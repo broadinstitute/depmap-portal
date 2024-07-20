@@ -1,0 +1,67 @@
+<link
+  rel="stylesheet"
+  href="//fonts.googleapis.com/css?family=Lato:100,300,400,700,900"
+  type="text/css"
+/>
+
+<link
+  rel="stylesheet"
+  href="//fonts.googleapis.com/css?family=Barlow+Condensed"
+  type="text/css"
+/>
+
+<link
+  rel="stylesheet"
+  href="//use.fontawesome.com/releases/v5.0.13/css/all.css"
+  type="text/css"
+/>
+
+<link
+  rel="stylesheet"
+  href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.css"
+  type="text/css"
+/>
+
+<link
+  rel="stylesheet"
+  href="//cdn.datatables.net/1.10.16/css/dataTables.bootstrap.min.css"
+  type="text/css"
+/>
+
+<link
+  rel="stylesheet"
+  href="//cdn.datatables.net/select/1.2.5/css/select.bootstrap.min.css"
+  type="text/css"
+/>
+
+<link
+  rel="stylesheet"
+  href="//cdnjs.cloudflare.com/ajax/libs/selectize.js/0.12.4/css/selectize.bootstrap3.min.css"
+  type="text/css"
+/>
+
+<link
+  rel="stylesheet"
+  href="https://unpkg.com/react-table@6.8.0/react-table.css"
+/>
+
+<script>
+  const enabledFeaturesOverrides = {};
+
+  const enabledFeatures = new Proxy(enabledFeaturesOverrides, {
+    get(obj, prop) {
+      if (!(prop in obj)) {
+        console.warn(
+          `enabledFeatures.${prop} is defaulting to true.`,
+          `To override this, set \`(window as any).enabledFeaturesOverrides.${prop} = false\`.`
+        );
+        return true;
+      } else {
+        return obj[prop];
+      }
+    },
+  });
+  const termsToText = {};
+  const depmapIsDevEnv = true;
+  const depmapContactUrl = "test@example.com";
+</script>
