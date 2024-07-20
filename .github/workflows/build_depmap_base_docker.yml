@@ -10,7 +10,7 @@ on:
 
 env:
   DOCKER_REPO: us.gcr.io/broad-achilles/depmap-base
-  DOCKER_TAG: ga-build-${{ github.run_number }}
+  DOCKER_TAG: ga2-build-${{ github.run_number }}
 
 jobs:
   build-docker-image:

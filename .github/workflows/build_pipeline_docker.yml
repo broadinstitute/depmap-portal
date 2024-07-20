@@ -11,7 +11,7 @@ on:
 
 env:
   DOCKER_REPO: us.gcr.io/broad-achilles/depmap-pipeline-run
-  DOCKER_TAG: ga-build-${{ github.run_number }}
+  DOCKER_TAG: ga2-build-${{ github.run_number }}
   DOCKERFILE_DIR: pipeline-run-docker
 
 jobs:

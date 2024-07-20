@@ -15,7 +15,7 @@ on:
 
 env:
   DOCKER_REPO: us.gcr.io/broad-achilles/depmap
-  DOCKER_TAG: ga-build-${{ github.run_number }}
+  DOCKER_TAG: ga2-build-${{ github.run_number }}
 
 jobs:
   run-frontend-tests:
