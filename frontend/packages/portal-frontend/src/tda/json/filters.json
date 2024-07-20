@@ -1,0 +1,68 @@
+[
+  {
+    "kind": "range",
+    "key": "CRISPR_strong_depCL_count",
+    "label": "Strong Dependency Count",
+    "step": 1
+  },
+  {
+    "kind": "range",
+    "key": "RNAi_strong_depCL_count",
+    "label": "Strong Dependency Count",
+    "step": 1
+  },
+  {
+    "kind": "range",
+    "key": "CRISPR_min_gene_effect",
+    "label": "Minimum Gene Effect"
+  },
+  {
+    "kind": "range",
+    "key": "RNAi_min_gene_effect",
+    "label": "Minimum Gene Effect"
+  },
+  {
+    "kind": "range",
+    "key": "CRISPR_min_gene_effect_zscore",
+    "label": "Min. Gene Effect Z-score"
+  },
+  {
+    "kind": "range",
+    "key": "RNAi_min_gene_effect_zscore",
+    "label": "Min. Gene Effect Z-score"
+  },
+  {
+    "kind": "checkbox",
+    "key": "CRISPR_PanDependency",
+    "label": "Non Pan-Dependency",
+    "match": "False"
+  },
+  {
+    "kind": "checkbox",
+    "key": "RNAi_PanDependency",
+    "label": "Non Pan-Dependency",
+    "match": "False"
+  },
+  {
+    "kind": "range",
+    "key": "CRISPR_Mean",
+    "label": "Mean Gene Effect"
+  },
+  {
+    "kind": "range",
+    "key": "RNAi_Mean",
+    "label": "Mean Gene Effect"
+  },
+  {
+    "kind": "range",
+    "key": "CRISPR_depCL_frac",
+    "label": "Dependency Fraction",
+    "step": 0.001
+  },
+  {
+    "kind": "range",
+    "key": "RNAi_depCL_frac",
+    "label": "Dependency Fraction",
+    "step": 0.001
+  }
+]

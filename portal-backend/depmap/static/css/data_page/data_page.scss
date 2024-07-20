@@ -1,0 +1,122 @@
+.nav-tabs > li > a {
+  margin-right: 2px;
+  line-height: 1.42857143;
+  border-top: 1px solid #bebebe;
+  border-radius: 4px 4px 0 0;
+  border-left: 1px solid #bebebe;
+  border-right: 1px solid #bebebe;
+}
+
+.nav-tabs > li.active > a,
+.nav-tabs > li.active > a:hover,
+.nav-tabs > li.active > a:focus {
+  color: #4479b2;
+  font-weight: bold;
+  cursor: default;
+  background-color: #fff;
+  border: 1px solid black;
+  border-bottom-color: transparent;
+}
+
+.nav-tabs > li > a:hover {
+  background-color: #0079b21a;
+}
+
+.nav-tabs {
+  border-bottom: 1px solid black;
+  padding-left: 80px;
+}
+
+#data-structure,
+#learn-about,
+#how-to-cite,
+#map-section {
+  .depmap-accordion {
+    border: none !important;
+    width: 100% !important;
+    margin: 0px !important;
+
+    .accordion-header {
+      margin-left: 0px;
+      background-color: #fff !important;
+      padding-bottom: 0px !important;
+      width: 100%;
+
+      .accordion-title {
+        color: black;
+        width: 100% !important;
+
+        h1 {
+          font-family: roboto !important;
+          font-weight: 500 !important;
+          font-size: 24px !important;
+          margin-bottom: 22px !important;
+        }
+      }
+    }
+
+    .accordion_contents {
+      margin-left: 12px;
+      border: 0;
+      text-align: left;
+      white-space: pre-line;
+      word-break: break-word;
+      color: black;
+      outline: 0;
+      text-decoration: none;
+
+      .btn:active {
+        font-weight: bolder;
+      }
+    }
+  }
+}
+
+.CollapsiblePanel {
+  .depmap-accordion {
+    border: solid 1px black;
+    width: 100% !important;
+
+    .accordion-header {
+      margin-left: 0px;
+      background-color: #fff !important;
+      padding-bottom: 0px !important;
+      width: 100%;
+
+      .accordion-title {
+        color: black;
+        width: 100% !important;
+      }
+    }
+
+    .accordion_contents {
+      margin-left: 12px;
+      border: 0;
+      text-align: left;
+      white-space: pre-line;
+      word-break: break-word;
+      color: black;
+      outline: 0;
+      text-decoration: none;
+
+      .btn:active {
+        font-weight: bolder;
+      }
+    }
+  }
+}
+
+#DataSlicer .parameters {
+  border: none !important;
+  padding: 0px !important;
+}
+
+// This is probably bad/hacky, but the documented way of hiding the Plotly modebar
+// (adding this to the config: {displayModeBar: false}) did not work for some reason
+.react-base-plot-toolbar {
+  display: none;
+}
+
+.modebar-btn {
+  display: none;
+}

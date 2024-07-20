@@ -1,0 +1,38 @@
+[
+  {
+    "key": "predictability",
+    "label": "Predictability"
+  },
+  {
+    "key": "essentiality",
+    "label": "Selectivity"
+  },
+  {
+    "key": "selectivity",
+    "label": "Enriched Lineages"
+  },
+  {
+    "key": "omics",
+    "label": "Omics"
+  },
+  {
+    "key": "target_tractability",
+    "label": "Target Tractability"
+  },
+  {
+    "key": "codependencies",
+    "label": "Codependencies"
+  },
+  {
+    "key": "mutations",
+    "label": "Mutations"
+  },
+  {
+    "key": "gene_score_confidence",
+    "label": "Gene score confidence"
+  },
+  {
+    "key": "description",
+    "label": "Description"
+  }
+]

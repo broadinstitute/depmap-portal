@@ -1,0 +1,17 @@
+{% macro global_search_dropdown(id, classes="adjustSearch", placeholder="Search for a gene, cell line, compound, lineage, or file") -%}
+<input
+  type="text"
+  placeholder="{{ placeholder }}"
+  class="{{ classes }}"
+  id="{{ id }}"
+/>
+
+{# $(function() {#} {# });#}
+<script type="text/javascript">
+  // global search should not wait for dom content loaded. the javascript is loaded in pre_js, in the header
+  buildGlobalSearchDropdown(
+    "{{ url_for('search.global_search', text='') }}",
+    "{{ id }}"
+  );
+</script>
+{%- endmacro %}

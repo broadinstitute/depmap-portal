@@ -1,0 +1,45 @@
+
+{% if alert_banner_message() is not none %}
+    <div class="alert-banner" id="alert-banner">
+        {{ alert_banner_message() | safe }}
+    </div>
+    <div class="alert-banner" id="read-more"></div>
+    {% endif %}
+
+<script>
+    $(function () { // document ready for middle-of-html js
+        let banner = document.getElementById("alert-banner");
+        if(banner){
+            let readMore = document.getElementById("read-more");
+        readMore.addEventListener('click', toggleBanner);
+
+        let collapsedText = "(<u>Read More</u>)";
+        let expandedText = "(<u>Show Less</u>)";
+
+        let collapsedHeight = banner.clientHeight;
+        let contentHeight = banner.scrollHeight;
+        let divHeight = banner.clientHeight;
+
+        let collapsed = true;
+        if (contentHeight > divHeight) {
+            console.log("Truncation has happened");
+            readMore.innerHTML = collapsedText;
+        }
+         function toggleBanner() {
+            if (collapsed) {
+                banner.style.maxHeight = contentHeight + "px";
+                readMore.innerHTML = expandedText;
+                collapsed = false;
+            }
+            else {
+                banner.style.maxHeight = collapsedHeight + "px";
+                readMore.innerHTML = collapsedText;
+                collapsed = true;
+            }
+
+        }
+
+        }
+
+    });
+</script>

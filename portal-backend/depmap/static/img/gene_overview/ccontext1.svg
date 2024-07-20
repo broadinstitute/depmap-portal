@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Generator: Adobe Illustrator 22.1.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
+<svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+	 viewBox="0 0 302 74.4" style="enable-background:new 0 0 302 74.4;" xml:space="preserve">
+<style type="text/css">
+	.st0{clip-path:url(#SVGID_2_);}
+	.st1{clip-path:url(#SVGID_4_);fill:#B9B9B9;}
+	.st2{clip-path:url(#SVGID_6_);}
+	.st3{clip-path:url(#SVGID_8_);fill:#3785B6;}
+	.st4{fill:none;stroke:#3A3A39;stroke-width:3;stroke-linecap:square;stroke-miterlimit:10;}
+	.st5{fill:none;stroke:#B9B9B9;stroke-width:3;stroke-linecap:square;stroke-miterlimit:10;}
+	.st6{fill:none;stroke:#3785B6;stroke-width:3;stroke-linecap:square;stroke-miterlimit:10;}
+	.st7{fill:#4B4B4B;}
+	.st8{font-family:'Lato-Bold';}
+	.st9{font-size:14px;}
+	.st10{fill:none;stroke:#FFFFFF;stroke-width:3;stroke-linecap:square;stroke-miterlimit:10;}
+</style>
+<g>
+	<defs>
+		<path id="SVGID_1_" d="M92,1h102c5,0,9,4,9,9s-4,9-9,9H92c-5,0-9-4-9-9S87,1,92,1z"/>
+	</defs>
+	<clipPath id="SVGID_2_">
+		<use xlink:href="#SVGID_1_"  style="overflow:visible;"/>
+	</clipPath>
+	<g class="st0">
+		<defs>
+			<rect id="SVGID_3_" x="-570" y="-307" width="1440" height="1024"/>
+		</defs>
+		<clipPath id="SVGID_4_">
+			<use xlink:href="#SVGID_3_"  style="overflow:visible;"/>
+		</clipPath>
+		<rect x="78" y="-4" class="st1" width="130" height="28"/>
+	</g>
+</g>
+<g>
+	<defs>
+		<path id="SVGID_5_" d="M61,27h102c5,0,9,4,9,9s-4,9-9,9H61c-5,0-9-4-9-9S56,27,61,27z"/>
+	</defs>
+	<clipPath id="SVGID_6_">
+		<use xlink:href="#SVGID_5_"  style="overflow:visible;"/>
+	</clipPath>
+	<g class="st2">
+		<defs>
+			<rect id="SVGID_7_" x="-570" y="-307" width="1440" height="1024"/>
+		</defs>
+		<clipPath id="SVGID_8_">
+			<use xlink:href="#SVGID_7_"  style="overflow:visible;"/>
+		</clipPath>
+		<rect x="47" y="22" class="st3" width="130" height="28"/>
+	</g>
+</g>
+<g>
+	<line class="st4" x1="2" y1="55.9" x2="301" y2="55.9"/>
+	<line class="st5" x1="30.5" y1="9.9" x2="221.5" y2="9.9"/>
+	<line class="st6" x1="19.5" y1="35.9" x2="241.5" y2="35.9"/>
+	<text transform="matrix(1 0 0 1 147.371 74)" class="st7 st8 st9">0</text>
+	<text transform="matrix(1 0 0 1 214.7084 74)" class="st7 st8 st9">.5</text>
+	<text transform="matrix(1 0 0 1 285.371 74)" class="st7 st8 st9">1</text>
+	<text transform="matrix(1 0 0 1 73.097 74)" class="st7 st8 st9">-.5</text>
+	<text transform="matrix(1 0 0 1 5.7596 74)" class="st7 st8 st9">-1</text>
+	<line class="st10" x1="138.5" y1="-1.5" x2="138.5" y2="22.5"/>
+	<line class="st10" x1="84.5" y1="23.5" x2="84.5" y2="47.5"/>
+</g>
+</svg>

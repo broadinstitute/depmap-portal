@@ -1,0 +1,22 @@
+depmap_id,cell_line_name,cell_line_display_name,label,aliases,alt_names,wtsi_master_cell_id,cosmic_id,cell_line_passport_id,primary_disease,subtype_name,tumor_type_name,gender,lineage_1,lineage_2,lineage_3,lineage_4,source,rrid,image_filename,comments
+ACH-000014,HS294T_SKIN,HS294T,HS294T,"HS294T_SKIN,Hs 294.T",,,,SIDM00800,,,Metastasis,Male,skin,melanoma,,,ATCC,CVCL_0331,,Isolated from the same donor tissue as A101D
+ACH-000052,A673_BONE,A673,A673,"A-673,A673_BONE",,660.0,684052.0,SIDM00848,,,Primary,Female,bone,Ewings_sarcoma,,,DSMZ,CVCL_0080,,(RNAseq) EWS/FLI
+ACH-000210,CADOES1_BONE,CADOES1,CADOES1,"CADO-ES-1,CADOES1_BONE",,1523.0,753539.0,SIDM00961,Bone Sarcoma,Ewing's Sarcoma,Metastasis,Female,bone,Ewings_sarcoma,,,KCLB,CVCL_0698,CADO-ES1.jpg,(RNAseq) EWS/ERG
+ACH-000279,EWS502_BONE,EWS502,EWS502,EWS502_BONE,,,,SIDM01499,Bone Sarcoma,Ewing's Sarcoma,,Unknown,bone,Ewings_sarcoma,,,,CVCL_1103,,(RNAseq) EWS/FLI
+ACH-000304,WM115_SKIN,WM115,WM115,"WM-115,WM115_SKIN",,1000.0,909784.0,SIDM01000,Melanoma/Skin Cancer,Malignant Melanoma,Primary,Female,skin,melanoma,,test_lineage,,CVCL_S740,,Derived from a metastasis of the same parent as WM-115 (ECACC).
+ACH-000425,UACC62_SKIN,UACC62,UACC62,"Alt2,Alt1,UACC62_SKIN,UACC-62","Alt1,Alt2",8.0,905976.0,SIDM00107,Melanoma/Skin Cancer,Melanoma,UACC sample tumor type,Unknown,skin,melanoma,b_cell_HERpos_dev_lineage,test_lineage,DSMZ,CVCL_0040,UACC-62_KG.jpg,
+ACH-000441,SH4_SKIN,SH4,SH4,SH4_SKIN,,1179.0,909713.0,SIDM01079,Melanoma/Skin Cancer,Melanoma,Metastasis,Female,skin,melanoma,,,,CVCL_1780,,
+ACH-000458,CJM_SKIN,CJM,CJM,CJM_SKIN,,,,SIDM01512,Melanoma/Skin Cancer,Unknown,Metastasis,Male,skin,melanoma,,,,CVCL_1692,CJM_KG.jpg,
+ACH-000552,HT29_LARGE_INTESTINE,HT29,HT29,"HT-29,HT29_LARGE_INTESTINE",,1212.0,905939.0,SIDM00136,Colon Cancer,Colon/ Colorectal Adenocarcinoma,Primary,Female,colorectal,,,,ECACC,CVCL_U797,HT-29-KG.tif,
+ACH-000580,C32_SKIN,C32,C32,C32_SKIN,,2242.0,906830.0,SIDM00890,Melanoma/Skin Cancer,"Melanoma, Amelanotic",Primary,Male,skin,melanoma_fake_1,,,ATCC,CVCL_0320,C32_LUA-3143.jpg,
+ACH-000585,EPLC272H_LUNG,EPLC272H,EPLC272H,"EPLC-272H,EPLC272H_LUNG",,404.0,753556.0,SIDM01044,Lung NSCLC,"Lung squamous carcinoma/Non Small Cell Lung Cancer, Squamous Cell Carcinoma",Primary,Male,unknown,,,,DSMZ,CVCL_1097,,
+ACH-000706,EKVX_LUNG,EKVX,EKVX,EKVX_LUNG,,322.0,905970.0,SIDM00119,Lung NSCLC,Lung adenocarcinoma/Non Small Cell Carcinoma,Primary,Unknown,lung,lung_NSC,lung_adenocarcinoma,,DSMZ,CVCL_1197,EKVX_LUA-3867.jpg,
+ACH-000788,A2058_SKIN,A2058,A2058,A2058_SKIN,,652.0,906792.0,SIDM00797,Melanoma/Skin Cancer,Melanoma,Metastasis,Male,skin,melanoma_fake_1,,,ATCC,CVCL_1195,"A2058-LUA-3175-AN.jpg, A2058-LUA-3175-AN.jpg",
+ACH-000805,COLO679_SKIN,COLO679,COLO679,"COLO679_SKIN,COLO-679",,2049.0,906818.0,SIDM00284,Melanoma/Skin Cancer,Malignant Melanoma,Metastasis,Female,skin,melanoma_fake_1,,,NIBRI,CVCL_1059,COLO-679_KG.jpg,
+ACH-000810,SKMEL30_SKIN,SKMEL30,SKMEL30,SKMEL30_SKIN,,1789.0,909726.0,SIDM00392,Melanoma/Skin Cancer,Malignant Melanoma,Metastasis,Male,skin,melanoma_fake_2,,,DSMZ,CVCL_1130,,
+ACH-000899,WM88_SKIN,WM88,WM88,"WM88_SKIN,WM-88",,,,SIDM01768,Melanoma/Skin Cancer,Melanoma,,Unknown,skin,melanoma,,,HSRRB,CVCL_0039,,
+ACH-001001,143B_BONE,143B,143B,143B_BONE,,,,SIDM00804,Bone Sarcoma,Osteosarcoma,Primary,Unknown,bone,osteosarcoma,,,DSMZ,CVCL_6805,,HOS and 143B originated from the same host: 143B is TK- and originated indirectly from HOS which is TK+ (ECACC).
+ACH-001170,PETA_SKIN,PETA,PETA,PETA_SKIN,,,,SIDM01848,Merkel,,,,skin,Merkel,,,ECACC,,,
+ACH-001205,TC32_BONE,TC32,TC32,TC32_BONE,,,,SIDM01465,Bone Sarcoma,Ewing's Sarcoma,,Male,bone,Ewings_sarcoma,,,,CVCL_LC73,,(RNAseq) EWS/FLI
+ACH-000131,HS229T_LUNG,HS229T,HS229T,"NCIH292,NCIH292_LUNG,Hs 229.T,HS229T_FIBROBLAST,HS229T_LUNG","HS229T_FIBROBLAST,Hs 229.T,NCIH292,NCIH292_LUNG",,,SIDM01615,Lung NSCLC,adenocarcinoma,Primary,Male,fibroblast,,,,ATCC,CVCL_7151,,
+ACH-000474,[MERGED_TO_ACH-000131]NCIH292_LUNG,NCIH292,NCIH292,Hs 229.T,,,,SIDM01615,Lung NSCLC,adenocarcinoma,Primary,Male,fibroblast,,,,ATCC,CVCL_7151,,

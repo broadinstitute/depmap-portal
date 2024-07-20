@@ -1,0 +1,42 @@
+{% extends "nav_footer.html" %} 
+
+{% block page_title %} Celligner {% endblock %}
+{% block css %}
+<link
+  rel="stylesheet"
+  href="https://unpkg.com/react-select@1.2.0/dist/react-select.css"
+/>
+<link
+  rel="stylesheet"
+  href="https://unpkg.com/react-table@6.8.0/react-table.css"
+/>
+{% assets filters="libsass", output="public/css/celligner.css",
+"css/celligner/celligner.scss" %}
+<link rel="stylesheet" href="{{ ASSET_URL }}" />
+{% endassets %} {% endblock %} {% block meta_description %} Alignment of models
+to tumors. {% endblock %} {% block content %}
+{% block content_class %}{% endblock content_class %}
+<div
+  style="
+    padding: 0px 15px;
+    overflow-x: hidden;
+    overflow-y: scroll;
+    height: 100%;
+    width: 100%;
+  "
+>
+  <div id="react-celligner-root"></div>
+</div>
+<script id="react-celligner-data" type="application/json">
+  {
+    "alignments": {{alignments|safe}},
+    "subtypes": {{subtypes|safe}},
+    "cellLineUrl": "{{url_for('cell_line.view_cell_line', cell_line_name='')}}",
+    "downloadUrl": "{{url_for('celligner.download_celligner_files')}}",
+    "methodologyUrl": {% if methodology_url %} "{{methodology_url | safe}}" {% else %} null {% endif %}
+  }
+</script>
+{% endblock %}
+{% block js %}
+  <script src="{{ webpack_url('celligner.js') }}"></script>
+{% endblock %}

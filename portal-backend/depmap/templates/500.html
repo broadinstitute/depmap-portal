@@ -1,0 +1,10 @@
+{% extends "error_page.html" %} {% block text %}
+<h1>500</h1>
+<p>
+  Sorry, something went wrong on our system. We have been notified and will be
+  fixing it. Apologies and please try again later and/or email
+  <a href="mailto:{{ config.CONTACT_EMAIL }}" class="contact_style"
+    >{{ config.CONTACT_EMAIL }}</a
+  >.
+</p>
+{% endblock %}

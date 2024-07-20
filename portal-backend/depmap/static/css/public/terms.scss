@@ -1,0 +1,72 @@
+/*Color variables*/
+@import "../shared/variables";
+
+.terms_and_conditions {
+  color: #303030;
+
+  a {
+    color: $skyros_link;
+    text-decoration: underline;
+  }
+
+  // These styles somewhat match homepage.scss
+  // TODO: Should all of depmap use these styling definitions globally?
+  h1 {
+    font-family: roboto;
+    font-size: 32px;
+    font-weight: 900; // Common weight name: "black" (Refer to: https://developer.mozilla.org/en-US/docs/Web/CSS/font-weight#common_weight_name_mapping)
+    line-height: 1.25;
+    color: $skyros_link;
+    margin-bottom: 0;
+  }
+
+  // h2 {
+  //   font-family: roboto;
+  //   font-size: 28px;
+  //   font-weight: 700; // Common weight name: "bold"
+  //   margin-bottom: 1em;
+  //   line-height: 1.25;
+  // }
+
+  // h3 {
+  //   font-family: roboto;
+  //   font-size: 24px;
+  //   font-weight: 500; // Common weight name: "medium"
+  //   margin-top: 0em;
+  //   margin-bottom: 1em;
+  //   line-height: 1.25;
+  // }
+
+  // h4 {
+  //   font-family: roboto;
+  //   font-size: 22px;
+  //   font-weight: 500; // Common weight name: "medium"
+  //   margin-top: 0em;
+  //   margin-bottom: 0.5em;
+  // }
+
+  h5 {
+    font-family: roboto;
+    font-size: 18px;
+    line-height: 26px;
+    font-weight: normal;
+    font-style: normal;
+    margin-bottom: 0.5em;
+  }
+
+  h6 {
+    font-family: roboto;
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 0.5em;
+    margin-top: 2em;
+  }
+
+  p {
+    font-family: roboto;
+    font-size: 14px;
+    line-height: 20px;
+    font-weight: normal;
+    margin-bottom: 14px;
+  }
+}

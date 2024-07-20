@@ -1,0 +1,73 @@
+{
+  "name": "@depmap/data-explorer-2",
+  "version": "1.0.0",
+  "main": "index.ts",
+  "license": "MIT",
+  "scripts": {
+    "test": "jest"
+  },
+  "dependencies": {
+    "@depmap/api": "1.0.0",
+    "@depmap/cell-line-selector": "1.0.0",
+    "@depmap/common-components": "1.0.0",
+    "@depmap/compute": "1.0.0",
+    "@depmap/data-slicer": "1.0.0",
+    "@depmap/downloads": "1.0.0",
+    "@depmap/globals": "1.0.0",
+    "@depmap/types": "1.0.0",
+    "classnames": "^2.3.1",
+    "js-base64": "^3.7.2",
+    "json-stable-stringify": "^1.0.2",
+    "lodash.get": "^4.4.2",
+    "lodash.omit": "^4.5.0",
+    "qs": "^6.11.0",
+    "react-bootstrap": "^0.32.3",
+    "react-select": "^3.2.0",
+    "react-windowed-select": "^3.1.2"
+  },
+  "devDependencies": {
+    "@types/js-base64": "^3.3.1",
+    "@types/json-stable-stringify": "^1.0.34",
+    "@types/lodash.get": "^4.4.7",
+    "@types/lodash.omit": "^4.5.7",
+    "@types/react-bootstrap": "^0.32.24",
+    "@types/react-select": "3.1.2"
+  },
+  "peerDependencies": {
+    "react": "^16.9.35",
+    "react-dom": "^16.9.8"
+  },
+  "jest": {
+    "moduleFileExtensions": [
+      "js",
+      "ts",
+      "tsx"
+    ],
+    "transform": {
+      "^.+\\.tsx?$": [
+        "ts-jest",
+        {
+          "diagnostics": false
+        }
+      ]
+    },
+    "transformIgnorePatterns": [
+      "node_modules/(?!depmap-shared)"
+    ],
+    "testRegex": ".*/__tests__/.*test.*\\.(ts|tsx|js)$",
+    "testEnvironment": "jsdom",
+    "setupFilesAfterEnv": [
+      "<rootDir>/jest-setup.ts"
+    ],
+    "setupFiles": [
+      "jest-localstorage-mock"
+    ],
+    "moduleNameMapper": {
+      "\\.(jpg|jpeg|png|gif|eot|otf|webp|svg|ttf|woff|woff2|mp4|webm|wav|mp3|m4a|aac|oga)$": "<rootDir>/__mocks__/fileMock.js",
+      "\\.(css|less|scss)$": "<rootDir>/__mocks__/styleMock.js",
+      "@depmap/(.*)/src/(.*)": "<rootDir>/../$1/src/$2",
+      "@depmap/(.*)": "<rootDir>/../$1",
+      "^src/(.*)": "<rootDir>/src/$1"
+    }
+  }
+}

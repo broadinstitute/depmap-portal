@@ -1,0 +1,33 @@
+{
+  "name": "@depmap/compute",
+  "version": "1.0.0",
+  "main": "index.ts",
+  "license": "MIT",
+  "scripts": {
+    "test": "echo 'no tests to run'"
+  },
+  "dependencies": {
+    "@depmap/api": "1.0.0",
+    "@depmap/cell-line-selector": "1.0.0",
+    "@depmap/compute": "1.0.0",
+    "@depmap/globals": "1.0.0",
+    "@depmap/interactive": "1.0.0",
+    "@depmap/long-table": "1.0.0",
+    "@depmap/user-upload": "1.0.0",
+    "@depmap/utils": "1.0.0",
+    "immutability-helper": "^2.7.1",
+    "lodash.uniqueid": "^4.0.1",
+    "react-bootstrap": "^0.32.3",
+    "react-select": "^3.2.0"
+  },
+  "devDependencies": {
+    "@types/immutability-helper": "2.0.15",
+    "@types/lodash.uniqueid": "^4.0.6",
+    "@types/react-bootstrap": "^0.32.24",
+    "@types/react-select": "3.1.2",
+    "plotly.js": "^2.8.0"
+  },
+  "peerDependencies": {
+    "react": "^16.9.35"
+  }
+}

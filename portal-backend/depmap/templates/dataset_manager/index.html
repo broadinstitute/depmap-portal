@@ -1,0 +1,25 @@
+{% extends "full_page.html" %} {% block page_title %} Dataset Manager {%
+endblock %} {% block css %}
+<link
+  rel="stylesheet"
+  href="https://unpkg.com/react-select@1.2.0/dist/react-select.css"
+/>
+<link
+  rel="stylesheet"
+  href="https://unpkg.com/react-table@6.8.0/react-table.css"
+/>
+{% assets filters="libsass", depends='css/shared/*.scss' %}
+<link rel="stylesheet" href="{{ ASSET_URL }}" />
+{% endassets %} {% endblock %} {% block meta_description %} Manage datasets {%
+endblock %} {% block content %}
+<div class="full-screen-div">
+  {% include "nav_footer/nav.html" %}
+  <div
+    class="dataset-manager-container"
+    id="react-dataset-manager-root"
+    data-react-component-loaded-for-selenium="false"
+  ></div>
+</div>
+{% endblock %} {% block js %}
+<script src="{{ webpack_url('datasetManager.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,55 @@
+<div>
+    <h3 style="padding-top: .5em;">Search external sites for {{ about.symbol }}</h3>
+    <div>
+        <ul>
+            <li>
+                <a href='http://www.ncbi.nlm.nih.gov/pubmed/?term={{ about.symbol }}' target="_blank">PubMed</a> (<span class="pubmed-search-count"></span> entries) <em class="no_data"></em>
+            </li>
+            <li>
+                <a href="https://www.genenames.org/cgi-bin/gene_search?search={{ about.symbol }}&submit=Submit">HUGO</a>
+            </li>
+            <li>
+                <a href="http://www.genecards.org/cgi-bin/carddisp.pl?gene={{ about.symbol }}">GeneCards</a>
+            </li>
+            <li>
+                <a href="https://en.wikipedia.org/wiki/{{ about.symbol }}">Wikipedia</a>
+            </li>
+            <li>
+                <a href="http://firebrowse.org/viewGene.html?gene={{ about.symbol }}">Firebrowse</a>
+            </li>
+            <li>
+                <a href="http://www.tumorportal.org/view?geneSymbol={{ about.symbol }}">Tumor Portal</a>
+            </li>
+            <li>
+                <a href="https://www.gtexportal.org/home/gene/{{ about.symbol }}">GTEx</a>
+            </li>
+            <li>
+                <a href="http://cancer.sanger.ac.uk/cosmic/gene/analysis?ln={{ about.symbol }}">COSMIC</a>
+            </li>
+            <li>
+                <a href="http://www.ncbi.nlm.nih.gov/gene/{{about.id}}">NCBI</a>
+            </li>
+        </ul>
+    </div>
+    <br>
+    <br>
+    <br>
+</div>
+
+
+<script type="text/javascript">
+    $(function () { // document ready for middle-of-html js
+        $.ajax({
+            url: "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi",
+            data: {
+                "db": "pubmed",
+                "term": "{{ about.symbol }}"
+            },
+            dataType: "xml",
+            success: function (xml) {
+                var count = $(xml).find("eSearchResult > Count").text();
+                $('.pubmed-search-count').text(count); // there are two instances, one on executive tab and one on about
+            }
+        });
+    });
+</script>

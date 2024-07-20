@@ -1,0 +1,186 @@
+{% extends "nav_footer.html" %}
+
+{% block css %}
+    {% assets filters="libsass", output="public/css/call_for_models.css", "css/public/call_for_models.scss" %}
+        <link rel="stylesheet" href="{{ ASSET_URL }}">
+    {% endassets %}
+{% endblock %}
+
+{% block highlight %}
+    <div class="row models_background">
+        <div class="container">
+            <div class="col-md-12">
+                <div>
+                    <br>
+                    <h3 class="model_seeking_headline">WE ARE CURRENTLY SEEKING*:</h3>
+                </div>
+            </div>
+                <div class="col-md-6">
+                    <div class="col-md-3">
+                        <div class="row">
+                            <h4 class="hidden-md hidden-lg" style="margin-bottom: 0">Pediatric osteosarcoma models</h4>
+                            <h4 class="hidden-xs hidden-sm text_box">Pediatric osteosarcoma models</h4>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="row">
+                            <h4 class="hidden-md hidden-lg" style="margin-bottom: 0">CIC-DUX4 fusion (Ewing-like) sarcoma models</h4>
+                            <h4 class="hidden-xs hidden-sm text_box">CIC-DUX4 fusion (Ewing-like) sarcoma models</h4>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="row">
+                            <h4 class="hidden-md hidden-lg" style="margin-bottom: 0">Desmoid tumor models</h4>
+                            <h4 class="hidden-xs hidden-sm text_box">Desmoid tumor models</h4>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="row">
+                            <h4 class="hidden-md hidden-lg" style="margin-bottom: 0">Oesophagus adenocarcinoma models</h4>
+                            <h4 class="hidden-xs hidden-sm text_box">Oesophagus adenocarcinoma models</h4>
+                        </div>
+                    </div>
+                </div>
+            <div class="col-md-6">
+                <div>
+                    <h6 style="margin-top: 10px; max-width: 40ch;">*If your cell line model(s) do not fall in these categories, that is fine - we are accepting models of all disease types!</h6>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block content %}
+ <div class="container">
+     <div class="col-md-6">
+            <div class="row">
+                <h1>Call for Cell Line Models</h1>
+                <p>DepMap is a resource for the scientific community. The data is being released pre-publication on a quarterly basis, and we are creating tools to make it accessible to scientists with no computational expertise so everyone has the ability to explore the data. We wouldn’t be able to build this Map without the help of the many collaborators and partners who have already shared their cell lines, allowing us to generate data available to the entire community.</p>
+                <p>If you are interested in identifying cancer vulnerabilities in your favorite cell lines, please consider sharing your valuable cell line models. We will profile them, screen them, and make the data available on the <a href="https://depmap.org/portal">DepMap portal</a>. We are currently able to accept cell lines that meet the following criteria:</p>
+            </div>
+            <div class="row">
+                <ul>
+                    <li>
+                        >2 million cells per vial
+                    </li>
+                    <li>
+                        Mycoplasma free
+                    </li>
+                    <li>
+                        Doubling time of 7 days or less
+                    </li>
+                    <li>
+                        Commercially available media and supplements (we can not grow cell lines that require specialized conditioned media)
+                    </li>
+                    <li>
+                        Grown in 5% CO2 (our facilities have limited ability to grow cells in hypoxia)
+                    </li>
+                    <li>
+                        We will accept all sizes of cells but our Achilles and PRISM facilities have size limitations and the cells need to be small enough to have 10 million cells per T175 flask.     
+                    </li>
+                </ul>
+            </div>    
+            <div class="row">
+                <h2>We will work to generate the following data
+                for all cell line models we receive:
+                </h2> 
+            </div>    
+            <div class="row">
+                <ul>
+                    <li>
+                        Genome-wide CRISPR loss of function screens
+                    </li>
+                    <li>
+                        Expression, mutation, and copy number model characterization
+                    </li>
+                    <li>
+                        Small molecule perturbation screens
+                    </li>
+                    <li>
+                        Model metadata
+                    </li>
+                </ul>
+            </div>         
+    </div>
+    <div class="col-md-6 hidden-xs hidden-sm"> 
+            <img class="circ_image" src="{{ url_for('static', filename='img/cell_line_models/broadies.png') }}" alt="Broadies analyizing cell lines">
+        </div>
+
+        <div class="col-md-12">
+            <div class="row">
+            <br>
+                <h4> 3 Easy steps to become a part of the DepMap community</h4>
+            </div>
+        </div>
+
+        <div class="col-md-5 hidden-sm hidden-xs">
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="row">
+                        <p class="model_callout_number">1</p>
+                        <p class="text_box">Contact us and tell us about your model.</p>
+                    </div>
+                </div>
+                <div class="col-md-5">
+                    <div class="row">
+                        <p class="model_callout_number">2</p>
+                        <p class="text_box2">We will work with you on regulatory paperwork and to ensure cells are safely delivered.</p>   
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="row">
+                        <p class="model_callout_number">3</p>
+                        <p class="text_box">We profile and screen your model.</p> 
+                    </div>       
+                </div>
+            </div>   
+        </div>
+        <div class="col-md-6 hidden-md hidden-lg">
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="row">
+                        <p> <span class="model_callout_number">1 </span> Contact us and tell us about your model.</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="row">
+                        <p> <span class="model_callout_number">2 </span> We will work with you on regulatory paperwork and to ensure cells are safely delivered.</p>    
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="row">
+                        <p> <span class="model_callout_number">3 </span> We profile and screen your model.</p> 
+                    </div>       
+                </div>
+            </div>   
+        </div>
+        <div class="col-md-7"></div>
+
+
+        <div class="col-md-12">
+            <div class="row">
+                <a href="mailto:depmap@broadinstitute.org" class="model_button">Submit your cell lines!</a>
+            </div>
+        </div>
+        <div class="col-md-8">
+            <div class="row">
+                <p>Please contact <a href="mailto:depmap@broadinstitute.org">depmap@broadinstitute.org</a> with a description of the line(s) you are willing to share, along with any information you have about your cell line(s), such as STR profiling information. <br>
+                <br>
+                We are enthusiastic to collaborate with you to build The Cancer Dependency Map, an important part of enabling precision medicine. Together, we can make this vision a reality!</p>
+            </div>
+        </div>
+            
+        <div class="col-md-4"></div>
+    
+    </div>
+
+
+
+ </div>
+ 
+        
+    <br>
+    <br>
+    <br>
+
+{% endblock %}

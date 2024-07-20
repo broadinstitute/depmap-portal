@@ -1,0 +1,20 @@
+{
+  "name": "@depmap/api",
+  "version": "1.0.0",
+  "main": "index.ts",
+  "license": "MIT",
+  "scripts": {
+    "test": "echo 'no tests to run'"
+  },
+  "dependencies": {
+    "@depmap/cell-line-selector": "1.0.0",
+    "@depmap/compute": "1.0.0",
+    "@depmap/data-slicer": "1.0.0",
+    "@depmap/interactive": "1.0.0",
+    "@depmap/types": "1.0.0",
+    "@depmap/user-upload": "1.0.0"
+  },
+  "peerDependencies": {
+    "react": "^16.9.35"
+  }
+}

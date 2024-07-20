@@ -1,0 +1,43 @@
+{% if show_celfie and correlations | length > 0 %}
+<div class="card_wrapper">
+    <div class="card_border">
+        <div>
+            <h2 class="no_margin cardtitle_text">Top Genomic Associations <i style="color: red; font-size: 8pt"><b>ALPHA</b></i></h2>
+        </div>
+        <div class="no_margin cardtitle_text">To view features other than expression click 'View details'</div>
+        <div class="card_padding">
+            <div class="plot_width plot_padding1">
+                {% for table in correlations %}
+                {% if table.is_rnai %}
+                <h4 class="rnai no_margin">{{ table.dataset_display_name }}</h4>
+                {% elif table.is_crispr %}
+                <h4 class="crispr no_margin">{{ table.dataset_display_name }}</h4>
+                {% else %}
+                <h4>{{ table.dataset_display_name }}</h4>
+                {% endif %}
+                <table style="width: 100%; table-layout: fixed;">
+                    <thead>
+                        <tr><th></th><th>Gene / Feature</th><th>Feature Type</th><th>Pearson Correlation</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for entry in table.entries %}
+                        <tr>
+                            <td><a href="{{ entry.interactive_url }}" target="_blank">Plot</a></td>
+                            <td><a href="{{ entry.gene_url }}">{{ entry.label }}</a></td>
+                            <td>{{ entry.feature_type }}</td>
+                            <td>{{ '%0.2f'| format(entry.correlation) }}</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% endfor %}
+                <div>
+                    {% if not is_mobile %}
+                    <br>
+                    <p><span>View additional features in the <a href="javascript:clickTab('#genomic_assoc')">Genomics Associations tab</a></span></p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}

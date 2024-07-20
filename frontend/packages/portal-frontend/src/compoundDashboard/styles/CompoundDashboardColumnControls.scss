@@ -1,0 +1,48 @@
+.CompoundDashboardColumnControls :global {
+  .dropdown-toggle {
+    border-radius: 0;
+    border: none;
+    border-left: 2px solid #b8b8b8;
+    width: 100%;
+  }
+
+  .btn-group:nth-child(1) {
+    width: 25%;
+  }
+
+  .btn-group:nth-child(2),
+  .btn-group:nth-child(3) {
+    width: 37.5%;
+  }
+
+  .btn-group:first-child .dropdown-toggle {
+    border: none;
+  }
+
+  .dropdown-toggle span:nth-child(1) {
+    text-align: left;
+  }
+
+  .dropdown-toggle span:nth-child(2) {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: scale(1.5, 2);
+  }
+
+  .dropdown-menu {
+    width: 100%;
+  }
+}
+
+.dropdownTitle {
+  color: #aaa;
+  font-style: italic;
+  text-overflow: ellipsis;
+  overflow-x: hidden;
+}
+
+.selection {
+  text-overflow: ellipsis;
+  overflow-x: hidden;
+}

@@ -1,0 +1,9 @@
+{
+  "name": "@depmap/globals",
+  "version": "1.0.0",
+  "main": "index.ts",
+  "license": "MIT",
+  "scripts": {
+    "test": "echo 'no tests to run'"
+  }
+}

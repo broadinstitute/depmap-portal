@@ -1,0 +1,2 @@
+class CeleryException(Exception):
+    pass

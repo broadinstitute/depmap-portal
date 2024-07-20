@@ -1,0 +1,34 @@
+// based on depmap/static/css/shared/narrow_react_table.scss
+@mixin narrow-react-table {
+  .ReactTable .rt-th,
+  .ReactTable .rt-td {
+    padding: 0;
+    text-align: center;
+    white-space: normal;
+  }
+
+  .ReactTable .rt-thead.-filters input,
+  .ReactTable .rt-thead.-filters select {
+    padding: 0;
+  }
+}
+
+// TODO: Get rid of :global and convert the corresponding component to CSS
+// Module format.
+:global {
+  /* React table, cursor pointer for entire row */
+  .association-table-container {
+    @include narrow-react-table;
+
+    .ReactTable .rt-th,
+    .ReactTable .rt-td {
+      cursor: pointer;
+    }
+  }
+
+  .striped-row {
+    &:nth-child(odd) {
+      background-color: #f2f2f2;
+    }
+  }
+}

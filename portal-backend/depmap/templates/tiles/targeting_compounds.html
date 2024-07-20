@@ -1,0 +1,34 @@
+{% if targeting_compounds | length > 0 %}
+<div class="card_wrapper">
+  <div class="card_border">
+    <div>
+      <h2 class="cardtitle_omics no_margin cardtitle_text">
+        Compounds Targeting {{gene_symbol}}
+      </h2>
+    </div>
+    <div class="card_padding">
+      <div class="plot_width plot_padding1">
+        <table style="width: 100%">
+          <thead>
+            <tr>
+              <th>Compound</th>
+              <th>Target/Mechanism</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for compound in targeting_compounds %}
+            <tr>
+              <td>
+                <a href="{{ compound.compound_url }}">{{compound.compound}}</a>
+              </td>
+              <td>{{ compound.target_or_mechanism }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <br />
+  </div>
+</div>
+{% endif %}

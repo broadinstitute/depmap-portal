@@ -1,0 +1,143 @@
+[tool.poetry]
+name = "depmap"
+version = "0.1.0"
+description = ""
+authors = ["Your Name <you@example.com>"]
+license = "BSD-3-Clause"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.9"
+Flask = "^1.1.4"
+#wheel==0.37.1
+# below is needed because flask_restplus does not work with later versions
+Werkzeug="0.16.1"
+#itsdangerous==1.1.0
+requests="^2.27.1"
+Flask-SQLAlchemy="^2.5.1"
+Flask-WTF="^1.0.0"
+WTForms="^3.0.1"
+gunicorn="^20.1.0"
+Flask-Assets="2.0"
+cssmin="0.2.0"
+jsmin="3.0.1"
+libsass="0.21.0"
+Flask-Login="^0.4.0"
+Flask-Bcrypt="^0.7.1"
+Flask-Caching="1.10.1"
+Flask-DebugToolbar="^0.11.0"
+pandas="^1.4.1"
+scipy="^1.8.0"
+matplotlib="^3.5.1"
+seaborn="^0.11.2"
+statsmodels="^0.13.2"
+scikit-learn="^1.0.2"
+h5py="^3.7.0"
+json-logic="^0.7.0-alpha"
+# google-cloud (needed so that pip doesn't spend too long looking for the right versions of these depende$
+google-cloud-core="1.7.2"
+google-cloud-storage="2.2.1"
+google-cloud-appengine-logging="1.1.1"
+google-cloud-audit-log="0.2.0"
+google-cloud-logging="3.0.0"
+google-cloud-monitoring="2.9.1"
+google-cloud-trace="0.24.0"
+google-cloud-error-reporting="1.5.1"
+# needed for pulling data used in data load
+boto3="^1.16.52"
+
+# progress bar
+tqdm="^4.63.0"
+progress="^1.6"
+# Download from bucket
+oauth2client="^4.1.3"
+# taigapy
+taigapy={git = "https://github.com/broadinstitute/taigapy.git", rev = "f0fcaf2e18a2e8beb99d3e9e86ab591afe3e34bb"}
+flask-hunter-profile={git = "https://github.com/broadinstitute/flask-hunter-profile.git"}
+Flask-Markdown="^0.3"
+Flask-Humanize="^0.3.0"
+
+# selenium for post-deploy checks
+selenium="^4.1.3"
+
+celery="^4.4.7"
+redis="^4.1.4"
+
+# cansar
+oauthlib="^3.2.0"
+requests_oauthlib="1.3.1"
+
+# APIs
+flask-restplus="0.13.0"
+
+# adding extension which switches shell to ipython
+flask-shell-ipython="0.4.1"
+
+graphviz="0.19.1"
+
+requests-toolbelt="0.9.1"
+
+# Opencensus
+opencensus="0.8.0"
+opencensus-ext-flask="0.7.6"
+opencensus-ext-stackdriver="0.8.0"
+opencensus-ext-zipkin="0.2.2"
+
+# Needed because the default updated version of MarkupSafe has removed soft_unicode
+MarkupSafe="2.0.1"
+
+# need to pin to avoid picking up sqlalchemy 2
+SQLAlchemy="1.4.40"
+breadbox-client = {version = "^2.2.1", source = "public-python"}
+
+pyyaml="^6.0"
+
+natsort="^8.4.0"
+igraph = "^0.10.6"
+pandera = "^0.16.1"
+pytest = "^7.4.0"
+pytest-split = "^0.8.1"
+multidict = "^6.0.4"
+html-sanitizer = "^2.3.0"
+depmap-compute = {version = "^0.1.2", source = "public-python"}
+
+
+[tool.poetry.group.dev.dependencies]
+atomicwrites="^1.4.0"
+packaging="^21.3"
+pluggy="^1.0.0"
+factory-boy="^3.2.1"
+pytest-xdist="^2.5.0"
+
+# Lint and code style
+flake8="^4.0.1"
+flake8-blind-except="^0.2.0"
+flake8-debugger="^4.0.0"
+flake8-docstrings="^1.6.0"
+flake8-isort="^4.1.1"
+flake8-quotes="^3.3.1"
+isort="^5.10.1"
+pep8-naming="^0.12.1"
+tqdm="^4.63.0"
+# if you change the version of black, also update the version in .pre-commit-config.yaml
+black="19.10b0"
+sqlalchemy-stubs="^0.4"
+
+# Git workflow
+pre-commit="^2.17.0"
+
+# release-scripts
+pyyaml="^6.0"
+sqlitedict="^2.1.0"
+import-linter = "^1.12.0"
+pyright-ratchet = {git = "https://github.com/pgm/pyright-ratchet.git"}
+
+
+[[tool.poetry.source]]
+name = "public-python"
+url = "https://us-central1-python.pkg.dev/cds-artifacts/public-python/simple/"
+priority = "supplemental"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

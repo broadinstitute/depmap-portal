@@ -1,0 +1,47 @@
+let STAGING_URL = "gs://preprocessing-pipeline-outputs/conseq/depmap"
+let DEFAULT_DOCKER_IMAGE = "us.gcr.io/broad-achilles/depmap-pipeline-run:ga-build-38"
+let DEFAULT_GCP_PROJECT = "broad-achilles"
+let DEFAULT_GCP_ZONE = "us-central*"
+let DSUB_EXE_PATH="dsub"
+let DSTAT_EXE_PATH="dstat"
+let DDEL_EXE_PATH="ddel"
+
+# match either format (comes from different versions of dsub)
+# Job: python3--pmontgom--210414-132401-98
+#  job-id: python3--pmontgom--210414-132401-98
+let DSUB_JOB_ID_PATTERN="""(?:(?:Job)|(?:job-id)): (\S+)"""
+
+executor-template dsub {
+  "type": "async-delegate",
+  "resources": { "slots": "100" },
+  "HELPER_PATH": "{{ parameters.helper_path | default('/usr/bin/python3 /helper.py') }}",
+  "COMMAND_TEMPLATE": """{{ config.DSUB_EXE_PATH }} \
+      --project {{ config.DEFAULT_GCP_PROJECT }} \
+      --zones '{{ config.DEFAULT_GCP_ZONE }}' \
+      --logging {{ config.STAGING_URL }}/logs/{{ parameters.UUID }} \
+      --image {{ parameters.docker_image | default(config.DEFAULT_DOCKER_IMAGE) }} \
+      --env AWS_ACCESS_KEY_ID=invalid \
+      --env AWS_SECRET_ACCESS_KEY=invalid \
+      --min-ram {{ parameters.min_ram | default("4") }} \
+      --boot-disk-size {{ parameters.boot_disk_size | default("10") }} \
+      --command '{{ COMMAND }}'""",
+  "CHECK_COMMAND_TEMPLATE": """{{config.DSTAT_EXE_PATH}} \
+      --project {{ config.DEFAULT_GCP_PROJECT }} \
+      --jobs {{ JOB_ID }} \
+      --status 'RUNNING'""",
+  "IS_RUNNING_PATTERN": "Status", # Really anything because we are only
+                                  # listing running jobs. Just make sure
+                                  # there's some output
+  "TERMINATE_CMD_TEMPLATE": "{{ config.DDEL_EXE_PATH }} --project {{ config.DEFAULT_GCP_PROJECT }} --jobs {{ JOB_ID }}",
+  "JOB_ID_PATTERN": """(?:(?:Job: )|(?:Launched job-id: ))(\S+).*""",
+  "COMPLETED_CMD_TEMPLATE" : """{{config.DSTAT_EXE_PATH}} \
+    --project  {{ config.DEFAULT_GCP_PROJECT }} \
+    --jobs {{ JOB_ID }} \
+    --status '*' --full && \
+    gsutil cat {{ config.STAGING_URL }}/logs/{{ parameters.UUID }}/{{ JOB_ID }}.log"""
+}
+
+
+
+
+

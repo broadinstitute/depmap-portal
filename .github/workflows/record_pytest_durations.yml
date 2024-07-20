@@ -1,0 +1,52 @@
+name: Record pytest durations
+
+on:
+  schedule:
+    - cron: "0 0 * * 0" # Every Sunday at midnight
+  workflow_dispatch:
+
+jobs:
+  record-pytest-durations:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python 3.9
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.9
+      - name: Cache pip
+        uses: actions/cache@v3
+        with:
+          # This path is specific to Ubuntu
+          path: ~/.cache/pip
+          # Look to see if there is a cache hit for the corresponding requirements files
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements/') }}
+          restore-keys: ${{ runner.os }}-pip-
+      - name: Cache node modules
+        uses: actions/cache@v3
+        with:
+          path: "frontend/node_modules"
+          key: ${{ runner.os }}-react-frontend-node-modules-${{ hashFiles('frontend/yarn.lock') }}
+          restore-keys: ${{ runner.os }}-react-frontend-node-modules-
+      - name: Build node modules
+        # Needed to run the views tests
+        run: |
+          cd portal-backend        
+          export NODE_OPTIONS='--openssl-legacy-provider'
+          yarn --cwd depmap install --modules-folder static/libs
+          yarn --cwd ../frontend install
+          yarn --cwd ../frontend "build:portal"
+      - name: Cache pytest durations
+        uses: actions/cache@v3
+        with:
+          path: .test_durations
+          key: ${{ runner.os }}-pytest-durations
+      - name: install poetry
+        run: pip install poetry==1.5.1 && poetry config virtualenvs.create false
+      - name: install dependencies
+        run: cd portal-backend && poetry install
+      - name: Record pytest durations
+        # Allow test failures
+        run: ((cd portal-backend && pytest --store-durations) || if [ $? = 1 ]; then exit 0; else exit 1; fi)
+      - name: Copy duration file to the place the caching looks for it
+        run: cp portal-backend/.test_durations .test_durations

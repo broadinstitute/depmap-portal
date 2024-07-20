@@ -1,0 +1,23 @@
+{
+  "name": "@depmap/downloads",
+  "version": "1.0.0",
+  "main": "index.ts",
+  "types": "index.d.ts",
+  "license": "MIT",
+  "scripts": {
+    "test": "echo 'no tests to run'"
+  },
+  "dependencies": {
+    "@depmap/data-slicer": "1.0.0",
+    "@depmap/globals": "1.0.0",
+    "@depmap/utils": "1.0.0",
+    "react-bootstrap": "^0.32.3"
+  },
+  "devDependencies": {
+    "@types/react-bootstrap": "^0.32.24"
+  },
+  "peerDependencies": {
+    "react": "^16.9.35",
+    "react-dom": "^16.9.8"
+  }
+}

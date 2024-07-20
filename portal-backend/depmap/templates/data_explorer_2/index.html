@@ -1,0 +1,35 @@
+{% extends "full_page.html" %}
+
+{% block page_title %}
+    DepMap Data Explorer 2.0
+{% endblock %}
+
+{% block css %}
+    {% assets filters="libsass",
+      output="public/css/data-explorer-2.css", "css/entities/executive.scss", "css/shared/*.scss"
+    %}
+        <link rel="stylesheet" href="{{ ASSET_URL }}">
+    {% endassets %}
+{% endblock %}
+
+{% block meta_description %}
+    Investigate the relationships between DepMap datasets
+{% endblock %}
+
+{% block content %}
+    <div class='full-screen-div'>
+        {% include "nav_footer/nav.html" %}
+        <div id="data-explorer-2"></div>
+    </div>
+{% endblock %}
+
+{% block js %}
+    <script id="data-explorer-2-data" type="application/json">
+      {
+        "feedbackUrl": "{{ config.FEEDBACK_FORM_URL | safe }}",
+        "contactEmail": "{{ config.CONTACT_EMAIL | safe }}",
+        "tutorialLink": "{{ tutorial_link | safe }}"
+      }
+    </script>
+    <script src="{{ webpack_url('dataExplorer2.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,431 @@
+/*Color variables*/
+@import "../shared/variables";
+
+.explore_tools_background {
+  color: white;
+  &.public {
+    background-image: linear-gradient(#6790f7, #16215b);
+  }
+}
+
+.cards_section {
+  display: flex;
+  gap: 2%;
+  min-height: 500px;
+
+  @media screen and (min-width: 992px) {
+    flex-direction: row;
+  }
+  @media screen and (max-width: 991px) {
+    flex-direction: column;
+  }
+}
+.thumbnail {
+  color: #303030;
+  padding: 0 20px 0px 20px;
+  border-radius: 6px;
+  flex: 1 1 0px;
+  position: relative;
+
+  img {
+    width: 100%;
+  }
+}
+
+.alert {
+  border-radius: 0;
+}
+
+.data_privacy_banner {
+  padding: 15px;
+  color: white;
+  text-align: center;
+  font-family: roboto;
+  &.public {
+    background-color: #6790f7;
+  }
+
+  .closebtn {
+    margin-left: 15px;
+    color: white;
+    font-weight: bold;
+    float: right;
+    font-size: 24px;
+    line-height: 30px;
+    cursor: pointer;
+    transition: 0.3s;
+  }
+  .closebtn:hover {
+    color: lightgray;
+  }
+
+  h3 {
+    font-size: 24px;
+    font-family: roboto;
+    font-weight: 500;
+    color: white;
+    margin-bottom: 0em;
+    a {
+      color: white;
+      text-decoration: none;
+      border-bottom: 1px solid white;
+    }
+    a:hover {
+      border-bottom: none;
+    }
+  }
+}
+
+.btn-non-public {
+  color: white !important;
+  background-color: $skyros_link;
+  // border-color: #2e6da4;
+  font-weight: 700;
+  font-size: 16px;
+  font-family: roboto;
+  text-decoration: none !important;
+  margin: 20px 10px 20px 0;
+}
+.btn-non-public:hover {
+  background-color: #933186;
+}
+.btn-non-public:active {
+  background-color: #711971;
+}
+
+.btn-outline-non-public {
+  color: $skyros_link !important;
+  background-color: transparent;
+  background-image: none;
+  font-weight: 700;
+  font-size: 16px;
+  font-family: roboto;
+  border-color: $skyros_link;
+  text-decoration: none !important;
+  margin: 20px 10px 20px 0;
+}
+.btn-outline-non-public:hover {
+  color: #933186 !important;
+  border-color: #933186;
+  background-color: rgba(#933186, 0.3);
+}
+.btn-outline-non-public:active {
+  color: white !important;
+  background-color: #711971;
+}
+
+.btn-public {
+  color: white !important;
+  background-color: #6790f7;
+  // border-color: #2e6da4;
+  font-weight: 700;
+  font-size: 16px;
+  font-family: roboto;
+  text-decoration: none !important;
+  margin: 20px 10px 20px 0;
+}
+.btn-public:hover {
+  background-color: #406ad4;
+}
+.btn-public:active {
+  background-color: #1f49b4;
+}
+
+.btn-outline-public {
+  color: #6790f7 !important;
+  background-color: transparent;
+  background-image: none;
+  font-weight: 700;
+  font-size: 16px;
+  font-family: roboto;
+  border-color: #6790f7;
+  text-decoration: none !important;
+  margin: 20px 10px 20px 0;
+}
+.btn-outline-public:hover {
+  color: #406ad4 !important;
+  border-color: #406ad4;
+  background-color: rgba(#406ad4, 0.3);
+}
+.btn-outline-public:active {
+  color: white !important;
+  background-color: #1f49b4;
+}
+
+.communications_section {
+  h1 {
+    margin-bottom: 0.5em;
+  }
+  h4 {
+    margin-bottom: 1em;
+  }
+  &.public {
+    a {
+      font-weight: 600;
+    }
+  }
+}
+
+.announcements_section {
+  @media screen and (min-width: 992px) and (max-width: 1375px) {
+    padding-bottom: 90px;
+  }
+  @media screen and (max-width: 992px) {
+    border-bottom: 0.5mm solid #999999;
+    padding-bottom: 25px;
+  }
+
+  @media screen and (min-width: 992px) {
+    border-right: 0.5mm solid #999999;
+    padding-right: 25px;
+  }
+
+  h6 {
+    font-weight: 600;
+  }
+}
+
+.announcement_date {
+  font-family: roboto;
+  font-size: 16px;
+  padding-right: 10px;
+  color: #303030;
+}
+
+.announcement_details {
+  padding-inline-start: 10px;
+  border-left: 0.5mm solid #999999;
+  color: #303030;
+}
+
+.skeeeros {
+  font-family: roboto;
+  font-size: 20px;
+  font-weight: 300;
+  letter-spacing: 0.05em;
+  color: $depmap_primary;
+}
+
+.skeeeros_padding {
+  padding: 50px 0 20px 0;
+  /*	border-style: solid;*/
+  border-width: 1pt;
+  border-color: #e8eaee;
+}
+
+.skeeeros_play {
+  height: 16px;
+  width: 16px;
+}
+
+.padding_pronouce {
+  padding-left: 0.25em;
+}
+
+.skeeeros_logo {
+  width: 85%;
+}
+
+.homepage {
+  font-family: roboto;
+  @media screen and (min-width: 1366px) {
+    padding: 100px;
+  }
+  @media screen and (min-width: 768px) and (max-width: 1365px) {
+    padding: 50px;
+  }
+  &.nonpublic_feature {
+    @media screen and (min-width: 1366px) {
+      padding: 0px 100px 0px 100px;
+    }
+    @media screen and (min-width: 768px) and (max-width: 1365px) {
+      padding: 0px 50px 0px 50px;
+    }
+  }
+
+  /* homepage typography (overrides base.scss) */
+
+  h1 {
+    font-family: roboto;
+    font-size: 32px;
+    font-weight: 900; // Common weight name: "black" (Refer to: https://developer.mozilla.org/en-US/docs/Web/CSS/font-weight#common_weight_name_mapping)
+    margin-bottom: 1em;
+    line-height: 1.25;
+  }
+
+  h2 {
+    font-family: roboto;
+    font-size: 28px;
+    font-weight: 700; // Common weight name: "bold"
+    margin-bottom: 1em;
+    line-height: 1.25;
+  }
+
+  h3 {
+    font-family: roboto;
+    font-size: 24px;
+    font-weight: 500; // Common weight name: "medium"
+    margin-top: 0em;
+    margin-bottom: 1em;
+    line-height: 1.25;
+  }
+
+  h4 {
+    font-family: roboto;
+    font-size: 22px;
+    font-weight: 500; // Common weight name: "medium"
+    margin-top: 0em;
+    margin-bottom: 0.5em;
+  }
+
+  h5 {
+    font-family: roboto;
+    font-size: 18px;
+    font-weight: normal;
+    font-style: normal;
+    // margin-top: 0.3em;
+    margin-bottom: 0.5em;
+  }
+
+  h6 {
+    font-family: roboto;
+    font-size: 16px;
+    font-weight: normal;
+    // line-height: 1.25;
+    margin-bottom: 0.5em;
+    // margin-top: 6px;
+    a {
+      font-weight: 600; // Common weight name: "semi bold"
+    }
+  }
+
+  p {
+    font-family: roboto;
+    font-size: 14px;
+    font-weight: normal;
+  }
+
+  &.public {
+    background-repeat: no-repeat;
+    background-position: right bottom;
+
+    @media screen and (min-width: 1024px) {
+      background-size: contain;
+    }
+    @media screen and (max-width: 1023px) {
+      background-size: 100%;
+    }
+    @media screen and (max-width: 767px) {
+      background-size: 150%;
+      padding: 70px;
+    }
+    a {
+      color: #406ad4;
+      text-decoration: underline;
+    }
+  }
+
+  a {
+    color: $skyros_link;
+    text-decoration: underline;
+  }
+
+  a:hover {
+    color: #303030;
+    text-decoration: none;
+  }
+
+  .feature_content {
+    &.public {
+      @media screen and (min-width: 1024px) {
+        display: grid;
+        grid-template-columns: 0.6fr 1fr;
+      }
+    }
+    &.nonpublic {
+      @media screen and (min-width: 1050px) {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        .feature_text {
+          padding-right: 100px;
+        }
+      }
+
+      @media screen and (max-width: 1049px) {
+        content: "";
+        background-size: contain;
+        background-repeat: no-repeat;
+        background-position: center;
+        background-color: rgba(255, 255, 255, 0.486);
+        background-blend-mode: overlay;
+      }
+
+      .fadeshow {
+        @media screen and (max-width: 1050px) {
+          display: none;
+        }
+        @media screen and (min-width: 1050px) {
+          display: flex;
+          height: inherit;
+          justify-content: center;
+          flex-direction: column;
+          width: 100%;
+        }
+      }
+    }
+    .feature_text {
+      display: flex;
+      height: inherit;
+      justify-content: center;
+      width: 100%;
+      flex-direction: column;
+    }
+  }
+}
+
+.public_explore_depmap_background {
+  background-color: #c4d4fa;
+}
+
+.explore_depmap_section {
+  @media screen and (min-width: 992px) {
+    display: flex;
+  }
+}
+
+.explore_depmap_caption {
+  color: #16215b;
+  font-family: roboto;
+  margin-top: 20px;
+  margin-bottom: 50px;
+  p {
+    font-size: 18px;
+    font-weight: 700;
+  }
+  a {
+    text-decoration: underline;
+    font-size: 18px;
+    font-weight: 700;
+  }
+}
+
+.card-img-top {
+  filter: drop-shadow(1px 5px 3px #cdcdcd);
+}
+
+.contribute_depmap {
+  @media screen and (min-width: 992px) {
+    display: grid;
+    grid-template-columns: 1fr 6fr;
+  }
+  .contribute_depmap_text {
+    @media screen and (min-width: 992px) {
+      display: flex;
+      height: inherit;
+      justify-content: center;
+      width: 100%;
+      flex-direction: column;
+      padding-left: 50px;
+    }
+  }
+}

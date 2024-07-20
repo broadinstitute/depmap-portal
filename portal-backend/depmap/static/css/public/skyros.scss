@@ -1,0 +1,182 @@
+/*Color variables*/
+@import "../shared/variables";
+
+.skyros_background {
+  background-color: #c1c8da;
+  /*  background: linear-gradient(90deg, rgba(193,200,218,1) 0%, rgba(142,156,190,1) 100%);*/
+  padding: 1em 0em 1.75em 0em;
+}
+
+.dmc_background {
+  background-color: #c8cacc;
+  padding: 1.75em 0em 2.5em 0em;
+}
+
+h3 {
+  font-family: lato;
+  font-size: 16px;
+  font-weight: 700;
+  margin-top: 0em;
+  margin-bottom: 0em;
+}
+h5 {
+  font-family: lato;
+  font-size: 12px;
+  font-weight: 700;
+  font-style: italic;
+  margin-top: 0.3em;
+  margin-bottom: 0.2em;
+}
+
+h6 {
+  font-family: lato;
+  font-size: 12px;
+  font-weight: normal;
+  line-height: 1.25;
+  margin-bottom: 6px;
+  margin-top: 6px;
+}
+
+.link_viewmore {
+  font-family: lato;
+  font-size: 13px;
+  font-weight: normal;
+  line-height: 1.25;
+  margin-bottom: 6px;
+  margin-top: 6px;
+}
+
+.wordoftheday {
+  margin-bottom: 0.3em;
+  margin-bottom: 0.3em;
+  color: $skyros_link;
+}
+
+.inline-block {
+  display: inline-block;
+}
+
+/*Hyperlinks*/
+
+/*
+This repetition of css selectors (link, hover, active, visited) is annoying, but works
+It's needed in edge cases like clicking and dragging, and visited
+I believe we are fighting with the user agent, and so need to specify more specific selectors
+We are fighting two built-in things: color and text decoration (we apply a border-bottom instead)
+ */
+a:link {
+  color: black;
+  text-decoration: none;
+  // the purple underline is implemented in .hotlink
+}
+
+a:active {
+  color: black;
+  text-decoration: none;
+}
+
+a:visited {
+  color: black;
+  text-decoration: none;
+}
+
+// this needs to be last, specifically at least after visited
+// so that visited but hovered still shows purple
+a:hover {
+  color: $skyros_link;
+  text-decoration: none;
+}
+
+.id_btn_link {
+  color: black;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.hotlink,
+.announcements-container a {
+  border-bottom: 1px solid $skyros_link;
+}
+
+.linkcolor {
+  color: $skyros_link;
+}
+
+/*Images*/
+
+.no_margin_bottom {
+  margin-bottom: 0em;
+}
+.no_margin_top {
+  margin-top: 0em;
+}
+
+.plot_padding {
+  height: 50px;
+  margin: 0.5em 0em 0.3em 0em;
+}
+
+.icon_size {
+  width: 3em;
+  height: 3em;
+}
+
+/*Primary article*/
+
+/*Secondary articles*/
+.secondary_article {
+  font-size: 14pt;
+  margin-bottom: 2px;
+}
+
+/*Rules*/
+
+.hr_connect {
+  display: block;
+  margin: 2em 0 0.5em 0em;
+  border-width: 1px;
+  border-color: #979797;
+}
+
+.hr_news {
+  display: block;
+  margin: 0em 0 1em 0em;
+  border-width: 1px;
+  border-color: #979797;
+}
+
+/*skyros prounciation*/
+
+.skeeeros {
+  font-family: lato;
+  font-size: 20px;
+  font-weight: 300;
+  letter-spacing: 0.05em;
+  color: $depmap_primary;
+}
+
+.skeeeros_padding {
+  padding: 10px 20px 20px 20px;
+  /*	border-style: solid;*/
+  border-width: 1pt;
+  border-color: #e8eaee;
+}
+
+.skeeeros_play {
+  height: 16px;
+  width: 16px;
+}
+
+.padding_pronouce {
+  padding-left: 0.25em;
+}
+
+.skeeeros_logo {
+  width: 85%;
+}
+
+.linkbox {
+  background: $depmap_popout;
+  color: white;
+  padding: 10px 20px 10px 20px;
+}

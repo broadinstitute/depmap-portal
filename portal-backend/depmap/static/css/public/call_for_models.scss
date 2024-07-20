@@ -1,0 +1,53 @@
+/*Color variables*/
+@import "../shared/variables";
+
+.models_background {
+  background-color: $skyros_secondary;
+  padding: 0.2em 0em 0.5em 0em;
+}
+
+.circ_image {
+  border-radius: 50%;
+  width: 450px;
+  height: 450px;
+  margin-top: 20px;
+}
+
+.model_button {
+  background-color: $depmap_popout;
+  border: none;
+  border-radius: 500px;
+  color: white;
+  padding: 8px 50px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 16px;
+  margin: 10px 0px 14px 0px;
+}
+
+.model_callout_number {
+  color: $depmap_popout;
+  font-weight: 900;
+  font-size: 20pt;
+  margin-bottom: 0pt;
+}
+
+.text_box {
+  padding-right: 4px;
+  max-width: 16ch;
+}
+
+.text_box2 {
+  padding-right: 8px;
+  max-width: 20ch;
+}
+
+.text_box3 {
+  max-width: 25ch;
+}
+
+.model_seeking_headline {
+  color: #ffffff;
+  margin-bottom: 0;
+}

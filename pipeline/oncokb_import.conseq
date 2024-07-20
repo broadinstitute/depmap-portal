@@ -1,0 +1,43 @@
+rule oncokb_data_import:
+    inputs:
+        maf={"type": "mutation-maf"},
+        annotated_csv={"type": "oncokb-annotated"}
+
+    outputs:
+        {
+            "type": "oncokb-csv-output",
+            "filename": {"$filename": "oncokb_annotated_full.csv"},
+            "orig_dataset_id": "{{inputs.maf.dataset_id}}"
+        }
+
+    run "python3" with """
+        import pandas as pd
+        from taigapy import create_taiga_client_v3
+        tc = create_taiga_client_v3()
+
+        def reformat_entrez_id(x):
+            if pd.isna(x):
+                return ""
+            if isinstance(x, float):
+                x_int = int(x)
+                assert x_int == x
+                return str(x_int)
+            if x == "Unknown":
+                return ""
+            else:
+                assert x.endswith(".0") # should really formatted as an int, not a decimal
+                x = x[:-2]
+            return x
+
+        release_df = tc.get(id="{{ inputs.maf.dataset_id }}")
+        # fiddle with the formatting to accomodate the fact that we have the string "Unknown" and the IDs are formatted as decimals.
+        release_df["EntrezGeneID"] = release_df["EntrezGeneID"].apply(reformat_entrez_id)
+        annotated_df = tc.get(id="{{ inputs.annotated_csv.dataset_id }}")
+        annotated_df["ProteinChange"] = annotated_df["ProteinChange"].map('p.{}'.format)
+        annotated_df["EntrezGeneID"] = annotated_df["EntrezGeneID"].astype(str)
+        merged_annotated_df = pd.merge(release_df, annotated_df, on=["EntrezGeneID", "ProteinChange"], how="left")
+        merged_annotated_df.to_csv("oncokb_annotated_full.csv", index=False)
+
+        # sanity check the columns that got added:
+        assert set(merged_annotated_df["Oncogenic"].value_counts().index) =={'Inconclusive', 'Unknown', 'Likely Oncogenic', 'Oncogenic', 'Likely Neutral'}
+    """

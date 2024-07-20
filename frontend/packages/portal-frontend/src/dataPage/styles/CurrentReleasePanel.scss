@@ -1,0 +1,89 @@
+.CurrentReleasePanel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+
+  .releaseDataSection {
+    margin-top: 50px;
+    border-top: 1px solid #000000;
+    width: 100%;
+  }
+
+  .releaseDataHeader {
+    font-size: 32px;
+    font-family: roboto;
+    font-weight: bolder;
+    margin-left: 80px;
+  }
+
+  .releaseDataSubHeader {
+    font-size: 24px;
+    font-family: roboto;
+    font-weight: 500;
+    margin-left: 80px;
+  }
+
+  .releaseDataSubSubHeader {
+    font-size: 20px;
+    font-family: roboto;
+    font-weight: 400;
+    margin-left: 80px;
+  }
+
+  .overview {
+    display: flex;
+    flex-direction: row;
+    padding-bottom: 30px;
+    padding-top: 20px;
+    width: 100%;
+
+    @media (max-width: 1100px) {
+      flex-direction: column;
+      padding-bottom: 60px;
+    }
+
+    .overviewColumnLeft {
+      display: flex;
+      flex-direction: column;
+      margin-right: 40px;
+      margin-left: 80px;
+      width: 40%;
+      @media (max-width: 1100px) {
+        width: 80%;
+        margin-left: 80px;
+        margin-right: 80px;
+      }
+      .smallTextMetadata {
+        font-family: roboto;
+        font-size: 14px;
+      }
+
+      .overColumnHeader {
+        font-family: roboto;
+        font-size: 24px;
+        font-weight: 500;
+        margin-bottom: 15px;
+      }
+
+      .overviewParagraph {
+        font-family: roboto;
+        font-size: "16px";
+        margin-bottom: 18px;
+      }
+    }
+
+    .overviewColumnRight {
+      display: flex;
+      flex-direction: column;
+      margin-left: 40px;
+      margin-right: 80px;
+      width: 60%;
+      @media (max-width: 1100px) {
+        margin-top: 50px;
+        margin-left: 80px;
+        margin-right: 80px;
+        width: 80%;
+      }
+    }
+  }
+}

@@ -1,0 +1,30 @@
+/**
+For react-table association table
+https://github.com/react-tools/react-table#styles
+*/
+
+.ReactTable .rt-th,
+.ReactTable .rt-td {
+  padding: 0;
+  text-align: center;
+  white-space: normal;
+}
+
+.ReactTable .rt-thead.-filters input,
+.ReactTable .rt-thead.-filters select {
+  padding: 0;
+}
+
+@mixin narrow-react-table {
+  .ReactTable .rt-th,
+  .ReactTable .rt-td {
+    padding: 0;
+    text-align: center;
+    white-space: normal;
+  }
+
+  .ReactTable .rt-thead.-filters input,
+  .ReactTable .rt-thead.-filters select {
+    padding: 0;
+  }
+}

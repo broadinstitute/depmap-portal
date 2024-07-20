@@ -1,0 +1,48 @@
+// TODO: Get rid of :global and convert the corresponding component to CSS
+// Module format.
+:global {
+  .upload-dataset-modal {
+    summary {
+      cursor: pointer;
+    }
+
+    #upload-example-table {
+      border-collapse: collapse;
+      border: 1px solid black;
+      color: #333;
+
+      th,
+      td {
+        border: 1px solid black;
+        padding: 4px;
+      }
+    }
+
+    .small-space-after-inline {
+      margin-inline-end: 4px;
+    }
+
+    .alert-message-container {
+      display: flex;
+      justify-content: space-between;
+
+      .alert-text-with-spinner-container {
+        display: flex;
+        align-items: center;
+      }
+
+      .alert-message-button {
+        color: inherit;
+      }
+    }
+
+    .upload-button-container {
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    .warning-message {
+      color: "#a94442";
+    }
+  }
+}

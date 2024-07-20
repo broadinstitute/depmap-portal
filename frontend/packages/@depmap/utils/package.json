@@ -1,0 +1,20 @@
+{
+  "name": "@depmap/utils",
+  "version": "1.0.0",
+  "main": "index.ts",
+  "license": "MIT",
+  "scripts": {
+    "test": "echo 'no tests to run'"
+  },
+  "dependencies": {
+    "@depmap/globals": "1.0.0",
+    "@depmap/utils": "1.0.0",
+    "depmap-shared": "../depmap-shared/"
+  },
+  "devDependencies": {
+    "plotly.js": "^2.8.0"
+  },
+  "peerDependencies": {
+    "react": "^16.9.35"
+  }
+}

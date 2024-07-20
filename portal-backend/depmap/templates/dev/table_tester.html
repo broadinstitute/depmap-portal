@@ -1,0 +1,27 @@
+{% extends "full_page.html" %}
+
+{% block page_title %}
+    Table test page
+{% endblock %}
+
+{% block content_class %}{% endblock %}
+
+{% block css %}
+    {% assets
+      filters="libsass",
+      output="public/css/table_tester.css", "css/entities/executive.scss", "css/shared/*.scss"
+    %}
+        <link rel="stylesheet" href="{{ ASSET_URL }}">
+    {% endassets %}
+{% endblock %}
+
+{% block content %}
+    <div class='full-screen-div'>
+        {% include "nav_footer/nav.html" %}
+        <div id="react-root"></div>
+    </div>
+{% endblock %}
+
+{% block js %}
+    <script src="{{ webpack_url('tableTester.js') }}"></script>
+{% endblock %}

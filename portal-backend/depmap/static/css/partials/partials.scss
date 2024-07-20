@@ -1,0 +1,89 @@
+@media (min-width: 1000px) {
+  .modal-box-plot {
+    width: 1100px;
+  }
+}
+
+// Apologies for the brute force css
+.data_table_search_row {
+  th {
+    padding-left: 2px !important;
+    padding-right: 2px !important;
+    input {
+      width: 100% !important;
+      padding: 6px !important;
+    }
+  }
+}
+
+.partials_toolbar.flex_align_right {
+  align-self: flex-end;
+  margin-left: auto;
+}
+
+.partials_toolbar span.glyphicon {
+  font-size: 1.2em;
+  padding: 1px;
+}
+
+.partials_toolbar span.glyphicon-question-sign {
+  cursor: help;
+}
+
+.entity_summary_legend {
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 20px;
+}
+
+.display_none {
+  display: none;
+}
+
+// Custom cell line group modal
+
+#valid_cell_lines_icon {
+  color: green;
+}
+
+#invalid_cell_lines_icon {
+  color: red;
+}
+
+// Only used by cell line selector light select-all/select none
+.global-select-checkbox:before {
+  content: " ";
+  border: 1px solid black;
+  border-radius: 3px;
+  display: block;
+  position: absolute;
+  top: 1.7em;
+  left: 0.9em;
+  width: 12px;
+  height: 12px;
+  box-sizing: border-box;
+}
+
+.global-select-checkbox-selected:after {
+  content: "\2714";
+  width: 12px;
+  height: 12px;
+  left: 1em;
+  top: 1.3em;
+  position: absolute;
+  text-align: center;
+  text-shadow: 1px 1px white, -1px -1px white, 1px -1px white, -1px 1px white;
+}
+
+// hack for datatable's search box. Datatable appears to duplicate the table header and
+// set the height of the elements to 0 to hide the elements. However, the absolute positioned content is
+// still visible. So make these elements invisble. (note: display: none seems to mess up the width, leading to the
+// less clear solution below.)
+.dataTables_scrollBody .global-select-checkbox:before {
+  border: none;
+}
+
+.dataTables_scrollBody .global-select-checkbox-selected:after {
+  text-shadow: none;
+  content: "";
+}

@@ -1,0 +1,134 @@
+{
+  "name": "portal-frontend",
+  "version": "1.0.0",
+  "description": "Frontend for interactive module of depmap",
+  "scripts": {
+    "test": "jest",
+    "dev": "webpack serve --progress --config=webpack.dev.js",
+    "build": "webpack --config=webpack.prod.js",
+    "analyze": "webpack --config=webpack.analyze.js --progress",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build"
+  },
+  "author": "CDS Team <cds@broadinstitute.org>",
+  "license": "MIT",
+  "dependencies": {
+    "@chakra-ui/descendant": "^2.0.1",
+    "@depmap/api": "1.0.0",
+    "@depmap/cell-line-selector": "1.0.0",
+    "@depmap/common-components": "1.0.0",
+    "@depmap/compute": "1.0.0",
+    "@depmap/custom-analyses": "1.0.0",
+    "@depmap/data-explorer-2": "1.0.0",
+    "@depmap/data-slicer": "1.0.0",
+    "@depmap/dataset-manager": "1.0.0",
+    "@depmap/downloads": "1.0.0",
+    "@depmap/globals": "1.0.0",
+    "@depmap/groups-manager": "1.0.0",
+    "@depmap/interactive": "1.0.0",
+    "@depmap/long-table": "1.0.0",
+    "@depmap/plotly-wrapper": "1.0.0",
+    "@depmap/types": "1.0.0",
+    "@depmap/user-upload": "1.0.0",
+    "@depmap/utils": "1.0.0",
+    "@depmap/wide-table": "1.0.0",
+    "bootstrap": "^3.3.7",
+    "classnames": "^2.3.1",
+    "d3-scale": "^2.1.0",
+    "depmap-shared": "../depmap-shared/",
+    "immutability-helper": "^2.7.1",
+    "js-base64": "^3.7.2",
+    "json-beautify": "^1.1.1",
+    "json-logic-js": "^2.0.2",
+    "json-stable-stringify": "^1.0.2",
+    "lineupjsx": "^4.6.0",
+    "lodash.clone": "^4.5.0",
+    "lodash.clonedeep": "^4.5.0",
+    "lodash.debounce": "^4.0.8",
+    "lodash.flatmap": "^4.5.0",
+    "lodash.get": "^4.4.2",
+    "lodash.isequal": "^4.5.0",
+    "lodash.memoize": "^4.1.2",
+    "lodash.omit": "^4.5.0",
+    "lodash.setwith": "^4.3.2",
+    "lodash.uniqueid": "^4.0.1",
+    "pako": "^2.0.4",
+    "papaparse": "^4.6.0",
+    "plotly.js": "^2.8.0",
+    "qs": "^6.11.0",
+    "react": "^16.9.35",
+    "react-base-table": "^1.8.0-rc.0",
+    "react-bootstrap": "^0.32.3",
+    "react-bootstrap-typeahead": "^5.1.4",
+    "react-dom": "^16.9.8",
+    "react-router-dom": "6.3.0",
+    "react-select": "^3.2.0",
+    "react-tiny-virtual-list": "^2.2.0",
+    "react-transition-group": "^4.4.2",
+    "react-windowed-select": "^3.1.2",
+    "seedrandom": "^3.0.5",
+    "use-deep-compare-effect": "^1.6.1"
+  },
+  "devDependencies": {
+    "@types/bootstrap": "^3.3.7",
+    "@types/immutability-helper": "2.0.15",
+    "@types/js-base64": "^3.3.1",
+    "@types/json-logic-js": "^2.0.1",
+    "@types/json-stable-stringify": "^1.0.34",
+    "@types/lodash.clone": "^4.5.7",
+    "@types/lodash.clonedeep": "^4.5.6",
+    "@types/lodash.debounce": "^4.0.6",
+    "@types/lodash.flatmap": "^4.5.6",
+    "@types/lodash.get": "^4.4.7",
+    "@types/lodash.isequal": "^4.5.5",
+    "@types/lodash.memoize": "^4.1.6",
+    "@types/lodash.omit": "^4.5.7",
+    "@types/lodash.setwith": "^4.3.7",
+    "@types/lodash.uniqueid": "^4.0.6",
+    "@types/pako": "^2.0.0",
+    "@types/papaparse": "^4.5.2",
+    "@types/plotly.js": "^1.54.17",
+    "@types/react": "16.14.2",
+    "@types/react-bootstrap": "^0.32.24",
+    "@types/react-bootstrap-typeahead": "^5.1.3",
+    "@types/react-dom": "16.9.8",
+    "@types/react-router-dom": "^5.3.3",
+    "@types/react-select": "3.1.2",
+    "@types/react-transition-group": "^4.4.4",
+    "@types/seedrandom": "2.4.28",
+    "stream-browserify": "^3.0.0"
+  },
+  "jest": {
+    "moduleFileExtensions": [
+      "js",
+      "ts",
+      "tsx"
+    ],
+    "transform": {
+      "^.+\\.tsx?$": [
+        "ts-jest",
+        {
+          "diagnostics": false
+        }
+      ]
+    },
+    "transformIgnorePatterns": [
+      "node_modules/(?!depmap-shared)"
+    ],
+    "testRegex": ".*/__tests__/.*test.*\\.(ts|tsx|js)$",
+    "testEnvironment": "jsdom",
+    "setupFilesAfterEnv": [
+      "<rootDir>/jest-setup.ts"
+    ],
+    "setupFiles": [
+      "jest-localstorage-mock"
+    ],
+    "moduleNameMapper": {
+      "\\.(jpg|jpeg|png|gif|eot|otf|webp|svg|ttf|woff|woff2|mp4|webm|wav|mp3|m4a|aac|oga)$": "<rootDir>/__mocks__/fileMock.js",
+      "\\.(css|less|scss)$": "<rootDir>/__mocks__/styleMock.js",
+      "@depmap/(.*)/src/(.*)": "<rootDir>/../@depmap/$1/src/$2",
+      "@depmap/(.*)": "<rootDir>/../@depmap/$1",
+      "^src/(.*)": "<rootDir>/src/$1"
+    }
+  }
+}

@@ -1,0 +1,26 @@
+// The bootstrap class
+:global {
+  .dropdown-toggle {
+    // Used because some labels are very long (like for compound datasets), so we want
+    // them to wrap.
+    .dropdown-button-label {
+      white-space: normal;
+    }
+    &.description-dropdown-button {
+      text-align: left;
+      border-radius: 0px;
+
+      .dropdown-button-label {
+        font-style: italic;
+      }
+      .caret {
+        width: 10px;
+        height: 10px;
+        margin-left: 5px;
+      }
+    }
+    .description-dropdown-button-label {
+      color: grey;
+    }
+  }
+}

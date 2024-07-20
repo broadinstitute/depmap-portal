@@ -1,0 +1,74 @@
+.Tabs {
+  font-family: "Lato", sans-serif;
+
+  .vertical {
+    display: flex;
+  }
+}
+
+.TabList {
+  display: flex;
+
+  .vertical & {
+    flex-direction: column;
+    max-width: 200px;
+    min-width: 200px;
+  }
+}
+
+.Tab {
+  border: none;
+  padding: 5px 10px;
+  width: auto;
+  overflow: visible;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  line-height: normal;
+  -webkit-font-smoothing: inherit;
+  -moz-osx-font-smoothing: inherit;
+  -webkit-appearance: none;
+  letter-spacing: 0.15px;
+  transition: background-color 0.3s ease;
+
+  .vertical & {
+    text-align: left;
+  }
+}
+
+.Tab[aria-selected="true"] {
+  font-weight: bold;
+  letter-spacing: normal;
+  background-image: linear-gradient(#c10ec1, #c10ec1);
+  background-repeat: no-repeat;
+  background-position: right 0 bottom -5px;
+  background-size: 100% 1px;
+  background-origin: content-box;
+}
+
+.Tab:focus {
+  outline: none;
+}
+
+.Tab:focus-visible {
+  box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.6);
+}
+
+.Tab:active {
+  background-color: #efefef;
+}
+
+.Tab:disabled {
+  color: #808080;
+  cursor: not-allowed;
+}
+
+.TabPanels {
+  display: flex;
+  padding: 20px 0;
+
+  .vertical & {
+    width: 100%;
+    padding: 0 20px;
+  }
+}

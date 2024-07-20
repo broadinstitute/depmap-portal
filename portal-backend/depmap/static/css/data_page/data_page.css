@@ -1,0 +1,122 @@
+.nav-tabs > li > a {
+  margin-right: 2px;
+  line-height: 1.42857143;
+  border-top: 1px solid #bebebe;
+  border-radius: 4px 4px 0 0;
+  border-left: 1px solid #bebebe;
+  border-right: 1px solid #bebebe;
+}
+
+.nav-tabs > li.active > a,
+.nav-tabs > li.active > a:hover,
+.nav-tabs > li.active > a:focus {
+  color: #4479b2;
+  font-weight: bold;
+  cursor: default;
+  background-color: #fff;
+  border: 1px solid black;
+  border-bottom-color: transparent;
+}
+
+.nav-tabs > li > a:hover {
+  background-color: #0079b21a;
+}
+
+.nav-tabs {
+  border-bottom: 1px solid black;
+  padding-left: 80px;
+}
+
+#data-structure .depmap-accordion,
+#learn-about .depmap-accordion,
+#how-to-cite .depmap-accordion,
+#map-section .depmap-accordion {
+  border: none !important;
+  width: 100% !important;
+  margin: 0px !important;
+}
+#data-structure .depmap-accordion .accordion-header,
+#learn-about .depmap-accordion .accordion-header,
+#how-to-cite .depmap-accordion .accordion-header,
+#map-section .depmap-accordion .accordion-header {
+  margin-left: 0px;
+  background-color: #fff !important;
+  padding-bottom: 0px !important;
+  width: 100%;
+}
+#data-structure .depmap-accordion .accordion-header .accordion-title,
+#learn-about .depmap-accordion .accordion-header .accordion-title,
+#how-to-cite .depmap-accordion .accordion-header .accordion-title,
+#map-section .depmap-accordion .accordion-header .accordion-title {
+  color: black;
+  width: 100% !important;
+}
+#data-structure .depmap-accordion .accordion-header .accordion-title h1,
+#learn-about .depmap-accordion .accordion-header .accordion-title h1,
+#how-to-cite .depmap-accordion .accordion-header .accordion-title h1,
+#map-section .depmap-accordion .accordion-header .accordion-title h1 {
+  font-family: roboto !important;
+  font-weight: 500 !important;
+  font-size: 24px !important;
+  margin-bottom: 22px !important;
+}
+#data-structure .depmap-accordion .accordion_contents,
+#learn-about .depmap-accordion .accordion_contents,
+#how-to-cite .depmap-accordion .accordion_contents,
+#map-section .depmap-accordion .accordion_contents {
+  margin-left: 12px;
+  border: 0;
+  text-align: left;
+  white-space: pre-line;
+  word-break: break-word;
+  color: black;
+  outline: 0;
+  text-decoration: none;
+}
+#data-structure .depmap-accordion .accordion_contents .btn:active,
+#learn-about .depmap-accordion .accordion_contents .btn:active,
+#how-to-cite .depmap-accordion .accordion_contents .btn:active,
+#map-section .depmap-accordion .accordion_contents .btn:active {
+  font-weight: bolder;
+}
+
+.CollapsiblePanel .depmap-accordion {
+  border: solid 1px black;
+  width: 100% !important;
+}
+.CollapsiblePanel .depmap-accordion .accordion-header {
+  margin-left: 0px;
+  background-color: #fff !important;
+  padding-bottom: 0px !important;
+  width: 100%;
+}
+.CollapsiblePanel .depmap-accordion .accordion-header .accordion-title {
+  color: black;
+  width: 100% !important;
+}
+.CollapsiblePanel .depmap-accordion .accordion_contents {
+  margin-left: 12px;
+  border: 0;
+  text-align: left;
+  white-space: pre-line;
+  word-break: break-word;
+  color: black;
+  outline: 0;
+  text-decoration: none;
+}
+.CollapsiblePanel .depmap-accordion .accordion_contents .btn:active {
+  font-weight: bolder;
+}
+
+#DataSlicer .parameters {
+  border: none !important;
+  padding: 0px !important;
+}
+
+.react-base-plot-toolbar {
+  display: none;
+}
+
+.modebar-btn {
+  display: none;
+}

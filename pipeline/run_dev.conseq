@@ -1,0 +1,8 @@
+# runs one rule, just to see that conseq is working
+# wouldn't be surprised if the rule fails because the data (xrefs) is out of date for the changing code
+
+include "xrefs-sample-data.conseq"
+
+let publish_dest = "INVALID"
+
+include "cell_lines.conseq"

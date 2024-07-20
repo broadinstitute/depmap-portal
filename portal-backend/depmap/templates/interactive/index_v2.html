@@ -1,0 +1,48 @@
+{% extends "full_page.html" %} {% block page_title %} DepMap Data Explorer {%
+endblock %} {% block css %}
+<link
+  rel="stylesheet"
+  href="https://unpkg.com/react-select@1.2.0/dist/react-select.css"
+/>
+<link
+  rel="stylesheet"
+  href="https://unpkg.com/react-table@6.8.0/react-table.css"
+/>
+{% assets filters="libsass", output="public/css/view_interactive.css",
+"css/interactive/view_interactive.scss", depends='css/shared/*.scss' %}
+<link rel="stylesheet" href="{{ ASSET_URL }}" />
+{% endassets %} {% endblock %} {% block meta_description %} Investigate the
+relationships between DepMap datasets {% endblock %} {% block content %}
+<div class="full-screen-div">
+  {% include "nav_footer/nav.html" %}
+  <div
+    class="controlled-plot-container"
+    id="react-interactive-v2-root"
+    data-react-component-loaded-for-selenium="false"
+  >
+    <div
+      style="
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+      "
+    >
+      <div class="spinner" style="/* align-items: center */">
+        <div class="rect1"></div>
+        <div class="rect2"></div>
+        <div class="rect3"></div>
+        <div class="rect4"></div>
+        <div class="rect5"></div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %} {% block js %}
+<script id="react-interactive-v2-data" type="application/json">
+  {
+    "showCustomAnalysis": true
+  }
+</script>
+<script src="{{ webpack_url('interactivev2.js') }}"></script>
+{% endblock %}

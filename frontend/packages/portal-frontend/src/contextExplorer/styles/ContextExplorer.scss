@@ -1,0 +1,623 @@
+.Tab {
+  color: #333333 !important;
+  font-weight: normal !important;
+  font-size: 16px !important;
+}
+
+.Tab[aria-selected="true"] {
+  font-weight: bold !important;
+  color: #a9529e !important;
+  background-color: #cda0c74d;
+  background-image: none !important;
+}
+
+.Tab:focus {
+  outline: none;
+}
+
+.Tab:focus-visible {
+  box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.6);
+}
+
+.Tab:active {
+  background-color: #a9529e important;
+}
+
+.Tab:disabled {
+  color: #808080;
+  cursor: not-allowed;
+}
+.TabPanel {
+  width: 100%;
+}
+
+.TabList {
+  display: flex;
+  border-bottom: 1px solid #000000;
+
+  .vertical & {
+    flex-direction: column;
+    max-width: 200px;
+    min-width: 200px;
+  }
+}
+
+.page {
+  display: flex;
+  flex-direction: column;
+  max-width: 1920px;
+  margin: 2px auto;
+  padding-top: 20px;
+  padding-bottom: none;
+  height: calc(100vh - 50px);
+}
+
+.header {
+  padding-left: 20px;
+  margin-bottom: 18px;
+
+  h1 {
+    color: #333333;
+    font-size: 32px;
+    font-weight: bold;
+    margin: 0 0 9px 0;
+  }
+
+  & > p {
+    font-size: 16px;
+  }
+}
+
+.main {
+  width: 100%;
+}
+
+.filters {
+  display: flex;
+  float: left;
+  min-width: 222px;
+  width: 264px;
+  max-width: 264px;
+  margin-top: 0px;
+  margin-right: 0px;
+  margin-bottom: 750px;
+  overflow: visible;
+}
+
+.lineageSelection {
+  padding-right: 17px;
+  padding-left: 17px;
+  margin-right: 0px;
+  padding-bottom: 15px;
+  height: fit-content;
+  margin-top: 29.5px;
+  background-color: #f6f8fa;
+  border-top: 1px solid #000000;
+  width: 264px;
+
+  .pHeader {
+    margin-top: 25px;
+    font-size: 16px;
+    font-weight: bold;
+  }
+
+  .disabledHeader {
+    margin-top: 25px;
+    font-size: 16px;
+    font-weight: bold;
+    color: #8b8b8b;
+  }
+
+  .treeContainer {
+    border: 1px solid #cccccc;
+    border-radius: 4px;
+    background-color: #fcfdfe;
+  }
+
+  .treeContainerDisabled {
+    border: 1px solid #e2e1e1b3;
+    border-radius: 4px;
+    background-color: #e2e1e1b3;
+  }
+}
+
+.tabContents {
+  display: flex;
+  flex-direction: column;
+  margin-left: 0px;
+  margin-right: 24px;
+  overflow: visible;
+}
+
+.overviewPlotWrapper {
+  display: flex;
+  flex-direction: row;
+  flex-grow: 1;
+  .datatypeSelector {
+    margin-left: 30px;
+    font-size: 16px;
+    min-width: 101px;
+
+    & > h5 {
+      font-style: normal;
+      font-weight: bold;
+      font-size: 14px;
+      margin-top: 4px;
+      padding-bottom: 4px;
+    }
+
+    .selector {
+      padding-bottom: 3px;
+    }
+  }
+
+  .numbersAxis {
+    margin-left: 6px;
+    margin-right: 15px;
+    min-width: 105px;
+
+    & > div {
+      font-size: 16px;
+      padding-bottom: 22px;
+      margin: 2px;
+    }
+
+    & > h5 {
+      font-style: normal;
+      font-size: 14px;
+      font-weight: bold;
+      padding-bottom: 11px;
+      margin-top: 4px;
+    }
+  }
+
+  .plot {
+    text-align: center;
+    width: 75%;
+
+    .plotHeaders {
+      & > h5 {
+        font-style: normal;
+        font-size: 14px;
+        font-weight: bold;
+        margin-top: 4px;
+      }
+    }
+  }
+}
+
+.bottomLegend {
+  display: flex;
+  flex-direction: row;
+  flex-grow: 1;
+
+  & > div.lofBox {
+    background: #e68bdb;
+    width: 16px;
+    height: 16px;
+    margin-right: 5px;
+    margin-left: 20px;
+
+    @media (max-width: 1050px) {
+      margin-left: 8px;
+      margin-right: 3px;
+    }
+  }
+
+  & > div.omicsBox {
+    background: #85a6c8;
+    width: 16px;
+    height: 16px;
+    margin-left: 35px;
+    margin-right: 10px;
+    @media (max-width: 1050px) {
+      margin-left: 8px;
+      margin-right: 3px;
+    }
+  }
+  & > div.compoundBox {
+    background: #ffba7a;
+    width: 16px;
+    height: 16px;
+    margin-left: 35px;
+    margin-right: 10px;
+    @media (max-width: 1050px) {
+      margin-left: 8px;
+      margin-right: 3px;
+    }
+  }
+
+  & > p.lofLabel {
+    width: 25%;
+    padding-bottom: 3px;
+  }
+}
+
+.plotContainer {
+  display: flex;
+  flex-direction: column;
+  width: 71%;
+  margin-left: 14px;
+  margin-right: 14px;
+  margin-bottom: 12px;
+  overflow: hidden;
+  border: 1px solid #d9d9d9;
+
+  .overviewTable {
+    margin-left: 20px;
+    margin-bottom: 20px;
+    margin-top: 20px;
+    margin-right: 20px;
+    font-weight: 500;
+    font-size: 12px;
+  }
+}
+
+.geneDepPage {
+  display: flex;
+  flex-direction: row;
+  height: 100%;
+}
+
+.deButtonRow {
+  display: flex;
+  flex-direction: row;
+  @media (max-width: 1280px) {
+    flex-direction: column;
+  }
+}
+
+.deButtonOffset {
+  display: flex;
+  flex-direction: column;
+  width: 50%;
+}
+
+.deButtonContainer {
+  display: flex;
+  flex-direction: column;
+  flex-wrap: wrap;
+  align-content: center;
+  margin-bottom: 10px;
+  width: 50%;
+  @media (max-width: 1280px) {
+    margin-left: 0px;
+    width: 100%;
+    align-content: flex-start;
+  }
+}
+
+.deButton {
+  color: #ffffff;
+  background-color: #4479b2;
+  border-color: #4479b2;
+  border-radius: 4px;
+  margin-left: 15px;
+  width: fit-content;
+  @media (max-width: 1280px) {
+    margin-left: 0px;
+    width: 100%;
+    align-content: flex-start;
+  }
+}
+
+.deButton:hover {
+  color: #ffffff;
+  background-color: #2864a5;
+  border-color: #2864a5;
+  border-radius: 4px;
+  @media (max-width: 1280px) {
+    margin-left: 0px;
+    width: 100%;
+    align-content: flex-start;
+  }
+}
+
+.makeContextButton {
+  color: #ffffff;
+  background-color: #4479b2;
+  border-color: #4479b2;
+  border-radius: 4px;
+  margin-right: 120px;
+  margin-bottom: 10px;
+}
+
+.makeContextButton:hover {
+  color: #ffffff;
+  background-color: #2864a5;
+  border-color: #2864a5;
+  border-radius: 4px;
+  margin-right: 120px;
+  margin-bottom: 10px;
+}
+
+.ContextExplorerScatterPlots {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  margin-left: 15px;
+  margin-right: 15px;
+
+  .plotControls {
+    display: flex;
+    flex-direction: row;
+    @media (max-width: 1280px) {
+      flex-direction: column;
+    }
+
+    .outgroupSelectorContainer {
+      display: flex;
+      flex-direction: column;
+      flex-wrap: wrap;
+      width: 50%;
+
+      .outgroupSelector {
+        margin-bottom: 20px;
+        max-width: 198px;
+        width: 198px;
+        margin-right: auto;
+      }
+    }
+
+    .legendContainer {
+      display: flex;
+      flex-direction: column;
+      flex-wrap: wrap;
+      width: 50%;
+      margin-left: 30px;
+      align-content: center;
+      @media (max-width: 1280px) {
+        flex-direction: column;
+        margin-left: 0px;
+        align-content: flex-start;
+        width: 100%;
+      }
+      .legend {
+        display: flex;
+        flex-direction: row;
+        margin-bottom: 30px;
+        border: 1px solid #333333;
+        border-radius: 4px;
+        padding: 10px 10px 0px 10px;
+        max-width: fit-content;
+        @media (max-width: 1280px) {
+          width: 100%;
+        }
+      }
+      .legendDisabled {
+        display: flex;
+        flex-direction: row;
+        margin-bottom: 20px;
+        border: 1px solid #333333;
+        border-radius: 4px;
+        padding: 10px 10px 0px 10px;
+        max-width: fit-content;
+        margin-right: 55px;
+        opacity: 0.5;
+        background: #ccc;
+      }
+    }
+  }
+
+  .plots {
+    display: flex;
+    flex-direction: row;
+    margin-bottom: 20px;
+    @media (max-width: 1280px) {
+      flex-direction: column;
+    }
+    .leftPlot {
+      flex-direction: column;
+      margin-right: 15px;
+      width: 50%;
+      overflow: hidden;
+      @media (max-width: 1280px) {
+        flex-direction: row;
+        padding-bottom: 8px;
+        margin-right: 0px;
+        width: 100%;
+      }
+    }
+
+    .rightPlot {
+      flex-direction: column;
+      margin-left: 15px;
+      width: 50%;
+      overflow: hidden;
+      @media (max-width: 1280px) {
+        flex-direction: row;
+        padding-top: 8px;
+        margin-left: 0px;
+        width: 100%;
+      }
+    }
+  }
+}
+
+.right {
+  display: flex;
+  flex-direction: column;
+  width: 440px;
+  min-width: 280;
+  overflow: hidden;
+  margin-left: 0;
+  margin-right: 0;
+  height: fit-content;
+  padding-bottom: 20px;
+  border: 1px solid #d9d9d9;
+}
+
+.scatterPlot {
+  border: 1px solid #d9d9d9;
+
+  :global .modebar {
+    display: none;
+  }
+}
+
+.datasetOverlapContiner {
+  margin-top: 25px;
+  margin-left: 20px;
+  margin-bottom: 15px;
+  font-size: 16px;
+
+  & > div {
+    padding-bottom: 10px;
+  }
+
+  .contextButton {
+    color: #4479b2;
+    border-color: #4479b2;
+    border-width: 1.5px;
+  }
+}
+
+.overviewGraphHeader {
+  margin-left: 20px;
+  margin-bottom: 20px;
+
+  & > h4 {
+    font-weight: normal;
+    max-width: 79%;
+  }
+  & > h2 {
+    font-weight: 600;
+  }
+}
+
+.overviewTableHeader {
+  margin-left: 20px;
+}
+
+.LegendLabels {
+  display: flex;
+  flex-direction: row;
+}
+
+.LegendLabels {
+  overflow: auto;
+
+  button {
+    background-color: transparent;
+    border: none;
+    max-width: 205px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 20px;
+    font-size: 12px;
+  }
+}
+
+.legendColumn {
+  display: flex;
+  flex-direction: column;
+}
+
+.legendSwatch {
+  position: relative;
+  top: 2px;
+  display: inline-block;
+  border-radius: 100%;
+  width: 12px;
+  height: 12px;
+  border: 1px solid #000;
+  margin-right: 2px;
+  margin-left: 2px;
+}
+
+.legendTooltip {
+  overflow: hidden;
+}
+
+.colorDimensionLabels {
+  max-width: 221px;
+
+  & > p {
+    font-size: 14px;
+    padding-right: 5px;
+  }
+}
+
+.tableContainer {
+  width: 100%;
+}
+
+.geneDepTable {
+  margin-bottom: 10px;
+  font-weight: 500;
+  font-size: 12px;
+
+  & > hr {
+    margin-top: 5px;
+  }
+}
+
+.geneDepFilters {
+  display: flex;
+  flex-direction: row;
+  margin-top: 15px;
+  margin-bottom: 85px;
+  @media (max-width: 1610px) {
+    flex-direction: column;
+    height: auto;
+    margin-bottom: 0;
+  }
+
+  .FilterInputGroup {
+    display: flex;
+    flex-direction: row;
+
+    & > div {
+      display: flex;
+      flex-direction: row;
+      height: 40px;
+      margin-bottom: 20px;
+      padding-bottom: 8px;
+      @media (max-width: 1610px) {
+        flex-direction: column;
+        height: auto;
+        margin-bottom: 0;
+      }
+      & > div {
+        display: flex;
+        flex-direction: column;
+        margin-right: 55px;
+        margin-top: auto;
+        text-align: center;
+        font-weight: bold;
+
+        .slider .div {
+          width: 300px;
+        }
+      }
+    }
+  }
+}
+
+.boxPlotHeader {
+  margin-left: 10px;
+  margin-right: 10px;
+
+  & > h2 {
+    font-weight: 600;
+  }
+  & > h4 {
+    font-weight: normal;
+    max-width: 79%;
+  }
+}
+
+.scatterPlotContainer {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  overflow: visible;
+
+  & > div {
+    border: 1px solid #b8b8b8;
+
+    &:not(:last-child) {
+      border-bottom: none;
+    }
+  }
+}

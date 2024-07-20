@@ -1,0 +1,42 @@
+[
+  {
+    "kind": "range",
+    "key": "PearsonScore",
+    "label": "Predictability"
+  },
+  {
+    "kind": "multiselect",
+    "key": "ModelType",
+    "label": "Model type"
+  },
+  {
+    "kind": "multiselect",
+    "key": "TopBiomarker",
+    "label": "Top biomarker type",
+    "regex": "[^_]+$",
+    "blocklist": ["confounders"]
+  },
+  {
+    "kind": "range",
+    "key": "BimodalityCoefficient",
+    "label": "Bimodality coefficient"
+  },
+  {
+    "kind": "range",
+    "key": "NumberOfSensitiveLines",
+    "label": "# of sensitive lines",
+    "step": 1
+  },
+  {
+    "kind": "multiselect",
+    "key": "Target",
+    "label": "Target",
+    "separator": ","
+  },
+  {
+    "kind": "multiselect",
+    "key": "TargetOrMechanism",
+    "label": "TargetOrMechanism",
+    "separator": ","
+  }
+]

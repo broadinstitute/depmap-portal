@@ -1,0 +1,46 @@
+@import "common_nav";
+
+.navbar,
+.navbar-default,
+.navbar-inverse {
+  .navbar-nav {
+    > li:not(#global_search_navbar) {
+      > a {
+        @media screen and (min-width: $sm_width) and (max-width: $md_width) {
+          padding-inline-start: 5px;
+          padding-inline-end: 5px;
+        }
+      }
+    }
+
+    .feedback-link {
+      // Break up into two lines
+      @media screen and (min-width: $sm_width) {
+        max-width: 90px;
+        text-align: center;
+        line-height: 1em;
+        padding-block-start: 11px;
+        padding-block-end: 11px;
+      }
+      @media screen and (min-width: ($md_width + 1)) {
+        max-width: 110px;
+      }
+    }
+
+    .toolbar-search {
+      @media screen and (min-width: $sm_width) {
+        width: 160px;
+        padding-block-start: 7.5px;
+        padding-inline-start: 5px;
+        padding-inline-end: 5px;
+      }
+
+      @media screen and (min-width: ($md_width + 1)) {
+        width: 297px;
+      }
+      @media screen and (min-width: ($lg_width + 1)) {
+        width: 330px;
+      }
+    }
+  }
+}

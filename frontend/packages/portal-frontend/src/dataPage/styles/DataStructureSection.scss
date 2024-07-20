@@ -1,0 +1,63 @@
+.dataStructureBody {
+  margin-left: 60px;
+  margin-bottom: 40px;
+  display: flex;
+  flex-direction: row;
+
+  @media (max-width: 1100px) {
+    flex-direction: column;
+  }
+
+  .dataStructureColumns {
+    display: flex;
+    flex-direction: column;
+    margin-right: 40px;
+    margin-top: 10px;
+    width: 25%;
+
+    @media (max-width: 1100px) {
+      width: 85%;
+    }
+
+    :last-child {
+      @media (max-width: 1100px) {
+        padding-bottom: 40px;
+      }
+    }
+
+    .modelConditionColor {
+      color: #358679;
+    }
+
+    .modelColor {
+      color: #a8529d;
+    }
+
+    .patientColor {
+      color: #0000ff;
+    }
+
+    .screenColor {
+      color: #02a3c8;
+    }
+
+    .profileColor {
+      color: #234a94;
+    }
+
+    .sectionHeader {
+      font-family: roboto;
+      font-weight: 500;
+      font-size: 20px;
+      color: #303030;
+    }
+
+    .imageContainer {
+      display: flex;
+      flex-direction: column;
+      margin-left: 0px;
+      margin-right: 80px;
+      width: 50%;
+    }
+  }
+}

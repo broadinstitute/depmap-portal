@@ -1,0 +1,51 @@
+.loadingAnimationCommon {
+  border: 5px solid #f3f3f3;
+  border-radius: 50%;
+  width: 25px;
+  height: 25px;
+  margin-right: 5px;
+}
+
+.percentComplete {
+  margin-right: 5px;
+}
+
+.success {
+  border: 5px solid green;
+}
+
+.failure {
+  border-top: 5px solid crimson;
+}
+
+.running {
+  border-top: 5px solid #3498db;
+  -webkit-animation: spin 2s linear infinite;
+  animation: spin 2s linear infinite;
+}
+
+.pending {
+  border: 5px solid lightGray;
+}
+
+.loadingEllipsis:after {
+  overflow: hidden;
+  display: inline-block;
+  vertical-align: bottom;
+  -webkit-animation: ellipsis steps(4, end) 900ms infinite;
+  animation: ellipsis steps(4, end) 900ms infinite;
+  content: "\2026"; /* ascii code for the ellipsis character */
+  width: 0px;
+}
+
+@keyframes ellipsis {
+  to {
+    width: 20px;
+  }
+}
+
+@-webkit-keyframes ellipsis {
+  to {
+    width: 20px;
+  }
+}

@@ -1,0 +1,7 @@
+{% extends "nav_footer.html" %}
+
+{% block content %}
+    {% for url in urls %}
+        <div><a href="{{ url }}">{{ url }}</a></div>
+    {% endfor %}
+{% endblock %}

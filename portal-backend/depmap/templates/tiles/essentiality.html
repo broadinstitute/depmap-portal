@@ -1,0 +1,69 @@
+{% if dep_dist %}
+<div class="card_wrapper">
+    <div class="card_border">
+        <div>
+            <h2 class="no_margin cardtitle_text">Dependent Cell Lines <span>
+                <img class="info-icon popover-selector" src="{{ url_for('static', filename='img/gene_overview/info_purple.svg') }}"
+                    data-toggle="popover" data-placement="right" tabindex="0" data-trigger="focus" data-html="true" 
+                    data-content="<h4 style='padding-top: 5px'>Dependent Cell Lines</h4><p>A cell line is considered dependent if it has a probability of dependency greater than 0.5.<p><h4 style='padding-top: 5px'>Probability of Dependency</h4><p>Probabilities of dependency are calculated for each gene score in a cell line as the probability that score arises from the distribution of essential gene scores rather than nonessential gene scores. See <a href='https://doi.org/10.1101/720243'>here</a> for details.</p>"
+                >
+            </span></h2>
+        </div>
+        <div class="card_padding">
+            {% if 'crispr' in dep_dist.info %}
+            <div>
+                <h4 class="crispr">{{ dep_dist.info.crispr.display_name }}: {% if dep_dist.info.crispr.should_show_dropped_by_chronos %}
+                    No Chronos Data
+                    {% else %}
+                    {{ dep_dist.info.crispr.num_lines }}{% endif %}</h4>
+                <h4 class="crispr">{% if dep_dist.info.crispr.is_strongly_selective %}
+                    <span class="box_rounded box_crispr">
+                        STRONGLY SELECTIVE<img class="info-icon popover-selector" src="{{ url_for('static', filename='img/gene_overview/info_white.svg') }}"
+                        data-toggle="popover" data-placement="right" tabindex="0" data-trigger="focus" data-html="true"
+                        data-content="A gene whose dependency has the product of skewness and kurtosis in the top quartile and has at least one dependent cell line."
+                        /></span>
+                        {% endif %}{% if dep_dist.info.crispr.is_common_essential %}
+                        <span class="box_rounded box_crispr">COMMON ESSENTIAL<img class="info-icon popover-selector" src="{{ url_for('static', filename='img/gene_overview/info_white.svg') }}"
+                            data-toggle="popover" data-placement="right" tabindex="0" data-trigger="focus" data-html="true"
+                            data-content="A gene which, in a large, pan-cancer screen, ranks in the top X most depleting genes in at least 90% of cell lines. X is chosen empirically using the minimum of the distribution of gene ranks in their 90th percentile least depleting lines." 
+                            /></span>
+                        {% endif %}</h4>
+            </div>
+            {% endif %}
+            {% if 'rnai' in dep_dist.info %}
+            <div>
+                <h4 class="rnai">{{ dep_dist.info.rnai.display_name }}: {{ dep_dist.info.rnai.num_lines }}</h4>
+                <h4>{% if dep_dist.info.rnai.is_strongly_selective %}<span class="box_rounded box_rnai">STRONGLY SELECTIVE<img class="info-icon popover-selector" src="{{ url_for('static', filename='img/gene_overview/info_white.svg') }}"
+                    data-toggle="popover" tabindex="0" data-trigger="focus" data-placement="right" data-html="true"
+                    data-content="A gene whose dependency is at least 100 times more likely to have been sampled from a skewed distribution than a normal distribution (i.e. <a href='https://www.ncbi.nlm.nih.gov/pubmed/28753431'>skewed-LRT</a> value > 100)." 
+                    /></span>{% endif %}{% if dep_dist.info.rnai.is_common_essential %}<span class="box_rounded box_rnai">COMMON ESSENTIAL<img class="info-icon popover-selector" src="{{ url_for('static', filename='img/gene_overview/info_white.svg') }}"
+                        data-toggle="popover" tabindex="0" data-trigger="focus" data-placement="right" data-html="true"
+                        data-content="A gene which, in a large, pan-cancer screen, ranks in the top X most depleting genes in at least 90% of cell lines. X is chosen empirically using the minimum of the distribution of gene ranks in their 90th percentile least depleting lines." 
+                        /></span>{% endif %}</h4>
+            </div>
+            {% endif %}
+            {% if dep_dist.svg %}
+                <div>
+                    <div class="plot_width plot_padding1">
+                        {{ dep_dist.svg | safe }}
+                    </div>
+                </div>
+                <div>
+                    <p class="no_margin plot_label">Gene Effect<img class="info-icon-axis popover-selector" src="{{ url_for('static', filename='img/gene_overview/info_purple.svg') }}"
+                        data-toggle="popover" tabindex="0" data-trigger="focus" data-placement="right" data-html="true"
+                        data-content="Outcome from <a href='https://www.nature.com/articles/s41467-018-06916-5'>DEMETER2</a> or <a href='https://www.biorxiv.org/content/10.1101/2021.02.25.432728v1'>Chronos</a>. A lower score means that a gene is more likely to be dependent in a given cell line. A score of 0 is equivalent to a gene that is not essential whereas a score of -1 corresponds to the median of all common essential genes." 
+                        /></p>
+                </div>
+            {% endif %}
+            <div>
+                {% if not is_mobile %}
+            </br>
+                <p class="view-details-text">
+                    <span>View individual lineages and cell lines in the <a href="javascript:clickTab('#dependency')">Perturbation Effects tab</a></span></p>
+                {% endif %}
+            </div> 
+        </div>
+    </div>
+
+</div>
+{% endif %}

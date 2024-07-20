@@ -1,0 +1,309 @@
+add-if-missing {
+  "type": "biomarker-matrix",
+  "source_dataset_id": "rrbs-4b29.7/CCLE_RRBS_TSS1kb_20181022_matrix",
+  "category": "rrbs",
+  "filename": {
+    "$file_url": "gs://preprocessing-pipeline-outputs/conseq/depmap/CAS/68f8a9aa08fb856f4f9a162b1c094a6d48dc471fa03c9f3defecb79253d32eea"
+  },
+  "commitsha": {
+    "$value": "107fd2a671ba944dd6cd7151debbdc69af779640"
+  }
+}
+
+add-if-missing {
+  "type": "biomarker-matrix",
+  "source_dataset_id": "ccle-absolute-cn.5/CCLE_ABSOLUTE_gene_level",
+  "category": "copy-number-absolute",
+  "filename": {
+    "$file_url": "gs://preprocessing-pipeline-outputs/conseq/depmap/CAS/f0d00a38418403d8d0501ab839658ac51a4624d5205836068f4adae4459a94fd"
+  },
+  "commitsha": {
+    "$value": "107fd2a671ba944dd6cd7151debbdc69af779640"
+  }
+}
+
+add-if-missing {
+  "type": "biomarker-matrix",
+  "source_dataset_id": "metabolomics-cd0c.4",
+  "category": "metabolomics",
+  "filename": {
+    "$file_url": "gs://preprocessing-pipeline-outputs/conseq/depmap/CAS/db4f15851dbca449f528d687544c8c8734206076ccf5a9a25156b13f108a0071"
+  },
+  "commitsha": {
+    "$value": "107fd2a671ba944dd6cd7151debbdc69af779640"
+  }
+}
+
+add-if-missing {
+  "type": "biomarker-matrix",
+  "source_dataset_id": "internal-23q2-1e49.66/OmicsExpressionGeneSetEnrichment",
+  "category": "ssgsea",
+  "filename": {
+    "$file_url": "gs://preprocessing-pipeline-outputs/conseq/depmap/CAS/b3ca4a7870d83fc67e00fd17ab1bd2cd1b87bd1e5e2fc5c879f6c0c3396b5cda"
+  },
+  "commitsha": {
+    "$value": "107fd2a671ba944dd6cd7151debbdc69af779640"
+  }
+}
+
+add-if-missing {
+  "type": "biomarker-matrix",
+  "source_dataset_id": "internal-23q2-1e49.76/OmicsCNGene",
+  "category": "copy-number-relative",
+  "filename": {
+    "$file_url": "gs://preprocessing-pipeline-outputs/conseq/depmap/CAS/b8adb5b872a062e60558c7c80673b99f89d627715a757eb3ca93861319a25051"
+  },
+  "commitsha": {
+    "$value": "107fd2a671ba944dd6cd7151debbdc69af779640"
+  }
+}
+
+add-if-missing {
+  "type": "biomarker-matrix",
+  "source_dataset_id": "internal-23q2-1e49.62/OmicsAbsoluteCNGene",
+  "category": "OmicsAbsoluteCNGene",
+  "filename": {
+    "$file_url": "gs://preprocessing-pipeline-outputs/conseq/depmap/CAS/886884db6d8da88cb58b0c3e6469fc81c76e902828e6270334e36afab77182d8"
+  },
+  "commitsha": {
+    "$value": "107fd2a671ba944dd6cd7151debbdc69af779640"
+  }
+}
+
+add-if-missing {
+  "type": "biomarker-matrix",
+  "source_dataset_id": "internal-23q2-1e49.64/OmicsSignatures",
+  "category": "OmicsSignatures",
+  "filename": {
+    "$file_url": "gs://preprocessing-pipeline-outputs/conseq/depmap/CAS/a1d2455ec30f47e9178d397be693915e8821a798dfdeecc4abdf594138461e59"
+  },
+  "commitsha": {
+    "$value": "107fd2a671ba944dd6cd7151debbdc69af779640"
+  }
+}
+
+add-if-missing {
+  "type": "biomarker-matrix",
+  "source_dataset_id": "internal-23q2-1e49.63/OmicsLoH",
+  "category": "OmicsLoH",
+  "filename": {
+    "$file_url": "gs://preprocessing-pipeline-outputs/conseq/depmap/CAS/c7d8aac4fb95fd81ae1c28bc2d53179c6c4b4c0f0869f5495d4e6f0debcb013b"
+  },
+  "commitsha": {
+    "$value": "107fd2a671ba944dd6cd7151debbdc69af779640"
+  }
+}
+
+add-if-missing {
+  "type": "biomarker-matrix",
+  "source_dataset_id": "depmap-rppa-1b43.3/CCLE_RPPA_20181003",
+  "category": "rppa",
+  "filename": {
+    "$file_url": "gs://preprocessing-pipeline-outputs/conseq/depmap/CAS/bcd9895a8c6856cfc484d6e57d73a47372d3c94048b8e7cf524ce8925bcc255a"
+  },
+  "commitsha": {
+    "$value": "107fd2a671ba944dd6cd7151debbdc69af779640"
+  }
+}
+
+add-if-missing {
+  "type": "dep-matrix",
+  "label": "RNAi_merged",
+  "orig_dataset_id": "demeter2-combined-dc9c.19/gene_means_proc",
+  "filename": {
+    "$file_url": "gs://preprocessing-pipeline-outputs/conseq/depmap/CAS/d2e590dafdd6ac801c7123f1269e2987c9e46868b3ec292eae6e22c38b7b7c40"
+  },
+  "confounders_label": "rnai-confounders",
+  "commitsha": {
+    "$value": "107fd2a671ba944dd6cd7151debbdc69af779640"
+  }
+}
+
+
+add-if-missing {
+  "type": "dep-matrix",
+  "label": "Chronos_Score",
+  "orig_dataset_id": "project-score-chronos-ad31.14/gene_effect",
+  "filename": {
+    "$file_url": "gs://preprocessing-pipeline-outputs/conseq/depmap/CAS/b8189b8786811850400090b0ec1f7d373772e3b924d94eb9114d5e9b6a5a33d3"
+  },
+  "confounders_label": "missing",
+  "commitsha": {
+    "$value": "107fd2a671ba944dd6cd7151debbdc69af779640"
+  }
+}
+
+add-if-missing {
+  "type": "biomarker-matrix",
+  "category": "proteomics",
+  "source_dataset_id": "total-proteome--5c50.1/protein_quant_current_normalized",
+  "filename": {
+    "$file_url": "gs://preprocessing-pipeline-outputs/conseq/depmap/CAS/fa99ce797dab293cd1ae8a8c475896159d87deb61972cc993e53a0df2d25e27e"
+  },
+  "commitsha": {
+    "$value": "107fd2a671ba944dd6cd7151debbdc69af779640"
+  }
+}
+
+
+add-if-missing {
+  "type": "raw-dep-prob-matrix",
+  "dataset_id": "demeter2-combined-dc9c.19/gene_dependency",
+  "label": "RNAi_merged"
+}
+
+add-if-missing {
+  "type": "raw-dep-prob-matrix",
+  "dataset_id": "project-score-chronos-ad31.14/gene_dependency",
+  "label": "Chronos_Score"
+}
+
+add-if-missing {
+  "type": "confounders-matrix-raw",
+  "label": "rnai",
+  "dataset_id": "confounders-f38f.2/demeter2-combined-v12-confounders"
+}
+
+add-if-missing {
+  "type": "match-related-matrix",
+  "dataset_id": "related-features-dcbd.5/related_features"
+}
+
+add-if-missing {
+  "type": "sample_info_dataset_id",
+  "dataset_id": "internal-23q2-1e49.90/Model"
+}
+
+add-if-missing {
+  "type": "crispr-confounder-parameters",
+  "achilles_qc_report_taiga_id": "23q2-internal-e553.3/AchillesScreenQCReport",
+  "crispr_screen_map_taiga_id": "23q2-internal-e553.3/CRISPRScreenMap"
+}
+
+add-if-missing {
+  "type": "dep-matrix",
+  "label": "Rep_all_single_pt",
+  "confounders_label": "none",
+  "filename": {
+    "$file_url": "gs://preprocessing-pipeline-outputs/conseq/depmap/CAS/1152e136c21dc33b9f38763e3c604c754ad7f32c063f93d762365f989f4c28d1"
+  },
+  "orig_dataset_id": "repurposing-23q2-a803.3/Repurposing_23Q2_Extended_Primary_Data_Matrix",
+  "commitsha": {
+    "$value": "c71e6285d8d065875651c69f13b9780b9ed7f91b"
+  }
+}
+
+add-if-missing {
+  "type": "confounders-stub",
+  "category": "none"
+}
+
+add-if-missing {
+  "type": "dep-matrix",
+  "dataset_id": "onc-ref-001--b531.1/AUC_matrix",
+  "orig_dataset_id": "onc-ref-001--b531.1/AUC_matrix",
+  "label": "Prism_oncology_AUC",
+  "confounders_label": "none",
+  "format": "hdf5",
+  "filename": {
+    "$file_url": "gs://preprocessing-pipeline-outputs/conseq/depmap/CAS/2cf87ac18dd7aae246876bcdab3d8695400b009f189a3d4af6c62e27b66092d5"
+  },
+  "commitsha": {
+    "$value": "275146d34f71f41d94f859b80569a9772c80f08b"
+  }
+}
+
+
+add-if-missing {
+  "type": "raw-dep-prob-matrix",
+  "dataset_id": "test-internal-3cfa.1/CRISPRGeneDependency",
+  "label": "Chronos_Combined",
+  "rows": "cell-lines"
+}
+
+add-if-missing {
+  "type": "biomarker-matrix",
+  "source_dataset_id": "internal-23q2-1e49.68/OmicsSomaticMutationsMatrixDamaging",
+  "category": "mutations-damaging",
+  "filename": {
+    "$file_url": "gs://preprocessing-pipeline-outputs/conseq/depmap/CAS/55128ae00de1b8a277435b8f5c55c8bae6b484d27bbda23cb347ab91f7fc8b67"
+  },
+  "commitsha": {
+    "$value": "107fd2a671ba944dd6cd7151debbdc69af779640"
+  }
+}
+
+add-if-missing {
+  "type": "biomarker-matrix",
+  "source_dataset_id": "internal-23q2-1e49.67/OmicsSomaticMutationsMatrixHotspot",
+  "category": "mutations-hotspot",
+  "filename": {
+    "$file_url": "gs://preprocessing-pipeline-outputs/conseq/depmap/CAS/75699d0f41f23f584d45dbcfa73087de0d840488d4534537f2dd2c3a3ba933fe"
+  },
+  "commitsha": {
+    "$value": "107fd2a671ba944dd6cd7151debbdc69af779640"
+  }
+}
+
+add-if-missing {
+  "type": "biomarker-matrix",
+  "category": "fusions",
+  "filename": {
+    "$file_url": "gs://preprocessing-pipeline-outputs/conseq/depmap/CAS/6c120664c1d59169a681ae34a7f2fd649c372561f7a0a51c2e8b5598e426e8de"
+  },
+  "source_dataset_id": "internal-23q2-1e49.70/OmicsFusionFiltered",
+  "commitsha": {
+    "$value": "107fd2a671ba944dd6cd7151debbdc69af779640"
+  }
+}
+
+add-if-missing {
+  "type": "biomarker-matrix",
+  "source_dataset_id": "test-internal-3cfa.1/CRISPRGeneDependency",
+  "category": "CRISPRGeneDependency",
+  "filename": {
+    "$file_url": "gs://preprocessing-pipeline-outputs/conseq/depmap/CAS/c1cf446e92d6ea2207619689c4a7809b938d99e7c6b2faf9228306fb04a75c9e"
+  },
+  "commitsha": {
+    "$value": "85fbdc1d4093af8faa746a6ad9cc8d41bb5e8689"
+  }
+}
+
+add-if-missing {"type": "raw-dep-matrix", "dataset_id": "test-internal-3cfa.1/CRISPRGeneEffect", "label": "Chronos_Combined", "confounders_label": "crispr-confounders", "rows": "cell-lines", "$manually-added": {"$value": "true"}}
+
+add-if-missing {
+  "type": "biomarker-matrix",
+  "category": "sanger-proteomics",
+  "source_dataset_id": "sanger-proteomics-74a3.3/protein_matrix_avg",
+  "filename": {
+    "$file_url": "gs://preprocessing-pipeline-outputs/conseq/depmap/CAS/ae69a4858ce11296b28c70daf5e261c15fbe13748ef125833d2042537d530276"
+  },
+  "commitsha": {
+    "$value": "107fd2a671ba944dd6cd7151debbdc69af779640"
+  }
+}
+
+add-if-missing {
+  "type": "biomarker-matrix",
+  "source_dataset_id": "internal-23q2-1e49.90/Model",
+  "category": "context",
+  "filename": {
+    "$file_url": "gs://preprocessing-pipeline-outputs/conseq/depmap/CAS/5fe763c6cd0e996f20b2d97c5a3664d7d11a393342fe2c6156731ca35acbb9e6"
+  },
+  "commitsha": {
+    "$value": "107fd2a671ba944dd6cd7151debbdc69af779640"
+  }
+}
+
+add-if-missing {
+  "type": "biomarker-matrix",
+  "source_dataset_id": "internal-23q2-1e49.65/OmicsExpressionProteinCodingGenesTPMLogp1",
+  "category": "expression",
+  "filename": {
+    "$file_url": "gs://preprocessing-pipeline-outputs/conseq/depmap/CAS/d82d2bcf3c59992b50385cd933c86c082856f2fbbfb0d8b596cbb96c287733f6"
+  },
+  "commitsha": {
+    "$value": "107fd2a671ba944dd6cd7151debbdc69af779640"
+  }
+}
+

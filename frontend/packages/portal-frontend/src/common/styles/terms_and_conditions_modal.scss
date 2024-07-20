@@ -1,0 +1,23 @@
+.checkboxText {
+  float: left;
+}
+input[type="checkbox"] {
+  cursor: pointer;
+}
+
+// same styling as homepage.scss btn-non-public
+.btnNonPublic {
+  color: white !important;
+  background-color: #a8529d;
+  font-weight: 700;
+  font-size: 16px;
+  font-family: roboto;
+  text-decoration: none;
+  margin: 20px 0px 20px 0;
+}
+.btnNonPublic:hover {
+  background-color: #933186;
+}
+.btnNonPublic:active {
+  background-color: #711971;
+}

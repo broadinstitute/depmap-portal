@@ -1,0 +1,53 @@
+[
+  {
+    "term": "Name",
+    "definition": "Compound name"
+  },
+  {
+    "term": "PearsonScore",
+    "definition": "Predictive accuracy (correlation between observed and predicted profile) for the best model. Ensemble of random forest models using 5-fold stratified cross-validation to predict probability of dependency from 5 different subsets of omics features (unbiased, related). The unbiased model has access to all potential predictive features from RNAseq, ssGSEA, CN, damaging mutations (MutDam), missense mutations (MutMis), hotspot mutations (MutHot), fusion, proteomics, RPPA, metabolomics, RRBS, lineage context (Lin)."
+  },
+  {
+    "term": "BimodalityCoefficient",
+    "definition": "",
+    "multipartDefinition": [
+      "Bimodality coefficient is introduced in (Elison, 1987) to assess the bimodality of a given distribution, by favoring highly skewed but light tailed distributions. Particularly, it has the following form:",
+      "BimodalityCoefficient = 1 + skewness<sup>2</sup>/kurtosis",
+      "And takes values between 0 (all the points concentrated in a single location) and 1 (all the points are concentrated in two distinct points). This coefficient is computed and presented for the distribution of log2-fold-change and log2(AUC) values across cell lines for each compound.",
+      "Bimodality coefficient, see below for computing.",
+      "Note: if AUC take log before computing coefficient because we don't store the log transformed data (For viability we do store log transformed so no log is needed)"
+    ]
+  },
+  {
+    "term": "ModelType",
+    "definition": "Best model type from predictive pipeline"
+  },
+  {
+    "term": "TopBiomarker(s)",
+    "definition": "Best model's predictive features from predictive pipeline"
+  },
+  {
+    "term": "NumberOfSensitiveLines",
+    "definition": "",
+    "multipartDefinition": [
+      "The number of lines which show sensitivity to this compound.",
+      "For fold change readout, this is calculated as the number of lines with less than 0.3. For AUC read-outs, this is calculated as the number of lines with an AUC of less than 0.8."
+    ]
+  },
+  {
+    "term": "Dose",
+    "definition": "The dosage at which the screens were run."
+  },
+  {
+    "term": "Target",
+    "definition": "The list of genes that are known to be targeted by this compound based on the Repurposing Hub and other sources."
+  },
+  {
+    "term": "Synonyms",
+    "definition": "Alternate known names for this compound"
+  },
+  {
+    "term": "TargetOrMechanism",
+    "definition": "A summary of the known mechanism of action taken from the Repurposing Hub and other sources."
+  }
+]

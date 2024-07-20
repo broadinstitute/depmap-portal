@@ -1,0 +1,48 @@
+{% if enrichment_boxes and enrichment_boxes | length > 0 %}
+<div class="card_wrapper">
+  <div class="card_border">
+    <div>
+      <h2 class="no_margin cardtitle_text">Enriched Lineages <span>
+          <img class="info-icon popover-selector" src="{{ url_for('static', filename='img/gene_overview/info_purple.svg') }}"
+              data-toggle="tooltip" data-placement="right" tabindex="0" data-trigger="focus" data-html="true" data-content="Enriched lineages have p-values < 0.0005 (shown in parentheses). n= indicates the number of cell lines plotted in that lineage. The ranking is done based on effect size in an ascending order."
+          >
+      </span></h2>
+  </div>
+      <div class="card_padding">
+        {% for enrichment_box in enrichment_boxes %}
+          <div>
+            <h4 style="color: {{ enrichment_box.title_color }};">
+              {{ enrichment_box.title }}
+            </h4>
+          </div>
+          <div class="plot_width plot_padding1">
+            {{ enrichment_box.svg | safe }}
+          </div>
+          <div>
+            <p class="no_margin plot_label">{{ enrichment_box.units }}</p>
+          </div>
+          <div class="text_labels">
+            <p class="no_margin">
+              <span>
+                {% for label in enrichment_box.labels %} 
+                  {{ loop.index }}. {{ label }} <br>
+                {% endfor %}
+              </span>
+            </p>
+          </div>
+          {% if not loop.last %} 
+          {# dirty hack to provide spacing as if there was a hr line, but not show a line #}
+          <div class="hr_margin"></div>
+          {% endif %} 
+        {% endfor %}
+        </br>
+        <div>
+            {% if not is_mobile %}
+            <p class="view-details-text">
+              <span>View details in the <a href="javascript:clickTab('#dependency')">{% if is_gene_entity_type %}Perturbation Effects{% else %}Sensitivity{% endif %} tab</a></span></p>
+            {% endif %}
+        </div>
+      </div>
+    </div>
+</div>
+{% endif %}

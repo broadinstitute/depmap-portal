@@ -1,0 +1,18 @@
+rule clean_proteomics:
+    inputs:
+        proteomics={"type": "proteomics-raw"},
+        hgnc={"type": "hgnc-snapshot"},
+        uniprot_mapping={"type": "uniprot-mapping"},
+        meta={"type": "cell_line_metadata"},
+        script=fileref("scripts/proteomics.py"),
+        hdf5_utils=fileref('scripts/hdf5_utils.py', copy_to='hdf5_utils.py')
+    outputs:
+        {
+            "type": "biomarker-matrix",
+            "category": "proteomics",
+            "source_dataset_id": "{{inputs.proteomics.dataset_id}}",
+            "filename": {"$filename": "proteomics.hdf5"}
+        }
+    run """python3 {{ inputs.script.filename }} \
+        {{ inputs.proteomics.dataset_id }} {{ inputs.hgnc.dataset_id }} \
+        {{ inputs.uniprot_mapping.dataset_id }} {{ inputs.meta.filename }}"""

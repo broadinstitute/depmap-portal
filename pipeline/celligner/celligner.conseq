@@ -1,0 +1,95 @@
+add-if-missing {
+    "type": "celligner-preprocess",
+    "category": "expression",
+    "label": "TCGA",
+    "source_dataset_id": "celligner-input-9827.1/tumor_expression"
+}
+
+add-if-missing {
+    "type": "celligner-preprocess",
+    "category": "annotation",
+    "label": "TCGA",
+    "source_dataset_id": "celligner-input-9827.7/tumor_annotations"
+}
+
+add-if-missing {
+    "type": "celligner-preprocess",
+    "category": "expression",
+    "label": "MET500",
+    "source_dataset_id": "met500-fc3c.2/met500_TPM"
+}
+
+add-if-missing {
+    "type": "celligner-preprocess",
+    "category": "annotation",
+    "label": "MET500",
+    "source_dataset_id": "met500-fc3c.3/met500_ann"
+}
+
+add-if-missing {
+    "type": "celligner-preprocess",
+    "category": "expression",
+    "label": "Nov_PDX",
+    "source_dataset_id": "pdx-data-3d29.2/Novartis_PDX_TPM"
+}
+
+add-if-missing {
+    "type": "celligner-preprocess",
+    "category": "annotation",
+    "label": "Nov_PDX",
+    "source_dataset_id": "pdx-data-3d29.2/Novartis_PDX_ann"
+}
+
+add-if-missing {
+    "type": "celligner-preprocess",
+    "category": "expression",
+    "label": "Ped_PDX",
+    "source_dataset_id": "pdx-data-3d29.2/pediatric_PDX_TPM"
+}
+
+add-if-missing {
+    "type": "celligner-preprocess",
+    "category": "annotation",
+    "label": "Ped_PDX",
+    "source_dataset_id": "pdx-data-3d29.2/pediatric_PDX_ann"
+}
+
+rule process_celligner_inputs:
+    executor: dsub {
+       "docker_image": "us.gcr.io/broad-achilles/celligner@sha256:945097955376f497074c29c0da2fa5d90d6f4e9c96cba3a116c2a1f3140d4ca2",
+       "min_ram": "50", 
+       "boot_disk_size": "70", 
+       "helper_path": "/opt/conseq/bin/conseq-helper" }
+    inputs:
+        depmap_expr = {"type": "biomarker-matrix", "category": "expression"},
+        depmap_ann = {"type": "biomarker-matrix", "category": "context"},
+        tcga_expr = {"type": "celligner-preprocess", "category": "expression", "label": "TCGA"},
+        tcga_ann = {"type": "celligner-preprocess", "category": "annotation", "label": "TCGA"},
+        met500_expr = {"type": "celligner-preprocess", "category": "expression", "label": "MET500"},
+        met500_ann = {"type": "celligner-preprocess", "category": "annotation", "label": "MET500"},
+        nov_pdx_expr = {"type": "celligner-preprocess", "category": "expression", "label": "Nov_PDX"},
+        nov_pdx_ann = {"type": "celligner-preprocess", "category": "annotation", "label": "Nov_PDX"},
+        ped_pdx_expr = {"type": "celligner-preprocess", "category": "expression", "label": "Ped_PDX"},
+        ped_pdx_ann = {"type": "celligner-preprocess", "category": "annotation", "label": "Ped_PDX"},
+        taiga_token={"type": "config-file", "name": "taiga-token"},
+        celligner_script = fileref("scripts/run_celligner.py")
+    outputs:
+        {
+            "type": "annotated-celligner-output",
+            "label": "placeholder",
+            "alignment": {"$filename": "celligner_output.csv"},
+            "distances": {"$filename": "tumor_CL_dist.csv"}
+        }
+    run "echo test" # this is here because it seems like changing the dsub parameters didn't force a re-run
+    run "cp {{ inputs.taiga_token.filename }} ./.taiga-token"
+    run "cp {{ inputs.celligner_script.filename }} ./run_celligner.py"
+    run "cp -r /var/env/script/celligner ./"
+    run "python3" with """
+        import json 
+        with open('inputs.json', "wt") as fd:
+            inputs = {{inputs}}
+            print(inputs)
+            fd.write(json.dumps(inputs, indent=2))
+        """
+    run "cat inputs.json"
+    run "python3 run_celligner.py --input inputs.json"

@@ -1,0 +1,40 @@
+{% if availability | length > 0 %}
+<div class="card_wrapper">
+    <div class="card_border">
+        <div>
+            <h2 class="no_margin cardtitle_text">Datasets with data for {{ name }}</h2>
+        </div>
+	<div class="card_padding">
+	    <table style="width: 100%">
+                <thead>
+                    <tr><th>Dataset</th><th>Cell Lines</th><th>Dose Range</th><th>Assay</th></tr>
+                </thead>
+		<tbody>
+		    {% for entry in availability[:5] %}
+                    <tr>
+			<td><a href="{{ entry['dataset_url'] }}">{{ entry["dataset_name"] }}</a></td>
+			<td>{{ entry["cell_lines"] }}</td>
+			<td>{{ entry["dose_range"] }}</td>
+			<td>{{ entry["assay"] }}</td>
+		    </tr>
+                    {% endfor %}
+		    <tbody id="availability-collapse" class="collapse">
+			{% for entry in availability[5:50] %}
+			<tr>
+			    <td><a href="{{ entry['dataset_url'] }}">{{ entry["dataset_name"] }}</a></td>
+			    <td>{{ entry["cell_lines"] }}</td>
+			    <td>{{ entry["dose_range"] }}</td>
+			    <td>{{ entry["assay"] }}</td>
+			</tr>
+			{% endfor %}
+                    </tbody>
+            </table>
+	    {% if availability | length > 5 %}
+	    <a data-toggle="collapse" data-toggle="true" data-target="#availability-collapse"> View More/Less </a>
+	    <br>
+	    {% endif %}
+	    <br>
+	</div>
+    </div>
+</div>
+{% endif %}

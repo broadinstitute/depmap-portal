@@ -1,0 +1,110 @@
+.SettingsModal {
+  max-height: calc(100vh - 180px);
+  overflow-y: auto;
+
+  h2 {
+    margin: 0 0 10px 0;
+    font-size: 18px;
+    font-weight: bold;
+  }
+
+  section {
+    &:not(:first-of-type) {
+      margin-top: 20px;
+    }
+  }
+
+  label {
+    font-weight: normal;
+  }
+}
+
+.buttons {
+  margin-top: 10px;
+}
+
+.stylesSection {
+  label {
+    font-size: 15px;
+    margin-right: 8px;
+    width: 130px;
+    margin-top: 8px;
+  }
+
+  input {
+    all: unset;
+    margin-right: 4px;
+    display: inline-block;
+    inline-size: 56px;
+    block-size: 27px;
+    box-sizing: border-box;
+    border: 1px solid #777;
+    padding: 1px 2px;
+    border-radius: 3px;
+  }
+
+  input[type="color"] {
+    background-color: #efefef;
+    cursor: pointer;
+  }
+}
+
+.checkboxLabel {
+  cursor: pointer;
+
+  span {
+    margin-left: 5px;
+    vertical-align: top;
+  }
+}
+
+.checkboxLabelDisabled {
+  cursor: not-allowed;
+  color: #aaa;
+}
+
+.gradient {
+  display: flex;
+
+  & > span {
+    position: relative;
+    top: 2px;
+    width: 56px;
+    height: 27px;
+    border: 1px solid #777;
+    border-radius: 2px;
+    cursor: pointer;
+
+    span {
+      display: inline-block;
+      width: 6px;
+      height: 25px;
+    }
+  }
+}
+
+.gradientEditor {
+  z-index: 1;
+  position: absolute;
+  margin-left: 131px;
+  margin-top: 32px;
+  padding: 5px;
+  border: 1px solid #999;
+  border-radius: 4px;
+  background-color: #fff;
+  filter: drop-shadow(5px 5px 10px #aaa);
+
+  label {
+    margin-top: 20px;
+    width: auto;
+  }
+}
+
+.gradientEditorItems {
+  width: 302px;
+
+  input {
+    width: 30px;
+    margin-right: 0;
+  }
+}

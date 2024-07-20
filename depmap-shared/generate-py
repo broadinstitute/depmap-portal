@@ -1,0 +1,18 @@
+import argparse
+import json
+
+parser = argparse.ArgumentParser(description='convert json to python file')
+parser.add_argument('source')
+parser.add_argument('dest')
+
+args = parser.parse_args()
+
+with open(args.source, "rt") as fd:
+    values = json.load(fd)
+with open(args.dest, "wt") as fd:
+    fd.write(f"# Do not manually edit this file. It was derived from {args.source} in\n")
+    fd.write(f"# the course of running install-prereqs.sh.\n")
+    fd.write(f"#\n")
+    fd.write(f"# To make changes, edit {args.source} and re-run install-prereqs.sh to regenerate this file\n")
+    for k, v in values.items():
+        fd.write(f"{k} = {json.dumps(v)}\n")

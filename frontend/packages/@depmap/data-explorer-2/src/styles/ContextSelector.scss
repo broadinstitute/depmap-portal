@@ -1,0 +1,26 @@
+.contextSelector {
+  display: flex;
+  flex-direction: column;
+}
+
+.saveAsContextButton {
+  max-width: 160px;
+  margin: 10px 33px 0 0;
+}
+
+.optimizedSelectOptionHover {
+  background-color: transparent;
+
+  &:hover {
+    background-color: rgb(222, 235, 255);
+  }
+}
+
+.negatedContextBadge {
+  color: #fff;
+  background-color: #2d8de1;
+  border: 1px solid #1c76c4;
+  padding: 0 4px;
+  border-radius: 3px;
+  margin-right: 3px;
+}

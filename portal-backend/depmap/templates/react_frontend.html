@@ -1,0 +1,32 @@
+{# The Webpack runtime needs to know where it can find assets so that it can
+dynamically load chunks. Typically, `publicPath` is set in the Webpack config
+file but we don't actually know it at build time (it's part of Flask's runtime
+configuration) so we make it available here so it can be set with
+__webpack_public_path__. #}
+<script id="webpack-config" type="application/json">
+{
+  {% set root_url = config.APPLICATION_ROOT %}
+  {% set root_url = "" if root_url == "/" else root_url %}
+  "rootUrl": "{{ root_url }}",
+
+{% if config.USE_FRONTEND_DEV_SERVER %}
+    "publicPath": "http://localhost:5001/depmap/static/webpack/"
+{% else %}
+    "publicPath": "{{ root_url }}/static/webpack/"
+{% endif %}
+}
+</script>
+
+{# This is Webpack's runtime which it uses to resolve and evaluate modules #}
+<script src="{{ webpack_url('runtime.js') }}"></script>
+
+{# vendors.js is a bundle of some large JS libraries which is shared by the
+application bundles #}
+<script src="{{ webpack_url('vendors.js') }}"></script>
+
+{# DepMap.js depends on common.js (the flask_assets bundle we create called
+common.js, not the popular module system) #}
+<script src="{{ webpack_url('DepMap.js') }}"></script>
+{% if config.USE_FRONTEND_DEV_SERVER %}
+    {% include 'dev/webpack_dev_server_warning.html' %}
+{% endif %}

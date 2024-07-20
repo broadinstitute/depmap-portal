@@ -1,0 +1,99 @@
+{% from 'global_search/dropdown.html' import global_search_dropdown %}
+
+<nav class="navbar {{ include_theme_snippet('navbar_color_class') }} navbar-fixed-top">
+  <div class="container">
+    <!-- Brand and toggle get grouped for better mobile display -->
+    <div class="navbar-header" id="nav-alignment">
+      <div>
+      <a class="navbar-brand" href="{{ url_for('public.home') }}">
+        {% block nav_branding_img %}{% endblock %}
+      </a>
+      {% block nav_branding_post %}{% endblock nav_branding_post%}
+    </div>
+    <div class="nav-spacer"></div>
+    <div class="nav navbar-nav" id="global_search_navbar">
+      {{ global_search_dropdown("global-search-dropdown-toolbar", "toolbar-search") }}
+    </div>
+      <div>
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#depmap-portal-global-navbar" aria-expanded="false">
+        <span class="sr-only">Toggle navigation</span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      </div>
+    </div>
+
+    <!-- Collect the nav links, forms, and other content for toggling -->
+    <div class="collapse navbar-collapse" id="depmap-portal-global-navbar">
+      <ul class="nav navbar-nav navbar-right">
+        <li class="dropdown">
+          <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Tools <i class="fas fa-caret-down" aria-hidden="true"></i></a>
+          <ul class="dropdown-menu">
+            {% if config.ENABLED_FEATURES.data_explorer_2 %}
+                <li><a href="{{ url_for('data_explorer_2.view_data_explorer_2')}}">Data Explorer</a></li>
+            {% else %}
+                <li><a href="{{ url_for('interactive.view_interactive') }}">Data Explorer</a></li>
+            {% endif %}
+            <li><a href="{{ url_for('interactive.view_custom_analysis') }}">Custom Analyses</a></li>
+              <li><a href="{{ url_for('celligner.view_celligner') }}">Celligner</a></li>
+            {% if config.ENABLED_FEATURES.morpheus %}
+              <li><a href="{{ url_for('experimental.morpheus') }}">Morpheus <i class="alpha-tag"><b>Alpha</b></i></a></li>
+            {% endif %}
+            {% if config.ENABLED_FEATURES.target_discovery_app %}
+              <li><a href="{{ url_for('tda.view_tda_summary') }}">Target Discovery</a></li>
+            {% endif %}
+            {% if config.ENABLED_FEATURES.context_explorer %}
+            <li><a href="{{ url_for('context_explorer.view_context_explorer') }}">Context Explorer <i class="alpha-tag"><b>Alpha</b></i></a></li>
+          {% endif %}
+            {% if config.ENABLED_FEATURES.compound_dashboard_app %}
+              <li><a href="{{ url_for('compound_dashboard.view_compound_dashboard') }}">Compound Dashboard <i class="alpha-tag"><b>Alpha</b></i></a></li>
+            {% endif %}
+            {% if config.ENABLED_FEATURES.interactive_table %}
+              <li><a href="{{ url_for('dev.interactive_table') }}">LineUp Interactive Table <i class="alpha-tag"><b>Preview</b></i></a></li>
+            {% endif %}
+            <li role="separator" class="divider"></li>
+            {% if config.ENABLED_FEATURES.data_explorer_2 %}
+                <li><a class="cursor-pointer" onclick="DepMap.launchContextManagerModal()">Context Manager</a></li>
+                <li><a class="cursor-pointer" onclick="DepMap.launchContextManagerModal({ showHelpText: true })">Cell Line Selector</a></li>
+            {% else %}
+                <li><a class="cursor-pointer" onclick="DepMap.launchCellLineSelectorModal();return false;">Cell Line Selector</a></li>
+            {% endif %}
+            {% if config.ENABLED_FEATURES.private_datasets %}
+              <li><a href="{{ url_for('private_dataset.home') }}">Private Datasets</a></li>          
+            {% endif %}
+            {% if config.EXTERNAL_TOOLS %}
+              <li role="separator" class="divider"></li>
+              {% for app_id, external_tool_config in config.EXTERNAL_TOOLS.items() %}
+                  <li><a href="{{ url_for("external_tools.view_external_tool", app_id=app_id) }}">{{ external_tool_config["title"] }}  <i class="alpha-tag"><b>Preview</b></i></a></li>
+               {% endfor %}
+            {% endif %}
+            {% if is_admin_user %}
+                <li role="separator" class="divider"></li>
+                <li><a href="{{ url_for("access_control.override") }}">Impersonate User</a></li>
+                <li><a href="{{ url_for("datasets.view_dataset_manager") }}">Breadbox data manager</a></li>
+                <li><a href="{{ url_for("groups.view_groups_manager") }}">Breadbox group manager</a></li>
+            {% endif %}
+          </ul>
+        </li>
+        <li><a href="{{ url_for('data_page.view_data_page') }}">Downloads</a></li>
+        
+        <li class="dropdown">
+          <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">About <i class="fas fa-caret-down" aria-hidden="true"></i></a>
+          <ul class="dropdown-menu">
+            <li><a target="_blank" rel="noreferrer noopener" href="https://depmap.org/portal/home">About DepMap</a></li>
+            <li><a target="_blank" rel="noreferrer noopener" href="{{ url_for('data_page.view_data_page', tab='overview', _anchor='how-to-cite') }}">How to cite</a></li>
+            <li><a target="_blank" rel="noreferrer noopener" href="https://depmap.org/portal/home/#/publications">Publications</a></li>
+            {{ include_theme_snippet("about_menu.html") }}
+          </ul>
+        <li class="visible-xs-block"><a href="mailto:{{ config.CONTACT_EMAIL }}"><i class="fas fa-envelope-open"></i> {{config.CONTACT_EMAIL}}</a></li>
+        <li class="visible-xs-block"><a href="https://twitter.com/CancerDepMap" target="_blank" rel="noopener"><i class="fab fa-twitter"></i> @CancerDepMap</a></li>
+        </li>
+        {{ include_theme_snippet("top_nav.html") }}
+        <li>
+      </ul>
+    </div><!-- /.navbar-collapse -->
+  </div><!-- /.container-fluid -->
+</nav>
+
+

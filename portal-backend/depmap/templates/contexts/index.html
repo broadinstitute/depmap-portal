@@ -1,0 +1,36 @@
+{% extends "nav_footer.html" %}
+
+{% macro format_indented_if_list(values) -%}
+    {% if values is not string and values is iterable %}
+        {% for value in values %}
+            <span style="padding-left: {{ 5*(loop.index - 1) }}px">{{ value | safe }}</span>
+            {% if not loop.last %}
+                <br>
+            {% endif %}
+        {% endfor %}
+    {% else %}
+        {{ values }}
+    {% endif %}
+    {#     | replace("\n", "<br>") | replace("\t", "<pre>&#9;</pre>") | safe #}
+{%- endmacro %}
+
+{% block page_title %}
+    {{ context_name }} DepMap Context Summary
+{% endblock %}
+
+{% block content %}
+    <br>
+    <div class="title_div">
+        <div> {# this wrapper div is required, probably to break the flex #}
+            <h3 style="margin: 0">CONTEXT</h3>
+            <h4>{{ format_indented_if_list(lineage) }}</h4>
+            <h1 class="inline-block" style="margin: 0">{{ title }}</h1>
+        </div>
+    </div>
+
+    <h2>Cell lines in {{ context_name }}</h2>
+    {{ partials.wide_data_table(cell_line_table) }}
+
+    <h2>Dependencies enriched in {{ context_name }}</h2>
+    {{ partials.wide_data_table(dependency_enrichment_table) }}
+{% endblock %}

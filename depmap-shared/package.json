@@ -1,0 +1,9 @@
+{
+  "name": "depmap-shared",
+  "version": "1.0.0",
+  "description": "Files shared between Flask backend and React frontend",
+  "main": "index.ts",
+  "types": "index.d.ts",
+  "author": "CDS Team <cds@broadinstitute.org>",
+  "license": "MIT"
+}

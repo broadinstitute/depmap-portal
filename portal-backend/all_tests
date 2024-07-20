@@ -1,0 +1,4 @@
+#!/bin/bash
+pyright-ratchet
+pytest -d --tx '6*popen//python=python'
+

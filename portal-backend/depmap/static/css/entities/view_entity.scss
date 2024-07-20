@@ -1,0 +1,67 @@
+.gray_data {
+  color: #aaa;
+}
+.black_data {
+  color: #333;
+}
+
+.title_div {
+  display: flex;
+}
+
+.header {
+  display: flex;
+  margin: 10px 8px;
+}
+
+.compound_name {
+  font-size: 32px;
+  font-weight: 400;
+  margin: 0px 4px 0px 0px;
+}
+
+.other_info {
+  display: inline-block;
+  font-size: 14px;
+  font-weight: 700;
+  margin-top: 10px;
+  margin-block-start: 1em;
+  margin-inline-start: 0px;
+  margin-inline-end: 0px;
+  padding-left: 17px;
+}
+
+.info_content {
+  font-weight: 400;
+  padding-left: 3px;
+}
+
+.header_info_container {
+  display: none;
+
+  @media screen and (min-width: 320px) {
+    display: flex;
+    flex-wrap: wrap;
+  }
+}
+
+.has_dose_icon {
+  width: 1em;
+}
+
+@import "./executive";
+@import "../shared/narrow_react_table";
+.predictive-models-table-container {
+  @include narrow-react-table;
+}
+
+#dose-curves-tab-content {
+  padding-block-start: 8px;
+  display: flex;
+  justify-content: center;
+
+  > div {
+    width: 100%;
+    max-width: 1200px;
+  }
+}

@@ -1,0 +1,17 @@
+entrez_id,label,name,ensembl_id,hgnc_id,locus_type,uniprot_ids
+276,AMY1A,"amylase, alpha 1A (salivary)",ENSG00000237763,HGNC:474,gene with protein product,P04745
+3730,ANOS1,anosmin 1,ENSG00000011201,HGNC:6211,gene with protein product,P23352
+8263,F8A1,coagulation factor VIII associated 1,ENSG00000277203,HGNC:3547,gene with protein product,P23610
+6928,HNF1B,HNF1 homeobox B,ENSG00000275410,HGNC:11630,gene with protein product,P35680
+80853,KDM7A,lysine demethylase 7A,ENSG00000006459,HGNC:22224,gene with protein product,Q6ZMT4
+9448,MAP4K4,mitogen-activated protein kinase kinase kinase kinase 4,ENSG00000071054,HGNC:6866,gene with protein product,O95819
+5469,MED1,mediator complex subunit 1,ENSG00000125686,HGNC:9234,gene with protein product,Q15648
+100500908,MIR3613,microRNA 3613,ENSG00000264864,HGNC:38964,"RNA, micro",
+4893,NRAS,"NRAS proto-oncogene, GTPase",ENSG00000213281,HGNC:7989,gene with protein product,P01111
+5676,PSG7,pregnancy specific beta-1-glycoprotein 7 (gene/pseudogene),ENSG00000221878,HGNC:9524,gene with protein product,Q13046
+6663,SOX10,SRY-box 10,ENSG00000100146,HGNC:11190,gene with protein product,P56693
+375757,SWI5,SWI5 homologous recombination repair protein,ENSG00000175854,HGNC:31412,gene with protein product,Q1ZZU3
+23371,TNS2,tensin 2,ENSG00000111077,HGNC:19737,gene with protein product,Q63HR2
+9865,TRIL,TLR4 interactor with leucine rich repeats,ENSG00000255690,HGNC:22200,gene with protein product,Q7L0X0
+81622,UNC93B1,unc-93 homolog B1 (C. elegans),ENSG00000110057,HGNC:13481,gene with protein product,Q9H1C4
+148304,C1orf74,chromosome 1 open reading frame 74,ENSG00000162757,HGNC:26319,gene with protein product,Q96LT6

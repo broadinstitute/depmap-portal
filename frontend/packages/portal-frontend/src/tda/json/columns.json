@@ -1,0 +1,52 @@
+[
+  {
+    "value": "CRISPR_LRT",
+    "label": "Selectivity: LRT",
+    "dataset": "CRISPR"
+  },
+  {
+    "value": "CRISPR_Predictive_Accuracy",
+    "label": "Predictability: Accuracy (r)",
+    "dataset": "CRISPR"
+  },
+  {
+    "value": "CRISPR_depCL_frac",
+    "label": "Selectivity: depCL frac",
+    "dataset": "CRISPR"
+  },
+  {
+    "value": "CRISPR_Skewness",
+    "label": "Selectivity: Skewness",
+    "dataset": "CRISPR"
+  },
+  {
+    "value": "CRISPR_Variance",
+    "label": "Selectivity: Variance",
+    "dataset": "CRISPR"
+  },
+  {
+    "value": "RNAi_LRT",
+    "label": "Selectivity: LRT",
+    "dataset": "RNAi"
+  },
+  {
+    "value": "RNAi_Predictive_Accuracy",
+    "label": "Predictability: Accuracy (r)",
+    "dataset": "RNAi"
+  },
+  {
+    "value": "RNAi_depCL_frac",
+    "label": "Selectivity: depCL frac",
+    "dataset": "RNAi"
+  },
+  {
+    "value": "RNAi_Skewness",
+    "label": "Selectivity: Skewness",
+    "dataset": "RNAi"
+  },
+  {
+    "value": "RNAi_Variance",
+    "label": "Selectivity: Variance",
+    "dataset": "RNAi"
+  }
+]

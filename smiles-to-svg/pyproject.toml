@@ -1,0 +1,24 @@
+[tool.poetry]
+name = "smiles2svg"
+version = "0.1.0"
+description = "Scripts for converting smiles to svg and uploading them to google cloud storage"
+authors = ["Nayeem Aquib <naquib@broadinsitute.org>"]
+readme = "README.md"
+
+
+[tool.poetry.dependencies]
+python = "^3.9"
+pandas = "1.5.3"
+taigapy = {git = "https://github.com/broadinstitute/taigapy"}
+rdkit = "^2023.9.2"
+tqdm = "^4.66.1"
+click = "^8.1.7"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+
+[tool.poetry.scripts]
+smiles2svg = "smiles2svg.smiles:main"

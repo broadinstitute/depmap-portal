@@ -1,0 +1,39 @@
+<div class="card_wrapper">
+  <div class="card_border">
+    <br/>
+    <h2 class="no_margin cardtitle_text">
+      Predictability<i style="color: red; font-size: 8pt"><b>ALPHA</b></i>
+    </h2>
+    <br/>
+    <div class="card_subheading">
+      Features of most accurate predictive model
+    </div>
+
+
+    {% for table in tables %}
+      <h4 class="{{ table.type }} no_margin">{{ table.dataset }}</h4>
+      <div>
+	<table style="width: 100%">
+	  <thead>
+            <tr>
+              <th>Model</th>
+              <th>Accuracy</th>
+              <th>Feature<br>Name</th>
+              <th>Feature<br>Type</th>
+            </tr>
+	  </thead>
+	  <tbody>
+            {% for model in table.top_models %}
+              <tr>
+		<td>{{ model.label }}</td>
+		<td>{{ '{:.3G}'.format(model.pearson) }}</td>
+		<td style="overflow-wrap: anywhere; max-width: 100px; padding-bottom: 5px; padding-top: 5px; padding-right: 10px;">{{ model.top_feature_label }}</td>
+		<td>{{ model.top_feature_type }}</td>
+              </tr>
+            {% endfor %}
+	  </tbody>
+	</table>
+      </div>
+    {% endfor %}
+  </div>
+</div>

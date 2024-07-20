@@ -1,0 +1,104 @@
+.DataFilePanel {
+  .dataPanelSection {
+    margin-top: 25px;
+
+    .filePanelHeader {
+      margin-top: 25px;
+      margin-left: 35px;
+      display: grid;
+      grid-template-columns: repeat(10, 1fr);
+      gap: 0px;
+
+      .headerColOne {
+        color: #707070;
+        font-size: 14px;
+        grid-column: 1/4;
+        grid-row: 1;
+      }
+      .headerColTwo {
+        color: #707070;
+        font-size: 14px;
+        grid-column: 4/8;
+        grid-row: 1;
+      }
+      .headerColThree {
+        color: #707070;
+        font-size: 14px;
+        grid-column: 8/9;
+        grid-row: 1;
+      }
+      .headerColFour {
+        color: #707070;
+        font-size: 14px;
+        grid-column: 9/10;
+        grid-row: 1;
+      }
+    }
+
+    .accordionTitle {
+      display: grid;
+      grid-template-columns: repeat(10, 1fr);
+      gap: 0px;
+      grid-auto-rows: minmax(20px, auto);
+      .one {
+        padding-top: 3px;
+        color: #4479b2;
+        font-size: 14px;
+        grid-column: 1/4;
+        grid-row: 1;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        overflow: hidden;
+        margin-right: 15px;
+      }
+      .two {
+        padding-top: 2px;
+        color: #303030;
+        font-size: 14px;
+        grid-column: 4/8;
+        grid-row: 1;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        overflow: hidden;
+        margin-right: 15px;
+      }
+      .three {
+        padding-top: 2px;
+        color: #303030;
+        font-size: 14px;
+        grid-column: 8/9;
+        grid-row: 1;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        overflow: hidden;
+        margin-right: 15px;
+      }
+      .four {
+        color: #4479b2;
+        font-size: 18px;
+        grid-column: 9;
+        grid-row: 1;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        overflow: hidden;
+        margin-right: 15px;
+        min-width: fit-content;
+
+        .iconsContainer {
+          display: grid;
+          grid-template-columns: repeat(2, 35px);
+        }
+      }
+      .five {
+        color: #4479b2;
+        font-size: 16px;
+        grid-column: 10;
+        grid-row: 1;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        overflow: hidden;
+        margin-right: 15px;
+      }
+    }
+  }
+}

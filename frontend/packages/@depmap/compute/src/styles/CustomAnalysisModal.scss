@@ -1,0 +1,34 @@
+// TODO: Get rid of :global and convert the corresponding component to CSS
+// Module format.
+:global {
+  .custom-associations-modal {
+    .query-container {
+      display: flex;
+      flex-direction: column;
+
+      .radio {
+        margin-bottom: 5px;
+      }
+
+      .modal-row {
+        // need to avoid applying "row" class from third party libraries
+        display: flex;
+        flex-direction: row;
+        border-top: 1px solid black;
+      }
+      .modal-row:last-child {
+        border-bottom: 1px solid black;
+      }
+      .modal-column {
+        display: flex;
+        flex-basis: 0;
+        flex-grow: 1;
+        padding: 15px;
+        border-left: 1px solid black;
+      }
+      .modal-column:last-child {
+        border-right: 1px solid black;
+      }
+    }
+  }
+}

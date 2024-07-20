@@ -1,0 +1,6 @@
+let publish_dest = "INVALID"
+include "_run_external.conseq"
+
+# the only edits/additions that should take place here are changing the publish destination
+# please don't add anything else here. any added rules should go into _run_external
+# this exists just so that the xqa environment can have a separate publish destination

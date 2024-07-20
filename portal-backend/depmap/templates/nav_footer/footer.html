@@ -1,0 +1,5 @@
+{% assets filters="libsass", output='public/css/footer.css', 'css/nav_footer/footer.scss', depends=['css/shared/*.scss', 'css/nav_footer/common_nav.scss'] %}
+    <link rel="stylesheet" href="{{ ASSET_URL }}">
+{% endassets %}
+
+{{ include_theme_snippet("footer.html") }}

@@ -1,0 +1,179 @@
+@import "skyros_public_shared_nav";
+
+$skyros-nav-hovered-background: adjust-color(
+  $color: $skyros_tertiary,
+  $saturation: 5%,
+  $lightness: -3%,
+);
+
+.navbar,
+.navbar-default {
+  background: $skyros_tertiary;
+
+  .navbar-brand {
+    padding: 0;
+
+    @media screen and (max-width: 768px) {
+      position: fixed;
+      left: 15px;
+    }
+
+    #navbar_logo {
+      height: 50px;
+
+      @media screen and (max-width: 648px) {
+        display: none;
+      }
+    }
+
+    #navbar_symbol {
+      height: 50px;
+
+      @media screen and (min-width: 649px) {
+        display: none;
+      }
+    }
+  }
+
+  .navbar-toggle {
+    border-color: adjust-color($color: $skyros_link, $saturation: -10%);
+    &:hover,
+    &:focus {
+      background: $skyros-nav-hovered-background;
+    }
+
+    .icon-bar {
+      background: $skyros_link;
+    }
+    @media screen and (max-width: 768px) {
+      position: fixed;
+      right: 15px;
+    }
+  }
+
+  .navbar-text.unpublished-data {
+    background: $skyros_link;
+    color: white;
+    display: inline-block;
+    position: relative;
+    margin-inline-start: 20px;
+    margin-inline-end: 0px;
+    margin-block-start: 0px;
+    margin-block-end: 0px;
+    line-height: 50px;
+
+    &:before {
+      left: -25px;
+      position: absolute;
+      width: 0;
+      height: 0;
+      border-right: 0px solid transparent;
+      border-left: 25px solid transparent;
+      border-bottom: 50px solid $skyros_link;
+      content: "";
+    }
+    &:after {
+      top: 0px;
+      right: -25px;
+      position: absolute;
+      width: 0;
+      height: 0;
+      border-left: 0px solid transparent;
+      border-right: 25px solid transparent;
+      border-top: 50px solid $skyros_link;
+      content: "";
+    }
+
+    @media screen and (max-width: 1199px) {
+      display: none;
+    }
+  }
+
+  .navbar-nav {
+    > li {
+      &:not(#global_search_navbar) {
+        &.open,
+        &:hover,
+        &:active,
+        &:focus {
+          > a {
+            color: $skyros_link;
+            background: $skyros-nav-hovered-background;
+          }
+        }
+      }
+
+      > a {
+        color: #393939;
+      }
+    }
+
+    .toolbar-search {
+      @media screen and (max-width: (304px)) {
+        display: none;
+      }
+
+      @media screen and (min-width: (305px)) {
+        width: 47% !important;
+        position: fixed;
+        left: 28vw !important;
+        overflow: visible;
+      }
+
+      @media screen and (min-width: (415px)) {
+        width: 59% !important;
+        left: 22vw !important;
+      }
+
+      @media screen and (min-width: (515px)) {
+        width: 62% !important;
+        left: 21vw !important;
+      }
+
+      @media screen and (min-width: (649px)) {
+        width: 53% !important;
+        left: 32vw !important;
+      }
+
+      @media screen and (min-width: ($sm_width + 1)) {
+        width: 20% !important;
+        left: 30vw !important;
+      }
+
+      @media screen and (min-width: 930px) {
+        width: 19% !important;
+        left: 31vw !important;
+      }
+
+      @media screen and (min-width: 992px) {
+        width: 25% !important;
+        left: 25vw !important;
+      }
+
+      @media screen and (min-width: $lg_width) {
+        width: 25% !important;
+        left: 32vw !important;
+      }
+
+      @media screen and (min-width: 1460px) {
+        width: 20% !important;
+        left: 36vw !important;
+      }
+
+      @media screen and (min-width: 1875px) {
+        width: 17% !important;
+        left: 38vw !important;
+      }
+
+      @media screen and (min-width: 2201px) {
+        width: 15% !important;
+        left: 39vw !important;
+      }
+
+      @media screen and (min-width: 2441px) {
+        width: 13% !important;
+        left: 41vw !important;
+      }
+    }
+  }
+}

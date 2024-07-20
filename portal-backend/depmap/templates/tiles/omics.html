@@ -1,0 +1,62 @@
+{% if omics %}
+{% if omics.expression and omics.copy_number %}
+{% set card_title='Expression & CN' %}
+{% elif omics.expression %}
+{% set card_title='Expression' %}
+{% else %}
+{% set card_title='Copy Number' %}
+{% endif %}
+<div class="card_wrapper">
+    <div class="card_border">
+        <div>
+            <h2 class="no_margin cardtitle_text">{{ card_title }}</h2>
+        </div>
+        <div class="card_padding">
+            {% if omics.expression %}
+            <h4>
+                {{ omics.expression.dataset_display_name }}
+                <span>
+                    <img class="info-icon popover-selector" src="{{ url_for('static', filename='img/gene_overview/info_purple.svg') }}"
+                    data-toggle="tooltip" data-placement="right" tabindex="0" data-trigger="focus" data-html="true" 
+                    data-content="RNASeq files are aligned with STAR and quantified with RSEM, then TPM-normalized. Reported values are log2(TPM+1)."
+                >
+                </span>
+            </h4>
+            <div class="plot_width plot_padding1">
+                {{ omics.expression.svg | safe }}
+            </div>
+            <div>
+                <p class="no_margin plot_label">{{ omics.expression.units }}</p>
+            </div>
+            {% endif %}
+            {% if omics.expression and omics.copy_number %}
+            <br>
+            {% endif %}
+            {% if omics.copy_number %}
+            <h4>
+                {{ omics.copy_number.dataset_display_name }}
+                <span>
+                    <img class="info-icon popover-selector" src="{{ url_for('static', filename='img/gene_overview/info_purple.svg') }}"
+                    data-toggle="tooltip" data-placement="right" tabindex="0" data-trigger="focus"  data-html="true" 
+                    data-content="The <a href='https://forum.depmap.org/t/what-is-relative-copy-number-copy-number-ratio/104/2' target='_blank'>relative copy number</a> pipeline used varies by cell line. For around 1000 lines, Sanger WES data was used, while for around 700 lines, Broad WES data was used. The remaining lines use SNP array data as explained in <a href='https://doi.org/10.1038/s41586-019-1186-3' target='_blank' rel='noopener'>10.1038/s41586-019-1186-3</a>. See <a href='https://doi.org/10.1101/720243' target='_blank' rel='noopener'>10.1101/720243</a> for details on how CN source is chosen per line. Lines with WES data were processed through GATK using PONs from TCGA without matched normals and transformed by log2(x+1)."
+                >
+                </span>
+            </h4>
+                <div class="plot_width plot_padding1">
+                {{ omics.copy_number.svg | safe }}
+            </div>
+            <div>
+                <p class="no_margin plot_label">{{ omics.copy_number.units }}</p>
+            </div>
+            {% endif %}
+        {% if not is_mobile %}
+            </br>
+            <div>
+                <p class="view-details-text">
+                    <span>View details in the <a href="javascript:clickTab('#characterization')">Characterization tab</a></span></p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endif %}

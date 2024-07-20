@@ -1,0 +1,60 @@
+.GenePage {
+  margin: 0 auto;
+}
+
+.header {
+  display: flex;
+  margin: 10px 8px;
+}
+
+// The header now has a lot of horizontal content, so we want
+// it to collapse like the tile columns as the page width gets
+// smaller
+.headerInfoContainer {
+  display: none;
+
+  @media screen and (min-width: 320px) {
+    display: flex;
+    flex-wrap: wrap;
+  }
+}
+
+.symbol {
+  font-size: 32px;
+  font-weight: 400;
+  margin: 0px 4px 0px 0px;
+}
+.fullName {
+  display: inline-block;
+  font-size: 14px;
+  font-weight: 700;
+  margin-top: 10px;
+  margin-block-start: 1.33em;
+  margin-inline-start: 0px;
+  margin-inline-end: 0px;
+}
+
+.otherInfo {
+  display: inline-block;
+  font-size: 14px;
+  font-weight: 700;
+  margin-top: 10px;
+  margin-block-start: 1.33em;
+  margin-inline-start: 0px;
+  margin-inline-end: 0px;
+  padding-left: 17px;
+}
+
+.infoContent {
+  font-weight: 400;
+  padding-left: 3px;
+}
+
+.TabPanel {
+  width: 100%;
+}
+
+.findCellLines {
+  margin-top: 10px;
+  margin-bottom: 5px;
+}

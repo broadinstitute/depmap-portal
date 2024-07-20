@@ -1,0 +1,9 @@
+guide_consistency_mean,1.9279846437278545
+guide_consistency_max,-0.4667293948464457
+unique_guides,0.1554295582791234
+score_consistency,3.314803124705771
+rnai_consistency,3.089467349899337
+normLRT,0.003782021600479112
+predictability,1.1207047383031539
+top_feature_importance,0.20878507335646823
+top_feature_confounder,0.06864410823935822

@@ -1,0 +1,670 @@
+import io
+
+from fastapi.testclient import TestClient
+
+from breadbox.db.session import SessionWithUser, SessionLocalWithUser
+from breadbox.schemas.dataset import AddDatasetResponse
+from breadbox.compute import dataset_uploads_tasks
+from breadbox.celery_task import utils
+from breadbox.models.dataset import TabularDataset, TabularCell, TabularColumn
+from sqlalchemy import and_
+
+from typing import Dict
+import hashlib
+from ..utils import assert_status_ok, assert_status_not_ok
+import pytest
+import numpy as np
+
+
+def file_ids_and_md5_hash(client, file):
+    tabular_file_ids = []
+    chunk = file.readline()
+    hasher = hashlib.md5(chunk)
+    while chunk:
+        response = client.post(
+            "/uploads/file", files={"file": ("table", chunk, "text/csv")},
+        )
+        assert response.status_code == 200
+        tabular_file_ids.append(response.json()["file_id"])
+        chunk = file.readline()
+        hasher.update(chunk)
+    hash = hasher.hexdigest()
+    return tabular_file_ids, hash
+
+
+class TestPost:
+    # Dataset post endpoint using uploads
+    def test_dataset_uploads_task(
+        self,
+        client: TestClient,
+        minimal_db: SessionWithUser,
+        private_group: Dict,
+        mock_celery,
+        monkeypatch,
+    ):
+        user = "someone@private-group.com"
+        headers = {"X-Forwarded-User": user}
+        user_db_session = SessionLocalWithUser(user)
+
+        file = factories.continuous_matrix_csv_file()
+        file_ids = []
+        chunk = file.readline()
+        while chunk:
+            response = client.post(
+                "/uploads/file", files={"file": ("filename", chunk, "text/csv")},
+            )
+            assert response.status_code == 200
+            file_ids.append(response.json()["file_id"])
+            chunk = file.readline()
+
+        assert len(file_ids) == 3
+        expected_md5 = "820882fc8dc0df48728c74db24c64fa1"
+
+        matrix_dataset_w_simple_metadata = client.post(
+            "/dataset-v2/",
+            json={
+                "format": "matrix",
+                "name": "a dataset",
+                "units": "a unit",
+                "feature_type": "generic",
+                "sample_type": "depmap_model",
+                "data_type": "User upload",
+                "file_ids": file_ids,
+                "dataset_md5": expected_md5,
+                "is_transient": False,
+                "group_id": private_group["id"],
+                "value_type": "continuous",
+                "allowed_values": None,
+                "dataset_metadata": {"yah": "nah"},
+            },
+            headers=headers,
+        )
+        assert_status_ok(matrix_dataset_w_simple_metadata)
+        assert matrix_dataset_w_simple_metadata.status_code == 202
+        assert matrix_dataset_w_simple_metadata.json()["state"] == "SUCCESS"
+        assert matrix_dataset_w_simple_metadata.json()["result"]["datasetId"]
+
+        # Test tabular dataset
+        tabular_data_file = factories.tabular_csv_data_file(
+            cols=["depmap_id", "attr1", "attr2", "attr3"],
+            row_values=[["ACH-1", 1.0, 0, '["a"]'], ["ACH-2", 2.0, 1, '["d", "c"]']],
+        )
+
+        tabular_file_ids, hash = file_ids_and_md5_hash(client, tabular_data_file)
+
+        assert len(tabular_file_ids) == 3
+        tabular_dataset_response = client.post(
+            "/dataset-v2/",
+            json={
+                "format": "tabular",
+                "name": "a table dataset",
+                "index_type": "depmap_model",
+                "data_type": "User upload",
+                "file_ids": tabular_file_ids,
+                "dataset_md5": hash,
+                "is_transient": False,
+                "group_id": private_group["id"],
+                "dataset_metadata": {"yah": "nah"},
+                "columns_metadata": {
+                    "depmap_id": {"units": None, "col_type": "text"},
+                    "attr1": {"units": "some units", "col_type": "continuous"},
+                    "attr2": {"units": None, "col_type": "binary"},
+                    "attr3": {"units": None, "col_type": "list_strings"},
+                },
+            },
+            headers=headers,
+        )
+        assert_status_ok(tabular_dataset_response)
+        assert tabular_dataset_response.status_code == 202
+        assert tabular_dataset_response.json()["state"] == "SUCCESS"
+        assert tabular_dataset_response.json()["result"]["dataset"]["id"]
+
+        # list string value is not all strings
+        tabular_data_file_bad_list_strings = factories.tabular_csv_data_file(
+            cols=["depmap_id", "attr1", "attr2", "attr3"],
+            row_values=[["ACH-1", 1.0, 0, '["a"]'], ["ACH-2", 2.0, 1, '[1, "c"]']],
+        )
+        bad_list_strings_file_ids, bad_list_strings_hash = file_ids_and_md5_hash(
+            client, tabular_data_file_bad_list_strings
+        )
+
+        def mock_failed_task_result(db, params, user):
+            return {"result": "Column 'attr1' failed validator"}
+
+        monkeypatch.setattr(
+            dataset_uploads_tasks, "dataset_upload", mock_failed_task_result,
+        )
+
+        def mock_return_failed_task(result):
+            return AddDatasetResponse(
+                id="123",
+                state="FAILURE",
+                result=result,
+                message=None,
+                percentComplete=None,
+            )
+
+        monkeypatch.setattr(
+            dataset_uploads_tasks, "dataset_upload", mock_failed_task_result,
+        )
+        monkeypatch.setattr(utils, "format_task_status", mock_return_failed_task)
+        bad_list_strings_file_ids_dataset = client.post(
+            "/dataset-v2/",
+            json={
+                "format": "tabular",
+                "name": "a table dataset",
+                "index_type": "depmap_model",
+                "data_type": "User upload",
+                "file_ids": bad_list_strings_file_ids,
+                "dataset_md5": bad_list_strings_hash,
+                "is_transient": False,
+                "group_id": private_group["id"],
+                "dataset_metadata": {"yah": "nah"},
+                "columns_metadata": {
+                    "depmap_id": {"units": None, "col_type": "text"},
+                    "attr1": {"units": "some units", "col_type": "continuous"},
+                    "attr3": {"units": None, "col_type": "list_strings",},
+                },
+            },
+            headers=headers,
+        )
+        assert bad_list_strings_file_ids_dataset.status_code == 202
+        assert bad_list_strings_file_ids_dataset.json()["state"] == "FAILURE"
+
+    def _setup_types(self, client, admin_headers):
+        r_feature_metadata = client.post(
+            "/types/feature",
+            data={
+                "name": "gene",
+                "id_column": "entrez_id",
+                "annotation_type_mapping": json.dumps(
+                    {
+                        "annotation_type_mapping": {
+                            "label": "text",
+                            "attr2": "continuous",
+                            "entrez_id": "text",
+                        }
+                    }
+                ),
+                "taiga_id": "test-taiga.1",
+            },
+            files={
+                "metadata_file": (
+                    "feature_metadata.csv",
+                    factories.tabular_csv_data_file(
+                        cols=["label", "entrez_id", "attr2"],
+                        row_values=[["a", "A", 1.0], ["b", "B", 2.0]],
+                    ),
+                    "text/csv",
+                )
+            },
+            headers=admin_headers,
+        )
+        assert r_feature_metadata.status_code == 200, r_feature_metadata.content
+        r_sample_metadata = client.post(
+            "/types/sample",
+            data={
+                "name": "sample",
+                "id_column": "sample_id",
+                "annotation_type_mapping": json.dumps(
+                    {
+                        "annotation_type_mapping": {
+                            "attr1": "text",
+                            "attr2": "continuous",
+                            "sample_id": "text",
+                            "label": "text",
+                        }
+                    }
+                ),
+                "taiga_id": None,
+            },
+            files={
+                "metadata_file": (
+                    "sample_metadata.csv",
+                    factories.tabular_csv_data_file(
+                        cols=["attr1", "sample_id", "attr2", "label"],
+                        row_values=[
+                            ["a", "ACH-1", 1.0, "cell line 1"],
+                            ["b", "ACH-2", 2.0, "cell line 2"],
+                        ],
+                    ),
+                    "text/csv",
+                )
+            },
+            headers=admin_headers,
+        )
+        assert r_sample_metadata.status_code == 200, r_sample_metadata.content
+
+    def _upload_file(self, client, file):
+        file_ids = []
+        chunk = file.readline()
+        hasher = hashlib.md5(chunk)
+        while chunk:
+            response = client.post(
+                "/uploads/file", files={"file": ("filename", chunk, "text/csv")},
+            )
+            assert response.status_code == 200
+            file_ids.append(response.json()["file_id"])
+            chunk = file.readline()
+            hasher.update(chunk)
+
+        return file_ids, hasher.hexdigest()
+
+    def test_add_matrix_dataset_with_dim_type_annotations(
+        self,
+        client: TestClient,
+        minimal_db,
+        private_group: Dict,
+        settings,
+        mock_celery,
+    ):
+        admin_headers = {"X-Forwarded-Email": settings.admin_users[0]}
+        self._setup_types(client, admin_headers)
+
+        file = factories.continuous_matrix_csv_file()
+        file_ids, expected_md5 = self._upload_file(client, file)
+
+        # If no metadata given, validate against feature type and sample type metadata. If not found, provide warning
+        r_matrix_dataset_no_metadata_for_feature = client.post(
+            "/dataset-v2/",
+            json={
+                "format": "matrix",
+                "name": "a dataset",
+                "units": "a unit",
+                "feature_type": "gene",  # Metadata doesn't have feature 'C'
+                "sample_type": "sample",
+                "data_type": "User upload",
+                "file_ids": file_ids,
+                "dataset_md5": expected_md5,
+                "is_transient": False,
+                "group_id": private_group["id"],
+                "value_type": "continuous",
+                "allowed_values": None,
+            },
+            headers=admin_headers,
+        )
+        # Has warning
+        assert_status_ok(r_matrix_dataset_no_metadata_for_feature)
+        assert r_matrix_dataset_no_metadata_for_feature.json()["result"][
+            "unknownIDs"
+        ] == [{"dimensionType": "gene", "axis": "feature", "IDs": ["C"]}]
+
+    def test_add_tabular_dataset_with_dim_type_annotations(
+        self,
+        client: TestClient,
+        minimal_db,
+        private_group: Dict,
+        settings,
+        mock_celery,
+    ):
+        admin_headers = {"X-Forwarded-Email": settings.admin_users[0]}
+        self._setup_types(client, admin_headers)
+
+        # Test tabular dataset
+        tabular_data_file = factories.tabular_csv_data_file(
+            cols=["sample_id", "attr1", "attr2", "attr3"],
+            row_values=[["ACH-1", 1.0, 0, '["a"]'], ["ACH-3", 2.0, 1, '["d", "c"]']],
+        )
+
+        tabular_file_ids, expected_md5 = self._upload_file(client, tabular_data_file)
+
+        tabular_dataset = client.post(
+            "/dataset-v2/",
+            json={
+                "format": "tabular",
+                "name": "a table dataset",
+                "index_type": "sample",
+                "data_type": "User upload",
+                "file_ids": tabular_file_ids,
+                "dataset_md5": expected_md5,
+                "is_transient": False,
+                "group_id": private_group["id"],
+                "dataset_metadata": {"yah": "nah"},
+                "columns_metadata": {
+                    "sample_id": {
+                        "units": None,
+                        "col_type": "text",
+                        "references": "sample",
+                    },
+                    "attr1": {"units": "some units", "col_type": "continuous"},
+                    "attr2": {"units": None, "col_type": "binary"},
+                    "attr3": {"units": None, "col_type": "list_strings"},
+                },
+            },
+            headers=admin_headers,
+        )
+        assert_status_ok(tabular_dataset)
+        assert tabular_dataset.status_code == 202
+
+    def test_add_tabular_dataset_with_missing_vals(
+        self,
+        client: TestClient,
+        minimal_db,
+        private_group: Dict,
+        settings,
+        mock_celery,
+    ):
+        admin_headers = {"X-Forwarded-Email": settings.admin_users[0]}
+        self._setup_types(client, admin_headers)
+
+        # Test tabular dataset
+        tabular_data_file = factories.tabular_csv_data_file(
+            cols=["sample_id", "attr1", "attr2", "attr3", "attr4", "attr5"],
+            row_values=[
+                ["ACH-1", 1.0, 0, np.NaN, np.NaN, "cat1"],
+                ["ACH-3", np.NaN, np.NaN, '["d", "c"]', "oops", np.NaN],
+            ],
+        )
+
+        tabular_file_ids, expected_md5 = self._upload_file(client, tabular_data_file)
+
+        tabular_dataset = client.post(
+            "/dataset-v2/",
+            json={
+                "format": "tabular",
+                "name": "a table dataset",
+                "index_type": "sample",
+                "data_type": "User upload",
+                "file_ids": tabular_file_ids,
+                "dataset_md5": expected_md5,
+                "is_transient": False,
+                "group_id": private_group["id"],
+                "dataset_metadata": {"yah": "nah"},
+                "columns_metadata": {
+                    "sample_id": {
+                        "units": None,
+                        "col_type": "text",
+                        "references": "sample",
+                    },
+                    "attr1": {"units": "some units", "col_type": "continuous"},
+                    "attr2": {"units": None, "col_type": "binary"},
+                    "attr3": {"units": None, "col_type": "list_strings"},
+                    "attr4": {"units": None, "col_type": "text"},
+                    "attr5": {"units": None, "col_type": "categorical"},
+                },
+            },
+            headers=admin_headers,
+        )
+        assert_status_ok(tabular_dataset)
+        dataset_id = tabular_dataset.json()["result"]["datasetId"]
+        ach3_vals = (
+            minimal_db.query(TabularCell)
+            .join(TabularColumn, TabularColumn.id == TabularCell.tabular_column_id)
+            .join(TabularDataset, TabularDataset.id == TabularColumn.dataset_id)
+            .filter(
+                and_(
+                    TabularDataset.id == dataset_id,
+                    TabularCell.dimension_given_id == "ACH-3",
+                )
+            )
+            .all()
+        )
+        assert len(ach3_vals) == 6
+        ach3_missing_bool_val = (
+            minimal_db.query(TabularCell)
+            .join(TabularColumn, TabularColumn.id == TabularCell.tabular_column_id)
+            .join(TabularDataset, TabularDataset.id == TabularColumn.dataset_id)
+            .filter(
+                and_(
+                    TabularDataset.id == dataset_id,
+                    TabularCell.dimension_given_id == "ACH-3",
+                    TabularColumn.given_id == "attr2",
+                )
+            )
+            .one()
+        )
+        assert ach3_missing_bool_val.value == None
+        ach3_missing_cont_val = (
+            minimal_db.query(TabularCell)
+            .join(TabularColumn, TabularColumn.id == TabularCell.tabular_column_id)
+            .join(TabularDataset, TabularDataset.id == TabularColumn.dataset_id)
+            .filter(
+                and_(
+                    TabularDataset.id == dataset_id,
+                    TabularCell.dimension_given_id == "ACH-3",
+                    TabularColumn.given_id == "attr1",
+                )
+            )
+            .one()
+        )
+        assert ach3_missing_cont_val.value == None
+        ach3_nonmissing_val = (
+            minimal_db.query(TabularCell)
+            .join(TabularColumn, TabularColumn.id == TabularCell.tabular_column_id)
+            .join(TabularDataset, TabularDataset.id == TabularColumn.dataset_id)
+            .filter(
+                and_(
+                    TabularDataset.id == dataset_id,
+                    TabularCell.dimension_given_id == "ACH-3",
+                    TabularColumn.given_id == "attr3",
+                )
+            )
+            .one()
+        )
+        assert ach3_nonmissing_val.value == '["d", "c"]'
+
+        subsetted_by_id_res = client.post(
+            f"/datasets/tabular/{dataset_id}",
+            json={
+                "indices": ["ACH-1"],
+                "identifier": "id",
+                "columns": ["attr2", "attr3", "attr4", "attr5"],
+            },
+            headers=admin_headers,
+        )
+        assert subsetted_by_id_res.status_code == 200
+        expected_res = {
+            "attr2": {"ACH-1": "False"},
+            "attr3": {"ACH-1": None},
+            "attr4": {"ACH-1": None},
+            "attr5": {"ACH-1": "cat1"},
+        }
+        assert subsetted_by_id_res.json() == expected_res
+        # subsetted_by_label_res = client.post(
+        #     f"/datasets/tabular/{dataset_id}",
+        #     json={
+        #         "indices": ["cell line 1"],
+        #         "identifier": "label",
+        #         "columns": ["attr4", "attr5"],
+        #     },
+        #     headers=admin_headers,
+        # )
+        # expected_res = {'attr4': {'cell line 1': None}, 'attr5': {'cell line 1': 'cat1'}}
+        # assert subsetted_by_label_res.json() == expected_res
+
+    @pytest.mark.parametrize(
+        "invalid_list_strings",
+        [
+            ('["d", "c"]', '["d", None]'),
+            ('["d", "c"]', ' ["d", "c"]'),
+            ('["d", "c"]', '["d", "c"] '),
+            (np.NaN, False),
+        ],
+    )
+    def test_add_tabular_dataset_with_invalid_list_str_vals(
+        self,
+        client: TestClient,
+        minimal_db,
+        private_group: Dict,
+        settings,
+        mock_celery,
+        invalid_list_strings,
+    ):
+        admin_headers = {"X-Forwarded-Email": settings.admin_users[0]}
+        self._setup_types(client, admin_headers)
+
+        # Test tabular dataset
+        tabular_data_file = factories.tabular_csv_data_file(
+            cols=["sample_id", "attr1", "attr2", "attr3", "attr4", "attr5"],
+            row_values=[
+                ["ACH-1", 1.0, 0, invalid_list_strings[0], np.NaN, "cat1"],
+                ["ACH-3", np.NaN, np.NaN, invalid_list_strings[1], "oops", np.NaN],
+            ],
+        )
+
+        tabular_file_ids, expected_md5 = self._upload_file(client, tabular_data_file)
+
+        tabular_dataset = client.post(
+            "/dataset-v2/",
+            json={
+                "format": "tabular",
+                "name": "a table dataset",
+                "index_type": "sample",
+                "data_type": "User upload",
+                "file_ids": tabular_file_ids,
+                "dataset_md5": expected_md5,
+                "is_transient": False,
+                "group_id": private_group["id"],
+                "dataset_metadata": {"yah": "nah"},
+                "columns_metadata": {
+                    "sample_id": {
+                        "units": None,
+                        "col_type": "text",
+                        "references": "sample",
+                    },
+                    "attr1": {"units": "some units", "col_type": "continuous"},
+                    "attr2": {"units": None, "col_type": "binary"},
+                    "attr3": {"units": None, "col_type": "list_strings"},
+                    "attr4": {"units": None, "col_type": "text"},
+                    "attr5": {"units": None, "col_type": "categorical"},
+                },
+            },
+            headers=admin_headers,
+        )
+        assert tabular_dataset.status_code == 400
+
+
+import json
+import pandas as pd
+from breadbox.models.dataset import AnnotationType
+from fastapi.testclient import TestClient
+from breadbox.schemas.dataset import ColumnMetadata
+from breadbox.crud.access_control import PUBLIC_GROUP_ID
+from tests import factories
+
+
+def test_end_to_end_with_mismatched_metadata(
+    client: TestClient, minimal_db, settings, mock_celery
+):
+    # create a matrix dataset with new feature and sample metadata
+    # but the feature metadata and sample metadata don't perfectly match
+    # matrix. Make sure fetching data gracefully handles these cases.
+    db = minimal_db
+    admin_headers = {"X-Forwarded-Email": settings.admin_users[0]}
+
+    # first create metadata. Using the api instead of factory methods because
+    # this is intended as an integration test, verifying that the whole flow works
+    # appropriately.
+    def create_dim_type(axis):
+        type_name = f"{axis}_name"
+        id_column = f"{axis}_id"
+        prefix = axis[0].upper()
+
+        dim_type_fields = {
+            "name": type_name,
+            "axis": axis,
+            "id_column": id_column,
+        }
+        response = client.post(
+            "/types/dimensions", json=dim_type_fields, headers=admin_headers,
+        )
+        assert_status_ok(response)
+
+        # now add a metadata table
+        # now, update the metadata
+        new_metadata = factories.tabular_dataset(
+            db,
+            settings,
+            columns_metadata={
+                "label": ColumnMetadata(units=None, col_type=AnnotationType.text),
+                id_column: ColumnMetadata(units=None, col_type=AnnotationType.text),
+            },
+            index_type_name=type_name,
+            data_df=pd.DataFrame(
+                {
+                    id_column: [f"{prefix}ID-1", f"{prefix}ID-2", f"{prefix}ID-3",],
+                    "label": [f"{prefix}L-1", f"{prefix}L-2", f"{prefix}L-3"],
+                }
+            ),
+        )
+
+        response = client.patch(
+            f"/types/dimensions/{type_name}",
+            json=(
+                {
+                    "metadata_dataset_id": new_metadata.id,
+                    "properties_to_index": ["label"],
+                }
+            ),
+            headers=admin_headers,
+        )
+        assert_status_ok(response)
+
+    # create a feature type and sample type with three records (SID-1, SID-2, SID-3, FID-1, FID-2, FID-3)
+    create_dim_type("feature")
+    create_dim_type("sample")
+
+    # now create a matrix indexed by those types, but has some IDs mismatch the dim type
+    matrix_df = pd.DataFrame(
+        {"FID-3": [1, 2, 3], "FID-1": [4, 5, 6], "FID-X": [7, 8, 9]},
+        index=["SID-3", "SID-X", "SID-1"],
+    )
+    file = io.BytesIO(matrix_df.to_csv().encode("utf8"))
+
+    file_ids, expected_md5 = file_ids_and_md5_hash(client, file)
+
+    matrix_dataset = client.post(
+        "/dataset-v2/",
+        json={
+            "format": "matrix",
+            "name": "a dataset",
+            "units": "a unit",
+            "feature_type": "feature_name",
+            "sample_type": "sample_name",
+            "data_type": "User upload",
+            "file_ids": file_ids,
+            "dataset_md5": expected_md5,
+            "is_transient": False,
+            "group_id": PUBLIC_GROUP_ID,
+            "value_type": "continuous",
+            "allowed_values": None,
+        },
+        headers=admin_headers,
+    )
+    assert_status_ok(matrix_dataset)
+    assert matrix_dataset.status_code == 202
+    result_json = matrix_dataset.json()
+    assert result_json["state"] == "SUCCESS"
+    dataset_id = result_json["result"]["datasetId"]
+    assert dataset_id is not None
+    assert sorted(result_json["result"]["unknownIDs"], key=lambda x: x["axis"]) == [
+        {"dimensionType": "feature_name", "axis": "feature", "IDs": ["FID-X"]},
+        {"dimensionType": "sample_name", "axis": "sample", "IDs": ["SID-X"]},
+    ]
+
+    # TODO: Delete after deprecated endpoint is deleted
+    result = client.post(
+        f"/datasets/data/{dataset_id}",
+        json={"features": ["FID-1", "FID-2", "FID-3"], "feature_identifier": "id",},
+    )
+    assert_status_ok(result)
+    # two points in this response that I'm not sure about:
+    # 1. since we requested FID-2, should this response include a FID-2 with no values?
+    # 2. this is returning samples (SID-X) which are not included in the metadata. Should breadbox filter these out before returning the result?
+    assert result.json() == {
+        "FID-1": {"SID-1": 6.0, "SID-X": 5.0, "SID-3": 4.0},
+        "FID-3": {"SID-1": 3.0, "SID-X": 2.0, "SID-3": 1.0},
+    }
+
+    result = client.post(
+        f"/datasets/matrix/{dataset_id}",
+        json={"features": ["FID-1", "FID-2", "FID-3"], "feature_identifier": "id",},
+    )
+    assert_status_ok(result)
+    # two points in this response that I'm not sure about:
+    # 1. since we requested FID-2, should this response include a FID-2 with no values?
+    # 2. this is returning samples (SID-X) which are not included in the metadata. Should breadbox filter these out before returning the result?
+    assert result.json() == {
+        "FID-1": {"SID-1": 6.0, "SID-X": 5.0, "SID-3": 4.0},
+        "FID-3": {"SID-1": 3.0, "SID-X": 2.0, "SID-3": 1.0},
+    }

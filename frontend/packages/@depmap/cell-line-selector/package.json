@@ -1,0 +1,64 @@
+{
+  "name": "@depmap/cell-line-selector",
+  "version": "1.0.0",
+  "main": "index.ts",
+  "license": "MIT",
+  "scripts": {
+    "test": "jest"
+  },
+  "dependencies": {
+    "@depmap/api": "1.0.0",
+    "@depmap/common-components": "1.0.0",
+    "@depmap/data-explorer-2": "1.0.0",
+    "@depmap/globals": "1.0.0",
+    "@depmap/interactive": "1.0.0",
+    "@depmap/long-table": "1.0.0",
+    "@depmap/types": "1.0.0",
+    "@depmap/utils": "1.0.0",
+    "immutability-helper": "^2.7.1",
+    "papaparse": "^4.6.0",
+    "react-bootstrap": "^0.32.3"
+  },
+  "devDependencies": {
+    "@types/immutability-helper": "2.0.15",
+    "@types/papaparse": "^4.5.2",
+    "@types/react-bootstrap": "^0.32.24"
+  },
+  "peerDependencies": {
+    "react": "^16.9.35",
+    "react-dom": "^16.9.8"
+  },
+  "jest": {
+    "moduleFileExtensions": [
+      "js",
+      "ts",
+      "tsx"
+    ],
+    "transform": {
+      "^.+\\.tsx?$": [
+        "ts-jest",
+        {
+          "diagnostics": false
+        }
+      ]
+    },
+    "transformIgnorePatterns": [
+      "node_modules/(?!depmap-shared)"
+    ],
+    "testRegex": ".*/__tests__/.*test.*\\.(ts|tsx|js)$",
+    "testEnvironment": "jsdom",
+    "setupFilesAfterEnv": [
+      "<rootDir>/jest-setup.ts"
+    ],
+    "setupFiles": [
+      "jest-localstorage-mock"
+    ],
+    "moduleNameMapper": {
+      "\\.(jpg|jpeg|png|gif|eot|otf|webp|svg|ttf|woff|woff2|mp4|webm|wav|mp3|m4a|aac|oga)$": "<rootDir>/__mocks__/fileMock.js",
+      "\\.(css|less|scss)$": "<rootDir>/__mocks__/styleMock.js",
+      "@depmap/(.*)/src/(.*)": "<rootDir>/../$1/src/$2",
+      "@depmap/(.*)": "<rootDir>/../$1",
+      "^src/(.*)": "<rootDir>/src/$1"
+    }
+  }
+}

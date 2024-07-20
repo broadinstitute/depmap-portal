@@ -1,0 +1,20 @@
+<html>
+<head>
+{#    <link rel="stylesheet" href="{{ url_for('static', filename='morpheus/morpheus-latest.min.css') }}">#}
+    <link rel="stylesheet" href="https://software.broadinstitute.org/morpheus/css/morpheus-latest.min.css">
+</head>
+<body>
+    <a href="{{ url_for('public.home') }}">Return to DepMap portal</a>
+    <div id="morphdiv"></div>
+
+{#          src="https://software.broadinstitute.org/morpheus/js/morpheus-external-latest.min.js"></script>#}
+{#  <script src="https://software.broadinstitute.org/morpheus/js/morpheus-latest.min.js"></script>#}
+    <script src="{{ url_for('static', filename='morpheus/morpheus-external-latest.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='morpheus/morpheus-latest.min.js') }}"></script>
+    <script>
+    $(function(){
+        new morpheus.HeatMap({el: $('#morphdiv'), dataset: {{ dataset_url_list | safe }} } );
+    });
+    </script>
+</body>
+</html>

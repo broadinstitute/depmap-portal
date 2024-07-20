@@ -1,0 +1,17 @@
+{% extends "nav_footer/layout.html" %}
+{% block body %}
+    {# wrap and main ids are used by css to get a footer which sticks to the bottom of the screen, following
+     instructions at https://stackoverflow.com/questions/10099422/flushing-footer-to-bottom-of-the-page-twitter-bootstrap #}
+    <div id="wrap">
+        {% include "nav_footer/nav.html" %}
+
+        {% block highlight %}{% endblock %}
+
+        <div id="main" class="{% block content_class %}container{% endblock content_class %}">
+            {% block content %}{% endblock %}
+        </div>
+    </div>
+
+    {% include "nav_footer/footer.html" %}
+
+{% endblock %}

@@ -1,0 +1,17 @@
+{% import "entities/celfie.html" as celfie_pg with context %}
+{% extends "nav_footer.html" %}
+{% set is_tab = false %}
+
+{% block page_title %}
+    Genomic Associations
+{% endblock %}
+
+{% block content_class %}{% endblock %}
+{% block content %}
+    
+    {{ celfie_pg.celfie_page("celfie_page", celfie, is_tab)}}
+
+{% endblock %}
+
+
+

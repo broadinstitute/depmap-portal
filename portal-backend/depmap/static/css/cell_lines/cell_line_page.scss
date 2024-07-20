@@ -1,0 +1,173 @@
+.nav-tabs > li > a {
+  margin-right: 2px;
+  line-height: 1.42857143;
+  border-top: 1px solid #bebebe;
+  border-radius: 4px 4px 0 0;
+  border-left: 1px solid #bebebe;
+  border-right: 1px solid #bebebe;
+}
+
+.nav-tabs > li.active > a,
+.nav-tabs > li.active > a:hover,
+.nav-tabs > li.active > a:focus {
+  color: #4479b2;
+  font-weight: bold;
+  cursor: default;
+  background-color: #fff;
+  border: 1px solid black;
+  border-bottom-color: transparent;
+}
+
+.nav-tabs > li > a:hover {
+  background-color: #0079b21a;
+}
+
+.nav-tabs {
+  border-bottom: 1px solid black;
+  padding-left: 8px;
+}
+
+.stacked-boxplot-tile {
+  .stacked-boxplot-tooltip {
+    position: relative;
+    top: -1px;
+    margin-left: 3px;
+
+    img {
+      width: 12px;
+      height: 12px;
+    }
+  }
+
+  .stacked-boxplot-svg-container {
+    // Prevent the svg from auto-scaling (to make sure the y-axis labels line up)
+    min-height: auto;
+    width: 250px;
+    margin-left: 100px;
+  }
+
+  .container_fluid .card_padding {
+    padding-top: 15px;
+  }
+
+  .stacked-boxplot-labels-container {
+    position: absolute;
+    padding-top: 2px;
+    padding-left: 15px;
+  }
+
+  .stacked-boxplot-plot {
+    padding-top: 10px;
+  }
+
+  .stacked-boxplot-download-container {
+    padding-top: 10px;
+  }
+
+  .boxplot-label {
+    max-width: 75px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+.datasets_tile {
+  .accordion_contents {
+    margin-left: 20px;
+  }
+
+  .depmap-accordion {
+    .accordion-header {
+      background-color: #fff;
+      border-bottom: 1px solid #aaa;
+
+      .accordion-title {
+        color: #337ab7;
+      }
+    }
+  }
+
+  .container_fluid .card_padding {
+    padding-bottom: 10px;
+  }
+}
+
+.oncogenic_alterations_tile {
+  .container_fluid .card_padding {
+    padding-bottom: 10px;
+  }
+
+  .center {
+    text-align: center;
+  }
+
+  .blue {
+    color: #0390fc;
+  }
+
+  .light_blue {
+    color: #97cef7;
+  }
+  .oncokb_logo {
+    width: 30%;
+    padding-left: 5px;
+  }
+}
+
+.metmap-tile {
+  .metmap-tooltip {
+    position: relative;
+    top: -1px;
+    margin-left: 1px;
+
+    img {
+      width: 12px;
+      height: 12px;
+    }
+  }
+
+  .metmap-table {
+    width: 100%;
+  }
+
+  .metmap-table td {
+    font-size: 12px;
+    padding: 2px 0;
+  }
+
+  .metmap-table th:nth-child(1),
+  td:nth-child(1) {
+    width: 25%;
+    font-weight: bold;
+  }
+
+  .metmap-table th:nth-child(2),
+  td:nth-child(2) {
+    width: 37.5%;
+  }
+
+  .metmap-table th:nth-child(3),
+  td:nth-child(3) {
+    width: 37.5%;
+    min-width: 100px;
+  }
+
+  .metmap-table-header {
+    border-bottom: 2px solid #b8b8b8;
+  }
+
+  .metmap-link-container {
+    margin-top: 50px;
+  }
+
+  .metmap-plot-svg {
+    width: 100%;
+    height: 100%;
+    max-height: 350px;
+  }
+
+  .container_fluid .card_padding {
+    padding-bottom: 10px;
+  }
+}

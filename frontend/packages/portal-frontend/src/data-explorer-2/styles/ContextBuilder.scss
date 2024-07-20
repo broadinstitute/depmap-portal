@@ -1,0 +1,208 @@
+.ContextBuilder {
+  :global .modal-lg {
+    width: 800px;
+  }
+
+  :global .modal-body {
+    padding: 20px 20px;
+  }
+}
+
+.contextNameInput {
+  margin-left: 10px;
+  min-width: 240px;
+
+  &.longName {
+    min-width: 659px;
+  }
+}
+
+.Expression {
+  padding: 20px 0;
+}
+
+.topLevelRule,
+.nestedGroup {
+  padding: 20px;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  background-color: #fafafa;
+}
+
+.groupExpr {
+  margin-top: 10px;
+
+  pre {
+    margin-top: 20px;
+  }
+}
+
+.groupSummary {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 15px;
+}
+
+.varSelect {
+  display: inline-block;
+  min-width: 200px;
+}
+
+.sliceLabelSelector {
+  & > div > span > div {
+    min-width: 200px;
+  }
+}
+
+.opSelect {
+  display: inline-block;
+  min-width: 100px;
+}
+
+.valueSelect {
+  display: inline-block;
+  min-width: 160px;
+}
+
+.numberInput {
+  width: 160px;
+  height: 38px;
+  margin: 0;
+}
+
+.invalidNumberInput {
+  border: 1px solid #a94442;
+}
+
+.listSelectContainer {
+  display: inline-block;
+  min-width: 160px;
+  max-width: 480px;
+  flex-grow: 1;
+  margin-right: 12px;
+}
+
+.invalidSelect {
+  & > div {
+    border: 1px solid #a94442;
+    box-shadow: none;
+
+    &:hover,
+    &:focus {
+      border: 1px solid #a94442;
+    }
+  }
+}
+
+.invalidEmptyExpression {
+  margin-left: 5px;
+  margin-top: 20px;
+  color: #a94442;
+}
+
+.addButton {
+  background-color: transparent;
+  border: none;
+  color: blue;
+  height: 30px;
+  padding-top: 5px;
+
+  &:disabled {
+    color: grey;
+  }
+
+  .topLevelRule > & {
+    margin-top: 10px;
+  }
+}
+
+.listInputHint {
+  color: #444;
+  padding: 15px 2px 5px 2px;
+}
+
+.mainGroup {
+  margin-top: 20px;
+}
+
+.mainExpr {
+  max-height: calc(100vh - 365px);
+  overflow: auto;
+}
+
+.comparisonExpr {
+  display: flex;
+
+  & > div:nth-child(1) {
+    display: flex;
+    flex-grow: 1;
+    flex-wrap: wrap;
+    max-width: 492px;
+    gap: 10px;
+    align-items: flex-end;
+  }
+
+  & > div:nth-child(2) {
+    flex-grow: 1;
+    display: flex;
+    justify-content: space-between;
+    align-self: flex-end;
+    height: 38px;
+  }
+}
+
+.subexprResult {
+  display: flex;
+  align-items: center;
+}
+
+.groupExprResult {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.groupExprResultSeparator {
+  margin-top: -11px;
+  min-width: 100px;
+  border-top: 2px solid #afafaf;
+}
+
+.groupExprResultValue {
+  display: flex;
+  gap: 4px;
+  margin-top: 8px;
+  justify-content: flex-end;
+  font-variant-numeric: tabular-nums;
+}
+
+.noMatchesError {
+  color: #a94442;
+  margin-right: 70px;
+}
+
+.footer {
+  margin-top: 15px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.CellLineSelectorModal {
+  :global .modal-dialog {
+    width: 85vw;
+  }
+
+  :global .modal-body {
+    padding-bottom: 0;
+  }
+}
+
+.cellLineContextName {
+  margin-bottom: 15px;
+}
+
+.downloadModalLabel {
+  margin-top: 20px;
+  margin-right: 20px;
+}

@@ -1,0 +1,84 @@
+@import "../shared/variables";
+
+footer {
+  //position: absolute;
+  //bottom: -50%;
+  //left: 0px;
+  width: 100%;
+  //height: $footer_height !important;
+  //margin-top: 45px;
+  //padding-top: 20px;
+  background-color: $depmap_primary;
+
+  p {
+    float: right;
+    margin-right: 25px;
+  }
+
+  ul {
+    list-style: none;
+
+    li {
+      float: left;
+      margin-left: 10px;
+    }
+  }
+
+  #navbar_broad {
+    width: 200px;
+  }
+
+  #copyright {
+    color: white;
+    font-size: 0.7em;
+  }
+
+  .footer_padding_bottom {
+    padding-bottom: 20px;
+  }
+
+  .footer_padding_top {
+    padding-top: 20px;
+  }
+
+  .footer_text_color {
+    color: white;
+  }
+
+  .footer_title {
+    font-size: 1em;
+    font-weight: 700;
+  }
+
+  .footer_links {
+    font-size: 0.8em;
+  }
+
+  .hr_footer {
+    margin: 0.2em 2em 0.5em 0;
+  }
+
+  /*links*/
+  a:link {
+    color: white;
+    text-decoration: none;
+  }
+
+  a:visited {
+    color: white;
+    text-decoration: none;
+  }
+
+  a:hover {
+    color: $depmap_popout;
+    text-decoration: none;
+  }
+
+  a:active {
+    color: white;
+    text-decoration: none;
+  }
+  .hotlink {
+    border-bottom: 1px solid $depmap_popout;
+  }
+}

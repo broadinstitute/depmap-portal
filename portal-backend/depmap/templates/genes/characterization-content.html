@@ -1,0 +1,19 @@
+{% import 'partials/partials.html' as partials %}
+{% import 'methylation/bubble_map.html' as bubble_map %}
+
+<div class="characterization-tab-content" id="{{ characterization.id }}">
+    {% if 'sublineage_plot' in characterization %}
+        {# box plot partial includes display_name so that it can be inline with the toolbar #}
+        {{ partials.sublineage_plot(characterization.display_name, characterization.sublineage_plot, "characterization-show-sublineage", "characterizationshowsublineageupdated") }}
+    {% else %}
+        <h2>{{ characterization.display_name }}</h2>
+    {% endif %}
+
+    {% if 'data_table' in characterization %}
+        {{ partials.wide_data_table(characterization.data_table) }}
+    {% endif %}
+
+    {% if 'bubble_map' in characterization %}
+        {{ bubble_map.bubble_map(characterization.bubble_map, gene_name) }}
+    {% endif %}
+</div>

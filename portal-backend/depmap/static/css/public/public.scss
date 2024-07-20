@@ -1,0 +1,129 @@
+@import "../shared/variables";
+
+@mixin important_small_title() {
+  font-size: 12px;
+  text-transform: uppercase;
+}
+
+@font-face {
+  font-family: "DIN OT";
+  src: url("./fonts/DinFonts/FF DIN OT 1/DINOT.otf") format("opentype"); // Depends on the output css file location
+}
+
+@font-face {
+  font-family: "DIN OT Bold";
+  src: url("./fonts/DinFonts/FF DIN OT 1/DINOT-Bold.otf") format("opentype"); // Depends on the output css file location
+}
+
+body {
+  min-height: 100%;
+  padding-top: 50px !important;
+}
+
+/*global search*/
+.gray {
+  color: gray;
+}
+
+.public-homepage-side-panel {
+  // this is a specific hack for the public home page
+  // we want to maintain the spacing of the right side panel in the normal view
+  // but we want to expand and reduce the padding on mobile view, so that the side panel fills the entire mobile screen
+  // the left, larger column, is currently hacked by double nesting of divs with the "row" class
+  //  ^ that's not great, but it's what we have
+  @media (max-width: $md_width) {
+    margin-right: -30px;
+    margin-left: -30px;
+  }
+}
+
+/*homepage image banner*/
+#main_homepage {
+  background-image: url("../img/public/homepage_bg_180h_4.svg"); // Depends on the output css file location
+  background-repeat: no-repeat;
+  background-position: center top;
+  background-size: cover;
+  min-height: 140px;
+}
+
+.banner_text {
+  color: white;
+  font-size: 28pt;
+  font-weight: 300;
+  line-height: 1.1;
+  padding: 2.5rem 0 0 9.5rem;
+  text-shadow: 1px 1px 0px rgba(0, 0, 0, 0.7);
+}
+
+/*
+This repetition of css selectors (link, hover, active, visited) is annoying, but works
+It's needed in edge cases like clicking and dragging, and visited
+I believe we are fighting with the user agent, and so need to specify more specific selectors.
+Despite defining a class, that doesn't seem sufficient to be more specific
+We are fighting two built-in things: color and text decoration (we apply a border-bottom instead)
+ */
+.hotlink,
+.announcements-container a {
+  color: black;
+  text-decoration: none;
+  border-bottom: 1px solid $depmap_link;
+}
+
+// skyros.scss works without specifying :focus, but public needs this
+.hotlink:focus,
+.announcements-container a:focus {
+  color: black;
+  text-decoration: none;
+}
+
+.hotlink:active,
+.announcements-container a:active {
+  color: black;
+  text-decoration: none;
+}
+
+.hotlink:visited,
+.announcements-container a:visited {
+  color: black;
+  text-decoration: none;
+}
+
+// this needs to be last, specifically at least after visited
+// so that visited but hovered still shows black
+.hotlink:hover,
+.announcements-container a:hover {
+  color: $depmap_link;
+  text-decoration: none;
+}
+
+h1 {
+  font-family: "Lato";
+  font-size: 30px;
+  font-weight: 600;
+}
+
+h2 {
+  font-family: lato;
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1.25;
+  margin-bottom: 6px;
+}
+
+ul.content-list {
+  list-style: none;
+  margin-left: 0;
+  margin-bottom: 0;
+  padding-left: 0em;
+  text-indent: 0em;
+}
+
+.linkbox {
+  background: #697caa;
+  color: white;
+  padding: 10px 20px 10px 20px;
+}
+
+hr {
+  border-top: 1px solid #c3c3c3;
+}

@@ -1,0 +1,8 @@
+// TODO: Get rid of :global and convert the corresponding component to CSS
+// Module format.
+:global {
+  .has-error {
+    //  mimics the color from react bootstrap forms.less, but allows us to apply it with just the has-error class
+    color: #a94442;
+  }
+}

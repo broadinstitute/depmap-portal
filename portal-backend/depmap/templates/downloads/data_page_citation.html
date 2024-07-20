@@ -1,0 +1,72 @@
+{% extends "nav_footer.html" %} {% block css %} {% assets filters="libsass",
+output="public/css/public.css", "css/public/public.scss",
+depends='css/shared/*.scss' %}
+<link rel="stylesheet" href="{{ ASSET_URL }}" />
+{% endassets %} {% endblock %} {% block content %}
+<div>
+  <div class="row">
+    <div class="col-md-12">
+      <h2>How do I use and cite DepMap data?</h2>
+      <br />
+      <div class="row">
+        <div class="col-md-6">
+          <div>
+            <div>
+              Data in the DepMap portal is available for the community to use.
+              The DepMap team does not need to be included as authors should you
+              seek to publish on the data, but we do ask that you use the
+              following citing instructions.
+            </div>
+            <br />
+            <div>
+              In addition to the relevant doi or paper, please include a
+              reference to the DepMap portal website in your
+              manuscript:<b>https://depmap.org/portal</b>.
+            </div>
+            <br />
+            <div>
+              We grant permission for reuse of all images and graphics produced
+              from the DepMap portal website.
+            </div>
+            <br />
+            <div>
+              DepMap releases data publicly independent of publication. We ask that instead of citing a publication, you cite the figshare for the data release you are using.
+            </div>
+            <br />
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div>
+            <b
+              >Current DepMap Release data, including CRISPR Screens, PRISM Drug
+              Screens, Copy Number, Mutation, Expression, and Fusions</b
+            ><br />
+            <i>
+              DepMap, Broad (2023). DepMap 23Q4 Public. Figshare+. Dataset.</i
+            >
+            https://doi.org/10.25452/figshare.plus.24667905.v2
+          </div>
+          <br />
+          <div>
+            <b>If you’d like to cite The DepMap project:</b><br />
+            Tsherniak A, Vazquez F, Montgomery PG, Weir BA, Kryukov G, Cowley
+            GS, Gill S, Harrington WF, Pantel S, Krill-Burger JM, Meyers RM, Ali
+            L, Goodale A, Lee Y, Jiang G, Hsiao J, Gerath WFJ, Howell S, Merkel
+            E, Ghandi M, Garraway LA, Root DE, Golub TR, Boehm JS, Hahn WC.
+            Defining a Cancer Dependency Map. Cell. 2017 Jul 27;170(3):564-576.
+          </div>
+          <br />
+          <div>
+            <b>Other datasets</b><br />
+            There are also other datasets available in the DepMap portal. You
+            can find the appropriate citation to use for each dataset in the
+            dropdown on the All Data Downloads page.
+          </div>
+        </div>
+      </div>
+      <br />
+    </div>
+  </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,159 @@
+version: "2"
+services:
+  depmap-web:
+    container_name: depmap-web
+    command:
+      [
+        "gunicorn",
+        "--timeout=600",
+        "-b",
+        "0.0.0.0:5000",
+        "--max-requests",
+        "1000",
+        "--max-requests-jitter",
+        "50",
+        "-w",
+        "4",
+        "autoapp:app",
+        "--access-logfile",
+        "-",
+      ]
+    image: depmap
+    environment:
+      - REDIS_HOST=depmap-redis
+      - GOOGLE_APPLICATION_CREDENTIALS=/auth/application_default_credentials.json
+      - DEPMAP_ENV=dev
+      - BREADBOX_PROXY_TARGET=http://breadbox:8000
+    ports:
+      - 127.0.0.1:5000:5000
+    networks:
+      - redis-net
+    depends_on:
+      - depmap-redis
+      - breadbox
+    working_dir: /work
+    volumes:
+      - ${PWD}:/work
+      - ${HOME}/.taiga:/home/depmap/.taiga
+      - ${PWD}/secrets:/secrets
+
+  depmap-worker:
+    container_name: depmap-worker
+    command: ["flask", "run_worker"]
+    image: depmap
+    environment:
+      - REDIS_HOST=depmap-redis
+      - GOOGLE_APPLICATION_CREDENTIALS=/auth/application_default_credentials.json
+      - DEPMAP_ENV=dev
+    networks:
+      - redis-net
+    depends_on:
+      - depmap-redis
+    working_dir: /work
+    volumes:
+      - ${PWD}:/work
+      - ${HOME}/.taiga:/home/depmap/.taiga
+      - ${PWD}/../ansible-configs:/ansible-configs
+
+  depmap-redis:
+    container_name: depmap-redis
+    image: redis:4.0.5-alpine
+    command:
+      [
+        "redis-server",
+        "--appendonly",
+        "no",
+        "--maxmemory",
+        "4gb",
+        "--maxmemory-policy",
+        "allkeys-lru",
+      ]
+    hostname: depmap-redis
+    networks:
+      - redis-net
+
+  breadbox:
+    container_name: breadbox
+    image: breadbox
+    environment:
+      - SQLALCHEMY_DATABASE_URL=sqlite:////data/sql_app.db
+      - FILESTORE_LOCATION=/data/app_datasets
+      - COMPUTE_RESULTS_LOCATION=/data/results
+      - ADMIN_USERS=["breadbox-admin@broadinstitute.org"]
+      - USE_DEPMAP_PROXY=False
+      - CELERY_BROKER_URL=redis://breadbox-redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://breadbox-redis:6379/0
+      - HOST_SCHEME_OVERRIDE=http:127.0.0.1:5000
+    depends_on:
+      - breadbox-redis
+      - breadbox-worker
+    command:
+      [
+        "uvicorn",
+        "app.main:app",
+        "--host",
+        "0.0.0.0",
+        "--reload",
+        "--reload-dir",
+        "app",
+        "--root-path",
+        "/breadbox",
+      ]
+    ports:
+      - 127.0.0.1:8000:8000
+    networks:
+      - redis-net
+    working_dir: /work # Uncomment this if using volume mappings that are uncommented below
+    volumes:
+      - ${PWD}/breadbox:/work
+      - ${PWD}/breadbox-client:/breadbox-client
+      - ${PWD}/breadbox-facade:/breadbox-facade
+      # Uncomment below only if you want to mount volume to repo data locations
+      # - ${PWD}/breadbox/sql_app.db:/data/sql_app.db
+      # - ${PWD}/breadbox/app_datasets:/data/app_datasets
+      # - ${PWD}/breadbox/result:/data/results
+
+  breadbox-redis:
+    container_name: breadbox-redis
+    image: redis:4.0.5-alpine
+    command:
+      [
+        "redis-server",
+        "--appendonly",
+        "no",
+        "--maxmemory",
+        "4gb",
+        "--maxmemory-policy",
+        "allkeys-lru",
+      ]
+    hostname: breadbox-redis-host
+    networks:
+      - redis-net
+
+  breadbox-worker:
+    container_name: breadbox-worker
+    command: ["python", "/install/breadbox/commands.py", "run_worker"]
+    image: breadbox
+    environment:
+      - REDIS_HOST=breadbox-redis
+      - CELERY_BROKER_URL=redis://breadbox-redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://breadbox-redis:6379/0
+      - SQLALCHEMY_DATABASE_URL=sqlite:////data/sql_app.db
+      - FILESTORE_LOCATION=/data/app_datasets
+      - COMPUTE_RESULTS_LOCATION=/data/results
+      - ADMIN_USERS=["breadbox-admin@broadinstitute.org"]
+      # - DEFAULT_USER=breadbox-admin@broadinstitute.org # if a proxy is not in place, this will need to be set manually
+      - USE_DEPMAP_PROXY=False
+    networks:
+      - redis-net
+    depends_on:
+      - breadbox-redis
+    volumes:
+      - ${PWD}/breadbox:/work
+      # Uncomment below only if you want to mount volume to repo data locations
+      # - ${PWD}/breadbox/sql_app.db:/data/sql_app.db
+      # - ${PWD}/breadbox/app_datasets:/data/app_datasets
+      # - ${PWD}/breadbox/result:/data/results
+
+networks:
+  redis-net:

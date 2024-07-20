@@ -1,0 +1,11 @@
+.card_container {
+  display: flex;
+  flex-direction: row;
+}
+
+.card_column {
+  display: flex;
+  flex-direction: column;
+  flex-basis: 0;
+  flex-grow: 1;
+}

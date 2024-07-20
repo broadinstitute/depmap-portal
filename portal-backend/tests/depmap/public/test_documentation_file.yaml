@@ -1,0 +1,28 @@
+sections:
+  - name: What is DepMap?
+    columns:
+      - subsections:
+          - name: ""
+            documents:
+              - text: DMC Portal Introduction 2020 Part 1 (26 mins)
+                links:
+                  - link_label: Video
+                    link: >-
+                      bucket:dmc-portal-files/DMC2020/DMC Portal Introduction
+                      Part 1.mp4
+      - subsections:
+          - name: ""
+            documents:
+              - text: Portal Walkthrough 2019 (24 mins)
+                links:
+                  - link_label: Video
+                    link: >-
+                      https://dmc.depmap.org/portal/download/api/download/dmc?file_name=dmc-resources%2Fdmc-portal-101.mp4
+      - subsections:
+          - name: ""
+            documents:
+              - text: User created DepMap tutorial (11 mins)
+                links:
+                  - link_label: Video
+                    link: >-
+                      https://youtu.be/1knIFBXY9g0

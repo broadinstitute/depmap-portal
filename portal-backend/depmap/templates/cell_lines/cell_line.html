@@ -1,0 +1,22 @@
+{% extends "nav_footer.html" %} {% block page_title %} {{ cell_line_display_name
+}} DepMap Cell Line Summary {% endblock %} {% block css %} {% assets
+filters="libsass", output="public/css/cell_line_page_v2.css",
+"css/cell_lines/cell_line_page.scss" %}
+<link rel="stylesheet" href="{{ ASSET_URL }}" />
+{% endassets %} {% assets filters="libsass",
+output="public/css/view_entity.css", "css/entities/view_entity.scss",
+depends=['css/entities/executive.scss', 'css/shared/*.scss'] %}
+<link rel="stylesheet" href="{{ ASSET_URL }}" />
+{% endassets %} {% endblock %} {% block content_class %}container-fluid{%
+endblock content_class %} {% block content %}
+<div id="react-cell-line-page-root"></div>
+{% endblock %} {% block js %}
+<script id="react-cell-line-page-data" type="application/json">
+  {
+    "strippedCellLineName": {{ stripped_cell_line_name|tojson|safe }},
+    "modelId": {{ model_id|tojson|safe }},
+    "hasMetMapData": {{ has_metmap_data|tojson|safe }}
+  }
+</script>
+<script src="{{ webpack_url('cellLine.js') }}"></script>
+{% endblock %}

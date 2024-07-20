@@ -1,0 +1,29 @@
+name: Build and push pipeline-run-docker image
+
+on:
+  push:
+    branches:
+      - "master"
+    paths:
+      - "pipeline/build-pipeline-docker-images/pipeline-run-docker/**"
+      - "pipeline/build-pipeline-docker-images/build.sh"
+      - ".github/workflows/build_pipeline_docker.yml"
+
+env:
+  DOCKER_REPO: us.gcr.io/broad-achilles/depmap-pipeline-run
+  DOCKER_TAG: ga-build-${{ github.run_number }}
+  DOCKERFILE_DIR: pipeline-run-docker
+
+jobs:
+  build-docker-image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Login to GCR
+        uses: docker/login-action@v2
+        with:
+          registry: us.gcr.io
+          username: _json_key
+          password: ${{ secrets.DEPMAP_DEPLOY_SVC_ACCT }}
+      - name: Build and push depmap pipeline docker image
+        run: cd pipeline/build-pipeline-docker-images && bash build.sh ${{ env.DOCKER_REPO }} ${{ env.DOCKER_TAG }} ${{ env.DOCKERFILE_DIR }}

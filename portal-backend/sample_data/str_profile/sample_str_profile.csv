@@ -1,0 +1,3 @@
+SampleReferenceNbr,Stripped Cell Line Name,Reg ID,Annotation,D3S1358,TH01,D21S11,D18S51,Penta E,D5S818,D13S317,D7S820,D16S539,CSF1PO,Penta D,vWA,D8S1179,TPOX,FGA,AMEL,Mouse
+UACC-62,UACC62,ACH-000425-01,STR matches public reference profile,15,"6, 9","28, 31",15,"5, 14","10, 12",12,"8, 11","9, 12","10, 11","11, 12","16, 17","10, 13","8, 11",23,X,NA
+WM-115,WM115,ACH-000304,Matches reference profile and same as WM-115 and WM-266-4; samples from the same patient,"15, 18","7, 9",29,"15, 17","5, 7",13,"12, 13",8,"11, 12",12,"10, 15","15, 17","13, 15","8, 11","21, 23",X,

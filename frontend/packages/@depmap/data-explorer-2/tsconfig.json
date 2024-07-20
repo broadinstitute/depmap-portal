@@ -1,0 +1,13 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "references": [
+    { "path": "../api" },
+    { "path": "../cell-line-selector" },
+    { "path": "../common-components" },
+    { "path": "../compute" },
+    { "path": "../data-slicer" },
+    { "path": "../downloads" },
+    { "path": "../globals" },
+    { "path": "../types" }
+  ]
+}

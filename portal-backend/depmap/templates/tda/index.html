@@ -1,0 +1,32 @@
+{% extends "full_page.html" %}
+
+{% block page_title %}
+    Target Discovery | DepMap Portal
+{% endblock %}
+
+{% block content_class %}{% endblock %}
+
+{% block css %}
+    {% assets
+      filters="libsass",
+      output="public/css/tda.css", "css/entities/executive.scss", "css/shared/*.scss"
+    %}
+        <link rel="stylesheet" href="{{ ASSET_URL }}">
+    {% endassets %}
+{% endblock %}
+
+{% block meta_description %}
+    Target Discovery Tool
+{% endblock %}
+
+{% block content %}
+    <div class='full-screen-div'>
+        {% include "nav_footer/nav.html" %}
+        <div id="react-tda-summary"></div>
+    </div>
+{% endblock %}
+
+{% block js %}
+    <script type="text/javascript">{% include "genes/partials/about.js" %}</script>
+    <script src="{{ webpack_url('tdaSummary.js') }}"></script>
+{% endblock %}

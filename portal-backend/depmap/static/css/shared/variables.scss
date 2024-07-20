@@ -1,0 +1,59 @@
+$footer_height: 120px;
+$xs_width: 640px;
+$sm_width: 768px;
+$md_width: 991px;
+$lg_width: 1200px;
+
+$link_blue: #337ab7;
+$link_blue_hover: #23527c;
+
+/*depmap*/
+$depmap_primary: #2b3b61;
+$depmap_popout: #a9529e;
+$depmap_link: #347bb6;
+
+/*skyros*/
+$skyros_primary: #e7e9ed;
+$skyros_secondary: #c0c7d9;
+$skyros_tertiary: #e8eaee;
+$skyros_popout: #000000;
+$skyros_link: #a8529d;
+
+/*dmc*/
+$dmc_primary: #e7e9ed;
+$dmc_secondary: #c0c7d9;
+$dmc_popout: #000000;
+
+/*depmap pillars*/
+$genetic_screens: #336699;
+$cellular_models: #cc6699;
+$drug_sensitivity: #669933;
+
+/*drug*/
+$repurp_color: $drug_sensitivity;
+$gdsc_color: #006600;
+$ctrp_color: #99cc66;
+$rep1m_color: #547335;
+$rep_all_single_pt_color: #55aa24;
+$prism_oncology_color: #99cc99;
+
+/*data aspects*/
+$allother: #aaaaaa;
+$crispr: #3584b5;
+$rnai: #532e8c;
+$expression: #7b8cb2;
+$copynumber: #cea3cb;
+
+$crispr_transparent_background: rgba(53, 132, 181, 0.5);
+$rnai_transparent_background: rgba(
+  83,
+  46,
+  140,
+  0.4
+); // slightly lighter, because the purple is slightly darker
+
+$hotspot: #f4220c;
+$damaging: #f4220c;
+$missense: #ffcc4d;
+$driver: #076075;
+$conserved: #2497aa;

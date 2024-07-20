@@ -1,0 +1,89 @@
+.step-container {
+  vertical-align: top;
+  width: 100%;
+}
+
+.card {
+  display: inline-block;
+  vertical-align: top;
+  padding: 20px;
+}
+
+.four-step {
+  width: 33%;
+}
+
+.three-step {
+  width: 50%;
+}
+
+.card-title {
+  background-color: #868acb;
+  color: white;
+  font-size: medium;
+  padding: 10px;
+}
+
+.card-text {
+  padding: 10px;
+}
+
+.cell-list {
+  overflow-y: scroll;
+  height: 100px;
+}
+
+.panel {
+  display: inline-block;
+  border: 1px black;
+  padding: 10px;
+  vertical-align: top;
+}
+
+html {
+  overflow-y: scroll;
+}
+
+#loader {
+  margin: 50px 0 0 50px;
+  border: 16px solid #f3f3f3;
+  border-radius: 50%;
+  border-top: 16px solid #3498db;
+  width: 120px;
+  height: 120px;
+  -webkit-animation: spin 2s linear infinite;
+  animation: spin 2s linear infinite;
+}
+
+#errored {
+  margin: 50px 0 0 50px;
+  border: 16px solid #f3f3f3;
+  border-radius: 50%;
+  border-top: 16px solid crimson;
+  width: 120px;
+  height: 120px;
+}
+
+@-webkit-keyframes spin {
+  0% {
+    -webkit-transform: rotate(0deg);
+  }
+  100% {
+    -webkit-transform: rotate(360deg);
+  }
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.selectedRow {
+  background-color: #e3e3e3 !important;
+}
+
+@import "../interactive/view_interactive.scss";

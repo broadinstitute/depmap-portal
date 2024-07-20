@@ -1,0 +1,36 @@
+[
+  {
+    "label": "Effect Size",
+    "groups": [
+      {
+        "label": "CRISPR",
+        "keys": [
+          "CRISPR_strong_depCL_count",
+          "CRISPR_min_gene_effect",
+          "CRISPR_min_gene_effect_zscore"
+        ]
+      },
+      {
+        "label": "RNAi",
+        "keys": [
+          "RNAi_strong_depCL_count",
+          "RNAi_min_gene_effect",
+          "RNAi_min_gene_effect_zscore"
+        ]
+      }
+    ]
+  },
+  {
+    "label": "Essentiality",
+    "groups": [
+      {
+        "label": "CRISPR",
+        "keys": ["CRISPR_PanDependency", "CRISPR_Mean", "CRISPR_depCL_frac"]
+      },
+      {
+        "label": "RNAi",
+        "keys": ["RNAi_PanDependency", "RNAi_Mean", "RNAi_depCL_frac"]
+      }
+    ]
+  }
+]

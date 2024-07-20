@@ -1,0 +1,14 @@
+{% extends "full_page.html" %} {% block page_title %} Context Explorer | DepMap
+Portal {% endblock %} {% block content_class %}{% endblock %} {% block css %} {%
+assets filters="libsass", output="public/css/context_explorer.css",
+"css/context_explorer/context_explorer.scss" %}
+<link rel="stylesheet" href="{{ ASSET_URL }}" />
+{% endassets %} {% endblock %} {% block meta_description %} Context Explorer
+tool {% endblock %} {% block content %}
+<div class="full-screen-div">
+  {% include "nav_footer/nav.html" %}
+  <div id="react-context-explorer"></div>
+</div>
+{% endblock %} {% block js %}
+<script src="{{ webpack_url('contextExplorer.js') }}"></script>
+{% endblock %}

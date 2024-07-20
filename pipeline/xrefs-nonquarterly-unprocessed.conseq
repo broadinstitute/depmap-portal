@@ -1,0 +1,122 @@
+let nonquarterly_dataset_id = "public-non-quarterly-processed-files-8e90.58"
+
+######### CTRP
+
+add-if-missing {
+  "type": "download_from_taiga",	          
+  "target_type": "dep-matrix",
+  "dataset_id": "{{ config.nonquarterly_dataset_id }}/ctd2drug-auc-matrix",
+  "orig_dataset_id": "ctrp-v2-9f98.1/v20._README",
+  "label": "CTRP_AUC",
+  "format": "hdf5"
+}
+
+add-if-missing {
+  "type": "download_aggregated_dose_from_taiga",
+  "target_type": "aggregated-dose-replicate-level",
+  "dataset_id": "{{ config.nonquarterly_dataset_id }}/ctd2drug-dosereps-vals",
+  "cell_lines_dataset_id": "{{ config.nonquarterly_dataset_id }}/ctd2drug-dosereps-rows",
+  "perturbations_dataset_id": "{{ config.nonquarterly_dataset_id }}/ctd2drug-dosereps-cols",
+  "orig_dataset_id": "ctrp-v2-9f98.1/v20._README",
+  "label": "CTRP_dose_replicate", 
+  "format": "csv"
+}
+
+add-if-missing {
+  "label": "ctd2_per_curve",
+  "orig_dataset_id": "ctrp-v2-9f98.1/v20._README",
+  "type": "download_from_taiga",
+  "target_type": "dose-response-curve-params",
+  "dataset_id": "{{ config.nonquarterly_dataset_id }}/ctd2drug-drc",
+  "orig_dataset_id": "ctrp-v2-9f98.1/v20._README",
+  "format": "csv"
+}
+
+######### GDSC1
+
+add-if-missing {
+  "type": "download_aggregated_dose_from_taiga",
+  "target_type": "aggregated-dose-replicate-level",
+  "label": "GDSC1_dose_replicate",
+  "orig_dataset_id": "gdsc-drug-set-export-658c.5/SANGER_VIABILTY", 
+  "dataset_id": "{{ config.nonquarterly_dataset_id }}/gdsc1drug-dosereps-vals",
+  "cell_lines_dataset_id": "{{ config.nonquarterly_dataset_id }}/gdsc1drug-dosereps-rows",
+  "perturbations_dataset_id": "{{ config.nonquarterly_dataset_id }}/gdsc1drug-dosereps-cols",
+}
+
+add-if-missing {
+  "type": "download_from_taiga",	          
+  "target_type": "dose-response-curve-params",
+  "dataset_id": "{{ config.nonquarterly_dataset_id }}/gdsc1drug-drc",
+  "orig_dataset_id": "gdsc-drug-set-export-658c.5/SANGER_DOSE_RESPONSE",
+  "label": "GDSC1",
+  "format": "csv"
+}
+
+add-if-missing {
+  "type": "download_from_taiga",	          
+  "target_type": "dep-matrix",
+  "dataset_id": "{{ config.nonquarterly_dataset_id }}/gdsc1drug-ic50-matrix",
+  "orig_dataset_id": "gdsc-drug-set-export-658c.5/SANGER_DOSE_RESPONSE",
+  "label": "GDSC1_IC50",
+  "format": "hdf5"
+}
+
+add-if-missing {
+  "type": "download_from_taiga",	          
+  "target_type": "dep-matrix",
+  "dataset_id": "{{ config.nonquarterly_dataset_id }}/gdsc1drug-auc-matrix",
+  "orig_dataset_id": "gdsc-drug-set-export-658c.5/SANGER_DOSE_RESPONSE",
+  "label": "GDSC1_AUC",
+  "format": "hdf5"
+}
+
+
+######### GDSC2
+
+add-if-missing {
+  "type": "download_aggregated_dose_from_taiga",
+  "target_type": "aggregated-dose-replicate-level",
+  "label": "GDSC2_dose_replicate",
+  "orig_dataset_id": "gdsc-drug-set-export-658c.5/SANGER_VIABILTY", 
+  "dataset_id": "{{ config.nonquarterly_dataset_id }}/gdsc2drug-dosereps-vals",
+  "cell_lines_dataset_id": "{{ config.nonquarterly_dataset_id }}/gdsc2drug-dosereps-rows",
+  "perturbations_dataset_id": "{{ config.nonquarterly_dataset_id }}/gdsc2drug-dosereps-cols"
+}
+
+
+add-if-missing {
+  "type": "download_from_taiga",	          
+  "target_type": "dose-response-curve-params",
+  "dataset_id": "{{ config.nonquarterly_dataset_id }}/gdsc2drug-drc",
+  "orig_dataset_id": "gdsc-drug-set-export-658c.5/SANGER_DOSE_RESPONSE",
+  "label": "GDSC2",
+  "format": "csv"
+}
+
+add-if-missing {
+  "type": "download_from_taiga",	          
+  "target_type": "dep-matrix",
+  "dataset_id": "{{ config.nonquarterly_dataset_id }}/gdsc2drug-auc-matrix",
+  "orig_dataset_id": "gdsc-drug-set-export-658c.5/SANGER_DOSE_RESPONSE",
+  "label": "GDSC2_AUC",
+  "format": "hdf5"
+}
+
+add-if-missing {
+  "type": "download_from_taiga",	          
+  "target_type": "dep-matrix",
+  "dataset_id": "{{ config.nonquarterly_dataset_id }}/gdsc2drug-ic50-matrix",
+  "orig_dataset_id": "gdsc-drug-set-export-658c.5/SANGER_DOSE_RESPONSE",
+  "label": "GDSC2_IC50",
+  "format": "hdf5"
+}
+
+add-if-missing {
+  "type": "download_from_taiga",	          
+  "target_type": "drug-metadata",
+  "dataset_id": "compound-metadata-de37.26/compound_metadata",
+  "name": "merged-drugs",
+  "label": "compound_metadata",
+  "format": "csv"
+}

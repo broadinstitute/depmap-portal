@@ -1,0 +1,160 @@
+.DimensionSelect {
+  & > div:not(:first-child) {
+    margin-top: 10px;
+  }
+}
+
+.AxisTypeToggle {
+  margin: 6px 10px;
+
+  label {
+    margin-top: 0;
+    color: #888;
+  }
+
+  button {
+    border-color: #999;
+  }
+}
+
+.unblockable {
+  display: block !important;
+}
+
+@mixin chip {
+  color: #fff;
+  border-width: 1px;
+  border-style: solid;
+  padding: 0 4px;
+  border-radius: 3px;
+  margin-right: 3px;
+}
+
+.defaultChip {
+  @include chip;
+  background-color: #2d8de1;
+  border-color: #1c76c4;
+}
+
+.noDefaultChip {
+  @include chip;
+  background-color: #d84848;
+  border-color: #8f1e1e;
+}
+
+.defaultDataset {
+  position: relative;
+  top: 2px;
+  margin-left: 5px;
+}
+
+.selectedDatasetLabel {
+  width: 162px;
+  min-height: 35px;
+  font-weight: bold;
+  font-size: 12px;
+  margin-top: 5px;
+  padding-left: 9px;
+  word-break: break-word;
+}
+
+:global #dimension-details-modal {
+  & ~ div[role="dialog"] {
+    // If a modal has a later sibling, hide its content (that one has taken
+    // priority)
+    &:has(~ div[role="dialog"]) {
+      .modal-content {
+        display: none;
+      }
+    }
+
+    // Now we're showing the only content of the later sibling but we also want
+    // to hide its backdrop. The idea is to reuse the first backdrop so there's
+    // no awkward transition where it fades out for a split second.
+    & ~ div[role="dialog"] {
+      .modal-backdrop {
+        display: none;
+      }
+    }
+  }
+}
+
+.DimensionDetailsModal {
+  display: flex;
+
+  & > div:first-child {
+    margin-top: 8px;
+  }
+
+  & > div:nth-child(2) {
+    display: flex;
+    flex-direction: row;
+    margin-left: 15px;
+    padding: 0 20px;
+    min-height: 300px;
+    height: 300px;
+    overflow: auto;
+  }
+}
+
+.emptyDatasetDetails {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  font-size: 20px;
+  font-weight: 300;
+}
+
+.detailsButton {
+  all: unset;
+  cursor: pointer;
+  color: #337ab7;
+  cursor: pointer;
+  margin-left: 50px;
+
+  &:hover,
+  &:focus {
+    color: #23527c;
+  }
+
+  &:focus-visible {
+    outline: 5px auto -webkit-focus-ring-color;
+    outline-offset: 3px;
+  }
+}
+
+.aggregation {
+  padding-left: 10px;
+
+  label {
+    font-size: 12px;
+    color: #888;
+  }
+
+  div > span > div:nth-child(2) {
+    width: 103px;
+  }
+}
+
+.ErrorBoundary {
+  button {
+    all: unset;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 160px;
+    margin-top: 15px;
+    color: #721c24;
+    background-color: #f8d7da;
+    border: 1px solid #f5c6cb;
+    border-radius: 8px;
+    cursor: pointer;
+
+    :global .glyphicon {
+      position: relative;
+      top: -0.5px;
+      left: -5px;
+    }
+  }
+}

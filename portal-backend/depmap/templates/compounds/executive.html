@@ -1,0 +1,39 @@
+{% import "entities/executive_cards.html" as cards with context %}
+{% block css %}
+    {% assets filters="libsass", output="public/css/accordion.css", "css/partials/accordion.scss" %}
+        <link rel="stylesheet" href="{{ ASSET_URL }}">
+    {% endassets %}
+{% endblock %}
+
+<div class="executive_container">
+    <div class="card_wrapper_sizer"></div>
+    {% if has_datasets %}
+        <div class="card_container" id="tile_container">
+            {% for group in order %}
+                <div class="card_column">
+                    {%  for tile_name, height in group %}
+                        {%  if tile_name == "predictability" %}
+                            {% if show_predictability_tab %}
+                                {{ cards.placeholder_card(tile_name+"_placeholder", height) }}
+                            {% endif %}
+                        {%  elif tile_name == "description" and about %}
+                            {{ cards.placeholder_card(tile_name+"_placeholder", height) }}                                                     
+                        {% else %}
+                                {{ cards.placeholder_card(tile_name+"_placeholder", height) }}
+                        {% endif %}
+                    {%  endfor %}
+                </div>
+            {%  endfor %}
+            </div>
+    {% endif %}
+    {% if about and not has_datasets %}
+        {{ cards.placeholder_card("description_placeholder", height) }}
+    {% endif %}
+
+</div>
+
+{% block js %}
+    <script type="text/javascript">
+        {% include "partials/accordion.js" %}
+    </script>
+{% endblock %}

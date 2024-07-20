@@ -1,0 +1,20 @@
+{
+  "references": [
+    { "path": "./packages/@depmap/api" },
+    { "path": "./packages/@depmap/cell-line-selector" },
+    { "path": "./packages/@depmap/common-components" },
+    { "path": "./packages/@depmap/compute" },
+    { "path": "./packages/@depmap/data-explorer-2" },
+    { "path": "./packages/@depmap/data-slicer" },
+    { "path": "./packages/@depmap/globals" },
+    { "path": "./packages/@depmap/interactive" },
+    { "path": "./packages/@depmap/long-table" },
+    { "path": "./packages/@depmap/plotly-wrapper" },
+    { "path": "./packages/@depmap/types" },
+    { "path": "./packages/@depmap/user-upload" },
+    { "path": "./packages/@depmap/utils" },
+    { "path": "./packages/@depmap/wide-table" },
+    { "path": "./packages/elara-frontend" },
+    { "path": "./packages/portal-frontend" }
+  ]
+}

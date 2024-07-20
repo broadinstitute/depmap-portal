@@ -1,0 +1,18 @@
+:global {
+  .icon {
+    height: 12px;
+    cursor: pointer;
+  }
+}
+
+.cellLineListsDropdown {
+  & > div > div > span,
+  & > div > div > span > div {
+    display: flex;
+    width: 100%;
+  }
+
+  :global .context-selector__control {
+    width: 100%;
+  }
+}

@@ -1,0 +1,26 @@
+{% extends "nav_footer.html" %} 
+{% block css %} 
+    {% assets filters="libsass",
+    output="public/css/public.css", "css/public/public.scss",
+    depends='css/shared/*.scss' %}
+    <link rel="stylesheet" href="{{ ASSET_URL }}" />
+    {% endassets %}
+
+{% endblock %} 
+{% set dmc_forum_warning_message = "The link you
+have clicked will take you to the public DepMap Forum.\\n\\nThe community DepMap
+forum is open to the world, and is not access controlled. Do not post any
+proprietary or non-public data on the forum."%} 
+
+{% block content %}
+<div id="react-resources-page"></div>
+{% endblock %}
+{% block js %}
+<script id="react-resources-page-data" type="application/json">
+    {
+        "rootCategory": {{ root_category|tojson|safe }}
+    }
+</script>
+<script src="{{ webpack_url('resourcesPage.js') }}"></script>
+
+{% endblock %}

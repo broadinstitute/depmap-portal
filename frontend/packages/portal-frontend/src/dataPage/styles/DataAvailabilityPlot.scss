@@ -1,0 +1,45 @@
+.dataAvailabilityPlotContainer {
+  width: 290px;
+  min-width: 290px;
+  margin-top: 2px;
+  border-bottom: 1px solid black;
+  padding-bottom: 0px;
+  margin-right: 8px;
+
+  @media (max-width: 910px) {
+    width: 200px;
+    min-width: 200px;
+  }
+  .datatypeSelector {
+    margin-left: 5px;
+    font-size: 16px;
+    min-width: 101px;
+
+    @media (max-width: 910px) {
+      font-size: 14px;
+    }
+
+    .groupContainer {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      .groupLabel {
+        grid-column: 1;
+        margin-right: 20px;
+        align-self: normal;
+        font-family: roboto;
+        font-size: 16px;
+        font-weight: 500;
+        margin-top: 5px;
+
+        @media (max-width: 910px) {
+          font-size: 14px;
+          margin-right: 10px;
+        }
+      }
+    }
+
+    .selector {
+      padding-bottom: 3px;
+    }
+  }
+}

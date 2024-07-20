@@ -1,0 +1,14 @@
+{% extends "nav_footer.html" %}
+
+{% block css %}
+    {% assets filters="libsass", output="public/css/public.css", "css/public/public.scss", depends='css/shared/*.scss' %}
+        <link rel="stylesheet" href="{{ ASSET_URL }}">
+    {% endassets %}
+    {% assets filters="libsass", output="public/css/sites.css", "css/public/sites.scss" %}
+        <link rel="stylesheet" href="{{ ASSET_URL }}">
+    {% endassets %}
+{% endblock %}
+
+{% block content %}
+    {{ content|markdown }}
+{% endblock %}

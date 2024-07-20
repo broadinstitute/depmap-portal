@@ -1,0 +1,32 @@
+let DSUB_JOB_ID_PATTERN="""(?:(?:Job: )|(?:Launched job-id: ))(\S+).*"""
+let S3_STAGING_URL = "gs://preprocessing-pipeline-outputs/conseq/depmap"
+
+exec-profile dsub-testimg {
+  "type": "async-delegate",
+  "label": "dsub-testimg",
+  "resources": { "slots": "5" },
+  "HELPER_PATH": "/opt/conseq/bin/conseq-helper",
+  "COMMAND_TEMPLATE": """dsub \
+      --project broad-achilles \
+      --zones "us-central*" \
+      --logging {{config.S3_STAGING_URL}}/conseq-log/{JOB} \
+      --image us.gcr.io/broad-achilles/testimg \
+      --env AWS_ACCESS_KEY_ID=invalid \
+      --env AWS_SECRET_ACCESS_KEY=invalid \
+      --min-ram 10 \
+      --command '{COMMAND}'""", # AWS keys needed for boto
+  "CHECK_COMMAND_TEMPLATE": """{{config.DSUB_PATH}}/dstat \
+      --project broad-achilles \
+      --jobs {job_id} \
+      --status 'RUNNING'""",
+  "IS_RUNNING_PATTERN": "Status", # Really anything because we are only
+                                  # listing running jobs. Just make sure
+                                  # there's some output
+  "TERMINATE_CMD_TEMPLATE": "{{config.DSUB_PATH}}/ddel --project broad-achilles --jobs {job_id}",
+  "JOB_ID_PATTERN": """{{ config.DSUB_JOB_ID_PATTERN }}"""
+}
+
+rule sample:
+    outputs: {"type": "complete", "filename": {"$filename": "out.txt"}}
+    executor: dsub-testimg
+    run "echo hello > out.txt"

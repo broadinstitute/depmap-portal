@@ -1,0 +1,7 @@
+{% for js_cdn in js_cdns %}
+    <script src="{{ js_cdn }}" type="text/javascript"></script>
+{% endfor %}
+
+{% for url in urls %}
+    <div><a href="{{ url }}">{{ url }}</a></div>
+{% endfor %}

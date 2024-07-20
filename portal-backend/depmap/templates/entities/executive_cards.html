@@ -1,0 +1,17 @@
+{% macro desktop_link() -%}
+<div class="card_wrapper">
+    <a href="{{ url_for('gene.view_gene', gene_symbol=gene_name, mobile='false') }}" class="hotlink">View in desktop mode</a>
+</div>
+{%- endmacro %}
+
+{% macro placeholder_card(placeholder_id, height) -%}
+<div id="{{ placeholder_id }}">
+    <div class="card_wrapper">
+        <div class="card_border">
+            <div class="placeholder_card" style="height: {{height}}px;">
+                Loading...
+            </div>
+        </div>
+    </div>
+</div>
+{%- endmacro %}

@@ -1,0 +1,11 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "references": [
+    { "path": "../cell-line-selector" },
+    { "path": "../compute" },
+    { "path": "../data-slicer" },
+    { "path": "../interactive" },
+    { "path": "../types" },
+    { "path": "../user-upload" }
+  ]
+}

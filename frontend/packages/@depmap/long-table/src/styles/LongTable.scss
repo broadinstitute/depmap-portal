@@ -1,0 +1,173 @@
+$depmap_link: #347bb6;
+
+// TODO: Get rid of all the :global's and convert the corresponding component
+// to CSS Module format.
+
+// this class is set on longTable when an onRowClick handler is set
+:global .longTableWithRowClick {
+  .BaseTable__body {
+    cursor: pointer;
+  }
+}
+
+:global .longTable {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+
+  .baseTableWrapper {
+    height: 100%;
+
+    .selectedRow {
+      // the specificity here by using the parent classes is required to override the basetable background
+      background: hsl(208, 50%, 85%);
+
+      &.BaseTable__row--hovered {
+        background: hsl(208, 50%, 80%);
+      }
+    }
+  }
+  .longTableButtons {
+    display: flex;
+    padding: 5px;
+    align-items: center;
+  }
+
+  .baseTableHeaderVis {
+    width: 100%;
+    height: 100%;
+  }
+
+  .stackedBarWrapper {
+    padding-top: 2.5px;
+    padding-bottom: 2.5px;
+    cursor: pointer;
+  }
+
+  .histogramWrapper {
+    padding-top: 1px;
+  }
+  .textFilterWrapper {
+    width: 100%;
+    height: 1.5em;
+  }
+  .filtered {
+    border: 3px solid black;
+  }
+
+  .sortIcon {
+    display: flex;
+    flex-direction: column;
+    color: lightgrey;
+    font-size: 12px;
+    margin-right: 5px;
+  }
+
+  .sortIcon:hover {
+    color: darkgray;
+  }
+
+  .sortArrowActive {
+    color: black;
+  }
+
+  .columnRemoveIcon {
+    font-size: 16px;
+    margin-right: 5px;
+    color: lightgrey;
+  }
+  .columnRemoveIcon:hover {
+    color: darkgray;
+  }
+
+  .columnFilterIcon {
+    font-size: 16px;
+    margin-right: 5px;
+    color: lightgrey;
+  }
+
+  .columnFilterIconActive {
+    font-size: 16px;
+    margin-right: 5px;
+    color: black;
+  }
+
+  .columnFilterIcon:hover {
+    color: darkgray;
+  }
+
+  .columnControlsContainer {
+    display: flex;
+    align-items: center;
+    margin-left: auto;
+    position: absolute;
+    background-color: #f8f8f8;
+  }
+
+  .BaseTable__header-cell:hover .columnControlsContainer {
+    background-color: #f3f3f3;
+  }
+
+  .floatRight {
+    right: 0;
+  }
+
+  .longTableHeader {
+    display: flex;
+    align-items: center;
+  }
+
+  .categoricalCell {
+    height: 80%;
+    display: flex;
+    align-items: center;
+    border-left: 10px solid;
+    padding-left: 5px;
+  }
+
+  .continuousCellWrapper {
+    position: relative;
+    height: 100%;
+    width: 100%;
+    display: flex;
+    align-items: center;
+  }
+
+  .continuousCellBar {
+    position: absolute;
+    z-index: 1;
+    height: 60%;
+  }
+  .continuousCellData {
+    position: absolute;
+    z-index: 2;
+    width: 100%;
+    display: flex;
+    justify-content: flex-end;
+  }
+}
+
+:global .long-table-with-column-dropdown {
+  height: 100%;
+
+  .long-table-container {
+    height: calc(100% - 35px);
+  }
+
+  .button-toolbar {
+    display: flex;
+    justify-content: flex-end;
+    margin-block-end: 8px;
+
+    .dropdown-menu {
+      height: 300px;
+      overflow-y: scroll;
+    }
+  }
+
+  .fake-checkbox {
+    margin-inline-start: -8px;
+    margin-inline-end: 4px;
+    color: $depmap_link;
+  }
+}

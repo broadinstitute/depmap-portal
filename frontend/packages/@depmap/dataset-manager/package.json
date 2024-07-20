@@ -1,0 +1,34 @@
+{
+  "name": "@depmap/dataset-manager",
+  "version": "1.0.0",
+  "main": "index.ts",
+  "license": "MIT",
+  "scripts": {
+    "test": "echo 'no tests to run'",
+    "storybook": "storybook dev",
+    "build-storybook": "storybook build"
+  },
+  "dependencies": {
+    "@depmap/annotation-type-selector": "1.0.0",
+    "@depmap/api": "1.0.0",
+    "@depmap/common-components": "1.0.0",
+    "@depmap/types": "1.0.0",
+    "@depmap/wide-table": "1.0.0",
+    "@rjsf/core": "^5.18.3",
+    "@rjsf/utils": "^5.18.3",
+    "@rjsf/validator-ajv8": "^5.18.3",
+    "papaparse": "^4.6.0",
+    "react-bootstrap": "^0.32.3",
+    "react-select": "^3.2.0",
+    "spark-md5": "^3.0.2"
+  },
+  "devDependencies": {
+    "@types/papaparse": "^4.5.2",
+    "@types/react-bootstrap": "^0.32.24",
+    "@types/react-select": "3.1.2",
+    "@types/spark-md5": "^3.0.4"
+  },
+  "peerDependencies": {
+    "react": "^16.9.35"
+  }
+}

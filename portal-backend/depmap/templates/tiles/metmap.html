@@ -1,0 +1,77 @@
+<article class="card_wrapper metmap-tile">
+    <div class="card_border container_fluid">
+        <h2 class="no_margin cardtitle_text">MetMap
+            <span
+                class="metmap-tooltip"
+                data-toggle="tooltip"
+                data-placement="bottom"
+                title="{{
+                    "Most deaths from cancer are explained by metastasis, and yet "
+                    "large-scale metastasis research has been impractical owing to the "
+                    "complexity of in vivo models. Here we introduce an in vivo barcoding "
+                    "strategy capable of determining the metastatic potential of human "
+                    "cancer cell lines in mouse xenografts at scale."
+                }}">
+                  <img src="{{ url_for('static',
+                  filename='img/predictability/info.svg') }}" alt="" />
+            </span>
+        </h2>
+        <div class="card_padding">
+            <div id="metmap-plot-{{ depmap_id }}"></div>
+            <table class="metmap-table">
+                <thead>
+                    <tr class="metmap-table-header">
+                        <th>Target</th>
+                        <th>Potential
+                            <span
+                                class="metmap-tooltip"
+                                data-toggle="tooltip"
+                                data-placement="top"
+                                title="{{
+                                    "DNA barcode abundance detected in each organ relative to the "
+                                    "pre-injected population. Data are presented on a log10 scale, range "
+                                    "from -4 ~ 4."
+                                }}">
+                                <img src="{{ url_for('static',
+                                filename='img/predictability/info.svg') }}" alt="" />
+                            </span>
+                        </th>
+                        <th>Penetrance
+                            <span
+                                class="metmap-tooltip"
+                                aria-hidden="true"
+                                data-toggle="tooltip"
+                                data-placement="top"
+                                title="{{
+                                    "Percentage of animals that the cell lines were detected via barcode "
+                                    "sequencing. Data ranges 0~1."
+                                 }}">
+                                <img src="{{ url_for('static',
+                                filename='img/predictability/info.svg') }}" alt="" />
+                            </span>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in metmap_data if row.target != "all5" %}
+                    <tr>
+                        <td>{{ row.target | capitalize }}</td>
+                        <td>{{ row.mean | round(2) }}</td>
+                        <td>{{ row.penetrance | round(2) }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <div class="metmap-link-container">
+                <a href="/metmap/vis-app/index.html">Explore MetMap 500 data</a>
+            </div>
+        </div>
+    </div>
+</article>
+{# HACK: We provide the data necessary to populate the petal plot as a script
+with type application/json. The metmap-petal-plot.js script then looks for this
+element, parses the json, and renders it as a plot into the div above with an
+id of "metmap-plot-" followed by the depmap_id. Note that won't work as
+expected if this tile appears more than once with the same depmap_id. Only the
+first such tile will be rendered properly. #}
+<script id="metmap-data-{{ depmap_id }}" type="application/json">{{ metmap_data|tojson|safe }}</script>

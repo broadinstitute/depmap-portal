@@ -1,0 +1,355 @@
+openapi: 3.0.1
+info:
+  title: Donut
+  version: 1.0.0
+tags:
+  - name: datasets
+  - name: groups
+paths:
+  /datasets:
+    get:
+      tags:
+        - datasets
+      summary: Get summary of all viewable datasets
+      operationId: getDatasets
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DatasetMetadata"
+    post:
+      tags:
+        - datasets
+      summary: Add a new dataset
+      operationId: addDataset
+      requestBody:
+        description: Dataset to be added
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  minLength: 1
+                  description: Display name of the dataset
+                units:
+                  type: string
+                  description: Units of the data
+                dataFile:
+                  type: string
+                  format: byte
+                  description: CSV with stable feature IDs as the column headers and sample IDs as the row headers
+                sampleType:
+                  type: string
+                  description: One of `cell_line`, `other`
+                sampleDataFile:
+                  type: string
+                  format: byte
+                  description: CSV with `id` and `label` dependent on `sampleType`,  described in the appendix.
+                FeatureType:
+                  type: string
+                  enum:
+                    [
+                      gene,
+                      compound,
+                      compound_experiment,
+                      compound_dose,
+                      antibody,
+                      protein,
+                      other,
+                    ]
+                  description: One of `gene`, `compound`, `compound_experiment`, `compound_dose`, `antibody`, `protein`, `other`. If not `other`, the `featureDataFile` property must be provided.
+                featureDataFile:
+                  type: string
+                  format: byte
+                  description: CSV with `id`, `label`, and additional columns based on `FeatureType`,  described in the appendix.
+                groupId:
+                  type: string
+                  format: uuid
+                  description: ID of the group that the dataset should be available to.
+              required:
+                - name
+                - units
+                - dataFile
+                - groupID
+        required: true
+      responses:
+        "200":
+          description: Dataset successfully added
+          content:
+            application/json:
+              schema:
+                type: string
+                format: uuid
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                type: string
+        "403":
+          description: User not allowed to add dataset to specified group
+          content:
+            application/json:
+              schema:
+                type: string
+      x-codegen-request-body-name: body
+  "/datasets/{datasetId}":
+    get:
+      tags:
+        - datasets
+      summary: Find dataset by ID
+      description: Returns metadata about a single dataset
+      operationId: getDatasetById
+      parameters:
+        - name: datasetId
+          in: path
+          description: ID of dataset to return
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DatasetMetadata"
+        "404":
+          description: Dataset not found
+    delete:
+      tags:
+        - datasets
+      summary: Deletes a dataset
+      operationId: deleteDataset
+      parameters:
+        - name: api_key
+          in: header
+          schema:
+            type: string
+        - name: datasetId
+          in: path
+          description: Pet id to delete
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "400":
+          description: Invalid ID supplied
+        "403":
+          description: User not allowed to delete daatset
+        "404":
+          description: Dataset not found
+  "/datasets/{datasetId}/samples":
+    get:
+      tags:
+        - datasets
+      summary: Get sample information for a dataset
+      operationId: getDatasetSamples
+      parameters:
+        - name: datasetId
+          in: path
+          description: ID of dataset
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  sampleType:
+                    type: string
+                    description: One of `cell_line`, `other`
+                  sampleInfo:
+                    type: object
+                    properties:
+                      id:
+                        type: array
+                        items:
+                          type: string
+                      label:
+                        type: array
+                        items:
+                          type: string
+        "404":
+          description: Dataset not found
+  "/datasets/{datasetId}/entities":
+    get:
+      tags:
+        - datasets
+      summary: Get feature information for a dataset
+      operationId: getDatasetEntities
+      parameters:
+        - name: datasetId
+          in: path
+          description: ID of dataset
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  FeatureType:
+                    type: string
+                    description: One of `gene`, `compound`, `compound_experiment`, `compound_dose`, `antibody`, `protein`, `other`. If not `other`, the `featureDataFile` property must be provided.
+                  featureInfo:
+                    type: object
+                    description: feature metadata defined in the `featureDataFile` parameter for uploading data.
+                    properties:
+                      id:
+                        type: array
+                        items:
+                          type: string
+                      label:
+                        type: array
+                        items:
+                          type: string
+        "404":
+          description: Dataset not found
+  "/datasets/{datasetId}/data":
+    get:
+      tags:
+        - datasets
+      summary: Get all dataset values
+      operationId: getDataset
+      parameters:
+        - name: datasetId
+          in: path
+          description: ID of dataset
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Dataset"
+        "404":
+          description: Dataset not found
+    post:
+      tags:
+        - datasets
+      summary: Get slices of dataset values
+      operationId: getDatasetSlice
+      parameters:
+        - name: datasetId
+          in: path
+          description: ID of dataset
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        description: Dataset to be added
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                featureIds:
+                  type: array
+                  description: List of stable IDs for entities (described in the Uploading data section in the appendix)
+                  items:
+                    type: string
+                sampleIds:
+                  type: array
+                  description: List of stable IDs for samples
+                  items:
+                    type: string
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Dataset"
+        "404":
+          description: Dataset not found
+  /groups:
+    get:
+      tags:
+        - groups
+      summary: Get all groups for user
+      operationId: getGroups
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AuthGroup"
+
+components:
+  schemas:
+    DatasetMetadata:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: ID for the dataset
+        name:
+          type: string
+          description: Display name of the dataset
+        units:
+          type: string
+          description: Units of the data
+        sampleType:
+          type: string
+          description: One of `cell_line`, `other`
+        FeatureType:
+          type: string
+          description: One of `gene`, `compound`, `compound_experiment`, `compound_dose`, `antibody`, `protein`, `other`. If not `other`, the `featureDataFile` property must be provided.
+    Dataset:
+      type: object
+      properties:
+        featureIds:
+          type: array
+          description: IDs of the entities in the dataset (described in the Uploading data section of the appendix)
+          items:
+            type: string
+        sampleIds:
+          type: array
+          description: IDs of the samples in the dataset
+          items:
+            type: string
+        data:
+          type: array
+          description: The data
+          items:
+            type: array
+            items:
+              type: number
+    AuthGroup:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: ID of the auth group
+        name:
+          type: string
+          description: Name of the auth group

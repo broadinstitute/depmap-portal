@@ -1,0 +1,29 @@
+// TODO: Get rid of :global and convert the corresponding component to CSS
+// Module format.
+:global {
+  .close-associations {
+    background: #ddd;
+    border-top-left-radius: 5px;
+    border-top-right-radius: 5px;
+  }
+
+  div.result-container .tab-content {
+    border-left: 1px solid #ddd;
+    border-right: 1px solid #ddd;
+    border-bottom: 1px solid #ddd;
+    padding: 10px;
+  }
+}
+
+.SaveContextButton {
+  padding-bottom: 5px;
+  font-size: 12px;
+
+  &:disabled {
+    background-color: #eee;
+
+    &:hover {
+      background-color: #eee;
+    }
+  }
+}

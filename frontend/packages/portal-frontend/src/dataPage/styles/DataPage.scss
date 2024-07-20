@@ -1,0 +1,309 @@
+.DataPage {
+  @import "./LearnAboutDepMapSection.scss";
+  @import "./MapSection.scss";
+  @import "./DataStructureSection.scss";
+  @import "./DataAvailabilityPlot.scss";
+  @import "./DataFilePanel.scss";
+  @import "./CurrentReleasePanel.scss";
+  @import "./OverviewPanel.scss";
+
+  margin-top: 30px;
+  padding-bottom: none;
+  height: calc(100vh - 50px);
+
+  .seePublic {
+    font-family: roboto;
+    font-weight: 400;
+    font-size: 20px;
+    padding-left: 60px;
+    margin-bottom: 40px;
+    color: #303030;
+  }
+  .dataPageLink {
+    text-decoration: underline !important;
+  }
+
+  .colParagraph {
+    font-family: roboto;
+    font-size: 16px;
+    color: #303030;
+    margin-bottom: 30px;
+  }
+
+  .dataFilePanelContainer {
+    max-width: 1200px;
+  }
+
+  .readmeButton {
+    color: #ffffff;
+    background-color: #6790f7;
+    border-color: #6790f7;
+    border-radius: 4px;
+    width: fit-content;
+  }
+
+  .header {
+    padding-left: 80px;
+    margin-bottom: 18px;
+
+    h1 {
+      color: #333333;
+      font-size: 32px;
+      font-weight: bold;
+      margin: 0 0 9px 0;
+    }
+
+    & > p {
+      font-size: 16px;
+    }
+  }
+
+  .AllDataTab {
+    margin-bottom: 18px;
+
+    h1 {
+      color: #333333;
+      font-size: 32px;
+      font-weight: bold;
+      margin: 0 0 9px 0;
+    }
+
+    & > p {
+      font-size: 16px;
+    }
+  }
+
+  .main {
+    margin-top: 35px;
+    width: 100%;
+  }
+  .releaseTabs {
+    font-size: 14px;
+    margin-top: 16px;
+    margin-bottom: 80px;
+    .releaseTab {
+      margin-left: 80px;
+      max-width: 1200px;
+      padding-right: 30px;
+    }
+  }
+
+  .TabPanel {
+    width: 100%;
+
+    h2 {
+      font-family: "roboto";
+      font-size: 32px;
+      font-weight: 500;
+      color: #303030;
+    }
+  }
+
+  .tabDescription {
+    max-width: 72ch;
+    font-family: "roboto";
+    font-size: 18px;
+    font-weight: 400;
+    color: #303030;
+  }
+
+  .Tabs {
+    font-size: 16px;
+    margin-top: 25px;
+  }
+
+  .TabPanels {
+    display: unset;
+    margin: 20px 0;
+  }
+
+  .TabList {
+    border-bottom: solid 1px gray;
+    padding-left: 80px;
+  }
+
+  .dataAvailabilityPlot {
+    display: flex;
+    flex-direction: row;
+  }
+
+  .collapsibleSection {
+    border-bottom: #000000 solid 1px;
+    border-top: #000000 solid 1px;
+    margin-right: 60px;
+    margin-left: 60px;
+  }
+
+  .collapsibleSection2 {
+    border-bottom: #000000 solid 1px;
+    margin-right: 60px;
+    margin-left: 60px;
+  }
+
+  .collapsibleSection3 {
+    border-bottom: #000000 solid 1px;
+    margin-right: 60px;
+    margin-left: 60px;
+  }
+
+  .plotHeader {
+    font-family: roboto;
+    font-size: 24px;
+    font-weight: 500;
+  }
+
+  .plotSubHeader {
+    font-family: roboto;
+    font-size: 16px;
+    margin-bottom: 20px;
+    max-width: 75ch;
+    font-weight: 500;
+  }
+
+  .plotFooter {
+    font-family: roboto;
+    font-size: 16px;
+    margin-top: 20px;
+  }
+
+  .customDownloads {
+    margin-right: 35px;
+    margin-left: 80px;
+    max-width: 1200px;
+  }
+
+  .fileVersionSelectorContainer {
+    display: flex;
+    flex-direction: row;
+  }
+
+  .selectFileSetLabel {
+    font-size: 16px;
+    font-weight: bold;
+    padding-left: 20px;
+    padding-left: 80px;
+  }
+
+  .versionSelector {
+    float: left;
+  }
+
+  .versionSelectorLabel {
+    margin-right: 5px;
+    padding-left: 37px;
+  }
+
+  .fileSetSelector {
+    float: left;
+    padding-left: 80px;
+    margin-right: 42px;
+    margin-bottom: 10px;
+    padding-bottom: 10px;
+  }
+
+  .allDataFilePanel {
+    padding-top: 1px;
+    margin-top: 20px;
+    padding-bottom: 80px;
+    padding-left: 80px;
+    padding-right: 30px;
+    background-color: rgba(105, 124, 170, 0.05);
+
+    h2 {
+      font-family: "roboto";
+      font-size: 28px;
+      font-weight: 500;
+    }
+
+    .releaseDescription {
+      overflow: auto;
+      font-size: 16px;
+      max-width: 72ch;
+    }
+  }
+
+  .accordionBodyContent {
+    background-color: #ffffff;
+    padding: 20px;
+    margin: 0;
+
+    hr {
+      margin: 0;
+      border-top: 1px solid #707070;
+      width: 98%;
+    }
+
+    .collapsiblePanelSubHeader {
+      font-family: lato;
+      font-weight: bold;
+      font-size: 16px;
+      margin-bottom: 5px;
+    }
+
+    .collapsiblePanelBodySection {
+      margin-bottom: 15px;
+    }
+
+    .releaseLabel {
+      font-family: lato;
+      font-weight: bold;
+      font-style: italic;
+      font-size: 16px;
+      color: #0a8d95;
+    }
+  }
+
+  .fileSearchContainer {
+    display: grid;
+    grid-template-columns: repeat(2, 350px);
+    align-items: center;
+
+    .fileSearch {
+      max-width: 344px;
+      grid-column: 1;
+    }
+  }
+
+  .clearFilterButtonContainer {
+    grid-column: 2;
+
+    .clearFilterButton {
+      color: #6790f7;
+      border-color: #6790f7;
+      padding-top: 4px;
+      padding-bottom: 4px;
+    }
+  }
+
+  .allDataTabHeader {
+    padding-bottom: 2px;
+
+    .allDataFileSearchSection {
+      margin-bottom: 10px;
+      max-width: 72ch;
+      padding-left: 80px;
+
+      .linkButton {
+        all: unset;
+        cursor: pointer;
+        color: #337ab7;
+        cursor: pointer;
+        text-decoration: underline;
+        margin-bottom: 10px;
+
+        &:active {
+          text-decoration: underline;
+        }
+
+        &:hover {
+          color: #23527c;
+        }
+
+        &:focus-visible {
+          outline: 5px auto -webkit-focus-ring-color;
+          outline-offset: 3px;
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "references": [
+    { "path": "../annotation-type-selector" },
+    { "path": "../api" },
+    { "path": "../common-components" },
+    { "path": "../types" },
+    { "path": "../wide-table" }
+  ]
+}

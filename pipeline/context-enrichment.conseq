@@ -1,0 +1,34 @@
+rule create_contexts: 
+    inputs: 
+        in={'type': 'cell_line_metadata'},
+        make_context_matrix=fileref('scripts/make_context_matrix.py'),
+        cleanup_script=fileref('scripts/cleanup_hdf5.py')
+    outputs: {
+      'type': 'context-matrix',
+      'hdf5_filename': {"$filename": "contexts.hdf5"},
+      'csv_filename': {"$filename": "out.csv"},
+      'dataset_id': '{{inputs.in.sample_info_id}}', # this is named dataset_id, because this key is recognized by the db load
+    },
+    { 'type': 'biomarker-matrix',
+      'source_dataset_id': '{{inputs.in.sample_info_id}}',
+      'category': 'context',
+      'filename': {'$filename': 'contexts.hdf5'}
+    }
+    run "python3 {{inputs.make_context_matrix.filename}} {{inputs.in.filename}} temp-out.hdf5 out.csv"
+    run "python3 {{inputs.cleanup_script.filename}} temp-out.hdf5 contexts.hdf5 --add-arxspan-to-cols -m {{inputs.in.filename}}"
+
+
+rule context_enrichment:
+    executor: dsub 
+    inputs: deps = all {'type': "dep-matrix", 'label' ~ '^(?!Repurposing_secondary_dose).*$'}, # negative lookahead to not run on secondary dose
+        contexts = {"type": "context-matrix"}, 
+        compute_enrichment=fileref('scripts/compute_enrichment.py', copy_to='compute_enrichment.py'),
+        hdf5_utils=fileref('scripts/hdf5_utils.py', copy_to='hdf5_utils.py')
+    outputs: {"type": "context-enrichment", 
+              "filename": {"$filename": "t-test-enrichment.csv"}}
+    run """python compute_enrichment.py \
+      --dep_datasets "[{% for dep in inputs.deps %}
+{\"filename\":\"{{dep.filename|quoted}}\",\"label\":\"{{dep.label|quoted}}\"}
+{% if not loop.last %},{% endif %}
+{% endfor %}]" \
+      --context_matrix {{ inputs.contexts.hdf5_filename | quoted }}"""

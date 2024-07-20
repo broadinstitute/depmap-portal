@@ -1,0 +1,130 @@
+<!doctype html>
+<!-- paulirish.com/2008/conditional-stylesheets-vs-css-hacks-answer-neither/ -->
+<!--[if lt IE 7]> <html class="no-js lt-ie9 lt-ie8 lt-ie7" lang="en"> <![endif]-->
+<!--[if IE 7]>    <html class="no-js lt-ie9 lt-ie8" lang="en"> <![endif]-->
+<!--[if IE 8]>    <html class="no-js lt-ie9" lang="en"> <![endif]-->
+<!--[if gt IE 8]><!-->
+<html class="no-js" lang="en"> <!--<![endif]-->
+<head>
+    <link rel='shortcut icon' type='image/x-icon' href="{{ url_for('static', filename='img/depmap.ico')}}" />
+
+    {% if config["GOOGLE_ANALYTICS_UA"] %}
+        <!-- Global site tag (gtag.js) - Google Analytics -->
+        <script async src="https://www.googletagmanager.com/gtag/js?id={{ config["GOOGLE_ANALYTICS_UA"] }}"></script>
+        <script>
+            window.dataLayer = window.dataLayer || [];
+
+            function gtag() {
+                dataLayer.push(arguments);
+            }
+
+            gtag('js', new Date());
+
+            gtag('config', '{{ config["GOOGLE_ANALYTICS_UA"] }}');
+        </script>
+    {% endif %}
+    <meta charset="utf-8">
+
+    <title>
+        {% block page_title %}
+            DepMap: The Cancer Dependency Map Project at Broad Institute
+        {% endblock %}
+    </title>
+    <meta name="description" content="{% block meta_description %}{% endblock %}">
+    <meta name="author" content="{% block meta_author %}{% endblock %}">
+
+    <!-- Mobile viewport optimized: h5bp.com/viewport -->
+    <meta name="viewport" content="width=device-width">
+
+    {% for css_cdn in css_cdns %}
+        <link rel="stylesheet" href="{{ css_cdn }}" type="text/css">
+    {% endfor %}
+
+    {% assets "css_bundle" %}
+        <link rel="stylesheet" href="{{ ASSET_URL }}">
+    {% endassets %}
+
+
+    <!-- Load DIN from local -->
+    <style type="text/css">
+
+    </style>
+
+    {% block css %}{% endblock %}
+
+    {% for pre_js_cdn in pre_js_cdns %}
+        <script src="{{ pre_js_cdn }}" type="text/javascript"></script>
+    {% endfor %}
+
+    {#  this goes after pre_js_cdns, because it depends on jquery  #}
+    {#  we should try to limit the dependencies of pre_ code to jquery  #}
+    {% assets "pre_js_bundle" %}
+        <script type="text/javascript" src="{{ ASSET_URL }}"></script>
+    {% endassets %}
+
+    {% import 'partials/partials.html' as partials %}
+
+</head>
+
+<body class="{% block body_class %}{% endblock %}">
+    {#  page content goes in this block  #}
+    {% block body %}{% endblock %}
+
+    <span id="cell_line_selector_modal"></span> {# anchor element to render the cell line selector modal onto #}
+    <div id="modal-container" class="modal-container"></div> {# used by ContextBuilder / ContextManager #}
+
+    <!-- Load JavaScript last, to not to block loading the actual elements in the page-->
+    {% for js_cdn in js_cdns %}
+        <script src="{{ js_cdn }}" type="text/javascript"></script>
+    {% endfor %}
+
+    {% assets "js_bundle" %}
+        <script type="text/javascript" src="{{ ASSET_URL }}"></script>
+    {% endassets %}
+
+    <script>
+        var d3 = Plotly.d3;
+        var isMobile = {% if is_mobile %}true{% else %}false{% endif %};
+        var enabledFeatures = {{ config.ENABLED_FEATURES.to_dict() |tojson}};
+        var depmapContactUrl = "{{ 'mailto:'+ config.CONTACT_EMAIL if config.ENV_TYPE == 'dmc' else config.FEEDBACK_FORM_URL }}";
+
+    </script>
+
+    <script type="text/javascript">
+        // set a global variable, used by other parts of the codebase
+        const depmapIsDevEnv = ("{{ config.ENV }}" == "dev");
+
+        {# we need to keep this until switching everything to asserts #}
+        class MockErrorHandler {
+            report(message) {
+                console.log('Reporting via mock errorHandler: ' + message);
+            }
+        }
+        errorHandler = new MockErrorHandler()
+    </script>
+
+    {# depends on js_bundle (common.js), wants the depmapIsDevEnv when calling assert #}
+    {% include 'react_frontend.html' %}
+
+    <!-- start js block, marker that templating was done correctly -->
+    {% block js %}{% endblock %}
+    <!-- end js block, marker that templating was done correctly -->
+
+    {% if config.get("GOOGLE_TAG_MANAGER_ID") %}
+        <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+        new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+        j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+        'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+        })(window,document,'script','dataLayer','{{ config.get("GOOGLE_TAG_MANAGER_ID") }}');</script>
+    {% endif %}
+
+    <!-- start toxic js block, marker that templating was done correctly -->
+    {% block toxic_js %}{% endblock %}
+    <!-- end toxic js block, marker that templating was done correctly -->
+</body>
+{% if config.get("GOOGLE_TAG_MANAGER_ID") %}
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id={{ config.get("GOOGLE_TAG_MANAGER_ID") }}" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+{% endif %}
+
+</html>
+

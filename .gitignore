@@ -1,0 +1,186 @@
+s3cache
+*~
+*.py[cod]
+
+# C extensions
+*.so
+
+# Packages
+*.egg
+*.egg-info
+build
+eggs
+parts
+bin
+var
+sdist
+develop-eggs
+.installed.cfg
+lib
+lib64
+
+# Installer logs
+pip-log.txt
+
+# Unit test / coverage reports
+.coverage
+.tox
+.pytest_cache
+.cache
+.mypy_cache
+nosetests.xml
+inputs.rds
+outputs.rds
+
+# Translations
+*.mo
+
+# Mr Developer
+.mr.developer.cfg
+.project
+.pydevproject
+
+# Complexity
+output/*.html
+output/*/index.html
+
+# Sphinx
+docs/_build
+
+.webassets-cache
+dist
+
+# Virtualenvs
+env/
+.idea/
+Procfile
+__pycache__/
+
+# Assets
+portal-backend/depmap/static/libs/
+portal-backend/depmap/static/css/*.css
+portal-backend/depmap/static/js/common.js
+portal-backend/depmap/static/js/pre_common.js
+
+# Webpack
+portal-backend/depmap/static/webpack
+npm-debug.log
+
+# Database
+dev.db
+
+# Mac filesystem
+.DS_Store
+
+# Screening quality
+portal-backend/sample_data/cell_line/avana-essential-genes.csv
+portal-backend/sample_data/cell_line/avana-nonessential-genes.csv
+portal-backend/sample_data/cell_line/avana-guide-qced-reduced.csv
+portal-backend/sample_data/cell_line/avana-guide-qced.csv
+portal-backend/sample_data/cell_line/avana-replicate-map.csv
+portal-backend/sample_data/cell_line/negative_avana-guide-qced.csv
+portal-backend/sample_data/cell_line/positive_avana-guide-qced.csv
+
+s3cache
+webapp_data*
+methylation.sqlite3
+
+# Pipeline
+pipeline/state
+pipeline/state-external
+pipeline/conseq-debug.log
+nonquarterly-pipeline/state
+
+webapp_data_prod_copy
+.ipynb_checkpoints
+scratch
+profiling
+pipeline/.gcloud
+build-db/.kubeque-cached-file-hashes
+
+travis/depmap-deploy-svc-acct.json
+sparkles/.kubeque-cached-file-hashes
+pipeline/conseq-debug.log
+
+# these change depending on when we run build-depmap-base, changes are just noise
+depmap-base/prod_copy.txt
+depmap-base/dev_copy.txt
+
+results
+depmap-base/requirements
+
+.RData
+.Rhistory
+yarn-error.log
+storybook-static
+node_modules
+documentation/cell_lines.png
+documentation/*.png
+*.orig
+pipeline/pipeline-run-docker/minicdsr.tar.gz
+pipeline/pipeline-run-docker/conseq-*.zip
+pipeline/tda-docker/conseq-*.zip
+pipeline/.sparkles-cache
+pipeline/DEADJOE
+pipeline/state
+
+# celery/redis
+dump.rdb
+
+# ignore files downloaded in release-scripts
+release-scripts/**/*.csv
+release-scripts/**/*.md
+release-scripts/**/depmap-gumbo-pull-sa.json
+# used for generating download entries
+metadata.csv
+pipeline/xrefs-internal-DO-NOT-EDIT-ME
+pipeline/xrefs-external-DO-NOT-EDIT-ME
+pipeline/xrefs-dmc-DO-NOT-EDIT-ME
+Untitled*.ipynb
+pipeline/test/state
+pipeline/ensemble_564f3670e5
+
+release-scripts/release-diff.cache.db
+.*
+!.importlinter
+backup
+
+!.github/
+hack-docker
+preprocess-logs
+pipeline/state-1
+pipeline/state-2
+pipeline/state-*
+hack-docker
+preprocess-logs
+sparkles.log
+release_schema.json
+release_schema.txt
+public-20q4.md
+pipeline/html
+nonquarterly-pipeline/html
+.env
+
+.vscode
+.*_cache
+
+# local breadbox db and dataset storage directory
+sql_app.db
+app_datasets/
+*.db-shm 
+*.db-wal
+
+# breadbox
+breadbox/install
+breadbox/breadbox/static
+breadbox/breadbox/result
+# generated file
+portal-backend/depmap/utilities/color_palette.py
+breadbox/app_datasets
+secrets
+
+# data access logs
+portal-backend/access.log
+
+# predictability output_data from local run
+output_data/

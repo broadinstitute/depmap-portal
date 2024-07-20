@@ -1,0 +1,92 @@
+.TargetDiscoveryTiles {
+  :global {
+    .dropdown {
+      width: 100%;
+      border: 2px solid #b8b8b8;
+      border-bottom: none;
+    }
+
+    .dropdown-toggle {
+      width: 100%;
+      text-align: left;
+      border: none;
+      border-radius: 0;
+    }
+
+    .dropdown-toggle span:nth-child(2) {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: scale(1.5, 2);
+    }
+
+    .dropdown-menu {
+      min-width: 100%;
+      max-width: 100%;
+    }
+
+    .loading-tile {
+      margin: 0;
+      border: none;
+    }
+  }
+}
+
+.dropdownTitle {
+  color: #aaa;
+  font-style: italic;
+}
+
+.header {
+  display: flex;
+  height: 53px;
+  justify-content: center;
+  align-items: center;
+}
+
+.tileSelector :global {
+  h2 {
+    display: none;
+  }
+
+  .card_padding {
+    padding: 0;
+  }
+
+  .card_border {
+    border: none;
+  }
+}
+
+.tile {
+  border: 2px solid #b8b8b8;
+  height: 100%;
+  max-height: calc(100vh - 275px);
+  overflow-y: auto;
+
+  :global {
+    .predictability-tile-table td:nth-child(2) {
+      max-width: 75px;
+      text-overflow: ellipsis;
+      overflow-x: hidden;
+    }
+
+    p.view-details-text {
+      margin: 0;
+    }
+
+    br:last-child {
+      display: none;
+    }
+  }
+}
+
+.emptyState {
+  display: flex;
+  color: #aaa;
+  justify-content: center;
+  align-items: center;
+  min-height: 150px;
+  text-align: center;
+  padding: 10px;
+}

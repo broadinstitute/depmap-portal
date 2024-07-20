@@ -1,0 +1,15 @@
+{% extends "nav_footer/layout.html" %} 
+
+{% block page_title %} LineUp Visualization Tool {% endblock %}
+
+{% block css %}
+<link href="https://unpkg.com/lineupjsx/build/LineUpJSx.css" rel="stylesheet" />
+{% endblock %} 
+
+{% block body %}
+    <div id="lineup-root"></div>
+{% endblock %}
+
+{% block js %}
+    <script src="{{ webpack_url('lineup.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,386 @@
+@import "../user_uploads/user_uploads";
+
+.dropdown-label {
+  margin-top: 5px;
+  margin-bottom: 5px;
+}
+
+.blk {
+  display: block;
+  padding: 9px;
+  margin: 0 0 10px;
+  line-height: 1.5;
+  color: #333;
+  word-break: break-all;
+  word-wrap: break-word;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.gray {
+  background-color: #f5f5f5;
+}
+
+.white {
+  background-color: white;
+}
+
+.scrollbox {
+  padding: 5px;
+  overflow: auto;
+  margin: auto;
+}
+
+.pad-sides {
+  padding-top: 15px;
+  padding-left: 15px;
+  padding-right: 15px;
+}
+
+/**
+Dropdown panel flexbox
+*/
+.flex {
+  display: flex;
+}
+
+.indent1 {
+  width: 97%;
+  margin-left: auto;
+}
+
+.indent2 {
+  width: 94%;
+  margin-left: auto;
+}
+
+.select-icon-row {
+  display: flex;
+  flex-wrap: nowrap;
+}
+
+.select-wrapper {
+  flex: 1; /* fill rest of space */
+}
+
+.dataset-link-button {
+  padding: 0 2px;
+}
+
+.dataset-link-icon {
+  font-size: 1em;
+  margin: 0 2px;
+}
+
+/**
+Overall page flexbox css
+http://jsfiddle.net/59trW/2/
+http://jsfiddle.net/t8jspw7x/
+http://jsfiddle.net/71ajoxv5/
+http://stackoverflow.com/questions/21126473/percentage-height-in-nested-flex-box
+http://stackoverflow.com/questions/31665315/flexbox-item-height-independent-of-its-content
+https://css-tricks.com/snippets/css/a-guide-to-flexbox/ responsiveness example starting with let's try something even better
+ */
+
+.entire-page {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: -moz-box;
+  display: -ms-flexbox;
+}
+
+.full-screen-body {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 5px;
+  right: 0;
+  overflow: hidden;
+}
+
+.full-screen-div {
+  height: 100%;
+  width: 100%;
+}
+
+.controlled-plot-container {
+  height: 100%;
+  width: 100%;
+  //padding-top: 50px;
+}
+
+.controlled-plot {
+  height: 100%;
+  width: 100%;
+
+  display: grid;
+  grid-template-columns: minmax(300px, 1fr) 2fr;
+  grid-template-rows: 50px minmax(200px, 1fr) minmax(200px, 1fr);
+}
+
+.controlled-plot-two-rows {
+  grid-template-rows: 0px minmax(200px, 1fr);
+}
+
+.controlled-plot-three-rows {
+  grid-template-rows: 0px minmax(200px, 1fr) minmax(200px, 1fr);
+}
+
+.header-pane {
+  /* Does not actually render the header, that is done by a floating div. This is
+     only here to reserve space for the header, as the grid layout is set up to take
+     up the entire page.
+  */
+  grid-column: 1 / 3;
+  grid-row: 1;
+}
+
+.controls-pane {
+  //background-color: orange;
+  grid-column: 1;
+  overflow: auto;
+  grid-row: 2;
+
+  .section {
+    display: flex;
+    justify-content: flex-end;
+    padding-top: 5px;
+    padding-bottom: 5px;
+  }
+
+  .label-wrapper {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: 700;
+  }
+
+  .dropdown-wrapper {
+    flex-basis: 80%;
+  }
+
+  .above-xy {
+    display: flex;
+    margin-top: 10px;
+
+    .above-xy-dataset {
+      margin-left: 20%;
+      flex: 1;
+      color: #aaa;
+    }
+
+    .above-xy-feature {
+      flex: 1;
+      color: #aaa;
+    }
+  }
+
+  .xy-wrapper {
+    display: flex;
+
+    .xy-section {
+      flex: 1;
+      padding: 5px;
+    }
+
+    .swapxy-wrapper {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding-top: 20px;
+
+      .swapxy-button {
+        padding: 20px 2px;
+      }
+    }
+  }
+
+  .button-wrapper {
+    flex-basis: 80%;
+
+    button {
+      margin-left: 5px;
+    }
+  }
+
+  .checkbox-wrapper {
+    padding: 5px 10px;
+  }
+
+  .show-labels-wrapper {
+    display: inline-block; // same line as button
+    vertical-align: middle; // align with button, which being part of btn-grp has vertical-align middle
+  }
+
+  hr {
+    margin-top: 0;
+    margin-bottom: 0;
+    margin-right: 5px;
+    margin-left: 5px;
+    border-top: 1px solid #000;
+  }
+
+  .page-link-span {
+    padding: 2px;
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    text-align: center;
+  }
+}
+
+.main-plot-pane {
+  //background-color: purple;
+  grid-column: 2;
+  grid-row: 2;
+
+  overflow: hidden;
+}
+
+.association-plot-pane {
+  //background-color: green;
+  grid-column: 1;
+  grid-row: 3;
+
+  overflow: hidden;
+}
+
+.association-table-pane {
+  //background-color: pink;
+  grid-column: 2;
+  grid-row: 3;
+
+  overflow: hidden;
+}
+
+.association-table-pane-full-width {
+  grid-column: 1/3;
+  grid-row: 3;
+
+  overflow: hidden;
+}
+
+.disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.custom-associations-modal {
+  .query-container {
+    display: flex;
+    flex-direction: column;
+
+    .radio {
+      margin-bottom: 5px;
+    }
+
+    .modal-row {
+      // need to avoid applying "row" class from third party libraries
+      display: flex;
+      flex-direction: row;
+      border-top: 1px solid black;
+    }
+    .modal-row:last-child {
+      border-bottom: 1px solid black;
+    }
+    .modal-column {
+      display: flex;
+      flex-basis: 0;
+      flex-grow: 1;
+      padding: 15px;
+      border-left: 1px solid black;
+    }
+    .modal-column:last-child {
+      border-right: 1px solid black;
+    }
+  }
+}
+
+@import "../shared/narrow_react_table";
+
+/* React table, cursor pointer for entire row */
+.association-table-container {
+  @include narrow-react-table;
+
+  .ReactTable .rt-th,
+  .ReactTable .rt-td {
+    cursor: pointer;
+  }
+}
+
+/*
+For custom cell line modal
+ */
+
+.custom_csv_example_table {
+  display: inline;
+  font-size: 12px;
+  td {
+    padding: 2px;
+    border: 1px solid #ddd;
+  }
+}
+
+#loader {
+  margin: 0px 0 0 0px;
+  border: 16px solid #f3f3f3;
+  border-radius: 50%;
+  border-top: 16px solid #3498db;
+  width: 10px;
+  height: 10px;
+  -webkit-animation: spin 2s linear infinite;
+  animation: spin 2s linear infinite;
+}
+
+#errored {
+  margin: 0px 0 0 0px;
+  border: 16px solid #f3f3f3;
+  border-radius: 50%;
+  border-top: 16px solid crimson;
+  width: 10px;
+  height: 10px;
+}
+
+@-webkit-keyframes spin {
+  0% {
+    -webkit-transform: rotate(0deg);
+  }
+  100% {
+    -webkit-transform: rotate(360deg);
+  }
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.close-associations {
+  background: #ddd;
+  border-top-left-radius: 5px;
+  border-top-right-radius: 5px;
+}
+
+div.result-container .tab-content {
+  border-left: 1px solid #ddd;
+  border-right: 1px solid #ddd;
+  border-bottom: 1px solid #ddd;
+  padding: 10px;
+}
+
+.nav-tabs {
+  margin-bottom: 0 !important;
+}
+
+.has-error {
+  //  mimics the color from react bootstrap forms.less, but allows us to apply it with just the has-error class
+  color: #a94442;
+}

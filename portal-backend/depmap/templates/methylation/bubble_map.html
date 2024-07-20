@@ -1,0 +1,50 @@
+{% macro bubble_map(options, gene_symbol) -%}
+
+    <div style="display: flex;">
+        <input type="text" placeholder="Select context(s)" id="bubble-search" style="width: 30%;"/>
+        <button class="btn btn-default" id="bubble-load">Load</button>
+    </div>
+    <script type="text/javascript">
+        $(function () { // document ready for middle-of-html js
+            renderBubbleSearch({{options|safe}})
+        });
+    </script>
+
+    <div class="bubble" id="bubble">
+        Select context(s) and press load
+    </div>
+
+    <script>
+        $(function () { // document ready for middle-of-html js
+            var bubbleEmptyDivsString = `
+            <div id="bbTooltip" class="bbMap-tooltip-class"></div>
+            ` + "<!-- bbMap documentation modal -->" + `
+            <div id="bubble-wrapper">
+                <div id="gtexBB" class="container-flow" style='overflow-x: auto'>
+                    <div id="bbLegends" class="col-md-12" ></div>
+                    <div class="changewidth" >
+                        <div id='bbMapCanvas'></div>
+                        ` + "<!-- bbMap SVG rendering -->" + `
+                        <div id="bbMap" style='' ><div id="error"></div></div>
+                        <div id="ldCanvas"></div>
+                        ` + "<!-- text-loader animation, from cssload.net -->" + `
+                    </div>
+                </div>
+            </div>`;
+
+            var spinner_html =
+              '<div class="spinner"><div class="rect1"></div><div class="rect2"></div><div class="rect3"></div><div class="rect4"></div><div class="rect5"></div></div>';
+
+            $('#bubble-load').on('click', function () {
+                $('#bubble').html($(bubbleEmptyDivsString));
+                var selectedContexts = $('#bubble-search').selectize()[0].selectize.items;
+                if (selectedContexts[0] == "" && selectedContexts.length == 1) {
+                    $('#error').replaceWith(`<div id="error">Please select a context.</div>`);
+                } else {
+                    $('#ldCanvas').html(spinner_html);
+                    renderBubbleMap(selectedContexts, "{{ gene_symbol }}", "{{ url_for('methylation.query_contexts', gene_symbol=gene_symbol) }}");
+                }
+            });
+        })
+    </script>
+{% endmacro %}

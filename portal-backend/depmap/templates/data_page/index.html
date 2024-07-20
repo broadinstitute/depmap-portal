@@ -1,0 +1,23 @@
+{% extends "full_page.html" %} {% block page_title %} Data | DepMap Portal {%
+endblock %} {% block content_class %}{% endblock %} {% block css %} {% assets
+filters="libsass", output="public/css/data_page/data_page.css",
+"css/data_page/data_page.scss" %}
+<link rel="stylesheet" href="{{ ASSET_URL }}" />
+{% endassets %} {% endblock %} {% block meta_description %} Data Page {%
+endblock %} {% block content %}
+<div class="full-screen-div">
+  {% include "nav_footer/nav.html" %}
+  <div id="react-data-page">
+      <div data-react-component-loaded-for-selenium="false"/> {# This element is here for the post-deploy crawl to tell that react hasn't intialized yet. As soon as the component is mounted, this node will go away and the crawl will consider the page as loaded #}
+  </div>
+</div>
+{% endblock %} {% block js %}
+<script id="react-data-page-data" type="application/json">
+  {
+    "termsDefinitions": {{ terms_definitions|tojson|safe }},
+    "releaseNotesUrl": {{ release_notes_url|tojson|safe }},
+    "forumUrl": {{ forum_url|tojson|safe }}
+  }
+</script>
+<script src="{{ webpack_url('dataPage.js') }}"></script>
+{% endblock %}

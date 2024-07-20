@@ -1,0 +1,31 @@
+@import "../user_uploads/user_uploads";
+
+#private-datasets-page-container {
+  .btn-danger-outline {
+    color: #d9534f;
+    background-color: transparent;
+    background-image: none;
+    border-color: #d9534f;
+  }
+
+  .button-toolbar {
+    display: flex;
+    justify-content: flex-end;
+    margin-block-end: 8px;
+
+    button:not(:last-child) {
+      margin-inline-end: 4px;
+    }
+  }
+
+  .page-bottom-spacer {
+    height: 20px;
+  }
+}
+
+#private-dataset-upload-page-container {
+  .back-to-list-link {
+    display: inline-block;
+    margin-block-start: 24px;
+  }
+}

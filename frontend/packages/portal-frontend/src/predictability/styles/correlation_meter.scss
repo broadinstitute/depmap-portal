@@ -1,0 +1,86 @@
+.container {
+  --height: 20px;
+  --width: 120px;
+
+  position: relative;
+  display: inline-block;
+
+  height: var(--height);
+}
+
+.meter {
+  --background-color: #f4f4f4;
+
+  height: var(--height);
+  width: var(--width);
+
+  border: 0px;
+  border-radius: 0px;
+
+  // For firefox
+  background-image: none;
+  background-color: var(--background-color);
+
+  &::-webkit-meter-bar {
+    background: none;
+    background-color: var(--background-color);
+    border: 0px;
+    border-radius: 0;
+    height: var(--height);
+  }
+
+  &::-moz-meter-bar {
+    border: 0px;
+    border-radius: 0;
+    height: var(--height);
+  }
+
+  &::-webkit-meter-optimum-value {
+    background: none;
+  }
+
+  &:-moz-meter-optimum::-moz-meter-bar {
+    background: none;
+  }
+}
+
+.positive {
+  --bar-color: #e3a7a7;
+  left: calc(50% + 1px);
+}
+
+.negative {
+  --bar-color: #bed3f4;
+  right: 50%;
+}
+
+.meter-bar {
+  position: absolute;
+  top: 0;
+  height: var(--height);
+  background: var(--bar-color);
+}
+
+.label {
+  --label-color: black;
+
+  color: var(--label-color);
+  position: absolute;
+  left: 2px;
+}
+
+.positive-label {
+  left: calc(50% + 3px);
+}
+
+.negative-label {
+}
+
+.vertical-bar {
+  height: var(--height);
+  position: absolute;
+  width: 1px;
+  background: black;
+  left: 50%;
+  top: 0;
+}

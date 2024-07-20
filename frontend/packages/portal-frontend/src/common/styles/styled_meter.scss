@@ -1,0 +1,70 @@
+.container {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.meter {
+  --height: 20px;
+  --background-color: #f4f4f4;
+  --optimum-bar-color: green;
+  --sub-optimum-bar-color: orange;
+  --sub-sub-optimum-bar-color: red;
+
+  height: var(--height);
+  border: 0px;
+  border-radius: 0px;
+
+  // For firefox
+  background-image: none;
+  background-color: var(--background-color);
+
+  &::-webkit-meter-bar {
+    background-color: var(--background-color);
+    border: 0px;
+    border-radius: 0;
+    height: var(--height);
+  }
+
+  &::-webkit-meter-bar {
+    background: none;
+  }
+
+  &::-webkit-meter-optimum-value {
+    background: var(--optimum-bar-color);
+  }
+
+  &::-webkit-meter-sub-optimum-value {
+    background: var(--sub-optimum-bar-color);
+  }
+
+  &::-webkit-meter-even-less-good-value {
+    background: var(--sub-sub-optimum-bar-color);
+  }
+
+  &::-moz-meter-bar {
+    border: 0px;
+    border-radius: 0;
+    height: var(--height);
+  }
+
+  &:-moz-meter-optimum::-moz-meter-bar {
+    background: var(--optimum-bar-color);
+  }
+
+  &:-moz-meter-sub-optimum::-moz-meter-bar {
+    background: var(--sub-optimum-bar-color);
+  }
+
+  &:-moz-meter-sub-sub-optimum::-moz-meter-bar {
+    background: var(--sub-sub-optimum-bar-color);
+  }
+}
+
+.label {
+  --label-color: black;
+
+  color: var(--label-color);
+  position: absolute;
+  left: 2px;
+}

@@ -1,0 +1,32 @@
+.metadataPage {
+  .metadataHeader {
+    padding-left: 2vw;
+  }
+
+  .metadataDropdown {
+    height: 70vh;
+    overflow: scroll;
+  }
+
+  .metadataTable {
+    padding-left: 2vw;
+    padding-right: 2vw;
+    overflow: auto;
+  }
+}
+
+.container {
+  padding: 30px;
+}
+
+.container table {
+  background: white;
+  font-size: 12pt;
+  border-collapse: collapse;
+}
+
+.container table td,
+.container table th {
+  padding: 8px;
+  border: 1px solid #ddd;
+}

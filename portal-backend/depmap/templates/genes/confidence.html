@@ -1,0 +1,68 @@
+<h2>{{ confidence.dataset_display_name }} Confidence</h2>
+<div class="row">
+    <div class="col-md-2">
+        <h3>{{ confidence.info.level }}</h3>
+        <div>
+            {% if confidence.info.positive | length == confidence.info.negative | length %}
+                <h4>No Standout Factors</h4>
+            {% else %}
+                {% if confidence.info.positive | length > 0 %}
+                    <h4>Positive Factors</h4>
+                    {% for positive in confidence.info.positive %}
+                        <li>{{ positive | safe }}</li>
+                    {% endfor %}
+                {% else %}
+                    <h4>No Positive Factors</h4>
+                {% endif %}
+
+                {% if confidence.info.negative | length > 0 %}
+                    <h4>Negative Factors</h4>
+                    {% for negative in confidence.info.negative %}
+                        <li>{{ negative | safe }}</li>
+                    {% endfor %}
+                {% else %}
+                    <h4>No Negative Factors</h4>
+                {% endif %}
+            {% endif %}
+            <p>Confidence scores are based on training a random forest to predict whether a gene's profile is "bad", using the features plotted below. "Bad" genes are identified with simple indicators, such as appearing to be dependent in cell lines that don't express them. More details can be found <a href="https://cancerdatascience.org/blog/posts/gene_confidence_blog/">here</a>.</p>
+        </div>
+    </div>
+
+    <div class="col-md-8">
+        <div class="tab-content">
+            <div class="plot_width plot_padding1">
+                {{ confidence.svg | safe }}
+            </div>
+        </div>
+    </div>
+</div><br/><br/><br/>
+
+{% if confidence.subplots %}
+    <div class="row">
+        <div class="col-md-2">
+        </div>
+
+        <div class="col-md-8">
+            <div class="tab-content">
+
+                <div>
+                    <div class="plot_width plot_padding1">
+                        {{ confidence.subplots | safe }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div><br/><br/><br/>
+{% endif %}
+
+{% if confidence.reagent_plot %}
+<h2>Guide Logfold Change Versus Gene Effect</h2>
+    <div class="row">
+        <div class="col-md-2">
+             <p>The relationship between the log fold change of individual sgRNAs targeting the gene and the composite Chronos score. SgRNAs that target multiple genes are less reliable.</p>
+        </div>
+        <div class="col-md-6">
+            {{ confidence.reagent_plot | safe }}
+        </div>
+    </div><br/><br/><br/>
+{% endif %}

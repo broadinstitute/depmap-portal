@@ -1,0 +1,19 @@
+gene_label,dot_graph
+NRAS (4893),"digraph Tree {
+node [shape=box, style=""filled, rounded"", color=""black"", fontname=helvetica] ;
+edge [fontname=helvetica] ;
+0 [label=""NRAS (4893)_MutHot > 0.92 <= 0.5\n0.052\n757\n0.117"", fillcolor=""#e5813910""] ;
+1 [label=""0.013\n709\n0.069"", fillcolor=""#e5813900""] ;
+0 -> 1 [labeldistance=2.5, labelangle=45, headlabel=""True""] ;
+2 [label=""0.081\n48\n0.832"", fillcolor=""#e58139ff""] ;
+0 -> 2 [labeldistance=2.5, labelangle=-45, headlabel=""False""] ;
+}"
+SOX10 (6663),"digraph Tree {
+node [shape=box, style=""filled, rounded"", color=""black"", fontname=helvetica] ;
+edge [fontname=helvetica] ;
+0 [label=""SOX10 (6663)_RNAseq > 2.34 <= 0.5\n0.064\n757\n0.371"", fillcolor=""#e581390f""] ;
+1 [label=""0.044\n711\n0.333"", fillcolor=""#e5813900""] ;
+0 -> 1 [labeldistance=2.5, labelangle=45, headlabel=""True""] ;
+2 [label=""0.019\n46\n0.952"", fillcolor=""#e58139ff""] ;
+0 -> 2 [labeldistance=2.5, labelangle=-45, headlabel=""False""] ;
+}"

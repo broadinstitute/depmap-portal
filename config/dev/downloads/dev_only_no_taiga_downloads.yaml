@@ -1,0 +1,81 @@
+virtual_dataset_id: ""
+name: Downloads that should show if taiga is not allowed
+release_date: 2019-05-08
+type: other
+description: This dataset contains long text description
+funding: null
+citation: null
+terms: depmap
+files:
+  - name: small-msi.csv
+    type: genetic_dependency
+    size: MB
+    pipeline_name: ""
+    url: https://link.to/bucket/msi
+    is_main_file: false
+    description: null
+    taiga_id: "small-msi-dataset-aa84.5"
+    canonical_taiga_id: "small-msi-dataset-aa84.5/small_msi"
+    sources:
+      - broad
+    satisfies_db_taiga_id: null
+    headliner_name_override: null
+    date_override: null
+    terms_override: null
+    retraction_override: null
+    summary_stats: null
+    md5_hash: null
+  - name: small-mapped-avana-551a.csv
+    type: genetic_dependency
+    size: MB
+    pipeline_name: ""
+    url: https://link.to/bucket/small-mapped-avana
+    is_main_file: false
+    description: null
+    taiga_id: "small-mapped-avana-551a.1"
+    canonical_taiga_id: "small-mapped-avana-551a.1/small_avana"
+    sources:
+      - broad
+    satisfies_db_taiga_id: null
+    headliner_name_override: null
+    date_override: null
+    terms_override: null
+    retraction_override: null
+    summary_stats: null
+    md5_hash: null
+  - name: small-avana-2987.csv
+    type: genetic_dependency
+    size: MB
+    pipeline_name: ""
+    url: https://link.to/bucket/small-mapped-avana
+    is_main_file: false
+    description: null
+    taiga_id: "small-avana-2987.2"
+    canonical_taiga_id: "small-avana-2987.2/small_avana"
+    sources:
+      - broad
+    satisfies_db_taiga_id: null
+    headliner_name_override: null
+    date_override: null
+    terms_override: null
+    retraction_override: null
+    summary_stats: null
+    md5_hash: null
+  - name: avana_score_duplicate.csv
+    type: genetic_dependency
+    size: MB
+    pipeline_name: ""
+    url: https://link.to/bucket/avana_score_duplicate
+    is_main_file: false
+    description: null
+    taiga_id: "small-avana-f2b9.2/avana_score_duplicate"
+    canonical_taiga_id: "small-avana-f2b9.2/avana_score_duplicate"
+    sources:
+      - broad
+    satisfies_db_taiga_id: null
+    headliner_name_override: null
+    date_override: null
+    terms_override: null
+    retraction_override: null
+    summary_stats: null
+    md5_hash: null

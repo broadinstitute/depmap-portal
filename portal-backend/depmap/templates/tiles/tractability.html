@@ -1,0 +1,46 @@
+{% macro bool_as_yn(v) -%}
+    {% if v %}Yes{% else %}No{% endif %}
+{%- endmacro %}
+
+{% if proteins %}
+<div class="card_wrapper">
+    <div class="card_border">
+        <div>
+            <h2 class="no_margin cardtitle_text">Target Tractability</h2>
+        </div>
+        <div class="card_padding">
+            <div class="plot_width">
+            {% for protein in proteins %}
+                
+                {% if protein.image %}<img src="{{ protein.image }}" width="100%">{% endif %}
+                <table class="cansar_table">
+                    <tbody>
+                    <tr><td>Bioactive Compounds</td><td><b>{{ bool_as_yn(protein.bioactive_compounds) }}</b></td></tr>
+                    <tr><td>Druggable Structure</td><td><b>{{ bool_as_yn(protein.druggable_structure) }}</b></td></tr>
+                    <tr><td>Druggable by Ligand Based Assessment</td><td><b>{{ bool_as_yn(protein.druggable_by_ligand_based_assessment) }}</b></td></tr>
+                    <tr><td>Enzyme</td><td><b>{{ bool_as_yn(protein.enzyme) }}</b></td></tr>
+                    </tbody>
+                </table>
+                {% if not is_mobile %}
+                <hr class="hr_margin2">
+            </br>
+                <p class="view-details-text">
+                    <span>Original and additional data on <a href="{{ protein.synopsis_url }}"><i>CanSAR</i></a></span></p>
+                {% endif %}
+
+            {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% else %}
+<div>
+    <div class="card_wrapper">
+        <div class="card_border">
+            <div class="placeholder_card">
+                Cansar is not accessible at this time
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}

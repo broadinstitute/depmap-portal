@@ -1,0 +1,17 @@
+
+rule get_context_analysis:
+    inputs:
+        script=fileref("./get_context_analysis.py"),
+        depmap_data_taiga_id={"type": "depmap_data_taiga_id"},
+        repurposing_matrix_taiga_id={"type": "repurposing_matrix_taiga_id"},
+        repurposing_list_taiga_id={"type": "repurposing_list_taiga_id"}
+    outputs:
+        {"type": "context_analysis", "filename": { "$filename": "context_analysis.csv"} }
+    run """
+        python \
+          {{ inputs.script.filename }} \
+          {{ inputs.depmap_data_taiga_id.dataset_id }} \
+          {{ inputs.repurposing_matrix_taiga_id.dataset_id }} \
+          {{ inputs.repurposing_list_taiga_id.dataset_id }} \
+          context_analysis.csv
+        """

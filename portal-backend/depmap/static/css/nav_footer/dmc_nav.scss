@@ -1,0 +1,150 @@
+@import "skyros_dmc_peddep_shared_nav";
+
+$dmc-nav-background: #dcdfe0;
+$dmc-nav-hovered-background: adjust-color(
+  $color: $dmc-nav-background,
+  $lightness: -10%,
+);
+
+.navbar,
+.navbar-default {
+  background: $dmc-nav-background;
+
+  .navbar-brand {
+    padding: 0;
+
+    @media screen and (max-width: 768px) {
+      position: fixed;
+      left: 15px;
+    }
+
+    #navbar_logo {
+      height: 50px;
+
+      @media screen and (max-width: 648px) {
+        display: none;
+      }
+    }
+
+    #navbar_symbol {
+      height: 50px;
+
+      @media screen and (min-width: 649px) {
+        display: none;
+      }
+    }
+  }
+  #nav-alignment.navbar-header {
+    height: 50px;
+  }
+
+  .navbar-toggle {
+    border-color: $dmc-nav-hovered-background;
+    &:hover,
+    &:focus {
+      background: $dmc-nav-hovered-background;
+    }
+
+    @media screen and (max-width: 768px) {
+      position: fixed;
+      right: 15px;
+    }
+  }
+
+  .navbar-nav {
+    @media screen and (max-width: $sm_width) {
+      .open .dropdown-menu {
+        .divider {
+          background: $dmc-nav-hovered-background;
+        }
+
+        > li > a {
+          color: hsl(0, 0%, 15%);
+
+          &:hover {
+            color: black;
+          }
+        }
+      }
+    }
+
+    > li {
+      &:not(#global_search_navbar) {
+        &.open,
+        &:hover,
+        &:active,
+        &:focus {
+          > a {
+            color: black;
+            background: $dmc-nav-hovered-background;
+          }
+        }
+      }
+
+      > a {
+        color: black;
+      }
+    }
+
+    .toolbar-search {
+      @media screen and (max-width: (304px)) {
+        display: none;
+      }
+
+      @media screen and (min-width: (305px)) {
+        width: 47% !important;
+        position: fixed;
+        left: 28vw !important;
+        overflow: visible;
+      }
+
+      @media screen and (min-width: (415px)) {
+        width: 59% !important;
+        left: 22vw !important;
+      }
+
+      @media screen and (min-width: (515px)) {
+        width: 62% !important;
+        left: 21vw !important;
+      }
+
+      @media screen and (min-width: (649px)) {
+        width: 62% !important;
+        left: 25vw !important;
+      }
+
+      @media screen and (min-width: $sm_width) {
+        width: 26% !important;
+        left: 28vw !important;
+        padding-block-start: 7.5px;
+        padding-inline-start: 5px;
+        padding-inline-end: 5px;
+      }
+
+      @media screen and (min-width: ($md_width + 1)) {
+        width: 39% !important;
+        left: 23vw !important;
+      }
+
+      @media screen and (min-width: ($lg_width + 1)) {
+        width: 42% !important;
+        left: 23vw !important;
+      }
+
+      @media screen and (min-width: 1630px) {
+        width: 35% !important;
+        left: 28vw !important;
+      }
+
+      @media screen and (min-width: 1950px) {
+        width: 27% !important;
+        left: 33vw !important;
+      }
+
+      @media screen and (min-width: 2490px) {
+        width: 17% !important;
+        left: 38vw !important;
+      }
+    }
+  }
+}

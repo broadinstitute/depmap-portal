@@ -1,0 +1,22 @@
+[
+  {
+    "value": "BimodalityCoefficient",
+    "label": "Bimodality Coefficient",
+    "dataset": "Primary"
+  },
+  {
+    "value": "PearsonScore",
+    "label": "Predictability",
+    "dataset": "Primary"
+  },
+  {
+    "value": "NumberOfSensitiveLines",
+    "label": "# of sensitive lines",
+    "dataset": "Primary"
+  },
+  {
+    "value": "Dose",
+    "label": "Dose",
+    "dataset": "Primary"
+  }
+]

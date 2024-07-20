@@ -1,0 +1,146 @@
+{% macro top_features_table(features, type) %}
+<div class="predictability-tile-table-container">
+  <table class="predictability-tile-table">
+    <thead>
+      <tr>
+        <th></th>
+        <th>Feature</th>
+        <th>Importance</th>
+        <th>Corr.</th>
+        <th>Type</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for feature in features %}
+      <tr>
+        <td>
+          {% if feature.related_type %}
+          <span class="relationship-icon-container">
+            <img
+              src="{{ url_for('static', filename='img/predictability/'+feature.related_type+'.svg') }}"
+            />
+          </span>
+          {% endif %}
+        </td>
+        <td>
+          {% if feature.interactive_url %}
+          <a href="{{ feature.interactive_url }}" target="_blank"
+            >{{ feature.name }}</a
+          >
+          {% else %} {{ feature.name }} {% endif %}
+        </td>
+        <td>
+          <div
+            style="width: {{ feature.importance * 100 }}%;"
+            class="{{ type }}_background"
+          >
+            {{ '{:.1f}'.format(feature.importance * 100) }}%
+          </div>
+        </td>
+        <td>
+          {% if feature.correlation %} {% if feature.correlation > 0 %}
+          <i class="fas fa-plus" aria-label="positive"></i>
+          {% elif feature.correlation < 0 %}
+          <i class="fas fa-minus" aria-label="negative"></i>
+          {% endif %} {% endif %}
+        </td>
+        <td>{{ feature.type }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{%- endmacro %} {% macro top_models_table(models) %}
+<table style="width: 100%">
+  <thead>
+    <tr>
+      <th></th>
+      {# use
+      <br />, leaving to word wrap prioritizes the width of the table columns
+      based on the width of the headers before they are word wrapped, causing
+      excessive whitespace even if table contents can all fit in one line #}
+      <th>Prediction<br />Accuracy</th>
+      <th>Feature<br />ID</th>
+      <th>Feature<br />Type</th>
+      <th>Feature<br />Set</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for model_and_top_feature in models %}
+    <tr>
+      <td>{{ loop.index }}.</td>
+      <td>{{ model_and_top_feature.model_pearson }}</td>
+      <td>{{ model_and_top_feature.feature_name }}</td>
+      <td>{{ model_and_top_feature.feature_type }}</td>
+      <td>{{ model_and_top_feature.model_label }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endmacro %} {% if predictability %}
+<div class="card_wrapper">
+  <div class="card_border">
+    <div>
+      {% if is_gene_executive %}
+      <h2 class="no_margin cardtitle_text">
+        Predictability<img class="info-icon popover-selector" src="{{ url_for('static', filename='img/gene_overview/info_purple.svg') }}"
+        data-toggle="tooltip" data-placement="right" tabindex="0" data-trigger="focus" data-html="true" 
+        data-content="Dependency probabilities for each gene are predicted using an ensemble of random forests (RF), where each RF model 
+        is fit using different combinations of CCLE 2019 datasets and feature selection methods (see details for model definitions). The measure 
+        of prediction accuracy for each model is the Pearson correlation of the predicted dependency values to the observed values."
+    >
+      </h2>
+      <div class="card_padding">
+        {% for percentile in predictability.plot.percentiles %}
+        <h4 class="{{ percentile.type }}">
+          {{ percentile.dataset_display_name }}: {{ percentile.percentile }}th
+          percentile
+        </h4>
+        {% endfor %}
+
+        <div>
+          <div class="plot_width plot_padding1">
+            {{ predictability.plot.svg | safe }}
+          </div>
+          <div>
+            <p class="no_margin plot_label">Prediction Accuracy<img class="info-icon-axis popover-selector" src="{{ url_for('static', filename='img/gene_overview/info_purple.svg') }}"
+              data-toggle="tooltip" data-placement="right" data-html="true" 
+              data-content="Densities represent the distribution of prediction accuracies for the top 6,000 genes with the highest variance. Vertical lines indicate the accuracy of 
+              predicting the query gene."
+          ></p>
+          </div>
+          <hr class="hr_margin" />
+          <div class="card_subheading">
+            Features of most accurate predictive model
+            <img class="info-icon popover-selector" src="{{ url_for('static', filename='img/gene_overview/info_purple.svg') }}"
+              data-toggle="tooltip" data-placement="right" tabindex="0" data-trigger="focus" data-html="true" 
+              data-content="Indicates the impact of an individual feature on prediction accuracy relative to the other features available to the model (0 to 1 scale). It is calculated 
+              using Gini Importance and is normalized so the total of all feature importance is 1."
+          >
+          </div>
+          <h4 class="{{predictability.overall_top_model.type}} no_margin">
+            {{ (predictability.tables | selectattr("type", "equalto",
+            predictability.overall_top_model.type) | first).dataset }}
+          </h4>
+          {{ top_features_table( predictability.overall_top_model.features,
+          predictability.overall_top_model.type ) }}
+
+          {% if not is_mobile %}
+          <div>
+            {% if not is_mobile %}
+          </br>
+            <p class="view-details-text">
+                <span>View model details and predictive features in the <a href="javascript:clickTab('#predictability')">Predictability tab</a></span></p>
+            {% endif %}
+        </div> 
+          {% endif %}
+        </div>
+      </div>
+      {% else %} {% for table in predictability.tables %}
+      <h4 class="{{ table.type }} no_margin">{{ table.dataset }}</h4>
+      <div>{{ top_models_table(table.top_models) }}</div>
+      {% endfor %} {% endif %}
+    </div>
+  </div>
+</div>
+{% endif %}

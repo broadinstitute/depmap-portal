@@ -1,0 +1,13 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "references": [
+    { "path": "../api" },
+    { "path": "../cell-line-selector" },
+    { "path": "../compute" },
+    { "path": "../globals" },
+    { "path": "../interactive" },
+    { "path": "../long-table" },
+    { "path": "../user-upload" },
+    { "path": "../utils" }
+  ]
+}

@@ -1,0 +1,27 @@
+[
+  {
+    "kind": "checkbox",
+    "subtype": "additive",
+    "key": "depletion",
+    "label": "Include Positive Effect Sizes",
+    "match": "False"
+  },
+  {
+    "kind": "range",
+    "key": "t_qval",
+    "label": "T-test q-value",
+    "value": { "max": 0.05 }
+  },
+  {
+    "kind": "range",
+    "key": "abs_effect_size",
+    "label": "Abs(effect size)",
+    "value": { "min": 0.1 }
+  },
+  {
+    "kind": "range",
+    "key": "frac_dep_in",
+    "label": " % of in-context lines dependent",
+    "value": { "min": 0.1 }
+  }
+]

@@ -1,0 +1,221 @@
+@import "../../node_modules/depmap-shared/color_palette.json";
+$model-name-width: 156px;
+
+:global {
+  #predictive-tab-root {
+    .button-container {
+      margin-block: 12px;
+    }
+
+    .icon-button {
+      display: inline-flex;
+      align-items: center;
+      color: black;
+
+      .fa-link {
+        margin-inline-end: 1px;
+      }
+    }
+    .icon {
+      height: 12px;
+      cursor: pointer;
+    }
+
+    summary {
+      display: list-item;
+    }
+
+    .screen-label {
+      font-weight: 900;
+      margin-inline-start: 4px;
+    }
+
+    .tables-headers {
+      display: flex;
+      padding-inline-start: 4px;
+      font-size: smaller;
+
+      .model-label {
+        // &.gene {
+        width: $model-name-width;
+        // }
+      }
+    }
+
+    .all-caps {
+      text-transform: uppercase;
+    }
+
+    .compound-experiment-label-container {
+      margin-inline-start: 4px;
+      margin-block-start: 4px;
+      margin-block-end: 8px;
+
+      .all-caps {
+        font-size: smaller;
+      }
+
+      .compound-experiment-label {
+        font-weight: 900;
+      }
+    }
+
+    .predictive-model-summary-container {
+      display: inline-flex;
+
+      .predictive-model-name-info {
+        // &.gene {
+        width: $model-name-width;
+        display: flex;
+        align-items: center;
+        // }
+
+        .predictive-model-name {
+          margin-inline-end: 4px;
+        }
+      }
+
+      .predictive-model-correlation-container {
+        display: flex;
+        align-items: center;
+
+        .predictive-model-correlation-box {
+          --height: 16px;
+          --background-color: #b5b5b5;
+
+          width: calc(50vw - 350px);
+          max-width: 315px;
+          margin-inline-end: 16px;
+
+          &.crispr {
+            --optimum-bar-color: #{$crispr_color};
+          }
+
+          &.rnai {
+            --optimum-bar-color: #{$rnai_color};
+          }
+
+          &.compound {
+            --optimum-bar-color: #{$compound_color};
+          }
+
+          @media screen and (max-width: 991px) {
+            width: calc(100vw - 330px);
+          }
+        }
+      }
+    }
+
+    .model-results-accordion {
+      margin-block-end: 4px;
+      overflow: hidden;
+
+      summary {
+        display: block;
+        padding: 4px;
+        background: #e8eaee;
+        list-style-type: none;
+
+        &::-webkit-details-marker {
+          display: none;
+        }
+
+        &::after {
+          font-size: 20px;
+          line-height: 20px;
+          content: "+";
+          float: right;
+          padding-right: 8px;
+          color: #707070;
+        }
+      }
+
+      &[open] {
+        summary {
+          &::after {
+            content: "-";
+          }
+        }
+      }
+    }
+
+    .predictive-results-table-container {
+      overflow-x: auto;
+
+      .predictive-results-table {
+        border-collapse: separate;
+        border-spacing: 16px 1px;
+        margin-block-start: 6px;
+        margin-block-end: 6px;
+
+        th {
+          white-space: nowrap;
+        }
+
+        td.feature-name {
+          width: 160px;
+          max-width: 160px;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
+        td:nth-child(3),
+        td:nth-child(3) {
+          width: 150px;
+        }
+
+        .column-header {
+          display: flex;
+          align-items: center;
+
+          .icon:nth-child(2) {
+            margin-inline-start: 2px;
+          }
+        }
+
+        .related-icon-container {
+          display: flex;
+          align-items: center;
+
+          .icon {
+            height: 12px;
+          }
+        }
+
+        .predictive-feature-result-importance {
+          width: 120px;
+
+          &.crispr {
+            --optimum-bar-color: #{$crispr_color};
+          }
+
+          &.rnai {
+            --optimum-bar-color: #{$rnai_color};
+          }
+
+          &.compound {
+            --optimum-bar-color: #{$compound_color};
+          }
+
+          &::-webkit-meter-optimum-value {
+            opacity: 40%;
+          }
+
+          &:-moz-meter-optimum::-moz-meter-bar {
+            opacity: 40%;
+          }
+        }
+      }
+    }
+  }
+
+  .popover-with-table {
+    max-width: none;
+
+    td:first-child {
+      padding-inline-end: 10px;
+      font-weight: bold;
+    }
+  }
+}

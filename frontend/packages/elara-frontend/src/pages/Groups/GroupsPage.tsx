@@ -1,0 +1,332 @@
+import React, { useEffect, useState } from "react";
+import {
+  Group,
+  GroupEntry,
+  AccessType,
+  GroupArgs,
+  GroupEntryArgs,
+  GroupTableData,
+  instanceOfErrorDetail,
+} from "@depmap/types";
+
+import { FormModal, Spinner } from "@depmap/common-components";
+import Button from "react-bootstrap/lib/Button";
+
+import styles from "src/pages/Groups/styles.scss";
+import { AddGroupEntryForm, GroupAddDelete } from "@depmap/groups-manager";
+import WideTable from "@depmap/wide-table";
+
+interface GroupsPageProps {
+  getGroups: () => Promise<Group[]>;
+  addGroup: (groupArgs: GroupArgs) => Promise<Group>;
+  deleteGroup: (group_id: string) => void;
+  addGroupEntry: (
+    groupId: string,
+    groupEntryArgs: GroupEntryArgs
+  ) => Promise<GroupEntry>;
+  deleteGroupEntry: (groupEntryId: string) => void;
+  user: string;
+}
+
+function formatTableData(groups: Group[]): GroupTableData[] {
+  return groups.map((group) => {
+    const groupEntries = group.group_entries;
+    const groupEntriesCount = groupEntries.length;
+    const datasetsCount: string = group.datasets
+      ? group.datasets.length.toString()
+      : "N/A";
+
+    return {
+      id: group.id,
+      name: group.name,
+      groupEntriesCount,
+      groupEntries,
+      datasetsCount,
+    };
+  });
+}
+
+export default function GroupsPage(props: GroupsPageProps) {
+  const {
+    getGroups,
+    addGroup,
+    deleteGroup,
+    addGroupEntry,
+    deleteGroupEntry,
+    user,
+  } = props;
+  const [groups, setGroups] = useState<Group[] | null>(null);
+  const [error, setError] = useState(false);
+  const [selectedGroupIds, setSelectedGroupIds] = useState<Set<string>>(
+    new Set()
+  );
+  const [showModal, setShowModal] = useState(true);
+  const [groupToEditEntries, setGroupToEditEntries] = useState<Group | null>(
+    null
+  );
+  const [addGroupError, setAddGroupError] = useState<string | null>(null);
+  const [groupEntryErrors, setGroupEntryErrors] = useState<{
+    addGroupEntryError: string | null;
+    updateGroupEntryError: string | null;
+  }>({ addGroupEntryError: null, updateGroupEntryError: null });
+
+  const editGroupEntriesHandler = (e: any, id: string) => {
+    const group = groups?.find((g) => g.id === id);
+    if (group) {
+      setShowModal(true);
+      setGroupToEditEntries(group);
+    }
+  };
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const fetchedGroups = await getGroups();
+        setGroups(fetchedGroups);
+      } catch (e) {
+        console.error(e);
+        setError(true);
+      }
+    })();
+  }, [getGroups]);
+
+  if (!groups) {
+    return error ? (
+      <div className={styles.container}>
+        Sorry, there was an error fetching groups.
+      </div>
+    ) : (
+      <Spinner />
+    );
+  }
+
+  const addButtonAction = async (groupArgs: GroupArgs) => {
+    try {
+      const group = await addGroup(groupArgs);
+
+      setGroups([...groups, group]);
+      setAddGroupError(null);
+    } catch (e) {
+      console.error(e);
+      if (instanceOfErrorDetail(e)) {
+        setAddGroupError(e.body.detail);
+      }
+    }
+  };
+
+  const deleteButtonAction = async (groupIdsSet: Set<string>) => {
+    try {
+      await Promise.all(
+        [...groupIdsSet].map((groupId) => deleteGroup(groupId))
+      );
+
+      setGroups((nextGroups) => {
+        return nextGroups
+          ? nextGroups.filter((g) => !groupIdsSet.has(g.id))
+          : null;
+      });
+    } catch (e) {
+      console.error(e);
+      if (instanceOfErrorDetail(e)) {
+        setAddGroupError(e.body.detail);
+      }
+    }
+  };
+
+  const submitGroupEntries = async (
+    groupId: string,
+    groupEntryArgs: GroupEntryArgs[],
+    addGroupEntriesStateCallback: (
+      addedGroupEntries: string[],
+      newGroupEntries: GroupEntry[]
+    ) => void
+  ) => {
+    const index = groups.findIndex((group) => {
+      return group.id === groupId;
+    });
+    const addedGroupEntries = [];
+    const newGroups = [...groups];
+    let newGroupEntries: GroupEntry[] = [];
+    try {
+      for (let i = 0; i < groupEntryArgs.length; i++) {
+        const groupEntryArg = groupEntryArgs[i];
+        // eslint-disable-next-line no-await-in-loop
+        const addedGroupEntry = await addGroupEntry(groupId, groupEntryArg);
+        addedGroupEntries.push(addedGroupEntry.email);
+        newGroups[index].group_entries = [
+          ...newGroups[index].group_entries,
+          addedGroupEntry,
+        ];
+        newGroupEntries = newGroups[index].group_entries;
+        setGroups(newGroups);
+        setGroupToEditEntries(newGroups[index]);
+      }
+
+      setGroupEntryErrors({
+        ...groupEntryErrors,
+        addGroupEntryError: null,
+      });
+    } catch (e) {
+      console.error(e);
+      if (instanceOfErrorDetail(e)) {
+        setGroupEntryErrors({
+          ...groupEntryErrors,
+          addGroupEntryError: e.body.detail,
+        });
+      }
+    }
+    addGroupEntriesStateCallback(addedGroupEntries, newGroupEntries);
+  };
+
+  const updateGroupEntries = async (
+    groupId: string,
+    groupEntryIds: Set<string>,
+    accessEdit: string,
+    updatedGroupEntriesStateCallback: (
+      selectedGroupEntries: Set<string>,
+      newGroupEntries: GroupEntry[]
+    ) => void
+  ) => {
+    const index = groups.findIndex((group) => {
+      return group.id === groupId;
+    });
+    const newGroups = [...groups];
+
+    try {
+      // delete the group entries to edit
+      await Promise.all(
+        [...groupEntryIds].map((groupEntryId) => deleteGroupEntry(groupEntryId))
+      );
+
+      // if not removing access, create new group entry with new access type
+      // then delete old group entries/selected group entries
+      if (accessEdit !== "remove") {
+        const groupEntriesToEdit = newGroups[index].group_entries.filter(
+          (groupEntry) => {
+            return groupEntryIds.has(groupEntry.id);
+          }
+        );
+        const newGroupEntryArgs: GroupEntryArgs[] = groupEntriesToEdit.map(
+          (groupEntry) => {
+            return {
+              email: groupEntry.email,
+              exact_match: groupEntry.exact_match,
+              access_type: accessEdit,
+            };
+          }
+        ) as GroupEntryArgs[];
+        const addedGroupEntries = await Promise.all([
+          ...newGroupEntryArgs.map((groupEntryArgs) =>
+            addGroupEntry(groupId, groupEntryArgs)
+          ),
+        ]);
+        newGroups[index].group_entries = [
+          ...newGroups[index].group_entries,
+          ...addedGroupEntries,
+        ];
+      }
+      newGroups[index].group_entries = newGroups[index].group_entries.filter(
+        (groupEntry) => {
+          return !groupEntryIds.has(groupEntry.id);
+        }
+      );
+      setGroups(newGroups);
+      setGroupToEditEntries(newGroups[index]);
+      setGroupEntryErrors({
+        ...groupEntryErrors,
+        updateGroupEntryError: null,
+      });
+    } catch (e) {
+      console.error(e);
+      if (instanceOfErrorDetail(e)) {
+        setGroupEntryErrors({
+          ...groupEntryErrors,
+          updateGroupEntryError: e.body.detail,
+        });
+      }
+    }
+    updatedGroupEntriesStateCallback(
+      groupEntryIds,
+      newGroups[index].group_entries
+    );
+  };
+
+  const groupEntryForm = groupToEditEntries ? (
+    <AddGroupEntryForm
+      group={groupToEditEntries}
+      addGroupEntries={submitGroupEntries}
+      updateGroupEntriesAccess={updateGroupEntries}
+      groupEntryErrors={groupEntryErrors}
+    />
+  ) : null;
+
+  return (
+    <>
+      <GroupAddDelete
+        selectedGroupIds={selectedGroupIds}
+        onAdd={addButtonAction}
+        onDelete={deleteButtonAction}
+        errorMessage={addGroupError}
+      />
+      {groupToEditEntries && groupEntryForm ? (
+        <FormModal
+          bsSize="large"
+          title="Edit Members"
+          showModal={showModal}
+          onHide={() => setShowModal(false)}
+          formComponent={groupEntryForm}
+        />
+      ) : null}
+      <WideTable
+        rowHeight={50}
+        idProp="id"
+        onChangeSelections={(selections) => {
+          setSelectedGroupIds(new Set(selections));
+        }}
+        data={formatTableData(groups)}
+        columns={[
+          {
+            accessor: "groupEntries",
+            Header: "",
+            maxWidth: 10,
+            disableFilters: true,
+            disableSortBy: true,
+            Cell: (cellProps: any) => {
+              const groupEntries: GroupEntry[] = cellProps.value;
+              // If user is owner of group, show group edit button
+              const cellButton =
+                groupEntries.find(
+                  (entry) =>
+                    entry.email === user &&
+                    entry.access_type === AccessType.owner
+                ) !== undefined ? (
+                  <div
+                    style={{
+                      display: "flex",
+                      width: "100%",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <Button
+                      id={cellProps.row.original.id}
+                      bsStyle="primary"
+                      onClick={(e) =>
+                        editGroupEntriesHandler(e, cellProps.row.original.id)
+                      }
+                    >
+                      Edit
+                    </Button>
+                  </div>
+                ) : null;
+
+              return cellButton;
+            },
+          },
+          { accessor: "name", Header: "Name" },
+          { accessor: "groupEntriesCount", Header: "Members" },
+          { accessor: "datasetsCount", Header: "Datasets" },
+        ]}
+      />
+    </>
+  );
+}

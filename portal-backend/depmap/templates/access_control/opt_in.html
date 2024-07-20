@@ -1,0 +1,27 @@
+{% extends "nav_footer.html" %}
+
+{% block content %}
+    <div class="row">
+        <div class="col-md-12">
+            <h1>Opt-in for early-access functionality</h1>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12">
+            <form method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                {% if early_access_enabled %}
+                    <input type="hidden" name="opt_in" value="OFF"/>
+                    <button type="submit" class="btn btn-default">Disable access functionality</button>
+                {% else %}
+                    <input type="hidden" name="opt_in" value="ON"/>
+                    <button type="submit" class="btn btn-default">Enable access functionality</button>
+                {% endif %}
+            </form>
+        </div>
+
+    </div>
+
+{% endblock %}
+

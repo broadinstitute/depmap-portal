@@ -1,0 +1,409 @@
+{
+  "biomarker-relationship": {
+    "plot_type": "scatter",
+    "index_type": "depmap_model",
+    "dimensions": {
+      "x": {
+        "axis_type": "entity",
+        "entity_type": "gene",
+        "dataset_id": "Chronos_Combined",
+        "aggregation": "first",
+        "context": {
+          "name": "VPS4A",
+          "context_type": "gene",
+          "expr": {
+            "==": [
+              {
+                "var": "entity_label"
+              },
+              "VPS4A"
+            ]
+          }
+        }
+      },
+      "y": {
+        "axis_type": "entity",
+        "entity_type": "gene",
+        "dataset_id": "copy_number_absolute",
+        "aggregation": "first",
+        "context": {
+          "name": "VPS4B",
+          "context_type": "gene",
+          "expr": {
+            "==": [
+              {
+                "var": "entity_label"
+              },
+              "VPS4B"
+            ]
+          }
+        }
+      }
+    }
+  },
+  "context-specific-dependencies": {
+    "plot_type": "scatter",
+    "index_type": "gene",
+    "color_by": "property",
+    "dimensions": {
+      "x": {
+        "dataset_id": "Chronos_Combined",
+        "entity_type": "depmap_model",
+        "axis_type": "context",
+        "context": {
+          "context_type": "depmap_model",
+          "expr": {
+            "and": [
+              {
+                ">": [
+                  {
+                    "var": "slice/ssgsea/HALLMARK_EPITHELIAL_MESENCHYMAL_TRANSITION/label"
+                  },
+                  0.25
+                ]
+              },
+              {
+                "==": [
+                  {
+                    "var": "slice/growth_pattern/all/label"
+                  },
+                  "Adherent"
+                ]
+              }
+            ]
+          },
+          "name": "Mesenchymal"
+        },
+        "aggregation": "mean"
+      },
+      "y": {
+        "dataset_id": "Chronos_Combined",
+        "entity_type": "depmap_model",
+        "axis_type": "context",
+        "aggregation": "mean",
+        "context": {
+          "context_type": "depmap_model",
+          "expr": {
+            "and": [
+              {
+                "<": [
+                  {
+                    "var": "slice/ssgsea/HALLMARK_EPITHELIAL_MESENCHYMAL_TRANSITION/label"
+                  },
+                  0
+                ]
+              },
+              {
+                "==": [
+                  {
+                    "var": "slice/growth_pattern/all/label"
+                  },
+                  "Adherent"
+                ]
+              }
+            ]
+          },
+          "name": "Epithelial"
+        }
+      }
+    },
+    "metadata": {
+      "color_property": {
+        "slice_id": "slice/gene_selectivity/all/label"
+      }
+    }
+  },
+  "context-specific-expression": {
+    "plot_type": "scatter",
+    "index_type": "gene",
+    "color_by": "custom",
+    "dimensions": {
+      "x": {
+        "dataset_id": "expression",
+        "entity_type": "depmap_model",
+        "axis_type": "context",
+        "aggregation": "mean",
+        "context": {
+          "context_type": "depmap_model",
+          "expr": {
+            "and": [
+              {
+                "or": [
+                  {
+                    ">": [
+                      {
+                        "var": "slice/mutations_damaging/RB1/label"
+                      },
+                      0
+                    ]
+                  },
+                  {
+                    ">": [
+                      {
+                        "var": "slice/mutations_hotspot/RB1/label"
+                      },
+                      0
+                    ]
+                  },
+                  {
+                    "<=": [
+                      {
+                        "var": "slice/copy_number_relative/RB1/label"
+                      },
+                      0.6
+                    ]
+                  }
+                ]
+              },
+              {
+                "==": [
+                  {
+                    "var": "slice/growth_pattern/all/label"
+                  },
+                  "Adherent"
+                ]
+              }
+            ]
+          },
+          "name": "RB1Loss"
+        }
+      },
+      "y": {
+        "dataset_id": "expression",
+        "entity_type": "depmap_model",
+        "axis_type": "context",
+        "aggregation": "mean",
+        "context": {
+          "context_type": "depmap_model",
+          "expr": {
+            "and": [
+              {
+                "and": [
+                  {
+                    "<=": [
+                      {
+                        "var": "slice/mutations_damaging/RB1/label"
+                      },
+                      0
+                    ]
+                  },
+                  {
+                    "<=": [
+                      {
+                        "var": "slice/mutations_hotspot/RB1/label"
+                      },
+                      0
+                    ]
+                  },
+                  {
+                    ">": [
+                      {
+                        "var": "slice/copy_number_relative/RB1/label"
+                      },
+                      0.6
+                    ]
+                  }
+                ]
+              },
+              {
+                "==": [
+                  {
+                    "var": "slice/growth_pattern/all/label"
+                  },
+                  "Adherent"
+                ]
+              }
+            ]
+          },
+          "name": "RB1NoLoss"
+        }
+      },
+      "color": {
+        "dataset_id": "expression",
+        "entity_type": "depmap_model",
+        "axis_type": "context",
+        "aggregation": "mean",
+        "context": {
+          "context_type": "depmap_model",
+          "expr": {
+            "and": [
+              {
+                "or": [
+                  {
+                    ">": [
+                      {
+                        "var": "slice/mutations_damaging/RB1/label"
+                      },
+                      0
+                    ]
+                  },
+                  {
+                    ">": [
+                      {
+                        "var": "slice/mutations_hotspot/RB1/label"
+                      },
+                      0
+                    ]
+                  },
+                  {
+                    "<=": [
+                      {
+                        "var": "slice/copy_number_relative/RB1/label"
+                      },
+                      0.6
+                    ]
+                  }
+                ]
+              },
+              {
+                "==": [
+                  {
+                    "var": "slice/growth_pattern/all/label"
+                  },
+                  "Adherent"
+                ]
+              }
+            ]
+          },
+          "name": "RB1Loss"
+        }
+      }
+    }
+  },
+  "compare-expression-distributions": {
+    "plot_type": "density_1d",
+    "index_type": "depmap_model",
+    "color_by": "context",
+    "dimensions": {
+      "x": {
+        "axis_type": "entity",
+        "entity_type": "gene",
+        "dataset_id": "expression",
+        "aggregation": "first",
+        "context": {
+          "name": "ERBB2",
+          "context_type": "gene",
+          "expr": {
+            "==": [
+              {
+                "var": "entity_label"
+              },
+              "ERBB2"
+            ]
+          }
+        }
+      }
+    },
+    "filters": {
+      "visible": {
+        "name": "Breast",
+        "context_type": "depmap_model",
+        "expr": {
+          "==": [
+            {
+              "var": "slice/lineage/1/label"
+            },
+            "Breast"
+          ]
+        }
+      },
+      "color1": {
+        "context_type": "depmap_model",
+        "expr": {
+          ">": [
+            {
+              "var": "slice/copy_number_relative/ERBB2/label"
+            },
+            1.5
+          ]
+        },
+        "name": "HER2Amp"
+      },
+      "color2": {
+        "name": "Not HER2Amp",
+        "context_type": "depmap_model",
+        "expr": {
+          "!": {
+            ">": [
+              {
+                "var": "slice/copy_number_relative/ERBB2/label"
+              },
+              1.5
+            ]
+          }
+        }
+      }
+    }
+  },
+  "mean-expression-vs-mean-crispr-gene-effect": {
+    "plot_type": "scatter",
+    "index_type": "gene",
+    "color_by": "property",
+    "dimensions": {
+      "x": {
+        "dataset_id": "Chronos_Combined",
+        "entity_type": "depmap_model",
+        "axis_type": "context",
+        "aggregation": "mean",
+        "context": {
+          "name": "All",
+          "context_type": "depmap_model",
+          "expr": true
+        }
+      },
+      "y": {
+        "dataset_id": "expression",
+        "entity_type": "depmap_model",
+        "axis_type": "context",
+        "aggregation": "mean",
+        "context": {
+          "name": "All",
+          "context_type": "depmap_model",
+          "expr": true
+        }
+      }
+    },
+    "metadata": {
+      "color_property": {
+        "slice_id": "slice/gene_essentiality/all/label"
+      }
+    }
+  },
+  "correlation-structure-of-dependencies": {
+    "plot_type": "correlation_heatmap",
+    "index_type": "depmap_model",
+    "dimensions": {
+      "x": {
+        "axis_type": "context",
+        "entity_type": "gene",
+        "dataset_id": "Chronos_Combined",
+        "aggregation": "correlation",
+        "context": {
+          "context_type": "gene",
+          "expr": {
+            "in": [
+              {
+                "var": "entity_label"
+              },
+              [
+                "CAD",
+                "CMPK1",
+                "CMPK2",
+                "CTPS1",
+                "CTPS2",
+                "DHODH",
+                "NME1",
+                "NME2",
+                "NME1-NME2",
+                "NME4",
+                "NME6",
+                "UMPS"
+              ]
+            ]
+          },
+          "name": "DeNovoPyrimidine"
+        }
+      }
+    }
+  }
+}

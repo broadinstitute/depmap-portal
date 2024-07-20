@@ -1,0 +1,259 @@
+.ConfigurationPanel {
+  min-width: 410px;
+  padding: 20px;
+  padding-right: 4px;
+  margin-right: 4px;
+  overflow: auto;
+
+  & > div {
+    width: 374px;
+  }
+
+  &:not(:has(div[data-open])) {
+    min-width: auto;
+    margin-right: 16px;
+
+    & > div {
+      width: auto;
+    }
+  }
+}
+
+.hr {
+  margin: 16px 0;
+  border-color: #ccc;
+}
+
+.dimensions {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 4px;
+}
+
+.dimensionWithGap {
+  & > div:last-child {
+    margin-top: 58px;
+  }
+}
+
+.copyAxisButton {
+  margin-left: 41px;
+  height: 20px;
+  padding: 0 4px;
+  color: #666;
+  position: relative;
+  top: -2px;
+
+  span {
+    position: relative;
+    top: -2px;
+  }
+
+  i {
+    position: relative;
+    top: -1px;
+    margin-left: 5px;
+    font-size: 11px;
+  }
+}
+
+.swapAxesButton {
+  margin-left: 31px;
+  width: 65px;
+  height: 20px;
+  padding: 0;
+  color: #666;
+  position: relative;
+  top: -2px;
+
+  span {
+    position: relative;
+    top: -2px;
+  }
+
+  i {
+    position: relative;
+    top: 2px;
+    margin-left: 5px;
+  }
+}
+
+.helpTip {
+  position: relative;
+  top: 3px;
+}
+
+.PointsSelector {
+  margin-top: 10px;
+
+  label {
+    width: 75px;
+    font-size: 13px;
+  }
+}
+
+.colorByContext {
+  display: flex;
+  gap: 10px;
+
+  & > div:nth-child(2) {
+    margin-left: 8px;
+
+    .Select {
+      width: 154px;
+    }
+  }
+}
+
+.sortByContainer {
+  &:not(:empty) {
+    margin-left: 170px;
+    margin-top: -101px;
+    margin-bottom: 38px;
+  }
+}
+
+.customColorDimension {
+  margin-left: 178px;
+  margin-top: -60px;
+}
+
+.checkbox {
+  margin-top: 0;
+  margin-bottom: 14px;
+}
+
+.ColorByViewOptions {
+  margin-top: 14px;
+}
+
+.distinguishOptions {
+  label {
+    margin-top: 10px;
+  }
+}
+
+.linearRegressionTable {
+  max-height: calc(100vh - 169px);
+  overflow: auto;
+  font-size: 12px;
+  margin: 0 -16px -16px -16px;
+  border-top: 1px solid #ddd;
+
+  &:not(:empty) {
+    min-height: 118px;
+  }
+
+  table {
+    border-collapse: separate;
+    empty-cells: show;
+
+    th {
+      background: white;
+      position: sticky;
+      top: 0; /* Don't forget this, required for the stickiness */
+    }
+
+    tr:first-child {
+      td {
+        border-top: none;
+      }
+    }
+  }
+
+  &.freezeFirstColumn {
+    thead th:first-child {
+      position: sticky;
+      left: 0;
+      z-index: 2;
+    }
+
+    tbody td:first-child {
+      position: sticky;
+      left: 0;
+      z-index: 1;
+      border-right: 2px solid #ddd;
+      background: #fff;
+    }
+
+    tbody tr:nth-child(odd) {
+      td {
+        background-color: #f6f6f6;
+      }
+    }
+  }
+}
+
+.linregSpinner {
+  margin: 40px auto !important;
+}
+
+.DatasetDetailsSelector {
+  display: flex;
+  flex-direction: column;
+
+  & > div:not(:first-child) {
+    margin-top: 10px;
+  }
+}
+
+.DatasetDetailsModal {
+  display: flex;
+
+  & > div:first-child {
+    margin-top: 8px;
+  }
+
+  & > div:nth-child(2) {
+    display: flex;
+    flex-direction: row;
+    margin-left: 15px;
+    padding: 0 20px;
+    min-height: 300px;
+    height: 300px;
+    overflow: auto;
+  }
+
+  h2 {
+    font-size: 18px;
+  }
+
+  button {
+    font-size: 20px;
+  }
+}
+
+.emptyDatasetDetails {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  font-size: 20px;
+  font-weight: 300;
+}
+
+.AnalysisResult {
+  & > div:nth-child(2) {
+    padding: 0;
+    min-height: 414px;
+
+    & > div {
+      margin-left: -20px;
+      margin-top: -20px;
+    }
+  }
+
+  :global div.result-container .tab-content {
+    border: none;
+  }
+}
+
+.closeAnalysis {
+  position: relative;
+
+  button {
+    position: absolute;
+    top: 29px;
+    left: 360px;
+  }
+}

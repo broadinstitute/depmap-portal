@@ -1,0 +1,75 @@
+<div class="card_wrapper">
+  <div class="card_border">
+    <div>
+      <h2 class="no_margin cardtitle_text">Description</h2>
+    </div>
+    <div class="card_padding">
+      <div>
+        <input type="checkbox" class="view-more-state" id="gene_description" />
+        <span class="view-more-wrap" id="entrez-summary-executive">
+          {# there needs to be no spacing between the first and second half
+          spans #}
+          <span id="entrez-summary-first-half">Loading...</span
+          ><span class="view-more-target"
+            ><span id="entrez-summary-second-half"></span>
+          </span>
+        </span>
+        &nbsp<label
+          style="font-weight: normal; display: none"
+          for="gene_description"
+          class="view-more-trigger"
+        ></label>
+        {# display not none gets activated by fetching summary, see about.js #}
+      </div>
+      <div class="description-columns">
+        {% if not is_mobile %}
+          <h3 style="padding-top: 0.5em">
+            Search external sites for {{ about.symbol }}
+          </h3>
+          <div class="row-description">
+          <div class="column-description">
+            <ul class="column-description">
+              <li>
+                <a
+                  href="http://www.ncbi.nlm.nih.gov/pubmed/?term={{ about.symbol }}"
+                  target="_blank" ref="noopener"
+                  >PubMed</a
+                ><em class="no_data"></em>
+              </li>
+              <li>
+                <a href="https://www.genenames.org/tools/search/#!/?query={{ about.symbol }}">HUGO</a>
+            </li>
+            <li>
+                <a href="http://www.genecards.org/cgi-bin/carddisp.pl?gene={{ about.symbol }}">GeneCards</a>
+            </li>
+            <li>
+                <a href="https://en.wikipedia.org/wiki/{{ about.symbol }}">Wikipedia</a>
+            </li>
+            <li>
+                <a href="http://firebrowse.org/viewGene.html?gene={{ about.symbol }}">Firebrowse</a>
+            </li>
+            </ul>
+            </div>
+            <div class = "column-description">
+            <ul>
+            <li>
+                <a href="http://www.tumorportal.org/view?geneSymbol={{ about.symbol }}">Tumor Portal</a>
+            </li>
+            <li>
+                <a href="https://www.gtexportal.org/home/gene/{{ about.symbol }}">GTEx</a>
+            </li>
+            <li>
+                <a href="http://cancer.sanger.ac.uk/cosmic/gene/analysis?ln={{ about.symbol }}">COSMIC</a>
+            </li>
+            <li>
+                <a href="http://www.ncbi.nlm.nih.gov/gene/?term={{about.symbol}}">NCBI</a>
+            </li>
+            </ul>
+            </div>
+          </div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>

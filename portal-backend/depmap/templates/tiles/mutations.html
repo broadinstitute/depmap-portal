@@ -1,0 +1,30 @@
+{% if mutation.plot %}
+<div class="card_wrapper">
+    <div class="card_border">
+        <div>
+            <h2 class="no_margin cardtitle_text">Mutations</h2>
+        </div>
+        <div class="card_padding">
+            <h4>
+                {{ mutation.dataset_display_name }}
+            </h4>
+            <div class="plot_width plot_padding1">
+                {{ mutation.plot | safe }}
+            </div>
+            <div>
+                <p class="no_margin plot_label"># of cell lines</p>
+            </div>
+
+            {% if not is_mobile %}
+            <div>
+            </br>
+            <p class="view-details-text">
+                {# Setting this as a jinja variable, so that we can escape the " with backslash instead of some uglier html character code #}
+                {% set clickjs = """javascript:clickTab('#characterization');$('button[data-dataset=\"mutation\"]').click()""" %}
+                <span>View details in the <a href="{{ clickjs }}">Characterization tab</a></span></p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endif %}

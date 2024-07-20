@@ -1,0 +1,32 @@
+{% if codependencies | length > 0 %}
+<div class="card_wrapper">
+    <div class="card_border">
+        <div>
+            <h2 class="cardtitle_omics no_margin cardtitle_text">Top Co-dependencies</h2>
+        </div>
+        <div class="card_padding">
+            <div class="plot_width plot_padding1">
+                {% for table in codependencies %}
+                {% if table.is_rnai %}
+                <h4 class="rnai no_margin">{{ table.dataset_display_name }}</h4>
+                {% elif table.is_crispr %}
+                <h4 class="crispr no_margin">{{ table.dataset_display_name }}</h4>
+                {% endif %}
+                <table style="width: 100%">
+                    <thead>
+                        <tr><th></th><th>Gene</th><th>Pearson correlation</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for entry in table.entries %}
+                        <tr><td><a href="{{ entry.interactive_url }}" target="_blank">Plot</a></td><td><a href="{{ entry.gene_url }}">{{ entry.label }}</a></td><td>{{ '%0.2f'| format(entry.correlation) }}</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                <p><span>Download <a href="{{ url_for('gene.download_top_correlations_for_gene_dataset', gene_symbol=gene.label, dataset_name=table.dataset_name) }}">Top 100 Co-dependencies</a></span></p>
+                {% endfor %}
+            </div>
+        </div>
+        <br>
+    </div>
+</div>
+{% endif %}

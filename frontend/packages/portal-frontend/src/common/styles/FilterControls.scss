@@ -1,0 +1,315 @@
+@import "../../node_modules/depmap-shared/color_palette.json";
+
+.FilterControls {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  min-width: 160px;
+  accent-color: $interesting_color;
+}
+
+.mainContent {
+  border-bottom: 2px solid #b8b8b8;
+  overflow-y: auto;
+}
+
+.disabled {
+  color: #aaa;
+}
+
+.title {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 8px 4px 14px;
+  border-bottom: 2px solid #b8b8b8;
+}
+
+.title span {
+  font-size: 14px;
+  text-transform: uppercase;
+}
+
+.resetButton {
+  border: none;
+  background-color: transparent;
+  padding: 0;
+  color: #8b8b8b;
+  font-size: 12px;
+}
+
+.resetButton:hover {
+  color: #000;
+}
+
+.FilterAccordions {
+  display: flex;
+  flex-direction: column;
+}
+
+.FilterAccordion {
+  border-bottom: 2px solid #b8b8b8;
+  font-size: 18px;
+}
+
+.FilterAccordion.transitionActive {
+  overflow-y: hidden;
+}
+
+.FilterInputGroup hr {
+  margin: 8px 0;
+  border-bottom: 1px solid #b8b8b8;
+}
+
+.FilterAccordion:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+}
+
+.FilterInputGroup:last-child hr {
+  display: none;
+}
+
+.FilterAccordion:not(.expanded) {
+  background-color: transparent;
+  transition: background-color 0.2s;
+}
+
+.FilterAccordion label {
+  line-height: 20px;
+  font-weight: 500;
+  cursor: pointer;
+  user-select: none;
+}
+
+.expanded {
+  background-color: #f4f4f4;
+  transition: background-color 0.2s;
+  padding-bottom: 0;
+}
+
+.expandButton {
+  display: flex;
+  width: 100%;
+  line-height: 22px;
+  justify-content: space-between;
+  background-color: transparent;
+  border: none;
+  padding: 3px 0;
+}
+
+.expandButtonLabel {
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.sectionChangedIndicator {
+  font-size: 10px;
+  color: #a9519d;
+  padding: 4px;
+
+  span {
+    position: relative;
+    left: 1px;
+    top: -4px;
+  }
+}
+
+.expanded .expandButton {
+  position: sticky;
+  top: 0;
+  border-bottom: none;
+  background-color: #f4f4f4;
+  transition: background-color 250ms;
+  z-index: 3;
+}
+
+.subsectionLabel {
+  position: sticky;
+  top: 31px;
+  padding: 0 0 4px 0;
+  z-index: 2;
+  background-color: #f4f4f4;
+  font-size: 15px;
+  line-height: 12px;
+  text-align: start;
+
+  .transitionActive & {
+    background-color: transparent;
+  }
+}
+
+.groupChangedIndicator {
+  position: relative;
+  float: left;
+  top: -1px;
+  left: -9px;
+  font-size: 10px;
+  color: #a9519d;
+  margin-right: -6px;
+  height: 0;
+}
+
+.expandedIndicator {
+  color: #000;
+  font-size: 14px;
+  margin-right: 8px;
+}
+
+.disabled .expandedIndicator {
+  color: #aaa;
+}
+
+.accordionContent {
+  font-size: 14px;
+  padding: 0 14px 8px 14px;
+}
+
+.transitionEnter {
+  max-height: 0;
+}
+
+.transitionEnterActive {
+  max-height: 750px;
+  transition: max-height 250ms ease-in;
+}
+
+.transitionExit {
+  max-height: 750px;
+}
+
+.transitionExitActive {
+  max-height: 0;
+  transition: max-height 200ms ease-out;
+}
+
+.multiSelectButtons {
+  margin-top: -4px;
+  margin-bottom: 8px;
+
+  button {
+    border: none;
+    background-color: transparent;
+    font-size: 12px;
+    font-style: italic;
+    padding: 0;
+    margin-right: 2px;
+    background-image: linear-gradient($interesting_color, $interesting_color);
+    background-repeat: no-repeat;
+    background-position: right 0 bottom;
+    background-size: 100% 1px;
+    background-origin: content-box;
+
+    &:hover {
+      background-size: 100% 2px;
+    }
+
+    &:active {
+      font-weight: bold;
+      letter-spacing: -0.15px;
+    }
+  }
+}
+
+.slider {
+  max-height: 104px;
+  margin-bottom: 8px;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+
+  input {
+    max-width: 65px;
+    max-height: 19px;
+    font-size: 12px;
+  }
+
+  & > div:first-child {
+    line-height: 18px;
+  }
+
+  & > div:nth-child(2) {
+    height: 94px !important;
+  }
+
+  :global {
+    .Histoslider--wrapper {
+      padding-top: 4px !important;
+      padding-bottom: 18px !important;
+
+      svg {
+        background-color: transparent !important;
+      }
+    }
+  }
+}
+
+.checkboxFilter {
+  label {
+    display: flex;
+    align-items: center;
+    margin: 0;
+  }
+
+  input {
+    margin: 0 4px 0 0;
+  }
+}
+
+.multiselectFilterContainer {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  flex-grow: 1;
+  margin-bottom: 5px;
+
+  :global {
+    .multiselect-filter__control {
+      min-height: 31px;
+    }
+
+    .multiselect-filter__clear-indicator {
+      padding: 2px;
+    }
+
+    .multiselect-filter__dropdown-indicator {
+      padding: 2px;
+    }
+
+    .multiselect-filter__value-container {
+      padding: 2px 4px;
+
+      & > div:not(.multiselect-filter__multi-value) {
+        height: 20px;
+        margin-top: -1px;
+      }
+    }
+
+    .multiselect-filter__indicators {
+      svg {
+        width: 16px;
+        height: 16px;
+      }
+    }
+
+    .multiselect-filter__multi-value {
+      display: flex;
+      align-items: center;
+      font-size: 12px;
+
+      &:not(:nth-last-child(2))::after {
+        content: "or";
+        background-color: #fff;
+        height: 20.5px;
+        padding: 0 0 0 4px;
+      }
+    }
+  }
+}
+
+:global .multiselect-filter__menu-portal {
+  .multiselect-filter__option {
+    overflow-x: hidden;
+    text-overflow: ellipsis;
+  }
+}

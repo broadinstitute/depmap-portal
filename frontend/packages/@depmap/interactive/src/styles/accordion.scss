@@ -1,0 +1,42 @@
+// TODO: Get rid of :global and convert the corresponding component to CSS
+// Module format.
+:global {
+  .depmap-accordion {
+    .accordion-header {
+      cursor: pointer;
+      background-color: #ddd;
+      border: none;
+      padding: 8px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    details {
+      summary {
+        list-style-type: none;
+
+        &::-webkit-details-marker {
+          display: none;
+        }
+
+        &::before {
+          content: "+";
+          float: right;
+          padding-right: 16;
+        }
+      }
+
+      &[open] {
+        summary {
+          margin-bottom: 0.5rem;
+
+          &::before {
+            content: "-";
+            float: right;
+            padding-right: 8;
+          }
+        }
+      }
+    }
+  }
+}

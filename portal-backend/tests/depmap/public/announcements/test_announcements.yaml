@@ -1,0 +1,21 @@
+# test announcements
+- title: "Fixed Bug in Custom Analysis and Celligner Results"
+  date: 11.07.23
+  description: |
+    In the previous deploy, the celligner results were not updated and custom analysis was lot loading for some users. Fixes for these issues has been added.
+
+- title: "New DepMap Data!"
+  date: 11.01.23
+  description: |
+    The 23Q4 release is now live and contains several new datasets, portal tools, metadata and pipeline improvements. Please read the [release notes][1] for more details.
+
+    [1]: https://drive.google.com/drive/folders/1OnlGEcHvuKWL8CseuvnpSPjwD1V3GIOe
+
+- title: ""
+  date: 09.25.23
+  description: |
+    We are excited to announce the launch of the Context Explorer, a brand new tool to discover selective gene dependencies and drug sensitivities, as well as see available data. The Context Explorer allows you to browse through lineages and primary disease types to investigate results for a context of your choosing. 
+
+    In the scope of the Context Explorer, a selective vulnerability is one that shows up more strongly and/or more frequently in the selected context as compared to a defined “out-group”. Each vulnerability can also be clicked on to be viewed in greater detail, both in and outside of the selected context. 
+
+    The Context Explorer can be connected to Data Explorer 2, and all results are downloadable. We are looking forward to hearing your feedback on this tool!

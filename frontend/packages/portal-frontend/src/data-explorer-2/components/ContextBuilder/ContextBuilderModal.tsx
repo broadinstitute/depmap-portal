@@ -1,0 +1,86 @@
+import React, { useEffect } from "react";
+import { Modal } from "react-bootstrap";
+import { capitalize, getDimensionTypeLabel } from "@depmap/data-explorer-2";
+import { DataExplorerContext } from "@depmap/types";
+import ModalContent from "src/data-explorer-2/components/ContextBuilder/ModalContent";
+import { useCellLineSelectorModal } from "src/data-explorer-2/components/ContextBuilder/CellLineSelector";
+import styles from "src/data-explorer-2/styles/ContextBuilder.scss";
+
+interface Props {
+  show: boolean;
+  context: DataExplorerContext | Partial<DataExplorerContext> | null;
+  onClickSave: (newContext: DataExplorerContext) => void;
+  onHide: () => void;
+  backdrop?: "static" | boolean;
+  isExistingContext?: boolean;
+}
+
+function ContextBuilderModal({
+  show,
+  context,
+  onClickSave,
+  onHide,
+  backdrop = "static",
+  isExistingContext = false,
+}: Props) {
+  useEffect(() => {
+    let modal = document.querySelector("#modal-container") as HTMLElement;
+
+    if (!modal) {
+      modal = document.createElement("div");
+      document.body.appendChild(modal);
+    }
+
+    modal.id = "modal-container";
+    modal.style.zIndex = "1051";
+    modal.style.position = "absolute";
+    modal.style.top = "0";
+  }, []);
+
+  const contextTypeName = context
+    ? capitalize(getDimensionTypeLabel(context.context_type as string))
+    : "";
+
+  const title = `${
+    context && "expr" in context
+      ? `${isExistingContext ? "Edit" : "Save as"}`
+      : `Create ${/^[AEIOU]/.test(contextTypeName) ? "an" : "a"}`
+  } ${contextTypeName} Context`;
+
+  const {
+    CellLineSelectorModal,
+    isCellLineSelectorVisible,
+    editInCellLineSelector,
+  } = useCellLineSelectorModal();
+
+  return (
+    <>
+      <Modal
+        className={styles.ContextBuilder}
+        backdrop={backdrop}
+        show={show}
+        onHide={onHide}
+        bsSize="large"
+        keyboard={false}
+        style={{
+          visibility: isCellLineSelectorVisible ? "hidden" : "visible",
+        }}
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>{title}</Modal.Title>
+        </Modal.Header>
+        <Modal.Body key={`${show}`}>
+          <ModalContent
+            context={context}
+            onClickSave={onClickSave}
+            onClickCancel={onHide}
+            editInCellLineSelector={editInCellLineSelector}
+          />
+        </Modal.Body>
+      </Modal>
+      <CellLineSelectorModal />
+    </>
+  );
+}
+
+export default ContextBuilderModal;

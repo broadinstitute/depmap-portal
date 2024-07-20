@@ -1,0 +1,233 @@
+$link_blue: #337ab7;
+$link_blue_hover: #23527c;
+$modal-height: 72vh;
+$bottom-div-height: 35px;
+
+// TODO: Get rid of :global and convert the corresponding component to CSS
+// Module format.
+:global {
+  .cell-line-selector-modal {
+    width: 85vw;
+    max-width: 85vw;
+  }
+
+  .cellLineSelector {
+    display: flex;
+    position: relative;
+    flex-direction: row;
+    border: 1px solid grey;
+    align-self: flex-start;
+  }
+
+  .cellLineSelector {
+    .parentDiv {
+      flex-basis: 0;
+      flex-grow: 1;
+    }
+
+    .listOfListsPanel {
+      display: flex;
+      flex-flow: column;
+      flex-basis: 0;
+      flex-grow: 1;
+
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      right: 85.7%;
+      overflow: auto;
+    }
+
+    .list-of-lines {
+      height: 100%;
+      overflow: scroll;
+    }
+
+    .selectorPanel {
+      display: inline-flex;
+      flex-direction: column;
+      flex-basis: 0;
+      flex-grow: 6;
+      font-family: lato, sans-serif;
+      overflow: auto;
+    }
+    .message-on-save {
+      width: 50vw;
+      max-width: 50vw;
+      .save-modal-content {
+        height: 50vh;
+      }
+    }
+
+    .cell-line-list-preview-container {
+      display: flex;
+      flex-direction: column;
+      overflow: scroll;
+      flex-wrap: wrap;
+      height: 100%;
+
+      li {
+        padding-right: 40px;
+      }
+      a {
+        color: $link_blue;
+
+        &:hover {
+          color: $link_blue_hover;
+          text-decoration: underline;
+        }
+      }
+    }
+    .custom-button {
+      background: #7b8cb2;
+      color: #ffffff;
+    }
+    .interactive-glyphicon-button {
+      cursor: pointer;
+    }
+
+    .italicize {
+      font-style: italic;
+    }
+
+    .selectorPanel {
+      // Height of LongTableCellLineSelector
+      height: $modal-height;
+
+      .saveAndDiscardButtons {
+        display: flex;
+        flex-direction: row-reverse;
+        position: absolute;
+        top: calc(#{$modal-height} - #{$bottom-div-height});
+        right: 5px;
+      }
+
+      .help-overlay {
+        height: 100%;
+        padding: 20px;
+
+        .main-instruction {
+          font-size: 2em;
+        }
+      }
+
+      .cell-line-list-preview-container {
+        display: flex;
+        flex-direction: column;
+        overflow: scroll;
+        flex-wrap: wrap;
+        height: 100%;
+
+        a {
+          color: $link_blue;
+
+          &:hover {
+            color: $link_blue_hover;
+            text-decoration: underline;
+          }
+        }
+      }
+    }
+
+    .listOfListsPanel {
+      .new-list-buttons-container {
+        display: flex;
+        flex-direction: column;
+        padding-bottom: 20px;
+        border-bottom: 1px solid lightgray;
+        border-right: 1px solid lightgray;
+
+        .btn {
+          background: hsl(221, 26%, 59%);
+          border-color: hsl(221, 19%, 40%);
+          color: white;
+          border-radius: 0;
+          flex-grow: 1;
+          padding: 4px;
+
+          &:hover:not([disabled]) {
+            background: hsl(221, 26%, 53%);
+          }
+
+          > div {
+            display: flex;
+            align-items: center;
+            text-align: left;
+            white-space: normal;
+
+            > .glyphicon {
+              margin-inline-end: 4px;
+            }
+          }
+        }
+      }
+
+      .list-group {
+        margin-bottom: 0px;
+        overflow: auto;
+
+        .list-group-item {
+          padding: 8px;
+
+          &:first-child {
+            border-top-left-radius: 0;
+            border-top-right-radius: 0;
+          }
+          &:last-child {
+            border-bottom-left-radius: 0;
+            border-bottom-right-radius: 0;
+          }
+
+          &.active,
+          &.active:hover,
+          &.active:focus {
+            background-color: #dee2eb;
+            border-color: #dee2eb;
+            color: black;
+          }
+
+          .cell-line-list-button-group {
+            display: flex;
+            align-items: center;
+
+            :first-child {
+              flex-grow: 1;
+            }
+
+            .edit-list-name-input {
+              // full width - width of buttons
+              max-width: calc(100% - 28px);
+            }
+
+            .action-button {
+              opacity: 0.7;
+
+              &:hover {
+                opacity: 1;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  .long-table-cell-line-selector-container {
+    .add-col-panel {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      height: calc(#{$modal-height} - #{$bottom-div-height});
+      padding-bottom: $bottom-div-height;
+    }
+    .long-table-container {
+      flex: 5;
+      height: $modal-height;
+    }
+    .preview-vis-container {
+      height: 100px;
+      padding: 10px;
+    }
+  }
+}

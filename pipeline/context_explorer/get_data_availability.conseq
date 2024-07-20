@@ -1,0 +1,17 @@
+
+rule get_data_availability:
+    inputs:
+        script=fileref("./get_data_availability.py"),
+        depmap_data_taiga_id={"type": "depmap_data_taiga_id"},
+        repurposing_matrix_taiga_id={"type": "repurposing_matrix_taiga_id"},
+        rnai_cell_lines_taiga_id={"type": "rnai_cell_lines_taiga_id"}
+    outputs:
+        {"type": "data-avail", "filename": { "$filename": "data-avail.csv"} }
+    run """
+        python \
+          {{ inputs.script.filename }} \
+          {{ inputs.depmap_data_taiga_id.dataset_id }} \
+          {{ inputs.repurposing_matrix_taiga_id.dataset_id }} \
+          {{ inputs.rnai_cell_lines_taiga_id.dataset_id }} \
+          data-avail.csv
+        """

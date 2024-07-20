@@ -1,0 +1,83 @@
+{% import 'partials/partials.html' as partials %}
+{% import 'methylation/bubble_map.html' as bubble_map %}
+
+{% if characterizations|length > 0 %}
+    <div class="row">
+        <div class="col-md-2">
+            {% set radio_active_set = {'is_set': False} %}
+            {% macro radio(characterization) -%}
+                <div class="radio" style="margin-left: 15px;">
+                    <label><input type="radio" class="characterizationRadio" name="characRadio"
+                                  data-dataset={{ characterization.dataset }} value=
+                            {{ characterization.id }}{% if not radio_active_set.is_set %}
+                                  checked="checked"{% endif %}>{{ characterization.display_name }}</label>
+                </div>
+                {% if radio_active_set.update({'is_set': True}) %}{% endif %}
+            {%- endmacro %}
+
+            {% for characterization in characterizations %}
+                {{ radio(characterization) }}
+            {% endfor %}
+
+            <label style="font-weight: normal; cursor: pointer; padding-left: 15px;">
+                <input type="checkbox" id="characterization-show-sublineage" name="showSublineage">
+                <span style="padding-left: 5px">Show lineage subtypes</span>
+            </label>
+        </div>
+
+        <div class="col-md-10">
+            <div class="tab-content">
+                {% set content_active_set = {'is_set': False} %}
+                {% macro tab_content(characterization) -%}
+                    <div role="tabpanel"
+                         class="characterization-tab-content tab-pane{% if not content_active_set.is_set %} active{% endif %}"
+                         id="{{ characterization.id }}">
+                        {% if 'sublineage_plot' in characterization %}
+                            {# box plot partial includes display_name so that it can be inline with the toolbar #}
+                            {{ partials.sublineage_plot(characterization.display_name, characterization.sublineage_plot, "characterization-show-sublineage", "characterizationshowsublineageupdated") }}
+                        {% else %}
+                            <h2>{{ characterization.display_name }}</h2>
+                        {% endif %}
+
+                        {% if 'data_table' in characterization %}
+                            {{ partials.wide_data_table(characterization.data_table) }}
+                        {% endif %}
+
+                        {% if 'bubble_map' in characterization %}
+                            {{ bubble_map.bubble_map(characterization.bubble_map, gene_name) }}
+                        {% endif %}
+                    </div>
+                    {% if content_active_set.update({'is_set': True}) %}{% endif %}
+                {%- endmacro %}
+
+                {% for characterization in characterizations %}
+                    {{ tab_content(characterization) }}
+                {% endfor %}
+            </div>
+        </div>
+        <br>
+        <br>
+        <br>
+    </div>
+
+    <script>
+        $(function () { // document ready for middle-of-html js
+            function showCharacterizationTabFromRadio() {
+                var selectedValue = $('input[name="characRadio"]:checked').val();
+                $('.characterization-tab-content').removeClass('active');
+                $(`#${selectedValue}`).addClass('active');
+            }
+
+            showCharacterizationTabFromRadio();
+            $('.characterizationRadio').change(function () {
+                showCharacterizationTabFromRadio();
+                $.fn.dataTable.tables({visible: true, api: true}).columns.adjust();
+            });
+
+            $('#characterization-show-sublineage').click(function () {
+                var event = new Event("characterizationshowsublineageupdated");
+                window.dispatchEvent(event);
+            })
+        });
+    </script>
+{% endif %}

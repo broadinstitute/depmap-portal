@@ -1,0 +1,19 @@
+.LoadingTile {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 10px;
+  min-height: 400px;
+  background-color: #eee;
+  border-top: 1px solid #5e5e5e;
+}
+
+.ErrorTile {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 10px;
+  min-height: 400px;
+  border: 1px solid #f0f0f0;
+  border-top: 1px solid #5e5e5e;
+}

@@ -1,0 +1,123 @@
+rule format_gene_dep_csv:
+    inputs:
+        data={'type': 'dep-matrix', 'label' ~ 'Chronos_Combined|Chronos_Achilles|Chronos_Score|RNAi_merged|CERES_Combined|Sanger_CRISPR|Avana'},
+        hdf5_utils=fileref("scripts/hdf5_utils.py", copy_to="hdf5_utils.py")
+    outputs:
+        {'type': 'dep-matrix-csv', 
+        'dataset_id': '{{inputs.data.orig_dataset_id}}', 
+        'label': '{{ inputs.data.label }}', 
+        'confounders_label': '{{ inputs.data.confounders_label }}',
+        'filename': {"$filename": 'deps.csv'} }
+    run "python3" with """
+        from hdf5_utils import read_hdf5
+
+        df = read_hdf5("{{ inputs.data.filename }}")
+        df = df.transpose()
+        df.to_csv("deps.csv",index_label="Row.name")
+    """
+
+rule common_essentials:
+    executor: dsub {"docker_image": "us.gcr.io/broad-achilles/depmap-pipeline-tda:v10", "min_ram": "10"}
+    inputs:
+        data={'type': 'dep-matrix-csv'},
+        script=fileref('scripts/tda/CE_percentile_rank_analysis.py')
+    outputs:
+        {'type': 'common-essentials', 'label': '{{ inputs.data.label }}', 'filename': {'$filename': 'ce.csv'} }
+    run "python3 {{ inputs.script.filename }} {{ inputs.data.filename }} ce.csv"
+
+rule dep_moments:
+    executor: dsub {"docker_image": "us.gcr.io/broad-achilles/depmap-pipeline-tda:v10", "min_ram": "10"}
+    inputs:
+        data={'type': 'dep-matrix-csv'},
+        script=fileref('scripts/tda/moments.py')
+    outputs:
+        {'type': 'dep-moments', 'label': '{{ inputs.data.label }}', 'filename': {'$filename': 'moments.csv'} }
+    run "python3 {{ inputs.script.filename }} {{ inputs.data.filename }} moments.csv"
+
+
+####### LRT
+
+let genes_per_lrt_task = '1000'
+
+
+rule lrt_partition:
+    inputs: 
+        data={'type': 'dep-matrix-csv'},
+        partition_lrt_input=fileref('scripts/tda/lrt/partition-lrt-input.py')
+    outputs: 
+        {'type': 'lrt-partitions', 
+        'dataset_id': '{{inputs.data.dataset_id}}', 
+        'label': '{{ inputs.data.label }}', 
+        'filename': {'$filename': 'partitions.csv'} }
+    run "python3 {{ inputs.partition_lrt_input.filename }} {{ inputs.data.filename }} partitions.csv {{ config.genes_per_lrt_task }}"
+
+rule lrt:
+    inputs:
+        partitions={'type': 'lrt-partitions', 'dataset_id': dataset_id, 'label': label},
+        data={'type': 'dep-matrix-csv', 'dataset_id': dataset_id, 'label': label},
+        sparkles_config=fileref('sparkles-config'),
+        lrt_sh=fileref('scripts/tda/lrt/lrt.sh')
+    outputs: 
+        {'type': 'lrt-scores', 
+        'label': '{{ inputs.data.label }}', 
+        'dataset_id': '{{ inputs.data.dataset_id }}', 
+        'filename': { '$filename': 'out.csv' }}
+    watch-regex: "task.*|Submitting job: .*" # print out the task status summary from sparkles
+    run """bash {{ inputs.lrt_sh.filename }} \
+        {{ config.SCRIPT_DIR }} \
+        {{ config.sparkles_path }} \
+        {{ inputs.sparkles_config.filename }} \
+        {{ inputs.partitions.filename }} \
+        {{ inputs.data.filename }} \
+        out.csv
+        """
+
+####### Merge the results from above into a single dataset
+
+rule summarize_gene_deps:
+    inputs:
+        common_essentials=all {'type':'common-essentials'},
+        dep_moments=all {'type':'dep-moments'},
+        lrt=all {'type':'lrt-scores'},
+        probs=all {'type': 'raw-dep-prob-matrix'},
+        count_dep_lines=fileref("scripts/count_dep_lines.py"),
+        summarize_gene_deps=fileref("scripts/summarize_gene_deps.py")
+    outputs: {'type': 'gene-dep-summary', 'filename': {"$filename": "deps.csv"}}
+
+    run "python" with """
+    import json
+    with open("probs.json", "wt") as fd:
+        fd.write(json.dumps( {{ inputs.probs }} ))
+    """
+
+    run "python3 {{ inputs.count_dep_lines.filename }} probs.json depcounts.csv"
+
+    run "python3" with """
+        import pandas as pd
+
+        def read_artifacts(artifacts):
+            dfs = []
+            for a in artifacts:
+                df = pd.read_csv(a['filename'])
+                df['label'] = a['label']
+                dfs.append(df)
+            return pd.concat(dfs, ignore_index=True)
+
+        common_essentials = read_artifacts( {{ inputs.common_essentials }} )
+        common_essentials.to_csv("common_essentials.csv", index=False)
+
+        dep_moments = read_artifacts( {{ inputs.dep_moments }} )
+        dep_moments.to_csv("moments.csv", index=False)
+
+        lrt = read_artifacts( {{ inputs.lrt }} )
+        lrt.to_csv("lrt.csv", index=False)
+    """
+
+    run """
+    python3 {{ inputs.summarize_gene_deps.filename }} \
+        output=deps.csv \
+        common_essentials=common_essentials.csv \
+        moments=moments.csv \
+        lrt=lrt.csv \
+        depcounts=depcounts.csv
+    """

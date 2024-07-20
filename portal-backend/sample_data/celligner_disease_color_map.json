@@ -1,0 +1,268 @@
+[
+  {
+    "Celligner color": "#EE6A50",
+    "Primary disease ccle": "Adrenal Cancer",
+    "Lineage ccle": "adrenal_cortex",
+    "Primary disease depmap": "Adrenal Cancer",
+    "lineage depmap": "adrenal_cortex"
+  },
+  {
+    "Celligner color": "#daa520",
+    "Primary disease ccle": "Bile Duct Cancer",
+    "Lineage ccle": "bile_duct",
+    "Primary disease depmap": "Bile Duct Cancer",
+    "lineage depmap": "bile_duct"
+  },
+  {
+    "Celligner color": "#cd6090",
+    "Primary disease ccle": "Bladder Cancer",
+    "Lineage ccle": "urinary_tract",
+    "Primary disease depmap": "Bladder Cancer",
+    "lineage depmap": ""
+  },
+  {
+    "Celligner color": "#9932CC",
+    "Primary disease ccle": "Bone Cancer",
+    "Lineage ccle": "bone",
+    "Primary disease depmap": "Bone Cancer",
+    "lineage depmap": "bone"
+  },
+  {
+    "Celligner color": "#cd6090",
+    "Primary disease ccle": "Brain Cancer",
+    "Lineage ccle": "central_nervous_system",
+    "Primary disease depmap": "Brain Cancer",
+    "lineage depmap": "central_nervous_system"
+  },
+  {
+    "Celligner color": "#cd6090",
+    "Primary disease ccle": "Breast Cancer",
+    "Lineage ccle": "breast",
+    "Primary disease depmap": "Breast Cancer",
+    "lineage depmap": "breast"
+  },
+  {
+    "Celligner color": "#6B8E23",
+    "Primary disease ccle": "Cervical Cancer",
+    "Lineage ccle": "cervix",
+    "Primary disease depmap": "Cervical Cancer",
+    "lineage depmap": "cervix"
+  },
+  {
+    "Celligner color": "#a2cd5a",
+    "Primary disease ccle": "Colon/Colorectal Cancer",
+    "Lineage ccle": "colorectal",
+    "Primary disease depmap": "Colon/Colorectal Cancer",
+    "lineage depmap": "colorectal"
+  },
+  {
+    "Celligner color": "#ff3e96",
+    "Primary disease ccle": "Embryonal Cancer",
+    "Lineage ccle": "embryo",
+    "Primary disease depmap": "Embryonal Cancer",
+    "lineage depmap": "embryo"
+  },
+  {
+    "Celligner color": "#DB7093",
+    "Primary disease ccle": "Endometrial/Uterine Cancer",
+    "Lineage ccle": "uterus",
+    "Primary disease depmap": "Endometrial/Uterine Cancer",
+    "lineage depmap": ""
+  },
+  {
+    "Celligner color": "#5cacee",
+    "Primary disease ccle": "Esophageal Cancer",
+    "Lineage ccle": "esophagus",
+    "Primary disease depmap": "Esophageal Cancer",
+    "lineage depmap": "esophagus"
+  },
+  {
+    "Celligner color": "#556b2f",
+    "Primary disease ccle": "Eye Cancer",
+    "Lineage ccle": "eye",
+    "Primary disease depmap": "Eye Cancer",
+    "lineage depmap": "eye"
+  },
+  {
+    "Celligner color": "#daa520",
+    "Primary disease ccle": "Gallbladder Cancer",
+    "Lineage ccle": "bile_duct",
+    "Primary disease depmap": "Gallbladder Cancer",
+    "lineage depmap": ""
+  },
+  {
+    "Celligner color": "#cd6090",
+    "Primary disease ccle": "",
+    "Lineage ccle": "",
+    "Primary disease depmap": "Fibroblast",
+    "lineage depmap": "fibroblast"
+  },
+  {
+    "Celligner color": "#008000",
+    "Primary disease ccle": "Gastric Cancer",
+    "Lineage ccle": "gastric",
+    "Primary disease depmap": "Gastric Cancer",
+    "lineage depmap": "gastric"
+  },
+  {
+    "Celligner color": "#008000",
+    "Primary disease ccle": "Gastric Cancer",
+    "Lineage ccle": "small_intestine",
+    "Primary disease depmap": "",
+    "lineage depmap": "small_intestine"
+  },
+  {
+    "Celligner color": "#6a5acd",
+    "Primary disease ccle": "Head and Neck Cancer",
+    "Lineage ccle": "upper_aerodigestive",
+    "Primary disease depmap": "Head and Neck Cancer",
+    "lineage depmap": "upper_aerodigestive"
+  },
+  {
+    "Celligner color": "#ee7621",
+    "Primary disease ccle": "Kidney Cancer",
+    "Lineage ccle": "kidney",
+    "Primary disease depmap": "Kidney Cancer",
+    "lineage depmap": "kidney"
+  },
+  {
+    "Celligner color": "#4682b4",
+    "Primary disease ccle": "Leukemia",
+    "Lineage ccle": "leukemia",
+    "Primary disease depmap": "Leukemia",
+    "lineage depmap": "leukemia"
+  },
+  {
+    "Celligner color": "#ADD8E6",
+    "Primary disease ccle": "Liposarcoma",
+    "Lineage ccle": "",
+    "Primary disease depmap": "Liposarcoma",
+    "lineage depmap": ""
+  },
+  {
+    "Celligner color": "#2F4F4F",
+    "Primary disease ccle": "Liver Cancer",
+    "Lineage ccle": "liver",
+    "Primary disease depmap": "Liver Cancer",
+    "lineage depmap": "liver"
+  },
+  {
+    "Celligner color": "#FF7F50",
+    "Primary disease ccle": "Lung Cancer",
+    "Lineage ccle": "lung",
+    "Primary disease depmap": "Lung Cancer",
+    "lineage depmap": "lung"
+  },
+  {
+    "Celligner color": "#66cd00",
+    "Primary disease ccle": "",
+    "Lineage ccle": "mesothelioma",
+    "Primary disease depmap": "",
+    "lineage depmap": "mesothelioma"
+  },
+  {
+    "Celligner color": "#20b2aa",
+    "Primary disease ccle": "Lymphoma",
+    "Lineage ccle": "lymphoma",
+    "Primary disease depmap": "Lymphoma",
+    "lineage depmap": "lymphoma"
+  },
+  {
+    "Celligner color": "#104e8b",
+    "Primary disease ccle": "Myeloma",
+    "Lineage ccle": "multiple_myeloma",
+    "Primary disease depmap": "Myeloma",
+    "lineage depmap": ""
+  },
+  {
+    "Celligner color": "#F93C86",
+    "Primary disease ccle": "Neuroblastoma",
+    "Lineage ccle": "peripheral_nervous_system",
+    "Primary disease depmap": "Neuroblastoma",
+    "lineage depmap": "peripheral_nervous_system"
+  },
+  {
+    "Celligner color": "#f08080",
+    "Primary disease ccle": "Ovarian Cancer",
+    "Lineage ccle": "ovary",
+    "Primary disease depmap": "Ovarian Cancer",
+    "lineage depmap": "ovary"
+  },
+  {
+    "Celligner color": "#cd4f39",
+    "Primary disease ccle": "Pancreatic Cancer",
+    "Lineage ccle": "pancreas",
+    "Primary disease depmap": "Pancreatic Cancer",
+    "lineage depmap": "pancreas"
+  },
+  {
+    "Celligner color": "#9370db",
+    "Primary disease ccle": "Prostate Cancer",
+    "Lineage ccle": "prostate",
+    "Primary disease depmap": "Prostate Cancer",
+    "lineage depmap": "prostate"
+  },
+  {
+    "Celligner color": "#ee5c42",
+    "Primary disease ccle": "Rhabdoid",
+    "Lineage ccle": "rhabdoid",
+    "Primary disease depmap": "Rhabdoid",
+    "lineage depmap": "rhabdoid"
+  },
+  {
+    "Celligner color": "#9400D3",
+    "Primary disease ccle": "Sarcoma",
+    "Lineage ccle": "rhabdomyosarcoma",
+    "Primary disease depmap": "",
+    "lineage depmap": "rhabdomyosarcoma"
+  },
+  {
+    "Celligner color": "#ADD8E6",
+    "Primary disease ccle": "Sarcoma",
+    "Lineage ccle": "soft_tissue",
+    "Primary disease depmap": "Sarcoma",
+    "lineage depmap": "soft_tissue"
+  },
+  {
+    "Celligner color": "#9ACD32",
+    "Primary disease ccle": "Skin Cancer",
+    "Lineage ccle": "skin",
+    "Primary disease depmap": "Skin Cancer",
+    "lineage depmap": "skin"
+  },
+  {
+    "Celligner color": "#FF087F",
+    "Primary disease ccle": "Teratoma",
+    "Lineage ccle": "",
+    "Primary disease depmap": "Teratoma",
+    "lineage depmap": ""
+  },
+  {
+    "Celligner color": "#00c5cd",
+    "Primary disease ccle": "Thymic Cancer",
+    "Lineage ccle": "",
+    "Primary disease depmap": "Thymic Cancer",
+    "lineage depmap": ""
+  },
+  {
+    "Celligner color": "#458b74",
+    "Primary disease ccle": "Thyroid Cancer",
+    "Lineage ccle": "thyroid",
+    "Primary disease depmap": "Thyroid Cancer",
+    "lineage depmap": "thyroid"
+  },
+  {
+    "Celligner color": "#7ccd7c",
+    "Primary disease ccle": "",
+    "Lineage ccle": "",
+    "Primary disease depmap": "",
+    "lineage depmap": "urinary_tract"
+  },
+  {
+    "Celligner color": "#009acd",
+    "Primary disease ccle": "",
+    "Lineage ccle": "",
+    "Primary disease depmap": "",
+    "lineage depmap": "uterus"
+  }
+]

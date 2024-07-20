@@ -1,0 +1,142 @@
+feature_id,feature_name,dataset,gene_symbol,entrez_id
+ANOS1_(3730)_CN,ANOS1 (3730),CN,ANOS1,3730
+C1orf74_(148304)_CN,C1orf74 (148304),CN,C1orf74,148304
+HNF1B_(6928)_CN,HNF1B (6928),CN,HNF1B,6928
+KDM7A_(80853)_CN,KDM7A (80853),CN,KDM7A,80853
+MAP4K4_(9448)_CN,MAP4K4 (9448),CN,MAP4K4,9448
+MED1_(5469)_CN,MED1 (5469),CN,MED1,5469
+MIR3613_(100500908)_CN,MIR3613 (100500908),CN,MIR3613,100500908
+NRAS_(4893)_CN,NRAS (4893),CN,NRAS,4893
+PSG7_(5676)_CN,PSG7 (5676),CN,PSG7,5676
+SOX10_(6663)_CN,SOX10 (6663),CN,SOX10,6663
+SWI5_(375757)_CN,SWI5 (375757),CN,SWI5,375757
+TNS2_(23371)_CN,TNS2 (23371),CN,TNS2,23371
+TRIL_(9865)_CN,TRIL (9865),CN,TRIL,9865
+UNC93B1_(81622)_CN,UNC93B1 (81622),CN,UNC93B1,81622
+3D_culture_crispr-confounders,3D_culture,crispr-confounders,,
+ACL4_media_crispr-confounders,ACL4_media,crispr-confounders,,
+AR5_media_crispr-confounders,AR5_media,crispr-confounders,,
+AlphaMEM_media_crispr-confounders,AlphaMEM_media,crispr-confounders,,
+CM_media_crispr-confounders,CM_media,crispr-confounders,,
+DMEM_media_crispr-confounders,DMEM_media,crispr-confounders,,
+F12K_media_crispr-confounders,F12K_media,crispr-confounders,,
+F12_media_crispr-confounders,F12_media,crispr-confounders,,
+HITES_media_crispr-confounders,HITES_media,crispr-confounders,,
+IMDM_media_crispr-confounders,IMDM_media,crispr-confounders,,
+KSFM_media_crispr-confounders,KSFM_media,crispr-confounders,,
+L15_media_crispr-confounders,L15_media,crispr-confounders,,
+MCDB_105_media_crispr-confounders,MCDB 105_media,crispr-confounders,,
+MEBM_media_crispr-confounders,MEBM_media,crispr-confounders,,
+MEGM_media_crispr-confounders,MEGM_media,crispr-confounders,,
+MEM_media_crispr-confounders,MEM_media,crispr-confounders,,
+McCoy's_5A_media_crispr-confounders,McCoy's 5A_media,crispr-confounders,,
+Medium_199_media_crispr-confounders,Medium 199_media,crispr-confounders,,
+N5_media_crispr-confounders,N5_media,crispr-confounders,,
+NeuroCult_NS_A_Basal_Medium_media_crispr-confounders,NeuroCult NS-A Basal Medium_media,crispr-confounders,,
+Neurobasal_Media_media_crispr-confounders,Neurobasal Media_media,crispr-confounders,,
+OCMI_L_media_crispr-confounders,OCMI-L_media,crispr-confounders,,
+RETM_media_crispr-confounders,RETM_media,crispr-confounders,,
+RPMI_media_crispr-confounders,RPMI_media,crispr-confounders,,
+SMBM_media_crispr-confounders,SMBM_media,crispr-confounders,,
+SMGM_media_crispr-confounders,SMGM_media,crispr-confounders,,
+SSMD_crispr-confounders,SSMD,crispr-confounders,,
+Stemline_Keratinocyte_Medium_II_media_crispr-confounders,Stemline Keratinocyte Medium II_media,crispr-confounders,,
+WITP_media_crispr-confounders,WITP_media,crispr-confounders,,
+Waymouth's_MB_752/1_media_crispr-confounders,Waymouth's MB 752/1_media,crispr-confounders,,
+William's_E_Medium_media_crispr-confounders,William's E Medium_media,crispr-confounders,,
+adherent_culture_crispr-confounders,adherent_culture,crispr-confounders,,
+cas9_crispr-confounders,cas9,crispr-confounders,,
+mixed_culture_crispr-confounders,mixed_culture,crispr-confounders,,
+semi_adherent_culture_crispr-confounders,semi-adherent_culture,crispr-confounders,,
+suspension_culture_crispr-confounders,suspension_culture,crispr-confounders,,
+AML_Lin,AML,Lin,,
+bone_Lin,bone,Lin,,
+colorectal_Lin,colorectal,Lin,,
+lung_Lin,lung,Lin,,
+melanoma_Lin,melanoma,Lin,,
+osteosarcoma_Lin,osteosarcoma,Lin,,
+skin_Lin,skin,Lin,,
+urinary_tract_Lin,urinary_tract,Lin,,
+AMY1A_(276)_MutDam,AMY1A (276),MutDam,AMY1A,276
+C1orf74_(148304)_MutDam,C1orf74 (148304),MutDam,C1orf74,148304
+HNF1B_(6928)_MutDam,HNF1B (6928),MutDam,HNF1B,6928
+KAL1_(3730)_MutDam,KAL1 (3730),MutDam,KAL1,3730
+MAP4K4_(9448)_MutDam,MAP4K4 (9448),MutDam,MAP4K4,9448
+MED1_(5469)_MutDam,MED1 (5469),MutDam,MED1,5469
+NRAS_(4893)_MutDam,NRAS (4893),MutDam,NRAS,4893
+SOX10_(6663)_MutDam,SOX10 (6663),MutDam,SOX10,6663
+SWI5_(375757)_MutDam,SWI5 (375757),MutDam,SWI5,375757
+TENC1_(23371)_MutDam,TENC1 (23371),MutDam,TENC1,23371
+UNC93B1_(81622)_MutDam,UNC93B1 (81622),MutDam,UNC93B1,81622
+NRAS_(4893)_MutHot,NRAS (4893),MutHot,NRAS,4893
+SOX10_(6663)_MutHot,SOX10 (6663),MutHot,SOX10,6663
+TENC1_(23371)_MutHot,TENC1 (23371),MutHot,TENC1,23371
+AMY1A_(276)_MutDrv,AMY1A (276),MutDrv,AMY1A,276
+C1orf74_(148304)_MutDrv,C1orf74 (148304),MutDrv,C1orf74,148304
+F8A1_(8263)_MutDrv,F8A1 (8263),MutDrv,F8A1,8263
+HNF1B_(6928)_MutDrv,HNF1B (6928),MutDrv,HNF1B,6928
+KAL1_(3730)_MutDrv,KAL1 (3730),MutDrv,KAL1,3730
+MAP4K4_(9448)_MutDrv,MAP4K4 (9448),MutDrv,MAP4K4,9448
+MED1_(5469)_MutDrv,MED1 (5469),MutDrv,MED1,5469
+NRAS_(4893)_MutDrv,NRAS (4893),MutDrv,NRAS,4893
+SOX10_(6663)_MutDrv,SOX10 (6663),MutDrv,SOX10,6663
+SWI5_(375757)_MutDrv,SWI5 (375757),MutDrv,SWI5,375757
+TENC1_(23371)_MutDrv,TENC1 (23371),MutDrv,TENC1,23371
+UNC93B1_(81622)_MutDrv,UNC93B1 (81622),MutDrv,UNC93B1,81622
+AMY1A_(276)_RNAseq,AMY1A (276),RNAseq,AMY1A,276
+ANOS1_(3730)_RNAseq,ANOS1 (3730),RNAseq,ANOS1,3730
+C1orf74_(148304)_RNAseq,C1orf74 (148304),RNAseq,C1orf74,148304
+F8A1_(8263)_RNAseq,F8A1 (8263),RNAseq,F8A1,8263
+HNF1B_(6928)_RNAseq,HNF1B (6928),RNAseq,HNF1B,6928
+KDM7A_(80853)_RNAseq,KDM7A (80853),RNAseq,KDM7A,80853
+MAP4K4_(9448)_RNAseq,MAP4K4 (9448),RNAseq,MAP4K4,9448
+MED1_(5469)_RNAseq,MED1 (5469),RNAseq,MED1,5469
+NRAS_(4893)_RNAseq,NRAS (4893),RNAseq,NRAS,4893
+PSG7_(5676)_RNAseq,PSG7 (5676),RNAseq,PSG7,5676
+SOX10_(6663)_RNAseq,SOX10 (6663),RNAseq,SOX10,6663
+SWI5_(375757)_RNAseq,SWI5 (375757),RNAseq,SWI5,375757
+TNS2_(23371)_RNAseq,TNS2 (23371),RNAseq,TNS2,23371
+TRIL_(9865)_RNAseq,TRIL (9865),RNAseq,TRIL,9865
+UNC93B1_(81622)_RNAseq,UNC93B1 (81622),RNAseq,UNC93B1,81622
+NRAS_(N_Ras)_RPPA,NRAS (N-Ras),RPPA,,
+2_aminoadipate_metabolomics,2-aminoadipate,metabolomics,,
+C18:1_LPC_metabolomics,C18:1 LPC,metabolomics,,
+C36:1_DAG_metabolomics,C36:1 DAG,metabolomics,,
+C36:2_PC_metabolomics,C36:2 PC,metabolomics,,
+C50:2_TAG_metabolomics,C50:2 TAG,metabolomics,,
+C56:3_TAG_metabolomics,C56:3 TAG,metabolomics,,
+acetylcarnitine_metabolomics,acetylcarnitine,metabolomics,,
+acetylcholine_metabolomics,acetylcholine,metabolomics,,
+glucuronate_metabolomics,glucuronate,metabolomics,,
+serine_metabolomics,serine,metabolomics,,
+sucrose_metabolomics,sucrose,metabolomics,,
+taurine_metabolomics,taurine,metabolomics,,
+BIOCARTA_FEEDER_PATHWAY_ssGSEA,BIOCARTA_FEEDER_PATHWAY,ssGSEA,,
+BIOCARTA_KREB_PATHWAY_ssGSEA,BIOCARTA_KREB_PATHWAY,ssGSEA,,
+BIOCARTA_PROTEASOME_PATHWAY_ssGSEA,BIOCARTA_PROTEASOME_PATHWAY,ssGSEA,,
+ST_DIFFERENTIATION_PATHWAY_IN_PC12_CELLS_ssGSEA,ST_DIFFERENTIATION_PATHWAY_IN_PC12_CELLS,ssGSEA,,
+ST_ERK1_ERK2_MAPK_PATHWAY_ssGSEA,ST_ERK1_ERK2_MAPK_PATHWAY,ssGSEA,,
+ST_GA12_PATHWAY_ssGSEA,ST_GA12_PATHWAY,ssGSEA,,
+ST_G_ALPHA_S_PATHWAY_ssGSEA,ST_G_ALPHA_S_PATHWAY,ssGSEA,,
+ST_INTERFERON_GAMMA_PATHWAY_ssGSEA,ST_INTERFERON_GAMMA_PATHWAY,ssGSEA,,
+ST_TUMOR_NECROSIS_FACTOR_PATHWAY_ssGSEA,ST_TUMOR_NECROSIS_FACTOR_PATHWAY,ssGSEA,,
+ST_WNT_CA2_CYCLIC_GMP_PATHWAY_ssGSEA,ST_WNT_CA2_CYCLIC_GMP_PATHWAY,ssGSEA,,
+AMY1A_SOX10_Fusion,AMY1A_SOX10,Fusion,,
+ANOS1_HNF1B_Fusion,ANOS1_HNF1B,Fusion,,
+HNF1B_MAP4K4_Fusion,HNF1B_MAP4K4,Fusion,,
+MED1_SOX10_Fusion,MED1_SOX10,Fusion,,
+MED1_TNS2_Fusion,MED1_TNS2,Fusion,,
+MIR3613_KDM7A_Fusion,MIR3613_KDM7A,Fusion,,
+NRAS_NRAS_Fusion,NRAS_NRAS,Fusion,,
+PSG7_MAP4K4_Fusion,PSG7_MAP4K4,Fusion,,
+PSG7_TRIL_Fusion,PSG7_TRIL,Fusion,,
+SOX10_MAP4K4_Fusion,SOX10_MAP4K4,Fusion,,
+SWI5_MIR3613_Fusion,SWI5_MIR3613,Fusion,,
+TNS2_KDM7A_Fusion,TNS2_KDM7A,Fusion,,
+TNS2_MED1_Fusion,TNS2_MED1,Fusion,,
+TRIL_AMY1A_Fusion,TRIL_AMY1A,Fusion,,
+TRIL_F8A1_Fusion,TRIL_F8A1,Fusion,,
+TRIL_MIR3613_Fusion,TRIL_MIR3613,Fusion,,
+TRIL_NRAS_Fusion,TRIL_NRAS,Fusion,,
+UNC93B1_AMY1A_Fusion,UNC93B1_AMY1A,Fusion,,
+UNC93B1_NRAS_Fusion,UNC93B1_NRAS,Fusion,,

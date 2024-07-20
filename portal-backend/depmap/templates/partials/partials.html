@@ -1,0 +1,115 @@
+{#
+    The name of the macro needs to be different from any variables it takes in
+    E.g. the macro 'sublineage_plot' must be different from the variable 'plot'
+    Otherwise, sublineage_plot will refer to the macro, which has properties on it such as .name
+#}
+{% macro sublineage_plot(display_name, plot, show_sublineage_checkbox_id, show_sublineage_updated_event_name) -%}
+    <div style="display: flex;">
+        <h2>{{ display_name }}</h2>
+        <div class="partials_toolbar flex_align_right">
+            {% if plot.interactive_url is not none %}
+                <a href="{{ plot.interactive_url }}" target="_blank">
+                    <button class="btn btn-default" aria-hidden="true">Explore relationships with other data</button>
+                </a>
+            {% endif %}
+            <a href="{{ plot.download_url }}" download>
+                <span class="glyphicon glyphicon-download-alt" aria-hidden="true" data-toggle="tooltip"
+                      data-placement="top" title="Download plot data"></span>
+            </a>
+            <span class="glyphicon glyphicon-question-sign" aria-hidden="true" data-toggle="tooltip"
+                  data-placement="top" title="Double-click on legend to isolate individual groups"></span>
+        </div>
+    </div>
+    <div id="sublineage_plot_{{ plot.name }}" class="plotly_div"><!-- Plotly chart will be drawn inside this DIV --></div>
+    <script type="text/javascript">
+        $(function () { // document ready for middle-of-html js
+            $.ajax({
+                url: "{{ plot.ajax_url|safe }}",
+                type: 'GET',
+                error: function () {
+                    console.log('Box plot error');
+                },
+                success: function (response) {
+                    DepMap.initSublineagePlot("sublineage_plot_{{ plot.name }}", response, selectedCellLineList, "{{ plot.name }}", "{{ show_sublineage_checkbox_id }}", "{{ show_sublineage_updated_event_name }}");
+                }
+            });
+        });
+    </script>
+{%- endmacro %}
+
+
+{% macro wide_data_table(table, dataLoadCallback=None) %}
+    <div id="wide-table-test-{{ table.name }}">Loading table...</div>
+    <script type="text/javascript">
+        $(function () {
+            // extract column names and put into array
+            let columns = {{table.cols|tojson|safe}};
+
+            let colsArray = [];
+            for (let i = 0; i < columns.length; i++) {
+                colsArray.push({"accessor": columns[i]})
+            }
+
+            // fetch data for the table
+            $.ajax({
+                url: "{{ table.ajax_url|safe }}",
+                type: "GET",
+                error: function () {
+                    console.log('Error');
+                },
+                success: function (response) {
+                    let data = [];
+
+                    //  response.data returns an array of arrays, each array being a row of the table
+                    //  we want to convert each row, which is currently an array, into an object where the keys are defined by colsArray and values are defined by the row array
+                    //TODO:  make some sort of assertation that length of colsArray == length of one row of data
+                    for (let i = 0; i < response.data.length; i++) {
+                        let result = {};
+                        colsArray.forEach((col, j) => result[col.accessor] = response.data[i][j]);
+                        data.push(result)
+                    }
+
+                    // if a column needs a render function applied to it, store it in the renderFunction field
+                    let renderers = {{ table.display.renders|tojson|safe }};
+                    for (let i = 0; i < renderers.length; i++) {
+                        let target_cols = renderers[i].target_cols;
+                        let urlRoots = (renderers[i].url_roots) ? renderers[i].url_roots : "";
+
+                        for (let j = 0; j < target_cols.length; j++) {
+                            let cellLineColIndex = target_cols[j];
+                            let cellLineCol = colsArray[cellLineColIndex];
+                            cellLineCol.renderFunction = function (e) {
+                                let data = e.value;
+                                let row = e.original || e.row.original;
+                                return (eval(renderers[i].render))
+                            };
+                        }
+                    }
+
+                    const sortCol = {{ table.display.sort_col|tojson|safe }};
+                    const sortOrder = {{ table.display.sort_order|tojson|safe }};
+                    const numericColIndices = {{ table.display.numeric_col_indices|tojson|safe }};
+                    let sorted;
+                    if (!!sortCol) {
+                        sorted = [{id: colsArray[sortCol].accessor, sort: sortOrder}]
+                    }
+
+                    let config = {
+                        data: data,
+                        columns: colsArray,
+                        invisibleColumns: {{ table.display.invisible_cols|tojson|safe }},
+                        defaultColumnsToShow: {{ table.display.default_cols_to_show|tojson|safe }},
+                        downloadURL: "{{ table.download_url }}",
+                        sorted: sorted,
+                        additionalReactTableProps: {{ table.display.additional_react_table_props|tojson|safe }}
+                    };
+                    DepMap.initWideTable(elementId = "wide-table-test-{{ table.name }}", config);
+
+                }
+            });
+
+        });
+
+    </script>
+
+{%- endmacro %}

@@ -1,0 +1,18 @@
+{
+  "name": "depmap-e2e",
+  "version": "1.0.0",
+  "description": "End-to-end tests for the depmap portal",
+  "scripts": {
+    "open": "cypress open",
+    "test": "cypress run"
+  },
+  "author": "CDS Team <cds@broadinstitute.org>",
+  "license": "MIT",
+  "dependencies": {
+    "@testing-library/cypress": "^8.0.2",
+    "cypress": "^9.6.1",
+    "cypress-image-snapshot": "^4.0.1",
+    "eslint": "^8.15.0",
+    "eslint-plugin-cypress": "^2.12.1"
+  }
+}

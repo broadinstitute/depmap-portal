@@ -1,0 +1,376 @@
+/*Color Variables*/
+@import "../shared/variables";
+
+.card_container {
+  display: flex;
+  flex-wrap: wrap;
+
+  .card_column {
+    display: flex;
+    flex-direction: column;
+    flex-basis: 0;
+    flex-grow: 1;
+    min-width: 0;
+
+    @media (min-width: 1px) {
+      flex: 100%;
+    }
+
+    @media (min-width: 640px) {
+      flex: 50%;
+    }
+
+    @media (min-width: 1200px) {
+      flex: 24%; /*set at 24% instead of 25% so that the columns don't overflow into a new row if the window is between 1200 - 1210 px*/
+    }
+  }
+}
+
+.card_wrapper_sizer,
+.card_wrapper {
+  //break-inside: avoid;
+  //page-break-inside: avoid;
+  padding: 10px 0px 10px 0px;
+
+  @media (min-width: 768px) {
+    padding: 10px 10px 10px 10px;
+  }
+
+  h2 {
+    font-size: 14pt;
+    font-weight: 600;
+  }
+
+  h4 {
+    margin: 0em 0em 0.3em 0em;
+  }
+
+  .info-icon {
+    height: 17px;
+    padding-left: 4px;
+    padding-bottom: 3px;
+    cursor: pointer;
+  }
+
+  // Added for confidence header tooltip. Double stacking of the long header meant info-icon was not ideal for this header
+  .info-icon-header {
+    height: 16px;
+    padding-left: 7px;
+    padding-bottom: 2px;
+    cursor: pointer;
+  }
+
+  .info-icon-axis {
+    height: 15px;
+    padding-left: 5px;
+    padding-bottom: 0px;
+    cursor: pointer;
+  }
+
+  .view-details-text {
+    text-align: left;
+    color: gray;
+  }
+
+  // We want to spacing at the bottom of the description tile to match the other tiles, which had
+  // margin set as 0, 0, 10 on their view details text <p>
+  .description-columns {
+    margin: 0px 0px 10px;
+  }
+
+  .definition-header {
+    padding-top: 10px;
+  }
+
+  .cardtitle_text {
+    padding: 0.4em 0.5em 0.4em 0.6em;
+  }
+
+  .card_border {
+    border: 1px;
+    border-style: solid;
+    border-color: #f0f0f0;
+    border-top: 1px;
+    border-top-color: #5e5e5e;
+    border-top-style: solid;
+    background-color: white;
+    /*        border-bottom: 2px;
+        border-bottom-color: #5E5E5E;
+        border-bottom-style: solid;*/
+  }
+
+  .card_padding {
+    padding: 0em 0.9em 0em 0.9em;
+  }
+
+  .card_definition {
+    padding: 0.5em 0 0.5em 0;
+  }
+
+  .no_padding {
+    padding: 0em 0em 0em 0em;
+  }
+
+  .no_margin {
+    margin-top: 0em;
+    margin-right: 0em;
+    margin-bottom: 0em;
+  }
+
+  .hr_margin {
+    margin-top: 1em;
+    margin-bottom: 0.5em;
+    border-color: white;
+  }
+
+  .hr_margin2 {
+    margin-top: 1.5em;
+    margin-bottom: 0.5em;
+    border-color: #999999;
+  }
+
+  .card_subheading {
+    font-size: 12pt;
+    font-weight: 600;
+    padding-bottom: 0.4em;
+  }
+
+  .box_rounded {
+    border-radius: 0.25em;
+    padding: 0.15em 0.5em 0.15em 0.5em;
+  }
+
+  .box_rnai {
+    background: $rnai;
+    font-size: 10pt;
+    letter-spacing: 1px;
+    font-weight: 500;
+    color: white;
+  }
+
+  .box_crispr {
+    background: $crispr;
+    font-size: 10pt;
+    letter-spacing: 1px;
+    font-weight: 500;
+    color: white;
+  }
+
+  .crispr {
+    color: $crispr;
+  }
+
+  .rnai {
+    color: $rnai;
+  }
+
+  .repurp {
+    color: $repurp_color;
+  }
+
+  .rep1m {
+    color: $rep1m_color;
+  }
+
+  .crispr_background {
+    background-color: $crispr_transparent_background;
+  }
+
+  .rnai_background {
+    background-color: $rnai_transparent_background;
+  }
+
+  .repurp_background {
+    background-color: adjust-color($color: $repurp_color, $alpha: -0.5);
+  }
+
+  .rep1m_background {
+    background-color: adjust-color($color: $rep1m_color, $alpha: -0.5);
+  }
+
+  .allother {
+    color: $allother;
+  }
+
+  .plot_width {
+    width: 100%;
+  }
+
+  .plot_padding1 {
+    padding: 0.2em 0em 0.2em 0em;
+  }
+
+  .plot_padding2 {
+    padding: 1.5em 0em 0.2em 0em;
+  }
+
+  .plot_label {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding-bottom: 0.4em;
+  }
+
+  .text_labels {
+    padding-left: 1em;
+  }
+
+  .top_features_list {
+    word-break: break-word;
+  }
+
+  .allcaps {
+    text-transform: uppercase;
+  }
+
+  td {
+    vertical-align: top;
+    padding: 0 2px;
+  }
+
+  th {
+    vertical-align: bottom;
+    padding: 0 2px;
+  }
+
+  table {
+    margin-bottom: 10px;
+  }
+
+  .predictability-tile-table-container {
+    .predictability-tile-table {
+      table-layout: fixed;
+
+      td,
+      th {
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      th:nth-child(1),
+      td:nth-child(1) {
+        padding: 0;
+      }
+
+      th:nth-child(2),
+      td:nth-child(2) {
+        width: 33%;
+      }
+
+      th:nth-child(3),
+      td:nth-child(3) {
+        max-width: 82px;
+      }
+
+      th:nth-child(4),
+      td:nth-child(4) {
+        width: 37px;
+      }
+
+      th:nth-child(5),
+      td:nth-child(5) {
+        max-width: 82px;
+      }
+
+      td {
+        vertical-align: middle;
+
+        .relationship-icon-container {
+          display: flex;
+          align-items: center;
+
+          img {
+            height: 12px;
+          }
+        }
+      }
+    }
+  }
+}
+
+/*.btn_viewmore {
+  background-color: white;
+  text-align: right;
+  font-size: 13px;
+  padding: 4px 0px 4px 0px;
+  width: 280px;
+  transition: all 0.4s;
+  margin: 0px;
+}
+
+.btn_viewmore span {
+  display: inline-block;
+  position: relative;
+  transition: 0.4s;
+}
+
+.btn_viewmore span:after {
+  content: "\00bb";
+  position: absolute;
+  opacity: 0;
+  top: 0;
+  right: -10px;
+  transition: 0.4s;
+}
+
+.btn_viewmore:hover span {
+  padding-right: 10px;
+  text-decoration: underline;
+}
+
+.btn_viewmore:hover span:after {
+  opacity: 1;
+  right: 0;
+}*/
+
+.btn_viewmore {
+  /*  border-radius: 10px;*/
+  text-align: right;
+  font-size: 14px;
+  padding: 20px 10px 5px 0px;
+  width: 150px;
+  transition: all 0.5s;
+  /*  margin: 3px;*/
+}
+
+.btn_viewmore span {
+  display: inline-block;
+  position: relative;
+  transition: 0.5s;
+}
+
+.btn_viewmore span:after {
+  content: "\00bb";
+  position: absolute;
+  opacity: 0;
+  top: 0;
+  right: -10px;
+  transition: 0.5s;
+}
+
+.btn_viewmore:hover span {
+  padding-right: 12px;
+  text-decoration: underline;
+}
+
+.btn_viewmore:hover span:after {
+  opacity: 1;
+  right: 0;
+}
+
+.cansar_table td:first-child {
+  word-break: break-word;
+  padding-right: 14px;
+}
+
+details > summary {
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.placeholder_card {
+  background-color: lightgray;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}

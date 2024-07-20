@@ -1,0 +1,39 @@
+.CardContainer {
+  display: flex;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+.CardColumn {
+  display: flex;
+  flex-direction: column;
+  flex-basis: 0;
+  flex-grow: 1;
+  min-width: 0;
+  max-width: 50%;
+}
+
+.CardColumn:empty {
+  display: none;
+}
+
+@media (min-width: 1px) {
+  .CardColumn {
+    flex: 100%;
+    max-width: 100%;
+  }
+}
+
+@media (min-width: 640px) {
+  .CardColumn {
+    flex: 50%;
+  }
+}
+
+@media (min-width: 1200px) {
+  .CardColumn {
+    /* set at 24% instead of 25% so that the columns don't overflow into a new
+     * row if the window is between 1200 - 1210 px*/
+    flex: 24%;
+  }
+}

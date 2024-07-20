@@ -1,0 +1,39 @@
+Celligner color,Primary disease ccle,Lineage ccle,Primary disease depmap,lineage depmap
+#EE6A50,Adrenal Cancer,adrenal_cortex,Adrenal Cancer,adrenal_cortex
+#daa520,Bile Duct Cancer,bile_duct,Bile Duct Cancer,bile_duct
+#cd6090,Bladder Cancer,urinary_tract,Bladder Cancer,
+#9932CC,Bone Cancer,bone,Bone Cancer,bone
+#cd6090,Brain Cancer,central_nervous_system,Brain Cancer,central_nervous_system
+#cd6090,Breast Cancer,breast,Breast Cancer,breast
+#6B8E23,Cervical Cancer,cervix,Cervical Cancer,cervix
+#a2cd5a,Colon/Colorectal Cancer,colorectal,Colon/Colorectal Cancer,colorectal
+#ff3e96,Embryonal Cancer,embryo,Embryonal Cancer,embryo
+#DB7093,Endometrial/Uterine Cancer,uterus,Endometrial/Uterine Cancer,
+#5cacee,Esophageal Cancer,esophagus,Esophageal Cancer,esophagus
+#556b2f,Eye Cancer,eye,Eye Cancer,eye
+#daa520,Gallbladder Cancer,bile_duct,Gallbladder Cancer,
+#cd6090,,,Fibroblast,fibroblast
+#008000,Gastric Cancer,gastric,Gastric Cancer,gastric
+#008000,Gastric Cancer,small_intestine,,small_intestine
+#6a5acd,Head and Neck Cancer,upper_aerodigestive,Head and Neck Cancer,upper_aerodigestive
+#ee7621,Kidney Cancer,kidney,Kidney Cancer,kidney
+#4682b4,Leukemia,leukemia,Leukemia,leukemia
+#ADD8E6,Liposarcoma,,Liposarcoma,
+#2F4F4F,Liver Cancer,liver,Liver Cancer,liver
+#FF7F50,Lung Cancer,lung,Lung Cancer,lung
+#66cd00,,mesothelioma,,mesothelioma
+#20b2aa,Lymphoma,lymphoma,Lymphoma,lymphoma
+#104e8b,Myeloma,multiple_myeloma,Myeloma,
+#F93C86,Neuroblastoma,peripheral_nervous_system,Neuroblastoma,peripheral_nervous_system
+#f08080,Ovarian Cancer,ovary,Ovarian Cancer,ovary
+#cd4f39,Pancreatic Cancer,pancreas,Pancreatic Cancer,pancreas
+#9370db,Prostate Cancer,prostate,Prostate Cancer,prostate
+#ee5c42,Rhabdoid,rhabdoid,Rhabdoid,rhabdoid
+#9400D3,Sarcoma,rhabdomyosarcoma,,rhabdomyosarcoma
+#ADD8E6,Sarcoma,soft_tissue,Sarcoma,soft_tissue
+#9ACD32,Skin Cancer,skin,Skin Cancer,skin
+#FF087F,Teratoma,,Teratoma,
+#00c5cd,Thymic Cancer,,Thymic Cancer,
+#458b74,Thyroid Cancer,thyroid,Thyroid Cancer,thyroid
+#7ccd7c,,,,urinary_tract
+#009acd,,,,uterus

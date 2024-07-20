@@ -1,0 +1,18 @@
+{% macro bool_as_yn(v) -%}
+    {% if v %}Yes{% else %}No{% endif %}
+{%- endmacro %}
+{% if protein.image %}<img src="{{ protein.image }}" width="100%">{% endif %}
+<table class="cansar_table">
+    <tbody>
+    <tr><td>Bioactive Compounds</td><td><b>{{ bool_as_yn(protein.bioactive_compounds) }}</b></td></tr>
+    <tr><td>Druggable Structure</td><td><b>{{ bool_as_yn(protein.druggable_structure) }}</b></td></tr>
+    <tr><td>Druggable by Ligand Based Assessment</td><td><b>{{ bool_as_yn(protein.druggable_by_ligand_based_assessment) }}</b></td></tr>
+    <tr><td>Enzyme</td><td><b>{{ bool_as_yn(protein.enzyme) }}</b></td></tr>
+    </tbody>
+</table>
+{% if not is_mobile %}
+<hr class="hr_margin2">
+    Original and additional data on <i>CanSAR</i>
+<a class="btn_viewmore pull-right" style="padding: 0px; margin: 0px;" href="{{ protein.synopsis_url }}"><span>View in Cansar</span></a>
+{% endif %}
+

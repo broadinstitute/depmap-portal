@@ -1,0 +1,37 @@
+{% extends "nav_footer.html" %}
+
+
+{% block content %}
+    <div class="row">
+        <p>Morpheus is an interactive heatmap visualization. <a href="https://software.broadinstitute.org/morpheus/documentation.html">Morpheus's documentation is here.</a></p>
+        <div class="col-md-12">
+            <h1>Pick datasets to view in Morpheus</h1>
+        </div>
+        <p>Warning: While you can leave the filter box empty, and that will attempt to load all genes from the dataset, there is currently a known
+        issue which prevents all genes from being loaded. In practice, only the first few hundred rows will actually appear in morpheus.</p>
+    </div>
+
+    <form class="form-horizontal" style="min-height: 500px;" method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        <select multiple name="dataset" id="dataset-selection" placeholder="Select datasets" style="width: 300px">
+        {% for dataset in datasets %}
+            <option value="{{ dataset }}">{{ dataset }}</option>
+        {% endfor %}
+        </select>
+
+        <h2>Filter dataset by the following</h2>
+      <textarea class="form-control" rows="10" name="label_filter" placeholder="Paste list of labels to filter datasets by (ie: BRAF, Erlotinib, etc)"></textarea>
+
+    <div class="form-group">
+    <div class="col-sm-10">
+      <button type="submit" class="btn btn-default" style="margin-top: 20px">Submit</button>
+    </div>
+  </div>
+    </form>
+
+<script>$(function(){
+    $("#dataset-selection").selectize()
+})</script>
+{% endblock %}
+
+

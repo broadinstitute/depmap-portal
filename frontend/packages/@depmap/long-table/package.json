@@ -1,0 +1,29 @@
+{
+  "name": "@depmap/long-table",
+  "version": "1.0.0",
+  "main": "index.ts",
+  "types": "index.d.ts",
+  "license": "MIT",
+  "scripts": {
+    "test": "echo 'no tests to run'",
+    "storybook": "storybook dev",
+    "build-storybook": "storybook build"
+  },
+  "dependencies": {
+    "@depmap/common-components": "1.0.0",
+    "immutability-helper": "^2.7.1",
+    "lodash.isequal": "^4.5.0",
+    "react-base-table": "^1.8.0-rc.0",
+    "react-bootstrap": "^0.32.3",
+    "react-csv": "^1.1.1"
+  },
+  "devDependencies": {
+    "@types/immutability-helper": "2.0.15",
+    "@types/lodash.isequal": "^4.5.5",
+    "@types/react-bootstrap": "^0.32.24",
+    "@types/react-csv": "^1.1.1"
+  },
+  "peerDependencies": {
+    "react": "^16.9.35"
+  }
+}

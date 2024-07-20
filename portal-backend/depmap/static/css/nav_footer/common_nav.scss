@@ -1,0 +1,62 @@
+@import "../shared/variables";
+
+.navbar,
+.navbar-default,
+.navbar-inverse {
+  border: none;
+  margin-block-end: 0;
+
+  #nav-alignment {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    justify-content: space-between;
+  }
+
+  .nav-spacer {
+    width: 15px;
+
+    @media screen and (max-width: 785px) {
+      display: none;
+    }
+  }
+
+  .navbar-nav {
+    .link-moved {
+      display: block;
+      padding: 3px 20px;
+      clear: both;
+      font-weight: normal;
+      line-height: 1.42857143;
+
+      @media screen and (max-width: $sm_width) {
+        padding-inline-start: 25px;
+      }
+
+      .alpha-tag {
+        text-transform: none;
+      }
+    }
+    .toolbar-search {
+      padding-inline-start: 15px;
+      padding-inline-end: 15px;
+      // Added to keep search bar dropdown from being covered by hamburger menu email address at small screen widths
+      z-index: 1032;
+    }
+    .alpha-tag {
+      color: red;
+      font-size: 8pt;
+      text-transform: uppercase;
+    }
+  }
+}
+
+#nav-alignment.navbar-header {
+  height: 50px;
+}
+
+#alert-banner {
+  background-color: firebrick;
+  color: white;
+  padding: 10px;
+}

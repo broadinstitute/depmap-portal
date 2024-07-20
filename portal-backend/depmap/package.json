@@ -1,0 +1,26 @@
+{
+  "name": "depmap_webassets",
+  "version": "0.1.0",
+  "description": "DepMap website enables scientists to perform analyses to identify cancer dependencies and enables any researcher to answer scientific questions about the DepMap data",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest"
+  },
+  "repository": "https://github.com/broadinstitute/depmap",
+  "author": "CDS Team <cds@broadinstitute.org>",
+  "license": "MIT",
+  "dependencies": {
+    "bootstrap-3-typeahead": "^4.0.2",
+    "bootstrap-slider": "^9.8.1",
+    "bootstrap-typeahead": "^2.3.2"
+  },
+  "devDependencies": {
+    "jest": "22.4.2"
+  },
+  "jest": {
+    "roots": [
+      "../tests/javascript"
+    ],
+    "testRegex": "/depmap/.*\\.(jsx|js)$"
+  }
+}

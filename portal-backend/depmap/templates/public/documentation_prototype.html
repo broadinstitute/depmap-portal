@@ -1,0 +1,99 @@
+{% extends "nav_footer.html" %} {% block css %} {% assets filters="libsass",
+output="public/css/public.css", "css/public/public.scss",
+depends='css/shared/*.scss' %}
+<link rel="stylesheet" href="{{ ASSET_URL }}" />
+{% endassets %} {% endblock %} {% set dmc_forum_warning_message = "The link you
+have clicked will take you to the public DepMap Forum.\\n\\nThe community DepMap
+forum is open to the world, and is not access controlled. Do not post any
+proprietary or non-public data on the forum."%} {% block content %}
+<div>
+  <h1>Resources</h1>
+  <div class="row">
+    <div class="col-md-9">
+      {% for topic in topics %}
+      <h2>{{ topic.topic_title }}</h2>
+      <div class="row">
+        {% for post in topic.posts %}
+        <div class="col-md-9">{{post.html|safe}}</div>
+        {% endfor %} {# for column in section.columns #}
+      </div>
+      <hr />
+      {% endfor %} {% if config.ENABLED_FEATURES.dmc_home_template %}
+      <div>
+        <body>
+          For further questions contact
+          <a href="mailto:{{ config.CONTACT_EMAIL }}"
+            >{{ config.CONTACT_EMAIL }}</a
+          >
+        </body>
+        <br />
+        <br />
+        <br />
+      </div>
+      {% endif %}
+    </div>
+    <div class="col-md-3">
+      {% if config.ENABLED_FEATURES.dmc_home_template %}
+      <a target="blank" href="https://dmcforum.depmap.org/">
+        <div class="linkbox" style="margin-bottom: 1em; background: #a9529e">
+          <h3>Visit the DMC Forum</h3>
+          <p>
+            A shared space for the DMC partners to ask questions, provide
+            feedback, and converse with the DepMap team and other DMC partners.
+            All DMC partners have access to this non-public forum.
+          </p>
+          <!-- <p>A place for the DMC partners to ask <span style="font-weight: 900;">non-private</span> DMC DepMap questions and converse with the DepMap team and other DMC partners</p> -->
+        </div>
+      </a>
+      <div class="linkbox">
+        <h3>DepMap Community Forum</h3>
+        <p>
+          Currently these FAQs link to the DepMap Community Forum and are
+          accurate for the public DepMap portal. With the release of the DMC
+          Forum, the plan is to update these FAQs to reflect the DMC-specific
+          data and capabilities soon.
+        </p>
+      </div>
+      {% endif %} {% if not config.ENABLED_FEATURES.dmc_home_template %}
+      <a
+        target="_blank"
+        href="https://forum.depmap.org/"
+        {%
+        if
+        config.ENABLED_FEATURES.dmc_home_template
+        %}
+        onclick="return confirm('{{ dmc_forum_warning_message }}')"
+        {%
+        endif
+        %}
+      >
+        <div class="linkbox">
+          <h3>DepMap Community Forum</h3>
+          <p>
+            Join the public DepMap community to ask questions, share insights
+            and have in-depth discussions.
+          </p>
+          {% if config.ENABLED_FEATURES.dmc_home_template %}
+          <strong class="italicize"
+            >Please note: this is the public DepMap forum, not the DMC-exclusive
+            channel.</strong
+          >
+          {% endif %}
+        </div>
+      </a>
+      {% endif %}
+      <br />
+      <a target="_blank" href="http://cancerdatascience.org/blog/">
+        <div class="linkbox">
+          <h3>CDS Blog</h3>
+          <p>
+            Insights, observations and research from the Cancer Data Science
+            team
+          </p>
+        </div>
+      </a>
+    </div>
+    <br />
+  </div>
+</div>
+{% endblock %}

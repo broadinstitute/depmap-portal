@@ -1,0 +1,41 @@
+{% macro celfie_page(celfie_id, celfie_vars, is_tab) %}
+<div class="container-fluid">
+    <h2>Genomic Associations</h2>
+    <div id="{{celfie_id}}"></div>
+</div>
+
+<script>
+    $(function() {
+        let is_tab = {{is_tab | tojson}};
+        if (is_tab) {
+            let celfieTabShownAtLeastOnce = false;
+            $('a[href="#genomic_assoc"]').on("show.bs.tab", () => {
+                if (!celfieTabShownAtLeastOnce) {
+                    celfieTabShownAtLeastOnce = true;
+                    DepMap.initCelfiePage(
+                        "{{celfie_id}}", 
+                        {{ celfie_vars.similarity_options | tojson }}, 
+                        {{ celfie_vars.color_options | tojson }}, 
+                        {{ celfie_vars.connectivity_options | tojson }}, 
+                        {{ celfie_vars.entity_name | tojson }},
+                        {{ celfie_vars.datasets | tojson }}, 
+                        {{ celfie_vars.dependency_datasets | tojson }}, 
+                        "{{ url_for("static", filename="img/celfie/celfie-tutorial.png") }}");
+                }
+            });
+        }
+        else {
+            DepMap.initCelfiePage(
+                "{{celfie_id}}", 
+                {{ celfie_vars.similarity_options | tojson }}, 
+                {{ celfie_vars.color_options | tojson }}, 
+                {{ celfie_vars.connectivity_options | tojson }}, 
+                {{ celfie_vars.entity_name | tojson }},
+                {{ celfie_vars.datasets | tojson }}, 
+                {{ celfie_vars.dependency_datasets | tojson }}, 
+                "{{ url_for("static", filename="img/celfie/celfie-tutorial.png") }}");
+        }
+        
+    })
+</script>
+{% endmacro %}

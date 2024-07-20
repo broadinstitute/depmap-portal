@@ -1,0 +1,43 @@
+{% extends "nav_footer.html" %}
+{% block css %}
+    {% set css_filename = "skyros" if config.ENV_TYPE in ['skyros', 'dmc'] else "public" %}
+    {% assets filters="libsass", output="public/css/{}.css".format(css_filename), "css/public/{}.scss".format(css_filename), depends='css/shared/*.scss' %}
+    <link rel="stylesheet" href="{{ ASSET_URL }}">
+{% endassets %}
+{% endblock %}
+
+{% block page_title %}
+    DepMap Announcements {# this appears as the tab title #}
+{% endblock %}
+
+{% block content %}
+<div>
+	<h1>Announcements</h1>
+</div>
+<div class="row">
+    {% for announcement in announcements %}
+    <div class="col-md-9">
+    <hr class="hr_announcement">    
+        <div style="margin: 0 0 0 0;">
+    	   <h4>{{ announcement.date }}</h4>
+        </div>
+        {% if announcement.title %}
+            <div>
+                <h4 style="margin: 1.3rem 0 .2rem 0">{{ announcement.title }}</h4>
+            </div>
+        {% endif %}
+        <div class="announcements-container">
+            {% for change in announcement.changes %}
+            <ul>
+                <li><p style="margin: 0 0 .1rem 0">{{ change.text | safe }}</p></li>
+            </ul>
+            {% endfor %}
+        </div>
+    </div>
+    <div class="col-md-3"></div>
+    {% endfor %} 
+</div>
+<br>
+<br>
+<br>
+{% endblock %}

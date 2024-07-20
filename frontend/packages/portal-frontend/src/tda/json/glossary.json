@@ -1,0 +1,60 @@
+[
+  {
+    "term": "Predictive accuracy (r)",
+    "definition": "Predictive accuracy (correlation between observed and predicted dependency) for the best model. Ensemble of random forest models using 5-fold stratified cross-validation to predict probability of dependency from 5 different subsets of omics features (unbiased, related). The unbiased model has access to all potential predictive features from RNAseq, ssGSEA, CN, damaging mutations (MutDam), missense mutations (MutMis), hotspot mutations (MutHot), fusion, proteomics, RPPA, metabolomics, RRBS, lineage context (Lin). The related model only has access to predictive features that are related to the target gene by inweb PPI network, paralogs by DNA sequence similarity, or members of the same CORUM protein complex."
+  },
+  {
+    "term": "LRT",
+    "definition": "Higher values indicate strongly selective gene effect distributions. Likelihood ratio test measures how much more likely the gene effect distribution is to be skewed-t compared to normal (null). LRT = 2*[ln(likelihood for Skewed-t) - ln(likelihood for Gaussian)]"
+  },
+  {
+    "term": "Skewness",
+    "definition": "Gene effect skewness. Negative value means the distribution of gene effects are skewed to the left, indicating the outlier cell lines are more depleted than the average cell line. Positive values indicate skew to the right (commonly observed for tumor suppressors). Calculated using the third central moment of the gene effect across all cell lines."
+  },
+  {
+    "term": "Variance",
+    "definition": "Gene effect variance. Higher variance indicates variable gene effect across cell lines in response to target inhibition. Calculated by variance of gene effects across cell lines."
+  },
+  {
+    "term": "Dependent cell line fraction",
+    "definition": "Fraction of cell lines with probability of dependency greater than 0.5. Probabilistic method compares gene effects to the distributions of positive and negative controls with each cell line as described in [biorxiv].",
+    "references": {
+      "biorxiv": {
+        "text": "Achilles BioRxiv",
+        "url": "https://doi.org/10.1101/720243"
+      }
+    }
+  },
+  {
+    "term": "Strong dependency count",
+    "definition": "Number of cell lines with probability of dependency greater than 0.9. Probabilistic method compares gene effects to the distributions of positive and negative controls with each cell line as described in [biorxiv].",
+    "references": {
+      "biorxiv": {
+        "text": "Achilles BioRxiv",
+        "url": "https://doi.org/10.1101/720243"
+      }
+    }
+  },
+  {
+    "term": "Minimum gene effect",
+    "definition": "Gene effect of most dependent cell line."
+  },
+  {
+    "term": "Minimum gene effect z-score",
+    "definition": "Gene effect z-score of most dependent cell line. Gene effects for each gene target are centered and scaled by the standard deviation across cell lines and the value for the most dependent cell line is reported."
+  },
+  {
+    "term": "Pan-dependency status",
+    "definition": "Inhibition of target gene results in reduced viability for 90% of cell lines. Pan-dependencies classified by taking genes in left mode of the distribution of 90th percentile least dependent cell line ranks for each gene as described in [biorxiv].",
+    "references": {
+      "biorxiv": {
+        "text": "Achilles BioRxiv",
+        "url": "https://doi.org/10.1101/720243"
+      }
+    }
+  },
+  {
+    "term": "Mean gene effect",
+    "definition": "Mean of CERES (CRISPR) or DEMETER2 (RNAi) gene effect across cell lines."
+  }
+]

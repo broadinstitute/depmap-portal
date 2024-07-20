@@ -1,0 +1,738 @@
+access_control_config.py: error: "GroupAuthConfig" is not defined (reportUndefinedVariable)
+api.py: error: "dataset_id" is possibly unbound (reportPossiblyUnboundVariable)
+api.py: error: "group" is not a known member of "None" (reportOptionalMemberAccess)
+api.py: error: Argument of type "Literal['COMPUTE_RESULTS_ROOT']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+api.py: error: Argument of type "Literal['DOWNLOADS_KEY']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+api.py: error: Argument of type "Literal['ENABLED_FEATURES']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+api.py: error: Argument of type "Literal['SHOW_TAIGA_IN_BULK_DOWNLOADS']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+api.py: error: Argument of type "Literal['WEBAPP_DATA_DIR']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+api.py: error: Cannot access member "delay" for type "function"
+api.py: error: Cannot access member "get" for type "list[str]"
+api.py: error: Cannot access member "getlist" for type "list[str]"
+api.py: error: Expression of type "tuple[Unknown, Unknown, Unknown]" cannot be assigned to return type "DataFrame"
+api.py: error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
+app.py: error: Argument of type "Literal['APPLICATION_ROOT']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+app.py: error: Argument of type "Literal['ENV']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+app.py: error: Argument of type "Literal['HAS_USER_ACCOUNTS']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+app.py: error: Argument of type "Literal['REQUIRE_REQUEST_SIGNATURE_VERIFICATION']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+app.py: error: Argument of type "Literal['SERVER_NAME']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+app.py: error: Argument of type "Literal['USE_FRONTEND_DEV_SERVER']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+app.py: error: Argument of type "Literal['WEBAPP_DATA_DIR']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+app.py: error: Argument of type "list[str] | Any" cannot be assigned to parameter "__a" of type "StrPath" in function "join" (reportArgumentType)
+app.py: error: Cannot access member "browser" for type "list[str]"
+app.py: error: Cannot access member "get" for type "list[str]"
+app.py: error: Cannot access member "startswith" for type "list[str]"
+app.py: error: Cannot access member "version" for type "list[str]"
+app.py: error: Cannot assign member "json_encoder" for type "Flask"
+app.py: error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
+app.py: error: No overloads for "join" match the provided arguments (reportCallIssue)
+association_loader.py: error: "dataset_id" is not a known member of "None" (reportOptionalMemberAccess)
+association_loader.py: error: "name" is not a known member of "None" (reportOptionalMemberAccess)
+association_loader.py: error: Argument of type "Literal['WEBAPP_DATA_DIR']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+association_loader.py: error: Argument of type "str" cannot be assigned to parameter "__key" of type "LiteralString" in function "__getitem__"
+association_loader.py: error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
+autoapp.py: error: "DispatcherMiddleware" is unknown import symbol (reportAttributeAccessIssue)
+autoapp.py: error: "ProxyMiddleware" is unknown import symbol (reportAttributeAccessIssue)
+biomarker_loader.py: error: "dataset_versions" is not defined (reportUndefinedVariable)
+biomarker_loader.py: error: "record" is possibly unbound (reportPossiblyUnboundVariable)
+biomarker_loader.py: error: Argument of type "Literal['LOADER_DATA_DIR']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+biomarker_loader.py: error: Argument of type "Literal[DependencyEnum.CTRP_AUC, 'expression', 'copy_number_absolute', 'copy_number_relative', 'mutation_pearson', 'mutations_damaging', 'mutations_hotspot', 'mutations_driver', 'mutations_prioritized', 'context', 'rppa', 'rrbs', 'proteomics', 'sanger_proteomics', 'fusions', 'ssgsea', 'metabolomics', 'crispr_confounders', 'rnai_confounders', 'oncref_confounders', 'rep_all_single_pt_confounders', 'rep1m_confounders', 'CRISPRGeneDependency', 'OmicsAbsoluteCNGene', 'OmicsSignatures', 'OmicsLoH', 'Chronos_Combined', 'Chronos_Achilles', 'Chronos_Score', 'CERES_Combined', 'Avana', 'Sanger_CRISPR', 'OrganoidGeneEffect', 'GeCKO', 'RNAi_merged', 'RNAi_Ach', 'RNAi_Nov_DEM', 'GDSC1_AUC', 'GDSC2_AUC', 'GDSC1_IC50', 'GDSC2_IC50', 'CTRP_AUC', 'Repurposing_secondary_AUC', 'CTRP_dose_replicate', 'GDSC1_dose_replicate', 'GDSC2_dose_replicate', 'Repurposing_secondary_dose', 'Repurposing_secondary_dose_replicate', 'Rep1M', 'Rep_all_single_pt', 'Prism_oncology_AUC', 'Prism_oncology_IC50', 'Prism_oncology_dose_replicate']" cannot be assigned to parameter "dependency_dataset_name" of type "str" in function "get_dataset_by_name"
+biomarker_loader.py: error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
+breadbox_shim.py: error: Argument of type "list[str | None]" cannot be assigned to parameter "feature_ids" of type "list[str]" in function "get_feature_data"
+breadbox_shim.py: error: Expression of type "None" cannot be assigned to parameter of type "str"
+bucket_utils.py: error: "csv_path" is not a known member of "None" (reportOptionalMemberAccess)
+bucket_utils.py: error: "delete" is not a known member of "None" (reportOptionalMemberAccess)
+bucket_utils.py: error: Argument of type "Literal['DOWNLOADS_KEY']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+bucket_utils.py: error: Argument of type "Literal['ENV']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+bucket_utils.py: error: Argument of type "Literal['record']" cannot be assigned to parameter "orient" of type "Literal['records']" in function "to_dict"
+bucket_utils.py: error: Argument of type "None" cannot be assigned to parameter "bucket" of type "Bucket" in function "_get_private_datasets_map_file"
+bucket_utils.py: error: Expression of type "None" cannot be assigned to parameter of type "Bucket"
+bucket_utils.py: error: Expression of type "None" cannot be assigned to parameter of type "Client"
+bucket_utils.py: error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
+bucket_utils.py: error: No overloads for "to_dict" match the provided arguments (reportCallIssue)
+categorical_tree_nodes.py: error: Method "create" overrides class "NodeFactory" in an incompatible manner
+categorical_tree_nodes.py: error: Method "get_added_attrs" overrides class "NodeFactory" in an incompatible manner
+categories.py: error: Argument of type "Unknown | None" cannot be assigned to parameter "__x" of type "ConvertibleToInt" in function "__new__" (reportArgumentType)
+categories.py: error: Method "_get_na_label" overrides class "CategoryConfig" in an incompatible manner
+categories.py: error: Method "_get_na_value" overrides class "CategoryConfig" in an incompatible manner
+cell_line_loader.py: error: "cell_line_alias" is not a known member of "None" (reportOptionalMemberAccess)
+cell_line_loader.py: error: "cell_line_display_name" is not a known member of "None" (reportOptionalMemberAccess)
+cell_line_loader.py: error: "cell_line_passport_id" is not a known member of "None" (reportOptionalMemberAccess)
+cell_line_loader.py: error: "comments" is not a known member of "None" (reportOptionalMemberAccess)
+cell_line_loader.py: error: "cosmic_id" is not a known member of "None" (reportOptionalMemberAccess)
+cell_line_loader.py: error: "disease_subtype" is not a known member of "None" (reportOptionalMemberAccess)
+cell_line_loader.py: error: "gender" is not a known member of "None" (reportOptionalMemberAccess)
+cell_line_loader.py: error: "group" is not a known member of "None" (reportOptionalMemberAccess)
+cell_line_loader.py: error: "image_filename" is not a known member of "None" (reportOptionalMemberAccess)
+cell_line_loader.py: error: "lineage" is not a known member of "None" (reportOptionalMemberAccess)
+cell_line_loader.py: error: "primary_disease" is not a known member of "None" (reportOptionalMemberAccess)
+cell_line_loader.py: error: "rrid" is not a known member of "None" (reportOptionalMemberAccess)
+cell_line_loader.py: error: "source" is not a known member of "None" (reportOptionalMemberAccess)
+cell_line_loader.py: error: "tumor_type" is not a known member of "None" (reportOptionalMemberAccess)
+cell_line_loader.py: error: "wtsi_master_cell_id" is not a known member of "None" (reportOptionalMemberAccess)
+cell_line_loader.py: error: Cannot assign member "cell_line_display_name" for type "CellLine"
+cell_line_loader.py: error: Cannot assign member "rrid" for type "CellLine"
+celligner_loader.py: error: Argument of type "Literal['WEBAPP_DATA_DIR']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+celligner_loader.py: error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
+characterization.py: error: "display_name" is not a known member of "None" (reportOptionalMemberAccess)
+check_data_issues.py: error: Argument of type "Literal['ENV']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+check_data_issues.py: error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
+check_download_data.py: error: Argument of type "Literal['ENABLED_FEATURES']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+check_download_data.py: error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
+check_download_data.py: error: Object of type "list[str]" is not callable (reportCallIssue)
+check_nonstandard_datasets.py: error: Argument of type "Literal['GET_NONSTANDARD_DATASETS']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+check_nonstandard_datasets.py: error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
+cloud_correlate.py: error: "group" is not a known member of "None" (reportOptionalMemberAccess)
+cloud_correlate.py: error: Argument of type "() -> tuple[int, ndarray[Any, dtype[float64]]]" cannot be assigned to parameter "get_matrix_callback" of type "() -> Tuple[DataFrame, ndarray[Unknown, Unknown]]" in function "submit"
+cloud_correlate.py: error: Argument of type "Literal[b"Content-Disposition"]" cannot be assigned to parameter "key" of type "str" in function "__getitem__"
+cloud_correlate.py: error: Argument of type "dict[str, NDArray[Any]]" cannot be assigned to parameter "files" of type "_Files | None" in function "post"
+common_utils.py: error: Argument of type "Unknown | None" cannot be assigned to parameter "group_label" of type "str" in function "__init__"
+compat.py: error: "basestring" is not defined (reportUndefinedVariable)
+compat.py: error: "unicode" is not defined (reportUndefinedVariable)
+compound_dose_replicate_loader.py: error: Argument of type "Literal['WEBAPP_DATA_DIR']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+compound_dose_replicate_loader.py: error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
+compound_nodes.py: error: Method "create" overrides class "NodeFactory" in an incompatible manner
+compound_nodes.py: error: Method "get_added_attrs" overrides class "NodeFactory" in an incompatible manner
+confidence.py: error: Argument of type "Literal['ENABLED_FEATURES']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+confidence.py: error: Expected type expression but received "(typename: str, fields: dict[str, type[Any]], total: bool = ...) -> type[dict[str, Any]]" (reportGeneralTypeIssues)
+confidence.py: error: Expression of type "dict[str, str | list[Any]]" cannot be assigned to declared type "ConfidenceDistInfo" (reportAssignmentType)
+confidence.py: error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
+config_groups.py: error: "__get_config" is unknown import symbol (reportAttributeAccessIssue)
+conftest.py: error: Argument of type "DatasetLabel | DepDatasetMeta | TabularDatasetMeta" cannot be assigned to parameter "obj" of type "DataclassInstance" in function "asdict"
+conftest.py: error: Argument of type "Literal['GET_NONSTANDARD_DATASETS']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+conftest.py: error: Argument of type "Literal['LOADER_DATA_DIR']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+conftest.py: error: Argument of type "Literal['WEBAPP_DATA_DIR']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+conftest.py: error: Argument of type "dict[str, Any]" cannot be assigned to parameter "__m" of type "Iterable[tuple[str, str]]" in function "update"
+conftest.py: error: Expression of type "None" cannot be assigned to parameter of type "str"
+conftest.py: error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
+conftest.py: error: No overloads for "update" match the provided arguments (reportCallIssue)
+constellation_loader.py: error: Argument of type "Literal['ENV']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+constellation_loader.py: error: Argument of type "Literal['WEBAPP_DATA_DIR']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+constellation_loader.py: error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
+context_explorer_loader.py: error: Argument of type "Literal['WEBAPP_DATA_DIR']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+context_explorer_loader.py: error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
+custom_analysis_test_data.py: error: Call expression not allowed in type expression (reportInvalidTypeForm)
+custom_analysis_test_data.py: error: Expression of type "list[float]" cannot be assigned to declared type "List[int]"
+custom_nodes.py: error: Method "create" overrides class "NodeFactory" in an incompatible manner
+custom_nodes.py: error: Method "get_added_attrs" overrides class "NodeFactory" in an incompatible manner
+database.py: error: Cannot access member "Boolean" for type "SQLAlchemy"
+database.py: error: Cannot access member "Float" for type "SQLAlchemy"
+database.py: error: Cannot access member "ForeignKey" for type "SQLAlchemy"
+database.py: error: Cannot access member "Integer" for type "SQLAlchemy"
+database.py: error: Cannot access member "String" for type "SQLAlchemy"
+database.py: error: Cannot access member "Text" for type "SQLAlchemy"
+database.py: error: Cannot access member "relationship" for type "SQLAlchemy"
+database.py: error: Expected type expression but received "Unknown | Model"
+db_load_commands.py: error: "download_to_cache" is not a known member of "None" (reportOptionalMemberAccess)
+db_load_commands.py: error: Argument of type "DatasetLabel | DepDatasetMeta | TabularDatasetMeta" cannot be assigned to parameter "dataset_metadata" of type "DepDatasetMeta" in function "load_compound_dose_replicate_dataset"
+db_load_commands.py: error: Argument of type "DatasetLabel | DepDatasetMeta | TabularDatasetMeta" cannot be assigned to parameter "obj" of type "DataclassInstance" in function "asdict"
+db_load_commands.py: error: Argument of type "Literal['COMPUTE_RESULTS_ROOT']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+db_load_commands.py: error: Argument of type "Literal['DATA_LOAD_CONFIG']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+db_load_commands.py: error: Argument of type "Literal['DB_PATH']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+db_load_commands.py: error: Argument of type "Literal['ENABLED_FEATURES']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+db_load_commands.py: error: Argument of type "Literal['ENV']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+db_load_commands.py: error: Argument of type "Literal['GET_NONSTANDARD_DATASETS']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+db_load_commands.py: error: Argument of type "Literal['LOADER_DATA_DIR']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+db_load_commands.py: error: Argument of type "Literal['LOG_CONFIG']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+db_load_commands.py: error: Argument of type "Literal['MATCH_RELATED_TAIGA_ID']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+db_load_commands.py: error: Argument of type "Literal['METMAP_500_TAIGA_ID']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+db_load_commands.py: error: Argument of type "Literal['NONSTANDARD_DATA_DIR']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+db_load_commands.py: error: Argument of type "Literal['S3_DIR']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+db_load_commands.py: error: Argument of type "Literal['SAMPLE_DATA_DIR']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+db_load_commands.py: error: Argument of type "Literal['WEBAPP_DATA_DIR']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+db_load_commands.py: error: Argument of type "None" cannot be assigned to parameter "task" of type "Task" in function "_upload_transient_csv"
+db_load_commands.py: error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
+df_test_utils.py: error: Argument of type "Literal['LOADER_DATA_DIR']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+df_test_utils.py: error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
+documentation.py: error: Argument of type "Literal['DOWNLOADS_KEY']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+documentation.py: error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
+download_settings.py: error: Argument of type "Literal['DEV_DOWNLOADS_PATH']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+download_settings.py: error: Argument of type "Literal['ENV']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+download_settings.py: error: Argument of type "Literal['SHOW_TAIGA_IN_DOWNLOADS']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+download_settings.py: error: Cannot access member "get" for type "list[str]"
+download_settings.py: error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
+enrichment.py: error: Argument of type "Geneset" cannot be assigned to parameter "__value" of type "set[Unknown]" in function "__setitem__"
+enrichment.py: error: Cannot access member "genes" for type "set[Unknown]"
+enrichment.py: error: Expression of type "list[None]" cannot be assigned to declared type "List[List[str]]"
+enrichment.py: error: Expression of type "list[None]" cannot be assigned to declared type "List[str]"
+executive.py: error: "_has_statsmodels" is not a known member of module "seaborn.distributions" (reportAttributeAccessIssue)
+executive.py: error: "ax" is possibly unbound (reportPossiblyUnboundVariable)
+executive.py: error: "groups" is not a known member of "None" (reportOptionalMemberAccess)
+executive.py: error: "is_common_essential" is not a known member of "None" (reportOptionalMemberAccess)
+executive.py: error: "is_strongly_selective" is not a known member of "None" (reportOptionalMemberAccess)
+executive.py: error: "name" is not a known member of "None" (reportOptionalMemberAccess)
+executive.py: error: "num_dependent_cell_lines" is not a known member of "None" (reportOptionalMemberAccess)
+executive.py: error: "num_lines_with_data" is not a known member of "None" (reportOptionalMemberAccess)
+executive.py: error: "plot_param" is possibly unbound (reportPossiblyUnboundVariable)
+executive.py: error: "taiga_id" is not a known member of "None" (reportOptionalMemberAccess)
+executive.py: error: Argument of type "Literal['All']" cannot be assigned to parameter "__value" of type "int" in function "__setitem__"
+executive.py: error: Argument of type "Literal['ENABLED_FEATURES']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+executive.py: error: Argument of type "str | Any" cannot be assigned to parameter "__value" of type "list[Unknown]" in function "__setitem__"
+executive.py: error: Cannot access member "barh" for type "ndarray[Any, dtype[Any]]"
+executive.py: error: Cannot access member "spines" for type "ndarray[Any, dtype[Any]]"
+executive.py: error: Cannot access member "tick_params" for type "ndarray[Any, dtype[Any]]"
+executive.py: error: Expected type expression but received "(typename: str, fields: dict[str, type[Any]], total: bool = ...) -> type[dict[str, Any]]" (reportGeneralTypeIssues)
+executive.py: error: Expression of type "None" cannot be assigned to parameter of type "DependencyDataset"
+executive.py: error: Expression of type "None" cannot be assigned to parameter of type "List[int]"
+executive.py: error: Expression of type "dict[Any, Any]" cannot be assigned to declared type "CrisprDepDistInfo" (reportAssignmentType)
+executive.py: error: Expression of type "dict[Any, Any]" cannot be assigned to declared type "GeneExecutiveInfoDict" (reportAssignmentType)
+executive.py: error: Expression of type "tuple[CompoundExperiment | None, Unknown | None]" cannot be assigned to return type "Tuple[CompoundExperiment, DependencyDataset]"
+executive.py: error: Incorrect keyword arguments for __init_subclass__ method (reportGeneralTypeIssues)
+executive.py: error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
+executive.py: error: No overloads for "__setitem__" match the provided arguments (reportCallIssue)
+executive.py: error: No parameter named "total" (reportCallIssue)
+extension.py: error: "methylation_db" is not a known member of "None" (reportOptionalMemberAccess)
+extension.py: error: Argument of type "Literal['BREADBOX_PROXY_TARGET']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+extension.py: error: Argument of type "Literal['METHYLATION_DATABASE']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+extension.py: error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
+extensions.py: error: Argument of type "bool" cannot be assigned to parameter "forced_update" of type "((...) -> Unknown) | None" in function "cached"
+extensions.py: error: Argument of type "bool" cannot be assigned to parameter "hash_method" of type "(...) -> Unknown" in function "cached"
+extensions.py: error: Argument of type "bool" cannot be assigned to parameter "key_prefix" of type "str" in function "cached"
+extensions.py: error: Argument of type "bool" cannot be assigned to parameter "make_cache_key" of type "((...) -> Unknown) | None" in function "cached"
+extensions.py: error: Argument of type "bool" cannot be assigned to parameter "response_filter" of type "((...) -> Unknown) | None" in function "cached"
+extensions.py: error: Argument of type "bool" cannot be assigned to parameter "unless" of type "((...) -> Unknown) | None" in function "cached"
+factories.py: error: "Meta" overrides symbol of same name in class "DatasetFactory"
+factories.py: error: "Meta" overrides symbol of same name in class "SQLAlchemyModelFactory"
+factories.py: error: "tolist" is not a known member of "None" (reportOptionalMemberAccess)
+factories.py: error: Cannot access member "session" for type "MutationTableSpec*"
+factories.py: error: Cannot access member "statement" for type "MutationTableSpec*"
+factories.py: error: Cannot access member "uuid4" for type "None"
+factories.py: error: Expression of type "None" cannot be assigned to declared type "int"
+factories.py: error: Object of type "None" cannot be used as iterable value (reportOptionalIterable)
+gcs_reporter.py: error: Expected 0 positional arguments (reportCallIssue)
+gene_loader.py: error: "depmap_id" is not a known member of "None" (reportOptionalMemberAccess)
+gene_loader.py: error: "name" is not a known member of "None" (reportOptionalMemberAccess)
+gene_loader.py: error: Argument of type "Literal['WEBAPP_DATA_DIR']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+gene_loader.py: error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
+gene_nodes.py: error: Method "create" overrides class "NodeFactory" in an incompatible manner
+gene_nodes.py: error: Method "get_added_attrs" overrides class "NodeFactory" in an incompatible manner
+get_and_process_data.py: error: "__get_config" is unknown import symbol (reportAttributeAccessIssue)
+get_and_process_data.py: error: "col_index" is not a known member of "None" (reportOptionalMemberAccess)
+get_and_process_data.py: error: "get_depmap_ids" is not a known member of "None" (reportOptionalMemberAccess)
+get_and_process_data.py: error: "name" is not a known member of "None" (reportOptionalMemberAccess)
+get_and_process_data.py: error: "row" is unbound (reportUnboundVariable)
+get_and_process_data.py: error: "series" is possibly unbound (reportPossiblyUnboundVariable)
+global_search_loader.py: error: Argument of type "Literal['ENABLED_FEATURES']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+global_search_loader.py: error: Cannot access member "is_not" for type "Column[Text]"
+global_search_loader.py: error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
+hashing_utils.py: error: "hash_pandas_object" is not a known member of module "numpy" (reportAttributeAccessIssue)
+hashing_utils.py: error: "indexes" is not a known member of module "numpy" (reportAttributeAccessIssue)
+hashing_utils.py: error: Cannot access member "hash_pandas_object" for type "type[SparseArray]"
+hashing_utils.py: error: Cannot access member "hash_pandas_object" for type "type[datetime]"
+hashing_utils.py: error: Cannot access member "indexes" for type "type[SparseArray]"
+hashing_utils.py: error: Cannot access member "indexes" for type "type[datetime]"
+hdf5_utils.py: error: "Datatype" is not iterable
+hdf5_utils.py: error: "__getitem__" method not defined on type "Datatype" (reportIndexIssue)
+hdf5_utils.py: error: Argument of type "Group | Dataset | Datatype | Unknown" cannot be assigned to parameter "__iterable" of type "Iterable[_T@list]" in function "__init__"
+hdf5_utils.py: error: Argument of type "Group | Dataset | Datatype | Unknown" cannot be assigned to parameter "arr" of type "ArrayLike" in function "apply_along_axis" (reportArgumentType)
+hdf5_utils.py: error: Argument of type "Group | Dataset | Datatype" cannot be assigned to parameter "__iterable" of type "Iterable[_T@list]" in function "__init__"
+hdf5_utils.py: error: Argument of type "NDArray[Any]" cannot be assigned to parameter "__x1" of type "_ScalarLike_co" in function "__call__"
+hdf5_utils.py: error: Cannot access member "shape" for type "Datatype"
+hdf5_utils.py: error: Cannot access member "shape" for type "Group"
+hdf5_utils.py: error: No overloads for "__call__" match the provided arguments (reportCallIssue)
+hdf5_utils.py: error: No overloads for "apply_along_axis" match the provided arguments (reportCallIssue)
+index.py: error: "about" is possibly unbound (reportPossiblyUnboundVariable)
+index.py: error: "celfie" is possibly unbound (reportPossiblyUnboundVariable)
+index.py: error: "characterizations" is possibly unbound (reportPossiblyUnboundVariable)
+index.py: error: "correlations" is possibly unbound (reportPossiblyUnboundVariable)
+index.py: error: "depmap_id" is not a known member of "None" (reportOptionalMemberAccess)
+index.py: error: "display_name" is not a known member of "None" (reportOptionalMemberAccess)
+index.py: error: "entity_id" is possibly unbound (reportPossiblyUnboundVariable)
+index.py: error: "gene_name" is possibly unbound (reportPossiblyUnboundVariable)
+index.py: error: "has_celfie" is possibly unbound (reportPossiblyUnboundVariable)
+index.py: error: "has_confidence" is possibly unbound (reportPossiblyUnboundVariable)
+index.py: error: "has_datasets" is possibly unbound (reportPossiblyUnboundVariable)
+index.py: error: "has_predictability" is possibly unbound (reportPossiblyUnboundVariable)
+index.py: error: "matrix" is not a known member of "None" (reportOptionalMemberAccess)
+index.py: error: "name" is not a known member of "None" (reportOptionalMemberAccess)
+index.py: error: "order" is possibly unbound (reportPossiblyUnboundVariable)
+index.py: error: "predictability_custom_downloads_link" is possibly unbound (reportPossiblyUnboundVariable)
+index.py: error: "predictability_methodology_link" is possibly unbound (reportPossiblyUnboundVariable)
+index.py: error: "pubmed_search_terms" is possibly unbound (reportPossiblyUnboundVariable)
+index.py: error: "show_mutations_tile" is possibly unbound (reportPossiblyUnboundVariable)
+index.py: error: "show_omics_expression_tile" is possibly unbound (reportPossiblyUnboundVariable)
+index.py: error: "show_targeting_compounds_tile" is possibly unbound (reportPossiblyUnboundVariable)
+index.py: error: "summary" is possibly unbound (reportPossiblyUnboundVariable)
+index.py: error: "title" is possibly unbound (reportPossiblyUnboundVariable)
+index.py: error: Argument of type "(model: PredictiveModel) -> (int | None)" cannot be assigned to parameter "key" of type "(PredictiveModel) -> SupportsRichComparison" in function "sort"
+index.py: error: Argument of type "Index | Any | Unknown" cannot be assigned to parameter "model_ids" of type "Sequence[str]" in function "get_cell_line_display_names"
+index.py: error: Argument of type "Literal['ENABLED_FEATURES']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+index.py: error: Argument of type "Literal['WEBAPP_DATA_DIR']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+index.py: error: Cannot access member "any" for type "List[Gene]"
+index.py: error: Cannot access member "get" for type "list[str]"
+index.py: error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
+index.py: error: No overloads for "sort" match the provided arguments (reportCallIssue)
+index.py: error: Object of type "None" is not subscriptable (reportOptionalSubscript)
+initialize_auth_config.py: error: Argument of type "type[GroupAuthConfig]" cannot be assigned to parameter "groups" of type "List[GroupAuthConfig]" in function "_create_authorization_config"
+initialize_current_auth.py: error: Argument of type "str | None" cannot be assigned to parameter "user_id_override" of type "str" in function "_setup_current_authorizations"
+initialize_current_auth.py: error: Cannot access member "groups" for type "list[str]"
+initialize_current_auth.py: error: Cannot access member "is_admin" for type "list[str]"
+initialize_current_auth.py: error: Cannot assign member "is_everything_visible" for type "list[str]"
+interface.py: error: Expression of type "Unknown | None" cannot be assigned to return type "Entity"
+interface.py: error: Expression of type "Unknown | None" cannot be assigned to return type "int"
+iter.py: error: Argument of type "TranslateCRtoNL" cannot be assigned to parameter "__value" of type "int" in function "__setitem__"
+json_dump.py: error: Argument of type "Literal['JSONIFY_MIMETYPE']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+json_dump.py: error: Argument of type "Literal['JSONIFY_PRETTYPRINT_REGULAR']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+json_dump.py: error: Method "default" overrides class "JSONEncoder" in an incompatible manner
+json_dump.py: error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
+json_dump.py: error: Object of type "list[str]" is not callable (reportCallIssue)
+links.py: error: Argument of type "Literal['ENABLED_FEATURES']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+links.py: error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
+match_related_loader.py: error: Argument of type "Hashable" cannot be assigned to parameter "__x" of type "ConvertibleToInt" in function "__new__"
+matrix_loader.py: error: Argument of type "Group | Dataset | Datatype" cannot be assigned to parameter "__iterable" of type "Iterable[_T@list]" in function "__init__"
+matrix_loader.py: error: Argument of type "Group | Dataset | Datatype" cannot be assigned to parameter "__obj" of type "Sized" in function "len"
+matrix_loader.py: error: Argument of type "Literal['WEBAPP_DATA_DIR']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+matrix_loader.py: error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
+minisites.py: error: "html_file" is possibly unbound (reportPossiblyUnboundVariable)
+mock_gcs.py: error: "blob_name" is unbound (reportUnboundVariable)
+mock_gcs.py: error: "bucket_name" is unbound (reportUnboundVariable)
+mock_gcs.py: error: Argument of type "str | None" cannot be assigned to parameter "content_type" of type "str" in function "upload_from_string"
+mock_gcs.py: error: Cannot access member "encode" for type "bytearray"
+mock_gcs.py: error: Cannot access member "encode" for type "memoryview"
+mock_gcs.py: error: Cannot assign member "_content" for type "MockBlob*"
+mock_gcs.py: error: Expression of type "None" cannot be assigned to parameter of type "MockClient"
+mock_gcs.py: error: Expression of type "None" cannot be assigned to parameter of type "str"
+models.py: error: "child_lineage" is possibly unbound (reportPossiblyUnboundVariable)
+models.py: error: "data_type" is not a known member of "None" (reportOptionalMemberAccess)
+models.py: error: "display_name" is not a known member of "None" (reportOptionalMemberAccess)
+models.py: error: "entity_type" is not a known member of "None" (reportOptionalMemberAccess)
+models.py: error: "group" is not a known member of "None" (reportOptionalMemberAccess)
+models.py: error: "index" is not a known member of "None" (reportOptionalMemberAccess)
+models.py: error: "is_dose_replicate" is not a known member of "None" (reportOptionalMemberAccess)
+models.py: error: "matrix" is not a known member of "None" (reportOptionalMemberAccess)
+models.py: error: "tolist" is not a known member of "None" (reportOptionalMemberAccess)
+models.py: error: Argument of type "DependencyEnum" cannot be assigned to parameter "dependency_dataset_name" of type "str" in function "get_dataset_by_name"
+models.py: error: Argument of type "List[str] | None" cannot be assigned to parameter "__obj" of type "Sized" in function "len"
+models.py: error: Argument of type "Literal['ENABLED_FEATURES']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+models.py: error: Argument of type "Literal['GET_NONSTANDARD_DATASETS']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+models.py: error: Argument of type "Literal['NONSTANDARD_DATA_DIR']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+models.py: error: Argument of type "Literal['PREFERRED_URL_SCHEME']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+models.py: error: Argument of type "Literal['WEBAPP_DATA_DIR']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+models.py: error: Cannot access member "Enum" for type "SQLAlchemy"
+models.py: error: Cannot access member "ForeignKey" for type "SQLAlchemy"
+models.py: error: Cannot access member "Index" for type "SQLAlchemy"
+models.py: error: Cannot access member "Integer" for type "SQLAlchemy"
+models.py: error: Cannot access member "Table" for type "SQLAlchemy"
+models.py: error: Cannot access member "UniqueConstraint" for type "SQLAlchemy"
+models.py: error: Cannot access member "cell_line" for type "_CellLine*"
+models.py: error: Cannot access member "compound" for type "_Compound*"
+models.py: error: Cannot access member "context_explorer" for type "_ContextExp*"
+models.py: error: Cannot access member "download_file" for type "_File*"
+models.py: error: Cannot access member "gene" for type "_Gene*"
+models.py: error: Cannot access member "get_attrs_from_slice_id" for type "NodeFactory"
+models.py: error: Cannot access member "get_attrs_from_slice_id" for type "NodeFactory*"
+models.py: error: Cannot access member "get_slice_id" for type "NodeFactory*"
+models.py: error: Cannot access member "nominal_range" for type "TabularDatasetMeta"
+models.py: error: Cannot access member "relationship" for type "SQLAlchemy"
+models.py: error: Cannot access member "unquote" for type "type[Serializer]"
+models.py: error: Cannot assign member "funding" for type "DownloadRelease*"
+models.py: error: Expression of type "None" cannot be assigned to parameter of type "Dict[int, GroupAuthConfig]"
+models.py: error: Expression of type "None" cannot be assigned to parameter of type "str"
+models.py: error: Expression of type "Unknown | ReleaseTerms | MockTerms" cannot be assigned to return type "ReleaseTerms"
+models.py: error: Method "create" overrides class "NodeFactory" in an incompatible manner
+models.py: error: Method "get_added_attrs" overrides class "NodeFactory" in an incompatible manner
+models.py: error: Method "get_dataset_by_name" overrides class "Dataset" in an incompatible manner
+models.py: error: Method "get_description" overrides class "_Compound" in an incompatible manner
+models.py: error: Method "get_label_aliases" overrides class "Entity" in an incompatible manner
+models.py: error: Method "has_cell_line" overrides class "Dataset" in an incompatible manner
+models.py: error: Method "has_entity" overrides class "Dataset" in an incompatible manner
+models.py: error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
+models.py: error: Object of type "None" cannot be used as iterable value (reportOptionalIterable)
+models.py: error: Object of type "None" is not subscriptable (reportOptionalSubscript)
+models_new.py: error: Cannot access member "Table" for type "SQLAlchemy"
+nonstandard_loader.py: error: Argument of type "Literal['GET_NONSTANDARD_DATASETS']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+nonstandard_loader.py: error: Argument of type "Literal['NONSTANDARD_DATA_DIR']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+nonstandard_loader.py: error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
+nonstandard_private_loader.py: error: "group" is not a known member of "None" (reportOptionalMemberAccess)
+nonstandard_private_loader.py: error: Argument of type "Literal['DOWNLOADS_KEY']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+nonstandard_private_loader.py: error: Argument of type "Literal['LOADER_DATA_DIR']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+nonstandard_private_loader.py: error: Argument of type "Literal['NONSTANDARD_DATA_DIR']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+nonstandard_private_loader.py: error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
+nonstandard_utils.py: error: "__get_config" is unknown import symbol (reportAttributeAccessIssue)
+nonstandard_utils.py: error: "__getitem__" method not defined on type "Datatype" (reportIndexIssue)
+nonstandard_utils.py: error: "get_label_aliases" is not a known member of "None" (reportOptionalMemberAccess)
+nonstandard_utils.py: error: "get_subsetted_df" is not a known member of "None" (reportOptionalMemberAccess)
+nonstandard_utils.py: error: Argument of type "Group | Dataset | Datatype | Unknown" cannot be assigned to parameter "__iterable" of type "Iterable[_T@list]" in function "__init__"
+nonstandard_utils.py: error: Argument of type "Literal['NONSTANDARD_DATA_DIR']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+nonstandard_utils.py: error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
+other_nodes.py: error: Method "create" overrides class "NodeFactory" in an incompatible manner
+other_nodes.py: error: Method "get_added_attrs" overrides class "NodeFactory" in an incompatible manner
+other_nodes.py: error: Method "get_added_attrs" overrides class "NonEntityOtherDatasetRowNodeFactoryBase" in an incompatible manner
+overrides.py: error: Cannot access member "DOWNLOADS_KEY" for type "str"
+overrides.py: error: Cannot access member "LOADER_DATA_DIR" for type "str"
+overrides.py: error: Cannot access member "NONSTANDARD_DATA_DIR" for type "str"
+overrides.py: error: Cannot access member "PROJECT_ROOT" for type "str"
+overrides.py: error: Cannot access member "TAIGA_CACHE_DIR" for type "str"
+overrides.py: error: Cannot access member "WEBAPP_DATA_DIR" for type "str"
+parse_downloads.py: error: Argument of type "Literal['DOWNLOADS_PATH']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+parse_downloads.py: error: Argument of type "Literal['SHARED_DOWNLOADS_PATH']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+parse_downloads.py: error: Cannot access member "get" for type "list[str]"
+parse_downloads.py: error: Expression of type "List[dict[Unknown, Unknown]]" cannot be assigned to return type "str"
+parse_downloads.py: error: Expression of type "None" cannot be assigned to return type "List[FileSource]"
+parse_downloads.py: error: Expression of type "None" cannot be assigned to return type "SummaryStats"
+parse_downloads.py: error: Expression of type "tuple[Unknown | None, DownloadRelease]" cannot be assigned to return type "Tuple[str, DownloadRelease]"
+parse_downloads.py: error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
+parse_resources.py: error: Argument of type "None" cannot be assigned to parameter "__default" of type "_T@get" in function "get"
+parse_resources.py: error: No overloads for "get" match the provided arguments (reportCallIssue)
+plot.py: error: Argument of type "str | None" cannot be assigned to parameter "entity_type" of type "str" in function "to_display_name"
+predictability_loader.py: error: "dataset_id" is not a known member of "None" (reportOptionalMemberAccess)
+predictability_loader.py: error: Argument of type "Hashable" cannot be assigned to parameter "feature_id" of type "str" in function "row_to_feature_obj"
+predictability_loader.py: error: Argument of type "Literal['WEBAPP_DATA_DIR']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+predictability_loader.py: error: Expression of type "int | None" cannot be assigned to return type "Gene | CompoundExperiment | None" (reportReturnType)
+predictability_loader.py: error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
+private_dataset_fixtures.py: error: Argument of type "Literal['ENV']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+private_dataset_fixtures.py: error: Cannot access member "_buckets" for type "Client"
+private_dataset_fixtures.py: error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
+private_util_functions.py: error: Argument of type "Literal['DEFAULT_USER_ID']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+private_util_functions.py: error: Argument of type "str | None" cannot be assigned to parameter "user_id_override" of type "str" in function "_setup_current_authorizations"
+private_util_functions.py: error: Cannot access member "get_allowed_owner_ids" for type "list[str]"
+private_util_functions.py: error: Cannot access member "groups" for type "list[str]"
+private_util_functions.py: error: Cannot access member "is_admin" for type "list[str]"
+private_util_functions.py: error: Expression of type "None" cannot be assigned to parameter of type "Dict[int, GroupAuthConfig]"
+private_util_functions.py: error: Expression of type "None" cannot be assigned to parameter of type "str"
+private_util_functions.py: error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
+private_util_functions.py: error: Object of type "list[str]" is not callable (reportCallIssue)
+read_config.py: error: Cannot access member "ENV" for type "str"
+reformat_cpg_meth.py: error: Argument of type "str" cannot be assigned to parameter "__data" of type "ReadableBuffer" in function "compress"
+reformat_cpg_meth.py: error: Object of type "None" is not subscriptable (reportOptionalSubscript)
+settings.py: error: Argument of type "Literal['ENV_TYPE']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+settings.py: error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
+settings.py: error: Object of type "list[str]" is not callable (reportCallIssue)
+shared.py: error: Expression of type "None" cannot be assigned to declared type "int"
+sign_bucket_url.py: error: Argument of type "Literal['DOWNLOADS_KEY']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+sign_bucket_url.py: error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
+single_input_file_dependency_loader.py: error: Argument of type "Literal['LOADER_DATA_DIR']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+single_input_file_dependency_loader.py: error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
+subset_celligner.py: error: Cannot access member "CELLIGNER_ALIGNMENT_TAIGA_ID" for type "type[Config]"
+subset_celligner.py: error: Cannot access member "CELLIGNER_DISTANCES_TAIGA_ID" for type "type[Config]"
+subset_celligner.py: error: Cannot access member "CELLIGNER_SUBTYPES_TAIGA_ID" for type "type[Config]"
+subset_context_analysis.py: error: "keys" is not a known member of "None" (reportOptionalMemberAccess)
+subset_context_analysis.py: error: Argument of type "Unknown | None" cannot be assigned to parameter "__obj" of type "Sized" in function "len"
+subset_context_analysis.py: error: Object of type "None" is not subscriptable (reportOptionalSubscript)
+subset_mutations_table.py: error: "TaigaClient" is not defined (reportUndefinedVariable)
+subset_predictive_models_and_features.py: error: Argument of type "Series | Unknown | ndarray[Any, Unknown] | Any | NDArray[Unknown]" cannot be assigned to parameter "feature_id" of type "str" in function "get_closest"
+subset_ssgsea.py: error: Import "hdf5_utils" could not be resolved (reportMissingImports)
+subset_translocations.py: error: Argument of type "Literal['4']" cannot be assigned to parameter "version" of type "DatasetVersion | None" in function "get"
+taiga_id_loader.py: error: Argument of type "Literal['ENV']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+taiga_id_loader.py: error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
+task_utils.py: error: Argument of type "FileStorage" cannot be assigned to parameter "fileobj" of type "IO[Unknown]" in function "write_fileobj_to_local_file"
+task_utils.py: error: Argument of type "Literal['COMPUTE_RESULTS_ROOT']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+task_utils.py: error: Argument of type "Literal['MAX_UPLOAD_SIZE']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+task_utils.py: error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
+tasks.py: error: "FileStorage" is unknown import symbol (reportAttributeAccessIssue)
+tasks.py: error: "tolist" is not a known member of "None" (reportOptionalMemberAccess)
+tasks.py: error: Argument of type "ArrayLike" cannot be assigned to parameter "column_labels" of type "List[str] | None" in function "_handle_df_nas" (reportArgumentType)
+tasks.py: error: Argument of type "Literal['COMPUTE_RESULTS_ROOT']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+tasks.py: error: Argument of type "Literal['ENABLED_FEATURES']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+tasks.py: error: Argument of type "Literal['NONSTANDARD_DATA_DIR']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+tasks.py: error: Argument of type "list[Unknown]" cannot be assigned to parameter "gene_ids" of type "MutationTableSpec" in function "get_subsetted_mutations_df_by_ids"
+tasks.py: error: Argument of type "str | None" cannot be assigned to parameter "data_type" of type "str" in function "format_config"
+tasks.py: error: Could not access item in TypedDict
+tasks.py: error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
+tda_loader.py: error: "dataset_id" is not a known member of "None" (reportOptionalMemberAccess)
+tda_loader.py: error: "groups" is not a known member of "None" (reportOptionalMemberAccess)
+tda_loader.py: error: Argument of type "Literal['WEBAPP_DATA_DIR']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+tda_loader.py: error: Argument of type "list[Unknown | None]" cannot be assigned to parameter "__iterable" of type "Iterable[str]" in function "join"
+tda_loader.py: error: Argument of type "str | Any" cannot be assigned to parameter "entrez_id" of type "int" in function "get_gene_by_entrez"
+tda_loader.py: error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
+tda_loader.py: error: No overloads for "join" match the provided arguments (reportCallIssue)
+test_bucket_utils.py: error: Argument of type "None" cannot be assigned to parameter "bucket" of type "Bucket" in function "_get_private_datasets_file"
+test_cell_line_loader.py: error: "catalog_number" is not a known member of "None" (reportOptionalMemberAccess)
+test_cell_line_loader.py: error: "cell_line_alias" is not a known member of "None" (reportOptionalMemberAccess)
+test_cell_line_loader.py: error: "cell_line_name" is not a known member of "None" (reportOptionalMemberAccess)
+test_cell_line_loader.py: error: "context" is not a known member of "None" (reportOptionalMemberAccess)
+test_cell_line_loader.py: error: "gender" is not a known member of "None" (reportOptionalMemberAccess)
+test_cell_line_loader.py: error: "growth_pattern" is not a known member of "None" (reportOptionalMemberAccess)
+test_cell_line_loader.py: error: "lineage" is not a known member of "None" (reportOptionalMemberAccess)
+test_cell_line_loader.py: error: "source" is not a known member of "None" (reportOptionalMemberAccess)
+test_cell_line_loader.py: error: Cannot access member "all" for type "LazyAttribute"
+test_cell_line_loader.py: error: Cannot access member "catalog_number" for type "CellLineFactory"
+test_cell_line_loader.py: error: Cannot access member "growth_pattern" for type "CellLineFactory"
+test_cell_line_loader.py: error: Cannot access member "name" for type "SubFactory"
+test_check_download_data.py: error: Argument of type "Unknown | Literal[FileType.genetic_dependency] | None" cannot be assigned to parameter "type" of type "FileType" in function "__init__"
+test_context_analysis.py: error: "keys" is not a known member of "None" (reportOptionalMemberAccess)
+test_context_analysis.py: error: Cannot access member "entity_id" for type "CompoundExperimentFactory"
+test_context_analysis.py: error: Cannot access member "entity_id" for type "GeneFactory"
+test_context_analysis.py: error: Object of type "None" is not subscriptable (reportOptionalSubscript)
+test_dataset_loader.py: error: "matrix" is not a known member of "None" (reportOptionalMemberAccess)
+test_dataset_loader.py: error: Argument of type "DatasetLabel | DepDatasetMeta | TabularDatasetMeta" cannot be assigned to parameter "dataset_metadata" of type "DepDatasetMeta" in function "load_compound_dose_replicate_dataset"
+test_dataset_loader.py: error: Argument of type "Literal[DependencyEnum.Avana]" cannot be assigned to parameter "dependency_dataset_name" of type "str" in function "get_dataset_by_name"
+test_dataset_sort_key.py: error: Cannot access member "entity_id" for type "GeneFactory"
+test_db.py: error: Cannot access member "Column" for type "SQLAlchemy"
+test_db.py: error: Cannot access member "String" for type "SQLAlchemy"
+test_entity_utils.py: error: Argument of type "Sequence" cannot be assigned to parameter "entity_label" of type "str" in function "get_matching_entity_ids_for_label"
+test_entity_utils.py: error: Cannot access member "entity_id" for type "CompoundDoseReplicateFactory"
+test_entity_utils.py: error: Cannot access member "entity_id" for type "CompoundExperimentFactory"
+test_entity_utils.py: error: Cannot access member "entity_id" for type "CompoundFactory"
+test_entity_utils.py: error: Cannot access member "entity_id" for type "ProteinFactory"
+test_entity_utils.py: error: Cannot access member "label" for type "SubFactory"
+test_executive.py: error: "keys" is not a known member of "None" (reportOptionalMemberAccess)
+test_executive.py: error: Argument of type "DependencyDatasetFactory" cannot be assigned to parameter "crispr_dataset" of type "DependencyDataset | None" in function "format_dep_dist_info"
+test_executive.py: error: Argument of type "DependencyDatasetFactory" cannot be assigned to parameter "rnai_dataset" of type "DependencyDataset | None" in function "format_dep_dist_info"
+test_executive.py: error: Argument of type "GeneFactory" cannot be assigned to parameter "entity" of type "Entity" in function "format_predictability_tile"
+test_executive.py: error: Argument of type "GeneFactory" cannot be assigned to parameter "gene" of type "Gene" in function "format_crispr_possible_missing_reason"
+test_executive.py: error: Argument of type "GeneFactory" cannot be assigned to parameter "gene" of type "Gene" in function "format_dep_dist_info"
+test_executive.py: error: Argument of type "list[DependencyDatasetFactory]" cannot be assigned to parameter "datasets" of type "List[DependencyDataset]" in function "format_predictability_tile"
+test_executive.py: error: Argument of type "list[Unknown] | None" cannot be assigned to parameter "__obj" of type "Sized" in function "len"
+test_executive.py: error: Cannot access member "dataset_id" for type "DependencyDatasetFactory"
+test_executive.py: error: Cannot access member "entity_id" for type "CompoundExperimentFactory"
+test_executive.py: error: Cannot access member "entity_id" for type "CompoundFactory"
+test_executive.py: error: Cannot access member "units" for type "LazyAttribute"
+test_executive.py: error: Object of type "None" cannot be used as iterable value (reportOptionalIterable)
+test_executive.py: error: Object of type "None" is not subscriptable (reportOptionalSubscript)
+test_executive.py: error: Operator "in" not supported for types "Literal['svg']" and "dict[str, dict[Unknown, Unknown]] | dict[str, Unknown] | None"
+test_executive.py: error: Operator "not in" not supported for types "Literal['svg']" and "dict[str, dict[Unknown, Unknown]] | dict[str, Unknown] | None"
+test_factories.py: error: "cell_line_1" is possibly unbound (reportPossiblyUnboundVariable)
+test_get_and_process_data.py: error: "file_path" is not a known member of "None" (reportOptionalMemberAccess)
+test_get_and_process_data.py: error: "row_index" is not a known member of "None" (reportOptionalMemberAccess)
+test_get_and_process_data.py: error: Cannot access member "entity_id" for type "GeneFactory"
+test_get_associations.py: error: "parse" is not a known member of module "urllib" (reportAttributeAccessIssue)
+test_get_associations.py: error: Cannot access member "entity_id" for type "GeneFactory"
+test_get_associations_csv.py: error: "parse" is not a known member of module "urllib" (reportAttributeAccessIssue)
+test_get_dataset_url.py: error: Argument of type "Sequence" cannot be assigned to parameter "dataset_id" of type "str" in function "get_dataset_url"
+test_get_dataset_url.py: error: Cannot access member "dataset_id" for type "PrivateDatasetMetadataFactory"
+test_get_features.py: error: "__get_config" is unknown import symbol (reportAttributeAccessIssue)
+test_get_features.py: error: Argument of type "list[tuple[Literal['groupBy'], str] | tuple[Literal['filter'], str] | tuple[Literal['computeLinearFit'], Literal[True]]]" cannot be assigned to parameter "__m" of type "Iterable[tuple[_S, str]]" in function "update"
+test_get_features.py: error: No overloads for "update" match the provided arguments (reportCallIssue)
+test_get_sort_key.py: error: Argument of type "LazyAttribute" cannot be assigned to parameter "third_key_display_name" of type "str" in function "__init__"
+test_get_sort_key.py: error: Cannot access member "dataset_id" for type "PrivateDatasetMetadataFactory"
+test_global_search_loader.py: error: "__load_context_search_index" is not a known member of module "loader.global_search_loader" (reportAttributeAccessIssue)
+test_global_search_loader.py: error: "__load_gene_search_index" is not a known member of module "loader.global_search_loader" (reportAttributeAccessIssue)
+test_global_search_loader.py: error: Cannot access member "entity_id" for type "CompoundFactory"
+test_hdf5_utils.py: error: Cannot access member "tolist" for type "float"
+test_index.py: error: Argument of type "Sequence" cannot be assigned to parameter "entity_label" of type "str" in function "format_celfie"
+test_index.py: error: Cannot access member "entity_id" for type "CompoundExperimentFactory"
+test_index.py: error: Cannot access member "entity_id" for type "CompoundFactory"
+test_index.py: error: Cannot access member "entity_id" for type "GeneFactory"
+test_index.py: error: Cannot access member "xref_full" for type "CompoundExperimentFactory"
+test_index.py: error: Object of type "None" is not subscriptable (reportOptionalSubscript)
+test_match_related_loader.py: error: "entity_id" is not a known member of "None" (reportOptionalMemberAccess)
+test_models.py: error: "__getitem__" method not defined on type "LazyAttribute" (reportIndexIssue)
+test_models.py: error: "__load_cell_line_search_index" is not a known member of module "loader.global_search_loader" (reportAttributeAccessIssue)
+test_models.py: error: "__load_context_search_index" is not a known member of module "loader.global_search_loader" (reportAttributeAccessIssue)
+test_models.py: error: "__load_gene_search_index" is not a known member of module "loader.global_search_loader" (reportAttributeAccessIssue)
+test_models.py: error: "cell_line_name" is not a known member of "None" (reportOptionalMemberAccess)
+test_models.py: error: "columns" is not a known member of "None" (reportOptionalMemberAccess)
+test_models.py: error: "dataset_id" is not a known member of "None" (reportOptionalMemberAccess)
+test_models.py: error: "name" is not a known member of "None" (reportOptionalMemberAccess)
+test_models.py: error: Argument of type "DataFrame | None" cannot be assigned to parameter "__obj" of type "Sized" in function "len"
+test_models.py: error: Argument of type "Literal['GET_NONSTANDARD_DATASETS']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+test_models.py: error: Argument of type "Sequence" cannot be assigned to parameter "gene_label" of type "str" in function "get_non_silent_rows"
+test_models.py: error: Cannot access member "Column" for type "SQLAlchemy"
+test_models.py: error: Cannot access member "Float" for type "SQLAlchemy"
+test_models.py: error: Cannot access member "Integer" for type "SQLAlchemy"
+test_models.py: error: Cannot access member "Numeric" for type "SQLAlchemy"
+test_models.py: error: Cannot access member "String" for type "SQLAlchemy"
+test_models.py: error: Cannot access member "all" for type "LazyAttribute"
+test_models.py: error: Cannot access member "biomarker_dataset_id" for type "BiomarkerDatasetFactory"
+test_models.py: error: Cannot access member "compound" for type "SubFactory"
+test_models.py: error: Cannot access member "dataset_id" for type "BiomarkerDatasetFactory"
+test_models.py: error: Cannot access member "dataset_id" for type "DependencyDatasetFactory"
+test_models.py: error: Cannot access member "dataset_id" for type "PrivateDatasetMetadataFactory"
+test_models.py: error: Cannot access member "dependency_dataset_id" for type "DependencyDatasetFactory"
+test_models.py: error: Cannot access member "depmap_id" for type "SubFactory"
+test_models.py: error: Cannot access member "display_name" for type "SubFactory"
+test_models.py: error: Cannot access member "entity_id" for type "CompoundFactory"
+test_models.py: error: Cannot access member "entity_id" for type "GeneFactory"
+test_models.py: error: Cannot access member "get_cell_line_values_and_depmap_ids" for type "LazyAttribute"
+test_models.py: error: Cannot access member "label" for type "SubFactory"
+test_models.py: error: Cannot access member "label_without_compound_name" for type "CompoundDoseReplicateFactory"
+test_models.py: error: Cannot access member "level_1_lineage" for type "CellLineFactory"
+test_models.py: error: Cannot access member "mutation_id" for type "MutationFactory"
+test_models.py: error: Cannot access member "name" for type "LazyAttribute"
+test_models.py: error: Cannot access member "name" for type "SubFactory"
+test_models.py: error: Cannot access member "oncotree_lineage" for type "DepmapModelFactory"
+test_models.py: error: Cannot access member "oncotree_primary_disease" for type "DepmapModelFactory"
+test_models.py: error: Cannot access member "predictive_model_id" for type "PredictiveModelFactory"
+test_models.py: error: Cannot access member "units" for type "LazyAttribute"
+test_models.py: error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
+test_models.py: error: Object of type "None" is not subscriptable (reportOptionalSubscript)
+test_nonstandard_private_loader.py: error: "col_index" is not a known member of "None" (reportOptionalMemberAccess)
+test_nonstandard_private_loader.py: error: "owner_id" is not a known member of "None" (reportOptionalMemberAccess)
+test_nonstandard_private_loader.py: error: "row_index" is not a known member of "None" (reportOptionalMemberAccess)
+test_nonstandard_private_loader.py: error: Argument of type "Literal[CellLineNameType.depmap_id]" cannot be assigned to parameter "cell_line_name_type" of type "str" in function "__init__"
+test_parse_downloads.py: error: "stats" is not a known member of "None" (reportOptionalMemberAccess)
+test_predictability_loader.py: error: "dataset_id" is not a known member of "None" (reportOptionalMemberAccess)
+test_predictability_loader.py: error: "entity_id" is not a known member of "None" (reportOptionalMemberAccess)
+test_predictability_loader.py: error: "name" is not a known member of "None" (reportOptionalMemberAccess)
+test_predictability_loader.py: error: Argument of type "Literal[DependencyEnum.Chronos_Combined]" cannot be assigned to parameter "dependency_dataset_name" of type "str" in function "get_dataset_by_name"
+test_run_custom_analysis_missing_row_matrix_index.py: error: Argument of type "list[Sequence]" cannot be assigned to parameter "depmap_model_ids" of type "List[str]" in function "_run_custom_analysis"
+test_run_custom_analysis_missing_row_matrix_index.py: error: Argument of type "list[Sequence]" cannot be assigned to parameter "sample_col_ids" of type "list[str] | None" in function "get_subsetted_df_by_labels"
+test_tasks.py: error: "__getitem__" method not defined on type "Datatype" (reportIndexIssue)
+test_tasks.py: error: Argument missing for parameter "self" (reportCallIssue)
+test_tasks.py: error: Argument missing for parameter "single_column" (reportCallIssue)
+test_tasks.py: error: Argument missing for parameter "taiga_id" (reportCallIssue)
+test_tasks.py: error: Argument of type "Group | Dataset | Datatype | Unknown" cannot be assigned to parameter "__iterable" of type "Iterable[_T@list]" in function "__init__"
+test_tasks.py: error: Argument of type "Group | Dataset | Datatype" cannot be assigned to parameter "__iterable" of type "Iterable[_T@list]" in function "__init__"
+test_tasks.py: error: Cannot access member "entity_id" for type "GeneFactory"
+test_tree.py: error: Method "create" overrides class "NodeFactory" in an incompatible manner
+test_tree.py: error: Method "get_added_attrs" overrides class "NodeFactory" in an incompatible manner
+test_tree_utils.py: error: Method "create" overrides class "NodeFactory" in an incompatible manner
+test_tree_utils.py: error: Method "get_added_attrs" overrides class "NodeFactory" in an incompatible manner
+test_trees.py: error: Argument of type "Sequence" cannot be assigned to parameter "feature" of type "str | int" in function "get_id_from_dataset_feature"
+test_trees.py: error: Cannot access member "entity_id" for type "GeneFactory"
+test_utils.py: error: "__get_taiga_id_to_download_url" is unknown import symbol (reportAttributeAccessIssue)
+test_utils.py: error: Cannot access member "dataset_id" for type "DependencyDatasetFactory"
+test_utils.py: error: Cannot access member "entity_id" for type "GeneFactory"
+test_utils.py: error: Cannot access member "matrix_id" for type "LazyAttribute"
+test_views.py: error: "__getitem__" method not defined on type "LazyAttribute" (reportIndexIssue)
+test_views.py: error: "__getitem__" method not defined on type "Sequence" (reportIndexIssue)
+test_views.py: error: "display_name" is not a known member of "None" (reportOptionalMemberAccess)
+test_views.py: error: Argument of type "Sequence" cannot be assigned to parameter "feature" of type "str | int" in function "get_id_from_dataset_feature"
+test_views.py: error: Argument of type "Sequence" cannot be assigned to parameter "model_id" of type "str" in function "get_related_models"
+test_views.py: error: Argument of type "Sequence" cannot be assigned to parameter "model_id" of type "str" in function "get_rows_with_lowest_z_score"
+test_views.py: error: Argument of type "Sequence" cannot be assigned to parameter "patient_id" of type "str" in function "get_related_models"
+test_views.py: error: Argument of type "dict[Sequence, float]" cannot be assigned to parameter "src_dict" of type "Dict[str, Any]" in function "from_dict"
+test_views.py: error: Argument of type "str" cannot be assigned to parameter "__value" of type "int" in function "index"
+test_views.py: error: Cannot access member "entity_id" for type "CompoundDoseFactory"
+test_views.py: error: Cannot access member "entity_id" for type "CompoundDoseReplicateFactory"
+test_views.py: error: Cannot access member "entity_id" for type "CompoundExperimentFactory"
+test_views.py: error: Cannot access member "entity_id" for type "CompoundFactory"
+test_views.py: error: Cannot access member "entity_id" for type "GeneFactory"
+test_views.py: error: Cannot access member "entity_id" for type "GenericEntityFactory"
+test_views.py: error: Cannot access member "entity_id" for type "SubFactory"
+test_views.py: error: Cannot access member "get_dose_enum" for type "DependencyDatasetFactory"
+test_views.py: error: Cannot access member "label_without_compound_name" for type "CompoundDoseFactory"
+test_views.py: error: Cannot access member "label_without_compound_name" for type "CompoundDoseReplicateFactory"
+test_views.py: error: Object of type "None" is not subscriptable (reportOptionalSubscript)
+url_utils.py: error: Argument of type "Literal['ENABLED_FEATURES']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+url_utils.py: error: Argument of type "Unknown | Literal['all'] | None" cannot be assigned to parameter "feature" of type "str | int" in function "get_id_from_dataset_feature" (reportArgumentType)
+url_utils.py: error: Argument of type "Unknown | None" cannot be assigned to parameter "feature" of type "str | int" in function "get_id_from_dataset_feature" (reportArgumentType)
+url_utils.py: error: Argument of type "tuple[str]" cannot be assigned to parameter "__value" of type "str" in function "__setitem__"
+url_utils.py: error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
+util.py: error: Argument of type "Literal['CAS_BUCKET']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+util.py: error: Argument of type "Literal['DOWNLOADS_KEY']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+util.py: error: Expression of type "None" cannot be assigned to parameter of type "Client"
+util.py: error: Expression of type "None" cannot be assigned to return type "str"
+util.py: error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
+utils.py: error: "abs_dest_path" is possibly unbound (reportPossiblyUnboundVariable)
+utils.py: error: "base_name" is possibly unbound (reportPossiblyUnboundVariable)
+utils.py: error: "display_name" is not a known member of "None" (reportOptionalMemberAccess)
+utils.py: error: "groups" is not a known member of "None" (reportOptionalMemberAccess)
+utils.py: error: "name" is not a known member of "None" (reportOptionalMemberAccess)
+utils.py: error: "reset_index" is not a known member of "None" (reportOptionalMemberAccess)
+utils.py: error: Argument of type "Literal['ALLOW_CUSTOM_DOWNLOAD_WITH_TAIGA_URL']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+utils.py: error: Argument of type "Literal['ANNOUNCEMENTS_FILE_PATH']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+utils.py: error: Argument of type "Literal['OAUTH_SIGNATURE_KEY']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+utils.py: error: Argument of type "Literal['TAIGA_CACHE_DIR']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+utils.py: error: Argument of type "Literal['WEBAPP_DATA_DIR']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+utils.py: error: Argument of type "Unknown | None" cannot be assigned to parameter "string" of type "bytes | bytearray" in function "quote" (reportArgumentType)
+utils.py: error: Cannot access member "dropna" for type "NDArray[Unknown]"
+utils.py: error: Cannot access member "dropna" for type "ndarray[Any, Unknown]"
+utils.py: error: Cannot access member "encode" for type "bytes"
+utils.py: error: Cannot access member "rename" for type "NDArray[Unknown]"
+utils.py: error: Cannot access member "rename" for type "ndarray[Any, Unknown]"
+utils.py: error: Cannot access member "unquote" for type "type[Serializer]"
+utils.py: error: Expression of type "Dict[str, DatasetSortKey] | Any" cannot be assigned to return type "DefaultDict[str, DatasetSortKey]"
+utils.py: error: Expression of type "None" cannot be assigned to return type "DataFrame"
+utils.py: error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
+utils.py: error: No overloads for "quote" match the provided arguments (reportCallIssue)
+utils.py: error: Second argument to "isinstance" must be a class or tuple of classes
+views.py: error: "IGNORECASE" is not a known member of module "natsort" (reportAttributeAccessIssue)
+views.py: error: "Unbound" is not iterable (reportGeneralTypeIssues)
+views.py: error: "__getitem__" method not defined on type "Datatype" (reportIndexIssue)
+views.py: error: "age" is not a known member of "None" (reportOptionalMemberAccess)
+views.py: error: "age_category" is not a known member of "None" (reportOptionalMemberAccess)
+views.py: error: "catalog_number" is not a known member of "None" (reportOptionalMemberAccess)
+views.py: error: "ccle_name" is not a known member of "None" (reportOptionalMemberAccess)
+views.py: error: "cell_line" is not a known member of "None" (reportOptionalMemberAccess)
+views.py: error: "cosmic_id" is not a known member of "None" (reportOptionalMemberAccess)
+views.py: error: "csv_path" is possibly unbound (reportPossiblyUnboundVariable)
+views.py: error: "dataset_id" is not a known member of "None" (reportOptionalMemberAccess)
+views.py: error: "dataset_name" is possibly unbound (reportPossiblyUnboundVariable)
+views.py: error: "display_name" is not a known member of "None" (reportOptionalMemberAccess)
+views.py: error: "engineered_model" is not a known member of "None" (reportOptionalMemberAccess)
+views.py: error: "enrichment_boxes" is possibly unbound (reportPossiblyUnboundVariable)
+views.py: error: "get" is not a known member of "None" (reportOptionalMemberAccess)
+views.py: error: "group_by_category_config" is possibly unbound (reportPossiblyUnboundVariable)
+views.py: error: "group_by_feature" is possibly unbound (reportPossiblyUnboundVariable)
+views.py: error: "growth_pattern" is not a known member of "None" (reportOptionalMemberAccess)
+views.py: error: "html" is possibly unbound (reportPossiblyUnboundVariable)
+views.py: error: "image_filename" is not a known member of "None" (reportOptionalMemberAccess)
+views.py: error: "index" is not a known member of "None" (reportOptionalMemberAccess)
+views.py: error: "legacy_molecular_subtype" is not a known member of "None" (reportOptionalMemberAccess)
+views.py: error: "level_1_lineage" is not a known member of "None" (reportOptionalMemberAccess)
+views.py: error: "matrix" is not a known member of "None" (reportOptionalMemberAccess)
+views.py: error: "model_derivation_material" is not a known member of "None" (reportOptionalMemberAccess)
+views.py: error: "model_id" is not a known member of "None" (reportOptionalMemberAccess)
+views.py: error: "name" is not a known member of "None" (reportOptionalMemberAccess)
+views.py: error: "oncotree_code" is not a known member of "None" (reportOptionalMemberAccess)
+views.py: error: "oncotree_lineage" is not a known member of "None" (reportOptionalMemberAccess)
+views.py: error: "oncotree_subtype" is not a known member of "None" (reportOptionalMemberAccess)
+views.py: error: "patient_id" is not a known member of "None" (reportOptionalMemberAccess)
+views.py: error: "patient_molecular_subtype" is not a known member of "None" (reportOptionalMemberAccess)
+views.py: error: "patient_race" is not a known member of "None" (reportOptionalMemberAccess)
+views.py: error: "primary_or_metastasis" is not a known member of "None" (reportOptionalMemberAccess)
+views.py: error: "rrid" is not a known member of "None" (reportOptionalMemberAccess)
+views.py: error: "sample_collection_site" is not a known member of "None" (reportOptionalMemberAccess)
+views.py: error: "sanger_model_id" is not a known member of "None" (reportOptionalMemberAccess)
+views.py: error: "sex" is not a known member of "None" (reportOptionalMemberAccess)
+views.py: error: "source_dir" is possibly unbound (reportPossiblyUnboundVariable)
+views.py: error: "source_type" is not a known member of "None" (reportOptionalMemberAccess)
+views.py: error: "tissue_origin" is not a known member of "None" (reportOptionalMemberAccess)
+views.py: error: "treatment_details" is not a known member of "None" (reportOptionalMemberAccess)
+views.py: error: "treatment_status" is not a known member of "None" (reportOptionalMemberAccess)
+views.py: error: Argument expression after ** must be a mapping with a "str" key type (reportCallIssue)
+views.py: error: Argument of type "DownloadRelease | None" cannot be assigned to parameter "release" of type "DownloadRelease" in function "get_file_record"
+views.py: error: Argument of type "DownloadRelease | None" cannot be assigned to parameter "release" of type "DownloadRelease" in function "get_release_record"
+views.py: error: Argument of type "Hashable | Unknown | Literal['mutations_prioritized', '']" cannot be assigned to parameter "group_by" of type "str" in function "__init__"
+views.py: error: Argument of type "Literal['COMPUTE_RESULTS_ROOT']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+views.py: error: Argument of type "Literal['CONTACT_EMAIL']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+views.py: error: Argument of type "Literal['DEBUG']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+views.py: error: Argument of type "Literal['DMC_SYMPOSIA_PATH']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+views.py: error: Argument of type "Literal['DOCUMENTATION_PATH']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+views.py: error: Argument of type "Literal['DOWNLOADS_KEY']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+views.py: error: Argument of type "Literal['ENABLED_FEATURES']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+views.py: error: Argument of type "Literal['ENV']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+views.py: error: Argument of type "Literal['EXTERNAL_TOOLS']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+views.py: error: Argument of type "Literal['FEEDBACK_FORM_URL']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+views.py: error: Argument of type "Literal['URL_UPLOAD_WHITELIST']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+views.py: error: Argument of type "Literal['WEBAPP_DATA_DIR']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+views.py: error: Argument of type "Literal['dataset_id']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+views.py: error: Argument of type "Literal['display_name']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+views.py: error: Argument of type "Literal['exception']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+views.py: error: Argument of type "Literal['kNeighbors']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+views.py: error: Argument of type "Literal['logerror']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+views.py: error: Argument of type "Literal['opt_in']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+views.py: error: Argument of type "Literal['primarySite']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+views.py: error: Argument of type "Literal['release']" cannot be assigned to parameter "__key" of type "_KT@dict" in function "__setitem__"
+views.py: error: Argument of type "Literal['sampleId']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+views.py: error: Argument of type "Literal['subtype']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+views.py: error: Argument of type "Literal['units']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+views.py: error: Argument of type "Literal['url']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+views.py: error: Argument of type "Literal['user_id']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+views.py: error: Argument of type "Literal['value']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+views.py: error: Argument of type "Literal[DependencyEnum.Avana]" cannot be assigned to parameter "dependency_dataset_name" of type "str" in function "get_dataset_by_name"
+views.py: error: Argument of type "Unknown | Any | None" cannot be assigned to parameter "query_feature_slice_id" of type "str" in function "run_custom_analysis"
+views.py: error: Argument of type "Unknown | Any | dict[Any, Any] | list[Unknown] | Literal[False] | None" cannot be assigned to parameter "__x" of type "ConvertibleToInt" in function "__new__" (reportArgumentType)
+views.py: error: Argument of type "Unknown | FileStorage" cannot be assigned to parameter "filepath_or_buffer" of type "FilePath | ReadCsvBuffer[bytes] | ReadCsvBuffer[str]" in function "read_csv" (reportArgumentType)
+views.py: error: Argument of type "Unknown | Hashable" cannot be assigned to parameter "group_name" of type "str" in function "__init__"
+views.py: error: Argument of type "Unknown | None" cannot be assigned to parameter "cell_line_col_index" of type "int" in function "get_all_cell_line_compound_sensitivity"
+views.py: error: Argument of type "Unknown | None" cannot be assigned to parameter "cell_line_col_index" of type "int" in function "get_all_cell_line_gene_effects"
+views.py: error: Argument of type "Unknown | int | list[Unknown]" cannot be assigned to parameter "color_num" of type "str | int" in function "__init__" (reportArgumentType)
+views.py: error: Argument of type "list[BreadboxVectorCatalogNodeInfo]" cannot be assigned to parameter "__iterable" of type "Iterable[dict[Unknown, Unknown]]" in function "extend"
+views.py: error: Argument of type "list[CellLineSeries]" cannot be assigned to parameter "breadbox_feature_data" of type "list[Series]" in function "get_df_from_feature_list"
+views.py: error: Argument of type "list[Unknown] | Any | list[int] | Unknown" cannot be assigned to parameter "query_cell_lines" of type "list[str] | None" in function "run_custom_analysis" (reportArgumentType)
+views.py: error: Argument of type "list[list[Unknown]] | None" cannot be assigned to parameter "compound_experiment_and_datasets" of type "List[Tuple[CompoundExperiment, DependencyDataset]]" in function "format_dep_dist_caption"
+views.py: error: Argument of type "str | Any" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+views.py: error: Argument of type "str | None" cannot be assigned to parameter "entity_type" of type "str" in function "to_display_name"
+views.py: error: Argument of type "str | None" cannot be assigned to parameter "s" of type "str | bytes | bytearray" in function "loads" (reportArgumentType)
+views.py: error: Argument of type "str" cannot be assigned to parameter "__value" of type "_VT@dict" in function "__setitem__"
+views.py: error: Cannot access member "any" for type "List[Gene]"
+views.py: error: Cannot access member "apply" for type "function"
+views.py: error: Cannot access member "delay" for type "function"
+views.py: error: Cannot access member "drop" for type "List[UserUploadRecord]"
+views.py: error: Cannot access member "genes" for type "set[Unknown]"
+views.py: error: Cannot access member "get" for type "list[str]"
+views.py: error: Cannot access member "getlist" for type "list[str]"
+views.py: error: Cannot access member "rename" for type "float"
+views.py: error: Cannot access member "term" for type "set[Unknown]"
+views.py: error: Cannot access member "to_dict" for type "list[str]"
+views.py: error: Expected type expression but received "(typename: str, fields: dict[str, type[Any]], total: bool = ...) -> type[dict[str, Any]]" (reportGeneralTypeIssues)
+views.py: error: Expression of type "None" cannot be assigned to parameter of type "List[Tuple[CompoundExperiment, DependencyDataset]]"
+views.py: error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
+views.py: error: No overloads for "read_csv" match the provided arguments (reportCallIssue)
+views.py: error: No overloads for "sum" match the provided arguments (reportCallIssue)
+views.py: error: Object of type "None" is not subscriptable (reportOptionalSubscript)
+views.py: error: Object of type "list[str]" is not callable (reportCallIssue)
+views.py: error: Variable not allowed in type expression (reportInvalidTypeForm)

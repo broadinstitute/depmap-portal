@@ -1,0 +1,31 @@
+{% extends "full_page.html" %}
+
+{% block page_title %}DepMap: {{ title }}{% endblock %}
+
+{% block css %}
+    {% assets filters="libsass",
+      output="public/css/external-tools.css", "css/entities/executive.scss", "css/shared/*.scss"
+    %}
+        <link rel="stylesheet" href="{{ ASSET_URL }}">
+    {% endassets %}
+{% endblock %}
+
+{% block meta_description %}{{ description }}{% endblock %}
+
+{% block content %}
+    <style>
+      .external-tool {
+        position: absolute;
+        width: 100%;
+        height: calc(100% - 48px);
+        border: none;
+      }
+    </style>
+
+    <div class="full-screen-div">
+        {% include "nav_footer/nav.html" %}
+        <iframe class="external-tool" src="{{ url }}">
+          <p>Your browser does not support iframes.</p>
+        </iframe>
+    </div>
+{% endblock %}

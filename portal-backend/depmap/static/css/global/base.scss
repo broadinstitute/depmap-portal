@@ -1,0 +1,507 @@
+/* =============================================================================
+   App specific SCSS file.
+   ========================================================================== */
+@import "../shared/variables";
+
+html,
+body {
+  height: 100%;
+}
+
+#wrap {
+  min-height: 100%;
+}
+
+#main {
+  overflow: auto;
+  padding-bottom: $footer_height; /* this needs to be bigger than footer height*/
+}
+
+.footer {
+  position: relative;
+  margin-top: -$footer_height; /* negative value of footer height */
+  /*  height: $footer_height;*/
+  clear: both;
+  /* padding-top:20px; */
+}
+
+html {
+  position: relative;
+  overflow-y: auto;
+  min-height: 100%;
+}
+
+section {
+  overflow: auto;
+}
+
+textarea {
+  resize: vertical;
+}
+
+summary {
+  display: list-item;
+}
+
+/*TYPOGRAPHY*/
+body {
+  padding-top: 48px;
+  font-family: lato, sans-serif;
+  font-size: 14px;
+  font-weight: normal;
+}
+
+h1 {
+  font-size: 32px;
+  font-weight: 400;
+}
+
+h2 {
+  font-size: 24px;
+  font-weight: 400;
+  line-height: 1.25;
+  margin-bottom: 6px;
+}
+
+h3 {
+  font-size: 18px;
+  font-weight: 700;
+  margin-top: 0px;
+  margin-bottom: 6px;
+}
+
+h4 {
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+h5 {
+  font-size: 13px;
+  font-weight: 700;
+  font-style: italic;
+  margin-bottom: 4px;
+}
+
+h6 {
+  font-size: 11px;
+  font-weight: normal;
+  line-height: 1.25;
+  margin-bottom: 6px;
+  margin-top: 6px;
+}
+
+.italicize {
+  font-style: italic;
+}
+
+.likeh4 {
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.25;
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
+
+.likeh5 {
+  font-size: 13px;
+  font-weight: 700;
+  font-style: italic;
+  margin-top: 10px;
+  margin-bottom: 4px;
+}
+
+.inline-block {
+  display: inline-block;
+}
+
+.cursor-pointer {
+  cursor: pointer;
+}
+
+.wrap-text {
+  white-space: normal;
+}
+
+.visually-hidden {
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  height: 1px;
+  overflow: hidden;
+  position: absolute;
+  white-space: nowrap;
+  width: 1px;
+}
+
+/* SliderInput */
+.slider-input-wrapper {
+  display: inline-block;
+  position: relative;
+  width: calc(100% - 50px);
+  margin: 0 auto 3rem;
+  padding-block-end: 5px;
+
+  .slider-input-range {
+    width: 100%;
+  }
+
+  .slider-input-bubble {
+    background: #337ab7;
+    color: white;
+    padding: 4px 12px;
+    position: absolute;
+    border-radius: 4px;
+    left: 50%;
+    transform: translateX(-50%);
+    margin-block-start: 4px;
+
+    &:after {
+      content: "";
+      position: absolute;
+      width: 4px;
+      height: 4px;
+      background: #337ab7;
+      top: -2px;
+      left: calc(50% - 2px);
+      transform: rotate(45deg);
+    }
+  }
+}
+
+.slider-input-min-max-label {
+  &:first-child {
+    margin-inline-end: 4px;
+  }
+  &:last-child {
+    margin-inline-start: 4px;
+  }
+}
+
+.row-description {
+  display: flex;
+}
+
+.column-description {
+  flex: 20%;
+
+  @media screen and (max-width: 300px) {
+    width: 100%;
+  }
+}
+
+.first-column {
+  padding-left: 2em;
+}
+
+/* Gene page overview popovers - "Strongly Selective" and "Common Essential" will retain white text in popover without this */
+.popover-content {
+  color: #333;
+}
+
+/* CSS for terms and conditions footer pop-up */
+.terms-and-conditions-wrapper {
+  width: 100%;
+  background-color: #363636;
+  bottom: 0px;
+  left: 0px;
+  position: fixed;
+  z-index: 4; // jquery datatables selected page has a z-index of 3, need to beat that
+  display: none;
+}
+
+.terms-and-conditions-footer {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  p {
+    color: white;
+  }
+}
+
+// tac means terms and conditions
+.tac-button {
+  background-color: $depmap_popout;
+  border-radius: 0;
+  height: 100%;
+  color: white;
+  width: 200px;
+}
+
+.tac_link {
+  border-bottom: 1px solid $depmap_popout;
+}
+
+a.tac:link {
+  color: white;
+}
+
+a.tac:visited {
+  color: white;
+}
+
+a.tac:hover {
+  color: $depmap_popout;
+  text-decoration: none;
+}
+
+a.tac:active {
+  color: white;
+}
+
+.tac_shadow {
+  position: relative;
+  box-shadow: 1px -2px 4px rgba(0, 0, 0, 0.5);
+}
+
+/* Global CSS for tooltips */
+.right .tooltip-inner {
+  text-align: left;
+}
+
+/* Global CSS to ellipses placeholder text on overflow - primarily for the global search bar */
+:placeholder-shown {
+  text-overflow: ellipsis;
+}
+
+/* To get rid of selectize.js caret */
+.selectize-input::after {
+  visibility: hidden;
+}
+
+/* This prevents the selectize placeholder from running over the edge of the
+search bar container at smaller screen widths. The media query is to prevent
+a noticeable gap in input at the end of the search bar on larger screen widths */
+.selectize-input.not-full > input {
+  width: 100% !important;
+}
+
+/* Set the global search magnifying glass and indent the text so it doesn't overlap. This
+pushes the placeholder out of the containing search bar at smaller screen widths unless
+we adjust the width of the input proportionally like above */
+.selectize-input {
+  background-image: url("../img/nav_footer/magnifyingglass_purple.svg") !important;
+  background-size: 15px !important;
+  background-position: 8px center !important;
+  background-repeat: no-repeat !important;
+  padding: 7px 12px 7px 30px;
+}
+
+/* Used by datatables partial to request auto x-scrolling */
+.scroll-x-wrapper {
+  overflow-x: auto;
+  clear: both;
+}
+
+/*RULE BREAKS*/
+.hr_headliner {
+  display: block;
+  margin: 0.5em 0 0.5em 0;
+  border-width: 1px;
+  border-color: #393939;
+}
+
+.hr_announcement {
+  display: block;
+  border-width: 1px;
+  border-color: #393939;
+}
+
+.hr_list {
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+}
+
+.hr_filter {
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+  border-width: 1px;
+  border-color: #393939;
+}
+
+/*Cell Line Selector*/
+.my_sets {
+  border-style: solid;
+  border-color: #979797;
+  border-width: 1pt;
+}
+
+.inline-block {
+  display: inline-block;
+}
+
+/*PADDING*/
+.no_padding {
+  padding: 0em 0em 0em 0em;
+}
+
+.no_margin {
+  margin: 0em 0em 0em 0em;
+}
+
+/*IMAGES*/
+.image_width_50 {
+  width: 50%;
+}
+.image_width_60 {
+  width: 60%;
+}
+.image_width_70 {
+  width: 70%;
+}
+.image_width_80 {
+  width: 80%;
+}
+
+.image_width_90 {
+  width: 90%;
+}
+
+.image_width_100 {
+  width: 100%;
+}
+
+.logo_squares {
+  background-color: white;
+  margin: 10px;
+  padding: 16px;
+  border-style: solid;
+  border-color: lightgray;
+  border-width: 1px;
+  display: inline-block;
+}
+
+.logo_square_linked {
+  background-color: white;
+  margin: 10px;
+  padding: 16px;
+  box-shadow: 1px 1px 5px black;
+  display: inline-block;
+}
+
+/*add outlines around col div*/
+.mockup {
+  border-style: solid;
+  border-color: red;
+  border-width: 1px;
+}
+
+/*center element in div*/
+.center_center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/*ANNOUNCEMENTS*/
+.announce_subtext {
+  font-size: 13px;
+}
+
+.date_bold {
+  font-weight: 800;
+}
+
+/*CUSTOM*/
+ul {
+  list-style: circle;
+  margin-left: 0;
+  margin-bottom: 0;
+  padding-left: 1.2em;
+  text-indent: 0em;
+}
+
+/*CITATIONS*/
+.padding_cite {
+  padding-bottom: 1rem;
+}
+
+/*expand text*/
+.read-more-state {
+  display: none;
+}
+
+.read-more-target {
+  opacity: 0;
+  max-height: 0;
+  font-size: 0;
+  transition: 0.3s ease-in;
+}
+
+.read-more-state:checked ~ .read-more-wrap .read-more-target {
+  opacity: 1;
+  font-size: inherit;
+  max-height: 999em;
+}
+
+.read-more-state ~ .read-more-trigger:before {
+  content: " ... ";
+}
+
+.read-more-state:checked ~ .read-more-trigger:before {
+  content: " ... ";
+}
+
+.read-more-trigger {
+  cursor: pointer;
+  display: inline-block;
+  margin-bottom: 0;
+  color: $link_blue;
+}
+
+/*view more*/
+.view-more-state {
+  display: none;
+}
+
+.view-more-target {
+  opacity: 0;
+  max-height: 0;
+  font-size: 0;
+  transition: 0.3s ease-in;
+}
+
+.view-more-state:checked ~ .view-more-wrap .view-more-target {
+  opacity: 1;
+  font-size: inherit;
+  max-height: 999em;
+}
+.view-more-state ~ .view-more-trigger:before {
+  content: "View more";
+}
+
+.view-more-state:checked ~ .view-more-trigger:before {
+  content: "View less";
+}
+
+.view-more-trigger {
+  cursor: pointer;
+  display: inline-block;
+  margin-bottom: 0;
+  color: $link_blue;
+}
+
+/* Modal prevent background jumping to top */
+/* https://stackoverflow.com/questions/21604674/bootstrap-modal-background-jumps-to-top-on-toggle */
+body.modal-open {
+  overflow: visible;
+}
+
+.gray_code_box {
+  // trying to mimic the css of the <pre> element
+  padding: 9.5px;
+  background-color: #f5f5f5;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+/*Remove the default sorting arrows from BaseTable*/
+.BaseTable__header-cell--sorting .BaseTable__sort-indicator,
+.BaseTable__header-cell--sorting:hover .BaseTable__sort-indicator {
+  display: none !important;
+}
+.BaseTable__header-cell--sortable:not(.BaseTable__header-cell--sorting):hover
+  .BaseTable__sort-indicator {
+  display: none !important;
+}

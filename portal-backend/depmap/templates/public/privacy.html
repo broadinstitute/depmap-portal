@@ -1,0 +1,37 @@
+{% extends "nav_footer.html" %}
+{% block content %}
+	<div class="title_div">
+		<div> {# this wrapper div is required, probably to break the flex #}
+			<br>
+			<br>
+			<h2 style="margin: 0">Privacy Policy</h2>
+			<br>
+			<i><b>The following discloses our information gathering and dissemination practices for the DEPMAP website depmap.org:</b></i>
+			<hr>
+			<h3>Information gathering</h3>
+            <p>We may use your IP address to help diagnose problems with our server and to administer our website by identifying (1) which parts of our site are most heavily used, and (2) which portion of our audience comes from within the Broad Institute network. We do not link IP addresses to anything personally identifiable. This means that user sessions will be tracked, but the users will remain anonymous. We use cookies to record information about your online preferences that allow us to personalize your experience of the website. You can control your use of cookies from your web browser, but if you choose not to accept cookies you will not be able to take full advantage of all of the website's features.</p>
+			{% if config.ENABLED_FEATURES.private_datasets %}
+				{% if config.ENV_TYPE == 'peddep' %}
+					{% if config.ENABLED_FEATURES.private_datasets %}
+					<p>The PedDep portal is a restricted-access website. To maintain the functionality of the site, Broad collects user information for all users using the site. This information might include username and associated views and activities on the portal. This information is used for the sole purpose of assuring the function of the site and will not be shared or used by the Broad for any other purpose.</p>
+					{% endif %}
+				{% else %}
+					<p>The {{ "Skyros" if config.ENV_TYPE == 'skyros' else "DMC" }} portal is a restricted-access website. To maintain the functionality of the site, Broad collects user information for all users using the site. This information might include username and associated views and activities on the portal. This information is used for the sole purpose of assuring the function of the site and will not be shared or used by the Broad for any other purpose.</p>
+				{% endif %}
+			{% endif %}
+            <hr>
+			<h3>Use of information</h3>
+            <p>DEPMAP staff uses the information gathered above to tailor site content to user needs, and to generate aggregate statistical reports. At no time do we disclose site usage by individual IP addresses. Web server logs are retained on a temporary basis and then deleted completely from our systems.</p>
+			<hr>
+			<h3>Security</h3>
+            <p>This site has security measures in place to protect the loss, misuse and alteration of the information under our control. DEPMAP however, is not liable for the loss, misuse or alteration of information on this site by any third party.</p>
+			<hr>
+			<h3>Effective date</h3>
+            <p>The effective date of this policy is Jan 31, 2018.</p>
+			<br>
+			<br>
+			<br>
+			<br>
+		</div>
+	</div>
+{% endblock %}

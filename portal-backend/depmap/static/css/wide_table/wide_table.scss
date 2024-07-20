@@ -1,0 +1,9 @@
+@import "../shared/narrow_react_table";
+
+.wide-table {
+  @include narrow-react-table;
+}
+
+.wide-table-slider-modal {
+  width: fit-content;
+}

@@ -1,0 +1,81 @@
+.ContextListItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 15px;
+  padding: 5px 10px;
+
+  &:not(:last-child) {
+    border-bottom: 1px solid #ddd;
+  }
+
+  span:nth-child(2) {
+    display: flex;
+    gap: 10px;
+  }
+}
+
+.MoreOptionsButton {
+  position: relative;
+
+  ul {
+    position: fixed;
+    left: unset;
+  }
+}
+
+.deleteContext {
+  &.deleteContext a {
+    color: #d9534f;
+
+    &:hover {
+      color: #d43f3a;
+    }
+  }
+}
+
+.NewContextItem {
+  padding: 10px;
+  background-color: #f7f7f7;
+  border: 1px solid #ccc;
+}
+
+.ContextManager {
+  h2:first-child {
+    margin-top: 5px;
+  }
+}
+
+.ContextList {
+  margin-top: 15px;
+}
+
+.ContextListItems {
+  border-top-left-radius: 5px;
+  border-top-right-radius: 5px;
+  max-height: calc(100vh - 317px);
+  overflow-y: auto;
+
+  &:not(:empty) {
+    border: 1px solid #ccc;
+    border-bottom: none;
+  }
+
+  &.showHelpText {
+    max-height: calc(100vh - 536px);
+  }
+}
+
+.ContextTypeSelect {
+  display: flex;
+  align-items: center;
+
+  & > div:nth-child(1) {
+    margin-top: 4px;
+    margin-right: 12px;
+  }
+
+  & > div:nth-child(2) {
+    width: 240px;
+  }
+}

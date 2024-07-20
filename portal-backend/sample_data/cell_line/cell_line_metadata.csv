@@ -1,0 +1,22 @@
+ccle_name,display_name,cosmic_id,catalog_number,growth_pattern,full_cell_line_name,cclf_gender,primary_disease_name,tumor_type_name,subtype_name,wtsi_master_cell_id,arxspan_id,cell_line_passport_id,alt_names,aliases,lineage_1,lineage_2,lineage_3,lineage_4,original_source,image_filename,rrid,comments,legacy_molecular_subtype,legacy_sub_subtype
+HS294T_SKIN,HS294T,,A12345,Adherent,Hs 294T,Male,,Metastasis,,,ACH-000014,SIDM00800,,Hs 294.T,skin,melanoma,,,ATCC,,CVCL_0331,Isolated from the same donor tissue as A101D,EWS_ERG,high_grade_serous
+A673_BONE,A673,684052,B12345,Adherent,A-673,Female,,Primary,,660,ACH-000052,SIDM00848,,A-673,bone,Ewings_sarcoma,,,DSMZ,,CVCL_0080,(RNAseq) EWS/FLI,non_MYC,M3
+CADOES1_BONE,CADOES1,753539,C12345,Suspension,CADO-ES1,Female,Bone Sarcoma,Metastasis,Ewing's Sarcoma,1523,ACH-000210,SIDM00961,,CADO-ES-1,bone,Ewings_sarcoma,,,KCLB,CADO-ES1.jpg,CVCL_0698,(RNAseq) EWS/ERG,basal_B,
+EWS502_BONE,EWS502,,D12345,Adherent,EWS502,Unknown,Bone Sarcoma,,Ewing's Sarcoma,,ACH-000279,SIDM01499,,,bone,Ewings_sarcoma,,,,,CVCL_1103,(RNAseq) EWS/FLI,,M6
+WM115_SKIN,WM115,909784,E12345,Adherent,WM-115,Female,Melanoma/Skin Cancer,Primary,Malignant Melanoma,1000,ACH-000304,SIDM01000,,WM-115,skin,melanoma,,test_lineage,,,CVCL_S740,Derived from a metastasis of the same parent as WM-115 (ECACC).,,M6
+UACC62_SKIN,UACC62,905976,F12345,Unknown,UACC-62,Unknown,Melanoma/Skin Cancer,UACC sample tumor type,Melanoma,8,ACH-000425,SIDM00107,"Alt1,Alt2",UACC-62,skin,melanoma,b_cell_HERpos_dev_lineage,test_lineage,DSMZ,UACC-62_KG.jpg,CVCL_0040,,,M5
+SH4_SKIN,SH4,909713,G12345,Adherent,SH-4,Female,Melanoma/Skin Cancer,Metastasis,Melanoma,1179,ACH-000441,SIDM01079,,,skin,melanoma,,,,,CVCL_1780,,,
+CJM_SKIN,CJM,,,Adherent,CJM,Male,Melanoma/Skin Cancer,Metastasis,Unknown,,ACH-000458,SIDM01512,,,skin,melanoma,,,,CJM_KG.jpg,CVCL_1692,,EWS_FLI,
+HT29_LARGE_INTESTINE,HT29,905939,H12345,Adherent,HT-29,Female,Colon Cancer,Primary,Colon/ Colorectal Adenocarcinoma,1212,ACH-000552,SIDM00136,,HT-29,colorectal,,,,ECACC,HT-29-KG.tif,CVCL_U797,,EWS_FLI,
+C32_SKIN,C32,906830,I12345,Adherent,C32,Male,Melanoma/Skin Cancer,Primary,"Melanoma, Amelanotic",2242,ACH-000580,SIDM00890,,,skin,melanoma_fake_1,,,ATCC,C32_LUA-3143.jpg,CVCL_0320,,,
+EPLC272H_LUNG,EPLC272H,753556,J12345,Adherent,EPLC-272H,Male,Lung NSCLC,Primary,"Lung squamous carcinoma/Non Small Cell Lung Cancer, Squamous Cell Carcinoma",404,ACH-000585,SIDM01044,,EPLC-272H,,,,,DSMZ,,CVCL_1097,,,NSCLC_adenocarcinoma
+EKVX_LUNG,EKVX,905970,K12345678,Adherent,EKVX,Unknown,Lung NSCLC,Primary,Lung adenocarcinoma/Non Small Cell Carcinoma,322,ACH-000706,SIDM00119,,,lung,lung_NSC,lung_adenocarcinoma,,DSMZ,EKVX_LUA-3867.jpg,CVCL_1197,,,high_grade_serous
+A2058_SKIN,A2058,906792,L123456,Adherent,A2058,Male,Melanoma/Skin Cancer,Metastasis,Melanoma,652,ACH-000788,SIDM00797,,,skin,melanoma_fake_1,,,ATCC,"A2058-LUA-3175-AN.jpg, A2058-LUA-3175-AN.jpg",CVCL_1195,,,
+COLO679_SKIN,COLO679,906818,M123,Adherent,COLO-679,Female,Melanoma/Skin Cancer,Metastasis,Malignant Melanoma,2049,ACH-000805,SIDM00284,,COLO-679,skin,melanoma_fake_1,,,NIBRI,COLO-679_KG.jpg,CVCL_1059,,basal_A,NSCLC_large_cell
+SKMEL30_SKIN,SKMEL30,909726,N12345678910,Adherent,SK-MEL-30,Male,Melanoma/Skin Cancer,Metastasis,Malignant Melanoma,1789,ACH-000810,SIDM00392,,,skin,melanoma_fake_2,,,DSMZ,,CVCL_1130,,,
+WM88_SKIN,WM88,,A5678,Unknown,WM-88,Unknown,Melanoma/Skin Cancer,,Melanoma,,ACH-000899,SIDM01768,,WM-88,skin,melanoma,,,HSRRB,,CVCL_0039,,,ERneg_HER2pos
+143B_BONE,143B,,B789,Adherent,143B,Unknown,Bone Sarcoma,Primary,Osteosarcoma,,ACH-001001,SIDM00804,,,bone,osteosarcoma,,,DSMZ,,CVCL_6805,HOS and 143B originated from the same host: 143B is TK- and originated indirectly from HOS which is TK+ (ECACC).,,
+PETA_SKIN,PETA,,C5678,Unknown,,,Merkel,,,,ACH-001170,SIDM01848,,,skin,Merkel,,,ECACC,,,,MYCN_amp,ERpos_HER2neg
+TC32_BONE,TC32,,D789,Adherent,TC-32,Male,Bone Sarcoma,,Ewing's Sarcoma,,ACH-001205,SIDM01465,,,bone,Ewings_sarcoma,,,,,CVCL_LC73,(RNAseq) EWS/FLI,MYCN_amp,high_grade_serous
+HS229T_LUNG,HS229T,,G6666,Adherent,Hs 229.T,Male,Lung NSCLC,Primary,adenocarcinoma,,ACH-000131,SIDM01615,HS229T_FIBROBLAST,Hs 229.T,fibroblast,,,,ATCC,,CVCL_7151,,luminal_HER2_amp,M3
+[MERGED_TO_ACH-000131]NCIH292_LUNG,NCIH292,,p678,Adherent,Hs 229.T,Male,Lung NSCLC,Primary,adenocarcinoma,,ACH-000474,SIDM01615,,Hs 229.T,fibroblast,,,,ATCC,,CVCL_7151,,MYCN_amp,

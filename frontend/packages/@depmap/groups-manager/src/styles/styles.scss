@@ -1,0 +1,21 @@
+.container {
+  padding: 30px;
+}
+
+.container table {
+  background: white;
+  font-size: 12pt;
+  border-collapse: collapse;
+}
+
+.container table td,
+.container table th {
+  padding: 8px;
+  border: 1px solid #ddd;
+}
+
+.primaryButtons {
+  display: flex;
+  padding: 20px;
+  gap: 10px;
+}

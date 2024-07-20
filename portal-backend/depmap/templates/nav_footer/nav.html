@@ -1,0 +1,15 @@
+{% assets filters="libsass", output='public/css/nav.css', 'css/nav_footer/'+config.ENV_TYPE+'_nav.scss', depends=['css/shared/*.scss', 'css/nav_footer/common_nav.scss', 'css/nav_footer/skyros_dmc_peddep_shared_nav.scss', 'css/cell_line_selector/cell_line_selector.scss'] %}
+    <link rel="stylesheet" href="{{ ASSET_URL }}">
+{% endassets %}
+{% block css %}
+        <link rel="stylesheet" href="https://unpkg.com/react-table@6.8.0/react-table.css">
+        {% assets filters="libsass", output="public/css/cell_line_selector.css", "css/cell_line_selector/cell_line_selector.scss" %}
+            <link rel="stylesheet" href="{{ ASSET_URL }}">
+        {% endassets %}
+{% endblock %}
+
+{% from 'global_search/dropdown.html' import global_search_dropdown %}
+
+{{ include_theme_snippet("nav.html") }}
+{% include "nav_footer/alert_banner.html" %}
+

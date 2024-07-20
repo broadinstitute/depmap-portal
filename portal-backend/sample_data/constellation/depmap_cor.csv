@@ -1,0 +1,5 @@
+v1,dataset_v1,v1_id,entrez_id_v1,v2,dataset_v2,v2_id,entrez_id_v2,weight,set
+FAM24A,expression,expression|FAM24A,118670,AC093668.2--CYP3A7,fusions,fusions|AC093668.2--CYP3A7,,0.9929157813377830,1
+SOX10,expression,expression|SOX10,6663,NRAS,mutations_hotspot,mutations_hotspot|NRAS,673,0.525887210924312,1
+SOX10,expression,expression|SOX10,6663,SOX10,proteomics,proteomics|SOX10,P56693,0.8702552260113920,1
+SOX10,expression,expression|SOX10,6663,SOX10,mutations_damaging,mutations_damaging|SOX10,6663,0.8702552260113920,1

@@ -1,0 +1,24 @@
+gene_id,dataset,dep_lines,lines_with_data,is_strongly_selective,is_common_essential
+276,Chronos_Combined,0,436,FALSE,FALSE
+3730,RNAi_merged,0,547,FALSE,FALSE
+4893,Chronos_Combined,31,436,TRUE,FALSE
+4893,RNAi_merged,30,712,FALSE,TRUE
+5469,Chronos_Combined,310,436,FALSE,FALSE
+5469,RNAi_merged,169,710,TRUE,FALSE
+5676,Chronos_Combined,0,601,FALSE,FALSE
+5676,RNAi_merged,0,601,FALSE,FALSE
+6663,Chronos_Combined,97,436,TRUE,FALSE
+6663,RNAi_merged,32,710,FALSE,TRUE
+6928,Chronos_Combined,58,436,TRUE,FALSE
+6928,RNAi_merged,38,710,TRUE,FALSE
+80853,Chronos_Combined,0,436,FALSE,FALSE
+80853,RNAi_merged,0,386,FALSE,FALSE
+81622,RNAi_merged,0,343,FALSE,FALSE
+8263,RNAi_merged,0,343,FALSE,FALSE
+9448,Chronos_Combined,1,436,TRUE,FALSE
+9448,RNAi_merged,1,708,FALSE,FALSE
+9865,RNAi_merged,0,383,FALSE,FALSE
+3730,Chronos_Combined,1,436,TRUE,FALSE
+375757,Chronos_Combined,1,436,TRUE,FALSE
+148304,Chronos_Combined,1,436,TRUE,FALSE
+ZNF765-ZNF761&ZNF761 (110116772&388561),Chronos_Combined,1,436,TRUE,FALSE

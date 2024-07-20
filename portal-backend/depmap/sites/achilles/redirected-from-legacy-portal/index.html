@@ -1,0 +1,24 @@
+{% extends "public/minisite.html" %}
+
+{% block content %}
+<div class="col-md-12">
+	<div class="container-fluid">
+		<br>
+    	<br>
+		<div class="row">
+			<img id="image_width_100" src="projectAchilles_logo.svg" alt="Project Achilles Logo">
+
+            <p>
+                The URL you were accessing no longer exists because the Achilles portal has been decomissioned.
+            However, all past Achilles data and ongoing, newly generated data is
+            available here in the DepMap portal.
+            </p>
+
+            <p>
+                <a class="navbar-brand" href="{{ url_for('public.home') }}">Click here to go to the DepMap portal's home page.</a>
+            </p>
+		</div>
+	</div>
+</div>
+{% endblock %}
+

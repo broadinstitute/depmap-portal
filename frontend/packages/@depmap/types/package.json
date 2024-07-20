@@ -1,0 +1,12 @@
+{
+  "name": "@depmap/types",
+  "version": "1.0.0",
+  "main": "index.ts",
+  "license": "MIT",
+  "scripts": {
+    "test": "echo 'no tests to run'"
+  },
+  "dependencies": {
+    "@depmap/common-components": "1.0.0"
+  }
+}

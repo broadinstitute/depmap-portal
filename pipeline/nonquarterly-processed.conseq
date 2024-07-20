@@ -1,0 +1,75 @@
+include "xrefs-nonquarterly-unprocessed.conseq"
+
+rule process_taiga_pulled_artifact:
+   inputs:
+      download={"type": "download_from_taiga"},
+      hdf5_utils=fileref("scripts/hdf5_utils.py")
+   run "python" with """
+      import shutil
+      import taigapy
+      import os
+
+      tc = taigapy.TaigaClient() # TODO: Need to update to Taiga Client V3 but don't know what the requested format should be for download_to_cache
+
+      ### The if blocks are here to convert the new oncref format to the old oncref format so that 
+      ### the oncref datasets can be ingested in the pipeline without much additional changes.
+      if {{ inputs.download.label == "Prism_oncology_AUC" or inputs.download.label == "Prism_oncology_IC50"}}:
+         prism_oncref_df = tc.get("{{ inputs.download.dataset_id }}")
+         prism_oncref_df = prism_oncref_df.transpose()
+         prism_oncref_df.to_csv("out.csv", index=True)
+      elif {{ inputs.download.label == "Prism_oncology_per_curve" }}:
+         prism_oncref_curves_df = tc.get("{{ inputs.download.dataset_id }}")
+         prism_oncref_curves_df = prism_oncref_curves_df.rename(columns={
+            'ModelID': 'cell_line_name',
+            'SampleID': 'compound_name',
+            'EC50': 'ec50',
+            'LowerAsymptote': 'lower_asymptote',
+            'UpperAsymptote': 'upper_asymptote',
+            'Slope': 'slope'
+         })
+         prism_oncref_curves_df.to_csv("out.csv", index=False)
+      else:
+         cached = tc.download_to_cache("{{ inputs.download.dataset_id }}")
+         shutil.copy2(cached, "out.csv")
+      
+      assert os.path.exists("out.csv"), "Output file 'out.csv' not generated"
+	"""
+   # Convert files to HDF5 if needed
+   run "bash" with """
+      if [[ "{{ inputs.download.format }}" == "hdf5" ]]; then
+         python {{ inputs.hdf5_utils.filename }} to_hdf5 out.csv csv out.hdf5
+      fi
+   """
+   # The input is polymorphic and we want the output to have (mostly) the same keys
+   run "python" with """
+      import json
+
+      artifact = {{inputs.download | quoted}}
+      artifact["filename"] = {"$filename": "out.{{ inputs.download.format }}"}
+      artifact["type"] = artifact["target_type"]
+
+      del artifact["target_type"]
+      del artifact["$manually-added"]
+
+      with open("results.json", "w") as f:
+         json.dump({"outputs": [artifact]}, f)
+   """
+# TODO: Need to update to Taiga Client V3 but don't know what the requested format should be for download_to_cache
+rule process_taiga_pulled_aggregated_dose_artifact:
+   inputs:
+      download={"type": "download_aggregated_dose_from_taiga"},
+      hdf5_utils=fileref("scripts/hdf5_utils.py"),
+      script=fileref("scripts/process_taiga_pulled_aggregated_dose_artifact.py")
+   outputs: {
+      "type": "aggregated-dose-replicate-level",
+      "label": "{{ inputs.download.label }}",
+      "dataset_id": "{{ inputs.download.dataset_id }}",
+      "orig_dataset_id": "{{ inputs.download.orig_dataset_id }}",
+      "cell_lines_dataset_id": "{{ inputs.download.cell_lines_dataset_id }}",
+      "perturbations_dataset_id": "{{ inputs.download.perturbations_dataset_id }}",
+      "hdf5_filename": {"$filename": "out.hdf5"},
+      "cell_lines_filename": {"$filename": "cell_lines.csv"},
+      "perturbations": {"$filename": "perturbations.csv"}
+   }
+   run "python {{ inputs.script.filename }} {{ inputs.download.label }} {{ inputs.download.cell_lines_dataset_id }} {{ inputs.download.perturbations_dataset_id }} {{ inputs.download.dataset_id }}"
+   run "python {{ inputs.hdf5_utils.filename }} to_hdf5 out.csv csv out.hdf5"

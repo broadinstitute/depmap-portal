@@ -1,0 +1,92 @@
+{% extends "public/minisite.html" %}
+{% from 'global_search/dropdown.html' import global_search_dropdown %}
+
+{% block meta_description %}
+    The Cancer Cell Line Encyclopedia
+{% endblock %}
+
+{% block highlight %}
+<div class="row" style="background-color: #C1C8DA; padding: 1em 0 1em 0;">
+    <div class="container">
+        <div style="font-size: 12pt;" class="col-md-9">
+            CCLE data is hosted on the Cancer Dependency Portal (DepMap) where it has been harmonized with our genomics and sequencing data. <a href="{{ url_for('download.view_all') }}">You can access the latest and all past datasets here.</a>
+        </div>
+    </div>
+ </div>     
+{% endblock %}
+
+{% block content %}
+<div class="row col-md-12">
+	<br>
+	<div class="col-md-6">
+		<img class="image_width_100" src="ccle_logo.png" alt="Cancer Cell Line Encyclopedia logo">
+	</div>
+	<div class="col-md-6">
+		<div class="global_search_title hidden-xs hidden-sm" style="margin-top:0; max-width: 38ch">View CCLE data by searching for gene, cell line or lineage on the DepMap portal 
+		</div>
+		<div class="global_search_title hidden-md hidden-lg" style="max-width: 38ch">View CCLE data by searching for gene, cell line or lineage on the DepMap portal 
+		</div>
+		<div style="max-width: 450px;">
+            {{ global_search_dropdown("global-search-dropdown-homepage", "homepage-search", "Examples: BRAF, afatinib, lung") }}
+        </div>
+	</div>
+
+</div>
+<div class="row col-md-12" style="margin-bottom: 4em;">
+	<div class="col-md-6">
+		<div>
+			<h2>Cancer Cell Line Encyclopedia (CCLE)</h2>
+		</div>
+		<div>
+			The Cancer Cell Line Encyclopedia (CCLE) project started in 2008 as a collaboration between the
+			<a href="https://www.broadinstitute.org/" target="_blank">Broad Institute</a>, and the
+			<a href="http://www.nibr.com/" target="_blank">Novartis Institutes for Biomedical Research</a> and its
+			Genomics Institute of the Novartis Research Foundation. The goal is to conduct a detailed genetic and pharmacologic characterization of a large panel of human cancer models, to develop integrated computational analyses that link distinct pharmacologic vulnerabilities to genomic patterns and to translate cell line integrative genomics into cancer patient stratification. Later the MD Anderson and Harvard Medical school joined the project. As of summer of 2018 CCLE continues its efforts as part of the <a href="../depmap">Broad Cancer Dependency Map Project</a>. <br>
+		<br>
+			<img id="image_width_100" src="depmap_chart_lineages.svg" alt="Pie Chart of lineages included in the Depmap portal"> <br>
+		<br>
+			<img id="image_width_100" src="depmap bubble graph.svg" alt="bubble chart of cell lines in the DepMap collection">
+			<h6>Many of the 2000 cell lines currently in the DepMap collection will be processed in the Achilles pipeline.</h6>
+		</div>
+	</div>
+	<div class="col-md-6">
+		<div>
+			<h2>Select Publications</h2>
+		</div>
+		<div>
+			<div class="padding_cite">
+				<input type="checkbox" class="read-more-state" id="ccle_cite_2"/>
+				<div class="read-more-wrap">
+					Mahmoud Ghandi, Franklin W. Huang, Judit Jané-Valbuena, Gregory V. Kryukov, <label for="ccle_cite_2" class="read-more-trigger">...</label><span class="read-more-target"> Christopher C. Lo, E. Robert McDonald III, Jordi Barretina, Ellen T. Gelfand, Craig M. Bielski, Haoxin Li, Kevin Hu, Alexander Y. Andreev-Drakhlin, Jaegil Kim, Julian M. Hess, Brian J. Haas, François Aguet, Barbara A. Weir, Michael V. Rothberg, Brenton R. Paolella, Michael S. Lawrence, Rehan Akbani, Yiling Lu, Hong L. Tiv, Prafulla C. Gokhale, Antoine de Weck, Ali Amin Mansour, Coyin Oh, Juliann Shih, Kevin Hadi, Yanay Rosen, Jonathan Bistline, Kavitha Venkatesan, Anupama Reddy, Dmitriy Sonkin, Manway Liu, Joseph Lehar, Joshua M. Korn, Dale A. Porter, Michael D. Jones, Javad Golji, Giordano Caponigro, Jordan E. Taylor, Caitlin M. Dunning, Amanda L. Creech, Allison C. Warren, James M. McFarland, Mahdi Zamanighomi, Audrey Kauffmann, Nicolas Stransky, Marcin Imielinski, Yosef E. Maruvka, Andrew D. Cherniack, Aviad Tsherniak, Francisca Vazquez, Jacob D. Jaffe, Andrew A. Lane, David M. Weinstock, Cory M. Johannessen, Michael P. Morrissey, Frank Stegmeier, Robert Schlegel, William C. Hahn, Gad Getz, Gordon B. Mills, Jesse S. Boehm,</span> Todd R. Golub, Levi A. Garraway & William R. Sellers. 2019. <a href="https://www.nature.com/articles/s41586-019-1186-3" target="_blank">Next-generation characterization of the Cancer Cell Line Encyclopedia.</a> <i>Nature</i> 569, 503–508 (2019). https://doi.org/10.1038/s41586-019-1186-3
+				</div>
+			</div>
+			<div class="padding_cite">
+				<div>
+					Cancer Cell Line Encyclopedia Consortium, and Genomics of Drug Sensitivity in Cancer Consortium. 2015. <a href="https://www.nature.com/articles/nature15736" target="_blank">Pharmacogenomic Agreement between Two Cancer Cell Line Data Sets.</a> <i>Nature</i> 528 (7580):84–87. https://doi.org/10.1038/nature15736.		
+				</div>				
+			</div>
+			<div class="padding_cite">
+				<input type="checkbox" class="read-more-state" id="ccle_cite_1"/>
+				<div class="read-more-wrap">
+					Jordi Barretina, Giordano Caponigro, Nicolas Stransky, Kavitha Venkatesan, <label for="ccle_cite_1" class="read-more-trigger">...</label><span class="read-more-target"> Adam A. Margoli, Sungjoon Kim,Christopher J. Wilson, Joseph Leha´r, Gregory V. Kryukov, Dmitriy Sonkin, Anupama Reddy, Manway Liu, Lauren Murray, Michael F. Berger, John E. Monahan, Paula Morais, Jodi Meltzer, Adam Korejwa, Judit Jane´-Valbuena, Felipa A. Mapa, Joseph Thibault, Eva Bric-Furlong, Pichai Raman, Aaron Shipway, Ingo H. Engels, Jill Cheng, Guoying K. Yu, Jianjun Yu, Peter Aspesi Jr, Melanie de Silva, Kalpana Jagtap, Michael D. Jones, Li Wang, Charles Hatton, Emanuele Palescandolo, Supriya Gupta, Scott Mahan, Carrie Sougnez, Robert C. Onofrio, Ted Liefeld, Laura MacConaill, Wendy Winckler, Michael Reich, Nanxin Li, Jill P. Mesirov, Stacey B. Gabriel, Gad Getz, Kristin Ardlie, Vivien Chan, Vic E. Myer, Barbara L. Weber, Jeff Porter, Markus Warmuth, Peter Finan, Jennifer L. Harris, Matthew Meyerson, Todd R. Golub, Michael P. Morrissey,</span> William R. Sellers, Robert Schlegel, & Levi A. Garraway. 2012. <a href="https://www.nature.com/articles/nature11003" target="_blank">The Cancer Cell Line Encyclopedia Enables Predictive Modelling of Anticancer Drug Sensitivity.</a> <i>Nature</i> 483 (7391):603–7. https://doi.org/10.1038/nature11003
+				</div>
+			</div>
+			<div class="padding_cite">
+                Processed data downloads are available in <a href="{{ url_for('download.view_all') }}">the DepMap portal data page</a>. Raw sequencing data for the 2019 publication is available through the Sequence Read Archive under <a href="https://www.ncbi.nlm.nih.gov/sra?term=PRJNA523380" target="_blank">accession number PRJNA523380</a>.
+            </div>
+		</div>
+		<div>
+			<h2>Contact us</h2>
+		</div>
+		<div>
+			<div class="padding_cite">
+				<input type="checkbox" class="read-more-state" id="ccle_cite_2"/>
+				<div class="read-more-wrap">
+                    For questions about the CCLE project and data please use the <a href="https://forum.depmap.org">DepMap forum</a>.
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+{% endblock %}

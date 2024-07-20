@@ -1,0 +1,139 @@
+.table {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-box-direction: normal;
+  -webkit-box-align: stretch;
+  width: 100%;
+  border-collapse: collapse;
+  overflow: hidden;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  min-width: 0px !important;
+
+  & > div {
+    max-width: 3000px !important;
+  }
+}
+
+.thead:nth-of-type(1) {
+  .tr {
+    box-shadow: 0 2px 15px 0 rgba(0, 0, 0, 0.15);
+  }
+}
+
+.thead:nth-of-type(2) {
+  border-bottom: solid 1px rgba(0, 0, 0, 0.05);
+}
+
+.thead .th,
+.thead .td {
+  line-height: normal;
+  position: relative;
+  border-right: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.thead .th:last-child,
+.thead .td:last-child {
+  border-right: 0;
+}
+
+.thead .th:focus {
+  outline-width: 0;
+}
+
+.tbody {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-box-direction: normal;
+  overflow: visible;
+  min-width: 100%;
+}
+
+.tbody .tr {
+  height: 100%;
+}
+
+.tbody .td {
+  display: flex;
+  align-items: center;
+  border-right: 1px solid rgba(0, 0, 0, 0.02);
+  border-bottom: solid 1px rgba(0, 0, 0, 0.05);
+}
+
+.tdContent {
+  width: 100%;
+
+  &,
+  & > * {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+.tbody .expandable {
+  cursor: pointer;
+  text-overflow: clip;
+}
+
+.th {
+  padding: 5px;
+}
+
+.td {
+  padding: 0 5px;
+}
+
+.hoverHighlight {
+  cursor: pointer;
+  height: inherit; // Need to inherit in case WideTable's rowHeight prop is set to something custom
+  &:hover {
+    background-color: lightgrey;
+  }
+}
+
+.checkboxContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 0 !important;
+  padding: 0;
+  min-width: 30px;
+  cursor: pointer;
+  background: #fff;
+  z-index: 1;
+
+  input {
+    margin: 0;
+    cursor: pointer;
+  }
+}
+
+.selectionSpacer {
+  min-width: 30px;
+}
+
+.resizer {
+  display: inline-block;
+  position: absolute;
+  width: 36px;
+  top: 0;
+  bottom: 0;
+  right: -18px;
+  cursor: col-resize;
+  z-index: 10;
+}
+
+.filter {
+  width: 100%;
+  height: 18px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+}
+
+.noRowsFound {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 16px;
+  color: rgba(0, 0, 0, 0.5);
+}

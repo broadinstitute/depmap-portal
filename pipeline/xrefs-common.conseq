@@ -1,0 +1,240 @@
+
+
+add-if-missing {
+  "type": "cell-line-images",
+  "dataset_id": "arxspan-id-to-cell-line-image-name-map-5753.3/arxspan_image_name_map"
+}
+
+add-if-missing {
+  "type": "sanger-models",
+  "dataset_id": "sanger-depmap-models-77aa.1/model_list_20210719"
+}
+
+# fixed list of achilles project genes, which were dropped in the switch from ceres to rchronos
+add-if-missing {
+    "type": "other-taiga-dataset",
+    "category": "dropped-by-chronos",
+    "dataset_id": "dropped-genes-e948.2/dropped_by_chronos"
+}
+
+add-if-missing {
+  "type": "raw-dep-matrix",
+  "dataset_id": "gecko-public-tentative-18q1-4213.1/gene_effect",
+  "label": "GeCKO",
+  "rows": "cell-lines"
+}
+
+add-if-missing {
+  'type': 'biomarker-needing-transpose',
+  'dataset_id' : 'ccle-absolute-cn.5/CCLE_ABSOLUTE_gene_level',
+  'category': 'copy-number-absolute'
+}
+
+add-if-missing {
+  'type': 'raw-rppa-matrix',
+  'matrix_dataset_id' : 'depmap-rppa-1b43.3/CCLE_RPPA_20181003',
+  'mapping_dataset_id' : 'depmap-rppa-1b43.3/CCLE_RPPA_Ab_info_20181226'
+}
+
+# used for tda ensembl. possibly not yet unified with the ccle 2019 metabolomics dataset, which is used as a nonstandard dataset
+add-if-missing {
+  "type": "biomarker-needing-transpose",
+  'category': 'metabolomics',
+  "dataset_id": "metabolomics-cd0c.4/CCLE_metabolomics_20190502"
+}
+
+
+add-if-missing {
+  'type': 'biomarker-correctly-transposed',
+  'dataset_id' : 'rrbs-4b29.7/CCLE_RRBS_TSS1kb_20181022_matrix',
+  'category': 'rrbs'
+}
+
+add-if-missing { # directly published
+  'type': 'rrbs-metadata',
+  'dataset_id' : 'rrbs-4b29.7/CCLE_RRBS_TSS1kb_20181022_info'
+}
+
+let rnai_merged_version = "demeter2-combined-dc9c.19"
+
+add-if-missing {
+    "type": "rnai_drive_taiga_id",
+    "dataset_id":  "demeter2-drive-0591.12"
+}
+
+add-if-missing {
+    "type": "rna_merged_version_taiga_id",
+    "dataset_id": "demeter2-combined-dc9c.19"
+}
+
+add-if-missing {
+    "type": "ctd2-drug-taiga-id",
+    "dataset_id": "ctrp-v2-9f98.1"
+}
+
+add-if-missing {
+  "type": "raw-dep-matrix",
+  "dataset_id": "{{ config.rnai_merged_version }}/gene_means_proc",
+  "confounders_label": "rnai-confounders",
+  "label": "RNAi_merged",
+  "rows": "genes"
+}
+
+add-if-missing {
+    "type": "rnai_cell_lines_taiga_id",
+    "dataset_id": "{{ config.rnai_merged_version }}/CL_data_comb"
+}
+
+add-if-missing {
+  "type": "raw-dep-prob-matrix",
+  "dataset_id": "{{ config.rnai_merged_version }}/gene_dependency",
+  "label": "RNAi_merged"
+}
+
+add-if-missing { 
+  "type": "raw-dep-matrix",
+  "dataset_id" : "demeter2-drive-0591.12/gene_means_proc",
+  "label": "RNAi_Nov_DEM",
+  "rows": "genes"
+}
+
+add-if-missing { 
+  "type": "raw-dep-matrix",
+  "dataset_id" : "demeter2-achilles-5386.13/gene_means_proc",
+  "label": "RNAi_Ach",
+  "rows": "genes"
+}
+
+
+
+# Sanger CRISPR data, run through Chronos
+add-if-missing {
+  "type": "raw-dep-matrix",
+  "dataset_id": "project-score-chronos-ad31.14/gene_effect",
+  "label": "Chronos_Score",
+  "rows": "cell-lines"
+}
+add-if-missing {
+  "type": "raw-dep-prob-matrix",
+  "dataset_id": "project-score-chronos-ad31.14/gene_dependency",
+  "label": "Chronos_Score",
+}
+
+# Sanger CRISPR data, run through CERES
+add-if-missing {
+  "type": "raw-dep-matrix",
+  "dataset_id": "sanger-crispr-project-score--e20b.4/gene_effect",
+  "label": "Sanger_CRISPR",
+  "rows": "cell-lines"
+}
+
+add-if-missing {
+    "type": "other-taiga-dataset",
+    "category": "translocations",
+    "dataset_id": "translocations-b331.5/translocations"
+}
+
+# taiga token, currently only used in biomarker correlation if taking in a biomarker-matrix is just defined as an xref with type 'biomarker-matrix' with property 'dataset_id', as opposed to a 'biomarker-needing-transpose' that has a filename and is processed to 'biomarker-matrix' without a 'dataset_id' (is instead 'source_dataset_id')
+# there are currently no such cases except in sample data, and this case could probably be removed. we just haven't gotten around to it yet
+# the taiga token xref is NOT needed for other normal rules, since we run the pipeline locally. It uses the local taiga token. It's only for the biomarker correlation that spins up a remote machine and needs to pull the dataset from that remote machine (vs passing a file).
+add-if-missing {
+  "type": "config-file",
+  "name": "taiga-token",
+  "filename": {"$filename": "{{config.ENV['HOME']}}/.taiga/token"}
+}
+
+add-if-missing {
+  "type": "confounders-matrix-raw",
+  "label": 'rnai',
+  "dataset_id": "confounders-f38f.2/demeter2-combined-v12-confounders"
+}
+
+
+add-if-missing {
+  "type": "confounders-matrix-raw",
+  "label": 'repallsinglept', # shared.py s3_json_name should match
+  "dataset_id": "repurposing-public-23q2-341f.10/Repurposing_Public_23Q2_Extended_Matrix_Confounders"
+}
+
+
+# Should match MATCH_RELATED_TAIGA_ID in settings
+add-if-missing {
+  "type": "match-related-matrix",
+  "dataset_id": "related-features-dcbd.5/related_features"
+}
+
+add-if-missing {
+  "type": "uniprot-mapping",
+  "dataset_id": "uniprot-mapping-proteomics-hgnc--a162.4/uniprot_mapping"
+}
+
+add-if-missing {
+  "type": "proteomics-raw",
+  "dataset_id": "total-proteome--5c50.1/protein_quant_current_normalized"
+}
+
+# Temp 
+add-if-missing {
+  "type": "hgnc-snapshot",
+  "dataset_id": "hgnc-gene-table-e250.3/hgnc_complete_set"
+}
+
+# To generate a new version please run scripts/oncokb_maf_annotator.py
+# Oncokb annotated mutations maf
+add-if-missing {
+    "type": "oncokb-annotated",
+    "dataset_id": "oncokb-annotated-mutations-7e2e.4/oncokb_annotated"
+}
+
+add-if-missing {
+    "type": "oncokb-dataset-version",
+    "dataset_id": "oncokb-dataset-version-ce69.3/oncokb_dataset_version"
+}
+
+# Data Page data availability overview
+add-if-missing {
+    'type' : 'ccle_mirna_taiga_id',
+    'dataset_id' : "mirna-573f.2/CCLE_miRNA_MIMAT"
+}
+
+add-if-missing {
+    'type' : 'gdsc_drug_taiga_id',
+    'dataset_id' : "gdsc-drug-set-export-658c.7"
+}
+
+# repurposing
+
+add-if-missing {
+    'type': 'dataset-display-name',
+    'display_name': 'PRISM Repurposing Public 24Q2', # Doesn't use config.RELEASE_LABEL bc not part of quarterly virtual release datasets
+    'label': 'Rep_all_single_pt',
+    'dataset_id' : 'repurposing-23q2-a803.3/Repurposing_23Q2_Extended_Primary_Data_Matrix',
+}
+
+add-if-missing {
+    'type' : 'repurposing-viability',
+    'dataset_id' : 'primary-screen-e5c7.8/primary_replicate_collapsed_logfold_change',
+    'treatment_info_dataset_id': 'primary-screen-e5c7.8/primary_replicate_collapsed_treatment_info',
+    'cell_line_info_dataset_id' : 'primary-screen-e5c7.8/cell_line_info',
+}
+
+add-if-missing {
+    'type' : 'repurposing-dose',
+    'dataset_id' : 'secondary-screen-0854.13/secondary_replicate_collapsed_logfold_change',
+    'treatment_info_dataset_id' : 'secondary-screen-0854.13/secondary_replicate_collapsed_treatment_info',
+    'cell_line_info_dataset_id' : 'secondary-screen-0854.13/cell_line_info',
+}
+
+add-if-missing {
+    'type' : 'repurposing-curves',
+    'label' : 'Repurposing_secondary_AUC',
+    'dataset_id' : 'secondary-screen-0854.13/secondary_dose_response_curve_parameters'
+}
+
+add-if-missing {
+    'type' : 'repurposing-dose-replicate',
+    'label' : 'Repurposing_secondary_dose_replicate', # matches with Dataset enum
+    'dataset_id' : 'secondary-screen-0854.13/secondary_logfold_change',
+    'treatment_info_dataset_id': "secondary-screen-0854.13/secondary_replicate_treatment_info",
+    'cell_line_info_dataset_id' : 'secondary-screen-0854.13/cell_line_info'
+}

@@ -1,0 +1,177 @@
+virtual_dataset_id: ""
+name: TEST DATA
+release_date: 2018-05-08
+type: other_crispr
+description: This dataset contains long text description
+funding: null
+citation: This is a fake dev citation
+terms: depmap
+files:
+  - name: gene_effect.csv
+    type: genetic_dependency
+    size: MB
+    pipeline_name: ""
+    url:
+      bucket: depmap-dmc-downloads
+      file_name: test/gene_effect.csv
+      dl_name: null
+    is_main_file: false
+    description: null
+    taiga_id: "small-chronos-combined-e82b.2/chronos_combined_score"
+    sources:
+      - broad
+    satisfies_db_taiga_id: null
+    headliner_name_override: null
+    date_override: null
+    terms_override: null
+    retraction_override: null
+    summary_stats:
+      - value: 1
+        label: genes
+      - value: 1
+        label: cell lines
+      - value: 1
+        label: primary diseases
+      - value: 1
+        label: lineages
+    md5_hash: null
+  - name: drug.csv
+    type: drug_sensitivity
+    size: MB
+    pipeline_name: ""
+    url: https://link.to/figshare/drug
+    is_main_file: true
+    description: This is the file description.
+    taiga_id: "placeholder-taiga-id.1"
+    sources:
+      - broad
+    satisfies_db_taiga_id: placeholder-gdsc-id.1
+    headliner_name_override: Dev 1.0 DepMap Consortium 19Q2
+    date_override: null
+    terms_override: null
+    retraction_override: null
+    summary_stats:
+      - value: 1
+        label: genes
+      - value: 1
+        label: cell lines
+      - value: 1
+        label: primary diseases
+      - value: 1
+        label: lineages
+    md5_hash: null
+  - name: drugctrp.csv
+    type: drug_sensitivity
+    size: MB
+    pipeline_name: ""
+    url: https://link.to/figshare/drugctrp
+    is_main_file: false
+    description: null
+    taiga_id: "placeholder-ctrp-id.1"
+    sources:
+      - broad
+    satisfies_db_taiga_id: null
+    headliner_name_override: Dev 1.0
+    date_override: null
+    terms_override: null
+    retraction_override: null
+    summary_stats: null
+    md5_hash: null
+  - name: copy_number.csv
+    type: omics
+    size: MB
+    pipeline_name: ""
+    url: https://link.to/figshare/copy_number
+    is_main_file: false
+    description: null
+    taiga_id: "placeholder-taiga-id.1"
+    sources:
+      - broad
+      - sanger
+    satisfies_db_taiga_id: null
+    headliner_name_override: Copy Number Internal 18Q3
+    date_override: null
+    terms_override: null
+    retraction_override: null
+    summary_stats:
+      - value: 1
+        label: genes
+      - value: 1
+        label: cell lines
+      - value: 1
+        label: primary diseases
+      - value: 1
+        label: lineages
+    md5_hash: null
+  - name: gecko.csv
+    type: genetic_dependency
+    size: MB
+    pipeline_name: ""
+    url: https://link.to/figshare/gecko
+    is_main_file: false
+    description: null
+    taiga_id: "small-gecko-aff0.1"
+    canonical_taiga_id: "small-gecko-aff0.1/gecko_score"
+    sources:
+      - broad
+    satisfies_db_taiga_id: null
+    headliner_name_override: null
+    date_override: null
+    terms_override: null
+    retraction_override: null
+    summary_stats: null
+    md5_hash: null
+  - name: rnai.csv
+    type: genetic_dependency
+    size: MB
+    pipeline_name: ""
+    url: https://link.to/figshare/rnai
+    is_main_file: false
+    description: null
+    taiga_id: "small-rnai-d0ad.1"
+    sources:
+      - broad
+      - novartis
+      - marcotte
+    satisfies_db_taiga_id: null
+    headliner_name_override: RNAi
+    date_override: null
+    terms_override: null
+    retraction_override: null
+    summary_stats:
+      - value: 1
+        label: genes
+      - value: 1
+        label: cell lines
+      - value: 1
+        label: primary diseases
+      - value: 1
+        label: lineages
+    md5_hash: null
+  - name: fusion.csv
+    type: omics
+    size: MB
+    pipeline_name: ""
+    url: https://link.to/figshare/fusion
+    is_main_file: false
+    description: null
+    taiga_id: "placeholder-taiga-id.1"
+    sources:
+      - broad
+      - novartis
+      - marcotte
+    satisfies_db_taiga_id: null
+    headliner_name_override: Fusion
+    date_override: null
+    terms_override: null
+    retraction_override: null
+    summary_stats:
+      - value: 1
+        label: genes
+      - value: 1
+        label: cell lines
+      - value: 1
+        label: primary diseases
+      - value: 1
+        label: lineages
+    md5_hash: null

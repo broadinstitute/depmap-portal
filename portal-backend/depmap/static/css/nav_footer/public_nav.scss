@@ -1,0 +1,143 @@
+@import "skyros_public_shared_nav";
+
+$depmap-nav-hovered-background: adjust-color(
+  $color: $depmap_primary,
+  $saturation: 5%,
+  $lightness: -3%,
+);
+
+.navbar,
+.navbar-inverse {
+  background: $depmap_primary;
+
+  .navbar-toggle {
+    border-color: adjust-color($color: white, $alpha: -0.5);
+    &:hover,
+    &:focus {
+      background: $depmap-nav-hovered-background;
+    }
+
+    @media screen and (max-width: 768px) {
+      position: fixed;
+      right: 15px;
+    }
+  }
+
+  .navbar-brand {
+    padding: 0;
+
+    @media screen and (max-width: 768px) {
+      position: fixed;
+      left: 15px;
+    }
+
+    #navbar_logo {
+      height: 50px;
+
+      @media screen and (max-width: 648px) {
+        display: none;
+      }
+    }
+
+    #navbar_symbol {
+      height: 50px;
+
+      @media screen and (min-width: 649px) {
+        display: none;
+      }
+    }
+  }
+
+  .navbar-nav {
+    @media screen and (max-width: $sm_width) {
+      .open .dropdown-menu {
+        .divider {
+          background: adjust-color(
+            $color: $depmap_primary,
+            $saturation: 5%,
+            $lightness: -8%
+          );
+        }
+
+        > li > a {
+          color: adjust-color($color: $depmap_primary, $lightness: 60%);
+        }
+      }
+    }
+
+    > li {
+      &:not(#global_search_navbar) {
+        &.open,
+        &:hover,
+        &:active,
+        &:focus {
+          > a {
+            background: $depmap-nav-hovered-background;
+          }
+        }
+      }
+
+      > a {
+        color: white;
+      }
+    }
+
+    .toolbar-search {
+      @media screen and (max-width: 304px) {
+        display: none;
+      }
+
+      @media screen and (min-width: 305px) {
+        width: 47%;
+        position: fixed;
+        left: 28vw !important;
+        overflow: visible;
+      }
+
+      @media screen and (min-width: 415px) {
+        width: 59% !important;
+        left: 22vw !important;
+      }
+
+      @media screen and (min-width: 515px) {
+        width: 62% !important;
+        left: 21vw !important;
+      }
+
+      @media screen and (min-width: 649px) {
+        width: 38% !important;
+        left: 48vw !important;
+      }
+
+      @media screen and (min-width: ($sm_width + 1)) {
+        width: 21% !important;
+        left: 41vw !important;
+      }
+
+      @media screen and (min-width: ($md_width + 1)) {
+        width: 28% !important;
+        left: 35vw !important;
+      }
+
+      @media screen and (min-width: ($lg_width + 1)) {
+        width: 31% !important;
+        left: 33vw !important;
+      }
+
+      @media screen and (min-width: 1700px) {
+        width: 27% !important;
+        left: 36vw !important;
+      }
+
+      @media screen and (min-width: 1937px) {
+        width: 19% !important;
+        left: 40vw !important;
+      }
+
+      @media screen and (min-width: 2850px) {
+        width: 15% !important;
+        left: 41vw !important;
+      }
+    }
+  }
+}

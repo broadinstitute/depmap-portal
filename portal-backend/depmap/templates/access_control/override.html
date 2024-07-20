@@ -1,0 +1,25 @@
+{% extends "nav_footer.html" %}
+
+{% block content %}
+    <div class="row">
+        <div class="col-md-12">
+            <h1>User name used in access controls</h1>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12">
+            <form method="POST">
+                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                <div class="form-group">
+                    <label for="user_id">Email address</label>
+                    <input type="text" class="form-control" name="user_id" id="user_id" placeholder="Email" value="{{ current_override }}">
+                </div>
+                <button type="submit" class="btn btn-default">Submit</button>
+            </form>
+        </div>
+
+    </div>
+
+{% endblock %}
+
