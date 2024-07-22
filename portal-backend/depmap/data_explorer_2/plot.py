@@ -58,7 +58,7 @@ def compute_dimension(
 
         if not df.empty:
             aggregated = (
-                df.squeeze()
+                df.squeeze("rows")
                 if aggregation == "first"
                 else df.agg(aggFunctions[aggregation])
             )
