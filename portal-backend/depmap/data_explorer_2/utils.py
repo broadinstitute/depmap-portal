@@ -48,7 +48,7 @@ def get_reoriented_df(
     row_labels: Optional[list[str]],
     col_labels: Optional[list[str]],
     is_transpose: bool,
-):
+) -> pd.DataFrame:
     """
     Load a dataframe with values filtered by the given labels. Transform if applicable.
     The given labels given specify the rows/columns of the output (after the dataset is transposed).
