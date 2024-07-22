@@ -316,7 +316,6 @@ class UploadDatasetResponse(BaseModel):
     dataset: DatasetResponse
     warnings: List[str]
     forwardingUrl: Optional[str] = Field()
-    sliceId: Optional[str] = Field()
 
 
 class UploadDatasetResponseV2(BaseModel):

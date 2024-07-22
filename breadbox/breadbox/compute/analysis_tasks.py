@@ -440,8 +440,8 @@ def create_cell_line_group(
             depmap_model_sample_type = get_dimension_type(db, "depmap_model")
 
             (
-                feature_labels_and_aliases,
-                sample_labels_and_aliases,
+                feature_given_id_and_index_df,
+                sample_given_id_and_index_df,
                 feature_warnings,
                 sample_warnings,
             ) = dataclasses.astuple(
@@ -481,8 +481,8 @@ def create_cell_line_group(
                 db,
                 user,
                 dataset_in,
-                feature_labels_and_aliases,
-                sample_labels_and_aliases,
+                feature_given_id_and_index_df,
+                sample_given_id_and_index_df,
                 generic_feature_type,
                 depmap_model_sample_type,
             )

@@ -9,14 +9,17 @@ from sqlalchemy import and_
 
 from breadbox.db.session import SessionWithUser
 from breadbox.models.dataset import (
+    AnnotationType,
     CatalogNode,
     DatasetFeature,
     DatasetSample,
     Dataset,
+    Dimension,
+    MatrixDataset,
     TabularDataset,
     TabularColumn,
     TabularCell,
-    AnnotationType,
+    ValueType,
 )
 from fastapi.testclient import TestClient
 from breadbox.api.dependencies import get_dataset
@@ -1349,9 +1352,6 @@ class TestPost:
         catalog_nodes = minimal_db.query(CatalogNode).all()
         assert len(feature_indexes) == 3  # Number of feaures should be 3
         assert len(sample_indexes) == 2  # Number of feaures should be 2
-        assert (
-            len(catalog_nodes) == 7
-        )  # Number of nodes is features + samples + dataset + root
 
     def test_add_dataset_no_write_access(
         self,
@@ -1450,22 +1450,15 @@ class TestPost:
         result_dataset = r.json()["result"]["dataset"]
         feature_indexes = minimal_db.query(DatasetFeature).all()
         sample_indexes = minimal_db.query(DatasetSample).all()
-        catalog_nodes = minimal_db.query(CatalogNode).all()
-        dataset_node = (
-            minimal_db.query(CatalogNode)
-            .filter(
-                and_(
-                    CatalogNode.dataset_id == result_dataset["id"],
-                    CatalogNode.dimension_id.is_(None),
-                )
-            )
-            .one()
-        )
         assert len(feature_indexes) == 3  # Number of feaures should be 3
         assert len(sample_indexes) == 2  # Number of samples should be 2
-        assert len(catalog_nodes) == 7  # Number features + samples + root + dataset
-        assert dataset_node
-        assert dataset_node.is_categorical == True  # and dataset_node.is_binary == True
+        categorical_dataset = (
+            minimal_db.query(MatrixDataset)
+            .filter(MatrixDataset.id == result_dataset["id"])
+            .one()
+        )
+        assert categorical_dataset
+        assert categorical_dataset.value_type == ValueType.categorical
 
     def test_add_categorical_and_binary_dataset(
         self, client: TestClient, minimal_db, private_group: Dict, mock_celery
@@ -1782,12 +1775,12 @@ class TestPost:
         assert minimal_db.query(Dataset).filter_by(id=result_dataset["id"]).one()
         assert (
             len(
-                minimal_db.query(CatalogNode)
+                minimal_db.query(Dimension)
                 .filter_by(dataset_id=result_dataset["id"])
                 .all()
             )
-            == 6
-        )  # 3 features + 2 samples + 1 dataset node
+            == 5
+        )  # 3 features + 2 samples
 
         r_categorical = client.post(
             "/datasets/?allowed_values=Thing1&allowed_values=Thing2&allowed_values=Thing3",
@@ -1820,23 +1813,17 @@ class TestPost:
         assert minimal_db.query(Dataset).filter_by(id=result_dataset["id"]).one()
         assert (
             len(
-                minimal_db.query(CatalogNode)
+                minimal_db.query(Dimension)
                 .filter_by(dataset_id=result_dataset["id"])
                 .all()
             )
-            == 6
-        )  # 3 features + 2 samples + 1 dataset node
-        categorical_dataset_node = (
-            minimal_db.query(CatalogNode)
-            .filter(
-                and_(
-                    CatalogNode.dataset_id == result_dataset["id"],
-                    CatalogNode.dimension_id.is_(None),
-                )
-            )
+            == 5
+        )  # 3 features + 2 samples
+        categorical_dataset = (
+            minimal_db.query(MatrixDataset)
+            .filter(MatrixDataset.value_type == ValueType.categorical)
             .one()
         )
-        categorical_dataset = categorical_dataset_node.dataset
         feature_indices = [
             tup[0]
             for tup in minimal_db.query(DatasetFeature.index)
