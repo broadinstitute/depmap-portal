@@ -22,7 +22,9 @@ def test_get_dimension_single_row(app, empty_db_mock_downloads):
     """
     gene0 = GeneFactory(label="gene0")
     gene1 = GeneFactory(label="gene1")
-    cell_line0 = CellLineFactory(depmap_id="ACH-0")
+    cell_line0 = CellLineFactory(
+        depmap_id="ACH-0", cell_line_display_name="cell_line_0"
+    )
     crispr_dataset = DependencyDatasetFactory(
         matrix=MatrixFactory(
             entities=[gene0, gene1], cell_lines=[cell_line0], data=[[1.0], [2.0]],
@@ -90,7 +92,7 @@ def test_get_dimension_single_row(app, empty_db_mock_downloads):
         # get dimension returns a compressed response, which needs to be unzipped
         response = json.loads(gzip.decompress(r.data).decode("utf8"))
 
-        assert response["axis_label"] == "0 (ACH-0) units"
+        assert response["axis_label"] == "cell_line_0 (ACH-0) units"
         assert response["dataset_id"] == "Chronos_Combined"
         assert response["dataset_label"] == "Chronos_Combined display name"
         assert response["entity_type"] == "Test dataset local Feature"
