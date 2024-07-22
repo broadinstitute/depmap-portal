@@ -376,16 +376,21 @@ def create_index_records_for_row(
                     db.query(Dataset).filter(Dataset.id == referenced_dataset_id).one()
                 )
 
-                if (
-                    row.property_metadata[property].annotation_type
-                    == AnnotationType.list_strings
-                ):
-                    values = cast_tabular_cell_value_type(
-                        row.property_metadata[property].value,
-                        row.property_metadata[property].annotation_type,
-                    )
+                if property not in row.property_metadata:
+                    #raise Exception(f"Could not find {property} among {row.property_metadata.keys()} (dataset {dataset.name} {dataset.id} has properties_to_index = {properties_to_index})")
+                    #values = []
+                    continue
                 else:
-                    values = [row.property_metadata[property].value]
+                    if (
+                        row.property_metadata[property].annotation_type
+                        == AnnotationType.list_strings
+                    ):
+                        values = cast_tabular_cell_value_type(
+                            row.property_metadata[property].value,
+                            row.property_metadata[property].annotation_type,
+                        )
+                    else:
+                        values = [row.property_metadata[property].value]
 
                 assert isinstance(values, list)
                 parent_dimension_id = row.property_metadata[property].dimension_id
@@ -857,7 +862,7 @@ def get_dataset_dimension_search_index_entries(
     user: str,
     limit: int,
     prefix: Optional[str],
-    substrings: List[str],
+    substring: Optional[str],
     dimension_type_name: Optional[str],
     include_referenced_by: bool,
 ):
@@ -865,74 +870,36 @@ def get_dataset_dimension_search_index_entries(
     visible_database_clause = get_dataset_filter_clauses(db, user)
 
     search_index_filter_clauses = []
-    outer = aliased(DimensionSearchIndex)
 
     if prefix is not None:
         search_index_filter_clauses.append(
-            outer.value.startswith(prefix, autoescape=True)
+            DimensionSearchIndex.value.startswith(prefix, autoescape=True)
+        )
+
+    if substring is not None:
+        search_index_filter_clauses.append(
+            DimensionSearchIndex.value.contains(substring, autoescape=True)
         )
 
     if dimension_type_name:
-        search_index_filter_clauses.append(outer.type_name == dimension_type_name)
-
-    if len(substrings) > 0:
-        predicate_per_substring = [
-            db.query(DimensionSearchIndex)
-            .join(Dimension)
-            .filter(
-                and_(
-                    DimensionSearchIndex.value.contains(substring, autoescape=True),
-                    *search_index_filter_clauses,
-                    outer.type_name == DimensionSearchIndex.type_name,
-                    outer.dimension_given_id == DimensionSearchIndex.dimension_given_id,
-                )
-            )
-            .with_entities(
-                DimensionSearchIndex.type_name, DimensionSearchIndex.dimension_given_id,
-            )
-            .exists()
-            for substring in substrings
-        ]
-
-        property_matches_at_least_one_substring = or_(
-            *[
-                outer.value.contains(substring, autoescape=True)
-                for substring in substrings
-            ]
+        search_index_filter_clauses.append(
+            DimensionSearchIndex.type_name == dimension_type_name
         )
 
-        search_index_query = (
-            db.query(outer)
-            .join(Dimension)
-            .filter(
-                and_(property_matches_at_least_one_substring, *predicate_per_substring)
-            )
-            .order_by(outer.priority, outer.label)
-            .limit(limit)
-            .with_entities(
-                outer.type_name,
-                outer.dimension_given_id,
-                outer.label,
-                outer.property,
-                outer.value,
-            )
+    search_index_query = (
+        db.query(DimensionSearchIndex)
+        .join(Dimension)
+        .filter(and_(True, *search_index_filter_clauses))
+        .order_by(DimensionSearchIndex.priority, DimensionSearchIndex.label)
+        .limit(limit)
+        .with_entities(
+            DimensionSearchIndex.type_name,
+            DimensionSearchIndex.dimension_given_id,
+            DimensionSearchIndex.label,
+            DimensionSearchIndex.property,
+            DimensionSearchIndex.value,
         )
-
-    else:
-        search_index_query = (
-            db.query(outer)
-            .join(Dimension)
-            .filter(and_(True, *search_index_filter_clauses))
-            .order_by(outer.priority, outer.label)
-            .limit(limit)
-            .with_entities(
-                outer.type_name,
-                outer.dimension_given_id,
-                outer.label,
-                outer.property,
-                outer.value,
-            )
-        )
+    )
 
     search_index_entries = pd.read_sql(
         search_index_query.statement, search_index_query.session.connection()
