@@ -60,26 +60,6 @@ def get_file_dict(datafile) -> FileDict:
     return data_file_dict
 
 
-def _get_transient_dataset_feature_cat_node_id(db, user, added_dataset) -> int:
-    feature_cat_nodes = (
-        db.query(CatalogNode)
-        .join(DatasetFeature, DatasetFeature.id == CatalogNode.dimension_id)
-        .filter(
-            and_(
-                CatalogNode.dataset_id == added_dataset.id,
-                CatalogNode.dimension_id.isnot(None),
-            )
-        )
-        .all()
-    )
-    if len(feature_cat_nodes) != 1:
-        raise HTTPException(
-            400,
-            f"Unexpected number of features for a transient dataset. Expected 1, found {len(feature_cat_nodes)}.",
-        )
-    return feature_cat_nodes[0].id
-
-
 # Convert the FileDict back to an UploadFile after it is passed through redis.
 # This is a general function used for data_file
 def _get_upload_file_from_file_dict(file_dict: FileDict) -> UploadFile:
@@ -238,8 +218,8 @@ def upload_dataset(
 
     try:
         (
-            feature_labels_and_aliases,
-            sample_labels_and_aliases,
+            feature_given_id_and_index_df,
+            sample_given_id_and_index_df,
             feature_warnings,
             sample_warnings,
         ) = dataclasses.astuple(
@@ -280,8 +260,8 @@ def upload_dataset(
         db,
         user,
         dataset,
-        feature_labels_and_aliases,
-        sample_labels_and_aliases,
+        feature_given_id_and_index_df,
+        sample_given_id_and_index_df,
         valid_fields.valid_feature_type,
         valid_fields.valid_sample_type,
     )
@@ -310,21 +290,6 @@ def upload_dataset(
         warning = feature_warning + sample_warning
 
     forwardingUrl = None
-    slice_id = ""
-    if is_transient:
-        feature_cat_node_id = _get_transient_dataset_feature_cat_node_id(
-            db, user, added_dataset
-        )
-        slice_id = str(feature_cat_node_id)
-
-        from urllib.parse import urlencode
-
-        params = {
-            "x": feature_cat_node_id,
-            "y": feature_cat_node_id,
-            "defaultCustomAnalysisToX": True,
-        }
-        forwardingUrl = "/elara?" + urlencode(params)
 
     if update_message:
         update_message("Wrapping up upload...")
@@ -336,7 +301,6 @@ def upload_dataset(
         datasetId=str(added_dataset.id),
         warnings=[warning],
         forwardingUrl=forwardingUrl,
-        sliceId=slice_id,
     )
 
 

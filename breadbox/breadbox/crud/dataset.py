@@ -187,8 +187,8 @@ def add_matrix_dataset(
     db: SessionWithUser,
     user: str,
     dataset_in: MatrixDatasetIn,
-    feature_labels_and_aliases: pd.DataFrame,
-    sample_labels_and_aliases: pd.DataFrame,
+    feature_given_id_and_index_df: pd.DataFrame,
+    sample_given_id_and_index_df: pd.DataFrame,
     feature_type: Optional[DimensionType],
     sample_type: DimensionType,
 ):
@@ -243,18 +243,16 @@ def add_matrix_dataset(
 
     _add_matrix_dataset_dimensions(
         db=db,
-        index_and_given_id=feature_labels_and_aliases,
+        index_and_given_id=feature_given_id_and_index_df,
         dimension_subtype_cls=DatasetFeature,
         dimension_type_name=feature_type.name if feature_type else None,
-        dataset_catalog_node=dataset_catalog_node,
         dataset=dataset,
     )
     _add_matrix_dataset_dimensions(
         db=db,
-        index_and_given_id=sample_labels_and_aliases,
+        index_and_given_id=sample_given_id_and_index_df,
         dimension_subtype_cls=DatasetSample,
         dimension_type_name=sample_type.name,
-        dataset_catalog_node=dataset_catalog_node,
         dataset=dataset,
     )
 
@@ -656,7 +654,6 @@ def _add_matrix_dataset_dimensions(
     index_and_given_id: pd.DataFrame,
     dimension_subtype_cls: Union[Type[DatasetFeature], Type[DatasetSample]],
     dimension_type_name: Optional[str],
-    dataset_catalog_node: CatalogNode,
     dataset: MatrixDataset,
 ):
     dimensions: List[Union[DatasetFeature, DatasetSample]] = []
@@ -680,19 +677,6 @@ def _add_matrix_dataset_dimensions(
                 group_id=dataset.group_id,
             )
         )
-
-        # `given_id` is being passed in here for the label of the catalog node. This is technically not how
-        # catalog nodes were originally intended to work, but:
-        #    1. we should be eliminating catalog nodes in the future
-        #    2. catalog nodes no longer have any UI impact
-        #    3. removing catalog nodes at this time would require a decent amount of refactoring
-        # This allows us to keep catalog nodes until we're ready to remove them, while at the same time
-        # avoiding catalog nodes depending on labels. (Metadata can now change after datasets are loaded,
-        # so any labels run the risk of being out of date)
-        dimension_catalog_nodes = _create_dataset_dimension_catalog_nodes(
-            row, dimension_id, given_id, dataset_catalog_node,
-        )
-        catalog_nodes.extend(dimension_catalog_nodes)
 
     db.bulk_save_objects(dimensions)
     db.flush()
@@ -1410,34 +1394,6 @@ def delete_dataset(
 
     log.info("delete_dataset %s complete", dataset.id)
     return True
-
-
-def _create_dataset_dimension_catalog_nodes(
-    dimension_row: pd.Series,
-    dimension_id: str,
-    dimension_label: str,
-    dataset_catalog_node: CatalogNode,
-) -> List[CatalogNode]:
-    catalog_nodes: List[CatalogNode] = []
-
-    aliases_set = set()
-    aliases_set.add(dimension_label)
-
-    for alias in aliases_set:
-        catalog_nodes.append(
-            CatalogNode(
-                dataset_id=dataset_catalog_node.dataset_id,
-                dimension_id=dimension_id,
-                priority=0,
-                parent=dataset_catalog_node,
-                label=alias,
-                is_continuous=dataset_catalog_node.is_continuous,
-                is_categorical=dataset_catalog_node.is_categorical,
-                is_binary=dataset_catalog_node.is_binary,
-                is_text=dataset_catalog_node.is_text,
-            )
-        )
-    return catalog_nodes
 
 
 def add_catalog_nodes(db: SessionWithUser, catalog_nodes: List[CatalogNode]):

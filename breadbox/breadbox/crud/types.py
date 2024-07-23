@@ -12,7 +12,6 @@ from breadbox.crud.access_control import PUBLIC_GROUP_ID
 from breadbox.crud.dataset import (
     ROOT_ID,
     add_catalog_nodes,
-    _create_dataset_dimension_catalog_nodes,
     delete_dataset,
     get_properties_to_index,
     populate_search_index,
@@ -367,16 +366,6 @@ def _update_dataset_dimensions_with_dimension_type(
         dataset_dimensions_with_dimension_type_query.session.connection(),
     ).groupby("dataset_id")
     for dataset_key in dims_grouped_by_dataset_df.groups.keys():
-        dataset_catalog_node = (
-            db.query(CatalogNode)
-            .filter(
-                and_(
-                    CatalogNode.dimension_id.is_(None),
-                    CatalogNode.dataset_id == dataset_key,
-                )
-            )
-            .one()
-        )
         dataset_dims_df = dims_grouped_by_dataset_df.get_group(dataset_key)
         # Rename dimension 'id' column in case of collision in naming where dimension type identifier is also named 'id'
         dataset_dims_df.rename(columns={"id": "dimension_id"}, inplace=True)
@@ -387,10 +376,6 @@ def _update_dataset_dimensions_with_dimension_type(
             dimension_label = (
                 str(row["label"]) if row["label"] is not None else row["given_id"]
             )
-            new_dim_nodes = _create_dataset_dimension_catalog_nodes(
-                row, row["dimension_id"], dimension_label, dataset_catalog_node
-            )
-            new_dataset_dimension_catalog_nodes.extend(new_dim_nodes)
             if dimension_type.axis == "feature":
                 if (
                     dimension_label != row["feature_label"]
