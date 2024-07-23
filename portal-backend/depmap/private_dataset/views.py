@@ -14,6 +14,7 @@ from depmap.user_uploads.utils import (
 )
 from depmap.vector_catalog.trees import OTHER_DATASET_NON_PREPOPULATE_ID_BASE
 from depmap.interactive.nonstandard import nonstandard_utils
+from depmap.utilities.data_access_log import log_legacy_private_dataset_access
 
 blueprint = Blueprint(
     "private_dataset",
@@ -29,6 +30,9 @@ def home():
         abort(404)
 
     datasets = data_access.get_private_datasets()
+    dataset_ids = list(datasets.keys())
+    log_legacy_private_dataset_access("get_dataset_label", dataset_ids)
+
     datasets = [
         {
             "dataset_id": dataset_id,
