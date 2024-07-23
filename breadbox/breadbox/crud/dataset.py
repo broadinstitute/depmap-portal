@@ -376,16 +376,22 @@ def create_index_records_for_row(
                     db.query(Dataset).filter(Dataset.id == referenced_dataset_id).one()
                 )
 
-                if (
-                    row.property_metadata[property].annotation_type
-                    == AnnotationType.list_strings
-                ):
-                    values = cast_tabular_cell_value_type(
-                        row.property_metadata[property].value,
-                        row.property_metadata[property].annotation_type,
-                    )
+                if property not in row.property_metadata:
+                    # if the property doesn't exist, just skip it instead of throwing an exception
+                    # This often happens when updating datasets because the properties to index
+                    # will include a property which hasn't been uploaded yet.
+                    continue
                 else:
-                    values = [row.property_metadata[property].value]
+                    if (
+                        row.property_metadata[property].annotation_type
+                        == AnnotationType.list_strings
+                    ):
+                        values = cast_tabular_cell_value_type(
+                            row.property_metadata[property].value,
+                            row.property_metadata[property].annotation_type,
+                        )
+                    else:
+                        values = [row.property_metadata[property].value]
 
                 assert isinstance(values, list)
                 parent_dimension_id = row.property_metadata[property].dimension_id
