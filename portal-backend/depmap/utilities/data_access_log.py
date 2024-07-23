@@ -70,7 +70,7 @@ def log_bulk_download_csv():
     )
 
 
-def log_legacy_private_dataset_access(function_name, dataset_id):
+def log_legacy_private_dataset_access(function_name, dataset_ids):
     """
     In theory, once we switch to the new private dataset UI,
     private datasets should no longer be accessed through the legacy system.
@@ -85,7 +85,7 @@ def log_legacy_private_dataset_access(function_name, dataset_id):
                 type="legacy-private-dataset-access",
                 endpoint=request.endpoint,
                 function=function_name,
-                dataset=dataset_id,
+                dataset_ids=dataset_ids,
                 user=get_authenticated_user(),
             )
         ),

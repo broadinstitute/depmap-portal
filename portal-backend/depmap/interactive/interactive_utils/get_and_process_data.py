@@ -209,7 +209,9 @@ def get_subsetted_df_by_labels(
     Get a filtered dataframe with rows indexed by entity labels and columns indexed by depmap ids. 
     """
     if __get_config().is_legacy_private_dataset(dataset_id):
-        log_legacy_private_dataset_access("get_subsetted_df_by_labels", dataset_id)
+        log_legacy_private_dataset_access(
+            "get_subsetted_df_by_labels", dataset_ids=[dataset_id]
+        )
 
     row_index_to_entity_label = {}
     col_index_to_depmap_id = {}
@@ -276,7 +278,9 @@ def get_subsetted_df_by_ids(
     :return: dataframe where rows are entities and columns are cell lines
     """
     if __get_config().is_legacy_private_dataset(dataset_id):
-        log_legacy_private_dataset_access("get_subsetted_df_by_ids", dataset_id)
+        log_legacy_private_dataset_access(
+            "get_subsetted_df_by_ids", dataset_ids=[dataset_id]
+        )
 
     row_index_to_entity_label = {}
     col_index_to_depmap_id = {}
@@ -326,7 +330,9 @@ def get_subsetted_df(dataset_id, row_indices, col_indices):
         df = standard_utils.get_subsetted_df(dataset_id, row_indices, col_indices)
     else:
         if __get_config().is_private_dataset(dataset_id):
-            log_legacy_private_dataset_access("get_subsetted_df", dataset_id)
+            log_legacy_private_dataset_access(
+                "get_subsetted_df", dataset_ids=[dataset_id]
+            )
         df = nonstandard_utils.get_subsetted_df(dataset_id, row_indices, col_indices)
 
     return df
