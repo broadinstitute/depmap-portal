@@ -506,6 +506,12 @@ class InteractiveConfig:
             nonstandard_datasets[key] = Config(**nonstandard_dict)
         return nonstandard_datasets
 
+    def is_legacy_private_dataset(self, dataset_id: str) -> bool:
+        all_private_dataset_ids = [
+            dataset.dataset_id for dataset in PrivateDatasetMetadata.get_all()
+        ]
+        return dataset_id in all_private_dataset_ids
+
     def get_allowed_private_datasets(self) -> Dict[str, Config]:
         """
         WARNING: This CANNOT BE CACHED and must be re-retrieved on every request.

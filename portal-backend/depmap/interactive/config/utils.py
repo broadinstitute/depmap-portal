@@ -18,6 +18,7 @@ from depmap.predictability.utilities import (
 from depmap.taiga_id import utils as taiga_utils
 from depmap.utilities import entity_utils
 from depmap.utilities.exception import InteractiveDatasetNotFound
+from depmap.utilities.data_access_log import log_legacy_private_dataset_access
 
 
 def __get_config() -> InteractiveConfig:
@@ -73,6 +74,8 @@ def get_dataset_label(dataset_id) -> str:
     """
     Returns label of dataset
     """
+    if __get_config().is_legacy_private_dataset(dataset_id):
+        log_legacy_private_dataset_access("get_dataset_label", dataset_id)
     return __get_config().get(dataset_id).label
 
 
