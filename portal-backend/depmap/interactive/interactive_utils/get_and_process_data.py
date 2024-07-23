@@ -329,7 +329,7 @@ def get_subsetted_df(dataset_id, row_indices, col_indices):
     if is_standard(dataset_id):
         df = standard_utils.get_subsetted_df(dataset_id, row_indices, col_indices)
     else:
-        if __get_config().is_private_dataset(dataset_id):
+        if __get_config().is_legacy_private_dataset(dataset_id):
             log_legacy_private_dataset_access(
                 "get_subsetted_df", dataset_ids=[dataset_id]
             )
