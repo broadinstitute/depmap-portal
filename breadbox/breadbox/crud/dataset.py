@@ -920,8 +920,6 @@ def get_dataset_dimension_search_index_entries(
         )
     )
 
-    print("query:", search_index_query.statement)
-
     search_index_entries = pd.read_sql(
         search_index_query.statement, search_index_query.session.connection()
     )
