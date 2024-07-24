@@ -35,6 +35,23 @@ from breadbox.config import Settings
 from typing import Dict
 
 
+def assert_dimensions_response_matches(a, b):
+    # made this into a function so that both values are bound to variables
+    # which makes them easier to poke around in the debugger
+
+    def sort_props(x):
+        new_value = dict(x)
+        new_value["matching_properties"] = sorted(
+            new_value["matching_properties"], key=lambda x: x["property"]
+        )
+        return new_value
+
+    a = [sort_props(x) for x in a]
+    b = [sort_props(x) for x in b]
+
+    assert a == b
+
+
 class TestGet:
     def test_empty_db(self, client: TestClient):
         response = client.get("/datasets/", headers={"X-Forwarded-User": "anyone"})
@@ -311,7 +328,6 @@ class TestGet:
             },
         ]
 
-
     def test_get_dimensions_braf_example(
         self, minimal_db, client: TestClient, settings, public_group
     ):
@@ -502,67 +518,73 @@ class TestGet:
             "/datasets/dimensions/?limit=100&type_name=compound"
         )
 
-        assert dimensions_response.json() == [
-            {
-                "type_name": "compound",
-                "id": "compound_id_az-628",
-                "label": "AZ-628",
-                "referenced_by": None,
-                "matching_properties": [
-                    {"property": "compound_id", "value": "compound_id_az-628"},
-                    {"property": "label", "value": "AZ-628"},
-                    {"property": "target.label", "value": "BRAF"},
-                    {"property": "target.entrez_id", "value": "entrez_id_BRAF"},
-                    {"property": "target.multi_val_example", "value": "BRAF_val1"},
-                    {"property": "target.multi_val_example", "value": "BRAF_val2"},
-                    {"property": "target.multi_val_example", "value": "BRAF_val3"},
-                ],
-            },
-            {
-                "type_name": "compound",
-                "id": "compound_id_BELVARAFENIB",
-                "label": "BELVARAFENIB",
-                "referenced_by": None,
-                "matching_properties": [
-                    {"property": "compound_id", "value": "compound_id_BELVARAFENIB"},
-                    {"property": "label", "value": "BELVARAFENIB"},
-                    {"property": "target.label", "value": "BRAF"},
-                    {"property": "target.entrez_id", "value": "entrez_id_BRAF"},
-                    {"property": "target.multi_val_example", "value": "BRAF_val1"},
-                    {"property": "target.multi_val_example", "value": "BRAF_val2"},
-                    {"property": "target.multi_val_example", "value": "BRAF_val3"},
-                    {"property": "target.label", "value": "SOX10"},
-                    {"property": "target.entrez_id", "value": "entrez_id_SOX10"},
-                ],
-            },
-            {
-                "type_name": "compound",
-                "id": "compound_id_CEP-32496",
-                "label": "CEP-32496",
-                "referenced_by": None,
-                "matching_properties": [
-                    {"property": "compound_id", "value": "compound_id_CEP-32496"},
-                    {"property": "label", "value": "CEP-32496"},
-                    {"property": "target.label", "value": "BRAF"},
-                    {"property": "target.entrez_id", "value": "entrez_id_BRAF"},
-                    {"property": "target.multi_val_example", "value": "BRAF_val1"},
-                    {"property": "target.multi_val_example", "value": "BRAF_val2"},
-                    {"property": "target.multi_val_example", "value": "BRAF_val3"},
-                ],
-            },
-            {
-                "type_name": "compound",
-                "id": "compound_id_RANDOM",
-                "label": "Compound_does_not_target_braf",
-                "referenced_by": None,
-                "matching_properties": [
-                    {"property": "compound_id", "value": "compound_id_RANDOM"},
-                    {"property": "label", "value": "Compound_does_not_target_braf"},
-                    {"property": "target.label", "value": "SOX10"},
-                    {"property": "target.entrez_id", "value": "entrez_id_SOX10"},
-                ],
-            },
-        ]
+        assert_dimensions_response_matches(
+            dimensions_response.json(),
+            [
+                {
+                    "type_name": "compound",
+                    "id": "compound_id_az-628",
+                    "label": "AZ-628",
+                    "referenced_by": None,
+                    "matching_properties": [
+                        {"property": "compound_id", "value": "compound_id_az-628"},
+                        {"property": "label", "value": "AZ-628"},
+                        {"property": "target.label", "value": "BRAF"},
+                        {"property": "target.entrez_id", "value": "entrez_id_BRAF"},
+                        {"property": "target.multi_val_example", "value": "BRAF_val1"},
+                        {"property": "target.multi_val_example", "value": "BRAF_val2"},
+                        {"property": "target.multi_val_example", "value": "BRAF_val3"},
+                    ],
+                },
+                {
+                    "type_name": "compound",
+                    "id": "compound_id_BELVARAFENIB",
+                    "label": "BELVARAFENIB",
+                    "referenced_by": None,
+                    "matching_properties": [
+                        {
+                            "property": "compound_id",
+                            "value": "compound_id_BELVARAFENIB",
+                        },
+                        {"property": "label", "value": "BELVARAFENIB"},
+                        {"property": "target.label", "value": "BRAF"},
+                        {"property": "target.entrez_id", "value": "entrez_id_BRAF"},
+                        {"property": "target.multi_val_example", "value": "BRAF_val1"},
+                        {"property": "target.multi_val_example", "value": "BRAF_val2"},
+                        {"property": "target.multi_val_example", "value": "BRAF_val3"},
+                        {"property": "target.label", "value": "SOX10"},
+                        {"property": "target.entrez_id", "value": "entrez_id_SOX10"},
+                    ],
+                },
+                {
+                    "type_name": "compound",
+                    "id": "compound_id_CEP-32496",
+                    "label": "CEP-32496",
+                    "referenced_by": None,
+                    "matching_properties": [
+                        {"property": "compound_id", "value": "compound_id_CEP-32496"},
+                        {"property": "label", "value": "CEP-32496"},
+                        {"property": "target.label", "value": "BRAF"},
+                        {"property": "target.entrez_id", "value": "entrez_id_BRAF"},
+                        {"property": "target.multi_val_example", "value": "BRAF_val1"},
+                        {"property": "target.multi_val_example", "value": "BRAF_val2"},
+                        {"property": "target.multi_val_example", "value": "BRAF_val3"},
+                    ],
+                },
+                {
+                    "type_name": "compound",
+                    "id": "compound_id_RANDOM",
+                    "label": "Compound_does_not_target_braf",
+                    "referenced_by": None,
+                    "matching_properties": [
+                        {"property": "compound_id", "value": "compound_id_RANDOM"},
+                        {"property": "label", "value": "Compound_does_not_target_braf"},
+                        {"property": "target.label", "value": "SOX10"},
+                        {"property": "target.entrez_id", "value": "entrez_id_SOX10"},
+                    ],
+                },
+            ],
+        )
 
         prefix_filtered_dimensions_response = client.get(
             "/datasets/dimensions/?limit=100&type_name=compound&prefix=br"
@@ -574,44 +596,47 @@ class TestGet:
         #       CEP-32496 target: BRAF
         # The query looks for matches on BOTH DimensionSearchIndex.label
         # AND DimensionSearchIndex.value.
-        assert prefix_filtered_dimensions_response.json() == [
-            {
-                "type_name": "compound",
-                "id": "compound_id_az-628",
-                "label": "AZ-628",
-                "referenced_by": None,
-                "matching_properties": [
-                    {"property": "target.label", "value": "BRAF"},
-                    {"property": "target.multi_val_example", "value": "BRAF_val1"},
-                    {"property": "target.multi_val_example", "value": "BRAF_val2"},
-                    {"property": "target.multi_val_example", "value": "BRAF_val3"},
-                ],
-            },
-            {
-                "type_name": "compound",
-                "id": "compound_id_BELVARAFENIB",
-                "label": "BELVARAFENIB",
-                "referenced_by": None,
-                "matching_properties": [
-                    {"property": "target.label", "value": "BRAF"},
-                    {"property": "target.multi_val_example", "value": "BRAF_val1"},
-                    {"property": "target.multi_val_example", "value": "BRAF_val2"},
-                    {"property": "target.multi_val_example", "value": "BRAF_val3"},
-                ],
-            },
-            {
-                "type_name": "compound",
-                "id": "compound_id_CEP-32496",
-                "label": "CEP-32496",
-                "referenced_by": None,
-                "matching_properties": [
-                    {"property": "target.label", "value": "BRAF"},
-                    {"property": "target.multi_val_example", "value": "BRAF_val1"},
-                    {"property": "target.multi_val_example", "value": "BRAF_val2"},
-                    {"property": "target.multi_val_example", "value": "BRAF_val3"},
-                ],
-            },
-        ]
+        assert_dimensions_response_matches(
+            prefix_filtered_dimensions_response.json(),
+            [
+                {
+                    "type_name": "compound",
+                    "id": "compound_id_az-628",
+                    "label": "AZ-628",
+                    "referenced_by": None,
+                    "matching_properties": [
+                        {"property": "target.label", "value": "BRAF"},
+                        {"property": "target.multi_val_example", "value": "BRAF_val1"},
+                        {"property": "target.multi_val_example", "value": "BRAF_val2"},
+                        {"property": "target.multi_val_example", "value": "BRAF_val3"},
+                    ],
+                },
+                {
+                    "type_name": "compound",
+                    "id": "compound_id_BELVARAFENIB",
+                    "label": "BELVARAFENIB",
+                    "referenced_by": None,
+                    "matching_properties": [
+                        {"property": "target.label", "value": "BRAF"},
+                        {"property": "target.multi_val_example", "value": "BRAF_val1"},
+                        {"property": "target.multi_val_example", "value": "BRAF_val2"},
+                        {"property": "target.multi_val_example", "value": "BRAF_val3"},
+                    ],
+                },
+                {
+                    "type_name": "compound",
+                    "id": "compound_id_CEP-32496",
+                    "label": "CEP-32496",
+                    "referenced_by": None,
+                    "matching_properties": [
+                        {"property": "target.label", "value": "BRAF"},
+                        {"property": "target.multi_val_example", "value": "BRAF_val1"},
+                        {"property": "target.multi_val_example", "value": "BRAF_val2"},
+                        {"property": "target.multi_val_example", "value": "BRAF_val3"},
+                    ],
+                },
+            ],
+        )
 
     def test_get_dimensions_with_referenced_datasets(
         self, db, client, settings, private_group, minimal_db
@@ -682,24 +707,31 @@ class TestGet:
             "/datasets/dimensions/?limit=100&prefix=name&include_referenced_by=T"
         )
         assert dimensions_response.status_code == 200
-        assert dimensions_response.json() == [
-            {
-                "type_name": "gene",
-                "id": "alpha",
-                "label": "alpha",
-                "referenced_by": [
-                    {"id": visible_dataset.id, "name": visible_dataset.name}
-                ],
-                "matching_properties": [{"property": "name", "value": "name:alpha"},],
-            },
-            {
-                "type_name": "gene",
-                "id": "gamma",
-                "label": "gamma",
-                "referenced_by": [],
-                "matching_properties": [{"property": "name", "value": "name:gamma"},],
-            },
-        ]
+        assert_dimensions_response_matches(
+            dimensions_response.json(),
+            [
+                {
+                    "type_name": "gene",
+                    "id": "alpha",
+                    "label": "alpha",
+                    "referenced_by": [
+                        {"id": visible_dataset.id, "name": visible_dataset.name}
+                    ],
+                    "matching_properties": [
+                        {"property": "name", "value": "name:alpha"},
+                    ],
+                },
+                {
+                    "type_name": "gene",
+                    "id": "gamma",
+                    "label": "gamma",
+                    "referenced_by": [],
+                    "matching_properties": [
+                        {"property": "name", "value": "name:gamma"},
+                    ],
+                },
+            ],
+        )
 
     def test_get_dimensions_by_substr(self, client, settings, public_group, minimal_db):
         admin_headers = {"X-Forwarded-Email": settings.admin_users[0]}
@@ -735,17 +767,20 @@ class TestGet:
             "/datasets/dimensions/?limit=100&substring=this%"
         )
         assert dimensions_response.status_code == 200
-        assert dimensions_response.json() == [
-            {
-                "type_name": "gene",
-                "id": "gamma",
-                "label": "gamma",
-                "referenced_by": None,
-                "matching_properties": [
-                    {"property": "name", "value": "only-this%-entry"},
-                ],
-            },
-        ]
+        assert_dimensions_response_matches(
+            dimensions_response.json(),
+            [
+                {
+                    "type_name": "gene",
+                    "id": "gamma",
+                    "label": "gamma",
+                    "referenced_by": None,
+                    "matching_properties": [
+                        {"property": "name", "value": "only-this%-entry"},
+                    ],
+                },
+            ],
+        )
 
     def test_get_dimensions(
         self, minimal_db, client: TestClient, settings, public_group
@@ -1253,71 +1288,83 @@ class TestGet:
         dimensions_response = client.get(
             "/datasets/dimensions/?limit=100&type_name=gene"
         )
-        assert dimensions_response.json() == [
-            {
-                "type_name": "gene",
-                "id": "A",
-                "label": "a",
-                "referenced_by": None,
-                "matching_properties": [
-                    {"property": "label", "value": "a"},
-                    {"property": "entrez_id", "value": "A"},
-                ],
-            },
-            {
-                "type_name": "gene",
-                "id": "AB",
-                "label": "ab",
-                "referenced_by": None,
-                "matching_properties": [
-                    {"property": "label", "value": "ab"},
-                    {"property": "entrez_id", "value": "AB"},
-                ],
-            },
-            {
-                "type_name": "gene",
-                "id": "B",
-                "label": "b",
-                "referenced_by": None,
-                "matching_properties": [
-                    {"property": "label", "value": "b"},
-                    {"property": "entrez_id", "value": "B"},
-                ],
-            },
-        ]
+        assert_dimensions_response_matches(
+            dimensions_response.json(),
+            [
+                {
+                    "type_name": "gene",
+                    "id": "A",
+                    "label": "a",
+                    "referenced_by": None,
+                    "matching_properties": [
+                        {"property": "label", "value": "a"},
+                        {"property": "entrez_id", "value": "A"},
+                    ],
+                },
+                {
+                    "type_name": "gene",
+                    "id": "AB",
+                    "label": "ab",
+                    "referenced_by": None,
+                    "matching_properties": [
+                        {"property": "label", "value": "ab"},
+                        {"property": "entrez_id", "value": "AB"},
+                    ],
+                },
+                {
+                    "type_name": "gene",
+                    "id": "B",
+                    "label": "b",
+                    "referenced_by": None,
+                    "matching_properties": [
+                        {"property": "label", "value": "b"},
+                        {"property": "entrez_id", "value": "B"},
+                    ],
+                },
+            ],
+        )
 
         # Lower limit
         dimensions_response = client.get(
             "/datasets/dimensions/?limit=4&type_name=compound&prefix=ab"
         )
-        assert dimensions_response.json() == [
-            {
-                "type_name": "compound",
-                "id": "AB",
-                "label": "ab",
-                "referenced_by": None,
-                "matching_properties": [
-                    {"property": "compound_id", "value": "AB"},
-                    {"property": "label", "value": "ab"},
-                    {"property": "target.label", "value": "ab"},
-                    {"property": "target.entrez_id", "value": "AB"},
-                ],
-            }
-        ]
+        assert_dimensions_response_matches(
+            dimensions_response.json(),
+            [
+                {
+                    "type_name": "compound",
+                    "id": "AB",
+                    "label": "ab",
+                    "referenced_by": None,
+                    "matching_properties": [
+                        {"property": "compound_id", "value": "AB"},
+                        {"property": "label", "value": "ab"},
+                        {"property": "target.label", "value": "ab"},
+                        {"property": "target.entrez_id", "value": "AB"},
+                    ],
+                }
+            ],
+        )
 
         # Filter on prefix
         dimensions_response = client.get(
-            "/datasets/dimensions/?limit=1&type_name=gene&prefix=b"
+            "/datasets/dimensions/?limit=10&type_name=gene&prefix=b"
         )
-        assert dimensions_response.json() == [
-            {
-                "type_name": "gene",
-                "id": "B",
-                "label": "b",
-                "referenced_by": None,
-                "matching_properties": [{"property": "label", "value": "b"}],
-            }
-        ]
+        assert_dimensions_response_matches(
+            dimensions_response.json(),
+            [
+                {
+                    "type_name": "gene",
+                    "id": "B",
+                    "label": "b",
+                    "referenced_by": None,
+                    "matching_properties": [
+                        {"property": "label", "value": "b"},
+                        {"property": "entrez_id", "value": "B"},
+                    ],
+                }
+            ],
+        )
 
         # There is no does_not_exist type_name, so this shouldn't return any results
         dimensions_response = client.get(
