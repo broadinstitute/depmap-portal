@@ -846,7 +846,7 @@ def get_dataset_dimension_search_index_entries(
     db: SessionWithUser,
     user: str,
     limit: int,
-    prefix: Optional[str],
+    prefixes: Optional[str],
     substrings: List[str],
     dimension_type_name: Optional[str],
     include_referenced_by: bool,
@@ -857,21 +857,19 @@ def get_dataset_dimension_search_index_entries(
     search_index_filter_clauses = []
     outer = aliased(DimensionSearchIndex)
 
-    if prefix is not None:
-        search_index_filter_clauses.append(
-            outer.value.startswith(prefix, autoescape=True)
-        )
-
     if dimension_type_name:
         search_index_filter_clauses.append(outer.type_name == dimension_type_name)
 
-    if len(substrings) > 0:
-        predicate_per_substring = [
+    def filter_per_value(values, predicate_constructor):
+        if len(values) == 0:
+            return []
+
+        exists_clause_per_value = [
             db.query(DimensionSearchIndex)
             .join(Dimension)
             .filter(
                 and_(
-                    DimensionSearchIndex.value.contains(substring, autoescape=True),
+                    predicate_constructor(DimensionSearchIndex, value),
                     *search_index_filter_clauses,
                     outer.type_name == DimensionSearchIndex.type_name,
                     outer.dimension_given_id == DimensionSearchIndex.dimension_given_id,
@@ -881,48 +879,37 @@ def get_dataset_dimension_search_index_entries(
                 DimensionSearchIndex.type_name, DimensionSearchIndex.dimension_given_id,
             )
             .exists()
-            for substring in substrings
+            for value in values
         ]
 
-        property_matches_at_least_one_substring = or_(
+        property_matches_at_least_one_predicate = or_(
             *[
-                outer.value.contains(substring, autoescape=True)
-                for substring in substrings
+                predicate_constructor(outer, value)
+                for value in values
             ]
         )
 
-        search_index_query = (
-            db.query(outer)
-            .join(Dimension)
-            .filter(
-                and_(property_matches_at_least_one_substring, *predicate_per_substring)
-            )
-            .order_by(outer.priority, outer.label)
-            .limit(limit)
-            .with_entities(
-                outer.type_name,
-                outer.dimension_given_id,
-                outer.label,
-                outer.property,
-                outer.value,
-            )
-        )
+        return [property_matches_at_least_one_predicate] + exists_clause_per_value
 
-    else:
-        search_index_query = (
-            db.query(outer)
-            .join(Dimension)
-            .filter(and_(True, *search_index_filter_clauses))
-            .order_by(outer.priority, outer.label)
-            .limit(limit)
-            .with_entities(
-                outer.type_name,
-                outer.dimension_given_id,
-                outer.label,
-                outer.property,
-                outer.value,
-            )
+    filters_for_prefixes = filter_per_value(prefixes, lambda table, prefix: table.value.startswith(prefix, autoescape=True))
+
+    filters_for_substrings = filter_per_value(substrings, lambda table, substring: table.value.contains(substring, autoescape=True))
+
+    search_index_query = (
+        db.query(outer)
+        # .join(Dimension)
+        .filter(and_(True, *(search_index_filter_clauses + filters_for_substrings + filters_for_prefixes)))
+        .limit(limit)
+        .with_entities(
+            outer.type_name,
+            outer.dimension_given_id,
+            outer.label,
+            outer.property,
+            outer.value,
         )
+    )
+
+    print("query:", search_index_query.statement)
 
     search_index_entries = pd.read_sql(
         search_index_query.statement, search_index_query.session.connection()
@@ -957,6 +944,10 @@ def get_dataset_dimension_search_index_entries(
                 ],
             )
         )
+
+    # sort at the end. This has been moved out of the sql query because we
+    # want the sort to happen after "limit" has been applied.
+    group_entries.sort(key=lambda x: x.label)
 
     return group_entries
 

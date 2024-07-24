@@ -413,7 +413,7 @@ def get_dataset_data(
 def get_dimensions(
     limit: int,
     include_referenced_by: str = "F",
-    prefix: Optional[str] = None,
+    prefix: Annotated[Optional[List[str]], Query()] = None,
     # curiously, when switching `substring` from str to list, I had to explictly
     # annotate it so that fastapi would look for it as a query parameter and not
     # look for it in the payload body.
@@ -434,10 +434,13 @@ def get_dimensions(
     if substring is None:
         substring = []
 
+    if prefix is None:
+        prefix = []
+
     search_index_entries = dataset_crud.get_dataset_dimension_search_index_entries(
         db=db,
         user=user,
-        prefix=prefix,
+        prefixes=prefix,
         dimension_type_name=type_name,
         limit=limit,
         substrings=substring,

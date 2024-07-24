@@ -294,6 +294,24 @@ class TestGet:
             },
         ]
 
+        response = client.get(
+            "/datasets/dimensions/?limit=100&type_name=gene&prefix=BR&prefix=entrez_id_A"
+        )
+        assert_status_ok(response)
+        assert response.json() == [
+            {
+                "type_name": "gene",
+                "id": "entrez_id_ABC1",
+                "label": "BRAX",
+                "referenced_by": None,
+                "matching_properties": [
+                    {"property": "label", "value": "BRAX"},
+                    {"property": "entrez_id", "value": "entrez_id_ABC1"},
+                ],
+            },
+        ]
+
+
     def test_get_dimensions_braf_example(
         self, minimal_db, client: TestClient, settings, public_group
     ):
