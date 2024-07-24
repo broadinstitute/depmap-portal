@@ -68,7 +68,7 @@
                   <li><a href="{{ url_for("external_tools.view_external_tool", app_id=app_id) }}">{{ external_tool_config["title"] }}  <i class="alpha-tag"><b>Preview</b></i></a></li>
                {% endfor %}
             {% endif %}
-            {% if true %}
+            {% if is_admin_user %}
                 <li role="separator" class="divider"></li>
                 <li><a href="{{ url_for("access_control.override") }}">Impersonate User</a></li>
                 <li><a href="{{ url_for("datasets.view_dataset_manager") }}">Breadbox data manager</a></li>
