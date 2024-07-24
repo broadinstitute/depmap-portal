@@ -83,6 +83,13 @@ import {
   DataPageDataType,
   getDataPageDataTypeColorCategory,
 } from "./dataPage/models/types";
+import {
+  FeatureInfo,
+  FeatureSummary,
+  FeatureVsGeneEffectPlotData,
+  PredictabilityData,
+  RelatedFeaturePlot,
+} from "./predictabilityPrototype/models/types";
 
 export interface RenderTile {
   html: string;
@@ -146,6 +153,11 @@ const PAGE_URL_ROOTS: Map<PageUrl, string> = new Map([
   ["constellation.view_constellation", "/constellation/"],
 ]);
 
+const featurePredictabilityRequestCache: Record<
+  string,
+  Promise<unknown> | null
+> = {};
+
 export type GeneCharacterizationData = {
   dataset: string;
   display_name: string;
@@ -190,20 +202,55 @@ export class DepmapApi {
     return fetch(fullUrl, {
       credentials: "include",
       headers,
-    }).then(
-      (response: Response): Promise<T> => {
-        log(`response arrived from ${fullUrl}`);
-        return response.json().then(
-          (body: T): Promise<T> => {
-            // nesting to access response.status
-            if (response.status >= 200 && response.status < 300) {
-              return Promise.resolve(body);
-            }
-            return Promise.reject(body);
-          }
-        );
+    }).then((response: Response): Promise<T> => {
+      log(`response arrived from ${fullUrl}`);
+      return response.json().then((body: T): Promise<T> => {
+        // nesting to access response.status
+        if (response.status >= 200 && response.status < 300) {
+          return Promise.resolve(body);
+        }
+        return Promise.reject(body);
+      });
+    });
+  };
+
+  _fetchIncludePredictabilityCache = async <T>(url: string): Promise<T> => {
+    if (!featurePredictabilityRequestCache[url]) {
+      const headers: { [key: string]: string } = {};
+      const traceParentField = this.getTraceParentField();
+      if (traceParentField) {
+        headers.traceparent = traceParentField;
       }
-    );
+      const fullUrl = this.urlPrefix + url;
+      log(`fetching ${fullUrl}`);
+      featurePredictabilityRequestCache[url] = new Promise(
+        (resolve, reject) => {
+          fetch(fullUrl, {
+            credentials: "include",
+            headers,
+          })
+            .then((response) => {
+              return response.json().then((body) => {
+                if (response.status >= 200 && response.status < 300) {
+                  const result = body;
+                  featurePredictabilityRequestCache[url] =
+                    Promise.resolve(result);
+                  resolve(result);
+                } else {
+                  featurePredictabilityRequestCache[url] = null;
+                  reject(body);
+                }
+              });
+            })
+            .catch((e) => {
+              featurePredictabilityRequestCache[url] = null;
+              reject(e);
+            });
+        }
+      );
+    }
+
+    return featurePredictabilityRequestCache[url] as Promise<T>;
   };
 
   _fetchText = (url: string): Promise<string> => {
@@ -236,20 +283,16 @@ export class DepmapApi {
       method: "POST",
       headers,
       body: JSON.stringify(args),
-    }).then(
-      (response: Response): Promise<T> => {
-        log(`response arrived from ${fullUrl}`);
-        return response.json().then(
-          (body: T): Promise<T> => {
-            // nesting to access response.status
-            if (response.status >= 200 && response.status < 300) {
-              return Promise.resolve(body);
-            }
-            return Promise.reject(body);
-          }
-        );
-      }
-    );
+    }).then((response: Response): Promise<T> => {
+      log(`response arrived from ${fullUrl}`);
+      return response.json().then((body: T): Promise<T> => {
+        // nesting to access response.status
+        if (response.status >= 200 && response.status < 300) {
+          return Promise.resolve(body);
+        }
+        return Promise.reject(body);
+      });
+    });
   };
 
   _post = <T>(url: string, args: any): Promise<T> => {
@@ -263,20 +306,16 @@ export class DepmapApi {
         method: "POST",
         body: data,
       })
-      .then(
-        (response: Response): Promise<T> => {
-          log(`response arrived from ${fullUrl}`);
-          return response.json().then(
-            (body: T): Promise<T> => {
-              // nesting to access response.status
-              if (response.status >= 200 && response.status < 300) {
-                return Promise.resolve(body);
-              }
-              return Promise.reject(body);
-            }
-          );
-        }
-      );
+      .then((response: Response): Promise<T> => {
+        log(`response arrived from ${fullUrl}`);
+        return response.json().then((body: T): Promise<T> => {
+          // nesting to access response.status
+          if (response.status >= 200 && response.status < 300) {
+            return Promise.resolve(body);
+          }
+          return Promise.reject(body);
+        });
+      });
   };
 
   _postForm = <T>(url: string, args: FormData): Promise<T> => {
@@ -286,20 +325,16 @@ export class DepmapApi {
     return fetch(fullUrl, {
       method: "POST",
       body: args,
-    }).then(
-      (response: Response): Promise<T> => {
-        log(`response arrived from ${fullUrl}`);
-        return response.json().then(
-          (body: T): Promise<T> => {
-            // nesting to access response.status
-            if (response.status >= 200 && response.status < 300) {
-              return Promise.resolve(body);
-            }
-            return Promise.reject(body);
-          }
-        );
-      }
-    );
+    }).then((response: Response): Promise<T> => {
+      log(`response arrived from ${fullUrl}`);
+      return response.json().then((body: T): Promise<T> => {
+        // nesting to access response.status
+        if (response.status >= 200 && response.status < 300) {
+          return Promise.resolve(body);
+        }
+        return Promise.reject(body);
+      });
+    });
   };
 
   _postMultipart = <T>(url: string, args: any): Promise<T> => {
@@ -317,24 +352,20 @@ export class DepmapApi {
       credentials: "include",
       method: "POST",
       body: data,
-    }).then(
-      (response: Response): Promise<T> => {
-        log(`response arrived from ${fullUrl}`);
-        return response.json().then(
-          (body: T): Promise<T> => {
-            // nesting to access response.status
-            if (response.status >= 200 && response.status < 300) {
-              return Promise.resolve(body);
-            }
-            // eslint-disable-next-line prefer-promise-reject-errors
-            return Promise.reject({ body, status: response.status } as {
-              body: T;
-              status: number;
-            });
-          }
-        );
-      }
-    );
+    }).then((response: Response): Promise<T> => {
+      log(`response arrived from ${fullUrl}`);
+      return response.json().then((body: T): Promise<T> => {
+        // nesting to access response.status
+        if (response.status >= 200 && response.status < 300) {
+          return Promise.resolve(body);
+        }
+        // eslint-disable-next-line prefer-promise-reject-errors
+        return Promise.reject({ body, status: response.status } as {
+          body: T;
+          status: number;
+        });
+      });
+    });
   };
 
   _deleteJson = (url: string, args: any): Promise<Response> => {
@@ -584,6 +615,94 @@ export class DepmapApi {
     );
   }
 
+  getRelatedFeatureCorrData(
+    entityLabel: string,
+    identifier: string,
+    model: string
+  ): Promise<RelatedFeaturePlot> {
+    const params = {
+      entity_label: entityLabel,
+      identifier,
+      model,
+    };
+
+    return this._fetchIncludePredictabilityCache<RelatedFeaturePlot>(
+      `/api/predictability_prototype/feature/related_correlations?${encodeParams(
+        params
+      )}`
+    );
+  }
+
+  getWaterfallData(
+    entityLabel: string,
+    identifier: string,
+    model: string
+  ): Promise<any> {
+    const params = {
+      entity_label: entityLabel,
+      identifier,
+      model,
+    };
+
+    return this._fetchIncludePredictabilityCache<any>(
+      `/api/predictability_prototype/feature/waterfall?${encodeParams(params)}`
+    );
+  }
+
+  getPredictabilityBoxPlotData(
+    featureName: string,
+    featureType: string,
+    identifier: string,
+    model: string
+  ): Promise<any> {
+    const params = {
+      feature_name: featureName,
+      feature_type: featureType,
+      feature_name_type: identifier,
+      model,
+    };
+
+    return this._fetchIncludePredictabilityCache<any>(
+      `/api/predictability_prototype/feature/boxplot?${encodeParams(params)}`
+    );
+  }
+
+  getPredictabilityFeatureGeneEffectData(
+    featureName: string,
+    featureType: string,
+    identifier: string,
+    featureIndex: number,
+    entityLabel: string,
+    model: string
+  ): Promise<FeatureVsGeneEffectPlotData> {
+    const params = {
+      feature_name: featureName,
+      feature_type: featureType,
+      feature_name_type: identifier,
+      feature_index: featureIndex,
+      entity_label: entityLabel,
+      model,
+    };
+
+    return this._fetchIncludePredictabilityCache<FeatureVsGeneEffectPlotData>(
+      `/api/predictability_prototype/feature/gene_effect_data?${encodeParams(
+        params
+      )}`
+    );
+  }
+
+  getPredictabilityPrototypeData(
+    gene_symbol: string
+  ): Promise<PredictabilityData> {
+    const params = {
+      gene_symbol,
+    };
+
+    return this._fetch<any>(
+      `/api/predictability_prototype/predictions?${encodeParams(params)}`
+    );
+  }
+
   getContextExplorerBoxPlotData(
     selected_context: string,
     dataset_id: string,
@@ -662,9 +781,7 @@ export class DepmapApi {
     };
   }
 
-  getOncogenicAlterations(
-    depmapId: string
-  ): Promise<{
+  getOncogenicAlterations(depmapId: string): Promise<{
     onco_alterations: Array<OncogenicAlteration>;
     oncokb_dataset_version: string;
   }> {

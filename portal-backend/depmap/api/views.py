@@ -11,6 +11,9 @@ from depmap.health_check.api import namespace as health_check_namespace
 from depmap.context_explorer.api import namespace as context_explorer_namespace
 from depmap.dataset_manager.api import namespace as dataset_manager_namespace
 from depmap.data_page.api import namespace as data_page_namespace
+from depmap.predictability_prototype.api import (
+    namespace as predictability_prototype_namespace,
+)
 
 """
 Endpoints that are user-facing should go in in api.py files. Their blueprints are imported here
@@ -29,6 +32,7 @@ api = ApiWithUrlScheme(
 )
 api.errorhandler(restplus_handle_exception)
 
+api.add_namespace(predictability_prototype_namespace)
 api.add_namespace(data_page_namespace)
 api.add_namespace(context_explorer_namespace)
 api.add_namespace(health_check_namespace)

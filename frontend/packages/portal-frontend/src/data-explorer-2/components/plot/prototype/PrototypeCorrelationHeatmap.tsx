@@ -44,6 +44,8 @@ interface Props {
   onSelectLabels?: (labels: string[]) => void;
   onLoad?: (plot: ExtendedPlotType) => void;
   palette?: DataExplorerColorPalette;
+  margin?: any;
+  doTruncateTickLabels?: boolean;
   distinguish1Label: string | undefined;
   distinguish2Label: string | undefined;
 }
@@ -91,6 +93,8 @@ function PrototypeCorrelationHeatmap({
   distinguish1Label = undefined,
   distinguish2Label = undefined,
   onLoad = () => {},
+  margin = { t: 30, l: 80, r: 30, b: 106 },
+  doTruncateTickLabels = true,
   Plotly,
 }: any) {
   const ref = useRef<ExtendedPlotType>(null);
@@ -238,13 +242,19 @@ function PrototypeCorrelationHeatmap({
       automargin: true,
       autorange: true,
       tickvals: y,
-      ticktext: yLabels ? yLabels.map(truncate) : y.map(truncate),
+      ticktext: doTruncateTickLabels
+        ? yLabels
+          ? yLabels.map(truncate)
+          : y.map(truncate)
+        : yLabels
+        ? yLabels
+        : y,
       domain: z2Key ? [0.25, 0.75] : [0, 1],
     };
 
     const layout: Partial<Layout> = {
       height: height === "auto" ? calcPlotHeight(plot) : height,
-      margin: { t: 30, l: 80, r: 30, b: 130 },
+      margin,
       hovermode: "closest",
       hoverlabel: { namelength: -1 },
 
@@ -388,6 +398,8 @@ function PrototypeCorrelationHeatmap({
     selectedLabels,
     onSelectLabels,
     palette,
+    margin,
+    doTruncateTickLabels,
     distinguish1Label,
     distinguish2Label,
     Plotly,

@@ -99,7 +99,7 @@ class DevConfig(Config):
     """Development configuration."""
 
     ENV = "dev"  # ENV is used for uniqueness, do not make checks against ENV. Use ENV_TYPE for skyros/public/dmc split. The only exception is for setting the depmapIsDevEnv in layout.html to determine error handling behavior
-    ENV_TYPE = os.environ.get("DEPMAP_THEME", "public")  # 'skyros' or 'public' or 'dmc'
+    ENV_TYPE = os.environ.get("DEPMAP_THEME", "skyros")  # 'skyros' or 'public' or 'dmc'
     USE_FRONTEND_DEV_SERVER = True
     SERVER_NAME = "127.0.0.1:5000"  # set to use url_for in celery (request context absent) and flask shell
     DEBUG = True  # this doesn't seem to do anything

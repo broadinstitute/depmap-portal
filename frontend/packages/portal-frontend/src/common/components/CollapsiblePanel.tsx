@@ -7,6 +7,7 @@ export interface CollapsiblePanelProps {
   openPanelOnLoad: boolean;
   keyPrefix: string;
   keySuffix: number;
+  openCloseSymbolStyle?: any;
 }
 
 export const CollapsiblePanel = ({
@@ -15,6 +16,14 @@ export const CollapsiblePanel = ({
   openPanelOnLoad,
   keyPrefix,
   keySuffix,
+  openCloseSymbolStyle = {
+    float: "left",
+    marginRight: "10px",
+    marginTop: "1px",
+    position: "relative",
+    lineHeight: "unset",
+    color: "#4479B2",
+  },
 }: CollapsiblePanelProps) => {
   return (
     <div className={"CollapsiblePanel"}>
@@ -25,14 +34,7 @@ export const CollapsiblePanel = ({
         title={headerContent}
         openCloseSymbol={OpenCloseSymbol.Caret}
         openingTransition={"max-height 0.2s ease"}
-        openCloseSymbolStyle={{
-          float: "left",
-          marginRight: "10px",
-          marginTop: "1px",
-          position: "relative",
-          lineHeight: "unset",
-          color: "#4479B2",
-        }}
+        openCloseSymbolStyle={openCloseSymbolStyle}
       >
         {bodyContent}
       </Accordion>

@@ -32,7 +32,13 @@ function GeneTeaTable({ data, onClickColorByContext, onClickTerm }: Props) {
   const checkScrollBar = useCallback(() => {
     if (ref.current) {
       const stack = ref.current.closest("#section-stack") as Element;
-      setHasScrollBar(stack.scrollHeight > stack.clientHeight);
+
+      // There was a previous assumption that Gene Tea would always be in
+      // a stack component, but GeneTEA is now being added to the Predictability
+      // Prototype, which does not use a stack component.
+      if (stack) {
+        setHasScrollBar(stack.scrollHeight > stack.clientHeight);
+      }
     }
   }, []);
 
@@ -83,13 +89,15 @@ function GeneTeaTable({ data, onClickColorByContext, onClickTerm }: Props) {
               <td
                 className={styles.geneTeaMatches}
                 onClick={() => {
-                  onClickColorByContext({
-                    name: term,
-                    context_type: "gene",
-                    expr: {
-                      in: [{ var: "entity_label" }, data.matchingGenes[i]],
-                    },
-                  });
+                  if (onClickColorByContext) {
+                    onClickColorByContext({
+                      name: term,
+                      context_type: "gene",
+                      expr: {
+                        in: [{ var: "entity_label" }, data.matchingGenes[i]],
+                      },
+                    });
+                  }
                 }}
               >
                 {data.matchingGenes[i].length}

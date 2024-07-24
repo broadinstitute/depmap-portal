@@ -1,63 +1,54 @@
-{% extends "nav_footer.html" %}
-
-{% block page_title %}
-{{ about.symbol }} DepMap Gene Summary
-{% endblock %}
-
-{% block css %}
-    {% assets
-      filters="libsass",
-      output="public/css/gene_page.css", "css/entities/view_entity.scss", "css/entities/executive.scss", "css/shared/*.scss"
-    %}
-        <link rel="stylesheet" href="{{ ASSET_URL }}">
-    {% endassets %}
-{% endblock %}
-
-{% block content_class %}container-fluid{% endblock content_class %}
-{% block content %}
+{% extends "nav_footer.html" %} {% block page_title %} {{ about.symbol }} DepMap
+Gene Summary {% endblock %} {% block css %} {% assets filters="libsass",
+output="public/css/gene_page.css", "css/entities/view_entity.scss",
+"css/entities/executive.scss",
+"css/predictability_prototype/predictability_prototype.scss",
+"css/shared/*.scss" %}
+<link rel="stylesheet" href="{{ ASSET_URL }}" />
+{% endassets %} {% endblock %} {% block content_class %}container-fluid{%
+endblock content_class %} {% block content %}
 <div id="react-gene-page-root"></div>
-{% endblock %}
-{% block js %}
-    <script id="react-gene-page-data" type="application/json">
-      {
-        "fullName": {{ about.full_name|tojson|safe }},
-        "symbol": {{ about.symbol|tojson|safe }},
-        {% if about.ensembl_id %}"ensemblId": {{ about.ensembl_id|tojson|safe }},{% endif %}
-        {% if about.entrez_id %}"entrezId": {{ about.entrez_id|tojson|safe }},{% endif %}
-        {% if about.hgnc_id %}"hgncId": {{ about.hgnc_id|tojson|safe }},{% endif %}
-        {% if about.aka %}"aka": {{ about.aka|tojson|safe }},{% endif %}
-        "showDependencyTab": {{ summary is not none|tojson|safe }},
-        "showConfidenceTab": {{ has_confidence|tojson|safe }},
-        "showCharacterizationTab": {{ (characterizations|length > 0)|tojson|safe }},
-        "showPredictabilityTab": {{ (has_datasets and has_predictability)|tojson|safe }},
-        "showCelfieTab": {{ has_celfie|tojson|safe }},
-        "showCelfieTile": {{ (has_celfie and correlations|length > 0)|tojson|safe }},
-        "hasDatasets": {{ has_datasets|tojson|safe }},
-        "order": {{ order|tojson|safe }},
-        "isMobile": {{ is_mobile|tojson|safe  }},
-        "entityId": {{ entity_id|tojson|safe }},
-        "customDownloadsLink": {{ predictability_custom_downloads_link|tojson|safe }},
-        "methodologyLink": {{ predictability_methodology_link|tojson|safe }},
-        {% if celfie.similarity_options %}"similarityOptions": {{ celfie.similarity_options|tojson|safe }},{% endif %}
-        {% if celfie.color_options %}"colorOptions": {{ celfie.color_options|tojson|safe }},{% endif %}
-        {% if celfie.connectivity_options %}"connectivityOptions": {{ celfie.connectivity_options|tojson|safe }},{% endif %}
-        {% if celfie.datasets %}"datasets": {{ celfie.datasets|tojson|safe }},{% endif %} 
-        {% if celfie.dependency_datasets %}"dependencyProfileOptions": {{ celfie.dependency_datasets|tojson|safe }},{% endif %}
-        {% if summary.size_biom_enum_name %}"sizeBiomEnumName": {{ summary.size_biom_enum_name|tojson|safe }},{% endif %} 
-        {% if summary.color %}"color": {{ summary.color|tojson|safe }},{% endif %} 
-        {% if summary.figure %}"figure": {{ summary.figure|tojson|safe }},{% endif %} 
-        {% if summary.show_auc_message %}"showAUCMessage": {{ summary.show_auc_message|tojson|safe }},{% endif %}
-        "howToImg": "{{ url_for("static", filename="img/celfie/celfie-tutorial.png") }}",
-        {% if summary.summary_options %}"summaryOptions": {{ summary.summary_options|tojson|safe }},{% endif %}
-        "showMutationsTile": {{ show_mutations_tile|tojson|safe }},
-        "showOmicsExpressionTile": {{ show_omics_expression_tile|tojson|safe}},
-        "showTargetingCompoundsTile": {{ show_targeting_compounds_tile|tojson|safe }}
-      }
-    </script>
-    <script type="text/javascript">
-      {% include "genes/partials/about.js" %}
-    </script>
-    <script src="{{ webpack_url('genePage.js') }}"></script>
+{% endblock %} {% block js %}
+<script id="react-gene-page-data" type="application/json">
+  {
+    "fullName": {{ about.full_name|tojson|safe }},
+    "symbol": {{ about.symbol|tojson|safe }},
+    {% if about.ensembl_id %}"ensemblId": {{ about.ensembl_id|tojson|safe }},{% endif %}
+    {% if about.entrez_id %}"entrezId": {{ about.entrez_id|tojson|safe }},{% endif %}
+    {% if about.hgnc_id %}"hgncId": {{ about.hgnc_id|tojson|safe }},{% endif %}
+    {% if about.aka %}"aka": {{ about.aka|tojson|safe }},{% endif %}
+    "showDependencyTab": {{ summary is not none|tojson|safe }},
+    "showConfidenceTab": {{ has_confidence|tojson|safe }},
+    "showCharacterizationTab": {{ (characterizations|length > 0)|tojson|safe }},
+    "showPredictabilityTab": {{ (has_datasets and has_predictability)|tojson|safe }},
+    "showCelfieTab": {{ has_celfie|tojson|safe }},
+    "showCelfieTile": {{ (has_celfie and correlations|length > 0)|tojson|safe }},
+    "hasDatasets": {{ has_datasets|tojson|safe }},
+    "order": {{ order|tojson|safe }},
+    "isMobile": {{ is_mobile|tojson|safe  }},
+    "entityId": {{ entity_id|tojson|safe }},
+    "customDownloadsLink": {{ predictability_custom_downloads_link|tojson|safe }},
+    "methodologyLink": {{ predictability_methodology_link|tojson|safe }},
+    {% if celfie.similarity_options %}"similarityOptions": {{ celfie.similarity_options|tojson|safe }},{% endif %}
+    {% if celfie.color_options %}"colorOptions": {{ celfie.color_options|tojson|safe }},{% endif %}
+    {% if celfie.connectivity_options %}"connectivityOptions": {{ celfie.connectivity_options|tojson|safe }},{% endif %}
+    {% if celfie.datasets %}"datasets": {{ celfie.datasets|tojson|safe }},{% endif %}
+    {% if celfie.dependency_datasets %}"dependencyProfileOptions": {{ celfie.dependency_datasets|tojson|safe }},{% endif %}
+    {% if summary.size_biom_enum_name %}"sizeBiomEnumName": {{ summary.size_biom_enum_name|tojson|safe }},{% endif %}
+    {% if summary.color %}"color": {{ summary.color|tojson|safe }},{% endif %}
+    {% if summary.figure %}"figure": {{ summary.figure|tojson|safe }},{% endif %}
+    {% if summary.show_auc_message %}"showAUCMessage": {{ summary.show_auc_message|tojson|safe }},{% endif %}
+    "howToImg": "{{ url_for("static", filename="img/celfie/celfie-tutorial.png") }}",
+    {% if summary.summary_options %}"summaryOptions": {{ summary.summary_options|tojson|safe }},{% endif %}
+    "showMutationsTile": {{ show_mutations_tile|tojson|safe }},
+    "showOmicsExpressionTile": {{ show_omics_expression_tile|tojson|safe}},
+    "showTargetingCompoundsTile": {{ show_targeting_compounds_tile|tojson|safe }},
+    "showPredictabilityPrototype": {{ show_predictability_prototype|tojson|safe }}
+  }
+</script>
+<script type="text/javascript">
+  {% include "genes/partials/about.js" %}
+</script>
+<script src="{{ webpack_url('genePage.js') }}"></script>
 
 {% endblock %}
-

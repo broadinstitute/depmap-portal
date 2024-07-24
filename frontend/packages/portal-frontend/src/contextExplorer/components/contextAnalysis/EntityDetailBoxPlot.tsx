@@ -125,7 +125,7 @@ function EntityDetailBoxPlot({
               ""
             ),
             hoverLabels: plotData.cell_line_display_names,
-            xVals: plotData.data,
+            vals: plotData.data,
             color: EntityBoxColorMap.get(plotData.type) ?? {
               r: 170,
               g: 51,
@@ -146,7 +146,7 @@ function EntityDetailBoxPlot({
               plotData.name
             ),
             hoverLabels: plotData.cell_line_display_names,
-            xVals: plotData.data,
+            vals: plotData.data,
             color: OtherColorOptions[otherColorIndex],
             lineColor: "#000000",
           });

@@ -1,0 +1,95 @@
+.nav-tabs > li > a {
+  margin-right: 2px;
+  line-height: 1.42857143;
+  border-top: 1px solid #bebebe;
+  border-radius: 4px 4px 0 0;
+  border-left: 1px solid #bebebe;
+  border-right: 1px solid #bebebe;
+}
+
+.nav-tabs > li.active > a,
+.nav-tabs > li.active > a:hover,
+.nav-tabs > li.active > a:focus {
+  color: #4479b2;
+  font-weight: bold;
+  cursor: default;
+  background-color: #fff;
+  border: 1px solid black;
+  border-bottom-color: transparent;
+}
+
+.nav-tabs > li > a:hover {
+  background-color: #0079b21a;
+}
+
+.nav-tabs {
+  border-bottom: 1px solid black;
+  padding-left: 80px;
+}
+
+/* activate toggle */
+.accordion_item.active {
+  height: auto;
+}
+.answer_wrapper {
+  height: 0;
+  overflow: hidden;
+  border-top: solid 1px black;
+  transition: height 0.7s ease-in-out;
+}
+.answer_wrapper.open {
+  height: auto;
+}
+
+.CollapsiblePanel {
+  .depmap-accordion {
+    border-top: solid 1px black;
+    width: 100% !important;
+
+    .accordion-header {
+      margin-left: 0px;
+      background-color: #fff !important;
+      padding-bottom: 0px !important;
+      width: 100%;
+
+      .accordion-title {
+        color: black;
+        width: 100% !important;
+      }
+    }
+
+    .accordion_contents {
+      margin-left: 12px;
+      border: 0;
+      text-align: left;
+      white-space: pre-line;
+      word-break: break-word;
+      color: black;
+      outline: 0;
+      text-decoration: none;
+
+      .btn:active {
+        font-weight: bolder;
+      }
+    }
+  }
+}
+
+.styled-correlation-box {
+  --height: 16px !important;
+  --background-color: #b5b5b5;
+
+  width: calc(50vw - 350px);
+  max-width: 315px;
+  margin-inline-end: 16px;
+}
+
+// This is probably bad/hacky, but the documented way of hiding the Plotly modebar
+// (adding this to the config: {displayModeBar: false}) did not work for some reason
+.react-base-plot-toolbar {
+  display: none;
+}
+
+.modebar-btn {
+  display: none;
+}

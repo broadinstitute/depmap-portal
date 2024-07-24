@@ -150,6 +150,10 @@ def _get_gene_page_template_parameters(gene_symbol):
     targeting_compounds = find_compounds_targeting_gene(gene_symbol)
     show_targeting_compounds_tile = len(targeting_compounds) > 0
 
+    show_predictability_prototype = current_app.config.get(
+        "ENABLED_FEATURES"
+    ).predictability_prototype
+
     template_parameters = dict(
         gene_name=gene_symbol,
         title=gene_symbol,
@@ -179,6 +183,7 @@ def _get_gene_page_template_parameters(gene_symbol):
         show_mutations_tile=show_mutations_tile,
         show_omics_expression_tile=show_omics_expression_tile,
         show_targeting_compounds_tile=show_targeting_compounds_tile,
+        show_predictability_prototype=show_predictability_prototype,
     )
     return template_parameters
 

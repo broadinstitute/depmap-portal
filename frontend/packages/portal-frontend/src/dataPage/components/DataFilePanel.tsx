@@ -3,7 +3,7 @@ import { encodeParams } from "@depmap/utils";
 import React from "react";
 import styles from "src/dataPage/styles/DataPage.scss";
 import { Tooltip } from "@depmap/common-components";
-import { CollapsiblePanel } from "./CollapsiblePanel";
+import { CollapsiblePanel } from "../../common/components/CollapsiblePanel";
 import { DownloadGlyph } from "@depmap/downloads";
 
 interface DataFilePanelProps {

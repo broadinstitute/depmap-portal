@@ -27,6 +27,9 @@ interface Props {
   // Height can be defined in pixels or set to "auto."  In auto mode, it will
   // attempt to fill the height of the viewport.
   height: number | "auto";
+  density?: number[]; // For coloring by density
+  margin?: any;
+  plotTitle?: string;
   hoverTextKey?: string;
   continuousColorKey?: string;
   selectedPoints?: Set<number>;
@@ -37,6 +40,7 @@ interface Props {
   regressionLines?: any[];
   onLoad?: (plot: ExtendedPlotType) => void;
   customContinuousColorScale?: string[][];
+  renderAsSvg?: boolean;
 }
 
 type PropsWithPlotly = Props & { Plotly: PlotlyType };
@@ -58,6 +62,8 @@ function ContextScatterPlot({
   yLabel,
   height,
   continuousColorKey,
+  margin = { t: 25, l: 62, r: 15 },
+  plotTitle = undefined,
   hoverTextKey = undefined,
   selectedPoints = undefined,
   pointVisibility = undefined,
@@ -67,6 +73,8 @@ function ContextScatterPlot({
   onClickPoint = () => {},
   onClickResetSelection = () => {},
   onLoad = () => {},
+  density = undefined,
+  renderAsSvg = false,
   Plotly,
 }: PropsWithPlotly) {
   const ref = useRef<ExtendedPlotType>(null);
@@ -150,21 +158,41 @@ function ContextScatterPlot({
       return typeof c === "number" ? "#aaa" : "#fff";
     });
 
-    const templateTrace = {
-      type: "scattergl",
-      y,
-      name: "",
-      mode: "markers",
-      text,
-      showlegend: false,
-      selectedpoints: selectedPoints ? [...selectedPoints] : [],
-      marker: {
+    const getMarker = () => {
+      if (density) {
+        return {
+          color: density,
+          colorbar: {
+            title: "Density (sqrt)",
+            titleside: "right",
+            thickness: "5px",
+          },
+          colorscale,
+          size: 7,
+          line: { color: lineColor, width: 0.5 },
+          opacity: selectedPoints && selectedPoints.size > 0 ? 0.75 : 1,
+        };
+      }
+
+      return {
         color,
         colorscale,
         size: 7,
         line: { color: lineColor, width: 0.5 },
         opacity: selectedPoints && selectedPoints.size > 0 ? 0.75 : 1,
-      },
+      };
+    };
+
+    const templateTrace = {
+      type: "scatter",
+      y,
+      name: "",
+      title: plotTitle,
+      mode: "markers",
+      text,
+      showlegend: true,
+      selectedpoints: selectedPoints ? [...selectedPoints] : [],
+      marker: getMarker(),
       selected: { marker: { opacity: 1 } },
       unselected: {
         marker: {
@@ -305,7 +333,7 @@ function ContextScatterPlot({
       uirevision: "true",
       shapes,
       height: height === "auto" ? calcPlotHeight(plot) : height,
-      margin: { t: 25, l: 62, r: 15 },
+      margin,
       hovermode: "closest",
       hoverlabel: {
         namelength: -1,
@@ -367,7 +395,14 @@ function ContextScatterPlot({
       edits: { annotationTail: true },
     };
 
-    Plotly.react(plot, plotlyData, layout, config);
+    //   export interface ToImgopts {
+    //     format: 'jpeg' | 'png' | 'webp' | 'svg';
+    //     width: number;
+    //     height: number;
+    //     scale?: number | undefined;
+    // }
+
+    Plotly.react(plot, plotlyData, layout, { staticPlot: true });
 
     // Keep track of added listeners so we can easily remove them.
     const listeners: [string, (e: any) => void][] = [];
@@ -479,6 +514,7 @@ function ContextScatterPlot({
     continuousColorKey,
     xLabel,
     yLabel,
+    plotTitle,
     hoverTextKey,
     height,
     selectedPoints,
@@ -489,6 +525,7 @@ function ContextScatterPlot({
     extents,
     showYEqualXLine,
     regressionLines,
+    renderAsSvg,
     Plotly,
   ]);
 

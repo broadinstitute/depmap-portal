@@ -4,8 +4,8 @@ import PlotlyLoader, { PlotlyType } from "./PlotlyLoader";
 
 export interface BoxPlotInfo {
   name: string;
-  hoverLabels: string[];
-  xVals: number[];
+  hoverLabels?: string[];
+  vals: any;
   color: { r: number; b: number; g: number };
   lineColor: string;
 }
@@ -13,13 +13,17 @@ export interface BoxPlotInfo {
 export interface BoxPlotProps {
   plotName: string;
   boxData: BoxPlotInfo[];
-  dottedLinePosition: number;
+  dottedLinePosition?: number;
   onLoad?: (plot: ExtendedPlotType) => void;
   setXAxisRange?: (range: any[]) => void;
   plotHeight?: number;
   xAxisRange?: any[];
   xAxisTitle?: string;
   bottomMargin?: number;
+  topMargin?: number;
+  showUnderlyingPoints?: boolean;
+  showDottedLines?: boolean;
+  orientation?: "h" | "v" | undefined; // if not set, defaults to "h" for horizontal
 }
 
 type BoxPlotWithPlotly = BoxPlotProps & { Plotly: PlotlyType };
@@ -27,13 +31,17 @@ type BoxPlotWithPlotly = BoxPlotProps & { Plotly: PlotlyType };
 function BoxPlot({
   boxData,
   plotName,
-  dottedLinePosition,
+  orientation = "h",
+  showUnderlyingPoints = true,
+  dottedLinePosition = undefined,
+  showDottedLines = true,
   onLoad = () => {},
   plotHeight = undefined,
   xAxisRange = undefined,
   xAxisTitle = undefined,
   setXAxisRange = undefined,
   bottomMargin = 0,
+  topMargin = 25,
   Plotly,
 }: BoxPlotWithPlotly) {
   const ref = useRef<ExtendedPlotType>(null);
@@ -64,9 +72,10 @@ function BoxPlot({
     const data: Partial<Plotly.PlotData>[] = boxData.map((box: BoxPlotInfo) => {
       return {
         name: formatTextWrap(box.name, 14),
-        x: box.xVals,
-        boxpoints: "all",
-        orientation: "h",
+        y: orientation == "v" ? box.vals : undefined,
+        x: orientation == "h" ? box.vals : undefined,
+        boxpoints: showUnderlyingPoints ? "all" : false,
+        orientation: orientation,
         jitter: 0.5,
         pointpos: 0,
         type: "box",
@@ -79,15 +88,15 @@ function BoxPlot({
           width: 1,
         },
         hoverinfo: "text",
-        hovertext: box.hoverLabels.map(
-          (label, index) => `${label}: ${box.xVals[index].toFixed(3)}`
+        hovertext: box.hoverLabels?.map(
+          (label, index) => `${label}: ${box.vals[index].toFixed(3)}`
         ),
         hoveron: "points",
       };
     });
 
     const layout: Partial<Plotly.Layout> = {
-      margin: { t: 25, r: 5, b: bottomMargin, l: 130 },
+      margin: { t: topMargin, r: 5, b: bottomMargin, l: 130 },
       autosize: plotHeight === undefined,
       dragmode: false,
       height: plotHeight,
@@ -102,34 +111,36 @@ function BoxPlot({
         autorange: xAxisRange === undefined,
         range: xAxisRange,
       },
-      shapes: [
-        {
-          x0: 0,
-          y0: 0,
-          x1: 0,
-          y1: 100,
-          type: "line",
-          yref: "paper",
-          line: {
-            color: "black",
-            dash: "dot",
-            width: 1,
-          },
-        },
-        {
-          x0: dottedLinePosition,
-          y0: 0,
-          x1: dottedLinePosition,
-          y1: 100,
-          type: "line",
-          yref: "paper",
-          line: {
-            color: "black",
-            dash: "dot",
-            width: 1,
-          },
-        },
-      ],
+      shapes: showDottedLines
+        ? [
+            {
+              x0: 0,
+              y0: 0,
+              x1: 0,
+              y1: 100,
+              type: "line",
+              yref: "paper",
+              line: {
+                color: "black",
+                dash: "dot",
+                width: 1,
+              },
+            },
+            {
+              x0: dottedLinePosition,
+              y0: 0,
+              x1: dottedLinePosition,
+              y1: 100,
+              type: "line",
+              yref: "paper",
+              line: {
+                color: "black",
+                dash: "dot",
+                width: 1,
+              },
+            },
+          ]
+        : undefined,
     };
 
     const config: Partial<Plotly.Config> = { responsive: true };
@@ -141,8 +152,12 @@ function BoxPlot({
     plotHeight,
     xAxisRange,
     bottomMargin,
+    topMargin,
     xAxisTitle,
     dottedLinePosition,
+    showDottedLines,
+    showUnderlyingPoints,
+    orientation,
     onLoad,
   ]);
 

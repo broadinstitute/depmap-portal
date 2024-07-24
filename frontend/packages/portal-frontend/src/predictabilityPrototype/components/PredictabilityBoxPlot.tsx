@@ -1,0 +1,119 @@
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import styles from "src/predictabilityPrototype/styles/PredictabilityPrototype.scss";
+import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
+import PlotSpinner from "src/plot/components/PlotSpinner";
+import BoxPlot from "src/plot/components/BoxPlot";
+
+interface PredictabilityBoxPlotProps {
+  modelName: string;
+  geneSymbol: string;
+  featureNameType: string;
+  featureType: string;
+  featureName: string;
+  panelIndex: number;
+  getPredictabilityBoxPlotData: (
+    featureName: string,
+    featureType: string,
+    identifier: string,
+    model: string
+  ) => Promise<number[]>;
+}
+
+const PredictabilityBoxPlot = ({
+  modelName,
+  geneSymbol,
+  featureNameType,
+  featureName,
+  featureType,
+  panelIndex,
+  getPredictabilityBoxPlotData,
+}: PredictabilityBoxPlotProps) => {
+  const [boxPlotElement, setBoxPlotElement] = useState<ExtendedPlotType | null>(
+    null
+  );
+  const [plotData, setPlotData] = useState<number[] | null>(null);
+
+  const [isLoading, setIsLoading] = useState(false);
+  const [isError, setIsError] = useState(false);
+
+  const latestPromise = useRef<Promise<number[]>>();
+
+  useEffect(() => {
+    if (getPredictabilityBoxPlotData) {
+      setPlotData(null);
+      setBoxPlotElement(null);
+      setIsLoading(true);
+      const promise = getPredictabilityBoxPlotData(
+        featureName,
+        featureType,
+        featureNameType,
+        modelName
+      );
+
+      latestPromise.current = promise;
+      promise
+        .then((result: any) => {
+          if (promise === latestPromise.current) {
+            setPlotData(result);
+            setIsLoading(false);
+          }
+        })
+        .catch((e) => {
+          if (promise === latestPromise.current) {
+            window.console.error(e);
+            setIsError(true);
+          }
+        });
+    }
+  }, [featureNameType]);
+
+  const boxPlotData: any = useMemo(() => {
+    const data = plotData;
+    if (data) {
+      return {
+        name: "CCLE",
+        // hoverLabels: featureActualsValueLabels,
+        vals: data,
+        color: { r: 139, g: 0, b: 0 },
+        lineColor: "#000000",
+      };
+    }
+
+    if (isLoading && !data) {
+      return null;
+    }
+
+    return {
+      name: "",
+      hoverLabels: [],
+      xVals: [],
+      color: { r: 255, g: 140, b: 0 },
+      lineColor: "#000000",
+    };
+  }, [plotData, isLoading]);
+
+  return (
+    <>
+      {!boxPlotElement && <PlotSpinner />}
+      {!isLoading && (
+        <BoxPlot
+          key={featureName + "boxplot" + panelIndex}
+          plotName={"Plot Title"}
+          boxData={[boxPlotData]}
+          showUnderlyingPoints={false}
+          showDottedLines={false}
+          orientation={"v"}
+          bottomMargin={60}
+          topMargin={60}
+          onLoad={(element: ExtendedPlotType | null) => {
+            if (element) {
+              setBoxPlotElement(element);
+            }
+          }}
+        />
+      )}
+    </>
+  );
+};
+
+export default PredictabilityBoxPlot;
