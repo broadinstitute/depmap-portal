@@ -846,7 +846,7 @@ def get_dataset_dimension_search_index_entries(
     db: SessionWithUser,
     user: str,
     limit: int,
-    prefixes: Optional[str],
+    prefixes: List[str],
     substrings: List[str],
     dimension_type_name: Optional[str],
     include_referenced_by: bool,
@@ -883,22 +883,33 @@ def get_dataset_dimension_search_index_entries(
         ]
 
         property_matches_at_least_one_predicate = or_(
-            *[
-                predicate_constructor(outer, value)
-                for value in values
-            ]
+            *[predicate_constructor(outer, value) for value in values]
         )
 
         return [property_matches_at_least_one_predicate] + exists_clause_per_value
 
-    filters_for_prefixes = filter_per_value(prefixes, lambda table, prefix: table.value.startswith(prefix, autoescape=True))
+    filters_for_prefixes = filter_per_value(
+        prefixes, lambda table, prefix: table.value.startswith(prefix, autoescape=True)
+    )
 
-    filters_for_substrings = filter_per_value(substrings, lambda table, substring: table.value.contains(substring, autoescape=True))
+    filters_for_substrings = filter_per_value(
+        substrings,
+        lambda table, substring: table.value.contains(substring, autoescape=True),
+    )
 
     search_index_query = (
         db.query(outer)
         # .join(Dimension)
-        .filter(and_(True, *(search_index_filter_clauses + filters_for_substrings + filters_for_prefixes)))
+        .filter(
+            and_(
+                True,
+                *(
+                    search_index_filter_clauses
+                    + filters_for_substrings
+                    + filters_for_prefixes
+                ),
+            )
+        )
         .limit(limit)
         .with_entities(
             outer.type_name,
