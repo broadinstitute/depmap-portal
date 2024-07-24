@@ -80,16 +80,8 @@ def test_matrix_dataset_uploads(
         .filter(DatasetFeature.dataset_id == dataset_id)
         .all()
     )
-    catalog_nodes = (
-        minimal_db.query(CatalogNode)
-        .filter(DatasetFeature.dataset_id == dataset_id)
-        .all()
-    )
     assert len(feature_indexes) == 3  # Number of feaures should be 3
     assert len(sample_indexes) == 2  # Number of feaures should be 2
-    assert (
-        len(catalog_nodes) == 7
-    )  # Number of nodes is features + samples + dataset + root
 
     matrix_params_only_sample_type = MatrixDatasetParams(
         format="matrix",

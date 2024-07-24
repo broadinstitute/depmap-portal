@@ -179,6 +179,9 @@ class InteractiveConfigFakeMutationsDownload(InteractiveConfig):
             "private-b4d7094196889fa4614409570bb12ab5c09c9cc00388deb7c13ec57fd2996461": None
         }
 
+    def is_legacy_private_dataset(self, dataset_id: str) -> bool:
+        return False
+
     @classmethod
     def _get_mutations_taiga_id(cls):
         return "this-is-test-nonsense-that-should-never-be-checked-against.1/except-for-taiga-alias-loading"

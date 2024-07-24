@@ -71,7 +71,11 @@ def run_migrations_online():
     )
 
     with connectable.connect() as connection:
-        connection.execute("PRAGMA foreign_keys = ON")
+        # because alembic batch operations drop and recreate tables, this causes
+        # problems with foreign key constraints. To work around this, we'll explicitly
+        # disable foreign key constraints at the before running migrations and the
+        # explicitly check the constraints after applying the migrations
+        connection.execute("PRAGMA foreign_keys = OFF")
 
         context.configure(
             connection=connection,
@@ -82,6 +86,21 @@ def run_migrations_online():
 
         with context.begin_transaction():
             context.run_migrations()
+
+        # verify there are no broken foreign key constraints
+        print("Checking fk constraints...")
+        # if there are violated constraint, the pragma returns a row for each
+        rows = connection.execute("pragma foreign_key_check").fetchall()
+        if len(rows) > 0:
+            for row in rows:
+                print("FK violated:", row)
+
+            raise Exception("FK constraints violated at the end of running migrations!")
+        print("Done. fk constraints are ok")
+
+        # shouldn't matter, but since I explictly disabled the constraints at the start
+        # I'd like to turn it back on at the end.
+        connection.execute("PRAGMA foreign_keys = ON")
 
 
 if context.is_offline_mode():

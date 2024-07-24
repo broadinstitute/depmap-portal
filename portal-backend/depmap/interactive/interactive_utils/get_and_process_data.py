@@ -43,6 +43,7 @@ from depmap.interactive.common_utils import RowSummary
 from depmap.vector_catalog.nodes.categorical_tree_nodes import (
     MUTATION_DETAILS_DATASET_ID,
 )
+from depmap.utilities.data_access_log import log_legacy_private_dataset_access
 
 
 def get_matrix(dataset_id):
@@ -207,6 +208,11 @@ def get_subsetted_df_by_labels(
     """
     Get a filtered dataframe with rows indexed by entity labels and columns indexed by depmap ids. 
     """
+    if __get_config().is_legacy_private_dataset(dataset_id):
+        log_legacy_private_dataset_access(
+            "get_subsetted_df_by_labels", dataset_ids=[dataset_id]
+        )
+
     row_index_to_entity_label = {}
     col_index_to_depmap_id = {}
     feature_row_labels_set = set(feature_row_labels) if feature_row_labels else set()
@@ -271,6 +277,11 @@ def get_subsetted_df_by_ids(
     :param cell_line_ids: depmap ids of cell lines to return.  If None, return all cell lines
     :return: dataframe where rows are entities and columns are cell lines
     """
+    if __get_config().is_legacy_private_dataset(dataset_id):
+        log_legacy_private_dataset_access(
+            "get_subsetted_df_by_ids", dataset_ids=[dataset_id]
+        )
+
     row_index_to_entity_label = {}
     col_index_to_depmap_id = {}
     entity_ids_set = set(entity_ids) if entity_ids else set()
@@ -318,6 +329,10 @@ def get_subsetted_df(dataset_id, row_indices, col_indices):
     if is_standard(dataset_id):
         df = standard_utils.get_subsetted_df(dataset_id, row_indices, col_indices)
     else:
+        if __get_config().is_legacy_private_dataset(dataset_id):
+            log_legacy_private_dataset_access(
+                "get_subsetted_df", dataset_ids=[dataset_id]
+            )
         df = nonstandard_utils.get_subsetted_df(dataset_id, row_indices, col_indices)
 
     return df

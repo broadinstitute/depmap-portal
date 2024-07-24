@@ -241,7 +241,8 @@ def _get_dimension_type_given_ids(
     db: SessionWithUser, dimension_type: DimensionType
 ) -> list[str]:
     """
-    Get entity labels and aliases from the metadata for the given dimension type.
+    Get the full list of dimension type given IDs by reading the ID column 
+    of the dimension type metadata table. 
     """
     given_ids = (
         db.query(TabularCell)
@@ -258,22 +259,6 @@ def _get_dimension_type_given_ids(
     return [x for x, in given_ids]
 
 
-def _get_dataset_dimensions_labels(
-    dataset_dimensions: Union[pd.Series, pd.Index],
-    dimension_type_entity_labels_df: pd.DataFrame,
-) -> pd.DataFrame:
-    """
-    For dataset matrix features or samples identifiers, get their canonical names ('label') and aliases (if any) and return it as a dataframe indexed by their ids
-    """
-    dataset_dimensions_df: pd.DataFrame = dataset_dimensions.to_frame(name="given_id")
-    # NOTE: Merging at this stage means changes to dimension's label might not be reflected when stored in DatsetFeature or DatasetSample
-    dataset_dimensions_df = dataset_dimensions_df.merge(
-        dimension_type_entity_labels_df, "left", on="given_id"
-    )
-    dataset_dimensions_df.replace({np.nan: None}, inplace=True)
-    return dataset_dimensions_df
-
-
 @dataclass
 class DimensionLabelsAndWarnings:
     given_id_to_index: pd.DataFrame
@@ -282,8 +267,8 @@ class DimensionLabelsAndWarnings:
 
 @dataclass
 class DataframeValidatedFile:
-    feature_labels_and_aliases: pd.DataFrame
-    sample_labels_and_aliases: pd.DataFrame
+    feature_given_id_and_index: pd.DataFrame
+    sample_given_id_and_index: pd.DataFrame
     feature_warnings: List[str]
     sample_warnings: List[str]
 

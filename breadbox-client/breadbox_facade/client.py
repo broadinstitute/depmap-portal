@@ -155,7 +155,7 @@ class BBClient:
         breadbox_response = get_dataset_data_client.sync_detailed(
             dataset_id=dataset_id,
             client=self.client,
-            json_body=request_params,
+            body=request_params,
         )
         response = self._parse_client_response(breadbox_response)
         try:
@@ -196,7 +196,7 @@ class BBClient:
 
             breadbox_response = upload_file.sync_detailed(
                 client=self.client,
-                multipart_data=BodyUploadFile(
+                body=BodyUploadFile(
                     file=File(
                         payload=io.BytesIO(chunk),
                         file_name="unnamed",
@@ -250,7 +250,7 @@ class BBClient:
         )
         breadbox_response = add_dataset_uploads_client.sync_detailed(
             client=self.client,
-            json_body=params,
+            body=params,
         )
         breadbox_response_ = typing.cast(AddDatasetResponse, self._parse_client_response(breadbox_response))
         result = self.await_task_result(breadbox_response_.id, timeout=timeout)
@@ -294,7 +294,7 @@ class BBClient:
         )
         breadbox_response = add_dataset_uploads_client.sync_detailed(
             client=self.client,
-            json_body=params,
+            body=params,
         )
         breadbox_response_ = typing.cast(AddDatasetResponse, self._parse_client_response(breadbox_response))
         result = self.await_task_result(breadbox_response_.id, timeout=timeout)
@@ -335,13 +335,13 @@ class BBClient:
 
         params = AddDimensionType(axis=axis, id_column=id_column, name=name)
 
-        breadbox_response = add_dimension_type_client.sync_detailed(client=self.client, json_body=params)
+        breadbox_response = add_dimension_type_client.sync_detailed(client=self.client, body=params)
         return self._parse_client_response(breadbox_response)
 
     def update_dimension_type(self, name: str, metadata_dataset_id: str, properties_to_index: List[str]):
         params = UpdateDimensionType(metadata_dataset_id, properties_to_index)
 
-        breadbox_response = update_dimension_type_client.sync_detailed(name=name, client=self.client, json_body=params)
+        breadbox_response = update_dimension_type_client.sync_detailed(name=name, client=self.client, body=params)
         return self._parse_client_response(breadbox_response)
 
     def get_dimension_types(self):
@@ -552,7 +552,7 @@ class BBClient:
             )
         )
         # Convert the breadbox task status response into the similar format used by the legacy portal
-        breadbox_response = compute_univariate_associations_client.sync_detailed(client=self.client, json_body=params)
+        breadbox_response = compute_univariate_associations_client.sync_detailed(client=self.client, body=params)
         return self._parse_client_response(breadbox_response)
 
     # OTHER
