@@ -18,9 +18,9 @@ def get_value_labels_temp_hack(gene_series, value_labels, values):
 def get_dataset_id_from_feature_type(feature_type: str):
 
     feature_type_to_dataset_id = {
-        "Confounder": "crispr_confounders",
-        "Lineage": "lineage",
-        "GeneCN": "copy_number_relative",
+        "crispr_confounder": "crispr_confounders",
+        "context": "lineage",
+        "gene": "copy_number_relative",
         "MutationsDamaging": "mutations_damaging",
         "MutationsHotspot": "mutations_hotspot",
         "DriverEvents": BiomarkerEnum.OmicsLoH.name,

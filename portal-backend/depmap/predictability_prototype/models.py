@@ -1,5 +1,5 @@
-from dataclasses import dataclass
-from operator import or_
+from typing import List, Optional
+from depmap import data_access
 from depmap.database import (
     Boolean,
     Column,
@@ -11,6 +11,13 @@ from depmap.database import (
     db,
     relationship,
 )
+from depmap.compound.models import Compound
+from depmap.dataset.models import (
+    BiomarkerDataset,
+    DependencyDataset,
+    DATASET_NAME_TO_FEATURE_TYPE,
+)
+from depmap.match_related.models import RelatedEntityIndex
 from depmap.entity.models import Entity
 from depmap.gene.models import Gene
 import pandas as pd
@@ -23,100 +30,167 @@ import numpy as np
 # class
 
 
-class PredictabilitySummary(Model):
-    __table_args__ = (db.Index("predictability_summary_idx_1", "entity_id"),)
-    predictability_summary_id = Column(Integer, primary_key=True, autoincrement=True)
+class PrototypePredictiveFeature(Model):
+    __tablename__ = "prototype_predictive_feature"
+
+    feature_id = Column(Integer, primary_key=True, autoincrement=True)
+
+    # Label of the feature in the dataset, or feature_name in the dataset it is from, if we don't have the feature loaded
+    feature_name = Column(String, nullable=False)
+    feature_label = Column(String, nullable=False)
+    dim_type = Column(String)
+    taiga_id = Column(String)
+    given_id = Column(String)
+
+    # Dataset name (biomarker enum name, "context", or nonstandard dataset id)
+    # dataset_id = Column(String, nullable=False)
+
+    @classmethod
+    def get(
+        cls, feature_label: str, must: bool = True
+    ) -> Optional["PrototypePredictiveFeature"]:
+        query = cls.query.filter_by(feature_label=feature_label)
+        if must:
+            return query.one()
+        return query.one_or_none()
+
+    @staticmethod
+    def get_by_feature_label(feature_label: str):
+        result = (
+            db.session.query(PrototypePredictiveFeature)
+            .filter(PrototypePredictiveFeature.feature_label == feature_label,)
+            .all()
+        )
+
+        return result
+
+
+class PrototypePredictiveModel(Model):
+    __tablename__ = "prototype_predictive_model"
+    predictive_model_id = Column(Integer, primary_key=True, autoincrement=True)
+
     entity_id = Column(
-        Integer, ForeignKey("gene.entity_id"), nullable=False, index=True
+        Integer, ForeignKey("entity.entity_id"), nullable=False, index=True
     )
-    gene = relationship(
-        "Gene", foreign_keys="PredictabilitySummary.entity_id", uselist=False
+    entity: Entity = relationship(
+        "Entity", foreign_keys="PrototypePredictiveModel.entity_id", uselist=False
     )
-    model = Column(String)
-    pearson = Column(Float)
-    feature0 = Column(String)
-    feature0_importance = Column(Float)
-    feature1 = Column(String)
-    feature1_importance = Column(Float)
-    feature2 = Column(String)
-    feature2_importance = Column(Float)
-    feature3 = Column(String)
-    feature3_importance = Column(Float)
-    feature4 = Column(String)
-    feature4_importance = Column(Float)
-    feature5 = Column(String)
-    feature5_importance = Column(Float)
-    feature6 = Column(String)
-    feature6_importance = Column(Float)
-    feature7 = Column(String)
-    feature7_importance = Column(Float)
-    feature8 = Column(String)
-    feature8_importance = Column(Float)
-    feature9 = Column(String)
-    feature9_importance = Column(Float)
+
+    label = Column(String(), nullable=False)
+    pearson = Column(Float, nullable=False)
+
+    feature_results: List["PrototypePredictiveFeatureResult"] = relationship(
+        "PrototypePredictiveFeatureResult"
+    )
 
     @staticmethod
     def get_by_model_name(model_name: str):
         query = (
-            db.session.query(PredictabilitySummary)
-            .filter(PredictabilitySummary.model == model_name)
-            .join(Gene, PredictabilitySummary.entity_id == Gene.entity_id)
+            db.session.query(PrototypePredictiveFeatureResult)
+            .join(
+                PrototypePredictiveModel,
+                PrototypePredictiveFeatureResult.predictive_model_id
+                == PrototypePredictiveModel.predictive_model_id,
+            )
+            .filter(PrototypePredictiveModel.label == model_name)
+            .join(Entity, PrototypePredictiveModel.entity_id == Entity.entity_id)
+            .join(
+                PrototypePredictiveFeature,
+                PrototypePredictiveFeatureResult.feature_id
+                == PrototypePredictiveFeature.feature_id,
+            )
+            .with_entities(
+                PrototypePredictiveFeature.feature_label,
+                PrototypePredictiveFeature.given_id,
+                PrototypePredictiveFeatureResult.importance,
+                PrototypePredictiveFeatureResult.rank,
+                PrototypePredictiveFeature.dim_type,
+                PrototypePredictiveModel.pearson,
+            )
             .add_columns(
-                sqlalchemy.column('"entity".label', is_literal=True).label("gene")
+                sqlalchemy.column('"entity".label', is_literal=True).label("entity")
             )
         )
-
         model_df = pd.read_sql(query.statement, query.session.connection())
 
         return model_df
 
     @staticmethod
-    def get_gene_row(model_name: str, gene_symbol: str):
+    def get_by_entity_label(entity_label: str):
+
         gene_query = (
-            db.session.query(PredictabilitySummary)
-            .filter(PredictabilitySummary.model == model_name)
-            .join(Gene, PredictabilitySummary.entity_id == Gene.entity_id)
-            .filter(Gene.label == gene_symbol)
+            db.session.query(PrototypePredictiveFeatureResult)
+            .join(
+                PrototypePredictiveModel,
+                PrototypePredictiveFeatureResult.predictive_model_id
+                == PrototypePredictiveModel.predictive_model_id,
+            )
+            .join(Entity, PrototypePredictiveModel.entity_id == Entity.entity_id)
+            .filter(Entity.label == entity_label)
+            .join(
+                PrototypePredictiveFeature,
+                PrototypePredictiveFeatureResult.feature_id
+                == PrototypePredictiveFeature.feature_id,
+            )
+            .with_entities(
+                PrototypePredictiveFeature.feature_label,
+                PrototypePredictiveFeature.given_id,
+                PrototypePredictiveFeatureResult.importance,
+                PrototypePredictiveFeatureResult.rank,
+                PrototypePredictiveFeature.dim_type,
+                PrototypePredictiveModel.pearson,
+            )
             .add_columns(
-                sqlalchemy.column('"entity".label', is_literal=True).label("gene")
+                sqlalchemy.column('"entity".label', is_literal=True).label("entity")
             )
         )
 
-        gene_row = pd.read_sql(gene_query.statement, gene_query.session.connection())
+        entity_row = pd.read_sql(gene_query.statement, gene_query.session.connection())
 
-        return gene_row
+        return entity_row
 
     @staticmethod
-    def get_features(model_name: str, gene_symbol: str):
+    def get_entity_row(model_name: str, entity_label: str):
+
         gene_query = (
-            db.session.query(PredictabilitySummary)
-            .filter(PredictabilitySummary.model == model_name)
-            .join(Gene, PredictabilitySummary.entity_id == Gene.entity_id)
-            .filter(Gene.label == gene_symbol)
+            db.session.query(PrototypePredictiveFeatureResult)
+            .join(
+                PrototypePredictiveModel,
+                PrototypePredictiveFeatureResult.predictive_model_id
+                == PrototypePredictiveModel.predictive_model_id,
+            )
+            .filter(PrototypePredictiveModel.label == model_name)
+            .join(Entity, PrototypePredictiveModel.entity_id == Entity.entity_id)
+            .filter(Entity.label == entity_label)
+            .join(
+                PrototypePredictiveFeature,
+                PrototypePredictiveFeatureResult.feature_id
+                == PrototypePredictiveFeature.feature_id,
+            )
             .with_entities(
-                PredictabilitySummary.feature0,
-                PredictabilitySummary.feature1,
-                PredictabilitySummary.feature2,
-                PredictabilitySummary.feature3,
-                PredictabilitySummary.feature4,
-                PredictabilitySummary.feature5,
-                PredictabilitySummary.feature6,
-                PredictabilitySummary.feature7,
-                PredictabilitySummary.feature8,
-                PredictabilitySummary.feature9,
+                PrototypePredictiveFeature.feature_label,
+                PrototypePredictiveFeature.given_id,
+                PrototypePredictiveFeatureResult.importance,
+                PrototypePredictiveFeatureResult.rank,
+                PrototypePredictiveFeature.dim_type,
+                PrototypePredictiveModel.pearson,
+            )
+            .add_columns(
+                sqlalchemy.column('"entity".label', is_literal=True).label("entity")
             )
         )
 
-        features = pd.read_sql(gene_query.statement, gene_query.session.connection())
+        entity_row = pd.read_sql(gene_query.statement, gene_query.session.connection())
 
-        return features.values.tolist()[0]
+        return entity_row
 
     @staticmethod
     def get_r_squared_for_model(model_name):
         result = (
-            db.session.query(PredictabilitySummary)
-            .filter(PredictabilitySummary.model == model_name)
-            .with_entities(PredictabilitySummary.pearson)
+            db.session.query(PrototypePredictiveFeatureResult)
+            .join(PrototypePredictiveModel)
+            .filter(PrototypePredictiveModel.label == model_name)
+            .with_entities(PrototypePredictiveModel.pearson)
             .all()
         )
 
@@ -129,29 +203,46 @@ class PredictabilitySummary(Model):
         return r_squared
 
 
-class PredictiveInsightsFeature(Model):
-    predictive_insights_feature_id = Column(
-        Integer, primary_key=True, autoincrement=True
+class PrototypePredictiveFeatureResult(Model):
+    __tablename__ = "prototype_predictive_feature_result"
+
+    predictive_feature_result_id = Column(Integer, primary_key=True, autoincrement=True)
+
+    predictive_model_id = Column(
+        Integer,
+        ForeignKey("prototype_predictive_model.predictive_model_id"),
+        nullable=False,
     )
-    model = Column(String, nullable=False)
-    feature_name = Column(String, nullable=False)
-    feature_label = Column(String, nullable=False)
-    dim_type = Column(String)
-    taiga_id = Column(String)
-    given_id = Column(String)
+    predictive_model: PrototypePredictiveModel = relationship(
+        "PrototypePredictiveModel",
+        foreign_keys="PrototypePredictiveFeatureResult.predictive_model_id",
+        uselist=False,
+        overlaps="feature_results",
+    )
+
+    feature_id = Column(Integer, ForeignKey("prototype_predictive_feature.feature_id"))
+    feature: PrototypePredictiveFeature = relationship(
+        "PrototypePredictiveFeature",
+        foreign_keys="PrototypePredictiveFeatureResult.feature_id",
+        uselist=False,
+    )
+
+    rank = Column(Integer(), nullable=False)
+    importance = Column(Float, nullable=False)
 
     @staticmethod
     def get_taiga_id_from_full_feature_name(model_name: str, feature_name: str):
         result = (
-            db.session.query(PredictiveInsightsFeature)
+            db.session.query(PrototypePredictiveFeatureResult)
             .filter(
                 and_(
-                    PredictiveInsightsFeature.model == model_name,
-                    PredictiveInsightsFeature.feature_name == feature_name,
+                    PrototypePredictiveModel.label == model_name,
+                    PrototypePredictiveFeature.feature_name == feature_name,
                 )
             )
             .with_entities(
-                PredictiveInsightsFeature.taiga_id, PredictiveInsightsFeature.given_id,
+                PrototypePredictiveFeature.taiga_id,
+                PrototypePredictiveFeature.given_id,
             )
             .one()
         )
@@ -163,12 +254,12 @@ class PredictiveInsightsFeature(Model):
     @staticmethod
     def get_all_label_name_features_for_model(model_name: str):
         result = (
-            db.session.query(PredictiveInsightsFeature)
-            .filter(and_(PredictiveInsightsFeature.model == model_name))
+            db.session.query(PrototypePredictiveFeature)
+            .filter(and_(PrototypePredictiveModel.label == model_name))
             .with_entities(
-                PredictiveInsightsFeature.feature_label,
-                PredictiveInsightsFeature.feature_name,
-                PredictiveInsightsFeature.model,
+                PrototypePredictiveFeature.feature_label,
+                PrototypePredictiveFeature.feature_name,
+                PrototypePredictiveModel.label,
             )
             .all()
         )

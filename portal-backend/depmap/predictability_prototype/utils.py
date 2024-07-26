@@ -19,8 +19,8 @@ from depmap.predictability_prototype.hacks import (
 )
 
 from depmap.predictability_prototype.models import (
-    PredictabilitySummary,
-    PredictiveInsightsFeature,
+    PrototypePredictiveModel,
+    PrototypePredictiveFeatureResult,
 )
 from depmap.settings.download_settings import get_download_list
 import pandas as pd
@@ -99,14 +99,11 @@ def accuracy_per_model(gene_symbol, datasets, actuals):
 
         accuracy = pairwise_complete_pearson_cor(gene_predictions, gene_actuals)
 
-        # Find the feature of highest importance out of all features added at each step.
-        # This won't always correspond with feature0!!!!!
         unique_model_features = unique_features_by_model[model_name]
-        gene_row = PredictabilitySummary.get_gene_row(
-            model_name=model_name, gene_symbol=gene_symbol
+        gene_row = PrototypePredictiveModel.get_entity_row(
+            model_name=model_name, entity_label=gene_symbol
         )
-        long_table = make_long_table(gene_row)
-        features = long_table["feature"].values.tolist()
+        features = gene_row["feature_label"].values.tolist()
 
         highest_importance_candidates = list(set(unique_model_features) - set(features))
 
@@ -135,55 +132,18 @@ def generate_aggregate_scores_across_all_models(gene_symbol, datasets, actuals):
     }
 
 
-def make_long_table(df):
-    # take the "wide" table which has a pair of columns per feature and turn it into a "long" table which has
-    # a row per feature
-    col_batches = [
-        df[
-            ["gene", "model", "pearson", f"feature{i}", f"feature{i}_importance",]
-        ].copy()
-        for i in range(10)
-    ]
-    for i, col_batch in enumerate(col_batches):
-        # make the columns all the same
-        col_batch.columns = [
-            "gene",
-            "model",
-            "pearson",
-            f"feature",
-            "feature_importance",
-        ]
-        # add a feature index column
-        col_batch["feature_index"] = i
-    # now concantentate them all into a single dataframe
-
-    return pd.concat(col_batches).reset_index(drop=True)
-
-
-def get_feature_df_for_gene_and_model(gene_symbol, model_name):
-    df = PredictabilitySummary.get_by_model_name(model_name)
-
-    df = df[df["gene"].str.startswith(gene_symbol)].copy()
-
-    return df
-
-
 def subset_features_by_gene(gene_symbol):
-    dfs = []
+    features_df = PrototypePredictiveModel.get_by_entity_label(gene_symbol)
 
-    for model_name in MODEL_SEQUENCE:
-        df = get_feature_df_for_gene_and_model(gene_symbol, model_name)
-        df["model"] = model_name
-        dfs.append(make_long_table(df))
-
-    return pd.concat(dfs).reset_index(drop=True)
+    return features_df.reset_index(drop=True)
 
 
 def aggregate_top_features(df: pd.DataFrame):
-    aggregate_feature_importance = lambda df: (
-        df["pearson"] * df["feature_importance"]
-    ).sum()
-    aggregated = df.groupby(["feature"]).apply(aggregate_feature_importance)
+    aggregate_feature_importance = lambda df: (df["pearson"] * df["importance"]).sum()
+
+    aggregated = df.groupby(["feature_label", "dim_type"]).apply(
+        aggregate_feature_importance
+    )
 
     return aggregated.sort_values(ascending=False)
 
@@ -192,12 +152,15 @@ def top_features_overall(gene_symbol):
     subsetted_features = subset_features_by_gene(gene_symbol)
     adj_feature_importance = aggregate_top_features(subsetted_features)
 
+    adj_feature_importance = adj_feature_importance.reset_index()
+    adj_feature_importance = adj_feature_importance.set_index("feature_label")
     assert adj_feature_importance.index.is_unique
 
     df = pd.DataFrame(
         dict(
             feature=adj_feature_importance.index,
-            adj_feature_importance=adj_feature_importance,
+            dim_type=adj_feature_importance["dim_type"].values.tolist(),
+            adj_feature_importance=adj_feature_importance[0].values.tolist(),
         )
     ).head(20)
 
@@ -209,7 +172,7 @@ def top_features_overall(gene_symbol):
             if feature_type in val:
                 return key
 
-    df["feature_type"] = [x.split("_")[-1] for x in df["feature"]]
+    df["feature_type"] = [x for x in df["dim_type"]]
     df["feature_set"] = [get_feature_set(x) for x in df["feature_type"]]
     df["feature"] = [x.replace("_", " ") for x in df["feature"]]
 
@@ -283,13 +246,13 @@ def get_dataset_id_from_taiga_id(model: str, feature_name: str, feature_type: st
         (
             taiga_id,
             feature_given_id,
-        ) = PredictiveInsightsFeature.get_taiga_id_from_full_feature_name(
+        ) = PrototypePredictiveFeatureResult.get_taiga_id_from_full_feature_name(
             model, feature_name
         )
     except:
         from pprint import pprint
 
-        test = PredictiveInsightsFeature.get_all_label_name_features_for_model(
+        test = PrototypePredictiveFeatureResult.get_all_label_name_features_for_model(
             model_name=model
         )
         breakpoint()
@@ -316,7 +279,6 @@ def get_dataset_id_from_taiga_id(model: str, feature_name: str, feature_type: st
 
 
 def get_feature_slice_by_type(feature_type: str, feature_name: str):
-
     dataset_id = get_dataset_id_from_feature_type(feature_type)
     slice = data_access.get_row_of_values(dataset_id, feature_name)
 
@@ -343,35 +305,37 @@ def get_feature_slice_and_dataset_id(
     return slice, feature_dataset_id
 
 
+# Index(['feature_label', 'given_id', 'importance', 'rank', 'pearson', 'entity'], dtype='object')
 def get_top_features(gene_symbol: str, model: str):
-    row = PredictabilitySummary.get_gene_row(model, gene_symbol)
+    feature_df = PrototypePredictiveModel.get_entity_row(
+        model_name=model, entity_label=gene_symbol
+    )
 
-    gene_features = make_long_table(row)
     top_features = {}
     top_features_metadata = {}
 
     for i in range(10):
-        feature = row["feature%i" % i]
-        feature_name = "_".join(feature[0].split("_")[:-1])
-        feature_type = feature[0].split("_")[-1]
+        feature_info = feature_df.loc[feature_df["rank"] == i].to_dict("records")[0]
+        feature = feature_info["feature_label"]
+        feature_name = feature_info["given_id"]
+        feature_type = feature_info["dim_type"]
 
         # TODO: Remove hackery inside get_feature_slice that does different logic for getting the
         # feature_dataset_id depending on the model name. This should be removeable once we
         # have real data. At that point, get the feature_dataset_id FIRST and use as param to get_feature_slice
         slice, feature_dataset_id = get_feature_slice_and_dataset_id(
-            feature_name_type=feature[0],
+            feature_name_type=feature,
             feature_name=feature_name,
             feature_type=feature_type,
             model=model,
         )
 
-        feature_row = gene_features.iloc[i]
-        feature_importance = feature_row["feature_importance"]
-        pearson = feature_row["pearson"]
+        feature_importance = feature_info["importance"]
+        pearson = feature_info["pearson"]
 
-        top_features[feature[0]] = slice
+        top_features[feature] = slice
 
-        top_features_metadata[feature[0]] = {
+        top_features_metadata[feature] = {
             "feature_name": feature_name,
             "feature_actuals_values": slice.values.tolist(),
             "feature_actuals_value_labels": slice.index.tolist(),
@@ -387,8 +351,6 @@ def get_top_features(gene_symbol: str, model: str):
     }
 
 
-# TODO this and get_top_features should be simplified after improving the data model
-# to avoid the need for make_long_table and using panelIndex
 def get_feature_gene_effect_plot_data(
     model: str,
     gene_symbol: str,
@@ -396,20 +358,24 @@ def get_feature_gene_effect_plot_data(
     feature_name: str,
     feature_type: str,
 ):
-    row = PredictabilitySummary.get_gene_row(model, gene_symbol)
+    row = PrototypePredictiveModel.get_entity_row(
+        model_name=model, entity_label=gene_symbol
+    )
 
     gene_series = get_dataset_column_by_gene("Chronos_Combined", gene_symbol)
 
-    feature = row[f"feature{feature_index}"]
-    feature_name = "_".join(feature[0].split("_")[:-1])
-    feature_type = feature[0].split("_")[-1]
+    feature = row.iloc[[feature_index]]
+
+    feature_name = feature["feature_label"].values[0]
+    feature_type = feature["dim_type"].values[0]
+    given_id = feature["given_id"].values[0]
 
     # TODO: Remove hackery inside get_feature_slice that does different logic for getting the
     # feature_dataset_id depending on the model name. This should be removeable once we
     # have real data. At that point, get the feature_dataset_id FIRST and use as param to get_feature_slice
     slice, feature_dataset_id = get_feature_slice_and_dataset_id(
-        feature_name_type=feature[0],
-        feature_name=feature_name,
+        feature_name_type=feature_name,
+        feature_name=given_id,
         feature_type=feature_type,
         model=model,
     )

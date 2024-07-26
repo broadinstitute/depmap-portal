@@ -1549,12 +1549,9 @@ def load_sample_data(
 
         if current_app.config["ENABLED_FEATURES"].predictability_prototype:
             log.info("Adding predictability prototype summary info")
-            predictability_summary_loader.load_predictability_summaries(
-                "depmap/predictability_prototype/scripts/predictability_summary.csv"
-            )
-            log.info("Adding predictive insights feature info")
-            predictability_summary_loader.load_predictive_insights_features(
-                "depmap/predictability_prototype/scripts/predictive_insights_features.csv"
+            predictability_summary_loader.load_predictability_prototype(
+                "depmap/predictability_prototype/scripts/predictability_summary.csv",
+                "depmap/predictability_prototype/scripts/predictive_insights_features.csv",
             )
 
             # predictability_summary_loader.load_prototype_predictive_model_csv(

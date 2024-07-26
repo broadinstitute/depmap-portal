@@ -2,7 +2,7 @@ from enum import unique
 from operator import ge
 from depmap import data_access
 from depmap.gene.models import Gene
-from depmap.predictability_prototype.models import PredictabilitySummary
+from depmap.predictability_prototype.models import PrototypePredictiveModel
 from depmap.predictability_prototype.utils import (
     feature_correlation_map_calc,
     generate_aggregate_scores_across_all_models,
@@ -18,10 +18,7 @@ from depmap.predictability_prototype.utils import (
 
 from flask_restplus import Namespace, Resource
 from flask import request
-from loader.predictability_summary_loader import (
-    load_predictability_summaries,
-    load_predictive_insights_features,
-)
+from loader.predictability_summary_loader import load_predictability_prototype
 from depmap.database import db
 import pandas as pd
 import numpy as np
@@ -41,44 +38,33 @@ class Predictions(
         """
         gene_symbol = request.args.get("gene_symbol")
         # statements = [
-        #     "drop table if exists predictability_summary",
-        #     """CREATE TABLE IF NOT EXISTS predictability_summary (
-        #     predictability_summary_id INTEGER PRIMARY KEY AUTOINCREMENT,
-        #     entity_id INTEGER NOT NULL,
-        #     model STRING,
-        #     pearson FLOAT,
-        #     feature0 STRING,
-        #     feature0_importance FLOAT,
-        #     feature1 STRING,
-        #     feature1_importance FLOAT,
-        #     feature2 STRING,
-        #     feature2_importance FLOAT,
-        #     feature3 STRING,
-        #     feature3_importance FLOAT,
-        #     feature4 STRING,
-        #     feature4_importance FLOAT,
-        #     feature5 STRING,
-        #     feature5_importance FLOAT,
-        #     feature6 STRING,
-        #     feature6_importance FLOAT,
-        #     feature7 STRING,
-        #     feature7_importance FLOAT,
-        #     feature8 STRING,
-        #     feature8_importance FLOAT,
-        #     feature9 STRING,
-        #     feature9_importance FLOAT,
-        #     CONSTRAINT predictability_summary_FK FOREIGN KEY (entity_id) REFERENCES gene(entity_id)
+        #     "drop table if exists prototype_predictive_feature",
+        #     """CREATE TABLE IF NOT EXISTS prototype_predictive_feature (
+        #     feature_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        #     feature_name STRING,
+        #     feature_label STRING,
+        #     dim_type STRING,
+        #     taiga_id STRING,
+        #     given_id STRING
         # );""",
-        #     "drop table if exists predictive_insights_feature",
-        #     """CREATE TABLE IF NOT EXISTS predictive_insights_feature (
-        #         predictive_insights_feature_id INTEGER PRIMARY KEY AUTOINCREMENT,
-        #         model STRING,
-        #         feature_name STRING,
-        #         feature_label STRING,
-        #         dim_type STRING,
-        #         taiga_id STRING,
-        #         given_id STRING
-        #     );""",
+        #     "drop table if exists prototype_predictive_model",
+        #     """CREATE TABLE IF NOT EXISTS prototype_predictive_model (
+        #     predictive_model_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        #     entity_id INTEGER,
+        #     label STRING,
+        #     pearson FLOAT,
+        #     CONSTRAINT prototype_predictive_model_FK FOREIGN KEY (entity_id) REFERENCES entity(entity_id)
+        # );""",
+        #     "drop table if exists prototype_predictive_feature_result",
+        #     """CREATE TABLE IF NOT EXISTS prototype_predictive_feature_result (
+        #     predictive_feature_result_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        #     predictive_model_id INTEGER,
+        #     feature_id INTEGER,
+        #     rank INTEGER,
+        #     importance FLOAT,
+        #     CONSTRAINT prototype_predictive_feature_result_FK FOREIGN KEY (predictive_model_id) REFERENCES prototype_predictive_model(predictive_model_id),
+        #     CONSTRAINT prototype_predictive_feature_result2_FK FOREIGN KEY (feature_id) REFERENCES prototype_predictive_feature(feature_id)
+        # );""",
         # ]
         # for statement in statements:
         #     db.session.execute(statement)
@@ -110,13 +96,11 @@ class Predictions(
         # combination.to_csv(
         #     "/Users/amourey/dev/depmap-portal/portal-backend/depmap/predictability_prototype/scripts/combination.csv"
         # )
-        # load_predictability_summaries(
-        #     "/Users/amourey/dev/depmap-portal/portal-backend/depmap/predictability_prototype/scripts/combination.csv"
+        # load_predictability_prototype(
+        #     "/Users/amourey/dev/depmap-portal/portal-backend/depmap/predictability_prototype/scripts/combination.csv",
+        #     "/Users/amourey/dev/depmap-portal/portal-backend/depmap/predictability_prototype/scripts/predictive_insights_features.csv",
         # )
 
-        # load_predictive_insights_features(
-        #     "/Users/amourey/dev/depmap/portal-backend/depmap/predictability_prototype/scripts/predictive_insights_features.csv"
-        # )
         # db.session.commit()
         # breakpoint()
 
@@ -143,7 +127,7 @@ class Predictions(
             )
             corr = feature_correlation_map_calc(model, gene_symbol)
             metadata: dict = corr["metadata"]
-            r = PredictabilitySummary.get_r_squared_for_model(model)
+            r = PrototypePredictiveModel.get_r_squared_for_model(model)
 
             model_performance_data[model] = {
                 "model_predictions": model_predictions,
