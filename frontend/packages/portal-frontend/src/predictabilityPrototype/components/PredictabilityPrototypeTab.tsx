@@ -145,6 +145,19 @@ const PredictabilityPrototypeTab = ({
                             modelPerformanceData[modelName].corr
                           }
                         />
+                                <div
+          style={{
+            backgroundColor: "rgba(105, 124, 170, 0.05)",
+            paddingTop: "30px",
+          }}
+          className={styles.filePanelHeader}
+        >
+          <div className={styles.headerColOne}>FEATURE</div>
+          <div className={styles.headerColTwo}>RELATIVE IMPORTANCE</div>
+
+          <div className={styles.headerColThree}>CORRELATION</div>
+          <div className={styles.headerColFour}>FEATURE TYPE</div>
+
                         <PanelGroup
                           accordion
                           id="accordion-feature"
@@ -193,6 +206,7 @@ const PredictabilityPrototypeTab = ({
                                   <div>
                                     {modelPerformanceData[modelName]
                                       .feature_summaries[feature] && (
+
                                       <FeatureCollapsiblePanel
                                         modelName={modelName}
                                         feature={
@@ -219,10 +233,13 @@ const PredictabilityPrototypeTab = ({
                               </Panel>
                             ))}
                         </PanelGroup>
+                        </div>
                       </Panel.Body>
                     </Panel>
                   </PanelGroup>
+
                 )
+                
               )}
           </>
         </div>

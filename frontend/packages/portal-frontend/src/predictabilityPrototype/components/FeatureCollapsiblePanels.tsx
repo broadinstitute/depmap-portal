@@ -115,21 +115,8 @@ const FeatureCollapsiblePanels = ({
         width: "100%",
       }}
     >
-      {panelIndex === 1 && (
-        <div
-          style={{
-            backgroundColor: "rgba(105, 124, 170, 0.05)",
-            paddingTop: "30px",
-          }}
-          className={styles.filePanelHeader}
-        >
-          <div className={styles.headerColOne}>FEATURE</div>
-          <div className={styles.headerColTwo}>RELATIVE IMPORTANCE</div>
 
-          <div className={styles.headerColThree}>CORRELATION</div>
-          <div className={styles.headerColFour}>FEATURE TYPE</div>
-        </div>
-      )}
+      
       <div className="collapsible-sub-panel-list">
         <div
           style={{
