@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { CardColumn, CardContainer } from "src/common/components/Card";
+import { CardRow, CardRowContainer, CardRowItem } from "src/common/components/Card";
 import { getDapi } from "src/common/utilities/context";
 import { EntityType } from "src/entity/models/entities";
 import styles from "src/predictabilityPrototype/styles/PredictabilityPrototype.scss";
@@ -21,9 +21,9 @@ const AggScoresTile = React.lazy(
 const TopFeaturesOverallTile = React.lazy(
   () => import("src/predictabilityPrototype/components/TopFeaturesOverallTile")
 );
-// const GeneTeaTile = React.lazy(
-//   () => import("src/predictabilityPrototype/components/GeneTeaTile")
-// );
+const GeneTeaTile = React.lazy(
+  () => import("src/predictabilityPrototype/components/GeneTeaTile")
+);
 
 export interface PredictabilityPrototypeProps {
   entityIdOrLabel: number | string;
@@ -79,7 +79,6 @@ const PredictabilityPrototypeTab = ({
     })();
   }, [dapi, entityLabel]);
   console.log(isLoading)
-  console.log(geneTeaSymbols)
 
   const [activeModelIndex, setActiveModelIndex] = useState<number | null>(null);
 
@@ -97,20 +96,22 @@ const PredictabilityPrototypeTab = ({
 
   return (
     <div>
-      <CardContainer>
-        <CardColumn>
+      <CardRowContainer>
+        <CardRow>
+          <CardRowItem>
           <AggScoresTile plotTitle={`${entityLabel}`} data={aggScoresData} />
-        </CardColumn>
-        <CardColumn>
+          </CardRowItem>
+          <CardRowItem>
           <TopFeaturesOverallTile
             plotTitle={`${entityLabel}`}
             topFeaturesData={topFeaturesData}
           />
-        </CardColumn>
-        <CardColumn>
-          <div>placeholder for gene tea</div>
-        </CardColumn>
-      </CardContainer>
+          </CardRowItem>
+          <CardRowItem>
+          {geneTeaSymbols.length > 0 && <GeneTeaTile selectedLabels={geneTeaSymbols}/>}
+          </CardRowItem>
+        </CardRow>
+      </CardRowContainer>
       <div className={styles.DataFilePanel}>
         <div className={styles.dataPanelSection}>
           <>
@@ -174,7 +175,7 @@ const PredictabilityPrototypeTab = ({
                             ).map((feature, featureIndex) => (
                               <Panel
                                 eventKey={featureIndex}
-                                key={`${modelPerformanceData[modelName].feature_summaries.feature_name}${modelName}`}
+                                key={`${modelPerformanceData[modelName].feature_summaries[feature].feature_name}${modelName}`}
                               >
                                 <Panel.Heading>
                                   <Panel.Title toggle>

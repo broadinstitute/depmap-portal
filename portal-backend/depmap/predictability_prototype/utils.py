@@ -162,7 +162,7 @@ def top_features_overall(gene_symbol):
             dim_type=adj_feature_importance["dim_type"].values.tolist(),
             adj_feature_importance=adj_feature_importance[0].values.tolist(),
         )
-    ).head(20)
+    ).head(10)
 
     # TODO: take this out. This is a short cut for the prototype.
     feature_types_by_model = get_feature_type_labels_added_by_model_step()

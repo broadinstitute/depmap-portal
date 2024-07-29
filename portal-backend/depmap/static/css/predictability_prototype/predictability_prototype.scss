@@ -104,14 +104,27 @@
 }
 
 
-#accordion-model.panel-group .panel-heading{
+#accordion-model.panel-group 
+{
+  margin-right: 180px !important;
+
+
+}
+
+.panel-body {
+  padding: 0 !important;
+  background-color: rgba(105, 124, 170, 0.05);
+  border: none !important;
+
+}
+
+.panel-heading{
   background-color: #FFFFFF !important;
   border-top: #000000 solid 1px !important;
   border-bottom: none !important;
   padding: 4px 20px !important;
 }
 
-.panel-body {
-  padding: 0 !important;
-  background-color: rgba(105, 124, 170, 0.05);
+.panel-default {
+  border: none !important;
 }

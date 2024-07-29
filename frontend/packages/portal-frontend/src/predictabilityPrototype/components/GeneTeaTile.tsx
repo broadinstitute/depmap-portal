@@ -11,7 +11,7 @@ const GeneTeaTile = ({ selectedLabels }: GeneTeaTileProps) => {
   console.log({ selectedLabels });
   if (selectedLabels) {
     return (
-      <article className="card_wrapper stacked-boxplot-tile">
+      <article className="card_wrapper stacked-boxplot-tile" style={{minHeight: "500px"}}>
         <div className="card_border container_fluid">
           <h2 className="no_margin cardtitle_text">Top GeneTEA Terms</h2>
           <div className="card_padding stacked-boxplot-graphs-padding">

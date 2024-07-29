@@ -10,10 +10,15 @@ export interface LineChartProps {
   yValues: number[];
   text: string[];
   onLoad: (plot: ExtendedPlotType) => void;
-  height?: number;
+  height?:number | "auto";
   margin?: Margin;
   customWidth?: number | undefined;
 }
+
+const calcPlotHeight = (plot: HTMLDivElement) => {
+  const fullHeight = window.innerHeight - plot.offsetTop - 26;
+  return Math.min(plot.offsetWidth * 0.8, fullHeight);
+};
 
 type LineChartWithPlotly = LineChartProps & { Plotly: PlotlyType };
 
@@ -24,10 +29,10 @@ function LineChart({
   yValues,
   text,
   onLoad = () => {},
-  height = 450,
+  height = "auto",
   customWidth = undefined,
   margin = {
-    l: 65,
+    l: 60,
 
     r: 20,
 
@@ -85,7 +90,7 @@ function LineChart({
 
       dragmode: false,
 
-      height,
+      height:  height === "auto" ? calcPlotHeight(plot) : height,
 
       margin,
     };

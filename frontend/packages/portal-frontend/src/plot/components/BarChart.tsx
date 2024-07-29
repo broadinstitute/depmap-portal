@@ -9,12 +9,21 @@ export interface BarChartProps {
   yValues: string[];
   onLoad: (plot: ExtendedPlotType) => void;
   customColors: string[];
-  height?: number;
+  height?: "auto" | number;
   margin?: Margin;
   customWidth?: number | undefined;
+  customLegend?: React.JSX.Element;
 }
 
 type BarChartWithPlotly = BarChartProps & { Plotly: PlotlyType };
+
+const calcPlotHeight = (plot: HTMLDivElement, includeCustomLegend: boolean) => {
+  const legendOffeset = includeCustomLegend ? 80 : 0;
+  const fullHeight = window.innerHeight - plot.offsetTop - 26 - legendOffeset;
+  const calculatedHeight = Math.min((plot.offsetWidth * 0.8)-legendOffeset, fullHeight);
+
+  return calculatedHeight;
+};
 
 function BarChart({
   title,
@@ -22,19 +31,20 @@ function BarChart({
   yValues,
   customColors,
   onLoad = () => {},
-  height = 450,
+  height = "auto",
   customWidth = undefined,
   margin = {
-    l: 300,
+    l: 290,
 
     r: 20,
 
-    b: 70,
+    b: 60,
 
     t: 0,
 
     pad: 0,
   },
+  customLegend = undefined,
   Plotly,
 }: BarChartWithPlotly) {
   const ref = useRef<ExtendedPlotType>(null);
@@ -81,7 +91,7 @@ function BarChart({
       dragmode: false,
       bargap: 0.1,
 
-      height,
+      height: height === "auto" ? calcPlotHeight(plot, true) : height,
 
       margin,
     };
@@ -89,7 +99,7 @@ function BarChart({
     const config: Partial<Plotly.Config> = { responsive: true };
 
     Plotly.newPlot(plot, test, layout, config);
-  }, [Plotly, xValues, yValues, height, margin, customWidth, customColors, title]);
+  }, [Plotly, xValues, yValues, height, margin, customWidth, customColors, customLegend, title]);
 
   return <div ref={ref} />;
 }
@@ -99,12 +109,14 @@ export default function LazyBarChart({
   xValues,
   yValues,
   customColors,
+  customLegend,
   ...otherProps
 }: BarChartProps) {
   return (
     <PlotlyLoader version="module">
       {(Plotly) =>
         xValues && yValues ? (
+          <>
           <BarChart
             title={title}
             xValues={xValues}
@@ -114,6 +126,8 @@ export default function LazyBarChart({
             // eslint-disable-next-line react/jsx-props-no-spreading
             {...otherProps}
           />
+          {customLegend ? customLegend : null}
+          </>
         ) : null
       }
     </PlotlyLoader>
