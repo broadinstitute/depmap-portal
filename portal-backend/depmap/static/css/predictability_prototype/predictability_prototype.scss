@@ -94,6 +94,19 @@
   display: none;
 }
 
-.panel-group {
+#accordion-feature.panel-group {
   grid-column: 1/11!important;
+
+  .panel-heading {
+    background-color: #FFFFFF !important;
+    padding: 2px 10px !important;
+  }
+}
+
+
+#accordion-model.panel-group .panel-heading{
+  background-color: #FFFFFF !important;
+  border-top: #000000 solid 1px !important;
+  border-bottom: none !important;
+  padding: 4px 20px !important;
 }

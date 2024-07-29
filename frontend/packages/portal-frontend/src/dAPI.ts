@@ -84,8 +84,6 @@ import {
   getDataPageDataTypeColorCategory,
 } from "./dataPage/models/types";
 import {
-  FeatureInfo,
-  FeatureSummary,
   FeatureVsGeneEffectPlotData,
   PredictabilityData,
   RelatedFeaturePlot,

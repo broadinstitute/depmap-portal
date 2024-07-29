@@ -3,7 +3,6 @@ import { CardColumn, CardContainer } from "src/common/components/Card";
 import { getDapi } from "src/common/utilities/context";
 import { EntityType } from "src/entity/models/entities";
 import styles from "src/predictabilityPrototype/styles/PredictabilityPrototype.scss";
-import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
 import FeatureCollapsiblePanel, {
   CollapsiblePanelHeader,
   FeatureCollapsiblePanelHeader,
@@ -22,9 +21,9 @@ const AggScoresTile = React.lazy(
 const TopFeaturesOverallTile = React.lazy(
   () => import("src/predictabilityPrototype/components/TopFeaturesOverallTile")
 );
-const GeneTeaTile = React.lazy(
-  () => import("src/predictabilityPrototype/components/GeneTeaTile")
-);
+// const GeneTeaTile = React.lazy(
+//   () => import("src/predictabilityPrototype/components/GeneTeaTile")
+// );
 
 export interface PredictabilityPrototypeProps {
   entityIdOrLabel: number | string;
@@ -79,6 +78,8 @@ const PredictabilityPrototypeTab = ({
       setIsLoading(false);
     })();
   }, [dapi, entityLabel]);
+  console.log(isLoading)
+  console.log(geneTeaSymbols)
 
   const [activeModelIndex, setActiveModelIndex] = useState<number | null>(null);
 
@@ -121,6 +122,7 @@ const PredictabilityPrototypeTab = ({
                     id="accordion-model"
                     onSelect={(index) => handleModelAccordionClick(index)}
                     activeKey={activeModelIndex}
+                    key={`${modelName}-accordion-model-${modelIndex}`}
                   >
                     <Panel eventKey={modelIndex} key={modelName}>
                       <Panel.Heading>

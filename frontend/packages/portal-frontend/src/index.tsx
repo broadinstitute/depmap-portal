@@ -226,7 +226,7 @@ export function initPredictabilityPrototypeTab(
         entityType={entityType}
         customDownloadsLink={customDownloadsLink}
         methodologyUrl={methodologyUrl}
-      ></PredictabilityPrototypeTab>
+      />
     </React.Suspense>,
     document.getElementById(elementId) as HTMLElement
   );

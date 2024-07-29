@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import styles from "src/predictabilityPrototype/styles/PredictabilityPrototype.scss";
+// import styles from "src/predictabilityPrototype/styles/PredictabilityPrototype.scss";
 import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
 import PlotSpinner from "src/plot/components/PlotSpinner";
 import BoxPlot from "src/plot/components/BoxPlot";
@@ -65,14 +65,15 @@ const PredictabilityBoxPlot = ({
           }
         });
     }
-  }, [featureNameType]);
+  }, [featureNameType,featureName, featureType, getPredictabilityBoxPlotData, modelName]);
+  console.log(isError);
+  console.log(geneSymbol)
 
   const boxPlotData: any = useMemo(() => {
     const data = plotData;
     if (data) {
       return {
         name: "CCLE",
-        // hoverLabels: featureActualsValueLabels,
         vals: data,
         color: { r: 139, g: 0, b: 0 },
         lineColor: "#000000",

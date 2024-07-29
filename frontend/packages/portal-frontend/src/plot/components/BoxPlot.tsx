@@ -72,10 +72,10 @@ function BoxPlot({
     const data: Partial<Plotly.PlotData>[] = boxData.map((box: BoxPlotInfo) => {
       return {
         name: formatTextWrap(box.name, 14),
-        y: orientation == "v" ? box.vals : undefined,
-        x: orientation == "h" ? box.vals : undefined,
+        y: orientation === "v" ? box.vals : undefined,
+        x: orientation === "h" ? box.vals : undefined,
         boxpoints: showUnderlyingPoints ? "all" : false,
-        orientation: orientation,
+        orientation,
         jitter: 0.5,
         pointpos: 0,
         type: "box",

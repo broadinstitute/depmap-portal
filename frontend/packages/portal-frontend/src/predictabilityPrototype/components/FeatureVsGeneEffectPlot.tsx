@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import styles from "src/predictabilityPrototype/styles/PredictabilityPrototype.scss";
 import {
   FeatureVsGeneEffectPlotData,
-  RelatedFeaturePlot,
 } from "../models/types";
 import ScatterPlot from "src/contextExplorer/components/contextAnalysis/ScatterPlot";
 import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
@@ -80,7 +79,9 @@ const FeatureVsGeneEffectPlot = ({
           }
         });
     }
-  }, [featureNameType]);
+  }, [featureNameType, feature, featureType, geneSymbol, getFeatureVsGeneEffectData, modelName, panelIndex]);
+
+  console.log(isError)
 
   const formattedPlotData: any = useMemo(() => {
     if (featureVsGeneEffectData?.actuals_slice) {

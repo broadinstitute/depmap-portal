@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import styles from "src/predictabilityPrototype/styles/PredictabilityPrototype.scss";
+// import styles from "src/predictabilityPrototype/styles/PredictabilityPrototype.scss";
 import { RelatedFeaturePlot } from "../models/types";
 import ScatterPlot from "src/contextExplorer/components/contextAnalysis/ScatterPlot";
 import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
@@ -66,7 +66,10 @@ const RelatedFeaturesCorrPlot = ({
           }
         });
     }
-  }, [featureNameType]);
+  }, [featureNameType, geneSymbol, getRelatedFeaturesCorrPlotData, modelName]);
+
+  // TODO: If isError add error message to UI
+  console.log(isError)
 
   const formattedPlotData: any = useMemo(() => {
     if (relatedFeaturesCorrPlotData) {

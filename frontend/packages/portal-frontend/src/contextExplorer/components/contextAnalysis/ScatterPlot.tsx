@@ -184,7 +184,7 @@ function ContextScatterPlot({
     };
 
     const templateTrace = {
-      type: "scatter",
+      type: renderAsSvg ? "scatter" : "scattergl",
       y,
       name: "",
       title: plotTitle,
@@ -395,14 +395,14 @@ function ContextScatterPlot({
       edits: { annotationTail: true },
     };
 
-    //   export interface ToImgopts {
-    //     format: 'jpeg' | 'png' | 'webp' | 'svg';
-    //     width: number;
-    //     height: number;
-    //     scale?: number | undefined;
-    // }
+    if (renderAsSvg) {
+      Plotly.react(plot, plotlyData, layout, { staticPlot: true });
 
-    Plotly.react(plot, plotlyData, layout, { staticPlot: true });
+    }
+    else {
+      Plotly.react(plot, plotlyData, layout, config);
+
+    }
 
     // Keep track of added listeners so we can easily remove them.
     const listeners: [string, (e: any) => void][] = [];
@@ -526,6 +526,8 @@ function ContextScatterPlot({
     showYEqualXLine,
     regressionLines,
     renderAsSvg,
+    density,
+    margin,
     Plotly,
   ]);
 

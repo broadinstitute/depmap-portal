@@ -48,7 +48,7 @@ const ModelPerformancePlots = ({
       };
     }
 
-    if (/*isLoading &&*/ !modelPredData) {
+    if (/* isLoading && */ !modelPredData) {
       return null;
     }
     return {
@@ -58,37 +58,37 @@ const ModelPerformancePlots = ({
       yLabel: "",
       hoverText: "",
     };
-  }, [modelPredData /*, isLoading*/]);
+  }, [modelPredData /* , isLoading */]);
 
   const memoizedData = useMemo(
     () =>
-      cellContextCorrData /*&& !isLoading*/
+      cellContextCorrData /* && !isLoading */
         ? {
             x: [],
             y: cellContextCorrData.row_labels,
             z: cellContextCorrData.corr_heatmap_vals.map(formatZVals),
           }
         : null,
-    [cellContextCorrData /*, isLoading*/]
+    [cellContextCorrData /* , isLoading */]
   );
 
   const memoizedXLabels = useMemo(
     () =>
-      cellContextCorrData /*&& !isLoading*/
+      cellContextCorrData /* && !isLoading */
         ? cellContextCorrData.row_labels
             .map((label: string) => label)
             .slice()
             .reverse()
         : null,
-    [cellContextCorrData /*, isLoading*/]
+    [cellContextCorrData /* , isLoading */]
   );
 
   const memoizedYLabels = useMemo(
     () =>
-      cellContextCorrData /*&& !isLoading*/
+      cellContextCorrData /* && !isLoading */
         ? cellContextCorrData.row_labels.map((label: string) => label)
         : null,
-    [cellContextCorrData /*, isLoading*/]
+    [cellContextCorrData /* , isLoading */]
   );
 
   return (
@@ -109,7 +109,7 @@ const ModelPerformancePlots = ({
             Model Predictions
           </h3>
           {!modelPredPlotElement && <PlotSpinner height="100%" />}
-          {modelPredData /*&& !isLoading*/ && (
+          {modelPredData /* && !isLoading */ && (
             <ScatterPlot
               key={"cell-context-scatter-plot"}
               margin={{ t: 60, l: 62, r: 150 }}
@@ -131,7 +131,7 @@ const ModelPerformancePlots = ({
               showYEqualXLine
             />
           )}
-          {modelPredData /*&& !isLoading*/ && (
+          {modelPredData /* && !isLoading */ && (
             <div className={styles.deButtonContainer}>
               <Button
                 className={styles.deButton}
@@ -158,7 +158,7 @@ const ModelPerformancePlots = ({
           <h3 style={{ marginLeft: "15px", marginTop: "15px" }}>
             Top Feature Correlation Map
           </h3>
-          {cellContextCorrData /*&& !isLoading*/ && (
+          {cellContextCorrData /* && !isLoading */ && (
             <PrototypeCorrelationHeatmap
               data={memoizedData as any}
               xLabels={memoizedXLabels!}

@@ -1,12 +1,7 @@
 import qs from "qs";
-import { useCallback, useEffect, useState } from "react";
 import { fetchUrlPrefix } from "src/common/utilities/context";
 import { GENE_DATASET_ID } from "src/contextExplorer/utils";
-import {
-  FeatureInfo,
-  FeatureSummary,
-  RelatedFeaturePlot,
-} from "./models/types";
+
 
 export function getDataExplorerUrl(
   featureDatasetId: string,

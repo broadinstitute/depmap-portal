@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React from "react";
 import styles from "src/predictabilityPrototype/styles/PredictabilityPrototype.scss";
 import StyledMeter from "src/common/components/StyledMeter";
 import { getDapi } from "src/common/utilities/context";
@@ -28,7 +28,7 @@ export const FeatureCollapsiblePanelHeader = ({
         {relativeImportance && (
           <StyledMeter
             value={relativeImportance}
-            style={{ barColor: "#1D6996" }}
+            style={{ barColor: "#97C2D4" }}
             extraClassNames={"styled-correlation-box"}
           />
         )}
@@ -41,7 +41,7 @@ export const FeatureCollapsiblePanelHeader = ({
         {correlation && (
           <StyledMeter
             value={correlation}
-            style={{ barColor: "#1D6996" }}
+            style={{ barColor: "#E79E9D" }}
             extraClassNames={"styled-correlation-box"}
           />
         )}
@@ -61,8 +61,9 @@ interface SinglePanelHeaderProps {
 export const CollapsiblePanelHeader = ({
   title,
   modelCorrelation,
-  screenType,
+  screenType, // take out if not used
 }: SinglePanelHeaderProps) => {
+  console.log(screenType)
   return (
     <span className={styles.accordionTitle}>
       <span className={styles.one}>{title}</span>
@@ -70,7 +71,7 @@ export const CollapsiblePanelHeader = ({
         {modelCorrelation && (
           <StyledMeter
             value={modelCorrelation}
-            style={{ barColor: "#1D6996" }}
+            style={{ barColor: "#52288E" }}
             extraClassNames={"styled-correlation-box"}
           />
         )}
@@ -123,6 +124,8 @@ const FeatureCollapsiblePanels = ({
             display: "grid",
             gridTemplateColumns: "repeat(3, 1fr)",
             gridTemplateRows: "repeat(2, 1fr)",
+            rowGap: "10px",
+            columnGap: "10px",
             paddingBottom: "15px",
             background: "white",
           }}

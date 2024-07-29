@@ -243,12 +243,9 @@ function PrototypeCorrelationHeatmap({
       autorange: true,
       tickvals: y,
       ticktext: doTruncateTickLabels
-        ? yLabels
-          ? yLabels.map(truncate)
-          : y.map(truncate)
-        : yLabels
-        ? yLabels
-        : y,
+        ? yLabels?.map(truncate)
+          ?? y.map(truncate)
+        : yLabels ?? y,
       domain: z2Key ? [0.25, 0.75] : [0, 1],
     };
 

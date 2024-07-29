@@ -93,7 +93,7 @@ function LineChart({
     const config: Partial<Plotly.Config> = { responsive: true };
 
     Plotly.newPlot(plot, data, layout, config);
-  }, [Plotly, xLabels, yValues, height, margin, customWidth]);
+  }, [Plotly, xLabels, yValues, height, margin, customWidth, text, title, yAxisTitle]);
 
   return <div ref={ref} />;
 }

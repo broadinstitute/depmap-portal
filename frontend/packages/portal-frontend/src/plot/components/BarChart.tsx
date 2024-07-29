@@ -89,7 +89,7 @@ function BarChart({
     const config: Partial<Plotly.Config> = { responsive: true };
 
     Plotly.newPlot(plot, test, layout, config);
-  }, [Plotly, xValues, yValues, height, margin, customWidth]);
+  }, [Plotly, xValues, yValues, height, margin, customWidth, customColors, title]);
 
   return <div ref={ref} />;
 }
