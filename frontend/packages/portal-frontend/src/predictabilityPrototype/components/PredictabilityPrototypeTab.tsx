@@ -149,7 +149,6 @@ const PredictabilityPrototypeTab = ({
                         />
                                 <div
           style={{
-            backgroundColor: "rgba(105, 124, 170, 0.05)",
             paddingTop: "30px",
           }}
           className={styles.filePanelHeader}

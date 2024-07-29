@@ -112,7 +112,6 @@ const FeatureCollapsiblePanels = ({
   return (
     <div
       style={{
-        backgroundColor: "rgba(105, 124, 170, 0.05)",
         width: "100%",
       }}
     >

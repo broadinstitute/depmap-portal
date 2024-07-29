@@ -96,7 +96,12 @@ const ModelPerformancePlots = ({
       style={{
         display: "grid",
         gridTemplateColumns: "repeat(3, 1fr)",
-        marginTop: "30px",
+        paddingTop: "30px",
+        paddingRight: "30px",
+        paddingLeft: "30px",
+        paddingBottom: "30px",
+        borderBottom: "1px solid black",
+        backgroundColor: "#ffffff"
       }}
     >
       <div style={{ gridColumn: "1" }}>
