@@ -95,7 +95,7 @@ const PredictabilityBoxPlot = ({
 
   return (
     <>
-      {!boxPlotElement && <PlotSpinner />}
+      {!boxPlotElement && <PlotSpinner height={"100%"}/>}
       {!isLoading && (
         <BoxPlot
           key={featureName + "boxplot" + panelIndex}
@@ -104,6 +104,7 @@ const PredictabilityBoxPlot = ({
           showUnderlyingPoints={false}
           showDottedLines={false}
           orientation={"v"}
+          plotHeight={350}
           bottomMargin={60}
           topMargin={60}
           onLoad={(element: ExtendedPlotType | null) => {

@@ -118,24 +118,8 @@ const FeatureCollapsiblePanels = ({
 
       
       <div className="collapsible-sub-panel-list">
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(3, 1fr)",
-            gridTemplateRows: "repeat(2, 1fr)",
-            rowGap: "10px",
-            columnGap: "10px",
-            paddingBottom: "15px",
-            background: "white",
-          }}
-        >
-          <div
-            style={{
-              gridColumn: "1",
-              gridRow: "1",
-              border: "1px solid lightgray",
-            }}
-          >
+        <div className={styles.featurePanel}>
+          <div className={styles.featureGraph}>
             {isOpen && (
               <FeatureVsGeneEffectPlot
                 modelName={modelName}
@@ -154,8 +138,7 @@ const FeatureCollapsiblePanels = ({
             style={{
               gridColumn: "2",
               gridRow: "1",
-              border: "1px solid lightgray",
-              marginLeft: "10px",
+              border: "1px solid lightgray"
             }}
           >
             {isOpen && (
@@ -176,8 +159,7 @@ const FeatureCollapsiblePanels = ({
             style={{
               gridColumn: "3",
               gridRow: "1",
-              border: "1px solid lightgray",
-              height: 400,
+              border: "1px solid lightgray"
             }}
           >
             {isOpen && (
@@ -197,8 +179,7 @@ const FeatureCollapsiblePanels = ({
             style={{
               gridColumn: "1",
               gridRow: "2",
-              border: "1px solid lightgray",
-              height: "auto",
+              border: "1px solid lightgray"
             }}
           >
             {isOpen && (

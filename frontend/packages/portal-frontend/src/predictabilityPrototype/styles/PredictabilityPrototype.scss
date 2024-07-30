@@ -4,6 +4,24 @@
   width: 500px;
 }
 
+.featurePanel {
+  display: grid;
+  grid-template-columns: repeat(3, 3fr);
+  grid-template-rows: repeat(2, 2fr);
+  row-gap: 10px;
+  column-gap: 10px;
+  padding-bottom: 15px;
+  padding-left: 10px;
+  padding-right: 10px;
+  background: white;
+}
+
+.featureGraph {
+  grid-column: 1;
+  grid-row: 1;
+  border: 1px solid lightgray;
+}
+
 
 
 .legendContainer {
@@ -142,6 +160,7 @@
         white-space: nowrap;
         overflow: hidden;
         margin-right: 15px;
+        min-width: 100px;
       }
       .two {
         padding-top: 2px;
@@ -155,6 +174,11 @@
         margin-right: 15px;
         display: flex;
         flex-direction: row;
+        min-width: 420px;
+
+        @media (max-width: 1075px) {
+          display: none;
+        }
       }
       .three {
         padding-top: 2px;
@@ -214,44 +238,4 @@
   display: flex;
   flex-wrap: wrap;
   width: 100%;
-}
-
-.CardColumn {
-  display: flex;
-  flex-direction: column;
-  flex-basis: 0;
-  flex-grow: 1;
-  min-width: 0;
-  max-width: 50%;
-  height: 500px;
-}
-
-.CardColumn:empty {
-  display: flex !important;
-  flex-direction: column !important;
-  flex-basis: 0 !important;
-  flex-grow: 1 !important;
-  min-width: 0 !important;
-  max-width: 50% !important;
-}
-
-@media (min-width: 1px) {
-  .CardColumn {
-    flex: 100%;
-    max-width: 100%;
-  }
-}
-
-@media (min-width: 640px) {
-  .CardColumn {
-    flex: 50%;
-  }
-}
-
-@media (min-width: 1200px) {
-  .CardColumn {
-    /* set at 24% instead of 25% so that the columns don't overflow into a new
-     * row if the window is between 1200 - 1210 px*/
-    flex: 24%;
-  }
 }

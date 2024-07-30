@@ -113,10 +113,10 @@ const FeatureVsGeneEffectPlot = ({
       {formattedPlotData && formattedPlotData.x?.length > 0 && (
         <ScatterPlot
           key={feature}
-          margin={{ t: 60, l: 62, r: 150 }}
+          margin={{ t: 60, l: 62, r: 100 }}
           data={formattedPlotData}
           logOR={[]}
-          height={387}
+          height={350}
           xKey="x"
           yKey="y"
           continuousColorKey="contColorData"

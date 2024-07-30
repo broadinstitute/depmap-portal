@@ -100,10 +100,10 @@ const PredictabilityWaterfallPlot = ({
       {!isLoading && (
         <ScatterPlot
           key={feature + "waterfall" + panelIndex}
-          margin={{ t: 100, l: 100, r: 150 }}
+          margin={{ t: 80, l: 80, r: 80 }}
           data={waterfallPlotFormattedData}
           logOR={[]}
-          height={387}
+          height={350}
           xKey="x"
           yKey="y"
           xLabel={waterfallPlotFormattedData?.xLabel}
