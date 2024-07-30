@@ -1,8 +1,6 @@
 import React, { useCallback, useContext, useEffect, useState } from "react";
 import {
   Dataset,
-  MatrixDataset,
-  TabularDataset,
   DatasetParams,
   DatasetTableData,
   DatasetUpdateArgs,
