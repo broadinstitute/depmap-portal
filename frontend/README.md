@@ -13,15 +13,15 @@ directory. If two different packages share the same dependency, only one copy
 is installed in frontend/node_modules.
 
 But you won't often need to do this because it's run for you as part of the
-[portal-backend/install_prereqs.sh](https://github.com/broadinstitute/depmap/blob/master/portal-backend/install_prereqs.sh#L16)
+[portal-backend/install_prereqs.sh](https://github.com/broadinstitute/depmap-portal/blob/a2e2cc9/portal-backend/install_prereqs.sh#L39)
 script.
 
 ## Main packages
 
 In the ./packages directory you'll find two main projects:
 
-- [elara-frontend](https://github.com/broadinstitute/depmap/tree/master/frontend/packages/elara-frontend#readme)
-- [portal-frontend](https://github.com/broadinstitute/depmap/tree/master/frontend/packages/portal-frontend#readme)
+- [elara-frontend](https://github.com/broadinstitute/depmap-portal/tree/master/frontend/packages/elara-frontend#readme)
+- [portal-frontend](https://github.com/broadinstitute/depmap-portal/tree/master/frontend/packages/portal-frontend#readme)
 
 Each of these represents a different set of UI features. The Elara frontend is
 limited to Data Explorer (the original version, also known as the "interactive
@@ -50,7 +50,7 @@ that's what you're used to. All it does is call `yarn dev:portal` for you).
 
 The two main frontends described above share a fair amount of code. The shared
 code is distributed across several libraries, scoped under the
-[@depmap](https://github.com/broadinstitute/depmap/tree/master/frontend/packages/%40depmap)
+[@depmap](https://github.com/broadinstitute/depmap-portal/tree/master/frontend/packages/%40depmap)
 directory. This is a naming convention to make them easily distinguishable from
 3rd party libraries.
 

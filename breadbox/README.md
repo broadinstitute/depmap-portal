@@ -1,6 +1,6 @@
 # Breadbox
 
-Breadbox is a persistent service for storing and retrieving data for the [DepMap portal](https://github.com/broadinstitute/depmap). It aims to simplify and consolidate formats across datasets that are uploaded by CDS during portal database re-builds, by users transiently, and by users for private groups. It consists of a persistent database to store the datasets and an API for uploading and fetching from the dataset.
+Breadbox is a persistent service for storing and retrieving data for the [DepMap portal](https://github.com/broadinstitute/depmap-portal). It aims to simplify and consolidate formats across datasets that are uploaded by CDS during portal database re-builds, by users transiently, and by users for private groups. It consists of a persistent database to store the datasets and an API for uploading and fetching from the dataset.
 
 ## Setup
 
@@ -54,7 +54,7 @@ To run tests, run
 
 ### Running Elara
 
-Elara is the UI containing tools that use and interface with the Breadbox service. To run the elara app, see instructions for setup at https://github.com/broadinstitute/depmap/tree/master/frontend/packages/elara-frontend.
+Elara is the UI containing tools that use and interface with the Breadbox service. To run the elara app, see instructions for setup at https://github.com/broadinstitute/depmap-portal/tree/master/frontend/packages/elara-frontend/README.md
 
 If trying to access Elara from the Depmap app (behind the `/breadbox` url prefix) locally, the Elara static files must exist at `depmap/breadbox/app/static/elara/` which are produced by running `yarn build` from the `elara/` directory. Additionally, the environment variable `HOST_SCHEME_OVERRIDE=http:127.0.0.1:5000` should be added to the `depmap/breadbox/.env` file. The Breadbox app must also be running first with the flag option `--use_proxy`. See instructions below for running Breadbox behind a proxy.
 

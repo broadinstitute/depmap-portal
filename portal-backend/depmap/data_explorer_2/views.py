@@ -422,7 +422,7 @@ def unique_values_or_range():
     # HACK: Infer if the values are lists by looking at the first member of the
     # series. If so, we assume it's a list of strings. When we rework this to
     # use BreadBox, we can take advantage of its "list_strings" AnnotationType.
-    # https://github.com/broadinstitute/depmap/blob/6f2b043/breadbox/app/models/dataset.py#L66
+    # https://github.com/broadinstitute/depmap-portal/blob/a2e2cc9/breadbox-client/breadbox_client/models/annotation_type.py#L8
     if isinstance(series[0], list):
         all_values = series.explode()
         if dataset_id == "mutation_protein_change_by_gene":

@@ -93,7 +93,7 @@ export const isPartialSliceId = (value: string | null) => {
 };
 
 // A more aggressive version of encodeURIComponent() to match this:
-// https://github.com/broadinstitute/depmap/blob/af83d4d/portal-backend/depmap/vector_catalog/models.py#L358
+// https://github.com/broadinstitute/depmap-portal/blob/a2e2cc9/portal-backend/depmap/vector_catalog/models.py#L358
 export const urlLibEncode = (s: string) => {
   return encodeURIComponent(s).replace(
     /[()*!']/g,
