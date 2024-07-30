@@ -1,6 +1,8 @@
 import React, { useCallback, useContext, useEffect, useState } from "react";
 import {
   Dataset,
+  MatrixDataset,
+  TabularDataset,
   DatasetParams,
   DatasetTableData,
   DatasetUpdateArgs,
@@ -77,18 +79,23 @@ export default function Datasets() {
   const dimensionTypeDatasetCount = (datasetsList: Dataset[]) =>
     datasetsList.reduce(
       (acc: { [key: string]: number }, curDataset: Dataset) => {
-        if (curDataset.feature_type != null) {
-          if (!(curDataset.feature_type in acc)) {
-            acc[curDataset.feature_type] = 1;
+        if (curDataset.format === "matrix_dataset") {
+          if (!(curDataset.feature_type_name in acc)) {
+            acc[curDataset.feature_type_name] = 1;
           } else {
-            acc[curDataset.feature_type] += 1;
+            acc[curDataset.feature_type_name] += 1;
+          }
+          if (!(curDataset.sample_type_name in acc)) {
+            acc[curDataset.sample_type_name] = 1;
+          } else {
+            acc[curDataset.sample_type_name] += 1;
           }
         }
-        if (curDataset.sample_type != null) {
-          if (!(curDataset.sample_type in acc)) {
-            acc[curDataset.sample_type] = 1;
+        if (curDataset.format === "tabular_dataset") {
+          if (!(curDataset.index_type_name in acc)) {
+            acc[curDataset.index_type_name] = 1;
           } else {
-            acc[curDataset.sample_type] += 1;
+            acc[curDataset.index_type_name] += 1;
           }
         }
         return acc;
