@@ -622,9 +622,9 @@ def view_MY_APP():
 ```
 
 👉 Make sure to
-[import it here](https://github.com/broadinstitute/depmap/blob/54005fb/portal-backend/depmap/app.py#L37)
+[import it here](https://github.com/broadinstitute/depmap-portal/blob/a2e2cc9/portal-backend/depmap/app.py#L36)
 and
-[register it here](https://github.com/broadinstitute/depmap/blob/54005fb/portal-backend/depmap/app.py#L383).
+[register it here](https://github.com/broadinstitute/depmap-portal/blob/a2e2cc9/portal-backend/depmap/app.py#L382).
 
 #### Step #3: Create a new React app
 
@@ -665,7 +665,7 @@ ReactDOM.render(<App />, container);
 #### Step #4: Configure Webpack
 
 Now Webpack needs to know that your app should be considered its own bundle. To the
-[webpack config](https://github.com/broadinstitute/depmap/blob/54005fb/frontend/packages/portal-frontend/webpack.common.js#L31),
+[webpack config](https://github.com/broadinstitute/depmap-portal/blob/a2e2cc9/frontend/packages/portal-frontend/webpack.common.js#L31),
 add this line:
 
 ```js

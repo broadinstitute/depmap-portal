@@ -20,15 +20,15 @@ function makeMockEnabledFeatures() {
 }
 
 // In the Portal, this is defined here:
-// https://github.com/broadinstitute/depmap/blob/c1ecacb/portal-backend/depmap/templates/nav_footer/layout.html#L88
+// https://github.com/broadinstitute/depmap-portal/blob/a2e2cc9/portal-backend/depmap/templates/nav_footer/layout.html#L88
 // In Elara, it's defined here:
-// https://github.com/broadinstitute/depmap/blob/c1ecacb/frontend/packages/elara-frontend/webpack.common.js#L34-L36
+// https://github.com/broadinstitute/depmap-portal/blob/a2e2cc9/frontend/packages/elara-frontend/webpack.common.js#L34-L36
 export const depmapContactUrl: string = (window as any).depmapContactUrl;
 
 // This is injected into the HTML by the Portal backend:
-// https://github.com/broadinstitute/depmap/blob/c1ecacb/portal-backend/depmap/templates/nav_footer/layout.html#L87
+// https://github.com/broadinstitute/depmap-portal/blob/a2e2cc9/portal-backend/depmap/templates/nav_footer/layout.html#L88
 // In Elara, it's instead "baked in" as a hardcoded feature list at build time:
-// https://github.com/broadinstitute/depmap/blob/c1ecacb/frontend/packages/elara-frontend/webpack.common.js#L29-L33
+// https://github.com/broadinstitute/depmap-portal/blob/a2e2cc9/frontend/packages/elara-frontend/webpack.common.js#L29-L33
 // If it doesn't exist on `window` then we assume we're running in a test
 // environment (like Jest or Storybook) and return a mock.
 export const enabledFeatures: Record<string, boolean> =
@@ -36,9 +36,9 @@ export const enabledFeatures: Record<string, boolean> =
 
 // Currently, the `errorHandler` doesn't really do anything special outside of
 // logging to the console. In the Portal, it's defined here:
-// https://github.com/broadinstitute/depmap/blob/c1ecacb/portal-backend/depmap/templates/nav_footer/layout.html#L102
+// https://github.com/broadinstitute/depmap-portal/blob/a2e2cc9/portal-backend/depmap/templates/nav_footer/layout.html#L103
 // In Elara, it's defined here:
-// https://github.com/broadinstitute/depmap/blob/c1ecacb/frontend/packages/elara-frontend/webpack.common.js#L37
+// https://github.com/broadinstitute/depmap-portal/blob/a2e2cc9/frontend/packages/elara-frontend/webpack.common.js#L37
 export const errorHandler: {
   report: (message: string) => void;
 } = (window as any).errorHandler;
@@ -46,9 +46,9 @@ export const errorHandler: {
 // The DepMap global is created by the portal-frontend's Webpack config.
 // There is no equivalent in elara-frontend and should be avoided there.
 // This is "set" by Webpack as part of its module loader.
-// https://github.com/broadinstitute/depmap/blob/70396b2/frontend/packages/portal-frontend/webpack.common.js#L7-L13
-// All exported functions in file become its properties:
-// https://github.com/broadinstitute/depmap/blob/70396b2/frontend/packages/portal-frontend/src/index.tsx
+// https://github.com/broadinstitute/depmap-portal/blob/a2e2cc9/frontend/packages/portal-frontend/webpack.common.js#L7-L13
+// All exported functions in this file become its properties:
+// https://github.com/broadinstitute/depmap-portal/blob/a2e2cc9/frontend/packages/portal-frontend/src/index.tsx
 // eslint-disable-next-line @typescript-eslint/ban-types
 export const DepMap: Record<string, Function> =
   "Proxy" in window
