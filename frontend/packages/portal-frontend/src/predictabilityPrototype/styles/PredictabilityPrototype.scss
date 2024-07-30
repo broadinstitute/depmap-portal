@@ -122,40 +122,62 @@
       margin-left: 35px;
       margin-right: 35px;
       display: grid;
-      grid-template-columns: repeat(10, 1fr);
+      grid-template-columns: repeat(4, 1fr);
       gap: 0px;
+
+      @media (max-width: 940px) {
+        grid-template-columns: repeat(3, 1fr);
+      }
 
       .headerColOne {
         color: #707070;
         font-size: 14px;
-        grid-column: 1/3;
-        grid-row: 1;
+        grid-column: 1;
+        padding-left: 10px;
+        padding-right: 2px;
       }
       .headerColTwo {
         color: #707070;
         font-size: 14px;
-        grid-column: 3/6;
-        grid-row: 1;
+        grid-column: 2;
+
+        @media (max-width: 846px) {
+          display: none;
+        }
       }
       .headerColThree {
         color: #707070;
         font-size: 14px;
-        grid-column: 6/10;
-        grid-row: 1;
+        grid-column: 3;
+
+        @media (max-width: 846px) {
+          display: none;
+        }
+      }
+      .headerColFour {
+        color: #707070;
+        font-size: 14px;
+        grid-column: 4;
+        @media (max-width: 940px) {
+          display: none;
+        }
+
       }
     }
 
     .accordionTitle {
       display: grid;
-      grid-template-columns: repeat(10, 1fr);
+      grid-template-columns: repeat(4, 1fr);
       gap: 0px;
-      grid-auto-rows: minmax(20px, auto);
+
+      @media (max-width: 940px) {
+        grid-template-columns: repeat(3, 1fr);
+      }
       .one {
         padding-top: 3px;
         color: #000000;
-        font-size: 18px;
-        grid-column: 1/3;
-        grid-row: 1;
+        font-size: 16px;
+        grid-column: 1;
         text-overflow: ellipsis;
         white-space: nowrap;
         overflow: hidden;
@@ -165,31 +187,33 @@
       .two {
         padding-top: 2px;
         color: #000000;
-        font-size: 18px;
-        grid-column: 3/6;
-        grid-row: 1;
+        font-size: 16px;
+        grid-column: 2;
         text-overflow: ellipsis;
         white-space: nowrap;
         overflow: hidden;
-        margin-right: 15px;
-        display: flex;
-        flex-direction: row;
-        min-width: 420px;
-
-        @media (max-width: 1075px) {
-          display: none;
-        }
       }
       .three {
         padding-top: 2px;
         color: #000000;
-        font-size: 18px;
-        grid-column: 6/10;
-        grid-row: 1;
+        font-size: 16px;
+        grid-column: 3;
         text-overflow: ellipsis;
         white-space: nowrap;
         overflow: hidden;
-        margin-right: 5px;
+      }
+      .four {
+        padding-top: 2px;
+        color: #000000;
+        font-size: 16px;
+        grid-column: 4;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        overflow: hidden;
+
+        @media (max-width: 940px) {
+          display: none;
+        }
       }
     }
   }

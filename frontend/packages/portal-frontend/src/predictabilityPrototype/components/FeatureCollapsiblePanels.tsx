@@ -28,24 +28,25 @@ export const FeatureCollapsiblePanelHeader = ({
         {relativeImportance && (
           <StyledMeter
             value={relativeImportance}
-            style={{ barColor: "#97C2D4" }}
+            style={{ barColor: "#97C2D4", maxWidth: "120px", labelFontSize: "14px", labelLeftPosition: "70px"}}
             extraClassNames={"styled-correlation-box"}
+            toFixed={2}
+            percentage
+            showLabel
           />
         )}
-        <div style={{ marginLeft: "5px" }}>
-          {relativeImportance?.toPrecision(3)}
-        </div>
       </div>
       <span className={styles.three}>
         {" "}
         {correlation && (
           <StyledMeter
             value={correlation}
-            style={{ barColor: "#E79E9D" }}
+            style={{ barColor: "#E79E9D", maxWidth: "120px", labelFontSize: "14px", labelLeftPosition: "70px" }}
             extraClassNames={"styled-correlation-box"}
+            toFixed={3}
+            showLabel
           />
         )}
-        <div style={{ marginLeft: "5px" }}>{correlation?.toPrecision(3)}</div>
       </span>
       <span className={styles.four}>{featureType}</span>
     </span>
@@ -71,13 +72,12 @@ export const CollapsiblePanelHeader = ({
         {modelCorrelation && (
           <StyledMeter
             value={modelCorrelation}
-            style={{ barColor: "#52288E" }}
+            style={{ barColor: "#52288E", maxWidth: "180px", labelFontSize: "14px", labelLeftPosition: "90px" }}
             extraClassNames={"styled-correlation-box"}
+            toFixed={3}
+            showLabel
           />
         )}
-        <div style={{ marginLeft: "5px" }}>
-          {modelCorrelation?.toPrecision(3)}
-        </div>
       </div>
       <span className={styles.three}>
         <div className={styles.additionalInfo}>

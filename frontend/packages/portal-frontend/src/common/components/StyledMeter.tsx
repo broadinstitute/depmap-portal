@@ -9,10 +9,13 @@ interface Colors {
 }
 
 interface OptionalStyles {
+  maxWidth: string | number;
   width: string | number;
   backgroundColor: string;
   barColor: string | Colors;
   labelColor?: string;
+  labelFontSize?: string;
+  labelLeftPosition?: string;
 }
 
 interface Props {
@@ -63,6 +66,9 @@ const StyledMeter = ({
     if (style.width) {
       additionalStyles.width = style.width;
     }
+    if (style.maxWidth) {
+      additionalStyles.maxWidth = style.maxWidth;
+    }
     if (style.backgroundColor) {
       additionalStyles["--background-color"] = style.backgroundColor;
     }
@@ -96,6 +102,15 @@ const StyledMeter = ({
 
     if (percentage) {
       label += "%";
+    }
+
+    if (style && style.labelFontSize) {
+      labelStyles["font-size"] = style.labelFontSize;
+
+      if (style && style.labelLeftPosition) {
+        labelStyles["left"] = style.labelLeftPosition;
+      }
+
     }
   }
 
