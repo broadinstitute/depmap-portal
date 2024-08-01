@@ -41,6 +41,7 @@ interface Props {
   onLoad?: (plot: ExtendedPlotType) => void;
   customContinuousColorScale?: string[][];
   renderAsSvg?: boolean;
+  autosize?: boolean;
 }
 
 type PropsWithPlotly = Props & { Plotly: PlotlyType };
@@ -75,6 +76,7 @@ function ContextScatterPlot({
   onLoad = () => {},
   density = undefined,
   renderAsSvg = false,
+  autosize = undefined,
   Plotly,
 }: PropsWithPlotly) {
   const ref = useRef<ExtendedPlotType>(null);
@@ -331,6 +333,7 @@ function ContextScatterPlot({
 
     const layout: Partial<Layout> = {
       uirevision: "true",
+      autosize,
       shapes,
       height: height === "auto" ? calcPlotHeight(plot) : height,
       margin,
@@ -389,7 +392,6 @@ function ContextScatterPlot({
     const config: Partial<Config> = {
       // Automatically resizes the plot when the window is resized.
       responsive: true,
-
       // Allows the user to move annotations (but just the tail and not the
       // whole thing).
       edits: { annotationTail: true },

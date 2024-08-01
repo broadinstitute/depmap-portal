@@ -109,7 +109,7 @@ const FeatureVsGeneEffectPlot = ({
 
   return (
     <>
-      {!featureVsGeneEffectPlotElement && <PlotSpinner />}
+      {!featureVsGeneEffectPlotElement && <PlotSpinner height={"100%"} />}
       {formattedPlotData && formattedPlotData.x?.length > 0 && (
         <ScatterPlot
           key={feature}

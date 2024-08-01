@@ -96,7 +96,7 @@ const PredictabilityWaterfallPlot = ({
 
   return (
     <>
-      {!waterfallPlotElement && <PlotSpinner />}
+      {!waterfallPlotElement && <PlotSpinner height={"100%"} />}
       {!isLoading && (
         <ScatterPlot
           key={feature + "waterfall" + panelIndex}

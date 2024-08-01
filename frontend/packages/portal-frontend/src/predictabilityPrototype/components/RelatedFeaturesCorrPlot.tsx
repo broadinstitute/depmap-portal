@@ -96,7 +96,7 @@ const RelatedFeaturesCorrPlot = ({
 
   return (
     <>
-      {!relatedFeaturesPlotElement && <PlotSpinner />}
+      {!relatedFeaturesPlotElement && <PlotSpinner height={"100%"} />}
       {!isLoading && (
         <ScatterPlot
           key={feature + "relatedFeaturesCorr" + panelIndex}

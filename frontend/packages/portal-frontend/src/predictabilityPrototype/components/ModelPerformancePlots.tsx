@@ -92,21 +92,9 @@ const ModelPerformancePlots = ({
   );
 
   return (
-    <div
-      style={{
-        display: "grid",
-        gridTemplateColumns: "repeat(3, 1fr)",
-        paddingTop: "30px",
-        paddingRight: "30px",
-        paddingLeft: "30px",
-        paddingBottom: "30px",
-        borderBottom: "1px solid black",
-        backgroundColor: "#ffffff"
-      }}
-    >
-      <div style={{ gridColumn: "1" }}>
-        {" "}
-        <div style={{ marginLeft: "15px", border: "1px solid lightgray" }}>
+    <div className={styles.modelPerformancePlots}>
+
+        <div className={styles.scatter}>
           {" "}
           <h3
             style={{ marginLeft: "15px", marginTop: "15px", maxWidth: "200px" }}
@@ -115,13 +103,13 @@ const ModelPerformancePlots = ({
           </h3>
           {!modelPredPlotElement && <PlotSpinner height="100%" />}
           {modelPredData /* && !isLoading */ && (
-            <ScatterPlot
+            <div ><ScatterPlot
               key={"cell-context-scatter-plot"}
-              margin={{ t: 60, l: 62, r: 150 }}
+              margin={{ t: 60, l: 62, r: 120 }}
               density={modelPredData?.density}
               data={formattedModelPredData}
               logOR={[]}
-              height={387}
+              height={337}
               xKey="x"
               yKey="y"
               continuousColorKey="contColorData"
@@ -133,8 +121,9 @@ const ModelPerformancePlots = ({
                   setModelPredPlotElement(element);
                 }
               }}
+              autosize
               showYEqualXLine
-            />
+            /></div>
           )}
           {modelPredData /* && !isLoading */ && (
             <div className={styles.deButtonContainer}>
@@ -149,15 +138,7 @@ const ModelPerformancePlots = ({
             </div>
           )}
         </div>
-      </div>
-      <div style={{ gridColumn: "2/4" }}>
-        <div
-          style={{
-            marginLeft: "15px",
-            border: "1px solid lightgray",
-            height: "500px",
-          }}
-        >
+        <div className={styles.heatmap}>
           {" "}
           {!cellContextCorrPlotElement && <PlotSpinner height="100%" />}
           <h3 style={{ marginLeft: "15px", marginTop: "15px" }}>
@@ -172,7 +153,7 @@ const ModelPerformancePlots = ({
               xKey="x"
               yKey="y"
               zKey="z"
-              height={400}
+              height={350}
               onLoad={(element: ExtendedPlotType | null) => {
                 if (element) {
                   setCellContextCorrPlotElement(element);
@@ -187,7 +168,6 @@ const ModelPerformancePlots = ({
           )}
         </div>
       </div>
-    </div>
   );
 };
 

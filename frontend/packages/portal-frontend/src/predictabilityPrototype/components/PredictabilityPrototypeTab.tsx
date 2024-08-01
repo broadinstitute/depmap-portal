@@ -96,6 +96,7 @@ const PredictabilityPrototypeTab = ({
 
   return (
     <div>
+      <div style={{borderBottom: "1px solid #000000", marginBottom: "15px"}}>
       <CardRowContainer>
         <CardRow>
           <CardRowItem>
@@ -112,6 +113,13 @@ const PredictabilityPrototypeTab = ({
           </CardRowItem>
         </CardRow>
       </CardRowContainer>
+      </div>
+      <div>
+        {modelPerformanceData && <div style={{marginLeft: "12px"}}>
+        <h3 style={{marginTop: "22px"}}>Model Performance</h3>
+        <p>Performance according to CRISPR and RNAi</p>
+        </div>}
+      </div>
       <div className={styles.DataFilePanel}>
         <div className={styles.dataPanelSection}>
           <>
@@ -130,11 +138,12 @@ const PredictabilityPrototypeTab = ({
                         <Panel.Title toggle>
                           <div>
                             <CollapsiblePanelHeader
-                              title={modelName}
+                              title={`Model: ${modelName}`}
                               modelCorrelation={
                                 modelPerformanceData[modelName].r
                               }
                               screenType={""}
+                              isOpen={activeModelIndex === modelIndex}
                             />
                           </div>
                         </Panel.Title>
@@ -200,6 +209,7 @@ const PredictabilityPrototypeTab = ({
                                             .feature_summaries[feature]
                                             .feature_type
                                         }
+                                        isOpen={activeFeatureIndex === featureIndex}
                                       />
                                     </div>
                                   </Panel.Title>

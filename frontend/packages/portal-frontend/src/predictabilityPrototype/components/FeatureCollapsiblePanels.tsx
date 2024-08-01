@@ -12,6 +12,7 @@ interface FeatureSinglePanelHeaderProps {
   relativeImportance: number;
   correlation: number;
   featureType: string;
+  isOpen: boolean;
 }
 
 export const FeatureCollapsiblePanelHeader = ({
@@ -19,10 +20,17 @@ export const FeatureCollapsiblePanelHeader = ({
   relativeImportance,
   correlation,
   featureType,
+  isOpen,
 }: FeatureSinglePanelHeaderProps) => {
   return (
     <span className={styles.accordionTitle}>
-      <span className={styles.one}>{feature}</span>
+      <span className={styles.one}>{
+              <span
+              style={{paddingRight: "8px", paddingTop: "3px", fontSize: "12px"}}
+                className={isOpen ? "glyphicon glyphicon-chevron-up"
+                : "glyphicon glyphicon-chevron-down"}
+              />
+            }{feature}</span>
       <div className={styles.two}>
         {" "}
         {relativeImportance && (
@@ -57,17 +65,25 @@ interface SinglePanelHeaderProps {
   title: string;
   modelCorrelation: number | null;
   screenType: string;
+  isOpen: boolean
 }
 
 export const CollapsiblePanelHeader = ({
   title,
   modelCorrelation,
   screenType, // take out if not used
+  isOpen
 }: SinglePanelHeaderProps) => {
   console.log(screenType)
   return (
     <span className={styles.accordionTitle}>
-      <span className={styles.one}>{title}</span>
+      <span className={styles.oneModel}>{
+              <span
+              style={{paddingRight: "8px", paddingTop: "3px", fontSize: "14px"}}
+                className={isOpen ? "glyphicon glyphicon-chevron-up"
+                : "glyphicon glyphicon-chevron-down"}
+              />
+            }{title}</span>
       <div className={styles.two}>
         {modelCorrelation && (
           <StyledMeter
@@ -119,7 +135,7 @@ const FeatureCollapsiblePanels = ({
       
       <div className="collapsible-sub-panel-list">
         <div className={styles.featurePanel}>
-          <div className={styles.featureGraph}>
+          <div className={styles.featureGraph1}>
             {isOpen && (
               <FeatureVsGeneEffectPlot
                 modelName={modelName}
@@ -134,13 +150,7 @@ const FeatureCollapsiblePanels = ({
               />
             )}
           </div>
-          <div
-            style={{
-              gridColumn: "2",
-              gridRow: "1",
-              border: "1px solid lightgray"
-            }}
-          >
+          <div className={styles.featureGraph2}>
             {isOpen && (
               <PredictabilityBoxPlot
                 modelName={modelName}
@@ -155,13 +165,7 @@ const FeatureCollapsiblePanels = ({
               />
             )}
           </div>
-          <div
-            style={{
-              gridColumn: "3",
-              gridRow: "1",
-              border: "1px solid lightgray"
-            }}
-          >
+          <div className={styles.featureGraph3}>
             {isOpen && (
               <RelatedFeaturesCorrPlot
                 modelName={modelName}
@@ -175,13 +179,7 @@ const FeatureCollapsiblePanels = ({
               />
             )}
           </div>
-          <div
-            style={{
-              gridColumn: "1",
-              gridRow: "2",
-              border: "1px solid lightgray"
-            }}
-          >
+          <div className={styles.featureGraph4}>
             {isOpen && (
               <PredictabilityWaterfallPlot
                 modelName={modelName}
