@@ -60,3 +60,9 @@ export type SearchDimenionsResponse = {
     value: string;
   }[];
 }[];
+
+export interface ColumnMetadata {
+  units: string;
+  col_type: AnnotationType;
+  references: string[];
+}
