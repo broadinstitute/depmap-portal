@@ -21,6 +21,7 @@ from ..schemas.dataset import (
     MatrixDimensionsInfo,
     ColumnMetadata,
     TabularDimensionsInfo,
+    UpdateDatasetParams,
 )
 from ..schemas.custom_http_exception import (
     DatasetAccessError,
@@ -1344,32 +1345,22 @@ def get_dataset_data_type_priorities(db: SessionWithUser):
 
 
 def update_dataset(
-    db: SessionWithUser, user: str, dataset: Dataset, new_values: DatasetUpdateParams
+    db: SessionWithUser, user: str, dataset: Dataset, new_values: UpdateDatasetParams
 ):
-    new_group = get_group(db, user, new_values.group_id, write_access=False)
-    if new_group is None:
-        raise ResourceNotFoundError(f"Group not found: {new_values.group_id}")
+    update_data = new_values.dict(exclude_unset=True)
+    if "group_id" in update_data:
+        new_group = get_group(db, user, update_data["group_id"], write_access=False)
+        if new_group is None:
+            raise ResourceNotFoundError(f"Group not found: {update_data['group_id']}")
 
-    if not user_has_access_to_group(dataset.group, user, write_access=True):
-        raise DatasetAccessError(f"User {user} cannot access this dataset!")
-    if not user_has_access_to_group(new_group, user, write_access=True):
-        raise DatasetAccessError("User {user} cannot access this dataset!")
+        if not user_has_access_to_group(dataset.group, user, write_access=True):
+            raise DatasetAccessError(f"User {user} cannot access this dataset!")
+        if not user_has_access_to_group(new_group, user, write_access=True):
+            raise DatasetAccessError("User {user} cannot access this dataset!")
 
-    dataset.group = new_group
-
-    if new_values.dataset_metadata:
-        dataset.dataset_metadata = new_values.dataset_metadata
-
-    if new_values.name:
-        dataset.name = new_values.name
-
-    if new_values.units:
-        dataset.units = new_values.units
-
-    if new_values.data_type:
-        dataset.data_type = new_values.data_type
-
-    dataset.priority = new_values.priority
+    for key, value in update_data.items():
+        if key != "format":
+            setattr(dataset, key, value)
 
     db.flush()
     return dataset

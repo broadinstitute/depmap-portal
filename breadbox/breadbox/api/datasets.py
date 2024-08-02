@@ -49,6 +49,11 @@ from ..schemas.dataset import (
     FeatureSampleIdentifier,
     MatrixDimensionsInfo,
     TabularDimensionsInfo,
+    UpdateDatasetParams,
+    MatrixDatasetUpdateFormat,
+    TabularDatasetUpdateFormat,
+    MatrixDatasetUpdateParams,
+    TabularDatasetUpdateParams,
 )
 from .dependencies import get_dataset as get_dataset_dep
 from .dependencies import get_db_with_user, get_user
@@ -457,41 +462,40 @@ def get_dimensions(
     response_model_by_alias=False,
 )
 def update_dataset(
-    name: Optional[str] = Form(None, description="Name of dataset"),
-    units: Optional[str] = Form(
-        None, description="Units for the values in the dataset"
-    ),
-    data_type: Optional[str] = Form(
-        None, description="Data type grouping for your dataset"
-    ),
-    group_id: Optional[UUID] = Form(
-        None, description="Id of the group the dataset belongs to"
-    ),  # Required for non-transient datasets
-    priority: Optional[Union[int, None]] = Form(
-        None,
-        description="Numeric value representing priority of the dataset within its `data_type`",
-    ),
-    dataset_metadata: Optional[Union[Json[DatasetMetadata], None]] = Body(
-        None,
-        description="Some arbitrary dict of additional dataset metadata to what is defined above",
-    ),
+    dataset_update_params: UpdateDatasetParams,
     db: SessionWithUser = Depends(get_db_with_user),
     user: str = Depends(get_user),
     dataset: DatasetModel = Depends(get_dataset_dep),
 ):
-    new_values = DatasetUpdateParams(
-        name=name,
-        units=units,
-        data_type=data_type,
-        group_id=str(group_id),
-        priority=priority,
-        dataset_metadata=dataset_metadata.dataset_metadata
-        if dataset_metadata
-        else None,
-    )
+    """
+    Update the dataset metadata
+
+    The following parameters may be provided or omitted if no change for the value:
+    `format` - Required parameter. Must be 'matrix' or 'tabular' and match the format of the given dataset
+    `name` - Optional parameter. Name of dataset
+    `data_type` - Optional parameter. Data type grouping for your dataset
+    `group_id` - Optional parameter. Id of the group the dataset belongs to
+    `priority` - Optional parameter. Numeric value representing priority of the dataset within its `data_type`
+    `dataset_metadata` - Optional parameter. A dictionary of additional dataset metadata that is not already provided
+    `units` - Optional parameter for matrix dataset only. Units for the values in the dataset
+
+    """
+    if dataset.format == "matrix_dataset":
+        if not isinstance(dataset_update_params, MatrixDatasetUpdateParams):
+            raise UserError(
+                "Allowed parameters to update for dataset with `matrix` format are `name`, `units`, `data_type`, `group_id`, `priority` and `dataset_metadata`. Please make sure your request body contains those parameters with the correct value types!"
+            )
+    if dataset.format == "tabular_dataset":
+        if not isinstance(dataset_update_params, TabularDatasetUpdateParams):
+            raise UserError(
+                "Allowed parameters to update for dataset with `tabular` format are `name`, `data_type`, `group_id`, `priority` and `dataset_metadata`. Please make sure your request body contains those parameters with the correct value types!"
+            )
 
     with transaction(db):
-        updated_dataset = dataset_crud.update_dataset(db, user, dataset, new_values)
+        updated_dataset = dataset_crud.update_dataset(
+            db, user, dataset, dataset_update_params
+        )
+
     return updated_dataset
 
 
