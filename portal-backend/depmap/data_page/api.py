@@ -4,6 +4,7 @@ from depmap.dataset.models import BiomarkerDataset, DependencyDataset
 from depmap.download.utils import get_download_url
 from depmap.enums import BiomarkerEnum, DependencyEnum
 from flask_restplus import Namespace, Resource
+from depmap.data_access import interface as data_access
 from flask import current_app
 import pandas as pd
 
@@ -37,6 +38,33 @@ DATA_ORDER = [
     "Uncategorized_miRNA_CCLE",
     "Uncategorized_ATACSeq_Broad",
 ]
+
+
+def _get_drug_count_mapping(data_types: List[str]):
+    def _get_drug_count(dataset_name: str):
+        dataset = DependencyDataset.get_dataset_by_name(dataset_name)
+
+        if not dataset:
+            return None
+
+        return len(data_access.get_dataset_feature_ids_by_label(dataset_name))
+
+    drug_counts_by_data_type = {
+        "Drug_CTD_Broad": _get_drug_count(DependencyEnum.CTRP_AUC.name),
+        "Drug_Repurposing_Broad": _get_drug_count(
+            DependencyEnum.Rep_all_single_pt.name
+        ),
+        "Drug_GDSC_Sanger": _get_drug_count(DependencyEnum.GDSC2_AUC.name),
+        "Drug_OncRef_Broad": _get_drug_count(DependencyEnum.Prism_oncology_AUC.name),
+    }
+
+    current_env_mapping = {
+        data_type_name: drug_count
+        for data_type_name, drug_count in drug_counts_by_data_type.items()
+        if data_type_name in data_types
+    }
+
+    return current_env_mapping
 
 
 def _get_data_type_url_mapping(data_types: List[str]):
@@ -118,9 +146,12 @@ def _get_formatted_all_data_avail_df(overall_summary: pd.DataFrame) -> pd.DataFr
 def _format_data_availability_summary_dict(summary_df: pd.DataFrame):
     data_types_by_url = _get_data_type_url_mapping(summary_df.index.values.tolist())
 
+    drug_count_mapping = _get_drug_count_mapping(summary_df.index.values.tolist())
+
     summary = {
         "values": [row.values.tolist() for _, row in summary_df.iterrows()],
         "data_type_url_mapping": data_types_by_url,
+        "drug_count_mapping": drug_count_mapping,
         # For keeping track of data_type order
         "data_types": summary_df.index.values.tolist(),
     }
@@ -145,4 +176,5 @@ class DataAvailability(
         all_data_df = _get_all_data_avail_df()
         formatted_df = _get_formatted_all_data_avail_df(all_data_df)
         all_data_dict = _format_data_availability_summary_dict(formatted_df)
+
         return all_data_dict

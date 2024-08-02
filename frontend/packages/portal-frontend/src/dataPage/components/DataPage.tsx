@@ -33,6 +33,7 @@ export const DataPage = ({
   const [allDataAvail, setAllDataAvail] = useState<DataAvailability>({
     all_depmap_ids: [],
     data_type_url_mapping: {},
+    drug_count_mapping: {},
     data_types: [],
     values: [],
   });
@@ -42,6 +43,7 @@ export const DataPage = ({
   ] = useState<DataAvailability>({
     all_depmap_ids: [],
     data_type_url_mapping: {},
+    drug_count_mapping: {},
     data_types: [],
     values: [],
   });
@@ -65,18 +67,22 @@ export const DataPage = ({
       const currentDataValues: number[][] = [];
       const currentDataTypes: string[] = [];
       const currentDataTypeUrlMapping: { [key: string]: string } = {};
+      const currentDataTypeDrugCountMapping: { [key: string]: number } = {};
       dataAvail.data_types.forEach((data_type: string, index: number) => {
         if (currentReleaseDatasets.includes(data_type)) {
           currentDataTypes.push(data_type);
           currentDataValues.push(dataAvail.values[index]);
           currentDataTypeUrlMapping[data_type] =
             dataAvail.data_type_url_mapping[data_type];
+          currentDataTypeDrugCountMapping[data_type] =
+            dataAvail.drug_count_mapping[data_type];
         }
       });
 
       setCurrentReleaseDataAvail({
         all_depmap_ids: dataAvail.all_depmap_ids,
         data_type_url_mapping: currentDataTypeUrlMapping,
+        drug_count_mapping: currentDataTypeDrugCountMapping,
         data_types: currentDataTypes,
         values: currentDataValues,
       });

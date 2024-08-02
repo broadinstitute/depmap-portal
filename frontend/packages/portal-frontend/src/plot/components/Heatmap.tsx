@@ -107,7 +107,7 @@ function Heatmap({
           height,
 
           margin,
-          width: 400,
+          width: customWidth,
         }
       : {
           title: "",
