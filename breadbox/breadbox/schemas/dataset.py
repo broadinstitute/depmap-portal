@@ -465,14 +465,6 @@ UpdateDatasetParams = Annotated[
 ]
 
 
-class MatrixDatasetUpdateFormat(MatrixDatasetUpdateParams):
-    format: Literal["matrix"]
-
-
-class TabularDatasetUpdateFormat(TabularDatasetUpdateParams):
-    format: Literal["tabular"]
-
-
 class NameAndID(BaseModel):
     name: str
     id: str

@@ -50,8 +50,6 @@ from ..schemas.dataset import (
     MatrixDimensionsInfo,
     TabularDimensionsInfo,
     UpdateDatasetParams,
-    MatrixDatasetUpdateFormat,
-    TabularDatasetUpdateFormat,
     MatrixDatasetUpdateParams,
     TabularDatasetUpdateParams,
 )
