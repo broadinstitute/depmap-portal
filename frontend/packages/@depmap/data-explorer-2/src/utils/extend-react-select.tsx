@@ -56,8 +56,10 @@ const ConditionalTooltip = ({
 // - Shows a tooltip when the value has been truncated
 // - Automatically set `menuPlacement` to "top" when the dropdown is near the
 // bottom of the viewport.
+// - Allows a pre-selected value to be edited as text (simulating a vanilla
+//   <input> element)
 // - Uses a windowed menu list. This allows thousands of options to be
-// displayed performantly (powered by react-windowed-select).
+//   displayed performantly (powered by react-windowed-select).
 export default function extendReactSelect(
   SelectComponent: Readonly<React.ComponentType>
 ) {
@@ -181,6 +183,8 @@ export default function extendReactSelect(
               styles={{
                 control: (base) => ({ ...base, fontSize: 12 }),
                 menuPortal: (base) => ({ ...base, zIndex: 3 }),
+                clearIndicator: (base) => ({ ...base, padding: 2 }),
+                dropdownIndicator: (base) => ({ ...base, padding: 4 }),
                 menu: (base) => ({
                   ...base,
                   fontSize: 12,
@@ -189,10 +193,87 @@ export default function extendReactSelect(
                 }),
                 ...props.styles,
               }}
+              onFocus={(e) => {
+                if (!value?.label) {
+                  return;
+                }
+
+                // HACK: Make it appear as if the cursor is at the end of the
+                // word. This acts as a hint to the user that the value is now
+                // editable (which is not the default react-select behavior).
+                // This hack is needed because, on initial focus, the <input>
+                // element is secretly empty! react-select has a "value
+                // container" <div> that makes it appear as if the input has a
+                // value. See the `onKeyDown` handler below where the new
+                // behavior is implemented.
+                const input = e.currentTarget as HTMLInputElement;
+
+                const valContainer = input.parentElement!.parentElement!
+                  .parentElement as HTMLElement;
+                const valContainerItem = valContainer.firstChild as HTMLElement;
+                const inputContainer = valContainerItem.nextSibling as HTMLElement;
+
+                valContainer.style.display = "inline";
+                inputContainer.style.display = "inline";
+
+                valContainerItem.style.cssText = `
+                  display: inline;
+                  margin-right: -2px;
+                  overflow: visible;
+                  position: static;
+                  transform: none;
+                  white-space: normal;
+                  word-break: break-all;
+                `;
+              }}
               onKeyDown={(e) => {
-                if (e.repeat) {
+                const input = e.currentTarget.querySelector(
+                  "input"
+                ) as HTMLInputElement;
+
+                // Custom behavior: instead of backspace wiping out the value
+                // (setting it null) just remove the last character (as one
+                // would expect a vanilla input element to behave).
+                if (
+                  value?.label &&
+                  input.value === "" &&
+                  ["Backspace", "ArrowLeft", "ArrowRight"].includes(e.key)
+                ) {
                   e.preventDefault();
                   e.stopPropagation();
+
+                  const nextInputValue =
+                    e.key === "Backspace"
+                      ? value.label.slice(0, -1)
+                      : value.label;
+
+                  reactSelectRef.current.select.onInputChange(nextInputValue);
+
+                  // Long strings can overflow the input box. Try to scroll
+                  // horizontally so the cursor is visible.
+                  setTimeout(() => {
+                    input.style.width = "95px";
+                    input.scrollTo(input.scrollWidth, 0);
+                  });
+
+                  if (e.key === "ArrowLeft") {
+                    const { shiftKey } = e;
+
+                    setTimeout(() => {
+                      const len = nextInputValue.length;
+                      input.setSelectionRange(
+                        len - 1,
+                        shiftKey ? len : len - 1
+                      );
+                    });
+                  }
+                }
+
+                // This is the only case where we actually do want to wipe out
+                // the value.
+                if (input.value.length === 1 && e.key === "Backspace") {
+                  reactSelectRef.current.select.onInputChange("");
+                  reactSelectRef.current.select.onChange(null);
                 }
 
                 if (props.onKeyDown) {
