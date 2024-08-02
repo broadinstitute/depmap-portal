@@ -51,15 +51,6 @@ const DataPageDatatypeSelector = ({
     );
     const inCurrentRelease = currentReleaseDatasets.includes(datatype);
 
-    if (!isCurrentRelease) {
-      console.log("datatype");
-      console.log(datatype);
-      console.log("dataTypeDisplayName");
-      console.log(dataTypeDisplayName);
-      console.log("dataTypeUrlMapping");
-      console.log(dataTypeUrlMapping);
-    }
-
     display.push(
       <div className={styles.selector} key={`wapper-${dataTypeDisplayName}`}>
         {Object.keys(dataTypeUrlMapping).includes(dataTypeDisplayName) &&
