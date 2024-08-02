@@ -1,2 +1,5 @@
 ModelID,Drug_CTD_Broad,Drug_Repurposing_Broad,CRISPR_Achilles_Broad
-ACH-000019,True,False,True
+ACH-000019,False,False,True
+ACH-000020,True,False,False
+ACH-000021,True,False,False
+ACH-000022,True,False,False

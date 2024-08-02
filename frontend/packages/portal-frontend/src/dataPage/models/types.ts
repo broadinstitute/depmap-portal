@@ -21,6 +21,7 @@ export const COLOR_SCALE = [
 export interface DataAvailSummary {
   all_depmap_ids: [number, string][];
   data_type_url_mapping: { [data_type: string]: string };
+  drug_count_mapping: { [data_type: string]: number };
   data_types: string[];
   values: boolean[][];
 }
@@ -38,6 +39,7 @@ export interface DataSummary {
 export interface DataAvailability {
   all_depmap_ids: [number, string][];
   data_type_url_mapping: { [data_type: string]: string };
+  drug_count_mapping: { [data_type: string]: number };
   values: number[][];
   data_types: string[];
 }
