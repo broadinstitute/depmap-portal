@@ -186,11 +186,6 @@ class InteractiveConfigFakeMutationsDownload(InteractiveConfig):
         return "this-is-test-nonsense-that-should-never-be-checked-against.1/except-for-taiga-alias-loading"
 
 
-class InteractiveConfigFakeDrugDataset(InteractiveConfig):
-    def is_standard(self, dataset_id):
-        return True
-
-
 class DefaultDictMock(defaultdict):
     def __contains__(self, item):
         """
