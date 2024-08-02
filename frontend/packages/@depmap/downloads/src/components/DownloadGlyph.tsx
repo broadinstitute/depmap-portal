@@ -62,6 +62,7 @@ interface DownloadLinkProps {
   downloadUrl: string;
   termsDefinitions: { [key: string]: string };
   buttonText: string;
+  textDecoration?: string;
 }
 
 export function DownloadLink({
@@ -69,6 +70,7 @@ export function DownloadLink({
   terms,
   termsDefinitions,
   buttonText,
+  textDecoration = "underline",
 }: DownloadLinkProps) {
   const [acceptModalShown, setAcceptModalShown] = useState<boolean>(false);
   const termsAccepted = AcceptedTerms.has(terms);
@@ -95,7 +97,7 @@ export function DownloadLink({
           all: "unset",
           color: "#337ab7",
           cursor: "pointer",
-          textDecoration: "underline",
+          textDecoration,
         }}
       >
         {buttonText}
