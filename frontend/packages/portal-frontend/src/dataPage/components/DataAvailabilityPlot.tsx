@@ -97,6 +97,22 @@ const DataAvailabilityPlot = ({
 
     return graphSectionUrlMapping;
   };
+
+  const getDrugCountMapping = (categoryKey: string) => {
+    const graphSectionDrugCountMapping: {
+      [key: string]: number | undefined;
+    } = {};
+    dataValuesByDataTypeCategory[categoryKey].forEach((category: any) => {
+      const dataTypeString = getDataPageDataTypeString(category.dataType);
+
+      const count =
+        currentReleaseDataAvil.drug_count_mapping[category.dataType];
+
+      graphSectionDrugCountMapping[dataTypeString] = count;
+    });
+
+    return graphSectionDrugCountMapping;
+  };
   return (
     <div>
       {dataValuesByDataTypeCategory && (
@@ -112,6 +128,7 @@ const DataAvailabilityPlot = ({
                       (category: any) => category.dataType
                     )}
                     dataTypeUrlMapping={getDataTypeUrlMapping(categoryKey)}
+                    drugCountMapping={getDrugCountMapping(categoryKey)}
                     dataTypeGroupName={categoryKey}
                     isCurrentRelease={isCurrentRelease}
                   />
@@ -131,7 +148,7 @@ const DataAvailabilityPlot = ({
                   BAR_THICKNESS *
                   dataValuesByDataTypeCategory[categoryKey].length
                 }
-                customWidth={400}
+                customWidth={350}
                 customColorScale={COLOR_SCALE}
                 margin={{
                   l: 0,

@@ -657,6 +657,7 @@ export class DepmapApi {
       // mapped to color category integers. The integer maps to Heatmap.tsx's
       // color scale.
       data_type_url_mapping: boolSummary.data_type_url_mapping,
+      drug_count_mapping: boolSummary.drug_count_mapping,
       values: dataAvailVals,
       data_types: boolSummary.data_types,
     };

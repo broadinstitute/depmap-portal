@@ -1,4 +1,4 @@
-export const BAR_THICKNESS = 42;
+export const BAR_THICKNESS = 43;
 
 export const currentReleaseDatasets = [
   "Sequencing_WES_Broad",
