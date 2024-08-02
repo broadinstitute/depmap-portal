@@ -66,7 +66,10 @@ const DataPageDatatypeSelector = ({
             {getDrugCountLabel(dataTypeDisplayName)}
           </a>
         ) : (
-          <p>{getDataTypeLabel(dataTypeDisplayName, inCurrentRelease)}</p>
+          <p>
+            {getDataTypeLabel(dataTypeDisplayName, inCurrentRelease)} <br />
+            {getDrugCountLabel(dataTypeDisplayName)}
+          </p>
         )}
       </div>
     );
