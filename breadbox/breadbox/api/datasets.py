@@ -43,7 +43,6 @@ from ..schemas.dataset import (
     AddDatasetResponse,
     DatasetResponse,
     DatasetMetadata,
-    DatasetUpdateParams,
     DimensionSearchIndexResponse,
     FeatureResponse,
     FeatureSampleIdentifier,

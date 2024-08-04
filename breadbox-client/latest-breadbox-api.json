@@ -1666,6 +1666,7 @@
           "group_id": {
             "anyOf": [
               {
+                "format": "uuid",
                 "type": "string"
               },
               {
@@ -2125,6 +2126,7 @@
           "group_id": {
             "anyOf": [
               {
+                "format": "uuid",
                 "type": "string"
               },
               {

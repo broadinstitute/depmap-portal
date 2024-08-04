@@ -409,17 +409,6 @@ class FeatureResponse(BaseModel):
     dataset_label: str
 
 
-class DatasetUpdateParams(BaseModel):
-    """Contains the subset of dataset fields that may be updated after dataset creation."""
-
-    name: Optional[str]
-    units: Optional[str]
-    data_type: Optional[str]
-    group_id: Optional[str]
-    priority: Optional[int]
-    dataset_metadata: Optional[Dict[str, Any]]
-
-
 class DatasetUpdateSharedParams(BaseModel):
     """Contains the shared subset of matrix and tabular dataset fields that may be updated after dataset creation."""
 
@@ -428,7 +417,7 @@ class DatasetUpdateSharedParams(BaseModel):
         Optional[str], Field(description="Data type grouping for your dataset")
     ] = None
     group_id: Annotated[
-        Optional[str], Field(description="Id of the group the dataset belongs to")
+        Optional[UUID], Field(description="Id of the group the dataset belongs to")
     ] = None
     priority: Annotated[
         Optional[int],

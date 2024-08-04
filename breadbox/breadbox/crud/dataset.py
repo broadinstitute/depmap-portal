@@ -15,7 +15,6 @@ from ..io.data_validation import dimension_label_df_schema
 from ..schemas.dataset import (
     MatrixDatasetIn,
     TabularDatasetIn,
-    DatasetUpdateParams,
     DimensionSearchIndexResponse,
     FeatureSampleIdentifier,
     MatrixDimensionsInfo,
