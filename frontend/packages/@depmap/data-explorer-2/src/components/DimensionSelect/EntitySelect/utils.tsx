@@ -437,13 +437,11 @@ export function formatOptionLabel(
           <Highlighter
             text={option.label}
             style={{ color: disabledReason ? "inherit" : "black" }}
-            termToHiglight={(() => {
-              return (
-                tokenize(inputValue).find((token) =>
-                  option.label?.toLowerCase().includes(token.toLowerCase())
-                ) || ""
-              );
-            })()}
+            termToHiglight={
+              tokenize(inputValue).find((token) =>
+                option.label?.toLowerCase().includes(token.toLowerCase())
+              ) || ""
+            }
             matchPartialTerms
           />
         </div>
