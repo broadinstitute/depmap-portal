@@ -15,7 +15,7 @@ def _get_kwargs(
     *,
     limit: int,
     include_referenced_by: Union[Unset, str] = "F",
-    prefix: Union[None, Unset, str] = UNSET,
+    prefix: Union[List[str], None, Unset] = UNSET,
     substring: Union[List[str], None, Unset] = UNSET,
     type_name: Union[None, Unset, str] = UNSET,
 ) -> Dict[str, Any]:
@@ -25,9 +25,12 @@ def _get_kwargs(
 
     params["include_referenced_by"] = include_referenced_by
 
-    json_prefix: Union[None, Unset, str]
+    json_prefix: Union[List[str], None, Unset]
     if isinstance(prefix, Unset):
         json_prefix = UNSET
+    elif isinstance(prefix, list):
+        json_prefix = prefix
+
     else:
         json_prefix = prefix
     params["prefix"] = json_prefix
@@ -120,7 +123,7 @@ def sync_detailed(
     client: Union[AuthenticatedClient, Client],
     limit: int,
     include_referenced_by: Union[Unset, str] = "F",
-    prefix: Union[None, Unset, str] = UNSET,
+    prefix: Union[List[str], None, Unset] = UNSET,
     substring: Union[List[str], None, Unset] = UNSET,
     type_name: Union[None, Unset, str] = UNSET,
 ) -> Response[
@@ -134,7 +137,7 @@ def sync_detailed(
     Args:
         limit (int):
         include_referenced_by (Union[Unset, str]):  Default: 'F'.
-        prefix (Union[None, Unset, str]):
+        prefix (Union[List[str], None, Unset]):
         substring (Union[List[str], None, Unset]):
         type_name (Union[None, Unset, str]):
 
@@ -166,7 +169,7 @@ def sync(
     client: Union[AuthenticatedClient, Client],
     limit: int,
     include_referenced_by: Union[Unset, str] = "F",
-    prefix: Union[None, Unset, str] = UNSET,
+    prefix: Union[List[str], None, Unset] = UNSET,
     substring: Union[List[str], None, Unset] = UNSET,
     type_name: Union[None, Unset, str] = UNSET,
 ) -> Optional[
@@ -180,7 +183,7 @@ def sync(
     Args:
         limit (int):
         include_referenced_by (Union[Unset, str]):  Default: 'F'.
-        prefix (Union[None, Unset, str]):
+        prefix (Union[List[str], None, Unset]):
         substring (Union[List[str], None, Unset]):
         type_name (Union[None, Unset, str]):
 
@@ -207,7 +210,7 @@ async def asyncio_detailed(
     client: Union[AuthenticatedClient, Client],
     limit: int,
     include_referenced_by: Union[Unset, str] = "F",
-    prefix: Union[None, Unset, str] = UNSET,
+    prefix: Union[List[str], None, Unset] = UNSET,
     substring: Union[List[str], None, Unset] = UNSET,
     type_name: Union[None, Unset, str] = UNSET,
 ) -> Response[
@@ -221,7 +224,7 @@ async def asyncio_detailed(
     Args:
         limit (int):
         include_referenced_by (Union[Unset, str]):  Default: 'F'.
-        prefix (Union[None, Unset, str]):
+        prefix (Union[List[str], None, Unset]):
         substring (Union[List[str], None, Unset]):
         type_name (Union[None, Unset, str]):
 
@@ -251,7 +254,7 @@ async def asyncio(
     client: Union[AuthenticatedClient, Client],
     limit: int,
     include_referenced_by: Union[Unset, str] = "F",
-    prefix: Union[None, Unset, str] = UNSET,
+    prefix: Union[List[str], None, Unset] = UNSET,
     substring: Union[List[str], None, Unset] = UNSET,
     type_name: Union[None, Unset, str] = UNSET,
 ) -> Optional[
@@ -265,7 +268,7 @@ async def asyncio(
     Args:
         limit (int):
         include_referenced_by (Union[Unset, str]):  Default: 'F'.
-        prefix (Union[None, Unset, str]):
+        prefix (Union[List[str], None, Unset]):
         substring (Union[List[str], None, Unset]):
         type_name (Union[None, Unset, str]):
 

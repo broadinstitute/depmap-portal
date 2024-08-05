@@ -1,5 +1,5 @@
 from taigapy import create_taiga_client_v3
-from utils import update_taiga
+from data_prep_pipeline.utils import update_taiga
 
 # Target dataset ID
 target_dataset_id = "predictability-legacy-datasets-8c54"
@@ -17,6 +17,9 @@ rppa_matrix_taiga_id = "repurposing-public-23q2-341f.10/Repurposing_Public_23Q2_
 rppa_mapping_taiga_id = (
     "repurposing-public-23q2-341f.10/Repurposing_Public_23Q2_RPPA_Mapping"
 )
+
+# RNAi
+rnai_taiga_id = "demeter2-combined-dc9c.19/gene_means_proc"
 
 
 def process_and_update_rnai_confounders():
@@ -116,7 +119,20 @@ def process_and_update_rppa():
     )
 
 
+def process_and_update_rnai():
+    tc = create_taiga_client_v3()
+    rnai = tc.get(rnai_taiga_id)
+    rnai = rnai.T
+    update_taiga(
+        rnai,
+        "Update rnai dep data for predictability",
+        target_dataset_id,
+        "RNAiDep",
+    )
+
+
 def main():
+    process_and_update_rnai()
     process_and_update_rnai_confounders()
     process_and_update_oncref_confounders()
     process_and_update_rep_single_pt_confounders()

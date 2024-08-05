@@ -7,6 +7,7 @@ interface Props {
   datatypes: string[];
   dataTypeGroupName: string;
   dataTypeUrlMapping: { [key: string]: string | undefined };
+  drugCountMapping: { [data_type: string]: number | undefined };
   isCurrentRelease: boolean;
 }
 
@@ -14,9 +15,22 @@ const DataPageDatatypeSelector = ({
   datatypes,
   dataTypeGroupName,
   dataTypeUrlMapping,
+  drugCountMapping,
   isCurrentRelease,
 }: Props) => {
   const display: any = [];
+
+  const getDrugCountLabel = (dataType: string) => {
+    if (
+      Object.keys(drugCountMapping).includes(dataType) &&
+      drugCountMapping[dataType] !== null &&
+      drugCountMapping[dataType] !== undefined
+    ) {
+      return `(${drugCountMapping[dataType]} drugs)`;
+    }
+
+    return "";
+  };
 
   // If the data type is in the current release, add an asterisk.
   const getDataTypeLabel = (
@@ -47,10 +61,15 @@ const DataPageDatatypeSelector = ({
             target="_blank"
             rel="noreferrer"
           >
-            {getDataTypeLabel(dataTypeDisplayName, inCurrentRelease)}
+            {`${getDataTypeLabel(dataTypeDisplayName, inCurrentRelease)}`}
+            <br />
+            {getDrugCountLabel(dataTypeDisplayName)}
           </a>
         ) : (
-          <p>{getDataTypeLabel(dataTypeDisplayName, inCurrentRelease)}</p>
+          <p>
+            {getDataTypeLabel(dataTypeDisplayName, inCurrentRelease)} <br />
+            {getDrugCountLabel(dataTypeDisplayName)}
+          </p>
         )}
       </div>
     );

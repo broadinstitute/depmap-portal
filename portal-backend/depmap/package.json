@@ -6,7 +6,7 @@
   "scripts": {
     "test": "jest"
   },
-  "repository": "https://github.com/broadinstitute/depmap",
+  "repository": "https://github.com/broadinstitute/depmap-portal",
   "author": "CDS Team <cds@broadinstitute.org>",
   "license": "MIT",
   "dependencies": {

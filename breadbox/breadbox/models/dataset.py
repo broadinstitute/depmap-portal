@@ -278,6 +278,13 @@ class DimensionSearchIndex(Base, UUIDMixin, GroupMixin):
 
     __table_args__ = (
         Index("idx_dimension_search_index_dimension_id", "dimension_id",),
+        # the following indices are for speeding up querying to search index, but
+        # not 100% confident this is the optimal combination of indices. However,
+        # testing the get dimensions endpoint suggests that these are "good enough"
+        # for now.
+        Index("idx_dim_search_index_perf_1", "value"),
+        Index("idx_dim_search_index_perf_2", "type_name", "value"),
+        Index("idx_dim_search_index_perf_3", "dimension_given_id", "type_name", "value")
     )
 
     dimension_id = Column(

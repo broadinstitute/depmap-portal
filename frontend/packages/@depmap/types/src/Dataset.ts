@@ -1,3 +1,5 @@
+import { ColumnMetadata } from "./Metadata";
+
 export interface MatrixDatasetParams {
   name: string;
   file_ids: string[];
@@ -27,29 +29,50 @@ export interface TableDatasetParams {
   is_transient: boolean;
   dataset_metadata?: any;
   format: "table";
-  units: string;
   index_type: string;
   columns_metadata: { [key: string]: any };
 }
 
 export type DatasetParams = TableDatasetParams | MatrixDatasetParams;
 
-export interface Dataset {
-  [key: string]: any;
+export interface MatrixDataset {
+  id: string;
+  format: "matrix_dataset";
+  dataset_md5: string | null;
+  name: string;
+  units: string;
+  feature_type_name: string;
+  sample_type_name: string;
+  data_type: string;
+  priority: number | null;
+  taiga_id: string | null;
+  group_id: string;
+  group: any;
+  is_transient: boolean;
+  value_type: string | null;
   allowed_values: string[] | null;
-  feature_type: string | null;
-  data_type: string | null;
+  dataset_metadata?: any;
+  [key: string]: any; // This appears to have been added as support for in case new properties introduced
+}
+
+export interface TabularDataset {
+  id: string;
+  format: "tabular_dataset";
+  dataset_md5: string | null;
+  name: string;
+  index_type_name: string;
+  data_type: string;
   priority: number | null;
   taiga_id: string | null;
   group_id: any;
-  id: string;
   is_transient: boolean;
-  name: string;
-  sample_type: string | null;
-  units: string;
   value_type: string | null;
+  columns_metadata: { [key: string]: ColumnMetadata };
   dataset_metadata?: any;
+  [key: string]: any; // This appears to have been added as support for in case new properties introduced
 }
+
+export type Dataset = TabularDataset | MatrixDataset;
 
 export interface DatasetUpdateArgs {
   [key: string]: any;

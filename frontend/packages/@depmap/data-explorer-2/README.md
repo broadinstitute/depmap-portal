@@ -5,7 +5,7 @@ Data Explorer 2.0 is the replacement for the original Data Explorer (a.k.a.
 original.
 
 Note that most of of the DE2 UI code is located in the
-[../../portal-frontend/src/data-explorer-2/](https://github.com/broadinstitute/depmap/tree/0fa2d2e/frontend/packages/portal-frontend/src/data-explorer-2)
+[../../portal-frontend/src/data-explorer-2/](https://github.com/broadinstitute/depmap-portal/tree/master/frontend/packages/portal-frontend/src/data-explorer-2)
 directory. That code will be migrated here over time. For now, only the
 ContextSelector is exported from this package.
 
