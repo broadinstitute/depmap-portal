@@ -272,8 +272,14 @@ export default function extendReactSelect(
                 // This is the only case where we actually do want to wipe out
                 // the value.
                 if (input.value.length === 1 && e.key === "Backspace") {
-                  reactSelectRef.current.select.onInputChange("");
-                  reactSelectRef.current.select.onChange(null);
+                  if (props.isClearable) {
+                    reactSelectRef.current.select.onInputChange("");
+                    reactSelectRef.current.select.onChange(null);
+                  } else {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    reactSelectRef.current.select.onInputChange(value?.label);
+                  }
                 }
 
                 if (props.onKeyDown) {
