@@ -43,7 +43,7 @@ interface SearchDimensionPrefix extends SearchDimensionCommon {
 }
 
 interface SearchDimensionSubstring extends SearchDimensionCommon {
-  substring: string;
+  substring: string | string[];
   prefix?: never;
 }
 

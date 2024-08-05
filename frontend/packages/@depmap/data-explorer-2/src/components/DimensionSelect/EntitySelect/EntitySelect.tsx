@@ -10,8 +10,8 @@ import {
   toDemapModelOptions,
   toOutputValue,
   toReactSelectOptions,
-  useApi,
   useEntityLabels,
+  useSearch,
 } from "./utils";
 
 interface Props {
@@ -35,7 +35,7 @@ function EntitySelect({
   units,
   swatchColor = undefined,
 }: Props) {
-  const api = useApi();
+  const search = useSearch();
 
   const {
     aliases,
@@ -47,11 +47,7 @@ function EntitySelect({
 
   const loadOptions = useCallback(
     async (inputValue: string) => {
-      const results = await api.searchDimensions({
-        substring: inputValue,
-        limit: 100,
-        type_name: entity_type,
-      });
+      const results = await search(inputValue, entity_type);
 
       // HACK: We want the user to be able to start typing right away, before
       // waiting for the `useEntityLabels` hook to have updated. This will run
@@ -77,7 +73,7 @@ function EntitySelect({
         cached.disabledReasons
       );
     },
-    [api, entity_type, waitForCachedValues]
+    [search, entity_type, waitForCachedValues]
   );
 
   const defaultOptions = useMemo(() => {

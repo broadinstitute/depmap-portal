@@ -185,6 +185,11 @@ export default function extendReactSelect(
                 menuPortal: (base) => ({ ...base, zIndex: 3 }),
                 clearIndicator: (base) => ({ ...base, padding: 2 }),
                 dropdownIndicator: (base) => ({ ...base, padding: 4 }),
+                loadingIndicator: (base) => ({
+                  ...base,
+                  position: "absolute",
+                  right: 22,
+                }),
                 menu: (base) => ({
                   ...base,
                   fontSize: 12,
@@ -214,6 +219,7 @@ export default function extendReactSelect(
                 const inputContainer = valContainerItem.nextSibling as HTMLElement;
 
                 valContainer.style.display = "inline";
+                valContainer.style.paddingRight = "0";
                 inputContainer.style.display = "inline";
 
                 valContainerItem.style.cssText = `
