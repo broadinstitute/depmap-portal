@@ -81,12 +81,12 @@
         text-overflow: ellipsis;
         white-space: nowrap;
         overflow: hidden;
-        margin-right: 15px;
+        margin-right: 5px;
         min-width: fit-content;
 
         .iconsContainer {
           display: grid;
-          grid-template-columns: repeat(2, 35px);
+          grid-template-columns: repeat(3, 42px);
         }
       }
       .five {

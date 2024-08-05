@@ -232,16 +232,6 @@ export const AllData = ({
             By default the latest DepMap data release of CRISPR and genomics
             data is shown.
           </p>
-          <button
-            type="button"
-            className={styles.linkButton}
-            onClick={(event) => {
-              handleToggleReleaseModal();
-              event.preventDefault();
-            }}
-          >
-            View full release details
-          </button>
           <div className={styles.fileSearchContainer}>
             <div className={styles.fileSearch}>
               <FileSearch
@@ -406,6 +396,16 @@ export const AllData = ({
                   dropdownSelector.selection[0].name}{" "}
                 Files
               </h2>
+              <button
+                type="button"
+                className={styles.linkButton}
+                onClick={(event) => {
+                  handleToggleReleaseModal();
+                  event.preventDefault();
+                }}
+              >
+                View full release details
+              </button>
               <div
                 className={styles.releaseDescription}
                 dangerouslySetInnerHTML={{
