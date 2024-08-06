@@ -9,7 +9,6 @@ export { default as EntitySelect } from "./src/components/DimensionSelect/Entity
 
 export {
   evaluateContext,
-  evaluateContextWithSummary,
   fetchAnalysisResult,
   fetchAssociations,
   fetchContext,

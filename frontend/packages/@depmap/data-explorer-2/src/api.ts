@@ -331,16 +331,9 @@ export async function evaluateContext(
       slice_id: string;
       values: string[];
     }[];
-  }>("/context/labels", { context, summarize: false });
-}
-
-export async function evaluateContextWithSummary(
-  context: DataExplorerContext | DataExplorerAnonymousContext
-) {
-  return postJson<{
     num_candidates: number;
     num_matches: number;
-  }>("/context/labels", { context, summarize: true });
+  }>("/context/labels", { context });
 }
 
 export function fetchDatasetDetails(dataset_id: string) {

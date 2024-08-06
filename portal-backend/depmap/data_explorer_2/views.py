@@ -447,31 +447,35 @@ def unique_values_or_range():
 @blueprint.route("/context/labels", methods=["POST"])
 @csrf_protect.exempt
 def get_labels_matching_context():
-    # TODO: remove
+    """
+    Get the full list of labels (in any dataset) which match the given context.
+    Also include the count of "candidate" labels, which belong to the given 
+    dimension type (called "context_type" here).
+    """
+    # TODO: remove aliases
     inputs = request.get_json()
     context = inputs["context"]
-    summarize = inputs["summarize"]
     context_type = context["context_type"]
     # Performance: combines labels from all datasets, then iterates through
     context_evaluator = ContextEvaluator(context)
     input_labels = get_entity_labels_across_datasets(context_type)
 
-    if summarize:
-        num_matches = sum(int(context_evaluator.is_match(x)) for x in input_labels)
-        # This is like it's own separate endpoint with its own separate contract
-        return make_gzipped_json_response(
-            {"num_candidates": len(input_labels), "num_matches": num_matches}
-        )
-
-    labels = []
+    labels_matching_context = []
 
     for label in input_labels:
         if context_evaluator.is_match(label):
-            labels.append(label)
+            labels_matching_context.append(label)
 
-    aliases = get_aliases_matching_labels(context_type, labels)
+    aliases = get_aliases_matching_labels(context_type, labels_matching_context)
 
-    return make_gzipped_json_response({"labels": labels, "aliases": aliases})
+    response = {
+        "labels": labels_matching_context,
+        "aliases": aliases,
+        "num_candidates": len(input_labels),
+        "num_matches": len(labels_matching_context),
+    }
+
+    return make_gzipped_json_response(response)
 
 
 @blueprint.route("/context/datasets", methods=["POST"])
@@ -479,6 +483,7 @@ def get_labels_matching_context():
 def get_datasets_matching_context():
     """
     Get the list of datasets which have data matching the given context.
+    For each dataset, include the full list of entity labels matching the context.
     """
     # Performance: iterates through each label in each dataset
     inputs = request.get_json()
