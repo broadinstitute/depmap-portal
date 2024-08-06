@@ -470,7 +470,6 @@ def get_labels_matching_context():
 
     response = {
         "labels": labels_matching_context,
-        "aliases": aliases,
         "num_candidates": len(input_labels),
         "num_matches": len(labels_matching_context),
     }

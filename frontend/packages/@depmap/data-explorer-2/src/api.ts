@@ -321,16 +321,11 @@ export function fetchUniqueValuesOrRange(slice_id: string) {
   );
 }
 
-export async function evaluateContext(
+export async function fetchContextLabels(
   context: DataExplorerContext | DataExplorerAnonymousContext
 ) {
   return postJson<{
     labels: string[];
-    aliases: {
-      label: string;
-      slice_id: string;
-      values: string[];
-    }[];
     num_candidates: number;
     num_matches: number;
   }>("/context/labels", { context });

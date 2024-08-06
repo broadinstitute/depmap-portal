@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Button, Modal, Radio } from "react-bootstrap";
 import {
-  evaluateContext,
+  fetchContextLabels,
   fetchContext,
   getDimensionTypeLabel,
   pluralize,
@@ -37,7 +37,7 @@ function DownloadContextModal({
 
   // Pre-fetch the context so it downloads faster (these requests are cached).
   useEffect(() => {
-    fetchContext(contextHash).then(evaluateContext);
+    fetchContext(contextHash).then(fetchContextLabels);
   }, [contextHash]);
 
   const handleClickDownload = () => {
@@ -47,7 +47,7 @@ function DownloadContextModal({
     }
 
     fetchContext(contextHash)
-      .then(evaluateContext)
+      .then(fetchContextLabels)
       .then((evaluated) => {
         let labels = evaluated.labels;
 

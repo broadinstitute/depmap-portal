@@ -8,7 +8,7 @@ export { default as DimensionSelect } from "./src/components/DimensionSelect";
 export { default as EntitySelect } from "./src/components/DimensionSelect/EntitySelect";
 
 export {
-  evaluateContext,
+  fetchContextLabels,
   fetchAnalysisResult,
   fetchAssociations,
   fetchContext,

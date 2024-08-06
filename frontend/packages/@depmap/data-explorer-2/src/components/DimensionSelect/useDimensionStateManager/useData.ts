@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { DataExplorerContext } from "@depmap/types";
 import {
-  evaluateContext,
+  fetchContextLabels,
   fetchDatasetsByIndexType,
   fetchEntityToDatasetsMapping,
 } from "../../../api";
@@ -83,7 +83,7 @@ export default function useDatasets({
     if (axis_type === "context" && context) {
       setContextLabels(null);
 
-      evaluateContext(context).then((result) => {
+      fetchContextLabels(context).then((result) => {
         setContextLabels(new Set(result.labels));
       });
     }

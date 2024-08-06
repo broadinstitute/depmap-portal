@@ -1,7 +1,7 @@
 import { get_operator, get_values } from "json-logic-js";
 import { urlLibEncode } from "@depmap/data-explorer-2";
 
-export interface EvaluateContextSummarizedResult {
+export interface fetchContextLabelsSummarizedResult {
   num_candidates: number;
   num_matches: number;
 }
