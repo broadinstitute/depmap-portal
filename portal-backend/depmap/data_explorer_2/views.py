@@ -449,24 +449,19 @@ def unique_values_or_range():
 def get_labels_matching_context():
     """
     Get the full list of labels (in any dataset) which match the given context.
-    Also include the count of "candidate" labels, which belong to the given 
+    Also include the count of "candidate" labels, which belong to the context's 
     dimension type (called "context_type" here).
     """
-    # TODO: remove aliases
     inputs = request.get_json()
     context = inputs["context"]
     context_type = context["context_type"]
-    # Performance: combines labels from all datasets, then iterates through
     context_evaluator = ContextEvaluator(context)
     input_labels = get_entity_labels_across_datasets(context_type)
 
     labels_matching_context = []
-
     for label in input_labels:
         if context_evaluator.is_match(label):
             labels_matching_context.append(label)
-
-    aliases = get_aliases_matching_labels(context_type, labels_matching_context)
 
     response = {
         "labels": labels_matching_context,
@@ -483,8 +478,16 @@ def get_datasets_matching_context():
     """
     Get the list of datasets which have data matching the given context.
     For each dataset, include the full list of entity labels matching the context.
+    Returns a list of dictionaries like:
+    [
+      {
+        "dataset_id"    : "Chronos_Combined"
+        "dataset_label" : "CRISPR (DepMap Internal 23Q4+Score, Chronos)"
+        "entity_labels" : ["SOX10"]
+      },
+      ...
+    ]
     """
-    # Performance: iterates through each label in each dataset
     inputs = request.get_json()
     context = inputs["context"]
     out = get_datasets_matching_context_with_details(context)

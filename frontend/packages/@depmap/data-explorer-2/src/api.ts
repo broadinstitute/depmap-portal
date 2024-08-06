@@ -236,16 +236,16 @@ export function fetchDatasetsByIndexType() {
   );
 }
 
+export interface ContextDatasetsResponse {
+  dataset_id: string;
+  dataset_label: string;
+  entity_labels: string[];
+}
+
 export function fetchDatasetsMatchingContextIncludingEntities(
   context: DataExplorerContext | DataExplorerAnonymousContext
-) {
-  return postJson<
-    {
-      dataset_id: string;
-      dataset_label: string;
-      entity_labels: string[];
-    }[]
-  >("/context/datasets", { context });
+): Promise<ContextDatasetsResponse> {
+  return postJson<ContextDatasetsResponse>("/context/datasets", { context });
 }
 
 export function fetchEntityLabels(
@@ -321,14 +321,16 @@ export function fetchUniqueValuesOrRange(slice_id: string) {
   );
 }
 
+export interface ContextLabelsResponse {
+  labels: string[];
+  num_candidates: number;
+  num_matches: number;
+}
+
 export async function fetchContextLabels(
   context: DataExplorerContext | DataExplorerAnonymousContext
-) {
-  return postJson<{
-    labels: string[];
-    num_candidates: number;
-    num_matches: number;
-  }>("/context/labels", { context });
+): Promise<ContextLabelsResponse> {
+  return postJson<ContextLabelsResponse>("/context/labels", { context });
 }
 
 export function fetchDatasetDetails(dataset_id: string) {

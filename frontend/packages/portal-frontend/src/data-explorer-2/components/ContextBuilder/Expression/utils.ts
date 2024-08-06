@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 import {
-  evaluateContextWithSummary,
+  fetchContextLabels,
   isCompleteExpression,
   isPartialSliceId,
 } from "@depmap/data-explorer-2";
 import {
-  EvaluateContextSummarizedResult,
+  fetchContextLabelsSummarizedResult,
   getOperator,
   isListOperator,
   normalizeExpr,
@@ -32,14 +32,16 @@ export const useEvaluatedExpressionResult = (
   entity_type: string,
   expr: any
 ) => {
-  const [result, setResult] = useState<EvaluateContextSummarizedResult | null>(
-    null
-  );
+  const [
+    result,
+    setResult,
+  ] = useState<fetchContextLabelsSummarizedResult | null>(null);
 
+  // TODO: re-implement this by calling the other endpoint
   useEffect(() => {
     (async () => {
       if (isCompleteExpression(expr)) {
-        const fetchedResult = await evaluateContextWithSummary({
+        const fetchedResult = await fetchContextLabels({
           context_type: entity_type,
           expr: normalizeExpr(expr),
         });
