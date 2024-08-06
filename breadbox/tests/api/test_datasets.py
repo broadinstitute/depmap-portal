@@ -2394,22 +2394,57 @@ class TestPost:
         private_group: Dict,
         settings,
     ):
+        admin_headers = {"X-Forwarded-Email": settings.admin_users[0]}
+
+        # Give metadata for depmap model
+        r_add_metadata_for_depmap_model = client.patch(
+            "/types/sample/depmap_model/metadata",
+            data={
+                "name": "depmap model metadata",
+                "annotation_type_mapping": json.dumps(
+                    {"annotation_type_mapping": {"label": "text", "depmap_id": "text",}}
+                ),
+            },
+            files={
+                "metadata_file": (
+                    "new_feature_metadata",
+                    factories.tabular_csv_data_file(
+                        cols=["label", "depmap_id"],
+                        row_values=[
+                            ["ach1", "ACH-1"],
+                            ["ach2", "ACH-2"],
+                            ["ach3", "ACH-3"],
+                        ],
+                    ),
+                    "text/csv",
+                )
+            },
+            headers=admin_headers,
+        )
+        assert_status_ok(
+            r_add_metadata_for_depmap_model
+        ), r_add_metadata_for_depmap_model.status_code == 200
+
+        # Create tabular dataset
         tabular_file_1 = factories.tabular_csv_data_file(
-            cols=["depmap_id", "label", "col_1", "col_2"],
-            row_values=[["ACH-1", "ach1", 1, "hi"], ["ACH-2", "ach2", np.NaN, "bye"]],
+            cols=[
+                "depmap_id",
+                "label",
+                "col_1",
+                "col_2",
+                "col_3",
+                "col_4",
+                "col_5",
+            ],  # NOTE: Add 'label' col to ensure endpoint only uses 'label' in dim type metadata
+            row_values=[
+                ["ACH-1", "other_label_1", 1, "hi", False, "cat1", '["a"]'],
+                ["ACH-2", "other_label_2", np.NaN, "bye", np.NaN, "cat2", np.NaN],
+            ],
         )
-        tabular_file_2 = factories.tabular_csv_data_file(
-            cols=["depmap_id", "label", "col_1", "col_2"],
-            row_values=[["ACH-1", "ach1", 1, "hi"]],
-        )
+
         tabular_file_ids_1, tabular_file_1_hash = factories.file_ids_and_md5_hash(
             client, tabular_file_1
         )
-        tabular_file_ids_2, tabular_file_2_hash = factories.file_ids_and_md5_hash(
-            client, tabular_file_2
-        )
-
-        admin_headers = {"X-Forwarded-Email": settings.admin_users[0]}
 
         tabular_dataset_1_response = client.post(
             "/dataset-v2/",
@@ -2428,6 +2463,9 @@ class TestPost:
                     "label": {"col_type": "text"},
                     "col_1": {"units": "a unit", "col_type": "continuous"},
                     "col_2": {"col_type": "text"},
+                    "col_3": {"col_type": "binary"},
+                    "col_4": {"col_type": "categorical"},
+                    "col_5": {"col_type": "list_strings"},
                 },
             },
             headers=admin_headers,
@@ -2490,9 +2528,12 @@ class TestPost:
         )
         assert res.json() == {
             "depmap_id": {"ACH-1": "ACH-1"},
-            "label": {"ACH-1": "ach1"},
-            "col_1": {"ACH-1": "1.0"},
+            "label": {"ACH-1": "other_label_1"},
+            "col_1": {"ACH-1": 1},
             "col_2": {"ACH-1": "hi"},
+            "col_3": {"ACH-1": False},
+            "col_4": {"ACH-1": "cat1"},
+            "col_5": {"ACH-1": '["a"]'},
         }
 
         # When both columns and indices not provided, the entire dataset should return'
@@ -2503,18 +2544,24 @@ class TestPost:
         )
         assert res.json() == {
             "depmap_id": {"ACH-1": "ACH-1", "ACH-2": "ACH-2"},
-            "label": {"ACH-1": "ach1", "ACH-2": "ach2"},
-            "col_1": {"ACH-1": "1.0", "ACH-2": None},
+            "label": {"ACH-1": "other_label_1", "ACH-2": "other_label_2"},
+            "col_1": {"ACH-1": 1, "ACH-2": None},
             "col_2": {"ACH-1": "hi", "ACH-2": "bye"},
+            "col_3": {"ACH-1": False, "ACH-2": None},
+            "col_4": {"ACH-1": "cat1", "ACH-2": "cat2"},
+            "col_5": {"ACH-1": '["a"]', "ACH-2": None},
         }
         res = client.post(
             f"/datasets/tabular/{tabular_dataset_1_id}", headers=admin_headers,
         )
         assert res.json() == {
             "depmap_id": {"ACH-1": "ACH-1", "ACH-2": "ACH-2"},
-            "label": {"ACH-1": "ach1", "ACH-2": "ach2"},
-            "col_1": {"ACH-1": "1.0", "ACH-2": None},
+            "label": {"ACH-1": "other_label_1", "ACH-2": "other_label_2"},
+            "col_1": {"ACH-1": 1, "ACH-2": None},
             "col_2": {"ACH-1": "hi", "ACH-2": "bye"},
+            "col_3": {"ACH-1": False, "ACH-2": None},
+            "col_4": {"ACH-1": "cat1", "ACH-2": "cat2"},
+            "col_5": {"ACH-1": '["a"]', "ACH-2": None},
         }
 
         # Test if no matches found with given query params --> empty df
@@ -2557,7 +2604,7 @@ class TestPost:
             },
             headers=admin_headers,
         )
-        assert res.json() == {"col_1": {"ACH-1": "1.0"}}
+        assert res.json() == {"col_1": {"ACH-1": 1}}
 
         # With strict keyword
         res = client.post(
@@ -2582,6 +2629,76 @@ class TestPost:
             headers=admin_headers,
         )
         assert res.status_code == 400
+
+    def test_get_tabular_dataset_data_no_index_metadata(
+        self,
+        client: TestClient,
+        minimal_db: SessionWithUser,
+        mock_celery,
+        private_group: Dict,
+        settings,
+    ):
+        admin_headers = {"X-Forwarded-Email": settings.admin_users[0]}
+
+        tabular_file_2 = factories.tabular_csv_data_file(
+            cols=["depmap_id", "col_1", "col_2"], row_values=[["ACH-1", 1, "hi"]],
+        )
+        tabular_file_ids_2, tabular_file_2_hash = factories.file_ids_and_md5_hash(
+            client, tabular_file_2
+        )
+        tabular_dataset_2_response = client.post(
+            "/dataset-v2/",
+            json={
+                "format": "tabular",
+                "name": "Test Dataset 2",
+                "index_type": "depmap_model",
+                "data_type": "User upload",
+                "file_ids": tabular_file_ids_2,
+                "dataset_md5": tabular_file_2_hash,
+                "is_transient": False,
+                "group_id": private_group["id"],
+                "dataset_metadata": None,
+                "columns_metadata": {
+                    "depmap_id": {"col_type": "text",},
+                    "col_1": {"units": "a unit", "col_type": "continuous"},
+                    "col_2": {"col_type": "text"},
+                },
+            },
+            headers=admin_headers,
+        )
+        assert_status_ok(tabular_dataset_2_response)
+        tabular_dataset_2_id = tabular_dataset_2_response.json()["result"]["dataset"][
+            "id"
+        ]
+
+        tabular_dataset_2 = (
+            minimal_db.query(Dataset).filter_by(id=tabular_dataset_2_id).one()
+        )
+        assert tabular_dataset_2
+
+        # Get a subset of the tabular dataset by id
+        res = client.post(
+            f"/datasets/tabular/{tabular_dataset_2_id}",
+            json={
+                "indices": ["ACH-1"],
+                "identifier": "id",
+                "columns": ["col_1", "col_2"],
+            },
+            headers=admin_headers,
+        )
+        assert res.json() == {"col_1": {"ACH-1": 1}, "col_2": {"ACH-1": "hi"}}
+
+        # Get a subset of the tabular dataset by label (no data)
+        res = client.post(
+            f"/datasets/tabular/{tabular_dataset_2_id}",
+            json={
+                "indices": ["ach1"],
+                "identifier": "label",
+                "columns": ["col_1", "col_2"],
+            },
+            headers=admin_headers,
+        )
+        assert res.json() == {}
 
 
 class TestPatch:
