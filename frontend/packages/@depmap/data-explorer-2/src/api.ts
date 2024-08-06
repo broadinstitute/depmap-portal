@@ -244,8 +244,8 @@ export interface ContextDatasetsResponse {
 
 export function fetchDatasetsMatchingContextIncludingEntities(
   context: DataExplorerContext | DataExplorerAnonymousContext
-): Promise<ContextDatasetsResponse> {
-  return postJson<ContextDatasetsResponse>("/context/datasets", { context });
+): Promise<ContextDatasetsResponse[]> {
+  return postJson<ContextDatasetsResponse[]>("/context/datasets", { context });
 }
 
 export function fetchEntityLabels(
@@ -323,8 +323,12 @@ export function fetchUniqueValuesOrRange(slice_id: string) {
 
 export interface ContextLabelsResponse {
   labels: string[];
+  aliases: {
+    label: string;
+    slice_id: string;
+    values: string[];
+  }[];
   num_candidates: number;
-  num_matches: number;
 }
 
 export async function fetchContextLabels(

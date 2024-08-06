@@ -108,10 +108,10 @@ function Expression({
             {result && (
               <div
                 className={styles.subexprResult}
-                style={{ fontSize: result.num_matches > 999 ? 12 : 14 }}
+                style={{ fontSize: result.labels.length > 999 ? 12 : 14 }}
               >
-                {result.num_matches.toLocaleString()}
-                {result.num_matches === 1 ? " match" : " matches"}
+                {result.labels.length.toLocaleString()}
+                {result.labels.length === 1 ? " match" : " matches"}
               </div>
             )}
           </div>

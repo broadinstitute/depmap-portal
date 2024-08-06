@@ -29,7 +29,7 @@ function Result({ result, isTopLevel, entity_type }: any) {
     >
       {!isTopLevel && <span className={styles.groupExprResultSeparator} />}
       <div className={styles.groupExprResultValue}>
-        {isTopLevel && result.num_matches === 0 && (
+        {isTopLevel && result.labels.length === 0 && (
           <div className={styles.noMatchesError}>
             These conditions produce no matches. Please double-check them.
           </div>
@@ -37,15 +37,15 @@ function Result({ result, isTopLevel, entity_type }: any) {
         {isTopLevel ? (
           <>
             <span>
-              <b>{result.num_matches.toLocaleString()}</b>
+              <b>{result.labels.length.toLocaleString()}</b>
             </span>
             <span>of {result.num_candidates.toLocaleString()}</span>
             <span>{pluralize(getDimensionTypeLabel(entity_type))}</span>
           </>
         ) : (
           <>
-            {result.num_matches.toLocaleString()}
-            {result.num_matches === 1 ? " match" : " matches"}
+            {result.labels.length.toLocaleString()}
+            {result.labels.length === 1 ? " match" : " matches"}
           </>
         )}
       </div>

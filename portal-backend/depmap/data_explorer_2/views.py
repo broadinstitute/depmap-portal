@@ -462,11 +462,14 @@ def get_labels_matching_context():
     for label in input_labels:
         if context_evaluator.is_match(label):
             labels_matching_context.append(label)
+    aliases = get_aliases_matching_labels(context_type, labels_matching_context)
 
+    # Aliases should be removed from this response once they're no longer needed by context manager.
+    # The breadbox implementation of this endpoint will not return aliases.
     response = {
         "labels": labels_matching_context,
+        "aliases": aliases,
         "num_candidates": len(input_labels),
-        "num_matches": len(labels_matching_context),
     }
 
     return make_gzipped_json_response(response)

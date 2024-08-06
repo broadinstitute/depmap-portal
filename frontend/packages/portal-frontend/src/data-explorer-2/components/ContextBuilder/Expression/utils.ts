@@ -5,11 +5,11 @@ import {
   isPartialSliceId,
 } from "@depmap/data-explorer-2";
 import {
-  fetchContextLabelsSummarizedResult,
   getOperator,
   isListOperator,
   normalizeExpr,
 } from "src/data-explorer-2/components/ContextBuilder/contextBuilderUtils";
+import { ContextLabelsResponse } from "@depmap/data-explorer-2/src/api";
 
 export const isEditableAsCellLineList = (entity_type: string, expr: any) => {
   const op = getOperator(expr);
@@ -32,10 +32,7 @@ export const useEvaluatedExpressionResult = (
   entity_type: string,
   expr: any
 ) => {
-  const [
-    result,
-    setResult,
-  ] = useState<fetchContextLabelsSummarizedResult | null>(null);
+  const [result, setResult] = useState<ContextLabelsResponse | null>(null);
 
   // TODO: re-implement this by calling the other endpoint
   useEffect(() => {
