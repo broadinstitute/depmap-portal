@@ -4,7 +4,7 @@ import WordBreaker from "./WordBreaker";
 interface Props {
   text: string;
   termToHiglight: string;
-  textColor?: string;
+  style?: React.CSSProperties;
   // Set this to `true` if you want highlight within words (rather than exactly
   // matching words)
   matchPartialTerms?: boolean;
@@ -15,7 +15,7 @@ interface Props {
 function Highlighter({
   text,
   termToHiglight,
-  textColor = "black",
+  style = undefined,
   matchPartialTerms = false,
 }: Props) {
   if (!text) {
@@ -48,7 +48,7 @@ function Highlighter({
         <span
           // eslint-disable-next-line react/no-array-index-key
           key={`${i}-h`}
-          style={{ color: textColor, backgroundColor: "yellow" }}
+          style={{ ...style, backgroundColor: "yellow" }}
         >
           <WordBreaker text={matches[i]} />
         </span>
