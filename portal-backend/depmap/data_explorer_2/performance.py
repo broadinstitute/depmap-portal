@@ -44,7 +44,7 @@ def generate_performance_report():
         "compute_filter": _test_compute_filters(),
         "compute_metadata": _test_compute_metadata(),
         "get_entity_labels_of_dataset": _test_get_entity_labels_of_dataset(),
-        "datasets_matching_context": _test_datasets_matching_context(),
+        "get_datasets_matching_context": _test_datasets_matching_context(),
     }
 
 

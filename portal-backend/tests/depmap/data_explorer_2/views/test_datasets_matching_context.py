@@ -70,7 +70,7 @@ def test_datasets_matching_context(app, empty_db_mock_downloads, mock_breadbox_c
 
     with app.test_client() as c:
         r = c.post(
-            url_for("data_explorer_2.datasets_matching_context"),
+            url_for("data_explorer_2.get_datasets_matching_context"),
             data=json.dumps(request_context),
             content_type="application/json",
         )

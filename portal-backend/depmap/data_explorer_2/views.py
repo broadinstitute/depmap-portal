@@ -444,9 +444,9 @@ def unique_values_or_range():
     )
 
 
-@blueprint.route("/evaluate_context", methods=["POST"])
+@blueprint.route("/context/labels", methods=["POST"])
 @csrf_protect.exempt
-def evaluate_context():
+def get_labels_matching_context():
     # TODO: remove
     inputs = request.get_json()
     context = inputs["context"]
@@ -474,9 +474,9 @@ def evaluate_context():
     return make_gzipped_json_response({"labels": labels, "aliases": aliases})
 
 
-@blueprint.route("/datasets_matching_context", methods=["POST"])
+@blueprint.route("/context/datasets", methods=["POST"])
 @csrf_protect.exempt
-def datasets_matching_context():
+def get_datasets_matching_context():
     """
     Get the list of datasets which have data matching the given context.
     """

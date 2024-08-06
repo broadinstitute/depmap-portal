@@ -16,7 +16,6 @@ export {
   fetchCorrelation,
   fetchDatasetDetails,
   fetchDatasetsByIndexType,
-  fetchDatasetsMatchingContext,
   fetchDatasetsMatchingContextIncludingEntities,
   fetchEntityLabels,
   fetchEntityToDatasetsMapping,

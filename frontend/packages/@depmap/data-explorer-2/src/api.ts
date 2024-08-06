@@ -245,7 +245,7 @@ export function fetchDatasetsMatchingContextIncludingEntities(
       dataset_label: string;
       entity_labels: string[];
     }[]
-  >("/datasets_matching_context", { context });
+  >("/context/datasets", { context });
 }
 
 export function fetchEntityLabels(
@@ -331,7 +331,7 @@ export async function evaluateContext(
       slice_id: string;
       values: string[];
     }[];
-  }>("/evaluate_context", { context, summarize: false });
+  }>("/context/labels", { context, summarize: false });
 }
 
 export async function evaluateContextWithSummary(
@@ -340,7 +340,7 @@ export async function evaluateContextWithSummary(
   return postJson<{
     num_candidates: number;
     num_matches: number;
-  }>("/evaluate_context", { context, summarize: true });
+  }>("/context/labels", { context, summarize: true });
 }
 
 export function fetchDatasetDetails(dataset_id: string) {
