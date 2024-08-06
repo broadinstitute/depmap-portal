@@ -1,5 +1,5 @@
 import time
-from depmap.data_explorer_2.datasets import get_datasets_matching_context
+from depmap.data_explorer_2.datasets import get_datasets_matching_context_with_details
 from depmap.data_explorer_2.plot import (
     compute_dimension,
     compute_filter,
@@ -98,7 +98,7 @@ def _test_datasets_matching_context():
     }
 
     start = time.time()
-    get_datasets_matching_context(context)
+    get_datasets_matching_context_with_details(context)
     elapsed = time.time() - start
 
     return round(elapsed, 4)

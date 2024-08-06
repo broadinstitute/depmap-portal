@@ -704,7 +704,6 @@ views.py: error: Argument of type "Literal['user_id']" cannot be assigned to par
 views.py: error: Argument of type "Literal['value']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
 views.py: error: Argument of type "Literal[DependencyEnum.Avana]" cannot be assigned to parameter "dependency_dataset_name" of type "str" in function "get_dataset_by_name"
 views.py: error: Argument of type "Unknown | Any | None" cannot be assigned to parameter "query_feature_slice_id" of type "str" in function "run_custom_analysis"
-views.py: error: Argument of type "Unknown | Any | dict[Any, Any] | list[Unknown] | Literal[False] | None" cannot be assigned to parameter "__x" of type "ConvertibleToInt" in function "__new__" (reportArgumentType)
 views.py: error: Argument of type "Unknown | FileStorage" cannot be assigned to parameter "filepath_or_buffer" of type "FilePath | ReadCsvBuffer[bytes] | ReadCsvBuffer[str]" in function "read_csv" (reportArgumentType)
 views.py: error: Argument of type "Unknown | Hashable" cannot be assigned to parameter "group_name" of type "str" in function "__init__"
 views.py: error: Argument of type "Unknown | None" cannot be assigned to parameter "cell_line_col_index" of type "int" in function "get_all_cell_line_compound_sensitivity"
@@ -732,7 +731,6 @@ views.py: error: Expected type expression but received "(typename: str, fields: 
 views.py: error: Expression of type "None" cannot be assigned to parameter of type "List[Tuple[CompoundExperiment, DependencyDataset]]"
 views.py: error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
 views.py: error: No overloads for "read_csv" match the provided arguments (reportCallIssue)
-views.py: error: No overloads for "sum" match the provided arguments (reportCallIssue)
 views.py: error: Object of type "None" is not subscriptable (reportOptionalSubscript)
 views.py: error: Object of type "list[str]" is not callable (reportCallIssue)
 views.py: error: Variable not allowed in type expression (reportInvalidTypeForm)

@@ -24,10 +24,7 @@ from depmap.data_explorer_2.plot import (
 )
 from depmap.data_explorer_2.context import ContextEvaluator
 from depmap.data_explorer_2.performance import generate_performance_report
-from depmap.data_explorer_2.datasets import (
-    get_datasets_matching_context,
-    get_datasets_matching_context_with_details,
-)
+from depmap.data_explorer_2.datasets import get_datasets_matching_context_with_details
 from depmap.data_explorer_2.utils import (
     decode_slice_id,
     get_aliases_matching_labels,
