@@ -236,12 +236,6 @@ export function fetchDatasetsByIndexType() {
   );
 }
 
-export function fetchDatasetsMatchingContext(
-  context: DataExplorerContext | DataExplorerAnonymousContext
-) {
-  return postJson<string[]>("/datasets_matching_context", { context });
-}
-
 export function fetchDatasetsMatchingContextIncludingEntities(
   context: DataExplorerContext | DataExplorerAnonymousContext
 ) {
@@ -251,10 +245,7 @@ export function fetchDatasetsMatchingContextIncludingEntities(
       dataset_label: string;
       entity_labels: string[];
     }[]
-  >("/datasets_matching_context", {
-    context,
-    include_matching_entities: true,
-  });
+  >("/datasets_matching_context", { context });
 }
 
 export function fetchEntityLabels(

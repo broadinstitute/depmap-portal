@@ -27,7 +27,7 @@ def get_datasets_matching_context(context):
     return dataset_ids
 
 
-def get_datasets_matching_context_with_details(context):
+def get_datasets_matching_context_with_details(context) -> list[dict]:
     """
     Returns a list of dictionaries like:
     [

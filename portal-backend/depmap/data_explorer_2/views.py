@@ -447,16 +447,18 @@ def unique_values_or_range():
 @blueprint.route("/evaluate_context", methods=["POST"])
 @csrf_protect.exempt
 def evaluate_context():
+    # TODO: remove
     inputs = request.get_json()
     context = inputs["context"]
     summarize = inputs["summarize"]
     context_type = context["context_type"]
-
+    # Performance: combines labels from all datasets, then iterates through
     context_evaluator = ContextEvaluator(context)
     input_labels = get_entity_labels_across_datasets(context_type)
 
     if summarize:
         num_matches = sum(int(context_evaluator.is_match(x)) for x in input_labels)
+        # This is like it's own separate endpoint with its own separate contract
         return make_gzipped_json_response(
             {"num_candidates": len(input_labels), "num_matches": num_matches}
         )
@@ -478,15 +480,10 @@ def datasets_matching_context():
     """
     Get the list of datasets which have data matching the given context.
     """
+    # Performance: iterates through each label in each dataset
     inputs = request.get_json()
     context = inputs["context"]
-    include_matching_entities = inputs.get("include_matching_entities", False)
-
-    out = (
-        get_datasets_matching_context_with_details(context)
-        if include_matching_entities
-        else get_datasets_matching_context(context)
-    )
+    out = get_datasets_matching_context_with_details(context)
 
     return make_gzipped_json_response(out)
 
