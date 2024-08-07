@@ -361,6 +361,7 @@ def dose_table(dataset_name, xref_full):
 
     # use xref_full to get the appropriate CompoundExperiment
     compound_experiment = CompoundExperiment.get_by_xref_full(xref_full)
+    units = compound_experiment.compound.units
 
     # get all CompoundDoseReplicate objects associated with CompoundExperiment
     compound_dose_replicates = CompoundDoseReplicate.get_all_with_compound_experiment_id(
@@ -391,7 +392,7 @@ def dose_table(dataset_name, xref_full):
     # "{:.15f}".format(cpr.dose) to fix UI bug caused by scientific notation. 5e-05 was being
     # parsed to 5μM instead of 0.000050 μM
     df["dose"] = [
-        str("{:.15f}".format(cpr.dose)).replace(".", "-")
+        str("{:.15f}".format(cpr.dose)).replace(".", "-") + " " + str(units).strip()
         for cpr in compound_dose_replicates
     ]
 

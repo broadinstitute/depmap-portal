@@ -261,13 +261,17 @@ class DoseResponseTab extends React.Component<Props, State> {
           .filter(
             (col) => !["depmapId", "cell_line_display_name"].includes(col)
           )
-          .map((dose) => {
+          .map((doseWithUnits) => {
+            const splitDoseUnits = doseWithUnits.split(/\s/, 2); // units should be separated from dose by one whitespace
+            console.log(splitDoseUnits, doseWithUnits);
+            const dose = splitDoseUnits[0];
+            const units = splitDoseUnits[1];
             const formatedDisplayName = `${parseFloat(
               dose.replace("-", ".")
-            ).toPrecision(2)} μM`;
+            ).toPrecision(2)} ${units}`;
 
             return {
-              key: dose,
+              key: doseWithUnits,
               type: "continuous" as ColumnType,
               displayName: formatedDisplayName,
             };
