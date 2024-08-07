@@ -45,6 +45,7 @@ class Compound(Entity):
     chembl_id = Column(String)
     smiles = Column(String)
     inchikey = Column(String)
+    units = Column(String)
 
     __mapper_args__ = {"polymorphic_identity": "compound"}
 
