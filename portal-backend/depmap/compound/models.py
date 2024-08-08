@@ -240,7 +240,6 @@ class CompoundDose(Entity):
     )
 
     dose = Column(Float, nullable=False)
-    unit = "μM"
 
     __mapper_args__ = {"polymorphic_identity": "compound_dose"}
 
