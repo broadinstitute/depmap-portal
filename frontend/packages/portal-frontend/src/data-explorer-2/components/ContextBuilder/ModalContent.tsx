@@ -44,7 +44,7 @@ function ModalContent({
   const [shouldShowValidation, setShouldShowValidation] = useState(false);
 
   const result = useEvaluatedExpressionResult(context.context_type, expr);
-  const hasSomeMatches = result && result.labels.length > 0;
+  const hasSomeMatches = result && result.num_matches > 0;
 
   const handleClickSave = async () => {
     setShouldShowValidation(true);

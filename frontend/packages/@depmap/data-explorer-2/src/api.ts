@@ -236,6 +236,21 @@ export function fetchDatasetsByIndexType() {
   );
 }
 
+export interface ContextLabelsResponse {
+  labels: string[];
+  aliases: {
+    label: string;
+    slice_id: string;
+    values: string[];
+  }[];
+}
+
+export async function fetchContextLabels(
+  context: DataExplorerContext | DataExplorerAnonymousContext
+): Promise<ContextLabelsResponse> {
+  return postJson<ContextLabelsResponse>("/context/labels", { context });
+}
+
 export interface ContextDatasetsResponse {
   dataset_id: string;
   dataset_label: string;
@@ -246,6 +261,17 @@ export function fetchDatasetsMatchingContextIncludingEntities(
   context: DataExplorerContext | DataExplorerAnonymousContext
 ): Promise<ContextDatasetsResponse[]> {
   return postJson<ContextDatasetsResponse[]>("/context/datasets", { context });
+}
+
+export interface ContextSummaryResponse {
+  num_matches: number;
+  num_candidates: number;
+}
+
+export async function fetchContextSummary(
+  context: DataExplorerContext | DataExplorerAnonymousContext
+): Promise<ContextSummaryResponse> {
+  return postJson<ContextSummaryResponse>("/context/summary", { context });
 }
 
 export function fetchEntityLabels(
@@ -319,22 +345,6 @@ export function fetchUniqueValuesOrRange(slice_id: string) {
   return fetchJson<CategoricalResponse | ContinuousResponse>(
     `/unique_values_or_range?${query}`
   );
-}
-
-export interface ContextLabelsResponse {
-  labels: string[];
-  aliases: {
-    label: string;
-    slice_id: string;
-    values: string[];
-  }[];
-  num_candidates: number;
-}
-
-export async function fetchContextLabels(
-  context: DataExplorerContext | DataExplorerAnonymousContext
-): Promise<ContextLabelsResponse> {
-  return postJson<ContextLabelsResponse>("/context/labels", { context });
 }
 
 export function fetchDatasetDetails(dataset_id: string) {

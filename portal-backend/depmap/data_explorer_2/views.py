@@ -446,8 +446,6 @@ def unique_values_or_range():
 def get_labels_matching_context():
     """
     Get the full list of labels (in any dataset) which match the given context.
-    Also include the count of "candidate" labels, which belong to the context's 
-    dimension type (called "context_type" here).
     """
     inputs = request.get_json()
     context = inputs["context"]
@@ -466,7 +464,6 @@ def get_labels_matching_context():
     response = {
         "labels": labels_matching_context,
         "aliases": aliases,
-        "num_candidates": len(input_labels),
     }
 
     return make_gzipped_json_response(response)
@@ -493,6 +490,30 @@ def get_datasets_matching_context():
     out = get_datasets_matching_context_with_details(context)
 
     return make_gzipped_json_response(out)
+
+
+@blueprint.route("/context/summary", methods=["POST"])
+@csrf_protect.exempt
+def get_context_summary():
+    """
+    Get the number of matching labels and candidate labels.
+    "Candidate" labels are all labels belonging to the context's dimension type. 
+    """
+    inputs = request.get_json()
+    context = inputs["context"]
+    context_type = context["context_type"]
+    context_evaluator = ContextEvaluator(context)
+    input_labels = get_entity_labels_across_datasets(context_type)
+
+    labels_matching_context = []
+    for label in input_labels:
+        if context_evaluator.is_match(label):
+            labels_matching_context.append(label)
+
+    return {
+        "num_candidates": len(input_labels),
+        "num_matches": len(labels_matching_context),
+    }
 
 
 @blueprint.route("/dataset_details")
