@@ -143,9 +143,7 @@ def documentation():
 
 
 @blueprint.route("/resources_prototype/")
-@cache_without_user_permissions(
-    timeout=1000
-)  # arbitrarily set timeout to longer than default 300s
+@cache_without_user_permissions()  # default timeout 300s
 def resources_prototype():
     forum_api_key_value = current_app.config.get("FORUM_API_KEY")
     forum_url = current_app.config.get("FORUM_URL")
