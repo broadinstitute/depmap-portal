@@ -83,8 +83,8 @@ export default function useDatasets({
     if (axis_type === "context" && context) {
       setContextLabels(null);
 
-      fetchContextLabels(context).then((result) => {
-        setContextLabels(new Set(result.labels));
+      fetchContextLabels(context).then((labels) => {
+        setContextLabels(new Set(labels));
       });
     }
   }, [axis_type, context]);

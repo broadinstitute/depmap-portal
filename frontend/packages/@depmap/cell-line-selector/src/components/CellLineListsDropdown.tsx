@@ -53,11 +53,11 @@ const ContextEnabledDropdown = ({
       }
 
       if (context && hash) {
-        const result = await fetchContextLabels(context);
+        const labels = await fetchContextLabels(context);
 
         onListSelect({
           name: context.name,
-          lines: new Set(result.labels),
+          lines: new Set(labels),
           fromContext: { hash, negated },
         });
       } else {

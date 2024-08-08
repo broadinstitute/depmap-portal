@@ -43,9 +43,10 @@ function DownloadContextModal({
 
     fetchContext(contextHash)
       .then(fetchContextLabels)
-      .then(async (evaluated) => {
-        let labels = evaluated.labels;
-
+      .then(async (depmap_ids) => {
+        // For now, we assume that the downloads are always depmap_models
+        // And the actual labels need to be loaded with a separate request
+        let labels = [...depmap_ids];
         if (include === "display_name" || include === "both") {
           if (context_type !== "depmap_model") {
             throw new Error("only supports depmap_model");
@@ -67,7 +68,7 @@ function DownloadContextModal({
         if (format === "csv" && include === "both") {
           text = [
             "DepMap ID,cell line name",
-            ...labels.map((label, i) => `${evaluated.labels[i]},${label}`),
+            ...labels.map((label, i) => `${depmap_ids[i]},${label}`),
           ].join("\r\n");
 
           download = `${filename}.csv`;

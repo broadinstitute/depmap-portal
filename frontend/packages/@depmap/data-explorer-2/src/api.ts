@@ -236,19 +236,10 @@ export function fetchDatasetsByIndexType() {
   );
 }
 
-export interface ContextLabelsResponse {
-  labels: string[];
-  aliases: {
-    label: string;
-    slice_id: string;
-    values: string[];
-  }[];
-}
-
 export async function fetchContextLabels(
   context: DataExplorerContext | DataExplorerAnonymousContext
-): Promise<ContextLabelsResponse> {
-  return postJson<ContextLabelsResponse>("/context/labels", { context });
+): Promise<string[]> {
+  return postJson<string[]>("/context/labels", { context });
 }
 
 export interface ContextDatasetsResponse {
