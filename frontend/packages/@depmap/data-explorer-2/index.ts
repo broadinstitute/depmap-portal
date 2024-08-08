@@ -23,6 +23,7 @@ export {
   fetchGeneTeaEnrichment,
   fetchGeneTeaTermContext,
   fetchLinearRegression,
+  fetchMetadataColumn,
   fetchPlotDimensions,
   fetchUniqueValuesOrRange,
   fetchWaterfall,

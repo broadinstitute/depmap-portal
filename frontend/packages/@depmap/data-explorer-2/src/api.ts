@@ -274,6 +274,12 @@ export async function fetchContextSummary(
   return postJson<ContextSummaryResponse>("/context/summary", { context });
 }
 
+export async function fetchMetadataColumn(
+  slice_id: string
+): Promise<{ slice_id: string; indexed_values: Record<string, string> }> {
+  return postJson("/get_metadata", { metadata: { slice_id } });
+}
+
 export function fetchEntityLabels(
   entity_type: string
 ): Promise<{
