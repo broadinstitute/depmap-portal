@@ -454,7 +454,7 @@ class TestPost:
         )
         assert subsetted_by_id_res.status_code == 200
         expected_res = {
-            "attr2": {"ACH-1": "False"},
+            "attr2": {"ACH-1": False},
             "attr3": {"ACH-1": None},
             "attr4": {"ACH-1": None},
             "attr5": {"ACH-1": "cat1"},
