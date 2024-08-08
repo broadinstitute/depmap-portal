@@ -48,6 +48,7 @@ def load_compounds(filename):
 
             compound_name = row["CompoundName"]
             units = row["DoseUnit"]
+            assert units, "Missing units!"
             if compound_name in created_compounds:
                 compound = created_compounds[compound_name]
             else:
