@@ -8,15 +8,14 @@ export { default as DimensionSelect } from "./src/components/DimensionSelect";
 export { default as EntitySelect } from "./src/components/DimensionSelect/EntitySelect";
 
 export {
-  evaluateContext,
-  evaluateContextWithSummary,
+  fetchContextLabels,
+  fetchContextSummary,
   fetchAnalysisResult,
   fetchAssociations,
   fetchContext,
   fetchCorrelation,
   fetchDatasetDetails,
   fetchDatasetsByIndexType,
-  fetchDatasetsMatchingContext,
   fetchDatasetsMatchingContextIncludingEntities,
   fetchEntityLabels,
   fetchEntityToDatasetsMapping,
@@ -24,6 +23,7 @@ export {
   fetchGeneTeaEnrichment,
   fetchGeneTeaTermContext,
   fetchLinearRegression,
+  fetchMetadataColumn,
   fetchPlotDimensions,
   fetchUniqueValuesOrRange,
   fetchWaterfall,

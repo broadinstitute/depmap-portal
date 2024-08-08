@@ -70,7 +70,7 @@ def test_datasets_matching_context(app, empty_db_mock_downloads, mock_breadbox_c
 
     with app.test_client() as c:
         r = c.post(
-            url_for("data_explorer_2.datasets_matching_context"),
+            url_for("data_explorer_2.get_datasets_matching_context"),
             data=json.dumps(request_context),
             content_type="application/json",
         )
@@ -78,4 +78,12 @@ def test_datasets_matching_context(app, empty_db_mock_downloads, mock_breadbox_c
         response = json.loads(gzip.decompress(r.data))
 
         # Should return a list with only two datasets
-        assert set(response) == {crispr_dataset.name.name, expression_dataset.name.name}
+        assert len(response) == 2
+        response_dataset_ids = {
+            response[0].get("dataset_id"),
+            response[1].get("dataset_id"),
+        }
+        assert response_dataset_ids == {
+            crispr_dataset.name.name,
+            expression_dataset.name.name,
+        }

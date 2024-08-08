@@ -5,7 +5,7 @@ import {
 } from "@depmap/common-components";
 import {
   ContextSelector,
-  evaluateContext,
+  fetchContextLabels,
   getDimensionTypeLabel,
   pluralize,
 } from "@depmap/data-explorer-2";
@@ -47,8 +47,8 @@ export default async function promptForSelectionFromContext(
           return;
         }
 
-        const result = await evaluateContext(nextContext);
-        const contextLabels = new Set(result.labels);
+        const labels = await fetchContextLabels(nextContext);
+        const contextLabels = new Set(labels);
 
         const found = datasetLabels.filter((label) => {
           return contextLabels.has(label);
@@ -125,8 +125,8 @@ export default async function promptForSelectionFromContext(
     return null;
   }
 
-  const result = await evaluateContext(context);
-  const contextLabels = new Set(result.labels);
+  const labels = await fetchContextLabels(context);
+  const contextLabels = new Set(labels);
   const matchingLabels = datasetLabels.filter((label, i) => {
     return contextLabels.has(label) && (!filter || filter.values[i]);
   });

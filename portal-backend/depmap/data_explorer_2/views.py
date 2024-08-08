@@ -24,10 +24,7 @@ from depmap.data_explorer_2.plot import (
 )
 from depmap.data_explorer_2.context import ContextEvaluator
 from depmap.data_explorer_2.performance import generate_performance_report
-from depmap.data_explorer_2.datasets import (
-    get_datasets_matching_context,
-    get_datasets_matching_context_with_details,
-)
+from depmap.data_explorer_2.datasets import get_datasets_matching_context_with_details
 from depmap.data_explorer_2.utils import (
     decode_slice_id,
     get_aliases_matching_labels,
@@ -444,51 +441,71 @@ def unique_values_or_range():
     )
 
 
-@blueprint.route("/evaluate_context", methods=["POST"])
+@blueprint.route("/context/labels", methods=["POST"])
 @csrf_protect.exempt
-def evaluate_context():
+def get_labels_matching_context():
+    """
+    Get the full list of labels (in any dataset) which match the given context.
+    """
     inputs = request.get_json()
     context = inputs["context"]
-    summarize = inputs["summarize"]
     context_type = context["context_type"]
-
     context_evaluator = ContextEvaluator(context)
     input_labels = get_entity_labels_across_datasets(context_type)
 
-    if summarize:
-        num_matches = sum(int(context_evaluator.is_match(x)) for x in input_labels)
-        return make_gzipped_json_response(
-            {"num_candidates": len(input_labels), "num_matches": num_matches}
-        )
-
-    labels = []
-
+    labels_matching_context = []
     for label in input_labels:
         if context_evaluator.is_match(label):
-            labels.append(label)
+            labels_matching_context.append(label)
 
-    aliases = get_aliases_matching_labels(context_type, labels)
-
-    return make_gzipped_json_response({"labels": labels, "aliases": aliases})
+    return make_gzipped_json_response(labels_matching_context)
 
 
-@blueprint.route("/datasets_matching_context", methods=["POST"])
+@blueprint.route("/context/datasets", methods=["POST"])
 @csrf_protect.exempt
-def datasets_matching_context():
+def get_datasets_matching_context():
     """
     Get the list of datasets which have data matching the given context.
+    For each dataset, include the full list of entity labels matching the context.
+    Returns a list of dictionaries like:
+    [
+      {
+        "dataset_id"    : "Chronos_Combined"
+        "dataset_label" : "CRISPR (DepMap Internal 23Q4+Score, Chronos)"
+        "entity_labels" : ["SOX10"]
+      },
+      ...
+    ]
     """
     inputs = request.get_json()
     context = inputs["context"]
-    include_matching_entities = inputs.get("include_matching_entities", False)
-
-    out = (
-        get_datasets_matching_context_with_details(context)
-        if include_matching_entities
-        else get_datasets_matching_context(context)
-    )
+    out = get_datasets_matching_context_with_details(context)
 
     return make_gzipped_json_response(out)
+
+
+@blueprint.route("/context/summary", methods=["POST"])
+@csrf_protect.exempt
+def get_context_summary():
+    """
+    Get the number of matching labels and candidate labels.
+    "Candidate" labels are all labels belonging to the context's dimension type. 
+    """
+    inputs = request.get_json()
+    context = inputs["context"]
+    context_type = context["context_type"]
+    context_evaluator = ContextEvaluator(context)
+    input_labels = get_entity_labels_across_datasets(context_type)
+
+    labels_matching_context = []
+    for label in input_labels:
+        if context_evaluator.is_match(label):
+            labels_matching_context.append(label)
+
+    return {
+        "num_candidates": len(input_labels),
+        "num_matches": len(labels_matching_context),
+    }
 
 
 @blueprint.route("/dataset_details")

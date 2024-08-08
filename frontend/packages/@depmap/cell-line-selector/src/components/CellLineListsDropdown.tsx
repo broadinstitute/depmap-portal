@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import {
   ContextSelector,
-  evaluateContext,
+  fetchContextLabels,
   fetchContext,
   isNegatedContext,
   negateContext,
@@ -53,11 +53,11 @@ const ContextEnabledDropdown = ({
       }
 
       if (context && hash) {
-        const result = await evaluateContext(context);
+        const labels = await fetchContextLabels(context);
 
         onListSelect({
           name: context.name,
-          lines: new Set(result.labels),
+          lines: new Set(labels),
           fromContext: { hash, negated },
         });
       } else {
