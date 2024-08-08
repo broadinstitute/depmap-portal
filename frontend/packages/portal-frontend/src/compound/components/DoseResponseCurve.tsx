@@ -12,6 +12,7 @@ export interface DoseResponseCurveProps {
   measurements?: Set<CurvePlotPoints>;
   curves?: Array<CurveParams>;
   yUnits?: string;
+  xUnits?: string;
 }
 
 export interface CurveParams {
@@ -79,6 +80,7 @@ export class DoseResponseCurve extends React.PureComponent<DoseResponseCurveProp
     measurements: defaultPoints,
     curves: defaultParams,
     yUnits: "DEFAULT NOT FOUND",
+    xUnits: undefined,
   };
 
   constructor(props: DoseResponseCurveProps) {
@@ -273,7 +275,9 @@ export class DoseResponseCurve extends React.PureComponent<DoseResponseCurveProp
 
     const plotProps = {
       plotId: this.props.plotId,
-      xLabel: "Concentration (μMol)",
+      xLabel: this.props.xUnits
+        ? `Concentration (${this.props.xUnits})`
+        : "Concentration",
       yLabel: this.props.yUnits || "",
       traces: this.buildTraces(),
       resizer: this.resizer,

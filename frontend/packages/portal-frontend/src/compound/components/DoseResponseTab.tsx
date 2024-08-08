@@ -256,6 +256,7 @@ class DoseResponseTab extends React.Component<Props, State> {
   }
 
   render() {
+    let doseUnitsXLabel: string | undefined = undefined;
     const columns: Array<LongTableColumn> = this.state.doseResponseTable
       ? Object.keys(this.state.doseResponseTable[0])
           .filter(
@@ -266,6 +267,9 @@ class DoseResponseTab extends React.Component<Props, State> {
             console.log(splitDoseUnits, doseWithUnits);
             const dose = splitDoseUnits[0];
             const units = splitDoseUnits[1];
+            if (doseUnitsXLabel === undefined) {
+              doseUnitsXLabel = units;
+            }
             const formatedDisplayName = `${parseFloat(
               dose.replace("-", ".")
             ).toPrecision(2)} ${units}`;
@@ -336,6 +340,7 @@ class DoseResponseTab extends React.Component<Props, State> {
               .reduce((prev, cur) => prev!.concat(cur!), [])
           }
           yUnits={this.state.dataset.dose_replicate_level_yunits}
+          xUnits={doseUnitsXLabel}
         />
         {this.state.doseResponseTable && (
           <div style={{ height: 400 }}>
