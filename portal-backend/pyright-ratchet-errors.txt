@@ -210,8 +210,6 @@ get_and_process_data.py: error: "__get_config" is unknown import symbol (reportA
 get_and_process_data.py: error: "col_index" is not a known member of "None" (reportOptionalMemberAccess)
 get_and_process_data.py: error: "get_depmap_ids" is not a known member of "None" (reportOptionalMemberAccess)
 get_and_process_data.py: error: "name" is not a known member of "None" (reportOptionalMemberAccess)
-get_and_process_data.py: error: "row" is unbound (reportUnboundVariable)
-get_and_process_data.py: error: "series" is possibly unbound (reportPossiblyUnboundVariable)
 global_search_loader.py: error: Argument of type "Literal['ENABLED_FEATURES']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
 global_search_loader.py: error: Cannot access member "is_not" for type "Column[Text]"
 global_search_loader.py: error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
