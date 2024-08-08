@@ -448,19 +448,3 @@ class PrismPoolConfig(CategoryConfig):
             return self.get_na_category().value
 
         return prism_pool_value_to_label[value]
-
-
-# Weird workaround needed to support private datasets with entities in DE2
-# (temporary until these datasets are moved to breadbox)
-gene_datasets_with_entrez_labels = set(
-    [
-        # Methylation Expression Impact (Broad) [nonstandard_entity]
-        "f325e2b0-3e1b-47cd-b1fb-66e8c8919638",
-        # Methylation Expression Impact (Sanger) [nonstandard_entity]
-        "2a8d18d2-0707-4b4c-9ceb-279d5592703a",
-        # OmicsAbsoluteCNGene [nonstandard_entity]
-        "8c5c677a-c3c0-4140-864a-edc113ecfc8b",
-        # OmicsLoH [nonstandard_entity]
-        "4ab1c78d-9f64-47a4-95f1-42d554fbc185",
-    ]
-)

@@ -139,15 +139,6 @@ def get_dataset_feature_ids_by_label(dataset_id) -> dict[str, str]:
     Get a mapping of feature labels to feature IDs.
     """
     row_summaries = get_all_row_indices_labels_entity_ids(dataset_id)
-
-    # Weird workaround needed to support private datasets with entities in DE2
-    # (temporary until these datasets are moved to breadbox)
-    if dataset_id in categories.gene_datasets_with_entrez_labels:
-        return {
-            get_gene_label_from_entrez_id(row.label): row.entity_id
-            for row in row_summaries
-        }
-
     return {row.label: row.entity_id for row in row_summaries}
 
 
@@ -167,12 +158,6 @@ def get_dataset_feature_labels(dataset_id: str) -> list[str]:
 
     row_summaries = get_all_row_indices_labels_entity_ids(dataset_id)
     labels = [row.label for row in row_summaries]
-
-    # Weird workaround needed to support private datasets with entities in DE2
-    # (temporary until these datasets are moved to breadbox)
-    if dataset_id in categories.gene_datasets_with_entrez_labels:
-        return [get_gene_label_from_entrez_id(entrez_id) for entrez_id in labels]
-
     return labels
 
 
@@ -217,18 +202,6 @@ def get_subsetted_df_by_labels(
     col_index_to_depmap_id = {}
     feature_row_labels_set = set(feature_row_labels) if feature_row_labels else set()
     row_summaries = get_all_row_indices_labels_entity_ids(dataset_id)
-
-    # Ugly workaround needed to support private datasets with entities in DE2
-    # Certain datasets are actually labeled by entrez id but need to be displayed in DE2 by gene name
-    # as a temporary workaround, we map the gene names back to entrez ids to load the data
-    # This workaround can be removed when these datasets are migrated to breadbox
-    if dataset_id in categories.gene_datasets_with_entrez_labels:
-        gene_name_to_entrez_id = {
-            get_gene_label_from_entrez_id(row.label): row.label for row in row_summaries
-        }
-        feature_row_labels_set = set(
-            [gene_name_to_entrez_id[gene_name] for gene_name in feature_row_labels_set]
-        )
 
     # convert the list of entity labels to row indices
     row_indices = []
@@ -429,18 +402,6 @@ def get_row_of_values(dataset_id, feature):
         series = GeneExecutiveInfo.get_gene_selectivity_series()
     elif dataset_id == "age_category" and feature == "all":
         series = DepmapModel.get_models_age_category_series()
-
-    # Special case needed to support private datasets with entities in DE2
-    # Certain datasets are actually labeled by entrez id but need to be displayed in DE2 by gene name
-    # as a temporary workaround, we map the gene names back to entrez ids to load the data
-    # This workaround can be removed when these datasets are migrated to breadbox
-    elif dataset_id in categories.gene_datasets_with_entrez_labels:
-        row_summaries = get_all_row_indices_labels_entity_ids(dataset_id)
-        gene_name_to_entrez_id = {
-            get_gene_label_from_entrez_id(row.label): row.label for row in row_summaries
-        }
-        row = gene_name_to_entrez_id[row]
-
     else:
         raise ValueError("Invalid dataset " + dataset_id + "; not in the config")
 
