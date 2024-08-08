@@ -161,10 +161,6 @@ def get_dataset_feature_labels(dataset_id: str) -> list[str]:
     return labels
 
 
-def get_gene_label_from_entrez_id(entrez_id: str):
-    return re.sub(r"\s*\([^(]*$", "", entrez_id)
-
-
 def get_dataset_sample_ids(dataset_id: str) -> list[str]:
     """
     Get all depmap ids for the given dataset.
