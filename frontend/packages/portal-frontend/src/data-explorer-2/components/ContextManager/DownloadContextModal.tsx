@@ -43,32 +43,32 @@ function DownloadContextModal({
 
     fetchContext(contextHash)
       .then(fetchContextLabels)
-      .then(async (depmap_ids) => {
-        // For now, we assume that the downloads are always depmap_models
-        // And the actual labels need to be loaded with a separate request
-        let labels = [...depmap_ids];
+      .then(async (contextLabels) => {
+        let labels = contextLabels;
+
         if (include === "display_name" || include === "both") {
+          // For now, we assume that the downloads are models if we're trying
+          // to use their display name (other types don't currently support a
+          // display name).
           if (context_type !== "depmap_model") {
             throw new Error("only supports depmap_model");
           }
+
           const sliceId = "slice/cell_line_display_name/all/label";
-          labels = await fetchMetadataColumn(sliceId).then(
-            (cell_line_labels) => {
-              return labels.map(
-                (depmap_id) => cell_line_labels.indexed_values[depmap_id]
-              );
-            }
-          );
+          labels = await fetchMetadataColumn(sliceId).then((column) => {
+            return labels.map((depmap_id) => column.indexed_values[depmap_id]);
+          });
         }
 
         const link = document.createElement("a");
         let text = labels.join(format === "list" ? "\r\n" : ",");
         let download = filename;
 
+        // Assume we're downloading models in this case and include a header.
         if (format === "csv" && include === "both") {
           text = [
             "DepMap ID,cell line name",
-            ...labels.map((label, i) => `${depmap_ids[i]},${label}`),
+            ...labels.map((label, i) => `${contextLabels[i]},${label}`),
           ].join("\r\n");
 
           download = `${filename}.csv`;
