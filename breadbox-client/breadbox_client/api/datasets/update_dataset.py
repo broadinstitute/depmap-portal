@@ -5,18 +5,19 @@ import httpx
 
 from ... import errors
 from ...client import AuthenticatedClient, Client
-from ...models.body_update_dataset import BodyUpdateDataset
 from ...models.http_error import HTTPError
 from ...models.http_validation_error import HTTPValidationError
 from ...models.matrix_dataset_response import MatrixDatasetResponse
+from ...models.matrix_dataset_update_params import MatrixDatasetUpdateParams
 from ...models.tabular_dataset_response import TabularDatasetResponse
+from ...models.tabular_dataset_update_params import TabularDatasetUpdateParams
 from ...types import Response
 
 
 def _get_kwargs(
     dataset_id: str,
     *,
-    body: BodyUpdateDataset,
+    body: Union["MatrixDatasetUpdateParams", "TabularDatasetUpdateParams"],
 ) -> Dict[str, Any]:
     headers: Dict[str, Any] = {}
 
@@ -27,10 +28,14 @@ def _get_kwargs(
         ),
     }
 
-    _body = body.to_dict()
+    _body: Dict[str, Any]
+    if isinstance(body, MatrixDatasetUpdateParams):
+        _body = body.to_dict()
+    else:
+        _body = body.to_dict()
 
-    _kwargs["data"] = _body
-    headers["Content-Type"] = "application/x-www-form-urlencoded"
+    _kwargs["json"] = _body
+    headers["Content-Type"] = "application/json"
 
     _kwargs["headers"] = headers
     return _kwargs
@@ -114,7 +119,7 @@ def sync_detailed(
     dataset_id: str,
     *,
     client: Union[AuthenticatedClient, Client],
-    body: BodyUpdateDataset,
+    body: Union["MatrixDatasetUpdateParams", "TabularDatasetUpdateParams"],
 ) -> Response[
     Union[
         HTTPError,
@@ -124,9 +129,23 @@ def sync_detailed(
 ]:
     """Update Dataset
 
+     Update the dataset metadata
+
+    The following parameters may be provided or omitted if no change for the value:
+    `format` - Required parameter. Must be 'matrix' or 'tabular' and match the format of the given
+    dataset
+    `name` - Optional parameter. Name of dataset
+    `data_type` - Optional parameter. Data type grouping for your dataset
+    `group_id` - Optional parameter. Id of the group the dataset belongs to
+    `priority` - Optional parameter. Numeric value representing priority of the dataset within its
+    `data_type`
+    `dataset_metadata` - Optional parameter. A dictionary of additional dataset metadata that is not
+    already provided
+    `units` - Optional parameter for matrix dataset only. Units for the values in the dataset
+
     Args:
         dataset_id (str):
-        body (BodyUpdateDataset):
+        body (Union['MatrixDatasetUpdateParams', 'TabularDatasetUpdateParams']):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -152,7 +171,7 @@ def sync(
     dataset_id: str,
     *,
     client: Union[AuthenticatedClient, Client],
-    body: BodyUpdateDataset,
+    body: Union["MatrixDatasetUpdateParams", "TabularDatasetUpdateParams"],
 ) -> Optional[
     Union[
         HTTPError,
@@ -162,9 +181,23 @@ def sync(
 ]:
     """Update Dataset
 
+     Update the dataset metadata
+
+    The following parameters may be provided or omitted if no change for the value:
+    `format` - Required parameter. Must be 'matrix' or 'tabular' and match the format of the given
+    dataset
+    `name` - Optional parameter. Name of dataset
+    `data_type` - Optional parameter. Data type grouping for your dataset
+    `group_id` - Optional parameter. Id of the group the dataset belongs to
+    `priority` - Optional parameter. Numeric value representing priority of the dataset within its
+    `data_type`
+    `dataset_metadata` - Optional parameter. A dictionary of additional dataset metadata that is not
+    already provided
+    `units` - Optional parameter for matrix dataset only. Units for the values in the dataset
+
     Args:
         dataset_id (str):
-        body (BodyUpdateDataset):
+        body (Union['MatrixDatasetUpdateParams', 'TabularDatasetUpdateParams']):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -185,7 +218,7 @@ async def asyncio_detailed(
     dataset_id: str,
     *,
     client: Union[AuthenticatedClient, Client],
-    body: BodyUpdateDataset,
+    body: Union["MatrixDatasetUpdateParams", "TabularDatasetUpdateParams"],
 ) -> Response[
     Union[
         HTTPError,
@@ -195,9 +228,23 @@ async def asyncio_detailed(
 ]:
     """Update Dataset
 
+     Update the dataset metadata
+
+    The following parameters may be provided or omitted if no change for the value:
+    `format` - Required parameter. Must be 'matrix' or 'tabular' and match the format of the given
+    dataset
+    `name` - Optional parameter. Name of dataset
+    `data_type` - Optional parameter. Data type grouping for your dataset
+    `group_id` - Optional parameter. Id of the group the dataset belongs to
+    `priority` - Optional parameter. Numeric value representing priority of the dataset within its
+    `data_type`
+    `dataset_metadata` - Optional parameter. A dictionary of additional dataset metadata that is not
+    already provided
+    `units` - Optional parameter for matrix dataset only. Units for the values in the dataset
+
     Args:
         dataset_id (str):
-        body (BodyUpdateDataset):
+        body (Union['MatrixDatasetUpdateParams', 'TabularDatasetUpdateParams']):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -221,7 +268,7 @@ async def asyncio(
     dataset_id: str,
     *,
     client: Union[AuthenticatedClient, Client],
-    body: BodyUpdateDataset,
+    body: Union["MatrixDatasetUpdateParams", "TabularDatasetUpdateParams"],
 ) -> Optional[
     Union[
         HTTPError,
@@ -231,9 +278,23 @@ async def asyncio(
 ]:
     """Update Dataset
 
+     Update the dataset metadata
+
+    The following parameters may be provided or omitted if no change for the value:
+    `format` - Required parameter. Must be 'matrix' or 'tabular' and match the format of the given
+    dataset
+    `name` - Optional parameter. Name of dataset
+    `data_type` - Optional parameter. Data type grouping for your dataset
+    `group_id` - Optional parameter. Id of the group the dataset belongs to
+    `priority` - Optional parameter. Numeric value representing priority of the dataset within its
+    `data_type`
+    `dataset_metadata` - Optional parameter. A dictionary of additional dataset metadata that is not
+    already provided
+    `units` - Optional parameter for matrix dataset only. Units for the values in the dataset
+
     Args:
         dataset_id (str):
-        body (BodyUpdateDataset):
+        body (Union['MatrixDatasetUpdateParams', 'TabularDatasetUpdateParams']):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
