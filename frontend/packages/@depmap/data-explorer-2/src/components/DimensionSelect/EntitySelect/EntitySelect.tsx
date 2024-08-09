@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from "react";
+import React, { useCallback, useEffect, useMemo, useRef } from "react";
 import VanillaAsycSelect from "react-select/async";
 import { WindowedMenuList } from "react-windowed-select";
 import { DataExplorerContext } from "@depmap/types";
@@ -36,6 +36,11 @@ function EntitySelect({
   swatchColor = undefined,
 }: Props) {
   const search = useSearch();
+  const searchQuery = useRef("");
+
+  useEffect(() => {
+    searchQuery.current = "";
+  }, [entity_type, dataType, dataset_id]);
 
   const {
     aliases,
@@ -144,6 +149,10 @@ function EntitySelect({
       swatchColor={swatchColor}
       isClearable
       isEditable
+      editableInputValue={searchQuery.current}
+      onEditInputValue={(editedText) => {
+        searchQuery.current = editedText;
+      }}
     />
   );
 }
