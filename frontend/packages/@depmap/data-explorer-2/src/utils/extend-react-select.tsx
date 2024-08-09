@@ -26,6 +26,11 @@ export interface ExtendedSelectProps {
   // When enabled, allows a pre-selected value to be edited as text (simulating
   // a vanilla input element)
   isEditable?: boolean;
+  // When `isEditable` is true, you can use this to populate the input with an
+  // arbitrary value (distinct from the one that'a actually selected).
+  editableInputValue?: string;
+  // This is called when editable text is changed.
+  onEditInputValue?: (editedText: string) => void;
 }
 
 const ConditionalTooltip = ({
@@ -93,7 +98,7 @@ any) {
           {...inputProps}
           ref={innerRef}
           disabled={isDisabled}
-          contentEditable="plaintext-only"
+          contentEditable
           onKeyDown={(e) => {
             if (e.key === " ") {
               e.stopPropagation();
@@ -170,6 +175,8 @@ export default function extendReactSelect(
       menuWidth = "max-content",
       swatchColor = undefined,
       isEditable = false,
+      editableInputValue = undefined,
+      onEditInputValue = () => {},
     } = props;
 
     const mounted = useRef<boolean>(true);
@@ -296,11 +303,17 @@ export default function extendReactSelect(
               onFocus={(e) => {
                 if (isEditable && value?.label) {
                   const editableDiv = e.currentTarget;
-                  editableDiv.innerText = value.label;
+                  editableDiv.innerText = editableInputValue || value.label;
 
                   const valContainerItem = editableDiv.parentElement!
                     .parentElement!.parentElement!.firstChild as HTMLElement;
                   valContainerItem.classList.add(styles.hidden);
+
+                  if (editableInputValue) {
+                    reactSelectRef.current.select.onInputChange(
+                      editableInputValue
+                    );
+                  }
                 }
               }}
               onBlur={(e) => {
@@ -325,9 +338,22 @@ export default function extendReactSelect(
                   editableDiv.innerText = "";
                 }
 
+                if (nextValue === null) {
+                  onEditInputValue("");
+                }
+
                 setTimeout(() => {
                   setPostSelectTimeoutExpired(true);
                 }, 500);
+              }}
+              onInputChange={(inputValue, actionMeta) => {
+                if (actionMeta?.action === "input-change") {
+                  onEditInputValue(inputValue);
+                }
+
+                if (props.onInputChange) {
+                  props.onInputChange(inputValue, actionMeta);
+                }
               }}
               onMenuOpen={() => {
                 if (props.onMenuOpen) {
