@@ -115,7 +115,7 @@ add-if-missing {
 add-if-missing {
   "type": "download_from_taiga",	          
   "target_type": "drug-metadata",
-  "dataset_id": "compound-metadata-de37.26/compound_metadata",
+  "dataset_id": "compound-metadata-de37.28/compound_metadata",
   "name": "merged-drugs",
   "label": "compound_metadata",
   "format": "csv"

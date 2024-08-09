@@ -45,6 +45,7 @@ class Compound(Entity):
     chembl_id = Column(String)
     smiles = Column(String)
     inchikey = Column(String)
+    units = Column(String)
 
     __mapper_args__ = {"polymorphic_identity": "compound"}
 
@@ -239,7 +240,6 @@ class CompoundDose(Entity):
     )
 
     dose = Column(Float, nullable=False)
-    unit = "μM"
 
     __mapper_args__ = {"polymorphic_identity": "compound_dose"}
 

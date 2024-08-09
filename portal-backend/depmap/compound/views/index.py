@@ -71,6 +71,8 @@ def view_compound(name):
         compound_id
     )
 
+    units = compound.units
+
     aliases = Compound.get_aliases_by_entity_id(compound_id)
     compound_aliases = ", ".join(
         [alias for alias in aliases if alias.lower() != name.lower()]
@@ -104,6 +106,7 @@ def view_compound(name):
         dose_curve_options=format_dose_curve_options(compound_experiment_and_datasets),
         has_celfie=has_celfie,
         celfie=celfie if has_celfie else None,
+        compound_units=units,
     )
 
 

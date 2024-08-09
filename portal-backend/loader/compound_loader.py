@@ -47,6 +47,8 @@ def load_compounds(filename):
                 continue
 
             compound_name = row["CompoundName"]
+            units = row["DoseUnit"]
+            assert units, "Missing units!"
             if compound_name in created_compounds:
                 compound = created_compounds[compound_name]
             else:
@@ -59,6 +61,7 @@ def load_compounds(filename):
                     target_gene=get_target_genes(row["GeneSymbolOfTargets"]),
                     smiles=row["SMILES"],
                     inchikey=row["InChIKey"],
+                    units=units,
                 )
                 db.session.add(compound)
                 created_compounds[compound_name] = compound

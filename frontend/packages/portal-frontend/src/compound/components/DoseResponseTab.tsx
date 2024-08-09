@@ -28,6 +28,7 @@ type CompoundDataset = {
 
 type Props = {
   datasetOptions: Array<CompoundDataset>;
+  doseUnits: string;
 };
 
 type DoseResponseTableRow = {
@@ -264,7 +265,7 @@ class DoseResponseTab extends React.Component<Props, State> {
           .map((dose) => {
             const formatedDisplayName = `${parseFloat(
               dose.replace("-", ".")
-            ).toPrecision(2)} μM`;
+            ).toPrecision(2)} ${this.props.doseUnits}`;
 
             return {
               key: dose,
@@ -332,6 +333,7 @@ class DoseResponseTab extends React.Component<Props, State> {
               .reduce((prev, cur) => prev!.concat(cur!), [])
           }
           yUnits={this.state.dataset.dose_replicate_level_yunits}
+          xUnits={this.props.doseUnits}
         />
         {this.state.doseResponseTable && (
           <div style={{ height: 400 }}>

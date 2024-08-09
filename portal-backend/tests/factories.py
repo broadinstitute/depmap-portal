@@ -274,6 +274,7 @@ class CompoundFactory(SQLAlchemyModelFactory):
     )  # Generates IDs like DPC-000001, DPC-000002, etc.
     label = factory.Sequence(lambda number: "compound_{}".format(number))
     entity_alias = factory.LazyAttribute(lambda o: [EntityAliasFactory()])
+    units = "μM"
 
 
 class CompoundExperimentFactory(SQLAlchemyModelFactory):
