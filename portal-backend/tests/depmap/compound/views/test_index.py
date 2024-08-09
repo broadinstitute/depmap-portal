@@ -351,8 +351,8 @@ def test_dose_table(empty_db_mock_downloads, app, has_ic50_dataset, has_ic50_row
 
         expected = {
             model.model_id: {
-                "0-000000010000000 μM": 10,  # 0-000000010000000 is rounded to precision of 2 significant digits on the frontend side of things
-                "0-200000000000000 μM": 20,
+                "0-000000010000000": 10,  # 0-000000010000000 is rounded to precision of 2 significant digits on the frontend side of things
+                "0-200000000000000": 20,
                 "cell_line_display_name": cell_line_display_name,
                 "auc": 0.5,
             }

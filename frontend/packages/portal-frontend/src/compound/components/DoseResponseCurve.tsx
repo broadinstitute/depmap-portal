@@ -80,7 +80,7 @@ export class DoseResponseCurve extends React.PureComponent<DoseResponseCurveProp
     measurements: defaultPoints,
     curves: defaultParams,
     yUnits: "DEFAULT NOT FOUND",
-    xUnits: undefined,
+    xUnits: "DEFAULT NOT FOUND",
   };
 
   constructor(props: DoseResponseCurveProps) {

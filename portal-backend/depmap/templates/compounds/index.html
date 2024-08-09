@@ -118,7 +118,8 @@
                         $(function () { // document ready for middle-of-html js
                             DepMap.initDoseResponseTab(
                                 "dose-curves-tab-content",
-                            {{dose_curve_options | tojson}}
+                            {{dose_curve_options | tojson}},
+                            "{{ compound_units }}"
                         );
                         });
                     </script>

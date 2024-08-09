@@ -28,6 +28,7 @@ type CompoundDataset = {
 
 type Props = {
   datasetOptions: Array<CompoundDataset>;
+  doseUnits: string;
 };
 
 type DoseResponseTableRow = {
@@ -256,26 +257,18 @@ class DoseResponseTab extends React.Component<Props, State> {
   }
 
   render() {
-    let doseUnitsXLabel: string | undefined = undefined;
     const columns: Array<LongTableColumn> = this.state.doseResponseTable
       ? Object.keys(this.state.doseResponseTable[0])
           .filter(
             (col) => !["depmapId", "cell_line_display_name"].includes(col)
           )
-          .map((doseWithUnits) => {
-            const splitDoseUnits = doseWithUnits.split(/\s/, 2); // units should be separated from dose by one whitespace
-            console.log(splitDoseUnits, doseWithUnits);
-            const dose = splitDoseUnits[0];
-            const units = splitDoseUnits[1];
-            if (doseUnitsXLabel === undefined) {
-              doseUnitsXLabel = units;
-            }
+          .map((dose) => {
             const formatedDisplayName = `${parseFloat(
               dose.replace("-", ".")
-            ).toPrecision(2)} ${units}`;
+            ).toPrecision(2)} ${this.props.doseUnits}`;
 
             return {
-              key: doseWithUnits,
+              key: dose,
               type: "continuous" as ColumnType,
               displayName: formatedDisplayName,
             };
@@ -340,7 +333,7 @@ class DoseResponseTab extends React.Component<Props, State> {
               .reduce((prev, cur) => prev!.concat(cur!), [])
           }
           yUnits={this.state.dataset.dose_replicate_level_yunits}
-          xUnits={doseUnitsXLabel}
+          xUnits={this.props.doseUnits}
         />
         {this.state.doseResponseTable && (
           <div style={{ height: 400 }}>

@@ -71,6 +71,8 @@ def view_compound(name):
         compound_id
     )
 
+    units = compound.units
+
     aliases = Compound.get_aliases_by_entity_id(compound_id)
     compound_aliases = ", ".join(
         [alias for alias in aliases if alias.lower() != name.lower()]
@@ -104,6 +106,7 @@ def view_compound(name):
         dose_curve_options=format_dose_curve_options(compound_experiment_and_datasets),
         has_celfie=has_celfie,
         celfie=celfie if has_celfie else None,
+        compound_units=units,
     )
 
 
@@ -361,7 +364,6 @@ def dose_table(dataset_name, xref_full):
 
     # use xref_full to get the appropriate CompoundExperiment
     compound_experiment = CompoundExperiment.get_by_xref_full(xref_full)
-    units = compound_experiment.compound.units
 
     # get all CompoundDoseReplicate objects associated with CompoundExperiment
     compound_dose_replicates = CompoundDoseReplicate.get_all_with_compound_experiment_id(
@@ -392,7 +394,7 @@ def dose_table(dataset_name, xref_full):
     # "{:.15f}".format(cpr.dose) to fix UI bug caused by scientific notation. 5e-05 was being
     # parsed to 5μM instead of 0.000050 μM
     df["dose"] = [
-        str("{:.15f}".format(cpr.dose)).replace(".", "-") + " " + str(units).strip()
+        str("{:.15f}".format(cpr.dose)).replace(".", "-")
         for cpr in compound_dose_replicates
     ]
 
