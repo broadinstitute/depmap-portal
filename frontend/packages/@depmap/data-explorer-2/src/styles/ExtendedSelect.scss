@@ -53,6 +53,33 @@
   }
 }
 
+.ContentEditableDivInput {
+  & > div {
+    display: inline-block;
+    min-height: 32px;
+    vertical-align: middle;
+  }
+
+  div[contenteditable] {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    width: 98px;
+    min-height: 32px;
+    border: none;
+    outline: none;
+    margin-left: 2px;
+
+    &:empty {
+      line-height: 32px;
+    }
+  }
+}
+
+.hidden {
+  visibility: hidden;
+}
+
 .selectError > div {
   border: 1px solid #a94442;
 
