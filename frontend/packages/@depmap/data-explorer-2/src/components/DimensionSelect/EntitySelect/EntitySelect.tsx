@@ -143,6 +143,7 @@ function EntitySelect({
       cacheOptions={`${entity_type}-${dataType}-${units}-${dataset_id}`}
       swatchColor={swatchColor}
       isClearable
+      isEditable
     />
   );
 }
