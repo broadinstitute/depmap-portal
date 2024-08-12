@@ -1360,6 +1360,8 @@ def update_dataset(
     for key, value in update_data.items():
         if key != "format":
             setattr(dataset, key, value)
+        if key == "group_id" and value is not None:
+            setattr(dataset, key, str(value))
 
     db.flush()
     return dataset
