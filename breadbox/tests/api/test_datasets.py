@@ -2645,36 +2645,32 @@ class TestPatch:
         settings: Settings,
         private_group: Dict,
     ):
-        # Create a new dataset
-        user = "someone@private-group.com"
-        test_user_headers = {"X-Forwarded-User": user}
-        dataset_simple_metadata = client.post(
-            "/datasets/",
-            data={
+        # Create a new matrix dataset
+        test_user_headers = {"X-Forwarded-User": "someone@private-group.com"}
+        matrix_file_ids, matrix_hash = factories.file_ids_and_md5_hash(
+            client, factories.continuous_matrix_csv_file()
+        )
+        matrix_dataset_res = client.post(
+            "/dataset-v2/",
+            json={
+                "format": "matrix",
+                "file_ids": matrix_file_ids,
+                "dataset_md5": matrix_hash,
                 "name": "a dataset",
                 "units": "a unit",
                 "feature_type": "generic",
                 "sample_type": "depmap_model",
                 "data_type": "User upload",
-                "is_transient": "False",
+                "is_transient": False,
                 "group_id": private_group["id"],
                 "value_type": "continuous",
-                "dataset_metadata": json.dumps(
-                    {"dataset_metadata": {"test": "value", "another": "value"}}
-                ),
-            },
-            files={
-                "data_file": (
-                    "data.csv",
-                    factories.continuous_matrix_csv_file(),
-                    "text/csv",
-                ),
+                "dataset_metadata": {"test": "value", "another": "value"},
             },
             headers=test_user_headers,
         )
 
-        assert_status_ok(dataset_simple_metadata)
-        dataset_res = dataset_simple_metadata.json()
+        assert_status_ok(matrix_dataset_res)
+        dataset_res = matrix_dataset_res.json()
         dataset_id = dataset_res["result"]["dataset"]["id"]
 
         assert dataset_res["result"]["dataset"]["dataset_metadata"] == {
@@ -2694,7 +2690,7 @@ class TestPatch:
         # Check that you can't update a dataset without valid credentials
         bad_user_update_dataset = client.patch(
             f"/datasets/{dataset_id}",
-            json={"ooh": "aah"},
+            json={"name": "New Name"},
             headers={"X-Forwarded-User": "someone"},
         )
         assert bad_user_update_dataset.status_code == 404
@@ -2704,21 +2700,25 @@ class TestPatch:
         new_units = "UPDATED UNITS"
         update_dataset_response = client.patch(
             f"/datasets/{dataset_id}",
-            data={
+            json={
+                "format": "matrix",
                 "group_id": group_id,
                 "name": new_name,
                 "units": new_units,
                 "priority": "1",
-                "dataset_metadata": json.dumps({"dataset_metadata": {"ooh": "aah"}}),
+                "dataset_metadata": None,
             },
             headers=admin_headers,
         )
         assert_status_ok(update_dataset_response)
-        assert update_dataset_response.json()["dataset_metadata"] == {"ooh": "aah"}
+        assert update_dataset_response.json()["dataset_metadata"] == None
         assert update_dataset_response.json()["group"]["id"] == group_id
         assert update_dataset_response.json()["name"] == new_name
         assert update_dataset_response.json()["units"] == new_units
         assert update_dataset_response.json()["priority"] == 1
+        assert (
+            update_dataset_response.json()["data_type"] == "User upload"
+        )  # same value expected
         dataset = minimal_db.query(Dataset).filter(Dataset.id == dataset_id).one()
         assert dataset.update_date is not None
 
@@ -2727,19 +2727,155 @@ class TestPatch:
             f"/datasets/{dataset_id}", headers=admin_headers
         )
         assert_status_ok(dataset_response_after_update)
-        assert dataset_response_after_update.json()["dataset_metadata"] == {
-            "ooh": "aah"
-        }
+        assert dataset_response_after_update.json()["dataset_metadata"] == None
         assert dataset_response_after_update.json()["group"]["id"] == group_id
         assert dataset_response_after_update.json()["name"] == new_name
         assert dataset_response_after_update.json()["units"] == new_units
         assert dataset_response_after_update.json()["priority"] == 1
+        assert (
+            dataset_response_after_update.json()["data_type"] == "User upload"
+        )  # same value expected
 
         # Check that the original dataset owner can no longer access it (because the group was changed)
         dataset_response_after_update = client.get(
             f"/datasets/{dataset_id}", headers=test_user_headers
         )
         assert dataset_response_after_update.status_code == 404
+
+        # Test tabular dataset
+        tabular_data_file = factories.tabular_csv_data_file(
+            cols=["depmap_id", "attr1"],
+            row_values=[["ACH-1", 1.0,], ["ACH-3", np.NaN],],
+        )
+        tabular_file_ids, tabular_hash = factories.file_ids_and_md5_hash(
+            client, tabular_data_file
+        )
+        tabular_dataset_res = client.post(
+            "/dataset-v2/",
+            json={
+                "format": "tabular",
+                "name": "a table dataset",
+                "index_type": "depmap_model",
+                "data_type": "User upload",
+                "file_ids": tabular_file_ids,
+                "dataset_md5": tabular_hash,
+                "is_transient": False,
+                "group_id": private_group["id"],
+                "dataset_metadata": {"yah": "nah"},
+                "columns_metadata": {
+                    "depmap_id": {"units": None, "col_type": "text",},
+                    "attr1": {"units": "some units", "col_type": "continuous"},
+                },
+            },
+            headers=admin_headers,
+        )
+        assert_status_ok(tabular_dataset_res)
+        res = tabular_dataset_res.json()
+        tab_dataset_id = res["result"]["dataset"]["id"]
+
+        no_update_response = client.patch(
+            f"/datasets/{tab_dataset_id}",
+            json={"format": "tabular"},
+            headers=admin_headers,
+        )
+        assert_status_ok(no_update_response)
+        assert no_update_response.json()["dataset_metadata"] == {"yah": "nah"}
+        assert no_update_response.json()["group"]["id"] == private_group["id"]
+        assert no_update_response.json()["name"] == "a table dataset"
+        assert no_update_response.json()["priority"] == None  # no change expected
+        assert (
+            no_update_response.json()["data_type"] == "User upload"
+        )  # same value expected
+
+        update_tab_dataset_response = client.patch(
+            f"/datasets/{tab_dataset_id}",
+            json={
+                "format": "tabular",
+                "group_id": group_id,
+                "name": new_name,
+                "dataset_metadata": None,
+            },
+            headers=admin_headers,
+        )
+        assert_status_ok(update_tab_dataset_response)
+        assert update_tab_dataset_response.json()["dataset_metadata"] == None
+        assert update_tab_dataset_response.json()["group"]["id"] == group_id
+        assert update_tab_dataset_response.json()["name"] == new_name
+        assert (
+            update_tab_dataset_response.json()["priority"] == None
+        )  # no change expected
+        assert (
+            update_tab_dataset_response.json()["data_type"] == "User upload"
+        )  # same value expected
+        dataset = minimal_db.query(Dataset).filter(Dataset.id == tab_dataset_id).one()
+        assert dataset.update_date is not None
+        # Check that the updates are saved to the database
+        dataset_response_after_update = client.get(
+            f"/datasets/{tab_dataset_id}", headers=admin_headers
+        )
+        assert_status_ok(dataset_response_after_update)
+        assert dataset_response_after_update.json()["dataset_metadata"] == None
+        assert dataset_response_after_update.json()["group"]["id"] == group_id
+        assert dataset_response_after_update.json()["name"] == new_name
+
+        # Check that the original dataset owner can no longer access it (because the group was changed)
+        dataset_response_after_update = client.get(
+            f"/datasets/{tab_dataset_id}", headers=test_user_headers
+        )
+        assert dataset_response_after_update.status_code == 404
+
+    def test_update_dataset_bad_params(
+        self,
+        client: TestClient,
+        minimal_db: SessionWithUser,
+        mock_celery,
+        settings: Settings,
+        private_group: Dict,
+    ):
+        admin_user = settings.admin_users[0]
+        admin_headers = {"X-Forwarded-Email": admin_user}
+        tabular_data_file = factories.tabular_csv_data_file(
+            cols=["depmap_id", "attr1"],
+            row_values=[["ACH-1", 1.0,], ["ACH-3", np.NaN],],
+        )
+        tabular_file_ids, tabular_hash = factories.file_ids_and_md5_hash(
+            client, tabular_data_file
+        )
+        tabular_dataset_res = client.post(
+            "/dataset-v2/",
+            json={
+                "format": "tabular",
+                "name": "a table dataset",
+                "index_type": "depmap_model",
+                "data_type": "User upload",
+                "file_ids": tabular_file_ids,
+                "dataset_md5": tabular_hash,
+                "is_transient": False,
+                "group_id": private_group["id"],
+                "dataset_metadata": {"yah": "nah"},
+                "columns_metadata": {
+                    "depmap_id": {"units": None, "col_type": "text",},
+                    "attr1": {"units": "some units", "col_type": "continuous"},
+                },
+            },
+            headers=admin_headers,
+        )
+        assert_status_ok(tabular_dataset_res)
+        res = tabular_dataset_res.json()
+        dataset_id = res["result"]["dataset"]["id"]
+
+        update_tab_dataset_response = client.patch(
+            f"/datasets/{dataset_id}",
+            json={
+                "format": "matrix",  # incorrect format
+                "name": "UPDATED NAME",
+                "units": "UPDATED UNITS",  # Not a valid param for tabular dataset
+                "dataset_metadata": None,
+            },
+            headers=admin_headers,
+        )
+        assert_status_not_ok(update_tab_dataset_response)
+        assert update_tab_dataset_response.status_code == 400
 
 
 class TestDelete:

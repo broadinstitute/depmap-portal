@@ -15,7 +15,6 @@ from .body_add_dataset import BodyAddDataset
 from .body_add_feature_type import BodyAddFeatureType
 from .body_add_sample_type import BodyAddSampleType
 from .body_get_dataset_data import BodyGetDatasetData
-from .body_update_dataset import BodyUpdateDataset
 from .body_update_feature_type_metadata import BodyUpdateFeatureTypeMetadata
 from .body_update_sample_type_metadata import BodyUpdateSampleTypeMetadata
 from .body_upload_file import BodyUploadFile
@@ -60,6 +59,11 @@ from .matrix_dataset_response_dataset_metadata_type_0 import (
     MatrixDatasetResponseDatasetMetadataType0,
 )
 from .matrix_dataset_response_format import MatrixDatasetResponseFormat
+from .matrix_dataset_update_params import MatrixDatasetUpdateParams
+from .matrix_dataset_update_params_dataset_metadata_type_0 import (
+    MatrixDatasetUpdateParamsDatasetMetadataType0,
+)
+from .matrix_dataset_update_params_format import MatrixDatasetUpdateParamsFormat
 from .matrix_dimensions_info import MatrixDimensionsInfo
 from .metadata_response import MetadataResponse
 from .name_and_id import NameAndID
@@ -79,6 +83,11 @@ from .tabular_dataset_response_dataset_metadata_type_0 import (
     TabularDatasetResponseDatasetMetadataType0,
 )
 from .tabular_dataset_response_format import TabularDatasetResponseFormat
+from .tabular_dataset_update_params import TabularDatasetUpdateParams
+from .tabular_dataset_update_params_dataset_metadata_type_0 import (
+    TabularDatasetUpdateParamsDatasetMetadataType0,
+)
+from .tabular_dataset_update_params_format import TabularDatasetUpdateParamsFormat
 from .tabular_dimensions_info import TabularDimensionsInfo
 from .update_dimension_type import UpdateDimensionType
 from .upload_file_response import UploadFileResponse
@@ -102,7 +111,6 @@ __all__ = (
     "BodyAddFeatureType",
     "BodyAddSampleType",
     "BodyGetDatasetData",
-    "BodyUpdateDataset",
     "BodyUpdateFeatureTypeMetadata",
     "BodyUpdateSampleTypeMetadata",
     "BodyUploadFile",
@@ -141,6 +149,9 @@ __all__ = (
     "MatrixDatasetResponse",
     "MatrixDatasetResponseDatasetMetadataType0",
     "MatrixDatasetResponseFormat",
+    "MatrixDatasetUpdateParams",
+    "MatrixDatasetUpdateParamsDatasetMetadataType0",
+    "MatrixDatasetUpdateParamsFormat",
     "MatrixDimensionsInfo",
     "MetadataResponse",
     "NameAndID",
@@ -154,6 +165,9 @@ __all__ = (
     "TabularDatasetResponseColumnsMetadata",
     "TabularDatasetResponseDatasetMetadataType0",
     "TabularDatasetResponseFormat",
+    "TabularDatasetUpdateParams",
+    "TabularDatasetUpdateParamsDatasetMetadataType0",
+    "TabularDatasetUpdateParamsFormat",
     "TabularDimensionsInfo",
     "UpdateDimensionType",
     "UploadFileResponse",
