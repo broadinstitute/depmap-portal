@@ -533,6 +533,24 @@ export async function fetchLinearRegression(
   return postJson("/linear_regression", json);
 }
 
+type SliceId = string;
+export type MetadataSlices = Record<
+  SliceId,
+  {
+    name: string;
+    valueType: "categorical" | "list_strings";
+    isHighCardinality?: boolean;
+    isPartialSliceId?: boolean;
+    entityTypeLabel?: string;
+  }
+>;
+
+export async function fetchMetadataSlices(dimension_type: string) {
+  const query = `dimension_type=${encodeURIComponent(dimension_type)}`;
+
+  return fetchJson<MetadataSlices>(`/metadata_slices?${query}`);
+}
+
 // *****************************************************************************
 // * Context cache                                                             *
 // *****************************************************************************
