@@ -173,6 +173,7 @@ export default function extendReactSelect(
       inlineLabel = false,
       label = null,
       menuWidth = "max-content",
+      placeholder = undefined,
       swatchColor = undefined,
       isEditable = false,
       editableInputValue = undefined,
@@ -237,12 +238,6 @@ export default function extendReactSelect(
 
     const tooltipText = value ? (value as { label: string }).label : null;
 
-    let { placeholder } = props;
-
-    if (typeof placeholder === "string" && placeholder.length > 25) {
-      placeholder = <span style={{ fontSize: 11 }}>{placeholder}</span>;
-    }
-
     return (
       <div className={styles.container}>
         {swatchColor && (
@@ -275,7 +270,11 @@ export default function extendReactSelect(
             <WrappedSelect
               {...props}
               ref={reactSelectRef}
-              placeholder={placeholder}
+              placeholder={
+                placeholder && (
+                  <span className={styles.placeholder}>{placeholder}</span>
+                )
+              }
               menuPortalTarget={menuPortalTarget}
               className={cx(styles.Select, props.className, {
                 [styles.selectError]: hasError,
