@@ -56,7 +56,7 @@ def validate_all_columns_have_types(
         )
 
 
-# TODO: Replace this with annotation_type_to_pandas_column_type
+# TODO: Replace this with annotation_type_to_pandas_column_type. This is used in dimension type tabular datasets only and we should try to make these dtype mappings standard for all tabular datasets
 def map_annotation_type_to_pandas_dtype(annotation_type: AnnotationType):
     annotation_type_to_pandas_type_mappings = {
         AnnotationType.continuous: "float",

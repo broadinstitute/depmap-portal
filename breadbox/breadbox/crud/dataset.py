@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from typing import Dict, Optional, List, Type, Union, Tuple
 from uuid import UUID, uuid4
 import warnings
+import json
 
 import pandas as pd
 import numpy as np
@@ -1682,23 +1683,30 @@ def get_subsetted_tabular_dataset_df(
         dataset.columns_metadata, tabular_dimensions_info.columns
     )
     subsetted_tabular_dataset_df = _convert_subsetted_tabular_df_dtypes(
-        subsetted_tabular_dataset_df, col_dtypes
+        subsetted_tabular_dataset_df, col_dtypes, dataset.columns_metadata
     )
     return subsetted_tabular_dataset_df
 
 
-def _convert_subsetted_tabular_df_dtypes(df: pd.DataFrame, dtype_map: Dict[str, Any]):
+def _convert_subsetted_tabular_df_dtypes(
+    df: pd.DataFrame,
+    dtype_map: Dict[str, Any],
+    dataset_columns_metadata: Dict[str, ColumnMetadata],
+):
     # Replace string boolean values with boolean
-    bool_cols_false = {}
-    bool_cols_true = {}
     for col, dtype in dtype_map.items():
+        column = df[col]
         if dtype == pd.BooleanDtype():
-            bool_cols_false[col] = "False"
-            bool_cols_true[col] = "True"
-    converted_df = df.replace(bool_cols_false, False)
-    converted_df = converted_df.replace(bool_cols_true, True)
-    converted_df = converted_df.fillna(value=pd.NA)
-    return converted_df.astype(dtype_map)
+            column = column.replace({"True": True, "False": False})
+        column = column.astype(dtype)
+        # NOTE: if col type is list string, convert to list. col dtype will be changed to object
+        if (
+            dtype == pd.StringDtype()
+            and dataset_columns_metadata[col].col_type == AnnotationType.list_strings
+        ):
+            column = column.apply(lambda x: json.loads(x) if x is not pd.NA else x)
+        df[col] = column
+    return df
 
 
 def get_truncated_message(missing_tabular_columns, missing_tabular_indices):

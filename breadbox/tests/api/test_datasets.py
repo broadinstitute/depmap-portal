@@ -2533,7 +2533,7 @@ class TestPost:
             "col_2": {"ACH-1": "hi"},
             "col_3": {"ACH-1": False},
             "col_4": {"ACH-1": "cat1"},
-            "col_5": {"ACH-1": '["a"]'},
+            "col_5": {"ACH-1": ["a"]},
         }
 
         # When both columns and indices not provided, the entire dataset should return'
@@ -2549,7 +2549,7 @@ class TestPost:
             "col_2": {"ACH-1": "hi", "ACH-2": "bye"},
             "col_3": {"ACH-1": False, "ACH-2": None},
             "col_4": {"ACH-1": "cat1", "ACH-2": "cat2"},
-            "col_5": {"ACH-1": '["a"]', "ACH-2": None},
+            "col_5": {"ACH-1": ["a"], "ACH-2": None},
         }
         res = client.post(
             f"/datasets/tabular/{tabular_dataset_1_id}", headers=admin_headers,
@@ -2561,7 +2561,7 @@ class TestPost:
             "col_2": {"ACH-1": "hi", "ACH-2": "bye"},
             "col_3": {"ACH-1": False, "ACH-2": None},
             "col_4": {"ACH-1": "cat1", "ACH-2": "cat2"},
-            "col_5": {"ACH-1": '["a"]', "ACH-2": None},
+            "col_5": {"ACH-1": ["a"], "ACH-2": None},
         }
 
         # Test if no matches found with given query params --> empty df
