@@ -32,6 +32,8 @@ class MatrixDatasetParams:
         value_type (ValueType):
         allowed_values (Union[List[str], None, Unset]): Only provide if 'value_type' is 'categorical'. Must contain all
             possible categorical values
+        data_file_format (Union[Unset, str]): The format of the uploaded data file. May either be 'csv' or 'parquet'
+            Default: 'csv'.
         dataset_metadata (Union['MatrixDatasetParamsDatasetMetadataType0', None, Unset]): Contains a dictionary of
             additional dataset values that are not already provided above.
         feature_type (Union[None, Unset, str]): Type of features your dataset contains
@@ -52,6 +54,7 @@ class MatrixDatasetParams:
     units: str
     value_type: ValueType
     allowed_values: Union[List[str], None, Unset] = UNSET
+    data_file_format: Union[Unset, str] = "csv"
     dataset_metadata: Union["MatrixDatasetParamsDatasetMetadataType0", None, Unset] = (
         UNSET
     )
@@ -92,6 +95,8 @@ class MatrixDatasetParams:
 
         else:
             allowed_values = self.allowed_values
+
+        data_file_format = self.data_file_format
 
         dataset_metadata: Union[Dict[str, Any], None, Unset]
         if isinstance(self.dataset_metadata, Unset):
@@ -138,6 +143,8 @@ class MatrixDatasetParams:
         )
         if allowed_values is not UNSET:
             field_dict["allowed_values"] = allowed_values
+        if data_file_format is not UNSET:
+            field_dict["data_file_format"] = data_file_format
         if dataset_metadata is not UNSET:
             field_dict["dataset_metadata"] = dataset_metadata
         if feature_type is not UNSET:
@@ -192,6 +199,8 @@ class MatrixDatasetParams:
             return cast(Union[List[str], None, Unset], data)
 
         allowed_values = _parse_allowed_values(d.pop("allowed_values", UNSET))
+
+        data_file_format = d.pop("data_file_format", UNSET)
 
         def _parse_dataset_metadata(
             data: object,
@@ -256,6 +265,7 @@ class MatrixDatasetParams:
             units=units,
             value_type=value_type,
             allowed_values=allowed_values,
+            data_file_format=data_file_format,
             dataset_metadata=dataset_metadata,
             feature_type=feature_type,
             is_transient=is_transient,
