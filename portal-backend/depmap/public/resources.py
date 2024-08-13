@@ -85,6 +85,17 @@ def add_forum_link_to_html(
     return str(soup)
 
 
+def remove_img_link(topic_html: str):
+    soup = BeautifulSoup(str(topic_html), features="html.parser")
+    img_divs = soup.find_all("div", class_="lightbox-wrapper")
+    for img_div in img_divs:
+        img_link_div = img_div.find("div", class_="meta")
+        if img_link_div:
+            img_link_div.decompose()
+
+    return str(soup)
+
+
 def modify_html(
     sanitizer: Sanitizer,
     topic_id: int,
@@ -97,7 +108,8 @@ def modify_html(
     added_forum_link_html = add_forum_link_to_html(
         forum_url, topic_id, topic_slug, modified_urls_html
     )
-    return added_forum_link_html
+    img_links_removed_html = remove_img_link(added_forum_link_html)
+    return img_links_removed_html
 
 
 def get_root_category_subcategory_topics(
