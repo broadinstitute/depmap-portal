@@ -1,30 +1,33 @@
 import os
 import re
 import shutil
-from json import dumps as json_dumps
-from typing import Dict, Match, Optional, Tuple, Union
+from typing import Dict, Match, Optional, Tuple, Union, final
 
 import pandas as pd
 from flask import current_app
 from sqlalchemy import func
 
-from depmap.antibody.models import Antibody
 from depmap.compound.models import CompoundExperiment
-from depmap.context.models import ContextEntity
 from depmap.database import db
-from depmap.dataset.models import BiomarkerDataset, Dataset, DependencyDataset
-from depmap.entity.models import GenericEntity
-from depmap.enums import BiomarkerEnum
 from depmap.gene.models import Gene
 from depmap.predictability_prototype.models import (
     PrototypePredictiveFeature,
     PrototypePredictiveFeatureResult,
     PrototypePredictiveModel,
 )
-from depmap.predictability.utilities import DATASET_LABEL_TO_ENUM
-from depmap.transcription_start_site.models import TranscriptionStartSite
 from depmap.utilities.bulk_load import bulk_load
 from depmap.utilities.models import log_data_issue
+import re
+from taigapy import create_taiga_client_v3
+import requests
+import os
+
+# this script exists to rewrite any Taiga IDs into their canonical form. (This allows conseq to recognize when data files are the same by just comparing taiga IDs)
+#
+# as a secondary concern, all these taiga IDs must exist in a file that this processes, so this also handles a "TAIGA_PREPROCESSOR_INCLUDE" statement to merge multiple files
+# into one while the taiga IDs are being processed
+
+tc = create_taiga_client_v3()
 
 
 def lookup_gene(m: Match):
@@ -47,7 +50,11 @@ def lookup_compound_dose(xref_full: str):
 
 
 def _load_predictive_models(
-    filename: str, model_ids: Dict[Tuple[str, str], int], entity_type: str, next_id
+    filename: str,
+    model_ids: Dict[Tuple[str, str], int],
+    entity_type: str,
+    next_id,
+    screen_type: str,
 ):
     def lookup_entity_id(
         gene_or_compound_experiment_label: str,
@@ -107,6 +114,7 @@ def _load_predictive_models(
             entity_id=lookup_entity_id(entity_label),
             label=model_name,
             pearson=float(row["pearson"]),
+            screen_type=screen_type,
         )
         return rec
 
@@ -120,16 +128,15 @@ def _load_predictive_features(
 ):
 
     feature_metadata = pd.read_csv(
-        feature_metadata_file,  # predictive_insights_features
-        index_col="feature_id",
+        feature_metadata_file,
         dtype={
-            "feature_id": int,
             "feature_name": str,
+            "feature_label": str,
             "taiga_id": str,
             "given_id": str,
             "dim_type": str,
         },
-        usecols=["feature_id", "feature_name", "taiga_id", "given_id", "dim_type"],
+        usecols=["feature_label", "feature_name", "taiga_id", "given_id", "dim_type",],
     )
 
     # Filter out features which are not in the top features of any model
@@ -141,21 +148,27 @@ def _load_predictive_features(
 
     # Filter out features which have already been loaded
     already_loaded_feature_labels = [
-        f.feature_label for f in PrototypePredictiveFeature.get_all()
+        f.feature_name for f in PrototypePredictiveFeature.get_all()
     ]
 
     dropIndex = feature_metadata[
         feature_metadata["feature_name"].isin(already_loaded_feature_labels)
     ].index
-    feature_metadata = feature_metadata.drop(dropIndex)
 
-    feature_metadata = feature_metadata.drop_duplicates()
+    feature_metadata = feature_metadata.drop(dropIndex)
+    feature_metadata = feature_metadata.drop_duplicates(subset=["feature_name"])
 
     def row_to_feature_obj(
         feature_id: str, row
     ) -> Optional[PrototypePredictiveFeature]:
         feature_name = row["feature_name"]
+        feature_label = row["feature_label"]
+
         taiga_id = row["taiga_id"]
+        tc = create_taiga_client_v3()
+        taiga_id = tc.get_canonical_id(taiga_id)
+        assert taiga_id, f"Could not find canonical taiga ID for {taiga_id}"
+
         dim_type = row["dim_type"]
         given_id = row["given_id"]
 
@@ -166,25 +179,31 @@ def _load_predictive_features(
 
         rec = PrototypePredictiveFeature(
             feature_name=feature_name,
-            feature_label=feature_name,
+            feature_label=feature_label,
             dim_type=dim_type,
             taiga_id=taiga_id,
-            given_id=given_id,
+            given_id=str(given_id),
+            feature_id=feature_name,
         )
 
         return rec
 
     objs = [row_to_feature_obj(i, row) for i, row in feature_metadata.iterrows()]
     objs = [o for o in objs if o is not None]
+
     db.session.bulk_save_objects(objs)
     db.session.commit()
 
 
-def load_predictability_prototype(filename: str, feature_metadata_file: str):
+# TODO: screenType will eventually be determined by a config file that hasn't yet been made,
+# so hardcoding it as param here for now.
+def load_predictability_prototype(
+    filename: str, feature_metadata_file: str, screen_type: str  # crispr or rnai
+):
     model_ids: Dict[Tuple[str, str], int] = {}
     next_id = [get_starting_predictive_model_id()]
 
-    _load_predictive_models(filename, model_ids, "gene", next_id)
+    _load_predictive_models(filename, model_ids, "gene", next_id, screen_type)
 
     _load_predictive_features(filename, feature_metadata_file)
 
@@ -201,19 +220,21 @@ def load_predictability_prototype(filename: str, feature_metadata_file: str):
         model_id = model_ids[model_ids_key]
         # top ten features, columns are labelled e.g. feature0, feature0_importance
         for i in range(10):
-            feature_label = row[f"feature{i}"]
+            feature_name = row[f"feature{i}"]
             feature_importance = row[f"feature{i}_importance"]
 
-            feature = PrototypePredictiveFeature.get(feature_label, must=False)
+            feature = PrototypePredictiveFeature.get_by_feature_name(feature_name)
+
             if feature is None:
                 continue
             assert (
                 feature is not None
-            ), f"Counld not find PredictiveFeature where feature_id={feature_label}"
+            ), f"Counld not find PredictiveFeature where feature_name={feature_name}"
 
             rec = dict(
                 predictive_model_id=model_id,
                 feature_id=feature.feature_id,
+                screen_type=screen_type,
                 rank=i,
                 importance=feature_importance,
             )

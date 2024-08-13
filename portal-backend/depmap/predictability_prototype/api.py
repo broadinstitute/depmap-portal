@@ -1,5 +1,3 @@
-from enum import unique
-from operator import ge
 from depmap import data_access
 from depmap.gene.models import Gene
 from depmap.predictability_prototype.models import PrototypePredictiveModel
@@ -14,14 +12,13 @@ from depmap.predictability_prototype.utils import (
     get_feature_waterfall_plot,
     get_gene_effect_df,
     top_features_overall,
+    MODEL_SEQUENCE,
 )
 
 from flask_restplus import Namespace, Resource
 from flask import request
 from loader.predictability_summary_loader import load_predictability_prototype
 from depmap.database import db
-import pandas as pd
-import numpy as np
 
 namespace = Namespace("predictability_prototype", description="")
 
@@ -40,7 +37,7 @@ class Predictions(
         # statements = [
         #     "drop table if exists prototype_predictive_feature",
         #     """CREATE TABLE IF NOT EXISTS prototype_predictive_feature (
-        #     feature_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        #     feature_id STRING PRIMARY KEY,
         #     feature_name STRING,
         #     feature_label STRING,
         #     dim_type STRING,
@@ -52,6 +49,7 @@ class Predictions(
         #     predictive_model_id INTEGER PRIMARY KEY AUTOINCREMENT,
         #     entity_id INTEGER,
         #     label STRING,
+        #     screen_type STRING,
         #     pearson FLOAT,
         #     CONSTRAINT prototype_predictive_model_FK FOREIGN KEY (entity_id) REFERENCES entity(entity_id)
         # );""",
@@ -59,13 +57,15 @@ class Predictions(
         #     """CREATE TABLE IF NOT EXISTS prototype_predictive_feature_result (
         #     predictive_feature_result_id INTEGER PRIMARY KEY AUTOINCREMENT,
         #     predictive_model_id INTEGER,
-        #     feature_id INTEGER,
+        #     feature_id STRING,
+        #     screen_type STRING,
         #     rank INTEGER,
         #     importance FLOAT,
         #     CONSTRAINT prototype_predictive_feature_result_FK FOREIGN KEY (predictive_model_id) REFERENCES prototype_predictive_model(predictive_model_id),
-        #     CONSTRAINT prototype_predictive_feature_result2_FK FOREIGN KEY (feature_id) REFERENCES prototype_predictive_feature(feature_id)
+        #     CONSTRAINT prototype_predictive_feature_result2_FK FOREIGN KEY (feature_id) REFERENCES prototype_predictive_feature(feature_id) ON DELETE CASCADE
         # );""",
         # ]
+        # db.session.execute("PRAGMA foreign_keys = 0;")
         # for statement in statements:
         #     db.session.execute(statement)
 
@@ -96,9 +96,21 @@ class Predictions(
         # combination.to_csv(
         #     "/Users/amourey/dev/depmap-portal/portal-backend/depmap/predictability_prototype/scripts/combination.csv"
         # )
+
+        # ensemble_crispr: predictability-76d5.110/ensemble_crispr
+        # ensemble_rnai: predictability-76d5.110/ensemble_rnai
+        # feature_metadata_crispr: predictability-76d5.110/feature_metadata_crispr
+        # feature_metadata_rnai: predictability-76d5.110/feature_metadata_rnai
+
         # load_predictability_prototype(
-        #     "/Users/amourey/dev/depmap-portal/portal-backend/depmap/predictability_prototype/scripts/combination.csv",
-        #     "/Users/amourey/dev/depmap-portal/portal-backend/depmap/predictability_prototype/scripts/predictive_insights_features.csv",
+        #     "/Users/amourey/dev/depmap-portal/portal-backend/depmap/predictability_prototype/scripts/ensemble_crispr.csv",
+        #     "/Users/amourey/dev/depmap-portal/portal-backend/depmap/predictability_prototype/scripts/feature_metadata_crispr.csv",
+        #     "crispr",
+        # )
+        # load_predictability_prototype(
+        #     "/Users/amourey/dev/depmap-portal/portal-backend/depmap/predictability_prototype/scripts/ensemble_rnai.csv",
+        #     "/Users/amourey/dev/depmap-portal/portal-backend/depmap/predictability_prototype/scripts/feature_metadata_rnai.csv",
+        #     "rnai",
         # )
 
         # db.session.commit()
@@ -110,22 +122,33 @@ class Predictions(
         start = time.time()
         # <code to time>
         gene_effect_df = get_gene_effect_df()
-
         predictablity_datasets = get_all_predictability_datasets()
 
+        # TODO: TAKE OUT
+        screen_type = "crispr"
+
         agg_scores = generate_aggregate_scores_across_all_models(
-            gene_symbol, datasets=predictablity_datasets, actuals=gene_effect_df
+            gene_symbol,
+            screen_type=screen_type,
+            datasets=predictablity_datasets,
+            actuals=gene_effect_df,
         )
 
         top_features, gene_tea_symbols = top_features_overall(gene_symbol)
-
+        # breakpoint()
+        print(gene_tea_symbols)
         model_performance_data = {}
 
-        for model in ["CellContext"]:
+        for model in MODEL_SEQUENCE:
             model_predictions = generate_model_predictions(
-                gene_symbol=gene_symbol, model=model, actuals=gene_effect_df
+                gene_symbol=gene_symbol,
+                screen_type=screen_type,
+                model=model,
+                actuals=gene_effect_df,
             )
-            corr = feature_correlation_map_calc(model, gene_symbol)
+            corr = feature_correlation_map_calc(
+                model, gene_symbol, screen_type=screen_type
+            )
             metadata: dict = corr["metadata"]
             r = PrototypePredictiveModel.get_r_squared_for_model(model)
 
@@ -162,9 +185,12 @@ class RelatedCorrelations(
         entity_label = request.args.get("entity_label")
         feature_name_type = request.args.get("identifier")
         model = request.args.get("model")
-
+        screen_type = "crispr"
         plot = get_feature_corr_plot(
-            model=model, gene_symbol=entity_label, feature_name_type=feature_name_type
+            screen_type=screen_type,
+            model=model,
+            gene_symbol=entity_label,
+            feature_name_type=feature_name_type,
         )
 
         return plot
@@ -183,9 +209,13 @@ class Waterfall(
         entity_label = request.args.get("entity_label")
         feature_name_type = request.args.get("identifier")
         model = request.args.get("model")
+        screen_type = "crispr"
 
         plot = get_feature_waterfall_plot(
-            model=model, gene_symbol=entity_label, feature_name_type=feature_name_type
+            screen_type=screen_type,
+            model=model,
+            gene_symbol=entity_label,
+            feature_name_type=feature_name_type,
         )
 
         return plot
@@ -201,15 +231,15 @@ class BoxPlot(
         """
         test
         """
-        feature_name = request.args.get("feature_name")
-        feature_type = request.args.get("feature_type")
         feature_name_type = request.args.get("identifier")
+        entity_label = request.args.get("entity_label")
         model = request.args.get("model")
+        screen_type = "crispr"
 
         plot = get_feature_boxplot_data(
+            screen_type=screen_type,
             feature_name_type=feature_name_type,
-            feature_name=feature_name,
-            feature_type=feature_type,
+            entity_label=entity_label,
             model=model,
         )
 
@@ -232,6 +262,7 @@ class GeneEffectData(
         feature_index = request.args.get("feature_index")
         model = request.args.get("model")
         entity_label = request.args.get("entity_label")
+        screen_type = "crispr"
 
         plot = get_feature_gene_effect_plot_data(
             model=model,
@@ -239,6 +270,7 @@ class GeneEffectData(
             feature_index=feature_index,
             feature_name=feature_name,
             feature_type=feature_type,
+            screen_type=screen_type,
         )
 
         return plot

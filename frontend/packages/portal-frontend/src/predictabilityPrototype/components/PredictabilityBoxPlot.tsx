@@ -12,9 +12,8 @@ interface PredictabilityBoxPlotProps {
   featureName: string;
   panelIndex: number;
   getPredictabilityBoxPlotData: (
-    featureName: string,
-    featureType: string,
     identifier: string,
+    entityLabel: string,
     model: string
   ) => Promise<number[]>;
 }
@@ -39,35 +38,43 @@ const PredictabilityBoxPlot = ({
   const latestPromise = useRef<Promise<number[]>>();
 
   useEffect(() => {
-    if (getPredictabilityBoxPlotData) {
+    setPlotData(null);
+    setBoxPlotElement(null);
+    setIsLoading(true);
+    const promise = getPredictabilityBoxPlotData(
+      featureNameType,
+      geneSymbol,
+      modelName
+    );
+
+    latestPromise.current = promise;
+    promise
+      .then((result: any) => {
+        if (promise === latestPromise.current) {
+          setPlotData(result);
+          setIsLoading(false);
+        }
+      })
+      .catch((e) => {
+        if (promise === latestPromise.current) {
+          window.console.error(e);
+          setIsError(true);
+        }
+      });
+
+    return () => {
       setPlotData(null);
       setBoxPlotElement(null);
-      setIsLoading(true);
-      const promise = getPredictabilityBoxPlotData(
-        featureName,
-        featureType,
-        featureNameType,
-        modelName
-      );
-
-      latestPromise.current = promise;
-      promise
-        .then((result: any) => {
-          if (promise === latestPromise.current) {
-            setPlotData(result);
-            setIsLoading(false);
-          }
-        })
-        .catch((e) => {
-          if (promise === latestPromise.current) {
-            window.console.error(e);
-            setIsError(true);
-          }
-        });
-    }
-  }, [featureNameType,featureName, featureType, getPredictabilityBoxPlotData, modelName]);
+    };
+  }, [
+    featureNameType,
+    featureName,
+    featureType,
+    getPredictabilityBoxPlotData,
+    modelName,
+  ]);
   console.log(isError);
-  console.log(geneSymbol)
+  console.log(geneSymbol);
 
   const boxPlotData: any = useMemo(() => {
     const data = plotData;
@@ -95,7 +102,7 @@ const PredictabilityBoxPlot = ({
 
   return (
     <>
-      {!boxPlotElement && <PlotSpinner height={"100%"}/>}
+      {!boxPlotElement && <PlotSpinner height={"100%"} />}
       {!isLoading && (
         <BoxPlot
           key={featureName + "boxplot" + panelIndex}

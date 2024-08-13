@@ -42,35 +42,38 @@ const PredictabilityWaterfallPlot = ({
   const latestPromise = useRef<Promise<RelatedFeaturePlot>>();
 
   useEffect(() => {
-    if (getWaterfallPlotData) {
+    setWaterfallPlotData(null);
+    setWaterfallPlotElement(null);
+    setIsLoading(true);
+    const promise = getWaterfallPlotData(
+      geneSymbol,
+      featureNameType,
+      modelName
+    );
+
+    latestPromise.current = promise;
+    promise
+      .then((result: any) => {
+        if (promise === latestPromise.current) {
+          setWaterfallPlotData(result);
+          setIsLoading(false);
+        }
+      })
+      .catch((e) => {
+        if (promise === latestPromise.current) {
+          window.console.error(e);
+          setIsError(true);
+        }
+      });
+
+    return () => {
       setWaterfallPlotData(null);
       setWaterfallPlotElement(null);
-      setIsLoading(true);
-      const promise = getWaterfallPlotData(
-        geneSymbol,
-        featureNameType,
-        modelName
-      );
-
-      latestPromise.current = promise;
-      promise
-        .then((result: any) => {
-          if (promise === latestPromise.current) {
-            setWaterfallPlotData(result);
-            setIsLoading(false);
-          }
-        })
-        .catch((e) => {
-          if (promise === latestPromise.current) {
-            window.console.error(e);
-            setIsError(true);
-          }
-        });
-    }
+    };
   }, [featureNameType, geneSymbol, getWaterfallPlotData, modelName]);
 
   // TODO: If isError add error message to UI
-  console.log(isError)
+  console.log(isError);
 
   const waterfallPlotFormattedData: any = useMemo(() => {
     if (waterfallPlotData) {

@@ -200,16 +200,20 @@ export class DepmapApi {
     return fetch(fullUrl, {
       credentials: "include",
       headers,
-    }).then((response: Response): Promise<T> => {
-      log(`response arrived from ${fullUrl}`);
-      return response.json().then((body: T): Promise<T> => {
-        // nesting to access response.status
-        if (response.status >= 200 && response.status < 300) {
-          return Promise.resolve(body);
-        }
-        return Promise.reject(body);
-      });
-    });
+    }).then(
+      (response: Response): Promise<T> => {
+        log(`response arrived from ${fullUrl}`);
+        return response.json().then(
+          (body: T): Promise<T> => {
+            // nesting to access response.status
+            if (response.status >= 200 && response.status < 300) {
+              return Promise.resolve(body);
+            }
+            return Promise.reject(body);
+          }
+        );
+      }
+    );
   };
 
   _fetchIncludePredictabilityCache = async <T>(url: string): Promise<T> => {
@@ -231,8 +235,9 @@ export class DepmapApi {
               return response.json().then((body) => {
                 if (response.status >= 200 && response.status < 300) {
                   const result = body;
-                  featurePredictabilityRequestCache[url] =
-                    Promise.resolve(result);
+                  featurePredictabilityRequestCache[url] = Promise.resolve(
+                    result
+                  );
                   resolve(result);
                 } else {
                   featurePredictabilityRequestCache[url] = null;
@@ -281,16 +286,20 @@ export class DepmapApi {
       method: "POST",
       headers,
       body: JSON.stringify(args),
-    }).then((response: Response): Promise<T> => {
-      log(`response arrived from ${fullUrl}`);
-      return response.json().then((body: T): Promise<T> => {
-        // nesting to access response.status
-        if (response.status >= 200 && response.status < 300) {
-          return Promise.resolve(body);
-        }
-        return Promise.reject(body);
-      });
-    });
+    }).then(
+      (response: Response): Promise<T> => {
+        log(`response arrived from ${fullUrl}`);
+        return response.json().then(
+          (body: T): Promise<T> => {
+            // nesting to access response.status
+            if (response.status >= 200 && response.status < 300) {
+              return Promise.resolve(body);
+            }
+            return Promise.reject(body);
+          }
+        );
+      }
+    );
   };
 
   _post = <T>(url: string, args: any): Promise<T> => {
@@ -304,16 +313,20 @@ export class DepmapApi {
         method: "POST",
         body: data,
       })
-      .then((response: Response): Promise<T> => {
-        log(`response arrived from ${fullUrl}`);
-        return response.json().then((body: T): Promise<T> => {
-          // nesting to access response.status
-          if (response.status >= 200 && response.status < 300) {
-            return Promise.resolve(body);
-          }
-          return Promise.reject(body);
-        });
-      });
+      .then(
+        (response: Response): Promise<T> => {
+          log(`response arrived from ${fullUrl}`);
+          return response.json().then(
+            (body: T): Promise<T> => {
+              // nesting to access response.status
+              if (response.status >= 200 && response.status < 300) {
+                return Promise.resolve(body);
+              }
+              return Promise.reject(body);
+            }
+          );
+        }
+      );
   };
 
   _postForm = <T>(url: string, args: FormData): Promise<T> => {
@@ -323,16 +336,20 @@ export class DepmapApi {
     return fetch(fullUrl, {
       method: "POST",
       body: args,
-    }).then((response: Response): Promise<T> => {
-      log(`response arrived from ${fullUrl}`);
-      return response.json().then((body: T): Promise<T> => {
-        // nesting to access response.status
-        if (response.status >= 200 && response.status < 300) {
-          return Promise.resolve(body);
-        }
-        return Promise.reject(body);
-      });
-    });
+    }).then(
+      (response: Response): Promise<T> => {
+        log(`response arrived from ${fullUrl}`);
+        return response.json().then(
+          (body: T): Promise<T> => {
+            // nesting to access response.status
+            if (response.status >= 200 && response.status < 300) {
+              return Promise.resolve(body);
+            }
+            return Promise.reject(body);
+          }
+        );
+      }
+    );
   };
 
   _postMultipart = <T>(url: string, args: any): Promise<T> => {
@@ -350,20 +367,24 @@ export class DepmapApi {
       credentials: "include",
       method: "POST",
       body: data,
-    }).then((response: Response): Promise<T> => {
-      log(`response arrived from ${fullUrl}`);
-      return response.json().then((body: T): Promise<T> => {
-        // nesting to access response.status
-        if (response.status >= 200 && response.status < 300) {
-          return Promise.resolve(body);
-        }
-        // eslint-disable-next-line prefer-promise-reject-errors
-        return Promise.reject({ body, status: response.status } as {
-          body: T;
-          status: number;
-        });
-      });
-    });
+    }).then(
+      (response: Response): Promise<T> => {
+        log(`response arrived from ${fullUrl}`);
+        return response.json().then(
+          (body: T): Promise<T> => {
+            // nesting to access response.status
+            if (response.status >= 200 && response.status < 300) {
+              return Promise.resolve(body);
+            }
+            // eslint-disable-next-line prefer-promise-reject-errors
+            return Promise.reject({ body, status: response.status } as {
+              body: T;
+              status: number;
+            });
+          }
+        );
+      }
+    );
   };
 
   _deleteJson = (url: string, args: any): Promise<Response> => {
@@ -648,15 +669,13 @@ export class DepmapApi {
   }
 
   getPredictabilityBoxPlotData(
-    featureName: string,
-    featureType: string,
     identifier: string,
+    entityLabel: string,
     model: string
   ): Promise<any> {
     const params = {
-      feature_name: featureName,
-      feature_type: featureType,
-      feature_name_type: identifier,
+      entity_label: entityLabel,
+      identifier,
       model,
     };
 
@@ -676,7 +695,7 @@ export class DepmapApi {
     const params = {
       feature_name: featureName,
       feature_type: featureType,
-      feature_name_type: identifier,
+      identifier,
       feature_index: featureIndex,
       entity_label: entityLabel,
       model,
@@ -780,7 +799,9 @@ export class DepmapApi {
     };
   }
 
-  getOncogenicAlterations(depmapId: string): Promise<{
+  getOncogenicAlterations(
+    depmapId: string
+  ): Promise<{
     onco_alterations: Array<OncogenicAlteration>;
     oncokb_dataset_version: string;
   }> {

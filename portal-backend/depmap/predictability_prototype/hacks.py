@@ -3,6 +3,31 @@ from depmap.enums import BiomarkerEnum
 import numpy as np
 
 
+DATASET_TAIGA_IDS_BY_MODEL_NAME_CRISPR = {
+    "CellContext": "predictability-76d5.107/CellContext_predictions_crispr",
+    "DNA": "predictability-76d5.107/DNA_predictions_crispr",
+    "DriverEvents": "predictability-76d5.107/DriverEvents_predictions_crispr",
+    "RNASeq": "predictability-76d5.107/RNASeq_predictions_crispr",
+    "GeneticDerangement": "predictability-76d5.107/GeneticDerangement_predictions_crispr",
+}
+
+DATASET_TAIGA_IDS_BY_MODEL_NAME_RNAI = {
+    "CellContext": "predictability-76d5.108/CellContext_predictions_rnai",
+    "DNA": "predictability-76d5.108/DNA_predictions_rnai",
+    "DriverEvents": "predictability-76d5.108/DriverEvents_predictions_rnai",
+    "RNASeq": "predictability-76d5.108/RNASeq_predictions_rnai",
+    "GeneticDerangement": "predictability-76d5.108/GeneticDerangement_predictions_rnai",
+}
+
+
+def get_dataset_taiga_id_by_model_and_screen_type(model_name: str, screen_type: str):
+    return (
+        DATASET_TAIGA_IDS_BY_MODEL_NAME_CRISPR[model_name]
+        if screen_type == "crispr"
+        else DATASET_TAIGA_IDS_BY_MODEL_NAME_RNAI[model_name]
+    )
+
+
 def get_value_labels_temp_hack(gene_series, value_labels, values):
     filtered_value_labels = []
     filtered_values = []

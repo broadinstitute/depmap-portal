@@ -1,8 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import styles from "src/predictabilityPrototype/styles/PredictabilityPrototype.scss";
-import {
-  FeatureVsGeneEffectPlotData,
-} from "../models/types";
+import { FeatureVsGeneEffectPlotData } from "../models/types";
 import ScatterPlot from "src/contextExplorer/components/contextAnalysis/ScatterPlot";
 import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
 import PlotSpinner from "src/plot/components/PlotSpinner";
@@ -51,37 +49,48 @@ const FeatureVsGeneEffectPlot = ({
   const latestPromise = useRef<Promise<FeatureVsGeneEffectPlotData>>();
 
   useEffect(() => {
-    if (getFeatureVsGeneEffectData) {
+    setFeatureVsGeneEffectData(null);
+    setFeatureVsGeneEffectPlotElement(null);
+    setIsLoading(true);
+    const promise = getFeatureVsGeneEffectData(
+      feature,
+      featureType,
+      featureNameType,
+      panelIndex,
+      geneSymbol,
+      modelName
+    );
+
+    latestPromise.current = promise;
+    promise
+      .then((result: any) => {
+        if (promise === latestPromise.current) {
+          setFeatureVsGeneEffectData(result);
+          setIsLoading(false);
+        }
+      })
+      .catch((e) => {
+        if (promise === latestPromise.current) {
+          window.console.error(e);
+          setIsError(true);
+        }
+      });
+
+    return () => {
       setFeatureVsGeneEffectData(null);
       setFeatureVsGeneEffectPlotElement(null);
-      setIsLoading(true);
-      const promise = getFeatureVsGeneEffectData(
-        feature,
-        featureType,
-        featureNameType,
-        panelIndex,
-        geneSymbol,
-        modelName
-      );
+    };
+  }, [
+    featureNameType,
+    feature,
+    featureType,
+    geneSymbol,
+    getFeatureVsGeneEffectData,
+    modelName,
+    panelIndex,
+  ]);
 
-      latestPromise.current = promise;
-      promise
-        .then((result: any) => {
-          if (promise === latestPromise.current) {
-            setFeatureVsGeneEffectData(result);
-            setIsLoading(false);
-          }
-        })
-        .catch((e) => {
-          if (promise === latestPromise.current) {
-            window.console.error(e);
-            setIsError(true);
-          }
-        });
-    }
-  }, [featureNameType, feature, featureType, geneSymbol, getFeatureVsGeneEffectData, modelName, panelIndex]);
-
-  console.log(isError)
+  console.log(isError);
 
   const formattedPlotData: any = useMemo(() => {
     if (featureVsGeneEffectData?.actuals_slice) {

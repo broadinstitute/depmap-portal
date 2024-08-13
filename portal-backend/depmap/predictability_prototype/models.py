@@ -22,7 +22,7 @@ from depmap.entity.models import Entity
 from depmap.gene.models import Gene
 import pandas as pd
 import sqlalchemy
-from sqlalchemy import and_, or_
+from sqlalchemy import and_, or_, func
 import numpy as np
 
 
@@ -33,7 +33,7 @@ import numpy as np
 class PrototypePredictiveFeature(Model):
     __tablename__ = "prototype_predictive_feature"
 
-    feature_id = Column(Integer, primary_key=True, autoincrement=True)
+    feature_id = Column(String, primary_key=True)
 
     # Label of the feature in the dataset, or feature_name in the dataset it is from, if we don't have the feature loaded
     feature_name = Column(String, nullable=False)
@@ -47,12 +47,50 @@ class PrototypePredictiveFeature(Model):
 
     @classmethod
     def get(
-        cls, feature_label: str, must: bool = True
+        cls, feature_name: str, must: bool = True
     ) -> Optional["PrototypePredictiveFeature"]:
-        query = cls.query.filter_by(feature_label=feature_label)
+        query = cls.query.filter_by(feature_name=feature_name)
         if must:
             return query.one()
         return query.one_or_none()
+
+    @staticmethod
+    def get_taiga_id_from_full_feature_name(
+        model_name: str, feature_name: str, screen_type: str
+    ):
+        result = (
+            db.session.query(PrototypePredictiveFeature)
+            .filter(
+                and_(
+                    PrototypePredictiveModel.label == model_name,
+                    PrototypePredictiveModel.screen_type == screen_type,
+                    PrototypePredictiveFeature.feature_name == feature_name,
+                )
+            )
+            .one()
+        )
+
+        return result.taiga_id, result.given_id
+
+    @staticmethod
+    def get_by_feature_name_and_model(feature_name: str):
+        result = (
+            db.session.query(PrototypePredictiveFeature)
+            .filter(PrototypePredictiveFeature.feature_name == feature_name)
+            .one_or_none()
+        )
+
+        return result
+
+    @staticmethod
+    def get_by_feature_name(feature_name: str):
+        result = (
+            db.session.query(PrototypePredictiveFeature)
+            .filter(PrototypePredictiveFeature.feature_name == feature_name)
+            .one_or_none()
+        )
+
+        return result
 
     @staticmethod
     def get_by_feature_label(feature_label: str):
@@ -77,11 +115,42 @@ class PrototypePredictiveModel(Model):
     )
 
     label = Column(String(), nullable=False)
+    screen_type = Column(String(), nullable=False)  # crispr or rnai
     pearson = Column(Float, nullable=False)
 
     feature_results: List["PrototypePredictiveFeatureResult"] = relationship(
         "PrototypePredictiveFeatureResult"
     )
+
+    # TODO: Figure out how to compute the model sequence
+    # @staticmethod
+    # def get_model_sequence(entity_label: str, screen_type: str = "crispr"):
+    #     # For each unique model label
+    #     # For an individual entity
+    #     # What is the model name, and how many PredictiveFeatureResults are there
+    #     # Order these ascending to get the model sequence
+    #     query = (
+    #         db.session.query(PrototypePredictiveFeatureResult)
+    #         .join(
+    #             PrototypePredictiveModel,
+    #             PrototypePredictiveFeatureResult.predictive_model_id
+    #             == PrototypePredictiveModel.predictive_model_id,
+    #         )
+    #         .filter(PrototypePredictiveModel.screen_type == screen_type)
+    #         .join(
+    #             PrototypePredictiveFeature,
+    #             PrototypePredictiveFeatureResult.feature_id
+    #             == PrototypePredictiveFeature.feature_id,
+    #         )
+    #         .join(Entity, PrototypePredictiveModel.entity_id == Entity.entity_id)
+    #         .filter(Entity.label == entity_label)
+    #         .with_entities(
+    #             PrototypePredictiveModel.label, PrototypePredictiveFeature.feature_name
+    #         )
+    #     )
+
+    #     # all_models = [model for model, in all_models_query_result]
+    #     model_df = pd.read_sql(query.statement, query.session.connection())
 
     @staticmethod
     def get_by_model_name(model_name: str):
@@ -133,6 +202,7 @@ class PrototypePredictiveModel(Model):
                 == PrototypePredictiveFeature.feature_id,
             )
             .with_entities(
+                PrototypePredictiveFeature.feature_name,
                 PrototypePredictiveFeature.feature_label,
                 PrototypePredictiveFeature.given_id,
                 PrototypePredictiveFeatureResult.importance,
@@ -150,7 +220,7 @@ class PrototypePredictiveModel(Model):
         return entity_row
 
     @staticmethod
-    def get_entity_row(model_name: str, entity_label: str):
+    def get_entity_row(model_name: str, entity_label: str, screen_type: str):
 
         gene_query = (
             db.session.query(PrototypePredictiveFeatureResult)
@@ -160,6 +230,7 @@ class PrototypePredictiveModel(Model):
                 == PrototypePredictiveModel.predictive_model_id,
             )
             .filter(PrototypePredictiveModel.label == model_name)
+            .filter(PrototypePredictiveModel.screen_type == screen_type)
             .join(Entity, PrototypePredictiveModel.entity_id == Entity.entity_id)
             .filter(Entity.label == entity_label)
             .join(
@@ -168,6 +239,7 @@ class PrototypePredictiveModel(Model):
                 == PrototypePredictiveFeature.feature_id,
             )
             .with_entities(
+                PrototypePredictiveFeature.feature_name,
                 PrototypePredictiveFeature.feature_label,
                 PrototypePredictiveFeature.given_id,
                 PrototypePredictiveFeatureResult.importance,
@@ -220,36 +292,55 @@ class PrototypePredictiveFeatureResult(Model):
         overlaps="feature_results",
     )
 
-    feature_id = Column(Integer, ForeignKey("prototype_predictive_feature.feature_id"))
+    feature_id = Column(String, ForeignKey("prototype_predictive_feature.feature_id"))
     feature: PrototypePredictiveFeature = relationship(
         "PrototypePredictiveFeature",
         foreign_keys="PrototypePredictiveFeatureResult.feature_id",
         uselist=False,
+        cascade="delete",
     )
+    screen_type = Column(String, nullable=False)  # crispr or rnai
 
-    rank = Column(Integer(), nullable=False)
+    rank = Column(Integer, nullable=False)
     importance = Column(Float, nullable=False)
 
     @staticmethod
-    def get_taiga_id_from_full_feature_name(model_name: str, feature_name: str):
-        result = (
+    def get_feature_result(
+        model_name: str, entity_label: str, screen_type: str, feature_name: str
+    ):
+
+        gene_query = (
             db.session.query(PrototypePredictiveFeatureResult)
+            .join(
+                PrototypePredictiveModel,
+                PrototypePredictiveFeatureResult.predictive_model_id
+                == PrototypePredictiveModel.predictive_model_id,
+            )
             .filter(
                 and_(
                     PrototypePredictiveModel.label == model_name,
-                    PrototypePredictiveFeature.feature_name == feature_name,
+                    PrototypePredictiveModel.screen_type == screen_type,
                 )
             )
-            .with_entities(
-                PrototypePredictiveFeature.taiga_id,
-                PrototypePredictiveFeature.given_id,
+            .join(Entity, PrototypePredictiveModel.entity_id == Entity.entity_id)
+            .filter(Entity.label == entity_label)
+            .join(
+                PrototypePredictiveFeature,
+                PrototypePredictiveFeatureResult.feature_id
+                == PrototypePredictiveFeature.feature_id,
             )
-            .one()
+            .filter(PrototypePredictiveFeature.feature_name == feature_name)
+            .with_entities(
+                PrototypePredictiveFeature.feature_name,
+                PrototypePredictiveFeature.feature_label,
+                PrototypePredictiveFeature.given_id,
+                PrototypePredictiveFeature.dim_type,
+            )
         )
 
-        taiga_id = result[0]
-        feature_given_id = result[1]
-        return taiga_id, feature_given_id
+        entity_row = pd.read_sql(gene_query.statement, gene_query.session.connection())
+
+        return entity_row
 
     @staticmethod
     def get_all_label_name_features_for_model(model_name: str):

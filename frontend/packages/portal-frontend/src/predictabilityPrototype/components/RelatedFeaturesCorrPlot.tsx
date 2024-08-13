@@ -41,35 +41,37 @@ const RelatedFeaturesCorrPlot = ({
   const latestPromise = useRef<Promise<RelatedFeaturePlot>>();
 
   useEffect(() => {
-    if (getRelatedFeaturesCorrPlotData) {
+    setRelatedFeaturesCorrPlotData(null);
+    setRelatedFeaturesPlotElement(null);
+    setIsLoading(true);
+    const promise = getRelatedFeaturesCorrPlotData(
+      geneSymbol,
+      featureNameType,
+      modelName
+    );
+
+    latestPromise.current = promise;
+    promise
+      .then((result: any) => {
+        if (promise === latestPromise.current) {
+          setRelatedFeaturesCorrPlotData(result);
+          setIsLoading(false);
+        }
+      })
+      .catch((e) => {
+        if (promise === latestPromise.current) {
+          window.console.error(e);
+          setIsError(true);
+        }
+      });
+    return () => {
       setRelatedFeaturesCorrPlotData(null);
       setRelatedFeaturesPlotElement(null);
-      setIsLoading(true);
-      const promise = getRelatedFeaturesCorrPlotData(
-        geneSymbol,
-        featureNameType,
-        modelName
-      );
-
-      latestPromise.current = promise;
-      promise
-        .then((result: any) => {
-          if (promise === latestPromise.current) {
-            setRelatedFeaturesCorrPlotData(result);
-            setIsLoading(false);
-          }
-        })
-        .catch((e) => {
-          if (promise === latestPromise.current) {
-            window.console.error(e);
-            setIsError(true);
-          }
-        });
-    }
+    };
   }, [featureNameType, geneSymbol, getRelatedFeaturesCorrPlotData, modelName]);
 
   // TODO: If isError add error message to UI
-  console.log(isError)
+  console.log(isError);
 
   const formattedPlotData: any = useMemo(() => {
     if (relatedFeaturesCorrPlotData) {
