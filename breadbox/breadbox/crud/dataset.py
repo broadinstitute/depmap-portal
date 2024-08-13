@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from typing import Dict, Optional, List, Type, Union, Tuple
 from uuid import UUID, uuid4
 import warnings
+import json
 
 import pandas as pd
 import numpy as np
@@ -11,7 +12,10 @@ from sqlalchemy import and_, func, or_
 from sqlalchemy.orm import aliased, with_polymorphic
 
 from breadbox.db.session import SessionWithUser
-from ..io.data_validation import dimension_label_df_schema
+from ..io.data_validation import (
+    dimension_label_df_schema,
+    annotation_type_to_pandas_column_type,
+)
 from ..schemas.dataset import (
     MatrixDatasetIn,
     TabularDatasetIn,
@@ -1506,10 +1510,29 @@ def get_dataset_feature(
     return dataset_feature
 
 
+def _get_column_types(columns_metadata, columns: Optional[List[str]]):
+    col_and_column_metadata_pairs = columns_metadata.items()
+    if columns is None:
+        return {
+            col: annotation_type_to_pandas_column_type(column_metadata.col_type)
+            for col, column_metadata in col_and_column_metadata_pairs
+        }
+
+    else:
+        column_types = {}
+        for col, column_metadata in col_and_column_metadata_pairs:
+            if col in columns:
+                column_types[col] = annotation_type_to_pandas_column_type(
+                    column_metadata.col_type
+                )
+
+        return column_types
+
+
 def get_subsetted_tabular_dataset_df(
     db: SessionWithUser,
     user: str,
-    dataset: Dataset,
+    dataset: TabularDataset,
     tabular_dimensions_info: TabularDimensionsInfo,
     strict: bool,
 ):
@@ -1530,15 +1553,20 @@ def get_subsetted_tabular_dataset_df(
         )
 
     if tabular_dimensions_info.identifier == FeatureSampleIdentifier.label:
-        # Get the corresponding dimension ids for the dimension labels and use the dimension ids to filter values by
+        # Get the corresponding dimension ids for the dimension labels from the dataset's dimension type and use the dimension ids to filter values by
+        dimension_type: DimensionType = db.query(DimensionType).filter(
+            DimensionType.name == dataset.index_type_name
+        ).one()
+
         label_filter_statements = [
-            TabularColumn.dataset_id == dataset.id,
+            TabularColumn.dataset_id == dimension_type.dataset_id,
             TabularColumn.given_id == "label",
         ]
         if tabular_dimensions_info.indices:
             label_filter_statements.append(
                 TabularCell.value.in_(tabular_dimensions_info.indices)
             )
+
         ids_by_label = (
             db.query(TabularCell)
             .join(TabularColumn)
@@ -1604,9 +1632,35 @@ def get_subsetted_tabular_dataset_df(
 
     # Need to index by "value" after checking if empty db bc empty db has no 'value' keyword
     subsetted_tabular_dataset_df = pivot_df["value"]
-    # TODO: It seems like None data values are potentially stored as 'nan' in the db. Must fix this!
-    subsetted_tabular_dataset_df = subsetted_tabular_dataset_df.replace({np.nan: None})
+    # set typing for columns
+    col_dtypes = _get_column_types(
+        dataset.columns_metadata, tabular_dimensions_info.columns
+    )
+    subsetted_tabular_dataset_df = _convert_subsetted_tabular_df_dtypes(
+        subsetted_tabular_dataset_df, col_dtypes, dataset.columns_metadata
+    )
     return subsetted_tabular_dataset_df
+
+
+def _convert_subsetted_tabular_df_dtypes(
+    df: pd.DataFrame,
+    dtype_map: Dict[str, Any],
+    dataset_columns_metadata: Dict[str, ColumnMetadata],
+):
+    # Replace string boolean values with boolean
+    for col, dtype in dtype_map.items():
+        column = df[col]
+        if dtype == pd.BooleanDtype():
+            column = column.replace({"True": True, "False": False})
+        column = column.astype(dtype)
+        # NOTE: if col type is list string, convert to list. col dtype will be changed to object
+        if (
+            dtype == pd.StringDtype()
+            and dataset_columns_metadata[col].col_type == AnnotationType.list_strings
+        ):
+            column = column.apply(lambda x: json.loads(x) if x is not pd.NA else x)
+        df[col] = column
+    return df
 
 
 def get_truncated_message(missing_tabular_columns, missing_tabular_indices):
