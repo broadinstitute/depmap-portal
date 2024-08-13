@@ -161,42 +161,56 @@ def _validate_data_value_type(
         return df.astype(np.float64)
 
 
-def _get_validated_dataframe_from_csv(
-    bytes_buf: BinaryIO,
-    dtypes: Dict[Any, str],
-    value_type: ValueType,
-    allowed_values: Optional[List[str]] = None,
-) -> pd.DataFrame:
-    bytes_buf.seek(0)
+def _read_parquet(file: BinaryIO, value_type: ValueType) -> pd.DataFrame:
+    df = pd.read_parquet(file, use_nullable_dtypes=True)  # pyright: ignore
 
-    df: pd.DataFrame = pd.read_csv(bytes_buf, index_col=0, dtype=dtypes)
+    # the first column will be treated as the index. Make sure it's of type string
+    df[df.columns[0]] = df[df.columns[0]].astype("string")
 
-    df = _validate_data_value_type(df, value_type, allowed_values)
+    # parquet files have the types encoded in the file, so we'll convert after the fact
+    if value_type == ValueType.continuous:
+        dtype = "Float64"
+    elif value_type == ValueType.categorical:
+        dtype = "string"
+    else:
+        raise ValueError(f"Invalid value type: {value_type}")
+
+    df[df.columns[1:]] = df[df.columns[1:]].astype(dtype)
+    return df
+
+
+from typing import cast
+
+
+def _read_csv(file: BinaryIO, value_type: ValueType) -> pd.DataFrame:
+    cols = pd.read_csv(file, nrows=0).columns
+
+    if value_type == ValueType.continuous:
+        dtypes_ = dict(zip(cols, ["string"] + (["Float64"] * (len(cols) - 1))))
+    elif value_type == ValueType.categorical:
+        dtypes_ = dict(zip(cols, ["string"] * len(cols)))
+    else:
+        raise ValueError(f"Invalid value type: {value_type}")
+
+    dtypes = cast(Dict[str, str], dtypes_)
+
+    file.seek(0)
+
+    df = pd.read_csv(file, dtype=dtypes)  # pyright: ignore
 
     return df
 
 
 def _validate_data_file(
-    data_file: UploadFile, value_type: ValueType, allowed_values: Optional[List[str]],
+    df: pd.DataFrame, value_type: ValueType, allowed_values: Optional[List[str]],
 ) -> pd.DataFrame:
     """
     Validates the data values against it's given value_type.
     Checks if all features and samples in dataset are unique.
     """
-    bytes_buf = data_file.file
-    cols = pd.read_csv(bytes_buf, index_col=0, nrows=0).columns
-    dtypes = None
 
-    if value_type == ValueType.continuous:
-        dtypes = dict(zip(cols, ["float64"] * len(cols)))
-    elif value_type == ValueType.categorical:
-        dtypes = dict(zip(cols, ["string"] * len(cols)))
-    else:
-        raise ValueError(f"Invalid value type: {value_type}")
-
-    df = _get_validated_dataframe_from_csv(
-        bytes_buf, dtypes, value_type, allowed_values
-    )
+    # make sure all the values in df conform to value_type
+    df = _validate_data_value_type(df, value_type, allowed_values)
 
     verify_unique_rows_and_cols(df)
 
@@ -357,8 +371,21 @@ def validate_and_upload_dataset_files(
     filestore_location: str,
     value_type: ValueType,
     allowed_values: Optional[List[str]],
+    data_file_format: str = "csv",
 ) -> DataframeValidatedFile:
-    data_df = _validate_data_file(data_file, value_type, allowed_values,)
+
+    if data_file_format == "csv":
+        unchecked_df = _read_csv(data_file.file, value_type)
+    elif data_file_format == "parquet":
+        unchecked_df = _read_parquet(data_file.file, value_type)
+    else:
+        raise FileValidationError(
+            f'data file format must either be "csv" or "parquet" but was "{data_file_format}"'
+        )
+
+    unchecked_df.set_index(unchecked_df.columns[0], inplace=True)
+
+    data_df = _validate_data_file(unchecked_df, value_type, allowed_values,)
 
     dataframe_validated_dimensions = _validate_dataset_dimensions(
         db, data_df, feature_type, sample_type
@@ -441,35 +468,28 @@ def process_annotation_list_values(
 
 
 def read_and_validate_matrix_df(
-    file_path: str, value_type: ValueType, allowed_values: Optional[List[str]],
+    file_path: str,
+    value_type: ValueType,
+    allowed_values: Optional[List[str]],
+    data_file_format: str,
 ) -> pd.DataFrame:
-    # read column names
-    cols = pd.read_csv(file_path, nrows=0).columns
-
-    if value_type == ValueType.continuous:
-        dtypes = dict(zip(cols, ["float64"] * len(cols)))
-    elif value_type == ValueType.categorical:
-        dtypes = dict(zip(cols, ["string"] * len(cols)))
-    else:
-        raise Exception(f"Unknown value_type: {value_type}")
-
-    # the first column is going to be the index, so this should be of type "string" regardless of type
-    index_col_name = cols[0]
-    dtypes[index_col_name] = "string"
-
-    df: pd.DataFrame = pd.read_csv(file_path, dtype=dtypes)  # type: ignore
+    with open(file_path, "rb") as fd:
+        if data_file_format == "csv":
+            df = _read_csv(fd, value_type)
+        elif data_file_format == "parquet":
+            df = _read_parquet(fd, value_type)
+        else:
+            raise FileValidationError(
+                f"data_file_format was unrecognized: {data_file_format}"
+            )
 
     # now make the first column into the index
-    df = df.set_index(index_col_name)
+    df.set_index(df.columns[0], inplace=True)
 
     # for categorical values, this will map strings to integers (representing the index into allowed_values)
     df = _validate_data_value_type(df, value_type, allowed_values)
 
-    if not df.columns.is_unique:
-        raise FileValidationError("Features in data_file are not unique.")
-
-    if not df.index.is_unique:
-        raise FileValidationError("Samples in data_file are not unique.")
+    verify_unique_rows_and_cols(df)
 
     return df
 

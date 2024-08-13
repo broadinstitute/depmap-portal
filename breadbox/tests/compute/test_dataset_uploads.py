@@ -28,7 +28,7 @@ from tests import factories
 
 # pyright seems to be having trouble recognizing non-required files when annotated with Field
 # so, just putting the defaults here and passing them in each time
-_default_params = {"prority": None, "taiga_id": None}
+_default_params = {"priority": None, "taiga_id": None, "data_file_format": "csv"}
 
 
 def test_matrix_dataset_uploads(

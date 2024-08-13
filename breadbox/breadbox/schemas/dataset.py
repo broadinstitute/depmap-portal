@@ -119,6 +119,13 @@ class MatrixDatasetParams(SharedDatasetParams):
         ),
     ] = None
 
+    data_file_format: Annotated[
+        str,
+        Field(
+            description="The format of the uploaded data file. May either be 'csv' or 'parquet'"
+        ),
+    ] = "csv"
+
     @model_validator(mode="after")
     def check_feature_and_sample_type(self):
         feature_type, sample_type = (self.feature_type, self.sample_type)

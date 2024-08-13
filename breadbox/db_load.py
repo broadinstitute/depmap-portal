@@ -62,6 +62,7 @@ class DatasetUpload:
     taiga_id: Optional[str] = None
     allowed_values: Optional[List[str]] = None
     dataset_metadata: Optional[DatasetMetadata] = None
+    data_file_format = "csv"
 
 
 class DataTypeEnum(enum.Enum):
@@ -351,5 +352,6 @@ def validate_dataset_upload_and_add_to_db(
             user,
             PUBLIC_GROUP_ID,
             {},
+            d.data_file_format,
         ]
     )
