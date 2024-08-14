@@ -120,7 +120,7 @@ class MatrixDatasetParams(SharedDatasetParams):
     ] = None
 
     data_file_format: Annotated[
-        str,
+        Literal["csv", "parquet"],
         Field(
             description="The format of the uploaded data file. May either be 'csv' or 'parquet'"
         ),
