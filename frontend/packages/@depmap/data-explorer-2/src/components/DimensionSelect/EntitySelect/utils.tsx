@@ -44,6 +44,29 @@ export function useApi() {
   return ref.current as SharedApi;
 }
 
+function tokenize(input: string | null) {
+  const str = input || "";
+  const tokens = str.split(/\s+/g).filter(Boolean);
+  const uniqueTokens = new Set(tokens);
+
+  return [...uniqueTokens];
+}
+
+export function useSearch() {
+  const api = useApi();
+
+  return useCallback(
+    (input: string, type_name: string) => {
+      return api.searchDimensions({
+        substring: tokenize(input),
+        type_name,
+        limit: 100,
+      });
+    },
+    [api]
+  );
+}
+
 function doNotOverlap(a: number[], b: number[]) {
   const setA = new Set(a);
 
@@ -176,7 +199,7 @@ export function useEntityLabels(
   };
 }
 
-const makeSortComparator = (term: string | null) => (a: Option, b: Option) => {
+const makeSortComparator = (tokens: string[]) => (a: Option, b: Option) => {
   if (a.isDisabled && !b.isDisabled) {
     return 1;
   }
@@ -188,12 +211,12 @@ const makeSortComparator = (term: string | null) => (a: Option, b: Option) => {
   const labelA = (a.nonLabelProperties[0]?.values[0] || a.label)?.toLowerCase();
   const labelB = (b.nonLabelProperties[0]?.values[0] || b.label)?.toLowerCase();
 
-  if (!term) {
+  if (tokens.length === 0) {
     return labelA < labelB ? -1 : 1;
   }
 
-  const indexA = labelA.indexOf(term);
-  const indexB = labelB.indexOf(term);
+  const indexA = tokens.reduce((sum, token) => labelA.indexOf(token) + sum, 0);
+  const indexB = tokens.reduce((sum, token) => labelB.indexOf(token) + sum, 0);
 
   if (indexA === indexB) {
     return labelA < labelB ? -1 : 1;
@@ -208,12 +231,29 @@ export function toReactSelectOptions(
   entityLabels: string[],
   disabledReasons: Record<string, string>
 ) {
-  const term = inputValue?.toLowerCase() || null;
+  const tokens = tokenize(inputValue);
+  const labelsWithAdditionalMatchingProps = new Set(
+    searchResults
+      .filter(({ matching_properties }) => matching_properties.length > 1)
+      .map(({ label }) => label)
+  );
 
+  // `labelOptions` is a fallback for cases where the search indexer doesn't
+  // know anything about the given dimension type.
   const labelOptions = entityLabels
     .filter((label) => {
-      return !term || label.toLowerCase().includes(term);
+      return (
+        // The user hasn't typed anything yet, so show the full list.
+        tokens.length === 0 ||
+        // Only try to search by label if there is only one token. There just
+        // isn't a reliable way to emulate what the search endpoint does when
+        // it matches multiple tokens to different properties.
+        (tokens.length === 1 &&
+          label.toLowerCase().includes(tokens[0].toLowerCase()))
+      );
     })
+    // Prefer showing results from the search indexer, where they exist.
+    .filter((label) => !labelsWithAdditionalMatchingProps.has(label))
     .map((label) => ({
       label,
       value: label,
@@ -233,7 +273,7 @@ export function toReactSelectOptions(
       );
     })
     .map((result) => {
-      const groupedProps: Record<string, string[]> = {};
+      const groupedProps: Record<string, Set<string>> = {};
 
       result.matching_properties.forEach(({ property, value }) => {
         const prop = property
@@ -241,20 +281,23 @@ export function toReactSelectOptions(
           .replace(/_/g, " ")
           // capitalize "ID"
           .replace(/\bids?\b/gi, "ID")
-          // A second-level "label" property is not interesting
+          // Never use "label" as a nested property (it doesn't give the user
+          // any real information)
           .replace(/\.label$/, "")
-          // Use parens instead of dot notation for other second-level properties
-          .replace(/\.(.+)$/, " ($1)");
+          // Now return only the last member of the property chain (this
+          // assumes that's the most meaningful info we can show the user).
+          .split(".")
+          .slice(-1)[0];
 
-        groupedProps[prop] ||= [];
-        groupedProps[prop].push(value);
+        groupedProps[prop] ||= new Set();
+        groupedProps[prop].add(value);
       });
 
       const nonLabelProperties = Object.keys(groupedProps)
         .filter((property) => property !== "label")
         .map((property) => ({
           property,
-          values: groupedProps[property],
+          values: [...groupedProps[property]],
         }));
 
       return {
@@ -267,10 +310,16 @@ export function toReactSelectOptions(
     });
 
   return [...labelOptions, ...searchIndexOptions].sort(
-    makeSortComparator(term)
+    makeSortComparator(tokens)
   );
 }
 
+// FIXME: We have a special case for models because they can be searched by
+// aliases. In practice there is only one alias we use, which is the cell line
+// name. This concept is a holdover from a time before the search indexer.
+// Going forward, we should instead make sure that the depmap_model sample type
+// has CellLineName (or StrippedCellLineName?) as one of its
+// `properties_to_index`.
 export function toDemapModelOptions(
   searchResults: SearchDimenionsResponse,
   inputValue: string | null,
@@ -278,7 +327,7 @@ export function toDemapModelOptions(
   aliases: Aliases | null,
   disabledReasons: Record<string, string>
 ) {
-  const term = inputValue?.toLowerCase() || null;
+  const tokens = tokenize(inputValue);
   const nameToId: Record<string, string> = {};
   const idToName: Record<string, string> = {};
 
@@ -295,8 +344,12 @@ export function toDemapModelOptions(
       ? aliases![0].values
           .filter((cellLineName) => {
             return (
-              (!term && cellLineName) ||
-              (term && cellLineName?.toLowerCase().includes(term))
+              tokens.length === 0 ||
+              // Only try to search by alias if there is only one token. There just
+              // isn't a reliable way to emulate what the search endpoint does when
+              // it matches multiple tokens to different properties.
+              (tokens.length === 1 &&
+                cellLineName?.toLowerCase().includes(tokens[0].toLowerCase()))
             );
           })
           .map((cellLineName) => {
@@ -341,7 +394,7 @@ export function toDemapModelOptions(
   });
 
   return [...aliasOptions, ...labelAndSearchIndexOptions].sort(
-    makeSortComparator(term)
+    makeSortComparator(tokens)
   );
 }
 
@@ -376,27 +429,41 @@ export function formatOptionLabel(
   return (
     <div>
       <MaybeTooltip>
-        {nonLabelProperties?.length ? (
-          <b>{option.label}</b>
-        ) : (
+        <div
+          style={{
+            fontWeight: nonLabelProperties?.length ? "bold" : "normal",
+          }}
+        >
           <Highlighter
             text={option.label}
-            termToHiglight={inputValue}
+            style={{ color: disabledReason ? "inherit" : "black" }}
+            termToHiglight={
+              tokenize(inputValue).find((token) =>
+                option.label?.toLowerCase().includes(token.toLowerCase())
+              ) || ""
+            }
             matchPartialTerms
-            textColor={disabledReason ? "inherit" : "black"}
           />
-        )}
+        </div>
       </MaybeTooltip>
       {nonLabelProperties?.map((match) => {
+        const termToHiglight = tokenize(inputValue)
+          .filter((token) => {
+            return match.values.some((value) => {
+              return value.toLowerCase().includes(token.toLowerCase());
+            });
+          })
+          .join(" ");
+
         return (
           <div key={`${match.property}=${match.values}`}>
             <MaybeTooltip>
               {match.property.replace(/^(.)/, (c: string) => c.toUpperCase())}:{" "}
               <Highlighter
                 text={match.values.join(", ")}
-                termToHiglight={inputValue}
+                termToHiglight={termToHiglight}
                 matchPartialTerms
-                textColor={disabledReason ? "inherit" : "black"}
+                style={{ color: disabledReason ? "inherit" : "black" }}
               />
             </MaybeTooltip>
           </div>

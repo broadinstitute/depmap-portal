@@ -152,11 +152,6 @@ def get_entity_type(dataset_id):
     """
     Returns entity type of a dataset
     """
-    if dataset_id in categories.gene_datasets_with_entrez_labels:
-        # Weird workaround needed to support private datasets with entities in DE2
-        # (temporary until these datasets are moved to breadbox)
-        return "gene"
-
     dataset_config = __get_config().get(dataset_id)
     return dataset_config["entity_type"]
 

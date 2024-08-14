@@ -214,6 +214,27 @@
       font-size: 28px;
       font-weight: 500;
     }
+    .linkButton {
+      all: unset;
+      cursor: pointer;
+      color: #337ab7;
+      cursor: pointer;
+      text-decoration: underline;
+      margin-bottom: 10px;
+
+      &:active {
+        text-decoration: underline;
+      }
+
+      &:hover {
+        color: #23527c;
+      }
+
+      &:focus-visible {
+        outline: 5px auto -webkit-focus-ring-color;
+        outline-offset: 3px;
+      }
+    }
 
     .releaseDescription {
       overflow: auto;
@@ -282,28 +303,6 @@
       margin-bottom: 10px;
       max-width: 72ch;
       padding-left: 80px;
-
-      .linkButton {
-        all: unset;
-        cursor: pointer;
-        color: #337ab7;
-        cursor: pointer;
-        text-decoration: underline;
-        margin-bottom: 10px;
-
-        &:active {
-          text-decoration: underline;
-        }
-
-        &:hover {
-          color: #23527c;
-        }
-
-        &:focus-visible {
-          outline: 5px auto -webkit-focus-ring-color;
-          outline-offset: 3px;
-        }
-      }
     }
   }
 }

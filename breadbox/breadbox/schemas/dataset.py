@@ -409,15 +409,49 @@ class FeatureResponse(BaseModel):
     dataset_label: str
 
 
-class DatasetUpdateParams(BaseModel):
-    """Contains the subset of dataset fields that may be updated after dataset creation."""
+class DatasetUpdateSharedParams(BaseModel):
+    """Contains the shared subset of matrix and tabular dataset fields that may be updated after dataset creation."""
 
-    name: Optional[str]
-    units: Optional[str]
-    data_type: Optional[str]
-    group_id: Optional[str]
-    priority: Optional[int]
-    dataset_metadata: Optional[Dict[str, Any]]
+    name: Annotated[Optional[str], Field(description="Name of dataset")] = None
+    data_type: Annotated[
+        Optional[str], Field(description="Data type grouping for your dataset")
+    ] = None
+    group_id: Annotated[
+        Optional[UUID], Field(description="Id of the group the dataset belongs to")
+    ] = None
+    priority: Annotated[
+        Optional[int],
+        Field(
+            description="Numeric value representing priority of the dataset within its `data_type`"
+        ),
+    ] = None
+    dataset_metadata: Annotated[
+        Optional[Dict[str, Any]],
+        Field(
+            description="A dictionary of additional dataset metadata that is not already provided"
+        ),
+    ] = None
+
+
+class TabularDatasetUpdateParams(DatasetUpdateSharedParams):
+    """Tabular dataset parameters that are editable"""
+
+    format: Literal["tabular"]
+
+
+class MatrixDatasetUpdateParams(DatasetUpdateSharedParams):
+    """Matrix dataset parameters that are editable"""
+
+    format: Literal["matrix"]
+    units: Annotated[
+        Optional[str], Field(description="Units for the values in the dataset")
+    ] = None
+
+
+UpdateDatasetParams = Annotated[
+    Union[MatrixDatasetUpdateParams, TabularDatasetUpdateParams],
+    Field(discriminator="format"),
+]
 
 
 class NameAndID(BaseModel):

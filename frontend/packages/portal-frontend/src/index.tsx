@@ -234,11 +234,12 @@ export function initPredictabilityPrototypeTab(
 
 export function initDoseResponseTab(
   elementId: string,
-  datasetOptions: Array<any>
+  datasetOptions: Array<any>,
+  units: string
 ) {
   renderWithErrorBoundary(
     <React.Suspense fallback={<div>Loading...</div>}>
-      <DoseResponseTab datasetOptions={datasetOptions} />
+      <DoseResponseTab datasetOptions={datasetOptions} doseUnits={units} />
     </React.Suspense>,
     document.getElementById(elementId) as HTMLElement
   );

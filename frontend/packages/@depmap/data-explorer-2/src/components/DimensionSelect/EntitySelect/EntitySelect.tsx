@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from "react";
+import React, { useCallback, useEffect, useMemo, useRef } from "react";
 import VanillaAsycSelect from "react-select/async";
 import { WindowedMenuList } from "react-windowed-select";
 import { DataExplorerContext } from "@depmap/types";
@@ -10,8 +10,8 @@ import {
   toDemapModelOptions,
   toOutputValue,
   toReactSelectOptions,
-  useApi,
   useEntityLabels,
+  useSearch,
 } from "./utils";
 
 interface Props {
@@ -35,7 +35,12 @@ function EntitySelect({
   units,
   swatchColor = undefined,
 }: Props) {
-  const api = useApi();
+  const search = useSearch();
+  const searchQuery = useRef("");
+
+  useEffect(() => {
+    searchQuery.current = "";
+  }, [entity_type, dataType, dataset_id]);
 
   const {
     aliases,
@@ -47,11 +52,7 @@ function EntitySelect({
 
   const loadOptions = useCallback(
     async (inputValue: string) => {
-      const results = await api.searchDimensions({
-        substring: inputValue,
-        limit: 100,
-        type_name: entity_type,
-      });
+      const results = await search(inputValue, entity_type);
 
       // HACK: We want the user to be able to start typing right away, before
       // waiting for the `useEntityLabels` hook to have updated. This will run
@@ -77,7 +78,7 @@ function EntitySelect({
         cached.disabledReasons
       );
     },
-    [api, entity_type, waitForCachedValues]
+    [search, entity_type, waitForCachedValues]
   );
 
   const defaultOptions = useMemo(() => {
@@ -147,6 +148,11 @@ function EntitySelect({
       cacheOptions={`${entity_type}-${dataType}-${units}-${dataset_id}`}
       swatchColor={swatchColor}
       isClearable
+      isEditable
+      editableInputValue={searchQuery.current}
+      onEditInputValue={(editedText) => {
+        searchQuery.current = editedText;
+      }}
     />
   );
 }

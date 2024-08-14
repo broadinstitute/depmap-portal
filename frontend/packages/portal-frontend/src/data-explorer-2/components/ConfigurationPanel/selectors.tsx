@@ -3,6 +3,7 @@ import { Checkbox } from "react-bootstrap";
 import {
   capitalize,
   fetchDatasetsByIndexType,
+  fetchMetadataSlices,
   getDimensionTypeLabel,
   PlotConfigSelect,
   pluralize,
@@ -13,7 +14,6 @@ import {
   DataExplorerDatasetDescriptor,
   DataExplorerPlotConfig,
 } from "@depmap/types";
-import metadataSlices from "src/data-explorer-2/json/metadata-slices.json";
 import HelpTip from "src/data-explorer-2/components/HelpTip";
 import styles from "src/data-explorer-2/styles/ConfigurationPanel.scss";
 
@@ -142,6 +142,15 @@ export function ColorByTypeSelector({
   onChange: (nextValue: DataExplorerPlotConfig["color_by"]) => void;
 }) {
   const entityTypeLabel = capitalize(getDimensionTypeLabel(entity_type));
+  const [hasSomeColorProperty, setHasSomeColorProperty] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      const keyedSlices = await fetchMetadataSlices(entity_type);
+      const slices = Object.values(keyedSlices);
+      setHasSomeColorProperty(slices.some((slice) => !slice.isHighCardinality));
+    })();
+  }, [entity_type]);
 
   const options: Record<string, string> = {
     entity: entityTypeLabel,
@@ -163,25 +172,15 @@ export function ColorByTypeSelector({
     );
   }
 
-  const md = metadataSlices as Record<string, object>;
-
-  if (Object.keys(md).includes(entity_type)) {
-    const hasSomeColorProperty = Object.values(md[entity_type]).some(
-      (entry) => {
-        return !entry.isHighCardinality;
-      }
+  if (hasSomeColorProperty || value === "property") {
+    options.property = `${entityTypeLabel} Property`;
+    helpContent.push(
+      <p key={2}>
+        Choose <b>{entityTypeLabel} property</b> to color by major properties of
+        the {entityTypeLabel}, such as selectivity for genes or lineage for
+        models.
+      </p>
     );
-
-    if (hasSomeColorProperty) {
-      options.property = `${entityTypeLabel} Property`;
-      helpContent.push(
-        <p key={2}>
-          Choose <b>{entityTypeLabel} property</b> to color by major properties
-          of the {entityTypeLabel}, such as selectivity for genes or lineage for
-          models.
-        </p>
-      );
-    }
   }
 
   if (entity_type !== "other") {

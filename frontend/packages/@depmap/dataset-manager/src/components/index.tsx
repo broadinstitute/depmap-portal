@@ -148,6 +148,19 @@ export default function Datasets() {
       <Spinner />
     );
   }
+  const getTabularDatasetDimensionTypeByAxis = (
+    dimensionName: string,
+    axis: "feature" | "sample"
+  ) => {
+    const dimType = dimensionTypes.find(
+      (dt) => dimensionName === dt.name && dt.axis === axis
+    );
+    if (dimType) {
+      return dimensionName;
+    }
+    return null;
+  };
+
   const formatDatasetTableData = (
     datasetsList: Dataset[]
   ): DatasetTableData[] => {
@@ -158,8 +171,20 @@ export default function Datasets() {
         id: dataset.id,
         name: dataset.name,
         groupName,
-        featureType: dataset.feature_type,
-        sampleType: dataset.sample_type,
+        featureType:
+          dataset.format === "matrix_dataset"
+            ? dataset.feature_type_name
+            : getTabularDatasetDimensionTypeByAxis(
+                dataset.index_type_name,
+                "feature"
+              ),
+        sampleType:
+          dataset.format === "matrix_dataset"
+            ? dataset.sample_type_name
+            : getTabularDatasetDimensionTypeByAxis(
+                dataset.index_type_name,
+                "sample"
+              ),
         dataType: dataset.data_type,
         datasetMetadata: (
           <div

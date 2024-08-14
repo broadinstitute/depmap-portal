@@ -23,6 +23,14 @@ export interface ExtendedSelectProps {
   // Adds a thin colored bar to left edge of the dropdown. This is intended as
   // visual cue to the user that it's being used to control a color option.
   swatchColor?: string;
+  // When enabled, allows a pre-selected value to be edited as text (simulating
+  // a vanilla input element)
+  isEditable?: boolean;
+  // When `isEditable` is true, you can use this to populate the input with an
+  // arbitrary value (distinct from the one that'a actually selected).
+  editableInputValue?: string;
+  // This is called when editable text is changed.
+  onEditInputValue?: (editedText: string) => void;
 }
 
 const ConditionalTooltip = ({
@@ -49,6 +57,98 @@ const ConditionalTooltip = ({
   );
 };
 
+// This can be used to replaced the standard <input> element. It uses a
+// contentEditable <div> which has the nice property that it will flexibly in
+// height as the user types.
+function ContentEditableDivInput({
+  innerRef,
+  placeholder,
+  isDisabled,
+
+  // unused props
+  clearValue,
+  // eslint-disable-next-line @typescript-eslint/no-shadow
+  cx,
+  extraWidth,
+  getValue,
+  getStyles,
+  isHidden,
+  hasValue,
+  injectStyles,
+  inputClassName,
+  inputStyle,
+  isMulti,
+  isRtl,
+  minWidth,
+  onAutosize,
+  placeholderIsMinWidth,
+  selectOption,
+  selectProps,
+  setValue,
+  theme,
+
+  ...inputProps
+}: // eslint-disable-next-line @typescript-eslint/no-explicit-any
+any) {
+  return (
+    <div className={styles.ContentEditableDivInput}>
+      <div>
+        {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions */}
+        <div
+          {...inputProps}
+          ref={innerRef}
+          disabled={isDisabled}
+          contentEditable
+          onKeyDown={(e) => {
+            if (e.key === " ") {
+              e.stopPropagation();
+            }
+          }}
+          onFocus={(e) => {
+            const div = e.currentTarget;
+            div.style.caretColor = "transparent";
+
+            setTimeout(() => {
+              const range = document.createRange();
+              range.selectNodeContents(div);
+              range.collapse(false);
+
+              const sel = window.getSelection();
+              sel?.removeAllRanges();
+              sel?.addRange(range);
+              div.style.caretColor = "";
+            });
+
+            inputProps.onFocus(e);
+          }}
+          onInput={(e) => {
+            const pseudoInput = e.currentTarget as HTMLInputElement;
+            pseudoInput.value = e.currentTarget.textContent || "";
+            inputProps.onChange(e);
+          }}
+          onBlur={(e) => {
+            const pseudoInput = e.currentTarget as HTMLInputElement;
+
+            setTimeout(() => {
+              const valContainer = pseudoInput.parentElement!.parentElement!
+                .parentElement as HTMLElement;
+              const valContainerItem = valContainer.firstChild as HTMLElement;
+
+              if (valContainerItem.innerHTML.length !== 0) {
+                pseudoInput.value = "";
+                pseudoInput.textContent = "";
+              }
+            });
+
+            inputProps.onBlur(e);
+          }}
+        />
+        {placeholder ? <div>{placeholder}</div> : null}
+      </div>
+    </div>
+  );
+}
+
 // Extends the behavior of a given `SelectComponent`. That component should be
 // a base ReactSelect or one of its variants (creatable, animated, async, etc).
 // In addition to the above options, it also:
@@ -57,7 +157,7 @@ const ConditionalTooltip = ({
 // - Automatically set `menuPlacement` to "top" when the dropdown is near the
 // bottom of the viewport.
 // - Uses a windowed menu list. This allows thousands of options to be
-// displayed performantly (powered by react-windowed-select).
+//   displayed performantly (powered by react-windowed-select).
 export default function extendReactSelect(
   SelectComponent: Readonly<React.ComponentType>
 ) {
@@ -73,7 +173,11 @@ export default function extendReactSelect(
       inlineLabel = false,
       label = null,
       menuWidth = "max-content",
+      placeholder = undefined,
       swatchColor = undefined,
+      isEditable = false,
+      editableInputValue = undefined,
+      onEditInputValue = () => {},
     } = props;
 
     const mounted = useRef<boolean>(true);
@@ -134,12 +238,6 @@ export default function extendReactSelect(
 
     const tooltipText = value ? (value as { label: string }).label : null;
 
-    let { placeholder } = props;
-
-    if (typeof placeholder === "string" && placeholder.length > 25) {
-      placeholder = <span style={{ fontSize: 11 }}>{placeholder}</span>;
-    }
-
     return (
       <div className={styles.container}>
         {swatchColor && (
@@ -172,7 +270,11 @@ export default function extendReactSelect(
             <WrappedSelect
               {...props}
               ref={reactSelectRef}
-              placeholder={placeholder}
+              placeholder={
+                placeholder && (
+                  <span className={styles.placeholder}>{placeholder}</span>
+                )
+              }
               menuPortalTarget={menuPortalTarget}
               className={cx(styles.Select, props.className, {
                 [styles.selectError]: hasError,
@@ -181,6 +283,13 @@ export default function extendReactSelect(
               styles={{
                 control: (base) => ({ ...base, fontSize: 12 }),
                 menuPortal: (base) => ({ ...base, zIndex: 3 }),
+                clearIndicator: (base) => ({ ...base, padding: 2 }),
+                dropdownIndicator: (base) => ({ ...base, padding: 4 }),
+                loadingIndicator: (base) => ({
+                  ...base,
+                  position: "absolute",
+                  right: 22,
+                }),
                 menu: (base) => ({
                   ...base,
                   fontSize: 12,
@@ -189,23 +298,61 @@ export default function extendReactSelect(
                 }),
                 ...props.styles,
               }}
-              onKeyDown={(e) => {
-                if (e.repeat) {
-                  e.preventDefault();
-                  e.stopPropagation();
-                }
+              backspaceRemovesValue={!isEditable}
+              onFocus={(e) => {
+                if (isEditable && value?.label) {
+                  const editableDiv = e.currentTarget;
+                  editableDiv.innerText = editableInputValue || value.label;
 
-                if (props.onKeyDown) {
-                  props.onKeyDown(e);
+                  const valContainerItem = editableDiv.parentElement!
+                    .parentElement!.parentElement!.firstChild as HTMLElement;
+                  valContainerItem.classList.add(styles.hidden);
+
+                  if (editableInputValue) {
+                    reactSelectRef.current.select.onInputChange(
+                      editableInputValue
+                    );
+                  }
+                }
+              }}
+              onBlur={(e) => {
+                if (isEditable && value?.label) {
+                  const editableDiv = e.currentTarget;
+                  editableDiv.innerText = value?.label || "";
+
+                  const valContainerItem = editableDiv.parentElement!
+                    .parentElement!.parentElement!.firstChild as HTMLElement;
+                  valContainerItem.classList.remove(styles.hidden);
                 }
               }}
               onChange={(nextValue, action) => {
                 setPostSelectTimeoutExpired(false);
                 onChange?.(nextValue, action);
 
+                if (isEditable) {
+                  const editableDiv = ref.current!.querySelector(
+                    "div[contenteditable]"
+                  ) as HTMLDivElement;
+
+                  editableDiv.innerText = "";
+                }
+
+                if (nextValue === null) {
+                  onEditInputValue("");
+                }
+
                 setTimeout(() => {
                   setPostSelectTimeoutExpired(true);
                 }, 500);
+              }}
+              onInputChange={(inputValue, actionMeta) => {
+                if (actionMeta?.action === "input-change") {
+                  onEditInputValue(inputValue);
+                }
+
+                if (props.onInputChange) {
+                  props.onInputChange(inputValue, actionMeta);
+                }
               }}
               onMenuOpen={() => {
                 if (props.onMenuOpen) {
@@ -244,6 +391,7 @@ export default function extendReactSelect(
               menuPlacement={props.menuPlacement || menuPlacement}
               components={{
                 Option: OptimizedSelectOption,
+                ...(isEditable ? { Input: ContentEditableDivInput } : null),
                 ...props.components,
               }}
             />

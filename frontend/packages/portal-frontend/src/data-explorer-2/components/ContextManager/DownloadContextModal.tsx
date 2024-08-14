@@ -1,9 +1,10 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Button, Modal, Radio } from "react-bootstrap";
 import {
-  evaluateContext,
+  fetchContextLabels,
   fetchContext,
   getDimensionTypeLabel,
+  fetchMetadataColumn,
   pluralize,
 } from "@depmap/data-explorer-2";
 import ContextNameForm from "src/data-explorer-2/components/ContextBuilder/ContextNameForm";
@@ -15,12 +16,6 @@ interface Props {
   contextHash: string;
   onHide: () => void;
 }
-
-const bySliceId = (slice_id: string) => (obj: unknown) =>
-  obj !== null &&
-  typeof obj === "object" &&
-  "slice_id" in obj &&
-  obj.slice_id === slice_id;
 
 function DownloadContextModal({
   contextName,
@@ -37,7 +32,7 @@ function DownloadContextModal({
 
   // Pre-fetch the context so it downloads faster (these requests are cached).
   useEffect(() => {
-    fetchContext(contextHash).then(evaluateContext);
+    fetchContext(contextHash).then(fetchContextLabels);
   }, [contextHash]);
 
   const handleClickDownload = () => {
@@ -47,28 +42,33 @@ function DownloadContextModal({
     }
 
     fetchContext(contextHash)
-      .then(evaluateContext)
-      .then((evaluated) => {
-        let labels = evaluated.labels;
+      .then(fetchContextLabels)
+      .then(async (contextLabels) => {
+        let labels = contextLabels;
 
         if (include === "display_name" || include === "both") {
+          // For now, we assume that the downloads are models if we're trying
+          // to use their display name (other types don't currently support a
+          // display name).
           if (context_type !== "depmap_model") {
             throw new Error("only supports depmap_model");
           }
 
-          labels = evaluated.aliases.find(
-            bySliceId("slice/cell_line_display_name/all/label")
-          )!.values;
+          const sliceId = "slice/cell_line_display_name/all/label";
+          labels = await fetchMetadataColumn(sliceId).then((column) => {
+            return labels.map((depmap_id) => column.indexed_values[depmap_id]);
+          });
         }
 
         const link = document.createElement("a");
         let text = labels.join(format === "list" ? "\r\n" : ",");
         let download = filename;
 
+        // Assume we're downloading models in this case and include a header.
         if (format === "csv" && include === "both") {
           text = [
             "DepMap ID,cell line name",
-            ...labels.map((label, i) => `${evaluated.labels[i]},${label}`),
+            ...labels.map((label, i) => `${contextLabels[i]},${label}`),
           ].join("\r\n");
 
           download = `${filename}.csv`;

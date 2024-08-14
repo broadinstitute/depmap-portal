@@ -236,25 +236,39 @@ export function fetchDatasetsByIndexType() {
   );
 }
 
-export function fetchDatasetsMatchingContext(
+export async function fetchContextLabels(
   context: DataExplorerContext | DataExplorerAnonymousContext
-) {
-  return postJson<string[]>("/datasets_matching_context", { context });
+): Promise<string[]> {
+  return postJson<string[]>("/context/labels", { context });
+}
+
+export interface ContextDatasetsResponse {
+  dataset_id: string;
+  dataset_label: string;
+  entity_labels: string[];
 }
 
 export function fetchDatasetsMatchingContextIncludingEntities(
   context: DataExplorerContext | DataExplorerAnonymousContext
-) {
-  return postJson<
-    {
-      dataset_id: string;
-      dataset_label: string;
-      entity_labels: string[];
-    }[]
-  >("/datasets_matching_context", {
-    context,
-    include_matching_entities: true,
-  });
+): Promise<ContextDatasetsResponse[]> {
+  return postJson<ContextDatasetsResponse[]>("/context/datasets", { context });
+}
+
+export interface ContextSummaryResponse {
+  num_matches: number;
+  num_candidates: number;
+}
+
+export async function fetchContextSummary(
+  context: DataExplorerContext | DataExplorerAnonymousContext
+): Promise<ContextSummaryResponse> {
+  return postJson<ContextSummaryResponse>("/context/summary", { context });
+}
+
+export async function fetchMetadataColumn(
+  slice_id: string
+): Promise<{ slice_id: string; indexed_values: Record<string, string> }> {
+  return postJson("/get_metadata", { metadata: { slice_id } });
 }
 
 export function fetchEntityLabels(
@@ -328,28 +342,6 @@ export function fetchUniqueValuesOrRange(slice_id: string) {
   return fetchJson<CategoricalResponse | ContinuousResponse>(
     `/unique_values_or_range?${query}`
   );
-}
-
-export async function evaluateContext(
-  context: DataExplorerContext | DataExplorerAnonymousContext
-) {
-  return postJson<{
-    labels: string[];
-    aliases: {
-      label: string;
-      slice_id: string;
-      values: string[];
-    }[];
-  }>("/evaluate_context", { context, summarize: false });
-}
-
-export async function evaluateContextWithSummary(
-  context: DataExplorerContext | DataExplorerAnonymousContext
-) {
-  return postJson<{
-    num_candidates: number;
-    num_matches: number;
-  }>("/evaluate_context", { context, summarize: true });
 }
 
 export function fetchDatasetDetails(dataset_id: string) {
@@ -539,6 +531,24 @@ export async function fetchLinearRegression(
   };
 
   return postJson("/linear_regression", json);
+}
+
+type SliceId = string;
+export type MetadataSlices = Record<
+  SliceId,
+  {
+    name: string;
+    valueType: "categorical" | "list_strings";
+    isHighCardinality?: boolean;
+    isPartialSliceId?: boolean;
+    entityTypeLabel?: string;
+  }
+>;
+
+export async function fetchMetadataSlices(dimension_type: string) {
+  const query = `dimension_type=${encodeURIComponent(dimension_type)}`;
+
+  return fetchJson<MetadataSlices>(`/metadata_slices?${query}`);
 }
 
 // *****************************************************************************

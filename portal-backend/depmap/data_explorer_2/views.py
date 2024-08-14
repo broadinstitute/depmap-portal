@@ -24,10 +24,7 @@ from depmap.data_explorer_2.plot import (
 )
 from depmap.data_explorer_2.context import ContextEvaluator
 from depmap.data_explorer_2.performance import generate_performance_report
-from depmap.data_explorer_2.datasets import (
-    get_datasets_matching_context,
-    get_datasets_matching_context_with_details,
-)
+from depmap.data_explorer_2.datasets import get_datasets_matching_context_with_details
 from depmap.data_explorer_2.utils import (
     decode_slice_id,
     get_aliases_matching_labels,
@@ -45,6 +42,7 @@ from depmap.data_explorer_2.utils import (
     to_serializable_numpy_number,
 )
 from depmap.data_explorer_2.linear_regression import compute_linear_regression
+from depmap.data_explorer_2.datatypes import hardcoded_metadata_slices
 
 from depmap.download.models import ReleaseTerms
 from depmap.download.views import get_file_record, get_release_record
@@ -444,51 +442,104 @@ def unique_values_or_range():
     )
 
 
-@blueprint.route("/evaluate_context", methods=["POST"])
+@blueprint.route("/context/labels", methods=["POST"])
 @csrf_protect.exempt
-def evaluate_context():
+def get_labels_matching_context():
+    """
+    Get the full list of labels (in any dataset) which match the given context.
+    """
     inputs = request.get_json()
     context = inputs["context"]
-    summarize = inputs["summarize"]
     context_type = context["context_type"]
-
     context_evaluator = ContextEvaluator(context)
     input_labels = get_entity_labels_across_datasets(context_type)
 
-    if summarize:
-        num_matches = sum(int(context_evaluator.is_match(x)) for x in input_labels)
-        return make_gzipped_json_response(
-            {"num_candidates": len(input_labels), "num_matches": num_matches}
-        )
-
-    labels = []
-
+    labels_matching_context = []
     for label in input_labels:
         if context_evaluator.is_match(label):
-            labels.append(label)
+            labels_matching_context.append(label)
 
-    aliases = get_aliases_matching_labels(context_type, labels)
-
-    return make_gzipped_json_response({"labels": labels, "aliases": aliases})
+    return make_gzipped_json_response(labels_matching_context)
 
 
-@blueprint.route("/datasets_matching_context", methods=["POST"])
+@blueprint.route("/context/datasets", methods=["POST"])
 @csrf_protect.exempt
-def datasets_matching_context():
+def get_datasets_matching_context():
     """
     Get the list of datasets which have data matching the given context.
+    For each dataset, include the full list of entity labels matching the context.
+    Returns a list of dictionaries like:
+    [
+      {
+        "dataset_id"    : "Chronos_Combined"
+        "dataset_label" : "CRISPR (DepMap Internal 23Q4+Score, Chronos)"
+        "entity_labels" : ["SOX10"]
+      },
+      ...
+    ]
     """
     inputs = request.get_json()
     context = inputs["context"]
-    include_matching_entities = inputs.get("include_matching_entities", False)
-
-    out = (
-        get_datasets_matching_context_with_details(context)
-        if include_matching_entities
-        else get_datasets_matching_context(context)
-    )
+    out = get_datasets_matching_context_with_details(context)
 
     return make_gzipped_json_response(out)
+
+
+@blueprint.route("/context/summary", methods=["POST"])
+@csrf_protect.exempt
+def get_context_summary():
+    """
+    Get the number of matching labels and candidate labels.
+    "Candidate" labels are all labels belonging to the context's dimension type.
+    """
+    inputs = request.get_json()
+    context = inputs["context"]
+    context_type = context["context_type"]
+    context_evaluator = ContextEvaluator(context)
+    input_labels = get_entity_labels_across_datasets(context_type)
+
+    labels_matching_context = []
+    for label in input_labels:
+        if context_evaluator.is_match(label):
+            labels_matching_context.append(label)
+
+    return {
+        "num_candidates": len(input_labels),
+        "num_matches": len(labels_matching_context),
+    }
+
+
+@blueprint.route("/metadata_slices")
+def metadata_slices():
+    """
+    A "metadata slice" is a slice ID that can be used by Data Explorer 2 as a
+    variable in a context or to color points. This endpoint returns a JSON
+    object where the keys are slice IDs and values look like:
+    {
+        "name": "Age Category",
+        "valueType": "categorical"
+    }
+    Additionally, this slice info objects may contain the following contain the
+    following properties.
+
+    "isPartialSliceId" (boolean):
+        Some slices are constructed on the frontend from individual components.
+        For example "slice/mutations_prioritized/" is such a partial ID. The
+        user is presented with a dropdown of genes and the chosen gene is
+        concatenated to that slice ID prefix.
+    "entityTypeLabel" (string):
+        This is related to the above "isPartialSliceId" property. In the given
+        example, this is used as a label to tell the user to that it's a gene
+        that they need to select.
+    "isHighCardinality" (boolean):
+        It's loosely defined exactly what should constitute "high cardinality"
+        but this has a specific use on the frontend. The UI interprets
+        isHighCardinality=True to mean "you can use this as context variable
+        but it would make no sense to try to color by it."
+    """
+    dimension_type = request.args.get("dimension_type")
+
+    return hardcoded_metadata_slices.get(dimension_type, {})
 
 
 @blueprint.route("/dataset_details")

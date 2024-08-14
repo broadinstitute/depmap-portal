@@ -4,7 +4,8 @@ import React from "react";
 import styles from "src/dataPage/styles/DataPage.scss";
 import { Tooltip } from "@depmap/common-components";
 import { CollapsiblePanel } from "../../common/components/CollapsiblePanel";
-import { DownloadGlyph } from "@depmap/downloads";
+import { DownloadGlyph, DownloadLink } from "@depmap/downloads";
+import { enabledFeatures } from "@depmap/globals";
 
 interface DataFilePanelProps {
   data: DownloadTableData;
@@ -90,6 +91,25 @@ const CollapsiblePanelHeader = ({
               </button>
             </Tooltip>
           </div>
+          {enabledFeatures.use_taiga_urls_downloads_page && file.taigaUrl && (
+            <div>
+              <Tooltip
+                id="get-file-taiga-tooltip"
+                content="Get file from Taiga"
+                placement="bottom"
+              >
+                <div style={{ gridColumn: "3" }}>
+                  <DownloadLink
+                    terms={file.terms}
+                    downloadUrl={file.taigaUrl}
+                    termsDefinitions={termsDefinitions!}
+                    buttonText={"Taiga"}
+                    textDecoration={"none"}
+                  />
+                </div>
+              </Tooltip>
+            </div>
+          )}
         </div>
       </span>
     </span>

@@ -1,15 +1,15 @@
 import { useEffect, useState } from "react";
 import {
-  evaluateContextWithSummary,
+  fetchContextSummary,
   isCompleteExpression,
   isPartialSliceId,
 } from "@depmap/data-explorer-2";
 import {
-  EvaluateContextSummarizedResult,
   getOperator,
   isListOperator,
   normalizeExpr,
 } from "src/data-explorer-2/components/ContextBuilder/contextBuilderUtils";
+import { ContextSummaryResponse } from "@depmap/data-explorer-2/src/api";
 
 export const isEditableAsCellLineList = (entity_type: string, expr: any) => {
   const op = getOperator(expr);
@@ -32,14 +32,13 @@ export const useEvaluatedExpressionResult = (
   entity_type: string,
   expr: any
 ) => {
-  const [result, setResult] = useState<EvaluateContextSummarizedResult | null>(
-    null
-  );
+  const [result, setResult] = useState<ContextSummaryResponse | null>(null);
 
+  // TODO: re-implement this by calling the other endpoint
   useEffect(() => {
     (async () => {
       if (isCompleteExpression(expr)) {
-        const fetchedResult = await evaluateContextWithSummary({
+        const fetchedResult = await fetchContextSummary({
           context_type: entity_type,
           expr: normalizeExpr(expr),
         });
