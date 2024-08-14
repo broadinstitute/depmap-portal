@@ -80,26 +80,6 @@ export default function ResourcesPage(props: ResourcesPageProps) {
             </Accordion>
           );
         })}
-        {/* {subcategories.map((subcategory: any) => {
-         const topicList = (<ListGroup>
-                  {subcategory.topics.map((topic: any) => {
-                    return (
-                        <Link
-                          key={topic.id}
-                          onClick={() => handleSelect(topic)}
-                          to={`?subcategory=${subcategory.slug}&topic=${topic.slug}`}
-                          state={{ postHtml: topic }}
-                          style={{ textDecoration: "none"}}
-                        >
-                    <ListGroupItem>
-                          {topic.title}
-                </ListGroupItem>
-                  </Link>
-              );
-            })}
-          </ListGroup>)
-          return <CollapsiblePanel key={subcategory.id} headerContent={subcategory.title} bodyContent={topicList} openPanelOnLoad={false} keyPrefix={subcategory.id} keySuffix={subcategory.id}/>
-        })} */}
       </Col>
       <Col xs={12} md={8}>
         {selectedPost ? (
