@@ -4,6 +4,7 @@ import { capitalize, getDimensionTypeLabel } from "@depmap/data-explorer-2";
 import { DataExplorerContext } from "@depmap/types";
 import ModalContent from "src/data-explorer-2/components/ContextBuilder/ModalContent";
 import { useCellLineSelectorModal } from "src/data-explorer-2/components/ContextBuilder/CellLineSelector";
+import { ContextBuilderContextProvider } from "src/data-explorer-2/components/ContextBuilder/ContextBuilderContext";
 import styles from "src/data-explorer-2/styles/ContextBuilder.scss";
 
 interface Props {
@@ -54,7 +55,7 @@ function ContextBuilderModal({
   } = useCellLineSelectorModal();
 
   return (
-    <>
+    <ContextBuilderContextProvider dimension_type={context?.context_type}>
       <Modal
         className={styles.ContextBuilder}
         backdrop={backdrop}
@@ -79,7 +80,7 @@ function ContextBuilderModal({
         </Modal.Body>
       </Modal>
       <CellLineSelectorModal />
-    </>
+    </ContextBuilderContextProvider>
   );
 }
 

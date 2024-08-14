@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/naming-convention */
 import React, {
   useCallback,
   useEffect,
@@ -12,7 +11,7 @@ import {
   fetchUniqueValuesOrRange,
   isPartialSliceId,
 } from "@depmap/data-explorer-2";
-import metadata from "src/data-explorer-2/json/metadata-slices.json";
+import { useContextBuilderContext } from "src/data-explorer-2/components/ContextBuilder/ContextBuilderContext";
 import {
   floor,
   getOperator,
@@ -62,6 +61,7 @@ function Comparison({
   const [summary, setSummary] = useState<Summary | null>(null);
   const [, forceRender] = useState<null>();
   const ref = useRef<HTMLDivElement | null>(null);
+  const { metadataSlices, isLoading } = useContextBuilderContext();
 
   useLayoutEffect(() => forceRender(null), []);
 
@@ -100,10 +100,7 @@ function Comparison({
   const handleChangeDataSelect = useCallback(
     (option: { value: string } | null) => {
       const selectedSlice = option!.value;
-      const valueType = getValueType(
-        (metadata as any)[entity_type],
-        selectedSlice
-      );
+      const valueType = getValueType(metadataSlices, selectedSlice);
       const operator = valueType === "list_strings" ? "has_any" : "==";
       const operands = [{ var: selectedSlice }, null];
       const nextValue = { [operator]: operands };
@@ -116,7 +113,7 @@ function Comparison({
         },
       });
     },
-    [dispatch, path, entity_type]
+    [dispatch, path, metadataSlices]
   );
 
   useEffect(() => {
@@ -184,8 +181,8 @@ function Comparison({
         path={path}
         op={op}
         dispatch={dispatch}
-        value_type={getValueType((metadata as any)[entity_type], slice_id)}
-        isLoading={slice_id && !summary}
+        value_type={getValueType(metadataSlices, slice_id)}
+        isLoading={isLoading || (slice_id && !summary)}
       />
       <RhsComponent
         key={slice_id}
