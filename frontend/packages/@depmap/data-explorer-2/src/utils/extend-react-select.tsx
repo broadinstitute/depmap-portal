@@ -7,7 +7,7 @@ import React, {
 } from "react";
 import cx from "classnames";
 import ReactSelect, { Props as ReactSelectProps } from "react-select";
-import { Tooltip, WordBreaker } from "@depmap/common-components";
+import { Highlighter, Tooltip, WordBreaker } from "@depmap/common-components";
 import OptimizedSelectOption from "../components/OptimizedSelectOption";
 import styles from "../styles/ExtendedSelect.scss";
 
@@ -49,7 +49,16 @@ const ConditionalTooltip = ({
   }
 
   return (
-    <span onFocus={onFocus}>
+    <span
+      onFocus={onFocus}
+      onMouseOver={() => {
+        const blocker = document.querySelector("#tooltip-blocker");
+        if (blocker) {
+          blocker.remove();
+          document.body.append(blocker);
+        }
+      }}
+    >
       <Tooltip id="extended-select-tooltip" content={content} placement="top">
         <span onFocus={onFocus}>{children}</span>
       </Tooltip>
@@ -90,6 +99,37 @@ function ContentEditableDivInput({
   ...inputProps
 }: // eslint-disable-next-line @typescript-eslint/no-explicit-any
 any) {
+  const underlineRef = useRef<HTMLDivElement>(null);
+  const isEditing = useRef(false);
+
+  const setTextUnderlines = (contentDiv: HTMLDivElement) => {
+    const underlineDiv = underlineRef.current as HTMLDivElement;
+    const words = contentDiv.innerText.split(/\s+/);
+
+    if (words.length <= 1) {
+      underlineDiv.innerHTML = "";
+      return;
+    }
+
+    if (contentDiv.scrollHeight <= 32) {
+      underlineDiv.style.paddingTop = "7px";
+    } else {
+      underlineDiv.style.paddingTop = "0";
+    }
+
+    underlineDiv.innerHTML = words
+      .map((word, index) => {
+        const color = Highlighter.colors[index % Highlighter.colors.length];
+
+        return [
+          `<span style="border-bottom: 2px solid ${color};">`,
+          word,
+          "</span>",
+        ].join("");
+      })
+      .join(" ");
+  };
+
   return (
     <div className={styles.ContentEditableDivInput}>
       <div>
@@ -99,9 +139,20 @@ any) {
           ref={innerRef}
           disabled={isDisabled}
           contentEditable
+          onMouseDown={(e) => {
+            if (isEditing.current) {
+              e.stopPropagation();
+            }
+          }}
           onKeyDown={(e) => {
             if (e.key === " ") {
               e.stopPropagation();
+
+              if (
+                e.currentTarget.innerText.endsWith(String.fromCharCode(160))
+              ) {
+                e.preventDefault();
+              }
             }
           }}
           onFocus={(e) => {
@@ -120,11 +171,14 @@ any) {
             });
 
             inputProps.onFocus(e);
+            isEditing.current = true;
+            setTextUnderlines(div);
           }}
           onInput={(e) => {
             const pseudoInput = e.currentTarget as HTMLInputElement;
             pseudoInput.value = e.currentTarget.textContent || "";
             inputProps.onChange(e);
+            setTextUnderlines(pseudoInput);
           }}
           onBlur={(e) => {
             const pseudoInput = e.currentTarget as HTMLInputElement;
@@ -141,8 +195,10 @@ any) {
             });
 
             inputProps.onBlur(e);
+            isEditing.current = false;
           }}
         />
+        <div ref={underlineRef} className={styles.underlineDiv} />
         {placeholder ? <div>{placeholder}</div> : null}
       </div>
     </div>
