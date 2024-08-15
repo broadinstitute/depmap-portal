@@ -273,9 +273,26 @@ export function toReactSelectOptions(
       );
     })
     .map((result) => {
+      const chainLength = (str: string) => str.split(".").length;
+
+      const tokenMatches = tokens
+        .map((token) => {
+          const lowercaseToken = token.toLowerCase();
+
+          return result.matching_properties
+            .filter(({ property }) => property !== "label")
+            .filter(({ value }) => {
+              return value.toLowerCase().includes(lowercaseToken);
+            })
+            .sort((a, b) => {
+              return chainLength(a.property) - chainLength(b.property);
+            })[0];
+        })
+        .filter(Boolean);
+
       const groupedProps: Record<string, Set<string>> = {};
 
-      result.matching_properties.forEach(({ property, value }) => {
+      tokenMatches.forEach(({ property, value }) => {
         const prop = property
           // no underscores
           .replace(/_/g, " ")
@@ -426,6 +443,8 @@ export function formatOptionLabel(
     );
   };
 
+  const tokens = tokenize(inputValue);
+
   return (
     <div>
       <MaybeTooltip>
@@ -437,31 +456,20 @@ export function formatOptionLabel(
           <Highlighter
             text={option.label}
             style={{ color: disabledReason ? "inherit" : "black" }}
-            termToHiglight={
-              tokenize(inputValue).find((token) =>
-                option.label?.toLowerCase().includes(token.toLowerCase())
-              ) || ""
-            }
+            termToHiglight={tokens}
             matchPartialTerms
           />
         </div>
       </MaybeTooltip>
-      {nonLabelProperties?.map((match) => {
-        const termToHiglight = tokenize(inputValue)
-          .filter((token) => {
-            return match.values.some((value) => {
-              return value.toLowerCase().includes(token.toLowerCase());
-            });
-          })
-          .join(" ");
-
+      {nonLabelProperties?.map((match, i) => {
         return (
-          <div key={`${match.property}=${match.values}`}>
+          // eslint-disable-next-line react/no-array-index-key
+          <div key={i}>
             <MaybeTooltip>
               {match.property.replace(/^(.)/, (c: string) => c.toUpperCase())}:{" "}
               <Highlighter
                 text={match.values.join(", ")}
-                termToHiglight={termToHiglight}
+                termToHiglight={tokens}
                 matchPartialTerms
                 style={{ color: disabledReason ? "inherit" : "black" }}
               />
