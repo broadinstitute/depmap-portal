@@ -135,13 +135,19 @@ def get_dataset_units(dataset_id: str) -> Optional[str]:
     return interactive_utils.get_dataset_units(dataset_id)
 
 
-def get_row_of_values(dataset_id: str, feature: str) -> CellLineSeries:
+def get_row_of_values(
+    dataset_id: str, feature: str, feature_identifier="label"
+) -> CellLineSeries:
     """
     Gets a row of numeric or string values, indexed by depmap_id
     for a given dataset and feature name.
     """
     if is_breadbox_id(dataset_id):
-        return breadbox_dao.get_row_of_values(dataset_id=dataset_id, feature=feature)
+        return breadbox_dao.get_row_of_values(
+            dataset_id=dataset_id,
+            feature=feature,
+            feature_identifier=feature_identifier,
+        )
     return interactive_utils.get_row_of_values(dataset_id=dataset_id, feature=feature)
 
 
@@ -149,6 +155,7 @@ def get_subsetted_df_by_labels(
     dataset_id: str,
     feature_row_labels: Optional[list[str]] = None,
     sample_col_ids: Optional[list[str]] = None,
+    feature_identifier: Optional[str] = "label",
 ) -> pd.DataFrame:
     """
     Load a dataframe with only the specified rows (features) and columns (cell_lines).
@@ -158,7 +165,10 @@ def get_subsetted_df_by_labels(
     """
     if is_breadbox_id(dataset_id):
         return breadbox_dao.get_subsetted_df_by_labels(
-            dataset_id, feature_row_labels, sample_col_ids
+            dataset_id=dataset_id,
+            feature_row_labels=feature_row_labels,
+            sample_col_ids=sample_col_ids,
+            feature_identifier=feature_identifier,
         )
     return interactive_utils.get_subsetted_df_by_labels(
         dataset_id, feature_row_labels, sample_col_ids

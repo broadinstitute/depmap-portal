@@ -1,5 +1,6 @@
 from depmap import data_access
 from depmap.gene.models import Gene
+from depmap.entity.models import Entity
 from depmap.predictability_prototype.models import PrototypePredictiveModel
 from depmap.predictability_prototype.utils import (
     feature_correlation_map_calc,
@@ -69,34 +70,6 @@ class Predictions(
         # for statement in statements:
         #     db.session.execute(statement)
 
-        # cell_context = pd.read_csv(
-        #     "/Users/amourey/dev/depmap-portal/portal-backend/depmap/predictability_prototype/scripts/CellContextSummary.csv",
-        # )
-        # cell_context["model"] = "CellContext"
-        # driver_events = pd.read_csv(
-        #     "/Users/amourey/dev/depmap-portal/portal-backend/depmap/predictability_prototype/scripts/DriverEventsSummary.csv",
-        # )
-        # driver_events["model"] = "DriverEvents"
-        # rna_seq = pd.read_csv(
-        #     "/Users/amourey/dev/depmap-portal/portal-backend/depmap/predictability_prototype/scripts/RNASeqSummary.csv",
-        # )
-        # rna_seq["model"] = "RNASeq"
-
-        # genetic_derangement = pd.read_csv(
-        #     "/Users/amourey/dev/depmap-portal/portal-backend/depmap/predictability_prototype/scripts/GeneticDerangementSummary.csv"
-        # )
-        # genetic_derangement["model"] = "GeneticDerangement"
-        # dna = pd.read_csv(
-        #     "/Users/amourey/dev/depmap-portal/portal-backend/depmap/predictability_prototype/scripts/DNASummary.csv"
-        # )
-        # dna["model"] = "DNA"
-        # combination = pd.concat(
-        #     [cell_context, driver_events, rna_seq, genetic_derangement, dna]
-        # )
-        # combination.to_csv(
-        #     "/Users/amourey/dev/depmap-portal/portal-backend/depmap/predictability_prototype/scripts/combination.csv"
-        # )
-
         # ensemble_crispr: predictability-76d5.110/ensemble_crispr
         # ensemble_rnai: predictability-76d5.110/ensemble_rnai
         # feature_metadata_crispr: predictability-76d5.110/feature_metadata_crispr
@@ -126,17 +99,19 @@ class Predictions(
 
         # TODO: TAKE OUT
         screen_type = "crispr"
-
+        entity_id = Gene.get_by_label(gene_symbol).entity_id
         agg_scores = generate_aggregate_scores_across_all_models(
             gene_symbol,
+            entity_id=entity_id,
             screen_type=screen_type,
             datasets=predictablity_datasets,
             actuals=gene_effect_df,
         )
 
-        top_features, gene_tea_symbols = top_features_overall(gene_symbol)
-        # breakpoint()
-        print(gene_tea_symbols)
+        top_features, gene_tea_symbols = top_features_overall(
+            gene_symbol, entity_id=entity_id
+        )
+
         model_performance_data = {}
 
         for model in MODEL_SEQUENCE:
@@ -147,7 +122,7 @@ class Predictions(
                 actuals=gene_effect_df,
             )
             corr = feature_correlation_map_calc(
-                model, gene_symbol, screen_type=screen_type
+                model, entity_id=entity_id, screen_type=screen_type
             )
             metadata: dict = corr["metadata"]
             r = PrototypePredictiveModel.get_r_squared_for_model(model)
@@ -186,9 +161,13 @@ class RelatedCorrelations(
         feature_name_type = request.args.get("identifier")
         model = request.args.get("model")
         screen_type = "crispr"
+
+        entity_id = Gene.get_by_label(entity_label).entity_id
+
         plot = get_feature_corr_plot(
             screen_type=screen_type,
             model=model,
+            entity_id=entity_id,
             gene_symbol=entity_label,
             feature_name_type=feature_name_type,
         )
@@ -211,10 +190,12 @@ class Waterfall(
         model = request.args.get("model")
         screen_type = "crispr"
 
+        entity_id = Gene.get_by_label(entity_label).entity_id
+
         plot = get_feature_waterfall_plot(
             screen_type=screen_type,
             model=model,
-            gene_symbol=entity_label,
+            entity_id=entity_id,
             feature_name_type=feature_name_type,
         )
 
@@ -238,7 +219,7 @@ class BoxPlot(
 
         plot = get_feature_boxplot_data(
             screen_type=screen_type,
-            feature_name_type=feature_name_type,
+            feature_name=feature_name_type,
             entity_label=entity_label,
             model=model,
         )
@@ -264,13 +245,15 @@ class GeneEffectData(
         entity_label = request.args.get("entity_label")
         screen_type = "crispr"
 
+        entity_id = Gene.get_by_label(entity_label).entity_id
+
         plot = get_feature_gene_effect_plot_data(
             model=model,
             gene_symbol=entity_label,
             feature_index=feature_index,
-            feature_name=feature_name,
-            feature_type=feature_type,
+            feature_name=feature_name_type,
             screen_type=screen_type,
+            entity_id=entity_id,
         )
 
         return plot

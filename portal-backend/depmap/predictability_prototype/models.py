@@ -55,7 +55,7 @@ class PrototypePredictiveFeature(Model):
         return query.one_or_none()
 
     @staticmethod
-    def get_taiga_id_from_full_feature_name(
+    def get_taiga_id_from_feature_name(
         model_name: str, feature_name: str, screen_type: str
     ):
         result = (
@@ -73,31 +73,11 @@ class PrototypePredictiveFeature(Model):
         return result.taiga_id, result.given_id
 
     @staticmethod
-    def get_by_feature_name_and_model(feature_name: str):
-        result = (
-            db.session.query(PrototypePredictiveFeature)
-            .filter(PrototypePredictiveFeature.feature_name == feature_name)
-            .one_or_none()
-        )
-
-        return result
-
-    @staticmethod
     def get_by_feature_name(feature_name: str):
         result = (
             db.session.query(PrototypePredictiveFeature)
             .filter(PrototypePredictiveFeature.feature_name == feature_name)
             .one_or_none()
-        )
-
-        return result
-
-    @staticmethod
-    def get_by_feature_label(feature_label: str):
-        result = (
-            db.session.query(PrototypePredictiveFeature)
-            .filter(PrototypePredictiveFeature.feature_label == feature_label,)
-            .all()
         )
 
         return result
@@ -185,6 +165,86 @@ class PrototypePredictiveModel(Model):
         return model_df
 
     @staticmethod
+    def get_feature_types_added_per_model(model_sequence: List[str], entity_id: int):
+        model_features = {}
+        previous_model = None
+        for model in model_sequence:
+            results = (
+                db.session.query(PrototypePredictiveModel)
+                .filter(
+                    and_(
+                        PrototypePredictiveModel.label == model,
+                        PrototypePredictiveModel.entity_id == entity_id,
+                    )
+                )
+                .join(
+                    PrototypePredictiveFeatureResult,
+                    PrototypePredictiveFeatureResult.predictive_model_id
+                    == PrototypePredictiveModel.predictive_model_id,
+                )
+                .join(
+                    PrototypePredictiveFeature,
+                    PrototypePredictiveFeatureResult.feature_id
+                    == PrototypePredictiveFeature.feature_id,
+                )
+                .with_entities(PrototypePredictiveFeature.dim_type)
+                .distinct()
+                .all()
+            )
+            feature_given_ids = [r for r, in results]
+
+            if previous_model != None:
+                model_features[model] = set(feature_given_ids) - set(
+                    model_features[previous_model]
+                )
+            else:
+                model_features[model] = set(feature_given_ids)
+
+            previous_model = model
+
+        return model_features
+
+    @staticmethod
+    def get_features_added_per_model(model_sequence: List[str], entity_id: int):
+        model_features = {}
+        previous_model = None
+        for model in model_sequence:
+            results = (
+                db.session.query(PrototypePredictiveModel)
+                .filter(
+                    and_(
+                        PrototypePredictiveModel.label == model,
+                        PrototypePredictiveModel.entity_id == entity_id,
+                    )
+                )
+                .join(
+                    PrototypePredictiveFeatureResult,
+                    PrototypePredictiveFeatureResult.predictive_model_id
+                    == PrototypePredictiveModel.predictive_model_id,
+                )
+                .join(
+                    PrototypePredictiveFeature,
+                    PrototypePredictiveFeatureResult.feature_id
+                    == PrototypePredictiveFeature.feature_id,
+                )
+                .with_entities(PrototypePredictiveFeature.feature_label)
+                .distinct()
+                .all()
+            )
+            feature_given_ids = [r for r, in results]
+
+            if previous_model != None:
+                model_features[model] = set(feature_given_ids) - set(
+                    model_features[previous_model]
+                )
+            else:
+                model_features[model] = set(feature_given_ids)
+
+            previous_model = model
+
+        return model_features
+
+    @staticmethod
     def get_by_entity_label(entity_label: str):
 
         gene_query = (
@@ -220,7 +280,7 @@ class PrototypePredictiveModel(Model):
         return entity_row
 
     @staticmethod
-    def get_entity_row(model_name: str, entity_label: str, screen_type: str):
+    def get_entity_row(model_name: str, entity_id: str, screen_type: str):
 
         gene_query = (
             db.session.query(PrototypePredictiveFeatureResult)
@@ -229,10 +289,13 @@ class PrototypePredictiveModel(Model):
                 PrototypePredictiveFeatureResult.predictive_model_id
                 == PrototypePredictiveModel.predictive_model_id,
             )
-            .filter(PrototypePredictiveModel.label == model_name)
-            .filter(PrototypePredictiveModel.screen_type == screen_type)
-            .join(Entity, PrototypePredictiveModel.entity_id == Entity.entity_id)
-            .filter(Entity.label == entity_label)
+            .filter(
+                and_(
+                    PrototypePredictiveModel.label == model_name,
+                    PrototypePredictiveModel.screen_type == screen_type,
+                    PrototypePredictiveModel.entity_id == entity_id,
+                )
+            )
             .join(
                 PrototypePredictiveFeature,
                 PrototypePredictiveFeatureResult.feature_id
@@ -246,9 +309,6 @@ class PrototypePredictiveModel(Model):
                 PrototypePredictiveFeatureResult.rank,
                 PrototypePredictiveFeature.dim_type,
                 PrototypePredictiveModel.pearson,
-            )
-            .add_columns(
-                sqlalchemy.column('"entity".label', is_literal=True).label("entity")
             )
         )
 
@@ -338,9 +398,9 @@ class PrototypePredictiveFeatureResult(Model):
             )
         )
 
-        entity_row = pd.read_sql(gene_query.statement, gene_query.session.connection())
+        result = pd.read_sql(gene_query.statement, gene_query.session.connection())
 
-        return entity_row
+        return result
 
     @staticmethod
     def get_all_label_name_features_for_model(model_name: str):

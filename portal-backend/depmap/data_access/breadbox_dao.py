@@ -115,7 +115,9 @@ def get_dataset_units(dataset_id: str) -> Optional[str]:
     return get_matrix_dataset(dataset_id).units
 
 
-def get_row_of_values(dataset_id: str, feature: str) -> CellLineSeries:
+def get_row_of_values(
+    dataset_id: str, feature: str, feature_identifier: str
+) -> CellLineSeries:
     """
     For the given dataset id and a feature label, 
     Get a row of numeric or string values, indexed by depmap_id
@@ -124,7 +126,7 @@ def get_row_of_values(dataset_id: str, feature: str) -> CellLineSeries:
     single_col_df = extensions.breadbox.client.get_dataset_data(
         dataset_id=dataset_uuid,
         features=[feature],
-        feature_identifier="label",
+        feature_identifier=feature_identifier,
         samples=None,
         sample_identifier=None,
     )
@@ -135,12 +137,13 @@ def get_subsetted_df_by_labels(
     dataset_id: str,
     feature_row_labels: Optional[list[str]],
     sample_col_ids: Optional[list[str]],
+    feature_identifier: Optional[str] = "label",
 ) -> pd.DataFrame:
     dataset_uuid = parse_breadbox_slice_id(dataset_id).dataset_id
     return extensions.breadbox.client.get_dataset_data(
         dataset_id=dataset_uuid,
         features=feature_row_labels,
-        feature_identifier="label",
+        feature_identifier=feature_identifier,
         samples=sample_col_ids,
         sample_identifier="id",
     ).transpose()
