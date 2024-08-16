@@ -1,4 +1,5 @@
 import requests
+from requests.adapters import HTTPAdapter, Retry
 from urllib.parse import urljoin
 from .utils import reformat_date
 
@@ -9,9 +10,13 @@ class DiscourseClient:
         self.api_key = api_key
         self.session = requests.Session()
         self.session.headers.update({"Api-Key": api_key, "Api-Username": "system"})
+        retry = Retry(total=5, backoff_factor=2, status_forcelist=[429, 500])
+        adapter = HTTPAdapter(max_retries=retry)
+        self.session.mount("https://", adapter)
 
     def get(self, url, **kwargs):
         try:
+            # print("getting ", url)
             r = self.session.get(urljoin(self.base_url, url), **kwargs)
             # Raises HTTPError, if one occurred.
             r.raise_for_status()
