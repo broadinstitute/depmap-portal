@@ -287,6 +287,34 @@ def get_feature_slice_and_dataset_id(
     return slice.fillna(0), feature_dataset_id
 
 
+def get_top_feature_headers(entity_id: int, model: str, screen_type: str):
+    feature_df = PrototypePredictiveModel.get_entity_row(
+        model_name=model, entity_id=entity_id, screen_type=screen_type
+    )
+
+    top_features_metadata = {}
+
+    for i in range(0, 10):
+        if len(feature_df.loc[feature_df["rank"] == i]) == 0:
+            continue
+        feature_info = feature_df.loc[feature_df["rank"] == i].to_dict("records")[0]
+        feature_name = feature_info["feature_name"]
+        feature_type = feature_info["dim_type"]
+        feature_label = feature_info["feature_label"]
+
+        feature_importance = feature_info["importance"]
+        pearson = feature_info["pearson"]
+
+        top_features_metadata[feature_name] = {
+            "feature_name": feature_label,
+            "feature_importance": feature_importance,
+            "feature_type": feature_type,
+            "pearson": pearson,
+        }
+
+    return top_features_metadata
+
+
 # Index(['feature_label', 'given_id', 'importance', 'rank', 'pearson', 'entity'], dtype='object')
 def get_top_features(entity_id: int, model: str, screen_type: str):
     feature_df = PrototypePredictiveModel.get_entity_row(
@@ -488,13 +516,21 @@ def get_related_features_scatter(
     )
     feature_df = feature_df.fillna(0)
 
+    import time
+
+    start = time.time()
     x = get_other_feature_corrs(
         feature_df=feature_df,
         feature_slice=pd.Series(index=feature_slice_index, data=feature_slice_values,),
     )
+    end = time.time()
+    print(f"get_other_feature_corrs {end-start} seconds")
 
+    start = time.time()
     y = get_ge_corrs(gene=gene_symbol, feature_df=feature_df)
     density = get_density(x.fillna(0), y.fillna(0))
+    end = time.time()
+    print(f"get_ge_corrs and get_density {end-start} seconds")
 
     x_label = "Other %s R<br>with %s" % (feature_type, feature_label)
     y_label = "Other %s R<br>with %s Gene Effect" % (feature_type, gene_symbol)
@@ -515,9 +551,15 @@ def get_other_dep_waterfall_plot(
         "Chronos_Combined", None, feature_slice_index
     )
     gene_df = gene_df.fillna(0)
+
+    import time
+
+    start = time.time()
     x = gene_df.corrwith(
         pd.Series(data=feature_slice_values, index=feature_slice_index), axis=1
     )
+    end = time.time()
+    print(f"CORRWITH TIME {end-start} seconds")
 
     # TODO confirm this method returns proper results. Example used corrwith but that
     # was 2x as slow as just using apply with np.corrcoef.

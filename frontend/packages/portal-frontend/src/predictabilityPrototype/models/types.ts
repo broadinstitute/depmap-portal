@@ -56,13 +56,20 @@ export type FeatureVsGeneEffectPlotData = {
 };
 
 export type FeatureInfo = {
-  featureSummary: FeatureSummary;
+  featureSummary: FeatureInfoSummary;
   relatedFeaturePlot: RelatedFeaturePlot;
   waterfallPlot: RelatedFeaturePlot;
 };
 
-export type FeatureSummary = {
+export type FeatureInfoSummary = {
   actuals_slice: number[];
+  feature_name: string;
+  feature_type: string;
+  feature_importance: number;
+  pearson: number;
+};
+
+export type FeatureSummary = {
   feature_name: string;
   feature_type: string;
   feature_importance: number;
@@ -92,8 +99,6 @@ export type FeatureWaterfallPlots = {
 export type PredictiveModelData = {
   model_predictions: ModelPredictionsGraphData;
   corr: CorrData;
-  r: number;
-  feature_summaries: FeatureSummaries;
 };
 
 export type AggScoresData = {
@@ -106,8 +111,9 @@ export type AggScoresData = {
   y_axis_label: string;
 };
 
-export type ModelPerformanceData = {
-  [key: string]: PredictiveModelData;
+export type ModelPerformanceInfo = {
+  r: number;
+  feature_summaries: FeatureSummaries;
 };
 
 export type PredictabilityData = {
@@ -117,5 +123,5 @@ export type PredictabilityData = {
     gene_tea_symbols: string[];
   };
   // Per predictive model
-  model_performance_data: ModelPerformanceData;
+  model_performance_info: { [key: string]: ModelPerformanceInfo };
 };

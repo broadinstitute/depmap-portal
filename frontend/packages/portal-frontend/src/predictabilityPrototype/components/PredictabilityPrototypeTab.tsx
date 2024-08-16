@@ -1,19 +1,20 @@
 import React, { useEffect, useState } from "react";
-import { CardRow, CardRowContainer, CardRowItem } from "src/common/components/Card";
+import {
+  CardRow,
+  CardRowContainer,
+  CardRowItem,
+} from "src/common/components/Card";
 import { getDapi } from "src/common/utilities/context";
 import { EntityType } from "src/entity/models/entities";
 import styles from "src/predictabilityPrototype/styles/PredictabilityPrototype.scss";
-import FeatureCollapsiblePanel, {
-  CollapsiblePanelHeader,
-  FeatureCollapsiblePanelHeader,
-} from "./FeatureCollapsiblePanels";
+import { CollapsiblePanelHeader } from "./FeatureCollapsiblePanels";
 import {
   AggScoresData,
-  ModelPerformanceData,
+  ModelPerformanceInfo,
   TopFeaturesBarData,
 } from "../models/types";
-import ModelPerformancePlots from "./ModelPerformancePlots";
 import { Panel, PanelGroup } from "react-bootstrap";
+import ModelPerformancePanel from "./ModelPerformancePanel";
 
 const AggScoresTile = React.lazy(
   () => import("src/predictabilityPrototype/components/AggScoresTile")
@@ -55,12 +56,11 @@ const PredictabilityPrototypeTab = ({
     setTopFeaturesData,
   ] = useState<TopFeaturesBarData | null>(null);
 
-  const [geneTeaSymbols, setGeneTeaSymbols] = useState<string[]>([]);
+  const [modelPerformanceInfo, setModelPerformanceInfo] = useState<{
+    [key: string]: ModelPerformanceInfo;
+  } | null>(null);
 
-  const [
-    modelPerformanceData,
-    setModelPerformanceData,
-  ] = useState<ModelPerformanceData | null>(null);
+  const [geneTeaSymbols, setGeneTeaSymbols] = useState<string[]>([]);
 
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
@@ -74,11 +74,11 @@ const PredictabilityPrototypeTab = ({
       setAggScoresData(data.overview.aggregated_scores);
       setTopFeaturesData(data.overview.top_features);
       setGeneTeaSymbols(data.overview.gene_tea_symbols);
-      setModelPerformanceData(data.model_performance_data);
+      setModelPerformanceInfo(data.model_performance_info);
       setIsLoading(false);
     })();
   }, [dapi, entityLabel]);
-  console.log(isLoading)
+  console.log(isLoading);
 
   const [activeModelIndex, setActiveModelIndex] = useState<number | null>(null);
 
@@ -86,45 +86,43 @@ const PredictabilityPrototypeTab = ({
     setActiveModelIndex((prevIndex) => (prevIndex === index ? null : index));
   };
 
-  const [activeFeatureIndex, setActiveFeatureIndex] = useState<number | null>(
-    null
-  );
-
-  const handleFeatureAccordionClick = (index: number) => {
-    setActiveFeatureIndex((prevIndex) => (prevIndex === index ? null : index));
-  };
-
+  console.log({ modelPerformanceInfo });
   return (
     <div>
-      <div style={{borderBottom: "1px solid #000000", marginBottom: "15px"}}>
-      <CardRowContainer>
-        <CardRow>
-          <CardRowItem>
-          <AggScoresTile plotTitle={`${entityLabel}`} data={aggScoresData} />
-          </CardRowItem>
-          <CardRowItem>
-          <TopFeaturesOverallTile
-            plotTitle={`${entityLabel}`}
-            topFeaturesData={topFeaturesData}
-          />
-          </CardRowItem>
-          <CardRowItem>
-          {geneTeaSymbols.length > 0 && <GeneTeaTile selectedLabels={geneTeaSymbols}/>}
-          </CardRowItem>
-        </CardRow>
-      </CardRowContainer>
+      <div style={{ borderBottom: "1px solid #000000", marginBottom: "15px" }}>
+        <CardRowContainer>
+          <CardRow>
+            <CardRowItem>
+              <AggScoresTile
+                plotTitle={`${entityLabel}`}
+                data={aggScoresData}
+              />
+            </CardRowItem>
+            <CardRowItem>
+              <TopFeaturesOverallTile
+                plotTitle={`${entityLabel}`}
+                topFeaturesData={topFeaturesData}
+              />
+            </CardRowItem>
+            <CardRowItem>
+              {geneTeaSymbols.length > 0 && (
+                <GeneTeaTile selectedLabels={geneTeaSymbols} />
+              )}
+            </CardRowItem>
+          </CardRow>
+        </CardRowContainer>
       </div>
       <div>
-        {modelPerformanceData && <div style={{marginLeft: "12px"}}>
-        <h3 style={{marginTop: "22px"}}>Model Performance</h3>
-        <p>Performance according to CRISPR and RNAi</p>
-        </div>}
+        <div style={{ marginLeft: "12px" }}>
+          <h3 style={{ marginTop: "22px" }}>Model Performance</h3>
+          <p>Performance according to CRISPR and RNAi</p>
+        </div>
       </div>
       <div className={styles.DataFilePanel}>
         <div className={styles.dataPanelSection}>
           <>
-            {modelPerformanceData &&
-              Object.keys(modelPerformanceData).map(
+            {modelPerformanceInfo &&
+              Object.keys(modelPerformanceInfo).map(
                 (modelName: string, modelIndex: number) => (
                   <PanelGroup
                     accordion
@@ -139,9 +137,7 @@ const PredictabilityPrototypeTab = ({
                           <div>
                             <CollapsiblePanelHeader
                               title={`Model: ${modelName}`}
-                              modelCorrelation={
-                                modelPerformanceData[modelName].r
-                              }
+                              modelCorrelation={90}
                               screenType={""}
                               isOpen={activeModelIndex === modelIndex}
                             />
@@ -149,109 +145,19 @@ const PredictabilityPrototypeTab = ({
                         </Panel.Title>
                       </Panel.Heading>
                       <Panel.Body collapsible>
-                        <ModelPerformancePlots
-                          modelPredData={
-                            modelPerformanceData[modelName].model_predictions
-                          }
-                          cellContextCorrData={
-                            modelPerformanceData[modelName].corr
-                          }
+                        <ModelPerformancePanel
+                          isOpen={activeModelIndex === modelIndex}
+                          modelName={modelName}
+                          entityLabel={entityLabel}
+                          modelPerformanceInfo={modelPerformanceInfo[modelName]}
+                          getModelPerformanceData={dapi.getModelPerformanceData.bind(
+                            dapi
+                          )}
                         />
-                                <div
-          style={{
-            paddingTop: "30px",
-          }}
-          className={styles.filePanelHeader}
-        >
-          <div className={styles.headerColOne}>FEATURE</div>
-          <div className={styles.headerColTwo}>RELATIVE IMPORTANCE</div>
-
-          <div className={styles.headerColThree}>CORRELATION</div>
-          <div className={styles.headerColFour}>FEATURE TYPE</div>
-
-                        <PanelGroup
-                          accordion
-                          id="accordion-feature"
-                          onSelect={(index) =>
-                            handleFeatureAccordionClick(index)
-                          }
-                          activeKey={activeFeatureIndex}
-                        >
-                          {modelPerformanceData[modelName] &&
-                            modelPerformanceData[modelName].feature_summaries &&
-                            Object.keys(
-                              modelPerformanceData[modelName].feature_summaries
-                            ).map((feature, featureIndex) => (
-                              <Panel
-                                eventKey={featureIndex}
-                                key={`${modelPerformanceData[modelName].feature_summaries[feature].feature_name}${modelName}`}
-                              >
-                                <Panel.Heading>
-                                  <Panel.Title toggle>
-                                    <div>
-                                      <FeatureCollapsiblePanelHeader
-                                        feature={
-                                          modelPerformanceData[modelName]
-                                            .feature_summaries[feature]
-                                            .feature_name
-                                        }
-                                        relativeImportance={
-                                          modelPerformanceData[modelName]
-                                            .feature_summaries[feature]
-                                            .feature_importance
-                                        }
-                                        correlation={
-                                          modelPerformanceData[modelName]
-                                            .feature_summaries[feature].pearson
-                                        }
-                                        featureType={
-                                          modelPerformanceData[modelName]
-                                            .feature_summaries[feature]
-                                            .feature_type
-                                        }
-                                        isOpen={activeFeatureIndex === featureIndex}
-                                      />
-                                    </div>
-                                  </Panel.Title>
-                                </Panel.Heading>
-                                <Panel.Body collapsible>
-                                  <div>
-                                    {modelPerformanceData[modelName]
-                                      .feature_summaries[feature] && (
-
-                                      <FeatureCollapsiblePanel
-                                        modelName={modelName}
-                                        feature={
-                                          modelPerformanceData[modelName]
-                                            .feature_summaries[feature]
-                                            .feature_name
-                                        }
-                                        featureNameType={feature}
-                                        featureType={
-                                          modelPerformanceData[modelName]
-                                            .feature_summaries[feature]
-                                            .feature_type
-                                        }
-                                        geneSymbol={entityLabel}
-                                        panelIndex={featureIndex}
-                                        isOpen={
-                                          modelIndex === activeModelIndex &&
-                                          featureIndex === activeFeatureIndex
-                                        }
-                                      />
-                                    )}
-                                  </div>
-                                </Panel.Body>
-                              </Panel>
-                            ))}
-                        </PanelGroup>
-                        </div>
                       </Panel.Body>
                     </Panel>
                   </PanelGroup>
-
                 )
-                
               )}
           </>
         </div>

@@ -86,6 +86,7 @@ import {
 import {
   FeatureVsGeneEffectPlotData,
   PredictabilityData,
+  PredictiveModelData,
   RelatedFeaturePlot,
 } from "./predictabilityPrototype/models/types";
 
@@ -681,6 +682,22 @@ export class DepmapApi {
 
     return this._fetchIncludePredictabilityCache<any>(
       `/api/predictability_prototype/feature/boxplot?${encodeParams(params)}`
+    );
+  }
+
+  getModelPerformanceData(
+    modelName: string,
+    geneSymbol: string,
+    screenType: string
+  ): Promise<PredictiveModelData> {
+    const params = {
+      entity_label: geneSymbol,
+      model: modelName,
+      screen_type: screenType,
+    };
+
+    return this._fetchIncludePredictabilityCache<PredictiveModelData>(
+      `/api/predictability_prototype/model_performance?${encodeParams(params)}`
     );
   }
 

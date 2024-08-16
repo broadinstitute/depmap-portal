@@ -13,6 +13,7 @@ from depmap.predictability_prototype.utils import (
     get_feature_waterfall_plot,
     get_gene_effect_df,
     top_features_overall,
+    get_top_feature_headers,
     MODEL_SEQUENCE,
 )
 
@@ -96,10 +97,13 @@ class Predictions(
         # <code to time>
         gene_effect_df = get_gene_effect_df()
         predictablity_datasets = get_all_predictability_datasets()
+        end = time.time()
+        print(f"Get Gene Effect and Pred Datasets {end-start} seconds")
 
         # TODO: TAKE OUT
         screen_type = "crispr"
         entity_id = Gene.get_by_label(gene_symbol).entity_id
+        start = time.time()
         agg_scores = generate_aggregate_scores_across_all_models(
             gene_symbol,
             entity_id=entity_id,
@@ -107,35 +111,30 @@ class Predictions(
             datasets=predictablity_datasets,
             actuals=gene_effect_df,
         )
+        end = time.time()
+        print(f"Generate Agg Scores {end-start} seconds")
 
+        start = time.time()
         top_features, gene_tea_symbols = top_features_overall(
             gene_symbol, entity_id=entity_id
         )
-
-        model_performance_data = {}
-
-        for model in MODEL_SEQUENCE:
-            model_predictions = generate_model_predictions(
-                gene_symbol=gene_symbol,
-                screen_type=screen_type,
-                model=model,
-                actuals=gene_effect_df,
-            )
-            corr = feature_correlation_map_calc(
-                model, entity_id=entity_id, screen_type=screen_type
-            )
-            metadata: dict = corr["metadata"]
-            r = PrototypePredictiveModel.get_r_squared_for_model(model)
-
-            model_performance_data[model] = {
-                "model_predictions": model_predictions,
-                "corr": corr["corr"],
-                "r": r,
-                "feature_summaries": metadata.to_dict(),
-            }
-
         end = time.time()
-        print(f"Total {end-start} seconds")
+        print(f"Top Features Overall {end-start} seconds")
+
+        model_performance_info = {}
+
+        start = time.time()
+        for model in MODEL_SEQUENCE:
+            feature_header_info = get_top_feature_headers(
+                entity_id=entity_id, model=model, screen_type=screen_type
+            )
+            r = PrototypePredictiveModel.get_r_squared_for_model(model)
+            model_performance_info[model] = {
+                "r": r,
+                "feature_summaries": feature_header_info,
+            }
+        end = time.time()
+        print(f"MODEL PERFORMANCE {end-start} seconds")
 
         return {
             "overview": {
@@ -143,8 +142,38 @@ class Predictions(
                 "top_features": top_features,
                 "gene_tea_symbols": list(gene_tea_symbols),
             },
-            "model_performance_data": model_performance_data,
+            "model_performance_info": model_performance_info,
         }
+
+
+@namespace.route("/model_performance")
+class ModelPerformance(
+    Resource
+):  # the flask url_for endpoint is automagically the snake case of the namespace prefix plus class name
+    def get(self):
+        # Note: docstrings to restplus methods end up in the swagger documentation.
+        # DO NOT put a docstring here that you would not want exposed to users of the API. Use # for comments instead
+        """
+        test
+        """
+        entity_label = request.args.get("entity_label")
+        model = request.args.get("model")
+        screen_type = request.args.get("screen_type")
+        screen_type = "crispr"
+
+        entity_id = Gene.get_by_label(entity_label).entity_id
+        gene_effect_df = get_gene_effect_df()
+        model_predictions = generate_model_predictions(
+            gene_symbol=entity_label,
+            screen_type=screen_type,
+            model=model,
+            actuals=gene_effect_df,
+        )
+        corr = feature_correlation_map_calc(
+            model, entity_id=entity_id, screen_type=screen_type
+        )
+
+        return {"model_predictions": model_predictions, "corr": corr["corr"]}
 
 
 @namespace.route("/feature/related_correlations")
