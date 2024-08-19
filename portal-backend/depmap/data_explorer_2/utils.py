@@ -3,7 +3,7 @@ import gzip
 import functools
 import numpy as np
 import pandas as pd
-from typing import Optional
+from typing import Any, Optional
 from collections import defaultdict
 
 from logging import getLogger
@@ -126,7 +126,8 @@ def get_series_from_de2_slice_id(slice_id: str) -> pd.Series:
     )
 
 
-def slice_to_dict(slice_id: str):
+def slice_to_dict(slice_id: str) -> dict[str, Any]:
+    """For the given slice ID, load a dictionary of values keyed by label."""
     return get_series_from_de2_slice_id(slice_id).replace({np.nan: None}).to_dict()
 
 

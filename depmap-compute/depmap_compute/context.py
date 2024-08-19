@@ -3,6 +3,7 @@
 # but it serves as a good reference for patching operators:
 # https://github.com/panzi/panzi-json-logic
 from json_logic import jsonLogic, operations  # type: ignore
+from typing import Any, Callable
 
 
 # Custom JsonLogic operators
@@ -26,7 +27,7 @@ operations.update(
 
 
 class ContextEvaluator:
-    def __init__(self, context):
+    def __init__(self, context: dict, get_slice_data: Callable[[str], dict[str, Any]]):
         """
         A `context` should have:
             - a `context_type` such as "depmap_model"
@@ -35,15 +36,18 @@ class ContextEvaluator:
         self.context_type = context["context_type"]
         self.expr = _encode_dots_in_vars(context["expr"])
         self.cache = {}
+        self.get_slice_data = get_slice_data
 
-    def is_match(self, entity_label):
+    def is_match(self, entity_label: str):
         """
         This evaluates `expr` against a given `entity_label`. It returns
         True/False depending on if `entity_label` satifies the conditions of
         the expression, including any variables ("var" subexpressions) which
         are bound by using a magic dict that does lookups lazily.
         """
-        data = _LazyContextDict(self.context_type, entity_label, self.cache)
+        data = _LazyContextDict(
+            self.context_type, entity_label, self.cache, self.get_slice_data
+        )
 
         try:
             return jsonLogic(self.expr, data)
@@ -58,10 +62,17 @@ class ContextEvaluator:
 # But we don't need to "perfectly" override it; just well enough to trick the
 # JsonLogic library.
 class _LazyContextDict(dict):
-    def __init__(self, context_type, entity_label, cache):
+    def __init__(
+        self,
+        context_type: str,
+        entity_label: str,
+        cache: dict,
+        get_slice_data: Callable[[str], dict[str, Any]],
+    ):
         self.context_type = context_type
         self.entity_label = entity_label
         self.cache = cache
+        self.get_slice_data = get_slice_data
 
     def __getitem__(self, prop):
         # Handle trivial case where we're just looking up an entity's own label
@@ -70,7 +81,7 @@ class _LazyContextDict(dict):
 
         if prop.startswith("slice/"):
             if prop not in self.cache:
-                self.cache[prop] = slice_to_dict(prop)  # TODO: pass as lambda??
+                self.cache[prop] = self.get_slice_data(prop)
 
             return self.cache[prop][self.entity_label]
 

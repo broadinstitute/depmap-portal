@@ -11,10 +11,10 @@ from flask import (
     request,
 )
 
+from depmap_compute.context import ContextEvaluator
 from depmap import data_access
 from depmap.extensions import csrf_protect
 from depmap.access_control import is_current_user_an_admin
-from depmap_compute.context import ContextEvaluator
 from depmap.data_explorer_2.links import get_plot_link, get_tutorial_link
 from depmap.data_explorer_2.plot import (
     compute_all,
@@ -38,6 +38,7 @@ from depmap.data_explorer_2.utils import (
     get_vector_labels,
     make_gzipped_json_response,
     pluralize,
+    slice_to_dict,
     to_display_name,
     to_serializable_numpy_number,
 )
@@ -184,7 +185,7 @@ def get_correlation():
         if not is_transpose
         else data_access.get_dataset_sample_type(dataset_id)
     )
-    row_context_evaluator = ContextEvaluator(context)
+    row_context_evaluator = ContextEvaluator(context, slice_to_dict)
     dataset_label = data_access.get_dataset_label(dataset_id)
 
     for label in get_vector_labels(dataset_id, is_transpose):
@@ -236,10 +237,10 @@ def get_correlation():
         col_context_evaluator = None
 
         if dimension_key == "x" and distinguish1:
-            col_context_evaluator = ContextEvaluator(distinguish1)
+            col_context_evaluator = ContextEvaluator(distinguish1, slice_to_dict)
 
         if dimension_key == "x2" and distinguish2:
-            col_context_evaluator = ContextEvaluator(distinguish2)
+            col_context_evaluator = ContextEvaluator(distinguish2, slice_to_dict)
 
         for label in get_vector_labels(dataset_id, not is_transpose):
             if not col_context_evaluator or col_context_evaluator.is_match(label):
@@ -451,7 +452,7 @@ def get_labels_matching_context():
     inputs = request.get_json()
     context = inputs["context"]
     context_type = context["context_type"]
-    context_evaluator = ContextEvaluator(context)
+    context_evaluator = ContextEvaluator(context, slice_to_dict)
     input_labels = get_entity_labels_across_datasets(context_type)
 
     labels_matching_context = []
@@ -495,7 +496,7 @@ def get_context_summary():
     inputs = request.get_json()
     context = inputs["context"]
     context_type = context["context_type"]
-    context_evaluator = ContextEvaluator(context)
+    context_evaluator = ContextEvaluator(context, slice_to_dict)
     input_labels = get_entity_labels_across_datasets(context_type)
 
     labels_matching_context = []

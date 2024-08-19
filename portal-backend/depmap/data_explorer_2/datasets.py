@@ -2,6 +2,7 @@ from depmap_compute.context import ContextEvaluator
 from depmap.data_explorer_2.utils import (
     get_datasets_from_entity_type,
     get_entity_labels_of_dataset,
+    slice_to_dict,
 )
 
 
@@ -19,7 +20,7 @@ def get_datasets_matching_context_with_details(context) -> list[dict]:
     """
     out = []
     context_type = context["context_type"]
-    context_evaluator = ContextEvaluator(context)
+    context_evaluator = ContextEvaluator(context, slice_to_dict)
 
     for dataset in get_datasets_from_entity_type(context_type):
         entity_labels = []

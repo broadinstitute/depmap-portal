@@ -1,5 +1,7 @@
 from depmap_compute.context import ContextEvaluator
 
+from depmap.data_explorer_2.utils import slice_to_dict
+
 
 def test_operator__not_in():
     assert expressions_are_equivalent(
@@ -75,6 +77,6 @@ def expressions_are_equivalent(boolean_value, json_logic_expr):
 
     # These expressions don't use variables (just pure logic)
     var_name = "dummy variable"
-    result = ContextEvaluator(context).is_match(var_name)
+    result = ContextEvaluator(context, slice_to_dict).is_match(var_name)
 
     return result == boolean_value
