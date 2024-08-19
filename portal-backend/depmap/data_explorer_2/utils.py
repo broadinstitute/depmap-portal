@@ -5,9 +5,10 @@ import numpy as np
 import pandas as pd
 from typing import Any, Optional
 from collections import defaultdict
-
 from logging import getLogger
 from flask import json, make_response
+
+from depmap_compute.context import decode_slice_id
 from depmap import data_access
 from depmap.data_access.models import MatrixDataset
 from depmap.settings.download_settings import get_download_list
@@ -64,26 +65,6 @@ def get_reoriented_df(
     return data_access.get_subsetted_df_by_labels(
         dataset_id=dataset_id, feature_row_labels=row_labels, sample_col_ids=col_labels,
     )
-
-
-# Based on the function of the same name from SliceSerializer but we don't
-# enforce that feature_type is of type SliceRowType. That way we can handle
-# novel feature types like the "transpose_label" described below.
-def decode_slice_id(slice_id):
-    parts = slice_id.split("/")
-    assert (
-        parts[0] == "slice" and len(parts) >= 4 and len(parts) <= 5
-    ), f"Malformed slice_id: {slice_id}"
-
-    if len(parts) == 5:
-        # handle dataset IDs with slashes in them
-        parts[1:3] = ["/".join(parts[1:3])]
-
-    dataset_id = Serializer.unquote(parts[1])
-    feature = Serializer.unquote(parts[2])
-    feature_type = Serializer.unquote(parts[3])
-
-    return dataset_id, feature, feature_type
 
 
 # There are also several bespoke slice IDs here that don't correlate with real

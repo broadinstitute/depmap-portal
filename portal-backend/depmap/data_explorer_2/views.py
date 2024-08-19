@@ -11,7 +11,7 @@ from flask import (
     request,
 )
 
-from depmap_compute.context import ContextEvaluator
+from depmap_compute.context import ContextEvaluator, decode_slice_id
 from depmap import data_access
 from depmap.extensions import csrf_protect
 from depmap.access_control import is_current_user_an_admin
@@ -26,7 +26,6 @@ from depmap.data_explorer_2.plot import (
 from depmap.data_explorer_2.performance import generate_performance_report
 from depmap.data_explorer_2.datasets import get_datasets_matching_context_with_details
 from depmap.data_explorer_2.utils import (
-    decode_slice_id,
     get_aliases_matching_labels,
     get_all_supported_continuous_datasets,
     get_entity_labels_across_datasets,

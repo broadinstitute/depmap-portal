@@ -4,6 +4,7 @@
 # https://github.com/panzi/panzi-json-logic
 from json_logic import jsonLogic, operations  # type: ignore
 from typing import Any, Callable
+from urllib.parse import unquote
 
 
 # Custom JsonLogic operators
@@ -111,3 +112,30 @@ def _encode_dots_in_vars(expr):
         return node
 
     return walk(expr, None)
+
+
+def decode_slice_id(slice_id) -> tuple[str, str, str]:
+    """
+    Based on the function of the same name from SliceSerializer but we don't
+    enforce that feature_type is of type SliceRowType. That way we can handle
+    novel feature types like the "transpose_label".
+
+    Data Explorer 2 slice ids are a superset of legacy slice ids.
+    One difference is that DE2 slice ids can include "transpose_label"
+    as a feature type, which indicates that the result should be transposed.
+    "transpose_label" is used similarly to the "depmap_model" feature type in slice ids.
+    """
+    parts = slice_id.split("/")
+    assert (
+        parts[0] == "slice" and len(parts) >= 4 and len(parts) <= 5
+    ), f"Malformed slice_id: {slice_id}"
+
+    if len(parts) == 5:
+        # handle dataset IDs with slashes in them
+        parts[1:3] = ["/".join(parts[1:3])]
+
+    dataset_id = unquote(parts[1])
+    feature = unquote(parts[2])
+    feature_type = unquote(parts[3])
+
+    return dataset_id, feature, feature_type
