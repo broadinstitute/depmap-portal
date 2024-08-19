@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from "react";
-import { fetchEntityLabels, fetchEntityLabelsOfDataset } from "../../../../api";
+import { fetchSliceLabels, fetchSliceLabelsOfDataset } from "../../../../api";
 import CompoundSearcher from "./CompoundSearcher";
 import { extractCompoundNames, fetchCompoundDatasets } from "./utils";
 
 interface Props {
   value: string | null;
   onChangeCompoundName: (name: string | null) => void;
-  onChange: (entity_label: string, dataset_id: string) => void;
+  onChange: (slice_label: string, dataset_id: string) => void;
   swatchColor?: string;
   isColorSelector: boolean;
   dataset_id: string | null;
@@ -31,8 +31,8 @@ function CompoundNameSelect({
 
       try {
         const { labels } = await (isColorSelector && dataset_id
-          ? fetchEntityLabelsOfDataset("compound_experiment", dataset_id)
-          : fetchEntityLabels("compound_experiment"));
+          ? fetchSliceLabelsOfDataset("compound_experiment", dataset_id)
+          : fetchSliceLabels("compound_experiment"));
 
         const nextOptions = extractCompoundNames(labels).map((name) => ({
           label: name,
@@ -66,8 +66,8 @@ function CompoundNameSelect({
 
     // TODO: Handle the case where `isColorSelector` is true and there is no
     // dataset_id selected yet!
-    if (datasets.length === 1 && datasets[0].entity_labels.length === 1) {
-      onChange(datasets[0].entity_labels[0], datasets[0].dataset_id);
+    if (datasets.length === 1 && datasets[0].slice_labels.length === 1) {
+      onChange(datasets[0].slice_labels[0], datasets[0].dataset_id);
     } else {
       onChangeCompoundName(nextValue);
     }

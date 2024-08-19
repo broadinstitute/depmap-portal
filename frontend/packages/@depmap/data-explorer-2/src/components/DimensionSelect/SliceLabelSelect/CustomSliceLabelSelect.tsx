@@ -1,62 +1,59 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { DataExplorerContext } from "@depmap/types";
-import { fetchEntityLabelsOfDataset } from "../../../api";
+import { fetchSliceLabelsOfDataset } from "../../../api";
 import PlotConfigSelect from "../../PlotConfigSelect";
 import { toOutputValue } from "./utils";
 
 interface Props {
-  entity_type: string;
+  slice_type: string;
   dataset_id: string | null;
   value: DataExplorerContext | null;
   onChange: (context: DataExplorerContext | null) => void;
   swatchColor?: string;
 }
 
-// HACK: This is a simplified version of EntitySelect intended to be used with
-// custom data (e.g. the transient datasets used by Custom Analysis). It uses
-// `fetchEntityLabelsOfDataset()` because feature labels aren't discoverable
-// using `fetchEntityToDatasetsMapping()`.
-function CustomEntitySelect({
-  entity_type,
+// HACK: This is a simplified version of SliceLabelSelect intended to be used
+// with custom data (e.g. the transient datasets used by Custom Analysis). It
+// uses `fetchSliceLabelsOfDataset()` because feature labels aren't
+// discoverable using `fetchSliceLabelsToDatasetsMapping()`.
+function CustomSliceLabelSelect({
+  slice_type,
   dataset_id,
   value,
   onChange,
   swatchColor = undefined,
 }: Props) {
   const [dsError, setDsError] = useState(false);
-  const [entityLabels, setEntityLabels] = useState<string[] | null>(null);
+  const [sliceLabels, setSliceLabels] = useState<string[] | null>(null);
 
   useEffect(() => {
-    setEntityLabels(null);
+    setSliceLabels(null);
     setDsError(false);
 
     (async () => {
-      if (entity_type && dataset_id) {
+      if (slice_type && dataset_id) {
         try {
-          const data = await fetchEntityLabelsOfDataset(
-            entity_type,
-            dataset_id
-          );
-          setEntityLabels(data.labels);
+          const data = await fetchSliceLabelsOfDataset(slice_type, dataset_id);
+          setSliceLabels(data.labels);
         } catch (e) {
           setDsError(true);
           window.console.error(e);
         }
       }
     })();
-  }, [entity_type, dataset_id]);
+  }, [slice_type, dataset_id]);
 
   const options = useMemo(() => {
-    return (entityLabels || []).map((label) => ({ label, value: label }));
-  }, [entityLabels]);
+    return (sliceLabels || []).map((label) => ({ label, value: label }));
+  }, [sliceLabels]);
 
   const notFound = useMemo(() => {
-    if (!entityLabels || !value) {
+    if (!sliceLabels || !value) {
       return false;
     }
 
-    return !entityLabels.find((label) => label === value.name);
-  }, [entityLabels, value]);
+    return !sliceLabels.find((label) => label === value.name);
+  }, [sliceLabels, value]);
 
   let placeholder = "Choose a custom value…";
 
@@ -79,12 +76,12 @@ function CustomEntitySelect({
       options={options}
       placeholder={placeholder}
       hasError={dsError || notFound}
-      isLoading={entityLabels === null && !dsError}
+      isLoading={sliceLabels === null && !dsError}
       swatchColor={swatchColor}
       onChangeUsesWrappedValue
-      onChange={(option) => onChange(toOutputValue(entity_type, option as any))}
+      onChange={(option) => onChange(toOutputValue(slice_type, option as any))}
     />
   );
 }
 
-export default CustomEntitySelect;
+export default CustomSliceLabelSelect;

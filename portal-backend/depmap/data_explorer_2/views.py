@@ -29,8 +29,8 @@ from depmap.data_explorer_2.utils import (
     decode_slice_id,
     get_aliases_matching_labels,
     get_all_supported_continuous_datasets,
-    get_entity_labels_across_datasets,
-    get_entity_to_datasets_mapping,
+    get_slice_labels_across_datasets,
+    get_slice_labels_to_datasets_mapping,
     get_file_and_release_from_dataset,
     get_reoriented_df,
     get_series_from_de2_slice_id,
@@ -179,7 +179,7 @@ def get_correlation():
     row_labels = []
 
     is_transpose = data_access.get_dataset_feature_type(dataset_id) == index_type
-    entity_type = (
+    slice_type = (
         data_access.get_dataset_feature_type(dataset_id)
         if not is_transpose
         else data_access.get_dataset_sample_type(dataset_id)
@@ -272,7 +272,7 @@ def get_correlation():
         if dimension_key == "x2" and use_clustering:
             df = df.reindex(row_labels, axis=0).reindex(row_labels, axis=1)  # type: ignore
 
-        entities = pluralize(to_display_name(entity_type))
+        entities = pluralize(to_display_name(slice_type))
         is_anonymous = re.match(r"\(\d+ selected\)", context["name"])
         axis_label = (
             f"correlation of {context['name']} {entities}"
@@ -309,7 +309,7 @@ def get_correlation():
             "values": values,
         }
 
-    index_aliases = get_aliases_matching_labels(entity_type, row_labels)
+    index_aliases = get_aliases_matching_labels(slice_type, row_labels)
 
     return make_gzipped_json_response(
         {
@@ -343,7 +343,7 @@ def datasets_by_index_type():
             dict(
                 common_props,
                 index_type=dataset.sample_type,
-                entity_type=dataset.feature_type,
+                slice_type=dataset.feature_type,
             )
         )
 
@@ -351,7 +351,7 @@ def datasets_by_index_type():
             dict(
                 common_props,
                 index_type=dataset.feature_type,
-                entity_type=dataset.sample_type,
+                slice_type=dataset.sample_type,
             )
         )
 
@@ -361,36 +361,36 @@ def datasets_by_index_type():
     return make_gzipped_json_response(output)
 
 
-@blueprint.route("/entity_labels")
-def entity_labels():
-    entity_type = request.args.get("entity_type")
-    labels = get_entity_labels_across_datasets(entity_type)
-    aliases = get_aliases_matching_labels(entity_type, labels)
+@blueprint.route("/slice_labels")
+def slice_labels():
+    slice_type = request.args.get("slice_type")
+    labels = get_slice_labels_across_datasets(slice_type)
+    aliases = get_aliases_matching_labels(slice_type, labels)
 
     return make_gzipped_json_response({"labels": labels, "aliases": aliases})
 
 
-@blueprint.route("/entity_to_datasets_mapping")
-def entity_to_datasets_mapping():
-    entity_type = request.args.get("entity_type")
+@blueprint.route("/slice_labels_to_datasets_mapping")
+def slice_labels_to_datasets_mapping():
+    slice_type = request.args.get("slice_type")
 
-    mapping = get_entity_to_datasets_mapping(entity_type)
+    mapping = get_slice_labels_to_datasets_mapping(slice_type)
     mapping["aliases"] = get_aliases_matching_labels(
-        entity_type, mapping["entity_labels"].keys()
+        slice_type, mapping["slice_labels"].keys()
     )
 
     return make_gzipped_json_response(mapping)
 
 
-@blueprint.route("/entity_labels_of_dataset")
-def entity_labels_of_dataset():
-    entity_type = request.args.get("entity_type")
+@blueprint.route("/slice_labels_of_dataset")
+def slice_labels_of_dataset():
+    slice_type = request.args.get("slice_type")
     dataset_id = urllib.parse.unquote(request.args.get("dataset_id"))
 
-    is_transpose = entity_type == data_access.get_dataset_sample_type(dataset_id)
+    is_transpose = slice_type == data_access.get_dataset_sample_type(dataset_id)
 
     labels = get_vector_labels(dataset_id, is_transpose)
-    aliases = get_aliases_matching_labels(entity_type, labels)
+    aliases = get_aliases_matching_labels(slice_type, labels)
 
     return make_gzipped_json_response({"labels": labels, "aliases": aliases})
 
@@ -452,7 +452,7 @@ def get_labels_matching_context():
     context = inputs["context"]
     context_type = context["context_type"]
     context_evaluator = ContextEvaluator(context)
-    input_labels = get_entity_labels_across_datasets(context_type)
+    input_labels = get_slice_labels_across_datasets(context_type)
 
     labels_matching_context = []
     for label in input_labels:
@@ -462,18 +462,25 @@ def get_labels_matching_context():
     return make_gzipped_json_response(labels_matching_context)
 
 
+# TODO: Remove this endpoint. It's only used for one specific feature type
+# which is compound_experiment. The DE2 UI has a special case for that type
+# where it allows you to start by searching on a compound name alone. Then the
+# dataset name is used to resolve ambiguities in the relatively small number of
+# cases where there's more than one experiment per compound. In the future, we
+# can solve this a manner more consistent with other types by leveraging the
+# search indexer.
 @blueprint.route("/context/datasets", methods=["POST"])
 @csrf_protect.exempt
 def get_datasets_matching_context():
     """
-    Get the list of datasets which have data matching the given context.
-    For each dataset, include the full list of entity labels matching the context.
+    Get the list of datasets which have data matching the given context. For
+    each dataset, include the full list of slice labels matching the context.
     Returns a list of dictionaries like:
     [
       {
         "dataset_id"    : "Chronos_Combined"
         "dataset_label" : "CRISPR (DepMap Internal 23Q4+Score, Chronos)"
-        "entity_labels" : ["SOX10"]
+        "slice_labels" : ["SOX10"]
       },
       ...
     ]
@@ -496,7 +503,7 @@ def get_context_summary():
     context = inputs["context"]
     context_type = context["context_type"]
     context_evaluator = ContextEvaluator(context)
-    input_labels = get_entity_labels_across_datasets(context_type)
+    input_labels = get_slice_labels_across_datasets(context_type)
 
     labels_matching_context = []
     for label in input_labels:
@@ -527,7 +534,7 @@ def metadata_slices():
         For example "slice/mutations_prioritized/" is such a partial ID. The
         user is presented with a dropdown of genes and the chosen gene is
         concatenated to that slice ID prefix.
-    "entityTypeLabel" (string):
+    "sliceTypeLabel" (string):
         This is related to the above "isPartialSliceId" property. In the given
         example, this is used as a label to tell the user to that it's a gene
         that they need to select.
@@ -569,9 +576,7 @@ def dataset_descriptions():
         file, release = get_file_and_release_from_dataset(dataset)
 
         if file is None:
-            out.append(
-                {"dataset_id": dataset.id, "label": dataset.label,}
-            )
+            out.append({"dataset_id": dataset.id, "label": dataset.label})
         else:
             out.append(
                 {

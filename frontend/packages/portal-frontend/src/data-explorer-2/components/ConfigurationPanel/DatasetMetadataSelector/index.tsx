@@ -8,7 +8,7 @@ import {
 import {
   containsPartialSlice,
   getDatasetIdFromSlice,
-  getMetadataEntityTypeLabelFromSlice,
+  getMetadataSliceTypeLabelFromSlice,
   getOptions,
   sliceLabel,
   slicePrefix,
@@ -18,7 +18,7 @@ import styles from "src/data-explorer-2/styles/ConfigurationPanel.scss";
 interface Props {
   show: boolean;
   enable: boolean;
-  entity_type: string;
+  slice_type: string;
   value: string | null;
   onChange: (nextValue: string | null) => void;
 }
@@ -26,7 +26,7 @@ interface Props {
 function DatasetMetadataSelector({
   show,
   enable,
-  entity_type,
+  slice_type,
   value,
   onChange,
 }: Props) {
@@ -37,12 +37,12 @@ function DatasetMetadataSelector({
     (async () => {
       setIsLoading(true);
 
-      const slices = await fetchMetadataSlices(entity_type);
+      const slices = await fetchMetadataSlices(slice_type);
       setMetadataSlices(slices);
 
       setIsLoading(false);
     })();
-  }, [entity_type]);
+  }, [slice_type]);
 
   const hasDynamicLabel = containsPartialSlice(metadataSlices, value);
 
@@ -77,7 +77,7 @@ function DatasetMetadataSelector({
           isClearable={false}
           menuPortalTarget={null}
           dataset_id={getDatasetIdFromSlice(metadataSlices, value as string)}
-          entityTypeLabel={getMetadataEntityTypeLabelFromSlice(
+          sliceTypeLabel={getMetadataSliceTypeLabelFromSlice(
             metadataSlices,
             value as string
           )}

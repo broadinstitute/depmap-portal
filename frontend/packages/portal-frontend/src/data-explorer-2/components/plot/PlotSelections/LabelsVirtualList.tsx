@@ -9,7 +9,7 @@ const toHyperlink = (
   displayLabel: string
 ) => {
   // FIXME: The correlation heatmap is weird. The index_type does not actually
-  // reflect what you're selecting. We would need entity_type for that.
+  // reflect what you're selecting. We would need slice_type for that.
   if (plot_type === "correlation_heatmap") {
     return displayLabel;
   }

@@ -5,7 +5,7 @@ export { default as PlotConfigSelect } from "./src/components/PlotConfigSelect";
 export { default as renderConditionally } from "./src/utils/render-conditionally";
 export { default as extendReactSelect } from "./src/utils/extend-react-select";
 export { default as DimensionSelect } from "./src/components/DimensionSelect";
-export { default as EntitySelect } from "./src/components/DimensionSelect/EntitySelect";
+export { default as SliceLabelSelect } from "./src/components/DimensionSelect/SliceLabelSelect";
 
 export {
   fetchContextLabels,
@@ -17,9 +17,9 @@ export {
   fetchDatasetDetails,
   fetchDatasetsByIndexType,
   fetchDatasetsMatchingContextIncludingEntities,
-  fetchEntityLabels,
-  fetchEntityToDatasetsMapping,
-  fetchEntityLabelsOfDataset,
+  fetchSliceLabels,
+  fetchSliceLabelsToDatasetsMapping,
+  fetchSliceLabelsOfDataset,
   fetchGeneTeaEnrichment,
   fetchGeneTeaTermContext,
   fetchLinearRegression,
@@ -45,7 +45,7 @@ export {
 
 export {
   contextsMatch,
-  entityLabelFromContext,
+  sliceLabelFromContext,
   getContextHash,
   initializeDevContexts,
   isContextAll,

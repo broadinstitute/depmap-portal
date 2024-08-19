@@ -13,7 +13,7 @@ from depmap.data_access.models import MatrixDataset
 from depmap.settings.download_settings import get_download_list
 from depmap.vector_catalog.models import Serializer
 from depmap.data_explorer_2.datatypes import (
-    blocked_entity_types,
+    blocked_dimension_types,
     entity_aliases,
 )
 
@@ -33,10 +33,10 @@ def get_vector_labels(dataset_id: str, is_transpose: bool) -> list[str]:
     return data_access.get_dataset_feature_labels(dataset_id)
 
 
-def get_entity_labels_of_dataset(entity_type: str, dataset: MatrixDataset):
-    is_transpose = entity_type == dataset.sample_type
+def get_slice_labels_of_dataset(slice_type: str, dataset: MatrixDataset):
+    is_transpose = slice_type == dataset.sample_type
 
-    if is_transpose or entity_type == dataset.feature_type:
+    if is_transpose or slice_type == dataset.feature_type:
         labels = get_vector_labels(dataset.id, is_transpose)
         return set(labels)
 
@@ -176,7 +176,7 @@ def make_gzipped_json_response(obj):
 
 def get_compound_experiment_compound_name_series():
     dictionary = {}
-    labels = get_entity_labels_across_datasets("compound_experiment")
+    labels = get_slice_labels_across_datasets("compound_experiment")
 
     for label in labels:
         compound_name = re.search(r"(.*) ((?<!-)\(.*)", label).groups()[0]
@@ -187,7 +187,7 @@ def get_compound_experiment_compound_name_series():
 
 def get_compound_experiment_compound_instance_series():
     dictionary = {}
-    labels = get_entity_labels_across_datasets("compound_experiment")
+    labels = get_slice_labels_across_datasets("compound_experiment")
 
     for label in labels:
         compound_instance = re.search(r"(.*) ((?<!-)\(.*)", label).groups()[1]
@@ -199,31 +199,31 @@ def get_compound_experiment_compound_instance_series():
 def get_mutations_prioritized_series(dataset_id: str, feature: str):
     series = data_access.get_row_of_values(dataset_id=dataset_id, feature=feature)
 
-    for entity_label, value in series.items():
+    for slice_label, value in series.items():
         # We throw out "Other" values because Data Explorer 2 labels NA values
         # as "Other", sometimes leading to two different types of "Other" being
         # displayed at once. As far as I can tell, these should actually be
         # considered NAs (i.e. points for which we have no data) and not "other
         # unspecified mutations."
         if value == "Other":
-            series[entity_label] = None
+            series[slice_label] = None
 
     return series
 
 
-def get_entity_labels_across_datasets(entity_type):
+def get_slice_labels_across_datasets(slice_type):
     all_labels = set()
 
     for dataset in get_all_supported_continuous_datasets():
-        labels = get_entity_labels_of_dataset(entity_type, dataset)
+        labels = get_slice_labels_of_dataset(slice_type, dataset)
         all_labels = all_labels.union(labels)
 
     return sorted(list(all_labels))
 
 
-def get_entity_to_datasets_mapping(entity_type: str):
+def get_slice_labels_to_datasets_mapping(slice_type: str):
     """
-    Takes an `entity_type` and returns a dictionary like:
+    Takes a `slice_type` and returns a dictionary like:
     {
       "dataset_ids": [
         "copy_number_absolute",
@@ -241,7 +241,7 @@ def get_entity_to_datasets_mapping(entity_type: str):
       # Each label maps to a list of integers that correspond to indices into
       # the "dataset_ids" array. This can be used to to determine which
       # datasets a given label can be found in.
-      "entity_labels": {
+      "slice_labels": {
         "ANOS1":  [1, 2],
         "HNF1B":  [0, 1, 2],
         "KDM7A":  [0, 1, 2],
@@ -252,7 +252,7 @@ def get_entity_to_datasets_mapping(entity_type: str):
         "SWI5":   [0, 1, 2]
       },
 
-      # Same format as "entity_labels" above. Answers the question
+      # Same format as "slice_labels" above. Answers the question
       # "which datasets are part of a given data type?"
       "data_types": {
         "CN": [0],
@@ -275,7 +275,7 @@ def get_entity_to_datasets_mapping(entity_type: str):
     dataset_labels = []
 
     for dataset in get_all_supported_continuous_datasets():
-        if entity_type not in (dataset.feature_type, dataset.sample_type):
+        if slice_type not in (dataset.feature_type, dataset.sample_type):
             continue
 
         index = len(dataset_ids)
@@ -284,27 +284,27 @@ def get_entity_to_datasets_mapping(entity_type: str):
         data_types[dataset.data_type].append(index)
         units[dataset.units].append(index)
 
-        for label in get_entity_labels_of_dataset(entity_type, dataset):
+        for label in get_slice_labels_of_dataset(slice_type, dataset):
             all_labels[label].append(index)
 
     sorted_labels = {key: all_labels[key] for key in sorted(all_labels.keys())}
 
     return {
         "units": units,
-        "entity_labels": sorted_labels,
+        "slice_labels": sorted_labels,
         "data_types": data_types,
         "dataset_ids": dataset_ids,
         "dataset_labels": dataset_labels,
     }
 
 
-def get_datasets_from_entity_type(entity_type: str) -> list[MatrixDataset]:
+def get_datasets_from_slice_type(slice_type: str) -> list[MatrixDataset]:
     datasets = []
 
     for dataset in get_all_supported_continuous_datasets():
-        if entity_type == dataset.feature_type:
+        if slice_type == dataset.feature_type:
             datasets.append(dataset)
-        elif entity_type == dataset.sample_type:
+        elif slice_type == dataset.sample_type:
             datasets.append(dataset)
 
     return datasets
@@ -319,7 +319,9 @@ def get_all_supported_continuous_datasets() -> list[MatrixDataset]:
             continue
         if dataset.feature_type is None:
             continue
-        if dataset.feature_type in blocked_entity_types:
+        if dataset.feature_type in blocked_dimension_types:
+            continue
+        if dataset.sample_type in blocked_dimension_types:
             continue
 
         if dataset.data_type is None:
@@ -352,11 +354,11 @@ def get_file_and_release_from_dataset(dataset: MatrixDataset):
     return None, None
 
 
-def get_aliases_matching_labels(entity_type, labels):
+def get_aliases_matching_labels(slice_type, labels):
     aliases = []
 
-    if entity_type in entity_aliases:
-        for alias in entity_aliases[entity_type]:
+    if slice_type in entity_aliases:
+        for alias in entity_aliases[slice_type]:
             values = []
             values_by_label = slice_to_dict(alias["slice_id"])
 
@@ -374,24 +376,24 @@ def get_aliases_matching_labels(entity_type, labels):
     return aliases
 
 
-def pluralize(entity_type: str):
-    return re.sub(r"y$", "ie", entity_type) + "s"
+def pluralize(slice_type: str):
+    return re.sub(r"y$", "ie", slice_type) + "s"
 
 
-def to_display_name(entity_type: str):
-    if entity_type == "depmap_model":
+def to_display_name(slice_type: str):
+    if slice_type == "depmap_model":
         return "model"
 
-    if entity_type == "compound_experiment":
+    if slice_type == "compound_experiment":
         return "compound"
 
-    if entity_type == "msigdb_gene_set":
+    if slice_type == "msigdb_gene_set":
         return "MSigDB gene set"
 
-    if entity_type == "other":
+    if slice_type == "other":
         return "point"
 
-    return re.sub(r"_", " ", entity_type)
+    return re.sub(r"_", " ", slice_type)
 
 
 def get_union_of_index_labels(index_type, dataset_ids):
@@ -399,16 +401,16 @@ def get_union_of_index_labels(index_type, dataset_ids):
     union_of_labels = set()
 
     for dataset_id in dataset_ids:
-        entity_type = data_access.get_dataset_feature_type(dataset_id)
+        slice_type = data_access.get_dataset_feature_type(dataset_id)
         sample_type = data_access.get_dataset_sample_type(dataset_id)
 
-        if index_type not in (sample_type, entity_type):
+        if index_type not in (sample_type, slice_type):
             raise ValueError(
                 f"Dataset '{dataset_id}' is not indexable by '{index_type}'! "
-                f"Its entity_type is '{entity_type}'."
+                f"Its slice_type is '{slice_type}'."
             )
 
-        is_transpose = entity_type == index_type
+        is_transpose = slice_type == index_type
         labels = get_vector_labels(dataset_id, not is_transpose)
         union_of_labels = union_of_labels.union(labels)
 

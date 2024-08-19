@@ -2,20 +2,20 @@ import {
   DataExplorerAggregation,
   DataExplorerDatasetDescriptor,
 } from "@depmap/types";
-import { contextsMatch, entityLabelFromContext } from "../../../utils/context";
+import { contextsMatch, sliceLabelFromContext } from "../../../utils/context";
 import {
   computeOptions,
   filterDatasets,
   findHighestPriorityDatasetId,
   getEnabledDatasetIds,
 } from "./utils";
-import { Changes, EntityToDatasetsMapping, State } from "./types";
-import { MismatchedEntityTypeError, UnknownDatasetError } from "./errors";
+import { Changes, SliceLabelsToDatasetsMapping, State } from "./types";
+import { MismatchedSliceTypeError, UnknownDatasetError } from "./errors";
 
 interface Props {
   changes: Changes;
   datasets: DataExplorerDatasetDescriptor[];
-  entityMap: EntityToDatasetsMapping;
+  sliceMap: SliceLabelsToDatasetsMapping;
   contextLabels: Set<string>;
   prev: State;
 }
@@ -23,14 +23,14 @@ interface Props {
 export default function resolveNextState({
   changes,
   datasets,
-  entityMap,
+  sliceMap,
   contextLabels,
   prev,
 }: Props) {
   const pd = prev.dimension;
   let dataType = prev.dataType;
   let units = prev.units;
-  let entity_type = pd.entity_type;
+  let slice_type = pd.slice_type;
   let context = pd.context;
   let dataset_id = pd.dataset_id;
   let axis_type = pd.axis_type;
@@ -42,7 +42,7 @@ export default function resolveNextState({
 
   if ("index_type" in changes && !dataset_id) {
     dataType = null;
-    entity_type = undefined;
+    slice_type = undefined;
     context = undefined;
 
     // FIXME: I think maybe none of this needed anymore.
@@ -52,14 +52,14 @@ export default function resolveNextState({
         .map((d) => d.data_type)
     );
 
-    const entityTypes = new Set(
+    const sliceTypes = new Set(
       datasets
         .filter((d) => d.index_type === changes.index_type)
-        .map((d) => d.entity_type)
+        .map((d) => d.slice_type)
     );
 
-    if (entityTypes.size === 1) {
-      entity_type = [...entityTypes][0];
+    if (sliceTypes.size === 1) {
+      slice_type = [...sliceTypes][0];
     }
 
     if (dataTypes.size === 1) {
@@ -75,30 +75,30 @@ export default function resolveNextState({
       dataType === null &&
       prev.dataTypeOptions.filter((o) => !o.isDisabled).length === 1
     ) {
-      entity_type = undefined;
+      slice_type = undefined;
       dataset_id = undefined;
       context = undefined;
       units = null;
     } else {
-      const entityTypes = new Set(
-        filterDatasets(datasets, { dataType }).map((d) => d.entity_type)
+      const sliceTypes = new Set(
+        filterDatasets(datasets, { dataType }).map((d) => d.slice_type)
       );
 
-      if (!entity_type && entityTypes.size === 1) {
-        entity_type = [...entityTypes][0];
+      if (!slice_type && sliceTypes.size === 1) {
+        slice_type = [...sliceTypes][0];
       }
     }
   }
 
-  if ("entity_type" in changes && entity_type !== changes.entity_type) {
-    entity_type = changes.entity_type || undefined;
+  if ("slice_type" in changes && slice_type !== changes.slice_type) {
+    slice_type = changes.slice_type || undefined;
 
-    if (entity_type !== context?.context_type) {
+    if (slice_type !== context?.context_type) {
       context = undefined;
     }
 
     const dataTypes = new Set(
-      filterDatasets(datasets, { entity_type }).map((d) => d.data_type)
+      filterDatasets(datasets, { slice_type }).map((d) => d.data_type)
     );
 
     if (!dataType && dataTypes.size === 1) {
@@ -106,11 +106,11 @@ export default function resolveNextState({
     }
   }
 
-  if (dataType !== prev.dataType || entity_type !== pd.entity_type) {
+  if (dataType !== prev.dataType || slice_type !== pd.slice_type) {
     units = null;
     dataset_id = undefined;
 
-    const ds = filterDatasets(datasets, { entity_type, dataType });
+    const ds = filterDatasets(datasets, { slice_type, dataType });
 
     if (ds.length === 1) {
       dataset_id = ds[0].dataset_id;
@@ -120,7 +120,7 @@ export default function resolveNextState({
   if ("axis_type" in changes && axis_type !== changes.axis_type) {
     axis_type = changes.axis_type || undefined;
     context = undefined;
-    aggregation = axis_type === "entity" ? "first" : "mean";
+    aggregation = axis_type === "raw_slice" ? "first" : "mean";
   }
 
   if (
@@ -129,17 +129,17 @@ export default function resolveNextState({
   ) {
     context = changes.context || undefined;
 
-    // See if we can infer a Data Type from an entity label alone.
-    if (!dataType && axis_type === "entity") {
-      const selectedLabel = entityLabelFromContext(context);
+    // See if we can infer a Data Type from a slice label alone.
+    if (!dataType && axis_type === "raw_slice") {
+      const selectedLabel = sliceLabelFromContext(context);
 
       const datasetIdsWithSelectedLabel = new Set(
-        entityMap.dataset_ids.filter((id, index) => {
+        sliceMap.dataset_ids.filter((id, index) => {
           if (!selectedLabel) {
             return false;
           }
 
-          return entityMap.entity_labels[selectedLabel]?.includes(index);
+          return sliceMap.slice_labels[selectedLabel]?.includes(index);
         })
       );
 
@@ -160,7 +160,7 @@ export default function resolveNextState({
     const dataset = datasets.find((d) => d.dataset_id === dataset_id);
 
     if (dataset) {
-      entity_type = dataset.entity_type;
+      slice_type = dataset.slice_type;
       dataType = dataset.data_type;
     }
   }
@@ -182,18 +182,18 @@ export default function resolveNextState({
       throw new UnknownDatasetError(`Unknown dataset_id "${dataset_id}"`);
     }
 
-    if (entity_type && entity_type !== dataset.entity_type) {
-      throw new MismatchedEntityTypeError(
-        `entity_type "${entity_type}" does not match dataset_id "${dataset_id}"`
+    if (slice_type && slice_type !== dataset.slice_type) {
+      throw new MismatchedSliceTypeError(
+        `slice_type "${slice_type}" does not match dataset_id "${dataset_id}"`
       );
     }
   }
 
-  const hasAllRequiredProps = Boolean(dataType && entity_type && context);
+  const hasAllRequiredProps = Boolean(dataType && slice_type && context);
 
   const requiredPropChanged =
     dataType !== prev.dataType ||
-    entity_type !== pd.entity_type ||
+    slice_type !== pd.slice_type ||
     context !== pd.context;
 
   const unitsChanged = units && units !== prev.units;
@@ -201,10 +201,10 @@ export default function resolveNextState({
   if (hasAllRequiredProps && (requiredPropChanged || unitsChanged)) {
     const enabledDatasetIds = getEnabledDatasetIds(
       datasets,
-      entityMap,
-      new Set(Object.keys(entityMap.entity_labels)),
+      sliceMap,
+      new Set(Object.keys(sliceMap.slice_labels)),
       dataType,
-      entity_type,
+      slice_type,
       axis_type,
       context,
       units
@@ -217,7 +217,7 @@ export default function resolveNextState({
         dataset_id = findHighestPriorityDatasetId(
           datasets,
           enabledDatasetIds,
-          entity_type,
+          slice_type,
           dataType,
           units
         );
@@ -225,10 +225,10 @@ export default function resolveNextState({
     }
   }
 
-  // Initalize `dataType`  and `units` if we already know the `dataset_id`.
-  // This needs to happen last, or it will trigger an auto-select which could
-  // obscure an exceptional condition where an entity is now missing from the
-  // selected dataset.
+  // Initalize `dataType` and `units` if we already know the `dataset_id`. This
+  // needs to happen last, or it will trigger an auto-select which could
+  // obscure an exceptional condition where a slice label is now missing from
+  // the selected dataset.
   if (!dataType && dataset_id) {
     const dataset = datasets.find((d) => d.dataset_id === dataset_id);
 
@@ -240,7 +240,7 @@ export default function resolveNextState({
   }
 
   let dirty =
-    entity_type !== pd.entity_type ||
+    slice_type !== pd.slice_type ||
     dataset_id !== pd.dataset_id ||
     context !== pd.context ||
     axis_type !== pd.axis_type ||
@@ -248,11 +248,11 @@ export default function resolveNextState({
 
   const options = computeOptions(
     datasets,
-    entityMap,
+    sliceMap,
     contextLabels,
     dataType,
     units,
-    entity_type,
+    slice_type,
     axis_type,
     context
   );
@@ -262,8 +262,8 @@ export default function resolveNextState({
     dirty = true;
   }
 
-  if (!entity_type && options.entityTypeOptions.length === 1) {
-    entity_type = options.entityTypeOptions[0].value;
+  if (!slice_type && options.sliceTypeOptions.length === 1) {
+    slice_type = options.sliceTypeOptions[0].value;
     dirty = true;
   }
 
@@ -284,7 +284,7 @@ export default function resolveNextState({
           axis_type,
           context,
           dataset_id,
-          entity_type,
+          slice_type,
           aggregation,
         }
       : prev.dimension,

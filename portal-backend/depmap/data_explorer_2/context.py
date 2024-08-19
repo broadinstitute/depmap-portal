@@ -37,19 +37,19 @@ class ContextEvaluator:
         self.expr = _encode_dots_in_vars(context["expr"])
         self.cache = {}
 
-    def is_match(self, entity_label):
+    def is_match(self, slice_label):
         """
-        This evaluates `expr` against a given `entity_label`. It returns
-        True/False depending on if `entity_label` satifies the conditions of
+        This evaluates `expr` against a given `slice_label`. It returns
+        True/False depending on if `slice_label` satifies the conditions of
         the expression, including any variables ("var" subexpressions) which
         are bound by using a magic dict that does lookups lazily.
         """
-        data = _LazyContextDict(self.context_type, entity_label, self.cache)
+        data = _LazyContextDict(self.context_type, slice_label, self.cache)
 
         try:
             return jsonLogic(self.expr, data)
         except (TypeError, ValueError) as e:
-            print("Exception evaluating", self.expr, "against", entity_label)
+            print("Exception evaluating", self.expr, "against", slice_label)
             print(e)
             return False
 
@@ -59,21 +59,23 @@ class ContextEvaluator:
 # But we don't need to "perfectly" override it; just well enough to trick the
 # JsonLogic library.
 class _LazyContextDict(dict):
-    def __init__(self, context_type, entity_label, cache):
+    def __init__(self, context_type, slice_label, cache):
         self.context_type = context_type
-        self.entity_label = entity_label
+        self.slice_label = slice_label
         self.cache = cache
 
     def __getitem__(self, prop):
         # Handle trivial case where we're just looking up an entity's own label
-        if prop == "entity_label":
-            return self.entity_label
+        # (this property was renamed from "entity_label" to "slice_label" so we
+        # check for both in order to maintain backward compatibility).
+        if prop in ("entity_label", "slice_label"):
+            return self.slice_label
 
         if prop.startswith("slice/"):
             if prop not in self.cache:
                 self.cache[prop] = slice_to_dict(prop)
 
-            return self.cache[prop][self.entity_label]
+            return self.cache[prop][self.slice_label]
 
         raise LookupError(
             f"Unable to find context property '{prop}'. Are you sure a corresponding "

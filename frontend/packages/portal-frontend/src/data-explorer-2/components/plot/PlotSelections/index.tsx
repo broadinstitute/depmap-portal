@@ -118,7 +118,7 @@ function PlotSelections({
           <VisualizeButton
             numSelected={labels.length}
             onClickVisualizeSelected={onClickVisualizeSelected}
-            isCustomData={data?.dimensions?.x.entity_type === "custom"}
+            isCustomData={data?.dimensions?.x.slice_type === "custom"}
           />
           <Button onClick={handleCopy} disabled={labels.length < 1}>
             Copy

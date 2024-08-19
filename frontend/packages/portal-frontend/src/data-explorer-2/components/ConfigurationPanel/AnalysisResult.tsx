@@ -31,7 +31,7 @@ const labelFromDimension = (dimension: DataExplorerPlotConfigDimension) => {
 function AnalysisResult({ plot, dispatch }: Props) {
   const [taskId, setTaskId] = useState<string | null>(null);
   const [result, setResult] = useState<ComputeResponseResult | null>(null);
-  const [entityType, setEntityType] = useState<string | null>(null);
+  const [sliceType, setSliceType] = useState<string | null>(null);
   const [status, setStatus] = useState<"loading" | "loaded" | "error">(
     "loading"
   );
@@ -49,7 +49,7 @@ function AnalysisResult({ plot, dispatch }: Props) {
   useEffect(() => {
     if (!taskId) {
       setResult(null);
-      setEntityType(null);
+      setSliceType(null);
       setStatus("loaded");
       return;
     }
@@ -61,7 +61,8 @@ function AnalysisResult({ plot, dispatch }: Props) {
         const analysisResult = await fetchAnalysisResult(taskId);
 
         setResult(analysisResult);
-        setEntityType(analysisResult?.entityType || "custom");
+        // IMPORTANT! Keep this as `entityType`
+        setSliceType(analysisResult?.entityType || "custom");
         setStatus("loaded");
       } catch (e) {
         setStatus("error");
@@ -130,7 +131,7 @@ function AnalysisResult({ plot, dispatch }: Props) {
                   dimensionKey
                 ] as DataExplorerPlotConfigDimension
               )}
-              onLabelClick={(entity_label) => {
+              onLabelClick={(slice_label) => {
                 let plot_type =
                   dimensionKey === "y" ? "scatter" : plot.plot_type;
 
@@ -150,9 +151,9 @@ function AnalysisResult({ plot, dispatch }: Props) {
                 );
 
                 const context = {
-                  name: entity_label,
-                  context_type: entityType,
-                  expr: { "==": [{ var: "entity_label" }, entity_label] },
+                  name: slice_label,
+                  context_type: sliceType,
+                  expr: { "==": [{ var: "slice_label" }, slice_label] },
                 };
 
                 dispatch({
@@ -164,9 +165,9 @@ function AnalysisResult({ plot, dispatch }: Props) {
                     dimensions: {
                       ...plot.dimensions,
                       [dimensionKey]: {
-                        axis_type: "entity",
+                        axis_type: "raw_slice",
                         aggregation: "first",
-                        entity_type: entityType,
+                        slice_type: sliceType,
                         dataset_id,
                         context,
                       },

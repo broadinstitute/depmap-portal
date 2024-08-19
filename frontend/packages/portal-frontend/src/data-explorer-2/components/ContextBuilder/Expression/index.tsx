@@ -23,7 +23,7 @@ interface ExpressionProps {
   expr: any;
   path: (string | number)[];
   dispatch: React.Dispatch<ContextBuilderReducerAction>;
-  entity_type: string;
+  slice_type: string;
   shouldShowValidation: boolean;
   isLastOfList?: boolean;
   editInCellLineSelector: (
@@ -36,12 +36,12 @@ function Expression({
   expr,
   path,
   dispatch,
-  entity_type,
+  slice_type,
   shouldShowValidation,
   isLastOfList = false,
   editInCellLineSelector,
 }: ExpressionProps): React.ReactElement {
-  const result = useEvaluatedExpressionResult(entity_type, expr);
+  const result = useEvaluatedExpressionResult(slice_type, expr);
 
   if (isBoolean(expr)) {
     return (
@@ -49,7 +49,7 @@ function Expression({
         expr={expr}
         path={path}
         dispatch={dispatch}
-        entity_type={entity_type}
+        slice_type={slice_type}
         shouldShowValidation={shouldShowValidation}
         result={result}
         editInCellLineSelector={editInCellLineSelector}
@@ -67,17 +67,17 @@ function Expression({
             expr={expr}
             path={path}
             dispatch={dispatch}
-            entity_type={entity_type}
+            slice_type={slice_type}
             shouldShowValidation={shouldShowValidation}
           />
           <div>
             <div>
-              {isEditableAsCellLineList(entity_type, expr) && (
+              {isEditableAsCellLineList(slice_type, expr) && (
                 <EditInCellLineSelectorButton
                   onClick={() => {
                     const op = getOperator(expr);
                     const shouldUseModelNames =
-                      expr[op][0].var !== "entity_label";
+                      expr[op][0].var !== "slice_label";
 
                     editInCellLineSelector(
                       getSelectedCellLines(expr),

@@ -57,7 +57,7 @@ function TooManyEntitiesWarning({
 
   const dimension = data.dimensions.x as
     | {
-        entity_type: string;
+        slice_type: string;
         context_size?: number; // HACK: Undocumented property
       }
     | undefined;
@@ -66,7 +66,7 @@ function TooManyEntitiesWarning({
     return null;
   }
 
-  const entitiesLabel = pluralize(getDimensionTypeLabel(dimension.entity_type));
+  const entitiesLabel = pluralize(getDimensionTypeLabel(dimension.slice_type));
 
   return (
     <div style={{ maxWidth: 600, padding: 20 }}>
@@ -234,7 +234,7 @@ function DataExplorerCorrelationHeatmap({
             }}
             onClickSaveSelectionAsContext={() => {
               onClickSaveSelectionAsContext(
-                plotConfig.dimensions.x!.entity_type,
+                plotConfig.dimensions.x!.slice_type,
                 selectedLabels as Set<string>
               );
             }}

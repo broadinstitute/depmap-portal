@@ -11,13 +11,13 @@ import {
 } from "src/data-explorer-2/components/ContextBuilder/contextBuilderUtils";
 import { ContextSummaryResponse } from "@depmap/data-explorer-2/src/api";
 
-export const isEditableAsCellLineList = (entity_type: string, expr: any) => {
+export const isEditableAsCellLineList = (slice_type: string, expr: any) => {
   const op = getOperator(expr);
 
   return (
     isListOperator(op) &&
-    entity_type === "depmap_model" &&
-    ["entity_label", "slice/cell_line_display_name/all/label"].includes(
+    slice_type === "depmap_model" &&
+    ["slice_label", "slice/cell_line_display_name/all/label"].includes(
       expr[op][0]?.var
     )
   );
@@ -28,10 +28,7 @@ export const getSelectedCellLines = (expr: any) => {
   return expr[op]?.[1] || [];
 };
 
-export const useEvaluatedExpressionResult = (
-  entity_type: string,
-  expr: any
-) => {
+export const useEvaluatedExpressionResult = (slice_type: string, expr: any) => {
   const [result, setResult] = useState<ContextSummaryResponse | null>(null);
 
   // TODO: re-implement this by calling the other endpoint
@@ -39,7 +36,7 @@ export const useEvaluatedExpressionResult = (
     (async () => {
       if (isCompleteExpression(expr)) {
         const fetchedResult = await fetchContextSummary({
-          context_type: entity_type,
+          context_type: slice_type,
           expr: normalizeExpr(expr),
         });
 
@@ -48,7 +45,7 @@ export const useEvaluatedExpressionResult = (
         setResult(null);
       }
     })();
-  }, [expr, entity_type]);
+  }, [expr, slice_type]);
 
   return result;
 };

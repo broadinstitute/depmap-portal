@@ -38,9 +38,9 @@ function ConfigurationPanel({
       plot.dimensions?.x &&
       plot.dimensions.x.context &&
       plot.dimensions.x.dataset_id &&
-      plot.dimensions.x.axis_type === "entity" &&
+      plot.dimensions.x.axis_type === "raw_slice" &&
       ["gene", "compound_experiment"].includes(
-        plot.dimensions.x.entity_type as string
+        plot.dimensions.x.slice_type as string
       )
   );
 

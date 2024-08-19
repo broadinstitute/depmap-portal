@@ -33,7 +33,7 @@ export default function useClickHandlers(
     const context: DataExplorerContext = {
       name: defaultContextName(selectedLabels.size),
       context_type,
-      expr: { in: [{ var: "entity_label" }, labels] },
+      expr: { in: [{ var: "slice_label" }, labels] },
     };
 
     onClickSaveAsContext(context, null);
@@ -66,7 +66,7 @@ export default function useClickHandlers(
       const nextPlot = omit(
         {
           ...plot,
-          color_by: "context" as const,
+          color_by: "aggregated_slice" as const,
           filters: { color1: context },
           dimensions: omit(plot.dimensions, "color"),
         },

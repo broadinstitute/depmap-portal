@@ -35,11 +35,11 @@ export type PlotConfigReducerAction =
   | { type: "select_use_clustering"; payload: boolean }
   | { type: "select_show_regression_line"; payload: boolean }
   | {
-      type: "select_scatter_y_entity";
+      type: "select_scatter_y_slice";
       payload: {
         dataset_id: string;
-        entity_label: string;
-        entity_type: string;
+        slice_label: string;
+        slice_type: string;
       };
     };
 
@@ -135,16 +135,20 @@ function plotConfigReducer(
       if (dx.aggregation === "correlation") {
         dx = {
           ...dx,
-          aggregation: dx.axis_type === "entity" ? "first" : "mean",
+          aggregation: dx.axis_type === "raw_slice" ? "first" : "mean",
         };
       }
 
       if (nextPlotType === "correlation_heatmap") {
-        if (dx.axis_type !== "context" && dx.context) {
+        if (dx.axis_type !== "aggregated_slice" && dx.context) {
           dx = { ...dx, context: undefined };
         }
 
-        dx = { ...dx, axis_type: "context", aggregation: "correlation" };
+        dx = {
+          ...dx,
+          axis_type: "aggregated_slice",
+          aggregation: "correlation",
+        };
       }
 
       let nextPlot: PartialDataExplorerPlotConfig = {
@@ -166,8 +170,8 @@ function plotConfigReducer(
 
         // No support for custom data yet (there's no such thing as a "custom
         // context").
-        if (dx.entity_type === "custom") {
-          nextPlot.dimensions!.x = omit(dx, "entity_type");
+        if (dx.slice_type === "custom") {
+          nextPlot.dimensions!.x = omit(dx, "slice_type");
         }
       } else if (plot.dimensions?.color) {
         nextPlot.dimensions!.color = plot.dimensions.color;
@@ -175,8 +179,8 @@ function plotConfigReducer(
 
       if (nextPlotType === "scatter" && plot.index_type !== "depmap_model") {
         nextPlot.dimensions!.y = {
-          entity_type: "depmap_model",
-          axis_type: "entity",
+          slice_type: "depmap_model",
+          axis_type: "raw_slice",
         };
       }
 
@@ -214,7 +218,9 @@ function plotConfigReducer(
       Object.keys(nextPlot.dimensions).forEach((key) => {
         nextPlot.dimensions[key as "x" | "y"] = {
           axis_type:
-            plot.plot_type === "correlation_heatmap" ? "context" : "entity",
+            plot.plot_type === "correlation_heatmap"
+              ? "aggregated_slice"
+              : "raw_slice",
         };
       });
 
@@ -351,8 +357,8 @@ function plotConfigReducer(
       });
     }
 
-    case "select_scatter_y_entity": {
-      const { dataset_id, entity_label, entity_type } = action.payload;
+    case "select_scatter_y_slice": {
+      const { dataset_id, slice_label, slice_type } = action.payload;
 
       return {
         ...plot,
@@ -360,14 +366,14 @@ function plotConfigReducer(
         dimensions: {
           ...plot.dimensions,
           y: {
-            axis_type: "entity",
+            axis_type: "raw_slice",
             aggregation: "first",
-            entity_type,
+            slice_type,
             dataset_id,
             context: {
-              name: entity_label,
-              context_type: entity_type,
-              expr: { "==": [{ var: "entity_label" }, entity_label] },
+              name: slice_label,
+              context_type: slice_type,
+              expr: { "==": [{ var: "slice_label" }, slice_label] },
             },
           },
         },

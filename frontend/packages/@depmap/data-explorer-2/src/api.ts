@@ -245,7 +245,7 @@ export async function fetchContextLabels(
 export interface ContextDatasetsResponse {
   dataset_id: string;
   dataset_label: string;
-  entity_labels: string[];
+  slice_labels: string[];
 }
 
 export function fetchDatasetsMatchingContextIncludingEntities(
@@ -271,8 +271,8 @@ export async function fetchMetadataColumn(
   return postJson("/get_metadata", { metadata: { slice_id } });
 }
 
-export function fetchEntityLabels(
-  entity_type: string
+export function fetchSliceLabels(
+  slice_type: string
 ): Promise<{
   labels: string[];
   aliases: {
@@ -281,36 +281,36 @@ export function fetchEntityLabels(
     values: string[];
   }[];
 }> {
-  const query = qs.stringify({ entity_type });
+  const query = qs.stringify({ slice_type });
 
-  return fetchJson(`/entity_labels?${query}`);
+  return fetchJson(`/slice_labels?${query}`);
 }
 
 type DataType = string;
 type DatasetIndex = number;
-type EntityLabel = string;
+type SliceLabel = string;
 
-export function fetchEntityToDatasetsMapping(
-  entity_type: string
+export function fetchSliceLabelsToDatasetsMapping(
+  slice_type: string
 ): Promise<{
   dataset_ids: string[];
   dataset_labels: string[];
   units: Record<string, DatasetIndex[]>;
   data_types: Record<DataType, DatasetIndex[]>;
-  entity_labels: Record<EntityLabel, DatasetIndex[]>;
+  slice_labels: Record<SliceLabel, DatasetIndex[]>;
   aliases: {
     label: string;
     slice_id: string;
     values: string[];
   }[];
 }> {
-  const query = qs.stringify({ entity_type });
+  const query = qs.stringify({ slice_type });
 
-  return fetchJson(`/entity_to_datasets_mapping?${query}`);
+  return fetchJson(`/slice_labels_to_datasets_mapping?${query}`);
 }
 
-export function fetchEntityLabelsOfDataset(
-  entity_type: string | null,
+export function fetchSliceLabelsOfDataset(
+  slice_type: string | null,
   dataset_id: string
 ): Promise<{
   labels: string[];
@@ -320,9 +320,9 @@ export function fetchEntityLabelsOfDataset(
     values: string[];
   }[];
 }> {
-  const query = qs.stringify({ entity_type, dataset_id });
+  const query = qs.stringify({ slice_type, dataset_id });
 
-  return fetchJson(`/entity_labels_of_dataset?${query}`);
+  return fetchJson(`/slice_labels_of_dataset?${query}`);
 }
 
 export function fetchUniqueValuesOrRange(slice_id: string) {
@@ -490,7 +490,7 @@ export async function fetchAnalysisResult(
 
 export async function fetchAssociations(
   dataset_id: string,
-  entity_label: string
+  slice_label: string
 ): Promise<{
   associatedDatasets: string[];
   datasetLabel: string;
@@ -502,7 +502,7 @@ export async function fetchAssociations(
     other_slice_id: string;
   }[];
 }> {
-  const sliceId = `slice/${dataset_id}/${entity_label}/label`;
+  const sliceId = `slice/${dataset_id}/${slice_label}/label`;
   const query = `x=${encodeURIComponent(sliceId)}`;
 
   return fetchJson(`/../interactive/api/associations?${query}`);
@@ -541,7 +541,7 @@ export type MetadataSlices = Record<
     valueType: "categorical" | "list_strings";
     isHighCardinality?: boolean;
     isPartialSliceId?: boolean;
-    entityTypeLabel?: string;
+    sliceTypeLabel?: string;
   }
 >;
 
@@ -667,7 +667,11 @@ export async function fetchContext(hash: string): Promise<DataExplorerContext> {
   }
 
   const body = await response.json();
-  const context = JSON.parse(body.value);
+  const json = body.value
+    // This property has been renamed in newer
+    // contexts so update any legacy ones.
+    .replace(/"entity_label"/g, '"slice_label"');
+  const context = JSON.parse(json);
 
   if (!cache) {
     fallbackInMemoryCache[hash] = context;

@@ -46,19 +46,19 @@ const makeFeatureParser = (dimensionKey: DimensionKey) => (
     (d) => d.dataset_id === dataset_id
   );
 
-  const entity_type = dataset ? dataset.entity_type : "custom";
+  const slice_type = dataset ? dataset.slice_type : "custom";
 
   p.dimensions = p.dimensions || {};
   p.dimensions[dimensionKey] = p.dimensions[dimensionKey] || {};
 
   p.dimensions[dimensionKey]!.dataset_id = dataset_id;
-  p.dimensions[dimensionKey]!.axis_type = "entity";
-  p.dimensions[dimensionKey]!.entity_type = entity_type;
+  p.dimensions[dimensionKey]!.axis_type = "raw_slice";
+  p.dimensions[dimensionKey]!.slice_type = slice_type;
   p.dimensions[dimensionKey]!.aggregation = "first";
   p.dimensions[dimensionKey]!.context = {
     name: feature,
-    context_type: entity_type,
-    expr: { "==": [{ var: "entity_label" }, feature] } as object,
+    context_type: slice_type,
+    expr: { "==": [{ var: "slice_label" }, feature] } as object,
   };
 
   return p;
@@ -88,8 +88,8 @@ const makeContextParser = (dimensionKey: DimensionKey) => (
   p.dimensions = p.dimensions || {};
   p.dimensions[dimensionKey] = p.dimensions[dimensionKey] || {};
 
-  p.dimensions[dimensionKey]!.axis_type = "context";
-  p.dimensions[dimensionKey]!.entity_type = context.context_type;
+  p.dimensions[dimensionKey]!.axis_type = "aggregated_slice";
+  p.dimensions[dimensionKey]!.slice_type = context.context_type;
   p.dimensions[dimensionKey]!.context = context;
 
   // TODO: Allow this default to be overriden.
@@ -181,21 +181,19 @@ const inferIndexType = (
   datasets: Datasets
 ) => {
   const dataset_id = partialPlot.dimensions?.x?.dataset_id;
-  const entity_type = partialPlot.dimensions?.x?.entity_type;
+  const slice_type = partialPlot.dimensions?.x?.slice_type;
 
-  if (!dataset_id || !entity_type) {
+  if (!dataset_id || !slice_type) {
     return null;
   }
 
-  if (entity_type === "custom") {
+  if (slice_type === "custom") {
     return "depmap_model";
   }
 
-  const dataset = datasets[entity_type].find(
-    (d) => d.dataset_id === dataset_id
-  );
+  const dataset = datasets[slice_type].find((d) => d.dataset_id === dataset_id);
 
-  return dataset?.entity_type || null;
+  return dataset?.slice_type || null;
 };
 
 const inferPlotType = (partialPlot: PartialDataExplorerPlotConfig) => {
@@ -210,7 +208,7 @@ const inferPlotType = (partialPlot: PartialDataExplorerPlotConfig) => {
 
 const inferColorBy = (partialPlot: PartialDataExplorerPlotConfig) => {
   if (partialPlot.filters?.color1 || partialPlot.filters?.color2) {
-    return "context";
+    return "aggregated_slice";
   }
 
   if (partialPlot.metadata) {

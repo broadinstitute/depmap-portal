@@ -4,8 +4,8 @@
     "index_type": "depmap_model",
     "dimensions": {
       "x": {
-        "axis_type": "entity",
-        "entity_type": "gene",
+        "axis_type": "raw_slice",
+        "slice_type": "gene",
         "dataset_id": "Chronos_Combined",
         "aggregation": "first",
         "context": {
@@ -14,7 +14,7 @@
           "expr": {
             "==": [
               {
-                "var": "entity_label"
+                "var": "slice_label"
               },
               "VPS4A"
             ]
@@ -22,8 +22,8 @@
         }
       },
       "y": {
-        "axis_type": "entity",
-        "entity_type": "gene",
+        "axis_type": "raw_slice",
+        "slice_type": "gene",
         "dataset_id": "copy_number_absolute",
         "aggregation": "first",
         "context": {
@@ -32,7 +32,7 @@
           "expr": {
             "==": [
               {
-                "var": "entity_label"
+                "var": "slice_label"
               },
               "VPS4B"
             ]
@@ -48,8 +48,8 @@
     "dimensions": {
       "x": {
         "dataset_id": "Chronos_Combined",
-        "entity_type": "depmap_model",
-        "axis_type": "context",
+        "slice_type": "depmap_model",
+        "axis_type": "aggregated_slice",
         "context": {
           "context_type": "depmap_model",
           "expr": {
@@ -78,8 +78,8 @@
       },
       "y": {
         "dataset_id": "Chronos_Combined",
-        "entity_type": "depmap_model",
-        "axis_type": "context",
+        "slice_type": "depmap_model",
+        "axis_type": "aggregated_slice",
         "aggregation": "mean",
         "context": {
           "context_type": "depmap_model",
@@ -120,8 +120,8 @@
     "dimensions": {
       "x": {
         "dataset_id": "expression",
-        "entity_type": "depmap_model",
-        "axis_type": "context",
+        "slice_type": "depmap_model",
+        "axis_type": "aggregated_slice",
         "aggregation": "mean",
         "context": {
           "context_type": "depmap_model",
@@ -170,8 +170,8 @@
       },
       "y": {
         "dataset_id": "expression",
-        "entity_type": "depmap_model",
-        "axis_type": "context",
+        "slice_type": "depmap_model",
+        "axis_type": "aggregated_slice",
         "aggregation": "mean",
         "context": {
           "context_type": "depmap_model",
@@ -220,8 +220,8 @@
       },
       "color": {
         "dataset_id": "expression",
-        "entity_type": "depmap_model",
-        "axis_type": "context",
+        "slice_type": "depmap_model",
+        "axis_type": "aggregated_slice",
         "aggregation": "mean",
         "context": {
           "context_type": "depmap_model",
@@ -273,11 +273,11 @@
   "compare-expression-distributions": {
     "plot_type": "density_1d",
     "index_type": "depmap_model",
-    "color_by": "context",
+    "color_by": "aggregated_slice",
     "dimensions": {
       "x": {
-        "axis_type": "entity",
-        "entity_type": "gene",
+        "axis_type": "raw_slice",
+        "slice_type": "gene",
         "dataset_id": "expression",
         "aggregation": "first",
         "context": {
@@ -286,7 +286,7 @@
           "expr": {
             "==": [
               {
-                "var": "entity_label"
+                "var": "slice_label"
               },
               "ERBB2"
             ]
@@ -342,8 +342,8 @@
     "dimensions": {
       "x": {
         "dataset_id": "Chronos_Combined",
-        "entity_type": "depmap_model",
-        "axis_type": "context",
+        "slice_type": "depmap_model",
+        "axis_type": "aggregated_slice",
         "aggregation": "mean",
         "context": {
           "name": "All",
@@ -353,8 +353,8 @@
       },
       "y": {
         "dataset_id": "expression",
-        "entity_type": "depmap_model",
-        "axis_type": "context",
+        "slice_type": "depmap_model",
+        "axis_type": "aggregated_slice",
         "aggregation": "mean",
         "context": {
           "name": "All",
@@ -374,8 +374,8 @@
     "index_type": "depmap_model",
     "dimensions": {
       "x": {
-        "axis_type": "context",
-        "entity_type": "gene",
+        "axis_type": "aggregated_slice",
+        "slice_type": "gene",
         "dataset_id": "Chronos_Combined",
         "aggregation": "correlation",
         "context": {
@@ -383,7 +383,7 @@
           "expr": {
             "in": [
               {
-                "var": "entity_label"
+                "var": "slice_label"
               },
               [
                 "CAD",

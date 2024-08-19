@@ -2,7 +2,7 @@ import {
   DataExplorerContext,
   DataExplorerDatasetDescriptor,
 } from "@depmap/types";
-import { entityLabelFromContext } from "../../../utils/context";
+import { sliceLabelFromContext } from "../../../utils/context";
 import {
   capitalize,
   getDimensionTypeLabel,
@@ -10,21 +10,21 @@ import {
   pluralize,
   sortDimensionTypes,
 } from "../../../utils/misc";
-import { EntityToDatasetsMapping } from "./types";
+import { SliceLabelsToDatasetsMapping } from "./types";
 
 export function filterDatasets(
   datasets: DataExplorerDatasetDescriptor[],
   filters: {
     dataType?: string | null | undefined;
-    entity_type?: string | null | undefined;
+    slice_type?: string | null | undefined;
     units?: string | null | undefined;
   }
 ) {
-  const { dataType, entity_type, units } = filters;
+  const { dataType, slice_type, units } = filters;
 
   return datasets
     .filter((d) => !dataType || d.data_type === dataType)
-    .filter((d) => !entity_type || d.entity_type === entity_type)
+    .filter((d) => !slice_type || d.slice_type === slice_type)
     .filter((d) => !units || d.units === units);
 }
 
@@ -46,14 +46,14 @@ export function sortDisabledOptionsLast(
 export function findHighestPriorityDatasetId(
   datasets: DataExplorerDatasetDescriptor[],
   enabledDatasetIds: Set<string>,
-  entity_type: string | undefined,
+  slice_type: string | undefined,
   dataType: string | null,
   units: string | null
 ) {
   let bestPriority = Infinity;
   let bestId: string | undefined;
 
-  filterDatasets(datasets, { entity_type, dataType, units }).forEach((d) => {
+  filterDatasets(datasets, { slice_type, dataType, units }).forEach((d) => {
     if (
       enabledDatasetIds.has(d.dataset_id) &&
       d.priority !== null &&
@@ -71,14 +71,14 @@ function isHighestPriorityDataset(
   dataset: DataExplorerDatasetDescriptor,
   datasets: DataExplorerDatasetDescriptor[],
   enabledDatasetIds: Set<string>,
-  entity_type: string | undefined,
+  slice_type: string | undefined,
   dataType: string | null,
   units: string | null
 ) {
   const bestId = findHighestPriorityDatasetId(
     datasets,
     enabledDatasetIds,
-    entity_type,
+    slice_type,
     dataType,
     units
   );
@@ -88,15 +88,15 @@ function isHighestPriorityDataset(
 
 export function getEnabledDatasetIds(
   datasets: DataExplorerDatasetDescriptor[],
-  entityLabelMap: EntityToDatasetsMapping,
+  sliceLabelMap: SliceLabelsToDatasetsMapping,
   contextLabels: Set<string>,
   dataType: string | null,
-  entity_type: string | undefined,
-  axis_type: "entity" | "context" | undefined,
+  slice_type: string | undefined,
+  axis_type: "raw_slice" | "aggregated_slice" | undefined,
   context: DataExplorerContext | undefined,
   units?: string | null
 ) {
-  if (!entity_type) {
+  if (!slice_type) {
     return new Set(
       datasets
         .filter((d) => !dataType || dataType === d.data_type)
@@ -107,33 +107,37 @@ export function getEnabledDatasetIds(
   const enabledDatasetIds = new Set<string>();
 
   const validDsIndices = new Set(
-    dataType ? entityLabelMap.data_types[dataType] : datasets.map((_, i) => i)
+    dataType ? sliceLabelMap.data_types[dataType] : datasets.map((_, i) => i)
   );
 
   if (units) {
     datasets
       .filter((d) => d.units !== units)
       .forEach((d) => {
-        const index = entityLabelMap.dataset_ids.findIndex(
+        const index = sliceLabelMap.dataset_ids.findIndex(
           (id) => id === d.dataset_id
         );
         validDsIndices.delete(index);
       });
   }
 
-  const selectedLabel = entityLabelFromContext(context);
-  const labels = Object.keys(entityLabelMap.entity_labels);
+  const selectedLabel = sliceLabelFromContext(context);
+  const labels = Object.keys(sliceLabelMap.slice_labels);
 
   for (let i = 0; i < labels.length; i += 1) {
     const label = labels[i];
-    const dsIndices = entityLabelMap.entity_labels[label];
+    const dsIndices = sliceLabelMap.slice_labels[label];
 
-    if (axis_type === "entity" && context && selectedLabel !== label) {
+    if (axis_type === "raw_slice" && context && selectedLabel !== label) {
       // eslint-disable-next-line no-continue
       continue;
     }
 
-    if (axis_type === "context" && context && !contextLabels.has(label)) {
+    if (
+      axis_type === "aggregated_slice" &&
+      context &&
+      !contextLabels.has(label)
+    ) {
       // eslint-disable-next-line no-continue
       continue;
     }
@@ -142,7 +146,7 @@ export function getEnabledDatasetIds(
       const k = dsIndices[j];
 
       if (validDsIndices.has(k)) {
-        const id = entityLabelMap.dataset_ids[k];
+        const id = sliceLabelMap.dataset_ids[k];
         enabledDatasetIds.add(id);
       }
     }
@@ -153,20 +157,20 @@ export function getEnabledDatasetIds(
 
 export function computeOptions(
   datasets: DataExplorerDatasetDescriptor[],
-  entityLabelMap: EntityToDatasetsMapping,
+  sliceLabelMap: SliceLabelsToDatasetsMapping,
   contextLabels: Set<string>,
   selectedDataType: string | null,
   selectedUnits: string | null,
-  selectedEntityType: string | undefined,
-  selectedAxisType: "entity" | "context" | undefined,
+  selectedSliceType: string | undefined,
+  selectedAxisType: "raw_slice" | "aggregated_slice" | undefined,
   selectedContext: DataExplorerContext | undefined
 ) {
   const enabledDatasetIds = getEnabledDatasetIds(
     datasets,
-    entityLabelMap,
+    sliceLabelMap,
     contextLabels,
     selectedDataType,
-    selectedEntityType,
+    selectedSliceType,
     selectedAxisType,
     selectedContext
   );
@@ -182,10 +186,10 @@ export function computeOptions(
 
       const idsForDataType = getEnabledDatasetIds(
         datasets,
-        entityLabelMap,
+        sliceLabelMap,
         contextLabels,
         dataType, // <---
-        selectedEntityType,
+        selectedSliceType,
         selectedAxisType,
         selectedContext
       );
@@ -193,9 +197,9 @@ export function computeOptions(
       if (idsForDataType.size === 0) {
         isDisabled = true;
         disabledOrder = 1;
-        const entity = getDimensionTypeLabel(selectedEntityType as string);
+        const entity = getDimensionTypeLabel(selectedSliceType as string);
 
-        if (selectedAxisType === "context") {
+        if (selectedAxisType === "aggregated_slice") {
           disabledReason = [
             `The context “${formattedlabel}”`,
             `has no ${pluralize(entity)} associated with this type`,
@@ -209,7 +213,7 @@ export function computeOptions(
       }
 
       const entityDatasets = filterDatasets(datasets, {
-        entity_type: selectedEntityType,
+        slice_type: selectedSliceType,
       });
 
       if (!entityDatasets.find((d) => d.data_type === dataType)) {
@@ -218,10 +222,8 @@ export function computeOptions(
 
         disabledReason = [
           "The",
-          isSampleType(selectedEntityType) ? "sample type" : "feature type",
-          `“${capitalize(
-            getDimensionTypeLabel(selectedEntityType as string)
-          )}”`,
+          isSampleType(selectedSliceType) ? "sample type" : "feature type",
+          `“${capitalize(getDimensionTypeLabel(selectedSliceType as string))}”`,
           "is incompatible with this data type",
         ].join(" ");
       }
@@ -243,21 +245,21 @@ export function computeOptions(
       return a.disabledOrder < b.disabledOrder ? -1 : 1;
     });
 
-  const entityTypeOptions = sortDimensionTypes([
-    ...new Set(datasets.map((d) => d.entity_type)),
+  const sliceTypeOptions = sortDimensionTypes([
+    ...new Set(datasets.map((d) => d.slice_type)),
   ])
-    .map((entity_type) => {
+    .map((slice_type) => {
       return {
-        label: capitalize(getDimensionTypeLabel(entity_type)),
-        value: entity_type,
+        label: capitalize(getDimensionTypeLabel(slice_type)),
+        value: slice_type,
         isDisabled: !filterDatasets(datasets, {
           dataType: selectedDataType,
-        }).find((d) => d.entity_type === entity_type),
+        }).find((d) => d.slice_type === slice_type),
         disabledReason: [
           "The data type",
           `“${selectedDataType}”`,
           "is incompatible with this",
-          isSampleType(selectedEntityType) ? "sample type" : "feature type",
+          isSampleType(selectedSliceType) ? "sample type" : "feature type",
         ].join(" "),
       };
     })
@@ -281,9 +283,9 @@ export function computeOptions(
 
       if (noEntities) {
         isDisabled = true;
-        const entity = getDimensionTypeLabel(selectedEntityType as string);
+        const entity = getDimensionTypeLabel(selectedSliceType as string);
 
-        if (selectedAxisType === "context") {
+        if (selectedAxisType === "aggregated_slice") {
           disabledReason = [
             `The context “${formattedlabel}”`,
             `has no ${pluralize(entity)}`,
@@ -299,7 +301,7 @@ export function computeOptions(
 
       const entityDatasets = filterDatasets(datasets, {
         dataType: selectedDataType,
-        entity_type: selectedEntityType,
+        slice_type: selectedSliceType,
       });
 
       if (!entityDatasets.find((d) => d.units === units)) {
@@ -311,7 +313,7 @@ export function computeOptions(
               units,
               dataType: selectedDataType,
             }).map(
-              (d) => `“${capitalize(getDimensionTypeLabel(d.entity_type))}”`
+              (d) => `“${capitalize(getDimensionTypeLabel(d.slice_type))}”`
             )
           ),
         ];
@@ -319,13 +321,13 @@ export function computeOptions(
         if (compatibleTypes.length === 1) {
           disabledReason = [
             "This measure is only compatible with",
-            isSampleType(selectedEntityType) ? "sample" : "feature",
+            isSampleType(selectedSliceType) ? "sample" : "feature",
             `type ${compatibleTypes[0]}`,
           ].join(" ");
         } else {
           disabledReason = [
             "This measure is only compatible with the following",
-            isSampleType(selectedEntityType) ? "sample" : "feature",
+            isSampleType(selectedSliceType) ? "sample" : "feature",
             `types: ${compatibleTypes.join(", ")}`,
           ].join(" ");
         }
@@ -346,7 +348,7 @@ export function computeOptions(
     .map((dataset) => {
       let isDisabled = false;
       let disabledReason = "";
-      const entity = getDimensionTypeLabel(dataset.entity_type);
+      const entity = getDimensionTypeLabel(dataset.slice_type);
 
       if (selectedUnits && dataset.units !== selectedUnits) {
         isDisabled = true;
@@ -359,7 +361,7 @@ export function computeOptions(
       if (selectedContext && !enabledDatasetIds.has(dataset.dataset_id)) {
         isDisabled = true;
 
-        if (selectedAxisType === "context") {
+        if (selectedAxisType === "aggregated_slice") {
           disabledReason = [
             `The context “${formattedlabel}”`,
             `has no ${pluralize(entity)}`,
@@ -373,12 +375,12 @@ export function computeOptions(
         }
       }
 
-      if (selectedEntityType && dataset.entity_type !== selectedEntityType) {
+      if (selectedSliceType && dataset.slice_type !== selectedSliceType) {
         isDisabled = true;
 
         disabledReason = [
           "This version is only compatible with",
-          isSampleType(selectedEntityType) ? "sample" : "feature",
+          isSampleType(selectedSliceType) ? "sample" : "feature",
           `type “${capitalize(entity)}”`,
         ].join(" ");
       }
@@ -390,7 +392,7 @@ export function computeOptions(
           dataset,
           datasets,
           enabledDatasetIds,
-          selectedEntityType,
+          selectedSliceType,
           selectedDataType,
           selectedUnits
         ),
@@ -402,7 +404,7 @@ export function computeOptions(
 
   return {
     dataTypeOptions,
-    entityTypeOptions,
+    sliceTypeOptions,
     dataVersionOptions,
     unitsOptions,
   };

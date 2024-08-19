@@ -1,13 +1,13 @@
 import React, { useEffect, useState } from "react";
 import PlotConfigSelect from "./PlotConfigSelect";
-import { fetchEntityLabelsOfDataset } from "../api";
+import { fetchSliceLabelsOfDataset } from "../api";
 import { urlLibEncode } from "../utils/misc";
 
 interface Props {
   value: string | null;
   onChange: (nextValue: string | null) => void;
   dataset_id: string;
-  entityTypeLabel: string;
+  sliceTypeLabel: string;
   isClearable: boolean;
   menuPortalTarget: HTMLElement | null;
 }
@@ -16,7 +16,7 @@ function SliceLabelSelector({
   value,
   onChange,
   dataset_id,
-  entityTypeLabel,
+  sliceTypeLabel,
   isClearable,
   menuPortalTarget,
 }: Props) {
@@ -32,7 +32,7 @@ function SliceLabelSelector({
       setError(false);
 
       try {
-        const data = await fetchEntityLabelsOfDataset(null, dataset_id);
+        const data = await fetchSliceLabelsOfDataset(null, dataset_id);
         const opts = data.labels.map((label) => ({ label, value: label }));
         setOptions(opts);
       } catch (e) {
@@ -43,7 +43,7 @@ function SliceLabelSelector({
   }, [dataset_id]);
 
   const isLoading = options === null && !error;
-  let placeholder = `Choose ${entityTypeLabel}…`;
+  let placeholder = `Choose ${sliceTypeLabel}…`;
 
   if (isLoading) {
     placeholder = "Loading...";

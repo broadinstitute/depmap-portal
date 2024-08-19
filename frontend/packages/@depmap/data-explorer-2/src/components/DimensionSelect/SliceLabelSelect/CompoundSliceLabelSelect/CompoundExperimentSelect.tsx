@@ -7,15 +7,15 @@ import styles from "../../../../styles/DimensionSelect.scss";
 
 interface Props {
   compoundName: string | null;
-  entity_label: string | null;
+  slice_label: string | null;
   dataset_id: string | null;
-  onChange: (entity_label: string | null, dataset_id: string | null) => void;
+  onChange: (slice_label: string | null, dataset_id: string | null) => void;
   isColorSelector: boolean;
 }
 
 function CompoundExperimentSelect({
   compoundName,
-  entity_label,
+  slice_label,
   dataset_id,
   onChange,
   isColorSelector,
@@ -25,7 +25,7 @@ function CompoundExperimentSelect({
     | {
         dataset_id: string;
         dataset_label: string;
-        entity_labels: string[];
+        slice_labels: string[];
       }[]
     | null
   >(null);
@@ -64,11 +64,11 @@ function CompoundExperimentSelect({
     }[] = [];
 
     (datasetsWithEntities || []).forEach((d) => {
-      d.entity_labels.forEach((label) => {
+      d.slice_labels.forEach((label) => {
         out.push({
           label: extractExperiment(label),
           value: JSON.stringify({
-            entity_label: label,
+            slice_label: label,
             dataset_id: d.dataset_id,
           }),
         });
@@ -79,8 +79,8 @@ function CompoundExperimentSelect({
   }, [datasetsWithEntities]);
 
   const displayValue =
-    entity_label && dataset_id
-      ? JSON.stringify({ entity_label, dataset_id })
+    slice_label && dataset_id
+      ? JSON.stringify({ slice_label, dataset_id })
       : null;
 
   const handleChange = (nextValue: string | null) => {
@@ -88,7 +88,7 @@ function CompoundExperimentSelect({
       onChange(null, null);
     } else {
       const parsed = JSON.parse(nextValue);
-      onChange(parsed.entity_label, parsed.dataset_id);
+      onChange(parsed.slice_label, parsed.dataset_id);
     }
   };
 

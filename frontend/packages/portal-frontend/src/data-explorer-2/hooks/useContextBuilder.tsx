@@ -82,7 +82,7 @@ export default function useContextBuilder(
     if (path[0] === "dimensions") {
       const [, key] = path;
       const { dimensions } = plot as any;
-      context_type = dimensions[key].entity_type;
+      context_type = dimensions[key].slice_type;
     } else {
       context_type = plot.index_type;
     }

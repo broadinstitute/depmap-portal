@@ -7,14 +7,14 @@ from depmap.data_explorer_2.plot import (
 )
 from depmap.data_explorer_2.utils import (
     clear_cache,
-    get_datasets_from_entity_type,
-    get_entity_labels_of_dataset,
+    get_datasets_from_slice_type,
+    get_slice_labels_of_dataset,
     get_union_of_index_labels,
 )
 
 TEST_DIMENSION = {
     "dataset_id": "Chronos_Combined",
-    "entity_type": "depmap_model",
+    "slice_type": "depmap_model",
     "axis_type": "context",
     "context": {
         "context_type": "depmap_model",
@@ -43,7 +43,7 @@ def generate_performance_report():
         "compute_dimension": _test_compute_dimension(),
         "compute_filter": _test_compute_filters(),
         "compute_metadata": _test_compute_metadata(),
-        "get_entity_labels_of_dataset": _test_get_entity_labels_of_dataset(),
+        "get_slice_labels_of_dataset": _test_get_slice_labels_of_dataset(),
         "get_datasets_matching_context": _test_datasets_matching_context(),
     }
 
@@ -94,7 +94,7 @@ def _test_datasets_matching_context():
     context = {
         "name": "VPS4B",
         "context_type": "gene",
-        "expr": {"==": [{"var": "entity_label"}, "VPS4B"]},
+        "expr": {"==": [{"var": "slice_label"}, "VPS4B"]},
     }
 
     start = time.time()
@@ -104,19 +104,19 @@ def _test_datasets_matching_context():
     return round(elapsed, 4)
 
 
-def _test_get_entity_labels_of_dataset():
+def _test_get_slice_labels_of_dataset():
     clear_cache()
 
     return {
-        "before caching": _measure_all_entity_types(get_entity_labels_of_dataset),
-        "from cache": _measure_all_entity_types(get_entity_labels_of_dataset),
+        "before caching": _measure_all_slice_types(get_slice_labels_of_dataset),
+        "from cache": _measure_all_slice_types(get_slice_labels_of_dataset),
     }
 
 
-def _measure_all_entity_types(func):
+def _measure_all_slice_types(func):
     out = {}
 
-    for entity_type in [
+    for slice_type in [
         "depmap_model",
         "gene",
         "compound",
@@ -125,11 +125,11 @@ def _measure_all_entity_types(func):
     ]:
         start = time.time()
 
-        for dataset in get_datasets_from_entity_type(entity_type):
-            func(entity_type, dataset)
+        for dataset in get_datasets_from_slice_type(slice_type):
+            func(slice_type, dataset)
 
         elapsed = time.time() - start
-        out[entity_type] = round(elapsed, 4)
+        out[slice_type] = round(elapsed, 4)
 
     out["total"] = round(sum(out.values()), 4)
 

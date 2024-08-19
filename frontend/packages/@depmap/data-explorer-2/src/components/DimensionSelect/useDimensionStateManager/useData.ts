@@ -3,29 +3,29 @@ import { DataExplorerContext } from "@depmap/types";
 import {
   fetchContextLabels,
   fetchDatasetsByIndexType,
-  fetchEntityToDatasetsMapping,
+  fetchSliceLabelsToDatasetsMapping,
 } from "../../../api";
-import { DatasetsByIndexType, EntityToDatasetsMapping } from "./types";
+import { DatasetsByIndexType, SliceLabelsToDatasetsMapping } from "./types";
 
 interface Props {
   index_type: string | null;
-  entity_type: string | undefined;
-  axis_type: "entity" | "context" | undefined;
+  slice_type: string | undefined;
+  axis_type: "raw_slice" | "aggregated_slice" | undefined;
   context: DataExplorerContext | undefined;
 }
 
-export const NULL_MAPPING: EntityToDatasetsMapping = {
+export const NULL_MAPPING: SliceLabelsToDatasetsMapping = {
   aliases: [],
   dataset_ids: [],
   dataset_labels: [],
   data_types: {},
   units: {},
-  entity_labels: {},
+  slice_labels: {},
 };
 
 export default function useDatasets({
   index_type,
-  entity_type,
+  slice_type,
   axis_type,
   context,
 }: Props) {
@@ -35,10 +35,10 @@ export default function useDatasets({
   ] = useState<DatasetsByIndexType | null>(null);
 
   const [
-    entityMap,
-    setEntityToDatasetsMapping,
-  ] = useState<EntityToDatasetsMapping | null>(
-    entity_type ? null : NULL_MAPPING
+    sliceMap,
+    setSliceLabelsToDatasetsMapping,
+  ] = useState<SliceLabelsToDatasetsMapping | null>(
+    slice_type ? null : NULL_MAPPING
   );
 
   const [contextLabels, setContextLabels] = useState<Set<string> | null>(
@@ -59,28 +59,28 @@ export default function useDatasets({
 
   useEffect(() => {
     (async () => {
-      setEntityToDatasetsMapping(null);
+      setSliceLabelsToDatasetsMapping(null);
 
       try {
-        if (entity_type) {
-          const mapping = await fetchEntityToDatasetsMapping(entity_type);
-          setEntityToDatasetsMapping(mapping);
+        if (slice_type) {
+          const mapping = await fetchSliceLabelsToDatasetsMapping(slice_type);
+          setSliceLabelsToDatasetsMapping(mapping);
         } else {
-          setEntityToDatasetsMapping(NULL_MAPPING);
+          setSliceLabelsToDatasetsMapping(NULL_MAPPING);
         }
       } catch (e) {
         window.console.error(e);
         throw new Error(
-          "DimensionSelect: Error fetching entity/datasets mapping"
+          "DimensionSelect: Error fetching slice-labels-to-datasets mapping"
         );
       }
     })();
-  }, [entity_type]);
+  }, [slice_type]);
 
   useEffect(() => {
     setContextLabels(new Set());
 
-    if (axis_type === "context" && context) {
+    if (axis_type === "aggregated_slice" && context) {
       setContextLabels(null);
 
       fetchContextLabels(context).then((labels) => {
@@ -97,11 +97,11 @@ export default function useDatasets({
 
   return {
     datasets,
-    entityMap,
+    sliceMap,
     contextLabels,
     isLoading:
       datasetsByIndexType === null ||
-      entityMap === null ||
+      sliceMap === null ||
       contextLabels === null,
   };
 }

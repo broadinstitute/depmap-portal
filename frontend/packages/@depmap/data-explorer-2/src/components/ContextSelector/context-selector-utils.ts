@@ -2,7 +2,7 @@ import omit from "lodash.omit";
 import { DepMap } from "@depmap/globals";
 import { DataExplorerContext } from "@depmap/types";
 import { LocalStorageListStore } from "@depmap/cell-line-selector";
-import { fetchContext, fetchEntityLabels, persistContext } from "../../api";
+import { fetchContext, fetchSliceLabels, persistContext } from "../../api";
 import {
   getContextHash,
   isContextAll,
@@ -49,7 +49,7 @@ type StoredContexts = Record<string, ContextWithoutExpr>;
 const depmapIDsToDisplayNames = async (lines: ReadonlySet<string>) => {
   const out: string[] = [];
 
-  const data = await fetchEntityLabels("depmap_model");
+  const data = await fetchSliceLabels("depmap_model");
   const names = data.aliases.find((alias) => alias.label === "Cell Line Name")!
     .values;
 

@@ -19,15 +19,15 @@ export default function useCallbacks(update: Update) {
     [update]
   );
 
-  const onChangeEntityType = useCallback(
-    (entity_type: string | null) => {
-      update({ entity_type });
+  const onChangeSliceType = useCallback(
+    (slice_type: string | null) => {
+      update({ slice_type });
     },
     [update]
   );
 
   const onChangeAxisType = useCallback(
-    (axis_type: "entity" | "context") => {
+    (axis_type: "raw_slice" | "aggregated_slice") => {
       update({ axis_type });
     },
     [update]
@@ -69,7 +69,7 @@ export default function useCallbacks(update: Update) {
     onChangeContext,
     onChangeDataType,
     onChangeDataVersion,
-    onChangeEntityType,
+    onChangeSliceType,
     onChangeUnits,
   };
 }
