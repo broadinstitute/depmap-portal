@@ -1,4 +1,4 @@
-from depmap.data_explorer_2.context import ContextEvaluator
+from depmap_compute.context import ContextEvaluator
 from depmap.data_explorer_2.utils import (
     get_datasets_from_entity_type,
     get_entity_labels_of_dataset,

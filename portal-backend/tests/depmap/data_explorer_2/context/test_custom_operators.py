@@ -1,4 +1,4 @@
-from depmap.data_explorer_2.context import ContextEvaluator
+from depmap_compute.context import ContextEvaluator
 
 
 def test_operator__not_in():

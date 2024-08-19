@@ -4,7 +4,7 @@ from typing import Literal, Optional
 from depmap import data_access
 from collections import defaultdict
 from depmap.data_access.models import MatrixDataset
-from depmap.data_explorer_2.context import ContextEvaluator
+from depmap_compute.context import ContextEvaluator
 from depmap.utilities.data_access_log import log_dataset_access
 from depmap.data_explorer_2.utils import (
     get_aliases_matching_labels,

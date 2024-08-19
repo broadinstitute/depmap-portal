@@ -3,7 +3,6 @@
 # but it serves as a good reference for patching operators:
 # https://github.com/panzi/panzi-json-logic
 from json_logic import jsonLogic, operations  # type: ignore
-from depmap.data_explorer_2.utils import slice_to_dict
 
 
 # Custom JsonLogic operators
@@ -71,7 +70,7 @@ class _LazyContextDict(dict):
 
         if prop.startswith("slice/"):
             if prop not in self.cache:
-                self.cache[prop] = slice_to_dict(prop)
+                self.cache[prop] = slice_to_dict(prop)  # TODO: pass as lambda??
 
             return self.cache[prop][self.entity_label]
 
