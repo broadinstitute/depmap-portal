@@ -1,5 +1,10 @@
-import React from "react";
-import { PlotConfigSelect, SliceLabelSelector } from "@depmap/data-explorer-2";
+import React, { useEffect, useState } from "react";
+import {
+  fetchMetadataSlices,
+  MetadataSlices,
+  PlotConfigSelect,
+  SliceLabelSelector,
+} from "@depmap/data-explorer-2";
 import {
   containsPartialSlice,
   getDatasetIdFromSlice,
@@ -25,16 +30,31 @@ function DatasetMetadataSelector({
   value,
   onChange,
 }: Props) {
-  const options = getOptions(entity_type);
-  const hasDynamicLabel = containsPartialSlice(value, entity_type);
+  const [isLoading, setIsLoading] = useState(false);
+  const [metadataSlices, setMetadataSlices] = useState<MetadataSlices>({});
+
+  useEffect(() => {
+    (async () => {
+      setIsLoading(true);
+
+      const slices = await fetchMetadataSlices(entity_type);
+      setMetadataSlices(slices);
+
+      setIsLoading(false);
+    })();
+  }, [entity_type]);
+
+  const hasDynamicLabel = containsPartialSlice(metadataSlices, value);
 
   const value1 = hasDynamicLabel
-    ? slicePrefix(value as string, entity_type)
+    ? slicePrefix(metadataSlices, value as string)
     : value;
   const value2 = hasDynamicLabel ? sliceLabel(value as string) : null;
 
+  const options = getOptions(metadataSlices);
+
   if (typeof value1 === "string" && !(value1 in options)) {
-    options[value1] = "(unknown property)";
+    options[value1] = isLoading ? "Loading…" : "(unknown property)";
   }
 
   return (
@@ -44,10 +64,11 @@ function DatasetMetadataSelector({
         isClearable
         placeholder="Choose property…"
         show={show}
-        enable={enable}
+        enable={enable && !isLoading}
         value={value1}
         options={options}
         onChange={onChange}
+        isLoading={isLoading}
       />
       {hasDynamicLabel && (
         <SliceLabelSelector
@@ -55,10 +76,10 @@ function DatasetMetadataSelector({
           onChange={onChange}
           isClearable={false}
           menuPortalTarget={null}
-          dataset_id={getDatasetIdFromSlice(value as string, entity_type)}
+          dataset_id={getDatasetIdFromSlice(metadataSlices, value as string)}
           entityTypeLabel={getMetadataEntityTypeLabelFromSlice(
-            value as string,
-            entity_type
+            metadataSlices,
+            value as string
           )}
         />
       )}

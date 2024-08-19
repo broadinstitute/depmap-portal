@@ -7,7 +7,7 @@ import React, {
 } from "react";
 import cx from "classnames";
 import ReactSelect, { Props as ReactSelectProps } from "react-select";
-import { Tooltip, WordBreaker } from "@depmap/common-components";
+import { Highlighter, Tooltip, WordBreaker } from "@depmap/common-components";
 import OptimizedSelectOption from "../components/OptimizedSelectOption";
 import styles from "../styles/ExtendedSelect.scss";
 
@@ -23,6 +23,14 @@ export interface ExtendedSelectProps {
   // Adds a thin colored bar to left edge of the dropdown. This is intended as
   // visual cue to the user that it's being used to control a color option.
   swatchColor?: string;
+  // When enabled, allows a pre-selected value to be edited as text (simulating
+  // a vanilla input element)
+  isEditable?: boolean;
+  // When `isEditable` is true, you can use this to populate the input with an
+  // arbitrary value (distinct from the one that'a actually selected).
+  editableInputValue?: string;
+  // This is called when editable text is changed.
+  onEditInputValue?: (editedText: string) => void;
 }
 
 const ConditionalTooltip = ({
@@ -41,13 +49,161 @@ const ConditionalTooltip = ({
   }
 
   return (
-    <span onFocus={onFocus}>
+    <span
+      onFocus={onFocus}
+      onMouseOver={() => {
+        const blocker = document.querySelector("#tooltip-blocker");
+        if (blocker) {
+          blocker.remove();
+          document.body.append(blocker);
+        }
+      }}
+    >
       <Tooltip id="extended-select-tooltip" content={content} placement="top">
         <span onFocus={onFocus}>{children}</span>
       </Tooltip>
     </span>
   );
 };
+
+// This can be used to replaced the standard <input> element. It uses a
+// contentEditable <div> which has the nice property that it will flexibly in
+// height as the user types.
+function ContentEditableDivInput({
+  innerRef,
+  placeholder,
+  isDisabled,
+
+  // unused props
+  clearValue,
+  // eslint-disable-next-line @typescript-eslint/no-shadow
+  cx,
+  extraWidth,
+  getValue,
+  getStyles,
+  isHidden,
+  hasValue,
+  injectStyles,
+  inputClassName,
+  inputStyle,
+  isMulti,
+  isRtl,
+  minWidth,
+  onAutosize,
+  placeholderIsMinWidth,
+  selectOption,
+  selectProps,
+  setValue,
+  theme,
+
+  ...inputProps
+}: // eslint-disable-next-line @typescript-eslint/no-explicit-any
+any) {
+  const underlineRef = useRef<HTMLDivElement>(null);
+  const isEditing = useRef(false);
+
+  const setTextUnderlines = (contentDiv: HTMLDivElement) => {
+    const underlineDiv = underlineRef.current as HTMLDivElement;
+    const words = contentDiv.innerText.split(/\s+/);
+
+    if (words.length <= 1) {
+      underlineDiv.innerHTML = "";
+      return;
+    }
+
+    if (contentDiv.scrollHeight <= 32) {
+      underlineDiv.style.paddingTop = "7px";
+    } else {
+      underlineDiv.style.paddingTop = "0";
+    }
+
+    underlineDiv.innerHTML = words
+      .map((word, index) => {
+        const color = Highlighter.colors[index % Highlighter.colors.length];
+
+        return [
+          `<span style="border-bottom: 2px solid ${color};">`,
+          word,
+          "</span>",
+        ].join("");
+      })
+      .join(" ");
+  };
+
+  return (
+    <div className={styles.ContentEditableDivInput}>
+      <div>
+        {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions */}
+        <div
+          {...inputProps}
+          ref={innerRef}
+          disabled={isDisabled}
+          contentEditable
+          onMouseDown={(e) => {
+            if (isEditing.current) {
+              e.stopPropagation();
+            }
+          }}
+          onKeyDown={(e) => {
+            if (e.key === " ") {
+              e.stopPropagation();
+
+              if (
+                e.currentTarget.innerText.endsWith(String.fromCharCode(160))
+              ) {
+                e.preventDefault();
+              }
+            }
+          }}
+          onFocus={(e) => {
+            const div = e.currentTarget;
+            div.style.caretColor = "transparent";
+
+            setTimeout(() => {
+              const range = document.createRange();
+              range.selectNodeContents(div);
+              range.collapse(false);
+
+              const sel = window.getSelection();
+              sel?.removeAllRanges();
+              sel?.addRange(range);
+              div.style.caretColor = "";
+            });
+
+            inputProps.onFocus(e);
+            isEditing.current = true;
+            setTextUnderlines(div);
+          }}
+          onInput={(e) => {
+            const pseudoInput = e.currentTarget as HTMLInputElement;
+            pseudoInput.value = e.currentTarget.textContent || "";
+            inputProps.onChange(e);
+            setTextUnderlines(pseudoInput);
+          }}
+          onBlur={(e) => {
+            const pseudoInput = e.currentTarget as HTMLInputElement;
+
+            setTimeout(() => {
+              const valContainer = pseudoInput.parentElement!.parentElement!
+                .parentElement as HTMLElement;
+              const valContainerItem = valContainer.firstChild as HTMLElement;
+
+              if (valContainerItem.innerHTML.length !== 0) {
+                pseudoInput.value = "";
+                pseudoInput.textContent = "";
+              }
+            });
+
+            inputProps.onBlur(e);
+            isEditing.current = false;
+          }}
+        />
+        <div ref={underlineRef} className={styles.underlineDiv} />
+        {placeholder ? <div>{placeholder}</div> : null}
+      </div>
+    </div>
+  );
+}
 
 // Extends the behavior of a given `SelectComponent`. That component should be
 // a base ReactSelect or one of its variants (creatable, animated, async, etc).
@@ -56,8 +212,6 @@ const ConditionalTooltip = ({
 // - Shows a tooltip when the value has been truncated
 // - Automatically set `menuPlacement` to "top" when the dropdown is near the
 // bottom of the viewport.
-// - Allows a pre-selected value to be edited as text (simulating a vanilla
-//   <input> element)
 // - Uses a windowed menu list. This allows thousands of options to be
 //   displayed performantly (powered by react-windowed-select).
 export default function extendReactSelect(
@@ -75,7 +229,11 @@ export default function extendReactSelect(
       inlineLabel = false,
       label = null,
       menuWidth = "max-content",
+      placeholder = undefined,
       swatchColor = undefined,
+      isEditable = false,
+      editableInputValue = undefined,
+      onEditInputValue = () => {},
     } = props;
 
     const mounted = useRef<boolean>(true);
@@ -136,12 +294,6 @@ export default function extendReactSelect(
 
     const tooltipText = value ? (value as { label: string }).label : null;
 
-    let { placeholder } = props;
-
-    if (typeof placeholder === "string" && placeholder.length > 25) {
-      placeholder = <span style={{ fontSize: 11 }}>{placeholder}</span>;
-    }
-
     return (
       <div className={styles.container}>
         {swatchColor && (
@@ -174,7 +326,11 @@ export default function extendReactSelect(
             <WrappedSelect
               {...props}
               ref={reactSelectRef}
-              placeholder={placeholder}
+              placeholder={
+                placeholder && (
+                  <span className={styles.placeholder}>{placeholder}</span>
+                )
+              }
               menuPortalTarget={menuPortalTarget}
               className={cx(styles.Select, props.className, {
                 [styles.selectError]: hasError,
@@ -198,107 +354,61 @@ export default function extendReactSelect(
                 }),
                 ...props.styles,
               }}
+              backspaceRemovesValue={!isEditable}
               onFocus={(e) => {
-                if (!value?.label) {
-                  return;
+                if (isEditable && value?.label) {
+                  const editableDiv = e.currentTarget;
+                  editableDiv.innerText = editableInputValue || value.label;
+
+                  const valContainerItem = editableDiv.parentElement!
+                    .parentElement!.parentElement!.firstChild as HTMLElement;
+                  valContainerItem.classList.add(styles.hidden);
+
+                  if (editableInputValue) {
+                    reactSelectRef.current.select.onInputChange(
+                      editableInputValue
+                    );
+                  }
                 }
-
-                // HACK: Make it appear as if the cursor is at the end of the
-                // word. This acts as a hint to the user that the value is now
-                // editable (which is not the default react-select behavior).
-                // This hack is needed because, on initial focus, the <input>
-                // element is secretly empty! react-select has a "value
-                // container" <div> that makes it appear as if the input has a
-                // value. See the `onKeyDown` handler below where the new
-                // behavior is implemented.
-                const input = e.currentTarget as HTMLInputElement;
-
-                const valContainer = input.parentElement!.parentElement!
-                  .parentElement as HTMLElement;
-                const valContainerItem = valContainer.firstChild as HTMLElement;
-                const inputContainer = valContainerItem.nextSibling as HTMLElement;
-
-                valContainer.style.display = "inline";
-                valContainer.style.paddingRight = "0";
-                inputContainer.style.display = "inline";
-
-                valContainerItem.style.cssText = `
-                  display: inline;
-                  margin-right: -2px;
-                  overflow: visible;
-                  position: static;
-                  transform: none;
-                  white-space: normal;
-                  word-break: break-all;
-                `;
               }}
-              onKeyDown={(e) => {
-                const input = e.currentTarget.querySelector(
-                  "input"
-                ) as HTMLInputElement;
+              onBlur={(e) => {
+                if (isEditable && value?.label) {
+                  const editableDiv = e.currentTarget;
+                  editableDiv.innerText = value?.label || "";
 
-                // Custom behavior: instead of backspace wiping out the value
-                // (setting it null) just remove the last character (as one
-                // would expect a vanilla input element to behave).
-                if (
-                  value?.label &&
-                  input.value === "" &&
-                  ["Backspace", "ArrowLeft", "ArrowRight"].includes(e.key)
-                ) {
-                  e.preventDefault();
-                  e.stopPropagation();
-
-                  const nextInputValue =
-                    e.key === "Backspace"
-                      ? value.label.slice(0, -1)
-                      : value.label;
-
-                  reactSelectRef.current.select.onInputChange(nextInputValue);
-
-                  // Long strings can overflow the input box. Try to scroll
-                  // horizontally so the cursor is visible.
-                  setTimeout(() => {
-                    input.style.width = "95px";
-                    input.scrollTo(input.scrollWidth, 0);
-                  });
-
-                  if (e.key === "ArrowLeft") {
-                    const { shiftKey } = e;
-
-                    setTimeout(() => {
-                      const len = nextInputValue.length;
-                      input.setSelectionRange(
-                        len - 1,
-                        shiftKey ? len : len - 1
-                      );
-                    });
-                  }
-                }
-
-                // This is the only case where we actually do want to wipe out
-                // the value.
-                if (input.value.length === 1 && e.key === "Backspace") {
-                  if (props.isClearable) {
-                    reactSelectRef.current.select.onInputChange("");
-                    reactSelectRef.current.select.onChange(null);
-                  } else {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    reactSelectRef.current.select.onInputChange(value?.label);
-                  }
-                }
-
-                if (props.onKeyDown) {
-                  props.onKeyDown(e);
+                  const valContainerItem = editableDiv.parentElement!
+                    .parentElement!.parentElement!.firstChild as HTMLElement;
+                  valContainerItem.classList.remove(styles.hidden);
                 }
               }}
               onChange={(nextValue, action) => {
                 setPostSelectTimeoutExpired(false);
                 onChange?.(nextValue, action);
 
+                if (isEditable) {
+                  const editableDiv = ref.current!.querySelector(
+                    "div[contenteditable]"
+                  ) as HTMLDivElement;
+
+                  editableDiv.innerText = "";
+                }
+
+                if (nextValue === null) {
+                  onEditInputValue("");
+                }
+
                 setTimeout(() => {
                   setPostSelectTimeoutExpired(true);
                 }, 500);
+              }}
+              onInputChange={(inputValue, actionMeta) => {
+                if (actionMeta?.action === "input-change") {
+                  onEditInputValue(inputValue);
+                }
+
+                if (props.onInputChange) {
+                  props.onInputChange(inputValue, actionMeta);
+                }
               }}
               onMenuOpen={() => {
                 if (props.onMenuOpen) {
@@ -337,6 +447,7 @@ export default function extendReactSelect(
               menuPlacement={props.menuPlacement || menuPlacement}
               components={{
                 Option: OptimizedSelectOption,
+                ...(isEditable ? { Input: ContentEditableDivInput } : null),
                 ...props.components,
               }}
             />

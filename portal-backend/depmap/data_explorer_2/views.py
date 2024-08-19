@@ -42,6 +42,7 @@ from depmap.data_explorer_2.utils import (
     to_serializable_numpy_number,
 )
 from depmap.data_explorer_2.linear_regression import compute_linear_regression
+from depmap.data_explorer_2.datatypes import hardcoded_metadata_slices
 
 from depmap.download.models import ReleaseTerms
 from depmap.download.views import get_file_record, get_release_record
@@ -489,7 +490,7 @@ def get_datasets_matching_context():
 def get_context_summary():
     """
     Get the number of matching labels and candidate labels.
-    "Candidate" labels are all labels belonging to the context's dimension type. 
+    "Candidate" labels are all labels belonging to the context's dimension type.
     """
     inputs = request.get_json()
     context = inputs["context"]
@@ -506,6 +507,39 @@ def get_context_summary():
         "num_candidates": len(input_labels),
         "num_matches": len(labels_matching_context),
     }
+
+
+@blueprint.route("/metadata_slices")
+def metadata_slices():
+    """
+    A "metadata slice" is a slice ID that can be used by Data Explorer 2 as a
+    variable in a context or to color points. This endpoint returns a JSON
+    object where the keys are slice IDs and values look like:
+    {
+        "name": "Age Category",
+        "valueType": "categorical"
+    }
+    Additionally, this slice info objects may contain the following contain the
+    following properties.
+
+    "isPartialSliceId" (boolean):
+        Some slices are constructed on the frontend from individual components.
+        For example "slice/mutations_prioritized/" is such a partial ID. The
+        user is presented with a dropdown of genes and the chosen gene is
+        concatenated to that slice ID prefix.
+    "entityTypeLabel" (string):
+        This is related to the above "isPartialSliceId" property. In the given
+        example, this is used as a label to tell the user to that it's a gene
+        that they need to select.
+    "isHighCardinality" (boolean):
+        It's loosely defined exactly what should constitute "high cardinality"
+        but this has a specific use on the frontend. The UI interprets
+        isHighCardinality=True to mean "you can use this as context variable
+        but it would make no sense to try to color by it."
+    """
+    dimension_type = request.args.get("dimension_type")
+
+    return hardcoded_metadata_slices.get(dimension_type, {})
 
 
 @blueprint.route("/dataset_details")

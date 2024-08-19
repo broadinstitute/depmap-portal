@@ -24,13 +24,18 @@ export {
   fetchGeneTeaTermContext,
   fetchLinearRegression,
   fetchMetadataColumn,
+  fetchMetadataSlices,
   fetchPlotDimensions,
   fetchUniqueValuesOrRange,
   fetchWaterfall,
   persistContext,
 } from "./src/api";
 
-export type { GeneTeaEnrichedTerms, GeneTeaTermContext } from "./src/api";
+export type {
+  GeneTeaEnrichedTerms,
+  GeneTeaTermContext,
+  MetadataSlices,
+} from "./src/api";
 
 export {
   DataExplorerSettingsProvider,
