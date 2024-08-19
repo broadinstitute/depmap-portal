@@ -8,6 +8,7 @@ from depmap.predictability_prototype.models import (
     PrototypePredictiveFeature,
     PrototypePredictiveFeatureResult,
 )
+from depmap_compute import analysis_tasks_interface
 import pandas as pd
 import numpy as np
 import re
@@ -257,9 +258,6 @@ def get_dataset_id_from_taiga_id(model: str, screen_type: str, feature_name: str
     for dataset in matrix_datasets:
         if dataset.taiga_id == taiga_id and dataset.data_type == "Predictability":
             feature_dataset_id = dataset.id
-            print(feature_dataset_id)
-            print(taiga_id)
-            print(vars(dataset))
             break
 
     assert feature_dataset_id is not None, f"{taiga_id}, {feature_name}"
@@ -284,7 +282,7 @@ def get_feature_slice_and_dataset_id(
         print(model)
         print(feature_name)
 
-    return slice.fillna(0), feature_dataset_id
+    return slice.dropna(), feature_dataset_id
 
 
 def get_top_feature_headers(entity_id: int, model: str, screen_type: str):
@@ -343,7 +341,7 @@ def get_top_features(entity_id: int, model: str, screen_type: str):
         feature_importance = feature_info["importance"]
         pearson = feature_info["pearson"]
 
-        slice = slice.fillna(0)
+        slice = slice.dropna()
         top_features[feature_label] = slice
 
         top_features_metadata[feature_name] = {
@@ -443,7 +441,7 @@ def get_feature_boxplot_data(
         model=model,
     )
 
-    return slice.fillna(0).values.tolist()
+    return slice.dropna().values.tolist()
 
 
 def feature_correlation_map_calc(model, entity_id, screen_type: str):
@@ -492,15 +490,31 @@ def feature_correlation_map_calc(model, entity_id, screen_type: str):
     }
 
 
+def get_pearson_corr(df, slice):
+    def progress_callback(percentage):
+        return
+
+    df, slice = df.align(slice, axis=1)
+
+    (x, _, _, _) = analysis_tasks_interface.prep_and_run_py_pearson(
+        slice.values, df.values, progress_callback
+    )
+
+    return x
+
+
 def get_other_feature_corrs(feature_df, feature_slice):
-    return feature_df.corrwith(feature_slice, axis=1)
+    corr = get_pearson_corr(feature_df, feature_slice)
+
+    return corr
 
 
 def get_ge_corrs(gene, feature_df):
     ge_slice = data_access.get_row_of_values("Chronos_Combined", gene)
-    ge_slice = ge_slice.fillna(0)
 
-    return feature_df.corrwith(ge_slice, axis=1)
+    corr = get_pearson_corr(feature_df, ge_slice)
+
+    return corr
 
 
 def get_related_features_scatter(
@@ -514,7 +528,7 @@ def get_related_features_scatter(
     feature_df = data_access.get_subsetted_df_by_labels(
         feature_dataset_id, None, feature_slice_index
     )
-    feature_df = feature_df.fillna(0)
+    feature_df = feature_df.dropna()
 
     import time
 
@@ -528,7 +542,11 @@ def get_related_features_scatter(
 
     start = time.time()
     y = get_ge_corrs(gene=gene_symbol, feature_df=feature_df)
-    density = get_density(x.fillna(0), y.fillna(0))
+
+    x = np.nan_to_num(x)
+    y = np.nan_to_num(y)
+
+    density = get_density(x, y)
     end = time.time()
     print(f"get_ge_corrs and get_density {end-start} seconds")
 
@@ -536,8 +554,8 @@ def get_related_features_scatter(
     y_label = "Other %s R<br>with %s Gene Effect" % (feature_type, gene_symbol)
 
     return {
-        "x": x.fillna(0).to_list(),
-        "y": y.fillna(0).to_list(),
+        "x": list(x),
+        "y": list(y),
         "density": list(density),
         "x_label": x_label,
         "y_label": y_label,
@@ -550,24 +568,28 @@ def get_other_dep_waterfall_plot(
     gene_df = data_access.get_subsetted_df_by_labels(
         "Chronos_Combined", None, feature_slice_index
     )
-    gene_df = gene_df.fillna(0)
+
+    gene_df = gene_df.dropna()
 
     import time
 
     start = time.time()
-    x = gene_df.corrwith(
-        pd.Series(data=feature_slice_values, index=feature_slice_index), axis=1
+    feature_series = pd.Series(data=feature_slice_values, index=feature_slice_index)
+
+    def progress_callback(percentage):
+        return
+
+    gene_df, feature_series = gene_df.align(feature_series, axis=1)
+
+    (x, _, _, _) = analysis_tasks_interface.prep_and_run_py_pearson(
+        feature_series.values, gene_df.values, progress_callback
     )
+
     end = time.time()
     print(f"CORRWITH TIME {end-start} seconds")
 
     # TODO confirm this method returns proper results. Example used corrwith but that
     # was 2x as slow as just using apply with np.corrcoef.
-    # x = gene_df.apply(
-    #     (lambda x: np.corrcoef(x.values, feature_slice_values, dtype=np.float64)[0, 1]),
-    #     axis=1,
-    # )
-    x.fillna(0)
 
     x = list(x)
     x.sort()
