@@ -13,10 +13,10 @@ class DiscourseClient:
     1. In refresh mode, data is fetched from Discourse API and stored in a DB cache
     2. In the normal mode, stored data is read directly from the DB cache"""
 
-    def __init__(self, api_key: str, base_url: str, refresh: bool = False):
+    def __init__(self, api_key: str, base_url: str, reload: bool = False):
         self.base_url = base_url
         self.api_key = api_key
-        self.refresh = refresh
+        self.reload = reload
         self.session = self.__create_session(api_key)
         self.resources_results = current_app.config["RESOURCES_DATA_PATH"]
         self.__create_db_dir_if_needed(self.resources_results)
@@ -51,7 +51,7 @@ class DiscourseClient:
         url = f"/c/{category_id}/show.json"
 
         with SqliteDict(self.resources_results) as db:
-            if self.refresh:
+            if self.reload:
                 res = self.get(url)["category"]
                 # Store response results
                 db[url] = res
@@ -66,7 +66,7 @@ class DiscourseClient:
         # Given the category slug, filter from list of categories the specific category that matches the slug. NOTE: This is a workaround since GET /c/{id}/show.json does not return subcategory information as far as we know
         url = "/categories.json"
         with SqliteDict(self.resources_results) as db:
-            if self.refresh:
+            if self.reload:
                 res = self.get(url)
                 categories = res["category_list"]["categories"]
                 category = next(
@@ -86,7 +86,7 @@ class DiscourseClient:
         url = f"/c/{category_slug}/{category_id}.json"
 
         with SqliteDict(self.resources_results) as db:
-            if self.refresh:
+            if self.reload:
                 res = self.get(url)
                 topics = res["topic_list"]["topics"]
                 # NOTE: "visible": False means post is unlisted
@@ -117,7 +117,7 @@ class DiscourseClient:
         url = f"t/{topic_id}/posts.json"
 
         with SqliteDict(self.resources_results) as db:
-            if self.refresh:
+            if self.reload:
                 res = self.get(url)
                 posts = res["post_stream"]["posts"]
                 main_post = posts[0]

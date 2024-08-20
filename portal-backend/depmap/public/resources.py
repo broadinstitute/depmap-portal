@@ -163,7 +163,7 @@ def get_root_category_subcategory_topics(
 
 
 def refresh_all_category_topics(client: DiscourseClient, category_slug: str):
-    assert client.refresh, "Client must be in refresh mode"
+    assert client.reload, "Client must be in refresh mode"
     # Get the root category
     print("Fetching categories")
     category = client.get_category_with_subcategories(category_slug)
