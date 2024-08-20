@@ -466,6 +466,7 @@ def register_commands(app: Flask):
     app.cli.add_command(db_load_commands.fixup_dataset_names)
     app.cli.add_command(db_load_commands.recreate_full_db)
     app.cli.add_command(db_load_commands.export_cell_lines)
+    app.cli.add_command(db_load_commands.reload_resources)
     app.cli.add_command(post_deploy_commands.check_data_issues)
     app.cli.add_command(post_deploy_commands.check_download_data)
     app.cli.add_command(post_deploy_commands.check_nonstandard_datasets)

@@ -165,6 +165,7 @@ def get_root_category_subcategory_topics(
 def refresh_all_category_topics(client: DiscourseClient, category_slug: str):
     assert client.refresh, "Client must be in refresh mode"
     # Get the root category
+    print("Fetching categories")
     category = client.get_category_with_subcategories(category_slug)
     # Category can be None if given slug isn't found in list of categories
     assert category
@@ -173,8 +174,12 @@ def refresh_all_category_topics(client: DiscourseClient, category_slug: str):
 
     # For each subcategory id, get its category info and their topics
     for sub_id in category["subcategory_ids"]:
+        print(f"Fetching subcategory {sub_id}")
         subcategory = client.get_category(sub_id)
         assert subcategory is not None
+        print("Fetching topics")
         subcategory_topics = client.get_category_topics(subcategory["slug"], sub_id)
         for sub_topic in subcategory_topics:
             client.get_topic_main_post(sub_topic["id"])
+
+    print(f"Successful in fetching all topics for {category_slug}!")
