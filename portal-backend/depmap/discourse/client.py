@@ -2,10 +2,10 @@ import requests
 from requests.adapters import HTTPAdapter, Retry
 from urllib.parse import urljoin
 from .utils import reformat_date
-import sqliteshelve as shelve
 from flask import current_app
 import os
 import json
+from sqlitedict import SqliteDict
 
 
 class DiscourseClient:
@@ -50,13 +50,14 @@ class DiscourseClient:
     def get_category(self, category_id: int):
         url = f"/c/{category_id}/show.json"
 
-        with shelve.open(self.resources_results) as db:
+        with SqliteDict(self.resources_results) as db:
             if self.refresh:
                 res = self.get(url)["category"]
                 # Store response results
                 db[url] = res
+                db.commit()
 
-            data = db.get(url, None)
+            data = db[url]
             assert data
 
         return data
@@ -64,7 +65,7 @@ class DiscourseClient:
     def get_category_with_subcategories(self, category_slug: str):
         # Given the category slug, filter from list of categories the specific category that matches the slug. NOTE: This is a workaround since GET /c/{id}/show.json does not return subcategory information as far as we know
         url = "/categories.json"
-        with shelve.open(self.resources_results) as db:
+        with SqliteDict(self.resources_results) as db:
             if self.refresh:
                 res = self.get(url)
                 categories = res["category_list"]["categories"]
@@ -73,8 +74,9 @@ class DiscourseClient:
                 )
                 # Store response results
                 db[url] = category
+                db.commit()
 
-            data = db.get(url, None)
+            data = db[url]
             assert data
 
         return data
@@ -83,7 +85,7 @@ class DiscourseClient:
         # Return topics for category sorted by date
         url = f"/c/{category_slug}/{category_id}.json"
 
-        with shelve.open(self.resources_results) as db:
+        with SqliteDict(self.resources_results) as db:
             if self.refresh:
                 res = self.get(url)
                 topics = res["topic_list"]["topics"]
@@ -105,22 +107,24 @@ class DiscourseClient:
                 )
                 # Store response results
                 db[url] = topics
+                db.commit()
 
-            data = db.get(url, None)
+            data = db[url]
             assert data
         return data
 
     def get_topic_main_post(self, topic_id: int):
         url = f"t/{topic_id}/posts.json"
 
-        with shelve.open(self.resources_results) as db:
+        with SqliteDict(self.resources_results) as db:
             if self.refresh:
                 res = self.get(url)
                 posts = res["post_stream"]["posts"]
                 main_post = posts[0]
                 # Store response results
                 db[url] = main_post
+                db.commit()
 
-            data = db.get(url, None)
+            data = db[url]
             assert data
         return data
