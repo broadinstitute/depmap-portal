@@ -119,6 +119,7 @@ def get_root_category_subcategory_topics(
     category = client.get_category_with_subcategories(category_slug)
     # Category can be None if given slug isn't found in list of categories
     # NOTE: It would have been nice to use get single category instead of list of categories that is then filtered but the response to get single category doesn't include subcategory info
+    # NOTE: Subcategory ids are returned in the order they are set to in Discourse settings
     if category is None:
         return None
     root_category = RootCategory(category["name"], [])
@@ -159,3 +160,21 @@ def get_root_category_subcategory_topics(
         # Append subcategory with topics to root category's list of subcategories
         root_category.subcategories.append(sub_category)
     return root_category
+
+
+def refresh_all_category_topics(client: DiscourseClient, category_slug: str):
+    assert client.refresh, "Client must be in refresh mode"
+    # Get the root category
+    category = client.get_category_with_subcategories(category_slug)
+    # Category can be None if given slug isn't found in list of categories
+    assert category
+    # NOTE: It would have been nice to use get single category instead of list of categories that is then filtered but the response to get single category doesn't include subcategory info
+    # NOTE: Subcategory ids are returned in the order they are set to in Discourse settings
+
+    # For each subcategory id, get its category info and their topics
+    for sub_id in category["subcategory_ids"]:
+        subcategory = client.get_category(sub_id)
+        assert subcategory is not None
+        subcategory_topics = client.get_category_topics(subcategory["slug"], sub_id)
+        for sub_topic in subcategory_topics:
+            client.get_topic_main_post(sub_topic["id"])

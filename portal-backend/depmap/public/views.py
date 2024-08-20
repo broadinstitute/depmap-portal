@@ -9,6 +9,7 @@ from depmap.public.fetch_forum_resources import pull_resource_topics_from_forum
 from depmap.public.resources import (
     get_root_category_subcategory_topics,
     create_sanitizer,
+    refresh_all_category_topics,
 )
 from depmap.discourse.client import DiscourseClient
 from depmap.settings.download_settings import get_download_list
@@ -140,6 +141,31 @@ def documentation():
 
     sections = rewrite_documentation_urls(sections)
     return render_template("public/documentation.html", sections=sections)
+
+
+@blueprint.route("/resources/reload")
+def resources_reloads():
+    forum_api_key_value = current_app.config.get("FORUM_API_KEY")
+    forum_url = current_app.config.get("FORUM_URL")
+    if forum_api_key_value is None or forum_url is None:
+        abort(404)
+
+    if os.path.isfile(
+        forum_api_key_value
+    ):  # Presumably value is filepath in dev config only
+        with open(forum_api_key_value) as fp:
+            discourse_api_key = fp.read()
+    else:
+        discourse_api_key = forum_api_key_value
+
+    client = DiscourseClient(discourse_api_key, forum_url, True)
+    try:
+        refresh_all_category_topics(
+            client, current_app.config.get("FORUM_RESOURCES_CATEGORY")
+        )
+    except Exception as e:
+        raise e
+    return render_template("public/resources_reload.html")
 
 
 @blueprint.route("/resources_prototype/")
