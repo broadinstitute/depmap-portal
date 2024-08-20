@@ -41,6 +41,7 @@ class ExternalConfig(RemoteConfig):
     DB_PATH = os.path.join(WEBAPP_DATA_DIR, Config.DB_NAME)
     SQLALCHEMY_DATABASE_URI = "sqlite:///{0}".format(DB_PATH)
     NONSTANDARD_DATA_DIR = os.path.join(WEBAPP_DATA_DIR, "nonstandard")
+    RESOURCES_DATA_PATH = os.path.join(WEBAPP_DATA_DIR, "resources", "results.db")
     GET_NONSTANDARD_DATASETS = get_external_nonstandard_datasets
     COMPUTE_RESULTS_ROOT = os.path.join(WEBAPP_DATA_DIR, "results")
     PROFILE_DIR = os.path.join(
