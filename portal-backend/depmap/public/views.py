@@ -29,6 +29,7 @@ from flask import (
     url_for,
     redirect,
 )
+import requests
 from depmap.public.parse_resources import parse_resources_file
 
 from depmap.public.announcements.utils import get_announcements_list
@@ -163,8 +164,11 @@ def resources_reloads():
         refresh_all_category_topics(
             client, current_app.config.get("FORUM_RESOURCES_CATEGORY")
         )
-    except Exception as e:
-        raise e
+    except requests.exceptions.HTTPError as err:
+        if err.response.status_code == 429:
+            abort(429)
+        else:
+            raise err
     return render_template("public/resources_reload.html")
 
 
@@ -187,9 +191,15 @@ def resources_prototype():
     client = DiscourseClient(discourse_api_key, forum_url)
     sanitizer = create_sanitizer()
 
-    root_category = get_root_category_subcategory_topics(
-        client, sanitizer, current_app.config.get("FORUM_RESOURCES_CATEGORY")
-    )
+    try:
+        root_category = get_root_category_subcategory_topics(
+            client, sanitizer, current_app.config.get("FORUM_RESOURCES_CATEGORY")
+        )
+    except requests.exceptions.HTTPError as err:
+        if err.response.status_code == 429:
+            abort(429)
+        else:
+            raise err
     if root_category is None:
         abort(404)
 
