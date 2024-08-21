@@ -416,7 +416,7 @@ def register_errorhandlers(app: Flask):
         # If a HTTPException, pull the `code` attribute; default to 500
         return render_template("{0}.html".format(error_code)), error_code
 
-    for errcode in [401, 404, 500]:
+    for errcode in [401, 404, 429, 500]:
         app.register_error_handler(errcode, render_error)
 
     app.register_error_handler(RequestRedirect, lambda r: redirect(r.new_url))
