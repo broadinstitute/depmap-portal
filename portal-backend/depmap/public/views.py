@@ -169,30 +169,8 @@ def resources_prototype():
 
     assert root_category
 
-    subcategory_id = request.args.get("subcategoryId")
-    topic_id = request.args.get("topicId")
-    topic_post_content = None
-    if topic_id and subcategory_id:
-        subcategory = next(
-            (
-                sub
-                for sub in root_category.subcategories
-                if sub.id == (int(subcategory_id))
-            ),
-            None,
-        )
-        if subcategory:
-            topic = next(
-                (topic for topic in subcategory.topics if topic.id == (int(topic_id))),
-                None,
-            )
-            if topic:
-                topic_post_content = topic.post_content
-
     return render_template(
-        "public/resources_prototype.html",
-        root_category=root_category,
-        post_content=topic_post_content,
+        "public/resources_prototype.html", root_category=root_category,
     )
 
 
