@@ -90,6 +90,7 @@ def view_cell_line(cell_line_name):
     return render_template(
         "cell_lines/cell_line.html",
         stripped_cell_line_name=selected_cell_line.stripped_cell_line_name,
+        public_comments=selected_cell_line.public_comments,
         model_id=selected_cell_line.model_id,
         has_metmap_data=has_metmap_data,
     )
