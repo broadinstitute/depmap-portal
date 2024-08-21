@@ -1768,8 +1768,8 @@ def _sync_metadata_to_breadbox():
 @click.command("reload_resources")
 @with_appcontext
 def reload_resources():
-    forum_api_key_value = current_app.config.get("FORUM_API_KEY")
-    forum_url = current_app.config.get("FORUM_URL")
+    forum_api_key_value = current_app.config["FORUM_API_KEY"]
+    forum_url = current_app.config["FORUM_URL"]
     if forum_api_key_value is None or forum_url is None:
         raise Exception("Missing forum_api_key_value or forum_url values!")
 
@@ -1784,7 +1784,7 @@ def reload_resources():
     client = DiscourseClient(discourse_api_key, forum_url, True)
     try:
         refresh_all_category_topics(
-            client, current_app.config.get("FORUM_RESOURCES_CATEGORY")
+            client, current_app.config["FORUM_RESOURCES_CATEGORY"]
         )
     except Exception as e:
         raise e

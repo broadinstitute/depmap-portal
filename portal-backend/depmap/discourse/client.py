@@ -18,7 +18,7 @@ class DiscourseClient:
         self.api_key = api_key
         self.reload = reload
         self.session = self.__create_session(api_key)
-        self.resources_results = current_app.config["RESOURCES_DATA_PATH"]
+        self.resources_results = current_app.config.get("RESOURCES_DATA_PATH")
         self.__create_db_dir_if_needed(self.resources_results)
 
     def __create_session(self, api_key: str):
