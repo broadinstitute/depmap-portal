@@ -27,7 +27,7 @@ const CellLinePageHeader = ({
           <span
             className="glyphicon glyphicon-alert"
             style={{ marginRight: "6px" }}
-          ></span>
+          />
           {publicComments}
         </div>
       )}
