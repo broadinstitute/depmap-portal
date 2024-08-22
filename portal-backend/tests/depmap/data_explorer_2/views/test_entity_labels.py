@@ -50,7 +50,7 @@ def test_entity_labels(app, empty_db_mock_downloads, mock_breadbox_client):
 
     with app.test_client() as c:
         r = c.get(
-            url_for("data_explorer_2.entity_labels", entity_type="gene"),
+            url_for("data_explorer_2.slice_labels", slice_type="gene"),
             content_type="application/json",
         )
         assert r.status_code == 200, r.status_code
