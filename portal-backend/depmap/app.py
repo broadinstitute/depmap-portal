@@ -77,6 +77,7 @@ from depmap.private_dataset.api import namespace as private_dataset_namespace
 from depmap.private_dataset.views import blueprint as private_dataset_blueprint
 from depmap.public.minisites import register_minisites
 from depmap.public.views import blueprint as public_blueprint
+from depmap.private.views import blueprint as private_blueprint
 from depmap.theme.views import blueprint as theme_blueprint
 from depmap.tda.views import blueprint as tda_blueprint
 from depmap.tile.views import blueprint as tile_blueprint
@@ -350,6 +351,7 @@ def register_access_control(app: Flask):
 def register_blueprints(app: Flask):
     """Register Flask blueprints."""
     app.register_blueprint(public_blueprint)
+    app.register_blueprint(private_blueprint)
     app.register_blueprint(theme_blueprint)
     app.register_blueprint(gene_blueprint)
     app.register_blueprint(cell_line_blueprint)
