@@ -14,13 +14,14 @@ if (!dataElement || !dataElement.textContent) {
 
 const data = JSON.parse(dataElement.textContent);
 
-const { strippedCellLineName, modelId, hasMetMapData } = data;
+const { strippedCellLineName, publicComments, modelId, hasMetMapData } = data;
 
 const App = () => {
   return (
     <ErrorBoundary>
       <CellLinePage
         strippedCellLineName={strippedCellLineName}
+        publicComments={publicComments}
         modelId={modelId}
         hasMetMapData={hasMetMapData}
       />

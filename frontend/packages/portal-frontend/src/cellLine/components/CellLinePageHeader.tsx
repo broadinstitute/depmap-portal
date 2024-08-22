@@ -3,11 +3,13 @@ import styles from "../styles/CellLinePage.scss";
 
 interface Props {
   strippedCellLineName: string | null;
+  publicComments: string | null;
   modelId: string | null;
 }
 
 const CellLinePageHeader = ({
   strippedCellLineName,
+  publicComments,
   modelId,
 }: Props): JSX.Element => {
   return (
@@ -20,6 +22,15 @@ const CellLinePageHeader = ({
           </span>
         )}
       </div>
+      {publicComments && publicComments !== "" && (
+        <div className={styles.publicComments}>
+          <span
+            className="glyphicon glyphicon-alert"
+            style={{ marginRight: "6px" }}
+          />
+          {publicComments}
+        </div>
+      )}
     </div>
   );
 };
