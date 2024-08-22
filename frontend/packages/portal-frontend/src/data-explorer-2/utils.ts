@@ -558,21 +558,6 @@ const replaceLegacyPropertyNames = (plot: DataExplorerPlotConfig | null) => {
     if (legacyDim.axis_type === "context") {
       dim.axis_type = "aggregated_slice";
     }
-
-    // "entity_label" has been renamed to "slice_label"
-    const renameEntityLabel = (o: unknown) => {
-      Object.keys(o || {}).forEach((key) => {
-        const obj = o as Record<string, unknown>;
-
-        if (typeof obj[key] === "object" && obj[key] !== null) {
-          renameEntityLabel(obj[key]);
-        } else if (key === "var" && obj[key] === "entity_label") {
-          obj[key] = "slice_label";
-        }
-      });
-    };
-
-    renameEntityLabel(dim.context);
   });
 
   return plot;

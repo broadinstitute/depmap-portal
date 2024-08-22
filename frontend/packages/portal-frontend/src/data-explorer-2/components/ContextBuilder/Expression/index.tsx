@@ -77,7 +77,7 @@ function Expression({
                   onClick={() => {
                     const op = getOperator(expr);
                     const shouldUseModelNames =
-                      expr[op][0].var !== "slice_label";
+                      expr[op][0].var !== "entity_label";
 
                     editInCellLineSelector(
                       getSelectedCellLines(expr),

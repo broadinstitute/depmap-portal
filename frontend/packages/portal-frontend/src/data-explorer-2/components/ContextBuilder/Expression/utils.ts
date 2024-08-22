@@ -17,7 +17,7 @@ export const isEditableAsCellLineList = (slice_type: string, expr: any) => {
   return (
     isListOperator(op) &&
     slice_type === "depmap_model" &&
-    ["slice_label", "slice/cell_line_display_name/all/label"].includes(
+    ["entity_label", "slice/cell_line_display_name/all/label"].includes(
       expr[op][0]?.var
     )
   );

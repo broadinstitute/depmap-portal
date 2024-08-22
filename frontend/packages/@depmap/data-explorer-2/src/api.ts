@@ -667,11 +667,7 @@ export async function fetchContext(hash: string): Promise<DataExplorerContext> {
   }
 
   const body = await response.json();
-  const json = body.value
-    // This property has been renamed in newer
-    // contexts so update any legacy ones.
-    .replace(/"entity_label"/g, '"slice_label"');
-  const context = JSON.parse(json);
+  const context = JSON.parse(body.value);
 
   if (!cache) {
     fallbackInMemoryCache[hash] = context;

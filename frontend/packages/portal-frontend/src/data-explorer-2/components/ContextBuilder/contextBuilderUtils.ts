@@ -117,7 +117,7 @@ export const getValueType = (
     return null;
   }
 
-  if (slice_id === "slice_label") {
+  if (slice_id === "entity_label") {
     return "categorical";
   }
 

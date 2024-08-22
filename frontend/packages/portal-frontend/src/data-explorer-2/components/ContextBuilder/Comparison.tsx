@@ -124,7 +124,7 @@ function Comparison({
         setSummary(null);
 
         try {
-          if (slice_id === "slice_label") {
+          if (slice_id === "entity_label") {
             const data = await fetchSliceLabels(slice_type);
             const labels = data.labels.sort(collator.compare);
             setSummary({

@@ -65,10 +65,9 @@ class _LazyContextDict(dict):
         self.cache = cache
 
     def __getitem__(self, prop):
-        # Handle trivial case where we're just looking up an entity's own label
-        # (this property was renamed from "entity_label" to "slice_label" so we
-        # check for both in order to maintain backward compatibility).
-        if prop in ("entity_label", "slice_label"):
+        # Handle trivial case where we're just looking up a slice's own label.
+        # Note that this is called "entity_label" for historical reasons.
+        if prop == "entity_label":
             return self.slice_label
 
         if prop.startswith("slice/"):

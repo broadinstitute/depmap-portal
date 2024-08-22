@@ -21,7 +21,7 @@ import styles from "src/data-explorer-2/styles/ContextBuilder.scss";
 type SliceId = string;
 
 interface Props {
-  value: "slice_label" | SliceId | null;
+  value: "entity_label" | SliceId | null;
   path: (string | number)[];
   onChangeDataSelect: (option: { label: string; value: string } | null) => void;
   dispatch: React.Dispatch<ContextBuilderReducerAction>;
