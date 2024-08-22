@@ -280,5 +280,5 @@ def _get_axis_label(
             axis_label += " " + units
         return axis_label
 
-    entities = pluralize(to_display_name(slice_type))
+    entities = pluralize(to_display_name(slice_type or ""))
     return f"{aggregation} {units} of {context_count} {context_name} {entities}"

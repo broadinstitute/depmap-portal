@@ -272,7 +272,7 @@ def get_correlation():
         if dimension_key == "x2" and use_clustering:
             df = df.reindex(row_labels, axis=0).reindex(row_labels, axis=1)  # type: ignore
 
-        entities = pluralize(to_display_name(slice_type))
+        entities = pluralize(to_display_name(slice_type or ""))
         is_anonymous = re.match(r"\(\d+ selected\)", context["name"])
         axis_label = (
             f"correlation of {context['name']} {entities}"
