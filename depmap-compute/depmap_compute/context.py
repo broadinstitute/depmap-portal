@@ -135,7 +135,7 @@ def decode_slice_id(slice_id) -> tuple[str, str, str]:
         parts[1:3] = ["/".join(parts[1:3])]
 
     dataset_id = unquote(parts[1])
-    feature = unquote(parts[2])
+    dimension_identifier = unquote(parts[2])
     slice_type = unquote(parts[3])  # "label", "entity_id", or "transpose_label"
 
-    return dataset_id, feature, slice_type
+    return dataset_id, dimension_identifier, slice_type
