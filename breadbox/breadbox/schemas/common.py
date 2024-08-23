@@ -33,4 +33,4 @@ class ResponseMixin:
 class DBBase(BaseModel, ResponseMixin):
     id: UUID
 
-    model_config: ConfigDict = ConfigDict(from_attributes=True)
+    model_config: ConfigDict = ConfigDict(extra="allow", from_attributes=True)

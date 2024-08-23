@@ -6,7 +6,8 @@ class HTTPError(BaseModel):
     detail: str
 
     model_config: ConfigDict = ConfigDict(
-        json_schema_extra={"example": {"detail": "HTTPException raised."}}
+        extra="allow",
+        json_schema_extra={"example": {"detail": "HTTPException raised."}},
     )
 
 

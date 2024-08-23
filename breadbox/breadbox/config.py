@@ -24,6 +24,7 @@ class Settings(BaseSettings):
     ]
 
     model_config: ConfigDict = {
+        "extra": "allow",
         "env_file": ".env",
         "CELERY_BROKER_URL": os.environ.get(
             "CELERY_BROKER_URL", "redis://127.0.0.1:6379/0"
