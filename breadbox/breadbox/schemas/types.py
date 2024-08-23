@@ -4,7 +4,7 @@ from breadbox.schemas.custom_http_exception import AnnotationValidationError
 from breadbox.schemas.dataset import TabularDatasetResponse
 from fastapi import File, Form, HTTPException, UploadFile, Body
 
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import BaseModel, Field, field_validator, model_validator, ConfigDict
 from typing import List, Optional, Dict, Annotated
 
 
@@ -42,9 +42,7 @@ class UpdateDimensionType(BaseModel):
 
 
 class FeatureTypeOut(BaseModel):
-    class Config:
-        orm_mode = True
-        allow_population_by_field_name = True
+    model_config: ConfigDict = ConfigDict(from_attributes=True, populate_by_name=True)
 
     name: str
     id_column: str
@@ -52,9 +50,7 @@ class FeatureTypeOut(BaseModel):
 
 
 class SampleTypeOut(BaseModel):
-    class Config:
-        orm_mode = True
-        allow_population_by_field_name = True
+    model_config: ConfigDict = ConfigDict(from_attributes=True, populate_by_name=True)
 
     name: str
     id_column: str

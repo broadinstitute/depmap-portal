@@ -2,7 +2,7 @@ from functools import lru_cache
 import os
 from typing import List, Optional
 
-from pydantic import field_validator
+from pydantic import field_validator, ConfigDict
 from pydantic_settings import BaseSettings
 
 
@@ -23,14 +23,15 @@ class Settings(BaseSettings):
         "http://127.0.0.1:5000",
     ]
 
-    class Config:
-        env_file = ".env"
-        CELERY_BROKER_URL: str = os.environ.get(
+    model_config: ConfigDict = {
+        "env_file": ".env",
+        "CELERY_BROKER_URL": os.environ.get(
             "CELERY_BROKER_URL", "redis://127.0.0.1:6379/0"
-        )
-        CELERY_RESULT_BACKEND: str = os.environ.get(
+        ),
+        "CELERY_RESULT_BACKEND": os.environ.get(
             "CELERY_RESULT_BACKEND", "redis://127.0.0.1:6379/0"
-        )
+        ),
+    }
 
     @field_validator("host_scheme_override")
     def env_contains_colon(cls, v):
