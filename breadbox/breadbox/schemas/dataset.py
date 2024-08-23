@@ -284,8 +284,8 @@ DatasetResponse = Annotated[
 ]
 
 
-MatrixDatasetResponse.update_forward_refs()
-TabularDatasetResponse.update_forward_refs()
+MatrixDatasetResponse.model_rebuild()
+TabularDatasetResponse.model_rebuild()
 
 
 class TabularDatasetIn(TabularDatasetBase):

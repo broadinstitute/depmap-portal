@@ -297,7 +297,7 @@ def upload_dataset(
     from breadbox.schemas.dataset import MatrixDatasetResponse
 
     return UploadDatasetResponse(
-        dataset=MatrixDatasetResponse.from_orm(added_dataset),
+        dataset=MatrixDatasetResponse.model_validate(added_dataset),
         datasetId=str(added_dataset.id),
         warnings=[warning],
         forwardingUrl=forwardingUrl,
