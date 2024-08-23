@@ -3655,13 +3655,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "allOf": [
-                  {
-                    "$ref": "#/components/schemas/MatrixDimensionsInfo"
-                  }
-                ],
-                "default": {},
-                "title": "Matrix Dimensions Info"
+                "$ref": "#/components/schemas/MatrixDimensionsInfo"
               }
             }
           }
@@ -3844,13 +3838,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "allOf": [
-                  {
-                    "$ref": "#/components/schemas/TabularDimensionsInfo"
-                  }
-                ],
-                "default": {},
-                "title": "Tabular Dimensions Info"
+                "$ref": "#/components/schemas/TabularDimensionsInfo"
               }
             }
           }
