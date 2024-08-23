@@ -2,7 +2,7 @@ from functools import lru_cache
 import os
 from typing import List, Optional
 
-from pydantic import validator
+from pydantic import field_validator
 from pydantic_settings import BaseSettings
 
 
@@ -32,8 +32,9 @@ class Settings(BaseSettings):
             "CELERY_RESULT_BACKEND", "redis://127.0.0.1:6379/0"
         )
 
-    @validator("host_scheme_override")
+    @field_validator("host_scheme_override")
     def env_contains_colon(cls, v):
+        """"""
         if v is not None and ":" not in v:
             raise ValueError(
                 "Must contain colon and take the format of [Internet protocol]:[host name]!"

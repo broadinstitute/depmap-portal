@@ -2,7 +2,7 @@ from __future__ import annotations
 import json
 from uuid import UUID
 from typing import Optional, List, Dict, Any, Annotated, Union, Literal
-from pydantic import BaseModel, Field, model_validator, validator
+from pydantic import AfterValidator, BaseModel, Field, model_validator, field_validator
 
 from breadbox.schemas.common import DBBase
 from fastapi import HTTPException, Body
@@ -86,13 +86,27 @@ class SharedDatasetParams(BaseModel):
         ),
     ] = None  # NOTE: Error if put default value in Body(). Strangely, setting typing to Annotated[Optional[...]] correctly outputs in openapi.json as unrequired param but not in other cases?
 
-    @validator("dataset_md5")
+    @field_validator("dataset_md5")
     def check_hexadecimal(cls, v):
         try:
             int(v, 16)
             return v
         except:
             raise ValueError("Must be hex string")
+
+
+def check_allowed_values_not_empty(v):
+    if v == "":
+        raise UserError("Empty strings are not allowed.")
+    allowed_values_list_lower = [str(x).lower() for x in v]
+    if len(set(allowed_values_list_lower)) != len(v):
+        raise UserError(
+            msg="Make sure there are no repeats in allowed_values. Values are not considered case-sensitive",
+        )
+    return v
+
+
+AllowedValue = Annotated[str, AfterValidator(check_allowed_values_not_empty)]
 
 
 class MatrixDatasetParams(SharedDatasetParams):
@@ -113,7 +127,7 @@ class MatrixDatasetParams(SharedDatasetParams):
         ),
     ]
     allowed_values: Annotated[
-        Optional[List[str]],
+        Optional[List[AllowedValue]],
         Field(
             description="Only provide if 'value_type' is 'categorical'. Must contain all possible categorical values",
         ),
@@ -150,17 +164,6 @@ class MatrixDatasetParams(SharedDatasetParams):
                 "Must include allowed_values for categorical value type datasets!"
             )
         return self
-
-    @validator("allowed_values", each_item=True)
-    def check_allowed_values_not_empty(cls, v):
-        if v == "":
-            raise UserError("Empty strings are not allowed.")
-        allowed_values_list_lower = [str(x).lower() for x in v]
-        if len(set(allowed_values_list_lower)) != len(v):
-            raise UserError(
-                msg="Make sure there are no repeats in allowed_values. Values are not considered case-sensitive",
-            )
-        return v
 
 
 class ColumnMetadata(BaseModel):
@@ -237,8 +240,8 @@ class SharedDatasetFields(BaseModel):
         Optional[Dict[str, Any]], Field()
     ]  # NOTE: Same as Dict[str, Any] =  Field(None,)
     dataset_md5: Annotated[Optional[str], Field(None, max_length=32, min_length=32,)]
-    # validator
-    _check_uuid = validator("group_id", allow_reuse=True)(check_uuid)
+    # field_validator
+    _check_uuid = field_validator("group_id")(check_uuid)
 
 
 class MatrixDatasetBase(SharedDatasetFields):
@@ -253,8 +256,8 @@ class MatrixDatasetBase(SharedDatasetFields):
 class MatrixDatasetIn(MatrixDatasetBase):
     id: str
 
-    # validator
-    _check_uuid = validator("id", allow_reuse=True)(check_uuid)
+    # field_validator
+    _check_uuid = field_validator("id")(check_uuid)
 
 
 class MatrixDatasetResponse(MatrixDatasetBase, DBBase):
@@ -288,8 +291,8 @@ TabularDatasetResponse.update_forward_refs()
 class TabularDatasetIn(TabularDatasetBase):
     id: str
 
-    # validator
-    _check_uuid = validator("id", allow_reuse=True)(check_uuid)
+    # field_validator
+    _check_uuid = field_validator("id")(check_uuid)
 
 
 class AddDatasetResponse(BaseModel):
