@@ -1293,6 +1293,9 @@
         "type": "object"
       },
       "HTTPError": {
+        "example": {
+          "detail": "HTTPException raised."
+        },
         "properties": {
           "detail": {
             "title": "Detail",
