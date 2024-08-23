@@ -116,14 +116,14 @@ def _encode_dots_in_vars(expr):
 
 def decode_slice_id(slice_id) -> tuple[str, str, str]:
     """
-    Based on the function of the same name from SliceSerializer but we don't
-    enforce that feature_type is of type SliceRowType. That way we can handle
-    novel feature types like the "transpose_label".
+    Originally based on the function of the same name from vector_catalog.SliceSerializer,
+    Data Explorer 2 slice ids are a superset of the legacy slice ids.
+    Originally, slice IDs were formatted like "slice/some_dataset_id/some_feature_label/label", 
+    or "slice/some_dataset_id/some_feature_id/entity_id", where the last part of the string
+    (originally called the SliceRowType) specifies whether the feature is being identified by ID or by label. 
 
-    Data Explorer 2 slice ids are a superset of legacy slice ids.
-    One difference is that DE2 slice ids can include "transpose_label"
-    as a feature type, which indicates that the result should be transposed.
-    "transpose_label" is used similarly to the "depmap_model" feature type in slice ids.
+    The DE2 slice IDs give you flexibility by letting you query samples as well using the "transpose_label" specifier.
+    When "transpose_label" is used as the last segment of the slice ID, it means we should query for samples.
     """
     parts = slice_id.split("/")
     assert (
@@ -136,6 +136,6 @@ def decode_slice_id(slice_id) -> tuple[str, str, str]:
 
     dataset_id = unquote(parts[1])
     feature = unquote(parts[2])
-    feature_type = unquote(parts[3])
+    slice_type = unquote(parts[3])  # "label", "entity_id", or "transpose_label"
 
-    return dataset_id, feature, feature_type
+    return dataset_id, feature, slice_type

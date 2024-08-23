@@ -620,7 +620,6 @@ utils.py: error: Cannot access member "dropna" for type "ndarray[Any, Unknown]"
 utils.py: error: Cannot access member "encode" for type "bytes"
 utils.py: error: Cannot access member "rename" for type "NDArray[Unknown]"
 utils.py: error: Cannot access member "rename" for type "ndarray[Any, Unknown]"
-utils.py: error: Cannot access member "unquote" for type "type[Serializer]"
 utils.py: error: Expression of type "Dict[str, DatasetSortKey] | Any" cannot be assigned to return type "DefaultDict[str, DatasetSortKey]"
 utils.py: error: Expression of type "None" cannot be assigned to return type "DataFrame"
 utils.py: error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
