@@ -6,6 +6,16 @@ export enum ModelName {
   RNASeq = "RNASeq",
 }
 
+export enum ScreenType {
+  CRISPR = "crispr",
+  RNAI = "rnai",
+}
+
+export const SCREEN_TYPE_COLORS = new Map<string, string>([
+  [ScreenType.CRISPR, "#1D6996"],
+  [ScreenType.RNAI, "#52288E"],
+]);
+
 export const FEATURE_SET_COLORS = new Map<string, string>([
   [ModelName.CellContext, "#3F3F9F"],
   [ModelName.DriverEvents, "#c55252"],
@@ -117,11 +127,13 @@ export type ModelPerformanceInfo = {
 };
 
 export type PredictabilityData = {
-  overview: {
-    aggregated_scores: AggScoresData;
-    top_features: TopFeaturesBarData;
-    gene_tea_symbols: string[];
+  [screen_type: string]: {
+    overview: {
+      aggregated_scores: AggScoresData;
+      top_features: TopFeaturesBarData;
+      gene_tea_symbols: string[];
+    };
+    // Per predictive model
+    model_performance_info: { [key: string]: ModelPerformanceInfo };
   };
-  // Per predictive model
-  model_performance_info: { [key: string]: ModelPerformanceInfo };
 };

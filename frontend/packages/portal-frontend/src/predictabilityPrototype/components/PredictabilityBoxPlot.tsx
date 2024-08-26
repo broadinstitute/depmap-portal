@@ -11,10 +11,12 @@ interface PredictabilityBoxPlotProps {
   featureType: string;
   featureName: string;
   panelIndex: number;
+  screenType: string;
   getPredictabilityBoxPlotData: (
     identifier: string,
     entityLabel: string,
-    model: string
+    model: string,
+    screenType: string
   ) => Promise<number[]>;
 }
 
@@ -25,6 +27,7 @@ const PredictabilityBoxPlot = ({
   featureName,
   featureType,
   panelIndex,
+  screenType,
   getPredictabilityBoxPlotData,
 }: PredictabilityBoxPlotProps) => {
   const [boxPlotElement, setBoxPlotElement] = useState<ExtendedPlotType | null>(
@@ -44,7 +47,8 @@ const PredictabilityBoxPlot = ({
     const promise = getPredictabilityBoxPlotData(
       featureNameType,
       geneSymbol,
-      modelName
+      modelName,
+      screenType
     );
 
     latestPromise.current = promise;

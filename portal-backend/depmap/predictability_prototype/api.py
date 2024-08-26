@@ -15,6 +15,7 @@ from depmap.predictability_prototype.utils import (
     top_features_overall,
     get_top_feature_headers,
     MODEL_SEQUENCE,
+    SCREEN_TYPES,
 )
 
 from flask_restplus import Namespace, Resource
@@ -91,59 +92,47 @@ class Predictions(
         # breakpoint()
 
         # Overview data
-        import time
-
-        start = time.time()
-        # <code to time>
         gene_effect_df = get_gene_effect_df()
         predictablity_datasets = get_all_predictability_datasets()
-        end = time.time()
-        print(f"Get Gene Effect and Pred Datasets {end-start} seconds")
 
-        # TODO: TAKE OUT
-        screen_type = "crispr"
-        entity_id = Gene.get_by_label(gene_symbol).entity_id
-        start = time.time()
-        agg_scores = generate_aggregate_scores_across_all_models(
-            gene_symbol,
-            entity_id=entity_id,
-            screen_type=screen_type,
-            datasets=predictablity_datasets,
-            actuals=gene_effect_df,
-        )
-        end = time.time()
-        print(f"Generate Agg Scores {end-start} seconds")
+        data_by_screen_type = {}
+        for screen_type in SCREEN_TYPES:
+            entity_id = Gene.get_by_label(gene_symbol).entity_id
 
-        start = time.time()
-        top_features, gene_tea_symbols = top_features_overall(
-            gene_symbol, entity_id=entity_id
-        )
-        end = time.time()
-        print(f"Top Features Overall {end-start} seconds")
-
-        model_performance_info = {}
-
-        start = time.time()
-        for model in MODEL_SEQUENCE:
-            feature_header_info = get_top_feature_headers(
-                entity_id=entity_id, model=model, screen_type=screen_type
+            agg_scores = generate_aggregate_scores_across_all_models(
+                gene_symbol,
+                entity_id=entity_id,
+                screen_type=screen_type,
+                datasets=predictablity_datasets,
+                actuals=gene_effect_df,
             )
-            r = PrototypePredictiveModel.get_r_squared_for_model(model)
-            model_performance_info[model] = {
-                "r": r,
-                "feature_summaries": feature_header_info,
-            }
-        end = time.time()
-        print(f"MODEL PERFORMANCE {end-start} seconds")
 
-        return {
-            "overview": {
-                "aggregated_scores": agg_scores,
-                "top_features": top_features,
-                "gene_tea_symbols": list(gene_tea_symbols),
-            },
-            "model_performance_info": model_performance_info,
-        }
+            top_features, gene_tea_symbols = top_features_overall(
+                gene_symbol, entity_id=entity_id
+            )
+
+            model_performance_info = {}
+
+            for model in MODEL_SEQUENCE:
+                feature_header_info = get_top_feature_headers(
+                    entity_id=entity_id, model=model, screen_type=screen_type
+                )
+                r = PrototypePredictiveModel.get_r_squared_for_model(model)
+                model_performance_info[model] = {
+                    "r": r,
+                    "feature_summaries": feature_header_info,
+                }
+
+            data_by_screen_type[screen_type] = {
+                "overview": {
+                    "aggregated_scores": agg_scores,
+                    "top_features": top_features,
+                    "gene_tea_symbols": list(gene_tea_symbols),
+                },
+                "model_performance_info": model_performance_info,
+            }
+
+        return data_by_screen_type
 
 
 @namespace.route("/model_performance")
@@ -159,7 +148,6 @@ class ModelPerformance(
         entity_label = request.args.get("entity_label")
         model = request.args.get("model")
         screen_type = request.args.get("screen_type")
-        screen_type = "crispr"
 
         entity_id = Gene.get_by_label(entity_label).entity_id
         gene_effect_df = get_gene_effect_df()
@@ -189,7 +177,7 @@ class RelatedCorrelations(
         entity_label = request.args.get("entity_label")
         feature_name_type = request.args.get("identifier")
         model = request.args.get("model")
-        screen_type = "crispr"
+        screen_type = request.args.get("screen_type")
 
         entity_id = Gene.get_by_label(entity_label).entity_id
 
@@ -217,7 +205,7 @@ class Waterfall(
         entity_label = request.args.get("entity_label")
         feature_name_type = request.args.get("identifier")
         model = request.args.get("model")
-        screen_type = "crispr"
+        screen_type = request.args.get("screen_type")
 
         entity_id = Gene.get_by_label(entity_label).entity_id
 
@@ -244,7 +232,7 @@ class BoxPlot(
         feature_name_type = request.args.get("identifier")
         entity_label = request.args.get("entity_label")
         model = request.args.get("model")
-        screen_type = "crispr"
+        screen_type = request.args.get("screen_type")
 
         plot = get_feature_boxplot_data(
             screen_type=screen_type,
@@ -272,7 +260,7 @@ class GeneEffectData(
         feature_index = request.args.get("feature_index")
         model = request.args.get("model")
         entity_label = request.args.get("entity_label")
-        screen_type = "crispr"
+        screen_type = request.args.get("screen_type")
 
         entity_id = Gene.get_by_label(entity_label).entity_id
 

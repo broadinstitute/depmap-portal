@@ -638,12 +638,14 @@ export class DepmapApi {
   getRelatedFeatureCorrData(
     entityLabel: string,
     identifier: string,
-    model: string
+    model: string,
+    screenType: string
   ): Promise<RelatedFeaturePlot> {
     const params = {
       entity_label: entityLabel,
       identifier,
       model,
+      screen_type: screenType,
     };
 
     return this._fetchIncludePredictabilityCache<RelatedFeaturePlot>(
@@ -656,12 +658,14 @@ export class DepmapApi {
   getWaterfallData(
     entityLabel: string,
     identifier: string,
-    model: string
+    model: string,
+    screenType: string
   ): Promise<any> {
     const params = {
       entity_label: entityLabel,
       identifier,
       model,
+      screen_type: screenType,
     };
 
     return this._fetchIncludePredictabilityCache<any>(
@@ -672,12 +676,14 @@ export class DepmapApi {
   getPredictabilityBoxPlotData(
     identifier: string,
     entityLabel: string,
-    model: string
+    model: string,
+    screenType: string
   ): Promise<any> {
     const params = {
       entity_label: entityLabel,
       identifier,
       model,
+      screen_type: screenType,
     };
 
     return this._fetchIncludePredictabilityCache<any>(
@@ -707,7 +713,8 @@ export class DepmapApi {
     identifier: string,
     featureIndex: number,
     entityLabel: string,
-    model: string
+    model: string,
+    screenType: string
   ): Promise<FeatureVsGeneEffectPlotData> {
     const params = {
       feature_name: featureName,
@@ -716,6 +723,7 @@ export class DepmapApi {
       feature_index: featureIndex,
       entity_label: entityLabel,
       model,
+      screen_type: screenType,
     };
 
     return this._fetchIncludePredictabilityCache<FeatureVsGeneEffectPlotData>(

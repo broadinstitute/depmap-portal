@@ -6,6 +6,7 @@ import PredictabilityWaterfallPlot from "./PredictabilityWaterfallPlot";
 import RelatedFeaturesCorrPlot from "./RelatedFeaturesCorrPlot";
 import PredictabilityBoxPlot from "./PredictabilityBoxPlot";
 import FeatureVsGeneEffectPlot from "./FeatureVsGeneEffectPlot";
+import { SCREEN_TYPE_COLORS } from "../models/types";
 
 interface FeatureSinglePanelHeaderProps {
   feature: string;
@@ -24,19 +25,30 @@ export const FeatureCollapsiblePanelHeader = ({
 }: FeatureSinglePanelHeaderProps) => {
   return (
     <span className={styles.accordionTitle}>
-      <span className={styles.one}>{
-              <span
-              style={{paddingRight: "8px", paddingTop: "3px", fontSize: "12px"}}
-                className={isOpen ? "glyphicon glyphicon-chevron-up"
-                : "glyphicon glyphicon-chevron-down"}
-              />
-            }{feature}</span>
+      <span className={styles.one}>
+        {
+          <span
+            style={{ paddingRight: "8px", paddingTop: "3px", fontSize: "12px" }}
+            className={
+              isOpen
+                ? "glyphicon glyphicon-chevron-up"
+                : "glyphicon glyphicon-chevron-down"
+            }
+          />
+        }
+        {feature}
+      </span>
       <div className={styles.two}>
         {" "}
         {relativeImportance && (
           <StyledMeter
             value={relativeImportance}
-            style={{ barColor: "#97C2D4", maxWidth: "120px", labelFontSize: "14px", labelLeftPosition: "70px"}}
+            style={{
+              barColor: "#97C2D4",
+              maxWidth: "120px",
+              labelFontSize: "14px",
+              labelLeftPosition: "70px",
+            }}
             extraClassNames={"styled-correlation-box"}
             toFixed={2}
             percentage
@@ -49,7 +61,12 @@ export const FeatureCollapsiblePanelHeader = ({
         {correlation && (
           <StyledMeter
             value={correlation}
-            style={{ barColor: "#E79E9D", maxWidth: "120px", labelFontSize: "14px", labelLeftPosition: "70px" }}
+            style={{
+              barColor: "#E79E9D",
+              maxWidth: "120px",
+              labelFontSize: "14px",
+              labelLeftPosition: "70px",
+            }}
             extraClassNames={"styled-correlation-box"}
             toFixed={3}
             showLabel
@@ -65,30 +82,41 @@ interface SinglePanelHeaderProps {
   title: string;
   modelCorrelation: number | null;
   screenType: string;
-  isOpen: boolean
+  isOpen: boolean;
 }
 
 export const CollapsiblePanelHeader = ({
   title,
   modelCorrelation,
-  screenType, // take out if not used
-  isOpen
+  screenType,
+  isOpen,
 }: SinglePanelHeaderProps) => {
-  console.log(screenType)
+  console.log(screenType);
   return (
     <span className={styles.accordionTitle}>
-      <span className={styles.oneModel}>{
-              <span
-              style={{paddingRight: "8px", paddingTop: "3px", fontSize: "14px"}}
-                className={isOpen ? "glyphicon glyphicon-chevron-up"
-                : "glyphicon glyphicon-chevron-down"}
-              />
-            }{title}</span>
+      <span className={styles.oneModel}>
+        {
+          <span
+            style={{ paddingRight: "8px", paddingTop: "3px", fontSize: "14px" }}
+            className={
+              isOpen
+                ? "glyphicon glyphicon-chevron-up"
+                : "glyphicon glyphicon-chevron-down"
+            }
+          />
+        }
+        {title}
+      </span>
       <div className={styles.two}>
         {modelCorrelation && (
           <StyledMeter
             value={modelCorrelation}
-            style={{ barColor: "#52288E", maxWidth: "180px", labelFontSize: "14px", labelLeftPosition: "90px" }}
+            style={{
+              barColor: SCREEN_TYPE_COLORS.get(screenType),
+              maxWidth: "180px",
+              labelFontSize: "14px",
+              labelLeftPosition: "90px",
+            }}
             extraClassNames={"styled-correlation-box"}
             toFixed={3}
             showLabel
@@ -112,6 +140,7 @@ interface FeatureCollapsiblePanelProps {
   geneSymbol: string;
   panelIndex: number;
   isOpen: boolean;
+  screenType: string;
 }
 
 const FeatureCollapsiblePanels = ({
@@ -122,6 +151,7 @@ const FeatureCollapsiblePanels = ({
   geneSymbol,
   panelIndex,
   isOpen,
+  screenType,
 }: FeatureCollapsiblePanelProps) => {
   const dapi = getDapi();
 
@@ -131,8 +161,6 @@ const FeatureCollapsiblePanels = ({
         width: "100%",
       }}
     >
-
-      
       <div className="collapsible-sub-panel-list">
         <div className={styles.featurePanel}>
           <div className={styles.featureGraph1}>
@@ -144,6 +172,7 @@ const FeatureCollapsiblePanels = ({
                 feature={feature}
                 featureType={featureType}
                 panelIndex={panelIndex}
+                screenType={screenType}
                 getFeatureVsGeneEffectData={dapi.getPredictabilityFeatureGeneEffectData.bind(
                   dapi
                 )}
@@ -159,6 +188,7 @@ const FeatureCollapsiblePanels = ({
                 featureName={feature}
                 featureType={featureType}
                 panelIndex={panelIndex}
+                screenType={screenType}
                 getPredictabilityBoxPlotData={dapi.getPredictabilityBoxPlotData.bind(
                   dapi
                 )}
@@ -173,6 +203,7 @@ const FeatureCollapsiblePanels = ({
                 featureNameType={featureNameType}
                 feature={feature}
                 panelIndex={panelIndex}
+                screenType={screenType}
                 getRelatedFeaturesCorrPlotData={dapi.getRelatedFeatureCorrData.bind(
                   dapi
                 )}
@@ -187,6 +218,7 @@ const FeatureCollapsiblePanels = ({
                 featureNameType={featureNameType}
                 feature={feature}
                 panelIndex={panelIndex}
+                screenType={screenType}
                 getWaterfallPlotData={dapi.getWaterfallData.bind(dapi)}
               />
             )}

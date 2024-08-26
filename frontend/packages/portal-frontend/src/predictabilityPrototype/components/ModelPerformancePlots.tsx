@@ -14,16 +14,18 @@ import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
 export interface ModelPerformancePlotsProps {
   modelName: string;
   entityLabel: string;
+  screenType: string;
   getModelPerformanceData: (
-    screenType: string,
     entityLabel: string,
-    model: string
+    model: string,
+    screenType: string
   ) => Promise<PredictiveModelData>;
 }
 
 const ModelPerformancePlots = ({
   modelName,
   entityLabel,
+  screenType,
   getModelPerformanceData,
 }: ModelPerformancePlotsProps) => {
   const [
@@ -41,7 +43,6 @@ const ModelPerformancePlots = ({
     setCellContextCorrPlotElement(null);
     setModelPredPlotElement(null);
     setIsLoading(true);
-    const screenType = "crispr";
     const promise = getModelPerformanceData(modelName, entityLabel, screenType);
 
     latestPromise.current = promise;

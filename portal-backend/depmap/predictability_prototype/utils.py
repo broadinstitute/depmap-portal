@@ -15,6 +15,7 @@ import re
 from scipy import stats
 
 MODEL_SEQUENCE = ["CellContext", "DriverEvents", "GeneticDerangement", "DNA", "RNASeq"]
+SCREEN_TYPES = ["crispr", "rnai"]
 
 
 def get_dataset_by_model_name(model_name: str, screen_type: str):

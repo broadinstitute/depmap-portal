@@ -12,6 +12,9 @@ import {
   AggScoresData,
   ModelPerformanceInfo,
   TopFeaturesBarData,
+  PredictabilityData,
+  ScreenType,
+  SCREEN_TYPE_COLORS,
 } from "../models/types";
 import { Panel, PanelGroup } from "react-bootstrap";
 import ModelPerformancePanel from "./ModelPerformancePanel";
@@ -47,14 +50,16 @@ const PredictabilityPrototypeTab = ({
   console.log(customDownloadsLink);
   console.log(methodologyUrl);
 
-  const [aggScoresData, setAggScoresData] = useState<AggScoresData | null>(
-    null
-  );
+  // const [aggScoresData, setAggScoresData] = useState<AggScoresData | null>(
+  //   null
+  // );
 
-  const [
-    topFeaturesData,
-    setTopFeaturesData,
-  ] = useState<TopFeaturesBarData | null>(null);
+  // const [
+  //   topFeaturesData,
+  //   setTopFeaturesData,
+  // ] = useState<TopFeaturesBarData | null>(null);
+
+  const [data, setData] = useState<PredictabilityData | null>(null);
 
   const [modelPerformanceInfo, setModelPerformanceInfo] = useState<{
     [key: string]: ModelPerformanceInfo;
@@ -71,10 +76,7 @@ const PredictabilityPrototypeTab = ({
       setIsLoading(true);
       const data = await dapi.getPredictabilityPrototypeData(entityLabel);
 
-      setAggScoresData(data.overview.aggregated_scores);
-      setTopFeaturesData(data.overview.top_features);
-      setGeneTeaSymbols(data.overview.gene_tea_symbols);
-      setModelPerformanceInfo(data.model_performance_info);
+      setData(data);
       setIsLoading(false);
     })();
   }, [dapi, entityLabel]);
@@ -95,13 +97,20 @@ const PredictabilityPrototypeTab = ({
             <CardRowItem>
               <AggScoresTile
                 plotTitle={`${entityLabel}`}
-                data={aggScoresData}
+                crisprData={
+                  data ? data["crispr"].overview?.aggregated_scores : null
+                }
+                rnaiData={
+                  data ? data["rnai"].overview?.aggregated_scores : null
+                }
               />
             </CardRowItem>
             <CardRowItem>
               <TopFeaturesOverallTile
                 plotTitle={`${entityLabel}`}
-                topFeaturesData={topFeaturesData}
+                topFeaturesData={
+                  data ? data["crispr"].overview?.top_features : null
+                }
               />
             </CardRowItem>
             <CardRowItem>
@@ -120,46 +129,100 @@ const PredictabilityPrototypeTab = ({
       </div>
       <div className={styles.DataFilePanel}>
         <div className={styles.dataPanelSection}>
-          <>
-            {modelPerformanceInfo &&
-              Object.keys(modelPerformanceInfo).map(
-                (modelName: string, modelIndex: number) => (
-                  <PanelGroup
-                    accordion
-                    id="accordion-model"
-                    onSelect={(index) => handleModelAccordionClick(index)}
-                    activeKey={activeModelIndex}
-                    key={`${modelName}-accordion-model-${modelIndex}`}
-                  >
-                    <Panel eventKey={modelIndex} key={modelName}>
-                      <Panel.Heading>
-                        <Panel.Title toggle>
-                          <div>
-                            <CollapsiblePanelHeader
-                              title={`Model: ${modelName}`}
-                              modelCorrelation={90}
-                              screenType={""}
-                              isOpen={activeModelIndex === modelIndex}
-                            />
-                          </div>
-                        </Panel.Title>
-                      </Panel.Heading>
-                      <Panel.Body collapsible>
-                        <ModelPerformancePanel
-                          isOpen={activeModelIndex === modelIndex}
-                          modelName={modelName}
-                          entityLabel={entityLabel}
-                          modelPerformanceInfo={modelPerformanceInfo[modelName]}
-                          getModelPerformanceData={dapi.getModelPerformanceData.bind(
-                            dapi
-                          )}
-                        />
-                      </Panel.Body>
-                    </Panel>
-                  </PanelGroup>
-                )
-              )}
-          </>
+          <h2 style={{ color: SCREEN_TYPE_COLORS.get(ScreenType.CRISPR) }}>
+            CRISPR
+          </h2>
+          {data &&
+            data[ScreenType.CRISPR].model_performance_info &&
+            Object.keys(data[ScreenType.CRISPR].model_performance_info).map(
+              (modelName: string, modelIndex: number) => (
+                <PanelGroup
+                  accordion
+                  id="accordion-model"
+                  onSelect={(index) => handleModelAccordionClick(index)}
+                  activeKey={activeModelIndex}
+                  key={`${modelName}-accordion-model-${modelIndex}`}
+                >
+                  <Panel eventKey={modelIndex} key={modelName}>
+                    <Panel.Heading>
+                      <Panel.Title toggle>
+                        <div>
+                          <CollapsiblePanelHeader
+                            title={`Model: ${modelName}`}
+                            modelCorrelation={90}
+                            screenType={ScreenType.CRISPR}
+                            isOpen={activeModelIndex === modelIndex}
+                          />
+                        </div>
+                      </Panel.Title>
+                    </Panel.Heading>
+                    <Panel.Body collapsible>
+                      <ModelPerformancePanel
+                        isOpen={activeModelIndex === modelIndex}
+                        modelName={modelName}
+                        entityLabel={entityLabel}
+                        screenType={ScreenType.CRISPR}
+                        modelPerformanceInfo={
+                          data[ScreenType.CRISPR].model_performance_info[
+                            modelName
+                          ]
+                        }
+                        getModelPerformanceData={dapi.getModelPerformanceData.bind(
+                          dapi
+                        )}
+                      />
+                    </Panel.Body>
+                  </Panel>
+                </PanelGroup>
+              )
+            )}
+          <h2 style={{ color: SCREEN_TYPE_COLORS.get(ScreenType.RNAI) }}>
+            RNAi
+          </h2>
+          {data &&
+            data[ScreenType.RNAI].model_performance_info &&
+            Object.keys(data[ScreenType.RNAI].model_performance_info).map(
+              (modelName: string, modelIndex: number) => (
+                <PanelGroup
+                  accordion
+                  id="accordion-model"
+                  onSelect={(index) => handleModelAccordionClick(index)}
+                  activeKey={activeModelIndex}
+                  key={`${modelName}-accordion-model-${modelIndex}`}
+                >
+                  <Panel eventKey={modelIndex} key={modelName}>
+                    <Panel.Heading>
+                      <Panel.Title toggle>
+                        <div>
+                          <CollapsiblePanelHeader
+                            title={`Model: ${modelName}`}
+                            modelCorrelation={90}
+                            screenType={ScreenType.RNAI}
+                            isOpen={activeModelIndex === modelIndex}
+                          />
+                        </div>
+                      </Panel.Title>
+                    </Panel.Heading>
+                    <Panel.Body collapsible>
+                      <ModelPerformancePanel
+                        isOpen={activeModelIndex === modelIndex}
+                        modelName={modelName}
+                        entityLabel={entityLabel}
+                        screenType={ScreenType.RNAI}
+                        modelPerformanceInfo={
+                          data[ScreenType.RNAI].model_performance_info[
+                            modelName
+                          ]
+                        }
+                        getModelPerformanceData={dapi.getModelPerformanceData.bind(
+                          dapi
+                        )}
+                      />
+                    </Panel.Body>
+                  </Panel>
+                </PanelGroup>
+              )
+            )}
         </div>
       </div>
     </div>

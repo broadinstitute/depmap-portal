@@ -11,10 +11,12 @@ interface PredictabilityWaterfallPlotProps {
   featureNameType: string;
   feature: string;
   panelIndex: number;
+  screenType: string;
   getWaterfallPlotData: (
     entityLabel: string,
     identifier: string,
-    model: string
+    model: string,
+    screenType: string
   ) => Promise<RelatedFeaturePlot>;
 }
 
@@ -24,6 +26,7 @@ const PredictabilityWaterfallPlot = ({
   featureNameType,
   feature,
   panelIndex,
+  screenType,
   getWaterfallPlotData,
 }: PredictabilityWaterfallPlotProps) => {
   const [
@@ -48,7 +51,8 @@ const PredictabilityWaterfallPlot = ({
     const promise = getWaterfallPlotData(
       geneSymbol,
       featureNameType,
-      modelName
+      modelName,
+      screenType
     );
 
     latestPromise.current = promise;

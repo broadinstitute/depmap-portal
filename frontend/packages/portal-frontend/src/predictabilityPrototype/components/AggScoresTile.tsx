@@ -3,14 +3,23 @@ import LineChart from "src/plot/components/LineChart";
 import PlotSpinner from "src/plot/components/PlotSpinner";
 import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
 import styles from "src/predictabilityPrototype/styles/PredictabilityPrototype.scss";
-import { AggScoresData } from "../models/types";
+import {
+  AggScoresData,
+  PredictabilityData,
+  SCREEN_TYPE_COLORS,
+} from "../models/types";
 
 export interface AggScoresTileProps {
   plotTitle: string;
-  data: AggScoresData | null;
+  crisprData: AggScoresData | null;
+  rnaiData: AggScoresData | null;
 }
 
-const AggScoresTile = ({ plotTitle, data }: AggScoresTileProps) => {
+const AggScoresTile = ({
+  plotTitle,
+  crisprData,
+  rnaiData,
+}: AggScoresTileProps) => {
   const [
     aggScoresPlotElement,
     setAggScoresPlotElement,
@@ -33,17 +42,38 @@ const AggScoresTile = ({ plotTitle, data }: AggScoresTileProps) => {
         </p>
         <div className="card_padding stacked-boxplot-graphs-padding">
           <div className={styles.PredictabilityTab}>
-            {!data && !aggScoresPlotElement && <PlotSpinner height="100%" />}
-            {data?.accuracies && (
+            {crisprData?.accuracies &&
+              rnaiData?.accuracies &&
+              !aggScoresPlotElement && <PlotSpinner height="100%" />}
+            {crisprData?.accuracies && rnaiData?.accuracies && (
               <LineChart
                 title={plotTitle}
                 yAxisTitle={"Model Cumulative Accuracy"}
-                xLabels={data.accuracies.name}
-                yValues={data.accuracies.accuracy}
-                text={data.accuracies.name.map(
-                  (modelName: string) =>
-                    data.accuracies.feature_highest_importance[modelName]
-                )}
+                xLabels={[
+                  crisprData?.accuracies.name,
+                  rnaiData?.accuracies.name,
+                ]}
+                yValues={[
+                  crisprData?.accuracies.accuracy,
+                  rnaiData?.accuracies.accuracy,
+                ]}
+                text={[
+                  crisprData.accuracies.name.map(
+                    (modelName: string) =>
+                      crisprData.accuracies.feature_highest_importance[
+                        modelName
+                      ]
+                  ),
+                  rnaiData.accuracies.name.map(
+                    (modelName: string) =>
+                      rnaiData.accuracies.feature_highest_importance[modelName]
+                  ),
+                ]}
+                lineColors={[
+                  SCREEN_TYPE_COLORS.get("crispr")!,
+                  SCREEN_TYPE_COLORS.get("rnai")!,
+                ]}
+                traceNames={["CRISPR", "RNAi"]}
                 onLoad={(element: ExtendedPlotType | null) => {
                   if (element) {
                     setAggScoresPlotElement(element);

@@ -14,13 +14,15 @@ interface FeatureVsGeneEffectPlotProps {
   feature: string;
   featureType: string;
   panelIndex: number;
+  screenType: string;
   getFeatureVsGeneEffectData: (
     featureName: string,
     featureType: string,
     identifier: string,
     featureIndex: number,
     entityLabel: string,
-    model: string
+    model: string,
+    screenType: string
   ) => Promise<FeatureVsGeneEffectPlotData>;
 }
 
@@ -31,6 +33,7 @@ const FeatureVsGeneEffectPlot = ({
   featureType,
   feature,
   panelIndex,
+  screenType,
   getFeatureVsGeneEffectData,
 }: FeatureVsGeneEffectPlotProps) => {
   const [
@@ -58,7 +61,8 @@ const FeatureVsGeneEffectPlot = ({
       featureNameType,
       panelIndex,
       geneSymbol,
-      modelName
+      modelName,
+      screenType
     );
 
     latestPromise.current = promise;

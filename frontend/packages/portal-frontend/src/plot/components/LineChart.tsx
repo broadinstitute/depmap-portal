@@ -6,11 +6,13 @@ import PlotlyLoader, { PlotlyType } from "./PlotlyLoader";
 export interface LineChartProps {
   title: string;
   yAxisTitle: string;
-  xLabels: string[];
-  yValues: number[];
-  text: string[];
+  xLabels: string[][];
+  yValues: number[][];
+  lineColors: string[];
+  text: string[][];
+  traceNames: string[];
   onLoad: (plot: ExtendedPlotType) => void;
-  height?:number | "auto";
+  height?: number | "auto";
   margin?: Margin;
   customWidth?: number | undefined;
 }
@@ -27,6 +29,8 @@ function LineChart({
   yAxisTitle,
   xLabels,
   yValues,
+  lineColors,
+  traceNames,
   text,
   onLoad = () => {},
   height = "auto",
@@ -54,15 +58,16 @@ function LineChart({
 
   useEffect(() => {
     const plot = ref.current as ExtendedPlotType;
-    const data: any = [
-      {
-        x: xLabels,
-        y: yValues,
+    const data = xLabels.map((labels: string[], i: number) => {
+      return {
+        x: labels,
+        y: yValues[i],
         hovertemplate: "<b>%{text}</b><extra></extra>",
-        text,
-        type: "lines",
-      },
-    ];
+        text: text[i],
+        name: traceNames[i],
+        marker: { color: lineColors[i] },
+      };
+    });
 
     const xAxisTemplate: Partial<Plotly.LayoutAxis> = {
       visible: true,
@@ -90,7 +95,7 @@ function LineChart({
 
       dragmode: false,
 
-      height:  height === "auto" ? calcPlotHeight(plot) : height,
+      height: height === "auto" ? calcPlotHeight(plot) : height,
 
       margin,
     };
@@ -98,7 +103,19 @@ function LineChart({
     const config: Partial<Plotly.Config> = { responsive: true };
 
     Plotly.newPlot(plot, data, layout, config);
-  }, [Plotly, xLabels, yValues, height, margin, customWidth, text, title, yAxisTitle]);
+  }, [
+    Plotly,
+    xLabels,
+    yValues,
+    lineColors,
+    traceNames,
+    height,
+    margin,
+    customWidth,
+    text,
+    title,
+    yAxisTitle,
+  ]);
 
   return <div ref={ref} />;
 }

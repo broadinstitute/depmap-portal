@@ -11,10 +11,12 @@ interface RelatedFeaturesCorrPlotProps {
   featureNameType: string;
   feature: string;
   panelIndex: number;
+  screenType: string;
   getRelatedFeaturesCorrPlotData: (
     entityLabel: string,
     identifier: string,
-    model: string
+    model: string,
+    screenType: string
   ) => Promise<RelatedFeaturePlot>;
 }
 
@@ -24,6 +26,7 @@ const RelatedFeaturesCorrPlot = ({
   featureNameType,
   feature,
   panelIndex,
+  screenType,
   getRelatedFeaturesCorrPlotData,
 }: RelatedFeaturesCorrPlotProps) => {
   const [
@@ -47,7 +50,8 @@ const RelatedFeaturesCorrPlot = ({
     const promise = getRelatedFeaturesCorrPlotData(
       geneSymbol,
       featureNameType,
-      modelName
+      modelName,
+      screenType
     );
 
     latestPromise.current = promise;

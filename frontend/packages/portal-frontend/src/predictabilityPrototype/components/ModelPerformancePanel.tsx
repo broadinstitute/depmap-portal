@@ -11,10 +11,11 @@ interface ModelPerformancePanelProps {
   modelName: string;
   entityLabel: string;
   modelPerformanceInfo: ModelPerformanceInfo;
+  screenType: string;
   getModelPerformanceData: (
-    screenType: string,
     entityLabel: string,
-    model: string
+    model: string,
+    screenType: string
   ) => Promise<PredictiveModelData>;
   isOpen: boolean;
 }
@@ -23,6 +24,7 @@ const ModelPerformancePanel = ({
   modelName,
   entityLabel,
   modelPerformanceInfo,
+  screenType,
   getModelPerformanceData,
   isOpen,
 }: ModelPerformancePanelProps) => {
@@ -40,6 +42,7 @@ const ModelPerformancePanel = ({
         <ModelPerformancePlots
           modelName={modelName}
           entityLabel={entityLabel}
+          screenType={screenType}
           getModelPerformanceData={getModelPerformanceData}
         />
       )}
@@ -66,7 +69,7 @@ const ModelPerformancePanel = ({
               (feature, featureIndex) => (
                 <Panel
                   eventKey={featureIndex}
-                  key={`${modelPerformanceInfo.feature_summaries[feature].feature_name}${modelName}`}
+                  key={`${modelPerformanceInfo.feature_summaries[feature].feature_name}${modelName}${screenType}`}
                 >
                   <Panel.Heading>
                     <Panel.Title toggle>
@@ -109,6 +112,7 @@ const ModelPerformancePanel = ({
                           }
                           geneSymbol={entityLabel}
                           panelIndex={featureIndex}
+                          screenType={screenType}
                           isOpen={isOpen && featureIndex === activeFeatureIndex}
                         />
                       )}
