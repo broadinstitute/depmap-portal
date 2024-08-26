@@ -14,7 +14,7 @@
           "expr": {
             "==": [
               {
-                "var": "slice_label"
+                "var": "entity_label"
               },
               "VPS4A"
             ]
@@ -32,7 +32,7 @@
           "expr": {
             "==": [
               {
-                "var": "slice_label"
+                "var": "entity_label"
               },
               "VPS4B"
             ]
@@ -286,7 +286,7 @@
           "expr": {
             "==": [
               {
-                "var": "slice_label"
+                "var": "entity_label"
               },
               "ERBB2"
             ]
@@ -383,7 +383,7 @@
           "expr": {
             "in": [
               {
-                "var": "slice_label"
+                "var": "entity_label"
               },
               [
                 "CAD",

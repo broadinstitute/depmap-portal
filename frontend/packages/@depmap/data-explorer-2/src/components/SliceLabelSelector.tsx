@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import PlotConfigSelect from "./PlotConfigSelect";
-import { fetchSliceLabelsOfDataset } from "../api";
+import { fetchDimensionLabelsOfDataset } from "../api";
 import { urlLibEncode } from "../utils/misc";
 
 interface Props {
@@ -32,7 +32,7 @@ function SliceLabelSelector({
       setError(false);
 
       try {
-        const data = await fetchSliceLabelsOfDataset(null, dataset_id);
+        const data = await fetchDimensionLabelsOfDataset(null, dataset_id);
         const opts = data.labels.map((label) => ({ label, value: label }));
         setOptions(opts);
       } catch (e) {

@@ -25,7 +25,7 @@ function CompoundExperimentSelect({
     | {
         dataset_id: string;
         dataset_label: string;
-        slice_labels: string[];
+        dimension_labels: string[];
       }[]
     | null
   >(null);
@@ -64,7 +64,7 @@ function CompoundExperimentSelect({
     }[] = [];
 
     (datasetsWithEntities || []).forEach((d) => {
-      d.slice_labels.forEach((label) => {
+      d.dimension_labels.forEach((label) => {
         out.push({
           label: extractExperiment(label),
           value: JSON.stringify({

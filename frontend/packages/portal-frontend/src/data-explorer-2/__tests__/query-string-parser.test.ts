@@ -66,7 +66,7 @@ describe("Data Explorer 2.0 query string parser", () => {
       context: {
         name: "SOX10",
         context_type: "gene",
-        expr: { "==": [{ var: "slice_label" }, "SOX10"] },
+        expr: { "==": [{ var: "entity_label" }, "SOX10"] },
       },
     });
   });

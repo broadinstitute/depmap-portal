@@ -7,7 +7,7 @@ import React, {
 } from "react";
 import { ApiContext, SharedApi } from "@depmap/api";
 import { Highlighter, Tooltip, WordBreaker } from "@depmap/common-components";
-import { fetchSliceLabelsToDatasetsMapping } from "../../../api";
+import { fetchDimensionLabelsToDatasetsMapping } from "../../../api";
 import { getDimensionTypeLabel } from "../../../utils/misc";
 import { SearchDimenionsResponse } from "@depmap/types";
 import styles from "../../../styles/DimensionSelect.scss";
@@ -93,8 +93,8 @@ async function fetchSliceLabelsAndAliases(
     };
   }
 
-  const mapping = await fetchSliceLabelsToDatasetsMapping(slice_type);
-  const labels = Object.keys(mapping.slice_labels);
+  const mapping = await fetchDimensionLabelsToDatasetsMapping(slice_type);
+  const labels = Object.keys(mapping.dimension_labels);
   const reasons: Record<string, string> = {};
 
   if (labels.length === 0) {
@@ -110,7 +110,7 @@ async function fetchSliceLabelsAndAliases(
   const typeIndices = dataType ? mapping.data_types[dataType] : [];
   const unitsIndices = units ? mapping.units[units] : [];
 
-  Object.entries(mapping.slice_labels).forEach(([label, dsIndices]) => {
+  Object.entries(mapping.dimension_labels).forEach(([label, dsIndices]) => {
     if (units && doNotOverlap(unitsIndices, dsIndices)) {
       reasons[label] = [
         `This ${getDimensionTypeLabel(slice_type)}`,
@@ -489,6 +489,6 @@ export function toOutputValue(
   return {
     context_type: slice_type,
     name: label || value,
-    expr: { "==": [{ var: "slice_label" }, value] },
+    expr: { "==": [{ var: "entity_label" }, value] },
   };
 }

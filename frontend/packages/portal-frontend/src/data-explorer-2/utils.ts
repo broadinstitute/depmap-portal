@@ -118,7 +118,7 @@ export function toRelatedPlot(
             context: {
               name: slice_labels[index],
               context_type: slice_type,
-              expr: { "==": [{ var: "slice_label" }, slice_labels[index]] },
+              expr: { "==": [{ var: "entity_label" }, slice_labels[index]] },
             },
             aggregation: "first",
           },
@@ -139,7 +139,7 @@ export function toRelatedPlot(
       name: defaultContextName(selectedLabels.size),
       context_type: slice_type,
       expr: {
-        in: [{ var: "slice_label" }, slice_labels],
+        in: [{ var: "entity_label" }, slice_labels],
       },
     };
 
@@ -216,7 +216,7 @@ export function toRelatedPlot(
           context: {
             name: slice_labels[index],
             context_type: slice_type,
-            expr: { "==": [{ var: "slice_label" }, slice_labels[index]] },
+            expr: { "==": [{ var: "entity_label" }, slice_labels[index]] },
           },
           aggregation: "first",
         },

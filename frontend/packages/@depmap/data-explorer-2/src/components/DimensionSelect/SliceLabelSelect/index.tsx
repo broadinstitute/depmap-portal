@@ -20,7 +20,7 @@ const SliceLabelSelect = renderConditionally((props: SliceLabelSelectProps) => {
             ? {
                 context_type: "compound_experiment",
                 name: slice_label,
-                expr: { "==": [{ var: "slice_label" }, slice_label] },
+                expr: { "==": [{ var: "entity_label" }, slice_label] },
               }
             : null;
 

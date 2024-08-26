@@ -7,7 +7,7 @@ import React, {
 } from "react";
 import { get_values } from "json-logic-js";
 import {
-  fetchSliceLabels,
+  fetchDimensionLabels,
   fetchUniqueValuesOrRange,
   isPartialSliceId,
 } from "@depmap/data-explorer-2";
@@ -125,7 +125,7 @@ function Comparison({
 
         try {
           if (slice_id === "entity_label") {
-            const data = await fetchSliceLabels(slice_type);
+            const data = await fetchDimensionLabels(slice_type);
             const labels = data.labels.sort(collator.compare);
             setSummary({
               value_type: "categorical",

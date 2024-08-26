@@ -29,8 +29,8 @@ from depmap.data_explorer_2.utils import (
     decode_slice_id,
     get_aliases_matching_labels,
     get_all_supported_continuous_datasets,
-    get_slice_labels_across_datasets,
-    get_slice_labels_to_datasets_mapping,
+    get_dimension_labels_across_datasets,
+    get_dimension_labels_to_datasets_mapping,
     get_file_and_release_from_dataset,
     get_reoriented_df,
     get_series_from_de2_slice_id,
@@ -179,7 +179,7 @@ def get_correlation():
     row_labels = []
 
     is_transpose = data_access.get_dataset_feature_type(dataset_id) == index_type
-    slice_type = (
+    dimension_type = (
         data_access.get_dataset_feature_type(dataset_id)
         if not is_transpose
         else data_access.get_dataset_sample_type(dataset_id)
@@ -272,7 +272,7 @@ def get_correlation():
         if dimension_key == "x2" and use_clustering:
             df = df.reindex(row_labels, axis=0).reindex(row_labels, axis=1)  # type: ignore
 
-        entities = pluralize(to_display_name(slice_type or ""))
+        entities = pluralize(to_display_name(dimension_type or ""))
         is_anonymous = re.match(r"\(\d+ selected\)", context["name"])
         axis_label = (
             f"correlation of {context['name']} {entities}"
@@ -309,7 +309,7 @@ def get_correlation():
             "values": values,
         }
 
-    index_aliases = get_aliases_matching_labels(slice_type, row_labels)
+    index_aliases = get_aliases_matching_labels(dimension_type, row_labels)
 
     return make_gzipped_json_response(
         {
@@ -361,36 +361,37 @@ def datasets_by_index_type():
     return make_gzipped_json_response(output)
 
 
-@blueprint.route("/slice_labels")
-def slice_labels():
-    slice_type = request.args.get("slice_type")
-    labels = get_slice_labels_across_datasets(slice_type)
-    aliases = get_aliases_matching_labels(slice_type, labels)
+# FIXME: Rename this to something like /types/dimensions/{name}/labels
+@blueprint.route("/dimension_labels")
+def dimension_labels():
+    dimension_type = request.args.get("dimension_type")
+    labels = get_dimension_labels_across_datasets(dimension_type)
+    aliases = get_aliases_matching_labels(dimension_type, labels)
 
     return make_gzipped_json_response({"labels": labels, "aliases": aliases})
 
 
-@blueprint.route("/slice_labels_to_datasets_mapping")
-def slice_labels_to_datasets_mapping():
-    slice_type = request.args.get("slice_type")
+@blueprint.route("/dimension_labels_to_datasets_mapping")
+def dimension_labels_to_datasets_mapping():
+    dimension_type = request.args.get("dimension_type")
 
-    mapping = get_slice_labels_to_datasets_mapping(slice_type)
+    mapping = get_dimension_labels_to_datasets_mapping(dimension_type)
     mapping["aliases"] = get_aliases_matching_labels(
-        slice_type, mapping["slice_labels"].keys()
+        dimension_type, mapping["dimension_labels"].keys()
     )
 
     return make_gzipped_json_response(mapping)
 
 
-@blueprint.route("/slice_labels_of_dataset")
-def slice_labels_of_dataset():
-    slice_type = request.args.get("slice_type")
+@blueprint.route("/dimension_labels_of_dataset")
+def dimension_labels_of_dataset():
+    dimension_type = request.args.get("dimension_type")
     dataset_id = urllib.parse.unquote(request.args.get("dataset_id"))
 
-    is_transpose = slice_type == data_access.get_dataset_sample_type(dataset_id)
+    is_transpose = dimension_type == data_access.get_dataset_sample_type(dataset_id)
 
     labels = get_vector_labels(dataset_id, is_transpose)
-    aliases = get_aliases_matching_labels(slice_type, labels)
+    aliases = get_aliases_matching_labels(dimension_type, labels)
 
     return make_gzipped_json_response({"labels": labels, "aliases": aliases})
 
@@ -452,7 +453,7 @@ def get_labels_matching_context():
     context = inputs["context"]
     context_type = context["context_type"]
     context_evaluator = ContextEvaluator(context)
-    input_labels = get_slice_labels_across_datasets(context_type)
+    input_labels = get_dimension_labels_across_datasets(context_type)
 
     labels_matching_context = []
     for label in input_labels:
@@ -474,13 +475,13 @@ def get_labels_matching_context():
 def get_datasets_matching_context():
     """
     Get the list of datasets which have data matching the given context. For
-    each dataset, include the full list of slice labels matching the context.
-    Returns a list of dictionaries like:
+    each dataset, include the full list of dimension labels matching the
+    context. Returns a list of dictionaries like:
     [
       {
         "dataset_id"    : "Chronos_Combined"
         "dataset_label" : "CRISPR (DepMap Internal 23Q4+Score, Chronos)"
-        "slice_labels" : ["SOX10"]
+        "dimension_labels" : ["SOX10"]
       },
       ...
     ]
@@ -503,7 +504,7 @@ def get_context_summary():
     context = inputs["context"]
     context_type = context["context_type"]
     context_evaluator = ContextEvaluator(context)
-    input_labels = get_slice_labels_across_datasets(context_type)
+    input_labels = get_dimension_labels_across_datasets(context_type)
 
     labels_matching_context = []
     for label in input_labels:
@@ -526,14 +527,15 @@ def metadata_slices():
         "name": "Age Category",
         "valueType": "categorical"
     }
-    Additionally, this slice info objects may contain the following contain the
-    following properties.
+    Additionally, these "slice info objects" may contain the following contain
+    the following properties.
 
     "isPartialSliceId" (boolean):
         Some slices are constructed on the frontend from individual components.
         For example "slice/mutations_prioritized/" is such a partial ID. The
         user is presented with a dropdown of genes and the chosen gene is
-        concatenated to that slice ID prefix.
+        concatenated to that slice ID prefix to form something like
+        "slice/mutations_prioritized/SOX10/label"
     "sliceTypeLabel" (string):
         This is related to the above "isPartialSliceId" property. In the given
         example, this is used as a label to tell the user to that it's a gene

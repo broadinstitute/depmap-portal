@@ -87,7 +87,7 @@ function GeneTeaTable({ data, onClickColorByContext, onClickTerm }: Props) {
                     name: term,
                     context_type: "gene",
                     expr: {
-                      in: [{ var: "slice_label" }, data.matchingGenes[i]],
+                      in: [{ var: "entity_label" }, data.matchingGenes[i]],
                     },
                   });
                 }}

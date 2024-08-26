@@ -55,7 +55,7 @@ function GeneTeaContextModal({
       {
         name: term,
         context_type: "gene",
-        expr: { in: [{ var: "slice_label" }, matchingGenes] },
+        expr: { in: [{ var: "entity_label" }, matchingGenes] },
       },
       () => setShow(true)
     );

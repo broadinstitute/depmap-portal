@@ -37,19 +37,19 @@ class ContextEvaluator:
         self.expr = _encode_dots_in_vars(context["expr"])
         self.cache = {}
 
-    def is_match(self, slice_label):
+    def is_match(self, dimension_label):
         """
-        This evaluates `expr` against a given `slice_label`. It returns
-        True/False depending on if `slice_label` satifies the conditions of
+        This evaluates `expr` against a given `dimension_label`. It returns
+        True/False depending on if `dimension_label` satifies the conditions of
         the expression, including any variables ("var" subexpressions) which
         are bound by using a magic dict that does lookups lazily.
         """
-        data = _LazyContextDict(self.context_type, slice_label, self.cache)
+        data = _LazyContextDict(self.context_type, dimension_label, self.cache)
 
         try:
             return jsonLogic(self.expr, data)
         except (TypeError, ValueError) as e:
-            print("Exception evaluating", self.expr, "against", slice_label)
+            print("Exception evaluating", self.expr, "against", dimension_label)
             print(e)
             return False
 
@@ -59,22 +59,23 @@ class ContextEvaluator:
 # But we don't need to "perfectly" override it; just well enough to trick the
 # JsonLogic library.
 class _LazyContextDict(dict):
-    def __init__(self, context_type, slice_label, cache):
+    def __init__(self, context_type, dimension_label, cache):
         self.context_type = context_type
-        self.slice_label = slice_label
+        self.dimension_label = dimension_label
         self.cache = cache
 
     def __getitem__(self, prop):
-        # Handle trivial case where we're just looking up a slice's own label.
-        # Note that this is called "entity_label" for historical reasons.
+        # Handle trivial case where we're just looking up a dimension's own
+        # label. Note that this is called "entity_label" for historical
+        # reasons.
         if prop == "entity_label":
-            return self.slice_label
+            return self.dimension_label
 
         if prop.startswith("slice/"):
             if prop not in self.cache:
                 self.cache[prop] = slice_to_dict(prop)
 
-            return self.cache[prop][self.slice_label]
+            return self.cache[prop][self.dimension_label]
 
         raise LookupError(
             f"Unable to find context property '{prop}'. Are you sure a corresponding "

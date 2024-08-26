@@ -10,7 +10,7 @@ import {
   pluralize,
   sortDimensionTypes,
 } from "../../../utils/misc";
-import { SliceLabelsToDatasetsMapping } from "./types";
+import { DimensionLabelsToDatasetsMapping } from "./types";
 
 export function filterDatasets(
   datasets: DataExplorerDatasetDescriptor[],
@@ -88,7 +88,7 @@ function isHighestPriorityDataset(
 
 export function getEnabledDatasetIds(
   datasets: DataExplorerDatasetDescriptor[],
-  sliceLabelMap: SliceLabelsToDatasetsMapping,
+  sliceLabelMap: DimensionLabelsToDatasetsMapping,
   contextLabels: Set<string>,
   dataType: string | null,
   slice_type: string | undefined,
@@ -122,11 +122,11 @@ export function getEnabledDatasetIds(
   }
 
   const selectedLabel = sliceLabelFromContext(context);
-  const labels = Object.keys(sliceLabelMap.slice_labels);
+  const labels = Object.keys(sliceLabelMap.dimension_labels);
 
   for (let i = 0; i < labels.length; i += 1) {
     const label = labels[i];
-    const dsIndices = sliceLabelMap.slice_labels[label];
+    const dsIndices = sliceLabelMap.dimension_labels[label];
 
     if (axis_type === "raw_slice" && context && selectedLabel !== label) {
       // eslint-disable-next-line no-continue
@@ -157,7 +157,7 @@ export function getEnabledDatasetIds(
 
 export function computeOptions(
   datasets: DataExplorerDatasetDescriptor[],
-  sliceLabelMap: SliceLabelsToDatasetsMapping,
+  sliceLabelMap: DimensionLabelsToDatasetsMapping,
   contextLabels: Set<string>,
   selectedDataType: string | null,
   selectedUnits: string | null,

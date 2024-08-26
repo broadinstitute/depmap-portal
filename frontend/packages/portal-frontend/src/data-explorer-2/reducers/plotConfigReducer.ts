@@ -373,7 +373,7 @@ function plotConfigReducer(
             context: {
               name: slice_label,
               context_type: slice_type,
-              expr: { "==": [{ var: "slice_label" }, slice_label] },
+              expr: { "==": [{ var: "entity_label" }, slice_label] },
             },
           },
         },

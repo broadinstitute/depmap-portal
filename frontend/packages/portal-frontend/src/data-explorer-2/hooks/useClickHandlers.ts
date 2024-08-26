@@ -33,7 +33,7 @@ export default function useClickHandlers(
     const context: DataExplorerContext = {
       name: defaultContextName(selectedLabels.size),
       context_type,
-      expr: { in: [{ var: "slice_label" }, labels] },
+      expr: { in: [{ var: "entity_label" }, labels] },
     };
 
     onClickSaveAsContext(context, null);

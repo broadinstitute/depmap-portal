@@ -153,7 +153,7 @@ function AnalysisResult({ plot, dispatch }: Props) {
                 const context = {
                   name: slice_label,
                   context_type: sliceType,
-                  expr: { "==": [{ var: "slice_label" }, slice_label] },
+                  expr: { "==": [{ var: "entity_label" }, slice_label] },
                 };
 
                 dispatch({

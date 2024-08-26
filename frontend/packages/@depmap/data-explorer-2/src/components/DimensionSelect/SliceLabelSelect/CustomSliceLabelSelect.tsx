@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { DataExplorerContext } from "@depmap/types";
-import { fetchSliceLabelsOfDataset } from "../../../api";
+import { fetchDimensionLabelsOfDataset } from "../../../api";
 import PlotConfigSelect from "../../PlotConfigSelect";
 import { toOutputValue } from "./utils";
 
@@ -14,8 +14,8 @@ interface Props {
 
 // HACK: This is a simplified version of SliceLabelSelect intended to be used
 // with custom data (e.g. the transient datasets used by Custom Analysis). It
-// uses `fetchSliceLabelsOfDataset()` because feature labels aren't
-// discoverable using `fetchSliceLabelsToDatasetsMapping()`.
+// uses `fetchDimensionLabelsOfDataset()` because custom feature labels aren't
+// discoverable using `fetchDimensionLabelsToDatasetsMapping()`.
 function CustomSliceLabelSelect({
   slice_type,
   dataset_id,
@@ -33,7 +33,10 @@ function CustomSliceLabelSelect({
     (async () => {
       if (slice_type && dataset_id) {
         try {
-          const data = await fetchSliceLabelsOfDataset(slice_type, dataset_id);
+          const data = await fetchDimensionLabelsOfDataset(
+            slice_type,
+            dataset_id
+          );
           setSliceLabels(data.labels);
         } catch (e) {
           setDsError(true);

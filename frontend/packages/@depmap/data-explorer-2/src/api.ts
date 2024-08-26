@@ -245,7 +245,7 @@ export async function fetchContextLabels(
 export interface ContextDatasetsResponse {
   dataset_id: string;
   dataset_label: string;
-  slice_labels: string[];
+  dimension_labels: string[];
 }
 
 export function fetchDatasetsMatchingContextIncludingEntities(
@@ -271,8 +271,8 @@ export async function fetchMetadataColumn(
   return postJson("/get_metadata", { metadata: { slice_id } });
 }
 
-export function fetchSliceLabels(
-  slice_type: string
+export function fetchDimensionLabels(
+  dimension_type: string
 ): Promise<{
   labels: string[];
   aliases: {
@@ -281,36 +281,36 @@ export function fetchSliceLabels(
     values: string[];
   }[];
 }> {
-  const query = qs.stringify({ slice_type });
+  const query = qs.stringify({ dimension_type });
 
   return fetchJson(`/slice_labels?${query}`);
 }
 
 type DataType = string;
 type DatasetIndex = number;
-type SliceLabel = string;
+type DimensionLabel = string;
 
-export function fetchSliceLabelsToDatasetsMapping(
-  slice_type: string
+export function fetchDimensionLabelsToDatasetsMapping(
+  dimension_type: string
 ): Promise<{
   dataset_ids: string[];
   dataset_labels: string[];
   units: Record<string, DatasetIndex[]>;
   data_types: Record<DataType, DatasetIndex[]>;
-  slice_labels: Record<SliceLabel, DatasetIndex[]>;
+  dimension_labels: Record<DimensionLabel, DatasetIndex[]>;
   aliases: {
     label: string;
     slice_id: string;
     values: string[];
   }[];
 }> {
-  const query = qs.stringify({ slice_type });
+  const query = qs.stringify({ dimension_type });
 
-  return fetchJson(`/slice_labels_to_datasets_mapping?${query}`);
+  return fetchJson(`/dimension_labels_to_datasets_mapping?${query}`);
 }
 
-export function fetchSliceLabelsOfDataset(
-  slice_type: string | null,
+export function fetchDimensionLabelsOfDataset(
+  dimension_type: string | null,
   dataset_id: string
 ): Promise<{
   labels: string[];
@@ -320,7 +320,7 @@ export function fetchSliceLabelsOfDataset(
     values: string[];
   }[];
 }> {
-  const query = qs.stringify({ slice_type, dataset_id });
+  const query = qs.stringify({ dimension_type, dataset_id });
 
   return fetchJson(`/slice_labels_of_dataset?${query}`);
 }

@@ -58,7 +58,7 @@ const makeFeatureParser = (dimensionKey: DimensionKey) => (
   p.dimensions[dimensionKey]!.context = {
     name: feature,
     context_type: slice_type,
-    expr: { "==": [{ var: "slice_label" }, feature] } as object,
+    expr: { "==": [{ var: "entity_label" }, feature] } as object,
   };
 
   return p;

@@ -9,13 +9,13 @@ import {
   findHighestPriorityDatasetId,
   getEnabledDatasetIds,
 } from "./utils";
-import { Changes, SliceLabelsToDatasetsMapping, State } from "./types";
+import { Changes, DimensionLabelsToDatasetsMapping, State } from "./types";
 import { MismatchedSliceTypeError, UnknownDatasetError } from "./errors";
 
 interface Props {
   changes: Changes;
   datasets: DataExplorerDatasetDescriptor[];
-  sliceMap: SliceLabelsToDatasetsMapping;
+  sliceMap: DimensionLabelsToDatasetsMapping;
   contextLabels: Set<string>;
   prev: State;
 }
@@ -139,7 +139,7 @@ export default function resolveNextState({
             return false;
           }
 
-          return sliceMap.slice_labels[selectedLabel]?.includes(index);
+          return sliceMap.dimension_labels[selectedLabel]?.includes(index);
         })
       );
 
@@ -202,7 +202,7 @@ export default function resolveNextState({
     const enabledDatasetIds = getEnabledDatasetIds(
       datasets,
       sliceMap,
-      new Set(Object.keys(sliceMap.slice_labels)),
+      new Set(Object.keys(sliceMap.dimension_labels)),
       dataType,
       slice_type,
       axis_type,

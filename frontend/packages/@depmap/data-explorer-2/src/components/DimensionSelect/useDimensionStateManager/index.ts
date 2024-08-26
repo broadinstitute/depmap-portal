@@ -7,7 +7,7 @@ import resolveNextState from "./resolveNextState";
 import { handleError } from "./errors";
 import {
   Changes,
-  SliceLabelsToDatasetsMapping,
+  DimensionLabelsToDatasetsMapping,
   Mode,
   State,
   DEFAULT_STATE,
@@ -57,7 +57,7 @@ export default function useDimensionStateManager({
           return resolveNextState({
             changes,
             datasets,
-            sliceMap: sliceMap as SliceLabelsToDatasetsMapping,
+            sliceMap: sliceMap as DimensionLabelsToDatasetsMapping,
             contextLabels: contextLabels as Set<string>,
             prev,
           });

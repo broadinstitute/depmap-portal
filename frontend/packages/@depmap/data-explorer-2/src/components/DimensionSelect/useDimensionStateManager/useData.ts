@@ -3,9 +3,9 @@ import { DataExplorerContext } from "@depmap/types";
 import {
   fetchContextLabels,
   fetchDatasetsByIndexType,
-  fetchSliceLabelsToDatasetsMapping,
+  fetchDimensionLabelsToDatasetsMapping,
 } from "../../../api";
-import { DatasetsByIndexType, SliceLabelsToDatasetsMapping } from "./types";
+import { DatasetsByIndexType, DimensionLabelsToDatasetsMapping } from "./types";
 
 interface Props {
   index_type: string | null;
@@ -14,13 +14,13 @@ interface Props {
   context: DataExplorerContext | undefined;
 }
 
-export const NULL_MAPPING: SliceLabelsToDatasetsMapping = {
+export const NULL_MAPPING: DimensionLabelsToDatasetsMapping = {
   aliases: [],
   dataset_ids: [],
   dataset_labels: [],
   data_types: {},
   units: {},
-  slice_labels: {},
+  dimension_labels: {},
 };
 
 export default function useDatasets({
@@ -36,8 +36,8 @@ export default function useDatasets({
 
   const [
     sliceMap,
-    setSliceLabelsToDatasetsMapping,
-  ] = useState<SliceLabelsToDatasetsMapping | null>(
+    setSliceMap,
+  ] = useState<DimensionLabelsToDatasetsMapping | null>(
     slice_type ? null : NULL_MAPPING
   );
 
@@ -59,14 +59,16 @@ export default function useDatasets({
 
   useEffect(() => {
     (async () => {
-      setSliceLabelsToDatasetsMapping(null);
+      setSliceMap(null);
 
       try {
         if (slice_type) {
-          const mapping = await fetchSliceLabelsToDatasetsMapping(slice_type);
-          setSliceLabelsToDatasetsMapping(mapping);
+          const mapping = await fetchDimensionLabelsToDatasetsMapping(
+            slice_type
+          );
+          setSliceMap(mapping);
         } else {
-          setSliceLabelsToDatasetsMapping(NULL_MAPPING);
+          setSliceMap(NULL_MAPPING);
         }
       } catch (e) {
         window.console.error(e);

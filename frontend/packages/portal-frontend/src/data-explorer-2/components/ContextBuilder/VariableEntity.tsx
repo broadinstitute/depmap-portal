@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import cx from "classnames";
 import Select from "react-windowed-select";
 import {
-  fetchSliceLabelsOfDataset,
+  fetchDimensionLabelsOfDataset,
   getDimensionTypeLabel,
   isPartialSliceId,
 } from "@depmap/data-explorer-2";
@@ -66,7 +66,7 @@ function VariableEntity({
     (async () => {
       if (dataset_id) {
         try {
-          const { labels } = await fetchSliceLabelsOfDataset(
+          const { labels } = await fetchDimensionLabelsOfDataset(
             slice_type,
             dataset_id
           );

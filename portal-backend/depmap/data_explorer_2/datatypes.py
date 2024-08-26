@@ -1,4 +1,4 @@
-# None of these can be used a slice_type/index_type.
+# None of these can be used as a slice_type/index_type.
 blocked_dimension_types = set(
     [
         "antibody",

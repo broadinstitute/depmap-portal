@@ -3,12 +3,12 @@ import {
   DataExplorerDatasetDescriptor,
   DataExplorerPlotConfigDimension,
 } from "@depmap/types";
-import { fetchSliceLabelsToDatasetsMapping } from "../../../api";
+import { fetchDimensionLabelsToDatasetsMapping } from "../../../api";
 
 export type Mode = "entity-only" | "context-only" | "entity-or-context";
 export type PartialDimension = Partial<DataExplorerPlotConfigDimension>;
-export type SliceLabelsToDatasetsMapping = Awaited<
-  ReturnType<typeof fetchSliceLabelsToDatasetsMapping>
+export type DimensionLabelsToDatasetsMapping = Awaited<
+  ReturnType<typeof fetchDimensionLabelsToDatasetsMapping>
 >;
 
 type Option = {

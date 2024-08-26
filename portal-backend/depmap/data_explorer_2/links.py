@@ -21,12 +21,12 @@ def get_plot_link(x, y, color, visible_filter, regression_line):
     if x:
         dataset_id, feature, _ = SliceSerializer.decode_slice_id(x)
         params["xDataset"] = dataset_id
-        params["xFeature"] = _get_slice_label(feature, dataset_id)
+        params["xFeature"] = _get_feature_label(feature, dataset_id)
 
     if y:
         dataset_id, feature, _ = SliceSerializer.decode_slice_id(y)
         params["yDataset"] = dataset_id
-        params["yFeature"] = _get_slice_label(feature, dataset_id)
+        params["yFeature"] = _get_feature_label(feature, dataset_id)
 
     if color:
         dataset_id, feature, _ = SliceSerializer.decode_slice_id(color)
@@ -46,10 +46,10 @@ def get_plot_link(x, y, color, visible_filter, regression_line):
     return url_for("data_explorer_2.view_data_explorer_2", **params)
 
 
-def _get_slice_label(entity_id, dataset_id):
-    slice_type = data_access.get_dataset_feature_type(dataset_id)
+def _get_feature_label(entity_id, dataset_id):
+    feature_type = data_access.get_dataset_feature_type(dataset_id)
 
-    if slice_type:
+    if feature_type:
         entity = Entity.get_by_id(entity_id, False)
         if entity:
             return entity.label

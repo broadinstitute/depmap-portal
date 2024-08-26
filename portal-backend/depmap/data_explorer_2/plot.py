@@ -8,7 +8,7 @@ from depmap.data_explorer_2.context import ContextEvaluator
 from depmap.utilities.data_access_log import log_dataset_access
 from depmap.data_explorer_2.utils import (
     get_aliases_matching_labels,
-    get_slice_labels_across_datasets,
+    get_dimension_labels_across_datasets,
     get_reoriented_df,
     get_union_of_index_labels,
     get_vector_labels,
@@ -97,7 +97,7 @@ def compute_dimension(
 def compute_filter(input_filter):
     indexed_values = {}
     context_evaluator = ContextEvaluator(input_filter)
-    index_labels = get_slice_labels_across_datasets(input_filter["context_type"])
+    index_labels = get_dimension_labels_across_datasets(input_filter["context_type"])
 
     for label in index_labels:
         indexed_values[label] = context_evaluator.is_match(label)
@@ -263,13 +263,13 @@ def _get_axis_label(
     context_name: str,
     context_count: int,
 ):
-    slice_type = dataset.feature_type if not is_transpose else dataset.sample_type
+    dimension_type = dataset.feature_type if not is_transpose else dataset.sample_type
     units = dataset.units
 
     if single_slice_label:
         axis_label = single_slice_label
 
-        if slice_type == "depmap_model":
+        if dimension_type == "depmap_model":
             index_aliases = get_aliases_matching_labels(
                 "depmap_model", [single_slice_label]
             )
@@ -280,5 +280,5 @@ def _get_axis_label(
             axis_label += " " + units
         return axis_label
 
-    entities = pluralize(to_display_name(slice_type or ""))
+    entities = pluralize(to_display_name(dimension_type or ""))
     return f"{aggregation} {units} of {context_count} {context_name} {entities}"

@@ -1,5 +1,8 @@
 import React, { useEffect, useState } from "react";
-import { fetchSliceLabels, fetchSliceLabelsOfDataset } from "../../../../api";
+import {
+  fetchDimensionLabels,
+  fetchDimensionLabelsOfDataset,
+} from "../../../../api";
 import CompoundSearcher from "./CompoundSearcher";
 import { extractCompoundNames, fetchCompoundDatasets } from "./utils";
 
@@ -31,8 +34,8 @@ function CompoundNameSelect({
 
       try {
         const { labels } = await (isColorSelector && dataset_id
-          ? fetchSliceLabelsOfDataset("compound_experiment", dataset_id)
-          : fetchSliceLabels("compound_experiment"));
+          ? fetchDimensionLabelsOfDataset("compound_experiment", dataset_id)
+          : fetchDimensionLabels("compound_experiment"));
 
         const nextOptions = extractCompoundNames(labels).map((name) => ({
           label: name,
@@ -66,8 +69,8 @@ function CompoundNameSelect({
 
     // TODO: Handle the case where `isColorSelector` is true and there is no
     // dataset_id selected yet!
-    if (datasets.length === 1 && datasets[0].slice_labels.length === 1) {
-      onChange(datasets[0].slice_labels[0], datasets[0].dataset_id);
+    if (datasets.length === 1 && datasets[0].dimension_labels.length === 1) {
+      onChange(datasets[0].dimension_labels[0], datasets[0].dataset_id);
     } else {
       onChangeCompoundName(nextValue);
     }
