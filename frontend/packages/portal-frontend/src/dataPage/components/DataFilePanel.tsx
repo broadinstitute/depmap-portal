@@ -154,7 +154,7 @@ const CollapsiblePanelBody = ({
             dangerouslySetInnerHTML={{
               __html: file.retractionOverride || "",
             }}
-          ></div>
+          />
           <div
             className={styles.collapsiblePanelBodySection}
             dangerouslySetInnerHTML={{
