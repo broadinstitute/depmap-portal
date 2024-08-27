@@ -50,7 +50,6 @@ from breadbox_client.models import (
     BodyAddFeatureType,
     BodyAddSampleType,
     BodyGetDatasetData,
-    BodyUpdateDataset,
     BodyUpdateFeatureTypeMetadata,
     BodyUpdateSampleTypeMetadata,
     BodyUploadFile,
@@ -80,7 +79,7 @@ from breadbox_client.models import (
     UploadFileResponse,
     ValueType,
 )
-from breadbox_client.types import UNSET, File, Response
+from breadbox_client.types import UNSET, Unset, File, Response
 from breadbox_facade.exceptions import BreadboxException
 
 
@@ -303,19 +302,30 @@ class BBClient:
     def update_dataset(
         self,
         dataset_id: str,
-        dataset_metadata: Optional[dict] = None,
-        group_id: Optional[str] = None,
+        name: Union[str, Unset] = UNSET,
+        dataset_metadata: Union[dict, Unset] = UNSET,
+        group_id: Union[str, Unset] = UNSET,
     ) -> Union[MatrixDatasetResponse, TabularDatasetResponse]:
         """Update the values specified for the given dataset"""
-        metadata = DatasetMetadata.from_dict(dataset_metadata) if dataset_metadata else None
-        params = BodyUpdateDataset(
+        from breadbox_client.models import MatrixDatasetUpdateParams, TabularDatasetUpdateParams
+
+        dataset = self.get_dataset(dataset_id)
+        if isinstance(dataset, MatrixDatasetResponse):
+            param_factory = MatrixDatasetUpdateParams
+        else:
+            assert isinstance(dataset, TabularDatasetResponse)
+            param_factory = TabularDatasetUpdateParams
+
+        metadata = DatasetMetadata.from_dict(dataset_metadata) if dataset_metadata is not UNSET else UNSET
+        params = param_factory(
+            name=name,
             dataset_metadata=metadata,
             group_id=group_id,
         )
         breadbox_response = update_dataset_client.sync_detailed(
             dataset_id=dataset_id,
             client=self.client,
-            form_data=params,
+            body=params,
         )
         return self._parse_client_response(breadbox_response)
 
