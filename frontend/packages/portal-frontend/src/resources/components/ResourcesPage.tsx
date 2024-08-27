@@ -1,5 +1,5 @@
 import * as React from "react";
-import { useCallback, useState, useMemo } from "react";
+import { useMemo } from "react";
 import { Col, ListGroup, ListGroupItem } from "react-bootstrap";
 import { Accordion } from "@depmap/interactive";
 import { Link, useLocation } from "react-router-dom";
@@ -25,7 +25,7 @@ export default function ResourcesPage(props: ResourcesPageProps) {
   const query = useQuery();
 
   // If window location url has query params at the start, find the post to show
-  const initPost = useCallback(() => {
+  const initPost = useMemo(() => {
     const subcategory = subcategories.find(
       (sub: any) => sub.slug === query.get("subcategory")
     );
@@ -39,13 +39,6 @@ export default function ResourcesPage(props: ResourcesPageProps) {
     return post;
   }, [subcategories, query]);
 
-  const [selectedPost, setSelectedPost] = useState(initPost());
-
-  function handleSelect(post: any) {
-    // sets the post content to show on click
-    setSelectedPost(post);
-  }
-
   return (
     <div>
       <h1 style={{ marginBottom: "30px" }}>{title}</h1>
@@ -58,18 +51,13 @@ export default function ResourcesPage(props: ResourcesPageProps) {
                   return (
                     <Link
                       key={topic.id}
-                      onClick={() => handleSelect(topic)}
                       to={`?subcategory=${subcategory.slug}&topic=${topic.slug}`}
                       state={{ postHtml: topic }}
                       style={{ textDecoration: "none" }}
                     >
                       <ListGroupItem
                         style={{ borderRadius: "0px" }}
-                        active={
-                          selectedPost
-                            ? selectedPost.slug === topic.slug
-                            : false
-                        }
+                        active={initPost ? initPost.slug === topic.slug : false}
                       >
                         {topic.title}
                       </ListGroupItem>
@@ -82,15 +70,15 @@ export default function ResourcesPage(props: ResourcesPageProps) {
         })}
       </Col>
       <Col xs={12} md={8}>
-        {selectedPost ? (
+        {initPost ? (
           <div className={styles.PostContent}>
             <div className={styles.postDate}>
-              <p>Posted: {selectedPost.creation_date}</p>
-              <p>Updated: {selectedPost.update_date}</p>
+              <p>Posted: {initPost.creation_date}</p>
+              <p>Updated: {initPost.update_date}</p>
             </div>
             <div
               // eslint-disable-next-line react/no-danger
-              dangerouslySetInnerHTML={{ __html: selectedPost.post_content }}
+              dangerouslySetInnerHTML={{ __html: initPost.post_content }}
             />
           </div>
         ) : null}
