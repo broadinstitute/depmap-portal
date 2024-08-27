@@ -78,6 +78,8 @@ from breadbox_client.models import (
     UpdateDimensionType,
     UploadFileResponse,
     ValueType,
+    MatrixDatasetUpdateParamsFormat,
+    TabularDatasetUpdateParamsFormat
 )
 from breadbox_client.types import UNSET, Unset, File, Response
 from breadbox_facade.exceptions import BreadboxException
@@ -311,10 +313,10 @@ class BBClient:
 
         dataset = self.get_dataset(dataset_id)
         if isinstance(dataset, MatrixDatasetResponse):
-            param_factory = MatrixDatasetUpdateParams
+            param_factory = lambda **kwargs: MatrixDatasetUpdateParams(format_=MatrixDatasetUpdateParamsFormat.MATRIX, **kwargs)
         else:
             assert isinstance(dataset, TabularDatasetResponse)
-            param_factory = TabularDatasetUpdateParams
+            param_factory = lambda **kwargs: TabularDatasetUpdateParams(format_=TabularDatasetUpdateParamsFormat.TABULAR, **kwargs)
 
         metadata = DatasetMetadata.from_dict(dataset_metadata) if dataset_metadata is not UNSET else UNSET
         params = param_factory(
