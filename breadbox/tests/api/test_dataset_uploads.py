@@ -33,6 +33,71 @@ def file_ids_and_md5_hash(client, file):
 
 
 class TestPost:
+    def test_upload_data_as_parquet(
+        self,
+        client: TestClient,
+        minimal_db: SessionWithUser,
+        private_group,
+        mock_celery,
+        monkeypatch,
+        tmpdir,
+    ):
+        user = "someone@private-group.com"
+        headers = {"X-Forwarded-User": user}
+
+        data_path = str(tmpdir.join("data.parquet"))
+        pd.DataFrame(
+            {"index": ["ACH-1", "ACH-2"], "A": [0.1, 0.2], "B": [0.3, 0.4]}
+        ).to_parquet(data_path)
+
+        file_ids = []
+        with open(data_path, "rb") as fd:
+            chunk = fd.read()
+
+        response = client.post(
+            "/uploads/file",
+            files={"file": ("filename", chunk, "application/vnd.apache.parquet")},
+        )
+        assert response.status_code == 200
+        file_ids.append(response.json()["file_id"])
+
+        expected_md5 = hashlib.md5(chunk).hexdigest()
+
+        matrix_dataset = client.post(
+            "/dataset-v2/",
+            json={
+                "format": "matrix",
+                "name": "a dataset",
+                "units": "a unit",
+                "feature_type": "generic",
+                "sample_type": "depmap_model",
+                "data_type": "User upload",
+                "file_ids": file_ids,
+                "dataset_md5": expected_md5,
+                "is_transient": False,
+                "group_id": private_group["id"],
+                "value_type": "continuous",
+                "allowed_values": None,
+                "data_file_format": "parquet",
+            },
+            headers=headers,
+        )
+        assert_status_ok(matrix_dataset)
+        assert matrix_dataset.status_code == 202
+        assert matrix_dataset.json()["state"] == "SUCCESS"
+        dataset_id = matrix_dataset.json()["result"]["datasetId"]
+
+        result = client.post(
+            f"/datasets/matrix/{dataset_id}",
+            json={"features": ["A", "B"], "feature_identifier": "id",},
+            headers=headers,
+        )
+        assert_status_ok(result)
+        assert result.json() == {
+            "A": {"ACH-1": 0.1, "ACH-2": 0.2},
+            "B": {"ACH-1": 0.3, "ACH-2": 0.4},
+        }
+
     # Dataset post endpoint using uploads
     def test_dataset_uploads_task(
         self,

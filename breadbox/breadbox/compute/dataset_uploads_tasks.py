@@ -86,7 +86,10 @@ def dataset_upload(
         sample_type = _get_dimension_type(db, dataset_params.sample_type, "sample")
 
         data_df = read_and_validate_matrix_df(
-            file_path, dataset_params.value_type, dataset_params.allowed_values
+            file_path,
+            dataset_params.value_type,
+            dataset_params.allowed_values,
+            dataset_params.data_file_format,
         )
 
         feature_labels_and_warnings = _get_dimension_labels_and_warnings(

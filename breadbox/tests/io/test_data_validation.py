@@ -69,6 +69,7 @@ def test_read_and_validate_matrix_df(tmpdir):
         to_csv(pd.DataFrame("3", columns=["C1", "C2"], index=["A", "B"])),
         ValueType.categorical,
         ["2", "3"],
+        "csv",
     )
 
     # this make look funny because we read in a matrix of all 3s but the value came back as 1
@@ -81,6 +82,7 @@ def test_read_and_validate_matrix_df(tmpdir):
         to_csv(pd.DataFrame("0", columns=["C1", "C2"], index=["A", "B"])),
         ValueType.continuous,
         None,
+        "csv",
     )
 
     assert df["C1"].to_list() == [0.0, 0.0]
@@ -90,6 +92,7 @@ def test_read_and_validate_matrix_df(tmpdir):
         to_csv(pd.DataFrame("0", columns=["10", "11"], index=["0", "1"])),
         ValueType.continuous,
         None,
+        "csv",
     )
     assert df.index.to_list() == ["0", "1"]
     assert df.columns.to_list() == ["10", "11"]

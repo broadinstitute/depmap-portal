@@ -1364,6 +1364,16 @@
             "description": "Only provide if 'value_type' is 'categorical'. Must contain all possible categorical values",
             "title": "Allowed Values"
           },
+          "data_file_format": {
+            "default": "csv",
+            "description": "The format of the uploaded data file. May either be 'csv' or 'parquet'",
+            "enum": [
+              "csv",
+              "parquet"
+            ],
+            "title": "Data File Format",
+            "type": "string"
+          },
           "data_type": {
             "description": "Data type grouping for your dataset",
             "title": "Data Type",
@@ -2293,7 +2303,7 @@
   },
   "info": {
     "title": "Breadbox",
-    "version": "3.4.1"
+    "version": "3.3.3"
   },
   "openapi": "3.1.0",
   "paths": {

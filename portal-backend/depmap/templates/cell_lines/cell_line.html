@@ -14,6 +14,7 @@ endblock content_class %} {% block content %}
 <script id="react-cell-line-page-data" type="application/json">
   {
     "strippedCellLineName": {{ stripped_cell_line_name|tojson|safe }},
+    "publicComments": {{ public_comments|tojson|safe }},
     "modelId": {{ model_id|tojson|safe }},
     "hasMetMapData": {{ has_metmap_data|tojson|safe }}
   }

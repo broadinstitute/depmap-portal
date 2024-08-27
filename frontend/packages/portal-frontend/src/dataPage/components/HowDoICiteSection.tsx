@@ -90,9 +90,10 @@ const HowDoICiteSection = ({
   }
 
   return (
-    <div id={"how-to-cite"}>
+    <div ref={scroll} id={"how-to-cite"}>
       <Accordion
         key="c"
+        isOpen={sectionIsOpen}
         openCloseSymbolStyle={{
           float: "left",
           marginRight: "20px",

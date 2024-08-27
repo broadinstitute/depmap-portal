@@ -100,6 +100,7 @@ pytest-split = "^0.8.1"
 multidict = "^6.0.4"
 html-sanitizer = "^2.3.0"
 depmap-compute = {version = "^0.1.2", source = "public-python"}
+sqlite-shelve = "^2.2.1"
 
 
 [tool.poetry.group.dev.dependencies]

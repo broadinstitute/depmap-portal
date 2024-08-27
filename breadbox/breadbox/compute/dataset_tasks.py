@@ -184,6 +184,8 @@ def upload_dataset(
     allowed_values: Optional[Set[str]],
     is_transient: bool,
     user: str,
+    data_file_format: str,
+    *,
     update_message: Optional[Callable[[str], None]] = None,
     group_id: Optional[str] = None,
     dataset_metadata: Optional[Dict[str, Any]] = None,
@@ -232,12 +234,13 @@ def upload_dataset(
                 settings.filestore_location,
                 value_type,
                 valid_fields.valid_allowed_values,
+                data_file_format=data_file_format,
             )
         )
     except ValueError as e:
         msg = f"Unexpected exception during dataset file validation: {e}"
         log.exception(msg)
-        raise HTTPException(400, detail=msg)
+        raise HTTPException(400, detail=msg) from e
 
     dataset = MatrixDatasetIn(
         id=dataset_id,
@@ -327,8 +330,9 @@ def run_upload_dataset(
     allowed_values: Optional[Set[str]],
     is_transient: bool,
     user: str,
-    group_id: Optional[UUID] = None,
-    dataset_metadata: Optional[Dict[str, Any]] = None,
+    group_id: Optional[UUID],
+    dataset_metadata: Optional[Dict[str, Any]],
+    data_file_format: str,
 ):
     with db_context(user, commit=True) as db:
         start_time = time.time()
@@ -388,6 +392,7 @@ def run_upload_dataset(
             group_id=str(group_id),
             update_message=update_message,
             dataset_metadata=dataset_metadata,
+            data_file_format=data_file_format,
         )
 
         return upload_dataset_response

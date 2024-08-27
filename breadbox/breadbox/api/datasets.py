@@ -277,6 +277,7 @@ def add_dataset(
                 user,
                 group_id,
                 dataset_metadata_,
+                "csv",
             ]
         )
     except PermissionError as e:
