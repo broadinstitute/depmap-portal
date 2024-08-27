@@ -3,6 +3,9 @@ from typing import TYPE_CHECKING, Any, Dict, List, Type, TypeVar, Union, cast
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
+from ..models.matrix_dataset_params_data_file_format import (
+    MatrixDatasetParamsDataFileFormat,
+)
 from ..models.matrix_dataset_params_format import MatrixDatasetParamsFormat
 from ..models.value_type import ValueType
 from ..types import UNSET, Unset
@@ -32,8 +35,8 @@ class MatrixDatasetParams:
         value_type (ValueType):
         allowed_values (Union[List[str], None, Unset]): Only provide if 'value_type' is 'categorical'. Must contain all
             possible categorical values
-        data_file_format (Union[Unset, str]): The format of the uploaded data file. May either be 'csv' or 'parquet'
-            Default: 'csv'.
+        data_file_format (Union[Unset, MatrixDatasetParamsDataFileFormat]): The format of the uploaded data file. May
+            either be 'csv' or 'parquet' Default: MatrixDatasetParamsDataFileFormat.CSV.
         dataset_metadata (Union['MatrixDatasetParamsDatasetMetadataType0', None, Unset]): Contains a dictionary of
             additional dataset values that are not already provided above.
         feature_type (Union[None, Unset, str]): Type of features your dataset contains
@@ -54,7 +57,9 @@ class MatrixDatasetParams:
     units: str
     value_type: ValueType
     allowed_values: Union[List[str], None, Unset] = UNSET
-    data_file_format: Union[Unset, str] = "csv"
+    data_file_format: Union[Unset, MatrixDatasetParamsDataFileFormat] = (
+        MatrixDatasetParamsDataFileFormat.CSV
+    )
     dataset_metadata: Union["MatrixDatasetParamsDatasetMetadataType0", None, Unset] = (
         UNSET
     )
@@ -96,7 +101,9 @@ class MatrixDatasetParams:
         else:
             allowed_values = self.allowed_values
 
-        data_file_format = self.data_file_format
+        data_file_format: Union[Unset, str] = UNSET
+        if not isinstance(self.data_file_format, Unset):
+            data_file_format = self.data_file_format.value
 
         dataset_metadata: Union[Dict[str, Any], None, Unset]
         if isinstance(self.dataset_metadata, Unset):
@@ -200,7 +207,12 @@ class MatrixDatasetParams:
 
         allowed_values = _parse_allowed_values(d.pop("allowed_values", UNSET))
 
-        data_file_format = d.pop("data_file_format", UNSET)
+        _data_file_format = d.pop("data_file_format", UNSET)
+        data_file_format: Union[Unset, MatrixDatasetParamsDataFileFormat]
+        if isinstance(_data_file_format, Unset):
+            data_file_format = UNSET
+        else:
+            data_file_format = MatrixDatasetParamsDataFileFormat(_data_file_format)
 
         def _parse_dataset_metadata(
             data: object,
