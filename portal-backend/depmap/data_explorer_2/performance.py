@@ -15,7 +15,7 @@ from depmap.data_explorer_2.utils import (
 TEST_DIMENSION = {
     "dataset_id": "Chronos_Combined",
     "slice_type": "depmap_model",
-    "axis_type": "context",
+    "axis_type": "aggregated_slice",
     "context": {
         "context_type": "depmap_model",
         "expr": {
