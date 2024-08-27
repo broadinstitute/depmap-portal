@@ -25,7 +25,7 @@ def get_vector_labels(dataset_id: str, is_transpose: bool) -> list[str]:
     """
     Load all labels for an axis of the given dataset.
     If is_transpose, then get depmap_ids/sample labels.
-    Otherwise, get entity/feature labels.
+    Otherwise, get sample/feature labels.
     """
     if is_transpose:
         return data_access.get_dataset_sample_ids(dataset_id)
@@ -34,10 +34,8 @@ def get_vector_labels(dataset_id: str, is_transpose: bool) -> list[str]:
 
 
 def get_dimension_labels_of_dataset(dimension_type: str, dataset: MatrixDataset):
-    assert dimension_type in (
-        dataset.feature_type,
-        dataset.sample_type,
-    ), f"'{dimension_type}' is neither the feature nor sample type of dataset '{dataset.id}'"
+    if dimension_type not in (dataset.feature_type, dataset.sample_type):
+        return set()
 
     is_transpose = dimension_type == dataset.sample_type
 
@@ -412,7 +410,7 @@ def get_union_of_index_labels(index_type, dataset_ids):
                 f"Its feature_type is '{feature_type}' and sample_type is '{sample_type}'."
             )
 
-        is_transpose = sample_type == index_type
+        is_transpose = feature_type == index_type
         labels = get_vector_labels(dataset_id, not is_transpose)
         union_of_labels = union_of_labels.union(labels)
 

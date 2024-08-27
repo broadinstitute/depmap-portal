@@ -2,7 +2,6 @@ import json
 
 from flask import url_for
 import gzip
-from unittest.mock import MagicMock
 
 from depmap.enums import DependencyEnum
 
@@ -15,10 +14,10 @@ from tests.factories import (
 from tests.utilities import interactive_test_utils
 
 
-def test_entity_labels(app, empty_db_mock_downloads, mock_breadbox_client):
+def test_dimension_labels_of_dataset(app, empty_db_mock_downloads):
     """
     Mock datasets with overlapping entities. 
-    Check that all unique entity labels are loaded.
+    Check that all dimension labels are loaded for the given dataset
     """
     gene0 = GeneFactory(label="gene0")
     gene1 = GeneFactory(label="gene1")
@@ -43,18 +42,21 @@ def test_entity_labels(app, empty_db_mock_downloads, mock_breadbox_client):
         name=DependencyEnum.Chronos_Achilles,
         priority=2,
     )
+
     empty_db_mock_downloads.session.flush()
     interactive_test_utils.reload_interactive_config()
 
-    mock_breadbox_client.get_datasets = MagicMock(return_value=[])
-
     with app.test_client() as c:
         r = c.get(
-            url_for("data_explorer_2.slice_labels", slice_type="gene"),
+            url_for(
+                "data_explorer_2.dimension_labels_of_dataset",
+                dimension_type="gene",
+                dataset_id=DependencyEnum.Chronos_Achilles.name,
+            ),
             content_type="application/json",
         )
         assert r.status_code == 200, r.status_code
         response = json.loads(gzip.decompress(r.data).decode("utf8"))
 
-        assert response.get("labels") == ["gene0", "gene1", "gene2"]
+        assert response.get("labels") == ["gene1", "gene2"]
         assert response.get("aliases") == []
