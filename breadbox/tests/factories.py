@@ -384,6 +384,7 @@ def matrix_dataset(
         taiga_id=taiga_id,
         allowed_values=allowed_values,
         user=_handle_call_if_omitted(user, settings),
+        data_file_format="csv",
     )
 
     return dataset_crud.get_dataset(
