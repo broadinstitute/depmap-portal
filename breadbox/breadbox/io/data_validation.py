@@ -56,6 +56,7 @@ def validate_all_columns_have_types(
         )
 
 
+# TODO: Replace this with annotation_type_to_pandas_column_type. This is used in dimension type tabular datasets only and we should try to make these dtype mappings standard for all tabular datasets
 def map_annotation_type_to_pandas_dtype(annotation_type: AnnotationType):
     annotation_type_to_pandas_type_mappings = {
         AnnotationType.continuous: "float",
@@ -65,6 +66,19 @@ def map_annotation_type_to_pandas_dtype(annotation_type: AnnotationType):
         AnnotationType.list_strings: "string",
     }
     return annotation_type_to_pandas_type_mappings.get(annotation_type)
+
+
+def annotation_type_to_pandas_column_type(annotation_type: AnnotationType):
+    annotation_type_to_pandas_type_mappings = {
+        AnnotationType.continuous: pd.Float64Dtype(),
+        AnnotationType.categorical: pd.CategoricalDtype(),
+        AnnotationType.binary: pd.BooleanDtype(),
+        AnnotationType.text: pd.StringDtype(),
+        AnnotationType.list_strings: pd.StringDtype(),
+    }
+    dtype = annotation_type_to_pandas_type_mappings.get(annotation_type)
+    assert dtype is not None
+    return dtype
 
 
 def _validate_dimension_type_metadata_file(
@@ -499,18 +513,6 @@ def read_and_validate_tabular_df(
     columns_metadata: Dict[str, ColumnMetadata],
     dimension_type_identifier: str,
 ):
-    def annotation_type_to_pandas_column_type(annotation_type: AnnotationType):
-        annotation_type_to_pandas_type_mappings = {
-            AnnotationType.continuous: pd.Float64Dtype(),
-            AnnotationType.categorical: pd.CategoricalDtype(),
-            AnnotationType.binary: pd.BooleanDtype(),
-            AnnotationType.text: pd.StringDtype(),
-            AnnotationType.list_strings: pd.StringDtype(),
-        }
-        dtype = annotation_type_to_pandas_type_mappings.get(annotation_type)
-        assert dtype is not None
-        return dtype
-
     def can_parse_list_strings(val):
         example_list_string = '["x", "y"]'
         if val is not None and not pd.isnull(val):

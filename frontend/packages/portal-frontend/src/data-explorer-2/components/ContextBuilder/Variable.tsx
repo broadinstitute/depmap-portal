@@ -1,15 +1,15 @@
-/* eslint-disable @typescript-eslint/naming-convention */
 import React, { useEffect, useMemo, useState } from "react";
 import cx from "classnames";
 import Select, { createFilter } from "react-windowed-select";
-import metadata from "src/data-explorer-2/json/metadata-slices.json";
 import {
   capitalize,
   fetchDatasetsByIndexType,
   getDimensionTypeLabel,
+  MetadataSlices,
   SliceLabelSelector,
 } from "@depmap/data-explorer-2";
 import { DataExplorerDatasetDescriptor } from "@depmap/types";
+import { useContextBuilderContext } from "src/data-explorer-2/components/ContextBuilder/ContextBuilderContext";
 import { ContextBuilderReducerAction } from "src/data-explorer-2/components/ContextBuilder/contextBuilderReducer";
 import {
   getValueType,
@@ -19,14 +19,6 @@ import VariableEntity from "src/data-explorer-2/components/ContextBuilder/Variab
 import styles from "src/data-explorer-2/styles/ContextBuilder.scss";
 
 type SliceId = string;
-type SliceDescriptor = {
-  name: string;
-  valueType: "categorical" | "list_strings";
-  entityTypeLabel?: string;
-  isPartialSliceId?: boolean;
-};
-type SliceVariables = Record<SliceId, SliceDescriptor>;
-type Metadata = Record<string, SliceVariables>;
 
 interface Props {
   value: "entity_label" | SliceId | null;
@@ -71,15 +63,10 @@ const extractDatasetIdFromSlice = (
   return decodeURIComponent(match.replace("slice/", "").slice(0, -1));
 };
 
-const getMetadataLookupTable = (entity_type: string) => {
-  if (!(entity_type in metadata)) {
-    return null;
-  }
-
+const getMetadataLookupTable = (slices: MetadataSlices) => {
   const out: Record<string, string> = {};
-  const entries = (metadata as Metadata)[entity_type];
 
-  Object.entries(entries).forEach(([key, value]) => {
+  Object.entries(slices).forEach(([key, value]) => {
     out[key] = value.name;
   });
 
@@ -116,6 +103,8 @@ function Variable({
   const [datasets, setDatasets] = useState<
     DataExplorerDatasetDescriptor[] | null
   >(null);
+
+  const { metadataSlices, isLoading } = useContextBuilderContext();
 
   useEffect(() => {
     let mounted = true;
@@ -162,10 +151,10 @@ function Variable({
 
     return {
       entity_label,
-      ...getMetadataLookupTable(entity_type),
+      ...getMetadataLookupTable(metadataSlices),
       ...(continuousDatasetSliceLookupTable || {}),
     };
-  }, [continuousDatasetSliceLookupTable, entity_type]);
+  }, [continuousDatasetSliceLookupTable, entity_type, metadataSlices]);
 
   // A partial slice is used to select the dataset only.
   // A complete slice also contains a specific entity.
@@ -173,9 +162,9 @@ function Variable({
     findSliceId(value, continuousDatasetSliceLookupTable)
   );
 
-  const psid = findSliceId(value, (metadata as Metadata)[entity_type]);
+  const psid = findSliceId(value, metadataSlices);
   const isParitalCategoricalSliceId =
-    !!psid && (metadata as Metadata)[entity_type][psid].isPartialSliceId;
+    !!psid && !!metadataSlices[psid]?.isPartialSliceId;
 
   const valueOrPartialSlice =
     isParitalContinuousSliceId || isParitalCategoricalSliceId
@@ -194,7 +183,8 @@ function Variable({
           [styles.invalidSelect]: shouldShowValidation && !valueOrPartialSlice,
         })}
         styles={selectStyles}
-        isLoading={!continuousDatasetSliceLookupTable}
+        isLoading={isLoading || !continuousDatasetSliceLookupTable}
+        isDisabled={isLoading || !continuousDatasetSliceLookupTable}
         value={
           valueOrPartialSlice && {
             value: valueOrPartialSlice,
@@ -226,10 +216,7 @@ function Variable({
           <SliceLabelSelector
             value={value ? decodeURIComponent(value.split("/")[2]) : null}
             onChange={(nextSliceId) => {
-              const nextValueType = getValueType(
-                (metadata as Metadata)[entity_type],
-                nextSliceId
-              );
+              const nextValueType = getValueType(metadataSlices, nextSliceId);
               const op = nextValueType === "list_strings" ? "has_any" : "==";
 
               dispatch({
@@ -242,8 +229,7 @@ function Variable({
             }}
             dataset_id={varDatasetId as string}
             entityTypeLabel={
-              (metadata as Metadata)[entity_type][valueOrPartialSlice!]
-                .entityTypeLabel as string
+              metadataSlices[valueOrPartialSlice!].entityTypeLabel as string
             }
             menuPortalTarget={document.querySelector("#modal-container")}
             isClearable={false}

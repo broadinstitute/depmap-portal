@@ -425,89 +425,6 @@
         "title": "Body_get_dataset_data",
         "type": "object"
       },
-      "Body_update_dataset": {
-        "properties": {
-          "data_type": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "Data type grouping for your dataset",
-            "title": "Data Type"
-          },
-          "dataset_metadata": {
-            "anyOf": [
-              {
-                "contentMediaType": "application/json",
-                "contentSchema": {
-                  "$ref": "#/components/schemas/DatasetMetadata"
-                },
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "Some arbitrary dict of additional dataset metadata to what is defined above",
-            "title": "Dataset Metadata"
-          },
-          "group_id": {
-            "anyOf": [
-              {
-                "format": "uuid",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "Id of the group the dataset belongs to",
-            "title": "Group Id"
-          },
-          "name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "Name of dataset",
-            "title": "Name"
-          },
-          "priority": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "Numeric value representing priority of the dataset within its `data_type`",
-            "title": "Priority"
-          },
-          "units": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "Units for the values in the dataset",
-            "title": "Units"
-          }
-        },
-        "title": "Body_update_dataset",
-        "type": "object"
-      },
       "Body_update_feature_type_metadata": {
         "properties": {
           "annotation_type_mapping": {
@@ -1717,6 +1634,97 @@
         "title": "MatrixDatasetResponse",
         "type": "object"
       },
+      "MatrixDatasetUpdateParams": {
+        "description": "Matrix dataset parameters that are editable",
+        "properties": {
+          "data_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Data type grouping for your dataset",
+            "title": "Data Type"
+          },
+          "dataset_metadata": {
+            "anyOf": [
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "A dictionary of additional dataset metadata that is not already provided",
+            "title": "Dataset Metadata"
+          },
+          "format": {
+            "const": "matrix",
+            "enum": [
+              "matrix"
+            ],
+            "title": "Format",
+            "type": "string"
+          },
+          "group_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Id of the group the dataset belongs to",
+            "title": "Group Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Name of dataset",
+            "title": "Name"
+          },
+          "priority": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Numeric value representing priority of the dataset within its `data_type`",
+            "title": "Priority"
+          },
+          "units": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Units for the values in the dataset",
+            "title": "Units"
+          }
+        },
+        "required": [
+          "format"
+        ],
+        "title": "MatrixDatasetUpdateParams",
+        "type": "object"
+      },
       "MatrixDimensionsInfo": {
         "properties": {
           "feature_identifier": {
@@ -2086,6 +2094,85 @@
         "title": "TabularDatasetResponse",
         "type": "object"
       },
+      "TabularDatasetUpdateParams": {
+        "description": "Tabular dataset parameters that are editable",
+        "properties": {
+          "data_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Data type grouping for your dataset",
+            "title": "Data Type"
+          },
+          "dataset_metadata": {
+            "anyOf": [
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "A dictionary of additional dataset metadata that is not already provided",
+            "title": "Dataset Metadata"
+          },
+          "format": {
+            "const": "tabular",
+            "enum": [
+              "tabular"
+            ],
+            "title": "Format",
+            "type": "string"
+          },
+          "group_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Id of the group the dataset belongs to",
+            "title": "Group Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Name of dataset",
+            "title": "Name"
+          },
+          "priority": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Numeric value representing priority of the dataset within its `data_type`",
+            "title": "Priority"
+          }
+        },
+        "required": [
+          "format"
+        ],
+        "title": "TabularDatasetUpdateParams",
+        "type": "object"
+      },
       "TabularDimensionsInfo": {
         "properties": {
           "columns": {
@@ -2212,7 +2299,7 @@
   },
   "info": {
     "title": "Breadbox",
-    "version": "3.3.3"
+    "version": "3.4.1"
   },
   "openapi": "3.1.0",
   "paths": {
@@ -4019,6 +4106,7 @@
         ]
       },
       "patch": {
+        "description": "Update the dataset metadata\n\nThe following parameters may be provided or omitted if no change for the value:\n`format` - Required parameter. Must be 'matrix' or 'tabular' and match the format of the given dataset\n`name` - Optional parameter. Name of dataset\n`data_type` - Optional parameter. Data type grouping for your dataset\n`group_id` - Optional parameter. Id of the group the dataset belongs to\n`priority` - Optional parameter. Numeric value representing priority of the dataset within its `data_type`\n`dataset_metadata` - Optional parameter. A dictionary of additional dataset metadata that is not already provided\n`units` - Optional parameter for matrix dataset only. Units for the values in the dataset",
         "operationId": "update_dataset",
         "parameters": [
           {
@@ -4034,17 +4122,28 @@
         ],
         "requestBody": {
           "content": {
-            "application/x-www-form-urlencoded": {
+            "application/json": {
               "schema": {
-                "allOf": [
+                "discriminator": {
+                  "mapping": {
+                    "matrix": "#/components/schemas/MatrixDatasetUpdateParams",
+                    "tabular": "#/components/schemas/TabularDatasetUpdateParams"
+                  },
+                  "propertyName": "format"
+                },
+                "oneOf": [
                   {
-                    "$ref": "#/components/schemas/Body_update_dataset"
+                    "$ref": "#/components/schemas/MatrixDatasetUpdateParams"
+                  },
+                  {
+                    "$ref": "#/components/schemas/TabularDatasetUpdateParams"
                   }
                 ],
-                "title": "Body"
+                "title": "Dataset Update Params"
               }
             }
-          }
+          },
+          "required": true
         },
         "responses": {
           "200": {

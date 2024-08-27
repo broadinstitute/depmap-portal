@@ -1,10 +1,9 @@
-import metadataSlices from "src/data-explorer-2/json/metadata-slices.json";
+import { MetadataSlices } from "@depmap/data-explorer-2";
 
-export const slicePrefix = (value: string, entity_type: string) => {
-  const md = (metadataSlices as Record<string, object>)[entity_type];
+export const slicePrefix = (slices: MetadataSlices, value: string) => {
   let out = "";
 
-  Object.keys(md).forEach((sliceId) => {
+  Object.keys(slices).forEach((sliceId) => {
     if (value.includes(sliceId)) {
       out = sliceId;
     }
@@ -22,20 +21,22 @@ export const sliceLabel = (value: string) => {
   return label ? decodeURIComponent(label) : null;
 };
 
-export const getDatasetIdFromSlice = (value: string, entity_type: string) => {
-  return slicePrefix(value, entity_type).replace("slice/", "").slice(0, -1);
+export const getDatasetIdFromSlice = (
+  slices: MetadataSlices,
+  value: string
+) => {
+  return slicePrefix(slices, value).replace("slice/", "").slice(0, -1);
 };
 
 export const getMetadataEntityTypeLabelFromSlice = (
-  value: string,
-  entity_type: string
+  slices: MetadataSlices,
+  value: string
 ) => {
-  const md = (metadataSlices as Record<string, object>)[entity_type];
   let out = "";
 
-  Object.entries(md).forEach(([sliceId, descriptor]) => {
-    if (sliceId === slicePrefix(value, entity_type)) {
-      out = descriptor.entityTypeLabel;
+  Object.entries(slices).forEach(([sliceId, descriptor]) => {
+    if (sliceId === slicePrefix(slices, value)) {
+      out = descriptor.entityTypeLabel as string;
     }
   });
 
@@ -43,36 +44,26 @@ export const getMetadataEntityTypeLabelFromSlice = (
 };
 
 export const containsPartialSlice = (
-  value: string | null,
-  entity_type: string
+  slices: MetadataSlices,
+  value: string | null
 ) => {
   if (!value) {
     return false;
   }
 
-  const md = (metadataSlices as Record<string, object>)[entity_type];
-
-  return Object.entries(md).some(
-    ([sliceId, descriptor]) =>
-      sliceId === slicePrefix(value, entity_type) && descriptor.isPartialSliceId
+  return Object.entries(slices).some(
+    ([sliceId, sliceInfo]) =>
+      sliceId === slicePrefix(slices, value) && sliceInfo.isPartialSliceId
   );
 };
 
-export const getOptions = (entity_type: string) => {
-  const md = metadataSlices;
-  const dimensionMetadata: Record<
-    string,
-    { name: string; isHighCardinality?: boolean }
-  > = md[entity_type as "depmap_model" | "gene" | "compound_experiment"];
-
+export const getOptions = (slices: MetadataSlices) => {
   const options: Record<string, string> = {};
 
-  Object.keys(dimensionMetadata || {})
-    .filter(
-      (slice_id: string) => !dimensionMetadata[slice_id].isHighCardinality
-    )
+  Object.keys(slices)
+    .filter((slice_id: string) => !slices[slice_id].isHighCardinality)
     .forEach((slice_id) => {
-      options[slice_id] = dimensionMetadata[slice_id].name;
+      options[slice_id] = slices[slice_id].name;
     });
 
   return options;
