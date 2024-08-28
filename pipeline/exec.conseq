@@ -18,7 +18,7 @@ executor-template dsub {
   "COMMAND_TEMPLATE": """{{ config.DSUB_EXE_PATH }} \
       --provider google-batch \
       --project {{ config.DEFAULT_GCP_PROJECT }} \
-      --zones '{{ config.DEFAULT_GCP_ZONE }}' \
+      --location us-central1 \
       --logging {{ config.STAGING_URL }}/logs/{{ parameters.UUID }} \
       --image {{ parameters.docker_image | default(config.DEFAULT_DOCKER_IMAGE) }} \
       --env AWS_ACCESS_KEY_ID=invalid \
@@ -29,8 +29,9 @@ executor-template dsub {
   "CHECK_COMMAND_TEMPLATE": """python dstat_wrapper.py {{config.DSTAT_EXE_PATH}} \
       --provider google-batch \
       --project {{ config.DEFAULT_GCP_PROJECT }} \
+      --location us-central1 \
       --jobs {{ JOB_ID }} \
-      --status 'RUNNING'""",
+      --format json""",
   "IS_RUNNING_PATTERN": "IN_PROGRESS:", 
   "TERMINATE_CMD_TEMPLATE": "{{ config.DDEL_EXE_PATH }} --provider google-batch --project {{ config.DEFAULT_GCP_PROJECT }} --jobs {{ JOB_ID }}",
   "JOB_ID_PATTERN": """(?:(?:Job: )|(?:Launched job-id: ))(\S+).*""",
