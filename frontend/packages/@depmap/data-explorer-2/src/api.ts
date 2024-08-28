@@ -283,7 +283,7 @@ export function fetchDimensionLabels(
 }> {
   const query = qs.stringify({ dimension_type });
 
-  return fetchJson(`/slice_labels?${query}`);
+  return fetchJson(`/dimension_labels?${query}`);
 }
 
 type DataType = string;
@@ -322,7 +322,7 @@ export function fetchDimensionLabelsOfDataset(
 }> {
   const query = qs.stringify({ dimension_type, dataset_id });
 
-  return fetchJson(`/slice_labels_of_dataset?${query}`);
+  return fetchJson(`/dimension_labels_of_dataset?${query}`);
 }
 
 export function fetchUniqueValuesOrRange(slice_id: string) {
