@@ -182,20 +182,21 @@ def resources_prototype():
 
     client = DiscourseClient(discourse_api_key, forum_url, resources_data_path)
     sanitizer = create_sanitizer()
+    root_category = None
 
     try:
         root_category = get_root_category_subcategory_topics(
             client, sanitizer, current_app.config.get("FORUM_RESOURCES_CATEGORY")
         )
+
     except requests.exceptions.HTTPError as err:
         if err.response.status_code == 429:
             abort(429)
         else:
             raise err
+
     if root_category is None:
         abort(404)
-
-    assert root_category
 
     return render_template(
         "public/resources_prototype.html", root_category=root_category,

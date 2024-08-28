@@ -1770,7 +1770,7 @@ def _sync_metadata_to_breadbox():
 def reload_resources():
     forum_api_key_value = current_app.config["FORUM_API_KEY"]
     forum_url = current_app.config["FORUM_URL"]
-    resources_data_path = current_app.config.get("RESOURCES_DATA_PATH")
+    resources_data_path = current_app.config["RESOURCES_DATA_PATH"]
 
     if forum_api_key_value is None or forum_url is None or resources_data_path is None:
         raise Exception(
