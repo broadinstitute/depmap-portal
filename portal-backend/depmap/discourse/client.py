@@ -63,6 +63,7 @@ class DiscourseClient:
     def get_category_with_subcategories(self, category_slug: str):
         # Given the category slug, filter from list of categories the specific category that matches the slug. NOTE: This is a workaround since GET /c/{id}/show.json does not return subcategory information as far as we know
         url = "/categories.json"
+        key = f"{url}/{category_slug}"
         with SqliteDict(self.resources_results) as db:
             if self.reload:
                 res = self.get(url)
@@ -71,10 +72,10 @@ class DiscourseClient:
                     (c for c in categories if c["slug"] == category_slug), None
                 )
                 # Store response results
-                db[url] = category
+                db[key] = category
                 db.commit()
 
-            data = db[url]
+            data = db[key]
             assert data
 
         return data
