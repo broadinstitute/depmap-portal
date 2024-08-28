@@ -26,14 +26,12 @@ executor-template dsub {
       --min-ram {{ parameters.min_ram | default("4") }} \
       --boot-disk-size {{ parameters.boot_disk_size | default("10") }} \
       --command '{{ COMMAND }}'""",
-  "CHECK_COMMAND_TEMPLATE": """{{config.DSTAT_EXE_PATH}} \
+  "CHECK_COMMAND_TEMPLATE": """python dstat_wrapper.py {{config.DSTAT_EXE_PATH}} \
       --provider google-batch \
       --project {{ config.DEFAULT_GCP_PROJECT }} \
       --jobs {{ JOB_ID }} \
       --status 'RUNNING'""",
-  "IS_RUNNING_PATTERN": "Status", # Really anything because we are only
-                                  # listing running jobs. Just make sure
-                                  # there's some output
+  "IS_RUNNING_PATTERN": "IN_PROGRESS:", 
   "TERMINATE_CMD_TEMPLATE": "{{ config.DDEL_EXE_PATH }} --provider google-batch --project {{ config.DEFAULT_GCP_PROJECT }} --jobs {{ JOB_ID }}",
   "JOB_ID_PATTERN": """(?:(?:Job: )|(?:Launched job-id: ))(\S+).*""",
   "COMPLETED_CMD_TEMPLATE" : """{{config.DSTAT_EXE_PATH}} \
