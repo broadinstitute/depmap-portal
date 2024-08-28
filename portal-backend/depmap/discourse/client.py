@@ -9,8 +9,8 @@ from sqlitedict import SqliteDict
 
 
 class DiscourseClient:
-    """The client has two modes:
-    1. In refresh mode, data is fetched from Discourse API and stored in a DB cache
+    """The client has two modes denoted by the `reload` boolean parameter:
+    1. In reload mode, data is fetched from Discourse API and stored in a DB cache
     2. In the normal mode, stored data is read directly from the DB cache"""
 
     def __init__(self, api_key: str, base_url: str, reload: bool = False):
@@ -41,8 +41,6 @@ class DiscourseClient:
             # Raises HTTPError, if one occurred.
             r.raise_for_status()
             return r.json()
-        except requests.exceptions.HTTPError as err:
-            raise err
         except requests.exceptions.RequestException as err:
             print("Unexpected error orcurred:\n", err)
             raise err

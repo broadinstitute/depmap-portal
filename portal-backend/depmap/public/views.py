@@ -10,6 +10,7 @@ from depmap.public.resources import (
     get_root_category_subcategory_topics,
     create_sanitizer,
     refresh_all_category_topics,
+    _read_forum_api_key,
 )
 from depmap.discourse.client import DiscourseClient
 from depmap.settings.download_settings import get_download_list
@@ -151,13 +152,7 @@ def resources_reloads():
     if forum_api_key_value is None or forum_url is None:
         abort(404)
 
-    if os.path.isfile(
-        forum_api_key_value
-    ):  # Presumably value is filepath in dev config only
-        with open(forum_api_key_value) as fp:
-            discourse_api_key = fp.read()
-    else:
-        discourse_api_key = forum_api_key_value
+    discourse_api_key = _read_forum_api_key(forum_api_key_value)
 
     client = DiscourseClient(discourse_api_key, forum_url, True)
     try:
@@ -179,13 +174,7 @@ def resources_prototype():
     if forum_api_key_value is None or forum_url is None:
         abort(404)
 
-    if os.path.isfile(
-        forum_api_key_value
-    ):  # Presumably value is filepath in dev config only
-        with open(forum_api_key_value) as fp:
-            discourse_api_key = fp.read()
-    else:
-        discourse_api_key = forum_api_key_value
+    discourse_api_key = _read_forum_api_key(forum_api_key_value)
 
     client = DiscourseClient(discourse_api_key, forum_url)
     sanitizer = create_sanitizer()

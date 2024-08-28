@@ -6,6 +6,7 @@ from bs4 import BeautifulSoup
 from urllib.parse import urljoin
 import html_sanitizer
 from html_sanitizer import Sanitizer
+import os
 
 
 @dataclass
@@ -183,3 +184,14 @@ def refresh_all_category_topics(client: DiscourseClient, category_slug: str):
             client.get_topic_main_post(sub_topic["id"])
 
     print(f"Successful in fetching all topics for {category_slug}!")
+
+
+def _read_forum_api_key(forum_api_key_value: str):
+    if os.path.isfile(
+        forum_api_key_value
+    ):  # Presumably value is filepath in dev config only
+        with open(forum_api_key_value) as fp:
+            discourse_api_key = fp.read()
+    else:
+        discourse_api_key = forum_api_key_value
+    return discourse_api_key
