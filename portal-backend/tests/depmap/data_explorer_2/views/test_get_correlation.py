@@ -41,7 +41,7 @@ def test_get_correlation_1d(app, empty_db_mock_downloads):
         "dimensions": {
             "x": {
                 "dataset_id": "Chronos_Combined",
-                "entity_type": "gene",
+                "slice_type": "gene",
                 "aggregation": "first",
                 "context": {
                     "name": gene1.label,
@@ -124,7 +124,7 @@ def test_get_correlation_2d(app, empty_db_mock_downloads):
         "dimensions": {
             "x": {
                 "dataset_id": "Chronos_Combined",
-                "entity_type": "depmap_model",
+                "slice_type": "depmap_model",
                 "aggregation": "mean",
                 "context": {
                     "name": "Breast",
@@ -134,7 +134,7 @@ def test_get_correlation_2d(app, empty_db_mock_downloads):
             },
             "x2": {
                 "dataset_id": "Chronos_Combined",
-                "entity_type": "depmap_model",
+                "slice_type": "depmap_model",
                 "aggregation": "mean",
                 "context": {
                     "name": "Not Breast",

@@ -39,12 +39,12 @@ export default function useSync({
         value.aggregation || prev.dimension.aggregation || "first";
 
       if (!axis_type || mode === "entity-only") {
-        axis_type = "entity";
+        axis_type = "raw_slice";
         aggregation = "first";
       }
 
       if (mode === "context-only") {
-        axis_type = "context";
+        axis_type = "aggregated_slice";
 
         if (aggregation !== "correlation") {
           aggregation = "mean";

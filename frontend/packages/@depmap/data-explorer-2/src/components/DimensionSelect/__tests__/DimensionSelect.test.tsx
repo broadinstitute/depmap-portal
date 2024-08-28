@@ -13,7 +13,7 @@ test("hides the aggregation select for the special case of correlation", async (
     .mockResolvedValue({ depmap_model: [] });
 
   jest
-    .spyOn(api, "fetchEntityToDatasetsMapping")
+    .spyOn(api, "fetchDimensionLabelsToDatasetsMapping")
     .mockResolvedValue(NULL_MAPPING);
 
   render(

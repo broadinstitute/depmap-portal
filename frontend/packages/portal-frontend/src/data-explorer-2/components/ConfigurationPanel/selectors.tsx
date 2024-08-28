@@ -11,6 +11,7 @@ import {
   sortDimensionTypes,
 } from "@depmap/data-explorer-2";
 import {
+  colorByValue,
   DataExplorerDatasetDescriptor,
   DataExplorerPlotConfig,
 } from "@depmap/types";
@@ -132,58 +133,58 @@ export function ColorByTypeSelector({
   show,
   enable,
   value,
-  entity_type,
+  slice_type,
   onChange,
 }: {
   show: boolean;
   enable: boolean;
   value: string | null;
-  entity_type: string;
+  slice_type: string;
   onChange: (nextValue: DataExplorerPlotConfig["color_by"]) => void;
 }) {
-  const entityTypeLabel = capitalize(getDimensionTypeLabel(entity_type));
+  const sliceTypeLabel = capitalize(getDimensionTypeLabel(slice_type));
   const [hasSomeColorProperty, setHasSomeColorProperty] = useState(false);
 
   useEffect(() => {
     (async () => {
-      const keyedSlices = await fetchMetadataSlices(entity_type);
+      const keyedSlices = await fetchMetadataSlices(slice_type);
       const slices = Object.values(keyedSlices);
       setHasSomeColorProperty(slices.some((slice) => !slice.isHighCardinality));
     })();
-  }, [entity_type]);
+  }, [slice_type]);
 
-  const options: Record<string, string> = {
-    entity: entityTypeLabel,
+  const options: Partial<Record<colorByValue, string>> = {
+    raw_slice: sliceTypeLabel,
   };
 
   const helpContent: React.ReactNode[] = [
     <p key={0}>
-      Choose <b>{entityTypeLabel}</b> to color a single point.
+      Choose <b>{sliceTypeLabel}</b> to color a single point.
     </p>,
   ];
 
-  if (entity_type !== "other") {
-    options.context = `${entityTypeLabel} Context`;
+  if (slice_type !== "other") {
+    options.aggregated_slice = `${sliceTypeLabel} Context`;
     helpContent.push(
       <p key={1}>
-        Choose <b>{entityTypeLabel} context</b> to color by membership in a
+        Choose <b>{sliceTypeLabel} context</b> to color by membership in a
         user-defined context.
       </p>
     );
   }
 
   if (hasSomeColorProperty || value === "property") {
-    options.property = `${entityTypeLabel} Property`;
+    options.property = `${sliceTypeLabel} Property`;
     helpContent.push(
       <p key={2}>
-        Choose <b>{entityTypeLabel} property</b> to color by major properties of
-        the {entityTypeLabel}, such as selectivity for genes or lineage for
+        Choose <b>{sliceTypeLabel} property</b> to color by major properties of
+        the {sliceTypeLabel}, such as selectivity for genes or lineage for
         models.
       </p>
     );
   }
 
-  if (entity_type !== "other") {
+  if (slice_type !== "other") {
     options.custom = "Custom";
     helpContent.push(
       <p key={3}>
@@ -199,7 +200,7 @@ export function ColorByTypeSelector({
         label={
           <span>
             Color by
-            {entity_type && (
+            {slice_type && (
               <HelpTip id="color-by-help" customContent={helpContent} />
             )}
           </span>

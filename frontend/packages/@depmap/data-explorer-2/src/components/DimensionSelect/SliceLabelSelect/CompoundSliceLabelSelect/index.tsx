@@ -7,14 +7,14 @@ import { extractCompoundName } from "./utils";
 interface Props {
   value: DataExplorerContext | null;
   onChange: (
-    entity_label: string | null,
+    slice_label: string | null,
     inferredDataset: string | null
   ) => void;
   dataset_id: string | null;
   swatchColor?: string;
 }
 
-function CompoundEntitySelect({
+function CompoundSliceLabelSelect({
   value,
   onChange,
   dataset_id,
@@ -46,7 +46,7 @@ function CompoundEntitySelect({
       <CompoundExperimentSelect
         show={Boolean(compoundName && !swatchColor)}
         compoundName={compoundName}
-        entity_label={value?.name || null}
+        slice_label={value?.name || null}
         dataset_id={dataset_id}
         onChange={onChange}
         isColorSelector={Boolean(swatchColor)}
@@ -55,4 +55,4 @@ function CompoundEntitySelect({
   );
 }
 
-export default CompoundEntitySelect;
+export default CompoundSliceLabelSelect;

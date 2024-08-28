@@ -14,10 +14,10 @@ from tests.factories import (
 from tests.utilities import interactive_test_utils
 
 
-def test_entity_labels_of_dataset(app, empty_db_mock_downloads):
+def test_dimension_labels_of_dataset(app, empty_db_mock_downloads):
     """
     Mock datasets with overlapping entities. 
-    Check that all entity labels are loaded for the given dataset
+    Check that all dimension labels are loaded for the given dataset
     """
     gene0 = GeneFactory(label="gene0")
     gene1 = GeneFactory(label="gene1")
@@ -49,8 +49,8 @@ def test_entity_labels_of_dataset(app, empty_db_mock_downloads):
     with app.test_client() as c:
         r = c.get(
             url_for(
-                "data_explorer_2.entity_labels_of_dataset",
-                entity_type="gene",
+                "data_explorer_2.dimension_labels_of_dataset",
+                dimension_type="gene",
                 dataset_id=DependencyEnum.Chronos_Achilles.name,
             ),
             content_type="application/json",

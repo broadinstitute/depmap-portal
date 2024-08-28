@@ -71,7 +71,7 @@ function DimensionDetailsModal({
           index_type={index_type}
           includeAllInContextOptions={includeAllInContextOptions}
           onClickCreateContext={() => {
-            const context_type = dimension.entity_type;
+            const context_type = dimension.slice_type;
 
             const onSave = (context: DataExplorerContext) => {
               setDimension((prev) => ({ ...prev, context }));
