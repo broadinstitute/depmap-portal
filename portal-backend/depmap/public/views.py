@@ -149,12 +149,14 @@ def documentation():
 def resources_reloads():
     forum_api_key_value = current_app.config.get("FORUM_API_KEY")
     forum_url = current_app.config.get("FORUM_URL")
-    if forum_api_key_value is None or forum_url is None:
+    resources_data_path = current_app.config.get("RESOURCES_DATA_PATH")
+
+    if forum_api_key_value is None or forum_url is None or resources_data_path is None:
         abort(404)
 
     discourse_api_key = _read_forum_api_key(forum_api_key_value)
 
-    client = DiscourseClient(discourse_api_key, forum_url, True)
+    client = DiscourseClient(discourse_api_key, forum_url, resources_data_path, True)
     try:
         refresh_all_category_topics(
             client, current_app.config.get("FORUM_RESOURCES_CATEGORY")
@@ -171,12 +173,14 @@ def resources_reloads():
 def resources_prototype():
     forum_api_key_value = current_app.config.get("FORUM_API_KEY")
     forum_url = current_app.config.get("FORUM_URL")
-    if forum_api_key_value is None or forum_url is None:
+    resources_data_path = current_app.config.get("RESOURCES_DATA_PATH")
+
+    if forum_api_key_value is None or forum_url is None or resources_data_path is None:
         abort(404)
 
     discourse_api_key = _read_forum_api_key(forum_api_key_value)
 
-    client = DiscourseClient(discourse_api_key, forum_url)
+    client = DiscourseClient(discourse_api_key, forum_url, resources_data_path)
     sanitizer = create_sanitizer()
 
     try:

@@ -2,9 +2,7 @@ import requests
 from requests.adapters import HTTPAdapter, Retry
 from urllib.parse import urljoin
 from .utils import reformat_date
-from flask import current_app
 import os
-import json
 from sqlitedict import SqliteDict
 
 
@@ -13,13 +11,15 @@ class DiscourseClient:
     1. In reload mode, data is fetched from Discourse API and stored in a DB cache
     2. In the normal mode, stored data is read directly from the DB cache"""
 
-    def __init__(self, api_key: str, base_url: str, reload: bool = False):
+    def __init__(
+        self, api_key: str, base_url: str, cache_path: str, reload: bool = False
+    ):
         self.base_url = base_url
         self.api_key = api_key
         self.reload = reload
         self.session = self.__create_session(api_key)
-        self.resources_results = current_app.config.get("RESOURCES_DATA_PATH")
-        self.__create_db_dir_if_needed(self.resources_results)
+        self.cache_path = cache_path
+        self.__create_db_dir_if_needed(self.cache_path)
 
     def __create_session(self, api_key: str):
         session = requests.Session()
@@ -48,7 +48,7 @@ class DiscourseClient:
     def get_category(self, category_id: int):
         url = f"/c/{category_id}/show.json"
 
-        with SqliteDict(self.resources_results) as db:
+        with SqliteDict(self.cache_path) as db:
             if self.reload:
                 res = self.get(url)["category"]
                 # Store response results
@@ -64,7 +64,7 @@ class DiscourseClient:
         # Given the category slug, filter from list of categories the specific category that matches the slug. NOTE: This is a workaround since GET /c/{id}/show.json does not return subcategory information as far as we know
         url = "/categories.json"
         key = f"{url}/{category_slug}"
-        with SqliteDict(self.resources_results) as db:
+        with SqliteDict(self.cache_path) as db:
             if self.reload:
                 res = self.get(url)
                 categories = res["category_list"]["categories"]
@@ -84,7 +84,7 @@ class DiscourseClient:
         # Return topics for category sorted by date
         url = f"/c/{category_slug}/{category_id}.json"
 
-        with SqliteDict(self.resources_results) as db:
+        with SqliteDict(self.cache_path) as db:
             if self.reload:
                 res = self.get(url)
                 topics = res["topic_list"]["topics"]
@@ -115,7 +115,7 @@ class DiscourseClient:
     def get_topic_main_post(self, topic_id: int):
         url = f"t/{topic_id}/posts.json"
 
-        with SqliteDict(self.resources_results) as db:
+        with SqliteDict(self.cache_path) as db:
             if self.reload:
                 res = self.get(url)
                 posts = res["post_stream"]["posts"]
