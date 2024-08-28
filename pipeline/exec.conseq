@@ -16,6 +16,7 @@ executor-template dsub {
   "resources": { "slots": "100" },
   "HELPER_PATH": "{{ parameters.helper_path | default('/usr/bin/python3 /helper.py') }}",
   "COMMAND_TEMPLATE": """{{ config.DSUB_EXE_PATH }} \
+      --provider google-batch \
       --project {{ config.DEFAULT_GCP_PROJECT }} \
       --zones '{{ config.DEFAULT_GCP_ZONE }}' \
       --logging {{ config.STAGING_URL }}/logs/{{ parameters.UUID }} \
