@@ -59,8 +59,7 @@ RUN cd /tmp && \
     ln -s /install/conseq/bin/conseq /usr/bin/conseq
 
 RUN virtualenv --python=python3.9 /install/depmap-py
-RUN /install/depmap-py/bin/pip install matplotlib pandas h5py pyarrow pyyaml
-RUN /install/depmap-py/bin/pip install 'taigapy @ git+https://github.com/broadinstitute/taigapy@4c4ec6542150fdea98ae5d67a7da8f8c3310a8d3'
+RUN /install/depmap-py/bin/pip install matplotlib 'pandas<2.0.0' 'numpy<2.0.0' h5py pyarrow pyyaml 'taigapy @ git+https://github.com/broadinstitute/taigapy@3.7.1'
 RUN /install/depmap-py/bin/pip install boto
 RUN /install/depmap-py/bin/pip install statsmodels
 RUN /install/depmap-py/bin/pip install pandera
