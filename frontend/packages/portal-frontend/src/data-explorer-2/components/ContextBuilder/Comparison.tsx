@@ -7,7 +7,7 @@ import React, {
 } from "react";
 import { get_values } from "json-logic-js";
 import {
-  fetchEntityLabels,
+  fetchDimensionLabels,
   fetchUniqueValuesOrRange,
   isPartialSliceId,
 } from "@depmap/data-explorer-2";
@@ -29,7 +29,7 @@ interface Props {
   expr: any;
   path: (string | number)[];
   dispatch: React.Dispatch<ContextBuilderReducerAction>;
-  entity_type: string;
+  slice_type: string;
   shouldShowValidation: boolean;
 }
 
@@ -55,7 +55,7 @@ function Comparison({
   expr,
   path,
   dispatch,
-  entity_type,
+  slice_type,
   shouldShowValidation,
 }: Props) {
   const [summary, setSummary] = useState<Summary | null>(null);
@@ -125,7 +125,7 @@ function Comparison({
 
         try {
           if (slice_id === "entity_label") {
-            const data = await fetchEntityLabels(entity_type);
+            const data = await fetchDimensionLabels(slice_type);
             const labels = data.labels.sort(collator.compare);
             setSummary({
               value_type: "categorical",
@@ -148,7 +148,7 @@ function Comparison({
     return () => {
       mounted = false;
     };
-  }, [entity_type, slice_id]);
+  }, [slice_type, slice_id]);
 
   useEffect(() => {
     if (summary && summary.value_type === "continuous") {
@@ -173,7 +173,7 @@ function Comparison({
         path={leftPath}
         dispatch={dispatch}
         onChangeDataSelect={handleChangeDataSelect}
-        entity_type={entity_type}
+        slice_type={slice_type}
         shouldShowValidation={shouldShowValidation}
       />
       <Operator

@@ -115,7 +115,7 @@ export function contextsMatch(
   return JSON.stringify(contextA) === JSON.stringify(contextB);
 }
 
-export function entityLabelFromContext(
+export function sliceLabelFromContext(
   context: DataExplorerContext | null | undefined
 ): string | null {
   if (!context?.expr) {

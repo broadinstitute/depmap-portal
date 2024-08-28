@@ -22,12 +22,12 @@ export const round = (num: number) =>
   Math.round((num + Number.EPSILON) * 100) / 100;
 
 export const makeSliceId = (
-  entity_type: string,
+  slice_type: string,
   dataset_id: string,
   feature: string
 ) => {
   const featureType =
-    entity_type === "depmap_model" ? "transpose_label" : "label";
+    slice_type === "depmap_model" ? "transpose_label" : "label";
 
   return [
     "slice",
@@ -41,7 +41,7 @@ export const makePartialSliceId = (dataset_id: string) => {
   return `slice/${urlLibEncode(dataset_id)}/`;
 };
 
-export const entityLabelFromSliceId = (
+export const sliceLabelFromSliceId = (
   slice_id: string | null,
   dataset_id: string | null
 ) => {

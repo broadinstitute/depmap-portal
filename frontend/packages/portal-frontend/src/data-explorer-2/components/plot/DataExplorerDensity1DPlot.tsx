@@ -74,12 +74,12 @@ function DataExplorerDensity1DPlot({
     return () => clearTimeout(timeout);
   }, [isLoading]);
 
-  const { entity_type } = plotConfig.dimensions
+  const { slice_type } = plotConfig.dimensions
     .x as DataExplorerPlotConfigDimension;
 
   useEffect(() => {
     setSelectedLabels(null);
-  }, [entity_type]);
+  }, [slice_type]);
 
   useEffect(() => {
     if (!data?.index_labels) {

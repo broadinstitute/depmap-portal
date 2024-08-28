@@ -43,7 +43,7 @@ def test_plot_dimensions_1d_model_index(app, empty_db_mock_downloads):
         "dimensions": {
             "x": {
                 "dataset_id": "Chronos_Combined",
-                "entity_type": "gene",
+                "slice_type": "gene",
                 "aggregation": "first",
                 "context": {
                     "name": gene1.label,
@@ -87,7 +87,7 @@ def test_plot_dimensions_1d_model_index(app, empty_db_mock_downloads):
         assert gene1.label in response["dimensions"]["x"]["axis_label"]
         assert response["dimensions"]["x"]["dataset_id"] == crispr_dataset.name.name
         assert response["dimensions"]["x"]["dataset_label"] is not None
-        assert response["dimensions"]["x"]["entity_type"] == "gene"
+        assert response["dimensions"]["x"]["slice_type"] == "gene"
         assert response["dimensions"]["x"]["values"] == [
             3.0,
             4.0,
@@ -120,7 +120,7 @@ def test_plot_dimensions_1d_gene_index(app, empty_db_mock_downloads):
         "dimensions": {
             "x": {
                 "dataset_id": "Chronos_Combined",
-                "entity_type": "depmap_model",
+                "slice_type": "depmap_model",
                 "aggregation": "first",
                 "context": {
                     "name": cell_line0.depmap_id,
@@ -155,7 +155,7 @@ def test_plot_dimensions_1d_gene_index(app, empty_db_mock_downloads):
         assert cell_line0.depmap_id in response["dimensions"]["x"]["axis_label"]
         assert response["dimensions"]["x"]["dataset_id"] == crispr_dataset.name.name
         assert response["dimensions"]["x"]["dataset_label"] is not None
-        assert response["dimensions"]["x"]["entity_type"] == "depmap_model"
+        assert response["dimensions"]["x"]["slice_type"] == "depmap_model"
         assert response["dimensions"]["x"]["values"] == [1.0, 3.0]
 
 
@@ -205,7 +205,7 @@ def test_plot_dimensions_3d(app, empty_db_mock_downloads):
         "dimensions": {
             "x": {
                 "dataset_id": "Chronos_Combined",
-                "entity_type": "depmap_model",
+                "slice_type": "depmap_model",
                 "aggregation": "mean",
                 "context": {
                     "name": "Breast",
@@ -215,7 +215,7 @@ def test_plot_dimensions_3d(app, empty_db_mock_downloads):
             },
             "y": {
                 "dataset_id": "Chronos_Combined",
-                "entity_type": "depmap_model",
+                "slice_type": "depmap_model",
                 "aggregation": "mean",
                 "context": {
                     "name": "Not Breast",
@@ -225,7 +225,7 @@ def test_plot_dimensions_3d(app, empty_db_mock_downloads):
             },
             "color": {
                 "dataset_id": "expression",
-                "entity_type": "depmap_model",
+                "slice_type": "depmap_model",
                 "aggregation": "first",
                 "context": {
                     "name": cell_line1.depmap_id,
@@ -261,7 +261,7 @@ def test_plot_dimensions_3d(app, empty_db_mock_downloads):
         assert "Breast" in response["dimensions"]["x"]["axis_label"]
         assert response["dimensions"]["x"]["dataset_id"] == crispr_dataset.name.name
         assert response["dimensions"]["x"]["dataset_label"] is not None
-        assert response["dimensions"]["x"]["entity_type"] == "depmap_model"
+        assert response["dimensions"]["x"]["slice_type"] == "depmap_model"
         assert response["dimensions"]["x"]["values"] == [
             (3 + 4) / 2.0,
             (7 + 8) / 2.0,
@@ -270,7 +270,7 @@ def test_plot_dimensions_3d(app, empty_db_mock_downloads):
         assert "Not Breast" in response["dimensions"]["y"]["axis_label"]
         assert response["dimensions"]["y"]["dataset_id"] == crispr_dataset.name.name
         assert response["dimensions"]["y"]["dataset_label"] is not None
-        assert response["dimensions"]["y"]["entity_type"] == "depmap_model"
+        assert response["dimensions"]["y"]["slice_type"] == "depmap_model"
         assert response["dimensions"]["y"]["values"] == [
             (1 + 2) / 2.0,
             (5 + 6) / 2.0,
@@ -282,5 +282,5 @@ def test_plot_dimensions_3d(app, empty_db_mock_downloads):
             == expression_dataset.name.name
         )
         assert response["dimensions"]["color"]["dataset_label"] is not None
-        assert response["dimensions"]["color"]["entity_type"] == "depmap_model"
+        assert response["dimensions"]["color"]["slice_type"] == "depmap_model"
         assert response["dimensions"]["color"]["values"] == [2.0, 6.0]

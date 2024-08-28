@@ -7,7 +7,7 @@ import React, {
 } from "react";
 import { ApiContext, SharedApi } from "@depmap/api";
 import { Highlighter, Tooltip, WordBreaker } from "@depmap/common-components";
-import { fetchEntityToDatasetsMapping } from "../../../api";
+import { fetchDimensionLabelsToDatasetsMapping } from "../../../api";
 import { getDimensionTypeLabel } from "../../../utils/misc";
 import { SearchDimenionsResponse } from "@depmap/types";
 import styles from "../../../styles/DimensionSelect.scss";
@@ -29,8 +29,8 @@ interface Option {
   disabledReason: string;
 }
 
-export const getPlaceholder = (entity_type: string) => {
-  return `Choose ${getDimensionTypeLabel(entity_type)}…`;
+export const getPlaceholder = (slice_type: string) => {
+  return `Choose ${getDimensionTypeLabel(slice_type)}…`;
 };
 
 export function useApi() {
@@ -79,27 +79,27 @@ function doNotOverlap(a: number[], b: number[]) {
   return true;
 }
 
-async function fetchEntityLabelsAndAliases(
-  entity_type: string | null,
+async function fetchSliceLabelsAndAliases(
+  slice_type: string | null,
   dataType: string | null,
   dataset_id: string | null,
   units: string | null
 ) {
-  if (!entity_type) {
+  if (!slice_type) {
     return {
-      entityLabels: [],
+      sliceLabels: [],
       aliases: [],
       disabledReasons: {},
     };
   }
 
-  const mapping = await fetchEntityToDatasetsMapping(entity_type);
-  const labels = Object.keys(mapping.entity_labels);
+  const mapping = await fetchDimensionLabelsToDatasetsMapping(slice_type);
+  const labels = Object.keys(mapping.dimension_labels);
   const reasons: Record<string, string> = {};
 
   if (labels.length === 0) {
     return {
-      entityLabels: [],
+      sliceLabels: [],
       aliases: [],
       disabledReasons: reasons,
     };
@@ -110,10 +110,10 @@ async function fetchEntityLabelsAndAliases(
   const typeIndices = dataType ? mapping.data_types[dataType] : [];
   const unitsIndices = units ? mapping.units[units] : [];
 
-  Object.entries(mapping.entity_labels).forEach(([label, dsIndices]) => {
+  Object.entries(mapping.dimension_labels).forEach(([label, dsIndices]) => {
     if (units && doNotOverlap(unitsIndices, dsIndices)) {
       reasons[label] = [
-        `This ${getDimensionTypeLabel(entity_type)}`,
+        `This ${getDimensionTypeLabel(slice_type)}`,
         `has no “${units}” measurement`,
       ].join(" ");
     }
@@ -123,7 +123,7 @@ async function fetchEntityLabelsAndAliases(
         "The data version",
         `“${mapping.dataset_labels[dsIndex]}”`,
         "doesn’t include this",
-        getDimensionTypeLabel(entity_type),
+        getDimensionTypeLabel(slice_type),
       ].join(" ");
     }
 
@@ -131,46 +131,46 @@ async function fetchEntityLabelsAndAliases(
       reasons[label] = [
         `The data type “${dataType}”`,
         "has no data versions with this",
-        getDimensionTypeLabel(entity_type),
+        getDimensionTypeLabel(slice_type),
       ].join(" ");
     }
   });
 
   return {
-    entityLabels: labels,
+    sliceLabels: labels,
     aliases: mapping.aliases,
     disabledReasons: reasons,
   };
 }
 
-export function useEntityLabels(
-  entity_type: string | null,
+export function useSliceLabels(
+  slice_type: string | null,
   dataType: string | null,
   dataset_id: string | null,
   units: string | null
 ) {
   const [error, setError] = useState(false);
-  const [entityLabels, setEntityLabels] = useState<string[] | null>(null);
+  const [sliceLabels, setSliceLabels] = useState<string[] | null>(null);
   const [aliases, setAliases] = useState<Aliases | null>(null);
   const [disabledReasons, setDisabledReasons] = useState<
     Record<string, string>
   >({});
 
   useEffect(() => {
-    setEntityLabels(null);
+    setSliceLabels(null);
     setError(false);
 
     (async () => {
-      if (entity_type) {
+      if (slice_type) {
         try {
-          const fetchedData = await fetchEntityLabelsAndAliases(
-            entity_type,
+          const fetchedData = await fetchSliceLabelsAndAliases(
+            slice_type,
             dataType,
             dataset_id,
             units
           );
 
-          setEntityLabels(fetchedData.entityLabels);
+          setSliceLabels(fetchedData.sliceLabels);
           setAliases(fetchedData.aliases);
           setDisabledReasons(fetchedData.disabledReasons);
         } catch (e) {
@@ -179,21 +179,16 @@ export function useEntityLabels(
         }
       }
     })();
-  }, [entity_type, dataType, dataset_id, units]);
+  }, [slice_type, dataType, dataset_id, units]);
 
   const waitForCachedValues = useCallback(() => {
-    return fetchEntityLabelsAndAliases(
-      entity_type,
-      dataType,
-      dataset_id,
-      units
-    );
-  }, [entity_type, dataType, dataset_id, units]);
+    return fetchSliceLabelsAndAliases(slice_type, dataType, dataset_id, units);
+  }, [slice_type, dataType, dataset_id, units]);
 
   return {
     aliases,
     disabledReasons,
-    entityLabels,
+    sliceLabels,
     error,
     waitForCachedValues,
   };
@@ -228,7 +223,7 @@ const makeSortComparator = (tokens: string[]) => (a: Option, b: Option) => {
 export function toReactSelectOptions(
   searchResults: SearchDimenionsResponse,
   inputValue: string | null,
-  entityLabels: string[],
+  sliceLabels: string[],
   disabledReasons: Record<string, string>
 ) {
   const tokens = tokenize(inputValue);
@@ -240,7 +235,7 @@ export function toReactSelectOptions(
 
   // `labelOptions` is a fallback for cases where the search indexer doesn't
   // know anything about the given dimension type.
-  const labelOptions = entityLabels
+  const labelOptions = sliceLabels
     .filter((label) => {
       return (
         // The user hasn't typed anything yet, so show the full list.
@@ -262,7 +257,7 @@ export function toReactSelectOptions(
       disabledReason: disabledReasons[label],
     }));
 
-  const labels = new Set(entityLabels);
+  const labels = new Set(sliceLabels);
 
   const searchIndexOptions = searchResults
     .filter((result) => labels.has(result.label))
@@ -340,7 +335,7 @@ export function toReactSelectOptions(
 export function toDemapModelOptions(
   searchResults: SearchDimenionsResponse,
   inputValue: string | null,
-  entityLabels: string[],
+  sliceLabels: string[],
   aliases: Aliases | null,
   disabledReasons: Record<string, string>
 ) {
@@ -349,7 +344,7 @@ export function toDemapModelOptions(
   const idToName: Record<string, string> = {};
 
   if (aliases && aliases.length > 0) {
-    entityLabels.forEach((label, i) => {
+    sliceLabels.forEach((label, i) => {
       const alias = aliases![0].values[i];
       nameToId[alias] = label;
       idToName[label] = alias;
@@ -384,7 +379,7 @@ export function toDemapModelOptions(
   const labelAndSearchIndexOptions = toReactSelectOptions(
     searchResults,
     inputValue,
-    entityLabels,
+    sliceLabels,
     disabledReasons
   ).map((option) => {
     if (option.nonLabelProperties.length > 0) {
@@ -482,7 +477,7 @@ export function formatOptionLabel(
 }
 
 export function toOutputValue(
-  entity_type: string,
+  slice_type: string,
   selectedOption?: { label: string; value: string } | null
 ) {
   if (!selectedOption) {
@@ -492,7 +487,7 @@ export function toOutputValue(
   const { label, value } = selectedOption;
 
   return {
-    context_type: entity_type,
+    context_type: slice_type,
     name: label || value,
     expr: { "==": [{ var: "entity_label" }, value] },
   };

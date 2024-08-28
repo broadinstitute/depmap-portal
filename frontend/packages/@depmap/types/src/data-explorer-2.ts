@@ -37,8 +37,8 @@ export type DataExplorerFilters = Partial<
 >;
 
 export interface DataExplorerPlotConfigDimension {
-  axis_type: "entity" | "context";
-  entity_type: string;
+  axis_type: "raw_slice" | "aggregated_slice";
+  slice_type: string;
   dataset_id: string;
   context: DataExplorerContext;
   aggregation: DataExplorerAggregation;
@@ -47,7 +47,7 @@ export interface DataExplorerPlotConfigDimension {
 // HACK: This Metadata type is intended as a stopgap. It should be removed from
 // the data model when we migrate to BreadBox. Its purpose is to provide a way
 // to request series that can *only* be referenced by `slice_id`. Certain
-// pseudo-datasets (e.g. lineage) don't have a `dataset_id` or `entity_type`
+// pseudo-datasets (e.g. lineage) don't have a `dataset_id` or `slice_type`
 // and thus are incompatible with the above notion of a dimension. Such
 // datasets cannot be plotted directly but it's still useful to get data from
 // them for the purposes of coloring and filtering.
@@ -57,9 +57,15 @@ export interface DataExplorerPlotResponseDimension {
   axis_label: string;
   dataset_id: string;
   dataset_label: string;
-  entity_type: string;
+  slice_type: string;
   values: number[];
 }
+
+export type colorByValue =
+  | "raw_slice"
+  | "aggregated_slice"
+  | "property"
+  | "custom";
 
 // A DataExplorerPlotConfig is an object with all the configurable parameters
 // used to generate a plot. Note that some properties only make sense with
@@ -69,7 +75,7 @@ export interface DataExplorerPlotConfig {
   plot_type: DataExplorerPlotType;
   index_type: string;
   dimensions: Partial<Record<DimensionKey, DataExplorerPlotConfigDimension>>;
-  color_by?: "entity" | "context" | "property" | "custom";
+  color_by?: colorByValue;
   filters?: DataExplorerFilters;
   metadata?: DataExplorerMetadata;
 
@@ -133,7 +139,7 @@ export interface DataExplorerDatasetDescriptor {
   data_type: string;
   dataset_id: string;
   index_type: string;
-  entity_type: string;
+  slice_type: string;
   label: string;
   units: string;
   priority: number;

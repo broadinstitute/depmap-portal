@@ -2,7 +2,7 @@ import React from "react";
 import {
   ContextSelector,
   DimensionSelect,
-  EntitySelect,
+  SliceLabelSelect,
   useDataExplorerSettings,
 } from "@depmap/data-explorer-2";
 import { ContextPath, DataExplorerContext, FilterKey } from "@depmap/types";
@@ -58,7 +58,7 @@ function ColorByViewOptions({
         show
         enable={Boolean(index_type)}
         value={color_by || null}
-        entity_type={index_type as string}
+        slice_type={index_type as string}
         onChange={(nextColorBy) =>
           dispatch({
             type: "select_color_by",
@@ -69,13 +69,12 @@ function ColorByViewOptions({
       <div className={styles.colorByContext}>
         {(["color1", "color2"] as FilterKey[]).map((filterKey) => (
           <React.Fragment key={filterKey}>
-            {/* TODO: Try to find a way to disable impossible color-by entities */}
-            <EntitySelect
-              show={color_by === "entity"}
+            <SliceLabelSelect
+              show={color_by === "raw_slice"}
               units={null}
               dataType={null}
               dataset_id={dataset_id}
-              entity_type={index_type as string}
+              slice_type={index_type as string}
               value={filters?.[filterKey]}
               onChange={(filter) => {
                 dispatch({
@@ -88,8 +87,8 @@ function ColorByViewOptions({
               }
             />
             <ContextSelector
-              show={color_by === "context"}
-              enable={color_by === "context"}
+              show={color_by === "aggregated_slice"}
+              enable={color_by === "aggregated_slice"}
               value={filters?.[filterKey]}
               context_type={index_type}
               swatchColor={
@@ -114,7 +113,7 @@ function ColorByViewOptions({
       <DatasetMetadataSelector
         show={color_by === "property"}
         enable={color_by === "property"}
-        entity_type={index_type}
+        slice_type={index_type}
         value={metadata?.color_property?.slice_id}
         onChange={(slice_id: string | null) => {
           dispatch({

@@ -3,9 +3,9 @@ import cx from "classnames";
 import ContextSelector from "../ContextSelector";
 import DataTypeSelect from "./DataTypeSelect";
 import UnitsSelect from "./UnitsSelect";
-import EntityTypeSelect from "./EntityTypeSelect";
+import SliceTypeSelect from "./SliceTypeSelect";
 import AxisTypeToggle from "./AxisTypeToggle";
-import EntitySelect from "./EntitySelect";
+import SliceLabelSelect from "./SliceLabelSelect";
 import DataVersionSelect from "./DataVersionSelect";
 import AggregationSelect from "./AggregationSelect";
 import useDimensionStateManager from "./useDimensionStateManager";
@@ -39,9 +39,9 @@ function AllSelects({
     units,
     dataTypeOptions,
     dataVersionOptions,
-    entityTypeOptions,
+    sliceTypeOptions,
     unitsOptions,
-    dimension: { aggregation, axis_type, context, dataset_id, entity_type },
+    dimension: { aggregation, axis_type, context, dataset_id, slice_type },
     isLoading,
     isSingleCompound,
     noMatchingContexts,
@@ -51,7 +51,7 @@ function AllSelects({
     onChangeContext,
     onChangeDataType,
     onChangeDataVersion,
-    onChangeEntityType,
+    onChangeSliceType,
     onChangeUnits,
   } = state;
 
@@ -64,43 +64,43 @@ function AllSelects({
         isLoading={isLoading}
         hasError={noMatchingContexts}
       />
-      <EntityTypeSelect
+      <SliceTypeSelect
         index_type={index_type}
-        axis_type={axis_type as "entity" | "context"}
+        axis_type={axis_type as "raw_slice" | "context"}
         aggregation={aggregation || null}
-        value={entity_type || null}
-        options={entityTypeOptions}
-        onChange={onChangeEntityType}
+        value={slice_type || null}
+        options={sliceTypeOptions}
+        onChange={onChangeSliceType}
         isLoading={isLoading}
       />
       <AxisTypeToggle
-        show={Boolean(entity_type && mode === "entity-or-context")}
+        show={Boolean(slice_type && mode === "entity-or-context")}
         disabled={dataType === "custom"}
-        value={axis_type as "entity" | "context"}
+        value={axis_type as "raw_slice" | "aggregated_slice"}
         onChange={onChangeAxisType}
       />
-      <EntitySelect
-        show={Boolean(entity_type) && axis_type === "entity"}
+      <SliceLabelSelect
+        show={Boolean(slice_type) && axis_type === "raw_slice"}
         value={context || null}
         onChange={onChangeContext}
         dataType={dataType}
-        entity_type={entity_type as string}
+        slice_type={slice_type as string}
         dataset_id={dataset_id || null}
         units={units || null}
         onChangeCompound={onChangeCompound}
       />
       <ContextSelector
         enable
-        show={axis_type === "context" && entity_type !== undefined}
+        show={axis_type === "aggregated_slice" && slice_type !== undefined}
         value={context || null}
         onChange={onChangeContext}
-        context_type={entity_type as string}
+        context_type={slice_type as string}
         includeAllInOptions={includeAllInContextOptions}
         onClickCreateContext={onClickCreateContext}
         onClickSaveAsContext={onClickSaveAsContext}
       />
       <AggregationSelect
-        show={axis_type === "context" && aggregation !== "correlation"}
+        show={axis_type === "aggregated_slice" && aggregation !== "correlation"}
         value={aggregation as string}
         onChange={onChangeAggregation}
       />
@@ -118,7 +118,7 @@ function AllSelects({
         options={dataVersionOptions}
         onChange={onChangeDataVersion}
         showDefaultHint={
-          Boolean(!dataType || !entity_type || !context) ||
+          Boolean(!dataType || !slice_type || !context) ||
           Boolean(isModalVersion && !units)
         }
         showNoDefaultHint={dataVersionOptions.every((o) => !o.isDefault)}

@@ -7,7 +7,7 @@ import resolveNextState from "./resolveNextState";
 import { handleError } from "./errors";
 import {
   Changes,
-  EntityToDatasetsMapping,
+  DimensionLabelsToDatasetsMapping,
   Mode,
   State,
   DEFAULT_STATE,
@@ -39,9 +39,9 @@ export default function useDimensionStateManager({
   // Keeps `value` and `state.dimension` in sync.
   useSync({ value, onChange, state, setState, mode });
 
-  const { contextLabels, datasets, entityMap, isLoading } = useData({
+  const { contextLabels, datasets, sliceMap, isLoading } = useData({
     index_type,
-    entity_type: state.dimension.entity_type,
+    slice_type: state.dimension.slice_type,
     axis_type: state.dimension.axis_type,
     context: state.dimension.context,
   });
@@ -57,7 +57,7 @@ export default function useDimensionStateManager({
           return resolveNextState({
             changes,
             datasets,
-            entityMap: entityMap as EntityToDatasetsMapping,
+            sliceMap: sliceMap as DimensionLabelsToDatasetsMapping,
             contextLabels: contextLabels as Set<string>,
             prev,
           });
@@ -66,7 +66,7 @@ export default function useDimensionStateManager({
         }
       });
     },
-    [contextLabels, datasets, entityMap, isLoading]
+    [contextLabels, datasets, sliceMap, isLoading]
   );
 
   const prevIndexType = useRef(index_type);
@@ -90,8 +90,8 @@ export default function useDimensionStateManager({
   }, [isLoading, state]);
 
   const isSingleCompound =
-    state.dimension.entity_type === "compound_experiment" &&
-    state.dimension.axis_type === "entity";
+    state.dimension.slice_type === "compound_experiment" &&
+    state.dimension.axis_type === "raw_slice";
 
   return {
     ...state,

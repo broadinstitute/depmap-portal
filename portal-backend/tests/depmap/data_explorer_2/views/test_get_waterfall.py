@@ -39,7 +39,7 @@ def test_get_waterfall_model_index(app, empty_db_mock_downloads):
         "dimensions": {
             "x": {
                 "dataset_id": "Chronos_Combined",
-                "entity_type": "gene",
+                "slice_type": "gene",
                 "aggregation": "first",
                 "context": {
                     "name": gene1.label,
@@ -83,7 +83,7 @@ def test_get_waterfall_model_index(app, empty_db_mock_downloads):
         assert gene1.label in response["dimensions"]["y"]["axis_label"]
         assert response["dimensions"]["y"]["dataset_id"] == crispr_dataset.name.name
         assert response["dimensions"]["y"]["dataset_label"] is not None
-        assert response["dimensions"]["y"]["entity_type"] == "gene"
+        assert response["dimensions"]["y"]["slice_type"] == "gene"
 
         # Make sure the y values are in ascending order. The request listed them as 5.0, 4.0.
         # Here, the order should be asc.
@@ -126,7 +126,7 @@ def test_get_waterfall_bad_request(app, empty_db_mock_downloads):
         "dimensions": {
             "x": {
                 "dataset_id": "Chronos_Combined",
-                "entity_type": "gene",
+                "slice_type": "gene",
                 "aggregation": "first",
                 "context": {
                     "name": "NON_EXISTANT_LABEL",
@@ -173,7 +173,7 @@ def test_get_waterfall_gene_index(app, empty_db_mock_downloads):
         "dimensions": {
             "x": {
                 "dataset_id": "Chronos_Combined",
-                "entity_type": "depmap_model",
+                "slice_type": "depmap_model",
                 "aggregation": "first",
                 "context": {
                     "name": cell_line0.depmap_id,
@@ -213,7 +213,7 @@ def test_get_waterfall_gene_index(app, empty_db_mock_downloads):
         assert cell_line0.depmap_id in response["dimensions"]["y"]["axis_label"]
         assert response["dimensions"]["y"]["dataset_id"] == crispr_dataset.name.name
         assert response["dimensions"]["y"]["dataset_label"] is not None
-        assert response["dimensions"]["y"]["entity_type"] == "depmap_model"
+        assert response["dimensions"]["y"]["slice_type"] == "depmap_model"
         assert response["dimensions"]["y"]["values"] == [3.0, 5.0]
 
         assert response["dimensions"]["x"]["axis_label"] == "Rank"

@@ -66,7 +66,7 @@ export default function useClickHandlers(
       const nextPlot = omit(
         {
           ...plot,
-          color_by: "context" as const,
+          color_by: "aggregated_slice" as const,
           filters: { color1: context },
           dimensions: omit(plot.dimensions, "color"),
         },
