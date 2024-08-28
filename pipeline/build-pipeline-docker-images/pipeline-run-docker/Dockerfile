@@ -15,7 +15,7 @@ RUN apt-get -y install python3 python3-pip curl unzip build-essential libssl-dev
     libcurl4-openssl-dev libxml2-dev virtualenv wget gpg git
 
 RUN virtualenv /install/dsub && \
-    /install/dsub/bin/pip install dsub && \
+    /install/dsub/bin/pip install pip install git+https://github.com/pgm/dsub.git@patched-0.4.13 && \
     ln -s /install/dsub/bin/dsub /usr/local/bin/dsub && \
     ln -s /install/dsub/bin/dstat /usr/local/bin/dstat
 
