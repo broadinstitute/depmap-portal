@@ -23,15 +23,22 @@ try:
     status = json.loads(stdout)
     assert len(status) == 1
     status_message = status[0]["status-message"]
-    m = re.match("Job state is set from [A-Z]+ to ([A-Z]+) for job.*", status_message)
-    assert m is not None
-    state = m.group(1)
-    if state in terminal_states:
-        prefix = "COMPLETED"
-    else:
-        assert state in in_progress_state
+    if status_message is None:  # seems to happen right after job submission
         prefix = "IN_PROGRESS"
+    else:
+        m = re.match(
+            "Job state is set from [A-Z]+ to ([A-Z]+) for job.*", status_message
+        )
+        assert m is not None
+        state = m.group(1)
+        if state in terminal_states:
+            prefix = "COMPLETED"
+        else:
+            assert state in in_progress_state
+            prefix = "IN_PROGRESS"
 except Exception as ex:
     sys.stderr.write(f"got exception parsing output from command {command}: {stdout}")
     raise ex
+with open("last_check_status.log", "wt") as fd:
+    fd.write(f"command: {command}\n{stdout}")
 print(f"{prefix}: {status_message}")
