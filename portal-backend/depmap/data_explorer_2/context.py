@@ -37,7 +37,7 @@ class ContextEvaluator:
         self.expr = _encode_dots_in_vars(context["expr"])
         self.cache = {}
 
-    def is_match(self, dimension_label):
+    def is_match(self, dimension_label: str):
         """
         This evaluates `expr` against a given `dimension_label`. It returns
         True/False depending on if `dimension_label` satifies the conditions of
