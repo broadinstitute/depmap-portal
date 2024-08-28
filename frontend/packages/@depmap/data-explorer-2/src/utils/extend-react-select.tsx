@@ -118,6 +118,7 @@ any) {
     }
 
     underlineDiv.innerHTML = words
+      .filter(Boolean)
       .map((word, index) => {
         const color = Highlighter.colors[index % Highlighter.colors.length];
 
@@ -128,6 +129,10 @@ any) {
         ].join("");
       })
       .join(" ");
+
+    if (contentDiv.innerText.endsWith(" ")) {
+      underlineDiv.innerHTML += "<span> </span>";
+    }
   };
 
   return (
@@ -138,7 +143,7 @@ any) {
           {...inputProps}
           ref={innerRef}
           disabled={isDisabled}
-          contentEditable
+          contentEditable="plaintext-only"
           onMouseDown={(e) => {
             if (isEditing.current) {
               e.stopPropagation();

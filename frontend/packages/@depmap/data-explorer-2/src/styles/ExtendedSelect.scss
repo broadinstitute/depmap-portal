@@ -66,9 +66,10 @@
     justify-content: center;
     width: 98px;
     min-height: 32px;
+    margin-left: 2px;
+    white-space: break-spaces;
     border: none;
     outline: none;
-    margin-left: 2px;
 
     &:empty {
       line-height: 32px;
@@ -83,8 +84,9 @@
 .underlineDiv {
   position: absolute;
   top: 2px;
-  left: 10px;
-  max-width: 98px;
+  width: 98.1px;
+  margin-left: 2px;
+  white-space: break-spaces;
   color: transparent;
   pointer-events: none;
 

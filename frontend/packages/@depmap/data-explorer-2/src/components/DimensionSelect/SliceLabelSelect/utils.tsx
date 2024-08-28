@@ -236,19 +236,20 @@ export function toReactSelectOptions(
   // `labelOptions` is a fallback for cases where the search indexer doesn't
   // know anything about the given dimension type.
   const labelOptions = sliceLabels
-    .filter((label) => {
-      return (
-        // The user hasn't typed anything yet, so show the full list.
-        tokens.length === 0 ||
-        // Only try to search by label if there is only one token. There just
-        // isn't a reliable way to emulate what the search endpoint does when
-        // it matches multiple tokens to different properties.
-        (tokens.length === 1 &&
-          label.toLowerCase().includes(tokens[0].toLowerCase()))
-      );
-    })
     // Prefer showing results from the search indexer, where they exist.
     .filter((label) => !labelsWithAdditionalMatchingProps.has(label))
+    .filter((label) => {
+      return (
+        // If the user hasn't typed anything yet, present the full list
+        // (to support the ability to browse samples/features which is
+        // most useful when then the list is fairly short).
+        tokens.length === 0 ||
+        // Otherwise, try to match all tokens.
+        tokens.every((token) =>
+          label.toLowerCase().includes(token.toLowerCase())
+        )
+      );
+    })
     .map((label) => ({
       label,
       value: label,
@@ -356,12 +357,14 @@ export function toDemapModelOptions(
       ? aliases![0].values
           .filter((cellLineName) => {
             return (
+              // If the user hasn't typed anything yet, present the full list
+              // (to support the ability to browse samples/features which is
+              // most useful when then the list is fairly short).
               tokens.length === 0 ||
-              // Only try to search by alias if there is only one token. There just
-              // isn't a reliable way to emulate what the search endpoint does when
-              // it matches multiple tokens to different properties.
-              (tokens.length === 1 &&
-                cellLineName?.toLowerCase().includes(tokens[0].toLowerCase()))
+              // Otherwise try to match all tokens.
+              tokens.every((token) =>
+                cellLineName?.toLowerCase().includes(token.toLowerCase())
+              )
             );
           })
           .map((cellLineName) => {
