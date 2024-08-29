@@ -1,4 +1,5 @@
-from typing import List, Optional
+from dataclasses import dataclass
+from typing import Any, Dict, List, Optional
 from depmap import data_access
 from depmap.database import (
     Boolean,
@@ -11,23 +12,50 @@ from depmap.database import (
     db,
     relationship,
 )
-from depmap.compound.models import Compound
-from depmap.dataset.models import (
-    BiomarkerDataset,
-    DependencyDataset,
-    DATASET_NAME_TO_FEATURE_TYPE,
-)
-from depmap.match_related.models import RelatedEntityIndex
 from depmap.entity.models import Entity
-from depmap.gene.models import Gene
 import pandas as pd
 import sqlalchemy
-from sqlalchemy import and_, or_, func
+from sqlalchemy import and_
 import numpy as np
 
 
-# @dataclass
-# class
+@dataclass
+class TopFeaturesBarData:
+    data: Dict[str, Any]
+    x_axis_label: str
+    y_axis_label: str
+
+
+@dataclass
+class ModelPredData:
+    predictions: List[float]
+    actuals: List[float]
+
+
+@dataclass
+class ModelPredictionsGraphData:
+    model_pred_data: ModelPredData
+    predictions_dataset_id: str
+    cell_lines: str
+    x_label: str
+    y_label: str
+    model: str
+    density: Any
+
+
+@dataclass
+class CorrData:
+    corr_heatmap_vals: List[List[float]]
+    row_labels: List[str]
+    gene_symbol_feature_types: Dict[str, str]
+    feature_names: List[str]
+    feature_types: List[str]
+
+
+@dataclass
+class PredictiveModelData:
+    model_predictions: ModelPredictionsGraphData
+    corr: CorrData
 
 
 class PrototypePredictiveFeature(Model):
@@ -309,6 +337,7 @@ class PrototypePredictiveModel(Model):
                 PrototypePredictiveFeatureResult.rank,
                 PrototypePredictiveFeature.dim_type,
                 PrototypePredictiveModel.pearson,
+                PrototypePredictiveFeature.taiga_id,
             )
         )
 

@@ -1,6 +1,7 @@
+from dataclasses import dataclass
+from typing import Any, Dict, List
 from depmap import data_access
 from depmap.gene.models import Gene
-from depmap.entity.models import Entity
 from depmap.predictability_prototype.models import PrototypePredictiveModel
 from depmap.predictability_prototype.utils import (
     feature_correlation_map_calc,
@@ -20,8 +21,6 @@ from depmap.predictability_prototype.utils import (
 
 from flask_restplus import Namespace, Resource
 from flask import request
-from loader.predictability_summary_loader import load_predictability_prototype
-from depmap.database import db
 
 namespace = Namespace("predictability_prototype", description="")
 
@@ -34,62 +33,9 @@ class Predictions(
         # Note: docstrings to restplus methods end up in the swagger documentation.
         # DO NOT put a docstring here that you would not want exposed to users of the API. Use # for comments instead
         """
-        test
+        Get the overview data and feature names list for CRISPR and RNAi predictions for a particular gene symbol
         """
         gene_symbol = request.args.get("gene_symbol")
-        # statements = [
-        #     "drop table if exists prototype_predictive_feature",
-        #     """CREATE TABLE IF NOT EXISTS prototype_predictive_feature (
-        #     feature_id STRING PRIMARY KEY,
-        #     feature_name STRING,
-        #     feature_label STRING,
-        #     dim_type STRING,
-        #     taiga_id STRING,
-        #     given_id STRING
-        # );""",
-        #     "drop table if exists prototype_predictive_model",
-        #     """CREATE TABLE IF NOT EXISTS prototype_predictive_model (
-        #     predictive_model_id INTEGER PRIMARY KEY AUTOINCREMENT,
-        #     entity_id INTEGER,
-        #     label STRING,
-        #     screen_type STRING,
-        #     pearson FLOAT,
-        #     CONSTRAINT prototype_predictive_model_FK FOREIGN KEY (entity_id) REFERENCES entity(entity_id)
-        # );""",
-        #     "drop table if exists prototype_predictive_feature_result",
-        #     """CREATE TABLE IF NOT EXISTS prototype_predictive_feature_result (
-        #     predictive_feature_result_id INTEGER PRIMARY KEY AUTOINCREMENT,
-        #     predictive_model_id INTEGER,
-        #     feature_id STRING,
-        #     screen_type STRING,
-        #     rank INTEGER,
-        #     importance FLOAT,
-        #     CONSTRAINT prototype_predictive_feature_result_FK FOREIGN KEY (predictive_model_id) REFERENCES prototype_predictive_model(predictive_model_id),
-        #     CONSTRAINT prototype_predictive_feature_result2_FK FOREIGN KEY (feature_id) REFERENCES prototype_predictive_feature(feature_id) ON DELETE CASCADE
-        # );""",
-        # ]
-        # db.session.execute("PRAGMA foreign_keys = 0;")
-        # for statement in statements:
-        #     db.session.execute(statement)
-
-        # ensemble_crispr: predictability-76d5.110/ensemble_crispr
-        # ensemble_rnai: predictability-76d5.110/ensemble_rnai
-        # feature_metadata_crispr: predictability-76d5.110/feature_metadata_crispr
-        # feature_metadata_rnai: predictability-76d5.110/feature_metadata_rnai
-
-        # load_predictability_prototype(
-        #     "/Users/amourey/dev/depmap-portal/portal-backend/depmap/predictability_prototype/scripts/ensemble_crispr.csv",
-        #     "/Users/amourey/dev/depmap-portal/portal-backend/depmap/predictability_prototype/scripts/feature_metadata_crispr.csv",
-        #     "crispr",
-        # )
-        # load_predictability_prototype(
-        #     "/Users/amourey/dev/depmap-portal/portal-backend/depmap/predictability_prototype/scripts/ensemble_rnai.csv",
-        #     "/Users/amourey/dev/depmap-portal/portal-backend/depmap/predictability_prototype/scripts/feature_metadata_rnai.csv",
-        #     "rnai",
-        # )
-
-        # db.session.commit()
-        # breakpoint()
 
         # Overview data
         gene_effect_df = get_gene_effect_df()
@@ -150,7 +96,7 @@ class ModelPerformance(
         screen_type = request.args.get("screen_type")
 
         entity_id = Gene.get_by_label(entity_label).entity_id
-        gene_effect_df = get_gene_effect_df()
+        gene_effect_df = get_gene_effect_df(screen_type)
         model_predictions = generate_model_predictions(
             gene_symbol=entity_label,
             screen_type=screen_type,
@@ -254,8 +200,6 @@ class GeneEffectData(
         """
         test
         """
-        feature_name = request.args.get("feature_name")
-        feature_type = request.args.get("feature_type")
         feature_name_type = request.args.get("identifier")
         feature_index = request.args.get("feature_index")
         model = request.args.get("model")

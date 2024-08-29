@@ -74,7 +74,13 @@ const PredictabilityWaterfallPlot = ({
       setWaterfallPlotData(null);
       setWaterfallPlotElement(null);
     };
-  }, [featureNameType, geneSymbol, getWaterfallPlotData, modelName]);
+  }, [
+    featureNameType,
+    geneSymbol,
+    getWaterfallPlotData,
+    modelName,
+    screenType,
+  ]);
 
   // TODO: If isError add error message to UI
   console.log(isError);

@@ -108,9 +108,8 @@ const StyledMeter = ({
       labelStyles["font-size"] = style.labelFontSize;
 
       if (style && style.labelLeftPosition) {
-        labelStyles["left"] = style.labelLeftPosition;
+        labelStyles.left = style.labelLeftPosition;
       }
-
     }
   }
 

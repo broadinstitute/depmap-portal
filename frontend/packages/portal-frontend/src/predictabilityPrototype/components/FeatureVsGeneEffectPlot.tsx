@@ -12,12 +12,11 @@ interface FeatureVsGeneEffectPlotProps {
   geneSymbol: string;
   featureNameType: string;
   feature: string;
+  featureDatasetLabel: string;
   featureType: string;
   panelIndex: number;
   screenType: string;
   getFeatureVsGeneEffectData: (
-    featureName: string,
-    featureType: string,
     identifier: string,
     featureIndex: number,
     entityLabel: string,
@@ -31,6 +30,7 @@ const FeatureVsGeneEffectPlot = ({
   geneSymbol,
   featureNameType,
   featureType,
+  featureDatasetLabel,
   feature,
   panelIndex,
   screenType,
@@ -56,8 +56,6 @@ const FeatureVsGeneEffectPlot = ({
     setFeatureVsGeneEffectPlotElement(null);
     setIsLoading(true);
     const promise = getFeatureVsGeneEffectData(
-      feature,
-      featureType,
       featureNameType,
       panelIndex,
       geneSymbol,
@@ -92,6 +90,7 @@ const FeatureVsGeneEffectPlot = ({
     getFeatureVsGeneEffectData,
     modelName,
     panelIndex,
+    screenType,
   ]);
 
   console.log(isError);
@@ -153,8 +152,10 @@ const FeatureVsGeneEffectPlot = ({
             href={getDataExplorerUrl(
               featureVsGeneEffectData.feature_dataset_id,
               feature,
-              featureType,
-              geneSymbol
+              featureDatasetLabel,
+              geneSymbol,
+              screenType,
+              []
             )}
             target="_blank"
             disabled={!formattedPlotData && isLoading}

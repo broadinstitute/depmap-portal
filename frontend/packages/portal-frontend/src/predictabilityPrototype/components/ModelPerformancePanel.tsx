@@ -110,6 +110,10 @@ const ModelPerformancePanel = ({
                             modelPerformanceInfo.feature_summaries[feature]
                               .feature_type
                           }
+                          featureDatasetLabel={
+                            modelPerformanceInfo.feature_summaries[feature]
+                              .dataset_feature_type_label
+                          }
                           geneSymbol={entityLabel}
                           panelIndex={featureIndex}
                           screenType={screenType}

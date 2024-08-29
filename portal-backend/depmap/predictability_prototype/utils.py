@@ -9,6 +9,7 @@ from depmap.predictability_prototype.models import (
     PrototypePredictiveFeatureResult,
 )
 from depmap_compute import analysis_tasks_interface
+from depmap.enums import DependencyEnum
 import pandas as pd
 import numpy as np
 import re
@@ -49,9 +50,9 @@ def get_all_predictability_datasets():
 
 
 @functools.cache
-def get_gene_effect_df():
+def get_gene_effect_df(screen_type="crispr"):
     dataset_name = DependencyDataset.get_dataset_by_data_type_priority(
-        DependencyDataset.DataTypeEnum.crispr
+        screen_type
     ).name.name
 
     gene_effect_df = data_access.get_subsetted_df_by_labels(dataset_name, None, None)
@@ -59,7 +60,7 @@ def get_gene_effect_df():
     return gene_effect_df.transpose()
 
 
-def get_column_by_gene(df, symbol):
+def get_column_by_gene(df, symbol) -> pd.Series:
     column_name = [x for x in df.columns if x == symbol.split(" ")[0]]
     assert len(column_name) == 1, f"Expected one matching column: {column_name}"
     return df[column_name[0]]
@@ -83,13 +84,13 @@ def accuracy_per_model(gene_symbol, entity_id, screen_type, datasets, actuals):
     )
 
     for model_name in MODEL_SEQUENCE:
+        prediction_dataset_id = datasets[
+            hacks.get_dataset_taiga_id_by_model_and_screen_type(
+                model_name=model_name, screen_type=screen_type
+            )
+        ].id
         gene_predictions = data_access.get_row_of_values(
-            datasets[
-                hacks.get_dataset_taiga_id_by_model_and_screen_type(
-                    model_name=model_name, screen_type=screen_type
-                )
-            ].id,
-            gene_symbol,
+            prediction_dataset_id, gene_symbol,
         )
 
         accuracy = pairwise_complete_pearson_cor(gene_predictions, gene_actuals)
@@ -139,7 +140,7 @@ def subset_features_by_gene(gene_symbol):
 def aggregate_top_features(df: pd.DataFrame):
     aggregate_feature_importance = lambda df: (df["pearson"] * df["importance"]).sum()
 
-    aggregated = df.groupby(["feature_name", "dim_type"]).apply(
+    aggregated = df.groupby(["feature_name", "dim_type", "feature_label"]).apply(
         aggregate_feature_importance
     )
 
@@ -157,6 +158,7 @@ def top_features_overall(gene_symbol, entity_id):
     df = pd.DataFrame(
         dict(
             feature=adj_feature_importance.index,
+            feature_label=adj_feature_importance["feature_label"].values.tolist(),
             dim_type=adj_feature_importance["dim_type"].values.tolist(),
             adj_feature_importance=adj_feature_importance[0].values.tolist(),
         )
@@ -174,6 +176,12 @@ def top_features_overall(gene_symbol, entity_id):
     df["feature_type"] = [x for x in df["dim_type"]]
     df["feature_set"] = [get_feature_set(x) for x in df["feature_type"]]
     df["feature"] = [x.replace("_", " ") for x in df["feature"]]
+    df["feature_label"] = df["feature_label"].values
+    unique_gene_symbols = [
+        x
+        for index, x in enumerate(df["feature_label"])
+        if df["dim_type"].iloc[index] == "gene"
+    ]
 
     # TODO: Replace this with real mapping of model_name to feature. This is just a short cut
     # for the prototype.
@@ -193,15 +201,6 @@ def top_features_overall(gene_symbol, entity_id):
         "x_axis_label": "adj_feature_importance",
         "y_axis_label": "feature",
     }
-
-    # TODO: This is temporary until we have a real mapping
-    GENE_PATTERN = re.compile("\S+ \((\d+)\)")
-    unique_gene_symbols = set()
-    for feature_name in df["feature"].values:
-        m = GENE_PATTERN.match(feature_name)
-        if m is not None:
-            symbol = m.group(0).split(" ")[0]
-            unique_gene_symbols.add(symbol)
 
     return top_features, unique_gene_symbols
 
@@ -223,25 +222,39 @@ def generate_model_predictions(
     )
     gene_actuals = get_column_by_gene(actuals, gene_symbol)
 
-    model_ids = gene_actuals.index.tolist()
-    prediction_model_ids = gene_predictions.index.tolist()
+    model_ids = gene_actuals.dropna().index.tolist()
+    prediction_model_ids = gene_predictions.dropna().index.tolist()
     # Finding this intersection is temporary due to the sample predictability
     # data using 23q4 data, but working with a copy of the 24q2 database.
     allowed_model_ids = list(set(model_ids) & set(prediction_model_ids))
 
-    gene_predictions = gene_predictions.loc[allowed_model_ids]
-    gene_actuals = gene_actuals.loc[allowed_model_ids]
+    gene_predictions = gene_predictions.dropna().loc[allowed_model_ids]
+    gene_actuals = gene_actuals.dropna().loc[allowed_model_ids]
 
     data = pd.DataFrame(dict(predictions=gene_predictions, actuals=gene_actuals))
     density = get_density(gene_predictions, gene_actuals)
 
     return {
         "model_pred_data": data.to_dict("list"),
+        "predictions_dataset_id": dataset.id,
+        "cell_lines": gene_predictions.index.tolist(),
         "x_label": "actuals",
         "y_label": "predictions",
         "density": list(density),
         "model": model,
     }
+
+
+def get_feature_dataset_feature_type_from_taiga_id(taiga_id: str):
+    matrix_datasets = data_access.get_all_matrix_datasets()
+    feature_type = None
+
+    for dataset in matrix_datasets:
+        if dataset.taiga_id == taiga_id and dataset.data_type == "Predictability":
+            feature_type = dataset.feature_type
+            break
+
+    return feature_type
 
 
 def get_dataset_id_from_taiga_id(model: str, screen_type: str, feature_name: str):
@@ -269,19 +282,14 @@ def get_dataset_id_from_taiga_id(model: str, screen_type: str, feature_name: str
 def get_feature_slice_and_dataset_id(
     screen_type: str, feature_name: str, feature_given_id: str, model: str
 ):
-    try:
-        feature_dataset_id = get_dataset_id_from_taiga_id(
-            model=model, screen_type=screen_type, feature_name=feature_name
-        )
 
-        slice = data_access.get_row_of_values(
-            feature_dataset_id, str(feature_given_id), feature_identifier="id"
-        )
-    except:
-        breakpoint()
-        print(feature_dataset_id)
-        print(model)
-        print(feature_name)
+    feature_dataset_id = get_dataset_id_from_taiga_id(
+        model=model, screen_type=screen_type, feature_name=feature_name
+    )
+
+    slice = data_access.get_row_of_values(
+        feature_dataset_id, str(feature_given_id), feature_identifier="id"
+    )
 
     return slice.dropna(), feature_dataset_id
 
@@ -292,7 +300,6 @@ def get_top_feature_headers(entity_id: int, model: str, screen_type: str):
     )
 
     top_features_metadata = {}
-
     for i in range(0, 10):
         if len(feature_df.loc[feature_df["rank"] == i]) == 0:
             continue
@@ -303,12 +310,17 @@ def get_top_feature_headers(entity_id: int, model: str, screen_type: str):
 
         feature_importance = feature_info["importance"]
         pearson = feature_info["pearson"]
+        taiga_id = feature_info["taiga_id"]
+        dataset_feature_type_label = get_feature_dataset_feature_type_from_taiga_id(
+            taiga_id
+        )
 
         top_features_metadata[feature_name] = {
             "feature_name": feature_label,
             "feature_importance": feature_importance,
             "feature_type": feature_type,
             "pearson": pearson,
+            "dataset_feature_type_label": dataset_feature_type_label,
         }
 
     return top_features_metadata
@@ -332,7 +344,7 @@ def get_top_features(entity_id: int, model: str, screen_type: str):
         feature_type = feature_info["dim_type"]
         feature_label = feature_info["feature_label"]
 
-        slice, feature_dataset_id = get_feature_slice_and_dataset_id(
+        (slice, feature_dataset_id) = get_feature_slice_and_dataset_id(
             screen_type=screen_type,
             feature_name=feature_name,
             feature_given_id=feature_given_id,
@@ -361,6 +373,14 @@ def get_top_features(entity_id: int, model: str, screen_type: str):
     }
 
 
+def _get_gene_dataset_id(screen_type: str):
+    return (
+        DependencyEnum.Chronos_Combined.name
+        if screen_type == "crispr"
+        else DependencyEnum.RNAi_merged.name
+    )
+
+
 def get_feature_gene_effect_plot_data(
     model: str,
     entity_id: int,
@@ -376,7 +396,9 @@ def get_feature_gene_effect_plot_data(
         model_name=model, entity_id=entity_id, screen_type=screen_type
     )
 
-    gene_series = data_access.get_row_of_values("Chronos_Combined", gene_symbol)
+    gene_series = data_access.get_row_of_values(
+        _get_gene_dataset_id(screen_type), gene_symbol
+    )
 
     feature = row.iloc[[feature_index]]
 
@@ -510,8 +532,8 @@ def get_other_feature_corrs(feature_df, feature_slice):
     return corr
 
 
-def get_ge_corrs(gene, feature_df):
-    ge_slice = data_access.get_row_of_values("Chronos_Combined", gene)
+def get_ge_corrs(gene, feature_df, screen_type):
+    ge_slice = data_access.get_row_of_values(_get_gene_dataset_id(screen_type), gene)
 
     corr = get_pearson_corr(feature_df, ge_slice)
 
@@ -525,6 +547,7 @@ def get_related_features_scatter(
     feature_slice_values,
     feature_slice_index,
     feature_dataset_id,
+    screen_type,
 ):
     feature_df = data_access.get_subsetted_df_by_labels(
         feature_dataset_id, None, feature_slice_index
@@ -542,7 +565,7 @@ def get_related_features_scatter(
     print(f"get_other_feature_corrs {end-start} seconds")
 
     start = time.time()
-    y = get_ge_corrs(gene=gene_symbol, feature_df=feature_df)
+    y = get_ge_corrs(gene=gene_symbol, feature_df=feature_df, screen_type=screen_type)
 
     x = np.nan_to_num(x)
     y = np.nan_to_num(y)
@@ -564,10 +587,14 @@ def get_related_features_scatter(
 
 
 def get_other_dep_waterfall_plot(
-    feature_label, feature_type, feature_slice_values, feature_slice_index
+    feature_label,
+    feature_type,
+    feature_slice_values,
+    feature_slice_index,
+    screen_type: str,
 ):
     gene_df = data_access.get_subsetted_df_by_labels(
-        "Chronos_Combined", None, feature_slice_index
+        _get_gene_dataset_id(screen_type), None, feature_slice_index
     )
 
     gene_df = gene_df.dropna()
@@ -619,6 +646,7 @@ def get_feature_corr_plot(
             feature_slice_values=full_feature_info["feature_actuals_values"],
             feature_slice_index=full_feature_info["feature_actuals_value_labels"],
             feature_dataset_id=full_feature_info["feature_dataset_id"],
+            screen_type=screen_type,
         )
 
     return rel_features_scatter_plot
@@ -639,6 +667,7 @@ def get_feature_waterfall_plot(model, entity_id, feature_name_type, screen_type:
             feature_type=full_feature_info["feature_type"],
             feature_slice_values=full_feature_info["feature_actuals_values"],
             feature_slice_index=full_feature_info["feature_actuals_value_labels"],
+            screen_type=screen_type,
         )
 
     return waterfall_plot

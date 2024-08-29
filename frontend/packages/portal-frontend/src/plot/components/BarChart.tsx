@@ -20,7 +20,10 @@ type BarChartWithPlotly = BarChartProps & { Plotly: PlotlyType };
 const calcPlotHeight = (plot: HTMLDivElement, includeCustomLegend: boolean) => {
   const legendOffeset = includeCustomLegend ? 80 : 0;
   const fullHeight = window.innerHeight - plot.offsetTop - 26 - legendOffeset;
-  const calculatedHeight = Math.min((plot.offsetWidth * 0.8)-legendOffeset, fullHeight);
+  const calculatedHeight = Math.min(
+    plot.offsetWidth * 0.8 - legendOffeset,
+    fullHeight
+  );
 
   return calculatedHeight;
 };
@@ -99,7 +102,17 @@ function BarChart({
     const config: Partial<Plotly.Config> = { responsive: true };
 
     Plotly.newPlot(plot, test, layout, config);
-  }, [Plotly, xValues, yValues, height, margin, customWidth, customColors, customLegend, title]);
+  }, [
+    Plotly,
+    xValues,
+    yValues,
+    height,
+    margin,
+    customWidth,
+    customColors,
+    customLegend,
+    title,
+  ]);
 
   return <div ref={ref} />;
 }
@@ -109,7 +122,7 @@ export default function LazyBarChart({
   xValues,
   yValues,
   customColors,
-  customLegend,
+  customLegend = undefined,
   ...otherProps
 }: BarChartProps) {
   return (
@@ -117,16 +130,16 @@ export default function LazyBarChart({
       {(Plotly) =>
         xValues && yValues ? (
           <>
-          <BarChart
-            title={title}
-            xValues={xValues}
-            yValues={yValues}
-            customColors={customColors}
-            Plotly={Plotly}
-            // eslint-disable-next-line react/jsx-props-no-spreading
-            {...otherProps}
-          />
-          {customLegend ? customLegend : null}
+            <BarChart
+              title={title}
+              xValues={xValues}
+              yValues={yValues}
+              customColors={customColors}
+              Plotly={Plotly}
+              // eslint-disable-next-line react/jsx-props-no-spreading
+              {...otherProps}
+            />
+            {customLegend || null}
           </>
         ) : null
       }

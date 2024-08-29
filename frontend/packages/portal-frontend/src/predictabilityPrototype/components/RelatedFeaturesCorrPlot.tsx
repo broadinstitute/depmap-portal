@@ -72,7 +72,13 @@ const RelatedFeaturesCorrPlot = ({
       setRelatedFeaturesCorrPlotData(null);
       setRelatedFeaturesPlotElement(null);
     };
-  }, [featureNameType, geneSymbol, getRelatedFeaturesCorrPlotData, modelName]);
+  }, [
+    featureNameType,
+    geneSymbol,
+    getRelatedFeaturesCorrPlotData,
+    modelName,
+    screenType,
+  ]);
 
   // TODO: If isError add error message to UI
   console.log(isError);

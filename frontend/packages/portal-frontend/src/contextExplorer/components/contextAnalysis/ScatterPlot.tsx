@@ -399,11 +399,8 @@ function ContextScatterPlot({
 
     if (renderAsSvg) {
       Plotly.react(plot, plotlyData, layout, { staticPlot: true });
-
-    }
-    else {
+    } else {
       Plotly.react(plot, plotlyData, layout, config);
-
     }
 
     // Keep track of added listeners so we can easily remove them.
@@ -530,6 +527,7 @@ function ContextScatterPlot({
     renderAsSvg,
     density,
     margin,
+    autosize,
     Plotly,
   ]);
 

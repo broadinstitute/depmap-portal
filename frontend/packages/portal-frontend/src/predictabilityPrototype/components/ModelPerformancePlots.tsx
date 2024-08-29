@@ -3,13 +3,10 @@ import ScatterPlot from "src/contextExplorer/components/contextAnalysis/ScatterP
 import PrototypeCorrelationHeatmap from "src/data-explorer-2/components/plot/prototype/PrototypeCorrelationHeatmap";
 import PlotSpinner from "src/plot/components/PlotSpinner";
 import styles from "src/predictabilityPrototype/styles/PredictabilityPrototype.scss";
-import {
-  CorrData,
-  ModelPredictionsGraphData,
-  PredictiveModelData,
-} from "../models/types";
+import { PredictiveModelData } from "../models/types";
 import { Button } from "react-bootstrap";
 import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
+import { getDataExplorerUrl } from "../utils";
 
 export interface ModelPerformancePlotsProps {
   modelName: string;
@@ -37,6 +34,16 @@ const ModelPerformancePlots = ({
   const [isError, setIsError] = useState(false);
 
   const latestPromise = useRef<Promise<PredictiveModelData>>();
+
+  const [
+    cellContextCorrPlotElement,
+    setCellContextCorrPlotElement,
+  ] = useState<ExtendedPlotType | null>(null);
+
+  const [
+    modelPredPlotElement,
+    setModelPredPlotElement,
+  ] = useState<ExtendedPlotType | null>(null);
 
   useEffect(() => {
     setPredictiveModelData(null);
@@ -67,18 +74,9 @@ const ModelPerformancePlots = ({
       setIsLoading(false);
       setIsError(false);
     };
-  }, [entityLabel, modelName, getModelPerformanceData]);
+  }, [entityLabel, modelName, getModelPerformanceData, screenType]);
   console.log(isError);
-
-  const [
-    cellContextCorrPlotElement,
-    setCellContextCorrPlotElement,
-  ] = useState<ExtendedPlotType | null>(null);
-
-  const [
-    modelPredPlotElement,
-    setModelPredPlotElement,
-  ] = useState<ExtendedPlotType | null>(null);
+  console.log(isLoading);
 
   const formatZVals = (zs: number[], i: number) =>
     zs
@@ -149,11 +147,13 @@ const ModelPerformancePlots = ({
     <div className={styles.modelPerformancePlots}>
       <div className={styles.scatter}>
         {" "}
-        <h3
-          style={{ marginLeft: "15px", marginTop: "15px", maxWidth: "200px" }}
-        >
-          Model Predictions
-        </h3>
+        {predictiveModelData && (
+          <h3
+            style={{ marginLeft: "15px", marginTop: "15px", maxWidth: "200px" }}
+          >
+            Model Predictions
+          </h3>
+        )}
         {!modelPredPlotElement && <PlotSpinner height="100%" />}
         {predictiveModelData /* && !isLoading */ && (
           <div>
@@ -184,7 +184,14 @@ const ModelPerformancePlots = ({
           <div className={styles.deButtonContainer}>
             <Button
               className={styles.deButton}
-              href={""}
+              href={getDataExplorerUrl(
+                predictiveModelData.model_predictions.predictions_dataset_id,
+                null,
+                "gene",
+                entityLabel,
+                screenType,
+                predictiveModelData.model_predictions.cell_lines
+              )}
               target="_blank"
               disabled={false}
             >
@@ -196,30 +203,33 @@ const ModelPerformancePlots = ({
       <div className={styles.heatmap}>
         {" "}
         {!cellContextCorrPlotElement && <PlotSpinner height="100%" />}
-        <h3 style={{ marginLeft: "15px", marginTop: "15px" }}>
-          Top Feature Correlation Map
-        </h3>
         {predictiveModelData?.corr /* && !isLoading */ && (
-          <PrototypeCorrelationHeatmap
-            data={memoizedData as any}
-            xLabels={memoizedXLabels!}
-            yLabels={memoizedYLabels!}
-            zLabel=""
-            xKey="x"
-            yKey="y"
-            zKey="z"
-            height={350}
-            onLoad={(element: ExtendedPlotType | null) => {
-              if (element) {
-                setCellContextCorrPlotElement(element);
-              }
-            }}
-            palette={undefined}
-            margin={{ t: 30, l: 120, r: 30, b: 106 }}
-            doTruncateTickLabels={false}
-            distinguish1Label={undefined}
-            distinguish2Label={undefined}
-          />
+          <>
+            <h3 style={{ marginLeft: "15px", marginTop: "15px" }}>
+              Top Feature Correlation Map
+            </h3>
+
+            <PrototypeCorrelationHeatmap
+              data={memoizedData as any}
+              xLabels={memoizedXLabels!}
+              yLabels={memoizedYLabels!}
+              zLabel=""
+              xKey="x"
+              yKey="y"
+              zKey="z"
+              height={350}
+              onLoad={(element: ExtendedPlotType | null) => {
+                if (element) {
+                  setCellContextCorrPlotElement(element);
+                }
+              }}
+              palette={undefined}
+              margin={{ t: 30, l: 120, r: 30, b: 106 }}
+              doTruncateTickLabels={false}
+              distinguish1Label={undefined}
+              distinguish2Label={undefined}
+            />
+          </>
         )}
       </div>
     </div>

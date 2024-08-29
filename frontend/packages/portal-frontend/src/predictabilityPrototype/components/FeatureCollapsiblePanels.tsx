@@ -137,6 +137,7 @@ interface FeatureCollapsiblePanelProps {
   feature: string;
   featureNameType: string; // The key to fetching the data
   featureType: string;
+  featureDatasetLabel: string;
   geneSymbol: string;
   panelIndex: number;
   isOpen: boolean;
@@ -148,6 +149,7 @@ const FeatureCollapsiblePanels = ({
   feature,
   featureNameType,
   featureType,
+  featureDatasetLabel,
   geneSymbol,
   panelIndex,
   isOpen,
@@ -171,6 +173,7 @@ const FeatureCollapsiblePanels = ({
                 featureNameType={featureNameType}
                 feature={feature}
                 featureType={featureType}
+                featureDatasetLabel={featureDatasetLabel}
                 panelIndex={panelIndex}
                 screenType={screenType}
                 getFeatureVsGeneEffectData={dapi.getPredictabilityFeatureGeneEffectData.bind(

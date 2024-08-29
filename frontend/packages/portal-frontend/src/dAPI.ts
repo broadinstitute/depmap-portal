@@ -708,8 +708,6 @@ export class DepmapApi {
   }
 
   getPredictabilityFeatureGeneEffectData(
-    featureName: string,
-    featureType: string,
     identifier: string,
     featureIndex: number,
     entityLabel: string,
@@ -717,8 +715,6 @@ export class DepmapApi {
     screenType: string
   ): Promise<FeatureVsGeneEffectPlotData> {
     const params = {
-      feature_name: featureName,
-      feature_type: featureType,
       identifier,
       feature_index: featureIndex,
       entity_label: entityLabel,

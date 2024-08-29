@@ -41,6 +41,8 @@ export type ModelPredictionsGraphData = {
     predictions: number[];
     actuals: number[];
   };
+  predictions_dataset_id: string;
+  cell_lines: string[];
   x_label: string;
   y_label: string;
   model: string;
@@ -84,6 +86,7 @@ export type FeatureSummary = {
   feature_type: string;
   feature_importance: number;
   pearson: number;
+  dataset_feature_type_label: string;
 };
 
 export type FeatureSummaries = {

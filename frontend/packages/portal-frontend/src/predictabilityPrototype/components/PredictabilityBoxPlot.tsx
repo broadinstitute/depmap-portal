@@ -76,6 +76,8 @@ const PredictabilityBoxPlot = ({
     featureType,
     getPredictabilityBoxPlotData,
     modelName,
+    geneSymbol,
+    screenType,
   ]);
   console.log(isError);
   console.log(geneSymbol);
