@@ -44,6 +44,7 @@ from .get_and_process_data import (
     get_dataset_feature_ids_by_label,
     get_dataset_feature_labels,
     get_dataset_sample_ids,
+    get_dataset_sample_labels_by_id,
     get_matrix,  # downloads: check dataset size
     get_row_of_values,  # very heavily used
     get_row_of_values_from_slice_id,  # used by custom analysis, DE2, vector catalog, tests

@@ -6,6 +6,7 @@ from .interface import (
     get_dataset_feature_ids_by_label,
     get_dataset_feature_labels,
     get_dataset_sample_ids,
+    get_dataset_sample_labels_by_id,
     get_dataset_data_type,
     get_dataset_feature_type,
     get_dataset_sample_type,
