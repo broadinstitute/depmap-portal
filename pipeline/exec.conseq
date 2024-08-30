@@ -16,8 +16,9 @@ executor-template dsub {
   "resources": { "slots": "100" },
   "HELPER_PATH": "{{ parameters.helper_path | default('/usr/bin/python3 /helper.py') }}",
   "COMMAND_TEMPLATE": """{{ config.DSUB_EXE_PATH }} \
+      --provider google-batch \
       --project {{ config.DEFAULT_GCP_PROJECT }} \
-      --zones '{{ config.DEFAULT_GCP_ZONE }}' \
+      --location us-central1 \
       --logging {{ config.STAGING_URL }}/logs/{{ parameters.UUID }} \
       --image {{ parameters.docker_image | default(config.DEFAULT_DOCKER_IMAGE) }} \
       --env AWS_ACCESS_KEY_ID=invalid \
@@ -25,16 +26,17 @@ executor-template dsub {
       --min-ram {{ parameters.min_ram | default("4") }} \
       --boot-disk-size {{ parameters.boot_disk_size | default("10") }} \
       --command '{{ COMMAND }}'""",
-  "CHECK_COMMAND_TEMPLATE": """{{config.DSTAT_EXE_PATH}} \
+  "CHECK_COMMAND_TEMPLATE": """python dstat_wrapper.py {{config.DSTAT_EXE_PATH}} \
+      --provider google-batch \
       --project {{ config.DEFAULT_GCP_PROJECT }} \
+      --location us-central1 \
       --jobs {{ JOB_ID }} \
-      --status 'RUNNING'""",
-  "IS_RUNNING_PATTERN": "Status", # Really anything because we are only
-                                  # listing running jobs. Just make sure
-                                  # there's some output
-  "TERMINATE_CMD_TEMPLATE": "{{ config.DDEL_EXE_PATH }} --project {{ config.DEFAULT_GCP_PROJECT }} --jobs {{ JOB_ID }}",
+      --format json""",
+  "IS_RUNNING_PATTERN": "IN_PROGRESS:", 
+  "TERMINATE_CMD_TEMPLATE": "{{ config.DDEL_EXE_PATH }} --provider google-batch --project {{ config.DEFAULT_GCP_PROJECT }} --jobs {{ JOB_ID }}",
   "JOB_ID_PATTERN": """(?:(?:Job: )|(?:Launched job-id: ))(\S+).*""",
   "COMPLETED_CMD_TEMPLATE" : """{{config.DSTAT_EXE_PATH}} \
+    --provider google-batch \
     --project  {{ config.DEFAULT_GCP_PROJECT }} \
     --jobs {{ JOB_ID }} \
     --status '*' --full && \
