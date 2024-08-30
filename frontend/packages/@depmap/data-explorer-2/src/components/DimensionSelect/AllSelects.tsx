@@ -66,7 +66,7 @@ function AllSelects({
       />
       <SliceTypeSelect
         index_type={index_type}
-        axis_type={axis_type as "raw_slice" | "context"}
+        axis_type={axis_type as "raw_slice" | "aggregated_slice"}
         aggregation={aggregation || null}
         value={slice_type || null}
         options={sliceTypeOptions}

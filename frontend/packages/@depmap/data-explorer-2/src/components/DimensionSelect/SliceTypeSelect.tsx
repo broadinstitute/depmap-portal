@@ -12,7 +12,7 @@ import styles from "../../styles/DimensionSelect.scss";
 interface Props {
   isLoading: boolean;
   index_type: string | null;
-  axis_type: "raw_slice" | "context";
+  axis_type: "raw_slice" | "aggregated_slice";
   aggregation: string | null;
   options: { label: string; value: string; isDisabled: boolean }[];
   value: string | null;
@@ -34,7 +34,7 @@ function SliceTypeSelect({
 
   let selectLabel = isSampleType(index_type) ? "Feature" : "Sample";
 
-  if (axis_type === "context") {
+  if (axis_type === "aggregated_slice") {
     selectLabel = `${pluralize(selectLabel)} to ${
       aggregation === "correlation" ? "correlate" : "aggregate"
     }`;

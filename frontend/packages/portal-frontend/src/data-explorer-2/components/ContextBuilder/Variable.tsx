@@ -29,6 +29,10 @@ interface Props {
   shouldShowValidation: boolean;
 }
 
+// These day we're referring to these as slice labels, but the constant
+// "entity_label" needs to be used for compatibility with old contexts.
+const SLICE_LABEL_VARIABLE = "entity_label";
+
 const findSliceId = (
   value: string | null,
   sliceVariables: Record<string, unknown>
@@ -150,7 +154,7 @@ function Variable({
     }
 
     return {
-      slice_label,
+      [SLICE_LABEL_VARIABLE]: slice_label,
       ...getMetadataLookupTable(metadataSlices),
       ...(continuousDatasetSliceLookupTable || {}),
     };
