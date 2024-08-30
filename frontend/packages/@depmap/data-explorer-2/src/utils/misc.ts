@@ -1,41 +1,29 @@
 import { DataExplorerPlotConfigDimension } from "@depmap/types";
 
-export function getDimensionTypeLabel(entity_type: string) {
-  if (!entity_type) {
+export function getDimensionTypeLabel(dimension_type: string) {
+  if (!dimension_type) {
     return "";
   }
 
-  if (entity_type === "depmap_model") {
+  if (dimension_type === "depmap_model") {
     return "model";
   }
 
-  if (entity_type === "compound_experiment") {
+  if (dimension_type === "compound_experiment") {
     return "compound";
   }
 
-  if (entity_type === "msigdb_gene_set") {
+  if (dimension_type === "msigdb_gene_set") {
     return "MSigDB gene set";
   }
 
   return (
-    entity_type
+    dimension_type
       // no underscores
       .replace(/_/g, " ")
       // strip out version suffixes
       .replace(/\s*[vV]?\d+$/, "")
   );
-}
-
-export function getEntityGroupLabel(entity_type: string) {
-  if (entity_type === "depmap_model") {
-    return "DepMap ID";
-  }
-
-  if (entity_type === "gene") {
-    return "gene name";
-  }
-
-  return getDimensionTypeLabel(entity_type);
 }
 
 export const isCompleteExpression = (expr: any) => {
@@ -71,17 +59,11 @@ export function isCompleteDimension(
     return false;
   }
 
-  const {
-    dataset_id,
-    entity_type,
-    axis_type,
-    context,
-    aggregation,
-  } = dimension;
+  const { dataset_id, slice_type, axis_type, context, aggregation } = dimension;
 
   return Boolean(
     dataset_id &&
-      entity_type &&
+      slice_type &&
       axis_type &&
       aggregation &&
       isCompleteExpression(context?.expr)
@@ -101,9 +83,11 @@ export const urlLibEncode = (s: string) => {
   );
 };
 
-export const isSampleType = (entityType: string | null | undefined) => {
+// TODO: Remove this helper in favor of getting this info from the backend. It
+// could be part of the response of the /datasets_by_index_type endpoint.
+export const isSampleType = (dimensionType: string | null | undefined) => {
   return ["depmap_model", "screen", "model_condition"].includes(
-    entityType as string
+    dimensionType as string
   );
 };
 

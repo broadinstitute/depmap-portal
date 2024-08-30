@@ -12,14 +12,14 @@ import styles from "../../styles/DimensionSelect.scss";
 interface Props {
   isLoading: boolean;
   index_type: string | null;
-  axis_type: "entity" | "context";
+  axis_type: "raw_slice" | "context";
   aggregation: string | null;
   options: { label: string; value: string; isDisabled: boolean }[];
   value: string | null;
-  onChange: (nextEntityType: string | null) => void;
+  onChange: (nextSliceType: string | null) => void;
 }
 
-function EntityTypeSelect({
+function SliceTypeSelect({
   isLoading,
   index_type,
   axis_type,
@@ -32,26 +32,26 @@ function EntityTypeSelect({
     ? "Loading…"
     : `Select ${isSampleType(index_type) ? "feature" : "sample"} type…`;
 
-  let label = isSampleType(index_type) ? "Feature" : "Sample";
+  let selectLabel = isSampleType(index_type) ? "Feature" : "Sample";
 
   if (axis_type === "context") {
-    label = `${pluralize(label)} to ${
+    selectLabel = `${pluralize(selectLabel)} to ${
       aggregation === "correlation" ? "correlate" : "aggregate"
     }`;
   }
 
-  const entityTypeLabel = value ? capitalize(getDimensionTypeLabel(value)) : "";
+  const sliceTypeLabel = value ? capitalize(getDimensionTypeLabel(value)) : "";
 
   return (
     <PlotConfigSelect
       show
       isClearable
       enable={options.length > 1}
-      label={label}
+      label={selectLabel}
       placeholder={placeholder}
       isLoading={isLoading}
       value={value}
-      options={isLoading ? [{ label: entityTypeLabel, value }] : options}
+      options={isLoading ? [{ label: sliceTypeLabel, value }] : options}
       onChange={onChange}
       formatOptionLabel={(option: {
         label: string;
@@ -77,4 +77,4 @@ function EntityTypeSelect({
   );
 }
 
-export default EntityTypeSelect;
+export default SliceTypeSelect;

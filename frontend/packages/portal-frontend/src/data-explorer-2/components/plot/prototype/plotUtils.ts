@@ -226,11 +226,11 @@ export function formatDataForScatterPlot(
         });
       }
 
-      if (c1Values && c1Values[i] && color_by === "context") {
+      if (c1Values && c1Values[i] && color_by === "aggregated_slice") {
         colorInfo.push(data.filters.color1!.name);
       }
 
-      if (c2Values && c2Values[i] && color_by === "context") {
+      if (c2Values && c2Values[i] && color_by === "aggregated_slice") {
         colorInfo.push(data.filters.color2!.name);
       }
 

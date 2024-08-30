@@ -1,7 +1,7 @@
 import { DataExplorerContext } from "@depmap/types";
 
-export interface EntitySelectorProps {
-  entity_type: string;
+export interface SliceLabelSelectProps {
+  slice_type: string;
   value: DataExplorerContext | null;
   onChange: (context: DataExplorerContext | null) => void;
   dataType: string | null;

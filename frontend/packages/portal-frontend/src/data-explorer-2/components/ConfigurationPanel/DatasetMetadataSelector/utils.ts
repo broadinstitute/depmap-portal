@@ -28,7 +28,7 @@ export const getDatasetIdFromSlice = (
   return slicePrefix(slices, value).replace("slice/", "").slice(0, -1);
 };
 
-export const getMetadataEntityTypeLabelFromSlice = (
+export const getMetadataSliceTypeLabelFromSlice = (
   slices: MetadataSlices,
   value: string
 ) => {
@@ -36,7 +36,7 @@ export const getMetadataEntityTypeLabelFromSlice = (
 
   Object.entries(slices).forEach(([sliceId, descriptor]) => {
     if (sliceId === slicePrefix(slices, value)) {
-      out = descriptor.entityTypeLabel as string;
+      out = descriptor.sliceTypeLabel as string;
     }
   });
 

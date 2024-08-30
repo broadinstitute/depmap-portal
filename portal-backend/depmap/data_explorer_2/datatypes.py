@@ -1,5 +1,5 @@
-# None of these can be used an entity_type/index_type.
-blocked_entity_types = set(
+# None of these can be used as a slice_type/index_type.
+blocked_dimension_types = set(
     [
         "antibody",
         "compound_dose",
@@ -60,26 +60,26 @@ hardcoded_metadata_slices = {
             "name": "Current PRISM Pools",
             "valueType": "categorical",
             "isPartialSliceId": True,
-            "entityTypeLabel": "cell line group",
+            "sliceTypeLabel": "cell line group",
         },
         "slice/mutations_prioritized/": {
             "name": "Mutation",
             "valueType": "categorical",
             "isPartialSliceId": True,
-            "entityTypeLabel": "gene",
+            "sliceTypeLabel": "gene",
         },
         "slice/mutation_protein_change_by_gene/": {
             "name": "Mutation protein changes",
             "valueType": "list_strings",
             "isPartialSliceId": True,
             "isHighCardinality": True,
-            "entityTypeLabel": "gene",
+            "sliceTypeLabel": "gene",
         },
         "slice/msi-0584.6%2Fmsi/": {
             "name": "Micro Satellite Instability",
             "valueType": "categorical",
             "isPartialSliceId": True,
-            "entityTypeLabel": "MSI annotation source",
+            "sliceTypeLabel": "MSI annotation source",
         },
     },
     "gene": {

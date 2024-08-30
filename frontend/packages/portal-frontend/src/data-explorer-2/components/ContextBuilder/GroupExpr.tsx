@@ -9,7 +9,7 @@ import styles from "src/data-explorer-2/styles/ContextBuilder.scss";
 
 const MAX_CONDITIONS = 10;
 
-function Result({ result, isTopLevel, entity_type }: any) {
+function Result({ result, isTopLevel, slice_type }: any) {
   const ref = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -40,7 +40,7 @@ function Result({ result, isTopLevel, entity_type }: any) {
               <b>{result.num_matches.toLocaleString()}</b>
             </span>
             <span>of {result.num_candidates.toLocaleString()}</span>
-            <span>{pluralize(getDimensionTypeLabel(entity_type))}</span>
+            <span>{pluralize(getDimensionTypeLabel(slice_type))}</span>
           </>
         ) : (
           <>
@@ -57,7 +57,7 @@ function GroupExpr({
   expr,
   path,
   dispatch,
-  entity_type,
+  slice_type,
   shouldShowValidation,
   result,
   editInCellLineSelector,
@@ -81,7 +81,7 @@ function GroupExpr({
                 expr={subExpr}
                 path={[...path, op, i]}
                 dispatch={dispatch}
-                entity_type={entity_type}
+                slice_type={slice_type}
                 shouldShowValidation={shouldShowValidation}
                 isLastOfList={i === expr[op].length - 1}
                 editInCellLineSelector={editInCellLineSelector}
@@ -117,7 +117,7 @@ function GroupExpr({
             <Result
               result={result}
               isTopLevel={isTopLevel}
-              entity_type={entity_type}
+              slice_type={slice_type}
             />
           )}
         </div>

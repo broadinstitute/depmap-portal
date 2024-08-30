@@ -2,12 +2,12 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import cx from "classnames";
 import Select from "react-windowed-select";
 import {
-  fetchEntityLabelsOfDataset,
+  fetchDimensionLabelsOfDataset,
   getDimensionTypeLabel,
   isPartialSliceId,
 } from "@depmap/data-explorer-2";
 import {
-  entityLabelFromSliceId,
+  sliceLabelFromSliceId,
   makeSliceId,
 } from "src/data-explorer-2/components/ContextBuilder/contextBuilderUtils";
 import { ContextBuilderReducerAction } from "src/data-explorer-2/components/ContextBuilder/contextBuilderReducer";
@@ -34,7 +34,7 @@ const selectStyles = {
 interface Props {
   value: string | null;
   path: (string | number)[];
-  entity_type: string;
+  slice_type: string;
   dataset_id: string;
   dispatch: React.Dispatch<ContextBuilderReducerAction>;
   shouldShowValidation: boolean;
@@ -43,13 +43,13 @@ interface Props {
 function VariableEntity({
   value,
   path,
-  entity_type,
+  slice_type,
   dataset_id,
   dispatch,
   shouldShowValidation,
 }: Props) {
   const ref = useRef<HTMLDivElement | null>(null);
-  const [entityLabels, setEntityLabels] = useState<string[] | null>(null);
+  const [sliceLabels, setSliceLabels] = useState<string[] | null>(null);
 
   useEffect(() => {
     if (ref.current) {
@@ -66,13 +66,13 @@ function VariableEntity({
     (async () => {
       if (dataset_id) {
         try {
-          const { labels } = await fetchEntityLabelsOfDataset(
-            entity_type,
+          const { labels } = await fetchDimensionLabelsOfDataset(
+            slice_type,
             dataset_id
           );
 
           if (!unmounted) {
-            setEntityLabels(labels.sort(collator.compare));
+            setSliceLabels(labels.sort(collator.compare));
           }
         } catch (e) {
           window.console.error(e);
@@ -83,22 +83,22 @@ function VariableEntity({
     return () => {
       unmounted = true;
     };
-  }, [entity_type, dataset_id]);
+  }, [slice_type, dataset_id]);
 
   const options = useMemo(() => {
     const out: any = [];
 
-    if (!entityLabels) {
+    if (!sliceLabels) {
       return null;
     }
 
-    for (let i = 0; i < entityLabels.length; i += 1) {
-      const label = entityLabels[i];
+    for (let i = 0; i < sliceLabels.length; i += 1) {
+      const label = sliceLabels[i];
       out.push({ label, value: label });
     }
 
     return out;
-  }, [entityLabels]);
+  }, [sliceLabels]);
 
   const handleChange = (option: any) => {
     dispatch({
@@ -107,7 +107,7 @@ function VariableEntity({
         path: path.slice(0, -2),
         value: {
           ">": [
-            { var: makeSliceId(entity_type, dataset_id, option.value) },
+            { var: makeSliceId(slice_type, dataset_id, option.value) },
             null,
           ],
         },
@@ -115,7 +115,7 @@ function VariableEntity({
     });
   };
 
-  const selectedLabel = entityLabelFromSliceId(value, dataset_id);
+  const selectedLabel = sliceLabelFromSliceId(value, dataset_id);
   const selectedValue = selectedLabel
     ? { label: selectedLabel, value: selectedLabel }
     : null;
@@ -132,7 +132,7 @@ function VariableEntity({
         value={selectedValue}
         options={options}
         onChange={handleChange}
-        placeholder={`Select ${getDimensionTypeLabel(entity_type)}…`}
+        placeholder={`Select ${getDimensionTypeLabel(slice_type)}…`}
         menuPortalTarget={document.querySelector("#modal-container")}
       />
     </div>

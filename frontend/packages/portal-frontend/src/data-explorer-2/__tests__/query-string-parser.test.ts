@@ -6,7 +6,7 @@ const MOCK_DATASETS_BY_INDEX_TYPE = {
     {
       data_type: "CRISPR",
       dataset_id: "Chronos_Combined",
-      entity_type: "gene",
+      slice_type: "gene",
       index_type: "depmap_model",
       label: "CRISPR (DepMap Internal 23Q2+Score, Chronos)",
       units: "Gene effect",
@@ -17,7 +17,7 @@ const MOCK_DATASETS_BY_INDEX_TYPE = {
     {
       data_type: "CRISPR",
       dataset_id: "Chronos_Combined",
-      entity_type: "depmap_model",
+      slice_type: "depmap_model",
       index_type: "gene",
       label: "CRISPR (DepMap Internal 23Q2+Score, Chronos)",
       units: "Gene effect",
@@ -60,8 +60,8 @@ describe("Data Explorer 2.0 query string parser", () => {
     expect(result?.dimensions?.x).toBeDefined();
     expect(result!.dimensions.x).toEqual({
       dataset_id: "Chronos_Combined",
-      entity_type: "gene",
-      axis_type: "entity",
+      slice_type: "gene",
+      axis_type: "raw_slice",
       aggregation: "first",
       context: {
         name: "SOX10",
@@ -83,8 +83,8 @@ describe("Data Explorer 2.0 query string parser", () => {
     expect(result?.dimensions?.x).toBeDefined();
     expect(result!.dimensions.x).toEqual({
       dataset_id: "Chronos_Combined",
-      entity_type: "depmap_model",
-      axis_type: "context",
+      slice_type: "depmap_model",
+      axis_type: "aggregated_slice",
       aggregation: "mean",
       context: {
         name: "Test context",
@@ -127,7 +127,7 @@ describe("Data Explorer 2.0 query string parser", () => {
     expect(result2?.plot_type).toEqual("scatter");
   });
 
-  it("should infer `index_type` from `dataset_id` and `entity_type`", () => {
+  it("should infer `index_type` from `dataset_id` and `slice_type`", () => {
     const result = parseShorthandParams(
       {
         xDataset: "Chronos_Combined",

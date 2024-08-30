@@ -15,13 +15,13 @@ function PrecomputedAssociationsSection({ plot, dispatch }: Props) {
   const sectionRef = useRef<HTMLDivElement | null>(null);
 
   const handleSelectY = useCallback(
-    (dataset_id: string, entity_label: string, entity_type: string) => {
+    (dataset_id: string, slice_label: string, slice_type: string) => {
       dispatch({
-        type: "select_scatter_y_entity",
+        type: "select_scatter_y_slice",
         payload: {
           dataset_id,
-          entity_label,
-          entity_type,
+          slice_label,
+          slice_type,
         },
       });
     },
