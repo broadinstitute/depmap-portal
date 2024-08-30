@@ -25,7 +25,7 @@ test("hides the aggregation select for the special case of correlation", async (
       onClickCreateContext={() => {}}
       onClickSaveAsContext={() => {}}
       value={{
-        axis_type: "context",
+        axis_type: "aggregated_slice",
         aggregation: "correlation",
       }}
     />
