@@ -3,11 +3,12 @@ import gzip
 import functools
 import numpy as np
 import pandas as pd
-from typing import Optional
+from typing import Any, Optional
 from collections import defaultdict
-
 from logging import getLogger
 from flask import json, make_response
+
+from depmap_compute.context import decode_slice_id
 from depmap import data_access
 from depmap.data_access.models import MatrixDataset
 from depmap.settings.download_settings import get_download_list
@@ -66,26 +67,6 @@ def get_reoriented_df(
     )
 
 
-# Based on the function of the same name from SliceSerializer but we don't
-# enforce that feature_type is of type SliceRowType. That way we can handle
-# novel feature types like the "transpose_label" described below.
-def decode_slice_id(slice_id):
-    parts = slice_id.split("/")
-    assert (
-        parts[0] == "slice" and len(parts) >= 4 and len(parts) <= 5
-    ), f"Malformed slice_id: {slice_id}"
-
-    if len(parts) == 5:
-        # handle dataset IDs with slashes in them
-        parts[1:3] = ["/".join(parts[1:3])]
-
-    dataset_id = Serializer.unquote(parts[1])
-    feature = Serializer.unquote(parts[2])
-    feature_type = Serializer.unquote(parts[3])
-
-    return dataset_id, feature, feature_type
-
-
 # There are also several bespoke slice IDs here that don't correlate with real
 # datasets. For example, there is no "gene_essentiality" dataset. Those data
 # are drawn from the gene_exective_info table in the sqlite db.
@@ -126,7 +107,8 @@ def get_series_from_de2_slice_id(slice_id: str) -> pd.Series:
     )
 
 
-def slice_to_dict(slice_id: str):
+def slice_to_dict(slice_id: str) -> dict[str, Any]:
+    """For the given slice ID, load a dictionary of values keyed by label."""
     return get_series_from_de2_slice_id(slice_id).replace({np.nan: None}).to_dict()
 
 

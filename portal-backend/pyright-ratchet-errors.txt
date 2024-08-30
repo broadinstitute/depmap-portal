@@ -372,7 +372,6 @@ parse_downloads.py: error: Expression of type "tuple[Unknown | None, DownloadRel
 parse_downloads.py: error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
 parse_resources.py: error: Argument of type "None" cannot be assigned to parameter "__default" of type "_T@get" in function "get"
 parse_resources.py: error: No overloads for "get" match the provided arguments (reportCallIssue)
-plot.py: error: Argument of type "str | None" cannot be assigned to parameter "entity_type" of type "str" in function "to_display_name"
 predictability_loader.py: error: "dataset_id" is not a known member of "None" (reportOptionalMemberAccess)
 predictability_loader.py: error: Argument of type "Hashable" cannot be assigned to parameter "feature_id" of type "str" in function "row_to_feature_obj"
 predictability_loader.py: error: Argument of type "Literal['WEBAPP_DATA_DIR']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
@@ -620,7 +619,6 @@ utils.py: error: Cannot access member "dropna" for type "ndarray[Any, Unknown]"
 utils.py: error: Cannot access member "encode" for type "bytes"
 utils.py: error: Cannot access member "rename" for type "NDArray[Unknown]"
 utils.py: error: Cannot access member "rename" for type "ndarray[Any, Unknown]"
-utils.py: error: Cannot access member "unquote" for type "type[Serializer]"
 utils.py: error: Expression of type "Dict[str, DatasetSortKey] | Any" cannot be assigned to return type "DefaultDict[str, DatasetSortKey]"
 utils.py: error: Expression of type "None" cannot be assigned to return type "DataFrame"
 utils.py: error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
@@ -712,7 +710,6 @@ views.py: error: Argument of type "list[CellLineSeries]" cannot be assigned to p
 views.py: error: Argument of type "list[Unknown] | Any | list[int] | Unknown" cannot be assigned to parameter "query_cell_lines" of type "list[str] | None" in function "run_custom_analysis" (reportArgumentType)
 views.py: error: Argument of type "list[list[Unknown]] | None" cannot be assigned to parameter "compound_experiment_and_datasets" of type "List[Tuple[CompoundExperiment, DependencyDataset]]" in function "format_dep_dist_caption"
 views.py: error: Argument of type "str | Any" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
-views.py: error: Argument of type "str | None" cannot be assigned to parameter "entity_type" of type "str" in function "to_display_name"
 views.py: error: Argument of type "str | None" cannot be assigned to parameter "s" of type "str | bytes | bytearray" in function "loads" (reportArgumentType)
 views.py: error: Argument of type "str" cannot be assigned to parameter "__value" of type "_VT@dict" in function "__setitem__"
 views.py: error: Cannot access member "any" for type "List[Gene]"
