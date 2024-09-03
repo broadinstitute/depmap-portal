@@ -10,8 +10,6 @@ from breadbox.db.session import SessionWithUser
 from breadbox.config import Settings
 from breadbox.crud.access_control import PUBLIC_GROUP_ID
 from breadbox.crud.dataset import (
-    ROOT_ID,
-    add_catalog_nodes,
     delete_dataset,
     get_properties_to_index,
     populate_search_index,
@@ -24,7 +22,6 @@ from breadbox.models.dataset import (
     AnnotationType,
     TabularCell,
     TabularColumn,
-    CatalogNode,
     TabularDataset,
     DatasetSample,
     DatasetFeature,
@@ -285,9 +282,6 @@ def _update_dataset_dimensions_with_dimension_type(
         dataset_dim.id
         for dataset_dim in dataset_dimensions_with_dimension_type_query.all()
     ]
-    db.query(CatalogNode).filter(
-        CatalogNode.dimension_id.in_(dataset_dimensions_ids)
-    ).delete()
 
     new_dataset_dimension_catalog_nodes = []
     updated_dimension_labels = []
@@ -318,8 +312,6 @@ def _update_dataset_dimensions_with_dimension_type(
         for i in range(0, len(updated_dimension_labels), 10000):  # arbitrary chunk size
             chunk = i + 10000
             db.bulk_update_mappings(DatasetFeature, updated_dimension_labels[i:chunk])
-    db.flush()
-    add_catalog_nodes(db, new_dataset_dimension_catalog_nodes)
     db.flush()
 
 
@@ -429,19 +421,7 @@ def update_dimension_type_metadata(
 
 
 def delete_dimension_type(db: SessionWithUser, dimension_type: DimensionType):
-    # NOTE: Delete feature type if has dataset should cascade deletes
     db.delete(dimension_type)
-    # NOTE: Manually delete dataset's CatalogNodes instead of relying foreign key
-    # constraints and cascade deletes because the self-referencing relationship is causing
-    # large performance issues. Notice how there are no foreign key constraints only for
-    # catalog_node in models
-    if dimension_type.axis == "feature":
-        feature_type_metadata_dataset_id = dimension_type.dataset_id
-        if feature_type_metadata_dataset_id:
-            db.query(CatalogNode).filter(
-                CatalogNode.dataset_id == feature_type_metadata_dataset_id
-            ).delete()
-
     db.flush()
     return True
 
