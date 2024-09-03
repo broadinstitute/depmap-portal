@@ -165,7 +165,6 @@ def get_subsetted_df_by_labels(
     )
 
 
-# TODO: convert this to labels by ID
 def get_dataset_feature_labels_by_id(dataset_id) -> dict[str, str]:
     """
     Get a mapping of feature labels to given IDs.
