@@ -306,6 +306,7 @@ class Config(object):
     # with the expectation that in some environments we'll want to lower this
     MAX_UPLOAD_SIZE = 10 ** 10
     FORUM_API_KEY = os.getenv("FORUM_API_KEY")
+    PRIVATE_FILE_BUCKETS = os.getenv("PRIVATE_FILE_BUCKETS")
 
 
 class RemoteConfig(Config):
