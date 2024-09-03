@@ -79,7 +79,7 @@ from depmap.enums import DataTypeEnum
 from depmap.extensions import breadbox
 from depmap.cell_line.models_new import DepmapModel
 from depmap.gene.models import Gene
-from depmap.public.resources import refresh_all_category_topics, _read_forum_api_key
+from depmap.public.resources import refresh_all_category_topics, read_forum_api_key
 from depmap.discourse.client import DiscourseClient
 
 
@@ -1777,7 +1777,7 @@ def reload_resources():
             "Missing forum_api_key_value or forum_url values or resources_data_path!"
         )
 
-    discourse_api_key = _read_forum_api_key(forum_api_key_value)
+    discourse_api_key = read_forum_api_key(forum_api_key_value)
 
     client = DiscourseClient(discourse_api_key, forum_url, resources_data_path, True)
     refresh_all_category_topics(client, current_app.config["FORUM_RESOURCES_CATEGORY"])

@@ -186,7 +186,7 @@ def refresh_all_category_topics(client: DiscourseClient, category_slug: str):
     print(f"Successful in fetching all topics for {category_slug}!")
 
 
-def _read_forum_api_key(forum_api_key_value: str):
+def read_forum_api_key(forum_api_key_value: str):
     if os.path.isfile(
         forum_api_key_value
     ):  # Presumably value is filepath in dev config only
