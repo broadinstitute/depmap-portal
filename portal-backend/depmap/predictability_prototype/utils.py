@@ -89,6 +89,7 @@ def accuracy_per_model(gene_symbol, entity_id, screen_type, datasets, actuals):
                 model_name=model_name, screen_type=screen_type
             )
         ].id
+
         gene_predictions = data_access.get_row_of_values(
             prediction_dataset_id, gene_symbol,
         )
@@ -455,7 +456,6 @@ def get_feature_boxplot_data(
 
     feature_name = feature["feature_name"].values[0]
     given_id = feature["given_id"].values[0]
-    feature_label = feature["feature_label"].values[0]
 
     slice, _ = get_feature_slice_and_dataset_id(
         screen_type=screen_type,
@@ -481,25 +481,19 @@ def feature_correlation_map_calc(model, entity_id, screen_type: str):
     row_labels = df.index.tolist()
     values = df.replace(np.nan, None).values.tolist()
 
-    # TODO: This is temporary until we have a real mapping
-    GENE_PATTERN = re.compile("\S+ \((\d+)\)")
     gene_symbol_feature_types = {}
-
-    for feature_name in list(top_features.keys()):
-        m = GENE_PATTERN.match(feature_name)
-        if m is not None:
-            symbol = m.group(0).split(" ")[0]
-            if symbol not in gene_symbol_feature_types:
-                feature_type = feature_name.split("_")[-1]
-                gene_symbol_feature_types[symbol] = feature_type
-
     feature_names = []
     feature_types = []
-    for feature in row_labels:
-        feature_name = "_".join(feature.split("_")[:-1])
-        feature_type = feature.split("_")[-1]
+
+    for feature_label in list(top_features.keys()):
+        feature = PrototypePredictiveFeature.get_by_feature_label(feature_label)
+        feature_name = feature.feature_name
+        feature_type = feature.dim_type
         feature_names.append(feature_name)
         feature_types.append(feature_type)
+
+        if feature_type == "gene":
+            gene_symbol_feature_types[feature_label] = feature_type
 
     return {
         "corr": {

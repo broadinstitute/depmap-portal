@@ -32,7 +32,7 @@ export function getDataExplorerUrl(
       : {
           name: "all_cell_lines",
           context_type: "depmap_model",
-          expr: { in: [{ var: "depmap_model" }, cellLines] },
+          expr: { in: [{ var: "entity_label" }, cellLines] },
         };
 
   const yContext =
@@ -43,15 +43,10 @@ export function getDataExplorerUrl(
           expr: { "==": [{ var: "entity_label" }, geneLabel] },
         }
       : {
-          name: "all_cell_lines2",
+          name: "all_cell_lines_y",
           context_type: "depmap_model",
-          expr: { in: [{ var: "depmap_model" }, cellLines] },
+          expr: { in: [{ var: "entity_label" }, cellLines] },
         };
-
-  console.log({ xContext });
-  console.log({ yContext });
-  console.log({ xDatasetId });
-  console.log({ yDatasetId });
 
   const queryString =
     featureLabel === null

@@ -108,6 +108,7 @@ const PredictabilityPrototypeTab = ({
                 topFeaturesData={
                   data ? data.crispr.overview?.top_features : null
                 }
+                entityLabel={entityLabel}
               />
             </CardRowItem>
             <CardRowItem>

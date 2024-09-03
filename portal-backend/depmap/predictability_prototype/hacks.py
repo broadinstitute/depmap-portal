@@ -1,5 +1,3 @@
-from depmap import data_access
-from depmap.enums import BiomarkerEnum
 import numpy as np
 
 

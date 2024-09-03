@@ -1,6 +1,3 @@
-from dataclasses import dataclass
-from typing import Any, Dict, List
-from depmap import data_access
 from depmap.gene.models import Gene
 from depmap.predictability_prototype.models import PrototypePredictiveModel
 from depmap.predictability_prototype.utils import (

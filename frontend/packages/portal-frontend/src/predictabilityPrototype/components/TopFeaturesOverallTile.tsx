@@ -8,11 +8,13 @@ import { FEATURE_SET_COLORS, TopFeaturesBarData } from "../models/types";
 export interface TopFeaturesOverallTileProps {
   plotTitle: string;
   topFeaturesData: TopFeaturesBarData | null;
+  entityLabel: string;
 }
 
 const TopFeaturesOverallTile = ({
   plotTitle,
   topFeaturesData,
+  entityLabel,
 }: TopFeaturesOverallTileProps) => {
   const [
     topFeaturesPlotElement,
@@ -31,7 +33,7 @@ const TopFeaturesOverallTile = ({
     () => (topFeaturesData ? topFeaturesData.data.feature.reverse() : []),
     [topFeaturesData]
   );
-  console.log(topFeaturesData)
+  console.log(topFeaturesData);
   const customColors = useMemo(() => {
     return topFeaturesData
       ? topFeaturesData.data.model_name
@@ -45,24 +47,25 @@ const TopFeaturesOverallTile = ({
       : [];
   }, [topFeaturesData]);
 
-  const customLegend =
-  <div className={styles.legendContainer}>
-  <div className={styles.legendTitle}>
-    <h4>FEATURE SET</h4>
-  </div>
-  <div className={styles.bottomLegend}>
-    <div className={styles.cellContextBox} />
-    <div className={styles.legendLabel}>Cell Context</div>
-    <div className={styles.driverEventsBox} />
-    <div className={styles.legendLabel}>Driver Events</div>
-    <div className={styles.geneticDerangementBox} />
-    <div className={styles.legendLabel}>Genetic Derangement</div>
-    <div className={styles.dnaBox} />
-    <div className={styles.legendLabel}>DNA</div>
-    <div className={styles.rnaSeqBox} />
-    <div className={styles.legendLabel}>RNASeq</div>
-  </div>
-</div>;
+  const customLegend = (
+    <div className={styles.legendContainer}>
+      <div className={styles.legendTitle}>
+        <h4>FEATURE SET</h4>
+      </div>
+      <div className={styles.bottomLegend}>
+        <div className={styles.cellContextBox} />
+        <div className={styles.legendLabel}>Cell Context</div>
+        <div className={styles.driverEventsBox} />
+        <div className={styles.legendLabel}>Driver Events</div>
+        <div className={styles.geneticDerangementBox} />
+        <div className={styles.legendLabel}>Genetic Derangement</div>
+        <div className={styles.dnaBox} />
+        <div className={styles.legendLabel}>DNA</div>
+        <div className={styles.rnaSeqBox} />
+        <div className={styles.legendLabel}>RNASeq</div>
+      </div>
+    </div>
+  );
 
   return (
     <article className="card_wrapper stacked-boxplot-tile">
@@ -75,12 +78,14 @@ const TopFeaturesOverallTile = ({
             marginBottom: "15px",
           }}
         >
-          Top features for BRAF are listed according to CRISPR Summed Importance
-          and RNAi Summed importance.
+          Top features for {entityLabel} are listed according to CRISPR Summed
+          Importance.
         </p>
         <div className="card_padding stacked-boxplot-graphs-padding">
           <div className={styles.PredictabilityTab}>
-            {!topFeaturesData && !topFeaturesPlotElement && <PlotSpinner height={"100%"} />}
+            {!topFeaturesData && !topFeaturesPlotElement && (
+              <PlotSpinner height={"100%"} />
+            )}
             {topFeaturesData && (
               <BarChart
                 title={plotTitle}

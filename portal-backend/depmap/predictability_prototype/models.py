@@ -110,6 +110,16 @@ class PrototypePredictiveFeature(Model):
 
         return result
 
+    @staticmethod
+    def get_by_feature_label(feature_label: str):
+        result = (
+            db.session.query(PrototypePredictiveFeature)
+            .filter(PrototypePredictiveFeature.feature_label == feature_label)
+            .one_or_none()
+        )
+
+        return result
+
 
 class PrototypePredictiveModel(Model):
     __tablename__ = "prototype_predictive_model"
