@@ -284,7 +284,9 @@ class DimensionSearchIndex(Base, UUIDMixin, GroupMixin):
         # for now.
         Index("idx_dim_search_index_perf_1", "value"),
         Index("idx_dim_search_index_perf_2", "type_name", "value"),
-        Index("idx_dim_search_index_perf_3", "dimension_given_id", "type_name", "value")
+        Index(
+            "idx_dim_search_index_perf_3", "dimension_given_id", "type_name", "value"
+        ),
     )
 
     dimension_id = Column(
@@ -339,48 +341,3 @@ class PropertyToIndex(Base, UUIDMixin, GroupMixin):
         Dataset, backref=backref("properties_to_index", cascade="all, delete-orphan"),
     )
     property = Column(String, nullable=False)
-
-
-class CatalogNode(Base):
-    """
-    Needs to be created right after a new dataset with features are added
-    """
-
-    __tablename__ = "catalog_node"
-    __table_args__ = (
-        Index("idx_dataset_id_dimension_id", "dataset_id", "dimension_id"),
-        Index("idx_catalog_node_dimension_id", "dimension_id"),
-    )
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    dataset_id = Column(String)
-    dataset = relationship(
-        Dataset,
-        foreign_keys=[dataset_id],
-        primaryjoin="Dataset.id == CatalogNode.dataset_id",
-        backref=backref(
-            "catalog_nodes", cascade="all, delete-orphan", passive_deletes=True,
-        ),
-    )
-    dimension_id = Column(String)
-    dimension = relationship(
-        Dimension,
-        foreign_keys=[dimension_id],
-        primaryjoin="Dimension.id == CatalogNode.dimension_id",
-        backref=backref(
-            "catalog_nodes", cascade="all, delete-orphan", passive_deletes=True
-        ),
-    )
-    priority = Column(Integer)
-    parent_id = Column(Integer)
-    parent = relationship(
-        "CatalogNode",
-        foreign_keys=[parent_id],
-        primaryjoin="CatalogNode.id == CatalogNode.parent_id",
-        remote_side=id,
-        backref=backref("children", lazy="select"),
-    )
-    label = Column(String, nullable=False)  # is the name of column/index in dataset
-    is_continuous = Column(Boolean)
-    is_categorical = Column(Boolean)
-    is_binary = Column(Boolean)
-    is_text = Column(Boolean)

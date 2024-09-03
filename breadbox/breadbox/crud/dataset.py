@@ -44,7 +44,6 @@ from ..models.dataset import (
     DimensionSearchIndex,
     TabularColumn,
     TabularCell,
-    CatalogNode,
     PropertyToIndex,
     ValueType,
     DimensionType,

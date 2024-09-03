@@ -15,7 +15,6 @@ from breadbox.crud import dataset as dataset_crud
 from breadbox.crud import data_type as data_type_crud
 from breadbox.models.group import AccessType
 from breadbox.schemas.group import GroupIn, GroupEntryIn
-from breadbox.models.dataset import CatalogNode
 from breadbox.crud.dataset import populate_search_index
 from pydantic import ValidationError
 
