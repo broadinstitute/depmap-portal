@@ -165,15 +165,25 @@ def get_subsetted_df_by_labels(
     )
 
 
-def get_dataset_feature_ids_by_label(dataset_id) -> dict[str, str]:
+def get_dataset_feature_labels_by_id(dataset_id) -> dict[str, str]:
     """
-    Get a mapping of feature labels to feature IDs.
+    Get a mapping of feature labels to given IDs.
     Other data loading methods return dataframes indexed by labels, but there are occasional
     times where we need the IDs as well. This makes it easy to map between the two.
     """
     if is_breadbox_id(dataset_id):
-        return breadbox_dao.get_dataset_feature_ids_by_label(dataset_id)
-    return interactive_utils.get_dataset_feature_ids_by_label(dataset_id)
+        return breadbox_dao.get_dataset_feature_labels_by_id(dataset_id)
+    return interactive_utils.get_dataset_feature_labels_by_id(dataset_id)
+
+
+def get_dataset_sample_labels_by_id(dataset_id) -> dict[str, str]:
+    """
+    Get a mapping of sample labels to given IDs.
+    For example, depmap models use cell line names as labels and depmap (ACH) IDs as given IDs. 
+    """
+    if is_breadbox_id(dataset_id):
+        return breadbox_dao.get_dataset_sample_labels_by_id(dataset_id)
+    return interactive_utils.get_dataset_sample_labels_by_id(dataset_id)
 
 
 def get_dataset_feature_labels(dataset_id: str) -> list[str]:

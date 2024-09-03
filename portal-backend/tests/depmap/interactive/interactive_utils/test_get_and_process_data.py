@@ -17,6 +17,7 @@ from tests.utilities.override_fixture import override
 from tests.utilities import interactive_test_utils
 from tests.factories import (
     GeneFactory,
+    DatasetFactory,
     DependencyDatasetFactory,
     MatrixFactory,
     NonstandardMatrixFactory,
@@ -357,3 +358,33 @@ def test_get_dataset_sample_ids(app, empty_db_mock_downloads):
     assert interactive_utils.get_dataset_sample_ids(standard_dataset_name.name)[
         0
     ].startswith("ACH-")
+
+
+@override(config=config)
+def test_get_dataset_sample_labels_by_id(app, empty_db_mock_downloads):
+    """Tests that all samples belonging to the dataset are returned."""
+    cell_lines = CellLineFactory.create_batch(3)
+
+    standard_dataset_name = DependencyDataset.DependencyEnum.Chronos_Combined
+    DependencyDatasetFactory(
+        matrix=MatrixFactory(cell_lines=cell_lines), name=standard_dataset_name
+    )
+    NonstandardMatrixFactory(nonstandard_dataset_id, cell_lines=cell_lines)
+
+    empty_db_mock_downloads.session.flush()
+    interactive_test_utils.reload_interactive_config()
+
+    expected_result = {
+        cell_line.depmap_id: cell_line.cell_line_display_name
+        for cell_line in cell_lines
+    }
+
+    nonstandard_dataset_result = interactive_utils.get_dataset_sample_labels_by_id(
+        nonstandard_dataset_id
+    )
+    assert nonstandard_dataset_result == expected_result
+
+    standard_dataset_result = interactive_utils.get_dataset_sample_labels_by_id(
+        standard_dataset_name.name
+    )
+    assert standard_dataset_result == expected_result
