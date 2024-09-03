@@ -10,7 +10,6 @@ from sqlalchemy import and_
 from breadbox.db.session import SessionWithUser
 from breadbox.models.dataset import (
     AnnotationType,
-    CatalogNode,
     DatasetFeature,
     DatasetSample,
     Dataset,
@@ -1414,7 +1413,6 @@ class TestPost:
         # Test feature and sample indexes and catalog nodes added
         feature_indexes = minimal_db.query(DatasetFeature).all()
         sample_indexes = minimal_db.query(DatasetSample).all()
-        catalog_nodes = minimal_db.query(CatalogNode).all()
         assert len(feature_indexes) == 3  # Number of feaures should be 3
         assert len(sample_indexes) == 2  # Number of feaures should be 2
 
@@ -1555,18 +1553,13 @@ class TestPost:
         assert_status_ok(r1)
         assert r1.status_code == 200
         dataset_response = r1.json()["result"]["dataset"]
-        dataset_node = (
-            minimal_db.query(CatalogNode)
-            .filter(
-                and_(
-                    CatalogNode.dataset_id == dataset_response["id"],
-                    CatalogNode.dimension_id.is_(None),
-                )
-            )
+        dataset: MatrixDataset = (
+            minimal_db.query(MatrixDataset)
+            .filter(MatrixDataset.id == dataset_response["id"])
             .one()
         )
-        assert dataset_node
-        assert dataset_node.is_categorical == True and dataset_node.is_binary == True
+        assert dataset is not None
+        assert dataset.value_type == ValueType.categorical
 
         # Two non boolean values should be considered categorical not binary
         r = client.post(
@@ -1594,18 +1587,13 @@ class TestPost:
         assert_status_ok(r)
         assert r.status_code == 200
         result_dataset = r.json()["result"]["dataset"]
-        dataset_node = (
-            minimal_db.query(CatalogNode)
-            .filter(
-                and_(
-                    CatalogNode.dataset_id == result_dataset["id"],
-                    CatalogNode.dimension_id.is_(None),
-                )
-            )
+        dataset: MatrixDataset = (
+            minimal_db.query(MatrixDataset)
+            .filter(MatrixDataset.id == result_dataset["id"])
             .one()
         )
-        assert dataset_node
-        assert dataset_node.is_categorical == True and dataset_node.is_binary == False
+        assert dataset is not None
+        assert dataset.value_type == ValueType.categorical
 
         # Dataset only has two values but allowed values is more than 2
         r2 = client.post(
@@ -1631,18 +1619,13 @@ class TestPost:
         )
         assert_status_ok(r2) and r2.status_code == 200
         result2_dataset = r2.json()["result"]["dataset"]
-        dataset_node = (
-            minimal_db.query(CatalogNode)
-            .filter(
-                and_(
-                    CatalogNode.dataset_id == result2_dataset["id"],
-                    CatalogNode.dimension_id.is_(None),
-                )
-            )
+        dataset: MatrixDataset = (
+            minimal_db.query(MatrixDataset)
+            .filter(MatrixDataset.id == result2_dataset["id"])
             .one()
         )
-        assert dataset_node
-        assert dataset_node.is_categorical == True and dataset_node.is_binary == False
+        assert dataset is not None
+        assert dataset.value_type == ValueType.categorical
 
     def test_add_categorical_incorrect_value_type(
         self, client: TestClient, private_group: Dict, mock_celery
@@ -3014,12 +2997,12 @@ class TestDelete:
         # make sure it's there
         r = client.get(f"/datasets/{dataset_in_private_group_id}", headers=headers)
         assert_status_ok(r)
-        dataset_nodes = (
-            minimal_db.query(CatalogNode)
-            .filter_by(dataset_id=dataset_in_private_group_id)
+        datasets = (
+            minimal_db.query(MatrixDataset)
+            .filter_by(id=dataset_in_private_group_id)
             .all()
         )
-        dataset_catalog_node_ids = [node.id for node in dataset_nodes]
+        dataset_ids = [dataset.id for dataset in datasets]
         dataset_feature_indexes = (
             minimal_db.query(DatasetFeature)
             .filter_by(dataset_id=dataset_in_private_group_id)
@@ -3032,7 +3015,7 @@ class TestDelete:
             .all()
         )
         sample_index_ids = [s.id for s in dataset_sample_indexes]
-        assert len(dataset_nodes) != 0
+        assert len(datasets) != 0
         assert len(dataset_sample_indexes) != 0
         assert len(dataset_feature_indexes) != 0
 
@@ -3044,9 +3027,9 @@ class TestDelete:
         r = client.get(f"/datasets/{dataset_in_private_group_id}", headers=headers)
         assert_status_not_ok(r)
         assert r.status_code == 404
-        dataset_nodes = (
-            minimal_db.query(CatalogNode)
-            .filter(CatalogNode.id.in_(dataset_catalog_node_ids))
+        datasets = (
+            minimal_db.query(MatrixDataset)
+            .filter(MatrixDataset.id.in_(dataset_ids))
             .all()
         )
         dataset_feature_indexes = (
@@ -3059,7 +3042,7 @@ class TestDelete:
             .filter(DatasetSample.id.in_(sample_index_ids))
             .all()
         )
-        assert len(dataset_nodes) == 0
+        assert len(datasets) == 0
         assert len(dataset_sample_indexes) == 0
         assert len(dataset_feature_indexes) == 0
         assert not os.path.exists(
@@ -3150,12 +3133,6 @@ class TestDelete:
         assert len(properties_to_index) == 2
         assert len(dimension_search_index_values) == 4
 
-        feature_annotation_catalog_nodes = (
-            minimal_db.query(CatalogNode)
-            .filter_by(dataset_id=feature_metadata_dataset_id)
-            .all()
-        )
-        assert len(feature_annotation_catalog_nodes) > 0
         # Should not be able to delete metadata without first deleting feature type
         r_delete_feature_metadata = client.delete(
             f"/datasets/{feature_metadata_dataset_id}", headers=admin_headers
@@ -3172,9 +3149,6 @@ class TestDelete:
         assert len(minimal_db.query(TabularCell).all()) == 0
         assert len(minimal_db.query(PropertyToIndex).all()) == 0
         assert len(minimal_db.query(DimensionSearchIndex).all()) == 0
-        assert (
-            len(minimal_db.query(CatalogNode).all()) == 1
-        )  # only root node should remain
 
 
 def test_get_feature_data(minimal_db, settings, client: TestClient):
