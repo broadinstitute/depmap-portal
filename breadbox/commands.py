@@ -335,30 +335,6 @@ def _populate_minimal_data(db: SessionWithUser, settings: Settings):
     if not existing_user_upload_data_type:
         data_type_crud.add_data_type(db, "User upload")
 
-    # Define the root node for vector catalog
-    root_node_id = 1  # The root node should always be the first record in the table
-    existing_root_node = dataset_crud.get_catalog_node(db, admin_user, id=root_node_id)
-    if existing_root_node:
-        assert existing_root_node.label == "root"
-    else:
-        dataset_crud.add_catalog_nodes(
-            db,
-            [
-                CatalogNode(
-                    id=root_node_id,
-                    dataset_id=None,
-                    dimension_id=None,
-                    priority=0,
-                    parent_id=None,
-                    label="root",
-                    is_continuous=True,
-                    is_categorical=True,
-                    is_binary=True,
-                    is_text=True,
-                )
-            ],
-        )
-
 
 @cli.command()
 def dropdb():

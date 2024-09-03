@@ -225,25 +225,6 @@ def add_matrix_dataset(
     )
     db.add(dataset)
     db.flush()
-    parent_node = db.query(CatalogNode).filter_by(id=ROOT_ID).one()
-    dataset_catalog_node = CatalogNode(
-        dataset=dataset,
-        dimension_id=None,
-        priority=0,
-        parent_id=parent_node.id,
-        label=dataset.name,
-        is_continuous=True if dataset_in.value_type == ValueType.continuous else False,
-        is_categorical=(
-            True if dataset_in.value_type == ValueType.categorical else False
-        ),
-        is_binary=is_binary_category(allowed_values),
-        is_text=False,
-    )
-    db.add(dataset_catalog_node)
-    print(
-        f"Added catalog node to {db} {db.bind}: node: {dataset_catalog_node.id} dataset: {dataset.id}"
-    )
-    db.flush()
 
     _add_matrix_dataset_dimensions(
         db=db,
@@ -667,7 +648,6 @@ def _add_matrix_dataset_dimensions(
     dataset: MatrixDataset,
 ):
     dimensions: List[Union[DatasetFeature, DatasetSample]] = []
-    catalog_nodes: List[CatalogNode] = []
 
     index_and_given_id = dimension_label_df_schema.validate(index_and_given_id)
 
@@ -689,8 +669,6 @@ def _add_matrix_dataset_dimensions(
         )
 
     db.bulk_save_objects(dimensions)
-    db.flush()
-    add_catalog_nodes(db, catalog_nodes)
     db.flush()
 
 
@@ -750,7 +728,7 @@ def _add_tabular_dimensions(
     group_id: str,
 ):
     """
-    Adds tabular dataset dimensions to database. Note that unlike matrix datasets, we do not store catalog nodes for each dimension since catalog nodes are expected to be deprecated in the future.
+    Adds tabular dataset dimensions to database.
     """
     dimensions = []
     values = []
@@ -1382,14 +1360,6 @@ def delete_dataset(
     log.info("delete_dataset %s delete dataset itself", dataset.id)
     db.delete(dataset)
 
-    log.info("delete CatalogNode %s", dataset.id)
-    # NOTE: Manually delete dataset's CatalogNodes instead of relying foreign key
-    # constraints and cascade deletes because the self-referencing relationship is causing
-    # large performance issues. Notice how there are no foreign key constraints only for
-    # catalog_node in models
-    db.query(CatalogNode).filter(CatalogNode.dataset_id == dataset.id).delete()
-    # NOTE: Delete dataset should perform cascade deletes for the rest of the related tables
-
     # Matrix dataset files are stored as hdf5 and need to be deleted as well
     if dataset.format == "matrix_dataset":
         delete_data_files(dataset.id, filestore_location)
@@ -1402,25 +1372,6 @@ def add_catalog_nodes(db: SessionWithUser, catalog_nodes: List[CatalogNode]):
     for i in range(0, len(catalog_nodes), 10000):  # arbitrary chunk size
         chunk = i + 10000
         db.bulk_save_objects(catalog_nodes[i:chunk])
-
-
-def get_catalog_node(
-    db: SessionWithUser, user: str, id: int,
-):
-    node = db.query(CatalogNode).get(id)
-
-    if node is None:
-        return None
-
-    if node.dataset_id:
-        dataset = get_dataset(db, user, node.dataset_id)
-        if dataset is None:
-            return None
-    if node.parent and node.parent.dataset_id:
-        dataset = get_dataset(db, user, node.parent.dataset_id)
-        if dataset is None:
-            return None
-    return node
 
 
 def get_features(
@@ -1773,23 +1724,3 @@ def get_subsetted_matrix_dataset_df(
         df = df.rename(index=label_by_id)
 
     return df
-
-
-def get_feature_catalog_node(
-    db: SessionWithUser, user: str, dataset_id: str, feature_label: str
-) -> CatalogNode:
-    """Load the catalog node corresponding to the given dataset ID and feature label"""
-    node: CatalogNode = (
-        db.query(CatalogNode)
-        .join(DatasetFeature, DatasetFeature.id == CatalogNode.dimension_id)
-        .filter(
-            and_(
-                CatalogNode.dataset_id == dataset_id,
-                CatalogNode.dimension_id.isnot(None),
-                CatalogNode.label == feature_label,
-            )
-        )
-        .one()
-    )
-    assert_user_has_access_to_dataset(node.dataset, user)
-    return node
