@@ -79,6 +79,8 @@ from depmap.enums import DataTypeEnum
 from depmap.extensions import breadbox
 from depmap.cell_line.models_new import DepmapModel
 from depmap.gene.models import Gene
+from depmap.public.resources import refresh_all_category_topics, read_forum_api_key
+from depmap.discourse.client import DiscourseClient
 
 
 def _get_relabel_updates():
@@ -1761,3 +1763,21 @@ def _sync_metadata_to_breadbox():
                         taiga_id=portal_taiga_id,
                         annotation_type_mapping=annotation_type_mapping,
                     )
+
+
+@click.command("reload_resources")
+@with_appcontext
+def reload_resources():
+    forum_api_key_value = current_app.config["FORUM_API_KEY"]
+    forum_url = current_app.config["FORUM_URL"]
+    resources_data_path = current_app.config["RESOURCES_DATA_PATH"]
+
+    if forum_api_key_value is None or forum_url is None or resources_data_path is None:
+        raise Exception(
+            "Missing forum_api_key_value or forum_url values or resources_data_path!"
+        )
+
+    discourse_api_key = read_forum_api_key(forum_api_key_value)
+
+    client = DiscourseClient(discourse_api_key, forum_url, resources_data_path, True)
+    refresh_all_category_topics(client, current_app.config["FORUM_RESOURCES_CATEGORY"])
