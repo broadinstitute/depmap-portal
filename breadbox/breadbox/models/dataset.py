@@ -198,9 +198,9 @@ class Dimension(Base, UUIDMixin, GroupMixin):
     given_id = Column(
         String, nullable=False
     )  # name of series (column or index name of the dataset)
-    dataset_dimension_type = Column(
-        String, nullable=True
-    )  # feature type or sample type name, only used by vector catalog
+    # Denormalized data: this information is also stored in the dataset's corresponding
+    # feature/sample/index type name column (the information is duplicated here for convenience)
+    dataset_dimension_type = Column(String, nullable=True)
     subtype = Column(String, nullable=False)  # discriminator column
 
     # NOTE: The type stubs package 'sqlalchemy-stubs' with mypy plugin 'sqlmypy' does not support SQLAlchemy's declared attributes decorator (and the module it's imported from) and this is still an open issue (https://github.com/dropbox/sqlalchemy-stubs/issues/97).
