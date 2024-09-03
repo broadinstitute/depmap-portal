@@ -30,13 +30,16 @@ def portal_file_private_url(bucket_name, filename):
     bucket = storage.Bucket(client, bucket_name)
     # Get the blob object
     blob = bucket.get_blob(filename)
-    # Reload the blob to ensure metadata is up-to-date
-    blob.reload()
-    # Generate signed url with expiration 24 hours from generation
-    signed_url = blob.generate_signed_url(
-        expiration=datetime.now() + timedelta(hours=24),
-        response_disposition="inline",
-        response_type=blob.content_type,
-    )
-    # Redirect to generated signed GCS url
-    return redirect(signed_url)
+    if blob is None:
+        abort(404)
+    else:
+        # Reload the blob to ensure metadata is up-to-date
+        blob.reload()
+        # Generate signed url with expiration 24 hours from generation
+        signed_url = blob.generate_signed_url(
+            expiration=datetime.now() + timedelta(hours=24),
+            response_disposition="inline",
+            response_type=blob.content_type,
+        )
+        # Redirect to generated signed GCS url
+        return redirect(signed_url)
