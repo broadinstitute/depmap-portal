@@ -7,7 +7,8 @@ from flask import (
     current_app,
     redirect,
 )
-from oauth2client.service_account import ServiceAccountCredentials
+from google.cloud import storage
+from datetime import datetime, timedelta
 
 log = logging.getLogger(__name__)
 
@@ -23,10 +24,19 @@ def portal_file_private_url(bucket_name, filename):
     if private_file_buckets is None or bucket_name not in private_file_buckets:
         abort(404)
 
-    credentials = ServiceAccountCredentials.from_json_keyfile_name(
+    client = storage.Client.from_service_account_json(
         current_app.config["DOWNLOADS_KEY"]
     )
-    signed_url = sign_url(credentials, bucket_name, filename)
-
+    bucket = storage.Bucket(client, bucket_name)
+    # Get the blob object
+    blob = bucket.get_blob(filename)
+    # Reload the blob to ensure metadata is up-to-date
+    blob.reload()
+    # Generate signed url with expiration 24 hours from generation
+    signed_url = blob.generate_signed_url(
+        expiration=datetime.now() + timedelta(hours=24),
+        response_disposition="inline",
+        response_type=blob.content_type,
+    )
     # Redirect to generated signed GCS url
     return redirect(signed_url)
