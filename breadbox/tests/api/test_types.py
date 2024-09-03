@@ -5,7 +5,6 @@ from fastapi.testclient import TestClient
 from sqlalchemy import and_
 from breadbox.models.dataset import DimensionType, Dataset
 from breadbox.models.dataset import (
-    CatalogNode,
     Dimension,
     TabularColumn,
     TabularCell,
@@ -806,11 +805,11 @@ def test_update_metadata(client: TestClient, minimal_db, settings):
     )
     assert (
         len(
-            minimal_db.query(CatalogNode)
-            .filter(CatalogNode.dataset_id == other_sample_dataset_id)
+            minimal_db.query(TabularColumn)
+            .filter(TabularColumn.dataset_id == other_sample_dataset_id)
             .all()
         )
-        == 4  # 1 node for metadata dataset, and 3 for annotations
+        == 3  # one for each for each annotation
     )
     updated_dataset = (
         minimal_db.query(Dataset).filter(Dataset.id == other_sample_dataset_id).one()
@@ -878,13 +877,15 @@ def test_update_metadata(client: TestClient, minimal_db, settings):
     # This only works bc we don't expect anything else in this table with minimal db but a more complex query is unnecessary here
     assert len(minimal_db.query(TabularCell).all()) == 6
     assert (
-        minimal_db.query(CatalogNode).filter(CatalogNode.label == "attr1").one_or_none()
+        minimal_db.query(TabularColumn)
+        .filter(TabularColumn.given_id == "attr1")
+        .one_or_none()
         is None
     )
-    attr1_annotation = (
-        minimal_db.query(CatalogNode).filter(CatalogNode.label == "label").one()
+    label_column = (
+        minimal_db.query(TabularColumn).filter(TabularColumn.given_id == "label").one()
     )
-    assert attr1_annotation
+    assert label_column
     assert (
         len(
             minimal_db.query(TabularCell)
@@ -896,18 +897,10 @@ def test_update_metadata(client: TestClient, minimal_db, settings):
     assert (
         len(
             minimal_db.query(TabularCell)
-            .filter(TabularCell.tabular_column_id == attr1_annotation.dimension_id)
+            .filter(TabularCell.tabular_column_id == label_column.id)
             .all()
         )
         == 2
-    )
-    assert (
-        len(
-            minimal_db.query(CatalogNode)
-            .filter(CatalogNode.dataset_id == other_sample_dataset_id)
-            .all()
-        )
-        == 4  # 1 node for metadata dataset, and 3 for annotations
     )
     updated_dataset = (
         minimal_db.query(Dataset).filter(Dataset.id == other_sample_dataset_id).one()
@@ -987,14 +980,6 @@ def test_update_metadata(client: TestClient, minimal_db, settings):
         )
         == 2
     )
-    assert (
-        len(
-            minimal_db.query(CatalogNode)
-            .filter(CatalogNode.dataset_id == other_feature_metadata_id)
-            .all()
-        )
-        == 4  # 1 node for metadata dataset, and 3 for annotations
-    )
     updated_dataset = (
         minimal_db.query(Dataset).filter(Dataset.id == other_feature_metadata_id).one()
     )
@@ -1060,11 +1045,11 @@ def test_update_metadata(client: TestClient, minimal_db, settings):
     )
     assert (
         len(
-            minimal_db.query(CatalogNode)
-            .filter(CatalogNode.dataset_id == other_feature_metadata_id)
+            minimal_db.query(TabularColumn)
+            .filter(TabularColumn.dataset_id == other_feature_metadata_id)
             .all()
         )
-        == 3  # 1 node for metadata dataset, and 2 for annotations
+        == 2  # one for each annotation ("label" and "id")
     )
     updated_dataset = (
         minimal_db.query(Dataset).filter(Dataset.id == other_feature_metadata_id).one()
