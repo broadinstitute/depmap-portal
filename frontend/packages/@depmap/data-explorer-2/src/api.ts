@@ -14,7 +14,11 @@ import {
   LinRegInfo,
 } from "@depmap/types";
 import { getContextHash } from "./utils/context";
-import { isCompleteDimension, isPartialSliceId } from "./utils/misc";
+import {
+  isCompleteDimension,
+  isPartialSliceId,
+  urlLibEncode,
+} from "./utils/misc";
 
 function fetchUrlPrefix() {
   // HACK: Detect when Elara is being served behind Depmap portal proxy
@@ -502,7 +506,7 @@ export async function fetchAssociations(
     other_slice_id: string;
   }[];
 }> {
-  const sliceId = `slice/${dataset_id}/${slice_label}/label`;
+  const sliceId = `slice/${urlLibEncode(dataset_id)}/${slice_label}/label`;
   const query = `x=${encodeURIComponent(sliceId)}`;
 
   return fetchJson(`/../interactive/api/associations?${query}`);
