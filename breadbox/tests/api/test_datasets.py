@@ -1410,7 +1410,7 @@ class TestPost:
         dataset_id = response.json()["result"]["datasetId"]
         dataset = minimal_db.query(Dataset).filter(Dataset.id == dataset_id).one()
         assert dataset.upload_date is not None
-        # Test feature and sample indexes and catalog nodes added
+        # Test that feature and sample dimensions were added
         feature_indexes = minimal_db.query(DatasetFeature).all()
         sample_indexes = minimal_db.query(DatasetSample).all()
         assert len(feature_indexes) == 3  # Number of feaures should be 3

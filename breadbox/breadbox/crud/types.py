@@ -278,12 +278,7 @@ def _update_dataset_dimensions_with_dimension_type(
         .filter(dataset_dimension.dataset_dimension_type == dimension_type.name)
         .order_by(dataset_dimension.dataset_id, dataset_dimension.index)
     )
-    dataset_dimensions_ids = [
-        dataset_dim.id
-        for dataset_dim in dataset_dimensions_with_dimension_type_query.all()
-    ]
 
-    new_dataset_dimension_catalog_nodes = []
     updated_dimension_labels = []
 
     dims_grouped_by_dataset_df = pd.read_sql(
@@ -372,7 +367,7 @@ def update_dimension_type_metadata(
                 db, user, dimension_type.dataset.id
             )
 
-        # Delete dataset and catalog nodes with dataset id; cascade deletes annotation dimensions which then deletes all annotation values
+        # Delete dataset; cascade deletes annotation dimensions which then deletes all annotation values
         is_deleted = delete_dataset(
             db, user, dimension_type.dataset, filestore_location
         )

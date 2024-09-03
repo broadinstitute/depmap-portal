@@ -30,14 +30,6 @@ class AnnotationType(enum.Enum):
     list_strings = "list_strings"
 
 
-class CatalogType(enum.Enum):
-    continuous = "continuous"
-    categorical = "categorical"
-    binary = "binary"
-    continuous_and_categorical = "continuous_and_categorical"
-    text = "text"
-
-
 # NOTE: `param: Annotated[Optional[str], Field(None)]` gives pydantic error 'ValueError: `Field` default cannot be set in `Annotated` for 'param''.
 # `param: Annotated[Optional[str], Field()] = None` solves the default issue
 # According to https://github.com/pydantic/pydantic/issues/8118 this issue is only in Pydantic V1.10 not V2.0.

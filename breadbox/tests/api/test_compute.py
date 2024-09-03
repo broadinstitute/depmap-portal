@@ -390,7 +390,6 @@ def test_run_custom_analysis_pearson_with_feature_ids_and_query_values(
         test_empty_assoc_table=False,
     )
 
-    # columns to search determined by feature_catalog_node instead of dep_mat_col_indices
     minimal_db.reset_user(settings.default_user)
     result = run_custom_analysis(
         user=settings.default_user,

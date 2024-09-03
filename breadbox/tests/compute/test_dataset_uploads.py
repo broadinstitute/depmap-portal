@@ -68,7 +68,7 @@ def test_matrix_dataset_uploads(
     assert matrix_dataset_w_simple_metadata.datasetId
     dataset_id = matrix_dataset_w_simple_metadata.datasetId
 
-    # Test feature and sample indexes and catalog nodes added
+    # Test that feature and sample dimensions were added
     feature_indexes = (
         minimal_db.query(DatasetFeature)
         .filter(DatasetFeature.dataset_id == dataset_id)
