@@ -9,7 +9,6 @@ from sqlalchemy import and_
 from breadbox.db.session import SessionWithUser
 from breadbox.models.dataset import ValueType
 from breadbox.models.dataset import (
-    CatalogNode,
     DatasetFeature,
     DatasetSample,
     TabularColumn,
