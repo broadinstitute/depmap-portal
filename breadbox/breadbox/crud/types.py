@@ -51,18 +51,16 @@ def _set_properties_to_index(
         db.flush()
 
 
-def _add_annotation_dimensions(
+def _add_metadata_dimensions(
     db: SessionWithUser,
     annotations_df: pd.DataFrame,
     annotation_type_mapping: Dict[str, AnnotationType],
     dataset_dimension_type_name: str,
     id_column: str,
-    dataset_catalog_node: CatalogNode,
     dataset: TabularDataset,
     units_per_column: Dict[str, str],
 ):
     col_annotations: List[TabularColumn] = []
-    catalog_nodes: List[CatalogNode] = []
     col_annotation_ids: Dict = {}
     annotation_values: List[TabularCell] = []
 
@@ -99,78 +97,11 @@ def _add_annotation_dimensions(
         )
 
         col_annotation_ids[col] = annotation_id
-        catalog_nodes.append(
-            CatalogNode(
-                dataset_id=dataset.id,
-                dimension_id=annotation_id,
-                priority=0,
-                parent=dataset_catalog_node,
-                label=col,
-                is_continuous=(
-                    True
-                    if annotation_type_mapping[col] == AnnotationType.continuous
-                    else False
-                ),
-                is_categorical=(
-                    True
-                    if annotation_type_mapping[col] == AnnotationType.categorical
-                    else False
-                ),
-                is_binary=(
-                    True
-                    if annotation_type_mapping[col] == AnnotationType.binary
-                    else False
-                ),
-                is_text=(
-                    True
-                    if annotation_type_mapping[col] == AnnotationType.text
-                    else False
-                ),
-            )
-        )
 
     db.bulk_save_objects(col_annotations)
     db.flush()
-    db.bulk_save_objects(catalog_nodes)
-    db.flush()
     db.bulk_save_objects(annotation_values)
     db.flush()
-
-
-def _add_metadata(
-    db: SessionWithUser,
-    metadata_df: pd.DataFrame,
-    annotation_type_mapping: Dict[str, AnnotationType],
-    dataset_dimension_type_name: str,
-    id_column: str,
-    dataset: TabularDataset,
-    units_per_column: Dict[str, str],
-):
-    parent_node = db.query(CatalogNode).filter_by(id=ROOT_ID).one()
-    annotation_mapping_values = set(annotation_type_mapping.values())
-    dataset_catalog_node = CatalogNode(
-        dataset=dataset,
-        dimension_id=None,
-        priority=0,
-        parent_id=parent_node.id,
-        label=dataset.name,
-        is_continuous=AnnotationType.continuous in annotation_mapping_values,
-        is_categorical=AnnotationType.categorical in annotation_mapping_values,
-        is_binary=AnnotationType.binary in annotation_mapping_values,
-        is_text=AnnotationType.text in annotation_mapping_values,
-    )
-    db.add(dataset_catalog_node)
-    db.flush()
-    _add_annotation_dimensions(
-        db=db,
-        annotations_df=metadata_df,
-        annotation_type_mapping=annotation_type_mapping,
-        dataset_dimension_type_name=dataset_dimension_type_name,
-        id_column=id_column,
-        dataset_catalog_node=dataset_catalog_node,
-        dataset=dataset,
-        units_per_column=units_per_column,
-    )
 
 
 def _add_dimension_type(
@@ -222,14 +153,14 @@ def _add_dimension_type(
         dimension_type.dataset_id = dataset_id
         db.flush()
 
-        _add_metadata(
-            db,
-            metadata_df,
-            annotation_type_mapping,
-            name,
-            id_column,
-            metadata_dataset,
-            units_per_column,
+        _add_metadata_dimensions(
+            db=db,
+            annotations_df=metadata_df,
+            annotation_type_mapping=annotation_type_mapping,
+            dataset_dimension_type_name=name,
+            id_column=id_column,
+            dataset=metadata_dataset,
+            units_per_column=units_per_column,
         )
 
         # Add a mapping that identifies which feature type datasets have columns that refer to other
@@ -472,14 +403,14 @@ def update_dimension_type_metadata(
     dimension_type.dataset_id = dataset_id
     db.flush()
 
-    _add_metadata(
-        db,
-        metadata_df,
-        annotation_type_mapping,
-        dimension_type.name,
-        dimension_type.id_column,
-        dimension_type_metadata,
-        units_per_column,
+    _add_metadata_dimensions(
+        db=db,
+        annotations_df=metadata_df,
+        annotation_type_mapping=annotation_type_mapping,
+        dataset_dimension_type_name=dimension_type.name,
+        id_column=dimension_type.id_column,
+        dataset=dimension_type_metadata,
+        units_per_column=units_per_column,
     )
     _update_dataset_dimensions_with_dimension_type(db, dimension_type, metadata_df)
 
