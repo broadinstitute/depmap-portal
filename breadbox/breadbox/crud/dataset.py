@@ -1368,12 +1368,6 @@ def delete_dataset(
     return True
 
 
-def add_catalog_nodes(db: SessionWithUser, catalog_nodes: List[CatalogNode]):
-    for i in range(0, len(catalog_nodes), 10000):  # arbitrary chunk size
-        chunk = i + 10000
-        db.bulk_save_objects(catalog_nodes[i:chunk])
-
-
 def get_features(
     db: SessionWithUser, user: str, dataset_ids: List[str], feature_ids: List[str]
 ) -> list[DatasetFeature]:

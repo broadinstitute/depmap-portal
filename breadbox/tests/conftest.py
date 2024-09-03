@@ -3,8 +3,6 @@ import copy
 import os
 
 import pytest
-from breadbox.crud.dataset import add_catalog_nodes
-from breadbox.models.dataset import CatalogNode
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
@@ -191,22 +189,6 @@ def minimal_db(db: SessionWithUser, settings: Settings, public_group, transient_
         axis="sample",
     )
     add_data_type(db, "User upload")
-    add_catalog_nodes(
-        db,
-        [
-            CatalogNode(
-                dataset_id=None,
-                dimension_id=None,
-                priority=0,
-                parent_id=None,
-                label="root",
-                is_continuous=True,
-                is_categorical=True,
-                is_binary=True,
-                is_text=True,
-            )
-        ],
-    )
     db.commit()
     db.flush()
     return db
