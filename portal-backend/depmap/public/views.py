@@ -9,6 +9,8 @@ from depmap.public.fetch_forum_resources import pull_resource_topics_from_forum
 from depmap.public.resources import (
     get_root_category_subcategory_topics,
     create_sanitizer,
+    refresh_all_category_topics,
+    read_forum_api_key,
 )
 from depmap.discourse.client import DiscourseClient
 from depmap.settings.download_settings import get_download_list
@@ -28,6 +30,7 @@ from flask import (
     url_for,
     redirect,
 )
+import requests
 from depmap.public.parse_resources import parse_resources_file
 
 from depmap.public.announcements.utils import get_announcements_list
@@ -142,57 +145,61 @@ def documentation():
     return render_template("public/documentation.html", sections=sections)
 
 
+@blueprint.route("/resources/reload")
+def resources_reloads():
+    forum_api_key_value = current_app.config.get("FORUM_API_KEY")
+    forum_url = current_app.config.get("FORUM_URL")
+    resources_data_path = current_app.config.get("RESOURCES_DATA_PATH")
+
+    if forum_api_key_value is None or forum_url is None or resources_data_path is None:
+        abort(404)
+
+    discourse_api_key = read_forum_api_key(forum_api_key_value)
+
+    client = DiscourseClient(discourse_api_key, forum_url, resources_data_path, True)
+    try:
+        refresh_all_category_topics(
+            client, current_app.config.get("FORUM_RESOURCES_CATEGORY")
+        )
+    except requests.exceptions.HTTPError as err:
+        if err.response.status_code == 429:
+            abort(429)
+        else:
+            raise err
+    return render_template("public/resources_reload.html")
+
+
 @blueprint.route("/resources_prototype/")
-@cache_without_user_permissions()  # default timeout 300s
 def resources_prototype():
     forum_api_key_value = current_app.config.get("FORUM_API_KEY")
     forum_url = current_app.config.get("FORUM_URL")
-    if forum_api_key_value is None or forum_url is None:
+    resources_data_path = current_app.config.get("RESOURCES_DATA_PATH")
+
+    if forum_api_key_value is None or forum_url is None or resources_data_path is None:
         abort(404)
 
-    if os.path.isfile(
-        forum_api_key_value
-    ):  # Presumably value is filepath in dev config only
-        with open(forum_api_key_value) as fp:
-            discourse_api_key = fp.read()
-    else:
-        discourse_api_key = forum_api_key_value
+    discourse_api_key = read_forum_api_key(forum_api_key_value)
 
-    client = DiscourseClient(discourse_api_key, forum_url)
+    client = DiscourseClient(discourse_api_key, forum_url, resources_data_path)
     sanitizer = create_sanitizer()
+    root_category = None
 
-    root_category = get_root_category_subcategory_topics(
-        client, sanitizer, current_app.config.get("FORUM_RESOURCES_CATEGORY")
-    )
+    try:
+        root_category = get_root_category_subcategory_topics(
+            client, sanitizer, current_app.config.get("FORUM_RESOURCES_CATEGORY")
+        )
+
+    except requests.exceptions.HTTPError as err:
+        if err.response.status_code == 429:
+            abort(429)
+        else:
+            raise err
+
     if root_category is None:
         abort(404)
 
-    assert root_category
-
-    subcategory_id = request.args.get("subcategoryId")
-    topic_id = request.args.get("topicId")
-    topic_post_content = None
-    if topic_id and subcategory_id:
-        subcategory = next(
-            (
-                sub
-                for sub in root_category.subcategories
-                if sub.id == (int(subcategory_id))
-            ),
-            None,
-        )
-        if subcategory:
-            topic = next(
-                (topic for topic in subcategory.topics if topic.id == (int(topic_id))),
-                None,
-            )
-            if topic:
-                topic_post_content = topic.post_content
-
     return render_template(
-        "public/resources_prototype.html",
-        root_category=root_category,
-        post_content=topic_post_content,
+        "public/resources_prototype.html", root_category=root_category,
     )
 
 

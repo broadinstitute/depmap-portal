@@ -111,6 +111,7 @@ class DevConfig(Config):
     SQLALCHEMY_DATABASE_URI = "sqlite:///{0}".format(DB_PATH)
     NONSTANDARD_DATA_DIR = os.path.join(WEBAPP_DATA_DIR, "nonstandard")
     PRIVATE_FILE_BUCKETS = ["dev-resources-files"]
+    RESOURCES_DATA_PATH = os.path.join(WEBAPP_DATA_DIR, "resources", "results.db")
     COMPUTE_RESULTS_ROOT = os.path.join(WEBAPP_DATA_DIR, "results")
     PROFILE_DIR = os.path.join(Config.PROJECT_ROOT, "profiling")
     ANNOUNCEMENTS_PATH = os.path.join(
