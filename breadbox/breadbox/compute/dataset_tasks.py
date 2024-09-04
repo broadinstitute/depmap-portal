@@ -18,8 +18,6 @@ from sqlalchemy import and_
 from breadbox.db.session import SessionWithUser
 from breadbox.schemas.custom_http_exception import ResourceNotFoundError
 from breadbox.models.dataset import (
-    CatalogNode,
-    DatasetFeature,
     DimensionType,
     ValueType,
 )

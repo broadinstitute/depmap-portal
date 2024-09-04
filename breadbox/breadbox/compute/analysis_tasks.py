@@ -487,7 +487,7 @@ def create_cell_line_group(
                 depmap_model_sample_type,
             )
 
-        # Return the feature or catalog node Id associated new dataset feature
+        # Return the feature ID associated with the new dataset feature
         if use_feature_ids:
             feature: DatasetFeature = dataset_crud.get_dataset_feature(
                 db=db, user=user, dataset_id=dataset_id, feature_label=feature_label

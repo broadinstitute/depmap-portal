@@ -11,12 +11,6 @@ dataset.py: error: "value" is not a known attribute of "None" (reportOptionalMem
 dataset.py: error: Argument of type "(id: str) -> str" cannot be assigned to parameter of type "_V1ValidatorType@validator"
 dataset.py: error: Argument of type "Hashable" cannot be assigned to parameter "dimension_given_id" of type "str" in function "__init__"
 dataset.py: error: Argument of type "list[dict[str, Series | Unknown | ndarray[Any, Unknown] | Any | NDArray[Unknown]]]" cannot be assigned to parameter "matching_properties" of type "List[Dict[str, str]]" in function "__init__" (reportArgumentType)
-dataset.py: error: Argument of type "str | None" cannot be assigned to parameter "group_id" of type "str | UUID" in function "get_group" (reportArgumentType)
-dataset.py: error: Cannot assign to attribute "data_type" for class "Dataset"
-dataset.py: error: Cannot assign to attribute "dataset_metadata" for class "Dataset"
-dataset.py: error: Cannot assign to attribute "group" for class "Dataset"
-dataset.py: error: Cannot assign to attribute "name" for class "Dataset"
-dataset.py: error: Cannot assign to attribute "priority" for class "Dataset"
 dataset_tasks.py: error: Expression of type "None" is incompatible with declared type "List[Unknown]"
 download_tasks.py: error: Argument of type "ArrayLike" cannot be assigned to parameter "column_labels" of type "List[str] | None" in function "_handle_df_nas" (reportArgumentType)
 env.py: error: Argument of type "str | PathLike[str] | None" cannot be assigned to parameter "fname" of type "StrOrBytesPath | IO[str] | RawConfigParser" in function "fileConfig" (reportArgumentType)
