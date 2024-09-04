@@ -3,8 +3,9 @@ import pandas as pd
 from typing import Literal, Optional
 from depmap import data_access
 from collections import defaultdict
+
+from depmap_compute.context import ContextEvaluator
 from depmap.data_access.models import MatrixDataset
-from depmap.data_explorer_2.context import ContextEvaluator
 from depmap.utilities.data_access_log import log_dataset_access
 from depmap.data_explorer_2.utils import (
     get_aliases_matching_labels,
@@ -39,7 +40,7 @@ def compute_dimension(
     # record to the log which data users request
     log_dataset_access("compute_dimension", dataset_id)
 
-    context_evaluator = ContextEvaluator(context)
+    context_evaluator = ContextEvaluator(context, slice_to_dict)
 
     col_labels = get_vector_labels(dataset_id, not is_transpose)
     row_labels = get_vector_labels(dataset_id, is_transpose)
@@ -96,7 +97,7 @@ def compute_dimension(
 
 def compute_filter(input_filter):
     indexed_values = {}
-    context_evaluator = ContextEvaluator(input_filter)
+    context_evaluator = ContextEvaluator(input_filter, slice_to_dict)
     index_labels = get_dimension_labels_across_datasets(input_filter["context_type"])
 
     for label in index_labels:

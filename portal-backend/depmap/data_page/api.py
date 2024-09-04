@@ -47,7 +47,7 @@ def _get_drug_count_mapping(data_types: List[str]):
         if not dataset:
             return None
 
-        return len(data_access.get_dataset_feature_ids_by_label(dataset_name))
+        return len(data_access.get_dataset_feature_labels_by_id(dataset_name))
 
     drug_counts_by_data_type = {
         "Drug_CTD_Broad": _get_drug_count(DependencyEnum.CTRP_AUC.name),

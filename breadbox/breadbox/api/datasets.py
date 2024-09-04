@@ -310,7 +310,9 @@ def get_matrix_dataset_data(
     user: Annotated[str, Depends(get_user)],
     settings: Annotated[Settings, Depends(get_settings)],
     dataset: Annotated[DatasetModel, Depends(get_dataset_dep)],
-    matrix_dimensions_info: MatrixDimensionsInfo = MatrixDimensionsInfo(),
+    matrix_dimensions_info: Annotated[
+        MatrixDimensionsInfo, Body(default_factory=MatrixDimensionsInfo)
+    ],
     strict: Annotated[
         bool,
         Query(
@@ -339,7 +341,9 @@ def get_tabular_dataset_data(
     db: Annotated[SessionWithUser, Depends(get_db_with_user)],
     user: Annotated[str, Depends(get_user)],
     dataset: Annotated[DatasetModel, Depends(get_dataset_dep)],
-    tabular_dimensions_info: TabularDimensionsInfo = TabularDimensionsInfo(),
+    tabular_dimensions_info: Annotated[
+        TabularDimensionsInfo, Body(default_factory=TabularDimensionsInfo)
+    ],
     strict: Annotated[
         bool,
         Query(

@@ -678,13 +678,13 @@ files = [
 
 [[package]]
 name = "depmap-compute"
-version = "0.1.2"
+version = "0.1.5"
 description = "Code related to computations shared between the Depmap Portal and BreadBox"
 optional = false
 python-versions = ">=3.9,<4.0"
 files = [
-    {file = "depmap_compute-0.1.2-py3-none-any.whl", hash = "sha256:b07b7dafc9af46590752d99c70f802e79574d58c1c2b6d16b775ffc276e288a2"},
-    {file = "depmap_compute-0.1.2.tar.gz", hash = "sha256:6b6b6702f301da608256deb72148d7ade7cf963fb292d3c980be0496ea407c1d"},
+    {file = "depmap_compute-0.1.5-py3-none-any.whl", hash = "sha256:ea92c262f913fb2323b445615a1b72cdb9b104e720eb227c4f587f8ed9502d12"},
+    {file = "depmap_compute-0.1.5.tar.gz", hash = "sha256:1626beeb9595b0f67ead8ede9edc4c73abe16f22e164048c6e16df06b5350536"},
 ]
 
 [package.dependencies]

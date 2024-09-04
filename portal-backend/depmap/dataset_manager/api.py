@@ -78,7 +78,8 @@ class CopyToBreadbox(
             dataset_id, feature_row_labels=None, sample_col_ids=None
         )
         # Convert column names from label -> id
-        feature_ids_by_label = data_access.get_dataset_feature_ids_by_label(dataset_id)
+        feature_labels_by_id = data_access.get_dataset_feature_labels_by_id(dataset_id)
+        feature_ids_by_label = {label: id for id, label in feature_labels_by_id}
         breadbox_upload_df = legacy_data_df.transpose().rename(
             columns=feature_ids_by_label
         )
