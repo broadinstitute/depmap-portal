@@ -491,7 +491,7 @@ class BBClient:
     def add_data_type(self, name: str):
         breadbox_response = add_data_type_client.sync_detailed(
             client=self.client,
-            form_data=BodyAddDataType.from_dict({"name": name}),
+            body=BodyAddDataType.from_dict({"name": name}),
         )
         return self._parse_client_response(breadbox_response)
 
