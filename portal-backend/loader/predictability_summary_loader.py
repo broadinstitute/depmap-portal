@@ -18,7 +18,8 @@ from depmap.predictability_prototype.models import (
 from depmap.utilities.bulk_load import bulk_load
 from depmap.utilities.models import log_data_issue
 import re
-from taigapy import create_taiga_client_v3
+from depmap.taiga_id.utils import get_taiga_client
+
 import requests
 import os
 
@@ -27,7 +28,7 @@ import os
 # as a secondary concern, all these taiga IDs must exist in a file that this processes, so this also handles a "TAIGA_PREPROCESSOR_INCLUDE" statement to merge multiple files
 # into one while the taiga IDs are being processed
 
-tc = create_taiga_client_v3()
+# tc = get_taiga_client()
 
 
 def lookup_gene(m: Match):
@@ -165,7 +166,7 @@ def _load_predictive_features(
         feature_label = row["feature_label"]
 
         taiga_id = row["taiga_id"]
-        tc = create_taiga_client_v3()
+        tc = get_taiga_client()
         taiga_id = tc.get_canonical_id(taiga_id)
         assert taiga_id, f"Could not find canonical taiga ID for {taiga_id}"
 
