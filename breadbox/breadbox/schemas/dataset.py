@@ -54,6 +54,12 @@ class SharedDatasetParams(BaseModel):
             description=f"ID of the group the dataset belongs to. Required for non-transient datasets. The public group is `00000000-0000-0000-0000-000000000000`"
         ),
     ]
+    given_id: Annotated[
+        Optional[str],
+        Field(
+            description="Stable human-readable identifier that the portal uses to look up specific datasets."
+        ),
+    ] = None
     priority: Annotated[
         Optional[int],
         Field(
