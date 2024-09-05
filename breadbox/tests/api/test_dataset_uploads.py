@@ -402,7 +402,7 @@ class TestPost:
             },
             headers=admin_headers,
         )
-        # Has warning
+
         assert_status_ok(matrix_dataset_response)
         matrix_dataset_result = matrix_dataset_response.json()["result"]["dataset"]
         assert matrix_dataset_result is not None

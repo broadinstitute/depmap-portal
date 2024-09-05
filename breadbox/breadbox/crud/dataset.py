@@ -155,7 +155,9 @@ def get_dataset(
     assert (
         db.user == user
     ), f"User parameter '{user}' must match the user set on the database session '{db.user}'"
-    dataset: Optional[Dataset] = db.query(Dataset).get(str(dataset_id))
+    dataset: Optional[Dataset] = db.query(Dataset).filter(
+        or_(Dataset.id == str(dataset_id), Dataset.given_id == str(dataset_id))
+    ).one_or_none()
     if dataset is None:
         return None
 

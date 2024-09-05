@@ -1,5 +1,5 @@
 from uuid import UUID, uuid4
-from typing import List, Optional, Union, Literal, Dict
+from typing import Any, List, Optional, Union, Literal, Dict
 
 from itsdangerous.url_safe import URLSafeSerializer
 
@@ -64,7 +64,11 @@ def dataset_upload(
     _validate_group(db, user, dataset_params.group_id)
     _validate_data_type(db, dataset_params.data_type)
 
-    given_id = _parse_and_validate_given_id(db, dataset_params)
+    given_id = parse_and_validate_dataset_given_id(
+        db=db,
+        dataset_given_id=dataset_params.given_id,
+        dataset_metadata=dataset_params.dataset_metadata,
+    )
 
     serializer = URLSafeSerializer(settings.breadbox_secret)
 
@@ -122,7 +126,6 @@ def dataset_upload(
         # Add to db
         dataset_in = MatrixDatasetIn(
             id=dataset_id,
-            given_id=given_id,
             name=dataset_params.name,
             units=dataset_params.units,
             feature_type_name=dataset_params.feature_type,
@@ -133,6 +136,7 @@ def dataset_upload(
             value_type=dataset_params.value_type,
             priority=dataset_params.priority,
             taiga_id=dataset_params.taiga_id,
+            given_id=given_id,
             allowed_values=dataset_params.allowed_values,
             dataset_metadata=dataset_params.dataset_metadata,
             dataset_md5=dataset_params.dataset_md5,
@@ -226,20 +230,20 @@ def _get_dimension_type(
     return dimension_type
 
 
-def _parse_and_validate_given_id(
-    db: SessionWithUser, dataset_params: DatasetParams
+def parse_and_validate_dataset_given_id(
+    db: SessionWithUser,
+    dataset_given_id: Optional[str],
+    dataset_metadata: Optional[Dict[str, Any]],
 ) -> str:
     """
     For backwards compatibility, parse the given id from the dataset_metadata
     (given_id had previously been stored in the legacy_dataset_id metadata field).
     Validate that there isn't already a dataset with this given ID. 
     """
-    if dataset_params.given_id:
-        given_id = dataset_params.given_id
-    elif dataset_params.dataset_metadata:
-        given_id = dataset_params.dataset_metadata.get("legacy_dataset_id")
+    if dataset_given_id is None and dataset_metadata:
+        given_id = dataset_metadata.get("legacy_dataset_id")
     else:
-        given_id = None
+        given_id = dataset_given_id
 
     if given_id is not None:
         existing_dataset = dataset_crud.get_dataset(db, db.user, given_id)
