@@ -12,14 +12,9 @@ from tests import factories
 
 def test_get_dataset(minimal_db, settings):
     """Test that datasets can be retrieved by either id or given id"""
-    example_matrix_values = factories.matrix_csv_data_file_with_values(
-        feature_ids=["featureID1", "featureID2", "featureID3"],
-        sample_ids=["sampleID1", "sampleID2", "sampleID3"],
-        values=np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]]),
-    )
     given_id = "some_id"
     matrix_dataset_with_given_id = factories.matrix_dataset(
-        minimal_db, settings, data_file=example_matrix_values, given_id=given_id
+        minimal_db, settings, given_id=given_id
     )
     assert get_dataset(minimal_db, minimal_db.user, given_id) is not None
     assert (
@@ -27,13 +22,8 @@ def test_get_dataset(minimal_db, settings):
         is not None
     )
 
-    example_matrix_values2 = factories.matrix_csv_data_file_with_values(
-        feature_ids=["featureID1", "featureID2", "featureID3"],
-        sample_ids=["sampleID1", "sampleID2", "sampleID3"],
-        values=np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]]),
-    )
     matrix_dataset_without_given_id = factories.matrix_dataset(
-        minimal_db, settings, data_file=example_matrix_values2, given_id=None,
+        minimal_db, settings, given_id=None,
     )
     assert (
         get_dataset(minimal_db, minimal_db.user, matrix_dataset_without_given_id.id)

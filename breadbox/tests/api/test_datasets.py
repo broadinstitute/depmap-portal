@@ -146,7 +146,8 @@ class TestGet:
     def test_get_dataset_features(
         self, client: TestClient, minimal_db: SessionWithUser, settings
     ):
-        dataset = factories.matrix_dataset(minimal_db, settings)
+        given_id = "matrix_given_id"
+        dataset = factories.matrix_dataset(minimal_db, settings, given_id=given_id)
         response = client.get(
             f"/datasets/features/{dataset.id}", headers={"X-Forwarded-User": "anyone"},
         )
@@ -155,10 +156,19 @@ class TestGet:
         feature_labels = [feature["label"] for feature in dataset_features]
         assert feature_labels == ["A", "B", "C"]
 
+        # The same response should be returned when you pass in the given ID
+        # instead of the dataset ID
+        given_id_response = client.get(
+            f"/datasets/features/{given_id}", headers={"X-Forwarded-User": "anyone"},
+        )
+        assert_status_ok(given_id_response)
+        assert given_id_response.json() == response.json()
+
     def test_get_dataset_samples(
         self, client: TestClient, minimal_db: SessionWithUser, settings
     ):
-        dataset = factories.matrix_dataset(minimal_db, settings)
+        given_id = "some_matrix_dataset"
+        dataset = factories.matrix_dataset(minimal_db, settings, given_id=given_id)
         response = client.get(
             f"/datasets/samples/{dataset.id}", headers={"X-Forwarded-User": "anyone"},
         )
@@ -166,6 +176,14 @@ class TestGet:
         dataset_samples = response.json()
         sample_labels = [sample["label"] for sample in dataset_samples]
         assert sample_labels == ["ACH-1", "ACH-2"]
+
+        # The same response should be returned when you pass in the given ID
+        # instead of the dataset ID
+        given_id_response = client.get(
+            f"/datasets/samples/{given_id}", headers={"X-Forwarded-User": "anyone"},
+        )
+        assert_status_ok(given_id_response)
+        assert given_id_response.json() == response.json()
 
     def test_get_dimensions_with_reference_tiny_example(
         self, minimal_db, client: TestClient, settings, public_group
@@ -2128,6 +2146,27 @@ class TestPost:
             headers={"X-Forwarded-User": "someone@private-group.com"},
         )
         assert r2.status_code == 200
+
+    def test_get_matrix_dataset_data_by_given_id(
+        self, client: TestClient, minimal_db: SessionWithUser, settings, mock_celery
+    ):
+        given_id = "dataset_given_id"
+        factories.matrix_dataset(minimal_db, settings, given_id=given_id)
+        # TODO: Delete after deprecated endpoint is deleted
+        response = client.post(f"/datasets/data/{given_id}",)
+        assert_status_ok(response)
+        assert response.json() == {
+            "A": {"ACH-1": 0.0, "ACH-2": 3.0},
+            "B": {"ACH-1": 1.0, "ACH-2": 4.0},
+            "C": {"ACH-1": 2.0, "ACH-2": 5.0},
+        }
+        response = client.post(f"/datasets/matrix/{given_id}",)
+        assert_status_ok(response)
+        assert response.json() == {
+            "A": {"ACH-1": 0.0, "ACH-2": 3.0},
+            "B": {"ACH-1": 1.0, "ACH-2": 4.0},
+            "C": {"ACH-1": 2.0, "ACH-2": 5.0},
+        }
 
     def test_get_dataset_data_no_filters(
         self, client: TestClient, minimal_db: SessionWithUser, settings, mock_celery
