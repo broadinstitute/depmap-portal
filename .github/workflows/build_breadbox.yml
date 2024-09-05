@@ -82,7 +82,7 @@ jobs:
         run: bash breadbox/build-docker-image.sh ${{ env.DOCKER_REPO }}:${{ env.DOCKER_TAG }}
       - name: check that the breadbox client passes pyright
         run: |
-          cd breadbox-client && poetry install && poetry run pyright breadbox_fascade
+          cd breadbox-client && poetry install && poetry run pyright breadbox_facade
       - name: check that the breadbox client is in sync with the latest API spec
         run: |
           docker run -v $PWD/breadbox-client/latest-breadbox-api.json:/latest-breadbox-api.json ${{ env.DOCKER_REPO }}:${{ env.DOCKER_TAG }} poetry run ./bb check-api /latest-breadbox-api.json
