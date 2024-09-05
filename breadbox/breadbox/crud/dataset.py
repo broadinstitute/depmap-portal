@@ -208,6 +208,7 @@ def add_matrix_dataset(
 
     dataset = MatrixDataset(
         id=dataset_in.id,
+        given_id=dataset_in.given_id,
         name=dataset_in.name,
         units=dataset_in.units,
         feature_type_name=dataset_in.feature_type_name,
@@ -688,6 +689,7 @@ def add_tabular_dataset(
     group = _get_dataset_group(db, user, dataset_in.group_id, dataset_in.is_transient)
     dataset = TabularDataset(
         id=dataset_in.id,
+        given_id=dataset_in.given_id,
         name=dataset_in.name,
         index_type_name=dataset_in.index_type_name,
         data_type=dataset_in.data_type,

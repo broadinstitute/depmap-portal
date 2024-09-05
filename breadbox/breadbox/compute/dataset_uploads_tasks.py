@@ -64,6 +64,8 @@ def dataset_upload(
     _validate_group(db, user, dataset_params.group_id)
     _validate_data_type(db, dataset_params.data_type)
 
+    given_id = _parse_and_validate_given_id(db, dataset_params)
+
     serializer = URLSafeSerializer(settings.breadbox_secret)
 
     file_path = construct_file_from_ids(
@@ -120,6 +122,7 @@ def dataset_upload(
         # Add to db
         dataset_in = MatrixDatasetIn(
             id=dataset_id,
+            given_id=given_id,
             name=dataset_params.name,
             units=dataset_params.units,
             feature_type_name=dataset_params.feature_type,
@@ -166,6 +169,7 @@ def dataset_upload(
         # Add to db
         dataset_in = TabularDatasetIn(
             id=dataset_id,
+            given_id=given_id,
             name=dataset_params.name,
             index_type_name=dataset_params.index_type,
             data_type=dataset_params.data_type,
@@ -220,6 +224,30 @@ def _get_dimension_type(
                 f"'{dim_type_name}' is of {dimension_type.axis} type not {axis} type!"
             )
     return dimension_type
+
+
+def _parse_and_validate_given_id(
+    db: SessionWithUser, dataset_params: DatasetParams
+) -> str:
+    """
+    For backwards compatibility, parse the given id from the dataset_metadata
+    (given_id had previously been stored in the legacy_dataset_id metadata field).
+    Validate that there isn't already a dataset with this given ID. 
+    """
+    if dataset_params.given_id:
+        given_id = dataset_params.given_id
+    elif dataset_params.dataset_metadata:
+        given_id = dataset_params.dataset_metadata.get("legacy_dataset_id")
+    else:
+        given_id = None
+
+    if given_id is not None:
+        existing_dataset = dataset_crud.get_dataset(db, db.user, given_id)
+        if existing_dataset is not None:
+            raise HTTPException(
+                409, f"A dataset with the given id {given_id} already exists."
+            )
+    return given_id
 
 
 def _validate_group(db: SessionWithUser, user: str, group_id: Union[str, UUID]):

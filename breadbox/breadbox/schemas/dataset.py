@@ -235,6 +235,7 @@ class SharedDatasetFields(BaseModel):
     name: str
     data_type: str
     group_id: str
+    given_id: Annotated[Optional[str], Field(default=None)]
     priority: Annotated[Optional[int], Field(default=None, gt=0,)]
     taiga_id: Annotated[Optional[str], Field(default=None,)]
     is_transient: Annotated[bool, Field(default=False,)]
