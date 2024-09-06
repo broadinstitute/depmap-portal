@@ -39,6 +39,14 @@ else:
 
 import enum
 
+# context-sensitive default function
+def default_display_name(context):
+    """
+    Gets the default display name from the Dimension Type's name field
+    context: The context of a statement is an internal SQLAlchemy object which contains all information about the statement being executed, including its source expression, the parameters associated with it and the cursor. 
+    """
+    return context.get_current_parameters()["name"]
+
 
 class DimensionType(Base):
     __tablename__ = "dimension_type"
@@ -47,6 +55,7 @@ class DimensionType(Base):
     )
 
     name = Column(String, nullable=False, primary_key=True)
+    display_name = Column(String, nullable=False, default=default_display_name)
     id_column = Column(String, nullable=False)  # The column name in the file
     axis = Column(String, nullable=False)  # "feature" or "sample" type
     dataset_id = Column(String, ForeignKey("dataset.id"))  # One to One relationship
