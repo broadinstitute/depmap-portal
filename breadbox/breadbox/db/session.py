@@ -29,8 +29,9 @@ class SessionWithUser(Session):
     is_test_db_session: bool = False
 
     @property
-    def user(self):
+    def user(self) -> str:
         """Read-only user value"""
+        assert self._user is not None, "User is not yet set on the database session"
         return self._user
 
     def set_user(self, user: str):

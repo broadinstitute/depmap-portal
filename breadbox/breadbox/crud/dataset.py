@@ -1398,7 +1398,7 @@ def get_dataset_feature_by_given_id(
     return feature
 
 
-def get_dataset_feature(
+def get_dataset_feature_by_label(
     db: SessionWithUser, user: str, dataset_id: str, feature_label: str
 ) -> DatasetFeature:
     """Load the dataset feature corresponding to the given dataset ID and feature label"""

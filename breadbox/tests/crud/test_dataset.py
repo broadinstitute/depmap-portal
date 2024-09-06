@@ -4,7 +4,7 @@ import pytest
 
 from breadbox.db.session import SessionWithUser
 from breadbox.crud.dataset import (
-    get_dataset_feature,
+    get_dataset_feature_by_label,
     get_dataset,
     get_dataset_feature_by_given_id,
 )
@@ -38,7 +38,7 @@ def test_get_dataset(minimal_db, settings):
     assert get_dataset(minimal_db, minimal_db.user, "foo") is None
 
 
-def test_get_dataset_feature(minimal_db: SessionWithUser, settings):
+def test_get_dataset_feature_by_label(minimal_db: SessionWithUser, settings):
 
     # Test the case where there is no metadata (where labels are given_ids)
     example_matrix_values = factories.matrix_csv_data_file_with_values(
@@ -50,7 +50,7 @@ def test_get_dataset_feature(minimal_db: SessionWithUser, settings):
         minimal_db, settings, feature_type=None, data_file=example_matrix_values
     )
     minimal_db.reset_user(settings.default_user)
-    feature = get_dataset_feature(
+    feature = get_dataset_feature_by_label(
         minimal_db,
         settings.default_user,
         dataset_id=dataset_with_generic_features.id,
@@ -93,7 +93,7 @@ def test_get_dataset_feature(minimal_db: SessionWithUser, settings):
 
     # Query with the non-admin user
     minimal_db.reset_user(settings.default_user)
-    feature = get_dataset_feature(
+    feature = get_dataset_feature_by_label(
         minimal_db,
         settings.default_user,
         dataset_id=dataset_with_metadata.id,
@@ -104,7 +104,7 @@ def test_get_dataset_feature(minimal_db: SessionWithUser, settings):
 
     # When the dataset does not exist, a clear error should be raised
     with pytest.raises(ResourceNotFoundError):
-        get_dataset_feature(
+        get_dataset_feature_by_label(
             minimal_db,
             settings.default_user,
             dataset_id="Undefined-dataset",
@@ -113,7 +113,7 @@ def test_get_dataset_feature(minimal_db: SessionWithUser, settings):
 
     # When the featureLabel does not exist within the dataset, a clear error should be raised
     with pytest.raises(ResourceNotFoundError):
-        get_dataset_feature(
+        get_dataset_feature_by_label(
             minimal_db,
             settings.default_user,
             dataset_id=dataset_with_generic_features.id,

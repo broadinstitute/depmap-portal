@@ -215,6 +215,7 @@ def add_dimension_type(
             is_transient=False,
             group_id=PUBLIC_GROUP_ID,
             taiga_id=taiga_id,
+            given_id=None,
             priority=None,
             dataset_metadata=None,
             dataset_md5=None,  # This may change!

@@ -234,7 +234,7 @@ def parse_and_validate_dataset_given_id(
     db: SessionWithUser,
     dataset_given_id: Optional[str],
     dataset_metadata: Optional[Dict[str, Any]],
-) -> str:
+) -> Optional[str]:
     """
     For backwards compatibility, parse the given id from the dataset_metadata
     (given_id had previously been stored in the legacy_dataset_id metadata field).
