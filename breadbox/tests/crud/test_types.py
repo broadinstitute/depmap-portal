@@ -30,6 +30,7 @@ def test_add_dimension_type_metadata_dataset_field_populates(
         settings,
         user=settings.admin_users[0],
         name="feature-with-metadata",
+        display_name="Feature with Metadata",
         id_column="ID",
         annotation_type_mapping={
             "ID": AnnotationType.text,
@@ -53,6 +54,7 @@ def test_add_dimension_type_metadata_dataset_field_populates(
         settings,
         user=settings.admin_users[0],
         name="sample-with-metadata-added-later",
+        display_name="Sample with Metadata Added Later",
         id_column="ID",
         annotation_type_mapping={
             "ID": AnnotationType.text,

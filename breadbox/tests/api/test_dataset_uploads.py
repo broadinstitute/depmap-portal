@@ -627,6 +627,7 @@ def test_end_to_end_with_mismatched_metadata(
 
         dim_type_fields = {
             "name": type_name,
+            "display_name": type_name,
             "axis": axis,
             "id_column": id_column,
         }

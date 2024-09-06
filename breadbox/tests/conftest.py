@@ -177,6 +177,7 @@ def minimal_db(db: SessionWithUser, settings: Settings, public_group, transient_
         settings,
         user=admin_user,
         name="generic",
+        display_name="Generic",
         id_column="label",
         axis="feature",
     )
@@ -185,6 +186,7 @@ def minimal_db(db: SessionWithUser, settings: Settings, public_group, transient_
         settings,
         user=admin_user,
         name="depmap_model",
+        display_name="Depmap Model",
         id_column="depmap_id",
         axis="sample",
     )

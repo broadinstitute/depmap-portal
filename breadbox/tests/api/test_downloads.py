@@ -434,6 +434,7 @@ def test_validate_data_slicer_features(minimal_db, settings, client: TestClient)
         settings,
         settings.admin_users[0],
         "feature_type_foobar",
+        "Feature Type Foobar",
         "ID",
         "feature",
         annotation_type_mapping={

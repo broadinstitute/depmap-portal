@@ -133,6 +133,7 @@ def test_tabular_uploads(
         settings,
         settings.admin_users[0],
         "test-sample",
+        "Test Sample",
         "sample_id",
         "sample",
         metadata_df=pd.DataFrame({"sample_id": ["ID1", "ID2"]}),

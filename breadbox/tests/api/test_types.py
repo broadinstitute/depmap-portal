@@ -27,6 +27,7 @@ def test_all_dimension_type_methods(client: TestClient, minimal_db, settings):
 
     dim_type_fields = {
         "name": "sample_id_name",
+        "display_name": "Sample Name",
         "axis": "sample",
         "id_column": "sample_id",
     }

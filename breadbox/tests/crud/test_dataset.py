@@ -38,6 +38,7 @@ def test_get_dataset_feature(minimal_db: SessionWithUser, settings):
         settings,
         user=settings.admin_users[0],
         name="feature-with-metadata",
+        display_name="Feature With Metadata",
         id_column="ID",
         annotation_type_mapping={
             "ID": AnnotationType.text,

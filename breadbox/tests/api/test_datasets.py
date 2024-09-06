@@ -116,6 +116,7 @@ class TestGet:
             settings,
             settings.admin_users[0],
             "sample-type",
+            "Sample Type",
             "ID",
             "sample",
             annotation_type_mapping={"ID": AnnotationType.text},
@@ -2334,6 +2335,7 @@ class TestPost:
             settings,
             settings.admin_users[0],
             "sample_type_foo",
+            "Sample Type Foo",
             "ID",
             "sample",
             annotation_type_mapping={
@@ -2352,6 +2354,7 @@ class TestPost:
             settings,
             settings.admin_users[0],
             "feature_type_foobar",
+            "Feature Type Foobar",
             "ID",
             "feature",
             annotation_type_mapping={
