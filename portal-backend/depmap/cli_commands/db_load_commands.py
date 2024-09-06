@@ -1552,12 +1552,13 @@ def load_sample_data(
             predictability_summary_loader.load_predictability_prototype(
                 "depmap/predictability_prototype/scripts/predictability_summary.csv",
                 "depmap/predictability_prototype/scripts/predictive_insights_features.csv",
+                "crispr",
             )
-
-            # predictability_summary_loader.load_prototype_predictive_model_csv(
-            #     "depmap/predictability_prototype/scripts/predictability_summary.csv",
-            #     "depmap/predictability_prototype/scripts/predictive_insights_features.csv",
-            # )
+            predictability_summary_loader.load_predictability_prototype(
+                "depmap/predictability_prototype/scripts/predictability_summary.csv",
+                "depmap/predictability_prototype/scripts/predictive_insights_features.csv",
+                "rnai",
+            )
 
         if current_app.config["ENABLED_FEATURES"].data_page:
             log.info("Adding data page all data availability info")

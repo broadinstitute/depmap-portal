@@ -1,7 +1,7 @@
 import os
 import re
 import shutil
-from typing import Dict, Match, Optional, Tuple, Union, final
+from typing import Any, Dict, Match, Optional, Tuple, Union, cast
 
 import pandas as pd
 from flask import current_app
@@ -19,13 +19,7 @@ from depmap.utilities.bulk_load import bulk_load
 from depmap.utilities.models import log_data_issue
 import re
 from taigapy import create_taiga_client_v3
-import requests
 import os
-
-# this script exists to rewrite any Taiga IDs into their canonical form. (This allows conseq to recognize when data files are the same by just comparing taiga IDs)
-#
-# as a secondary concern, all these taiga IDs must exist in a file that this processes, so this also handles a "TAIGA_PREPROCESSOR_INCLUDE" statement to merge multiple files
-# into one while the taiga IDs are being processed
 
 tc = create_taiga_client_v3()
 
@@ -56,9 +50,7 @@ def _load_predictive_models(
     next_id,
     screen_type: str,
 ):
-    def lookup_entity_id(
-        gene_or_compound_experiment_label: str,
-    ) -> Optional[Union[Gene, CompoundExperiment]]:
+    def lookup_entity_id(gene_or_compound_experiment_label: str,) -> Optional[int]:
         if entity_type == "gene":
             m = re.match("\S+ \\((\\d+)\\)", gene_or_compound_experiment_label)
             if m is None:
@@ -246,7 +238,9 @@ def load_predictability_prototype(
     )
 
     # Copy file for download
-    source_dir = current_app.config["WEBAPP_DATA_DIR"]
+    assert isinstance(current_app.config, dict)
+    source_dir = current_app.config.get("WEBAPP_DATA_DIR")
+
     path = os.path.join(
         source_dir, "predictability_prototype", f"predictability_results.csv",
     )

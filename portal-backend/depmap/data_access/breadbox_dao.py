@@ -1,5 +1,5 @@
 import pandas as pd
-from typing import Optional
+from typing import Literal, Optional
 
 from breadbox_client.models import MatrixDatasetResponse, MatrixDatasetResponseFormat
 from depmap.data_access.response_parsing import (
@@ -116,7 +116,7 @@ def get_dataset_units(dataset_id: str) -> Optional[str]:
 
 
 def get_row_of_values(
-    dataset_id: str, feature: str, feature_identifier: str
+    dataset_id: str, feature: str, feature_identifier: Literal["id", "label"]
 ) -> CellLineSeries:
     """
     For the given dataset id and a feature label, 
@@ -137,7 +137,7 @@ def get_subsetted_df_by_labels(
     dataset_id: str,
     feature_row_labels: Optional[list[str]],
     sample_col_ids: Optional[list[str]],
-    feature_identifier: Optional[str] = "label",
+    feature_identifier: Optional[Literal["id", "label"]] = "label",
 ) -> pd.DataFrame:
     dataset_uuid = parse_breadbox_slice_id(dataset_id).dataset_id
     return extensions.breadbox.client.get_dataset_data(

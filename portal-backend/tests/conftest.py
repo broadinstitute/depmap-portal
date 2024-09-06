@@ -572,21 +572,6 @@ def load_populated_db_data():
             os.path.join(loader_data_dir, "context_explorer", "context_analysis.csv")
         )
 
-        predictability_summary_loader.load_predictability_summaries(
-            os.path.join(
-                loader_data_dir,
-                "predictability_prototype",
-                "predictability_summary.csv",
-            )
-        )
-        predictability_summary_loader.load_predictive_insights_features(
-            os.path.join(
-                loader_data_dir,
-                "predictability_prototype",
-                "predictive_insights_features.csv",
-            ),
-        )
-
         data_page_all_data_avail = pd.read_csv(
             "sample_data/data_page/sample_all_data_avail.csv"
         )

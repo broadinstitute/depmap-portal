@@ -141,9 +141,8 @@ def subset_features_by_gene(gene_symbol):
 def aggregate_top_features(df: pd.DataFrame):
     aggregate_feature_importance = lambda df: (df["pearson"] * df["importance"]).sum()
 
-    aggregated = df.groupby(["feature_name", "dim_type", "feature_label"]).apply(
-        aggregate_feature_importance
-    )
+    grouped_df = df.groupby(["feature_name", "dim_type", "feature_label"])
+    aggregated = grouped_df.apply(aggregate_feature_importance)
 
     return aggregated.sort_values(ascending=False)
 
@@ -429,7 +428,7 @@ def get_feature_gene_effect_plot_data(
     if len(set(feature_values)) <= 1:
         density = feature_values
     else:
-        density = get_density(feature_values, gene_slice)
+        density = get_density(np.ndarray(feature_values), gene_slice)
 
     feature_dataset_units = data_access.get_dataset_units(feature_dataset_id)
 
@@ -487,6 +486,9 @@ def feature_correlation_map_calc(model, entity_id, screen_type: str):
 
     for feature_label in list(top_features.keys()):
         feature = PrototypePredictiveFeature.get_by_feature_label(feature_label)
+
+        assert feature is not None
+
         feature_name = feature.feature_name
         feature_type = feature.dim_type
         feature_names.append(feature_name)
@@ -596,7 +598,7 @@ def get_other_dep_waterfall_plot(
     import time
 
     start = time.time()
-    feature_series = pd.Series(data=feature_slice_values, index=feature_slice_index)
+    feature_series = pd.DataFrame(data=feature_slice_values, index=feature_slice_index)
 
     def progress_callback(percentage):
         return

@@ -8,7 +8,7 @@ export function getDataExplorerUrl(
   featureType: string,
   geneLabel: string,
   screenType: string,
-  cellLines: string[]
+  cellLines: string[] // TODO: Take this out completely, we don't need a cell lines list anywhere
 ): string {
   const yDatasetId =
     screenType === ScreenType.CRISPR ? "Chronos_Combined" : "RNAi_merged";
@@ -30,23 +30,16 @@ export function getDataExplorerUrl(
           expr: { "==": [{ var: "entity_label" }, featureLabel] },
         }
       : {
-          name: "all_cell_lines",
-          context_type: "depmap_model",
-          expr: { in: [{ var: "entity_label" }, cellLines] },
-        };
-
-  const yContext =
-    featureLabel !== null
-      ? {
           name: geneLabel,
           context_type: "gene",
           expr: { "==": [{ var: "entity_label" }, geneLabel] },
-        }
-      : {
-          name: "all_cell_lines_y",
-          context_type: "depmap_model",
-          expr: { in: [{ var: "entity_label" }, cellLines] },
         };
+
+  const yContext = {
+    name: geneLabel,
+    context_type: "gene",
+    expr: { "==": [{ var: "entity_label" }, geneLabel] },
+  };
 
   const queryString =
     featureLabel === null

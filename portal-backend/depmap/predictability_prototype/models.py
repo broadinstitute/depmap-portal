@@ -318,7 +318,7 @@ class PrototypePredictiveModel(Model):
         return entity_row
 
     @staticmethod
-    def get_entity_row(model_name: str, entity_id: str, screen_type: str):
+    def get_entity_row(model_name: str, entity_id: int, screen_type: str):
 
         gene_query = (
             db.session.query(PrototypePredictiveFeatureResult)

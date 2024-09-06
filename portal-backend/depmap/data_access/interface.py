@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Literal, Optional
 import pandas as pd
 
 from depmap.data_access import breadbox_dao
@@ -136,7 +136,7 @@ def get_dataset_units(dataset_id: str) -> Optional[str]:
 
 
 def get_row_of_values(
-    dataset_id: str, feature: str, feature_identifier="label"
+    dataset_id: str, feature: str, feature_identifier: Literal["id", "label"] = "label"
 ) -> CellLineSeries:
     """
     Gets a row of numeric or string values, indexed by depmap_id
@@ -155,7 +155,7 @@ def get_subsetted_df_by_labels(
     dataset_id: str,
     feature_row_labels: Optional[list[str]] = None,
     sample_col_ids: Optional[list[str]] = None,
-    feature_identifier: Optional[str] = "label",
+    feature_identifier: Optional[Literal["id", "label"]] = "label",
 ) -> pd.DataFrame:
     """
     Load a dataframe with only the specified rows (features) and columns (cell_lines).
