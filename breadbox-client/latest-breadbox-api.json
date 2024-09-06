@@ -1578,6 +1578,17 @@
             "title": "Format",
             "type": "string"
           },
+          "given_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Given Id"
+          },
           "group": {
             "$ref": "#/components/schemas/Group"
           },
@@ -2053,6 +2064,17 @@
             "title": "Format",
             "type": "string"
           },
+          "given_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Given Id"
+          },
           "group": {
             "$ref": "#/components/schemas/Group"
           },
@@ -2327,7 +2349,7 @@
   },
   "info": {
     "title": "Breadbox",
-    "version": "3.5.0"
+    "version": "3.5.1"
   },
   "openapi": "3.1.0",
   "paths": {
@@ -3232,9 +3254,16 @@
             "name": "dataset_id",
             "required": true,
             "schema": {
-              "format": "uuid",
-              "title": "Dataset Id",
-              "type": "string"
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "string"
+                }
+              ],
+              "title": "Dataset Id"
             }
           }
         ],
@@ -3667,9 +3696,16 @@
             "name": "dataset_id",
             "required": true,
             "schema": {
-              "format": "uuid",
-              "title": "Dataset Id",
-              "type": "string"
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "string"
+                }
+              ],
+              "title": "Dataset Id"
             }
           },
           {
@@ -3850,9 +3886,16 @@
             "name": "dataset_id",
             "required": true,
             "schema": {
-              "format": "uuid",
-              "title": "Dataset Id",
-              "type": "string"
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "string"
+                }
+              ],
+              "title": "Dataset Id"
             }
           },
           {
@@ -4033,9 +4076,16 @@
             "name": "dataset_id",
             "required": true,
             "schema": {
-              "format": "uuid",
-              "title": "Dataset Id",
-              "type": "string"
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "string"
+                }
+              ],
+              "title": "Dataset Id"
             }
           }
         ],
@@ -4130,9 +4180,16 @@
             "name": "dataset_id",
             "required": true,
             "schema": {
-              "format": "uuid",
-              "title": "Dataset Id",
-              "type": "string"
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "string"
+                }
+              ],
+              "title": "Dataset Id"
             }
           }
         ],

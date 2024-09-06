@@ -43,6 +43,7 @@ class TabularDatasetResponse:
         name (str):
         dataset_md5 (Union[None, Unset, str]):
         format_ (Union[Unset, TabularDatasetResponseFormat]):  Default: TabularDatasetResponseFormat.TABULAR_DATASET.
+        given_id (Union[None, Unset, str]):
         is_transient (Union[Unset, bool]):  Default: False.
         priority (Union[None, Unset, int]):
         taiga_id (Union[None, Unset, str]):
@@ -60,6 +61,7 @@ class TabularDatasetResponse:
     format_: Union[Unset, TabularDatasetResponseFormat] = (
         TabularDatasetResponseFormat.TABULAR_DATASET
     )
+    given_id: Union[None, Unset, str] = UNSET
     is_transient: Union[Unset, bool] = False
     priority: Union[None, Unset, int] = UNSET
     taiga_id: Union[None, Unset, str] = UNSET
@@ -103,6 +105,12 @@ class TabularDatasetResponse:
         if not isinstance(self.format_, Unset):
             format_ = self.format_.value
 
+        given_id: Union[None, Unset, str]
+        if isinstance(self.given_id, Unset):
+            given_id = UNSET
+        else:
+            given_id = self.given_id
+
         is_transient = self.is_transient
 
         priority: Union[None, Unset, int]
@@ -135,6 +143,8 @@ class TabularDatasetResponse:
             field_dict["dataset_md5"] = dataset_md5
         if format_ is not UNSET:
             field_dict["format"] = format_
+        if given_id is not UNSET:
+            field_dict["given_id"] = given_id
         if is_transient is not UNSET:
             field_dict["is_transient"] = is_transient
         if priority is not UNSET:
@@ -211,6 +221,15 @@ class TabularDatasetResponse:
         else:
             format_ = TabularDatasetResponseFormat(_format_)
 
+        def _parse_given_id(data: object) -> Union[None, Unset, str]:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(Union[None, Unset, str], data)
+
+        given_id = _parse_given_id(d.pop("given_id", UNSET))
+
         is_transient = d.pop("is_transient", UNSET)
 
         def _parse_priority(data: object) -> Union[None, Unset, int]:
@@ -242,6 +261,7 @@ class TabularDatasetResponse:
             name=name,
             dataset_md5=dataset_md5,
             format_=format_,
+            given_id=given_id,
             is_transient=is_transient,
             priority=priority,
             taiga_id=taiga_id,
