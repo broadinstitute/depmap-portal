@@ -43,8 +43,17 @@ or
 yarn dev:portal
 ```
 
-(But you can still do `./flask webpack` from the portal-backend directory if
-that's what you're used to. All it does is call `yarn dev:portal` for you).
+This runs Webpack Dev Server which watches for changes and automatically pushes
+them to the browser. Most of the time changes are applied in a second or two.
+But if you find that it's getting hung up or you're just impatient, you can use
+this:
+
+```
+yarn dev:portal:nocheck
+```
+
+This will speed up the compilation time but be warned that TypeScript errors
+will no longer be displayed in the terminal or browser console!
 
 ## @depmap packages
 
