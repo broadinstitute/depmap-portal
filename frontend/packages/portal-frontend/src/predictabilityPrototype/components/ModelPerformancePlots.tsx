@@ -189,8 +189,7 @@ const ModelPerformancePlots = ({
                 null,
                 "gene",
                 entityLabel,
-                screenType,
-                predictiveModelData.model_predictions.cell_lines
+                screenType
               )}
               target="_blank"
               disabled={false}

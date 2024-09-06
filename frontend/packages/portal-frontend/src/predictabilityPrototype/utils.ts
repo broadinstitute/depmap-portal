@@ -7,8 +7,8 @@ export function getDataExplorerUrl(
   featureLabel: string | null,
   featureType: string,
   geneLabel: string,
-  screenType: string,
-  cellLines: string[] // TODO: Take this out completely, we don't need a cell lines list anywhere
+  screenType: string
+  // cellLines: string[] // TODO: Take this out completely, we don't need a cell lines list anywhere
 ): string {
   const yDatasetId =
     screenType === ScreenType.CRISPR ? "Chronos_Combined" : "RNAi_merged";

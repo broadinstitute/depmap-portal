@@ -154,8 +154,7 @@ const FeatureVsGeneEffectPlot = ({
               feature,
               featureDatasetLabel,
               geneSymbol,
-              screenType,
-              []
+              screenType
             )}
             target="_blank"
             disabled={!formattedPlotData && isLoading}
