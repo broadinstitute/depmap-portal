@@ -263,8 +263,12 @@ def run_custom_analysis(
     user: str,
     analysis_type: str,  # pearson, association, or two_class
     query_node_id: Optional[str],  # Query feature spec used by elara (deprecated)
-    query_feature_id: Optional[str],  # Query feature spec (given id + dataset id)
-    query_dataset_id: Optional[str],
+    query_feature_id: Optional[
+        str
+    ],  # Query feature spec used by the portal (feature given id)
+    query_dataset_id: Optional[
+        str
+    ],  # Query feature spec used by the portal (dataset id or dataset given id)
     filestore_location: str,
     dataset_id: str,
     vector_is_dependent: bool,
@@ -314,9 +318,9 @@ def run_custom_analysis(
                 )
             elif query_feature_id and query_dataset_id:
                 # The given query Id should be the id of the feature itself
-                feature = dataset_crud.get_features(
-                    db, user, [query_dataset_id], [query_feature_id]
-                )[0]
+                feature = dataset_crud.get_dataset_feature_by_given_id(
+                    db, user, query_dataset_id, query_feature_id
+                )
                 query_series = filestore_crud.get_feature_slice(
                     dataset=feature.dataset,
                     feature_indexes=[feature.index],

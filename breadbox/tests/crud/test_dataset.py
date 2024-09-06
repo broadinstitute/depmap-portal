@@ -3,7 +3,11 @@ import pandas as pd
 import pytest
 
 from breadbox.db.session import SessionWithUser
-from breadbox.crud.dataset import get_dataset_feature, get_dataset
+from breadbox.crud.dataset import (
+    get_dataset_feature,
+    get_dataset,
+    get_dataset_feature_by_given_id,
+)
 from breadbox.models.dataset import AnnotationType
 from breadbox.schemas.custom_http_exception import ResourceNotFoundError
 
@@ -115,3 +119,46 @@ def test_get_dataset_feature(minimal_db: SessionWithUser, settings):
             dataset_id=dataset_with_generic_features.id,
             feature_label="Undefined_Feature_Label",
         )
+
+
+def test_get_dataset_feature_by_given_id(minimal_db: SessionWithUser, settings):
+    """
+    Test that this works regardless of whether dataset id or given id are passed in.
+    """
+    example_matrix_values = factories.matrix_csv_data_file_with_values(
+        feature_ids=["featureID1", "featureID2", "featureID3"],
+        sample_ids=["sampleID1", "sampleID2", "sampleID3"],
+        values=np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]]),
+    )
+    dataset_given_id = "dataset_123"
+    matrix_dataset = factories.matrix_dataset(
+        minimal_db,
+        settings,
+        feature_type=None,
+        data_file=example_matrix_values,
+        given_id=dataset_given_id,
+    )
+
+    # Pass in the dataset ID
+    feature1 = get_dataset_feature_by_given_id(
+        minimal_db, matrix_dataset.id, "featureID1"
+    )
+    assert feature1.given_id == "featureID1"
+    assert feature1.dataset_id == matrix_dataset.id
+    feature2 = get_dataset_feature_by_given_id(
+        minimal_db, matrix_dataset.id, "featureID2"
+    )
+    assert feature2.given_id == "featureID2"
+    assert feature2.dataset_id == matrix_dataset.id
+
+    # Pass in the dataset given ID
+    feature1 = get_dataset_feature_by_given_id(
+        minimal_db, dataset_given_id, "featureID1"
+    )
+    assert feature1.given_id == "featureID1"
+    assert feature1.dataset_id == matrix_dataset.id
+    feature2 = get_dataset_feature_by_given_id(
+        minimal_db, dataset_given_id, "featureID2"
+    )
+    assert feature2.given_id == "featureID2"
+    assert feature2.dataset_id == matrix_dataset.id
