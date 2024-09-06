@@ -152,10 +152,15 @@ def get_datasets(
 def get_dataset(
     db: SessionWithUser, user: str, dataset_id: Union[str, UUID]
 ) -> Optional[Dataset]:
+    """Get a dataset either by ID or given ID."""
     assert (
         db.user == user
     ), f"User parameter '{user}' must match the user set on the database session '{db.user}'"
-    dataset: Optional[Dataset] = db.query(Dataset).get(str(dataset_id))
+
+    dataset: Optional[Dataset] = db.query(Dataset).filter(
+        or_(Dataset.id == str(dataset_id), Dataset.given_id == str(dataset_id))
+    ).one_or_none()
+
     if dataset is None:
         return None
 
@@ -208,6 +213,7 @@ def add_matrix_dataset(
 
     dataset = MatrixDataset(
         id=dataset_in.id,
+        given_id=dataset_in.given_id,
         name=dataset_in.name,
         units=dataset_in.units,
         feature_type_name=dataset_in.feature_type_name,
@@ -688,6 +694,7 @@ def add_tabular_dataset(
     group = _get_dataset_group(db, user, dataset_in.group_id, dataset_in.is_transient)
     dataset = TabularDataset(
         id=dataset_in.id,
+        given_id=dataset_in.given_id,
         name=dataset_in.name,
         index_type_name=dataset_in.index_type_name,
         data_type=dataset_in.data_type,
@@ -1367,37 +1374,31 @@ def delete_dataset(
     return True
 
 
-def get_features(
-    db: SessionWithUser, user: str, dataset_ids: List[str], feature_ids: List[str]
-) -> list[DatasetFeature]:
-    """
-    Load data for a set of features with the given natural keys (ex. entrez ids)
-    """
-    # iterate through the dataset id, feature id pairs
-    features = []
-    assert len(dataset_ids) == len(feature_ids)
+def get_dataset_feature_by_given_id(
+    db: SessionWithUser, dataset_id: str, feature_given_id: str,  # An ID or given ID
+) -> DatasetFeature:
+    dataset = get_dataset(db, db.user, dataset_id)
+    if dataset is None:
+        raise ResourceNotFoundError(f"Dataset '{dataset_id}' not found.")
+    assert_user_has_access_to_dataset(dataset, db.user)
+    assert isinstance(dataset, MatrixDataset)
 
-    for i in range(len(dataset_ids)):
-        feature = (
-            db.query(DatasetFeature)
-            .filter(
-                DatasetFeature.given_id == feature_ids[i],
-                DatasetFeature.dataset_id == dataset_ids[i],
-            )
-            .one_or_none()
+    feature = (
+        db.query(DatasetFeature)
+        .filter(
+            DatasetFeature.given_id == feature_given_id,
+            DatasetFeature.dataset_id == dataset.id,
         )
-        features.append(feature)
-
-    # validate that all of the requested features were loaded
-    if None in features:
-        raise ResourceNotFoundError(msg="One or more features were not found")
-
-    # validate access
-    [assert_user_has_access_to_dataset(feature.dataset, user) for feature in features]
-    return features
+        .one_or_none()
+    )
+    if feature is None:
+        raise ResourceNotFoundError(
+            f"Feature given ID '{feature_given_id}' not found in dataset '{dataset_id}'."
+        )
+    return feature
 
 
-def get_dataset_feature(
+def get_dataset_feature_by_label(
     db: SessionWithUser, user: str, dataset_id: str, feature_label: str
 ) -> DatasetFeature:
     """Load the dataset feature corresponding to the given dataset ID and feature label"""
