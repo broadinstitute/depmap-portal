@@ -3197,7 +3197,10 @@ def test_get_feature_data(minimal_db, settings, client: TestClient):
         sample_ids=["sampleID1", "sampleID2", "sampleID3"],
         values=np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]]),
     )
-    dataset = factories.matrix_dataset(minimal_db, settings, data_file=matrix_values,)
+    dataset_given_id = "dataset123"
+    dataset = factories.matrix_dataset(
+        minimal_db, settings, data_file=matrix_values, given_id=dataset_given_id
+    )
 
     # Base case: No features in request
     response = client.get(
@@ -3219,6 +3222,31 @@ def test_get_feature_data(minimal_db, settings, client: TestClient):
         "dataset_id": dataset.id,
         "values": {"sampleID1": 1.0, "sampleID2": 4.0, "sampleID3": 7.0,},
         "label": "featureID1",
+        "units": dataset.units,
+        "dataset_label": dataset.name,
+    }
+
+    # Two features in request, specified with dataset given ID
+    query_str = f"?dataset_ids={dataset_given_id}&dataset_ids={dataset_given_id}&feature_ids=featureID1&feature_ids=featureID3"
+    response = client.get(
+        f"/datasets/features/data/{query_str}", headers={"X-Forwarded-User": "anyone"},
+    )
+    assert_status_ok(response)
+    response_content = response.json()
+    assert len(response_content) == 2
+    assert response_content[0] == {
+        "feature_id": "featureID1",
+        "dataset_id": dataset.id,
+        "values": {"sampleID1": 1.0, "sampleID2": 4.0, "sampleID3": 7.0,},
+        "label": "featureID1",
+        "units": dataset.units,
+        "dataset_label": dataset.name,
+    }
+    assert response_content[1] == {
+        "feature_id": "featureID3",
+        "dataset_id": dataset.id,
+        "values": {"sampleID1": 3.0, "sampleID2": 6.0, "sampleID3": 9.0,},
+        "label": "featureID3",
         "units": dataset.units,
         "dataset_label": dataset.name,
     }
