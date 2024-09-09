@@ -224,6 +224,7 @@ class BBClient:
         dataset_metadata: Optional[Dict] = None,
         priority: Optional[int] = None,
         taiga_id: Optional[str] = None,
+        given_id: Optional[str] = None,
         timeout=None,
     ):
         metadata = TableDatasetParamsDatasetMetadataType0.from_dict(dataset_metadata) if dataset_metadata else None
@@ -248,6 +249,7 @@ class BBClient:
             is_transient=is_transient,
             priority=priority if priority else UNSET,
             taiga_id=taiga_id if taiga_id else UNSET,
+            given_id=given_id if given_id else UNSET,
         )
         breadbox_response = add_dataset_uploads_client.sync_detailed(
             client=self.client,
@@ -270,6 +272,7 @@ class BBClient:
         value_type: str = ValueType.CONTINUOUS.value,
         priority: Optional[int] = None,
         taiga_id: Optional[str] = None,
+        given_id: Optional[str] = None,
         dataset_metadata: Optional[dict] = None,
         timeout=None,
     ) -> AddDatasetResponse:
@@ -292,6 +295,7 @@ class BBClient:
             is_transient=is_transient,
             priority=priority if priority else UNSET,
             taiga_id=taiga_id if taiga_id else UNSET,
+            given_id=given_id if given_id else UNSET,
         )
         breadbox_response = add_dataset_uploads_client.sync_detailed(
             client=self.client,

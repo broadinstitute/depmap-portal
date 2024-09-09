@@ -167,12 +167,11 @@ def get_feature_data(
             f"Expected dataset_id, feature_id pairs. The number of dataset ids and feature ids provided should be equal."
         )
 
-    dataset_features = dataset_crud.get_features(
-        db=db, user=user, dataset_ids=dataset_ids, feature_ids=feature_ids
-    )
     feature_data = []
-
-    for feature in dataset_features:
+    for i in range(len(feature_ids)):
+        feature = dataset_crud.get_dataset_feature_by_given_id(
+            db=db, dataset_id=dataset_ids[i], feature_given_id=feature_ids[i]
+        )
         dataset = feature.dataset
         if not isinstance(dataset, MatrixDataset):
             raise UserError(

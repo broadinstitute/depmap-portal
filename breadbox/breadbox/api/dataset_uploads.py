@@ -32,6 +32,8 @@ def add_dataset_uploads(
 
     `group_id`: ID of the group the dataset belongs to. Required for non-transient datasets.
 
+    `given_id`: Stable human-readable identifier that the portal uses to look up specific datasets.
+
     `priority`: Numeric value assigned to the dataset with `1` being highest priority within the `data_type`, used for displaying order of datasets to show for a specific `data_type` in UI.
 
     `taiga_id`: Taiga ID the dataset is sourced from.

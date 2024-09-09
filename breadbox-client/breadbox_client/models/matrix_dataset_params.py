@@ -40,6 +40,8 @@ class MatrixDatasetParams:
         dataset_metadata (Union['MatrixDatasetParamsDatasetMetadataType0', None, Unset]): Contains a dictionary of
             additional dataset values that are not already provided above.
         feature_type (Union[None, Unset, str]): Type of features your dataset contains
+        given_id (Union[None, Unset, str]): Stable human-readable identifier that the portal uses to look up specific
+            datasets.
         is_transient (Union[Unset, bool]): Transient datasets can be deleted - should only be set to true for non-public
             short-term-use datasets like custom analysis results. Default: False.
         priority (Union[None, Unset, int]): Numeric value assigned to the dataset with `1` being highest priority within
@@ -64,6 +66,7 @@ class MatrixDatasetParams:
         UNSET
     )
     feature_type: Union[None, Unset, str] = UNSET
+    given_id: Union[None, Unset, str] = UNSET
     is_transient: Union[Unset, bool] = False
     priority: Union[None, Unset, int] = UNSET
     taiga_id: Union[None, Unset, str] = UNSET
@@ -119,6 +122,12 @@ class MatrixDatasetParams:
         else:
             feature_type = self.feature_type
 
+        given_id: Union[None, Unset, str]
+        if isinstance(self.given_id, Unset):
+            given_id = UNSET
+        else:
+            given_id = self.given_id
+
         is_transient = self.is_transient
 
         priority: Union[None, Unset, int]
@@ -156,6 +165,8 @@ class MatrixDatasetParams:
             field_dict["dataset_metadata"] = dataset_metadata
         if feature_type is not UNSET:
             field_dict["feature_type"] = feature_type
+        if given_id is not UNSET:
+            field_dict["given_id"] = given_id
         if is_transient is not UNSET:
             field_dict["is_transient"] = is_transient
         if priority is not UNSET:
@@ -246,6 +257,15 @@ class MatrixDatasetParams:
 
         feature_type = _parse_feature_type(d.pop("feature_type", UNSET))
 
+        def _parse_given_id(data: object) -> Union[None, Unset, str]:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(Union[None, Unset, str], data)
+
+        given_id = _parse_given_id(d.pop("given_id", UNSET))
+
         is_transient = d.pop("is_transient", UNSET)
 
         def _parse_priority(data: object) -> Union[None, Unset, int]:
@@ -280,6 +300,7 @@ class MatrixDatasetParams:
             data_file_format=data_file_format,
             dataset_metadata=dataset_metadata,
             feature_type=feature_type,
+            given_id=given_id,
             is_transient=is_transient,
             priority=priority,
             taiga_id=taiga_id,

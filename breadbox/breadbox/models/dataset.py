@@ -77,6 +77,7 @@ class Dataset(Base, UUIDMixin, GroupMixin):
         ),
     )
 
+    given_id = Column(String, unique=True)
     name = Column(String, nullable=False)
     format = Column(String, nullable=False)
     data_type = Column(String, ForeignKey(DataType.data_type), nullable=False)
