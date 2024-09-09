@@ -207,7 +207,10 @@ def _read_csv(file: BinaryIO, value_type: ValueType) -> pd.DataFrame:
     if headers and len(set(headers)) != len(headers):
         raise FileValidationError(f"Make sure all column names are unique.")
 
-    cols = pd.read_csv(text_io, nrows=0).columns
+    # Reset the cursor and read the file into a dataframe
+    file.seek(0)
+    cols = pd.read_csv(file, nrows=0).columns
+
     if value_type == ValueType.continuous:
         dtypes_ = dict(zip(cols, ["string"] + (["Float64"] * (len(cols) - 1))))
     elif value_type == ValueType.categorical:
