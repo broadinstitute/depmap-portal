@@ -1,6 +1,7 @@
 import functools
 from http.client import HTTPException
 import math
+from typing import Any
 from depmap.data_access import interface as data_access
 from depmap.dataset.models import DependencyDataset
 from depmap.predictability_prototype import hacks
@@ -161,14 +162,22 @@ def top_features_overall(gene_symbol, entity_id):
     adj_feature_importance = adj_feature_importance.set_index("feature_name")
     assert adj_feature_importance.index.is_unique
 
-    df = pd.DataFrame(
+    df_100 = pd.DataFrame(
         dict(
             feature=adj_feature_importance.index,
             feature_label=adj_feature_importance["feature_label"].values.tolist(),
             dim_type=adj_feature_importance["dim_type"].values.tolist(),
             adj_feature_importance=adj_feature_importance[0].values.tolist(),
         )
-    ).head(20)
+    ).head(100)
+
+    unique_gene_symbols = [
+        x
+        for index, x in enumerate(df_100["feature_label"])
+        if df_100["dim_type"].iloc[index] == "gene"
+    ]
+
+    df = df_100.head(10)
 
     feature_types_by_model = PrototypePredictiveModel.get_feature_types_added_per_model(
         MODEL_SEQUENCE, entity_id
@@ -183,11 +192,6 @@ def top_features_overall(gene_symbol, entity_id):
     df["feature_set"] = [get_feature_set(x) for x in df["feature_type"]]
     df["feature"] = [x.replace("_", " ") for x in df["feature"]]
     df["feature_label"] = df["feature_label"].values
-    unique_gene_symbols = [
-        x
-        for index, x in enumerate(df["feature_label"])
-        if df["dim_type"].iloc[index] == "gene"
-    ]
 
     # TODO: Replace this with real mapping of model_name to feature. This is just a short cut
     # for the prototype.
@@ -211,7 +215,7 @@ def top_features_overall(gene_symbol, entity_id):
     return top_features, unique_gene_symbols
 
 
-def get_density(x: np.ndarray, y: np.ndarray):
+def get_density(x: Any, y: Any):
     values = np.vstack([x, y])
     kernel = stats.gaussian_kde(values)
     density = kernel(values)
@@ -434,7 +438,7 @@ def get_feature_gene_effect_plot_data(
     if len(set(feature_values)) <= 1:
         density = feature_values
     else:
-        density = get_density(np.ndarray(feature_values), gene_slice)
+        density = get_density(feature_values, gene_slice)
 
     feature_dataset_units = data_access.get_dataset_units(feature_dataset_id)
 
