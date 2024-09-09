@@ -120,6 +120,10 @@ def _validate_dimension_type_metadata_file(
     except ValueError as e:
         raise AnnotationValidationError(str(e))
 
+    # make sure id column is unique
+    if not df[id_column].is_unique:
+        raise FileValidationError(f"Make sure all ids in {id_column} are unique.")
+
     # make sure id column have no missing info
     if df[id_column].isnull().values.any():
         raise FileValidationError(
@@ -200,9 +204,7 @@ def _read_csv(file: BinaryIO, value_type: ValueType) -> pd.DataFrame:
     text_io = io.TextIOWrapper(file, encoding="utf-8")
     dict_reader = csv.DictReader(text_io)
     headers = dict_reader.fieldnames
-    if headers is None:
-        raise FileValidationError(f"Unable to read CSV file header.")
-    if len(set(headers)) != len(headers):
+    if headers and len(set(headers)) != len(headers):
         raise FileValidationError(f"Make sure all column names are unique.")
 
     cols = pd.read_csv(text_io, nrows=0).columns
@@ -223,10 +225,7 @@ def _read_csv(file: BinaryIO, value_type: ValueType) -> pd.DataFrame:
 
 
 def _validate_data_file(
-    df: pd.DataFrame,
-    file: BinaryIO,
-    value_type: ValueType,
-    allowed_values: Optional[List[str]],
+    df: pd.DataFrame, value_type: ValueType, allowed_values: Optional[List[str]],
 ) -> pd.DataFrame:
     """
     Validates the data values against it's given value_type.
@@ -242,7 +241,6 @@ def _validate_data_file(
 
 
 def verify_unique_rows_and_cols(df: pd.DataFrame):
-    # TODO: this is the place where uniqueness is getting verified now
     duplicated_columns = df.columns[df.columns.duplicated()]
     if len(duplicated_columns) > 0:
         raise FileValidationError(
@@ -410,9 +408,7 @@ def validate_and_upload_dataset_files(
 
     unchecked_df.set_index(unchecked_df.columns[0], inplace=True)
 
-    data_df = _validate_data_file(
-        unchecked_df, data_file.file, value_type, allowed_values,
-    )
+    data_df = _validate_data_file(unchecked_df, value_type, allowed_values,)
 
     dataframe_validated_dimensions = _validate_dataset_dimensions(
         db, data_df, feature_type, sample_type
