@@ -1,7 +1,6 @@
 import requests
 from requests.adapters import HTTPAdapter, Retry
 from urllib.parse import urljoin
-from .utils import reformat_date
 import os
 from sqlitedict import SqliteDict
 
@@ -97,12 +96,7 @@ class DiscourseClient:
                 ]
 
                 topics = sorted(
-                    topics,
-                    key=lambda post: (
-                        post["pinned"] is True,
-                        reformat_date(post["bumped_at"]),
-                    ),
-                    reverse=True,
+                    topics, key=lambda post: (post["pinned"] is True,), reverse=True,
                 )
                 # Store response results
                 db[url] = topics
