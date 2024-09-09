@@ -13,17 +13,21 @@ class AddDimensionType:
     """
     Attributes:
         axis (AddDimensionTypeAxis):
+        display_name (str):
         id_column (str):
         name (str):
     """
 
     axis: AddDimensionTypeAxis
+    display_name: str
     id_column: str
     name: str
     additional_properties: Dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> Dict[str, Any]:
         axis = self.axis.value
+
+        display_name = self.display_name
 
         id_column = self.id_column
 
@@ -34,6 +38,7 @@ class AddDimensionType:
         field_dict.update(
             {
                 "axis": axis,
+                "display_name": display_name,
                 "id_column": id_column,
                 "name": name,
             }
@@ -46,12 +51,15 @@ class AddDimensionType:
         d = src_dict.copy()
         axis = AddDimensionTypeAxis(d.pop("axis"))
 
+        display_name = d.pop("display_name")
+
         id_column = d.pop("id_column")
 
         name = d.pop("name")
 
         add_dimension_type = cls(
             axis=axis,
+            display_name=display_name,
             id_column=id_column,
             name=name,
         )
