@@ -297,6 +297,7 @@ def validate_metadata_upload_and_add_to_db(
         settings,
         user,
         m.metadata_type_name,
+        m.metadata_type_name,
         m.id_column,
         axis,
         metadata_df,
