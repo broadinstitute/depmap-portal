@@ -1156,7 +1156,6 @@
         "type": "object"
       },
       "Group": {
-        "additionalProperties": true,
         "properties": {
           "id": {
             "format": "uuid",
@@ -1176,7 +1175,6 @@
         "type": "object"
       },
       "GroupEntry": {
-        "additionalProperties": true,
         "properties": {
           "access_type": {
             "$ref": "#/components/schemas/AccessType"
@@ -1240,7 +1238,6 @@
         "type": "object"
       },
       "GroupOut": {
-        "additionalProperties": true,
         "properties": {
           "datasets": {
             "anyOf": [
@@ -1499,7 +1496,6 @@
         "type": "object"
       },
       "MatrixDatasetResponse": {
-        "additionalProperties": true,
         "properties": {
           "allowed_values": {
             "anyOf": [
@@ -1980,7 +1976,6 @@
         "type": "object"
       },
       "TabularDatasetResponse": {
-        "additionalProperties": true,
         "properties": {
           "columns_metadata": {
             "additionalProperties": {

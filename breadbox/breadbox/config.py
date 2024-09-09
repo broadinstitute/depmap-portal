@@ -1,9 +1,9 @@
 from functools import lru_cache
 import os
-from typing import List, Optional
+from typing import List, Optional, Union
 
-from pydantic import field_validator, ConfigDict
-from pydantic_settings import BaseSettings
+from pydantic import RedisDsn, field_validator
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
@@ -22,17 +22,14 @@ class Settings(BaseSettings):
     origins: List[str] = [
         "http://127.0.0.1:5000",
     ]
+    CELERY_BROKER_URL: Union[RedisDsn, str] = os.environ.get(
+        "CELERY_BROKER_URL", "redis://127.0.0.1:6379/0"
+    )
+    CELERY_RESULT_BACKEND: Union[RedisDsn, str] = os.environ.get(
+        "CELERY_RESULT_BACKEND", "redis://127.0.0.1:6379/0"
+    )
 
-    model_config: ConfigDict = {
-        "extra": "allow",
-        "env_file": ".env",
-        "CELERY_BROKER_URL": os.environ.get(
-            "CELERY_BROKER_URL", "redis://127.0.0.1:6379/0"
-        ),
-        "CELERY_RESULT_BACKEND": os.environ.get(
-            "CELERY_RESULT_BACKEND", "redis://127.0.0.1:6379/0"
-        ),
-    }
+    model_config = SettingsConfigDict(env_file=".env",)
 
     @field_validator("host_scheme_override")
     def env_contains_colon(cls, v):
