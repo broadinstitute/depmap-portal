@@ -40,7 +40,7 @@ function LineChart({
 
     r: 20,
 
-    b: 90,
+    b: 160,
 
     t: 45,
 

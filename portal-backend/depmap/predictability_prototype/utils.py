@@ -1,4 +1,5 @@
 import functools
+from http.client import HTTPException
 import math
 from depmap.data_access import interface as data_access
 from depmap.dataset.models import DependencyDataset
@@ -90,9 +91,14 @@ def accuracy_per_model(gene_symbol, entity_id, screen_type, datasets, actuals):
             )
         ].id
 
-        gene_predictions = data_access.get_row_of_values(
-            prediction_dataset_id, gene_symbol,
-        )
+        try:
+            gene_predictions = data_access.get_row_of_values(
+                prediction_dataset_id, gene_symbol,
+            )
+        except:
+            raise Exception(
+                f"{gene_symbol} is missing prediction data. Cannot load page."
+            )
 
         accuracy = pairwise_complete_pearson_cor(gene_predictions, gene_actuals)
 
@@ -162,7 +168,7 @@ def top_features_overall(gene_symbol, entity_id):
             dim_type=adj_feature_importance["dim_type"].values.tolist(),
             adj_feature_importance=adj_feature_importance[0].values.tolist(),
         )
-    ).head(10)
+    ).head(20)
 
     feature_types_by_model = PrototypePredictiveModel.get_feature_types_added_per_model(
         MODEL_SEQUENCE, entity_id

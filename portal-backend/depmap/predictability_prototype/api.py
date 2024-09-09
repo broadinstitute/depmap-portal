@@ -35,47 +35,50 @@ class Predictions(
         gene_symbol = request.args.get("gene_symbol")
 
         # Overview data
-        gene_effect_df = get_gene_effect_df()
-        predictablity_datasets = get_all_predictability_datasets()
+        try:
+            gene_effect_df = get_gene_effect_df()
+            predictablity_datasets = get_all_predictability_datasets()
 
-        data_by_screen_type = {}
-        for screen_type in SCREEN_TYPES:
-            entity_id = Gene.get_by_label(gene_symbol).entity_id
+            data_by_screen_type = {}
+            for screen_type in SCREEN_TYPES:
+                entity_id = Gene.get_by_label(gene_symbol).entity_id
 
-            agg_scores = generate_aggregate_scores_across_all_models(
-                gene_symbol,
-                entity_id=entity_id,
-                screen_type=screen_type,
-                datasets=predictablity_datasets,
-                actuals=gene_effect_df,
-            )
-
-            top_features, gene_tea_symbols = top_features_overall(
-                gene_symbol, entity_id=entity_id
-            )
-
-            model_performance_info = {}
-
-            for model in MODEL_SEQUENCE:
-                feature_header_info = get_top_feature_headers(
-                    entity_id=entity_id, model=model, screen_type=screen_type
+                agg_scores = generate_aggregate_scores_across_all_models(
+                    gene_symbol,
+                    entity_id=entity_id,
+                    screen_type=screen_type,
+                    datasets=predictablity_datasets,
+                    actuals=gene_effect_df,
                 )
-                r = PrototypePredictiveModel.get_r_squared_for_model(model)
-                model_performance_info[model] = {
-                    "r": r,
-                    "feature_summaries": feature_header_info,
+
+                top_features, gene_tea_symbols = top_features_overall(
+                    gene_symbol, entity_id=entity_id
+                )
+
+                model_performance_info = {}
+
+                for model in MODEL_SEQUENCE:
+                    feature_header_info = get_top_feature_headers(
+                        entity_id=entity_id, model=model, screen_type=screen_type
+                    )
+                    r = PrototypePredictiveModel.get_r_squared_for_model(model)
+                    model_performance_info[model] = {
+                        "r": r,
+                        "feature_summaries": feature_header_info,
+                    }
+
+                data_by_screen_type[screen_type] = {
+                    "overview": {
+                        "aggregated_scores": agg_scores,
+                        "top_features": top_features,
+                        "gene_tea_symbols": list(gene_tea_symbols),
+                    },
+                    "model_performance_info": model_performance_info,
                 }
+        except Exception as e:
+            return {"error_message": str(e)}
 
-            data_by_screen_type[screen_type] = {
-                "overview": {
-                    "aggregated_scores": agg_scores,
-                    "top_features": top_features,
-                    "gene_tea_symbols": list(gene_tea_symbols),
-                },
-                "model_performance_info": model_performance_info,
-            }
-
-        return data_by_screen_type
+        return {"data": data_by_screen_type}
 
 
 @namespace.route("/model_performance")

@@ -22,7 +22,7 @@ const AggScoresTile = ({
   ] = useState<ExtendedPlotType | null>(null);
   return (
     <article className="card_wrapper stacked-boxplot-tile">
-      <div className="card_border container_fluid">
+      <div className="card_border container_fluid" style={{ height: "530px" }}>
         <h2 className="no_margin cardtitle_text">
           Aggregate Scores Across All Models
         </h2>
@@ -38,10 +38,10 @@ const AggScoresTile = ({
         </p>
         <div className="card_padding stacked-boxplot-graphs-padding">
           <div className={styles.PredictabilityTab}>
-            {crisprData?.accuracies &&
-              rnaiData?.accuracies &&
-              !aggScoresPlotElement && <PlotSpinner height="100%" />}
-            {crisprData?.accuracies && rnaiData?.accuracies && (
+            {!crisprData && !rnaiData && !aggScoresPlotElement && (
+              <PlotSpinner height="100%" />
+            )}
+            {crisprData && rnaiData && (
               <LineChart
                 title={plotTitle}
                 yAxisTitle={"Model Cumulative Accuracy"}

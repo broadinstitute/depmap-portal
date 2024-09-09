@@ -129,7 +129,7 @@ export type ModelPerformanceInfo = {
   feature_summaries: FeatureSummaries;
 };
 
-export type PredictabilityData = {
+export interface PredData {
   [screen_type: string]: {
     overview: {
       aggregated_scores: AggScoresData;
@@ -139,4 +139,9 @@ export type PredictabilityData = {
     // Per predictive model
     model_performance_info: { [key: string]: ModelPerformanceInfo };
   };
-};
+}
+
+export interface PredictabilityData {
+  data: PredData;
+  error_message?: string;
+}

@@ -69,7 +69,7 @@ const TopFeaturesOverallTile = ({
 
   return (
     <article className="card_wrapper stacked-boxplot-tile">
-      <div className="card_border container_fluid">
+      <div className="card_border container_fluid" style={{ height: "530px" }}>
         <h2 className="no_margin cardtitle_text">Top Features Overall</h2>
         <p
           style={{
@@ -91,7 +91,7 @@ const TopFeaturesOverallTile = ({
                 title={plotTitle}
                 xValues={xValues}
                 yValues={yValues}
-                height={320}
+                height={360}
                 customColors={customColors}
                 customLegend={customLegend}
                 onLoad={(element: ExtendedPlotType | null) => {
