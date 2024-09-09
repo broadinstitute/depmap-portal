@@ -200,6 +200,8 @@ def _read_csv(file: BinaryIO, value_type: ValueType) -> pd.DataFrame:
     text_io = io.TextIOWrapper(file, encoding="utf-8")
     dict_reader = csv.DictReader(text_io)
     headers = dict_reader.fieldnames
+    if headers is None:
+        raise FileValidationError(f"Unable to read CSV file header.")
     if len(set(headers)) != len(headers):
         raise FileValidationError(f"Make sure all column names are unique.")
 
