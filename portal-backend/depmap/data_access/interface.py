@@ -23,13 +23,13 @@ def get_all_matrix_datasets() -> list[MatrixDataset]:
     Return all matrix datasets as objects containing config values. 
     Uses a single request to breadbox to load all breadbox datasets. 
     """
-    # Load breadbox datases
+    # Load breadbox datasets
     breadbox_datasets = breadbox_dao.get_all_matrix_datasets()
 
     legacy_dataset_ids = _get_visible_legacy_dataset_ids()
     legacy_datasets = []
     for dataset_id in legacy_dataset_ids:
-        legacy_datasets.append(get_matrix_dataset(dataset_id))
+        legacy_datasets.append(_get_legacy_matrix_dataset(dataset_id))
     return legacy_datasets + breadbox_datasets
 
 
@@ -37,19 +37,23 @@ def get_matrix_dataset(dataset_id: str) -> MatrixDataset:
     if is_breadbox_id(dataset_id):
         return breadbox_dao.get_matrix_dataset(dataset_id)
     else:
-        data_type = interactive_utils.get_dataset_data_type(dataset_id)
-        return MatrixDataset(
-            id=dataset_id,
-            given_id=None,
-            label=interactive_utils.get_dataset_label(dataset_id),
-            data_type=data_type if data_type else None,
-            feature_type=interactive_utils.get_entity_type(dataset_id),
-            sample_type="depmap_model",
-            priority=interactive_utils.get_dataset_priority(dataset_id),
-            taiga_id=interactive_utils.get_taiga_id(dataset_id),
-            units=interactive_utils.get_dataset_units(dataset_id),
-            is_continuous=interactive_utils.is_continuous(dataset_id),
-        )
+        return _get_legacy_matrix_dataset(dataset_id)
+
+
+def _get_legacy_matrix_dataset(dataset_id: str) -> MatrixDataset:
+    data_type = interactive_utils.get_dataset_data_type(dataset_id)
+    return MatrixDataset(
+        id=dataset_id,
+        given_id=None,
+        label=interactive_utils.get_dataset_label(dataset_id),
+        data_type=data_type if data_type else None,
+        feature_type=interactive_utils.get_entity_type(dataset_id),
+        sample_type="depmap_model",
+        priority=interactive_utils.get_dataset_priority(dataset_id),
+        taiga_id=interactive_utils.get_taiga_id(dataset_id),
+        units=interactive_utils.get_dataset_units(dataset_id),
+        is_continuous=interactive_utils.is_continuous(dataset_id),
+    )
 
 
 def get_dataset_data_type(dataset_id: str) -> Optional[str]:
