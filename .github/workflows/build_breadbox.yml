@@ -72,7 +72,7 @@ jobs:
           virtualenvs-in-project: true
       - name: check that the breadbox client passes pyright
         run: |
-          cd breadbox-client && poetry install && poetry run pyright breadbox_fascade
+          cd breadbox-client && poetry install && poetry run pyright breadbox_facade
   build-docker:
     runs-on: ubuntu-latest
     steps:
