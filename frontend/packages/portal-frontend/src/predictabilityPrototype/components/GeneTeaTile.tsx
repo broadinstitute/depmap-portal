@@ -13,8 +13,20 @@ const GeneTeaTile = ({ selectedLabels }: GeneTeaTileProps) => {
   if (selectedLabels) {
     return (
       <article className="card_wrapper stacked-boxplot-tile">
-        <div className="card_border container_fluid">
+        <div
+          className="card_border container_fluid"
+          style={{ height: "530px" }}
+        >
           <h2 className="no_margin cardtitle_text">Top GeneTEA Terms</h2>
+          <p
+            style={{
+              marginLeft: "10px",
+              marginRight: "10px",
+              marginBottom: "15px",
+            }}
+          >
+            Search terms are derived from the top 100 overall features.
+          </p>
           <div className="card_padding stacked-boxplot-graphs-padding">
             <div style={{ paddingLeft: "15px", paddingRight: "15px" }}>
               {!selectedLabels && <PlotSpinner height="100%" />}
