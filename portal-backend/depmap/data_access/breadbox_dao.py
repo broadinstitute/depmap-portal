@@ -5,6 +5,7 @@ from breadbox_client.models import MatrixDatasetResponse, MatrixDatasetResponseF
 from depmap.data_access.response_parsing import (
     parse_breadbox_slice_id,
     parse_matrix_dataset_response,
+    is_breadbox_id_format,
 )
 from depmap.data_access.models import MatrixDataset
 from depmap import extensions
@@ -32,21 +33,20 @@ def get_all_matrix_dataset_ids() -> set[str]:
     return set([dataset.id for dataset in get_all_matrix_datasets()])
 
 
-def get_aliased_legacy_ids() -> set[str]:
-    """
-    Get the set of legacy IDs which have corresponding datasets in breadbox.
-    The breadbox definition will be preferred over the legacy definition. 
-    """
-    aliased_ids = set()
+def get_breadbox_given_ids() -> set[str]:
+    given_ids = set()
     for dataset in extensions.breadbox.client.get_datasets():
-        if (
-            dataset.format_ == MatrixDatasetResponseFormat.MATRIX_DATASET
-            and dataset.dataset_metadata
-        ):
-            alias = dataset.dataset_metadata.to_dict().get("legacy_dataset_id")
-            if alias:
-                aliased_ids.add(alias)
-    return aliased_ids
+        if dataset.given_id is not None:
+            given_ids.add(dataset.given_id)
+
+
+def is_breadbox_id(dataset_id: str) -> bool:
+    """
+    Check if the ID matches either:
+    - the breadbox dataset format (prefixed by "breadbox/")
+    - or matches the given id of a breadbox dataset
+    """
+    return is_breadbox_id_format(dataset_id) or dataset_id in get_breadbox_given_ids()
 
 
 # Eventually we will also need a more generic "get_dataset" that can handle tabular datasets

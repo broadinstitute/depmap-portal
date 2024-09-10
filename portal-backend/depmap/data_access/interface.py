@@ -2,7 +2,7 @@ from typing import Optional
 import pandas as pd
 
 from depmap.data_access import breadbox_dao
-from depmap.data_access.response_parsing import is_breadbox_id
+from depmap.data_access.breadbox_dao import is_breadbox_id
 from depmap.data_access.models import MatrixDataset
 from depmap.entity.models import Entity
 from depmap.interactive import interactive_utils
@@ -47,6 +47,7 @@ def get_all_matrix_datasets() -> list[MatrixDataset]:
 
 
 def get_matrix_dataset(dataset_id: str) -> MatrixDataset:
+    # TODO: update this to work with given ids
     if is_breadbox_id(dataset_id):
         return breadbox_dao.get_matrix_dataset(dataset_id)
     else:
@@ -399,7 +400,11 @@ def is_standard(dataset_id: str) -> bool:
 
 
 def _get_visible_legacy_dataset_ids():
+    """
+    Determine which legacy datasets should be hidden because they
+    have been copied to breadbox. 
+    """
     legacy_dataset_ids = interactive_utils.get_all_dataset_ids()
-    aliased_legacy_ids = breadbox_dao.get_aliased_legacy_ids()
+    breadbox_given_ids = breadbox_dao.get_breadbox_given_ids()
 
-    return legacy_dataset_ids - aliased_legacy_ids
+    return legacy_dataset_ids - breadbox_given_ids
