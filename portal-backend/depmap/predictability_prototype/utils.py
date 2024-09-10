@@ -598,6 +598,7 @@ def get_other_dep_waterfall_plot(
     feature_slice_values,
     feature_slice_index,
     screen_type: str,
+    entity_label: str,
 ):
     gene_df = data_access.get_subsetted_df_by_labels(
         _get_gene_dataset_id(screen_type), None, feature_slice_index
@@ -605,10 +606,7 @@ def get_other_dep_waterfall_plot(
 
     gene_df = gene_df.dropna()
 
-    import time
-
-    start = time.time()
-    feature_series = pd.DataFrame(data=feature_slice_values, index=feature_slice_index)
+    feature_series = pd.Series(data=feature_slice_values, index=feature_slice_index)
 
     def progress_callback(percentage):
         return
@@ -618,12 +616,6 @@ def get_other_dep_waterfall_plot(
     (x, _, _, _) = analysis_tasks_interface.prep_and_run_py_pearson(
         feature_series.values, gene_df.values, progress_callback
     )
-
-    end = time.time()
-    print(f"CORRWITH TIME {end-start} seconds")
-
-    # TODO confirm this method returns proper results. Example used corrwith but that
-    # was 2x as slow as just using apply with np.corrcoef.
 
     x = list(x)
     x.sort()
@@ -658,7 +650,9 @@ def get_feature_corr_plot(
     return rel_features_scatter_plot
 
 
-def get_feature_waterfall_plot(model, entity_id, feature_name_type, screen_type: str):
+def get_feature_waterfall_plot(
+    model, entity_id, feature_name_type, screen_type: str, entity_label: str
+):
     top_features = get_top_features(
         screen_type=screen_type, entity_id=entity_id, model=model
     )
@@ -674,6 +668,7 @@ def get_feature_waterfall_plot(model, entity_id, feature_name_type, screen_type:
             feature_slice_values=full_feature_info["feature_actuals_values"],
             feature_slice_index=full_feature_info["feature_actuals_value_labels"],
             screen_type=screen_type,
+            entity_label=entity_label,
         )
 
     return waterfall_plot

@@ -160,6 +160,7 @@ class Waterfall(
             model=model,
             entity_id=entity_id,
             feature_name_type=feature_name_type,
+            entity_label=entity_label,
         )
 
         return plot
