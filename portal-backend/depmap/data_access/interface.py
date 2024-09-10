@@ -54,6 +54,7 @@ def get_matrix_dataset(dataset_id: str) -> MatrixDataset:
         data_type = interactive_utils.get_dataset_data_type(dataset_id)
         return MatrixDataset(
             id=dataset_id,
+            given_id=None,
             label=interactive_utils.get_dataset_label(dataset_id),
             data_type=data_type if data_type else None,
             feature_type=interactive_utils.get_entity_type(dataset_id),

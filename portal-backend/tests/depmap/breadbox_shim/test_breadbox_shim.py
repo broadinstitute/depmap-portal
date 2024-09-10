@@ -4,7 +4,7 @@ from unittest.mock import MagicMock
 
 from breadbox_client.models import (
     MatrixDatasetResponse,
-    MatrixDatasetResponseDatasetMetadata,
+    MatrixDatasetResponseDatasetMetadataType0,
     FeatureResponse,
     FeatureResponseValues,
     Group,
@@ -26,7 +26,9 @@ mock_breadbox_datasets = [
         feature_type_name="compound",
         sample_type_name="depmap_model",
         data_type="user_upload",
+        dataset_metadata=None,
         value_type=ValueType.CONTINUOUS,
+        allowed_values=None,
     ),
     MatrixDatasetResponse(
         id="DATASET2-XXXX-XXXX-XXXX-XXXXXXXXXXXX",
@@ -38,10 +40,11 @@ mock_breadbox_datasets = [
         feature_type_name="gene",
         sample_type_name="depmap_model",
         data_type="user_upload",
-        dataset_metadata=MatrixDatasetResponseDatasetMetadata.from_dict(
+        dataset_metadata=MatrixDatasetResponseDatasetMetadataType0.from_dict(
             {"show_in_vector_catalog": True}
         ),
         value_type=ValueType.CATEGORICAL,
+        allowed_values=None,
     ),
 ]
 
@@ -185,7 +188,7 @@ def test_get_vector_catalog_children_feature_node():
 def test_get_dataset_nodes(mock_breadbox_client):
     # Update our mocks to all be allowed in vector catalog:
     for dataset_mock in mock_breadbox_datasets:
-        dataset_mock.dataset_metadata = MatrixDatasetResponseDatasetMetadata.from_dict(
+        dataset_mock.dataset_metadata = MatrixDatasetResponseDatasetMetadataType0.from_dict(
             {"show_in_vector_catalog": True}
         )
     # Mock the response from breadbox

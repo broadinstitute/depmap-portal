@@ -10,7 +10,7 @@ class MatrixDataset:
     """
 
     id: str
-    given_id: str
+    given_id: Optional[str]
     label: str
     data_type: Optional[str]
     feature_type: Optional[str]

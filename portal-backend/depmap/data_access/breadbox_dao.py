@@ -39,6 +39,7 @@ def get_breadbox_given_ids() -> set[str]:
     for dataset in extensions.breadbox.client.get_datasets():
         if dataset.given_id is not None:
             given_ids.add(dataset.given_id)
+    return given_ids
 
 
 def is_breadbox_id(dataset_id: str) -> bool:

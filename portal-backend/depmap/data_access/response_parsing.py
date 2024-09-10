@@ -87,7 +87,7 @@ def parse_matrix_dataset_response(dataset: MatrixDatasetResponse) -> MatrixDatas
     )
     return MatrixDataset(
         id=f"breadbox/{dataset.id}",
-        given_id=dataset.given_id,
+        given_id=dataset.given_id if dataset.given_id else None,
         label=dataset.name,
         data_type=dataset.data_type,
         feature_type=feature_type,
