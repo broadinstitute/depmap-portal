@@ -18,19 +18,6 @@ from depmap.partials.matrix.models import CellLineSeries, Matrix
 # portal should use this module for data access exclusively (and not interactive_utils).
 
 
-def get_all_matrix_dataset_ids() -> set[str]:
-    """
-    Get the ids of all datasets which should be visible to the user. 
-    Legacy dataset ids are formatted like: 'dataset_name'
-    Breadbox dataset ids are formatted like: 'breadbox/<dataset-UUID>'
-    The differing formats are used so that we can easily check the source of a given dataset.
-    """
-    legacy_dataset_ids = _get_visible_legacy_dataset_ids()
-    breadbox_dataset_ids = breadbox_dao.get_all_matrix_dataset_ids()
-
-    return legacy_dataset_ids.union(breadbox_dataset_ids)
-
-
 def get_all_matrix_datasets() -> list[MatrixDataset]:
     """
     Return all matrix datasets as objects containing config values. 
@@ -47,7 +34,6 @@ def get_all_matrix_datasets() -> list[MatrixDataset]:
 
 
 def get_matrix_dataset(dataset_id: str) -> MatrixDataset:
-    # TODO: update this to work with given ids
     if is_breadbox_id(dataset_id):
         return breadbox_dao.get_matrix_dataset(dataset_id)
     else:

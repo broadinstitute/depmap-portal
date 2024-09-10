@@ -27,13 +27,6 @@ def get_all_matrix_datasets() -> list[MatrixDataset]:
     return matrix_datasets
 
 
-def get_all_matrix_dataset_ids() -> set[str]:
-    """
-    Return all breadbox matrix dataset IDs.
-    """
-    return set([dataset.id for dataset in get_all_matrix_datasets()])
-
-
 def get_breadbox_given_ids() -> set[str]:
     given_ids = set()
     for dataset in extensions.breadbox.client.get_datasets():

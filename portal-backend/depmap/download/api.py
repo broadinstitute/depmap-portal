@@ -170,15 +170,15 @@ class Datasets(
 
 def get_datasets():
     dataset_list = []
-    for dataset_id in data_access.get_all_matrix_dataset_ids():
-        if data_access.is_continuous(dataset_id):
-            taiga_id = data_access.get_dataset_taiga_id(dataset_id)
+    for dataset in data_access.get_all_matrix_datasets():
+        if dataset.is_continuous:
+            taiga_id = dataset.taiga_id
             dataset_url = get_download_url(taiga_id) if taiga_id else None
             dataset_list.append(
                 {
-                    "id": dataset_id,
-                    "display_name": data_access.get_dataset_label(dataset_id),
-                    "data_type": data_access.get_dataset_data_type(dataset_id),
+                    "id": dataset.id,
+                    "display_name": dataset.label,
+                    "data_type": dataset.data_type,
                     "download_entry_url": dataset_url,
                 }
             )
