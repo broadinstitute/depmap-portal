@@ -32,6 +32,20 @@ def parse_breadbox_slice_id(slice_id: str) -> ParsedBreadboxSliceId:
     return ParsedBreadboxSliceId(match.group(1), match.group(2))
 
 
+def remove_breadbox_prefix(dataset_id: str) -> str:
+    """
+    If a dataset ID belongs to a breadbox dataset, it either:
+    - is a dataset's ID prefixed with "breadbox/" 
+    - or is a breadbox dataset's given id
+    However, when we make a request to breadbox, we don't want to pass the prefix,
+    so we strip the prefix off here if it has one.
+    """
+    match = re.match(BREADBOX_SLICE_ID_REGEX, dataset_id)
+    if match:
+        return match.group(1)
+    return dataset_id
+
+
 def is_breadbox_id_format(id: str):
     """Check if the ID matches eitherbreadbox dataset format (prefixed by "breadbox/")"""
     breadbox_match = re.match(BREADBOX_SLICE_ID_REGEX, id)
