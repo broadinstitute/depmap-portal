@@ -67,7 +67,7 @@ css_cdns = [
     "//fonts.googleapis.com/css?family=Barlow+Condensed",
     "//fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900",
     "//use.fontawesome.com/releases/v5.0.13/css/all.css",  # maxcdn.bootstrapcdn.com doesn't have this version
-    "//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.css",
+    "//cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap.min.css",
     "//cdn.datatables.net/1.10.16/css/dataTables.bootstrap.min.css",
     "//cdn.datatables.net/select/1.2.5/css/select.bootstrap.min.css",
     "//cdnjs.cloudflare.com/ajax/libs/selectize.js/0.12.4/css/selectize.bootstrap3.min.css",
@@ -94,7 +94,7 @@ pre_js = Bundle(  # js that is included in the header
 
 
 js_cdns = [
-    "//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js",
+    "//cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/js/bootstrap.min.js",
     "//cdnjs.cloudflare.com/ajax/libs/bootstrap-slider/9.8.1/bootstrap-slider.min.js",
     "//cdnjs.cloudflare.com/ajax/libs/seedrandom/3.0.5/seedrandom.min.js",
     "//cdn.datatables.net/1.10.13/js/jquery.dataTables.min.js",
