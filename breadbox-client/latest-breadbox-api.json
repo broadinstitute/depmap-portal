@@ -2282,22 +2282,43 @@
       },
       "UpdateDimensionType": {
         "properties": {
+          "display_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Display Name"
+          },
           "metadata_dataset_id": {
-            "title": "Metadata Dataset Id",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Metadata Dataset Id"
           },
           "properties_to_index": {
-            "items": {
-              "type": "string"
-            },
-            "title": "Properties To Index",
-            "type": "array"
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Properties To Index"
           }
         },
-        "required": [
-          "metadata_dataset_id",
-          "properties_to_index"
-        ],
         "title": "UpdateDimensionType",
         "type": "object"
       },
@@ -2359,7 +2380,7 @@
   },
   "info": {
     "title": "Breadbox",
-    "version": "3.6.0"
+    "version": "3.4.1"
   },
   "openapi": "3.1.0",
   "paths": {
