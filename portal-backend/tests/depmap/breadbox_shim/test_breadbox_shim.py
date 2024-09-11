@@ -29,6 +29,7 @@ mock_breadbox_datasets = [
         dataset_metadata=None,
         value_type=ValueType.CONTINUOUS,
         allowed_values=None,
+        dataset_metadata=MatrixDatasetResponseDatasetMetadataType0.from_dict({}),
     ),
     MatrixDatasetResponse(
         id="DATASET2-XXXX-XXXX-XXXX-XXXXXXXXXXXX",
