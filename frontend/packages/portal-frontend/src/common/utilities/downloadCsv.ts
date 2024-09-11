@@ -20,7 +20,7 @@ export default function downloadCsv(
         )
         // if the value contains commas, wrap it in quotes
         .map((value) =>
-          typeof value === "string" && value.indexOf(",") > 1
+          typeof value === "string" && value.indexOf(",") > -1
             ? `"${value}"`
             : value
         )

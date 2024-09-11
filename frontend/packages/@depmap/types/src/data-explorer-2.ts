@@ -116,7 +116,14 @@ export interface DataExplorerPlotResponse {
   dimensions: Record<DimensionKey | "x2", DataExplorerPlotResponseDimension>;
   filters: Partial<Record<FilterKey, { name: string; values: boolean[] }>>;
   metadata: Partial<
-    Record<string, { slice_id: string; values: (string | number)[] }>
+    Record<
+      string,
+      {
+        label: string;
+        slice_id: string;
+        values: (string | number)[];
+      }
+    >
   >;
 }
 
