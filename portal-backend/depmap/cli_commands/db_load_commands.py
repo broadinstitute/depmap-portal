@@ -164,13 +164,13 @@ def db_create_all():
 @click.option("-n", "--load_nonstandard", is_flag=True, default=False)
 @click.option("-d", "--load_full_constellation", is_flag=True, default=False)
 @click.option("-t", "--load_tda_predictability", is_flag=True, default=False)
-@click.option("--sync", is_flag=True, default=False)
+@click.option("--sync-only", is_flag=True, default=False)
 def recreate_dev_db(
     load_celligner,
     load_nonstandard,
     load_full_constellation,
     load_tda_predictability,
-    sync,
+    sync_only,
 ):
     """
     Deletes and recreates db
@@ -186,7 +186,7 @@ def recreate_dev_db(
     if not os.path.exists(current_app.config["COMPUTE_RESULTS_ROOT"]):
         os.makedirs(current_app.config["COMPUTE_RESULTS_ROOT"])
 
-    if not sync:
+    if not sync_only:
         if os.path.isfile(current_app.config["DB_PATH"]):
             os.remove(current_app.config["DB_PATH"])
 
