@@ -25,7 +25,7 @@ class DimensionType(BaseModel):
 
 class AddDimensionType(BaseModel):
     name: str
-    display_name: str
+    display_name: Optional[str] = None
     id_column: str
     axis: Literal["feature", "sample"]
 

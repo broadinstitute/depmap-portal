@@ -541,10 +541,10 @@ def add_dimension_type_endpoint(
             db,
             settings,
             user,
-            dimension_type.name,
-            dimension_type.display_name,
-            dimension_type.id_column,
-            dimension_type.axis,
+            name=dimension_type.name,
+            display_name=dimension_type.display_name,
+            id_column=dimension_type.id_column,
+            axis=dimension_type.axis,
         )
 
         return _dim_type_to_response(result)

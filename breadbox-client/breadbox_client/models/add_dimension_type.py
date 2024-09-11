@@ -1,9 +1,10 @@
-from typing import Any, Dict, List, Type, TypeVar
+from typing import Any, Dict, List, Type, TypeVar, Union, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
 from ..models.add_dimension_type_axis import AddDimensionTypeAxis
+from ..types import UNSET, Unset
 
 T = TypeVar("T", bound="AddDimensionType")
 
@@ -13,36 +14,41 @@ class AddDimensionType:
     """
     Attributes:
         axis (AddDimensionTypeAxis):
-        display_name (str):
         id_column (str):
         name (str):
+        display_name (Union[None, Unset, str]):
     """
 
     axis: AddDimensionTypeAxis
-    display_name: str
     id_column: str
     name: str
+    display_name: Union[None, Unset, str] = UNSET
     additional_properties: Dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> Dict[str, Any]:
         axis = self.axis.value
 
-        display_name = self.display_name
-
         id_column = self.id_column
 
         name = self.name
+
+        display_name: Union[None, Unset, str]
+        if isinstance(self.display_name, Unset):
+            display_name = UNSET
+        else:
+            display_name = self.display_name
 
         field_dict: Dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
             {
                 "axis": axis,
-                "display_name": display_name,
                 "id_column": id_column,
                 "name": name,
             }
         )
+        if display_name is not UNSET:
+            field_dict["display_name"] = display_name
 
         return field_dict
 
@@ -51,17 +57,24 @@ class AddDimensionType:
         d = src_dict.copy()
         axis = AddDimensionTypeAxis(d.pop("axis"))
 
-        display_name = d.pop("display_name")
-
         id_column = d.pop("id_column")
 
         name = d.pop("name")
 
+        def _parse_display_name(data: object) -> Union[None, Unset, str]:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(Union[None, Unset, str], data)
+
+        display_name = _parse_display_name(d.pop("display_name", UNSET))
+
         add_dimension_type = cls(
             axis=axis,
-            display_name=display_name,
             id_column=id_column,
             name=name,
+            display_name=display_name,
         )
 
         add_dimension_type.additional_properties = d

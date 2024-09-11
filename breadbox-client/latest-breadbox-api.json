@@ -72,8 +72,15 @@
             "type": "string"
           },
           "display_name": {
-            "title": "Display Name",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Display Name"
           },
           "id_column": {
             "title": "Id Column",
@@ -86,7 +93,6 @@
         },
         "required": [
           "name",
-          "display_name",
           "id_column",
           "axis"
         ],
@@ -2359,7 +2365,7 @@
   },
   "info": {
     "title": "Breadbox",
-    "version": "3.6.0"
+    "version": "3.4.1"
   },
   "openapi": "3.1.0",
   "paths": {
