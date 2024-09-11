@@ -368,9 +368,13 @@ def compute_context_explorer_results(
     depmap_data_taiga_id,
     repurposing_matrix_taiga_id,
     repurposing_list_taiga_id,
+    tda_table,
 ):
     ### ---- LOAD DATA ---- ###
     tc = create_taiga_client_v3()
+
+    tda_cols_needed = ["CRISPR_KS_score", "CRISPR_Bimodality"]
+    color_by_metrics_df = pd.read_csv(tda_table, usecols=tda_cols_needed)
 
     models = load_models(tc, depmap_data_taiga_id)
     gene_effect, gene_dependency = load_crispr_data(tc, depmap_data_taiga_id)
@@ -426,6 +430,7 @@ if __name__ == "__main__":
     parser.add_argument("depmap_data_taiga_id")
     parser.add_argument("repurposing_matrix_taiga_id")
     parser.add_argument("repurposing_list_taiga_id")
+    parser.add_argument("tda_table")
     parser.add_argument("out_filename")
     args = parser.parse_args()
     compute_context_explorer_results(
@@ -433,4 +438,5 @@ if __name__ == "__main__":
         args.depmap_data_taiga_id,
         args.repurposing_matrix_taiga_id,
         args.repurposing_list_taiga_id,
+        args.tda_table,
     )
