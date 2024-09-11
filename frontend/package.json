@@ -12,7 +12,9 @@
   "scripts": {
     "test": "yarn workspaces run test",
     "dev:elara": "yarn workspace elara-frontend dev",
+    "dev:elara:nocheck": "yarn workspace elara-frontend dev --env transpileOnly=true",
     "dev:portal": "yarn workspace portal-frontend dev",
+    "dev:portal:nocheck": "yarn workspace portal-frontend dev --env transpileOnly=true",
     "build:elara": "yarn workspace elara-frontend build",
     "build:portal": "yarn workspace portal-frontend build",
     "analyze:elara": "yarn workspace elara-frontend analyze",
