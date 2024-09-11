@@ -1,6 +1,7 @@
 import plotToCsv from "src/data-explorer-2/components/plot/prototype/plotToCsv";
+import { DataExplorerPlotResponse } from "@depmap/types";
 
-const data = {
+const data: DataExplorerPlotResponse = {
   index_type: "depmap_model",
   index_labels: ["ACH-000001", "ACH-000147", "ACH-000535", "ACH-000552"],
   index_aliases: [
@@ -24,6 +25,7 @@ const data = {
       ],
     },
   },
+  filters: {},
   metadata: {
     color_property: {
       label: "Lineage",
