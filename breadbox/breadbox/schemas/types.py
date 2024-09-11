@@ -1,10 +1,10 @@
 from typing import Optional, Dict, Any, Literal
 from breadbox.models.dataset import AnnotationType
-from breadbox.schemas.custom_http_exception import AnnotationValidationError
+from breadbox.schemas.custom_http_exception import AnnotationValidationError, UserError
 from breadbox.schemas.dataset import TabularDatasetResponse
 from fastapi import File, Form, HTTPException, UploadFile, Body
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, validator, model_validator
 from typing import List, Optional, Dict, Annotated
 import json
 
@@ -32,8 +32,28 @@ class AddDimensionType(BaseModel):
 
 class UpdateDimensionType(BaseModel):
     # cannot update name, id_column, nor axis
-    metadata_dataset_id: str
-    properties_to_index: List[str]
+    display_name: Optional[str] = None
+    metadata_dataset_id: Optional[str] = None
+    properties_to_index: Optional[List[str]] = None
+
+    @model_validator(mode="after")
+    def check_metadata_and_properties_to_index(self):
+        """
+        If `metadata_dataset_id` is provided, this means a new metadata for dimension type is being provided. Therefore, the properties to index, which are column names, should also change along with the new metadata.
+        """
+        metadata_dataset_id, properties_to_index = (
+            self.metadata_dataset_id,
+            self.properties_to_index,
+        )
+
+        if (metadata_dataset_id is not None and properties_to_index is None) or (
+            metadata_dataset_id is None and properties_to_index is not None
+        ):
+            raise UserError(
+                f"Both `metadata_dataset_id` and `properties_to_index` must be provided if one is to be updated."
+            )
+
+        return self
 
 
 # class DimensionTypeIn(DimensionType):
