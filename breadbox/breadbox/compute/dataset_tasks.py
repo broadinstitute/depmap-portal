@@ -18,8 +18,6 @@ from sqlalchemy import and_
 from breadbox.db.session import SessionWithUser
 from breadbox.schemas.custom_http_exception import ResourceNotFoundError
 from breadbox.models.dataset import (
-    CatalogNode,
-    DatasetFeature,
     DimensionType,
     ValueType,
 )
@@ -37,6 +35,7 @@ from ..crud import data_type as data_type_crud
 from ..io.data_validation import validate_and_upload_dataset_files
 from .celery import app
 from ..db.util import db_context
+from breadbox.compute.dataset_uploads_tasks import parse_and_validate_dataset_given_id
 
 log = getLogger(__name__)
 
@@ -188,6 +187,7 @@ def upload_dataset(
     *,
     update_message: Optional[Callable[[str], None]] = None,
     group_id: Optional[str] = None,
+    given_id: Optional[str] = None,
     dataset_metadata: Optional[Dict[str, Any]] = None,
 ):
     assert (
@@ -203,6 +203,9 @@ def upload_dataset(
         raise HTTPException(
             400, "Dataset sample_type and feature_type cannot both be null."
         )
+    parsed_given_id = parse_and_validate_dataset_given_id(
+        db=db, dataset_given_id=given_id, dataset_metadata=dataset_metadata
+    )
 
     dataset_id = str(uuid4())
 
@@ -254,6 +257,7 @@ def upload_dataset(
         value_type=value_type,
         priority=priority,
         taiga_id=taiga_id,
+        given_id=parsed_given_id,
         allowed_values=valid_fields.valid_allowed_values,
         dataset_metadata=dataset_metadata,
         dataset_md5=None,

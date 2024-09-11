@@ -263,8 +263,12 @@ def run_custom_analysis(
     user: str,
     analysis_type: str,  # pearson, association, or two_class
     query_node_id: Optional[str],  # Query feature spec used by elara (deprecated)
-    query_feature_id: Optional[str],  # Query feature spec (given id + dataset id)
-    query_dataset_id: Optional[str],
+    query_feature_id: Optional[
+        str
+    ],  # Query feature spec used by the portal (feature given id)
+    query_dataset_id: Optional[
+        str
+    ],  # Query feature spec used by the portal (dataset id or dataset given id)
     filestore_location: str,
     dataset_id: str,
     vector_is_dependent: bool,
@@ -314,9 +318,9 @@ def run_custom_analysis(
                 )
             elif query_feature_id and query_dataset_id:
                 # The given query Id should be the id of the feature itself
-                feature = dataset_crud.get_features(
-                    db, user, [query_dataset_id], [query_feature_id]
-                )[0]
+                feature = dataset_crud.get_dataset_feature_by_given_id(
+                    db, query_dataset_id, query_feature_id
+                )
                 query_series = filestore_crud.get_feature_slice(
                     dataset=feature.dataset,
                     feature_indexes=[feature.index],
@@ -470,6 +474,7 @@ def create_cell_line_group(
                 sample_type_name="depmap_model",
                 data_type="User upload",
                 id=dataset_id,
+                given_id=None,
                 value_type=ValueType.categorical,
                 allowed_values=["False", "True"],
                 priority=None,
@@ -487,14 +492,14 @@ def create_cell_line_group(
                 depmap_model_sample_type,
             )
 
-        # Return the feature or catalog node Id associated new dataset feature
+        # Return the feature ID associated with the new dataset feature
         if use_feature_ids:
-            feature: DatasetFeature = dataset_crud.get_dataset_feature(
+            feature: DatasetFeature = dataset_crud.get_dataset_feature_by_label(
                 db=db, user=user, dataset_id=dataset_id, feature_label=feature_label
             )
             return _format_breadbox_shim_slice_id(feature.dataset_id, feature.given_id)
         else:
-            dataset_feature = dataset_crud.get_dataset_feature(
+            dataset_feature = dataset_crud.get_dataset_feature_by_label(
                 db, user, dataset_id, feature_label
             )
             return str(dataset_feature.id)

@@ -10,8 +10,6 @@ from breadbox.db.session import SessionWithUser
 from breadbox.config import Settings
 from breadbox.crud.access_control import PUBLIC_GROUP_ID
 from breadbox.crud.dataset import (
-    ROOT_ID,
-    add_catalog_nodes,
     delete_dataset,
     get_properties_to_index,
     populate_search_index,
@@ -24,7 +22,6 @@ from breadbox.models.dataset import (
     AnnotationType,
     TabularCell,
     TabularColumn,
-    CatalogNode,
     TabularDataset,
     DatasetSample,
     DatasetFeature,
@@ -51,18 +48,16 @@ def _set_properties_to_index(
         db.flush()
 
 
-def _add_annotation_dimensions(
+def _add_metadata_dimensions(
     db: SessionWithUser,
     annotations_df: pd.DataFrame,
     annotation_type_mapping: Dict[str, AnnotationType],
     dataset_dimension_type_name: str,
     id_column: str,
-    dataset_catalog_node: CatalogNode,
     dataset: TabularDataset,
     units_per_column: Dict[str, str],
 ):
     col_annotations: List[TabularColumn] = []
-    catalog_nodes: List[CatalogNode] = []
     col_annotation_ids: Dict = {}
     annotation_values: List[TabularCell] = []
 
@@ -99,78 +94,11 @@ def _add_annotation_dimensions(
         )
 
         col_annotation_ids[col] = annotation_id
-        catalog_nodes.append(
-            CatalogNode(
-                dataset_id=dataset.id,
-                dimension_id=annotation_id,
-                priority=0,
-                parent=dataset_catalog_node,
-                label=col,
-                is_continuous=(
-                    True
-                    if annotation_type_mapping[col] == AnnotationType.continuous
-                    else False
-                ),
-                is_categorical=(
-                    True
-                    if annotation_type_mapping[col] == AnnotationType.categorical
-                    else False
-                ),
-                is_binary=(
-                    True
-                    if annotation_type_mapping[col] == AnnotationType.binary
-                    else False
-                ),
-                is_text=(
-                    True
-                    if annotation_type_mapping[col] == AnnotationType.text
-                    else False
-                ),
-            )
-        )
 
     db.bulk_save_objects(col_annotations)
     db.flush()
-    db.bulk_save_objects(catalog_nodes)
-    db.flush()
     db.bulk_save_objects(annotation_values)
     db.flush()
-
-
-def _add_metadata(
-    db: SessionWithUser,
-    metadata_df: pd.DataFrame,
-    annotation_type_mapping: Dict[str, AnnotationType],
-    dataset_dimension_type_name: str,
-    id_column: str,
-    dataset: TabularDataset,
-    units_per_column: Dict[str, str],
-):
-    parent_node = db.query(CatalogNode).filter_by(id=ROOT_ID).one()
-    annotation_mapping_values = set(annotation_type_mapping.values())
-    dataset_catalog_node = CatalogNode(
-        dataset=dataset,
-        dimension_id=None,
-        priority=0,
-        parent_id=parent_node.id,
-        label=dataset.name,
-        is_continuous=AnnotationType.continuous in annotation_mapping_values,
-        is_categorical=AnnotationType.categorical in annotation_mapping_values,
-        is_binary=AnnotationType.binary in annotation_mapping_values,
-        is_text=AnnotationType.text in annotation_mapping_values,
-    )
-    db.add(dataset_catalog_node)
-    db.flush()
-    _add_annotation_dimensions(
-        db=db,
-        annotations_df=metadata_df,
-        annotation_type_mapping=annotation_type_mapping,
-        dataset_dimension_type_name=dataset_dimension_type_name,
-        id_column=id_column,
-        dataset_catalog_node=dataset_catalog_node,
-        dataset=dataset,
-        units_per_column=units_per_column,
-    )
 
 
 def _add_dimension_type(
@@ -222,14 +150,14 @@ def _add_dimension_type(
         dimension_type.dataset_id = dataset_id
         db.flush()
 
-        _add_metadata(
-            db,
-            metadata_df,
-            annotation_type_mapping,
-            name,
-            id_column,
-            metadata_dataset,
-            units_per_column,
+        _add_metadata_dimensions(
+            db=db,
+            annotations_df=metadata_df,
+            annotation_type_mapping=annotation_type_mapping,
+            dataset_dimension_type_name=name,
+            id_column=id_column,
+            dataset=metadata_dataset,
+            units_per_column=units_per_column,
         )
 
         # Add a mapping that identifies which feature type datasets have columns that refer to other
@@ -287,6 +215,7 @@ def add_dimension_type(
             is_transient=False,
             group_id=PUBLIC_GROUP_ID,
             taiga_id=taiga_id,
+            given_id=None,
             priority=None,
             dataset_metadata=None,
             dataset_md5=None,  # This may change!
@@ -350,15 +279,7 @@ def _update_dataset_dimensions_with_dimension_type(
         .filter(dataset_dimension.dataset_dimension_type == dimension_type.name)
         .order_by(dataset_dimension.dataset_id, dataset_dimension.index)
     )
-    dataset_dimensions_ids = [
-        dataset_dim.id
-        for dataset_dim in dataset_dimensions_with_dimension_type_query.all()
-    ]
-    db.query(CatalogNode).filter(
-        CatalogNode.dimension_id.in_(dataset_dimensions_ids)
-    ).delete()
 
-    new_dataset_dimension_catalog_nodes = []
     updated_dimension_labels = []
 
     dims_grouped_by_dataset_df = pd.read_sql(
@@ -387,8 +308,6 @@ def _update_dataset_dimensions_with_dimension_type(
         for i in range(0, len(updated_dimension_labels), 10000):  # arbitrary chunk size
             chunk = i + 10000
             db.bulk_update_mappings(DatasetFeature, updated_dimension_labels[i:chunk])
-    db.flush()
-    add_catalog_nodes(db, new_dataset_dimension_catalog_nodes)
     db.flush()
 
 
@@ -449,7 +368,7 @@ def update_dimension_type_metadata(
                 db, user, dimension_type.dataset.id
             )
 
-        # Delete dataset and catalog nodes with dataset id; cascade deletes annotation dimensions which then deletes all annotation values
+        # Delete dataset; cascade deletes annotation dimensions which then deletes all annotation values
         is_deleted = delete_dataset(
             db, user, dimension_type.dataset, filestore_location
         )
@@ -472,14 +391,14 @@ def update_dimension_type_metadata(
     dimension_type.dataset_id = dataset_id
     db.flush()
 
-    _add_metadata(
-        db,
-        metadata_df,
-        annotation_type_mapping,
-        dimension_type.name,
-        dimension_type.id_column,
-        dimension_type_metadata,
-        units_per_column,
+    _add_metadata_dimensions(
+        db=db,
+        annotations_df=metadata_df,
+        annotation_type_mapping=annotation_type_mapping,
+        dataset_dimension_type_name=dimension_type.name,
+        id_column=dimension_type.id_column,
+        dataset=dimension_type_metadata,
+        units_per_column=units_per_column,
     )
     _update_dataset_dimensions_with_dimension_type(db, dimension_type, metadata_df)
 
@@ -498,19 +417,7 @@ def update_dimension_type_metadata(
 
 
 def delete_dimension_type(db: SessionWithUser, dimension_type: DimensionType):
-    # NOTE: Delete feature type if has dataset should cascade deletes
     db.delete(dimension_type)
-    # NOTE: Manually delete dataset's CatalogNodes instead of relying foreign key
-    # constraints and cascade deletes because the self-referencing relationship is causing
-    # large performance issues. Notice how there are no foreign key constraints only for
-    # catalog_node in models
-    if dimension_type.axis == "feature":
-        feature_type_metadata_dataset_id = dimension_type.dataset_id
-        if feature_type_metadata_dataset_id:
-            db.query(CatalogNode).filter(
-                CatalogNode.dataset_id == feature_type_metadata_dataset_id
-            ).delete()
-
     db.flush()
     return True
 
