@@ -7,9 +7,19 @@ downloads.
 Also set up your taiga token (<https://cds.team/taiga/token/>)
 
 Create a virtual environment, install Python and Javascript
-dependencies, and create and populate the database :
+dependencies:
 
     ./install_prereqs.sh
+
+Create and populate the database :
+
+    # first, in a different window, start breadbox, redis and the worker process
+    cd ../breadbox
+    ./bb run &
+    redis-server &
+    ./bb run_worker &
+
+    # then back in portal-backend create empty DB and sync the data into breadbox
     ./flask recreate_dev_db
 
 In one window, compile the Javascript :

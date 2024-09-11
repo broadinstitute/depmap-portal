@@ -208,17 +208,12 @@ def recreate_dev_db(
             ["poetry", "run", "./bb", "recreate-dev-db"], check=True, cwd="../breadbox"
         )
 
-    # start up the breadbox service so we can communicate with it
-    proc = subprocess.Popen(["poetry", "run", "./bb", "run"], cwd="../breadbox")
-    try:
-        # run the sync'ing process to make sure the breadbox metadata matches
-        # what's in the portal's DB.
+    # run the sync'ing process to make sure the breadbox metadata matches
+    # what's in the portal's DB.
 
-        sync_metadata_to_breadbox_with_retry(5)
+    sync_metadata_to_breadbox_with_retry(5)
 
-        # now shutdown the breadbox process
-    finally:
-        proc.kill()
+    # now shutdown the breadbox process
 
 
 def sync_metadata_to_breadbox_with_retry(max_attempts):
