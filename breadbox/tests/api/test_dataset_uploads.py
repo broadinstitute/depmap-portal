@@ -408,6 +408,75 @@ class TestPost:
         assert matrix_dataset_result is not None
         assert matrix_dataset_result.get("given_id") == given_id
 
+    def test_add_matrix_dataset_with_duplicate_ids_fails(
+        self,
+        client: TestClient,
+        minimal_db,
+        private_group: Dict,
+        settings,
+        mock_celery,
+        tmpdir,
+    ):
+        """Uploading a dataset with duplicate column or row IDs should fail"""
+        admin_headers = {"X-Forwarded-Email": settings.admin_users[0]}
+        self._setup_types(client, admin_headers)
+
+        file_with_duplicate_features = factories.continuous_matrix_csv_file(
+            feature_ids=["A", "B", "A", "C"], sample_ids=["A", "B", "C"],
+        )
+        file_ids, expected_md5 = self._upload_file(client, file_with_duplicate_features)
+
+        # This should fail because of the duplicate feature IDs
+        matrix_dataset_response = client.post(
+            "/dataset-v2/",
+            json={
+                "format": "matrix",
+                "name": "a dataset",
+                "units": "a unit",
+                "feature_type": None,
+                "sample_type": "sample",
+                "data_type": "User upload",
+                "file_ids": file_ids,
+                "dataset_md5": expected_md5,
+                "is_transient": False,
+                "group_id": PUBLIC_GROUP_ID,
+                "given_id": None,
+                "dataset_metadata": {},
+                "value_type": "continuous",
+                "allowed_values": None,
+            },
+            headers=admin_headers,
+        )
+        assert matrix_dataset_response.status_code == 400
+
+        file_with_duplicate_samples = factories.continuous_matrix_csv_file(
+            feature_ids=["A", "B", "C"], sample_ids=["A", "B", "A", "C"],
+        )
+        file_ids, expected_md5 = self._upload_file(client, file_with_duplicate_samples)
+
+        # This should fail because of the duplicate sample IDs
+        matrix_dataset_response = client.post(
+            "/dataset-v2/",
+            json={
+                "format": "matrix",
+                "name": "a dataset",
+                "units": "a unit",
+                "feature_type": None,
+                "sample_type": "sample",
+                "data_type": "User upload",
+                "file_ids": file_ids,
+                "dataset_md5": expected_md5,
+                "is_transient": False,
+                "group_id": PUBLIC_GROUP_ID,
+                "given_id": None,
+                "dataset_metadata": {},
+                "value_type": "continuous",
+                "allowed_values": None,
+            },
+            headers=admin_headers,
+        )
+        assert matrix_dataset_response.status_code == 400
+
     def test_add_tabular_dataset_with_dim_type_annotations(
         self,
         client: TestClient,

@@ -1,5 +1,7 @@
+import csv
 from dataclasses import dataclass
 from typing import Any, BinaryIO, Dict, List, Optional, Sequence, Union
+import io
 import json
 
 import numpy as np
@@ -197,6 +199,16 @@ from typing import cast
 
 
 def _read_csv(file: BinaryIO, value_type: ValueType) -> pd.DataFrame:
+    # When pandas reads non-unique columns from a CSV, it mangles them to make them unique.
+    # As a workaround, load and validate the columns first using csv.DictReader.
+    text_io = io.TextIOWrapper(file, encoding="utf-8")
+    dict_reader = csv.DictReader(text_io)
+    headers = dict_reader.fieldnames
+    if headers and len(set(headers)) != len(headers):
+        raise FileValidationError(f"Make sure all column names are unique.")
+
+    # Reset the cursor and read the file into a dataframe
+    file.seek(0)
     cols = pd.read_csv(file, nrows=0).columns
 
     if value_type == ValueType.continuous:
