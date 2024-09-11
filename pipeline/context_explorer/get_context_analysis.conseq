@@ -6,6 +6,8 @@ rule get_context_analysis:
         repurposing_matrix_taiga_id={"type": "repurposing_matrix_taiga_id"},
         repurposing_list_taiga_id={"type": "repurposing_list_taiga_id"}
         tda_table={"type": "tda-table"}
+        repurposing_table={'type': 'compound-summary','dataset': "Rep_all_single_pt"}
+        oncref_table={'type': 'compound-summary','dataset': "Prism_oncology_AUC"}
     outputs:
         {"type": "context_analysis", "filename": { "$filename": "context_analysis.csv"} }
     run """
@@ -15,5 +17,7 @@ rule get_context_analysis:
           {{ inputs.repurposing_matrix_taiga_id.dataset_id }} \
           {{ inputs.repurposing_list_taiga_id.dataset_id }} \
           {{ inputs.tda_table }} \
+          {{ inputs.repurposing_table }} \
+          {{ inputs.oncref_table }} \
           context_analysis.csv
         """

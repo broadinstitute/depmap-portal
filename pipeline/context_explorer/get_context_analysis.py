@@ -369,12 +369,16 @@ def compute_context_explorer_results(
     repurposing_matrix_taiga_id,
     repurposing_list_taiga_id,
     tda_table,
+    repurposing_table,
+    oncref_table,
 ):
     ### ---- LOAD DATA ---- ###
     tc = create_taiga_client_v3()
 
-    tda_cols_needed = ["CRISPR_KS_score", "CRISPR_Bimodality"]
-    color_by_metrics_df = pd.read_csv(tda_table, usecols=tda_cols_needed)
+    tda_cols_needed = ["entrez_id", "CRISPR_KS_score"]
+    color_by_metrics_df = pd.read_csv(
+        tda_table, usecols=tda_cols_needed, index_col=["entrez_id"]
+    )
 
     models = load_models(tc, depmap_data_taiga_id)
     gene_effect, gene_dependency = load_crispr_data(tc, depmap_data_taiga_id)
@@ -431,6 +435,8 @@ if __name__ == "__main__":
     parser.add_argument("repurposing_matrix_taiga_id")
     parser.add_argument("repurposing_list_taiga_id")
     parser.add_argument("tda_table")
+    parser.add_argument("repurposing_table")
+    parser.add_argument("oncref_table")
     parser.add_argument("out_filename")
     args = parser.parse_args()
     compute_context_explorer_results(
@@ -439,4 +445,6 @@ if __name__ == "__main__":
         args.repurposing_matrix_taiga_id,
         args.repurposing_list_taiga_id,
         args.tda_table,
+        args.repurposing_table,
+        args.oncref_table,
     )
