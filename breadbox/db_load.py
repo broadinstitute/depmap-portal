@@ -9,7 +9,7 @@ import pandas as pd
 from breadbox.crud.types import add_dimension_type
 
 from breadbox.crud.data_type import get_data_types
-from breadbox.api.types import add_feature_type, add_sample_type, Settings
+from breadbox.api.types import Settings
 from breadbox.schemas.types import IdMapping, AnnotationTypeMap
 import os
 from typing import Protocol, Any
