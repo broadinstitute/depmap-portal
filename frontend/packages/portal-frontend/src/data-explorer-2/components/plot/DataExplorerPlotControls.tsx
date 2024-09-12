@@ -1,31 +1,8 @@
 import React, { useCallback, useMemo } from "react";
 import { getDimensionTypeLabel } from "@depmap/data-explorer-2";
 import PrototypePlotControls from "src/data-explorer-2/components/plot/prototype/PrototypePlotsControls";
+import plotToLookupTable from "src/data-explorer-2/components/plot/prototype/plotToLookupTable";
 import downloadCsv from "src/common/utilities/downloadCsv";
-
-function getDimensions(plot: any) {
-  const { dimensions } = plot;
-  const { x, y, color } = dimensions || {};
-
-  return [x, y, color].filter(Boolean);
-}
-
-function applyFilter(
-  formattedData: Record<string, (number | null)[]>,
-  filter: boolean[] | undefined
-) {
-  if (!filter) {
-    return formattedData;
-  }
-
-  const filtered: typeof formattedData = {};
-
-  Object.keys(formattedData).forEach((key) => {
-    filtered[key] = formattedData[key].filter((_, i) => filter[i]);
-  });
-
-  return filtered;
-}
 
 function isHeatmap(
   data: any
@@ -121,24 +98,7 @@ function DataExplorerPlotControls({
       return;
     }
 
-    const indexColumn = getDimensionTypeLabel(data.index_type);
-
-    let formattedData: Record<string, any[]> = {
-      [indexColumn]: data.index_labels,
-    };
-
-    const cellLineDisplayNames = data.index_aliases?.[0]?.values;
-
-    if (cellLineDisplayNames) {
-      formattedData[data.index_aliases?.[0].label] = cellLineDisplayNames;
-    }
-
-    getDimensions(data).forEach((dimension: any) => {
-      const label = `"${dimension.axis_label}\n${dimension.dataset_label}"`;
-      formattedData[label] = dimension.values;
-    });
-
-    formattedData = applyFilter(formattedData, data?.filters?.visible?.values);
+    const { formattedData, indexColumn } = plotToLookupTable(data);
 
     downloadCsv(formattedData, indexColumn, filename as string);
   }, [data, filename]);
