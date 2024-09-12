@@ -270,7 +270,6 @@ initialize_current_auth.py: error: Argument of type "str | None" cannot be assig
 initialize_current_auth.py: error: Cannot access member "groups" for type "list[str]"
 initialize_current_auth.py: error: Cannot access member "is_admin" for type "list[str]"
 initialize_current_auth.py: error: Cannot assign member "is_everything_visible" for type "list[str]"
-interface.py: error: Expression of type "Unknown | None" cannot be assigned to return type "Entity"
 interface.py: error: Expression of type "Unknown | None" cannot be assigned to return type "int"
 iter.py: error: Argument of type "TranslateCRtoNL" cannot be assigned to parameter "__value" of type "int" in function "__setitem__"
 json_dump.py: error: Argument of type "Literal['JSONIFY_MIMETYPE']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
@@ -352,7 +351,6 @@ nonstandard_private_loader.py: error: Argument of type "Literal['NONSTANDARD_DAT
 nonstandard_private_loader.py: error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
 nonstandard_utils.py: error: "__get_config" is unknown import symbol (reportAttributeAccessIssue)
 nonstandard_utils.py: error: "__getitem__" method not defined on type "Datatype" (reportIndexIssue)
-nonstandard_utils.py: error: "get_label_aliases" is not a known member of "None" (reportOptionalMemberAccess)
 nonstandard_utils.py: error: "get_subsetted_df" is not a known member of "None" (reportOptionalMemberAccess)
 nonstandard_utils.py: error: Argument of type "Group | Dataset | Datatype | Unknown" cannot be assigned to parameter "__iterable" of type "Iterable[_T@list]" in function "__init__"
 nonstandard_utils.py: error: Argument of type "Literal['NONSTANDARD_DATA_DIR']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"

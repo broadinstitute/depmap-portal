@@ -1,4 +1,3 @@
-from depmap import data_access
 from depmap.interactive import interactive_utils
 from depmap.vector_catalog.models import (
     NodeFactory,
@@ -31,7 +30,7 @@ class CustomDatasetNodeFactory(NodeFactory):
             tree_id_encoder,
             key,
             self.get_attrs(locals()),
-            label=data_access.get_dataset_label(dataset_id),
+            label=interactive_utils.get_dataset_label(dataset_id),
             value=dataset_id,
             url=interactive_utils.get_dataset_url(dataset_id),
         )

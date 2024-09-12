@@ -11,6 +11,7 @@ from typing import Callable, List, Optional
 import pytest
 
 from depmap import data_access
+from depmap.interactive import interactive_utils
 from depmap.compute.analysis_tasks import run_custom_analysis
 from depmap.compute.models import CustomCellLineGroup
 from depmap_compute.models import AnalysisType
@@ -220,14 +221,14 @@ def test_run_custom_analysis_two_class(tmpdir, app, empty_db_mock_downloads):
     assert result["numCellLinesUsed"] == len(all_cell_lines)
 
     assert (
-        data_access.get_row_of_values_from_slice_id(
+        interactive_utils.get_row_of_values_from_slice_id(
             result["filterSliceId"]
         ).index.tolist()
         == all_cell_lines
     )
 
     assert (
-        data_access.get_row_of_values_from_slice_id(
+        interactive_utils.get_row_of_values_from_slice_id(
             result["colorSliceId"]
         ).index.tolist()
         == in_cell_lines
@@ -301,7 +302,7 @@ def test_run_custom_analysis_pearson(tmpdir, app, empty_db_mock_downloads):
 
     assert result["numCellLinesUsed"] == len(cell_lines)
     assert (
-        data_access.get_row_of_values_from_slice_id(
+        interactive_utils.get_row_of_values_from_slice_id(
             result["filterSliceId"]
         ).index.tolist()
         == cell_lines
@@ -344,7 +345,7 @@ def test_run_custom_analysis_assoc_vector_is_dependent_true(
 
     assert result["numCellLinesUsed"] == len(cell_lines)
     assert (
-        data_access.get_row_of_values_from_slice_id(
+        interactive_utils.get_row_of_values_from_slice_id(
             result["filterSliceId"]
         ).index.tolist()
         == cell_lines

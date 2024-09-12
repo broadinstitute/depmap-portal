@@ -2,7 +2,6 @@ from flask import url_for
 
 from depmap.enums import BiomarkerEnum
 from depmap.partials.matrix.models import RowMatrixIndex
-from depmap import data_access
 from depmap.interactive import interactive_utils
 from depmap.vector_catalog.models import (
     NodeFactory,
@@ -124,7 +123,7 @@ class GeneStandardDatasetNodeFactory(NodeFactory):
             tree_id_encoder,
             key,
             self.get_attrs(locals()),
-            label=data_access.get_dataset_label(dataset_id),
+            label=interactive_utils.get_dataset_label(dataset_id),
             value=dataset_id,
             url=interactive_utils.get_dataset_url(dataset_id),
             group=group,
@@ -148,7 +147,7 @@ class GeneStandardDatasetNodeFactory(NodeFactory):
         dataset_id, feature, feature_type = SliceSerializer.decode_slice_id(slice_id)
 
         if feature_type == SliceRowType.entity_id:
-            if data_access.get_dataset_feature_type(dataset_id) == "gene":
+            if interactive_utils.get_entity_type(dataset_id) == "gene":
                 gene_id = int(feature)
 
                 allowed_dataset_ids = set(
@@ -189,7 +188,7 @@ class GeneNonstandardDatasetNodeFactory(NodeFactory):
             tree_id_encoder,
             key,
             self.get_attrs(locals()),
-            label=data_access.get_dataset_label(dataset_id),
+            label=interactive_utils.get_dataset_label(dataset_id),
             value=dataset_id,
             url=interactive_utils.get_dataset_url(dataset_id),
             group=group,
@@ -213,8 +212,8 @@ class GeneNonstandardDatasetNodeFactory(NodeFactory):
             gene_id = int(feature)
 
             if (
-                not data_access.is_standard(dataset_id)
-                and data_access.get_entity_class(dataset_id) == Gene
+                not interactive_utils.is_standard(dataset_id)
+                and interactive_utils.get_entity_class(dataset_id) == Gene
             ):
                 return {"dataset_id": dataset_id, "gene_id": gene_id}
 
@@ -256,7 +255,7 @@ class RppaDatasetNodeFactory(NodeFactory):
             tree_id_encoder,
             key,
             self.get_attrs(locals()),
-            label=data_access.get_dataset_label(dataset_id),
+            label=interactive_utils.get_dataset_label(dataset_id),
             value=dataset_id,
             url=interactive_utils.get_dataset_url(dataset_id),
             group=group,
@@ -352,7 +351,7 @@ class RrbsDatasetNodeFactory(NodeFactory):
             tree_id_encoder,
             key,
             self.get_attrs(locals()),
-            label=data_access.get_dataset_label(
+            label=interactive_utils.get_dataset_label(
                 BiomarkerDataset.BiomarkerEnum.rrbs.name
             ),
             value=BiomarkerDataset.BiomarkerEnum.rrbs.name,
@@ -458,7 +457,7 @@ class ProteomicsDatasetNodeFactory(NodeFactory):
             tree_id_encoder,
             key,
             self.get_attrs(locals()),
-            label=data_access.get_dataset_label(dataset_id),
+            label=interactive_utils.get_dataset_label(dataset_id),
             value=dataset_id,
             url=interactive_utils.get_dataset_url(dataset_id),
             group=group,
@@ -560,7 +559,7 @@ class SangerProteomicsDatasetNodeFactory(NodeFactory):
             tree_id_encoder,
             key,
             self.get_attrs(locals()),
-            label=data_access.get_dataset_label(dataset_id),
+            label=interactive_utils.get_dataset_label(dataset_id),
             value=dataset_id,
             url=interactive_utils.get_dataset_url(dataset_id),
             group=group,
