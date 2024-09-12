@@ -16,6 +16,7 @@ class IdAndName(BaseModel):
 
 class DimensionType(BaseModel):
     name: str
+    display_name: str
     id_column: str
     axis: Literal["feature", "sample"]
     properties_to_index: Optional[List[str]] = Field(None,)
@@ -24,6 +25,7 @@ class DimensionType(BaseModel):
 
 class AddDimensionType(BaseModel):
     name: str
+    display_name: Optional[str] = None
     id_column: str
     axis: Literal["feature", "sample"]
 

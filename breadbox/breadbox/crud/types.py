@@ -107,6 +107,7 @@ def _add_dimension_type(
     name: str,
     id_column: str,
     axis: Literal["feature", "sample"],
+    display_name: Optional[str] = None,
     dataset_in: Optional[TabularDatasetIn] = None,
     metadata_df: Optional[pd.DataFrame] = None,
     annotation_type_mapping: Dict[str, AnnotationType] = None,
@@ -128,7 +129,11 @@ def _add_dimension_type(
 
     dataset_id = None
     dimension_type = DimensionType(
-        name=name, axis=axis, dataset_id=dataset_id, id_column=id_column,
+        name=name,
+        display_name=display_name,
+        axis=axis,
+        dataset_id=dataset_id,
+        id_column=id_column,
     )
     db.add(dimension_type)
     db.flush()
@@ -182,6 +187,7 @@ def add_dimension_type(
     name: str,
     id_column: str,
     axis: Literal["feature", "sample"],
+    display_name: Optional[str] = None,
     metadata_df: Optional[pd.DataFrame] = None,
     annotation_type_mapping: Optional[Dict[str, AnnotationType]] = None,
     reference_column_mappings: Optional[Dict[str, str]] = None,
@@ -227,6 +233,7 @@ def add_dimension_type(
             db,
             user=user,
             name=name,
+            display_name=display_name,
             id_column=id_column,
             axis=axis,
             dataset_in=dataset,
@@ -243,7 +250,12 @@ def add_dimension_type(
             )
 
         dimension_type = _add_dimension_type(
-            db, user=user, name=name, id_column=id_column, axis=axis,
+            db,
+            user=user,
+            name=name,
+            display_name=display_name,
+            id_column=id_column,
+            axis=axis,
         )
 
     return dimension_type

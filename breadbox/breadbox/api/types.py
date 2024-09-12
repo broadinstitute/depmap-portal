@@ -117,6 +117,7 @@ def add_dimension_type(
     settings: Settings,
     units_per_column: Dict[str, str],
 ):
+    """NOTE: This function is only used in the deprecated add_sample_type and add_feature_type endpoints"""
     # Check if sample type already exists
     existing_dimension_type = type_crud.get_dimension_type(db, name)
     if existing_dimension_type is not None:
@@ -150,6 +151,7 @@ def add_dimension_type(
             settings,
             user,
             name,
+            display_name=name,  # Placeholder value doesn't matter for deprecated function
             axis=axis,
             id_column=id_column,
             metadata_df=metadata_df,
@@ -539,9 +541,10 @@ def add_dimension_type_endpoint(
             db,
             settings,
             user,
-            dimension_type.name,
-            dimension_type.id_column,
-            dimension_type.axis,
+            name=dimension_type.name,
+            display_name=dimension_type.display_name,
+            id_column=dimension_type.id_column,
+            axis=dimension_type.axis,
         )
 
         return _dim_type_to_response(result)
@@ -630,6 +633,7 @@ def _dim_type_to_response(type: DimensionTypeModel):
 
     return DimensionType(
         name=type.name,
+        display_name=type.display_name,
         id_column=type.id_column,
         axis=type.axis,
         metadata_dataset_id=type.dataset_id,

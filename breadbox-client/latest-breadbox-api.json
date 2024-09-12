@@ -71,6 +71,17 @@
             "title": "Axis",
             "type": "string"
           },
+          "display_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Display Name"
+          },
           "id_column": {
             "title": "Id Column",
             "type": "string"
@@ -819,6 +830,10 @@
             "title": "Axis",
             "type": "string"
           },
+          "display_name": {
+            "title": "Display Name",
+            "type": "string"
+          },
           "id_column": {
             "title": "Id Column",
             "type": "string"
@@ -855,6 +870,7 @@
         },
         "required": [
           "name",
+          "display_name",
           "id_column",
           "axis"
         ],

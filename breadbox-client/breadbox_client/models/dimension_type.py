@@ -22,6 +22,7 @@ class DimensionType:
     """
     Attributes:
         axis (DimensionTypeAxis):
+        display_name (str):
         id_column (str):
         name (str):
         metadata_dataset_id (Union[None, Unset, str]):
@@ -29,6 +30,7 @@ class DimensionType:
     """
 
     axis: DimensionTypeAxis
+    display_name: str
     id_column: str
     name: str
     metadata_dataset_id: Union[None, Unset, str] = UNSET
@@ -37,6 +39,8 @@ class DimensionType:
 
     def to_dict(self) -> Dict[str, Any]:
         axis = self.axis.value
+
+        display_name = self.display_name
 
         id_column = self.id_column
 
@@ -62,6 +66,7 @@ class DimensionType:
         field_dict.update(
             {
                 "axis": axis,
+                "display_name": display_name,
                 "id_column": id_column,
                 "name": name,
             }
@@ -77,6 +82,8 @@ class DimensionType:
     def from_dict(cls: Type[T], src_dict: Dict[str, Any]) -> T:
         d = src_dict.copy()
         axis = DimensionTypeAxis(d.pop("axis"))
+
+        display_name = d.pop("display_name")
 
         id_column = d.pop("id_column")
 
@@ -114,6 +121,7 @@ class DimensionType:
 
         dimension_type = cls(
             axis=axis,
+            display_name=display_name,
             id_column=id_column,
             name=name,
             metadata_dataset_id=metadata_dataset_id,
