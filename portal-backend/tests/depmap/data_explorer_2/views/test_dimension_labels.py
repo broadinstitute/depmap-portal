@@ -15,10 +15,10 @@ from tests.factories import (
 from tests.utilities import interactive_test_utils
 
 
-def test_entity_labels(app, empty_db_mock_downloads, mock_breadbox_client):
+def test_dimension_labels(app, empty_db_mock_downloads, mock_breadbox_client):
     """
     Mock datasets with overlapping entities. 
-    Check that all unique entity labels are loaded.
+    Check that all unique dimension labels are loaded.
     """
     gene0 = GeneFactory(label="gene0")
     gene1 = GeneFactory(label="gene1")
@@ -50,7 +50,7 @@ def test_entity_labels(app, empty_db_mock_downloads, mock_breadbox_client):
 
     with app.test_client() as c:
         r = c.get(
-            url_for("data_explorer_2.entity_labels", entity_type="gene"),
+            url_for("data_explorer_2.dimension_labels", dimension_type="gene"),
             content_type="application/json",
         )
         assert r.status_code == 200, r.status_code

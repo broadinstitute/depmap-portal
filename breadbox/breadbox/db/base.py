@@ -8,6 +8,5 @@ from breadbox.models.dataset import (
     DatasetFeature,
     DatasetSample,
     DimensionType,
-    CatalogNode,
 )
 from breadbox.models.group import Group, GroupEntry

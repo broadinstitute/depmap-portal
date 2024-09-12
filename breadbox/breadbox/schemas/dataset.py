@@ -2,7 +2,7 @@ from __future__ import annotations
 import json
 from uuid import UUID
 from typing import Optional, List, Dict, Any, Annotated, Union, Literal
-from pydantic import BaseModel, Field, model_validator, validator
+from pydantic import AfterValidator, BaseModel, Field, model_validator, field_validator
 
 from breadbox.schemas.common import DBBase
 from fastapi import HTTPException, Body
@@ -30,14 +30,6 @@ class AnnotationType(enum.Enum):
     list_strings = "list_strings"
 
 
-class CatalogType(enum.Enum):
-    continuous = "continuous"
-    categorical = "categorical"
-    binary = "binary"
-    continuous_and_categorical = "continuous_and_categorical"
-    text = "text"
-
-
 # NOTE: `param: Annotated[Optional[str], Field(None)]` gives pydantic error 'ValueError: `Field` default cannot be set in `Annotated` for 'param''.
 # `param: Annotated[Optional[str], Field()] = None` solves the default issue
 # According to https://github.com/pydantic/pydantic/issues/8118 this issue is only in Pydantic V1.10 not V2.0.
@@ -62,6 +54,12 @@ class SharedDatasetParams(BaseModel):
             description=f"ID of the group the dataset belongs to. Required for non-transient datasets. The public group is `00000000-0000-0000-0000-000000000000`"
         ),
     ]
+    given_id: Annotated[
+        Optional[str],
+        Field(
+            description="Stable human-readable identifier that the portal uses to look up specific datasets."
+        ),
+    ] = None
     priority: Annotated[
         Optional[int],
         Field(
@@ -86,13 +84,27 @@ class SharedDatasetParams(BaseModel):
         ),
     ] = None  # NOTE: Error if put default value in Body(). Strangely, setting typing to Annotated[Optional[...]] correctly outputs in openapi.json as unrequired param but not in other cases?
 
-    @validator("dataset_md5")
+    @field_validator("dataset_md5")
     def check_hexadecimal(cls, v):
         try:
             int(v, 16)
             return v
         except:
             raise ValueError("Must be hex string")
+
+
+def check_allowed_values_not_empty(v):
+    if v == "":
+        raise UserError("Empty strings are not allowed.")
+    allowed_values_list_lower = [str(x).lower() for x in v]
+    if len(set(allowed_values_list_lower)) != len(v):
+        raise UserError(
+            msg="Make sure there are no repeats in allowed_values. Values are not considered case-sensitive",
+        )
+    return v
+
+
+AllowedValue = Annotated[str, AfterValidator(check_allowed_values_not_empty)]
 
 
 class MatrixDatasetParams(SharedDatasetParams):
@@ -113,11 +125,18 @@ class MatrixDatasetParams(SharedDatasetParams):
         ),
     ]
     allowed_values: Annotated[
-        Optional[List[str]],
+        Optional[List[AllowedValue]],
         Field(
             description="Only provide if 'value_type' is 'categorical'. Must contain all possible categorical values",
         ),
     ] = None
+
+    data_file_format: Annotated[
+        Literal["csv", "parquet"],
+        Field(
+            description="The format of the uploaded data file. May either be 'csv' or 'parquet'"
+        ),
+    ] = "csv"
 
     @model_validator(mode="after")
     def check_feature_and_sample_type(self):
@@ -150,17 +169,6 @@ class MatrixDatasetParams(SharedDatasetParams):
                 "Must include allowed_values for categorical value type datasets!"
             )
         return self
-
-    @validator("allowed_values", each_item=True)
-    def check_allowed_values_not_empty(cls, v):
-        if v == "":
-            raise UserError("Empty strings are not allowed.")
-        allowed_values_list_lower = [str(x).lower() for x in v]
-        if len(set(allowed_values_list_lower)) != len(v):
-            raise UserError(
-                msg="Make sure there are no repeats in allowed_values. Values are not considered case-sensitive",
-            )
-        return v
 
 
 class ColumnMetadata(BaseModel):
@@ -230,6 +238,7 @@ class SharedDatasetFields(BaseModel):
     name: str
     data_type: str
     group_id: str
+    given_id: Annotated[Optional[str], Field(default=None)]
     priority: Annotated[Optional[int], Field(default=None, gt=0,)]
     taiga_id: Annotated[Optional[str], Field(default=None,)]
     is_transient: Annotated[bool, Field(default=False,)]
@@ -237,8 +246,8 @@ class SharedDatasetFields(BaseModel):
         Optional[Dict[str, Any]], Field()
     ]  # NOTE: Same as Dict[str, Any] =  Field(None,)
     dataset_md5: Annotated[Optional[str], Field(None, max_length=32, min_length=32,)]
-    # validator
-    _check_uuid = validator("group_id", allow_reuse=True)(check_uuid)
+    # field_validator
+    _check_uuid = field_validator("group_id")(check_uuid)
 
 
 class MatrixDatasetBase(SharedDatasetFields):
@@ -253,8 +262,8 @@ class MatrixDatasetBase(SharedDatasetFields):
 class MatrixDatasetIn(MatrixDatasetBase):
     id: str
 
-    # validator
-    _check_uuid = validator("id", allow_reuse=True)(check_uuid)
+    # field_validator
+    _check_uuid = field_validator("id")(check_uuid)
 
 
 class MatrixDatasetResponse(MatrixDatasetBase, DBBase):
@@ -281,15 +290,15 @@ DatasetResponse = Annotated[
 ]
 
 
-MatrixDatasetResponse.update_forward_refs()
-TabularDatasetResponse.update_forward_refs()
+MatrixDatasetResponse.model_rebuild()
+TabularDatasetResponse.model_rebuild()
 
 
 class TabularDatasetIn(TabularDatasetBase):
     id: str
 
-    # validator
-    _check_uuid = validator("id", allow_reuse=True)(check_uuid)
+    # field_validator
+    _check_uuid = field_validator("id")(check_uuid)
 
 
 class AddDatasetResponse(BaseModel):

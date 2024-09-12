@@ -3,7 +3,8 @@
 # but it serves as a good reference for patching operators:
 # https://github.com/panzi/panzi-json-logic
 from json_logic import jsonLogic, operations  # type: ignore
-from depmap.data_explorer_2.utils import slice_to_dict
+from typing import Any, Callable
+from urllib.parse import unquote
 
 
 # Custom JsonLogic operators
@@ -27,7 +28,7 @@ operations.update(
 
 
 class ContextEvaluator:
-    def __init__(self, context):
+    def __init__(self, context: dict, get_slice_data: Callable[[str], dict[str, Any]]):
         """
         A `context` should have:
             - a `context_type` such as "depmap_model"
@@ -36,20 +37,23 @@ class ContextEvaluator:
         self.context_type = context["context_type"]
         self.expr = _encode_dots_in_vars(context["expr"])
         self.cache = {}
+        self.get_slice_data = get_slice_data
 
-    def is_match(self, entity_label):
+    def is_match(self, dimension_label: str):
         """
-        This evaluates `expr` against a given `entity_label`. It returns
-        True/False depending on if `entity_label` satifies the conditions of
+        This evaluates `expr` against a given `dimension_label`. It returns
+        True/False depending on if `dimension_label` satifies the conditions of
         the expression, including any variables ("var" subexpressions) which
         are bound by using a magic dict that does lookups lazily.
         """
-        data = _LazyContextDict(self.context_type, entity_label, self.cache)
+        data = _LazyContextDict(
+            self.context_type, dimension_label, self.cache, self.get_slice_data
+        )
 
         try:
             return jsonLogic(self.expr, data)
         except (TypeError, ValueError) as e:
-            print("Exception evaluating", self.expr, "against", entity_label)
+            print("Exception evaluating", self.expr, "against", dimension_label)
             print(e)
             return False
 
@@ -59,21 +63,30 @@ class ContextEvaluator:
 # But we don't need to "perfectly" override it; just well enough to trick the
 # JsonLogic library.
 class _LazyContextDict(dict):
-    def __init__(self, context_type, entity_label, cache):
+    def __init__(
+        self,
+        context_type: str,
+        dimension_label: str,
+        cache: dict,
+        get_slice_data: Callable[[str], dict[str, Any]],
+    ):
         self.context_type = context_type
-        self.entity_label = entity_label
+        self.dimension_label = dimension_label
         self.cache = cache
+        self.get_slice_data = get_slice_data
 
     def __getitem__(self, prop):
-        # Handle trivial case where we're just looking up an entity's own label
+        # Handle trivial case where we're just looking up a dimension's own
+        # label. Note that this is called "entity_label" for historical
+        # reasons.
         if prop == "entity_label":
-            return self.entity_label
+            return self.dimension_label
 
         if prop.startswith("slice/"):
             if prop not in self.cache:
-                self.cache[prop] = slice_to_dict(prop)
+                self.cache[prop] = self.get_slice_data(prop)
 
-            return self.cache[prop][self.entity_label]
+            return self.cache[prop][self.dimension_label]
 
         raise LookupError(
             f"Unable to find context property '{prop}'. Are you sure a corresponding "
@@ -101,3 +114,30 @@ def _encode_dots_in_vars(expr):
         return node
 
     return walk(expr, None)
+
+
+def decode_slice_id(slice_id) -> tuple[str, str, str]:
+    """
+    Originally based on the function of the same name from vector_catalog.SliceSerializer,
+    Data Explorer 2 slice ids are a superset of the legacy slice ids.
+    Originally, slice IDs were formatted like "slice/some_dataset_id/some_feature_label/label", 
+    or "slice/some_dataset_id/some_feature_id/entity_id", where the last part of the string
+    (originally called the SliceRowType) specifies whether the feature is being identified by ID or by label. 
+
+    The DE2 slice IDs give you flexibility by letting you query samples as well using the "transpose_label" specifier.
+    When "transpose_label" is used as the last segment of the slice ID, it means we should query for samples.
+    """
+    parts = slice_id.split("/")
+    assert (
+        parts[0] == "slice" and len(parts) >= 4 and len(parts) <= 5
+    ), f"Malformed slice_id: {slice_id}"
+
+    if len(parts) == 5:
+        # handle dataset IDs with slashes in them
+        parts[1:3] = ["/".join(parts[1:3])]
+
+    dataset_id = unquote(parts[1])
+    dimension_identifier = unquote(parts[2])
+    slice_type = unquote(parts[3])  # "label", "entity_id", or "transpose_label"
+
+    return dataset_id, dimension_identifier, slice_type

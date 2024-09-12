@@ -71,7 +71,7 @@ function ModalContent({
           expr={expr}
           path={[]}
           dispatch={dispatch}
-          entity_type={context.context_type}
+          slice_type={context.context_type}
           shouldShowValidation={shouldShowValidation}
           editInCellLineSelector={editInCellLineSelector}
         />

@@ -39,6 +39,14 @@ else:
 
 import enum
 
+# context-sensitive default function
+def default_display_name(context):
+    """
+    Gets the default display name from the Dimension Type's name field
+    context: The context of a statement is an internal SQLAlchemy object which contains all information about the statement being executed, including its source expression, the parameters associated with it and the cursor. 
+    """
+    return context.get_current_parameters()["name"]
+
 
 class DimensionType(Base):
     __tablename__ = "dimension_type"
@@ -47,6 +55,7 @@ class DimensionType(Base):
     )
 
     name = Column(String, nullable=False, primary_key=True)
+    display_name = Column(String, nullable=False, default=default_display_name)
     id_column = Column(String, nullable=False)  # The column name in the file
     axis = Column(String, nullable=False)  # "feature" or "sample" type
     dataset_id = Column(String, ForeignKey("dataset.id"))  # One to One relationship
@@ -68,6 +77,7 @@ class Dataset(Base, UUIDMixin, GroupMixin):
         ),
     )
 
+    given_id = Column(String, unique=True)
     name = Column(String, nullable=False)
     format = Column(String, nullable=False)
     data_type = Column(String, ForeignKey(DataType.data_type), nullable=False)
@@ -198,9 +208,9 @@ class Dimension(Base, UUIDMixin, GroupMixin):
     given_id = Column(
         String, nullable=False
     )  # name of series (column or index name of the dataset)
-    dataset_dimension_type = Column(
-        String, nullable=True
-    )  # feature type or sample type name, only used by vector catalog
+    # Denormalized data: this information is also stored in the dataset's corresponding
+    # feature/sample/index type name column (the information is duplicated here for convenience)
+    dataset_dimension_type = Column(String, nullable=True)
     subtype = Column(String, nullable=False)  # discriminator column
 
     # NOTE: The type stubs package 'sqlalchemy-stubs' with mypy plugin 'sqlmypy' does not support SQLAlchemy's declared attributes decorator (and the module it's imported from) and this is still an open issue (https://github.com/dropbox/sqlalchemy-stubs/issues/97).
@@ -284,7 +294,9 @@ class DimensionSearchIndex(Base, UUIDMixin, GroupMixin):
         # for now.
         Index("idx_dim_search_index_perf_1", "value"),
         Index("idx_dim_search_index_perf_2", "type_name", "value"),
-        Index("idx_dim_search_index_perf_3", "dimension_given_id", "type_name", "value")
+        Index(
+            "idx_dim_search_index_perf_3", "dimension_given_id", "type_name", "value"
+        ),
     )
 
     dimension_id = Column(
@@ -339,48 +351,3 @@ class PropertyToIndex(Base, UUIDMixin, GroupMixin):
         Dataset, backref=backref("properties_to_index", cascade="all, delete-orphan"),
     )
     property = Column(String, nullable=False)
-
-
-class CatalogNode(Base):
-    """
-    Needs to be created right after a new dataset with features are added
-    """
-
-    __tablename__ = "catalog_node"
-    __table_args__ = (
-        Index("idx_dataset_id_dimension_id", "dataset_id", "dimension_id"),
-        Index("idx_catalog_node_dimension_id", "dimension_id"),
-    )
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    dataset_id = Column(String)
-    dataset = relationship(
-        Dataset,
-        foreign_keys=[dataset_id],
-        primaryjoin="Dataset.id == CatalogNode.dataset_id",
-        backref=backref(
-            "catalog_nodes", cascade="all, delete-orphan", passive_deletes=True,
-        ),
-    )
-    dimension_id = Column(String)
-    dimension = relationship(
-        Dimension,
-        foreign_keys=[dimension_id],
-        primaryjoin="Dimension.id == CatalogNode.dimension_id",
-        backref=backref(
-            "catalog_nodes", cascade="all, delete-orphan", passive_deletes=True
-        ),
-    )
-    priority = Column(Integer)
-    parent_id = Column(Integer)
-    parent = relationship(
-        "CatalogNode",
-        foreign_keys=[parent_id],
-        primaryjoin="CatalogNode.id == CatalogNode.parent_id",
-        remote_side=id,
-        backref=backref("children", lazy="select"),
-    )
-    label = Column(String, nullable=False)  # is the name of column/index in dataset
-    is_continuous = Column(Boolean)
-    is_categorical = Column(Boolean)
-    is_binary = Column(Boolean)
-    is_text = Column(Boolean)

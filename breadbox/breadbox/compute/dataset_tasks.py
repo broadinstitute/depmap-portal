@@ -18,8 +18,6 @@ from sqlalchemy import and_
 from breadbox.db.session import SessionWithUser
 from breadbox.schemas.custom_http_exception import ResourceNotFoundError
 from breadbox.models.dataset import (
-    CatalogNode,
-    DatasetFeature,
     DimensionType,
     ValueType,
 )
@@ -37,6 +35,7 @@ from ..crud import data_type as data_type_crud
 from ..io.data_validation import validate_and_upload_dataset_files
 from .celery import app
 from ..db.util import db_context
+from breadbox.compute.dataset_uploads_tasks import parse_and_validate_dataset_given_id
 
 log = getLogger(__name__)
 
@@ -184,8 +183,11 @@ def upload_dataset(
     allowed_values: Optional[Set[str]],
     is_transient: bool,
     user: str,
+    data_file_format: str,
+    *,
     update_message: Optional[Callable[[str], None]] = None,
     group_id: Optional[str] = None,
+    given_id: Optional[str] = None,
     dataset_metadata: Optional[Dict[str, Any]] = None,
 ):
     assert (
@@ -201,6 +203,9 @@ def upload_dataset(
         raise HTTPException(
             400, "Dataset sample_type and feature_type cannot both be null."
         )
+    parsed_given_id = parse_and_validate_dataset_given_id(
+        db=db, dataset_given_id=given_id, dataset_metadata=dataset_metadata
+    )
 
     dataset_id = str(uuid4())
 
@@ -232,12 +237,13 @@ def upload_dataset(
                 settings.filestore_location,
                 value_type,
                 valid_fields.valid_allowed_values,
+                data_file_format=data_file_format,
             )
         )
     except ValueError as e:
         msg = f"Unexpected exception during dataset file validation: {e}"
         log.exception(msg)
-        raise HTTPException(400, detail=msg)
+        raise HTTPException(400, detail=msg) from e
 
     dataset = MatrixDatasetIn(
         id=dataset_id,
@@ -251,6 +257,7 @@ def upload_dataset(
         value_type=value_type,
         priority=priority,
         taiga_id=taiga_id,
+        given_id=parsed_given_id,
         allowed_values=valid_fields.valid_allowed_values,
         dataset_metadata=dataset_metadata,
         dataset_md5=None,
@@ -297,7 +304,7 @@ def upload_dataset(
     from breadbox.schemas.dataset import MatrixDatasetResponse
 
     return UploadDatasetResponse(
-        dataset=MatrixDatasetResponse.from_orm(added_dataset),
+        dataset=MatrixDatasetResponse.model_validate(added_dataset),
         datasetId=str(added_dataset.id),
         warnings=[warning],
         forwardingUrl=forwardingUrl,
@@ -327,8 +334,9 @@ def run_upload_dataset(
     allowed_values: Optional[Set[str]],
     is_transient: bool,
     user: str,
-    group_id: Optional[UUID] = None,
-    dataset_metadata: Optional[Dict[str, Any]] = None,
+    group_id: Optional[UUID],
+    dataset_metadata: Optional[Dict[str, Any]],
+    data_file_format: str,
 ):
     with db_context(user, commit=True) as db:
         start_time = time.time()
@@ -388,6 +396,7 @@ def run_upload_dataset(
             group_id=str(group_id),
             update_message=update_message,
             dataset_metadata=dataset_metadata,
+            data_file_format=data_file_format,
         )
 
         return upload_dataset_response

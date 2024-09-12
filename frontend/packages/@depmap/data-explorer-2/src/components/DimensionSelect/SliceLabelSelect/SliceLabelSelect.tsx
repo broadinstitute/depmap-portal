@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef } from "react";
 import VanillaAsycSelect from "react-select/async";
 import { WindowedMenuList } from "react-windowed-select";
 import { DataExplorerContext } from "@depmap/types";
-import { entityLabelFromContext } from "../../../utils/context";
+import { sliceLabelFromContext } from "../../../utils/context";
 import extendReactSelect from "../../../utils/extend-react-select";
 import {
   formatOptionLabel,
@@ -10,12 +10,12 @@ import {
   toDemapModelOptions,
   toOutputValue,
   toReactSelectOptions,
-  useEntityLabels,
+  useSliceLabels,
   useSearch,
 } from "./utils";
 
 interface Props {
-  entity_type: string;
+  slice_type: string;
   value: DataExplorerContext | null;
   onChange: (context: DataExplorerContext | null) => void;
   dataType: string | null;
@@ -26,10 +26,10 @@ interface Props {
 
 const AsyncSelect = extendReactSelect(VanillaAsycSelect);
 
-function EntitySelect({
+function SliceLabelSelect({
   value,
   onChange,
-  entity_type,
+  slice_type,
   dataType,
   dataset_id,
   units,
@@ -40,32 +40,32 @@ function EntitySelect({
 
   useEffect(() => {
     searchQuery.current = "";
-  }, [entity_type, dataType, dataset_id]);
+  }, [slice_type, dataType, dataset_id]);
 
   const {
     aliases,
     disabledReasons,
-    entityLabels,
+    sliceLabels,
     error,
     waitForCachedValues,
-  } = useEntityLabels(entity_type, dataType, dataset_id, units);
+  } = useSliceLabels(slice_type, dataType, dataset_id, units);
 
   const loadOptions = useCallback(
     async (inputValue: string) => {
-      const results = await search(inputValue, entity_type);
+      const results = await search(inputValue, slice_type);
 
       // HACK: We want the user to be able to start typing right away, before
-      // waiting for the `useEntityLabels` hook to have updated. This will run
+      // waiting for the `useSliceLabels` hook to have updated. This will run
       // quickly because the initial request from that hook is already in
       // flight.
       const cached = await waitForCachedValues();
 
       // special case
-      if (entity_type === "depmap_model") {
+      if (slice_type === "depmap_model") {
         return toDemapModelOptions(
           results,
           inputValue,
-          cached.entityLabels || [],
+          cached.sliceLabels || [],
           cached.aliases || [],
           cached.disabledReasons
         );
@@ -74,44 +74,44 @@ function EntitySelect({
       return toReactSelectOptions(
         results,
         inputValue,
-        cached.entityLabels || [],
+        cached.sliceLabels || [],
         cached.disabledReasons
       );
     },
-    [search, entity_type, waitForCachedValues]
+    [search, slice_type, waitForCachedValues]
   );
 
   const defaultOptions = useMemo(() => {
     // special case
-    if (entity_type === "depmap_model") {
+    if (slice_type === "depmap_model") {
       return toDemapModelOptions(
         [],
         null,
-        entityLabels || [],
+        sliceLabels || [],
         aliases || [],
         disabledReasons
       );
     }
 
-    return toReactSelectOptions([], null, entityLabels || [], disabledReasons);
-  }, [aliases, entity_type, entityLabels, disabledReasons]);
+    return toReactSelectOptions([], null, sliceLabels || [], disabledReasons);
+  }, [aliases, slice_type, sliceLabels, disabledReasons]);
 
   const notFound = useMemo(() => {
-    if (!dataset_id || !value || !entityLabels) {
+    if (!dataset_id || !value || !sliceLabels) {
       return null;
     }
 
-    if (value.context_type !== entity_type) {
+    if (value.context_type !== slice_type) {
       return null;
     }
 
-    const label = entityLabelFromContext(value);
+    const label = sliceLabelFromContext(value);
 
     if (disabledReasons[label as string]) {
       return `${value.name} not found`;
     }
 
-    if (new Set<string | null>(entityLabels).has(label)) {
+    if (new Set<string | null>(sliceLabels).has(label)) {
       return null;
     }
 
@@ -119,33 +119,33 @@ function EntitySelect({
       aliases &&
       aliases.length > 0 &&
       new Set<string | null>(aliases[0].values).has(
-        entityLabelFromContext(value)
+        sliceLabelFromContext(value)
       )
     ) {
       return null;
     }
 
     return `${value.name} not found`;
-  }, [aliases, dataset_id, disabledReasons, entity_type, entityLabels, value]);
+  }, [aliases, dataset_id, disabledReasons, slice_type, sliceLabels, value]);
 
   const displayValue =
     !value || notFound
       ? null
-      : { value: entityLabelFromContext(value) as string, label: value.name };
+      : { value: sliceLabelFromContext(value) as string, label: value.name };
 
   return (
     <AsyncSelect
       value={displayValue}
       hasError={Boolean(notFound || error)}
-      onChange={(option) => onChange(toOutputValue(entity_type, option))}
+      onChange={(option) => onChange(toOutputValue(slice_type, option))}
       menuWidth={310}
-      placeholder={notFound || getPlaceholder(entity_type)}
-      isLoading={!entityLabels}
+      placeholder={notFound || getPlaceholder(slice_type)}
+      isLoading={!sliceLabels}
       loadOptions={loadOptions}
       defaultOptions={defaultOptions}
       formatOptionLabel={formatOptionLabel}
       components={{ MenuList: WindowedMenuList }}
-      cacheOptions={`${entity_type}-${dataType}-${units}-${dataset_id}`}
+      cacheOptions={`${slice_type}-${dataType}-${units}-${dataset_id}`}
       swatchColor={swatchColor}
       isClearable
       isEditable
@@ -157,4 +157,4 @@ function EntitySelect({
   );
 }
 
-export default EntitySelect;
+export default SliceLabelSelect;

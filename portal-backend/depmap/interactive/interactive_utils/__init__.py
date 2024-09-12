@@ -41,9 +41,10 @@ from .get_and_process_data import (
     get_category_config,  # used only by get-features calls which involve custom analysis two class comparisons
     get_context_dataset,  # 6 uses, mostly vector catalog, also predictability
     get_custom_cell_lines_dataset,  # used in custom analysis, DE1, and in other interactive function implementations
-    get_dataset_feature_ids_by_label,
+    get_dataset_feature_labels_by_id,
     get_dataset_feature_labels,
     get_dataset_sample_ids,
+    get_dataset_sample_labels_by_id,
     get_matrix,  # downloads: check dataset size
     get_row_of_values,  # very heavily used
     get_row_of_values_from_slice_id,  # used by custom analysis, DE2, vector catalog, tests

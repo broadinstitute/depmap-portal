@@ -44,7 +44,6 @@ from ..models.dataset import (
     DimensionSearchIndex,
     TabularColumn,
     TabularCell,
-    CatalogNode,
     PropertyToIndex,
     ValueType,
     DimensionType,
@@ -153,10 +152,15 @@ def get_datasets(
 def get_dataset(
     db: SessionWithUser, user: str, dataset_id: Union[str, UUID]
 ) -> Optional[Dataset]:
+    """Get a dataset either by ID or given ID."""
     assert (
         db.user == user
     ), f"User parameter '{user}' must match the user set on the database session '{db.user}'"
-    dataset: Optional[Dataset] = db.query(Dataset).get(str(dataset_id))
+
+    dataset: Optional[Dataset] = db.query(Dataset).filter(
+        or_(Dataset.id == str(dataset_id), Dataset.given_id == str(dataset_id))
+    ).one_or_none()
+
     if dataset is None:
         return None
 
@@ -209,6 +213,7 @@ def add_matrix_dataset(
 
     dataset = MatrixDataset(
         id=dataset_in.id,
+        given_id=dataset_in.given_id,
         name=dataset_in.name,
         units=dataset_in.units,
         feature_type_name=dataset_in.feature_type_name,
@@ -224,25 +229,6 @@ def add_matrix_dataset(
         md5_hash=dataset_in.dataset_md5,
     )
     db.add(dataset)
-    db.flush()
-    parent_node = db.query(CatalogNode).filter_by(id=ROOT_ID).one()
-    dataset_catalog_node = CatalogNode(
-        dataset=dataset,
-        dimension_id=None,
-        priority=0,
-        parent_id=parent_node.id,
-        label=dataset.name,
-        is_continuous=True if dataset_in.value_type == ValueType.continuous else False,
-        is_categorical=(
-            True if dataset_in.value_type == ValueType.categorical else False
-        ),
-        is_binary=is_binary_category(allowed_values),
-        is_text=False,
-    )
-    db.add(dataset_catalog_node)
-    print(
-        f"Added catalog node to {db} {db.bind}: node: {dataset_catalog_node.id} dataset: {dataset.id}"
-    )
     db.flush()
 
     _add_matrix_dataset_dimensions(
@@ -667,7 +653,6 @@ def _add_matrix_dataset_dimensions(
     dataset: MatrixDataset,
 ):
     dimensions: List[Union[DatasetFeature, DatasetSample]] = []
-    catalog_nodes: List[CatalogNode] = []
 
     index_and_given_id = dimension_label_df_schema.validate(index_and_given_id)
 
@@ -690,8 +675,6 @@ def _add_matrix_dataset_dimensions(
 
     db.bulk_save_objects(dimensions)
     db.flush()
-    add_catalog_nodes(db, catalog_nodes)
-    db.flush()
 
 
 def add_tabular_dataset(
@@ -711,6 +694,7 @@ def add_tabular_dataset(
     group = _get_dataset_group(db, user, dataset_in.group_id, dataset_in.is_transient)
     dataset = TabularDataset(
         id=dataset_in.id,
+        given_id=dataset_in.given_id,
         name=dataset_in.name,
         index_type_name=dataset_in.index_type_name,
         data_type=dataset_in.data_type,
@@ -750,7 +734,7 @@ def _add_tabular_dimensions(
     group_id: str,
 ):
     """
-    Adds tabular dataset dimensions to database. Note that unlike matrix datasets, we do not store catalog nodes for each dimension since catalog nodes are expected to be deprecated in the future.
+    Adds tabular dataset dimensions to database.
     """
     dimensions = []
     values = []
@@ -1350,7 +1334,7 @@ def get_dataset_data_type_priorities(db: SessionWithUser):
 def update_dataset(
     db: SessionWithUser, user: str, dataset: Dataset, new_values: UpdateDatasetParams
 ):
-    update_data = new_values.dict(exclude_unset=True)
+    update_data = new_values.model_dump(exclude_unset=True)
     if "group_id" in update_data:
         new_group = get_group(db, user, update_data["group_id"], write_access=False)
         if new_group is None:
@@ -1382,14 +1366,6 @@ def delete_dataset(
     log.info("delete_dataset %s delete dataset itself", dataset.id)
     db.delete(dataset)
 
-    log.info("delete CatalogNode %s", dataset.id)
-    # NOTE: Manually delete dataset's CatalogNodes instead of relying foreign key
-    # constraints and cascade deletes because the self-referencing relationship is causing
-    # large performance issues. Notice how there are no foreign key constraints only for
-    # catalog_node in models
-    db.query(CatalogNode).filter(CatalogNode.dataset_id == dataset.id).delete()
-    # NOTE: Delete dataset should perform cascade deletes for the rest of the related tables
-
     # Matrix dataset files are stored as hdf5 and need to be deleted as well
     if dataset.format == "matrix_dataset":
         delete_data_files(dataset.id, filestore_location)
@@ -1398,62 +1374,31 @@ def delete_dataset(
     return True
 
 
-def add_catalog_nodes(db: SessionWithUser, catalog_nodes: List[CatalogNode]):
-    for i in range(0, len(catalog_nodes), 10000):  # arbitrary chunk size
-        chunk = i + 10000
-        db.bulk_save_objects(catalog_nodes[i:chunk])
+def get_dataset_feature_by_given_id(
+    db: SessionWithUser, dataset_id: str, feature_given_id: str,  # An ID or given ID
+) -> DatasetFeature:
+    dataset = get_dataset(db, db.user, dataset_id)
+    if dataset is None:
+        raise ResourceNotFoundError(f"Dataset '{dataset_id}' not found.")
+    assert_user_has_access_to_dataset(dataset, db.user)
+    assert isinstance(dataset, MatrixDataset)
 
-
-def get_catalog_node(
-    db: SessionWithUser, user: str, id: int,
-):
-    node = db.query(CatalogNode).get(id)
-
-    if node is None:
-        return None
-
-    if node.dataset_id:
-        dataset = get_dataset(db, user, node.dataset_id)
-        if dataset is None:
-            return None
-    if node.parent and node.parent.dataset_id:
-        dataset = get_dataset(db, user, node.parent.dataset_id)
-        if dataset is None:
-            return None
-    return node
-
-
-def get_features(
-    db: SessionWithUser, user: str, dataset_ids: List[str], feature_ids: List[str]
-) -> list[DatasetFeature]:
-    """
-    Load data for a set of features with the given natural keys (ex. entrez ids)
-    """
-    # iterate through the dataset id, feature id pairs
-    features = []
-    assert len(dataset_ids) == len(feature_ids)
-
-    for i in range(len(dataset_ids)):
-        feature = (
-            db.query(DatasetFeature)
-            .filter(
-                DatasetFeature.given_id == feature_ids[i],
-                DatasetFeature.dataset_id == dataset_ids[i],
-            )
-            .one_or_none()
+    feature = (
+        db.query(DatasetFeature)
+        .filter(
+            DatasetFeature.given_id == feature_given_id,
+            DatasetFeature.dataset_id == dataset.id,
         )
-        features.append(feature)
-
-    # validate that all of the requested features were loaded
-    if None in features:
-        raise ResourceNotFoundError(msg="One or more features were not found")
-
-    # validate access
-    [assert_user_has_access_to_dataset(feature.dataset, user) for feature in features]
-    return features
+        .one_or_none()
+    )
+    if feature is None:
+        raise ResourceNotFoundError(
+            f"Feature given ID '{feature_given_id}' not found in dataset '{dataset_id}'."
+        )
+    return feature
 
 
-def get_dataset_feature(
+def get_dataset_feature_by_label(
     db: SessionWithUser, user: str, dataset_id: str, feature_label: str
 ) -> DatasetFeature:
     """Load the dataset feature corresponding to the given dataset ID and feature label"""
@@ -1773,23 +1718,3 @@ def get_subsetted_matrix_dataset_df(
         df = df.rename(index=label_by_id)
 
     return df
-
-
-def get_feature_catalog_node(
-    db: SessionWithUser, user: str, dataset_id: str, feature_label: str
-) -> CatalogNode:
-    """Load the catalog node corresponding to the given dataset ID and feature label"""
-    node: CatalogNode = (
-        db.query(CatalogNode)
-        .join(DatasetFeature, DatasetFeature.id == CatalogNode.dimension_id)
-        .filter(
-            and_(
-                CatalogNode.dataset_id == dataset_id,
-                CatalogNode.dimension_id.isnot(None),
-                CatalogNode.label == feature_label,
-            )
-        )
-        .one()
-    )
-    assert_user_has_access_to_dataset(node.dataset, user)
-    return node

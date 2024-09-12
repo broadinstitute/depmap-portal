@@ -188,7 +188,7 @@ export function formatDataForScatterPlot(
   const contValues = nullifyUnplottableValues(
     data.dimensions.color?.values,
     data.filters?.visible?.values,
-    [data.dimensions.x, data.dimensions.y]
+    [data.dimensions.x, data.dimensions.y!]
   );
 
   return {
@@ -226,11 +226,11 @@ export function formatDataForScatterPlot(
         });
       }
 
-      if (c1Values && c1Values[i] && color_by === "context") {
+      if (c1Values && c1Values[i] && color_by === "aggregated_slice") {
         colorInfo.push(data.filters.color1!.name);
       }
 
-      if (c2Values && c2Values[i] && color_by === "context") {
+      if (c2Values && c2Values[i] && color_by === "aggregated_slice") {
         colorInfo.push(data.filters.color2!.name);
       }
 
@@ -241,7 +241,7 @@ export function formatDataForScatterPlot(
       if (contValues && contValues[i] !== null) {
         colorInfo.push(
           [
-            `<b>${data.dimensions.color.axis_label}</b>`,
+            `<b>${data.dimensions.color!.axis_label}</b>`,
             round(contValues[i] as number),
           ].join(": ")
         );

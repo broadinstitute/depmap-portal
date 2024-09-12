@@ -14,7 +14,11 @@ import {
   LinRegInfo,
 } from "@depmap/types";
 import { getContextHash } from "./utils/context";
-import { isCompleteDimension, isPartialSliceId } from "./utils/misc";
+import {
+  isCompleteDimension,
+  isPartialSliceId,
+  urlLibEncode,
+} from "./utils/misc";
 
 function fetchUrlPrefix() {
   // HACK: Detect when Elara is being served behind Depmap portal proxy
@@ -186,7 +190,7 @@ export async function fetchPlotDimensions(
     out[property][key] = { ...rest, values };
   });
 
-  return Promise.resolve(out as DataExplorerPlotResponse);
+  return Promise.resolve((out as unknown) as DataExplorerPlotResponse);
 }
 
 export async function fetchCorrelation(
@@ -245,7 +249,7 @@ export async function fetchContextLabels(
 export interface ContextDatasetsResponse {
   dataset_id: string;
   dataset_label: string;
-  entity_labels: string[];
+  dimension_labels: string[];
 }
 
 export function fetchDatasetsMatchingContextIncludingEntities(
@@ -271,8 +275,8 @@ export async function fetchMetadataColumn(
   return postJson("/get_metadata", { metadata: { slice_id } });
 }
 
-export function fetchEntityLabels(
-  entity_type: string
+export function fetchDimensionLabels(
+  dimension_type: string
 ): Promise<{
   labels: string[];
   aliases: {
@@ -281,36 +285,36 @@ export function fetchEntityLabels(
     values: string[];
   }[];
 }> {
-  const query = qs.stringify({ entity_type });
+  const query = qs.stringify({ dimension_type });
 
-  return fetchJson(`/entity_labels?${query}`);
+  return fetchJson(`/dimension_labels?${query}`);
 }
 
 type DataType = string;
 type DatasetIndex = number;
-type EntityLabel = string;
+type DimensionLabel = string;
 
-export function fetchEntityToDatasetsMapping(
-  entity_type: string
+export function fetchDimensionLabelsToDatasetsMapping(
+  dimension_type: string
 ): Promise<{
   dataset_ids: string[];
   dataset_labels: string[];
   units: Record<string, DatasetIndex[]>;
   data_types: Record<DataType, DatasetIndex[]>;
-  entity_labels: Record<EntityLabel, DatasetIndex[]>;
+  dimension_labels: Record<DimensionLabel, DatasetIndex[]>;
   aliases: {
     label: string;
     slice_id: string;
     values: string[];
   }[];
 }> {
-  const query = qs.stringify({ entity_type });
+  const query = qs.stringify({ dimension_type });
 
-  return fetchJson(`/entity_to_datasets_mapping?${query}`);
+  return fetchJson(`/dimension_labels_to_datasets_mapping?${query}`);
 }
 
-export function fetchEntityLabelsOfDataset(
-  entity_type: string | null,
+export function fetchDimensionLabelsOfDataset(
+  dimension_type: string | null,
   dataset_id: string
 ): Promise<{
   labels: string[];
@@ -320,9 +324,9 @@ export function fetchEntityLabelsOfDataset(
     values: string[];
   }[];
 }> {
-  const query = qs.stringify({ entity_type, dataset_id });
+  const query = qs.stringify({ dimension_type, dataset_id });
 
-  return fetchJson(`/entity_labels_of_dataset?${query}`);
+  return fetchJson(`/dimension_labels_of_dataset?${query}`);
 }
 
 export function fetchUniqueValuesOrRange(slice_id: string) {
@@ -490,7 +494,7 @@ export async function fetchAnalysisResult(
 
 export async function fetchAssociations(
   dataset_id: string,
-  entity_label: string
+  slice_label: string
 ): Promise<{
   associatedDatasets: string[];
   datasetLabel: string;
@@ -502,7 +506,7 @@ export async function fetchAssociations(
     other_slice_id: string;
   }[];
 }> {
-  const sliceId = `slice/${dataset_id}/${entity_label}/label`;
+  const sliceId = `slice/${urlLibEncode(dataset_id)}/${slice_label}/label`;
   const query = `x=${encodeURIComponent(sliceId)}`;
 
   return fetchJson(`/../interactive/api/associations?${query}`);
@@ -541,7 +545,7 @@ export type MetadataSlices = Record<
     valueType: "categorical" | "list_strings";
     isHighCardinality?: boolean;
     isPartialSliceId?: boolean;
-    entityTypeLabel?: string;
+    sliceTypeLabel?: string;
   }
 >;
 

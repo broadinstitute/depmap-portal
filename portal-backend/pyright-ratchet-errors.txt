@@ -131,12 +131,16 @@ db_load_commands.py: error: Argument of type "Literal['DATA_LOAD_CONFIG']" canno
 db_load_commands.py: error: Argument of type "Literal['DB_PATH']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
 db_load_commands.py: error: Argument of type "Literal['ENABLED_FEATURES']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
 db_load_commands.py: error: Argument of type "Literal['ENV']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+db_load_commands.py: error: Argument of type "Literal['FORUM_API_KEY']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+db_load_commands.py: error: Argument of type "Literal['FORUM_RESOURCES_CATEGORY']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+db_load_commands.py: error: Argument of type "Literal['FORUM_URL']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
 db_load_commands.py: error: Argument of type "Literal['GET_NONSTANDARD_DATASETS']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
 db_load_commands.py: error: Argument of type "Literal['LOADER_DATA_DIR']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
 db_load_commands.py: error: Argument of type "Literal['LOG_CONFIG']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
 db_load_commands.py: error: Argument of type "Literal['MATCH_RELATED_TAIGA_ID']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
 db_load_commands.py: error: Argument of type "Literal['METMAP_500_TAIGA_ID']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
 db_load_commands.py: error: Argument of type "Literal['NONSTANDARD_DATA_DIR']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
+db_load_commands.py: error: Argument of type "Literal['RESOURCES_DATA_PATH']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
 db_load_commands.py: error: Argument of type "Literal['S3_DIR']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
 db_load_commands.py: error: Argument of type "Literal['SAMPLE_DATA_DIR']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
 db_load_commands.py: error: Argument of type "Literal['WEBAPP_DATA_DIR']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
@@ -266,7 +270,6 @@ initialize_current_auth.py: error: Argument of type "str | None" cannot be assig
 initialize_current_auth.py: error: Cannot access member "groups" for type "list[str]"
 initialize_current_auth.py: error: Cannot access member "is_admin" for type "list[str]"
 initialize_current_auth.py: error: Cannot assign member "is_everything_visible" for type "list[str]"
-interface.py: error: Expression of type "Unknown | None" cannot be assigned to return type "Entity"
 interface.py: error: Expression of type "Unknown | None" cannot be assigned to return type "int"
 iter.py: error: Argument of type "TranslateCRtoNL" cannot be assigned to parameter "__value" of type "int" in function "__setitem__"
 json_dump.py: error: Argument of type "Literal['JSONIFY_MIMETYPE']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
@@ -348,7 +351,6 @@ nonstandard_private_loader.py: error: Argument of type "Literal['NONSTANDARD_DAT
 nonstandard_private_loader.py: error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
 nonstandard_utils.py: error: "__get_config" is unknown import symbol (reportAttributeAccessIssue)
 nonstandard_utils.py: error: "__getitem__" method not defined on type "Datatype" (reportIndexIssue)
-nonstandard_utils.py: error: "get_label_aliases" is not a known member of "None" (reportOptionalMemberAccess)
 nonstandard_utils.py: error: "get_subsetted_df" is not a known member of "None" (reportOptionalMemberAccess)
 nonstandard_utils.py: error: Argument of type "Group | Dataset | Datatype | Unknown" cannot be assigned to parameter "__iterable" of type "Iterable[_T@list]" in function "__init__"
 nonstandard_utils.py: error: Argument of type "Literal['NONSTANDARD_DATA_DIR']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
@@ -372,7 +374,6 @@ parse_downloads.py: error: Expression of type "tuple[Unknown | None, DownloadRel
 parse_downloads.py: error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
 parse_resources.py: error: Argument of type "None" cannot be assigned to parameter "__default" of type "_T@get" in function "get"
 parse_resources.py: error: No overloads for "get" match the provided arguments (reportCallIssue)
-plot.py: error: Argument of type "str | None" cannot be assigned to parameter "entity_type" of type "str" in function "to_display_name"
 predictability_loader.py: error: "dataset_id" is not a known member of "None" (reportOptionalMemberAccess)
 predictability_loader.py: error: Argument of type "Hashable" cannot be assigned to parameter "feature_id" of type "str" in function "row_to_feature_obj"
 predictability_loader.py: error: Argument of type "Literal['WEBAPP_DATA_DIR']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
@@ -620,7 +621,6 @@ utils.py: error: Cannot access member "dropna" for type "ndarray[Any, Unknown]"
 utils.py: error: Cannot access member "encode" for type "bytes"
 utils.py: error: Cannot access member "rename" for type "NDArray[Unknown]"
 utils.py: error: Cannot access member "rename" for type "ndarray[Any, Unknown]"
-utils.py: error: Cannot access member "unquote" for type "type[Serializer]"
 utils.py: error: Expression of type "Dict[str, DatasetSortKey] | Any" cannot be assigned to return type "DefaultDict[str, DatasetSortKey]"
 utils.py: error: Expression of type "None" cannot be assigned to return type "DataFrame"
 utils.py: error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
@@ -712,7 +712,6 @@ views.py: error: Argument of type "list[CellLineSeries]" cannot be assigned to p
 views.py: error: Argument of type "list[Unknown] | Any | list[int] | Unknown" cannot be assigned to parameter "query_cell_lines" of type "list[str] | None" in function "run_custom_analysis" (reportArgumentType)
 views.py: error: Argument of type "list[list[Unknown]] | None" cannot be assigned to parameter "compound_experiment_and_datasets" of type "List[Tuple[CompoundExperiment, DependencyDataset]]" in function "format_dep_dist_caption"
 views.py: error: Argument of type "str | Any" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
-views.py: error: Argument of type "str | None" cannot be assigned to parameter "entity_type" of type "str" in function "to_display_name"
 views.py: error: Argument of type "str | None" cannot be assigned to parameter "s" of type "str | bytes | bytearray" in function "loads" (reportArgumentType)
 views.py: error: Argument of type "str" cannot be assigned to parameter "__value" of type "_VT@dict" in function "__setitem__"
 views.py: error: Cannot access member "any" for type "List[Gene]"

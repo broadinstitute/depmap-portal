@@ -39,7 +39,7 @@ def test_get_dimension_single_row(app, empty_db_mock_downloads):
     get_dimension_model_request = {
         "index_type": "depmap_model",
         "dimension": {
-            "axis_type": "entity",
+            "axis_type": "raw_slice",
             "aggregation": "first",
             "context": {
                 "context_type": "Canary dataset local Feature",
@@ -47,13 +47,13 @@ def test_get_dimension_single_row(app, empty_db_mock_downloads):
                 "expr": {"==": [{"var": "entity_label"}, "gene0"]},
             },
             "dataset_id": "Chronos_Combined",
-            "entity_type": "Test dataset local Feature",
+            "slice_type": "Test dataset local Feature",
         },
     }
     get_dimension_gene_request = {
         "index_type": "gene",
         "dimension": {
-            "axis_type": "entity",
+            "axis_type": "raw_slice",
             "aggregation": "first",
             "context": {
                 "context_type": "Canary dataset local Feature",
@@ -61,7 +61,7 @@ def test_get_dimension_single_row(app, empty_db_mock_downloads):
                 "expr": {"==": [{"var": "entity_label"}, "ACH-0"]},
             },
             "dataset_id": "Chronos_Combined",
-            "entity_type": "Test dataset local Feature",
+            "slice_type": "Test dataset local Feature",
         },
     }
 
@@ -79,7 +79,7 @@ def test_get_dimension_single_row(app, empty_db_mock_downloads):
         assert response["axis_label"] == "gene0 units"
         assert response["dataset_id"] == "Chronos_Combined"
         assert response["dataset_label"] == "Chronos_Combined display name"
-        assert response["entity_type"] == "Test dataset local Feature"
+        assert response["slice_type"] == "Test dataset local Feature"
         assert response["indexed_values"] == {"ACH-0": 1.0}
 
         # Get the two gene values associated with the one model
@@ -95,5 +95,5 @@ def test_get_dimension_single_row(app, empty_db_mock_downloads):
         assert response["axis_label"] == "cell_line_0 (ACH-0) units"
         assert response["dataset_id"] == "Chronos_Combined"
         assert response["dataset_label"] == "Chronos_Combined display name"
-        assert response["entity_type"] == "Test dataset local Feature"
+        assert response["slice_type"] == "Test dataset local Feature"
         assert response["indexed_values"] == {"gene0": 1.0, "gene1": 2.0}

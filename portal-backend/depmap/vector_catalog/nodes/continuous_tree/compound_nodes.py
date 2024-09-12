@@ -1,5 +1,4 @@
 from flask import url_for
-from depmap import data_access
 from depmap.interactive import interactive_utils
 from depmap.vector_catalog.models import (
     NodeFactory,
@@ -71,7 +70,7 @@ class CompoundExperimentTerminatingDatasetNodeFactory(NodeFactory):
             tree_id_encoder,
             key,
             self.get_attrs(locals()),
-            label=data_access.get_dataset_label(dataset_id),
+            label=interactive_utils.get_dataset_label(dataset_id),
             value=dataset_id,
             url=interactive_utils.get_dataset_url(dataset_id),
         )
@@ -110,7 +109,7 @@ class CompoundDoseDatasetNodeFactory(NodeFactory):
             tree_id_encoder,
             key,
             self.get_attrs(locals()),
-            label=data_access.get_dataset_label(dataset_id),
+            label=interactive_utils.get_dataset_label(dataset_id),
             value=dataset_id,
             url=interactive_utils.get_dataset_url(dataset_id),
         )
@@ -155,7 +154,7 @@ class CompoundDoseReplicateDatasetNodeFactory(NodeFactory):
             tree_id_encoder,
             key,
             self.get_attrs(locals()),
-            label=data_access.get_dataset_label(dataset_id),
+            label=interactive_utils.get_dataset_label(dataset_id),
             value=dataset_id,
             url=interactive_utils.get_dataset_url(dataset_id),
         )

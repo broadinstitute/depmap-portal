@@ -4,7 +4,7 @@ from unittest.mock import MagicMock
 
 from breadbox_client.models import (
     MatrixDatasetResponse,
-    MatrixDatasetResponseDatasetMetadata,
+    MatrixDatasetResponseDatasetMetadataType0,
     Group,
     ValueType,
 )
@@ -424,10 +424,11 @@ def test_catalog_children_other_lookup(
             feature_type_name="gene",
             sample_type_name="depmap_model",
             data_type="user_upload",
-            dataset_metadata=MatrixDatasetResponseDatasetMetadata.from_dict(
+            dataset_metadata=MatrixDatasetResponseDatasetMetadataType0.from_dict(
                 {"show_in_vector_catalog": True}
             ),
             value_type=ValueType.CONTINUOUS,
+            allowed_values=None,
         ),
     ]
     mock_breadbox_client.get_datasets = MagicMock(return_value=mock_breadbox_datasets)
@@ -707,10 +708,11 @@ def test_catalog_path_other_label(app, empty_db_mock_downloads, mock_breadbox_cl
             feature_type_name="gene",
             sample_type_name="depmap_model",
             data_type="user_upload",
-            dataset_metadata=MatrixDatasetResponseDatasetMetadata.from_dict(
+            dataset_metadata=MatrixDatasetResponseDatasetMetadataType0.from_dict(
                 {"show_in_vector_catalog": True}
             ),
             value_type=ValueType.CONTINUOUS,
+            allowed_values=None,
         ),
     ]
     mock_breadbox_client.get_datasets = MagicMock(return_value=mock_breadbox_datasets)
@@ -735,7 +737,7 @@ def test_catalog_path_other_label(app, empty_db_mock_downloads, mock_breadbox_cl
         {
             "id": f"breadbox/{breadbox_dataset_uuid}",
             "label": "Breadbox Dataset 1",
-            "childValue": "Breadbox Dataset 1",
+            "childValue": f"breadbox/{breadbox_dataset_uuid}",
             "terminal": False,
             "url": None,
             "group": None,
@@ -883,10 +885,11 @@ def test_catalog_path_breadbox_feature(
             feature_type_name="gene",
             sample_type_name="depmap_model",
             data_type="user_upload",
-            dataset_metadata=MatrixDatasetResponseDatasetMetadata.from_dict(
+            dataset_metadata=MatrixDatasetResponseDatasetMetadataType0.from_dict(
                 {"show_in_vector_catalog": True}
             ),
             value_type=ValueType.CONTINUOUS,
+            allowed_values=None,
         ),
     ]
     mock_breadbox_client.get_datasets = MagicMock(return_value=mock_breadbox_datasets)
@@ -922,7 +925,7 @@ def test_catalog_path_breadbox_feature(
         expected_dataset_child_node = {
             "id": f"breadbox/{dataset_uuid}",
             "label": "Breadbox Dataset 1",
-            "childValue": "Breadbox Dataset 1",
+            "childValue": f"breadbox/{dataset_uuid}",
             "terminal": False,
             "url": None,
             "group": None,

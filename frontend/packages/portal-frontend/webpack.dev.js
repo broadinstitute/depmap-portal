@@ -4,7 +4,7 @@ const ReactRefreshWebpackPlugin = require("@pmmmwh/react-refresh-webpack-plugin"
 const ReactRefreshTypeScript = require("react-refresh-typescript");
 const jsonImporter = require("node-sass-json-importer");
 
-module.exports = merge(common, {
+const devConfig = (env, argv) => ({
   mode: "development",
 
   devtool: "cheap-module-source-map",
@@ -42,6 +42,7 @@ module.exports = merge(common, {
           {
             loader: require.resolve("ts-loader"),
             options: {
+              transpileOnly: env.transpileOnly === "true",
               getCustomTransformers: () => ({
                 before: [ReactRefreshTypeScript()],
               }),
@@ -77,3 +78,5 @@ module.exports = merge(common, {
     ],
   },
 });
+
+module.exports = (env, argv) => merge(common, devConfig(env, argv));

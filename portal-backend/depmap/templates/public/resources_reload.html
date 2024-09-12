@@ -1,0 +1,12 @@
+{% extends "nav_footer.html" %} {% block page_title %}Page Not Found{% endblock
+%} {% block css %} {% assets filters="libsass",
+output="public/css/error_page.css", "css/error_page/error_page.scss" %}
+<link rel="stylesheet" href="{{ ASSET_URL }}" />
+{% endassets %} {% endblock %} {% block content %}
+<div>
+    <h1>Reload Successful!</h1>
+    <p>
+        Resources Page posts should be updated!
+    </p>
+</div>
+{% endblock %}

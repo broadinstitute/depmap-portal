@@ -3,12 +3,12 @@ import {
   DataExplorerDatasetDescriptor,
   DataExplorerPlotConfigDimension,
 } from "@depmap/types";
-import { fetchEntityToDatasetsMapping } from "../../../api";
+import { fetchDimensionLabelsToDatasetsMapping } from "../../../api";
 
 export type Mode = "entity-only" | "context-only" | "entity-or-context";
 export type PartialDimension = Partial<DataExplorerPlotConfigDimension>;
-export type EntityToDatasetsMapping = Awaited<
-  ReturnType<typeof fetchEntityToDatasetsMapping>
+export type DimensionLabelsToDatasetsMapping = Awaited<
+  ReturnType<typeof fetchDimensionLabelsToDatasetsMapping>
 >;
 
 type Option = {
@@ -28,7 +28,7 @@ export interface State {
   justSynced: boolean;
   unitsOptions: Option[];
   dataTypeOptions: Option[];
-  entityTypeOptions: Option[];
+  sliceTypeOptions: Option[];
   dataVersionOptions: (Option & { isDefault: boolean })[];
   dataType: string | null;
   units: string | null;
@@ -40,7 +40,7 @@ export const DEFAULT_STATE: State = {
   justSynced: false,
   unitsOptions: [],
   dataTypeOptions: [],
-  entityTypeOptions: [],
+  sliceTypeOptions: [],
   dataVersionOptions: [],
   dataType: null,
   units: null,
@@ -52,9 +52,9 @@ export type Changes = Partial<{
   index_type: string | null;
   dataType: string | null;
   units: string | null;
-  entity_type: string | null;
+  slice_type: string | null;
   dataset_id: string | null;
-  axis_type: "context" | "entity" | null;
+  axis_type: "raw_slice" | "aggregated_slice" | null;
   context: DataExplorerContext | null;
 }>;
 

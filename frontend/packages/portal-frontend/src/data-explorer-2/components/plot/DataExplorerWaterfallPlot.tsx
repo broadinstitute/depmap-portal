@@ -74,12 +74,12 @@ function DataExplorerWaterfallPlot({
     return () => clearTimeout(timeout);
   }, [isLoading]);
 
-  const entity_type0 = plotConfig.dimensions.x?.entity_type;
-  const entity_type1 = plotConfig.dimensions.y?.entity_type;
+  const slice_type0 = plotConfig.dimensions.x?.slice_type;
+  const slice_type1 = plotConfig.dimensions.y?.slice_type;
 
   useEffect(() => {
     setSelectedLabels(null);
-  }, [entity_type0, entity_type1]);
+  }, [slice_type0, slice_type1]);
 
   useEffect(() => {
     if (!data?.index_labels) {
@@ -345,7 +345,7 @@ function DataExplorerWaterfallPlot({
               }}
               onClickSetSelectionFromContext={async () => {
                 const datasetLabels = data!.index_labels.filter((_, i) => {
-                  return data!.dimensions.y.values[i] !== null;
+                  return data!.dimensions.y?.values[i] !== null;
                 });
 
                 const labels = await promptForSelectionFromContext(

@@ -3,10 +3,10 @@ import { DataExplorerDatasetDescriptor } from "@depmap/types";
 import { capitalize, getDimensionTypeLabel } from "../../../utils/misc";
 import { Changes, State } from "./types";
 
-export class MismatchedEntityTypeError extends Error {
+export class MismatchedSliceTypeError extends Error {
   constructor(message?: string) {
     super(message);
-    this.name = "MismatchedEntityTypeError";
+    this.name = "MismatchedSliceTypeError";
   }
 }
 
@@ -23,21 +23,21 @@ export function handleError(
   changes: Changes,
   datasets: DataExplorerDatasetDescriptor[]
 ) {
-  if (error instanceof MismatchedEntityTypeError) {
-    const entity_type = datasets.find(
+  if (error instanceof MismatchedSliceTypeError) {
+    const slice_type = datasets.find(
       (d) => d.dataset_id === prevState.dimension.dataset_id
-    )?.entity_type;
+    )?.slice_type;
 
     window.console.error(error);
     window.console.warn(
-      `Ignoring this error and setting entity_type to "${entity_type}"`
+      `Ignoring this error and setting slice_type to "${slice_type}"`
     );
 
     return {
       ...prevState,
       dimension: {
         ...prevState.dimension,
-        entity_type,
+        slice_type,
       },
     };
   }
@@ -78,12 +78,12 @@ export function handleError(
         }),
       ],
 
-      entityTypeOptions: [
+      sliceTypeOptions: [
         {
           label: capitalize(
-            getDimensionTypeLabel(prevState.dimension.entity_type as string)
+            getDimensionTypeLabel(prevState.dimension.slice_type as string)
           ),
-          value: prevState.dimension.entity_type as string,
+          value: prevState.dimension.slice_type as string,
           isDisabled: false,
           disabledReason: "",
         },

@@ -10,7 +10,6 @@ from sqlalchemy import and_
 from breadbox.db.session import SessionWithUser
 from breadbox.models.dataset import (
     AnnotationType,
-    CatalogNode,
     DatasetFeature,
     DatasetSample,
     Dataset,
@@ -116,9 +115,10 @@ class TestGet:
             minimal_db,
             settings,
             settings.admin_users[0],
-            "sample-type",
-            "ID",
-            "sample",
+            name="sample-type",
+            display_name="Sample Type",
+            id_column="ID",
+            axis="sample",
             annotation_type_mapping={"ID": AnnotationType.text},
             metadata_df=pd.DataFrame({"ID": ["ID1", "ID2"]}),
         )
@@ -147,7 +147,8 @@ class TestGet:
     def test_get_dataset_features(
         self, client: TestClient, minimal_db: SessionWithUser, settings
     ):
-        dataset = factories.matrix_dataset(minimal_db, settings)
+        given_id = "matrix_given_id"
+        dataset = factories.matrix_dataset(minimal_db, settings, given_id=given_id)
         response = client.get(
             f"/datasets/features/{dataset.id}", headers={"X-Forwarded-User": "anyone"},
         )
@@ -156,10 +157,19 @@ class TestGet:
         feature_labels = [feature["label"] for feature in dataset_features]
         assert feature_labels == ["A", "B", "C"]
 
+        # The same response should be returned when you pass in the given ID
+        # instead of the dataset ID
+        given_id_response = client.get(
+            f"/datasets/features/{given_id}", headers={"X-Forwarded-User": "anyone"},
+        )
+        assert_status_ok(given_id_response)
+        assert given_id_response.json() == response.json()
+
     def test_get_dataset_samples(
         self, client: TestClient, minimal_db: SessionWithUser, settings
     ):
-        dataset = factories.matrix_dataset(minimal_db, settings)
+        given_id = "some_matrix_dataset"
+        dataset = factories.matrix_dataset(minimal_db, settings, given_id=given_id)
         response = client.get(
             f"/datasets/samples/{dataset.id}", headers={"X-Forwarded-User": "anyone"},
         )
@@ -167,6 +177,14 @@ class TestGet:
         dataset_samples = response.json()
         sample_labels = [sample["label"] for sample in dataset_samples]
         assert sample_labels == ["ACH-1", "ACH-2"]
+
+        # The same response should be returned when you pass in the given ID
+        # instead of the dataset ID
+        given_id_response = client.get(
+            f"/datasets/samples/{given_id}", headers={"X-Forwarded-User": "anyone"},
+        )
+        assert_status_ok(given_id_response)
+        assert given_id_response.json() == response.json()
 
     def test_get_dimensions_with_reference_tiny_example(
         self, minimal_db, client: TestClient, settings, public_group
@@ -1411,10 +1429,9 @@ class TestPost:
         dataset_id = response.json()["result"]["datasetId"]
         dataset = minimal_db.query(Dataset).filter(Dataset.id == dataset_id).one()
         assert dataset.upload_date is not None
-        # Test feature and sample indexes and catalog nodes added
+        # Test that feature and sample dimensions were added
         feature_indexes = minimal_db.query(DatasetFeature).all()
         sample_indexes = minimal_db.query(DatasetSample).all()
-        catalog_nodes = minimal_db.query(CatalogNode).all()
         assert len(feature_indexes) == 3  # Number of feaures should be 3
         assert len(sample_indexes) == 2  # Number of feaures should be 2
 
@@ -1555,18 +1572,13 @@ class TestPost:
         assert_status_ok(r1)
         assert r1.status_code == 200
         dataset_response = r1.json()["result"]["dataset"]
-        dataset_node = (
-            minimal_db.query(CatalogNode)
-            .filter(
-                and_(
-                    CatalogNode.dataset_id == dataset_response["id"],
-                    CatalogNode.dimension_id.is_(None),
-                )
-            )
+        dataset: MatrixDataset = (
+            minimal_db.query(MatrixDataset)
+            .filter(MatrixDataset.id == dataset_response["id"])
             .one()
         )
-        assert dataset_node
-        assert dataset_node.is_categorical == True and dataset_node.is_binary == True
+        assert dataset is not None
+        assert dataset.value_type == ValueType.categorical
 
         # Two non boolean values should be considered categorical not binary
         r = client.post(
@@ -1594,18 +1606,13 @@ class TestPost:
         assert_status_ok(r)
         assert r.status_code == 200
         result_dataset = r.json()["result"]["dataset"]
-        dataset_node = (
-            minimal_db.query(CatalogNode)
-            .filter(
-                and_(
-                    CatalogNode.dataset_id == result_dataset["id"],
-                    CatalogNode.dimension_id.is_(None),
-                )
-            )
+        dataset: MatrixDataset = (
+            minimal_db.query(MatrixDataset)
+            .filter(MatrixDataset.id == result_dataset["id"])
             .one()
         )
-        assert dataset_node
-        assert dataset_node.is_categorical == True and dataset_node.is_binary == False
+        assert dataset is not None
+        assert dataset.value_type == ValueType.categorical
 
         # Dataset only has two values but allowed values is more than 2
         r2 = client.post(
@@ -1631,18 +1638,13 @@ class TestPost:
         )
         assert_status_ok(r2) and r2.status_code == 200
         result2_dataset = r2.json()["result"]["dataset"]
-        dataset_node = (
-            minimal_db.query(CatalogNode)
-            .filter(
-                and_(
-                    CatalogNode.dataset_id == result2_dataset["id"],
-                    CatalogNode.dimension_id.is_(None),
-                )
-            )
+        dataset: MatrixDataset = (
+            minimal_db.query(MatrixDataset)
+            .filter(MatrixDataset.id == result2_dataset["id"])
             .one()
         )
-        assert dataset_node
-        assert dataset_node.is_categorical == True and dataset_node.is_binary == False
+        assert dataset is not None
+        assert dataset.value_type == ValueType.categorical
 
     def test_add_categorical_incorrect_value_type(
         self, client: TestClient, private_group: Dict, mock_celery
@@ -2146,6 +2148,27 @@ class TestPost:
         )
         assert r2.status_code == 200
 
+    def test_get_matrix_dataset_data_by_given_id(
+        self, client: TestClient, minimal_db: SessionWithUser, settings, mock_celery
+    ):
+        given_id = "dataset_given_id"
+        factories.matrix_dataset(minimal_db, settings, given_id=given_id)
+        # TODO: Delete after deprecated endpoint is deleted
+        response = client.post(f"/datasets/data/{given_id}",)
+        assert_status_ok(response)
+        assert response.json() == {
+            "A": {"ACH-1": 0.0, "ACH-2": 3.0},
+            "B": {"ACH-1": 1.0, "ACH-2": 4.0},
+            "C": {"ACH-1": 2.0, "ACH-2": 5.0},
+        }
+        response = client.post(f"/datasets/matrix/{given_id}",)
+        assert_status_ok(response)
+        assert response.json() == {
+            "A": {"ACH-1": 0.0, "ACH-2": 3.0},
+            "B": {"ACH-1": 1.0, "ACH-2": 4.0},
+            "C": {"ACH-1": 2.0, "ACH-2": 5.0},
+        }
+
     def test_get_dataset_data_no_filters(
         self, client: TestClient, minimal_db: SessionWithUser, settings, mock_celery
     ):
@@ -2350,9 +2373,10 @@ class TestPost:
             minimal_db,
             settings,
             settings.admin_users[0],
-            "sample_type_foo",
-            "ID",
-            "sample",
+            name="sample_type_foo",
+            display_name="Sample Type Foo",
+            id_column="ID",
+            axis="sample",
             annotation_type_mapping={
                 "ID": AnnotationType.text,
                 "label": AnnotationType.text,
@@ -2368,9 +2392,10 @@ class TestPost:
             minimal_db,
             settings,
             settings.admin_users[0],
-            "feature_type_foobar",
-            "ID",
-            "feature",
+            name="feature_type_foobar",
+            display_name="Feature Type Foobar",
+            id_column="ID",
+            axis="feature",
             annotation_type_mapping={
                 "ID": AnnotationType.text,
                 "label": AnnotationType.text,
@@ -3014,12 +3039,12 @@ class TestDelete:
         # make sure it's there
         r = client.get(f"/datasets/{dataset_in_private_group_id}", headers=headers)
         assert_status_ok(r)
-        dataset_nodes = (
-            minimal_db.query(CatalogNode)
-            .filter_by(dataset_id=dataset_in_private_group_id)
+        datasets = (
+            minimal_db.query(MatrixDataset)
+            .filter_by(id=dataset_in_private_group_id)
             .all()
         )
-        dataset_catalog_node_ids = [node.id for node in dataset_nodes]
+        dataset_ids = [dataset.id for dataset in datasets]
         dataset_feature_indexes = (
             minimal_db.query(DatasetFeature)
             .filter_by(dataset_id=dataset_in_private_group_id)
@@ -3032,7 +3057,7 @@ class TestDelete:
             .all()
         )
         sample_index_ids = [s.id for s in dataset_sample_indexes]
-        assert len(dataset_nodes) != 0
+        assert len(datasets) != 0
         assert len(dataset_sample_indexes) != 0
         assert len(dataset_feature_indexes) != 0
 
@@ -3044,9 +3069,9 @@ class TestDelete:
         r = client.get(f"/datasets/{dataset_in_private_group_id}", headers=headers)
         assert_status_not_ok(r)
         assert r.status_code == 404
-        dataset_nodes = (
-            minimal_db.query(CatalogNode)
-            .filter(CatalogNode.id.in_(dataset_catalog_node_ids))
+        datasets = (
+            minimal_db.query(MatrixDataset)
+            .filter(MatrixDataset.id.in_(dataset_ids))
             .all()
         )
         dataset_feature_indexes = (
@@ -3059,7 +3084,7 @@ class TestDelete:
             .filter(DatasetSample.id.in_(sample_index_ids))
             .all()
         )
-        assert len(dataset_nodes) == 0
+        assert len(datasets) == 0
         assert len(dataset_sample_indexes) == 0
         assert len(dataset_feature_indexes) == 0
         assert not os.path.exists(
@@ -3150,12 +3175,6 @@ class TestDelete:
         assert len(properties_to_index) == 2
         assert len(dimension_search_index_values) == 4
 
-        feature_annotation_catalog_nodes = (
-            minimal_db.query(CatalogNode)
-            .filter_by(dataset_id=feature_metadata_dataset_id)
-            .all()
-        )
-        assert len(feature_annotation_catalog_nodes) > 0
         # Should not be able to delete metadata without first deleting feature type
         r_delete_feature_metadata = client.delete(
             f"/datasets/{feature_metadata_dataset_id}", headers=admin_headers
@@ -3172,9 +3191,6 @@ class TestDelete:
         assert len(minimal_db.query(TabularCell).all()) == 0
         assert len(minimal_db.query(PropertyToIndex).all()) == 0
         assert len(minimal_db.query(DimensionSearchIndex).all()) == 0
-        assert (
-            len(minimal_db.query(CatalogNode).all()) == 1
-        )  # only root node should remain
 
 
 def test_get_feature_data(minimal_db, settings, client: TestClient):
@@ -3184,7 +3200,10 @@ def test_get_feature_data(minimal_db, settings, client: TestClient):
         sample_ids=["sampleID1", "sampleID2", "sampleID3"],
         values=np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]]),
     )
-    dataset = factories.matrix_dataset(minimal_db, settings, data_file=matrix_values,)
+    dataset_given_id = "dataset123"
+    dataset = factories.matrix_dataset(
+        minimal_db, settings, data_file=matrix_values, given_id=dataset_given_id
+    )
 
     # Base case: No features in request
     response = client.get(
@@ -3206,6 +3225,31 @@ def test_get_feature_data(minimal_db, settings, client: TestClient):
         "dataset_id": dataset.id,
         "values": {"sampleID1": 1.0, "sampleID2": 4.0, "sampleID3": 7.0,},
         "label": "featureID1",
+        "units": dataset.units,
+        "dataset_label": dataset.name,
+    }
+
+    # Two features in request, specified with dataset given ID
+    query_str = f"?dataset_ids={dataset_given_id}&dataset_ids={dataset_given_id}&feature_ids=featureID1&feature_ids=featureID3"
+    response = client.get(
+        f"/datasets/features/data/{query_str}", headers={"X-Forwarded-User": "anyone"},
+    )
+    assert_status_ok(response)
+    response_content = response.json()
+    assert len(response_content) == 2
+    assert response_content[0] == {
+        "feature_id": "featureID1",
+        "dataset_id": dataset.id,
+        "values": {"sampleID1": 1.0, "sampleID2": 4.0, "sampleID3": 7.0,},
+        "label": "featureID1",
+        "units": dataset.units,
+        "dataset_label": dataset.name,
+    }
+    assert response_content[1] == {
+        "feature_id": "featureID3",
+        "dataset_id": dataset.id,
+        "values": {"sampleID1": 3.0, "sampleID2": 6.0, "sampleID3": 9.0,},
+        "label": "featureID3",
         "units": dataset.units,
         "dataset_label": dataset.name,
     }

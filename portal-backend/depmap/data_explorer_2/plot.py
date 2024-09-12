@@ -1,14 +1,17 @@
 import numpy as np
 import pandas as pd
+from flask import abort
 from typing import Literal, Optional
-from depmap import data_access
 from collections import defaultdict
+
+from depmap_compute.context import ContextEvaluator, decode_slice_id
+from depmap import data_access
 from depmap.data_access.models import MatrixDataset
-from depmap.data_explorer_2.context import ContextEvaluator
 from depmap.utilities.data_access_log import log_dataset_access
+from depmap.data_explorer_2.datatypes import hardcoded_metadata_slices
 from depmap.data_explorer_2.utils import (
     get_aliases_matching_labels,
-    get_entity_labels_across_datasets,
+    get_dimension_labels_across_datasets,
     get_reoriented_df,
     get_union_of_index_labels,
     get_vector_labels,
@@ -16,7 +19,6 @@ from depmap.data_explorer_2.utils import (
     slice_to_dict,
     to_display_name,
 )
-from flask import abort
 
 
 aggFunctions = {
@@ -39,7 +41,7 @@ def compute_dimension(
     # record to the log which data users request
     log_dataset_access("compute_dimension", dataset_id)
 
-    context_evaluator = ContextEvaluator(context)
+    context_evaluator = ContextEvaluator(context, slice_to_dict)
 
     col_labels = get_vector_labels(dataset_id, not is_transpose)
     row_labels = get_vector_labels(dataset_id, is_transpose)
@@ -74,10 +76,10 @@ def compute_dimension(
     if aggregation == "first" and len(filtered_row_labels) == 0:
         return abort(400)
 
-    single_entity_label = filtered_row_labels[0] if aggregation == "first" else None
+    single_slice_label = filtered_row_labels[0] if aggregation == "first" else None
 
     axis_label = _get_axis_label(
-        single_entity_label,
+        single_slice_label,
         dataset,
         is_transpose,
         aggregation,
@@ -89,15 +91,15 @@ def compute_dimension(
         "dataset_id": dataset_id,
         "dataset_label": dataset.label,
         "axis_label": axis_label,
-        "entity_type": dimension["entity_type"],
+        "slice_type": dimension["slice_type"],
         "indexed_values": indexed_values,
     }
 
 
 def compute_filter(input_filter):
     indexed_values = {}
-    context_evaluator = ContextEvaluator(input_filter)
-    index_labels = get_entity_labels_across_datasets(input_filter["context_type"])
+    context_evaluator = ContextEvaluator(input_filter, slice_to_dict)
+    index_labels = get_dimension_labels_across_datasets(input_filter["context_type"])
 
     for label in index_labels:
         indexed_values[label] = context_evaluator.is_match(label)
@@ -108,8 +110,21 @@ def compute_filter(input_filter):
 def compute_metadata(metadata):
     slice_id = metadata["slice_id"]
     indexed_values = slice_to_dict(slice_id)
+    label = slice_id
+
+    # HACK: Look up a label for the `slice_id` in `hardcoded_metadata_slices`.
+    # When we stop relying on Slice IDs and start using SliceQuery objects,
+    # perhaps we could include `label` as an optional field.
+    for slices in hardcoded_metadata_slices.values():
+        for m_slice_id, info in slices.items():
+            if m_slice_id == slice_id:
+                label = info["name"]
+            elif info.get("isPartialSliceId", False) and m_slice_id in slice_id:
+                _, identifier, _ = decode_slice_id(slice_id)
+                label = f"{info['name']} ({info['sliceTypeLabel']} = {identifier})"
 
     return {
+        "label": label,
         "slice_id": slice_id,
         "indexed_values": indexed_values,
     }
@@ -131,7 +146,7 @@ def compute_all(index_type, dimensions, filters, metadata):
             "dataset_id": dimension["dataset_id"],
             "dataset_label": dimension["dataset_label"],
             "axis_label": dimension["axis_label"],
-            "entity_type": dimension["entity_type"],
+            "slice_type": dimension["slice_type"],
             "values": [indexed_values.get(label, None) for label in index_labels],
         }
 
@@ -198,7 +213,7 @@ def compute_waterfall(index_type, dimensions, filters, metadata):
         "dataset_id": primary_dimension["dataset_id"],
         "dataset_label": "",
         "axis_label": "Rank" if categorical_colors is None else "",
-        "entity_type": primary_dimension["entity_type"],
+        "slice_type": primary_dimension["slice_type"],
         "values": list(range(0, len(index_labels))),
     }
 
@@ -206,7 +221,7 @@ def compute_waterfall(index_type, dimensions, filters, metadata):
         "dataset_id": primary_dimension["dataset_id"],
         "dataset_label": primary_dimension["dataset_label"],
         "axis_label": primary_dimension["axis_label"],
-        "entity_type": primary_dimension["entity_type"],
+        "slice_type": primary_dimension["slice_type"],
         "values": [indexed_values.get(label, None) for label in index_labels],
     }
 
@@ -216,7 +231,7 @@ def compute_waterfall(index_type, dimensions, filters, metadata):
             "dataset_id": color_dimension["dataset_id"],
             "dataset_label": color_dimension["dataset_label"],
             "axis_label": color_dimension["axis_label"],
-            "entity_type": color_dimension["entity_type"],
+            "slice_type": color_dimension["slice_type"],
             "values": [
                 color_dimension["indexed_values"].get(label, None)
                 for label in index_labels
@@ -256,22 +271,22 @@ def compute_waterfall(index_type, dimensions, filters, metadata):
 
 
 def _get_axis_label(
-    single_entity_label: Optional[str],
+    single_slice_label: Optional[str],
     dataset: MatrixDataset,
     is_transpose: bool,
     aggregation: str,
     context_name: str,
     context_count: int,
 ):
-    entity_type = dataset.feature_type if not is_transpose else dataset.sample_type
+    dimension_type = dataset.feature_type if not is_transpose else dataset.sample_type
     units = dataset.units
 
-    if single_entity_label:
-        axis_label = single_entity_label
+    if single_slice_label:
+        axis_label = single_slice_label
 
-        if entity_type == "depmap_model":
+        if dimension_type == "depmap_model":
             index_aliases = get_aliases_matching_labels(
-                "depmap_model", [single_entity_label]
+                "depmap_model", [single_slice_label]
             )
             for alias in index_aliases:
                 if alias["slice_id"] == "slice/cell_line_display_name/all/label":
@@ -280,5 +295,5 @@ def _get_axis_label(
             axis_label += " " + units
         return axis_label
 
-    entities = pluralize(to_display_name(entity_type))
+    entities = pluralize(to_display_name(dimension_type or ""))
     return f"{aggregation} {units} of {context_count} {context_name} {entities}"

@@ -9,7 +9,7 @@ import pandas as pd
 from breadbox.crud.types import add_dimension_type
 
 from breadbox.crud.data_type import get_data_types
-from breadbox.api.types import add_feature_type, add_sample_type, Settings
+from breadbox.api.types import Settings
 from breadbox.schemas.types import IdMapping, AnnotationTypeMap
 import os
 from typing import Protocol, Any
@@ -62,6 +62,7 @@ class DatasetUpload:
     taiga_id: Optional[str] = None
     allowed_values: Optional[List[str]] = None
     dataset_metadata: Optional[DatasetMetadata] = None
+    data_file_format = "csv"
 
 
 class DataTypeEnum(enum.Enum):
@@ -295,11 +296,12 @@ def validate_metadata_upload_and_add_to_db(
         db,
         settings,
         user,
-        m.metadata_type_name,
-        m.id_column,
-        axis,
-        metadata_df,
-        m.annotation_type_mapping,
+        name=m.metadata_type_name,
+        display_name=m.metadata_type_name,
+        id_column=m.id_column,
+        axis=axis,
+        metadata_df=metadata_df,
+        annotation_type_mapping=m.annotation_type_mapping,
         reference_column_mappings={},
         # reference_column_mappings: Optional[Dict[str, str]] = None,
         properties_to_index=None,
@@ -351,5 +353,6 @@ def validate_dataset_upload_and_add_to_db(
             user,
             PUBLIC_GROUP_ID,
             {},
+            d.data_file_format,
         ]
     )

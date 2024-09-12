@@ -281,13 +281,13 @@ crt = ["awscrt (==0.16.26)"]
 
 [[package]]
 name = "breadbox-client"
-version = "2.2.1"
+version = "3.6.2"
 description = "A client library for accessing Breadbox"
 optional = false
 python-versions = ">=3.9,<4.0"
 files = [
-    {file = "breadbox_client-2.2.1-py3-none-any.whl", hash = "sha256:cda5a1781718e17eb71f61b035475df01e18568cbf02df4ad52fcab2f02f1955"},
-    {file = "breadbox_client-2.2.1.tar.gz", hash = "sha256:e34cae8b38151c05b82e59dc6e61227a859de46c601d18eb645dbd50c0b94617"},
+    {file = "breadbox_client-3.6.2-py3-none-any.whl", hash = "sha256:6794ef7904109721df044fa54ffca7a3e087ac760a01e97c29c44620cbe2202e"},
+    {file = "breadbox_client-3.6.2.tar.gz", hash = "sha256:c6968f8efc02f4e0d0861780a7f3e0dbad9b85575995e9c3b2102eb9369c2bca"},
 ]
 
 [package.dependencies]
@@ -674,13 +674,13 @@ files = [
 
 [[package]]
 name = "depmap-compute"
-version = "0.1.2"
+version = "0.1.5"
 description = "Code related to computations shared between the Depmap Portal and BreadBox"
 optional = false
 python-versions = ">=3.9,<4.0"
 files = [
-    {file = "depmap_compute-0.1.2-py3-none-any.whl", hash = "sha256:b07b7dafc9af46590752d99c70f802e79574d58c1c2b6d16b775ffc276e288a2"},
-    {file = "depmap_compute-0.1.2.tar.gz", hash = "sha256:6b6b6702f301da608256deb72148d7ade7cf963fb292d3c980be0496ea407c1d"},
+    {file = "depmap_compute-0.1.5-py3-none-any.whl", hash = "sha256:ea92c262f913fb2323b445615a1b72cdb9b104e720eb227c4f587f8ed9502d12"},
+    {file = "depmap_compute-0.1.5.tar.gz", hash = "sha256:1626beeb9595b0f67ead8ede9edc4c73abe16f22e164048c6e16df06b5350536"},
 ]
 
 [package.dependencies]
@@ -4496,13 +4496,13 @@ typing-extensions = ">=3.7.4"
 
 [[package]]
 name = "sqlite-shelve"
-version = "2.0.1"
+version = "2.2.1"
 description = "A SQLite implementation of the Python Shelf interface"
 optional = false
 python-versions = ">=3.6"
 files = [
-    {file = "sqlite-shelve-2.0.1.tar.gz", hash = "sha256:2b52f1aecbece99ecc26ce7d268cc107f3f0f9bfd61a38f1132064c6a300e066"},
-    {file = "sqlite_shelve-2.0.1-py3-none-any.whl", hash = "sha256:93f91770e5c3e9cc4204ca5256ff922e5401efa25f67b3a9627c4230b10225de"},
+    {file = "sqlite-shelve-2.2.1.tar.gz", hash = "sha256:49bfd073a014a0e89aa6c58567a347f33bec70d20397598c5fc5fb831ae8bd82"},
+    {file = "sqlite_shelve-2.2.1-py3-none-any.whl", hash = "sha256:c09e08139bc858d8970cd0325433da80b1ebf72706280096dbcfddf071c73ab9"},
 ]
 
 [[package]]
@@ -5036,4 +5036,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "5bbe05b456ce3f829c17e442e0f7e8f9ae38d2b89138f89bbc46bb58cea21057"
+content-hash = "fdcd9a18ddb0ce65a5dde9fde6696436965c12f4437edaf9f777b4abc8375cbd"

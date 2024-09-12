@@ -134,12 +134,27 @@ def get_all_row_indices_labels_entity_ids(dataset_id) -> List[RowSummary]:
         return nonstandard_utils.get_all_row_indices_labels_entity_ids(dataset_id)
 
 
-def get_dataset_feature_ids_by_label(dataset_id) -> dict[str, str]:
+def get_dataset_feature_labels_by_id(dataset_id: str) -> dict[str, str]:
     """
-    Get a mapping of feature labels to feature IDs.
+    Get a mapping of feature IDs to feature labels.
     """
     row_summaries = get_all_row_indices_labels_entity_ids(dataset_id)
-    return {row.label: row.entity_id for row in row_summaries}
+    return {row.entity_id: row.label for row in row_summaries}
+
+
+def get_dataset_sample_labels_by_id(dataset_id: str) -> dict[str, str]:
+    """
+    Get a mapping of sample labels to sample IDs.
+    Samples from the legacy backend are always depmap_models, so it's safe to
+    hard-code that labels should always be cell line display names. 
+    """
+    dataset_sample_ids = get_dataset_sample_ids(dataset_id)
+    all_model_labels_by_id = CellLine.get_cell_line_display_name_series().to_dict()
+    return {
+        id: label
+        for id, label in all_model_labels_by_id.items()
+        if id in dataset_sample_ids
+    }
 
 
 def get_dataset_feature_labels(dataset_id: str) -> list[str]:

@@ -1,4 +1,4 @@
-from depmap.data_explorer_2.context import ContextEvaluator
+from depmap_compute.context import ContextEvaluator
 
 
 def test_operator__not_in():
@@ -75,6 +75,7 @@ def expressions_are_equivalent(boolean_value, json_logic_expr):
 
     # These expressions don't use variables (just pure logic)
     var_name = "dummy variable"
-    result = ContextEvaluator(context).is_match(var_name)
+    get_slice_data_mock = lambda _: {}
+    result = ContextEvaluator(context, get_slice_data_mock).is_match(var_name)
 
     return result == boolean_value

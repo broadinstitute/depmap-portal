@@ -9,7 +9,6 @@ from sqlalchemy import and_
 from breadbox.db.session import SessionWithUser
 from breadbox.models.dataset import ValueType
 from breadbox.models.dataset import (
-    CatalogNode,
     DatasetFeature,
     DatasetSample,
     TabularColumn,
@@ -28,7 +27,7 @@ from tests import factories
 
 # pyright seems to be having trouble recognizing non-required files when annotated with Field
 # so, just putting the defaults here and passing them in each time
-_default_params = {"prority": None, "taiga_id": None}
+_default_params = {"priority": None, "taiga_id": None, "data_file_format": "csv"}
 
 
 def test_matrix_dataset_uploads(
@@ -69,7 +68,7 @@ def test_matrix_dataset_uploads(
     assert matrix_dataset_w_simple_metadata.datasetId
     dataset_id = matrix_dataset_w_simple_metadata.datasetId
 
-    # Test feature and sample indexes and catalog nodes added
+    # Test that feature and sample dimensions were added
     feature_indexes = (
         minimal_db.query(DatasetFeature)
         .filter(DatasetFeature.dataset_id == dataset_id)
@@ -133,9 +132,10 @@ def test_tabular_uploads(
         minimal_db,
         settings,
         settings.admin_users[0],
-        "test-sample",
-        "sample_id",
-        "sample",
+        name="test-sample",
+        display_name="Test Sample",
+        id_column="sample_id",
+        axis="sample",
         metadata_df=pd.DataFrame({"sample_id": ["ID1", "ID2"]}),
         annotation_type_mapping={"sample_id": AnnotationType.text},
     )

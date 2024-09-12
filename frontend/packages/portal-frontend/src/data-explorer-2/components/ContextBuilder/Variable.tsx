@@ -25,9 +25,13 @@ interface Props {
   path: (string | number)[];
   onChangeDataSelect: (option: { label: string; value: string } | null) => void;
   dispatch: React.Dispatch<ContextBuilderReducerAction>;
-  entity_type: string;
+  slice_type: string;
   shouldShowValidation: boolean;
 }
+
+// These day we're referring to these as slice labels, but the constant
+// "entity_label" needs to be used for compatibility with old contexts.
+const SLICE_LABEL_VARIABLE = "entity_label";
 
 const findSliceId = (
   value: string | null,
@@ -97,7 +101,7 @@ function Variable({
   path,
   onChangeDataSelect,
   dispatch,
-  entity_type,
+  slice_type,
   shouldShowValidation,
 }: Props) {
   const [datasets, setDatasets] = useState<
@@ -112,7 +116,7 @@ function Variable({
     (async () => {
       try {
         const data = await fetchDatasetsByIndexType();
-        const fetchedDatasets = data?.[entity_type] || [];
+        const fetchedDatasets = data?.[slice_type] || [];
         if (mounted) {
           setDatasets(fetchedDatasets);
         }
@@ -124,7 +128,7 @@ function Variable({
     return () => {
       mounted = false;
     };
-  }, [entity_type]);
+  }, [slice_type]);
 
   const continuousDatasetSliceLookupTable = useMemo(
     () =>
@@ -139,25 +143,25 @@ function Variable({
   );
 
   const variables: Record<string, string> = useMemo(() => {
-    let entity_label = `${capitalize(getDimensionTypeLabel(entity_type))} name`;
+    let slice_label = `${capitalize(getDimensionTypeLabel(slice_type))} name`;
 
-    if (entity_type === "depmap_model") {
-      entity_label = "Depmap ID";
+    if (slice_type === "depmap_model") {
+      slice_label = "Depmap ID";
     }
 
-    if (entity_type === "compound_experiment") {
-      entity_label = "Compound/experiment ID";
+    if (slice_type === "compound_experiment") {
+      slice_label = "Compound/experiment ID";
     }
 
     return {
-      entity_label,
+      [SLICE_LABEL_VARIABLE]: slice_label,
       ...getMetadataLookupTable(metadataSlices),
       ...(continuousDatasetSliceLookupTable || {}),
     };
-  }, [continuousDatasetSliceLookupTable, entity_type, metadataSlices]);
+  }, [continuousDatasetSliceLookupTable, slice_type, metadataSlices]);
 
   // A partial slice is used to select the dataset only.
-  // A complete slice also contains a specific entity.
+  // A complete slice also contains a specific feature.
   const isParitalContinuousSliceId = Boolean(
     findSliceId(value, continuousDatasetSliceLookupTable)
   );
@@ -173,8 +177,8 @@ function Variable({
 
   const varDatasetId = extractDatasetIdFromSlice(value, variables);
 
-  const varEntityType = datasets?.find((d) => d.dataset_id === varDatasetId)
-    ?.entity_type;
+  const varSliceType = datasets?.find((d) => d.dataset_id === varDatasetId)
+    ?.slice_type;
 
   return (
     <div>
@@ -207,7 +211,7 @@ function Variable({
           path={path}
           dispatch={dispatch}
           dataset_id={varDatasetId as string}
-          entity_type={varEntityType as string}
+          slice_type={varSliceType as string}
           shouldShowValidation={shouldShowValidation}
         />
       )}
@@ -228,8 +232,8 @@ function Variable({
               });
             }}
             dataset_id={varDatasetId as string}
-            entityTypeLabel={
-              metadataSlices[valueOrPartialSlice!].entityTypeLabel as string
+            sliceTypeLabel={
+              metadataSlices[valueOrPartialSlice!].sliceTypeLabel as string
             }
             menuPortalTarget={document.querySelector("#modal-container")}
             isClearable={false}

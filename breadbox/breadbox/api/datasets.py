@@ -167,12 +167,11 @@ def get_feature_data(
             f"Expected dataset_id, feature_id pairs. The number of dataset ids and feature ids provided should be equal."
         )
 
-    dataset_features = dataset_crud.get_features(
-        db=db, user=user, dataset_ids=dataset_ids, feature_ids=feature_ids
-    )
     feature_data = []
-
-    for feature in dataset_features:
+    for i in range(len(feature_ids)):
+        feature = dataset_crud.get_dataset_feature_by_given_id(
+            db=db, dataset_id=dataset_ids[i], feature_given_id=feature_ids[i]
+        )
         dataset = feature.dataset
         if not isinstance(dataset, MatrixDataset):
             raise UserError(
@@ -277,6 +276,7 @@ def add_dataset(
                 user,
                 group_id,
                 dataset_metadata_,
+                "csv",
             ]
         )
     except PermissionError as e:
@@ -309,7 +309,9 @@ def get_matrix_dataset_data(
     user: Annotated[str, Depends(get_user)],
     settings: Annotated[Settings, Depends(get_settings)],
     dataset: Annotated[DatasetModel, Depends(get_dataset_dep)],
-    matrix_dimensions_info: MatrixDimensionsInfo = MatrixDimensionsInfo(),
+    matrix_dimensions_info: Annotated[
+        MatrixDimensionsInfo, Body(default_factory=MatrixDimensionsInfo)
+    ],
     strict: Annotated[
         bool,
         Query(
@@ -338,7 +340,9 @@ def get_tabular_dataset_data(
     db: Annotated[SessionWithUser, Depends(get_db_with_user)],
     user: Annotated[str, Depends(get_user)],
     dataset: Annotated[DatasetModel, Depends(get_dataset_dep)],
-    tabular_dimensions_info: TabularDimensionsInfo = TabularDimensionsInfo(),
+    tabular_dimensions_info: Annotated[
+        TabularDimensionsInfo, Body(default_factory=TabularDimensionsInfo)
+    ],
     strict: Annotated[
         bool,
         Query(

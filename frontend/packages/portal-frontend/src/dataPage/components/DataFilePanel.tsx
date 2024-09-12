@@ -51,29 +51,41 @@ const CollapsiblePanelHeader = ({
     e.stopPropagation();
   };
 
-  const description = stripHtmlTags(file.fileDescription);
+  const description = file.retractionOverride ? (
+    <span style={{ color: "red" }}>
+      {stripHtmlTags(file.retractionOverride)}
+    </span>
+  ) : (
+    stripHtmlTags(file.fileDescription)
+  );
   return (
     <span className={styles.accordionTitle}>
-      <span className={styles.one}>{file.fileName}</span>
+      <span className={styles.one}>
+        {file.retractionOverride
+          ? file.fileName + " (retracted)"
+          : file.fileName}
+      </span>
       <div className={styles.two}>{description}</div>
       {file.size && <span className={styles.three}>{file.size}</span>}
       <span className={styles.four}>
         <div className={styles.iconsContainer}>
           {" "}
-          <Tooltip
-            id="download-file-tooltip"
-            content="Download file"
-            placement="bottom"
-          >
-            <div style={{ gridColumn: "1" }}>
-              <DownloadGlyph
-                terms={file.terms}
-                downloadUrl={file.downloadUrl ?? file.taigaUrl}
-                termsDefinitions={termsDefinitions!}
-                isDownloadModal
-              />
-            </div>
-          </Tooltip>
+          {!file.retractionOverride && file.downloadUrl && (
+            <Tooltip
+              id="download-file-tooltip"
+              content="Download file"
+              placement="bottom"
+            >
+              <div style={{ gridColumn: "1" }}>
+                <DownloadGlyph
+                  terms={file.terms}
+                  downloadUrl={file.downloadUrl}
+                  termsDefinitions={termsDefinitions!}
+                  isDownloadModal
+                />
+              </div>
+            </Tooltip>
+          )}
           <div style={{ gridColumn: "2" }}>
             <Tooltip
               id="get-file-url-tooltip"
@@ -128,12 +140,29 @@ const CollapsiblePanelBody = ({
 
       <br />
       <div className={styles.collapsiblePanelSubHeader}>Description</div>
-      <div
-        className={styles.collapsiblePanelBodySection}
-        dangerouslySetInnerHTML={{
-          __html: file.fileDescription || "",
-        }}
-      />
+      {!file.retractionOverride ? (
+        <div
+          className={styles.collapsiblePanelBodySection}
+          dangerouslySetInnerHTML={{
+            __html: file.fileDescription || "",
+          }}
+        />
+      ) : (
+        <div>
+          <div
+            style={{ color: "red", marginBottom: "5px" }}
+            dangerouslySetInnerHTML={{
+              __html: file.retractionOverride || "",
+            }}
+          />
+          <div
+            className={styles.collapsiblePanelBodySection}
+            dangerouslySetInnerHTML={{
+              __html: file.fileDescription || "",
+            }}
+          />
+        </div>
+      )}
       {file.sources.length > 0 && (
         <>
           <div className={styles.collapsiblePanelSubHeader}>Sources</div>

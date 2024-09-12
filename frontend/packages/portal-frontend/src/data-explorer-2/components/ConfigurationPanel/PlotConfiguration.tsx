@@ -130,9 +130,9 @@ function PlotConfiguration({
             const path: ContextPath = ["dimensions", key, "context"];
 
             const onlyParallelAxisHasAggregation =
-              dimension.axis_type === "entity" &&
+              dimension.axis_type === "raw_slice" &&
               plot.dimensions![key === "x" ? "y" : "x"]?.axis_type ===
-                "context";
+                "aggregated_slice";
 
             return (
               <div key={key}>

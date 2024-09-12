@@ -71,6 +71,17 @@
             "title": "Axis",
             "type": "string"
           },
+          "display_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Display Name"
+          },
           "id_column": {
             "title": "Id Column",
             "type": "string"
@@ -819,6 +830,10 @@
             "title": "Axis",
             "type": "string"
           },
+          "display_name": {
+            "title": "Display Name",
+            "type": "string"
+          },
           "id_column": {
             "title": "Id Column",
             "type": "string"
@@ -855,6 +870,7 @@
         },
         "required": [
           "name",
+          "display_name",
           "id_column",
           "axis"
         ],
@@ -1293,6 +1309,9 @@
         "type": "object"
       },
       "HTTPError": {
+        "example": {
+          "detail": "HTTPException raised."
+        },
         "properties": {
           "detail": {
             "title": "Detail",
@@ -1364,6 +1383,16 @@
             "description": "Only provide if 'value_type' is 'categorical'. Must contain all possible categorical values",
             "title": "Allowed Values"
           },
+          "data_file_format": {
+            "default": "csv",
+            "description": "The format of the uploaded data file. May either be 'csv' or 'parquet'",
+            "enum": [
+              "csv",
+              "parquet"
+            ],
+            "title": "Data File Format",
+            "type": "string"
+          },
           "data_type": {
             "description": "Data type grouping for your dataset",
             "title": "Data Type",
@@ -1415,6 +1444,18 @@
             ],
             "title": "Format",
             "type": "string"
+          },
+          "given_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Stable human-readable identifier that the portal uses to look up specific datasets.",
+            "title": "Given Id"
           },
           "group_id": {
             "description": "ID of the group the dataset belongs to. Required for non-transient datasets. The public group is `00000000-0000-0000-0000-000000000000`",
@@ -1555,6 +1596,17 @@
             ],
             "title": "Format",
             "type": "string"
+          },
+          "given_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Given Id"
           },
           "group": {
             "$ref": "#/components/schemas/Group"
@@ -1910,6 +1962,18 @@
             "title": "Format",
             "type": "string"
           },
+          "given_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Stable human-readable identifier that the portal uses to look up specific datasets.",
+            "title": "Given Id"
+          },
           "group_id": {
             "description": "ID of the group the dataset belongs to. Required for non-transient datasets. The public group is `00000000-0000-0000-0000-000000000000`",
             "format": "uuid",
@@ -2018,6 +2082,17 @@
             ],
             "title": "Format",
             "type": "string"
+          },
+          "given_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Given Id"
           },
           "group": {
             "$ref": "#/components/schemas/Group"
@@ -2293,7 +2368,7 @@
   },
   "info": {
     "title": "Breadbox",
-    "version": "3.4.1"
+    "version": "3.7.1"
   },
   "openapi": "3.1.0",
   "paths": {
@@ -2822,7 +2897,7 @@
     },
     "/dataset-v2/": {
       "post": {
-        "description": "Create a new dataset.\n\n`name`: Name of dataset\n\n`file_ids`: Ordered list of file ids from the chunked dataset uploads\n\n`dataset_md5`: md5 hash for entire dataset file\n\n`data_type`: Data type grouping for your dataset\n\n`group_id`: ID of the group the dataset belongs to. Required for non-transient datasets.\n\n`priority`: Numeric value assigned to the dataset with `1` being highest priority within the `data_type`, used for displaying order of datasets to show for a specific `data_type` in UI.\n\n`taiga_id`: Taiga ID the dataset is sourced from.\n\n`is_transient`: Transient datasets can be deleted - should only be set to true for non-public short-term-use datasets like custom analysis results.\n\n`dataset_metadata`: Contains a dictionary of additional dataset values that are not already provided above.\n\nFor matrix dataset format:\n\n`units`: Units for the values in the dataset, used for display\n\n`feature_type`: Type of features your dataset contains\n\n`sample_type`: Type of samples your dataset contains\n\n`value_type`: Value 'continuous' if dataset contains numerical values or 'categorical' if dataset contains string categories as values.\n\n`allowed_values`: Only provide if 'value_type' is 'categorical'. Must contain all possible categorical values\n\nFor table dataset format:\n\n`index_type`: Feature type or sample type name that is used as index in the table dataset format. Used to validate the identifier of the dimension type is included in the dataset.\n\n`columns_metadata`: List of objects containing info about each column in the table dataset format.\n\n    - `units`: Units for the values in the column, used for display\n    - `col_type`: Annotation type for the column. Annotation types may include: `continuous`, `categorical`, `binary`, `text`, or `list_strings`",
+        "description": "Create a new dataset.\n\n`name`: Name of dataset\n\n`file_ids`: Ordered list of file ids from the chunked dataset uploads\n\n`dataset_md5`: md5 hash for entire dataset file\n\n`data_type`: Data type grouping for your dataset\n\n`group_id`: ID of the group the dataset belongs to. Required for non-transient datasets.\n\n`given_id`: Stable human-readable identifier that the portal uses to look up specific datasets.\n\n`priority`: Numeric value assigned to the dataset with `1` being highest priority within the `data_type`, used for displaying order of datasets to show for a specific `data_type` in UI.\n\n`taiga_id`: Taiga ID the dataset is sourced from.\n\n`is_transient`: Transient datasets can be deleted - should only be set to true for non-public short-term-use datasets like custom analysis results.\n\n`dataset_metadata`: Contains a dictionary of additional dataset values that are not already provided above.\n\nFor matrix dataset format:\n\n`units`: Units for the values in the dataset, used for display\n\n`feature_type`: Type of features your dataset contains\n\n`sample_type`: Type of samples your dataset contains\n\n`value_type`: Value 'continuous' if dataset contains numerical values or 'categorical' if dataset contains string categories as values.\n\n`allowed_values`: Only provide if 'value_type' is 'categorical'. Must contain all possible categorical values\n\nFor table dataset format:\n\n`index_type`: Feature type or sample type name that is used as index in the table dataset format. Used to validate the identifier of the dimension type is included in the dataset.\n\n`columns_metadata`: List of objects containing info about each column in the table dataset format.\n\n    - `units`: Units for the values in the column, used for display\n    - `col_type`: Annotation type for the column. Annotation types may include: `continuous`, `categorical`, `binary`, `text`, or `list_strings`",
         "operationId": "add_dataset_uploads",
         "requestBody": {
           "content": {
@@ -3198,9 +3273,16 @@
             "name": "dataset_id",
             "required": true,
             "schema": {
-              "format": "uuid",
-              "title": "Dataset Id",
-              "type": "string"
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "string"
+                }
+              ],
+              "title": "Dataset Id"
             }
           }
         ],
@@ -3633,9 +3715,16 @@
             "name": "dataset_id",
             "required": true,
             "schema": {
-              "format": "uuid",
-              "title": "Dataset Id",
-              "type": "string"
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "string"
+                }
+              ],
+              "title": "Dataset Id"
             }
           },
           {
@@ -3655,13 +3744,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "allOf": [
-                  {
-                    "$ref": "#/components/schemas/MatrixDimensionsInfo"
-                  }
-                ],
-                "default": {},
-                "title": "Matrix Dimensions Info"
+                "$ref": "#/components/schemas/MatrixDimensionsInfo"
               }
             }
           }
@@ -3822,9 +3905,16 @@
             "name": "dataset_id",
             "required": true,
             "schema": {
-              "format": "uuid",
-              "title": "Dataset Id",
-              "type": "string"
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "string"
+                }
+              ],
+              "title": "Dataset Id"
             }
           },
           {
@@ -3844,13 +3934,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "allOf": [
-                  {
-                    "$ref": "#/components/schemas/TabularDimensionsInfo"
-                  }
-                ],
-                "default": {},
-                "title": "Tabular Dimensions Info"
+                "$ref": "#/components/schemas/TabularDimensionsInfo"
               }
             }
           }
@@ -4011,9 +4095,16 @@
             "name": "dataset_id",
             "required": true,
             "schema": {
-              "format": "uuid",
-              "title": "Dataset Id",
-              "type": "string"
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "string"
+                }
+              ],
+              "title": "Dataset Id"
             }
           }
         ],
@@ -4108,9 +4199,16 @@
             "name": "dataset_id",
             "required": true,
             "schema": {
-              "format": "uuid",
-              "title": "Dataset Id",
-              "type": "string"
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "string"
+                }
+              ],
+              "title": "Dataset Id"
             }
           }
         ],
@@ -5983,6 +6081,7 @@
     },
     "/types/feature": {
       "get": {
+        "deprecated": true,
         "operationId": "get_feature_types",
         "responses": {
           "200": {
@@ -6046,6 +6145,7 @@
         ]
       },
       "post": {
+        "deprecated": true,
         "operationId": "add_feature_type",
         "requestBody": {
           "content": {
@@ -6127,6 +6227,7 @@
     },
     "/types/feature/{feature_type_name}/metadata": {
       "patch": {
+        "deprecated": true,
         "operationId": "update_feature_type_metadata",
         "parameters": [
           {
@@ -6219,6 +6320,7 @@
     },
     "/types/feature/{feature_type}": {
       "delete": {
+        "deprecated": true,
         "description": "Delete a feature type, if the user is an admin.",
         "operationId": "remove_feature_type",
         "parameters": [
@@ -6300,6 +6402,7 @@
     },
     "/types/sample": {
       "get": {
+        "deprecated": true,
         "operationId": "get_sample_types",
         "responses": {
           "200": {
@@ -6363,6 +6466,7 @@
         ]
       },
       "post": {
+        "deprecated": true,
         "operationId": "add_sample_type",
         "requestBody": {
           "content": {
@@ -6444,6 +6548,7 @@
     },
     "/types/sample/{sample_type_name}/metadata": {
       "patch": {
+        "deprecated": true,
         "operationId": "update_sample_type_metadata",
         "parameters": [
           {
@@ -6536,6 +6641,7 @@
     },
     "/types/sample/{sample_type}": {
       "delete": {
+        "deprecated": true,
         "description": "Delete a sample type, if the user is an admin.",
         "operationId": "remove_sample_type",
         "parameters": [

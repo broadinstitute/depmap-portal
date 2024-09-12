@@ -38,7 +38,7 @@ const confirmPasteUnknownTokens = (unknownTokens: string[]) => {
   });
 };
 
-async function pastedTextToEntityLabels(
+async function pastedTextToSliceLabels(
   pastedText: string,
   options: { label: string }[]
 ) {
@@ -105,7 +105,7 @@ function List({ expr, path, dispatch, options, shouldShowValidation }: any) {
       e.preventDefault();
       e.currentTarget.blur();
 
-      const pastedLabels = await pastedTextToEntityLabels(pastedText, options);
+      const pastedLabels = await pastedTextToSliceLabels(pastedText, options);
       const uniqueLabels = new Set([...(expr || []), ...pastedLabels]);
 
       if (uniqueLabels.size > 0) {

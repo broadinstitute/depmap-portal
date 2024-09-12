@@ -50,6 +50,7 @@ from .id_mapping import IdMapping
 from .id_mapping_insanity import IdMappingInsanity
 from .id_mapping_reference_column_mappings import IdMappingReferenceColumnMappings
 from .matrix_dataset_params import MatrixDatasetParams
+from .matrix_dataset_params_data_file_format import MatrixDatasetParamsDataFileFormat
 from .matrix_dataset_params_dataset_metadata_type_0 import (
     MatrixDatasetParamsDatasetMetadataType0,
 )
@@ -144,6 +145,7 @@ __all__ = (
     "IdMappingInsanity",
     "IdMappingReferenceColumnMappings",
     "MatrixDatasetParams",
+    "MatrixDatasetParamsDataFileFormat",
     "MatrixDatasetParamsDatasetMetadataType0",
     "MatrixDatasetParamsFormat",
     "MatrixDatasetResponse",

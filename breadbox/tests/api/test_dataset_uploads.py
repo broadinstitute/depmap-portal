@@ -33,6 +33,71 @@ def file_ids_and_md5_hash(client, file):
 
 
 class TestPost:
+    def test_upload_data_as_parquet(
+        self,
+        client: TestClient,
+        minimal_db: SessionWithUser,
+        private_group,
+        mock_celery,
+        monkeypatch,
+        tmpdir,
+    ):
+        user = "someone@private-group.com"
+        headers = {"X-Forwarded-User": user}
+
+        data_path = str(tmpdir.join("data.parquet"))
+        pd.DataFrame(
+            {"index": ["ACH-1", "ACH-2"], "A": [0.1, 0.2], "B": [0.3, 0.4]}
+        ).to_parquet(data_path)
+
+        file_ids = []
+        with open(data_path, "rb") as fd:
+            chunk = fd.read()
+
+        response = client.post(
+            "/uploads/file",
+            files={"file": ("filename", chunk, "application/vnd.apache.parquet")},
+        )
+        assert response.status_code == 200
+        file_ids.append(response.json()["file_id"])
+
+        expected_md5 = hashlib.md5(chunk).hexdigest()
+
+        matrix_dataset = client.post(
+            "/dataset-v2/",
+            json={
+                "format": "matrix",
+                "name": "a dataset",
+                "units": "a unit",
+                "feature_type": "generic",
+                "sample_type": "depmap_model",
+                "data_type": "User upload",
+                "file_ids": file_ids,
+                "dataset_md5": expected_md5,
+                "is_transient": False,
+                "group_id": private_group["id"],
+                "value_type": "continuous",
+                "allowed_values": None,
+                "data_file_format": "parquet",
+            },
+            headers=headers,
+        )
+        assert_status_ok(matrix_dataset)
+        assert matrix_dataset.status_code == 202
+        assert matrix_dataset.json()["state"] == "SUCCESS"
+        dataset_id = matrix_dataset.json()["result"]["datasetId"]
+
+        result = client.post(
+            f"/datasets/matrix/{dataset_id}",
+            json={"features": ["A", "B"], "feature_identifier": "id",},
+            headers=headers,
+        )
+        assert_status_ok(result)
+        assert result.json() == {
+            "A": {"ACH-1": 0.1, "ACH-2": 0.2},
+            "B": {"ACH-1": 0.3, "ACH-2": 0.4},
+        }
+
     # Dataset post endpoint using uploads
     def test_dataset_uploads_task(
         self,
@@ -59,12 +124,14 @@ class TestPost:
 
         assert len(file_ids) == 3
         expected_md5 = "820882fc8dc0df48728c74db24c64fa1"
+        matrix_dataset_given_id = "some_given_id"
 
         matrix_dataset_w_simple_metadata = client.post(
             "/dataset-v2/",
             json={
                 "format": "matrix",
                 "name": "a dataset",
+                "given_id": matrix_dataset_given_id,
                 "units": "a unit",
                 "feature_type": "generic",
                 "sample_type": "depmap_model",
@@ -83,12 +150,19 @@ class TestPost:
         assert matrix_dataset_w_simple_metadata.status_code == 202
         assert matrix_dataset_w_simple_metadata.json()["state"] == "SUCCESS"
         assert matrix_dataset_w_simple_metadata.json()["result"]["datasetId"]
+        matrix_dataset_result = matrix_dataset_w_simple_metadata.json()["result"][
+            "dataset"
+        ]
+        assert matrix_dataset_result is not None
+        assert matrix_dataset_result.get("id") is not None
+        assert matrix_dataset_result.get("given_id") == matrix_dataset_given_id
 
         # Test tabular dataset
         tabular_data_file = factories.tabular_csv_data_file(
             cols=["depmap_id", "attr1", "attr2", "attr3"],
             row_values=[["ACH-1", 1.0, 0, '["a"]'], ["ACH-2", 2.0, 1, '["d", "c"]']],
         )
+        tabular_dataset_given_id = "some_other_given_id"
 
         tabular_file_ids, hash = file_ids_and_md5_hash(client, tabular_data_file)
 
@@ -98,6 +172,7 @@ class TestPost:
             json={
                 "format": "tabular",
                 "name": "a table dataset",
+                "given_id": tabular_dataset_given_id,
                 "index_type": "depmap_model",
                 "data_type": "User upload",
                 "file_ids": tabular_file_ids,
@@ -117,7 +192,9 @@ class TestPost:
         assert_status_ok(tabular_dataset_response)
         assert tabular_dataset_response.status_code == 202
         assert tabular_dataset_response.json()["state"] == "SUCCESS"
-        assert tabular_dataset_response.json()["result"]["dataset"]["id"]
+        tabular_dataset_result = tabular_dataset_response.json()["result"]["dataset"]
+        assert tabular_dataset_result.get("id") is not None
+        assert tabular_dataset_result.get("given_id") == tabular_dataset_given_id
 
         # list string value is not all strings
         tabular_data_file_bad_list_strings = factories.tabular_csv_data_file(
@@ -288,6 +365,117 @@ class TestPost:
         assert r_matrix_dataset_no_metadata_for_feature.json()["result"][
             "unknownIDs"
         ] == [{"dimensionType": "gene", "axis": "feature", "IDs": ["C"]}]
+
+    def test_add_matrix_dataset_with_given_id_in_metadata(
+        self,
+        client: TestClient,
+        minimal_db,
+        private_group: Dict,
+        settings,
+        mock_celery,
+    ):
+        admin_headers = {"X-Forwarded-Email": settings.admin_users[0]}
+        self._setup_types(client, admin_headers)
+
+        file = factories.continuous_matrix_csv_file()
+        file_ids, expected_md5 = self._upload_file(client, file)
+
+        # Even though there's no given_id explicitely set, it should get populated from the metadata
+        given_id = "some_given_id"
+        matrix_dataset_response = client.post(
+            "/dataset-v2/",
+            json={
+                "format": "matrix",
+                "name": "a dataset",
+                "units": "a unit",
+                "feature_type": None,
+                "sample_type": "sample",
+                "data_type": "User upload",
+                "file_ids": file_ids,
+                "dataset_md5": expected_md5,
+                "is_transient": False,
+                "group_id": PUBLIC_GROUP_ID,
+                "given_id": None,
+                "dataset_metadata": {"legacy_dataset_id": given_id},
+                "value_type": "continuous",
+                "allowed_values": None,
+            },
+            headers=admin_headers,
+        )
+
+        assert_status_ok(matrix_dataset_response)
+        matrix_dataset_result = matrix_dataset_response.json()["result"]["dataset"]
+        assert matrix_dataset_result is not None
+        assert matrix_dataset_result.get("given_id") == given_id
+
+    def test_add_matrix_dataset_with_duplicate_ids_fails(
+        self,
+        client: TestClient,
+        minimal_db,
+        private_group: Dict,
+        settings,
+        mock_celery,
+        tmpdir,
+    ):
+        """Uploading a dataset with duplicate column or row IDs should fail"""
+        admin_headers = {"X-Forwarded-Email": settings.admin_users[0]}
+        self._setup_types(client, admin_headers)
+
+        file_with_duplicate_features = factories.continuous_matrix_csv_file(
+            feature_ids=["A", "B", "A", "C"], sample_ids=["A", "B", "C"],
+        )
+        file_ids, expected_md5 = self._upload_file(client, file_with_duplicate_features)
+
+        # This should fail because of the duplicate feature IDs
+        matrix_dataset_response = client.post(
+            "/dataset-v2/",
+            json={
+                "format": "matrix",
+                "name": "a dataset",
+                "units": "a unit",
+                "feature_type": None,
+                "sample_type": "sample",
+                "data_type": "User upload",
+                "file_ids": file_ids,
+                "dataset_md5": expected_md5,
+                "is_transient": False,
+                "group_id": PUBLIC_GROUP_ID,
+                "given_id": None,
+                "dataset_metadata": {},
+                "value_type": "continuous",
+                "allowed_values": None,
+            },
+            headers=admin_headers,
+        )
+        assert matrix_dataset_response.status_code == 400
+
+        file_with_duplicate_samples = factories.continuous_matrix_csv_file(
+            feature_ids=["A", "B", "C"], sample_ids=["A", "B", "A", "C"],
+        )
+        file_ids, expected_md5 = self._upload_file(client, file_with_duplicate_samples)
+
+        # This should fail because of the duplicate sample IDs
+        matrix_dataset_response = client.post(
+            "/dataset-v2/",
+            json={
+                "format": "matrix",
+                "name": "a dataset",
+                "units": "a unit",
+                "feature_type": None,
+                "sample_type": "sample",
+                "data_type": "User upload",
+                "file_ids": file_ids,
+                "dataset_md5": expected_md5,
+                "is_transient": False,
+                "group_id": PUBLIC_GROUP_ID,
+                "given_id": None,
+                "dataset_metadata": {},
+                "value_type": "continuous",
+                "allowed_values": None,
+            },
+            headers=admin_headers,
+        )
+        assert matrix_dataset_response.status_code == 400
 
     def test_add_tabular_dataset_with_dim_type_annotations(
         self,
@@ -562,6 +750,7 @@ def test_end_to_end_with_mismatched_metadata(
 
         dim_type_fields = {
             "name": type_name,
+            "display_name": type_name,
             "axis": axis,
             "id_column": id_column,
         }

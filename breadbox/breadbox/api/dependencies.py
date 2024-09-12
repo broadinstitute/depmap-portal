@@ -1,3 +1,4 @@
+from typing import Union
 from uuid import UUID
 
 from fastapi import Depends, HTTPException, Request
@@ -36,7 +37,7 @@ def get_user(request: Request) -> str:
 
 
 def get_dataset(
-    dataset_id: UUID,
+    dataset_id: Union[UUID, str],
     db: SessionWithUser = Depends(get_db_with_user),
     user: str = Depends(get_user),
 ):

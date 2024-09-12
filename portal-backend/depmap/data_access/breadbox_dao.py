@@ -71,10 +71,16 @@ def get_dataset_sample_type(dataset_id: str) -> Optional[str]:
     return get_matrix_dataset(dataset_id).sample_type
 
 
-def get_dataset_feature_ids_by_label(dataset_id) -> dict[str, str]:
+def get_dataset_feature_labels_by_id(dataset_id) -> dict[str, str]:
     dataset_uuid = parse_breadbox_slice_id(dataset_id).dataset_id
     features = extensions.breadbox.client.get_dataset_features(dataset_uuid)
-    return {feature["label"]: feature["id"] for feature in features}
+    return {feature["id"]: feature["label"] for feature in features}
+
+
+def get_dataset_sample_labels_by_id(dataset_id) -> dict[str, str]:
+    dataset_uuid = parse_breadbox_slice_id(dataset_id).dataset_id
+    samples = extensions.breadbox.client.get_dataset_samples(dataset_uuid)
+    return {sample["id"]: sample["label"] for sample in samples}
 
 
 def get_dataset_feature_labels(dataset_id: str) -> list[str]:

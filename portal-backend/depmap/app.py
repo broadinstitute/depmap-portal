@@ -77,6 +77,7 @@ from depmap.private_dataset.api import namespace as private_dataset_namespace
 from depmap.private_dataset.views import blueprint as private_dataset_blueprint
 from depmap.public.minisites import register_minisites
 from depmap.public.views import blueprint as public_blueprint
+from depmap.private.views import blueprint as private_blueprint
 from depmap.theme.views import blueprint as theme_blueprint
 from depmap.tda.views import blueprint as tda_blueprint
 from depmap.tile.views import blueprint as tile_blueprint
@@ -350,6 +351,7 @@ def register_access_control(app: Flask):
 def register_blueprints(app: Flask):
     """Register Flask blueprints."""
     app.register_blueprint(public_blueprint)
+    app.register_blueprint(private_blueprint)
     app.register_blueprint(theme_blueprint)
     app.register_blueprint(gene_blueprint)
     app.register_blueprint(cell_line_blueprint)
@@ -416,7 +418,7 @@ def register_errorhandlers(app: Flask):
         # If a HTTPException, pull the `code` attribute; default to 500
         return render_template("{0}.html".format(error_code)), error_code
 
-    for errcode in [401, 404, 500]:
+    for errcode in [401, 404, 429, 500]:
         app.register_error_handler(errcode, render_error)
 
     app.register_error_handler(RequestRedirect, lambda r: redirect(r.new_url))
@@ -466,6 +468,7 @@ def register_commands(app: Flask):
     app.cli.add_command(db_load_commands.fixup_dataset_names)
     app.cli.add_command(db_load_commands.recreate_full_db)
     app.cli.add_command(db_load_commands.export_cell_lines)
+    app.cli.add_command(db_load_commands.reload_resources)
     app.cli.add_command(post_deploy_commands.check_data_issues)
     app.cli.add_command(post_deploy_commands.check_download_data)
     app.cli.add_command(post_deploy_commands.check_nonstandard_datasets)

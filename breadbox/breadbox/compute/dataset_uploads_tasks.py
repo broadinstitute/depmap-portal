@@ -1,5 +1,5 @@
 from uuid import UUID, uuid4
-from typing import List, Optional, Union, Literal, Dict
+from typing import Any, List, Optional, Union, Literal, Dict
 
 from itsdangerous.url_safe import URLSafeSerializer
 
@@ -64,6 +64,12 @@ def dataset_upload(
     _validate_group(db, user, dataset_params.group_id)
     _validate_data_type(db, dataset_params.data_type)
 
+    given_id = parse_and_validate_dataset_given_id(
+        db=db,
+        dataset_given_id=dataset_params.given_id,
+        dataset_metadata=dataset_params.dataset_metadata,
+    )
+
     serializer = URLSafeSerializer(settings.breadbox_secret)
 
     file_path = construct_file_from_ids(
@@ -86,7 +92,10 @@ def dataset_upload(
         sample_type = _get_dimension_type(db, dataset_params.sample_type, "sample")
 
         data_df = read_and_validate_matrix_df(
-            file_path, dataset_params.value_type, dataset_params.allowed_values
+            file_path,
+            dataset_params.value_type,
+            dataset_params.allowed_values,
+            dataset_params.data_file_format,
         )
 
         feature_labels_and_warnings = _get_dimension_labels_and_warnings(
@@ -127,6 +136,7 @@ def dataset_upload(
             value_type=dataset_params.value_type,
             priority=dataset_params.priority,
             taiga_id=dataset_params.taiga_id,
+            given_id=given_id,
             allowed_values=dataset_params.allowed_values,
             dataset_metadata=dataset_params.dataset_metadata,
             dataset_md5=dataset_params.dataset_md5,
@@ -163,6 +173,7 @@ def dataset_upload(
         # Add to db
         dataset_in = TabularDatasetIn(
             id=dataset_id,
+            given_id=given_id,
             name=dataset_params.name,
             index_type_name=dataset_params.index_type,
             data_type=dataset_params.data_type,
@@ -217,6 +228,30 @@ def _get_dimension_type(
                 f"'{dim_type_name}' is of {dimension_type.axis} type not {axis} type!"
             )
     return dimension_type
+
+
+def parse_and_validate_dataset_given_id(
+    db: SessionWithUser,
+    dataset_given_id: Optional[str],
+    dataset_metadata: Optional[Dict[str, Any]],
+) -> Optional[str]:
+    """
+    For backwards compatibility, parse the given id from the dataset_metadata
+    (given_id had previously been stored in the legacy_dataset_id metadata field).
+    Validate that there isn't already a dataset with this given ID. 
+    """
+    if dataset_given_id is None and dataset_metadata:
+        given_id = dataset_metadata.get("legacy_dataset_id")
+    else:
+        given_id = dataset_given_id
+
+    if given_id is not None:
+        existing_dataset = dataset_crud.get_dataset(db, db.user, given_id)
+        if existing_dataset is not None:
+            raise HTTPException(
+                409, f"A dataset with the given id {given_id} already exists."
+            )
+    return given_id
 
 
 def _validate_group(db: SessionWithUser, user: str, group_id: Union[str, UUID]):

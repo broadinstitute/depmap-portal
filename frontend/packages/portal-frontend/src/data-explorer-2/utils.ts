@@ -65,8 +65,8 @@ export function isCompletePlot(
   );
 }
 
-export const defaultContextName = (numEntities: number) => {
-  return ["(", numEntities, " selected", ")"].join("");
+export const defaultContextName = (numLabels: number) => {
+  return ["(", numLabels, " selected", ")"].join("");
 };
 
 export function toRelatedPlot(
@@ -74,14 +74,14 @@ export function toRelatedPlot(
   selectedLabels: Set<string>
 ): DataExplorerPlotConfig {
   const numDimensions = Math.min(selectedLabels.size, 2);
-  const entity_labels = [...selectedLabels];
+  const slice_labels = [...selectedLabels];
 
   // correlation_heatmap -> any
   // Linking from a correlation heatmap is weird. We don't want to flip the
-  // index_type and the index_labels actually match the entity_type.
+  // index_type and the index_labels actually match the slice_type.
   if (plot.plot_type === "correlation_heatmap") {
     const { index_type } = plot;
-    const { dataset_id, entity_type } = plot.dimensions
+    const { dataset_id, slice_type } = plot.dimensions
       .x as DataExplorerPlotConfigDimension;
 
     const filters: DataExplorerFilters = {};
@@ -91,7 +91,7 @@ export function toRelatedPlot(
       plot.filters?.distinguish1 &&
       !isContextAll(plot.filters?.distinguish1)
     ) {
-      color_by = "context";
+      color_by = "aggregated_slice";
       filters.color1 = plot.filters?.distinguish1;
     }
 
@@ -99,7 +99,7 @@ export function toRelatedPlot(
       plot.filters?.distinguish2 &&
       !isContextAll(plot.filters?.distinguish2)
     ) {
-      color_by = "context";
+      color_by = "aggregated_slice";
       filters.color2 = plot.filters?.distinguish2;
     }
 
@@ -112,13 +112,13 @@ export function toRelatedPlot(
         (dimensions, dimensionKey, index) => ({
           ...dimensions,
           [dimensionKey]: {
-            entity_type,
-            axis_type: "entity",
+            slice_type,
+            axis_type: "raw_slice",
             dataset_id,
             context: {
-              name: entity_labels[index],
-              context_type: entity_type,
-              expr: { "==": [{ var: "entity_label" }, entity_labels[index]] },
+              name: slice_labels[index],
+              context_type: slice_type,
+              expr: { "==": [{ var: "entity_label" }, slice_labels[index]] },
             },
             aggregation: "first",
           },
@@ -129,25 +129,25 @@ export function toRelatedPlot(
     };
   }
 
-  const index_type = plot.dimensions.x!.entity_type;
+  const index_type = plot.dimensions.x!.slice_type;
   const { dataset_id } = plot.dimensions.x as DataExplorerPlotConfigDimension;
-  const entity_type = plot.index_type;
+  const slice_type = plot.index_type;
 
   // { density_1d, waterfall, scatter } -> correlation_heatmap
   if (selectedLabels.size > 2) {
     const context = {
       name: defaultContextName(selectedLabels.size),
-      context_type: entity_type,
+      context_type: slice_type,
       expr: {
-        in: [{ var: "entity_label" }, entity_labels],
+        in: [{ var: "entity_label" }, slice_labels],
       },
     };
 
     const isCompatibleTwoContextComparison =
-      plot.dimensions.x!.axis_type === "context" &&
-      plot.dimensions.y?.axis_type === "context" &&
-      plot.dimensions.x!.entity_type === index_type &&
-      plot.dimensions.y?.entity_type === index_type &&
+      plot.dimensions.x!.axis_type === "aggregated_slice" &&
+      plot.dimensions.y?.axis_type === "aggregated_slice" &&
+      plot.dimensions.x!.slice_type === index_type &&
+      plot.dimensions.y?.slice_type === index_type &&
       plot.dimensions.x!.dataset_id !== plot.dimensions.y.dataset_id;
 
     return {
@@ -155,10 +155,10 @@ export function toRelatedPlot(
       index_type,
       dimensions: {
         x: {
-          axis_type: "context",
-          // HACK: just use the entity_type and dataset_id from the the X axis. In theory,
+          axis_type: "aggregated_slice",
+          // HACK: just use the slice_type and dataset_id from the the X axis. In theory,
           // they could be different. Should we force them to be the same?
-          entity_type,
+          slice_type,
           dataset_id,
           context,
           aggregation: "correlation",
@@ -178,28 +178,28 @@ export function toRelatedPlot(
   let color_by: DataExplorerPlotConfig["color_by"];
 
   if (
-    plot.dimensions.x?.entity_type === index_type &&
+    plot.dimensions.x?.slice_type === index_type &&
     !isContextAll(plot.dimensions.x.context)
   ) {
     filters.color1 = plot.dimensions.x.context;
-    color_by = "entity";
+    color_by = "raw_slice";
   }
 
   if (
-    plot.dimensions.y?.entity_type === index_type &&
+    plot.dimensions.y?.slice_type === index_type &&
     !isContextAll(plot.dimensions.y.context) &&
     !contextsMatch(plot.dimensions.x!.context, plot.dimensions.y.context)
   ) {
     filters.color2 = plot.dimensions.y.context;
-    color_by = "entity";
+    color_by = "raw_slice";
   }
 
-  if (filters.color1 && plot.dimensions.x?.axis_type === "context") {
-    color_by = "context";
+  if (filters.color1 && plot.dimensions.x?.axis_type === "aggregated_slice") {
+    color_by = "aggregated_slice";
   }
 
-  if (filters.color2 && plot.dimensions.y?.axis_type === "context") {
-    color_by = "context";
+  if (filters.color2 && plot.dimensions.y?.axis_type === "aggregated_slice") {
+    color_by = "aggregated_slice";
   }
 
   return {
@@ -210,13 +210,13 @@ export function toRelatedPlot(
       (dimensions, dimensionKey, index) => ({
         ...dimensions,
         [dimensionKey]: {
-          axis_type: "entity",
-          entity_type,
+          axis_type: "raw_slice",
+          slice_type,
           dataset_id,
           context: {
-            name: entity_labels[index],
-            context_type: entity_type,
-            expr: { "==": [{ var: "entity_label" }, entity_labels[index]] },
+            name: slice_labels[index],
+            context_type: slice_type,
+            expr: { "==": [{ var: "entity_label" }, slice_labels[index]] },
           },
           aggregation: "first",
         },
@@ -515,6 +515,54 @@ export async function plotToQueryString(
   return `?${qs.stringify({ ...nextParams, p: serialized })}`;
 }
 
+const replaceLegacyPropertyNames = (plot: DataExplorerPlotConfig | null) => {
+  if (!plot) {
+    return null;
+  }
+
+  const legacyPlot = (plot as unknown) as {
+    // The values for `color_by` are now
+    // "raw_slice" | "aggregated_slice" | "property" | "custom"
+    color_by?: "entity" | "context" | "property" | "custom";
+  };
+
+  if (legacyPlot.color_by === "entity") {
+    // eslint-disable-next-line no-param-reassign
+    plot.color_by = "raw_slice";
+  }
+
+  if (legacyPlot.color_by === "context") {
+    // eslint-disable-next-line no-param-reassign
+    plot.color_by = "aggregated_slice";
+  }
+
+  (Object.keys(plot.dimensions) as DimensionKey[]).forEach((dKey) => {
+    const dim = plot.dimensions[dKey] as DataExplorerPlotConfigDimension;
+
+    const legacyDim = (dim as unknown) as {
+      // "entity_type" has been renamed to "slice_type"
+      entity_type?: string;
+      // The values for `axis_type` are now "raw_slice" | "aggregated_slice"
+      axis_type?: "entity" | "context";
+    };
+
+    if (legacyDim.entity_type) {
+      dim.slice_type = legacyDim.entity_type;
+      delete legacyDim.entity_type;
+    }
+
+    if (legacyDim.axis_type === "entity") {
+      dim.axis_type = "raw_slice";
+    }
+
+    if (legacyDim.axis_type === "context") {
+      dim.axis_type = "aggregated_slice";
+    }
+  });
+
+  return plot;
+};
+
 export async function readPlotFromQueryString(): Promise<DataExplorerPlotConfig> {
   const params = qs.parse(window.location.search.substr(1));
   let plot: DataExplorerPlotConfig | null = null;
@@ -553,6 +601,7 @@ export async function readPlotFromQueryString(): Promise<DataExplorerPlotConfig>
     };
   }
 
+  plot = replaceLegacyPropertyNames(plot);
   plot = await replaceHashesWithContexts(plot);
 
   return (plot as DataExplorerPlotConfig) || DEFAULT_EMPTY_PLOT;

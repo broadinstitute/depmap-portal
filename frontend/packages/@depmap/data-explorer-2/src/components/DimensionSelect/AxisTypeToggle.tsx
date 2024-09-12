@@ -4,16 +4,16 @@ import { ToggleSwitch } from "@depmap/common-components";
 import styles from "../../styles/DimensionSelect.scss";
 
 interface Props {
-  value: "entity" | "context";
-  onChange: (nextValue: "entity" | "context") => void;
+  value: "raw_slice" | "aggregated_slice";
+  onChange: (nextValue: "raw_slice" | "aggregated_slice") => void;
   disabled?: boolean;
 }
 
-type ToggleOption = { label: string; value: "entity" | "context" };
+type ToggleOption = { label: string; value: "raw_slice" | "aggregated_slice" };
 
 const toggleOptions = [
-  { label: "Single", value: "entity" },
-  { label: "Multiple", value: "context" },
+  { label: "Single", value: "raw_slice" },
+  { label: "Multiple", value: "aggregated_slice" },
 ] as [ToggleOption, ToggleOption];
 
 const AxisTypeToggle = renderConditionally(
