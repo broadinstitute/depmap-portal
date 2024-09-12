@@ -135,6 +135,7 @@ def get_cell_line_url_root():
 
 @blueprint.route("/api/getDatasets")
 def get_datasets():
+    """Return all matrix datasets (both breadbox and legacy datasets)."""
     combined_datasets = []
     for dataset_id in data_access.get_all_matrix_dataset_ids():
         if data_access.is_continuous(dataset_id):
@@ -160,9 +161,10 @@ def get_datasets():
 
 def valid_feature(feature, dataset):
     """
-    Returns true if feature is in dataset row
+    Returns true if feature is in dataset row.
+    Deprecated: Not supported for breadbox datasets.
     """
-    return data_access.valid_row(dataset, feature)
+    return interactive_utils.valid_row(dataset, feature)
 
 
 # Getting plot points
@@ -170,14 +172,15 @@ def valid_feature(feature, dataset):
 
 def valid_dataset(thing_to_check, place_to_check):
     """
-    Returns true if thing_to_check is a key in the place_to_check config dictionary, false otherwise
+    Returns true if thing_to_check is a key in the place_to_check config dictionary, false otherwise.
+    Deprecated: Not supported for breadbox datasets.
     """
     if place_to_check == "DATASETS":
-        return data_access.is_continuous(thing_to_check)
+        return interactive_utils.is_continuous(thing_to_check)
     elif place_to_check == "COLOR_DATASETS":
-        return data_access.is_categorical(thing_to_check)
+        return interactive_utils.is_categorical(thing_to_check)
     elif place_to_check == "FILTER_DATASETS":
-        return data_access.is_filter(thing_to_check)
+        return interactive_utils.is_filter(thing_to_check)
     else:
         raise ValueError("Invalid dataset_config_key_name " + place_to_check)
 
@@ -188,6 +191,7 @@ def is_none(value):
 
 def option_used(optionFeature, optionDataset, dataset_config_key_name=""):
     """
+    Deprecated: Not supported for breadbox datasets.
     Returns true if
      1) optionFeature has a non-empty value
      2) The dataset requested is allowed for that particular config (e.g. prevent coloring by a continuous x/y dataset)
@@ -237,16 +241,17 @@ def merge_x_y(xSeries, ySeries):
 
 
 def filter_df(df, filter_dataset, filter_feature):
+    """Deprecated: Not supported for breadbox datasets."""
     # filter is a binary thing. it is currently only implemented for context
     assert filter_dataset in {
-        data_access.get_context_dataset(),
-        data_access.get_custom_cell_lines_dataset(),
+        interactive_utils.get_context_dataset(),
+        interactive_utils.get_custom_cell_lines_dataset(),
     }
 
     # for both context and custom cellines, get row of values returns a series where all values are the filter_feature, e.g. skin
     # nas are dropped, so it only returns cell lines for which the value is "true"
     # thus, we can do the filtering by doing an inner join
-    feature_series = data_access.get_row_of_values(filter_dataset, filter_feature)
+    feature_series = interactive_utils.get_row_of_values(filter_dataset, filter_feature)
     assert feature_series.isnull().sum() == 0
 
     filter_df = pd.merge(
@@ -431,7 +436,7 @@ def get_df_from_feature_list(
     cell_line_info_features: list[str],
     breadbox_feature_data: list[pd.Series] = [],
 ):
-    # Load feature data into a dataframe
+    # Load legacy feature data into a dataframe
     values = []
     seen_features_ids = []
     for i, feature_label in enumerate(feature_labels):
@@ -445,9 +450,9 @@ def get_df_from_feature_list(
             log_feature_access("get_df_from_feature_list", datasets[i], feature_label)
 
             # Get a Series with name being the feature slice id
-            val = data_access.get_row_of_values(datasets[i], feature_label).rename(
-                feature_ids[i], inplace=True
-            )
+            val = interactive_utils.get_row_of_values(
+                datasets[i], feature_label
+            ).rename(feature_ids[i], inplace=True)
 
             values.append(val)
             seen_features_ids.append(feature_ids[i])
@@ -659,6 +664,7 @@ def get_features():
 
 
 def get_associations_df(matrix_id, x_feature):
+    """Deprecated: Not supported for breadbox datasets."""
     # this works because the dataset display_name is also used at the value in the correlation table
     df = get_all_correlations(matrix_id, x_feature)
 
@@ -677,7 +683,7 @@ def get_associations_df(matrix_id, x_feature):
         )
 
         df["other_entity_type"] = df[["other_dataset_id"]].apply(
-            lambda x: data_access.get_dataset_feature_type(dataset_id_to_name[x[0]]),
+            lambda x: interactive_utils.get_entity_type(dataset_id_to_name[x[0]]),
             axis=1,
         )
     else:
@@ -717,10 +723,12 @@ def get_associations():
                 "featureLabel": "",
             }
         )
-
+    # Everything below this point is deprecated: and not supported for breadbox datasets.
     x_dataset, x_feature = InteractiveTree.get_dataset_feature_from_id(x_id)
-    dataset_label = data_access.get_dataset_label(x_dataset)
-    if not option_used(x_feature, x_dataset, "DATASETS") or not data_access.is_standard(
+    dataset_label = interactive_utils.get_dataset_label(x_dataset)
+    if not option_used(
+        x_feature, x_dataset, "DATASETS"
+    ) or not interactive_utils.is_standard(
         x_dataset
     ):  # fixme test for this path
         return jsonify(
@@ -750,6 +758,7 @@ def get_associations():
 
 @blueprint.route("/api/associations-csv")
 def get_associations_csv():
+    """Deprecated: Not supported for breadbox datasets."""
     from depmap.partials.views import format_csv_response
 
     x_id = request.args.get("x")
@@ -757,7 +766,7 @@ def get_associations_csv():
 
     assert option_used(x_feature, x_dataset, "DATASETS")  # fixme test for this path
 
-    matrix_id = data_access.get_matrix_id(x_dataset)
+    matrix_id = interactive_utils.get_matrix_id(x_dataset)
 
     df = get_associations_df(matrix_id, x_feature)
 

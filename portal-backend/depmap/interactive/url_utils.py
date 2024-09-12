@@ -5,12 +5,14 @@ from depmap.dataset.models import (
     DependencyDataset,
     Dataset,
 )
+from depmap.interactive import interactive_utils
 from depmap.vector_catalog.trees import InteractiveTree, ContinuousValuesTree
 from depmap.vector_catalog.models import Serializer
 
 
 def _get_dataset_id(dataset_obj):
     """
+    Deprecated: Not supported for breadbox datasets.
     Returns dataset_id in interactive_config, or None if not in the config
     Currently only supports taking in a Dataset object
     Could imagine this being extended to take any interactive id, e.g. nonstandard datasets
@@ -20,7 +22,7 @@ def _get_dataset_id(dataset_obj):
     assert isinstance(dataset_obj, Dataset), "{} is not a Dataset".format(dataset_obj)
 
     dataset_id = dataset_obj.name.name
-    assert data_access.is_continuous(
+    assert interactive_utils.is_continuous(
         dataset_id
     ), "If this is hit in a test, check that the interactive config has been set up correctly"
     return dataset_id
@@ -35,6 +37,7 @@ def get_interactive_url(
     color_feature=None,
 ):
     """
+    Not supported for breadbox datasets. 
     If you are constructing a url to interactive for an announcement or static page, please instead use:
         url_for(
             "interactive.view_interactive",
@@ -69,7 +72,7 @@ def get_interactive_url(
             y_dataset_id, y_feature
         )
     else:  # if y is not specified, we try to autofill
-        x_entity_type = data_access.get_dataset_feature_type(x_dataset_id)
+        x_entity_type = interactive_utils.get_dataset_feature_type(x_dataset_id)
 
         if x_entity_type == "gene":
             y_dataset_id = fill_y_dataset_from_x_gene(x_dataset_id, x_feature)
@@ -78,7 +81,7 @@ def get_interactive_url(
                     y_dataset_id, x_feature
                 )
             else:  # x feature was not found in attempted y dataset
-                gene = data_access.get_entity_class(x_dataset_id).get_by_label(
+                gene = interactive_utils.get_entity_class(x_dataset_id).get_by_label(
                     x_feature
                 )
                 kwargs["y"] = ContinuousValuesTree().get_gene_node_id(
