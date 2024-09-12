@@ -26,7 +26,6 @@ mock_breadbox_datasets = [
         feature_type_name="compound",
         sample_type_name="depmap_model",
         data_type="user_upload",
-        dataset_metadata=None,
         value_type=ValueType.CONTINUOUS,
         allowed_values=None,
         dataset_metadata=MatrixDatasetResponseDatasetMetadataType0.from_dict({}),
