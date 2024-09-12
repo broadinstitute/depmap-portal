@@ -1,6 +1,7 @@
 from uuid import UUID
 
 from pydantic import BaseModel
+from pydantic_settings import SettingsConfigDict
 
 from typing import Callable, Any
 
@@ -33,5 +34,4 @@ class ResponseMixin:
 class DBBase(BaseModel, ResponseMixin):
     id: UUID
 
-    class Config:
-        from_attributes = True
+    model_config = SettingsConfigDict(from_attributes=True)
