@@ -1,5 +1,4 @@
 import flask
-from depmap import data_access
 from depmap.dataset.models import (
     BiomarkerDataset,
     DependencyDataset,

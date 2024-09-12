@@ -147,12 +147,6 @@ def get_datasets():
         key=lambda dataset: data_access.get_sort_key(dataset["value"]),
     )
 
-    # append breadbox datasets to the end of the list
-    for dataset_node in breadbox_shim.get_dataset_nodes(catalog_type="continuous"):
-        combined_datasets.append(
-            {"label": dataset_node.label, "value": dataset_node.id,}
-        )
-
     return jsonify(combined_datasets)
 
 
