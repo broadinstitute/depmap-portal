@@ -4,9 +4,9 @@ from breadbox.schemas.custom_http_exception import AnnotationValidationError, Us
 from breadbox.schemas.dataset import TabularDatasetResponse
 from fastapi import File, Form, HTTPException, UploadFile, Body
 
-from pydantic import BaseModel, Field, validator, model_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic_settings import SettingsConfigDict
 from typing import List, Optional, Dict, Annotated
-import json
 
 
 class IdAndName(BaseModel):
@@ -25,7 +25,7 @@ class DimensionType(BaseModel):
 
 class AddDimensionType(BaseModel):
     name: str
-    display_name: str
+    display_name: Optional[str] = None
     id_column: str
     axis: Literal["feature", "sample"]
 
@@ -65,9 +65,7 @@ class UpdateDimensionType(BaseModel):
 
 
 class FeatureTypeOut(BaseModel):
-    class Config:
-        orm_mode = True
-        allow_population_by_field_name = True
+    model_config = SettingsConfigDict(from_attributes=True, populate_by_name=True)
 
     name: str
     id_column: str
@@ -75,9 +73,7 @@ class FeatureTypeOut(BaseModel):
 
 
 class SampleTypeOut(BaseModel):
-    class Config:
-        orm_mode = True
-        allow_population_by_field_name = True
+    model_config = SettingsConfigDict(from_attributes=True, populate_by_name=True)
 
     name: str
     id_column: str
@@ -99,7 +95,7 @@ class MetadataMapping(BaseModel):
     annotation_type_mapping: Optional[Dict[str, AnnotationType]] = Body(None)
     id_mapping: Optional[Dict[str, Any]] = Body(None)
 
-    @validator("metadata_file")
+    @field_validator("metadata_file")
     def check_metadata_file_content_type(cls, metadata_value: Optional[UploadFile]):
         if metadata_value and metadata_value.content_type != "text/csv":
             raise HTTPException(
@@ -108,52 +104,50 @@ class MetadataMapping(BaseModel):
             )
         return metadata_value
 
-    @validator("annotation_type_mapping")
-    def check_annotation_type_mapping_provided(
-        cls,
-        annotation_type_mapping_val: Optional[Dict[str, AnnotationType]],
-        values: Dict[str, Any],
-    ) -> Optional[Dict[str, AnnotationType]]:
+    @model_validator(mode="after")
+    def check_annotation_type_mapping_provided(self):
+        annotation_type_mapping, metadata_file = (
+            self.annotation_type_mapping,
+            self.metadata_file,
+        )
 
-        if values.get("metadata_file") is not None:
-            if annotation_type_mapping_val is None:
+        if metadata_file is not None:
+            if annotation_type_mapping is None:
                 raise AnnotationValidationError(
                     "Annotation type mapping must be provided if metadata file is provided!"
                 )
 
         else:
-            if annotation_type_mapping_val is not None:
+            if annotation_type_mapping is not None:
                 raise AnnotationValidationError(
                     "Annotation type mapping can only be provided when metadata file is provided"
                 )
-        return annotation_type_mapping_val
+        return self
 
 
 class TypeMetadataIn(MetadataType, MetadataMapping):
     taiga_id: Optional[str]
 
-    @validator("id_column")
-    def check_annotation_type_for_id_col_is_string(
-        cls, id_col_val: str, values: Dict[str, Any]
-    ):
-        # Unsure why 'id_column' gets checked after 'annotation_type_mapping
-        annotation_type_map = values.get("annotation_type_mapping")
+    @model_validator(mode="after")
+    def check_annotation_type_for_id_col_is_string(self):
+        id_col, annotation_type_map = self.id_column, self.annotation_type_mapping
         if annotation_type_map is not None:
-            if id_col_val not in annotation_type_map:
+            if id_col not in annotation_type_map:
                 raise AnnotationValidationError(
-                    f"Annotation type mapping should include the id column '{id_col_val}' and be of type 'text'!"
+                    f"Annotation type mapping should include the id column '{id_col}' and be of type 'text'!"
                 )
-            if annotation_type_map[id_col_val] != AnnotationType.text:
+            if annotation_type_map[id_col] != AnnotationType.text:
                 raise AnnotationValidationError(
-                    f"Annotation type for the id column '{id_col_val}' should be of type 'text'!"
+                    f"Annotation type for the id column '{id_col}' should be of type 'text'!"
                 )
-        return id_col_val
+        return self
 
-    @validator("taiga_id")
-    def check_taiga_id_with_metadata_file(cls, taiga_val: str, values: Dict[str, Any]):
-        metadata_file = values.get("metadata_file")
+    @model_validator(mode="after")
+    def check_taiga_id_with_metadata_file(self):
+        taiga_val, metadata_file = self.taiga_id, self.metadata_file
         if metadata_file is None and taiga_val is not None:
             raise AnnotationValidationError("Need metadata file if providing taiga id!")
+        return self
 
 
 class IdMapping(BaseModel):

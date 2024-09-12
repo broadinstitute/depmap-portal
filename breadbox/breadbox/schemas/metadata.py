@@ -1,5 +1,5 @@
 from typing import Any, List
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, field_validator
 from ..models.dataset import AnnotationType
 
 
@@ -12,7 +12,7 @@ class FormattedMetadata(BaseModel):
     value: Any
     annotation_type: str
 
-    @validator("annotation_type")
+    @field_validator("annotation_type")
     def check_value_type_in_annotation_type(cls, annotation_type):
         assert annotation_type in [x.value for x in AnnotationType]
         return annotation_type

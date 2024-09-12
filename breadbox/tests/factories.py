@@ -98,7 +98,15 @@ def feature_type(
 ):
     settings: realSettings = MockSettings(user)  # pyright: ignore
     display_name_val = display_name if display_name else name
-    add_dimension_type(db, settings, user, name, display_name_val, id_column, "feature")
+    add_dimension_type(
+        db,
+        settings,
+        user,
+        name=name,
+        display_name=display_name_val,
+        id_column=id_column,
+        axis="feature",
+    )
     db.flush()
 
 
@@ -111,7 +119,15 @@ def sample_type(
 ):
     settings: realSettings = MockSettings(user)  # pyright: ignore
     display_name_val = display_name if display_name else name
-    add_dimension_type(db, settings, user, name, display_name_val, id_column, "sample")
+    add_dimension_type(
+        db,
+        settings,
+        user,
+        name=name,
+        display_name=display_name_val,
+        id_column=id_column,
+        axis="sample",
+    )
     db.flush()
 
 

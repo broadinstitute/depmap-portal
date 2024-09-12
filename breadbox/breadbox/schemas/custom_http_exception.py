@@ -1,12 +1,14 @@
 from fastapi import HTTPException, status
 from pydantic import BaseModel
+from pydantic_settings import SettingsConfigDict
 
 
 class HTTPError(BaseModel):
     detail: str
 
-    class Config:
-        schema_extra = {"example": {"detail": "HTTPException raised."}}
+    model_config = SettingsConfigDict(
+        json_schema_extra={"example": {"detail": "HTTPException raised."}},
+    )
 
 
 ERROR_CODES = [
