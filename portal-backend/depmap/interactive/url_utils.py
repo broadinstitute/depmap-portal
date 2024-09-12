@@ -72,7 +72,7 @@ def get_interactive_url(
             y_dataset_id, y_feature
         )
     else:  # if y is not specified, we try to autofill
-        x_entity_type = interactive_utils.get_dataset_feature_type(x_dataset_id)
+        x_entity_type = interactive_utils.get_entity_type(x_dataset_id)
 
         if x_entity_type == "gene":
             y_dataset_id = fill_y_dataset_from_x_gene(x_dataset_id, x_feature)
