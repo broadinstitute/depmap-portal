@@ -393,7 +393,7 @@ function DataExplorerScatterPlot({
                 const datasetLabels = data!.index_labels.filter((_, i) => {
                   return (
                     data!.dimensions.x.values[i] !== null &&
-                    data!.dimensions.y.values[i] !== null
+                    data!.dimensions.y?.values[i] !== null
                   );
                 });
 

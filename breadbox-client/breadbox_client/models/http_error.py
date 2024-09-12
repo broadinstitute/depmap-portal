@@ -9,6 +9,9 @@ T = TypeVar("T", bound="HTTPError")
 @_attrs_define
 class HTTPError:
     """
+    Example:
+        {'detail': 'HTTPException raised.'}
+
     Attributes:
         detail (str):
     """

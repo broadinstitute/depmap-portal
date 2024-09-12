@@ -190,7 +190,7 @@ export async function fetchPlotDimensions(
     out[property][key] = { ...rest, values };
   });
 
-  return Promise.resolve(out as DataExplorerPlotResponse);
+  return Promise.resolve((out as unknown) as DataExplorerPlotResponse);
 }
 
 export async function fetchCorrelation(

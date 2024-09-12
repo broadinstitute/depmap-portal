@@ -2,7 +2,7 @@ from enum import Enum
 import click
 from flask.cli import with_appcontext
 from flask import current_app
-from depmap import data_access
+from depmap.interactive import interactive_utils
 from depmap.interactive.nonstandard.models import NonstandardMatrix
 from depmap.access_control import all_records_visible
 
@@ -60,7 +60,7 @@ def _get_nonstandard_dataset_issues():
     issues = NonstandardIssues()
 
     for matrix in NonstandardMatrix.get_all():
-        if not data_access.has_config(matrix.nonstandard_dataset_id):
+        if not interactive_utils.has_config(matrix.nonstandard_dataset_id):
             issues.append(
                 NonstandardIssueType.nonstandard_matrix_not_in_interactive_config,
                 "NonstandardMatrix {} not found in interactive config. If this is a non-custom dataset, this may imply a stale dataset that was deleted from settings but still exists in the db. The solution here is a clean db load.".format(

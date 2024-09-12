@@ -1,7 +1,6 @@
 from flask import abort, Blueprint, request
 from flask_restplus import Api, Resource, fields
 
-from depmap import data_access
 from depmap.breadbox_shim import breadbox_shim
 from depmap.extensions import (
     csrf_protect,
@@ -252,7 +251,7 @@ class Vector(
     )
     @api.marshal_with(VectorValues)
     def get(self, id):
-        series = data_access.get_row_of_values_from_slice_id(id)
+        series = interactive_utils.get_row_of_values_from_slice_id(id)
         dataset_id, row, row_type = SliceSerializer.decode_slice_id(id)
         cell_line_names = []
         values = []
@@ -260,7 +259,7 @@ class Vector(
             if cell_line is not None:
                 cell_line_names.append(cell_line.depmap_id)
                 values.append(value)
-        if data_access.is_continuous(dataset_id):
+        if interactive_utils.is_continuous(dataset_id):
 
             return {
                 "cellLines": cell_line_names,

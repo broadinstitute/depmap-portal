@@ -235,16 +235,6 @@ def valid_row(dataset_id: str, row_name: str) -> bool:
     return interactive_utils.valid_row(dataset_id, row_name)
 
 
-# This could be supported by breadbox but isn't very useful for DE2 because
-# we can use get_row_of_values just as easily to load data when we have the feature label.
-def get_row_of_values_from_slice_id(id: str) -> CellLineSeries:
-    """
-    Gets a row of numeric or string values, indexed by depmap_id
-    for a given slice_id.
-    """
-    return interactive_utils.get_row_of_values_from_slice_id(id)
-
-
 ######################################################################
 # METHODS BELOW NEED UPDATED CONTRACTS TO BE SUPPORTABLE BY BREADBOX #
 ######################################################################
@@ -255,16 +245,6 @@ def get_private_datasets() -> dict[str, Config]:
     Get configuration information for all private datasets.
     """
     return interactive_utils.get_private_datasets()
-
-
-# Not currently used anywhere
-def get_all_entity_ids(dataset_id: str) -> list[int]:
-    """
-    Get all entity ids for a given dataset. 
-    Entity ids are the entity PK values in the legacy database, used to join
-    entity metadata with matrix data. 
-    """
-    return interactive_utils.get_all_entity_ids(dataset_id)
 
 
 def get_subsetted_df(
@@ -311,14 +291,6 @@ def get_all_row_indices_labels_entity_ids(dataset_id: str) -> list[RowSummary]:
     return interactive_utils.get_all_row_indices_labels_entity_ids(dataset_id)
 
 
-# Only used in /api/get-features (DE1)
-def get_category_config(color_dataset: str) -> CategoryConfig:
-    """
-    Gets a config object describing the categories for the given dataset.
-    """
-    return interactive_utils.get_category_config(color_dataset)
-
-
 def get_context_dataset() -> str:
     """
     Get the id of the context dataset.
@@ -334,28 +306,6 @@ def get_custom_cell_lines_dataset() -> str:
     return interactive_utils.get_custom_cell_lines_dataset()
 
 
-# Currently only used by Vector Catalog
-# Breadbox can support a function that does this, but it shouldn't live in this data access interface.
-# Rather, in our files that correspond to tables and DB Models (ie: models.py) we could have a function
-# to convert an entity type to the corresponding entity class.
-# And we can use GenericEntity as a catch all for anything not recognized.
-def get_entity_class(dataset_id: str) -> Entity:
-    """
-    Gets the entity subclass which represents the entity type for the given dataset. 
-    Each entity subclass maps to a legacy database table which stores entity metadata
-    For example, Gene, Compound, Antibody, etc.
-    """
-    return interactive_utils.get_entity_class(dataset_id)
-
-
-def get_matrix(dataset_id: str) -> Matrix:
-    """
-    Load the matrix object for the given dataset.
-    Matrices are specific to the legacy data access implementation
-    """
-    return interactive_utils.get_matrix(dataset_id)
-
-
 def get_matrix_id(dataset_id: str) -> int:
     """
     Load the matrix id for the given dataset.
@@ -369,10 +319,6 @@ def has_config(dataset_id: str) -> bool:
     Check whether the given dataset exists in interactive config
     """
     return interactive_utils.has_config(dataset_id)
-
-
-def has_opaque_features(dataset_id: str) -> bool:
-    return interactive_utils.has_opaque_features(dataset_id)
 
 
 def is_filter(dataset_id: str) -> bool:

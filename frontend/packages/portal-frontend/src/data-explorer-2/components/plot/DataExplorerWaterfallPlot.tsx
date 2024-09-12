@@ -345,7 +345,7 @@ function DataExplorerWaterfallPlot({
               }}
               onClickSetSelectionFromContext={async () => {
                 const datasetLabels = data!.index_labels.filter((_, i) => {
-                  return data!.dimensions.y.values[i] !== null;
+                  return data!.dimensions.y?.values[i] !== null;
                 });
 
                 const labels = await promptForSelectionFromContext(

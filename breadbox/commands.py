@@ -326,6 +326,7 @@ def _populate_minimal_data(db: SessionWithUser, settings: Settings):
             settings,
             user=admin_user,
             name="generic",
+            display_name="Generic",
             id_column="label",
             axis="feature",
         )

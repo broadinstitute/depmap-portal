@@ -45,6 +45,7 @@ from pydantic import Json
     response_model=SampleTypeOut,
     response_model_by_alias=False,
     response_model_exclude_none=True,
+    deprecated=True,
 )
 def add_sample_type(
     name: str = Form(...),
@@ -117,6 +118,7 @@ def add_dimension_type(
     settings: Settings,
     units_per_column: Dict[str, str],
 ):
+    """NOTE: This function is only used in the deprecated add_sample_type and add_feature_type endpoints"""
     # Check if sample type already exists
     existing_dimension_type = type_crud.get_dimension_type(db, name)
     if existing_dimension_type is not None:
@@ -150,6 +152,7 @@ def add_dimension_type(
             settings,
             user,
             name,
+            display_name=name,  # Placeholder value doesn't matter for deprecated function
             axis=axis,
             id_column=id_column,
             metadata_df=metadata_df,
@@ -171,6 +174,7 @@ def add_dimension_type(
     response_model=FeatureTypeOut,
     response_model_by_alias=False,
     response_model_exclude_none=True,
+    deprecated=True,
 )
 def add_feature_type(
     name: Annotated[str, Form(...)],
@@ -244,6 +248,7 @@ def add_feature_type(
     response_model=List[SampleTypeOut],
     response_model_by_alias=False,
     response_model_exclude_none=True,
+    deprecated=True,
 )
 def get_sample_types(db: SessionWithUser = Depends(get_db_with_user)):
     samples = type_crud.get_dimension_types(db, axis="sample")
@@ -256,6 +261,7 @@ def get_sample_types(db: SessionWithUser = Depends(get_db_with_user)):
     response_model=List[FeatureTypeOut],
     response_model_by_alias=False,
     response_model_exclude_none=True,
+    deprecated=True,
 )
 def get_feature_types(db: SessionWithUser = Depends(get_db_with_user)):
     features = type_crud.get_dimension_types(db, axis="feature")
@@ -267,6 +273,7 @@ def get_feature_types(db: SessionWithUser = Depends(get_db_with_user)):
     operation_id="update_sample_type_metadata",
     response_model=SampleTypeOut,
     response_model_exclude_none=True,
+    deprecated=True,
 )
 def update_sample_type_metadata(
     sample_type_name: str,
@@ -364,6 +371,7 @@ def update_sample_type_metadata(
     operation_id="update_feature_type_metadata",
     response_model=FeatureTypeOut,
     response_model_exclude_none=True,
+    deprecated=True,
 )
 def update_feature_type_metadata(
     feature_type_name: str,
@@ -444,7 +452,7 @@ def update_feature_type_metadata(
 
 
 @router.delete(
-    "/sample/{sample_type}", operation_id="remove_sample_type",
+    "/sample/{sample_type}", operation_id="remove_sample_type", deprecated=True
 )
 def delete_sample_type(
     sample_type: str,
@@ -478,7 +486,7 @@ def delete_sample_type(
 
 
 @router.delete(
-    "/feature/{feature_type}", operation_id="remove_feature_type",
+    "/feature/{feature_type}", operation_id="remove_feature_type", deprecated=True
 )
 def delete_feature_type(
     feature_type: str,
@@ -539,9 +547,10 @@ def add_dimension_type_endpoint(
             db,
             settings,
             user,
-            dimension_type.name,
-            dimension_type.id_column,
-            dimension_type.axis,
+            name=dimension_type.name,
+            display_name=dimension_type.display_name,
+            id_column=dimension_type.id_column,
+            axis=dimension_type.axis,
         )
 
         return _dim_type_to_response(result)
@@ -630,6 +639,7 @@ def _dim_type_to_response(type: DimensionTypeModel):
 
     return DimensionType(
         name=type.name,
+        display_name=type.display_name,
         id_column=type.id_column,
         axis=type.axis,
         metadata_dataset_id=type.dataset_id,

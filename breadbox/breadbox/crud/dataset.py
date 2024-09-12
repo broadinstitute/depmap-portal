@@ -1334,7 +1334,7 @@ def get_dataset_data_type_priorities(db: SessionWithUser):
 def update_dataset(
     db: SessionWithUser, user: str, dataset: Dataset, new_values: UpdateDatasetParams
 ):
-    update_data = new_values.dict(exclude_unset=True)
+    update_data = new_values.model_dump(exclude_unset=True)
     if "group_id" in update_data:
         new_group = get_group(db, user, update_data["group_id"], write_access=False)
         if new_group is None:

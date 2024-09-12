@@ -89,15 +89,45 @@ def group(
     return group
 
 
-def feature_type(db: SessionWithUser, user: str, name: str, id_column="id"):
+def feature_type(
+    db: SessionWithUser,
+    user: str,
+    name: str,
+    display_name: Optional[str] = None,
+    id_column="id",
+):
     settings: realSettings = MockSettings(user)  # pyright: ignore
-    add_dimension_type(db, settings, user, name, id_column, "feature")
+    display_name_val = display_name if display_name else name
+    add_dimension_type(
+        db,
+        settings,
+        user,
+        name=name,
+        display_name=display_name_val,
+        id_column=id_column,
+        axis="feature",
+    )
     db.flush()
 
 
-def sample_type(db: SessionWithUser, user: str, name: str, id_column="id"):
+def sample_type(
+    db: SessionWithUser,
+    user: str,
+    name: str,
+    display_name: Optional[str] = None,
+    id_column="id",
+):
     settings: realSettings = MockSettings(user)  # pyright: ignore
-    add_dimension_type(db, settings, user, name, id_column, "sample")
+    display_name_val = display_name if display_name else name
+    add_dimension_type(
+        db,
+        settings,
+        user,
+        name=name,
+        display_name=display_name_val,
+        id_column=id_column,
+        axis="sample",
+    )
     db.flush()
 
 

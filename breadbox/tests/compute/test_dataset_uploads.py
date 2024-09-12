@@ -132,9 +132,10 @@ def test_tabular_uploads(
         minimal_db,
         settings,
         settings.admin_users[0],
-        "test-sample",
-        "sample_id",
-        "sample",
+        name="test-sample",
+        display_name="Test Sample",
+        id_column="sample_id",
+        axis="sample",
         metadata_df=pd.DataFrame({"sample_id": ["ID1", "ID2"]}),
         annotation_type_mapping={"sample_id": AnnotationType.text},
     )
