@@ -33,11 +33,9 @@ class InteractiveTree(Tree):
         dataset_id, feature, feature_type = SliceSerializer.decode_slice_id(id)
 
         if feature_type == SliceRowType.entity_id:
-            feature = (
-                interactive_utils.get_entity_class(dataset_id)
-                .get_by_id(int(feature))
-                .label
-            )
+            entity_class = interactive_utils.get_entity_class(dataset_id)
+            assert entity_class is not None
+            feature = entity_class.get_by_id(int(feature)).label
         return dataset_id, feature
 
     @staticmethod

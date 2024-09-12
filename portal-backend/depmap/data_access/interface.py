@@ -314,20 +314,6 @@ def get_custom_cell_lines_dataset() -> str:
     return interactive_utils.get_custom_cell_lines_dataset()
 
 
-# Currently only used by Vector Catalog
-# Breadbox can support a function that does this, but it shouldn't live in this data access interface.
-# Rather, in our files that correspond to tables and DB Models (ie: models.py) we could have a function
-# to convert an entity type to the corresponding entity class.
-# And we can use GenericEntity as a catch all for anything not recognized.
-def get_entity_class(dataset_id: str) -> Entity:
-    """
-    Gets the entity subclass which represents the entity type for the given dataset. 
-    Each entity subclass maps to a legacy database table which stores entity metadata
-    For example, Gene, Compound, Antibody, etc.
-    """
-    return interactive_utils.get_entity_class(dataset_id)
-
-
 def get_matrix_id(dataset_id: str) -> int:
     """
     Load the matrix id for the given dataset.

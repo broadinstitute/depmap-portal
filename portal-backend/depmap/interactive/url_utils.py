@@ -80,9 +80,9 @@ def get_interactive_url(
                     y_dataset_id, x_feature
                 )
             else:  # x feature was not found in attempted y dataset
-                gene = interactive_utils.get_entity_class(x_dataset_id).get_by_label(
-                    x_feature
-                )
+                gene_entity_class = interactive_utils.get_entity_class(x_dataset_id)
+                assert gene_entity_class is not None
+                gene = gene_entity_class.get_by_label(x_feature)
                 kwargs["y"] = ContinuousValuesTree().get_gene_node_id(
                     gene.entity_id
                 )  # this is why y_**justid is in the if else blockssaid&p
