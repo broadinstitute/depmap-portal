@@ -354,8 +354,9 @@ class BBClient:
         breadbox_response = add_dimension_type_client.sync_detailed(client=self.client, body=params)
         return self._parse_client_response(breadbox_response)
 
-    def update_dimension_type(self, name: str, metadata_dataset_id: str, properties_to_index: List[str]):
-        params = UpdateDimensionType(metadata_dataset_id, properties_to_index)
+    def update_dimension_type(self, name: str, metadata_dataset_id: str, properties_to_index: List[str], display_name=UNSET):
+        # display_name is set to UNSET for backwards compatibility
+        params = UpdateDimensionType(display_name=display_name, metadata_dataset_id=metadata_dataset_id, properties_to_index=properties_to_index)
 
         breadbox_response = update_dimension_type_client.sync_detailed(name=name, client=self.client, body=params)
         return self._parse_client_response(breadbox_response)
