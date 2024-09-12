@@ -9,8 +9,6 @@ source_modules=
     depmap.compound
     depmap.data_explorer_2
     depmap.download
-    depmap.interactive.common_utils
-    depmap.interactive.views
     depmap.predictability
     depmap.private_dataset
     depmap.tile
