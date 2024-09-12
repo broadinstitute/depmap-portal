@@ -20,7 +20,7 @@ const applyFilter = (
   return filtered;
 };
 
-export default function plotToCsv(data: DataExplorerPlotResponse) {
+export default function plotToLookupTable(data: DataExplorerPlotResponse) {
   const indexColumn = getDimensionTypeLabel(data.index_type);
   const cellLineDisplayNames = data.index_aliases?.[0];
 

@@ -1,4 +1,4 @@
-import plotToCsv from "src/data-explorer-2/components/plot/prototype/plotToCsv";
+import plotToLookupTable from "src/data-explorer-2/components/plot/prototype/plotToLookupTable";
 import { DataExplorerPlotResponse } from "@depmap/types";
 
 const data: DataExplorerPlotResponse = {
@@ -35,9 +35,9 @@ const data: DataExplorerPlotResponse = {
   },
 };
 
-describe("plotToCsv", () => {
+describe("plotToLookupTable", () => {
   it("should format data properly", () => {
-    const { formattedData } = plotToCsv(data);
+    const { formattedData } = plotToLookupTable(data);
 
     expect(formattedData).toEqual({
       '"SOX10 Gene Effect (Chronos) CRISPR (DepMap Internal 24Q2 v2+Score, Chronos)"': [

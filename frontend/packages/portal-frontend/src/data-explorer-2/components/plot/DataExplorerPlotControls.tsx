@@ -1,7 +1,7 @@
 import React, { useCallback, useMemo } from "react";
 import { getDimensionTypeLabel } from "@depmap/data-explorer-2";
 import PrototypePlotControls from "src/data-explorer-2/components/plot/prototype/PrototypePlotsControls";
-import plotToCsv from "src/data-explorer-2/components/plot/prototype/plotToCsv";
+import plotToLookupTable from "src/data-explorer-2/components/plot/prototype/plotToLookupTable";
 import downloadCsv from "src/common/utilities/downloadCsv";
 
 function isHeatmap(
@@ -98,7 +98,7 @@ function DataExplorerPlotControls({
       return;
     }
 
-    const { formattedData, indexColumn } = plotToCsv(data);
+    const { formattedData, indexColumn } = plotToLookupTable(data);
 
     downloadCsv(formattedData, indexColumn, filename as string);
   }, [data, filename]);
