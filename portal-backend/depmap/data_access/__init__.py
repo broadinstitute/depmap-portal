@@ -21,7 +21,6 @@ from .interface import (
     get_all_entity_ids,
     get_private_datasets,
     get_row_of_values,
-    get_row_of_values_from_slice_id,
     get_subsetted_df,
     get_subsetted_df_by_ids,
     valid_row,

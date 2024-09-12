@@ -243,16 +243,6 @@ def valid_row(dataset_id: str, row_name: str) -> bool:
     return interactive_utils.valid_row(dataset_id, row_name)
 
 
-# This could be supported by breadbox but isn't very useful for DE2 because
-# we can use get_row_of_values just as easily to load data when we have the feature label.
-def get_row_of_values_from_slice_id(id: str) -> CellLineSeries:
-    """
-    Gets a row of numeric or string values, indexed by depmap_id
-    for a given slice_id.
-    """
-    return interactive_utils.get_row_of_values_from_slice_id(id)
-
-
 ######################################################################
 # METHODS BELOW NEED UPDATED CONTRACTS TO BE SUPPORTABLE BY BREADBOX #
 ######################################################################

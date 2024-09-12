@@ -5,6 +5,7 @@ from flask_restplus import Api, Resource
 import pandas as pd
 
 from depmap import data_access
+from depmap.interactive import interactive_utils
 from depmap.breadbox_shim import breadbox_shim
 from depmap.celery_task.utils import (
     format_task_status,
@@ -117,7 +118,7 @@ class ComputeUnivariateAssociations(Resource):
             # If the query feature is from a legacy dataset, load it now and pass the values to breadbox
             # The query_cell_lines parameter needs to be the same order/length as the query_values when passed to breadbox.
             if query_id and not query_id.startswith("breadbox/"):
-                legacy_feature_series: pd.Series = data_access.get_row_of_values_from_slice_id(
+                legacy_feature_series: pd.Series = interactive_utils.get_row_of_values_from_slice_id(
                     query_id
                 )
                 if query_cell_lines is not None:
@@ -166,7 +167,9 @@ class ComputeUnivariateAssociations(Resource):
             if query_id.startswith("breadbox/"):
                 query_series = breadbox_shim.get_feature_data_slice(slice_id=query_id)
             else:
-                query_series = data_access.get_row_of_values_from_slice_id(query_id)
+                query_series = interactive_utils.get_row_of_values_from_slice_id(
+                    query_id
+                )
 
             # cl_query_vector is the intersection of cell lines in both data tracts plus the cell line subset
             (
