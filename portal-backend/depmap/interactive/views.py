@@ -19,6 +19,7 @@ from flask import (
 )
 from scipy.stats import linregress, pearsonr, spearmanr
 
+from depmap.interactive import interactive_utils
 from depmap.breadbox_shim import breadbox_shim
 from depmap.celery_task.utils import format_task_status, TaskState
 from depmap.cell_line.models import CellLine
@@ -605,8 +606,10 @@ def get_features():
         if group_by_dataset == BiomarkerEnum.mutations_prioritized.name:
             df = add_mutation_labels(df, group_by_feature)
 
-        group_by_category_config = data_access.get_category_config(group_by_dataset)
-        group_by_series = data_access.get_row_of_values(
+        group_by_category_config = interactive_utils.get_category_config(
+            group_by_dataset
+        )
+        group_by_series = interactive_utils.get_row_of_values(
             group_by_dataset, group_by_feature
         )
         df = group_df(df, group_by_series, group_by_category_config)
@@ -728,7 +731,7 @@ def get_associations():
                 "featureLabel": x_feature,
             }
         )
-    matrix_id = data_access.get_matrix_id(x_dataset)
+    matrix_id = interactive_utils.get_matrix_id(x_dataset)
 
     df = get_associations_df(matrix_id, x_feature)
 

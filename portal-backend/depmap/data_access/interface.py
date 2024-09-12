@@ -255,16 +255,6 @@ def get_private_datasets() -> dict[str, Config]:
     return interactive_utils.get_private_datasets()
 
 
-# Not currently used anywhere
-def get_all_entity_ids(dataset_id: str) -> list[int]:
-    """
-    Get all entity ids for a given dataset. 
-    Entity ids are the entity PK values in the legacy database, used to join
-    entity metadata with matrix data. 
-    """
-    return interactive_utils.get_all_entity_ids(dataset_id)
-
-
 def get_subsetted_df(
     dataset_id: str, row_indices: Optional[list[int]], col_indices: Optional[list[int]]
 ) -> pd.DataFrame:
@@ -309,14 +299,6 @@ def get_all_row_indices_labels_entity_ids(dataset_id: str) -> list[RowSummary]:
     return interactive_utils.get_all_row_indices_labels_entity_ids(dataset_id)
 
 
-# Only used in /api/get-features (DE1)
-def get_category_config(color_dataset: str) -> CategoryConfig:
-    """
-    Gets a config object describing the categories for the given dataset.
-    """
-    return interactive_utils.get_category_config(color_dataset)
-
-
 def get_context_dataset() -> str:
     """
     Get the id of the context dataset.
@@ -346,14 +328,6 @@ def get_entity_class(dataset_id: str) -> Entity:
     return interactive_utils.get_entity_class(dataset_id)
 
 
-def get_matrix(dataset_id: str) -> Matrix:
-    """
-    Load the matrix object for the given dataset.
-    Matrices are specific to the legacy data access implementation
-    """
-    return interactive_utils.get_matrix(dataset_id)
-
-
 def get_matrix_id(dataset_id: str) -> int:
     """
     Load the matrix id for the given dataset.
@@ -367,10 +341,6 @@ def has_config(dataset_id: str) -> bool:
     Check whether the given dataset exists in interactive config
     """
     return interactive_utils.has_config(dataset_id)
-
-
-def has_opaque_features(dataset_id: str) -> bool:
-    return interactive_utils.has_opaque_features(dataset_id)
 
 
 def is_filter(dataset_id: str) -> bool:

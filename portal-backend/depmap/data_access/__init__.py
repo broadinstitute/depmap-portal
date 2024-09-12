@@ -18,7 +18,6 @@ from .interface import (
     is_categorical,
     is_continuous,
     # methods that will be supported with modified contracts
-    get_all_entity_ids,
     get_private_datasets,
     get_row_of_values,
     get_subsetted_df,
@@ -26,15 +25,12 @@ from .interface import (
     valid_row,
     # methods that will be replaced/removed
     get_all_row_indices_labels_entity_ids,
-    get_category_config,
     get_context_dataset,
     get_custom_cell_lines_dataset,
     get_entity_class,
-    get_matrix,
     get_matrix_id,
     get_sort_key,
     has_config,
-    has_opaque_features,
     is_filter,
     is_standard,
 )
