@@ -149,7 +149,7 @@ def test_get_vector_catalog_datasets(mock_breadbox_client):
     # Mock the breadbox client response
     mock_breadbox_client.get_datasets = MagicMock(return_value=mock_breadbox_datasets)
 
-    vector_catalog_datasets = breadbox_shim._get_vector_catalog_datasets()
+    vector_catalog_datasets = breadbox_shim._get_matrix_datasets()
 
     assert len(vector_catalog_datasets) == 1
     assert vector_catalog_datasets[0].id == "DATASET2-XXXX-XXXX-XXXX-XXXXXXXXXXXX"
