@@ -94,7 +94,7 @@ def run_custom_analysis(
             task_id = self.request.id
 
         def update_message(
-            message=None, start_time=None, max_time: int = 45, percent_complete=None
+            message=None, start_time=None, max_time=45, percent_complete=None
         ):
             """
             :start_time: the presence of this is used to determine whether we show a progress presented
