@@ -29,15 +29,27 @@
   a {
     overflow-wrap: break-word;
   }
+  h1 {
+    margin-bottom: 20px;
+  }
+  p {
+    font-size: 16px;
+    line-height: 25px;
+  }
+
+  .postDate {
+    // text-align: right;
+    padding: 5px 0 20px 0;
+    p {
+      font-size: 12px;
+      line-height: 18px;
+      margin-bottom: 0;
+    }
+  }
 }
 
 .postContent {
   padding: 0 50px 0 50px;
-}
-
-.postDate {
-  // text-align: right;
-  padding: 5px 0 0 0;
 }
 
 /* styling for the nav accordions section */
