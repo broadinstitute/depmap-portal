@@ -1,15 +1,42 @@
-.PostList {
-  padding: 0;
-  margin: 0px;
-  background-color: "white";
+/* styling for the whole resources page container, including the filters on the side */
+.ResourcesPageContainer {
+  display: grid;
+  grid-template-rows: 115px calc(100vh - 115px - 50px);
+  grid-template-columns: 1fr 2fr;
+  grid-template-areas:
+    "header header header"
+    "nav post post";
 }
 
-.PostContent {
-  margin-left: 50px;
-  margin-bottom: 20px;
+.resourcesPageHeader {
+  grid-area: header;
+  padding-left: 30px;
+}
+
+/* styling for the post content */
+.postContentContainer {
+  grid-area: post;
+  overflow-y: auto;
+  a {
+    overflow-wrap: break-word;
+  }
+}
+
+.postContent {
+  padding: 0 50px 0 50px;
 }
 
 .postDate {
   text-align: right;
   line-height: 10px;
+  padding-bottom: 20px;
+}
+
+/* styling for the nav accordions section */
+.postsNavList {
+  grid-area: nav;
+  height: calc(100vh - 115px - 50px);
+  overflow-y: auto;
+  background-color: #f5f8fd !important;
+  padding-left: 30px;
 }

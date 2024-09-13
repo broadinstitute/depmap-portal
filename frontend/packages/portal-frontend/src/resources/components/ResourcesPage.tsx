@@ -1,6 +1,6 @@
 import * as React from "react";
 import { useMemo } from "react";
-import { Col, ListGroup, ListGroupItem } from "react-bootstrap";
+import { ListGroup, ListGroupItem } from "react-bootstrap";
 import { Accordion } from "@depmap/interactive";
 import { Link, useLocation } from "react-router-dom";
 import styles from "src/resources/styles/ResourcesPage.scss";
@@ -43,9 +43,16 @@ export default function ResourcesPage(props: ResourcesPageProps) {
   }, [subcategories, query, default_topic]);
 
   return (
-    <div>
-      <h1 style={{ marginBottom: "30px" }}>{title}</h1>
-      <Col xs={12} md={4} className={styles.PostList}>
+    <div className={styles.ResourcesPageContainer}>
+      <div className={styles.resourcesPageHeader}>
+        <h1>Depmap Resources</h1>
+        <h3>
+          Browse resource categories for information and frequently asked
+          questions
+        </h3>
+      </div>
+
+      <section className={styles.postsNavList}>
         {subcategories.map((subcategory: any) => {
           return (
             <Accordion key={subcategory.id} title={subcategory.title}>
@@ -71,10 +78,10 @@ export default function ResourcesPage(props: ResourcesPageProps) {
             </Accordion>
           );
         })}
-      </Col>
-      <Col xs={12} md={8}>
+      </section>
+      <section className={styles.postContentContainer}>
         {initPost ? (
-          <div className={styles.PostContent}>
+          <div className={styles.postContent}>
             <div className={styles.postDate}>
               <p>Posted: {initPost.creation_date}</p>
               <p>Updated: {initPost.update_date}</p>
@@ -85,7 +92,7 @@ export default function ResourcesPage(props: ResourcesPageProps) {
             />
           </div>
         ) : null}
-      </Col>
+      </section>
     </div>
   );
 }
