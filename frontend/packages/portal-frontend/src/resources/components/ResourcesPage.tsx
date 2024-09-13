@@ -22,7 +22,7 @@ function useQuery() {
 
 export default function ResourcesPage(props: ResourcesPageProps) {
   const { subcategories, title, default_topic } = props;
-  console.log(subcategories);
+  console.log(subcategories, title);
   const query = useQuery();
 
   // If window location url has query params at the start, find the post to show
@@ -56,7 +56,7 @@ export default function ResourcesPage(props: ResourcesPageProps) {
         {subcategories.map((subcategory: any) => {
           return (
             <Accordion key={subcategory.id} title={subcategory.title}>
-              <ListGroup>
+              <ListGroup style={{ marginBottom: 0, borderRadius: 0 }}>
                 {subcategory.topics.map((topic: any) => {
                   return (
                     <Link
@@ -66,6 +66,7 @@ export default function ResourcesPage(props: ResourcesPageProps) {
                       style={{ textDecoration: "none" }}
                     >
                       <ListGroupItem
+                        className={styles.navPostItem}
                         style={{ borderRadius: "0px" }}
                         active={initPost ? initPost.slug === topic.slug : false}
                       >

@@ -1,9 +1,11 @@
 .depmap-accordion {
   margin: 0px !important;
   .accordion-header {
+    padding: 8px 20px 8px 40px !important;
     background-color: #f5f8fd !important;
+    border-bottom: 1px solid #585858 !important;
     .accordion-title {
-      font-weight: 600;
+      font-weight: 500;
       font-size: 18px;
     }
   }

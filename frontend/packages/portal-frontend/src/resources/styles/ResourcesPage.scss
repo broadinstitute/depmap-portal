@@ -1,7 +1,8 @@
 /* styling for the whole resources page container, including the filters on the side */
 .ResourcesPageContainer {
+  font-family: "Roboto";
   display: grid;
-  grid-template-rows: 115px calc(100vh - 115px - 50px);
+  grid-template-rows: 110px calc(100vh - 110px - 50px);
   grid-template-columns: 1fr 2fr;
   grid-template-areas:
     "header header header"
@@ -10,7 +11,15 @@
 
 .resourcesPageHeader {
   grid-area: header;
-  padding-left: 30px;
+  padding-left: 40px;
+
+  h1 {
+    font-weight: bold;
+  }
+
+  h3 {
+    font-weight: normal;
+  }
 }
 
 /* styling for the post content */
@@ -27,16 +36,23 @@
 }
 
 .postDate {
-  text-align: right;
-  line-height: 10px;
-  padding-bottom: 20px;
+  // text-align: right;
+  padding: 5px 0 0 0;
 }
 
 /* styling for the nav accordions section */
 .postsNavList {
   grid-area: nav;
-  height: calc(100vh - 115px - 50px);
+  height: calc(100vh - 110px - 50px);
   overflow-y: auto;
   background-color: #f5f8fd !important;
-  padding-left: 30px;
+}
+
+.navPostItem {
+  border: none;
+  border-bottom: 1px solid lightgray;
+  padding-left: 40px;
+  padding-right: 20px;
+  font-weight: 500;
+  font-size: 16px;
 }
