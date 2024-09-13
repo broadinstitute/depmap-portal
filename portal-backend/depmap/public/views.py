@@ -186,7 +186,10 @@ def resources_prototype():
 
     try:
         root_category = get_root_category_subcategory_topics(
-            client, sanitizer, current_app.config.get("FORUM_RESOURCES_CATEGORY")
+            client,
+            sanitizer,
+            current_app.config.get("FORUM_RESOURCES_CATEGORY"),
+            current_app.config.get("FORUM_RESOURCES_DEFAULT_TOPIC_ID"),
         )
 
     except requests.exceptions.HTTPError as err:

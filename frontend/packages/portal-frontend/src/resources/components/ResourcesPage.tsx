@@ -9,6 +9,7 @@ import styles from "src/resources/styles/ResourcesPage.scss";
 interface ResourcesPageProps {
   subcategories: any;
   title: string;
+  default_topic: any;
 }
 
 // A custom hook that builds on useLocation to parse
@@ -20,7 +21,7 @@ function useQuery() {
 }
 
 export default function ResourcesPage(props: ResourcesPageProps) {
-  const { subcategories, title } = props;
+  const { subcategories, title, default_topic } = props;
   console.log(subcategories);
   const query = useQuery();
 
@@ -29,15 +30,17 @@ export default function ResourcesPage(props: ResourcesPageProps) {
     const subcategory = subcategories.find(
       (sub: any) => sub.slug === query.get("subcategory")
     );
-    let post = null;
+    let post;
     if (subcategory) {
       const topic = subcategory.topics.find(
         (t: any) => t.slug === query.get("topic")
       );
       post = topic;
+    } else {
+      post = default_topic;
     }
     return post;
-  }, [subcategories, query]);
+  }, [subcategories, query, default_topic]);
 
   return (
     <div>
