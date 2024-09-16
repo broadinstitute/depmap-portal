@@ -170,6 +170,9 @@ class DevConfig(Config):
     RELEASE_NOTES_URL = get_setting_from_config("RELEASE_NOTES_URL", ENV_TYPE)
     FORUM_URL = get_setting_from_config("FORUM_URL", ENV_TYPE)
     FORUM_RESOURCES_CATEGORY = "resources-prototype"
+    FORUM_RESOURCES_DEFAULT_TOPIC_ID = get_setting_from_config(
+        "FORUM_RESOURCES_DEFAULT_TOPIC_ID", ENV_TYPE
+    )
 
     # to test oauth signing using ssh tunnel
     # SERVER_NAME = "dev.cds.team"

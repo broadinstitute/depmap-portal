@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 from dataclasses import dataclass
 from ..discourse.client import DiscourseClient
 from ..discourse.utils import reformat_date
@@ -31,6 +31,7 @@ class Subcategory:
 class RootCategory:
     title: str
     subcategories: List[Subcategory]
+    default_topic: Optional[Topic] = None
 
 
 def create_sanitizer() -> Sanitizer:
@@ -114,7 +115,10 @@ def modify_html(
 
 
 def get_root_category_subcategory_topics(
-    client: DiscourseClient, sanitizer: Sanitizer, category_slug: str
+    client: DiscourseClient,
+    sanitizer: Sanitizer,
+    category_slug: str,
+    default_topic_id: Optional[int],
 ):
     # Get the root category
     category = client.get_category_with_subcategories(category_slug)
@@ -155,6 +159,8 @@ def get_root_category_subcategory_topics(
                 creation_date=creation_date,
                 update_date=update_date,
             )
+            if default_topic_id == topic_id:
+                root_category.default_topic = topic
 
             # Add Topic to list of topics for Subcategory
             sub_category.topics.append(topic)
