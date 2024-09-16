@@ -44,7 +44,10 @@ const PredictabilityPrototypeTab = ({
   console.log(methodologyUrl);
 
   const [data, setData] = useState<PredData | null>(null);
-  const [geneTeaSymbols, setGeneTeaSymbols] = useState<string[]>([]);
+  const [geneTeaSymbolsCRISPR, setGeneTeaSymbolsCRISPR] = useState<string[]>(
+    []
+  );
+  const [geneTeaSymbolsRNAi, setGeneTeaSymbolsRNAi] = useState<string[]>([]);
 
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isError, setIsError] = useState<boolean>(false);
@@ -72,10 +75,11 @@ const PredictabilityPrototypeTab = ({
         setError(predictabilityData.error_message);
       } else if (predictabilityData && !predictabilityData.error_message) {
         setData(predictabilityData.data);
-        setGeneTeaSymbols(
-          predictabilityData.data.crispr.overview.gene_tea_symbols.concat(
-            predictabilityData.data.rnai.overview.gene_tea_symbols
-          )
+        setGeneTeaSymbolsCRISPR(
+          predictabilityData.data.crispr.overview.gene_tea_symbols
+        );
+        setGeneTeaSymbolsRNAi(
+          predictabilityData.data.rnai.overview.gene_tea_symbols
         );
       }
 
@@ -122,16 +126,40 @@ const PredictabilityPrototypeTab = ({
               </CardRowItem>
               <CardRowItem>
                 <TopFeaturesOverallTile
-                  plotTitle={`${entityLabel}`}
+                  plotTitle={`${entityLabel} CRISPR`}
                   topFeaturesData={
                     data ? data.crispr.overview?.top_features : null
                   }
                   entityLabel={entityLabel}
+                  screenTypeLabel={"CRISPR"}
                 />
               </CardRowItem>
               <CardRowItem>
-                {geneTeaSymbols.length > 0 && (
-                  <GeneTeaTile selectedLabels={geneTeaSymbols} />
+                {geneTeaSymbolsCRISPR.length > 0 && (
+                  <GeneTeaTile
+                    selectedLabels={geneTeaSymbolsCRISPR}
+                    screenTypeLabel={"CRISPR"}
+                  />
+                )}
+              </CardRowItem>
+            </CardRow>
+            <CardRow>
+              <CardRowItem>
+                <TopFeaturesOverallTile
+                  plotTitle={`${entityLabel} RNAi`}
+                  topFeaturesData={
+                    data ? data.rnai.overview?.top_features : null
+                  }
+                  entityLabel={entityLabel}
+                  screenTypeLabel={"RNAi"}
+                />
+              </CardRowItem>
+              <CardRowItem>
+                {geneTeaSymbolsRNAi.length > 0 && (
+                  <GeneTeaTile
+                    selectedLabels={geneTeaSymbolsRNAi}
+                    screenTypeLabel={"RNAi"}
+                  />
                 )}
               </CardRowItem>
             </CardRow>

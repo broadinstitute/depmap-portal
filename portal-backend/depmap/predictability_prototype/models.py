@@ -189,7 +189,9 @@ class PrototypePredictiveModel(Model):
         return predictive_model.predictions_dataset_taiga_id
 
     @staticmethod
-    def get_feature_types_added_per_model(model_sequence: List[str], entity_id: int):
+    def get_feature_types_added_per_model(
+        model_sequence: List[str], entity_id: int, screen_type: str
+    ):
         model_features = {}
         previous_model = None
         for model in model_sequence:
@@ -199,6 +201,7 @@ class PrototypePredictiveModel(Model):
                     and_(
                         PrototypePredictiveModel.label == model,
                         PrototypePredictiveModel.entity_id == entity_id,
+                        PrototypePredictiveModel.screen_type == screen_type,
                     )
                 )
                 .join(
@@ -269,7 +272,7 @@ class PrototypePredictiveModel(Model):
         return model_features
 
     @staticmethod
-    def get_by_entity_label(entity_label: str):
+    def get_by_entity_label_and_screen_type(entity_label: str, screen_type: str):
 
         gene_query = (
             db.session.query(PrototypePredictiveFeatureResult)
@@ -279,7 +282,12 @@ class PrototypePredictiveModel(Model):
                 == PrototypePredictiveModel.predictive_model_id,
             )
             .join(Entity, PrototypePredictiveModel.entity_id == Entity.entity_id)
-            .filter(Entity.label == entity_label)
+            .filter(
+                and_(
+                    Entity.label == entity_label,
+                    PrototypePredictiveModel.screen_type == screen_type,
+                )
+            )
             .join(
                 PrototypePredictiveFeature,
                 PrototypePredictiveFeatureResult.feature_id

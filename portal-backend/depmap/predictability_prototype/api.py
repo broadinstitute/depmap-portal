@@ -86,11 +86,11 @@ class Predictions(
 
         # Overview data
         try:
-            gene_effect_df = get_gene_effect_df()
             predictablity_datasets = get_all_datasets()
 
             data_by_screen_type = {}
             for screen_type in SCREEN_TYPES:
+                gene_effect_df = get_gene_effect_df(screen_type)
                 entity_id = Gene.get_by_label(gene_symbol).entity_id
 
                 agg_scores = generate_aggregate_scores_across_all_models(
@@ -102,7 +102,7 @@ class Predictions(
                 )
 
                 top_features, gene_tea_symbols = top_features_overall(
-                    gene_symbol, entity_id=entity_id
+                    gene_symbol, entity_id=entity_id, screen_type=screen_type
                 )
 
                 model_performance_info = {}

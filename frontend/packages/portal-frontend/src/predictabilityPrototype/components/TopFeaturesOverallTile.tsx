@@ -9,12 +9,14 @@ export interface TopFeaturesOverallTileProps {
   plotTitle: string;
   topFeaturesData: TopFeaturesBarData | null;
   entityLabel: string;
+  screenTypeLabel: string;
 }
 
 const TopFeaturesOverallTile = ({
   plotTitle,
   topFeaturesData,
   entityLabel,
+  screenTypeLabel,
 }: TopFeaturesOverallTileProps) => {
   const [
     topFeaturesPlotElement,
@@ -70,7 +72,9 @@ const TopFeaturesOverallTile = ({
   return (
     <article className="card_wrapper stacked-boxplot-tile">
       <div className="card_border container_fluid" style={{ height: "530px" }}>
-        <h2 className="no_margin cardtitle_text">Top Features Overall</h2>
+        <h2 className="no_margin cardtitle_text">
+          {screenTypeLabel} Top Features Overall
+        </h2>
         <p
           style={{
             marginLeft: "10px",
@@ -78,8 +82,8 @@ const TopFeaturesOverallTile = ({
             marginBottom: "15px",
           }}
         >
-          Top features for {entityLabel} are listed according to CRISPR Summed
-          Importance.
+          Top features for {entityLabel} are listed according to{" "}
+          {screenTypeLabel} Summed Importance.
         </p>
         <div className="card_padding stacked-boxplot-graphs-padding">
           <div className={styles.PredictabilityTab}>

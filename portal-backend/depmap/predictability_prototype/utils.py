@@ -129,8 +129,10 @@ def generate_aggregate_scores_across_all_models(
     }
 
 
-def subset_features_by_gene(gene_symbol):
-    features_df = PrototypePredictiveModel.get_by_entity_label(gene_symbol)
+def subset_features_by_gene(gene_symbol, screen_type):
+    features_df = PrototypePredictiveModel.get_by_entity_label_and_screen_type(
+        gene_symbol, screen_type
+    )
 
     return features_df.reset_index(drop=True)
 
@@ -144,8 +146,8 @@ def aggregate_top_features(df: pd.DataFrame):
     return aggregated.sort_values(ascending=False)
 
 
-def top_features_overall(gene_symbol, entity_id):
-    subsetted_features = subset_features_by_gene(gene_symbol)
+def top_features_overall(gene_symbol, entity_id, screen_type):
+    subsetted_features = subset_features_by_gene(gene_symbol, screen_type)
     adj_feature_importance = aggregate_top_features(subsetted_features)
 
     adj_feature_importance = adj_feature_importance.reset_index()
@@ -170,7 +172,7 @@ def top_features_overall(gene_symbol, entity_id):
     df = df_100.head(10)
 
     feature_types_by_model = PrototypePredictiveModel.get_feature_types_added_per_model(
-        MODEL_SEQUENCE, entity_id
+        MODEL_SEQUENCE, entity_id, screen_type
     )
 
     def get_feature_set(feature_type: str):

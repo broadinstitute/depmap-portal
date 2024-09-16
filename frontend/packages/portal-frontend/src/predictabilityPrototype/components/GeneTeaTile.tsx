@@ -6,10 +6,10 @@ import PlotSpinner from "src/plot/components/PlotSpinner";
 
 export interface GeneTeaTileProps {
   selectedLabels: string[] | null;
+  screenTypeLabel: string;
 }
 
-const GeneTeaTile = ({ selectedLabels }: GeneTeaTileProps) => {
-  console.log(selectedLabels);
+const GeneTeaTile = ({ selectedLabels, screenTypeLabel }: GeneTeaTileProps) => {
   if (selectedLabels) {
     return (
       <article className="card_wrapper stacked-boxplot-tile">
@@ -17,7 +17,9 @@ const GeneTeaTile = ({ selectedLabels }: GeneTeaTileProps) => {
           className="card_border container_fluid"
           style={{ height: "530px" }}
         >
-          <h2 className="no_margin cardtitle_text">Top GeneTEA Terms</h2>
+          <h2 className="no_margin cardtitle_text">
+            Top GeneTEA Terms ({screenTypeLabel})
+          </h2>
           <p
             style={{
               marginLeft: "10px",
@@ -25,7 +27,8 @@ const GeneTeaTile = ({ selectedLabels }: GeneTeaTileProps) => {
               marginBottom: "15px",
             }}
           >
-            Search terms are derived from the top 100 overall features.
+            Search terms are derived from the top 100 {screenTypeLabel} overall
+            features.
           </p>
           <div className="card_padding stacked-boxplot-graphs-padding">
             <div style={{ paddingLeft: "15px", paddingRight: "15px" }}>
