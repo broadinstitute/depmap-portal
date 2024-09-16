@@ -21,32 +21,23 @@ MODEL_SEQUENCE = ["CellContext", "DriverEvents", "GeneticDerangement", "DNA", "R
 SCREEN_TYPES = ["crispr", "rnai"]
 
 
-def get_dataset_by_model_name(model_name: str, screen_type: str):
+def get_dataset_by_model_name(model_name: str, screen_type: str, entity_id: int):
     matrix_datasets = data_access.get_all_matrix_datasets()
+    predictions_taiga_id = PrototypePredictiveModel.get_predictions_taiga_id_by_model_name_and_screen_type(
+        model_name=model_name, screen_type=screen_type, entity_id=entity_id
+    )
     for dataset in matrix_datasets:
-        if screen_type == "crispr":
-            if (
-                hacks.DATASET_TAIGA_IDS_BY_MODEL_NAME_CRISPR[model_name]
-                == dataset.taiga_id
-            ):
-                return dataset
-        elif screen_type == "rnai":
-            if (
-                hacks.DATASET_TAIGA_IDS_BY_MODEL_NAME_RNAI[model_name]
-                == dataset.taiga_id
-            ):
-                return dataset
+        if dataset.taiga_id == predictions_taiga_id:
+            return dataset
 
     raise Exception(f"Could not find dataset for {model_name}")
 
 
-@functools.cache
-def get_all_predictability_datasets():
+def get_all_datasets():
     all_predictability_datasets = {}
     matrix_datasets = data_access.get_all_matrix_datasets()
     for dataset in matrix_datasets:
-        if dataset.data_type == "Predictability":
-            all_predictability_datasets[dataset.taiga_id] = dataset
+        all_predictability_datasets[dataset.taiga_id] = dataset
 
     return all_predictability_datasets
 
@@ -86,11 +77,10 @@ def accuracy_per_model(gene_symbol, entity_id, screen_type, datasets, actuals):
     )
 
     for model_name in MODEL_SEQUENCE:
-        prediction_dataset_id = datasets[
-            hacks.get_dataset_taiga_id_by_model_and_screen_type(
-                model_name=model_name, screen_type=screen_type
-            )
-        ].id
+        predictions_taiga_id = PrototypePredictiveModel.get_predictions_taiga_id_by_model_name_and_screen_type(
+            model_name=model_name, screen_type=screen_type, entity_id=entity_id
+        )
+        prediction_dataset_id = datasets[predictions_taiga_id].id
 
         try:
             gene_predictions = data_access.get_row_of_values(
@@ -223,9 +213,15 @@ def get_density(x: Any, y: Any):
 
 
 def generate_model_predictions(
-    gene_symbol: str, screen_type: str, model: str, actuals: pd.DataFrame
+    gene_symbol: str,
+    screen_type: str,
+    model: str,
+    actuals: pd.DataFrame,
+    entity_id: int,
 ):
-    dataset = get_dataset_by_model_name(model_name=model, screen_type=screen_type)
+    dataset = get_dataset_by_model_name(
+        model_name=model, screen_type=screen_type, entity_id=entity_id
+    )
 
     gene_predictions = data_access.get_row_of_values(
         dataset_id=dataset.id, feature=gene_symbol
@@ -280,7 +276,7 @@ def get_dataset_id_from_taiga_id(model: str, screen_type: str, feature_name: str
     feature_dataset_id = None
 
     for dataset in matrix_datasets:
-        if dataset.taiga_id == taiga_id and dataset.data_type == "Predictability":
+        if dataset.taiga_id == taiga_id:
             feature_dataset_id = dataset.id
             break
 
@@ -613,16 +609,16 @@ def get_other_dep_waterfall_plot(
 
     gene_df, feature_series = gene_df.align(feature_series, axis=1)
 
-    (x, _, _, _) = analysis_tasks_interface.prep_and_run_py_pearson(
+    (scores, _, _, _) = analysis_tasks_interface.prep_and_run_py_pearson(
         feature_series.values, gene_df.values, progress_callback
     )
 
-    x = list(x)
-    x.sort()
-    y = list(range(len(x)))
+    scores = list(scores)
+    scores.sort()
+    rank = list(range(len(scores)))
     y_label = "Gene Effect R<br>with %s %s" % (feature_label, feature_type)
 
-    return {"x": x, "y": y, "x_label": "Rank", "y_label": y_label}
+    return {"x": rank, "y": scores, "x_label": "Rank", "y_label": y_label}
 
 
 def get_feature_corr_plot(

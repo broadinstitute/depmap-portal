@@ -20,6 +20,7 @@ from depmap.utilities.models import log_data_issue
 import re
 from depmap.taiga_id.utils import get_taiga_client
 import os
+import json
 
 # this script exists to rewrite any Taiga IDs into their canonical form. (This allows conseq to recognize when data files are the same by just comparing taiga IDs)
 #
@@ -27,6 +28,7 @@ import os
 # into one while the taiga IDs are being processed
 
 # tc = get_taiga_client()
+MODEL_SEQUENCE = ["CellContext", "DriverEvents", "GeneticDerangement", "DNA", "RNASeq"]
 
 
 def lookup_gene(m: Match):
@@ -49,11 +51,12 @@ def lookup_compound_dose(xref_full: str):
 
 
 def _load_predictive_models(
-    filename: str,
+    ensemble_csv_path: str,
     model_ids: Dict[Tuple[str, str], int],
     entity_type: str,
     next_id,
     screen_type: str,
+    model_configs: dict,
 ):
     def lookup_entity_id(gene_or_compound_experiment_label: str,) -> Optional[int]:
         if entity_type == "gene":
@@ -96,7 +99,7 @@ def _load_predictive_models(
         model_id = next_id[0]
         next_id[0] += 1
 
-        entity_label = row["gene"]
+        entity_label = row["target_variable"]
         model_name = row["model"]
         model_ids_key = (entity_label, model_name)
 
@@ -106,10 +109,18 @@ def _load_predictive_models(
 
         # only add to dictionary if valid entity id
         model_ids[model_ids_key] = model_id
+
+        tc = get_taiga_client()
+        predictions_dataset_taiga_id = model_configs[model_name]["output"][
+            "prediction_matrix_taiga_id"
+        ]
+        predictions_dataset_taiga_id = tc.get_canonical_id(predictions_dataset_taiga_id)
+
         rec = dict(
             predictive_model_id=model_id,
             entity_id=lookup_entity_id(entity_label),
             label=model_name,
+            predictions_dataset_taiga_id=predictions_dataset_taiga_id,
             pearson=float(row["pearson"]),
             screen_type=screen_type,
         )
@@ -117,27 +128,19 @@ def _load_predictive_models(
 
     assert entity_type in {"gene", "compound_experiment"}
 
-    bulk_load(filename, row_to_model_dict, PrototypePredictiveModel.__table__)
+    bulk_load(ensemble_csv_path, row_to_model_dict, PrototypePredictiveModel.__table__)
 
 
-def _load_predictive_features(
-    filename: str, feature_metadata_file: str,
-):
+def _load_predictive_features(model_configs: dict, ensemble_csv_path: str):
+    tc = get_taiga_client()
+    feature_metadata_taiga_id = model_configs["CellContext"]["output"][
+        "feature_metadata_taiga_id"
+    ]
 
-    feature_metadata = pd.read_csv(
-        feature_metadata_file,
-        dtype={
-            "feature_name": str,
-            "feature_label": str,
-            "taiga_id": str,
-            "given_id": str,
-            "dim_type": str,
-        },
-        usecols=["feature_label", "feature_name", "taiga_id", "given_id", "dim_type",],
-    )
+    feature_metadata = tc.get(feature_metadata_taiga_id)
 
     # Filter out features which are not in the top features of any model
-    df = pd.read_csv(filename, usecols=[f"feature{i}" for i in range(10)])
+    df = pd.read_csv(ensemble_csv_path, usecols=[f"feature{i}" for i in range(10)])
     used_features = pd.unique(df.values.ravel("K"))
     feature_metadata = feature_metadata.loc[
         feature_metadata["feature_name"].isin(used_features)
@@ -192,65 +195,97 @@ def _load_predictive_features(
     db.session.commit()
 
 
-# TODO: screenType will eventually be determined by a config file that hasn't yet been made,
-# so hardcoding it as param here for now.
-def load_predictability_prototype(
-    filename: str, feature_metadata_file: str, screen_type: str  # crispr or rnai
+def _load_predictability_screen(
+    screen_type: str, screen_model_configs: dict,
 ):
-    model_ids: Dict[Tuple[str, str], int] = {}
-    next_id = [get_starting_predictive_model_id()]
+    tc = get_taiga_client()
 
-    _load_predictive_models(filename, model_ids, "gene", next_id, screen_type)
+    for model_name in MODEL_SEQUENCE:
+        ensemble_csv_taiga_id = screen_model_configs[model_name]["output"][
+            "ensemble_taiga_id"
+        ]
 
-    _load_predictive_features(filename, feature_metadata_file)
+        ensemble_csv_path = tc.download_to_cache(
+            ensemble_csv_taiga_id, requested_format="csv_table"
+        )
 
-    # Load all feature results
-    def row_to_feature_result_dict(row):
-        results = []
-        entity_label = row["gene"]
-        model_name = row["model"]
-        model_ids_key = (entity_label, model_name)
-        # if invalid entity id, not in dictionary
-        if model_ids_key not in model_ids:
+        model_ids: Dict[Tuple[str, str], int] = {}
+        next_id = [get_starting_predictive_model_id()]
+
+        _load_predictive_models(
+            ensemble_csv_path,
+            model_ids,
+            "gene",
+            next_id,
+            screen_type,
+            screen_model_configs,
+        )
+
+        _load_predictive_features(screen_model_configs, ensemble_csv_path)
+
+        # Load all feature results
+        def row_to_feature_result_dict(row):
+            results = []
+            entity_label = row["target_variable"]
+            model_name = row["model"]
+            model_ids_key = (entity_label, model_name)
+            # if invalid entity id, not in dictionary
+            if model_ids_key not in model_ids:
+                return results
+
+            model_id = model_ids[model_ids_key]
+            # top ten features, columns are labelled e.g. feature0, feature0_importance
+            for i in range(10):
+                feature_name = row[f"feature{i}"]
+                feature_importance = row[f"feature{i}_importance"]
+
+                feature = PrototypePredictiveFeature.get_by_feature_name(feature_name)
+
+                if feature is None:
+                    continue
+                assert (
+                    feature is not None
+                ), f"Counld not find PredictiveFeature where feature_name={feature_name}"
+
+                rec = dict(
+                    predictive_model_id=model_id,
+                    feature_id=feature.feature_id,
+                    screen_type=screen_type,
+                    rank=i,
+                    importance=feature_importance,
+                )
+                results.append(rec)
             return results
 
-        model_id = model_ids[model_ids_key]
-        # top ten features, columns are labelled e.g. feature0, feature0_importance
-        for i in range(10):
-            feature_name = row[f"feature{i}"]
-            feature_importance = row[f"feature{i}_importance"]
+        bulk_load(
+            ensemble_csv_path,
+            row_to_feature_result_dict,
+            PrototypePredictiveFeatureResult.__table__,
+        )
 
-            feature = PrototypePredictiveFeature.get_by_feature_name(feature_name)
+        # Copy file for download
+        assert isinstance(current_app.config, dict)
+        source_dir = current_app.config.get("WEBAPP_DATA_DIR")
 
-            if feature is None:
-                continue
-            assert (
-                feature is not None
-            ), f"Counld not find PredictiveFeature where feature_name={feature_name}"
+        path = os.path.join(
+            source_dir,
+            "predictability_prototype",
+            f"{model_name}_{screen_type}_predictability_results.csv",
+        )
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        shutil.copy(ensemble_csv_path, path)
 
-            rec = dict(
-                predictive_model_id=model_id,
-                feature_id=feature.feature_id,
-                screen_type=screen_type,
-                rank=i,
-                importance=feature_importance,
-            )
-            results.append(rec)
-        return results
 
-    bulk_load(
-        filename, row_to_feature_result_dict, PrototypePredictiveFeatureResult.__table__
-    )
+def load_predictability_prototype(model_config_file_path: str):
+    with open(model_config_file_path, "r") as file:
+        model_configs = json.load(file)
 
-    # Copy file for download
-    assert isinstance(current_app.config, dict)
-    source_dir = current_app.config.get("WEBAPP_DATA_DIR")
+    screen_types = model_configs.keys()
 
-    path = os.path.join(
-        source_dir, "predictability_prototype", f"predictability_results.csv",
-    )
-    os.makedirs(os.path.dirname(path), exist_ok=True)
-    shutil.copy(filename, path)
+    for screen_type in screen_types:
+        _load_predictability_screen(
+            screen_type=screen_type, screen_model_configs=model_configs[screen_type],
+        )
 
 
 def get_starting_predictive_model_id():

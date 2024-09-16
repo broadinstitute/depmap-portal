@@ -4,7 +4,7 @@ from depmap.predictability_prototype.utils import (
     feature_correlation_map_calc,
     generate_aggregate_scores_across_all_models,
     generate_model_predictions,
-    get_all_predictability_datasets,
+    get_all_datasets,
     get_feature_boxplot_data,
     get_feature_corr_plot,
     get_feature_gene_effect_plot_data,
@@ -18,6 +18,8 @@ from depmap.predictability_prototype.utils import (
 
 from flask_restplus import Namespace, Resource
 from flask import request
+from loader.predictability_summary_loader import load_predictability_prototype
+from depmap.database import db
 
 namespace = Namespace("predictability_prototype", description="")
 
@@ -34,10 +36,58 @@ class Predictions(
         """
         gene_symbol = request.args.get("gene_symbol")
 
+        # statements = [
+        #     "drop table if exists prototype_predictive_feature",
+        #     """CREATE TABLE IF NOT EXISTS prototype_predictive_feature (
+        #     feature_id STRING PRIMARY KEY,
+        #     feature_name STRING,
+        #     feature_label STRING,
+        #     dim_type STRING,
+        #     taiga_id STRING,
+        #     given_id STRING
+        # );""",
+        #     "drop table if exists prototype_predictive_model",
+        #     """CREATE TABLE IF NOT EXISTS prototype_predictive_model (
+        #     predictive_model_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        #     entity_id INTEGER,
+        #     label STRING,
+        #     screen_type STRING,
+        #     predictions_dataset_taiga_id STRING,
+        #     pearson FLOAT,
+        #     CONSTRAINT prototype_predictive_model_FK FOREIGN KEY (entity_id) REFERENCES entity(entity_id)
+        # );""",
+        #     "drop table if exists prototype_predictive_feature_result",
+        #     """CREATE TABLE IF NOT EXISTS prototype_predictive_feature_result (
+        #     predictive_feature_result_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        #     predictive_model_id INTEGER,
+        #     feature_id STRING,
+        #     screen_type STRING,
+        #     rank INTEGER,
+        #     importance FLOAT,
+        #     CONSTRAINT prototype_predictive_feature_result_FK FOREIGN KEY (predictive_model_id) REFERENCES prototype_predictive_model(predictive_model_id),
+        #     CONSTRAINT prototype_predictive_feature_result2_FK FOREIGN KEY (feature_id) REFERENCES prototype_predictive_feature(feature_id) ON DELETE CASCADE
+        # );""",
+        # ]
+        # db.session.execute("PRAGMA foreign_keys = 0;")
+        # for statement in statements:
+        #     db.session.execute(statement)
+
+        # # ensemble_crispr: predictability-76d5.110/ensemble_crispr
+        # # ensemble_rnai: predictability-76d5.110/ensemble_rnai
+        # # feature_metadata_crispr: predictability-76d5.110/feature_metadata_crispr
+        # # feature_metadata_rnai: predictability-76d5.110/feature_metadata_rnai
+
+        # load_predictability_prototype(
+        #     "/Users/amourey/dev/depmap-portal/portal-backend/depmap/predictability_prototype/scripts/merged-output-model-config.json"
+        # )
+
+        # db.session.commit()
+        # breakpoint()
+
         # Overview data
         try:
             gene_effect_df = get_gene_effect_df()
-            predictablity_datasets = get_all_predictability_datasets()
+            predictablity_datasets = get_all_datasets()
 
             data_by_screen_type = {}
             for screen_type in SCREEN_TYPES:
@@ -102,6 +152,7 @@ class ModelPerformance(
             screen_type=screen_type,
             model=model,
             actuals=gene_effect_df,
+            entity_id=entity_id,
         )
         corr = feature_correlation_map_calc(
             model, entity_id=entity_id, screen_type=screen_type

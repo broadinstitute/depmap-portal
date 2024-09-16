@@ -18,14 +18,6 @@ DATASET_TAIGA_IDS_BY_MODEL_NAME_RNAI = {
 }
 
 
-def get_dataset_taiga_id_by_model_and_screen_type(model_name: str, screen_type: str):
-    return (
-        DATASET_TAIGA_IDS_BY_MODEL_NAME_CRISPR[model_name]
-        if screen_type == "crispr"
-        else DATASET_TAIGA_IDS_BY_MODEL_NAME_RNAI[model_name]
-    )
-
-
 def get_value_labels_temp_hack(gene_series, value_labels, values):
     filtered_value_labels = []
     filtered_values = []

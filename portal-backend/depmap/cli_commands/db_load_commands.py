@@ -1556,14 +1556,7 @@ def load_sample_data(
         if current_app.config["ENABLED_FEATURES"].predictability_prototype:
             log.info("Adding predictability prototype summary info")
             predictability_summary_loader.load_predictability_prototype(
-                "depmap/predictability_prototype/scripts/predictability_summary.csv",
-                "depmap/predictability_prototype/scripts/predictive_insights_features.csv",
-                "crispr",
-            )
-            predictability_summary_loader.load_predictability_prototype(
-                "depmap/predictability_prototype/scripts/predictability_summary.csv",
-                "depmap/predictability_prototype/scripts/predictive_insights_features.csv",
-                "rnai",
+                model_config_file_path="/Users/amourey/dev/depmap-portal/portal-backend/depmap/predictability_prototype/scripts/merged-output-model-config.json",
             )
 
         if current_app.config["ENABLED_FEATURES"].data_page:

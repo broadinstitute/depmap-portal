@@ -134,6 +134,7 @@ class PrototypePredictiveModel(Model):
 
     label = Column(String(), nullable=False)
     screen_type = Column(String(), nullable=False)  # crispr or rnai
+    predictions_dataset_taiga_id = Column(String(), nullable=False)
     pearson = Column(Float, nullable=False)
 
     feature_results: List["PrototypePredictiveFeatureResult"] = relationship(
@@ -169,38 +170,23 @@ class PrototypePredictiveModel(Model):
 
     #     # all_models = [model for model, in all_models_query_result]
     #     model_df = pd.read_sql(query.statement, query.session.connection())
-
     @staticmethod
-    def get_by_model_name(model_name: str):
-        query = (
-            db.session.query(PrototypePredictiveFeatureResult)
-            .join(
-                PrototypePredictiveModel,
-                PrototypePredictiveFeatureResult.predictive_model_id
-                == PrototypePredictiveModel.predictive_model_id,
+    def get_predictions_taiga_id_by_model_name_and_screen_type(
+        model_name: str, screen_type: str, entity_id: int
+    ):
+        predictive_model = (
+            db.session.query(PrototypePredictiveModel)
+            .filter(
+                and_(
+                    PrototypePredictiveModel.label == model_name,
+                    PrototypePredictiveModel.screen_type == screen_type,
+                    PrototypePredictiveModel.entity_id == entity_id,
+                )
             )
-            .filter(PrototypePredictiveModel.label == model_name)
-            .join(Entity, PrototypePredictiveModel.entity_id == Entity.entity_id)
-            .join(
-                PrototypePredictiveFeature,
-                PrototypePredictiveFeatureResult.feature_id
-                == PrototypePredictiveFeature.feature_id,
-            )
-            .with_entities(
-                PrototypePredictiveFeature.feature_label,
-                PrototypePredictiveFeature.given_id,
-                PrototypePredictiveFeatureResult.importance,
-                PrototypePredictiveFeatureResult.rank,
-                PrototypePredictiveFeature.dim_type,
-                PrototypePredictiveModel.pearson,
-            )
-            .add_columns(
-                sqlalchemy.column('"entity".label', is_literal=True).label("entity")
-            )
+            .one()
         )
-        model_df = pd.read_sql(query.statement, query.session.connection())
 
-        return model_df
+        return predictive_model.predictions_dataset_taiga_id
 
     @staticmethod
     def get_feature_types_added_per_model(model_sequence: List[str], entity_id: int):

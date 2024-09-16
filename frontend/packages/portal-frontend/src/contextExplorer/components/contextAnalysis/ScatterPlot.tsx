@@ -195,7 +195,7 @@ function ContextScatterPlot({
       showlegend: true,
       selectedpoints: selectedPoints ? [...selectedPoints] : [],
       marker: getMarker(),
-      selected: { marker: { opacity: 1 } },
+      selected: { marker: { opacity: 1, symbol: "star-dot" } },
       unselected: {
         marker: {
           opacity: selectedPoints && selectedPoints.size > 0 ? 0.75 : 1,
