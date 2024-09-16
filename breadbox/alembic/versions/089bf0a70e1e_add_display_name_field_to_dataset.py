@@ -1,7 +1,7 @@
 """Add display name field to Dataset
 
 Revision ID: 089bf0a70e1e
-Revises: aadda1ee0328
+Revises: 63f08df61a58
 Create Date: 2024-09-09 15:03:26.411163
 
 """
@@ -11,7 +11,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision = "089bf0a70e1e"
-down_revision = "aadda1ee0328"
+down_revision = "63f08df61a58"
 branch_labels = None
 depends_on = None
 
