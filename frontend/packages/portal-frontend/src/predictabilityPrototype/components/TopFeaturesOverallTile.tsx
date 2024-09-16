@@ -33,10 +33,10 @@ const TopFeaturesOverallTile = ({
     () => (topFeaturesData ? topFeaturesData.data.feature.reverse() : []),
     [topFeaturesData]
   );
-  console.log(topFeaturesData);
+
   const customColors = useMemo(() => {
     return topFeaturesData
-      ? topFeaturesData.data.model_name
+      ? topFeaturesData.data.feature_set
           .map((set) => {
             console.log(set);
             const test = FEATURE_SET_COLORS.get(set);
