@@ -1,6 +1,6 @@
 import React from "react";
 import ReactSelect from "react-select";
-import { isListOperator, opLabels } from "./contextBuilderUtils";
+import { Expr, isListOperator, opLabels } from "./contextBuilderUtils";
 import { ContextBuilderReducerAction } from "./contextBuilderReducer";
 import styles from "../../styles/ContextBuilder.scss";
 
@@ -24,11 +24,11 @@ const toOperatorOptions = (
       value: op,
       label: toOperatorLabel(value_type, op),
     };
-  }) as any;
+  });
 };
 
 type Props = {
-  expr: any;
+  expr: Expr;
   path: (string | number)[];
   op: OperatorType;
   dispatch: React.Dispatch<ContextBuilderReducerAction>;
@@ -36,12 +36,13 @@ type Props = {
   isLoading: boolean;
 };
 
-const getNextValue = (expr: any, op: OperatorType, nextOp: OperatorType) => {
-  const [lhs, rhs] = expr[op];
+const getNextValue = (expr: Expr, op: OperatorType, nextOp: OperatorType) => {
+  const [lhs, rhs] = (expr as Record<OperatorType, Expr[]>)[op];
   let nextValue = [lhs, rhs];
 
   if (isListOperator(op)) {
-    nextValue = [lhs, rhs?.length ? rhs[0] : null];
+    const firstElement = Array.isArray(rhs) && rhs.length > 0 ? rhs[0] : null;
+    nextValue = [lhs, firstElement];
   }
 
   if (isListOperator(nextOp)) {
@@ -88,7 +89,7 @@ function Operator({ expr, op, path, dispatch, value_type, isLoading }: Props) {
       isLoading={isLoading}
       isDisabled={!isLoading && !value_type}
       value={value_type && !isLoading ? { value: op, label } : null}
-      options={value_type ? toOperatorOptions(value_type, options) : null}
+      options={value_type ? toOperatorOptions(value_type, options) : []}
       onChange={(option) => {
         dispatch({
           type: "update-value",

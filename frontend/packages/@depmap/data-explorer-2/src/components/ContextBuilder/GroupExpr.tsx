@@ -1,14 +1,39 @@
 import React, { useRef, useEffect } from "react";
 import cx from "classnames";
 import { get_values } from "json-logic-js";
+import { ContextSummaryResponse } from "../../api";
 import { getDimensionTypeLabel, pluralize } from "../../utils/misc";
 import AnyAllSelect from "./AnyAllSelect";
-import { getOperator } from "./contextBuilderUtils";
+import { Expr, getOperator } from "./contextBuilderUtils";
+import { ContextBuilderReducerAction } from "./contextBuilderReducer";
+import type { ExpressionComponentType } from "./Expression";
 import styles from "../../styles/ContextBuilder.scss";
 
 const MAX_CONDITIONS = 10;
 
-function Result({ result, isTopLevel, slice_type }: any) {
+interface Props {
+  expr: Record<"and" | "or", Expr[]>;
+  path: (string | number)[];
+  dispatch: React.Dispatch<ContextBuilderReducerAction>;
+  slice_type: string;
+  shouldShowValidation: boolean;
+  result: ContextSummaryResponse | null;
+  editInCellLineSelector: (
+    modelNamesOrIDs: string[],
+    shouldUseModelNames: boolean
+  ) => Promise<string[]>;
+  Expression: ExpressionComponentType;
+}
+
+function Result({
+  result,
+  isTopLevel,
+  slice_type,
+}: {
+  result: ContextSummaryResponse;
+  isTopLevel: boolean;
+  slice_type: string;
+}) {
   const ref = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -61,9 +86,9 @@ function GroupExpr({
   result,
   editInCellLineSelector,
   Expression,
-}: any) {
+}: Props) {
   const container = useRef(null);
-  const op = getOperator(expr);
+  const op = getOperator(expr) as "and" | "or";
   const isTopLevel = path.length === 0;
   const numConditions = get_values(expr).length;
 
@@ -72,7 +97,7 @@ function GroupExpr({
       <AnyAllSelect path={path} value={op} dispatch={dispatch} />
       <div className={styles.groupExpr}>
         <div ref={container} className={cx({ [styles.mainExpr]: isTopLevel })}>
-          {expr[op].map((subExpr: any, i: number) => (
+          {expr[op].map((subExpr, i: number) => (
             <div
               key={[...path, op, i].toString()}
               style={{ marginTop: i > 0 ? 10 : 0 }}

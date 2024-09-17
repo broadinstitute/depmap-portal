@@ -24,7 +24,9 @@ export default function useContextBuilder(
   setPlot: (config: DataExplorerPlotConfig) => void
 ) {
   const [showContextModal, setShowContextModal] = useState(false);
-  const contextToEdit = useRef<Partial<DataExplorerContext> | null>(null);
+  const contextToEdit = useRef<DataExplorerContext | { context_type: string }>({
+    context_type: "depmap_model",
+  });
   const onClickSave = useRef<SaveCallback | null>(noop);
 
   const saveContext = async (
@@ -84,8 +86,8 @@ export default function useContextBuilder(
 
     if (path[0] === "dimensions") {
       const [, key] = path;
-      const { dimensions } = plot as any;
-      context_type = dimensions[key].slice_type;
+      const { dimensions } = plot;
+      context_type = dimensions[key]!.slice_type;
     } else {
       context_type = plot.index_type;
     }
