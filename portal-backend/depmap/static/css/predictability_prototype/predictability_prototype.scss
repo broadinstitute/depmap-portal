@@ -24,7 +24,8 @@
 
 .nav-tabs {
   border-bottom: 1px solid black;
-  padding-left: 80px;
+  padding-left: 0px;
+  padding-top: 20px;
 }
 
 /* activate toggle */
@@ -95,36 +96,31 @@
 }
 
 #accordion-feature.panel-group {
-  grid-column: 1/5!important;
+  grid-column: 1/5 !important;
 
   .panel {
     margin-bottom: 8px !important;
   }
 
   .panel-heading {
-    background-color: #FFFFFF !important;
+    background-color: #ffffff !important;
     padding: 2px 10px !important;
     border: none !important;
   }
 }
 
-
-#accordion-model.panel-group 
-{
+#accordion-model.panel-group {
   margin-right: 180px !important;
-
-
 }
 
 .panel-body {
   padding: 0 !important;
   background-color: rgba(105, 124, 170, 0.05);
   border: none !important;
-
 }
 
-.panel-heading{
-  background-color: #FFFFFF !important;
+.panel-heading {
+  background-color: #ffffff !important;
   border-top: #000000 solid 1px !important;
   border-bottom: none !important;
   padding: 4px 20px !important;
@@ -132,4 +128,8 @@
 
 .panel-default {
   border: none !important;
+}
+
+.tab-content {
+  padding-top: 25px !important;
 }

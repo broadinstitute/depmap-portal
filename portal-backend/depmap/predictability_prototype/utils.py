@@ -163,14 +163,6 @@ def top_features_overall(gene_symbol, entity_id, screen_type):
         )
     ).head(100)
 
-    unique_gene_symbols = [
-        x
-        for index, x in enumerate(df_100["feature_label"])
-        if df_100["dim_type"].iloc[index] == "gene"
-    ]
-
-    df = df_100.head(10)
-
     feature_types_by_model = PrototypePredictiveModel.get_feature_types_added_per_model(
         MODEL_SEQUENCE, entity_id, screen_type
     )
@@ -179,6 +171,18 @@ def top_features_overall(gene_symbol, entity_id, screen_type):
         for key, val in feature_types_by_model.items():
             if feature_type in val:
                 return key
+
+    unique_gene_symbols = [
+        {
+            "name": x,
+            "feature_set": get_feature_set(df_100["dim_type"].iloc[index]),
+            "importance_rank": index + 1,
+        }
+        for index, x in enumerate(df_100["feature_label"])
+        if df_100["dim_type"].iloc[index] == "gene"
+    ]
+
+    df = df_100.head(10)
 
     df["feature_type"] = [x for x in df["dim_type"]]
     df["feature_set"] = [get_feature_set(x) for x in df["feature_type"]]

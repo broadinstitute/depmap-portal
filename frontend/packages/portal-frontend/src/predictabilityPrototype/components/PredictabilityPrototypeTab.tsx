@@ -8,7 +8,12 @@ import { getDapi } from "src/common/utilities/context";
 import { EntityType } from "src/entity/models/entities";
 import styles from "src/predictabilityPrototype/styles/PredictabilityPrototype.scss";
 import { CollapsiblePanelHeader } from "./FeatureCollapsiblePanels";
-import { PredData, ScreenType, SCREEN_TYPE_COLORS } from "../models/types";
+import {
+  GeneTeaSearchTerm,
+  PredData,
+  ScreenType,
+  SCREEN_TYPE_COLORS,
+} from "../models/types";
 import { Panel, PanelGroup } from "react-bootstrap";
 import ModelPerformancePanel from "./ModelPerformancePanel";
 
@@ -44,10 +49,12 @@ const PredictabilityPrototypeTab = ({
   console.log(methodologyUrl);
 
   const [data, setData] = useState<PredData | null>(null);
-  const [geneTeaSymbolsCRISPR, setGeneTeaSymbolsCRISPR] = useState<string[]>(
-    []
-  );
-  const [geneTeaSymbolsRNAi, setGeneTeaSymbolsRNAi] = useState<string[]>([]);
+  const [geneTeaSymbolsCRISPR, setGeneTeaSymbolsCRISPR] = useState<
+    GeneTeaSearchTerm[]
+  >([]);
+  const [geneTeaSymbolsRNAi, setGeneTeaSymbolsRNAi] = useState<
+    GeneTeaSearchTerm[]
+  >([]);
 
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isError, setIsError] = useState<boolean>(false);

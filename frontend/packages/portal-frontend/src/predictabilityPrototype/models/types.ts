@@ -129,12 +129,18 @@ export type ModelPerformanceInfo = {
   feature_summaries: FeatureSummaries;
 };
 
+export interface GeneTeaSearchTerm {
+  name: string;
+  feature_set: string;
+  importance_rank: number;
+}
+
 export interface PredData {
   [screen_type: string]: {
     overview: {
       aggregated_scores: AggScoresData;
       top_features: TopFeaturesBarData;
-      gene_tea_symbols: string[];
+      gene_tea_symbols: GeneTeaSearchTerm[];
     };
     // Per predictive model
     model_performance_info: { [key: string]: ModelPerformanceInfo };

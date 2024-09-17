@@ -1,11 +1,14 @@
 import { DataExplorerContext } from "@depmap/types";
 import React from "react";
+import { Tab, Tabs } from "react-bootstrap";
 import GeneTea from "src/data-explorer-2/components/plot/integrations/GeneTea";
 import PlotSpinner from "src/plot/components/PlotSpinner";
+import { GeneTeaSearchTerm, SCREEN_TYPE_COLORS } from "../models/types";
+import TopFeaturesTableTile from "./TopFeaturesTableTile";
 // import styles from "src/predictabilityPrototype/styles/PredictabilityPrototype.scss";
 
 export interface GeneTeaTileProps {
-  selectedLabels: string[] | null;
+  selectedLabels: GeneTeaSearchTerm[] | null;
   screenTypeLabel: string;
 }
 
@@ -18,7 +21,15 @@ const GeneTeaTile = ({ selectedLabels, screenTypeLabel }: GeneTeaTileProps) => {
           style={{ height: "530px" }}
         >
           <h2 className="no_margin cardtitle_text">
-            Top GeneTEA Terms ({screenTypeLabel})
+            Top GeneTEA Terms (
+            <span
+              style={{
+                color: SCREEN_TYPE_COLORS.get(screenTypeLabel.toLowerCase()),
+              }}
+            >
+              {screenTypeLabel}
+            </span>
+            )
           </h2>
           <p
             style={{
@@ -27,19 +38,34 @@ const GeneTeaTile = ({ selectedLabels, screenTypeLabel }: GeneTeaTileProps) => {
               marginBottom: "15px",
             }}
           >
-            Search terms are derived from the top 100 {screenTypeLabel} overall
-            features.
+            Search terms are derived from genes in the top 100 {screenTypeLabel}{" "}
+            overall features.
           </p>
           <div className="card_padding stacked-boxplot-graphs-padding">
-            <div style={{ paddingLeft: "15px", paddingRight: "15px" }}>
-              {!selectedLabels && <PlotSpinner height="100%" />}
-              <GeneTea
-                selectedLabels={new Set<string>(selectedLabels)}
-                onClickColorByContext={(_: DataExplorerContext) => {
-                  console.log(_);
-                }}
-              />
-            </div>
+            {!selectedLabels && <PlotSpinner height="100%" />}
+            {selectedLabels && (
+              <Tabs
+                defaultActiveKey={1}
+                style={{ height: "100%" }}
+                id={`gene_tea_${screenTypeLabel}_tile_tabs`}
+              >
+                <Tab eventKey={1} title="GeneTEA Results">
+                  <GeneTea
+                    selectedLabels={
+                      new Set<string>(selectedLabels.map((label) => label.name))
+                    }
+                    onClickColorByContext={(_: DataExplorerContext) => {
+                      console.log(_);
+                    }}
+                  />
+                </Tab>
+                <Tab eventKey={2} title="Search Terms">
+                  <div style={{ height: "150px" }}>
+                    <TopFeaturesTableTile selectedLabels={selectedLabels} />
+                  </div>
+                </Tab>
+              </Tabs>
+            )}
           </div>
         </div>
       </article>
