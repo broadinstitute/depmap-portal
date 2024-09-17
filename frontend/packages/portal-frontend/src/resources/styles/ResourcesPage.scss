@@ -3,10 +3,10 @@
   font-family: "Roboto";
   display: grid;
   grid-template-rows: 110px calc(100vh - 110px - 50px);
-  grid-template-columns: 1fr 2fr;
+  grid-template-columns: 1fr 3fr;
   grid-template-areas:
-    "header header header"
-    "nav post post";
+    "header header header header"
+    "nav post post post";
 }
 
 .resourcesPageHeader {
