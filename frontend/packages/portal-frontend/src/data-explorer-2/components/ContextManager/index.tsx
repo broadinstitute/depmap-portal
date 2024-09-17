@@ -1,10 +1,15 @@
 import React, { useEffect, useState } from "react";
 import { Button, Modal } from "react-bootstrap";
+import { ApiContext } from "@depmap/api";
+import { Spinner } from "@depmap/common-components";
+import {
+  getDapi as getApi,
+  getVectorCatalogApi,
+} from "src/common/utilities/context";
 import {
   convertLegacyContexts,
   someLegacyContextsExist,
 } from "src/data-explorer-2/utils";
-import { Spinner } from "@depmap/common-components";
 import ContextManagerContent from "src/data-explorer-2/components/ContextManager/ContextManagerContent";
 
 interface Props {
@@ -76,11 +81,13 @@ function ContextManager({
       </Modal.Body>
     </Modal>
   ) : (
-    <ContextManagerContent
-      onHide={onHide}
-      initialContextType={initialContextType}
-      showHelpText={showHelpText}
-    />
+    <ApiContext.Provider value={{ getApi, getVectorCatalogApi }}>
+      <ContextManagerContent
+        onHide={onHide}
+        initialContextType={initialContextType}
+        showHelpText={showHelpText}
+      />
+    </ApiContext.Provider>
   );
 }
 

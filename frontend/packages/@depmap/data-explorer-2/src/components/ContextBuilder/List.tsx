@@ -1,10 +1,9 @@
-/* eslint react/jsx-props-no-spreading: "off" */
 import React, { useCallback, useRef } from "react";
 import cx from "classnames";
-import Select from "react-windowed-select";
-import { OptimizedSelectOption } from "@depmap/data-explorer-2";
+import ReactSelect from "react-select";
 import { getConfirmation } from "@depmap/common-components";
-import styles from "src/data-explorer-2/styles/ContextBuilder.scss";
+import OptimizedSelectOption from "../OptimizedSelectOption";
+import styles from "../../styles/ContextBuilder.scss";
 
 const selectStyles = {
   control: (base: any) => ({
@@ -128,7 +127,7 @@ function List({ expr, path, dispatch, options, shouldShowValidation }: any) {
       onPaste={handlePaste}
       ref={ref}
     >
-      <Select
+      <ReactSelect
         isMulti
         isClearable={false}
         className={cx(styles.listSelect, {
@@ -164,7 +163,9 @@ function List({ expr, path, dispatch, options, shouldShowValidation }: any) {
         options={options}
         isDisabled={!options}
         placeholder="Select values…"
-        menuPortalTarget={document.querySelector("#modal-container")}
+        menuPortalTarget={
+          document.querySelector("#modal-container") as HTMLElement
+        }
         components={{ Option: OptimizedSelectOption }}
       />
     </div>

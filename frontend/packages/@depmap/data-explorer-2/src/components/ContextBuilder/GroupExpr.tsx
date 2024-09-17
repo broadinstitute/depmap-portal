@@ -1,11 +1,10 @@
 import React, { useRef, useEffect } from "react";
 import cx from "classnames";
 import { get_values } from "json-logic-js";
-import { getDimensionTypeLabel, pluralize } from "@depmap/data-explorer-2";
-import { getOperator } from "src/data-explorer-2/components/ContextBuilder/contextBuilderUtils";
-import AnyAllSelect from "src/data-explorer-2/components/ContextBuilder/AnyAllSelect";
-import Expression from "src/data-explorer-2/components/ContextBuilder/Expression";
-import styles from "src/data-explorer-2/styles/ContextBuilder.scss";
+import { getDimensionTypeLabel, pluralize } from "../../utils/misc";
+import AnyAllSelect from "./AnyAllSelect";
+import { getOperator } from "./contextBuilderUtils";
+import styles from "../../styles/ContextBuilder.scss";
 
 const MAX_CONDITIONS = 10;
 
@@ -61,6 +60,7 @@ function GroupExpr({
   shouldShowValidation,
   result,
   editInCellLineSelector,
+  Expression,
 }: any) {
   const container = useRef(null);
   const op = getOperator(expr);

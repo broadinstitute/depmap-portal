@@ -6,6 +6,10 @@ export { default as renderConditionally } from "./src/utils/render-conditionally
 export { default as extendReactSelect } from "./src/utils/extend-react-select";
 export { default as DimensionSelect } from "./src/components/DimensionSelect";
 export { default as SliceLabelSelect } from "./src/components/DimensionSelect/SliceLabelSelect";
+export { default as ContextBuilderModal } from "./src/components/ContextBuilder/ContextBuilderModal";
+export { default as ContextNameForm } from "./src/components/ContextBuilder/ContextNameForm";
+export { default as useCellLineSelectorModal } from "./src/components/ContextBuilder/CellLineSelector/useCellLineSelectorModal";
+export { default as EditInCellLineSelectorButton } from "./src/components/ContextBuilder/Expression/EditInCellLineSelectorButton";
 
 export {
   fetchContextLabels,

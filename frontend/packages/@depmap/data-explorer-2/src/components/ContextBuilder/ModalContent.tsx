@@ -1,17 +1,14 @@
 import React, { useReducer, useState } from "react";
 import jsonBeautify from "json-beautify";
 import { Button } from "react-bootstrap";
-import { isCompleteExpression } from "@depmap/data-explorer-2";
 import { DataExplorerContext } from "@depmap/types";
-import contextBuilderReducer from "src/data-explorer-2/components/ContextBuilder/contextBuilderReducer";
-import { useEvaluatedExpressionResult } from "src/data-explorer-2/components/ContextBuilder/Expression/utils";
-import {
-  denormalizeExpr,
-  normalizeExpr,
-} from "src/data-explorer-2/components/ContextBuilder/contextBuilderUtils";
-import ContextNameForm from "src/data-explorer-2/components/ContextBuilder/ContextNameForm";
-import Expression from "src/data-explorer-2/components/ContextBuilder/Expression";
-import styles from "src/data-explorer-2/styles/ContextBuilder.scss";
+import { isCompleteExpression } from "../../utils/misc";
+import ContextNameForm from "./ContextNameForm";
+import Expression from "./Expression";
+import contextBuilderReducer from "./contextBuilderReducer";
+import { denormalizeExpr, normalizeExpr } from "./contextBuilderUtils";
+import { useEvaluatedExpressionResult } from "./Expression/utils";
+import styles from "../../styles/ContextBuilder.scss";
 
 interface Props {
   context: any;

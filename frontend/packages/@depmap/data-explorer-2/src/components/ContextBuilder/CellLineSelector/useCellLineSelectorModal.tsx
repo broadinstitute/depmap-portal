@@ -1,5 +1,5 @@
 import React, { useCallback, useRef, useState } from "react";
-import CellLineSelectorModal from "src/data-explorer-2/components/ContextBuilder/CellLineSelector/CellLineSelectorModal";
+import CellLineSelectorModal from "./CellLineSelectorModal";
 
 export default function useCellLineSelectorModal() {
   const [show, setShow] = useState(false);

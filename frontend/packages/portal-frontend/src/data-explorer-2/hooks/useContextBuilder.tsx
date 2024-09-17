@@ -1,17 +1,20 @@
-/* eslint-disable @typescript-eslint/naming-convention */
 import React, { useRef, useState } from "react";
-import { negateContext } from "@depmap/data-explorer-2";
+import { ApiContext } from "@depmap/api";
+import { ContextBuilderModal, negateContext } from "@depmap/data-explorer-2";
 import {
   DataExplorerContext,
   DataExplorerPlotConfig,
   ContextPath,
 } from "@depmap/types";
 import {
+  getDapi as getApi,
+  getVectorCatalogApi,
+} from "src/common/utilities/context";
+import {
   plotToQueryString,
   plotsAreEquivalentWhenSerialized,
   saveContextToLocalStorage,
 } from "src/data-explorer-2/utils";
-import ContextBuilderModal from "src/data-explorer-2/components/ContextBuilder/ContextBuilderModal";
 
 type SaveCallback = (context: DataExplorerContext) => void;
 const noop = () => {};
@@ -117,12 +120,14 @@ export default function useContextBuilder(
     onClickCreateContext,
     onClickSaveAsContext,
     ContextBuilder: () => (
-      <ContextBuilderModal
-        show={showContextModal}
-        context={contextToEdit.current}
-        onClickSave={onClickSave.current as SaveCallback}
-        onHide={() => setShowContextModal(false)}
-      />
+      <ApiContext.Provider value={{ getApi, getVectorCatalogApi }}>
+        <ContextBuilderModal
+          show={showContextModal}
+          context={contextToEdit.current}
+          onClickSave={onClickSave.current as SaveCallback}
+          onHide={() => setShowContextModal(false)}
+        />
+      </ApiContext.Provider>
     ),
   };
 }

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/naming-convention */
 import get from "lodash.get";
 import setWith from "lodash.setwith";
 import clone from "lodash.clone";
