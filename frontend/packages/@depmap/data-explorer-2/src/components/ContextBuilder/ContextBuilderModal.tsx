@@ -1,11 +1,11 @@
 import React, { useEffect } from "react";
 import { Modal } from "react-bootstrap";
-import { capitalize, getDimensionTypeLabel } from "@depmap/data-explorer-2";
 import { DataExplorerContext } from "@depmap/types";
-import ModalContent from "src/data-explorer-2/components/ContextBuilder/ModalContent";
-import { useCellLineSelectorModal } from "src/data-explorer-2/components/ContextBuilder/CellLineSelector";
-import { ContextBuilderContextProvider } from "src/data-explorer-2/components/ContextBuilder/ContextBuilderContext";
-import styles from "src/data-explorer-2/styles/ContextBuilder.scss";
+import { capitalize, getDimensionTypeLabel } from "../../utils/misc";
+import ModalContent from "./ModalContent";
+import useCellLineSelectorModal from "./CellLineSelector/useCellLineSelectorModal";
+import { ContextBuilderContextProvider } from "./ContextBuilderContext";
+import styles from "../../styles/ContextBuilder.scss";
 
 interface Props {
   show: boolean;

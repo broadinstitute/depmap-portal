@@ -1,23 +1,19 @@
 import React from "react";
 import cx from "classnames";
 import {
-  getOperator,
-  isBoolean,
-  isComparison,
-} from "src/data-explorer-2/components/ContextBuilder/contextBuilderUtils";
-import GroupExpr from "src/data-explorer-2/components/ContextBuilder/GroupExpr";
-import Comparison from "src/data-explorer-2/components/ContextBuilder/Comparison";
-import {
   isEditableAsCellLineList,
   isEmptyListExpr,
   getSelectedCellLines,
   useEvaluatedExpressionResult,
-} from "src/data-explorer-2/components/ContextBuilder/Expression/utils";
-import { ContextBuilderReducerAction } from "src/data-explorer-2/components/ContextBuilder/contextBuilderReducer";
-import DeleteConditionButton from "src/data-explorer-2/components/ContextBuilder/Expression/DeleteConditionButton";
-import AddConditionButton from "src/data-explorer-2/components/ContextBuilder/Expression/AddConditionButton";
-import EditInCellLineSelectorButton from "src/data-explorer-2/components/ContextBuilder/Expression/EditInCellLineSelectorButton";
-import styles from "src/data-explorer-2/styles/ContextBuilder.scss";
+} from "./utils";
+import AddConditionButton from "./AddConditionButton";
+import DeleteConditionButton from "./DeleteConditionButton";
+import EditInCellLineSelectorButton from "./EditInCellLineSelectorButton";
+import Comparison from "../Comparison";
+import { ContextBuilderReducerAction } from "../contextBuilderReducer";
+import { getOperator, isBoolean, isComparison } from "../contextBuilderUtils";
+import GroupExpr from "../GroupExpr";
+import styles from "../../../styles/ContextBuilder.scss";
 
 interface ExpressionProps {
   expr: any;
@@ -53,6 +49,9 @@ function Expression({
         shouldShowValidation={shouldShowValidation}
         result={result}
         editInCellLineSelector={editInCellLineSelector}
+        // We pass the Expression component as a prop (rather than
+        // importing this module directly) to avoid a dependency cycle.
+        Expression={Expression}
       />
     );
   }

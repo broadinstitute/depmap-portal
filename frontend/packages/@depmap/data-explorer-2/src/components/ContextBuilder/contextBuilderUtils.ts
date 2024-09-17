@@ -1,5 +1,5 @@
 import { get_operator, get_values } from "json-logic-js";
-import { urlLibEncode } from "@depmap/data-explorer-2";
+import { urlLibEncode } from "../../utils/misc";
 
 export const isBoolean = (expr: any) => expr?.and || expr?.or;
 

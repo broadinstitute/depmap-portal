@@ -1,6 +1,6 @@
 import React from "react";
-import Select from "react-windowed-select";
-import styles from "src/data-explorer-2/styles/ContextBuilder.scss";
+import Select from "react-select";
+import styles from "../../styles/ContextBuilder.scss";
 
 const selectStyles = {
   control: (base: any) => ({
@@ -47,7 +47,9 @@ function AnyAllSelect({ path, value, dispatch }: any) {
             })
           }
           placeholder="Select…"
-          menuPortalTarget={document.querySelector("#modal-container")}
+          menuPortalTarget={
+            document.querySelector("#modal-container") as HTMLElement
+          }
         />
       </div>
       {value === "and" ? (

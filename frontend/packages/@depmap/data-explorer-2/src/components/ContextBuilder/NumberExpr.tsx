@@ -2,12 +2,8 @@ import React, { useCallback, useState } from "react";
 import cx from "classnames";
 import debounce from "lodash.debounce";
 import { FormControl } from "react-bootstrap";
-import {
-  floor,
-  ceil,
-  round,
-} from "src/data-explorer-2/components/ContextBuilder/contextBuilderUtils";
-import styles from "src/data-explorer-2/styles/ContextBuilder.scss";
+import { floor, ceil, round } from "./contextBuilderUtils";
+import styles from "../../styles/ContextBuilder.scss";
 
 function NumberExpr({
   expr,

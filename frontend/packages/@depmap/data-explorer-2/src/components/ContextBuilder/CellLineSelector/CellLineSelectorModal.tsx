@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { Button, Modal } from "react-bootstrap";
 import { ApiContext } from "@depmap/api";
 import {
@@ -8,12 +8,8 @@ import {
   SaveConfirmationModal,
 } from "@depmap/cell-line-selector";
 import { Spinner } from "@depmap/common-components";
-import {
-  getDapi as getApi,
-  getVectorCatalogApi,
-} from "src/common/utilities/context";
-import ContextNameForm from "src/data-explorer-2/components/ContextBuilder/ContextNameForm";
-import styles from "src/data-explorer-2/styles/ContextBuilder.scss";
+import ContextNameForm from "../ContextNameForm";
+import styles from "../../../styles/ContextBuilder.scss";
 
 interface Props {
   mode: "edit" | "create";
@@ -81,6 +77,8 @@ function CellLineSelectorModal({
     Set<string>
   >(new Set());
 
+  const { getApi, getVectorCatalogApi } = useContext(ApiContext);
+
   useEffect(() => {
     getApi()
       .getCellLineSelectorLines()
@@ -93,7 +91,7 @@ function CellLineSelectorModal({
           setSelection(modelNamesToIDs(initialSelection, td));
         }
       });
-  }, [useModelNames, initialSelection]);
+  }, [useModelNames, initialSelection, getApi, getVectorCatalogApi]);
 
   useEffect(() => {
     getApi()
@@ -115,11 +113,11 @@ function CellLineSelectorModal({
 
         setColorMaps(maps);
       });
-  }, []);
+  }, [getApi]);
 
   useEffect(() => {
     getApi().getCellLineUrlRoot().then(setCellLineUrlRoot);
-  }, []);
+  }, [getApi]);
 
   const isLoading = !tableData || !colorMaps || !cellLineUrlRoot;
 
@@ -146,7 +144,7 @@ function CellLineSelectorModal({
   };
 
   return (
-    <ApiContext.Provider value={{ getApi, getVectorCatalogApi }}>
+    <>
       <Modal
         className={styles.CellLineSelectorModal}
         backdrop={false}
@@ -256,7 +254,7 @@ function CellLineSelectorModal({
           );
         }}
       />
-    </ApiContext.Provider>
+    </>
   );
 }
 

@@ -6,24 +6,21 @@ import React, {
   useState,
 } from "react";
 import { get_values } from "json-logic-js";
-import {
-  fetchDimensionLabels,
-  fetchUniqueValuesOrRange,
-  isPartialSliceId,
-} from "@depmap/data-explorer-2";
-import { useContextBuilderContext } from "src/data-explorer-2/components/ContextBuilder/ContextBuilderContext";
+import { isPartialSliceId } from "../../utils/misc";
+import { fetchDimensionLabels, fetchUniqueValuesOrRange } from "../../api";
 import {
   floor,
   getOperator,
   getValueType,
   isListOperator,
-} from "src/data-explorer-2/components/ContextBuilder/contextBuilderUtils";
-import Variable from "src/data-explorer-2/components/ContextBuilder/Variable";
-import Operator from "src/data-explorer-2/components/ContextBuilder/Operator";
-import List from "src/data-explorer-2/components/ContextBuilder/List";
-import Constant from "src/data-explorer-2/components/ContextBuilder/Constant";
-import NumberExpr from "src/data-explorer-2/components/ContextBuilder/NumberExpr";
-import { ContextBuilderReducerAction } from "src/data-explorer-2/components/ContextBuilder/contextBuilderReducer";
+} from "./contextBuilderUtils";
+import { ContextBuilderReducerAction } from "./contextBuilderReducer";
+import { useContextBuilderContext } from "./ContextBuilderContext";
+import Constant from "./Constant";
+import List from "./List";
+import Operator from "./Operator";
+import Variable from "./Variable";
+import NumberExpr from "./NumberExpr";
 
 interface Props {
   expr: any;

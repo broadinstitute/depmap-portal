@@ -1,22 +1,14 @@
 import React, { useEffect, useMemo, useState } from "react";
-import cx from "classnames";
-import Select, { createFilter } from "react-windowed-select";
-import {
-  capitalize,
-  fetchDatasetsByIndexType,
-  getDimensionTypeLabel,
-  MetadataSlices,
-  SliceLabelSelector,
-} from "@depmap/data-explorer-2";
 import { DataExplorerDatasetDescriptor } from "@depmap/types";
-import { useContextBuilderContext } from "src/data-explorer-2/components/ContextBuilder/ContextBuilderContext";
-import { ContextBuilderReducerAction } from "src/data-explorer-2/components/ContextBuilder/contextBuilderReducer";
-import {
-  getValueType,
-  makePartialSliceId,
-} from "src/data-explorer-2/components/ContextBuilder/contextBuilderUtils";
-import VariableEntity from "src/data-explorer-2/components/ContextBuilder/VariableEntity";
-import styles from "src/data-explorer-2/styles/ContextBuilder.scss";
+import { capitalize, getDimensionTypeLabel } from "../../utils/misc";
+import { fetchDatasetsByIndexType, MetadataSlices } from "../../api";
+import SliceLabelSelector from "../SliceLabelSelector";
+import PlotConfigSelect from "../PlotConfigSelect";
+import { ContextBuilderReducerAction } from "./contextBuilderReducer";
+import { getValueType, makePartialSliceId } from "./contextBuilderUtils";
+import { useContextBuilderContext } from "./ContextBuilderContext";
+import VariableEntity from "./VariableEntity";
+import styles from "../../styles/ContextBuilder.scss";
 
 type SliceId = string;
 
@@ -82,19 +74,6 @@ const toOptions = (variables: Record<string, string>) =>
     value,
     label,
   }));
-
-const selectStyles = {
-  control: (base: object) => ({
-    ...base,
-    fontSize: 13,
-  }),
-  menu: (base: object) => ({
-    ...base,
-    fontSize: 12,
-    minWidth: "100%",
-    width: "max-content",
-  }),
-};
 
 function Variable({
   value,
@@ -182,28 +161,24 @@ function Variable({
 
   return (
     <div>
-      <Select
-        className={cx(styles.varSelect, {
-          [styles.invalidSelect]: shouldShowValidation && !valueOrPartialSlice,
-        })}
-        styles={selectStyles}
+      <PlotConfigSelect
+        show
+        enable={!isLoading && Boolean(continuousDatasetSliceLookupTable)}
+        className={styles.varSelect}
+        hasError={shouldShowValidation && !valueOrPartialSlice}
         isLoading={isLoading || !continuousDatasetSliceLookupTable}
-        isDisabled={isLoading || !continuousDatasetSliceLookupTable}
         value={
-          valueOrPartialSlice && {
+          valueOrPartialSlice &&
+          ({
             value: valueOrPartialSlice,
             label: variables[valueOrPartialSlice] || "(unknown property)",
-          }
+          } as any)
         }
         options={toOptions(variables)}
-        onChange={onChangeDataSelect}
+        onChange={onChangeDataSelect as any}
+        onChangeUsesWrappedValue
         placeholder="Select data…"
         menuPortalTarget={document.querySelector("#modal-container")}
-        // See https://github.com/JedWatson/react-select/issues/3403#issuecomment-480183854
-        filterOption={createFilter({
-          matchFrom: "any",
-          stringify: (option) => `${option.label}`,
-        })}
       />
       {isParitalContinuousSliceId && (
         <VariableEntity

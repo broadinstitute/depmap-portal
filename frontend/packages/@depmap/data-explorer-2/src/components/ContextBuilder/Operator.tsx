@@ -1,11 +1,8 @@
 import React from "react";
-import Select from "react-windowed-select";
-import {
-  isListOperator,
-  opLabels,
-} from "src/data-explorer-2/components/ContextBuilder/contextBuilderUtils";
-import { ContextBuilderReducerAction } from "src/data-explorer-2/components/ContextBuilder/contextBuilderReducer";
-import styles from "src/data-explorer-2/styles/ContextBuilder.scss";
+import ReactSelect from "react-select";
+import { isListOperator, opLabels } from "./contextBuilderUtils";
+import { ContextBuilderReducerAction } from "./contextBuilderReducer";
+import styles from "../../styles/ContextBuilder.scss";
 
 type OperatorType = keyof typeof opLabels;
 type ValueType = "continuous" | "categorical" | "list_strings" | null;
@@ -27,7 +24,7 @@ const toOperatorOptions = (
       value: op,
       label: toOperatorLabel(value_type, op),
     };
-  });
+  }) as any;
 };
 
 type Props = {
@@ -80,7 +77,7 @@ function Operator({ expr, op, path, dispatch, value_type, isLoading }: Props) {
   const label = toOperatorLabel(value_type, op);
 
   return (
-    <Select
+    <ReactSelect
       className={styles.opSelect}
       styles={{
         control: (base: React.CSSProperties) => ({
@@ -92,16 +89,22 @@ function Operator({ expr, op, path, dispatch, value_type, isLoading }: Props) {
       isDisabled={!isLoading && !value_type}
       value={value_type && !isLoading ? { value: op, label } : null}
       options={value_type ? toOperatorOptions(value_type, options) : null}
-      onChange={(option: { value: OperatorType }) => {
+      onChange={(option) => {
         dispatch({
           type: "update-value",
           payload: {
             path,
-            value: getNextValue(expr, op, option.value),
+            value: getNextValue(
+              expr,
+              op,
+              (option as { value: OperatorType }).value
+            ),
           },
         });
       }}
-      menuPortalTarget={document.querySelector("#modal-container")}
+      menuPortalTarget={
+        document.querySelector("#modal-container") as HTMLElement
+      }
       placeholder=""
     />
   );

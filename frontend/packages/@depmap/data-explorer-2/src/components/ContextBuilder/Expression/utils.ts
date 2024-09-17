@@ -1,15 +1,11 @@
 import { useEffect, useState } from "react";
-import {
-  fetchContextSummary,
-  isCompleteExpression,
-  isPartialSliceId,
-} from "@depmap/data-explorer-2";
+import { ContextSummaryResponse, fetchContextSummary } from "../../../api";
+import { isCompleteExpression, isPartialSliceId } from "../../../utils/misc";
 import {
   getOperator,
   isListOperator,
   normalizeExpr,
-} from "src/data-explorer-2/components/ContextBuilder/contextBuilderUtils";
-import { ContextSummaryResponse } from "@depmap/data-explorer-2/src/api";
+} from "../contextBuilderUtils";
 
 export const isEditableAsCellLineList = (slice_type: string, expr: any) => {
   const op = getOperator(expr);
