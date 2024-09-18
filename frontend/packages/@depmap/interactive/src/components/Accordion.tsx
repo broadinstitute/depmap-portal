@@ -42,7 +42,9 @@ export default class Accordion extends React.Component<Props, State> {
     const { isOpen } = this.props;
 
     if (prevProps.isOpen !== isOpen) {
-      this.toggle();
+      if (isOpen !== undefined) {
+        this.toggle();
+      }
     }
   };
 

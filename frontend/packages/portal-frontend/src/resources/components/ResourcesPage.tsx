@@ -1,5 +1,5 @@
 import * as React from "react";
-import { useMemo } from "react";
+import { useMemo, useCallback, useState } from "react";
 import { ListGroup, ListGroupItem } from "react-bootstrap";
 import { Accordion } from "@depmap/interactive";
 import { Link, useLocation } from "react-router-dom";
@@ -41,6 +41,27 @@ export default function ResourcesPage(props: ResourcesPageProps) {
     return post;
   }, [subcategories, query, defaultTopic]);
 
+  const subcategoryIsOpen = useCallback(
+    (subcategory: any) => {
+      console.log("query ", query.get("subcategory"));
+      const welcomeTopic = subcategory.topics.find(
+        (topic: any) => defaultTopic.id === topic.id
+      );
+      if (query.get("subcategory") === null) {
+        if (welcomeTopic) {
+          return true;
+        }
+
+        return false;
+      }
+      // eslint-disable-next-line no-else-return
+      else {
+        return undefined;
+      }
+    },
+    [defaultTopic.id, query]
+  );
+
   return (
     <div className={styles.ResourcesPageContainer}>
       <div className={styles.resourcesPageHeader}>
@@ -54,7 +75,11 @@ export default function ResourcesPage(props: ResourcesPageProps) {
       <section className={styles.postsNavList}>
         {subcategories.map((subcategory: any) => {
           return (
-            <Accordion key={subcategory.id} title={subcategory.title}>
+            <Accordion
+              key={subcategory.id}
+              title={subcategory.title}
+              isOpen={subcategoryIsOpen(subcategory)}
+            >
               <ListGroup style={{ marginBottom: 0, borderRadius: 0 }}>
                 {subcategory.topics.map((topic: any) => {
                   return (
