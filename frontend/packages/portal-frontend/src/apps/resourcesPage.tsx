@@ -28,7 +28,7 @@ const App = () => {
         <ResourcesPage
           subcategories={rootCategory.subcategories}
           title={rootCategory.title}
-          default_topic={rootCategory.default_topic}
+          defaultTopic={rootCategory.default_topic}
         />
       </Router>
     </ErrorBoundary>

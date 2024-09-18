@@ -9,7 +9,7 @@ import styles from "src/resources/styles/ResourcesPage.scss";
 interface ResourcesPageProps {
   subcategories: any;
   title: string;
-  default_topic: any;
+  defaultTopic: any;
 }
 
 // A custom hook that builds on useLocation to parse
@@ -21,7 +21,7 @@ function useQuery() {
 }
 
 export default function ResourcesPage(props: ResourcesPageProps) {
-  const { subcategories, title, default_topic } = props;
+  const { subcategories, title, defaultTopic } = props;
   console.log(subcategories, title);
   const query = useQuery();
 
@@ -37,10 +37,10 @@ export default function ResourcesPage(props: ResourcesPageProps) {
       );
       post = topic;
     } else {
-      post = default_topic;
+      post = defaultTopic;
     }
     return post;
-  }, [subcategories, query, default_topic]);
+  }, [subcategories, query, defaultTopic]);
 
   return (
     <div className={styles.ResourcesPageContainer}>
