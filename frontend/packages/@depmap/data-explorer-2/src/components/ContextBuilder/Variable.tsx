@@ -168,14 +168,15 @@ function Variable({
         hasError={shouldShowValidation && !valueOrPartialSlice}
         isLoading={isLoading || !continuousDatasetSliceLookupTable}
         value={
-          valueOrPartialSlice &&
-          ({
-            value: valueOrPartialSlice,
-            label: variables[valueOrPartialSlice] || "(unknown property)",
-          } as any)
+          valueOrPartialSlice
+            ? {
+                value: valueOrPartialSlice,
+                label: variables[valueOrPartialSlice] || "(unknown property)",
+              }
+            : null
         }
         options={toOptions(variables)}
-        onChange={onChangeDataSelect as any}
+        onChange={onChangeDataSelect as () => void}
         onChangeUsesWrappedValue
         placeholder="Select data…"
         menuPortalTarget={document.querySelector("#modal-container")}

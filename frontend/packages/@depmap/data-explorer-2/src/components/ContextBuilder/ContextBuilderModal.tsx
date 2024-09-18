@@ -9,7 +9,7 @@ import styles from "../../styles/ContextBuilder.scss";
 
 interface Props {
   show: boolean;
-  context: DataExplorerContext | Partial<DataExplorerContext> | null;
+  context: DataExplorerContext | { context_type: string };
   onClickSave: (newContext: DataExplorerContext) => void;
   onHide: () => void;
   backdrop?: "static" | boolean;

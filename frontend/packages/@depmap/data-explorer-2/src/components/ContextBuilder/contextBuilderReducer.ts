@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import get from "lodash.get";
 import setWith from "lodash.setwith";
 import clone from "lodash.clone";

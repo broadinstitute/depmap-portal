@@ -66,7 +66,10 @@ function VariableEntity({
   }, [slice_type, dataset_id]);
 
   const options = useMemo(() => {
-    const out: any = [];
+    const out: {
+      label: string;
+      value: string;
+    }[] = [];
 
     if (!sliceLabels) {
       return null;
@@ -80,22 +83,26 @@ function VariableEntity({
     return out;
   }, [sliceLabels]);
 
-  const handleChange = (nextValue: string) => {
+  const handleChange = (nextValue: string | null) => {
     dispatch({
       type: "update-value",
       payload: {
         path: path.slice(0, -2),
         value: {
-          ">": [{ var: makeSliceId(slice_type, dataset_id, nextValue) }, null],
+          ">": [
+            {
+              var: nextValue
+                ? makeSliceId(slice_type, dataset_id, nextValue)
+                : null,
+            },
+            null,
+          ],
         },
       },
     });
   };
 
   const selectedLabel = sliceLabelFromSliceId(value, dataset_id);
-  const selectedValue = selectedLabel
-    ? { label: selectedLabel, value: selectedLabel }
-    : null;
 
   return (
     <div ref={ref} style={{ scrollMargin: 22 }}>
@@ -105,9 +112,9 @@ function VariableEntity({
         className={styles.varSelect}
         hasError={shouldShowValidation && (!value || isPartialSliceId(value))}
         isLoading={!options}
-        value={selectedValue as any}
+        value={selectedLabel || null}
         options={options || []}
-        onChange={handleChange as any}
+        onChange={handleChange}
         placeholder={`Select ${getDimensionTypeLabel(slice_type)}…`}
         menuPortalTarget={document.querySelector("#modal-container")}
       />

@@ -1,11 +1,12 @@
 import React from "react";
 import PlotConfigSelect from "../PlotConfigSelect";
+import { ContextBuilderReducerAction } from "./contextBuilderReducer";
 
 interface Props {
-  expr: any;
-  path: any;
-  dispatch: any;
-  options: any;
+  dispatch: React.Dispatch<ContextBuilderReducerAction>;
+  expr: string | null;
+  options: { label: string; value: string }[] | undefined;
+  path: (string | number)[];
   shouldShowValidation: boolean;
 }
 

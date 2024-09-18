@@ -11,7 +11,7 @@ import { useEvaluatedExpressionResult } from "./Expression/utils";
 import styles from "../../styles/ContextBuilder.scss";
 
 interface Props {
-  context: any;
+  context: DataExplorerContext | { context_type: string };
   onClickSave: (context: DataExplorerContext) => void;
   onClickCancel: () => void;
   editInCellLineSelector: (
@@ -20,12 +20,9 @@ interface Props {
   ) => Promise<string[]>;
 }
 
-type Expr = Record<string, any> | null;
-
 const SHOW_DEBUG_INFO = false;
 
-const emptyExpr: Expr = { "==": [null, null] };
-const emptyGroup: Expr = denormalizeExpr(emptyExpr);
+const emptyGroup = denormalizeExpr({ "==": [null, null] });
 
 function ModalContent({
   context,
@@ -33,10 +30,10 @@ function ModalContent({
   onClickCancel,
   editInCellLineSelector,
 }: Props) {
-  const [name, setName] = useState(context.name || "");
+  const [name, setName] = useState("name" in context ? context.name : "");
   const [expr, dispatch] = useReducer(
     contextBuilderReducer,
-    denormalizeExpr(context.expr) || emptyGroup
+    denormalizeExpr("expr" in context ? context.expr : null) || emptyGroup
   );
   const [shouldShowValidation, setShouldShowValidation] = useState(false);
 
@@ -83,7 +80,7 @@ function ModalContent({
             }}
           >
             <code style={{ fontSize: 10 }}>
-              {jsonBeautify(expr, null as any, 2, 80)}
+              {jsonBeautify(expr, null!, 2, 80)}
             </code>
           </pre>
         </div>

@@ -290,7 +290,7 @@ function ContextManagerContent({
       <ContextBuilderModal
         backdrop={false}
         show={showContextModal}
-        context={contextToEdit.current}
+        context={contextToEdit.current as DataExplorerContext}
         onClickSave={onClickSave.current}
         onHide={() => setShowContextModal(false)}
         isExistingContext

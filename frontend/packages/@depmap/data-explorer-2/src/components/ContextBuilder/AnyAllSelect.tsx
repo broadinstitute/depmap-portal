@@ -1,14 +1,21 @@
 import React from "react";
-import Select from "react-select";
+import Select, { Props as ReactSelectProps } from "react-select";
+import { ContextBuilderReducerAction } from "./contextBuilderReducer";
 import styles from "../../styles/ContextBuilder.scss";
 
-const selectStyles = {
-  control: (base: any) => ({
+interface Props {
+  path: (string | number)[];
+  dispatch: React.Dispatch<ContextBuilderReducerAction>;
+  value: "and" | "or";
+}
+
+const selectStyles: ReactSelectProps["styles"] = {
+  control: (base) => ({
     ...base,
     fontSize: 13,
     width: 78,
   }),
-  menu: (base: any) => ({
+  menu: (base) => ({
     ...base,
     fontSize: 12,
     minWidth: "100%",
@@ -16,18 +23,23 @@ const selectStyles = {
   }),
 };
 
-const toOptions = (labels: string[]) =>
-  Object.entries(labels).map(([value, label]) => ({
-    value,
-    label,
-  }));
+const options = [
+  {
+    label: "all",
+    value: "and",
+  },
+  {
+    label: "any",
+    value: "or",
+  },
+];
 
-function AnyAllSelect({ path, value, dispatch }: any) {
-  const labels = { and: "all", or: "any" } as any;
-
+function AnyAllSelect({ path, value, dispatch }: Props) {
   if (!value) {
     return <div className={styles.AnyAllSelect} />;
   }
+
+  const label = options.find((option) => option.value === value)!.label;
 
   return (
     <div className={styles.AnyAllSelect}>
@@ -35,14 +47,14 @@ function AnyAllSelect({ path, value, dispatch }: any) {
         <Select
           disabled={!value}
           styles={selectStyles}
-          value={{ value, label: labels[value] }}
-          options={toOptions(labels)}
-          onChange={(option: any) =>
+          value={{ value, label }}
+          options={options}
+          onChange={(option) =>
             dispatch({
               type: "update-bool-op",
               payload: {
                 path,
-                value: option.value,
+                value: option!.value as "and" | "or",
               },
             })
           }

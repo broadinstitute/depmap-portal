@@ -22,7 +22,7 @@ interface Props extends Omit<ReactSelectProps, "options"> {
    * `onChangeUsesWrappedValue` prop described below.
    */
   options: Record<string, string> | object[];
-  value: string | null;
+  value: string | { label: string; value: string } | null;
   enable: boolean;
   onChange: (value: string | null) => void;
   // HACK: `onChange` usually unwraps the value from react-select for you. On

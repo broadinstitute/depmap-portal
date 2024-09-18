@@ -11,12 +11,18 @@ import DeleteConditionButton from "./DeleteConditionButton";
 import EditInCellLineSelectorButton from "./EditInCellLineSelectorButton";
 import Comparison from "../Comparison";
 import { ContextBuilderReducerAction } from "../contextBuilderReducer";
-import { getOperator, isBoolean, isComparison } from "../contextBuilderUtils";
+import {
+  Expr,
+  isBoolean,
+  isComparison,
+  getOperator,
+  OperatorType,
+} from "../contextBuilderUtils";
 import GroupExpr from "../GroupExpr";
 import styles from "../../../styles/ContextBuilder.scss";
 
 interface ExpressionProps {
-  expr: any;
+  expr: Expr;
   path: (string | number)[];
   dispatch: React.Dispatch<ContextBuilderReducerAction>;
   slice_type: string;
@@ -63,7 +69,7 @@ function Expression({
       <div className={cx({ [styles.topLevelRule]: path.length < 3 })}>
         <div className={styles.comparisonExpr}>
           <Comparison
-            expr={expr}
+            expr={expr as Record<OperatorType, Expr>}
             path={path}
             dispatch={dispatch}
             slice_type={slice_type}
@@ -76,7 +82,7 @@ function Expression({
                   onClick={() => {
                     const op = getOperator(expr);
                     const shouldUseModelNames =
-                      expr[op][0].var !== "entity_label";
+                      (expr[op][0] as { var: string }).var !== "entity_label";
 
                     editInCellLineSelector(
                       getSelectedCellLines(expr),
@@ -128,3 +134,4 @@ function Expression({
 }
 
 export default Expression;
+export type ExpressionComponentType = typeof Expression;
