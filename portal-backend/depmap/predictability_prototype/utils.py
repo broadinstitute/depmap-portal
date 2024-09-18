@@ -3,7 +3,6 @@ from http.client import HTTPException
 import math
 from typing import Any
 from depmap.data_access import interface as data_access
-from depmap.dataset.models import DependencyDataset
 from depmap.predictability_prototype import hacks
 from depmap.predictability_prototype.models import (
     PrototypePredictiveModel,
@@ -43,10 +42,8 @@ def get_all_datasets():
 
 
 @functools.cache
-def get_gene_effect_df(screen_type="crispr"):
-    dataset_name = DependencyDataset.get_dataset_by_data_type_priority(
-        screen_type
-    ).name.name
+def get_gene_effect_df(dataset):
+    dataset_name = dataset.name.name
 
     gene_effect_df = data_access.get_subsetted_df_by_labels(dataset_name, None, None)
 
@@ -245,11 +242,16 @@ def generate_model_predictions(
 
     data = pd.DataFrame(dict(predictions=gene_predictions, actuals=gene_actuals))
     density = get_density(gene_predictions, gene_actuals)
+    model_id_to_display_name_map = data_access.get_dataset_sample_labels_by_id(
+        dataset.id
+    )
 
     return {
         "model_pred_data": data.to_dict("list"),
         "predictions_dataset_id": dataset.id,
-        "index_labels": data.index.tolist(),
+        "index_labels": [
+            model_id_to_display_name_map[model_id] for model_id in data.index.tolist()
+        ],
         "x_label": "actuals",
         "y_label": "predictions",
         "density": list(density),
@@ -408,9 +410,8 @@ def get_feature_gene_effect_plot_data(
         model_name=model, entity_id=entity_id, screen_type=screen_type
     )
 
-    gene_series = data_access.get_row_of_values(
-        _get_gene_dataset_id(screen_type), gene_symbol
-    )
+    gene_dataset_id = _get_gene_dataset_id(screen_type)
+    gene_series = data_access.get_row_of_values(gene_dataset_id, gene_symbol)
 
     feature = row.iloc[[feature_index]]
 
@@ -443,12 +444,17 @@ def get_feature_gene_effect_plot_data(
         density = get_density(feature_values, gene_slice)
 
     feature_dataset_units = data_access.get_dataset_units(feature_dataset_id)
+    model_ids_to_display_name_map = data_access.get_dataset_sample_labels_by_id(
+        feature_dataset_id
+    )
 
     return {
         "actuals_slice": gene_slice,
         "feature_dataset_id": feature_dataset_id,
         "feature_actuals_values": slice.values.tolist(),
-        "feature_actuals_value_labels": slice.index.tolist(),
+        "feature_actuals_value_labels": [
+            model_ids_to_display_name_map[model_id] for model_id in slice.index.tolist()
+        ],
         "density": list(density),
         "x_axis_label": f"{feature_label}<br>{feature_dataset_units}",
         "y_axis_label": f"{gene_symbol} Gene Effect",
@@ -572,9 +578,8 @@ def get_related_features_scatter(
     print(f"get_other_feature_corrs {end-start} seconds")
 
     start = time.time()
-    ge_slice = data_access.get_row_of_values(
-        _get_gene_dataset_id(screen_type), gene_symbol
-    )
+    gene_dataset_id = _get_gene_dataset_id(screen_type)
+    ge_slice = data_access.get_row_of_values(gene_dataset_id, gene_symbol)
     y = get_ge_corrs(ge_slice=ge_slice, feature_df=feature_df, screen_type=screen_type)
 
     x = np.nan_to_num(x)
@@ -587,11 +592,18 @@ def get_related_features_scatter(
     x_label = "Other %s R<br>with %s" % (feature_type, feature_label)
     y_label = "Other %s R<br>with %s Gene Effect" % (feature_type, gene_symbol)
 
+    model_ids_to_display_name_map = data_access.get_dataset_sample_labels_by_id(
+        gene_dataset_id
+    )
+
     return {
         "x": list(x),
         "x_index": feature_df.index.tolist(),
         "y": list(y),
-        "y_index": ge_slice.index.tolist(),
+        "y_index": [
+            model_ids_to_display_name_map[model_id]
+            for model_id in ge_slice.index.tolist()
+        ],
         "density": list(density),
         "x_label": x_label,
         "y_label": y_label,

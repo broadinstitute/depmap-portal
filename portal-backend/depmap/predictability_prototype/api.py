@@ -18,6 +18,7 @@ from depmap.predictability_prototype.utils import (
 
 from flask_restplus import Namespace, Resource
 from flask import request
+from depmap.dataset.models import DependencyDataset
 from loader.predictability_summary_loader import load_predictability_prototype
 from depmap.database import db
 
@@ -90,7 +91,10 @@ class Predictions(
 
             data_by_screen_type = {}
             for screen_type in SCREEN_TYPES:
-                gene_effect_df = get_gene_effect_df(screen_type)
+                dataset = DependencyDataset.get_dataset_by_data_type_priority(
+                    screen_type
+                )
+                gene_effect_df = get_gene_effect_df(dataset)
                 entity_id = Gene.get_by_label(gene_symbol).entity_id
 
                 agg_scores = generate_aggregate_scores_across_all_models(
@@ -146,7 +150,8 @@ class ModelPerformance(
         screen_type = request.args.get("screen_type")
 
         entity_id = Gene.get_by_label(entity_label).entity_id
-        gene_effect_df = get_gene_effect_df(screen_type)
+        dataset = DependencyDataset.get_dataset_by_data_type_priority(screen_type)
+        gene_effect_df = get_gene_effect_df(dataset)
         model_predictions = generate_model_predictions(
             gene_symbol=entity_label,
             screen_type=screen_type,

@@ -67,6 +67,7 @@ function BarChart({
         y: [yValues[index]],
         type: "bar",
         marker: { color: customColors[index] },
+        hoverinfo: "x+y",
         orientation: "h",
       };
     });
