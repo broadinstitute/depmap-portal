@@ -21,12 +21,12 @@ function useQuery() {
 
 export default function ResourcesPage(props: ResourcesPageProps) {
   const { subcategories, defaultTopic } = props;
-  console.log(subcategories);
   const query = useQuery();
+  // the subcategory url query param value when the Resources Page is first rendered
   const [initSubcategory] = useState(query.get("subcategory"));
 
-  // If window location url has query params at the start, find the post to show
-  const initPost = useMemo(() => {
+  // If window location url has query params, find the corresponding post to show. If there are no query params, show the default post
+  const postToShow = useMemo(() => {
     const subcategory = subcategories.find(
       (sub: any) => sub.slug === query.get("subcategory")
     );
@@ -42,12 +42,13 @@ export default function ResourcesPage(props: ResourcesPageProps) {
     return post;
   }, [subcategories, query, defaultTopic]);
 
+  // Determines whether the accordion for the subcategory should be open. The default state is undefined
   const subcategoryIsOpen = useCallback(
     (subcategory: any) => {
-      console.log("query ", query.get("subcategory"));
       const welcomeTopic = subcategory.topics.find(
         (topic: any) => defaultTopic.id === topic.id
       );
+      // when there are no url query params, this means the default welcome post should be shown. Open accordion for the subcategory of that topic
       if (query.get("subcategory") === null) {
         if (welcomeTopic) {
           return true;
@@ -58,15 +59,16 @@ export default function ResourcesPage(props: ResourcesPageProps) {
       // eslint-disable-next-line no-else-return
       else {
         const selectedTopic = subcategory.topics.find(
-          (topic: any) => initPost.id === topic.id
+          (topic: any) => postToShow.id === topic.id
         );
+        // Open the accordion for the post that matches the initial url query params at time of component's render
         if (selectedTopic && initSubcategory === subcategory.slug) {
           return true;
         }
         return undefined;
       }
     },
-    [defaultTopic.id, initPost.id, initSubcategory, query]
+    [defaultTopic.id, postToShow.id, initSubcategory, query]
   );
 
   return (
@@ -99,7 +101,9 @@ export default function ResourcesPage(props: ResourcesPageProps) {
                       <ListGroupItem
                         className={styles.navPostItem}
                         style={{ borderRadius: "0px" }}
-                        active={initPost ? initPost.slug === topic.slug : false}
+                        active={
+                          postToShow ? postToShow.slug === topic.slug : false
+                        }
                       >
                         {topic.title}
                       </ListGroupItem>
@@ -112,15 +116,15 @@ export default function ResourcesPage(props: ResourcesPageProps) {
         })}
       </section>
       <section className={styles.postContentContainer}>
-        {initPost ? (
+        {postToShow ? (
           <div className={styles.postContent}>
             <div className={styles.postDate}>
-              <p>Posted: {initPost.creation_date}</p>
-              <p>Updated: {initPost.update_date}</p>
+              <p>Posted: {postToShow.creation_date}</p>
+              <p>Updated: {postToShow.update_date}</p>
             </div>
             <div
               // eslint-disable-next-line react/no-danger
-              dangerouslySetInnerHTML={{ __html: initPost.post_content }}
+              dangerouslySetInnerHTML={{ __html: postToShow.post_content }}
             />
           </div>
         ) : null}
