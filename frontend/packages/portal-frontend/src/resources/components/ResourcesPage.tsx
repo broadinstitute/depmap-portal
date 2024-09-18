@@ -23,6 +23,7 @@ export default function ResourcesPage(props: ResourcesPageProps) {
   const { subcategories, defaultTopic } = props;
   console.log(subcategories);
   const query = useQuery();
+  const [initSubcategory] = useState(query.get("subcategory"));
 
   // If window location url has query params at the start, find the post to show
   const initPost = useMemo(() => {
@@ -52,14 +53,20 @@ export default function ResourcesPage(props: ResourcesPageProps) {
           return true;
         }
 
-        return false;
+        return undefined;
       }
       // eslint-disable-next-line no-else-return
       else {
+        const selectedTopic = subcategory.topics.find(
+          (topic: any) => initPost.id === topic.id
+        );
+        if (selectedTopic && initSubcategory === subcategory.slug) {
+          return true;
+        }
         return undefined;
       }
     },
-    [defaultTopic.id, query]
+    [defaultTopic.id, initPost.id, initSubcategory, query]
   );
 
   return (
