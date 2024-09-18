@@ -8,7 +8,6 @@ import styles from "src/resources/styles/ResourcesPage.scss";
 
 interface ResourcesPageProps {
   subcategories: any;
-  title: string;
   defaultTopic: any;
 }
 
@@ -21,8 +20,8 @@ function useQuery() {
 }
 
 export default function ResourcesPage(props: ResourcesPageProps) {
-  const { subcategories, title, defaultTopic } = props;
-  console.log(subcategories, title);
+  const { subcategories, defaultTopic } = props;
+  console.log(subcategories);
   const query = useQuery();
 
   // If window location url has query params at the start, find the post to show

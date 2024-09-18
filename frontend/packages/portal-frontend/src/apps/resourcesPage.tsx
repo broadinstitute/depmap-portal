@@ -27,7 +27,6 @@ const App = () => {
       <Router>
         <ResourcesPage
           subcategories={rootCategory.subcategories}
-          title={rootCategory.title}
           defaultTopic={rootCategory.default_topic}
         />
       </Router>
