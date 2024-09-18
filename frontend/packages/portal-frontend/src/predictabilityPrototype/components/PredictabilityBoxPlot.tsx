@@ -86,7 +86,7 @@ const PredictabilityBoxPlot = ({
     const data = plotData;
     if (data) {
       return {
-        name: "CCLE",
+        name: "DepMap Models",
         vals: data,
         color: { r: 139, g: 0, b: 0 },
         lineColor: "#000000",

@@ -92,6 +92,7 @@ const PredictabilityWaterfallPlot = ({
         y: waterfallPlotData.y,
         xLabel: waterfallPlotData.x_label,
         yLabel: waterfallPlotData.y_label,
+        hoverText: waterfallPlotData.y_index,
       };
     }
 
@@ -104,6 +105,7 @@ const PredictabilityWaterfallPlot = ({
       y: [],
       xLabel: "",
       yLabel: "",
+      hoverText: "",
     };
   }, [waterfallPlotData, isLoading]);
 
@@ -119,6 +121,7 @@ const PredictabilityWaterfallPlot = ({
           height={350}
           xKey="x"
           yKey="y"
+          hoverTextKey="hoverText"
           xLabel={waterfallPlotFormattedData?.xLabel}
           yLabel={waterfallPlotFormattedData?.yLabel}
           onLoad={(element: ExtendedPlotType | null) => {

@@ -42,7 +42,7 @@ export type ModelPredictionsGraphData = {
     actuals: number[];
   };
   predictions_dataset_id: string;
-  cell_lines: string[];
+  index_labels: string[];
   x_label: string;
   y_label: string;
   model: string;
@@ -95,7 +95,9 @@ export type FeatureSummaries = {
 
 export type RelatedFeaturePlot = {
   x: number[];
+  x_index?: string[];
   y: number[];
+  y_index: string[];
   density?: number[];
   x_label: string;
   y_label: string;

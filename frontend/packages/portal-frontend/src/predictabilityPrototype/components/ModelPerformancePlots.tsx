@@ -97,6 +97,17 @@ const ModelPerformancePlots = ({
         y: predictiveModelData.model_predictions.model_pred_data.predictions,
         xLabel: predictiveModelData.model_predictions.x_label,
         yLabel: predictiveModelData.model_predictions.y_label,
+        hoverinfo: "text",
+        hoverText: predictiveModelData.model_predictions.index_labels.map(
+          (label, index) =>
+            `${label}<br> Actual: ${predictiveModelData.model_predictions.model_pred_data.actuals[
+              index
+            ].toFixed(
+              3
+            )}<br> Prediction: ${predictiveModelData.model_predictions.model_pred_data.predictions[
+              index
+            ].toFixed(3)}`
+        ),
       };
     }
 
@@ -167,7 +178,7 @@ const ModelPerformancePlots = ({
               xKey="x"
               yKey="y"
               continuousColorKey="contColorData"
-              // hoverTextKey="hoverText"
+              hoverTextKey="hoverText"
               xLabel={formattedModelPredData?.xLabel}
               yLabel={formattedModelPredData?.yLabel}
               onLoad={(element: ExtendedPlotType | null) => {

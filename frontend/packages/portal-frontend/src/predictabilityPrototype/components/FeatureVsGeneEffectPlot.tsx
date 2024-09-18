@@ -103,6 +103,7 @@ const FeatureVsGeneEffectPlot = ({
         density: featureVsGeneEffectData.density,
         xLabel: featureVsGeneEffectData?.x_axis_label,
         yLabel: featureVsGeneEffectData?.y_axis_label,
+        hoverText: featureVsGeneEffectData?.feature_actuals_value_labels,
       };
     }
 
@@ -132,7 +133,7 @@ const FeatureVsGeneEffectPlot = ({
           xKey="x"
           yKey="y"
           continuousColorKey="contColorData"
-          // hoverTextKey="hoverText"
+          hoverTextKey="hoverText"
           xLabel={formattedPlotData?.xLabel}
           yLabel={formattedPlotData?.yLabel}
           density={formattedPlotData?.density}

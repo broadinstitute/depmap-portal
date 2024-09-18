@@ -249,7 +249,7 @@ def generate_model_predictions(
     return {
         "model_pred_data": data.to_dict("list"),
         "predictions_dataset_id": dataset.id,
-        "cell_lines": gene_predictions.index.tolist(),
+        "index_labels": data.index.tolist(),
         "x_label": "actuals",
         "y_label": "predictions",
         "density": list(density),
@@ -262,7 +262,7 @@ def get_feature_dataset_feature_type_from_taiga_id(taiga_id: str):
     feature_type = None
 
     for dataset in matrix_datasets:
-        if dataset.taiga_id == taiga_id and dataset.data_type == "Predictability":
+        if dataset.taiga_id == taiga_id:
             feature_type = dataset.feature_type
             break
 
@@ -540,8 +540,7 @@ def get_other_feature_corrs(feature_df, feature_slice):
     return corr
 
 
-def get_ge_corrs(gene, feature_df, screen_type):
-    ge_slice = data_access.get_row_of_values(_get_gene_dataset_id(screen_type), gene)
+def get_ge_corrs(ge_slice, feature_df, screen_type):
 
     corr = get_pearson_corr(feature_df, ge_slice)
 
@@ -573,7 +572,10 @@ def get_related_features_scatter(
     print(f"get_other_feature_corrs {end-start} seconds")
 
     start = time.time()
-    y = get_ge_corrs(gene=gene_symbol, feature_df=feature_df, screen_type=screen_type)
+    ge_slice = data_access.get_row_of_values(
+        _get_gene_dataset_id(screen_type), gene_symbol
+    )
+    y = get_ge_corrs(ge_slice=ge_slice, feature_df=feature_df, screen_type=screen_type)
 
     x = np.nan_to_num(x)
     y = np.nan_to_num(y)
@@ -587,7 +589,9 @@ def get_related_features_scatter(
 
     return {
         "x": list(x),
+        "x_index": feature_df.index.tolist(),
         "y": list(y),
+        "y_index": ge_slice.index.tolist(),
         "density": list(density),
         "x_label": x_label,
         "y_label": y_label,
@@ -624,7 +628,13 @@ def get_other_dep_waterfall_plot(
     rank = list(range(len(scores)))
     y_label = "Gene Effect R<br>with %s %s" % (feature_label, feature_type)
 
-    return {"x": rank, "y": scores, "x_label": "Rank", "y_label": y_label}
+    return {
+        "x": rank,
+        "y": scores,
+        "y_index": gene_df.index.tolist(),
+        "x_label": "Rank",
+        "y_label": y_label,
+    }
 
 
 def get_feature_corr_plot(

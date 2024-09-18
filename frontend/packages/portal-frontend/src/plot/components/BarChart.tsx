@@ -37,7 +37,7 @@ function BarChart({
   height = "auto",
   customWidth = undefined,
   margin = {
-    l: 290,
+    l: 325,
 
     r: 20,
 

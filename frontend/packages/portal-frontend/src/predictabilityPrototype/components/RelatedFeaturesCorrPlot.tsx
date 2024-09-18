@@ -91,6 +91,10 @@ const RelatedFeaturesCorrPlot = ({
         xLabel: relatedFeaturesCorrPlotData.x_label,
         yLabel: relatedFeaturesCorrPlotData.y_label,
         density: relatedFeaturesCorrPlotData.density,
+        hoverText: relatedFeaturesCorrPlotData.x_index?.map(
+          (x_index_label, i) =>
+            `Feature: ${x_index_label}<br> Cell Line: ${relatedFeaturesCorrPlotData.y_index[i]}`
+        ),
       };
     }
 
@@ -103,6 +107,7 @@ const RelatedFeaturesCorrPlot = ({
       y: [],
       xLabel: "",
       yLabel: "",
+      hoverText: "",
     };
   }, [relatedFeaturesCorrPlotData, isLoading]);
 
@@ -118,6 +123,7 @@ const RelatedFeaturesCorrPlot = ({
           height={350}
           xKey="x"
           yKey="y"
+          hoverTextKey="hoverText"
           continuousColorKey="contColorData"
           xLabel={formattedPlotData?.xLabel}
           yLabel={formattedPlotData?.yLabel}
