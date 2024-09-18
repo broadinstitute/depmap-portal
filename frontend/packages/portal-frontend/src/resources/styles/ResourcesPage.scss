@@ -1,15 +1,70 @@
-.PostList {
-  padding: 0;
-  margin: 0px;
-  background-color: "white";
+/* styling for the whole resources page container, including the filters on the side */
+.ResourcesPageContainer {
+  font-family: "Roboto";
+  display: grid;
+  grid-template-rows: 110px calc(100vh - 110px - 50px);
+  grid-template-columns: 1fr 3fr;
+  grid-template-areas:
+    "header header header header"
+    "nav post post post";
 }
 
-.PostContent {
-  margin-left: 50px;
-  margin-bottom: 20px;
+.resourcesPageHeader {
+  grid-area: header;
+  padding-left: 40px;
+
+  h1 {
+    font-weight: bold;
+  }
+
+  h3 {
+    font-weight: normal;
+  }
 }
 
-.postDate {
-  text-align: right;
-  line-height: 10px;
+/* styling for the post content */
+.postContentContainer {
+  grid-area: post;
+  overflow-y: auto;
+  a {
+    overflow-wrap: break-word;
+  }
+  h1 {
+    margin-bottom: 20px;
+  }
+  p {
+    font-size: 16px;
+    line-height: 25px;
+  }
+
+  .postDate {
+    // text-align: right;
+    padding: 5px 0 20px 0;
+    p {
+      font-size: 12px;
+      line-height: 18px;
+      margin-bottom: 0;
+    }
+  }
+}
+
+.postContent {
+  padding: 0 50px 0 50px;
+}
+
+/* styling for the nav accordions section */
+.postsNavList {
+  grid-area: nav;
+  height: calc(100vh - 110px - 50px);
+  overflow-y: auto;
+  background-color: #f5f8fd !important;
+}
+
+.navPostItem {
+  border: none;
+  border-bottom: 1px solid lightgray;
+  padding-left: 40px;
+  padding-right: 20px;
+  font-weight: 500;
+  font-size: 16px;
 }
