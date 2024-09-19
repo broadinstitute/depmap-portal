@@ -222,7 +222,7 @@ class Waterfall(
         return plot
 
 
-@namespace.route("/feature/boxplot")
+@namespace.route("/feature/boxbarplot")
 class BoxPlot(
     Resource
 ):  # the flask url_for endpoint is automagically the snake case of the namespace prefix plus class name

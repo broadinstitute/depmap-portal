@@ -673,7 +673,7 @@ export class DepmapApi {
     );
   }
 
-  getPredictabilityBoxPlotData(
+  getPredictabilityBoxOrBarPlotData(
     identifier: string,
     entityLabel: string,
     model: string,
@@ -687,7 +687,7 @@ export class DepmapApi {
     };
 
     return this._fetchIncludePredictabilityCache<any>(
-      `/api/predictability_prototype/feature/boxplot?${encodeParams(params)}`
+      `/api/predictability_prototype/feature/boxbarplot?${encodeParams(params)}`
     );
   }
 

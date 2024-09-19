@@ -481,7 +481,25 @@ def get_feature_boxplot_data(
         model=model,
     )
 
-    return slice.dropna().values.tolist()
+    # TODO:
+    slice_vals = slice.dropna().values.tolist()
+
+    is_binary = (
+        min(slice_vals) == 0
+        and max(slice_vals) == 1
+        or min(slice_vals) == 0
+        and max(slice_vals) == 0
+        or min(slice_vals) == 1
+        and max(slice_vals) == 1
+    )
+
+    if is_binary:
+        frac_0 = slice_vals.count(0) / len(slice_vals)
+        frac_1 = slice_vals.count(1) / len(slice_vals)
+        data = {"fraction_0": frac_0, "fraction_1": frac_1}
+        return {"data": data, "is_binary": is_binary}
+
+    return {"data": slice.dropna().values.tolist(), "is_binary": is_binary}
 
 
 def feature_correlation_map_calc(model, entity_id, screen_type: str):

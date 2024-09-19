@@ -153,3 +153,8 @@ export interface PredictabilityData {
   data: PredData;
   error_message?: string;
 }
+
+export interface PredictabilityBoxOrBarPlot {
+  data: number[] | { fraction_0: number; fraction_1: number };
+  is_binary: boolean;
+}

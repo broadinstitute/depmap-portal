@@ -93,8 +93,8 @@ const TopFeaturesOverallTile = ({
             {topFeaturesData && (
               <BarChart
                 title={plotTitle}
-                xValues={xValues}
-                yValues={yValues}
+                categoryValues={xValues}
+                categoryLabels={yValues}
                 height={360}
                 customColors={customColors}
                 customLegend={customLegend}

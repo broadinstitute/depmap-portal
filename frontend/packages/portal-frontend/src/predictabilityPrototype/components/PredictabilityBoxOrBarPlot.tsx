@@ -3,6 +3,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
 import PlotSpinner from "src/plot/components/PlotSpinner";
 import BoxPlot from "src/plot/components/BoxPlot";
+import BarChart from "src/plot/components/BarChart";
 
 interface PredictabilityBoxPlotProps {
   modelName: string;
@@ -20,7 +21,7 @@ interface PredictabilityBoxPlotProps {
   ) => Promise<number[]>;
 }
 
-const PredictabilityBoxPlot = ({
+const PredictabilityBoxOrBarPlot = ({
   modelName,
   geneSymbol,
   featureNameType,
@@ -30,10 +31,16 @@ const PredictabilityBoxPlot = ({
   screenType,
   getPredictabilityBoxPlotData,
 }: PredictabilityBoxPlotProps) => {
-  const [boxPlotElement, setBoxPlotElement] = useState<ExtendedPlotType | null>(
-    null
-  );
-  const [plotData, setPlotData] = useState<number[] | null>(null);
+  const [
+    boxOrBarPlotElement,
+    setBoxOrBarPlotElement,
+  ] = useState<ExtendedPlotType | null>(null);
+  const [boxPlotData, setBoxPlotData] = useState<number[] | null>(null);
+  const [barPlotData, setBarPlotData] = useState<{
+    fraction_0: number;
+    fraction_1: number;
+  } | null>(null);
+  const [isBinary, setIsBinary] = useState<boolean>(false);
 
   const [isLoading, setIsLoading] = useState(false);
   const [isError, setIsError] = useState(false);
@@ -41,8 +48,9 @@ const PredictabilityBoxPlot = ({
   const latestPromise = useRef<Promise<number[]>>();
 
   useEffect(() => {
-    setPlotData(null);
-    setBoxPlotElement(null);
+    setBoxPlotData(null);
+    setBarPlotData(null);
+    setBoxOrBarPlotElement(null);
     setIsLoading(true);
     const promise = getPredictabilityBoxPlotData(
       featureNameType,
@@ -55,7 +63,13 @@ const PredictabilityBoxPlot = ({
     promise
       .then((result: any) => {
         if (promise === latestPromise.current) {
-          setPlotData(result);
+          console.log({ result });
+          if (result.is_binary) {
+            setBarPlotData(result.data);
+          } else {
+            setBoxPlotData(result.data);
+          }
+          setIsBinary(result.is_binary);
           setIsLoading(false);
         }
       })
@@ -67,8 +81,8 @@ const PredictabilityBoxPlot = ({
       });
 
     return () => {
-      setPlotData(null);
-      setBoxPlotElement(null);
+      setBoxPlotData(null);
+      setBoxOrBarPlotElement(null);
     };
   }, [
     featureNameType,
@@ -82,18 +96,17 @@ const PredictabilityBoxPlot = ({
   console.log(isError);
   console.log(geneSymbol);
 
-  const boxPlotData: any = useMemo(() => {
-    const data = plotData;
-    if (data) {
+  const formattedBoxPlotData: any = useMemo(() => {
+    if (boxPlotData && !isBinary) {
       return {
         name: "DepMap Models",
-        vals: data,
+        vals: boxPlotData,
         color: { r: 139, g: 0, b: 0 },
         lineColor: "#000000",
       };
     }
 
-    if (isLoading && !data) {
+    if (isLoading && !boxPlotData) {
       return null;
     }
 
@@ -104,16 +117,16 @@ const PredictabilityBoxPlot = ({
       color: { r: 255, g: 140, b: 0 },
       lineColor: "#000000",
     };
-  }, [plotData, isLoading]);
+  }, [boxPlotData, isBinary, isLoading]);
 
   return (
     <>
-      {!boxPlotElement && <PlotSpinner height={"100%"} />}
-      {!isLoading && (
+      {!boxOrBarPlotElement && <PlotSpinner height={"100%"} />}
+      {boxPlotData && !isLoading && (
         <BoxPlot
           key={featureName + "boxplot" + panelIndex}
           plotName={"Plot Title"}
-          boxData={[boxPlotData]}
+          boxData={[formattedBoxPlotData]}
           showUnderlyingPoints={false}
           showDottedLines={false}
           orientation={"v"}
@@ -122,7 +135,33 @@ const PredictabilityBoxPlot = ({
           topMargin={60}
           onLoad={(element: ExtendedPlotType | null) => {
             if (element) {
-              setBoxPlotElement(element);
+              setBoxOrBarPlotElement(element);
+            }
+          }}
+        />
+      )}
+      {barPlotData && !isLoading && (
+        <BarChart
+          title={"test"}
+          categoryLabels={["Percent 0", "Percent 1"]}
+          categoryValues={[barPlotData.fraction_0, barPlotData.fraction_1]}
+          height={360}
+          customColors={["#86BDB5", "#2FA9D0"]}
+          orientation="v"
+          margin={{
+            l: 100,
+
+            r: 20,
+
+            b: 60,
+
+            t: 0,
+
+            pad: 0,
+          }}
+          onLoad={(element: ExtendedPlotType | null) => {
+            if (element) {
+              setBoxOrBarPlotElement(element);
             }
           }}
         />
@@ -131,4 +170,4 @@ const PredictabilityBoxPlot = ({
   );
 };
 
-export default PredictabilityBoxPlot;
+export default PredictabilityBoxOrBarPlot;

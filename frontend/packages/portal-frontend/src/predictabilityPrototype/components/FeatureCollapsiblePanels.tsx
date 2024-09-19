@@ -4,7 +4,7 @@ import StyledMeter from "src/common/components/StyledMeter";
 import { getDapi } from "src/common/utilities/context";
 import PredictabilityWaterfallPlot from "./PredictabilityWaterfallPlot";
 import RelatedFeaturesCorrPlot from "./RelatedFeaturesCorrPlot";
-import PredictabilityBoxPlot from "./PredictabilityBoxPlot";
+import PredictabilityBoxOrBarPlot from "./PredictabilityBoxOrBarPlot";
 import FeatureVsGeneEffectPlot from "./FeatureVsGeneEffectPlot";
 import { SCREEN_TYPE_COLORS } from "../models/types";
 
@@ -184,7 +184,7 @@ const FeatureCollapsiblePanels = ({
           </div>
           <div className={styles.featureGraph2}>
             {isOpen && (
-              <PredictabilityBoxPlot
+              <PredictabilityBoxOrBarPlot
                 modelName={modelName}
                 geneSymbol={geneSymbol}
                 featureNameType={featureNameType}
@@ -192,7 +192,7 @@ const FeatureCollapsiblePanels = ({
                 featureType={featureType}
                 panelIndex={panelIndex}
                 screenType={screenType}
-                getPredictabilityBoxPlotData={dapi.getPredictabilityBoxPlotData.bind(
+                getPredictabilityBoxPlotData={dapi.getPredictabilityBoxOrBarPlotData.bind(
                   dapi
                 )}
               />

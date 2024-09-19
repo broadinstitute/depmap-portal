@@ -5,13 +5,14 @@ import PlotlyLoader, { PlotlyType } from "./PlotlyLoader";
 
 export interface BarChartProps {
   title: string;
-  xValues: number[];
-  yValues: string[];
+  categoryLabels: string[];
+  categoryValues: number[];
   onLoad: (plot: ExtendedPlotType) => void;
   customColors: string[];
   height?: "auto" | number;
   margin?: Margin;
   customWidth?: number | undefined;
+  orientation?: string;
   customLegend?: React.JSX.Element;
 }
 
@@ -30,12 +31,13 @@ const calcPlotHeight = (plot: HTMLDivElement, includeCustomLegend: boolean) => {
 
 function BarChart({
   title,
-  xValues,
-  yValues,
+  categoryLabels,
+  categoryValues,
   customColors,
   onLoad = () => {},
   height = "auto",
   customWidth = undefined,
+  orientation = "h",
   margin = {
     l: 325,
 
@@ -61,14 +63,14 @@ function BarChart({
   useEffect(() => {
     const plot = ref.current as ExtendedPlotType;
 
-    const test: any = xValues.map((xVal: number, index: number) => {
+    const test: any = categoryValues.map((xVal: number, index: number) => {
       return {
-        x: [xVal],
-        y: [yValues[index]],
+        x: orientation === "v" ? [categoryLabels[index]] : [xVal],
+        y: orientation === "v" ? [xVal] : [categoryLabels[index]],
         type: "bar",
         marker: { color: customColors[index] },
         hoverinfo: "x+y",
-        orientation: "h",
+        orientation,
       };
     });
 
@@ -105,11 +107,12 @@ function BarChart({
     Plotly.newPlot(plot, test, layout, config);
   }, [
     Plotly,
-    xValues,
-    yValues,
+    categoryValues,
+    categoryLabels,
     height,
     margin,
     customWidth,
+    orientation,
     customColors,
     customLegend,
     title,
@@ -120,8 +123,8 @@ function BarChart({
 
 export default function LazyBarChart({
   title,
-  xValues,
-  yValues,
+  categoryValues,
+  categoryLabels,
   customColors,
   customLegend = undefined,
   ...otherProps
@@ -129,12 +132,12 @@ export default function LazyBarChart({
   return (
     <PlotlyLoader version="module">
       {(Plotly) =>
-        xValues && yValues ? (
+        categoryValues && categoryLabels ? (
           <>
             <BarChart
               title={title}
-              xValues={xValues}
-              yValues={yValues}
+              categoryValues={categoryValues}
+              categoryLabels={categoryLabels}
               customColors={customColors}
               Plotly={Plotly}
               // eslint-disable-next-line react/jsx-props-no-spreading
