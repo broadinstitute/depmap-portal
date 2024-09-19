@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 // import styles from "src/predictabilityPrototype/styles/PredictabilityPrototype.scss";
-import { RelatedFeaturePlot } from "../models/types";
+import { DENSITY_COLOR_SCALE, RelatedFeaturePlot } from "../models/types";
 import ScatterPlot from "src/contextExplorer/components/contextAnalysis/ScatterPlot";
 import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
 import PlotSpinner from "src/plot/components/PlotSpinner";
@@ -124,6 +124,7 @@ const RelatedFeaturesCorrPlot = ({
           xKey="x"
           yKey="y"
           hoverTextKey="hoverText"
+          customContinuousColorScale={DENSITY_COLOR_SCALE}
           continuousColorKey="contColorData"
           xLabel={formattedPlotData?.xLabel}
           yLabel={formattedPlotData?.yLabel}

@@ -11,6 +11,19 @@ export enum ScreenType {
   RNAI = "rnai",
 }
 
+export const DENSITY_COLOR_SCALE = [
+  ["0.0", "#0B1D4B"],
+  ["0.111111", "#192E75"],
+  ["0.222222", "#2968A4"],
+  ["0.333333", "#388BB3"],
+  ["0.444444", "#50A8B8"],
+  ["0.555555", "#76BFB5"],
+  ["0.666666", "#A7D5B1"],
+  ["0.777777", "#D4E9B0"],
+  ["0.888888", "#EFF6BB"],
+  ["1.0", "#FFFED8"],
+];
+
 export const SCREEN_TYPE_COLORS = new Map<string, string>([
   [ScreenType.CRISPR, "#1D6996"],
   [ScreenType.RNAI, "#52288E"],

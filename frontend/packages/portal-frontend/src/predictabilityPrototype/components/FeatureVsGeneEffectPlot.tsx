@@ -1,6 +1,9 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import styles from "src/predictabilityPrototype/styles/PredictabilityPrototype.scss";
-import { FeatureVsGeneEffectPlotData } from "../models/types";
+import {
+  DENSITY_COLOR_SCALE,
+  FeatureVsGeneEffectPlotData,
+} from "../models/types";
 import ScatterPlot from "src/contextExplorer/components/contextAnalysis/ScatterPlot";
 import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
 import PlotSpinner from "src/plot/components/PlotSpinner";
@@ -133,6 +136,7 @@ const FeatureVsGeneEffectPlot = ({
           xKey="x"
           yKey="y"
           continuousColorKey="contColorData"
+          customContinuousColorScale={DENSITY_COLOR_SCALE}
           hoverTextKey="hoverText"
           xLabel={formattedPlotData?.xLabel}
           yLabel={formattedPlotData?.yLabel}

@@ -3,7 +3,7 @@ import ScatterPlot from "src/contextExplorer/components/contextAnalysis/ScatterP
 import PrototypeCorrelationHeatmap from "src/data-explorer-2/components/plot/prototype/PrototypeCorrelationHeatmap";
 import PlotSpinner from "src/plot/components/PlotSpinner";
 import styles from "src/predictabilityPrototype/styles/PredictabilityPrototype.scss";
-import { PredictiveModelData } from "../models/types";
+import { DENSITY_COLOR_SCALE, PredictiveModelData } from "../models/types";
 import { Button } from "react-bootstrap";
 import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
 import { getDataExplorerUrl } from "../utils";
@@ -178,6 +178,7 @@ const ModelPerformancePlots = ({
               xKey="x"
               yKey="y"
               continuousColorKey="contColorData"
+              customContinuousColorScale={DENSITY_COLOR_SCALE}
               hoverTextKey="hoverText"
               xLabel={formattedModelPredData?.xLabel}
               yLabel={formattedModelPredData?.yLabel}

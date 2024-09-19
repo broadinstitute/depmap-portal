@@ -171,8 +171,8 @@ function ContextScatterPlot({
           },
           colorscale,
           size: 7,
-          line: { color: lineColor, width: 0.5 },
-          opacity: selectedPoints && selectedPoints.size > 0 ? 0.75 : 1,
+          line: { color: "#000000", width: 0.5 },
+          opacity: 0.8,
         };
       }
 
