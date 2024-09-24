@@ -34,11 +34,12 @@ class SliceQuery:
     indentifier_type: SliceIdentifierType
 
 
+# TODO: should this return a SliceResponse object instead of a Series?
 def get_slice_data(slice_query: SliceQuery) -> pd.Series:
     """
     Loads data for the given slice query. 
-    The result will be a pandas series indexed by sample/feature ID.
-    # TODO: ask Randy if this is a reasonable default, or if it's worth adding this as a param
+    The result will be a pandas series indexed by sample/feature ID 
+    (regardless of the indentifier_type used in the query).
     """
     # TODO: convert df to series
     if slice_query.indentifier_type == SliceIdentifierType.feature_id:
