@@ -1,21 +1,65 @@
-from typing import Optional
+from dataclasses import dataclass
+from enum import Enum
+from typing import Literal, Optional
 import pandas as pd
 
 from depmap.data_access import breadbox_dao
 from depmap.data_access.response_parsing import is_breadbox_id
 from depmap.data_access.models import MatrixDataset
-from depmap.entity.models import Entity
 from depmap.interactive import interactive_utils
 from depmap.interactive.common_utils import RowSummary
-from depmap.interactive.config.categories import CategoryConfig
 from depmap.interactive.config.models import Config, DatasetSortKey
-from depmap.partials.matrix.models import CellLineSeries, Matrix
+from depmap.partials.matrix.models import CellLineSeries
 
 # This data access interface will eventually only contains functions
 # which can be supported through both breadbox and the legacy backend.
 # It is being used to more clearly delineate "legacy" data access utilities
 # from the interface that will be used going forward. The majority of the
 # portal should use this module for data access exclusively (and not interactive_utils).
+
+
+# These type definitions will eventually be moved to the shared module
+class SliceIdentifierType(Enum):
+    feature_id = "feature_id"
+    feature_label = "feature_label"
+    sample_id = "sample_id"
+    sample_label = "sample_label"
+    column = "column"
+
+
+@dataclass
+class SliceQuery:
+    dataset_id: str
+    identifier: str
+    indentifier_type: SliceIdentifierType
+
+
+# TODO: write a test for this
+def get_slice_data(slice_query: SliceQuery) -> pd.Series:
+    """
+    Loads data for the given slice query. 
+    The result will be a pandas series indexed by sample/feature ID.
+    # TODO: ask Randy if this is a reasonable default, or if it's worth adding this as a param
+    """
+    # TODO: convert df to series
+    if slice_query.indentifier_type == SliceIdentifierType.feature_id:
+        return get_subsetted_df_by_ids(
+            slice_query.dataset_id, entity_ids=[slice_query.identifier]
+        )
+    elif slice_query.indentifier_type == SliceIdentifierType.feature_label:
+        return get_subsetted_df_by_labels(
+            slice_query.dataset_id, feature_row_labels=[slice_query.identifier]
+        )
+    elif slice_query.indentifier_type == SliceIdentifierType.sample_id:
+        return get_subsetted_df_by_ids(
+            slice_query.dataset_id, cell_line_ids=[slice_query.identifier]
+        )
+    elif slice_query.indentifier_type == SliceIdentifierType.sample_label:
+        raise NotImplementedError()
+    elif slice_query.indentifier_type == SliceIdentifierType.column:
+        raise NotImplementedError()  # TODO: only implement for breadbox, otherwise throw not implemented
+    else:
+        raise Exception("Unrecognized slice query identifier type")
 
 
 def get_all_matrix_dataset_ids() -> set[str]:
@@ -138,7 +182,7 @@ def get_dataset_units(dataset_id: str) -> Optional[str]:
 def get_row_of_values(dataset_id: str, feature: str) -> CellLineSeries:
     """
     Gets a row of numeric or string values, indexed by depmap_id
-    for a given dataset and feature name.
+    for a given dataset and feature label.
     """
     if is_breadbox_id(dataset_id):
         return breadbox_dao.get_row_of_values(dataset_id=dataset_id, feature=feature)

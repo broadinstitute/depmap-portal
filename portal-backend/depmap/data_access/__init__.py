@@ -1,4 +1,6 @@
 from .interface import (
+    SliceQuery,
+    SliceIdentifierType,
     # methods that will likely be supported going forward
     get_all_matrix_dataset_ids,
     get_all_matrix_datasets,
@@ -15,6 +17,7 @@ from .interface import (
     get_dataset_taiga_id,
     get_dataset_units,
     get_subsetted_df_by_labels,
+    get_slice_data,
     is_categorical,
     is_continuous,
     # methods that will be supported with modified contracts
