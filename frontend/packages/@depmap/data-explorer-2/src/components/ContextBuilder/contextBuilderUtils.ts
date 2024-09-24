@@ -1,12 +1,47 @@
 import { get_operator, get_values } from "json-logic-js";
-import { urlLibEncode } from "@depmap/data-explorer-2";
+import { DataExplorerContext } from "@depmap/types";
+import { urlLibEncode } from "../../utils/misc";
 
-export const isBoolean = (expr: any) => expr?.and || expr?.or;
+export const opLabels = {
+  "==": "is",
+  "!=": "is not",
+  in: "is in list",
+  "!in": "is not in list",
+  or: "or",
+  and: "and",
+  ">": ">",
+  ">=": "≥",
+  "<": "<",
+  "<=": "≤",
+  has_any: "has any of",
+  "!has_any": "has none of",
+};
 
-export const isComparison = (expr: any) =>
-  ["==", "!=", "in", "!in", ">", ">=", "<", "<=", "has_any", "!has_any"].some(
-    (op) => expr && op in expr
+const supportedOperators = new Set(Object.keys(opLabels));
+
+export type OperatorType = keyof typeof opLabels;
+
+export type Expr = string | number | null | { [key: string]: Expr } | Expr[];
+
+export const isBoolean = (expr: Expr): expr is Record<"and" | "or", Expr[]> => {
+  return (
+    expr !== null &&
+    typeof expr === "object" &&
+    ["and", "or"].some((op) => op in expr)
   );
+};
+
+export const isComparison = (
+  expr: Expr
+): expr is Record<OperatorType, [Expr, Expr]> => {
+  return (
+    expr !== null &&
+    typeof expr === "object" &&
+    ["==", "!=", "in", "!in", ">", ">=", "<", "<=", "has_any", "!has_any"].some(
+      (op) => op in expr
+    )
+  );
+};
 
 export const isListOperator = (op: string) => {
   return ["in", "!in", "has_any", "!has_any"].includes(op);
@@ -15,11 +50,9 @@ export const isListOperator = (op: string) => {
 export const ceil = (num: number) =>
   Math.ceil((num + Number.EPSILON) * 100) / 100;
 
-export const floor = (num: number) =>
-  Math.floor((num + Number.EPSILON) * 100) / 100;
+export const floor = (num: number) => Math.floor(num * 100) / 100;
 
-export const round = (num: number) =>
-  Math.round((num + Number.EPSILON) * 100) / 100;
+export const round = (num: number) => Math.round(num * 100) / 100;
 
 export const makeSliceId = (
   slice_type: string,
@@ -56,55 +89,38 @@ export const sliceLabelFromSliceId = (
   return decodeURIComponent(encodedLabel);
 };
 
-export const opLabels = {
-  "==": "is",
-  "!=": "is not",
-  in: "is in list",
-  "!in": "is not in list",
-  or: "or",
-  and: "and",
-  ">": ">",
-  ">=": "≥",
-  "<": "<",
-  "<=": "≤",
-  has_any: "has any of",
-  "!has_any": "has none of",
-};
+export const getOperator = (expr: Expr): OperatorType => {
+  const op = get_operator(expr as object);
 
-type OperatorType = keyof typeof opLabels;
-
-export const getOperator = (expr: any): OperatorType => {
-  const op = get_operator(expr);
-
-  if (op) {
+  if (op && supportedOperators.has(op)) {
     return op as OperatorType;
   }
 
-  throw new Error(`Unknown operator ${Object.keys(expr)[0]}`);
+  throw new Error(`Unsupported operator "${op}"`);
 };
 
-export const isVar = (expr: any) => {
-  return expr && expr.var;
+export const isVar = (expr: Expr): expr is Record<"var", string> => {
+  return expr !== null && typeof expr === "object" && "var" in expr;
 };
 
 // To make it easier to edit expressions, we want make sure there's a top-level
 // boolean wrapper expression (even if it consists of a single subexpression).
-export const denormalizeExpr = (expr: Record<string, any>) => {
-  if (!expr) {
+export const denormalizeExpr = (expr: DataExplorerContext["expr"] | null) => {
+  if (expr == null || typeof expr !== "object") {
     return null;
   }
 
-  return expr.and || expr.or ? expr : { and: [expr] };
+  return isBoolean(expr) ? expr : { and: [expr] };
 };
 
 // Before saving, we put such an expression back to normal.
-export const normalizeExpr = (expr: Record<string, any>) => {
-  if (get_values(expr).length > 1) {
-    return expr;
+export const normalizeExpr = (expr: Expr) => {
+  if (!isBoolean(expr) || get_values(expr as object).length > 1) {
+    return expr as DataExplorerContext["expr"];
   }
 
-  const op = getOperator(expr);
-  return expr[op][0];
+  const op = getOperator(expr) as "and" | "or";
+  return expr[op][0] as DataExplorerContext["expr"];
 };
 
 export const getValueType = (

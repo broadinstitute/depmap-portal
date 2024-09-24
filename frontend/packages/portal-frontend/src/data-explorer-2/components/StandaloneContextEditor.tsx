@@ -1,7 +1,12 @@
 import React from "react";
+import { ApiContext } from "@depmap/api";
+import { ContextBuilderModal } from "@depmap/data-explorer-2";
 import { DataExplorerContext } from "@depmap/types";
+import {
+  getDapi as getApi,
+  getVectorCatalogApi,
+} from "src/common/utilities/context";
 import { saveContextToLocalStorage } from "src/data-explorer-2/utils";
-import ContextBuilderModal from "src/data-explorer-2/components/ContextBuilder/ContextBuilderModal";
 
 interface Props {
   /* The context to use as a starting point. This can be as simple as
@@ -50,13 +55,15 @@ function StandaloneContextEditor({
   };
 
   return (
-    <ContextBuilderModal
-      show
-      context={context}
-      isExistingContext={Boolean(hash)}
-      onClickSave={onClickSave}
-      onHide={onHide}
-    />
+    <ApiContext.Provider value={{ getApi, getVectorCatalogApi }}>
+      <ContextBuilderModal
+        show
+        context={context}
+        isExistingContext={Boolean(hash)}
+        onClickSave={onClickSave}
+        onHide={onHide}
+      />
+    </ApiContext.Provider>
   );
 }
 

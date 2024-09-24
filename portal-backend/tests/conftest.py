@@ -67,7 +67,7 @@ def config(request):
 
 
 @pytest.fixture(scope="function")
-def app(tmpdir, config, monkeypatch):
+def app(tmpdir, config, monkeypatch, mock_breadbox_client):
     """
     An application for the tests
     Set tempfiles here so that they are different for every test
@@ -128,7 +128,12 @@ def mock_breadbox_client(monkeypatch):
 
     mock_extension = MockBreadboxExtension()
     monkeypatch.setattr(extensions, "breadbox", mock_extension)
-    return mock_extension.client
+    mock_client = mock_extension.client
+
+    # override commonly-called extension methods
+    mock_client.get_datasets = MagicMock(return_value=[])  # pyright: ignore
+
+    return mock_client
 
 
 @pytest.fixture(scope="function")

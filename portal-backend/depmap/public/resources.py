@@ -73,17 +73,19 @@ def add_forum_link_to_html(
     forum_url: str, topic_id: int, topic_slug: str, topic_html: str
 ):
     soup = BeautifulSoup(str(topic_html), features="html.parser")
+    link_p = soup.new_tag("p")
     link_tag = soup.new_tag("a")
     link_tag.attrs.update(
         {
             "href": urljoin(forum_url, f"/t/{topic_slug}/{topic_id}"),
             "target": "_blank",
-            "style": "float:right; margin: 20px; font-weight: bold",
+            "style": "float:right; padding-top: 50px; padding-bottom: 20px; font-weight: bold",
         }
     )
     link_tag.string = "View Post in Forum"
+    link_p.append(link_tag)
     last_element = soup.find_all()[-1]
-    last_element.insert_after(link_tag)
+    last_element.insert_after(link_p)
     return str(soup)
 
 

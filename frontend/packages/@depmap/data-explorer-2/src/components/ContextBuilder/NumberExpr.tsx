@@ -2,12 +2,17 @@ import React, { useCallback, useState } from "react";
 import cx from "classnames";
 import debounce from "lodash.debounce";
 import { FormControl } from "react-bootstrap";
-import {
-  floor,
-  ceil,
-  round,
-} from "src/data-explorer-2/components/ContextBuilder/contextBuilderUtils";
-import styles from "src/data-explorer-2/styles/ContextBuilder.scss";
+import { floor, ceil } from "./contextBuilderUtils";
+import { ContextBuilderReducerAction } from "./contextBuilderReducer";
+import styles from "../../styles/ContextBuilder.scss";
+
+interface Props {
+  dispatch: React.Dispatch<ContextBuilderReducerAction>;
+  expr: number | null;
+  options: { min: number; max: number };
+  path: (string | number)[];
+  shouldShowValidation: boolean;
+}
 
 function NumberExpr({
   expr,
@@ -15,16 +20,16 @@ function NumberExpr({
   options,
   dispatch,
   shouldShowValidation,
-}: any) {
-  const [value, setValue] = useState(expr || floor(options.min));
+}: Props) {
+  const [value, setValue] = useState<number | null>(expr || floor(options.min));
 
   const { min, max } = options;
-  const step = round((max - min) / 100);
+  const step = ceil(max - min) / 100;
   const pathAsString = JSON.stringify(path);
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const throttledDispatch = useCallback(
-    debounce((nextValue: number) => {
+    debounce((nextValue: number | null) => {
       dispatch({
         type: "update-value",
         payload: {
@@ -49,10 +54,12 @@ function NumberExpr({
         min={floor(min)}
         max={ceil(max)}
         value={value ?? ""}
-        onChange={(e: any) => {
-          const nextValue = Number.isNaN(e.target.valueAsNumber)
-            ? null
-            : e.target.valueAsNumber;
+        onChange={(e) => {
+          const {
+            valueAsNumber,
+          } = ((e as unknown) as React.ChangeEvent<HTMLInputElement>).target;
+
+          const nextValue = Number.isNaN(valueAsNumber) ? null : valueAsNumber;
           setValue(nextValue);
           throttledDispatch(nextValue);
         }}
