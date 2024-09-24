@@ -130,7 +130,7 @@ def mock_breadbox_client(monkeypatch):
     mock_client = mock_extension.client
 
     # override commonly-called extension methods
-    mock_client.get_datasets = MagicMock(return_value=[])
+    mock_client.get_datasets = MagicMock(return_value=[])  # pyright: ignore
 
     return mock_client
 
