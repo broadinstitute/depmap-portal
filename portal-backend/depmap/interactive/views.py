@@ -137,11 +137,9 @@ def get_cell_line_url_root():
 def get_datasets():
     """Return all matrix datasets (both breadbox and legacy datasets)."""
     combined_datasets = []
-    for dataset_id in data_access.get_all_matrix_dataset_ids():
-        if data_access.is_continuous(dataset_id):
-            combined_datasets.append(
-                dict(label=data_access.get_dataset_label(dataset_id), value=dataset_id,)
-            )
+    for dataset in data_access.get_all_matrix_datasets():
+        if dataset.is_continuous:
+            combined_datasets.append(dict(label=dataset.label, value=dataset.id,))
     combined_datasets = sorted(
         combined_datasets,
         key=lambda dataset: data_access.get_sort_key(dataset["value"]),

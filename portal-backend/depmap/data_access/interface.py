@@ -2,7 +2,7 @@ from typing import Optional
 import pandas as pd
 
 from depmap.data_access import breadbox_dao
-from depmap.data_access.response_parsing import is_breadbox_id
+from depmap.data_access.breadbox_dao import is_breadbox_id
 from depmap.data_access.models import MatrixDataset
 from depmap.entity.models import Entity
 from depmap.interactive import interactive_utils
@@ -18,31 +18,18 @@ from depmap.partials.matrix.models import CellLineSeries, Matrix
 # portal should use this module for data access exclusively (and not interactive_utils).
 
 
-def get_all_matrix_dataset_ids() -> set[str]:
-    """
-    Get the ids of all datasets which should be visible to the user. 
-    Legacy dataset ids are formatted like: 'dataset_name'
-    Breadbox dataset ids are formatted like: 'breadbox/<dataset-UUID>'
-    The differing formats are used so that we can easily check the source of a given dataset.
-    """
-    legacy_dataset_ids = _get_visible_legacy_dataset_ids()
-    breadbox_dataset_ids = breadbox_dao.get_all_matrix_dataset_ids()
-
-    return legacy_dataset_ids.union(breadbox_dataset_ids)
-
-
 def get_all_matrix_datasets() -> list[MatrixDataset]:
     """
     Return all matrix datasets as objects containing config values. 
     Uses a single request to breadbox to load all breadbox datasets. 
     """
-    # Load breadbox datases
+    # Load breadbox datasets
     breadbox_datasets = breadbox_dao.get_all_matrix_datasets()
 
     legacy_dataset_ids = _get_visible_legacy_dataset_ids()
     legacy_datasets = []
     for dataset_id in legacy_dataset_ids:
-        legacy_datasets.append(get_matrix_dataset(dataset_id))
+        legacy_datasets.append(_get_legacy_matrix_dataset(dataset_id))
     return legacy_datasets + breadbox_datasets
 
 
@@ -50,18 +37,23 @@ def get_matrix_dataset(dataset_id: str) -> MatrixDataset:
     if is_breadbox_id(dataset_id):
         return breadbox_dao.get_matrix_dataset(dataset_id)
     else:
-        data_type = interactive_utils.get_dataset_data_type(dataset_id)
-        return MatrixDataset(
-            id=dataset_id,
-            label=interactive_utils.get_dataset_label(dataset_id),
-            data_type=data_type if data_type else None,
-            feature_type=interactive_utils.get_entity_type(dataset_id),
-            sample_type="depmap_model",
-            priority=interactive_utils.get_dataset_priority(dataset_id),
-            taiga_id=interactive_utils.get_taiga_id(dataset_id),
-            units=interactive_utils.get_dataset_units(dataset_id),
-            is_continuous=interactive_utils.is_continuous(dataset_id),
-        )
+        return _get_legacy_matrix_dataset(dataset_id)
+
+
+def _get_legacy_matrix_dataset(dataset_id: str) -> MatrixDataset:
+    data_type = interactive_utils.get_dataset_data_type(dataset_id)
+    return MatrixDataset(
+        id=dataset_id,
+        given_id=None,
+        label=interactive_utils.get_dataset_label(dataset_id),
+        data_type=data_type if data_type else None,
+        feature_type=interactive_utils.get_entity_type(dataset_id),
+        sample_type="depmap_model",
+        priority=interactive_utils.get_dataset_priority(dataset_id),
+        taiga_id=interactive_utils.get_taiga_id(dataset_id),
+        units=interactive_utils.get_dataset_units(dataset_id),
+        is_continuous=interactive_utils.is_continuous(dataset_id),
+    )
 
 
 def get_dataset_data_type(dataset_id: str) -> Optional[str]:
@@ -345,7 +337,11 @@ def is_standard(dataset_id: str) -> bool:
 
 
 def _get_visible_legacy_dataset_ids():
+    """
+    Determine which legacy datasets should be hidden because they
+    have been copied to breadbox. 
+    """
     legacy_dataset_ids = interactive_utils.get_all_dataset_ids()
-    aliased_legacy_ids = breadbox_dao.get_aliased_legacy_ids()
+    breadbox_given_ids = breadbox_dao.get_breadbox_given_ids()
 
-    return legacy_dataset_ids - aliased_legacy_ids
+    return legacy_dataset_ids - breadbox_given_ids

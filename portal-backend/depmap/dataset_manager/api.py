@@ -4,10 +4,7 @@ from flask_restplus import Namespace, Resource
 from breadbox_facade.exceptions import BreadboxException
 
 from depmap import data_access
-from depmap.data_access.response_parsing import (
-    is_breadbox_id,
-    format_breadbox_task_status,
-)
+from depmap.data_access.response_parsing import is_breadbox_id_format
 from depmap import extensions
 
 namespace = Namespace("dataset_manager", description="Manage Breadbox datasets")
@@ -48,7 +45,7 @@ class CopyToBreadbox(
         )
         feature_type = request.args.get("feature_type")
 
-        if is_breadbox_id(dataset_id):
+        if is_breadbox_id_format(dataset_id):
             abort(400, f"The given dataset id '{dataset_id}' is a breadbox dataset.")
 
         if not data_access.is_continuous(dataset_id):
