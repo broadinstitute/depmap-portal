@@ -2,7 +2,6 @@ from .interface import (
     SliceQuery,
     SliceIdentifierType,
     # methods that will likely be supported going forward
-    get_all_matrix_dataset_ids,
     get_all_matrix_datasets,
     get_matrix_dataset,
     get_dataset_feature_labels_by_id,

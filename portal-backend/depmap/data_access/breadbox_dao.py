@@ -3,8 +3,10 @@ from typing import Optional
 
 from breadbox_client.models import MatrixDatasetResponse, MatrixDatasetResponseFormat
 from depmap.data_access.response_parsing import (
+    is_breadbox_id_format,
     parse_breadbox_slice_id,
     parse_matrix_dataset_response,
+    remove_breadbox_prefix,
 )
 from depmap.data_access.models import MatrixDataset
 from depmap import extensions
@@ -25,34 +27,27 @@ def get_all_matrix_datasets() -> list[MatrixDataset]:
     return matrix_datasets
 
 
-def get_all_matrix_dataset_ids() -> set[str]:
-    """
-    Return all breadbox matrix dataset IDs.
-    """
-    return set([dataset.id for dataset in get_all_matrix_datasets()])
-
-
-def get_aliased_legacy_ids() -> set[str]:
-    """
-    Get the set of legacy IDs which have corresponding datasets in breadbox.
-    The breadbox definition will be preferred over the legacy definition. 
-    """
-    aliased_ids = set()
+def get_breadbox_given_ids() -> set[str]:
+    given_ids = set()
     for dataset in extensions.breadbox.client.get_datasets():
-        if (
-            dataset.format_ == MatrixDatasetResponseFormat.MATRIX_DATASET
-            and dataset.dataset_metadata
-        ):
-            alias = dataset.dataset_metadata.to_dict().get("legacy_dataset_id")
-            if alias:
-                aliased_ids.add(alias)
-    return aliased_ids
+        if dataset.given_id is not None:
+            given_ids.add(dataset.given_id)
+    return given_ids
+
+
+def is_breadbox_id(dataset_id: str) -> bool:
+    """
+    Check if the ID matches either:
+    - the breadbox dataset format (prefixed by "breadbox/")
+    - or matches the given id of a breadbox dataset
+    """
+    return is_breadbox_id_format(dataset_id) or dataset_id in get_breadbox_given_ids()
 
 
 # Eventually we will also need a more generic "get_dataset" that can handle tabular datasets
 def get_matrix_dataset(dataset_id: str) -> MatrixDataset:
-    dataset_uuid = parse_breadbox_slice_id(dataset_id).dataset_id
-    dataset = extensions.breadbox.client.get_dataset(dataset_uuid)
+    bb_dataset_id = remove_breadbox_prefix(dataset_id)
+    dataset = extensions.breadbox.client.get_dataset(bb_dataset_id)
     assert isinstance(
         dataset, MatrixDatasetResponse
     ), f"Expected {dataset_id} to be a matrix dataset"
@@ -72,20 +67,20 @@ def get_dataset_sample_type(dataset_id: str) -> Optional[str]:
 
 
 def get_dataset_feature_labels_by_id(dataset_id) -> dict[str, str]:
-    dataset_uuid = parse_breadbox_slice_id(dataset_id).dataset_id
-    features = extensions.breadbox.client.get_dataset_features(dataset_uuid)
+    bb_dataset_id = remove_breadbox_prefix(dataset_id)
+    features = extensions.breadbox.client.get_dataset_features(bb_dataset_id)
     return {feature["id"]: feature["label"] for feature in features}
 
 
 def get_dataset_sample_labels_by_id(dataset_id) -> dict[str, str]:
-    dataset_uuid = parse_breadbox_slice_id(dataset_id).dataset_id
-    samples = extensions.breadbox.client.get_dataset_samples(dataset_uuid)
+    bb_dataset_id = remove_breadbox_prefix(dataset_id)
+    samples = extensions.breadbox.client.get_dataset_samples(bb_dataset_id)
     return {sample["id"]: sample["label"] for sample in samples}
 
 
 def get_dataset_feature_labels(dataset_id: str) -> list[str]:
-    dataset_uuid = parse_breadbox_slice_id(dataset_id).dataset_id
-    features = extensions.breadbox.client.get_dataset_features(dataset_uuid)
+    bb_dataset_id = remove_breadbox_prefix(dataset_id)
+    features = extensions.breadbox.client.get_dataset_features(bb_dataset_id)
     return [feature["label"] for feature in features]
 
 
@@ -98,8 +93,8 @@ def get_dataset_priority(dataset_id: str) -> Optional[int]:
 
 
 def get_dataset_sample_ids(dataset_id: str) -> list[str]:
-    dataset_uuid = parse_breadbox_slice_id(dataset_id).dataset_id
-    samples = extensions.breadbox.client.get_dataset_samples(dataset_uuid)
+    bb_dataset_id = remove_breadbox_prefix(dataset_id)
+    samples = extensions.breadbox.client.get_dataset_samples(bb_dataset_id)
     return [sample["id"] for sample in samples]
 
 
@@ -126,9 +121,9 @@ def get_row_of_values(dataset_id: str, feature: str) -> CellLineSeries:
     For the given dataset id and a feature label, 
     Get a row of numeric or string values, indexed by depmap_id
     """
-    dataset_uuid = parse_breadbox_slice_id(dataset_id).dataset_id
+    bb_dataset_id = remove_breadbox_prefix(dataset_id)
     single_col_df = extensions.breadbox.client.get_dataset_data(
-        dataset_id=dataset_uuid,
+        dataset_id=bb_dataset_id,
         features=[feature],
         feature_identifier="label",
         samples=None,
@@ -142,9 +137,9 @@ def get_subsetted_df_by_labels(
     feature_row_labels: Optional[list[str]],
     sample_col_ids: Optional[list[str]],
 ) -> pd.DataFrame:
-    dataset_uuid = parse_breadbox_slice_id(dataset_id).dataset_id
+    bb_dataset_id = remove_breadbox_prefix(dataset_id)
     return extensions.breadbox.client.get_dataset_data(
-        dataset_id=dataset_uuid,
+        dataset_id=bb_dataset_id,
         features=feature_row_labels,
         feature_identifier="label",
         samples=sample_col_ids,

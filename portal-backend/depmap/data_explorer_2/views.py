@@ -334,6 +334,7 @@ def datasets_by_index_type():
         common_props = {
             "data_type": dataset.data_type,
             "dataset_id": dataset.id,
+            "given_id": dataset.given_id,
             "label": dataset.label,
             "units": dataset.units,
             "priority": dataset.priority,

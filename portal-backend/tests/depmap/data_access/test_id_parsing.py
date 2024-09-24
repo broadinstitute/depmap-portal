@@ -1,7 +1,7 @@
 import pytest
 
 from depmap.data_access.response_parsing import (
-    is_breadbox_id,
+    is_breadbox_id_format,
     parse_breadbox_slice_id,
 )
 
@@ -29,5 +29,5 @@ def test_is_breadbox_id():
     legacy_id = "some_dataset"
     breadbox_id = "breadbox/dataset-id-foo"
 
-    assert not is_breadbox_id(legacy_id)
-    assert is_breadbox_id(breadbox_id)
+    assert not is_breadbox_id_format(legacy_id)
+    assert is_breadbox_id_format(breadbox_id)
