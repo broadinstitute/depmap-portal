@@ -34,7 +34,6 @@ class SliceQuery:
     indentifier_type: SliceIdentifierType
 
 
-# TODO: write a test for this
 def get_slice_data(slice_query: SliceQuery) -> pd.Series:
     """
     Loads data for the given slice query. 
@@ -43,17 +42,15 @@ def get_slice_data(slice_query: SliceQuery) -> pd.Series:
     """
     # TODO: convert df to series
     if slice_query.indentifier_type == SliceIdentifierType.feature_id:
-        return get_subsetted_df_by_ids(
-            slice_query.dataset_id, entity_ids=[slice_query.identifier]
-        )
+        raise NotImplementedError()
     elif slice_query.indentifier_type == SliceIdentifierType.feature_label:
         return get_subsetted_df_by_labels(
             slice_query.dataset_id, feature_row_labels=[slice_query.identifier]
-        )
+        ).squeeze()
     elif slice_query.indentifier_type == SliceIdentifierType.sample_id:
         return get_subsetted_df_by_ids(
             slice_query.dataset_id, cell_line_ids=[slice_query.identifier]
-        )
+        ).squeeze()
     elif slice_query.indentifier_type == SliceIdentifierType.sample_label:
         raise NotImplementedError()
     elif slice_query.indentifier_type == SliceIdentifierType.column:

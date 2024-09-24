@@ -259,7 +259,7 @@ def get_subsetted_df_by_ids(
     :param dataset_id:  id of dataset to subset
     :param entity_ids: entity ids of entities to return.  If None, return all entities
     :param cell_line_ids: depmap ids of cell lines to return.  If None, return all cell lines
-    :return: dataframe where rows are entities and columns are cell lines
+    :return: dataframe where rows are entities (indexed by label) and columns are cell lines (indexed by ID)
     """
     if __get_config().is_legacy_private_dataset(dataset_id):
         log_legacy_private_dataset_access(

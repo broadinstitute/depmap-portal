@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 
 from depmap import data_access
@@ -55,12 +56,13 @@ def test_get_matrix_dataset(interactive_db_mock_downloads):
 @override(config=config)
 def test_get_slice_data_for_matrix_dataset(app, empty_db_mock_downloads):
     # Set up a simple 5x5 dataset where samples are cell lines and features are genes
-    cell_lines = CellLineFactory.create_batch(5)
-    genes = GeneFactory.create_batch(5)
+    cell_lines = CellLineFactory.create_batch(3)
+    genes = GeneFactory.create_batch(4)
     standard_dataset_name = DependencyDataset.DependencyEnum.Chronos_Combined
+    dataset_data = np.array([[1, 10, 100], [2, 20, 200], [3, 30, 300], [4, 40, 400],])
+    matrix = MatrixFactory(cell_lines=cell_lines, entities=genes, data=dataset_data)
     DependencyDatasetFactory(
-        matrix=MatrixFactory(cell_lines=cell_lines, entities=genes),
-        name=standard_dataset_name,
+        matrix=matrix, name=standard_dataset_name,
     )
 
     empty_db_mock_downloads.session.flush()
@@ -69,19 +71,28 @@ def test_get_slice_data_for_matrix_dataset(app, empty_db_mock_downloads):
     # Load the identifiers to use in the test
     dataset_id = standard_dataset_name.name
     feature_labels_by_id = data_access.get_dataset_feature_labels_by_id(dataset_id)
+    feature_ids = list(feature_labels_by_id.keys())
     sample_ids = data_access.get_dataset_sample_ids(dataset_id)
 
-    # Test a query by feature ID
+    # Test a query by feature label
     query_gene = genes[0]
     feature_id_query = data_access.SliceQuery(
         dataset_id=dataset_id,
-        identifier=query_gene.entrez_id,
-        indentifier_type=data_access.SliceIdentifierType.feature_id,
+        identifier=query_gene.label,
+        indentifier_type=data_access.SliceIdentifierType.feature_label,
     )
     result = data_access.get_slice_data(slice_query=feature_id_query)
     assert result is not None
-    breakpoint()
+    assert list(result.index) == sample_ids
+    assert list(result.values) == [1, 10, 100]
 
-    dataset_df = data_access.get_subsetted_df_by_labels(
-        nonstandard_dataset_id, None, sample_ids
+    # Test a query by sample ID
+    sample_id_query = data_access.SliceQuery(
+        dataset_id=dataset_id,
+        identifier=sample_ids[0],
+        indentifier_type=data_access.SliceIdentifierType.sample_id,
     )
+    result = data_access.get_slice_data(slice_query=sample_id_query)
+    assert result is not None
+    assert list(result.index) == feature_ids
+    assert list(result.values) == [1, 2, 3, 4]
