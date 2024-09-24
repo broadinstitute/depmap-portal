@@ -12,9 +12,11 @@ from depmap.predictability_prototype.utils import (
     get_gene_effect_df,
     top_features_overall,
     get_top_feature_headers,
+    get_taiga_ids_feature_types_mapping,
     MODEL_SEQUENCE,
     SCREEN_TYPES,
 )
+from depmap.data_access import interface as data_access
 
 from flask_restplus import Namespace, Resource
 from flask import request
@@ -87,7 +89,11 @@ class Predictions(
 
         # Overview data
         try:
-            predictablity_datasets = get_all_datasets()
+            matrix_datasets = data_access.get_all_matrix_datasets()
+            predictablity_datasets = get_all_datasets(matrix_datasets)
+            taiga_id_feature_type_mapping = get_taiga_ids_feature_types_mapping(
+                matrix_datasets
+            )
 
             data_by_screen_type = {}
             for screen_type in SCREEN_TYPES:
@@ -112,10 +118,12 @@ class Predictions(
                 )
 
                 model_performance_info = {}
-
                 for model in MODEL_SEQUENCE:
                     feature_header_info = get_top_feature_headers(
-                        entity_id=entity_id, model=model, screen_type=screen_type
+                        entity_id=entity_id,
+                        model=model,
+                        screen_type=screen_type,
+                        taiga_id_feature_type_mapping=taiga_id_feature_type_mapping,
                     )
                     # r = PrototypePredictiveModel.get_r_squared_for_model(model)
                     model_performance_info[model] = {
@@ -131,6 +139,7 @@ class Predictions(
                     },
                     "model_performance_info": model_performance_info,
                 }
+
         except Exception as e:
             return {"error_message": str(e)}
 
@@ -151,19 +160,31 @@ class ModelPerformance(
         model = request.args.get("model")
         screen_type = request.args.get("screen_type")
 
+        import time
+
+        start = time.time()
         entity_id = Gene.get_by_label(entity_label).entity_id
         dataset = DependencyDataset.get_dataset_by_data_type_priority(screen_type)
         gene_effect_df = get_gene_effect_df(dataset)
+        matrix_datasets = data_access.get_all_matrix_datasets()
+
         model_predictions = generate_model_predictions(
             gene_symbol=entity_label,
             screen_type=screen_type,
             model=model,
             actuals=gene_effect_df,
             entity_id=entity_id,
+            matrix_datasets=matrix_datasets,
         )
+
         corr = feature_correlation_map_calc(
-            model, entity_id=entity_id, screen_type=screen_type
+            model,
+            entity_id=entity_id,
+            screen_type=screen_type,
+            matrix_datasets=matrix_datasets,
         )
+        end = time.time()
+        print(f"MODEL PERF {end-start} seconds")
 
         return {"model_predictions": model_predictions, "corr": corr["corr"]}
 
@@ -184,6 +205,7 @@ class RelatedCorrelations(
         screen_type = request.args.get("screen_type")
 
         entity_id = Gene.get_by_label(entity_label).entity_id
+        matrix_datasets = data_access.get_all_matrix_datasets()
 
         plot = get_feature_corr_plot(
             screen_type=screen_type,
@@ -191,6 +213,7 @@ class RelatedCorrelations(
             entity_id=entity_id,
             gene_symbol=entity_label,
             feature_name_type=feature_name_type,
+            matrix_datasets=matrix_datasets,
         )
 
         return plot
@@ -212,6 +235,7 @@ class Waterfall(
         screen_type = request.args.get("screen_type")
 
         entity_id = Gene.get_by_label(entity_label).entity_id
+        matrix_datasets = data_access.get_all_matrix_datasets()
 
         plot = get_feature_waterfall_plot(
             screen_type=screen_type,
@@ -219,6 +243,7 @@ class Waterfall(
             entity_id=entity_id,
             feature_name_type=feature_name_type,
             entity_label=entity_label,
+            matrix_datasets=matrix_datasets,
         )
 
         return plot
@@ -239,11 +264,14 @@ class BoxPlot(
         model = request.args.get("model")
         screen_type = request.args.get("screen_type")
 
+        matrix_datasets = data_access.get_all_matrix_datasets()
+
         plot = get_feature_boxplot_data(
             screen_type=screen_type,
             feature_name=feature_name_type,
             entity_label=entity_label,
             model=model,
+            matrix_datasets=matrix_datasets,
         )
 
         return plot
@@ -266,6 +294,7 @@ class GeneEffectData(
         screen_type = request.args.get("screen_type")
 
         entity_id = Gene.get_by_label(entity_label).entity_id
+        matrix_datasets = data_access.get_all_matrix_datasets()
 
         plot = get_feature_gene_effect_plot_data(
             model=model,
@@ -274,6 +303,7 @@ class GeneEffectData(
             feature_name=feature_name_type,
             screen_type=screen_type,
             entity_id=entity_id,
+            matrix_datasets=matrix_datasets,
         )
 
         return plot

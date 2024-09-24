@@ -110,7 +110,7 @@ export type RelatedFeaturePlot = {
   x: number[];
   x_index?: string[];
   y: number[];
-  y_index: string[];
+  y_index?: string[];
   density?: number[];
   x_label: string;
   y_label: string;

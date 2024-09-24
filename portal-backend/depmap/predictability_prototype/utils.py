@@ -1,7 +1,7 @@
 import functools
 from http.client import HTTPException
 import math
-from typing import Any
+from typing import Any, Dict
 from depmap.data_access import interface as data_access
 from depmap.predictability_prototype import hacks
 from depmap.predictability_prototype.models import (
@@ -20,8 +20,9 @@ MODEL_SEQUENCE = ["CellContext", "DriverEvents", "GeneticDerangement", "DNA", "R
 SCREEN_TYPES = ["crispr", "rnai"]
 
 
-def get_dataset_by_model_name(model_name: str, screen_type: str, entity_id: int):
-    matrix_datasets = data_access.get_all_matrix_datasets()
+def get_dataset_by_model_name(
+    model_name: str, screen_type: str, entity_id: int, matrix_datasets: list
+):
     predictions_taiga_id = PrototypePredictiveModel.get_predictions_taiga_id_by_model_name_and_screen_type(
         model_name=model_name, screen_type=screen_type, entity_id=entity_id
     )
@@ -32,9 +33,8 @@ def get_dataset_by_model_name(model_name: str, screen_type: str, entity_id: int)
     raise Exception(f"Could not find dataset for {model_name}")
 
 
-def get_all_datasets():
+def get_all_datasets(matrix_datasets):
     all_predictability_datasets = {}
-    matrix_datasets = data_access.get_all_matrix_datasets()
     for dataset in matrix_datasets:
         all_predictability_datasets[dataset.taiga_id] = dataset
 
@@ -221,9 +221,13 @@ def generate_model_predictions(
     model: str,
     actuals: pd.DataFrame,
     entity_id: int,
+    matrix_datasets: list,
 ):
     dataset = get_dataset_by_model_name(
-        model_name=model, screen_type=screen_type, entity_id=entity_id
+        model_name=model,
+        screen_type=screen_type,
+        entity_id=entity_id,
+        matrix_datasets=matrix_datasets,
     )
 
     gene_predictions = data_access.get_row_of_values(
@@ -259,8 +263,7 @@ def generate_model_predictions(
     }
 
 
-def get_taiga_ids_feature_types_mapping():
-    matrix_datasets = data_access.get_all_matrix_datasets()
+def get_taiga_ids_feature_types_mapping(matrix_datasets):
     feature_type = None
 
     mapping = {}
@@ -271,7 +274,9 @@ def get_taiga_ids_feature_types_mapping():
     return mapping
 
 
-def get_dataset_id_from_taiga_id(model: str, screen_type: str, feature_name: str):
+def get_dataset_id_from_taiga_id(
+    model: str, screen_type: str, feature_name: str, matrix_datasets: list
+):
 
     (
         taiga_id,
@@ -280,7 +285,6 @@ def get_dataset_id_from_taiga_id(model: str, screen_type: str, feature_name: str
         model, feature_name, screen_type
     )
 
-    matrix_datasets = data_access.get_all_matrix_datasets()
     feature_dataset_id = None
 
     for dataset in matrix_datasets:
@@ -294,11 +298,18 @@ def get_dataset_id_from_taiga_id(model: str, screen_type: str, feature_name: str
 
 
 def get_feature_slice_and_dataset_id(
-    screen_type: str, feature_name: str, feature_given_id: str, model: str
+    screen_type: str,
+    feature_name: str,
+    feature_given_id: str,
+    model: str,
+    matrix_datasets: list,
 ):
 
     feature_dataset_id = get_dataset_id_from_taiga_id(
-        model=model, screen_type=screen_type, feature_name=feature_name
+        model=model,
+        screen_type=screen_type,
+        feature_name=feature_name,
+        matrix_datasets=matrix_datasets,
     )
 
     slice = data_access.get_row_of_values(
@@ -308,11 +319,15 @@ def get_feature_slice_and_dataset_id(
     return slice.dropna(), feature_dataset_id
 
 
-def get_top_feature_headers(entity_id: int, model: str, screen_type: str):
+def get_top_feature_headers(
+    entity_id: int,
+    model: str,
+    screen_type: str,
+    taiga_id_feature_type_mapping: Dict[str, str],
+):
     feature_df = PrototypePredictiveModel.get_entity_row(
         model_name=model, entity_id=entity_id, screen_type=screen_type
     )
-    taiga_id_feature_type_mapping = get_taiga_ids_feature_types_mapping()
 
     top_features_metadata = {}
     for i in range(0, 10):
@@ -341,7 +356,9 @@ def get_top_feature_headers(entity_id: int, model: str, screen_type: str):
 
 
 # Index(['feature_label', 'given_id', 'importance', 'rank', 'pearson', 'entity'], dtype='object')
-def get_top_features(entity_id: int, model: str, screen_type: str):
+def get_top_features(
+    entity_id: int, model: str, screen_type: str, matrix_datasets: list
+):
     feature_df = PrototypePredictiveModel.get_entity_row(
         model_name=model, entity_id=entity_id, screen_type=screen_type
     )
@@ -363,6 +380,7 @@ def get_top_features(entity_id: int, model: str, screen_type: str):
             feature_name=feature_name,
             feature_given_id=feature_given_id,
             model=model,
+            matrix_datasets=matrix_datasets,
         )
 
         feature_importance = feature_info["importance"]
@@ -402,6 +420,7 @@ def get_feature_gene_effect_plot_data(
     feature_index: int,
     feature_name: str,
     screen_type: str,
+    matrix_datasets: list,
 ):
     # Use entity_id instead of label for consistency between the portal release
     # datasets and Breadbox. If a gene has 2 symbols, using the entity_id ensures
@@ -424,6 +443,7 @@ def get_feature_gene_effect_plot_data(
         feature_name=feature_name,
         feature_given_id=given_id,
         model=model,
+        matrix_datasets=matrix_datasets,
     )
 
     value_labels = slice.index.tolist()
@@ -462,7 +482,11 @@ def get_feature_gene_effect_plot_data(
 
 
 def get_feature_boxplot_data(
-    screen_type: str, feature_name: str, entity_label: str, model: str,
+    screen_type: str,
+    feature_name: str,
+    entity_label: str,
+    model: str,
+    matrix_datasets: list,
 ):
     feature = PrototypePredictiveFeatureResult.get_feature_result(
         model_name=model,
@@ -479,6 +503,7 @@ def get_feature_boxplot_data(
         feature_name=feature_name,
         feature_given_id=given_id,
         model=model,
+        matrix_datasets=matrix_datasets,
     )
 
     # TODO:
@@ -502,10 +527,16 @@ def get_feature_boxplot_data(
     return {"data": slice.dropna().values.tolist(), "is_binary": is_binary}
 
 
-def feature_correlation_map_calc(model, entity_id, screen_type: str):
+def feature_correlation_map_calc(
+    model, entity_id, screen_type: str, matrix_datasets: list
+):
     top_features_and_metadata = get_top_features(
-        screen_type=screen_type, entity_id=entity_id, model=model
+        screen_type=screen_type,
+        entity_id=entity_id,
+        model=model,
+        matrix_datasets=matrix_datasets,
     )
+
     top_features = top_features_and_metadata["top_features"]
     top_features_metadata = top_features_and_metadata["metadata"]
     df = pd.DataFrame(top_features)
@@ -585,17 +616,11 @@ def get_related_features_scatter(
     )
     feature_df = feature_df.dropna()
 
-    import time
-
-    start = time.time()
     x = get_other_feature_corrs(
         feature_df=feature_df,
         feature_slice=pd.Series(index=feature_slice_index, data=feature_slice_values,),
     )
-    end = time.time()
-    print(f"get_other_feature_corrs {end-start} seconds")
 
-    start = time.time()
     gene_dataset_id = _get_gene_dataset_id(screen_type)
     ge_slice = data_access.get_row_of_values(gene_dataset_id, gene_symbol)
     y = get_ge_corrs(ge_slice=ge_slice, feature_df=feature_df, screen_type=screen_type)
@@ -604,24 +629,14 @@ def get_related_features_scatter(
     y = np.nan_to_num(y)
 
     density = get_density(x, y)
-    end = time.time()
-    print(f"get_ge_corrs and get_density {end-start} seconds")
 
     x_label = "Other %s R<br>with %s" % (feature_type, feature_label)
     y_label = "Other %s R<br>with %s Gene Effect" % (feature_type, gene_symbol)
-
-    model_ids_to_display_name_map = data_access.get_dataset_sample_labels_by_id(
-        gene_dataset_id
-    )
 
     return {
         "x": list(x),
         "x_index": feature_df.index.tolist(),
         "y": list(y),
-        "y_index": [
-            model_ids_to_display_name_map[model_id]
-            for model_id in ge_slice.index.tolist()
-        ],
         "density": list(density),
         "x_label": x_label,
         "y_label": y_label,
@@ -668,10 +683,18 @@ def get_other_dep_waterfall_plot(
 
 
 def get_feature_corr_plot(
-    model, gene_symbol, entity_id, feature_name_type, screen_type: str
+    model,
+    gene_symbol,
+    entity_id,
+    feature_name_type,
+    screen_type: str,
+    matrix_datasets: list,
 ):
     top_features = get_top_features(
-        screen_type=screen_type, entity_id=entity_id, model=model
+        screen_type=screen_type,
+        entity_id=entity_id,
+        model=model,
+        matrix_datasets=matrix_datasets,
     )
     full_feature_info = top_features["metadata"][feature_name_type]
 
@@ -693,10 +716,18 @@ def get_feature_corr_plot(
 
 
 def get_feature_waterfall_plot(
-    model, entity_id, feature_name_type, screen_type: str, entity_label: str
+    model,
+    entity_id,
+    feature_name_type,
+    screen_type: str,
+    entity_label: str,
+    matrix_datasets: list,
 ):
     top_features = get_top_features(
-        screen_type=screen_type, entity_id=entity_id, model=model
+        screen_type=screen_type,
+        entity_id=entity_id,
+        model=model,
+        matrix_datasets=matrix_datasets,
     )
     full_feature_info = top_features["metadata"][feature_name_type]
 
