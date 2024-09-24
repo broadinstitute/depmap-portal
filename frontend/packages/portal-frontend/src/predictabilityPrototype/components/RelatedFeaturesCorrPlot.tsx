@@ -121,13 +121,6 @@ const RelatedFeaturesCorrPlot = ({
     return undefined;
   }, [relatedFeaturesCorrPlotData, feature]);
 
-  console.log(feature);
-  console.log(selectedPoints);
-
-  if (relatedFeaturesCorrPlotData?.x_index) {
-    console.log(relatedFeaturesCorrPlotData?.x_index);
-  }
-
   return (
     <>
       {!relatedFeaturesPlotElement && <PlotSpinner height={"100%"} />}

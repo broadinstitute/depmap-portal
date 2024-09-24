@@ -259,16 +259,16 @@ def generate_model_predictions(
     }
 
 
-def get_feature_dataset_feature_type_from_taiga_id(taiga_id: str):
+def get_taiga_ids_feature_types_mapping():
     matrix_datasets = data_access.get_all_matrix_datasets()
     feature_type = None
 
+    mapping = {}
     for dataset in matrix_datasets:
-        if dataset.taiga_id == taiga_id:
-            feature_type = dataset.feature_type
-            break
+        feature_type = dataset.feature_type
+        mapping[dataset.taiga_id] = feature_type
 
-    return feature_type
+    return mapping
 
 
 def get_dataset_id_from_taiga_id(model: str, screen_type: str, feature_name: str):
@@ -312,6 +312,7 @@ def get_top_feature_headers(entity_id: int, model: str, screen_type: str):
     feature_df = PrototypePredictiveModel.get_entity_row(
         model_name=model, entity_id=entity_id, screen_type=screen_type
     )
+    taiga_id_feature_type_mapping = get_taiga_ids_feature_types_mapping()
 
     top_features_metadata = {}
     for i in range(0, 10):
@@ -325,9 +326,8 @@ def get_top_feature_headers(entity_id: int, model: str, screen_type: str):
         feature_importance = feature_info["importance"]
         pearson = feature_info["pearson"]
         taiga_id = feature_info["taiga_id"]
-        dataset_feature_type_label = get_feature_dataset_feature_type_from_taiga_id(
-            taiga_id
-        )
+
+        dataset_feature_type_label = taiga_id_feature_type_mapping[taiga_id]
 
         top_features_metadata[feature_name] = {
             "feature_name": feature_label,
