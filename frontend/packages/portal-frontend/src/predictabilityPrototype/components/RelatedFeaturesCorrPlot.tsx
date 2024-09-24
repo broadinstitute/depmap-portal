@@ -111,6 +111,23 @@ const RelatedFeaturesCorrPlot = ({
     };
   }, [relatedFeaturesCorrPlotData, isLoading]);
 
+  const selectedPoints: Set<number> | undefined = useMemo(() => {
+    if (relatedFeaturesCorrPlotData) {
+      const selectedPtIndex = relatedFeaturesCorrPlotData?.x_index?.indexOf(
+        feature
+      );
+      return selectedPtIndex ? new Set<number>([selectedPtIndex]) : undefined;
+    }
+    return undefined;
+  }, [relatedFeaturesCorrPlotData, feature]);
+
+  console.log(feature);
+  console.log(selectedPoints);
+
+  if (relatedFeaturesCorrPlotData?.x_index) {
+    console.log(relatedFeaturesCorrPlotData?.x_index);
+  }
+
   return (
     <>
       {!relatedFeaturesPlotElement && <PlotSpinner height={"100%"} />}
@@ -129,6 +146,10 @@ const RelatedFeaturesCorrPlot = ({
           xLabel={formattedPlotData?.xLabel}
           yLabel={formattedPlotData?.yLabel}
           density={formattedPlotData?.density}
+          selectedPoints={selectedPoints}
+          customSelectedMarkerSymbol={"star-dot"}
+          disableAnnotations
+          // renderAsSvg
           onLoad={(element: ExtendedPlotType | null) => {
             if (element) {
               setRelatedFeaturesPlotElement(element);

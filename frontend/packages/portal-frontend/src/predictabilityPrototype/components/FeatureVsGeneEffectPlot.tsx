@@ -147,6 +147,7 @@ const FeatureVsGeneEffectPlot = ({
             }
           }}
           showYEqualXLine={false}
+          // renderAsSvg
         />
       )}
 

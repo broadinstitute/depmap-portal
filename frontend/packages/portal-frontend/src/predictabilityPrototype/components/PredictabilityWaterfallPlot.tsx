@@ -130,6 +130,7 @@ const PredictabilityWaterfallPlot = ({
             }
           }}
           showYEqualXLine={false}
+          // renderAsSvg
         />
       )}
     </>
