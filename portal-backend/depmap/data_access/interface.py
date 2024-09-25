@@ -1,11 +1,9 @@
-from dataclasses import dataclass
-from enum import Enum
-from typing import Literal, Optional
+from typing import Any, Literal, Optional
 import pandas as pd
 
 from depmap.data_access import breadbox_dao
 from depmap.data_access.breadbox_dao import is_breadbox_id
-from depmap.data_access.models import MatrixDataset
+from depmap.data_access.models import MatrixDataset, SliceIdentifierType, SliceQuery
 from depmap.interactive import interactive_utils
 from depmap.interactive.common_utils import RowSummary
 from depmap.interactive.config.models import Config, DatasetSortKey
@@ -18,46 +16,69 @@ from depmap.partials.matrix.models import CellLineSeries
 # portal should use this module for data access exclusively (and not interactive_utils).
 
 
-# These type definitions will eventually be moved to the shared module
-class SliceIdentifierType(Enum):
-    feature_id = "feature_id"
-    feature_label = "feature_label"
-    sample_id = "sample_id"
-    sample_label = "sample_label"
-    column = "column"
+class SliceResult:
+    ids: list[str]
+    labels: list[str]
+    values: list[Any]
+
+    def __init__(
+        self,
+        dataset_id: str,
+        series: pd.Series,
+        series_index_type: Literal["id", "label"],
+        index_axis: Literal["sample", "feature"],
+    ) -> None:
+        """
+        A SliceResult should include both IDs and labels.
+        However, our helper functions only return one or the other as their index. 
+        This constructor loads the second index type from the one that's given.
+        """
+        self.values = series.values.tolist()
+        if index_axis == "feature":
+            labels_by_id = get_dataset_feature_labels_by_id(dataset_id)
+        else:
+            labels_by_id = get_dataset_sample_labels_by_id(dataset_id)
+        if series_index_type == "id":
+            self.ids = series.index.to_list()
+            self.labels = [labels_by_id[id] for id in self.ids]
+        else:
+            self.labels = series.index.to_list()
+            ids_by_label = {v: k for k, v in labels_by_id.items()}
+            self.ids = [ids_by_label[label] for label in self.labels]
 
 
-@dataclass
-class SliceQuery:
-    dataset_id: str
-    identifier: str
-    indentifier_type: SliceIdentifierType
-
-
-# TODO: should this return a SliceResponse object instead of a Series?
-def get_slice_data(slice_query: SliceQuery) -> pd.Series:
+def get_slice_data(slice_query: SliceQuery) -> SliceResult:
     """
     Loads data for the given slice query. 
     The result will be a pandas series indexed by sample/feature ID 
     (regardless of the indentifier_type used in the query).
     """
-    # TODO: convert df to series
+    dataset_id = slice_query.dataset_id
     if slice_query.indentifier_type == SliceIdentifierType.feature_id:
         raise NotImplementedError()
+
     elif slice_query.indentifier_type == SliceIdentifierType.feature_label:
-        return get_subsetted_df_by_labels(
+        values_by_label = get_subsetted_df_by_labels(
             slice_query.dataset_id, feature_row_labels=[slice_query.identifier]
         ).squeeze()
+
+        return SliceResult(dataset_id, values_by_label, series_index_type="label")
+
     elif slice_query.indentifier_type == SliceIdentifierType.sample_id:
-        return get_subsetted_df_by_ids(
+        values_by_label = get_subsetted_df_by_ids(
             slice_query.dataset_id, cell_line_ids=[slice_query.identifier]
         ).squeeze()
+        return SliceResult(dataset_id, values_by_label, series_index_type="label")
+
     elif slice_query.indentifier_type == SliceIdentifierType.sample_label:
         raise NotImplementedError()
+
     elif slice_query.indentifier_type == SliceIdentifierType.column:
-        return get_tabular_dataset_column(
+        values_by_id = get_tabular_dataset_column(
             slice_query.dataset_id, slice_query.identifier
         )
+        return SliceResult(dataset_id, values_by_id, series_index_type="id")
+
     else:
         raise Exception("Unrecognized slice query identifier type")
 
@@ -297,7 +318,7 @@ def valid_row(dataset_id: str, row_name: str) -> bool:
 ##################################################
 
 
-def get_tabular_dataset_column(dataset_id: str, column_name: str) -> pd.DataFrame:
+def get_tabular_dataset_column(dataset_id: str, column_name: str) -> pd.Series:
     if is_breadbox_id(dataset_id):
         return breadbox_dao.get_tabular_dataset_column(dataset_id, column_name)
     else:
