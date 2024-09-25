@@ -20,6 +20,8 @@ const AggScoresTile = ({
     aggScoresPlotElement,
     setAggScoresPlotElement,
   ] = useState<ExtendedPlotType | null>(null);
+
+  console.log(crisprData);
   return (
     <article className="card_wrapper stacked-boxplot-tile">
       <div className="card_border container_fluid" style={{ height: "530px" }}>
@@ -58,11 +60,13 @@ const AggScoresTile = ({
                     (modelName: string) =>
                       crisprData.accuracies.feature_highest_importance[
                         modelName
-                      ]
+                      ]?.join("<br>") || "None above .1 importance"
                   ),
                   rnaiData.accuracies.name.map(
                     (modelName: string) =>
-                      rnaiData.accuracies.feature_highest_importance[modelName]
+                      rnaiData.accuracies.feature_highest_importance[
+                        modelName
+                      ]?.join("<br>") || "None above .1 importance"
                   ),
                 ]}
                 lineColors={[

@@ -18,6 +18,7 @@ from scipy import stats
 
 MODEL_SEQUENCE = ["CellContext", "DriverEvents", "GeneticDerangement", "DNA", "RNASeq"]
 SCREEN_TYPES = ["crispr", "rnai"]
+IMPORTANCE_CUTOFF = 0.1
 
 
 def get_dataset_by_model_name(
@@ -94,14 +95,27 @@ def accuracy_per_model(gene_symbol, entity_id, screen_type, datasets, actuals):
         gene_row = PrototypePredictiveModel.get_entity_row(
             model_name=model_name, entity_id=entity_id, screen_type=screen_type
         )
-        features = gene_row["feature_label"].values.tolist()
+        features_importances = list(
+            zip(
+                gene_row["feature_label"].values.tolist(),
+                gene_row["importance"].values.tolist(),
+            )
+        )
 
-        highest_importance_candidates = list(set(unique_model_features) - set(features))
+        features_above_threshold = [
+            feat_imp[0]
+            for feat_imp in features_importances
+            if feat_imp[1] > IMPORTANCE_CUTOFF
+        ]
+
+        highest_importance_candidates = [
+            feat for feat in features_above_threshold if feat in unique_model_features
+        ]
 
         feature_highest_importance_by_model[model_name] = (
             None
             if len(highest_importance_candidates) < 1
-            else highest_importance_candidates[0]
+            else highest_importance_candidates
         )
 
         accuracies.append(accuracy)

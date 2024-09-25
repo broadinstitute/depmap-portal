@@ -136,7 +136,7 @@ export type AggScoresData = {
   accuracies: {
     name: string[];
     accuracy: number[];
-    feature_highest_importance: { [key: string]: string };
+    feature_highest_importance: { [key: string]: string[] };
   };
   x_axis_label: string;
   y_axis_label: string;
