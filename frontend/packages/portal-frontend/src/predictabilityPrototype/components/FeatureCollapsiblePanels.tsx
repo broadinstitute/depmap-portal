@@ -7,12 +7,14 @@ import RelatedFeaturesCorrPlot from "./RelatedFeaturesCorrPlot";
 import PredictabilityBoxOrBarPlot from "./PredictabilityBoxOrBarPlot";
 import FeatureVsGeneEffectPlot from "./FeatureVsGeneEffectPlot";
 import { SCREEN_TYPE_COLORS } from "../models/types";
+import { RelatedType } from "src/predictability/models/predictive";
 
 interface FeatureSinglePanelHeaderProps {
   feature: string;
   relativeImportance: number;
   correlation: number;
   featureType: string;
+  relatedType: RelatedType | null;
   isOpen: boolean;
 }
 
@@ -21,6 +23,7 @@ export const FeatureCollapsiblePanelHeader = ({
   relativeImportance,
   correlation,
   featureType,
+  relatedType,
   isOpen,
 }: FeatureSinglePanelHeaderProps) => {
   return (
@@ -37,7 +40,23 @@ export const FeatureCollapsiblePanelHeader = ({
           />
         }
         {feature}
+        {relatedType && (
+          <span className="related-icon-container">
+            <img
+              style={{
+                height: "16px",
+                paddingBottom: "3px",
+                paddingLeft: "5px",
+              }}
+              src={getDapi()._getFileUrl(
+                `/static/img/predictability/${relatedType}.svg`
+              )}
+              alt={relatedType}
+            />
+          </span>
+        )}
       </span>
+
       <div className={styles.two}>
         {" "}
         {relativeImportance && (

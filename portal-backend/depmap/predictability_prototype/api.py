@@ -124,6 +124,7 @@ class Predictions(
                         model=model,
                         screen_type=screen_type,
                         taiga_id_feature_type_mapping=taiga_id_feature_type_mapping,
+                        matrix_datasets=matrix_datasets,
                     )
                     # r = PrototypePredictiveModel.get_r_squared_for_model(model)
                     model_performance_info[model] = {
@@ -160,9 +161,6 @@ class ModelPerformance(
         model = request.args.get("model")
         screen_type = request.args.get("screen_type")
 
-        import time
-
-        start = time.time()
         entity_id = Gene.get_by_label(entity_label).entity_id
         dataset = DependencyDataset.get_dataset_by_data_type_priority(screen_type)
         gene_effect_df = get_gene_effect_df(dataset)
@@ -183,8 +181,6 @@ class ModelPerformance(
             screen_type=screen_type,
             matrix_datasets=matrix_datasets,
         )
-        end = time.time()
-        print(f"MODEL PERF {end-start} seconds")
 
         return {"model_predictions": model_predictions, "corr": corr["corr"]}
 

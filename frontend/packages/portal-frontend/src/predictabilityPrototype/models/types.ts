@@ -1,3 +1,5 @@
+import { RelatedType } from "src/predictability/models/predictive";
+
 export enum ModelName {
   CellContext = "CellContext",
   DriverEvents = "DriverEvents",
@@ -98,6 +100,7 @@ export type FeatureSummary = {
   feature_name: string;
   feature_type: string;
   feature_importance: number;
+  related_type: RelatedType | null;
   pearson: number;
   dataset_feature_type_label: string;
 };

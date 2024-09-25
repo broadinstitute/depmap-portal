@@ -297,6 +297,24 @@ def get_dataset_id_from_taiga_id(
     return feature_dataset_id
 
 
+def get_dataset_from_taiga_id(
+    model: str, screen_type: str, feature_name: str, matrix_datasets: list
+):
+
+    (
+        taiga_id,
+        feature_given_id,
+    ) = PrototypePredictiveFeature.get_taiga_id_from_feature_name(
+        model, feature_name, screen_type
+    )
+
+    for dataset in matrix_datasets:
+        if dataset.taiga_id == taiga_id:
+            return dataset
+
+    raise Exception("Dataset not found")
+
+
 def get_feature_slice_and_dataset_id(
     screen_type: str,
     feature_name: str,
@@ -324,6 +342,7 @@ def get_top_feature_headers(
     model: str,
     screen_type: str,
     taiga_id_feature_type_mapping: Dict[str, str],
+    matrix_datasets: list,
 ):
     feature_df = PrototypePredictiveModel.get_entity_row(
         model_name=model, entity_id=entity_id, screen_type=screen_type
@@ -344,12 +363,16 @@ def get_top_feature_headers(
 
         dataset_feature_type_label = taiga_id_feature_type_mapping[taiga_id]
 
+        feature_obj = PrototypePredictiveFeature.get_by_feature_name(feature_name)
+        related_type = feature_obj.get_relation_to_entity(entity_id=entity_id)
+
         top_features_metadata[feature_name] = {
             "feature_name": feature_label,
             "feature_importance": feature_importance,
             "feature_type": feature_type,
             "pearson": pearson,
             "dataset_feature_type_label": dataset_feature_type_label,
+            "related_type": related_type,
         }
 
     return top_features_metadata

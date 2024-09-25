@@ -1,4 +1,4 @@
-enum RelatedType {
+export enum RelatedType {
   Self = "self",
   Related = "related",
   Target = "target",

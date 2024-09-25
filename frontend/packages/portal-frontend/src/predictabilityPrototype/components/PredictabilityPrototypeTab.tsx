@@ -224,7 +224,9 @@ const PredictabilityPrototypeTab = ({
                           isOpen={activeCRISPRModelIndex === modelIndex}
                           modelName={modelName}
                           entityLabel={entityLabel}
+                          entityType={entityType}
                           screenType={ScreenType.CRISPR}
+                          dapi={dapi}
                           modelPerformanceInfo={
                             data[ScreenType.CRISPR].model_performance_info[
                               modelName
@@ -280,6 +282,8 @@ const PredictabilityPrototypeTab = ({
                           modelName={modelName}
                           entityLabel={entityLabel}
                           screenType={ScreenType.RNAI}
+                          entityType={entityType}
+                          dapi={dapi}
                           modelPerformanceInfo={
                             data[ScreenType.RNAI].model_performance_info[
                               modelName

@@ -12,7 +12,12 @@ from depmap.database import (
     db,
     relationship,
 )
+from depmap.dataset.models import BiomarkerDataset
 from depmap.entity.models import Entity
+from depmap.gene.models import Gene
+from depmap.match_related.models import RelatedEntityIndex
+from depmap.entity.models import Entity
+from depmap.compound.models import Compound
 import pandas as pd
 import sqlalchemy
 from sqlalchemy import and_
@@ -119,6 +124,40 @@ class PrototypePredictiveFeature(Model):
         )
 
         return result
+
+    def get_relation_to_entity(self, entity_id: int) -> Optional[str]:
+        if self.dim_type != "gene":
+            return None
+
+        # Currently relation is only defined for gene-gene or gene-compound. The
+        # entity defined by entity_id is the target (either gene or compound
+        # experiment), so self_entity must be a gene
+        self_entity = Gene.get_by_label(self.feature_label, must=False)
+
+        if self_entity is None:
+            return None
+
+        if entity_id == self_entity.entity_id:
+            return "self"
+
+        entity = Entity.get_by_entity_id(entity_id)
+
+        if entity.type == "gene":
+            related_entity_index = RelatedEntityIndex.get(entity_id)
+            if related_entity_index is None:
+                return None
+
+            related_entity_ids = related_entity_index.get_related_entity_ids()
+
+            if self_entity.entity_id in related_entity_ids:
+                return "related"
+        elif entity.type == "compound_experiment":
+            compound: Compound = entity.compound
+            if any(
+                gene.entity_id == self_entity.entity_id for gene in compound.target_gene
+            ):
+                return "target"
+        return None
 
 
 class PrototypePredictiveModel(Model):

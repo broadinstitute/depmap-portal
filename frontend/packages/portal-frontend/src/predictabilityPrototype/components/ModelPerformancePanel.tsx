@@ -6,27 +6,88 @@ import FeatureCollapsiblePanel, {
   FeatureCollapsiblePanelHeader,
 } from "./FeatureCollapsiblePanels";
 import ModelPerformancePlots from "./ModelPerformancePlots";
+import { DepmapApi } from "src/dAPI";
+import InfoIcon from "src/common/components/InfoIcon";
 
 interface ModelPerformancePanelProps {
   modelName: string;
   entityLabel: string;
   modelPerformanceInfo: ModelPerformanceInfo;
   screenType: string;
+  entityType: string;
   getModelPerformanceData: (
     entityLabel: string,
     model: string,
     screenType: string
   ) => Promise<PredictiveModelData>;
   isOpen: boolean;
+  dapi: DepmapApi;
 }
+
+const getRelationshipDescription = (dapi: DepmapApi, featureType: string) => {
+  return featureType === "gene" ? (
+    <>
+      <div style={{ display: "flex", alignItems: "center" }}>
+        <img
+          src={dapi._getFileUrl("/static/img/predictability/self.svg")}
+          alt=""
+          style={{ height: 12, marginInlineEnd: 4 }}
+        />
+        Self
+      </div>
+      <p>
+        Features that correspond to measurements of the same gene as the
+        dependency being predicted (Lin and Confounders are still included).
+      </p>
+
+      <div style={{ display: "flex", alignItems: "center" }}>
+        <img
+          src={dapi._getFileUrl("/static/img/predictability/related.svg")}
+          alt=""
+          style={{ height: 12, marginInlineEnd: 4 }}
+        />
+        Related
+      </div>
+      <p>
+        Features that are connected to the target gene dependency by PPI
+        (inweb), members of the same protein complex (CORUM), or paralogs based
+        on DNA sequence analysis from Ensembl (Lin and Confounders are still
+        included).
+      </p>
+    </>
+  ) : (
+    <>
+      <div style={{ display: "flex", alignItems: "center" }}>
+        <img
+          src={dapi._getFileUrl("/static/img/predictability/target.svg")}
+          alt=""
+          style={{ height: 12, marginInlineEnd: 4 }}
+        />
+        Target
+      </div>
+      <p>
+        Annotated drug target in{" "}
+        <a
+          href="https://clue.io/repurposing-app"
+          target="_blank"
+          rel="noreferrer noopener"
+        >
+          Repurposing hub
+        </a>
+      </p>
+    </>
+  );
+};
 
 const ModelPerformancePanel = ({
   modelName,
   entityLabel,
+  entityType,
   modelPerformanceInfo,
   screenType,
   getModelPerformanceData,
   isOpen,
+  dapi,
 }: ModelPerformancePanelProps) => {
   const [activeFeatureIndex, setActiveFeatureIndex] = useState<number | null>(
     null
@@ -52,7 +113,16 @@ const ModelPerformancePanel = ({
         }}
         className={styles.filePanelHeader}
       >
-        <div className={styles.headerColOne}>FEATURE</div>
+        <div className={styles.headerColOne}>
+          FEATURE{" "}
+          <span>
+            <InfoIcon
+              popoverContent={getRelationshipDescription(dapi, entityType)}
+              popoverId={`relationship-popover-${screenType}-${modelName}`}
+              trigger="click"
+            />
+          </span>
+        </div>
         <div className={styles.headerColTwo}>RELATIVE IMPORTANCE</div>
 
         <div className={styles.headerColThree}>CORRELATION</div>
@@ -90,6 +160,10 @@ const ModelPerformancePanel = ({
                           featureType={
                             modelPerformanceInfo.feature_summaries[feature]
                               .feature_type
+                          }
+                          relatedType={
+                            modelPerformanceInfo.feature_summaries[feature]
+                              .related_type
                           }
                           isOpen={activeFeatureIndex === featureIndex}
                         />
