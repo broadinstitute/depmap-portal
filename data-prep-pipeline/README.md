@@ -44,7 +44,7 @@ ACH-000002,0.6,0.6,0.7
 ACH-000003,0.3,0.4,0.4
 ```
 
-### How to run the data prep pipeline
+## How to run the data prep pipeline
 
 The `data_prep.py` runs the data-prep-pipeline. It needs at least a taiga dataset id which is used as the source. It is optional to provide a new target dataset id where the output matrices would be uploaded. If no new dataset id is provided, then the script will write the output matrices to the dataset of the source taiga id.
 
