@@ -160,3 +160,10 @@ def valid_row(dataset_id: str, row_name: str) -> bool:
     valid_features = extensions.breadbox.client.get_dataset_features(dataset_id)
     valid_feature_labels = [feature["label"] for feature in valid_features]
     return row_name in valid_feature_labels
+
+
+def get_tabular_dataset_column(dataset_id: str, column_name: str) -> pd.Series:
+    df = extensions.breadbox.client.get_tabular_dataset_data(
+        dataset_id=dataset_id, columns=[column_name], strict=True,
+    )
+    return df.squeeze()

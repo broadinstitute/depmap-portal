@@ -55,7 +55,9 @@ def get_slice_data(slice_query: SliceQuery) -> pd.Series:
     elif slice_query.indentifier_type == SliceIdentifierType.sample_label:
         raise NotImplementedError()
     elif slice_query.indentifier_type == SliceIdentifierType.column:
-        raise NotImplementedError()  # TODO: only implement for breadbox, otherwise throw not implemented
+        return get_tabular_dataset_column(
+            slice_query.dataset_id, slice_query.identifier
+        )
     else:
         raise Exception("Unrecognized slice query identifier type")
 
@@ -288,6 +290,20 @@ def valid_row(dataset_id: str, row_name: str) -> bool:
     if is_breadbox_id(dataset_id):
         return breadbox_dao.valid_row(dataset_id, row_name)
     return interactive_utils.valid_row(dataset_id, row_name)
+
+
+##################################################
+# METHODS BELOW ARE ONLY SUPPORTABLE BY BREADBOX #
+##################################################
+
+
+def get_tabular_dataset_column(dataset_id: str, column_name: str) -> pd.DataFrame:
+    if is_breadbox_id(dataset_id):
+        return breadbox_dao.get_tabular_dataset_column(dataset_id, column_name)
+    else:
+        raise NotImplementedError(
+            "Tabular datasets are not supported outside of breadbox."
+        )
 
 
 ######################################################################
