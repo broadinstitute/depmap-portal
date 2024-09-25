@@ -36,6 +36,7 @@ class ContextEvaluator:
         """
         self.context_type = context["context_type"]
         self.expr = _encode_dots_in_vars(context["expr"])
+        # Cache is keyed by Slice ID. Each value is an entire dictionary of slice values.
         self.cache = {}
         self.get_slice_data = get_slice_data
 
@@ -46,23 +47,29 @@ class ContextEvaluator:
         the expression, including any variables ("var" subexpressions) which
         are bound by using a magic dict that does lookups lazily.
         """
-        data = _LazyContextDict(
+        dictionary_override = _LazyLoadingSliceLookup(
             self.context_type, dimension_label, self.cache, self.get_slice_data
         )
 
         try:
-            return jsonLogic(self.expr, data)
+            return jsonLogic(self.expr, dictionary_override)
         except (TypeError, ValueError) as e:
             print("Exception evaluating", self.expr, "against", dimension_label)
             print(e)
             return False
 
 
-# Interesting thread on overriding the Dict class:
-# https://stackoverflow.com/questions/3387691/how-to-perfectly-override-a-dict
-# But we don't need to "perfectly" override it; just well enough to trick the
-# JsonLogic library.
-class _LazyContextDict(dict):
+class _LazyLoadingSliceLookup(dict):
+    """
+    The JsonLogic library wants to be passed a dictionary of values. However, we need to 
+    inject our own special cases and caching, so we override the dictionary class with 
+    special functionality. Interesting thread on overriding the Dict class:
+    https://stackoverflow.com/questions/3387691/how-to-perfectly-override-a-dict
+    But we don't need to "perfectly" override it; just well enough to trick the JsonLogic library.
+
+    This implementation uses and updates the cache that's been passed in to the constructor.
+    """
+
     def __init__(
         self,
         context_type: str,
@@ -76,6 +83,10 @@ class _LazyContextDict(dict):
         self.get_slice_data = get_slice_data
 
     def __getitem__(self, prop):
+        """
+        Given a slice ID, get the slice value which corresponds to the 
+        "dimension_label" that's already been passed into the constructor of this class.
+        """
         # Handle trivial case where we're just looking up a dimension's own
         # label. Note that this is called "entity_label" for historical
         # reasons.
@@ -87,6 +98,8 @@ class _LazyContextDict(dict):
                 self.cache[prop] = self.get_slice_data(prop)
 
             return self.cache[prop][self.dimension_label]
+
+        # TODO: handle new-style slice IDs
 
         raise LookupError(
             f"Unable to find context property '{prop}'. Are you sure a corresponding "
@@ -100,15 +113,18 @@ class _LazyContextDict(dict):
         return True
 
 
-def _encode_dots_in_vars(expr):
+def _encode_dots_in_vars(expr: dict):
+    """
+    URL-encode any dots in variables. Otherwise, JsonLogic thinks they are property lookups.
+    Example expression: { "==": [ { "var": "slice/lineage/1/label" }, "Breast" ] }
+    """
+
     def walk(node, key):
         if isinstance(node, dict):
             return {k: walk(v, k) for k, v in node.items()}
         if isinstance(node, list):
             return [walk(x, key) for x in node]
         if key == "var":
-            # URL-encode any dots. Otherwise, JsonLogic thinks they are
-            # property lookups.
             return node.replace(".", "%2E")
 
         return node
