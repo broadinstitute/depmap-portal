@@ -1,13 +1,12 @@
 import numpy as np
-import pandas as pd
 
 from depmap import data_access
-from depmap.dataset.models import TabularDataset, BiomarkerDataset, DependencyDataset
+from depmap.dataset.models import DependencyDataset
 from depmap.settings.settings import TestConfig
+from depmap_compute.slice import SliceQuery, SliceIdentifierType
 from tests.utilities import interactive_test_utils
 from tests.utilities.override_fixture import override
 from tests.factories import (
-    NonstandardMatrixFactory,
     CellLineFactory,
     DependencyDatasetFactory,
     GeneFactory,
@@ -76,10 +75,10 @@ def test_get_slice_data_for_matrix_dataset(app, empty_db_mock_downloads):
 
     # Test a query by feature label
     query_gene = genes[0]
-    feature_id_query = data_access.SliceQuery(
+    feature_id_query = SliceQuery(
         dataset_id=dataset_id,
         identifier=query_gene.label,
-        indentifier_type=data_access.SliceIdentifierType.feature_label,
+        indentifier_type=SliceIdentifierType.feature_label,
     )
     result = data_access.get_slice_data(slice_query=feature_id_query)
     assert result is not None
@@ -87,10 +86,10 @@ def test_get_slice_data_for_matrix_dataset(app, empty_db_mock_downloads):
     assert result.values.tolist() == [1, 10, 100]
 
     # Test a query by sample ID
-    sample_id_query = data_access.SliceQuery(
+    sample_id_query = SliceQuery(
         dataset_id=dataset_id,
         identifier=sample_ids[0],
-        indentifier_type=data_access.SliceIdentifierType.sample_id,
+        indentifier_type=SliceIdentifierType.sample_id,
     )
     result = data_access.get_slice_data(slice_query=sample_id_query)
     assert result is not None

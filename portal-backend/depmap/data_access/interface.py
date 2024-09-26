@@ -1,9 +1,10 @@
 from typing import Any, Literal, Optional
 import pandas as pd
 
+from depmap_compute.slice import SliceQuery, SliceIdentifierType
 from depmap.data_access import breadbox_dao
 from depmap.data_access.breadbox_dao import is_breadbox_id
-from depmap.data_access.models import MatrixDataset, SliceIdentifierType, SliceQuery
+from depmap.data_access.models import MatrixDataset
 from depmap.interactive import interactive_utils
 from depmap.interactive.common_utils import RowSummary
 from depmap.interactive.config.models import Config, DatasetSortKey
