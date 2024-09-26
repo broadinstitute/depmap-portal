@@ -48,6 +48,7 @@ class ContextEvaluator:
         # TODO: does this even use the dimension type here?
         self.dimension_type = context["dimension_type"]
         self.expr = _encode_dots_in_vars(context["expr"])
+        self.slice_query_vars = context["vars"]
 
         # Takes a slice query, returns a dictionary of slice values (indexed by ID)
         self.get_slice_data = get_slice_data
@@ -66,7 +67,11 @@ class ContextEvaluator:
         are bound by using a magic dict (_JsonLogicVarLookup) that does lookups lazily.
         """
         dictionary_override = _JsonLogicVarLookup(
-            self.dimension_type, given_id, self.cache, self.get_slice_data
+            self.dimension_type,
+            given_id,
+            self.cache,
+            self.get_slice_data,
+            self.slice_query_vars,
         )
 
         try:
@@ -99,14 +104,16 @@ class _JsonLogicVarLookup(dict):
         given_id: str,
         cache: dict,
         get_slice_data: Callable[[SliceQuery], pd.Series],
+        slice_query_vars: dict[str, dict[str, str]],
     ):
         self.dimension_type = dimension_type
         self.given_id = given_id
         self.get_slice_data = get_slice_data
         # The cache is stored outside of this class so it can be reused.
         self.cache = cache
+        self.slice_query_vars = slice_query_vars
 
-    def __getitem__(self, context_var: Union[str, dict]) -> Any:
+    def __getitem__(self, var_name: Union[str, dict]) -> Any:
         """
         Given a variable from the context definition, load the corresponding slice value. 
         Look up the value by the "given_id" that's already been passed into the constructor of this class.
@@ -117,18 +124,14 @@ class _JsonLogicVarLookup(dict):
         # There is a special case where "given_id" may be specified instead of
         # a slice query. This allows our context definitions to reference ids, which
         # wouldn't otherwise be possible because slice queries are used to load dataset values.
-        if context_var == "given_id":
+        if var_name == "given_id":
             return self.given_id
 
         else:
-            cache_key = _encode_slice_query(context_var)
-            if cache_key not in self.cache:
-                slice_query_obj = SliceQuery(
-                    **context_var
-                )  # TODO: does this constructor work okay with the enum? - if not, make literal
-                self.cache[cache_key] = self.get_slice_data(slice_query_obj).squeeze()
-
-            slice_values = self.cache[cache_key]
+            if var_name not in self.cache:
+                slice_query = SliceQuery(**self.slice_query_vars[var_name])
+                self.cache[var_name] = self.get_slice_data(slice_query).to_dict()
+            slice_values = self.cache[var_name]
             return slice_values[self.given_id]
 
     # We don't want our virtual dictionary to appear empty.

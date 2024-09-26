@@ -78,7 +78,7 @@ def test_get_slice_data_for_matrix_dataset(app, empty_db_mock_downloads):
     feature_id_query = SliceQuery(
         dataset_id=dataset_id,
         identifier=query_gene.label,
-        indentifier_type=SliceIdentifierType.feature_label,
+        identifier_type="feature_label",
     )
     result = data_access.get_slice_data(slice_query=feature_id_query)
     assert result is not None
@@ -87,9 +87,7 @@ def test_get_slice_data_for_matrix_dataset(app, empty_db_mock_downloads):
 
     # Test a query by sample ID
     sample_id_query = SliceQuery(
-        dataset_id=dataset_id,
-        identifier=sample_ids[0],
-        indentifier_type=SliceIdentifierType.sample_id,
+        dataset_id=dataset_id, identifier=sample_ids[0], identifier_type="sample_id",
     )
     result = data_access.get_slice_data(slice_query=sample_id_query)
     assert result is not None
