@@ -468,7 +468,7 @@ def get_labels_matching_context():
 
 @blueprint.route("/v2/context", methods=["POST"])
 @csrf_protect.exempt
-def get_labels_matching_context_v2():
+def evaluate_context_v2():
     """
     Get the full list of labels (in any dataset) which match the given context.
     """
@@ -477,16 +477,9 @@ def get_labels_matching_context_v2():
     if "dimension_type" not in context:
         abort(400, "v2 Contexts must have a 'dimension_type' field")
 
-    dimension_type = context["dimension_type"]
-    context_evaluator = ContextEvaluator(context, slice_to_dict)
-    input_labels = get_dimension_labels_across_datasets(context_type)
+    ids_matching_context = get_ids_matching_v2_context(context)
 
-    labels_matching_context = []
-    for label in input_labels:
-        if context_evaluator.is_match(label):
-            labels_matching_context.append(label)
-
-    return make_gzipped_json_response(labels_matching_context)
+    return make_gzipped_json_response({"ids": ids_matching_context})
 
 
 # TODO: Remove this endpoint. It's only used for one specific feature type

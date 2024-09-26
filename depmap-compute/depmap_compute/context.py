@@ -45,6 +45,7 @@ class ContextEvaluator:
             - a `dimension_type` such as "depmap_model"
             - an `expr` such as { "==": [ { "var": "slice/lineage/1/label" }, "Breast" ] }
         """
+        # TODO: does this even use the dimension type here?
         self.dimension_type = context["dimension_type"]
         self.expr = _encode_dots_in_vars(context["expr"])
 
@@ -65,7 +66,7 @@ class ContextEvaluator:
         are bound by using a magic dict (_JsonLogicVarLookup) that does lookups lazily.
         """
         dictionary_override = _JsonLogicVarLookup(
-            self.context_type, given_id, self.cache, self.get_slice_data
+            self.dimension_type, given_id, self.cache, self.get_slice_data
         )
 
         try:
@@ -94,12 +95,12 @@ class _JsonLogicVarLookup(dict):
 
     def __init__(
         self,
-        context_type: str,
+        dimension_type: str,
         given_id: str,
         cache: dict,
         get_slice_data: Callable[[SliceQuery], pd.Series],
     ):
-        self.context_type = context_type
+        self.dimension_type = dimension_type
         self.given_id = given_id
         self.get_slice_data = get_slice_data
         # The cache is stored outside of this class so it can be reused.
@@ -125,7 +126,7 @@ class _JsonLogicVarLookup(dict):
                 slice_query_obj = SliceQuery(
                     **context_var
                 )  # TODO: does this constructor work okay with the enum? - if not, make literal
-                self.cache[cache_key] = self.get_slice_data(context_var).squeeze()
+                self.cache[cache_key] = self.get_slice_data(slice_query_obj).squeeze()
 
             slice_values = self.cache[cache_key]
             return slice_values[self.given_id]

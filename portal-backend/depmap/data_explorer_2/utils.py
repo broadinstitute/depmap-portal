@@ -434,14 +434,16 @@ def clear_cache():
 
 
 def get_ids_matching_v2_context(context):
+    # TODO: have this return both ids and labels
     # TODO: test this
     dimension_type = context["dimension_type"]
-    all_dimension_ids = []
+    all_dimension_ids = get_dimension_ids_across_datasets(dimension_type)
 
     context_evaluator = ContextEvaluator(context, data_access.get_slice_data)
 
-    # iterate through them, figure out what matches
-    ids_maatching_context = get_dimension_ids_across_datasets()
+    ids_matching_context = []
     for given_id in all_dimension_ids:
-        if context_evaluator.is_match(given_id):
-            ids_maatching_context.append(given_id)
+        if context_evaluator.is_match(str(given_id)):
+            ids_matching_context.append(given_id)
+
+    return ids_matching_context
