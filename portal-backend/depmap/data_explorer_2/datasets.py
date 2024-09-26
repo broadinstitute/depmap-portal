@@ -1,4 +1,4 @@
-from depmap_compute.context import ContextEvaluator
+from depmap_compute.context import LegacyContextEvaluator
 from depmap.data_explorer_2.utils import (
     get_datasets_from_dimension_type,
     get_dimension_labels_of_dataset,
@@ -22,7 +22,7 @@ def get_datasets_matching_context_with_details(context) -> list[dict]:
     """
     out = []
     context_type = context["context_type"]
-    context_evaluator = ContextEvaluator(context, slice_to_dict)
+    context_evaluator = LegacyContextEvaluator(context, slice_to_dict)
 
     for dataset in get_datasets_from_dimension_type(context_type):
         dimension_labels = []

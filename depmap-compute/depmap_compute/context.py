@@ -3,7 +3,7 @@
 # but it serves as a good reference for patching operators:
 # https://github.com/panzi/panzi-json-logic
 from json_logic import jsonLogic, operations  # type: ignore
-from typing import Any, Callable
+from typing import Any, Callable, Union
 from urllib.parse import unquote
 
 
@@ -28,9 +28,123 @@ operations.update(
 
 
 class ContextEvaluator:
+    """
+    Instantiated for a specific context. 
+    Caches data for the slices referenced in the context (in memory).
+    For context examples, see tests.
+    """
+
+    def __init__(
+        self, context: dict, get_slice_data: Callable[[dict[str, str]], dict[str, Any]],
+    ):
+        """
+        A `context` dict should have:
+            - a `dimension_type` such as "depmap_model"
+            - an `expr` such as { "==": [ { "var": "slice/lineage/1/label" }, "Breast" ] }
+        """
+        self.dimension_type = context["dimension_type"]
+        self.expr = _encode_dots_in_vars(context["expr"])
+
+        # Takes a slice query, returns a dictionary of slice values (indexed by ID)
+        self.get_slice_data = get_slice_data
+
+        # The cache is used so that slice values only need to be looked up once per context.
+        # - The keys in this dictionary are slice queries encoded as a tuple
+        #   (ex. `("Chronos_combined", "SOX10", "feature_label")`).
+        # - The values are each an entire dictionary of slice values (indexed by given ID)
+        self.cache = {}
+
+    def is_match(self, given_id: str):
+        """
+        This evaluates `expr` against a `given_id`. It returns
+        True/False depending on if `given_id` satifies the conditions of
+        the expression, including any variables ("var" subexpressions) which
+        are bound by using a magic dict (_JsonLogicVarLookup) that does lookups lazily.
+        """
+        dictionary_override = _JsonLogicVarLookup(
+            self.context_type, given_id, self.cache, self.get_slice_data
+        )
+
+        try:
+            return jsonLogic(self.expr, dictionary_override)
+        except (TypeError, ValueError) as e:
+            print("Exception evaluating", self.expr, "against", given_id)
+            print(e)
+            return False
+
+
+class _JsonLogicVarLookup(dict):
+    """
+    Context expressions use `var` fields to load data on the fly. 
+        For example, the following expression might be used to exclude certain given IDs from a query:
+            - { "!in": [ { "var": "given_id" }, ["1", "2", "3"] ] }
+
+    In order to populate these with real values, the JsonLogic library 
+    wants to be passed a dictionary it can use to look up values by variable name. 
+
+    However, we need to inject our own special cases and
+    caching, so we override the dictionary class with special functionality.
+    We don't need to "perfectly" override it; just well enough to trick the JsonLogic library.
+    Interesting thread on overriding the Dict class:
+    https://stackoverflow.com/questions/3387691/how-to-perfectly-override-a-dict
+    """
+
+    def __init__(
+        self,
+        context_type: str,
+        given_id: str,
+        cache: dict,
+        get_slice_data: Callable[[str], dict[str, Any]],
+    ):
+        self.context_type = context_type
+        self.given_id = given_id
+        self.get_slice_data = get_slice_data
+        # The cache is stored outside of this class so it can be reused.
+        self.cache = cache
+
+    def __getitem__(self, context_var: Union[str, dict]) -> Any:
+        """
+        Given a variable from the context definition, load the corresponding slice value. 
+        Look up the value by the "given_id" that's already been passed into the constructor of this class.
+        Context vars can be either:
+        - a slice query (used to reference a dimension value)
+        - the string "given_id" (used to reference an id)
+        """
+        # There is a special case where "given_id" may be specified instead of
+        # a slice query. This allows our context definitions to reference ids, which
+        # wouldn't otherwise be possible because slice queries are used to load dataset values.
+        if context_var == "given_id":
+            return self.given_id
+
+        else:
+            cache_key = _encode_slice_query(context_var)
+            if cache_key not in self.cache:
+                self.cache[cache_key] = self.get_slice_data(context_var)
+
+            slice_values = self.cache[cache_key]
+            return slice_values[self.given_id]
+
+    # We don't want our virtual dictionary to appear empty.
+    # Otherwise, the JsonLogic library will stomp it out with an empty default dict:
+    # https://github.com/nadirizr/json-logic-py/blob/master/json_logic/__init__.py#L180
+    def __bool__(self):
+        return True
+
+
+class LegacyContextEvaluator:
+    """
+    DEPRECATED: Use `ContextEvaluator` for future development.
+    This older version has a few differences from the new one:
+    - Slices are specified using string slice IDs instead of slice queries
+    - Matching on index is done with a field called "entity_label". For features, 
+    this is expected to match the feature label. For samples, this matches on sample ID (not label).
+    This confusing behavior is part of why we're deprecating the old version. 
+    - the field "context_type" is used to specify the dimension type
+    """
+
     def __init__(self, context: dict, get_slice_data: Callable[[str], dict[str, Any]]):
         """
-        A `context` should have:
+        A `context` dict should have:
             - a `context_type` such as "depmap_model"
             - an `expr` such as { "==": [ { "var": "slice/lineage/1/label" }, "Breast" ] }
         """
@@ -47,7 +161,7 @@ class ContextEvaluator:
         the expression, including any variables ("var" subexpressions) which
         are bound by using a magic dict that does lookups lazily.
         """
-        dictionary_override = _LazyLoadingSliceLookup(
+        dictionary_override = _LegacyLazyContextDict(
             self.context_type, dimension_label, self.cache, self.get_slice_data
         )
 
@@ -59,7 +173,7 @@ class ContextEvaluator:
             return False
 
 
-class _LazyLoadingSliceLookup(dict):
+class _LegacyLazyContextDict(dict):
     """
     The JsonLogic library wants to be passed a dictionary of values. However, we need to 
     inject our own special cases and caching, so we override the dictionary class with 
@@ -99,8 +213,6 @@ class _LazyLoadingSliceLookup(dict):
 
             return self.cache[prop][self.dimension_label]
 
-        # TODO: handle new-style slice IDs
-
         raise LookupError(
             f"Unable to find context property '{prop}'. Are you sure a corresponding "
             f"dataset exists and can be looked up by {self.context_type}?"
@@ -130,6 +242,18 @@ def _encode_dots_in_vars(expr: dict):
         return node
 
     return walk(expr, None)
+
+
+def _encode_slice_query(self, slice_query: dict):
+    """
+    Slice queries are dictionaries, which are not hashable.
+    In order to use them as keys in our cache, they need to be converted to tuples.
+    """
+    return (
+        slice_query["dataset_id"],
+        slice_query["identifier"],
+        slice_query["identifier_type"],
+    )
 
 
 def decode_slice_id(slice_id) -> tuple[str, str, str]:
