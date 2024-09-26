@@ -12,7 +12,6 @@ from depmap.predictability_prototype.utils import (
     get_gene_effect_df,
     top_features_overall,
     get_top_feature_headers,
-    get_taiga_ids_feature_types_mapping,
     MODEL_SEQUENCE,
     SCREEN_TYPES,
 )
@@ -90,10 +89,7 @@ class Predictions(
         # Overview data
         try:
             matrix_datasets = data_access.get_all_matrix_datasets()
-            predictablity_datasets = get_all_datasets(matrix_datasets)
-            taiga_id_feature_type_mapping = get_taiga_ids_feature_types_mapping(
-                matrix_datasets
-            )
+            datasets_by_taiga_id = get_all_datasets(matrix_datasets)
 
             data_by_screen_type = {}
             for screen_type in SCREEN_TYPES:
@@ -109,7 +105,7 @@ class Predictions(
                     gene_symbol,
                     entity_id=entity_id,
                     screen_type=screen_type,
-                    datasets=predictablity_datasets,
+                    datasets_by_taiga_id=datasets_by_taiga_id,
                     actuals=gene_effect_df,
                 )
 
@@ -123,8 +119,7 @@ class Predictions(
                         entity_id=entity_id,
                         model=model,
                         screen_type=screen_type,
-                        taiga_id_feature_type_mapping=taiga_id_feature_type_mapping,
-                        matrix_datasets=matrix_datasets,
+                        datasets_by_taiga_id=datasets_by_taiga_id,
                     )
                     # r = PrototypePredictiveModel.get_r_squared_for_model(model)
                     model_performance_info[model] = {

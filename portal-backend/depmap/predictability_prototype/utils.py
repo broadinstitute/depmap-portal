@@ -128,10 +128,10 @@ def accuracy_per_model(gene_symbol, entity_id, screen_type, datasets, actuals):
 
 
 def generate_aggregate_scores_across_all_models(
-    gene_symbol, entity_id, screen_type, datasets, actuals
+    gene_symbol, entity_id, screen_type, datasets_by_taiga_id, actuals
 ):
     accuracies = accuracy_per_model(
-        gene_symbol, entity_id, screen_type, datasets, actuals
+        gene_symbol, entity_id, screen_type, datasets_by_taiga_id, actuals
     )
     return {
         "accuracies": accuracies,
@@ -277,17 +277,6 @@ def generate_model_predictions(
     }
 
 
-def get_taiga_ids_feature_types_mapping(matrix_datasets):
-    feature_type = None
-
-    mapping = {}
-    for dataset in matrix_datasets:
-        feature_type = dataset.feature_type
-        mapping[dataset.taiga_id] = feature_type
-
-    return mapping
-
-
 def get_dataset_id_from_taiga_id(
     model: str, screen_type: str, feature_name: str, matrix_datasets: list
 ):
@@ -352,11 +341,7 @@ def get_feature_slice_and_dataset_id(
 
 
 def get_top_feature_headers(
-    entity_id: int,
-    model: str,
-    screen_type: str,
-    taiga_id_feature_type_mapping: Dict[str, str],
-    matrix_datasets: list,
+    entity_id: int, model: str, screen_type: str, datasets_by_taiga_id: dict
 ):
     feature_df = PrototypePredictiveModel.get_entity_row(
         model_name=model, entity_id=entity_id, screen_type=screen_type
@@ -374,8 +359,7 @@ def get_top_feature_headers(
         feature_importance = feature_info["importance"]
         pearson = feature_info["pearson"]
         taiga_id = feature_info["taiga_id"]
-
-        dataset_feature_type_label = taiga_id_feature_type_mapping[taiga_id]
+        feature_dataset = datasets_by_taiga_id[taiga_id]
 
         feature_obj = PrototypePredictiveFeature.get_by_feature_name(feature_name)
         related_type = feature_obj.get_relation_to_entity(entity_id=entity_id)
@@ -385,7 +369,6 @@ def get_top_feature_headers(
             "feature_importance": feature_importance,
             "feature_type": feature_type,
             "pearson": pearson,
-            "dataset_feature_type_label": dataset_feature_type_label,
             "related_type": related_type,
         }
 

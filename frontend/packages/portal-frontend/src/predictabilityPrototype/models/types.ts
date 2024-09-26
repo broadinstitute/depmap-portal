@@ -102,7 +102,6 @@ export type FeatureSummary = {
   feature_importance: number;
   related_type: RelatedType | null;
   pearson: number;
-  dataset_feature_type_label: string;
 };
 
 export type FeatureSummaries = {

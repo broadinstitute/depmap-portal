@@ -186,7 +186,7 @@ const ModelPerformancePanel = ({
                           }
                           featureDatasetLabel={
                             modelPerformanceInfo.feature_summaries[feature]
-                              .dataset_feature_type_label
+                              .feature_type
                           }
                           geneSymbol={entityLabel}
                           panelIndex={featureIndex}
