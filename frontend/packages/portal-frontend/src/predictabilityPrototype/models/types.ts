@@ -2,6 +2,7 @@ import { RelatedType } from "src/predictability/models/predictive";
 
 export enum ModelName {
   CellContext = "CellContext",
+  Confounders = "Confounders",
   DriverEvents = "DriverEvents",
   GeneticDerangement = "GeneticDerangement",
   DNA = "DNA",
@@ -27,16 +28,17 @@ export const DENSITY_COLOR_SCALE = [
 ];
 
 export const SCREEN_TYPE_COLORS = new Map<string, string>([
-  [ScreenType.CRISPR, "#1D6996"],
-  [ScreenType.RNAI, "#52288E"],
+  [ScreenType.CRISPR, "#2FA9D0"],
+  [ScreenType.RNAI, "#5236A1"],
 ]);
 
 export const FEATURE_SET_COLORS = new Map<string, string>([
-  [ModelName.CellContext, "#3F3F9F"],
-  [ModelName.DriverEvents, "#c55252"],
+  [ModelName.CellContext, "#244A95"],
+  [ModelName.Confounders, "#06402b"],
+  [ModelName.DriverEvents, "#56B7A9"],
   [ModelName.GeneticDerangement, "#E1790E"],
-  [ModelName.DNA, "#86BDB5"],
-  [ModelName.RNASeq, "#2FA9D0"],
+  [ModelName.DNA, "#C55252"],
+  [ModelName.RNASeq, "#863D8D"],
 ]);
 
 export type TopFeaturesBarData = {

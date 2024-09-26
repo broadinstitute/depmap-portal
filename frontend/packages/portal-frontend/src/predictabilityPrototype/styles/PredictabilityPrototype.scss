@@ -113,78 +113,111 @@
   border: 1px solid black;
   display: flex;
   flex-direction: column;
-  width: 100%;
-  height: 80px;
+  width: 55%;
+  height: 76px;
   .legendTitle {
     color: gray;
     align-self: center;
-    padding-top: 5px;
-    padding-bottom: 5px;
+    padding-top: 3px;
+
+    & > h5 {
+      font-size: 13px;
+      font-weight: 700;
+      font-style: normal;
+      margin-bottom: 3px;
+      margin-top: 0px;
+    }
   }
   .bottomLegend {
     display: flex;
     flex-direction: row;
     flex-grow: 1;
     align-self: center;
-    width: 100%;
 
-    & > div.cellContextBox {
-      background: #3f3f9f;
-      width: 18px;
-      height: 12px;
-      margin-right: 5px;
-      margin-left: 5px;
-
-      @media (max-width: 1050px) {
-        margin-left: 5px;
-        margin-right: 5px;
-      }
+    .legendItem {
+      display: flex;
+      flex-direction: row;
+      margin-right: 10px;
     }
 
-    & > div.driverEventsBox {
-      background: #c55252;
-      width: 18px;
-      height: 12px;
-      margin-left: 8px;
-      margin-right: 8px;
-      @media (max-width: 1050px) {
-        margin-left: 5px;
+    div {
+      & > div.cellContextBox {
+        background: #244a95;
+        width: 18px;
+        height: 8px;
         margin-right: 5px;
-      }
-    }
-    & > div.geneticDerangementBox {
-      background: #e1790e;
-      width: 18px;
-      height: 12px;
-      margin-left: 8px;
-      margin-right: 8px;
-      @media (max-width: 1050px) {
         margin-left: 5px;
-        margin-right: 5px;
-      }
-    }
+        align-self: center;
 
-    & > div.dnaBox {
-      background: #86bdb5;
-      width: 18px;
-      height: 12px;
-      margin-left: 8px;
-      margin-right: 8px;
-      @media (max-width: 1050px) {
-        margin-left: 5px;
-        margin-right: 5px;
+        @media (max-width: 1050px) {
+          margin-left: 5px;
+          margin-right: 5px;
+        }
       }
-    }
 
-    & > div.rnaSeqBox {
-      background: #2fa9d0;
-      width: 18px;
-      height: 12px;
-      margin-left: 8px;
-      margin-right: 8px;
-      @media (max-width: 1050px) {
+      & > div.confoundersBox {
+        background: #06402b;
+        width: 18px;
+        height: 8px;
+        margin-right: 5px;
+        margin-left: 5px;
+        align-self: center;
+
+        @media (max-width: 1050px) {
+          margin-left: 5px;
+          margin-right: 5px;
+        }
+      }
+
+      & > div.driverEventsBox {
+        background: #56b7a9;
+        width: 18px;
+        height: 8px;
         margin-left: 5px;
         margin-right: 5px;
+        align-self: center;
+        @media (max-width: 1050px) {
+          margin-left: 5px;
+          margin-right: 5px;
+        }
+      }
+      & > div.geneticDerangementBox {
+        background: #e1790e;
+        width: 18px;
+        height: 8px;
+        margin-left: 5px;
+        margin-right: 5px;
+        align-self: center;
+        @media (max-width: 1050px) {
+          margin-left: 5px;
+          margin-right: 5px;
+        }
+      }
+
+      & > div.dnaBox {
+        background: #c55252;
+        width: 18px;
+        height: 8px;
+        margin-left: 5px;
+        margin-right: 5px;
+        align-self: center;
+        @media (max-width: 1050px) {
+          margin-left: 5px;
+          margin-right: 5px;
+        }
+      }
+
+      & > div.rnaSeqBox {
+        background: #863d8d;
+        width: 18px;
+        height: 8px;
+        margin-left: 5px;
+        margin-right: 5px;
+        align-self: center;
+        @media (max-width: 1050px) {
+          margin-left: 5px;
+          margin-right: 5px;
+        }
       }
     }
 

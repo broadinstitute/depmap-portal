@@ -24,8 +24,8 @@ const AggScoresTile = ({
   console.log(crisprData);
   return (
     <article className="card_wrapper stacked-boxplot-tile">
-      <div className="card_border container_fluid" style={{ height: "530px" }}>
-        <h2 className="no_margin cardtitle_text">
+      <div className="card_border container_fluid" style={{ height: "560px" }}>
+        <h2 style={{ marginLeft: "10px" }}>
           Aggregate Scores Across All Models
         </h2>
         <p

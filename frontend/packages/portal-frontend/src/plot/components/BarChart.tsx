@@ -9,6 +9,7 @@ export interface BarChartProps {
   categoryValues: number[];
   onLoad: (plot: ExtendedPlotType) => void;
   customColors: string[];
+  xAxisTitle?: string;
   height?: "auto" | number;
   margin?: Margin;
   customWidth?: number | undefined;
@@ -37,6 +38,7 @@ function BarChart({
   onLoad = () => {},
   height = "auto",
   customWidth = undefined,
+  xAxisTitle = undefined,
   orientation = "h",
   margin = {
     l: 325,
@@ -77,6 +79,7 @@ function BarChart({
     const xAxisTemplate: Partial<Plotly.LayoutAxis> = {
       visible: true,
       autorange: true,
+      title: xAxisTitle,
     };
 
     const yAxisTemplate: Partial<Plotly.LayoutAxis> = {
@@ -114,6 +117,7 @@ function BarChart({
     customWidth,
     orientation,
     customColors,
+    xAxisTitle,
     customLegend,
     title,
   ]);
