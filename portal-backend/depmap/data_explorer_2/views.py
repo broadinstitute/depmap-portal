@@ -468,7 +468,7 @@ def get_labels_matching_context():
 
 @blueprint.route("/v2/context", methods=["POST"])
 @csrf_protect.exempt
-def evaluate_context_v2():
+def evaluate_v2_context():
     """
     Get the full list of labels (in any dataset) which match the given context.
     """
