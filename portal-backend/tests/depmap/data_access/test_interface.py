@@ -83,8 +83,8 @@ def test_get_slice_data_for_matrix_dataset(app, empty_db_mock_downloads):
     )
     result = data_access.get_slice_data(slice_query=feature_id_query)
     assert result is not None
-    assert result.ids == sample_ids
-    assert result.values == [1, 10, 100]
+    assert result.index.to_list() == sample_ids
+    assert result.values.tolist() == [1, 10, 100]
 
     # Test a query by sample ID
     sample_id_query = data_access.SliceQuery(
@@ -94,5 +94,5 @@ def test_get_slice_data_for_matrix_dataset(app, empty_db_mock_downloads):
     )
     result = data_access.get_slice_data(slice_query=sample_id_query)
     assert result is not None
-    assert result.ids == feature_ids
-    assert result.values == [1, 2, 3, 4]
+    assert result.index.to_list() == feature_ids
+    assert result.values.tolist() == [1, 2, 3, 4]

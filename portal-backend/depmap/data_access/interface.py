@@ -16,44 +16,45 @@ from depmap.partials.matrix.models import CellLineSeries
 # portal should use this module for data access exclusively (and not interactive_utils).
 
 
-class SliceResult:
-    ids: list[str]
-    labels: list[str]
-    values: list[Any]
+# class SliceResult:
+#     ids: list[str]
+#     labels: list[str]
+#     values: list[Any]
 
-    def __init__(
-        self,
-        dataset_id: str,
-        series: pd.Series,
-        series_index_type: Literal["id", "label"],
-        index_axis: Literal["sample", "feature"],
-    ) -> None:
-        """
-        A SliceResult should include both IDs and labels.
-        However, our helper functions only return one or the other as their index. 
-        This constructor loads the second index type from the one that's given.
-        """
-        self.values = series.values.tolist()
-        if index_axis == "feature":
-            labels_by_id = get_dataset_feature_labels_by_id(dataset_id)
-        else:
-            labels_by_id = get_dataset_sample_labels_by_id(dataset_id)
-        if series_index_type == "id":
-            self.ids = series.index.to_list()
-            self.labels = [labels_by_id[id] for id in self.ids]
-        else:
-            self.labels = series.index.to_list()
-            ids_by_label = {v: k for k, v in labels_by_id.items()}
-            self.ids = [ids_by_label[label] for label in self.labels]
+#     def __init__(
+#         self,
+#         dataset_id: str,
+#         series: pd.Series,
+#         series_index_type: Literal["id", "label"],
+#         index_axis: Literal["sample", "feature"],
+#     ) -> None:
+#         """
+#         A SliceResult should include both IDs and labels.
+#         However, our helper functions only return one or the other as their index.
+#         This constructor loads the second index type from the one that's given.
+#         """
+#         self.values = series.values.tolist()
+#         if index_axis == "feature":
+#             labels_by_id = get_dataset_feature_labels_by_id(dataset_id)
+#         else:
+#             labels_by_id = get_dataset_sample_labels_by_id(dataset_id)
+#         if series_index_type == "id":
+#             self.ids = series.index.to_list()
+#             self.labels = [labels_by_id[id] for id in self.ids]
+#         else:
+#             self.labels = series.index.to_list()
+#             ids_by_label = {v: k for k, v in labels_by_id.items()}
+#             self.ids = [ids_by_label[label] for label in self.labels]
 
 
-def get_slice_data(slice_query: SliceQuery) -> SliceResult:
+def get_slice_data(slice_query: SliceQuery) -> pd.Series:
     """
     Loads data for the given slice query. 
     The result will be a pandas series indexed by sample/feature ID 
     (regardless of the indentifier_type used in the query).
     """
     dataset_id = slice_query.dataset_id
+
     if slice_query.indentifier_type == SliceIdentifierType.feature_id:
         raise NotImplementedError()
 
@@ -61,26 +62,40 @@ def get_slice_data(slice_query: SliceQuery) -> SliceResult:
         values_by_label = get_subsetted_df_by_labels(
             slice_query.dataset_id, feature_row_labels=[slice_query.identifier]
         ).squeeze()
-
-        return SliceResult(dataset_id, values_by_label, series_index_type="label")
+        ids_by_label = get_ids_by_label(dataset_id, axis="sample")
+        return values_by_label.rename(ids_by_label)
 
     elif slice_query.indentifier_type == SliceIdentifierType.sample_id:
-        values_by_label = get_subsetted_df_by_ids(
+        values_by_label: pd.Series = get_subsetted_df_by_ids(
             slice_query.dataset_id, cell_line_ids=[slice_query.identifier]
         ).squeeze()
-        return SliceResult(dataset_id, values_by_label, series_index_type="label")
+        ids_by_label = get_ids_by_label(dataset_id, axis="feature")
+        return values_by_label.rename(ids_by_label)
 
     elif slice_query.indentifier_type == SliceIdentifierType.sample_label:
         raise NotImplementedError()
 
     elif slice_query.indentifier_type == SliceIdentifierType.column:
-        values_by_id = get_tabular_dataset_column(
-            slice_query.dataset_id, slice_query.identifier
-        )
-        return SliceResult(dataset_id, values_by_id, series_index_type="id")
+        return get_tabular_dataset_column(dataset_id, slice_query.identifier)
 
     else:
         raise Exception("Unrecognized slice query identifier type")
+
+
+def get_ids_by_label(
+    dataset_id: str, axis: Literal["sample", "feature"]
+) -> dict[str, str]:
+    """
+    For the given dataset axis, load all given_ids indexed by label.
+    This is helpful for re-indexing data which has been loaded by label. 
+    """
+    if axis == "feature":
+        labels_by_id = get_dataset_feature_labels_by_id(dataset_id)
+    else:
+        labels_by_id = get_dataset_sample_labels_by_id(dataset_id)
+    # invert the dictionary
+    ids_by_label = {v: k for k, v in labels_by_id.items()}
+    return ids_by_label
 
 
 def get_all_matrix_dataset_ids() -> set[str]:
@@ -319,6 +334,10 @@ def valid_row(dataset_id: str, row_name: str) -> bool:
 
 
 def get_tabular_dataset_column(dataset_id: str, column_name: str) -> pd.Series:
+    """
+    Get a column of values from the given tabular dataset. 
+    The result will be a series indexed by given id. 
+    """
     if is_breadbox_id(dataset_id):
         return breadbox_dao.get_tabular_dataset_column(dataset_id, column_name)
     else:
