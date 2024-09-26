@@ -11,7 +11,6 @@ from flask import (
     request,
 )
 
-from depmap_compute.context import LegacyContextEvaluator, decode_slice_id
 from depmap import data_access
 from depmap.extensions import csrf_protect
 from depmap.access_control import is_current_user_an_admin
@@ -30,6 +29,7 @@ from depmap.data_explorer_2.utils import (
     get_all_supported_continuous_datasets,
     get_dimension_labels_across_datasets,
     get_dimension_labels_to_datasets_mapping,
+    get_ids_matching_v2_context,
     get_file_and_release_from_dataset,
     get_reoriented_df,
     get_series_from_de2_slice_id,
@@ -46,6 +46,8 @@ from depmap.data_explorer_2.datatypes import hardcoded_metadata_slices
 
 from depmap.download.models import ReleaseTerms
 from depmap.download.views import get_file_record, get_release_record
+
+from depmap_compute.context import decode_slice_id, LegacyContextEvaluator
 
 blueprint = Blueprint(
     "data_explorer_2",
@@ -454,6 +456,29 @@ def get_labels_matching_context():
     context = inputs["context"]
     context_type = context["context_type"]
     context_evaluator = LegacyContextEvaluator(context, slice_to_dict)
+    input_labels = get_dimension_labels_across_datasets(context_type)
+
+    labels_matching_context = []
+    for label in input_labels:
+        if context_evaluator.is_match(label):
+            labels_matching_context.append(label)
+
+    return make_gzipped_json_response(labels_matching_context)
+
+
+@blueprint.route("/v2/context", methods=["POST"])
+@csrf_protect.exempt
+def get_labels_matching_context_v2():
+    """
+    Get the full list of labels (in any dataset) which match the given context.
+    """
+    inputs = request.get_json()
+    context = inputs["context"]
+    if "dimension_type" not in context:
+        abort(400, "v2 Contexts must have a 'dimension_type' field")
+
+    dimension_type = context["dimension_type"]
+    context_evaluator = ContextEvaluator(context, slice_to_dict)
     input_labels = get_dimension_labels_across_datasets(context_type)
 
     labels_matching_context = []

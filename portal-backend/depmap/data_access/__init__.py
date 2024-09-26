@@ -2,6 +2,7 @@ from .interface import (
     # methods that will likely be supported going forward
     get_all_matrix_datasets,
     get_matrix_dataset,
+    get_dataset_feature_ids,
     get_dataset_feature_labels_by_id,
     get_dataset_feature_labels,
     get_dataset_sample_ids,

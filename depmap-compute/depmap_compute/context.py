@@ -3,6 +3,7 @@
 # but it serves as a good reference for patching operators:
 # https://github.com/panzi/panzi-json-logic
 from json_logic import jsonLogic, operations  # type: ignore
+import pandas as pd
 from typing import Any, Callable, Union
 from urllib.parse import unquote
 
@@ -37,7 +38,7 @@ class ContextEvaluator:
     """
 
     def __init__(
-        self, context: dict, get_slice_data: Callable[[SliceQuery], dict[str, Any]],
+        self, context: dict, get_slice_data: Callable[[SliceQuery], pd.Series],
     ):
         """
         A `context` dict should have:
@@ -96,7 +97,7 @@ class _JsonLogicVarLookup(dict):
         context_type: str,
         given_id: str,
         cache: dict,
-        get_slice_data: Callable[[SliceQuery], dict[str, Any]],
+        get_slice_data: Callable[[SliceQuery], pd.Series],
     ):
         self.context_type = context_type
         self.given_id = given_id
@@ -124,7 +125,7 @@ class _JsonLogicVarLookup(dict):
                 slice_query_obj = SliceQuery(
                     **context_var
                 )  # TODO: does this constructor work okay with the enum? - if not, make literal
-                self.cache[cache_key] = self.get_slice_data(context_var)
+                self.cache[cache_key] = self.get_slice_data(context_var).squeeze()
 
             slice_values = self.cache[cache_key]
             return slice_values[self.given_id]

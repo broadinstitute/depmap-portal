@@ -92,6 +92,12 @@ def get_dataset_priority(dataset_id: str) -> Optional[int]:
     return get_matrix_dataset(dataset_id).priority
 
 
+def get_dataset_feature_ids(dataset_id: str) -> list[str]:
+    bb_dataset_id = remove_breadbox_prefix(dataset_id)
+    features = extensions.breadbox.client.get_dataset_features(bb_dataset_id)
+    return [feature["id"] for feature in features]
+
+
 def get_dataset_sample_ids(dataset_id: str) -> list[str]:
     bb_dataset_id = remove_breadbox_prefix(dataset_id)
     samples = extensions.breadbox.client.get_dataset_samples(bb_dataset_id)

@@ -6,13 +6,13 @@ import pandas as pd
 from typing import Any, Optional
 from collections import defaultdict
 from logging import getLogger
-from flask import json, make_response
+from flask import abort, json, make_response
 
-from depmap_compute.context import decode_slice_id
+from depmap_compute.context import decode_slice_id, ContextEvaluator
+from depmap_compute.slice import SliceQuery
 from depmap import data_access
 from depmap.data_access.models import MatrixDataset
 from depmap.settings.download_settings import get_download_list
-from depmap.vector_catalog.models import Serializer
 from depmap.data_explorer_2.datatypes import (
     blocked_dimension_types,
     entity_aliases,
@@ -24,6 +24,8 @@ log = getLogger(__name__)
 @functools.cache
 def get_vector_labels(dataset_id: str, is_transpose: bool) -> list[str]:
     """
+    DEPRECATED: this does not use the definition of "labels" that we are using
+    going forward. For samples, this returns IDs as labels. 
     Load all labels for an axis of the given dataset.
     If is_transpose, then get depmap_ids/sample labels.
     Otherwise, get sample/feature labels.
@@ -35,6 +37,10 @@ def get_vector_labels(dataset_id: str, is_transpose: bool) -> list[str]:
 
 
 def get_dimension_labels_of_dataset(dimension_type: str, dataset: MatrixDataset):
+    """
+    DEPRECATED: this does not use the definition of "labels" that we are using
+    going forward. For samples, this returns IDs as labels. 
+    """
     if dimension_type not in (dataset.feature_type, dataset.sample_type):
         return set()
 
@@ -42,6 +48,20 @@ def get_dimension_labels_of_dataset(dimension_type: str, dataset: MatrixDataset)
 
     labels = get_vector_labels(dataset.id, is_transpose)
     return set(labels)
+
+
+def get_dimension_ids_of_dataset(dimension_type: str, dataset: MatrixDataset):
+    if dimension_type not in (dataset.feature_type, dataset.sample_type):
+        return set()
+
+    if dimension_type == dataset.sample_type:
+        return set(data_access.get_dataset_sample_ids(dataset.id))
+    elif dimension_type == dataset.feature_type:
+        return set(data_access.get_dataset_feature_ids(dataset.id))
+    else:
+        raise ValueError(
+            f"Dataset '{dataset.id}' does not have a dimension of type '{dimension_type}'"
+        )
 
 
 def get_reoriented_df(
@@ -201,6 +221,16 @@ def get_dimension_labels_across_datasets(dimension_type):
         all_labels = all_labels.union(labels)
 
     return sorted(list(all_labels))
+
+
+def get_dimension_ids_across_datasets(dimension_type):
+    all_ids = set()
+
+    for dataset in get_all_supported_continuous_datasets():
+        dataset_ids = get_dimension_ids_of_dataset(dimension_type, dataset)
+        all_ids = all_ids.union(dataset_ids)
+
+    return sorted(list(all_ids))
 
 
 def get_dimension_labels_to_datasets_mapping(dimension_type: str):
@@ -401,3 +431,17 @@ def get_union_of_index_labels(index_type, dataset_ids):
 
 def clear_cache():
     get_vector_labels.cache_clear()
+
+
+def get_ids_matching_v2_context(context):
+    # TODO: test this
+    dimension_type = context["dimension_type"]
+    all_dimension_ids = []
+
+    context_evaluator = ContextEvaluator(context, data_access.get_slice_data)
+
+    # iterate through them, figure out what matches
+    ids_maatching_context = get_dimension_ids_across_datasets()
+    for given_id in all_dimension_ids:
+        if context_evaluator.is_match(given_id):
+            ids_maatching_context.append(given_id)
