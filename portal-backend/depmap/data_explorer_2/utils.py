@@ -212,7 +212,7 @@ def get_dimension_labels_across_datasets(dimension_type):
 def get_all_dimension_labels_by_id(dimension_type: str) -> dict[str, str]:
     """Get all dimension labels and IDs across datasets."""
     all_labels_by_id = {}
-    # For ech dataset, if it has the dimension type, get its IDs and labels
+    # For each dataset, if it has the dimension type, get its IDs and labels
     for dataset in get_all_supported_continuous_datasets():
         if dimension_type == dataset.sample_type:
             dataset_labels_by_id = data_access.get_dataset_sample_labels_by_id(

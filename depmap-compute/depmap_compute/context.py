@@ -123,9 +123,7 @@ class _JsonLogicVarLookup(dict):
             if var_name not in self.cache:
                 slice_query = SliceQuery(**self.slice_query_vars[var_name])
                 self.cache[var_name] = self.get_slice_data(slice_query).to_dict()
-            slice_values = self.cache[
-                var_name
-            ]  # TODO: figure out why this is empty now
+            slice_values = self.cache[var_name]
             return slice_values[self.given_id]
 
     # We don't want our virtual dictionary to appear empty.
