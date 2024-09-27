@@ -53,14 +53,13 @@ def test_evaluate_v2_context_given_id_match(app, empty_db_mock_downloads):
     }
 
     with app.test_client() as c:
-        # Get the single model value belonging to gene0
         r = c.post(
             url_for("data_explorer_2.evaluate_v2_context"),
             data=json.dumps(basic_context_request),
             content_type="application/json",
         )
         assert r.status_code == 200, r.status_code
-        # get dimension returns a compressed response, which needs to be unzipped
+        # returns a compressed response, which needs to be unzipped
         response = json.loads(gzip.decompress(r.data).decode("utf8"))
 
         assert response["ids"] == ["2"]
@@ -76,14 +75,13 @@ def test_evaluate_v2_context_given_id_match(app, empty_db_mock_downloads):
     }
 
     with app.test_client() as c:
-        # Get the single model value belonging to gene0
         r = c.post(
             url_for("data_explorer_2.evaluate_v2_context"),
             data=json.dumps(basic_context_request),
             content_type="application/json",
         )
         assert r.status_code == 200, r.status_code
-        # get dimension returns a compressed response, which needs to be unzipped
+        # returns a compressed response, which needs to be unzipped
         response = json.loads(gzip.decompress(r.data).decode("utf8"))
 
         assert response["ids"] == ["1", "3"]
@@ -99,14 +97,13 @@ def test_evaluate_v2_context_given_id_match(app, empty_db_mock_downloads):
     }
 
     with app.test_client() as c:
-        # Get the single model value belonging to gene0
         r = c.post(
             url_for("data_explorer_2.evaluate_v2_context"),
             data=json.dumps(basic_context_request),
             content_type="application/json",
         )
         assert r.status_code == 200, r.status_code
-        # get dimension returns a compressed response, which needs to be unzipped
+        # returns a compressed response, which needs to be unzipped
         response = json.loads(gzip.decompress(r.data).decode("utf8"))
 
         assert response["ids"] == ["ACH-1", "ACH-2"]
@@ -160,14 +157,13 @@ def test_evaluate_v2_context_slice_queries(app, empty_db_mock_downloads):
     }
 
     with app.test_client() as c:
-        # Get the single model value belonging to gene0
         r = c.post(
             url_for("data_explorer_2.evaluate_v2_context"),
             data=json.dumps(basic_context_request),
             content_type="application/json",
         )
         assert r.status_code == 200, r.status_code
-        # get dimension returns a compressed response, which needs to be unzipped
+        # returns a compressed response, which needs to be unzipped
         response = json.loads(gzip.decompress(r.data).decode("utf8"))
 
         assert response["ids"] == ["2", "3"]
@@ -190,14 +186,13 @@ def test_evaluate_v2_context_slice_queries(app, empty_db_mock_downloads):
     }
 
     with app.test_client() as c:
-        # Get the single model value belonging to gene0
         r = c.post(
             url_for("data_explorer_2.evaluate_v2_context"),
             data=json.dumps(basic_context_request),
             content_type="application/json",
         )
         assert r.status_code == 200, r.status_code
-        # get dimension returns a compressed response, which needs to be unzipped
+        # returns a compressed response, which needs to be unzipped
         response = json.loads(gzip.decompress(r.data).decode("utf8"))
 
         assert response["ids"] == ["ACH-2", "ACH-3"]
@@ -225,9 +220,9 @@ def test_evaluate_v2_context_compound_expressions(app, empty_db_mock_downloads):
             entities=genes,
             cell_lines=cell_lines,
             data=[
-                [1.0, 0.1, 0.01],  # gene0, entrez_id 1
-                [2.0, 0.2, 0.02],  # gene1, entrez_id 2
-                [3.0, 0.3, 0.03],  # gene2, entrez_id 3
+                [1.0, 0.1, 0.01],  # gene1
+                [2.0, 0.2, 0.02],  # gene2
+                [3.0, 0.3, 0.03],  # gene3
             ],
         ),
         name=dataset_name,
@@ -265,14 +260,13 @@ def test_evaluate_v2_context_compound_expressions(app, empty_db_mock_downloads):
         },
     }
     with app.test_client() as c:
-        # Get the single model value belonging to gene0
         r = c.post(
             url_for("data_explorer_2.evaluate_v2_context"),
             data=json.dumps(basic_context_request),
             content_type="application/json",
         )
         assert r.status_code == 200, r.status_code
-        # get dimension returns a compressed response, which needs to be unzipped
+        # returns a compressed response, which needs to be unzipped
         response = json.loads(gzip.decompress(r.data).decode("utf8"))
 
         assert response["ids"] == ["2"]
