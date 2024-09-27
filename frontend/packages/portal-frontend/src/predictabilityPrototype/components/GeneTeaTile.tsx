@@ -3,11 +3,7 @@ import React from "react";
 import { Tab, Tabs } from "react-bootstrap";
 import GeneTea from "src/data-explorer-2/components/plot/integrations/GeneTea";
 import PlotSpinner from "src/plot/components/PlotSpinner";
-import {
-  GeneTeaSearchTerm,
-  SCREEN_TYPE_COLORS,
-  TopFeaturesBarData,
-} from "../models/types";
+import { GeneTeaSearchTerm, TopFeaturesBarData } from "../models/types";
 import TopFeaturesOverallTile from "./TopFeaturesOverallTile";
 import TopFeaturesTableTile from "./TopFeaturesTableTile";
 // import styles from "src/predictabilityPrototype/styles/PredictabilityPrototype.scss";

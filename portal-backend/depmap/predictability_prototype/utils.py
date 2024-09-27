@@ -185,12 +185,12 @@ def top_features_overall(gene_symbol, entity_id, screen_type):
 
     unique_gene_symbols = [
         {
-            "name": x,
-            "feature_set": get_feature_set(df_100["dim_type"].iloc[index]),
+            "name": row["feature_label"],
+            "feature_type": row["feature"].split("_")[-1],
             "importance_rank": index + 1,
         }
-        for index, x in enumerate(df_100["feature_label"])
-        if df_100["dim_type"].iloc[index] == "gene"
+        for index, row in df_100.iterrows()
+        if row["dim_type"] == "gene"
     ]
 
     df = df_100.head(10)
@@ -291,7 +291,7 @@ def get_dataset_id_from_taiga_id(
     feature_dataset_id = None
 
     for dataset in matrix_datasets:
-        if dataset.taiga_id == taiga_id:
+        if dataset.taiga_id == taiga_id and data_access.is_breadbox_id(dataset.id):
             feature_dataset_id = dataset.id
             break
 
@@ -365,9 +365,9 @@ def get_top_feature_headers(
         related_type = feature_obj.get_relation_to_entity(entity_id=entity_id)
 
         top_features_metadata[feature_name] = {
-            "feature_name": feature_label,
+            "feature_label": feature_label,
             "feature_importance": feature_importance,
-            "feature_type": feature_type,
+            "feature_type": feature_name.split("_")[-1],
             "pearson": pearson,
             "related_type": related_type,
         }
@@ -407,10 +407,11 @@ def get_top_features(
         pearson = feature_info["pearson"]
 
         slice = slice.dropna()
-        top_features[feature_label] = slice
+        top_features[feature_name] = slice
 
         top_features_metadata[feature_name] = {
-            "feature_name": feature_label,
+            "feature_name": feature_name,
+            "feature_label": feature_label,
             "feature_actuals_values": slice.values.tolist(),
             "feature_actuals_value_labels": slice.index.tolist(),
             "feature_dataset_id": feature_dataset_id,
@@ -571,8 +572,8 @@ def feature_correlation_map_calc(
     feature_names = []
     feature_types = []
 
-    for feature_label in list(top_features.keys()):
-        feature = PrototypePredictiveFeature.get_by_feature_label(feature_label)
+    for feature_name in list(top_features.keys()):
+        feature = PrototypePredictiveFeature.get_by_feature_name(feature_name)
 
         assert feature is not None
 
@@ -582,7 +583,7 @@ def feature_correlation_map_calc(
         feature_types.append(feature_type)
 
         if feature_type == "gene":
-            gene_symbol_feature_types[feature_label] = feature_type
+            gene_symbol_feature_types[feature_name] = feature_type
 
     return {
         "corr": {
@@ -721,10 +722,11 @@ def get_feature_corr_plot(
     feature_dataset_id = full_feature_info["feature_dataset_id"]
 
     rel_features_scatter_plot = None
+
     if data_access.is_continuous(feature_dataset_id):
         rel_features_scatter_plot = get_related_features_scatter(
             gene_symbol=gene_symbol,
-            feature_label=full_feature_info["feature_name"],
+            feature_label=full_feature_info["feature_label"],
             feature_type=full_feature_info["feature_type"],
             feature_slice_values=full_feature_info["feature_actuals_values"],
             feature_slice_index=full_feature_info["feature_actuals_value_labels"],
@@ -756,7 +758,7 @@ def get_feature_waterfall_plot(
     waterfall_plot = None
     if data_access.is_continuous(feature_dataset_id):
         waterfall_plot = get_other_dep_waterfall_plot(
-            feature_label=full_feature_info["feature_name"],
+            feature_label=full_feature_info["feature_label"],
             feature_type=full_feature_info["feature_type"],
             feature_slice_values=full_feature_info["feature_actuals_values"],
             feature_slice_index=full_feature_info["feature_actuals_value_labels"],

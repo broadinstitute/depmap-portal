@@ -139,7 +139,7 @@ const ModelPerformancePanel = ({
               (feature, featureIndex) => (
                 <Panel
                   eventKey={featureIndex}
-                  key={`${modelPerformanceInfo.feature_summaries[feature].feature_name}${modelName}${screenType}`}
+                  key={`${modelPerformanceInfo.feature_summaries[feature].feature_label}${modelName}${screenType}`}
                 >
                   <Panel.Heading>
                     <Panel.Title toggle>
@@ -147,7 +147,7 @@ const ModelPerformancePanel = ({
                         <FeatureCollapsiblePanelHeader
                           feature={
                             modelPerformanceInfo.feature_summaries[feature]
-                              .feature_name
+                              .feature_label
                           }
                           relativeImportance={
                             modelPerformanceInfo.feature_summaries[feature]
@@ -177,7 +177,7 @@ const ModelPerformancePanel = ({
                           modelName={modelName}
                           feature={
                             modelPerformanceInfo.feature_summaries[feature]
-                              .feature_name
+                              .feature_label
                           }
                           featureNameType={feature}
                           featureType={

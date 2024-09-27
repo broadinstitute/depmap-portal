@@ -99,7 +99,7 @@ export type FeatureInfoSummary = {
 };
 
 export type FeatureSummary = {
-  feature_name: string;
+  feature_label: string;
   feature_type: string;
   feature_importance: number;
   related_type: RelatedType | null;
@@ -150,7 +150,7 @@ export type ModelPerformanceInfo = {
 
 export interface GeneTeaSearchTerm {
   name: string;
-  feature_set: string;
+  feature_type: string;
   importance_rank: number;
 }
 
