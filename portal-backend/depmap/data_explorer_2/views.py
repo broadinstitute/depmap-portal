@@ -499,6 +499,35 @@ def evaluate_v2_context():
     )
 
 
+@blueprint.route("/v2/context/summary", methods=["POST"])
+@csrf_protect.exempt
+def get_context_summary():
+    """
+    Get the number of matching labels and candidate labels.
+    "Candidate" labels are all labels belonging to the context's dimension type.
+    """
+    inputs = request.get_json()
+    context = inputs["context"]
+    dimension_type = context.get("dimension_type")
+    if dimension_type is None:
+        abort(400, "v2 Contexts must have a 'dimension_type' field")
+
+    # Load all dimension labels and ids
+    all_labels_by_id = get_all_dimension_labels_by_id(dimension_type)
+
+    # Evaluate each against the context
+    context_evaluator = ContextEvaluator(context, data_access.get_slice_data)
+    ids_matching_context = []
+    for given_id, label in all_labels_by_id.items():
+        if context_evaluator.is_match(str(given_id)):
+            ids_matching_context.append(str(given_id))
+
+    return {
+        "num_candidates": len(all_labels_by_id.keys()),
+        "num_matches": len(ids_matching_context),
+    }
+
+
 # TODO: Remove this endpoint. It's only used for one specific feature type
 # which is compound_experiment. The DE2 UI has a special case for that type
 # where it allows you to start by searching on a compound name alone. Then the
