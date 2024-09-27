@@ -490,8 +490,8 @@ def evaluate_v2_context():
     ids_matching_context = []
     labels_matching_context = []
     for given_id, label in all_labels_by_id.items():
-        if context_evaluator.is_match(str(given_id)):
-            ids_matching_context.append(str(given_id))
+        if context_evaluator.is_match(given_id):
+            ids_matching_context.append(given_id)
             labels_matching_context.append(label)
 
     return make_gzipped_json_response(
@@ -519,8 +519,8 @@ def get_v2_context_summary():
     context_evaluator = ContextEvaluator(context, data_access.get_slice_data)
     ids_matching_context = []
     for given_id, label in all_labels_by_id.items():
-        if context_evaluator.is_match(str(given_id)):
-            ids_matching_context.append(str(given_id))
+        if context_evaluator.is_match(given_id):
+            ids_matching_context.append(given_id)
 
     return {
         "num_candidates": len(all_labels_by_id.keys()),

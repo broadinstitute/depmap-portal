@@ -139,7 +139,7 @@ def get_dataset_feature_labels_by_id(dataset_id: str) -> dict[str, str]:
     Get a mapping of feature IDs to feature labels.
     """
     row_summaries = get_all_row_indices_labels_entity_ids(dataset_id)
-    return {row.entity_id: row.label for row in row_summaries}
+    return {str(row.entity_id): row.label for row in row_summaries}
 
 
 def get_dataset_sample_labels_by_id(dataset_id: str) -> dict[str, str]:

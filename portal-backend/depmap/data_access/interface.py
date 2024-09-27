@@ -17,23 +17,6 @@ from depmap.partials.matrix.models import CellLineSeries
 # portal should use this module for data access exclusively (and not interactive_utils).
 
 
-def get_dataset_ids_by_label(
-    dataset_id: str, axis: Literal["sample", "feature"]
-) -> dict[str, str]:
-    """
-    For the given dataset axis, load all given_ids indexed by label.
-    This is helpful for re-indexing data which has been loaded by label. 
-    """
-    if axis == "feature":
-        labels_by_id = get_dataset_feature_labels_by_id(dataset_id)
-    else:
-        labels_by_id = get_dataset_sample_labels_by_id(dataset_id)
-    # invert the dictionary
-    # Also make sure ids are converted to strings (some legacy IDs are not)
-    ids_by_label = {label: str(id) for id, label in labels_by_id.items()}
-    return ids_by_label
-
-
 def get_all_matrix_datasets() -> list[MatrixDataset]:
     """
     Return all matrix datasets as objects containing config values. 
@@ -179,7 +162,6 @@ def get_dataset_feature_labels_by_id(dataset_id) -> dict[str, str]:
     Other data loading methods return dataframes indexed by labels, but there are occasional
     times where we need the IDs as well. This makes it easy to map between the two.
     """
-    # TODO: update typing to not be str, str
     if is_breadbox_id(dataset_id):
         return breadbox_dao.get_dataset_feature_labels_by_id(dataset_id)
     return interactive_utils.get_dataset_feature_labels_by_id(dataset_id)
@@ -190,10 +172,26 @@ def get_dataset_sample_labels_by_id(dataset_id) -> dict[str, str]:
     Get a mapping of sample labels to given IDs.
     For example, depmap models use cell line names as labels and depmap (ACH) IDs as given IDs. 
     """
-    # TODO: update typing to not be str, str
     if is_breadbox_id(dataset_id):
         return breadbox_dao.get_dataset_sample_labels_by_id(dataset_id)
     return interactive_utils.get_dataset_sample_labels_by_id(dataset_id)
+
+
+def get_dataset_dimension_ids_by_label(
+    dataset_id: str, axis: Literal["sample", "feature"]
+) -> dict[str, str]:
+    """
+    For the given dataset axis, load all given_ids indexed by label.
+    This is helpful for re-indexing data which has been loaded by label. 
+    """
+    if axis == "feature":
+        labels_by_id = get_dataset_feature_labels_by_id(dataset_id)
+    else:
+        labels_by_id = get_dataset_sample_labels_by_id(dataset_id)
+    # invert the dictionary
+    # Also make sure ids are converted to strings (some legacy IDs are not)
+    ids_by_label = {label: str(id) for id, label in labels_by_id.items()}
+    return ids_by_label
 
 
 def get_dataset_feature_labels(dataset_id: str) -> list[str]:
@@ -277,14 +275,14 @@ def get_slice_data(slice_query: SliceQuery) -> pd.Series:
         values_by_label = get_subsetted_df_by_labels(
             slice_query.dataset_id, feature_row_labels=[slice_query.identifier]
         ).squeeze()
-        ids_by_label = get_dataset_ids_by_label(dataset_id, axis="sample")
+        ids_by_label = get_dataset_dimension_ids_by_label(dataset_id, axis="sample")
         return values_by_label.rename(ids_by_label)
 
     elif slice_query.identifier_type == "sample_id":
-        values_by_label: pd.Series = get_subsetted_df_by_ids(
-            slice_query.dataset_id, cell_line_ids=[slice_query.identifier]
+        values_by_label: pd.Series = get_subsetted_df_by_labels(
+            slice_query.dataset_id, sample_col_ids=[slice_query.identifier]
         ).squeeze()
-        ids_by_label = get_dataset_ids_by_label(dataset_id, axis="feature")
+        ids_by_label = get_dataset_dimension_ids_by_label(dataset_id, axis="feature")
         return values_by_label.rename(ids_by_label)
 
     elif slice_query.identifier_type == "sample_label":

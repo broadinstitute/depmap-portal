@@ -4,14 +4,13 @@ from flask import url_for
 import gzip
 
 from depmap.enums import DependencyEnum
-
+from depmap.dataset.models import DependencyDataset
 from tests.factories import (
+    CompoundExperimentFactory,
     GeneFactory,
     MatrixFactory,
-    BiomarkerDatasetFactory,
     DependencyDatasetFactory,
     CellLineFactory,
-    LineageFactory,
 )
 from tests.utilities import interactive_test_utils
 
@@ -21,13 +20,19 @@ def test_evaluate_v2_context_given_id_match(app, empty_db_mock_downloads):
     Test the evaluation of v2 contexts with expressions 
     that use the special 'given_id' variable. 
     """
-    gene0 = GeneFactory(label="gene1")
-    gene1 = GeneFactory(label="gene2")
-    gene2 = GeneFactory(label="gene3")
-    cell_lines = CellLineFactory.create_batch(3)
+    genes = [
+        GeneFactory(label="gene1", entrez_id=1),
+        GeneFactory(label="gene2", entrez_id=2),
+        GeneFactory(label="gene3", entrez_id=3),
+    ]
+    cell_lines = [
+        CellLineFactory(depmap_id="ACH-1", cell_line_display_name="cell_line1"),
+        CellLineFactory(depmap_id="ACH-2", cell_line_display_name="cell_line2"),
+        CellLineFactory(depmap_id="ACH-3", cell_line_display_name="cell_line3"),
+    ]
     crispr_dataset = DependencyDatasetFactory(
         matrix=MatrixFactory(
-            entities=[gene0, gene1, gene2],
+            entities=genes,
             cell_lines=cell_lines,
             data=[[1.0, 10.0, 100.0], [2.0, 20.0, 200.0], [3.0, 30.0, 300.0]],
         ),
@@ -89,7 +94,7 @@ def test_evaluate_v2_context_given_id_match(app, empty_db_mock_downloads):
         "context": {
             "dimension_type": "depmap_model",
             "name": "subset of models",
-            "expr": {"in": [{"var": "given_id"}, ["ACH-0", "ACH-1"]]},
+            "expr": {"in": [{"var": "given_id"}, ["ACH-1", "ACH-2"]]},
         },
     }
 
@@ -104,23 +109,30 @@ def test_evaluate_v2_context_given_id_match(app, empty_db_mock_downloads):
         # get dimension returns a compressed response, which needs to be unzipped
         response = json.loads(gzip.decompress(r.data).decode("utf8"))
 
-        assert response["ids"] == ["ACH-0", "ACH-1"]
-        assert response["labels"] == ["0", "1"]
+        assert response["ids"] == ["ACH-1", "ACH-2"]
+        assert response["labels"] == ["cell_line1", "cell_line2"]
 
 
 def test_evaluate_v2_context_slice_queries(app, empty_db_mock_downloads):
     """
     Test the evaluation of v2 contexts with slice query expressions. 
     """
-    gene0 = GeneFactory(label="gene1")
-    gene1 = GeneFactory(label="gene2")
-    gene2 = GeneFactory(label="gene3")
-    cell_lines = CellLineFactory.create_batch(3)
+
+    genes = [
+        GeneFactory(label="gene1", entrez_id=1),
+        GeneFactory(label="gene2", entrez_id=2),
+        GeneFactory(label="gene3", entrez_id=3),
+    ]
+    cell_lines = [
+        CellLineFactory(depmap_id="ACH-1", cell_line_display_name="cell_line1"),
+        CellLineFactory(depmap_id="ACH-2", cell_line_display_name="cell_line2"),
+        CellLineFactory(depmap_id="ACH-3", cell_line_display_name="cell_line3"),
+    ]
     dataset_name = DependencyEnum.Chronos_Combined
     dataset_id = dataset_name.name
     crispr_dataset = DependencyDatasetFactory(
         matrix=MatrixFactory(
-            entities=[gene0, gene1, gene2],
+            entities=genes,
             cell_lines=cell_lines,
             data=[[1.0, 0.1, 0.01], [2.0, 0.2, 0.02], [3.0, 0.3, 0.03]],
         ),
@@ -131,7 +143,7 @@ def test_evaluate_v2_context_slice_queries(app, empty_db_mock_downloads):
     empty_db_mock_downloads.session.flush()
     interactive_test_utils.reload_interactive_config()
 
-    # Test: Get genes which have a dependency > .15 in the model ACH-1
+    # Test: Get genes which have a dependency > .15 in the model ACH-3
     basic_context_request = {
         "context": {
             "dimension_type": "gene",
@@ -140,7 +152,7 @@ def test_evaluate_v2_context_slice_queries(app, empty_db_mock_downloads):
             "vars": {
                 "model1_var": {
                     "dataset_id": dataset_id,
-                    "identifier": "ACH-1",
+                    "identifier": "ACH-2",
                     "identifier_type": "sample_id",
                 }
             },
@@ -188,23 +200,29 @@ def test_evaluate_v2_context_slice_queries(app, empty_db_mock_downloads):
         # get dimension returns a compressed response, which needs to be unzipped
         response = json.loads(gzip.decompress(r.data).decode("utf8"))
 
-        assert response["ids"] == ["ACH-1", "ACH-2"]
-        assert response["labels"] == ["1", "2"]
+        assert response["ids"] == ["ACH-2", "ACH-3"]
+        assert response["labels"] == ["cell_line2", "cell_line3"]
 
 
 def test_evaluate_v2_context_compound_expressions(app, empty_db_mock_downloads):
     """
     Test the evaluation of v2 contexts with multiple slice query expressions. 
     """
-    gene0 = GeneFactory(label="gene1")
-    gene1 = GeneFactory(label="gene2")
-    gene2 = GeneFactory(label="gene3")
-    cell_lines = CellLineFactory.create_batch(3)
+    genes = [
+        GeneFactory(label="gene1", entrez_id=1),
+        GeneFactory(label="gene2", entrez_id=2),
+        GeneFactory(label="gene3", entrez_id=3),
+    ]
+    cell_lines = [
+        CellLineFactory(depmap_id="ACH-1", cell_line_display_name="cell_line1"),
+        CellLineFactory(depmap_id="ACH-2", cell_line_display_name="cell_line2"),
+        CellLineFactory(depmap_id="ACH-3", cell_line_display_name="cell_line3"),
+    ]
     dataset_name = DependencyEnum.Chronos_Combined
     dataset_id = dataset_name.name
     crispr_dataset = DependencyDatasetFactory(
         matrix=MatrixFactory(
-            entities=[gene0, gene1, gene2],
+            entities=genes,
             cell_lines=cell_lines,
             data=[
                 [1.0, 0.1, 0.01],  # gene0, entrez_id 1
@@ -220,8 +238,8 @@ def test_evaluate_v2_context_compound_expressions(app, empty_db_mock_downloads):
     interactive_test_utils.reload_interactive_config()
 
     # Test: Get genes which have BOTH:
-    # - a dependency > .15 in the model ACH-1
-    # - and a dependency < 0.025 in model ACH-2
+    # - a dependency > .15 in the model ACH-2
+    # - and a dependency < 0.025 in model ACH-3
     basic_context_request = {
         "context": {
             "dimension_type": "gene",
@@ -235,12 +253,12 @@ def test_evaluate_v2_context_compound_expressions(app, empty_db_mock_downloads):
             "vars": {
                 "model1_var": {
                     "dataset_id": dataset_id,
-                    "identifier": "ACH-1",
+                    "identifier": "ACH-2",
                     "identifier_type": "sample_id",
                 },
                 "model2_var": {
                     "dataset_id": dataset_id,
-                    "identifier": "ACH-2",
+                    "identifier": "ACH-3",
                     "identifier_type": "sample_id",
                 },
             },

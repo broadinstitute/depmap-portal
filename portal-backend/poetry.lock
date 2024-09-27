@@ -678,13 +678,13 @@ files = [
 
 [[package]]
 name = "depmap-compute"
-version = "0.1.6"
+version = "0.1.8"
 description = "Code related to computations shared between the Depmap Portal and BreadBox"
 optional = false
 python-versions = ">=3.9,<4.0"
 files = [
-    {file = "depmap_compute-0.1.6-py3-none-any.whl", hash = "sha256:5bf0cd117a17ad235b1960d3e0b6fb56502dac11d342083c8bf28352afcb1d58"},
-    {file = "depmap_compute-0.1.6.tar.gz", hash = "sha256:bfc5b071e569f2e85a8a23b033470b8c6c4157ff8361bd156b11d7c6590fde4f"},
+    {file = "depmap_compute-0.1.8-py3-none-any.whl", hash = "sha256:c46963590e684ea2a5d284574770f3b4529d083016e9d6bbe8f70e942d7c15e2"},
+    {file = "depmap_compute-0.1.8.tar.gz", hash = "sha256:58e405922cd51b74a12aafaab15f68a2a0df655fe0cbd6543e00bcdc7ff18e0f"},
 ]
 
 [package.dependencies]
@@ -5055,4 +5055,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "549ca9fd4ff13001366b10a53ab8eed57d24c5ab035ef0bd973418c4478a6522"
+content-hash = "7a7d5ede0a7f1cbad9543af99f366a31eb98fda177bbf477cef0d0222dfa6177"
