@@ -50,20 +50,6 @@ def get_dimension_labels_of_dataset(dimension_type: str, dataset: MatrixDataset)
     return set(labels)
 
 
-def get_dimension_ids_of_dataset(dimension_type: str, dataset: MatrixDataset):
-    if dimension_type not in (dataset.feature_type, dataset.sample_type):
-        return set()
-
-    if dimension_type == dataset.sample_type:
-        return set(data_access.get_dataset_sample_ids(dataset.id))
-    elif dimension_type == dataset.feature_type:
-        return set(data_access.get_dataset_feature_ids(dataset.id))
-    else:
-        raise ValueError(
-            f"Dataset '{dataset.id}' does not have a dimension of type '{dimension_type}'"
-        )
-
-
 def get_reoriented_df(
     dataset_id: str,
     row_labels: Optional[list[str]],
@@ -223,14 +209,25 @@ def get_dimension_labels_across_datasets(dimension_type):
     return sorted(list(all_labels))
 
 
-def get_dimension_ids_across_datasets(dimension_type):
-    all_ids = set()
-
+def get_all_dimension_labels_by_id(dimension_type: str) -> dict[str, str]:
+    """Get all dimension labels and IDs across datasets."""
+    all_labels_by_id = {}
+    # For ech dataset, if it has the dimension type, get its IDs and labels
     for dataset in get_all_supported_continuous_datasets():
-        dataset_ids = get_dimension_ids_of_dataset(dimension_type, dataset)
-        all_ids = all_ids.union(dataset_ids)
+        if dimension_type == dataset.sample_type:
+            dataset_labels_by_id = data_access.get_dataset_sample_labels_by_id(
+                dataset.id
+            )
+        elif dimension_type == dataset.feature_type:
+            dataset_labels_by_id = data_access.get_dataset_feature_labels_by_id(
+                dataset.id
+            )
+        else:
+            dataset_labels_by_id = {}
 
-    return sorted(list(all_ids))
+        all_labels_by_id.update(dataset_labels_by_id)
+
+    return all_labels_by_id
 
 
 def get_dimension_labels_to_datasets_mapping(dimension_type: str):
@@ -431,19 +428,3 @@ def get_union_of_index_labels(index_type, dataset_ids):
 
 def clear_cache():
     get_vector_labels.cache_clear()
-
-
-def get_ids_matching_v2_context(context):
-    # TODO: have this return both ids and labels
-    # TODO: test this
-    dimension_type = context["dimension_type"]
-    all_dimension_ids = get_dimension_ids_across_datasets(dimension_type)
-
-    context_evaluator = ContextEvaluator(context, data_access.get_slice_data)
-
-    ids_matching_context = []
-    for given_id in all_dimension_ids:
-        if context_evaluator.is_match(str(given_id)):
-            ids_matching_context.append(given_id)
-
-    return ids_matching_context

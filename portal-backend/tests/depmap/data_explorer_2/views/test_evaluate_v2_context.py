@@ -21,9 +21,9 @@ def test_evaluate_v2_context_given_id_match(app, empty_db_mock_downloads):
     Test the evaluation of v2 contexts with expressions 
     that use the special 'given_id' variable. 
     """
-    gene0 = GeneFactory(label="gene0")
-    gene1 = GeneFactory(label="gene1")
-    gene2 = GeneFactory(label="gene2")
+    gene0 = GeneFactory(label="gene1")
+    gene1 = GeneFactory(label="gene2")
+    gene2 = GeneFactory(label="gene3")
     cell_lines = CellLineFactory.create_batch(3)
     crispr_dataset = DependencyDatasetFactory(
         matrix=MatrixFactory(
@@ -59,6 +59,7 @@ def test_evaluate_v2_context_given_id_match(app, empty_db_mock_downloads):
         response = json.loads(gzip.decompress(r.data).decode("utf8"))
 
         assert response["ids"] == ["2"]
+        assert response["labels"] == ["gene2"]
 
     # Test: Get all genes except for the ones in the given set
     basic_context_request = {
@@ -81,6 +82,7 @@ def test_evaluate_v2_context_given_id_match(app, empty_db_mock_downloads):
         response = json.loads(gzip.decompress(r.data).decode("utf8"))
 
         assert response["ids"] == ["1", "3"]
+        assert response["labels"] == ["gene1", "gene3"]
 
     # Test: Get all models with ids in given set
     basic_context_request = {
@@ -103,15 +105,16 @@ def test_evaluate_v2_context_given_id_match(app, empty_db_mock_downloads):
         response = json.loads(gzip.decompress(r.data).decode("utf8"))
 
         assert response["ids"] == ["ACH-0", "ACH-1"]
+        assert response["labels"] == ["0", "1"]
 
 
 def test_evaluate_v2_context_slice_queries(app, empty_db_mock_downloads):
     """
     Test the evaluation of v2 contexts with slice query expressions. 
     """
-    gene0 = GeneFactory(label="gene0")
-    gene1 = GeneFactory(label="gene1")
-    gene2 = GeneFactory(label="gene2")
+    gene0 = GeneFactory(label="gene1")
+    gene1 = GeneFactory(label="gene2")
+    gene2 = GeneFactory(label="gene3")
     cell_lines = CellLineFactory.create_batch(3)
     dataset_name = DependencyEnum.Chronos_Combined
     dataset_id = dataset_name.name
@@ -156,6 +159,7 @@ def test_evaluate_v2_context_slice_queries(app, empty_db_mock_downloads):
         response = json.loads(gzip.decompress(r.data).decode("utf8"))
 
         assert response["ids"] == ["2", "3"]
+        assert response["labels"] == ["gene2", "gene3"]
 
     # Test: Get models which have a dependency of < .5 on gene1
     basic_context_request = {
@@ -166,7 +170,7 @@ def test_evaluate_v2_context_slice_queries(app, empty_db_mock_downloads):
             "vars": {
                 "gene_var": {
                     "dataset_id": dataset_id,
-                    "identifier": "gene1",
+                    "identifier": "gene2",
                     "identifier_type": "feature_label",
                 }
             },
@@ -185,15 +189,16 @@ def test_evaluate_v2_context_slice_queries(app, empty_db_mock_downloads):
         response = json.loads(gzip.decompress(r.data).decode("utf8"))
 
         assert response["ids"] == ["ACH-1", "ACH-2"]
+        assert response["labels"] == ["1", "2"]
 
 
 def test_evaluate_v2_context_compound_expressions(app, empty_db_mock_downloads):
     """
     Test the evaluation of v2 contexts with multiple slice query expressions. 
     """
-    gene0 = GeneFactory(label="gene0")
-    gene1 = GeneFactory(label="gene1")
-    gene2 = GeneFactory(label="gene2")
+    gene0 = GeneFactory(label="gene1")
+    gene1 = GeneFactory(label="gene2")
+    gene2 = GeneFactory(label="gene3")
     cell_lines = CellLineFactory.create_batch(3)
     dataset_name = DependencyEnum.Chronos_Combined
     dataset_id = dataset_name.name
@@ -253,3 +258,4 @@ def test_evaluate_v2_context_compound_expressions(app, empty_db_mock_downloads):
         response = json.loads(gzip.decompress(r.data).decode("utf8"))
 
         assert response["ids"] == ["2"]
+        assert response["labels"] == ["gene2"]

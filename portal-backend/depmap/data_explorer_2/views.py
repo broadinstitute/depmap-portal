@@ -26,10 +26,10 @@ from depmap.data_explorer_2.performance import generate_performance_report
 from depmap.data_explorer_2.datasets import get_datasets_matching_context_with_details
 from depmap.data_explorer_2.utils import (
     get_aliases_matching_labels,
+    get_all_dimension_labels_by_id,
     get_all_supported_continuous_datasets,
     get_dimension_labels_across_datasets,
     get_dimension_labels_to_datasets_mapping,
-    get_ids_matching_v2_context,
     get_file_and_release_from_dataset,
     get_reoriented_df,
     get_series_from_de2_slice_id,
@@ -47,7 +47,11 @@ from depmap.data_explorer_2.datatypes import hardcoded_metadata_slices
 from depmap.download.models import ReleaseTerms
 from depmap.download.views import get_file_record, get_release_record
 
-from depmap_compute.context import decode_slice_id, LegacyContextEvaluator
+from depmap_compute.context import (
+    decode_slice_id,
+    LegacyContextEvaluator,
+    ContextEvaluator,
+)
 
 blueprint = Blueprint(
     "data_explorer_2",
@@ -474,12 +478,25 @@ def evaluate_v2_context():
     """
     inputs = request.get_json()
     context = inputs["context"]
-    if "dimension_type" not in context:
+    dimension_type = context.get("dimension_type")
+    if dimension_type is None:
         abort(400, "v2 Contexts must have a 'dimension_type' field")
 
-    ids_matching_context = get_ids_matching_v2_context(context)
+    # Load all dimension labels and ids
+    all_labels_by_id = get_all_dimension_labels_by_id(dimension_type)
 
-    return make_gzipped_json_response({"ids": ids_matching_context})
+    # Evaluate each against the context
+    context_evaluator = ContextEvaluator(context, data_access.get_slice_data)
+    ids_matching_context = []
+    labels_matching_context = []
+    for given_id, label in all_labels_by_id.items():
+        if context_evaluator.is_match(str(given_id)):
+            ids_matching_context.append(str(given_id))
+            labels_matching_context.append(label)
+
+    return make_gzipped_json_response(
+        {"ids": ids_matching_context, "labels": labels_matching_context,}
+    )
 
 
 # TODO: Remove this endpoint. It's only used for one specific feature type
