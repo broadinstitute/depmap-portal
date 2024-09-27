@@ -17,7 +17,7 @@ from depmap.partials.matrix.models import CellLineSeries
 # portal should use this module for data access exclusively (and not interactive_utils).
 
 
-def get_ids_by_label(
+def get_dataset_ids_by_label(
     dataset_id: str, axis: Literal["sample", "feature"]
 ) -> dict[str, str]:
     """
@@ -277,14 +277,14 @@ def get_slice_data(slice_query: SliceQuery) -> pd.Series:
         values_by_label = get_subsetted_df_by_labels(
             slice_query.dataset_id, feature_row_labels=[slice_query.identifier]
         ).squeeze()
-        ids_by_label = get_ids_by_label(dataset_id, axis="sample")
+        ids_by_label = get_dataset_ids_by_label(dataset_id, axis="sample")
         return values_by_label.rename(ids_by_label)
 
     elif slice_query.identifier_type == "sample_id":
         values_by_label: pd.Series = get_subsetted_df_by_ids(
             slice_query.dataset_id, cell_line_ids=[slice_query.identifier]
         ).squeeze()
-        ids_by_label = get_ids_by_label(dataset_id, axis="feature")
+        ids_by_label = get_dataset_ids_by_label(dataset_id, axis="feature")
         return values_by_label.rename(ids_by_label)
 
     elif slice_query.identifier_type == "sample_label":

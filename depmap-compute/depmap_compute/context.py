@@ -42,11 +42,9 @@ class ContextEvaluator:
     ):
         """
         A `context` dict should have:
-            - a `dimension_type` such as "depmap_model"
+            - a `dimension_type` such as "depmap_model" (which is not used in this evaluator)
             - an `expr` such as { "==": [ { "var": "slice/lineage/1/label" }, "Breast" ] }
         """
-        # TODO: does this even use the dimension type here?
-        self.dimension_type = context["dimension_type"]
         self.expr = _encode_dots_in_vars(context["expr"])
         self.slice_query_vars = context["vars"]
 
@@ -67,11 +65,7 @@ class ContextEvaluator:
         are bound by using a magic dict (_JsonLogicVarLookup) that does lookups lazily.
         """
         dictionary_override = _JsonLogicVarLookup(
-            self.dimension_type,
-            given_id,
-            self.cache,
-            self.get_slice_data,
-            self.slice_query_vars,
+            given_id, self.cache, self.get_slice_data, self.slice_query_vars,
         )
 
         try:
@@ -100,13 +94,11 @@ class _JsonLogicVarLookup(dict):
 
     def __init__(
         self,
-        dimension_type: str,
         given_id: str,
         cache: dict,
         get_slice_data: Callable[[SliceQuery], pd.Series],
         slice_query_vars: dict[str, dict[str, str]],
     ):
-        self.dimension_type = dimension_type
         self.given_id = given_id
         self.get_slice_data = get_slice_data
         # The cache is stored outside of this class so it can be reused.
@@ -252,18 +244,6 @@ def _encode_dots_in_vars(expr: dict):
         return node
 
     return walk(expr, None)
-
-
-def _encode_slice_query(self, slice_query: dict):
-    """
-    Slice queries are dictionaries, which are not hashable.
-    In order to use them as keys in our cache, they need to be converted to tuples.
-    """
-    return (
-        slice_query["dataset_id"],
-        slice_query["identifier"],
-        slice_query["identifier_type"],
-    )
 
 
 def decode_slice_id(slice_id) -> tuple[str, str, str]:
