@@ -1,4 +1,5 @@
 /* eslint-disable react/require-default-props */
+/* eslint-disable no-nested-ternary */
 import React, { useEffect, useMemo, useRef } from "react";
 import type {
   Config,

@@ -20,10 +20,10 @@ const formatTextWrap = (text: string, maxLineLength: number) => {
     if (lineLength + word.length >= maxLineLength) {
       lineLength = word.length;
       return result + `<br>${word}`; // don't add spaces upfront
-    } else {
-      lineLength += word.length + (result ? 1 : 0);
-      return result ? result + ` ${word}` : `${word}`; // add space only when needed
     }
+
+    lineLength += word.length + (result ? 1 : 0);
+    return result ? result + ` ${word}` : `${word}`; // add space only when needed
   }, "");
 };
 
