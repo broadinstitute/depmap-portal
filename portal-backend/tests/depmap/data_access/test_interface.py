@@ -3,7 +3,7 @@ import numpy as np
 from depmap import data_access
 from depmap.dataset.models import DependencyDataset
 from depmap.settings.settings import TestConfig
-from depmap_compute.slice import SliceQuery, SliceIdentifierType
+from depmap_compute.slice import SliceQuery
 from tests.utilities import interactive_test_utils
 from tests.utilities.override_fixture import override
 from tests.factories import (

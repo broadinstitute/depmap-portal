@@ -501,7 +501,7 @@ def evaluate_v2_context():
 
 @blueprint.route("/v2/context/summary", methods=["POST"])
 @csrf_protect.exempt
-def get_context_summary():
+def get_v2_context_summary():
     """
     Get the number of matching labels and candidate labels.
     "Candidate" labels are all labels belonging to the context's dimension type.

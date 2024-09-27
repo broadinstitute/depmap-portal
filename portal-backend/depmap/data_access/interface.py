@@ -34,19 +34,6 @@ def get_ids_by_label(
     return ids_by_label
 
 
-def get_all_matrix_dataset_ids() -> set[str]:
-    """
-    Get the ids of all datasets which should be visible to the user. 
-    Legacy dataset ids are formatted like: 'dataset_name'
-    Breadbox dataset ids are formatted like: 'breadbox/<dataset-UUID>'
-    The differing formats are used so that we can easily check the source of a given dataset.
-    """
-    legacy_dataset_ids = _get_visible_legacy_dataset_ids()
-    breadbox_dataset_ids = breadbox_dao.get_all_matrix_dataset_ids()
-
-    return legacy_dataset_ids.union(breadbox_dataset_ids)
-
-
 def get_all_matrix_datasets() -> list[MatrixDataset]:
     """
     Return all matrix datasets as objects containing config values. 
@@ -192,6 +179,7 @@ def get_dataset_feature_labels_by_id(dataset_id) -> dict[str, str]:
     Other data loading methods return dataframes indexed by labels, but there are occasional
     times where we need the IDs as well. This makes it easy to map between the two.
     """
+    # TODO: update typing to not be str, str
     if is_breadbox_id(dataset_id):
         return breadbox_dao.get_dataset_feature_labels_by_id(dataset_id)
     return interactive_utils.get_dataset_feature_labels_by_id(dataset_id)
@@ -202,6 +190,7 @@ def get_dataset_sample_labels_by_id(dataset_id) -> dict[str, str]:
     Get a mapping of sample labels to given IDs.
     For example, depmap models use cell line names as labels and depmap (ACH) IDs as given IDs. 
     """
+    # TODO: update typing to not be str, str
     if is_breadbox_id(dataset_id):
         return breadbox_dao.get_dataset_sample_labels_by_id(dataset_id)
     return interactive_utils.get_dataset_sample_labels_by_id(dataset_id)

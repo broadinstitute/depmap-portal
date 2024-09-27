@@ -170,6 +170,10 @@ def valid_row(dataset_id: str, row_name: str) -> bool:
 
 def get_tabular_dataset_column(dataset_id: str, column_name: str) -> pd.Series:
     df = extensions.breadbox.client.get_tabular_dataset_data(
-        dataset_id=dataset_id, columns=[column_name], strict=True,
+        dataset_id=dataset_id,
+        columns=[column_name],
+        identifier=None,
+        indices=None,
+        strict=True,
     )
     return df.squeeze()
