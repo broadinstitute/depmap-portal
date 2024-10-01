@@ -78,20 +78,15 @@ export const tableFormSchema: Required<Pick<RJSFSchema, "properties">> &
       title: "Group Id",
       type: "string",
       description:
-        "ID of the group the dataset belongs to. Required for non-transient datasets. The public group is `00000000-0000-0000-0000-000000000000`",
+        "ID of the group the dataset belongs to. Required for non-transient datasets.",
       format: "uuid",
     },
     priority: {
       title: "Priority",
       minimum: 1,
-      type: "integer",
+      type: ["integer", "null"],
       description:
         "Numeric value assigned to the dataset with `1` being highest priority within the `data_type`, used for displaying order of datasets to show for a specific `data_type` in UI.",
-    },
-    taiga_id: {
-      title: "Taiga Id",
-      type: "string",
-      description: "Taiga ID the dataset is sourced from.",
     },
     is_transient: {
       // TODO: This should be required param in bb
@@ -103,7 +98,7 @@ export const tableFormSchema: Required<Pick<RJSFSchema, "properties">> &
     },
     dataset_metadata: {
       title: "Dataset Metadata",
-      type: "object",
+      type: ["object", "null"],
       description:
         "Contains a dictionary of additional dataset values that are not already provided above.",
     },

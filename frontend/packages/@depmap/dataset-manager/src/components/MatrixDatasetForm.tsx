@@ -191,7 +191,6 @@ const uiSchema: UiSchema = {
     "allowed_values",
     "data_type",
     "priority",
-    "taiga_id",
     "dataset_metadata",
     "is_transient",
     "format",
