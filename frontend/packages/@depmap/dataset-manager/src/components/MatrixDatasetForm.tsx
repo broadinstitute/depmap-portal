@@ -9,7 +9,7 @@ import {
 } from "@rjsf/utils";
 import validator from "@rjsf/validator-ajv8";
 import { matrixFormSchema } from "../models/matrixDatasetFormSchema";
-import DatasetMetadataForm from "./DatasetMetadataForm";
+import { CustomDatasetMetadata } from "./DatasetMetadataForm";
 import { FormGroup, ControlLabel } from "react-bootstrap";
 import {
   DataType,
@@ -20,24 +20,6 @@ import {
 } from "@depmap/types";
 import { Option, TagInput } from "@depmap/common-components";
 import { ActionMeta, ValueType } from "react-select";
-
-// TODO: copied from MatrixDatasetForm
-const CustomDatasetMetadata = function (props: FieldProps) {
-  const { onChange } = props;
-
-  return (
-    <div id="customDatasetMetadata">
-      <DatasetMetadataForm
-        isEdit={false} // TODO: Unhardcode
-        forwardDatasetMetadataDict={(metadataDict: {
-          [key: string]: string;
-        }) => {
-          onChange(metadataDict);
-        }}
-      />
-    </div>
-  );
-};
 
 function transformErrors(errors: RJSFValidationError[]) {
   // eslint-disable-next-line array-callback-return, consistent-return
