@@ -7,17 +7,17 @@ export const matrixUpdateFormSchema: Required<Pick<RJSFSchema, "properties">> &
   type: "object",
   properties: {
     name: {
-      type: ["string", "null"],
+      type: ["string"],
       title: "Name",
       description: "Name of dataset",
     },
     data_type: {
-      type: ["string", "null"],
+      type: ["string"],
       title: "Data Type",
       description: "Data type grouping for your dataset",
     },
     group_id: {
-      type: ["string", "null"],
+      type: ["string"],
       format: "uuid",
       title: "Group Id",
       description: "Id of the group the dataset belongs to",
@@ -42,7 +42,7 @@ export const matrixUpdateFormSchema: Required<Pick<RJSFSchema, "properties">> &
       default: "matrix",
     },
     units: {
-      type: ["string", "null"],
+      type: ["string"],
       title: "Units",
       description: "Units for the values in the dataset",
     },

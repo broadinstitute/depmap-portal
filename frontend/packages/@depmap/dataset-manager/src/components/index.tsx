@@ -204,9 +204,7 @@ export default function Datasets() {
                 setShowUpdateDatasetMetadataModal(true);
                 setDatasetToEdit(dataset.id);
                 setDatasetMetadataToEdit(
-                  dataset.dataset_metadata
-                    ? dataset.dataset_metadata
-                    : undefined
+                  dataset.dataset_metadata ? dataset.dataset_metadata : null
                 ); // handled in DatasetMetadataForm.tsx:261
               }}
             >
@@ -450,7 +448,7 @@ export default function Datasets() {
       const updatedDatasetInfo: DatasetUpdateArgs = {
         id: selectedDataset.id,
         group_id: selectedDataset.group.id,
-        dataset_metadata: { dataset_metadata: metadata },
+        dataset_metadata: metadata,
       };
 
       const dataset = await dapi.updateDataset(updatedDatasetInfo);
