@@ -38,6 +38,13 @@ def compute_dimension(
     dataset = data_access.get_matrix_dataset(dataset_id)
     is_transpose = dataset.feature_type == index_type
 
+    if aggregation == "correlation":
+        print("dimension:", dimension)
+        raise ValueError(
+            "compute_dimension() called with `aggregation == 'correlation'."
+            "Use the /get_correlation endpoint for this!"
+        )
+
     # record to the log which data users request
     log_dataset_access("compute_dimension", dataset_id)
 
