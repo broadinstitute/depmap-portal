@@ -1,15 +1,14 @@
-from typing import Optional
+from typing import Any, Literal, Optional
 import pandas as pd
 
+from depmap_compute.slice import SliceQuery
 from depmap.data_access import breadbox_dao
 from depmap.data_access.breadbox_dao import is_breadbox_id
 from depmap.data_access.models import MatrixDataset
-from depmap.entity.models import Entity
 from depmap.interactive import interactive_utils
 from depmap.interactive.common_utils import RowSummary
-from depmap.interactive.config.categories import CategoryConfig
 from depmap.interactive.config.models import Config, DatasetSortKey
-from depmap.partials.matrix.models import CellLineSeries, Matrix
+from depmap.partials.matrix.models import CellLineSeries
 
 # This data access interface will eventually only contains functions
 # which can be supported through both breadbox and the legacy backend.
@@ -130,7 +129,7 @@ def get_dataset_units(dataset_id: str) -> Optional[str]:
 def get_row_of_values(dataset_id: str, feature: str) -> CellLineSeries:
     """
     Gets a row of numeric or string values, indexed by depmap_id
-    for a given dataset and feature name.
+    for a given dataset and feature label.
     """
     if is_breadbox_id(dataset_id):
         return breadbox_dao.get_row_of_values(dataset_id=dataset_id, feature=feature)
@@ -178,6 +177,23 @@ def get_dataset_sample_labels_by_id(dataset_id) -> dict[str, str]:
     return interactive_utils.get_dataset_sample_labels_by_id(dataset_id)
 
 
+def get_dataset_dimension_ids_by_label(
+    dataset_id: str, axis: Literal["sample", "feature"]
+) -> dict[str, str]:
+    """
+    For the given dataset axis, load all given_ids indexed by label.
+    This is helpful for re-indexing data which has been loaded by label. 
+    """
+    if axis == "feature":
+        labels_by_id = get_dataset_feature_labels_by_id(dataset_id)
+    else:
+        labels_by_id = get_dataset_sample_labels_by_id(dataset_id)
+    # invert the dictionary
+    # Also make sure ids are converted to strings (some legacy IDs are not)
+    ids_by_label = {label: str(id) for id, label in labels_by_id.items()}
+    return ids_by_label
+
+
 def get_dataset_feature_labels(dataset_id: str) -> list[str]:
     """
     Get a list of all feature/entity labels for the given dataset.
@@ -185,6 +201,15 @@ def get_dataset_feature_labels(dataset_id: str) -> list[str]:
     if is_breadbox_id(dataset_id):
         return breadbox_dao.get_dataset_feature_labels(dataset_id)
     return interactive_utils.get_dataset_feature_labels(dataset_id)
+
+
+def get_dataset_feature_ids(dataset_id: str) -> list[str]:
+    """
+    Get a list of all feature/entity given_ids for the given dataset.
+    """
+    if is_breadbox_id(dataset_id):
+        return breadbox_dao.get_dataset_feature_ids(dataset_id)
+    return interactive_utils.get_dataset_feature_ids(dataset_id)
 
 
 def get_dataset_sample_ids(dataset_id: str) -> list[str]:
@@ -233,6 +258,59 @@ def valid_row(dataset_id: str, row_name: str) -> bool:
     if is_breadbox_id(dataset_id):
         return breadbox_dao.valid_row(dataset_id, row_name)
     return interactive_utils.valid_row(dataset_id, row_name)
+
+
+def get_slice_data(slice_query: SliceQuery) -> pd.Series:
+    """
+    Loads data for the given slice query. 
+    The result will be a pandas series indexed by sample/feature ID 
+    (regardless of the identifier_type used in the query).
+    """
+    dataset_id = slice_query.dataset_id
+
+    if slice_query.identifier_type == "feature_id":
+        raise NotImplementedError()
+
+    elif slice_query.identifier_type == "feature_label":
+        values_by_label = get_subsetted_df_by_labels(
+            slice_query.dataset_id, feature_row_labels=[slice_query.identifier]
+        ).squeeze()
+        ids_by_label = get_dataset_dimension_ids_by_label(dataset_id, axis="sample")
+        return values_by_label.rename(ids_by_label)
+
+    elif slice_query.identifier_type == "sample_id":
+        values_by_label: pd.Series = get_subsetted_df_by_labels(
+            slice_query.dataset_id, sample_col_ids=[slice_query.identifier]
+        ).squeeze()
+        ids_by_label = get_dataset_dimension_ids_by_label(dataset_id, axis="feature")
+        return values_by_label.rename(ids_by_label)
+
+    elif slice_query.identifier_type == "sample_label":
+        raise NotImplementedError()
+
+    elif slice_query.identifier_type == "column":
+        return get_tabular_dataset_column(dataset_id, slice_query.identifier)
+
+    else:
+        raise Exception("Unrecognized slice query identifier type")
+
+
+##################################################
+# METHODS BELOW ARE ONLY SUPPORTABLE BY BREADBOX #
+##################################################
+
+
+def get_tabular_dataset_column(dataset_id: str, column_name: str) -> pd.Series:
+    """
+    Get a column of values from the given tabular dataset. 
+    The result will be a series indexed by given id. 
+    """
+    if is_breadbox_id(dataset_id):
+        return breadbox_dao.get_tabular_dataset_column(dataset_id, column_name)
+    else:
+        raise NotImplementedError(
+            "Tabular datasets are not supported outside of breadbox."
+        )
 
 
 ######################################################################

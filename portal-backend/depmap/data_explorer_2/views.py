@@ -11,7 +11,6 @@ from flask import (
     request,
 )
 
-from depmap_compute.context import ContextEvaluator, decode_slice_id
 from depmap import data_access
 from depmap.extensions import csrf_protect
 from depmap.access_control import is_current_user_an_admin
@@ -27,6 +26,7 @@ from depmap.data_explorer_2.performance import generate_performance_report
 from depmap.data_explorer_2.datasets import get_datasets_matching_context_with_details
 from depmap.data_explorer_2.utils import (
     get_aliases_matching_labels,
+    get_all_dimension_labels_by_id,
     get_all_supported_continuous_datasets,
     get_dimension_labels_across_datasets,
     get_dimension_labels_to_datasets_mapping,
@@ -46,6 +46,12 @@ from depmap.data_explorer_2.datatypes import hardcoded_metadata_slices
 
 from depmap.download.models import ReleaseTerms
 from depmap.download.views import get_file_record, get_release_record
+
+from depmap_compute.context import (
+    decode_slice_id,
+    LegacyContextEvaluator,
+    ContextEvaluator,
+)
 
 blueprint = Blueprint(
     "data_explorer_2",
@@ -184,7 +190,7 @@ def get_correlation():
         if not is_transpose
         else data_access.get_dataset_sample_type(dataset_id)
     )
-    row_context_evaluator = ContextEvaluator(context, slice_to_dict)
+    row_context_evaluator = LegacyContextEvaluator(context, slice_to_dict)
     dataset_label = data_access.get_dataset_label(dataset_id)
 
     for label in get_vector_labels(dataset_id, is_transpose):
@@ -236,10 +242,10 @@ def get_correlation():
         col_context_evaluator = None
 
         if dimension_key == "x" and distinguish1:
-            col_context_evaluator = ContextEvaluator(distinguish1, slice_to_dict)
+            col_context_evaluator = LegacyContextEvaluator(distinguish1, slice_to_dict)
 
         if dimension_key == "x2" and distinguish2:
-            col_context_evaluator = ContextEvaluator(distinguish2, slice_to_dict)
+            col_context_evaluator = LegacyContextEvaluator(distinguish2, slice_to_dict)
 
         for label in get_vector_labels(dataset_id, not is_transpose):
             if not col_context_evaluator or col_context_evaluator.is_match(label):
@@ -453,7 +459,7 @@ def get_labels_matching_context():
     inputs = request.get_json()
     context = inputs["context"]
     context_type = context["context_type"]
-    context_evaluator = ContextEvaluator(context, slice_to_dict)
+    context_evaluator = LegacyContextEvaluator(context, slice_to_dict)
     input_labels = get_dimension_labels_across_datasets(context_type)
 
     labels_matching_context = []
@@ -462,6 +468,64 @@ def get_labels_matching_context():
             labels_matching_context.append(label)
 
     return make_gzipped_json_response(labels_matching_context)
+
+
+@blueprint.route("/v2/context", methods=["POST"])
+@csrf_protect.exempt
+def evaluate_v2_context():
+    """
+    Get the full list of labels (in any dataset) which match the given context.
+    """
+    inputs = request.get_json()
+    context = inputs["context"]
+    dimension_type = context.get("dimension_type")
+    if dimension_type is None:
+        abort(400, "v2 Contexts must have a 'dimension_type' field")
+
+    # Load all dimension labels and ids
+    all_labels_by_id = get_all_dimension_labels_by_id(dimension_type)
+
+    # Evaluate each against the context
+    context_evaluator = ContextEvaluator(context, data_access.get_slice_data)
+    ids_matching_context = []
+    labels_matching_context = []
+    for given_id, label in all_labels_by_id.items():
+        if context_evaluator.is_match(given_id):
+            ids_matching_context.append(given_id)
+            labels_matching_context.append(label)
+
+    return make_gzipped_json_response(
+        {"ids": ids_matching_context, "labels": labels_matching_context,}
+    )
+
+
+@blueprint.route("/v2/context/summary", methods=["POST"])
+@csrf_protect.exempt
+def get_v2_context_summary():
+    """
+    Get the number of matching labels and candidate labels.
+    "Candidate" labels are all labels belonging to the context's dimension type.
+    """
+    inputs = request.get_json()
+    context = inputs["context"]
+    dimension_type = context.get("dimension_type")
+    if dimension_type is None:
+        abort(400, "v2 Contexts must have a 'dimension_type' field")
+
+    # Load all dimension labels and ids
+    all_labels_by_id = get_all_dimension_labels_by_id(dimension_type)
+
+    # Evaluate each against the context
+    context_evaluator = ContextEvaluator(context, data_access.get_slice_data)
+    ids_matching_context = []
+    for given_id, label in all_labels_by_id.items():
+        if context_evaluator.is_match(given_id):
+            ids_matching_context.append(given_id)
+
+    return {
+        "num_candidates": len(all_labels_by_id.keys()),
+        "num_matches": len(ids_matching_context),
+    }
 
 
 # TODO: Remove this endpoint. It's only used for one specific feature type
@@ -504,7 +568,7 @@ def get_context_summary():
     inputs = request.get_json()
     context = inputs["context"]
     context_type = context["context_type"]
-    context_evaluator = ContextEvaluator(context, slice_to_dict)
+    context_evaluator = LegacyContextEvaluator(context, slice_to_dict)
     input_labels = get_dimension_labels_across_datasets(context_type)
 
     labels_matching_context = []
