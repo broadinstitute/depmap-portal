@@ -6,6 +6,7 @@ from sqlalchemy import and_
 import pandas as pd
 import numpy as np
 
+from breadbox.schemas.types import UpdateDimensionType
 from breadbox.db.session import SessionWithUser
 from breadbox.config import Settings
 from breadbox.crud.access_control import PUBLIC_GROUP_ID
@@ -13,10 +14,11 @@ from breadbox.crud.dataset import (
     delete_dataset,
     get_properties_to_index,
     populate_search_index,
+    get_dataset,
 )
 from breadbox.crud.dataset_reference import add_id_mapping
 from breadbox.io.data_validation import validate_all_columns_have_types
-from breadbox.schemas.custom_http_exception import UserError
+from breadbox.schemas.custom_http_exception import UserError, ResourceNotFoundError
 from breadbox.schemas.dataset import TabularDatasetIn
 from breadbox.models.dataset import (
     AnnotationType,
@@ -328,30 +330,58 @@ def update_dimension_type(
     user: str,
     filestore_location: str,
     dimension_type: DimensionType,
-    metadata_dataset: TabularDataset,
-    properties_to_index: List[str],
+    dimension_type_update_fields: UpdateDimensionType,
 ):
+    given_updated_fields = dimension_type_update_fields.dict(exclude_unset=True)
 
-    if dimension_type.dataset != metadata_dataset:
-        assert metadata_dataset.index_type_name == dimension_type.name
-        old_dataset = dimension_type.dataset
-        dimension_type.dataset = metadata_dataset
+    if (
+        "metadata_dataset_id" in given_updated_fields
+        and "properties_to_index" in given_updated_fields
+    ):
+        metadata_dataset = get_dataset(
+            db, user, given_updated_fields["metadata_dataset_id"]
+        )
+        if metadata_dataset is None:
+            raise ResourceNotFoundError(
+                f"Metadata table {given_updated_fields['metadata_dataset_id']} not found"
+            )
 
-        # make sure the metadata dataset is marked as non-transient and is in the public group
-        if metadata_dataset.is_transient:
-            metadata_dataset.is_transient = False  # pyright: ignore
+        if not isinstance(metadata_dataset, TabularDataset):
+            raise ResourceNotFoundError(
+                f"Metadata table {given_updated_fields['metadata_dataset_id']} was not a tabular dataset",
+            )
 
-        if metadata_dataset.group_id != PUBLIC_GROUP_ID:
-            metadata_dataset.group_id = PUBLIC_GROUP_ID  # pyright: ignore
+        if metadata_dataset.index_type_name != dimension_type.name:
+            raise ResourceNotFoundError(
+                f"Metadata table {given_updated_fields['metadata_dataset_id']} was not indexed by {dimension_type.name}",
+            )
 
-        if old_dataset is not None:
-            delete_dataset(db, user, old_dataset, filestore_location)
+        if dimension_type.dataset != metadata_dataset:
+            assert metadata_dataset.index_type_name == dimension_type.name
+            old_dataset = dimension_type.dataset
+            dimension_type.dataset = metadata_dataset
 
-    _set_properties_to_index(
-        db, properties_to_index, metadata_dataset.id, metadata_dataset.group_id
-    )
+            # make sure the metadata dataset is marked as non-transient and is in the public group
+            if metadata_dataset.is_transient:
+                metadata_dataset.is_transient = False  # pyright: ignore
 
-    populate_search_index(db, user, metadata_dataset.id)
+            if metadata_dataset.group_id != PUBLIC_GROUP_ID:
+                metadata_dataset.group_id = PUBLIC_GROUP_ID  # pyright: ignore
+
+            if old_dataset is not None:
+                delete_dataset(db, user, old_dataset, filestore_location)
+
+        _set_properties_to_index(
+            db,
+            given_updated_fields["properties_to_index"],
+            metadata_dataset.id,
+            metadata_dataset.group_id,
+        )
+
+        populate_search_index(db, user, metadata_dataset.id)
+
+    if "display_name" in given_updated_fields:
+        dimension_type.display_name = given_updated_fields["display_name"]
 
     db.flush()
 

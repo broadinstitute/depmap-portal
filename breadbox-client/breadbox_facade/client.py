@@ -17,6 +17,7 @@ from breadbox_client.api.data_types import remove_data_type as remove_data_type_
 from breadbox_client.api.datasets import add_dataset_uploads as add_dataset_uploads_client
 from breadbox_client.api.datasets import get_dataset as get_dataset_client
 from breadbox_client.api.datasets import get_dataset_data as get_dataset_data_client
+from breadbox_client.api.datasets import get_tabular_dataset_data as get_tabular_dataset_data_client
 from breadbox_client.api.datasets import get_dataset_features as get_dataset_features_client
 from breadbox_client.api.datasets import get_dataset_samples as get_dataset_samples_client
 from breadbox_client.api.datasets import get_datasets as get_datasets_client
@@ -58,6 +59,7 @@ from breadbox_client.models import (
     ComputeResponse,
     DatasetMetadata,
     DataType,
+    FeatureSampleIdentifier,
     FeatureResponse,
     FeatureTypeOut,
     GroupIn,
@@ -75,6 +77,7 @@ from breadbox_client.models import (
     TableDatasetParamsDatasetMetadataType0,
     TableDatasetParamsFormat,
     TabularDatasetResponse,
+    TabularDimensionsInfo,
     UpdateDimensionType,
     UploadFileResponse,
     ValueType,
@@ -157,6 +160,32 @@ class BBClient:
             dataset_id=dataset_id,
             client=self.client,
             body=request_params,
+        )
+        response = self._parse_client_response(breadbox_response)
+        try:
+            return pd.DataFrame.from_dict(response)
+        except Exception as e:
+            raise Exception(e, "Unable to parse breadbox response into dataframe.")
+        
+    def get_tabular_dataset_data(
+        self, 
+        dataset_id: str,
+        columns: Optional[list[str]],
+        identifier: Optional[Literal["id", "label"]],
+        indices: Optional[list[str]],
+        strict: bool = False,
+    ):
+        
+        request_params = TabularDimensionsInfo(
+            columns=columns,
+            identifier=FeatureSampleIdentifier(identifier) if identifier else UNSET,
+            indices=indices,
+        )
+        breadbox_response = get_tabular_dataset_data_client.sync_detailed(
+            dataset_id=dataset_id,
+            client=self.client,
+            body=request_params,
+            strict=strict,
         )
         response = self._parse_client_response(breadbox_response)
         try:
@@ -354,8 +383,9 @@ class BBClient:
         breadbox_response = add_dimension_type_client.sync_detailed(client=self.client, body=params)
         return self._parse_client_response(breadbox_response)
 
-    def update_dimension_type(self, name: str, metadata_dataset_id: str, properties_to_index: List[str]):
-        params = UpdateDimensionType(metadata_dataset_id, properties_to_index)
+    def update_dimension_type(self, name: str, metadata_dataset_id: str, properties_to_index: List[str], display_name=UNSET):
+        # display_name is set to UNSET for backwards compatibility
+        params = UpdateDimensionType(display_name=display_name, metadata_dataset_id=metadata_dataset_id, properties_to_index=properties_to_index)
 
         breadbox_response = update_dimension_type_client.sync_detailed(name=name, client=self.client, body=params)
         return self._parse_client_response(breadbox_response)
