@@ -745,12 +745,13 @@ def test_end_to_end_with_mismatched_metadata(
     # appropriately.
     def create_dim_type(axis):
         type_name = f"{axis}_name"
+        display_name = f"{axis} Name"
         id_column = f"{axis}_id"
         prefix = axis[0].upper()
 
         dim_type_fields = {
             "name": type_name,
-            "display_name": type_name,
+            "display_name": display_name,
             "axis": axis,
             "id_column": id_column,
         }

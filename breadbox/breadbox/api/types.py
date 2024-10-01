@@ -21,7 +21,7 @@ from ..schemas.types import (
     SampleTypeOut,
 )
 from ..io.data_validation import validate_dimension_type_metadata
-from ..schemas.custom_http_exception import UserError
+from ..schemas.custom_http_exception import UserError, ResourceNotFoundError
 from breadbox.models.dataset import AnnotationType
 import breadbox.crud.dataset as dataset_crud
 from breadbox.schemas.types import DimensionType, UpdateDimensionType, AddDimensionType
@@ -596,36 +596,11 @@ def update_dimension_type_endpoint(
 
     dimension_type = type_crud.get_dimension_type(db, name)
     if dimension_type is None:
-        raise HTTPException(404, f"Dimension type {name} not found")
-
-    metadata_dataset = dataset_crud.get_dataset(
-        db, user, dimension_type_update.metadata_dataset_id
-    )
-    if metadata_dataset is None:
-        raise HTTPException(
-            404, f"Metadata table {dimension_type_update.metadata_dataset_id} not found"
-        )
-
-    if not isinstance(metadata_dataset, dataset_crud.TabularDataset):
-        raise HTTPException(
-            404,
-            f"Metadata table {dimension_type_update.metadata_dataset_id} was not a tabular dataset",
-        )
-
-    if metadata_dataset.index_type_name != name:
-        raise HTTPException(
-            404,
-            f"Metadata table {dimension_type_update.metadata_dataset_id} was not indexed by {name}",
-        )
+        raise ResourceNotFoundError(f"Dimension type {name} not found")
 
     with transaction(db):
         type_crud.update_dimension_type(
-            db,
-            user,
-            settings.filestore_location,
-            dimension_type,
-            metadata_dataset,
-            dimension_type_update.properties_to_index,
+            db, user, settings.filestore_location, dimension_type, dimension_type_update
         )
 
         updated = type_crud.get_dimension_type(db, name)
