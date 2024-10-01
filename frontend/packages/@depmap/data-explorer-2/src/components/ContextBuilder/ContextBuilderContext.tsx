@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { fetchMetadataSlices, MetadataSlices } from "@depmap/data-explorer-2";
+import { fetchMetadataSlices, MetadataSlices } from "../../api";
 
 const ContextBuilderContext = createContext({
   metadataSlices: {} as MetadataSlices,

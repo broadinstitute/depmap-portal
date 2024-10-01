@@ -1,7 +1,8 @@
 const path = require("path");
-const devConfig = require("../webpack.dev.js");
+const devConfigFn = require("../webpack.dev.js");
 const tsConfig = require("./tsconfig.storybook.json");
 
+const devConfig = devConfigFn({}, {});
 devConfig.module.rules[0].use[0].options = {};
 
 module.exports = {

@@ -1,14 +1,14 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Button, Modal, Radio } from "react-bootstrap";
 import {
+  ContextNameForm,
   fetchContextLabels,
   fetchContext,
   getDimensionTypeLabel,
   fetchMetadataColumn,
   pluralize,
 } from "@depmap/data-explorer-2";
-import ContextNameForm from "src/data-explorer-2/components/ContextBuilder/ContextNameForm";
-import styles from "src/data-explorer-2/styles/ContextBuilder.scss";
+import styles from "src/data-explorer-2/styles/ContextManager.scss";
 
 interface Props {
   contextName: string;
@@ -89,7 +89,7 @@ function DownloadContextModal({
           {contextName}”
         </Modal.Title>
       </Modal.Header>
-      <Modal.Body className={styles.DownloadContextModal}>
+      <Modal.Body>
         <ContextNameForm
           label="Filename"
           value={filename}

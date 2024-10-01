@@ -17,6 +17,7 @@ from breadbox_client.api.data_types import remove_data_type as remove_data_type_
 from breadbox_client.api.datasets import add_dataset_uploads as add_dataset_uploads_client
 from breadbox_client.api.datasets import get_dataset as get_dataset_client
 from breadbox_client.api.datasets import get_dataset_data as get_dataset_data_client
+from breadbox_client.api.datasets import get_tabular_dataset_data as get_tabular_dataset_data_client
 from breadbox_client.api.datasets import get_dataset_features as get_dataset_features_client
 from breadbox_client.api.datasets import get_dataset_samples as get_dataset_samples_client
 from breadbox_client.api.datasets import get_datasets as get_datasets_client
@@ -58,6 +59,7 @@ from breadbox_client.models import (
     ComputeResponse,
     DatasetMetadata,
     DataType,
+    FeatureSampleIdentifier,
     FeatureResponse,
     FeatureTypeOut,
     GroupIn,
@@ -75,6 +77,7 @@ from breadbox_client.models import (
     TableDatasetParamsDatasetMetadataType0,
     TableDatasetParamsFormat,
     TabularDatasetResponse,
+    TabularDimensionsInfo,
     UpdateDimensionType,
     UploadFileResponse,
     ValueType,
@@ -157,6 +160,32 @@ class BBClient:
             dataset_id=dataset_id,
             client=self.client,
             body=request_params,
+        )
+        response = self._parse_client_response(breadbox_response)
+        try:
+            return pd.DataFrame.from_dict(response)
+        except Exception as e:
+            raise Exception(e, "Unable to parse breadbox response into dataframe.")
+        
+    def get_tabular_dataset_data(
+        self, 
+        dataset_id: str,
+        columns: Optional[list[str]],
+        identifier: Optional[Literal["id", "label"]],
+        indices: Optional[list[str]],
+        strict: bool = False,
+    ):
+        
+        request_params = TabularDimensionsInfo(
+            columns=columns,
+            identifier=FeatureSampleIdentifier(identifier) if identifier else UNSET,
+            indices=indices,
+        )
+        breadbox_response = get_tabular_dataset_data_client.sync_detailed(
+            dataset_id=dataset_id,
+            client=self.client,
+            body=request_params,
+            strict=strict,
         )
         response = self._parse_client_response(breadbox_response)
         try:

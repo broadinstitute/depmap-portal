@@ -5,7 +5,7 @@ import extendReactSelect from "../utils/extend-react-select";
 import renderConditionally from "../utils/render-conditionally";
 
 interface Props extends Omit<ReactSelectProps, "options"> {
-  label: React.ReactNode;
+  label?: React.ReactNode;
   inlineLabel?: boolean;
   /*
    * react-select uses options formatted like:
@@ -22,7 +22,7 @@ interface Props extends Omit<ReactSelectProps, "options"> {
    * `onChangeUsesWrappedValue` prop described below.
    */
   options: Record<string, string> | object[];
-  value: string | null;
+  value: string | { label: string; value: string } | null;
   enable: boolean;
   onChange: (value: string | null) => void;
   // HACK: `onChange` usually unwraps the value from react-select for you. On
@@ -68,11 +68,11 @@ const workaroundFilter = createFilter({
 });
 
 function PlotConfigSelect({
-  label,
   options,
   enable,
   value,
   onChange,
+  label = null,
   onChangeUsesWrappedValue = false,
   width = "max-content",
   ...otherProps
@@ -89,7 +89,8 @@ function PlotConfigSelect({
     ? options
     : Object.keys(options).map(toOption);
 
-  const reactSelectValue = toOption(value);
+  const reactSelectValue =
+    value !== null && typeof value === "object" ? value : toOption(value);
 
   return (
     <ExtendedSelect

@@ -2389,7 +2389,7 @@
   },
   "info": {
     "title": "Breadbox",
-    "version": "3.7.0"
+    "version": "3.7.3"
   },
   "openapi": "3.1.0",
   "paths": {
@@ -6102,6 +6102,7 @@
     },
     "/types/feature": {
       "get": {
+        "deprecated": true,
         "operationId": "get_feature_types",
         "responses": {
           "200": {
@@ -6165,6 +6166,7 @@
         ]
       },
       "post": {
+        "deprecated": true,
         "operationId": "add_feature_type",
         "requestBody": {
           "content": {
@@ -6246,6 +6248,7 @@
     },
     "/types/feature/{feature_type_name}/metadata": {
       "patch": {
+        "deprecated": true,
         "operationId": "update_feature_type_metadata",
         "parameters": [
           {
@@ -6338,6 +6341,7 @@
     },
     "/types/feature/{feature_type}": {
       "delete": {
+        "deprecated": true,
         "description": "Delete a feature type, if the user is an admin.",
         "operationId": "remove_feature_type",
         "parameters": [
@@ -6419,6 +6423,7 @@
     },
     "/types/sample": {
       "get": {
+        "deprecated": true,
         "operationId": "get_sample_types",
         "responses": {
           "200": {
@@ -6482,6 +6487,7 @@
         ]
       },
       "post": {
+        "deprecated": true,
         "operationId": "add_sample_type",
         "requestBody": {
           "content": {
@@ -6563,6 +6569,7 @@
     },
     "/types/sample/{sample_type_name}/metadata": {
       "patch": {
+        "deprecated": true,
         "operationId": "update_sample_type_metadata",
         "parameters": [
           {
@@ -6655,6 +6662,7 @@
     },
     "/types/sample/{sample_type}": {
       "delete": {
+        "deprecated": true,
         "description": "Delete a sample type, if the user is an admin.",
         "operationId": "remove_sample_type",
         "parameters": [

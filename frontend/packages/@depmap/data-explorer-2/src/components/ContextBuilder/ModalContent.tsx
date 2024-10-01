@@ -1,20 +1,17 @@
 import React, { useReducer, useState } from "react";
 import jsonBeautify from "json-beautify";
 import { Button } from "react-bootstrap";
-import { isCompleteExpression } from "@depmap/data-explorer-2";
 import { DataExplorerContext } from "@depmap/types";
-import contextBuilderReducer from "src/data-explorer-2/components/ContextBuilder/contextBuilderReducer";
-import { useEvaluatedExpressionResult } from "src/data-explorer-2/components/ContextBuilder/Expression/utils";
-import {
-  denormalizeExpr,
-  normalizeExpr,
-} from "src/data-explorer-2/components/ContextBuilder/contextBuilderUtils";
-import ContextNameForm from "src/data-explorer-2/components/ContextBuilder/ContextNameForm";
-import Expression from "src/data-explorer-2/components/ContextBuilder/Expression";
-import styles from "src/data-explorer-2/styles/ContextBuilder.scss";
+import { isCompleteExpression } from "../../utils/misc";
+import ContextNameForm from "./ContextNameForm";
+import Expression from "./Expression";
+import contextBuilderReducer from "./contextBuilderReducer";
+import { denormalizeExpr, normalizeExpr } from "./contextBuilderUtils";
+import { useEvaluatedExpressionResult } from "./Expression/utils";
+import styles from "../../styles/ContextBuilder.scss";
 
 interface Props {
-  context: any;
+  context: DataExplorerContext | { context_type: string };
   onClickSave: (context: DataExplorerContext) => void;
   onClickCancel: () => void;
   editInCellLineSelector: (
@@ -23,12 +20,9 @@ interface Props {
   ) => Promise<string[]>;
 }
 
-type Expr = Record<string, any> | null;
-
 const SHOW_DEBUG_INFO = false;
 
-const emptyExpr: Expr = { "==": [null, null] };
-const emptyGroup: Expr = denormalizeExpr(emptyExpr);
+const emptyGroup = denormalizeExpr({ "==": [null, null] });
 
 function ModalContent({
   context,
@@ -36,10 +30,10 @@ function ModalContent({
   onClickCancel,
   editInCellLineSelector,
 }: Props) {
-  const [name, setName] = useState(context.name || "");
+  const [name, setName] = useState("name" in context ? context.name : "");
   const [expr, dispatch] = useReducer(
     contextBuilderReducer,
-    denormalizeExpr(context.expr) || emptyGroup
+    denormalizeExpr("expr" in context ? context.expr : null) || emptyGroup
   );
   const [shouldShowValidation, setShouldShowValidation] = useState(false);
 
@@ -86,7 +80,7 @@ function ModalContent({
             }}
           >
             <code style={{ fontSize: 10 }}>
-              {jsonBeautify(expr, null as any, 2, 80)}
+              {jsonBeautify(expr, null!, 2, 80)}
             </code>
           </pre>
         </div>

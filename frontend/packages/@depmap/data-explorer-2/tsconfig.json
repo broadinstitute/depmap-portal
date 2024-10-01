@@ -8,6 +8,7 @@
     { "path": "../data-slicer" },
     { "path": "../downloads" },
     { "path": "../globals" },
+    { "path": "../interactive" },
     { "path": "../types" }
   ]
 }

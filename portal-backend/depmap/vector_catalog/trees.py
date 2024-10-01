@@ -4,7 +4,7 @@ from flask import current_app
 
 from enum import Enum
 from sqlalchemy.orm.exc import NoResultFound
-from depmap import data_access
+from depmap.interactive import interactive_utils
 from depmap.vector_catalog.models import (
     Tree,
     NodeTemplate,
@@ -33,9 +33,9 @@ class InteractiveTree(Tree):
         dataset_id, feature, feature_type = SliceSerializer.decode_slice_id(id)
 
         if feature_type == SliceRowType.entity_id:
-            feature = (
-                data_access.get_entity_class(dataset_id).get_by_id(int(feature)).label
-            )
+            entity_class = interactive_utils.get_entity_class(dataset_id)
+            assert entity_class is not None
+            feature = entity_class.get_by_id(int(feature)).label
         return dataset_id, feature
 
     @staticmethod
@@ -70,11 +70,11 @@ class InteractiveTree(Tree):
         # This check is to accommodate the interactive config hack for mutations_prioritized. See depmap/interactive/config/models.py::_get_standard_datasets
         # mutations_prioritized is a biomarker which is currently defaulted to be defined there as continuous but we actually want it to be categorical
         # TODO: Make mutations_prioritized interactive config nonambiguous and move it to a categorical config.
-        elif data_access.is_categorical(dataset):
+        elif interactive_utils.is_categorical(dataset):
             row_type = SliceRowType.label
         # get_entity_class does not work on categorical/binary datasets
-        elif data_access.is_continuous(dataset):
-            entity_class = data_access.get_entity_class(dataset)
+        elif interactive_utils.is_continuous(dataset):
+            entity_class = interactive_utils.get_entity_class(dataset)
             if entity_class:
                 try:
                     features = [

@@ -68,6 +68,7 @@ def _get_label_aliases_starting_with(dataset_id, prefix, max=10):
     entity_ids = _find_entity_ids_by_label_alias_prefix(dataset_id, prefix, max)
 
     entity_class = get_entity_class(dataset_id)
+    assert entity_class is not None
     list_of_label_aliases = []
     for entity_id in entity_ids:
         # calling on the entity_class enforces that we only get objects of the correct entity subclass

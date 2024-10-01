@@ -3,6 +3,7 @@ from typing import DefaultDict, Dict, Optional, Set
 
 from flask import current_app
 
+from depmap.entity.models import Entity
 from depmap.enums import DataTypeEnum
 from depmap.dataset.models import Dataset
 from depmap.download.utils import get_download_url
@@ -164,7 +165,7 @@ def legacy_get_entity_class_name(dataset_id):
     return dataset_config["entity_class_name"]
 
 
-def get_entity_class(dataset_id):
+def get_entity_class(dataset_id) -> Optional[Entity]:
     entity_class_name = legacy_get_entity_class_name(dataset_id)
     if entity_class_name is None:
         return None

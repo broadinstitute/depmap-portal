@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 from dataclasses import dataclass
 from ..discourse.client import DiscourseClient
 from ..discourse.utils import reformat_date
@@ -31,6 +31,7 @@ class Subcategory:
 class RootCategory:
     title: str
     subcategories: List[Subcategory]
+    default_topic: Optional[Topic] = None
 
 
 def create_sanitizer() -> Sanitizer:
@@ -72,17 +73,19 @@ def add_forum_link_to_html(
     forum_url: str, topic_id: int, topic_slug: str, topic_html: str
 ):
     soup = BeautifulSoup(str(topic_html), features="html.parser")
+    link_p = soup.new_tag("p")
     link_tag = soup.new_tag("a")
     link_tag.attrs.update(
         {
             "href": urljoin(forum_url, f"/t/{topic_slug}/{topic_id}"),
             "target": "_blank",
-            "style": "float:right; margin: 20px; font-weight: bold",
+            "style": "float:right; padding-top: 50px; padding-bottom: 20px; font-weight: bold",
         }
     )
     link_tag.string = "View Post in Forum"
+    link_p.append(link_tag)
     last_element = soup.find_all()[-1]
-    last_element.insert_after(link_tag)
+    last_element.insert_after(link_p)
     return str(soup)
 
 
@@ -114,7 +117,10 @@ def modify_html(
 
 
 def get_root_category_subcategory_topics(
-    client: DiscourseClient, sanitizer: Sanitizer, category_slug: str
+    client: DiscourseClient,
+    sanitizer: Sanitizer,
+    category_slug: str,
+    default_topic_id: Optional[int],
 ):
     # Get the root category
     category = client.get_category_with_subcategories(category_slug)
@@ -155,6 +161,8 @@ def get_root_category_subcategory_topics(
                 creation_date=creation_date,
                 update_date=update_date,
             )
+            if default_topic_id == topic_id:
+                root_category.default_topic = topic
 
             # Add Topic to list of topics for Subcategory
             sub_category.topics.append(topic)

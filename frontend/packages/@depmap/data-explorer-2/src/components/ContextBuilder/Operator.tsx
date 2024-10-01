@@ -1,11 +1,8 @@
 import React from "react";
-import Select from "react-windowed-select";
-import {
-  isListOperator,
-  opLabels,
-} from "src/data-explorer-2/components/ContextBuilder/contextBuilderUtils";
-import { ContextBuilderReducerAction } from "src/data-explorer-2/components/ContextBuilder/contextBuilderReducer";
-import styles from "src/data-explorer-2/styles/ContextBuilder.scss";
+import ReactSelect from "react-select";
+import { Expr, isListOperator, opLabels } from "./contextBuilderUtils";
+import { ContextBuilderReducerAction } from "./contextBuilderReducer";
+import styles from "../../styles/ContextBuilder.scss";
 
 type OperatorType = keyof typeof opLabels;
 type ValueType = "continuous" | "categorical" | "list_strings" | null;
@@ -31,7 +28,7 @@ const toOperatorOptions = (
 };
 
 type Props = {
-  expr: any;
+  expr: Expr;
   path: (string | number)[];
   op: OperatorType;
   dispatch: React.Dispatch<ContextBuilderReducerAction>;
@@ -39,12 +36,13 @@ type Props = {
   isLoading: boolean;
 };
 
-const getNextValue = (expr: any, op: OperatorType, nextOp: OperatorType) => {
-  const [lhs, rhs] = expr[op];
+const getNextValue = (expr: Expr, op: OperatorType, nextOp: OperatorType) => {
+  const [lhs, rhs] = (expr as Record<OperatorType, Expr[]>)[op];
   let nextValue = [lhs, rhs];
 
   if (isListOperator(op)) {
-    nextValue = [lhs, rhs?.length ? rhs[0] : null];
+    const firstElement = Array.isArray(rhs) && rhs.length > 0 ? rhs[0] : null;
+    nextValue = [lhs, firstElement];
   }
 
   if (isListOperator(nextOp)) {
@@ -80,7 +78,7 @@ function Operator({ expr, op, path, dispatch, value_type, isLoading }: Props) {
   const label = toOperatorLabel(value_type, op);
 
   return (
-    <Select
+    <ReactSelect
       className={styles.opSelect}
       styles={{
         control: (base: React.CSSProperties) => ({
@@ -91,17 +89,23 @@ function Operator({ expr, op, path, dispatch, value_type, isLoading }: Props) {
       isLoading={isLoading}
       isDisabled={!isLoading && !value_type}
       value={value_type && !isLoading ? { value: op, label } : null}
-      options={value_type ? toOperatorOptions(value_type, options) : null}
-      onChange={(option: { value: OperatorType }) => {
+      options={value_type ? toOperatorOptions(value_type, options) : []}
+      onChange={(option) => {
         dispatch({
           type: "update-value",
           payload: {
             path,
-            value: getNextValue(expr, op, option.value),
+            value: getNextValue(
+              expr,
+              op,
+              (option as { value: OperatorType }).value
+            ),
           },
         });
       }}
-      menuPortalTarget={document.querySelector("#modal-container")}
+      menuPortalTarget={
+        document.querySelector("#modal-container") as HTMLElement
+      }
       placeholder=""
     />
   );

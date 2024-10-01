@@ -45,6 +45,7 @@ from pydantic import Json
     response_model=SampleTypeOut,
     response_model_by_alias=False,
     response_model_exclude_none=True,
+    deprecated=True,
 )
 def add_sample_type(
     name: str = Form(...),
@@ -173,6 +174,7 @@ def add_dimension_type(
     response_model=FeatureTypeOut,
     response_model_by_alias=False,
     response_model_exclude_none=True,
+    deprecated=True,
 )
 def add_feature_type(
     name: Annotated[str, Form(...)],
@@ -246,6 +248,7 @@ def add_feature_type(
     response_model=List[SampleTypeOut],
     response_model_by_alias=False,
     response_model_exclude_none=True,
+    deprecated=True,
 )
 def get_sample_types(db: SessionWithUser = Depends(get_db_with_user)):
     samples = type_crud.get_dimension_types(db, axis="sample")
@@ -258,6 +261,7 @@ def get_sample_types(db: SessionWithUser = Depends(get_db_with_user)):
     response_model=List[FeatureTypeOut],
     response_model_by_alias=False,
     response_model_exclude_none=True,
+    deprecated=True,
 )
 def get_feature_types(db: SessionWithUser = Depends(get_db_with_user)):
     features = type_crud.get_dimension_types(db, axis="feature")
@@ -269,6 +273,7 @@ def get_feature_types(db: SessionWithUser = Depends(get_db_with_user)):
     operation_id="update_sample_type_metadata",
     response_model=SampleTypeOut,
     response_model_exclude_none=True,
+    deprecated=True,
 )
 def update_sample_type_metadata(
     sample_type_name: str,
@@ -366,6 +371,7 @@ def update_sample_type_metadata(
     operation_id="update_feature_type_metadata",
     response_model=FeatureTypeOut,
     response_model_exclude_none=True,
+    deprecated=True,
 )
 def update_feature_type_metadata(
     feature_type_name: str,
@@ -446,7 +452,7 @@ def update_feature_type_metadata(
 
 
 @router.delete(
-    "/sample/{sample_type}", operation_id="remove_sample_type",
+    "/sample/{sample_type}", operation_id="remove_sample_type", deprecated=True
 )
 def delete_sample_type(
     sample_type: str,
@@ -480,7 +486,7 @@ def delete_sample_type(
 
 
 @router.delete(
-    "/feature/{feature_type}", operation_id="remove_feature_type",
+    "/feature/{feature_type}", operation_id="remove_feature_type", deprecated=True
 )
 def delete_feature_type(
     feature_type: str,

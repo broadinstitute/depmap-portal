@@ -737,7 +737,7 @@ def test_catalog_path_other_label(app, empty_db_mock_downloads, mock_breadbox_cl
         {
             "id": f"breadbox/{breadbox_dataset_uuid}",
             "label": "Breadbox Dataset 1",
-            "childValue": "Breadbox Dataset 1",
+            "childValue": f"breadbox/{breadbox_dataset_uuid}",
             "terminal": False,
             "url": None,
             "group": None,
@@ -925,7 +925,7 @@ def test_catalog_path_breadbox_feature(
         expected_dataset_child_node = {
             "id": f"breadbox/{dataset_uuid}",
             "label": "Breadbox Dataset 1",
-            "childValue": "Breadbox Dataset 1",
+            "childValue": f"breadbox/{dataset_uuid}",
             "terminal": False,
             "url": None,
             "group": None,

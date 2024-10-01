@@ -6,7 +6,6 @@ import {
   DataTypeStrings,
   OutGroupType,
 } from "./models/types";
-import { normalizeExpr } from "src/data-explorer-2/components/ContextBuilder/contextBuilderUtils";
 import { DataExplorerContext } from "@depmap/types";
 import qs from "qs";
 import { Filter } from "src/common/models/discoveryAppFilters";
@@ -220,7 +219,7 @@ export function getDataExplorerContextFromSelections(
   const context = {
     name: de2ContextName,
     context_type: "depmap_model",
-    expr: normalizeExpr(exp),
+    expr: exp,
   };
 
   return context;
@@ -259,7 +258,7 @@ export function getGeneDependencyContexts(
   const inGroupContext = {
     name: `${selectedContextName}`,
     context_type,
-    expr: normalizeExpr(exp),
+    expr: exp,
   };
 
   function getOutgroupContext(
@@ -274,20 +273,20 @@ export function getGeneDependencyContexts(
         return {
           name: `Not ${ingroupName}`,
           context_type: "depmap_model",
-          expr: normalizeExpr({
+          expr: {
             and: [{ "!=": [{ var: inGroupSliceId }, ingroupName] }],
-          }),
+          },
         };
       case OutGroupType.Lineage:
         return {
           name: `Other ${topContext}`,
           context_type: "depmap_model",
-          expr: normalizeExpr({
+          expr: {
             and: [
               { "!=": [{ var: inGroupSliceId }, ingroupName] },
               { "==": [{ var: lSliceId }, topContext] },
             ],
-          }),
+          },
         };
       case OutGroupType.Type: {
         const bloodLineages = ["Myeloid", "Lymphoid"];
@@ -295,24 +294,24 @@ export function getGeneDependencyContexts(
           return {
             name: `Other Heme`,
             context_type: "depmap_model",
-            expr: normalizeExpr({
+            expr: {
               and: [
                 { "!=": [{ var: inGroupSliceId }, ingroupName] },
                 { in: [{ var: lSliceId }, bloodLineages] },
               ],
-            }),
+            },
           };
         }
         return {
           name: `Other Solid`,
           context_type: "depmap_model",
-          expr: normalizeExpr({
+          expr: {
             and: [
               { "!=": [{ var: inGroupSliceId }, ingroupName] },
               { "!=": [{ var: lSliceId }, "Myeloid"] },
               { "!=": [{ var: lSliceId }, "Lymphoid"] },
             ],
-          }),
+          },
         };
       }
       default:

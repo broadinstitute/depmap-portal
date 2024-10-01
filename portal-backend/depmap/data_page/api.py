@@ -1,10 +1,11 @@
 import os
 from typing import List, Union
+
+from depmap import data_access
 from depmap.dataset.models import BiomarkerDataset, DependencyDataset
 from depmap.download.utils import get_download_url
 from depmap.enums import BiomarkerEnum, DependencyEnum
 from flask_restplus import Namespace, Resource
-from depmap.data_access import interface as data_access
 from flask import current_app
 import pandas as pd
 

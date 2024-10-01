@@ -1,17 +1,31 @@
-/* eslint react/jsx-props-no-spreading: "off" */
-import React, { useCallback, useRef } from "react";
+import React, { ClipboardEventHandler, useCallback, useRef } from "react";
 import cx from "classnames";
-import Select from "react-windowed-select";
-import { OptimizedSelectOption } from "@depmap/data-explorer-2";
+import Select, { Props as ReactSelectProps } from "react-select";
 import { getConfirmation } from "@depmap/common-components";
-import styles from "src/data-explorer-2/styles/ContextBuilder.scss";
+import OptimizedSelectOption from "../OptimizedSelectOption";
+import { ContextBuilderReducerAction } from "./contextBuilderReducer";
+import styles from "../../styles/ContextBuilder.scss";
 
-const selectStyles = {
-  control: (base: any) => ({
+interface Props {
+  dispatch: React.Dispatch<ContextBuilderReducerAction>;
+  expr: string[] | null;
+  options: { label: string; value: string }[] | undefined;
+  path: (string | number)[];
+  shouldShowValidation: boolean;
+}
+
+declare global {
+  interface Window {
+    clipboardData: DataTransfer;
+  }
+}
+
+const selectStyles: ReactSelectProps["styles"] = {
+  control: (base) => ({
     ...base,
     fontSize: 13,
   }),
-  menu: (base: any) => ({
+  menu: (base) => ({
     ...base,
     fontSize: 12,
     minWidth: "100%",
@@ -40,8 +54,12 @@ const confirmPasteUnknownTokens = (unknownTokens: string[]) => {
 
 async function pastedTextToSliceLabels(
   pastedText: string,
-  options: { label: string }[]
+  options: { label: string }[] | undefined
 ) {
+  if (!options) {
+    return [];
+  }
+
   const text = pastedText.trim();
   let separator: string | RegExp = /\s+/;
 
@@ -82,11 +100,11 @@ async function pastedTextToSliceLabels(
   return filtered;
 }
 
-function List({ expr, path, dispatch, options, shouldShowValidation }: any) {
+function List({ expr, path, dispatch, options, shouldShowValidation }: Props) {
   const ref = useRef<HTMLDivElement | null>(null);
 
-  const handleCopy = useCallback(
-    (e: any) => {
+  const handleCopy: ClipboardEventHandler<HTMLDivElement> = useCallback(
+    (e) => {
       if (expr) {
         e.clipboardData.setData("text/plain", expr.join("\r\n"));
       }
@@ -96,14 +114,14 @@ function List({ expr, path, dispatch, options, shouldShowValidation }: any) {
     [expr]
   );
 
-  const handlePaste = useCallback(
-    async (e: any) => {
-      const pastedText = (
-        e.clipboardData || (window as any).clipboardData
-      ).getData("text");
+  const handlePaste: ClipboardEventHandler<HTMLDivElement> = useCallback(
+    async (e) => {
+      const pastedText = (e.clipboardData || window.clipboardData).getData(
+        "text"
+      );
 
       e.preventDefault();
-      e.currentTarget.blur();
+      e.currentTarget?.blur();
 
       const pastedLabels = await pastedTextToSliceLabels(pastedText, options);
       const uniqueLabels = new Set([...(expr || []), ...pastedLabels]);
@@ -138,10 +156,12 @@ function List({ expr, path, dispatch, options, shouldShowValidation }: any) {
         value={
           expr ? expr.map((value: string) => ({ value, label: value })) : null
         }
-        onChange={(selections: any) => {
+        onChange={(val) => {
+          const selections = (val as unknown) as { value: string }[];
+
           const nextValue =
             selections?.length > 0
-              ? selections.map(({ value }: any) => value)
+              ? selections.map(({ value }) => value)
               : null;
 
           dispatch({
@@ -164,7 +184,9 @@ function List({ expr, path, dispatch, options, shouldShowValidation }: any) {
         options={options}
         isDisabled={!options}
         placeholder="Select values…"
-        menuPortalTarget={document.querySelector("#modal-container")}
+        menuPortalTarget={
+          document.querySelector("#modal-container") as HTMLElement
+        }
         components={{ Option: OptimizedSelectOption }}
       />
     </div>
