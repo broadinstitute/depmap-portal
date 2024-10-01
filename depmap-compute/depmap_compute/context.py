@@ -43,7 +43,8 @@ class ContextEvaluator:
         """
         A `context` dict should have:
             - a `dimension_type` such as "depmap_model" (which is not used in this evaluator)
-            - an `expr` such as { "==": [ { "var": "slice/lineage/1/label" }, "Breast" ] }
+            - an `expr` such as { "==": [ { "var": "var1" }, "Breast" ] }
+            - a set of `vars`, each of which assigns a name to a slice query
         """
         self.expr = _encode_dots_in_vars(context["expr"])
         self.slice_query_vars = context.get("vars", {})
@@ -105,7 +106,7 @@ class _JsonLogicVarLookup(dict):
         self.cache = cache
         self.slice_query_vars = slice_query_vars
 
-    def __getitem__(self, var_name: Union[str, dict]) -> Any:
+    def __getitem__(self, var_name: str) -> Any:
         """
         Given a variable from the context definition, load the corresponding slice value. 
         Look up the value by the "given_id" that's already been passed into the constructor of this class.
