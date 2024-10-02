@@ -449,8 +449,7 @@ def get_ids_and_labels_matching_context(context: dict) -> tuple[list[str], list[
         context_evaluator = ContextEvaluator(context, data_access.get_slice_data)
 
     if dimension_type is None:
-        abort(400, "Context requests must specify a dimension type.")
-
+        raise ValueError("Context requests must specify a dimension type.")
     # Load all dimension labels and ids
     all_labels_by_id = get_all_dimension_labels_by_id(dimension_type)
 

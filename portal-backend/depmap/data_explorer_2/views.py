@@ -455,7 +455,7 @@ def unique_values_or_range():
 @csrf_protect.exempt
 def get_labels_matching_context():
     """
-    Get the full list of labels (in any dataset) which match the given context.
+    DEPRECATED: Get the full list of labels (in any dataset) which match the given context.
     """
     inputs = request.get_json()
     context = inputs["context"]
@@ -524,7 +524,7 @@ def get_v2_context_summary():
 @csrf_protect.exempt
 def get_datasets_matching_context():
     """
-    Get the list of datasets which have data matching the given context. For
+    DEPRECATED: Get the list of datasets which have data matching the given context. For
     each dataset, include the full list of dimension labels matching the
     context. Returns a list of dictionaries like:
     [
@@ -547,7 +547,7 @@ def get_datasets_matching_context():
 @csrf_protect.exempt
 def get_context_summary():
     """
-    Get the number of matching labels and candidate labels.
+    DEPRECATED: Get the number of matching labels and candidate labels.
     "Candidate" labels are all labels belonging to the context's dimension type.
     """
     inputs = request.get_json()
