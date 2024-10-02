@@ -41,7 +41,7 @@ export default function Datasets() {
     showUpdateDatasetMetadataModal,
     setShowUpdateDatasetMetadataModal,
   ] = useState(false);
-  const [datasetToEdit, setDatasetToEdit] = useState<string | null>(null);
+  const [datasetToEdit, setDatasetToEdit] = useState<Dataset | null>(null);
   const [datasetMetadataToEdit, setDatasetMetadataToEdit] = useState<{
     [key: string]: string;
   } | null>(null);
@@ -202,7 +202,7 @@ export default function Datasets() {
               bsSize="small"
               onClick={() => {
                 setShowUpdateDatasetMetadataModal(true);
-                setDatasetToEdit(dataset.id);
+                setDatasetToEdit(dataset);
                 setDatasetMetadataToEdit(
                   dataset.dataset_metadata ? dataset.dataset_metadata : null
                 ); // handled in DatasetMetadataForm.tsx:261
@@ -642,7 +642,7 @@ export default function Datasets() {
           />
         ) : null}
         {datasetToEdit !== null && datasetMetadataToEdit !== null
-          ? updateDatasetMetadataForm(datasetToEdit, datasetMetadataToEdit)
+          ? updateDatasetMetadataForm(datasetToEdit.id, datasetMetadataToEdit)
           : null}
 
         {dimensionTypes ? (
