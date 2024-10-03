@@ -20,7 +20,6 @@ COPY pyproject.toml poetry.lock /install/breadbox
 # then if any *.py file, docker can reuse the old layers. (Just make sure that
 # COPY *.py and COPY breadbox ... are all after `poetry install`. Poetry install doesn't
 # need them, and poetry install does take some time.
-COPY breadbox-client /install/breadbox-client
 RUN mkdir -p /install/breadbox/breadbox && echo '# stubbing out this file just so we can run poetry install (just an optimization for rebuilding docker image faster after code changes)' > /install/breadbox/breadbox/__init__.py
 
 WORKDIR /install/breadbox

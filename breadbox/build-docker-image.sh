@@ -9,7 +9,7 @@ IMAGE_TAG="$1"
 set -ex
 
 # Copy breadbox-client package
-cp -R breadbox-client breadbox/
+#cp -R breadbox-client breadbox/
 
 # Build Docker image
 export DOCKER_BUILDKIT=1
