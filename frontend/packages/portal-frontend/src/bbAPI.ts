@@ -295,57 +295,11 @@ export class BreadboxApi {
     return this._delete("/datasets", id);
   }
 
-  patchDataset(datasetToUpdate: DatasetUpdateArgs): Promise<Dataset> {
-    const data = new FormData();
-    const jsonFormParams = ["dataset_metadata"];
+  updateDataset(datasetId: string, datasetUpdateArgs: any) {
+    const url = `/datasets/${datasetId}`;
+    log(`fetching ${url}`);
 
-    const updateDict = Object.fromEntries(
-      Object.entries(datasetToUpdate).filter(
-        /* eslint-disable-next-line @typescript-eslint/no-unused-vars */
-        ([_, val]) => val !== null && val !== undefined
-      )
-    );
-
-    const datasetArgsCopy = { ...updateDict };
-    // eslint-disable-next-line no-restricted-syntax
-    for (const prop of Object.keys(datasetArgsCopy)) {
-      if (jsonFormParams.includes(prop) && prop in datasetArgsCopy) {
-        datasetArgsCopy[prop] = JSON.stringify(datasetArgsCopy[prop]);
-      }
-      if (Object.prototype.hasOwnProperty.call(datasetArgsCopy, prop)) {
-        data.append(prop, datasetArgsCopy[prop]);
-      }
-    }
-
-    const url = `/datasets/${datasetToUpdate.id}`;
-    const fullUrl = this.urlPrefix + url;
-    log(`fetching ${fullUrl}`);
-
-    return fetch(fullUrl, {
-      credentials: "include",
-      method: "PATCH",
-      body: data,
-    }).then(
-      (response: Response): Promise<Dataset> => {
-        return response.json().then(
-          (body: any): Promise<Dataset> => {
-            // nesting to access response.status
-            if (response.status >= 200 && response.status < 300) {
-              return Promise.resolve(body);
-            }
-            // eslint-disable-next-line prefer-promise-reject-errors
-            return Promise.reject({ body, status: response.status } as {
-              body: any;
-              status: number;
-            });
-          }
-        );
-      }
-    );
-  }
-
-  updateDataset(datasetToUpdate: DatasetUpdateArgs) {
-    return this.patchDataset(datasetToUpdate);
+    return this._fetchWithJsonBody(url, "PATCH", datasetUpdateArgs);
   }
 
   postFileUpload(fileArgs: { file: File | Blob }): Promise<UploadFileResponse> {
