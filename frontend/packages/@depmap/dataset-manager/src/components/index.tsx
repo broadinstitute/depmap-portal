@@ -147,8 +147,12 @@ export default function Datasets() {
 
   const datasetForm = useCallback(() => {
     if (datasets) {
+      let datasetFormComponent;
+      let formTitle: string;
+
       if (isEditDatasetMode && datasetToEdit) {
-        const datasetEditForm = (
+        formTitle = "Edit Dataset";
+        datasetFormComponent = (
           <DatasetEditForm
             getGroups={getGroups}
             getDataTypesAndPriorities={getDataTypesAndPriorities}
@@ -156,23 +160,11 @@ export default function Datasets() {
             datasetToEdit={datasetToEdit}
           />
         );
-        return (
-          <FormModal
-            title={"Edit Dataset"}
-            showModal={showDatasetModal}
-            onHide={() => {
-              setShowDatasetModal(false);
-              setIsEditDatasetMode(false);
-              setDatasetToEdit(null);
-              setDatasetMetadataToEdit(null);
-            }}
-            formComponent={datasetEditForm}
-          />
-        );
       }
       // eslint-disable-next-line no-else-return
       else {
-        const datasetAddForm = (
+        formTitle = "Add Dataset";
+        datasetFormComponent = (
           <DatasetForm
             getFeatureTypes={getFeatureTypes}
             getSampleTypes={getSampleTypes}
@@ -182,20 +174,20 @@ export default function Datasets() {
             uploadDataset={postDatasetUpload}
           />
         );
-        return (
-          <FormModal
-            title={"Add Dataset"}
-            showModal={showDatasetModal}
-            onHide={() => {
-              setShowDatasetModal(false);
-              setIsEditDatasetMode(false);
-              setDatasetToEdit(null);
-              setDatasetMetadataToEdit(null);
-            }}
-            formComponent={datasetAddForm}
-          />
-        );
       }
+      return (
+        <FormModal
+          title={formTitle}
+          showModal={showDatasetModal}
+          onHide={() => {
+            setShowDatasetModal(false);
+            setIsEditDatasetMode(false);
+            setDatasetToEdit(null);
+            setDatasetMetadataToEdit(null);
+          }}
+          formComponent={datasetFormComponent}
+        />
+      );
     }
     return null;
   }, [
