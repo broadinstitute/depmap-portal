@@ -22,8 +22,6 @@ interface LineageAvailabilityPlotProps {
   selectedDataType: DataPageDataType;
   data: LineageCountInfo[];
   onCloseLineageModal: () => void;
-  handleSetPlotElement: (element: any) => void;
-  plotElement: ExtendedPlotType | null;
 }
 
 const LineageAvailabilityPlot = ({
@@ -31,8 +29,6 @@ const LineageAvailabilityPlot = ({
   selectedDataType,
   data,
   onCloseLineageModal,
-  handleSetPlotElement,
-  plotElement,
 }: LineageAvailabilityPlotProps) => {
   // For each primary disease
   // Make a trace with the primary disease as the value of trace.name
@@ -72,6 +68,7 @@ const LineageAvailabilityPlot = ({
 
   return (
     <Modal
+      bsSize="large"
       show={show}
       onHide={onCloseLineageModal}
       dialogClassName="custom-modal"
@@ -82,14 +79,27 @@ const LineageAvailabilityPlot = ({
         </Modal.Title>
       </Modal.Header>
       <Modal.Body>
-        <h4>Hover over bars to see counts per Oncotree Primary Disease</h4>
+        <h4 style={{ marginBottom: "25px" }}>
+          Hover over bars to see counts per Oncotree Primary Disease
+        </h4>
         {formattedData && (
           <BarChart
-            title="text title"
+            title=""
             data={formattedData}
             barmode={"stack"}
+            height={25 * formattedData[0].y.length}
             onLoad={() => {}}
-            customColors={[["#86BDB5"], ["#2FA9D0"]]}
+            margin={{
+              l: 180,
+
+              r: 20,
+
+              b: 30,
+
+              t: 0,
+
+              pad: 0,
+            }}
           />
         )}
       </Modal.Body>

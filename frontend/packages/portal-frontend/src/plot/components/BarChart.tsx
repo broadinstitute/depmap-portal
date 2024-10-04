@@ -7,7 +7,6 @@ export interface BarChartProps {
   title: string;
   data: any;
   onLoad: (plot: ExtendedPlotType) => void;
-  customColors: string[][];
   barmode?: "stack" | "group" | "overlay" | "relative" | undefined;
   xAxisTitle?: string;
   height?: "auto" | number;
@@ -33,7 +32,6 @@ const calcPlotHeight = (plot: HTMLDivElement, includeCustomLegend: boolean) => {
 function BarChart({
   title,
   data,
-  customColors,
   onLoad = () => {},
   height = "auto",
   barmode = undefined,
@@ -64,33 +62,6 @@ function BarChart({
 
   useEffect(() => {
     const plot = ref.current as ExtendedPlotType;
-
-    // console.log({ data2 });
-
-    // var trace1 = {
-    //   x: ["giraffes", "orangutans", "monkeys"],
-
-    //   y: [20, 14, 23],
-
-    //   name: "SF Zoo",
-
-    //   type: "bar",
-    // };
-
-    // var trace2 = {
-    //   x: ["giraffes", "orangutans", "monkeys"],
-
-    //   y: [12, 18, 29],
-
-    //   name: "LA Zoo",
-
-    //   type: "bar",
-    // };
-
-    // const data: any = [trace1, trace2];
-    console.log({ data });
-
-    // const layout: Partial<Plotly.Layout> = { barmode: "stack" };
 
     const xAxisTemplate: Partial<Plotly.LayoutAxis> = {
       visible: true,
@@ -128,12 +99,10 @@ function BarChart({
   }, [
     Plotly,
     data,
-    ,
     height,
     margin,
     customWidth,
     orientation,
-    customColors,
     xAxisTitle,
     customLegend,
     title,
@@ -145,7 +114,6 @@ function BarChart({
 export default function LazyBarChart({
   title,
   data,
-  customColors,
   customLegend = undefined,
   ...otherProps
 }: BarChartProps) {
@@ -157,7 +125,6 @@ export default function LazyBarChart({
             <BarChart
               title={title}
               data={data}
-              customColors={customColors}
               Plotly={Plotly}
               // eslint-disable-next-line react/jsx-props-no-spreading
               {...otherProps}

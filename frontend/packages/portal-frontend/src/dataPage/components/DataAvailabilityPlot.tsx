@@ -117,7 +117,6 @@ const DataAvailabilityPlot = ({
     setSelectedDataType,
   ] = useState<DataPageDataType | null>(null);
   const openLineagePlotModal = (dataTypeCategory: DataPageDataType) => {
-    console.log(dataTypeCategory);
     setSelectedDataType(dataTypeCategory);
     setShowLineageModal(true);
   };
@@ -136,8 +135,6 @@ const DataAvailabilityPlot = ({
                 setSelectedDataType(null);
                 setShowLineageModal(false);
               }}
-              handleSetPlotElement={() => {}}
-              plotElement={null}
             />
           )}
           {Object.keys(dataValuesByDataTypeCategory).map((categoryKey: any) => (
@@ -194,8 +191,10 @@ const DataAvailabilityPlot = ({
                 >
                   {dataValuesByDataTypeCategory[categoryKey].map(
                     (category: any, row: number) => (
-                      <p
+                      <button
                         key={`${categoryKey}cellLineCount${row + 1}`}
+                        type="button"
+                        className={styles.linkButton}
                         style={{
                           margin: 0,
                           gridRow: `${row + 1}`,
@@ -207,7 +206,7 @@ const DataAvailabilityPlot = ({
                           category.values.filter((val: number) => val > 0)
                             .length
                         }
-                      </p>
+                      </button>
                     )
                   )}
                 </div>
