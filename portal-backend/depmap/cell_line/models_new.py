@@ -170,6 +170,9 @@ class DepmapModel(Model):
 
         df = pd.DataFrame(q)
 
+        if df.empty:
+            return {}
+
         df_agg = pd.pivot_table(
             df,
             values=["lineage", "primary_disease"],

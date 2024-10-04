@@ -6,6 +6,7 @@ import {
 } from "../models/types";
 import { Button, Modal } from "react-bootstrap";
 import BarChart from "src/plot/components/BarChart";
+import { DISEASE_COLORS } from "./utils";
 
 interface LineageAvailabilityPlotProps {
   show: boolean;
@@ -38,7 +39,7 @@ const LineageAvailabilityPlot = ({
       const uniquePrimaryDiseases = new Set(allPrimaryDiseases);
 
       const traceData = [...uniquePrimaryDiseases].map(
-        (primaryDiseaseName: string) => {
+        (primaryDiseaseName: string, index: number) => {
           return {
             y: lineages,
             x: lineages.map(
@@ -50,6 +51,7 @@ const LineageAvailabilityPlot = ({
             showlegend: false,
             hovertext: primaryDiseaseName,
             hoverinfo: "x+text",
+            marker: { color: DISEASE_COLORS[index] },
           };
         }
       );
@@ -92,7 +94,7 @@ const LineageAvailabilityPlot = ({
 
               t: 0,
 
-              pad: 0,
+              pad: 5,
             }}
           />
         )}
