@@ -660,6 +660,7 @@ export class DepmapApi {
       drug_count_mapping: boolSummary.drug_count_mapping,
       values: dataAvailVals,
       data_types: boolSummary.data_types,
+      lineage_counts: boolSummary.lineage_counts,
     };
   }
 

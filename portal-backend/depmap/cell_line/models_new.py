@@ -2,7 +2,7 @@
 """Cell line models."""
 import enum
 import re
-from typing import Dict, Optional, Sequence
+from typing import Dict, List, Optional, Sequence
 from depmap.cell_line.models import Lineage
 
 import pandas as pd
@@ -152,6 +152,40 @@ class DepmapModel(Model):
             return q.one()
         else:
             return q.one_or_none()
+
+    @staticmethod
+    def get_lineage_primary_disease_counts(model_ids: List[str],) -> Dict[str, dict]:
+        q = (
+            db.session.query(DepmapModel)
+            .filter(DepmapModel.model_id.in_(model_ids))
+            .outerjoin(Lineage, DepmapModel.oncotree_lineage)
+            .filter(Lineage.level == 1)
+            .with_entities(
+                DepmapModel.model_id,
+                Lineage.name.label("lineage"),
+                DepmapModel.oncotree_primary_disease.label("primary_disease"),
+            )
+            .all()
+        )
+
+        df = pd.DataFrame(q)
+
+        df_agg = pd.pivot_table(
+            df,
+            values=["lineage", "primary_disease"],
+            index="lineage",
+            aggfunc={"primary_disease": list},
+        )
+
+        assert df_agg.index.is_unique
+
+        counts = {}
+        for lin in df_agg.index.tolist():
+            # Gets primary diseases as index and the counts of each as the values
+            value_counts = df_agg.loc[lin].explode().value_counts()
+            counts[lin] = dict(value_counts.astype(str))
+
+        return counts
 
     @staticmethod
     def get_valid_cell_line_names_in(cell_line_names):

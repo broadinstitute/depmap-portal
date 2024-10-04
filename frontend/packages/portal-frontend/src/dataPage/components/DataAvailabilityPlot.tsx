@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import Heatmap from "src/plot/components/Heatmap";
 import PlotSpinner from "src/plot/components/PlotSpinner";
 import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
@@ -13,6 +13,7 @@ import {
 import styles from "src/dataPage/styles/DataPage.scss";
 import DataPageDatatypeSelector from "./DataPageDatatypeSelector";
 import { BAR_THICKNESS, getFileUrl } from "./utils";
+import LineageAvailabilityPlot from "./LineageAvailabilityPlot";
 
 interface DataAvailabilityPlotProps {
   currentReleaseDataAvil: DataAvailability;
@@ -113,11 +114,32 @@ const DataAvailabilityPlot = ({
 
     return graphSectionDrugCountMapping;
   };
+
+  const [showLineageModal, setShowLineageModal] = useState<boolean>(false);
+  const [selectedDataType, setSelectedDataType] = useState<string | null>(null);
+  const openLineagePlotModal = (dataTypeCategory: string) => {
+    setSelectedDataType(dataTypeCategory);
+    setShowLineageModal(true);
+  };
+
   return (
     <div>
       {dataValuesByDataTypeCategory && (
         <div className={styles.plot}>
           {(!plotElement || !totalCellLines) && <PlotSpinner />}
+          {selectedDataType && showLineageModal && (
+            <LineageAvailabilityPlot
+              show={showLineageModal}
+              selectedDataType={selectedDataType}
+              data={dataValuesByDataTypeCategory[selectedDataType]}
+              onCloseLineageModal={() => {
+                setSelectedDataType(null);
+                setShowLineageModal(false);
+              }}
+              handleSetPlotElement={() => {}}
+              plotElement={null}
+            />
+          )}
           {Object.keys(dataValuesByDataTypeCategory).map((categoryKey: any) => (
             <div key={categoryKey} className={styles.dataAvailabilityPlot}>
               {plotElement && (
@@ -179,6 +201,7 @@ const DataAvailabilityPlot = ({
                           gridRow: `${row + 1}`,
                           alignSelf: "center",
                         }}
+                        onClick={() => openLineagePlotModal(categoryKey)}
                       >
                         {
                           category.values.filter((val: number) => val > 0)
