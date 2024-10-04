@@ -105,6 +105,7 @@ function BarChart({
     orientation,
     xAxisTitle,
     customLegend,
+    barmode,
     title,
   ]);
 
