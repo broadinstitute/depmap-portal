@@ -5,7 +5,6 @@ import { useState, useEffect } from "react";
 import {
   Dataset,
   DatasetUpdateArgs,
-  DataType,
   Group,
   InvalidPrioritiesByDataType,
 } from "@depmap/types";

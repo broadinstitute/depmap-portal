@@ -295,7 +295,10 @@ export class BreadboxApi {
     return this._delete("/datasets", id);
   }
 
-  updateDataset(datasetId: string, datasetUpdateArgs: any) {
+  updateDataset(
+    datasetId: string,
+    datasetUpdateArgs: DatasetUpdateArgs
+  ): Promise<Dataset> {
     const url = `/datasets/${datasetId}`;
     log(`fetching ${url}`);
 

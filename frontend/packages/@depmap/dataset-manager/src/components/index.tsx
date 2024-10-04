@@ -489,12 +489,11 @@ export default function Datasets() {
       )[0];
 
       const updatedDatasetInfo: DatasetUpdateArgs = {
-        id: selectedDataset.id,
         group_id: selectedDataset.group.id,
         dataset_metadata: metadata,
       };
 
-      const dataset = await dapi.updateDataset(updatedDatasetInfo);
+      const dataset = await dapi.updateDataset(datasetId, updatedDatasetInfo);
       setShowUpdateDatasetMetadataModal(false);
       setDatasets(
         datasets.map((originalDataset) => {

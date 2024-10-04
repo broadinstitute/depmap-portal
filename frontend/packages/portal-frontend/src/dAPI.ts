@@ -992,7 +992,7 @@ export class DepmapApi {
   };
 
   updateDataset(
-    datasetId,
+    datasetId: string,
     datasetToUpdate: DatasetUpdateArgs
   ): Promise<BreadboxDataset> {
     return Promise.reject(Error("Wrong api used. Check ApiContext"));
