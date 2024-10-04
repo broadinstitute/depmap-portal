@@ -16,26 +16,26 @@ import { BAR_THICKNESS, getFileUrl } from "./utils";
 import LineageAvailabilityPlot from "./LineageAvailabilityPlot";
 
 interface DataAvailabilityPlotProps {
-  currentReleaseDataAvil: DataAvailability;
+  dataAvail: DataAvailability;
   handleSetPlotElement: (element: any) => void;
   plotElement: ExtendedPlotType | null;
   isCurrentRelease?: boolean;
 }
 
 const DataAvailabilityPlot = ({
-  currentReleaseDataAvil,
+  dataAvail,
   handleSetPlotElement,
   plotElement,
   isCurrentRelease = false,
 }: DataAvailabilityPlotProps) => {
   const xVals = useMemo(() => {
-    return currentReleaseDataAvil.all_depmap_ids.map((item) => item[1]);
-  }, [currentReleaseDataAvil]);
+    return dataAvail.all_depmap_ids.map((item) => item[1]);
+  }, [dataAvail]);
   const totalCellLines = xVals.length;
 
   // Split the data avail values into separate array by data type category
   const dataValuesByDataTypeCategory = useMemo(() => {
-    if (currentReleaseDataAvil && currentReleaseDataAvil.values.length > 0) {
+    if (dataAvail && dataAvail.values.length > 0) {
       const dataByCategory: {
         category: DataPageDataTypeCategoryStrings;
         dataTypeValues: {
@@ -45,12 +45,10 @@ const DataAvailabilityPlot = ({
       }[] = [];
 
       // Values are split up by "row", with each value corresponding to a different data type.
-      currentReleaseDataAvil.values.forEach((row, index) => {
+      dataAvail.values.forEach((row, index) => {
         const dType =
           DataPageDataType[
-            currentReleaseDataAvil.data_types[
-              index
-            ] as keyof typeof DataPageDataType
+            dataAvail.data_types[index] as keyof typeof DataPageDataType
           ];
 
         const category = getDataPageDataTypeColorCategoryString(dType);
@@ -74,7 +72,7 @@ const DataAvailabilityPlot = ({
       return groupedVals;
     }
     return null;
-  }, [currentReleaseDataAvil]);
+  }, [dataAvail]);
 
   const getZVals = useCallback(
     (categoryKey: string) => {
@@ -90,8 +88,7 @@ const DataAvailabilityPlot = ({
     dataValuesByDataTypeCategory[categoryKey].forEach((category: any) => {
       const dataTypeString = getDataPageDataTypeString(category.dataType);
 
-      const dataUrl =
-        currentReleaseDataAvil.data_type_url_mapping[category.dataType];
+      const dataUrl = dataAvail.data_type_url_mapping[category.dataType];
 
       graphSectionUrlMapping[dataTypeString] = getFileUrl(dataUrl);
     });
@@ -106,8 +103,7 @@ const DataAvailabilityPlot = ({
     dataValuesByDataTypeCategory[categoryKey].forEach((category: any) => {
       const dataTypeString = getDataPageDataTypeString(category.dataType);
 
-      const count =
-        currentReleaseDataAvil.drug_count_mapping[category.dataType];
+      const count = dataAvail.drug_count_mapping[category.dataType];
 
       graphSectionDrugCountMapping[dataTypeString] = count;
     });
@@ -116,8 +112,12 @@ const DataAvailabilityPlot = ({
   };
 
   const [showLineageModal, setShowLineageModal] = useState<boolean>(false);
-  const [selectedDataType, setSelectedDataType] = useState<string | null>(null);
-  const openLineagePlotModal = (dataTypeCategory: string) => {
+  const [
+    selectedDataType,
+    setSelectedDataType,
+  ] = useState<DataPageDataType | null>(null);
+  const openLineagePlotModal = (dataTypeCategory: DataPageDataType) => {
+    console.log(dataTypeCategory);
     setSelectedDataType(dataTypeCategory);
     setShowLineageModal(true);
   };
@@ -131,7 +131,7 @@ const DataAvailabilityPlot = ({
             <LineageAvailabilityPlot
               show={showLineageModal}
               selectedDataType={selectedDataType}
-              data={dataValuesByDataTypeCategory[selectedDataType]}
+              data={dataAvail.lineage_counts[selectedDataType]}
               onCloseLineageModal={() => {
                 setSelectedDataType(null);
                 setShowLineageModal(false);
@@ -201,7 +201,7 @@ const DataAvailabilityPlot = ({
                           gridRow: `${row + 1}`,
                           alignSelf: "center",
                         }}
-                        onClick={() => openLineagePlotModal(categoryKey)}
+                        onClick={() => openLineagePlotModal(category.dataType)}
                       >
                         {
                           category.values.filter((val: number) => val > 0)

@@ -136,7 +136,7 @@ function OverviewPanel(props: OverviewPanelProps) {
             data source.
           </div>
           <DataAvailabilityPlot
-            currentReleaseDataAvil={allDataAvail}
+            dataAvail={allDataAvail}
             handleSetPlotElement={(element: ExtendedPlotType | null) => {
               setPlotElement(element);
             }}

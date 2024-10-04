@@ -5,10 +5,10 @@ import PlotlyLoader, { PlotlyType } from "./PlotlyLoader";
 
 export interface BarChartProps {
   title: string;
-  categoryLabels: string[];
-  categoryValues: number[];
+  data: any;
   onLoad: (plot: ExtendedPlotType) => void;
-  customColors: string[];
+  customColors: string[][];
+  barmode?: "stack" | "group" | "overlay" | "relative" | undefined;
   xAxisTitle?: string;
   height?: "auto" | number;
   margin?: Margin;
@@ -32,11 +32,11 @@ const calcPlotHeight = (plot: HTMLDivElement, includeCustomLegend: boolean) => {
 
 function BarChart({
   title,
-  categoryLabels,
-  categoryValues,
+  data,
   customColors,
   onLoad = () => {},
   height = "auto",
+  barmode = undefined,
   customWidth = undefined,
   xAxisTitle = undefined,
   orientation = "h",
@@ -65,16 +65,32 @@ function BarChart({
   useEffect(() => {
     const plot = ref.current as ExtendedPlotType;
 
-    const test: any = categoryValues.map((xVal: number, index: number) => {
-      return {
-        x: orientation === "v" ? [categoryLabels[index]] : [xVal],
-        y: orientation === "v" ? [xVal] : [categoryLabels[index]],
-        type: "bar",
-        marker: { color: customColors[index] },
-        hoverinfo: "x+y",
-        orientation,
-      };
-    });
+    // console.log({ data2 });
+
+    // var trace1 = {
+    //   x: ["giraffes", "orangutans", "monkeys"],
+
+    //   y: [20, 14, 23],
+
+    //   name: "SF Zoo",
+
+    //   type: "bar",
+    // };
+
+    // var trace2 = {
+    //   x: ["giraffes", "orangutans", "monkeys"],
+
+    //   y: [12, 18, 29],
+
+    //   name: "LA Zoo",
+
+    //   type: "bar",
+    // };
+
+    // const data: any = [trace1, trace2];
+    console.log({ data });
+
+    // const layout: Partial<Plotly.Layout> = { barmode: "stack" };
 
     const xAxisTemplate: Partial<Plotly.LayoutAxis> = {
       visible: true,
@@ -99,6 +115,7 @@ function BarChart({
 
       dragmode: false,
       bargap: 0.1,
+      barmode,
 
       height: height === "auto" ? calcPlotHeight(plot, true) : height,
 
@@ -107,11 +124,11 @@ function BarChart({
 
     const config: Partial<Plotly.Config> = { responsive: true };
 
-    Plotly.newPlot(plot, test, layout, config);
+    Plotly.newPlot(plot, data, layout, config);
   }, [
     Plotly,
-    categoryValues,
-    categoryLabels,
+    data,
+    ,
     height,
     margin,
     customWidth,
@@ -127,8 +144,7 @@ function BarChart({
 
 export default function LazyBarChart({
   title,
-  categoryValues,
-  categoryLabels,
+  data,
   customColors,
   customLegend = undefined,
   ...otherProps
@@ -136,12 +152,11 @@ export default function LazyBarChart({
   return (
     <PlotlyLoader version="module">
       {(Plotly) =>
-        categoryValues && categoryLabels ? (
+        data ? (
           <>
             <BarChart
               title={title}
-              categoryValues={categoryValues}
-              categoryLabels={categoryLabels}
+              data={data}
               customColors={customColors}
               Plotly={Plotly}
               // eslint-disable-next-line react/jsx-props-no-spreading

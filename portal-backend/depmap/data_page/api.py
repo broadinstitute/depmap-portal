@@ -145,25 +145,25 @@ def _get_formatted_all_data_avail_df(overall_summary: pd.DataFrame) -> pd.DataFr
     return transposed_summary
 
 
+def _get_lineage_primary_disease(
+    data_type_availability_row: List[bool], summary_df_columns: list
+):
+    lineage_primary_disease_counts = DepmapModel.get_lineage_primary_disease_counts(
+        [
+            depmap_id
+            for j, depmap_id in enumerate(summary_df_columns)
+            if data_type_availability_row[j] == True
+        ]
+    )
+
+    return lineage_primary_disease_counts
+
+
 def _format_data_availability_summary_dict(summary_df: pd.DataFrame):
     data_types_by_url = _get_data_type_url_mapping(summary_df.index.values.tolist())
 
     drug_count_mapping = _get_drug_count_mapping(summary_df.index.values.tolist())
 
-    def _get_lineage_primary_disease(data_type_availability_row: List[bool]):
-        lineage_primary_disease_counts = DepmapModel.get_lineage_primary_disease_counts(
-            [
-                depmap_id
-                for j, depmap_id in enumerate(summary_df.columns.tolist())
-                if data_type_availability_row[j] == True
-            ]
-        )
-
-        return lineage_primary_disease_counts
-
-    import time
-
-    start = time.time()
     summary = {
         "values": [row.values.tolist() for _, row in summary_df.iterrows()],
         "data_type_url_mapping": data_types_by_url,
@@ -171,14 +171,12 @@ def _format_data_availability_summary_dict(summary_df: pd.DataFrame):
         # For keeping track of data_type order
         "lineage_counts": {
             data_type_availability_row.name: _get_lineage_primary_disease(
-                data_type_availability_row.values.tolist(),
+                data_type_availability_row.values.tolist(), summary_df.columns.tolist()
             )
             for i, data_type_availability_row in summary_df.iterrows()
         },
         "data_types": summary_df.index.values.tolist(),
     }
-    end = time.time()
-    print(f"test {end-start}")
 
     summary["all_depmap_ids"] = [
         (i, depmap_id) for i, depmap_id in enumerate(summary_df.columns.tolist())
