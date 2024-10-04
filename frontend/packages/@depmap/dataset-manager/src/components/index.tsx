@@ -63,8 +63,8 @@ export default function Datasets() {
     [dapi]
   );
   const updateDataset = useCallback(
-    (datasetUpdateArgs: DatasetUpdateArgs) =>
-      dapi.updateDataset(datasetUpdateArgs),
+    (datasetId: string, datasetUpdateArgs: DatasetUpdateArgs) =>
+      dapi.updateDataset(datasetId, datasetUpdateArgs),
     [dapi]
   );
 
