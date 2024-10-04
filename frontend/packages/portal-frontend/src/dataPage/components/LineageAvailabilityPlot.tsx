@@ -1,19 +1,9 @@
-import React, { useCallback, useMemo } from "react";
-import Heatmap from "src/plot/components/Heatmap";
-import PlotSpinner from "src/plot/components/PlotSpinner";
-import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
+import React, { useMemo } from "react";
 import {
-  COLOR_SCALE,
-  DataAvailability,
   DataPageDataType,
-  DataPageDataTypeCategoryStrings,
-  getDataPageDataTypeColorCategoryString,
   getDataPageDataTypeString,
   LineageCountInfo,
 } from "../models/types";
-import styles from "src/dataPage/styles/DataPage.scss";
-import DataPageDatatypeSelector from "./DataPageDatatypeSelector";
-import { BAR_THICKNESS, getFileUrl } from "./utils";
 import { Button, Modal } from "react-bootstrap";
 import BarChart from "src/plot/components/BarChart";
 
@@ -57,6 +47,9 @@ const LineageAvailabilityPlot = ({
             name: primaryDiseaseName,
             type: "bar",
             orientation: "h",
+            showlegend: false,
+            hovertext: primaryDiseaseName,
+            hoverinfo: "x+text",
           };
         }
       );
@@ -89,6 +82,7 @@ const LineageAvailabilityPlot = ({
             barmode={"stack"}
             height={25 * formattedData[0].y.length}
             onLoad={() => {}}
+            xAxisTitle={"Count"}
             margin={{
               l: 180,
 
