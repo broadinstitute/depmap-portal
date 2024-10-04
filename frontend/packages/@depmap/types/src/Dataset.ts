@@ -64,7 +64,8 @@ export interface TabularDataset {
   data_type: string;
   priority: number | null;
   taiga_id: string | null;
-  group_id: any;
+  group_id: string;
+  group: any;
   is_transient: boolean;
   value_type: string | null;
   columns_metadata: { [key: string]: ColumnMetadata };
@@ -76,7 +77,6 @@ export type Dataset = TabularDataset | MatrixDataset;
 
 export interface DatasetUpdateArgs {
   [key: string]: any;
-  id: string;
   group_id?: any;
   name?: string;
   data_type?: string | null;

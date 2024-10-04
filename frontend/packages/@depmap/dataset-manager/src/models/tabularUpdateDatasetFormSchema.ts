@@ -1,9 +1,8 @@
 import { RJSFSchema } from "@rjsf/utils";
 
-export const matrixUpdateFormSchema: Required<Pick<RJSFSchema, "properties">> &
+export const tabularUpdateFormSchema: Required<Pick<RJSFSchema, "properties">> &
   RJSFSchema = {
-  title: "MatrixDatasetUpdateParams",
-  required: ["format"],
+  title: "TabularDatasetUpdateParams",
   type: "object",
   properties: {
     name: {
@@ -36,15 +35,10 @@ export const matrixUpdateFormSchema: Required<Pick<RJSFSchema, "properties">> &
     },
     format: {
       type: "string",
-      enum: ["matrix"],
-      const: "matrix",
+      enum: ["tabular"],
+      const: "tabular",
       title: "Format",
-      default: "matrix",
-    },
-    units: {
-      type: "string",
-      title: "Units",
-      description: "Units for the values in the dataset",
+      default: "tabular",
     },
   },
 };
