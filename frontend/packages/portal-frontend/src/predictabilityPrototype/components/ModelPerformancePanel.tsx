@@ -157,7 +157,7 @@ const ModelPerformancePanel = ({
                             modelPerformanceInfo.feature_summaries[feature]
                               .pearson
                           }
-                          featureType={
+                          featureTypeLabel={
                             modelPerformanceInfo.feature_summaries[feature]
                               .feature_type_label
                           }
