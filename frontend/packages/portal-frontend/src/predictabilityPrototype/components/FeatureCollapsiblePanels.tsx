@@ -13,7 +13,7 @@ interface FeatureSinglePanelHeaderProps {
   feature: string;
   relativeImportance: number;
   correlation: number;
-  featureType: string;
+  featureTypeLabel: string;
   relatedType: RelatedType | null;
   isOpen: boolean;
 }
@@ -22,7 +22,7 @@ export const FeatureCollapsiblePanelHeader = ({
   feature,
   relativeImportance,
   correlation,
-  featureType,
+  featureTypeLabel,
   relatedType,
   isOpen,
 }: FeatureSinglePanelHeaderProps) => {
@@ -92,7 +92,7 @@ export const FeatureCollapsiblePanelHeader = ({
           />
         )}
       </span>
-      <span className={styles.four}>{featureType}</span>
+      <span className={styles.four}>{featureTypeLabel}</span>
     </span>
   );
 };
@@ -205,7 +205,7 @@ const FeatureCollapsiblePanels = ({
                 geneSymbol={geneSymbol}
                 featureNameType={featureNameType}
                 featureName={feature}
-                featureType={dimType}
+                dimType={dimType}
                 panelIndex={panelIndex}
                 screenType={screenType}
                 getPredictabilityBoxPlotData={dapi.getPredictabilityBoxOrBarPlotData.bind(

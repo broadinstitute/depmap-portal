@@ -45,7 +45,7 @@ export type TopFeaturesBarData = {
   data: {
     feature: string[];
     adj_feature_importance: number[];
-    feature_type: string[];
+    dim_type: string[];
     feature_set: string[];
     model_name: string[];
   };
@@ -156,7 +156,7 @@ export type ModelPerformanceInfo = {
 
 export interface GeneTeaSearchTerm {
   name: string;
-  feature_type: string;
+  feature_type_label: string;
   importance_rank: number;
 }
 

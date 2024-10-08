@@ -186,7 +186,7 @@ def top_features_overall(gene_symbol, entity_id, screen_type):
     unique_gene_symbols = [
         {
             "name": row["feature_label"],
-            "feature_type": row["feature"].split("_")[-1],
+            "feature_type_label": row["feature"].split("_")[-1],
             "importance_rank": index + 1,
         }
         for index, row in df_100.iterrows()
@@ -195,7 +195,7 @@ def top_features_overall(gene_symbol, entity_id, screen_type):
 
     df = df_100.head(10)
 
-    df["feature_type"] = [x for x in df["dim_type"]]
+    df["dim_type"] = [x for x in df["dim_type"]]
     df["feature_set"] = [get_feature_set(x) for x in df["feature_type"]]
     df["feature"] = [x.replace("_", " ") for x in df["feature"]]
     df["feature_label"] = df["feature_label"].values

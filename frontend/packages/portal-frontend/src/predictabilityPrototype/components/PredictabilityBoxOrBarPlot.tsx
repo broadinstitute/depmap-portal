@@ -9,7 +9,7 @@ interface PredictabilityBoxPlotProps {
   modelName: string;
   geneSymbol: string;
   featureNameType: string;
-  featureType: string;
+  dimType: string;
   featureName: string;
   panelIndex: number;
   screenType: string;
@@ -26,7 +26,7 @@ const PredictabilityBoxOrBarPlot = ({
   geneSymbol,
   featureNameType,
   featureName,
-  featureType,
+  dimType,
   panelIndex,
   screenType,
   getPredictabilityBoxPlotData,
@@ -87,7 +87,7 @@ const PredictabilityBoxOrBarPlot = ({
   }, [
     featureNameType,
     featureName,
-    featureType,
+    dimType,
     getPredictabilityBoxPlotData,
     modelName,
     geneSymbol,

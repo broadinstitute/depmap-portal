@@ -34,7 +34,7 @@ const TopFeaturesTable = ({ selectedLabels }: TopFeaturesTableProps) => {
               {selectedLabels.map((label, i) => (
                 <tr key={i}>
                   <td>{label.name}</td>
-                  <td>{label.feature_type}</td>
+                  <td>{label.feature_type_label}</td>
                   <td>{label.importance_rank}</td>
                 </tr>
               ))}
