@@ -41,11 +41,14 @@ export interface DataSummary {
   };
 }
 
+export interface LineageAvailability {
+  lineage_counts: LineageCountInfo;
+}
+
 export interface DataAvailability {
   all_depmap_ids: [number, string][];
   data_type_url_mapping: { [data_type: string]: string };
   drug_count_mapping: { [data_type: string]: number };
-  lineage_counts: { [data_type: string]: LineageCountInfo[] };
   values: number[][];
   data_types: string[];
 }

@@ -27,7 +27,6 @@ def test_get_data_availability(populated_db):
             "values",
             "data_type_url_mapping",
             "drug_count_mapping",
-            "lineage_counts",
             "data_types",
             "all_depmap_ids",
         ]
@@ -268,26 +267,6 @@ def test_get_data_availability_not_all_data_types_present(
                 "Drug_CTD_Broad": 3,
                 "Drug_Repurposing_Broad": None,
             },
-            "lineage_counts": {
-                "CRISPR_Achilles_Broad": {
-                    "Bone": {"Ewing Sarcoma": "2", "Osteosarcoma": "2"},
-                    "Lung": {},
-                    "Myeloid": {"Acute Myeloid Leukemia": "1"},
-                },
-                "Drug_CTD_Broad": {
-                    "Bone": {"Osteosarcoma": "2", "Ewing Sarcoma": "1"},
-                    "Lung": {},
-                    "Myeloid": {"Acute Myeloid Leukemia": "2"},
-                },
-                "Drug_Repurposing_Broad": {
-                    "Bone": {"Ewing Sarcoma": "2", "Osteosarcoma": "1"},
-                    # Is it possible for a lineage to not have primary diseases?
-                    # Or are the primary disease counts always going to add up to the
-                    # lineage count?
-                    "Lung": {},
-                    "Myeloid": {"Acute Myeloid Leukemia": "1"},
-                },
-            },
             "data_types": [
                 "CRISPR_Achilles_Broad",
                 "Drug_CTD_Broad",
@@ -320,3 +299,56 @@ def test_get_data_availability_not_all_data_types_present(
                 [23, "ACH-5myeloid"],
             ],
         }
+
+        with empty_db_mock_downloads.app.test_client() as c:
+            r = c.get(
+                url_for(
+                    "api.data_page_lineage_availability",
+                    data_type="CRISPR_Achilles_Broad",
+                ),
+                content_type="application/json",
+            )
+            lineage_availability = r.json
+
+            assert lineage_availability == {
+                "lineage_counts": {
+                    "Bone": {"Ewing Sarcoma": "2", "Osteosarcoma": "2"},
+                    "Lung": {"unknown": "2"},
+                    "Myeloid": {"Acute Myeloid Leukemia": "1"},
+                }
+            }
+
+        with empty_db_mock_downloads.app.test_client() as c:
+            r = c.get(
+                url_for(
+                    "api.data_page_lineage_availability", data_type="Drug_CTD_Broad",
+                ),
+                content_type="application/json",
+            )
+            lineage_availability = r.json
+
+            assert lineage_availability == {
+                "lineage_counts": {
+                    "Bone": {"Osteosarcoma": "2", "Ewing Sarcoma": "1"},
+                    "Lung": {"unknown": "4"},
+                    "Myeloid": {"Acute Myeloid Leukemia": "2"},
+                }
+            }
+
+        with empty_db_mock_downloads.app.test_client() as c:
+            r = c.get(
+                url_for(
+                    "api.data_page_lineage_availability",
+                    data_type="Drug_Repurposing_Broad",
+                ),
+                content_type="application/json",
+            )
+            lineage_availability = r.json
+
+            assert lineage_availability == {
+                "lineage_counts": {
+                    "Bone": {"Ewing Sarcoma": "2", "Osteosarcoma": "1"},
+                    "Lung": {"unknown": "1"},
+                    "Myeloid": {"Acute Myeloid Leukemia": "1"},
+                }
+            }

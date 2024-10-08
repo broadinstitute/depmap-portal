@@ -116,9 +116,15 @@ const DataAvailabilityPlot = ({
     selectedDataType,
     setSelectedDataType,
   ] = useState<DataPageDataType | null>(null);
+
   const openLineagePlotModal = (dataTypeCategory: DataPageDataType) => {
     setSelectedDataType(dataTypeCategory);
     setShowLineageModal(true);
+  };
+
+  const handleCloseLineageAvailModal = () => {
+    setSelectedDataType(null);
+    setShowLineageModal(false);
   };
 
   return (
@@ -129,11 +135,7 @@ const DataAvailabilityPlot = ({
           <LineageAvailabilityPlot
             show={showLineageModal}
             selectedDataType={selectedDataType}
-            data={dataAvail.lineage_counts[selectedDataType]}
-            onCloseLineageModal={() => {
-              setSelectedDataType(null);
-              setShowLineageModal(false);
-            }}
+            onCloseLineageModal={handleCloseLineageAvailModal}
           />
         )}
         {dataValuesByDataTypeCategory &&

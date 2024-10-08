@@ -177,7 +177,9 @@ class DepmapModel(Model):
         if df.empty:
             return {}
 
-        df_agg = df.groupby(["lineage"]).agg({"primary_disease": list})
+        df_agg = (
+            df.fillna("unknown").groupby(["lineage"]).agg({"primary_disease": list})
+        )
 
         assert df_agg.index.is_unique
 

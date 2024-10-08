@@ -2,7 +2,7 @@ import { DownloadTableData, Release, ReleaseType } from "@depmap/data-slicer";
 import React, { useEffect, useState } from "react";
 import { getDapi } from "src/common/utilities/context";
 import styles from "src/dataPage/styles/DataPage.scss";
-import { DataAvailability, LineageCountInfo } from "../models/types";
+import { DataAvailability } from "../models/types";
 import DataTabs from "./DataTabs";
 import { currentReleaseDatasets } from "./utils";
 
@@ -35,7 +35,6 @@ export const DataPage = ({
     data_type_url_mapping: {},
     drug_count_mapping: {},
     data_types: [],
-    lineage_counts: {},
     values: [],
   });
   const [
@@ -46,7 +45,6 @@ export const DataPage = ({
     data_type_url_mapping: {},
     drug_count_mapping: {},
     data_types: [],
-    lineage_counts: {},
     values: [],
   });
 
@@ -70,16 +68,13 @@ export const DataPage = ({
       const currentDataTypes: string[] = [];
       const currentDataTypeUrlMapping: { [key: string]: string } = {};
       const currentDataTypeDrugCountMapping: { [key: string]: number } = {};
-      const currentLineageCounts: {
-        [data_type: string]: LineageCountInfo[];
-      } = {};
+
       dataAvail.data_types.forEach((data_type: string, index: number) => {
         if (currentReleaseDatasets.includes(data_type)) {
           currentDataTypes.push(data_type);
           currentDataValues.push(dataAvail.values[index]);
           currentDataTypeUrlMapping[data_type] =
             dataAvail.data_type_url_mapping[data_type];
-          currentLineageCounts[data_type] = dataAvail.lineage_counts[data_type];
           currentDataTypeDrugCountMapping[data_type] =
             dataAvail.drug_count_mapping[data_type];
         }
@@ -89,7 +84,6 @@ export const DataPage = ({
         all_depmap_ids: dataAvail.all_depmap_ids,
         data_type_url_mapping: currentDataTypeUrlMapping,
         drug_count_mapping: currentDataTypeDrugCountMapping,
-        lineage_counts: currentLineageCounts,
         data_types: currentDataTypes,
         values: currentDataValues,
       });
