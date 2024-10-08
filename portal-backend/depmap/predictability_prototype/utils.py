@@ -340,9 +340,7 @@ def get_feature_slice_and_dataset_id(
     return slice.dropna(), feature_dataset_id
 
 
-def get_top_feature_headers(
-    entity_id: int, model: str, screen_type: str, datasets_by_taiga_id: dict
-):
+def get_top_feature_headers(entity_id: int, model: str, screen_type: str):
     feature_df = PrototypePredictiveModel.get_entity_row(
         model_name=model, entity_id=entity_id, screen_type=screen_type
     )
@@ -353,13 +351,11 @@ def get_top_feature_headers(
             continue
         feature_info = feature_df.loc[feature_df["rank"] == i].to_dict("records")[0]
         feature_name = feature_info["feature_name"]
-        feature_type = feature_info["dim_type"]
+        dim_type = feature_info["dim_type"]
         feature_label = feature_info["feature_label"]
 
         feature_importance = feature_info["importance"]
         pearson = feature_info["pearson"]
-        taiga_id = feature_info["taiga_id"]
-        feature_dataset = datasets_by_taiga_id[taiga_id]
 
         feature_obj = PrototypePredictiveFeature.get_by_feature_name(feature_name)
         related_type = feature_obj.get_relation_to_entity(entity_id=entity_id)
@@ -368,6 +364,7 @@ def get_top_feature_headers(
             "feature_label": feature_label,
             "feature_importance": feature_importance,
             "feature_type": feature_name.split("_")[-1],
+            "dim_type": dim_type,  # For data explorer button
             "pearson": pearson,
             "related_type": related_type,
         }
@@ -392,7 +389,7 @@ def get_top_features(
         feature_info = feature_df.loc[feature_df["rank"] == i].to_dict("records")[0]
         feature_name = feature_info["feature_name"]
         feature_given_id = feature_info["given_id"]
-        feature_type = feature_info["dim_type"]
+        dim_type = feature_info["dim_type"]
         feature_label = feature_info["feature_label"]
 
         (slice, feature_dataset_id) = get_feature_slice_and_dataset_id(
@@ -416,7 +413,8 @@ def get_top_features(
             "feature_actuals_value_labels": slice.index.tolist(),
             "feature_dataset_id": feature_dataset_id,
             "feature_importance": feature_importance,
-            "feature_type": feature_type,
+            "feature_type": feature_name.split("_")[-1],
+            "dim_type": dim_type,  # For data explorer button
             "pearson": pearson,
         }
 

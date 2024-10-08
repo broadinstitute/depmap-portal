@@ -15,8 +15,7 @@ interface FeatureVsGeneEffectPlotProps {
   geneSymbol: string;
   featureNameType: string;
   feature: string;
-  featureDatasetLabel: string;
-  featureType: string;
+  dimType: string;
   panelIndex: number;
   screenType: string;
   getFeatureVsGeneEffectData: (
@@ -32,8 +31,7 @@ const FeatureVsGeneEffectPlot = ({
   modelName,
   geneSymbol,
   featureNameType,
-  featureType,
-  featureDatasetLabel,
+  dimType,
   feature,
   panelIndex,
   screenType,
@@ -88,7 +86,7 @@ const FeatureVsGeneEffectPlot = ({
   }, [
     featureNameType,
     feature,
-    featureType,
+    dimType,
     geneSymbol,
     getFeatureVsGeneEffectData,
     modelName,
@@ -158,7 +156,7 @@ const FeatureVsGeneEffectPlot = ({
             href={getDataExplorerUrl(
               featureVsGeneEffectData.feature_dataset_id,
               feature,
-              featureDatasetLabel,
+              dimType,
               geneSymbol,
               screenType
             )}

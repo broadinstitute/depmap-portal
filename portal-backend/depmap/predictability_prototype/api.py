@@ -116,10 +116,7 @@ class Predictions(
                 model_performance_info = {}
                 for model in MODEL_SEQUENCE:
                     feature_header_info = get_top_feature_headers(
-                        entity_id=entity_id,
-                        model=model,
-                        screen_type=screen_type,
-                        datasets_by_taiga_id=datasets_by_taiga_id,
+                        entity_id=entity_id, model=model, screen_type=screen_type
                     )
                     # r = PrototypePredictiveModel.get_r_squared_for_model(model)
                     model_performance_info[model] = {

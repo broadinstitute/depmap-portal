@@ -90,17 +90,23 @@ export type FeatureInfo = {
   waterfallPlot: RelatedFeaturePlot;
 };
 
+// TODO: Fix FeatureInfoSummary and FeatureSummary to more clearly
+// differentiate between the 2. 1 is used for the feature headers
+// on initial load, and 1 is used afterwards for loading of ALL the
+// individual feature's data. There names are too similar at the moment...
 export type FeatureInfoSummary = {
   actuals_slice: number[];
   feature_name: string;
-  feature_type: string;
+  feature_type_label: string;
+  dim_type: string;
   feature_importance: number;
   pearson: number;
 };
 
 export type FeatureSummary = {
   feature_label: string;
-  feature_type: string;
+  feature_type_label: string;
+  dim_type: string;
   feature_importance: number;
   related_type: RelatedType | null;
   pearson: number;

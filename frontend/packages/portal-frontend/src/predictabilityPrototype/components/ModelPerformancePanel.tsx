@@ -159,7 +159,7 @@ const ModelPerformancePanel = ({
                           }
                           featureType={
                             modelPerformanceInfo.feature_summaries[feature]
-                              .feature_type
+                              .feature_type_label
                           }
                           relatedType={
                             modelPerformanceInfo.feature_summaries[feature]
@@ -180,13 +180,9 @@ const ModelPerformancePanel = ({
                               .feature_label
                           }
                           featureNameType={feature}
-                          featureType={
+                          dimType={
                             modelPerformanceInfo.feature_summaries[feature]
-                              .feature_type
-                          }
-                          featureDatasetLabel={
-                            modelPerformanceInfo.feature_summaries[feature]
-                              .feature_type
+                              .dim_type
                           }
                           geneSymbol={entityLabel}
                           panelIndex={featureIndex}
