@@ -32,6 +32,9 @@ import {
   SearchDimenionsRequest,
   SearchDimenionsResponse,
   UploadFileResponse,
+  DimensionType,
+  DimensionTypeAddArgs,
+  DimensionTypeUpdateArgs,
 } from "@depmap/types";
 import {
   DatasetDownloadMetadata,
@@ -93,6 +96,7 @@ export interface SharedApi {
   ) => Promise<GroupEntry>;
   deleteGroupEntry: (groupEntryId: string) => Promise<any>;
   getDataTypesAndPriorities: () => Promise<InvalidPrioritiesByDataType>;
+  // NOTE: The endpoints for feature type and sample type are deprecated and should not be used.
   getFeatureTypes: () => Promise<FeatureType[]>;
   getSampleTypes: () => Promise<SampleType[]>;
   postSampleType: (sampleTypeArgs: any) => Promise<SampleType>;
@@ -105,6 +109,16 @@ export interface SharedApi {
   updateFeatureType: (
     featureTypeArgs: FeatureTypeUpdateArgs
   ) => Promise<FeatureType>;
+  // NOTE: The endpoints for dimension type should be used instead of ones for feature and sample type
+  getDimensionTypes: () => Promise<DimensionType>;
+  postDimensionType: (
+    dimTypeArgs: DimensionTypeAddArgs
+  ) => Promise<DimensionType>;
+  updateDimensionType: (
+    dimTypeName: string,
+    dimTypeArgs: DimensionTypeUpdateArgs
+  ) => Promise<DimensionType>;
+  deleteDimensionType: (name: string) => Promise<any>;
   getMetadata: (label: string) => Promise<any>;
   computeUnivariateAssociations: (
     config: UnivariateAssociationsParams
