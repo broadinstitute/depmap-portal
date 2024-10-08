@@ -19,8 +19,31 @@
     margin-bottom: 40px;
     color: #303030;
   }
+
   .dataPageLink {
     text-decoration: underline !important;
+  }
+
+  .linkButton {
+    all: unset;
+    cursor: pointer;
+    color: #337ab7;
+    cursor: pointer;
+    text-decoration: none;
+    margin-bottom: 10px;
+
+    &:active {
+      text-decoration: underline;
+    }
+
+    &:hover {
+      color: #23527c;
+    }
+
+    &:focus-visible {
+      outline: 5px auto -webkit-focus-ring-color;
+      outline-offset: 3px;
+    }
   }
 
   .colParagraph {
@@ -210,11 +233,6 @@
     padding-right: 30px;
     background-color: rgba(105, 124, 170, 0.05);
 
-    h2 {
-      font-family: "roboto";
-      font-size: 28px;
-      font-weight: 500;
-    }
     .linkButton {
       all: unset;
       cursor: pointer;
@@ -235,6 +253,12 @@
         outline: 5px auto -webkit-focus-ring-color;
         outline-offset: 3px;
       }
+    }
+
+    h2 {
+      font-family: "roboto";
+      font-size: 28px;
+      font-weight: 500;
     }
 
     .releaseDescription {

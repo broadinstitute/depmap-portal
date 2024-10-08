@@ -18,6 +18,10 @@ export const COLOR_SCALE = [
   [1.0, "rgb(0, 0, 0)"],
 ];
 
+export interface LineageCountInfo {
+  [lineage: string]: [{ [primary_disease: string]: number }];
+}
+
 export interface DataAvailSummary {
   all_depmap_ids: [number, string][];
   data_type_url_mapping: { [data_type: string]: string };
@@ -34,6 +38,10 @@ export interface DataSummary {
       values: number[][];
     };
   };
+}
+
+export interface LineageAvailability {
+  lineage_counts: LineageCountInfo;
 }
 
 export interface DataAvailability {

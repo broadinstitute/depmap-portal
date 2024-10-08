@@ -68,6 +68,7 @@ export const DataPage = ({
       const currentDataTypes: string[] = [];
       const currentDataTypeUrlMapping: { [key: string]: string } = {};
       const currentDataTypeDrugCountMapping: { [key: string]: number } = {};
+
       dataAvail.data_types.forEach((data_type: string, index: number) => {
         if (currentReleaseDatasets.includes(data_type)) {
           currentDataTypes.push(data_type);

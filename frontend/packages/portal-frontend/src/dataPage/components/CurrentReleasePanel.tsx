@@ -109,7 +109,7 @@ function CurrentReleasePanel(props: CurrentReleasePanelProps) {
           </div>
 
           <DataAvailabilityPlot
-            currentReleaseDataAvil={currentReleaseDataAvail}
+            dataAvail={currentReleaseDataAvail}
             handleSetPlotElement={(element: ExtendedPlotType | null) => {
               setPlotElement(element);
             }}

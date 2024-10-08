@@ -7,11 +7,12 @@ import plotlyCore from "plotly.js/lib/core";
 import scattergl from "plotly.js/lib/scattergl";
 
 import box from "plotly.js/lib/box";
+import bar from "plotly.js/lib/bar";
 // import histogram from 'plotly.js/lib/histogram';
 // import scatter from 'plotly.js/lib/scatter';
 import violin from "plotly.js/lib/violin";
 import heatmap from "plotly.js/lib/heatmap";
 
-plotlyCore.register([scattergl, violin, heatmap, box]);
+plotlyCore.register([scattergl, violin, heatmap, box, bar]);
 
 export default plotlyCore;
