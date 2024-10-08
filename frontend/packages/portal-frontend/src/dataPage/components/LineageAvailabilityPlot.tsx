@@ -73,7 +73,9 @@ const LineageAvailabilityPlot = ({
   // The trace x should be the count of THIS primary disease in each lineage.
   const formattedData = useMemo(() => {
     if (lineageAvail) {
-      const lineages = Object.keys(lineageAvail);
+      const lineages = [...Object.keys(lineageAvail)].sort((a, b) =>
+        b.localeCompare(a)
+      );
 
       let allPrimaryDiseases: string[] = [];
       lineages.forEach((lineageName: string) => {

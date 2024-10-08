@@ -181,19 +181,17 @@ class DepmapModel(Model):
             df.fillna("unknown").groupby(["lineage"]).agg({"primary_disease": list})
         )
 
-        assert df_agg.index.is_unique
+        assert isinstance(df_agg, pd.DataFrame)
 
         def count_primary_disease_occurences(x):
             if isinstance(x, list):
                 return {key: str(val) for key, val in dict(Counter(x)).items()}
 
-        df_agg.reset_index()
-
         df_agg = df_agg[["primary_disease"]].apply(
             np.vectorize(count_primary_disease_occurences)
         )["primary_disease"]
 
-        return df_agg.to_dict()
+        return dict(df_agg)
 
     @staticmethod
     def get_valid_cell_line_names_in(cell_line_names):
