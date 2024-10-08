@@ -26,7 +26,6 @@ export interface DataAvailSummary {
   all_depmap_ids: [number, string][];
   data_type_url_mapping: { [data_type: string]: string };
   drug_count_mapping: { [data_type: string]: number };
-  lineage_counts: { [data_type: string]: LineageCountInfo[] };
   data_types: string[];
   values: boolean[][];
 }
