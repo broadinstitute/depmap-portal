@@ -1,7 +1,5 @@
-from functools import lru_cache
-import itertools
 import os
-from typing import List, Optional, Union
+from typing import List, Union
 
 from depmap import data_access
 from depmap.dataset.models import BiomarkerDataset, DependencyDataset
@@ -9,7 +7,6 @@ from depmap.download.utils import get_download_url
 from depmap.enums import BiomarkerEnum, DependencyEnum
 from depmap.cell_line.models_new import DepmapModel
 from flask_restplus import Namespace, Resource
-import numpy as np
 from flask import current_app, request
 import pandas as pd
 
