@@ -82,7 +82,11 @@ const LineageAvailabilityPlot = ({
             title=""
             data={formattedData}
             barmode={"stack"}
-            height={25 * formattedData[0].y.length}
+            height={
+              formattedData[0].y.length > 3
+                ? 25 * formattedData[0].y.length
+                : 80 * formattedData[0].y.length
+            }
             onLoad={() => {}}
             xAxisTitle={"Count"}
             margin={{
@@ -90,7 +94,7 @@ const LineageAvailabilityPlot = ({
 
               r: 20,
 
-              b: 30,
+              b: 50,
 
               t: 0,
 

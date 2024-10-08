@@ -1,3 +1,4 @@
+import itertools
 import os
 from typing import List, Union
 
@@ -7,6 +8,7 @@ from depmap.download.utils import get_download_url
 from depmap.enums import BiomarkerEnum, DependencyEnum
 from depmap.cell_line.models_new import DepmapModel
 from flask_restplus import Namespace, Resource
+import numpy as np
 from flask import current_app
 import pandas as pd
 
@@ -145,37 +147,43 @@ def _get_formatted_all_data_avail_df(overall_summary: pd.DataFrame) -> pd.DataFr
     return transposed_summary
 
 
-def _get_lineage_primary_disease(
-    data_type_availability_row: List[bool], summary_df_columns: list
-):
+def _get_lineage_primary_disease(model_ids: list):
     lineage_primary_disease_counts = DepmapModel.get_lineage_primary_disease_counts(
-        [
-            depmap_id
-            for j, depmap_id in enumerate(summary_df_columns)
-            if data_type_availability_row[j] == True
-        ]
+        model_ids
     )
-
     return lineage_primary_disease_counts
 
 
 def _format_data_availability_summary_dict(summary_df: pd.DataFrame):
-    data_types_by_url = _get_data_type_url_mapping(summary_df.index.values.tolist())
+    summary_df_index = summary_df.index.tolist()
+    data_types_by_url = _get_data_type_url_mapping(summary_df_index)
 
-    drug_count_mapping = _get_drug_count_mapping(summary_df.index.values.tolist())
+    drug_count_mapping = _get_drug_count_mapping(summary_df_index)
+
+    models_available_by_data_type = {
+        data_type: summary_df.loc[data_type]
+        .explode()[summary_df.loc[data_type].explode() == True]
+        .index.tolist()
+        for data_type in summary_df_index
+    }
+
+    # Get the lineage and primary disease counts for all model ids
+    # lineage_counts = _get_lineage_primary_disease(summary_df_index)
+
+    lineage_counts = {
+        data_type: _get_lineage_primary_disease(
+            models_available_by_data_type[data_type]
+        )
+        for data_type in summary_df_index
+    }
 
     summary = {
-        "values": [row.values.tolist() for _, row in summary_df.iterrows()],
+        "values": summary_df.values.tolist(),
         "data_type_url_mapping": data_types_by_url,
         "drug_count_mapping": drug_count_mapping,
         # For keeping track of data_type order
-        "lineage_counts": {
-            data_type_availability_row.name: _get_lineage_primary_disease(
-                data_type_availability_row.values.tolist(), summary_df.columns.tolist()
-            )
-            for i, data_type_availability_row in summary_df.iterrows()
-        },
-        "data_types": summary_df.index.values.tolist(),
+        "lineage_counts": lineage_counts,
+        "data_types": summary_df_index,
     }
 
     summary["all_depmap_ids"] = [

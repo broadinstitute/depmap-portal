@@ -4,6 +4,9 @@ import enum
 import re
 from typing import Dict, List, Optional, Sequence
 from depmap.cell_line.models import Lineage
+import numpy as np
+from collections import Counter
+
 
 import pandas as pd
 import sqlalchemy
@@ -154,17 +157,18 @@ class DepmapModel(Model):
             return q.one_or_none()
 
     @staticmethod
-    def get_lineage_primary_disease_counts(model_ids: List[str],) -> Dict[str, dict]:
+    def get_lineage_primary_disease_counts(model_ids: List[str]) -> Dict[str, dict]:
         q = (
             db.session.query(DepmapModel)
             .filter(DepmapModel.model_id.in_(model_ids))
-            .outerjoin(Lineage, DepmapModel.oncotree_lineage)
+            .join(Lineage, DepmapModel.oncotree_lineage)
             .filter(Lineage.level == 1)
             .with_entities(
                 DepmapModel.model_id,
                 Lineage.name.label("lineage"),
                 DepmapModel.oncotree_primary_disease.label("primary_disease"),
             )
+            .order_by(Lineage.name)
             .all()
         )
 
@@ -173,22 +177,21 @@ class DepmapModel(Model):
         if df.empty:
             return {}
 
-        df_agg = pd.pivot_table(
-            df,
-            values=["lineage", "primary_disease"],
-            index="lineage",
-            aggfunc={"primary_disease": list},
-        )
+        df_agg = df.groupby(["lineage"]).agg({"primary_disease": list})
 
         assert df_agg.index.is_unique
 
-        counts = {}
-        for lin in df_agg.index.tolist():
-            # Gets primary diseases as index and the counts of each as the values
-            value_counts = df_agg.loc[lin].explode().value_counts()
-            counts[lin] = dict(value_counts.astype(str))
+        def count_primary_disease_occurences(x):
+            if isinstance(x, list):
+                return {key: str(val) for key, val in dict(Counter(x)).items()}
 
-        return counts
+        df_agg.reset_index()
+
+        df_agg = df_agg[["primary_disease"]].apply(
+            np.vectorize(count_primary_disease_occurences)
+        )["primary_disease"]
+
+        return df_agg.to_dict()
 
     @staticmethod
     def get_valid_cell_line_names_in(cell_line_names):

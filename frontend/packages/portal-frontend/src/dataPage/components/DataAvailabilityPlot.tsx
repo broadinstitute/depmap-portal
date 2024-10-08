@@ -123,21 +123,21 @@ const DataAvailabilityPlot = ({
 
   return (
     <div>
-      {dataValuesByDataTypeCategory && (
-        <div className={styles.plot}>
-          {(!plotElement || !totalCellLines) && <PlotSpinner />}
-          {selectedDataType && showLineageModal && (
-            <LineageAvailabilityPlot
-              show={showLineageModal}
-              selectedDataType={selectedDataType}
-              data={dataAvail.lineage_counts[selectedDataType]}
-              onCloseLineageModal={() => {
-                setSelectedDataType(null);
-                setShowLineageModal(false);
-              }}
-            />
-          )}
-          {Object.keys(dataValuesByDataTypeCategory).map((categoryKey: any) => (
+      <div className={styles.plot}>
+        {(!plotElement || !totalCellLines) && <PlotSpinner />}
+        {selectedDataType && showLineageModal && (
+          <LineageAvailabilityPlot
+            show={showLineageModal}
+            selectedDataType={selectedDataType}
+            data={dataAvail.lineage_counts[selectedDataType]}
+            onCloseLineageModal={() => {
+              setSelectedDataType(null);
+              setShowLineageModal(false);
+            }}
+          />
+        )}
+        {dataValuesByDataTypeCategory &&
+          Object.keys(dataValuesByDataTypeCategory).map((categoryKey: any) => (
             <div key={categoryKey} className={styles.dataAvailabilityPlot}>
               {plotElement && (
                 <div className={styles.dataAvailabilityPlotContainer}>
@@ -213,8 +213,7 @@ const DataAvailabilityPlot = ({
               )}
             </div>
           ))}
-        </div>
-      )}
+      </div>
     </div>
   );
 };
