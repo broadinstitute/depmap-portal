@@ -31,6 +31,12 @@ We are not expecting many such datasets to be out there. But if you need to add 
 4. Add that function to the main function.
 5. Execute the `legacy_data_prep.py` once.
 
+#### Bonus Case: If the source data is generated as part of the data prep pipeline
+
+1. Add the taiga permaname in [datarelease_taiga_permanames](data_prep_pipeline/datarelease_taiga_permanames.py).
+2. Import and use that taiga permaname variable in your source data transformation script's update_taiga function's `matrix_name_in_taiga` parameter. E.g. line 33 in cngene transformation.[script](data_prep_pipeline/cn_gene/transform_cngene_to_log2.py)
+3. Everything else is exactly as [If Source Data is from release only](#if-source-data-is-from-release-only). Just make sure that this script is executed after the source data transformation script in the main function of [data_prep.py](data_prep_pipeline/data_prep.py)
+
 #### Note
 
 Transformed and uploaded data should have samples as the row header/index and feature names as the column headers.

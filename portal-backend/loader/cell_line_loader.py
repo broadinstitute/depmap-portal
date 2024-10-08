@@ -36,6 +36,7 @@ def insert_or_update_cell_lines(df):
     # we seem to have a dup wtsi_master_cell_id
     if "WTSI_Master_Cell_ID" in df.columns:
         del df["WTSI_Master_Cell_ID"]
+
     df.columns = [x.lower() for x in df.columns]
     assert "wtsi_master_cell_id" in df.columns
     # more strange column renames. Something is wrong with how we generated the 20q4 sample info file
@@ -46,89 +47,46 @@ def insert_or_update_cell_lines(df):
     if "disease_subtype" in df.columns and "subtype_name" not in df.columns:
         df["subtype_name"] = df["disease_subtype"]
 
-    # Combine all merged cell lines (add as aliases for the cell lines they were merged to)
-    merged_cell_lines = df[
-        df["ccle_name"].str.match(r"\[MERGED_TO_[A-Za-z\d\-\_]*\].*", na=False)
-    ]
-    for index, row in merged_cell_lines.iterrows():
-        merged_depmap_id = re.search(
-            r"(?<=MERGED_TO_)[A-Za-z\d\-\_]*(?=\])", row["ccle_name"]
-        ).group(0)
-        ccle_name = row["ccle_name"].rsplit("]")[1]
-        # HACK: There's a typo in one of the lines. Adding this here to avoid rerunning the pipeline.
-        if merged_depmap_id == "ACH001163":
-            merged_depmap_id = "ACH-001163"
-        assert merged_depmap_id in df["arxspan_id"].values
-
-        canonical_cell_line = df[df["arxspan_id"] == merged_depmap_id].iloc[0]
-
-        alt_names = canonical_cell_line["alt_names"]
-        if type(alt_names) != str or len(alt_names) == 0:
-            alt_names = ccle_name
-
-        alt_names = set(alt_names.split(",") + [ccle_name])
-
-        if type(row["aliases"]) == str:
-            alt_names.add(",".join(row["aliases"].split(", ")))
-        if type(row["alt_names"]) == str:
-            alt_names.add(row["alt_names"])
-        if type(row["display_name"]) == str and "MERGED" not in row["display_name"]:
-            alt_names.add(row["display_name"])
-
-        alt_names = ",".join(sorted(alt_names))
-
-        df.loc[canonical_cell_line.name, "alt_names"] = alt_names
-
     for index, row in df.iterrows():
         depmap_id = row["arxspan_id"]
+        if is_empty_string(depmap_id):
+            # if we don't have a depmap ID there's really nothing to do but drop this
+            log.warning(f"Missing depmap_id for {row}!")
+            continue
 
         cell_line_name = row["ccle_name"]
         cell_line_display_name = row["display_name"]
 
         catalog_number = row["catalog_number"]
-        growth_pattern = row["growth_pattern"]
 
         if type(cell_line_name) == str and "[MERGED_TO_" in cell_line_name:
             continue
 
         # hack: some cell line names are missing striped cell line name because these are internal and have no data.
-        # We just want it for a display label and so if we don't have it, instead use the ccle name. Check for NaN because
-        # that's how pandas represents missing values
-        if not isinstance(cell_line_display_name, str) and isnan(
-            cell_line_display_name
-        ):
+        # We just want it for a display label and so if we don't have it, instead use the ccle name.
+        if is_empty_string(cell_line_display_name):
             cell_line_display_name = cell_line_name
 
-        # switching to model.csv resulted in records which also are missing ccle_name. Drop these records
-        if not isinstance(cell_line_display_name, str) and (
-            isnan(cell_line_display_name) or cell_line_display_name is None
-        ):
+        if is_empty_string(cell_line_display_name):
             log.warning(f"Missing display name for {depmap_id}")
             cell_line_display_name = depmap_id
 
-        # print(f"depmap_id {depmap_id}, cell_line_display_name {repr(cell_line_display_name)}")
-
-        seen_aliases = set()
+        aliases = set()
         if is_non_empty_string(row["aliases"]):
-            cell_line_aliases = [
-                CellLineAlias(alias=alias) for alias in row["aliases"].split(", ")
-            ]
-            seen_aliases.update(row["aliases"].split(", "))
-        else:
-            cell_line_aliases = []
+            aliases.update(row["aliases"].split(","))
 
         if is_non_empty_string(row["alt_names"]):
-            alt_names = row["alt_names"].split(",")
-            for alt_name in alt_names:
-                if alt_name not in seen_aliases:
-                    cell_line_aliases.append(CellLineAlias(alias=alt_name))
-                    seen_aliases.add(alt_name)
+            aliases.update(row["alt_names"].split(","))
 
-        if (
-            is_non_empty_string(row["ccle_name"])
-            and row["ccle_name"] not in seen_aliases
-        ):
-            cell_line_aliases.append(CellLineAlias(alias=row["ccle_name"]))
+        for alt_name_column in ["ccle_name", "full_cell_line_name"]:
+            alt_name_value = row.get(alt_name_column)
+            if is_non_empty_string(alt_name_value):
+                aliases.add(alt_name_value)
+
+        # get rid of any extra space
+        aliases = set([x.strip() for x in aliases])
+
+        cell_line_aliases = [CellLineAlias(alias=alias) for alias in aliases]
 
         level_1_lineage = row["lineage_1"]
         # each cell line must have a level 1 lineage
@@ -181,6 +139,7 @@ def insert_or_update_cell_lines(df):
             )
         else:
             tumor_type_obj = None
+
         if CellLine.exists(cell_line_name):
             log_data_issue(
                 "CellLine",
@@ -237,6 +196,10 @@ def insert_or_update_cell_lines(df):
                 )
 
                 db.session.add(cell_line)
+
+
+def is_empty_string(s):
+    return not is_non_empty_string(s)
 
 
 def is_non_empty_string(row_lineage_value):
