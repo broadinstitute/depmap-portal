@@ -1,6 +1,8 @@
 import { RJSFSchema } from "@rjsf/utils";
 
-export const UpdateDimensionType: Required<Pick<RJSFSchema, "properties">> &
+export const updateDimensionTypeSchema: Required<
+  Pick<RJSFSchema, "properties">
+> &
   RJSFSchema = {
   title: "UpdateDimensionType",
   type: "object",

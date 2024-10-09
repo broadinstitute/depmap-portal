@@ -1,9 +1,9 @@
 import { RJSFSchema } from "@rjsf/utils";
 
-export const AddDimensionTypeSchema: Required<Pick<RJSFSchema, "properties">> &
+export const addDimensionTypeSchema: Required<Pick<RJSFSchema, "properties">> &
   RJSFSchema = {
   title: "AddDimensionType",
-  required: ["name", "id_column", "axis"],
+  required: ["name", "display_name", "id_column", "axis"],
   type: "object",
   properties: {
     name: {
@@ -11,7 +11,7 @@ export const AddDimensionTypeSchema: Required<Pick<RJSFSchema, "properties">> &
       title: "Name",
     },
     display_name: {
-      type: "string", // bb typing is nullable for backwards compatibility by we want display name to be required
+      type: "string", // bb typing is nullable for backwards compatibility but we want display name to be required
       title: "Display Name",
     },
     id_column: {
