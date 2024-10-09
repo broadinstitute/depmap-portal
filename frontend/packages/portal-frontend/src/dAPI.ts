@@ -51,6 +51,9 @@ import {
   InvalidPrioritiesByDataType,
   SearchDimenionsRequest,
   SearchDimenionsResponse,
+  DimensionType,
+  DimensionTypeAddArgs,
+  DimensionTypeUpdateArgs,
 } from "@depmap/types";
 import { TDASummaryTable } from "src/tda/models/types";
 import { CompoundSummaryTableRaw } from "src/compoundDashboard/models/types";
@@ -1021,6 +1024,27 @@ export class DepmapApi {
   };
 
   getFeatureTypes = (): Promise<FeatureType[]> => {
+    return Promise.reject(Error("Wrong api used. Check ApiContext"));
+  };
+
+  getDimensionTypes = (): Promise<DimensionType[]> => {
+    return Promise.reject(Error("Wrong api used. Check ApiContext"));
+  };
+
+  postDimensionType = (
+    dimTypeArgs: DimensionTypeAddArgs
+  ): Promise<DimensionType> => {
+    return Promise.reject(Error("Wrong api used. Check ApiContext"));
+  };
+
+  updateDimensionType = (
+    dimTypeName: string,
+    dimTypeArgs: DimensionTypeUpdateArgs
+  ): Promise<DimensionType> => {
+    return Promise.reject(Error("Wrong api used. Check ApiContext"));
+  };
+
+  deleteDimensionType = (name: string) => {
     return Promise.reject(Error("Wrong api used. Check ApiContext"));
   };
 
