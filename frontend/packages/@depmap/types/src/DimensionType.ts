@@ -1,4 +1,4 @@
-export default interface DimensionType {
+export interface DimensionType {
   name: string;
   display_name: string;
   id_column: string;
