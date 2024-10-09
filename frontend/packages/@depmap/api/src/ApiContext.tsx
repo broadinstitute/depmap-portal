@@ -110,7 +110,7 @@ export interface SharedApi {
     featureTypeArgs: FeatureTypeUpdateArgs
   ) => Promise<FeatureType>;
   // NOTE: The endpoints for dimension type should be used instead of ones for feature and sample type
-  getDimensionTypes: () => Promise<DimensionType>;
+  getDimensionTypes: () => Promise<DimensionType[]>;
   postDimensionType: (
     dimTypeArgs: DimensionTypeAddArgs
   ) => Promise<DimensionType>;
