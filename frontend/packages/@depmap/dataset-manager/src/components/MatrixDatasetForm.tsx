@@ -233,6 +233,9 @@ export function MatrixDatasetForm({
     const featureTypeOptions = featureTypes.map((option) => {
       return { title: option.name, const: option.name };
     });
+    // include value to give to form data for unchosen option
+    featureTypeOptions.push({ title: undefined, const: undefined });
+
     const sampleTypeOptions = sampleTypes.map((option) => {
       return { title: option.name, const: option.name };
     });
