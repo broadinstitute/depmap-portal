@@ -92,6 +92,12 @@ def get_dataset_priority(dataset_id: str) -> Optional[int]:
     return get_matrix_dataset(dataset_id).priority
 
 
+def get_dataset_feature_ids(dataset_id: str) -> list[str]:
+    bb_dataset_id = remove_breadbox_prefix(dataset_id)
+    features = extensions.breadbox.client.get_dataset_features(bb_dataset_id)
+    return [feature["id"] for feature in features]
+
+
 def get_dataset_sample_ids(dataset_id: str) -> list[str]:
     bb_dataset_id = remove_breadbox_prefix(dataset_id)
     samples = extensions.breadbox.client.get_dataset_samples(bb_dataset_id)
@@ -160,3 +166,14 @@ def valid_row(dataset_id: str, row_name: str) -> bool:
     valid_features = extensions.breadbox.client.get_dataset_features(dataset_id)
     valid_feature_labels = [feature["label"] for feature in valid_features]
     return row_name in valid_feature_labels
+
+
+def get_tabular_dataset_column(dataset_id: str, column_name: str) -> pd.Series:
+    df = extensions.breadbox.client.get_tabular_dataset_data(
+        dataset_id=dataset_id,
+        columns=[column_name],
+        identifier=None,
+        indices=None,
+        strict=True,
+    )
+    return df.squeeze()

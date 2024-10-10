@@ -1714,6 +1714,7 @@ def _sync_metadata_to_breadbox():
                 # if the type does not exist, create it
                 breadbox.client.add_dimension_type(
                     name=dimension_type.type_name,
+                    display_name=dimension_type.type_name,
                     id_column=dimension_type.id_column,
                     axis=dimension_type.axis,
                 )
