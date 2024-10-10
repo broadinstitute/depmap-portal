@@ -9,6 +9,8 @@ import {
   instanceOfErrorDetail,
   SampleTypeUpdateArgs,
   FeatureTypeUpdateArgs,
+  DimensionTypeAddArgs,
+  DimensionTypeUpdateArgs,
 } from "@depmap/types";
 
 import { FormModal, Spinner } from "@depmap/common-components";
@@ -23,6 +25,7 @@ import DatasetMetadataForm from "./DatasetMetadataForm";
 import DimensionTypeForm from "./DimensionTypeForm";
 import { Alert } from "react-bootstrap";
 import DatasetEditForm from "./DatasetEditForm";
+import DimensionTypeFormV2 from "./DimensionTypeFormV2";
 
 export default function Datasets() {
   const { getApi } = useContext(ApiContext);
@@ -47,8 +50,20 @@ export default function Datasets() {
     [key: string]: string;
   } | null>(null);
 
+  // TODO: Remove
   const getFeatureTypes = useCallback(() => dapi.getFeatureTypes(), [dapi]);
   const getSampleTypes = useCallback(() => dapi.getSampleTypes(), [dapi]);
+
+  const getDimensionTypes = useCallback(() => dapi.getDimensionTypes(), [dapi]);
+  const postDimensionType = useCallback(
+    (dimTypeArgs: DimensionTypeAddArgs) => dapi.postDimensionType(dimTypeArgs),
+    [dapi]
+  );
+  const updateDimensionType = useCallback(
+    (dimTypeName: string, dimTypeArgs: DimensionTypeUpdateArgs) =>
+      dapi.updateDimensionType(dimTypeName, dimTypeArgs),
+    [dapi]
+  );
   const getGroups = useCallback(() => dapi.getGroups(), [dapi]);
   const getDataTypesAndPriorities = useCallback(
     () => dapi.getDataTypesAndPriorities(),
@@ -117,33 +132,46 @@ export default function Datasets() {
           currentDatasets
         );
 
-        const feature_types = (await getFeatureTypes()).map((f) => {
-          return {
-            ...f,
-            axis: "feature",
-            datasetsCount:
-              f.name in dimensionTypeDatasetNum
-                ? dimensionTypeDatasetNum[f.name]
-                : 0,
-          };
-        });
-        const sample_types = (await getSampleTypes()).map((s) => {
-          return {
-            ...s,
-            axis: "sample",
-            datasetsCount:
-              s.name in dimensionTypeDatasetNum
-                ? dimensionTypeDatasetNum[s.name]
-                : 0,
-          };
-        });
-        setDimensionTypes(feature_types.concat(sample_types));
+        // TODO: DELETE
+        // const feature_types = (await getFeatureTypes()).map((f) => {
+        //   return {
+        //     ...f,
+        //     axis: "feature",
+        //     datasetsCount:
+        //       f.name in dimensionTypeDatasetNum
+        //         ? dimensionTypeDatasetNum[f.name]
+        //         : 0,
+        //   };
+        // });
+        // const sample_types = (await getSampleTypes()).map((s) => {
+        //   return {
+        //     ...s,
+        //     axis: "sample",
+        //     datasetsCount:
+        //       s.name in dimensionTypeDatasetNum
+        //         ? dimensionTypeDatasetNum[s.name]
+        //         : 0,
+        //   };
+        // });
+
+        const dimensionTypesWithDatasetCounts = (await getDimensionTypes()).map(
+          (dt) => {
+            return {
+              ...dt,
+              datasetsCount:
+                dt.name in dimensionTypeDatasetNum
+                  ? dimensionTypeDatasetNum[dt.name]
+                  : 0,
+            };
+          }
+        );
+        setDimensionTypes(dimensionTypesWithDatasetCounts);
       } catch (e) {
         console.error(e);
         setInitError(true);
       }
     })();
-  }, [dapi, getFeatureTypes, getSampleTypes]);
+  }, [dapi, getDimensionTypes]);
 
   const datasetForm = useCallback(() => {
     if (datasets) {
@@ -366,6 +394,7 @@ export default function Datasets() {
   //   return null;
   // };
 
+  // TODO: REMOVE
   const onSubmitDimensionTypeEdit = async (
     dimensionTypeArgs: any,
     clear_state_callback: (
@@ -426,6 +455,7 @@ export default function Datasets() {
     clear_state_callback(isSubmitted, wasEditing);
   };
 
+  // TODO: REMOVE
   const onSubmitDimensionTypeUpload = async (
     dimensionTypeArgs: any,
     clear_state_callback: (isSuccessfulSubmit: boolean) => void
@@ -470,12 +500,14 @@ export default function Datasets() {
     return null;
   };
   const dimensionTypeForm = (
-    <DimensionTypeForm
-      onSubmit={onSubmitDimensionTypeUpload}
-      onSubmitDimensionTypeEdit={onSubmitDimensionTypeEdit}
-      dimensionTypeSubmissionError={dimensionTypeSubmissionError}
+    <DimensionTypeFormV2
+      addDimensionType={postDimensionType}
+      updateDimensionType={updateDimensionType}
       isEditMode={isEditDimensionTypeMode}
-      selectedDimensionType={getSelectedDimensionType()}
+      dimensionTypeToEdit={getSelectedDimensionType()}
+      datasets={datasets.filter(
+        (dataset) => dataset.format === "tabular_dataset"
+      )}
     />
   );
 
