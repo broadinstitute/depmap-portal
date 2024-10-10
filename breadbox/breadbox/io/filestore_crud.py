@@ -50,7 +50,7 @@ def get_slice(
 
 def get_feature_slice(
     dataset: Dataset, feature_indexes: List[int], filestore_location: str
-):
+) -> pd.DataFrame:
     if len(feature_indexes) == 0:
         raise ValueError(f"No features match query")
 
@@ -64,7 +64,7 @@ def get_feature_slice(
 
 def get_sample_slice(
     dataset: Dataset, sample_indexes: List[int], filestore_location: str
-):
+) -> pd.DataFrame:
     if len(sample_indexes) == 0:
         raise ValueError(f"No samples match query")
 

@@ -1480,7 +1480,7 @@ def get_subsetted_tabular_dataset_df(
     dataset: TabularDataset,
     tabular_dimensions_info: TabularDimensionsInfo,
     strict: bool,
-):
+) -> pd.DataFrame:
     """
     Load a dataframe containing data for the specified indices and columns.
     If the indices are specified by label, then return a result indexed by labels
