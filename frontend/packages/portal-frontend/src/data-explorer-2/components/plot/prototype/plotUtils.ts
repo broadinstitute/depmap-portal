@@ -594,7 +594,7 @@ export function calcVisibility(
     const primary = c1Values || c2Values;
     const other = c2Values || [];
 
-    primary!.forEach((value: boolean, i: number) => {
+    primary?.forEach((value: boolean, i: number) => {
       if (!value && !other[i]) {
         visiblePoints[i] = false;
       }

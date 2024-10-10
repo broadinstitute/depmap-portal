@@ -6,13 +6,17 @@ import pandas as pd
 from typing import Any, Optional
 from collections import defaultdict
 from logging import getLogger
-from flask import json, make_response
+from flask import abort, json, make_response
 
-from depmap_compute.context import decode_slice_id
+from depmap_compute.context import (
+    decode_slice_id,
+    ContextEvaluator,
+    LegacyContextEvaluator,
+)
+from depmap_compute.slice import SliceQuery
 from depmap import data_access
 from depmap.data_access.models import MatrixDataset
 from depmap.settings.download_settings import get_download_list
-from depmap.vector_catalog.models import Serializer
 from depmap.data_explorer_2.datatypes import (
     blocked_dimension_types,
     entity_aliases,
@@ -24,6 +28,8 @@ log = getLogger(__name__)
 @functools.cache
 def get_vector_labels(dataset_id: str, is_transpose: bool) -> list[str]:
     """
+    DEPRECATED: this does not use the definition of "labels" that we are using
+    going forward. For samples, this returns IDs as labels. 
     Load all labels for an axis of the given dataset.
     If is_transpose, then get depmap_ids/sample labels.
     Otherwise, get sample/feature labels.
@@ -35,6 +41,10 @@ def get_vector_labels(dataset_id: str, is_transpose: bool) -> list[str]:
 
 
 def get_dimension_labels_of_dataset(dimension_type: str, dataset: MatrixDataset):
+    """
+    DEPRECATED: this does not use the definition of "labels" that we are using
+    going forward. For samples, this returns IDs as labels. 
+    """
     if dimension_type not in (dataset.feature_type, dataset.sample_type):
         return set()
 
@@ -201,6 +211,27 @@ def get_dimension_labels_across_datasets(dimension_type):
         all_labels = all_labels.union(labels)
 
     return sorted(list(all_labels))
+
+
+def get_all_dimension_labels_by_id(dimension_type: str) -> dict[str, str]:
+    """Get all dimension labels and IDs across datasets."""
+    all_labels_by_id = {}
+    # For each dataset, if it has the dimension type, get its IDs and labels
+    for dataset in get_all_supported_continuous_datasets():
+        if dimension_type == dataset.sample_type:
+            dataset_labels_by_id = data_access.get_dataset_sample_labels_by_id(
+                dataset.id
+            )
+        elif dimension_type == dataset.feature_type:
+            dataset_labels_by_id = data_access.get_dataset_feature_labels_by_id(
+                dataset.id
+            )
+        else:
+            dataset_labels_by_id = {}
+
+        all_labels_by_id.update(dataset_labels_by_id)
+
+    return all_labels_by_id
 
 
 def get_dimension_labels_to_datasets_mapping(dimension_type: str):
@@ -401,3 +432,33 @@ def get_union_of_index_labels(index_type, dataset_ids):
 
 def clear_cache():
     get_vector_labels.cache_clear()
+
+
+def get_ids_and_labels_matching_context(context: dict) -> tuple[list[str], list[str]]:
+    """
+    For a given context, load all matching IDs and labels.
+    Both context versions are supported here. 
+    """
+    # Identify which type of context has been provided
+    # Legacy contexts use the "context_type" field name, while newer contexts use "dimension_type"
+    if context.get("context_type"):
+        dimension_type = context.get("context_type")
+        context_evaluator = LegacyContextEvaluator(context, slice_to_dict)
+    else:
+        dimension_type = context.get("dimension_type")
+        context_evaluator = ContextEvaluator(context, data_access.get_slice_data)
+
+    if dimension_type is None:
+        raise ValueError("Context requests must specify a dimension type.")
+    # Load all dimension labels and ids
+    all_labels_by_id = get_all_dimension_labels_by_id(dimension_type)
+
+    # Evaluate each against the context
+    ids_matching_context = []
+    labels_matching_context = []
+    for given_id, label in all_labels_by_id.items():
+        if context_evaluator.is_match(given_id):
+            ids_matching_context.append(given_id)
+            labels_matching_context.append(label)
+
+    return ids_matching_context, labels_matching_context
