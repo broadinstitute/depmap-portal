@@ -1375,7 +1375,7 @@ def delete_dataset(
 
 
 def get_dataset_feature_by_given_id(
-    db: SessionWithUser, dataset_id: str, feature_given_id: str,  # An ID or given ID
+    db: SessionWithUser, dataset_id: str, feature_given_id: str,
 ) -> DatasetFeature:
     dataset = get_dataset(db, db.user, dataset_id)
     if dataset is None:
@@ -1399,6 +1399,31 @@ def get_dataset_feature_by_given_id(
     return feature
 
 
+def get_dataset_sample_by_given_id(
+    db: SessionWithUser, dataset_id: str, sample_given_id: str,
+) -> DatasetSample:
+    dataset = get_dataset(db, db.user, dataset_id)
+    if dataset is None:
+        raise ResourceNotFoundError(f"Dataset '{dataset_id}' not found.")
+    assert_user_has_access_to_dataset(dataset, db.user)
+    assert isinstance(dataset, MatrixDataset)
+
+    sample = (
+        db.query(DatasetSample)
+        .filter(
+            DatasetSample.given_id == sample_given_id,
+            DatasetSample.dataset_id == dataset.id,
+        )
+        .one_or_none()
+    )
+
+    if sample is None:
+        raise ResourceNotFoundError(
+            f"Sample given ID '{sample_given_id}' not found in dataset '{dataset_id}'."
+        )
+    return sample
+
+
 def get_dataset_feature_by_label(
     db: SessionWithUser, user: str, dataset_id: str, feature_label: str
 ) -> DatasetFeature:
@@ -1419,6 +1444,28 @@ def get_dataset_feature_by_label(
         )
 
     return get_dataset_feature_by_given_id(db, dataset_id, feature_given_id)
+
+
+def get_dataset_sample_by_label(
+    db: SessionWithUser, user: str, dataset_id: str, sample_label: str
+) -> DatasetSample:
+    """Load the dataset sample corresponding to the given dataset ID and sample label"""
+
+    dataset = get_dataset(db, user, dataset_id)
+    if dataset is None:
+        raise ResourceNotFoundError(f"Dataset '{dataset_id}' not found.")
+    assert_user_has_access_to_dataset(dataset, user)
+    assert isinstance(dataset, MatrixDataset)
+
+    labels_by_given_id = get_dataset_sample_labels_by_id(db, user, dataset)
+    given_ids_by_label = {label: id for id, label in labels_by_given_id.items()}
+    sample_given_id = given_ids_by_label[sample_label]
+    if sample_given_id is None:
+        raise ResourceNotFoundError(
+            f"Sample label '{sample_label}' not found in dataset '{dataset_id}'."
+        )
+
+    return get_dataset_feature_by_given_id(db, dataset_id, sample_given_id)
 
 
 def _get_column_types(columns_metadata, columns: Optional[List[str]]):
