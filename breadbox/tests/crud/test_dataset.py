@@ -55,7 +55,6 @@ def test_get_dataset_feature_by_label(minimal_db: SessionWithUser, settings):
     minimal_db.reset_user(settings.default_user)
     feature = get_dataset_feature_by_label(
         minimal_db,
-        settings.default_user,
         dataset_id=dataset_with_generic_features.id,
         feature_label="featureID1",
     )
@@ -98,10 +97,7 @@ def test_get_dataset_feature_by_label(minimal_db: SessionWithUser, settings):
     # Query with the non-admin user
     minimal_db.reset_user(settings.default_user)
     feature = get_dataset_feature_by_label(
-        minimal_db,
-        settings.default_user,
-        dataset_id=dataset_with_metadata.id,
-        feature_label="featureLabel1",
+        minimal_db, dataset_id=dataset_with_metadata.id, feature_label="featureLabel1",
     )
     assert feature.dataset_id == dataset_with_metadata.id
     assert feature.given_id == "featureID1"
@@ -110,7 +106,6 @@ def test_get_dataset_feature_by_label(minimal_db: SessionWithUser, settings):
     with pytest.raises(ResourceNotFoundError):
         get_dataset_feature_by_label(
             minimal_db,
-            settings.default_user,
             dataset_id="Undefined-dataset",
             feature_label="someFeatureLabel",
         )
@@ -119,7 +114,6 @@ def test_get_dataset_feature_by_label(minimal_db: SessionWithUser, settings):
     with pytest.raises(ResourceNotFoundError):
         get_dataset_feature_by_label(
             minimal_db,
-            settings.default_user,
             dataset_id=dataset_with_generic_features.id,
             feature_label="Undefined_Feature_Label",
         )
@@ -173,16 +167,60 @@ def test_get_slice_data_with_matrix_dataset(minimal_db: SessionWithUser, setting
     Test that the get_slice_data function works with all matrix identifier types.
     """
     filestore_location = settings.filestore_location
+    # Define label metadata for our features
+    factories.add_dimension_type(
+        minimal_db,
+        settings,
+        user=settings.admin_users[0],
+        name="feature-with-metadata",
+        display_name="Feature With Metadata",
+        id_column="ID",
+        annotation_type_mapping={
+            "ID": AnnotationType.text,
+            "label": AnnotationType.text,
+        },
+        axis="feature",
+        metadata_df=pd.DataFrame(
+            {
+                "ID": ["featureID1", "featureID2", "featureID3"],
+                "label": ["featureLabel1", "featureLabel2", "featureLabel3"],
+            }
+        ),
+    )
+
+    # Define label metadata for our samples
+    factories.add_dimension_type(
+        minimal_db,
+        settings,
+        user=settings.admin_users[0],
+        name="sample-with-metadata",
+        display_name="Sample With Metadata",
+        id_column="ID",
+        annotation_type_mapping={
+            "ID": AnnotationType.text,
+            "label": AnnotationType.text,
+        },
+        axis="sample",
+        metadata_df=pd.DataFrame(
+            {
+                "ID": ["sampleID1", "sampleID2", "sampleID3"],
+                "label": ["sampleLabel1", "sampleLabel2", "sampleLabel3"],
+            }
+        ),
+    )
+
+    # Define a matrix dataset
     example_matrix_values = factories.matrix_csv_data_file_with_values(
         feature_ids=["featureID1", "featureID2", "featureID3"],
         sample_ids=["sampleID1", "sampleID2", "sampleID3"],
         values=np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]]),
     )
     dataset_given_id = "dataset_123"
-    matrix_dataset = factories.matrix_dataset(
+    dataset_with_metadata = factories.matrix_dataset(
         minimal_db,
         settings,
-        feature_type=None,
+        feature_type="feature-with-metadata",
+        sample_type="sample-with-metadata",
         data_file=example_matrix_values,
         given_id=dataset_given_id,
     )
@@ -198,7 +236,14 @@ def test_get_slice_data_with_matrix_dataset(minimal_db: SessionWithUser, setting
     assert result_series.values.tolist() == [2, 5, 8]
 
     # Test queries by feature_label
-    # TODO
+    feature_label_query = SliceQuery(
+        dataset_id=dataset_given_id,
+        identifier="featureLabel1",
+        identifier_type="feature_label",
+    )
+    result_series = get_slice_data(minimal_db, filestore_location, feature_label_query)
+    assert result_series.index.tolist() == ["sampleID1", "sampleID2", "sampleID3"]
+    assert result_series.values.tolist() == [1, 4, 7]
 
     # Test queries by sample_id
     sample_id_query = SliceQuery(
@@ -209,4 +254,12 @@ def test_get_slice_data_with_matrix_dataset(minimal_db: SessionWithUser, setting
     assert result_series.values.tolist() == [7, 8, 9]
 
     # Test queries by sample_label
-    # TODO
+    sample_label_query = SliceQuery(
+        dataset_id=dataset_given_id,
+        identifier="sampleLabel2",
+        identifier_type="sample_label",
+    )
+    result_series = get_slice_data(minimal_db, filestore_location, sample_label_query)
+    assert result_series.index.tolist() == ["featureID1", "featureID2", "featureID3"]
+    assert result_series.values.tolist() == [4, 5, 6]
+    # TODO: debug this last test
