@@ -22,6 +22,9 @@ import {
   DatasetUpdateArgs,
   DatasetValueType,
   DimensionMetadata,
+  DimensionType,
+  DimensionTypeAddArgs,
+  DimensionTypeUpdateArgs,
   FeatureType,
   FeatureTypeUpdateArgs,
   Group,
@@ -358,6 +361,7 @@ export class BreadboxApi {
     );
   }
 
+  // NOTE: These endpoints for feature type and sample type should not be used because they are deprecated
   getSampleTypes(): Promise<SampleType[]> {
     return this._fetch<SampleType[]>("/types/sample");
   }
@@ -390,24 +394,6 @@ export class BreadboxApi {
     return this._fetch<FeatureType[]>("/types/feature");
   }
 
-  searchDimensions({
-    prefix,
-    substring,
-    type_name,
-    limit,
-  }: SearchDimenionsRequest) {
-    const params = {
-      prefix,
-      substring,
-      type_name,
-      limit: Number.isFinite(limit) ? limit : 100,
-    };
-
-    return this._fetch<SearchDimenionsResponse>(
-      `/datasets/dimensions/?${encodeParams(params)}`
-    );
-  }
-
   postFeatureType(featureTypeArgs: any): Promise<FeatureType> {
     console.log("In bbapi.ts: ", featureTypeArgs);
     const args = { ...featureTypeArgs };
@@ -433,6 +419,54 @@ export class BreadboxApi {
 
   deleteFeatureType(name: string) {
     return this._delete("/types/feature", name);
+  }
+
+  // NOTE: THe above endpoints for feature type and sample type are deprecated and should not be used.
+  // Endpoints with URI prefix /types/dimensions should be used instead
+
+  getDimensionTypes(): Promise<DimensionType[]> {
+    return this._fetch<DimensionType[]>("/types/dimensions");
+  }
+
+  postDimensionType(dimTypeArgs: DimensionTypeAddArgs): Promise<DimensionType> {
+    console.log("In bbapi.ts: ", dimTypeArgs);
+
+    return this._fetchWithJsonBody<DimensionType>(
+      "/types/dimensions",
+      "POST",
+      dimTypeArgs
+    );
+  }
+
+  updateDimensionType(
+    dimTypeName: string,
+    dimTypeArgs: DimensionTypeUpdateArgs
+  ): Promise<DimensionType> {
+    const url = `/types/dimensions/${dimTypeName}`;
+
+    return this._fetchWithJsonBody(url, "PATCH", dimTypeArgs);
+  }
+
+  deleteDimensionType(name: string) {
+    return this._delete("/types/dimensions", name);
+  }
+
+  searchDimensions({
+    prefix,
+    substring,
+    type_name,
+    limit,
+  }: SearchDimenionsRequest) {
+    const params = {
+      prefix,
+      substring,
+      type_name,
+      limit: Number.isFinite(limit) ? limit : 100,
+    };
+
+    return this._fetch<SearchDimenionsResponse>(
+      `/datasets/dimensions/?${encodeParams(params)}`
+    );
   }
 
   async getDataTypesAndPriorities(): Promise<InvalidPrioritiesByDataType> {
