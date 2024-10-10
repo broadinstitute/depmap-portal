@@ -7,9 +7,12 @@ from breadbox.crud.dataset import (
     get_dataset_feature_by_label,
     get_dataset,
     get_dataset_feature_by_given_id,
+    get_slice_data,
 )
 from breadbox.models.dataset import AnnotationType
 from breadbox.schemas.custom_http_exception import ResourceNotFoundError
+
+from depmap_compute.slice import SliceQuery
 
 from tests import factories
 
@@ -163,3 +166,47 @@ def test_get_dataset_feature_by_given_id(minimal_db: SessionWithUser, settings):
     )
     assert feature2.given_id == "featureID2"
     assert feature2.dataset_id == matrix_dataset.id
+
+
+def test_get_slice_data_with_matrix_dataset(minimal_db: SessionWithUser, settings):
+    """
+    Test that the get_slice_data function works with all matrix identifier types.
+    """
+    filestore_location = settings.filestore_location
+    example_matrix_values = factories.matrix_csv_data_file_with_values(
+        feature_ids=["featureID1", "featureID2", "featureID3"],
+        sample_ids=["sampleID1", "sampleID2", "sampleID3"],
+        values=np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]]),
+    )
+    dataset_given_id = "dataset_123"
+    matrix_dataset = factories.matrix_dataset(
+        minimal_db,
+        settings,
+        feature_type=None,
+        data_file=example_matrix_values,
+        given_id=dataset_given_id,
+    )
+
+    # Test queries by feature_id
+    feature_id_query = SliceQuery(
+        dataset_id=dataset_given_id,
+        identifier="featureID2",
+        identifier_type="feature_id",
+    )
+    result_series = get_slice_data(minimal_db, filestore_location, feature_id_query)
+    assert result_series.index.tolist() == ["sampleID1", "sampleID2", "sampleID3"]
+    assert result_series.values.tolist() == [2, 5, 8]
+
+    # Test queries by feature_label
+    # TODO
+
+    # Test queries by sample_id
+    sample_id_query = SliceQuery(
+        dataset_id=dataset_given_id, identifier="sampleID3", identifier_type="sample_id"
+    )
+    result_series = get_slice_data(minimal_db, filestore_location, sample_id_query)
+    assert result_series.index.tolist() == ["featureID1", "featureID2", "featureID3"]
+    assert result_series.values.tolist() == [7, 8, 9]
+
+    # Test queries by sample_label
+    # TODO

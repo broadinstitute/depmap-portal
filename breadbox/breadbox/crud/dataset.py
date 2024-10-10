@@ -1444,7 +1444,7 @@ def get_dataset_feature_by_label(
 
     labels_by_given_id = get_dataset_feature_labels_by_id(db, user, dataset)
     given_ids_by_label = {label: id for id, label in labels_by_given_id.items()}
-    feature_given_id = given_ids_by_label[feature_label]
+    feature_given_id = given_ids_by_label.get(feature_label)
     if feature_given_id is None:
         raise ResourceNotFoundError(
             f"Feature label '{feature_label}' not found in dataset '{dataset_id}'."
@@ -1466,7 +1466,7 @@ def get_dataset_sample_by_label(
 
     labels_by_given_id = get_dataset_sample_labels_by_id(db, user, dataset)
     given_ids_by_label = {label: id for id, label in labels_by_given_id.items()}
-    sample_given_id = given_ids_by_label[sample_label]
+    sample_given_id = given_ids_by_label.get(sample_label)
     if sample_given_id is None:
         raise ResourceNotFoundError(
             f"Sample label '{sample_label}' not found in dataset '{dataset_id}'."
@@ -1740,6 +1740,7 @@ def get_subsetted_matrix_dataset_df(
     return df
 
 
+# TODO: write unit tests for this
 def get_slice_data(
     db: SessionWithUser, filestore_location: str, slice_query: SliceQuery
 ) -> pd.Series:
@@ -1755,31 +1756,25 @@ def get_slice_data(
 
     if slice_query.identifier_type == "feature_id":
         feature = get_dataset_feature_by_given_id(
-            db=db,
-            user=db.user,
-            dataset_id=dataset_id,
-            feature_label=slice_query.identifier,
+            db, dataset_id, feature_given_id=slice_query.identifier
         )
         slice_data = get_feature_slice(dataset, [feature.index], filestore_location)
 
     elif slice_query.identifier_type == "feature_label":
         feature = get_dataset_feature_by_label(
-            db=db,
-            user=db.user,
-            dataset_id=dataset_id,
-            feature_label=slice_query.identifier,
+            db, dataset_id, feature_label=slice_query.identifier,
         )
         slice_data = get_feature_slice(dataset, [feature.index], filestore_location)
 
     elif slice_query.identifier_type == "sample_id":
         sample = get_dataset_sample_by_given_id(
-            db, db.user, dataset_id=dataset_id, sample_label=slice_query.identifier
+            db, dataset_id, sample_given_id=slice_query.identifier
         )
         slice_data = get_sample_slice(dataset, [sample.index], filestore_location)
 
     elif slice_query.identifier_type == "sample_label":
         sample = get_dataset_sample_by_label(
-            db, db.user, dataset_id=dataset_id, sample_label=slice_query.identifier
+            db, dataset_id, sample_label=slice_query.identifier
         )
         slice_data = get_sample_slice(dataset, [sample.index], filestore_location)
 
