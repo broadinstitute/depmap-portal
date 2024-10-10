@@ -114,7 +114,13 @@ const ContextExplorerTabs = ({
           </div>
           <div className={styles.plot}>
             <OverviewTable
-              cellLineData={formattedFilteredData}
+              cellLineData={
+                overlappingDepmapIds.length > 0
+                  ? formattedFilteredData.filter((dataItem: CellLineOverview) =>
+                      overlappingDepmapIds.includes(dataItem.depmapId)
+                    )
+                  : formattedFilteredData
+              }
               getCellLineUrlRoot={getCellLineUrlRoot}
             />
           </div>
