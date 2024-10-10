@@ -22,6 +22,7 @@ import DatasetForm from "./DatasetForm";
 import DatasetMetadataForm from "./DatasetMetadataForm";
 import DimensionTypeForm from "./DimensionTypeForm";
 import { Alert } from "react-bootstrap";
+import DatasetEditForm from "./DatasetEditForm";
 
 export default function Datasets() {
   const { getApi } = useContext(ApiContext);
@@ -41,7 +42,7 @@ export default function Datasets() {
     showUpdateDatasetMetadataModal,
     setShowUpdateDatasetMetadataModal,
   ] = useState(false);
-  const [datasetToEdit, setDatasetToEdit] = useState<string | null>(null);
+  const [datasetToEdit, setDatasetToEdit] = useState<Dataset | null>(null);
   const [datasetMetadataToEdit, setDatasetMetadataToEdit] = useState<{
     [key: string]: string;
   } | null>(null);
@@ -59,6 +60,11 @@ export default function Datasets() {
   );
   const postDatasetUpload = useCallback(
     (datasetParams: DatasetParams) => dapi.postDatasetUpload(datasetParams),
+    [dapi]
+  );
+  const updateDataset = useCallback(
+    (datasetId: string, datasetUpdateArgs: DatasetUpdateArgs) =>
+      dapi.updateDataset(datasetId, datasetUpdateArgs),
     [dapi]
   );
 
@@ -139,6 +145,65 @@ export default function Datasets() {
     })();
   }, [dapi, getFeatureTypes, getSampleTypes]);
 
+  const datasetForm = useCallback(() => {
+    if (datasets) {
+      let datasetFormComponent;
+      let formTitle: string;
+
+      if (isEditDatasetMode && datasetToEdit) {
+        formTitle = "Edit Dataset";
+        datasetFormComponent = (
+          <DatasetEditForm
+            getGroups={getGroups}
+            getDataTypesAndPriorities={getDataTypesAndPriorities}
+            updateDataset={updateDataset}
+            datasetToEdit={datasetToEdit}
+          />
+        );
+      }
+      // eslint-disable-next-line no-else-return
+      else {
+        formTitle = "Add Dataset";
+        datasetFormComponent = (
+          <DatasetForm
+            getFeatureTypes={getFeatureTypes}
+            getSampleTypes={getSampleTypes}
+            getGroups={getGroups}
+            getDataTypesAndPriorities={getDataTypesAndPriorities}
+            uploadFile={postFileUpload}
+            uploadDataset={postDatasetUpload}
+          />
+        );
+      }
+      return (
+        <FormModal
+          title={formTitle}
+          showModal={showDatasetModal}
+          onHide={() => {
+            setShowDatasetModal(false);
+            setIsEditDatasetMode(false);
+            setDatasetToEdit(null);
+            setDatasetMetadataToEdit(null);
+          }}
+          formComponent={datasetFormComponent}
+        />
+      );
+    }
+    return null;
+  }, [
+    datasetToEdit,
+    datasets,
+    getDataTypesAndPriorities,
+    getFeatureTypes,
+    getGroups,
+    getSampleTypes,
+    isEditDatasetMode,
+    postDatasetUpload,
+    postFileUpload,
+    showDatasetModal,
+    updateDataset,
+  ]);
+
   if (!datasets || !dimensionTypes) {
     return initError ? (
       <div className={styles.container}>
@@ -202,11 +267,9 @@ export default function Datasets() {
               bsSize="small"
               onClick={() => {
                 setShowUpdateDatasetMetadataModal(true);
-                setDatasetToEdit(dataset.id);
+                setDatasetToEdit(dataset);
                 setDatasetMetadataToEdit(
-                  dataset.dataset_metadata
-                    ? dataset.dataset_metadata
-                    : undefined
+                  dataset.dataset_metadata ? dataset.dataset_metadata : null
                 ); // handled in DatasetMetadataForm.tsx:261
               }}
             >
@@ -302,28 +365,6 @@ export default function Datasets() {
   //   }
   //   return null;
   // };
-
-  const datasetForm = (
-    <DatasetForm
-      getFeatureTypes={getFeatureTypes}
-      getSampleTypes={getSampleTypes}
-      getGroups={getGroups}
-      getDataTypesAndPriorities={getDataTypesAndPriorities}
-      uploadFile={postFileUpload}
-      uploadDataset={postDatasetUpload}
-    />
-    // <DatasetForm
-    //   onSubmit={onSubmitDatasetUpload}
-    //   onSubmitDatasetEdit={onSubmitDatasetEdit}
-    //   getFeatureTypes={getFeatureTypes}
-    //   getSampleTypes={getSampleTypes}
-    //   getDataTypesAndPriorities={getDataTypesAndPriorities}
-    //   getGroups={getGroups}
-    //   datasetSubmissionError={datasetSubmissionError}
-    //   isEditMode={isEditDatasetMode}
-    //   selectedDataset={getSelectedDataset()}
-    // />
-  );
 
   const onSubmitDimensionTypeEdit = async (
     dimensionTypeArgs: any,
@@ -448,12 +489,11 @@ export default function Datasets() {
       )[0];
 
       const updatedDatasetInfo: DatasetUpdateArgs = {
-        id: selectedDataset.id,
         group_id: selectedDataset.group.id,
-        dataset_metadata: { dataset_metadata: metadata },
+        dataset_metadata: metadata,
       };
 
-      const dataset = await dapi.updateDataset(updatedDatasetInfo);
+      const dataset = await dapi.updateDataset(datasetId, updatedDatasetInfo);
       setShowUpdateDatasetMetadataModal(false);
       setDatasets(
         datasets.map((originalDataset) => {
@@ -591,6 +631,13 @@ export default function Datasets() {
             idProp="id"
             onChangeSelections={(selections) => {
               setSelectedDatasetIds(new Set(selections));
+              // If only one dataset is selected, assign that as the dataset to edit
+              if (selections.length === 1) {
+                const selectedDataset = datasets.find(
+                  (dataset) => dataset.id === selections[0]
+                );
+                setDatasetToEdit(selectedDataset || null);
+              }
             }}
             data={formatDatasetTableData(datasets)}
             columns={[
@@ -630,21 +677,9 @@ export default function Datasets() {
           />
         </div>
 
-        {datasets ? (
-          <FormModal
-            title={isEditDatasetMode ? "Edit Dataset" : "Add Dataset"}
-            showModal={showDatasetModal}
-            onHide={() => {
-              setShowDatasetModal(false);
-              setIsEditDatasetMode(false);
-              setDatasetToEdit(null);
-              setDatasetMetadataToEdit(null);
-            }}
-            formComponent={datasetForm}
-          />
-        ) : null}
+        {datasetForm()}
         {datasetToEdit !== null && datasetMetadataToEdit !== null
-          ? updateDatasetMetadataForm(datasetToEdit, datasetMetadataToEdit)
+          ? updateDatasetMetadataForm(datasetToEdit.id, datasetMetadataToEdit)
           : null}
 
         {dimensionTypes ? (
