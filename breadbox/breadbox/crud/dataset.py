@@ -1391,6 +1391,7 @@ def get_dataset_feature_by_given_id(
         )
         .one_or_none()
     )
+
     if feature is None:
         raise ResourceNotFoundError(
             f"Feature given ID '{feature_given_id}' not found in dataset '{dataset_id}'."
@@ -1409,50 +1410,15 @@ def get_dataset_feature_by_label(
     assert_user_has_access_to_dataset(dataset, user)
     assert isinstance(dataset, MatrixDataset)
 
-    # check for metadata table associated with the features
-    feature_metadata_dataset_id = None
-    if dataset.feature_type is not None:
-        feature_metadata_dataset_id = dataset.feature_type.dataset_id
-
-    if feature_metadata_dataset_id is not None:
-        # look up the given_id from the metadata
-        assert feature_metadata_dataset_id
-        result = (
-            db.query(TabularColumn)
-            .join(TabularCell)
-            .filter(
-                TabularColumn.dataset_id == feature_metadata_dataset_id,
-                TabularColumn.given_id == "label",
-                TabularCell.value == feature_label,
-            )
-            .with_entities(TabularCell.dimension_given_id)
-            .one_or_none()
-        )
-        if result is None:
-            raise ResourceNotFoundError(
-                f"Feature label '{feature_label}' not found in dataset '{dataset_id}' feature metadata."
-            )
-        given_id = result["dimension_given_id"]
-    else:
-        # if there is no metadata, then the given_id is used as the label
-        given_id = feature_label
-
-    dataset_feature: Optional[DatasetFeature] = (
-        db.query(DatasetFeature)
-        .filter(
-            and_(
-                DatasetFeature.dataset_id == dataset_id,
-                DatasetFeature.given_id == given_id,
-            )
-        )
-        .one_or_none()
-    )
-    if dataset_feature is None:
+    labels_by_given_id = get_dataset_feature_labels_by_id(db, user, dataset)
+    given_ids_by_label = {label: id for id, label in labels_by_given_id.items()}
+    feature_given_id = given_ids_by_label[feature_label]
+    if feature_given_id is None:
         raise ResourceNotFoundError(
-            f"Feature given_id '{given_id}' associated with label '{feature_label}' not found in dataset '{dataset_id}' features."
+            f"Feature label '{feature_label}' not found in dataset '{dataset_id}'."
         )
 
-    return dataset_feature
+    return get_dataset_feature_by_given_id(db, dataset_id, feature_given_id)
 
 
 def _get_column_types(columns_metadata, columns: Optional[List[str]]):
