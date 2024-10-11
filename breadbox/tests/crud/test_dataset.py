@@ -11,6 +11,7 @@ from breadbox.crud.dataset import (
 )
 from breadbox.models.dataset import AnnotationType
 from breadbox.schemas.custom_http_exception import ResourceNotFoundError
+from breadbox.schemas.dataset import ColumnMetadata
 
 from depmap_compute.slice import SliceQuery
 
@@ -262,4 +263,60 @@ def test_get_slice_data_with_matrix_dataset(minimal_db: SessionWithUser, setting
     result_series = get_slice_data(minimal_db, filestore_location, sample_label_query)
     assert result_series.index.tolist() == ["featureID1", "featureID2", "featureID3"]
     assert result_series.values.tolist() == [4, 5, 6]
-    # TODO: debug this last test
+
+
+def test_get_slice_data_with_tabular_dataset(minimal_db: SessionWithUser, settings):
+    """
+    Test that the get_slice_data function works with tabular identifier types.
+    """
+    filestore_location = settings.filestore_location
+    factories.add_dimension_type(
+        minimal_db,
+        settings,
+        user=settings.admin_users[0],
+        name="some-sample-type",
+        axis="sample",
+        id_column="ID",
+    )
+
+    dataset_given_id = "my-tabular-dataset"
+    factories.tabular_dataset(
+        minimal_db,
+        settings,
+        name="some-tabular-dataset",
+        columns_metadata={
+            "ID": ColumnMetadata(units=None, col_type=AnnotationType.text),
+            "label": ColumnMetadata(units=None, col_type=AnnotationType.text),
+            "count": ColumnMetadata(
+                units="somethings", col_type=AnnotationType.continuous
+            ),
+        },
+        data_df=pd.DataFrame(
+            {
+                "ID": ["sampleID1", "sampleID2", "sampleID3"],
+                "label": ["sampleLabel1", "sampleLabel2", "sampleLabel3"],
+                "count": [1, 2, 3],
+            }
+        ),
+        index_type_name="some-sample-type",
+        given_id=dataset_given_id,
+    )
+
+    # Test queries by column
+    label_column_query = SliceQuery(
+        dataset_id=dataset_given_id, identifier="label", identifier_type="column",
+    )
+    result_series = get_slice_data(minimal_db, filestore_location, label_column_query)
+    assert result_series.index.tolist() == ["sampleID1", "sampleID2", "sampleID3"]
+    assert result_series.values.tolist() == [
+        "sampleLabel1",
+        "sampleLabel2",
+        "sampleLabel3",
+    ]
+
+    count_column_query = SliceQuery(
+        dataset_id=dataset_given_id, identifier="count", identifier_type="column",
+    )
+    result_series = get_slice_data(minimal_db, filestore_location, count_column_query)
+    assert result_series.index.tolist() == ["sampleID1", "sampleID2", "sampleID3"]
+    assert result_series.values.tolist() == [1, 2, 3]

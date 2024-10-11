@@ -1588,7 +1588,7 @@ def get_subsetted_tabular_dataset_df(
         tabular_dimensions_info.indices,
         dataset.id,
     )
-    if strict:
+    if strict and (missing_columns or missing_indices):
         raise UserError(msg=get_truncated_message(missing_columns, missing_indices))
 
     # If df is empty, there is no 'value' key to index by
@@ -1753,7 +1753,28 @@ def get_slice_data(
     if dataset is None:
         raise ResourceNotFoundError("Dataset not found")
 
-    if slice_query.identifier_type == "feature_id":
+    if slice_query.identifier_type == "column":
+        if not dataset.format == "tabular_dataset":
+            raise UserError(
+                "The slice query identifier type `column` may only be used with tabular datasets."
+            )
+        tabular_dimension_info = TabularDimensionsInfo(columns=[slice_query.identifier])
+        slice_data = get_subsetted_tabular_dataset_df(
+            db=db,
+            user=db.user,
+            dataset=dataset,
+            tabular_dimensions_info=tabular_dimension_info,
+            strict=True,
+        )
+
+    elif dataset.format == "tabular_dataset":
+        # Ideally, you could load a row of tabular data by specifying a row identifier.
+        # We can add support for this later if it's helpful. Currently, there's no use-case for it.
+        raise NotImplementedError(
+            "Not yet implemented. To load tabular data by row, use the get_tabular_dataset_data endpoint instead."
+        )
+
+    elif slice_query.identifier_type == "feature_id":
         feature = get_dataset_feature_by_given_id(
             db, dataset_id, feature_given_id=slice_query.identifier
         )
@@ -1776,20 +1797,6 @@ def get_slice_data(
             db, dataset_id, sample_label=slice_query.identifier
         )
         slice_data = get_sample_slice(dataset, [sample.index], filestore_location)
-
-    elif slice_query.identifier_type == "column":
-        if not dataset.format == "tabular_dataset":
-            raise UserError(
-                f"The slice query identifier type `column` may only be used with tabular datasets."
-            )
-        tabular_dimension_info = TabularDimensionsInfo(columns=[slice_query.identifier])
-        slice_data = get_subsetted_tabular_dataset_df(
-            db=db,
-            user=db.user,
-            dataset=dataset,
-            tabular_dimensions_info=tabular_dimension_info,
-            strict=True,
-        )
 
     else:
         raise ResourceNotFoundError(
