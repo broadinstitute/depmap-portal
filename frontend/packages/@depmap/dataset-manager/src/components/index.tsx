@@ -83,10 +83,6 @@ export default function Datasets() {
     string | null
   >(null);
   const [isEditDimensionTypeMode, setIsEditDimensionTypeMode] = useState(false);
-  const [
-    dimensionTypeSubmissionError,
-    setDimensionTypeSubmissionError,
-  ] = useState<string | null>(null);
   const [showDimensionTypeModal, setShowDimensionTypeModal] = useState(false);
   const [showDeleteError, setShowDeleteError] = useState(false);
 
@@ -621,7 +617,6 @@ export default function Datasets() {
             onHide={() => {
               setShowDimensionTypeModal(false);
               setIsEditDimensionTypeMode(false);
-              setDimensionTypeSubmissionError(null);
             }}
             formComponent={dimensionTypeForm}
           />
