@@ -30,7 +30,7 @@ from ..config import Settings, get_settings
 from breadbox.crud.access_control import PUBLIC_GROUP_ID
 from ..crud import dataset as dataset_crud
 from ..crud import types as type_crud
-from ..crud import group as group_crud
+from ..crud import slice as slice_crud
 
 from ..models.dataset import (
     Dataset as DatasetModel,
@@ -458,22 +458,23 @@ def get_dimensions(
     return search_index_entries
 
 
-@router.get(
+@router.post(
     "/dimension/data/",
     operation_id="get_dimension_data",
     response_model=DimensionDataResponse,
 )
 def get_dimension_data(
-    slice_query: SliceQueryParam,
+    slice_query: Annotated[SliceQueryParam, Body(default_factory=SliceQueryParam)],
     db: SessionWithUser = Depends(get_db_with_user),
     settings: Settings = Depends(get_settings),
 ):
     """
     Load all values, IDs, and labels for a given dimension (specified by SliceQuery).
     """
-    slice_values_by_id = dataset_crud.get_slice_data(
+    slice_values_by_id = slice_crud.get_slice_data(
         db, settings.filestore_location, slice_query
     )
+    breakpoint()
 
     # labels_by_id =
 

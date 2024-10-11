@@ -477,8 +477,13 @@ class DimensionSearchIndexResponse(BaseModel):
     referenced_by: Optional[List[NameAndID]]
 
 
-class SliceQueryParam(SliceQuery, BaseModel):
-    pass
+class SliceQueryParam(BaseModel):
+    # Ideally this should always be identical depmap_compute.slice.SliceQuery
+    dataset_id: str
+    identifier: str
+    identifier_type: Literal[
+        "feature_id", "feature_label", "sample_id", "sample_label", "column"
+    ]
 
 
 class DimensionDataResponse(BaseModel):
