@@ -22,7 +22,6 @@ import { ApiContext } from "@depmap/api";
 
 import DatasetForm from "./DatasetForm";
 import DatasetMetadataForm from "./DatasetMetadataForm";
-import DimensionTypeForm from "./DimensionTypeForm";
 import { Alert } from "react-bootstrap";
 import DatasetEditForm from "./DatasetEditForm";
 import DimensionTypeFormV2 from "./DimensionTypeFormV2";
@@ -393,105 +392,6 @@ export default function Datasets() {
   //   }
   //   return null;
   // };
-
-  // TODO: REMOVE
-  const onSubmitDimensionTypeEdit = async (
-    dimensionTypeArgs: any,
-    clear_state_callback: (
-      isSuccessfulSubmit: boolean,
-      wasEditing: boolean
-    ) => void
-  ) => {
-    let isSubmitted = false;
-    // Reset submission error state on submit
-    setDimensionTypeSubmissionError(null);
-    try {
-      let dimensionType: FeatureType | SampleType;
-      const { axis, ...args } = dimensionTypeArgs;
-
-      if (axis === "feature") {
-        dimensionType = await dapi.updateFeatureType(
-          new FeatureTypeUpdateArgs(
-            args.name,
-            args.metadata_file,
-            args.annotation_type_mapping
-          )
-        );
-      } else {
-        dimensionType = await dapi.updateSampleType(
-          new SampleTypeUpdateArgs(
-            args.name,
-            args.metadata_file,
-            args.annotation_type_mapping
-          )
-        );
-      }
-      setDimensionTypes(
-        dimensionTypes.map((originalDimensionType) => {
-          if (originalDimensionType.name === dimensionType.name) {
-            return {
-              ...dimensionType,
-              axis,
-              datasetsCount: args.metadata_file === "" ? 0 : 1,
-            };
-          }
-          return originalDimensionType;
-        })
-      );
-      setShowDimensionTypeModal(false);
-      setIsEditDimensionTypeMode(false);
-      isSubmitted = true;
-    } catch (e) {
-      console.error(e);
-      if (instanceOfErrorDetail(e)) {
-        setDimensionTypeSubmissionError(e.body.detail);
-      }
-    }
-    // In case of 500 error
-    if (!isSubmitted && dimensionTypeSubmissionError == null) {
-      setDimensionTypeSubmissionError("Failed to submit dimension type!");
-    }
-    const wasEditing = true;
-    clear_state_callback(isSubmitted, wasEditing);
-  };
-
-  // TODO: REMOVE
-  const onSubmitDimensionTypeUpload = async (
-    dimensionTypeArgs: any,
-    clear_state_callback: (isSuccessfulSubmit: boolean) => void
-  ) => {
-    let isSubmitted = false;
-    // Reset submission error state on submit
-    setDimensionTypeSubmissionError(null);
-    let dimensionType;
-    const { axis, ...args } = dimensionTypeArgs;
-    try {
-      if (axis === "feature") {
-        dimensionType = await dapi.postFeatureType(args);
-      } else {
-        dimensionType = await dapi.postSampleType(args);
-      }
-      setDimensionTypes(
-        dimensionTypes.concat({
-          ...dimensionType,
-          axis,
-          datasetsCount: args.metadata_file === "" ? 0 : 1,
-        })
-      );
-      setShowDimensionTypeModal(false);
-      isSubmitted = true;
-    } catch (e) {
-      console.error(e);
-      if (instanceOfErrorDetail(e)) {
-        setDimensionTypeSubmissionError(e.body.detail);
-      }
-    }
-    // In case of 500 error
-    if (!isSubmitted && dimensionTypeSubmissionError == null) {
-      setDimensionTypeSubmissionError("Failed to submit dimension type!");
-    }
-    clear_state_callback(isSubmitted);
-  };
 
   const getSelectedDimensionType = () => {
     if (isEditDimensionTypeMode && selectedDimensionType) {

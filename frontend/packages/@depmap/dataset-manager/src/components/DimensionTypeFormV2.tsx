@@ -55,14 +55,9 @@ export default function DimensionTypeFormV2(props: DimensionTypeAddFormProps) {
 
   React.useEffect(() => {
     if (isEditMode && dimensionTypeToEdit) {
-      const datasetOptions: {
-        title: string | undefined;
-        const: string | undefined;
-      }[] = datasets.map((d) => {
+      const datasetOptions = datasets.map((d) => {
         return { title: d.name, const: d.id };
       });
-      // include value to give to form data for unchosen options
-      datasetOptions.push({ title: undefined, const: undefined });
 
       const dimensionTypeEditSchemaWithOptions = {
         ...updateDimensionTypeSchema,
