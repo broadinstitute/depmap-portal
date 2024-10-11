@@ -1,12 +1,13 @@
 import pandas as pd
+from typing import Optional
 
 from breadbox.db.session import SessionWithUser
-from breadbox.schemas.dataset import TabularDimensionsInfo
+import breadbox.crud.dataset as dataset_crud
+from breadbox.schemas.dataset import SliceQueryIdentifierType, TabularDimensionsInfo
 from breadbox.schemas.custom_http_exception import (
     ResourceNotFoundError,
     UserError,
 )
-import breadbox.crud.dataset as dataset_crud
 from breadbox.io.filestore_crud import (
     get_feature_slice,
     get_sample_slice,
@@ -86,6 +87,20 @@ def get_slice_data(
 
 
 def get_labels_for_slice_type(
-    db: SessionWithUser, slice_query: SliceQuery
-) -> dict[str, str]:
-    return {}
+    db: SessionWithUser, slice_query: SliceQueryIdentifierType
+) -> Optional[dict[str, str]]:
+    """
+    For the given slice query identifier type, get a dictionary of all dataset labels and IDs.
+    If the identifier type does not have labels, return None.
+    """
+    dataset = dataset_crud.get_dataset(db, db.user, slice_query.dataset_id)
+    if dataset is None:
+        raise ResourceNotFoundError(f"Dataset '{slice_query.dataset_id}' not found.")
+
+    if slice_query.identifier_type in {"feature_label", "feature_id"}:
+        return dataset_crud.get_dataset_sample_labels_by_id(db, db.user, dataset)
+    elif slice_query.identifier_type in {"sample_label", "sample_id"}:
+        return dataset_crud.get_dataset_feature_labels_by_id(db, db.user, dataset)
+    else:
+        # Columns don't have labels, so just return None
+        return None

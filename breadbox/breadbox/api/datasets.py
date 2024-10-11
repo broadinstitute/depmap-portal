@@ -476,14 +476,16 @@ def get_dimension_data(
     slice_values_by_id = slice_crud.get_slice_data(
         db, settings.filestore_location, parsed_slice_query
     )
-    breakpoint()
 
-    # labels_by_id =
+    # Load the labels separately, ensuring they're in the same order as the other values
+    slice_ids = slice_values_by_id.index.tolist()
+    labels_by_id = slice_crud.get_labels_for_slice_type(db, parsed_slice_query)
+    slice_labels = [labels_by_id[id] for id in slice_ids] if labels_by_id else None
 
     return {
-        "ids": [],
-        "labels": [],
-        "values": [],
+        "ids": slice_ids,
+        "labels": slice_labels,
+        "values": slice_values_by_id.values.tolist(),
     }
 
 

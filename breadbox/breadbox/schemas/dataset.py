@@ -515,5 +515,5 @@ class SliceQueryParam(BaseModel):
 
 class DimensionDataResponse(BaseModel):
     ids: list[str]
-    labels: list[str]
+    labels: Optional[list[str]]
     values: list[Any]
