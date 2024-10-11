@@ -12,7 +12,10 @@ import enum
 from depmap_compute.slice import SliceQuery
 
 
-# NOTE: Using multivalue Literals seems to be creating errors in pydantic models and fastapi request params. It is possible for our version of pydantic, the schema for Literals is messed up (see: https://github.com/tiangolo/fastapi/issues/562). Upgrading the pydantic version could potentially solve this issue
+# NOTE: Using multivalue Literals seems to be creating errors in pydantic models and fastapi request params.
+# It is possible that for our version of pydantic, the schema for Literals is messed up
+# (see: https://github.com/tiangolo/fastapi/issues/562).
+# Upgrading the pydantic version could potentially solve this issue
 class FeatureSampleIdentifier(enum.Enum):
     id = "id"
     label = "label"
@@ -29,6 +32,14 @@ class AnnotationType(enum.Enum):
     binary = "binary"
     text = "text"
     list_strings = "list_strings"
+
+
+class SliceQueryIdentifierType(enum.Enum):
+    feature_id = "feature_id"
+    feature_label = "feature_label"
+    sample_id = "sample_id"
+    sample_label = "sample_label"
+    column = "column"
 
 
 # NOTE: `param: Annotated[Optional[str], Field(None)]` gives pydantic error 'ValueError: `Field` default cannot be set in `Annotated` for 'param''.
@@ -481,9 +492,25 @@ class SliceQueryParam(BaseModel):
     # Ideally this should always be identical depmap_compute.slice.SliceQuery
     dataset_id: str
     identifier: str
-    identifier_type: Literal[
-        "feature_id", "feature_label", "sample_id", "sample_label", "column"
-    ]
+    identifier_type: Annotated[
+        SliceQueryIdentifierType,
+        Field(
+            description="Denotes the type of identifier being used to specify a dimension."
+        ),
+    ] = None
+
+    def to_generic_slice_query(self) -> SliceQuery:
+        """
+        Since this query is sometimes used to call functions defined outside of breadbox,
+        it needs to be converted to a more generic type (SliceQuery) that's accessible from the shared module.
+        In an ideal world, this SliceQueryParam would inherit from the more generic SliceQuery
+        and no conversion would be needed. However, that seems to break Pydantic.
+        """
+        return SliceQuery(
+            dataset_id=self.dataset_id,
+            identifier=self.identifier,
+            identifier_type=self.identifier_type.name,
+        )
 
 
 class DimensionDataResponse(BaseModel):

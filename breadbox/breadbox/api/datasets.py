@@ -57,6 +57,7 @@ from ..schemas.dataset import (
 from .dependencies import get_dataset as get_dataset_dep
 from .dependencies import get_db_with_user, get_user
 
+from depmap_compute.slice import SliceQuery
 
 router = APIRouter(prefix="/datasets", tags=["datasets"])
 log = getLogger(__name__)
@@ -471,14 +472,19 @@ def get_dimension_data(
     """
     Load all values, IDs, and labels for a given dimension (specified by SliceQuery).
     """
+    parsed_slice_query = slice_query.to_generic_slice_query()
     slice_values_by_id = slice_crud.get_slice_data(
-        db, settings.filestore_location, slice_query
+        db, settings.filestore_location, parsed_slice_query
     )
     breakpoint()
 
     # labels_by_id =
 
-    pass
+    return {
+        "ids": [],
+        "labels": [],
+        "values": [],
+    }
 
 
 @router.patch(
