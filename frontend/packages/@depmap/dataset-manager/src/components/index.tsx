@@ -4,11 +4,7 @@ import {
   DatasetParams,
   DatasetTableData,
   DatasetUpdateArgs,
-  FeatureType,
-  SampleType,
-  instanceOfErrorDetail,
-  SampleTypeUpdateArgs,
-  FeatureTypeUpdateArgs,
+  // instanceOfErrorDetail,
   DimensionTypeAddArgs,
   DimensionTypeUpdateArgs,
 } from "@depmap/types";
