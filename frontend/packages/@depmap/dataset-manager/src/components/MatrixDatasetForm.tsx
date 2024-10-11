@@ -231,7 +231,7 @@ export function MatrixDatasetForm({
 
   React.useEffect(() => {
     const featureTypeOptions = featureTypes.map((option) => {
-      return { title: option.name, const: option.name };
+      return option.name;
     });
 
     const sampleTypeOptions = sampleTypes.map((option) => {
@@ -250,7 +250,9 @@ export function MatrixDatasetForm({
         ...matrixFormSchema.properties,
         feature_type: {
           ...(matrixFormSchema.properties.feature_type as object),
-          oneOf: featureTypeOptions,
+          default: null,
+          enum: [null, ...featureTypeOptions],
+          enumNames: ["None"].concat(featureTypeOptions),
         },
         sample_type: {
           ...(matrixFormSchema.properties.sample_type as object),

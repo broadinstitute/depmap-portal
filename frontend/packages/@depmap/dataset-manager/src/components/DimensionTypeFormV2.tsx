@@ -32,7 +32,6 @@ const uiSchema: UiSchema = {
   },
   metadata_dataset_id: {
     "ui:title": "Dataset Metadata",
-    "ui:emptyValue": null,
     "ui:help":
       "This dataset contains metadata about your dimension type. At mininum one of the columns must match the ID Column of the dimension type and contain a column called 'label'.",
   },
@@ -55,10 +54,6 @@ export default function DimensionTypeFormV2(props: DimensionTypeAddFormProps) {
 
   React.useEffect(() => {
     if (isEditMode && dimensionTypeToEdit) {
-      const datasetOptions = datasets.map((d) => {
-        return { title: d.name, const: d.id };
-      });
-
       const dimensionTypeEditSchemaWithOptions = {
         ...updateDimensionTypeSchema,
         properties: {
@@ -66,7 +61,19 @@ export default function DimensionTypeFormV2(props: DimensionTypeAddFormProps) {
           metadata_dataset_id: {
             ...(updateDimensionTypeSchema.properties
               .metadata_dataset_id as object),
-            oneOf: datasetOptions,
+            default: null, // must include default null with enum options otherwise UI renders 2 null options
+            enum: [
+              null,
+              ...datasets.map((d) => {
+                return d.id;
+              }),
+            ],
+            enumNames: [
+              "None",
+              ...datasets.map((d) => {
+                return d.name;
+              }),
+            ],
           },
         },
       };
@@ -79,7 +86,6 @@ export default function DimensionTypeFormV2(props: DimensionTypeAddFormProps) {
           initForm[key] = dimensionTypeToEdit[key];
         }
       });
-      console.log("dim tupe: ", dimensionTypeToEdit);
       setEditFormData(initForm);
     }
   }, [dimensionTypeToEdit, isEditMode, datasets]);
