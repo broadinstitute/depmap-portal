@@ -16,6 +16,8 @@ export type CellignerModelTypes =
   | CellignerSampleType.PEDIATRIC_PDX_MODEL;
 
 export interface Alignments {
+  profileId: Array<string>;
+  modelConditionId: Array<string>;
   sampleId: Array<string>;
   displayName: Array<string>;
   modelLoaded: Array<boolean>;
@@ -33,6 +35,8 @@ export interface Alignments {
 export interface Sample {
   displayName: string;
   sampleId: string;
+  profileId: string;
+  modelConditionId: string;
   umap1: number;
   umap2: number;
   lineage: string;

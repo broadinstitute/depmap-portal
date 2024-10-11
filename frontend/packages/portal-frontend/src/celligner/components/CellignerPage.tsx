@@ -295,14 +295,14 @@ export default class CellignerPage extends React.Component<Props, State> {
     this.setState({ cellLineList });
   }
 
-  handleCellLineSelected(selectedSampleId: string, kNeighbors: number) {
+  handleCellLineSelected(selectedProfileId: string, kNeighbors: number) {
     const { alignmentsArr } = this.props;
 
-    const cellLineIndex = alignmentsArr.sampleId.findIndex(
-      (sampleId) => sampleId === selectedSampleId
+    const cellLineIndex = alignmentsArr.profileId.findIndex(
+      (profileId) => profileId === selectedProfileId
     );
     this.dapi
-      .getCellignerDistancesToCellLine(selectedSampleId, kNeighbors)
+      .getCellignerDistancesToCellLine(selectedProfileId, kNeighbors)
       .then((e) => {
         this.setState({
           tumorDistances: e.distance_to_tumors,
@@ -464,9 +464,9 @@ export default class CellignerPage extends React.Component<Props, State> {
     } = this.state;
 
     const handleChangeCellLineTableSelections = (selections: string[]) => {
-      const selectedIndexes = selections.map((selectedDisplayName: string) =>
-        alignmentsArr.displayName.findIndex(
-          (displayName) => displayName === selectedDisplayName
+      const selectedIndexes = selections.map((selectedProfileId: string) =>
+        alignmentsArr.profileId.findIndex(
+          (profileId) => profileId === selectedProfileId
         )
       );
 
@@ -497,6 +497,16 @@ export default class CellignerPage extends React.Component<Props, State> {
     if (activeTab === "cell-line-for-tumors") {
       const cellLinesForTumorsColumns: Array<WideTableColumns> = ([
         {
+          Header: "Model Condition ID",
+          accessor: "modelConditionId",
+          columnDropdownLabel: "Model Condition ID",
+        },
+        {
+          Header: "Profile ID",
+          accessor: "profileId",
+          columnDropdownLabel: "Profile ID",
+        },
+        {
           Header: `${titleCase(NAME_FOR_MODEL)} Name`,
           accessor: "displayName",
           columnDropdownLabel: `${titleCase(NAME_FOR_MODEL)} Name`,
@@ -511,7 +521,7 @@ export default class CellignerPage extends React.Component<Props, State> {
           <div style={{ height: 380 }}>
             <WideTable
               key={activeTab}
-              idProp={"displayName"}
+              idProp={"profileId"}
               onChangeSelections={handleChangeCellLineTableSelections}
               data={
                 cellLineDistances
@@ -560,6 +570,16 @@ export default class CellignerPage extends React.Component<Props, State> {
     if (activeTab === "tumors-for-cell-line") {
       const tumorsForCellLinesColumns: Array<WideTableColumns> = ([
         {
+          Header: "Model Condition ID",
+          accessor: "modelConditionId",
+          columnDropdownLabel: "Model Condition ID",
+        },
+        {
+          Header: "Profile ID",
+          accessor: "profileId",
+          columnDropdownLabel: "Profile ID",
+        },
+        {
           Header: "Tumor Sample ID",
           accessor: "displayName",
           columnDropdownLabel: "Tumor Sample ID",
@@ -572,7 +592,7 @@ export default class CellignerPage extends React.Component<Props, State> {
           <div style={{ height: 380 }}>
             <WideTable
               key={activeTab}
-              idProp={"displayName"}
+              idProp={"profileId"}
               data={
                 tumorDistances
                   ? tumors

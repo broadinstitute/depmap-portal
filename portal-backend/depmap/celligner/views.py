@@ -50,6 +50,9 @@ def _flatten_subtype_lists(grp):
 
 def _format_alignments(alignment: pd.DataFrame):
     return {
+        "profileId": alignment["profileId"].values.tolist(),
+        "modelConditionId": alignment["modelConditionId"].values.tolist(),
+        # sampleId could be a model or a tumor id
         "sampleId": alignment["sampleId"].values.tolist(),
         "displayName": alignment["displayName"].values.tolist(),
         "modelLoaded": alignment["modelLoaded"].values.tolist(),
@@ -72,6 +75,8 @@ def view_celligner():
     celligner_alignment = pd.read_csv(
         path,
         dtype={
+            "profileId": str,
+            "modelConditionId": str,
             "sampleId": str,
             "displayName": str,
             "modelLoaded": bool,
