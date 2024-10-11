@@ -85,6 +85,7 @@ import {
   DataAvailSummary,
   DataPageDataType,
   getDataPageDataTypeColorCategory,
+  LineageAvailability,
 } from "./dataPage/models/types";
 
 export interface RenderTile {
@@ -664,6 +665,15 @@ export class DepmapApi {
       values: dataAvailVals,
       data_types: boolSummary.data_types,
     };
+  }
+
+  getLineageDataAvailability(dataType: string): Promise<LineageAvailability> {
+    const params = {
+      data_type: dataType,
+    };
+    return this._fetch<LineageAvailability>(
+      `/api/data_page/lineage_availability?${encodeParams(params)}`
+    );
   }
 
   getOncogenicAlterations(
