@@ -1,14 +1,15 @@
 from __future__ import annotations
-import json
 from uuid import UUID
 from typing import Optional, List, Dict, Any, Annotated, Union, Literal
 from pydantic import AfterValidator, BaseModel, Field, model_validator, field_validator
 
 from breadbox.schemas.common import DBBase
-from fastapi import HTTPException, Body
+from fastapi import Body
 from breadbox.schemas.custom_http_exception import UserError
 from .group import Group
 import enum
+
+from depmap_compute.slice import SliceQuery
 
 
 # NOTE: Using multivalue Literals seems to be creating errors in pydantic models and fastapi request params. It is possible for our version of pydantic, the schema for Literals is messed up (see: https://github.com/tiangolo/fastapi/issues/562). Upgrading the pydantic version could potentially solve this issue
@@ -474,3 +475,13 @@ class DimensionSearchIndexResponse(BaseModel):
     label: str
     matching_properties: List[Dict[str, str]]
     referenced_by: Optional[List[NameAndID]]
+
+
+class SliceQueryParam(SliceQuery, BaseModel):
+    pass
+
+
+class DimensionDataResponse(BaseModel):
+    ids: list[str]
+    labels: list[str]
+    values: list[Any]

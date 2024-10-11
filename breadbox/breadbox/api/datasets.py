@@ -51,6 +51,8 @@ from ..schemas.dataset import (
     UpdateDatasetParams,
     MatrixDatasetUpdateParams,
     TabularDatasetUpdateParams,
+    DimensionDataResponse,
+    SliceQueryParam,
 )
 from .dependencies import get_dataset as get_dataset_dep
 from .dependencies import get_db_with_user, get_user
@@ -454,6 +456,28 @@ def get_dimensions(
     )
 
     return search_index_entries
+
+
+@router.get(
+    "/dimension/data/",
+    operation_id="get_dimension_data",
+    response_model=DimensionDataResponse,
+)
+def get_dimension_data(
+    slice_query: SliceQueryParam,
+    db: SessionWithUser = Depends(get_db_with_user),
+    settings: Settings = Depends(get_settings),
+):
+    """
+    Load all values, IDs, and labels for a given dimension (specified by SliceQuery).
+    """
+    slice_values_by_id = dataset_crud.get_slice_data(
+        db, settings.filestore_location, slice_query
+    )
+
+    # labels_by_id =
+
+    pass
 
 
 @router.patch(
