@@ -20,7 +20,7 @@ import DatasetForm from "./DatasetForm";
 import DatasetMetadataForm from "./DatasetMetadataForm";
 import { Alert } from "react-bootstrap";
 import DatasetEditForm from "./DatasetEditForm";
-import DimensionTypeFormV2 from "./DimensionTypeFormV2";
+import DimensionTypeForm from "./DimensionTypeForm";
 
 export default function Datasets() {
   const { getApi } = useContext(ApiContext);
@@ -392,7 +392,7 @@ export default function Datasets() {
     return null;
   };
   const dimensionTypeForm = (
-    <DimensionTypeFormV2
+    <DimensionTypeForm
       addDimensionType={postDimensionType}
       updateDimensionType={updateDimensionType}
       isEditMode={isEditDimensionTypeMode}
