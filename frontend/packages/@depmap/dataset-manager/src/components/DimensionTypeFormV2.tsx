@@ -33,6 +33,12 @@ const uiSchema: UiSchema = {
   metadata_dataset_id: {
     "ui:title": "Dataset Metadata",
     "ui:emptyValue": null,
+    "ui:help":
+      "This dataset contains metadata about your dimension type. At mininum one of the columns must match the ID Column of the dimension type and contain a column called 'label'.",
+  },
+  properties_to_index: {
+    "ui:help":
+      "Columns in the dataset file that you would like to index by or search by.",
   },
 };
 
@@ -87,6 +93,9 @@ export default function DimensionTypeFormV2(props: DimensionTypeAddFormProps) {
   return isEditMode && editSchema ? (
     <Form
       formData={editFormData}
+      onChange={(e) => {
+        setEditFormData(e.formData);
+      }}
       schema={editSchema}
       uiSchema={uiSchema}
       validator={validator}
