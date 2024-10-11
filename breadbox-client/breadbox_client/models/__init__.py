@@ -24,6 +24,7 @@ from .compute_response import ComputeResponse
 from .data_type import DataType
 from .dataset_metadata import DatasetMetadata
 from .dataset_metadata_dataset_metadata import DatasetMetadataDatasetMetadata
+from .dimension_data_response import DimensionDataResponse
 from .dimension_search_index_response import DimensionSearchIndexResponse
 from .dimension_search_index_response_matching_properties_item import (
     DimensionSearchIndexResponseMatchingPropertiesItem,
@@ -70,6 +71,8 @@ from .metadata_response import MetadataResponse
 from .name_and_id import NameAndID
 from .sample_type_out import SampleTypeOut
 from .search_response import SearchResponse
+from .slice_query_param import SliceQueryParam
+from .slice_query_param_identifier_type import SliceQueryParamIdentifierType
 from .table_dataset_params import TableDatasetParams
 from .table_dataset_params_columns_metadata import TableDatasetParamsColumnsMetadata
 from .table_dataset_params_dataset_metadata_type_0 import (
@@ -121,6 +124,7 @@ __all__ = (
     "DatasetMetadata",
     "DatasetMetadataDatasetMetadata",
     "DataType",
+    "DimensionDataResponse",
     "DimensionSearchIndexResponse",
     "DimensionSearchIndexResponseMatchingPropertiesItem",
     "DimensionType",
@@ -159,6 +163,8 @@ __all__ = (
     "NameAndID",
     "SampleTypeOut",
     "SearchResponse",
+    "SliceQueryParam",
+    "SliceQueryParamIdentifierType",
     "TableDatasetParams",
     "TableDatasetParamsColumnsMetadata",
     "TableDatasetParamsDatasetMetadataType0",

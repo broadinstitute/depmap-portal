@@ -771,6 +771,36 @@
         "title": "DatasetMetadata",
         "type": "object"
       },
+      "DimensionDataResponse": {
+        "properties": {
+          "ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Ids",
+            "type": "array"
+          },
+          "labels": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Labels",
+            "type": "array"
+          },
+          "values": {
+            "items": {},
+            "title": "Values",
+            "type": "array"
+          }
+        },
+        "required": [
+          "ids",
+          "labels",
+          "values"
+        ],
+        "title": "DimensionDataResponse",
+        "type": "object"
+      },
       "DimensionSearchIndexResponse": {
         "properties": {
           "id": {
@@ -1910,6 +1940,36 @@
           "labels"
         ],
         "title": "SearchResponse",
+        "type": "object"
+      },
+      "SliceQueryParam": {
+        "properties": {
+          "dataset_id": {
+            "title": "Dataset Id",
+            "type": "string"
+          },
+          "identifier": {
+            "title": "Identifier",
+            "type": "string"
+          },
+          "identifier_type": {
+            "enum": [
+              "feature_id",
+              "feature_label",
+              "sample_id",
+              "sample_label",
+              "column"
+            ],
+            "title": "Identifier Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "dataset_id",
+          "identifier",
+          "identifier_type"
+        ],
+        "title": "SliceQueryParam",
         "type": "object"
       },
       "TableDatasetParams": {
@@ -3382,6 +3442,88 @@
           }
         },
         "summary": "Get Dataset Data",
+        "tags": [
+          "datasets"
+        ]
+      }
+    },
+    "/datasets/dimension/data/": {
+      "get": {
+        "description": "Load all values, IDs, and labels for a given dimension (specified by SliceQuery).",
+        "operationId": "get_dimension_data",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SliceQueryParam"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DimensionDataResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Dimension Data",
         "tags": [
           "datasets"
         ]
