@@ -108,7 +108,9 @@ export default function DimensionTypeForm(props: DimensionTypeFormProps) {
         validator={validator}
         onSubmit={onSubmission}
       />
-      <p style={{ color: "red", paddingTop: "5px" }}>{submissionErrorMsg}</p>
+      <p style={{ color: "red", paddingTop: "5px", fontStyle: "italic" }}>
+        {submissionErrorMsg}
+      </p>
     </>
   ) : (
     <>
@@ -118,7 +120,9 @@ export default function DimensionTypeForm(props: DimensionTypeFormProps) {
         validator={validator}
         onSubmit={onSubmission}
       />
-      <p style={{ color: "red", paddingTop: "5px" }}>{submissionErrorMsg}</p>
+      <p style={{ color: "red", paddingTop: "5px", fontStyle: "italic" }}>
+        {submissionErrorMsg}
+      </p>
     </>
   );
 }
