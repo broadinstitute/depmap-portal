@@ -1,27 +1,21 @@
 import * as React from "react";
 import { useState } from "react";
-
 import validator from "@rjsf/validator-ajv8";
 import Form from "@rjsf/core";
 import { addDimensionTypeSchema } from "../models/addDimensionTypeSchema";
 import { RJSFSchema, UiSchema } from "@rjsf/utils";
 import { updateDimensionTypeSchema } from "../models/updateDimensionTypeSchema";
-import {
-  Dataset,
-  DimensionTypeAddArgs,
-  DimensionTypeUpdateArgs,
-} from "@depmap/types";
+import { Dataset } from "@depmap/types";
 
 interface DimensionTypeFormProps {
-  addDimensionType: (args: DimensionTypeAddArgs) => void;
-  updateDimensionType: (name: string, args: DimensionTypeUpdateArgs) => void;
+  onSubmit: (formData: any) => Promise<void>;
   dimensionTypeToEdit: any | null;
   isEditMode: boolean;
   datasets: Dataset[];
 }
 
 const uiSchema: UiSchema = {
-  "ui:title": "", // removes the title <legend> html element
+  "ui:title": "", // removes the title <legend> html element,
   id_column: {
     "ui:help":
       "Identifier name for the dimension type. Ex: For sample type gene, the identifier is entrez_id. entrez_id must then be a column in the metadata file.",
@@ -42,15 +36,12 @@ const uiSchema: UiSchema = {
 };
 
 export default function DimensionTypeForm(props: DimensionTypeFormProps) {
-  const {
-    addDimensionType,
-    updateDimensionType,
-    isEditMode,
-    dimensionTypeToEdit,
-    datasets,
-  } = props;
+  const { onSubmit, isEditMode, dimensionTypeToEdit, datasets } = props;
   const [editFormData, setEditFormData] = useState<any>(undefined);
   const [editSchema, setEditSchema] = useState<RJSFSchema | null>(null);
+  const [submissionErrorMsg, setSubmissionErrorMsg] = useState<string | null>(
+    null
+  );
 
   React.useEffect(() => {
     if (isEditMode && dimensionTypeToEdit) {
@@ -89,31 +80,45 @@ export default function DimensionTypeForm(props: DimensionTypeFormProps) {
       setEditFormData(initForm);
     }
   }, [dimensionTypeToEdit, isEditMode, datasets]);
+
+  const onSubmission = async ({ formData }: any) => {
+    try {
+      await onSubmit(formData);
+    } catch (e: any) {
+      console.log(e);
+      if ("detail" in e) {
+        setSubmissionErrorMsg(e.detail as string);
+      } else {
+        setSubmissionErrorMsg("An unknown error occurred!");
+      }
+    }
+  };
+
   console.log(editFormData);
 
   return isEditMode && editSchema ? (
-    <Form
-      formData={editFormData}
-      onChange={(e) => {
-        setEditFormData(e.formData);
-      }}
-      schema={editSchema}
-      uiSchema={uiSchema}
-      validator={validator}
-      onSubmit={async ({ formData }) => {
-        console.log(formData);
-        await updateDimensionType(dimensionTypeToEdit.name, formData);
-      }}
-    />
+    <>
+      <Form
+        formData={editFormData}
+        onChange={(e) => {
+          setEditFormData(e.formData);
+        }}
+        schema={editSchema}
+        uiSchema={uiSchema}
+        validator={validator}
+        onSubmit={onSubmission}
+      />
+      <p style={{ color: "red", paddingTop: "5px" }}>{submissionErrorMsg}</p>
+    </>
   ) : (
-    <Form
-      schema={addDimensionTypeSchema}
-      uiSchema={uiSchema}
-      validator={validator}
-      onSubmit={async ({ formData }) => {
-        console.log(formData);
-        await addDimensionType(formData);
-      }}
-    />
+    <>
+      <Form
+        schema={addDimensionTypeSchema}
+        uiSchema={uiSchema}
+        validator={validator}
+        onSubmit={onSubmission}
+      />
+      <p style={{ color: "red", paddingTop: "5px" }}>{submissionErrorMsg}</p>
+    </>
   );
 }

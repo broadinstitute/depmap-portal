@@ -278,10 +278,31 @@ export default function Datasets() {
     });
   };
 
+  const onSubmitDimensionType = async (formData: any) => {
+    if (isEditDimensionTypeMode && selectedDimensionType) {
+      const updatedDimensionType = await updateDimensionType(
+        selectedDimensionType.name,
+        formData
+      );
+      setDimensionTypes([
+        ...dimensionTypes,
+        {
+          ...updatedDimensionType,
+          datasetsCount: selectedDimensionType.datasetsCount,
+        },
+      ]);
+    } else {
+      const addedDimensionType = await postDimensionType(formData);
+      setDimensionTypes([
+        ...dimensionTypes,
+        { ...addedDimensionType, datasetsCount: 0 },
+      ]);
+    }
+  };
+
   const dimensionTypeForm = (
     <DimensionTypeForm
-      addDimensionType={postDimensionType}
-      updateDimensionType={updateDimensionType}
+      onSubmit={onSubmitDimensionType}
       isEditMode={isEditDimensionTypeMode}
       dimensionTypeToEdit={selectedDimensionType}
       datasets={datasets.filter(
