@@ -278,12 +278,6 @@ export default function Datasets() {
     });
   };
 
-  const getSelectedDimensionType = () => {
-    if (isEditDimensionTypeMode && selectedDimensionType) {
-      return dimensionTypes.find((dt) => selectedDimensionType === dt.name);
-    }
-    return null;
-  };
   const dimensionTypeForm = (
     <DimensionTypeForm
       addDimensionType={postDimensionType}
