@@ -3,7 +3,7 @@ from typing import Optional
 
 from breadbox.db.session import SessionWithUser
 import breadbox.crud.dataset as dataset_crud
-from breadbox.schemas.dataset import SliceQueryIdentifierType, TabularDimensionsInfo
+from breadbox.schemas.dataset import TabularDimensionsInfo
 from breadbox.schemas.custom_http_exception import (
     ResourceNotFoundError,
     UserError,
@@ -87,7 +87,7 @@ def get_slice_data(
 
 
 def get_labels_for_slice_type(
-    db: SessionWithUser, slice_query: SliceQueryIdentifierType
+    db: SessionWithUser, slice_query: SliceQuery
 ) -> Optional[dict[str, str]]:
     """
     For the given slice query identifier type, get a dictionary of all the dataset labels and IDs

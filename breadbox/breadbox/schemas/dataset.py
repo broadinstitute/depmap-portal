@@ -35,6 +35,7 @@ class AnnotationType(enum.Enum):
 
 
 class SliceQueryIdentifierType(enum.Enum):
+    # Only used because Pyright doesn't work well with the literal types we use elsewhere.
     feature_id = "feature_id"
     feature_label = "feature_label"
     sample_id = "sample_id"
@@ -486,31 +487,6 @@ class DimensionSearchIndexResponse(BaseModel):
     label: str
     matching_properties: List[Dict[str, str]]
     referenced_by: Optional[List[NameAndID]]
-
-
-class SliceQueryParam(BaseModel):
-    # Ideally this should always be identical depmap_compute.slice.SliceQuery
-    dataset_id: str
-    identifier: str
-    identifier_type: Annotated[
-        SliceQueryIdentifierType,
-        Field(
-            description="Denotes the type of identifier being used to specify a dimension."
-        ),
-    ] = None
-
-    def to_generic_slice_query(self) -> SliceQuery:
-        """
-        Since this query is sometimes used to call functions defined outside of breadbox,
-        it needs to be converted to a more generic type (SliceQuery) that's accessible from the shared module.
-        In an ideal world, this SliceQueryParam would inherit from the more generic SliceQuery
-        and no conversion would be needed. However, that seems to break Pydantic.
-        """
-        return SliceQuery(
-            dataset_id=self.dataset_id,
-            identifier=self.identifier,
-            identifier_type=self.identifier_type.name,
-        )
 
 
 class DimensionDataResponse(BaseModel):

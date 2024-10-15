@@ -5,21 +5,21 @@ import httpx
 
 from ... import errors
 from ...client import AuthenticatedClient, Client
+from ...models.body_get_dimension_data import BodyGetDimensionData
 from ...models.dimension_data_response import DimensionDataResponse
 from ...models.http_error import HTTPError
 from ...models.http_validation_error import HTTPValidationError
-from ...models.slice_query_param import SliceQueryParam
 from ...types import Response
 
 
 def _get_kwargs(
     *,
-    body: SliceQueryParam,
+    body: BodyGetDimensionData,
 ) -> Dict[str, Any]:
     headers: Dict[str, Any] = {}
 
     _kwargs: Dict[str, Any] = {
-        "method": "get",
+        "method": "post",
         "url": "/datasets/dimension/data/",
     }
 
@@ -79,14 +79,14 @@ def _build_response(
 def sync_detailed(
     *,
     client: Union[AuthenticatedClient, Client],
-    body: SliceQueryParam,
+    body: BodyGetDimensionData,
 ) -> Response[Union[DimensionDataResponse, HTTPError, HTTPValidationError]]:
     """Get Dimension Data
 
      Load all values, IDs, and labels for a given dimension (specified by SliceQuery).
 
     Args:
-        body (SliceQueryParam):
+        body (BodyGetDimensionData):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -110,14 +110,14 @@ def sync_detailed(
 def sync(
     *,
     client: Union[AuthenticatedClient, Client],
-    body: SliceQueryParam,
+    body: BodyGetDimensionData,
 ) -> Optional[Union[DimensionDataResponse, HTTPError, HTTPValidationError]]:
     """Get Dimension Data
 
      Load all values, IDs, and labels for a given dimension (specified by SliceQuery).
 
     Args:
-        body (SliceQueryParam):
+        body (BodyGetDimensionData):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -136,14 +136,14 @@ def sync(
 async def asyncio_detailed(
     *,
     client: Union[AuthenticatedClient, Client],
-    body: SliceQueryParam,
+    body: BodyGetDimensionData,
 ) -> Response[Union[DimensionDataResponse, HTTPError, HTTPValidationError]]:
     """Get Dimension Data
 
      Load all values, IDs, and labels for a given dimension (specified by SliceQuery).
 
     Args:
-        body (SliceQueryParam):
+        body (BodyGetDimensionData):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -165,14 +165,14 @@ async def asyncio_detailed(
 async def asyncio(
     *,
     client: Union[AuthenticatedClient, Client],
-    body: SliceQueryParam,
+    body: BodyGetDimensionData,
 ) -> Optional[Union[DimensionDataResponse, HTTPError, HTTPValidationError]]:
     """Get Dimension Data
 
      Load all values, IDs, and labels for a given dimension (specified by SliceQuery).
 
     Args:
-        body (SliceQueryParam):
+        body (BodyGetDimensionData):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.

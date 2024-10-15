@@ -436,6 +436,35 @@
         "title": "Body_get_dataset_data",
         "type": "object"
       },
+      "Body_get_dimension_data": {
+        "properties": {
+          "dataset_id": {
+            "description": "The UUID or given ID of a dataset.",
+            "title": "Dataset Id",
+            "type": "string"
+          },
+          "identifier": {
+            "description": "A dimension identifier of the specified type (id, label, etc.).",
+            "title": "Identifier",
+            "type": "string"
+          },
+          "identifier_type": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SliceQueryIdentifierType"
+              }
+            ],
+            "description": "Denotes the type of identifier being used and the axis being queried."
+          }
+        },
+        "required": [
+          "dataset_id",
+          "identifier",
+          "identifier_type"
+        ],
+        "title": "Body_get_dimension_data",
+        "type": "object"
+      },
       "Body_update_feature_type_metadata": {
         "properties": {
           "annotation_type_mapping": {
@@ -781,11 +810,18 @@
             "type": "array"
           },
           "labels": {
-            "items": {
-              "type": "string"
-            },
-            "title": "Labels",
-            "type": "array"
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Labels"
           },
           "values": {
             "items": {},
@@ -1942,35 +1978,16 @@
         "title": "SearchResponse",
         "type": "object"
       },
-      "SliceQueryParam": {
-        "properties": {
-          "dataset_id": {
-            "title": "Dataset Id",
-            "type": "string"
-          },
-          "identifier": {
-            "title": "Identifier",
-            "type": "string"
-          },
-          "identifier_type": {
-            "enum": [
-              "feature_id",
-              "feature_label",
-              "sample_id",
-              "sample_label",
-              "column"
-            ],
-            "title": "Identifier Type",
-            "type": "string"
-          }
-        },
-        "required": [
-          "dataset_id",
-          "identifier",
-          "identifier_type"
+      "SliceQueryIdentifierType": {
+        "enum": [
+          "feature_id",
+          "feature_label",
+          "sample_id",
+          "sample_label",
+          "column"
         ],
-        "title": "SliceQueryParam",
-        "type": "object"
+        "title": "SliceQueryIdentifierType",
+        "type": "string"
       },
       "TableDatasetParams": {
         "properties": {
@@ -3448,14 +3465,14 @@
       }
     },
     "/datasets/dimension/data/": {
-      "get": {
+      "post": {
         "description": "Load all values, IDs, and labels for a given dimension (specified by SliceQuery).",
         "operationId": "get_dimension_data",
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/SliceQueryParam"
+                "$ref": "#/components/schemas/Body_get_dimension_data"
               }
             }
           },

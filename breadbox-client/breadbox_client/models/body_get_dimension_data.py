@@ -3,23 +3,23 @@ from typing import Any, Dict, List, Type, TypeVar
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
-from ..models.slice_query_param_identifier_type import SliceQueryParamIdentifierType
+from ..models.slice_query_identifier_type import SliceQueryIdentifierType
 
-T = TypeVar("T", bound="SliceQueryParam")
+T = TypeVar("T", bound="BodyGetDimensionData")
 
 
 @_attrs_define
-class SliceQueryParam:
+class BodyGetDimensionData:
     """
     Attributes:
-        dataset_id (str):
-        identifier (str):
-        identifier_type (SliceQueryParamIdentifierType):
+        dataset_id (str): The UUID or given ID of a dataset.
+        identifier (str): A dimension identifier of the specified type (id, label, etc.).
+        identifier_type (SliceQueryIdentifierType):
     """
 
     dataset_id: str
     identifier: str
-    identifier_type: SliceQueryParamIdentifierType
+    identifier_type: SliceQueryIdentifierType
     additional_properties: Dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> Dict[str, Any]:
@@ -48,16 +48,16 @@ class SliceQueryParam:
 
         identifier = d.pop("identifier")
 
-        identifier_type = SliceQueryParamIdentifierType(d.pop("identifier_type"))
+        identifier_type = SliceQueryIdentifierType(d.pop("identifier_type"))
 
-        slice_query_param = cls(
+        body_get_dimension_data = cls(
             dataset_id=dataset_id,
             identifier=identifier,
             identifier_type=identifier_type,
         )
 
-        slice_query_param.additional_properties = d
-        return slice_query_param
+        body_get_dimension_data.additional_properties = d
+        return body_get_dimension_data
 
     @property
     def additional_keys(self) -> List[str]:

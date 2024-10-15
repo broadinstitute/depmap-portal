@@ -1,4 +1,12 @@
-from typing import Any, Dict, List, Type, TypeVar, cast
+from typing import (
+    Any,
+    Dict,
+    List,
+    Type,
+    TypeVar,
+    Union,
+    cast,
+)
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -11,19 +19,24 @@ class DimensionDataResponse:
     """
     Attributes:
         ids (List[str]):
-        labels (List[str]):
+        labels (Union[List[str], None]):
         values (List[Any]):
     """
 
     ids: List[str]
-    labels: List[str]
+    labels: Union[List[str], None]
     values: List[Any]
     additional_properties: Dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> Dict[str, Any]:
         ids = self.ids
 
-        labels = self.labels
+        labels: Union[List[str], None]
+        if isinstance(self.labels, list):
+            labels = self.labels
+
+        else:
+            labels = self.labels
 
         values = self.values
 
@@ -44,7 +57,20 @@ class DimensionDataResponse:
         d = src_dict.copy()
         ids = cast(List[str], d.pop("ids"))
 
-        labels = cast(List[str], d.pop("labels"))
+        def _parse_labels(data: object) -> Union[List[str], None]:
+            if data is None:
+                return data
+            try:
+                if not isinstance(data, list):
+                    raise TypeError()
+                labels_type_0 = cast(List[str], data)
+
+                return labels_type_0
+            except:  # noqa: E722
+                pass
+            return cast(Union[List[str], None], data)
+
+        labels = _parse_labels(d.pop("labels"))
 
         values = cast(List[Any], d.pop("values"))
 

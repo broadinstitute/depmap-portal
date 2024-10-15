@@ -15,6 +15,7 @@ from .body_add_dataset import BodyAddDataset
 from .body_add_feature_type import BodyAddFeatureType
 from .body_add_sample_type import BodyAddSampleType
 from .body_get_dataset_data import BodyGetDatasetData
+from .body_get_dimension_data import BodyGetDimensionData
 from .body_update_feature_type_metadata import BodyUpdateFeatureTypeMetadata
 from .body_update_sample_type_metadata import BodyUpdateSampleTypeMetadata
 from .body_upload_file import BodyUploadFile
@@ -71,8 +72,7 @@ from .metadata_response import MetadataResponse
 from .name_and_id import NameAndID
 from .sample_type_out import SampleTypeOut
 from .search_response import SearchResponse
-from .slice_query_param import SliceQueryParam
-from .slice_query_param_identifier_type import SliceQueryParamIdentifierType
+from .slice_query_identifier_type import SliceQueryIdentifierType
 from .table_dataset_params import TableDatasetParams
 from .table_dataset_params_columns_metadata import TableDatasetParamsColumnsMetadata
 from .table_dataset_params_dataset_metadata_type_0 import (
@@ -115,6 +115,7 @@ __all__ = (
     "BodyAddFeatureType",
     "BodyAddSampleType",
     "BodyGetDatasetData",
+    "BodyGetDimensionData",
     "BodyUpdateFeatureTypeMetadata",
     "BodyUpdateSampleTypeMetadata",
     "BodyUploadFile",
@@ -163,8 +164,7 @@ __all__ = (
     "NameAndID",
     "SampleTypeOut",
     "SearchResponse",
-    "SliceQueryParam",
-    "SliceQueryParamIdentifierType",
+    "SliceQueryIdentifierType",
     "TableDatasetParams",
     "TableDatasetParamsColumnsMetadata",
     "TableDatasetParamsDatasetMetadataType0",

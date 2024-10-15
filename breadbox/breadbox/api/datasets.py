@@ -52,7 +52,7 @@ from ..schemas.dataset import (
     MatrixDatasetUpdateParams,
     TabularDatasetUpdateParams,
     DimensionDataResponse,
-    SliceQueryParam,
+    SliceQueryIdentifierType,
 )
 from .dependencies import get_dataset as get_dataset_dep
 from .dependencies import get_db_with_user, get_user
@@ -465,20 +465,37 @@ def get_dimensions(
     response_model=DimensionDataResponse,
 )
 def get_dimension_data(
-    slice_query: Annotated[SliceQueryParam, Body(default_factory=SliceQueryParam)],
+    # The request body should be a SliceQuery with the following three fields:
+    dataset_id: Annotated[str, Body(description="The UUID or given ID of a dataset.")],
+    identifier: Annotated[
+        str,
+        Body(
+            description="A dimension identifier of the specified type (id, label, etc.)."
+        ),
+    ],
+    identifier_type: Annotated[
+        SliceQueryIdentifierType,
+        Body(
+            description="Denotes the type of identifier being used and the axis being queried."
+        ),
+    ],
     db: SessionWithUser = Depends(get_db_with_user),
     settings: Settings = Depends(get_settings),
 ):
     """
     Load all values, IDs, and labels for a given dimension (specified by SliceQuery).
     """
-    parsed_slice_query = slice_query.to_generic_slice_query()
+    parsed_slice_query = SliceQuery(
+        dataset_id=dataset_id,
+        identifier=identifier,
+        identifier_type=identifier_type.name,
+    )
     slice_values_by_id = slice_crud.get_slice_data(
         db, settings.filestore_location, parsed_slice_query
     )
 
     # Load the labels separately, ensuring they're in the same order as the other values
-    slice_ids = slice_values_by_id.index.tolist()
+    slice_ids: list = slice_values_by_id.index.tolist()
     labels_by_id = slice_crud.get_labels_for_slice_type(db, parsed_slice_query)
     slice_labels = [labels_by_id[id] for id in slice_ids] if labels_by_id else None
 

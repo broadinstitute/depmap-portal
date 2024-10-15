@@ -1,7 +1,7 @@
 from enum import Enum
 
 
-class SliceQueryParamIdentifierType(str, Enum):
+class SliceQueryIdentifierType(str, Enum):
     COLUMN = "column"
     FEATURE_ID = "feature_id"
     FEATURE_LABEL = "feature_label"
