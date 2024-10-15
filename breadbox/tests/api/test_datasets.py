@@ -2821,15 +2821,22 @@ class TestPost:
             "/datasets/dimension/data",
             json={
                 "dataset_id": dataset_with_metadata.id,
-                "identifier": "featureID1",
-                "identifier_type": "feature_id",
+                "identifier": "sampleID1",
+                "identifier_type": "sample_id",
             },
             headers={"X-Forwarded-User": "some-public-user"},
         )
 
         assert_status_ok(response)
-
-        assert response.json() is not None
+        response_content = response.json()
+        assert response_content is not None
+        assert response_content["ids"] == ["featureID1", "featureID2", "featureID3"]
+        assert response_content["labels"] == [
+            "featureLabel1",
+            "featureLabel2",
+            "featureLabel3",
+        ]
+        assert response_content["values"] == [1, 2, 3]
 
 
 class TestPatch:

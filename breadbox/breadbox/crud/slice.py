@@ -90,7 +90,8 @@ def get_labels_for_slice_type(
     db: SessionWithUser, slice_query: SliceQueryIdentifierType
 ) -> Optional[dict[str, str]]:
     """
-    For the given slice query identifier type, get a dictionary of all dataset labels and IDs.
+    For the given slice query identifier type, get a dictionary of all the dataset labels and IDs
+    that should be used to index the resulting slice.
     If the identifier type does not have labels, return None.
     """
     dataset = dataset_crud.get_dataset(db, db.user, slice_query.dataset_id)
