@@ -39,9 +39,8 @@ export default function DimensionTypeForm(props: DimensionTypeFormProps) {
   const { onSubmit, isEditMode, dimensionTypeToEdit, datasets } = props;
   const [editFormData, setEditFormData] = useState<any>(undefined);
   const [editSchema, setEditSchema] = useState<RJSFSchema | null>(null);
-  const [submissionErrorMsg, setSubmissionErrorMsg] = useState<string | null>(
-    null
-  );
+  const [submissionMsg, setSubmissionMsg] = useState<string | null>(null);
+  const [hasError, setHasError] = useState<boolean>(false);
 
   React.useEffect(() => {
     if (isEditMode && dimensionTypeToEdit) {
@@ -82,19 +81,22 @@ export default function DimensionTypeForm(props: DimensionTypeFormProps) {
   }, [dimensionTypeToEdit, isEditMode, datasets]);
 
   const onSubmission = async ({ formData }: any) => {
+    setSubmissionMsg("Loading...");
+    // Refresh state at start of submission
+    setHasError(false);
     try {
       await onSubmit(formData);
+      setSubmissionMsg("Success!");
     } catch (e: any) {
       console.log(e);
+      setHasError(true);
       if ("detail" in e) {
-        setSubmissionErrorMsg(e.detail as string);
+        setSubmissionMsg(e.detail as string);
       } else {
-        setSubmissionErrorMsg("An unknown error occurred!");
+        setSubmissionMsg("An unknown error occurred!");
       }
     }
   };
-
-  console.log(editFormData);
 
   return isEditMode && editSchema ? (
     <>
@@ -102,14 +104,22 @@ export default function DimensionTypeForm(props: DimensionTypeFormProps) {
         formData={editFormData}
         onChange={(e) => {
           setEditFormData(e.formData);
+          // Refresh message if form changes
+          setSubmissionMsg(null);
         }}
         schema={editSchema}
         uiSchema={uiSchema}
         validator={validator}
         onSubmit={onSubmission}
       />
-      <p style={{ color: "red", paddingTop: "5px", fontStyle: "italic" }}>
-        {submissionErrorMsg}
+      <p
+        style={{
+          color: hasError ? "red" : "gray",
+          paddingTop: "5px",
+          fontStyle: "italic",
+        }}
+      >
+        {submissionMsg}
       </p>
     </>
   ) : (
@@ -120,8 +130,14 @@ export default function DimensionTypeForm(props: DimensionTypeFormProps) {
         validator={validator}
         onSubmit={onSubmission}
       />
-      <p style={{ color: "red", paddingTop: "5px", fontStyle: "italic" }}>
-        {submissionErrorMsg}
+      <p
+        style={{
+          color: hasError ? "red" : "gray",
+          paddingTop: "5px",
+          fontStyle: "italic",
+        }}
+      >
+        {submissionMsg}
       </p>
     </>
   );
