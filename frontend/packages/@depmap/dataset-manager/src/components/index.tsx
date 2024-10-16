@@ -153,7 +153,24 @@ export default function Datasets() {
           <DatasetEditForm
             getGroups={getGroups}
             getDataTypesAndPriorities={getDataTypesAndPriorities}
-            updateDataset={updateDataset}
+            onSubmit={async (
+              datasetId: string,
+              datasetToUpdate: DatasetUpdateArgs
+            ) => {
+              const updatedDataset = await updateDataset(
+                datasetId,
+                datasetToUpdate
+              );
+              setDatasets(
+                datasets.map((d) => {
+                  if (d.id === datasetId) {
+                    return { ...d, ...updatedDataset };
+                  }
+                  return d;
+                })
+              );
+              setDatasetToEdit(updatedDataset);
+            }}
             datasetToEdit={datasetToEdit}
           />
         );
