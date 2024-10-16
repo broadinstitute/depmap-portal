@@ -118,7 +118,7 @@ export default function DatasetForm(props: DatasetEditFormProps) {
     })();
   }, [getGroups, getDataTypesAndPriorities, datasetToEdit]);
 
-  return schema ? (
+  return schema && formDataVals ? (
     <Form
       formData={formDataVals}
       schema={schema}

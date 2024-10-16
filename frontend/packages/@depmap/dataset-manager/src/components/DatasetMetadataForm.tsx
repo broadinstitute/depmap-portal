@@ -303,12 +303,13 @@ export default function DatasetMetadataForm({
 CustomDatasetMetadata component is a wrapper for DatasetMetadataForm and is used as a custom RJSF field component for dataset metadata
 */
 export const CustomDatasetMetadata = function (props: FieldProps) {
-  const { onChange } = props;
+  const { onChange, formData } = props;
 
   return (
     <div id="customDatasetMetadata">
       <DatasetMetadataForm
         isEdit={false}
+        initDatasetMetadata={formData}
         forwardDatasetMetadataDict={(metadataDict: {
           [key: string]: string;
         }) => {
