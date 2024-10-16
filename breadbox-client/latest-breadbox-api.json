@@ -810,18 +810,11 @@
             "type": "array"
           },
           "labels": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Labels"
+            "items": {
+              "type": "string"
+            },
+            "title": "Labels",
+            "type": "array"
           },
           "values": {
             "items": {},

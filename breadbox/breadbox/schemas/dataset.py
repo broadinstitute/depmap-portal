@@ -491,5 +491,5 @@ class DimensionSearchIndexResponse(BaseModel):
 
 class DimensionDataResponse(BaseModel):
     ids: list[str]
-    labels: Optional[list[str]]
+    labels: list[str]
     values: list[Any]

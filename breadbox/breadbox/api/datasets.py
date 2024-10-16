@@ -497,7 +497,7 @@ def get_dimension_data(
     # Load the labels separately, ensuring they're in the same order as the other values
     slice_ids: list = slice_values_by_id.index.tolist()
     labels_by_id = slice_crud.get_labels_for_slice_type(db, parsed_slice_query)
-    slice_labels = [labels_by_id[id] for id in slice_ids] if labels_by_id else None
+    slice_labels = [labels_by_id[id] for id in slice_ids] if labels_by_id else slice_ids
 
     return {
         "ids": slice_ids,
