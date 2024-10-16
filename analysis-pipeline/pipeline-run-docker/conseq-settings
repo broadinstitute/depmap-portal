@@ -1,0 +1,4 @@
+let TAIGA_URL = "http://taiga.broadinstitute.org"
+let DSUB_PATH="/install/dsub/bin"
+let AWS_ACCESS_KEY_ID = "ABCD1234"
+let AWS_SECRET_ACCESS_KEY = "1234"

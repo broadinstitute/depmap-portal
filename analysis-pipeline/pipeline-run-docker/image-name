@@ -1,0 +1,3 @@
+# This is also used in pipeline/jenkins-run-pipeline.sh.
+
+DOCKER_IMAGE=us.gcr.io/broad-achilles/depmap-pipeline-run:local-build-1
