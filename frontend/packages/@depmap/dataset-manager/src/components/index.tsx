@@ -4,11 +4,9 @@ import {
   DatasetParams,
   DatasetTableData,
   DatasetUpdateArgs,
-  FeatureType,
-  SampleType,
-  instanceOfErrorDetail,
-  SampleTypeUpdateArgs,
-  FeatureTypeUpdateArgs,
+  // instanceOfErrorDetail,
+  DimensionTypeAddArgs,
+  DimensionTypeUpdateArgs,
 } from "@depmap/types";
 
 import { FormModal, Spinner } from "@depmap/common-components";
@@ -20,9 +18,9 @@ import { ApiContext } from "@depmap/api";
 
 import DatasetForm from "./DatasetForm";
 import DatasetMetadataForm from "./DatasetMetadataForm";
-import DimensionTypeForm from "./DimensionTypeForm";
 import { Alert } from "react-bootstrap";
 import DatasetEditForm from "./DatasetEditForm";
+import DimensionTypeForm from "./DimensionTypeForm";
 
 export default function Datasets() {
   const { getApi } = useContext(ApiContext);
@@ -47,8 +45,20 @@ export default function Datasets() {
     [key: string]: string;
   } | null>(null);
 
+  // TODO: Remove
   const getFeatureTypes = useCallback(() => dapi.getFeatureTypes(), [dapi]);
   const getSampleTypes = useCallback(() => dapi.getSampleTypes(), [dapi]);
+
+  const getDimensionTypes = useCallback(() => dapi.getDimensionTypes(), [dapi]);
+  const postDimensionType = useCallback(
+    (dimTypeArgs: DimensionTypeAddArgs) => dapi.postDimensionType(dimTypeArgs),
+    [dapi]
+  );
+  const updateDimensionType = useCallback(
+    (dimTypeName: string, dimTypeArgs: DimensionTypeUpdateArgs) =>
+      dapi.updateDimensionType(dimTypeName, dimTypeArgs),
+    [dapi]
+  );
   const getGroups = useCallback(() => dapi.getGroups(), [dapi]);
   const getDataTypesAndPriorities = useCallback(
     () => dapi.getDataTypesAndPriorities(),
@@ -70,13 +80,9 @@ export default function Datasets() {
 
   const [dimensionTypes, setDimensionTypes] = useState<any[] | null>(null);
   const [selectedDimensionType, setSelectedDimensionType] = useState<
-    string | null
+    any | null
   >(null);
   const [isEditDimensionTypeMode, setIsEditDimensionTypeMode] = useState(false);
-  const [
-    dimensionTypeSubmissionError,
-    setDimensionTypeSubmissionError,
-  ] = useState<string | null>(null);
   const [showDimensionTypeModal, setShowDimensionTypeModal] = useState(false);
   const [showDeleteError, setShowDeleteError] = useState(false);
 
@@ -117,33 +123,24 @@ export default function Datasets() {
           currentDatasets
         );
 
-        const feature_types = (await getFeatureTypes()).map((f) => {
-          return {
-            ...f,
-            axis: "feature",
-            datasetsCount:
-              f.name in dimensionTypeDatasetNum
-                ? dimensionTypeDatasetNum[f.name]
-                : 0,
-          };
-        });
-        const sample_types = (await getSampleTypes()).map((s) => {
-          return {
-            ...s,
-            axis: "sample",
-            datasetsCount:
-              s.name in dimensionTypeDatasetNum
-                ? dimensionTypeDatasetNum[s.name]
-                : 0,
-          };
-        });
-        setDimensionTypes(feature_types.concat(sample_types));
+        const dimensionTypesWithDatasetCounts = (await getDimensionTypes()).map(
+          (dt) => {
+            return {
+              ...dt,
+              datasetsCount:
+                dt.name in dimensionTypeDatasetNum
+                  ? dimensionTypeDatasetNum[dt.name]
+                  : 0,
+            };
+          }
+        );
+        setDimensionTypes(dimensionTypesWithDatasetCounts);
       } catch (e) {
         console.error(e);
         setInitError(true);
       }
     })();
-  }, [dapi, getFeatureTypes, getSampleTypes]);
+  }, [dapi, getDimensionTypes]);
 
   const datasetForm = useCallback(() => {
     if (datasets) {
@@ -281,201 +278,15 @@ export default function Datasets() {
     });
   };
 
-  // const onSubmitDatasetEdit = async (
-  //   datasetArgs: any,
-  //   clear_state_callback: (
-  //     isSuccessfulSubmit: boolean,
-  //     wasEditing: boolean
-  //   ) => void
-  // ) => {
-  //   let isSubmitted = false;
-  //   // Reset submission error state on submit
-  //   setDatasetSubmissionError(null);
-  //   try {
-  //     const dataset = await dapi.updateDataset(datasetArgs);
-  //     setDatasets(
-  //       datasets.map((originalDataset) => {
-  //         if (originalDataset.id === dataset.id) {
-  //           return dataset;
-  //         }
-  //         return originalDataset;
-  //       })
-  //     );
-  //     setShowDatasetModal(false);
-  //     setIsEditDatasetMode(false);
-  //     isSubmitted = true;
-  //   } catch (e) {
-  //     console.error(e);
-  //     if (instanceOfErrorDetail(e)) {
-  //       setDatasetSubmissionError(e.body.detail);
-  //     }
-  //   }
-  //   // In case of 500 error
-  //   if (!isSubmitted && datasetSubmissionError == null) {
-  //     setDatasetSubmissionError("Failed to submit dataset!");
-  //   }
-  //   const wasEditing = true;
-  //   clear_state_callback(isSubmitted, wasEditing);
-  // };
-
-  // const onSubmitDatasetUpload = async (
-  //   datasetArgs: any,
-  //   allowed_values_query_args: string[],
-  //   clear_state_callback: (isSuccessfulSubmit: boolean) => void
-  // ) => {
-  //   let isSubmitted = false;
-  //   // Reset submission error state on submit
-  //   setDatasetSubmissionError(null);
-  //   try {
-  //     const dataset = await dapi.postDataset(
-  //       datasetArgs,
-  //       allowed_values_query_args
-  //     );
-  //     const newDatasets = await dapi.getBreadboxDatasets();
-  //     setDatasets(newDatasets);
-  //     setShowDatasetModal(false);
-  //     isSubmitted = true;
-  //     const datasetSampleType = dataset.sample_type;
-  //     const datasetFeatureType = dataset.feature_type;
-  //     const updatedDimensionTypeCounts = dimensionTypes.map((dt) => {
-  //       if (dt.name === datasetSampleType || dt.name === datasetFeatureType) {
-  //         return { ...dt, datasetsCount: dt.datasetsCount + 1 };
-  //       }
-  //       return dt;
-  //     });
-  //     setDimensionTypes(updatedDimensionTypeCounts);
-  //   } catch (e) {
-  //     console.error(e);
-  //     if (instanceOfErrorDetail(e)) {
-  //       setDatasetSubmissionError(e.body.detail);
-  //     }
-  //   }
-  //   // In case of 500 error
-  //   if (!isSubmitted && datasetSubmissionError == null) {
-  //     setDatasetSubmissionError("Failed to submit dataset!");
-  //   }
-  //   clear_state_callback(isSubmitted);
-  // };
-
-  // const getSelectedDataset = () => {
-  //   if (isEditDatasetMode && selectedDatasetIds.size === 1) {
-  //     return datasets.filter(
-  //       (dataset) => dataset.id === [...selectedDatasetIds][0]
-  //     )[0];
-  //   }
-  //   return null;
-  // };
-
-  const onSubmitDimensionTypeEdit = async (
-    dimensionTypeArgs: any,
-    clear_state_callback: (
-      isSuccessfulSubmit: boolean,
-      wasEditing: boolean
-    ) => void
-  ) => {
-    let isSubmitted = false;
-    // Reset submission error state on submit
-    setDimensionTypeSubmissionError(null);
-    try {
-      let dimensionType: FeatureType | SampleType;
-      const { axis, ...args } = dimensionTypeArgs;
-
-      if (axis === "feature") {
-        dimensionType = await dapi.updateFeatureType(
-          new FeatureTypeUpdateArgs(
-            args.name,
-            args.metadata_file,
-            args.annotation_type_mapping
-          )
-        );
-      } else {
-        dimensionType = await dapi.updateSampleType(
-          new SampleTypeUpdateArgs(
-            args.name,
-            args.metadata_file,
-            args.annotation_type_mapping
-          )
-        );
-      }
-      setDimensionTypes(
-        dimensionTypes.map((originalDimensionType) => {
-          if (originalDimensionType.name === dimensionType.name) {
-            return {
-              ...dimensionType,
-              axis,
-              datasetsCount: args.metadata_file === "" ? 0 : 1,
-            };
-          }
-          return originalDimensionType;
-        })
-      );
-      setShowDimensionTypeModal(false);
-      setIsEditDimensionTypeMode(false);
-      isSubmitted = true;
-    } catch (e) {
-      console.error(e);
-      if (instanceOfErrorDetail(e)) {
-        setDimensionTypeSubmissionError(e.body.detail);
-      }
-    }
-    // In case of 500 error
-    if (!isSubmitted && dimensionTypeSubmissionError == null) {
-      setDimensionTypeSubmissionError("Failed to submit dimension type!");
-    }
-    const wasEditing = true;
-    clear_state_callback(isSubmitted, wasEditing);
-  };
-
-  const onSubmitDimensionTypeUpload = async (
-    dimensionTypeArgs: any,
-    clear_state_callback: (isSuccessfulSubmit: boolean) => void
-  ) => {
-    let isSubmitted = false;
-    // Reset submission error state on submit
-    setDimensionTypeSubmissionError(null);
-    let dimensionType;
-    const { axis, ...args } = dimensionTypeArgs;
-    try {
-      if (axis === "feature") {
-        dimensionType = await dapi.postFeatureType(args);
-      } else {
-        dimensionType = await dapi.postSampleType(args);
-      }
-      setDimensionTypes(
-        dimensionTypes.concat({
-          ...dimensionType,
-          axis,
-          datasetsCount: args.metadata_file === "" ? 0 : 1,
-        })
-      );
-      setShowDimensionTypeModal(false);
-      isSubmitted = true;
-    } catch (e) {
-      console.error(e);
-      if (instanceOfErrorDetail(e)) {
-        setDimensionTypeSubmissionError(e.body.detail);
-      }
-    }
-    // In case of 500 error
-    if (!isSubmitted && dimensionTypeSubmissionError == null) {
-      setDimensionTypeSubmissionError("Failed to submit dimension type!");
-    }
-    clear_state_callback(isSubmitted);
-  };
-
-  const getSelectedDimensionType = () => {
-    if (isEditDimensionTypeMode && selectedDimensionType) {
-      return dimensionTypes.find((dt) => selectedDimensionType === dt.name);
-    }
-    return null;
-  };
   const dimensionTypeForm = (
     <DimensionTypeForm
-      onSubmit={onSubmitDimensionTypeUpload}
-      onSubmitDimensionTypeEdit={onSubmitDimensionTypeEdit}
-      dimensionTypeSubmissionError={dimensionTypeSubmissionError}
+      addDimensionType={postDimensionType}
+      updateDimensionType={updateDimensionType}
       isEditMode={isEditDimensionTypeMode}
-      selectedDimensionType={getSelectedDimensionType()}
+      dimensionTypeToEdit={selectedDimensionType}
+      datasets={datasets.filter(
+        (dataset) => dataset.format === "tabular_dataset"
+      )}
     />
   );
 
@@ -579,7 +390,7 @@ export default function Datasets() {
     try {
       if (selectedDimensionType != null) {
         const dimensionType = dimensionTypes.find(
-          (dt) => dt.name === selectedDimensionType
+          (dt) => dt.name === selectedDimensionType.name
         );
         if (dimensionType.axis === "feature") {
           await dapi.deleteFeatureType(dimensionType.name);
@@ -596,7 +407,7 @@ export default function Datasets() {
     }
     if (isDeleted) {
       setDimensionTypes(
-        dimensionTypes.filter((dt) => dt.name !== selectedDimensionType)
+        dimensionTypes.filter((dt) => dt.name !== selectedDimensionType.name)
       );
       setSelectedDimensionType(null);
     }
@@ -693,7 +504,6 @@ export default function Datasets() {
             onHide={() => {
               setShowDimensionTypeModal(false);
               setIsEditDimensionTypeMode(false);
-              setDimensionTypeSubmissionError(null);
             }}
             formComponent={dimensionTypeForm}
           />
@@ -703,9 +513,11 @@ export default function Datasets() {
 
         {showDeleteError && (
           <Alert bsStyle="danger">
-            <strong>Delete &quot;{selectedDimensionType}&quot; Failed!</strong>{" "}
-            Make sure &quot;{selectedDimensionType}&quot; has no datasets with
-            its dimension type.
+            <strong>
+              Delete &quot;{selectedDimensionType.name}&quot; Failed!
+            </strong>{" "}
+            Make sure &quot;{selectedDimensionType.name}&quot; has no datasets
+            with its dimension type.
           </Alert>
         )}
 
@@ -736,9 +548,14 @@ export default function Datasets() {
           <WideTable
             idProp="name"
             onChangeSelections={(selections) => {
-              setSelectedDimensionType(
-                selections.length > 0 ? selections[0] : null
-              );
+              if (selections.length > 0) {
+                const selectedDimType = dimensionTypes.find(
+                  (dt) => dt.name === selections[0]
+                );
+                setSelectedDimensionType(selectedDimType || null);
+              } else {
+                setSelectedDimensionType(null);
+              }
               setShowDeleteError(false);
             }}
             rowHeight={40}
