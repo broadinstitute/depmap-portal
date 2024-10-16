@@ -1,301 +1,119 @@
 import * as React from "react";
-import { TagOption } from "@depmap/common-components";
-import { AnnotationType, AnnotationTypingInput } from "@depmap/types";
-import Papa from "papaparse";
-import { useRef, useState } from "react";
+import { useState } from "react";
+
+import validator from "@rjsf/validator-ajv8";
+import Form from "@rjsf/core";
+import { addDimensionTypeSchema } from "../models/addDimensionTypeSchema";
+import { RJSFSchema, UiSchema } from "@rjsf/utils";
+import { updateDimensionTypeSchema } from "../models/updateDimensionTypeSchema";
 import {
-  Button,
-  ControlLabel,
-  FormControl,
-  FormGroup,
-  HelpBlock,
-} from "react-bootstrap";
-import AnnotationTypingSelectors from "@depmap/annotation-type-selector";
+  Dataset,
+  DimensionTypeAddArgs,
+  DimensionTypeUpdateArgs,
+} from "@depmap/types";
 
 interface DimensionTypeFormProps {
-  onSubmit: (
-    args: any,
-    clearStateCallback: (isSuccessfulSubmit: boolean) => void
-  ) => void;
-  onSubmitDimensionTypeEdit: (
-    args: any,
-    clearStateCallback: (isSuccessfulSubmit: boolean) => void
-  ) => void;
-  dimensionTypeSubmissionError: string | null;
-  selectedDimensionType: any | null;
+  addDimensionType: (args: DimensionTypeAddArgs) => void;
+  updateDimensionType: (name: string, args: DimensionTypeUpdateArgs) => void;
+  dimensionTypeToEdit: any | null;
   isEditMode: boolean;
+  datasets: Dataset[];
 }
+
+const uiSchema: UiSchema = {
+  "ui:title": "", // removes the title <legend> html element
+  id_column: {
+    "ui:help":
+      "Identifier name for the dimension type. Ex: For sample type gene, the identifier is entrez_id. entrez_id must then be a column in the metadata file.",
+  },
+  axis: {
+    "ui:help":
+      "Dimensions are either feature or sample. When used in a matrix dataset, features are oriented as columns and samples are oriented as rows.",
+  },
+  metadata_dataset_id: {
+    "ui:title": "Dataset Metadata",
+    "ui:help":
+      "This dataset contains metadata about your dimension type. At mininum one of the columns must match the ID Column of the dimension type and contain a column called 'label'.",
+  },
+  properties_to_index: {
+    "ui:help":
+      "Columns in the dataset file that you would like to index by or search by.",
+  },
+};
 
 export default function DimensionTypeForm(props: DimensionTypeFormProps) {
   const {
-    onSubmit,
-    onSubmitDimensionTypeEdit,
-    dimensionTypeSubmissionError,
-    selectedDimensionType,
+    addDimensionType,
+    updateDimensionType,
     isEditMode,
+    dimensionTypeToEdit,
+    datasets,
   } = props;
+  const [editFormData, setEditFormData] = useState<any>(undefined);
+  const [editSchema, setEditSchema] = useState<RJSFSchema | null>(null);
 
-  const initFormValues =
-    isEditMode && selectedDimensionType
-      ? {
-          name: selectedDimensionType.name,
-          id_column: selectedDimensionType.id_column,
-          axis: selectedDimensionType.axis,
-          metadata_file: "",
-        }
-      : { name: "", id_column: "", axis: "", metadata_file: "" };
-
-  const [formValues, setFormValues] = useState<any>(initFormValues);
-
-  const [
-    annotationTypingOptions,
-    setAnnotationTypingOptions,
-  ] = useState<AnnotationTypingInput>({
-    options: [],
-    remainingOptions: [],
-    selectedContinuousAnnotations: [],
-    selectedBinaryAnnotations: [],
-    selectedCategoricalAnnotations: [],
-    selectedTextAnnotations: [],
-    selectedStringListAnnotations: [],
-  });
-  const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
-  const formElement = useRef<HTMLFormElement | null>(null);
-
-  const handleInputChange = (e: any) => {
-    const { name, value } = e.target;
-
-    setFormValues({
-      ...formValues,
-      [name]: value,
-    });
-  };
-
-  const handleMetadataFileUpload = (
-    fileUpload: File,
-    setAnnotationTypeOptionsCallback: (options: AnnotationTypingInput) => void
-  ) => {
-    if (fileUpload !== undefined) {
-      Papa.parse(fileUpload, {
-        preview: 1,
-        beforeFirstChunk() {
-          const annotationTypeMapping: { [key: string]: AnnotationType } = {};
-          setFormValues({
-            ...formValues,
-            metadata_file: fileUpload,
-            annotation_type_mapping: {
-              annotation_type_mapping: annotationTypeMapping,
-            },
-          });
-        },
-        complete(results) {
-          const columnNames: TagOption[] = results.data[0].map(
-            (colName: string) => {
-              if (colName === "") {
-                throw new Error(
-                  "Column must not contain an empty string! CSV must be in tabular format"
-                );
-              }
-              return { label: colName, value: colName };
-            }
-          );
-          setAnnotationTypeOptionsCallback({
-            remainingOptions: columnNames,
-            options: columnNames,
-            selectedContinuousAnnotations: [],
-            selectedCategoricalAnnotations: [],
-            selectedBinaryAnnotations: [],
-            selectedTextAnnotations: [],
-            selectedStringListAnnotations: [],
-          });
-        },
-        error(error, file) {
-          console.log(error);
-          console.log(file);
-        },
-      });
-    } else {
-      setAnnotationTypeOptionsCallback({
-        options: [],
-        remainingOptions: [],
-        selectedContinuousAnnotations: [],
-        selectedCategoricalAnnotations: [],
-        selectedBinaryAnnotations: [],
-        selectedTextAnnotations: [],
-        selectedStringListAnnotations: [],
-      });
-
-      const newValues = { ...formValues, metadata_file: "" };
-      delete newValues.annotation_type_mapping;
-      setFormValues(newValues);
-    }
-  };
-
-  const clearStateOnSubmit = (
-    isSuccessfulSubmit: boolean,
-    wasEditing = false
-  ) => {
-    if (isSuccessfulSubmit) {
-      setFormValues(initFormValues);
-
-      if (!wasEditing) {
-        const metadataFile = document?.getElementById(
-          "metadataFile"
-        ) as HTMLFormElement;
-        metadataFile.value = "";
-      }
-    }
-    setIsSubmitted(false);
-  };
-
-  const setAnnotationTypeMapping = (
-    selectedOptions: TagOption[] | null,
-    annotationType: AnnotationType
-  ) => {
-    if (selectedOptions == null) {
-      return;
-    }
-
-    setFormValues({
-      ...formValues,
-      annotation_type_mapping: {
-        /* eslint-disable no-param-reassign */
-        annotation_type_mapping: selectedOptions.reduce(
-          (acc: { [key: string]: AnnotationType }, curVal: TagOption) => {
-            acc[curVal.label] = annotationType;
-            return acc;
+  React.useEffect(() => {
+    if (isEditMode && dimensionTypeToEdit) {
+      const dimensionTypeEditSchemaWithOptions = {
+        ...updateDimensionTypeSchema,
+        properties: {
+          ...updateDimensionTypeSchema.properties,
+          metadata_dataset_id: {
+            ...(updateDimensionTypeSchema.properties
+              .metadata_dataset_id as object),
+            default: null, // must include default null with enum options otherwise UI renders 2 null options
+            enum: [
+              null,
+              ...datasets.map((d) => {
+                return d.id;
+              }),
+            ],
+            enumNames: [
+              "None",
+              ...datasets.map((d) => {
+                return d.name;
+              }),
+            ],
           },
-          formValues.annotation_type_mapping.annotation_type_mapping
-        ),
-      },
-    });
-  };
+        },
+      };
+      setEditSchema(dimensionTypeEditSchemaWithOptions);
 
-  const handleSubmitButtonClick = () => {
-    if (isEditMode) {
-      onSubmitDimensionTypeEdit(formValues, clearStateOnSubmit);
-    } else {
-      onSubmit(formValues, clearStateOnSubmit);
+      // initialize form with selected dataset existing fields
+      const initForm: { [key: string]: any } = {};
+      Object.keys(updateDimensionTypeSchema.properties).forEach((key) => {
+        if (key in dimensionTypeToEdit) {
+          initForm[key] = dimensionTypeToEdit[key];
+        }
+      });
+      setEditFormData(initForm);
     }
-    setIsSubmitted(true);
-  };
+  }, [dimensionTypeToEdit, isEditMode, datasets]);
+  console.log(editFormData);
 
-  const disableSubmit = () => {
-    if (isEditMode && formValues.metadata_file === "") {
-      return true;
-    }
-
-    const element = formElement.current;
-    const requiredForms:
-      | NodeListOf<HTMLInputElement>
-      | undefined = element?.querySelectorAll("[required]");
-    if (requiredForms) {
-      return (
-        [...requiredForms].some((x) => x.value === "") ||
-        annotationTypingOptions.remainingOptions.length !== 0
-      );
-    }
-
-    return false;
-  };
-
-  return (
-    <>
-      <form ref={formElement}>
-        <p>
-          Fill out the fields below to {isEditMode ? " edit" : " add"} your
-          dimension type!
-        </p>
-        <FormGroup controlId="name">
-          <ControlLabel>Dimension Type Name</ControlLabel>
-          <FormControl
-            name="name"
-            type="text"
-            value={formValues.name}
-            onChange={handleInputChange}
-            disabled={isEditMode}
-            required
-          />
-        </FormGroup>
-        <FormGroup controlId="idColumn">
-          <ControlLabel>ID Column</ControlLabel>
-          <FormControl
-            name="id_column"
-            type="text"
-            value={formValues.id_column}
-            onChange={handleInputChange}
-            disabled={isEditMode}
-            required
-          />
-          <HelpBlock>
-            <p>
-              Identifier name for the dimension type. Ex: For sample type gene,
-              the identifier is entrez_id. entrez_id must then be a column in
-              the metadata file.
-            </p>
-          </HelpBlock>
-        </FormGroup>
-        <FormGroup controlId="dimensionAxis">
-          <ControlLabel>Dimension Axis</ControlLabel>
-          <FormControl
-            name="axis"
-            componentClass="select"
-            value={formValues.axis}
-            onChange={handleInputChange}
-            disabled={isEditMode}
-            required
-          >
-            <option key="default" value="">
-              --Select--
-            </option>
-            <option key="feature" value="feature">
-              Feature
-            </option>
-            <option key="sample" value="sample">
-              Sample
-            </option>
-          </FormControl>
-          <HelpBlock>
-            <p>
-              Dimensions are either feature or sample. When used in a matrix
-              dataset, features are oriented as columns and samples are oriented
-              as rows.
-            </p>
-          </HelpBlock>
-        </FormGroup>
-        <FormGroup controlId="metadataFile">
-          <ControlLabel>Dimension Type Metadata File</ControlLabel>
-          <FormControl
-            name="metadata_file"
-            type="file"
-            accept=".csv"
-            onChange={(e: React.FormEvent<HTMLInputElement & FormControl>) => {
-              const target = e.target as HTMLInputElement;
-              const file = target.files?.[0];
-              if (file) {
-                handleMetadataFileUpload(file, setAnnotationTypingOptions);
-              } else {
-                setFormValues({ ...formValues, metadata_file: "" });
-              }
-            }}
-          />
-          {formValues.metadata_file !== "" ? (
-            <AnnotationTypingSelectors
-              annotationTypesInput={{ ...annotationTypingOptions }}
-              setAnnotationTypeMapping={setAnnotationTypeMapping}
-              setAnnotationTypeOptionsCallback={setAnnotationTypingOptions}
-            />
-          ) : null}
-        </FormGroup>
-        <Button
-          disabled={disableSubmit() || isSubmitted}
-          onClick={handleSubmitButtonClick}
-        >
-          Submit
-        </Button>
-        {isSubmitted ? "  Submitting Dimension Type..." : ""}
-        <p style={{ color: "red" }}>{dimensionTypeSubmissionError}</p>
-      </form>
-    </>
+  return isEditMode && editSchema ? (
+    <Form
+      formData={editFormData}
+      onChange={(e) => {
+        setEditFormData(e.formData);
+      }}
+      schema={editSchema}
+      uiSchema={uiSchema}
+      validator={validator}
+      onSubmit={async ({ formData }) => {
+        console.log(formData);
+        await updateDimensionType(dimensionTypeToEdit.name, formData);
+      }}
+    />
+  ) : (
+    <Form
+      schema={addDimensionTypeSchema}
+      uiSchema={uiSchema}
+      validator={validator}
+      onSubmit={async ({ formData }) => {
+        console.log(formData);
+        await addDimensionType(formData);
+      }}
+    />
   );
 }
