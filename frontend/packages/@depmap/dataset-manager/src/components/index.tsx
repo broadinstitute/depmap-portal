@@ -179,7 +179,6 @@ export default function Datasets() {
           onHide={() => {
             setShowDatasetModal(false);
             setIsEditDatasetMode(false);
-            setDatasetToEdit(null);
             setDatasetMetadataToEdit(null);
           }}
           formComponent={datasetFormComponent}
@@ -329,7 +328,6 @@ export default function Datasets() {
         showModal={showUpdateDatasetMetadataModal}
         onHide={() => {
           setShowUpdateDatasetMetadataModal(false);
-          setDatasetToEdit(null);
           setDatasetMetadataToEdit(null);
         }}
         formComponent={
