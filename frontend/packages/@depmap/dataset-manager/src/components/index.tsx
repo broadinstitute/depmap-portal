@@ -561,6 +561,7 @@ export default function Datasets() {
             rowHeight={40}
             columns={[
               { accessor: "name", Header: "Name" },
+              { accessor: "display_name", Header: "Display Name" },
               { accessor: "axis", Header: "Type" },
               { accessor: "datasetsCount", Header: "Datasets" },
             ]}
