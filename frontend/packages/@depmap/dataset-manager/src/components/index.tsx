@@ -284,13 +284,16 @@ export default function Datasets() {
         selectedDimensionType.name,
         formData
       );
-      setDimensionTypes([
-        ...dimensionTypes,
-        {
-          ...updatedDimensionType,
-          datasetsCount: selectedDimensionType.datasetsCount,
-        },
-      ]);
+      const updatedDimensionTypes = dimensionTypes.map((dt) => {
+        if (dt.name === updatedDimensionType.name) {
+          return {
+            ...updatedDimensionType,
+            datasetsCount: selectedDimensionType.datasetsCount,
+          };
+        }
+        return dt;
+      });
+      setDimensionTypes(updatedDimensionTypes);
     } else {
       const addedDimensionType = await postDimensionType(formData);
       setDimensionTypes([
