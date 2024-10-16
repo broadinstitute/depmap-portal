@@ -1,6 +1,6 @@
 import * as React from "react";
-import { useState, useMemo } from "react";
-import { FormGroup, ControlLabel, Button, HelpBlock } from "react-bootstrap";
+import { useState } from "react";
+import { FormGroup, ControlLabel, HelpBlock } from "react-bootstrap";
 
 import { ActionMeta, ValueType } from "react-select";
 import { TagInput, Option } from "@depmap/common-components";
@@ -10,24 +10,12 @@ interface DatasetMetadataFormProps {
   forwardDatasetMetadataDict?: (metadataDict: {
     [key: string]: string;
   }) => void;
-  /**
-   * isEdit, datasetId, initDatasetMetadata all required together
-   */
-  isEdit: boolean;
-  datasetId?: string;
   initDatasetMetadata?: { [key: string]: string } | null;
-  onSubmit?: (
-    datasetId: string,
-    updatedDatasetMetadata: { [key: string]: string }
-  ) => void;
 }
 
 export default function DatasetMetadataForm({
-  isEdit,
   forwardDatasetMetadataDict = undefined,
-  datasetId = undefined,
   initDatasetMetadata = undefined,
-  onSubmit = undefined,
 }: DatasetMetadataFormProps) {
   let initMetadataValues: string[] = [];
   if (initDatasetMetadata != null) {
@@ -51,7 +39,7 @@ export default function DatasetMetadataForm({
   );
   const [validValues, setValidValues] = useState<Set<string>>(new Set());
   const [invalidValues, setInvalidValues] = useState<Set<string>>(new Set());
-  const [metadata, setMetdata] = useState({});
+  const [, setMetadata] = useState({});
 
   const validateMetadata = (inputs: string[]) => {
     const valid: Set<string> = new Set();
@@ -96,7 +84,7 @@ export default function DatasetMetadataForm({
       metadataDict[key] = value;
     });
 
-    setMetdata(metadataDict);
+    setMetadata(metadataDict);
     if (forwardDatasetMetadataDict !== undefined) {
       forwardDatasetMetadataDict(metadataDict);
     }
@@ -241,36 +229,8 @@ export default function DatasetMetadataForm({
     );
   }
 
-  const submitButton = useMemo(() => {
-    return (
-      <Button
-        disabled={invalidValues.size > 0 || metadataValues.length === 0}
-        onClick={() => {
-          if (
-            datasetId !== undefined &&
-            metadata !== undefined &&
-            onSubmit !== undefined
-          ) {
-            onSubmit(datasetId, metadata);
-          }
-          setMetdata({});
-        }}
-      >
-        Submit
-      </Button>
-    );
-  }, [datasetId, invalidValues, metadataValues, metadata, onSubmit]);
-
   return (
     <>
-      {isEdit === true ? (
-        <p>
-          Current metadata:{" "}
-          {initDatasetMetadata !== undefined
-            ? JSON.stringify(initDatasetMetadata, null, 2)
-            : "None"}
-        </p>
-      ) : null}
       <FormGroup
         controlId="formControlsTextarea"
         validationState={
@@ -294,7 +254,6 @@ export default function DatasetMetadataForm({
         </div>
         <HelpBlock>Metadata must be in key:value format</HelpBlock>
       </FormGroup>
-      {isEdit ? submitButton : null}
     </>
   );
 }
@@ -308,7 +267,6 @@ export const CustomDatasetMetadata = function (props: FieldProps) {
   return (
     <div id="customDatasetMetadata">
       <DatasetMetadataForm
-        isEdit={false}
         initDatasetMetadata={formData}
         forwardDatasetMetadataDict={(metadataDict: {
           [key: string]: string;

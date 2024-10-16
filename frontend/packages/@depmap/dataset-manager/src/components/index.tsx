@@ -17,7 +17,6 @@ import styles from "../styles/styles.scss";
 import { ApiContext } from "@depmap/api";
 
 import DatasetForm from "./DatasetForm";
-import DatasetMetadataForm from "./DatasetMetadataForm";
 import { Alert } from "react-bootstrap";
 import DatasetEditForm from "./DatasetEditForm";
 import DimensionTypeForm from "./DimensionTypeForm";
