@@ -2777,6 +2777,67 @@ class TestPost:
         )
         assert res.json() == {}
 
+    def test_get_dimension_data(
+        self, client: TestClient, minimal_db: SessionWithUser, public_group, settings,
+    ):
+        # Define label metadata for our features
+        factories.add_dimension_type(
+            minimal_db,
+            settings,
+            user=settings.admin_users[0],
+            name="feature-with-metadata",
+            display_name="Feature With Metadata",
+            id_column="ID",
+            annotation_type_mapping={
+                "ID": AnnotationType.text,
+                "label": AnnotationType.text,
+            },
+            axis="feature",
+            metadata_df=pd.DataFrame(
+                {
+                    "ID": ["featureID1", "featureID2", "featureID3"],
+                    "label": ["featureLabel1", "featureLabel2", "featureLabel3"],
+                }
+            ),
+        )
+
+        # Define a matrix dataset
+        example_matrix_values = factories.matrix_csv_data_file_with_values(
+            feature_ids=["featureID1", "featureID2", "featureID3"],
+            sample_ids=["sampleID1", "sampleID2", "sampleID3"],
+            values=np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]]),
+        )
+        dataset_given_id = "dataset_123"
+        dataset_with_metadata = factories.matrix_dataset(
+            minimal_db,
+            settings,
+            feature_type="feature-with-metadata",
+            data_file=example_matrix_values,
+            given_id=dataset_given_id,
+        )
+
+        # Test get by feature ID
+        response = client.post(
+            "/datasets/dimension/data",
+            json={
+                "dataset_id": dataset_with_metadata.id,
+                "identifier": "sampleID1",
+                "identifier_type": "sample_id",
+            },
+            headers={"X-Forwarded-User": "some-public-user"},
+        )
+
+        assert_status_ok(response)
+        response_content = response.json()
+        assert response_content is not None
+        assert response_content["ids"] == ["featureID1", "featureID2", "featureID3"]
+        assert response_content["labels"] == [
+            "featureLabel1",
+            "featureLabel2",
+            "featureLabel3",
+        ]
+        assert response_content["values"] == [1, 2, 3]
+
 
 class TestPatch:
     def test_update_dataset(

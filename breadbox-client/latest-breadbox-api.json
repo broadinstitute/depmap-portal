@@ -436,6 +436,35 @@
         "title": "Body_get_dataset_data",
         "type": "object"
       },
+      "Body_get_dimension_data": {
+        "properties": {
+          "dataset_id": {
+            "description": "The UUID or given ID of a dataset.",
+            "title": "Dataset Id",
+            "type": "string"
+          },
+          "identifier": {
+            "description": "A dimension identifier of the specified type (id, label, etc.).",
+            "title": "Identifier",
+            "type": "string"
+          },
+          "identifier_type": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SliceQueryIdentifierType"
+              }
+            ],
+            "description": "Denotes the type of identifier being used and the axis being queried."
+          }
+        },
+        "required": [
+          "dataset_id",
+          "identifier",
+          "identifier_type"
+        ],
+        "title": "Body_get_dimension_data",
+        "type": "object"
+      },
       "Body_update_feature_type_metadata": {
         "properties": {
           "annotation_type_mapping": {
@@ -769,6 +798,36 @@
           "dataset_metadata"
         ],
         "title": "DatasetMetadata",
+        "type": "object"
+      },
+      "DimensionDataResponse": {
+        "properties": {
+          "ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Ids",
+            "type": "array"
+          },
+          "labels": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Labels",
+            "type": "array"
+          },
+          "values": {
+            "items": {},
+            "title": "Values",
+            "type": "array"
+          }
+        },
+        "required": [
+          "ids",
+          "labels",
+          "values"
+        ],
+        "title": "DimensionDataResponse",
         "type": "object"
       },
       "DimensionSearchIndexResponse": {
@@ -1911,6 +1970,17 @@
         ],
         "title": "SearchResponse",
         "type": "object"
+      },
+      "SliceQueryIdentifierType": {
+        "enum": [
+          "feature_id",
+          "feature_label",
+          "sample_id",
+          "sample_label",
+          "column"
+        ],
+        "title": "SliceQueryIdentifierType",
+        "type": "string"
       },
       "TableDatasetParams": {
         "properties": {
@@ -3382,6 +3452,88 @@
           }
         },
         "summary": "Get Dataset Data",
+        "tags": [
+          "datasets"
+        ]
+      }
+    },
+    "/datasets/dimension/data/": {
+      "post": {
+        "description": "Load all values, IDs, and labels for a given dimension (specified by SliceQuery).",
+        "operationId": "get_dimension_data",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_get_dimension_data"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DimensionDataResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Dimension Data",
         "tags": [
           "datasets"
         ]
