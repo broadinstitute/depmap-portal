@@ -195,7 +195,7 @@ function formatHoverTexts(alignments: Alignments): Array<string> {
     growthPattern,
     cluster,
   } = alignments;
-  return modelConditionId.map((id, i: number) =>
+  return profileId.map((id, i: number) =>
     [
       `Profile ID: ${profileId[i]}`,
       `Model Condition ID: ${modelConditionId[i] || "N/A"}`,
