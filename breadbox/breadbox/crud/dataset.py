@@ -57,6 +57,7 @@ from breadbox.io.filestore_crud import (
     get_slice,
     delete_data_files,
 )
+from breadbox.crud.dimension_type import get_dimension_type
 from .metadata import cast_tabular_cell_value_type
 from .dataset_reference import add_id_mapping
 import typing
@@ -995,7 +996,7 @@ def get_dataset_samples(db: SessionWithUser, dataset: Dataset, user: str):
 
 
 def get_dataset_feature_labels_by_id(
-    db: SessionWithUser, user: str, dataset: Dataset,
+    db: SessionWithUser, user: str, dataset: MatrixDataset,
 ) -> dict[str, str]:
     """
     Try loading feature labels from metadata.
@@ -1013,7 +1014,7 @@ def get_dataset_feature_labels_by_id(
 
 
 def get_dataset_sample_labels_by_id(
-    db: SessionWithUser, user: str, dataset: Dataset,
+    db: SessionWithUser, user: str, dataset: MatrixDataset,
 ) -> dict[str, str]:
     """
     Try loading sample labels from metadata.
@@ -1034,7 +1035,7 @@ from typing import Any
 
 # TODO: This can probably be merged.
 def get_dataset_feature_annotations(
-    db: SessionWithUser, user: str, dataset: Dataset, metadata_col_name: str,
+    db: SessionWithUser, user: str, dataset: MatrixDataset, metadata_col_name: str,
 ) -> dict[str, Any]:
     """
     For the given dataset, load metadata of the specified type, keyed by feature id.
@@ -1047,16 +1048,9 @@ def get_dataset_feature_annotations(
 
     # Try to find the associated metadata dataset
     feature_metadata_dataset_id = None
-    if dataset.format == "matrix_dataset":
-        if dataset.feature_type is not None:
-            feature_type = (
-                db.query(DimensionType)
-                .filter(DimensionType.name == dataset.feature_type_name)
-                .one()
-            )
-            feature_metadata_dataset_id = feature_type.dataset_id
-    else:
-        feature_metadata_dataset_id = dataset.id
+    if dataset.feature_type is not None:
+        feature_type = get_dimension_type(db, dataset.feature_type_name)
+        feature_metadata_dataset_id = feature_type.dataset_id
 
     data_dataset_feature = aliased(DatasetFeature)
 
@@ -1082,7 +1076,7 @@ def get_dataset_feature_annotations(
 
 
 def get_dataset_sample_annotations(
-    db: SessionWithUser, user: str, dataset: Dataset, metadata_col_name: str
+    db: SessionWithUser, user: str, dataset: MatrixDataset, metadata_col_name: str
 ) -> dict[str, Any]:
     """
     For the given dataset, load metadata of the specified type, keyed by sample id.
@@ -1095,16 +1089,9 @@ def get_dataset_sample_annotations(
 
     # Try to find the associated metadata dataset
     sample_metadata_dataset_id = None
-    if dataset.format == "matrix_dataset":
-        if dataset.sample_type is not None:
-            sample_type = (
-                db.query(DimensionType)
-                .filter(DimensionType.name == dataset.sample_type_name)
-                .one()
-            )
-            sample_metadata_dataset_id = sample_type.dataset_id
-    else:
-        sample_metadata_dataset_id = dataset.id
+    if dataset.sample_type is not None:
+        sample_type = get_dimension_type(db, dataset.sample_type_name)
+        sample_metadata_dataset_id = sample_type.dataset_id
 
     data_dataset_sample = aliased(DatasetSample)
 
@@ -1513,6 +1500,7 @@ def get_subsetted_tabular_dataset_df(
         )
 
     if tabular_dimensions_info.identifier == FeatureSampleIdentifier.label:
+        # TODO: move this duplicate query into a helper function, take optional index filter
         # Get the corresponding dimension ids for the dimension labels from the dataset's dimension type and use the dimension ids to filter values by
         dimension_type: DimensionType = db.query(DimensionType).filter(
             DimensionType.name == dataset.index_type_name
@@ -1665,7 +1653,7 @@ def get_missing_tabular_columns_and_indices(
 def get_subsetted_matrix_dataset_df(
     db: SessionWithUser,
     user: str,
-    dataset: Dataset,
+    dataset: MatrixDataset,
     dimensions_info: MatrixDimensionsInfo,
     filestore_location,
     strict: bool = False,  # False default for backwards compatibility
