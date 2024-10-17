@@ -115,14 +115,14 @@ def view_celligner():
 
 @blueprint.route("/distance_cell_line_to_tumors")
 def celligner_distance_cell_line_to_tumors():
-    sample_id = request.args["sampleId"]
+    profile_id = request.args["profileId"]
     k_neighbors = int(request.args["kNeighbors"])
 
     source_dir = current_app.config["WEBAPP_DATA_DIR"]
     path = os.path.join(source_dir, DIR, ALIGNMENT_FILE)
     celligner_alignment = pd.read_csv(path)
 
-    col_index = CellignerDistanceColIndex.get_by_sample_id(sample_id)
+    col_index = CellignerDistanceColIndex.get_by_profile_id(profile_id)
     col = np.array(
         hdf5_utils.get_col_of_values(
             os.path.join(source_dir, DIR), DISTANCES_FILE, col_index.index
@@ -131,7 +131,7 @@ def celligner_distance_cell_line_to_tumors():
     top_k_indexes = np.argsort(col)[:k_neighbors].tolist()
     top_k_row_indexes = CellignerDistanceRowIndex.get_by_indexes(top_k_indexes)
     top_k_lineages = celligner_alignment[
-        celligner_alignment["sampleId"].isin(
+        celligner_alignment["profileId"].isin(
             [row_index.tumor_sample_id for row_index in top_k_row_indexes]
         )
     ].lineage
@@ -170,7 +170,7 @@ def celligner_distance_tumors_to_cell_lines():
         return jsonify(response)
 
     row_indexes = CellignerDistanceRowIndex.get_by_tumor_sample_ids(
-        tumors["sampleId"].values
+        tumors["profileId"].values
     )
 
     median_distances = np.median(

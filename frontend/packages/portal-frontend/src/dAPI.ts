@@ -761,14 +761,14 @@ export class DepmapApi {
     );
   }
 
-  getCellignerDistancesToCellLine(sampleId: string, kNeighbors: number) {
+  getCellignerDistancesToCellLine(profileId: string, kNeighbors: number) {
     return this._fetch<{
       distance_to_tumors: Array<number>;
       most_common_lineage: string;
       color_indexes: Array<number>;
     }>(
       `/celligner/distance_cell_line_to_tumors?${encodeParams({
-        sampleId,
+        profileId,
         kNeighbors,
       })}`
     );

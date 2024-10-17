@@ -198,7 +198,7 @@ function formatHoverTexts(alignments: Alignments): Array<string> {
   return modelConditionId.map((id, i: number) =>
     [
       `Profile ID: ${profileId[i]}`,
-      `Model Condition ID: ${modelConditionId[i]}`,
+      `Model Condition ID: ${modelConditionId[i] || "N/A"}`,
       `${
         type[i] === CellignerSampleType.DEPMAP_MODEL ? "Depmap ID" : "Sample ID"
       }: ${sampleId[i]}`,

@@ -63,7 +63,7 @@ export type GroupingCategory =
   | "growthPattern"
   | "cluster"
   | "type"
-  | "cellLineSet";
+  | "cellLineSet"; // Used for color by Model Context
 
 export interface Point {
   x: number;

@@ -497,14 +497,14 @@ export default class CellignerPage extends React.Component<Props, State> {
     if (activeTab === "cell-line-for-tumors") {
       const cellLinesForTumorsColumns: Array<WideTableColumns> = ([
         {
-          Header: "Model Condition ID",
-          accessor: "modelConditionId",
-          columnDropdownLabel: "Model Condition ID",
-        },
-        {
           Header: "Profile ID",
           accessor: "profileId",
           columnDropdownLabel: "Profile ID",
+        },
+        {
+          Header: "Model Condition ID",
+          accessor: "modelConditionId",
+          columnDropdownLabel: "Model Condition ID",
         },
         {
           Header: `${titleCase(NAME_FOR_MODEL)} Name`,
@@ -557,7 +557,7 @@ export default class CellignerPage extends React.Component<Props, State> {
               selectedTableLabels={
                 new Set(
                   [...annotatedPoints].map(
-                    (i: number) => alignmentsArr.displayName[i]
+                    (i: number) => alignmentsArr.profileId[i]
                   )
                 )
               }
@@ -569,16 +569,6 @@ export default class CellignerPage extends React.Component<Props, State> {
     }
     if (activeTab === "tumors-for-cell-line") {
       const tumorsForCellLinesColumns: Array<WideTableColumns> = ([
-        {
-          Header: "Model Condition ID",
-          accessor: "modelConditionId",
-          columnDropdownLabel: "Model Condition ID",
-        },
-        {
-          Header: "Profile ID",
-          accessor: "profileId",
-          columnDropdownLabel: "Profile ID",
-        },
         {
           Header: "Tumor Sample ID",
           accessor: "displayName",
@@ -624,7 +614,7 @@ export default class CellignerPage extends React.Component<Props, State> {
               selectedTableLabels={
                 new Set(
                   [...annotatedPoints].map(
-                    (i: number) => alignmentsArr.displayName[i]
+                    (i: number) => alignmentsArr.profileId[i]
                   )
                 )
               }

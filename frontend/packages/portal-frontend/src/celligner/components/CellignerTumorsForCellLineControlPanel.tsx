@@ -60,7 +60,7 @@ export default class CellignerTumorsForCellLineControlPanel extends React.Compon
       (cellLine) => {
         return {
           value: cellLine.profileId,
-          label: `${cellLine.displayName} (Model Condition: ${cellLine.modelConditionId})`,
+          label: `${cellLine.displayName} (Profile ID: ${cellLine.profileId})`,
         };
       }
     );
