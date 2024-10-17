@@ -115,7 +115,7 @@ def view_celligner():
 
 @blueprint.route("/distance_cell_line_to_tumors")
 def celligner_distance_cell_line_to_tumors():
-    profile_id = request.args["profileId"]
+    profile_id = request.args.get("profileId")
     k_neighbors = int(request.args["kNeighbors"])
 
     source_dir = current_app.config["WEBAPP_DATA_DIR"]
