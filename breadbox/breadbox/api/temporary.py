@@ -36,17 +36,15 @@ def get_context_summary(
     "Candidate" labels are all labels belonging to the context's dimension type.
     This implementation only supports the "version 2" format of contexts.
     """
-    context_evaluator = ContextEvaluator(context.dict(), slice_crud.get_slice_data)
-
+    # TODO: support either context type
     all_labels_by_id = dataset_crud.get_dimension_labels_by_id(
         db, context.dimension_type
     )
 
     # Evaluate each of the dimension's given_ids against the context
-    ids_matching_context = []
-    for given_id in all_labels_by_id.keys():
-        if context_evaluator.is_match(given_id):
-            ids_matching_context.append(given_id)
+    ids_matching_context, _ = slice_crud.get_ids_and_labels_matching_context(
+        db, context.dict()
+    )
 
     return ContextSummary(
         num_candidates=len(all_labels_by_id.keys()),
