@@ -33,9 +33,10 @@ def get_subsetted_matrix_dataset_df(
     missing_features = []
     missing_samples = []
 
+    feature_identifier = dimensions_info.feature_identifier
     if dimensions_info.features is None:
         feature_indexes = None
-    elif dimensions_info.feature_identifier.value == "id":
+    elif feature_identifier and feature_identifier.value == "id":
         (
             feature_indexes,
             missing_features,
@@ -43,7 +44,7 @@ def get_subsetted_matrix_dataset_df(
             db, user, dataset, dimensions_info.features
         )
     else:
-        assert dimensions_info.feature_identifier.value == "label"
+        assert feature_identifier and feature_identifier.value == "label"
         (
             feature_indexes,
             missing_features,
@@ -54,9 +55,10 @@ def get_subsetted_matrix_dataset_df(
     if len(missing_features) > 0:
         log.warning(f"Could not find features: {missing_features}")
 
+    sample_identifier = dimensions_info.sample_identifier
     if dimensions_info.samples is None:
         sample_indexes = None
-    elif dimensions_info.sample_identifier.value == "id":
+    elif sample_identifier and sample_identifier.value == "id":
         sample_indexes, missing_samples = dataset_crud.get_sample_indexes_by_given_ids(
             db, user, dataset, dimensions_info.samples
         )
