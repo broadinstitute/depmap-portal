@@ -13,6 +13,13 @@ from breadbox.io.filestore_crud import (
     get_sample_slice,
 )
 
+from breadbox.service.labels import (
+    get_dataset_feature_labels_by_id,
+    get_dataset_sample_labels_by_id,
+    get_dataset_feature_by_label,
+    get_dataset_sample_by_label,
+)
+
 from depmap_compute.slice import SliceQuery
 
 
@@ -57,7 +64,7 @@ def get_slice_data(
         slice_data = get_feature_slice(dataset, [feature.index], filestore_location)
 
     elif slice_query.identifier_type == "feature_label":
-        feature = dataset_crud.get_dataset_feature_by_label(
+        feature = get_dataset_feature_by_label(
             db, dataset_id, feature_label=slice_query.identifier,
         )
         slice_data = get_feature_slice(dataset, [feature.index], filestore_location)
@@ -69,7 +76,7 @@ def get_slice_data(
         slice_data = get_sample_slice(dataset, [sample.index], filestore_location)
 
     elif slice_query.identifier_type == "sample_label":
-        sample = dataset_crud.get_dataset_sample_by_label(
+        sample = get_dataset_sample_by_label(
             db, dataset_id, sample_label=slice_query.identifier
         )
         slice_data = get_sample_slice(dataset, [sample.index], filestore_location)
@@ -99,9 +106,9 @@ def get_labels_for_slice_type(
         raise ResourceNotFoundError(f"Dataset '{slice_query.dataset_id}' not found.")
 
     if slice_query.identifier_type in {"feature_label", "feature_id"}:
-        return dataset_crud.get_dataset_sample_labels_by_id(db, db.user, dataset)
+        return get_dataset_sample_labels_by_id(db, db.user, dataset)
     elif slice_query.identifier_type in {"sample_label", "sample_id"}:
-        return dataset_crud.get_dataset_feature_labels_by_id(db, db.user, dataset)
+        return get_dataset_feature_labels_by_id(db, db.user, dataset)
     else:
         # Columns don't have labels, so just return None
         return None

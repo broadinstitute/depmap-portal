@@ -1,11 +1,9 @@
 from breadbox.db.session import SessionWithUser
 from breadbox.crud import dataset as dataset_crud
-from breadbox.crud import dimension_type as dimension_type_crud
 from breadbox.models.dataset import (
     DatasetFeature,
     DatasetSample,
     MatrixDataset,
-    TabularDataset,
 )
 from breadbox.schemas.custom_http_exception import ResourceNotFoundError
 
