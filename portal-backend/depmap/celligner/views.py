@@ -123,6 +123,7 @@ def celligner_distance_cell_line_to_tumors():
     celligner_alignment = pd.read_csv(path)
 
     col_index = CellignerDistanceColIndex.get_by_profile_id(profile_id)
+
     col = np.array(
         hdf5_utils.get_col_of_values(
             os.path.join(source_dir, DIR), DISTANCES_FILE, col_index.index
@@ -170,7 +171,7 @@ def celligner_distance_tumors_to_cell_lines():
         return jsonify(response)
 
     row_indexes = CellignerDistanceRowIndex.get_by_tumor_sample_ids(
-        tumors["profileId"].values
+        tumors["sampleId"].values
     )
 
     median_distances = np.median(
