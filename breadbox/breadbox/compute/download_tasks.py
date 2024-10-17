@@ -11,7 +11,6 @@ from breadbox.schemas.custom_http_exception import UserError
 from breadbox.crud.dataset import get_sample_indexes_by_given_ids
 from breadbox.crud.dataset import get_all_sample_indexes
 from breadbox.crud.partial import get_cell_line_selector_lines
-from breadbox.crud.dataset import get_dataset_feature_labels_by_id
 from ..config import get_settings
 from ..models.dataset import (
     Dataset,
@@ -21,6 +20,7 @@ from ..models.dataset import (
 )
 from .celery import app
 from ..db.util import db_context
+from breadbox.service.labels import get_dataset_feature_labels_by_id
 
 
 def _progress_callback(task, percentage, message="Fetching data"):
