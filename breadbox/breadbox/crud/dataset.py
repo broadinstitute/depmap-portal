@@ -1418,7 +1418,6 @@ def get_subsetted_tabular_dataset_df(
         )
 
     if tabular_dimensions_info.identifier == FeatureSampleIdentifier.label:
-        # TODO: move this duplicate query into a helper function, take optional index filter
         # Get the corresponding dimension ids for the dimension labels from the dataset's dimension type and use the dimension ids to filter values by
         dimension_type: DimensionType = db.query(DimensionType).filter(
             DimensionType.name == dataset.index_type_name
