@@ -1,10 +1,8 @@
 import * as React from "react";
 import { useMemo } from "react";
-import { ListGroup, ListGroupItem } from "react-bootstrap";
-import { Accordion } from "@depmap/interactive";
+import { ListGroup, ListGroupItem, Panel, PanelGroup } from "react-bootstrap";
 import { Link, useLocation } from "react-router-dom";
 import styles from "src/resources/styles/ResourcesPage.scss";
-// import { CollapsiblePanel } from "src/dataPage/components/CollapsiblePanel";
 
 interface ResourcesPageProps {
   subcategories: any;
@@ -23,6 +21,7 @@ export default function ResourcesPage(props: ResourcesPageProps) {
   const { subcategories, defaultTopic } = props;
   console.log(subcategories);
   const query = useQuery();
+  const querySubcategory = query.get("subcategory");
 
   // If window location url has query params at the start, find the post to show
   const initPost = useMemo(() => {
@@ -52,32 +51,57 @@ export default function ResourcesPage(props: ResourcesPageProps) {
       </div>
 
       <section className={styles.postsNavList}>
-        {subcategories.map((subcategory: any) => {
-          return (
-            <Accordion key={subcategory.id} title={subcategory.title}>
-              <ListGroup style={{ marginBottom: 0, borderRadius: 0 }}>
-                {subcategory.topics.map((topic: any) => {
-                  return (
-                    <Link
-                      key={topic.id}
-                      to={`?subcategory=${subcategory.slug}&topic=${topic.slug}`}
-                      state={{ postHtml: topic }}
-                      style={{ textDecoration: "none" }}
-                    >
-                      <ListGroupItem
-                        className={styles.navPostItem}
-                        style={{ borderRadius: "0px" }}
-                        active={initPost ? initPost.slug === topic.slug : false}
-                      >
-                        {topic.title}
-                      </ListGroupItem>
-                    </Link>
-                  );
-                })}
-              </ListGroup>
-            </Accordion>
-          );
-        })}
+        <PanelGroup>
+          {subcategories.map((subcategory: any) => {
+            let isDefaultExpandedSubcategory: boolean;
+            if (querySubcategory) {
+              isDefaultExpandedSubcategory =
+                subcategory.slug === querySubcategory;
+            } else {
+              isDefaultExpandedSubcategory = !!subcategory.topics.find(
+                (t: any) => t.slug === defaultTopic.slug
+              );
+            }
+
+            return (
+              <Panel
+                key={subcategory.id}
+                eventKey={subcategory.slug}
+                defaultExpanded={isDefaultExpandedSubcategory}
+              >
+                <Panel.Heading className={styles.postHeading}>
+                  <Panel.Toggle componentClass="div">
+                    {subcategory.title}
+                  </Panel.Toggle>
+                </Panel.Heading>
+                <Panel.Collapse>
+                  <ListGroup>
+                    {subcategory.topics.map((topic: any) => {
+                      return (
+                        <Link
+                          key={topic.id}
+                          to={`?subcategory=${subcategory.slug}&topic=${topic.slug}`}
+                          state={{ postHtml: topic }}
+                          style={{ textDecoration: "none" }}
+                        >
+                          <ListGroupItem
+                            className={styles.navPostItem}
+                            style={{ borderRadius: "0px" }}
+                            active={
+                              initPost ? initPost.slug === topic.slug : false
+                            }
+                          >
+                            {topic.title}
+                          </ListGroupItem>
+                        </Link>
+                      );
+                    })}
+                  </ListGroup>
+                </Panel.Collapse>
+              </Panel>
+            );
+          })}
+        </PanelGroup>
       </section>
       <section className={styles.postContentContainer}>
         {initPost ? (
