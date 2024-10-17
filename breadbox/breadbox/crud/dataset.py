@@ -53,10 +53,7 @@ from breadbox.crud.group import (
     TRANSIENT_GROUP_ID,
     get_transient_group,
 )
-from breadbox.io.filestore_crud import (
-    get_slice,
-    delete_data_files,
-)
+from breadbox.io.filestore_crud import delete_data_files
 from breadbox.crud.dimension_type import get_dimension_type
 from .metadata import cast_tabular_cell_value_type
 from .dataset_reference import add_id_mapping
@@ -995,41 +992,6 @@ def get_dataset_samples(db: SessionWithUser, dataset: Dataset, user: str):
     return dataset_samples
 
 
-def get_dataset_feature_labels_by_id(
-    db: SessionWithUser, user: str, dataset: MatrixDataset,
-) -> dict[str, str]:
-    """
-    Try loading feature labels from metadata.
-    If there are no labels in the metadata or there is no metadata, then just return the feature names.
-    """
-    metadata_labels_by_given_id = get_dataset_feature_annotations(
-        db=db, user=user, dataset=dataset, metadata_col_name="label"
-    )
-
-    if metadata_labels_by_given_id:
-        return metadata_labels_by_given_id
-    else:
-        all_dataset_features = get_dataset_features(db=db, dataset=dataset, user=user)
-        return {feature.given_id: feature.given_id for feature in all_dataset_features}
-
-
-def get_dataset_sample_labels_by_id(
-    db: SessionWithUser, user: str, dataset: MatrixDataset,
-) -> dict[str, str]:
-    """
-    Try loading sample labels from metadata.
-    If there are no labels in the metadata or there is no metadata, then just return the sample names.
-    """
-    metadata_labels = get_dataset_sample_annotations(
-        db=db, user=user, dataset=dataset, metadata_col_name="label"
-    )
-    if metadata_labels:
-        return metadata_labels
-    else:
-        samples = get_dataset_samples(db=db, dataset=dataset, user=user)
-        return {sample.given_id: sample.given_id for sample in samples}
-
-
 from typing import Any
 
 
@@ -1413,50 +1375,6 @@ def get_dataset_sample_by_given_id(
     return sample
 
 
-def get_dataset_feature_by_label(
-    db: SessionWithUser, dataset_id: str, feature_label: str
-) -> DatasetFeature:
-    """Load the dataset feature corresponding to the given dataset ID and feature label"""
-
-    dataset = get_dataset(db, db.user, dataset_id)
-    if dataset is None:
-        raise ResourceNotFoundError(f"Dataset '{dataset_id}' not found.")
-    assert_user_has_access_to_dataset(dataset, db.user)
-    assert isinstance(dataset, MatrixDataset)
-
-    labels_by_given_id = get_dataset_feature_labels_by_id(db, db.user, dataset)
-    given_ids_by_label = {label: id for id, label in labels_by_given_id.items()}
-    feature_given_id = given_ids_by_label.get(feature_label)
-    if feature_given_id is None:
-        raise ResourceNotFoundError(
-            f"Feature label '{feature_label}' not found in dataset '{dataset_id}'."
-        )
-
-    return get_dataset_feature_by_given_id(db, dataset_id, feature_given_id)
-
-
-def get_dataset_sample_by_label(
-    db: SessionWithUser, dataset_id: str, sample_label: str
-) -> DatasetSample:
-    """Load the dataset sample corresponding to the given dataset ID and sample label"""
-
-    dataset = get_dataset(db, db.user, dataset_id)
-    if dataset is None:
-        raise ResourceNotFoundError(f"Dataset '{dataset_id}' not found.")
-    assert_user_has_access_to_dataset(dataset, db.user)
-    assert isinstance(dataset, MatrixDataset)
-
-    labels_by_given_id = get_dataset_sample_labels_by_id(db, db.user, dataset)
-    given_ids_by_label = {label: id for id, label in labels_by_given_id.items()}
-    sample_given_id = given_ids_by_label.get(sample_label)
-    if sample_given_id is None:
-        raise ResourceNotFoundError(
-            f"Sample label '{sample_label}' not found in dataset '{dataset_id}'."
-        )
-
-    return get_dataset_sample_by_given_id(db, dataset_id, sample_given_id)
-
-
 def _get_column_types(columns_metadata, columns: Optional[List[str]]):
     col_and_column_metadata_pairs = columns_metadata.items()
     if columns is None:
@@ -1648,76 +1566,3 @@ def get_missing_tabular_columns_and_indices(
             )
 
     return missing_columns, missing_indices
-
-
-def get_subsetted_matrix_dataset_df(
-    db: SessionWithUser,
-    user: str,
-    dataset: MatrixDataset,
-    dimensions_info: MatrixDimensionsInfo,
-    filestore_location,
-    strict: bool = False,  # False default for backwards compatibility
-):
-    """
-    Load a dataframe containing data for the specified dimensions.
-    If the dimensions are specified by label, then return a result indexed by labels
-    """
-
-    missing_features = []
-    missing_samples = []
-
-    if dimensions_info.features is None:
-        feature_indexes = None
-    elif dimensions_info.feature_identifier.value == "id":
-        feature_indexes, missing_features = get_feature_indexes_by_given_ids(
-            db, user, dataset, dimensions_info.features
-        )
-    else:
-        assert dimensions_info.feature_identifier.value == "label"
-        feature_indexes, missing_features = get_dimension_indexes_of_labels(
-            db, user, dataset, axis="feature", dimension_labels=dimensions_info.features
-        )
-
-    if len(missing_features) > 0:
-        log.warning(f"Could not find features: {missing_features}")
-
-    if dimensions_info.samples is None:
-        sample_indexes = None
-    elif dimensions_info.sample_identifier.value == "id":
-        sample_indexes, missing_samples = get_sample_indexes_by_given_ids(
-            db, user, dataset, dimensions_info.samples
-        )
-    else:
-        sample_indexes, missing_samples = get_dimension_indexes_of_labels(
-            db, user, dataset, axis="sample", dimension_labels=dimensions_info.samples
-        )
-
-    if len(missing_samples) > 0:
-        log.warning(f"Could not find samples: {missing_samples}")
-
-    if strict:
-        num_missing_features = len(missing_features)
-        missing_features_msg = f"{num_missing_features} missing features: {missing_features[:20] + ['...'] if num_missing_features >= 20 else missing_features}"
-        num_missing_samples = len(missing_samples)
-        missing_samples_msg = f"{num_missing_samples} missing samples: {missing_samples[:20] + ['...'] if num_missing_samples >= 20 else missing_samples}"
-        if len(missing_features) > 0 or len(missing_samples) > 0:
-            raise UserError(f"{missing_features_msg} and {missing_samples_msg}")
-
-    # call sort on the indices because hdf5_read requires indices be in ascending order
-    if feature_indexes is not None:
-        feature_indexes = sorted(feature_indexes)
-    if sample_indexes is not None:
-        sample_indexes = sorted(sample_indexes)
-
-    df = get_slice(dataset, feature_indexes, sample_indexes, filestore_location)
-
-    # Re-index by label if applicable
-    if dimensions_info.feature_identifier == FeatureSampleIdentifier.label:
-        labels_by_id = get_dataset_feature_labels_by_id(db, user, dataset)
-        df = df.rename(columns=labels_by_id)
-
-    if dimensions_info.sample_identifier == FeatureSampleIdentifier.label:
-        label_by_id = get_dataset_sample_labels_by_id(db, user, dataset)
-        df = df.rename(index=label_by_id)
-
-    return df
