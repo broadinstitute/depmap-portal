@@ -52,7 +52,6 @@ def test_get_dataset_feature_by_label(minimal_db: SessionWithUser, settings):
     minimal_db.reset_user(settings.default_user)
     feature = get_dataset_feature_by_label(
         minimal_db,
-        settings.default_user,
         dataset_id=dataset_with_generic_features.id,
         feature_label="featureID1",
     )
@@ -95,10 +94,7 @@ def test_get_dataset_feature_by_label(minimal_db: SessionWithUser, settings):
     # Query with the non-admin user
     minimal_db.reset_user(settings.default_user)
     feature = get_dataset_feature_by_label(
-        minimal_db,
-        settings.default_user,
-        dataset_id=dataset_with_metadata.id,
-        feature_label="featureLabel1",
+        minimal_db, dataset_id=dataset_with_metadata.id, feature_label="featureLabel1",
     )
     assert feature.dataset_id == dataset_with_metadata.id
     assert feature.given_id == "featureID1"
@@ -107,7 +103,6 @@ def test_get_dataset_feature_by_label(minimal_db: SessionWithUser, settings):
     with pytest.raises(ResourceNotFoundError):
         get_dataset_feature_by_label(
             minimal_db,
-            settings.default_user,
             dataset_id="Undefined-dataset",
             feature_label="someFeatureLabel",
         )
@@ -116,7 +111,6 @@ def test_get_dataset_feature_by_label(minimal_db: SessionWithUser, settings):
     with pytest.raises(ResourceNotFoundError):
         get_dataset_feature_by_label(
             minimal_db,
-            settings.default_user,
             dataset_id=dataset_with_generic_features.id,
             feature_label="Undefined_Feature_Label",
         )

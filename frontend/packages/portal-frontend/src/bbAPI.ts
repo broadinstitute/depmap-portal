@@ -22,6 +22,9 @@ import {
   DatasetUpdateArgs,
   DatasetValueType,
   DimensionMetadata,
+  DimensionType,
+  DimensionTypeAddArgs,
+  DimensionTypeUpdateArgs,
   FeatureType,
   FeatureTypeUpdateArgs,
   Group,
@@ -295,57 +298,14 @@ export class BreadboxApi {
     return this._delete("/datasets", id);
   }
 
-  patchDataset(datasetToUpdate: DatasetUpdateArgs): Promise<Dataset> {
-    const data = new FormData();
-    const jsonFormParams = ["dataset_metadata"];
+  updateDataset(
+    datasetId: string,
+    datasetUpdateArgs: DatasetUpdateArgs
+  ): Promise<Dataset> {
+    const url = `/datasets/${datasetId}`;
+    log(`fetching ${url}`);
 
-    const updateDict = Object.fromEntries(
-      Object.entries(datasetToUpdate).filter(
-        /* eslint-disable-next-line @typescript-eslint/no-unused-vars */
-        ([_, val]) => val !== null && val !== undefined
-      )
-    );
-
-    const datasetArgsCopy = { ...updateDict };
-    // eslint-disable-next-line no-restricted-syntax
-    for (const prop of Object.keys(datasetArgsCopy)) {
-      if (jsonFormParams.includes(prop) && prop in datasetArgsCopy) {
-        datasetArgsCopy[prop] = JSON.stringify(datasetArgsCopy[prop]);
-      }
-      if (Object.prototype.hasOwnProperty.call(datasetArgsCopy, prop)) {
-        data.append(prop, datasetArgsCopy[prop]);
-      }
-    }
-
-    const url = `/datasets/${datasetToUpdate.id}`;
-    const fullUrl = this.urlPrefix + url;
-    log(`fetching ${fullUrl}`);
-
-    return fetch(fullUrl, {
-      credentials: "include",
-      method: "PATCH",
-      body: data,
-    }).then(
-      (response: Response): Promise<Dataset> => {
-        return response.json().then(
-          (body: any): Promise<Dataset> => {
-            // nesting to access response.status
-            if (response.status >= 200 && response.status < 300) {
-              return Promise.resolve(body);
-            }
-            // eslint-disable-next-line prefer-promise-reject-errors
-            return Promise.reject({ body, status: response.status } as {
-              body: any;
-              status: number;
-            });
-          }
-        );
-      }
-    );
-  }
-
-  updateDataset(datasetToUpdate: DatasetUpdateArgs) {
-    return this.patchDataset(datasetToUpdate);
+    return this._fetchWithJsonBody(url, "PATCH", datasetUpdateArgs);
   }
 
   postFileUpload(fileArgs: { file: File | Blob }): Promise<UploadFileResponse> {
@@ -401,6 +361,7 @@ export class BreadboxApi {
     );
   }
 
+  // NOTE: These endpoints for feature type and sample type should not be used because they are deprecated
   getSampleTypes(): Promise<SampleType[]> {
     return this._fetch<SampleType[]>("/types/sample");
   }
@@ -433,24 +394,6 @@ export class BreadboxApi {
     return this._fetch<FeatureType[]>("/types/feature");
   }
 
-  searchDimensions({
-    prefix,
-    substring,
-    type_name,
-    limit,
-  }: SearchDimenionsRequest) {
-    const params = {
-      prefix,
-      substring,
-      type_name,
-      limit: Number.isFinite(limit) ? limit : 100,
-    };
-
-    return this._fetch<SearchDimenionsResponse>(
-      `/datasets/dimensions/?${encodeParams(params)}`
-    );
-  }
-
   postFeatureType(featureTypeArgs: any): Promise<FeatureType> {
     console.log("In bbapi.ts: ", featureTypeArgs);
     const args = { ...featureTypeArgs };
@@ -476,6 +419,54 @@ export class BreadboxApi {
 
   deleteFeatureType(name: string) {
     return this._delete("/types/feature", name);
+  }
+
+  // NOTE: THe above endpoints for feature type and sample type are deprecated and should not be used.
+  // Endpoints with URI prefix /types/dimensions should be used instead
+
+  getDimensionTypes(): Promise<DimensionType[]> {
+    return this._fetch<DimensionType[]>("/types/dimensions");
+  }
+
+  postDimensionType(dimTypeArgs: DimensionTypeAddArgs): Promise<DimensionType> {
+    console.log("In bbapi.ts: ", dimTypeArgs);
+
+    return this._fetchWithJsonBody<DimensionType>(
+      "/types/dimensions",
+      "POST",
+      dimTypeArgs
+    );
+  }
+
+  updateDimensionType(
+    dimTypeName: string,
+    dimTypeArgs: DimensionTypeUpdateArgs
+  ): Promise<DimensionType> {
+    const url = `/types/dimensions/${dimTypeName}`;
+
+    return this._fetchWithJsonBody(url, "PATCH", dimTypeArgs);
+  }
+
+  deleteDimensionType(name: string) {
+    return this._delete("/types/dimensions", name);
+  }
+
+  searchDimensions({
+    prefix,
+    substring,
+    type_name,
+    limit,
+  }: SearchDimenionsRequest) {
+    const params = {
+      prefix,
+      substring,
+      type_name,
+      limit: Number.isFinite(limit) ? limit : 100,
+    };
+
+    return this._fetch<SearchDimenionsResponse>(
+      `/datasets/dimensions/?${encodeParams(params)}`
+    );
   }
 
   async getDataTypesAndPriorities(): Promise<InvalidPrioritiesByDataType> {

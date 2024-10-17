@@ -17,6 +17,12 @@ export type {
 } from "./src/DataType";
 
 export type {
+  DimensionType,
+  DimensionTypeAddArgs,
+  DimensionTypeUpdateArgs,
+} from "./src/DimensionType";
+
+export type {
   Dataset,
   AddCustDatasetArgs,
   DatasetParams,

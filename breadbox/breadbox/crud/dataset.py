@@ -7,7 +7,6 @@ import warnings
 import json
 
 import pandas as pd
-import numpy as np
 from sqlalchemy import and_, func, or_
 from sqlalchemy.orm import aliased, with_polymorphic
 
@@ -32,7 +31,7 @@ from ..schemas.custom_http_exception import (
     UserError,
 )
 from breadbox.crud.access_control import user_has_access_to_group
-from ..models.dataset import (
+from breadbox.models.dataset import (
     AnnotationType,
     Dataset,
     MatrixDataset,
@@ -54,7 +53,10 @@ from breadbox.crud.group import (
     TRANSIENT_GROUP_ID,
     get_transient_group,
 )
-from ..io.filestore_crud import get_slice, delete_data_files
+from breadbox.io.filestore_crud import (
+    get_slice,
+    delete_data_files,
+)
 from .metadata import cast_tabular_cell_value_type
 from .dataset_reference import add_id_mapping
 import typing
@@ -1375,7 +1377,7 @@ def delete_dataset(
 
 
 def get_dataset_feature_by_given_id(
-    db: SessionWithUser, dataset_id: str, feature_given_id: str,  # An ID or given ID
+    db: SessionWithUser, dataset_id: str, feature_given_id: str,
 ) -> DatasetFeature:
     dataset = get_dataset(db, db.user, dataset_id)
     if dataset is None:
@@ -1391,6 +1393,7 @@ def get_dataset_feature_by_given_id(
         )
         .one_or_none()
     )
+
     if feature is None:
         raise ResourceNotFoundError(
             f"Feature given ID '{feature_given_id}' not found in dataset '{dataset_id}'."
@@ -1398,61 +1401,73 @@ def get_dataset_feature_by_given_id(
     return feature
 
 
-def get_dataset_feature_by_label(
-    db: SessionWithUser, user: str, dataset_id: str, feature_label: str
-) -> DatasetFeature:
-    """Load the dataset feature corresponding to the given dataset ID and feature label"""
-
-    dataset = get_dataset(db, user, dataset_id)
+def get_dataset_sample_by_given_id(
+    db: SessionWithUser, dataset_id: str, sample_given_id: str,
+) -> DatasetSample:
+    dataset = get_dataset(db, db.user, dataset_id)
     if dataset is None:
         raise ResourceNotFoundError(f"Dataset '{dataset_id}' not found.")
-    assert_user_has_access_to_dataset(dataset, user)
+    assert_user_has_access_to_dataset(dataset, db.user)
     assert isinstance(dataset, MatrixDataset)
 
-    # check for metadata table associated with the features
-    feature_metadata_dataset_id = None
-    if dataset.feature_type is not None:
-        feature_metadata_dataset_id = dataset.feature_type.dataset_id
-
-    if feature_metadata_dataset_id is not None:
-        # look up the given_id from the metadata
-        assert feature_metadata_dataset_id
-        result = (
-            db.query(TabularColumn)
-            .join(TabularCell)
-            .filter(
-                TabularColumn.dataset_id == feature_metadata_dataset_id,
-                TabularColumn.given_id == "label",
-                TabularCell.value == feature_label,
-            )
-            .with_entities(TabularCell.dimension_given_id)
-            .one_or_none()
-        )
-        if result is None:
-            raise ResourceNotFoundError(
-                f"Feature label '{feature_label}' not found in dataset '{dataset_id}' feature metadata."
-            )
-        given_id = result["dimension_given_id"]
-    else:
-        # if there is no metadata, then the given_id is used as the label
-        given_id = feature_label
-
-    dataset_feature: Optional[DatasetFeature] = (
-        db.query(DatasetFeature)
+    sample = (
+        db.query(DatasetSample)
         .filter(
-            and_(
-                DatasetFeature.dataset_id == dataset_id,
-                DatasetFeature.given_id == given_id,
-            )
+            DatasetSample.given_id == sample_given_id,
+            DatasetSample.dataset_id == dataset.id,
         )
         .one_or_none()
     )
-    if dataset_feature is None:
+
+    if sample is None:
         raise ResourceNotFoundError(
-            f"Feature given_id '{given_id}' associated with label '{feature_label}' not found in dataset '{dataset_id}' features."
+            f"Sample given ID '{sample_given_id}' not found in dataset '{dataset_id}'."
+        )
+    return sample
+
+
+def get_dataset_feature_by_label(
+    db: SessionWithUser, dataset_id: str, feature_label: str
+) -> DatasetFeature:
+    """Load the dataset feature corresponding to the given dataset ID and feature label"""
+
+    dataset = get_dataset(db, db.user, dataset_id)
+    if dataset is None:
+        raise ResourceNotFoundError(f"Dataset '{dataset_id}' not found.")
+    assert_user_has_access_to_dataset(dataset, db.user)
+    assert isinstance(dataset, MatrixDataset)
+
+    labels_by_given_id = get_dataset_feature_labels_by_id(db, db.user, dataset)
+    given_ids_by_label = {label: id for id, label in labels_by_given_id.items()}
+    feature_given_id = given_ids_by_label.get(feature_label)
+    if feature_given_id is None:
+        raise ResourceNotFoundError(
+            f"Feature label '{feature_label}' not found in dataset '{dataset_id}'."
         )
 
-    return dataset_feature
+    return get_dataset_feature_by_given_id(db, dataset_id, feature_given_id)
+
+
+def get_dataset_sample_by_label(
+    db: SessionWithUser, dataset_id: str, sample_label: str
+) -> DatasetSample:
+    """Load the dataset sample corresponding to the given dataset ID and sample label"""
+
+    dataset = get_dataset(db, db.user, dataset_id)
+    if dataset is None:
+        raise ResourceNotFoundError(f"Dataset '{dataset_id}' not found.")
+    assert_user_has_access_to_dataset(dataset, db.user)
+    assert isinstance(dataset, MatrixDataset)
+
+    labels_by_given_id = get_dataset_sample_labels_by_id(db, db.user, dataset)
+    given_ids_by_label = {label: id for id, label in labels_by_given_id.items()}
+    sample_given_id = given_ids_by_label.get(sample_label)
+    if sample_given_id is None:
+        raise ResourceNotFoundError(
+            f"Sample label '{sample_label}' not found in dataset '{dataset_id}'."
+        )
+
+    return get_dataset_sample_by_given_id(db, dataset_id, sample_given_id)
 
 
 def _get_column_types(columns_metadata, columns: Optional[List[str]]):
@@ -1480,7 +1495,7 @@ def get_subsetted_tabular_dataset_df(
     dataset: TabularDataset,
     tabular_dimensions_info: TabularDimensionsInfo,
     strict: bool,
-):
+) -> pd.DataFrame:
     """
     Load a dataframe containing data for the specified indices and columns.
     If the indices are specified by label, then return a result indexed by labels
@@ -1568,7 +1583,7 @@ def get_subsetted_tabular_dataset_df(
         tabular_dimensions_info.indices,
         dataset.id,
     )
-    if strict:
+    if strict and (missing_columns or missing_indices):
         raise UserError(msg=get_truncated_message(missing_columns, missing_indices))
 
     # If df is empty, there is no 'value' key to index by
