@@ -30,7 +30,6 @@ from ..config import Settings, get_settings
 from breadbox.crud.access_control import PUBLIC_GROUP_ID
 from ..crud import dataset as dataset_crud
 from ..crud import types as type_crud
-from ..crud import slice as slice_crud
 
 from ..models.dataset import (
     Dataset as DatasetModel,
@@ -59,6 +58,7 @@ from breadbox.service.labels import (
     get_dataset_feature_labels_by_id,
     get_dataset_sample_labels_by_id,
 )
+from breadbox.service.slice import get_slice_data, get_labels_for_slice_type
 from .dependencies import get_dataset as get_dataset_dep
 from .dependencies import get_db_with_user, get_user
 
@@ -495,13 +495,13 @@ def get_dimension_data(
         identifier=identifier,
         identifier_type=identifier_type.name,
     )
-    slice_values_by_id = slice_crud.get_slice_data(
+    slice_values_by_id = get_slice_data(
         db, settings.filestore_location, parsed_slice_query
     )
 
     # Load the labels separately, ensuring they're in the same order as the other values
     slice_ids: list = slice_values_by_id.index.tolist()
-    labels_by_id = slice_crud.get_labels_for_slice_type(db, parsed_slice_query)
+    labels_by_id = get_labels_for_slice_type(db, parsed_slice_query)
     slice_labels = [labels_by_id[id] for id in slice_ids] if labels_by_id else slice_ids
 
     return {

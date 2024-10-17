@@ -2,9 +2,9 @@ import numpy as np
 import pandas as pd
 
 from breadbox.db.session import SessionWithUser
-from breadbox.crud.slice import get_slice_data
 from breadbox.models.dataset import AnnotationType
 from breadbox.schemas.dataset import ColumnMetadata
+from breadbox.service.slice import get_slice_data
 
 from depmap_compute.slice import SliceQuery
 
