@@ -1,21 +1,41 @@
 from typing import Any, Annotated
 
-from fastapi import APIRouter, Body, Depends, HTTPException
-
-from depmap_compute.context import ContextEvaluator
+from fastapi import APIRouter, Body, Depends
 
 from breadbox.db.session import SessionWithUser
-from breadbox.config import Settings, get_settings
 from breadbox.crud import dataset as dataset_crud
 from breadbox.crud import slice as slice_crud
-from breadbox.io import filestore_crud
-from breadbox.models.dataset import MatrixDataset, TabularDataset
-from breadbox.schemas.context import Context, ContextSummary
+from breadbox.schemas.context import Context, ContextSummary, ContextMatchResponse
 from breadbox.api.dependencies import get_db_with_user, get_user
 
 # This temporary prefix is intended to convey to API users that these contracts may change.
 # Most of these endpoints are intended to support feature-specific functionality
 router = APIRouter(prefix="/temporary", tags=["portal"])
+
+
+@router.post(
+    "/context",
+    operation_id="evaluate_context",
+    response_model=ContextMatchResponse,
+    response_model_exclude_none=False,
+)
+def get_context_summary(
+    db: Annotated[SessionWithUser, Depends(get_db_with_user)],
+    context: Annotated[
+        Context, Body(description="A Data Explorer 2 context expression")
+    ],
+):
+    # TODO: write tests for this
+    """
+    Get the full list of IDs and labels (in any dataset) which match the given context.
+    Requests may be made in either the old or new format. 
+    """
+    # Evaluate each of the dimension's given_ids against the context
+    matching_ids, matching_labels = slice_crud.get_ids_and_labels_matching_context(
+        db, context
+    )
+
+    return ContextMatchResponse(ids=matching_ids, labels=matching_labels,)
 
 
 @router.post(
@@ -26,7 +46,6 @@ router = APIRouter(prefix="/temporary", tags=["portal"])
 )
 def get_context_summary(
     db: Annotated[SessionWithUser, Depends(get_db_with_user)],
-    user: Annotated[str, Depends(get_user)],
     context: Annotated[
         Context, Body(description="A Data Explorer 2 context expression")
     ],
@@ -34,12 +53,12 @@ def get_context_summary(
     """
     Get the number of matching labels and candidate labels.
     "Candidate" labels are all labels belonging to the context's dimension type.
-    This implementation only supports the "version 2" format of contexts.
+    Requests may be made in either the old or new format. 
     """
-    # TODO: write a bunch of tests for this
-    all_labels_by_id = dataset_crud.get_dimension_labels_by_id(
-        db, context.dimension_type
+    dimension_type = (
+        context.dimension_type if context.dimension_type else context.context_type
     )
+    all_labels_by_id = dataset_crud.get_dimension_labels_by_id(db, dimension_type)
 
     # Evaluate each of the dimension's given_ids against the context
     ids_matching_context, _ = slice_crud.get_ids_and_labels_matching_context(
@@ -50,6 +69,3 @@ def get_context_summary(
         num_candidates=len(all_labels_by_id.keys()),
         num_matches=len(ids_matching_context),
     )
-
-
-# TODO: implement the other endpoint as well
