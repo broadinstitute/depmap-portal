@@ -5,15 +5,15 @@ import styles from "../styles/ContextExplorer.scss";
 import {
   ContextNameInfo,
   ContextNode,
-  ContextTree,
+  ContextExplorerTree,
   TabTypes,
 } from "../models/types";
 
 export interface RefineContextTreeProps {
   topContextNameInfo: ContextNameInfo;
   selectedContextName: string;
-  contextTrees: { [key: string]: ContextTree };
-  onRefineYourContext: (node: ContextNode, tree: ContextTree) => void;
+  contextTrees: { [key: string]: ContextExplorerTree };
+  onRefineYourContext: (node: ContextNode, tree: ContextExplorerTree) => void;
   selectedTab: TabTypes | null;
 }
 
@@ -27,7 +27,7 @@ export const RefineContextTree = (
     selectedContextName,
     selectedTab,
   } = refineContextTreeProps;
-  const [selectedTree, setSelectedTree] = useState<ContextTree>();
+  const [selectedTree, setSelectedTree] = useState<ContextExplorerTree>();
   const [hasSmallContext, setHasSmallContext] = useState<boolean>(false);
 
   useEffect(() => {

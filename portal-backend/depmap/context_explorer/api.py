@@ -12,6 +12,8 @@ from depmap.context_explorer.utils import (
     has_gene_dep_data,
 )
 from depmap.gene.models import Gene
+from depmap.dataset.models import DependencyDataset
+from depmap.enums import DependencyEnum
 from depmap.tda.views import convert_series_to_json_safe_list
 from flask_restplus import Namespace, Resource
 from flask import current_app, request
@@ -20,7 +22,7 @@ from depmap.context_explorer.models import (
     ContextAnalysis,
     ContextNameInfo,
     ContextNode,
-    ContextTree,
+    ContextExplorerTree,
 )
 
 namespace = Namespace("context_explorer", description="View context data in the portal")
@@ -28,7 +30,7 @@ namespace = Namespace("context_explorer", description="View context data in the 
 
 DATA_AVAIL_FILE = "data_avail.csv"
 
-INOUT_ANALYSIS_COLS = {
+GENE_INOUT_ANALYSIS_COLS = {
     "entity": str,
     "t_pval": float,
     "mean_in": float,
@@ -37,12 +39,25 @@ INOUT_ANALYSIS_COLS = {
     "abs_effect_size": float,
     "t_qval": float,
     "t_qval_log": float,
-    "OR": float,
     "n_dep_in": float,
     "n_dep_out": float,
     "frac_dep_in": float,
     "frac_dep_out": float,
-    "log_OR": float,
+    "selectivity_val": float,
+    "depletion": str,
+    "label": str,
+}
+
+DRUG_INOUT_ANALYSIS_COLS = {
+    "entity": str,
+    "t_pval": float,
+    "mean_in": float,
+    "mean_out": float,
+    "effect_size": float,
+    "abs_effect_size": float,
+    "frac_dep_in": float,
+    "frac_dep_out": float,
+    "selectivity_val": float,
     "depletion": str,
     "label": str,
 }
@@ -73,7 +88,7 @@ def _get_context_summary():
 
 
 def _get_all_top_level_lineages(
-    all_lineages: Dict[str, ContextTree],
+    all_lineages: Dict[str, ContextExplorerTree],
 ) -> List[ContextNameInfo]:
     unique_top_level_lineages = []
 
@@ -152,7 +167,7 @@ def _get_overview_table_data(
     overview_page_table = overview_page_table.fillna(dummy_value)
 
     # Get a list of crispr_depmap_ids and prism_depmap_ids so that we can store
-    # hasGenDepData and hasDrugData as fields in the ContextTree.
+    # hasGenDepData and hasDrugData as fields in the ContextExplorerTree.
     crispr_depmap_ids = overview_page_table[
         overview_page_table["crispr"] == True
     ].index.tolist()
@@ -173,7 +188,7 @@ def _get_overview_table_data(
 
 
 def get_context_explorer_lineage_trees_and_table_data() -> Tuple[
-    Dict[str, ContextTree], List[Dict[str, Union[str, bool]]]
+    Dict[str, ContextExplorerTree], List[Dict[str, Union[str, bool]]]
 ]:
     query = DepmapModel.get_context_tree_query()
     df = pd.read_sql(query.statement, query.session.connection())
@@ -240,7 +255,7 @@ def get_context_explorer_lineage_trees_and_table_data() -> Tuple[
             crispr_depmap_ids=crispr_depmap_ids,
             drug_depmap_ids=drug_depmap_ids,
         )
-        tree = ContextTree(root_node)
+        tree = ContextExplorerTree(root_node)
 
         tree_df = lineage_1_sorted.loc[lineage_1_sorted["lineage_1"] == unique_lineage]
 
@@ -274,13 +289,19 @@ class ContextSummary(
 
 
 def _get_analysis_data_table(
-    in_group: str, out_group_type: str, entity_type: Literal["gene", "compound"]
+    in_group: str,
+    out_group_type: str,
+    entity_type: Literal["gene", "compound"],
+    dataset_id: str,
 ):
     if in_group == "All":
         return None
 
     data = ContextAnalysis.find_context_analysis_by_context_name_out_group(
-        context_name=in_group, out_group=out_group_type, entity_type=entity_type
+        context_name=in_group,
+        out_group=out_group_type,
+        entity_type=entity_type,
+        dataset_id=dataset_id,
     )
 
     if data.empty:
@@ -307,9 +328,15 @@ def _get_analysis_data_table(
     data_table = data.reset_index()
     data_table = data_table.round(decimals=3)
 
+    # TODO: Add test for this endpoint to assert the proper columns are returned
+    #  depending on "gene" or "compound" entity_type
+    in_out_analysis_cols = (
+        GENE_INOUT_ANALYSIS_COLS if entity_type == "gene" else DRUG_INOUT_ANALYSIS_COLS
+    )
+
     data_table = {
         column: convert_series_to_json_safe_list(data_table[column], dtype=dtype)
-        for column, dtype in INOUT_ANALYSIS_COLS.items()
+        for column, dtype in in_out_analysis_cols.items()
     }
 
     return data_table
@@ -327,8 +354,17 @@ class AnalysisData(Resource):
         out_group_type = request.args.get("out_group_type")
         entity_type = request.args.get("entity_type")
 
+        # Can be either
+        # DependencyEnum.Chronos_Combined.name
+        # Repurposing aka DependencyEnum.Rep_all_single_pt.name
+        # OncRef aka DependencyEnum.Prism_oncology_AUC.name
+        dataset_id = request.args.get("dataset_id")
+
         data_table = _get_analysis_data_table(
-            in_group=in_group, out_group_type=out_group_type, entity_type=entity_type
+            in_group=in_group,
+            out_group_type=out_group_type,
+            entity_type=entity_type,
+            dataset_id=dataset_id,
         )
 
         return data_table

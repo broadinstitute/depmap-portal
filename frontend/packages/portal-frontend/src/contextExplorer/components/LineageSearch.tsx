@@ -4,7 +4,7 @@ import InfoIcon from "src/common/components/InfoIcon";
 import {
   ContextNameInfo,
   ContextNode,
-  ContextTree,
+  ContextExplorerTree,
   TabTypes,
 } from "../models/types";
 import styles from "../styles/ContextExplorer.scss";
@@ -12,10 +12,10 @@ import { RefineContextTree } from "./RefineContextTree";
 
 export interface LineageSearchProps {
   searchOptions: { value: string; label: string }[];
-  contextTrees: { [key: string]: ContextTree };
+  contextTrees: { [key: string]: ContextExplorerTree };
   onRefineYourContext: (
     node: ContextNode | null,
-    tree: ContextTree | null
+    tree: ContextExplorerTree | null
   ) => void;
   topContextNameInfo: ContextNameInfo;
   selectedContextName: string;

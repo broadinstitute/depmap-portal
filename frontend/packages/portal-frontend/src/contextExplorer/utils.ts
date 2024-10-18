@@ -1,10 +1,11 @@
 import {
   ContextNode,
   ContextSummary,
-  ContextTree,
+  ContextExplorerTree,
   DataType,
   DataTypeStrings,
   OutGroupType,
+  ContextExplorerDatasets,
 } from "./models/types";
 import { DataExplorerContext } from "@depmap/types";
 import qs from "qs";
@@ -330,9 +331,6 @@ export function getGeneDependencyContexts(
   return { inGroupContext, outGroupContext };
 }
 
-export const GENE_DATASET_ID = "Chronos_Combined";
-export const COMPOUND_DATASET_ID = "Rep_all_single_pt";
-
 export const GENE_BOX_PLOT_X_AXIS_TITLE = "CRISPR Gene Effect";
 export const COMPOUND_BOX_PLOT_X_AXIS_TITLE = "log2(viability)";
 
@@ -344,12 +342,10 @@ export function getDataExplorerUrl(
   topContextName: string,
   ingroupName: string,
   outgroupType: OutGroupType,
-  entityType: string
+  datasetId: ContextExplorerDatasets
 ): string {
-  const xDataset =
-    entityType === "gene" ? GENE_DATASET_ID : COMPOUND_DATASET_ID;
-  const yDataset =
-    entityType === "gene" ? GENE_DATASET_ID : COMPOUND_DATASET_ID;
+  const xDataset = datasetId;
+  const yDataset = datasetId;
   const { inGroupContext, outGroupContext } = getGeneDependencyContexts(
     ingroupName,
     topContextName,
@@ -494,7 +490,7 @@ export function getSelectionInfo(
 export function getSelectedContextNode(
   contextTrees:
     | {
-        [key: string]: ContextTree;
+        [key: string]: ContextExplorerTree;
       }
     | undefined,
   lineageQueryParam: string | null,

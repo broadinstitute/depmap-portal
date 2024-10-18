@@ -79,6 +79,7 @@ import {
   getDataTypeColorCategoryFromDataTypeValue,
   Summary,
   ContextPlotBoxData,
+  ContextExplorerDatasets,
 } from "src/contextExplorer/models/types";
 import {
   DataAvailability,
@@ -575,12 +576,14 @@ export class DepmapApi {
   getContextExplorerAnalysisData(
     in_group: string,
     out_group_type: string,
-    entity_type: string
+    entity_type: string,
+    dataset_id: ContextExplorerDatasets
   ): Promise<ContextAnalysisTableType> {
     const params = {
       in_group,
       out_group_type,
       entity_type,
+      dataset_id,
     };
 
     return this._fetch<ContextAnalysisTableType>(
@@ -590,7 +593,7 @@ export class DepmapApi {
 
   getContextExplorerBoxPlotData(
     selected_context: string,
-    dataset_id: string,
+    dataset_id: ContextExplorerDatasets,
     top_context: string,
     out_group_type: string,
     entity_type: string,

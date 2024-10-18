@@ -9,6 +9,7 @@ import {
 import styles from "../styles/ContextExplorer.scss";
 import {
   CellLineOverview,
+  ContextExplorerDatasets,
   ContextNameInfo,
   ContextSummary,
   TabTypes,
@@ -87,10 +88,13 @@ const ContextExplorerTabs = ({
           Overview
         </Tab>
         <Tab id="geneDependency" className={styles.Tab}>
-          Gene Dependency
+          CRISPR Gene Dependency
         </Tab>
-        <Tab id="drugSensitivity" className={styles.Tab}>
-          Drug Sensitivity
+        <Tab id="repurposing" className={styles.Tab}>
+          Repurposing Sensitivity
+        </Tab>
+        <Tab id="oncref" className={styles.Tab}>
+          OncRef Sensitivity
         </Tab>
       </TabList>
 
@@ -131,6 +135,7 @@ const ContextExplorerTabs = ({
             topContextNameInfo={topContextNameInfo}
             entityType={"gene"}
             customInfoImg={customInfoImg}
+            datasetId={ContextExplorerDatasets.Chronos_Combined}
           />
         </TabPanel>
         <TabPanel className={styles.TabPanel}>
@@ -140,6 +145,17 @@ const ContextExplorerTabs = ({
             topContextNameInfo={topContextNameInfo}
             entityType={"compound"}
             customInfoImg={customInfoImg}
+            datasetId={ContextExplorerDatasets.Rep_all_single_pt}
+          />
+        </TabPanel>
+        <TabPanel className={styles.TabPanel}>
+          {" "}
+          <ContextAnalysis
+            selectedContextNameInfo={selectedContextNameInfo}
+            topContextNameInfo={topContextNameInfo}
+            entityType={"compound"}
+            customInfoImg={customInfoImg}
+            datasetId={ContextExplorerDatasets.Chronos_Combined}
           />
         </TabPanel>
       </TabPanels>

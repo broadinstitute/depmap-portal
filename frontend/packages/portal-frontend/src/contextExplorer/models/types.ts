@@ -1,3 +1,9 @@
+export enum ContextExplorerDatasets {
+  Chronos_Combined = "Chronos_Combined",
+  Rep_all_single_pt = "Rep_all_single_pt",
+  Prism_oncology_AUC = "Prism_oncology_AUC",
+}
+
 export interface ContextNode {
   name: string;
   display_name: string;
@@ -7,7 +13,7 @@ export interface ContextNode {
   children: ContextNode[];
 }
 
-export interface ContextTree {
+export interface ContextExplorerTree {
   root: ContextNode;
   children: ContextNode[];
 }
@@ -18,7 +24,7 @@ export interface ContextNameInfo {
 }
 
 export interface ContextInfo {
-  trees: { [key: string]: ContextTree };
+  trees: { [key: string]: ContextExplorerTree };
   table_data: { [key: string]: string | boolean }[];
   search_options: ContextNameInfo[];
 }

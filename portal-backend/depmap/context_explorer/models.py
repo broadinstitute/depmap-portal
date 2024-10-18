@@ -39,7 +39,7 @@ def _get_child_lineages_next_lineage_level_from_root_info(
     return child_lineages, next_lineage_level
 
 
-class ContextTree(dict):
+class ContextExplorerTree(dict):
     def __init__(self, root):
         super().__init__()
         self.__dict__ = self
@@ -199,12 +199,17 @@ class ContextNode(dict):
 
 # Separated from the class method for testing purposes
 def get_context_analysis_query(
-    context_name: str, out_group: str, entity_type: Literal["gene", "compound"]
+    context_name: str,
+    out_group: str,
+    entity_type: Literal["gene", "compound"],
+    dataset_id: str,
 ):
     if entity_type == "gene":
         query = (
             ContextAnalysis.query.filter_by(
-                context_name=context_name, out_group=out_group
+                context_name=context_name,
+                out_group=out_group,
+                dependency_dataset_id=dataset_id,
             )
             .join(Gene, Gene.entity_id == ContextAnalysis.entity_id)
             .add_columns(
@@ -217,7 +222,9 @@ def get_context_analysis_query(
     else:
         query = (
             ContextAnalysis.query.filter_by(
-                context_name=context_name, out_group=out_group
+                context_name=context_name,
+                out_group=out_group,
+                dependency_dataset_id=dataset_id,
             )
             .join(
                 CompoundExperiment,
@@ -267,6 +274,18 @@ class ContextAnalysis(Model):
         "Entity", foreign_keys="ContextAnalysis.entity_id", uselist=False
     )
 
+    dependency_dataset_id = Column(
+        Integer,
+        ForeignKey("dependency_dataset.dependency_dataset_id"),
+        nullable=False,
+        index=True,
+    )
+    dataset = relationship(
+        "DependencyDataset",
+        foreign_keys="ContextAnalysis.dependency_dataset_id",
+        uselist=False,
+    )
+
     out_group = Column(String, nullable=False)
     t_pval = Column(Float)
     mean_in = Column(Float)
@@ -274,12 +293,16 @@ class ContextAnalysis(Model):
     effect_size = Column(Float)
     t_qval = Column(Float)
     t_qval_log = Column(Float)
-    OR = Column(Float)
+
+    # TODO: The columns n_dep_in, n_dep_out, frac_dep_in, frac_dep_out all depend on a binarized version of the data, which only
+    # makes sense for genes. So these columns will be the same for the gene page, but will be entirely NaNs for drug entities.
+    # The thought is that those columns should be dropped from the displayed version of the table for the two drug tabs
     n_dep_in = Column(Float)
     n_dep_out = Column(Float)
     frac_dep_in = Column(Float)
     frac_dep_out = Column(Float)
-    log_OR = Column(Float)
+    # TODO: selectivity_val is a different metric between gene and drug pages, so we'll also need to pick different colorscales to use.
+    selectivity_val = Column(Float)
 
     def to_dict(self):
         entity_label = self.entity.label
@@ -291,6 +314,7 @@ class ContextAnalysis(Model):
         return {
             "entity": entity_label,
             "context_name": self.context_name,
+            "dependency_dataset_id": self.dependency_dataset_id,
             "out_group": self.out_group,
             "t_pval": self.t_pval,
             "mean_in": self.mean_in,
@@ -298,21 +322,26 @@ class ContextAnalysis(Model):
             "effect_size": self.effect_size,
             "t_qval": self.t_qval,
             "t_qval_log": self.t_qval_log,
-            "OR": self.OR,
             "n_dep_in": self.n_dep_in,
             "n_dep_out": self.n_dep_out,
             "frac_dep_in": self.frac_dep_in,
             "frac_dep_out": self.frac_dep_out,
-            "log_OR": self.log_OR,
+            "selectivity_val": self.selectivity_val,
         }
 
     @staticmethod
     def find_context_analysis_by_context_name_out_group(
-        context_name: str, out_group: str, entity_type: Literal["gene", "compound"]
+        context_name: str,
+        out_group: str,
+        entity_type: Literal["gene", "compound"],
+        dataset_id: str,
     ):
 
         query = get_context_analysis_query(
-            context_name=context_name, out_group=out_group, entity_type=entity_type
+            context_name=context_name,
+            out_group=out_group,
+            entity_type=entity_type,
+            dataset_id=dataset_id,
         )
         context_analysis_df = pd.read_sql(query.statement, query.session.connection())
 

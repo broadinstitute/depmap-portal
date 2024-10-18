@@ -10,6 +10,7 @@ import {
   ContextAnalysisPlotData,
   ContextAnalysisPlotType,
   ContextAnalysisTableType,
+  ContextExplorerDatasets,
   ContextNameInfo,
   ContextPlotBoxData,
   OutGroupType,
@@ -32,8 +33,6 @@ import {
   getDataExplorerUrl,
   OUTGROUP_TYPE_ALL_OPTION,
   BLOOD_LINEAGES,
-  GENE_DATASET_ID,
-  COMPOUND_DATASET_ID,
   getBoxPlotFilterVariables,
 } from "../../utils";
 import geneDepFilterDefinitions from "../../json/geneDepFilters.json";
@@ -55,6 +54,7 @@ interface ContextAnalysisProps {
   topContextNameInfo: ContextNameInfo;
   entityType: string;
   customInfoImg: React.JSX.Element;
+  datasetId: ContextExplorerDatasets;
 }
 
 function ContextAnalysis({
@@ -62,6 +62,7 @@ function ContextAnalysis({
   topContextNameInfo,
   entityType,
   customInfoImg,
+  datasetId,
 }: ContextAnalysisProps) {
   const dapi = getDapi();
   const [outgroup, setOutgroup] = useState<{
@@ -152,7 +153,8 @@ function ContextAnalysis({
       const promise = dapi.getContextExplorerAnalysisData(
         selectedContextNameInfo.name,
         outgroup.value,
-        entityType
+        entityType,
+        datasetId
       );
 
       latestPromise.current = promise;
@@ -614,7 +616,7 @@ function ContextAnalysis({
       setIsLoadingBoxplot(true);
       const boxplotPromise = dapi.getContextExplorerBoxPlotData(
         selectedContextNameInfo.name,
-        entityType === "gene" ? GENE_DATASET_ID : COMPOUND_DATASET_ID,
+        datasetId,
         topContextNameInfo.name,
         outgroup.value,
         entityType,
@@ -813,7 +815,7 @@ function ContextAnalysis({
                     topContextNameInfo.name,
                     selectedContextNameInfo.name,
                     outgroup.value,
-                    entityType
+                    datasetId
                   )}
                   target="_blank"
                   disabled={

@@ -11,7 +11,7 @@ import {
   ContextNameInfo,
   ContextNode,
   ContextSummary,
-  ContextTree,
+  ContextExplorerTree,
   TabTypes,
 } from "../models/types";
 import styles from "../styles/ContextExplorer.scss";
@@ -28,7 +28,7 @@ export const ContextExplorer = () => {
     { value: string; label: string }[]
   >([]);
   const [contextTrees, setContextTrees] = useState<{
-    [key: string]: ContextTree;
+    [key: string]: ContextExplorerTree;
   }>();
   const [allContextData, setAllContextData] = useState<ContextSummary>({
     all_depmap_ids: [],
@@ -121,7 +121,10 @@ export const ContextExplorer = () => {
   );
 
   const onRefineYourContext = useCallback(
-    (contextNode: ContextNode | null, contextTree: ContextTree | null) => {
+    (
+      contextNode: ContextNode | null,
+      contextTree: ContextExplorerTree | null
+    ) => {
       deleteSpecificQueryParams(["lineage", "primary_disease"]);
 
       if (allContextData && contextNode && contextTree) {
