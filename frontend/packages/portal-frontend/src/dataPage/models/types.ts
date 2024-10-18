@@ -173,11 +173,11 @@ export function getDataPageDataTypeString(datatype: DataPageDataType) {
     case DataPageDataType.Sequencing_WGS_Broad:
       return "WGS (Broad)";
     case DataPageDataType.CRISPR_Achilles_Broad:
-      return "Standard KO Screens (Broad)";
+      return "CRISPR KO screens (Broad)";
     case DataPageDataType.CRISPR_Score_Sanger:
-      return "Score (Sanger)";
+      return "CRISPR KO screens (Sanger)";
     case DataPageDataType.CRISPR_ParalogsScreens:
-      return "Paralog Screens";
+      return "Paralog CRISPR KO screens (Broad)";
     case DataPageDataType.Methylation_Sanger:
       return "Sanger";
     case DataPageDataType.Methylation_CCLE:
@@ -185,7 +185,7 @@ export function getDataPageDataTypeString(datatype: DataPageDataType) {
     case DataPageDataType.Uncategorized_miRNA_CCLE:
       return "miRNA (CCLE)";
     case DataPageDataType.Uncategorized_ATACSeq_Broad:
-      return "Atac Seq (Broad)";
+      return "ATAC-seq (Broad)";
     default:
       throw new Error(`Cannot map datatype ${datatype} to color category`);
   }

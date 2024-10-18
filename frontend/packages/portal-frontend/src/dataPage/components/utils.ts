@@ -5,6 +5,17 @@ export const currentReleaseDatasets = [
   "Sequencing_WGS_Broad",
   "Sequencing_RNA_Broad",
   "CRISPR_Achilles_Broad",
+  // "CRISPR_ParalogsScreens",
+  "Drug_OncRef_Broad",
+];
+
+// Defines what is asterisked on the DataAvailability
+// plot for the Overview tab.
+export const growingDatasets = [
+  "Sequencing_WGS_Broad",
+  "Sequencing_RNA_Broad",
+  "CRISPR_Achilles_Broad",
+  "CRISPR_ParalogsScreens",
   "Drug_OncRef_Broad",
 ];
 
