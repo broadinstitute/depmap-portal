@@ -1,5 +1,5 @@
 import pandas as pd
-from typing import Optional
+from typing import Any, Optional
 
 from breadbox.db.session import SessionWithUser
 import breadbox.crud.dataset as dataset_crud
@@ -140,3 +140,19 @@ def get_ids_and_labels_matching_context(
             labels_matching_context.append(label)
 
     return ids_matching_context, labels_matching_context
+
+
+def get_slice_data_from_legacy_slice_id(
+    db: SessionWithUser, filestore_location: str, slice_id: str
+) -> dict[str, Any]:
+    """
+    Loads data for the given slice ID string. Exists to support legacy contexts.
+    The result should be a dictionary containing the dimension's values, 
+    keyed by either sample IDs or feature labels. 
+    """
+    pass
+
+
+def slice_id_to_slice_query(slice_id: str):
+    """Take a legacy slice ID string and convert it to a slice query."""
+    pass
