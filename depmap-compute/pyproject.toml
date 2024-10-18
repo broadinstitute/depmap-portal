@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "depmap-compute"
-version = "0.1.9"
+version = "0.1.10"
 description = "Code related to computations shared between the Depmap Portal and BreadBox"
 authors = []
 

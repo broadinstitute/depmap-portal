@@ -15,6 +15,7 @@ from breadbox.io.filestore_crud import (
 )
 
 from depmap_compute.slice import SliceQuery, ContextEvaluator, LegacyContextEvaluator
+from depmap_compute.context import slice_id_to_slice_query
 
 
 def get_slice_data(
@@ -109,22 +110,31 @@ def get_labels_for_slice_type(
 
 
 def get_ids_and_labels_matching_context(
-    db: SessionWithUser, context: Context
+    db: SessionWithUser, filestore_location: str, context: Context
 ) -> tuple[list[str], list[str]]:
+    # TODO: this has some duplicate code, is any of it worth moving to the shared module?
+    # TODO: write many tests for this lol
     """
     For a given context, load all matching IDs and labels.
     Both context versions are supported here. 
     """
     # Identify which type of context has been provided
     # Legacy contexts use the "context_type" field name, while newer contexts use "dimension_type"
+    is_legacy_context = context.get("context_type") is not None
     if context.get("context_type"):
         dimension_type = context.get("context_type")
+        slice_loader_function = lambda slice_id: get_slice_data_from_legacy_slice_id(
+            db, filestore_location, slice_id
+        )
         context_evaluator = LegacyContextEvaluator(
-            context, slice_to_dict
-        )  # TODO: implement slice_to_dict
+            context.dict(), slice_loader_function
+        )
     else:
         dimension_type = context.get("dimension_type")
-        context_evaluator = ContextEvaluator(context, get_slice_data)
+        slice_loader_function = lambda slice_query: get_slice_data(
+            db, filestore_location, slice_query
+        )
+        context_evaluator = ContextEvaluator(context.dict(), get_slice_data)
 
     if dimension_type is None:
         raise ValueError("Context requests must specify a dimension type.")
@@ -147,12 +157,7 @@ def get_slice_data_from_legacy_slice_id(
 ) -> dict[str, Any]:
     """
     Loads data for the given slice ID string. Exists to support legacy contexts.
-    The result should be a dictionary containing the dimension's values, 
-    keyed by either sample IDs or feature labels. 
+    The result should be a dictionary containing the dimension's values keyed by sample/feature ID
     """
-    pass
-
-
-def slice_id_to_slice_query(slice_id: str):
-    """Take a legacy slice ID string and convert it to a slice query."""
-    pass
+    slice_query = slice_id_to_slice_query(slice_id)
+    return get_slice_data(db, filestore_location, slice_query)
