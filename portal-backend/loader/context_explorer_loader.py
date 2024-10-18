@@ -8,6 +8,7 @@ from depmap.utilities.caching import LazyCache
 from depmap.utilities.models import log_data_issue
 from loader.dataset_loader.biomarker_loader import _batch_load
 import pandas as pd
+from depmap.dataset.models import DependencyDataset
 from flask import current_app
 
 
@@ -81,9 +82,21 @@ def _read_context_analyses(dr, pbar, gene_cache, cell_line_cache):
             )
             continue
 
+        # TODO: Better way to do this???
+        dependency_dataset = row["dataset"]
+        dataset_str_to_name_mapping = {
+            "CRISPR": "Chronos_Combined",
+            "PRISMOncRef": "Prism_oncology_AUC",
+            "PRISMRepurposing": "Rep_all_single_pt",
+        }
+        dataset = DependencyDataset.get_dataset_by_name(
+            dataset_str_to_name_mapping[dependency_dataset]
+        )
+
         analysis = dict(
             context_name=context.name,
             entity_id=entity_id,
+            dependency_dataset_id=dataset.dependency_dataset_id,
             out_group=row["out_group"],
             t_pval=float(_to_nan(row["t_pval"])),
             mean_in=float(_to_nan(row["mean_in"])),
@@ -91,12 +104,11 @@ def _read_context_analyses(dr, pbar, gene_cache, cell_line_cache):
             effect_size=float(_to_nan(row["effect_size"])),
             t_qval=float(_to_nan(row["t_qval"])),
             t_qval_log=float(_to_nan(row["t_qval_log"])),
-            OR=float(_to_nan(row["OR"])),
             n_dep_in=float(_to_nan(row["n_dep_in"])),
             n_dep_out=float(_to_nan(row["n_dep_out"])),
             frac_dep_in=float(_to_nan(row["frac_dep_in"])),
             frac_dep_out=float(_to_nan(row["frac_dep_out"])),
-            log_OR=float(_to_nan(row["log_OR"])),
+            selectivity_val=float(_to_nan(row["selectivity_val"])),
         )
 
         yield analysis
@@ -111,4 +123,8 @@ def _read_context_analyses(dr, pbar, gene_cache, cell_line_cache):
 
 
 def load_context_explorer_context_analysis(db_file):
+    _batch_load(db_file, _read_context_analyses, ContextAnalysis.__table__)
+
+
+def load_context_explorer_context_analysis_dev(db_file):
     _batch_load(db_file, _read_context_analyses, ContextAnalysis.__table__)

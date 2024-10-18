@@ -7,6 +7,7 @@ from depmap.cell_line.models import Lineage
 import pandas as pd
 from depmap.gene.models import Gene
 from depmap.compound.models import CompoundExperiment
+from depmap.dataset.models import DependencyDataset
 from depmap.database import (
     Column,
     Float,
@@ -204,12 +205,15 @@ def get_context_analysis_query(
     entity_type: Literal["gene", "compound"],
     dataset_id: str,
 ):
+    dependency_dataset_id = DependencyDataset.get_dataset_by_name(
+        dataset_id
+    ).dependency_dataset_id
     if entity_type == "gene":
         query = (
             ContextAnalysis.query.filter_by(
                 context_name=context_name,
                 out_group=out_group,
-                dependency_dataset_id=dataset_id,
+                dependency_dataset_id=dependency_dataset_id,
             )
             .join(Gene, Gene.entity_id == ContextAnalysis.entity_id)
             .add_columns(

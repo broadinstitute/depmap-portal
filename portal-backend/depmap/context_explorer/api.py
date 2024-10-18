@@ -12,8 +12,6 @@ from depmap.context_explorer.utils import (
     has_gene_dep_data,
 )
 from depmap.gene.models import Gene
-from depmap.dataset.models import DependencyDataset
-from depmap.enums import DependencyEnum
 from depmap.tda.views import convert_series_to_json_safe_list
 from flask_restplus import Namespace, Resource
 from flask import current_app, request
@@ -24,6 +22,7 @@ from depmap.context_explorer.models import (
     ContextNode,
     ContextExplorerTree,
 )
+from .development_scripts import dev
 
 namespace = Namespace("context_explorer", description="View context data in the portal")
 
@@ -299,11 +298,11 @@ def _get_analysis_data_table(
 
     data = ContextAnalysis.find_context_analysis_by_context_name_out_group(
         context_name=in_group,
-        out_group=out_group_type,
+        out_group="All Others",
         entity_type=entity_type,
         dataset_id=dataset_id,
     )
-
+    # breakpoint()
     if data.empty:
         return None
 
@@ -359,6 +358,8 @@ class AnalysisData(Resource):
         # Repurposing aka DependencyEnum.Rep_all_single_pt.name
         # OncRef aka DependencyEnum.Prism_oncology_AUC.name
         dataset_id = request.args.get("dataset_id")
+
+        # dev.load_context_explorer_sample_data()
 
         data_table = _get_analysis_data_table(
             in_group=in_group,

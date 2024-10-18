@@ -254,7 +254,7 @@ function ContextAnalysis({
   const formatDataForScatterPlot = useCallback(
     (tableData: ContextAnalysisTableType) => {
       const entityLabels: string[] = [];
-      const logOR: number[] = [];
+      const selectivityVal: number[] = [];
       const tTestXVals: number[] = [];
       const tTestYVals: number[] = [];
       const inVsOutXVals: number[] = [];
@@ -262,7 +262,7 @@ function ContextAnalysis({
 
       tableData.entity.forEach((entity, i) => {
         entityLabels.push(entity);
-        logOR.push(tableData.log_OR[i]);
+        selectivityVal.push(tableData.selectivity_val[i]);
         tTestXVals.push(tableData.effect_size[i]);
         tTestYVals.push(tableData.t_qval_log[i]);
         inVsOutXVals.push(tableData.mean_in[i]);
@@ -270,7 +270,7 @@ function ContextAnalysis({
       });
       return {
         indexLabels: entityLabels,
-        logOR,
+        selectivityVal,
         tTest: {
           x: {
             axisLabel: "Effect size (difference in means)",
@@ -429,7 +429,7 @@ function ContextAnalysis({
   );
 
   const continuousColorScale = useMemo(() => {
-    const values = plotData?.logOR;
+    const values = plotData?.selectivityVal;
     if (!values) {
       return undefined;
     }
@@ -505,18 +505,19 @@ function ContextAnalysis({
   }, []);
 
   const continuousBins = useMemo(
-    () => (plotData ? calcEnrichmentDepletionBins(plotData.logOR) : null),
+    () =>
+      plotData ? calcEnrichmentDepletionBins(plotData.selectivityVal) : null,
     [plotData, calcEnrichmentDepletionBins]
   );
 
   const colorMap = useMemo(() => {
-    if (!plotData?.logOR || !continuousColorScale) {
+    if (!plotData?.selectivityVal || !continuousColorScale) {
       return {
         [LEGEND_ALL]: DEFAULT_PALETTE.all,
       };
     }
 
-    if (plotData?.logOR.length === 0) {
+    if (plotData?.selectivityVal.length === 0) {
       return {
         [LEGEND_ALL]: DEFAULT_PALETTE.all,
       };
@@ -535,7 +536,7 @@ function ContextAnalysis({
     };
 
     return colorM;
-  }, [plotData?.logOR, continuousColorScale]);
+  }, [plotData?.selectivityVal, continuousColorScale]);
 
   const getEntityUrlRoot = useCallback(
     () =>
@@ -755,7 +756,7 @@ function ContextAnalysis({
                     plotType={ContextAnalysisPlotType.TTest}
                     pointVisibility={
                       plotData && pointVisibility.length === 0
-                        ? plotData.logOR.map(() => true)
+                        ? plotData.selectivityVal.map(() => true)
                         : pointVisibility
                     }
                     handleClickPoint={handleClickRowAndPoint}
@@ -785,7 +786,7 @@ function ContextAnalysis({
                     plotType={ContextAnalysisPlotType.inVsOut}
                     pointVisibility={
                       plotData && pointVisibility.length === 0
-                        ? plotData.logOR.map(() => true)
+                        ? plotData.selectivityVal.map(() => true)
                         : pointVisibility
                     }
                     handleClickPoint={handleClickRowAndPoint}

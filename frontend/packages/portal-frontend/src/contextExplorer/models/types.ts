@@ -122,7 +122,7 @@ export enum OutGroupType {
 
 export interface ContextAnalysisPlotData {
   indexLabels: string[];
-  logOR: number[];
+  selectivityVal: number[];
   tTest: {
     x: {
       axisLabel: string;
@@ -153,7 +153,7 @@ export interface ContextAnalysisTableRow {
   effectSize: number;
   fractionInContextLinesDependent: number;
   fractionOutGroupLinesDependent: number;
-  or: number;
+  selectivityVal: number;
 }
 
 export type ContextAnalysisTableType = {
@@ -165,12 +165,11 @@ export type ContextAnalysisTableType = {
   abs_effect_size: number[];
   t_qval: number[];
   t_qval_log: number[];
-  OR: number[];
   n_dep_in: number[];
   n_dep_out: number[];
   frac_dep_in: number[];
   frac_dep_out: number[];
-  log_OR: number[];
+  selectivity_val: number[];
   depletion: string[];
   label: string[];
 };

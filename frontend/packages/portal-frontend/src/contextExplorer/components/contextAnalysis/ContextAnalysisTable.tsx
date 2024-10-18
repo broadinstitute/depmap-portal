@@ -53,7 +53,7 @@ function ContextAnalysisTable(props: ContextAnalysisTableProps) {
             effectSize: data.effect_size[index],
             fractionInContextLinesDependent: data.frac_dep_in[index],
             fractionOutGroupLinesDependent: data.frac_dep_out[index],
-            or: data.OR[index],
+            selectivityVal: data.selectivity_val[index],
           });
 
           entityLabelMap[data.entity[index]] = data.label[index];
