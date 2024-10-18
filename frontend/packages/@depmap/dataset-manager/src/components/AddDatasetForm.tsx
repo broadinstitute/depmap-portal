@@ -522,7 +522,6 @@ export default function DatasetForm(props: DatasetFormProps) {
           )}
           {!isEditMode && (
             <DatasetMetadataForm
-              isEdit={false}
               forwardDatasetMetadataDict={(metadataDict: {
                 [key: string]: string;
               }) => {
