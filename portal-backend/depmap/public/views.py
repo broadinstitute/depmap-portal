@@ -169,8 +169,8 @@ def resources_reloads():
     return render_template("public/resources_reload.html")
 
 
-@blueprint.route("/resources_prototype/")
-def resources_prototype():
+@blueprint.route("/resources")
+def resources():
     forum_api_key_value = current_app.config.get("FORUM_API_KEY")
     forum_url = current_app.config.get("FORUM_URL")
     resources_data_path = current_app.config.get("RESOURCES_DATA_PATH")
@@ -201,9 +201,7 @@ def resources_prototype():
     if root_category is None:
         abort(404)
 
-    return render_template(
-        "public/resources_prototype.html", root_category=root_category,
-    )
+    return render_template("public/resources.html", root_category=root_category,)
 
 
 # DMC Only
