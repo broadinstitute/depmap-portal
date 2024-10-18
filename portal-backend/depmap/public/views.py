@@ -142,7 +142,8 @@ def documentation():
         sections = []
 
     sections = rewrite_documentation_urls(sections)
-    return render_template("public/documentation.html", sections=sections)
+    # redirect to new resources page
+    return redirect(url_for("public.resources"))
 
 
 @blueprint.route("/resources/reload")
