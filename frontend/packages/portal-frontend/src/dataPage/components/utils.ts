@@ -5,7 +5,6 @@ export const currentReleaseDatasets = [
   "Sequencing_WGS_Broad",
   "Sequencing_RNA_Broad",
   "CRISPR_Achilles_Broad",
-  // "CRISPR_ParalogsScreens",
   "Drug_OncRef_Broad",
 ];
 
