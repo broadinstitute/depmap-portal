@@ -380,7 +380,7 @@ export class BreadboxApi {
     );
   }
 
-  updateDataset(datasetToUpdate: DatasetUpdateArgs) {
+  updateDataset(datasetId: string, datasetToUpdate: DatasetUpdateArgs) {
     return this.patchDataset(datasetToUpdate);
   }
 

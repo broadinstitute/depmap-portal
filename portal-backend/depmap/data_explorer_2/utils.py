@@ -8,7 +8,11 @@ from collections import defaultdict
 from logging import getLogger
 from flask import abort, json, make_response
 
-from depmap_compute.context import decode_slice_id, ContextEvaluator
+from depmap_compute.context import (
+    decode_slice_id,
+    ContextEvaluator,
+    LegacyContextEvaluator,
+)
 from depmap_compute.slice import SliceQuery
 from depmap import data_access
 from depmap.data_access.models import MatrixDataset
@@ -428,3 +432,41 @@ def get_union_of_index_labels(index_type, dataset_ids):
 
 def clear_cache():
     get_vector_labels.cache_clear()
+
+
+def get_ids_and_labels_matching_context(context: dict) -> tuple[list[str], list[str]]:
+    """
+    For a given context, load all matching IDs and labels.
+    Both context versions are supported here. 
+    """
+    # Identify which type of context has been provided
+    # Legacy contexts use the "context_type" field name, while newer contexts use "dimension_type"
+    is_legacy_context = context.get("context_type") is not None
+    if is_legacy_context:
+        dimension_type = context.get("context_type")
+        context_evaluator = LegacyContextEvaluator(context, slice_to_dict)
+    else:
+        dimension_type = context.get("dimension_type")
+        context_evaluator = ContextEvaluator(context, data_access.get_slice_data)
+
+    if dimension_type is None:
+        raise ValueError("Context requests must specify a dimension type.")
+    # Load all dimension labels and ids
+    all_labels_by_id = get_all_dimension_labels_by_id(dimension_type)
+
+    # Evaluate each against the context
+    ids_matching_context = []
+    labels_matching_context = []
+    for given_id, label in all_labels_by_id.items():
+        if is_legacy_context and dimension_type != "depmap_model":
+            # Legacy contexts do feature lookups by label
+            is_match = context_evaluator.is_match(label)
+
+        else:
+            is_match = context_evaluator.is_match(given_id)
+
+        if is_match:
+            ids_matching_context.append(given_id)
+            labels_matching_context.append(label)
+
+    return ids_matching_context, labels_matching_context

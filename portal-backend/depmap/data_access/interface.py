@@ -269,24 +269,39 @@ def get_slice_data(slice_query: SliceQuery) -> pd.Series:
     dataset_id = slice_query.dataset_id
 
     if slice_query.identifier_type == "feature_id":
-        raise NotImplementedError()
+        feature_labels_by_id = get_dataset_feature_labels_by_id(dataset_id)
+        query_feature_label = feature_labels_by_id[slice_query.identifier]
+        values_by_sample_id = get_subsetted_df_by_labels(
+            slice_query.dataset_id, feature_row_labels=[query_feature_label]
+        ).squeeze()
+        return values_by_sample_id
 
     elif slice_query.identifier_type == "feature_label":
-        values_by_label = get_subsetted_df_by_labels(
+        values_by_sample_id = get_subsetted_df_by_labels(
             slice_query.dataset_id, feature_row_labels=[slice_query.identifier]
         ).squeeze()
-        ids_by_label = get_dataset_dimension_ids_by_label(dataset_id, axis="sample")
-        return values_by_label.rename(ids_by_label)
+        return values_by_sample_id
 
     elif slice_query.identifier_type == "sample_id":
-        values_by_label: pd.Series = get_subsetted_df_by_labels(
+        values_by_feature_label: pd.Series = get_subsetted_df_by_labels(
             slice_query.dataset_id, sample_col_ids=[slice_query.identifier]
         ).squeeze()
-        ids_by_label = get_dataset_dimension_ids_by_label(dataset_id, axis="feature")
-        return values_by_label.rename(ids_by_label)
+        feature_ids_by_label = get_dataset_dimension_ids_by_label(
+            dataset_id, axis="feature"
+        )
+        return values_by_feature_label.rename(feature_ids_by_label)
 
     elif slice_query.identifier_type == "sample_label":
-        raise NotImplementedError()
+        ids_by_label = get_dataset_dimension_ids_by_label(dataset_id, axis="sample")
+        query_sample_id = ids_by_label[slice_query.identifier]
+
+        values_by_feature_label: pd.Series = get_subsetted_df_by_labels(
+            slice_query.dataset_id, sample_col_ids=[query_sample_id]
+        ).squeeze()
+        feature_ids_by_label = get_dataset_dimension_ids_by_label(
+            dataset_id, axis="feature"
+        )
+        return values_by_feature_label.rename(feature_ids_by_label)
 
     elif slice_query.identifier_type == "column":
         return get_tabular_dataset_column(dataset_id, slice_query.identifier)

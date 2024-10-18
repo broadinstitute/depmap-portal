@@ -31,6 +31,7 @@ from depmap.data_explorer_2.utils import (
     get_dimension_labels_across_datasets,
     get_dimension_labels_to_datasets_mapping,
     get_file_and_release_from_dataset,
+    get_ids_and_labels_matching_context,
     get_reoriented_df,
     get_series_from_de2_slice_id,
     get_union_of_index_labels,
@@ -454,7 +455,7 @@ def unique_values_or_range():
 @csrf_protect.exempt
 def get_labels_matching_context():
     """
-    Get the full list of labels (in any dataset) which match the given context.
+    DEPRECATED: Get the full list of labels (in any dataset) which match the given context.
     """
     inputs = request.get_json()
     context = inputs["context"]
@@ -478,25 +479,10 @@ def evaluate_v2_context():
     """
     inputs = request.get_json()
     context = inputs["context"]
-    dimension_type = context.get("dimension_type")
-    if dimension_type is None:
-        abort(400, "v2 Contexts must have a 'dimension_type' field")
 
-    # Load all dimension labels and ids
-    all_labels_by_id = get_all_dimension_labels_by_id(dimension_type)
+    matching_ids, matching_labels = get_ids_and_labels_matching_context(context)
 
-    # Evaluate each against the context
-    context_evaluator = ContextEvaluator(context, data_access.get_slice_data)
-    ids_matching_context = []
-    labels_matching_context = []
-    for given_id, label in all_labels_by_id.items():
-        if context_evaluator.is_match(given_id):
-            ids_matching_context.append(given_id)
-            labels_matching_context.append(label)
-
-    return make_gzipped_json_response(
-        {"ids": ids_matching_context, "labels": labels_matching_context,}
-    )
+    return make_gzipped_json_response({"ids": matching_ids, "labels": matching_labels,})
 
 
 @blueprint.route("/v2/context/summary", methods=["POST"])
@@ -508,23 +494,22 @@ def get_v2_context_summary():
     """
     inputs = request.get_json()
     context = inputs["context"]
+
+    # Legacy contexts use the "context_type" field name, while newer contexts use "dimension_type"
     dimension_type = context.get("dimension_type")
     if dimension_type is None:
-        abort(400, "v2 Contexts must have a 'dimension_type' field")
+        dimension_type = context.get("context_type")
+
+    if dimension_type is None:
+        abort(400, "Context requests must specify a dimension type.")
 
     # Load all dimension labels and ids
     all_labels_by_id = get_all_dimension_labels_by_id(dimension_type)
-
-    # Evaluate each against the context
-    context_evaluator = ContextEvaluator(context, data_access.get_slice_data)
-    ids_matching_context = []
-    for given_id, label in all_labels_by_id.items():
-        if context_evaluator.is_match(given_id):
-            ids_matching_context.append(given_id)
+    matching_ids, _ = get_ids_and_labels_matching_context(context)
 
     return {
         "num_candidates": len(all_labels_by_id.keys()),
-        "num_matches": len(ids_matching_context),
+        "num_matches": len(matching_ids),
     }
 
 
@@ -539,7 +524,7 @@ def get_v2_context_summary():
 @csrf_protect.exempt
 def get_datasets_matching_context():
     """
-    Get the list of datasets which have data matching the given context. For
+    DEPRECATED: Get the list of datasets which have data matching the given context. For
     each dataset, include the full list of dimension labels matching the
     context. Returns a list of dictionaries like:
     [
@@ -562,7 +547,7 @@ def get_datasets_matching_context():
 @csrf_protect.exempt
 def get_context_summary():
     """
-    Get the number of matching labels and candidate labels.
+    DEPRECATED: Get the number of matching labels and candidate labels.
     "Candidate" labels are all labels belonging to the context's dimension type.
     """
     inputs = request.get_json()

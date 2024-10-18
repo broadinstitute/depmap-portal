@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import Heatmap from "src/plot/components/Heatmap";
 import PlotSpinner from "src/plot/components/PlotSpinner";
 import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
@@ -13,28 +13,29 @@ import {
 import styles from "src/dataPage/styles/DataPage.scss";
 import DataPageDatatypeSelector from "./DataPageDatatypeSelector";
 import { BAR_THICKNESS, getFileUrl } from "./utils";
+import LineageAvailabilityPlot from "./LineageAvailabilityPlot";
 
 interface DataAvailabilityPlotProps {
-  currentReleaseDataAvil: DataAvailability;
+  dataAvail: DataAvailability;
   handleSetPlotElement: (element: any) => void;
   plotElement: ExtendedPlotType | null;
   isCurrentRelease?: boolean;
 }
 
 const DataAvailabilityPlot = ({
-  currentReleaseDataAvil,
+  dataAvail,
   handleSetPlotElement,
   plotElement,
   isCurrentRelease = false,
 }: DataAvailabilityPlotProps) => {
   const xVals = useMemo(() => {
-    return currentReleaseDataAvil.all_depmap_ids.map((item) => item[1]);
-  }, [currentReleaseDataAvil]);
+    return dataAvail.all_depmap_ids.map((item) => item[1]);
+  }, [dataAvail]);
   const totalCellLines = xVals.length;
 
   // Split the data avail values into separate array by data type category
   const dataValuesByDataTypeCategory = useMemo(() => {
-    if (currentReleaseDataAvil && currentReleaseDataAvil.values.length > 0) {
+    if (dataAvail && dataAvail.values.length > 0) {
       const dataByCategory: {
         category: DataPageDataTypeCategoryStrings;
         dataTypeValues: {
@@ -44,12 +45,10 @@ const DataAvailabilityPlot = ({
       }[] = [];
 
       // Values are split up by "row", with each value corresponding to a different data type.
-      currentReleaseDataAvil.values.forEach((row, index) => {
+      dataAvail.values.forEach((row, index) => {
         const dType =
           DataPageDataType[
-            currentReleaseDataAvil.data_types[
-              index
-            ] as keyof typeof DataPageDataType
+            dataAvail.data_types[index] as keyof typeof DataPageDataType
           ];
 
         const category = getDataPageDataTypeColorCategoryString(dType);
@@ -73,7 +72,7 @@ const DataAvailabilityPlot = ({
       return groupedVals;
     }
     return null;
-  }, [currentReleaseDataAvil]);
+  }, [dataAvail]);
 
   const getZVals = useCallback(
     (categoryKey: string) => {
@@ -89,8 +88,7 @@ const DataAvailabilityPlot = ({
     dataValuesByDataTypeCategory[categoryKey].forEach((category: any) => {
       const dataTypeString = getDataPageDataTypeString(category.dataType);
 
-      const dataUrl =
-        currentReleaseDataAvil.data_type_url_mapping[category.dataType];
+      const dataUrl = dataAvail.data_type_url_mapping[category.dataType];
 
       graphSectionUrlMapping[dataTypeString] = getFileUrl(dataUrl);
     });
@@ -105,20 +103,43 @@ const DataAvailabilityPlot = ({
     dataValuesByDataTypeCategory[categoryKey].forEach((category: any) => {
       const dataTypeString = getDataPageDataTypeString(category.dataType);
 
-      const count =
-        currentReleaseDataAvil.drug_count_mapping[category.dataType];
+      const count = dataAvail.drug_count_mapping[category.dataType];
 
       graphSectionDrugCountMapping[dataTypeString] = count;
     });
 
     return graphSectionDrugCountMapping;
   };
+
+  const [showLineageModal, setShowLineageModal] = useState<boolean>(false);
+  const [
+    selectedDataType,
+    setSelectedDataType,
+  ] = useState<DataPageDataType | null>(null);
+
+  const openLineagePlotModal = (dataTypeCategory: DataPageDataType) => {
+    setSelectedDataType(dataTypeCategory);
+    setShowLineageModal(true);
+  };
+
+  const handleCloseLineageAvailModal = () => {
+    setSelectedDataType(null);
+    setShowLineageModal(false);
+  };
+
   return (
     <div>
-      {dataValuesByDataTypeCategory && (
-        <div className={styles.plot}>
-          {(!plotElement || !totalCellLines) && <PlotSpinner />}
-          {Object.keys(dataValuesByDataTypeCategory).map((categoryKey: any) => (
+      <div className={styles.plot}>
+        {(!plotElement || !totalCellLines) && <PlotSpinner />}
+        {selectedDataType && showLineageModal && (
+          <LineageAvailabilityPlot
+            show={showLineageModal}
+            selectedDataType={selectedDataType}
+            onCloseLineageModal={handleCloseLineageAvailModal}
+          />
+        )}
+        {dataValuesByDataTypeCategory &&
+          Object.keys(dataValuesByDataTypeCategory).map((categoryKey: any) => (
             <div key={categoryKey} className={styles.dataAvailabilityPlot}>
               {plotElement && (
                 <div className={styles.dataAvailabilityPlotContainer}>
@@ -172,27 +193,29 @@ const DataAvailabilityPlot = ({
                 >
                   {dataValuesByDataTypeCategory[categoryKey].map(
                     (category: any, row: number) => (
-                      <p
+                      <button
                         key={`${categoryKey}cellLineCount${row + 1}`}
+                        type="button"
+                        className={styles.linkButton}
                         style={{
                           margin: 0,
                           gridRow: `${row + 1}`,
                           alignSelf: "center",
                         }}
+                        onClick={() => openLineagePlotModal(category.dataType)}
                       >
                         {
                           category.values.filter((val: number) => val > 0)
                             .length
                         }
-                      </p>
+                      </button>
                     )
                   )}
                 </div>
               )}
             </div>
           ))}
-        </div>
-      )}
+      </div>
     </div>
   );
 };
