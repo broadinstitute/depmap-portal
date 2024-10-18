@@ -30,7 +30,6 @@ from ..config import Settings, get_settings
 from breadbox.crud.access_control import PUBLIC_GROUP_ID
 from ..crud import dataset as dataset_crud
 from ..crud import types as type_crud
-from ..crud import slice as slice_crud
 
 from ..models.dataset import (
     Dataset as DatasetModel,
@@ -54,6 +53,12 @@ from ..schemas.dataset import (
     DimensionDataResponse,
     SliceQueryIdentifierType,
 )
+from breadbox.service.data_loading import get_subsetted_matrix_dataset_df
+from breadbox.service.labels import (
+    get_dataset_feature_labels_by_id,
+    get_dataset_sample_labels_by_id,
+)
+from breadbox.service.slice import get_slice_data, get_labels_for_slice_type
 from .dependencies import get_dataset as get_dataset_dep
 from .dependencies import get_db_with_user, get_user
 
@@ -110,7 +115,7 @@ def get_dataset_features(
     if dataset is None:
         raise HTTPException(404, "Dataset not found")
 
-    feature_labels_by_id = dataset_crud.get_dataset_feature_labels_by_id(
+    feature_labels_by_id = get_dataset_feature_labels_by_id(
         db=db, user=user, dataset=dataset,
     )
     return [{"id": id, "label": label} for id, label in feature_labels_by_id.items()]
@@ -133,7 +138,7 @@ def get_dataset_samples(
     if dataset is None:
         raise HTTPException(404, "Dataset not found")
 
-    sample_labels_by_id = dataset_crud.get_dataset_sample_labels_by_id(
+    sample_labels_by_id = get_dataset_sample_labels_by_id(
         db=db, user=user, dataset=dataset,
     )
     return [{"id": id, "label": label} for id, label in sample_labels_by_id.items()]
@@ -185,7 +190,7 @@ def get_feature_data(
         # Get the feature label
         if dataset.feature_type_name:
             # Note: this would be faster if we had a query to load one label instead of all labels - but performance hasn't been an issue
-            feature_labels_by_id = dataset_crud.get_dataset_feature_labels_by_id(
+            feature_labels_by_id = get_dataset_feature_labels_by_id(
                 db=db, user=user, dataset=dataset
             )
             label = feature_labels_by_id[feature.given_id]
@@ -323,7 +328,7 @@ def get_matrix_dataset_data(
     ] = False,
 ):
     try:
-        df = dataset_crud.get_subsetted_matrix_dataset_df(
+        df = get_subsetted_matrix_dataset_df(
             db,
             user,
             dataset,
@@ -404,7 +409,7 @@ def get_dataset_data(
     except UserError as e:
         raise e
 
-    df = dataset_crud.get_subsetted_matrix_dataset_df(
+    df = get_subsetted_matrix_dataset_df(
         db, user, dataset, dim_info, settings.filestore_location
     )
 
@@ -490,13 +495,13 @@ def get_dimension_data(
         identifier=identifier,
         identifier_type=identifier_type.name,
     )
-    slice_values_by_id = slice_crud.get_slice_data(
+    slice_values_by_id = get_slice_data(
         db, settings.filestore_location, parsed_slice_query
     )
 
     # Load the labels separately, ensuring they're in the same order as the other values
     slice_ids: list = slice_values_by_id.index.tolist()
-    labels_by_id = slice_crud.get_labels_for_slice_type(db, parsed_slice_query)
+    labels_by_id = get_labels_for_slice_type(db, parsed_slice_query)
     slice_labels = [labels_by_id[id] for id in slice_ids] if labels_by_id else slice_ids
 
     return {

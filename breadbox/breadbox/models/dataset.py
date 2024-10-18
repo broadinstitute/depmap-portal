@@ -223,6 +223,8 @@ class Dimension(Base, UUIDMixin, GroupMixin):
 
 
 class DatasetFeature(Dimension):
+    """A matrix dataset feature dimension"""
+
     # @declared_attr
     # def index(cls) -> Column[Integer]:
     #     "0-indexed column number in hdf5 file"
@@ -232,6 +234,8 @@ class DatasetFeature(Dimension):
 
 
 class DatasetSample(Dimension):
+    """A matrix dataset sample dimension"""
+
     # @declared_attr
     # def index(cls) -> Column[Integer]:
     #     "0-indexed column number in hdf5 file"
