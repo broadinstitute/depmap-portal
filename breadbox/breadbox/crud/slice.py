@@ -14,8 +14,12 @@ from breadbox.io.filestore_crud import (
     get_sample_slice,
 )
 
-from depmap_compute.slice import SliceQuery, ContextEvaluator, LegacyContextEvaluator
-from depmap_compute.context import slice_id_to_slice_query
+from depmap_compute.slice import SliceQuery
+from depmap_compute.context import (
+    ContextEvaluator,
+    LegacyContextEvaluator,
+    slice_id_to_slice_query,
+)
 
 
 def get_slice_data(
