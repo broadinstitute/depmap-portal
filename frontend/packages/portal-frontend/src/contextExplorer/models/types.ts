@@ -151,8 +151,8 @@ export interface ContextAnalysisTableRow {
   inContextMean: number;
   outGroupMean: number;
   effectSize: number;
-  fractionInContextLinesDependent: number;
-  fractionOutGroupLinesDependent: number;
+  fractionInContextLinesDependent?: number; // only valid for genes
+  fractionOutGroupLinesDependent?: number; // only valid for genes
   selectivityVal: number;
 }
 

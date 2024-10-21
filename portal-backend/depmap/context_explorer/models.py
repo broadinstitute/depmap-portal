@@ -228,7 +228,7 @@ def get_context_analysis_query(
             ContextAnalysis.query.filter_by(
                 context_name=context_name,
                 out_group=out_group,
-                dependency_dataset_id=dataset_id,
+                dependency_dataset_id=dependency_dataset_id,
             )
             .join(
                 CompoundExperiment,

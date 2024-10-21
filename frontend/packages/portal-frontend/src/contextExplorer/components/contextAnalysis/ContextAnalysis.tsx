@@ -38,7 +38,8 @@ import {
 import geneDepFilterDefinitions from "../../json/geneDepFilters.json";
 import drugFilterDefinitions from "../../json/drugFilters.json";
 import Select from "react-select";
-import filterLayout from "../../json/filterLayout.json";
+import filterLayoutGene from "../../json/filterLayoutGene.json";
+import filterLayoutDrug from "../../json/filterLayoutDrug.json";
 import { satisfiesFilters } from "src/common/models/discoveryAppFilters";
 import ContextAnalysisTable from "./ContextAnalysisTable";
 import FilterInputGroup from "src/common/components/FilterControls/FilterInputGroup";
@@ -182,6 +183,7 @@ function ContextAnalysis({
     setIsLoading,
     selectedContextNameInfo.name,
     outgroup,
+    datasetId,
     entityType,
     dapi,
     didValidateOutgroup,
@@ -647,6 +649,7 @@ function ContextAnalysis({
     setIsLoadingBoxplot,
     selectedContextNameInfo,
     outgroup,
+    datasetId,
     selectedPlotLabels,
     entityType,
     dapi,
@@ -871,12 +874,22 @@ function ContextAnalysis({
                   // eslint-disable-next-line react/no-array-index-key
                   key="gene-dep-plot-filters"
                   data={data}
-                  group={filterLayout[0].groups[0]}
+                  group={
+                    entityType === "gene"
+                      ? filterLayoutGene[0].groups[0]
+                      : filterLayoutDrug[0].groups[0]
+                  }
                   filters={transientFilterState}
                   onChangeFilter={updateFilter}
-                  hasChanges={filterLayout[0].groups[0].keys.some(
-                    (key: any) => changedFilters.indexOf(key) > -1
-                  )}
+                  hasChanges={
+                    entityType === "gene"
+                      ? filterLayoutGene[0].groups[0].keys.some(
+                          (key: any) => changedFilters.indexOf(key) > -1
+                        )
+                      : filterLayoutDrug[0].groups[0].keys.some(
+                          (key: any) => changedFilters.indexOf(key) > -1
+                        )
+                  }
                   altStyle={styles}
                   selectedColor={"#a8529d66"}
                   disableHistogram

@@ -54,8 +54,8 @@ DRUG_INOUT_ANALYSIS_COLS = {
     "mean_out": float,
     "effect_size": float,
     "abs_effect_size": float,
-    "frac_dep_in": float,
-    "frac_dep_out": float,
+    "t_qval": float,
+    "t_qval_log": float,
     "selectivity_val": float,
     "depletion": str,
     "label": str,
@@ -302,7 +302,7 @@ def _get_analysis_data_table(
         entity_type=entity_type,
         dataset_id=dataset_id,
     )
-    # breakpoint()
+
     if data.empty:
         return None
 
@@ -319,6 +319,10 @@ def _get_analysis_data_table(
             return compound.label
 
         data["label"] = data["entity"].apply(get_compound_label_for_compound_experiment)
+        # These columns don't make sense for compounds and will always be NaNs, so just drop them
+        data = data.drop(
+            ["n_dep_in", "n_dep_out", "frac_dep_in", "frac_dep_out"], axis=1
+        )
 
     data["depletion"] = data["effect_size"] > 0
     data["depletion"] = data["depletion"].map({True: "True", False: "False"})

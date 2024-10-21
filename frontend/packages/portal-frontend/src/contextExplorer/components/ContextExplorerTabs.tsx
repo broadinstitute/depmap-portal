@@ -155,7 +155,7 @@ const ContextExplorerTabs = ({
             topContextNameInfo={topContextNameInfo}
             entityType={"compound"}
             customInfoImg={customInfoImg}
-            datasetId={ContextExplorerDatasets.Chronos_Combined}
+            datasetId={ContextExplorerDatasets.Prism_oncology_AUC}
           />
         </TabPanel>
       </TabPanels>

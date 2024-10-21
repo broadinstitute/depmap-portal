@@ -96,7 +96,7 @@ function ContextAnalysisPlotPanel({
         <ContextAnalysisScatterPlot
           data={formattedPlotData}
           indexLabels={data?.indexLabels || []}
-          logOR={data?.logOR || []}
+          logOR={[]}
           handleClickPoint={handleClickPoint}
           handleSetSelectedLabels={handleSetSelectedLabels}
           handleSetPlotElement={handleSetPlotElement}

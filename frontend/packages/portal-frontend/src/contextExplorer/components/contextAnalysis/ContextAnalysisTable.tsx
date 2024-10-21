@@ -45,16 +45,25 @@ function ContextAnalysisTable(props: ContextAnalysisTableProps) {
     if (data) {
       for (let index = 0; index < data?.entity.length; index++) {
         if (pointVisibility[index]) {
-          iData.push({
-            entity: data.entity[index],
-            tTestQVal: data.t_qval[index],
-            inContextMean: data.mean_in[index],
-            outGroupMean: data.mean_out[index],
-            effectSize: data.effect_size[index],
-            fractionInContextLinesDependent: data.frac_dep_in[index],
-            fractionOutGroupLinesDependent: data.frac_dep_out[index],
-            selectivityVal: data.selectivity_val[index],
-          });
+          entityType === "gene"
+            ? iData.push({
+                entity: data.entity[index],
+                tTestQVal: data.t_qval[index],
+                inContextMean: data.mean_in[index],
+                outGroupMean: data.mean_out[index],
+                effectSize: data.effect_size[index],
+                fractionInContextLinesDependent: data.frac_dep_in[index],
+                fractionOutGroupLinesDependent: data.frac_dep_out[index],
+                selectivityVal: data.selectivity_val[index],
+              })
+            : iData.push({
+                entity: data.entity[index],
+                tTestQVal: data.t_qval[index],
+                inContextMean: data.mean_in[index],
+                outGroupMean: data.mean_out[index],
+                effectSize: data.effect_size[index],
+                selectivityVal: data.selectivity_val[index],
+              });
 
           entityLabelMap[data.entity[index]] = data.label[index];
         }
@@ -76,7 +85,7 @@ function ContextAnalysisTable(props: ContextAnalysisTableProps) {
       );
     };
 
-    const initialCols = [
+    let initialCols = [
       {
         accessor: "entity",
         Header: entityType === "gene" ? "Gene" : "Drug",
@@ -119,14 +128,6 @@ function ContextAnalysisTable(props: ContextAnalysisTableProps) {
         disableFilters: true,
       },
       {
-        accessor: "or",
-        id: "or",
-        Header: "FET Odds Ratio",
-        maxWidth: 90,
-        minWidth: 90,
-        disableFilters: true,
-      },
-      {
         accessor: "inContextMean",
         id: "inContextMean",
         Header:
@@ -148,29 +149,37 @@ function ContextAnalysisTable(props: ContextAnalysisTableProps) {
         minWidth: 90,
         disableFilters: true,
       },
-      {
-        accessor: "fractionInContextLinesDependent",
-        id: "fractionInContextLinesDependent",
-        Header:
-          entityType === "gene"
-            ? "% of in-context lines dependent"
-            : "% of in-context lines sensitive",
-        maxWidth: 90,
-        minWidth: 90,
-        disableFilters: true,
-      },
-      {
-        accessor: "fractionOutGroupLinesDependent",
-        id: "fractionOutGroupLinesDependent",
-        Header:
-          entityType === "gene"
-            ? "% of out-group lines dependent"
-            : "% of out-group lines sensitive",
-        maxWidth: 90,
-        minWidth: 90,
-        disableFilters: true,
-      },
     ];
+
+    if (entityType === "gene") {
+      const geneOnlyColumns = [
+        {
+          accessor: "fractionInContextLinesDependent",
+          id: "fractionInContextLinesDependent",
+          Header:
+            entityType === "gene"
+              ? "% of in-context lines dependent"
+              : "% of in-context lines sensitive",
+          maxWidth: 90,
+          minWidth: 90,
+
+          disableFilters: true,
+        },
+        {
+          accessor: "fractionOutGroupLinesDependent",
+          id: "fractionOutGroupLinesDependent",
+          Header:
+            entityType === "gene"
+              ? "% of out-group lines dependent"
+              : "% of out-group lines sensitive",
+          maxWidth: 90,
+          minWidth: 90,
+          disableFilters: true,
+        },
+      ];
+
+      initialCols = [...initialCols, ...geneOnlyColumns];
+    }
     setColumns(initialCols);
   }, [data, pointVisibility, entityUrlRoot, entityType]);
 
