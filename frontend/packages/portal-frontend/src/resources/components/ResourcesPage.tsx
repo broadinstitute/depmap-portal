@@ -83,6 +83,7 @@ export default function ResourcesPage(props: ResourcesPageProps) {
               <p>Posted: {initOrSelectedPost.creation_date}</p>
               <p>Updated: {initOrSelectedPost.update_date}</p>
             </div>
+            <h2>{initOrSelectedPost.title}</h2>
             <div
               // eslint-disable-next-line react/no-danger
               dangerouslySetInnerHTML={{
