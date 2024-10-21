@@ -85,6 +85,9 @@ function ContextAnalysisTable(props: ContextAnalysisTableProps) {
       );
     };
 
+    const selectivityValLabel =
+      entityType === "gene" ? "CRISPR KS score" : "Bimodality Coefficient";
+
     let initialCols = [
       {
         accessor: "entity",
@@ -110,6 +113,13 @@ function ContextAnalysisTable(props: ContextAnalysisTableProps) {
             )}
           </>
         ),
+      },
+      {
+        accessor: "selectivityVal",
+        id: "selectivityVal",
+        Header: selectivityValLabel,
+        maxWidth: 90,
+        minWidth: 90,
       },
       {
         accessor: "tTestQVal",
