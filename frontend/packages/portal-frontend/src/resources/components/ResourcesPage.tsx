@@ -1,12 +1,14 @@
 import * as React from "react";
 import { useMemo } from "react";
-import { ListGroup, ListGroupItem, Panel, PanelGroup } from "react-bootstrap";
-import { Link, useLocation } from "react-router-dom";
+import { PanelGroup } from "react-bootstrap";
+import { useLocation } from "react-router-dom";
 import styles from "src/resources/styles/ResourcesPage.scss";
+import { Subcategory, Topic } from "../models/Category";
+import SubcategoryPanel from "./SubcategoryPanel";
 
 interface ResourcesPageProps {
-  subcategories: any;
-  defaultTopic: any;
+  subcategories: Subcategory[];
+  defaultTopic: Topic | null;
 }
 
 // A custom hook that builds on useLocation to parse
@@ -24,14 +26,14 @@ export default function ResourcesPage(props: ResourcesPageProps) {
   const querySubcategory = query.get("subcategory");
 
   // If window location url has query params at the start, find the post to show
-  const initPost = useMemo(() => {
+  const initOrSelectedPost = useMemo(() => {
     const subcategory = subcategories.find(
-      (sub: any) => sub.slug === query.get("subcategory")
+      (sub: Subcategory) => sub.slug === query.get("subcategory")
     );
     let post;
     if (subcategory) {
       const topic = subcategory.topics.find(
-        (t: any) => t.slug === query.get("topic")
+        (t: Topic) => t.slug === query.get("topic")
       );
       post = topic;
     } else {
@@ -52,67 +54,40 @@ export default function ResourcesPage(props: ResourcesPageProps) {
 
       <section className={styles.postsNavList}>
         <PanelGroup>
-          {subcategories.map((subcategory: any) => {
+          {subcategories.map((subcategory: Subcategory) => {
             let isDefaultExpandedSubcategory: boolean;
             if (querySubcategory) {
               isDefaultExpandedSubcategory =
                 subcategory.slug === querySubcategory;
             } else {
               isDefaultExpandedSubcategory = !!subcategory.topics.find(
-                (t: any) => t.slug === defaultTopic.slug
+                (t: Topic) => t.slug === defaultTopic?.slug
               );
             }
 
             return (
-              <Panel
+              <SubcategoryPanel
                 key={subcategory.id}
-                eventKey={subcategory.slug}
-                defaultExpanded={isDefaultExpandedSubcategory}
-              >
-                <Panel.Heading className={styles.postHeading}>
-                  <Panel.Toggle componentClass="div">
-                    {subcategory.title}
-                  </Panel.Toggle>
-                </Panel.Heading>
-                <Panel.Collapse>
-                  <ListGroup>
-                    {subcategory.topics.map((topic: any) => {
-                      return (
-                        <Link
-                          key={topic.id}
-                          to={`?subcategory=${subcategory.slug}&topic=${topic.slug}`}
-                          state={{ postHtml: topic }}
-                          style={{ textDecoration: "none" }}
-                        >
-                          <ListGroupItem
-                            className={styles.navPostItem}
-                            style={{ borderRadius: "0px" }}
-                            active={
-                              initPost ? initPost.slug === topic.slug : false
-                            }
-                          >
-                            {topic.title}
-                          </ListGroupItem>
-                        </Link>
-                      );
-                    })}
-                  </ListGroup>
-                </Panel.Collapse>
-              </Panel>
+                subcategory={subcategory}
+                isDefaultExpandedSubcategory={isDefaultExpandedSubcategory}
+                selectedTopic={initOrSelectedPost}
+              />
             );
           })}
         </PanelGroup>
       </section>
       <section className={styles.postContentContainer}>
-        {initPost ? (
+        {initOrSelectedPost ? (
           <div className={styles.postContent}>
             <div className={styles.postDate}>
-              <p>Posted: {initPost.creation_date}</p>
-              <p>Updated: {initPost.update_date}</p>
+              <p>Posted: {initOrSelectedPost.creation_date}</p>
+              <p>Updated: {initOrSelectedPost.update_date}</p>
             </div>
             <div
               // eslint-disable-next-line react/no-danger
-              dangerouslySetInnerHTML={{ __html: initPost.post_content }}
+              dangerouslySetInnerHTML={{
+                __html: initOrSelectedPost.post_content,
+              }}
             />
           </div>
         ) : null}
