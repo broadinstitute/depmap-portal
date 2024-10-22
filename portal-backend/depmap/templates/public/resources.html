@@ -23,8 +23,7 @@
 {% block js %}
 <script id="react-resources-page-data" type="application/json">
     {
-        "rootCategory": {{ root_category|tojson|safe }},
-        "title": {{("DMC Portal Resources" if config.ENV_TYPE == 'dmc' else "Depmap Resources")|tojson|safe }}
+        "rootCategory": {{ root_category|tojson|safe }}
     }
 </script>
 <script src="{{ webpack_url('resourcesPage.js') }}"></script>
