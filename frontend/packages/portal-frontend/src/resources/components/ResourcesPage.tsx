@@ -7,6 +7,7 @@ import styles from "src/resources/styles/ResourcesPage.scss";
 // import { CollapsiblePanel } from "src/dataPage/components/CollapsiblePanel";
 
 interface ResourcesPageProps {
+  title: string;
   subcategories: any;
   defaultTopic: any;
 }
@@ -20,7 +21,7 @@ function useQuery() {
 }
 
 export default function ResourcesPage(props: ResourcesPageProps) {
-  const { subcategories, defaultTopic } = props;
+  const { subcategories, defaultTopic, title } = props;
   console.log(subcategories);
   const query = useQuery();
 
@@ -44,7 +45,7 @@ export default function ResourcesPage(props: ResourcesPageProps) {
   return (
     <div className={styles.ResourcesPageContainer}>
       <div className={styles.resourcesPageHeader}>
-        <h1>Depmap Resources</h1>
+        <h1>{title}</h1>
         <h3>
           Browse resource categories for information and frequently asked
           questions

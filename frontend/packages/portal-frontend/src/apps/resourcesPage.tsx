@@ -20,12 +20,13 @@ if (!dataElement || !dataElement.textContent) {
 }
 const data = JSON.parse(dataElement.textContent);
 
-const { rootCategory } = data;
+const { rootCategory, title } = data;
 const App = () => {
   return (
     <ErrorBoundary>
       <Router>
         <ResourcesPage
+          title={title}
           subcategories={rootCategory.subcategories}
           defaultTopic={rootCategory.default_topic}
         />
