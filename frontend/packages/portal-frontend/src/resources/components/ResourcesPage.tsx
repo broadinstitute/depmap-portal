@@ -21,7 +21,6 @@ function useQuery() {
 
 export default function ResourcesPage(props: ResourcesPageProps) {
   const { subcategories, defaultTopic } = props;
-  console.log(subcategories);
   const query = useQuery();
   const querySubcategory = query.get("subcategory");
 
