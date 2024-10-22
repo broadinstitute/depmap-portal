@@ -1035,7 +1035,7 @@ def get_dimension_labels_by_id(
     """
     For a given dimension, get all IDs and labels that exist in the metadata.
     """
-    dimension_type: DimensionType = db.query(DimensionType).filter(
+    dimension_type: Optional[DimensionType] = db.query(DimensionType).filter(
         DimensionType.name == dimension_type_name
     ).one_or_none()
 

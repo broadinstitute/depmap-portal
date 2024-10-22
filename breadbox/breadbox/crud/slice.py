@@ -138,7 +138,7 @@ def get_ids_and_labels_matching_context(
         context_evaluator = ContextEvaluator(context.dict(), slice_loader_function)
 
     if dimension_type is None:
-        raise ValueError("Context requests must specify a dimension type.")
+        raise UserError("Context requests must specify a dimension type.")
     # Load all dimension labels and ids
     all_labels_by_id = dataset_crud.get_dimension_labels_by_id(db, dimension_type)
 
@@ -161,4 +161,4 @@ def get_slice_data_from_legacy_slice_id(
     The result should be a dictionary containing the dimension's values keyed by sample/feature ID
     """
     slice_query = slice_id_to_slice_query(slice_id)
-    return get_slice_data(db, filestore_location, slice_query)
+    return get_slice_data(db, filestore_location, slice_query).to_dict()

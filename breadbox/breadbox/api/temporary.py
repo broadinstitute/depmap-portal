@@ -2,12 +2,13 @@ from typing import Any, Annotated
 
 from fastapi import APIRouter, Body, Depends
 
-from breadbox.db.session import SessionWithUser
+from breadbox.api.dependencies import get_db_with_user
 from breadbox.config import Settings, get_settings
 from breadbox.crud import dataset as dataset_crud
 from breadbox.crud import slice as slice_crud
+from breadbox.db.session import SessionWithUser
+from breadbox.schemas.custom_http_exception import UserError
 from breadbox.schemas.context import Context, ContextSummary, ContextMatchResponse
-from breadbox.api.dependencies import get_db_with_user
 
 # This temporary prefix is intended to convey to API users that these contracts may change.
 # Most of these endpoints are intended to support feature-specific functionality
@@ -60,6 +61,8 @@ def get_context_summary(
     dimension_type = (
         context.dimension_type if context.dimension_type else context.context_type
     )
+    if dimension_type is None:
+        raise UserError(("Context requests must specify a dimension type."))
     all_labels_by_id = dataset_crud.get_dimension_labels_by_id(db, dimension_type)
 
     # Evaluate each of the dimension's given_ids against the context
