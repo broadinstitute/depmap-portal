@@ -24,7 +24,7 @@ class Context(BaseModel):
     # - { "==": [ {"var": "slice/growth_pattern/all/label"}, "Adherent" ] }
     # - True
     expr: ContextExpression
-    name: str
+    name: Optional[str] = None
 
     # The "dimension_type" field is used by contexts in the new format (with slice queries)
     # The "context_type" field is used by the old format (with slice IDs)
@@ -32,3 +32,7 @@ class Context(BaseModel):
     dimension_type: Optional[str] = None
     context_type: Optional[str] = None
     vars: dict[str, dict[str, str]] = {}
+
+
+class ContextRequest(BaseModel):
+    context: Context

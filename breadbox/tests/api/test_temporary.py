@@ -74,9 +74,11 @@ class TestPost:
         response = client.post(
             "/temporary/context",
             json={
-                "dimension_type": "some_feature_type",
-                "name": "feature 2",
-                "expr": {"==": [{"var": "given_id"}, "featureID2"]},
+                "context": {
+                    "dimension_type": "some_feature_type",
+                    "name": "feature 2",
+                    "expr": {"==": [{"var": "given_id"}, "featureID2"]},
+                }
             },
             headers={"X-Forwarded-User": "some-public-user"},
         )
@@ -91,9 +93,11 @@ class TestPost:
         response = client.post(
             "/temporary/context",
             json={
-                "dimension_type": "some_sample_type",
-                "name": "sample 1",
-                "expr": {"==": [{"var": "given_id"}, "sampleID1"]},
+                "context": {
+                    "dimension_type": "some_sample_type",
+                    "name": "sample 1",
+                    "expr": {"==": [{"var": "given_id"}, "sampleID1"]},
+                }
             },
             headers={"X-Forwarded-User": "some-public-user"},
         )
@@ -108,16 +112,18 @@ class TestPost:
         response = client.post(
             "/temporary/context",
             json={
-                "dimension_type": "some_sample_type",
-                "name": "value greater than",
-                "expr": {">": [{"var": "feature_var"}, 2.1]},
-                "vars": {
-                    "feature_var": {
-                        "dataset_id": dataset_given_id,
-                        "identifier": "featureLabel2",
-                        "identifier_type": "feature_label",
-                    }
-                },
+                "context": {
+                    "dimension_type": "some_sample_type",
+                    "name": "value greater than",
+                    "expr": {">": [{"var": "feature_var"}, 2.1]},
+                    "vars": {
+                        "feature_var": {
+                            "dataset_id": dataset_given_id,
+                            "identifier": "featureLabel2",
+                            "identifier_type": "feature_label",
+                        }
+                    },
+                }
             },
             headers={"X-Forwarded-User": "some-public-user"},
         )
@@ -134,26 +140,28 @@ class TestPost:
         response = client.post(
             "/temporary/context",
             json={
-                "dimension_type": "some_feature_type",
-                "name": "dependency greater than",
-                "expr": {
-                    "and": [
-                        {">": [{"var": "model1_var"}, 4.5]},  # 4, 5, 6
-                        {"<": [{"var": "model2_var"}, 8.5]},  # 7, 8, 9
-                    ]
-                },
-                "vars": {
-                    "model1_var": {
-                        "dataset_id": dataset_given_id,
-                        "identifier": "sampleID2",
-                        "identifier_type": "sample_id",
+                "context": {
+                    "dimension_type": "some_feature_type",
+                    "name": "dependency greater than",
+                    "expr": {
+                        "and": [
+                            {">": [{"var": "model1_var"}, 4.5]},  # 4, 5, 6
+                            {"<": [{"var": "model2_var"}, 8.5]},  # 7, 8, 9
+                        ]
                     },
-                    "model2_var": {
-                        "dataset_id": dataset_given_id,
-                        "identifier": "sampleLabel3",
-                        "identifier_type": "sample_label",
+                    "vars": {
+                        "model1_var": {
+                            "dataset_id": dataset_given_id,
+                            "identifier": "sampleID2",
+                            "identifier_type": "sample_id",
+                        },
+                        "model2_var": {
+                            "dataset_id": dataset_given_id,
+                            "identifier": "sampleLabel3",
+                            "identifier_type": "sample_label",
+                        },
                     },
-                },
+                }
             },
             headers={"X-Forwarded-User": "some-public-user"},
         )
@@ -164,4 +172,88 @@ class TestPost:
         assert response_content["ids"] == ["featureID2"]
         assert response_content["labels"] == ["featureLabel2"]
 
-        # TODO: test legacy slice type
+    def test_evaluate_context_with_legacy_request(
+        self, client: TestClient, minimal_db: SessionWithUser, public_group, settings,
+    ):
+        """
+        Test that the breadbox context endpoints work with 
+        """
+        # Define label metadata for our features
+        factories.add_dimension_type(
+            minimal_db,
+            settings,
+            user=settings.admin_users[0],
+            name="some_feature_type",
+            display_name="Feature With Metadata",
+            id_column="ID",
+            annotation_type_mapping={
+                "ID": AnnotationType.text,
+                "label": AnnotationType.text,
+            },
+            axis="feature",
+            metadata_df=pd.DataFrame(
+                {
+                    "ID": ["featureID1", "featureID2", "featureID3"],
+                    "label": ["featureLabel1", "featureLabel2", "featureLabel3"],
+                }
+            ),
+        )
+
+        # Define label metadata for our samples
+        factories.add_dimension_type(
+            minimal_db,
+            settings,
+            user=settings.admin_users[0],
+            name="some_sample_type",
+            display_name="Sample With Metadata",
+            id_column="ID",
+            annotation_type_mapping={
+                "ID": AnnotationType.text,
+                "label": AnnotationType.text,
+            },
+            axis="sample",
+            metadata_df=pd.DataFrame(
+                {
+                    "ID": ["sampleID1", "sampleID2", "sampleID3"],
+                    "label": ["sampleLabel1", "sampleLabel2", "sampleLabel3"],
+                }
+            ),
+        )
+
+        # Define a matrix dataset
+        example_matrix_values = factories.matrix_csv_data_file_with_values(
+            feature_ids=["featureID1", "featureID2", "featureID3"],
+            sample_ids=["sampleID1", "sampleID2", "sampleID3"],
+            values=np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]]),
+        )
+        dataset_given_id = "dataset_123"
+        dataset_with_metadata = factories.matrix_dataset(
+            minimal_db,
+            settings,
+            feature_type="some_feature_type",
+            sample_type="some_sample_type",
+            data_file=example_matrix_values,
+            given_id=dataset_given_id,
+        )
+
+        response = client.post(
+            "/temporary/context",
+            json={
+                "context": {
+                    "context_type": "some_sample_type",
+                    "expr": {
+                        ">": [
+                            {"var": f"slice/{dataset_given_id}/featureLabel1/label"},
+                            1.5,
+                        ]
+                    },
+                }
+            },
+            headers={"X-Forwarded-User": "some-public-user"},
+        )
+
+        assert_status_ok(response)
+        response_content = response.json()
+        assert response_content is not None
+        assert response_content["ids"] == ["sampleID2", "sampleID3"]
+        assert response_content["labels"] == ["sampleLabel2", "sampleLabel3"]

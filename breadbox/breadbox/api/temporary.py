@@ -8,7 +8,11 @@ from breadbox.crud import dataset as dataset_crud
 from breadbox.crud import slice as slice_crud
 from breadbox.db.session import SessionWithUser
 from breadbox.schemas.custom_http_exception import UserError
-from breadbox.schemas.context import Context, ContextSummary, ContextMatchResponse
+from breadbox.schemas.context import (
+    ContextRequest,
+    ContextSummary,
+    ContextMatchResponse,
+)
 
 # This temporary prefix is intended to convey to API users that these contracts may change.
 # Most of these endpoints are intended to support feature-specific functionality
@@ -24,8 +28,8 @@ router = APIRouter(prefix="/temporary", tags=["temporary"])
 def evaluate_context(
     db: Annotated[SessionWithUser, Depends(get_db_with_user)],
     settings: Annotated[Settings, Depends(get_settings)],
-    context: Annotated[
-        Context, Body(description="A Data Explorer 2 context expression")
+    context_request: Annotated[
+        ContextRequest, Body(description="A Data Explorer 2 context expression")
     ],
 ):
     """
@@ -34,7 +38,7 @@ def evaluate_context(
     """
     # Evaluate each of the dimension's given_ids against the context
     matching_ids, matching_labels = slice_crud.get_ids_and_labels_matching_context(
-        db, settings.filestore_location, context
+        db, settings.filestore_location, context_request.context
     )
 
     return ContextMatchResponse(ids=matching_ids, labels=matching_labels,)
@@ -49,8 +53,8 @@ def evaluate_context(
 def get_context_summary(
     db: Annotated[SessionWithUser, Depends(get_db_with_user)],
     settings: Annotated[Settings, Depends(get_settings)],
-    context: Annotated[
-        Context, Body(description="A Data Explorer 2 context expression")
+    context_request: Annotated[
+        ContextRequest, Body(description="A Data Explorer 2 context expression")
     ],
 ):
     """
@@ -58,6 +62,7 @@ def get_context_summary(
     "Candidate" labels are all labels belonging to the context's dimension type.
     Requests may be made in either the old or new format. 
     """
+    context = context_request.context
     dimension_type = (
         context.dimension_type if context.dimension_type else context.context_type
     )
