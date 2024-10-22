@@ -12,6 +12,10 @@ import qs from "qs";
 import { Filter } from "src/common/models/discoveryAppFilters";
 import { deleteSpecificQueryParams } from "@depmap/utils";
 
+export function getSelectivityValLabel(entityType: string) {
+  return entityType === "gene" ? "CRISPR KS score" : "Bimodality Coefficient";
+}
+
 function isWholeNumberNotZero(num: number) {
   return num % 1 === 0 && num !== 0;
 }

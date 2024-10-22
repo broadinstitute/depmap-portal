@@ -54,6 +54,11 @@ def _read_context_analyses(dr, pbar, gene_cache, cell_line_cache):
         gene = gene_cache.get(row["entity_id"])
         compound = compound_cache.get(row["entity_id"])
 
+        # HACK until I can figure out the norm for handling PRC- prefixed compounds.
+        if gene is None and compound is None:
+            entity_id = row["entity_id"]
+            compound = compound_cache.get(f"BRD:{entity_id}")
+
         if gene is None and compound is None:
             skipped_entity += 1
             log_data_issue(
@@ -84,6 +89,7 @@ def _read_context_analyses(dr, pbar, gene_cache, cell_line_cache):
 
         # TODO: Better way to do this???
         dependency_dataset = row["dataset"]
+
         dataset_str_to_name_mapping = {
             "CRISPR": "Chronos_Combined",
             "PRISMOncRef": "Prism_oncology_AUC",

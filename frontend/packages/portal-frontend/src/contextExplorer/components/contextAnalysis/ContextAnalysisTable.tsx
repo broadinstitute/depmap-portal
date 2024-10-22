@@ -6,6 +6,7 @@ import {
   ContextAnalysisTableRow,
   ContextAnalysisTableType,
 } from "src/contextExplorer/models/types";
+import { getSelectivityValLabel } from "src/contextExplorer/utils";
 
 interface ContextAnalysisTableProps {
   data: ContextAnalysisTableType | null;
@@ -85,8 +86,7 @@ function ContextAnalysisTable(props: ContextAnalysisTableProps) {
       );
     };
 
-    const selectivityValLabel =
-      entityType === "gene" ? "CRISPR KS score" : "Bimodality Coefficient";
+    const selectivityValLabel = getSelectivityValLabel(entityType);
 
     let initialCols = [
       {
