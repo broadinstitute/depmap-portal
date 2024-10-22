@@ -135,7 +135,7 @@ def get_ids_and_labels_matching_context(
         slice_loader_function = lambda slice_query: get_slice_data(
             db, filestore_location, slice_query
         )
-        context_evaluator = ContextEvaluator(context.dict(), get_slice_data)
+        context_evaluator = ContextEvaluator(context.dict(), slice_loader_function)
 
     if dimension_type is None:
         raise ValueError("Context requests must specify a dimension type.")

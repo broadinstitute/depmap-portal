@@ -138,8 +138,8 @@ class TestPost:
                 "name": "dependency greater than",
                 "expr": {
                     "and": [
-                        {">": [{"var": "model1_var"}, 0]},  # 4, 5, 6
-                        {"<": [{"var": "model2_var"}, 10]},  # 7, 8, 9
+                        {">": [{"var": "model1_var"}, 4.5]},  # 4, 5, 6
+                        {"<": [{"var": "model2_var"}, 8.5]},  # 7, 8, 9
                     ]
                 },
                 "vars": {
