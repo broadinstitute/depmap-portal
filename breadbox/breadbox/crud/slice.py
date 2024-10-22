@@ -18,8 +18,8 @@ from depmap_compute.slice import SliceQuery
 from depmap_compute.context import (
     ContextEvaluator,
     LegacyContextEvaluator,
-    slice_id_to_slice_query,
 )
+from depmap_compute.slice import slice_id_to_slice_query
 
 
 def get_slice_data(
@@ -116,17 +116,14 @@ def get_labels_for_slice_type(
 def get_ids_and_labels_matching_context(
     db: SessionWithUser, filestore_location: str, context: Context
 ) -> tuple[list[str], list[str]]:
-    # TODO: this has some duplicate code, is any of it worth moving to the shared module?
-    # TODO: write many tests for this lol
     """
     For a given context, load all matching IDs and labels.
     Both context versions are supported here. 
     """
     # Identify which type of context has been provided
     # Legacy contexts use the "context_type" field name, while newer contexts use "dimension_type"
-    is_legacy_context = context.get("context_type") is not None
-    if context.get("context_type"):
-        dimension_type = context.get("context_type")
+    if context.context_type:
+        dimension_type = context.context_type
         slice_loader_function = lambda slice_id: get_slice_data_from_legacy_slice_id(
             db, filestore_location, slice_id
         )
@@ -134,7 +131,7 @@ def get_ids_and_labels_matching_context(
             context.dict(), slice_loader_function
         )
     else:
-        dimension_type = context.get("dimension_type")
+        dimension_type = context.dimension_type
         slice_loader_function = lambda slice_query: get_slice_data(
             db, filestore_location, slice_query
         )

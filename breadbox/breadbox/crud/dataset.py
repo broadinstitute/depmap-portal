@@ -1037,22 +1037,26 @@ def get_dimension_labels_by_id(
     """
     dimension_type: DimensionType = db.query(DimensionType).filter(
         DimensionType.name == dimension_type_name
-    ).one()
+    ).one_or_none()
+
+    if dimension_type is None:
+        raise ResourceNotFoundError(
+            f"Dimension type '{dimension_type_name}' not found. "
+        )
 
     label_filter_statements = [
         TabularColumn.dataset_id == dimension_type.dataset_id,
         TabularColumn.given_id == "label",
     ]
 
-    labels_by_id = (
+    labels_by_id_tuples = (
         db.query(TabularCell)
         .join(TabularColumn)
         .filter(and_(True, *label_filter_statements))
         .with_entities(TabularCell.dimension_given_id, TabularCell.value)
         .all()
     )
-    # TODO: test this
-    return labels_by_id
+    return {id: label for id, label in labels_by_id_tuples}
 
 
 from typing import Any
