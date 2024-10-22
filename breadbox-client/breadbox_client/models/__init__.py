@@ -22,6 +22,13 @@ from .body_upload_file import BodyUploadFile
 from .column_metadata import ColumnMetadata
 from .compute_params import ComputeParams
 from .compute_response import ComputeResponse
+from .context import Context
+from .context_expr_type_1 import ContextExprType1
+from .context_match_response import ContextMatchResponse
+from .context_request import ContextRequest
+from .context_summary import ContextSummary
+from .context_vars import ContextVars
+from .context_vars_additional_property import ContextVarsAdditionalProperty
 from .data_type import DataType
 from .dataset_metadata import DatasetMetadata
 from .dataset_metadata_dataset_metadata import DatasetMetadataDatasetMetadata
@@ -122,6 +129,13 @@ __all__ = (
     "ColumnMetadata",
     "ComputeParams",
     "ComputeResponse",
+    "Context",
+    "ContextExprType1",
+    "ContextMatchResponse",
+    "ContextRequest",
+    "ContextSummary",
+    "ContextVars",
+    "ContextVarsAdditionalProperty",
     "DatasetMetadata",
     "DatasetMetadataDatasetMetadata",
     "DataType",
