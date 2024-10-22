@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "breadbox"
-version = "3.8.0"
+version = "3.9.0"
 description = "A peristent service that stores and fetches datasets"
 authors = ["Jessica Cheng <jcheng@broadinstitute.org>"]
 packages = [{include = "breadbox"}]
@@ -29,7 +29,7 @@ itsdangerous = "^2.1.2"
 pandera = "^0.18.3"
 bpython = "^0.24"
 pydantic-settings = "^2.2.1"
-depmap-compute = {version = "0.1.3", source = "public-python"}
+depmap-compute = {version = "0.1.9", source = "public-python"}
 
 [tool.poetry.group.dev.dependencies]
 pyright-ratchet = {git = "https://github.com/pgm/pyright-ratchet.git", rev = "v0.3.1"}
@@ -54,7 +54,7 @@ name = "cz_customize"   # Must use name 'cz_customize' in order to enable custom
 tag_format = "breadbox-$version"
 version_scheme = "pep440"
 version_provider = "poetry"
-version = "3.8.0"
+version = "3.9.0"
 version_files = [
     'pyproject.toml:version',
     '../breadbox-client/pyproject.toml:version',

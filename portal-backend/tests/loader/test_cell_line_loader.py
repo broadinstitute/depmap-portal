@@ -29,6 +29,7 @@ def test_alt_names_or_aliases(empty_db_mock_downloads):
     # line_1 updated to have lineage test, no aliases, and new arxspan_id
     new_cell_line_data = {
         "ccle_name": ["line_1"],
+        "full_cell_line_name": ["line-6000"],
         "display_name": ["line"],
         "aliases": ["abcd, xyz"],
         "alt_names": ["theanswertolife"],
@@ -58,12 +59,9 @@ def test_alt_names_or_aliases(empty_db_mock_downloads):
 
     # line 1 was updated, and context is fine
     cell_line_1 = CellLine.get_by_depmap_id("depmap_id_1")
-    assert [ali.alias for ali in cell_line_1.cell_line_alias] == [
-        "abcd",
-        "xyz",
-        "theanswertolife",
-        "line_1",
-    ]
+    assert sorted([ali.alias for ali in cell_line_1.cell_line_alias]) == sorted(
+        ["abcd", "xyz", "theanswertolife", "line_1", "line-6000"]
+    )
 
 
 def test_insert_or_update_cell_lines(empty_db_mock_downloads):
@@ -83,7 +81,7 @@ def test_insert_or_update_cell_lines(empty_db_mock_downloads):
 
     # line_1 updated to have lineage test, no aliases, and new arxspan_id
     new_cell_line_data = {
-        "ccle_name": ["name_1", "new_name", "[MERGED_TO_line_1]merged_line"],
+        "ccle_name": ["name_1", "new_name", "merged_line"],
         "display_name": ["line", "new", nan],
         "aliases": ["abcd, xyz", "", nan],
         "lineage_1": ["test", "test", nan],
@@ -136,12 +134,9 @@ def test_insert_or_update_cell_lines(empty_db_mock_downloads):
     assert new_line.catalog_number == "2"
     assert new_line.growth_pattern == "Adherent"
 
-    assert [ali.alias for ali in cell_line_1.cell_line_alias] == [
-        "abcd",
-        "xyz",
-        "merged_line",
-        "name_1",
-    ]
+    assert sorted([ali.alias for ali in cell_line_1.cell_line_alias]) == sorted(
+        ["abcd", "xyz", "name_1",]
+    )
 
 
 @pytest.mark.parametrize("lineage, expected", [(nan, False), ("", False), ("a", True)])

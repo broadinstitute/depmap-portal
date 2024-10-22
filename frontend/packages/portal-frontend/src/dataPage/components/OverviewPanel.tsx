@@ -136,7 +136,7 @@ function OverviewPanel(props: OverviewPanelProps) {
             data source.
           </div>
           <DataAvailabilityPlot
-            currentReleaseDataAvil={allDataAvail}
+            dataAvail={allDataAvail}
             handleSetPlotElement={(element: ExtendedPlotType | null) => {
               setPlotElement(element);
             }}
@@ -144,7 +144,16 @@ function OverviewPanel(props: OverviewPanelProps) {
           />
           {plotElement && (
             <div className={styles.plotFooter}>
-              *These datasets are growing as part of the DepMap Release dataset.
+              <div className={styles.plotFooterSection1}>
+                *These datasets are growing as part of the DepMap Release
+                dataset.
+              </div>
+              <div className={styles.plotFooterSection2}>
+                <sup>†</sup> The Drug Repurposing screens varied in the number
+                of lines screened. Originally compounds screened were tested in
+                578 lines, but collection of lines grew over time with the last
+                batch of compounds being tested in 916 lines.
+              </div>
             </div>
           )}
         </div>
