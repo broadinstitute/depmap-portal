@@ -7,8 +7,9 @@ import { Subcategory, Topic } from "../models/Category";
 import SubcategoryPanel from "./SubcategoryPanel";
 
 interface ResourcesPageProps {
-  subcategories: Subcategory[];
-  defaultTopic: Topic | null;
+  title: string;
+  subcategories: any;
+  defaultTopic: any;
 }
 
 // A custom hook that builds on useLocation to parse
@@ -20,7 +21,7 @@ function useQuery() {
 }
 
 export default function ResourcesPage(props: ResourcesPageProps) {
-  const { subcategories, defaultTopic } = props;
+  const { subcategories, defaultTopic, title } = props;
   const query = useQuery();
   const querySubcategory = query.get("subcategory");
 
@@ -44,7 +45,7 @@ export default function ResourcesPage(props: ResourcesPageProps) {
   return (
     <div className={styles.ResourcesPageContainer}>
       <div className={styles.resourcesPageHeader}>
-        <h1>Depmap Resources</h1>
+        <h1>{title}</h1>
         <h3>
           Browse resource categories for information and frequently asked
           questions
