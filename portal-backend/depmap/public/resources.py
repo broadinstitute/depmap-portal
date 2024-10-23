@@ -12,7 +12,7 @@ import os
 @dataclass
 class Topic:
     id: int
-    slug: str  # topic slug is used as identifier to route to specific post on resources prototype
+    slug: str  # topic slug is used as identifier to route to specific post on resources
     title: str
     post_content: str  # first post
     creation_date: str
