@@ -66,6 +66,8 @@ def expand_forum_relative_urls(forum_url: str, html: str):
         if str(a["href"]).startswith("/"):
             short_link = str(a["href"])
             a["href"] = urljoin(forum_url, short_link)
+        # add attribute to open links in new tab
+        a["target"] = "_blank"
     return str(soup)
 
 
