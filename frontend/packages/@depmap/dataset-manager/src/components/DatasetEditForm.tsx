@@ -17,10 +17,10 @@ interface DatasetEditFormProps {
   getDataTypesAndPriorities: () => Promise<InvalidPrioritiesByDataType>;
   getGroups: () => Promise<Group[]>;
   datasetToEdit: Dataset;
-  updateDataset: (
+  onSubmit: (
     datasetId: string,
     datasetToUpdate: DatasetUpdateArgs
-  ) => Promise<Dataset>;
+  ) => Promise<void>;
 }
 
 const fields: RegistryFieldsType = {
@@ -45,7 +45,7 @@ export default function DatasetForm(props: DatasetEditFormProps) {
     getDataTypesAndPriorities,
     getGroups,
     datasetToEdit,
-    updateDataset,
+    onSubmit,
   } = props;
 
   const [schema, setSchema] = useState<RJSFSchema | null>(null);
@@ -118,7 +118,7 @@ export default function DatasetForm(props: DatasetEditFormProps) {
     })();
   }, [getGroups, getDataTypesAndPriorities, datasetToEdit]);
 
-  return schema ? (
+  return schema && formDataVals ? (
     <Form
       formData={formDataVals}
       schema={schema}
@@ -127,7 +127,7 @@ export default function DatasetForm(props: DatasetEditFormProps) {
       fields={fields}
       onSubmit={async ({ formData }) => {
         console.log(formData);
-        await updateDataset(datasetToEdit.id, formData);
+        await onSubmit(datasetToEdit.id, formData);
       }}
     />
   ) : null;

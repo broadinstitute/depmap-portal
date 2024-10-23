@@ -17,7 +17,6 @@ import styles from "../styles/styles.scss";
 import { ApiContext } from "@depmap/api";
 
 import DatasetForm from "./DatasetForm";
-import DatasetMetadataForm from "./DatasetMetadataForm";
 import { Alert } from "react-bootstrap";
 import DatasetEditForm from "./DatasetEditForm";
 import DimensionTypeForm from "./DimensionTypeForm";
@@ -36,14 +35,15 @@ export default function Datasets() {
   );
   const [showDatasetModal, setShowDatasetModal] = useState(false);
   const [isEditDatasetMode, setIsEditDatasetMode] = useState(false);
-  const [
-    showUpdateDatasetMetadataModal,
-    setShowUpdateDatasetMetadataModal,
-  ] = useState(false);
+
   const [datasetToEdit, setDatasetToEdit] = useState<Dataset | null>(null);
-  const [datasetMetadataToEdit, setDatasetMetadataToEdit] = useState<{
-    [key: string]: string;
-  } | null>(null);
+  const [datasetMetadataToShow, setDatasetMetadataToShow] = useState<
+    | {
+        [key: string]: string;
+      }
+    | null
+    | undefined
+  >(undefined);
 
   // TODO: Remove
   const getFeatureTypes = useCallback(() => dapi.getFeatureTypes(), [dapi]);
@@ -153,7 +153,24 @@ export default function Datasets() {
           <DatasetEditForm
             getGroups={getGroups}
             getDataTypesAndPriorities={getDataTypesAndPriorities}
-            updateDataset={updateDataset}
+            onSubmit={async (
+              datasetId: string,
+              datasetToUpdate: DatasetUpdateArgs
+            ) => {
+              const updatedDataset = await updateDataset(
+                datasetId,
+                datasetToUpdate
+              );
+              setDatasets(
+                datasets.map((d) => {
+                  if (d.id === datasetId) {
+                    return { ...d, ...updatedDataset };
+                  }
+                  return d;
+                })
+              );
+              setDatasetToEdit(updatedDataset);
+            }}
             datasetToEdit={datasetToEdit}
           />
         );
@@ -179,8 +196,6 @@ export default function Datasets() {
           onHide={() => {
             setShowDatasetModal(false);
             setIsEditDatasetMode(false);
-            setDatasetToEdit(null);
-            setDatasetMetadataToEdit(null);
           }}
           formComponent={datasetFormComponent}
         />
@@ -263,14 +278,10 @@ export default function Datasets() {
               bsStyle="primary"
               bsSize="small"
               onClick={() => {
-                setShowUpdateDatasetMetadataModal(true);
-                setDatasetToEdit(dataset);
-                setDatasetMetadataToEdit(
-                  dataset.dataset_metadata ? dataset.dataset_metadata : null
-                ); // handled in DatasetMetadataForm.tsx:261
+                setDatasetMetadataToShow(dataset.dataset_metadata);
               }}
             >
-              View / Edit
+              View
             </Button>
           </div>
         ),
@@ -314,56 +325,24 @@ export default function Datasets() {
     />
   );
 
-  const onSubmitUpdateDatasetMetadata = async (
-    datasetId: string,
-    metadata: { [key: string]: string }
-  ) => {
-    try {
-      const selectedDataset = datasets.filter(
-        (dataset) => dataset.id === datasetId
-      )[0];
-
-      const updatedDatasetInfo: DatasetUpdateArgs = {
-        group_id: selectedDataset.group.id,
-        dataset_metadata: metadata,
-      };
-
-      const dataset = await dapi.updateDataset(datasetId, updatedDatasetInfo);
-      setShowUpdateDatasetMetadataModal(false);
-      setDatasets(
-        datasets.map((originalDataset) => {
-          if (originalDataset.id === datasetId) {
-            return dataset;
-          }
-          return originalDataset;
-        })
-      );
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
   const updateDatasetMetadataForm = (
-    datasetId: string,
-    datasetMetadata: { [key: string]: string }
+    datasetMetadata: { [key: string]: string } | null
   ) => {
     return (
       <FormModal
-        title="Update Dataset Metadata"
-        showModal={showUpdateDatasetMetadataModal}
+        title="Dataset Metadata"
+        showModal={datasetMetadataToShow !== undefined}
         onHide={() => {
-          setShowUpdateDatasetMetadataModal(false);
-          setDatasetToEdit(null);
-          setDatasetMetadataToEdit(null);
+          setDatasetMetadataToShow(undefined);
         }}
         formComponent={
           <div>
-            <DatasetMetadataForm
-              isEdit
-              datasetId={datasetId}
-              initDatasetMetadata={datasetMetadata}
-              onSubmit={onSubmitUpdateDatasetMetadata}
-            />
+            <p>
+              Current dataset metadata:{" "}
+              {datasetMetadata
+                ? JSON.stringify(datasetMetadata, null, 2)
+                : "None"}
+            </p>
           </div>
         }
       />
@@ -513,8 +492,8 @@ export default function Datasets() {
         </div>
 
         {datasetForm()}
-        {datasetToEdit !== null && datasetMetadataToEdit !== null
-          ? updateDatasetMetadataForm(datasetToEdit.id, datasetMetadataToEdit)
+        {datasetMetadataToShow !== undefined
+          ? updateDatasetMetadataForm(datasetMetadataToShow)
           : null}
 
         {dimensionTypes ? (
