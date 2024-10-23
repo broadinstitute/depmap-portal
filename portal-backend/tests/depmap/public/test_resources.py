@@ -8,20 +8,25 @@ def test_expand_forum_relative_urls():
     )
 
     input_html = f'<a class="attachment" href="{input_short_url1}">test_random_non_image_pdf.pdf</a> (13.9 KB)'
-    expected_output_html = f'<a class="attachment" href="{expected_long_url1}">test_random_non_image_pdf.pdf</a> (13.9 KB)'
+    expected_output_html = f'<a class="attachment" href="{expected_long_url1}" target="_blank">test_random_non_image_pdf.pdf</a> (13.9 KB)'
 
+    # Checks full link html element
     html_with_absolute_urls = expand_forum_relative_urls(
         "https://forum.depmap.org", input_html
     )
 
     assert html_with_absolute_urls == expected_output_html
 
+    # Checks only href value
     input_html = '<a href="depmap.org/portal">test</a>'
     expect_no_change_html = expand_forum_relative_urls(
         "https://forum.depmap.org", input_html
     )
 
-    assert input_html == expect_no_change_html
+    assert (
+        'href="depmap.org/portal"' in input_html
+        and 'href="depmap.org/portal"' in expect_no_change_html
+    )
 
 
 def test_add_forum_link_to_html():
