@@ -573,6 +573,22 @@ export class DepmapApi {
     return this._fetch<ContextInfo>(`/api/context_explorer/context_info`);
   }
 
+  getContextExplorerDoseResponsePoints(
+    datasetName: string,
+    selectedContextName: string,
+    compoundLabel: string
+  ): Promise<DoseResponseCurvePromise> {
+    const params = {
+      dataset_name: datasetName,
+      context_name: selectedContextName,
+      entity_full_label: compoundLabel,
+    };
+
+    return this._fetch<DoseResponseCurvePromise>(
+      `/api/context_explorer/context_dose_curves?${encodeParams(params)}`
+    );
+  }
+
   getContextExplorerAnalysisData(
     in_group: string,
     out_group_type: string,

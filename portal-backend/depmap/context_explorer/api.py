@@ -16,6 +16,9 @@ from depmap.tda.views import convert_series_to_json_safe_list
 from flask_restplus import Namespace, Resource
 from flask import current_app, request
 import pandas as pd
+from depmap.dataset.models import DependencyDataset
+from depmap.settings.shared import DATASET_METADATA
+from depmap.compound.views.index import dev_format_dose_curve
 from depmap.context_explorer.models import (
     ContextAnalysis,
     ContextNameInfo,
@@ -364,6 +367,7 @@ class AnalysisData(Resource):
         dataset_id = request.args.get("dataset_id")
 
         # dev.load_context_explorer_sample_data()
+        # breakpoint()
 
         data_table = _get_analysis_data_table(
             in_group=in_group,
@@ -417,6 +421,56 @@ def _get_entity_id_from_entity_full_label(
         label = Compound.get_by_entity_id(entity_id).label
 
     return {"entity_id": entity_id, "label": label}
+
+
+@namespace.route("/context_dose_curves")
+class ContextDoseCurves(Resource):
+    @namespace.doc(
+        description="",
+    )  # the flask url_for endpoint is automagically the snake case of the namespace prefix plus class name
+    def get(self):
+        dataset_name = request.args.get("dataset_name")
+        entity_full_label = request.args.get("entity_full_label")
+        context_name = request.args.get("context_name")
+
+        dataset = DependencyDataset.get_dataset_by_name(dataset_name)
+        replicate_dataset_name = dataset.get_dose_replicate_enum().name
+        compound_experiment = _get_compound_experiment(
+            entity_full_label=entity_full_label
+        )
+
+        # TODO this needs to be updated to query the new context tree for the list of models
+        model_ids = DepmapModel.get_model_ids_by_lineage(context_name)
+
+        dose_curves = []
+        for model_id in model_ids:
+            curve = dev_format_dose_curve(
+                dataset_name=replicate_dataset_name,
+                depmap_id=model_id,
+                xref_full=compound_experiment.xref_full,
+            )
+            if curve is not None:
+                dose_curves.append(curve)
+
+        label = f"{compound_experiment.label} {dataset.display_name}"
+
+        dose_curve_metadata = {
+            "label": label,
+            "id": "{}_{}".format(
+                dataset.name.name, compound_experiment.entity_id
+            ),  # used for uniqueness
+            "dataset": dataset.name.name,
+            "entity": compound_experiment.entity_id,
+            "dose_replicate_dataset": replicate_dataset_name,
+            "auc_dataset_display_name": dataset.display_name,
+            "compound_label": compound_experiment.label,
+            "compound_xref_full": compound_experiment.xref_full,
+            "dose_replicate_level_yunits": DATASET_METADATA[
+                dataset.get_dose_replicate_enum()
+            ].units,
+        }
+
+        return {"dose_curves": dose_curves, "dose_curve_metadata": dose_curve_metadata}
 
 
 @namespace.route("/context_box_plot_data")

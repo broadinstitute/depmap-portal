@@ -31,6 +31,16 @@ export interface CurvePlotPoints {
   id?: string;
 }
 
+export interface CurveData {
+  points: CurvePlotPoints;
+  curve_params: CurveParams;
+}
+
+export interface DoseCurveData {
+  dose_curves: CurveData[];
+  dose_curve_metadata: any[];
+}
+
 export const defaultParams: Array<CurveParams> = [
   {
     ec50: 0,

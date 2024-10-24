@@ -50,6 +50,7 @@ import { getDapi } from "src/common/utilities/context";
 import { Button } from "react-bootstrap";
 import useContextExplorerFilters from "src/contextExplorer/hooks/useContextExplorerFilters";
 import EntityDetailBoxPlot from "./EntityDetailBoxPlot";
+import DoseCurvesTile from "./DoseCurvesTile";
 
 interface ContextAnalysisProps {
   selectedContextNameInfo: ContextNameInfo;
@@ -923,6 +924,19 @@ function ContextAnalysis({
       </section>
       {selectedContextNameInfo.name !== "All" && !isLoading && data && (
         <div className={styles.right}>
+          {selectedPlotLabels &&
+            selectedPlotLabels.size > 0 &&
+            boxPlotData &&
+            datasetId === ContextExplorerDatasets.Prism_oncology_AUC && (
+              <DoseCurvesTile
+                selectedContextName={selectedContextNameInfo.name}
+                selectedDrugLabel={boxPlotData.entity_label}
+                datasetName={datasetId}
+                getContextExplorerDoseResponsePoints={dapi.getContextExplorerDoseResponsePoints.bind(
+                  dapi
+                )}
+              />
+            )}
           {selectedPlotLabels && selectedPlotLabels.size > 0 ? (
             <div className={styles.boxPlotHeader}>
               <h2 style={{ marginBottom: "0" }}>

@@ -392,8 +392,6 @@ class ContextAnalysis(Model):
                         ContextAnalysis.t_qval <= fdr[1],
                         func.abs(ContextAnalysis.effect_size) >= abs_effect_size[0],
                         func.abs(ContextAnalysis.effect_size) <= abs_effect_size[1],
-                        ContextAnalysis.frac_dep_in >= frac_dep_in[0],
-                        ContextAnalysis.frac_dep_in <= frac_dep_in[1],
                     )
                 )
                 .join(
