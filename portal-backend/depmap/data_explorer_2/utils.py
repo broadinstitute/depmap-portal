@@ -9,11 +9,10 @@ from logging import getLogger
 from flask import abort, json, make_response
 
 from depmap_compute.context import (
-    decode_slice_id,
     ContextEvaluator,
     LegacyContextEvaluator,
 )
-from depmap_compute.slice import SliceQuery
+from depmap_compute.slice import decode_slice_id
 from depmap import data_access
 from depmap.data_access.models import MatrixDataset
 from depmap.settings.download_settings import get_download_list

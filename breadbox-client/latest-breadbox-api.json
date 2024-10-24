@@ -774,6 +774,128 @@
         "title": "ComputeResponse",
         "type": "object"
       },
+      "Context": {
+        "properties": {
+          "context_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Context Type"
+          },
+          "dimension_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dimension Type"
+          },
+          "expr": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "additionalProperties": {
+                  "items": {},
+                  "type": "array"
+                },
+                "type": "object"
+              }
+            ],
+            "title": "Expr"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "vars": {
+            "additionalProperties": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "default": {},
+            "title": "Vars",
+            "type": "object"
+          }
+        },
+        "required": [
+          "expr"
+        ],
+        "title": "Context",
+        "type": "object"
+      },
+      "ContextMatchResponse": {
+        "properties": {
+          "ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Ids",
+            "type": "array"
+          },
+          "labels": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Labels",
+            "type": "array"
+          }
+        },
+        "required": [
+          "ids",
+          "labels"
+        ],
+        "title": "ContextMatchResponse",
+        "type": "object"
+      },
+      "ContextRequest": {
+        "properties": {
+          "context": {
+            "$ref": "#/components/schemas/Context"
+          }
+        },
+        "required": [
+          "context"
+        ],
+        "title": "ContextRequest",
+        "type": "object"
+      },
+      "ContextSummary": {
+        "properties": {
+          "num_candidates": {
+            "title": "Num Candidates",
+            "type": "integer"
+          },
+          "num_matches": {
+            "title": "Num Matches",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "num_candidates",
+          "num_matches"
+        ],
+        "title": "ContextSummary",
+        "type": "object"
+      },
       "DataType": {
         "properties": {
           "name": {
@@ -5853,6 +5975,182 @@
         "summary": "Get Cell Line Selector Lines",
         "tags": [
           "partials"
+        ]
+      }
+    },
+    "/temporary/context": {
+      "post": {
+        "description": "Get the full list of IDs and labels (in any dataset) which match the given context.\nRequests may be made in either the old or new format.",
+        "operationId": "evaluate_context",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/ContextRequest"
+                  }
+                ],
+                "description": "A Data Explorer 2 context expression",
+                "title": "Context Request"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContextMatchResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Evaluate Context",
+        "tags": [
+          "temporary"
+        ]
+      }
+    },
+    "/temporary/context/summary": {
+      "post": {
+        "description": "Get the number of matching labels and candidate labels.\n\"Candidate\" labels are all labels belonging to the context's dimension type.\nRequests may be made in either the old or new format.",
+        "operationId": "get_context_summary",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/ContextRequest"
+                  }
+                ],
+                "description": "A Data Explorer 2 context expression",
+                "title": "Context Request"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContextSummary"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Context Summary",
+        "tags": [
+          "temporary"
         ]
       }
     },

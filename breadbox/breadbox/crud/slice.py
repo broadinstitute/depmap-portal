@@ -1,8 +1,9 @@
 import pandas as pd
-from typing import Optional
+from typing import Any, Optional
 
 from breadbox.db.session import SessionWithUser
 import breadbox.crud.dataset as dataset_crud
+from breadbox.schemas.context import Context
 from breadbox.schemas.dataset import TabularDimensionsInfo
 from breadbox.schemas.custom_http_exception import (
     ResourceNotFoundError,
@@ -14,6 +15,11 @@ from breadbox.io.filestore_crud import (
 )
 
 from depmap_compute.slice import SliceQuery
+from depmap_compute.context import (
+    ContextEvaluator,
+    LegacyContextEvaluator,
+)
+from depmap_compute.slice import slice_id_to_slice_query
 
 
 def get_slice_data(
@@ -105,3 +111,54 @@ def get_labels_for_slice_type(
     else:
         # Columns don't have labels, so just return None
         return None
+
+
+def get_ids_and_labels_matching_context(
+    db: SessionWithUser, filestore_location: str, context: Context
+) -> tuple[list[str], list[str]]:
+    """
+    For a given context, load all matching IDs and labels.
+    Both context versions are supported here. 
+    """
+    # Identify which type of context has been provided
+    # Legacy contexts use the "context_type" field name, while newer contexts use "dimension_type"
+    if context.context_type:
+        dimension_type = context.context_type
+        slice_loader_function = lambda slice_id: get_slice_data_from_legacy_slice_id(
+            db, filestore_location, slice_id
+        )
+        context_evaluator = LegacyContextEvaluator(
+            context.dict(), slice_loader_function
+        )
+    else:
+        dimension_type = context.dimension_type
+        slice_loader_function = lambda slice_query: get_slice_data(
+            db, filestore_location, slice_query
+        )
+        context_evaluator = ContextEvaluator(context.dict(), slice_loader_function)
+
+    if dimension_type is None:
+        raise UserError("Context requests must specify a dimension type.")
+    # Load all dimension labels and ids
+    all_labels_by_id = dataset_crud.get_dimension_labels_by_id(db, dimension_type)
+
+    # Evaluate each against the context
+    ids_matching_context = []
+    labels_matching_context = []
+    for given_id, label in all_labels_by_id.items():
+        if context_evaluator.is_match(given_id):
+            ids_matching_context.append(given_id)
+            labels_matching_context.append(label)
+
+    return ids_matching_context, labels_matching_context
+
+
+def get_slice_data_from_legacy_slice_id(
+    db: SessionWithUser, filestore_location: str, slice_id: str
+) -> dict[str, Any]:
+    """
+    Loads data for the given slice ID string. Exists to support legacy contexts.
+    The result should be a dictionary containing the dimension's values keyed by sample/feature ID
+    """
+    slice_query = slice_id_to_slice_query(slice_id)
+    return get_slice_data(db, filestore_location, slice_query).to_dict()

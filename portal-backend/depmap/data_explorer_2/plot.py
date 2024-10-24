@@ -4,7 +4,8 @@ from flask import abort
 from typing import Literal, Optional
 from collections import defaultdict
 
-from depmap_compute.context import LegacyContextEvaluator, decode_slice_id
+from depmap_compute.context import LegacyContextEvaluator
+from depmap_compute.slice import decode_slice_id
 from depmap import data_access
 from depmap.data_access.models import MatrixDataset
 from depmap.utilities.data_access_log import log_dataset_access

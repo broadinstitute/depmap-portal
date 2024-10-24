@@ -1,10 +1,15 @@
 from pydantic import Field, BaseModel
-from typing import Annotated, Union
+from typing import Annotated, Optional, Union
 
 
 class ContextSummary(BaseModel):
     num_candidates: int
     num_matches: int
+
+
+class ContextMatchResponse(BaseModel):
+    ids: list[str]
+    labels: list[str]
 
 
 ContextExpression = Annotated[
@@ -19,4 +24,15 @@ class Context(BaseModel):
     # - { "==": [ {"var": "slice/growth_pattern/all/label"}, "Adherent" ] }
     # - True
     expr: ContextExpression
-    context_type: str  # Dimension type, Ex. "depmap_model"
+    name: Optional[str] = None
+
+    # The "dimension_type" field is used by contexts in the new format (with slice queries)
+    # The "context_type" field is used by the old format (with slice IDs)
+    # The two fields contain the same information (the dimension type name)
+    dimension_type: Optional[str] = None
+    context_type: Optional[str] = None
+    vars: dict[str, dict[str, str]] = {}
+
+
+class ContextRequest(BaseModel):
+    context: Context

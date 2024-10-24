@@ -527,6 +527,24 @@ MarkupSafe = ">=0.23"
 i18n = ["Babel (>=0.8)"]
 
 [[package]]
+name = "json-logic"
+version = "0.7.0a0"
+description = "Build complex rules, serialize them as JSON, and execute them in Python"
+optional = false
+python-versions = "*"
+files = [
+    {file = "json_logic-0.7.0a0-py2.py3-none-any.whl", hash = "sha256:a7af2e3673212279b4c7b63d0b0ead5f6b3d89cef8970bdbf60595d3bc9dd819"},
+    {file = "json_logic-0.7.0a0.tar.gz", hash = "sha256:84580b974bcfec7b00d63745f19ca363939fc2b93c579f578d41d7d10c12fe0c"},
+]
+
+[package.dependencies]
+six = "*"
+
+[package.extras]
+dev = ["check-manifest"]
+test = ["coverage"]
+
+[[package]]
 name = "markupsafe"
 version = "3.0.1"
 description = "Safely add untrusted strings to HTML/XML markup."
@@ -862,4 +880,4 @@ watchdog = ["watchdog"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "4286c7fc177f5ac4b6c67bb28dd15ba3dcdcd57dd2572790c8b6c9c81d906583"
+content-hash = "3dd444e51c14a84437f01d6a4a29f3bb3700af5ac621ade7625b490da90bd4e5"
