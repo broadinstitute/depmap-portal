@@ -36,8 +36,7 @@ from breadbox_client.api.types import get_dimension_type as get_dimension_type_c
 from breadbox_client.api.types import get_dimension_types as get_dimension_types_client
 from breadbox_client.api.types import get_feature_types as get_feature_types_client
 from breadbox_client.api.types import get_sample_types as get_sample_types_client
-from breadbox_client.api.types import remove_feature_type as remove_feature_type_client
-from breadbox_client.api.types import remove_sample_type as remove_sample_type_client
+from breadbox_client.api.types import remove_dimension_type as remove_dimension_type_client
 from breadbox_client.api.types import update_dimension_type as update_dimension_type_client
 from breadbox_client.api.types import update_feature_type_metadata as update_feature_type_metadata_client
 from breadbox_client.api.types import update_sample_type_metadata as update_sample_type_metadata_client
@@ -402,6 +401,11 @@ class BBClient:
     def get_dimension_type(self, name: str):
         breadbox_response = get_dimension_type_client.sync_detailed(name=name, client=self.client)
         return self._parse_client_response(breadbox_response)
+    
+    def delete_dimension_type(self, name: str):
+        breadbox_response = remove_dimension_type_client.sync_detailed(name=name, client=self.client)
+        return self._parse_client_response(breadbox_response)
+    
 
     # DATA TYPES
 
