@@ -374,11 +374,16 @@ class BBClient:
         breadbox_response = get_sample_types_client.sync_detailed(client=self.client)
         return self._parse_client_response(breadbox_response)
 
-    def add_dimension_type(self, name: str, id_column: str, axis: Union[AddDimensionTypeAxis, str], display_name: Optional[str] = UNSET):
+    def add_dimension_type(self, name: str, id_column: str, axis: Union[AddDimensionTypeAxis, str], display_name: Optional[str] = None):
         if isinstance(axis, str):
             axis = AddDimensionTypeAxis(axis)
 
-        params = AddDimensionType(axis=axis, id_column=id_column, name=name, display_name=display_name)
+        params = AddDimensionType(
+            axis=axis, 
+            id_column=id_column, 
+            name=name, 
+            display_name=display_name if display_name is not None else UNSET
+        )
 
         breadbox_response = add_dimension_type_client.sync_detailed(client=self.client, body=params)
         return self._parse_client_response(breadbox_response)
