@@ -18,7 +18,7 @@ interface DoseCurvesTileProps {
     datasetName: string,
     selectedContextName: string,
     compoundLabel: string
-  ) => Promise<DoseResponseCurvePromise>;
+  ) => Promise<DoseCurveData>;
 }
 
 function DoseCurvesTile(props: DoseCurvesTileProps) {
@@ -34,9 +34,7 @@ function DoseCurvesTile(props: DoseCurvesTileProps) {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isError, setIsError] = useState<boolean>(false);
 
-  const doseCurvesLatestPromise = useRef<Promise<DoseResponseCurvePromise> | null>(
-    null
-  );
+  const doseCurvesLatestPromise = useRef<Promise<DoseCurveData> | null>(null);
 
   useEffect(() => {
     if (selectedDrugLabel) {
@@ -78,6 +76,11 @@ function DoseCurvesTile(props: DoseCurvesTileProps) {
       {!isError && isLoading && <PlotSpinner />}
       {data && (
         <DoseCurvesPlot
+          medianLines={[
+            data.in_group_median_dose_curve,
+            data.out_group_median_dose_curve,
+          ]}
+          medianTitles={["a", "b"]}
           measurements={[
             ...new Set<CurvePlotPoints>(
               data.dose_curves

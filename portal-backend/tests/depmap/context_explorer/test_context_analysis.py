@@ -407,7 +407,9 @@ def test_get_drug_dotted_line(empty_db_mock_downloads, entity_type):
 def _get_box_plot_data(
     dataset_id: str, selected_entity_id: int, selected_context: str, top_context: str
 ):
-    lineage_depmap_ids_names_dict = DepmapModel.get_model_ids_by_lineage(top_context)
+    lineage_depmap_ids_names_dict = DepmapModel.get_model_ids_by_lineage_and_level(
+        top_context
+    )
 
     entity_full_row_of_values = get_full_row_of_values_and_depmap_ids(
         dataset_id=dataset_id, entity_id=selected_entity_id

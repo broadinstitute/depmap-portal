@@ -35,6 +35,7 @@ import { UploadTask, UserUploadArgs } from "@depmap/user-upload";
 import {
   CurvePlotPoints,
   CurveParams,
+  DoseCurveData,
 } from "src/compound/components/DoseResponseCurve";
 import {
   Dataset as BreadboxDataset,
@@ -577,14 +578,16 @@ export class DepmapApi {
     datasetName: string,
     selectedContextName: string,
     compoundLabel: string
-  ): Promise<DoseResponseCurvePromise> {
+  ): Promise<DoseCurveData> {
     const params = {
       dataset_name: datasetName,
       context_name: selectedContextName,
       entity_full_label: compoundLabel,
+      level: 1,
+      out_group_type: "All Others",
     };
 
-    return this._fetch<DoseResponseCurvePromise>(
+    return this._fetch<DoseCurveData>(
       `/api/context_explorer/context_dose_curves?${encodeParams(params)}`
     );
   }

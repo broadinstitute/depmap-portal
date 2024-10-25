@@ -36,9 +36,17 @@ export interface CurveData {
   curve_params: CurveParams;
 }
 
+export interface MedianCurve {
+  dose: { [key: number]: number };
+  dose_curve: { [key: number]: number };
+  smoothed_drc: { [key: number]: number };
+}
+
 export interface DoseCurveData {
   dose_curves: CurveData[];
   dose_curve_metadata: any[];
+  in_group_median_dose_curve: MedianCurve;
+  out_group_median_dose_curve: MedianCurve;
 }
 
 export const defaultParams: Array<CurveParams> = [
@@ -62,7 +70,7 @@ function getCurveY(
 }
 
 // from : https://stackoverflow.com/questions/14696326/break-array-of-objects-into-separate-arrays-based-on-a-property
-function groupBy(
+export function groupBy(
   array: Array<CurvePlotPoints>,
   prop: "dose" | "viability" | "isMasked" | "replicate" | "id"
 ): Map<string, Array<CurvePlotPoints>> {

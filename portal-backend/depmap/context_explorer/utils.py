@@ -1,9 +1,18 @@
+import math
 from typing import Dict, List, Literal
 from depmap.cell_line.models_new import DepmapModel, LineageType
 import pandas as pd
+import numpy as np
 
 from depmap import data_access
+from scipy.ndimage import uniform_filter1d
 from depmap.context.models import Context
+from depmap.dataset.models import Dataset, DependencyDataset
+from depmap.compound.models import (
+    CompoundExperiment,
+    CompoundDoseReplicate,
+    DoseResponseCurve,
+)
 from depmap.context_explorer.models import (
     BoxPlotTypes,
     ContextAnalysis,
@@ -52,7 +61,9 @@ def get_other_context_dependencies(
         )
 
         if not depmap_ids_names_dict:
-            depmap_ids_names_dict = DepmapModel.get_model_ids_by_lineage(other_dep_name)
+            depmap_ids_names_dict = DepmapModel.get_model_ids_by_lineage_and_level(
+                other_dep_name
+            )
 
         full_row_of_values = get_full_row_of_values_and_depmap_ids(
             dataset_id=dataset_id, entity_id=entity_id
@@ -254,3 +265,143 @@ def has_drug_data(drug_depmap_ids: List[str], context_depmap_ids: List[str]):
     intersection = list(set(context_depmap_ids).intersection(set(drug_depmap_ids)))
 
     return len(intersection) >= 5
+
+
+# Temporary copy of format_dose_curve while context explorer V2 is in development
+# and doesn't have fully in-sync data, which was causing this to fail.
+def get_dose_curve(
+    dataset_name: str, model_id: str, compound_experiment: CompoundExperiment
+):
+    dataset = Dataset.get_dataset_by_name(dataset_name)
+    # get all CompoundDoseReplicate objects associated with CompoundExperiment
+    compound_dose_replicates = CompoundDoseReplicate.get_all_with_compound_experiment_id(
+        compound_experiment.entity_id
+    )
+    compound_dose_replicates = [
+        dose_rep
+        for dose_rep in compound_dose_replicates
+        if DependencyDataset.has_entity(dataset.name, dose_rep.entity_id)
+    ]
+
+    try:
+        # call the get_values_by_entities_and_depmap_id function in matrix, passing in entities and depmap id
+        viabilities = dataset.matrix.get_values_by_entities_and_depmap_id(
+            entities=compound_dose_replicates, depmap_id=model_id
+        )
+
+        # points only contains viability -- we need to add on dose, isMasked, and replicate ourselves
+        assert len(compound_dose_replicates) == len(viabilities)
+    except:
+        return None
+    points = []
+    for i in range(len(viabilities)):
+        if (viabilities[i] is not None) & (not math.isnan(viabilities[i])):
+            points.append(
+                {
+                    "dose": compound_dose_replicates[i].dose,
+                    "viability": viabilities[i].item(),
+                    "isMasked": compound_dose_replicates[i].is_masked,
+                    "replicate": compound_dose_replicates[i].replicate,
+                }
+            )
+
+    # fetch the dose response curve parameters using cell line name and compound experiment to find the appropriate DoseResponseCurve
+    curve_objs = DoseResponseCurve.query.filter(
+        DoseResponseCurve.compound_exp == compound_experiment,
+        DoseResponseCurve.depmap_id == model_id,
+    ).all()
+
+    curve_params = []
+
+    for curve in curve_objs:
+        curve_param = {
+            "ec50": curve.ec50,
+            "slope": curve.slope,
+            "lowerAsymptote": curve.lower_asymptote,
+            "upperAsymptote": curve.upper_asymptote,
+        }
+        curve_params.append(curve_param)
+
+    dose_response_curve = {"points": points, "curve_params": curve_params}
+
+    return dose_response_curve
+
+
+def get_dose_response_curves_per_model(
+    model_ids: List[str],
+    replicate_dataset_name: str,
+    compound_experiment: CompoundExperiment,
+):
+    # Get the list of in group model curves
+    dose_curves = []
+    for model_id in model_ids:
+        curve = get_dose_curve(
+            dataset_name=replicate_dataset_name,
+            model_id=model_id,
+            compound_experiment=compound_experiment,
+        )
+
+        if curve is not None:
+            dose_curves.append(curve)
+
+    return dose_curves
+
+
+def impute_dose_curve_from_params(max_dose, min_dose, row, numPts=3000):
+    df = pd.DataFrame(
+        {
+            "model_id": row.model_id,
+            "dose": np.logspace(np.log10(min_dose), np.log10(max_dose), num=numPts),
+        }
+    )
+    df["dose_curve"] = row.lower_asymptote + (
+        row.upper_asymptote - row.lower_asymptote
+    ) / (1 + (df.dose / row.ec50) ** (np.abs(row.slope)))
+
+    return df
+
+
+def get_median_dose_response_curve(
+    model_ids: List[str], compound_experiment: CompoundExperiment,
+):
+
+    # Get the median of in group models
+    dose_curves_df = DoseResponseCurve.get_dose_response_curve_dataframe_for_compound_experiment_models(
+        model_ids=model_ids, compound_exp_id=compound_experiment.entity_id
+    )
+
+    drc_dfs = []
+    for i in range(dose_curves_df.shape[0]):
+        max_dose = dose_curves_df.dose.max()
+        min_dose = dose_curves_df.dose.min()
+
+        drc_dfs.append(
+            impute_dose_curve_from_params(
+                max_dose, min_dose, dose_curves_df.iloc[i], numPts=3000
+            )
+        )
+    drcs_by_model = pd.concat(drc_dfs)
+
+    med_drc = drcs_by_model.groupby("dose").dose_curve.median().to_frame().reset_index()
+    med_drc["smoothed_drc"] = uniform_filter1d(
+        med_drc.dose_curve, size=500, mode="nearest"
+    )
+
+    return med_drc
+
+
+def get_out_group_model_ids(
+    out_group_type, dataset_name, entity_id, in_group_model_ids
+):
+    (entity_full_row_of_values) = get_full_row_of_values_and_depmap_ids(
+        dataset_id=dataset_name, entity_id=entity_id,
+    )
+    entity_full_row_of_values.dropna(inplace=True)
+    if out_group_type == "All Others":
+        return entity_full_row_of_values[
+            ~entity_full_row_of_values.index.isin(in_group_model_ids)
+        ].index.tolist()
+    else:
+        raise NotImplementedError(
+            "Need to implement logic for getting model ids for none 'All Others' outgroup types"
+        )

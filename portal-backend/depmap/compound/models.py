@@ -11,7 +11,9 @@ from depmap.database import (
     relationship,
 )
 from depmap.entity.models import Entity, EntityAlias
+from depmap.cell_line.models import CellLine
 from depmap.gene.models import Gene
+import pandas as pd
 import re
 
 gene_compound_target_association = db.Table(
@@ -394,3 +396,32 @@ class DoseResponseCurve(Model):
     slope = Column(Float)
     upper_asymptote = Column(Float)
     lower_asymptote = Column(Float)
+
+    @staticmethod
+    def get_dose_response_curve_dataframe_for_compound_experiment_models(
+        model_ids: List[int], compound_exp_id: int
+    ):
+        query = (
+            db.session.query(DoseResponseCurve)
+            .join(CellLine, DoseResponseCurve.cell_line)
+            .filter(DoseResponseCurve.depmap_id.in_(model_ids))
+            .join(CompoundExperiment, DoseResponseCurve.compound_exp)
+            .filter(DoseResponseCurve.compound_exp_id == compound_exp_id)
+            .join(
+                CompoundDoseReplicate,
+                CompoundDoseReplicate.compound_experiment_id
+                == DoseResponseCurve.compound_exp_id,
+            )
+            .with_entities(
+                CompoundDoseReplicate.dose,
+                DoseResponseCurve.ec50,
+                DoseResponseCurve.slope,
+                DoseResponseCurve.lower_asymptote,
+                DoseResponseCurve.upper_asymptote,
+                DoseResponseCurve.depmap_id.label("model_id"),
+            )
+        )
+
+        dose_curves_df = pd.read_sql(query.statement, query.session.connection())
+
+        return dose_curves_df

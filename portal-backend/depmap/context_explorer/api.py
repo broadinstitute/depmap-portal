@@ -10,6 +10,9 @@ from depmap.context_explorer.utils import (
     get_full_row_of_values_and_depmap_ids,
     has_drug_data,
     has_gene_dep_data,
+    get_dose_response_curves_per_model,
+    get_median_dose_response_curve,
+    get_out_group_model_ids,
 )
 from depmap.gene.models import Gene
 from depmap.tda.views import convert_series_to_json_safe_list
@@ -18,7 +21,6 @@ from flask import current_app, request
 import pandas as pd
 from depmap.dataset.models import DependencyDataset
 from depmap.settings.shared import DATASET_METADATA
-from depmap.compound.views.index import dev_format_dose_curve
 from depmap.context_explorer.models import (
     ContextAnalysis,
     ContextNameInfo,
@@ -432,6 +434,10 @@ class ContextDoseCurves(Resource):
         dataset_name = request.args.get("dataset_name")
         entity_full_label = request.args.get("entity_full_label")
         context_name = request.args.get("context_name")
+        level = request.args.get("level")
+
+        # TODO calculate outgroup median using outgroup type instead of always using All Others
+        out_group_type = request.args.get("out_group_type")
 
         dataset = DependencyDataset.get_dataset_by_name(dataset_name)
         replicate_dataset_name = dataset.get_dose_replicate_enum().name
@@ -440,25 +446,35 @@ class ContextDoseCurves(Resource):
         )
 
         # TODO this needs to be updated to query the new context tree for the list of models
-        model_ids = DepmapModel.get_model_ids_by_lineage(context_name)
+        context_model_ids = DepmapModel.get_model_ids_by_lineage_and_level(
+            context_name, level
+        ).keys()
 
-        dose_curves = []
-        for model_id in model_ids:
-            curve = dev_format_dose_curve(
-                dataset_name=replicate_dataset_name,
-                depmap_id=model_id,
-                xref_full=compound_experiment.xref_full,
-            )
-            if curve is not None:
-                dose_curves.append(curve)
+        in_group_dose_curves = get_dose_response_curves_per_model(
+            context_model_ids,
+            replicate_dataset_name,
+            compound_experiment=compound_experiment,
+        )
+
+        in_group_median_dose_curve = get_median_dose_response_curve(
+            model_ids=context_model_ids, compound_experiment=compound_experiment
+        )
+        out_group_model_ids = get_out_group_model_ids(
+            "All Others",  # TODO UPDATE THIS TO USE out_group_type
+            dataset_name=dataset_name,
+            entity_id=compound_experiment.entity_id,
+            in_group_model_ids=context_model_ids,
+        )
+
+        out_group_median_dose_curve = get_median_dose_response_curve(
+            model_ids=out_group_model_ids, compound_experiment=compound_experiment,
+        )
 
         label = f"{compound_experiment.label} {dataset.display_name}"
 
         dose_curve_metadata = {
             "label": label,
-            "id": "{}_{}".format(
-                dataset.name.name, compound_experiment.entity_id
-            ),  # used for uniqueness
+            "id": f"{dataset.name.name}_{compound_experiment.entity_id}",  # used for uniqueness
             "dataset": dataset.name.name,
             "entity": compound_experiment.entity_id,
             "dose_replicate_dataset": replicate_dataset_name,
@@ -470,7 +486,12 @@ class ContextDoseCurves(Resource):
             ].units,
         }
 
-        return {"dose_curves": dose_curves, "dose_curve_metadata": dose_curve_metadata}
+        return {
+            "in_group_median_dose_curve": in_group_median_dose_curve.to_dict(),
+            "out_group_median_dose_curve": out_group_median_dose_curve.to_dict(),
+            "dose_curves": in_group_dose_curves,
+            "dose_curve_metadata": dose_curve_metadata,
+        }
 
 
 @namespace.route("/context_box_plot_data")
@@ -501,7 +522,7 @@ class ContextBoxPlotData(Resource):
         entity_label = entity_id_and_label["label"]
 
         is_lineage = selected_context == top_context
-        lineage_depmap_ids_names_dict = DepmapModel.get_model_ids_by_lineage(
+        lineage_depmap_ids_names_dict = DepmapModel.get_model_ids_by_lineage_and_level(
             top_context
         )
 

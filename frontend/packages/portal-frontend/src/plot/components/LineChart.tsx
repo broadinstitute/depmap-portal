@@ -7,7 +7,7 @@ export interface LineChartProps {
   title: string;
   yAxisTitle: string;
   curves: any;
-  lineColors?: string[];
+  showLegend: boolean;
   onLoad: (plot: ExtendedPlotType) => void;
   height?: number | "auto";
   margin?: Margin;
@@ -25,18 +25,18 @@ function LineChart({
   title,
   yAxisTitle,
   curves,
-  lineColors = undefined,
+  showLegend,
   onLoad = () => {},
   height = "auto",
   customWidth = undefined,
   margin = {
-    l: 60,
+    l: 80,
 
-    r: 20,
+    r: 40,
 
-    b: 160,
+    b: 65,
 
-    t: 45,
+    t: 60,
 
     pad: 0,
   },
@@ -80,6 +80,8 @@ function LineChart({
 
       dragmode: false,
 
+      showlegend: showLegend,
+
       height: height === "auto" ? calcPlotHeight(plot) : height,
 
       margin,
@@ -88,7 +90,7 @@ function LineChart({
     const config: Partial<Plotly.Config> = { responsive: true };
 
     Plotly.newPlot(plot, curves, layout, config);
-  }, [Plotly, lineColors, height, margin, customWidth, title, yAxisTitle]);
+  }, [Plotly, showLegend, height, margin, customWidth, title, yAxisTitle]);
 
   return <div ref={ref} />;
 }

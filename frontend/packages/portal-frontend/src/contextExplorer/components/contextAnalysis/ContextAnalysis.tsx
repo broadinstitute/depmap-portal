@@ -922,98 +922,113 @@ function ContextAnalysis({
           )}
         </div>
       </section>
-      {selectedContextNameInfo.name !== "All" && !isLoading && data && (
-        <div className={styles.right}>
-          {selectedPlotLabels &&
-            selectedPlotLabels.size > 0 &&
-            boxPlotData &&
-            datasetId === ContextExplorerDatasets.Prism_oncology_AUC && (
+      <div className={styles.right}>
+        {selectedPlotLabels && boxPlotData && (
+          <>
+            <h2 style={{ marginBottom: "0" }}>
+              {entityType === "gene" ? "Gene" : "Drug"} Detail
+              {selectedPlotLabels && <span> - {selectedPlotLabels}</span>}
+            </h2>
+            {boxPlotData && (
+              <a
+                href={`${entityUrlRoot}${boxPlotData.entity_label}`}
+                target="_blank"
+                rel="noreferrer"
+                style={{
+                  textDecoration: "underline",
+                  marginTop: "0",
+                  marginBottom: "25px",
+                }}
+              >
+                Go to {entityType} page
+              </a>
+            )}
+          </>
+        )}
+        {boxPlotData &&
+          selectedPlotLabels &&
+          selectedPlotLabels.size > 0 &&
+          datasetId === ContextExplorerDatasets.Prism_oncology_AUC &&
+          selectedContextNameInfo.name !== "All" &&
+          !isLoading &&
+          data && (
+            <div className={styles.plotFrame}>
               <DoseCurvesTile
                 selectedContextName={selectedContextNameInfo.name}
-                selectedDrugLabel={boxPlotData.entity_label}
+                selectedDrugLabel={[...selectedPlotLabels][0]}
                 datasetName={datasetId}
                 getContextExplorerDoseResponsePoints={dapi.getContextExplorerDoseResponsePoints.bind(
                   dapi
                 )}
               />
-            )}
-          {selectedPlotLabels && selectedPlotLabels.size > 0 ? (
-            <div className={styles.boxPlotHeader}>
-              <h2 style={{ marginBottom: "0" }}>
-                {entityType === "gene" ? "Gene" : "Drug"} Detail
-                {selectedPlotLabels && <span> - {selectedPlotLabels}</span>}
-              </h2>
-              {boxPlotData && (
-                <a
-                  href={`${entityUrlRoot}${boxPlotData.entity_label}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  style={{
-                    textDecoration: "underline",
-                    marginTop: "0",
-                    marginBottom: "25px",
-                  }}
-                >
-                  Go to {entityType} page
-                </a>
-              )}
-              {boxplotError && (
-                <div className={styles.initialLoadError}>
-                  <h1>Sorry, an error occurred</h1>
-                  <p>There was an error loading this plot.</p>
-                </div>
-              )}
-              {!boxplotError &&
-                (!entityDetailPlotElement || isLoadingBoxplot) && (
-                  <PlotSpinner />
-                )}
-              {!boxplotError && boxPlotData && (
-                <EntityDetailBoxPlot
-                  handleSetPlotElement={(element: ExtendedPlotType | null) => {
-                    if (element) {
-                      setEntityDetailPlotElement(element);
-                    }
-                  }}
-                  selectedContextNameInfo={selectedContextNameInfo}
-                  topContextNameInfo={topContextNameInfo}
-                  boxPlotData={boxPlotData}
-                  entityType={entityType}
-                  mainPlot={entityDetailPlotElement}
-                  useScatterPlotFiltersOnBoxPlot={
-                    useScatterPlotFiltersOnBoxPlot
-                  }
-                  handleUseScatterPlotFiltersClicked={
-                    handleUseScatterPlotFiltersClicked
-                  }
-                  boxPlotFDRRange={boxPlotFDRRange}
-                  boxPlotEffectSizeRange={boxPlotEffectSizeRange}
-                  boxPlotFracDepInRange={boxPlotFracDepInRange}
-                  showOtherContexts={showOtherContexts}
-                  handleShowOtherContexts={handleShowOtherContexts}
-                  customInfoImg={customInfoImg}
-                />
-              )}
-            </div>
-          ) : (
-            <div className={styles.boxPlotHeader}>
-              <h2 style={{ marginBottom: "15px" }}>
-                {entityType === "gene" ? "Gene" : "Drug"} Detail
-              </h2>
-              <h4
-                style={{
-                  textAlign: "left",
-                  margin: "20 20 20 20",
-                }}
-              >
-                Select a {entityType === "gene" ? "gene" : "drug"} to see the
-                distribution of{" "}
-                {entityType === "gene" ? "gene effects" : "log2(viability)"} in
-                the selected context and other groups.
-              </h4>
             </div>
           )}
-        </div>
-      )}
+        {selectedContextNameInfo.name !== "All" && !isLoading && data && (
+          <div className={styles.right}>
+            <div className={styles.plotFrame}>
+              {selectedPlotLabels && selectedPlotLabels.size > 0 ? (
+                <div className={styles.boxPlotHeader}>
+                  {boxplotError && (
+                    <div className={styles.initialLoadError}>
+                      <h1>Sorry, an error occurred</h1>
+                      <p>There was an error loading this plot.</p>
+                    </div>
+                  )}
+                  {!boxplotError &&
+                    (!entityDetailPlotElement || isLoadingBoxplot) && (
+                      <PlotSpinner />
+                    )}
+                  {!boxplotError && boxPlotData && (
+                    <EntityDetailBoxPlot
+                      handleSetPlotElement={(
+                        element: ExtendedPlotType | null
+                      ) => {
+                        if (element) {
+                          setEntityDetailPlotElement(element);
+                        }
+                      }}
+                      selectedContextNameInfo={selectedContextNameInfo}
+                      topContextNameInfo={topContextNameInfo}
+                      boxPlotData={boxPlotData}
+                      entityType={entityType}
+                      mainPlot={entityDetailPlotElement}
+                      useScatterPlotFiltersOnBoxPlot={
+                        useScatterPlotFiltersOnBoxPlot
+                      }
+                      handleUseScatterPlotFiltersClicked={
+                        handleUseScatterPlotFiltersClicked
+                      }
+                      boxPlotFDRRange={boxPlotFDRRange}
+                      boxPlotEffectSizeRange={boxPlotEffectSizeRange}
+                      boxPlotFracDepInRange={boxPlotFracDepInRange}
+                      showOtherContexts={showOtherContexts}
+                      handleShowOtherContexts={handleShowOtherContexts}
+                      customInfoImg={customInfoImg}
+                    />
+                  )}
+                </div>
+              ) : (
+                <div className={styles.boxPlotHeader}>
+                  <h2 style={{ marginBottom: "15px" }}>
+                    {entityType === "gene" ? "Gene" : "Drug"} Detail
+                  </h2>
+                  <h4
+                    style={{
+                      textAlign: "left",
+                      margin: "20 20 20 20",
+                    }}
+                  >
+                    Select a {entityType === "gene" ? "gene" : "drug"} to see
+                    the distribution of{" "}
+                    {entityType === "gene" ? "gene effects" : "log2(viability)"}{" "}
+                    in the selected context and other groups.
+                  </h4>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

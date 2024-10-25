@@ -181,6 +181,7 @@ function EntityDetailBoxPlot({
           plotHeight={boxData.length * 95 + 80}
           xAxisTitle={X_AXIS_TITLE}
           bottomMargin={80}
+          topMargin={100}
           dottedLinePosition={
             entityType === "gene" ? -1 : drugDottedLine || -1.74
           }

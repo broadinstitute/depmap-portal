@@ -258,12 +258,14 @@ class DepmapModel(Model):
         return table_query
 
     @staticmethod
-    def get_model_ids_by_lineage(lineage_name) -> Dict[str, str]:
+    def get_model_ids_by_lineage_and_level(
+        lineage_name: str, level: int = 1
+    ) -> Dict[str, str]:
         display_name_by_depmap_id = {}
         cell_lines = (
             db.session.query(DepmapModel)
             .join(Lineage, DepmapModel.oncotree_lineage)
-            .filter(and_(Lineage.name == lineage_name, Lineage.level == 1))
+            .filter(and_(Lineage.name == lineage_name, Lineage.level == level))
             .with_entities(DepmapModel.model_id, DepmapModel.stripped_cell_line_name)
             .all()
         )

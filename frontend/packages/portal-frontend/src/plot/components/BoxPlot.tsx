@@ -20,6 +20,7 @@ export interface BoxPlotProps {
   xAxisRange?: any[];
   xAxisTitle?: string;
   bottomMargin?: number;
+  topMargin?: number;
 }
 
 type BoxPlotWithPlotly = BoxPlotProps & { Plotly: PlotlyType };
@@ -34,6 +35,7 @@ function BoxPlot({
   xAxisTitle = undefined,
   setXAxisRange = undefined,
   bottomMargin = 0,
+  topMargin = 25,
   Plotly,
 }: BoxPlotWithPlotly) {
   const ref = useRef<ExtendedPlotType>(null);
@@ -87,7 +89,7 @@ function BoxPlot({
     });
 
     const layout: Partial<Plotly.Layout> = {
-      margin: { t: 25, r: 5, b: bottomMargin, l: 130 },
+      margin: { t: topMargin, r: 80, b: bottomMargin, l: 130 },
       autosize: plotHeight === undefined,
       dragmode: false,
       height: plotHeight,
@@ -141,6 +143,7 @@ function BoxPlot({
     plotHeight,
     xAxisRange,
     bottomMargin,
+    topMargin,
     xAxisTitle,
     dottedLinePosition,
     onLoad,
@@ -158,7 +161,7 @@ function BoxPlot({
       Plotly.relayout(ref.current, update);
     } else if (ref.current?.layout && plotName === "main") {
       const update: Partial<Plotly.Layout> = {
-        margin: { t: 25, r: 5, b: bottomMargin, l: 130 },
+        margin: { t: topMargin, r: 80, b: bottomMargin, l: 130 },
         xaxis: {
           range: xAxisRange ?? ref.current.layout.xaxis.range,
           title: xAxisTitle ?? "",
