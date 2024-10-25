@@ -1,4 +1,4 @@
-from depmap.public.resources import expand_forum_relative_urls, add_forum_link_to_html
+from depmap.public.resources import modify_forum_relative_urls, add_forum_link_to_html
 
 
 def test_expand_forum_relative_urls():
@@ -11,7 +11,7 @@ def test_expand_forum_relative_urls():
     expected_output_html = f'<a class="attachment" href="{expected_long_url1}" target="_blank">test_random_non_image_pdf.pdf</a> (13.9 KB)'
 
     # Checks full link html element
-    html_with_absolute_urls = expand_forum_relative_urls(
+    html_with_absolute_urls = modify_forum_relative_urls(
         "https://forum.depmap.org", input_html
     )
 
@@ -19,7 +19,7 @@ def test_expand_forum_relative_urls():
 
     # Checks only href value
     input_html = '<a href="depmap.org/portal">test</a>'
-    expect_no_change_html = expand_forum_relative_urls(
+    expect_no_change_html = modify_forum_relative_urls(
         "https://forum.depmap.org", input_html
     )
 
@@ -37,3 +37,12 @@ def test_add_forum_link_to_html():
     assert 'href="https://forum.depmap.org/t/topic-slug/1"' in added_forum_link_to_html
     assert "</p><p><a" in added_forum_link_to_html
     assert added_forum_link_to_html.endswith("</a></p>")
+
+
+def test_remove_anchor_links():
+    input_html = f'<h1><a href="#p-100-welcome" name="p-100-welcome"></a>Welcome to the Resources Page!</h1>'
+    expected_output_html = f"<h1>Welcome to the Resources Page!</h1>"
+
+    # Checks full link html element
+    modified_html = modify_forum_relative_urls("https://forum.depmap.org", input_html)
+    assert expected_output_html == modified_html
