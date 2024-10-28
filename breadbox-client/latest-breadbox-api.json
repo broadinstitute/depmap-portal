@@ -774,6 +774,86 @@
         "title": "ComputeResponse",
         "type": "object"
       },
+      "Context": {
+        "properties": {
+          "dimension_type": {
+            "title": "Dimension Type",
+            "type": "string"
+          },
+          "expr": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "additionalProperties": {
+                  "items": {},
+                  "type": "array"
+                },
+                "type": "object"
+              }
+            ],
+            "title": "Expr"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "vars": {
+            "additionalProperties": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "default": {},
+            "title": "Vars",
+            "type": "object"
+          }
+        },
+        "required": [
+          "expr",
+          "dimension_type"
+        ],
+        "title": "Context",
+        "type": "object"
+      },
+      "ContextMatchResponse": {
+        "properties": {
+          "ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Ids",
+            "type": "array"
+          },
+          "labels": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Labels",
+            "type": "array"
+          },
+          "num_candidates": {
+            "title": "Num Candidates",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "ids",
+          "labels",
+          "num_candidates"
+        ],
+        "title": "ContextMatchResponse",
+        "type": "object"
+      },
       "DataType": {
         "properties": {
           "name": {
@@ -2459,7 +2539,7 @@
   },
   "info": {
     "title": "Breadbox",
-    "version": "3.9.3"
+    "version": "3.9.0"
   },
   "openapi": "3.1.0",
   "paths": {
@@ -5853,6 +5933,94 @@
         "summary": "Get Cell Line Selector Lines",
         "tags": [
           "partials"
+        ]
+      }
+    },
+    "/temp/context": {
+      "post": {
+        "description": "Get the full list of IDs and labels (in any dataset) which match the given context.\nAlso get the total number of \"candidate\" records (all records with labels belonging to the dimension type).\nRequests must be in the version 2 context format.",
+        "operationId": "evaluate_context",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/Context"
+                  }
+                ],
+                "description": "A Data Explorer 2 context expression",
+                "title": "Context"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContextMatchResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Evaluate Context",
+        "tags": [
+          "temp"
         ]
       }
     },

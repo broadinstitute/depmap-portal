@@ -1,7 +1,7 @@
 import logging
 from collections import defaultdict
 from dataclasses import dataclass
-from typing import Dict, Optional, List, Type, Union, Tuple
+from typing import Any, Dict, Optional, List, Type, Union, Tuple
 from uuid import UUID, uuid4
 import warnings
 import json
@@ -1027,9 +1027,6 @@ def get_dataset_sample_labels_by_id(
     else:
         samples = get_dataset_samples(db=db, dataset=dataset, user=user)
         return {sample.given_id: sample.given_id for sample in samples}
-
-
-from typing import Any
 
 
 # TODO: This can probably be merged.

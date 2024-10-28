@@ -29,7 +29,7 @@ itsdangerous = "^2.1.2"
 pandera = "^0.18.3"
 bpython = "^0.24"
 pydantic-settings = "^2.2.1"
-depmap-compute = {version = "0.1.9", source = "public-python"}
+depmap-compute = {version = "0.1.12", source = "public-python"}
 
 [tool.poetry.group.dev.dependencies]
 pyright-ratchet = {git = "https://github.com/pgm/pyright-ratchet.git", rev = "v0.3.1"}

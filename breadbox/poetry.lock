@@ -722,18 +722,19 @@ files = [
 
 [[package]]
 name = "depmap-compute"
-version = "0.1.9"
+version = "0.1.12"
 description = "Code related to computations shared between the Depmap Portal and BreadBox"
 optional = false
 python-versions = ">=3.9,<4.0"
 files = [
-    {file = "depmap_compute-0.1.9-py3-none-any.whl", hash = "sha256:cb37eef5ff77fd19d298eb3327dd55a17ef1c87f9cd62797266ca520f206f09d"},
-    {file = "depmap_compute-0.1.9.tar.gz", hash = "sha256:676fdb580671529631262097838610d711cb22c0751f2ea10535a5462662cd7f"},
+    {file = "depmap_compute-0.1.12-py3-none-any.whl", hash = "sha256:bd82da7a2da8d360af3c344e3f2fb2427bec66cb374df16ab5011cebd3b3a3a2"},
+    {file = "depmap_compute-0.1.12.tar.gz", hash = "sha256:3f2cd033b9f540dd66d949bfa230706728417dca00a68227000e959831113555"},
 ]
 
 [package.dependencies]
 attrs = ">=21.3.0"
 httpx = ">=0.15.4,<0.24.0"
+json-logic = ">=0.7.0-alpha,<0.8.0"
 opencensus = "0.8.0"
 opencensus-ext-flask = "0.7.6"
 opencensus-ext-stackdriver = "0.8.0"
@@ -1610,6 +1611,24 @@ files = [
     {file = "jmespath-0.10.0-py2.py3-none-any.whl", hash = "sha256:cdf6525904cc597730141d61b36f2e4b8ecc257c420fa2f4549bac2c2d0cb72f"},
     {file = "jmespath-0.10.0.tar.gz", hash = "sha256:b85d0567b8666149a93172712e68920734333c0ce7e89b78b3e987f71e5ed4f9"},
 ]
+
+[[package]]
+name = "json-logic"
+version = "0.7.0a0"
+description = "Build complex rules, serialize them as JSON, and execute them in Python"
+optional = false
+python-versions = "*"
+files = [
+    {file = "json_logic-0.7.0a0-py2.py3-none-any.whl", hash = "sha256:a7af2e3673212279b4c7b63d0b0ead5f6b3d89cef8970bdbf60595d3bc9dd819"},
+    {file = "json_logic-0.7.0a0.tar.gz", hash = "sha256:84580b974bcfec7b00d63745f19ca363939fc2b93c579f578d41d7d10c12fe0c"},
+]
+
+[package.dependencies]
+six = "*"
+
+[package.extras]
+dev = ["check-manifest"]
+test = ["coverage"]
 
 [[package]]
 name = "kombu"
@@ -3821,4 +3840,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "jaraco.test", "more
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "c8b59dd626620c314a7028d89b6a4fd58d6dfb79babb236e1e692b3bf624f2ad"
+content-hash = "f1ca769dad54ebc354d7a83ad6a099a94277150a3cdb5c915dd3f4eb43024f76"
