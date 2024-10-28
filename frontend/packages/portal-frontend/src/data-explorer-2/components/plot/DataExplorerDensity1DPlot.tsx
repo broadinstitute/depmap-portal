@@ -60,7 +60,14 @@ function DataExplorerDensity1DPlot({
   );
   const [showSpinner, setShowSpinner] = useState(isLoading);
   const { plotStyles } = useDataExplorerSettings();
-  const { pointSize, pointOpacity, outlineWidth, palette } = plotStyles;
+  const {
+    pointSize,
+    pointOpacity,
+    outlineWidth,
+    palette,
+    xAxisFontSize,
+    yAxisFontSize,
+  } = plotStyles;
 
   useEffect(() => {
     let timeout: number | undefined;
@@ -270,6 +277,8 @@ function DataExplorerDensity1DPlot({
               pointOpacity={pointOpacity}
               outlineWidth={outlineWidth}
               palette={palette}
+              xAxisFontSize={xAxisFontSize}
+              yAxisFontSize={yAxisFontSize}
             />
           )}
         </div>
