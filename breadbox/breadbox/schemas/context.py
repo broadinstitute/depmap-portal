@@ -19,18 +19,14 @@ ContextExpression = Annotated[
 
 class Context(BaseModel):
     # Context expression examples:
-    # - { "!": [ { "var": "slice/lineage/1/label" }, "Breast" ] }
-    # - { "==": [ { "var": "entity_label"}, "ACH-000001" ] }
-    # - { "==": [ {"var": "slice/growth_pattern/all/label"}, "Adherent" ] }
+    # - { "!": [ { "var": "model1_lineage" }, "Breast" ] }
+    # - { "==": [ { "var": "entity_id"}, "ACH-000001" ] }
+    # - { ">": [ {"var": "model2_expression"}, 0.5 ] }
     # - True
     expr: ContextExpression
     name: Optional[str] = None
-
-    # The "dimension_type" field is used by contexts in the new format (with slice queries)
-    # The "context_type" field is used by the old format (with slice IDs)
-    # The two fields contain the same information (the dimension type name)
-    dimension_type: Optional[str] = None
-    context_type: Optional[str] = None
+    dimension_type: str
+    # This vars field is a dictionary of variable names to slice queries
     vars: dict[str, dict[str, str]] = {}
 
 

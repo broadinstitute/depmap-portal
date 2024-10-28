@@ -63,12 +63,9 @@ def get_context_summary(
     Requests may be made in either the old or new format. 
     """
     context = context_request.context
-    dimension_type = (
-        context.dimension_type if context.dimension_type else context.context_type
+    all_labels_by_id = dataset_crud.get_dimension_labels_by_id(
+        db, context.dimension_type
     )
-    if dimension_type is None:
-        raise UserError(("Context requests must specify a dimension type."))
-    all_labels_by_id = dataset_crud.get_dimension_labels_by_id(db, dimension_type)
 
     # Evaluate each of the dimension's given_ids against the context
     ids_matching_context, _ = slice_crud.get_ids_and_labels_matching_context(
