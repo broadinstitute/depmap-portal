@@ -93,7 +93,7 @@ function SettingsModal({
             <label htmlFor="x-axis-font-size">X axis font size</label>
             <input
               type="number"
-              name="outline-width"
+              name="x-axis-font-size"
               min={10}
               max={50}
               step={1}
@@ -109,7 +109,7 @@ function SettingsModal({
             <label htmlFor="y-axis-font-size">Y axis font size</label>
             <input
               type="number"
-              name="outline-width"
+              name="y-axis-font-size"
               min={10}
               max={50}
               step={1}
