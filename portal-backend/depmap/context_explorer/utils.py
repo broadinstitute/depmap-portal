@@ -348,6 +348,7 @@ def get_dose_response_curves_per_model(
 
 
 def impute_dose_curve_from_params(max_dose, min_dose, row, numPts=3000):
+    breakpoint()
     df = pd.DataFrame(
         {
             "model_id": row.model_id,
@@ -361,31 +362,62 @@ def impute_dose_curve_from_params(max_dose, min_dose, row, numPts=3000):
     return df
 
 
+# START: 9 seconds
 def get_median_dose_response_curve(
-    model_ids: List[str], compound_experiment: CompoundExperiment,
+    model_ids: List[str], compound_experiment: CompoundExperiment, quantiles=[0.4, 0.6]
 ):
 
+    print(f"NUMBER OF MODEL IDS {len(model_ids)}")
+    import time
+
+    start = time.time()
     # Get the median of in group models
     dose_curves_df = DoseResponseCurve.get_dose_response_curve_dataframe_for_compound_experiment_models(
         model_ids=model_ids, compound_exp_id=compound_experiment.entity_id
     )
+    end = time.time()
+    print(
+        f"HERE get_dose_response_curve_dataframe_for_compound_experiment_models {end-start}"
+    )
 
+    start = time.time()
     drc_dfs = []
-    for i in range(dose_curves_df.shape[0]):
-        max_dose = dose_curves_df.dose.max()
-        min_dose = dose_curves_df.dose.min()
-
-        drc_dfs.append(
-            impute_dose_curve_from_params(
-                max_dose, min_dose, dose_curves_df.iloc[i], numPts=3000
-            )
+    max_dose = dose_curves_df.dose.max()
+    min_dose = dose_curves_df.dose.min()
+    drc_dfs = [
+        impute_dose_curve_from_params(
+            max_dose, min_dose, dose_curves_df.iloc[i], numPts=3000
         )
-    drcs_by_model = pd.concat(drc_dfs)
+        for i in range(dose_curves_df.shape[0])
+    ]
 
+    drcs_by_model = pd.concat(drc_dfs)
+    end = time.time()
+    print(f"HERE impute_dose_curve_from_params {end-start}")
+
+    start = time.time()
     med_drc = drcs_by_model.groupby("dose").dose_curve.median().to_frame().reset_index()
     med_drc["smoothed_drc"] = uniform_filter1d(
         med_drc.dose_curve, size=500, mode="nearest"
     )
+    end = time.time()
+    print(f"HERE uniform_filter1d {end-start}")
+
+    start = time.time()
+    quantile_ys = [
+        uniform_filter1d(
+            drcs_by_model.groupby("dose").dose_curve.quantile(q).values,
+            size=500,
+            mode="nearest",
+        )
+        for q in quantiles
+    ]
+
+    end = time.time()
+    print(f"HERE MEDIAN Quantiles {end-start}")
+
+    med_drc["quantile_0"] = quantile_ys[0]
+    med_drc["quantile_1"] = quantile_ys[1]
 
     return med_drc
 

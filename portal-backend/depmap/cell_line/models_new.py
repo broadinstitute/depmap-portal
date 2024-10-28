@@ -261,19 +261,21 @@ class DepmapModel(Model):
     def get_model_ids_by_lineage_and_level(
         lineage_name: str, level: int = 1
     ) -> Dict[str, str]:
-        display_name_by_depmap_id = {}
-        cell_lines = (
+        query = (
             db.session.query(DepmapModel)
             .join(Lineage, DepmapModel.oncotree_lineage)
             .filter(and_(Lineage.name == lineage_name, Lineage.level == level))
             .with_entities(DepmapModel.model_id, DepmapModel.stripped_cell_line_name)
-            .all()
         )
 
-        for depmap_id, display_name in cell_lines:
-            display_name_by_depmap_id[depmap_id] = display_name
-
-        return display_name_by_depmap_id
+        cell_lines = pd.read_sql(query.statement, query.session.connection())
+        cell_lines_dict = dict(
+            zip(
+                cell_lines["model_id"].values,
+                cell_lines["stripped_cell_line_name"].values,
+            )
+        )
+        return cell_lines_dict
 
     @staticmethod
     def get_model_ids_by_primary_disease(primary_disease_name) -> Dict[str, str]:

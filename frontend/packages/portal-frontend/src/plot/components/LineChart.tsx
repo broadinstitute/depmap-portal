@@ -56,7 +56,6 @@ function LineChart({
     const xAxisTemplate: Partial<Plotly.LayoutAxis> = {
       visible: true,
       type: "linear",
-      autorange: true,
     };
 
     const yAxisTemplate: Partial<Plotly.LayoutAxis> = {

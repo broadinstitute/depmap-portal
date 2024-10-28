@@ -1,5 +1,7 @@
 from typing import List
 import sqlalchemy
+from sqlalchemy import and_
+from sqlalchemy.orm import load_only
 from depmap.database import (
     Column,
     Float,
@@ -402,16 +404,25 @@ class DoseResponseCurve(Model):
         model_ids: List[int], compound_exp_id: int
     ):
         query = (
-            db.session.query(DoseResponseCurve)
-            .join(CellLine, DoseResponseCurve.cell_line)
-            .filter(DoseResponseCurve.depmap_id.in_(model_ids))
-            .join(CompoundExperiment, DoseResponseCurve.compound_exp)
-            .filter(DoseResponseCurve.compound_exp_id == compound_exp_id)
-            .join(
-                CompoundDoseReplicate,
-                CompoundDoseReplicate.compound_experiment_id
-                == DoseResponseCurve.compound_exp_id,
+            db.session.query(CompoundDoseReplicate)
+            .options(
+                load_only(
+                    CompoundDoseReplicate.compound_experiment_id,
+                    CompoundDoseReplicate.dose,
+                )
             )
+            .join(
+                DoseResponseCurve,
+                DoseResponseCurve.compound_exp_id
+                == CompoundDoseReplicate.compound_experiment_id,
+            )
+            .filter(
+                and_(
+                    DoseResponseCurve.depmap_id.in_(model_ids),
+                    DoseResponseCurve.compound_exp_id == compound_exp_id,
+                )
+            )
+            .order_by(CompoundDoseReplicate.dose)
             .with_entities(
                 CompoundDoseReplicate.dose,
                 DoseResponseCurve.ec50,

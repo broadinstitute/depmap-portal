@@ -24,7 +24,12 @@ interface CurveTrace {
   replicate?: string[];
   name: string;
   marker?: { color: string };
-  type?: "curve" | null;
+  type?: "curve" | "scatter" | null;
+  fill?: "tonextx" | "tozerox" | "none" | null;
+  fillcolor?: string;
+  opacity?: string;
+  line?: { color: string; dash?: string };
+  mode?: string;
 }
 
 function getCurveY(
@@ -88,12 +93,55 @@ const buildTraces = (
       );
     }
 
+    // In Group
+    const lineColorInGroup = "rgba(1, 50, 32, 1)";
+    const shadingColorInGroup = "rgba(11, 146, 39, 0.3)";
+    const lineColorOutGroup = "rgba(211, 84, 0, 1)";
+    const shadingColorOutGroup = "rgba(251, 192, 147, 0.5)";
+    traces.push({
+      x: xs,
+      y: Object.values(medianLines[0].quantile_0),
+      name: "Quantile 0 Median 1",
+      type: "scatter",
+      fill: "tonextx",
+      fillcolor: shadingColorInGroup,
+      line: { color: lineColorInGroup, dash: "dash" },
+    });
+
+    traces.push({
+      x: xs,
+      y: Object.values(medianLines[0].quantile_1),
+      name: "Quantile 1 Median 1",
+      type: "scatter",
+      fill: "none",
+      line: { color: lineColorInGroup, dash: "dash" },
+    });
     traces.push({
       x: xs,
       y: Object.values(medianLines[0].smoothed_drc),
       name: "Median 1",
       type: "curve",
-      marker: { color: "green" },
+      marker: { color: lineColorInGroup },
+    });
+
+    // Out Group
+    traces.push({
+      x: xs,
+      y: Object.values(medianLines[1].quantile_0),
+      name: "Quantile 0 Median 2",
+      type: "scatter",
+      fill: "tonextx",
+      fillcolor: shadingColorOutGroup,
+      line: { color: lineColorOutGroup, dash: "dash" },
+    });
+
+    traces.push({
+      x: xs,
+      y: Object.values(medianLines[1].quantile_1),
+      name: "Quantile 1 Median 2",
+      type: "scatter",
+      fill: "none",
+      line: { color: lineColorOutGroup, dash: "dash" },
     });
 
     traces.push({
@@ -101,7 +149,7 @@ const buildTraces = (
       y: Object.values(medianLines[1].smoothed_drc),
       name: `Median 2`,
       type: "curve",
-      marker: { color: "red" },
+      marker: { color: lineColorOutGroup },
     });
 
     traces.push({
@@ -114,7 +162,7 @@ const buildTraces = (
             : `Curve ${index + 1}`
           : "Curve",
       type: "curve",
-      marker: { color: "#D3D3D3" },
+      marker: { color: "rgba(108, 122, 137, 0.2)" },
     });
   });
 

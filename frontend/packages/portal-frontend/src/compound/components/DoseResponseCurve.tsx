@@ -40,6 +40,8 @@ export interface MedianCurve {
   dose: { [key: number]: number };
   dose_curve: { [key: number]: number };
   smoothed_drc: { [key: number]: number };
+  quantile_0: { [key: number]: number };
+  quantile_1: { [key: number]: number };
 }
 
 export interface DoseCurveData {
