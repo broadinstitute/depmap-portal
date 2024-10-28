@@ -89,6 +89,38 @@ function SettingsModal({
             />
             <span>px</span>
           </div>
+          <div>
+            <label htmlFor="x-axis-font-size">X axis font size</label>
+            <input
+              type="number"
+              name="outline-width"
+              min={10}
+              max={50}
+              step={1}
+              value={settings.plotStyles.xAxisFontSize ?? ""}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                const xAxisFontSize = e.target.valueAsNumber;
+                setSettings(updateStyle("xAxisFontSize", xAxisFontSize));
+              }}
+            />
+            <span>px</span>
+          </div>
+          <div>
+            <label htmlFor="y-axis-font-size">Y axis font size</label>
+            <input
+              type="number"
+              name="outline-width"
+              min={10}
+              max={50}
+              step={1}
+              value={settings.plotStyles.yAxisFontSize ?? ""}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                const yAxisFontSize = e.target.valueAsNumber;
+                setSettings(updateStyle("yAxisFontSize", yAxisFontSize));
+              }}
+            />
+            <span>px</span>
+          </div>
           <ColorSelector
             name="all-point-color"
             label="default point color"
