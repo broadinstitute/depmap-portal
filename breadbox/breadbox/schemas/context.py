@@ -2,14 +2,10 @@ from pydantic import Field, BaseModel
 from typing import Annotated, Optional, Union
 
 
-class ContextSummary(BaseModel):
-    num_candidates: int
-    num_matches: int
-
-
 class ContextMatchResponse(BaseModel):
     ids: list[str]
     labels: list[str]
+    num_candidates: int
 
 
 ContextExpression = Annotated[

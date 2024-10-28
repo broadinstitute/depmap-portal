@@ -86,6 +86,7 @@ class TestPost:
         assert response_content is not None
         assert response_content["ids"] == ["featureID2"]
         assert response_content["labels"] == ["featureLabel2"]
+        assert response_content["num_candidates"] == 3
 
         # Test get by sample ID
         response = client.post(
@@ -103,6 +104,7 @@ class TestPost:
         assert response_content is not None
         assert response_content["ids"] == ["sampleID1"]
         assert response_content["labels"] == ["sampleLabel1"]
+        assert response_content["num_candidates"] == 3
 
         # Test a single expression context
         response = client.post(
@@ -127,6 +129,7 @@ class TestPost:
         assert response_content is not None
         assert response_content["ids"] == ["sampleID2", "sampleID3"]
         assert response_content["labels"] == ["sampleLabel2", "sampleLabel3"]
+        assert response_content["num_candidates"] == 3
 
         # Test a multi-expression context. Get features which have BOTH:
         # - a value > 4.5 in sample 2 (identified by ID)
@@ -163,3 +166,4 @@ class TestPost:
         assert response_content is not None
         assert response_content["ids"] == ["featureID2"]
         assert response_content["labels"] == ["featureLabel2"]
+        assert response_content["num_candidates"] == 3

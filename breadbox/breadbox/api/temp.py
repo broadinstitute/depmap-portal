@@ -9,9 +9,10 @@ from breadbox.crud import slice as slice_crud
 from breadbox.db.session import SessionWithUser
 from breadbox.schemas.context import (
     Context,
-    ContextSummary,
     ContextMatchResponse,
 )
+
+from depmap_compute.context import ContextEvaluator
 
 # This temp prefix is intended to convey to API users that these contracts may change.
 # Most of these endpoints are intended to support feature-specific functionality
@@ -33,44 +34,29 @@ def evaluate_context(
 ):
     """
     Get the full list of IDs and labels (in any dataset) which match the given context.
-    Requests may be made in either the old or new format. 
+    Also get the total number of "candidate" records (all records with labels belonging to the dimension type).
+    Requests must be in the version 2 context format. 
     """
-    # Evaluate each of the dimension's given_ids against the context
-    matching_ids, matching_labels = slice_crud.get_ids_and_labels_matching_context(
-        db, settings.filestore_location, context
+    slice_loader_function = lambda slice_query: slice_crud.get_slice_data(
+        db, settings.filestore_location, slice_query
     )
+    context_evaluator = ContextEvaluator(context.dict(), slice_loader_function)
 
-    return ContextMatchResponse(ids=matching_ids, labels=matching_labels,)
-
-
-@router.post(
-    "/context/summary",
-    operation_id="get_context_summary",
-    response_model=ContextSummary,
-    response_model_exclude_none=False,
-)
-def get_context_summary(
-    db: Annotated[SessionWithUser, Depends(get_db_with_user)],
-    settings: Annotated[Settings, Depends(get_settings)],
-    context: Annotated[
-        Context, Body(description="A Data Explorer 2 context expression")
-    ],
-):
-    """
-    Get the number of matching labels and candidate labels.
-    "Candidate" labels are all labels belonging to the context's dimension type.
-    Requests may be made in either the old or new format. 
-    """
+    # Load all dimension labels and ids
     all_labels_by_id = dataset_crud.get_dimension_labels_by_id(
         db, context.dimension_type
     )
 
-    # Evaluate each of the dimension's given_ids against the context
-    ids_matching_context, _ = slice_crud.get_ids_and_labels_matching_context(
-        db, settings.filestore_location, context
-    )
+    # Evaluate each against the context
+    matching_ids = []
+    matching_labels = []
+    for given_id, label in all_labels_by_id.items():
+        if context_evaluator.is_match(given_id):
+            matching_ids.append(given_id)
+            matching_labels.append(label)
 
-    return ContextSummary(
+    return ContextMatchResponse(
+        ids=matching_ids,
+        labels=matching_labels,
         num_candidates=len(all_labels_by_id.keys()),
-        num_matches=len(ids_matching_context),
     )
