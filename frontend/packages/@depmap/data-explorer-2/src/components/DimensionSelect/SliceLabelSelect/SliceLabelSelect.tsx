@@ -22,6 +22,7 @@ interface Props {
   dataset_id: string | null;
   units: string | null;
   swatchColor?: string;
+  label?: string;
 }
 
 const AsyncSelect = extendReactSelect(VanillaAsycSelect);
@@ -34,6 +35,7 @@ function SliceLabelSelect({
   dataset_id,
   units,
   swatchColor = undefined,
+  label = undefined,
 }: Props) {
   const search = useSearch();
   const searchQuery = useRef("");
@@ -105,13 +107,13 @@ function SliceLabelSelect({
       return null;
     }
 
-    const label = sliceLabelFromContext(value);
+    const sliceLabel = sliceLabelFromContext(value);
 
-    if (disabledReasons[label as string]) {
+    if (disabledReasons[sliceLabel as string]) {
       return `${value.name} not found`;
     }
 
-    if (new Set<string | null>(sliceLabels).has(label)) {
+    if (new Set<string | null>(sliceLabels).has(sliceLabel)) {
       return null;
     }
 
@@ -135,6 +137,7 @@ function SliceLabelSelect({
 
   return (
     <AsyncSelect
+      label={label}
       value={displayValue}
       hasError={Boolean(notFound || error)}
       onChange={(option) => onChange(toOutputValue(slice_type, option))}

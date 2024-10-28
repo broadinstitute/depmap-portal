@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import { Button } from "react-bootstrap";
 import { Tooltip } from "@depmap/common-components";
-import MoreOptionsButton from "src/data-explorer-2/components/ContextManager/MoreOptionsButton";
-import styles from "src/data-explorer-2/styles/ContextManager.scss";
+import MoreOptionsButton from "./MoreOptionsButton";
+import styles from "../../styles/ContextManager.scss";
 
 interface Props {
   contextName: string;

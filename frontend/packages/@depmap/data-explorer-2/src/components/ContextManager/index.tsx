@@ -1,36 +1,37 @@
 import React, { useEffect, useRef, useState } from "react";
 import cx from "classnames";
 import { Button, Modal } from "react-bootstrap";
+import { LocalStorageListStore } from "@depmap/cell-line-selector";
 import { DataExplorerContext } from "@depmap/types";
-import {
-  ContextBuilderModal,
-  fetchContext,
-  loadContextsFromLocalStorage,
-  persistLegacyListAsContext,
-  useCellLineSelectorModal,
-} from "@depmap/data-explorer-2";
+import { fetchContext } from "../../api";
+import ContextBuilderModal from "../ContextBuilder/ContextBuilderModal";
+import useCellLineSelectorModal from "../ContextBuilder/CellLineSelector/useCellLineSelectorModal";
+import ContextBuilderV2 from "../ContextBuilderV2";
 import {
   deleteContextFromLocalStorage,
+  loadContextsFromLocalStorage,
   saveContextToLocalStorage,
-} from "src/data-explorer-2/utils";
-import { LocalStorageListStore } from "@depmap/cell-line-selector";
-import Welcome from "src/data-explorer-2/components/ContextManager/Welcome";
-import ContextListItem from "src/data-explorer-2/components/ContextManager/ContextListItem";
-import ContextTypeSelect from "src/data-explorer-2/components/ContextManager/ContextTypeSelect";
-import useDownloadContextModal from "src/data-explorer-2/components/ContextManager/DownloadContextModal";
-import { confirmDeleteContext } from "src/data-explorer-2/components/ContextManager/context-manager-utils";
-import styles from "src/data-explorer-2/styles/ContextManager.scss";
+} from "../../utils/context";
+import { persistLegacyListAsContext } from "../ContextSelector/context-selector-utils";
+import Welcome from "./Welcome";
+import ContextListItem from "./ContextListItem";
+import ContextTypeSelect from "./ContextTypeSelect";
+import useDownloadContextModal from "./DownloadContextModal";
+import { confirmDeleteContext } from "./context-manager-utils";
+import styles from "../../styles/ContextManager.scss";
 
 interface Props {
   onHide: () => void;
   showHelpText: boolean;
   initialContextType?: string;
+  useContextBuilderV2?: boolean;
 }
 
-function ContextManagerContent({
+function ContextManager({
   onHide,
   showHelpText,
   initialContextType = "depmap_model",
+  useContextBuilderV2 = false,
 }: Props) {
   const [showContextModal, setShowContextModal] = useState(false);
   const [contextType, setContextType] = useState(initialContextType);
@@ -194,6 +195,10 @@ function ContextManagerContent({
       });
   };
 
+  const ContextBuilder = useContextBuilderV2
+    ? (ContextBuilderV2 as any)
+    : ContextBuilderModal;
+
   return (
     <>
       <Modal
@@ -224,6 +229,7 @@ function ContextManagerContent({
           <ContextTypeSelect
             value={contextType}
             onChange={(value: string) => setContextType(value)}
+            useContextBuilderV2={useContextBuilderV2}
           />
           <div className={styles.ContextList}>
             <div
@@ -270,7 +276,7 @@ function ContextManagerContent({
               >
                 Create new +
               </Button>
-              {contextType === "depmap_model" && (
+              {contextType === "depmap_model" && !useContextBuilderV2 && (
                 <Button
                   style={{ marginLeft: 10 }}
                   onClick={handleClickCreateWithCellLineSelector}
@@ -287,10 +293,10 @@ function ContextManagerContent({
           </Button>
         </Modal.Footer>
       </Modal>
-      <ContextBuilderModal
+      <ContextBuilder
         backdrop={false}
         show={showContextModal}
-        context={contextToEdit.current as DataExplorerContext}
+        context={contextToEdit.current || { contex_type: contextType }}
         onClickSave={onClickSave.current}
         onHide={() => setShowContextModal(false)}
         isExistingContext
@@ -301,4 +307,4 @@ function ContextManagerContent({
   );
 }
 
-export default ContextManagerContent;
+export default ContextManager;

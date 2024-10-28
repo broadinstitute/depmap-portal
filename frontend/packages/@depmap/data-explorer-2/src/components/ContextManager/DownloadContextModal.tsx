@@ -1,14 +1,14 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Button, Modal, Radio } from "react-bootstrap";
+import ContextNameForm from "../ContextBuilder/ContextNameForm";
 import {
-  ContextNameForm,
   fetchContextLabels,
   fetchContext,
-  getDimensionTypeLabel,
   fetchMetadataColumn,
-  pluralize,
-} from "@depmap/data-explorer-2";
-import styles from "src/data-explorer-2/styles/ContextManager.scss";
+} from "../../api";
+
+import { getDimensionTypeLabel, pluralize } from "../../utils/misc";
+import styles from "../../styles/ContextManager.scss";
 
 interface Props {
   contextName: string;

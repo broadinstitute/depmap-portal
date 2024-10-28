@@ -1,12 +1,14 @@
 import React from "react";
 import { ApiContext } from "@depmap/api";
-import { ContextBuilderModal } from "@depmap/data-explorer-2";
+import {
+  ContextBuilderModal,
+  saveContextToLocalStorage,
+} from "@depmap/data-explorer-2";
 import { DataExplorerContext } from "@depmap/types";
 import {
   getDapi as getApi,
   getVectorCatalogApi,
 } from "src/common/utilities/context";
-import { saveContextToLocalStorage } from "src/data-explorer-2/utils";
 
 interface Props {
   /* The context to use as a starting point. This can be as simple as
