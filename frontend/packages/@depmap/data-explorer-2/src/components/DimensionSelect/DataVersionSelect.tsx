@@ -32,6 +32,7 @@ function DataVersionSelect({
 }: Props) {
   return (
     <PlotConfigSelect
+      data-version-select
       isClearable
       show={show}
       enable={options.length > 1 && !isLoading}

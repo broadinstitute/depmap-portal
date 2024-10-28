@@ -1,7 +1,7 @@
 import React, { useRef } from "react";
 import { DropdownButton, MenuItem } from "react-bootstrap";
 import { Tooltip } from "@depmap/common-components";
-import styles from "src/data-explorer-2/styles/ContextManager.scss";
+import styles from "../../styles/ContextManager.scss";
 
 interface Props {
   onClickDelete: () => void;

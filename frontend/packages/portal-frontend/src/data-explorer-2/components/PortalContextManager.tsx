@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Button, Modal } from "react-bootstrap";
 import { ApiContext } from "@depmap/api";
 import { Spinner } from "@depmap/common-components";
+import { ContextManager } from "@depmap/data-explorer-2";
 import {
   getDapi as getApi,
   getVectorCatalogApi,
@@ -10,7 +11,6 @@ import {
   convertLegacyContexts,
   someLegacyContextsExist,
 } from "src/data-explorer-2/utils";
-import ContextManagerContent from "src/data-explorer-2/components/ContextManager/ContextManagerContent";
 
 interface Props {
   onHide: () => void;
@@ -18,7 +18,7 @@ interface Props {
   initialContextType?: string;
 }
 
-function ContextManager({
+function PortalContextManager({
   onHide,
   showHelpText = false,
   initialContextType = undefined,
@@ -81,8 +81,10 @@ function ContextManager({
       </Modal.Body>
     </Modal>
   ) : (
+    // ApiContext is needed to support Cell Line Selector inside of
+    // ContextBuilder.
     <ApiContext.Provider value={{ getApi, getVectorCatalogApi }}>
-      <ContextManagerContent
+      <ContextManager
         onHide={onHide}
         initialContextType={initialContextType}
         showHelpText={showHelpText}
@@ -91,4 +93,4 @@ function ContextManager({
   );
 }
 
-export default ContextManager;
+export default PortalContextManager;

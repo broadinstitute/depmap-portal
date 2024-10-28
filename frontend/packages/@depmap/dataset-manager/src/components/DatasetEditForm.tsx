@@ -105,7 +105,7 @@ export default function DatasetForm(props: DatasetEditFormProps) {
             if (key === "format") {
               initForm[key] = datasetToEdit[key].replace("_dataset", "");
             } else {
-              initForm[key] = datasetToEdit[key];
+              initForm[key] = datasetToEdit[key as keyof Dataset];
             }
           }
         });

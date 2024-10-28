@@ -1,0 +1,189 @@
+.ContextBuilder {
+  :global .modal-lg {
+    width: 800px;
+  }
+
+  :global .modal-body {
+    padding: 20px 20px;
+
+    &:has(:local .DebugInfo) {
+      :local .boolSubexpressions {
+        max-height: 200px;
+      }
+    }
+  }
+}
+
+.DebugInfo {
+  padding: 0 10px 10px 10px;
+  margin-top: 10px;
+  margin-bottom: -20px;
+  max-height: calc(100vh - 556px);
+  overflow: auto;
+}
+
+.mainExpr {
+  margin-top: 20px;
+}
+
+.TopLevelExpression {
+  & > .BooleanExpression {
+    & > .boolSubexpressions {
+      max-height: calc(100vh - 367px);
+      overflow: auto;
+    }
+  }
+}
+
+.topLevelButtonsAndStats {
+  display: flex;
+  margin-top: 20px;
+  justify-content: space-between;
+}
+
+.BooleanExpression {
+  display: flex;
+  flex-direction: column;
+}
+
+.AnyAllToggle {
+  margin-bottom: 20px;
+}
+
+.boolSubexpr.isTopLevel {
+  width: 100%;
+  padding: 20px;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  background-color: #fafafa;
+
+  &:not(:first-child) {
+    margin-top: 10px;
+  }
+}
+
+.boolSubexpr:not(.isTopLevel) {
+  &:not(:first-child) {
+    padding-top: 20px;
+
+    &::before {
+      display: flex;
+      border-top: 1px solid #ccc;
+      padding-bottom: 16px;
+      width: 100%;
+      content: "";
+    }
+  }
+}
+
+.boolExprResult {
+  display: flex;
+  flex-direction: column;
+}
+
+.boolExprResultLine {
+  width: 100px;
+  align-self: flex-end;
+  margin-top: 5px;
+  padding-top: 5px;
+  border-top: 2px solid #afafaf;
+
+  &:only-child {
+    display: none;
+  }
+}
+
+.singleExprMatches {
+  margin-bottom: 8px;
+  font-variant-numeric: tabular-nums;
+}
+
+.subexpressionMatches {
+  display: flex;
+  justify-content: flex-end;
+  font-variant-numeric: tabular-nums;
+}
+
+.topLevelMatches {
+  align-self: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.RelationalExpression {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  scroll-margin: 21px;
+
+  // Force the Data Version to always wrap to the 2nd row.
+  & > div:has(+ div[data-version-select]:nth-child(4)) {
+    margin-right: 50px;
+  }
+}
+
+.spacerWidth300 {
+  width: 300px;
+}
+
+.spacerWidth400 {
+  width: 400px;
+}
+
+.Operator {
+  margin-top: 22px;
+  max-width: 108px;
+}
+
+.rhsWrapper {
+  display: flex;
+  flex-grow: 1;
+  scroll-margin: 21px;
+}
+
+.ButtonsAndStats {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  margin-left: 30px;
+
+  & > div {
+    display: flex;
+    align-items: flex-end;
+  }
+}
+
+.NumberInput {
+  input {
+    width: 160px;
+    height: 38px;
+    margin-top: 2px;
+
+    &.invalidNumber {
+      border: 1px solid #a94442;
+    }
+  }
+
+  label {
+    all: unset;
+    font-weight: bold;
+    text-align: start;
+    font-size: 12px;
+    margin-right: 6px;
+  }
+}
+
+.ListSelect {
+  min-width: 452px;
+}
+
+.invalidSelect {
+  & > div {
+    border: 1px solid #a94442;
+    box-shadow: none;
+
+    &:hover,
+    &:focus {
+      border: 1px solid #a94442;
+    }
+  }
+}
