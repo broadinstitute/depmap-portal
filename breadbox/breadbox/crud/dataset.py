@@ -1,7 +1,7 @@
 import logging
 from collections import defaultdict
 from dataclasses import dataclass
-from typing import Dict, Optional, List, Literal, Type, Union, Tuple
+from typing import Any, Dict, Optional, List, Type, Union, Tuple
 from uuid import UUID, uuid4
 import warnings
 import json
@@ -1027,39 +1027,6 @@ def get_dataset_sample_labels_by_id(
     else:
         samples = get_dataset_samples(db=db, dataset=dataset, user=user)
         return {sample.given_id: sample.given_id for sample in samples}
-
-
-def get_dimension_labels_by_id(
-    db: SessionWithUser, dimension_type_name: str
-) -> dict[str, str]:
-    """
-    For a given dimension, get all IDs and labels that exist in the metadata.
-    """
-    dimension_type: Optional[DimensionType] = db.query(DimensionType).filter(
-        DimensionType.name == dimension_type_name
-    ).one_or_none()
-
-    if dimension_type is None:
-        raise ResourceNotFoundError(
-            f"Dimension type '{dimension_type_name}' not found. "
-        )
-
-    label_filter_statements = [
-        TabularColumn.dataset_id == dimension_type.dataset_id,
-        TabularColumn.given_id == "label",
-    ]
-
-    labels_by_id_tuples = (
-        db.query(TabularCell)
-        .join(TabularColumn)
-        .filter(and_(True, *label_filter_statements))
-        .with_entities(TabularCell.dimension_given_id, TabularCell.value)
-        .all()
-    )
-    return {id: label for id, label in labels_by_id_tuples}
-
-
-from typing import Any
 
 
 # TODO: This can probably be merged.
