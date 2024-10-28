@@ -98,8 +98,8 @@ body {
     .navbar-nav {
       float: right;
     }
-    .form-control {
-      width: 100% !important;
+    .navbar .form-control {
+      width: 100%;
     }
     .metadata-search-container {
       width: 30vw;

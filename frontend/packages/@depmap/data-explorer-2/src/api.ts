@@ -13,7 +13,7 @@ import {
   FilterKey,
   LinRegInfo,
 } from "@depmap/types";
-import { getContextHash } from "./utils/context";
+import getContextHash from "./utils/get-context-hash";
 import {
   isCompleteDimension,
   isPartialSliceId,

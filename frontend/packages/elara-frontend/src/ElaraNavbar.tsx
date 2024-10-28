@@ -13,10 +13,9 @@ import {
   useNavigate,
 } from "react-router-dom";
 import BannerSvg from "src/BannerSvg";
-import { BreadboxApi } from "src/api";
-import { VectorCatalogApi } from "@depmap/interactive";
-import { renderCellLineSelectorModal } from "@depmap/cell-line-selector";
+import { ElaraApi } from "src/api";
 import { SearchBar, SearchResponse } from "./pages/SearchBar";
+import launchContextManagerModal from "src/modals/launchContextManagerModal";
 
 type MenuItemLinkProps = LinkProps & { onSelect?: SelectCallback };
 
@@ -43,23 +42,9 @@ function MenuItemLink({ onSelect = undefined, ...rest }: MenuItemLinkProps) {
 
 function ElaraNavbar() {
   // TODO: Needs to be cleaned up
-  const dapi = useMemo(() => new BreadboxApi("/"), []);
-  const vectorCatalogApi = new VectorCatalogApi(dapi);
+  const dapi = useMemo(() => new ElaraApi("/"), []);
   const [isLoading, setIsLoading] = useState(false);
   const [options, setOptions] = useState<string[]>([]);
-
-  const getDapi = () => dapi;
-  const getVectorCatalogApi = () => vectorCatalogApi;
-  const cellLineSelectorContainer = document.getElementById(
-    "cell_line_selector_modal"
-  );
-
-  const launchCellLineSelectorModal = () =>
-    renderCellLineSelectorModal(
-      getDapi,
-      getVectorCatalogApi,
-      cellLineSelectorContainer
-    );
 
   const handleSearch = useCallback(
     async (query: string) => {
@@ -135,8 +120,8 @@ function ElaraNavbar() {
           </MenuItemLink>
           <MenuItemLink to="/elara/groups">Manage Groups</MenuItemLink>
           <MenuItem divider />
-          <MenuItem onClick={launchCellLineSelectorModal}>
-            Cell Line Selector
+          <MenuItem onClick={launchContextManagerModal}>
+            Context Manager
           </MenuItem>
         </NavDropdown>
       </Nav>

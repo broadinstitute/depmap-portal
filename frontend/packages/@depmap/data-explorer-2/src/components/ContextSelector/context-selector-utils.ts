@@ -4,11 +4,11 @@ import { DataExplorerContext } from "@depmap/types";
 import { LocalStorageListStore } from "@depmap/cell-line-selector";
 import { fetchContext, fetchDimensionLabels, persistContext } from "../../api";
 import {
-  getContextHash,
   isContextAll,
   isNegatedContext,
   negateContext,
 } from "../../utils/context";
+import getContextHash from "../../utils/get-context-hash";
 import { getDimensionTypeLabel } from "../../utils/misc";
 
 export const getPlaceholder = (context_type: string | null) => {
