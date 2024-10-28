@@ -72,7 +72,7 @@ class TestPost:
 
         # Test get by feature ID
         response = client.post(
-            "/temporary/context",
+            "/temp/context",
             json={
                 "context": {
                     "dimension_type": "some_feature_type",
@@ -91,7 +91,7 @@ class TestPost:
 
         # Test get by sample ID
         response = client.post(
-            "/temporary/context",
+            "/temp/context",
             json={
                 "context": {
                     "dimension_type": "some_sample_type",
@@ -110,7 +110,7 @@ class TestPost:
 
         # Test a single expression context
         response = client.post(
-            "/temporary/context",
+            "/temp/context",
             json={
                 "context": {
                     "dimension_type": "some_sample_type",
@@ -138,7 +138,7 @@ class TestPost:
         # - a value > 4.5 in sample 2 (identified by ID)
         # - and a value < 8.5 in sample 3 (identified by label)
         response = client.post(
-            "/temporary/context",
+            "/temp/context",
             json={
                 "context": {
                     "dimension_type": "some_feature_type",
@@ -237,7 +237,7 @@ class TestPost:
         )
 
         response = client.post(
-            "/temporary/context",
+            "/temp/context",
             json={
                 "context": {
                     "context_type": "some_sample_type",
