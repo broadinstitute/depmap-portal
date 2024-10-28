@@ -28,7 +28,3 @@ class Context(BaseModel):
     dimension_type: str
     # This vars field is a dictionary of variable names to slice queries
     vars: dict[str, dict[str, str]] = {}
-
-
-class ContextRequest(BaseModel):
-    context: Context

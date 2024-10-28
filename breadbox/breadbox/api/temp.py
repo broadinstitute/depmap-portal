@@ -1,4 +1,4 @@
-from typing import Any, Annotated
+from typing import Annotated
 
 from fastapi import APIRouter, Body, Depends
 
@@ -7,9 +7,8 @@ from breadbox.config import Settings, get_settings
 from breadbox.crud import dataset as dataset_crud
 from breadbox.crud import slice as slice_crud
 from breadbox.db.session import SessionWithUser
-from breadbox.schemas.custom_http_exception import UserError
 from breadbox.schemas.context import (
-    ContextRequest,
+    Context,
     ContextSummary,
     ContextMatchResponse,
 )
@@ -28,8 +27,8 @@ router = APIRouter(prefix="/temp", tags=["temp"])
 def evaluate_context(
     db: Annotated[SessionWithUser, Depends(get_db_with_user)],
     settings: Annotated[Settings, Depends(get_settings)],
-    context_request: Annotated[
-        ContextRequest, Body(description="A Data Explorer 2 context expression")
+    context: Annotated[
+        Context, Body(description="A Data Explorer 2 context expression")
     ],
 ):
     """
@@ -38,7 +37,7 @@ def evaluate_context(
     """
     # Evaluate each of the dimension's given_ids against the context
     matching_ids, matching_labels = slice_crud.get_ids_and_labels_matching_context(
-        db, settings.filestore_location, context_request.context
+        db, settings.filestore_location, context
     )
 
     return ContextMatchResponse(ids=matching_ids, labels=matching_labels,)
@@ -53,8 +52,8 @@ def evaluate_context(
 def get_context_summary(
     db: Annotated[SessionWithUser, Depends(get_db_with_user)],
     settings: Annotated[Settings, Depends(get_settings)],
-    context_request: Annotated[
-        ContextRequest, Body(description="A Data Explorer 2 context expression")
+    context: Annotated[
+        Context, Body(description="A Data Explorer 2 context expression")
     ],
 ):
     """
@@ -62,7 +61,6 @@ def get_context_summary(
     "Candidate" labels are all labels belonging to the context's dimension type.
     Requests may be made in either the old or new format. 
     """
-    context = context_request.context
     all_labels_by_id = dataset_crud.get_dimension_labels_by_id(
         db, context.dimension_type
     )

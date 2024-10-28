@@ -74,11 +74,9 @@ class TestPost:
         response = client.post(
             "/temp/context",
             json={
-                "context": {
-                    "dimension_type": "some_feature_type",
-                    "name": "feature 2",
-                    "expr": {"==": [{"var": "given_id"}, "featureID2"]},
-                }
+                "dimension_type": "some_feature_type",
+                "name": "feature 2",
+                "expr": {"==": [{"var": "given_id"}, "featureID2"]},
             },
             headers={"X-Forwarded-User": "some-public-user"},
         )
@@ -93,11 +91,9 @@ class TestPost:
         response = client.post(
             "/temp/context",
             json={
-                "context": {
-                    "dimension_type": "some_sample_type",
-                    "name": "sample 1",
-                    "expr": {"==": [{"var": "given_id"}, "sampleID1"]},
-                }
+                "dimension_type": "some_sample_type",
+                "name": "sample 1",
+                "expr": {"==": [{"var": "given_id"}, "sampleID1"]},
             },
             headers={"X-Forwarded-User": "some-public-user"},
         )
@@ -112,18 +108,16 @@ class TestPost:
         response = client.post(
             "/temp/context",
             json={
-                "context": {
-                    "dimension_type": "some_sample_type",
-                    "name": "value greater than",
-                    "expr": {">": [{"var": "feature_var"}, 2.1]},
-                    "vars": {
-                        "feature_var": {
-                            "dataset_id": dataset_given_id,
-                            "identifier": "featureLabel2",
-                            "identifier_type": "feature_label",
-                        }
-                    },
-                }
+                "dimension_type": "some_sample_type",
+                "name": "value greater than",
+                "expr": {">": [{"var": "feature_var"}, 2.1]},
+                "vars": {
+                    "feature_var": {
+                        "dataset_id": dataset_given_id,
+                        "identifier": "featureLabel2",
+                        "identifier_type": "feature_label",
+                    }
+                },
             },
             headers={"X-Forwarded-User": "some-public-user"},
         )
@@ -140,28 +134,26 @@ class TestPost:
         response = client.post(
             "/temp/context",
             json={
-                "context": {
-                    "dimension_type": "some_feature_type",
-                    "name": "dependency greater than",
-                    "expr": {
-                        "and": [
-                            {">": [{"var": "model1_var"}, 4.5]},  # 4, 5, 6
-                            {"<": [{"var": "model2_var"}, 8.5]},  # 7, 8, 9
-                        ]
+                "dimension_type": "some_feature_type",
+                "name": "dependency greater than",
+                "expr": {
+                    "and": [
+                        {">": [{"var": "model1_var"}, 4.5]},  # 4, 5, 6
+                        {"<": [{"var": "model2_var"}, 8.5]},  # 7, 8, 9
+                    ]
+                },
+                "vars": {
+                    "model1_var": {
+                        "dataset_id": dataset_given_id,
+                        "identifier": "sampleID2",
+                        "identifier_type": "sample_id",
                     },
-                    "vars": {
-                        "model1_var": {
-                            "dataset_id": dataset_given_id,
-                            "identifier": "sampleID2",
-                            "identifier_type": "sample_id",
-                        },
-                        "model2_var": {
-                            "dataset_id": dataset_given_id,
-                            "identifier": "sampleLabel3",
-                            "identifier_type": "sample_label",
-                        },
+                    "model2_var": {
+                        "dataset_id": dataset_given_id,
+                        "identifier": "sampleLabel3",
+                        "identifier_type": "sample_label",
                     },
-                }
+                },
             },
             headers={"X-Forwarded-User": "some-public-user"},
         )
