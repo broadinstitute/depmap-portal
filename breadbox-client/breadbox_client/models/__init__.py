@@ -25,8 +25,6 @@ from .compute_response import ComputeResponse
 from .context import Context
 from .context_expr_type_1 import ContextExprType1
 from .context_match_response import ContextMatchResponse
-from .context_request import ContextRequest
-from .context_summary import ContextSummary
 from .context_vars import ContextVars
 from .context_vars_additional_property import ContextVarsAdditionalProperty
 from .data_type import DataType
@@ -132,8 +130,6 @@ __all__ = (
     "Context",
     "ContextExprType1",
     "ContextMatchResponse",
-    "ContextRequest",
-    "ContextSummary",
     "ContextVars",
     "ContextVarsAdditionalProperty",
     "DatasetMetadata",

@@ -12,10 +12,12 @@ class ContextMatchResponse:
     Attributes:
         ids (List[str]):
         labels (List[str]):
+        num_candidates (int):
     """
 
     ids: List[str]
     labels: List[str]
+    num_candidates: int
     additional_properties: Dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> Dict[str, Any]:
@@ -23,12 +25,15 @@ class ContextMatchResponse:
 
         labels = self.labels
 
+        num_candidates = self.num_candidates
+
         field_dict: Dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
             {
                 "ids": ids,
                 "labels": labels,
+                "num_candidates": num_candidates,
             }
         )
 
@@ -41,9 +46,12 @@ class ContextMatchResponse:
 
         labels = cast(List[str], d.pop("labels"))
 
+        num_candidates = d.pop("num_candidates")
+
         context_match_response = cls(
             ids=ids,
             labels=labels,
+            num_candidates=num_candidates,
         )
 
         context_match_response.additional_properties = d

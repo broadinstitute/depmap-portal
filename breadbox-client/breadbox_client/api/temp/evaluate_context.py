@@ -5,8 +5,8 @@ import httpx
 
 from ... import errors
 from ...client import AuthenticatedClient, Client
+from ...models.context import Context
 from ...models.context_match_response import ContextMatchResponse
-from ...models.context_request import ContextRequest
 from ...models.http_error import HTTPError
 from ...models.http_validation_error import HTTPValidationError
 from ...types import Response
@@ -14,13 +14,13 @@ from ...types import Response
 
 def _get_kwargs(
     *,
-    body: ContextRequest,
+    body: Context,
 ) -> Dict[str, Any]:
     headers: Dict[str, Any] = {}
 
     _kwargs: Dict[str, Any] = {
         "method": "post",
-        "url": "/temporary/context",
+        "url": "/temp/context",
     }
 
     _body = body.to_dict()
@@ -79,15 +79,17 @@ def _build_response(
 def sync_detailed(
     *,
     client: Union[AuthenticatedClient, Client],
-    body: ContextRequest,
+    body: Context,
 ) -> Response[Union[ContextMatchResponse, HTTPError, HTTPValidationError]]:
-    """Evaluate Context
+    r"""Evaluate Context
 
      Get the full list of IDs and labels (in any dataset) which match the given context.
-    Requests may be made in either the old or new format.
+    Also get the total number of \"candidate\" records (all records with labels belonging to the
+    dimension type).
+    Requests must be in the version 2 context format.
 
     Args:
-        body (ContextRequest):
+        body (Context):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -111,15 +113,17 @@ def sync_detailed(
 def sync(
     *,
     client: Union[AuthenticatedClient, Client],
-    body: ContextRequest,
+    body: Context,
 ) -> Optional[Union[ContextMatchResponse, HTTPError, HTTPValidationError]]:
-    """Evaluate Context
+    r"""Evaluate Context
 
      Get the full list of IDs and labels (in any dataset) which match the given context.
-    Requests may be made in either the old or new format.
+    Also get the total number of \"candidate\" records (all records with labels belonging to the
+    dimension type).
+    Requests must be in the version 2 context format.
 
     Args:
-        body (ContextRequest):
+        body (Context):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -138,15 +142,17 @@ def sync(
 async def asyncio_detailed(
     *,
     client: Union[AuthenticatedClient, Client],
-    body: ContextRequest,
+    body: Context,
 ) -> Response[Union[ContextMatchResponse, HTTPError, HTTPValidationError]]:
-    """Evaluate Context
+    r"""Evaluate Context
 
      Get the full list of IDs and labels (in any dataset) which match the given context.
-    Requests may be made in either the old or new format.
+    Also get the total number of \"candidate\" records (all records with labels belonging to the
+    dimension type).
+    Requests must be in the version 2 context format.
 
     Args:
-        body (ContextRequest):
+        body (Context):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -168,15 +174,17 @@ async def asyncio_detailed(
 async def asyncio(
     *,
     client: Union[AuthenticatedClient, Client],
-    body: ContextRequest,
+    body: Context,
 ) -> Optional[Union[ContextMatchResponse, HTTPError, HTTPValidationError]]:
-    """Evaluate Context
+    r"""Evaluate Context
 
      Get the full list of IDs and labels (in any dataset) which match the given context.
-    Requests may be made in either the old or new format.
+    Also get the total number of \"candidate\" records (all records with labels belonging to the
+    dimension type).
+    Requests must be in the version 2 context format.
 
     Args:
-        body (ContextRequest):
+        body (Context):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
