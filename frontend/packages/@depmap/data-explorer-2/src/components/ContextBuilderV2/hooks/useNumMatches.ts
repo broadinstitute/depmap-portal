@@ -44,7 +44,6 @@ function useNumMatches(expr: Expr) {
       (async () => {
         try {
           const result = await api.evaluateContext({
-            name: "",
             dimension_type,
             expr: flattenedExpr as Record<string, unknown>,
             vars: exprVars,

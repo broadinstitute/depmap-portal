@@ -48,7 +48,9 @@ const postJson = async <T>(url: string, obj: unknown): Promise<T> => {
   return fetchJsonCache[cacheKey] as Promise<T>;
 };
 
-export async function evaluateContext(context: DataExplorerContextV2) {
+export async function evaluateContext(
+  context: Omit<DataExplorerContextV2, "name">
+) {
   const varsAsSliceQueries = Object.fromEntries(
     Object.entries(context.vars).map(([varName, variable]) => [
       varName,

@@ -21,7 +21,7 @@ export type VariableDomain =
 
 const defaultValue = {
   evaluateContext: (
-    context: DataExplorerContextV2
+    context: Omit<DataExplorerContextV2, "name">
   ): Promise<{ ids: string[]; labels: string[]; num_candidates: number }> => {
     window.console.log("evaluateContext:", { context });
     throw new Error("Not implemented");
