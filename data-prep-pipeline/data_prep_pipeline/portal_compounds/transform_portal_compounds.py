@@ -53,10 +53,11 @@ def filter_portal_compounds(
     Filters the portal_compounds DataFrame by keeping only valid SampleIDs according to the
     specified rules. Rows with empty SampleIDs are removed.
     """
+    df = df.copy()
     # Use apply to filter SampleIDs
     df["SampleIDs"] = df["SampleIDs"].apply(
         lambda x: filter_sample_ids(x, repsdrug_matrix, repsdrug_auc, oncrefauc_matrix)
-        if pd.notnull(x)
+        if pd.isna(x)
         else ""
     )
 
