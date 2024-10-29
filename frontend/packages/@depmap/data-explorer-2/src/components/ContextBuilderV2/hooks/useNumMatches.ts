@@ -1,19 +1,12 @@
 import { useEffect, useState } from "react";
-import { DataExplorerContextV2, SliceQuery } from "@depmap/types";
+import { SliceQuery } from "@depmap/types";
+import { useDataExplorerApi } from "../../../contexts/DataExplorerApiContext";
 import { isCompleteExpression } from "../../../utils/misc";
 import { Expr, isBoolean, getVariableNames } from "../utils/expressionUtils";
 import { useContextBuilderState } from "../state/ContextBuilderState";
 
-// TODO: Use Sarah's new endpoint /temporary/context/summary for this
-function fetchContextSummaryV2(contextV2: Omit<DataExplorerContextV2, "name">) {
-  console.log("TODO: fetch context summary", { contextV2 });
-  return Promise.resolve({
-    num_matches: 0,
-    num_candidates: 1000,
-  });
-}
-
 function useNumMatches(expr: Expr) {
+  const api = useDataExplorerApi();
   const [numMatches, setNumMatches] = useState<number | null>(null);
   const [numCandidates, setNumCandidates] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -50,14 +43,15 @@ function useNumMatches(expr: Expr) {
 
       (async () => {
         try {
-          const summary = await fetchContextSummaryV2({
+          const result = await api.evaluateContext({
+            name: "",
             dimension_type,
             expr: flattenedExpr as Record<string, unknown>,
             vars: exprVars,
           });
 
-          setNumMatches(summary.num_matches);
-          setNumCandidates(summary.num_candidates);
+          setNumMatches(result.ids.length);
+          setNumCandidates(result.num_candidates);
         } catch (e) {
           window.console.error(e);
           setNumMatches(null);
@@ -69,7 +63,7 @@ function useNumMatches(expr: Expr) {
     } else {
       setNumMatches(null);
     }
-  }, [expr, dimension_type, fullySpecifiedVars, vars]);
+  }, [api, expr, dimension_type, fullySpecifiedVars, vars]);
 
   return { isLoading, hasError, numMatches, numCandidates };
 }
