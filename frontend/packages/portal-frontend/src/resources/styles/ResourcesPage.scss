@@ -75,3 +75,14 @@
   font-weight: 500;
   font-size: 16px;
 }
+
+.panelHeading {
+  display: grid;
+  grid-template-columns: 95% 5%;
+  grid-template-areas: "title glyph-symbol";
+}
+
+.headingTitle {
+  grid-area: "title";
+  padding-right: "10px";
+}
