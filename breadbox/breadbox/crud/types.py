@@ -499,6 +499,16 @@ def get_dimension_labels_by_id(
     """
     For a given dimension, get all IDs and labels that exist in the metadata.
     """
+    return get_dimension_type_metadata_col(dimension_type_name, col_name="label")
+
+
+def get_dimension_type_metadata_col(
+    db: SessionWithUser, dimension_type_name: str, col_name: str
+) -> dict[str, Any]:
+    """
+    Get a column of values from the dimension type's metadata. 
+    Return a dictionary of values indexed by given ID.
+    """
     dimension_type = get_dimension_type(db=db, name=dimension_type_name)
 
     if dimension_type is None:
@@ -506,16 +516,16 @@ def get_dimension_labels_by_id(
             f"Dimension type '{dimension_type_name}' not found. "
         )
 
-    label_filter_statements = [
-        TabularColumn.dataset_id == dimension_type.dataset_id,
-        TabularColumn.given_id == "label",
-    ]
-
-    labels_by_id_tuples = (
+    values_by_id_tuples = (
         db.query(TabularCell)
         .join(TabularColumn)
-        .filter(and_(True, *label_filter_statements))
+        .filter(
+            and_(
+                TabularColumn.dataset_id == dimension_type.dataset_id,
+                TabularColumn.given_id == col_name,
+            )
+        )
         .with_entities(TabularCell.dimension_given_id, TabularCell.value)
         .all()
     )
-    return {id: label for id, label in labels_by_id_tuples}
+    return {id: label for id, label in values_by_id_tuples}
