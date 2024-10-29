@@ -1,5 +1,7 @@
-// import { urlLibEncode } from "@depmap/data-explorer-2";
-import { DataExplorerContextVariable } from "@depmap/types";
+import {
+  DataExplorerContextVariable,
+  DataExplorerContextV2,
+} from "@depmap/types";
 
 let urlPrefix = "";
 
@@ -45,6 +47,35 @@ const postJson = async <T>(url: string, obj: unknown): Promise<T> => {
 
   return fetchJsonCache[cacheKey] as Promise<T>;
 };
+
+export async function evaluateContext(
+  context: Omit<DataExplorerContextV2, "name">
+) {
+  const varsAsSliceQueries = Object.fromEntries(
+    Object.entries(context.vars).map(([varName, variable]) => [
+      varName,
+      {
+        // The `DataExplorerContextVariable` type has some extra fields that
+        // aren't part of the SliceQuery format. We'll strip those out so
+        // the backend doesn't get confused.
+        dataset_id: variable.dataset_id,
+        identifier: variable.identifier,
+        identifier_type: variable.identifier_type,
+      },
+    ])
+  );
+
+  const contextToEval = {
+    ...context,
+    vars: varsAsSliceQueries,
+  };
+
+  return postJson<{
+    ids: string[];
+    labels: string[];
+    num_candidates: number;
+  }>("/temp/context", contextToEval);
+}
 
 export async function fetchVariableDomain(
   variable: DataExplorerContextVariable

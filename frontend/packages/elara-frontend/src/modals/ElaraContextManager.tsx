@@ -6,7 +6,10 @@ import {
 } from "@depmap/data-explorer-2";
 import { VectorCatalogApi } from "@depmap/interactive";
 import { ElaraApi } from "src/api";
-import { fetchVariableDomain } from "src/pages/DataExplorer/api";
+import {
+  evaluateContext,
+  fetchVariableDomain,
+} from "src/pages/DataExplorer/api";
 
 interface Props {
   onHide: () => void;
@@ -28,7 +31,10 @@ function ElaraContextManager({ onHide }: Props) {
 
   return (
     <ApiContext.Provider value={{ getApi, getVectorCatalogApi }}>
-      <DataExplorerApiProvider fetchVariableDomain={fetchVariableDomain}>
+      <DataExplorerApiProvider
+        evaluateContext={evaluateContext}
+        fetchVariableDomain={fetchVariableDomain}
+      >
         <ContextManager
           onHide={onHide}
           initialContextType="depmap_model"

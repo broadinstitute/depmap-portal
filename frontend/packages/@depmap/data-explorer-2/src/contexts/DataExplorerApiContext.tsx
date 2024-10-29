@@ -1,5 +1,8 @@
 import React, { createContext, useContext, useMemo } from "react";
-import { DataExplorerContextVariable } from "@depmap/types";
+import {
+  DataExplorerContextVariable,
+  DataExplorerContextV2,
+} from "@depmap/types";
 
 export type VariableDomain =
   | {
@@ -17,6 +20,13 @@ export type VariableDomain =
     };
 
 const defaultValue = {
+  evaluateContext: (
+    context: Omit<DataExplorerContextV2, "name">
+  ): Promise<{ ids: string[]; labels: string[]; num_candidates: number }> => {
+    window.console.log("evaluateContext:", { context });
+    throw new Error("Not implemented");
+  },
+
   fetchVariableDomain: (
     variable: DataExplorerContextVariable
   ): Promise<VariableDomain> => {
@@ -32,15 +42,20 @@ export const useDataExplorerApi = () => {
 };
 
 export const DataExplorerApiProvider = ({
+  evaluateContext,
   fetchVariableDomain,
   children,
 }: {
+  evaluateContext: typeof defaultValue["evaluateContext"];
   fetchVariableDomain: typeof defaultValue["fetchVariableDomain"];
   children: React.ReactNode;
 }) => {
   const value = useMemo(() => {
-    return { fetchVariableDomain };
-  }, [fetchVariableDomain]);
+    return {
+      evaluateContext,
+      fetchVariableDomain,
+    };
+  }, [evaluateContext, fetchVariableDomain]);
 
   return (
     <DataExplorerApiContext.Provider value={value}>
