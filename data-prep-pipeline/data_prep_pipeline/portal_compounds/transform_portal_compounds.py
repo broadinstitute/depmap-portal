@@ -57,7 +57,7 @@ def filter_portal_compounds(
     # Use apply to filter SampleIDs
     df["SampleIDs"] = df["SampleIDs"].apply(
         lambda x: filter_sample_ids(x, repsdrug_matrix, repsdrug_auc, oncrefauc_matrix)
-        if pd.isna(x)
+        if pd.notna(x)
         else ""
     )
 
