@@ -18,7 +18,7 @@ def update_taiga(
         tc = create_taiga_client_v3()
         with tempfile.NamedTemporaryFile(suffix=".csv") as temp_file:
             # Save the transformed data to the temporary file
-            df_to_upload.to_csv(temp_file.name)
+            df_to_upload.to_csv(temp_file.name, index=False)
             temp_filename = temp_file.name
 
             # Update the dataset with the transformed data
