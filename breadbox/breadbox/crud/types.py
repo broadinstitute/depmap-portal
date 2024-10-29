@@ -508,6 +508,7 @@ def get_dimension_type_metadata_col(
     """
     Get a column of values from the dimension type's metadata. 
     Return a dictionary of values indexed by given ID.
+    If there is no metadata for the given dimension type, return an empty dict.
     """
     dimension_type = get_dimension_type(db=db, name=dimension_type_name)
 
@@ -515,6 +516,8 @@ def get_dimension_type_metadata_col(
         raise ResourceNotFoundError(
             f"Dimension type '{dimension_type_name}' not found. "
         )
+    if dimension_type.dataset_id is None:
+        return {}
 
     values_by_id_tuples = (
         db.query(TabularCell)
