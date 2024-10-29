@@ -7,9 +7,6 @@ import yaml
 import re
 from tqdm import tqdm
 
-gumbo_client = Client()
-taiga_client_v3 = create_taiga_client_v3()
-
 
 def get_second_part_of_string(string: str) -> str:
     """
@@ -53,6 +50,9 @@ def multi_join(primary_df: pd.DataFrame, join_instructions: list) -> pd.DataFram
     Returns:
         pd.DataFrame: Resulting DataFrame after performing multiple joins
     """
+
+    gumbo_client = Client()
+
     result_df = primary_df
     for instruction in join_instructions:
         assert (
@@ -120,6 +120,9 @@ def get_model_ids(quarterly_release_dataset_id: str) -> set():
         Returns:
             set: Set of model ids
         """
+
+    taiga_client_v3 = create_taiga_client_v3()
+
     taiga_ids_to_check = {
         f"{quarterly_release_dataset_id}/{f}": column
         for f, column in quarterly_files_to_check.items()
@@ -152,6 +155,9 @@ def get_model_condition_ids(quarterly_release_dataset_id: str) -> set():
     Returns:
         set: Set of model condition ids
     """
+
+    taiga_client_v3 = create_taiga_client_v3()
+
     omics_profiles_taiga_id = f"{quarterly_release_dataset_id}/OmicsProfiles"
     screen_sequence_map_taiga_id = f"{quarterly_release_dataset_id}/ScreenSequenceMap"
 

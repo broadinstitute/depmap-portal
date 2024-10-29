@@ -18,6 +18,7 @@ tqdm = "^4.66.1"
 pandera = "^0.19.2"
 google-api-python-client = "^2.112.0"
 gumbo-rest-client = {version = "^2.0.4", source = "public-python"}
+ipykernel = "^6.29.5"
 
 
 [[tool.poetry.source]]
