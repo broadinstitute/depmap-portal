@@ -1,6 +1,11 @@
 import argparse
 
 from cn_gene.transform_cngene_to_log2 import process_and_update_cngene_log2
+from portal_compounds.transform_portal_compounds import (
+    process_and_update_portal_compounds,
+)
+from update_hgnc_gene import process_and_update_hgnc_gene
+
 from predictability.transform_crispr_confounders import (
     process_and_update_crispr_confounders,
 )
@@ -34,12 +39,14 @@ def parse_args() -> tuple[str, str]:
 def main():
     source_dataset_id, target_dataset_id = parse_args()
 
+    process_and_update_hgnc_gene(source_dataset_id, target_dataset_id)
     process_and_update_cngene_log2(source_dataset_id, target_dataset_id)
     process_and_update_crispr_confounders(source_dataset_id, target_dataset_id)
     process_and_update_lineage(source_dataset_id, target_dataset_id)
     process_and_update_fusion(source_dataset_id, target_dataset_id)
     process_and_update_driver_events(source_dataset_id, target_dataset_id)
     process_and_update_genetic_derangement(source_dataset_id, target_dataset_id)
+    process_and_update_portal_compounds(source_dataset_id, target_dataset_id)
 
 
 if __name__ == "__main__":
