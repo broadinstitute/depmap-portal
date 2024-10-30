@@ -1009,6 +1009,8 @@ def get_tabular_dataset_index_given_ids(
     dimension_type = (
         db.query(DimensionType).filter_by(name=dataset.index_type_name).one_or_none()
     )
+    assert dimension_type is not None
+
     id_col_name = dimension_type.id_column
     cells_in_id_column = (
         db.query(TabularCell)
