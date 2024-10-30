@@ -43,7 +43,9 @@ def evaluate_context(
     context_evaluator = ContextEvaluator(context.dict(), slice_loader_function)
 
     # Load all dimension labels and ids
-    all_labels_by_id = types_crud.get_dimension_labels_by_id(db, context.dimension_type)
+    all_labels_by_id = types_crud.get_dimension_type_labels_by_id(
+        db, context.dimension_type
+    )
 
     # Evaluate each against the context
     matching_ids = []

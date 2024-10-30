@@ -493,7 +493,7 @@ def check_id_mapping_is_valid(
         )
 
 
-def get_dimension_labels_by_id(
+def get_dimension_type_labels_by_id(
     db: SessionWithUser, dimension_type_name: str
 ) -> dict[str, str]:
     """
