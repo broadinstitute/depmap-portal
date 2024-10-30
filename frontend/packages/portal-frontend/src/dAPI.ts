@@ -40,14 +40,10 @@ import {
   Dataset as BreadboxDataset,
   DatasetParams,
   DatasetUpdateArgs,
-  FeatureType,
-  FeatureTypeUpdateArgs,
   Group,
   GroupArgs,
   GroupEntry,
   GroupEntryArgs,
-  SampleType,
-  SampleTypeUpdateArgs,
   InvalidPrioritiesByDataType,
   SearchDimenionsRequest,
   SearchDimenionsResponse,
@@ -1015,28 +1011,6 @@ export class DepmapApi {
     return Promise.reject(Error("Wrong api used. Check ApiContext"));
   };
 
-  getSampleTypes = (): Promise<SampleType[]> => {
-    return Promise.reject(Error("Wrong api used. Check ApiContext"));
-  };
-
-  postSampleType = (sampleTypeArgs: any): Promise<SampleType> => {
-    return Promise.reject(Error("Wrong api used. Check ApiContext"));
-  };
-
-  updateSampleType = (
-    sampleTypeArgs: SampleTypeUpdateArgs
-  ): Promise<SampleType> => {
-    return Promise.reject(Error("Wrong api used. Check ApiContext"));
-  };
-
-  deleteSampleType = (name: string) => {
-    return Promise.reject(Error("Wrong api used. Check ApiContext"));
-  };
-
-  getFeatureTypes = (): Promise<FeatureType[]> => {
-    return Promise.reject(Error("Wrong api used. Check ApiContext"));
-  };
-
   getDimensionTypes = (): Promise<DimensionType[]> => {
     return Promise.reject(Error("Wrong api used. Check ApiContext"));
   };
@@ -1077,20 +1051,6 @@ export class DepmapApi {
   }
 
   getDataTypesAndPriorities = (): Promise<InvalidPrioritiesByDataType> => {
-    return Promise.reject(Error("Wrong api used. Check ApiContext"));
-  };
-
-  postFeatureType = (featureTypeArgs: any): Promise<FeatureType> => {
-    return Promise.reject(Error("Wrong api used. Check ApiContext"));
-  };
-
-  updateFeatureType = (
-    featureTypeArgs: FeatureTypeUpdateArgs
-  ): Promise<FeatureType> => {
-    return Promise.reject(Error("Wrong api used. Check ApiContext"));
-  };
-
-  deleteFeatureType = (name: string) => {
     return Promise.reject(Error("Wrong api used. Check ApiContext"));
   };
 

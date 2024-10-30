@@ -471,6 +471,7 @@ export class ElaraApi {
     );
   }
 
+  // NOTE: The endpoints for feature type and sample type are deprecated and should not be used. Currently still used in TypesPage.tsx
   getSampleTypes(): Promise<SampleType[]> {
     return this._fetch<SampleType[]>("/types/sample");
   }
@@ -501,24 +502,6 @@ export class ElaraApi {
     return this._fetch<FeatureType[]>("/types/feature");
   }
 
-  searchDimensions({
-    prefix,
-    substring,
-    type_name,
-    limit,
-  }: SearchDimenionsRequest) {
-    const params = {
-      prefix,
-      substring,
-      type_name,
-      limit: Number.isFinite(limit) ? limit : 100,
-    };
-
-    return this._fetch<SearchDimenionsResponse>(
-      `/datasets/dimensions/?${encodeParams(params)}`
-    );
-  }
-
   postFeatureType(featureTypeArgs: any): Promise<FeatureType> {
     const args = { ...featureTypeArgs };
 
@@ -540,6 +523,24 @@ export class ElaraApi {
 
   deleteFeatureType(name: string) {
     return this._delete("/types/feature", name);
+  }
+
+  searchDimensions({
+    prefix,
+    substring,
+    type_name,
+    limit,
+  }: SearchDimenionsRequest) {
+    const params = {
+      prefix,
+      substring,
+      type_name,
+      limit: Number.isFinite(limit) ? limit : 100,
+    };
+
+    return this._fetch<SearchDimenionsResponse>(
+      `/datasets/dimensions/?${encodeParams(params)}`
+    );
   }
 
   async getDataTypesAndPriorities(): Promise<InvalidPrioritiesByDataType> {
