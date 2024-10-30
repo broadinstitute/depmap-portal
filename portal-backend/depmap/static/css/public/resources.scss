@@ -1,9 +1,13 @@
 .panel-default > .panel-heading {
-  padding: 8px 20px 8px 40px;
+  @media screen and (min-width: 800px) {
+    padding: 8px 20px 8px 40px;
+    font-size: 18px;
+  }
+
+  font-weight: 500;
   background-color: #f5f8fd;
   border-bottom: 1px solid #585858;
-  font-weight: 500;
-  font-size: 18px;
+
   cursor: pointer;
 }
 
@@ -19,15 +23,6 @@
 // list-group when expanded has white border-top as default so get rid of border-top
 .panel-group .panel-heading + .panel-collapse > .list-group {
   border-top: 0px;
-}
-
-.panel-default > .panel-heading {
-  padding: 8px 20px 8px 40px;
-  background-color: #f5f8fd;
-  border-bottom: 1px solid #585858;
-  font-weight: 500;
-  font-size: 18px;
-  cursor: pointer;
 }
 
 .panel-group .panel {
