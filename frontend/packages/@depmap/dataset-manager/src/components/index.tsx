@@ -45,10 +45,6 @@ export default function Datasets() {
     [key: string]: string;
   } | null>(null);
 
-  // TODO: Remove
-  const getFeatureTypes = useCallback(() => dapi.getFeatureTypes(), [dapi]);
-  const getSampleTypes = useCallback(() => dapi.getSampleTypes(), [dapi]);
-
   const getDimensionTypes = useCallback(() => dapi.getDimensionTypes(), [dapi]);
   const postDimensionType = useCallback(
     (dimTypeArgs: DimensionTypeAddArgs) => dapi.postDimensionType(dimTypeArgs),
@@ -163,8 +159,7 @@ export default function Datasets() {
         formTitle = "Add Dataset";
         datasetFormComponent = (
           <DatasetForm
-            getFeatureTypes={getFeatureTypes}
-            getSampleTypes={getSampleTypes}
+            getDimensionTypes={getDimensionTypes}
             getGroups={getGroups}
             getDataTypesAndPriorities={getDataTypesAndPriorities}
             uploadFile={postFileUpload}
@@ -191,9 +186,8 @@ export default function Datasets() {
     datasetToEdit,
     datasets,
     getDataTypesAndPriorities,
-    getFeatureTypes,
+    getDimensionTypes,
     getGroups,
-    getSampleTypes,
     isEditDatasetMode,
     postDatasetUpload,
     postFileUpload,
