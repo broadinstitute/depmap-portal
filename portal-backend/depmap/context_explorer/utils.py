@@ -267,8 +267,26 @@ def has_drug_data(drug_depmap_ids: List[str], context_depmap_ids: List[str]):
     return len(intersection) >= 5
 
 
-# Temporary copy of format_dose_curve while context explorer V2 is in development
-# and doesn't have fully in-sync data, which was causing this to fail.
+def get_curve_params_for_model_ids(
+    compound_experiment: CompoundExperiment, model_ids: List[str]
+):
+    curve_objs = DoseResponseCurve.get_curve_params(
+        compound_experiment=compound_experiment, model_ids=model_ids
+    )
+    curve_params = []
+
+    for curve in curve_objs:
+        curve_param = {
+            "ec50": curve.ec50,
+            "slope": curve.slope,
+            "lowerAsymptote": curve.lower_asymptote,
+            "upperAsymptote": curve.upper_asymptote,
+        }
+        curve_params.append(curve_param)
+
+    return curve_params
+
+
 def get_dose_curve(
     dataset_name: str, model_id: str, compound_experiment: CompoundExperiment
 ):
@@ -306,21 +324,9 @@ def get_dose_curve(
             )
 
     # fetch the dose response curve parameters using cell line name and compound experiment to find the appropriate DoseResponseCurve
-    curve_objs = DoseResponseCurve.query.filter(
-        DoseResponseCurve.compound_exp == compound_experiment,
-        DoseResponseCurve.depmap_id == model_id,
-    ).all()
-
-    curve_params = []
-
-    for curve in curve_objs:
-        curve_param = {
-            "ec50": curve.ec50,
-            "slope": curve.slope,
-            "lowerAsymptote": curve.lower_asymptote,
-            "upperAsymptote": curve.upper_asymptote,
-        }
-        curve_params.append(curve_param)
+    curve_params = get_curve_params_for_model_ids(
+        compound_experiment=compound_experiment, model_ids=[model_id]
+    )
 
     dose_response_curve = {"points": points, "curve_params": curve_params}
 
@@ -347,24 +353,8 @@ def get_dose_response_curves_per_model(
     return dose_curves
 
 
-def impute_dose_curve_from_params(max_dose, min_dose, row, numPts=3000):
-    breakpoint()
-    df = pd.DataFrame(
-        {
-            "model_id": row.model_id,
-            "dose": np.logspace(np.log10(min_dose), np.log10(max_dose), num=numPts),
-        }
-    )
-    df["dose_curve"] = row.lower_asymptote + (
-        row.upper_asymptote - row.lower_asymptote
-    ) / (1 + (df.dose / row.ec50) ** (np.abs(row.slope)))
-
-    return df
-
-
-# START: 9 seconds
-def get_median_dose_response_curve(
-    model_ids: List[str], compound_experiment: CompoundExperiment, quantiles=[0.4, 0.6]
+def get_median_dose_response_curve_params(
+    model_ids: List[str], compound_experiment: CompoundExperiment
 ):
 
     print(f"NUMBER OF MODEL IDS {len(model_ids)}")
@@ -372,54 +362,24 @@ def get_median_dose_response_curve(
 
     start = time.time()
     # Get the median of in group models
-    dose_curves_df = DoseResponseCurve.get_dose_response_curve_dataframe_for_compound_experiment_models(
-        model_ids=model_ids, compound_exp_id=compound_experiment.entity_id
+    dose_curves_df = DoseResponseCurve.get_curve_params(
+        compound_experiment=compound_experiment, model_ids=model_ids
     )
-    end = time.time()
-    print(
-        f"HERE get_dose_response_curve_dataframe_for_compound_experiment_models {end-start}"
-    )
-
-    start = time.time()
-    drc_dfs = []
-    max_dose = dose_curves_df.dose.max()
-    min_dose = dose_curves_df.dose.min()
-    drc_dfs = [
-        impute_dose_curve_from_params(
-            max_dose, min_dose, dose_curves_df.iloc[i], numPts=3000
-        )
-        for i in range(dose_curves_df.shape[0])
-    ]
-
-    drcs_by_model = pd.concat(drc_dfs)
-    end = time.time()
-    print(f"HERE impute_dose_curve_from_params {end-start}")
-
-    start = time.time()
-    med_drc = drcs_by_model.groupby("dose").dose_curve.median().to_frame().reset_index()
-    med_drc["smoothed_drc"] = uniform_filter1d(
-        med_drc.dose_curve, size=500, mode="nearest"
-    )
-    end = time.time()
-    print(f"HERE uniform_filter1d {end-start}")
-
-    start = time.time()
-    quantile_ys = [
-        uniform_filter1d(
-            drcs_by_model.groupby("dose").dose_curve.quantile(q).values,
-            size=500,
-            mode="nearest",
-        )
-        for q in quantiles
-    ]
+    dose_curves_median_df = dose_curves_df.groupby("dose").median()
 
     end = time.time()
-    print(f"HERE MEDIAN Quantiles {end-start}")
+    print(f"HERE DoseResponseCurve.get_curve_params {end-start}")
 
-    med_drc["quantile_0"] = quantile_ys[0]
-    med_drc["quantile_1"] = quantile_ys[1]
+    dose_curves_median_dict = dose_curves_median_df.iloc[0].to_dict()
 
-    return med_drc
+    curve_param_dict = {
+        "ec50": dose_curves_median_dict["ec50"],
+        "slope": dose_curves_median_dict["slope"],
+        "lowerAsymptote": dose_curves_median_dict["lower_asymptote"],
+        "upperAsymptote": dose_curves_median_dict["upper_asymptote"],
+    }
+
+    return curve_param_dict
 
 
 def get_out_group_model_ids(

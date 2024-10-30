@@ -1,15 +1,16 @@
+import _ from "lodash";
 import React, { useEffect, useState } from "react";
 import {
   CurveParams,
   CurvePlotPoints,
   groupBy,
-  MedianCurve,
+  MedianCurveData,
 } from "src/compound/components/DoseResponseCurve";
 import LineChart from "src/plot/components/LineChart";
 import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
 
 interface Props {
-  medianLines: MedianCurve[];
+  medianCurves: CurveParams[];
   medianTitles: string[];
   measurements: CurvePlotPoints[];
   curves: CurveParams;
@@ -45,7 +46,7 @@ function getCurveY(
 const buildTraces = (
   measurements: any,
   curves: any,
-  medianLines: MedianCurve[]
+  medianCurves: CurveParams[]
 ): CurveTrace[] => {
   const setAsArray: CurvePlotPoints[] = Array.from(measurements.points || []);
   const traces: CurveTrace[] = [];
@@ -70,17 +71,24 @@ const buildTraces = (
   });
 
   const doses = measurements.map((m: any) => m.dose);
-  const min = Math.min(...doses);
-  const range = Math.max(...doses) - min;
+  const minX = Math.min(...doses);
+  const maxX = Math.max(...doses);
+  const rangeOfExponents = Math.log10(maxX) - Math.log10(minX);
+  const minExponent = Math.log10(minX);
+  const numPts = 2000;
 
-  // make curve traces
-  curves?.forEach((curve: CurveParams, index: number) => {
+  // Make median curve traces
+  const lineColorInGroup = "rgba(1, 50, 32, 1)";
+  const shadingColorInGroup = "rgba(11, 146, 39, 0.3)";
+  const lineColorOutGroup = "rgba(211, 84, 0, 1)";
+  const shadingColorOutGroup = "rgba(251, 192, 147, 0.5)";
+  const colors = [lineColorInGroup, lineColorOutGroup];
+  medianCurves?.forEach((curve: CurveParams, index: number) => {
     const xs: number[] = [];
     const ys: number[] = [];
 
-    const numPts = 3000;
     for (let i = 0; i < numPts; i++) {
-      const x = min + (i / numPts) * range;
+      const x = Math.pow(10, minExponent + (i / numPts) * rangeOfExponents);
       xs.push(x);
       ys.push(
         getCurveY(
@@ -93,64 +101,51 @@ const buildTraces = (
       );
     }
 
-    // In Group
-    const lineColorInGroup = "rgba(1, 50, 32, 1)";
-    const shadingColorInGroup = "rgba(11, 146, 39, 0.3)";
-    const lineColorOutGroup = "rgba(211, 84, 0, 1)";
-    const shadingColorOutGroup = "rgba(251, 192, 147, 0.5)";
     traces.push({
       x: xs,
-      y: Object.values(medianLines[0].quantile_0),
-      name: "Quantile 0 Median 1",
-      type: "scatter",
-      fill: "tonextx",
-      fillcolor: shadingColorInGroup,
-      line: { color: lineColorInGroup, dash: "dash" },
-    });
-
-    traces.push({
-      x: xs,
-      y: Object.values(medianLines[0].quantile_1),
-      name: "Quantile 1 Median 1",
-      type: "scatter",
-      fill: "none",
-      line: { color: lineColorInGroup, dash: "dash" },
-    });
-    traces.push({
-      x: xs,
-      y: Object.values(medianLines[0].smoothed_drc),
-      name: "Median 1",
+      y: ys,
+      name: `Median ${index}`,
       type: "curve",
-      marker: { color: lineColorInGroup },
-    });
-
-    // Out Group
-    traces.push({
-      x: xs,
-      y: Object.values(medianLines[1].quantile_0),
-      name: "Quantile 0 Median 2",
-      type: "scatter",
-      fill: "tonextx",
-      fillcolor: shadingColorOutGroup,
-      line: { color: lineColorOutGroup, dash: "dash" },
+      marker: { color: colors[index] },
     });
 
     traces.push({
       x: xs,
-      y: Object.values(medianLines[1].quantile_1),
-      name: "Quantile 1 Median 2",
-      type: "scatter",
-      fill: "none",
-      line: { color: lineColorOutGroup, dash: "dash" },
-    });
-
-    traces.push({
-      x: xs,
-      y: Object.values(medianLines[1].smoothed_drc),
-      name: `Median 2`,
+      y: ys.map((orig) => orig * 0.4),
+      name: `quantile ${index}`,
       type: "curve",
-      marker: { color: lineColorOutGroup },
+      // marker: { color: "red" },
+      line: { color: colors[index], dash: "dash" },
     });
+
+    traces.push({
+      x: xs,
+      y: ys.map((orig) => orig * 0.4),
+      name: `quantile ${index}`,
+      type: "curve",
+      // marker: { color: "red" },
+      line: { color: colors[index], dash: "dash" },
+    });
+  });
+
+  // make curve traces
+  curves?.forEach((curve: CurveParams, index: number) => {
+    const xs: number[] = [];
+    const ys: number[] = [];
+
+    for (let i = 0; i < numPts; i++) {
+      const x = Math.pow(10, minExponent + (i / numPts) * rangeOfExponents);
+      xs.push(x);
+      ys.push(
+        getCurveY(
+          x,
+          curve.ec50,
+          curve.slope,
+          curve.upperAsymptote,
+          curve.lowerAsymptote
+        )
+      );
+    }
 
     traces.push({
       x: xs,
@@ -174,14 +169,14 @@ const buildTraces = (
 function DoseCurvesPlot({
   measurements,
   curves,
-  medianLines,
+  medianCurves,
   medianTitles,
 }: Props) {
   const [curveTraces, setcurveTraces] = useState<CurveTrace[] | null>(null);
 
   useEffect(() => {
     if (measurements && curves) {
-      const plotTraces = buildTraces(measurements, curves, medianLines);
+      const plotTraces = buildTraces(measurements, curves, medianCurves);
       setcurveTraces(plotTraces);
     }
   }, [measurements, curves]);

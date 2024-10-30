@@ -36,19 +36,11 @@ export interface CurveData {
   curve_params: CurveParams;
 }
 
-export interface MedianCurve {
-  dose: { [key: number]: number };
-  dose_curve: { [key: number]: number };
-  smoothed_drc: { [key: number]: number };
-  quantile_0: { [key: number]: number };
-  quantile_1: { [key: number]: number };
-}
-
 export interface DoseCurveData {
   dose_curves: CurveData[];
   dose_curve_metadata: any[];
-  in_group_median_dose_curve: MedianCurve;
-  out_group_median_dose_curve: MedianCurve;
+  in_group_median_dose_curve: CurveParams;
+  out_group_median_dose_curve: CurveParams;
 }
 
 export const defaultParams: Array<CurveParams> = [

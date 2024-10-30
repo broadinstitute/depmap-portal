@@ -400,29 +400,25 @@ class DoseResponseCurve(Model):
     lower_asymptote = Column(Float)
 
     @staticmethod
-    def get_dose_response_curve_dataframe_for_compound_experiment_models(
-        model_ids: List[int], compound_exp_id: int
-    ):
+    def get_curve_params(compound_experiment: CompoundExperiment, model_ids: List[str]):
+        if len(model_ids) == 1:
+            return DoseResponseCurve.query.filter(
+                DoseResponseCurve.compound_exp == compound_experiment,
+                DoseResponseCurve.depmap_id == model_ids[0],
+            ).all()
+
         query = (
-            db.session.query(CompoundDoseReplicate)
-            .options(
-                load_only(
-                    CompoundDoseReplicate.compound_experiment_id,
-                    CompoundDoseReplicate.dose,
+            DoseResponseCurve.query.filter(
+                and_(
+                    DoseResponseCurve.compound_exp == compound_experiment,
+                    DoseResponseCurve.depmap_id.in_(model_ids),
                 )
             )
             .join(
-                DoseResponseCurve,
-                DoseResponseCurve.compound_exp_id
-                == CompoundDoseReplicate.compound_experiment_id,
+                CompoundDoseReplicate,
+                CompoundDoseReplicate.compound_experiment_id
+                == DoseResponseCurve.compound_exp_id,
             )
-            .filter(
-                and_(
-                    DoseResponseCurve.depmap_id.in_(model_ids),
-                    DoseResponseCurve.compound_exp_id == compound_exp_id,
-                )
-            )
-            .order_by(CompoundDoseReplicate.dose)
             .with_entities(
                 CompoundDoseReplicate.dose,
                 DoseResponseCurve.ec50,

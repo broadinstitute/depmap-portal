@@ -76,7 +76,7 @@ function DoseCurvesTile(props: DoseCurvesTileProps) {
       {!isError && isLoading && <PlotSpinner />}
       {data && (
         <DoseCurvesPlot
-          medianLines={[
+          medianCurves={[
             data.in_group_median_dose_curve,
             data.out_group_median_dose_curve,
           ]}

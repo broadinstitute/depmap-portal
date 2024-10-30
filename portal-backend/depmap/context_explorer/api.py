@@ -11,7 +11,7 @@ from depmap.context_explorer.utils import (
     has_drug_data,
     has_gene_dep_data,
     get_dose_response_curves_per_model,
-    get_median_dose_response_curve,
+    get_median_dose_response_curve_params,
     get_out_group_model_ids,
 )
 from depmap.gene.models import Gene
@@ -464,7 +464,7 @@ class ContextDoseCurves(Resource):
         print(f"TIME get_dose_response_curves_per_model {end-start}")
 
         start = time.time()
-        in_group_median_dose_curve = get_median_dose_response_curve(
+        in_group_median_dose_curve_dict = get_median_dose_response_curve_params(
             model_ids=context_model_ids, compound_experiment=compound_experiment
         )
         end = time.time()
@@ -481,7 +481,7 @@ class ContextDoseCurves(Resource):
         print(f"TIME get_out_group_model_ids {end-start}")
 
         start = time.time()
-        out_group_median_dose_curve = get_median_dose_response_curve(
+        out_group_median_dose_curve_dict = get_median_dose_response_curve_params(
             model_ids=out_group_model_ids, compound_experiment=compound_experiment,
         )
         end = time.time()
@@ -504,8 +504,8 @@ class ContextDoseCurves(Resource):
         }
 
         return {
-            "in_group_median_dose_curve": in_group_median_dose_curve.to_dict(),
-            "out_group_median_dose_curve": out_group_median_dose_curve.to_dict(),
+            "in_group_median_dose_curve": in_group_median_dose_curve_dict,
+            "out_group_median_dose_curve": out_group_median_dose_curve_dict,
             "dose_curves": in_group_dose_curves,
             "dose_curve_metadata": dose_curve_metadata,
         }
