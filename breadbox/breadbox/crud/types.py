@@ -499,7 +499,7 @@ def get_dimension_labels_by_id(
     """
     For a given dimension, get all IDs and labels that exist in the metadata.
     """
-    return get_dimension_type_metadata_col(dimension_type_name, col_name="label")
+    return get_dimension_type_metadata_col(db, dimension_type_name, col_name="label")
 
 
 def get_dimension_type_metadata_col(

@@ -968,7 +968,9 @@ def get_dataset_feature_dimensions(db: SessionWithUser, user: str, dataset_id: s
     return dimensions
 
 
-def get_dataset_features(db: SessionWithUser, dataset: Dataset, user: str):
+def get_dataset_features(
+    db: SessionWithUser, dataset: MatrixDataset, user: str
+) -> list[DatasetFeature]:
     assert_user_has_access_to_dataset(dataset, user)
 
     dataset_features = (
@@ -981,7 +983,9 @@ def get_dataset_features(db: SessionWithUser, dataset: Dataset, user: str):
     return dataset_features
 
 
-def get_dataset_samples(db: SessionWithUser, dataset: Dataset, user: str):
+def get_dataset_samples(
+    db: SessionWithUser, dataset: MatrixDataset, user: str
+) -> list[DatasetSample]:
     assert_user_has_access_to_dataset(dataset, user)
 
     dataset_samples = (
@@ -992,6 +996,21 @@ def get_dataset_samples(db: SessionWithUser, dataset: Dataset, user: str):
     )
 
     return dataset_samples
+
+
+def get_dataset_columns(
+    db: SessionWithUser, dataset: TabularDataset
+) -> list[TabularColumn]:
+    assert_user_has_access_to_dataset(dataset, db.user)
+
+    dataset_columns = (
+        db.query(TabularColumn)
+        .filter(TabularColumn.dataset_id == dataset.id)
+        .order_by(TabularColumn.given_id)
+        .all()
+    )
+
+    return dataset_columns
 
 
 def get_dataset_feature_labels_by_id(
