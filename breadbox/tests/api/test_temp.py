@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-from ..utils import assert_status_ok
+from ..utils import assert_status_ok, assert_status_not_ok
 
 from breadbox.db.session import SessionWithUser
 from breadbox.models.dataset import AnnotationType
@@ -167,3 +167,83 @@ class TestPost:
         assert response_content["ids"] == ["featureID2"]
         assert response_content["labels"] == ["featureLabel2"]
         assert response_content["num_candidates"] == 3
+
+    def test_evaluate_context_errors(
+        self, client: TestClient, minimal_db: SessionWithUser, public_group, settings,
+    ):
+        """
+        Test that errors are handled well when invalid requests are made
+        (instead of just returning an empty set of matches).
+        """
+        # Define label metadata for our samples
+        factories.add_dimension_type(
+            minimal_db,
+            settings,
+            user=settings.admin_users[0],
+            name="some_sample_type",
+            display_name="Sample With Metadata",
+            id_column="ID",
+            annotation_type_mapping={
+                "ID": AnnotationType.text,
+                "label": AnnotationType.text,
+            },
+            axis="sample",
+            metadata_df=pd.DataFrame(
+                {
+                    "ID": ["sampleID1", "sampleID2", "sampleID3"],
+                    "label": ["sampleLabel1", "sampleLabel2", "sampleLabel3"],
+                }
+            ),
+        )
+
+        # Define a matrix dataset
+        example_matrix_values = factories.matrix_csv_data_file_with_values(
+            feature_ids=["featureID1", "featureID2", "featureID3"],
+            sample_ids=["sampleID1", "sampleID2", "sampleID3"],
+            values=np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]]),
+        )
+        dataset_given_id = "dataset_123"
+        factories.matrix_dataset(
+            minimal_db,
+            settings,
+            feature_type=None,
+            sample_type="some_sample_type",
+            data_file=example_matrix_values,
+            given_id=dataset_given_id,
+        )
+
+        # Make sure an error is thrown when a variable isn't defined in the request
+        # Should return a Bad Request error with a message like "Encountered lookup error: 'some_var_that_doesnt_exist'"
+        response = client.post(
+            "/temp/context",
+            json={
+                "dimension_type": "some_sample_type",
+                "name": "value greater than",
+                "expr": {">": [{"var": "some_var_that_doesnt_exist"}, 2.1]},
+                "vars": {},
+            },
+            headers={"X-Forwarded-User": "some-public-user"},
+        )
+        assert_status_not_ok(response)
+        assert response.status_code == 400
+
+        # Make sure an error is thrown when a slice doesn't exist in our database
+        # should return a message like "Sample given ID 'this sample does not exist!' not found in dataset 'dataset_123'."
+        response = client.post(
+            "/temp/context",
+            json={
+                "dimension_type": "some_sample_type",
+                "name": "value greater than",
+                "expr": {">": [{"var": "var_thats_not_in_db"}, 2.1]},
+                "vars": {
+                    "var_thats_not_in_db": {
+                        "dataset_id": dataset_given_id,
+                        "identifier": "this sample does not exist!",
+                        "identifier_type": "sample_id",
+                    },
+                },
+            },
+            headers={"X-Forwarded-User": "some-public-user"},
+        )
+        assert_status_not_ok(response)
+        assert response.status_code == 404
