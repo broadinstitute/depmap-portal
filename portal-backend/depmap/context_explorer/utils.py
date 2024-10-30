@@ -274,112 +274,51 @@ def get_curve_params_for_model_ids(
         compound_experiment=compound_experiment, model_ids=model_ids
     )
     curve_params = []
-
     for curve in curve_objs:
-        curve_param = {
-            "ec50": curve.ec50,
-            "slope": curve.slope,
-            "lowerAsymptote": curve.lower_asymptote,
-            "upperAsymptote": curve.upper_asymptote,
-        }
-        curve_params.append(curve_param)
+        if curve is not None:
+            curve_param = {
+                "id": curve.depmap_id,
+                "ec50": curve.ec50,
+                "slope": curve.slope,
+                "lowerAsymptote": curve.lower_asymptote,
+                "upperAsymptote": curve.upper_asymptote,
+            }
+            curve_params.append(curve_param)
 
     return curve_params
 
 
-def get_dose_curve(
-    dataset_name: str, model_id: str, compound_experiment: CompoundExperiment
+def get_dose_response_curves_per_model(
+    in_group_model_ids: List[str],
+    out_group_model_ids: List[str],
+    replicate_dataset_name: str,
+    compound_experiment: CompoundExperiment,
 ):
-    dataset = Dataset.get_dataset_by_name(dataset_name)
-    # get all CompoundDoseReplicate objects associated with CompoundExperiment
-    compound_dose_replicates = CompoundDoseReplicate.get_all_with_compound_experiment_id(
+    dataset = Dataset.get_dataset_by_name(replicate_dataset_name)
+
+    dose_min_max_df = CompoundDoseReplicate.get_dose_min_max_of_replicates_with_compound_experiment_id(
         compound_experiment.entity_id
     )
     compound_dose_replicates = [
         dose_rep
-        for dose_rep in compound_dose_replicates
+        for dose_rep in dose_min_max_df
         if DependencyDataset.has_entity(dataset.name, dose_rep.entity_id)
     ]
 
-    try:
-        # call the get_values_by_entities_and_depmap_id function in matrix, passing in entities and depmap id
-        viabilities = dataset.matrix.get_values_by_entities_and_depmap_id(
-            entities=compound_dose_replicates, depmap_id=model_id
-        )
-
-        # points only contains viability -- we need to add on dose, isMasked, and replicate ourselves
-        assert len(compound_dose_replicates) == len(viabilities)
-    except:
-        return None
-    points = []
-    for i in range(len(viabilities)):
-        if (viabilities[i] is not None) & (not math.isnan(viabilities[i])):
-            points.append(
-                {
-                    "dose": compound_dose_replicates[i].dose,
-                    "viability": viabilities[i].item(),
-                    "isMasked": compound_dose_replicates[i].is_masked,
-                    "replicate": compound_dose_replicates[i].replicate,
-                }
-            )
-
-    # fetch the dose response curve parameters using cell line name and compound experiment to find the appropriate DoseResponseCurve
-    curve_params = get_curve_params_for_model_ids(
-        compound_experiment=compound_experiment, model_ids=[model_id]
+    in_group_curve_params = get_curve_params_for_model_ids(
+        model_ids=in_group_model_ids, compound_experiment=compound_experiment
     )
 
-    dose_response_curve = {"points": points, "curve_params": curve_params}
-
-    return dose_response_curve
-
-
-def get_dose_response_curves_per_model(
-    model_ids: List[str],
-    replicate_dataset_name: str,
-    compound_experiment: CompoundExperiment,
-):
-    # Get the list of in group model curves
-    dose_curves = []
-    for model_id in model_ids:
-        curve = get_dose_curve(
-            dataset_name=replicate_dataset_name,
-            model_id=model_id,
-            compound_experiment=compound_experiment,
-        )
-
-        if curve is not None:
-            dose_curves.append(curve)
-
-    return dose_curves
-
-
-def get_median_dose_response_curve_params(
-    model_ids: List[str], compound_experiment: CompoundExperiment
-):
-
-    print(f"NUMBER OF MODEL IDS {len(model_ids)}")
-    import time
-
-    start = time.time()
-    # Get the median of in group models
-    dose_curves_df = DoseResponseCurve.get_curve_params(
-        compound_experiment=compound_experiment, model_ids=model_ids
+    out_group_curve_params = get_curve_params_for_model_ids(
+        model_ids=out_group_model_ids, compound_experiment=compound_experiment
     )
-    dose_curves_median_df = dose_curves_df.groupby("dose").median()
 
-    end = time.time()
-    print(f"HERE DoseResponseCurve.get_curve_params {end-start}")
-
-    dose_curves_median_dict = dose_curves_median_df.iloc[0].to_dict()
-
-    curve_param_dict = {
-        "ec50": dose_curves_median_dict["ec50"],
-        "slope": dose_curves_median_dict["slope"],
-        "lowerAsymptote": dose_curves_median_dict["lower_asymptote"],
-        "upperAsymptote": dose_curves_median_dict["upper_asymptote"],
+    return {
+        "in_group_curve_params": in_group_curve_params,
+        "out_group_curve_params": out_group_curve_params,
+        "max_dose": compound_dose_replicates[0].max_dose,
+        "min_dose": compound_dose_replicates[0].min_dose,
     }
-
-    return curve_param_dict
 
 
 def get_out_group_model_ids(

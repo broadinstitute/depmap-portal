@@ -37,10 +37,11 @@ export interface CurveData {
 }
 
 export interface DoseCurveData {
-  dose_curves: CurveData[];
+  in_group_curve_params: CurveParams[];
+  out_group_curve_params: CurveParams[];
   dose_curve_metadata: any[];
-  in_group_median_dose_curve: CurveParams;
-  out_group_median_dose_curve: CurveParams;
+  min_dose: number;
+  max_dose: number;
 }
 
 export const defaultParams: Array<CurveParams> = [

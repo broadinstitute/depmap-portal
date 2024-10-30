@@ -12,6 +12,7 @@ export interface LineChartProps {
   height?: number | "auto";
   margin?: Margin;
   customWidth?: number | undefined;
+  xRange?: number[] | undefined;
 }
 
 const calcPlotHeight = (plot: HTMLDivElement) => {
@@ -29,6 +30,7 @@ function LineChart({
   onLoad = () => {},
   height = "auto",
   customWidth = undefined,
+  xRange = undefined,
   margin = {
     l: 80,
 
@@ -55,16 +57,12 @@ function LineChart({
 
     const xAxisTemplate: Partial<Plotly.LayoutAxis> = {
       visible: true,
-      type: "linear",
+      type: "log",
     };
 
     const yAxisTemplate: Partial<Plotly.LayoutAxis> = {
       visible: true,
-      autorange: true,
-
-      // Type MUST be explicitly stated. Without this, plotly thinks
-      // y is also categorical will plot the y numbers as if they were strings.
-      type: "linear",
+      rangemode: "tozero",
       title: yAxisTitle,
     };
 
@@ -89,7 +87,16 @@ function LineChart({
     const config: Partial<Plotly.Config> = { responsive: true };
 
     Plotly.newPlot(plot, curves, layout, config);
-  }, [Plotly, showLegend, height, margin, customWidth, title, yAxisTitle]);
+  }, [
+    Plotly,
+    showLegend,
+    height,
+    margin,
+    customWidth,
+    xRange,
+    title,
+    yAxisTitle,
+  ]);
 
   return <div ref={ref} />;
 }

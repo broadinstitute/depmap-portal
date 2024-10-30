@@ -1,7 +1,6 @@
 from typing import List
 import sqlalchemy
-from sqlalchemy import and_
-from sqlalchemy.orm import load_only
+from sqlalchemy import and_, func
 from depmap.database import (
     Column,
     Float,
@@ -361,6 +360,21 @@ class CompoundDoseReplicate(Entity):
         q = CompoundDoseReplicate.query.filter_by(compound_experiment_id=cpd_exp_id)
         return q.all()
 
+    @staticmethod
+    def get_dose_min_max_of_replicates_with_compound_experiment_id(cpd_exp_id):
+        q = (
+            db.session.query(
+                CompoundDoseReplicate.dose, CompoundDoseReplicate.entity_id
+            )
+            .filter_by(compound_experiment_id=cpd_exp_id)
+            .with_entities(
+                CompoundDoseReplicate.entity_id,
+                func.max(CompoundDoseReplicate.dose).label("max_dose"),
+                func.min(CompoundDoseReplicate.dose).label("min_dose"),
+            )
+        )
+        return q.all()
+
     @classmethod
     def get_all_for_compound_label(
         cls, compound_label: str, must=True
@@ -407,7 +421,7 @@ class DoseResponseCurve(Model):
                 DoseResponseCurve.depmap_id == model_ids[0],
             ).all()
 
-        query = (
+        return (
             DoseResponseCurve.query.filter(
                 and_(
                     DoseResponseCurve.compound_exp == compound_experiment,
@@ -419,16 +433,5 @@ class DoseResponseCurve(Model):
                 CompoundDoseReplicate.compound_experiment_id
                 == DoseResponseCurve.compound_exp_id,
             )
-            .with_entities(
-                CompoundDoseReplicate.dose,
-                DoseResponseCurve.ec50,
-                DoseResponseCurve.slope,
-                DoseResponseCurve.lower_asymptote,
-                DoseResponseCurve.upper_asymptote,
-                DoseResponseCurve.depmap_id.label("model_id"),
-            )
+            .all()
         )
-
-        dose_curves_df = pd.read_sql(query.statement, query.session.connection())
-
-        return dose_curves_df

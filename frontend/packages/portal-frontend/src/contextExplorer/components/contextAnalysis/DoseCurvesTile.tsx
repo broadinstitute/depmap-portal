@@ -1,11 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
-import {
-  CurveData,
-  CurvePlotPoints,
-  DoseCurveData,
-} from "src/compound/components/DoseResponseCurve";
+import { DoseCurveData } from "src/compound/components/DoseResponseCurve";
 import styles from "src/contextExplorer/styles/ContextExplorer.scss";
-import { DoseResponseCurvePromise } from "src/dAPI";
 import PlotSpinner from "src/plot/components/PlotSpinner";
 import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
 import DoseCurvesPlot from "./DoseCurvesPlot";
@@ -64,7 +59,7 @@ function DoseCurvesTile(props: DoseCurvesTileProps) {
         .finally(() => setIsLoading(false));
     }
   }, [datasetName, selectedContextName, selectedDrugLabel]);
-  console.log(data);
+
   return (
     <div>
       {isError && (
@@ -76,23 +71,10 @@ function DoseCurvesTile(props: DoseCurvesTileProps) {
       {!isError && isLoading && <PlotSpinner />}
       {data && (
         <DoseCurvesPlot
-          medianCurves={[
-            data.in_group_median_dose_curve,
-            data.out_group_median_dose_curve,
-          ]}
-          medianTitles={["a", "b"]}
-          measurements={[
-            ...new Set<CurvePlotPoints>(
-              data.dose_curves
-                .map((curve: CurveData) => curve?.points)
-                .filter(Boolean)
-                .reduce((prev: any, cur: any) => prev!.concat(cur!), [])
-            ),
-          ]}
-          curves={data.dose_curves
-            .map((curve: CurveData) => curve?.curve_params)
-            .filter(Boolean)
-            .reduce((prev: any, cur: any) => prev!.concat(cur!), [])}
+          minDose={data.min_dose}
+          maxDose={data.max_dose}
+          inGroupCurveParams={data.in_group_curve_params}
+          outGroupCurveParams={data.out_group_curve_params}
         />
       )}
     </div>

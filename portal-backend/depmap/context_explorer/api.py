@@ -11,7 +11,6 @@ from depmap.context_explorer.utils import (
     has_drug_data,
     has_gene_dep_data,
     get_dose_response_curves_per_model,
-    get_median_dose_response_curve_params,
     get_out_group_model_ids,
 )
 from depmap.gene.models import Gene
@@ -444,51 +443,33 @@ class ContextDoseCurves(Resource):
         compound_experiment = _get_compound_experiment(
             entity_full_label=entity_full_label
         )
-        import time
 
-        start = time.time()
         # TODO this needs to be updated to query the new context tree for the list of models
-        context_model_ids = DepmapModel.get_model_ids_by_lineage_and_level(
+        in_group_model_ids = DepmapModel.get_model_ids_by_lineage_and_level(
             context_name, level
         ).keys()
-        end = time.time()
-        print(f"TIME get_model_ids_by_lineage_and_level {end-start}")
-
-        start = time.time()
-        in_group_dose_curves = get_dose_response_curves_per_model(
-            context_model_ids,
-            replicate_dataset_name,
-            compound_experiment=compound_experiment,
-        )
-        end = time.time()
-        print(f"TIME get_dose_response_curves_per_model {end-start}")
-
-        start = time.time()
-        in_group_median_dose_curve_dict = get_median_dose_response_curve_params(
-            model_ids=context_model_ids, compound_experiment=compound_experiment
-        )
-        end = time.time()
-        print(f"TIME get_median_dose_response_curve {end-start}")
-
-        start = time.time()
         out_group_model_ids = get_out_group_model_ids(
             "All Others",  # TODO UPDATE THIS TO USE out_group_type
             dataset_name=dataset_name,
             entity_id=compound_experiment.entity_id,
-            in_group_model_ids=context_model_ids,
+            in_group_model_ids=in_group_model_ids,
         )
-        end = time.time()
-        print(f"TIME get_out_group_model_ids {end-start}")
 
-        start = time.time()
-        out_group_median_dose_curve_dict = get_median_dose_response_curve_params(
-            model_ids=out_group_model_ids, compound_experiment=compound_experiment,
+        dose_curve_info = get_dose_response_curves_per_model(
+            in_group_model_ids=in_group_model_ids,
+            out_group_model_ids=out_group_model_ids,
+            replicate_dataset_name=replicate_dataset_name,
+            compound_experiment=compound_experiment,
         )
-        end = time.time()
-        print(f"TIME out_group_median_dose_curve {end-start}")
+
+        # Needed for frontend calculation of the out-group median line. The first pass
+        # at this feature calculated the median of each curve_param: ec50, upper_asymptote, etc,
+        # but this method result in a slightly distorted, inaccurate curve. As a result, it
+        # became necessary to retrieve each individual out_group_curve.
 
         label = f"{compound_experiment.label} {dataset.display_name}"
 
+        # TODO not sure if I need this metadata yet
         dose_curve_metadata = {
             "label": label,
             "id": f"{dataset.name.name}_{compound_experiment.entity_id}",  # used for uniqueness
@@ -504,9 +485,10 @@ class ContextDoseCurves(Resource):
         }
 
         return {
-            "in_group_median_dose_curve": in_group_median_dose_curve_dict,
-            "out_group_median_dose_curve": out_group_median_dose_curve_dict,
-            "dose_curves": in_group_dose_curves,
+            "in_group_curve_params": dose_curve_info["in_group_curve_params"],
+            "out_group_curve_params": dose_curve_info["out_group_curve_params"],
+            "max_dose": min(dose_curve_info["max_dose"], 1.0),
+            "min_dose": dose_curve_info["min_dose"],
             "dose_curve_metadata": dose_curve_metadata,
         }
 
