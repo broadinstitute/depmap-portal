@@ -116,7 +116,6 @@ class TabularDataset(Dataset):
     index_type_name = Column(
         String, ForeignKey("dimension_type.name", ondelete="CASCADE"), nullable=False
     )
-    index_type = relationship("DimensionType", foreign_keys=[index_type_name])
     __mapper_args__ = {"polymorphic_identity": "tabular_dataset"}
 
     @property

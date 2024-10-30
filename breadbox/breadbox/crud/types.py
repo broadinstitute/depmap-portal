@@ -459,6 +459,7 @@ def update_dimension_type_metadata(
 
 
 def delete_dimension_type(db: SessionWithUser, dimension_type: DimensionType):
+    """Delete the dimension type as well as its metadata dataset."""
     db.delete(dimension_type)
     db.flush()
     return True

@@ -1006,7 +1006,10 @@ def get_tabular_dataset_index_given_ids(
     This can be used for joining the metadata that's relevant for this particular dataset.
     Warning: this may contain given IDs that do not exist in the metadata.
     """
-    id_col_name = dataset.index_type.id_column
+    dimension_type = (
+        db.query(DimensionType).filter_by(name=dataset.index_type_name).one_or_none()
+    )
+    id_col_name = dimension_type.id_column
     cells_in_id_column = (
         db.query(TabularCell)
         .join(TabularColumn)
