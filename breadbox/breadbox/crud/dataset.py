@@ -998,19 +998,27 @@ def get_dataset_samples(
     return dataset_samples
 
 
-def get_dataset_columns(
+def get_tabular_dataset_index_given_ids(
     db: SessionWithUser, dataset: TabularDataset
-) -> list[TabularColumn]:
-    assert_user_has_access_to_dataset(dataset, db.user)
-
-    dataset_columns = (
-        db.query(TabularColumn)
-        .filter(TabularColumn.dataset_id == dataset.id)
-        .order_by(TabularColumn.given_id)
+) -> list[str]:
+    """
+    Get all row given IDs belonging to a tabular dataset.
+    This can be used for joining the metadata that's relevant for this particular dataset.
+    Warning: this may contain given IDs that do not exist in the metadata.
+    """
+    id_col_name = dataset.index_type.id_column
+    cells_in_id_column = (
+        db.query(TabularCell)
+        .join(TabularColumn)
+        .filter(
+            and_(
+                TabularColumn.dataset_id == dataset.id,
+                TabularColumn.given_id == id_col_name,
+            )
+        )
         .all()
     )
-
-    return dataset_columns
+    return [cell.dimension_given_id for cell in cells_in_id_column]
 
 
 def get_dataset_feature_labels_by_id(

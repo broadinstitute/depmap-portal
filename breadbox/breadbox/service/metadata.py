@@ -13,7 +13,7 @@ log = logging.getLogger(__name__)
 
 
 def get_tabular_dataset_metadata_annotations(
-    db: SessionWithUser, dataset: MatrixDataset, metadata_col_name: str,
+    db: SessionWithUser, dataset: TabularDataset, metadata_col_name: str,
 ) -> dict[str, Any]:
     """
     For the given tabular dataset, load a column from the associated metadata.
@@ -22,19 +22,26 @@ def get_tabular_dataset_metadata_annotations(
     or HAS metadata.
     """
     full_metadata_col = types_crud.get_dimension_type_metadata_col(
-        db, dimension_type_name=dataset.sample_type, col_name=metadata_col_name
+        db, dimension_type_name=dataset.index_type_name, col_name=metadata_col_name
     )
     # Filter the metadata to only include the given IDs belonging to this dataset
-    dataset_samples = dataset_crud.get_dataset_columns(db, dataset)
-    dataset_given_ids = [sample.given_id for sample in dataset_samples]
-    return {given_id: full_metadata_col[given_id] for given_id in dataset_given_ids}
+    dataset_index_given_ids = dataset_crud.get_tabular_dataset_index_given_ids(
+        db, dataset
+    )
+    filtered_metadata_vals = {}
+    for given_id in dataset_index_given_ids:
+        metadata_val = full_metadata_col.get(given_id)
+        if metadata_val is not None:
+            filtered_metadata_vals[given_id] = metadata_val
+    return filtered_metadata_vals
 
 
 def get_tabular_dataset_labels_by_id(
     db: SessionWithUser, dataset: TabularDataset,
 ) -> dict[str, str]:
     """
-    For the index (rows) of a tabular dataset, try loading labels from metadata.
+    For the index (rows) of a tabular dataset, load the relevant labels from metadata.
+    This should only include the labels that overlap between the dataset and its metadata.
     If there are no labels in the metadata or there is no metadata, then just return the given IDs as labels.
     """
     metadata_labels = get_tabular_dataset_metadata_annotations(
@@ -43,8 +50,10 @@ def get_tabular_dataset_labels_by_id(
     if metadata_labels:
         return metadata_labels
     else:
-        columns = dataset_crud.get_dataset_columns(db=db, dataset=dataset)
-        return {column.given_id: column.given_id for column in columns}
+        dataset_index_given_ids = dataset_crud.get_tabular_dataset_index_given_ids(
+            db, dataset
+        )
+        return {given_id: given_id for given_id in dataset_index_given_ids}
 
 
 def get_labels_for_slice_type(
