@@ -1,11 +1,13 @@
-import _, { range } from "lodash";
 import React, { useEffect, useState } from "react";
-import {
-  CurveParams,
-  CurvePlotPoints,
-} from "src/compound/components/DoseResponseCurve";
-import LineChart from "src/plot/components/LineChart";
-import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
+import { CurveParams } from "src/compound/components/DoseResponseCurve";
+import LineChart from "src/plot/components/CurvesChart";
+// import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
+
+// Make median curve traces
+const lineColorInGroup = "rgba(1, 50, 32, 1)";
+const shadingColorInGroup = "rgba(11, 146, 39, 0.3)";
+const lineColorOutGroup = "rgba(211, 84, 0, 1)";
+const shadingColorOutGroup = "rgba(251, 192, 147, 0.5)";
 
 interface Props {
   minDose: number;
@@ -31,40 +33,190 @@ interface CurveTrace {
   mode?: string;
 }
 
-function getCurveY(
-  x: number,
-  ec50: number,
-  slope: number,
-  upperA: number,
-  lowerA: number
-) {
-  return lowerA + (upperA - lowerA) / (1 + Math.pow(x / ec50, -slope));
-}
+const getMedianData = (
+  data: {
+    xs: number[];
+    ys: Float32Array;
+  }[]
+) => {
+  const medianYs: number[] = [];
+  const quantile0Ys: number[] = [];
+  const quantile1Ys: number[] = [];
+  for (let index = 0; index < data[0].xs.length; index++) {
+    const xIndex = index;
 
-interface MedianAndQuantiles {
-  median: number;
-  quantile0: number;
-  quantile1: number;
-}
-const calcMedianAndQuantiles = (
-  sortedArr: number[],
-  quantile0Index: number,
-  quantile1Index: number
-): MedianAndQuantiles => {
-  const s = [...sortedArr];
-  const mid = Math.floor(s.length / 2);
-  const median = s.length % 2 ? s[mid] : (s[mid - 1] + s[mid]) / 2;
-  const quantile0 = s[Math.round(quantile0Index)];
-  const quantile1 = s[Math.round(quantile1Index)];
+    const yValsAtThisXIndex = new Float32Array(data.length);
+    for (let j = 0; j < data.length; j++) {
+      const dataCurve = data[j];
+      yValsAtThisXIndex[j] = dataCurve.ys[xIndex];
+    }
+    const sortedArr = yValsAtThisXIndex.sort();
+    const quantile0Index = sortedArr.length * 0.4;
+    const quantile1Index = sortedArr.length * 0.6;
+    const mid = Math.floor(sortedArr.length / 2);
+    const median =
+      sortedArr.length % 2
+        ? sortedArr[mid]
+        : (sortedArr[mid - 1] + sortedArr[mid]) / 2;
+    const quantile0 = sortedArr[Math.round(quantile0Index)];
+    const quantile1 = sortedArr[Math.round(quantile1Index)];
 
-  return { median, quantile0, quantile1 };
+    medianYs.push(median);
+    quantile0Ys.push(quantile0);
+    quantile1Ys.push(quantile1);
+  }
+
+  return { xs: data[0].xs, medianYs, quantile0Ys, quantile1Ys };
 };
 
-// Make median curve traces
-const lineColorInGroup = "rgba(1, 50, 32, 1)";
-const shadingColorInGroup = "rgba(11, 146, 39, 0.3)";
-const lineColorOutGroup = "rgba(211, 84, 0, 1)";
-const shadingColorOutGroup = "rgba(251, 192, 147, 0.5)";
+const samplePoints = (
+  curves: CurveParams[],
+  numPts: number,
+  minExponent: number,
+  rangeOfExponents: number
+) => {
+  const data: { xs: number[]; ys: Float32Array }[] = [];
+
+  for (let i = 0; i < curves.length; i++) {
+    const lowerA = curves[i].lowerAsymptote;
+    const upperA = curves[i].upperAsymptote;
+    const ec50 = curves[i].ec50;
+    const slope = curves[i].slope;
+    const xs: number[] = [];
+    const ys = new Float32Array(numPts);
+
+    for (let j = 0; j < numPts; j++) {
+      const x = Math.pow(
+        10,
+        minExponent + (j / (numPts - 1)) * rangeOfExponents
+      );
+      xs.push(x);
+
+      ys[j] = lowerA + (upperA - lowerA) / (1 + Math.pow(x / ec50, -slope));
+    }
+
+    data.push({ xs, ys });
+  }
+
+  const medianYs: number[] = [];
+  const quantile0Ys: number[] = [];
+  const quantile1Ys: number[] = [];
+  for (let index = 0; index < data[0].xs.length; index++) {
+    const xIndex = index;
+
+    const yValsAtThisXIndex = new Float32Array(data.length);
+    for (let j = 0; j < data.length; j++) {
+      const dataCurve = data[j];
+      yValsAtThisXIndex[j] = dataCurve.ys[xIndex];
+    }
+    const sortedArr = yValsAtThisXIndex.sort();
+    const quantile0Index = sortedArr.length * 0.4;
+    const quantile1Index = sortedArr.length * 0.6;
+    const mid = Math.floor(sortedArr.length / 2);
+    const median =
+      sortedArr.length % 2
+        ? sortedArr[mid]
+        : (sortedArr[mid - 1] + sortedArr[mid]) / 2;
+    const quantile0 = sortedArr[Math.round(quantile0Index)];
+    const quantile1 = sortedArr[Math.round(quantile1Index)];
+
+    medianYs.push(median);
+    quantile0Ys.push(quantile0);
+    quantile1Ys.push(quantile1);
+  }
+
+  return {
+    data,
+    medianData: { xs: data[0].xs, medianYs, quantile0Ys, quantile1Ys },
+  };
+};
+
+const buildMedianAndQuantileTraces = (
+  xs: number[],
+  medianYs: number[],
+  quantile0Ys: number[],
+  quantile1Ys: number[],
+  lineColor: string,
+  fillColor: string
+) => {
+  const traces: CurveTrace[] = [];
+  traces.push({
+    x: xs,
+    y: quantile0Ys,
+    name: "",
+    type: "curve",
+    mode: "lines",
+    fill: "tonextx",
+    fillcolor: fillColor,
+    line: { color: lineColor, dash: "dash", smoothing: 1.3 },
+  });
+
+  traces.push({
+    x: xs,
+    y: quantile1Ys,
+    name: "",
+    type: "curve",
+    mode: "lines",
+    fill: "none",
+    fillcolor: fillColor,
+    line: { color: lineColor, dash: "dash", smoothing: 1.3 },
+  });
+
+  traces.push({
+    x: xs,
+    y: medianYs,
+    name: "",
+    mode: "lines",
+    type: "curve",
+    marker: { color: lineColor },
+  });
+
+  return traces;
+};
+
+const getTraces = (
+  curveParams: CurveParams[],
+  numPts: number,
+  minExponent: number,
+  rangeOfExponents: number,
+  lineColor: string,
+  shadingColor: string
+) => {
+  const traces: CurveTrace[] = [];
+  const curves = samplePoints(
+    curveParams,
+    numPts,
+    minExponent,
+    rangeOfExponents
+  );
+  const points = curves.data;
+  const medianPoints = curves.medianData;
+
+  for (let index = 0; index < points.length; index++) {
+    const pt = points[index];
+
+    traces.push({
+      x: pt.xs,
+      y: Array.from(pt.ys),
+      name: "",
+      type: "curve",
+      mode: "lines",
+      marker: { color: "rgba(108, 122, 137, 0.5)" },
+    });
+  }
+
+  const medianAndQuantileTraces = buildMedianAndQuantileTraces(
+    medianPoints.xs,
+    medianPoints.medianYs,
+    medianPoints.quantile0Ys,
+    medianPoints.quantile1Ys,
+    lineColor,
+    shadingColor
+  );
+  traces.push(...medianAndQuantileTraces);
+
+  return traces;
+};
 
 const buildTraces = (
   minDose: number,
@@ -72,179 +224,43 @@ const buildTraces = (
   inGroupCurveParams: CurveParams[],
   outGroupCurveParams: CurveParams[]
 ): CurveTrace[] => {
-  const traces: CurveTrace[] = [];
-
   const minX = minDose;
   const maxX = maxDose;
   const rangeOfExponents = Math.log10(maxX) - Math.log10(minX);
   const minExponent = Math.log10(minX);
-  const numPts = 300;
+  const inGroupNumPts = 150;
+  const outGroupNumPts = 8;
 
-  const xs: number[] = [];
+  const traces = getTraces(
+    inGroupCurveParams,
+    inGroupNumPts,
+    minExponent,
+    rangeOfExponents,
+    lineColorInGroup,
+    shadingColorInGroup
+  );
 
-  // make curve traces
-  inGroupCurveParams?.forEach((curve: CurveParams, index: number) => {
-    const ys: number[] = [];
+  const outGroupData = samplePoints(
+    outGroupCurveParams,
+    outGroupNumPts,
+    minExponent,
+    rangeOfExponents
+  );
 
-    for (let i = 0; i < numPts; i++) {
-      const x = Math.pow(10, minExponent + (i / numPts) * rangeOfExponents);
-      xs.push(x);
-      const curveY = getCurveY(
-        x,
-        curve.ec50,
-        curve.slope,
-        curve.upperAsymptote,
-        curve.lowerAsymptote
-      );
-      ys.push(curveY);
-    }
-    traces.push({
-      x: xs,
-      y: ys,
-      name: `${curve.id}`,
-      type: "curve",
-      mode: "lines",
-      marker: {
-        color: "rgba(108, 122, 137, 0.5)",
-        line: {
-          smoothing: 1.3,
-        },
-      },
-    });
-  });
+  const medianPoints = outGroupData.medianData;
 
-  const xsOUT: number[] = [];
-  // Needed for the median and quantile calculations, but not drawn as individual curves
-  const outgroupTracesNotDrawn: CurveTrace[] = [];
-  outGroupCurveParams?.forEach((curve: CurveParams) => {
-    const ys: number[] = [];
-
-    for (let i = 0; i < 8; i++) {
-      const x = Math.pow(10, minExponent + (i / 7) * rangeOfExponents);
-      xsOUT.push(x);
-      const curveY = getCurveY(
-        x,
-        curve.ec50,
-        curve.slope,
-        curve.upperAsymptote,
-        curve.lowerAsymptote
-      );
-      ys.push(curveY);
-    }
-    outgroupTracesNotDrawn.push({
-      x: xsOUT,
-      y: ys,
-      name: "",
-      type: "curve",
-      marker: { color: "rgba(108, 122, 137, 1)" },
-    });
-  });
-
-  const medianYs: number[] = [];
-  const quantile0Ys: number[] = [];
-  const quantile1Ys: number[] = [];
-
-  const outGroupMedianYs: number[] = [];
-  const outGroupQuantile0Ys: number[] = [];
-  const outGroupQuantile1Ys: number[] = [];
-
-  xs.forEach((_: number, i: number) => {
-    // get the In Group y's
-    const yValsAtXDose = [...traces].map((trace: CurveTrace) => trace.y[i]);
-    const sortedYValsAtXDose = [...yValsAtXDose].sort();
-    const quantile0Location = sortedYValsAtXDose.length * 0.4;
-    const quantile1Location = sortedYValsAtXDose.length * 0.6;
-    const medianAndQuantiles = calcMedianAndQuantiles(
-      sortedYValsAtXDose,
-      quantile0Location,
-      quantile1Location
-    );
-    medianYs.push(medianAndQuantiles.median);
-    quantile0Ys.push(medianAndQuantiles.quantile0);
-    quantile1Ys.push(medianAndQuantiles.quantile1);
-  });
-
-  xsOUT.forEach((_: number, i: number) => {
-    // get the Out Group y's
-    const yValsAtXDoseOUT = [...outgroupTracesNotDrawn].map(
-      (trace: CurveTrace) => trace.y[i]
-    );
-    const sortedYValsAtXDoseOUT = [...yValsAtXDoseOUT].sort();
-    const quantile0LocationOUT = sortedYValsAtXDoseOUT.length * 0.4;
-    const quantile1LocationOUT = sortedYValsAtXDoseOUT.length * 0.6;
-    const medianAndQuantilesOUT = calcMedianAndQuantiles(
-      sortedYValsAtXDoseOUT,
-      quantile0LocationOUT,
-      quantile1LocationOUT
-    );
-    outGroupMedianYs.push(medianAndQuantilesOUT.median);
-    outGroupQuantile0Ys.push(medianAndQuantilesOUT.quantile0);
-    outGroupQuantile1Ys.push(medianAndQuantilesOUT.quantile1);
-  });
-
-  traces.push({
-    x: xs,
-    y: quantile0Ys,
-    name: "quantile 0 in group",
-    type: "curve",
-    mode: "lines",
-    fill: "tonextx",
-    fillcolor: shadingColorInGroup,
-    line: { color: lineColorInGroup, dash: "dash", smoothing: 1.3 },
-  });
-
-  traces.push({
-    x: xs,
-    y: quantile1Ys,
-    name: "quantile 1 in group",
-    type: "curve",
-    mode: "lines",
-    fill: "none",
-    fillcolor: shadingColorInGroup,
-    line: { color: lineColorInGroup, dash: "dash", smoothing: 1.3 },
-  });
-
-  traces.push({
-    x: xs,
-    y: medianYs,
-    name: "median in group",
-    mode: "lines",
-    type: "curve",
-    marker: { color: lineColorInGroup },
-  });
-
-  traces.push({
-    x: xsOUT,
-    y: outGroupQuantile0Ys,
-    name: "quantile 0 OUT group",
-    type: "curve",
-    mode: "lines",
-    fill: "tonextx",
-    fillcolor: shadingColorOutGroup,
-    line: { color: lineColorOutGroup, dash: "dash", smoothing: 1.3 },
-  });
-
-  traces.push({
-    x: xsOUT,
-    y: outGroupQuantile1Ys,
-    name: "quantile 1 OUT group",
-    type: "curve",
-    mode: "lines",
-    fill: "none",
-    fillcolor: shadingColorOutGroup,
-    line: { color: lineColorOutGroup, dash: "dash", smoothing: 1.3 },
-  });
-
-  traces.push({
-    x: xsOUT,
-    y: outGroupMedianYs,
-    name: "median OUT group",
-    type: "curve",
-    mode: "lines",
-    marker: { color: lineColorOutGroup },
-  });
+  const medianAndQuantileTraces = buildMedianAndQuantileTraces(
+    medianPoints.xs,
+    medianPoints.medianYs,
+    medianPoints.quantile0Ys,
+    medianPoints.quantile1Ys,
+    lineColorOutGroup,
+    shadingColorOutGroup
+  );
+  traces.push(...medianAndQuantileTraces);
 
   traces.reverse();
+
   return traces;
 };
 

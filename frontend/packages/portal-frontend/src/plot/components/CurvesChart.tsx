@@ -3,7 +3,7 @@ import React, { useEffect, useRef } from "react";
 import ExtendedPlotType from "../models/ExtendedPlotType";
 import PlotlyLoader, { PlotlyType } from "./PlotlyLoader";
 
-export interface LineChartProps {
+export interface CurvesChartProps {
   title: string;
   yAxisTitle: string;
   curves: any;
@@ -20,9 +20,9 @@ const calcPlotHeight = (plot: HTMLDivElement) => {
   return Math.min(plot.offsetWidth * 0.8, fullHeight);
 };
 
-type LineChartWithPlotly = LineChartProps & { Plotly: PlotlyType };
+type CurvesChartWithPlotly = CurvesChartProps & { Plotly: PlotlyType };
 
-function LineChart({
+function CurvesChart({
   title,
   yAxisTitle,
   curves,
@@ -43,7 +43,7 @@ function LineChart({
     pad: 0,
   },
   Plotly,
-}: LineChartWithPlotly) {
+}: CurvesChartWithPlotly) {
   const ref = useRef<ExtendedPlotType>(null);
 
   useEffect(() => {
@@ -92,6 +92,7 @@ function LineChart({
     showLegend,
     height,
     margin,
+    curves,
     customWidth,
     xRange,
     title,
@@ -105,12 +106,12 @@ export default function LazyLineChart({
   title,
   curves,
   ...otherProps
-}: LineChartProps) {
+}: CurvesChartProps) {
   return (
     <PlotlyLoader version="module">
       {(Plotly) =>
         curves ? (
-          <LineChart
+          <CurvesChart
             title={title}
             curves={curves}
             Plotly={Plotly}
