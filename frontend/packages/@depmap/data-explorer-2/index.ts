@@ -14,6 +14,7 @@ export {
   fetchContext,
   fetchCorrelation,
   fetchDatasetsByIndexType,
+  fetchDatasetsMatchingContextIncludingEntities,
   fetchGeneTeaEnrichment,
   fetchGeneTeaTermContext,
   fetchLinearRegression,

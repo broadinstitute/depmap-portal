@@ -52,6 +52,11 @@ def interactive_table():
     return render_template("interactive_table/index.html")
 
 
+@blueprint.route("/datasets")
+def datasets():
+    return render_template("dev/datasets.html")
+
+
 @blueprint.route("/crawl_start/")
 def crawl_start():
     """
