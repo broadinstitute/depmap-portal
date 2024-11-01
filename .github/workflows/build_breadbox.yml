@@ -93,18 +93,18 @@ jobs:
           registry: us.gcr.io
           username: _json_key
           password: ${{ secrets.DEPMAP_DEPLOY_SVC_ACCT }}
-      - name: Install and configure Poetry
-        uses: snok/install-poetry@v1
-        with:
-          version: 1.7.1
-          virtualenvs-create: true
-          virtualenvs-in-project: true
-      - name: Install dependencies
-        run: poetry install
+      # - name: Install and configure Poetry
+      #   uses: snok/install-poetry@v1
+      #   with:
+      #     version: 1.7.1
+      #     virtualenvs-create: true
+      #     virtualenvs-in-project: true
+      # - name: Install dependencies
+      #   run: poetry install
       - name: Auto-generate the breadbox client
         run:
           | # Set up the other poetry env before using it # TODO: attempt to use pip to install without need for generator
-          pip install openapi-python-client --include-deps
+          pip install openapi-python-client
           openapi-python-client generate --meta=none --output-path breadbox-client/breadbox_client --path breadbox-client/latest-breadbox-api.json --overwrite
 
       # poetry run ./bb export-api-spec
