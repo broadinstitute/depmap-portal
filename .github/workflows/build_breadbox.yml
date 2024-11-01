@@ -104,6 +104,7 @@ jobs:
       - name: Auto-generate the breadbox client
         run: |
           poetry run ./bb export-api-spec
+          cd ../breadbox-client-generator && poetry install
           cd ..
           poetry run -C breadbox-client-generator openapi-python-client update --path breadbox-client/latest-breadbox-api.json
           cd breadbox
