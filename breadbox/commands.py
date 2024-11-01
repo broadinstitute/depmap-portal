@@ -187,7 +187,7 @@ def export_api_spec():
 def update_client():
     "Update the code for the breadbox client based. (Also saving out a new 'latest-breadbox-api.json' file)"
 
-    export_api_spec()
+    _export_api_spec("../breadbox-client/latest-breadbox-api.json")  # TODO: call helper
 
     # use the breadbox-client-generator directory which has a different virtual env with incompatible
     # libraries, but we need it in order to run the openapi-python-client generator
