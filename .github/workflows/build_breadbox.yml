@@ -104,8 +104,7 @@ jobs:
       - name: Auto-generate the breadbox client
         run: | # Set up the other poetry env before using it
           cd ../breadbox-client-generator && poetry install
-          poetry shell && cd ../breadbox
-          ./bb update-client
+          cd ../breadbox && poetry run ./bb update-client
 
       # poetry run ./bb export-api-spec
       # cd ../breadbox-client-generator && poetry install
