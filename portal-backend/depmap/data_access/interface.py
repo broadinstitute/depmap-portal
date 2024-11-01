@@ -126,13 +126,19 @@ def get_dataset_units(dataset_id: str) -> Optional[str]:
     return interactive_utils.get_dataset_units(dataset_id)
 
 
-def get_row_of_values(dataset_id: str, feature: str) -> CellLineSeries:
+def get_row_of_values(
+    dataset_id: str, feature: str, feature_identifier: Optional[str] = "label"
+) -> CellLineSeries:
     """
     Gets a row of numeric or string values, indexed by depmap_id
     for a given dataset and feature label.
     """
     if is_breadbox_id(dataset_id):
-        return breadbox_dao.get_row_of_values(dataset_id=dataset_id, feature=feature)
+        return breadbox_dao.get_row_of_values(
+            dataset_id=dataset_id,
+            feature=feature,
+            feature_identifier=feature_identifier,
+        )
     return interactive_utils.get_row_of_values(dataset_id=dataset_id, feature=feature)
 
 

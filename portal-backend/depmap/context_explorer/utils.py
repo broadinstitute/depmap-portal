@@ -1,5 +1,5 @@
 import math
-from typing import Dict, List, Literal
+from typing import Dict, List, Literal, Optional
 from depmap.cell_line.models_new import DepmapModel, LineageType
 import pandas as pd
 import numpy as np
@@ -19,19 +19,18 @@ from depmap.context_explorer.models import (
 )
 
 
-def get_full_row_of_values_and_depmap_ids(dataset_id: str, entity_id: int) -> pd.Series:
-    full_row_of_values_df = data_access.get_subsetted_df_by_ids(
-        dataset_id=dataset_id, entity_ids=[entity_id], cell_line_ids=None,
+def get_full_row_of_values_and_depmap_ids(dataset_id: str, label: str) -> pd.Series:
+    full_row_of_values = data_access.get_row_of_values(
+        dataset_id=dataset_id, feature=label
     )
-    full_row_of_values = (
-        pd.Series() if full_row_of_values_df.empty else full_row_of_values_df.iloc[0, :]
-    )
+
+    if full_row_of_values.empty:
+        return pd.Series()
 
     return full_row_of_values
 
 
 def get_other_context_dependencies(
-    dataset_id: str,
     in_group: str,
     out_group_type: str,
     entity_type: Literal["gene", "compound"],
@@ -39,6 +38,7 @@ def get_other_context_dependencies(
     fdr: List[float],
     abs_effect_size: List[float],
     frac_dep_in: List[float],
+    full_row_of_values: pd.Series,
 ):
 
     other_context_dependencies = ContextAnalysis.get_other_context_dependencies(
@@ -64,10 +64,6 @@ def get_other_context_dependencies(
             depmap_ids_names_dict = DepmapModel.get_model_ids_by_lineage_and_level(
                 other_dep_name
             )
-
-        full_row_of_values = get_full_row_of_values_and_depmap_ids(
-            dataset_id=dataset_id, entity_id=entity_id
-        )
 
         box_plot_values = full_row_of_values[
             full_row_of_values.index.isin(depmap_ids_names_dict.keys())
@@ -321,11 +317,9 @@ def get_dose_response_curves_per_model(
     }
 
 
-def get_out_group_model_ids(
-    out_group_type, dataset_name, entity_id, in_group_model_ids
-):
+def get_out_group_model_ids(out_group_type, dataset_name, in_group_model_ids, label):
     (entity_full_row_of_values) = get_full_row_of_values_and_depmap_ids(
-        dataset_id=dataset_name, entity_id=entity_id,
+        dataset_id=dataset_name, label=label
     )
     entity_full_row_of_values.dropna(inplace=True)
     if out_group_type == "All Others":

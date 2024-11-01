@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { CurveParams } from "src/compound/components/DoseResponseCurve";
-import LineChart from "src/plot/components/CurvesChart";
+import CurvesChart from "src/plot/components/CurvesChart";
 // import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
 
 // Make median curve traces
@@ -32,42 +32,6 @@ interface CurveTrace {
   line?: any;
   mode?: string;
 }
-
-const getMedianData = (
-  data: {
-    xs: number[];
-    ys: Float32Array;
-  }[]
-) => {
-  const medianYs: number[] = [];
-  const quantile0Ys: number[] = [];
-  const quantile1Ys: number[] = [];
-  for (let index = 0; index < data[0].xs.length; index++) {
-    const xIndex = index;
-
-    const yValsAtThisXIndex = new Float32Array(data.length);
-    for (let j = 0; j < data.length; j++) {
-      const dataCurve = data[j];
-      yValsAtThisXIndex[j] = dataCurve.ys[xIndex];
-    }
-    const sortedArr = yValsAtThisXIndex.sort();
-    const quantile0Index = sortedArr.length * 0.4;
-    const quantile1Index = sortedArr.length * 0.6;
-    const mid = Math.floor(sortedArr.length / 2);
-    const median =
-      sortedArr.length % 2
-        ? sortedArr[mid]
-        : (sortedArr[mid - 1] + sortedArr[mid]) / 2;
-    const quantile0 = sortedArr[Math.round(quantile0Index)];
-    const quantile1 = sortedArr[Math.round(quantile1Index)];
-
-    medianYs.push(median);
-    quantile0Ys.push(quantile0);
-    quantile1Ys.push(quantile1);
-  }
-
-  return { xs: data[0].xs, medianYs, quantile0Ys, quantile1Ys };
-};
 
 const samplePoints = (
   curves: CurveParams[],
@@ -286,7 +250,7 @@ function DoseCurvesPlot({
 
   return (
     <div>
-      <LineChart
+      <CurvesChart
         title={"Dose Response Curve"}
         yAxisTitle={"Viability"}
         curves={curveTraces}

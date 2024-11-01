@@ -122,7 +122,9 @@ def get_dataset_units(dataset_id: str) -> Optional[str]:
     return get_matrix_dataset(dataset_id).units
 
 
-def get_row_of_values(dataset_id: str, feature: str) -> CellLineSeries:
+def get_row_of_values(
+    dataset_id: str, feature: str, feature_identifier: str
+) -> CellLineSeries:
     """
     For the given dataset id and a feature label, 
     Get a row of numeric or string values, indexed by depmap_id
@@ -131,7 +133,7 @@ def get_row_of_values(dataset_id: str, feature: str) -> CellLineSeries:
     single_col_df = extensions.breadbox.client.get_dataset_data(
         dataset_id=bb_dataset_id,
         features=[feature],
-        feature_identifier="label",
+        feature_identifier=feature_identifier,
         samples=None,
         sample_identifier=None,
     )

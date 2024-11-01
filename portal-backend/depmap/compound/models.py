@@ -400,10 +400,12 @@ class DoseResponseCurve(Model):
 
     dose_response_curve = Column(Integer, primary_key=True, autoincrement=True)
 
-    depmap_id = Column(String, ForeignKey("cell_line.depmap_id"), nullable=False)
+    depmap_id = Column(
+        String, ForeignKey("cell_line.depmap_id"), nullable=False, index=True
+    )
     cell_line = relationship("CellLine", backref=__tablename__)
 
-    compound_exp_id = Column(Integer, ForeignKey("entity.entity_id"))
+    compound_exp_id = Column(Integer, ForeignKey("entity.entity_id"), index=True)
     compound_exp = relationship(
         "CompoundExperiment", foreign_keys="DoseResponseCurve.compound_exp_id"
     )

@@ -451,8 +451,8 @@ class ContextDoseCurves(Resource):
         out_group_model_ids = get_out_group_model_ids(
             "All Others",  # TODO UPDATE THIS TO USE out_group_type
             dataset_name=dataset_name,
-            entity_id=compound_experiment.entity_id,
             in_group_model_ids=in_group_model_ids,
+            label=entity_full_label,
         )
 
         dose_curve_info = get_dose_response_curves_per_model(
@@ -461,11 +461,6 @@ class ContextDoseCurves(Resource):
             replicate_dataset_name=replicate_dataset_name,
             compound_experiment=compound_experiment,
         )
-
-        # Needed for frontend calculation of the out-group median line. The first pass
-        # at this feature calculated the median of each curve_param: ec50, upper_asymptote, etc,
-        # but this method result in a slightly distorted, inaccurate curve. As a result, it
-        # became necessary to retrieve each individual out_group_curve.
 
         label = f"{compound_experiment.label} {dataset.display_name}"
 
@@ -526,7 +521,7 @@ class ContextBoxPlotData(Resource):
         )
 
         (entity_full_row_of_values) = get_full_row_of_values_and_depmap_ids(
-            dataset_id=dataset_id, entity_id=entity_id
+            dataset_id=dataset_id, label=entity_full_label
         )
         entity_full_row_of_values.dropna(inplace=True)
 
@@ -551,7 +546,6 @@ class ContextBoxPlotData(Resource):
             )
 
         other_context_dependencies = get_other_context_dependencies(
-            dataset_id=dataset_id,
             in_group=selected_context,
             out_group_type=out_group_type,
             entity_type=entity_type,
@@ -559,6 +553,7 @@ class ContextBoxPlotData(Resource):
             fdr=fdr,
             abs_effect_size=abs_effect_size,
             frac_dep_in=frac_dep_in,
+            full_row_of_values=entity_full_row_of_values,
         )
 
         return {
