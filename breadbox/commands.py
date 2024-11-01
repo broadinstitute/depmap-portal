@@ -230,7 +230,7 @@ def update_client():
             "poetry",
             "run",
             "-C",
-            "breadbox-client-generator/breadbox_client_generator",
+            "breadbox-client-generator",
             "openapi-python-client",
             "generate",
             "--meta=none",
