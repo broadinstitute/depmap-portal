@@ -573,7 +573,7 @@ def load_populated_db_data():
             current_app.config["WEBAPP_DATA_DIR"], context_explorer_data_avail
         )
         context_explorer_loader.load_context_explorer_context_analysis(
-            os.path.join(loader_data_dir, "context_explorer", "context_analysis.csv")
+            os.path.join(loader_data_dir, "context_explorer", "context_analysis_v2.csv")
         )
 
         data_page_all_data_avail = pd.read_csv(

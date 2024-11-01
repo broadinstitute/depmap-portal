@@ -86,6 +86,7 @@ def test_unknown_context_analysis_data(populated_db):
                 in_group="unknown",
                 out_group_type="All",
                 entity_type="gene",
+                dataset_id="Chronos_Combined",
             ),
             content_type="application/json",
         )

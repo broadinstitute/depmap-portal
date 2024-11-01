@@ -1549,7 +1549,9 @@ def load_sample_data(
                 "Adding context explorer ingroup/outgroup analyses to ContextAnalysis"
             )
             context_explorer_loader.load_context_explorer_context_analysis(
-                os.path.join(loader_data_dir, "context_explorer/context_analysis.csv")
+                os.path.join(
+                    loader_data_dir, "context_explorer/context_analysis_v2.csv"
+                )
             )
 
         if current_app.config["ENABLED_FEATURES"].data_page:
