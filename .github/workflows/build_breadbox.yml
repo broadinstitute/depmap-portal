@@ -60,25 +60,28 @@ jobs:
       # We want to use the rules defined in breadbox/pyproject.toml
       - name: Check PR title
         run: poetry run cz check -m "${{ github.event.pull_request.title }}"
-  # pyright-breadbox-client:
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - uses: actions/checkout@v2
-  #     - name: Install and configure Poetry
-  #       uses: snok/install-poetry@v1
-  #       with:
-  #         version: 1.7.1
-  #         virtualenvs-create: true
-  #         virtualenvs-in-project: true
-  #     - name: auto-generate the breadbox client
-  #       # TODO: fix this - don't generate the client IN the docker image. That doesn't make any sense.
-  #       run: |
-  #         docker run ${{ env.DOCKER_REPO }}:${{ env.DOCKER_TAG }} poetry run ./bb update-client
-  #     - name: check that the breadbox client passes pyright
-  #       run: |
-  #         cd breadbox-client && poetry install && poetry run pyright breadbox_facade
+  pyright-breadbox-client:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install and configure Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: 1.7.1
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+      # - name: auto-generate the breadbox client
+      #   # TODO: fix this - don't generate the client IN the docker image. That doesn't make any sense.
+      #   run: |
+      #     docker run ${{ env.DOCKER_REPO }}:${{ env.DOCKER_TAG }} poetry run ./bb update-client
+      # - name: check that the breadbox client passes pyright
+      #   run: |
+      #     cd breadbox-client && poetry install && poetry run pyright breadbox_facade
   build-docker:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./breadbox
     steps:
       - uses: actions/checkout@v2
       - name: Update build id
@@ -108,10 +111,10 @@ jobs:
       #     yarn --cwd frontend test
       #     yarn --cwd frontend "build:elara"
       - name: build docker image
-        run: bash breadbox/build-docker-image.sh ${{ env.DOCKER_REPO }}:${{ env.DOCKER_TAG }}
+        run: bash build-docker-image.sh ${{ env.DOCKER_REPO }}:${{ env.DOCKER_TAG }}
       - name: Run pyright-ratchet
         run: |
-          docker run -v $PWD/breadbox/pyright-ratchet-errors.txt:/install/breadbox/pyright-ratchet-errors.txt ${{ env.DOCKER_REPO }}:${{ env.DOCKER_TAG }} poetry run pyright-ratchet
+          docker run -v $PWD/pyright-ratchet-errors.txt:/install/breadbox/pyright-ratchet-errors.txt ${{ env.DOCKER_REPO }}:${{ env.DOCKER_TAG }} poetry run pyright-ratchet
       - name: Push Docker image
         run: docker push ${{ env.DOCKER_REPO }}:${{ env.DOCKER_TAG }}
 
