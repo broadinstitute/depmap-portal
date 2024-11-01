@@ -72,7 +72,7 @@ jobs:
           virtualenvs-in-project: true
       - name: Generate the breadbox client
         run: |
-          pip install openapi-python-client
+          pip install openapi-python-client==0.21.6
           openapi-python-client generate --meta=none --output-path breadbox-client/breadbox_client --path breadbox-client/latest-breadbox-api.json --overwrite
       - name: check that the breadbox client passes pyright
         run: |
@@ -90,10 +90,6 @@ jobs:
           registry: us.gcr.io
           username: _json_key
           password: ${{ secrets.DEPMAP_DEPLOY_SVC_ACCT }}
-      - name: Auto-generate the breadbox client
-        run: | # TODO: move this step to different job (at end)
-          pip install openapi-python-client
-          openapi-python-client generate --meta=none --output-path breadbox-client/breadbox_client --path breadbox-client/latest-breadbox-api.json --overwrite
       # Temp remove Elara build which is paused for development
       # - name: Build Elara
       #   run: |
@@ -226,7 +222,7 @@ jobs:
         if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
       - name: Generate the breadbox client
         run: |
-          pip install openapi-python-client
+          pip install openapi-python-client==0.21.6
           openapi-python-client generate --meta=none --output-path breadbox-client/breadbox_client --path breadbox-client/latest-breadbox-api.json --overwrite
       - name: Set up for publishing breadbox client
         working-directory: ./breadbox-client
