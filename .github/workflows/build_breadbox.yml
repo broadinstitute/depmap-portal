@@ -79,9 +79,6 @@ jobs:
       #     cd breadbox-client && poetry install && poetry run pyright breadbox_facade
   build-docker:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./breadbox
     steps:
       - uses: actions/checkout@v2
       - name: Update build id
@@ -120,10 +117,10 @@ jobs:
       #     yarn --cwd frontend test
       #     yarn --cwd frontend "build:elara"
       - name: build docker image
-        run: bash build-docker-image.sh ${{ env.DOCKER_REPO }}:${{ env.DOCKER_TAG }}
+        run: bash breadbox/build-docker-image.sh ${{ env.DOCKER_REPO }}:${{ env.DOCKER_TAG }}
       - name: Run pyright-ratchet
         run: |
-          docker run -v $PWD/pyright-ratchet-errors.txt:/install/breadbox/pyright-ratchet-errors.txt ${{ env.DOCKER_REPO }}:${{ env.DOCKER_TAG }} poetry run pyright-ratchet
+          docker run -v $PWD/breadbox/pyright-ratchet-errors.txt:/install/breadbox/pyright-ratchet-errors.txt ${{ env.DOCKER_REPO }}:${{ env.DOCKER_TAG }} poetry run pyright-ratchet      - name: Push Docker image
       - name: Push Docker image
         run: docker push ${{ env.DOCKER_REPO }}:${{ env.DOCKER_TAG }}
 
