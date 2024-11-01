@@ -142,8 +142,7 @@ def documentation():
         sections = []
 
     sections = rewrite_documentation_urls(sections)
-    # redirect to new resources page
-    return redirect(url_for("public.resources"))
+    return render_template("public/documentation.html", sections=sections)
 
 
 @blueprint.route("/resources/reload")
@@ -170,8 +169,8 @@ def resources_reloads():
     return render_template("public/resources_reload.html")
 
 
-@blueprint.route("/resources")
-def resources():
+@blueprint.route("/resources_prototype/")
+def resources_prototype():
     forum_api_key_value = current_app.config.get("FORUM_API_KEY")
     forum_url = current_app.config.get("FORUM_URL")
     resources_data_path = current_app.config.get("RESOURCES_DATA_PATH")
@@ -202,7 +201,9 @@ def resources():
     if root_category is None:
         abort(404)
 
-    return render_template("public/resources.html", root_category=root_category,)
+    return render_template(
+        "public/resources_prototype.html", root_category=root_category,
+    )
 
 
 # DMC Only
