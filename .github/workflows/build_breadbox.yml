@@ -102,10 +102,10 @@ jobs:
       - name: Install dependencies
         run: poetry install
       - name: Auto-generate the breadbox client
-        run: | # Set up the other poetry env before using it
-          cd ../breadbox-client-generator && poetry install
-          cd ..
-          poetry run -C breadbox-client-generator openapi-python-client generate --meta=none --output-path breadbox-client/breadbox_client --path breadbox-client/latest-breadbox-api.json --overwrite
+        run:
+          | # Set up the other poetry env before using it # TODO: attempt to use pip to install without need for generator
+          pip install openapi-python-client --include-deps
+          openapi-python-client generate --meta=none --output-path breadbox-client/breadbox_client --path breadbox-client/latest-breadbox-api.json --overwrite
 
       # poetry run ./bb export-api-spec
       # cd ../breadbox-client-generator && poetry install
