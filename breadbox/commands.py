@@ -177,13 +177,6 @@ def _get_version():
 
 
 @cli.command()
-def export_api_spec():
-    "Used by github actions only. For local development, use the update-client command."
-    # This should be run every time we regenerate the client.
-    _export_api_spec("../breadbox-client/latest-breadbox-api.json")
-
-
-@cli.command()
 def update_client():
     "Update the code for the breadbox client based. (Also saving out a new 'latest-breadbox-api.json' file)"
 

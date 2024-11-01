@@ -190,7 +190,7 @@ jobs:
 
   generate-and-publish-client:
     needs: bump-versions
-    if: ${{ (needs.bump-versions.outputs.current_version != needs.bump-versions.outputs.bumped_version) }} # && (github.ref_name == 'master') }} # TODO: change back
+    # if: ${{ (needs.bump-versions.outputs.current_version != needs.bump-versions.outputs.bumped_version) && (github.ref_name == 'master') }} # TODO: change back
     runs-on: ubuntu-latest
     steps:
       - name: Check out
