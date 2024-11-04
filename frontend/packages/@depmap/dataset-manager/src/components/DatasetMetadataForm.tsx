@@ -39,7 +39,6 @@ export default function DatasetMetadataForm({
   );
   const [validValues, setValidValues] = useState<Set<string>>(new Set());
   const [invalidValues, setInvalidValues] = useState<Set<string>>(new Set());
-  const [, setMetadata] = useState({});
 
   const validateMetadata = (inputs: string[]) => {
     const valid: Set<string> = new Set();
@@ -84,7 +83,6 @@ export default function DatasetMetadataForm({
       metadataDict[key] = value;
     });
 
-    setMetadata(metadataDict);
     if (forwardDatasetMetadataDict !== undefined) {
       forwardDatasetMetadataDict(metadataDict);
     }

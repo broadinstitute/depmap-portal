@@ -37,13 +37,10 @@ export default function Datasets() {
   const [isEditDatasetMode, setIsEditDatasetMode] = useState(false);
 
   const [datasetToEdit, setDatasetToEdit] = useState<Dataset | null>(null);
-  const [datasetMetadataToShow, setDatasetMetadataToShow] = useState<
-    | {
-        [key: string]: string;
-      }
-    | null
-    | undefined
-  >(undefined);
+  const [datasetMetadataToShow, setDatasetMetadataToShow] = useState<{
+    [key: string]: string;
+  } | null>(null);
+  const [showMetadataForm, setShowMetadataForm] = useState<boolean>(false);
 
   // TODO: Remove
   const getFeatureTypes = useCallback(() => dapi.getFeatureTypes(), [dapi]);
@@ -279,6 +276,7 @@ export default function Datasets() {
               bsSize="small"
               onClick={() => {
                 setDatasetMetadataToShow(dataset.dataset_metadata);
+                setShowMetadataForm(true);
               }}
             >
               View
@@ -325,15 +323,15 @@ export default function Datasets() {
     />
   );
 
-  const updateDatasetMetadataForm = (
+  const datasetMetadataToShowForm = (
     datasetMetadata: { [key: string]: string } | null
   ) => {
     return (
       <FormModal
         title="Dataset Metadata"
-        showModal={datasetMetadataToShow !== undefined}
+        showModal={showMetadataForm}
         onHide={() => {
-          setDatasetMetadataToShow(undefined);
+          setShowMetadataForm(false);
         }}
         formComponent={
           <div>
@@ -492,9 +490,7 @@ export default function Datasets() {
         </div>
 
         {datasetForm()}
-        {datasetMetadataToShow !== undefined
-          ? updateDatasetMetadataForm(datasetMetadataToShow)
-          : null}
+        {datasetMetadataToShowForm(datasetMetadataToShow)}
 
         {dimensionTypes ? (
           <FormModal
