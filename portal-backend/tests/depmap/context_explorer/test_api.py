@@ -2,6 +2,7 @@ from depmap.cell_line.models_new import LineageType
 from depmap.context_explorer.utils import _get_lineage_type_from_top_context
 from flask import url_for
 import numpy as np
+import pytest
 
 
 def test_get_context_info(populated_db):
@@ -86,7 +87,7 @@ def test_unknown_context_analysis_data(populated_db):
                 in_group="unknown",
                 out_group_type="All",
                 entity_type="gene",
-                dataset_id="Chronos_Combined",
+                dataset_name="Chronos_Combined",
             ),
             content_type="application/json",
         )
@@ -120,3 +121,19 @@ def test_get_lineage_type_from_top_context():
 
     lineage_type = _get_lineage_type_from_top_context(top_context)
     assert lineage_type == LineageType.Solid
+
+
+def test_get_context_dose_curves_invalid_request_arguments(populated_db):
+    with populated_db.app.test_client() as c:
+        with pytest.raises(AssertionError):
+            r = c.get(
+                url_for(
+                    "api.context_explorer_context_dose_curves",
+                    dataset_name="Chronos_Combined",
+                    entity_full_label="BRD:PRC-003330600-058-29",
+                    context_name="bone",
+                    level="1",
+                    out_group_type="All Others",
+                ),
+                content_type="application/json",
+            )

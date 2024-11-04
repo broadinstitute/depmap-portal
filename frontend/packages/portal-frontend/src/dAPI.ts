@@ -596,13 +596,13 @@ export class DepmapApi {
     in_group: string,
     out_group_type: string,
     entity_type: string,
-    dataset_id: ContextExplorerDatasets
+    dataset_name: ContextExplorerDatasets
   ): Promise<ContextAnalysisTableType> {
     const params = {
       in_group,
       out_group_type,
       entity_type,
-      dataset_id,
+      dataset_name,
     };
 
     return this._fetch<ContextAnalysisTableType>(
@@ -612,7 +612,7 @@ export class DepmapApi {
 
   getContextExplorerBoxPlotData(
     selected_context: string,
-    dataset_id: ContextExplorerDatasets,
+    dataset_name: ContextExplorerDatasets,
     top_context: string,
     out_group_type: string,
     entity_type: string,
@@ -623,7 +623,7 @@ export class DepmapApi {
   ): Promise<ContextPlotBoxData> {
     const params: any = {
       selected_context,
-      dataset_id,
+      dataset_name,
       top_context,
       out_group_type,
       entity_type,

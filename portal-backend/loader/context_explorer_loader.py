@@ -87,7 +87,7 @@ def _read_context_analyses(dr, pbar, gene_cache, cell_line_cache):
             )
             continue
 
-        # TODO: Better way to do this???
+        # TODO: Is there a better way to do this??
         dependency_dataset = row["dataset"]
 
         dataset_str_to_name_mapping = {
@@ -95,14 +95,15 @@ def _read_context_analyses(dr, pbar, gene_cache, cell_line_cache):
             "PRISMOncRef": "Prism_oncology_AUC",
             "PRISMRepurposing": "Rep_all_single_pt",
         }
-        dataset = DependencyDataset.get_dataset_by_name(
+
+        dataset_name = DependencyDataset.DependencyEnum(
             dataset_str_to_name_mapping[dependency_dataset]
         )
 
         analysis = dict(
             context_name=context.name,
             entity_id=entity_id,
-            dependency_dataset_id=dataset.dependency_dataset_id,
+            dataset_name=dataset_name,
             out_group=row["out_group"],
             t_pval=float(_to_nan(row["t_pval"])),
             mean_in=float(_to_nan(row["mean_in"])),

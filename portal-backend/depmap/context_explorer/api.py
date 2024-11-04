@@ -295,16 +295,19 @@ def _get_analysis_data_table(
     in_group: str,
     out_group_type: str,
     entity_type: Literal["gene", "compound"],
-    dataset_id: str,
+    dataset_name: str,
 ):
     if in_group == "All":
         return None
 
+    # if out_group_type == "All":
+    #    out_group_type = "All Others"  # HACK: Temporary until we agree on value options for outgroup types
+
     data = ContextAnalysis.find_context_analysis_by_context_name_out_group(
         context_name=in_group,
-        out_group="All Others",
+        out_group=out_group_type,
         entity_type=entity_type,
-        dataset_id=dataset_id,
+        dataset_name=dataset_name,
     )
 
     if data.empty:
@@ -365,7 +368,7 @@ class AnalysisData(Resource):
         # DependencyEnum.Chronos_Combined.name
         # Repurposing aka DependencyEnum.Rep_all_single_pt.name
         # OncRef aka DependencyEnum.Prism_oncology_AUC.name
-        dataset_id = request.args.get("dataset_id")
+        dataset_name = request.args.get("dataset_name")
 
         # dev.load_context_explorer_sample_data()
         # breakpoint()
@@ -374,7 +377,7 @@ class AnalysisData(Resource):
             in_group=in_group,
             out_group_type=out_group_type,
             entity_type=entity_type,
-            dataset_id=dataset_id,
+            dataset_name=dataset_name,
         )
 
         return data_table
@@ -438,6 +441,7 @@ class ContextDoseCurves(Resource):
         # TODO calculate outgroup median using outgroup type instead of always using All Others
         out_group_type = request.args.get("out_group_type")
 
+        assert dataset_name == DependencyDataset.DependencyEnum.Prism_oncology_AUC.name
         dataset = DependencyDataset.get_dataset_by_name(dataset_name)
         replicate_dataset_name = dataset.get_dose_replicate_enum().name
         compound_experiment = _get_compound_experiment(
@@ -496,7 +500,7 @@ class ContextBoxPlotData(Resource):
     def get(self):
         # Used to get the main box plot data
         selected_context = request.args.get("selected_context")
-        dataset_id = request.args.get("dataset_id")
+        dataset_name = request.args.get("dataset_name")
         top_context = request.args.get("top_context")
 
         # Used to get Other Context Dependencies
@@ -521,7 +525,7 @@ class ContextBoxPlotData(Resource):
         )
 
         (entity_full_row_of_values) = get_full_row_of_values_and_depmap_ids(
-            dataset_id=dataset_id, label=entity_full_label
+            dataset_name=dataset_name, label=entity_full_label
         )
         entity_full_row_of_values.dropna(inplace=True)
 

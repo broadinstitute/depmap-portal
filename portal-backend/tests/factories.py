@@ -226,6 +226,7 @@ class ContextAnalysisFactory(SQLAlchemyModelFactory):
 
         sqlalchemy_session = _db.session
 
+    dataset_name = factory.Sequence(lambda number: "dataset_{}".format(number))
     context_name = factory.Sequence(lambda number: "context_{}".format(number))
     context = factory.SubFactory(
         ContextFactory, name=factory.SelfAttribute("..context_name")
@@ -241,12 +242,13 @@ class ContextAnalysisFactory(SQLAlchemyModelFactory):
     effect_size = factory.Sequence(lambda number: number)
     t_qval = factory.Sequence(lambda number: number)
     t_qval_log = factory.Sequence(lambda number: number)
-    OR = factory.Sequence(lambda number: number)
+    # OR = factory.Sequence(lambda number: number)
     n_dep_in = factory.Sequence(lambda number: number)
     n_dep_out = factory.Sequence(lambda number: number)
     frac_dep_in = factory.Sequence(lambda number: number)
     frac_dep_out = factory.Sequence(lambda number: number)
-    log_OR = factory.Sequence(lambda number: number)
+    selectivity_val = factory.Sequence(lambda number: number)
+    # log_OR = factory.Sequence(lambda number: number)
 
 
 class EntityAliasFactory(SQLAlchemyModelFactory):

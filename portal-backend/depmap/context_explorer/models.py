@@ -7,7 +7,7 @@ from depmap.cell_line.models import Lineage
 import pandas as pd
 from depmap.gene.models import Gene
 from depmap.compound.models import CompoundExperiment
-from depmap.dataset.models import DependencyDataset
+from depmap.enums import DependencyEnum
 from depmap.database import (
     Column,
     Float,
@@ -203,17 +203,17 @@ def get_context_analysis_query(
     context_name: str,
     out_group: str,
     entity_type: Literal["gene", "compound"],
-    dataset_id: str,
+    dataset_name: str,
 ):
-    dependency_dataset_id = DependencyDataset.get_dataset_by_name(
-        dataset_id
-    ).dependency_dataset_id
+    assert dataset_name in DependencyEnum.values()
+
+    dataset_enum_name = DependencyEnum(dataset_name)
     if entity_type == "gene":
         query = (
             ContextAnalysis.query.filter_by(
                 context_name=context_name,
                 out_group=out_group,
-                dependency_dataset_id=dependency_dataset_id,
+                dataset_name=dataset_enum_name,
             )
             .join(Gene, Gene.entity_id == ContextAnalysis.entity_id)
             .add_columns(
@@ -228,7 +228,7 @@ def get_context_analysis_query(
             ContextAnalysis.query.filter_by(
                 context_name=context_name,
                 out_group=out_group,
-                dependency_dataset_id=dependency_dataset_id,
+                dataset_name=dataset_enum_name,
             )
             .join(
                 CompoundExperiment,
@@ -278,16 +278,8 @@ class ContextAnalysis(Model):
         "Entity", foreign_keys="ContextAnalysis.entity_id", uselist=False
     )
 
-    dependency_dataset_id = Column(
-        Integer,
-        ForeignKey("dependency_dataset.dependency_dataset_id"),
-        nullable=False,
-        index=True,
-    )
-    dataset = relationship(
-        "DependencyDataset",
-        foreign_keys="ContextAnalysis.dependency_dataset_id",
-        uselist=False,
+    dataset_name: "Column[DependencyEnum]" = Column(
+        db.Enum(DependencyEnum, name="DependencyEnum"), nullable=False
     )
 
     out_group = Column(String, nullable=False)
@@ -318,7 +310,7 @@ class ContextAnalysis(Model):
         return {
             "entity": entity_label,
             "context_name": self.context_name,
-            "dependency_dataset_id": self.dependency_dataset_id,
+            "dataset_name": self.dataset_name,
             "out_group": self.out_group,
             "t_pval": self.t_pval,
             "mean_in": self.mean_in,
@@ -338,14 +330,13 @@ class ContextAnalysis(Model):
         context_name: str,
         out_group: str,
         entity_type: Literal["gene", "compound"],
-        dataset_id: str,
+        dataset_name: str,
     ):
-
         query = get_context_analysis_query(
             context_name=context_name,
             out_group=out_group,
             entity_type=entity_type,
-            dataset_id=dataset_id,
+            dataset_name=dataset_name,
         )
         context_analysis_df = pd.read_sql(query.statement, query.session.connection())
 

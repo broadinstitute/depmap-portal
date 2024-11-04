@@ -19,9 +19,9 @@ from depmap.context_explorer.models import (
 )
 
 
-def get_full_row_of_values_and_depmap_ids(dataset_id: str, label: str) -> pd.Series:
+def get_full_row_of_values_and_depmap_ids(dataset_name: str, label: str) -> pd.Series:
     full_row_of_values = data_access.get_row_of_values(
-        dataset_id=dataset_id, feature=label
+        dataset_id=dataset_name, feature=label
     )
 
     if full_row_of_values.empty:
@@ -319,7 +319,7 @@ def get_dose_response_curves_per_model(
 
 def get_out_group_model_ids(out_group_type, dataset_name, in_group_model_ids, label):
     (entity_full_row_of_values) = get_full_row_of_values_and_depmap_ids(
-        dataset_id=dataset_name, label=label
+        dataset_name=dataset_name, label=label
     )
     entity_full_row_of_values.dropna(inplace=True)
     if out_group_type == "All Others":

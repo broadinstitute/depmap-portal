@@ -25,9 +25,11 @@ from tests.factories import (
     LineageFactory,
     MatrixFactory,
     PrimaryDiseaseFactory,
+    DoseResponseCurveFactory,
+    CompoundDoseReplicateFactory,
 )
 from tests.utilities import interactive_test_utils
-import re
+import pandas as pd
 
 
 # Filter ranges to be used as params for get_other_context_dependencies.
@@ -73,8 +75,46 @@ narrow_filters = OtherContextFilterVals(
 wide_filters = OtherContextFilterVals(t_qval=8.5, effect_size=8.5, frac_dep_in=8.5)
 
 
+def _setup_dose_response_curves(models: List[DepmapModelFactory], compound_exps: list):
+    for cpd_exp in compound_exps:
+        dose_1 = CompoundDoseReplicateFactory(
+            compound_experiment=cpd_exp, dose=0.1, replicate=10
+        )
+        dose_2 = CompoundDoseReplicateFactory(
+            compound_experiment=cpd_exp,
+            dose=0.2,
+            replicate=20,
+            is_masked=True,  # TODO: what does is_masked mean and does Context Explorer need to care?????
+        )
+        dose_3 = CompoundDoseReplicateFactory(
+            compound_experiment=cpd_exp, dose=0.3, replicate=30
+        )
+
+    viability_df = pd.DataFrame(
+        {model.cell_line_name: [10, 20, 30] for model in models},
+        index=["dose_1", "dose_2", "dose_3"],
+    )
+
+    dataset = DependencyDatasetFactory(
+        name=DependencyDataset.DependencyEnum.Prism_oncology_dose_replicate,
+        matrix=MatrixFactory(
+            entities=[dose_1, dose_2, dose_3],
+            cell_lines=models,
+            data=viability_df,
+            using_depmap_model_table=True,
+        ),
+    )
+
+    for compound_exp in compound_exps:
+        curves = [
+            DoseResponseCurveFactory(compound_exp=cpd_exp, cell_line=model.cell_line)
+            for model in models
+        ]
+
+
 def _setup_factories(
     empty_db_mock_downloads,
+    dataset_name: str,
     gene_a: Optional[GeneFactory] = None,
     gene_b: Optional[GeneFactory] = None,
     compound_a: Optional[CompoundExperimentFactory] = None,
@@ -156,82 +196,6 @@ def _setup_factories(
     myeloid_context = ContextFactory(name="Myeloid")
     aml_context = ContextFactory(name="Acute Myeloid Leukemia")
 
-    ContextAnalysisFactory(
-        context=es_context,
-        context_name="Ewing Sarcoma",
-        out_group="All",
-        entity=gene_a if use_genes else compound_a,
-        t_pval=1.0,
-        mean_in=6,
-        mean_out=0.5,
-        effect_size=-0.05,  # Make sure this results in an abs_effect_size of 0.05
-    )
-
-    ContextAnalysisFactory(
-        context=es_context,
-        context_name="Ewing Sarcoma",
-        out_group="Type",
-        entity=gene_a if use_genes else compound_a,
-        t_pval=1,
-        mean_in=2,
-        mean_out=3,
-        effect_size=4,
-    )
-
-    ContextAnalysisFactory(
-        context=lung_context,
-        context_name="Lung",
-        out_group="All",
-        entity=gene_a if use_genes else compound_a,
-        t_pval=1.0,
-        mean_in=6,
-        mean_out=0.5,
-        t_qval=narrow_filters.t_qval,
-        effect_size=narrow_filters.effect_size,
-        frac_dep_in=narrow_filters.frac_dep_in,
-    )
-
-    # Uses a wide filter, so filtered out if only_narrow_range
-    ContextAnalysisFactory(
-        context=os_context,
-        context_name="Osteosarcoma",
-        out_group="All",
-        entity=gene_a if use_genes else compound_a,
-        t_qval=wide_filters.t_qval,
-        effect_size=narrow_filters.effect_size,
-        frac_dep_in=narrow_filters.frac_dep_in,
-    )
-    ContextAnalysisFactory(
-        context=es_context,
-        context_name="Ewing Sarcoma",
-        out_group="Lineage",
-        entity=gene_a if use_genes else compound_a,
-        t_pval=3.0,
-        mean_in=0.1,
-        mean_out=8,
-        t_qval=narrow_filters.t_qval,
-        effect_size=narrow_filters.effect_size,
-        frac_dep_in=narrow_filters.frac_dep_in,
-    )
-    ContextAnalysisFactory(
-        context=myeloid_context,
-        context_name="Myeloid",
-        out_group="All",
-        entity=gene_a if use_genes else compound_a,
-        t_qval=wide_filters.t_qval,
-        effect_size=narrow_filters.effect_size,
-        frac_dep_in=narrow_filters.frac_dep_in,
-    )
-    ContextAnalysisFactory(
-        context=aml_context,
-        context_name="Acute Myeloid Leukemia",
-        out_group="All",
-        entity=gene_a if use_genes else compound_a,
-        t_qval=narrow_filters.t_qval,
-        effect_size=narrow_filters.effect_size,
-        frac_dep_in=wide_filters.frac_dep_in,
-    )
-
     matrix_cell_lines = (
         bone_es_cell_lines
         + lung_cell_lines
@@ -248,30 +212,112 @@ def _setup_factories(
         cell_lines=matrix_cell_lines,
         using_depmap_model_table=True,
     )
+
     dataset = DependencyDatasetFactory(
         display_name="test display name",
-        name=DependencyDataset.DependencyEnum.Chronos_Combined
-        if use_genes
-        else DependencyDataset.DependencyEnum.Rep_all_single_pt,
+        name=DependencyDataset.DependencyEnum(dataset_name),
         matrix=matrix,
         priority=1,
     )
+    dependency_dataset_name = dataset.name
+
+    ContextAnalysisFactory(
+        dataset_name=dependency_dataset_name,
+        context=es_context,
+        context_name="Ewing Sarcoma",
+        out_group="All",
+        entity=gene_a if use_genes else compound_a,
+        t_pval=1.0,
+        mean_in=6,
+        mean_out=0.5,
+        effect_size=-0.05,  # Make sure this results in an abs_effect_size of 0.05
+    )
+
+    ContextAnalysisFactory(
+        dataset_name=dependency_dataset_name,
+        context=es_context,
+        context_name="Ewing Sarcoma",
+        out_group="Type",
+        entity=gene_a if use_genes else compound_a,
+        t_pval=1,
+        mean_in=2,
+        mean_out=3,
+        effect_size=4,
+    )
+
+    ContextAnalysisFactory(
+        dataset_name=dependency_dataset_name,
+        context=lung_context,
+        context_name="Lung",
+        out_group="All",
+        entity=gene_a if use_genes else compound_a,
+        t_pval=1.0,
+        mean_in=6,
+        mean_out=0.5,
+        t_qval=narrow_filters.t_qval,
+        effect_size=narrow_filters.effect_size,
+        frac_dep_in=narrow_filters.frac_dep_in if use_genes else None,
+    )
+
+    # Uses a wide filter, so filtered out if only_narrow_range
+    ContextAnalysisFactory(
+        dataset_name=dependency_dataset_name,
+        context=os_context,
+        context_name="Osteosarcoma",
+        out_group="All",
+        entity=gene_a if use_genes else compound_a,
+        t_qval=wide_filters.t_qval,
+        effect_size=narrow_filters.effect_size,
+        frac_dep_in=narrow_filters.frac_dep_in if use_genes else None,
+    )
+    ContextAnalysisFactory(
+        dataset_name=dependency_dataset_name,
+        context=es_context,
+        context_name="Ewing Sarcoma",
+        out_group="Lineage",
+        entity=gene_a if use_genes else compound_a,
+        t_pval=3.0,
+        mean_in=0.1,
+        mean_out=8,
+        t_qval=narrow_filters.t_qval,
+        effect_size=narrow_filters.effect_size,
+        frac_dep_in=narrow_filters.frac_dep_in if use_genes else None,
+    )
+    ContextAnalysisFactory(
+        dataset_name=dependency_dataset_name,
+        context=myeloid_context,
+        context_name="Myeloid",
+        out_group="All",
+        entity=gene_a if use_genes else compound_a,
+        t_qval=wide_filters.t_qval,
+        effect_size=narrow_filters.effect_size,
+        frac_dep_in=narrow_filters.frac_dep_in if use_genes else None,
+    )
+    ContextAnalysisFactory(
+        dataset_name=dependency_dataset_name,
+        context=aml_context,
+        context_name="Acute Myeloid Leukemia",
+        out_group="All",
+        entity=gene_a if use_genes else compound_a,
+        t_qval=narrow_filters.t_qval,
+        effect_size=wide_filters.effect_size,
+        frac_dep_in=wide_filters.frac_dep_in if use_genes else None,
+    )
+
+    if dataset_name == DependencyDataset.DependencyEnum.Prism_oncology_AUC.name:
+        _setup_dose_response_curves(
+            models=matrix_cell_lines, compound_exps=[compound_a, compound_b]
+        )
 
     empty_db_mock_downloads.session.flush()
 
 
-def _setup_entities_and_dataset_id(empty_db_mock_downloads, entity_type):
+def _setup_entities_and_dataset_id(empty_db_mock_downloads, entity_type, dataset_name):
     gene_a = GeneFactory()
     gene_b = GeneFactory()
 
     compound_a = CompoundExperimentFactory()
     compound_b = CompoundExperimentFactory()
-
-    dataset_id = (
-        DependencyDataset.DependencyEnum.Chronos_Combined.name
-        if entity_type == "gene"
-        else DependencyDataset.DependencyEnum.Rep_all_single_pt.name
-    )
 
     _setup_factories(
         empty_db_mock_downloads=empty_db_mock_downloads,
@@ -280,48 +326,70 @@ def _setup_entities_and_dataset_id(empty_db_mock_downloads, entity_type):
         compound_a=compound_a,
         compound_b=compound_b,
         entity_type=entity_type,
+        dataset_name=dataset_name,
     )
 
-    return gene_a, gene_b, compound_a, compound_b, dataset_id
+    return gene_a, gene_b, compound_a, compound_b
 
 
 @pytest.mark.parametrize(
-    "entity_type", ["gene", "compound"],
+    "dataset_name", ["Chronos_Combined", "Rep_all_single_pt", "Prism_oncology_AUC"],
 )
-def test_get_anaysis_data(empty_db_mock_downloads, entity_type):
-    use_genes = entity_type == "gene"
+def test_get_anaysis_data(empty_db_mock_downloads, dataset_name):
+    use_genes = dataset_name == DependencyDataset.DependencyEnum.Chronos_Combined.name
 
-    (
-        gene_a,
-        gene_b,
-        compound_a,
-        compound_b,
-        dataset_id,
-    ) = _setup_entities_and_dataset_id(empty_db_mock_downloads, entity_type)
+    entity_type = "gene" if use_genes else "compound"
+
+    (gene_a, gene_b, compound_a, compound_b) = _setup_entities_and_dataset_id(
+        empty_db_mock_downloads, entity_type, dataset_name
+    )
 
     ew_vs_all = _get_analysis_data_table(
-        in_group="Ewing Sarcoma", out_group_type="All", entity_type=entity_type
+        in_group="Ewing Sarcoma",
+        out_group_type="All",
+        entity_type=entity_type,
+        dataset_name=dataset_name,
     )
 
     # Make sure the expected columns are present.
-    assert list(ew_vs_all.keys()) == [
-        "entity",
-        "t_pval",
-        "mean_in",
-        "mean_out",
-        "effect_size",
-        "abs_effect_size",
-        "t_qval",
-        "t_qval_log",
-        "OR",
-        "n_dep_in",
-        "n_dep_out",
-        "frac_dep_in",
-        "frac_dep_out",
-        "log_OR",
-        "depletion",
-        "label",
-    ]
+    if entity_type == "gene":
+        assert list(ew_vs_all.keys()) == [
+            "entity",
+            "t_pval",
+            "mean_in",
+            "mean_out",
+            "effect_size",
+            "abs_effect_size",
+            "t_qval",
+            "t_qval_log",
+            "n_dep_in",
+            "n_dep_out",
+            "frac_dep_in",
+            "frac_dep_out",
+            "selectivity_val",
+            "depletion",
+            "label",
+        ]
+    else:
+        assert list(ew_vs_all.keys()) == [
+            "entity",
+            "t_pval",
+            "mean_in",
+            "mean_out",
+            "effect_size",
+            "abs_effect_size",
+            "t_qval",
+            "t_qval_log",
+            # "OR",
+            # "n_dep_in",
+            # "n_dep_out",
+            # "frac_dep_in",
+            # "frac_dep_out",
+            "selectivity_val",
+            # "log_OR",
+            "depletion",
+            "label",
+        ]
 
     assert ew_vs_all["entity"] == [
         f"{gene_a.label} ({gene_a.entrez_id})" if use_genes else compound_a.label
@@ -334,7 +402,10 @@ def test_get_anaysis_data(empty_db_mock_downloads, entity_type):
     assert ew_vs_all["depletion"] == ["False"]
 
     ew_vs_lineage = _get_analysis_data_table(
-        in_group="Ewing Sarcoma", out_group_type="Lineage", entity_type=entity_type
+        in_group="Ewing Sarcoma",
+        out_group_type="Lineage",
+        entity_type=entity_type,
+        dataset_name=dataset_name,
     )
 
     assert ew_vs_lineage["entity"] == [
@@ -348,7 +419,10 @@ def test_get_anaysis_data(empty_db_mock_downloads, entity_type):
     assert ew_vs_lineage["depletion"] == ["True"]
 
     ew_vs_type = _get_analysis_data_table(
-        in_group="Ewing Sarcoma", out_group_type="Type", entity_type=entity_type
+        in_group="Ewing Sarcoma",
+        out_group_type="Type",
+        entity_type=entity_type,
+        dataset_name=dataset_name,
     )
 
     assert ew_vs_type["entity"] == [
@@ -362,38 +436,42 @@ def test_get_anaysis_data(empty_db_mock_downloads, entity_type):
     assert ew_vs_type["depletion"] == ["True"]
 
     empty_data = _get_analysis_data_table(
-        in_group="Skin", out_group_type="All", entity_type=entity_type
+        in_group="Skin",
+        out_group_type="All",
+        entity_type=entity_type,
+        dataset_name=dataset_name,
     )
 
     assert empty_data == None
 
     all_in_group = _get_analysis_data_table(
-        in_group="All", out_group_type="All", entity_type=entity_type
+        in_group="All",
+        out_group_type="All",
+        entity_type=entity_type,
+        dataset_name=dataset_name,
     )
 
     assert all_in_group == None
 
 
 @pytest.mark.parametrize(
-    "entity_type", ["gene", "compound"],
+    "dataset_name", ["Chronos_Combined", "Rep_all_single_pt", "Prism_oncology_AUC"],
 )
-def test_get_drug_dotted_line(empty_db_mock_downloads, entity_type):
-    use_genes = entity_type == "gene"
+def test_get_drug_dotted_line(empty_db_mock_downloads, dataset_name):
+    use_genes = dataset_name == DependencyDataset.DependencyEnum.Chronos_Combined.name
 
-    (
-        gene_a,
-        gene_b,
-        compound_a,
-        compound_b,
-        dataset_id,
-    ) = _setup_entities_and_dataset_id(empty_db_mock_downloads, entity_type)
+    entity_type = "gene" if use_genes else "compound"
+
+    (gene_a, gene_b, compound_a, compound_b,) = _setup_entities_and_dataset_id(
+        empty_db_mock_downloads, entity_type, dataset_name
+    )
 
     interactive_test_utils.reload_interactive_config()
 
-    selected_entity_id = gene_a.entity_id if use_genes else compound_a.entity_id
+    selected_entity_label = gene_a.label if use_genes else compound_a.label
 
     (entity_full_row_of_values) = get_full_row_of_values_and_depmap_ids(
-        dataset_id=dataset_id, entity_id=selected_entity_id
+        dataset_name=dataset_name, label=selected_entity_label
     )
     entity_full_row_of_values.dropna(inplace=True)
 
@@ -405,14 +483,17 @@ def test_get_drug_dotted_line(empty_db_mock_downloads, entity_type):
 
 
 def _get_box_plot_data(
-    dataset_id: str, selected_entity_id: int, selected_context: str, top_context: str
+    dataset_name: str,
+    selected_entity_label: int,
+    selected_context: str,
+    top_context: str,
 ):
     lineage_depmap_ids_names_dict = DepmapModel.get_model_ids_by_lineage_and_level(
         top_context
     )
 
     entity_full_row_of_values = get_full_row_of_values_and_depmap_ids(
-        dataset_id=dataset_id, entity_id=selected_entity_id
+        dataset_name=dataset_name, label=selected_entity_label
     )
     entity_full_row_of_values.dropna(inplace=True)
     assert entity_full_row_of_values.values.tolist() == [num for num in range(20)]
@@ -460,29 +541,27 @@ def _get_box_plot_data(
 
 
 @pytest.mark.parametrize(
-    "entity_type", ["gene", "compound"],
+    "dataset_name", ["Chronos_Combined", "Rep_all_single_pt", "Prism_oncology_AUC"],
 )
-def test_get_box_plot_data(empty_db_mock_downloads, entity_type):
-    use_genes = entity_type == "gene"
+def test_get_box_plot_data(empty_db_mock_downloads, dataset_name):
+    use_genes = dataset_name == DependencyDataset.DependencyEnum.Chronos_Combined.name
 
-    (
-        gene_a,
-        gene_b,
-        compound_a,
-        compound_b,
-        dataset_id,
-    ) = _setup_entities_and_dataset_id(empty_db_mock_downloads, entity_type)
+    entity_type = "gene" if use_genes else "compound"
+
+    (gene_a, gene_b, compound_a, compound_b) = _setup_entities_and_dataset_id(
+        empty_db_mock_downloads, entity_type, dataset_name
+    )
 
     interactive_test_utils.reload_interactive_config()
 
-    selected_entity_id = gene_a.entity_id if use_genes else compound_a.entity_id
+    selected_entity_label = gene_a.label if use_genes else compound_a.label
 
     # 1. Test selected context is a lineage.
     selected_context = "Bone"
     top_context = "Bone"
     box_plot_data = _get_box_plot_data(
-        dataset_id=dataset_id,
-        selected_entity_id=selected_entity_id,
+        dataset_name=dataset_name,
+        selected_entity_label=selected_entity_label,
         selected_context=selected_context,
         top_context=top_context,
     )
@@ -537,8 +616,8 @@ def test_get_box_plot_data(empty_db_mock_downloads, entity_type):
     selected_context = "Ewing Sarcoma"
     top_context = "Bone"
     box_plot_data = _get_box_plot_data(
-        dataset_id=dataset_id,
-        selected_entity_id=selected_entity_id,
+        dataset_name=dataset_name,
+        selected_entity_label=selected_entity_label,
         selected_context=selected_context,
         top_context=top_context,
     )
@@ -584,25 +663,27 @@ def test_get_box_plot_data(empty_db_mock_downloads, entity_type):
 
 
 @pytest.mark.parametrize(
-    "entity_type", ["gene", "compound"],
+    "dataset_name", ["Chronos_Combined", "Rep_all_single_pt", "Prism_oncology_AUC"],
 )
-def test_get_other_context_dependencies(empty_db_mock_downloads, entity_type):
-    use_genes = entity_type == "gene"
+def test_get_other_context_dependencies(empty_db_mock_downloads, dataset_name):
+    use_genes = dataset_name == DependencyDataset.DependencyEnum.Chronos_Combined.name
 
-    (
-        gene_a,
-        gene_b,
-        compound_a,
-        compound_b,
-        dataset_id,
-    ) = _setup_entities_and_dataset_id(empty_db_mock_downloads, entity_type)
+    entity_type = "gene" if use_genes else "compound"
+
+    (gene_a, gene_b, compound_a, compound_b,) = _setup_entities_and_dataset_id(
+        empty_db_mock_downloads, entity_type, dataset_name=dataset_name
+    )
 
     interactive_test_utils.reload_interactive_config()
 
+    selected_entity_label = gene_a.label if use_genes else compound_a.label
     selected_entity_id = gene_a.entity_id if use_genes else compound_a.entity_id
 
+    full_row_of_values = get_full_row_of_values_and_depmap_ids(
+        dataset_name=dataset_name, label=selected_entity_label
+    )
+
     other_deps = get_other_context_dependencies(
-        dataset_id=dataset_id,
         in_group="Ewing Sarcoma",
         out_group_type="All",
         entity_type=entity_type,
@@ -610,6 +691,7 @@ def test_get_other_context_dependencies(empty_db_mock_downloads, entity_type):
         fdr=all_range.fdr,
         abs_effect_size=all_range.abs_effect_size,
         frac_dep_in=all_range.frac_dep_in,
+        full_row_of_values=full_row_of_values,
     )
 
     # 1. Test with all_range filters to get all possible other_context_dependencies.
@@ -666,7 +748,6 @@ def test_get_other_context_dependencies(empty_db_mock_downloads, entity_type):
 
     # 2. Test with only_narrow_range filter range so that 1 of the above "other context dependencies" is filtered out
     other_deps = get_other_context_dependencies(
-        dataset_id=dataset_id,
         in_group="Ewing Sarcoma",
         out_group_type="All",
         entity_type=entity_type,
@@ -674,13 +755,13 @@ def test_get_other_context_dependencies(empty_db_mock_downloads, entity_type):
         fdr=only_narrow_range.fdr,
         abs_effect_size=only_narrow_range.abs_effect_size,
         frac_dep_in=only_narrow_range.frac_dep_in,
+        full_row_of_values=full_row_of_values,
     )
 
     assert other_deps == [lung_result]
 
     # 3. Filter out everything so that nothing is returned.
     other_deps = get_other_context_dependencies(
-        dataset_id=dataset_id,
         in_group="Ewing Sarcoma",
         out_group_type="All",
         entity_type=entity_type,
@@ -688,13 +769,13 @@ def test_get_other_context_dependencies(empty_db_mock_downloads, entity_type):
         fdr=nothing_range.fdr,
         abs_effect_size=nothing_range.abs_effect_size,
         frac_dep_in=nothing_range.frac_dep_in,
+        full_row_of_values=full_row_of_values,
     )
 
     assert other_deps == []
 
     # 4. Test with an outgroup type other than "All"
     other_deps = get_other_context_dependencies(
-        dataset_id=dataset_id,
         in_group="Osteosarcoma",
         out_group_type="Lineage",
         entity_type=entity_type,
@@ -702,6 +783,7 @@ def test_get_other_context_dependencies(empty_db_mock_downloads, entity_type):
         fdr=all_range.fdr,
         abs_effect_size=all_range.abs_effect_size,
         frac_dep_in=all_range.frac_dep_in,
+        full_row_of_values=full_row_of_values,
     )
 
     assert other_deps == [
