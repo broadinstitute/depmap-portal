@@ -73,7 +73,7 @@ jobs:
       - name: Generate the breadbox client
         working-directory: ./breadbox
         run: |
-          poetry install && poetry run ./bb export-api-spec
+          poetry install && poetry run ./bb export-api-spec ../breadbox-client/latest-breadbox-api.json
           cd .. && pip install openapi-python-client==0.21.1
           openapi-python-client generate --meta=none --output-path breadbox-client/breadbox_client --path breadbox-client/latest-breadbox-api.json --overwrite
       - name: check that the breadbox client passes pyright
