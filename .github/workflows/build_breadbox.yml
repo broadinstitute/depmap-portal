@@ -64,18 +64,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - name: Install and configure Poetry
-        uses: snok/install-poetry@v1
-        with:
-          version: 1.7.1
-          virtualenvs-create: true
-          virtualenvs-in-project: true
-      - name: Generate the breadbox client
-        working-directory: ./breadbox
-        run: |
-          poetry install && poetry run ./bb export-api-spec ../breadbox-client/latest-breadbox-api.json
-          cd .. && pip install openapi-python-client==0.21.1
-          openapi-python-client generate --meta=none --output-path breadbox-client/breadbox_client --path breadbox-client/latest-breadbox-api.json --overwrite
+      - name: Generate breadbox client
+        uses: ./.github/actions/generate-breadbox-client # defined as a re-usable action
       - name: check that the breadbox client passes pyright
         working-directory: ./breadbox-client
         run: |
