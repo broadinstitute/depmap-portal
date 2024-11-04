@@ -1,9 +1,10 @@
 import hashlib
 import io
+
 import typing
 from dataclasses import dataclass
 from time import sleep, time
-from typing import Any, Dict, List, Literal, Optional, Union
+from typing import Any, Dict, List, Literal, Optional, Union, IO
 from uuid import UUID
 
 import pandas as pd
@@ -213,7 +214,7 @@ class BBClient:
         )
         return self._parse_client_response(breadbox_response)
 
-    def upload_file(self, file_handle: io.BytesIO, chunk_size=5 * 1024 * 1024) -> UploadedFile:
+    def upload_file(self, file_handle: IO[bytes], chunk_size=5 * 1024 * 1024) -> UploadedFile:
         "Uploads a file in pieces and returns a list of file IDs and MD5 hash for subsequent calls"
 
         md5_hash = hashlib.md5()
