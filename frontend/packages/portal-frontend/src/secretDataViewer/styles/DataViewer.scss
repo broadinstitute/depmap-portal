@@ -1,0 +1,102 @@
+.DataViewer {
+  display: flex;
+  height: calc(100vh - 50px);
+  margin-top: 2px;
+  padding: 20px;
+
+  h2 {
+    margin-top: 0;
+    font-size: 16px;
+    font-weight: bold;
+  }
+}
+
+.HackedDimensionSelect {
+  margin-top: 15px;
+}
+
+.complete {
+  margin-top: 30px;
+  padding: 10px;
+  border: 3px solid green;
+  color: green;
+  max-width: 78%;
+}
+
+.Config {
+  min-width: 220px;
+  border-right: 1px solid #aaa;
+
+  & > div:first-child {
+    label {
+      width: auto;
+
+      :global .glyphicon-info-sign {
+        display: none;
+      }
+    }
+  }
+}
+
+.disabled {
+  color: #ccc;
+}
+
+.selected {
+  & > span {
+    outline: 1px solid blue;
+    outline-offset: 2px;
+  }
+}
+
+.Stats {
+  display: flex;
+}
+
+.types {
+  font-size: 13px;
+  padding: 0 20px;
+}
+
+.datasets {
+  display: flex;
+  flex-direction: column;
+  flex-wrap: wrap;
+  font-size: 13px;
+}
+
+.tooltip {
+  :global .tooltip-inner {
+    max-width: 350px;
+  }
+}
+
+.tooltipContent {
+  text-align: left;
+
+  .disabled {
+    color: #777;
+  }
+
+  h3 {
+    margin-top: 0;
+    font-size: 14px;
+    font-weight: bold;
+  }
+
+  & > ul > li > ul {
+    margin-bottom: 10px;
+  }
+
+  & > ul > li:last-of-type > ul {
+    margin-bottom: 0;
+  }
+
+  li {
+    list-style-type: disc;
+
+    ul li {
+      list-style-type: circle;
+    }
+  }
+}
