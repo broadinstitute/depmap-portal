@@ -72,7 +72,8 @@ jobs:
           virtualenvs-in-project: true
       - name: Generate the breadbox client
         run: |
-          pip install openapi-python-client==0.21.1
+          cd breadbox && ./bb export-api-spec
+          cd .. && pip install openapi-python-client==0.21.1
           openapi-python-client generate --meta=none --output-path breadbox-client/breadbox_client --path breadbox-client/latest-breadbox-api.json --overwrite
       - name: check that the breadbox client passes pyright
         run: |
@@ -144,7 +145,7 @@ jobs:
           ./.github/push_docker.py ${{ env.DOCKER_REPO }} ${{ env.DOCKER_REPO }}:${{ env.DOCKER_TAG }} ${GITHUB_REF##*/}
 
   bump-versions:
-    if: ${{ !startsWith(github.event.head_commit.message, 'bump:') && (!startsWith(github.actor, 'github-actions') || !startsWith(github.event.pusher.name, 'github-actions')) && (github.ref_name == 'master') && (github.event_name == 'push') }} # TODO: change back
+    if: ${{ !startsWith(github.event.head_commit.message, 'bump:') && (!startsWith(github.actor, 'github-actions') || !startsWith(github.event.pusher.name, 'github-actions')) && (github.ref_name == 'master') && (github.event_name == 'push') }}
     needs: push-docker-tag
     runs-on: ubuntu-latest
     name: "Bump breadbox and breadbox-client version and create changelog with commitizen"
@@ -190,7 +191,7 @@ jobs:
 
   generate-and-publish-client:
     needs: bump-versions
-    if: ${{ (needs.bump-versions.outputs.current_version != needs.bump-versions.outputs.bumped_version) && (github.ref_name == 'master') }} # TODO: change back
+    if: ${{ (needs.bump-versions.outputs.current_version != needs.bump-versions.outputs.bumped_version) && (github.ref_name == 'master') }}
     runs-on: ubuntu-latest
     steps:
       - name: Check out
