@@ -62,9 +62,6 @@ jobs:
         run: poetry run cz check -m "${{ github.event.pull_request.title }}"
   pyright-breadbox-client:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./breadbox
     steps:
       - uses: actions/checkout@v2
       - name: Install and configure Poetry
@@ -74,13 +71,15 @@ jobs:
           virtualenvs-create: true
           virtualenvs-in-project: true
       - name: Generate the breadbox client
+        working-directory: ./breadbox
         run: |
-          cd breadbox && poetry install && ./bb export-api-spec
+          poetry install && ./bb export-api-spec
           cd .. && pip install openapi-python-client==0.21.1
           openapi-python-client generate --meta=none --output-path breadbox-client/breadbox_client --path breadbox-client/latest-breadbox-api.json --overwrite
       - name: check that the breadbox client passes pyright
+        working-directory: ./breadbox-client
         run: |
-          cd breadbox-client && poetry install && poetry run pyright breadbox_facade
+          poetry install && poetry run pyright breadbox_facade
   build-docker:
     runs-on: ubuntu-latest
     steps:
