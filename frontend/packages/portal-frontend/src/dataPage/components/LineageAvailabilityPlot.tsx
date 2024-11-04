@@ -46,7 +46,7 @@ const LineageAvailabilityPlot = ({
     promise
       .then((result: any) => {
         if (promise === latestPromise.current) {
-          if (result.error) {
+          if (result.error || Object.keys(result.lineage_counts).length === 0) {
             setIsError(true);
             setIsLoading(false);
           } else {

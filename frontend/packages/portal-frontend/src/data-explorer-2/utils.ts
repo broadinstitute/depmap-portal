@@ -617,11 +617,6 @@ export function plotsAreEquivalentWhenSerialized(
   );
 }
 
-const stripExprFromContext = (context: DataExplorerContext) => {
-  const { expr, ...rest } = context;
-  return rest;
-};
-
 export function someLegacyContextsExist() {
   const LEGACY_KEY = "dx2_prototype_user_contexts";
 
@@ -658,89 +653,6 @@ export async function convertLegacyContexts() {
   window.localStorage.removeItem(LEGACY_KEY);
 
   return contexts;
-}
-
-// TODO: Rename this to communicate that it also persists it to a bucket.
-export async function saveContextToLocalStorage(
-  context: DataExplorerContext,
-  hashToReplace?: string | null
-) {
-  let nextHash;
-  const json = window.localStorage.getItem("user_contexts");
-  const existingContexts: StoredContexts = json ? JSON.parse(json) : {};
-
-  const updates = await Promise.all(
-    Object.entries(existingContexts).map(async ([oldHash, oldValue]) => {
-      if (oldHash === hashToReplace) {
-        nextHash = await persistContext(context);
-
-        return {
-          hash: nextHash,
-          value: stripExprFromContext(context),
-        };
-      }
-
-      return { hash: oldHash, value: oldValue };
-    })
-  );
-
-  if (!hashToReplace) {
-    nextHash = await persistContext(context);
-
-    updates.push({
-      hash: nextHash,
-      value: stripExprFromContext(context),
-    });
-  }
-
-  const updatedContexts: StoredContexts = {};
-
-  updates.forEach(({ hash, value }) => {
-    updatedContexts[hash] = value;
-  });
-
-  window.localStorage.setItem("user_contexts", JSON.stringify(updatedContexts));
-
-  // WORKAROUND: These hosts are special in that they simulates multiple
-  // environments (public, Skyros, DMC, PedDep). Each env has its own external
-  // storage but shares local storage. That means they can "see" each other's
-  // contexts but can't actually fetch them. This mechanism corrects for that.
-  if (["dev.cds.team", "127.0.0.1"].includes(window.location.hostname)) {
-    const { rootUrl } = JSON.parse(
-      document.getElementById("webpack-config")!.textContent as string
-    );
-
-    const devContextsByRootUrl = JSON.parse(
-      window.localStorage.getItem("dev_contexts_by_root_url") || "{}"
-    );
-
-    const devContexts = devContextsByRootUrl[rootUrl] || [];
-    devContextsByRootUrl[rootUrl] = [...new Set(devContexts.concat(nextHash))];
-
-    window.localStorage.setItem(
-      "dev_contexts_by_root_url",
-      JSON.stringify(devContextsByRootUrl)
-    );
-  }
-
-  return nextHash as string;
-}
-
-// This only deletes the entry from the map of hashes to names. The content of
-// the context still persists in the CAS.
-export function deleteContextFromLocalStorage(hashToDelete: string) {
-  const json = window.localStorage.getItem("user_contexts");
-  const existingContexts: StoredContexts = json ? JSON.parse(json) : {};
-
-  const updatedContexts: StoredContexts = {};
-
-  Object.entries(existingContexts).forEach(([oldHash, oldContext]) => {
-    if (oldHash !== hashToDelete) {
-      updatedContexts[oldHash] = oldContext;
-    }
-  });
-
-  window.localStorage.setItem("user_contexts", JSON.stringify(updatedContexts));
 }
 
 export function findPathsToContext(

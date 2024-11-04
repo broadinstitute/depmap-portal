@@ -31,6 +31,8 @@ export interface ExtendedSelectProps {
   editableInputValue?: string;
   // This is called when editable text is changed.
   onEditInputValue?: (editedText: string) => void;
+  // Use this if you need access to the container div.
+  innerRef?: React.LegacyRef<HTMLDivElement>;
 }
 
 const ConditionalTooltip = ({
@@ -239,7 +241,12 @@ export default function extendReactSelect(
       isEditable = false,
       editableInputValue = undefined,
       onEditInputValue = () => {},
+      innerRef = null,
     } = props;
+
+    const dataProps = Object.fromEntries(
+      Object.entries(props).filter(([key]) => key.startsWith("data-"))
+    );
 
     const mounted = useRef<boolean>(true);
     const ref = useRef<HTMLElement | null>(null);
@@ -251,12 +258,6 @@ export default function extendReactSelect(
     const [menuPlacement, setMenuPlacement] = useState<"top" | "bottom">(
       "bottom"
     );
-    const [postSelectTimeoutExpired, setPST] = useState(true);
-    const setPostSelectTimeoutExpired = (expired: boolean) => {
-      if (mounted.current) {
-        setPST(expired);
-      }
-    };
 
     useEffect(() => {
       return () => {
@@ -300,7 +301,7 @@ export default function extendReactSelect(
     const tooltipText = value ? (value as { label: string }).label : null;
 
     return (
-      <div className={styles.container}>
+      <div ref={innerRef} className={styles.container} {...dataProps}>
         {swatchColor && (
           <span
             className={styles.swatch}
@@ -318,7 +319,7 @@ export default function extendReactSelect(
             </div>
           )}
           <ConditionalTooltip
-            showTooltip={value && isTruncated && postSelectTimeoutExpired}
+            showTooltip={value && isTruncated}
             content={<WordBreaker text={tooltipText} />}
             onFocus={() => {
               setTimeout(() => {
@@ -387,7 +388,6 @@ export default function extendReactSelect(
                 }
               }}
               onChange={(nextValue, action) => {
-                setPostSelectTimeoutExpired(false);
                 onChange?.(nextValue, action);
 
                 if (isEditable) {
@@ -401,10 +401,6 @@ export default function extendReactSelect(
                 if (nextValue === null) {
                   onEditInputValue("");
                 }
-
-                setTimeout(() => {
-                  setPostSelectTimeoutExpired(true);
-                }, 500);
               }}
               onInputChange={(inputValue, actionMeta) => {
                 if (actionMeta?.action === "input-change") {
@@ -436,18 +432,14 @@ export default function extendReactSelect(
                   props.onMenuClose();
                 }
 
-                setPostSelectTimeoutExpired(false);
-
                 reactSelectRef.current?.blur();
                 const div = document.querySelector("#tooltip-blocker");
 
                 if (div) {
-                  div.remove();
+                  setTimeout(() => {
+                    div.remove();
+                  }, 0);
                 }
-
-                setTimeout(() => {
-                  setPostSelectTimeoutExpired(true);
-                }, 500);
               }}
               menuPlacement={props.menuPlacement || menuPlacement}
               components={{

@@ -4,7 +4,7 @@ import { BrowserRouter, Navigate, Routes, Route } from "react-router-dom";
 import ErrorBoundary from "src/common/components/ErrorBoundary";
 import NotFound from "src/pages/NotFound";
 import { Spinner } from "@depmap/common-components";
-import { BreadboxApi } from "src/api";
+import { ElaraApi } from "src/api";
 import ElaraNavbar from "src/ElaraNavbar";
 import TypesPage from "src/pages/Types/TypesPage";
 
@@ -34,7 +34,7 @@ const App = () => {
     basename = window.location.pathname.replace(/\/elara\/.*$/, "");
   }
   const [bbapi] = useState(
-    () => new BreadboxApi(basename === "" ? "/" : basename)
+    () => new ElaraApi(basename === "" ? "/" : basename)
   );
   const [user, setUser] = useState<string | null>(null);
 

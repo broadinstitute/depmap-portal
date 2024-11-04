@@ -30,7 +30,7 @@ from ..config import Settings, get_settings
 from breadbox.crud.access_control import PUBLIC_GROUP_ID
 from ..crud import dataset as dataset_crud
 from ..crud import types as type_crud
-from ..crud import group as group_crud
+from ..crud import slice as slice_crud
 
 from ..models.dataset import (
     Dataset as DatasetModel,
@@ -51,10 +51,13 @@ from ..schemas.dataset import (
     UpdateDatasetParams,
     MatrixDatasetUpdateParams,
     TabularDatasetUpdateParams,
+    DimensionDataResponse,
+    SliceQueryIdentifierType,
 )
 from .dependencies import get_dataset as get_dataset_dep
 from .dependencies import get_db_with_user, get_user
 
+from depmap_compute.slice import SliceQuery
 
 router = APIRouter(prefix="/datasets", tags=["datasets"])
 log = getLogger(__name__)
@@ -454,6 +457,53 @@ def get_dimensions(
     )
 
     return search_index_entries
+
+
+@router.post(
+    "/dimension/data/",
+    operation_id="get_dimension_data",
+    response_model=DimensionDataResponse,
+)
+def get_dimension_data(
+    # The request body should be a SliceQuery with the following three fields:
+    dataset_id: Annotated[str, Body(description="The UUID or given ID of a dataset.")],
+    identifier: Annotated[
+        str,
+        Body(
+            description="A dimension identifier of the specified type (id, label, etc.)."
+        ),
+    ],
+    identifier_type: Annotated[
+        SliceQueryIdentifierType,
+        Body(
+            description="Denotes the type of identifier being used and the axis being queried."
+        ),
+    ],
+    db: SessionWithUser = Depends(get_db_with_user),
+    settings: Settings = Depends(get_settings),
+):
+    """
+    Load all values, IDs, and labels for a given dimension (specified by SliceQuery).
+    """
+    parsed_slice_query = SliceQuery(
+        dataset_id=dataset_id,
+        identifier=identifier,
+        identifier_type=identifier_type.name,
+    )
+    slice_values_by_id = slice_crud.get_slice_data(
+        db, settings.filestore_location, parsed_slice_query
+    )
+
+    # Load the labels separately, ensuring they're in the same order as the other values
+    slice_ids: list = slice_values_by_id.index.tolist()
+    labels_by_id = slice_crud.get_labels_for_slice_type(db, parsed_slice_query)
+    slice_labels = [labels_by_id[id] for id in slice_ids] if labels_by_id else slice_ids
+
+    return {
+        "ids": slice_ids,
+        "labels": slice_labels,
+        "values": slice_values_by_id.values.tolist(),
+    }
 
 
 @router.patch(

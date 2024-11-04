@@ -9,11 +9,10 @@ from logging import getLogger
 from flask import abort, json, make_response
 
 from depmap_compute.context import (
-    decode_slice_id,
     ContextEvaluator,
     LegacyContextEvaluator,
 )
-from depmap_compute.slice import SliceQuery
+from depmap_compute.slice import decode_slice_id
 from depmap import data_access
 from depmap.data_access.models import MatrixDataset
 from depmap.settings.download_settings import get_download_list
@@ -441,7 +440,8 @@ def get_ids_and_labels_matching_context(context: dict) -> tuple[list[str], list[
     """
     # Identify which type of context has been provided
     # Legacy contexts use the "context_type" field name, while newer contexts use "dimension_type"
-    if context.get("context_type"):
+    is_legacy_context = context.get("context_type") is not None
+    if is_legacy_context:
         dimension_type = context.get("context_type")
         context_evaluator = LegacyContextEvaluator(context, slice_to_dict)
     else:
@@ -457,7 +457,14 @@ def get_ids_and_labels_matching_context(context: dict) -> tuple[list[str], list[
     ids_matching_context = []
     labels_matching_context = []
     for given_id, label in all_labels_by_id.items():
-        if context_evaluator.is_match(given_id):
+        if is_legacy_context and dimension_type != "depmap_model":
+            # Legacy contexts do feature lookups by label
+            is_match = context_evaluator.is_match(label)
+
+        else:
+            is_match = context_evaluator.is_match(given_id)
+
+        if is_match:
             ids_matching_context.append(given_id)
             labels_matching_context.append(label)
 

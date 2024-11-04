@@ -1,17 +1,18 @@
 /* eslint-disable react/jsx-props-no-spreading */
 import React from "react";
 import renderConditionally from "../../../utils/render-conditionally";
+import { capitalize, getDimensionTypeLabel } from "../../../utils/misc";
 import CustomSliceLabelSelect from "./CustomSliceLabelSelect";
 import CompoundSliceLabelSelect from "./CompoundSliceLabelSelect";
 import StandardSliceLabelSelect from "./SliceLabelSelect";
 import { SliceLabelSelectProps } from "./types";
 
-const SliceLabelSelect = renderConditionally((props: SliceLabelSelectProps) => {
+function SliceLabelSelect(props: SliceLabelSelectProps) {
   if (props.dataType === "custom") {
     return <CustomSliceLabelSelect {...props} />;
   }
 
-  if (props.slice_type === "compound_experiment") {
+  if (props.slice_type === "compound_experiment" && !props.removeWrapperDiv) {
     return (
       <CompoundSliceLabelSelect
         {...props}
@@ -34,7 +35,17 @@ const SliceLabelSelect = renderConditionally((props: SliceLabelSelectProps) => {
     );
   }
 
-  return <StandardSliceLabelSelect {...props} />;
-});
+  let label: string | undefined;
 
-export default SliceLabelSelect;
+  if (props.removeWrapperDiv) {
+    label = `${capitalize(getDimensionTypeLabel(props.slice_type))}`;
+
+    if (label.length > 24) {
+      label = label.slice(0, 24) + "…";
+    }
+  }
+
+  return <StandardSliceLabelSelect {...props} label={label} />;
+}
+
+export default renderConditionally(SliceLabelSelect);

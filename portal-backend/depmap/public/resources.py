@@ -12,7 +12,7 @@ import os
 @dataclass
 class Topic:
     id: int
-    slug: str  # topic slug is used as identifier to route to specific post on resources prototype
+    slug: str  # topic slug is used as identifier to route to specific post on resources
     title: str
     post_content: str  # first post
     creation_date: str
@@ -58,7 +58,7 @@ def create_sanitizer() -> Sanitizer:
 # The discourse api returns non-image attachments with ONLY relative urls.
 # Example: /uploads/short-url/random_letters_and_numbers.pdf
 # This function adds a prefix equal to the url of the relevant forum (DMC vs public).
-def expand_forum_relative_urls(forum_url: str, html: str):
+def modify_forum_relative_urls(forum_url: str, html: str):
     # html.parser must be used to avoid automatically adding <html> and <body>
     # tags to the post html
     soup = BeautifulSoup(str(html), features="html.parser")
@@ -66,6 +66,11 @@ def expand_forum_relative_urls(forum_url: str, html: str):
         if str(a["href"]).startswith("/"):
             short_link = str(a["href"])
             a["href"] = urljoin(forum_url, short_link)
+        # remove link anchors to forum post
+        elif str(a["href"]).startswith("#p"):
+            a.extract()
+        # add attribute to open links in new tab
+        a["target"] = "_blank"
     return str(soup)
 
 
@@ -73,7 +78,6 @@ def add_forum_link_to_html(
     forum_url: str, topic_id: int, topic_slug: str, topic_html: str
 ):
     soup = BeautifulSoup(str(topic_html), features="html.parser")
-    link_p = soup.new_tag("p")
     link_tag = soup.new_tag("a")
     link_tag.attrs.update(
         {
@@ -83,9 +87,8 @@ def add_forum_link_to_html(
         }
     )
     link_tag.string = "View Post in Forum"
-    link_p.append(link_tag)
     last_element = soup.find_all()[-1]
-    last_element.insert_after(link_p)
+    last_element.insert_after(link_tag)
     return str(soup)
 
 
@@ -108,7 +111,7 @@ def modify_html(
     forum_url: str,
 ):
     sanitized_html = sanitizer.sanitize(topic_html)
-    modified_urls_html = expand_forum_relative_urls(forum_url, sanitized_html)
+    modified_urls_html = modify_forum_relative_urls(forum_url, sanitized_html)
     added_forum_link_html = add_forum_link_to_html(
         forum_url, topic_id, topic_slug, modified_urls_html
     )

@@ -26,7 +26,7 @@ import {
   ValidationResult,
   ValidationTextbox,
 } from "@depmap/data-slicer";
-import { BreadboxApi } from "src/api";
+import { ElaraApi } from "src/api";
 import { VectorCatalogApi } from "@depmap/interactive";
 import styles from "src/pages/Downloads/styles.scss";
 import { ApiContext } from "@depmap/api";
@@ -385,7 +385,7 @@ export default class ElaraDataSlicer extends React.Component<
   };
 
   renderCellLineSelection = (): any => {
-    const dapi = new BreadboxApi("/");
+    const dapi = new ElaraApi("/");
     const vectorCatalogApi = new VectorCatalogApi(dapi);
 
     const getDapi = () => dapi;

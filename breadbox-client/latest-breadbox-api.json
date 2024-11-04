@@ -436,6 +436,35 @@
         "title": "Body_get_dataset_data",
         "type": "object"
       },
+      "Body_get_dimension_data": {
+        "properties": {
+          "dataset_id": {
+            "description": "The UUID or given ID of a dataset.",
+            "title": "Dataset Id",
+            "type": "string"
+          },
+          "identifier": {
+            "description": "A dimension identifier of the specified type (id, label, etc.).",
+            "title": "Identifier",
+            "type": "string"
+          },
+          "identifier_type": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SliceQueryIdentifierType"
+              }
+            ],
+            "description": "Denotes the type of identifier being used and the axis being queried."
+          }
+        },
+        "required": [
+          "dataset_id",
+          "identifier",
+          "identifier_type"
+        ],
+        "title": "Body_get_dimension_data",
+        "type": "object"
+      },
       "Body_update_feature_type_metadata": {
         "properties": {
           "annotation_type_mapping": {
@@ -745,6 +774,86 @@
         "title": "ComputeResponse",
         "type": "object"
       },
+      "Context": {
+        "properties": {
+          "dimension_type": {
+            "title": "Dimension Type",
+            "type": "string"
+          },
+          "expr": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "additionalProperties": {
+                  "items": {},
+                  "type": "array"
+                },
+                "type": "object"
+              }
+            ],
+            "title": "Expr"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "vars": {
+            "additionalProperties": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "default": {},
+            "title": "Vars",
+            "type": "object"
+          }
+        },
+        "required": [
+          "expr",
+          "dimension_type"
+        ],
+        "title": "Context",
+        "type": "object"
+      },
+      "ContextMatchResponse": {
+        "properties": {
+          "ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Ids",
+            "type": "array"
+          },
+          "labels": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Labels",
+            "type": "array"
+          },
+          "num_candidates": {
+            "title": "Num Candidates",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "ids",
+          "labels",
+          "num_candidates"
+        ],
+        "title": "ContextMatchResponse",
+        "type": "object"
+      },
       "DataType": {
         "properties": {
           "name": {
@@ -769,6 +878,36 @@
           "dataset_metadata"
         ],
         "title": "DatasetMetadata",
+        "type": "object"
+      },
+      "DimensionDataResponse": {
+        "properties": {
+          "ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Ids",
+            "type": "array"
+          },
+          "labels": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Labels",
+            "type": "array"
+          },
+          "values": {
+            "items": {},
+            "title": "Values",
+            "type": "array"
+          }
+        },
+        "required": [
+          "ids",
+          "labels",
+          "values"
+        ],
+        "title": "DimensionDataResponse",
         "type": "object"
       },
       "DimensionSearchIndexResponse": {
@@ -1912,6 +2051,17 @@
         "title": "SearchResponse",
         "type": "object"
       },
+      "SliceQueryIdentifierType": {
+        "enum": [
+          "feature_id",
+          "feature_label",
+          "sample_id",
+          "sample_label",
+          "column"
+        ],
+        "title": "SliceQueryIdentifierType",
+        "type": "string"
+      },
       "TableDatasetParams": {
         "properties": {
           "columns_metadata": {
@@ -2389,7 +2539,7 @@
   },
   "info": {
     "title": "Breadbox",
-    "version": "3.8.0"
+    "version": "3.10.1"
   },
   "openapi": "3.1.0",
   "paths": {
@@ -3382,6 +3532,88 @@
           }
         },
         "summary": "Get Dataset Data",
+        "tags": [
+          "datasets"
+        ]
+      }
+    },
+    "/datasets/dimension/data/": {
+      "post": {
+        "description": "Load all values, IDs, and labels for a given dimension (specified by SliceQuery).",
+        "operationId": "get_dimension_data",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_get_dimension_data"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DimensionDataResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Dimension Data",
         "tags": [
           "datasets"
         ]
@@ -5701,6 +5933,94 @@
         "summary": "Get Cell Line Selector Lines",
         "tags": [
           "partials"
+        ]
+      }
+    },
+    "/temp/context": {
+      "post": {
+        "description": "Get the full list of IDs and labels (in any dataset) which match the given context.\nAlso get the total number of \"candidate\" records (all records with labels belonging to the dimension type).\nRequests must be in the version 2 context format.",
+        "operationId": "evaluate_context",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/Context"
+                  }
+                ],
+                "description": "A Data Explorer 2 context expression",
+                "title": "Context"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContextMatchResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Evaluate Context",
+        "tags": [
+          "temp"
         ]
       }
     },

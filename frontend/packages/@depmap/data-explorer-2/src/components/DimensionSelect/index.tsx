@@ -9,11 +9,6 @@ export interface Props {
   index_type: string | null;
   value: Partial<DataExplorerPlotConfigDimension> | null;
   onChange: (nextValue: Partial<DataExplorerPlotConfigDimension>) => void;
-  onClickCreateContext: () => void;
-  onClickSaveAsContext: () => void;
-
-  /** Should you be able to select "All" as your context? */
-  includeAllInContextOptions: boolean;
 
   /** optionally add a classname to the container div */
   className?: string;
@@ -25,17 +20,37 @@ export interface Props {
    * @default "entity-or-context"
    */
   mode?: "entity-only" | "context-only" | "entity-or-context";
+
+  /** Called when the height of the container <div> changes. Useful for modals
+   * where the available height might be confined. */
+  onHeightChange?: (el: HTMLDivElement, prevHeight: number) => void;
+
+  /**
+   * Use this if you need to break out of the standard vertically stacked
+   * layout.
+   *
+   * @default false
+   */
+  removeWrapperDiv?: boolean;
+
+  // These are only relevant when mode is not "entity-only"
+  onClickCreateContext?: () => void;
+  onClickSaveAsContext?: () => void;
+  /** Should you be able to select "All" as your context? */
+  includeAllInContextOptions?: boolean;
 }
 
 function DimensionSelect({
   index_type,
   value,
   onChange,
-  includeAllInContextOptions,
-  onClickCreateContext,
-  onClickSaveAsContext,
   className = undefined,
   mode = "entity-or-context",
+  onHeightChange = undefined,
+  removeWrapperDiv = false,
+  onClickCreateContext = () => {},
+  onClickSaveAsContext = () => {},
+  includeAllInContextOptions = false,
 }: Props) {
   const state = useDimensionStateManager({
     index_type,
@@ -59,10 +74,12 @@ function DimensionSelect({
       className={className}
       index_type={index_type}
       isModalVersion={false}
+      removeWrapperDiv={removeWrapperDiv}
       includeAllInContextOptions={includeAllInContextOptions}
       onClickCreateContext={onClickCreateContext}
       onClickSaveAsContext={onClickSaveAsContext}
       onClickShowModal={onClickShowModal}
+      onHeightChange={onHeightChange}
     />
   );
 }

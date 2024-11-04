@@ -160,6 +160,12 @@ function ColorByViewOptions({
             const context = plot.dimensions.color.context;
             onClickSaveAsContext(context, path);
           }}
+          onHeightChange={(el) => {
+            el.scrollIntoView({
+              behavior: "smooth",
+              block: "nearest",
+            });
+          }}
         />
       )}
     </div>

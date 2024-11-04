@@ -491,3 +491,31 @@ def check_id_mapping_is_valid(
         raise UserError(
             "Attempted reference mapping to a dimension type that does not exist!"
         )
+
+
+def get_dimension_labels_by_id(
+    db: SessionWithUser, dimension_type_name: str
+) -> dict[str, str]:
+    """
+    For a given dimension, get all IDs and labels that exist in the metadata.
+    """
+    dimension_type = get_dimension_type(db=db, name=dimension_type_name)
+
+    if dimension_type is None:
+        raise ResourceNotFoundError(
+            f"Dimension type '{dimension_type_name}' not found. "
+        )
+
+    label_filter_statements = [
+        TabularColumn.dataset_id == dimension_type.dataset_id,
+        TabularColumn.given_id == "label",
+    ]
+
+    labels_by_id_tuples = (
+        db.query(TabularCell)
+        .join(TabularColumn)
+        .filter(and_(True, *label_filter_statements))
+        .with_entities(TabularCell.dimension_given_id, TabularCell.value)
+        .all()
+    )
+    return {id: label for id, label in labels_by_id_tuples}

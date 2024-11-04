@@ -62,7 +62,6 @@ cell_line_loader.py: error: "comments" is not a known member of "None" (reportOp
 cell_line_loader.py: error: "cosmic_id" is not a known member of "None" (reportOptionalMemberAccess)
 cell_line_loader.py: error: "disease_subtype" is not a known member of "None" (reportOptionalMemberAccess)
 cell_line_loader.py: error: "gender" is not a known member of "None" (reportOptionalMemberAccess)
-cell_line_loader.py: error: "group" is not a known member of "None" (reportOptionalMemberAccess)
 cell_line_loader.py: error: "image_filename" is not a known member of "None" (reportOptionalMemberAccess)
 cell_line_loader.py: error: "lineage" is not a known member of "None" (reportOptionalMemberAccess)
 cell_line_loader.py: error: "primary_disease" is not a known member of "None" (reportOptionalMemberAccess)

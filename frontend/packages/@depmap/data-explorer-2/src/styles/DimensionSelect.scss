@@ -1,11 +1,19 @@
 .DimensionSelect {
   & > div:not(:first-child) {
     margin-top: 10px;
+
+    &:empty {
+      margin-top: 0;
+    }
+
+    &:not(:has(label)) {
+      margin-top: 0;
+    }
   }
 }
 
 .AxisTypeToggle {
-  margin: 6px 10px;
+  margin: 10px;
 
   label {
     margin-top: 0;

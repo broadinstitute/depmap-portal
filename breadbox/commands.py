@@ -335,6 +335,10 @@ def _populate_minimal_data(db: SessionWithUser, settings: Settings):
     if not existing_user_upload_data_type:
         data_type_crud.add_data_type(db, "User upload")
 
+    existing_metadata_data_type = data_type_crud.get_data_type(db, "metadata")
+    if not existing_metadata_data_type:
+        data_type_crud.add_data_type(db, "metadata")
+
 
 @cli.command()
 def dropdb():
