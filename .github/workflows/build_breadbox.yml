@@ -72,7 +72,7 @@ jobs:
           virtualenvs-in-project: true
       - name: Generate the breadbox client
         run: |
-          pip install openapi-python-client==0.21.6
+          pip install openapi-python-client==0.21.1
           openapi-python-client generate --meta=none --output-path breadbox-client/breadbox_client --path breadbox-client/latest-breadbox-api.json --overwrite
       - name: check that the breadbox client passes pyright
         run: |
@@ -222,7 +222,7 @@ jobs:
         if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
       - name: Generate the breadbox client
         run: |
-          pip install openapi-python-client==0.21.6
+          pip install openapi-python-client==0.21.1
           openapi-python-client generate --meta=none --output-path breadbox-client/breadbox_client --path breadbox-client/latest-breadbox-api.json --overwrite
       - name: Set up for publishing breadbox client
         working-directory: ./breadbox-client
