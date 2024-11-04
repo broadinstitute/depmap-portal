@@ -1,7 +1,6 @@
 # A re-usable github action which generates the breadbox client
 name: "generate-breadbox-client"
 description: "Auto-generate the breadbox client"
-# TODO: determine if I need to set inputs or outputs
 runs:
   using: "composite"
   steps:

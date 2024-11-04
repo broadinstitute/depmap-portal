@@ -210,13 +210,8 @@ jobs:
         with:
           path: .venv
           key: venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('**/poetry.lock') }}
-      - name: Install dependencies
-        run: poetry install
-        if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
-      - name: Generate the breadbox client
-        run: |
-          pip install openapi-python-client==0.21.1
-          openapi-python-client generate --meta=none --output-path breadbox-client/breadbox_client --path breadbox-client/latest-breadbox-api.json --overwrite
+      - name: Generate breadbox client
+        uses: ./.github/actions/generate-breadbox-client # defined as a re-usable action
       - name: Set up for publishing breadbox client
         working-directory: ./breadbox-client
         run: |
