@@ -35,6 +35,7 @@ class TabularDatasetUpdateParams:
         data_type (Union[None, Unset, str]): Data type grouping for your dataset
         dataset_metadata (Union['TabularDatasetUpdateParamsDatasetMetadataType0', None, Unset]): A dictionary of
             additional dataset metadata that is not already provided
+        given_id (Union[None, Unset, str]): The 'given ID' for this dataset
         group_id (Union[None, Unset, str]): Id of the group the dataset belongs to
         name (Union[None, Unset, str]): Name of dataset
         priority (Union[None, Unset, int]): Numeric value representing priority of the dataset within its `data_type`
@@ -45,6 +46,7 @@ class TabularDatasetUpdateParams:
     dataset_metadata: Union[
         "TabularDatasetUpdateParamsDatasetMetadataType0", None, Unset
     ] = UNSET
+    given_id: Union[None, Unset, str] = UNSET
     group_id: Union[None, Unset, str] = UNSET
     name: Union[None, Unset, str] = UNSET
     priority: Union[None, Unset, int] = UNSET
@@ -72,6 +74,12 @@ class TabularDatasetUpdateParams:
             dataset_metadata = self.dataset_metadata.to_dict()
         else:
             dataset_metadata = self.dataset_metadata
+
+        given_id: Union[None, Unset, str]
+        if isinstance(self.given_id, Unset):
+            given_id = UNSET
+        else:
+            given_id = self.given_id
 
         group_id: Union[None, Unset, str]
         if isinstance(self.group_id, Unset):
@@ -102,6 +110,8 @@ class TabularDatasetUpdateParams:
             field_dict["data_type"] = data_type
         if dataset_metadata is not UNSET:
             field_dict["dataset_metadata"] = dataset_metadata
+        if given_id is not UNSET:
+            field_dict["given_id"] = given_id
         if group_id is not UNSET:
             field_dict["group_id"] = group_id
         if name is not UNSET:
@@ -153,6 +163,15 @@ class TabularDatasetUpdateParams:
 
         dataset_metadata = _parse_dataset_metadata(d.pop("dataset_metadata", UNSET))
 
+        def _parse_given_id(data: object) -> Union[None, Unset, str]:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(Union[None, Unset, str], data)
+
+        given_id = _parse_given_id(d.pop("given_id", UNSET))
+
         def _parse_group_id(data: object) -> Union[None, Unset, str]:
             if data is None:
                 return data
@@ -184,6 +203,7 @@ class TabularDatasetUpdateParams:
             format_=format_,
             data_type=data_type,
             dataset_metadata=dataset_metadata,
+            given_id=given_id,
             group_id=group_id,
             name=name,
             priority=priority,

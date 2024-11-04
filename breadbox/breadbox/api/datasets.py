@@ -543,6 +543,18 @@ def update_dataset(
             )
 
     with transaction(db):
+        # before calling the method to update, check to make sure the given_id either does not already exist
+        # or it is already assigned to this dataset (in which case, updating it will have no effect)
+        if dataset_update_params.given_id is not None:
+            existing_dataset = dataset_crud.get_dataset(
+                db, db.user, dataset_update_params.given_id
+            )
+            if existing_dataset is not None and existing_dataset.id != dataset.id:
+                raise HTTPException(
+                    409,
+                    f"A dataset with the new given id {dataset_update_params.given_id} already exists.",
+                )
+
         updated_dataset = dataset_crud.update_dataset(
             db, user, dataset, dataset_update_params
         )

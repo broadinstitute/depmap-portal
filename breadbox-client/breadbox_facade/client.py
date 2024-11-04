@@ -81,10 +81,13 @@ from breadbox_client.models import (
     UploadFileResponse,
     ValueType,
     MatrixDatasetUpdateParamsFormat,
-    TabularDatasetUpdateParamsFormat
+    TabularDatasetUpdateParamsFormat,
+    MatrixDatasetParamsDataFileFormat,
 )
+
 from breadbox_client.types import UNSET, Unset, File, Response
 from breadbox_facade.exceptions import BreadboxException
+import tempfile
 
 
 class TimeoutError(Exception):
@@ -210,7 +213,7 @@ class BBClient:
         )
         return self._parse_client_response(breadbox_response)
 
-    def upload_file(self, file_handle: io.BytesIO, mime_type="text/csv", chunk_size=5 * 1024 * 1024) -> UploadedFile:
+    def upload_file(self, file_handle: io.BytesIO, chunk_size=5 * 1024 * 1024) -> UploadedFile:
         "Uploads a file in pieces and returns a list of file IDs and MD5 hash for subsequent calls"
 
         md5_hash = hashlib.md5()
@@ -228,8 +231,7 @@ class BBClient:
                 body=BodyUploadFile(
                     file=File(
                         payload=io.BytesIO(chunk),
-                        file_name="unnamed",
-                        mime_type=mime_type,
+                        file_name="unnamed"
                     )
                 ),
             )
@@ -302,11 +304,23 @@ class BBClient:
         taiga_id: Optional[str] = None,
         given_id: Optional[str] = None,
         dataset_metadata: Optional[dict] = None,
+        upload_parquet=False,
         timeout=None,
+        log_status=lambda msg: None
     ) -> AddDatasetResponse:
+        log_status(f"add_matrix_dataset start")
         metadata = MatrixDatasetParamsDatasetMetadataType0.from_dict(dataset_metadata) if dataset_metadata else None
 
-        uploaded_file = self.upload_file(file_handle=io.BytesIO(data_df.to_csv(index=False).encode("utf8")))
+        if upload_parquet:
+            log_status(f"uploading as parquet")
+            with tempfile.NamedTemporaryFile() as tmp:
+                data_df.to_parquet(tmp.name, index=False)
+                uploaded_file = self.upload_file(tmp)
+            data_file_format=MatrixDatasetParamsDataFileFormat.PARQUET
+        else:
+            log_status(f"uploading as csv")
+            uploaded_file = self.upload_file(file_handle=io.BytesIO(data_df.to_csv(index=False).encode("utf8")))
+            data_file_format=MatrixDatasetParamsDataFileFormat.CSV
 
         params = MatrixDatasetParams(
             name=name,
@@ -324,13 +338,17 @@ class BBClient:
             priority=priority if priority else UNSET,
             taiga_id=taiga_id if taiga_id else UNSET,
             given_id=given_id if given_id else UNSET,
+            data_file_format=data_file_format
         )
+        log_status(f"calling add_dataset_uploads_client.sync_detailed")
         breadbox_response = add_dataset_uploads_client.sync_detailed(
             client=self.client,
             body=params,
         )
         breadbox_response_ = typing.cast(AddDatasetResponse, self._parse_client_response(breadbox_response))
+        log_status(f"awaiting task result")
         result = self.await_task_result(breadbox_response_.id, timeout=timeout)
+        log_status(f"task completed")
         return result
 
     def update_dataset(
@@ -339,6 +357,7 @@ class BBClient:
         name: Union[str, Unset] = UNSET,
         dataset_metadata: Optional[dict] = None,
         group_id: Union[str, Unset] = UNSET,
+        given_id: Union[str, Unset] = UNSET,
     ) -> Union[MatrixDatasetResponse, TabularDatasetResponse]:
         """Update the values specified for the given dataset"""
         from breadbox_client.models import MatrixDatasetUpdateParams, TabularDatasetUpdateParams
@@ -355,6 +374,7 @@ class BBClient:
             name=name,
             dataset_metadata=metadata,
             group_id=group_id,
+            given_id=given_id
         )
         breadbox_response = update_dataset_client.sync_detailed(
             dataset_id=dataset_id,
