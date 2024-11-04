@@ -3,9 +3,6 @@ name: "generate-breadbox-client"
 description: "Auto-generate the breadbox client"
 # TODO: determine if I need to set inputs or outputs
 runs:
-  defaults:
-    run:
-      shell: bash
   steps:
     - uses: actions/checkout@v2
     - name: Install and configure Poetry
@@ -17,11 +14,14 @@ runs:
     - name: Install breadbox python dependencies
       working-directory: ./breadbox
       run: poetry install
+      shell: bash
     - name: Export the breadbox API spec
       working-directory: ./breadbox
       run: |
         poetry run ./bb export-api-spec ../breadbox-client/latest-breadbox-api.json
+      shell: bash
     - name: Generate the breadbox client
       run: |
         pip install openapi-python-client==0.21.1
         openapi-python-client generate --meta=none --output-path breadbox-client/breadbox_client --path breadbox-client/latest-breadbox-api.json --overwrite
+      shell: bash
