@@ -52,9 +52,7 @@ def filter_portal_compounds(
     df = df.copy()
     # Use apply to filter SampleIDs
     df["SampleIDs"] = df["SampleIDs"].apply(
-        lambda x: filter_sample_ids(x, repsdrug_matrix, repsdrug_auc, oncrefauc_matrix)
-        if pd.notna(x)
-        else ""
+        lambda x: filter_sample_ids(x, repsdrug_ids, oncref_ids) if pd.notna(x) else ""
     )
 
     # Remove rows with empty SampleIDs
@@ -71,21 +69,24 @@ def process_and_update_portal_compounds(source_dataset_id, target_dataset_id):
 
     print("Getting portal compounds data...")
     portal_compounds_df = tc.get(portal_compounds_taiga_id)
+    assert not portal_compounds_df.empty, "portal_compounds_df is empty"
 
     print("Getting repsdrug matrix data...")
     repsdrug_matrix = tc.get(repsdrug_matrix_taiga_id)
+    assert not repsdrug_matrix.index.empty, "repsdrug_matrix index is empty"
 
     print("Getting repsdrug AUC matrix data...")
     repsdrug_auc = tc.get(repsdrug_auc_matrix_taiga_id)
+    assert not repsdrug_auc.index.empty, "repsdrug_auc index is empty"
 
     print("Getting oncref AUC matrix data...")
-    oncrefauc_matrix = tc.get(
-        f"{source_dataset_id}/{prism_oncref_auc_matrix_taiga_permaname}"
-    )
-
-    assert not repsdrug_matrix.index.empty, "repsdrug_matrix index is empty"
-    assert not repsdrug_auc.index.empty, "repsdrug_auc index is empty"
-    assert not oncrefauc_matrix.columns.empty, "oncrefauc_matrix columns are empty"
+    if source_dataset_id.startswith("public"):
+        oncrefauc_matrix = pd.DataFrame()
+    else:
+        oncrefauc_matrix = tc.get(
+            f"{source_dataset_id}/{prism_oncref_auc_matrix_taiga_permaname}"
+        )
+        assert not oncrefauc_matrix.columns.empty, "oncrefauc_matrix columns are empty"
 
     print("Computing IDs for filtering...")
     repsdrug_ids = set(repsdrug_matrix.index).union(repsdrug_auc.index)
