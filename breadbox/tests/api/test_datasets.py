@@ -2939,6 +2939,33 @@ class TestPatch:
             dataset_response_after_update.json()["data_type"] == "User upload"
         )  # same value expected
 
+        # Check that we can set the given_id to a non-null value and then reset it back to null
+        update_dataset_response = client.patch(
+            f"/datasets/{dataset_id}",
+            json={"format": "matrix", "given_id": "xyz"},
+            headers=admin_headers,
+        )
+        assert_status_ok(update_dataset_response)
+
+        dataset_response_after_update = client.get(
+            f"/datasets/{dataset_id}", headers=admin_headers
+        )
+        assert_status_ok(dataset_response_after_update)
+        assert dataset_response_after_update.json()["given_id"] == "xyz"
+
+        update_dataset_response = client.patch(
+            f"/datasets/{dataset_id}",
+            json={"format": "matrix", "given_id": None},
+            headers=admin_headers,
+        )
+        assert_status_ok(update_dataset_response)
+
+        dataset_response_after_update = client.get(
+            f"/datasets/{dataset_id}", headers=admin_headers
+        )
+        assert_status_ok(dataset_response_after_update)
+        assert dataset_response_after_update.json()["given_id"] is None
+
         # Check that the original dataset owner can no longer access it (because the group was changed)
         dataset_response_after_update = client.get(
             f"/datasets/{dataset_id}", headers=test_user_headers
