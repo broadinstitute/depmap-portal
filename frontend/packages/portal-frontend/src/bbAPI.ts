@@ -357,50 +357,6 @@ export class BreadboxApi {
     );
   }
 
-  // NOTE: These endpoints for feature type and sample type should not be used because they are deprecated
-  getSampleTypes() {
-    return Promise.reject(Error("Deprecated function! Use getDimensionTypes."));
-  }
-
-  postSampleType(sampleTypeArgs: any) {
-    return Promise.reject(Error("Deprecated function! Use postDimensionType."));
-  }
-
-  updateSampleType(sampleTypeArgs: any) {
-    return Promise.reject(
-      Error("Deprecated function! Use updateDimensionType.")
-    );
-  }
-
-  deleteSampleType(name: string) {
-    return Promise.reject(
-      Error("Deprecated function! Use deleteDimensionType.")
-    );
-  }
-
-  getFeatureTypes() {
-    return Promise.reject(Error("Deprecated function! Use getDimensionTypes."));
-  }
-
-  postFeatureType(featureTypeArgs: any) {
-    return Promise.reject(Error("Deprecated function! Use postDimensionType."));
-  }
-
-  updateFeatureType(featureTypeArgs: any) {
-    return Promise.reject(
-      Error("Deprecated function! Use updateDimensionType.")
-    );
-  }
-
-  deleteFeatureType(name: string) {
-    return Promise.reject(
-      Error("Deprecated function! Use deleteDimensionType.")
-    );
-  }
-
-  // NOTE: THe above endpoints for feature type and sample type are deprecated and should not be used.
-  // Endpoints with URI prefix /types/dimensions should be used instead
-
   getDimensionTypes(): Promise<DimensionType[]> {
     return this._fetch<DimensionType[]>("/types/dimensions");
   }
@@ -720,4 +676,49 @@ export class BreadboxApi {
       }
     );
   };
+
+  /* eslint-disable @typescript-eslint/no-unused-vars */
+  // NOTE: These endpoints for feature type and sample type should not be used because they are deprecated
+  getSampleTypes() {
+    return Promise.reject(Error("Deprecated function! Use getDimensionTypes."));
+  }
+
+  postSampleType(sampleTypeArgs: any) {
+    return Promise.reject(Error("Deprecated function! Use postDimensionType."));
+  }
+
+  updateSampleType(sampleTypeArgs: any) {
+    return Promise.reject(
+      Error("Deprecated function! Use updateDimensionType.")
+    );
+  }
+
+  deleteSampleType(name: string) {
+    return Promise.reject(
+      Error("Deprecated function! Use deleteDimensionType.")
+    );
+  }
+
+  getFeatureTypes() {
+    return Promise.reject(Error("Deprecated function! Use getDimensionTypes."));
+  }
+
+  postFeatureType(featureTypeArgs: any) {
+    return Promise.reject(Error("Deprecated function! Use postDimensionType."));
+  }
+
+  updateFeatureType(featureTypeArgs: any) {
+    return Promise.reject(
+      Error("Deprecated function! Use updateDimensionType.")
+    );
+  }
+
+  deleteFeatureType(name: string) {
+    return Promise.reject(
+      Error("Deprecated function! Use deleteDimensionType.")
+    );
+  }
+
+  // NOTE: THe above endpoints for feature type and sample type are deprecated and should not be used.
+  // Endpoints with URI prefix /types/dimensions should be used instead
 }
