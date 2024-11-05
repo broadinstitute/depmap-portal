@@ -1011,6 +1011,41 @@ export class DepmapApi {
     return Promise.reject(Error("Wrong api used. Check ApiContext"));
   };
 
+  // NOTE: These endpoints for feature type and sample type should not be used because they are deprecated
+  getSampleTypes = () => {
+    return Promise.reject(Error("Wrong api used. Check ApiContext"));
+  };
+
+  postSampleType = (sampleTypeArgs: any) => {
+    return Promise.reject(Error("Wrong api used. Check ApiContext"));
+  };
+
+  updateSampleType = (sampleTypeArgs: any) => {
+    return Promise.reject(Error("Wrong api used. Check ApiContext"));
+  };
+
+  deleteSampleType = (name: string) => {
+    return Promise.reject(Error("Wrong api used. Check ApiContext"));
+  };
+
+  getFeatureTypes = () => {
+    return Promise.reject(Error("Wrong api used. Check ApiContext"));
+  };
+
+  postFeatureType = (featureTypeArgs: any) => {
+    return Promise.reject(Error("Wrong api used. Check ApiContext"));
+  };
+
+  updateFeatureType = (featureTypeArgs: any) => {
+    return Promise.reject(Error("Wrong api used. Check ApiContext"));
+  };
+
+  deleteFeatureType = (name: string) => {
+    return Promise.reject(Error("Wrong api used. Check ApiContext"));
+  };
+  // NOTE: THe above endpoints for feature type and sample type are deprecated and should not be used.
+  // Endpoints with URI prefix /types/dimensions should be used instead
+
   getDimensionTypes = (): Promise<DimensionType[]> => {
     return Promise.reject(Error("Wrong api used. Check ApiContext"));
   };
