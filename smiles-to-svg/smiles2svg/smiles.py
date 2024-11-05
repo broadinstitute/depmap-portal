@@ -1,4 +1,4 @@
-from taigapy import TaigaClient
+from taigapy import create_taiga_client_v3
 from google.cloud import storage
 
 import pandas as pd
@@ -39,7 +39,7 @@ def get_compound_data(taiga_id: str) -> pd.DataFrame:
     Returns:
         DataFrame: A dataframe containing the compound data
     """
-    tc = TaigaClient()
+    tc = create_taiga_client_v3()
     return tc.get(taiga_id)
 
 
