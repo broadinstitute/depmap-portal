@@ -532,4 +532,4 @@ def get_dimension_type_metadata_col(
         .with_entities(TabularCell.dimension_given_id, TabularCell.value)
         .all()
     )
-    return {id: label for id, label in values_by_id_tuples}
+    return {id: value for id, value in values_by_id_tuples}
