@@ -9,11 +9,12 @@ import { tableFormSchema } from "../models/tableDatasetFormSchema";
 import {
   DatasetParams,
   DataType,
-  FeatureType,
   Group,
   InvalidPrioritiesByDataType,
-  SampleType,
   UploadFileResponse,
+  DimensionType,
+  SampleDimensionType,
+  FeatureDimensionType,
 } from "@depmap/types";
 import ChunkedFileUploader from "./ChunkedFileUploader";
 
@@ -60,8 +61,7 @@ interface DatasetFormProps {
   //   clear_state_callback: (isSuccessfulSubmit: boolean) => void
   // ) => void;
   // datasetSubmissionError: string | null;
-  getFeatureTypes: () => Promise<FeatureType[]>;
-  getSampleTypes: () => Promise<SampleType[]>;
+  getDimensionTypes: () => Promise<DimensionType[]>;
   getDataTypesAndPriorities: () => Promise<InvalidPrioritiesByDataType>;
   getGroups: () => Promise<Group[]>;
   uploadFile: (fileArgs: { file: File | Blob }) => Promise<UploadFileResponse>;
@@ -72,8 +72,7 @@ interface DatasetFormProps {
 
 export default function DatasetForm(props: DatasetFormProps) {
   const {
-    getFeatureTypes,
-    getSampleTypes,
+    getDimensionTypes,
     getGroups,
     getDataTypesAndPriorities,
     uploadFile,
@@ -90,10 +89,12 @@ export default function DatasetForm(props: DatasetFormProps) {
   const [fileIds, setFileIds] = useState<string[] | null>(null);
   const [md5Hash, setMD5Hash] = useState<string | null>(null);
 
-  const [featureTypeOptions, setFeatureTypesOptions] = useState<FeatureType[]>(
-    []
-  );
-  const [sampleTypeOptions, setSampleTypesOptions] = useState<SampleType[]>([]);
+  const [featureTypeOptions, setFeatureTypesOptions] = useState<
+    FeatureDimensionType[]
+  >([]);
+  const [sampleTypeOptions, setSampleTypesOptions] = useState<
+    SampleDimensionType[]
+  >([]);
   const [groupOptions, setGroupsOptions] = useState<Group[]>([]);
   const [
     invalidPrioritiesByDataType,
@@ -108,13 +109,11 @@ export default function DatasetForm(props: DatasetFormProps) {
       try {
         const [
           dataTypesPriorities,
-          featureTypes,
-          sampleTypes,
+          dimensionTypes,
           groups,
         ] = await Promise.all([
           getDataTypesAndPriorities(),
-          getFeatureTypes(),
-          getSampleTypes(),
+          getDimensionTypes(),
           getGroups(),
         ]);
 
@@ -123,6 +122,12 @@ export default function DatasetForm(props: DatasetFormProps) {
             name: dType,
           };
         });
+        const sampleTypes: SampleDimensionType[] = [];
+        const featureTypes: FeatureDimensionType[] = [];
+        dimensionTypes.map((dt: FeatureDimensionType | SampleDimensionType) =>
+          dt.axis === "sample" ? sampleTypes.push(dt) : featureTypes.push(dt)
+        );
+
         setInvalidPrioritiesByDataType(dataTypesPriorities);
         setDataTypeOptions(dataTypes);
         setFeatureTypesOptions(featureTypes);
@@ -133,7 +138,7 @@ export default function DatasetForm(props: DatasetFormProps) {
         // setInitFetchError(true);
       }
     })();
-  }, [getFeatureTypes, getSampleTypes, getGroups, getDataTypesAndPriorities]);
+  }, [getDimensionTypes, getGroups, getDataTypesAndPriorities]);
 
   const formComponent = useMemo(() => {
     const onSubmitForm = (formData: { [key: string]: any }) => {
@@ -176,10 +181,12 @@ export default function DatasetForm(props: DatasetFormProps) {
       );
     }
     if (selectedFormat === "table") {
+      const dimensionTypeOptions: DimensionType[] = (featureTypeOptions as DimensionType[]).concat(
+        sampleTypeOptions
+      );
       return (
         <TableDatasetForm
-          featureTypes={featureTypeOptions}
-          sampleTypes={sampleTypeOptions}
+          dimensionTypes={dimensionTypeOptions}
           groups={groupOptions}
           dataTypes={dataTypeOptions}
           invalidDataTypePriorities={invalidPrioritiesByDataType}
