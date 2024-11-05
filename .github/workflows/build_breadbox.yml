@@ -181,7 +181,7 @@ jobs:
       - name: Get bumped version
         run: echo "${{ steps.current-version.outputs.bumped_version}}"
 
-  generate-and-publish-client:
+  publish-breadbox-client:
     needs: bump-versions
     if: ${{ (needs.bump-versions.outputs.current_version != needs.bump-versions.outputs.bumped_version) && (github.ref_name == 'master') }}
     runs-on: ubuntu-latest
