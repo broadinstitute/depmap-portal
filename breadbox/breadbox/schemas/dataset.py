@@ -453,6 +453,9 @@ class DatasetUpdateSharedParams(BaseModel):
             description="A dictionary of additional dataset metadata that is not already provided"
         ),
     ] = None
+    given_id: Annotated[
+        Optional[str], Field(description="The 'given ID' for this dataset")
+    ] = None
 
 
 class TabularDatasetUpdateParams(DatasetUpdateSharedParams):

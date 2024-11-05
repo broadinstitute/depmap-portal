@@ -1854,6 +1854,18 @@
             "title": "Format",
             "type": "string"
           },
+          "given_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The 'given ID' for this dataset",
+            "title": "Given Id"
+          },
           "group_id": {
             "anyOf": [
               {
@@ -2347,6 +2359,18 @@
             ],
             "title": "Format",
             "type": "string"
+          },
+          "given_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The 'given ID' for this dataset",
+            "title": "Given Id"
           },
           "group_id": {
             "anyOf": [
