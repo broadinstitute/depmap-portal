@@ -54,6 +54,8 @@ interface Props {
   pointOpacity?: number;
   outlineWidth?: number;
   palette?: DataExplorerColorPalette;
+  xAxisFontSize?: number;
+  yAxisFontSize?: number;
 }
 
 const calcPlotHeight = (plot: HTMLDivElement) => {
@@ -164,6 +166,8 @@ function PrototypeDensity1D({
   pointOpacity = 1.0,
   outlineWidth = 0.5,
   palette = DEFAULT_PALETTE,
+  xAxisFontSize = 14,
+  yAxisFontSize = 14,
   Plotly,
 }: any) {
   const ref = useRef<ExtendedPlotType>(null);
@@ -200,6 +204,24 @@ function PrototypeDensity1D({
   useEffect(() => {
     axes.current.yaxis = undefined;
   }, [colorMap, colorData, hiddenLegendValues.size]);
+
+  // Update axes when font size changes.
+  useEffect(() => {
+    const xaxis = axes.current.xaxis;
+    const yaxis = axes.current.yaxis;
+
+    if (xaxis) {
+      xaxis.title = {
+        ...(xaxis.title as object),
+        font: { size: xAxisFontSize },
+      };
+    }
+
+    if (yaxis) {
+      yaxis.tickfont = { size: yAxisFontSize };
+      console.log(axes.current.yaxis);
+    }
+  }, [xAxisFontSize, yAxisFontSize]);
 
   useEffect(() => {
     const plot = ref.current as ExtendedPlotType;
@@ -399,7 +421,13 @@ function PrototypeDensity1D({
 
     const layout: Partial<Layout> = {
       height: height === "auto" ? calcPlotHeight(plot) : height,
-      margin: { t: 30, l: 30, r: 30 },
+      // margin: { t: 30, l: 30, r: 30 },
+      margin: {
+        t: 30,
+        r: 30,
+        b: 50 + xAxisFontSize * 2.2,
+        l: 50 + yAxisFontSize * 2.2,
+      },
       hovermode: "closest",
       hoverlabel: {
         namelength: -1,
@@ -411,7 +439,11 @@ function PrototypeDensity1D({
       showlegend: false,
 
       xaxis: axes.current.xaxis || {
-        title: xLabel,
+        title: {
+          text: xLabel,
+          font: { size: xAxisFontSize },
+          standoff: 8,
+        } as any,
         exponentformat: "e",
         type: "linear",
         autorange: true,
@@ -427,6 +459,7 @@ function PrototypeDensity1D({
         automargin: true,
         tickvals: violinTraces.map((vt) => vt.y0),
         ticktext: violinTraces.map((vt) => truncate(vt.name)),
+        tickfont: { size: yAxisFontSize },
       },
 
       dragmode,
@@ -727,6 +760,8 @@ function PrototypeDensity1D({
     pointOpacity,
     outlineWidth,
     palette,
+    xAxisFontSize,
+    yAxisFontSize,
     Plotly,
   ]);
 

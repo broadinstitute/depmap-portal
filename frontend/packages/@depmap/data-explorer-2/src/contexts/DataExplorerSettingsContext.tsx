@@ -15,6 +15,8 @@ export const DEFAULT_SETTINGS = {
     pointSize: 10,
     pointOpacity: 0.5,
     outlineWidth: 2,
+    xAxisFontSize: 14,
+    yAxisFontSize: 14,
     palette: {
       all: "#3f3f9f",
       other: "#bdbdbd",
