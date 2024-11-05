@@ -27,6 +27,7 @@ from breadbox.schemas.custom_http_exception import (
     AnnotationValidationError,
 )
 from breadbox.schemas.dataset import ColumnMetadata
+import pyarrow.parquet as pq
 
 pd.set_option("mode.use_inf_as_na", True)
 
@@ -81,6 +82,20 @@ def annotation_type_to_pandas_column_type(annotation_type: AnnotationType):
     dtype = annotation_type_to_pandas_type_mappings.get(annotation_type)
     assert dtype is not None
     return dtype
+
+
+def _read_parquet_with_less_memory(filename):
+    # it seems like pd.read_parquet() should be the right thing to do
+    # but in practice, when reading a file with 20k columns, the memory usage balloons
+    # to > 30GB and would take down breadbox. Reading it in as a table, and then
+    # processing it column by column seems to avoid this problem. Not 100% sure that this
+    # results in identical behavior, but it seems valid for numerical matrices
+    table = pq.read_table(filename)
+    df_dict = {
+        column_name: column
+        for column_name, column in zip(table.column_names, table.columns)
+    }
+    return pd.DataFrame(df_dict).convert_dtypes()
 
 
 def _validate_dimension_type_metadata_file(
@@ -178,7 +193,8 @@ def _validate_data_value_type(
 
 
 def _read_parquet(file: BinaryIO, value_type: ValueType) -> pd.DataFrame:
-    df = pd.read_parquet(file, use_nullable_dtypes=True)  # pyright: ignore
+    # df = pd.read_parquet(file, use_nullable_dtypes=True)  # pyright: ignore
+    df = _read_parquet_with_less_memory(file)
 
     # the first column will be treated as the index. Make sure it's of type string
     df[df.columns[0]] = df[df.columns[0]].astype("string")
