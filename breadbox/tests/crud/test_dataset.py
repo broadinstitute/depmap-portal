@@ -7,9 +7,11 @@ from breadbox.crud.dataset import (
     get_dataset_feature_by_label,
     get_dataset,
     get_dataset_feature_by_given_id,
+    get_tabular_dataset_index_given_ids,
 )
 from breadbox.models.dataset import AnnotationType
 from breadbox.schemas.custom_http_exception import ResourceNotFoundError
+from breadbox.schemas.dataset import ColumnMetadata
 
 from tests import factories
 
@@ -157,3 +159,53 @@ def test_get_dataset_feature_by_given_id(minimal_db: SessionWithUser, settings):
     )
     assert feature2.given_id == "featureID2"
     assert feature2.dataset_id == matrix_dataset.id
+
+
+def test_get_tabular_dataset_index_given_ids(minimal_db, settings):
+    """
+    Test that this function works for 
+    - tabular datasets that are metadata and
+    - tabular datasets that are not metadata
+    """
+    # Define metadata
+    dimension_type = factories.add_dimension_type(
+        minimal_db,
+        settings,
+        user=settings.admin_users[0],
+        name="some_feature_type",
+        display_name="Feature With Metadata",
+        id_column="ID",
+        annotation_type_mapping={
+            "ID": AnnotationType.text,
+            "label": AnnotationType.text,
+        },
+        axis="feature",
+        metadata_df=pd.DataFrame(
+            {
+                "ID": ["1", "2", "5"],
+                "label": ["featureLabel1", "featureLabel2", "featureLabel3"],
+            }
+        ),
+    )
+    tabular_dataset = factories.tabular_dataset(
+        minimal_db,
+        settings,
+        data_df=pd.DataFrame(
+            {"ID": ["1", "2", "3", "4"], "SomeOtherColumn": ["a", "b", "c", "d"]}
+        ),
+        index_type_name="some_feature_type",
+        columns_metadata={
+            "ID": ColumnMetadata(col_type=AnnotationType.text),
+            "SomeOtherColumn": ColumnMetadata(col_type=AnnotationType.text),
+        },
+    )
+
+    non_metadata_result = get_tabular_dataset_index_given_ids(
+        minimal_db, tabular_dataset
+    )
+    assert non_metadata_result == ["1", "2", "3", "4"]
+
+    metadata_result = get_tabular_dataset_index_given_ids(
+        minimal_db, dimension_type.dataset
+    )
+    assert metadata_result == ["1", "2", "5"]

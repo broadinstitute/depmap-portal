@@ -968,7 +968,9 @@ def get_dataset_feature_dimensions(db: SessionWithUser, user: str, dataset_id: s
     return dimensions
 
 
-def get_dataset_features(db: SessionWithUser, dataset: Dataset, user: str):
+def get_dataset_features(
+    db: SessionWithUser, dataset: MatrixDataset, user: str
+) -> list[DatasetFeature]:
     assert_user_has_access_to_dataset(dataset, user)
 
     dataset_features = (
@@ -981,7 +983,9 @@ def get_dataset_features(db: SessionWithUser, dataset: Dataset, user: str):
     return dataset_features
 
 
-def get_dataset_samples(db: SessionWithUser, dataset: Dataset, user: str):
+def get_dataset_samples(
+    db: SessionWithUser, dataset: MatrixDataset, user: str
+) -> list[DatasetSample]:
     assert_user_has_access_to_dataset(dataset, user)
 
     dataset_samples = (
@@ -992,6 +996,34 @@ def get_dataset_samples(db: SessionWithUser, dataset: Dataset, user: str):
     )
 
     return dataset_samples
+
+
+def get_tabular_dataset_index_given_ids(
+    db: SessionWithUser, dataset: TabularDataset
+) -> list[str]:
+    """
+    Get all row given IDs belonging to a tabular dataset.
+    This can be used for joining the metadata that's relevant for this particular dataset.
+    Warning: this may contain given IDs that do not exist in the metadata.
+    """
+    dimension_type = (
+        db.query(DimensionType).filter_by(name=dataset.index_type_name).one_or_none()
+    )
+    assert dimension_type is not None
+
+    id_col_name = dimension_type.id_column
+    cells_in_id_column = (
+        db.query(TabularCell)
+        .join(TabularColumn)
+        .filter(
+            and_(
+                TabularColumn.dataset_id == dataset.id,
+                TabularColumn.given_id == id_col_name,
+            )
+        )
+        .all()
+    )
+    return [cell.dimension_given_id for cell in cells_in_id_column]
 
 
 def get_dataset_feature_labels_by_id(

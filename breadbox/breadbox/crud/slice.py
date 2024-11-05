@@ -84,24 +84,3 @@ def get_slice_data(
 
     # Convert the single-col/row DataFrame into a series and drop null values
     return slice_data.dropna().squeeze()
-
-
-def get_labels_for_slice_type(
-    db: SessionWithUser, slice_query: SliceQuery
-) -> Optional[dict[str, str]]:
-    """
-    For the given slice query identifier type, get a dictionary of all the dataset labels and IDs
-    that should be used to index the resulting slice.
-    If the identifier type does not have labels, return None.
-    """
-    dataset = dataset_crud.get_dataset(db, db.user, slice_query.dataset_id)
-    if dataset is None:
-        raise ResourceNotFoundError(f"Dataset '{slice_query.dataset_id}' not found.")
-
-    if slice_query.identifier_type in {"feature_label", "feature_id"}:
-        return dataset_crud.get_dataset_sample_labels_by_id(db, db.user, dataset)
-    elif slice_query.identifier_type in {"sample_label", "sample_id"}:
-        return dataset_crud.get_dataset_feature_labels_by_id(db, db.user, dataset)
-    else:
-        # Columns don't have labels, so just return None
-        return None
