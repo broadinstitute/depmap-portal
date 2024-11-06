@@ -131,14 +131,16 @@ class DevConfig(Config):
         Config.PROJECT_ROOT,
         f"../../depmap-deploy/portal-config/env/{ENV_TYPE}/dmc_symposia.yaml",
     )
-    DOWNLOADS_PATH = os.path.join(
-        Config.PROJECT_ROOT,
-        f"../../depmap-deploy/portal-config/env/{ENV_TYPE}/downloads",
-    )
-    SHARED_DOWNLOADS_PATH = os.path.join(
-        Config.PROJECT_ROOT,
-        "../../depmap-deploy/portal-config/env/shared/shared_downloads",
-    )
+    DOWNLOADS_PATHS = [
+        os.path.join(
+            Config.PROJECT_ROOT,
+            f"../../depmap-deploy/portal-config/env/{ENV_TYPE}/downloads",
+        ),
+        os.path.join(
+            Config.PROJECT_ROOT,
+            "../../depmap-deploy/portal-config/env/shared/shared_downloads",
+        ),
+    ]
     DEV_DOWNLOADS_PATH = os.path.join(Config.PROJECT_ROOT, f"../config/dev/downloads")
     DOWNLOADS_KEY = os.path.join(
         Config.PROJECT_ROOT, "./secrets/dev-downloads-key.json",
