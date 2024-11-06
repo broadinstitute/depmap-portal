@@ -150,6 +150,9 @@ def dataset_upload(
             sample_labels_and_warnings.given_id_to_index,
             feature_type,
             sample_type,
+            dataset_params.short_name,
+            dataset_params.version,
+            dataset_params.description,
         )
         save_dataset_file(dataset_id, data_df, settings.filestore_location)
 
@@ -185,7 +188,15 @@ def dataset_upload(
             dataset_md5=dataset_params.dataset_md5,
         )
         added_dataset = dataset_crud.add_tabular_dataset(
-            db, user, dataset_in, data_df, dataset_params.columns_metadata, index_type,
+            db,
+            user,
+            dataset_in,
+            data_df,
+            dataset_params.columns_metadata,
+            index_type,
+            dataset_params.short_name,
+            dataset_params.version,
+            dataset_params.description,
         )
 
     # NOTE: The return value of dataset_crud.add_dataset can be None if the user

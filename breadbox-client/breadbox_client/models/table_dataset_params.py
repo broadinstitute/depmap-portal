@@ -44,13 +44,16 @@ class TableDatasetParams:
         name (str): Name of dataset
         dataset_metadata (Union['TableDatasetParamsDatasetMetadataType0', None, Unset]): Contains a dictionary of
             additional dataset values that are not already provided above.
+        description (Union[None, Unset, str]): an optional long description of the dataset
         given_id (Union[None, Unset, str]): Stable human-readable identifier that the portal uses to look up specific
             datasets.
         is_transient (Union[Unset, bool]): Transient datasets can be deleted - should only be set to true for non-public
             short-term-use datasets like custom analysis results. Default: False.
         priority (Union[None, Unset, int]): Numeric value assigned to the dataset with `1` being highest priority within
             the `data_type`, used for displaying order of datasets to show for a specific `data_type` in UI.
+        short_name (Union[None, Unset, str]): an optional short label describing dataset
         taiga_id (Union[None, Unset, str]): Taiga ID the dataset is sourced from.
+        version (Union[None, Unset, str]): an optional short version identifier
     """
 
     columns_metadata: "TableDatasetParamsColumnsMetadata"
@@ -64,10 +67,13 @@ class TableDatasetParams:
     dataset_metadata: Union["TableDatasetParamsDatasetMetadataType0", None, Unset] = (
         UNSET
     )
+    description: Union[None, Unset, str] = UNSET
     given_id: Union[None, Unset, str] = UNSET
     is_transient: Union[Unset, bool] = False
     priority: Union[None, Unset, int] = UNSET
+    short_name: Union[None, Unset, str] = UNSET
     taiga_id: Union[None, Unset, str] = UNSET
+    version: Union[None, Unset, str] = UNSET
     additional_properties: Dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> Dict[str, Any]:
@@ -99,6 +105,12 @@ class TableDatasetParams:
         else:
             dataset_metadata = self.dataset_metadata
 
+        description: Union[None, Unset, str]
+        if isinstance(self.description, Unset):
+            description = UNSET
+        else:
+            description = self.description
+
         given_id: Union[None, Unset, str]
         if isinstance(self.given_id, Unset):
             given_id = UNSET
@@ -113,11 +125,23 @@ class TableDatasetParams:
         else:
             priority = self.priority
 
+        short_name: Union[None, Unset, str]
+        if isinstance(self.short_name, Unset):
+            short_name = UNSET
+        else:
+            short_name = self.short_name
+
         taiga_id: Union[None, Unset, str]
         if isinstance(self.taiga_id, Unset):
             taiga_id = UNSET
         else:
             taiga_id = self.taiga_id
+
+        version: Union[None, Unset, str]
+        if isinstance(self.version, Unset):
+            version = UNSET
+        else:
+            version = self.version
 
         field_dict: Dict[str, Any] = {}
         field_dict.update(self.additional_properties)
@@ -135,14 +159,20 @@ class TableDatasetParams:
         )
         if dataset_metadata is not UNSET:
             field_dict["dataset_metadata"] = dataset_metadata
+        if description is not UNSET:
+            field_dict["description"] = description
         if given_id is not UNSET:
             field_dict["given_id"] = given_id
         if is_transient is not UNSET:
             field_dict["is_transient"] = is_transient
         if priority is not UNSET:
             field_dict["priority"] = priority
+        if short_name is not UNSET:
+            field_dict["short_name"] = short_name
         if taiga_id is not UNSET:
             field_dict["taiga_id"] = taiga_id
+        if version is not UNSET:
+            field_dict["version"] = version
 
         return field_dict
 
@@ -197,6 +227,15 @@ class TableDatasetParams:
 
         dataset_metadata = _parse_dataset_metadata(d.pop("dataset_metadata", UNSET))
 
+        def _parse_description(data: object) -> Union[None, Unset, str]:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(Union[None, Unset, str], data)
+
+        description = _parse_description(d.pop("description", UNSET))
+
         def _parse_given_id(data: object) -> Union[None, Unset, str]:
             if data is None:
                 return data
@@ -217,6 +256,15 @@ class TableDatasetParams:
 
         priority = _parse_priority(d.pop("priority", UNSET))
 
+        def _parse_short_name(data: object) -> Union[None, Unset, str]:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(Union[None, Unset, str], data)
+
+        short_name = _parse_short_name(d.pop("short_name", UNSET))
+
         def _parse_taiga_id(data: object) -> Union[None, Unset, str]:
             if data is None:
                 return data
@@ -225,6 +273,15 @@ class TableDatasetParams:
             return cast(Union[None, Unset, str], data)
 
         taiga_id = _parse_taiga_id(d.pop("taiga_id", UNSET))
+
+        def _parse_version(data: object) -> Union[None, Unset, str]:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(Union[None, Unset, str], data)
+
+        version = _parse_version(d.pop("version", UNSET))
 
         table_dataset_params = cls(
             columns_metadata=columns_metadata,
@@ -236,10 +293,13 @@ class TableDatasetParams:
             index_type=index_type,
             name=name,
             dataset_metadata=dataset_metadata,
+            description=description,
             given_id=given_id,
             is_transient=is_transient,
             priority=priority,
+            short_name=short_name,
             taiga_id=taiga_id,
+            version=version,
         )
 
         table_dataset_params.additional_properties = d
