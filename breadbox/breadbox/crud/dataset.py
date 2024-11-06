@@ -201,6 +201,9 @@ def add_matrix_dataset(
     sample_given_id_and_index_df: pd.DataFrame,
     feature_type: Optional[DimensionType],
     sample_type: DimensionType,
+    short_name: Optional[str],
+    version: Optional[str],
+    description: Optional[str],
 ):
     group = _get_dataset_group(db, user, dataset_in.group_id, dataset_in.is_transient)
 
@@ -229,6 +232,9 @@ def add_matrix_dataset(
         allowed_values=allowed_values if allowed_values else None,
         dataset_metadata=dataset_in.dataset_metadata,
         md5_hash=dataset_in.dataset_md5,
+        short_name=short_name,
+        description=description,
+        version=version,
     )
     db.add(dataset)
     db.flush()
@@ -686,6 +692,9 @@ def add_tabular_dataset(
     data_df: pd.DataFrame,
     columns_metadata: Dict[str, ColumnMetadata],
     dimension_type: DimensionType,
+    short_name: Optional[str],
+    version: Optional[str],
+    description: Optional[str],
 ):
     # verify the id_column is present in the data frame before proceeding and is of type string
     if dimension_type.id_column not in data_df.columns:
@@ -706,6 +715,9 @@ def add_tabular_dataset(
         taiga_id=dataset_in.taiga_id,
         dataset_metadata=dataset_in.dataset_metadata,
         md5_hash=dataset_in.dataset_md5,
+        short_name=short_name,
+        version=version,
+        description=description,
     )
     db.add(dataset)
     db.flush()

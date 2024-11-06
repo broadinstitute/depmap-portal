@@ -33,11 +33,14 @@ class MatrixDatasetUpdateParams:
         data_type (Union[None, Unset, str]): Data type grouping for your dataset
         dataset_metadata (Union['MatrixDatasetUpdateParamsDatasetMetadataType0', None, Unset]): A dictionary of
             additional dataset metadata that is not already provided
+        description (Union[None, Unset, str]): an optional long description of the dataset
         given_id (Union[None, Unset, str]): The 'given ID' for this dataset
         group_id (Union[None, Unset, str]): Id of the group the dataset belongs to
         name (Union[None, Unset, str]): Name of dataset
         priority (Union[None, Unset, int]): Numeric value representing priority of the dataset within its `data_type`
+        short_name (Union[None, Unset, str]): an optional short label describing dataset
         units (Union[None, Unset, str]): Units for the values in the dataset
+        version (Union[None, Unset, str]): an optional short version identifier
     """
 
     format_: MatrixDatasetUpdateParamsFormat
@@ -45,11 +48,14 @@ class MatrixDatasetUpdateParams:
     dataset_metadata: Union[
         "MatrixDatasetUpdateParamsDatasetMetadataType0", None, Unset
     ] = UNSET
+    description: Union[None, Unset, str] = UNSET
     given_id: Union[None, Unset, str] = UNSET
     group_id: Union[None, Unset, str] = UNSET
     name: Union[None, Unset, str] = UNSET
     priority: Union[None, Unset, int] = UNSET
+    short_name: Union[None, Unset, str] = UNSET
     units: Union[None, Unset, str] = UNSET
+    version: Union[None, Unset, str] = UNSET
     additional_properties: Dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> Dict[str, Any]:
@@ -75,6 +81,12 @@ class MatrixDatasetUpdateParams:
         else:
             dataset_metadata = self.dataset_metadata
 
+        description: Union[None, Unset, str]
+        if isinstance(self.description, Unset):
+            description = UNSET
+        else:
+            description = self.description
+
         given_id: Union[None, Unset, str]
         if isinstance(self.given_id, Unset):
             given_id = UNSET
@@ -99,11 +111,23 @@ class MatrixDatasetUpdateParams:
         else:
             priority = self.priority
 
+        short_name: Union[None, Unset, str]
+        if isinstance(self.short_name, Unset):
+            short_name = UNSET
+        else:
+            short_name = self.short_name
+
         units: Union[None, Unset, str]
         if isinstance(self.units, Unset):
             units = UNSET
         else:
             units = self.units
+
+        version: Union[None, Unset, str]
+        if isinstance(self.version, Unset):
+            version = UNSET
+        else:
+            version = self.version
 
         field_dict: Dict[str, Any] = {}
         field_dict.update(self.additional_properties)
@@ -116,6 +140,8 @@ class MatrixDatasetUpdateParams:
             field_dict["data_type"] = data_type
         if dataset_metadata is not UNSET:
             field_dict["dataset_metadata"] = dataset_metadata
+        if description is not UNSET:
+            field_dict["description"] = description
         if given_id is not UNSET:
             field_dict["given_id"] = given_id
         if group_id is not UNSET:
@@ -124,8 +150,12 @@ class MatrixDatasetUpdateParams:
             field_dict["name"] = name
         if priority is not UNSET:
             field_dict["priority"] = priority
+        if short_name is not UNSET:
+            field_dict["short_name"] = short_name
         if units is not UNSET:
             field_dict["units"] = units
+        if version is not UNSET:
+            field_dict["version"] = version
 
         return field_dict
 
@@ -171,6 +201,15 @@ class MatrixDatasetUpdateParams:
 
         dataset_metadata = _parse_dataset_metadata(d.pop("dataset_metadata", UNSET))
 
+        def _parse_description(data: object) -> Union[None, Unset, str]:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(Union[None, Unset, str], data)
+
+        description = _parse_description(d.pop("description", UNSET))
+
         def _parse_given_id(data: object) -> Union[None, Unset, str]:
             if data is None:
                 return data
@@ -207,6 +246,15 @@ class MatrixDatasetUpdateParams:
 
         priority = _parse_priority(d.pop("priority", UNSET))
 
+        def _parse_short_name(data: object) -> Union[None, Unset, str]:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(Union[None, Unset, str], data)
+
+        short_name = _parse_short_name(d.pop("short_name", UNSET))
+
         def _parse_units(data: object) -> Union[None, Unset, str]:
             if data is None:
                 return data
@@ -216,15 +264,27 @@ class MatrixDatasetUpdateParams:
 
         units = _parse_units(d.pop("units", UNSET))
 
+        def _parse_version(data: object) -> Union[None, Unset, str]:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(Union[None, Unset, str], data)
+
+        version = _parse_version(d.pop("version", UNSET))
+
         matrix_dataset_update_params = cls(
             format_=format_,
             data_type=data_type,
             dataset_metadata=dataset_metadata,
+            description=description,
             given_id=given_id,
             group_id=group_id,
             name=name,
             priority=priority,
+            short_name=short_name,
             units=units,
+            version=version,
         )
 
         matrix_dataset_update_params.additional_properties = d

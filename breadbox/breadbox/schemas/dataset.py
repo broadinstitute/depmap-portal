@@ -50,6 +50,15 @@ class SliceQueryIdentifierType(enum.Enum):
 # NOTE: fastapi versions >= V0.100.0 supports Pydantic V2
 class SharedDatasetParams(BaseModel):
     name: Annotated[str, Field(description="Name of dataset", min_length=1)]
+    short_name: Annotated[
+        Optional[str], Field(description="an optional short label describing dataset")
+    ] = None
+    description: Annotated[
+        Optional[str], Field(description="an optional long description of the dataset")
+    ] = None
+    version: Annotated[
+        Optional[str], Field(description="an optional short version identifier")
+    ] = None
     file_ids: Annotated[
         List[str],
         Field(description="Ordered list of file ids from the chunked dataset uploads"),
@@ -249,6 +258,15 @@ def check_uuid(id: str) -> str:
 
 class SharedDatasetFields(BaseModel):
     name: str
+    short_name: Annotated[
+        Optional[str], Field(description="an optional short label describing dataset")
+    ] = None
+    description: Annotated[
+        Optional[str], Field(description="an optional long description of the dataset")
+    ] = None
+    version: Annotated[
+        Optional[str], Field(description="an optional short version identifier")
+    ] = None
     data_type: str
     group_id: str
     given_id: Annotated[Optional[str], Field(default=None)]
@@ -435,6 +453,15 @@ class DatasetUpdateSharedParams(BaseModel):
     """Contains the shared subset of matrix and tabular dataset fields that may be updated after dataset creation."""
 
     name: Annotated[Optional[str], Field(description="Name of dataset")] = None
+    short_name: Annotated[
+        Optional[str], Field(description="an optional short label describing dataset")
+    ] = None
+    description: Annotated[
+        Optional[str], Field(description="an optional long description of the dataset")
+    ] = None
+    version: Annotated[
+        Optional[str], Field(description="an optional short version identifier")
+    ] = None
     data_type: Annotated[
         Optional[str], Field(description="Data type grouping for your dataset")
     ] = None
