@@ -143,6 +143,9 @@ class TestPost:
                 "value_type": "continuous",
                 "allowed_values": None,
                 "dataset_metadata": {"yah": "nah"},
+                "short_name": "m1",
+                "description": "a dataset",
+                "version": "v1",
             },
             headers=headers,
         )
@@ -156,6 +159,9 @@ class TestPost:
         assert matrix_dataset_result is not None
         assert matrix_dataset_result.get("id") is not None
         assert matrix_dataset_result.get("given_id") == matrix_dataset_given_id
+        assert matrix_dataset_result.get("short_name") == "m1"
+        assert matrix_dataset_result.get("description") == "a dataset"
+        assert matrix_dataset_result.get("version") == "v1"
 
         # Test tabular dataset
         tabular_data_file = factories.tabular_csv_data_file(
@@ -186,6 +192,9 @@ class TestPost:
                     "attr2": {"units": None, "col_type": "binary"},
                     "attr3": {"units": None, "col_type": "list_strings"},
                 },
+                "short_name": "t1",
+                "description": "a table",
+                "version": "v2",
             },
             headers=headers,
         )
@@ -195,6 +204,9 @@ class TestPost:
         tabular_dataset_result = tabular_dataset_response.json()["result"]["dataset"]
         assert tabular_dataset_result.get("id") is not None
         assert tabular_dataset_result.get("given_id") == tabular_dataset_given_id
+        assert tabular_dataset_result.get("short_name") == "t1"
+        assert tabular_dataset_result.get("description") == "a table"
+        assert tabular_dataset_result.get("version") == "v2"
 
         # list string value is not all strings
         tabular_data_file_bad_list_strings = factories.tabular_csv_data_file(

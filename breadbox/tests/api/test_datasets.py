@@ -2901,6 +2901,9 @@ class TestPatch:
         # Check that a well-formed request returns a happy result
         new_name = "UPDATED NAME"
         new_units = "UPDATED UNITS"
+        new_version = "updated version"
+        new_short_name = "updated short name"
+        new_description = "updated description"
         update_dataset_response = client.patch(
             f"/datasets/{dataset_id}",
             json={
@@ -2910,6 +2913,9 @@ class TestPatch:
                 "units": new_units,
                 "priority": "1",
                 "dataset_metadata": None,
+                "short_name": new_short_name,
+                "version": new_version,
+                "description": new_description,
             },
             headers=admin_headers,
         )
@@ -2919,6 +2925,9 @@ class TestPatch:
         assert update_dataset_response.json()["name"] == new_name
         assert update_dataset_response.json()["units"] == new_units
         assert update_dataset_response.json()["priority"] == 1
+        assert update_dataset_response.json()["short_name"] == new_short_name
+        assert update_dataset_response.json()["version"] == new_version
+        assert update_dataset_response.json()["description"] == new_description
         assert (
             update_dataset_response.json()["data_type"] == "User upload"
         )  # same value expected
@@ -2935,6 +2944,9 @@ class TestPatch:
         assert dataset_response_after_update.json()["name"] == new_name
         assert dataset_response_after_update.json()["units"] == new_units
         assert dataset_response_after_update.json()["priority"] == 1
+        assert dataset_response_after_update.json()["short_name"] == new_short_name
+        assert dataset_response_after_update.json()["version"] == new_version
+        assert dataset_response_after_update.json()["description"] == new_description
         assert (
             dataset_response_after_update.json()["data_type"] == "User upload"
         )  # same value expected

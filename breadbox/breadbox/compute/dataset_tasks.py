@@ -271,6 +271,9 @@ def upload_dataset(
         sample_given_id_and_index_df,
         valid_fields.valid_feature_type,
         valid_fields.valid_sample_type,
+        short_name=None,
+        version=None,
+        description=None,
     )
 
     # NOTE: The return value of dataset_crud.add_dataset can be None if the user
