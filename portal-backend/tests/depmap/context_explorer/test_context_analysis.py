@@ -1,9 +1,7 @@
 from dataclasses import dataclass
+from re import X
 from depmap.cell_line.models_new import DepmapModel
-from depmap.context_explorer.api import (
-    _get_analysis_data_table,
-    _get_compound_experiment_id_from_entity_label,
-)
+from depmap.context_explorer.api import _get_analysis_data_table
 import pytest
 from typing import List, Literal, Optional
 from depmap.context_explorer.utils import (
@@ -11,6 +9,8 @@ from depmap.context_explorer.utils import (
     get_box_plot_data_for_selected_lineage,
     get_full_row_of_values_and_depmap_ids,
     get_other_context_dependencies,
+    get_context_dose_curves,
+    _get_compound_experiment_id_from_entity_label,
 )
 from depmap.dataset.models import DependencyDataset
 import numpy as np
@@ -107,7 +107,9 @@ def _setup_dose_response_curves(models: List[DepmapModelFactory], compound_exps:
 
     for compound_exp in compound_exps:
         curves = [
-            DoseResponseCurveFactory(compound_exp=cpd_exp, cell_line=model.cell_line)
+            DoseResponseCurveFactory(
+                compound_exp=compound_exp, cell_line=model.cell_line
+            )
             for model in models
         ]
 
@@ -316,8 +318,17 @@ def _setup_entities_and_dataset_id(empty_db_mock_downloads, entity_type, dataset
     gene_a = GeneFactory()
     gene_b = GeneFactory()
 
-    compound_a = CompoundExperimentFactory()
-    compound_b = CompoundExperimentFactory()
+    xref_type = "BRD"
+    xref = "PRC-003465060-210-01"
+    xref_full = xref_type + ":" + xref
+    compound_a = CompoundExperimentFactory(
+        xref_type=xref_type, xref=xref, label=xref_full
+    )
+    xref_b = "PRC-003538266-583-86"
+    xref_full_b = xref_type + ":" + xref
+    compound_b = CompoundExperimentFactory(
+        xref_type=xref_type, xref=xref_b, label=xref_full_b
+    )
 
     _setup_factories(
         empty_db_mock_downloads=empty_db_mock_downloads,
@@ -452,6 +463,31 @@ def test_get_anaysis_data(empty_db_mock_downloads, dataset_name):
     )
 
     assert all_in_group == None
+
+
+def test_get_dose_curves(empty_db_mock_downloads):
+    dataset_name = "Prism_oncology_AUC"
+    entity_type = "compound"
+
+    (_, _, compound_a, compound_b,) = _setup_entities_and_dataset_id(
+        empty_db_mock_downloads, entity_type, dataset_name
+    )
+
+    interactive_test_utils.reload_interactive_config()
+
+    selected_entity_label = compound_a.label
+
+    breakpoint()
+    dose_curve_info = get_context_dose_curves(
+        dataset_name=dataset_name,
+        entity_full_label=selected_entity_label,
+        context_name="Lung",
+        level=1,
+        out_group_type="All",
+    )
+    breakpoint()
+    print(dose_curve_info)
+    breakpoint()
 
 
 @pytest.mark.parametrize(

@@ -362,17 +362,14 @@ class CompoundDoseReplicate(Entity):
 
     @staticmethod
     def get_dose_min_max_of_replicates_with_compound_experiment_id(cpd_exp_id):
-        q = (
-            db.session.query(
-                CompoundDoseReplicate.dose, CompoundDoseReplicate.entity_id
-            )
-            .filter_by(compound_experiment_id=cpd_exp_id)
-            .with_entities(
-                CompoundDoseReplicate.entity_id,
-                func.max(CompoundDoseReplicate.dose).label("max_dose"),
-                func.min(CompoundDoseReplicate.dose).label("min_dose"),
-            )
+        q = CompoundDoseReplicate.query.filter_by(
+            compound_experiment_id=cpd_exp_id
+        ).with_entities(
+            CompoundDoseReplicate.entity_id,
+            func.max(CompoundDoseReplicate.dose).label("max_dose"),
+            func.min(CompoundDoseReplicate.dose).label("min_dose"),
         )
+
         return q.all()
 
     @classmethod

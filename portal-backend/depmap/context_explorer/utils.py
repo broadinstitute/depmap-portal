@@ -12,11 +12,14 @@ from depmap.compound.models import (
     CompoundExperiment,
     CompoundDoseReplicate,
     DoseResponseCurve,
+    Compound,
 )
+from depmap.gene.models import Gene
 from depmap.context_explorer.models import (
     BoxPlotTypes,
     ContextAnalysis,
 )
+import re
 
 
 def get_full_row_of_values_and_depmap_ids(dataset_name: str, label: str) -> pd.Series:
@@ -284,7 +287,7 @@ def get_curve_params_for_model_ids(
     return curve_params
 
 
-def get_dose_response_curves_per_model(
+def _get_dose_response_curves_per_model(
     in_group_model_ids: List[str],
     out_group_model_ids: List[str],
     replicate_dataset_name: str,
@@ -317,12 +320,12 @@ def get_dose_response_curves_per_model(
     }
 
 
-def get_out_group_model_ids(out_group_type, dataset_name, in_group_model_ids, label):
+def _get_out_group_model_ids(out_group_type, dataset_name, in_group_model_ids, label):
     (entity_full_row_of_values) = get_full_row_of_values_and_depmap_ids(
         dataset_name=dataset_name, label=label
     )
     entity_full_row_of_values.dropna(inplace=True)
-    if out_group_type == "All Others":
+    if out_group_type == "All Others" or out_group_type == "All":
         return entity_full_row_of_values[
             ~entity_full_row_of_values.index.isin(in_group_model_ids)
         ].index.tolist()
@@ -330,3 +333,108 @@ def get_out_group_model_ids(out_group_type, dataset_name, in_group_model_ids, la
         raise NotImplementedError(
             "Need to implement logic for getting model ids for none 'All Others' outgroup types"
         )
+
+
+def _get_compound_experiment_id_from_entity_label(entity_full_label: str):
+    m = re.search(r"([A-Z0-9]*:[A-Z0-9-]*)", entity_full_label)
+    compound_experiment_id = m.group(1)
+
+    return compound_experiment_id
+
+
+def _get_compound_experiment(entity_full_label: str):
+    compound_experiment_id = _get_compound_experiment_id_from_entity_label(
+        entity_full_label=entity_full_label
+    )
+
+    assert ":" in compound_experiment_id
+    compound_experiment = CompoundExperiment.get_by_xref_full(
+        compound_experiment_id, must=False
+    )
+
+    return compound_experiment
+
+
+def get_entity_id_from_entity_full_label(
+    entity_type: str, entity_full_label: str
+) -> dict:
+    entity = None
+    if entity_type == "gene":
+        m = re.match("\\S+ \\((\\d+)\\)", entity_full_label)
+
+        assert m is not None
+        entrez_id = int(m.group(1))
+        gene = Gene.get_gene_by_entrez(entrez_id)
+        assert gene is not None
+        label = gene.label
+        entity = gene
+        entity_id = entity.entity_id
+    else:
+        compound_experiment = _get_compound_experiment(
+            entity_full_label=entity_full_label
+        )
+        entity_id = compound_experiment.entity_id
+        label = Compound.get_by_entity_id(entity_id).label
+
+    return {"entity_id": entity_id, "label": label}
+
+
+def _get_in_group_out_group_model_ids(
+    dataset_name: str,
+    entity_full_label: str,
+    context_name: str,
+    level: int,
+    out_group_type: str,
+):
+    # TODO this needs to be updated to query the new context tree for the list of models
+    in_group_model_ids = DepmapModel.get_model_ids_by_lineage_and_level(
+        context_name, level
+    ).keys()
+    out_group_model_ids = _get_out_group_model_ids(
+        out_group_type,
+        dataset_name=dataset_name,
+        in_group_model_ids=in_group_model_ids,
+        label=entity_full_label,
+    )
+
+    return {
+        "in_group_model_ids": in_group_model_ids,
+        "out_group_model_ids": out_group_model_ids,
+    }
+
+
+# Separated out for testing purposes
+def get_context_dose_curves(
+    dataset_name: str,
+    entity_full_label: str,
+    context_name: str,
+    level: int,
+    out_group_type: str,
+):
+    assert dataset_name == DependencyDataset.DependencyEnum.Prism_oncology_AUC.name
+    dataset = DependencyDataset.get_dataset_by_name(dataset_name)
+    replicate_dataset_name = dataset.get_dose_replicate_enum().name
+
+    compound_experiment = _get_compound_experiment(entity_full_label=entity_full_label)
+
+    in_group_out_group_model_ids = _get_in_group_out_group_model_ids(
+        dataset_name=dataset_name,
+        entity_full_label=entity_full_label,
+        context_name=context_name,
+        level=level,
+        out_group_type=out_group_type,
+    )
+
+    dose_curve_info = _get_dose_response_curves_per_model(
+        in_group_model_ids=in_group_out_group_model_ids["in_group_model_ids"],
+        out_group_model_ids=in_group_out_group_model_ids["out_group_model_ids"],
+        replicate_dataset_name=replicate_dataset_name,
+        compound_experiment=compound_experiment,
+    )
+
+    return {
+        "dataset": dataset,
+        "compound_experiment": compound_experiment,
+        "replicate_dataset_name": replicate_dataset_name,
+        "dose_curve_info": dose_curve_info,
+    }

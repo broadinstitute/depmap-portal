@@ -600,7 +600,7 @@ export class DepmapApi {
   ): Promise<ContextAnalysisTableType> {
     const params = {
       in_group,
-      out_group_type,
+      out_group_type: "All Others",
       entity_type,
       dataset_name,
     };
@@ -625,7 +625,7 @@ export class DepmapApi {
       selected_context,
       dataset_name,
       top_context,
-      out_group_type,
+      out_group_type: "All Others",
       entity_type,
       entity_full_label,
       fdr,

@@ -10,8 +10,8 @@ from depmap.context_explorer.utils import (
     get_full_row_of_values_and_depmap_ids,
     has_drug_data,
     has_gene_dep_data,
-    get_dose_response_curves_per_model,
-    get_out_group_model_ids,
+    get_context_dose_curves,
+    get_entity_id_from_entity_full_label,
 )
 from depmap.gene.models import Gene
 from depmap.tda.views import convert_series_to_json_safe_list
@@ -383,50 +383,6 @@ class AnalysisData(Resource):
         return data_table
 
 
-def _get_compound_experiment_id_from_entity_label(entity_full_label: str):
-    m = re.search(r"([A-Z0-9]*:[A-Z0-9-]*)", entity_full_label)
-    compound_experiment_id = m.group(1)
-
-    return compound_experiment_id
-
-
-def _get_compound_experiment(entity_full_label: str):
-    compound_experiment_id = _get_compound_experiment_id_from_entity_label(
-        entity_full_label=entity_full_label
-    )
-
-    assert ":" in compound_experiment_id
-    compound_experiment = CompoundExperiment.get_by_xref_full(
-        compound_experiment_id, must=False
-    )
-
-    return compound_experiment
-
-
-def _get_entity_id_from_entity_full_label(
-    entity_type: str, entity_full_label: str
-) -> dict:
-    entity = None
-    if entity_type == "gene":
-        m = re.match("\\S+ \\((\\d+)\\)", entity_full_label)
-
-        assert m is not None
-        entrez_id = int(m.group(1))
-        gene = Gene.get_gene_by_entrez(entrez_id)
-        assert gene is not None
-        label = gene.label
-        entity = gene
-        entity_id = entity.entity_id
-    else:
-        compound_experiment = _get_compound_experiment(
-            entity_full_label=entity_full_label
-        )
-        entity_id = compound_experiment.entity_id
-        label = Compound.get_by_entity_id(entity_id).label
-
-    return {"entity_id": entity_id, "label": label}
-
-
 @namespace.route("/context_dose_curves")
 class ContextDoseCurves(Resource):
     @namespace.doc(
@@ -439,32 +395,19 @@ class ContextDoseCurves(Resource):
         level = request.args.get("level")
 
         # TODO calculate outgroup median using outgroup type instead of always using All Others
-        out_group_type = request.args.get("out_group_type")
+        out_group_type = "All Others"  # request.args.get("out_group_type")
 
-        assert dataset_name == DependencyDataset.DependencyEnum.Prism_oncology_AUC.name
-        dataset = DependencyDataset.get_dataset_by_name(dataset_name)
-        replicate_dataset_name = dataset.get_dose_replicate_enum().name
-        compound_experiment = _get_compound_experiment(
-            entity_full_label=entity_full_label
-        )
-
-        # TODO this needs to be updated to query the new context tree for the list of models
-        in_group_model_ids = DepmapModel.get_model_ids_by_lineage_and_level(
-            context_name, level
-        ).keys()
-        out_group_model_ids = get_out_group_model_ids(
-            "All Others",  # TODO UPDATE THIS TO USE out_group_type
+        dose_curve_info = get_context_dose_curves(
             dataset_name=dataset_name,
-            in_group_model_ids=in_group_model_ids,
-            label=entity_full_label,
+            entity_full_label=entity_full_label,
+            context_name=context_name,
+            level=level,
+            out_group_type=out_group_type,
         )
 
-        dose_curve_info = get_dose_response_curves_per_model(
-            in_group_model_ids=in_group_model_ids,
-            out_group_model_ids=out_group_model_ids,
-            replicate_dataset_name=replicate_dataset_name,
-            compound_experiment=compound_experiment,
-        )
+        compound_experiment = dose_curve_info["compound_experiment"]
+        dataset = dose_curve_info["dataset"]
+        replicate_dataset_name = dose_curve_info["replicate_dataset_name"]
 
         label = f"{compound_experiment.label} {dataset.display_name}"
 
@@ -513,7 +456,7 @@ class ContextBoxPlotData(Resource):
 
         box_plot_data = []
 
-        entity_id_and_label = _get_entity_id_from_entity_full_label(
+        entity_id_and_label = get_entity_id_from_entity_full_label(
             entity_type=entity_type, entity_full_label=entity_full_label
         )
         entity_id = entity_id_and_label["entity_id"]

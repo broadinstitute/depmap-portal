@@ -291,7 +291,11 @@ class CompoundExperimentFactory(SQLAlchemyModelFactory):
     xref = factory.Sequence(lambda number: "{}".format(number))
 
     type = "compound_experiment"
-    compound = factory.LazyAttribute(lambda o: CompoundFactory())
+    entity_id = factory.Sequence(lambda number: number)
+    compound_id = factory.Sequence(lambda number: number)
+    compound = factory.SubFactory(
+        CompoundFactory, compound_id=factory.SelfAttribute("..compound_id")
+    )
     label = factory.Sequence(lambda number: "CTRP:{}".format(number))
     entity_alias = factory.LazyAttribute(lambda o: [EntityAliasFactory()])
 
@@ -322,7 +326,10 @@ class CompoundDoseReplicateFactory(SQLAlchemyModelFactory):
     type = "compound_dose_replicate"
     label = factory.Sequence(lambda number: "CTRP:{} dose rep".format(number))
 
-    compound_experiment = factory.LazyAttribute(lambda o: CompoundExperimentFactory())
+    compound_experiment_id = factory.Sequence(lambda number: number)
+    compound_experiment = factory.SubFactory(
+        CompoundExperimentFactory, entity_id="..compound_experiment_id"
+    )
     dose = factory.Sequence(lambda number: number)
     replicate = factory.Sequence(lambda number: number)
     is_masked = None
