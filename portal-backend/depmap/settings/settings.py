@@ -283,10 +283,10 @@ class Config(object):
     ANNOUNCEMENTS_FILE_PATH = os.path.join(ADDITIONAL_MOUNTS_DIR, "announcements.yaml")
     DOCUMENTATION_PATH = os.path.join(ADDITIONAL_MOUNTS_DIR, "documentation.yaml")
     DMC_SYMPOSIA_PATH = os.path.join(ADDITIONAL_MOUNTS_DIR, "dmc_symposia.yaml")
-    DOWNLOADS_PATH = os.path.join(ADDITIONAL_MOUNTS_DIR, "downloads")
-    SHARED_DOWNLOADS_PATH = os.path.join(
-        ADDITIONAL_MOUNTS_DIR, "shared/shared_downloads"
-    )
+    DOWNLOADS_PATHS = [
+        os.path.join(ADDITIONAL_MOUNTS_DIR, "downloads"),
+        os.path.join(ADDITIONAL_MOUNTS_DIR, "shared/shared_downloads"),
+    ]
     BREADBOX_PROXY_TARGET = os.environ.get(
         "BREADBOX_PROXY_TARGET", "http://127.0.0.1:8000"
     )
@@ -482,6 +482,5 @@ class TestConfig(Config):
     )  # this is a valid formatted cred file, but this key is not actually valid
     FEEDBACK_FORM_URL = None
     CLOUD_TRACE_ENABLED = False
-    DOWNLOADS_PATH = None
-    SHARED_DOWNLOADS_PATH = None
+    DOWNLOADS_PATHS = []
     THEME_PATH = os.path.join(Config.PROJECT_ROOT, f"../config/{ENV_TYPE}/theme")
