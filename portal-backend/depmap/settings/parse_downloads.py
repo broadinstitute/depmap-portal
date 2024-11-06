@@ -340,6 +340,7 @@ def _parse_downloads_with_caching(downloads_paths: List[str]) -> DownloadInfoFro
         prev_timestamp, prev_value = cache_entry
         if prev_timestamp == timestamp:
             return prev_value
+    assert timestamp is not None
 
     # otherwise, parse all the files and cache the result
     value = _parse_downloads(downloads_paths)
@@ -354,8 +355,9 @@ def _parse_downloads_with_caching(downloads_paths: List[str]) -> DownloadInfoFro
 def get_taiga_ids_from_all_downloads():
     taiga_ids = set()
 
-    downloads_paths = current_app.config["DOWNLOADS_PATHS"]
-    if downloads_paths is None or len(downloads_paths) == 0:
+    downloads_paths = current_app.config["DOWNLOADS_PATHS"]  # pyright: ignore
+    assert isinstance(downloads_paths, list)
+    if len(downloads_paths) == 0:
         downloads_releases = []
     else:
         downloads_releases, _ = _parse_releases(downloads_paths)
@@ -381,12 +383,13 @@ def get_taiga_ids_from_all_downloads():
 # Used in download_settings.py get_download_list and _get_download_list_for_env to load downloads into the portal.
 # If this is called directly, it WILL BYPASS ACCESS CONTROLS. For access controls use get_download_list
 def parse_downloads_unsafe() -> DownloadInfoFromConfig:
-    downloads_path = current_app.config["DOWNLOADS_PATHS"]
-    if downloads_path is None or len(downloads_path) == 0:
+    downloads_paths = current_app.config["DOWNLOADS_PATHS"]  # pyright: ignore
+    assert isinstance(downloads_paths, list)
+    if len(downloads_paths) == 0:
         return DownloadInfoFromConfig(
             releases=[], display_names_by_taiga_ids={}, release_by_filename={}
         )
-    return _parse_downloads_with_caching(downloads_path)
+    return _parse_downloads_with_caching(downloads_paths)
 
 
 # These are taiga IDs that are used by tests. Let's just ignore them for purposes of display names
