@@ -38,7 +38,7 @@ def config(tmpdir):
     tmpdir.join("sample.yaml").write(release_yaml)
 
     class TestVersionConfig(TestConfig):
-        DOWNLOADS_PATH = downloads_path
+        DOWNLOADS_PATHS = [downloads_path]
 
     return TestVersionConfig
 
