@@ -6,11 +6,22 @@ Includes both an auto-generated `breadbox_client` module and a human-curated `br
 
 
 ## Auto-Generating the breadbox_client
-In general, the `breadbox_client` directory is auto-generated in a github action. It is not checked in to the repo.
+When changes are merged to master, the `breadbox-client/breadbox_client` directory will be auto-generated before the breadbox-client module is published.
 
-If you would like to generate the client for local developmen/debugging, follow these steps:
-1. Install the `openapi-python-client` with the python environment manager of your choice. For example: `pipx install openapi-python-client==0.21.1`
-2. In the depmap-portal directory, run the following command: `openapi-python-client generate --meta=none --output-path breadbox-client/breadbox_client --path breadbox-client/latest-breadbox-api.json --overwrite`
+In general, the `breadbox_client` directory is auto-generated in a github action. It is not checked in to the repo.
+When changes are merged to master, the `breadbox-client/breadbox_client` directory will be auto-generated before the breadbox-client module is published.
+
+To generate the client for local development:
+1. Make sure you have the `breadbox-client-generator` poetry project installed: 
+    ```
+    cd ../breadbox-client-generator
+    poetry install
+    ```
+2. Generate the breadbox client:
+    ```
+    cd ../breadbox 
+    poetry run ./bb update-client
+    ```
 
 
 ## The breadbox Facade 
