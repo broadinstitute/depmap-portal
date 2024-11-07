@@ -79,6 +79,9 @@ class Dataset(Base, UUIDMixin, GroupMixin):
 
     given_id = Column(String, unique=True)
     name = Column(String, nullable=False)
+    short_name = Column(String, nullable=True)
+    description = Column(String, nullable=True)
+    version = Column(String, nullable=True)
     format = Column(String, nullable=False)
     data_type = Column(String, ForeignKey(DataType.data_type), nullable=False)
     is_transient = Column(Boolean, nullable=False)

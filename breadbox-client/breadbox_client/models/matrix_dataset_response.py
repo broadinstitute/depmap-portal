@@ -42,11 +42,14 @@ class MatrixDatasetResponse:
         units (str):
         value_type (ValueType):
         dataset_md5 (Union[None, Unset, str]):
+        description (Union[None, Unset, str]): an optional long description of the dataset
         format_ (Union[Unset, MatrixDatasetResponseFormat]):  Default: MatrixDatasetResponseFormat.MATRIX_DATASET.
         given_id (Union[None, Unset, str]):
         is_transient (Union[Unset, bool]):  Default: False.
         priority (Union[None, Unset, int]):
+        short_name (Union[None, Unset, str]): an optional short label describing dataset
         taiga_id (Union[None, Unset, str]):
+        version (Union[None, Unset, str]): an optional short version identifier
     """
 
     allowed_values: Union[List[str], None]
@@ -61,13 +64,16 @@ class MatrixDatasetResponse:
     units: str
     value_type: ValueType
     dataset_md5: Union[None, Unset, str] = UNSET
+    description: Union[None, Unset, str] = UNSET
     format_: Union[Unset, MatrixDatasetResponseFormat] = (
         MatrixDatasetResponseFormat.MATRIX_DATASET
     )
     given_id: Union[None, Unset, str] = UNSET
     is_transient: Union[Unset, bool] = False
     priority: Union[None, Unset, int] = UNSET
+    short_name: Union[None, Unset, str] = UNSET
     taiga_id: Union[None, Unset, str] = UNSET
+    version: Union[None, Unset, str] = UNSET
     additional_properties: Dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> Dict[str, Any]:
@@ -113,6 +119,12 @@ class MatrixDatasetResponse:
         else:
             dataset_md5 = self.dataset_md5
 
+        description: Union[None, Unset, str]
+        if isinstance(self.description, Unset):
+            description = UNSET
+        else:
+            description = self.description
+
         format_: Union[Unset, str] = UNSET
         if not isinstance(self.format_, Unset):
             format_ = self.format_.value
@@ -131,11 +143,23 @@ class MatrixDatasetResponse:
         else:
             priority = self.priority
 
+        short_name: Union[None, Unset, str]
+        if isinstance(self.short_name, Unset):
+            short_name = UNSET
+        else:
+            short_name = self.short_name
+
         taiga_id: Union[None, Unset, str]
         if isinstance(self.taiga_id, Unset):
             taiga_id = UNSET
         else:
             taiga_id = self.taiga_id
+
+        version: Union[None, Unset, str]
+        if isinstance(self.version, Unset):
+            version = UNSET
+        else:
+            version = self.version
 
         field_dict: Dict[str, Any] = {}
         field_dict.update(self.additional_properties)
@@ -156,6 +180,8 @@ class MatrixDatasetResponse:
         )
         if dataset_md5 is not UNSET:
             field_dict["dataset_md5"] = dataset_md5
+        if description is not UNSET:
+            field_dict["description"] = description
         if format_ is not UNSET:
             field_dict["format"] = format_
         if given_id is not UNSET:
@@ -164,8 +190,12 @@ class MatrixDatasetResponse:
             field_dict["is_transient"] = is_transient
         if priority is not UNSET:
             field_dict["priority"] = priority
+        if short_name is not UNSET:
+            field_dict["short_name"] = short_name
         if taiga_id is not UNSET:
             field_dict["taiga_id"] = taiga_id
+        if version is not UNSET:
+            field_dict["version"] = version
 
         return field_dict
 
@@ -244,6 +274,15 @@ class MatrixDatasetResponse:
 
         dataset_md5 = _parse_dataset_md5(d.pop("dataset_md5", UNSET))
 
+        def _parse_description(data: object) -> Union[None, Unset, str]:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(Union[None, Unset, str], data)
+
+        description = _parse_description(d.pop("description", UNSET))
+
         _format_ = d.pop("format", UNSET)
         format_: Union[Unset, MatrixDatasetResponseFormat]
         if isinstance(_format_, Unset):
@@ -271,6 +310,15 @@ class MatrixDatasetResponse:
 
         priority = _parse_priority(d.pop("priority", UNSET))
 
+        def _parse_short_name(data: object) -> Union[None, Unset, str]:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(Union[None, Unset, str], data)
+
+        short_name = _parse_short_name(d.pop("short_name", UNSET))
+
         def _parse_taiga_id(data: object) -> Union[None, Unset, str]:
             if data is None:
                 return data
@@ -279,6 +327,15 @@ class MatrixDatasetResponse:
             return cast(Union[None, Unset, str], data)
 
         taiga_id = _parse_taiga_id(d.pop("taiga_id", UNSET))
+
+        def _parse_version(data: object) -> Union[None, Unset, str]:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(Union[None, Unset, str], data)
+
+        version = _parse_version(d.pop("version", UNSET))
 
         matrix_dataset_response = cls(
             allowed_values=allowed_values,
@@ -293,11 +350,14 @@ class MatrixDatasetResponse:
             units=units,
             value_type=value_type,
             dataset_md5=dataset_md5,
+            description=description,
             format_=format_,
             given_id=given_id,
             is_transient=is_transient,
             priority=priority,
+            short_name=short_name,
             taiga_id=taiga_id,
+            version=version,
         )
 
         matrix_dataset_response.additional_properties = d

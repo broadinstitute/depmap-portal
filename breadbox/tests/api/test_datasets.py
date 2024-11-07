@@ -2901,6 +2901,9 @@ class TestPatch:
         # Check that a well-formed request returns a happy result
         new_name = "UPDATED NAME"
         new_units = "UPDATED UNITS"
+        new_version = "updated version"
+        new_short_name = "updated short name"
+        new_description = "updated description"
         update_dataset_response = client.patch(
             f"/datasets/{dataset_id}",
             json={
@@ -2910,6 +2913,9 @@ class TestPatch:
                 "units": new_units,
                 "priority": "1",
                 "dataset_metadata": None,
+                "short_name": new_short_name,
+                "version": new_version,
+                "description": new_description,
             },
             headers=admin_headers,
         )
@@ -2919,6 +2925,9 @@ class TestPatch:
         assert update_dataset_response.json()["name"] == new_name
         assert update_dataset_response.json()["units"] == new_units
         assert update_dataset_response.json()["priority"] == 1
+        assert update_dataset_response.json()["short_name"] == new_short_name
+        assert update_dataset_response.json()["version"] == new_version
+        assert update_dataset_response.json()["description"] == new_description
         assert (
             update_dataset_response.json()["data_type"] == "User upload"
         )  # same value expected
@@ -2935,9 +2944,39 @@ class TestPatch:
         assert dataset_response_after_update.json()["name"] == new_name
         assert dataset_response_after_update.json()["units"] == new_units
         assert dataset_response_after_update.json()["priority"] == 1
+        assert dataset_response_after_update.json()["short_name"] == new_short_name
+        assert dataset_response_after_update.json()["version"] == new_version
+        assert dataset_response_after_update.json()["description"] == new_description
         assert (
             dataset_response_after_update.json()["data_type"] == "User upload"
         )  # same value expected
+
+        # Check that we can set the given_id to a non-null value and then reset it back to null
+        update_dataset_response = client.patch(
+            f"/datasets/{dataset_id}",
+            json={"format": "matrix", "given_id": "xyz"},
+            headers=admin_headers,
+        )
+        assert_status_ok(update_dataset_response)
+
+        dataset_response_after_update = client.get(
+            f"/datasets/{dataset_id}", headers=admin_headers
+        )
+        assert_status_ok(dataset_response_after_update)
+        assert dataset_response_after_update.json()["given_id"] == "xyz"
+
+        update_dataset_response = client.patch(
+            f"/datasets/{dataset_id}",
+            json={"format": "matrix", "given_id": None},
+            headers=admin_headers,
+        )
+        assert_status_ok(update_dataset_response)
+
+        dataset_response_after_update = client.get(
+            f"/datasets/{dataset_id}", headers=admin_headers
+        )
+        assert_status_ok(dataset_response_after_update)
+        assert dataset_response_after_update.json()["given_id"] is None
 
         # Check that the original dataset owner can no longer access it (because the group was changed)
         dataset_response_after_update = client.get(

@@ -1556,6 +1556,18 @@
             "description": "Contains a dictionary of additional dataset values that are not already provided above.",
             "title": "Dataset Metadata"
           },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "an optional long description of the dataset",
+            "title": "Description"
+          },
           "feature_type": {
             "anyOf": [
               {
@@ -1632,6 +1644,18 @@
             "title": "Sample Type",
             "type": "string"
           },
+          "short_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "an optional short label describing dataset",
+            "title": "Short Name"
+          },
           "taiga_id": {
             "anyOf": [
               {
@@ -1656,6 +1680,18 @@
               }
             ],
             "description": "Value 'continuous' if dataset contains numerical values or 'categorical' if dataset contains string categories as values."
+          },
+          "version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "an optional short version identifier",
+            "title": "Version"
           }
         },
         "required": [
@@ -1715,6 +1751,18 @@
               }
             ],
             "title": "Dataset Metadata"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "an optional long description of the dataset",
+            "title": "Description"
           },
           "feature_type_name": {
             "anyOf": [
@@ -1784,6 +1832,18 @@
             "title": "Sample Type Name",
             "type": "string"
           },
+          "short_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "an optional short label describing dataset",
+            "title": "Short Name"
+          },
           "taiga_id": {
             "anyOf": [
               {
@@ -1801,6 +1861,18 @@
           },
           "value_type": {
             "$ref": "#/components/schemas/ValueType"
+          },
+          "version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "an optional short version identifier",
+            "title": "Version"
           }
         },
         "required": [
@@ -1846,6 +1918,18 @@
             "description": "A dictionary of additional dataset metadata that is not already provided",
             "title": "Dataset Metadata"
           },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "an optional long description of the dataset",
+            "title": "Description"
+          },
           "format": {
             "const": "matrix",
             "enum": [
@@ -1853,6 +1937,18 @@
             ],
             "title": "Format",
             "type": "string"
+          },
+          "given_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The 'given ID' for this dataset",
+            "title": "Given Id"
           },
           "group_id": {
             "anyOf": [
@@ -1891,6 +1987,18 @@
             "description": "Numeric value representing priority of the dataset within its `data_type`",
             "title": "Priority"
           },
+          "short_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "an optional short label describing dataset",
+            "title": "Short Name"
+          },
           "units": {
             "anyOf": [
               {
@@ -1902,6 +2010,18 @@
             ],
             "description": "Units for the values in the dataset",
             "title": "Units"
+          },
+          "version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "an optional short version identifier",
+            "title": "Version"
           }
         },
         "required": [
@@ -2096,6 +2216,18 @@
             "description": "Contains a dictionary of additional dataset values that are not already provided above.",
             "title": "Dataset Metadata"
           },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "an optional long description of the dataset",
+            "title": "Description"
+          },
           "file_ids": {
             "description": "Ordered list of file ids from the chunked dataset uploads",
             "items": {
@@ -2160,6 +2292,18 @@
             "description": "Numeric value assigned to the dataset with `1` being highest priority within the `data_type`, used for displaying order of datasets to show for a specific `data_type` in UI.",
             "title": "Priority"
           },
+          "short_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "an optional short label describing dataset",
+            "title": "Short Name"
+          },
           "taiga_id": {
             "anyOf": [
               {
@@ -2171,6 +2315,18 @@
             ],
             "description": "Taiga ID the dataset is sourced from.",
             "title": "Taiga Id"
+          },
+          "version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "an optional short version identifier",
+            "title": "Version"
           }
         },
         "required": [
@@ -2223,6 +2379,18 @@
               }
             ],
             "title": "Dataset Metadata"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "an optional long description of the dataset",
+            "title": "Description"
           },
           "format": {
             "const": "tabular_dataset",
@@ -2288,6 +2456,18 @@
             ],
             "title": "Priority"
           },
+          "short_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "an optional short label describing dataset",
+            "title": "Short Name"
+          },
           "taiga_id": {
             "anyOf": [
               {
@@ -2298,6 +2478,18 @@
               }
             ],
             "title": "Taiga Id"
+          },
+          "version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "an optional short version identifier",
+            "title": "Version"
           }
         },
         "required": [
@@ -2340,6 +2532,18 @@
             "description": "A dictionary of additional dataset metadata that is not already provided",
             "title": "Dataset Metadata"
           },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "an optional long description of the dataset",
+            "title": "Description"
+          },
           "format": {
             "const": "tabular",
             "enum": [
@@ -2347,6 +2551,18 @@
             ],
             "title": "Format",
             "type": "string"
+          },
+          "given_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The 'given ID' for this dataset",
+            "title": "Given Id"
           },
           "group_id": {
             "anyOf": [
@@ -2384,6 +2600,30 @@
             ],
             "description": "Numeric value representing priority of the dataset within its `data_type`",
             "title": "Priority"
+          },
+          "short_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "an optional short label describing dataset",
+            "title": "Short Name"
+          },
+          "version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "an optional short version identifier",
+            "title": "Version"
           }
         },
         "required": [
@@ -2539,7 +2779,7 @@
   },
   "info": {
     "title": "Breadbox",
-    "version": "3.10.0"
+    "version": "3.10.1"
   },
   "openapi": "3.1.0",
   "paths": {

@@ -67,13 +67,7 @@ class ContextEvaluator:
         dictionary_override = _JsonLogicVarLookup(
             given_id, self.cache, self.get_slice_data, self.slice_query_vars,
         )
-
-        try:
-            return jsonLogic(self.expr, dictionary_override)
-        except (TypeError, ValueError) as e:
-            print("Exception evaluating", self.expr, "against", given_id)
-            print(e)
-            return False
+        return jsonLogic(self.expr, dictionary_override)
 
 
 class _JsonLogicVarLookup(dict):
@@ -121,8 +115,12 @@ class _JsonLogicVarLookup(dict):
 
         else:
             if var_name not in self.cache:
-                slice_query = SliceQuery(**self.slice_query_vars[var_name])
-                self.cache[var_name] = self.get_slice_data(slice_query).to_dict()
+                try:
+                    slice_query = SliceQuery(**self.slice_query_vars[var_name])
+                    self.cache[var_name] = self.get_slice_data(slice_query).to_dict()
+                except (KeyError, TypeError, ValueError) as e:
+                    raise LookupError(e)
+
             slice_values = self.cache[var_name]
             return slice_values[self.given_id]
 

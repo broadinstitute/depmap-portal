@@ -39,6 +39,7 @@ class MatrixDatasetParams:
             either be 'csv' or 'parquet' Default: MatrixDatasetParamsDataFileFormat.CSV.
         dataset_metadata (Union['MatrixDatasetParamsDatasetMetadataType0', None, Unset]): Contains a dictionary of
             additional dataset values that are not already provided above.
+        description (Union[None, Unset, str]): an optional long description of the dataset
         feature_type (Union[None, Unset, str]): Type of features your dataset contains
         given_id (Union[None, Unset, str]): Stable human-readable identifier that the portal uses to look up specific
             datasets.
@@ -46,7 +47,9 @@ class MatrixDatasetParams:
             short-term-use datasets like custom analysis results. Default: False.
         priority (Union[None, Unset, int]): Numeric value assigned to the dataset with `1` being highest priority within
             the `data_type`, used for displaying order of datasets to show for a specific `data_type` in UI.
+        short_name (Union[None, Unset, str]): an optional short label describing dataset
         taiga_id (Union[None, Unset, str]): Taiga ID the dataset is sourced from.
+        version (Union[None, Unset, str]): an optional short version identifier
     """
 
     data_type: str
@@ -65,11 +68,14 @@ class MatrixDatasetParams:
     dataset_metadata: Union["MatrixDatasetParamsDatasetMetadataType0", None, Unset] = (
         UNSET
     )
+    description: Union[None, Unset, str] = UNSET
     feature_type: Union[None, Unset, str] = UNSET
     given_id: Union[None, Unset, str] = UNSET
     is_transient: Union[Unset, bool] = False
     priority: Union[None, Unset, int] = UNSET
+    short_name: Union[None, Unset, str] = UNSET
     taiga_id: Union[None, Unset, str] = UNSET
+    version: Union[None, Unset, str] = UNSET
     additional_properties: Dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> Dict[str, Any]:
@@ -116,6 +122,12 @@ class MatrixDatasetParams:
         else:
             dataset_metadata = self.dataset_metadata
 
+        description: Union[None, Unset, str]
+        if isinstance(self.description, Unset):
+            description = UNSET
+        else:
+            description = self.description
+
         feature_type: Union[None, Unset, str]
         if isinstance(self.feature_type, Unset):
             feature_type = UNSET
@@ -136,11 +148,23 @@ class MatrixDatasetParams:
         else:
             priority = self.priority
 
+        short_name: Union[None, Unset, str]
+        if isinstance(self.short_name, Unset):
+            short_name = UNSET
+        else:
+            short_name = self.short_name
+
         taiga_id: Union[None, Unset, str]
         if isinstance(self.taiga_id, Unset):
             taiga_id = UNSET
         else:
             taiga_id = self.taiga_id
+
+        version: Union[None, Unset, str]
+        if isinstance(self.version, Unset):
+            version = UNSET
+        else:
+            version = self.version
 
         field_dict: Dict[str, Any] = {}
         field_dict.update(self.additional_properties)
@@ -163,6 +187,8 @@ class MatrixDatasetParams:
             field_dict["data_file_format"] = data_file_format
         if dataset_metadata is not UNSET:
             field_dict["dataset_metadata"] = dataset_metadata
+        if description is not UNSET:
+            field_dict["description"] = description
         if feature_type is not UNSET:
             field_dict["feature_type"] = feature_type
         if given_id is not UNSET:
@@ -171,8 +197,12 @@ class MatrixDatasetParams:
             field_dict["is_transient"] = is_transient
         if priority is not UNSET:
             field_dict["priority"] = priority
+        if short_name is not UNSET:
+            field_dict["short_name"] = short_name
         if taiga_id is not UNSET:
             field_dict["taiga_id"] = taiga_id
+        if version is not UNSET:
+            field_dict["version"] = version
 
         return field_dict
 
@@ -248,6 +278,15 @@ class MatrixDatasetParams:
 
         dataset_metadata = _parse_dataset_metadata(d.pop("dataset_metadata", UNSET))
 
+        def _parse_description(data: object) -> Union[None, Unset, str]:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(Union[None, Unset, str], data)
+
+        description = _parse_description(d.pop("description", UNSET))
+
         def _parse_feature_type(data: object) -> Union[None, Unset, str]:
             if data is None:
                 return data
@@ -277,6 +316,15 @@ class MatrixDatasetParams:
 
         priority = _parse_priority(d.pop("priority", UNSET))
 
+        def _parse_short_name(data: object) -> Union[None, Unset, str]:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(Union[None, Unset, str], data)
+
+        short_name = _parse_short_name(d.pop("short_name", UNSET))
+
         def _parse_taiga_id(data: object) -> Union[None, Unset, str]:
             if data is None:
                 return data
@@ -285,6 +333,15 @@ class MatrixDatasetParams:
             return cast(Union[None, Unset, str], data)
 
         taiga_id = _parse_taiga_id(d.pop("taiga_id", UNSET))
+
+        def _parse_version(data: object) -> Union[None, Unset, str]:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(Union[None, Unset, str], data)
+
+        version = _parse_version(d.pop("version", UNSET))
 
         matrix_dataset_params = cls(
             data_type=data_type,
@@ -299,11 +356,14 @@ class MatrixDatasetParams:
             allowed_values=allowed_values,
             data_file_format=data_file_format,
             dataset_metadata=dataset_metadata,
+            description=description,
             feature_type=feature_type,
             given_id=given_id,
             is_transient=is_transient,
             priority=priority,
+            short_name=short_name,
             taiga_id=taiga_id,
+            version=version,
         )
 
         matrix_dataset_params.additional_properties = d

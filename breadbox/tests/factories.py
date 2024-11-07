@@ -313,6 +313,9 @@ def tabular_dataset(
     index_type_name=None,
     user=None,
     id_mapping=None,
+    short_name=None,
+    description=None,
+    version=None,
 ):
 
     if group_id is None:
@@ -359,7 +362,15 @@ def tabular_dataset(
     assert index_type is not None
 
     added_dataset = dataset_crud.add_tabular_dataset(
-        db, user, dataset_in, data_df, columns_metadata, index_type
+        db,
+        user,
+        dataset_in,
+        data_df,
+        columns_metadata,
+        index_type,
+        short_name=short_name,
+        version=version,
+        description=description,
     )
 
     if id_mapping is not None:
