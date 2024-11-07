@@ -149,7 +149,7 @@ class FeatureFlags:
 
     @property
     def celligner_app_v3(self):
-        return self.is_prerelease_env()
+        return True
 
     # used in depmap/settings/shared.py to set special value for DepDatasetMeta cell_lines
     @property

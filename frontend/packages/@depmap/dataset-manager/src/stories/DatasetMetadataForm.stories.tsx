@@ -8,10 +8,6 @@ export default {
 
 export function DatasetMetadataFormStory() {
   return (
-    <DatasetMetadataForm
-      forwardDatasetMetadataDict={() => console.log("HI")}
-      isEdit
-      datasetId="datasetId"
-    />
+    <DatasetMetadataForm forwardDatasetMetadataDict={() => console.log("HI")} />
   );
 }
