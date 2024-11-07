@@ -179,6 +179,7 @@ breadbox/breadbox/result
 portal-backend/depmap/utilities/color_palette.py
 breadbox/app_datasets
 breadbox_client/
+latest-breadbox-api.json
 secrets
 
 # data access logs
