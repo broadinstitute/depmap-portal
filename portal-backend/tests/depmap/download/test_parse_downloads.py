@@ -192,7 +192,7 @@ expected_path_list = [
 
 # test getting a list of paths from an index.yaml file: index_file_path = f"{downloads_path}/index.yaml"
 def test_get_list_of_file_paths(app):
-    downloads_path = "tests/depmap/download/index.yaml"
+    downloads_path = "tests/depmap/download"
     with app.app_context():
-        path_list = get_list_of_file_paths(downloads_path)
+        path_list = get_list_of_file_paths([downloads_path])
         assert expected_path_list == [path for path in path_list]
