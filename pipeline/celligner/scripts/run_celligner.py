@@ -14,6 +14,8 @@ import argparse
 import json
 import pickle as pkl
 import os
+from sklearn.decomposition import PCA
+import warnings
 
 tc = TaigaClient()
 
@@ -203,13 +205,15 @@ def process_tcga_ipts(expr_df, context_df):
     return adata
 
 
-def process_depmap_ipts(expr_df, context_df):
+def process_depmap_ipts(expr_df, context_df, prof_map, model_condition):
     """
 
     Args:
         expr_df: Pandas Dataframe. DepMap expression data, pulled from taiga
         context_df: Pandas DataFrame. artifact input from conseq file with either type = biomarker-matrix and category = context
                 or type = context-matrix (not sure what the difference is)
+        prof_map: Pandas DataFrame. maping from profile ID to model ID/model condition ID
+        model_condition: Pandas DataFrame. table containing information on model conditions, including growth media
 
     Returns: anndata object. Observations are indexed by ModelID and variables are ensembl IDs. Includes model metadata.
             Model metadata included are: lineage, subtype, type (provenance), primary/metastasis,
@@ -219,7 +223,8 @@ def process_depmap_ipts(expr_df, context_df):
 
     """
 
-    hgnc_complete_set = tc.get(name="hgnc-87ab", version=7, file="hgnc_complete_set")
+    hgnc_complete_set = tc.get(name="hgnc-gene-table-e250", version=3, file="hgnc_complete_set")
+    # hgnc_complete_set = hgnc_complete_set[hgnc_complete_set.locus_group == 'protein-coding gene']
     bg_genes = (
         pd.Series(expr_df.keys())
         .apply(lambda s: re.search(r"^([\w.-]+) \(", s).group(1))
@@ -232,6 +237,7 @@ def process_depmap_ipts(expr_df, context_df):
         right_on="symbol",
     )[["index", "ensembl_gene_id"]].set_index("index")
     expr_df = expr_df.rename(columns=bg_genes.to_dict()["ensembl_gene_id"])
+    expr_df = expr_df[hgnc_complete_set[hgnc_complete_set.locus_group == 'protein-coding gene'].ensembl_gene_id]
 
     context_df = context_df.set_index("ModelID")
     context_w_oncocode = context_df.loc[~context_df.OncotreeCode.isna()]
@@ -246,6 +252,9 @@ def process_depmap_ipts(expr_df, context_df):
     context_nocode.loc[:, ["lineage", "subtype"]] = codes_for_codeless
     context_df = pd.concat([context_nocode, context_w_oncocode])
     context_df["type"] = "DepMap Model"
+    context_df = prof_map.merge(context_df, how="left", left_on="ModelID", right_index=True).set_index('ProfileID')
+    context_df = context_df.merge(model_condition, how="left", left_on="ModelCondition", right_on='ModelConditionID')
+
     adata = ad.AnnData(expr_df)
     adata.obs_names = expr_df.index
     adata.var_names = expr_df.columns
@@ -254,7 +263,7 @@ def process_depmap_ipts(expr_df, context_df):
     adata.uns["mnn_params"] = None
     adata.obs = context_df.loc[
         expr_df.index,
-        ["GrowthPattern", "PrimaryOrMetastasis", "lineage", "subtype", "type"],
+        ["GrowthPattern", "PrimaryOrMetastasis", "lineage", "subtype", "type", "FormulationID"],
     ]
     return adata
 
@@ -463,7 +472,10 @@ def run_celligner(bg, contrast, extra_data=None):
     out_umap["cluster"] = cluster_ids
     out = pd.merge(out_umap, df_annots, left_index=True, right_index=True)
 
-    return out, my_celligner.tumor_CL_dist
+    pca = PCA(my_celligner.pca_ncomp)
+    pcs = pca.fit_transform(my_celligner.combined_output)
+
+    return out, my_celligner.tumor_CL_dist, pcs, my_celligner.combined_output
 
 
 #%%
@@ -474,18 +486,26 @@ def process_data(inputs, extra=True):
     @param extra: (bool) include extra datasets (MET500 & PDXs) or not
     @return: (tuple of Anndata objects containing expression and metadata) Depmap, TCGA, and extra datasets
     """
+    warnings.warn("loading depmap")
     print("loading DepMap data...")
     depmap_data = tc.get(inputs["depmap_expr"]["source_dataset_id"])
+    warnings.warn("loading anns")
     depmap_ann = tc.get(inputs["depmap_ann"]["source_dataset_id"])
+    warnings.warn("loading prof map")
+    depmap_prof_map = tc.get(inputs["depmap_prof_map"]["source_dataset_id"])
+    warnings.warn("loading model conds")
+    depmap_model_cond = tc.get(inputs["depmap_model_cond"]["source_dataset_id"])
 
-    depmap_out = process_depmap_ipts(depmap_data, depmap_ann)
+    depmap_out = process_depmap_ipts(depmap_data, depmap_ann, depmap_prof_map, depmap_model_cond)
 
     # process tcga data into single input for celligner
+    warnings.warn("loading tcga")
     print("loading TCGA data...")
     tcga_expr = tc.get(inputs["tcga_expr"]["source_dataset_id"])
     tcga_ann = tc.get(inputs["tcga_ann"]["source_dataset_id"])
 
     tcga_out = process_tcga_ipts(tcga_expr, tcga_ann)
+    warnings.warn("loading extra datasets")
     if extra:
         # process met500 data into single input for celligner
         print("loading MET500 data...")
@@ -521,12 +541,17 @@ if __name__ == "__main__":
         "--input", type=str, help="name of input file", default="inputs.json"
     )
     args = parser.parse_args()
-
+    print('Reading inputs')
+    warnings.warn("reading inputs")
     with open(args.input, "r") as fp:
         inputs = json.load(fp)
     # process depmap data into single input for celligner
-    depmap_out, tcga_out, extra_data = process_data(inputs, extra=True)
+    depmap_processed, tcga_processed, extra_data_processed = process_data(inputs, extra=True)
+    warnings.warn("beginning alignment")
     print("Beginning alignment...")
-    out, distances = run_celligner(depmap_out, tcga_out, extra_data)
+    out, distances, pcs, combined_expression = run_celligner(depmap_processed, tcga_processed, extra_data_processed)
+    corrected_expression = combined_expression.loc[combined_expression.index.difference(depmap_processed.obs)]
     out.to_csv("celligner_output.csv")
     distances.to_csv("tumor_CL_dist.csv")
+    pcs.to_csv('celligner_pcs.csv')
+    corrected_expression.to_csv('corrected_expression.csv')
