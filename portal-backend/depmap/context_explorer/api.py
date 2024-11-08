@@ -26,7 +26,8 @@ from depmap.context_explorer.models import (
     ContextNode,
     ContextExplorerTree,
 )
-from .development_scripts import dev
+
+# from .development_scripts import dev
 
 namespace = Namespace("context_explorer", description="View context data in the portal")
 
@@ -427,10 +428,14 @@ class ContextDoseCurves(Resource):
         }
 
         return {
-            "in_group_curve_params": dose_curve_info["in_group_curve_params"],
-            "out_group_curve_params": dose_curve_info["out_group_curve_params"],
-            "max_dose": min(dose_curve_info["max_dose"], 1.0),
-            "min_dose": dose_curve_info["min_dose"],
+            "in_group_curve_params": dose_curve_info["dose_curve_info"][
+                "in_group_curve_params"
+            ],
+            "out_group_curve_params": dose_curve_info["dose_curve_info"][
+                "out_group_curve_params"
+            ],
+            "max_dose": min(dose_curve_info["dose_curve_info"]["max_dose"], 1.0),
+            "min_dose": dose_curve_info["dose_curve_info"]["min_dose"],
             "dose_curve_metadata": dose_curve_metadata,
         }
 

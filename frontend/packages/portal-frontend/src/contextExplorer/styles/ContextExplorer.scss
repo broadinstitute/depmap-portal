@@ -186,6 +186,46 @@
   }
 }
 
+.doseCurvesLegend {
+  display: flex;
+  flex-direction: row;
+  flex-grow: 1;
+  border: 1px solid #d9d9d9;
+  margin: 10px;
+  padding: 5px;
+  & > div.medianInGroupBox {
+    background: #016d5b;
+    width: 10px;
+    height: 5px;
+    margin-right: 5px;
+    margin-left: 20px;
+    align-self: center;
+  }
+
+  & > div.medianOutGroupBox {
+    background: #e97451;
+    width: 10px;
+    height: 5px;
+    margin-right: 5px;
+    margin-left: 20px;
+    align-self: center;
+  }
+
+  & > div.modelsBox {
+    background: #d9d9d9;
+    width: 8px;
+    height: 5px;
+    margin-right: 5px;
+    margin-left: 20px;
+    align-self: center;
+  }
+
+  & > div.doseCurvesLegendLabel {
+    font-size: 10px;
+    font-weight: bold;
+  }
+}
+
 .bottomLegend {
   display: flex;
   flex-direction: row;

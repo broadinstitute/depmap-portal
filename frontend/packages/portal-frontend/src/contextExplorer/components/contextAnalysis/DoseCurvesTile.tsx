@@ -8,6 +8,7 @@ import DoseCurvesPlot from "./DoseCurvesPlot";
 interface DoseCurvesTileProps {
   selectedDrugLabel: string | null;
   selectedContextName: string;
+  selectedOutGroupType: string;
   datasetName: string;
   getContextExplorerDoseResponsePoints: (
     datasetName: string,
@@ -20,6 +21,7 @@ function DoseCurvesTile(props: DoseCurvesTileProps) {
   const {
     selectedDrugLabel,
     selectedContextName,
+    selectedOutGroupType,
     datasetName,
     getContextExplorerDoseResponsePoints,
   } = props;
@@ -70,12 +72,28 @@ function DoseCurvesTile(props: DoseCurvesTileProps) {
       )}
       {!isError && isLoading && <PlotSpinner />}
       {data && (
-        <DoseCurvesPlot
-          minDose={data.min_dose}
-          maxDose={data.max_dose}
-          inGroupCurveParams={data.in_group_curve_params}
-          outGroupCurveParams={data.out_group_curve_params}
-        />
+        <>
+          <DoseCurvesPlot
+            minDose={data.min_dose}
+            maxDose={data.max_dose}
+            inGroupCurveParams={data.in_group_curve_params}
+            outGroupCurveParams={data.out_group_curve_params}
+          />
+          <fieldset className={styles.doseCurvesLegend}>
+            <div className={styles.modelsBox} />
+            <div className={styles.doseCurvesLegendLabel}>
+              {selectedDrugLabel?.split(" ")[0]} {selectedContextName} Models
+            </div>
+            <div className={styles.medianInGroupBox} />
+            <div className={styles.doseCurvesLegendLabel}>
+              Median of {selectedDrugLabel?.split(" ")[0]} {selectedContextName}
+            </div>
+            <div className={styles.medianOutGroupBox} />
+            <div className={styles.doseCurvesLegendLabel}>
+              Median of {selectedOutGroupType}
+            </div>
+          </fieldset>
+        </>
       )}
     </div>
   );

@@ -36,7 +36,7 @@ function CurvesChart({
 
     r: 40,
 
-    b: 65,
+    b: 35,
 
     t: 60,
 
