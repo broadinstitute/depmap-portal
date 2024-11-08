@@ -24,7 +24,12 @@ from ..io.data_validation import validate_dimension_type_metadata
 from ..schemas.custom_http_exception import UserError, ResourceNotFoundError
 from breadbox.models.dataset import AnnotationType
 import breadbox.crud.dataset as dataset_crud
-from breadbox.schemas.types import DimensionType, UpdateDimensionType, AddDimensionType
+from breadbox.schemas.types import (
+    DimensionType,
+    UpdateDimensionType,
+    AddDimensionType,
+    DimensionIdentifiers,
+)
 from .settings import assert_is_admin_user
 from breadbox.db.util import transaction
 
@@ -578,6 +583,19 @@ def get_dimension_type_endpoint(
 def list_dimension_types_endpoint(db: SessionWithUser = Depends(get_db_with_user),):
     dim_types = type_crud.get_dimension_types(db)
     return [_dim_type_to_response(x) for x in dim_types]
+
+
+@router.get(
+    "/dimensions/{name}/identifiers", operation_id="get_dimension_type_identifiers"
+)
+def get_dimension_type_identifiers(
+    name: str, db: SessionWithUser = Depends(get_db_with_user)
+):
+    dim_type_ids_and_labels = type_crud.get_dimension_type_labels_by_id(db, name)
+    return [
+        DimensionIdentifiers(id=id, label=label)
+        for id, label in dim_type_ids_and_labels.items()
+    ]
 
 
 @router.patch(
