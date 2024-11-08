@@ -13,12 +13,24 @@ pandas = "1.5.3"
 click = "^8.1.7"
 numpy = "^1.25.1"
 taigapy = {version = "3.8.3", source = "gcp-artifact-registry"}
+termcolor = "^2.4.0"
+tqdm = "^4.66.1"
+pandera = "^0.19.2"
+google-api-python-client = "^2.112.0"
+gumbo-rest-client = {version = "^2.0.4", source = "public-python"}
+ipykernel = "^6.29.5"
 
 
 [[tool.poetry.source]]
 name = "gcp-artifact-registry"
 url = "https://us-central1-python.pkg.dev/cds-artifacts/public-python/simple"
 priority = "explicit"
+
+
+[[tool.poetry.source]]
+name = "public-python"
+url = "https://us-central1-python.pkg.dev/cds-artifacts/public-python/simple/"
+priority = "supplemental"
 
 [build-system]
 requires = ["poetry-core"]

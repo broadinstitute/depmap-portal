@@ -10,11 +10,15 @@ interface Props {
 }
 
 function AggregationSelect({ show, value, onChange }: Props) {
+  if (!show) {
+    return null;
+  }
+
   return (
     <div className={styles.aggregation}>
       <PlotConfigSelect
+        show
         enable
-        show={show}
         inlineLabel
         label="Method"
         placeholder="Choose a method…"

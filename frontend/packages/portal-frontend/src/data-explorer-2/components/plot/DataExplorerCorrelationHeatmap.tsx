@@ -112,7 +112,7 @@ function DataExplorerCorrelationHeatmap({
     null
   );
   const { plotStyles } = useDataExplorerSettings();
-  const { palette } = plotStyles;
+  const { palette, xAxisFontSize } = plotStyles;
 
   const memoizedData = useMemo(
     () =>
@@ -215,6 +215,7 @@ function DataExplorerCorrelationHeatmap({
               onSelectLabels={handleSelectLabels}
               selectedLabels={selectedLabels || undefined}
               palette={palette}
+              xAxisFontSize={xAxisFontSize}
               distinguish1Label={plotConfig.filters?.distinguish1?.name}
               distinguish2Label={plotConfig.filters?.distinguish2?.name}
             />

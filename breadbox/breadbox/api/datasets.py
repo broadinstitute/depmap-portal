@@ -54,6 +54,7 @@ from ..schemas.dataset import (
     DimensionDataResponse,
     SliceQueryIdentifierType,
 )
+from breadbox.service import metadata as metadata_service
 from .dependencies import get_dataset as get_dataset_dep
 from .dependencies import get_db_with_user, get_user
 
@@ -496,8 +497,8 @@ def get_dimension_data(
 
     # Load the labels separately, ensuring they're in the same order as the other values
     slice_ids: list = slice_values_by_id.index.tolist()
-    labels_by_id = slice_crud.get_labels_for_slice_type(db, parsed_slice_query)
-    slice_labels = [labels_by_id[id] for id in slice_ids] if labels_by_id else slice_ids
+    labels_by_id = metadata_service.get_labels_for_slice_type(db, parsed_slice_query)
+    slice_labels = [labels_by_id[id] for id in slice_ids]
 
     return {
         "ids": slice_ids,
@@ -543,6 +544,18 @@ def update_dataset(
             )
 
     with transaction(db):
+        # before calling the method to update, check to make sure the given_id either does not already exist
+        # or it is already assigned to this dataset (in which case, updating it will have no effect)
+        if dataset_update_params.given_id is not None:
+            existing_dataset = dataset_crud.get_dataset(
+                db, db.user, dataset_update_params.given_id
+            )
+            if existing_dataset is not None and existing_dataset.id != dataset.id:
+                raise HTTPException(
+                    409,
+                    f"A dataset with the new given id {dataset_update_params.given_id} already exists.",
+                )
+
         updated_dataset = dataset_crud.update_dataset(
             db, user, dataset, dataset_update_params
         )

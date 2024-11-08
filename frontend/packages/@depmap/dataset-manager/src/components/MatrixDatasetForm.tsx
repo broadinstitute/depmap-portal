@@ -13,10 +13,10 @@ import { CustomDatasetMetadata } from "./DatasetMetadataForm";
 import { FormGroup, ControlLabel } from "react-bootstrap";
 import {
   DataType,
-  FeatureType,
+  FeatureDimensionType,
   Group,
   InvalidPrioritiesByDataType,
-  SampleType,
+  SampleDimensionType,
 } from "@depmap/types";
 import { Option, TagInput } from "@depmap/common-components";
 import { ActionMeta, ValueType } from "react-select";
@@ -202,8 +202,8 @@ const uiSchema: UiSchema = {
 };
 
 interface MatrixDatasetFormProps {
-  featureTypes: FeatureType[];
-  sampleTypes: SampleType[];
+  featureTypes: FeatureDimensionType[];
+  sampleTypes: SampleDimensionType[];
   dataTypes: DataType[];
   invalidDataTypePriorities: InvalidPrioritiesByDataType;
   groups: Group[];

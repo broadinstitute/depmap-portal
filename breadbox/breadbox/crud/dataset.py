@@ -1,7 +1,7 @@
 import logging
 from collections import defaultdict
 from dataclasses import dataclass
-from typing import Dict, Optional, List, Type, Union, Tuple
+from typing import Any, Dict, Optional, List, Type, Union, Tuple
 from uuid import UUID, uuid4
 import warnings
 import json
@@ -201,6 +201,9 @@ def add_matrix_dataset(
     sample_given_id_and_index_df: pd.DataFrame,
     feature_type: Optional[DimensionType],
     sample_type: DimensionType,
+    short_name: Optional[str],
+    version: Optional[str],
+    description: Optional[str],
 ):
     group = _get_dataset_group(db, user, dataset_in.group_id, dataset_in.is_transient)
 
@@ -229,6 +232,9 @@ def add_matrix_dataset(
         allowed_values=allowed_values if allowed_values else None,
         dataset_metadata=dataset_in.dataset_metadata,
         md5_hash=dataset_in.dataset_md5,
+        short_name=short_name,
+        description=description,
+        version=version,
     )
     db.add(dataset)
     db.flush()
@@ -686,6 +692,9 @@ def add_tabular_dataset(
     data_df: pd.DataFrame,
     columns_metadata: Dict[str, ColumnMetadata],
     dimension_type: DimensionType,
+    short_name: Optional[str],
+    version: Optional[str],
+    description: Optional[str],
 ):
     # verify the id_column is present in the data frame before proceeding and is of type string
     if dimension_type.id_column not in data_df.columns:
@@ -706,6 +715,9 @@ def add_tabular_dataset(
         taiga_id=dataset_in.taiga_id,
         dataset_metadata=dataset_in.dataset_metadata,
         md5_hash=dataset_in.dataset_md5,
+        short_name=short_name,
+        version=version,
+        description=description,
     )
     db.add(dataset)
     db.flush()
@@ -968,7 +980,9 @@ def get_dataset_feature_dimensions(db: SessionWithUser, user: str, dataset_id: s
     return dimensions
 
 
-def get_dataset_features(db: SessionWithUser, dataset: Dataset, user: str):
+def get_dataset_features(
+    db: SessionWithUser, dataset: MatrixDataset, user: str
+) -> list[DatasetFeature]:
     assert_user_has_access_to_dataset(dataset, user)
 
     dataset_features = (
@@ -981,7 +995,9 @@ def get_dataset_features(db: SessionWithUser, dataset: Dataset, user: str):
     return dataset_features
 
 
-def get_dataset_samples(db: SessionWithUser, dataset: Dataset, user: str):
+def get_dataset_samples(
+    db: SessionWithUser, dataset: MatrixDataset, user: str
+) -> list[DatasetSample]:
     assert_user_has_access_to_dataset(dataset, user)
 
     dataset_samples = (
@@ -992,6 +1008,34 @@ def get_dataset_samples(db: SessionWithUser, dataset: Dataset, user: str):
     )
 
     return dataset_samples
+
+
+def get_tabular_dataset_index_given_ids(
+    db: SessionWithUser, dataset: TabularDataset
+) -> list[str]:
+    """
+    Get all row given IDs belonging to a tabular dataset.
+    This can be used for joining the metadata that's relevant for this particular dataset.
+    Warning: this may contain given IDs that do not exist in the metadata.
+    """
+    dimension_type = (
+        db.query(DimensionType).filter_by(name=dataset.index_type_name).one_or_none()
+    )
+    assert dimension_type is not None
+
+    id_col_name = dimension_type.id_column
+    cells_in_id_column = (
+        db.query(TabularCell)
+        .join(TabularColumn)
+        .filter(
+            and_(
+                TabularColumn.dataset_id == dataset.id,
+                TabularColumn.given_id == id_col_name,
+            )
+        )
+        .all()
+    )
+    return [cell.dimension_given_id for cell in cells_in_id_column]
 
 
 def get_dataset_feature_labels_by_id(
@@ -1027,9 +1071,6 @@ def get_dataset_sample_labels_by_id(
     else:
         samples = get_dataset_samples(db=db, dataset=dataset, user=user)
         return {sample.given_id: sample.given_id for sample in samples}
-
-
-from typing import Any
 
 
 # TODO: This can probably be merged.

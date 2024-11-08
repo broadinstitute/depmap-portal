@@ -1,9 +1,10 @@
 import hashlib
 import io
+
 import typing
 from dataclasses import dataclass
 from time import sleep, time
-from typing import Any, Dict, List, Literal, Optional, Union
+from typing import Any, Dict, List, Literal, Optional, Union, IO
 from uuid import UUID
 
 import pandas as pd
@@ -36,8 +37,7 @@ from breadbox_client.api.types import get_dimension_type as get_dimension_type_c
 from breadbox_client.api.types import get_dimension_types as get_dimension_types_client
 from breadbox_client.api.types import get_feature_types as get_feature_types_client
 from breadbox_client.api.types import get_sample_types as get_sample_types_client
-from breadbox_client.api.types import remove_feature_type as remove_feature_type_client
-from breadbox_client.api.types import remove_sample_type as remove_sample_type_client
+from breadbox_client.api.types import remove_dimension_type as remove_dimension_type_client
 from breadbox_client.api.types import update_dimension_type as update_dimension_type_client
 from breadbox_client.api.types import update_feature_type_metadata as update_feature_type_metadata_client
 from breadbox_client.api.types import update_sample_type_metadata as update_sample_type_metadata_client
@@ -82,10 +82,13 @@ from breadbox_client.models import (
     UploadFileResponse,
     ValueType,
     MatrixDatasetUpdateParamsFormat,
-    TabularDatasetUpdateParamsFormat
+    TabularDatasetUpdateParamsFormat,
+    MatrixDatasetParamsDataFileFormat,
 )
+
 from breadbox_client.types import UNSET, Unset, File, Response
 from breadbox_facade.exceptions import BreadboxException
+import tempfile
 
 
 class TimeoutError(Exception):
@@ -211,7 +214,7 @@ class BBClient:
         )
         return self._parse_client_response(breadbox_response)
 
-    def upload_file(self, file_handle: io.BytesIO, mime_type="text/csv", chunk_size=5 * 1024 * 1024) -> UploadedFile:
+    def upload_file(self, file_handle: IO[bytes], chunk_size=5 * 1024 * 1024) -> UploadedFile:
         "Uploads a file in pieces and returns a list of file IDs and MD5 hash for subsequent calls"
 
         md5_hash = hashlib.md5()
@@ -229,8 +232,7 @@ class BBClient:
                 body=BodyUploadFile(
                     file=File(
                         payload=io.BytesIO(chunk),
-                        file_name="unnamed",
-                        mime_type=mime_type,
+                        file_name="unnamed"
                     )
                 ),
             )
@@ -303,11 +305,26 @@ class BBClient:
         taiga_id: Optional[str] = None,
         given_id: Optional[str] = None,
         dataset_metadata: Optional[dict] = None,
+        upload_parquet=False,
         timeout=None,
+        log_status=lambda msg: None
     ) -> AddDatasetResponse:
+        log_status(f"add_matrix_dataset start")
         metadata = MatrixDatasetParamsDatasetMetadataType0.from_dict(dataset_metadata) if dataset_metadata else None
 
-        uploaded_file = self.upload_file(file_handle=io.BytesIO(data_df.to_csv(index=False).encode("utf8")))
+        if upload_parquet:
+            with tempfile.NamedTemporaryFile() as tmp:
+                log_status(f"writing parquet")
+                data_df.to_parquet(tmp.name, index=False)
+                log_status(f"uploading parquet")
+                uploaded_file = self.upload_file(tmp)
+            data_file_format=MatrixDatasetParamsDataFileFormat.PARQUET
+        else:
+            log_status("Writing CSV")
+            buffer = io.BytesIO(data_df.to_csv(index=False).encode("utf8"))
+            log_status(f"Uploading CSV")
+            uploaded_file = self.upload_file(file_handle=buffer)
+            data_file_format=MatrixDatasetParamsDataFileFormat.CSV
 
         params = MatrixDatasetParams(
             name=name,
@@ -325,13 +342,17 @@ class BBClient:
             priority=priority if priority else UNSET,
             taiga_id=taiga_id if taiga_id else UNSET,
             given_id=given_id if given_id else UNSET,
+            data_file_format=data_file_format
         )
+        log_status(f"calling add_dataset_uploads_client.sync_detailed")
         breadbox_response = add_dataset_uploads_client.sync_detailed(
             client=self.client,
             body=params,
         )
         breadbox_response_ = typing.cast(AddDatasetResponse, self._parse_client_response(breadbox_response))
+        log_status(f"awaiting task result")
         result = self.await_task_result(breadbox_response_.id, timeout=timeout)
+        log_status(f"task completed")
         return result
 
     def update_dataset(
@@ -340,6 +361,7 @@ class BBClient:
         name: Union[str, Unset] = UNSET,
         dataset_metadata: Optional[dict] = None,
         group_id: Union[str, Unset] = UNSET,
+        given_id: Union[str, Unset] = UNSET,
     ) -> Union[MatrixDatasetResponse, TabularDatasetResponse]:
         """Update the values specified for the given dataset"""
         from breadbox_client.models import MatrixDatasetUpdateParams, TabularDatasetUpdateParams
@@ -356,6 +378,7 @@ class BBClient:
             name=name,
             dataset_metadata=metadata,
             group_id=group_id,
+            given_id=given_id
         )
         breadbox_response = update_dataset_client.sync_detailed(
             dataset_id=dataset_id,
@@ -374,11 +397,16 @@ class BBClient:
         breadbox_response = get_sample_types_client.sync_detailed(client=self.client)
         return self._parse_client_response(breadbox_response)
 
-    def add_dimension_type(self, name: str, display_name: str, id_column: str, axis: Union[AddDimensionTypeAxis, str]):
+    def add_dimension_type(self, name: str, id_column: str, axis: Union[AddDimensionTypeAxis, str], display_name: Optional[str] = None):
         if isinstance(axis, str):
             axis = AddDimensionTypeAxis(axis)
 
-        params = AddDimensionType(axis=axis, id_column=id_column, name=name, display_name=display_name)
+        params = AddDimensionType(
+            axis=axis, 
+            id_column=id_column, 
+            name=name, 
+            display_name=display_name if display_name is not None else UNSET
+        )
 
         breadbox_response = add_dimension_type_client.sync_detailed(client=self.client, body=params)
         return self._parse_client_response(breadbox_response)
@@ -397,6 +425,11 @@ class BBClient:
     def get_dimension_type(self, name: str):
         breadbox_response = get_dimension_type_client.sync_detailed(name=name, client=self.client)
         return self._parse_client_response(breadbox_response)
+    
+    def delete_dimension_type(self, name: str):
+        breadbox_response = remove_dimension_type_client.sync_detailed(name=name, client=self.client)
+        return self._parse_client_response(breadbox_response)
+    
 
     # DATA TYPES
 

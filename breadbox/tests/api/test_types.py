@@ -124,6 +124,10 @@ def test_all_dimension_type_methods(client: TestClient, minimal_db, settings):
     # make sure we can delete it
     response = client.delete("/types/dimensions/sample_id_name", headers=admin_headers,)
     assert_status_ok(response)
+    metadata_dataset = (
+        minimal_db.query(Dataset).filter_by(id=new_metadata.id).one_or_none()
+    )
+    assert metadata_dataset is None
 
     # and now reports as missing
     response = client.get("/types/dimensions/sample_id_name")

@@ -25,15 +25,11 @@ import {
   DimensionType,
   DimensionTypeAddArgs,
   DimensionTypeUpdateArgs,
-  FeatureType,
-  FeatureTypeUpdateArgs,
   Group,
   GroupArgs,
   GroupEntry,
   GroupEntryArgs,
   InvalidPrioritiesByDataType,
-  SampleType,
-  SampleTypeUpdateArgs,
   SearchDimenionsRequest,
   SearchDimenionsResponse,
   UploadFileResponse,
@@ -361,69 +357,6 @@ export class BreadboxApi {
     );
   }
 
-  // NOTE: These endpoints for feature type and sample type should not be used because they are deprecated
-  getSampleTypes(): Promise<SampleType[]> {
-    return this._fetch<SampleType[]>("/types/sample");
-  }
-
-  postSampleType(sampleTypeArgs: any): Promise<SampleType> {
-    const args = { ...sampleTypeArgs };
-
-    if ("annotation_type_mapping" in args) {
-      args.annotation_type_mapping = JSON.stringify(
-        args.annotation_type_mapping
-      );
-    }
-    return this._postMultipart<SampleType>("/types/sample", args);
-  }
-
-  updateSampleType(sampleTypeArgs: SampleTypeUpdateArgs): Promise<SampleType> {
-    const sampleTypeName = sampleTypeArgs.name;
-    const url = `/types/sample/${sampleTypeName}/metadata`;
-
-    const args = { ...sampleTypeArgs };
-
-    return this._patchMultipart<SampleType>(url, args);
-  }
-
-  deleteSampleType(name: string) {
-    return this._delete("/types/sample", name);
-  }
-
-  getFeatureTypes(): Promise<FeatureType[]> {
-    return this._fetch<FeatureType[]>("/types/feature");
-  }
-
-  postFeatureType(featureTypeArgs: any): Promise<FeatureType> {
-    console.log("In bbapi.ts: ", featureTypeArgs);
-    const args = { ...featureTypeArgs };
-
-    if ("annotation_type_mapping" in args) {
-      args.annotation_type_mapping = JSON.stringify(
-        args.annotation_type_mapping
-      );
-    }
-    return this._postMultipart<FeatureType>("/types/feature", args);
-  }
-
-  updateFeatureType(
-    featureTypeArgs: FeatureTypeUpdateArgs
-  ): Promise<FeatureType> {
-    const featureTypeName = featureTypeArgs.name;
-
-    const url = `/types/feature/${featureTypeName}/metadata`;
-    const args = { ...featureTypeArgs };
-
-    return this._patchMultipart<FeatureType>(url, args);
-  }
-
-  deleteFeatureType(name: string) {
-    return this._delete("/types/feature", name);
-  }
-
-  // NOTE: THe above endpoints for feature type and sample type are deprecated and should not be used.
-  // Endpoints with URI prefix /types/dimensions should be used instead
-
   getDimensionTypes(): Promise<DimensionType[]> {
     return this._fetch<DimensionType[]>("/types/dimensions");
   }
@@ -743,4 +676,49 @@ export class BreadboxApi {
       }
     );
   };
+
+  /* eslint-disable @typescript-eslint/no-unused-vars */
+  // NOTE: These endpoints for feature type and sample type should not be used because they are deprecated
+  getSampleTypes() {
+    return Promise.reject(Error("Deprecated function! Use getDimensionTypes."));
+  }
+
+  postSampleType(sampleTypeArgs: any) {
+    return Promise.reject(Error("Deprecated function! Use postDimensionType."));
+  }
+
+  updateSampleType(sampleTypeArgs: any) {
+    return Promise.reject(
+      Error("Deprecated function! Use updateDimensionType.")
+    );
+  }
+
+  deleteSampleType(name: string) {
+    return Promise.reject(
+      Error("Deprecated function! Use deleteDimensionType.")
+    );
+  }
+
+  getFeatureTypes() {
+    return Promise.reject(Error("Deprecated function! Use getDimensionTypes."));
+  }
+
+  postFeatureType(featureTypeArgs: any) {
+    return Promise.reject(Error("Deprecated function! Use postDimensionType."));
+  }
+
+  updateFeatureType(featureTypeArgs: any) {
+    return Promise.reject(
+      Error("Deprecated function! Use updateDimensionType.")
+    );
+  }
+
+  deleteFeatureType(name: string) {
+    return Promise.reject(
+      Error("Deprecated function! Use deleteDimensionType.")
+    );
+  }
+
+  // NOTE: THe above endpoints for feature type and sample type are deprecated and should not be used.
+  // Endpoints with URI prefix /types/dimensions should be used instead
 }

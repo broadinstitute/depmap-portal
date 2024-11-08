@@ -489,6 +489,9 @@ def create_cell_line_group(
                 sample_given_id_and_index_df,
                 generic_feature_type,
                 depmap_model_sample_type,
+                short_name=None,
+                version=None,
+                description=None,
             )
 
         # Return the feature ID associated with the new dataset feature

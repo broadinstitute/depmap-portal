@@ -29,12 +29,19 @@
   a {
     overflow-wrap: break-word;
   }
-  h1 {
+  h1,
+  h2,
+  h3 {
     margin-bottom: 20px;
   }
   p {
     font-size: 16px;
     line-height: 25px;
+  }
+
+  ul {
+    font-size: 16px;
+    line-height: 35px;
   }
 
   .postDate {
@@ -62,8 +69,8 @@
 
 .navPostItem {
   border: none;
-  border-bottom: 1px solid lightgray;
-  padding-left: 40px;
+  border-bottom: 1px solid lightgray !important;
+  padding-left: 55px;
   padding-right: 20px;
   font-weight: 500;
   font-size: 16px;
