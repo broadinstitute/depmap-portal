@@ -15,6 +15,8 @@ export type {
 
 export type {
   DimensionType,
+  SampleDimensionType,
+  FeatureDimensionType,
   DimensionTypeAddArgs,
   DimensionTypeUpdateArgs,
 } from "./src/DimensionType";

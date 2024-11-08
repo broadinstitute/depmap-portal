@@ -51,7 +51,7 @@ export interface MatrixDataset {
   is_transient: boolean;
   value_type: string | null;
   allowed_values: string[] | null;
-  dataset_metadata?: { [key: string]: string } | null;
+  dataset_metadata: { [key: string]: string } | null;
   given_id: string | null;
 }
 
@@ -69,7 +69,7 @@ export interface TabularDataset {
   is_transient: boolean;
   value_type: string | null;
   columns_metadata: { [key: string]: ColumnMetadata };
-  dataset_metadata?: { [key: string]: string } | null;
+  dataset_metadata: { [key: string]: string } | null;
   given_id: string | null;
 }
 

@@ -40,14 +40,10 @@ import {
   Dataset as BreadboxDataset,
   DatasetParams,
   DatasetUpdateArgs,
-  FeatureType,
-  FeatureTypeUpdateArgs,
   Group,
   GroupArgs,
   GroupEntry,
   GroupEntryArgs,
-  SampleType,
-  SampleTypeUpdateArgs,
   InvalidPrioritiesByDataType,
   SearchDimenionsRequest,
   SearchDimenionsResponse,
@@ -1015,17 +1011,16 @@ export class DepmapApi {
     return Promise.reject(Error("Wrong api used. Check ApiContext"));
   };
 
-  getSampleTypes = (): Promise<SampleType[]> => {
+  // NOTE: These endpoints for feature type and sample type should not be used because they are deprecated
+  getSampleTypes = () => {
     return Promise.reject(Error("Wrong api used. Check ApiContext"));
   };
 
-  postSampleType = (sampleTypeArgs: any): Promise<SampleType> => {
+  postSampleType = (sampleTypeArgs: any) => {
     return Promise.reject(Error("Wrong api used. Check ApiContext"));
   };
 
-  updateSampleType = (
-    sampleTypeArgs: SampleTypeUpdateArgs
-  ): Promise<SampleType> => {
+  updateSampleType = (sampleTypeArgs: any) => {
     return Promise.reject(Error("Wrong api used. Check ApiContext"));
   };
 
@@ -1033,9 +1028,23 @@ export class DepmapApi {
     return Promise.reject(Error("Wrong api used. Check ApiContext"));
   };
 
-  getFeatureTypes = (): Promise<FeatureType[]> => {
+  getFeatureTypes = () => {
     return Promise.reject(Error("Wrong api used. Check ApiContext"));
   };
+
+  postFeatureType = (featureTypeArgs: any) => {
+    return Promise.reject(Error("Wrong api used. Check ApiContext"));
+  };
+
+  updateFeatureType = (featureTypeArgs: any) => {
+    return Promise.reject(Error("Wrong api used. Check ApiContext"));
+  };
+
+  deleteFeatureType = (name: string) => {
+    return Promise.reject(Error("Wrong api used. Check ApiContext"));
+  };
+  // NOTE: THe above endpoints for feature type and sample type are deprecated and should not be used.
+  // Endpoints with URI prefix /types/dimensions should be used instead
 
   getDimensionTypes = (): Promise<DimensionType[]> => {
     return Promise.reject(Error("Wrong api used. Check ApiContext"));
@@ -1077,20 +1086,6 @@ export class DepmapApi {
   }
 
   getDataTypesAndPriorities = (): Promise<InvalidPrioritiesByDataType> => {
-    return Promise.reject(Error("Wrong api used. Check ApiContext"));
-  };
-
-  postFeatureType = (featureTypeArgs: any): Promise<FeatureType> => {
-    return Promise.reject(Error("Wrong api used. Check ApiContext"));
-  };
-
-  updateFeatureType = (
-    featureTypeArgs: FeatureTypeUpdateArgs
-  ): Promise<FeatureType> => {
-    return Promise.reject(Error("Wrong api used. Check ApiContext"));
-  };
-
-  deleteFeatureType = (name: string) => {
     return Promise.reject(Error("Wrong api used. Check ApiContext"));
   };
 

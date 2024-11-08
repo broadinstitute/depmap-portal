@@ -4,4 +4,4 @@ hgnc_gene_table_taiga_id = (
 )
 oncokb_annotated_taiga_id = "oncokb-annotated-mutations-7e2e.17/oncokb_annotated"  # This is needed for driver events data
 
-portal_compounds_taiga_id = "compound-metadata-de37.30/PortalCompounds"
+portal_compounds_taiga_id = "compound-metadata-de37.32/PortalCompounds"

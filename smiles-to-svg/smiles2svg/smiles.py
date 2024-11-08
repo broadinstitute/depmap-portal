@@ -144,7 +144,7 @@ def main(taiga_id):
     bad_smiles = (
         set()
     )  # This is helpful to see what smiles are bad. However, this can be commented out.
-    new_upload_count = 0
+    new_upload_count = 0  # Keeps a count of how many new smiles were uploaded to the bucket in this run
 
     for smiles in tqdm(smiles_list):
         if smiles is None:
