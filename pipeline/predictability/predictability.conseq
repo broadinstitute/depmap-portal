@@ -360,7 +360,6 @@ rule assemble_feature_matrix:
         hotspot_mutations={'type': 'pred-biomarker-matrix-csv', 'category': 'mutations-hotspot'},
         fusions={'type': 'pred-biomarker-matrix-csv', 'category': 'fusions'},
         lineage={'type': 'pred-biomarker-matrix-csv', 'category': 'context'},
-        rppa={'type':'pred-biomarker-matrix-csv', 'category': 'rppa'},
         metabolomics={'type':'pred-biomarker-matrix-csv', 'category': 'metabolomics'},
         match_related={'type': 'match-related-matrix-csv'},
         dep_ftr={'type': 'pred-dep-matrix-ftr', "label": label, "confounders_label" : confounders_label},
