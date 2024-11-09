@@ -390,7 +390,6 @@ rule assemble_feature_matrix:
             Fusion="{{ inputs.fusions.filename }}",
             Lin="{{ inputs.lineage.filename }}",
             MatchRelated="{{ inputs.match_related.filename }}",
-            RPPA="{{ inputs.rppa.filename }}",
             metabolomics="{{ inputs.metabolomics.filename }}"
         )
 

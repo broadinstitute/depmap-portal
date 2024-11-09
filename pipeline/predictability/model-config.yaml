@@ -24,7 +24,6 @@ Extended_omics:
     - MutHot
     - Fusion
     - Lin
-    - RPPA
     - metabolomics
     - Confounders
   Required:
@@ -35,7 +34,6 @@ Extended_omics:
     - MutHot
     - Fusion
     - Lin
-    - RPPA
     - metabolomics
     - Confounders
   Relation: All
