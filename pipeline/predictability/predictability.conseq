@@ -482,21 +482,13 @@ rule fit_predictive_model:
         partition_inputs_script=fileref('scripts/partition_ensemble_inputs.py'),
         validate_jobs_script=fileref('scripts/validate_jobs_complete.py'),
         gather_ensemble_script=fileref('scripts/gather_ensemble_tasks.py'),
-        sparkles_config=fileref('../sparkles-config'),
-        construct_cache_key_script=fileref('scripts/construct_cache_key_script.py')
+        sparkles_config=fileref('../sparkles-config')
     outputs: {
         'type': 'pred-models-csv',
         'filename': {'$filename': 'ensemble.csv'},
         'dataset': '{{ inputs.dep.label }}',
     }
     watch-regex: "(?:! .*)|task.*|Submitting job: .*" # print out the task status summary from sparkles or lines that start with a "!"
-    # hack to work around case where there is no related.ft
-    construct-cache-key-run "python3" with """
-        import json
-        with open('inputs.json', 'wt') as fd:
-            json.dump({{ inputs }}, fd)
-    """
-    construct-cache-key-run "python3 {{inputs.construct_cache_key_script.filename}}"
     run """touch no-related-ftr"""
 
     run "python3" with """
