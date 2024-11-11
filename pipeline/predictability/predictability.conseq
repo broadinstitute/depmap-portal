@@ -355,7 +355,7 @@ rule prep_rppa_pred_biomarker_matrix_csv:
     outputs: {
         'type': 'pred-biomarker-matrix-csv',
         'category': 'rppa',
-        'filename': 'rppa.csv',
+        'filename': {'$filename': 'rppa.csv'},
         'source_dataset_id': '{{inputs.rppa.dataset_id}}',
         'testpred': ''
         }
