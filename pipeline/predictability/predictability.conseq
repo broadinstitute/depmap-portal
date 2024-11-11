@@ -349,6 +349,25 @@ add-if-missing {
     "category": "none"
 }
 
+rule prep_rppa_pred_biomarker_matrix_csv:
+    inputs:
+        rppa={'type': 'harmonized-rppa'}
+    outputs: {
+        'type': 'pred-biomarker-matrix-csv',
+        'category': 'rppa',
+        'filename': 'rppa.csv',
+        'source_dataset_id': '{{inputs.rppa.dataset_id}}',
+        'testpred': ''
+        }
+    run "python3" with """
+        from taigapy import create_taiga_client_v3
+
+        tc = create_taiga_client_v3()
+        df = tc.get("{{inputs.rppa.dataset_id}}")
+        df.to_csv("rppa.csv")
+    """
+
+
 # Construct the feature matrix for each target matrix (and its corresponding model config)
 rule assemble_feature_matrix:
     executor: dsub {"min_ram":"10", "docker_image": "us.gcr.io/broad-achilles/depmap-pipeline-tda:v10"}
@@ -362,6 +381,7 @@ rule assemble_feature_matrix:
         lineage={'type': 'pred-biomarker-matrix-csv', 'category': 'context'},
         metabolomics={'type':'pred-biomarker-matrix-csv', 'category': 'metabolomics'},
         match_related={'type': 'match-related-matrix-csv'},
+        rppa={'type':'pred-biomarker-matrix-csv', 'category': 'rppa'},
         dep_ftr={'type': 'pred-dep-matrix-ftr', "label": label, "confounders_label" : confounders_label},
         model_config={"type": "ensemble-model-config", "label": label},
         confounders={'type' ~ 'pred-biomarker-matrix-csv|confounders-stub', 'category': confounders_label},
@@ -390,6 +410,7 @@ rule assemble_feature_matrix:
             Fusion="{{ inputs.fusions.filename }}",
             Lin="{{ inputs.lineage.filename }}",
             MatchRelated="{{ inputs.match_related.filename }}",
+            RPPA="{{ inputs.rppa.filename }}",
             metabolomics="{{ inputs.metabolomics.filename }}"
         )
 
@@ -461,14 +482,21 @@ rule fit_predictive_model:
         partition_inputs_script=fileref('scripts/partition_ensemble_inputs.py'),
         validate_jobs_script=fileref('scripts/validate_jobs_complete.py'),
         gather_ensemble_script=fileref('scripts/gather_ensemble_tasks.py'),
-        sparkles_config=fileref('../sparkles-config')
+        sparkles_config=fileref('../sparkles-config'),
+        construct_cache_key_script=fileref('scripts/construct_cache_key_script.py')
     outputs: {
         'type': 'pred-models-csv',
         'filename': {'$filename': 'ensemble.csv'},
         'dataset': '{{ inputs.dep.label }}',
     }
     watch-regex: "(?:! .*)|task.*|Submitting job: .*" # print out the task status summary from sparkles or lines that start with a "!"
-    # hack to work around case where there is no related.ftr
+    # hack to work around case where there is no related.ft
+    construct-cache-key-run "python3" with """
+        import json
+        with open('inputs.json', 'wt') as fd:
+            json.dump({{ inputs }}, fd)
+    """
+    construct-cache-key-run "python3 {{inputs.construct_cache_key_script.filename}}"
     run """touch no-related-ftr"""
 
     run "python3" with """
