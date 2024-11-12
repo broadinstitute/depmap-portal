@@ -51,6 +51,7 @@ import { Button } from "react-bootstrap";
 import useContextExplorerFilters from "src/contextExplorer/hooks/useContextExplorerFilters";
 import EntityDetailBoxPlot from "./EntityDetailBoxPlot";
 import DoseCurvesTile from "./DoseCurvesTile";
+import ApplyFilters from "./ApplyFilters";
 
 interface ContextAnalysisProps {
   selectedContextNameInfo: ContextNameInfo;
@@ -925,7 +926,14 @@ function ContextAnalysis({
       <div className={styles.right}>
         {selectedPlotLabels && boxPlotData && (
           <>
-            <h2 style={{ marginBottom: "0" }}>
+            <h2
+              style={{
+                marginBottom: "0",
+                fontFamily: "Lato",
+                fontSize: "24px",
+                fontWeight: "bold",
+              }}
+            >
               {entityType === "gene" ? "Gene" : "Drug"} Detail
               {selectedPlotLabels && <span> - {selectedPlotLabels}</span>}
             </h2>
@@ -965,7 +973,7 @@ function ContextAnalysis({
             </div>
           )}
         {selectedContextNameInfo.name !== "All" && !isLoading && data && (
-          <div className={styles.right}>
+          <div>
             <div className={styles.plotFrame}>
               {selectedPlotLabels && selectedPlotLabels.size > 0 ? (
                 <div className={styles.boxPlotHeader}>
@@ -993,24 +1001,18 @@ function ContextAnalysis({
                       boxPlotData={boxPlotData}
                       entityType={entityType}
                       mainPlot={entityDetailPlotElement}
-                      useScatterPlotFiltersOnBoxPlot={
-                        useScatterPlotFiltersOnBoxPlot
-                      }
-                      handleUseScatterPlotFiltersClicked={
-                        handleUseScatterPlotFiltersClicked
-                      }
-                      boxPlotFDRRange={boxPlotFDRRange}
-                      boxPlotEffectSizeRange={boxPlotEffectSizeRange}
-                      boxPlotFracDepInRange={boxPlotFracDepInRange}
                       showOtherContexts={showOtherContexts}
                       handleShowOtherContexts={handleShowOtherContexts}
-                      customInfoImg={customInfoImg}
                     />
                   )}
                 </div>
               ) : (
                 <div className={styles.boxPlotHeader}>
-                  <h2 style={{ marginBottom: "15px" }}>
+                  <h2
+                    style={{
+                      marginBottom: "15px",
+                    }}
+                  >
                     {entityType === "gene" ? "Gene" : "Drug"} Detail
                   </h2>
                   <h4
@@ -1027,6 +1029,19 @@ function ContextAnalysis({
                 </div>
               )}
             </div>
+            {entityDetailPlotElement && (
+              <ApplyFilters
+                entityType={entityType}
+                useScatterPlotFiltersOnBoxPlot={useScatterPlotFiltersOnBoxPlot}
+                handleUseScatterPlotFiltersClicked={
+                  handleUseScatterPlotFiltersClicked
+                }
+                boxPlotFDRRange={boxPlotFDRRange}
+                boxPlotEffectSizeRange={boxPlotEffectSizeRange}
+                boxPlotFracDepInRange={boxPlotFracDepInRange}
+                customInfoImg={customInfoImg}
+              />
+            )}
           </div>
         )}
       </div>

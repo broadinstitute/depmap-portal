@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { Checkbox } from "react-bootstrap";
-import InfoIcon from "src/common/components/InfoIcon";
 import {
   BoxPlotTypes,
   ContextNameInfo,
@@ -21,14 +20,8 @@ interface Props {
   entityType: string;
   handleSetPlotElement: (element: any) => void;
   mainPlot: ExtendedPlotType | null;
-  useScatterPlotFiltersOnBoxPlot: boolean;
-  handleUseScatterPlotFiltersClicked: () => void;
-  boxPlotFDRRange: number[] | null;
-  boxPlotEffectSizeRange: number[] | null;
-  boxPlotFracDepInRange: number[] | null;
   showOtherContexts: boolean;
   handleShowOtherContexts: () => void;
-  customInfoImg: React.JSX.Element;
 }
 
 const EntityBoxColorMap = new Map<
@@ -91,14 +84,8 @@ function EntityDetailBoxPlot({
   entityType,
   handleSetPlotElement,
   mainPlot,
-  useScatterPlotFiltersOnBoxPlot,
-  handleUseScatterPlotFiltersClicked,
-  boxPlotFDRRange,
-  boxPlotEffectSizeRange,
-  boxPlotFracDepInRange,
   showOtherContexts,
   handleShowOtherContexts,
-  customInfoImg,
 }: Props) {
   const [boxData, setBoxData] = useState<BoxPlotInfo[] | null>(null);
   const [otherBoxData, setOtherBoxData] = useState<BoxPlotInfo[] | null>(null);
@@ -204,77 +191,8 @@ function EntityDetailBoxPlot({
             {entityType === "gene" ? "dependency" : "sensitivity"} in other
             contexts
           </p>
-        )}
+        )}{" "}
       </Checkbox>
-      {mainPlot && (
-        <>
-          <Checkbox
-            checked={useScatterPlotFiltersOnBoxPlot}
-            style={{ marginBottom: "0" }}
-            onChange={handleUseScatterPlotFiltersClicked}
-          >
-            <span>
-              Apply Scatter Plot Filters
-              <InfoIcon
-                target={customInfoImg}
-                popoverContent={
-                  <p>
-                    To identify other contexts in which your{" "}
-                    {entityType === "gene" ? "gene" : "drug"} of interest is a
-                    selective{" "}
-                    {entityType === "gene" ? "dependency" : "sensitivity"}, use
-                    the scatterplot filters as the criteria. When this is
-                    unselected, the default filters are used to identify other
-                    contexts.
-                  </p>
-                }
-                popoverId={`apply-filters-popover`}
-                trigger={["hover", "focus"]}
-              />
-            </span>
-          </Checkbox>
-          <div>
-            <p
-              style={{
-                color: "gray",
-                fontSize: "12px",
-                marginBottom: "0px",
-              }}
-            >
-              Using{" "}
-              {useScatterPlotFiltersOnBoxPlot ? "Scatter Plot" : "Default"}{" "}
-              Filters:
-            </p>
-            <p
-              style={{
-                color: "gray",
-                fontSize: "12px",
-                marginBottom: "0px",
-              }}
-            >
-              T-test q-value between {boxPlotFDRRange && boxPlotFDRRange[0]} and{" "}
-              {boxPlotFDRRange && boxPlotFDRRange[1]}
-            </p>
-            <p
-              style={{
-                color: "gray",
-                fontSize: "12px",
-                marginBottom: "0px",
-              }}
-            >
-              Abs(effect size) between{" "}
-              {boxPlotEffectSizeRange && boxPlotEffectSizeRange[0]} and{" "}
-              {boxPlotEffectSizeRange && boxPlotEffectSizeRange[1]}
-            </p>
-            <p style={{ color: "gray", fontSize: "12px" }}>
-              % of in-context lines{" "}
-              {entityType === "gene" ? "dependent" : "sensitive"} between{" "}
-              {boxPlotFracDepInRange && boxPlotFracDepInRange[0]} and{" "}
-              {boxPlotFracDepInRange && boxPlotFracDepInRange[1]}
-            </p>
-          </div>
-        </>
-      )}
       {otherBoxData && showOtherContexts && mainPlot && (
         <BoxPlot
           plotName="other"
