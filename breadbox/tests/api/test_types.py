@@ -327,6 +327,81 @@ def test_add_sample_types(client: TestClient, settings, minimal_db):
     assert_status_ok(response)
 
 
+def test_get_dimension_type_dimension_identifiers(
+    client: TestClient, minimal_db, settings
+):
+    db = minimal_db
+    admin_headers = {"X-Forwarded-Email": settings.admin_users[0]}
+
+    dim_type_fields = {
+        "name": "sample_id_name",
+        "display_name": "Sample Name",
+        "axis": "sample",
+        "id_column": "sample_id",
+    }
+
+    # Create dimension type
+    dim_type_res = client.post(
+        "/types/dimensions", json=dim_type_fields, headers=admin_headers,
+    )
+    assert_status_ok(dim_type_res)
+    expected_dim_type_res = dim_type_fields.copy()
+    expected_dim_type_res["properties_to_index"] = []
+    expected_dim_type_res["metadata_dataset_id"] = None
+    assert dim_type_res.json() == expected_dim_type_res
+
+    # Confirm dimension type has no dimension identifiers
+    dim_type_ids_res = client.get(
+        f"types/dimensions/{dim_type_fields['name']}/identifiers",
+        headers=admin_headers,
+    )
+    assert_status_ok(dim_type_ids_res)
+    assert dim_type_ids_res.json() == []
+
+    # add a metadata table
+    dim_type_metadata = factories.tabular_dataset(
+        db,
+        settings,
+        columns_metadata={
+            "label": ColumnMetadata(units=None, col_type=AnnotationType.text),
+            "sample_id": ColumnMetadata(units=None, col_type=AnnotationType.text),
+        },
+        index_type_name=dim_type_fields["name"],
+        data_df=pd.DataFrame(
+            {"sample_id": ["sample-1", "sample-2"], "label": ["Sample 1", "Sample 2"]}
+        ),
+    )
+
+    dim_type_metadata_res = client.patch(
+        f"/types/dimensions/{dim_type_fields['name']}",
+        json=(
+            {
+                "metadata_dataset_id": dim_type_metadata.id,
+                "properties_to_index": ["label"],
+            }
+        ),
+        headers=admin_headers,
+    )
+    assert_status_ok(dim_type_metadata_res)
+    expected_dim_type_res["metadata_dataset_id"] = dim_type_metadata.id
+    expected_dim_type_res["properties_to_index"] = ["label"]
+    assert dim_type_metadata_res.json() == expected_dim_type_res
+
+    # Confirm dimension type has new dimension identifiers
+    dim_type_ids_res = client.get(
+        f"types/dimensions/{dim_type_fields['name']}/identifiers",
+        headers=admin_headers,
+    )
+    assert_status_ok(dim_type_ids_res)
+    assert dim_type_ids_res.json() == [
+        {"id": "sample-1", "label": "Sample 1"},
+        {"id": "sample-2", "label": "Sample 2"},
+    ]
+
+
+#### /types/sample and types/feature endpoints are deprecated!! ###
+
+
 def test_add_sample_type_with_taiga_id_no_dataset(client: TestClient, settings):
     # make sure we start with nothing
     admin_headers = {"X-Forwarded-Email": settings.admin_users[0]}
