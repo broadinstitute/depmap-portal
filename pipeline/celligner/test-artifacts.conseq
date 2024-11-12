@@ -22,7 +22,7 @@ add-if-missing {
 # biomarker-matrix
 add-if-missing {
   'type': 'raw-expr-matrix-profile',
-  'source_dataset_id' : "internal-24q2-3719.88/OmicsExpressionTranscriptsTPMLogp1Profile",
+  'source_dataset_id' : "internal-24q2-3719.88/OmicsExpressionAllGenesTPMLogp1Profile",
   'category' : 'expression',
 }
 

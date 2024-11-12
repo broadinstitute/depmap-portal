@@ -227,19 +227,15 @@ def process_depmap_ipts(expr_df, context_df, prof_map, model_condition):
     # hgnc_complete_set = hgnc_complete_set[hgnc_complete_set.locus_group == 'protein-coding gene']
     bg_genes = (
         pd.Series(expr_df.keys())
-        .apply(lambda s: re.search(r"^([\w.-]+) \(", s).group(1))
-        .rename("symbol")
+        .apply(lambda s: re.search(r"(ENSG[0-9]+)", s).group(1))
+        .rename("ensembl_gene_id")
     )
-    bg_genes = bg_genes.set_axis(expr_df.keys()).to_frame().reset_index()
-    bg_genes = bg_genes.merge(
-        hgnc_complete_set[["symbol", "ensembl_gene_id"]],
-        left_on="symbol",
-        right_on="symbol",
-    )[["index", "ensembl_gene_id"]].set_index("index")
+    bg_genes = bg_genes.set_axis(expr_df.keys()).to_frame()
     expr_df = expr_df.rename(columns=bg_genes.to_dict()["ensembl_gene_id"])
-    expr_df = expr_df[hgnc_complete_set[hgnc_complete_set.locus_group == 'protein-coding gene'].ensembl_gene_id]
+    protein_coding = pd.Index(hgnc_complete_set[hgnc_complete_set.locus_group == 'protein-coding gene'].ensembl_gene_id)
+    expr_df = expr_df[expr_df.columns.intersection(protein_coding)]
 
-    context_df = context_df.set_index("ModelID")
+    context_df = context_df
     context_w_oncocode = context_df.loc[~context_df.OncotreeCode.isna()]
     context_w_oncocode.loc[
         :, ["lineage", "subtype"]
@@ -252,9 +248,11 @@ def process_depmap_ipts(expr_df, context_df, prof_map, model_condition):
     context_nocode.loc[:, ["lineage", "subtype"]] = codes_for_codeless
     context_df = pd.concat([context_nocode, context_w_oncocode])
     context_df["type"] = "DepMap Model"
-    context_df = prof_map.merge(context_df, how="left", left_on="ModelID", right_index=True).set_index('ProfileID')
-    context_df = context_df.merge(model_condition, how="left", left_on="ModelCondition", right_on='ModelConditionID')
-
+    context_df = prof_map.merge(context_df, how="left", left_on="ModelID", right_on='ModelID',suffixes = (None,'_y'))
+    context_df = context_df.merge(model_condition, how="left",
+                                  left_on=["ModelCondition",'ModelID'], right_on=["ModelConditionID",'ModelID'],
+                                  suffixes = (None,'_y')).set_index('ProfileID')
+    # warnings.warn(context_df.head().to_string())
     adata = ad.AnnData(expr_df)
     adata.obs_names = expr_df.index
     adata.var_names = expr_df.columns
@@ -473,7 +471,10 @@ def run_celligner(bg, contrast, extra_data=None):
     out = pd.merge(out_umap, df_annots, left_index=True, right_index=True)
 
     pca = PCA(my_celligner.pca_ncomp)
-    pcs = pca.fit_transform(my_celligner.combined_output)
+    pcs = pd.DataFrame(data=pca.fit_transform(my_celligner.combined_output),
+                       index=my_celligner.combined_output.index,
+                       columns = ['pc_'+str(i) for i in range(my_celligner.pca_ncomp)]
+                       )
 
     return out, my_celligner.tumor_CL_dist, pcs, my_celligner.combined_output
 
@@ -554,4 +555,4 @@ if __name__ == "__main__":
     out.to_csv("celligner_output.csv")
     distances.to_csv("tumor_CL_dist.csv")
     pcs.to_csv('celligner_pcs.csv')
-    corrected_expression.to_csv('corrected_expression.csv')
+    corrected_expression.set_index('Unnamed: 0').to_csv('corrected_expression.csv')
