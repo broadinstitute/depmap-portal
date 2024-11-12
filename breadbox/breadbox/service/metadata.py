@@ -89,15 +89,16 @@ def get_dataset_feature_labels_by_id(
     Try loading feature labels from metadata.
     If there are no labels in the metadata or there is no metadata, then just return the feature names.
     """
-    metadata_labels_by_given_id = get_matrix_dataset_feature_metadata(
-        db=db, dataset=dataset, metadata_col_name="label"
-    )
+    if dataset.feature_type_name is not None:
+        metadata_labels_by_given_id = get_matrix_dataset_feature_metadata(
+            db=db, dataset=dataset, metadata_col_name="label"
+        )
+        if metadata_labels_by_given_id:
+            return metadata_labels_by_given_id
 
-    if metadata_labels_by_given_id:
-        return metadata_labels_by_given_id
-    else:
-        all_dataset_features = dataset_crud.get_dataset_features(db, dataset)
-        return {feature.given_id: feature.given_id for feature in all_dataset_features}
+    # If there are no labels or there is no feature type, return the given IDs
+    all_dataset_features = dataset_crud.get_dataset_features(db, dataset)
+    return {feature.given_id: feature.given_id for feature in all_dataset_features}
 
 
 def get_dataset_sample_labels_by_id(
