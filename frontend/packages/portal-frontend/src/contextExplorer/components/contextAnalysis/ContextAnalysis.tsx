@@ -846,7 +846,7 @@ function ContextAnalysis({
                     (!isLoading && !data)
                   }
                 >
-                  Open This Plot in Data Explorer 2
+                  Open This Plot in Data Explorer
                 </Button>
               </div>
             </div>
@@ -1032,18 +1032,43 @@ function ContextAnalysis({
                 </div>
               )}
             </div>
+
             {entityDetailPlotElement && (
-              <ApplyFilters
-                entityType={entityType}
-                useScatterPlotFiltersOnBoxPlot={useScatterPlotFiltersOnBoxPlot}
-                handleUseScatterPlotFiltersClicked={
-                  handleUseScatterPlotFiltersClicked
-                }
-                boxPlotFDRRange={boxPlotFDRRange}
-                boxPlotEffectSizeRange={boxPlotEffectSizeRange}
-                boxPlotFracDepInRange={boxPlotFracDepInRange}
-                customInfoImg={customInfoImg}
-              />
+              <>
+                <div className={styles.deButtonContainerCentered}>
+                  <Button
+                    className={styles.deButton}
+                    href={
+                      "/" /* getDataExplorerUrl(
+                      topContextNameInfo.name,
+                      selectedContextNameInfo.name,
+                      outgroup.value,
+                      datasetId
+                    ) */
+                    }
+                    target="_blank"
+                    disabled={
+                      selectedContextNameInfo.name === "All" ||
+                      (!isLoading && !data)
+                    }
+                  >
+                    Open as 1D Density in Data Explorer
+                  </Button>
+                </div>
+                <ApplyFilters
+                  entityType={entityType}
+                  useScatterPlotFiltersOnBoxPlot={
+                    useScatterPlotFiltersOnBoxPlot
+                  }
+                  handleUseScatterPlotFiltersClicked={
+                    handleUseScatterPlotFiltersClicked
+                  }
+                  boxPlotFDRRange={boxPlotFDRRange}
+                  boxPlotEffectSizeRange={boxPlotEffectSizeRange}
+                  boxPlotFracDepInRange={boxPlotFracDepInRange}
+                  customInfoImg={customInfoImg}
+                />
+              </>
             )}
           </div>
         )}

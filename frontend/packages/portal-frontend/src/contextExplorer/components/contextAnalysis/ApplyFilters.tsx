@@ -50,9 +50,10 @@ function ApplyFilters({
       <div>
         <p
           style={{
-            color: "gray",
+            color: "#333333",
             fontSize: "12px",
             marginBottom: "0px",
+            marginLeft: "20px",
           }}
         >
           Using {useScatterPlotFiltersOnBoxPlot ? "Scatter Plot" : "Default"}{" "}
@@ -60,9 +61,10 @@ function ApplyFilters({
         </p>
         <p
           style={{
-            color: "gray",
+            color: "#333333",
             fontSize: "12px",
             marginBottom: "0px",
+            marginLeft: "20px",
           }}
         >
           T-test q-value between {boxPlotFDRRange && boxPlotFDRRange[0]} and{" "}
@@ -70,9 +72,10 @@ function ApplyFilters({
         </p>
         <p
           style={{
-            color: "gray",
+            color: "#333333",
             fontSize: "12px",
             marginBottom: "0px",
+            marginLeft: "20px",
           }}
         >
           Abs(effect size) between{" "}
@@ -80,7 +83,7 @@ function ApplyFilters({
           {boxPlotEffectSizeRange && boxPlotEffectSizeRange[1]}
         </p>
         {entityType === "gene" && (
-          <p style={{ color: "gray", fontSize: "12px" }}>
+          <p style={{ color: "#333333", fontSize: "12px", marginLeft: "20px" }}>
             % of in-context lines dependent between{" "}
             {boxPlotFracDepInRange && boxPlotFracDepInRange[0]} and{" "}
             {boxPlotFracDepInRange && boxPlotFracDepInRange[1]}

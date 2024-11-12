@@ -329,6 +329,20 @@
   }
 }
 
+.deButtonContainerCentered {
+  display: flex;
+  flex-direction: column;
+  flex-wrap: wrap;
+  align-content: center;
+  margin-bottom: 20px;
+  margin-top: 20px;
+  @media (max-width: 1280px) {
+    margin-left: 0px;
+    width: 100%;
+    align-content: flex-start;
+  }
+}
+
 .deButton {
   color: #ffffff;
   background-color: #4479b2;
