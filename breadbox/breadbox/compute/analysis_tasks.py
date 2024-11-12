@@ -166,7 +166,7 @@ def get_features_info_and_dataset(
     dataset = dataset_crud.get_dataset(db, user, dataset_id)
     if dataset is None:
         raise ResourceNotFoundError(f"Dataset '{dataset_id}' not found.")
-    dataset_features = dataset_crud.get_dataset_features(db, dataset, user)
+    dataset_features = dataset_crud.get_dataset_features(db, dataset)
 
     result_features: List[Feature] = []
     dataset_feature_ids: List[str] = []

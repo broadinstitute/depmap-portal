@@ -982,9 +982,9 @@ def get_dataset_feature_dimensions(db: SessionWithUser, user: str, dataset_id: s
 
 
 def get_dataset_features(
-    db: SessionWithUser, dataset: MatrixDataset, user: str
+    db: SessionWithUser, dataset: MatrixDataset
 ) -> list[DatasetFeature]:
-    assert_user_has_access_to_dataset(dataset, user)
+    assert_user_has_access_to_dataset(dataset, db.user)
 
     dataset_features = (
         db.query(DatasetFeature)
@@ -997,9 +997,9 @@ def get_dataset_features(
 
 
 def get_dataset_samples(
-    db: SessionWithUser, dataset: MatrixDataset, user: str
+    db: SessionWithUser, dataset: MatrixDataset
 ) -> list[DatasetSample]:
-    assert_user_has_access_to_dataset(dataset, user)
+    assert_user_has_access_to_dataset(dataset, db.user)
 
     dataset_samples = (
         db.query(DatasetSample)
@@ -1037,102 +1037,6 @@ def get_tabular_dataset_index_given_ids(
         .all()
     )
     return [cell.dimension_given_id for cell in cells_in_id_column]
-
-
-# TODO: This can probably be merged.
-def get_dataset_feature_annotations(
-    db: SessionWithUser, user: str, dataset: Dataset, metadata_col_name: str,
-) -> dict[str, Any]:
-    """
-    For the given dataset, load metadata of the specified type, keyed by feature id.
-    For example, if a dataset's feature type is "gene", and the requested metadata field name is "label",
-    then this will return a dictionary with entrez ids as keys and gene labels as values.
-    If there is no metadata of this type, return an empty dictionary.
-    Note: this may need to be updated eventually to support non-string types in metadata
-    """
-    assert_user_has_access_to_dataset(dataset, user)
-
-    # Try to find the associated metadata dataset
-    feature_metadata_dataset_id = None
-    if dataset.format == "matrix_dataset":
-        if dataset.feature_type is not None:
-            feature_type = (
-                db.query(DimensionType)
-                .filter(DimensionType.name == dataset.feature_type_name)
-                .one()
-            )
-            feature_metadata_dataset_id = feature_type.dataset_id
-    else:
-        feature_metadata_dataset_id = dataset.id
-
-    data_dataset_feature = aliased(DatasetFeature)
-
-    # Load the values and entity ids
-    annotation_vals_by_id: Dict[str, Any] = {
-        row[0]: cast_tabular_cell_value_type(row[1], row[2])
-        for row in db.query(TabularCell)
-        .join(
-            data_dataset_feature,
-            data_dataset_feature.given_id == TabularCell.dimension_given_id,
-        )  # join the given dataset's dimensions
-        .filter_by(dataset_id=dataset.id)
-        .join(TabularCell.tabular_column)  # join the metadata dimension
-        .filter_by(dataset_id=feature_metadata_dataset_id, given_id=metadata_col_name,)
-        .with_entities(
-            TabularCell.dimension_given_id,
-            TabularCell.value,
-            TabularColumn.annotation_type,
-        )
-    }
-
-    return annotation_vals_by_id
-
-
-def get_dataset_sample_annotations(
-    db: SessionWithUser, user: str, dataset: Dataset, metadata_col_name: str
-) -> dict[str, Any]:
-    """
-    For the given dataset, load metadata of the specified type, keyed by sample id.
-    For example, if a dataset's sample type is "depmap_model", and the requested metadata field name is "label",
-    then this will return a dictionary with depmap ids as keys and cell line names as values.
-    If there is no metadata of this type, return an empty dictionary.
-    Note: this may need to be updated eventually to support non-string types in metadata
-    """
-    assert_user_has_access_to_dataset(dataset, user)
-
-    # Try to find the associated metadata dataset
-    sample_metadata_dataset_id = None
-    if dataset.format == "matrix_dataset":
-        if dataset.sample_type is not None:
-            sample_type = (
-                db.query(DimensionType)
-                .filter(DimensionType.name == dataset.sample_type_name)
-                .one()
-            )
-            sample_metadata_dataset_id = sample_type.dataset_id
-    else:
-        sample_metadata_dataset_id = dataset.id
-
-    data_dataset_sample = aliased(DatasetSample)
-
-    # Load the labels and entity ids
-    annotation_vals_by_id = {
-        row[0]: cast_tabular_cell_value_type(row[1], row[2])
-        for row in db.query(TabularCell)
-        .join(
-            data_dataset_sample,
-            data_dataset_sample.given_id == TabularCell.dimension_given_id,
-        )
-        .filter_by(dataset_id=dataset.id)
-        .join(TabularCell.tabular_column)
-        .filter_by(dataset_id=sample_metadata_dataset_id, given_id=metadata_col_name,)
-        .with_entities(
-            TabularCell.dimension_given_id,
-            TabularCell.value,
-            TabularColumn.annotation_type,
-        )
-    }
-    return annotation_vals_by_id
 
 
 def get_matching_feature_metadata_labels(
