@@ -53,6 +53,7 @@ from ..schemas.dataset import (
     DimensionDataResponse,
     SliceQueryIdentifierType,
 )
+from breadbox.service import dataset as dataset_service
 from breadbox.service import metadata as metadata_service
 from breadbox.service import slice as slice_service
 from .dependencies import get_dataset as get_dataset_dep
@@ -324,7 +325,7 @@ def get_matrix_dataset_data(
     ] = False,
 ):
     try:
-        df = dataset_crud.get_subsetted_matrix_dataset_df(
+        df = dataset_service.get_subsetted_matrix_dataset_df(
             db,
             user,
             dataset,
@@ -405,7 +406,7 @@ def get_dataset_data(
     except UserError as e:
         raise e
 
-    df = dataset_crud.get_subsetted_matrix_dataset_df(
+    df = dataset_service.get_subsetted_matrix_dataset_df(
         db, user, dataset, dim_info, settings.filestore_location
     )
 
