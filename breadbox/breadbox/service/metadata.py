@@ -6,6 +6,7 @@ from breadbox.crud import types as types_crud
 from breadbox.db.session import SessionWithUser
 from breadbox.schemas.custom_http_exception import ResourceNotFoundError
 from breadbox.models.dataset import MatrixDataset, TabularDataset
+from breadbox.service import metadata as metadata_service
 
 from depmap_compute.slice import SliceQuery
 
@@ -34,6 +35,43 @@ def get_tabular_dataset_metadata_annotations(
         if metadata_val is not None:
             filtered_metadata_vals[given_id] = metadata_val
     return filtered_metadata_vals
+
+
+def get_dataset_feature_labels_by_id(
+    db: SessionWithUser, user: str, dataset: MatrixDataset,
+) -> dict[str, str]:
+    """
+    Try loading feature labels from metadata.
+    If there are no labels in the metadata or there is no metadata, then just return the feature names.
+    """
+    metadata_labels_by_given_id = dataset_crud.get_dataset_feature_annotations(  # TODO: replace this
+        db=db, user=user, dataset=dataset, metadata_col_name="label"
+    )
+
+    if metadata_labels_by_given_id:
+        return metadata_labels_by_given_id
+    else:
+        all_dataset_features = dataset_crud.get_dataset_features(
+            db=db, dataset=dataset, user=user
+        )
+        return {feature.given_id: feature.given_id for feature in all_dataset_features}
+
+
+def get_dataset_sample_labels_by_id(
+    db: SessionWithUser, user: str, dataset: MatrixDataset,
+) -> dict[str, str]:
+    """
+    Try loading sample labels from metadata.
+    If there are no labels in the metadata or there is no metadata, then just return the sample names.
+    """
+    metadata_labels = dataset_crud.get_dataset_sample_annotations(  # TODO: replace this
+        db=db, user=user, dataset=dataset, metadata_col_name="label"
+    )
+    if metadata_labels:
+        return metadata_labels
+    else:
+        samples = dataset_crud.get_dataset_samples(db=db, dataset=dataset, user=user)
+        return {sample.given_id: sample.given_id for sample in samples}
 
 
 def get_tabular_dataset_labels_by_id(
@@ -69,9 +107,9 @@ def get_labels_for_slice_type(
         raise ResourceNotFoundError(f"Dataset '{slice_query.dataset_id}' not found.")
 
     if slice_query.identifier_type in {"feature_label", "feature_id"}:
-        return dataset_crud.get_dataset_sample_labels_by_id(db, db.user, dataset)
+        return metadata_service.get_dataset_sample_labels_by_id(db, db.user, dataset)
     elif slice_query.identifier_type in {"sample_label", "sample_id"}:
-        return dataset_crud.get_dataset_feature_labels_by_id(db, db.user, dataset)
+        return metadata_service.get_dataset_feature_labels_by_id(db, db.user, dataset)
     elif slice_query.identifier_type == "column":
         return get_tabular_dataset_labels_by_id(db, dataset)
     else:

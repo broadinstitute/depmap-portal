@@ -25,6 +25,7 @@ from breadbox.models.dataset import (
 from breadbox.schemas.custom_http_exception import ResourceNotFoundError, UserError
 
 from breadbox.schemas.dataset import MatrixDatasetIn
+from breadbox.service import metadata as metadata_service
 
 from ..crud.types import get_dimension_type
 from ..crud import dataset as dataset_crud
@@ -170,7 +171,7 @@ def get_features_info_and_dataset(
     result_features: List[Feature] = []
     dataset_feature_ids: List[str] = []
     datasets: List[Dataset] = []
-    feature_labels_by_id = dataset_crud.get_dataset_feature_labels_by_id(
+    feature_labels_by_id = metadata_service.get_dataset_feature_labels_by_id(
         db, user, dataset
     )
     feature_indices = []
