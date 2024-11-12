@@ -1,7 +1,6 @@
 import React from "react";
 import { Checkbox } from "react-bootstrap";
 import InfoIcon from "src/common/components/InfoIcon";
-import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
 
 interface Props {
   entityType: string;

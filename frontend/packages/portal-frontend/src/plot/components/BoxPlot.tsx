@@ -170,7 +170,7 @@ function BoxPlot({
 
       Plotly.relayout(ref.current, update);
     }
-  }, [xAxisRange, xAxisTitle, Plotly, bottomMargin, plotName]);
+  }, [xAxisRange, xAxisTitle, Plotly, bottomMargin, topMargin, plotName]);
 
   useEffect(() => {
     if (

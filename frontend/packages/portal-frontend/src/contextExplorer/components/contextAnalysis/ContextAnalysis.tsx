@@ -475,44 +475,47 @@ function ContextAnalysis({
     ];
 
     return scale;
-  }, [plotData]);
+  }, [plotData, entityType]);
 
-  const calcColorByBins = useCallback((values: number[]) => {
-    if (values.length === 0) {
-      return null;
-    }
-    const bins = [];
-    const { min, max } = calcMinMax(values);
+  const calcColorByBins = useCallback(
+    (values: number[]) => {
+      if (values.length === 0) {
+        return null;
+      }
+      const bins = [];
+      const { min, max } = calcMinMax(values);
 
-    const NUM_BINS = entityType === "gene" ? 6 : 5;
-    const binSize = (max - min) / NUM_BINS;
-    let binStart = min;
+      const NUM_BINS = entityType === "gene" ? 6 : 5;
+      const binSize = (max - min) / NUM_BINS;
+      let binStart = min;
 
-    for (let i = 0; i < NUM_BINS; i += 1) {
-      const binEnd = i === NUM_BINS - 1 ? max : binStart + binSize;
-      bins.push([binStart, binEnd]);
-      binStart = binEnd;
-    }
+      for (let i = 0; i < NUM_BINS; i += 1) {
+        const binEnd = i === NUM_BINS - 1 ? max : binStart + binSize;
+        bins.push([binStart, binEnd]);
+        binStart = binEnd;
+      }
 
-    if (entityType === "gene") {
+      if (entityType === "gene") {
+        return {
+          [LEGEND_RANGE_1]: bins[0],
+          [LEGEND_RANGE_2]: bins[1],
+          [LEGEND_RANGE_3]: bins[2],
+          [LEGEND_RANGE_4]: bins[3],
+          [LEGEND_RANGE_5]: bins[4],
+          [LEGEND_RANGE_6]: bins[5],
+        };
+      }
+
       return {
         [LEGEND_RANGE_1]: bins[0],
         [LEGEND_RANGE_2]: bins[1],
         [LEGEND_RANGE_3]: bins[2],
         [LEGEND_RANGE_4]: bins[3],
         [LEGEND_RANGE_5]: bins[4],
-        [LEGEND_RANGE_6]: bins[5],
       };
-    } else {
-      return {
-        [LEGEND_RANGE_1]: bins[0],
-        [LEGEND_RANGE_2]: bins[1],
-        [LEGEND_RANGE_3]: bins[2],
-        [LEGEND_RANGE_4]: bins[3],
-        [LEGEND_RANGE_5]: bins[4],
-      };
-    }
-  }, []);
+    },
+    [entityType]
+  );
 
   const continuousBins = useMemo(
     () => (plotData ? calcColorByBins(plotData.selectivityVal) : null),
@@ -553,7 +556,7 @@ function ContextAnalysis({
           };
 
     return colorM;
-  }, [plotData?.selectivityVal, continuousColorScale]);
+  }, [plotData?.selectivityVal, continuousColorScale, entityType]);
 
   const getEntityUrlRoot = useCallback(
     () =>

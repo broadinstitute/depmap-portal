@@ -133,6 +133,9 @@ function CurvesChart({
     title,
     yAxisTitle,
     xAxisTitle,
+    dottedLine,
+    minX,
+    maxX,
   ]);
 
   return <div ref={ref} />;

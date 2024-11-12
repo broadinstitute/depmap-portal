@@ -2,7 +2,6 @@ import React, { useEffect, useRef, useState } from "react";
 import { DoseCurveData } from "src/compound/components/DoseResponseCurve";
 import styles from "src/contextExplorer/styles/ContextExplorer.scss";
 import PlotSpinner from "src/plot/components/PlotSpinner";
-import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
 import DoseCurvesPlot from "./DoseCurvesPlot";
 
 interface DoseCurvesTileProps {
@@ -27,7 +26,6 @@ function DoseCurvesTile(props: DoseCurvesTileProps) {
   } = props;
 
   const [data, setData] = useState<DoseCurveData | null>();
-  const [plotElement, setPlotElement] = useState<ExtendedPlotType | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isError, setIsError] = useState<boolean>(false);
 
@@ -36,7 +34,6 @@ function DoseCurvesTile(props: DoseCurvesTileProps) {
   useEffect(() => {
     if (selectedDrugLabel) {
       setData(null);
-      setPlotElement(null);
       setIsLoading(true);
       const doseCurvesPromise = getContextExplorerDoseResponsePoints(
         datasetName,
@@ -60,7 +57,12 @@ function DoseCurvesTile(props: DoseCurvesTileProps) {
         })
         .finally(() => setIsLoading(false));
     }
-  }, [datasetName, selectedContextName, selectedDrugLabel]);
+  }, [
+    datasetName,
+    selectedContextName,
+    selectedDrugLabel,
+    getContextExplorerDoseResponsePoints,
+  ]);
 
   return (
     <div>

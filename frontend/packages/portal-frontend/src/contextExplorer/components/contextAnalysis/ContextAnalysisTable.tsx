@@ -46,25 +46,27 @@ function ContextAnalysisTable(props: ContextAnalysisTableProps) {
     if (data) {
       for (let index = 0; index < data?.entity.length; index++) {
         if (pointVisibility[index]) {
-          entityType === "gene"
-            ? iData.push({
-                entity: data.entity[index],
-                tTestQVal: data.t_qval[index],
-                inContextMean: data.mean_in[index],
-                outGroupMean: data.mean_out[index],
-                effectSize: data.effect_size[index],
-                fractionInContextLinesDependent: data.frac_dep_in[index],
-                fractionOutGroupLinesDependent: data.frac_dep_out[index],
-                selectivityVal: data.selectivity_val[index],
-              })
-            : iData.push({
-                entity: data.entity[index],
-                tTestQVal: data.t_qval[index],
-                inContextMean: data.mean_in[index],
-                outGroupMean: data.mean_out[index],
-                effectSize: data.effect_size[index],
-                selectivityVal: data.selectivity_val[index],
-              });
+          if (entityType === "gene") {
+            iData.push({
+              entity: data.entity[index],
+              tTestQVal: data.t_qval[index],
+              inContextMean: data.mean_in[index],
+              outGroupMean: data.mean_out[index],
+              effectSize: data.effect_size[index],
+              fractionInContextLinesDependent: data.frac_dep_in[index],
+              fractionOutGroupLinesDependent: data.frac_dep_out[index],
+              selectivityVal: data.selectivity_val[index],
+            });
+          } else {
+            iData.push({
+              entity: data.entity[index],
+              tTestQVal: data.t_qval[index],
+              inContextMean: data.mean_in[index],
+              outGroupMean: data.mean_out[index],
+              effectSize: data.effect_size[index],
+              selectivityVal: data.selectivity_val[index],
+            });
+          }
 
           entityLabelMap[data.entity[index]] = data.label[index];
         }

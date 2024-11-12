@@ -50,13 +50,10 @@ const samplePoints = (
     const ys = new Float32Array(numPts);
 
     for (let j = 0; j < numPts; j++) {
-      const x = Math.pow(
-        10,
-        minExponent + (j / (numPts - 1)) * rangeOfExponents
-      );
+      const x = 10 ** (minExponent + (j / (numPts - 1)) * rangeOfExponents);
       xs.push(x);
 
-      ys[j] = lowerA + (upperA - lowerA) / (1 + Math.pow(x / ec50, -slope));
+      ys[j] = lowerA + (upperA - lowerA) / (1 + (x / ec50) ** -slope);
     }
 
     data.push({ xs, ys });
