@@ -250,12 +250,28 @@ function DoseCurvesPlot({
 
   return (
     <div>
+      <div
+        style={{
+          color: "#333333",
+          fontFamily: "Lato",
+          fontWeight: "bold",
+          fontSize: "18px",
+          paddingLeft: "30px",
+          paddingTop: "15px",
+        }}
+      >
+        Dose Response Curves
+      </div>
       <CurvesChart
-        title={"Dose Response Curve"}
+        title={""}
         yAxisTitle={"Viability"}
+        xAxisTitle={"Concentration (uM)"}
+        dottedLine={0.3}
+        minX={minDose}
+        maxX={maxDose}
         curves={curveTraces}
         showLegend={false}
-        height={480}
+        height={300}
         onLoad={() => {}}
       />
     </div>

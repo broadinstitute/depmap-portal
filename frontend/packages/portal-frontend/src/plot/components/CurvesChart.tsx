@@ -6,7 +6,11 @@ import PlotlyLoader, { PlotlyType } from "./PlotlyLoader";
 export interface CurvesChartProps {
   title: string;
   yAxisTitle: string;
+  xAxisTitle: string;
   curves: any;
+  dottedLine: number;
+  minX: number;
+  maxX: number;
   showLegend: boolean;
   onLoad: (plot: ExtendedPlotType) => void;
   height?: number | "auto";
@@ -25,7 +29,11 @@ type CurvesChartWithPlotly = CurvesChartProps & { Plotly: PlotlyType };
 function CurvesChart({
   title,
   yAxisTitle,
+  xAxisTitle,
   curves,
+  dottedLine,
+  minX,
+  maxX,
   showLegend,
   onLoad = () => {},
   height = "auto",
@@ -38,7 +46,7 @@ function CurvesChart({
 
     b: 35,
 
-    t: 60,
+    t: 15,
 
     pad: 0,
   },
@@ -58,18 +66,45 @@ function CurvesChart({
     const xAxisTemplate: Partial<Plotly.LayoutAxis> = {
       visible: true,
       type: "log",
+      title: {
+        text: xAxisTitle,
+        font: {
+          size: 12,
+        },
+      },
     };
 
     const yAxisTemplate: Partial<Plotly.LayoutAxis> = {
       visible: true,
       rangemode: "tozero",
-      title: yAxisTitle,
+      title: {
+        text: yAxisTitle,
+        font: {
+          size: 12,
+        },
+      },
     };
 
     const layout: Partial<Plotly.Layout> = {
       title,
 
       xaxis: xAxisTemplate,
+
+      shapes: [
+        {
+          x0: minX,
+          y0: dottedLine,
+          x1: maxX,
+          y1: dottedLine,
+          type: "line",
+          yref: "paper",
+          line: {
+            color: "#D9D9D9",
+            dash: "dot",
+            width: 1,
+          },
+        },
+      ],
 
       yaxis: yAxisTemplate,
 
@@ -97,6 +132,7 @@ function CurvesChart({
     xRange,
     title,
     yAxisTitle,
+    xAxisTitle,
   ]);
 
   return <div ref={ref} />;
