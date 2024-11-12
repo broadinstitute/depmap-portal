@@ -30,7 +30,6 @@ from ..config import Settings, get_settings
 from breadbox.crud.access_control import PUBLIC_GROUP_ID
 from ..crud import dataset as dataset_crud
 from ..crud import types as type_crud
-from ..crud import slice as slice_crud
 
 from ..models.dataset import (
     Dataset as DatasetModel,
@@ -55,6 +54,7 @@ from ..schemas.dataset import (
     SliceQueryIdentifierType,
 )
 from breadbox.service import metadata as metadata_service
+from breadbox.service import slice as slice_service
 from .dependencies import get_dataset as get_dataset_dep
 from .dependencies import get_db_with_user, get_user
 
@@ -491,7 +491,7 @@ def get_dimension_data(
         identifier=identifier,
         identifier_type=identifier_type.name,
     )
-    slice_values_by_id = slice_crud.get_slice_data(
+    slice_values_by_id = slice_service.get_slice_data(
         db, settings.filestore_location, parsed_slice_query
     )
 

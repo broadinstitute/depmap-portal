@@ -497,12 +497,12 @@ def create_cell_line_group(
 
         # Return the feature ID associated with the new dataset feature
         if use_feature_ids:
-            feature: DatasetFeature = dataset_crud.get_dataset_feature_by_label(
+            feature: DatasetFeature = metadata_service.get_dataset_feature_by_label(
                 db=db, dataset_id=dataset_id, feature_label=feature_label
             )
             return _format_breadbox_shim_slice_id(feature.dataset_id, feature.given_id)
         else:
-            dataset_feature = dataset_crud.get_dataset_feature_by_label(
+            dataset_feature = metadata_service.get_dataset_feature_by_label(
                 db, dataset_id, feature_label
             )
             return str(dataset_feature.id)

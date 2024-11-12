@@ -1043,6 +1043,7 @@ def get_matching_feature_metadata_labels(
     db: SessionWithUser, feature_labels: List[str]
 ) -> set[str]:
     """
+    DEPRECATED: this method should be removed when the old data_slicer functionality is replaced.
     Return the subset of the given list which matches any feature metadata label
     Use case-insensitive matching, but return a list of properly-cased labels.
     """
@@ -1335,54 +1336,6 @@ def get_dataset_sample_by_given_id(
             f"Sample given ID '{sample_given_id}' not found in dataset '{dataset_id}'."
         )
     return sample
-
-
-def get_dataset_feature_by_label(
-    db: SessionWithUser, dataset_id: str, feature_label: str
-) -> DatasetFeature:
-    """Load the dataset feature corresponding to the given dataset ID and feature label"""
-
-    dataset = get_dataset(db, db.user, dataset_id)
-    if dataset is None:
-        raise ResourceNotFoundError(f"Dataset '{dataset_id}' not found.")
-    assert_user_has_access_to_dataset(dataset, db.user)
-    assert isinstance(dataset, MatrixDataset)
-
-    labels_by_given_id = metadata_service.get_dataset_feature_labels_by_id(
-        db, db.user, dataset
-    )
-    given_ids_by_label = {label: id for id, label in labels_by_given_id.items()}
-    feature_given_id = given_ids_by_label.get(feature_label)
-    if feature_given_id is None:
-        raise ResourceNotFoundError(
-            f"Feature label '{feature_label}' not found in dataset '{dataset_id}'."
-        )
-
-    return get_dataset_feature_by_given_id(db, dataset_id, feature_given_id)
-
-
-def get_dataset_sample_by_label(
-    db: SessionWithUser, dataset_id: str, sample_label: str
-) -> DatasetSample:
-    """Load the dataset sample corresponding to the given dataset ID and sample label"""
-
-    dataset = get_dataset(db, db.user, dataset_id)
-    if dataset is None:
-        raise ResourceNotFoundError(f"Dataset '{dataset_id}' not found.")
-    assert_user_has_access_to_dataset(dataset, db.user)
-    assert isinstance(dataset, MatrixDataset)
-
-    labels_by_given_id = metadata_service.get_dataset_sample_labels_by_id(
-        db, db.user, dataset
-    )
-    given_ids_by_label = {label: id for id, label in labels_by_given_id.items()}
-    sample_given_id = given_ids_by_label.get(sample_label)
-    if sample_given_id is None:
-        raise ResourceNotFoundError(
-            f"Sample label '{sample_label}' not found in dataset '{dataset_id}'."
-        )
-
-    return get_dataset_sample_by_given_id(db, dataset_id, sample_given_id)
 
 
 def _get_column_types(columns_metadata, columns: Optional[List[str]]):
