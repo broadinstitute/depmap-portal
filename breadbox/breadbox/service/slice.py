@@ -12,6 +12,7 @@ from breadbox.io.filestore_crud import (
     get_feature_slice,
     get_sample_slice,
 )
+from breadbox.service import metadata as metadata_service
 
 from depmap_compute.slice import SliceQuery
 
@@ -57,7 +58,7 @@ def get_slice_data(
         slice_data = get_feature_slice(dataset, [feature.index], filestore_location)
 
     elif slice_query.identifier_type == "feature_label":
-        feature = dataset_crud.get_dataset_feature_by_label(
+        feature = metadata_service.get_dataset_feature_by_label(
             db, dataset_id, feature_label=slice_query.identifier,
         )
         slice_data = get_feature_slice(dataset, [feature.index], filestore_location)
@@ -69,7 +70,7 @@ def get_slice_data(
         slice_data = get_sample_slice(dataset, [sample.index], filestore_location)
 
     elif slice_query.identifier_type == "sample_label":
-        sample = dataset_crud.get_dataset_sample_by_label(
+        sample = metadata_service.get_dataset_sample_by_label(
             db, dataset_id, sample_label=slice_query.identifier
         )
         slice_data = get_sample_slice(dataset, [sample.index], filestore_location)

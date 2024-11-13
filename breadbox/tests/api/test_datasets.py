@@ -165,7 +165,7 @@ class TestGet:
         assert_status_ok(given_id_response)
         assert given_id_response.json() == response.json()
 
-    def test_get_dataset_samples(
+    def test_get_matrix_dataset_samples(
         self, client: TestClient, minimal_db: SessionWithUser, settings
     ):
         given_id = "some_matrix_dataset"
