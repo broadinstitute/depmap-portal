@@ -7,6 +7,7 @@ from breadbox.crud.dataset import (
     get_dataset_feature_by_given_id,
     get_tabular_dataset_index_given_ids,
     get_datasets,
+    get_unique_dimension_ids_from_datasets,
 )
 from breadbox.models.dataset import AnnotationType
 from breadbox.schemas.dataset import ColumnMetadata
@@ -277,3 +278,60 @@ def test_get_datasets_by_data_type(minimal_db, settings):
     )
     assert len(datasets_with_data_type_2) == 1
     assert datasets_with_data_type_2[0].id == matrix_dataset.id
+
+
+def test_get_unique_dimension_ids_from_datasets(minimal_db, settings):
+    # Define metadata
+    dimension_type = factories.add_dimension_type(
+        minimal_db,
+        settings,
+        user=settings.admin_users[0],
+        name="some_feature_type",
+        display_name="Feature With Metadata",
+        id_column="ID",
+        annotation_type_mapping={
+            "ID": AnnotationType.text,
+            "label": AnnotationType.text,
+        },
+        axis="feature",
+        metadata_df=pd.DataFrame(
+            {
+                "ID": ["F1", "F2", "F5"],
+                "label": ["featureLabel1", "featureLabel2", "featureLabel3"],
+            }
+        ),
+    )
+    # Define tabular datasets
+    tabular_dataset_with_feature_type = factories.tabular_dataset(
+        minimal_db,
+        settings,
+        data_df=pd.DataFrame(
+            {"ID": ["F1", "F2", "F3", "F4"], "SomeOtherColumn": ["a", "b", "c", "d"]}
+        ),
+        index_type_name="some_feature_type",
+        columns_metadata={
+            "ID": ColumnMetadata(col_type=AnnotationType.text),
+            "SomeOtherColumn": ColumnMetadata(col_type=AnnotationType.text),
+        },
+    )
+
+    # Example matrix values with IDs corresponding to above feature type
+    example_matrix_values = factories.matrix_csv_data_file_with_values(
+        feature_ids=["F1", "F2", "F3"],
+        sample_ids=["sampleID1", "sampleID2", "sampleID3"],
+        values=np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]]),
+    )
+    # Example matrix with feature type
+    matrix_dataset_with_feature_type = factories.matrix_dataset(
+        minimal_db,
+        settings,
+        feature_type="some_feature_type",
+        data_file=example_matrix_values,
+    )
+    dimensions_set = get_unique_dimension_ids_from_datasets(
+        minimal_db,
+        [matrix_dataset_with_feature_type.id, tabular_dataset_with_feature_type.id],
+        dimension_type,
+    )
+
+    assert dimensions_set == set(["F1", "F2", "F3", "F4"])

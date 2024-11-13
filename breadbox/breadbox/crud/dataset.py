@@ -1535,3 +1535,46 @@ def get_missing_tabular_columns_and_indices(
             )
 
     return missing_columns, missing_indices
+
+
+def get_unique_dimension_ids_from_datasets(
+    db: SessionWithUser, dataset_ids: List[str], dimension_type: DimensionType
+):
+    if dimension_type.axis == "feature":
+        matrix_dimension_class = DatasetFeature
+    else:
+        matrix_dimension_class = DatasetSample
+
+    unique_dims = set()
+
+    matrix_dimensions = (
+        db.query(matrix_dimension_class)
+        .filter(
+            and_(
+                Dimension.dataset_id.in_(dataset_ids),
+                Dimension.dataset_dimension_type == dimension_type.name,
+            )
+        )
+        .all()
+    )
+
+    tabular_dimension_ids = (
+        db.query(TabularCell)
+        .join(TabularColumn)
+        .filter(
+            and_(
+                TabularColumn.dataset_id.in_(dataset_ids),
+                TabularColumn.given_id == dimension_type.id_column,
+                TabularColumn.dataset_dimension_type == dimension_type.name,
+            )
+        )
+        .all()
+    )
+
+    for m_dim in matrix_dimensions:
+        unique_dims.add(m_dim.given_id)
+
+    for t_dim in tabular_dimension_ids:
+        unique_dims.add(t_dim.dimension_given_id)
+
+    return unique_dims
