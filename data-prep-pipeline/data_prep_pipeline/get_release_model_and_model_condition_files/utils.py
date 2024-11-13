@@ -133,14 +133,17 @@ def get_model_ids(quarterly_release_dataset_id: str) -> set():
         taiga_ids_to_check.items(), desc="Processing Taiga IDs", unit="id"
     ):
         print("taiga_id", taiga_id)
-        df = taiga_client_v3.get(taiga_id)
-        if re.match("ACH-[0-9]*", str(df.index[0])):
-            model_ids.update(set(df.index))
-        elif re.match("ACH-[0-9]*", str(df.columns[0])):
-            model_ids.update(set(df.columns))
+        if "public" in taiga_id and "PRISMOncologyReferenceAUCMatrix" in taiga_id:
+            continue
         else:
-            assert column in df.columns, f"Missing {column} in {df.columns}"
-            model_ids.update(set(df[column]))
+            df = taiga_client_v3.get(taiga_id)
+            if re.match("ACH-[0-9]*", str(df.index[0])):
+                model_ids.update(set(df.index))
+            elif re.match("ACH-[0-9]*", str(df.columns[0])):
+                model_ids.update(set(df.columns))
+            else:
+                assert column in df.columns, f"Missing {column} in {df.columns}"
+                model_ids.update(set(df[column]))
 
     return model_ids
 
