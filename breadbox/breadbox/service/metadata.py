@@ -11,7 +11,6 @@ from breadbox.models.dataset import (
     MatrixDataset,
     TabularDataset,
 )
-from breadbox.service import metadata as metadata_service
 
 from depmap_compute.slice import SliceQuery
 
@@ -53,7 +52,7 @@ def get_matrix_dataset_feature_metadata(
         db, dimension_type_name=dataset.feature_type_name, col_name=metadata_col_name
     )
     # Filter the metadata to only include the given IDs belonging to this dataset
-    dataset_features = dataset_crud.get_dataset_features(db, dataset)
+    dataset_features = dataset_crud.get_matrix_dataset_features(db, dataset)
     filtered_metadata_vals = {}
     for feature in dataset_features:
         metadata_val = full_metadata_col.get(feature.given_id)
@@ -73,7 +72,7 @@ def get_matrix_dataset_sample_metadata(
         db, dimension_type_name=dataset.sample_type_name, col_name=metadata_col_name
     )
     # Filter the metadata to only include the given IDs belonging to this dataset
-    dataset_samples = dataset_crud.get_dataset_samples(db, dataset)
+    dataset_samples = dataset_crud.get_matrix_dataset_samples(db, dataset)
     filtered_metadata_vals = {}
     for sample in dataset_samples:
         metadata_val = full_metadata_col.get(sample.given_id)
@@ -82,7 +81,7 @@ def get_matrix_dataset_sample_metadata(
     return filtered_metadata_vals
 
 
-def get_dataset_feature_labels_by_id(
+def get_matrix_dataset_feature_labels_by_id(
     db: SessionWithUser, user: str, dataset: MatrixDataset,
 ) -> dict[str, str]:
     """
@@ -97,11 +96,11 @@ def get_dataset_feature_labels_by_id(
             return metadata_labels_by_given_id
 
     # If there are no labels or there is no feature type, return the given IDs
-    all_dataset_features = dataset_crud.get_dataset_features(db, dataset)
+    all_dataset_features = dataset_crud.get_matrix_dataset_features(db, dataset)
     return {feature.given_id: feature.given_id for feature in all_dataset_features}
 
 
-def get_dataset_sample_labels_by_id(
+def get_matrix_dataset_sample_labels_by_id(
     db: SessionWithUser, user: str, dataset: MatrixDataset,
 ) -> dict[str, str]:
     """
@@ -114,7 +113,7 @@ def get_dataset_sample_labels_by_id(
     if metadata_labels:
         return metadata_labels
     else:
-        samples = dataset_crud.get_dataset_samples(db=db, dataset=dataset)
+        samples = dataset_crud.get_matrix_dataset_samples(db=db, dataset=dataset)
         return {sample.given_id: sample.given_id for sample in samples}
 
 
@@ -151,9 +150,9 @@ def get_labels_for_slice_type(
         raise ResourceNotFoundError(f"Dataset '{slice_query.dataset_id}' not found.")
 
     if slice_query.identifier_type in {"feature_label", "feature_id"}:
-        return metadata_service.get_dataset_sample_labels_by_id(db, db.user, dataset)
+        return get_matrix_dataset_sample_labels_by_id(db, db.user, dataset)
     elif slice_query.identifier_type in {"sample_label", "sample_id"}:
-        return metadata_service.get_dataset_feature_labels_by_id(db, db.user, dataset)
+        return get_matrix_dataset_feature_labels_by_id(db, db.user, dataset)
     elif slice_query.identifier_type == "column":
         return get_tabular_dataset_labels_by_id(db, dataset)
     else:
@@ -172,9 +171,7 @@ def get_dataset_feature_by_label(
         raise ResourceNotFoundError(f"Dataset '{dataset_id}' not found.")
     assert isinstance(dataset, MatrixDataset)
 
-    labels_by_given_id = metadata_service.get_dataset_feature_labels_by_id(
-        db, db.user, dataset
-    )
+    labels_by_given_id = get_matrix_dataset_feature_labels_by_id(db, db.user, dataset)
     given_ids_by_label = {label: id for id, label in labels_by_given_id.items()}
     feature_given_id = given_ids_by_label.get(feature_label)
     if feature_given_id is None:
@@ -197,9 +194,7 @@ def get_dataset_sample_by_label(
         raise ResourceNotFoundError(f"Dataset '{dataset_id}' not found.")
     assert isinstance(dataset, MatrixDataset)
 
-    labels_by_given_id = metadata_service.get_dataset_sample_labels_by_id(
-        db, db.user, dataset
-    )
+    labels_by_given_id = get_matrix_dataset_sample_labels_by_id(db, db.user, dataset)
     given_ids_by_label = {label: id for id, label in labels_by_given_id.items()}
     sample_given_id = given_ids_by_label.get(sample_label)
     if sample_given_id is None:

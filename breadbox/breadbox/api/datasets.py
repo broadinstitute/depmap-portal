@@ -112,7 +112,7 @@ def get_dataset_features(
     if dataset is None:
         raise HTTPException(404, "Dataset not found")
 
-    feature_labels_by_id = metadata_service.get_dataset_feature_labels_by_id(
+    feature_labels_by_id = metadata_service.get_matrix_dataset_feature_labels_by_id(
         db=db, user=user, dataset=dataset,
     )
     return [{"id": id, "label": label} for id, label in feature_labels_by_id.items()]
@@ -135,7 +135,7 @@ def get_dataset_samples(
     if dataset is None:
         raise HTTPException(404, "Dataset not found")
 
-    sample_labels_by_id = metadata_service.get_dataset_sample_labels_by_id(
+    sample_labels_by_id = metadata_service.get_matrix_dataset_sample_labels_by_id(
         db=db, user=user, dataset=dataset,
     )
     return [{"id": id, "label": label} for id, label in sample_labels_by_id.items()]
@@ -187,7 +187,7 @@ def get_feature_data(
         # Get the feature label
         if dataset.feature_type_name:
             # Note: this would be faster if we had a query to load one label instead of all labels - but performance hasn't been an issue
-            feature_labels_by_id = metadata_service.get_dataset_feature_labels_by_id(
+            feature_labels_by_id = metadata_service.get_matrix_dataset_feature_labels_by_id(
                 db=db, user=user, dataset=dataset
             )
             label = feature_labels_by_id[feature.given_id]

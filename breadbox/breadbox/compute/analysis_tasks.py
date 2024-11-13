@@ -166,12 +166,12 @@ def get_features_info_and_dataset(
     dataset = dataset_crud.get_dataset(db, user, dataset_id)
     if dataset is None:
         raise ResourceNotFoundError(f"Dataset '{dataset_id}' not found.")
-    dataset_features = dataset_crud.get_dataset_features(db, dataset)
+    dataset_features = dataset_crud.get_matrix_dataset_features(db, dataset)
 
     result_features: List[Feature] = []
     dataset_feature_ids: List[str] = []
     datasets: List[Dataset] = []
-    feature_labels_by_id = metadata_service.get_dataset_feature_labels_by_id(
+    feature_labels_by_id = metadata_service.get_matrix_dataset_feature_labels_by_id(
         db, user, dataset
     )
     feature_indices = []

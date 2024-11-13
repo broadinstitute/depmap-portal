@@ -67,7 +67,7 @@ def _get_subsetted_df_by_indexes(
         # Only include dataset names in column names if we're merging datasets
         col_rename_map = {}
 
-        feature_labels = metadata_service.get_dataset_feature_labels_by_id(
+        feature_labels = metadata_service.get_matrix_dataset_feature_labels_by_id(
             db, user, dataset
         )
 

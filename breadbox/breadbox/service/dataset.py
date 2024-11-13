@@ -83,13 +83,13 @@ def get_subsetted_matrix_dataset_df(
 
     # Re-index by label if applicable
     if dimensions_info.feature_identifier == FeatureSampleIdentifier.label:
-        labels_by_id = metadata_service.get_dataset_feature_labels_by_id(
+        labels_by_id = metadata_service.get_matrix_dataset_feature_labels_by_id(
             db, user, dataset
         )
         df = df.rename(columns=labels_by_id)
 
     if dimensions_info.sample_identifier == FeatureSampleIdentifier.label:
-        label_by_id = metadata_service.get_dataset_sample_labels_by_id(
+        label_by_id = metadata_service.get_matrix_dataset_sample_labels_by_id(
             db, user, dataset
         )
         df = df.rename(index=label_by_id)

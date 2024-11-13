@@ -976,7 +976,7 @@ def get_dataset_feature_dimensions(db: SessionWithUser, user: str, dataset_id: s
     return dimensions
 
 
-def get_dataset_features(
+def get_matrix_dataset_features(
     db: SessionWithUser, dataset: MatrixDataset
 ) -> list[DatasetFeature]:
     assert_user_has_access_to_dataset(dataset, db.user)
@@ -991,7 +991,7 @@ def get_dataset_features(
     return dataset_features
 
 
-def get_dataset_samples(
+def get_matrix_dataset_samples(
     db: SessionWithUser, dataset: MatrixDataset
 ) -> list[DatasetSample]:
     assert_user_has_access_to_dataset(dataset, db.user)
