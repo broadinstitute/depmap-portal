@@ -88,6 +88,7 @@ def get_datasets(
     sample_id: Optional[str] = None,
     sample_type: Optional[str] = None,
     value_type: Optional[ValueType] = None,
+    data_type: str = None,
 ) -> list[Dataset]:
     assert (
         db.user == user
@@ -108,13 +109,18 @@ def get_datasets(
     dataset_poly = with_polymorphic(Dataset, [MatrixDataset, TabularDataset])
 
     filter_clauses = [Dataset.group_id.in_(group_ids)]  # pyright: ignore
+
     # Don't return transient datasets
     filter_clauses.append(Dataset.is_transient == False)
-    # TODO: Below filters only returns for matrix datasets!
+    # TODO: 'feature_id' and 'sample_id' filters only returns for matrix datasets!
     # Decide if should return for metadata when given feature id/type or sample id/type
+    # TODO: feature type can be none. How should we filter those datasets?
     if feature_type is not None:
         filter_clauses.append(
-            dataset_poly.MatrixDataset.feature_type_name == feature_type
+            or_(
+                dataset_poly.MatrixDataset.feature_type_name == feature_type,
+                dataset_poly.TabularDataset.index_type_name == feature_type,
+            )
         )
 
         if feature_id is not None:
@@ -128,7 +134,10 @@ def get_datasets(
 
     if sample_type is not None:
         filter_clauses.append(
-            dataset_poly.MatrixDataset.sample_type_name == sample_type
+            or_(
+                dataset_poly.MatrixDataset.sample_type_name == sample_type,
+                dataset_poly.TabularDataset.index_type_name == sample_type,
+            )
         )
 
         if sample_id is not None:
@@ -142,6 +151,9 @@ def get_datasets(
 
     if value_type is not None:
         filter_clauses.append(dataset_poly.MatrixDataset.value_type == value_type)
+
+    if data_type is not None:
+        filter_clauses.append(Dataset.data_type == data_type)
 
     datasets = db.query(dataset_poly).filter(and_(True, *filter_clauses)).all()
     return datasets
