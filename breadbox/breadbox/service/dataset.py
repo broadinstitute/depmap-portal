@@ -150,15 +150,18 @@ def get_subsetted_tabular_dataset_df(
         # Rename the resulting column with dimension ids to their labels
         tabular_subset_df = tabular_subset_df.rename(index=dataset_labels_by_id)
 
-    # If 'strict' raise error
-    missing_columns, missing_indices = _get_missing_tabular_columns_and_indices(
-        tabular_subset_df,
-        tabular_dimensions_info.columns,
-        tabular_dimensions_info.indices,
-        dataset.id,
-    )
-    if strict and (missing_columns or missing_indices):
-        raise UserError(msg=_get_truncated_message(missing_columns, missing_indices))
+    # If 'strict' raise error for missing values
+    if strict:
+        missing_columns, missing_indices = _get_missing_tabular_columns_and_indices(
+            tabular_subset_df,
+            tabular_dimensions_info.columns,
+            tabular_dimensions_info.indices,
+            dataset.id,
+        )
+        if missing_columns or missing_indices:
+            raise UserError(
+                msg=_get_truncated_message(missing_columns, missing_indices)
+            )
 
     if tabular_subset_df.empty:
         return tabular_subset_df
@@ -200,8 +203,7 @@ def _get_missing_tabular_columns_and_indices(
     missing_columns = set()
     missing_indices = set()
     if tabular_columns is not None:
-        found_columns = [x[1] for x in df.columns]
-        missing_columns = set(tabular_columns).difference(found_columns)
+        missing_columns = set(tabular_columns).difference(df.columns)
         if len(missing_columns) > 0:
             log.warning(
                 f"In get_subsetted_tabular_dataset_df, missing columns: {missing_columns} for dataset: {dataset_id}"
