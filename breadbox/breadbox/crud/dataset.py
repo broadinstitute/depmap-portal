@@ -433,7 +433,6 @@ def create_index_records_for_row(
 def get_properties_to_index_query_for_metadata_dataset(
     db: SessionWithUser, metadata_dataset_id: str, properties_to_index: List[str],
 ):
-    # Note: This function could likely be replaced by a call to get_subsetted_tabular_dataset_df
     filter_clauses = [
         DimensionType.dataset_id == metadata_dataset_id,
         Dimension.given_id.in_(properties_to_index),
@@ -549,7 +548,7 @@ def _populate_search_index_for_dataset(db: SessionWithUser, user: str, dataset_i
     _delete_dataset_dimension_search_index_records(db=db, dataset_id=dataset_id)
     log.info("_delete_dataset_dimension_search_index_records complete")
 
-    labels_by_feature_id_query = (
+    labels_by_feature_id_query = (  # TODO: replace
         db.query(TabularCell)
         .join(TabularColumn, TabularCell.tabular_column_id == TabularColumn.id,)
         .join(DimensionType, TabularColumn.dataset_id == DimensionType.dataset_id,)
@@ -1092,87 +1091,6 @@ def get_feature_indexes_by_given_ids(
     db: SessionWithUser, user: str, dataset: Dataset, given_ids: List[str]
 ):
     return _get_indexes_by_given_id(db, user, dataset, DatasetFeature, given_ids)
-
-
-def get_dimension_indexes_of_labels(
-    db: SessionWithUser,
-    user: str,
-    dataset: MatrixDataset,
-    axis: str,
-    dimension_labels: List[str],
-) -> Tuple[List[int], List[str]]:
-    """
-    Get the set of numeric indices corresponding to the given dimension labels for the given dataset.
-    Note: The order of the result does not necessarily match the order of the input
-    """
-    assert_user_has_access_to_dataset(dataset, user)
-
-    # We could do this in one query, but it's unwieldy, so let's make two queries. First
-    # let's resolve dimension_labels to given_ids
-
-    def _query_given_id_and_label(type_name):
-        results = (
-            db.query(DimensionType)
-            .join(TabularDataset, DimensionType.dataset)
-            .join(TabularColumn, TabularDataset.dimensions)
-            .join(TabularCell, TabularColumn.tabular_cells)
-            .filter(
-                TabularColumn.given_id == "label",
-                DimensionType.name == type_name,
-                TabularCell.value.in_(dimension_labels),
-            )
-            .with_entities(TabularCell.dimension_given_id, TabularCell.value)
-            .all()
-        )
-        return results
-
-    if axis == "feature":
-        if dataset.feature_type_name is None:
-            # feature types are allowed to be None. If that's the case, the labels are the given_ids on the matrix
-            given_id_and_label = (
-                db.query(DatasetFeature)
-                .filter(
-                    DatasetFeature.dataset_id == dataset.id,
-                    DatasetFeature.given_id.in_(dimension_labels),
-                )
-                .with_entities(DatasetFeature.given_id, DatasetFeature.given_id)
-            )
-        else:
-            given_id_and_label = _query_given_id_and_label(dataset.feature_type_name)
-    else:
-        assert axis == "sample"
-        given_id_and_label = _query_given_id_and_label(dataset.sample_type_name)
-
-    # unpack into two columns
-    given_id_to_label = dict(given_id_and_label)
-
-    missing_labels = set(dimension_labels).difference(given_id_to_label.values())
-
-    # for the time being, just warn in the log about things that are missing. I'm not 100% confident that
-    # something won't break if we start treating missing things as an error. If we don't see warnings in the
-    # log from normal use, we can turn it into an error later
-    if len(missing_labels) > 0:
-        log.warning(
-            f"In get_dimension_indexes_of_labels, missing labels: {missing_labels}"
-        )
-
-    # now resolve those given_ids to indices
-    if axis == "feature":
-        indices, missing_given_ids = get_feature_indexes_by_given_ids(
-            db, user, dataset, list(given_id_to_label.keys())
-        )
-    else:
-        assert axis == "sample"
-        indices, missing_given_ids = get_sample_indexes_by_given_ids(
-            db, user, dataset, list(given_id_to_label.keys())
-        )
-
-    if len(missing_given_ids) > 0:
-        log.warning(
-            f"In get_dimension_indexes_of_labels, missing given_ids: {missing_given_ids}"
-        )
-
-    return indices, list(missing_labels)
 
 
 def get_dataset_feature_by_uuid(

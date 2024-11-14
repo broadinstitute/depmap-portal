@@ -51,7 +51,7 @@ def get_subsetted_matrix_dataset_df(
         (
             feature_indexes,
             missing_features,
-        ) = dataset_crud.get_dimension_indexes_of_labels(
+        ) = metadata_service.get_dimension_indexes_of_labels(
             db, user, dataset, axis="feature", dimension_labels=dimensions_info.features
         )
 
@@ -65,7 +65,10 @@ def get_subsetted_matrix_dataset_df(
             db, user, dataset, dimensions_info.samples
         )
     else:
-        sample_indexes, missing_samples = dataset_crud.get_dimension_indexes_of_labels(
+        (
+            sample_indexes,
+            missing_samples,
+        ) = metadata_service.get_dimension_indexes_of_labels(
             db, user, dataset, axis="sample", dimension_labels=dimensions_info.samples
         )
 

@@ -203,3 +203,62 @@ def get_dataset_sample_by_label(
         )
 
     return dataset_crud.get_dataset_sample_by_given_id(db, dataset_id, sample_given_id)
+
+
+def get_dimension_indexes_of_labels(
+    db: SessionWithUser,
+    user: str,
+    dataset: MatrixDataset,
+    axis: str,
+    dimension_labels: list[str],
+) -> tuple[list[int], list[str]]:
+    """
+    Get the set of numeric indices corresponding to the given dimension labels for the given dataset.
+    Note: The order of the result does not necessarily match the order of the input
+    """
+
+    # We could do this in one query, but it's unwieldy, so let's make two queries. First
+    # let's resolve dimension_labels to given_ids
+    if axis == "feature":
+        all_given_ids_to_labels = get_matrix_dataset_feature_labels_by_id(
+            db, user, dataset
+        )
+    else:
+        assert axis == "sample"
+        all_given_ids_to_labels = get_matrix_dataset_sample_labels_by_id(
+            db, user, dataset
+        )
+    filtered_given_ids_to_labels = {
+        id: label
+        for id, label in all_given_ids_to_labels.items()
+        if label in dimension_labels
+    }
+    missing_labels = set(dimension_labels).difference(
+        filtered_given_ids_to_labels.values()
+    )
+
+    # for the time being, just warn in the log about things that are missing. I'm not 100% confident that
+    # something won't break if we start treating missing things as an error. If we don't see warnings in the
+    # log from normal use, we can turn it into an error later
+    if len(missing_labels) > 0:
+        log.warning(
+            f"In get_dimension_indexes_of_labels, missing labels: {missing_labels}"
+        )
+
+    # now resolve those given_ids to indices
+    if axis == "feature":
+        indices, missing_given_ids = dataset_crud.get_feature_indexes_by_given_ids(
+            db, user, dataset, list(filtered_given_ids_to_labels.keys())
+        )
+    else:
+        assert axis == "sample"
+        indices, missing_given_ids = dataset_crud.get_sample_indexes_by_given_ids(
+            db, user, dataset, list(filtered_given_ids_to_labels.keys())
+        )
+
+    if len(missing_given_ids) > 0:
+        log.warning(
+            f"In get_dimension_indexes_of_labels, missing given_ids: {missing_given_ids}"
+        )
+
+    return indices, list(missing_labels)
