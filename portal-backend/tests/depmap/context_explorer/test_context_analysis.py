@@ -76,29 +76,33 @@ wide_filters = OtherContextFilterVals(t_qval=8.5, effect_size=8.5, frac_dep_in=8
 
 
 def _setup_dose_response_curves(models: List[DepmapModelFactory], compound_exps: list):
+    dose_rep_entities = []
     for cpd_exp in compound_exps:
         dose_1 = CompoundDoseReplicateFactory(
             compound_experiment=cpd_exp, dose=0.1, replicate=10
         )
+        dose_rep_entities.append(dose_1)
         dose_2 = CompoundDoseReplicateFactory(
             compound_experiment=cpd_exp,
             dose=0.2,
             replicate=20,
             is_masked=True,  # TODO: what does is_masked mean and does Context Explorer need to care?????
         )
+        dose_rep_entities.append(dose_2)
         dose_3 = CompoundDoseReplicateFactory(
             compound_experiment=cpd_exp, dose=0.3, replicate=30
         )
+        dose_rep_entities.append(dose_3)
 
     viability_df = pd.DataFrame(
-        {model.cell_line_name: [10, 20, 30] for model in models},
-        index=["dose_1", "dose_2", "dose_3"],
+        {model.cell_line_name: [10, 20, 30, 10, 20, 30] for model in models},
+        index=["dose_1", "dose_2", "dose_3", "dose_4", "dose_5", "dose_6"],
     )
 
     dataset = DependencyDatasetFactory(
         name=DependencyDataset.DependencyEnum.Prism_oncology_dose_replicate,
         matrix=MatrixFactory(
-            entities=[dose_1, dose_2, dose_3],
+            entities=dose_rep_entities,
             cell_lines=models,
             data=viability_df,
             using_depmap_model_table=True,
@@ -325,7 +329,7 @@ def _setup_entities_and_dataset_id(empty_db_mock_downloads, entity_type, dataset
         xref_type=xref_type, xref=xref, label=xref_full
     )
     xref_b = "PRC-003538266-583-86"
-    xref_full_b = xref_type + ":" + xref
+    xref_full_b = xref_type + ":" + xref_b
     compound_b = CompoundExperimentFactory(
         xref_type=xref_type, xref=xref_b, label=xref_full_b
     )
@@ -477,7 +481,6 @@ def test_get_dose_curves(empty_db_mock_downloads):
 
     selected_entity_label = compound_a.label
 
-    breakpoint()
     dose_curve_info = get_context_dose_curves(
         dataset_name=dataset_name,
         entity_full_label=selected_entity_label,
@@ -485,9 +488,166 @@ def test_get_dose_curves(empty_db_mock_downloads):
         level=1,
         out_group_type="All",
     )
-    breakpoint()
-    print(dose_curve_info)
-    breakpoint()
+
+    assert list(dose_curve_info.keys()) == [
+        "dataset",
+        "compound_experiment",
+        "replicate_dataset_name",
+        "dose_curve_info",
+    ]
+    assert dose_curve_info["dataset"].name.value == dataset_name
+    assert dose_curve_info["compound_experiment"].type == "compound_experiment"
+    assert dose_curve_info["compound_experiment"].xref == "PRC-003465060-210-01"
+    assert dose_curve_info["compound_experiment"].xref_type == "BRD"
+    assert dose_curve_info["compound_experiment"].label == "BRD:PRC-003465060-210-01"
+    assert dose_curve_info["dose_curve_info"] == {
+        "in_group_curve_params": [
+            {
+                "ec50": 0,
+                "id": "ACH-0lung",
+                "lowerAsymptote": 0,
+                "slope": 0,
+                "upperAsymptote": 0,
+            },
+            {
+                "ec50": 0,
+                "id": "ACH-1lung",
+                "lowerAsymptote": 0,
+                "slope": 0,
+                "upperAsymptote": 0,
+            },
+            {
+                "ec50": 0,
+                "id": "ACH-2lung",
+                "lowerAsymptote": 0,
+                "slope": 0,
+                "upperAsymptote": 0,
+            },
+            {
+                "ec50": 0,
+                "id": "ACH-3lung",
+                "lowerAsymptote": 0,
+                "slope": 0,
+                "upperAsymptote": 0,
+            },
+            {
+                "ec50": 0,
+                "id": "ACH-4lung",
+                "lowerAsymptote": 0,
+                "slope": 0,
+                "upperAsymptote": 0,
+            },
+        ],
+        "max_dose": 0.3,
+        "min_dose": 0.1,
+        "out_group_curve_params": [
+            {
+                "ec50": 0,
+                "id": "ACH-0es",
+                "lowerAsymptote": 0,
+                "slope": 0,
+                "upperAsymptote": 0,
+            },
+            {
+                "ec50": 0,
+                "id": "ACH-1es",
+                "lowerAsymptote": 0,
+                "slope": 0,
+                "upperAsymptote": 0,
+            },
+            {
+                "ec50": 0,
+                "id": "ACH-2es",
+                "lowerAsymptote": 0,
+                "slope": 0,
+                "upperAsymptote": 0,
+            },
+            {
+                "ec50": 0,
+                "id": "ACH-3es",
+                "lowerAsymptote": 0,
+                "slope": 0,
+                "upperAsymptote": 0,
+            },
+            {
+                "ec50": 0,
+                "id": "ACH-4es",
+                "lowerAsymptote": 0,
+                "slope": 0,
+                "upperAsymptote": 0,
+            },
+            {
+                "ec50": 0,
+                "id": "ACH-0os",
+                "lowerAsymptote": 0,
+                "slope": 0,
+                "upperAsymptote": 0,
+            },
+            {
+                "ec50": 0,
+                "id": "ACH-1os",
+                "lowerAsymptote": 0,
+                "slope": 0,
+                "upperAsymptote": 0,
+            },
+            {
+                "ec50": 0,
+                "id": "ACH-2os",
+                "lowerAsymptote": 0,
+                "slope": 0,
+                "upperAsymptote": 0,
+            },
+            {
+                "ec50": 0,
+                "id": "ACH-3os",
+                "lowerAsymptote": 0,
+                "slope": 0,
+                "upperAsymptote": 0,
+            },
+            {
+                "ec50": 0,
+                "id": "ACH-4os",
+                "lowerAsymptote": 0,
+                "slope": 0,
+                "upperAsymptote": 0,
+            },
+            {
+                "ec50": 0,
+                "id": "ACH-0myeloid",
+                "lowerAsymptote": 0,
+                "slope": 0,
+                "upperAsymptote": 0,
+            },
+            {
+                "ec50": 0,
+                "id": "ACH-1myeloid",
+                "lowerAsymptote": 0,
+                "slope": 0,
+                "upperAsymptote": 0,
+            },
+            {
+                "ec50": 0,
+                "id": "ACH-2myeloid",
+                "lowerAsymptote": 0,
+                "slope": 0,
+                "upperAsymptote": 0,
+            },
+            {
+                "ec50": 0,
+                "id": "ACH-3myeloid",
+                "lowerAsymptote": 0,
+                "slope": 0,
+                "upperAsymptote": 0,
+            },
+            {
+                "ec50": 0,
+                "id": "ACH-4myeloid",
+                "lowerAsymptote": 0,
+                "slope": 0,
+                "upperAsymptote": 0,
+            },
+        ],
+    }
 
 
 @pytest.mark.parametrize(

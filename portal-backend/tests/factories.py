@@ -291,7 +291,6 @@ class CompoundExperimentFactory(SQLAlchemyModelFactory):
     xref = factory.Sequence(lambda number: "{}".format(number))
 
     type = "compound_experiment"
-    entity_id = factory.Sequence(lambda number: number)
     compound_id = factory.Sequence(lambda number: number)
     compound = factory.SubFactory(
         CompoundFactory, compound_id=factory.SelfAttribute("..compound_id")
