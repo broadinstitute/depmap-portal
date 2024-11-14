@@ -1334,9 +1334,9 @@ def get_subset_of_tabular_data_as_df(
     index_given_ids: Optional[list[str]],
 ) -> pd.DataFrame:
     filter_statements = [TabularColumn.dataset_id == dataset.id]
-    if column_names:
+    if column_names is not None:
         filter_statements.append(TabularColumn.given_id.in_(column_names))
-    if index_given_ids:
+    if index_given_ids is not None:
         filter_statements.append(TabularCell.dimension_given_id.in_(index_given_ids))
     query = (
         db.query(TabularColumn)
@@ -1352,4 +1352,8 @@ def get_subset_of_tabular_data_as_df(
     # NOTE: resulting df will have columns as multi index ("value", "given_id") so will need to index df by "value" to get final df
     pivot_df = query_df.pivot(index="dimension_given_id", columns="given_id")
 
-    return pivot_df
+    # If df is empty, there is no 'value' key to index by
+    if pivot_df.empty:
+        return pivot_df
+
+    return pivot_df["value"]

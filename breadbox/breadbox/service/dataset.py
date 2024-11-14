@@ -121,37 +121,34 @@ def get_subsetted_tabular_dataset_df(
         raise DatasetAccessError(f"User {user} does not have access to dataset")
 
     # If labels were given as the filter, get the corresponding set of given ids
-    index_filtered_by_label = (
-        tabular_dimensions_info.identifier == FeatureSampleIdentifier.label
-    ) and tabular_dimensions_info.indices is not None
-    if index_filtered_by_label:
-        all_dataset_labels_by_id = metadata_service.get_tabular_dataset_labels_by_id(
+    if tabular_dimensions_info.identifier == FeatureSampleIdentifier.label:
+        dataset_labels_by_id = metadata_service.get_tabular_dataset_labels_by_id(
             db, dataset
         )
-        user_specified_given_ids = {}
-        all_dataset_ids_by_label = {
-            label: id for id, label in all_dataset_labels_by_id.items()
-        }
-        user_specified_given_ids = [
-            all_dataset_ids_by_label[label] for label in tabular_dimensions_info.indices
-        ]
-    elif tabular_dimensions_info.indices is None:
-        user_specified_given_ids = None
+        if tabular_dimensions_info.indices is None:
+            user_specified_given_ids = None
+        else:
+            user_specified_given_ids = {
+                id
+                for id, label in dataset_labels_by_id.items()
+                if label in tabular_dimensions_info.indices
+            }
     else:
-        user_specified_given_ids = tabular_dimensions_info.indices
+        if tabular_dimensions_info.indices is None:
+            user_specified_given_ids = None
+        else:
+            user_specified_given_ids = tabular_dimensions_info.indices
 
     tabular_subset_df = dataset_crud.get_subset_of_tabular_data_as_df(
         db=db,
         dataset=dataset,
         column_names=tabular_dimensions_info.columns,
         index_given_ids=user_specified_given_ids,
-    )  # TODO: is this still a "pivot df" somehow?
+    )
 
-    if index_filtered_by_label:
+    if tabular_dimensions_info.identifier == FeatureSampleIdentifier.label:
         # Rename the resulting column with dimension ids to their labels
-        tabular_subset_df = tabular_subset_df.replace(
-            {"dimension_given_id": all_dataset_labels_by_id}
-        )
+        tabular_subset_df = tabular_subset_df.rename(index=dataset_labels_by_id)
 
     # If 'strict' raise error
     missing_columns, missing_indices = _get_missing_tabular_columns_and_indices(
@@ -163,20 +160,17 @@ def get_subsetted_tabular_dataset_df(
     if strict and (missing_columns or missing_indices):
         raise UserError(msg=_get_truncated_message(missing_columns, missing_indices))
 
-    # If df is empty, there is no 'value' key to index by
     if tabular_subset_df.empty:
         return tabular_subset_df
 
-    # Need to index by "value" after checking if empty db bc empty db has no 'value' keyword
-    subsetted_tabular_dataset_df = tabular_subset_df["value"]
     # set typing for columns
     col_dtypes = _get_column_types(
         dataset.columns_metadata, tabular_dimensions_info.columns
     )
-    subsetted_tabular_dataset_df = _convert_subsetted_tabular_df_dtypes(
-        subsetted_tabular_dataset_df, col_dtypes, dataset.columns_metadata
+    tabular_subset_df = _convert_subsetted_tabular_df_dtypes(
+        tabular_subset_df, col_dtypes, dataset.columns_metadata
     )
-    return subsetted_tabular_dataset_df
+    return tabular_subset_df
 
 
 def _convert_subsetted_tabular_df_dtypes(
