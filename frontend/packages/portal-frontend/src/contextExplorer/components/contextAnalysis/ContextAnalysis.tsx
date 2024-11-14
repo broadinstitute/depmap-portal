@@ -29,6 +29,7 @@ import {
   LEGEND_RANGE_8,
   LEGEND_RANGE_9,
   LEGEND_RANGE_10,
+  calcMinMax,
 } from "src/data-explorer-2/components/plot/prototype/plotUtils";
 import ContextAnalysisPlotPanel from "./ContextAnalysisPlotPanel";
 import ScatterPlotLegend from "./ScatterPlotLegend";
@@ -436,22 +437,7 @@ function ContextAnalysis({
     [setSelectedPlotLabels]
   );
 
-  const getLogOrColorScale = (values: number[]) => {
-    let min = Infinity;
-    let max = -Infinity;
-
-    for (let i = 0; i < values.length; i += 1) {
-      const value = values[i];
-
-      if (value !== null && value < min) {
-        min = value;
-      }
-
-      if (value !== null && value > max) {
-        max = value;
-      }
-    }
-
+  const getLogOrColorScale = (min: number, max: number) => {
     const zeroPosition = Math.abs((0 - min) / (max - min));
     const scale = [
       ["0.0", "#0000FF"], // Blue to label Depletions (points with the most negative log(OR)
@@ -469,35 +455,46 @@ function ContextAnalysis({
     }
 
     if (entityType === "gene") {
-      const scale = getLogOrColorScale(values);
+      const { min, max } = calcMinMax(values);
+      const scale = getLogOrColorScale(min, max);
 
       return scale;
-    }
-    let min = Infinity;
-    let max = -Infinity;
-
-    for (let i = 0; i < values.length; i += 1) {
-      const value = values[i];
-
-      if (value !== null && value < min) {
-        min = value;
-      }
-
-      if (value !== null && value > max) {
-        max = value;
-      }
     }
 
     const scale = [
       ["0", "#01153e"],
-      ["0.2", "#1873d3"],
-      ["0.4", "#00827d"],
-      ["0.6", "#00c06e"],
+      ["0.25", "#1873d3"],
+      ["0.5", "#00827d"],
+      ["0.75", "#00c06e"],
+      ["0.85", "#ccff00"],
       ["1", "#ccff00"],
     ];
 
     return scale;
   }, [plotData, entityType]);
+
+  const getBins = useCallback(
+    (
+      legendMin: number,
+      legendMax: number,
+      legendRange: number,
+      binNumber: number
+    ) => {
+      let binStart = legendMin;
+      const legendBinSize = legendRange / binNumber;
+
+      const bins = [];
+      for (let i = 0; i < binNumber; i += 1) {
+        const binEnd =
+          i === binNumber - 1 ? legendMax : binStart + legendBinSize;
+        bins.push([binStart, binEnd]);
+        binStart = binEnd;
+      }
+
+      return bins;
+    },
+    []
+  );
 
   const calcColorByBins = useCallback(
     (values: number[]) => {
@@ -505,38 +502,14 @@ function ContextAnalysis({
         return null;
       }
 
-      let min = Infinity;
-      let max = -Infinity;
-
-      for (let i = 0; i < values.length; i += 1) {
-        const value = values[i];
-
-        if (value !== null && value < min) {
-          min = value;
-        }
-
-        if (value !== null && value > max) {
-          max = value;
-        }
-      }
+      const { min, max } = calcMinMax(values);
 
       if (entityType !== "gene") {
         const binNumber = 5;
         const legendMin = 0;
-        const legendMax = 1;
-        const legendRange = legendMax + Math.abs(legendMin);
-
-        let binStart = legendMin;
-        const legendBinSize = legendRange / binNumber;
-
-        const bins = [];
-        for (let i = 0; i < binNumber; i += 1) {
-          const binEnd =
-            i === binNumber - 1 ? legendMax : binStart + legendBinSize;
-          bins.push([binStart, binEnd]);
-          binStart = binEnd;
-        }
-
+        const legendMax = max;
+        const legendRange = legendMax - legendMin;
+        const bins = getBins(legendMin, legendMax, legendRange, binNumber);
         return {
           [LEGEND_RANGE_1]: bins[0],
           [LEGEND_RANGE_2]: bins[1],
@@ -550,16 +523,7 @@ function ContextAnalysis({
       const legendMax = 2;
       const legendRange = legendMax + Math.abs(legendMin);
 
-      let binStart = legendMin;
-      const legendBinSize = legendRange / binNumber;
-
-      const bins = [];
-      for (let i = 0; i < binNumber; i += 1) {
-        const binEnd =
-          i === binNumber - 1 ? legendMax : binStart + legendBinSize;
-        bins.push([binStart, binEnd]);
-        binStart = binEnd;
-      }
+      const bins = getBins(legendMin, legendMax, legendRange, binNumber);
 
       return {
         [LEGEND_RANGE_1]: bins[0],
