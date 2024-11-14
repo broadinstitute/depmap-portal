@@ -548,7 +548,8 @@ def _populate_search_index_for_dataset(db: SessionWithUser, user: str, dataset_i
     _delete_dataset_dimension_search_index_records(db=db, dataset_id=dataset_id)
     log.info("_delete_dataset_dimension_search_index_records complete")
 
-    labels_by_feature_id_query = (  # TODO: replace
+    # Note: this query can be replaced with a call to crud.types.get_dimension_type_labels_by_id
+    labels_by_feature_id_query = (
         db.query(TabularCell)
         .join(TabularColumn, TabularCell.tabular_column_id == TabularColumn.id,)
         .join(DimensionType, TabularColumn.dataset_id == DimensionType.dataset_id,)
