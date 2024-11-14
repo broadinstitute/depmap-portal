@@ -67,7 +67,17 @@ class DepmapModel(Model):
 
     stripped_cell_line_name = Column(String, nullable=False)  # stripped cell line name
     patient_id = Column(String)
+
     depmap_model_type = Column(String)
+    oncotree_code = Column(String)
+
+    subtype_node_id = Column(
+        Integer, ForeignKey("subtype_node.subtype_node_id"), nullable=False
+    )
+    subtype_node = relationship(
+        "SubtypeNode", foreign_keys="SubtypeNode.subtype_node_id", uselist=False
+    )
+
     wtsi_master_cell_id = Column(Integer, index=True)  # wtsi is wellcome trust sanger
 
     # same as cell_line_passport_id in CellLine table
@@ -87,8 +97,6 @@ class DepmapModel(Model):
 
     oncotree_primary_disease = Column(String)
     oncotree_subtype = Column(String)
-
-    oncotree_code = Column(String)
     legacy_molecular_subtype = Column(String)
     patient_molecular_subtype = Column(String)
     rrid = Column(String)
@@ -196,7 +204,7 @@ class DepmapModel(Model):
     @staticmethod
     def get_valid_cell_line_names_in(cell_line_names):
         """
-        Returns (valid) cell line names contained in the provided list/set cell_line_names 
+        Returns (valid) cell line names contained in the provided list/set cell_line_names
         """
         q = (
             db.session.query(DepmapModel)
