@@ -1,5 +1,5 @@
 import logging
-from typing import Any
+from typing import Any, Optional
 
 from breadbox.crud import dataset as dataset_crud
 from breadbox.crud import types as types_crud
@@ -10,6 +10,7 @@ from breadbox.models.dataset import (
     DatasetSample,
     MatrixDataset,
     TabularDataset,
+    DimensionType,
 )
 
 from depmap_compute.slice import SliceQuery
@@ -203,3 +204,46 @@ def get_dataset_sample_by_label(
         )
 
     return dataset_crud.get_dataset_sample_by_given_id(db, dataset_id, sample_given_id)
+
+
+def get_dimension_type_identifiers(
+    db: SessionWithUser,
+    dimension_type: DimensionType,
+    data_type: Optional[str] = None,
+    show_only_dimensions_in_datasets: Optional[bool] = False,
+):
+    """
+    For the given dimension type,
+    1. Get datasets by dimension type and optionally data type
+    2. Get unique dimensions from above list of filtered datasets
+    If the `data_type` is given and/or `show_only_dimensions_in_datasets` is True, the dimension identifiers that are returned will only be those that are used within a dataset.
+    Additionally, the dimension identifiers returned will be from datasets that the user has access to.
+    Otherwise, if neither `data_type` is given nor `show_only_dimensions_in_datasets` is True, all dimension identifiers from the given dimension type are returned.
+    """
+    # Get all dimension identifiers in a dimension type
+    dim_type_ids_and_labels = types_crud.get_dimension_type_labels_by_id(
+        db, dimension_type.name
+    )
+
+    if data_type is None and not show_only_dimensions_in_datasets:
+        return dim_type_ids_and_labels
+
+    # Note that this also only returns datasets the user has access to as well
+    filtered_datasets = dataset_crud.get_datasets(
+        db,
+        db.user,
+        feature_type=dimension_type.name if dimension_type.axis == "feature" else None,
+        sample_type=dimension_type.name if dimension_type.axis == "sample" else None,
+        data_type=data_type,
+    )
+    filtered_dataset_ids = [dataset.id for dataset in filtered_datasets]
+    # Get all dimension given ids from list of filtered datasets
+    unique_dimension_given_ids = dataset_crud.get_unique_dimension_ids_from_datasets(
+        db, filtered_dataset_ids, dimension_type
+    )
+
+    # Further filters only dimensions that have identifiers that exist in the metadata
+    return {
+        given_id: dim_type_ids_and_labels[given_id]
+        for given_id in unique_dimension_given_ids
+    }

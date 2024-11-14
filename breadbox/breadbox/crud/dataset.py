@@ -1,7 +1,7 @@
 import logging
 from collections import defaultdict
 from dataclasses import dataclass
-from typing import Any, Dict, Optional, List, Type, Union, Tuple
+from typing import Any, Dict, Optional, List, Type, Union, Tuple, Set
 from uuid import UUID, uuid4
 import warnings
 import json
@@ -1539,7 +1539,10 @@ def get_missing_tabular_columns_and_indices(
 
 def get_unique_dimension_ids_from_datasets(
     db: SessionWithUser, dataset_ids: List[str], dimension_type: DimensionType
-):
+) -> Set[str]:
+    """
+    Returns a unique set of dimension given ids from matrix and tabular datasets based on the given dimension type
+    """
     if dimension_type.axis == "feature":
         matrix_dimension_class = DatasetFeature
     else:
@@ -1547,6 +1550,7 @@ def get_unique_dimension_ids_from_datasets(
 
     unique_dims = set()
 
+    # Get all matrix dimensions for that dimension type
     matrix_dimensions = (
         db.query(matrix_dimension_class)
         .filter(
@@ -1557,7 +1561,7 @@ def get_unique_dimension_ids_from_datasets(
         )
         .all()
     )
-
+    # Get all tabular identifiers for that dimension type
     tabular_dimension_ids = (
         db.query(TabularCell)
         .join(TabularColumn)
@@ -1570,7 +1574,7 @@ def get_unique_dimension_ids_from_datasets(
         )
         .all()
     )
-
+    # Combine dimension type's dimension given ids from datasets
     for m_dim in matrix_dimensions:
         unique_dims.add(m_dim.given_id)
 

@@ -1,8 +1,17 @@
-from typing import List, Optional, Literal, Union
+from typing import List, Optional, Literal, Union, Annotated
 from logging import getLogger
 from uuid import UUID, uuid4
 from collections import defaultdict
-from fastapi import APIRouter, Body, Depends, File, Form, HTTPException, UploadFile
+from fastapi import (
+    APIRouter,
+    Body,
+    Depends,
+    File,
+    Form,
+    HTTPException,
+    UploadFile,
+    Query,
+)
 from breadbox.models.dataset import Dataset
 from breadbox.models.dataset import DimensionType as DimensionTypeModel
 from breadbox.schemas.types import IdMappingInsanity
@@ -30,6 +39,7 @@ from breadbox.schemas.types import (
     AddDimensionType,
     DimensionIdentifiers,
 )
+from breadbox.service import metadata as metadata_service
 from .settings import assert_is_admin_user
 from breadbox.db.util import transaction
 
@@ -586,15 +596,32 @@ def list_dimension_types_endpoint(db: SessionWithUser = Depends(get_db_with_user
 
 
 @router.get(
-    "/dimensions/{name}/identifiers", operation_id="get_dimension_type_identifiers"
+    "/dimensions/{name}/identifiers",
+    operation_id="get_dimension_type_identifiers",
+    response_model=List[DimensionIdentifiers],
 )
 def get_dimension_type_identifiers(
-    name: str, db: SessionWithUser = Depends(get_db_with_user)
+    name: str,
+    data_type: Annotated[Union[str, None], Query()] = None,
+    show_only_dimensions_in_datasets: Annotated[Union[bool, None], Query()] = None,
+    db: SessionWithUser = Depends(get_db_with_user),
 ):
-    dim_type_ids_and_labels = type_crud.get_dimension_type_labels_by_id(db, name)
+    dim_type = type_crud.get_dimension_type(db, name)
+    if dim_type is None:
+        raise HTTPException(404, f"Dimension type {name} not found")
+
+    if show_only_dimensions_in_datasets is True:
+        dimension_ids_and_labels = metadata_service.get_dimension_type_identifiers(
+            db, dim_type, data_type, show_only_dimensions_in_datasets=True
+        )
+    else:
+        dimension_ids_and_labels = metadata_service.get_dimension_type_identifiers(
+            db, dim_type, data_type
+        )
+
     return [
         DimensionIdentifiers(id=id, label=label)
-        for id, label in dim_type_ids_and_labels.items()
+        for id, label in dimension_ids_and_labels.items()
     ]
 
 

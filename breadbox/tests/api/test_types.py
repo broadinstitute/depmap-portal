@@ -327,7 +327,7 @@ def test_add_sample_types(client: TestClient, settings, minimal_db):
     assert_status_ok(response)
 
 
-def test_get_dimension_type_dimension_identifiers(
+def test_get_all_dimension_type_dimension_identifiers(
     client: TestClient, minimal_db, settings
 ):
     db = minimal_db
@@ -397,6 +397,13 @@ def test_get_dimension_type_dimension_identifiers(
         {"id": "sample-1", "label": "Sample 1"},
         {"id": "sample-2", "label": "Sample 2"},
     ]
+
+    # test dim type doesn't exist
+    nonexistent_dim_type_res = client.get(
+        f"types/dimensions/nonexistentDimensionType/identifiers", headers=admin_headers,
+    )
+    assert_status_not_ok(nonexistent_dim_type_res)
+    assert nonexistent_dim_type_res.status_code == 404
 
 
 #### /types/sample and types/feature endpoints are deprecated!! ###
