@@ -73,6 +73,9 @@ function ContextAnalysisPlotPanel({
     };
   }, [data, plotType, isLoading, entityType]);
 
+  console.log("IS THE SELECTIVITY VAL CORRECT");
+  console.log(data?.selectivityVal);
+  console.log(colorScale);
   return (
     <div className={styles.scatterPlotContainer}>
       {plot && data && (

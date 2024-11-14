@@ -25,7 +25,10 @@ import {
   LEGEND_RANGE_5,
   LEGEND_RANGE_6,
   LegendKey,
-  calcMinMax,
+  LEGEND_RANGE_7,
+  LEGEND_RANGE_8,
+  LEGEND_RANGE_9,
+  LEGEND_RANGE_10,
 } from "src/data-explorer-2/components/plot/prototype/plotUtils";
 import ContextAnalysisPlotPanel from "./ContextAnalysisPlotPanel";
 import ScatterPlotLegend from "./ScatterPlotLegend";
@@ -433,6 +436,32 @@ function ContextAnalysis({
     [setSelectedPlotLabels]
   );
 
+  const getLogOrColorScale = (values: number[]) => {
+    let min = Infinity;
+    let max = -Infinity;
+
+    for (let i = 0; i < values.length; i += 1) {
+      const value = values[i];
+
+      if (value !== null && value < min) {
+        min = value;
+      }
+
+      if (value !== null && value > max) {
+        max = value;
+      }
+    }
+
+    const zeroPosition = Math.abs((0 - min) / (max - min));
+    const scale = [
+      ["0.0", "#0000FF"], // Blue to label Depletions (points with the most negative log(OR)
+      [zeroPosition.toString(), "#DDDCDC"],
+      ["1.0", "#FF0000"], // Red to label Enrichments (points with the most positive log(OR))
+    ];
+
+    return scale;
+  };
+
   const continuousColorScale = useMemo(() => {
     const values = plotData?.selectivityVal;
     if (!values) {
@@ -440,14 +469,7 @@ function ContextAnalysis({
     }
 
     if (entityType === "gene") {
-      const scale = [
-        ["-50", "#FFFF00"],
-        ["-40", "#FFA500"],
-        ["-30", "#ff667c"],
-        ["-20", "#c1246b"],
-        ["-10", "#7600bc"],
-        ["0", "#000052"],
-      ];
+      const scale = getLogOrColorScale(values);
 
       return scale;
     }
@@ -471,7 +493,7 @@ function ContextAnalysis({
       ["0.2", "#1873d3"],
       ["0.4", "#00827d"],
       ["0.6", "#00c06e"],
-      ["0.8", "#ccff00"],
+      ["1", "#ccff00"],
     ];
 
     return scale;
@@ -482,28 +504,61 @@ function ContextAnalysis({
       if (values.length === 0) {
         return null;
       }
-      const bins = [];
-      const { min, max } = calcMinMax(values);
 
-      const NUM_BINS = entityType === "gene" ? 6 : 5;
-      const binSize = (max - min) / NUM_BINS;
-      let binStart = min;
+      let min = Infinity;
+      let max = -Infinity;
 
-      for (let i = 0; i < NUM_BINS; i += 1) {
-        const binEnd = i === NUM_BINS - 1 ? max : binStart + binSize;
-        bins.push([binStart, binEnd]);
-        binStart = binEnd;
+      for (let i = 0; i < values.length; i += 1) {
+        const value = values[i];
+
+        if (value !== null && value < min) {
+          min = value;
+        }
+
+        if (value !== null && value > max) {
+          max = value;
+        }
       }
 
-      if (entityType === "gene") {
+      if (entityType !== "gene") {
+        const binNumber = 5;
+        const legendMin = 0;
+        const legendMax = 1;
+        const legendRange = legendMax + Math.abs(legendMin);
+
+        let binStart = legendMin;
+        const legendBinSize = legendRange / binNumber;
+
+        const bins = [];
+        for (let i = 0; i < binNumber; i += 1) {
+          const binEnd =
+            i === binNumber - 1 ? legendMax : binStart + legendBinSize;
+          bins.push([binStart, binEnd]);
+          binStart = binEnd;
+        }
+
         return {
           [LEGEND_RANGE_1]: bins[0],
           [LEGEND_RANGE_2]: bins[1],
           [LEGEND_RANGE_3]: bins[2],
           [LEGEND_RANGE_4]: bins[3],
           [LEGEND_RANGE_5]: bins[4],
-          [LEGEND_RANGE_6]: bins[5],
         };
+      }
+      const binNumber = 7;
+      const legendMin = -2;
+      const legendMax = 2;
+      const legendRange = legendMax + Math.abs(legendMin);
+
+      let binStart = legendMin;
+      const legendBinSize = legendRange / binNumber;
+
+      const bins = [];
+      for (let i = 0; i < binNumber; i += 1) {
+        const binEnd =
+          i === binNumber - 1 ? legendMax : binStart + legendBinSize;
+        bins.push([binStart, binEnd]);
+        binStart = binEnd;
       }
 
       return {
@@ -512,6 +567,8 @@ function ContextAnalysis({
         [LEGEND_RANGE_3]: bins[2],
         [LEGEND_RANGE_4]: bins[3],
         [LEGEND_RANGE_5]: bins[4],
+        [LEGEND_RANGE_6]: bins[5],
+        [LEGEND_RANGE_7]: bins[6],
       };
     },
     [entityType]
@@ -541,11 +598,12 @@ function ContextAnalysis({
       entityType === "gene"
         ? {
             [LEGEND_RANGE_1]: continuousColorScale[0][1],
-            [LEGEND_RANGE_2]: continuousColorScale[1][1],
-            [LEGEND_RANGE_3]: continuousColorScale[2][1],
-            [LEGEND_RANGE_4]: continuousColorScale[3][1],
-            [LEGEND_RANGE_5]: continuousColorScale[4][1],
-            [LEGEND_RANGE_6]: continuousColorScale[5][1],
+            [LEGEND_RANGE_2]: "#BCD0F5",
+            [LEGEND_RANGE_3]: "#BCD0F5",
+            [LEGEND_RANGE_4]: continuousColorScale[1][1],
+            [LEGEND_RANGE_5]: "#EDC5AF",
+            [LEGEND_RANGE_6]: "#EDC5AF",
+            [LEGEND_RANGE_7]: continuousColorScale[2][1],
           }
         : {
             [LEGEND_RANGE_1]: continuousColorScale[0][1],
