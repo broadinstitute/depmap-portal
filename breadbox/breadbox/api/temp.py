@@ -5,7 +5,6 @@ from fastapi import APIRouter, Body, Depends, HTTPException
 from breadbox.api.dependencies import get_db_with_user, get_cas_db_path
 from breadbox.config import Settings, get_settings
 from breadbox.crud import types as types_crud
-from breadbox.crud import slice as slice_crud
 from breadbox.schemas.custom_http_exception import UserError
 from breadbox.db.session import SessionWithUser
 from breadbox.schemas.context import (
@@ -13,6 +12,7 @@ from breadbox.schemas.context import (
     ContextMatchResponse,
 )
 from breadbox.schemas.cas import CASKey, CASValue
+from breadbox.service import slice as slice_service
 
 from depmap_compute.context import ContextEvaluator
 from breadbox.io import cas
@@ -60,7 +60,7 @@ def evaluate_context(
     Also get the total number of "candidate" records (all records with labels belonging to the dimension type).
     Requests must be in the version 2 context format. 
     """
-    slice_loader_function = lambda slice_query: slice_crud.get_slice_data(
+    slice_loader_function = lambda slice_query: slice_service.get_slice_data(
         db, settings.filestore_location, slice_query
     )
     context_evaluator = ContextEvaluator(context.dict(), slice_loader_function)
