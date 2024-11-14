@@ -3261,6 +3261,16 @@ mypy = ">=0.790"
 typing-extensions = ">=3.7.4"
 
 [[package]]
+name = "sqlitedict"
+version = "2.1.0"
+description = "Persistent dict in Python, backed up by sqlite3 and pickle, multithread-safe."
+optional = false
+python-versions = "*"
+files = [
+    {file = "sqlitedict-2.1.0.tar.gz", hash = "sha256:03d9cfb96d602996f1d4c2db2856f1224b96a9c431bdd16e78032a72940f9e8c"},
+]
+
+[[package]]
 name = "starlette"
 version = "0.37.2"
 description = "The little ASGI library that shines."
@@ -4022,4 +4032,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "jaraco.test", "more
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "117c8fd64b42e2d4c493d8af21f98bdce70a003407888e9d5e6d1b37b7bfa02a"
+content-hash = "cd8fc387b39e60a331737df5b540d935667cbe565c18fd77d7939db44bedb22d"

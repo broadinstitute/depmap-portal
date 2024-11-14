@@ -247,3 +247,31 @@ class TestPost:
         )
         assert_status_not_ok(response)
         assert response.status_code == 404
+
+
+def test_cas_operations(client: TestClient, settings):
+    # make sure we handle missing keys with a 404
+    response = client.get("/temp/cas/asdfasdf",)
+    assert response.status_code == 404
+
+    # make sure storing and getting results in same value
+    value = "payload"
+    response = client.post("/temp/cas", json={"value": value,})
+    assert response.status_code == 200
+    key = response.json()["key"]
+
+    response = client.get(f"/temp/cas/{key}",)
+    assert response.status_code == 200
+    assert response.json()["value"] == value
+
+    # make sure storing a different value results in a different key
+    value2 = "different"
+    response = client.post("/temp/cas", json={"value": value2,})
+    assert response.status_code == 200
+    key2 = response.json()["key"]
+
+    assert key != key2
+
+    response = client.get(f"/temp/cas/{key2}",)
+    assert response.status_code == 200
+    assert response.json()["value"] == value2

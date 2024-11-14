@@ -6,6 +6,7 @@ from fastapi import Depends, HTTPException, Request
 from ..crud import dataset as dataset_crud
 from breadbox.db.session import SessionLocalWithUser, SessionWithUser
 from breadbox.config import get_settings
+import os
 
 
 def get_db_with_user(request: Request):
@@ -15,6 +16,11 @@ def get_db_with_user(request: Request):
         yield db
     finally:
         db.close()
+
+
+def get_cas_db_path():
+    settings = get_settings()
+    return os.path.join(settings.filestore_location, "cas.sqlite3")
 
 
 def get_user(request: Request) -> str:
