@@ -19,6 +19,8 @@ from .body_get_dimension_data import BodyGetDimensionData
 from .body_update_feature_type_metadata import BodyUpdateFeatureTypeMetadata
 from .body_update_sample_type_metadata import BodyUpdateSampleTypeMetadata
 from .body_upload_file import BodyUploadFile
+from .cas_key import CASKey
+from .cas_value import CASValue
 from .column_metadata import ColumnMetadata
 from .compute_params import ComputeParams
 from .compute_response import ComputeResponse
@@ -124,6 +126,8 @@ __all__ = (
     "BodyUpdateFeatureTypeMetadata",
     "BodyUpdateSampleTypeMetadata",
     "BodyUploadFile",
+    "CASKey",
+    "CASValue",
     "ColumnMetadata",
     "ComputeParams",
     "ComputeResponse",
