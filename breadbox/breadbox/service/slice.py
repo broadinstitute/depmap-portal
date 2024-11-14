@@ -1,5 +1,4 @@
 import pandas as pd
-from typing import Any, Optional
 
 from breadbox.db.session import SessionWithUser
 import breadbox.crud.dataset as dataset_crud
@@ -13,6 +12,7 @@ from breadbox.io.filestore_crud import (
     get_sample_slice,
 )
 from breadbox.service import metadata as metadata_service
+from breadbox.service import dataset as dataset_service
 
 from depmap_compute.slice import SliceQuery
 
@@ -36,7 +36,7 @@ def get_slice_data(
                 "The slice query identifier type `column` may only be used with tabular datasets."
             )
         tabular_dimension_info = TabularDimensionsInfo(columns=[slice_query.identifier])
-        slice_data = dataset_crud.get_subsetted_tabular_dataset_df(
+        slice_data = dataset_service.get_subsetted_tabular_dataset_df(
             db=db,
             user=db.user,
             dataset=dataset,

@@ -342,6 +342,7 @@ def get_matrix_dataset_data(
     "/tabular/{dataset_id}", operation_id="get_tabular_dataset_data",
 )
 def get_tabular_dataset_data(
+    # TODO: make sure there are actually tests for this
     db: Annotated[SessionWithUser, Depends(get_db_with_user)],
     user: Annotated[str, Depends(get_user)],
     dataset: Annotated[DatasetModel, Depends(get_dataset_dep)],
@@ -356,7 +357,7 @@ def get_tabular_dataset_data(
     ] = False,
 ):
     try:
-        df = dataset_crud.get_subsetted_tabular_dataset_df(
+        df = dataset_service.get_subsetted_tabular_dataset_df(
             db, user, dataset, tabular_dimensions_info, strict
         )
     except UserError as e:
