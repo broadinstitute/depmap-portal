@@ -281,10 +281,8 @@ def get_metadata_by_dataset(
         "label" in properties_to_index
     ), f"The code is assuming that label is present but dataset {dataset.id} had properties_to_index={properties_to_index}"
 
-    feature_query = get_feature_query_for_feature_type(
-        db=db,
-        feature_type_dataset_id=dataset.id,
-        properties_to_index=properties_to_index,
+    feature_query = get_properties_to_index_query_for_metadata_dataset(
+        db=db, metadata_dataset_id=dataset.id, properties_to_index=properties_to_index,
     )
     feature_df = pd.read_sql(
         feature_query.statement, feature_query.session.connection()
@@ -432,11 +430,12 @@ def create_index_records_for_row(
     return dimension_search_index_rows
 
 
-def get_feature_query_for_feature_type(
-    db: SessionWithUser, feature_type_dataset_id: str, properties_to_index: List[str],
+def get_properties_to_index_query_for_metadata_dataset(
+    db: SessionWithUser, metadata_dataset_id: str, properties_to_index: List[str],
 ):
+    # Note: This function could likely be replaced by a call to get_subsetted_tabular_dataset_df
     filter_clauses = [
-        DimensionType.dataset_id == feature_type_dataset_id,
+        DimensionType.dataset_id == metadata_dataset_id,
         Dimension.given_id.in_(properties_to_index),
     ]
 

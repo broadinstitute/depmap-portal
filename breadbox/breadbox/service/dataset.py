@@ -121,18 +121,18 @@ def get_subsetted_tabular_dataset_df(
         raise DatasetAccessError(f"User {user} does not have access to dataset")
 
     # If labels were given as the filter, get the corresponding set of given ids
+    dataset_labels_by_id = metadata_service.get_tabular_dataset_labels_by_id(
+        db, dataset
+    )
     if tabular_dimensions_info.identifier == FeatureSampleIdentifier.label:
-        dataset_labels_by_id = metadata_service.get_tabular_dataset_labels_by_id(
-            db, dataset
-        )
         if tabular_dimensions_info.indices is None:
             user_specified_given_ids = None
         else:
-            user_specified_given_ids = {
+            user_specified_given_ids = [
                 id
                 for id, label in dataset_labels_by_id.items()
                 if label in tabular_dimensions_info.indices
-            }
+            ]
     else:
         if tabular_dimensions_info.indices is None:
             user_specified_given_ids = None
