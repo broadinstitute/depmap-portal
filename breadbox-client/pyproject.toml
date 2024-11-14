@@ -1,6 +1,10 @@
 [tool.poetry]
 name = "breadbox-client"
+<<<<<<< HEAD
 version = "3.12.1"
+=======
+version = "3.13.0"
+>>>>>>> internal
 description = "A client library for accessing Breadbox"
 
 authors = []

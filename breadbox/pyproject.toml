@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "breadbox"
-version = "3.12.1"
+version = "3.13.0"
 description = "A peristent service that stores and fetches datasets"
 authors = ["Jessica Cheng <jcheng@broadinstitute.org>"]
 packages = [{include = "breadbox"}]
@@ -56,7 +56,7 @@ name = "cz_customize"   # Must use name 'cz_customize' in order to enable custom
 tag_format = "breadbox-$version"
 version_scheme = "pep440"
 version_provider = "poetry"
-version = "3.12.1"
+version = "3.13.0"
 version_files = [
     'pyproject.toml:version',
     '../breadbox-client/pyproject.toml:version',
