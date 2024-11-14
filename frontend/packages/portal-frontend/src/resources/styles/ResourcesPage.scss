@@ -70,8 +70,26 @@
 .navPostItem {
   border: none;
   border-bottom: 1px solid lightgray !important;
-  padding-left: 55px;
-  padding-right: 20px;
   font-weight: 500;
-  font-size: 16px;
+
+  @media screen and (min-width: 800px) {
+    padding-left: 55px;
+    padding-right: 20px;
+    font-size: 16px;
+  }
+  @media screen and (max-width: 799px) {
+    padding-left: 20px;
+    padding-right: 10px;
+  }
+}
+
+.panelHeading {
+  display: grid;
+  grid-template-columns: 95% 5%;
+  grid-template-areas: "title glyph-symbol";
+}
+
+.headingTitle {
+  grid-area: "title";
+  padding-right: "10px";
 }
