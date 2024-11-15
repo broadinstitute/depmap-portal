@@ -120,10 +120,29 @@ def test_all_dimension_type_methods(client: TestClient, minimal_db, settings):
         "/types/dimensions/sample_id_name", headers={"X-Forwarded-Email": "not-admin"}
     )
     assert_status_not_ok(response)
+    minimal_db.reset_user(settings.admin_users[0])
+
+    # Make sure deleting cannot be done if nonmetadata dataset using dimension type
+    matrix_dataset = factories.matrix_dataset(
+        db, settings, sample_type=dim_type_fields["name"]
+    )
+    response = client.delete("/types/dimensions/sample_id_name", headers=admin_headers,)
+    assert response.status_code == 409
 
     # make sure we can delete it
+    # first delete dataset using dimension type we want to delete
+    res_del_dataset = client.delete(
+        f"/datasets/{matrix_dataset.id}", headers=admin_headers,
+    )
+    assert_status_ok(res_del_dataset)
+    # check metadata dataset exist first
+    metadata_dataset = (
+        minimal_db.query(Dataset).filter_by(id=new_metadata.id).one_or_none()
+    )
+    assert metadata_dataset.id == new_metadata.id
     response = client.delete("/types/dimensions/sample_id_name", headers=admin_headers,)
     assert_status_ok(response)
+    # verify metadata dataset deleted along with its dimension type
     metadata_dataset = (
         minimal_db.query(Dataset).filter_by(id=new_metadata.id).one_or_none()
     )

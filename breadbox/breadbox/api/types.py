@@ -689,7 +689,7 @@ def delete_dimension_type_endpoint(
 
     # don't count datasets which are actually the metadata for this type
     datasets_with_using_type = [
-        x for x in datasets_with_using_type if x.id == dim_feature_type.dataset_id
+        x for x in datasets_with_using_type if x.id != dim_feature_type.dataset_id
     ]
 
     num_datasets = len(datasets_with_using_type)
