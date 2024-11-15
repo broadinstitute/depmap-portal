@@ -116,12 +116,21 @@ def get_datasets(
     # Decide if should return for metadata when given feature id/type or sample id/type
     # TODO: feature type can be none. How should we filter those datasets?
     if feature_type is not None:
-        filter_clauses.append(
-            or_(
-                dataset_poly.MatrixDataset.feature_type_name == feature_type,
-                dataset_poly.TabularDataset.index_type_name == feature_type,
-            )
+        # Make sure that the `feature_type` dimension type is actually in the feature axis so tabular datasets are correctly filtered
+        feature_dimension_type = (
+            db.query(DimensionType).filter_by(name=feature_type).one_or_none()
         )
+        if feature_dimension_type and feature_dimension_type.axis == "feature":
+            filter_clauses.append(
+                or_(
+                    dataset_poly.MatrixDataset.feature_type_name == feature_type,
+                    dataset_poly.TabularDataset.index_type_name == feature_type,
+                )
+            )
+        else:
+            filter_clauses.append(
+                dataset_poly.MatrixDataset.feature_type_name == feature_type
+            )
 
         if feature_id is not None:
             dataset_ids = [
@@ -133,12 +142,21 @@ def get_datasets(
             filter_clauses.append(dataset_poly.MatrixDataset.id.in_(dataset_ids))
 
     if sample_type is not None:
-        filter_clauses.append(
-            or_(
-                dataset_poly.MatrixDataset.sample_type_name == sample_type,
-                dataset_poly.TabularDataset.index_type_name == sample_type,
-            )
+        # Make sure that the `sample_type` dimension type is actually in the sample axis so tabular datasets are correctly filtered
+        sample_dimension_type = (
+            db.query(DimensionType).filter_by(name=sample_type).one_or_none()
         )
+        if sample_dimension_type and sample_dimension_type.axis == "sample":
+            filter_clauses.append(
+                or_(
+                    dataset_poly.MatrixDataset.sample_type_name == sample_type,
+                    dataset_poly.TabularDataset.index_type_name == sample_type,
+                )
+            )
+        else:
+            filter_clauses.append(
+                dataset_poly.MatrixDataset.sample_type_name == sample_type
+            )
 
         if sample_id is not None:
             dataset_ids = [

@@ -233,6 +233,22 @@ def test_get_datasets_by_dimension_types(minimal_db, settings):
             tabular_dataset_with_sample_type.id,
         ]
 
+    # test filter both feature and sample type
+    datasets_with_sample_and_feature_type = get_datasets(
+        minimal_db,
+        minimal_db.user,
+        feature_type="some_feature_type",
+        sample_type="depmap_model",
+    )
+    assert len(datasets_with_sample_and_feature_type) == 1
+    assert datasets_with_sample_and_feature_type[0].id == matrix_dataset_2.id
+
+    # test that when filtering a dimension type by the wrong axis, the datasets won't get returned
+    datasets_with_feature_type_as_sample_type = get_datasets(
+        minimal_db, minimal_db.user, sample_type="some_feature_type"
+    )
+    assert len(datasets_with_feature_type_as_sample_type) == 0
+
 
 def test_get_datasets_by_data_type(minimal_db, settings):
     factories.data_type(minimal_db, "Data Type 1")
