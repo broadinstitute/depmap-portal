@@ -348,7 +348,7 @@ def run_custom_analysis(
             feature_indices,
         )
         if len(filtered_cell_line_list) == 0:
-            return UserError(
+            raise UserError(
                 "No cell lines in common between query and dataset searched"
             )
 
