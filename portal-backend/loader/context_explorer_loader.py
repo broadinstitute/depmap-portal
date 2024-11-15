@@ -9,6 +9,7 @@ from depmap.utilities.models import log_data_issue
 from loader.dataset_loader.biomarker_loader import _batch_load
 import pandas as pd
 from depmap.dataset.models import DependencyDataset
+from depmap.context.models_new import SubtypeNode, SubtypeNodeAlias
 from flask import current_app
 
 
@@ -135,3 +136,57 @@ def load_context_explorer_context_analysis(db_file):
 
 def load_context_explorer_context_analysis_dev(db_file):
     _batch_load(db_file, _read_context_analyses, ContextAnalysis.__table__)
+
+
+# TODO: Loading the subtype tree should probably eventually be moved to where
+# Contexts are currently loaded.
+def _read_subtype_tree(dr, pbar):
+    loaded = 0
+
+    for row in dr:
+        oncotree_code = row["OncotreeCode"]
+        depmap_model_type = row["DepmapModelType"]
+        subtype_code = oncotree_code if oncotree_code else depmap_model_type
+        node_name = row["NodeName"]
+        node_level = row["NodeLevel"]
+        level_0 = row["Level0"]
+        level_1 = row["Level1"]
+        level_2 = row["Level2"]
+        level_3 = row["Level3"]
+        level_4 = row["Level4"]
+        level_5 = row["Level5"]
+
+        alias_names = row["NodeAliasName"].split(";")
+        alias_codes = row["NodeAliasCode"].split(";")
+        assert len(alias_names) == len(alias_codes)
+        subtype_node_aliases = [
+            SubtypeNodeAlias(
+                alias_name=alias.strip(), alias_subtype_code=alias_codes[i]
+            )
+            for i, alias in enumerate(alias_names)
+        ]
+
+        subtype_node = dict(
+            subtype_code=subtype_code,
+            oncotree_code=oncotree_code,
+            depmap_model_type=depmap_model_type,
+            node_name=node_name,
+            node_level=node_level,
+            level_0=level_0,
+            level_1=level_1,
+            level_2=level_2,
+            level_3=level_3,
+            level_4=level_4,
+            level_5=level_5,
+            subtype_node_alias=subtype_node_aliases,
+        )
+
+        yield subtype_node
+        loaded += 1
+        pbar.update(1)
+
+    print("Loaded {} subtype records.".format(loaded))
+
+
+def load_subtype_tree(db_file):
+    _batch_load(db_file, _read_subtype_tree, SubtypeNode.__table__)

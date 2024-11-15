@@ -8,12 +8,9 @@ from depmap.context_explorer.utils import (
     get_box_plot_data_for_selected_lineage,
     get_other_context_dependencies,
     get_full_row_of_values_and_depmap_ids,
-    has_drug_data,
-    has_gene_dep_data,
     get_context_dose_curves,
     get_entity_id_from_entity_full_label,
 )
-from depmap.gene.models import Gene
 from depmap.tda.views import convert_series_to_json_safe_list
 from flask_restplus import Namespace, Resource
 from flask import current_app, request
@@ -142,16 +139,20 @@ class ContextInfo(
 def _get_overview_table_data(
     df: pd.DataFrame, summary_df: pd.DataFrame
 ) -> pd.DataFrame:
-    overview_page_table = df[["lineage_1", "lineage_2", "lineage_3", "lineage_6"]]
-    overview_page_table.rename(
-        columns={
-            "lineage_1": "lineage",
-            "lineage_2": "primary_disease",
-            "lineage_3": "subtype",
-            "lineage_6": "molecular_subtype",
-        },
-        inplace=True,
-    )
+    # TODO: Ask Alison, should I go to level_2 or 3. Not sure if "show 3 levels"
+    # was when we were calling the first level 0 or 1.
+    overview_page_table = df
+
+    # TODO: What do we want these named in the front end?????
+    # overview_page_table.rename(
+    #     columns={
+    #         "lineage_1": "lineage",
+    #         "lineage_2": "primary_disease",
+    #         "lineage_3": "subtype",
+    #         "lineage_6": "molecular_subtype",
+    #     },
+    #     inplace=True,
+    # )
 
     cell_line_display_names = DepmapModel.get_cell_line_display_names(
         list(summary_df.columns.values)
@@ -170,19 +171,10 @@ def _get_overview_table_data(
     dummy_value = ""
     overview_page_table = overview_page_table.fillna(dummy_value)
 
-    # Get a list of crispr_depmap_ids and prism_depmap_ids so that we can store
-    # hasGenDepData and hasDrugData as fields in the ContextExplorerTree.
-    crispr_depmap_ids = overview_page_table[
-        overview_page_table["crispr"] == True
-    ].index.tolist()
-    drug_depmap_ids = overview_page_table[
-        overview_page_table["prism"] == True
-    ].index.tolist()
-
     overview_page_table = overview_page_table.reset_index()
     overview_data = overview_page_table.to_dict("records")
 
-    return overview_data, crispr_depmap_ids, drug_depmap_ids
+    return overview_data
 
 
 # lineage_1: oncotree_lineage
@@ -194,86 +186,53 @@ def _get_overview_table_data(
 def get_context_explorer_lineage_trees_and_table_data() -> Tuple[
     Dict[str, ContextExplorerTree], List[Dict[str, Union[str, bool]]]
 ]:
-    query = DepmapModel.get_context_tree_query()
-    df = pd.read_sql(query.statement, query.session.connection())
-    df = df.rename(columns={"model_id": "depmap_id"})
+    subtype_tree_query = DepmapModel.get_subtype_tree_query()
+    subtype_df = pd.read_sql(
+        subtype_tree_query.statement, subtype_tree_query.session.connection()
+    )
 
-    # Filter out lineages that don't have depmap_ids in the summary data
     summary_df = _get_context_summary_df()
-    df = df[df["depmap_id"].isin(list(summary_df.columns))]
 
-    # Get lineage_df (with list of depmap_ids per lineage), so that given a lineage
-    # name, we can easily get the list of depmap_ids for that lienage
-    lineage_by_level = df.copy()
-    lineage_by_level["lineage_by_level"] = lineage_by_level[
-        ["lineage", "lineage_level"]
-    ].values.tolist()
-    lineage_by_level["lineage_by_level"] = lineage_by_level["lineage_by_level"].apply(
-        tuple
-    )
+    overview_data = _get_overview_table_data(df=subtype_df, summary_df=summary_df)
 
-    lineage_df = pd.pivot_table(
-        lineage_by_level,
-        values=["lineage", "depmap_id", "lineage_level"],
-        index="lineage_by_level",
-        aggfunc={"depmap_id": list, "lineage_level": list},
-    )
-
-    df["lineage_level"] = "lineage_" + df["lineage_level"].astype(str)
-    inds = df.columns.difference(["lineage_level", "lineage"]).tolist()
-    dummy_value = ""
-    df = df.fillna(dummy_value)
-    df = df.pivot_table(
-        index=inds, columns="lineage_level", values="lineage", aggfunc="first"
-    )
-
-    overview_data, crispr_depmap_ids, drug_depmap_ids = _get_overview_table_data(
-        df=df, summary_df=summary_df
-    )
-
-    # NOTE: TEMPORARY - per Barbara's instructions, dropping all but the first 2 lineage levels for the prototype
-    df = df.drop(columns=["lineage_3", "lineage_5", "lineage_6"])
-    lineage_1_sorted = df.sort_values("lineage_1")
-    unique_lineage_1 = lineage_1_sorted["lineage_1"].unique()
+    subtype_tree_df = subtype_df[
+        [
+            "subtype_code",
+            "node_name",
+            "node_level",
+            "level_0",
+            "level_1",
+            "level_2",
+            "level_3",
+            "level_4",
+            "level_5",
+        ]
+    ]
+    subtype_codes_and_names = subtype_df[["subtype_code", "node_name"]].loc[
+        subtype_df["node_level"] == 0
+    ]
+    subtype_codes_and_names_dict = subtype_codes_and_names.set_index(
+        "subtype_code"
+    ).to_dict()["node_name"]
 
     trees = {}
-    for unique_lineage in unique_lineage_1:
-        if pd.isna(unique_lineage):
-            continue
-
-        lineage_row = lineage_df.loc[lineage_df.index == (unique_lineage, 1)]
-
-        # If we don't take the unique depmap_ids, some depmap_ids are
-        # counted twice if they have the same lineage listed at 2 different
-        # levels (for example: Bone --> Ewing Sarcoma --> Ewing Sarcoma)
-        depmap_ids = (
-            list(set(lineage_row["depmap_id"].iloc[[0]].values[0]))
-            if len(lineage_row["depmap_id"]) != 0
-            else []
-        )
+    for subtype_code in list(subtype_codes_and_names_dict.keys()):
+        model_ids = DepmapModel.get_model_ids_by_subtype_code(subtype_code)
+        node_name = subtype_codes_and_names_dict[subtype_code]
         root_node = ContextNode(
-            name=unique_lineage,
-            depmap_ids=depmap_ids,
-            has_gene_dep_data=has_gene_dep_data,
-            has_drug_data=has_drug_data,
-            crispr_depmap_ids=crispr_depmap_ids,
-            drug_depmap_ids=drug_depmap_ids,
+            name=node_name, subtype_code=subtype_code, model_ids=model_ids
         )
         tree = ContextExplorerTree(root_node)
 
-        tree_df = lineage_1_sorted.loc[lineage_1_sorted["lineage_1"] == unique_lineage]
-
         tree.create_context_tree_from_root_info(
-            tree_df=tree_df,
-            current_lineage=unique_lineage,
-            lineage_df=lineage_df,
-            current_lineage_level="lineage_1",
-            has_gene_dep_data=has_gene_dep_data,
-            has_drug_data=has_drug_data,
-            crispr_depmap_ids=crispr_depmap_ids,
-            drug_depmap_ids=drug_depmap_ids,
+            tree_df=subtype_tree_df,
+            current_node_name=node_name,
+            lineage_df=subtype_tree_df.loc[
+                subtype_tree_df["subtype_code"] == subtype_code
+            ],
+            current_level=0,
         )
-        trees[unique_lineage] = tree
+        trees[subtype_code] = tree
 
     return trees, overview_data
 
@@ -304,7 +263,7 @@ def _get_analysis_data_table(
     # if out_group_type == "All":
     #    out_group_type = "All Others"  # HACK: Temporary until we agree on value options for outgroup types
 
-    data = ContextAnalysis.find_context_analysis_by_context_name_out_group(
+    data = ContextAnalysis.find_context_analysis_by_subtype_code_out_group(
         context_name=in_group,
         out_group=out_group_type,
         entity_type=entity_type,

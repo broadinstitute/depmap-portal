@@ -1,3 +1,4 @@
+from typing import Optional
 from depmap.database import (
     Column,
     ForeignKey,
@@ -19,7 +20,7 @@ class SubtypeNode(Model):
         ),
     )
 
-    subtype_node_id = Column(Integer, primary_key=True, autoincrement=True)
+    subtype_code = Column(String, primary_key=True, index=True)
     oncotree_code = Column(String)
     depmap_model_type = Column(String)
     node_name = Column(String, nullable=True)
@@ -32,6 +33,14 @@ class SubtypeNode(Model):
     level_5 = Column(String, nullable=True)
     subtype_node_alias = relationship("SubtypeNodeAlias", lazy="dynamic")
 
+    @classmethod
+    def get_by_code(cls, code, must=True) -> Optional["SubtypeNode"]:
+        q = db.session.query(SubtypeNode).filter(SubtypeNode.subtype_code == code)
+        if must:
+            return q.one()
+        else:
+            return q.one_or_none()
+
 
 class SubtypeNodeAlias(Model):
     """
@@ -41,8 +50,9 @@ class SubtypeNodeAlias(Model):
     __tablename__ = "subtype_node_alias"
     subtype_node_alias_id = Column(Integer, primary_key=True, autoincrement=True)
     alias_name = Column(String, nullable=False, index=True)
-    subtype_node_id = Column(
-        Integer, ForeignKey("subtype_node.subtype_node_id"), nullable=False
+    alias_subtype_code = Column(String, nullable=False, index=True)
+    subtype_code = Column(
+        String, ForeignKey("subtype_node.subtype_code"), nullable=False
     )
     subtype_node = relationship(
         "SubtypeNode",

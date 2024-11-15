@@ -6,6 +6,7 @@ from typing import Dict, List, Optional, Sequence
 from depmap.cell_line.models import Lineage
 import numpy as np
 from collections import Counter
+from depmap.context.models_new import SubtypeNode
 
 
 import pandas as pd
@@ -71,11 +72,11 @@ class DepmapModel(Model):
     depmap_model_type = Column(String)
     oncotree_code = Column(String)
 
-    subtype_node_id = Column(
-        Integer, ForeignKey("subtype_node.subtype_node_id"), nullable=False
+    subtype_code = Column(
+        String, ForeignKey("subtype_node.subtype_code"), nullable=False
     )
     subtype_node = relationship(
-        "SubtypeNode", foreign_keys="SubtypeNode.subtype_node_id", uselist=False
+        "SubtypeNode", foreign_keys="SubtypeNode.subtype_code", uselist=False
     )
 
     wtsi_master_cell_id = Column(Integer, index=True)  # wtsi is wellcome trust sanger
@@ -248,22 +249,36 @@ class DepmapModel(Model):
         return s
 
     @staticmethod
-    def get_context_tree_query():
-        """
-        Joins database tables required for Context Explorer
-        """
-        query = db.session.query(DepmapModel.model_id)
-        table_query = (
-            query.outerjoin(Lineage, DepmapModel.oncotree_lineage)
-            .add_columns(
-                sqlalchemy.column('"lineage".name', is_literal=True).label("lineage"),
-                sqlalchemy.column('"lineage".level', is_literal=True).label(
-                    "lineage_level"
-                ),
-            )
-            .order_by(Lineage.level)
+    def get_subtype_tree_query():
+        query = SubtypeNode.query.add_columns(
+            sqlalchemy.column('"subtype_node".node_name', is_literal=True).label(
+                "node_name"
+            ),
+            sqlalchemy.column('"subtype_node".subtype_code', is_literal=True).label(
+                "subtype_code"
+            ),
+            sqlalchemy.column('"subtype_node".node_level', is_literal=True).label(
+                "node_level"
+            ),
+        ).order_by(SubtypeNode.node_level)
+        return query
+
+    @staticmethod
+    def get_model_ids_by_subtype_code(subtype_code: str) -> Dict[str, str]:
+        query = (
+            db.session.query(DepmapModel)
+            .filter_by(DepmapModel.subtype_code == subtype_code)
+            .with_entities(DepmapModel.model_id, DepmapModel.stripped_cell_line_name)
         )
-        return table_query
+
+        cell_lines = pd.read_sql(query.statement, query.session.connection())
+        cell_lines_dict = dict(
+            zip(
+                cell_lines["model_id"].values,
+                cell_lines["stripped_cell_line_name"].values,
+            )
+        )
+        return cell_lines_dict
 
     @staticmethod
     def get_model_ids_by_lineage_and_level(

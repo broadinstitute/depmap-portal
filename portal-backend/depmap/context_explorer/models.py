@@ -3,11 +3,12 @@ import sqlalchemy
 from sqlalchemy import and_, func, desc
 import enum
 from typing import List, Literal, Optional, Tuple
-from depmap.cell_line.models import Lineage
 import pandas as pd
 from depmap.gene.models import Gene
 from depmap.compound.models import CompoundExperiment
 from depmap.enums import DependencyEnum
+from depmap.context.models_new import SubtypeNode
+from depmap.cell_line.models_new import DepmapModel
 from depmap.database import (
     Column,
     Float,
@@ -23,21 +24,20 @@ from depmap.database import (
 @dataclass
 class ContextNameInfo:
     name: str
-    display_name: str
+    subtype_code: str
 
 
 def _get_child_lineages_next_lineage_level_from_root_info(
-    sorted: pd.DataFrame, current_level: str,
+    sorted: pd.DataFrame, current_level: int,
 ) -> Tuple[Optional[List[str]], Optional[str]]:
-    next_lineage_level_num = int(current_level) + 1
-    next_lineage_level = "lineage_" + str(next_lineage_level_num)
+    next_lineage_level = current_level + 1
 
-    if next_lineage_level not in sorted:
+    if next_lineage_level not in sorted["node_level"]:
         return None, None
 
-    child_lineages = sorted[next_lineage_level].unique()
+    child_lineages_df = sorted[sorted["node_level"] == next_lineage_level]
 
-    return child_lineages, next_lineage_level
+    return child_lineages_df, next_lineage_level
 
 
 class ContextExplorerTree(dict):
@@ -51,64 +51,47 @@ class ContextExplorerTree(dict):
         self.children.append(obj)
 
     def create_context_tree_from_root_info(
-        self,
-        tree_df,
-        current_lineage,
-        lineage_df,
-        current_lineage_level: str,  # e.g.: "lineage_2"
-        has_gene_dep_data,
-        has_drug_data,
-        crispr_depmap_ids,
-        drug_depmap_ids,
+        self, tree_df, current_node_name, lineage_df, node_level: int,
     ):
-        _, current_level = current_lineage_level.split("_")
-        sorted = tree_df.loc[tree_df[current_lineage_level] == current_lineage]
+        # Find all subtype nodes at this level
+        sorted = tree_df.loc[tree_df["node_level"] == node_level]
 
         (
-            child_lineages,
-            next_lineage_level,
+            child_lineages_df,
+            next_level,
         ) = _get_child_lineages_next_lineage_level_from_root_info(
-            sorted=sorted, current_level=current_level,
+            sorted=sorted, current_level=node_level,
         )
-        if next_lineage_level is None:
+        if next_level is None:
             return
 
-        _, next_level = next_lineage_level.split("_")
+        subtype_codes_and_names: pd.DataFrame = child_lineages_df[
+            ["subtype_code", "node_name"]
+        ].loc[child_lineages_df["node_level"] == next_level]
+        if not subtype_codes_and_names.empty:
+            subtype_codes_and_names_dict = subtype_codes_and_names.set_index(
+                "subtype_code"
+            ).to_dict()["node_name"]
 
-        if len(child_lineages) > 0:
-            for child_lineage in child_lineages:
-                lineage_row = lineage_df.loc[
-                    lineage_df.index == (child_lineage, int(next_level))
-                ]
-
-                depmap_ids = (
-                    list(set(lineage_row["depmap_id"].values.tolist()[0]))
-                    if len(lineage_row["depmap_id"]) != 0
-                    else []
+            for child_subtype_code in list(subtype_codes_and_names_dict.keys()):
+                model_ids = DepmapModel.get_model_ids_by_subtype_code(
+                    child_subtype_code
                 )
-
-                current_child_names = [child.name for child in self.children]
-                if len(depmap_ids) > 0 and child_lineage not in current_child_names:
+                current_child_codes = [child.subtype_code for child in self.children]
+                if len(model_ids) > 0 and child_subtype_code not in current_child_codes:
                     node = ContextNode(
-                        name=child_lineage,
-                        depmap_ids=depmap_ids,
-                        has_gene_dep_data=has_gene_dep_data,
-                        has_drug_data=has_drug_data,
-                        crispr_depmap_ids=crispr_depmap_ids,
-                        drug_depmap_ids=drug_depmap_ids,
+                        name=subtype_codes_and_names[child_subtype_code],
+                        subtype_code=child_subtype_code,
+                        model_ids=model_ids,
                     )
                     self.add_node(node)
 
             for child in self.children:
                 child.create_context_tree_from_root_info(
                     tree_df=sorted,
-                    current_lineage=child_lineage,
+                    current_node_name=subtype_codes_and_names[child_subtype_code],
                     lineage_df=lineage_df,
-                    current_lineage_level=next_lineage_level,
-                    has_gene_dep_data=child.has_gene_dep_data,
-                    has_drug_data=child.has_drug_data,
-                    crispr_depmap_ids=crispr_depmap_ids,
-                    drug_depmap_ids=drug_depmap_ids,
+                    current_lineage_level=next_level,
                 )
 
     def get_all_nodes(self):
@@ -121,21 +104,13 @@ class ContextExplorerTree(dict):
 
 class ContextNode(dict):
     def __init__(
-        self,
-        name,
-        depmap_ids,
-        has_gene_dep_data,
-        has_drug_data,
-        crispr_depmap_ids,
-        drug_depmap_ids,
+        self, name, subtype_code, model_ids,
     ):
         super().__init__()
         self.__dict__ = self
-        self.name = name
-        self.display_name = Lineage.get_display_name(self.name)
-        self.depmap_ids = depmap_ids
-        self.has_gene_dep_data = has_gene_dep_data(crispr_depmap_ids, depmap_ids)
-        self.has_drug_data = has_drug_data(drug_depmap_ids, depmap_ids)
+        self.name = name  # display name
+        self.subtype_code = subtype_code  # unique key
+        self.model_ids = model_ids
         self.children = []
 
     def add_node(self, obj):
@@ -150,57 +125,46 @@ class ContextNode(dict):
                 Tree.append(child)
 
     def create_context_tree_from_root_info(
-        self,
-        tree_df,
-        current_lineage,
-        lineage_df,
-        current_lineage_level: str,  # e.g.: "lineage_2"
-        has_gene_dep_data,
-        has_drug_data,
-        crispr_depmap_ids,
-        drug_depmap_ids,
+        self, tree_df, current_node_name, lineage_df, node_level: int
     ):
-        _, current_level = current_lineage_level.split("_")
-        sorted = tree_df.loc[tree_df[current_lineage_level] == current_lineage]
+        # Find all subtype nodes at this level
+        sorted = tree_df.loc[tree_df["node_level"] == node_level]
+
         (
-            child_lineages,
-            next_lineage_level,
+            child_lineages_df,
+            next_level,
         ) = _get_child_lineages_next_lineage_level_from_root_info(
-            sorted=sorted, current_level=current_level,
+            sorted=sorted, current_level=node_level,
         )
 
-        if next_lineage_level is None:
+        if next_level is None:
             return
 
-        _, next_level = next_lineage_level.split("_")
+        subtype_codes_and_names: pd.DataFrame = child_lineages_df[
+            ["subtype_code", "node_name"]
+        ].loc[child_lineages_df["node_level"] == next_level]
+        if not subtype_codes_and_names.empty:
+            subtype_codes_and_names_dict = subtype_codes_and_names.set_index(
+                "subtype_code"
+            ).to_dict()["node_name"]
 
-        if len(child_lineages) > 0:
-            for child_lineage in child_lineages:
-                lineage_row = lineage_df.loc[
-                    lineage_df.index == (child_lineage, int(next_level))
-                ]
-                depmap_ids = (
-                    list(set(lineage_row["depmap_id"].iloc[[0]].values[0]))
-                    if len(lineage_row["depmap_id"]) != 0
-                    else []
+            for child_subtype_code in list(subtype_codes_and_names_dict.keys()):
+                model_ids = DepmapModel.get_model_ids_by_subtype_code(
+                    child_subtype_code
                 )
-
-                current_child_names = [child.name for child in self.children]
-                if len(depmap_ids) > 0 and child_lineage not in current_child_names:
+                current_child_codes = [child.subtype_code for child in self.children]
+                if len(model_ids) > 0 and child_subtype_code not in current_child_codes:
                     node = ContextNode(
-                        name=child_lineage,
-                        depmap_ids=depmap_ids,
-                        has_gene_dep_data=has_gene_dep_data,
-                        has_drug_data=has_drug_data,
-                        crispr_depmap_ids=crispr_depmap_ids,
-                        drug_depmap_ids=drug_depmap_ids,
+                        name=subtype_codes_and_names[child_subtype_code],
+                        subtype_code=child_subtype_code,
+                        model_ids=model_ids,
                     )
                     self.add_node(node)
 
 
 # Separated from the class method for testing purposes
 def get_context_analysis_query(
-    context_name: str,
+    subtype_code: str,
     out_group: str,
     entity_type: Literal["gene", "compound"],
     dataset_name: str,
@@ -211,7 +175,7 @@ def get_context_analysis_query(
     if entity_type == "gene":
         query = (
             ContextAnalysis.query.filter_by(
-                context_name=context_name,
+                subtype_code=subtype_code,
                 out_group=out_group,
                 dataset_name=dataset_enum_name,
             )
@@ -226,7 +190,7 @@ def get_context_analysis_query(
     else:
         query = (
             ContextAnalysis.query.filter_by(
-                context_name=context_name,
+                subtype_code=subtype_code,
                 out_group=out_group,
                 dataset_name=dataset_enum_name,
             )
@@ -265,11 +229,17 @@ class ContextAnalysis(Model):
         ),
     )
     context_analysis_id = Column(Integer, primary_key=True, autoincrement=True)
-    context_name = Column(
-        String, ForeignKey("context.name"), nullable=False, index=True
+    # context_name = Column(
+    #     String, ForeignKey("context.name"), nullable=False, index=True
+    # )
+    # context = relationship(
+    #     "Context", foreign_keys="ContextAnalysis.context_name", uselist=False
+    # )
+    subtype_code = Column(
+        String, ForeignKey("subtype_node.subtype_code"), nullable=False, index=True
     )
-    context = relationship(
-        "Context", foreign_keys="ContextAnalysis.context_name", uselist=False
+    subtype = relationship(
+        "SubtypeNode", foreign_keys="ContextAnalysis.subtype_code", uselist=False
     )
     entity_id = Column(
         Integer, ForeignKey("entity.entity_id"), nullable=False, index=True
@@ -309,7 +279,7 @@ class ContextAnalysis(Model):
 
         return {
             "entity": entity_label,
-            "context_name": self.context_name,
+            "context_name": self.subtype_code,
             "dataset_name": self.dataset_name,
             "out_group": self.out_group,
             "t_pval": self.t_pval,
@@ -326,14 +296,14 @@ class ContextAnalysis(Model):
         }
 
     @staticmethod
-    def find_context_analysis_by_context_name_out_group(
-        context_name: str,
+    def find_context_analysis_by_subtype_code_out_group(
+        subtype_code: str,
         out_group: str,
         entity_type: Literal["gene", "compound"],
         dataset_name: str,
     ):
         query = get_context_analysis_query(
-            context_name=context_name,
+            subtype_code=subtype_code,
             out_group=out_group,
             entity_type=entity_type,
             dataset_name=dataset_name,
@@ -344,7 +314,7 @@ class ContextAnalysis(Model):
 
     @staticmethod
     def get_other_context_dependencies(
-        context_name: str,
+        subtype_code: str,
         out_group: str,
         entity_id: int,
         entity_type: Literal["gene", "compound"],
@@ -356,7 +326,7 @@ class ContextAnalysis(Model):
             return (
                 ContextAnalysis.query.filter(
                     and_(
-                        ContextAnalysis.context_name != context_name,
+                        ContextAnalysis.subtype_code != subtype_code,
                         ContextAnalysis.out_group == out_group,
                         ContextAnalysis.entity_id == entity_id,
                         ContextAnalysis.t_qval >= fdr[0],
@@ -368,7 +338,12 @@ class ContextAnalysis(Model):
                     )
                 )
                 .join(Gene, Gene.entity_id == ContextAnalysis.entity_id)
-                .with_entities(ContextAnalysis.context_name)
+                .join(
+                    SubtypeNode,
+                    SubtypeNode.subtype_code == ContextAnalysis.subtype_code,
+                )
+                # Need the node name AND code, because node_names are not always unique, but codes are
+                .with_entities(SubtypeNode.node_name, SubtypeNode.subtype_code,)
                 .order_by(desc(ContextAnalysis.mean_in))
                 .all()
             )
@@ -376,7 +351,7 @@ class ContextAnalysis(Model):
             return (
                 ContextAnalysis.query.filter(
                     and_(
-                        ContextAnalysis.context_name != context_name,
+                        ContextAnalysis.subtype_code != subtype_code,
                         ContextAnalysis.out_group == out_group,
                         ContextAnalysis.entity_id == entity_id,
                         ContextAnalysis.t_qval >= fdr[0],
@@ -389,7 +364,12 @@ class ContextAnalysis(Model):
                     CompoundExperiment,
                     CompoundExperiment.entity_id == ContextAnalysis.entity_id,
                 )
-                .with_entities(ContextAnalysis.context_name)
+                .join(
+                    SubtypeNode,
+                    SubtypeNode.subtype_code == ContextAnalysis.subtype_code,
+                )
+                # Need the node name AND code, because node_names are not always unique, but codes are
+                .with_entities(SubtypeNode.node_name, SubtypeNode.subtype_code,)
                 .order_by(desc(ContextAnalysis.mean_in))
                 .all()
             )
