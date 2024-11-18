@@ -495,16 +495,22 @@ def get_dimension_data(
     slice_values_by_id = slice_service.get_slice_data(
         db, settings.filestore_location, parsed_slice_query
     )
-
-    # Load the labels separately, ensuring they're in the same order as the other values
-    slice_ids: list = slice_values_by_id.index.tolist()
     labels_by_id = metadata_service.get_labels_for_slice_type(db, parsed_slice_query)
-    slice_labels = [labels_by_id[id] for id in slice_ids]
+
+    # Only the values which have corresponding metadata should be returned
+    all_dataset_given_ids = slice_values_by_id.index.to_list()
+    result_given_ids: list[str] = [
+        id for id in all_dataset_given_ids if id in labels_by_id
+    ]
+
+    # Ensure the values and labels are similarly filtered and ordered
+    result_values = [slice_values_by_id[id] for id in result_given_ids]
+    result_labels = [labels_by_id[id] for id in result_given_ids]
 
     return {
-        "ids": slice_ids,
-        "labels": slice_labels,
-        "values": slice_values_by_id.values.tolist(),
+        "ids": result_given_ids,
+        "labels": result_labels,
+        "values": result_values,
     }
 
 
