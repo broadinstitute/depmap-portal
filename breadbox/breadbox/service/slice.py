@@ -24,6 +24,7 @@ def get_slice_data(
     Loads data for the given slice query. 
     The result will be a pandas series indexed by sample/feature ID 
     (regardless of the identifier_type used in the query).
+    Note: the result may contain given_ids which do not exist in the metadata. These should not be returned to users.
     """
     dataset_id = slice_query.dataset_id
     dataset = dataset_crud.get_dataset(db=db, user=db.user, dataset_id=dataset_id)
@@ -84,4 +85,4 @@ def get_slice_data(
         raise ResourceNotFoundError("No data matches the given slice query.")
 
     # Convert the single-col/row DataFrame into a series and drop null values
-    return slice_data.dropna().squeeze()
+    return slice_data.squeeze().dropna()
