@@ -364,9 +364,14 @@ def test_get_dimension_type_dimension_identifiers(
         "/types/dimensions", json=dim_type_fields, headers=admin_headers,
     )
     assert_status_ok(dim_type_res)
-    expected_dim_type_res = dim_type_fields.copy()
-    expected_dim_type_res["properties_to_index"] = []
-    expected_dim_type_res["metadata_dataset_id"] = None
+    expected_dim_type_res = {
+        "name": "sample_id_name",
+        "display_name": "Sample Name",
+        "axis": "sample",
+        "id_column": "sample_id",
+        "properties_to_index": [],
+        "metadata_dataset_id": None,
+    }
     assert dim_type_res.json() == expected_dim_type_res
 
     # Confirm dimension type has no dimension identifiers

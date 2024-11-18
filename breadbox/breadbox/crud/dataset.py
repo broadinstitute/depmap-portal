@@ -88,7 +88,7 @@ def get_datasets(
     sample_id: Optional[str] = None,
     sample_type: Optional[str] = None,
     value_type: Optional[ValueType] = None,
-    data_type: str = None,
+    data_type: Optional[str] = None,
 ) -> list[Dataset]:
     assert (
         db.user == user
