@@ -252,8 +252,11 @@ export interface ContextDatasetsResponse {
   dimension_labels: string[];
 }
 
+// This is only used by DimensionSelect to show a special UI for the
+// "compound_experiment" dimension type. After migrating everything to
+// Breadbox, that feature type will be phased out and we can remove this.
 export function fetchDatasetsMatchingContextIncludingEntities(
-  context: DataExplorerContext | DataExplorerAnonymousContext
+  context: DataExplorerAnonymousContext
 ): Promise<ContextDatasetsResponse[]> {
   return postJson<ContextDatasetsResponse[]>("/context/datasets", { context });
 }

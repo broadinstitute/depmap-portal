@@ -6,7 +6,10 @@ import {
   DataExplorerContext,
   DataExplorerPlotConfigDimension,
 } from "@depmap/types";
-import { fetchDatasetDetails } from "../../../api";
+import {
+  DataExplorerApiResponse,
+  useDataExplorerApi,
+} from "../../../contexts/DataExplorerApiContext";
 import { Mode, State } from "../useDimensionStateManager/types";
 import ModalDimensionSelect from "./ModalDimensionSelect";
 import DatasetDetails from "./DatasetDetails";
@@ -29,12 +32,13 @@ function DimensionDetailsModal({
   onCancel,
   initialState,
 }: Props) {
+  const api = useDataExplorerApi();
   const [isLoading, setIsLoading] = useState(false);
   const [dimension, setDimension] = useState(initialState.dimension);
 
-  const [details, setDetails] = useState<Awaited<
-    ReturnType<typeof fetchDatasetDetails>
-  > | null>(null);
+  const [details, setDetails] = useState<
+    DataExplorerApiResponse["fetchDatasetDetails"] | null
+  >(null);
 
   useEffect(() => {
     if (!dimension.dataset_id) {
@@ -44,7 +48,7 @@ function DimensionDetailsModal({
         setIsLoading(true);
 
         try {
-          const fetchedDetails = await fetchDatasetDetails(
+          const fetchedDetails = await api.fetchDatasetDetails(
             dimension.dataset_id as string
           );
           setDetails(fetchedDetails);
@@ -55,7 +59,7 @@ function DimensionDetailsModal({
         }
       })();
     }
-  }, [dimension]);
+  }, [api, dimension]);
 
   return (
     <Modal show bsSize="large" onHide={onCancel}>

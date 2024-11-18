@@ -1,5 +1,15 @@
 import React, { useEffect, useRef } from "react";
-import { DimensionSelect } from "@depmap/data-explorer-2";
+import {
+  DataExplorerApiProvider,
+  DimensionSelect,
+  fetchContextLabels,
+  fetchDatasetDetails,
+  fetchDatasetsByIndexType,
+  fetchDatasetsMatchingContextIncludingEntities,
+  fetchDimensionLabels,
+  fetchDimensionLabelsOfDataset,
+  fetchDimensionLabelsToDatasetsMapping,
+} from "@depmap/data-explorer-2";
 
 type Props = React.ComponentProps<typeof DimensionSelect>;
 
@@ -42,8 +52,22 @@ export default function HackedDimensionSelect(props: Props) {
   }, []);
 
   return (
-    <div ref={ref}>
-      <DimensionSelect {...props} />
-    </div>
+    <DataExplorerApiProvider
+      evaluateLegacyContext={fetchContextLabels}
+      fetchDatasetDetails={fetchDatasetDetails}
+      fetchDatasetsByIndexType={fetchDatasetsByIndexType}
+      fetchDimensionLabels={fetchDimensionLabels}
+      fetchDimensionLabelsOfDataset={fetchDimensionLabelsOfDataset}
+      fetchDimensionLabelsToDatasetsMapping={
+        fetchDimensionLabelsToDatasetsMapping
+      }
+      fetchDatasetsMatchingContextIncludingEntities={
+        fetchDatasetsMatchingContextIncludingEntities
+      }
+    >
+      <div ref={ref}>
+        <DimensionSelect {...props} />
+      </div>
+    </DataExplorerApiProvider>
   );
 }

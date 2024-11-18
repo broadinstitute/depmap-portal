@@ -1,4 +1,8 @@
-import { DataExplorerContext, StoredContexts } from "@depmap/types";
+import {
+  DataExplorerContext,
+  DataExplorerContextV2,
+  StoredContexts,
+} from "@depmap/types";
 import { LocalStorageListStore } from "@depmap/cell-line-selector";
 import { persistContext } from "../api";
 
@@ -175,8 +179,8 @@ export function negateContext(context: DataExplorerContext) {
 }
 
 export function contextsMatch(
-  contextA: DataExplorerContext | null,
-  contextB: DataExplorerContext | null
+  contextA: DataExplorerContext | DataExplorerContextV2 | null,
+  contextB: DataExplorerContext | DataExplorerContextV2 | null
 ) {
   if (!contextA || !contextB) {
     return false;

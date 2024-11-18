@@ -1,8 +1,5 @@
 import React, { useEffect, useState } from "react";
-import {
-  fetchDimensionLabels,
-  fetchDimensionLabelsOfDataset,
-} from "../../../../api";
+import { useDataExplorerApi } from "../../../../contexts/DataExplorerApiContext";
 import CompoundSearcher from "./CompoundSearcher";
 import { extractCompoundNames, fetchCompoundDatasets } from "./utils";
 
@@ -23,6 +20,7 @@ function CompoundNameSelect({
   isColorSelector,
   dataset_id,
 }: Props) {
+  const api = useDataExplorerApi();
   const [isLoading, setIsLoading] = useState(false);
   const [options, setOptions] = useState<{ label: string; value: string }[]>(
     []
@@ -34,8 +32,8 @@ function CompoundNameSelect({
 
       try {
         const { labels } = await (isColorSelector && dataset_id
-          ? fetchDimensionLabelsOfDataset("compound_experiment", dataset_id)
-          : fetchDimensionLabels("compound_experiment"));
+          ? api.fetchDimensionLabelsOfDataset("compound_experiment", dataset_id)
+          : api.fetchDimensionLabels("compound_experiment"));
 
         const nextOptions = extractCompoundNames(labels).map((name) => ({
           label: name,
@@ -49,7 +47,7 @@ function CompoundNameSelect({
 
       setIsLoading(false);
     })();
-  }, [dataset_id, isColorSelector]);
+  }, [api, dataset_id, isColorSelector]);
 
   const handleChange = async (nextValue: string | null) => {
     if (nextValue === null) {
@@ -59,7 +57,7 @@ function CompoundNameSelect({
 
     setIsLoading(true);
 
-    const allDatasets = await fetchCompoundDatasets(nextValue);
+    const allDatasets = await fetchCompoundDatasets(api, nextValue);
 
     const datasets = isColorSelector
       ? allDatasets.filter((d) => d.dataset_id === dataset_id)
