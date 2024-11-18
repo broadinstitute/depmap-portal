@@ -136,9 +136,12 @@ export const makeCompatibleExpression = (
     }
   }
 
-  if (value_type === "categorical") {
+  if (value_type === "text" || value_type === "categorical") {
     if (nextValue && Array.isArray(nextValue)) {
       nextValue = nextValue.filter((val) => domain.unique_values.includes(val));
+      if (nextValue.length === 0) {
+        nextValue = null;
+      }
     } else if (
       nextValue &&
       !domain.unique_values.find((val) => val === nextValue)
