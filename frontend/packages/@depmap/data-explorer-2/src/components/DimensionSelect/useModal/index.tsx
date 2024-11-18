@@ -2,6 +2,10 @@ import React, { useCallback, useContext } from "react";
 import ReactDOM from "react-dom";
 import { ApiContext } from "@depmap/api";
 import { DataExplorerPlotConfigDimension } from "@depmap/types";
+import {
+  DataExplorerApiProvider,
+  useDataExplorerApi,
+} from "../../../contexts/DataExplorerApiContext";
 import { Mode, State } from "../useDimensionStateManager/types";
 import DimensionDetailsModal from "./DimensionDetailsModal";
 
@@ -20,7 +24,8 @@ export default function useModal({
   onChange,
   state,
 }: Props) {
-  const apiContext = useContext(ApiContext);
+  const sharedApi = useContext(ApiContext);
+  const dataExplorerApi = useDataExplorerApi();
 
   const onClickShowModal = useCallback(() => {
     const container = document.createElement("div");
@@ -33,23 +38,26 @@ export default function useModal({
     };
 
     ReactDOM.render(
-      <ApiContext.Provider value={apiContext}>
-        <DimensionDetailsModal
-          mode={mode}
-          index_type={index_type}
-          initialState={state}
-          onCancel={unmount}
-          onChange={(dimension) => {
-            onChange(dimension);
-            unmount();
-          }}
-          includeAllInContextOptions={includeAllInContextOptions}
-        />
+      <ApiContext.Provider value={sharedApi}>
+        <DataExplorerApiProvider {...dataExplorerApi}>
+          <DimensionDetailsModal
+            mode={mode}
+            index_type={index_type}
+            initialState={state}
+            onCancel={unmount}
+            onChange={(dimension) => {
+              onChange(dimension);
+              unmount();
+            }}
+            includeAllInContextOptions={includeAllInContextOptions}
+          />
+        </DataExplorerApiProvider>
       </ApiContext.Provider>,
       container
     );
   }, [
-    apiContext,
+    sharedApi,
+    dataExplorerApi,
     includeAllInContextOptions,
     index_type,
     mode,

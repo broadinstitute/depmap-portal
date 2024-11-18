@@ -81,6 +81,8 @@ interface Props {
   pointOpacity?: number;
   outlineWidth?: number;
   palette?: DataExplorerColorPalette;
+  xAxisFontSize?: number;
+  yAxisFontSize?: number;
 }
 
 type PropsWithPlotly = Props & { Plotly: PlotlyType };
@@ -163,6 +165,8 @@ function PrototypeScatterPlot({
   pointOpacity = 1.0,
   outlineWidth = 0.5,
   palette = DEFAULT_PALETTE,
+  xAxisFontSize = 14,
+  yAxisFontSize = 14,
   Plotly,
 }: PropsWithPlotly) {
   const ref = useRef<ExtendedPlotType>(null);
@@ -220,6 +224,26 @@ function PrototypeScatterPlot({
       yaxis: undefined,
     };
   }, [xKey, yKey, xLabel, yLabel, data]);
+
+  // Update axes when font size changes.
+  useEffect(() => {
+    const xaxis = axes.current.xaxis;
+    const yaxis = axes.current.yaxis;
+
+    if (xaxis) {
+      xaxis.title = {
+        ...(xaxis.title as object),
+        font: { size: xAxisFontSize },
+      };
+    }
+
+    if (yaxis) {
+      yaxis.title = {
+        ...(yaxis.title as object),
+        font: { size: yAxisFontSize },
+      };
+    }
+  }, [xAxisFontSize, yAxisFontSize]);
 
   // All other updates are handled by this one big effect.
   useEffect(() => {
@@ -498,7 +522,11 @@ function PrototypeScatterPlot({
     // Restore or initialize axes. We set `autorange` to true on the first render
     // so that Plotly can calculate the extents of the plot for us.
     const xaxis = axes.current.xaxis || {
-      title: xLabel,
+      title: {
+        text: xLabel,
+        font: { size: xAxisFontSize },
+        standoff: 8,
+      } as any,
       exponentformat: "e",
       type: "linear",
       autorange: true,
@@ -507,7 +535,11 @@ function PrototypeScatterPlot({
     };
 
     const yaxis = axes.current.yaxis || {
-      title: yLabel,
+      title: {
+        text: yLabel,
+        font: { size: yAxisFontSize },
+        standoff: 0,
+      } as any,
       exponentformat: "e",
       autorange: true,
     };
@@ -521,7 +553,13 @@ function PrototypeScatterPlot({
       // an invisible line that tricks Plotly into adjusting the scale.
       shapes: calcAutoscaleShapes(showIdentityLine, extents),
       height: height === "auto" ? calcPlotHeight(plot) : height,
-      margin: { t: 30, l: 80, r: 30 },
+
+      margin: {
+        t: 30,
+        r: 30,
+        b: 50 + xAxisFontSize * 2.2,
+        l: 50 + yAxisFontSize * 2.2,
+      },
       hovermode: "closest",
 
       // We hide the legend because the traces don't have names and some of
@@ -868,6 +906,8 @@ function PrototypeScatterPlot({
     pointOpacity,
     outlineWidth,
     palette,
+    xAxisFontSize,
+    yAxisFontSize,
     shapes,
     Plotly,
   ]);

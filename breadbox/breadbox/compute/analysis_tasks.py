@@ -25,6 +25,7 @@ from breadbox.models.dataset import (
 from breadbox.schemas.custom_http_exception import ResourceNotFoundError, UserError
 
 from breadbox.schemas.dataset import MatrixDatasetIn
+from breadbox.service import metadata as metadata_service
 
 from ..crud.types import get_dimension_type
 from ..crud import dataset as dataset_crud
@@ -165,12 +166,12 @@ def get_features_info_and_dataset(
     dataset = dataset_crud.get_dataset(db, user, dataset_id)
     if dataset is None:
         raise ResourceNotFoundError(f"Dataset '{dataset_id}' not found.")
-    dataset_features = dataset_crud.get_dataset_features(db, dataset, user)
+    dataset_features = dataset_crud.get_matrix_dataset_features(db, dataset)
 
     result_features: List[Feature] = []
     dataset_feature_ids: List[str] = []
     datasets: List[Dataset] = []
-    feature_labels_by_id = dataset_crud.get_dataset_feature_labels_by_id(
+    feature_labels_by_id = metadata_service.get_matrix_dataset_feature_labels_by_id(
         db, user, dataset
     )
     feature_indices = []
@@ -347,7 +348,7 @@ def run_custom_analysis(
             feature_indices,
         )
         if len(filtered_cell_line_list) == 0:
-            return UserError(
+            raise UserError(
                 "No cell lines in common between query and dataset searched"
             )
 
@@ -489,16 +490,19 @@ def create_cell_line_group(
                 sample_given_id_and_index_df,
                 generic_feature_type,
                 depmap_model_sample_type,
+                short_name=None,
+                version=None,
+                description=None,
             )
 
         # Return the feature ID associated with the new dataset feature
         if use_feature_ids:
-            feature: DatasetFeature = dataset_crud.get_dataset_feature_by_label(
+            feature: DatasetFeature = metadata_service.get_dataset_feature_by_label(
                 db=db, dataset_id=dataset_id, feature_label=feature_label
             )
             return _format_breadbox_shim_slice_id(feature.dataset_id, feature.given_id)
         else:
-            dataset_feature = dataset_crud.get_dataset_feature_by_label(
+            dataset_feature = metadata_service.get_dataset_feature_by_label(
                 db, dataset_id, feature_label
             )
             return str(dataset_feature.id)

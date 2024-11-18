@@ -8,6 +8,7 @@ export interface SliceLabelSelectProps {
   dataset_id: string | null;
   units: string | null;
   swatchColor?: string;
+  removeWrapperDiv?: boolean;
 
   // Special case
   onChangeCompound?: (

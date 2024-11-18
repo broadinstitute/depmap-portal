@@ -1,6 +1,10 @@
 import React, { useRef, useState } from "react";
 import { ApiContext } from "@depmap/api";
-import { ContextBuilderModal, negateContext } from "@depmap/data-explorer-2";
+import {
+  ContextBuilderModal,
+  negateContext,
+  saveContextToLocalStorage,
+} from "@depmap/data-explorer-2";
 import {
   DataExplorerContext,
   DataExplorerPlotConfig,
@@ -13,7 +17,6 @@ import {
 import {
   plotToQueryString,
   plotsAreEquivalentWhenSerialized,
-  saveContextToLocalStorage,
 } from "src/data-explorer-2/utils";
 
 type SaveCallback = (context: DataExplorerContext) => void;

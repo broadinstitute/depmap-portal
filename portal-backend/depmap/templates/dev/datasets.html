@@ -1,0 +1,16 @@
+{% extends "full_page.html" %}
+
+{% block page_title %}
+    Secret DepMap dataset viewer 🤫
+{% endblock %}
+
+{% block content %}
+    <div class="full-screen-div">
+        {% include "nav_footer/nav.html" %}
+        <div id="secret_data_viewer"></div>
+    </div>
+{% endblock %}
+
+{% block js %}
+    <script src="{{ webpack_url('secretDataViewer.js') }}"></script>
+{% endblock %}

@@ -101,5 +101,7 @@ export function handleError(
     };
   }
 
-  throw new Error("unhandlded DimensionSelect error");
+  window.console.error("Error applying changes", { prevState, changes });
+  window.console.error(error);
+  throw new Error("^^^ unhandled DimensionSelect error ^^^");
 }

@@ -459,6 +459,7 @@ def update_dimension_type_metadata(
 
 
 def delete_dimension_type(db: SessionWithUser, dimension_type: DimensionType):
+    """Delete the dimension type as well as its metadata dataset."""
     db.delete(dimension_type)
     db.flush()
     return True
@@ -491,3 +492,44 @@ def check_id_mapping_is_valid(
         raise UserError(
             "Attempted reference mapping to a dimension type that does not exist!"
         )
+
+
+def get_dimension_type_labels_by_id(
+    db: SessionWithUser, dimension_type_name: str
+) -> dict[str, str]:
+    """
+    For a given dimension, get all IDs and labels that exist in the metadata.
+    """
+    return get_dimension_type_metadata_col(db, dimension_type_name, col_name="label")
+
+
+def get_dimension_type_metadata_col(
+    db: SessionWithUser, dimension_type_name: str, col_name: str
+) -> dict[str, Any]:
+    """
+    Get a column of values from the dimension type's metadata. 
+    Return a dictionary of values indexed by given ID.
+    If there is no metadata for the given dimension type, return an empty dict.
+    """
+    dimension_type = get_dimension_type(db=db, name=dimension_type_name)
+
+    if dimension_type is None:
+        raise ResourceNotFoundError(
+            f"Dimension type '{dimension_type_name}' not found. "
+        )
+    if dimension_type.dataset_id is None:
+        return {}
+
+    values_by_id_tuples = (
+        db.query(TabularCell)
+        .join(TabularColumn)
+        .filter(
+            and_(
+                TabularColumn.dataset_id == dimension_type.dataset_id,
+                TabularColumn.given_id == col_name,
+            )
+        )
+        .with_entities(TabularCell.dimension_given_id, TabularCell.value)
+        .all()
+    )
+    return {id: value for id, value in values_by_id_tuples}

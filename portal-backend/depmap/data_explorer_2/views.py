@@ -48,11 +48,8 @@ from depmap.data_explorer_2.datatypes import hardcoded_metadata_slices
 from depmap.download.models import ReleaseTerms
 from depmap.download.views import get_file_record, get_release_record
 
-from depmap_compute.context import (
-    decode_slice_id,
-    LegacyContextEvaluator,
-    ContextEvaluator,
-)
+from depmap_compute.context import LegacyContextEvaluator
+from depmap_compute.slice import decode_slice_id
 
 blueprint = Blueprint(
     "data_explorer_2",

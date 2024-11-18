@@ -177,8 +177,11 @@ def _validate_data_value_type(
         return df.astype(np.float64)
 
 
-def _read_parquet(file: BinaryIO, value_type: ValueType) -> pd.DataFrame:
-    df = pd.read_parquet(file, use_nullable_dtypes=True)  # pyright: ignore
+def _read_parquet(file, value_type: ValueType) -> pd.DataFrame:
+    # It appears that pd.read_parquet() by default uses pyarrow. However, for some reason
+    #  when reading a file with 20k columns, the memory usage balloons
+    # to > 30GB and would take down breadbox. However, using fastparquet seems to avoid this problem.
+    df = pd.read_parquet(file, engine="fastparquet").convert_dtypes()
 
     # the first column will be treated as the index. Make sure it's of type string
     df[df.columns[0]] = df[df.columns[0]].astype("string")
