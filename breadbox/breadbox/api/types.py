@@ -603,21 +603,16 @@ def list_dimension_types_endpoint(db: SessionWithUser = Depends(get_db_with_user
 def get_dimension_type_identifiers(
     name: str,
     data_type: Annotated[Union[str, None], Query()] = None,
-    show_only_dimensions_in_datasets: Annotated[Union[bool, None], Query()] = None,
+    show_only_dimensions_in_datasets: Annotated[bool, Query()] = False,
     db: SessionWithUser = Depends(get_db_with_user),
 ):
     dim_type = type_crud.get_dimension_type(db, name)
     if dim_type is None:
         raise HTTPException(404, f"Dimension type {name} not found")
 
-    if show_only_dimensions_in_datasets is True:
-        dimension_ids_and_labels = metadata_service.get_dimension_type_identifiers(
-            db, dim_type, data_type, show_only_dimensions_in_datasets=True
-        )
-    else:
-        dimension_ids_and_labels = metadata_service.get_dimension_type_identifiers(
-            db, dim_type, data_type
-        )
+    dimension_ids_and_labels = metadata_service.get_dimension_type_identifiers(
+        db, dim_type, data_type, show_only_dimensions_in_datasets
+    )
 
     return [
         DimensionIdentifiers(id=id, label=label)
