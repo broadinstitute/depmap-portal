@@ -84,4 +84,4 @@ def get_slice_data(
         raise ResourceNotFoundError("No data matches the given slice query.")
 
     # Convert the single-col/row DataFrame into a series and drop null values
-    return slice_data.dropna().squeeze()
+    return slice_data.squeeze().dropna()
