@@ -23,7 +23,7 @@ class SubtypeNode(Model):
     subtype_code = Column(String, primary_key=True, index=True)
     oncotree_code = Column(String)
     depmap_model_type = Column(String)
-    node_name = Column(String, nullable=True)
+    node_name = Column(String, nullable=False)
     node_level = Column(Integer, nullable=False)
     level_0 = Column(String, nullable=False)
     level_1 = Column(String, nullable=True)
@@ -41,6 +41,11 @@ class SubtypeNode(Model):
         else:
             return q.one_or_none()
 
+    @staticmethod
+    def get_subtype_tree_query():
+        query = db.session.query(SubtypeNode).order_by(SubtypeNode.node_level)
+        return query
+
 
 class SubtypeNodeAlias(Model):
     """
@@ -56,7 +61,7 @@ class SubtypeNodeAlias(Model):
     )
     subtype_node = relationship(
         "SubtypeNode",
-        foreign_keys="SubtypeNodeAlias.subtype_node_alias_id",
+        foreign_keys="SubtypeNodeAlias.subtype_code",
         uselist=False,
         overlaps="subtype_node_alias",
     )

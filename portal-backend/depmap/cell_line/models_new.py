@@ -72,12 +72,10 @@ class DepmapModel(Model):
     depmap_model_type = Column(String)
     oncotree_code = Column(String)
 
-    subtype_code = Column(
-        String, ForeignKey("subtype_node.subtype_code"), nullable=False
-    )
-    subtype_node = relationship(
-        "SubtypeNode", foreign_keys="SubtypeNode.subtype_code", uselist=False
-    )
+    # TODO: Maybe add???
+    # Either oncotree_code or in cases where there is no oncotree_code, this will
+    # hold depmap_model_type
+    # subtype_code = Column(String, nullable=False)
 
     wtsi_master_cell_id = Column(Integer, index=True)  # wtsi is wellcome trust sanger
 
@@ -249,25 +247,10 @@ class DepmapModel(Model):
         return s
 
     @staticmethod
-    def get_subtype_tree_query():
-        query = SubtypeNode.query.add_columns(
-            sqlalchemy.column('"subtype_node".node_name', is_literal=True).label(
-                "node_name"
-            ),
-            sqlalchemy.column('"subtype_node".subtype_code', is_literal=True).label(
-                "subtype_code"
-            ),
-            sqlalchemy.column('"subtype_node".node_level', is_literal=True).label(
-                "node_level"
-            ),
-        ).order_by(SubtypeNode.node_level)
-        return query
-
-    @staticmethod
     def get_model_ids_by_subtype_code(subtype_code: str) -> Dict[str, str]:
         query = (
             db.session.query(DepmapModel)
-            .filter_by(DepmapModel.subtype_code == subtype_code)
+            .filter_by(DepmapModel.depmap_model_type == subtype_code)
             .with_entities(DepmapModel.model_id, DepmapModel.stripped_cell_line_name)
         )
 

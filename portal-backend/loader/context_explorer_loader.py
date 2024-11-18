@@ -140,7 +140,7 @@ def load_context_explorer_context_analysis_dev(db_file):
 
 # TODO: Loading the subtype tree should probably eventually be moved to where
 # Contexts are currently loaded.
-def _read_subtype_tree(dr, pbar):
+def _read_subtype_tree(dr, pbar, gene_cache, cell_line_cache):
     loaded = 0
 
     for row in dr:

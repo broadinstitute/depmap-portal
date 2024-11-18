@@ -23,6 +23,19 @@ from depmap.context_explorer.models import (
     ContextNode,
     ContextExplorerTree,
 )
+from depmap.context.models_new import SubtypeNode
+from depmap.database import (
+    Boolean,
+    Column,
+    ForeignKey,
+    Integer,
+    Model,
+    String,
+    Text,
+    db,
+    relationship,
+)
+from loader.context_explorer_loader import load_subtype_tree
 
 # from .development_scripts import dev
 
@@ -88,22 +101,19 @@ def _get_context_summary():
     return summary
 
 
-def _get_all_top_level_lineages(
-    all_lineages: Dict[str, ContextExplorerTree],
+def _get_all_level_0_subtype_info(
+    all_trees: Dict[str, ContextExplorerTree],
 ) -> List[ContextNameInfo]:
-    unique_top_level_lineages = []
+    context_name_info = []
 
-    seen_lineage_names = []
-    for lineage in all_lineages.keys():
-        if lineage not in seen_lineage_names:
-            unique_top_level_lineages.append(
-                ContextNameInfo(
-                    name=lineage, display_name=all_lineages[lineage].root.display_name
-                )
+    for subtype_code in all_trees.keys():
+        context_name_info.append(
+            ContextNameInfo(
+                name=all_trees[subtype_code].root.name, subtype_code=subtype_code
             )
-            seen_lineage_names.append(lineage)
+        )
 
-    return unique_top_level_lineages
+    return context_name_info
 
 
 @namespace.route("/context_info")
@@ -121,16 +131,23 @@ class ContextInfo(
         # Getting the top level lineages by querying the Lineage table result in data inconsistencies. We
         # don't have datatype information for all level 1 lineages. As a result, we have to get the data trees
         # first, and then use the keys to get the list of top level lineages for the search bar.
+        # load_subtype_tree("/Users/amourey/Downloads/SubtypeTree.csv")
+        # db.session.commit()
+        # breakpoint()
         (
             context_trees,
             overview_data,
         ) = get_context_explorer_lineage_trees_and_table_data()
-        context_name_info = _get_all_top_level_lineages(context_trees)
+        context_name_info = _get_all_level_0_subtype_info(context_trees)
         return {
             "trees": context_trees,
             "table_data": overview_data,
+            # TODO change the search_options object in the typescript to use subtype_code and
+            # name instead of "name" and "display_name" to avoid confusion. Subtype_code really
+            # does serve the same function that context name served (unique identifier), while
+            # subtype name is really the display name (b/c it's not necessarily unique).
             "search_options": [
-                {"name": name_info.name, "display_name": name_info.display_name}
+                {"name": name_info.subtype_code, "display_name": name_info.name}
                 for name_info in context_name_info
             ],
         }
@@ -142,17 +159,6 @@ def _get_overview_table_data(
     # TODO: Ask Alison, should I go to level_2 or 3. Not sure if "show 3 levels"
     # was when we were calling the first level 0 or 1.
     overview_page_table = df
-
-    # TODO: What do we want these named in the front end?????
-    # overview_page_table.rename(
-    #     columns={
-    #         "lineage_1": "lineage",
-    #         "lineage_2": "primary_disease",
-    #         "lineage_3": "subtype",
-    #         "lineage_6": "molecular_subtype",
-    #     },
-    #     inplace=True,
-    # )
 
     cell_line_display_names = DepmapModel.get_cell_line_display_names(
         list(summary_df.columns.values)
@@ -177,16 +183,10 @@ def _get_overview_table_data(
     return overview_data
 
 
-# lineage_1: oncotree_lineage
-# lineage_2: oncotree_primary_disease
-# lineage_3: oncotree_subtype
-# lineage_6: legacy_molecular_subtype
-
-
 def get_context_explorer_lineage_trees_and_table_data() -> Tuple[
     Dict[str, ContextExplorerTree], List[Dict[str, Union[str, bool]]]
 ]:
-    subtype_tree_query = DepmapModel.get_subtype_tree_query()
+    subtype_tree_query = SubtypeNode.get_subtype_tree_query()
     subtype_df = pd.read_sql(
         subtype_tree_query.statement, subtype_tree_query.session.connection()
     )
@@ -208,9 +208,8 @@ def get_context_explorer_lineage_trees_and_table_data() -> Tuple[
             "level_5",
         ]
     ]
-    subtype_codes_and_names = subtype_df[["subtype_code", "node_name"]].loc[
-        subtype_df["node_level"] == 0
-    ]
+
+    subtype_codes_and_names = subtype_df.loc[subtype_df["node_level"] == 0]
     subtype_codes_and_names_dict = subtype_codes_and_names.set_index(
         "subtype_code"
     ).to_dict()["node_name"]

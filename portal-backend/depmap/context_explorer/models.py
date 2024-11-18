@@ -225,7 +225,7 @@ class ContextAnalysis(Model):
     __table_args__ = (
         db.Index("context_analysis_idx_1", "entity_id", "out_group"),
         db.UniqueConstraint(
-            "context_name", "out_group", "entity_id", name="uc_context_outgroup_entity",
+            "subtype_code", "out_group", "entity_id", name="uc_context_outgroup_entity",
         ),
     )
     context_analysis_id = Column(Integer, primary_key=True, autoincrement=True)
@@ -279,7 +279,7 @@ class ContextAnalysis(Model):
 
         return {
             "entity": entity_label,
-            "context_name": self.subtype_code,
+            "subtype_code": self.subtype_code,
             "dataset_name": self.dataset_name,
             "out_group": self.out_group,
             "t_pval": self.t_pval,
