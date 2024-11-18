@@ -1,5 +1,5 @@
 import React from "react";
-import DimensionSelect from "../../../../../DimensionSelect";
+import DimensionSelectV2 from "../../../../../DimensionSelectV2";
 import useDimensionType from "../../../../hooks/useDimensionType";
 import { useContextBuilderState } from "../../../../state/ContextBuilderState";
 
@@ -13,10 +13,8 @@ function MatrixDataSelect({ varName }: Props) {
   const { vars, setVar } = useContextBuilderState();
   const variable = vars[varName] || null;
 
-  // TODO: Create a version of this that uses DataExplorerContextV2 and talk
-  // directly to Breadbox.
   return (
-    <DimensionSelect
+    <DimensionSelectV2
       mode="entity-only"
       removeWrapperDiv
       index_type={dimension_type}
@@ -28,25 +26,31 @@ function MatrixDataSelect({ varName }: Props) {
         context:
           variable?.identifier && variable?.slice_type
             ? {
-                context_type: variable.slice_type,
-                name: variable.identifier,
-                expr: { "==": [{ var: "entity_label" }, variable.identifier] },
+                dimension_type: variable.slice_type,
+                name: variable.label || variable.identifier,
+                expr: { "==": [{ var: "given_id" }, variable.identifier] },
+                vars: {},
               }
             : undefined,
       }}
       onChange={async (nextDimension) => {
         const dimensionType = await getDimensionTypeAsync();
 
+        const identifier = nextDimension?.context
+          ? (nextDimension.context.expr as { "==": [unknown, string] })["=="][1]
+          : undefined;
+
         const identifier_type =
-          dimensionType.axis === "sample" ? "feature_label" : "sample_label";
+          dimensionType.axis === "sample" ? "feature_id" : "sample_id";
 
         setVar(varName, {
           dataset_id: nextDimension.dataset_id,
+          identifier,
           identifier_type,
-          identifier: nextDimension.context?.name,
-          source: "matrix",
+          source: "matrix_dataset",
           value_type: "continuous",
           slice_type: nextDimension.slice_type,
+          label: nextDimension.context?.name,
         });
       }}
     />

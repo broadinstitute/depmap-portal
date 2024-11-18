@@ -1,7 +1,7 @@
 import React, { useCallback, useContext } from "react";
 import ReactDOM from "react-dom";
 import { ApiContext } from "@depmap/api";
-import { DataExplorerPlotConfigDimension } from "@depmap/types";
+import { DataExplorerPlotConfigDimensionV2 } from "@depmap/types";
 import {
   DataExplorerApiProvider,
   useDataExplorerApi,
@@ -13,7 +13,7 @@ interface Props {
   includeAllInContextOptions: boolean;
   index_type: string | null;
   mode: Mode;
-  onChange: (dimension: DataExplorerPlotConfigDimension) => void;
+  onChange: (dimension: DataExplorerPlotConfigDimensionV2) => void;
   state: State;
 }
 

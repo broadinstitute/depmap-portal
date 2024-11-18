@@ -1,4 +1,5 @@
 import React from "react";
+import { AnnotationType } from "@depmap/types";
 import PlotConfigSelect from "../../../../../PlotConfigSelect";
 import { useContextBuilderState } from "../../../../state/ContextBuilderState";
 import useTabularDatasets from "../../../../hooks/useTabularDatasets";
@@ -8,7 +9,7 @@ interface Props {
   varName: string;
 }
 
-function AnnotationSelect({ varName }: Props) {
+function TabularDataSelect({ varName }: Props) {
   const { vars, setVar } = useContextBuilderState();
   const {
     isLoadingTabularDatasets,
@@ -41,7 +42,7 @@ function AnnotationSelect({ varName }: Props) {
       <PlotConfigSelect
         show
         enable={!isLoadingTabularDatasets}
-        label="Annotation Dataset"
+        label="Dataset"
         isLoading={isLoadingTabularDatasets}
         value={variable?.dataset_id || null}
         options={otherTabularDatasets.map((td) => ({
@@ -51,9 +52,9 @@ function AnnotationSelect({ varName }: Props) {
         onChange={(dataset_id) => {
           setVar(varName, {
             dataset_id: dataset_id as string,
-            source: "annotation",
+            source: "tabular_dataset",
             slice_type: undefined,
-            value_type: "categorical",
+            value_type: undefined,
           });
         }}
         placeholder="Choose dataset…"
@@ -63,24 +64,34 @@ function AnnotationSelect({ varName }: Props) {
       <PlotConfigSelect
         show
         enable={Boolean(variable?.dataset_id)}
-        label="Property"
+        label="Column"
         value={variable?.identifier || null}
         options={columnOptions}
-        onChange={(identifier) => {
+        onChangeUsesWrappedValue
+        onChange={(wrappedValue) => {
+          const { value, col_type } = (wrappedValue as unknown) as {
+            value: string;
+            col_type: AnnotationType;
+          };
+
+          if (col_type !== "text" && col_type !== "categorical") {
+            window.console.warn(`Warning: unsupported col_type "${col_type}"`);
+          }
+
           setVar(varName, {
             dataset_id: variable.dataset_id,
             identifier_type: "column",
-            identifier: identifier as string,
-            source: "annotation",
+            identifier: value,
+            source: "tabular_dataset",
             slice_type: undefined,
-            value_type: "categorical",
+            value_type: col_type as "text" | "categorical" | "list_strings",
           });
         }}
-        placeholder="Choose property…"
+        placeholder="Choose column…"
         menuPortalTarget={document.querySelector("#modal-container")}
       />
     </>
   );
 }
 
-export default AnnotationSelect;
+export default TabularDataSelect;

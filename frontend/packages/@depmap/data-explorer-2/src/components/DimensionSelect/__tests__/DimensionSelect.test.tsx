@@ -4,31 +4,29 @@ import * as React from "react";
 import DimensionSelect from "../index";
 import { NULL_MAPPING } from "../useDimensionStateManager/useData";
 import * as api from "../../../api";
-
-jest.mock("../../../api");
+import { DataExplorerApiProvider } from "../../../contexts/DataExplorerApiContext";
 
 test("hides the aggregation select for the special case of correlation", async () => {
-  jest
-    .spyOn(api, "fetchDatasetsByIndexType")
-    .mockResolvedValue({ depmap_model: [] });
-
-  jest
-    .spyOn(api, "fetchDimensionLabelsToDatasetsMapping")
-    .mockResolvedValue(NULL_MAPPING);
-
   render(
-    <DimensionSelect
-      mode="entity-or-context"
-      index_type="depmap_model"
-      includeAllInContextOptions
-      onChange={() => {}}
-      onClickCreateContext={() => {}}
-      onClickSaveAsContext={() => {}}
-      value={{
-        axis_type: "aggregated_slice",
-        aggregation: "correlation",
+    <DataExplorerApiProvider
+      fetchDatasetsByIndexType={() => Promise.resolve({ depmap_model: [] })}
+      fetchDimensionLabelsToDatasetsMapping={() => {
+        return Promise.resolve(NULL_MAPPING);
       }}
-    />
+    >
+      <DimensionSelect
+        mode="entity-or-context"
+        index_type="depmap_model"
+        includeAllInContextOptions
+        onChange={() => {}}
+        onClickCreateContext={() => {}}
+        onClickSaveAsContext={() => {}}
+        value={{
+          axis_type: "aggregated_slice",
+          aggregation: "correlation",
+        }}
+      />
+    </DataExplorerApiProvider>
   );
 
   await waitFor(() => {

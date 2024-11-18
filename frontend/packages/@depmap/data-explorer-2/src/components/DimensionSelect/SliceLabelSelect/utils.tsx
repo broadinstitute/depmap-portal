@@ -7,7 +7,7 @@ import React, {
 } from "react";
 import { ApiContext, SharedApi } from "@depmap/api";
 import { Highlighter, Tooltip, WordBreaker } from "@depmap/common-components";
-import { fetchDimensionLabelsToDatasetsMapping } from "../../../api";
+import { useDataExplorerApi } from "../../../contexts/DataExplorerApiContext";
 import { getDimensionTypeLabel } from "../../../utils/misc";
 import { SearchDimenionsResponse } from "@depmap/types";
 import styles from "../../../styles/DimensionSelect.scss";
@@ -33,7 +33,7 @@ export const getPlaceholder = (slice_type: string) => {
   return `Choose ${getDimensionTypeLabel(slice_type)}…`;
 };
 
-export function useApi() {
+export function useSharedApi() {
   const apiContext = useContext(ApiContext);
   const ref = useRef<SharedApi | null>(null);
 
@@ -53,7 +53,7 @@ function tokenize(input: string | null) {
 }
 
 export function useSearch() {
-  const api = useApi();
+  const api = useSharedApi();
 
   return useCallback(
     (input: string, type_name: string) => {
@@ -80,6 +80,7 @@ function doNotOverlap(a: number[], b: number[]) {
 }
 
 async function fetchSliceLabelsAndAliases(
+  api: ReturnType<typeof useDataExplorerApi>,
   slice_type: string | null,
   dataType: string | null,
   dataset_id: string | null,
@@ -93,7 +94,7 @@ async function fetchSliceLabelsAndAliases(
     };
   }
 
-  const mapping = await fetchDimensionLabelsToDatasetsMapping(slice_type);
+  const mapping = await api.fetchDimensionLabelsToDatasetsMapping(slice_type);
   const labels = Object.keys(mapping.dimension_labels);
   const reasons: Record<string, string> = {};
 
@@ -149,6 +150,7 @@ export function useSliceLabels(
   dataset_id: string | null,
   units: string | null
 ) {
+  const api = useDataExplorerApi();
   const [error, setError] = useState(false);
   const [sliceLabels, setSliceLabels] = useState<string[] | null>(null);
   const [aliases, setAliases] = useState<Aliases | null>(null);
@@ -164,6 +166,7 @@ export function useSliceLabels(
       if (slice_type) {
         try {
           const fetchedData = await fetchSliceLabelsAndAliases(
+            api,
             slice_type,
             dataType,
             dataset_id,
@@ -179,11 +182,17 @@ export function useSliceLabels(
         }
       }
     })();
-  }, [slice_type, dataType, dataset_id, units]);
+  }, [api, slice_type, dataType, dataset_id, units]);
 
   const waitForCachedValues = useCallback(() => {
-    return fetchSliceLabelsAndAliases(slice_type, dataType, dataset_id, units);
-  }, [slice_type, dataType, dataset_id, units]);
+    return fetchSliceLabelsAndAliases(
+      api,
+      slice_type,
+      dataType,
+      dataset_id,
+      units
+    );
+  }, [api, slice_type, dataType, dataset_id, units]);
 
   return {
     aliases,

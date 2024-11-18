@@ -8,13 +8,17 @@ export { default as ContextBuilderModal } from "./src/components/ContextBuilder/
 export { default as ContextManager } from "./src/components/ContextManager";
 
 export {
-  fetchContextLabels,
   fetchAnalysisResult,
   fetchAssociations,
   fetchContext,
+  fetchContextLabels,
   fetchCorrelation,
+  fetchDatasetDetails,
   fetchDatasetsByIndexType,
   fetchDatasetsMatchingContextIncludingEntities,
+  fetchDimensionLabels,
+  fetchDimensionLabelsOfDataset,
+  fetchDimensionLabelsToDatasetsMapping,
   fetchGeneTeaEnrichment,
   fetchGeneTeaTermContext,
   fetchLinearRegression,

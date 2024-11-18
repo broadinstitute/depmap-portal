@@ -3,8 +3,8 @@ import React, { useEffect, useState } from "react";
 import { Button, Modal } from "react-bootstrap";
 import { DepMap } from "@depmap/globals";
 import {
-  DataExplorerContext,
-  DataExplorerPlotConfigDimension,
+  DataExplorerContextV2,
+  DataExplorerPlotConfigDimensionV2,
 } from "@depmap/types";
 import {
   DataExplorerApiResponse,
@@ -20,7 +20,7 @@ interface Props {
   includeAllInContextOptions: boolean;
   index_type: string | null;
   onCancel: () => void;
-  onChange: (dimension: DataExplorerPlotConfigDimension) => void;
+  onChange: (dimension: DataExplorerPlotConfigDimensionV2) => void;
   initialState: State;
 }
 
@@ -77,14 +77,14 @@ function DimensionDetailsModal({
           onClickCreateContext={() => {
             const context_type = dimension.slice_type;
 
-            const onSave = (context: DataExplorerContext) => {
+            const onSave = (context: DataExplorerContextV2) => {
               setDimension((prev) => ({ ...prev, context }));
             };
 
             DepMap.saveNewContext({ context_type }, null, onSave);
           }}
           onClickSaveAsContext={() => {
-            const onSave = (context: DataExplorerContext) => {
+            const onSave = (context: DataExplorerContextV2) => {
               setDimension((prev) => ({ ...prev, context }));
             };
 
@@ -97,7 +97,9 @@ function DimensionDetailsModal({
         <Button onClick={onCancel}>Cancel</Button>
         <Button
           bsStyle="primary"
-          onClick={() => onChange(dimension as DataExplorerPlotConfigDimension)}
+          onClick={() =>
+            onChange(dimension as DataExplorerPlotConfigDimensionV2)
+          }
           disabled={
             !dimension.dataset_id || dimension === initialState.dimension
           }

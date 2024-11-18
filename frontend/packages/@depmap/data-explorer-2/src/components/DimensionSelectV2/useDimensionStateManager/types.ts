@@ -1,13 +1,10 @@
 import {
-  DataExplorerContext,
-  DataExplorerDatasetDescriptor,
-  DataExplorerPlotConfigDimension,
+  DataExplorerContextV2,
+  DataExplorerPlotConfigDimensionV2,
 } from "@depmap/types";
-import { DataExplorerApiResponse } from "../../../contexts/DataExplorerApiContext";
 
 export type Mode = "entity-only" | "context-only" | "entity-or-context";
-export type PartialDimension = Partial<DataExplorerPlotConfigDimension>;
-export type DimensionLabelsToDatasetsMapping = DataExplorerApiResponse["fetchDimensionLabelsToDatasetsMapping"];
+export type PartialDimension = Partial<DataExplorerPlotConfigDimensionV2>;
 
 type Option = {
   label: string;
@@ -15,11 +12,6 @@ type Option = {
   isDisabled: boolean;
   disabledReason: string;
 };
-
-export type DatasetsByIndexType = Record<
-  string,
-  DataExplorerDatasetDescriptor[]
->;
 
 export interface State {
   dirty: boolean;
@@ -53,7 +45,7 @@ export type Changes = Partial<{
   slice_type: string | null;
   dataset_id: string | null;
   axis_type: "raw_slice" | "aggregated_slice" | null;
-  context: DataExplorerContext | null;
+  context: DataExplorerContextV2 | null;
 }>;
 
 export type Update = (changes: Changes) => void;
