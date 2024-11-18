@@ -217,6 +217,7 @@ def get_dimension_type_identifiers(
     1. Get datasets by dimension type and optionally data type
     2. Get unique dimensions from above list of filtered datasets
     If the `data_type` is given and/or `show_only_dimensions_in_datasets` is True, the dimension identifiers that are returned will only be those that are used within a dataset.
+    If `show_only_dimensions_in_datasets` is True, dimension identifiers within datasets, excluding the dimension type metadata, are returned
     Additionally, the dimension identifiers returned will be from datasets that the user has access to.
     Otherwise, if neither `data_type` is given nor `show_only_dimensions_in_datasets` is True, all dimension identifiers from the given dimension type are returned.
     """
@@ -236,7 +237,14 @@ def get_dimension_type_identifiers(
         sample_type=dimension_type.name if dimension_type.axis == "sample" else None,
         data_type=data_type,
     )
-    filtered_dataset_ids = [dataset.id for dataset in filtered_datasets]
+    # Additionally filter out metadata dataset if show_only_dimensions_in_datasets is True
+    filtered_dataset_ids = []
+    for dataset in filtered_datasets:
+        if show_only_dimensions_in_datasets:
+            if dataset.id != dimension_type.dataset_id:
+                filtered_dataset_ids.append(dataset.id)
+        else:
+            filtered_dataset_ids.append(dataset.id)
     # Get all dimension given ids from list of filtered datasets
     unique_dimension_given_ids = dataset_crud.get_unique_dimension_ids_from_datasets(
         db, filtered_dataset_ids, dimension_type
@@ -246,4 +254,5 @@ def get_dimension_type_identifiers(
     return {
         given_id: dim_type_ids_and_labels[given_id]
         for given_id in unique_dimension_given_ids
+        if given_id in dim_type_ids_and_labels
     }
