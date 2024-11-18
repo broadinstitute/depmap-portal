@@ -1,8 +1,17 @@
-from typing import List, Optional, Literal, Union
+from typing import List, Optional, Literal, Union, Annotated
 from logging import getLogger
 from uuid import UUID, uuid4
 from collections import defaultdict
-from fastapi import APIRouter, Body, Depends, File, Form, HTTPException, UploadFile
+from fastapi import (
+    APIRouter,
+    Body,
+    Depends,
+    File,
+    Form,
+    HTTPException,
+    UploadFile,
+    Query,
+)
 from breadbox.models.dataset import Dataset
 from breadbox.models.dataset import DimensionType as DimensionTypeModel
 from breadbox.schemas.types import IdMappingInsanity
@@ -24,7 +33,13 @@ from ..io.data_validation import validate_dimension_type_metadata
 from ..schemas.custom_http_exception import UserError, ResourceNotFoundError
 from breadbox.models.dataset import AnnotationType
 import breadbox.crud.dataset as dataset_crud
-from breadbox.schemas.types import DimensionType, UpdateDimensionType, AddDimensionType
+from breadbox.schemas.types import (
+    DimensionType,
+    UpdateDimensionType,
+    AddDimensionType,
+    DimensionIdentifiers,
+)
+from breadbox.service import metadata as metadata_service
 from .settings import assert_is_admin_user
 from breadbox.db.util import transaction
 
@@ -580,6 +595,31 @@ def list_dimension_types_endpoint(db: SessionWithUser = Depends(get_db_with_user
     return [_dim_type_to_response(x) for x in dim_types]
 
 
+@router.get(
+    "/dimensions/{name}/identifiers",
+    operation_id="get_dimension_type_identifiers",
+    response_model=List[DimensionIdentifiers],
+)
+def get_dimension_type_identifiers(
+    name: str,
+    data_type: Annotated[Union[str, None], Query()] = None,
+    show_only_dimensions_in_datasets: Annotated[bool, Query()] = False,
+    db: SessionWithUser = Depends(get_db_with_user),
+):
+    dim_type = type_crud.get_dimension_type(db, name)
+    if dim_type is None:
+        raise HTTPException(404, f"Dimension type {name} not found")
+
+    dimension_ids_and_labels = metadata_service.get_dimension_type_identifiers(
+        db, dim_type, data_type, show_only_dimensions_in_datasets
+    )
+
+    return [
+        DimensionIdentifiers(id=id, label=label)
+        for id, label in dimension_ids_and_labels.items()
+    ]
+
+
 @router.patch(
     "/dimensions/{name}",
     operation_id="update_dimension_type",
@@ -644,7 +684,7 @@ def delete_dimension_type_endpoint(
 
     # don't count datasets which are actually the metadata for this type
     datasets_with_using_type = [
-        x for x in datasets_with_using_type if x.id == dim_feature_type.dataset_id
+        x for x in datasets_with_using_type if x.id != dim_feature_type.dataset_id
     ]
 
     num_datasets = len(datasets_with_using_type)

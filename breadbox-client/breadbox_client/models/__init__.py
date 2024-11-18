@@ -31,6 +31,7 @@ from .data_type import DataType
 from .dataset_metadata import DatasetMetadata
 from .dataset_metadata_dataset_metadata import DatasetMetadataDatasetMetadata
 from .dimension_data_response import DimensionDataResponse
+from .dimension_identifiers import DimensionIdentifiers
 from .dimension_search_index_response import DimensionSearchIndexResponse
 from .dimension_search_index_response_matching_properties_item import (
     DimensionSearchIndexResponseMatchingPropertiesItem,
@@ -136,6 +137,7 @@ __all__ = (
     "DatasetMetadataDatasetMetadata",
     "DataType",
     "DimensionDataResponse",
+    "DimensionIdentifiers",
     "DimensionSearchIndexResponse",
     "DimensionSearchIndexResponseMatchingPropertiesItem",
     "DimensionType",
