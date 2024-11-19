@@ -13,11 +13,11 @@ runs:
         virtualenvs-in-project: true
     - name: Install breadbox-client-generator python dependencies
       working-directory: ./breadbox-client-generator
-      run: poetry install && poetry env info --path # This installs to /home/runner/work/depmap-portal/depmap-portal/breadbox-client-generator/.venv
+      run: poetry install # Installs to /home/runner/work/depmap-portal/depmap-portal/breadbox-client-generator/.venv
       shell: bash
     - name: Install breadbox python dependencies
       working-directory: ./breadbox
-      run: poetry install # This installs to /home/runner/work/depmap-portal/depmap-portal/breadbox/.venv
+      run: poetry install # Installs to /home/runner/work/depmap-portal/depmap-portal/breadbox/.venv
       shell: bash
     - name: Export the breadbox API spec
       working-directory: ./breadbox
@@ -25,8 +25,6 @@ runs:
         poetry run ./bb export-api-spec ../breadbox-client/latest-breadbox-api.json
       shell: bash
     - name: Generate the breadbox client
-      run:
-        | # ideally, this would run from the breadbox client directory and activate the breadbox-client-generator env
-        pip install openapi-python-client==0.21.1
-        openapi-python-client generate --meta=none --output-path breadbox-client/breadbox_client --path breadbox-client/latest-breadbox-api.json --overwrite
+      working-directory: ./breadbox
+      run: poetry run ./bb update-client
       shell: bash
