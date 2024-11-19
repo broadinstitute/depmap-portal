@@ -1,5 +1,5 @@
 import React from "react";
-import EditInCellLineSelectorButton from "src/data-explorer-2/components/ContextBuilder/Expression/EditInCellLineSelectorButton";
+import { EditInCellLineSelectorButton } from "@depmap/data-explorer-2";
 
 function Welcome() {
   return (

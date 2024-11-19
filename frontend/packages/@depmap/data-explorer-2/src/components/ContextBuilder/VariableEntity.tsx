@@ -1,35 +1,15 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import cx from "classnames";
-import Select from "react-windowed-select";
-import {
-  fetchDimensionLabelsOfDataset,
-  getDimensionTypeLabel,
-  isPartialSliceId,
-} from "@depmap/data-explorer-2";
-import {
-  sliceLabelFromSliceId,
-  makeSliceId,
-} from "src/data-explorer-2/components/ContextBuilder/contextBuilderUtils";
-import { ContextBuilderReducerAction } from "src/data-explorer-2/components/ContextBuilder/contextBuilderReducer";
-import styles from "src/data-explorer-2/styles/ContextBuilder.scss";
+import { fetchDimensionLabelsOfDataset } from "../../api";
+import { getDimensionTypeLabel, isPartialSliceId } from "../../utils/misc";
+import PlotConfigSelect from "../PlotConfigSelect";
+import { sliceLabelFromSliceId, makeSliceId } from "./contextBuilderUtils";
+import { ContextBuilderReducerAction } from "./contextBuilderReducer";
+import styles from "../../styles/ContextBuilder.scss";
 
 const collator = new Intl.Collator(undefined, {
   numeric: true,
   sensitivity: "base",
 });
-
-const selectStyles = {
-  control: (base: object) => ({
-    ...base,
-    fontSize: 13,
-  }),
-  menu: (base: object) => ({
-    ...base,
-    fontSize: 12,
-    minWidth: "100%",
-    width: "max-content",
-  }),
-};
 
 interface Props {
   value: string | null;
@@ -86,7 +66,10 @@ function VariableEntity({
   }, [slice_type, dataset_id]);
 
   const options = useMemo(() => {
-    const out: any = [];
+    const out: {
+      label: string;
+      value: string;
+    }[] = [];
 
     if (!sliceLabels) {
       return null;
@@ -100,14 +83,18 @@ function VariableEntity({
     return out;
   }, [sliceLabels]);
 
-  const handleChange = (option: any) => {
+  const handleChange = (nextValue: string | null) => {
     dispatch({
       type: "update-value",
       payload: {
         path: path.slice(0, -2),
         value: {
           ">": [
-            { var: makeSliceId(slice_type, dataset_id, option.value) },
+            {
+              var: nextValue
+                ? makeSliceId(slice_type, dataset_id, nextValue)
+                : null,
+            },
             null,
           ],
         },
@@ -116,21 +103,17 @@ function VariableEntity({
   };
 
   const selectedLabel = sliceLabelFromSliceId(value, dataset_id);
-  const selectedValue = selectedLabel
-    ? { label: selectedLabel, value: selectedLabel }
-    : null;
 
   return (
     <div ref={ref} style={{ scrollMargin: 22 }}>
-      <Select
-        className={cx(styles.varEntitySelect, {
-          [styles.invalidSelect]:
-            shouldShowValidation && (!value || isPartialSliceId(value)),
-        })}
-        styles={selectStyles}
+      <PlotConfigSelect
+        show
+        enable
+        className={styles.varSelect}
+        hasError={shouldShowValidation && (!value || isPartialSliceId(value))}
         isLoading={!options}
-        value={selectedValue}
-        options={options}
+        value={selectedLabel || null}
+        options={options || []}
         onChange={handleChange}
         placeholder={`Select ${getDimensionTypeLabel(slice_type)}…`}
         menuPortalTarget={document.querySelector("#modal-container")}

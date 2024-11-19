@@ -139,7 +139,7 @@ def get_dataset_feature_labels_by_id(dataset_id: str) -> dict[str, str]:
     Get a mapping of feature IDs to feature labels.
     """
     row_summaries = get_all_row_indices_labels_entity_ids(dataset_id)
-    return {row.entity_id: row.label for row in row_summaries}
+    return {str(row.entity_id): row.label for row in row_summaries}
 
 
 def get_dataset_sample_labels_by_id(dataset_id: str) -> dict[str, str]:
@@ -155,6 +155,14 @@ def get_dataset_sample_labels_by_id(dataset_id: str) -> dict[str, str]:
         for id, label in all_model_labels_by_id.items()
         if id in dataset_sample_ids
     }
+
+
+def get_dataset_feature_ids(dataset_id: str) -> list[str]:
+    """
+    Get a list of all feature/entity given_ids for the given dataset.
+    """
+    row_summaries = get_all_row_indices_labels_entity_ids(dataset_id)
+    return [str(row.entity_id) for row in row_summaries]
 
 
 def get_dataset_feature_labels(dataset_id: str) -> list[str]:
@@ -259,7 +267,7 @@ def get_subsetted_df_by_ids(
     :param dataset_id:  id of dataset to subset
     :param entity_ids: entity ids of entities to return.  If None, return all entities
     :param cell_line_ids: depmap ids of cell lines to return.  If None, return all cell lines
-    :return: dataframe where rows are entities and columns are cell lines
+    :return: dataframe where rows are entities (indexed by label) and columns are cell lines (indexed by ID)
     """
     if __get_config().is_legacy_private_dataset(dataset_id):
         log_legacy_private_dataset_access(

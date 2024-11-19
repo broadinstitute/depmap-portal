@@ -55,6 +55,7 @@ class ExternalConfig(RemoteConfig):
     RELEASE_NOTES_URL = "https://forum.depmap.org/c/announcements/15"
     FORUM_URL = "https://forum.depmap.org/"
     FORUM_RESOURCES_CATEGORY = "resources-prototype"
+    FORUM_RESOURCES_DEFAULT_TOPIC_ID = 3396
     BREADBOX_PROXY_DEFAULT_USER = "anonymous"
 
 

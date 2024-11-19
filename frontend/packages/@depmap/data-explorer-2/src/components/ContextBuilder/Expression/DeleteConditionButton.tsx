@@ -1,10 +1,11 @@
 import React from "react";
 import { Button } from "react-bootstrap";
 import { Tooltip } from "@depmap/common-components";
+import { ContextBuilderReducerAction } from "../contextBuilderReducer";
 
 interface Props {
+  dispatch: React.Dispatch<ContextBuilderReducerAction>;
   path: (string | number)[];
-  dispatch: any;
 }
 
 function DeleteConditionButton({ path, dispatch }: Props) {

@@ -1,11 +1,12 @@
 import React from "react";
 import { Button } from "react-bootstrap";
 import { Tooltip } from "@depmap/common-components";
+import { ContextBuilderReducerAction } from "../contextBuilderReducer";
 
 interface Props {
-  path: (string | number)[];
-  dispatch: any;
+  dispatch: React.Dispatch<ContextBuilderReducerAction>;
   numConditions: number;
+  path: (string | number)[];
 }
 
 const MAX_CONDITIONS = 10;

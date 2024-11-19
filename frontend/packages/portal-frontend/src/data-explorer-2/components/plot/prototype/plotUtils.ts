@@ -188,7 +188,7 @@ export function formatDataForScatterPlot(
   const contValues = nullifyUnplottableValues(
     data.dimensions.color?.values,
     data.filters?.visible?.values,
-    [data.dimensions.x, data.dimensions.y]
+    [data.dimensions.x, data.dimensions.y!]
   );
 
   return {
@@ -241,7 +241,7 @@ export function formatDataForScatterPlot(
       if (contValues && contValues[i] !== null) {
         colorInfo.push(
           [
-            `<b>${data.dimensions.color.axis_label}</b>`,
+            `<b>${data.dimensions.color!.axis_label}</b>`,
             round(contValues[i] as number),
           ].join(": ")
         );
@@ -594,7 +594,7 @@ export function calcVisibility(
     const primary = c1Values || c2Values;
     const other = c2Values || [];
 
-    primary!.forEach((value: boolean, i: number) => {
+    primary?.forEach((value: boolean, i: number) => {
       if (!value && !other[i]) {
         visiblePoints[i] = false;
       }

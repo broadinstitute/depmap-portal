@@ -71,6 +71,17 @@
             "title": "Axis",
             "type": "string"
           },
+          "display_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Display Name"
+          },
           "id_column": {
             "title": "Id Column",
             "type": "string"
@@ -819,6 +830,10 @@
             "title": "Axis",
             "type": "string"
           },
+          "display_name": {
+            "title": "Display Name",
+            "type": "string"
+          },
           "id_column": {
             "title": "Id Column",
             "type": "string"
@@ -855,6 +870,7 @@
         },
         "required": [
           "name",
+          "display_name",
           "id_column",
           "axis"
         ],
@@ -1293,6 +1309,9 @@
         "type": "object"
       },
       "HTTPError": {
+        "example": {
+          "detail": "HTTPException raised."
+        },
         "properties": {
           "detail": {
             "title": "Detail",
@@ -2272,22 +2291,43 @@
       },
       "UpdateDimensionType": {
         "properties": {
+          "display_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Display Name"
+          },
           "metadata_dataset_id": {
-            "title": "Metadata Dataset Id",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Metadata Dataset Id"
           },
           "properties_to_index": {
-            "items": {
-              "type": "string"
-            },
-            "title": "Properties To Index",
-            "type": "array"
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Properties To Index"
           }
         },
-        "required": [
-          "metadata_dataset_id",
-          "properties_to_index"
-        ],
         "title": "UpdateDimensionType",
         "type": "object"
       },
@@ -2349,7 +2389,7 @@
   },
   "info": {
     "title": "Breadbox",
-    "version": "3.6.1"
+    "version": "3.8.0"
   },
   "openapi": "3.1.0",
   "paths": {
@@ -6062,6 +6102,7 @@
     },
     "/types/feature": {
       "get": {
+        "deprecated": true,
         "operationId": "get_feature_types",
         "responses": {
           "200": {
@@ -6125,6 +6166,7 @@
         ]
       },
       "post": {
+        "deprecated": true,
         "operationId": "add_feature_type",
         "requestBody": {
           "content": {
@@ -6206,6 +6248,7 @@
     },
     "/types/feature/{feature_type_name}/metadata": {
       "patch": {
+        "deprecated": true,
         "operationId": "update_feature_type_metadata",
         "parameters": [
           {
@@ -6298,6 +6341,7 @@
     },
     "/types/feature/{feature_type}": {
       "delete": {
+        "deprecated": true,
         "description": "Delete a feature type, if the user is an admin.",
         "operationId": "remove_feature_type",
         "parameters": [
@@ -6379,6 +6423,7 @@
     },
     "/types/sample": {
       "get": {
+        "deprecated": true,
         "operationId": "get_sample_types",
         "responses": {
           "200": {
@@ -6442,6 +6487,7 @@
         ]
       },
       "post": {
+        "deprecated": true,
         "operationId": "add_sample_type",
         "requestBody": {
           "content": {
@@ -6523,6 +6569,7 @@
     },
     "/types/sample/{sample_type_name}/metadata": {
       "patch": {
+        "deprecated": true,
         "operationId": "update_sample_type_metadata",
         "parameters": [
           {
@@ -6615,6 +6662,7 @@
     },
     "/types/sample/{sample_type}": {
       "delete": {
+        "deprecated": true,
         "description": "Delete a sample type, if the user is an admin.",
         "operationId": "remove_sample_type",
         "parameters": [

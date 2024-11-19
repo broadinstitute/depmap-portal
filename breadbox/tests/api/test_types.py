@@ -27,6 +27,7 @@ def test_all_dimension_type_methods(client: TestClient, minimal_db, settings):
 
     dim_type_fields = {
         "name": "sample_id_name",
+        "display_name": "Sample Name",
         "axis": "sample",
         "id_column": "sample_id",
     }
@@ -62,6 +63,20 @@ def test_all_dimension_type_methods(client: TestClient, minimal_db, settings):
         data_df=pd.DataFrame({"sample_id": ["Y"], "label": ["X"]}),
     )
 
+    # Make sure if only metadata_dataset_id or properties_to_index is provided, throw and error. Both should be provided when dimension type metadata is changed
+    response = client.patch(
+        "/types/dimensions/sample_id_name",
+        json=({"metadata_dataset_id": new_metadata.id}),
+        headers=admin_headers,
+    )
+    assert_status_not_ok(response)
+    response = client.patch(
+        "/types/dimensions/sample_id_name",
+        json=({"properties_to_index": ["label"]}),
+        headers=admin_headers,
+    )
+    assert_status_not_ok(response)
+
     response = client.patch(
         "/types/dimensions/sample_id_name",
         json=(
@@ -77,6 +92,7 @@ def test_all_dimension_type_methods(client: TestClient, minimal_db, settings):
     dim_type = response.json()
     assert dim_type["properties_to_index"] == ["label"]
     assert dim_type["metadata_dataset_id"] == new_metadata.id
+    assert dim_type["display_name"] == dim_type_fields["display_name"]
 
     # verify we can see it in the list of all types
     def sample_id_name_exists():
@@ -85,6 +101,19 @@ def test_all_dimension_type_methods(client: TestClient, minimal_db, settings):
         return "sample_id_name" in [x["name"] for x in response_.json()]
 
     assert sample_id_name_exists()
+
+    # Verify only the dimension type display name has changed
+    response = client.patch(
+        "/types/dimensions/sample_id_name",
+        json=({"display_name": "New Sample Name"}),
+        headers=admin_headers,
+    )
+    assert_status_ok(response)
+    dim_type = response.json()
+    assert dim_type["display_name"] == "New Sample Name"
+    # The previously updated fields are still changed
+    assert dim_type["metadata_dataset_id"] == new_metadata.id
+    assert dim_type["properties_to_index"] == ["label"]
 
     # verify deleting requires admin
     response = client.delete(

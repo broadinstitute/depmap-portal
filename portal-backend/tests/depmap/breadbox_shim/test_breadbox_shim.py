@@ -4,7 +4,7 @@ from unittest.mock import MagicMock
 
 from breadbox_client.models import (
     MatrixDatasetResponse,
-    MatrixDatasetResponseDatasetMetadata,
+    MatrixDatasetResponseDatasetMetadataType0,
     FeatureResponse,
     FeatureResponseValues,
     Group,
@@ -27,6 +27,8 @@ mock_breadbox_datasets = [
         sample_type_name="depmap_model",
         data_type="user_upload",
         value_type=ValueType.CONTINUOUS,
+        allowed_values=None,
+        dataset_metadata=MatrixDatasetResponseDatasetMetadataType0.from_dict({}),
     ),
     MatrixDatasetResponse(
         id="DATASET2-XXXX-XXXX-XXXX-XXXXXXXXXXXX",
@@ -38,10 +40,9 @@ mock_breadbox_datasets = [
         feature_type_name="gene",
         sample_type_name="depmap_model",
         data_type="user_upload",
-        dataset_metadata=MatrixDatasetResponseDatasetMetadata.from_dict(
-            {"show_in_vector_catalog": True}
-        ),
+        dataset_metadata=MatrixDatasetResponseDatasetMetadataType0.from_dict({}),
         value_type=ValueType.CATEGORICAL,
+        allowed_values=None,
     ),
 ]
 
@@ -146,10 +147,9 @@ def test_get_vector_catalog_datasets(mock_breadbox_client):
     # Mock the breadbox client response
     mock_breadbox_client.get_datasets = MagicMock(return_value=mock_breadbox_datasets)
 
-    vector_catalog_datasets = breadbox_shim._get_vector_catalog_datasets()
+    vector_catalog_datasets = breadbox_shim._get_matrix_datasets()
 
-    assert len(vector_catalog_datasets) == 1
-    assert vector_catalog_datasets[0].id == "DATASET2-XXXX-XXXX-XXXX-XXXXXXXXXXXX"
+    assert len(vector_catalog_datasets) == 2
 
 
 def test_get_vector_catalog_children_dataset_node(mock_breadbox_client):
@@ -185,7 +185,7 @@ def test_get_vector_catalog_children_feature_node():
 def test_get_dataset_nodes(mock_breadbox_client):
     # Update our mocks to all be allowed in vector catalog:
     for dataset_mock in mock_breadbox_datasets:
-        dataset_mock.dataset_metadata = MatrixDatasetResponseDatasetMetadata.from_dict(
+        dataset_mock.dataset_metadata = MatrixDatasetResponseDatasetMetadataType0.from_dict(
             {"show_in_vector_catalog": True}
         )
     # Mock the response from breadbox

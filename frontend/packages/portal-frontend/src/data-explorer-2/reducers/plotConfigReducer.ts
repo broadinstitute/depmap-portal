@@ -45,12 +45,6 @@ export type PlotConfigReducerAction =
 
 const DEFAULT_SORT = "alphabetical";
 
-// TODO: Remove this. It's just a reminder that a default aggregation must be
-// computed based on plot_type.
-// const defaultAggregation = (plot_type?: DataExplorerPlotType) => {
-//   return plot_type === "correlation_heatmap" ? "correlation" : "mean";
-// };
-
 const isEmptyObject = (obj?: object) =>
   obj !== null && typeof obj === "object" && Object.keys(obj).length === 0;
 
@@ -132,7 +126,10 @@ function plotConfigReducer(
         };
       }
 
-      if (dx.aggregation === "correlation") {
+      if (
+        nextPlotType !== "correlation_heatmap" &&
+        dx.aggregation === "correlation"
+      ) {
         dx = {
           ...dx,
           aggregation: dx.axis_type === "raw_slice" ? "first" : "mean",
@@ -141,7 +138,15 @@ function plotConfigReducer(
 
       if (nextPlotType === "correlation_heatmap") {
         if (dx.axis_type !== "aggregated_slice" && dx.context) {
-          dx = { ...dx, context: undefined };
+          dx = omit(dx, "context");
+        }
+
+        // Edge case: Other plot types allow you to select the special value
+        // "All" as a context. The correlation_heatmap does not. We can detect
+        // this case by looking at the `expr`. It is set to a boolean value of
+        // `true` only for this special case.
+        if (dx.context && dx.context.expr === true) {
+          dx = omit(dx, "context");
         }
 
         dx = {

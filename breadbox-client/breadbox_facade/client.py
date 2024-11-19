@@ -17,6 +17,7 @@ from breadbox_client.api.data_types import remove_data_type as remove_data_type_
 from breadbox_client.api.datasets import add_dataset_uploads as add_dataset_uploads_client
 from breadbox_client.api.datasets import get_dataset as get_dataset_client
 from breadbox_client.api.datasets import get_dataset_data as get_dataset_data_client
+from breadbox_client.api.datasets import get_tabular_dataset_data as get_tabular_dataset_data_client
 from breadbox_client.api.datasets import get_dataset_features as get_dataset_features_client
 from breadbox_client.api.datasets import get_dataset_samples as get_dataset_samples_client
 from breadbox_client.api.datasets import get_datasets as get_datasets_client
@@ -58,6 +59,7 @@ from breadbox_client.models import (
     ComputeResponse,
     DatasetMetadata,
     DataType,
+    FeatureSampleIdentifier,
     FeatureResponse,
     FeatureTypeOut,
     GroupIn,
@@ -75,6 +77,7 @@ from breadbox_client.models import (
     TableDatasetParamsDatasetMetadataType0,
     TableDatasetParamsFormat,
     TabularDatasetResponse,
+    TabularDimensionsInfo,
     UpdateDimensionType,
     UploadFileResponse,
     ValueType,
@@ -157,6 +160,32 @@ class BBClient:
             dataset_id=dataset_id,
             client=self.client,
             body=request_params,
+        )
+        response = self._parse_client_response(breadbox_response)
+        try:
+            return pd.DataFrame.from_dict(response)
+        except Exception as e:
+            raise Exception(e, "Unable to parse breadbox response into dataframe.")
+        
+    def get_tabular_dataset_data(
+        self, 
+        dataset_id: str,
+        columns: Optional[list[str]],
+        identifier: Optional[Literal["id", "label"]],
+        indices: Optional[list[str]],
+        strict: bool = False,
+    ):
+        
+        request_params = TabularDimensionsInfo(
+            columns=columns,
+            identifier=FeatureSampleIdentifier(identifier) if identifier else UNSET,
+            indices=indices,
+        )
+        breadbox_response = get_tabular_dataset_data_client.sync_detailed(
+            dataset_id=dataset_id,
+            client=self.client,
+            body=request_params,
+            strict=strict,
         )
         response = self._parse_client_response(breadbox_response)
         try:
@@ -268,7 +297,7 @@ class BBClient:
         feature_type: Optional[str],
         sample_type: str,
         is_transient: bool = False,
-        group_id: Optional[str] = None,
+        group_id: str = PUBLIC_GROUP_ID,
         value_type: str = ValueType.CONTINUOUS.value,
         priority: Optional[int] = None,
         taiga_id: Optional[str] = None,
@@ -289,7 +318,7 @@ class BBClient:
             group_id=group_id,
             sample_type=sample_type,
             units=units,
-            value_type=ValueType(value_type) if value_type else UNSET,
+            value_type=ValueType(value_type),
             dataset_metadata=metadata,
             feature_type=feature_type if feature_type else UNSET,
             is_transient=is_transient,
@@ -309,7 +338,7 @@ class BBClient:
         self,
         dataset_id: str,
         name: Union[str, Unset] = UNSET,
-        dataset_metadata: Union[dict, Unset] = UNSET,
+        dataset_metadata: Optional[dict] = None,
         group_id: Union[str, Unset] = UNSET,
     ) -> Union[MatrixDatasetResponse, TabularDatasetResponse]:
         """Update the values specified for the given dataset"""
@@ -322,7 +351,7 @@ class BBClient:
             assert isinstance(dataset, TabularDatasetResponse)
             param_factory = lambda **kwargs: TabularDatasetUpdateParams(format_=TabularDatasetUpdateParamsFormat.TABULAR, **kwargs)
 
-        metadata = DatasetMetadata.from_dict(dataset_metadata) if dataset_metadata is not UNSET else UNSET
+        metadata = DatasetMetadata.from_dict(dataset_metadata) if dataset_metadata is not None else UNSET
         params = param_factory(
             name=name,
             dataset_metadata=metadata,
@@ -345,17 +374,18 @@ class BBClient:
         breadbox_response = get_sample_types_client.sync_detailed(client=self.client)
         return self._parse_client_response(breadbox_response)
 
-    def add_dimension_type(self, name: str, id_column: str, axis: Union[AddDimensionTypeAxis, str]):
+    def add_dimension_type(self, name: str, display_name: str, id_column: str, axis: Union[AddDimensionTypeAxis, str]):
         if isinstance(axis, str):
             axis = AddDimensionTypeAxis(axis)
 
-        params = AddDimensionType(axis=axis, id_column=id_column, name=name)
+        params = AddDimensionType(axis=axis, id_column=id_column, name=name, display_name=display_name)
 
         breadbox_response = add_dimension_type_client.sync_detailed(client=self.client, body=params)
         return self._parse_client_response(breadbox_response)
 
-    def update_dimension_type(self, name: str, metadata_dataset_id: str, properties_to_index: List[str]):
-        params = UpdateDimensionType(metadata_dataset_id, properties_to_index)
+    def update_dimension_type(self, name: str, metadata_dataset_id: str, properties_to_index: List[str], display_name=UNSET):
+        # display_name is set to UNSET for backwards compatibility
+        params = UpdateDimensionType(display_name=display_name, metadata_dataset_id=metadata_dataset_id, properties_to_index=properties_to_index)
 
         breadbox_response = update_dimension_type_client.sync_detailed(name=name, client=self.client, body=params)
         return self._parse_client_response(breadbox_response)
@@ -368,134 +398,12 @@ class BBClient:
         breadbox_response = get_dimension_type_client.sync_detailed(name=name, client=self.client)
         return self._parse_client_response(breadbox_response)
 
-    def add_feature_type(
-        self,
-        name: str,
-        id_column: str,
-        metadata_df: Optional[pd.DataFrame] = None,
-        taiga_id: Optional[str] = None,
-        annotation_type_mapping: Optional[dict] = None,
-        id_mapping: Optional[dict] = None,
-        properties_to_index: Optional[list[str]] = None,
-    ) -> FeatureTypeOut:
-        metadata_file = File(
-            payload=metadata_df.to_csv(index=False),
-            file_name=f"{name}.csv",
-            mime_type="text/csv",
-        )
-        type_mapping = AnnotationTypeMap.from_dict(annotation_type_mapping) if annotation_type_mapping else None
-        params = BodyAddFeatureType(
-            name=name,
-            id_column=id_column,
-            metadata_file=metadata_file,
-            taiga_id=taiga_id,
-            annotation_type_mapping=type_mapping,
-            id_mapping=IdMapping.from_dict(id_mapping) if id_mapping else UNSET,
-            properties_to_index=properties_to_index if properties_to_index else UNSET,
-        )
-        breadbox_response = add_feature_type_client.sync_detailed(client=self.client, multipart_data=params)
-        return self._parse_client_response(breadbox_response)
-
-    def add_sample_type(
-        self,
-        name: str,
-        id_column: str,
-        metadata_df: Optional[pd.DataFrame],
-        taiga_id: Optional[str],
-        annotation_type_mapping: Optional[dict],
-        id_mapping: Optional[dict] = None,
-        properties_to_index: Optional[list[str]] = None,
-    ) -> SampleTypeOut:
-        metadata_file = File(
-            payload=metadata_df.to_csv(index=False),
-            file_name=f"{name}.csv",
-            mime_type="text/csv",
-        )
-        type_mapping = AnnotationTypeMap.from_dict(annotation_type_mapping) if annotation_type_mapping else None
-        params = BodyAddSampleType(
-            name=name,
-            id_column=id_column,
-            metadata_file=metadata_file,
-            taiga_id=taiga_id,
-            annotation_type_mapping=type_mapping,
-            id_mapping=IdMapping.from_dict(id_mapping) if id_mapping else UNSET,
-            properties_to_index=properties_to_index if properties_to_index else UNSET,
-        )
-        breadbox_response = add_sample_type_client.sync_detailed(client=self.client, multipart_data=params)
-        return self._parse_client_response(breadbox_response)
-
-    def update_feature_type_metadata(
-        self,
-        feature_type_name: str,
-        metadata_df: pd.DataFrame,
-        taiga_id: Optional[str],
-        annotation_type_mapping: Optional[dict],
-        id_mapping: Optional[dict] = None,
-        properties_to_index: Optional[list[str]] = None,
-    ) -> FeatureTypeOut:
-        metadata_file = File(
-            payload=metadata_df.to_csv(index=False),
-            file_name=f"{feature_type_name}.csv",
-            mime_type="text/csv",
-        )
-        type_mapping = AnnotationTypeMap.from_dict(annotation_type_mapping) if annotation_type_mapping else None
-        params = BodyUpdateFeatureTypeMetadata(
-            metadata_file=metadata_file,
-            annotation_type_mapping=type_mapping,
-            taiga_id=taiga_id,
-            id_mapping=IdMapping.from_dict(id_mapping) if id_mapping else UNSET,
-            properties_to_index=properties_to_index if properties_to_index else UNSET,
-        )
-        breadbox_response = update_feature_type_metadata_client.sync_detailed(
-            feature_type_name=feature_type_name,
-            client=self.client,
-            multipart_data=params,
-        )
-        return self._parse_client_response(breadbox_response)
-
-    def update_sample_type_metadata(
-        self,
-        sample_type_name: str,
-        metadata_df: pd.DataFrame,
-        taiga_id: Optional[str],
-        annotation_type_mapping: Optional[dict],
-        id_mapping: Optional[dict] = None,
-        properties_to_index: Optional[list[str]] = None,
-    ) -> SampleTypeOut:
-        metadata_file = File(
-            payload=metadata_df.to_csv(index=False),
-            file_name=f"{sample_type_name}.csv",
-            mime_type="text/csv",
-        )
-        type_mapping = AnnotationTypeMap.from_dict(annotation_type_mapping) if annotation_type_mapping else None
-        params = BodyUpdateSampleTypeMetadata(
-            metadata_file=metadata_file,
-            annotation_type_mapping=type_mapping,
-            taiga_id=taiga_id,
-            id_mapping=IdMapping.from_dict(id_mapping) if id_mapping else UNSET,
-            properties_to_index=properties_to_index if properties_to_index else UNSET,
-        )
-        breadbox_response = update_sample_type_metadata_client.sync_detailed(
-            sample_type_name=sample_type_name,
-            client=self.client,
-            multipart_data=params,
-        )
-        return self._parse_client_response(breadbox_response)
-
-    def delete_feature_type(self, feature_type: str):
-        breadbox_response = remove_feature_type_client.sync_detailed(feature_type=feature_type, client=self.client)
-        return self._parse_client_response(breadbox_response)
-
-    def delete_sample_type(self, sample_type: str):
-        breadbox_response = remove_sample_type_client.sync_detailed(sample_type=sample_type, client=self.client)
-        return self._parse_client_response(breadbox_response)
-
     # DATA TYPES
 
     def add_data_type(self, name: str):
         breadbox_response = add_data_type_client.sync_detailed(
             client=self.client,
-            form_data=BodyAddDataType.from_dict({"name": name}),
+            body=BodyAddDataType.from_dict({"name": name}),
         )
         return self._parse_client_response(breadbox_response)
 

@@ -6,27 +6,27 @@ import React, {
   useState,
 } from "react";
 import { get_values } from "json-logic-js";
+import { isPartialSliceId } from "../../utils/misc";
+import { fetchDimensionLabels, fetchUniqueValuesOrRange } from "../../api";
 import {
-  fetchDimensionLabels,
-  fetchUniqueValuesOrRange,
-  isPartialSliceId,
-} from "@depmap/data-explorer-2";
-import { useContextBuilderContext } from "src/data-explorer-2/components/ContextBuilder/ContextBuilderContext";
-import {
+  Expr,
   floor,
   getOperator,
   getValueType,
   isListOperator,
-} from "src/data-explorer-2/components/ContextBuilder/contextBuilderUtils";
-import Variable from "src/data-explorer-2/components/ContextBuilder/Variable";
-import Operator from "src/data-explorer-2/components/ContextBuilder/Operator";
-import List from "src/data-explorer-2/components/ContextBuilder/List";
-import Constant from "src/data-explorer-2/components/ContextBuilder/Constant";
-import NumberExpr from "src/data-explorer-2/components/ContextBuilder/NumberExpr";
-import { ContextBuilderReducerAction } from "src/data-explorer-2/components/ContextBuilder/contextBuilderReducer";
+  isVar,
+  OperatorType,
+} from "./contextBuilderUtils";
+import { ContextBuilderReducerAction } from "./contextBuilderReducer";
+import { useContextBuilderContext } from "./ContextBuilderContext";
+import Operator from "./Operator";
+import Variable from "./Variable";
+import Constant from "./Constant";
+import List from "./List";
+import NumberExpr from "./NumberExpr";
 
 interface Props {
-  expr: any;
+  expr: Record<OperatorType, Expr>;
   path: (string | number)[];
   dispatch: React.Dispatch<ContextBuilderReducerAction>;
   slice_type: string;
@@ -45,6 +45,16 @@ interface SummaryCategorical {
 }
 
 type Summary = SummaryContinuous | SummaryCategorical;
+
+interface RHS {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  expr: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  options: any;
+  dispatch: React.Dispatch<ContextBuilderReducerAction>;
+  path: (string | number)[];
+  shouldShowValidation: boolean;
+}
 
 const collator = new Intl.Collator(undefined, {
   numeric: true,
@@ -75,12 +85,12 @@ function Comparison({
   }, []);
 
   const op = getOperator(expr);
-  const [left, right] = expr[op];
+  const [left, right] = expr[op] as [Expr, string | string[] | number | null];
   const leftPath = [...path, op, 0];
   const rightPath = [...path, op, 1];
-  const slice_id = isPartialSliceId(left?.var) ? null : left?.var;
+  const slice_id = !isVar(left) || isPartialSliceId(left.var) ? null : left.var;
 
-  let RhsComponent = isListOperator(op) ? List : Constant;
+  let RhsComponent: React.FC<RHS> = isListOperator(op) ? List : Constant;
   let options = null;
 
   if (summary?.value_type === "continuous") {
@@ -169,7 +179,7 @@ function Comparison({
   return (
     <div ref={ref} style={{ scrollMargin: 22 }}>
       <Variable
-        value={left?.var || null}
+        value={isVar(left) ? left.var : null}
         path={leftPath}
         dispatch={dispatch}
         onChangeDataSelect={handleChangeDataSelect}
@@ -182,7 +192,7 @@ function Comparison({
         op={op}
         dispatch={dispatch}
         value_type={getValueType(metadataSlices, slice_id)}
-        isLoading={isLoading || (slice_id && !summary)}
+        isLoading={isLoading || (Boolean(slice_id) && !summary)}
       />
       <RhsComponent
         key={slice_id}

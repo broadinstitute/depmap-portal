@@ -3,7 +3,7 @@ from typing import List
 
 import pandas as pd
 
-from depmap import data_access
+from depmap.interactive import interactive_utils
 from depmap.dataset.models import BiomarkerDataset
 from depmap.interactive.models import Feature, LinRegInfo
 
@@ -56,20 +56,21 @@ def get_lin_reg_info_list(table: List[List[str]]) -> List[LinRegInfo]:
 
 
 def format_axis_label(dataset: str, feature: str) -> str:
+    """Only called with legacy datasets/features, does not work with breadbox."""
     if dataset == BiomarkerDataset.BiomarkerEnum.mutations_prioritized.name:
         return feature + " Mutations"
-    units = data_access.get_dataset_units(dataset)
+    units = interactive_utils.get_dataset_units(dataset)
     if units is None:
         units = ""
     else:
         units = " " + units
 
-    if data_access.has_opaque_features(dataset):
+    if interactive_utils.has_opaque_features(dataset):
         # exception for custom cell line groups, feature is a uuid
         feature_label = ""
     else:
         feature_label = feature
-    return feature_label + units + "<br>" + data_access.get_dataset_label(dataset)
+    return feature_label + units + "<br>" + interactive_utils.get_dataset_label(dataset)
 
 
 def get_features_from_ungrouped_df(

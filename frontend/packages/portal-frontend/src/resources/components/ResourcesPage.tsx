@@ -1,6 +1,6 @@
 import * as React from "react";
 import { useMemo } from "react";
-import { Col, ListGroup, ListGroupItem } from "react-bootstrap";
+import { ListGroup, ListGroupItem } from "react-bootstrap";
 import { Accordion } from "@depmap/interactive";
 import { Link, useLocation } from "react-router-dom";
 import styles from "src/resources/styles/ResourcesPage.scss";
@@ -8,7 +8,7 @@ import styles from "src/resources/styles/ResourcesPage.scss";
 
 interface ResourcesPageProps {
   subcategories: any;
-  title: string;
+  defaultTopic: any;
 }
 
 // A custom hook that builds on useLocation to parse
@@ -20,7 +20,7 @@ function useQuery() {
 }
 
 export default function ResourcesPage(props: ResourcesPageProps) {
-  const { subcategories, title } = props;
+  const { subcategories, defaultTopic } = props;
   console.log(subcategories);
   const query = useQuery();
 
@@ -29,24 +29,33 @@ export default function ResourcesPage(props: ResourcesPageProps) {
     const subcategory = subcategories.find(
       (sub: any) => sub.slug === query.get("subcategory")
     );
-    let post = null;
+    let post;
     if (subcategory) {
       const topic = subcategory.topics.find(
         (t: any) => t.slug === query.get("topic")
       );
       post = topic;
+    } else {
+      post = defaultTopic;
     }
     return post;
-  }, [subcategories, query]);
+  }, [subcategories, query, defaultTopic]);
 
   return (
-    <div>
-      <h1 style={{ marginBottom: "30px" }}>{title}</h1>
-      <Col xs={12} md={4} className={styles.PostList}>
+    <div className={styles.ResourcesPageContainer}>
+      <div className={styles.resourcesPageHeader}>
+        <h1>Depmap Resources</h1>
+        <h3>
+          Browse resource categories for information and frequently asked
+          questions
+        </h3>
+      </div>
+
+      <section className={styles.postsNavList}>
         {subcategories.map((subcategory: any) => {
           return (
             <Accordion key={subcategory.id} title={subcategory.title}>
-              <ListGroup>
+              <ListGroup style={{ marginBottom: 0, borderRadius: 0 }}>
                 {subcategory.topics.map((topic: any) => {
                   return (
                     <Link
@@ -56,6 +65,7 @@ export default function ResourcesPage(props: ResourcesPageProps) {
                       style={{ textDecoration: "none" }}
                     >
                       <ListGroupItem
+                        className={styles.navPostItem}
                         style={{ borderRadius: "0px" }}
                         active={initPost ? initPost.slug === topic.slug : false}
                       >
@@ -68,10 +78,10 @@ export default function ResourcesPage(props: ResourcesPageProps) {
             </Accordion>
           );
         })}
-      </Col>
-      <Col xs={12} md={8}>
+      </section>
+      <section className={styles.postContentContainer}>
         {initPost ? (
-          <div className={styles.PostContent}>
+          <div className={styles.postContent}>
             <div className={styles.postDate}>
               <p>Posted: {initPost.creation_date}</p>
               <p>Updated: {initPost.update_date}</p>
@@ -82,7 +92,7 @@ export default function ResourcesPage(props: ResourcesPageProps) {
             />
           </div>
         ) : null}
-      </Col>
+      </section>
     </div>
   );
 }

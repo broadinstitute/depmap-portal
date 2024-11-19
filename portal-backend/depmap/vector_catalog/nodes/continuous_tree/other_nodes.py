@@ -1,4 +1,3 @@
-from depmap import data_access
 from depmap.vector_catalog.models import (
     NodeFactory,
     SliceRowType,
@@ -80,7 +79,7 @@ class OtherDatasetNodeFactoryBase(NodeFactory):
             MetMap 500: Penetrance
         Not touching the sorting of the other datasets, because they actually seem to work out for usage, and the python sorting is stable
         """
-        dataset_label = data_access.get_dataset_label(dataset_id)
+        dataset_label = interactive_utils.get_dataset_label(dataset_id)
         if dataset_label.lower().startswith("metmap"):
             return dataset_label
         return ""
@@ -116,7 +115,7 @@ class OtherDatasetNodeFactoryBase(NodeFactory):
             tree_id_encoder,
             key,
             self.get_attrs(locals()),
-            label=data_access.get_dataset_label(dataset_id),
+            label=interactive_utils.get_dataset_label(dataset_id),
             value=dataset_id,
             url=interactive_utils.get_dataset_url(dataset_id),
             sort_key=self.get_sort_key(dataset_id),

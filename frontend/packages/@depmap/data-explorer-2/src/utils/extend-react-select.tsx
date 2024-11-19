@@ -143,7 +143,7 @@ any) {
           {...inputProps}
           ref={innerRef}
           disabled={isDisabled}
-          contentEditable="plaintext-only"
+          contentEditable
           onMouseDown={(e) => {
             if (isEditing.current) {
               e.stopPropagation();

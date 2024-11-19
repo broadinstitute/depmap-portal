@@ -84,7 +84,6 @@ const uiSchema: UiSchema = {
     "group_id",
     "data_type",
     "priority",
-    "taiga_id",
     "dataset_metadata",
     "is_transient",
     "format",

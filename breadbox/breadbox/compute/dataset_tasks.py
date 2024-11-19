@@ -304,7 +304,7 @@ def upload_dataset(
     from breadbox.schemas.dataset import MatrixDatasetResponse
 
     return UploadDatasetResponse(
-        dataset=MatrixDatasetResponse.from_orm(added_dataset),
+        dataset=MatrixDatasetResponse.model_validate(added_dataset),
         datasetId=str(added_dataset.id),
         warnings=[warning],
         forwardingUrl=forwardingUrl,
@@ -353,7 +353,7 @@ def run_upload_dataset(
             # )
 
         def update_message(
-            message=None, start_time=None, max_time=45, percent_complete=None
+            message=None, start_time=None, max_time: int = 45, percent_complete=None
         ):
             """
             :start_time: the presence of this is used to determine whether we show a progress presented

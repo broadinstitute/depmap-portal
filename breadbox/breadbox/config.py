@@ -1,9 +1,9 @@
 from functools import lru_cache
 import os
-from typing import List, Optional
+from typing import List, Optional, Union
 
-from pydantic import validator
-from pydantic_settings import BaseSettings
+from pydantic import RedisDsn, field_validator
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
@@ -22,18 +22,18 @@ class Settings(BaseSettings):
     origins: List[str] = [
         "http://127.0.0.1:5000",
     ]
+    CELERY_BROKER_URL: Union[RedisDsn, str] = os.environ.get(
+        "CELERY_BROKER_URL", "redis://127.0.0.1:6379/0"
+    )
+    CELERY_RESULT_BACKEND: Union[RedisDsn, str] = os.environ.get(
+        "CELERY_RESULT_BACKEND", "redis://127.0.0.1:6379/0"
+    )
 
-    class Config:
-        env_file = ".env"
-        CELERY_BROKER_URL: str = os.environ.get(
-            "CELERY_BROKER_URL", "redis://127.0.0.1:6379/0"
-        )
-        CELERY_RESULT_BACKEND: str = os.environ.get(
-            "CELERY_RESULT_BACKEND", "redis://127.0.0.1:6379/0"
-        )
+    model_config = SettingsConfigDict(env_file=".env",)
 
-    @validator("host_scheme_override")
+    @field_validator("host_scheme_override")
     def env_contains_colon(cls, v):
+        """"""
         if v is not None and ":" not in v:
             raise ValueError(
                 "Must contain colon and take the format of [Internet protocol]:[host name]!"

@@ -1,8 +1,8 @@
 from .interface import (
     # methods that will likely be supported going forward
-    get_all_matrix_dataset_ids,
     get_all_matrix_datasets,
     get_matrix_dataset,
+    get_dataset_feature_ids,
     get_dataset_feature_labels_by_id,
     get_dataset_feature_labels,
     get_dataset_sample_ids,
@@ -15,27 +15,22 @@ from .interface import (
     get_dataset_taiga_id,
     get_dataset_units,
     get_subsetted_df_by_labels,
+    get_slice_data,
     is_categorical,
     is_continuous,
     # methods that will be supported with modified contracts
-    get_all_entity_ids,
     get_private_datasets,
     get_row_of_values,
-    get_row_of_values_from_slice_id,
     get_subsetted_df,
     get_subsetted_df_by_ids,
     valid_row,
     # methods that will be replaced/removed
     get_all_row_indices_labels_entity_ids,
-    get_category_config,
     get_context_dataset,
     get_custom_cell_lines_dataset,
-    get_entity_class,
-    get_matrix,
     get_matrix_id,
     get_sort_key,
     has_config,
-    has_opaque_features,
     is_filter,
     is_standard,
 )

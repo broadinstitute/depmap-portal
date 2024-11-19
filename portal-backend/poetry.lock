@@ -281,13 +281,13 @@ crt = ["awscrt (==0.16.26)"]
 
 [[package]]
 name = "breadbox-client"
-version = "2.2.1"
+version = "3.7.3"
 description = "A client library for accessing Breadbox"
 optional = false
 python-versions = ">=3.9,<4.0"
 files = [
-    {file = "breadbox_client-2.2.1-py3-none-any.whl", hash = "sha256:cda5a1781718e17eb71f61b035475df01e18568cbf02df4ad52fcab2f02f1955"},
-    {file = "breadbox_client-2.2.1.tar.gz", hash = "sha256:e34cae8b38151c05b82e59dc6e61227a859de46c601d18eb645dbd50c0b94617"},
+    {file = "breadbox_client-3.7.3-py3-none-any.whl", hash = "sha256:f36bbc5f5e7a70fd95b6ba2ad77e275e73476c9306a0da5774a9e3b1a5c80b80"},
+    {file = "breadbox_client-3.7.3.tar.gz", hash = "sha256:34c699b7367f13cd649abb650510ebae1e07e44f9b7b150214cce42e804636ea"},
 ]
 
 [package.dependencies]
@@ -678,13 +678,13 @@ files = [
 
 [[package]]
 name = "depmap-compute"
-version = "0.1.5"
+version = "0.1.8"
 description = "Code related to computations shared between the Depmap Portal and BreadBox"
 optional = false
 python-versions = ">=3.9,<4.0"
 files = [
-    {file = "depmap_compute-0.1.5-py3-none-any.whl", hash = "sha256:ea92c262f913fb2323b445615a1b72cdb9b104e720eb227c4f587f8ed9502d12"},
-    {file = "depmap_compute-0.1.5.tar.gz", hash = "sha256:1626beeb9595b0f67ead8ede9edc4c73abe16f22e164048c6e16df06b5350536"},
+    {file = "depmap_compute-0.1.8-py3-none-any.whl", hash = "sha256:c46963590e684ea2a5d284574770f3b4529d083016e9d6bbe8f70e942d7c15e2"},
+    {file = "depmap_compute-0.1.8.tar.gz", hash = "sha256:58e405922cd51b74a12aafaab15f68a2a0df655fe0cbd6543e00bcdc7ff18e0f"},
 ]
 
 [package.dependencies]
@@ -5055,4 +5055,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "5bbe05b456ce3f829c17e442e0f7e8f9ae38d2b89138f89bbc46bb58cea21057"
+content-hash = "7a7d5ede0a7f1cbad9543af99f366a31eb98fda177bbf477cef0d0222dfa6177"

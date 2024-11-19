@@ -81,6 +81,7 @@ from depmap.cell_line.models_new import DepmapModel
 from depmap.gene.models import Gene
 from depmap.public.resources import refresh_all_category_topics, read_forum_api_key
 from depmap.discourse.client import DiscourseClient
+from breadbox_facade import BBClient, BreadboxException, ColumnMetadata, AnnotationType
 
 
 def _get_relabel_updates():
@@ -163,8 +164,13 @@ def db_create_all():
 @click.option("-n", "--load_nonstandard", is_flag=True, default=False)
 @click.option("-d", "--load_full_constellation", is_flag=True, default=False)
 @click.option("-t", "--load_tda_predictability", is_flag=True, default=False)
+@click.option("--sync-only", is_flag=True, default=False)
 def recreate_dev_db(
-    load_celligner, load_nonstandard, load_full_constellation, load_tda_predictability
+    load_celligner,
+    load_nonstandard,
+    load_full_constellation,
+    load_tda_predictability,
+    sync_only,
 ):
     """
     Deletes and recreates db
@@ -180,36 +186,34 @@ def recreate_dev_db(
     if not os.path.exists(current_app.config["COMPUTE_RESULTS_ROOT"]):
         os.makedirs(current_app.config["COMPUTE_RESULTS_ROOT"])
 
-    if os.path.isfile(current_app.config["DB_PATH"]):
-        os.remove(current_app.config["DB_PATH"])
+    if not sync_only:
+        if os.path.isfile(current_app.config["DB_PATH"]):
+            os.remove(current_app.config["DB_PATH"])
 
-    db_create_all()
+        db_create_all()
 
-    setup_logging(current_app.config["LOG_CONFIG"])
+        setup_logging(current_app.config["LOG_CONFIG"])
 
-    with all_records_visible():
-        load_sample_data(
-            load_celligner=load_celligner,
-            load_nonstandard=load_nonstandard,
-            load_full_constellation=load_full_constellation,
-            load_tda_predictability=load_tda_predictability,
+        with all_records_visible():
+            load_sample_data(
+                load_celligner=load_celligner,
+                load_nonstandard=load_nonstandard,
+                load_full_constellation=load_full_constellation,
+                load_tda_predictability=load_tda_predictability,
+            )
+
+        # now set up the breadbox. Assumes breadbox isn't running already
+        # first, tell breadbox to create an empty database
+        subprocess.run(
+            ["poetry", "run", "./bb", "recreate-dev-db"], check=True, cwd="../breadbox"
         )
-
-    # now set up the breadbox. Assumes breadbox isn't running already
-    # first, tell breadbox to create an empty database
-    subprocess.run(
-        ["poetry", "run", "./bb", "recreate-dev-db"], check=True, cwd="../breadbox"
-    )
-
-    # start up the breadbox service so we can communicate with it
-    proc = subprocess.Popen(["poetry", "run", "./bb", "run"], cwd="../breadbox")
 
     # run the sync'ing process to make sure the breadbox metadata matches
     # what's in the portal's DB.
+
     sync_metadata_to_breadbox_with_retry(5)
 
     # now shutdown the breadbox process
-    proc.kill()
 
 
 def sync_metadata_to_breadbox_with_retry(max_attempts):
@@ -1637,6 +1641,8 @@ def _sync_metadata_to_breadbox():
     overwrite breadbox's metadata with values from the legacy database.
     If the taiga id is defined in the portal, use that to compare (more efficient). Otherwise use a hash of the data.
     """
+    metadata_data_type = "User upload"
+
     synced_dimension_types = [
         SyncedMetadataType(
             type_name="depmap_model",
@@ -1654,27 +1660,26 @@ def _sync_metadata_to_breadbox():
         ),
     ]
 
+    data_types = breadbox.client.get_data_types()
+    if metadata_data_type not in [x.name for x in data_types]:
+        breadbox.client.add_data_type(metadata_data_type)
+
+    dim_type_by_name = {
+        dim_type.name: dim_type for dim_type in breadbox.client.get_dimension_types()
+    }
+
     for dimension_type in synced_dimension_types:
         # Load info about the dimension from both the portal and breadbox
         portal_metadata_info = TabularDataset.get_by_name(
             dimension_type.type_name, must=False
         )
         breadbox_taiga_id = None
-        existing_axis = None
-        for dim_type in breadbox.client.get_sample_types():
-            if dim_type.name == dimension_type.type_name:
-                existing_axis = "sample"
-                if dimension_type.axis == "sample":
-                    breadbox_taiga_id = (
-                        dim_type.dataset.taiga_id if dim_type.dataset else None
-                    )
-        for dim_type in breadbox.client.get_feature_types():
-            if dim_type.name == dimension_type.type_name:
-                existing_axis = "feature"
-                if dimension_type.axis == "feature":
-                    breadbox_taiga_id = (
-                        dim_type.dataset.taiga_id if dim_type.dataset else None
-                    )
+
+        dim_type = dim_type_by_name.get(dimension_type.type_name)
+        if dim_type is not None:
+            metadata_dataset_id = dim_type.metadata_dataset_id
+            metadata_dataset = breadbox.client.get_dataset(metadata_dataset_id)
+            breadbox_taiga_id = metadata_dataset.taiga_id
 
         # If the portal taiga id exists and matches what's in breadbox, skip to the next metadata type
         portal_taiga_id = (
@@ -1705,64 +1710,59 @@ def _sync_metadata_to_breadbox():
             # Filter out rows which have null ids or labels (ex. some genes have null entrez ids)
             metadata_df = metadata_df.dropna()
 
-            # Update the data in breadbox
-            annotation_type_mapping = {
-                "annotation_type_mapping": {
-                    dimension_type.id_column: "text",
-                    "label": "text",
-                }
-            }
-            if existing_axis and existing_axis != dimension_type.axis:
-                breadbox_taiga_id = None
-                if existing_axis == "feature":
-                    log.info(
-                        f"Deleting existing breadbox feature {dimension_type.type_name}."
-                    )
-                    breadbox.client.delete_feature_type(dimension_type.type_name)
-                else:
-                    log.info(
-                        f"Deleting existing breadbox sample {dimension_type.type_name}."
-                    )
-                    breadbox.client.delete_sample_type(dimension_type.type_name)
+            if not dim_type:
+                # if the type does not exist, create it
+                breadbox.client.add_dimension_type(
+                    name=dimension_type.type_name,
+                    display_name=dimension_type.type_name,
+                    id_column=dimension_type.id_column,
+                    axis=dimension_type.axis,
+                )
 
-            if breadbox_taiga_id is not None:
-                log.info(
-                    f"Updating {dimension_type.type_name} {dimension_type.axis} metadata in breadbox..."
-                )
-                if dimension_type.axis == "sample":
-                    breadbox.client.update_sample_type_metadata(
-                        sample_type_name=dimension_type.type_name,
-                        metadata_df=metadata_df,
-                        taiga_id=portal_taiga_id,
-                        annotation_type_mapping=annotation_type_mapping,
-                    )
-                else:
-                    breadbox.client.update_feature_type_metadata(
-                        feature_type_name=dimension_type.type_name,
-                        metadata_df=metadata_df,
-                        taiga_id=portal_taiga_id,
-                        annotation_type_mapping=annotation_type_mapping,
-                    )
-            else:
-                log.info(
-                    f"Creating {dimension_type.type_name} metadata type in breadbox..."
-                )
-                if dimension_type.axis == "sample":
-                    breadbox.client.add_sample_type(
-                        name=dimension_type.type_name,
-                        id_column=dimension_type.id_column,
-                        metadata_df=metadata_df,
-                        taiga_id=portal_taiga_id,
-                        annotation_type_mapping=annotation_type_mapping,
-                    )
-                else:
-                    breadbox.client.add_feature_type(
-                        name=dimension_type.type_name,
-                        id_column=dimension_type.id_column,
-                        metadata_df=metadata_df,
-                        taiga_id=portal_taiga_id,
-                        annotation_type_mapping=annotation_type_mapping,
-                    )
+            log.info(
+                f"Updating {dimension_type.type_name} metadata type in breadbox..."
+            )
+
+            _add_dimension_type_metadata(
+                breadbox.client,
+                dimension_type.id_column,
+                dimension_type.type_name,
+                metadata_data_type,
+                metadata_df,
+            )
+
+
+def _add_dimension_type_metadata(
+    client, id_column_name, name, data_type, df, taiga_id=None
+):
+    # print("head of table")
+    # print(df.head)
+
+    columns_metadata = {
+        "label": ColumnMetadata(col_type=AnnotationType("text")),
+        id_column_name: ColumnMetadata(col_type=AnnotationType("text")),
+    }
+
+    assert columns_metadata is not None
+
+    # now that we have a feature type, we can create a table indexed by that feature type
+    result = client.add_table_dataset(
+        name=f"{name} metadata",
+        group_id=client.PUBLIC_GROUP_ID,
+        index_type=name,
+        data_df=df,
+        data_type=data_type,
+        columns_metadata=columns_metadata,
+        taiga_id=taiga_id,
+    )
+
+    # todo: fix client to not return a dict
+    dataset_id = result["datasetId"]
+
+    # now associate the data table with the dimension type
+    client.update_dimension_type(
+        name=name, metadata_dataset_id=dataset_id, properties_to_index=["label"],
+    )
 
 
 @click.command("reload_resources")

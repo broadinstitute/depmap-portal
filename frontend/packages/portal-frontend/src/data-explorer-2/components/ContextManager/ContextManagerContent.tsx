@@ -3,17 +3,17 @@ import cx from "classnames";
 import { Button, Modal } from "react-bootstrap";
 import { DataExplorerContext } from "@depmap/types";
 import {
+  ContextBuilderModal,
   fetchContext,
   loadContextsFromLocalStorage,
   persistLegacyListAsContext,
+  useCellLineSelectorModal,
 } from "@depmap/data-explorer-2";
 import {
   deleteContextFromLocalStorage,
   saveContextToLocalStorage,
 } from "src/data-explorer-2/utils";
 import { LocalStorageListStore } from "@depmap/cell-line-selector";
-import ContextBuilderModal from "src/data-explorer-2/components/ContextBuilder/ContextBuilderModal";
-import { useCellLineSelectorModal } from "src/data-explorer-2/components/ContextBuilder/CellLineSelector";
 import Welcome from "src/data-explorer-2/components/ContextManager/Welcome";
 import ContextListItem from "src/data-explorer-2/components/ContextManager/ContextListItem";
 import ContextTypeSelect from "src/data-explorer-2/components/ContextManager/ContextTypeSelect";
@@ -290,7 +290,7 @@ function ContextManagerContent({
       <ContextBuilderModal
         backdrop={false}
         show={showContextModal}
-        context={contextToEdit.current}
+        context={contextToEdit.current as DataExplorerContext}
         onClickSave={onClickSave.current}
         onHide={() => setShowContextModal(false)}
         isExistingContext

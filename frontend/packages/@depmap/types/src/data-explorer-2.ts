@@ -112,11 +112,23 @@ export interface DataExplorerPlotResponse {
   index_type: string;
   index_labels: string[];
   index_aliases: IndexAlias[];
-  // "x2" is a pseudo-dimension returned by the /get_correlation endpoint
-  dimensions: Record<DimensionKey | "x2", DataExplorerPlotResponseDimension>;
+  dimensions: {
+    x: DataExplorerPlotResponseDimension;
+    y?: DataExplorerPlotResponseDimension;
+    color?: DataExplorerPlotResponseDimension;
+    // "x2" is a pseudo-dimension returned by the /get_correlation endpoint
+    x2?: DataExplorerPlotResponseDimension;
+  };
   filters: Partial<Record<FilterKey, { name: string; values: boolean[] }>>;
   metadata: Partial<
-    Record<string, { slice_id: string; values: (string | number)[] }>
+    Record<
+      string,
+      {
+        label: string;
+        slice_id: string;
+        values: (string | number)[];
+      }
+    >
   >;
 }
 

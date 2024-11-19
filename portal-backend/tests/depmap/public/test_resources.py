@@ -30,5 +30,5 @@ def test_add_forum_link_to_html():
         "https://forum.depmap.org", 1, "topic-slug", html
     )
     assert 'href="https://forum.depmap.org/t/topic-slug/1"' in added_forum_link_to_html
-    assert "</p><a" in added_forum_link_to_html
-    assert added_forum_link_to_html.endswith("</a>")
+    assert "</p><p><a" in added_forum_link_to_html
+    assert added_forum_link_to_html.endswith("</a></p>")

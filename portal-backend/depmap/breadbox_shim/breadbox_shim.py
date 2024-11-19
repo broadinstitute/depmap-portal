@@ -5,6 +5,7 @@ from typing import Any, Optional, Union
 from breadbox_client.models.compute_response import ComputeResponse
 from breadbox_client.models import (
     MatrixDatasetResponse,
+    MatrixDatasetResponseFormat,
     TabularDatasetResponse,
     FeatureResponse,
     ValueType,
@@ -34,7 +35,13 @@ class BreadboxVectorCatalogChildNode(Node):
     for breadbox nodes, so a simpler version is being used as a return type in the shim.
     """
 
-    def __init__(self, slice_id: str, label: str, is_terminal: bool):
+    def __init__(
+        self,
+        slice_id: str,
+        label: str,
+        value: str,  # For datasets, this should be the ID, for features, it's the label
+        is_terminal: bool,
+    ):
         # Fill in defaults for values that are required in the Node type
         super().__init__(
             id=slice_id,
@@ -42,7 +49,7 @@ class BreadboxVectorCatalogChildNode(Node):
             attrs={},
             is_terminal=is_terminal,
             label=label,
-            value=label,
+            value=value,  # maps onto childValue in the API response
             children_list_type=NodeType.dynamic if not is_terminal else None,
             children_category="generic entity" if not is_terminal else None,
         )
@@ -144,25 +151,24 @@ def get_dataset_nodes(catalog_type: str) -> list[Node]:
     Return a list of objects similar to vector_catalog's Node type, but with only a 
     subset of the fields (those that are exposed by the vector_catalog endpoints).
     """
-    bb_datasets = _get_vector_catalog_datasets()
+    bb_datasets = _get_matrix_datasets()
     dataset_types_for_catalog = _get_breadbox_value_types(catalog_type)
     # Convert to the format used by vector catalog
     result_nodes: list[Node] = []
     for bb_dataset in bb_datasets:
-        if (
-            isinstance(bb_dataset, MatrixDatasetResponse)
-            and bb_dataset.value_type in dataset_types_for_catalog
-        ):
+        if bb_dataset.value_type in dataset_types_for_catalog:
             slice_id = get_breadbox_slice_id(dataset_id=bb_dataset.id)
             child_node = BreadboxVectorCatalogChildNode(
-                slice_id=slice_id, label=bb_dataset.name, is_terminal=False
+                slice_id=slice_id,
+                label=bb_dataset.name,
+                value=slice_id,
+                is_terminal=False,
             )
             result_nodes.append(child_node)
     return result_nodes
 
 
 def _get_feature_nodes(dataset_uuid: str) -> list[Node]:
-    dataset_slice_id = get_breadbox_slice_id(dataset_id=dataset_uuid)
     bb_features = extensions.breadbox.client.get_dataset_features(dataset_uuid)
     feature_nodes: list[Node] = []
     for bb_feature in bb_features:
@@ -170,7 +176,10 @@ def _get_feature_nodes(dataset_uuid: str) -> list[Node]:
             dataset_id=dataset_uuid, feature_id=bb_feature["id"]
         )
         child_node = BreadboxVectorCatalogChildNode(
-            slice_id=slice_id, label=bb_feature["label"], is_terminal=True
+            slice_id=slice_id,
+            label=bb_feature["label"],
+            value=bb_feature["label"],
+            is_terminal=True,
         )
         feature_nodes.append(child_node)
     return feature_nodes
@@ -276,9 +285,7 @@ def _get_dataset_node_info_with_siblings(
     )
 
 
-def _get_vector_catalog_datasets() -> list[
-    Union[MatrixDatasetResponse, TabularDatasetResponse]
-]:
+def _get_matrix_datasets() -> list[MatrixDatasetResponse]:
     """Get all datasets where the metadata contains {"show_in_vector_catalog": true}"""
     all_breadbox_datasets: list[
         Union[MatrixDatasetResponse, TabularDatasetResponse]
@@ -286,10 +293,7 @@ def _get_vector_catalog_datasets() -> list[
     vector_catalog_datasets = [
         dataset
         for dataset in all_breadbox_datasets
-        if (
-            dataset.dataset_metadata
-            and dataset.dataset_metadata.to_dict().get("show_in_vector_catalog")
-        )
+        if isinstance(dataset, MatrixDatasetResponse)
     ]
     return vector_catalog_datasets
 
