@@ -22,7 +22,8 @@ function isWholeNumberNotZero(num: number) {
 
 export const ALL_SEARCH_OPTION = {
   name: "All",
-  display_name: "All",
+  subtype_code: "All",
+  node_level: 0,
 };
 
 export const OUTGROUP_TYPE_ALL_OPTION = {
@@ -425,7 +426,7 @@ function getSelectedContextData(
   allContextData: ContextSummary
 ) {
   const filteredDepmapIds = allContextData.all_depmap_ids.filter((item) =>
-    selectedContextNode.depmap_ids.includes(item[1])
+    selectedContextNode.model_ids.includes(item[1])
   );
 
   const newDataVals = [];
@@ -446,8 +447,9 @@ function getSelectedContextData(
   return {
     selectedContextData: newContextData,
     selectedContextNameInfo: {
+      subtype_code: selectedContextNode.subtype_code,
       name: selectedContextNode.name,
-      display_name: selectedContextNode.display_name,
+      node_level: selectedContextNode.node_level,
     },
   };
 }
@@ -498,7 +500,8 @@ export function getSelectedContextNode(
       }
     | undefined,
   lineageQueryParam: string | null,
-  primaryDiseaseQueryParam: string | null
+  primaryDiseaseQueryParam: string | null,
+  subtypeQueryParam: string | null
 ) {
   let selectedNode = null;
   let topContextNameInfo = ALL_SEARCH_OPTION;
@@ -509,8 +512,9 @@ export function getSelectedContextNode(
       // Make sure the lineageQueryParam is a valid contextTree key
       if (selectedTree) {
         topContextNameInfo = {
+          subtype_code: selectedTree.root.subtype_code,
           name: selectedTree.root.name,
-          display_name: selectedTree.root.display_name,
+          node_level: 0,
         };
         selectedNode = selectedTree.root;
         if (primaryDiseaseQueryParam) {

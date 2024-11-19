@@ -103,8 +103,8 @@ const ContextExplorerTabs = ({
           <div className={styles.plot}>
             {checkedDataValues && selectedContextData && (
               <ContextExplorerPlot
-                topContextName={topContextNameInfo.display_name}
-                selectedContextName={selectedContextNameInfo.display_name}
+                topContextName={topContextNameInfo.name}
+                selectedContextName={selectedContextNameInfo.name}
                 data={selectedContextData}
                 checkedDataValues={checkedDataValues}
                 checkedDatatypes={checkedDatatypes}

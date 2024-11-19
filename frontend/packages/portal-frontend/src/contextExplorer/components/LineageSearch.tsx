@@ -42,8 +42,8 @@ const LineageSearch = (lineageSearchProps: LineageSearchProps) => {
       <p className={styles.pHeader}>Select Lineage</p>
       <Select
         value={{
-          value: topContextNameInfo.name,
-          label: topContextNameInfo.display_name,
+          value: topContextNameInfo.subtype_code,
+          label: topContextNameInfo.name,
         }}
         options={searchOptions}
         isClearable

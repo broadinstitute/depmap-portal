@@ -6,10 +6,9 @@ export enum ContextExplorerDatasets {
 
 export interface ContextNode {
   name: string;
-  display_name: string;
-  has_gene_dep_data: boolean;
-  has_drug_data: boolean;
-  depmap_ids: string[];
+  node_level: number;
+  subtype_code: string;
+  model_ids: string[];
   children: ContextNode[];
 }
 
@@ -20,7 +19,8 @@ export interface ContextExplorerTree {
 
 export interface ContextNameInfo {
   name: string;
-  display_name: string;
+  subtype_code: string;
+  node_level: number;
 }
 
 export interface ContextInfo {

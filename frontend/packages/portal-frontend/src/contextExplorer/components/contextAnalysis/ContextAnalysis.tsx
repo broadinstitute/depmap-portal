@@ -106,14 +106,14 @@ function ContextAnalysis({
       // context is a subset of Bone
       outGroupOpts.push({
         value: OutGroupType.Lineage,
-        label: `Other ${topContextNameInfo.display_name}`,
+        label: `Other ${topContextNameInfo.name}`,
       });
     }
 
     // Other Solid
     if (
-      BLOOD_LINEAGES.includes(topContextNameInfo.display_name) ||
-      BLOOD_LINEAGES.includes(topContextNameInfo.name)
+      BLOOD_LINEAGES.includes(topContextNameInfo.name) ||
+      BLOOD_LINEAGES.includes(topContextNameInfo.subtype_code)
     ) {
       outGroupOpts.push({
         value: OutGroupType.Type,
@@ -716,8 +716,7 @@ function ContextAnalysis({
           {selectedContextNameInfo.name !== "All" && data && (
             <>
               <h2>
-                Dependencies enriched/depleted in{" "}
-                {selectedContextNameInfo.display_name}
+                Dependencies enriched/depleted in {selectedContextNameInfo.name}
               </h2>
               <h4>
                 Displayed here are{" "}
@@ -725,7 +724,7 @@ function ContextAnalysis({
                   ? "gene dependencies"
                   : "drug sensitivities"}{" "}
                 that occur more strongly or more frequently in{" "}
-                {selectedContextNameInfo.display_name} cell lines compared to{" "}
+                {selectedContextNameInfo.name} cell lines compared to{" "}
                 {outgroup.label.toLowerCase()} cell lines.
               </h4>
             </>

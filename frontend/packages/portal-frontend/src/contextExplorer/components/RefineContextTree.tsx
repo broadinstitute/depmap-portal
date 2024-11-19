@@ -32,25 +32,25 @@ export const RefineContextTree = (
 
   useEffect(() => {
     if (contextTrees && topContextNameInfo) {
-      setSelectedTree(contextTrees[topContextNameInfo.name]);
+      setSelectedTree(contextTrees[topContextNameInfo.subtype_code]);
     }
   }, [contextTrees, topContextNameInfo]);
 
   useEffect(() => {
     if (selectedTree) {
       for (let index = 0; index < selectedTree.children.length; index++) {
-        const node = selectedTree.children[index];
-        if (selectedTab === TabTypes.GeneDependency) {
-          if (!node.has_gene_dep_data) {
-            setHasSmallContext(true);
-            break;
-          }
-        } else if (selectedTab === TabTypes.DrugSensitivity) {
-          if (!node.has_drug_data) {
-            setHasSmallContext(true);
-            break;
-          }
-        }
+        // const node = selectedTree.children[index];
+        // if (selectedTab === TabTypes.GeneDependency) {
+        //   if (!node.has_gene_dep_data) {
+        //     setHasSmallContext(true);
+        //     break;
+        //   }
+        // } else if (selectedTab === TabTypes.DrugSensitivity) {
+        //   if (!node.has_drug_data) {
+        //     setHasSmallContext(true);
+        //     break;
+        //   }
+        // }
         setHasSmallContext(false);
       }
     }
@@ -91,22 +91,21 @@ export const RefineContextTree = (
                 <Button
                   bsStyle="link"
                   className="accordion_title_button"
-                  key={topContextNameInfo.display_name}
+                  key={topContextNameInfo.name}
                   onClick={() => {
                     onRefineYourContext(selectedTree.root, selectedTree);
                   }}
-                  value={selectedTree.root.depmap_ids}
+                  value={selectedTree.root.model_ids}
                 >
                   {" "}
                   <span
                     style={
-                      selectedContextName === topContextNameInfo.display_name
+                      selectedContextName === topContextNameInfo.name
                         ? { fontWeight: "bold" }
                         : { fontWeight: "normal" }
                     }
                   >
-                    {topContextNameInfo.display_name} (
-                    {selectedTree.children.length})
+                    {topContextNameInfo.name} ({selectedTree.children.length})
                   </span>
                 </Button>
               }
@@ -128,21 +127,20 @@ export const RefineContextTree = (
                   onClick={() => {
                     onRefineYourContext(node, selectedTree);
                   }}
-                  value={node.depmap_ids}
+                  value={node.model_ids}
                 >
                   <p
                     style={
-                      selectedContextName === node.display_name
+                      selectedContextName === node.name
                         ? { fontWeight: "bold" }
                         : { fontWeight: "normal" }
                     }
                   >
                     <span>
-                      {node.display_name}
-                      {((selectedTab === TabTypes.GeneDependency &&
-                        !node.has_gene_dep_data) ||
+                      {node.name}
+                      {((selectedTab === TabTypes.GeneDependency && false) ||
                         (selectedTab === TabTypes.DrugSensitivity &&
-                          !node.has_drug_data)) && (
+                          false)) && (
                         <span
                           style={{ color: "#994299", marginLeft: "3px" }}
                           className="glyphicon glyphicon-exclamation-sign"

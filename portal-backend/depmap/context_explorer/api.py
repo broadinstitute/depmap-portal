@@ -24,18 +24,19 @@ from depmap.context_explorer.models import (
     ContextExplorerTree,
 )
 from depmap.context.models_new import SubtypeNode
-from depmap.database import (
-    Boolean,
-    Column,
-    ForeignKey,
-    Integer,
-    Model,
-    String,
-    Text,
-    db,
-    relationship,
-)
-from loader.context_explorer_loader import load_subtype_tree
+
+# from depmap.database import (
+#     Boolean,
+#     Column,
+#     ForeignKey,
+#     Integer,
+#     Model,
+#     String,
+#     Text,
+#     db,
+#     relationship,
+# )
+# from loader.context_explorer_loader import load_subtype_tree
 
 # from .development_scripts import dev
 
@@ -109,7 +110,9 @@ def _get_all_level_0_subtype_info(
     for subtype_code in all_trees.keys():
         context_name_info.append(
             ContextNameInfo(
-                name=all_trees[subtype_code].root.name, subtype_code=subtype_code
+                name=all_trees[subtype_code].root.name,
+                subtype_code=subtype_code,
+                node_level=0,
             )
         )
 
@@ -142,12 +145,12 @@ class ContextInfo(
         return {
             "trees": context_trees,
             "table_data": overview_data,
-            # TODO change the search_options object in the typescript to use subtype_code and
-            # name instead of "name" and "display_name" to avoid confusion. Subtype_code really
-            # does serve the same function that context name served (unique identifier), while
-            # subtype name is really the display name (b/c it's not necessarily unique).
             "search_options": [
-                {"name": name_info.subtype_code, "display_name": name_info.name}
+                {
+                    "subtype_code": name_info.subtype_code,
+                    "name": name_info.name,
+                    "node_level": name_info.node_level,
+                }
                 for name_info in context_name_info
             ],
         }
@@ -216,20 +219,26 @@ def get_context_explorer_lineage_trees_and_table_data() -> Tuple[
 
     trees = {}
     for subtype_code in list(subtype_codes_and_names_dict.keys()):
-        model_ids = DepmapModel.get_model_ids_by_subtype_code(subtype_code)
+        node_level = 0
+        model_ids = DepmapModel.get_model_ids_by_subtype_code_and_node_level(
+            subtype_code, node_level
+        )
         node_name = subtype_codes_and_names_dict[subtype_code]
         root_node = ContextNode(
-            name=node_name, subtype_code=subtype_code, model_ids=model_ids
+            name=node_name,
+            subtype_code=subtype_code,
+            model_ids=model_ids,
+            node_level=node_level,
         )
         tree = ContextExplorerTree(root_node)
 
         tree.create_context_tree_from_root_info(
             tree_df=subtype_tree_df,
-            current_node_name=node_name,
+            current_node_code=subtype_code,
             lineage_df=subtype_tree_df.loc[
-                subtype_tree_df["subtype_code"] == subtype_code
+                subtype_tree_df[f"level_{node_level}"] == subtype_code
             ],
-            current_level=0,
+            node_level=node_level,
         )
         trees[subtype_code] = tree
 

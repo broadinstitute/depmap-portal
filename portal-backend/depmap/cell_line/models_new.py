@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """Cell line models."""
 import enum
+from platform import node
 import re
 from typing import Dict, List, Optional, Sequence
 from depmap.cell_line.models import Lineage
@@ -247,10 +248,16 @@ class DepmapModel(Model):
         return s
 
     @staticmethod
-    def get_model_ids_by_subtype_code(subtype_code: str) -> Dict[str, str]:
+    def get_model_ids_by_subtype_code_and_node_level(
+        subtype_code: str, node_level: int
+    ) -> Dict[str, str]:
+        node_level_column = f"level_{node_level}"
         query = (
             db.session.query(DepmapModel)
-            .filter_by(DepmapModel.depmap_model_type == subtype_code)
+            .join(
+                SubtypeNode, SubtypeNode.subtype_code == DepmapModel.depmap_model_type
+            )
+            .filter(getattr(SubtypeNode, node_level_column) == subtype_code)
             .with_entities(DepmapModel.model_id, DepmapModel.stripped_cell_line_name)
         )
 

@@ -46,6 +46,9 @@ export const ContextExplorer = () => {
   const [primaryDiseaseQueryParam, setPrimaryDiseaseQueryParam] = useState<
     string | null
   >(null);
+  const [subtypeQueryParam, setSubtypeQueryParam] = useState<string | null>(
+    null
+  );
   const [checkedDatatypes, setCheckedDatatypes] = useState<Set<string>>(
     new Set()
   );
@@ -56,7 +59,8 @@ export const ContextExplorer = () => {
   const { selectedContextNode, topContextNameInfo } = getSelectedContextNode(
     contextTrees,
     lineageQueryParam,
-    primaryDiseaseQueryParam
+    primaryDiseaseQueryParam,
+    subtypeQueryParam // TODO LEFT OFF HERE!!!!!!
   );
 
   const {
@@ -77,7 +81,7 @@ export const ContextExplorer = () => {
       options.unshift(ALL_SEARCH_OPTION);
       setSearchOptions(
         options.map((option) => {
-          return { value: option.name, label: option.display_name };
+          return { value: option.subtype_code, label: option.name };
         })
       );
 
@@ -120,12 +124,18 @@ export const ContextExplorer = () => {
     [checkedDatatypes]
   );
 
+  const queryStrFromNodeLevel = new Map<number, string>([
+    [0, "lineage"],
+    [1, "primary_disease"],
+    [2, "subtype"],
+  ]);
+
   const onRefineYourContext = useCallback(
     (
       contextNode: ContextNode | null,
       contextTree: ContextExplorerTree | null
     ) => {
-      deleteSpecificQueryParams(["lineage", "primary_disease"]);
+      deleteSpecificQueryParams(["lineage", "primary_disease", "subtype"]);
 
       if (allContextData && contextNode && contextTree) {
         setLineageQueryParam(contextTree.root.name);
@@ -133,7 +143,7 @@ export const ContextExplorer = () => {
         setPrimaryDiseaseQueryParam(null);
         setQueryStringWithoutPageReload("lineage", contextTree.root.name);
 
-        if (contextTree.root.display_name !== contextNode.display_name) {
+        if (contextTree.root.name !== contextNode.name) {
           setPrimaryDiseaseQueryParam(contextNode.name);
           setQueryStringWithoutPageReload("primary_disease", contextNode.name);
         }
@@ -180,7 +190,7 @@ export const ContextExplorer = () => {
               contextTrees={contextTrees}
               onRefineYourContext={onRefineYourContext}
               topContextNameInfo={topContextNameInfo}
-              selectedContextName={selectedContextNameInfo.display_name}
+              selectedContextName={selectedContextNameInfo.name}
               selectedTab={selectedTab}
               customInfoImg={customInfoImg}
             />

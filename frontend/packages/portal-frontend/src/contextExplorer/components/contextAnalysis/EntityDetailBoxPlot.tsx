@@ -51,9 +51,10 @@ function getPlotName(
   topContextNameInfo: ContextNameInfo,
   otherDepName: string
 ) {
+  // TODO: Redo this logic??? Heme/Solid are now built into the Subtype Tree???
   const lineageType =
-    BLOOD_LINEAGES.includes(topContextNameInfo.display_name) ||
-    BLOOD_LINEAGES.includes(topContextNameInfo.name)
+    BLOOD_LINEAGES.includes(topContextNameInfo.name) ||
+    BLOOD_LINEAGES.includes(topContextNameInfo.subtype_code)
       ? "Heme"
       : "Solid";
 
@@ -61,11 +62,11 @@ function getPlotName(
 
   switch (type) {
     case BoxPlotTypes.SelectedLineage:
-      return topContextNameInfo.display_name;
+      return topContextNameInfo.name;
     case BoxPlotTypes.SelectedPrimaryDisease:
-      return selectedContextNameInfo.display_name;
+      return selectedContextNameInfo.name;
     case BoxPlotTypes.SameLineage:
-      return `Other ${topContextNameInfo.display_name}`;
+      return `Other ${topContextNameInfo.name}`;
     case BoxPlotTypes.OtherLineageType:
       return `${otherLineageType}`;
     case BoxPlotTypes.SameLineageType:

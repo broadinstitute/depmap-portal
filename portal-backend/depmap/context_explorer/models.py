@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from math import nextafter
 import sqlalchemy
 from sqlalchemy import and_, func, desc
 import enum
@@ -25,19 +26,22 @@ from depmap.database import (
 class ContextNameInfo:
     name: str
     subtype_code: str
+    node_level: int
 
 
 def _get_child_lineages_next_lineage_level_from_root_info(
-    sorted: pd.DataFrame, current_level: int,
+    sorted: pd.DataFrame, current_level: str, current_code: str
 ) -> Tuple[Optional[List[str]], Optional[str]]:
-    next_lineage_level = current_level + 1
+    next_lineage_level_num = int(current_level) + 1
+    next_lineage_level = "level_" + str(next_lineage_level_num)
 
-    if next_lineage_level not in sorted["node_level"]:
+    if next_lineage_level not in sorted:
         return None, None
 
-    child_lineages_df = sorted[sorted["node_level"] == next_lineage_level]
-
-    return child_lineages_df, next_lineage_level
+    children = sorted[sorted[f"level_{current_level}"] == current_code]
+    child_lineages = children[next_lineage_level].unique()
+    child_lineages = [child for child in child_lineages if child != ""]
+    return child_lineages, next_lineage_level_num
 
 
 class ContextExplorerTree(dict):
@@ -51,47 +55,43 @@ class ContextExplorerTree(dict):
         self.children.append(obj)
 
     def create_context_tree_from_root_info(
-        self, tree_df, current_node_name, lineage_df, node_level: int,
+        self, tree_df, current_node_code, lineage_df, node_level: int,
     ):
         # Find all subtype nodes at this level
-        sorted = tree_df.loc[tree_df["node_level"] == node_level]
+        sorted = tree_df.loc[tree_df[f"level_{node_level}"] == current_node_code]
 
         (
-            child_lineages_df,
+            child_subtype_codes,
             next_level,
         ) = _get_child_lineages_next_lineage_level_from_root_info(
-            sorted=sorted, current_level=node_level,
+            sorted=tree_df, current_level=node_level, current_code=current_node_code
         )
+
         if next_level is None:
             return
 
-        subtype_codes_and_names: pd.DataFrame = child_lineages_df[
-            ["subtype_code", "node_name"]
-        ].loc[child_lineages_df["node_level"] == next_level]
-        if not subtype_codes_and_names.empty:
-            subtype_codes_and_names_dict = subtype_codes_and_names.set_index(
-                "subtype_code"
-            ).to_dict()["node_name"]
-
-            for child_subtype_code in list(subtype_codes_and_names_dict.keys()):
-                model_ids = DepmapModel.get_model_ids_by_subtype_code(
-                    child_subtype_code
+        if len(child_subtype_codes) > 0:
+            for child_subtype_code in child_subtype_codes:
+                model_ids = DepmapModel.get_model_ids_by_subtype_code_and_node_level(
+                    child_subtype_code, next_level
                 )
+
                 current_child_codes = [child.subtype_code for child in self.children]
                 if len(model_ids) > 0 and child_subtype_code not in current_child_codes:
                     node = ContextNode(
-                        name=subtype_codes_and_names[child_subtype_code],
+                        name=SubtypeNode.get_by_code(child_subtype_code).node_name,
                         subtype_code=child_subtype_code,
                         model_ids=model_ids,
+                        node_level=next_level,
                     )
                     self.add_node(node)
 
             for child in self.children:
                 child.create_context_tree_from_root_info(
                     tree_df=sorted,
-                    current_node_name=subtype_codes_and_names[child_subtype_code],
+                    current_node_code=child_subtype_code,
                     lineage_df=lineage_df,
-                    current_lineage_level=next_level,
+                    node_level=next_level,
                 )
 
     def get_all_nodes(self):
@@ -104,12 +104,13 @@ class ContextExplorerTree(dict):
 
 class ContextNode(dict):
     def __init__(
-        self, name, subtype_code, model_ids,
+        self, name, subtype_code, node_level, model_ids,
     ):
         super().__init__()
         self.__dict__ = self
         self.name = name  # display name
         self.subtype_code = subtype_code  # unique key
+        self.node_level = node_level
         self.model_ids = model_ids
         self.children = []
 
@@ -125,39 +126,34 @@ class ContextNode(dict):
                 Tree.append(child)
 
     def create_context_tree_from_root_info(
-        self, tree_df, current_node_name, lineage_df, node_level: int
+        self, tree_df, current_node_code, lineage_df, node_level: int
     ):
         # Find all subtype nodes at this level
-        sorted = tree_df.loc[tree_df["node_level"] == node_level]
+        sorted = tree_df.loc[tree_df[f"level_{node_level}"] == current_node_code]
 
         (
-            child_lineages_df,
+            child_subtype_codes,
             next_level,
         ) = _get_child_lineages_next_lineage_level_from_root_info(
-            sorted=sorted, current_level=node_level,
+            sorted=sorted, current_level=node_level, current_code=current_node_code
         )
 
         if next_level is None:
             return
 
-        subtype_codes_and_names: pd.DataFrame = child_lineages_df[
-            ["subtype_code", "node_name"]
-        ].loc[child_lineages_df["node_level"] == next_level]
-        if not subtype_codes_and_names.empty:
-            subtype_codes_and_names_dict = subtype_codes_and_names.set_index(
-                "subtype_code"
-            ).to_dict()["node_name"]
-
-            for child_subtype_code in list(subtype_codes_and_names_dict.keys()):
-                model_ids = DepmapModel.get_model_ids_by_subtype_code(
-                    child_subtype_code
+        if len(child_subtype_codes) > 0:
+            for child_subtype_code in child_subtype_codes:
+                model_ids = DepmapModel.get_model_ids_by_subtype_code_and_node_level(
+                    child_subtype_code, next_level
                 )
+
                 current_child_codes = [child.subtype_code for child in self.children]
                 if len(model_ids) > 0 and child_subtype_code not in current_child_codes:
                     node = ContextNode(
-                        name=subtype_codes_and_names[child_subtype_code],
+                        name=SubtypeNode.get_by_code(child_subtype_code).node_name,
                         subtype_code=child_subtype_code,
                         model_ids=model_ids,
+                        node_level=next_level,
                     )
                     self.add_node(node)
 
