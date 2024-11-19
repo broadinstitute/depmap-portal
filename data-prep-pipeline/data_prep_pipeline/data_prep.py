@@ -10,6 +10,7 @@ from predictability.transform_driver_events import process_and_update_driver_eve
 from predictability.transform_genetic_derangement import (
     process_and_update_genetic_derangement,
 )
+from subtype_tree.create_subtype_tree import create_subtype_tree
 
 
 def parse_args() -> tuple[str, str]:
@@ -40,6 +41,7 @@ def main():
     process_and_update_fusion(source_dataset_id, target_dataset_id)
     process_and_update_driver_events(source_dataset_id, target_dataset_id)
     process_and_update_genetic_derangement(source_dataset_id, target_dataset_id)
+    create_subtype_tree(source_dataset_id, target_dataset_id)
 
 
 if __name__ == "__main__":

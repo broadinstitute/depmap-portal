@@ -7,3 +7,4 @@ omics_fusion_filtered_taiga_permaname = "OmicsFusionFiltered"
 omics_somatic_mutations_taiga_permaname = "OmicsSomaticMutations"
 
 cngene_log2_taiga_permaname = "PortalOmicsCNGeneLog2"
+subtype_tree_taiga_permaname = "SubtypeTree"
