@@ -24,9 +24,9 @@ function DataSourceSelect({ expr, path }: Props) {
       innerRef={ref}
       value={source}
       options={{
-        metadata_column: "Core Annotation",
-        annotation: "Custom Annotation",
-        matrix: "Matrix",
+        metadata_column: "Annotation",
+        tabular_dataset: "Tabular Dataset",
+        matrix_dataset: "Matrix Dataset",
       }}
       onChange={(nextSource) => {
         let nextVarName = varName;

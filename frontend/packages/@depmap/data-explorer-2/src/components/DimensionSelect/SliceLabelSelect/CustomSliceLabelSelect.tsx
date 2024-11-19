@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { DataExplorerContext } from "@depmap/types";
-import { fetchDimensionLabelsOfDataset } from "../../../api";
+import { useDataExplorerApi } from "../../../contexts/DataExplorerApiContext";
 import PlotConfigSelect from "../../PlotConfigSelect";
 import { toOutputValue } from "./utils";
 
@@ -23,6 +23,7 @@ function CustomSliceLabelSelect({
   onChange,
   swatchColor = undefined,
 }: Props) {
+  const api = useDataExplorerApi();
   const [dsError, setDsError] = useState(false);
   const [sliceLabels, setSliceLabels] = useState<string[] | null>(null);
 
@@ -33,7 +34,7 @@ function CustomSliceLabelSelect({
     (async () => {
       if (slice_type && dataset_id) {
         try {
-          const data = await fetchDimensionLabelsOfDataset(
+          const data = await api.fetchDimensionLabelsOfDataset(
             slice_type,
             dataset_id
           );
@@ -44,7 +45,7 @@ function CustomSliceLabelSelect({
         }
       }
     })();
-  }, [slice_type, dataset_id]);
+  }, [api, slice_type, dataset_id]);
 
   const options = useMemo(() => {
     return (sliceLabels || []).map((label) => ({ label, value: label }));

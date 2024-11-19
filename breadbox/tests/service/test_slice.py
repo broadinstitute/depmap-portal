@@ -14,6 +14,7 @@ from tests import factories
 def test_get_slice_data_with_matrix_dataset(minimal_db: SessionWithUser, settings):
     """
     Test that the get_slice_data function works with all matrix identifier types.
+    Also test that it filters NA values correctly.
     """
     filestore_location = settings.filestore_location
     # Define label metadata for our features
@@ -62,7 +63,7 @@ def test_get_slice_data_with_matrix_dataset(minimal_db: SessionWithUser, setting
     example_matrix_values = factories.matrix_csv_data_file_with_values(
         feature_ids=["featureID1", "featureID2", "featureID3"],
         sample_ids=["sampleID1", "sampleID2", "sampleID3"],
-        values=np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]]),
+        values=np.array([[np.NAN, 2, 3], [4, np.NAN, 6], [7, 8, np.NAN]]),
     )
     dataset_given_id = "dataset_123"
     dataset_with_metadata = factories.matrix_dataset(
@@ -81,8 +82,8 @@ def test_get_slice_data_with_matrix_dataset(minimal_db: SessionWithUser, setting
         identifier_type="feature_id",
     )
     result_series = get_slice_data(minimal_db, filestore_location, feature_id_query)
-    assert result_series.index.tolist() == ["sampleID1", "sampleID2", "sampleID3"]
-    assert result_series.values.tolist() == [2, 5, 8]
+    assert result_series.index.tolist() == ["sampleID1", "sampleID3"]
+    assert result_series.values.tolist() == [2, 8]
 
     # Test queries by feature_label
     feature_label_query = SliceQuery(
@@ -91,16 +92,16 @@ def test_get_slice_data_with_matrix_dataset(minimal_db: SessionWithUser, setting
         identifier_type="feature_label",
     )
     result_series = get_slice_data(minimal_db, filestore_location, feature_label_query)
-    assert result_series.index.tolist() == ["sampleID1", "sampleID2", "sampleID3"]
-    assert result_series.values.tolist() == [1, 4, 7]
+    assert result_series.index.tolist() == ["sampleID2", "sampleID3"]
+    assert result_series.values.tolist() == [4, 7]
 
     # Test queries by sample_id
     sample_id_query = SliceQuery(
         dataset_id=dataset_given_id, identifier="sampleID3", identifier_type="sample_id"
     )
     result_series = get_slice_data(minimal_db, filestore_location, sample_id_query)
-    assert result_series.index.tolist() == ["featureID1", "featureID2", "featureID3"]
-    assert result_series.values.tolist() == [7, 8, 9]
+    assert result_series.index.tolist() == ["featureID1", "featureID2"]
+    assert result_series.values.tolist() == [7, 8]
 
     # Test queries by sample_label
     sample_label_query = SliceQuery(
@@ -109,8 +110,8 @@ def test_get_slice_data_with_matrix_dataset(minimal_db: SessionWithUser, setting
         identifier_type="sample_label",
     )
     result_series = get_slice_data(minimal_db, filestore_location, sample_label_query)
-    assert result_series.index.tolist() == ["featureID1", "featureID2", "featureID3"]
-    assert result_series.values.tolist() == [4, 5, 6]
+    assert result_series.index.tolist() == ["featureID1", "featureID3"]
+    assert result_series.values.tolist() == [4, 6]
 
 
 def test_get_slice_data_with_tabular_dataset(minimal_db: SessionWithUser, settings):

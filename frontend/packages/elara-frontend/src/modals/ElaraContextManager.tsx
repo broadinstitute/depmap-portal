@@ -8,6 +8,10 @@ import { VectorCatalogApi } from "@depmap/interactive";
 import { ElaraApi } from "src/api";
 import {
   evaluateContext,
+  fetchDatasets,
+  fetchDatasetsByIndexType,
+  fetchDimensionIdentifiers,
+  fetchDimensionTypes,
   fetchVariableDomain,
 } from "src/pages/DataExplorer/api";
 
@@ -33,7 +37,11 @@ function ElaraContextManager({ onHide }: Props) {
     <ApiContext.Provider value={{ getApi, getVectorCatalogApi }}>
       <DataExplorerApiProvider
         evaluateContext={evaluateContext}
+        fetchDatasetsByIndexType={fetchDatasetsByIndexType}
         fetchVariableDomain={fetchVariableDomain}
+        fetchDatasets={fetchDatasets}
+        fetchDimensionTypes={fetchDimensionTypes}
+        fetchDimensionIdentifiers={fetchDimensionIdentifiers}
       >
         <ContextManager
           onHide={onHide}

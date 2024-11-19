@@ -1,10 +1,20 @@
 import React, { useEffect, useState } from "react";
 import {
+  DataExplorerApiProvider,
+  fetchContextLabels,
+  fetchDatasetDetails,
+  fetchDatasetsByIndexType,
+  fetchDatasetsMatchingContextIncludingEntities,
+  fetchDimensionLabels,
+  fetchDimensionLabelsOfDataset,
+  fetchDimensionLabelsToDatasetsMapping,
+} from "@depmap/data-explorer-2";
+import { PartialDataExplorerPlotConfig } from "@depmap/types";
+import {
   convertLegacyContexts,
   readPlotFromQueryString,
   DEFAULT_EMPTY_PLOT,
 } from "src/data-explorer-2/utils";
-import { PartialDataExplorerPlotConfig } from "@depmap/types";
 import DataExplorer2MainContent from "src/data-explorer-2/components/DataExplorer2MainContent";
 import SpinnerOverlay from "src/data-explorer-2/components/plot/SpinnerOverlay";
 import styles from "src/data-explorer-2/styles/DataExplorer2.scss";
@@ -43,12 +53,26 @@ function DataExplorer2({ feedbackUrl, contactEmail, tutorialLink }: PageProps) {
   }, []);
 
   return initialPlot ? (
-    <DataExplorer2MainContent
-      initialPlot={initialPlot}
-      feedbackUrl={feedbackUrl}
-      contactEmail={contactEmail}
-      tutorialLink={tutorialLink}
-    />
+    <DataExplorerApiProvider
+      evaluateLegacyContext={fetchContextLabels}
+      fetchDatasetDetails={fetchDatasetDetails}
+      fetchDatasetsByIndexType={fetchDatasetsByIndexType}
+      fetchDimensionLabels={fetchDimensionLabels}
+      fetchDimensionLabelsOfDataset={fetchDimensionLabelsOfDataset}
+      fetchDimensionLabelsToDatasetsMapping={
+        fetchDimensionLabelsToDatasetsMapping
+      }
+      fetchDatasetsMatchingContextIncludingEntities={
+        fetchDatasetsMatchingContextIncludingEntities
+      }
+    >
+      <DataExplorer2MainContent
+        initialPlot={initialPlot}
+        feedbackUrl={feedbackUrl}
+        contactEmail={contactEmail}
+        tutorialLink={tutorialLink}
+      />
+    </DataExplorerApiProvider>
   ) : (
     <div className={styles.initialLoadingSpinner}>
       {!error && <SpinnerOverlay />}

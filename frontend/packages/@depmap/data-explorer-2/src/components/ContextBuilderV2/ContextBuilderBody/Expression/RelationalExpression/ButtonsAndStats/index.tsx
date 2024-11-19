@@ -13,7 +13,7 @@ interface Props {
 }
 
 function ButtonsAndStats({ expr, path, varName, isLastOfList }: Props) {
-  const numConditions = Number(path.slice().pop()) + 1;
+  const numConditions = path.length < 4 ? 1 : (path[3] as number) + 1;
 
   // TODO: Add a button similar to "Edit in Cell Line Selector" that opens a
   // new metadata viewer.

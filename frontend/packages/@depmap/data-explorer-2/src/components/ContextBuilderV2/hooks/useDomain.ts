@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { isValidSliceQuery } from "@depmap/types";
 import {
+  DataExplorerApiResponse,
   useDataExplorerApi,
-  VariableDomain,
 } from "../../../contexts/DataExplorerApiContext";
 import { useContextBuilderState } from "../state/ContextBuilderState";
 
@@ -10,7 +10,9 @@ export default function useDomain(varName: string | null) {
   const api = useDataExplorerApi();
   const [isLoading, setIsLoading] = useState(false);
   const [hasError, setHasError] = useState(false);
-  const [domain, setDomain] = useState<VariableDomain | null>(null);
+  const [domain, setDomain] = useState<
+    DataExplorerApiResponse["fetchVariableDomain"] | null
+  >(null);
   const { vars } = useContextBuilderState();
 
   const variable = varName ? vars[varName] : null;

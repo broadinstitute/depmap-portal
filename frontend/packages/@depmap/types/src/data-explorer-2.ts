@@ -9,9 +9,10 @@ export type DataExplorerPlotType =
   | "waterfall";
 
 export type DataExplorerContextVariable = SliceQuery & {
-  source?: "metadata_column" | "annotation" | "matrix";
-  value_type?: "categorical" | "continuous" | "list_strings";
+  source?: "metadata_column" | "tabular_dataset" | "matrix_dataset";
+  value_type?: "text" | "categorical" | "continuous" | "list_strings";
   slice_type?: string;
+  label?: string;
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -58,6 +59,11 @@ export interface DataExplorerPlotConfigDimension {
   dataset_id: string;
   context: DataExplorerContext;
   aggregation: DataExplorerAggregation;
+}
+
+export interface DataExplorerPlotConfigDimensionV2
+  extends Omit<DataExplorerPlotConfigDimension, "context"> {
+  context: DataExplorerContextV2;
 }
 
 // TODO: Rework this to work SliceQuery objects instead of Slice IDs.
@@ -164,7 +170,7 @@ export interface DataExplorerDatasetDescriptor {
   slice_type: string;
   label: string;
   units: string;
-  priority: number;
+  priority: number | null;
 }
 
 type ContextWithoutExprOrVars = {
