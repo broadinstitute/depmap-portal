@@ -1,8 +1,10 @@
 import os
+from logging import getLogger
 from typing import Tuple
 
 from fastapi.staticfiles import StaticFiles
 
+log = getLogger(__name__)
 
 # copied from https://stackoverflow.com/a/68843198
 class SinglePageApplication(StaticFiles):
@@ -28,6 +30,10 @@ class SinglePageApplication(StaticFiles):
             [tuple[str, os.stat_result]]: Always retuens a full path and stat result.
         """
         full_path, stat_result = super().lookup_path(path)
+
+        # Temporary logging
+        found = stat_result is not None
+        log.info(f"path: '{path}', full_path: '{full_path}', found: {found}")
 
         # if a file cannot be found
         if stat_result is None:
