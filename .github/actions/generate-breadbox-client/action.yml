@@ -13,7 +13,7 @@ runs:
         virtualenvs-in-project: true
     - name: Install breadbox-client-generator python dependencies
       working-directory: ./breadbox-client-generator
-      run: poetry install && poetry env info --path # This installs to /home/runner/work/depmap-portal/depmap-portal/breadbox-client-generator/.venv ???
+      run: poetry install && poetry env info --path # This installs to /home/runner/work/depmap-portal/depmap-portal/breadbox-client-generator/.venv
       shell: bash
     - name: Install breadbox python dependencies
       working-directory: ./breadbox
