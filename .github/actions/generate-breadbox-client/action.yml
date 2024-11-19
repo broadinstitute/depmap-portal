@@ -13,7 +13,7 @@ runs:
         virtualenvs-in-project: true
     - name: Install breadbox python dependencies
       working-directory: ./breadbox
-      run: poetry install
+      run: poetry install && poetry env info --path # TODO remove this info command
       shell: bash
     - name: Export the breadbox API spec
       working-directory: ./breadbox
@@ -21,7 +21,8 @@ runs:
         poetry run ./bb export-api-spec ../breadbox-client/latest-breadbox-api.json
       shell: bash
     - name: Generate the breadbox client
-      run: |
+      run:
+        | # ideally, this would run from the breadbox client directory and activate the breadbox-client-generator env
         pip install openapi-python-client==0.21.1
         openapi-python-client generate --meta=none --output-path breadbox-client/breadbox_client --path breadbox-client/latest-breadbox-api.json --overwrite
       shell: bash
