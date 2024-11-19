@@ -2,7 +2,7 @@ import React from "react";
 import { useContextBuilderState } from "../../../../state/ContextBuilderState";
 import DataSourceSelect from "./DataSourceSelect";
 import MetadataColumnSelect from "./MetadataColumnSelect";
-import AnnotationSelect from "./AnnotationSelect";
+import TabularDataSelect from "./TabularDataSelect";
 import MatrixDataSelect from "./MatrixDataSelect";
 
 interface Props {
@@ -22,10 +22,12 @@ function Variable({ expr, path }: Props) {
       {source === "metadata_column" && (
         <MetadataColumnSelect varName={varName as string} />
       )}
-      {source === "annotation" && (
-        <AnnotationSelect varName={varName as string} />
+      {source === "tabular_dataset" && (
+        <TabularDataSelect varName={varName as string} />
       )}
-      {source === "matrix" && <MatrixDataSelect varName={varName as string} />}
+      {source === "matrix_dataset" && (
+        <MatrixDataSelect varName={varName as string} />
+      )}
     </>
   );
 }

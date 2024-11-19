@@ -12,6 +12,7 @@ from breadbox.io.filestore_crud import (
     get_feature_slice,
     get_sample_slice,
 )
+from breadbox.service import metadata as metadata_service
 
 from depmap_compute.slice import SliceQuery
 
@@ -23,6 +24,7 @@ def get_slice_data(
     Loads data for the given slice query. 
     The result will be a pandas series indexed by sample/feature ID 
     (regardless of the identifier_type used in the query).
+    Note: the result may contain given_ids which do not exist in the metadata. These should not be returned to users.
     """
     dataset_id = slice_query.dataset_id
     dataset = dataset_crud.get_dataset(db=db, user=db.user, dataset_id=dataset_id)
@@ -57,7 +59,7 @@ def get_slice_data(
         slice_data = get_feature_slice(dataset, [feature.index], filestore_location)
 
     elif slice_query.identifier_type == "feature_label":
-        feature = dataset_crud.get_dataset_feature_by_label(
+        feature = metadata_service.get_dataset_feature_by_label(
             db, dataset_id, feature_label=slice_query.identifier,
         )
         slice_data = get_feature_slice(dataset, [feature.index], filestore_location)
@@ -69,7 +71,7 @@ def get_slice_data(
         slice_data = get_sample_slice(dataset, [sample.index], filestore_location)
 
     elif slice_query.identifier_type == "sample_label":
-        sample = dataset_crud.get_dataset_sample_by_label(
+        sample = metadata_service.get_dataset_sample_by_label(
             db, dataset_id, sample_label=slice_query.identifier
         )
         slice_data = get_sample_slice(dataset, [sample.index], filestore_location)
@@ -83,4 +85,4 @@ def get_slice_data(
         raise ResourceNotFoundError("No data matches the given slice query.")
 
     # Convert the single-col/row DataFrame into a series and drop null values
-    return slice_data.dropna().squeeze()
+    return slice_data.squeeze().dropna()

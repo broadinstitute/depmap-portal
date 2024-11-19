@@ -313,14 +313,17 @@ class BBClient:
         metadata = MatrixDatasetParamsDatasetMetadataType0.from_dict(dataset_metadata) if dataset_metadata else None
 
         if upload_parquet:
-            log_status(f"uploading as parquet")
             with tempfile.NamedTemporaryFile() as tmp:
+                log_status(f"writing parquet")
                 data_df.to_parquet(tmp.name, index=False)
+                log_status(f"uploading parquet")
                 uploaded_file = self.upload_file(tmp)
             data_file_format=MatrixDatasetParamsDataFileFormat.PARQUET
         else:
-            log_status(f"uploading as csv")
-            uploaded_file = self.upload_file(file_handle=io.BytesIO(data_df.to_csv(index=False).encode("utf8")))
+            log_status("Writing CSV")
+            buffer = io.BytesIO(data_df.to_csv(index=False).encode("utf8"))
+            log_status(f"Uploading CSV")
+            uploaded_file = self.upload_file(file_handle=buffer)
             data_file_format=MatrixDatasetParamsDataFileFormat.CSV
 
         params = MatrixDatasetParams(

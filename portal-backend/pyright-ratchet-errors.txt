@@ -363,14 +363,11 @@ overrides.py: error: Cannot access member "NONSTANDARD_DATA_DIR" for type "str"
 overrides.py: error: Cannot access member "PROJECT_ROOT" for type "str"
 overrides.py: error: Cannot access member "TAIGA_CACHE_DIR" for type "str"
 overrides.py: error: Cannot access member "WEBAPP_DATA_DIR" for type "str"
-parse_downloads.py: error: Argument of type "Literal['DOWNLOADS_PATH']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
-parse_downloads.py: error: Argument of type "Literal['SHARED_DOWNLOADS_PATH']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
 parse_downloads.py: error: Cannot access member "get" for type "list[str]"
 parse_downloads.py: error: Expression of type "List[dict[Unknown, Unknown]]" cannot be assigned to return type "str"
 parse_downloads.py: error: Expression of type "None" cannot be assigned to return type "List[FileSource]"
 parse_downloads.py: error: Expression of type "None" cannot be assigned to return type "SummaryStats"
 parse_downloads.py: error: Expression of type "tuple[Unknown | None, DownloadRelease]" cannot be assigned to return type "Tuple[str, DownloadRelease]"
-parse_downloads.py: error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
 parse_resources.py: error: Argument of type "None" cannot be assigned to parameter "__default" of type "_T@get" in function "get"
 parse_resources.py: error: No overloads for "get" match the provided arguments (reportCallIssue)
 predictability_loader.py: error: "dataset_id" is not a known member of "None" (reportOptionalMemberAccess)

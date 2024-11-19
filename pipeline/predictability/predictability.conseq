@@ -349,6 +349,25 @@ add-if-missing {
     "category": "none"
 }
 
+rule prep_rppa_pred_biomarker_matrix_csv:
+    inputs:
+        rppa={'type': 'harmonized-rppa'}
+    outputs: {
+        'type': 'pred-biomarker-matrix-csv',
+        'category': 'rppa',
+        'filename': {'$filename': 'rppa.csv'},
+        'source_dataset_id': '{{inputs.rppa.dataset_id}}',
+        'testpred': ''
+        }
+    run "python3" with """
+        from taigapy import create_taiga_client_v3
+
+        tc = create_taiga_client_v3()
+        df = tc.get("{{inputs.rppa.dataset_id}}")
+        df.to_csv("rppa.csv")
+    """
+
+
 # Construct the feature matrix for each target matrix (and its corresponding model config)
 rule assemble_feature_matrix:
     executor: dsub {"min_ram":"10", "docker_image": "us.gcr.io/broad-achilles/depmap-pipeline-tda:v10"}
@@ -360,9 +379,9 @@ rule assemble_feature_matrix:
         hotspot_mutations={'type': 'pred-biomarker-matrix-csv', 'category': 'mutations-hotspot'},
         fusions={'type': 'pred-biomarker-matrix-csv', 'category': 'fusions'},
         lineage={'type': 'pred-biomarker-matrix-csv', 'category': 'context'},
-        rppa={'type':'pred-biomarker-matrix-csv', 'category': 'rppa'},
         metabolomics={'type':'pred-biomarker-matrix-csv', 'category': 'metabolomics'},
         match_related={'type': 'match-related-matrix-csv'},
+        rppa={'type':'pred-biomarker-matrix-csv', 'category': 'rppa'},
         dep_ftr={'type': 'pred-dep-matrix-ftr', "label": label, "confounders_label" : confounders_label},
         model_config={"type": "ensemble-model-config", "label": label},
         confounders={'type' ~ 'pred-biomarker-matrix-csv|confounders-stub', 'category': confounders_label},
@@ -470,7 +489,6 @@ rule fit_predictive_model:
         'dataset': '{{ inputs.dep.label }}',
     }
     watch-regex: "(?:! .*)|task.*|Submitting job: .*" # print out the task status summary from sparkles or lines that start with a "!"
-    # hack to work around case where there is no related.ftr
     run """touch no-related-ftr"""
 
     run "python3" with """
