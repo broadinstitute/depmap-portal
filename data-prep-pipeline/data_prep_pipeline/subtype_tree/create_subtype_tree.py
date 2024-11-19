@@ -66,7 +66,8 @@ def create_oncotable(oncotree):
                         **{'oncotree':oncotree},
                         axis=1
                     ).assign(
-                        DepmapModelType = lambda x: x.OncotreeCode
+                        DepmapModelType = lambda x: x.OncotreeCode,
+                        NodeSource = "Oncotree"
                     )
     
     return oncotable
@@ -86,7 +87,8 @@ def add_depmap_nodes(models, oncotable):
             'NodeLevel':1,
             'NodeName':new_depmap_type.OncotreeSubtype,
             'OncotreeCode':np.nan,
-            'DepmapModelType':new_depmap_type.DepmapModelType
+            'DepmapModelType':new_depmap_type.DepmapModelType,
+            'NodeSource':'Depmap'
         })
 
         return new_depmap_node
@@ -274,13 +276,19 @@ def collapse_parent_child_nodes(models, oncotable_plus):
 
 
 def create_subtype_tree_with_names(subtype_tree):
-    codes_to_names = dict(zip(subtype_tree.OncotreeCode, subtype_tree.NodeName))
+    codes_to_names = dict(zip(subtype_tree.DepmapModelType, subtype_tree.NodeName))
 
     subtype_tree_names = subtype_tree.copy()
     for col in [i for i in subtype_tree.columns if i.startswith('Level')]:
         subtype_tree_names[col] = subtype_tree_names[col].map(codes_to_names)
 
-    return subtype_tree_names
+    col_order = [
+        'DepmapModelType','NodeName','NodeLevel','NodeSource',
+        'Level0','Level1','Level2','Level3','Level4','Level5',
+        'OncotreeCode','NodeAliasCode','NodeAliasName'
+    ]
+
+    return subtype_tree_names.loc[:, col_order].copy()
 
 
 def create_subtype_tree(source_dataset_id, target_dataset_id):
@@ -299,13 +307,10 @@ def create_subtype_tree(source_dataset_id, target_dataset_id):
 
     subtype_tree_names = create_subtype_tree_with_names(subtype_tree)
 
-    #SAVE CODE VERSION AS CSV FOR INTERNAL USE
-    #TODO: CHECK WITH NAYEEM THAT THIS WILL WORK/WHERE TO SAVE
-
     #UPLOAD NAME VERSION TO TAIGA
     update_taiga(
         subtype_tree_names,
-        "Create SubtypeTree for Depmap Context Hierarchy",
+        "Create SubtypeTree for Depmap Lineage-based Context Hierarchy",
         target_dataset_id,
         subtype_tree_taiga_permaname,
         file_format='csv_table'
