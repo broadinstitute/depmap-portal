@@ -60,9 +60,16 @@ export function loadContextsFromLocalStorage(context_type: string) {
   // storage but shares local storage. That means they can "see" each other's
   // contexts but can't actually fetch them. This mechanism corrects for that.
   if (["dev.cds.team", "127.0.0.1:5000"].includes(window.location.host)) {
-    const { rootUrl } = JSON.parse(
-      document.getElementById("webpack-config")!.textContent as string
-    );
+    const webpackConfig = document.getElementById("webpack-config");
+
+    let rootUrl = webpackConfig
+      ? JSON.parse(webpackConfig.textContent as string).rootUrl
+      : window.location.pathname.replace(/([^^])\/.*/, "$1");
+
+    if (window.location.pathname.includes("/breadbox")) {
+      rootUrl += "/breadbox";
+    }
+
     const devContextsByRootUrl = JSON.parse(
       window.localStorage.getItem("dev_contexts_by_root_url") || "{}"
     );
@@ -129,9 +136,15 @@ export async function saveContextToLocalStorage(
   // storage but shares local storage. That means they can "see" each other's
   // contexts but can't actually fetch them. This mechanism corrects for that.
   if (["dev.cds.team", "127.0.0.1:5000"].includes(window.location.host)) {
-    const { rootUrl } = JSON.parse(
-      document.getElementById("webpack-config")!.textContent as string
-    );
+    const webpackConfig = document.getElementById("webpack-config");
+
+    let rootUrl = webpackConfig
+      ? JSON.parse(webpackConfig.textContent as string).rootUrl
+      : window.location.pathname.replace(/([^^])\/.*/, "$1");
+
+    if (window.location.pathname.includes("/breadbox")) {
+      rootUrl += "/breadbox";
+    }
 
     const devContextsByRootUrl = JSON.parse(
       window.localStorage.getItem("dev_contexts_by_root_url") || "{}"
