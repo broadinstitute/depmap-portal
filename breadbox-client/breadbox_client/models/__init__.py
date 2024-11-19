@@ -15,15 +15,25 @@ from .body_add_dataset import BodyAddDataset
 from .body_add_feature_type import BodyAddFeatureType
 from .body_add_sample_type import BodyAddSampleType
 from .body_get_dataset_data import BodyGetDatasetData
+from .body_get_dimension_data import BodyGetDimensionData
 from .body_update_feature_type_metadata import BodyUpdateFeatureTypeMetadata
 from .body_update_sample_type_metadata import BodyUpdateSampleTypeMetadata
 from .body_upload_file import BodyUploadFile
+from .cas_key import CASKey
+from .cas_value import CASValue
 from .column_metadata import ColumnMetadata
 from .compute_params import ComputeParams
 from .compute_response import ComputeResponse
+from .context import Context
+from .context_expr_type_1 import ContextExprType1
+from .context_match_response import ContextMatchResponse
+from .context_vars import ContextVars
+from .context_vars_additional_property import ContextVarsAdditionalProperty
 from .data_type import DataType
 from .dataset_metadata import DatasetMetadata
 from .dataset_metadata_dataset_metadata import DatasetMetadataDatasetMetadata
+from .dimension_data_response import DimensionDataResponse
+from .dimension_identifiers import DimensionIdentifiers
 from .dimension_search_index_response import DimensionSearchIndexResponse
 from .dimension_search_index_response_matching_properties_item import (
     DimensionSearchIndexResponseMatchingPropertiesItem,
@@ -70,6 +80,7 @@ from .metadata_response import MetadataResponse
 from .name_and_id import NameAndID
 from .sample_type_out import SampleTypeOut
 from .search_response import SearchResponse
+from .slice_query_identifier_type import SliceQueryIdentifierType
 from .table_dataset_params import TableDatasetParams
 from .table_dataset_params_columns_metadata import TableDatasetParamsColumnsMetadata
 from .table_dataset_params_dataset_metadata_type_0 import (
@@ -112,15 +123,25 @@ __all__ = (
     "BodyAddFeatureType",
     "BodyAddSampleType",
     "BodyGetDatasetData",
+    "BodyGetDimensionData",
     "BodyUpdateFeatureTypeMetadata",
     "BodyUpdateSampleTypeMetadata",
     "BodyUploadFile",
+    "CASKey",
+    "CASValue",
     "ColumnMetadata",
     "ComputeParams",
     "ComputeResponse",
+    "Context",
+    "ContextExprType1",
+    "ContextMatchResponse",
+    "ContextVars",
+    "ContextVarsAdditionalProperty",
     "DatasetMetadata",
     "DatasetMetadataDatasetMetadata",
     "DataType",
+    "DimensionDataResponse",
+    "DimensionIdentifiers",
     "DimensionSearchIndexResponse",
     "DimensionSearchIndexResponseMatchingPropertiesItem",
     "DimensionType",
@@ -159,6 +180,7 @@ __all__ = (
     "NameAndID",
     "SampleTypeOut",
     "SearchResponse",
+    "SliceQueryIdentifierType",
     "TableDatasetParams",
     "TableDatasetParamsColumnsMetadata",
     "TableDatasetParamsDatasetMetadataType0",

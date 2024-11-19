@@ -26,7 +26,7 @@ import { initializeDevContexts } from "@depmap/data-explorer-2";
 
 export { log, tailLog, getLogCount } from "src/common/utilities/log";
 
-if (["dev.cds.team", "127.0.0.1"].includes(window.location.hostname)) {
+if (["dev.cds.team", "127.0.0.1:5000"].includes(window.location.host)) {
   initializeDevContexts();
 }
 
@@ -78,11 +78,11 @@ const WideTable = React.lazy(
     )
 );
 
-const ContextManager = React.lazy(
+const PortalContextManager = React.lazy(
   () =>
     import(
-      /* webpackChunkName: "ContextManager" */
-      "src/data-explorer-2/components/ContextManager"
+      /* webpackChunkName: "PortalContextManager" */
+      "src/data-explorer-2/components/PortalContextManager"
     )
 );
 
@@ -126,7 +126,7 @@ export function launchContextManagerModal(options?: {
 
   ReactDOM.render(
     <React.Suspense fallback={null}>
-      <ContextManager
+      <PortalContextManager
         onHide={hide}
         initialContextType={options?.initialContextType}
         showHelpText={options?.showHelpText || false}
@@ -151,6 +151,7 @@ export function editContext(context: DataExplorerContext, hash: string) {
 }
 
 export function saveNewContext(
+  // TODO: Extend this to also work with DataExplorerContextV2
   context: DataExplorerContext,
   onHide?: () => void,
   onSave?: (context: DataExplorerContext, hash: string) => void

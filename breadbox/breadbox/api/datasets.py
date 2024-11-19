@@ -30,7 +30,6 @@ from ..config import Settings, get_settings
 from breadbox.crud.access_control import PUBLIC_GROUP_ID
 from ..crud import dataset as dataset_crud
 from ..crud import types as type_crud
-from ..crud import group as group_crud
 
 from ..models.dataset import (
     Dataset as DatasetModel,
@@ -51,10 +50,16 @@ from ..schemas.dataset import (
     UpdateDatasetParams,
     MatrixDatasetUpdateParams,
     TabularDatasetUpdateParams,
+    DimensionDataResponse,
+    SliceQueryIdentifierType,
 )
+from breadbox.service import dataset as dataset_service
+from breadbox.service import metadata as metadata_service
+from breadbox.service import slice as slice_service
 from .dependencies import get_dataset as get_dataset_dep
 from .dependencies import get_db_with_user, get_user
 
+from depmap_compute.slice import SliceQuery
 
 router = APIRouter(prefix="/datasets", tags=["datasets"])
 log = getLogger(__name__)
@@ -107,7 +112,7 @@ def get_dataset_features(
     if dataset is None:
         raise HTTPException(404, "Dataset not found")
 
-    feature_labels_by_id = dataset_crud.get_dataset_feature_labels_by_id(
+    feature_labels_by_id = metadata_service.get_matrix_dataset_feature_labels_by_id(
         db=db, user=user, dataset=dataset,
     )
     return [{"id": id, "label": label} for id, label in feature_labels_by_id.items()]
@@ -130,7 +135,7 @@ def get_dataset_samples(
     if dataset is None:
         raise HTTPException(404, "Dataset not found")
 
-    sample_labels_by_id = dataset_crud.get_dataset_sample_labels_by_id(
+    sample_labels_by_id = metadata_service.get_matrix_dataset_sample_labels_by_id(
         db=db, user=user, dataset=dataset,
     )
     return [{"id": id, "label": label} for id, label in sample_labels_by_id.items()]
@@ -182,7 +187,7 @@ def get_feature_data(
         # Get the feature label
         if dataset.feature_type_name:
             # Note: this would be faster if we had a query to load one label instead of all labels - but performance hasn't been an issue
-            feature_labels_by_id = dataset_crud.get_dataset_feature_labels_by_id(
+            feature_labels_by_id = metadata_service.get_matrix_dataset_feature_labels_by_id(
                 db=db, user=user, dataset=dataset
             )
             label = feature_labels_by_id[feature.given_id]
@@ -320,7 +325,7 @@ def get_matrix_dataset_data(
     ] = False,
 ):
     try:
-        df = dataset_crud.get_subsetted_matrix_dataset_df(
+        df = dataset_service.get_subsetted_matrix_dataset_df(
             db,
             user,
             dataset,
@@ -401,7 +406,7 @@ def get_dataset_data(
     except UserError as e:
         raise e
 
-    df = dataset_crud.get_subsetted_matrix_dataset_df(
+    df = dataset_service.get_subsetted_matrix_dataset_df(
         db, user, dataset, dim_info, settings.filestore_location
     )
 
@@ -456,6 +461,59 @@ def get_dimensions(
     return search_index_entries
 
 
+@router.post(
+    "/dimension/data/",
+    operation_id="get_dimension_data",
+    response_model=DimensionDataResponse,
+)
+def get_dimension_data(
+    # The request body should be a SliceQuery with the following three fields:
+    dataset_id: Annotated[str, Body(description="The UUID or given ID of a dataset.")],
+    identifier: Annotated[
+        str,
+        Body(
+            description="A dimension identifier of the specified type (id, label, etc.)."
+        ),
+    ],
+    identifier_type: Annotated[
+        SliceQueryIdentifierType,
+        Body(
+            description="Denotes the type of identifier being used and the axis being queried."
+        ),
+    ],
+    db: SessionWithUser = Depends(get_db_with_user),
+    settings: Settings = Depends(get_settings),
+):
+    """
+    Load all values, IDs, and labels for a given dimension (specified by SliceQuery).
+    """
+    parsed_slice_query = SliceQuery(
+        dataset_id=dataset_id,
+        identifier=identifier,
+        identifier_type=identifier_type.name,
+    )
+    slice_values_by_id = slice_service.get_slice_data(
+        db, settings.filestore_location, parsed_slice_query
+    )
+    labels_by_id = metadata_service.get_labels_for_slice_type(db, parsed_slice_query)
+
+    # Only the values which have corresponding metadata should be returned
+    all_dataset_given_ids = slice_values_by_id.index.to_list()
+    result_given_ids: list[str] = [
+        id for id in all_dataset_given_ids if id in labels_by_id
+    ]
+
+    # Ensure the values and labels are similarly filtered and ordered
+    result_values = [slice_values_by_id[id] for id in result_given_ids]
+    result_labels = [labels_by_id[id] for id in result_given_ids]
+
+    return {
+        "ids": result_given_ids,
+        "labels": result_labels,
+        "values": result_values,
+    }
+
+
 @router.patch(
     "/{dataset_id}",
     operation_id="update_dataset",
@@ -493,6 +551,18 @@ def update_dataset(
             )
 
     with transaction(db):
+        # before calling the method to update, check to make sure the given_id either does not already exist
+        # or it is already assigned to this dataset (in which case, updating it will have no effect)
+        if dataset_update_params.given_id is not None:
+            existing_dataset = dataset_crud.get_dataset(
+                db, db.user, dataset_update_params.given_id
+            )
+            if existing_dataset is not None and existing_dataset.id != dataset.id:
+                raise HTTPException(
+                    409,
+                    f"A dataset with the new given id {dataset_update_params.given_id} already exists.",
+                )
+
         updated_dataset = dataset_crud.update_dataset(
             db, user, dataset, dataset_update_params
         )

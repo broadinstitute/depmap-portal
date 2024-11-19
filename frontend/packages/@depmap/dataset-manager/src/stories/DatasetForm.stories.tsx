@@ -1,9 +1,8 @@
 import * as React from "react";
 import {
-  FeatureType,
+  DimensionType,
   Group,
   InvalidPrioritiesByDataType,
-  SampleType,
   UploadFileResponse,
 } from "@depmap/types";
 import DatasetForm from "../components/DatasetForm";
@@ -13,31 +12,28 @@ export default {
   component: DatasetForm,
 };
 
-async function getFeatureTypes(): Promise<FeatureType[]> {
-  const featureTypes = [
+async function getDimensionTypes(): Promise<DimensionType[]> {
+  const dimensionTypes = [
     {
       name: "generic",
+      display_name: "Generic",
       id_column: "label",
-      dataset: null as any,
+      axis: "feature",
     },
     {
       name: "gene",
+      display_name: "Gene",
       id_column: "entrez_id",
-      dataset: null,
+      axis: "feature",
     },
-  ];
-  return featureTypes;
-}
-
-async function getSampleTypes(): Promise<SampleType[]> {
-  const sampleTypes = [
     {
       name: "depmap_model",
+      display_name: "Depmap Model",
       id_column: "depmap_id",
-      dataset: null as any,
+      axis: "sample",
     },
   ];
-  return sampleTypes;
+  return dimensionTypes as DimensionType[];
 }
 
 async function getGroups() {
@@ -72,15 +68,14 @@ async function uploadFile(): Promise<UploadFileResponse> {
   return { file_id: `id-${counter}` };
 }
 
-async function uploadDataset(datasetParams) {
+async function uploadDataset(datasetParams: any) {
   console.log(datasetParams);
 }
 
 export function DatasetFormStory() {
   return (
     <DatasetForm
-      getFeatureTypes={getFeatureTypes}
-      getSampleTypes={getSampleTypes}
+      getDimensionTypes={getDimensionTypes}
       getGroups={getGroups}
       getDataTypesAndPriorities={getDataTypesAndPriorities}
       uploadFile={uploadFile}

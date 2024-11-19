@@ -18,6 +18,10 @@ export const COLOR_SCALE = [
   [1.0, "rgb(0, 0, 0)"],
 ];
 
+export interface LineageCountInfo {
+  [lineage: string]: [{ [primary_disease: string]: number }];
+}
+
 export interface DataAvailSummary {
   all_depmap_ids: [number, string][];
   data_type_url_mapping: { [data_type: string]: string };
@@ -34,6 +38,10 @@ export interface DataSummary {
       values: number[][];
     };
   };
+}
+
+export interface LineageAvailability {
+  lineage_counts: LineageCountInfo;
 }
 
 export interface DataAvailability {
@@ -165,11 +173,11 @@ export function getDataPageDataTypeString(datatype: DataPageDataType) {
     case DataPageDataType.Sequencing_WGS_Broad:
       return "WGS (Broad)";
     case DataPageDataType.CRISPR_Achilles_Broad:
-      return "Standard KO Screens (Broad)";
+      return "CRISPR KO screens (Broad)";
     case DataPageDataType.CRISPR_Score_Sanger:
-      return "Score (Sanger)";
+      return "CRISPR KO screens (Sanger)";
     case DataPageDataType.CRISPR_ParalogsScreens:
-      return "Paralog Screens";
+      return "Paralog CRISPR KO screens (Broad)";
     case DataPageDataType.Methylation_Sanger:
       return "Sanger";
     case DataPageDataType.Methylation_CCLE:
@@ -177,7 +185,7 @@ export function getDataPageDataTypeString(datatype: DataPageDataType) {
     case DataPageDataType.Uncategorized_miRNA_CCLE:
       return "miRNA (CCLE)";
     case DataPageDataType.Uncategorized_ATACSeq_Broad:
-      return "Atac Seq (Broad)";
+      return "ATAC-seq (Broad)";
     default:
       throw new Error(`Cannot map datatype ${datatype} to color category`);
   }

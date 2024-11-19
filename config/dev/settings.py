@@ -7,6 +7,7 @@ from depmap.settings.settings import RemoteConfig, Config
 import os
 from depmap.read_config import read_config
 
+
 dev_datasets = DataLoadConfig(
     hgnc_dataset=HUGO_NCGC_TAIGA_ID,
     dose_replicate_level_datasets=[  # this split is only used by db loading, to loop over a different list and use a different loader
@@ -17,6 +18,30 @@ dev_datasets = DataLoadConfig(
         DependencyEnum.Prism_oncology_dose_replicate,
     ],
 )
+
+
+def get_downloads_paths(ENV_TYPE):
+    paths = [
+        os.path.join(
+            Config.PROJECT_ROOT,
+            f"../../depmap-deploy/portal-config/env/{ENV_TYPE}/downloads",
+        )
+    ]
+
+    if ENV_TYPE != "public":
+        paths.append(
+            os.path.join(
+                Config.PROJECT_ROOT,
+                "../../depmap-deploy/portal-config/env/shared/nonpublic_downloads",
+            )
+        )
+    paths.append(
+        os.path.join(
+            Config.PROJECT_ROOT,
+            "../../depmap-deploy/portal-config/env/shared/public_downloads",
+        )
+    )
+    return paths
 
 
 # dev downloads are _dev_only, plus specified in settings.py
@@ -131,14 +156,7 @@ class DevConfig(Config):
         Config.PROJECT_ROOT,
         f"../../depmap-deploy/portal-config/env/{ENV_TYPE}/dmc_symposia.yaml",
     )
-    DOWNLOADS_PATH = os.path.join(
-        Config.PROJECT_ROOT,
-        f"../../depmap-deploy/portal-config/env/{ENV_TYPE}/downloads",
-    )
-    SHARED_DOWNLOADS_PATH = os.path.join(
-        Config.PROJECT_ROOT,
-        "../../depmap-deploy/portal-config/env/shared/shared_downloads",
-    )
+    DOWNLOADS_PATHS = get_downloads_paths(ENV_TYPE)
     DEV_DOWNLOADS_PATH = os.path.join(Config.PROJECT_ROOT, f"../config/dev/downloads")
     DOWNLOADS_KEY = os.path.join(
         Config.PROJECT_ROOT, "./secrets/dev-downloads-key.json",
@@ -169,7 +187,9 @@ class DevConfig(Config):
     )
     RELEASE_NOTES_URL = get_setting_from_config("RELEASE_NOTES_URL", ENV_TYPE)
     FORUM_URL = get_setting_from_config("FORUM_URL", ENV_TYPE)
-    FORUM_RESOURCES_CATEGORY = "resources-prototype"
+    FORUM_RESOURCES_CATEGORY = get_setting_from_config(
+        "FORUM_RESOURCES_CATEGORY", ENV_TYPE
+    )
     FORUM_RESOURCES_DEFAULT_TOPIC_ID = get_setting_from_config(
         "FORUM_RESOURCES_DEFAULT_TOPIC_ID", ENV_TYPE
     )

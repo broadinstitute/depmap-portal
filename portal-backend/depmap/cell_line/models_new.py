@@ -2,8 +2,11 @@
 """Cell line models."""
 import enum
 import re
-from typing import Dict, Optional, Sequence
+from typing import Dict, List, Optional, Sequence
 from depmap.cell_line.models import Lineage
+import numpy as np
+from collections import Counter
+
 
 import pandas as pd
 import sqlalchemy
@@ -152,6 +155,43 @@ class DepmapModel(Model):
             return q.one()
         else:
             return q.one_or_none()
+
+    @staticmethod
+    def get_lineage_primary_disease_counts(model_ids: List[str]) -> Dict[str, dict]:
+        q = (
+            db.session.query(DepmapModel)
+            .filter(DepmapModel.model_id.in_(model_ids))
+            .join(Lineage, DepmapModel.oncotree_lineage)
+            .filter(Lineage.level == 1)
+            .with_entities(
+                DepmapModel.model_id,
+                Lineage.name.label("lineage"),
+                DepmapModel.oncotree_primary_disease.label("primary_disease"),
+            )
+            .order_by(Lineage.name)
+            .all()
+        )
+
+        df = pd.DataFrame(q)
+
+        if df.empty:
+            return {}
+
+        df_agg = (
+            df.fillna("unknown").groupby(["lineage"]).agg({"primary_disease": list})
+        )
+
+        assert isinstance(df_agg, pd.DataFrame)
+
+        def count_primary_disease_occurences(x):
+            if isinstance(x, list):
+                return {key: str(val) for key, val in dict(Counter(x)).items()}
+
+        df_agg = df_agg[["primary_disease"]].apply(
+            np.vectorize(count_primary_disease_occurences)
+        )["primary_disease"]
+
+        return dict(df_agg)
 
     @staticmethod
     def get_valid_cell_line_names_in(cell_line_names):

@@ -34,11 +34,6 @@ add-if-missing {
   "dataset_id": PREPROCESS_TAIGA_ID(virtual_dataset_id, "ScreenSequenceMap")
 }
 
-add-if-missing {
-  'type': 'biomarker-needing-transpose',
-  'dataset_id' : PREPROCESS_TAIGA_ID(virtual_dataset_id, "OmicsExpressionGeneSetEnrichment"),
-  'category': 'ssgsea'
-}
 
 add-if-missing {
   "type": "raw-dep-matrix",

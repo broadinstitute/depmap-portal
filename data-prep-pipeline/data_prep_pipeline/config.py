@@ -7,3 +7,4 @@ oncokb_annotated_taiga_id = "oncokb-annotated-mutations-7e2e.17/oncokb_annotated
 oncotree_json_taiga_id = (
     "oncotree-42c7.2/oncotree"
 )
+portal_compounds_taiga_id = "compound-metadata-de37.32/PortalCompounds"

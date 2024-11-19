@@ -436,6 +436,35 @@
         "title": "Body_get_dataset_data",
         "type": "object"
       },
+      "Body_get_dimension_data": {
+        "properties": {
+          "dataset_id": {
+            "description": "The UUID or given ID of a dataset.",
+            "title": "Dataset Id",
+            "type": "string"
+          },
+          "identifier": {
+            "description": "A dimension identifier of the specified type (id, label, etc.).",
+            "title": "Identifier",
+            "type": "string"
+          },
+          "identifier_type": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SliceQueryIdentifierType"
+              }
+            ],
+            "description": "Denotes the type of identifier being used and the axis being queried."
+          }
+        },
+        "required": [
+          "dataset_id",
+          "identifier",
+          "identifier_type"
+        ],
+        "title": "Body_get_dimension_data",
+        "type": "object"
+      },
       "Body_update_feature_type_metadata": {
         "properties": {
           "annotation_type_mapping": {
@@ -562,6 +591,32 @@
           "file"
         ],
         "title": "Body_upload_file",
+        "type": "object"
+      },
+      "CASKey": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key"
+        ],
+        "title": "CASKey",
+        "type": "object"
+      },
+      "CASValue": {
+        "properties": {
+          "value": {
+            "title": "Value",
+            "type": "string"
+          }
+        },
+        "required": [
+          "value"
+        ],
+        "title": "CASValue",
         "type": "object"
       },
       "ColumnMetadata": {
@@ -745,6 +800,86 @@
         "title": "ComputeResponse",
         "type": "object"
       },
+      "Context": {
+        "properties": {
+          "dimension_type": {
+            "title": "Dimension Type",
+            "type": "string"
+          },
+          "expr": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "additionalProperties": {
+                  "items": {},
+                  "type": "array"
+                },
+                "type": "object"
+              }
+            ],
+            "title": "Expr"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "vars": {
+            "additionalProperties": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "default": {},
+            "title": "Vars",
+            "type": "object"
+          }
+        },
+        "required": [
+          "expr",
+          "dimension_type"
+        ],
+        "title": "Context",
+        "type": "object"
+      },
+      "ContextMatchResponse": {
+        "properties": {
+          "ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Ids",
+            "type": "array"
+          },
+          "labels": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Labels",
+            "type": "array"
+          },
+          "num_candidates": {
+            "title": "Num Candidates",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "ids",
+          "labels",
+          "num_candidates"
+        ],
+        "title": "ContextMatchResponse",
+        "type": "object"
+      },
       "DataType": {
         "properties": {
           "name": {
@@ -769,6 +904,54 @@
           "dataset_metadata"
         ],
         "title": "DatasetMetadata",
+        "type": "object"
+      },
+      "DimensionDataResponse": {
+        "properties": {
+          "ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Ids",
+            "type": "array"
+          },
+          "labels": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Labels",
+            "type": "array"
+          },
+          "values": {
+            "items": {},
+            "title": "Values",
+            "type": "array"
+          }
+        },
+        "required": [
+          "ids",
+          "labels",
+          "values"
+        ],
+        "title": "DimensionDataResponse",
+        "type": "object"
+      },
+      "DimensionIdentifiers": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "label"
+        ],
+        "title": "DimensionIdentifiers",
         "type": "object"
       },
       "DimensionSearchIndexResponse": {
@@ -1417,6 +1600,18 @@
             "description": "Contains a dictionary of additional dataset values that are not already provided above.",
             "title": "Dataset Metadata"
           },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "an optional long description of the dataset",
+            "title": "Description"
+          },
           "feature_type": {
             "anyOf": [
               {
@@ -1493,6 +1688,18 @@
             "title": "Sample Type",
             "type": "string"
           },
+          "short_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "an optional short label describing dataset",
+            "title": "Short Name"
+          },
           "taiga_id": {
             "anyOf": [
               {
@@ -1517,6 +1724,18 @@
               }
             ],
             "description": "Value 'continuous' if dataset contains numerical values or 'categorical' if dataset contains string categories as values."
+          },
+          "version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "an optional short version identifier",
+            "title": "Version"
           }
         },
         "required": [
@@ -1576,6 +1795,18 @@
               }
             ],
             "title": "Dataset Metadata"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "an optional long description of the dataset",
+            "title": "Description"
           },
           "feature_type_name": {
             "anyOf": [
@@ -1645,6 +1876,18 @@
             "title": "Sample Type Name",
             "type": "string"
           },
+          "short_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "an optional short label describing dataset",
+            "title": "Short Name"
+          },
           "taiga_id": {
             "anyOf": [
               {
@@ -1662,6 +1905,18 @@
           },
           "value_type": {
             "$ref": "#/components/schemas/ValueType"
+          },
+          "version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "an optional short version identifier",
+            "title": "Version"
           }
         },
         "required": [
@@ -1707,6 +1962,18 @@
             "description": "A dictionary of additional dataset metadata that is not already provided",
             "title": "Dataset Metadata"
           },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "an optional long description of the dataset",
+            "title": "Description"
+          },
           "format": {
             "const": "matrix",
             "enum": [
@@ -1714,6 +1981,18 @@
             ],
             "title": "Format",
             "type": "string"
+          },
+          "given_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The 'given ID' for this dataset",
+            "title": "Given Id"
           },
           "group_id": {
             "anyOf": [
@@ -1752,6 +2031,18 @@
             "description": "Numeric value representing priority of the dataset within its `data_type`",
             "title": "Priority"
           },
+          "short_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "an optional short label describing dataset",
+            "title": "Short Name"
+          },
           "units": {
             "anyOf": [
               {
@@ -1763,6 +2054,18 @@
             ],
             "description": "Units for the values in the dataset",
             "title": "Units"
+          },
+          "version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "an optional short version identifier",
+            "title": "Version"
           }
         },
         "required": [
@@ -1912,6 +2215,17 @@
         "title": "SearchResponse",
         "type": "object"
       },
+      "SliceQueryIdentifierType": {
+        "enum": [
+          "feature_id",
+          "feature_label",
+          "sample_id",
+          "sample_label",
+          "column"
+        ],
+        "title": "SliceQueryIdentifierType",
+        "type": "string"
+      },
       "TableDatasetParams": {
         "properties": {
           "columns_metadata": {
@@ -1945,6 +2259,18 @@
             ],
             "description": "Contains a dictionary of additional dataset values that are not already provided above.",
             "title": "Dataset Metadata"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "an optional long description of the dataset",
+            "title": "Description"
           },
           "file_ids": {
             "description": "Ordered list of file ids from the chunked dataset uploads",
@@ -2010,6 +2336,18 @@
             "description": "Numeric value assigned to the dataset with `1` being highest priority within the `data_type`, used for displaying order of datasets to show for a specific `data_type` in UI.",
             "title": "Priority"
           },
+          "short_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "an optional short label describing dataset",
+            "title": "Short Name"
+          },
           "taiga_id": {
             "anyOf": [
               {
@@ -2021,6 +2359,18 @@
             ],
             "description": "Taiga ID the dataset is sourced from.",
             "title": "Taiga Id"
+          },
+          "version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "an optional short version identifier",
+            "title": "Version"
           }
         },
         "required": [
@@ -2073,6 +2423,18 @@
               }
             ],
             "title": "Dataset Metadata"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "an optional long description of the dataset",
+            "title": "Description"
           },
           "format": {
             "const": "tabular_dataset",
@@ -2138,6 +2500,18 @@
             ],
             "title": "Priority"
           },
+          "short_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "an optional short label describing dataset",
+            "title": "Short Name"
+          },
           "taiga_id": {
             "anyOf": [
               {
@@ -2148,6 +2522,18 @@
               }
             ],
             "title": "Taiga Id"
+          },
+          "version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "an optional short version identifier",
+            "title": "Version"
           }
         },
         "required": [
@@ -2190,6 +2576,18 @@
             "description": "A dictionary of additional dataset metadata that is not already provided",
             "title": "Dataset Metadata"
           },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "an optional long description of the dataset",
+            "title": "Description"
+          },
           "format": {
             "const": "tabular",
             "enum": [
@@ -2197,6 +2595,18 @@
             ],
             "title": "Format",
             "type": "string"
+          },
+          "given_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The 'given ID' for this dataset",
+            "title": "Given Id"
           },
           "group_id": {
             "anyOf": [
@@ -2234,6 +2644,30 @@
             ],
             "description": "Numeric value representing priority of the dataset within its `data_type`",
             "title": "Priority"
+          },
+          "short_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "an optional short label describing dataset",
+            "title": "Short Name"
+          },
+          "version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "an optional short version identifier",
+            "title": "Version"
           }
         },
         "required": [
@@ -2389,7 +2823,7 @@
   },
   "info": {
     "title": "Breadbox",
-    "version": "3.8.0"
+    "version": "3.16.0"
   },
   "openapi": "3.1.0",
   "paths": {
@@ -3382,6 +3816,88 @@
           }
         },
         "summary": "Get Dataset Data",
+        "tags": [
+          "datasets"
+        ]
+      }
+    },
+    "/datasets/dimension/data/": {
+      "post": {
+        "description": "Load all values, IDs, and labels for a given dimension (specified by SliceQuery).",
+        "operationId": "get_dimension_data",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_get_dimension_data"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DimensionDataResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Dimension Data",
         "tags": [
           "datasets"
         ]
@@ -5704,6 +6220,257 @@
         ]
       }
     },
+    "/temp/cas": {
+      "post": {
+        "operationId": "set_cas_value",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CASValue"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CASKey"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Set Cas Value",
+        "tags": [
+          "temp"
+        ]
+      }
+    },
+    "/temp/cas/{key}": {
+      "get": {
+        "operationId": "get_cas_value",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "key",
+            "required": true,
+            "schema": {
+              "title": "Key",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CASValue"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Cas Value",
+        "tags": [
+          "temp"
+        ]
+      }
+    },
+    "/temp/context": {
+      "post": {
+        "description": "Get the full list of IDs and labels (in any dataset) which match the given context.\nAlso get the total number of \"candidate\" records (all records with labels belonging to the dimension type).\nRequests must be in the version 2 context format.",
+        "operationId": "evaluate_context",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/Context"
+                  }
+                ],
+                "description": "A Data Explorer 2 context expression",
+                "title": "Context"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContextMatchResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Evaluate Context",
+        "tags": [
+          "temp"
+        ]
+      }
+    },
     "/types/dimensions": {
       "get": {
         "operationId": "get_dimension_types",
@@ -6095,6 +6862,118 @@
           }
         },
         "summary": "Update Dimension Type Endpoint",
+        "tags": [
+          "types"
+        ]
+      }
+    },
+    "/types/dimensions/{name}/identifiers": {
+      "get": {
+        "operationId": "get_dimension_type_identifiers",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "name",
+            "required": true,
+            "schema": {
+              "title": "Name",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "data_type",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Data Type"
+            }
+          },
+          {
+            "in": "query",
+            "name": "show_only_dimensions_in_datasets",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Show Only Dimensions In Datasets",
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/DimensionIdentifiers"
+                  },
+                  "title": "Response Get Dimension Type Identifiers",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Dimension Type Identifiers",
         "tags": [
           "types"
         ]

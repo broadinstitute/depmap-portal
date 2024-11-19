@@ -4,7 +4,7 @@ from typing import Any, List, Optional, Union
 
 import pandas as pd
 
-from ..models.dataset import Dataset, ValueType
+from ..models.dataset import Dataset, MatrixDataset, ValueType
 from .hdf5_utils import write_hdf5_file, read_hdf5_file
 
 DATA_FILE: str = "data.hdf5"
@@ -49,8 +49,12 @@ def get_slice(
 
 
 def get_feature_slice(
-    dataset: Dataset, feature_indexes: List[int], filestore_location: str
-):
+    dataset: MatrixDataset, feature_indexes: List[int], filestore_location: str
+) -> pd.DataFrame:
+    """
+    Load a dataframe of feature data belonging to the given indexes.
+    The resulting dataframe will be indexed by given IDs with features as columns.
+    """
     if len(feature_indexes) == 0:
         raise ValueError(f"No features match query")
 
@@ -63,8 +67,12 @@ def get_feature_slice(
 
 
 def get_sample_slice(
-    dataset: Dataset, sample_indexes: List[int], filestore_location: str
-):
+    dataset: MatrixDataset, sample_indexes: List[int], filestore_location: str
+) -> pd.DataFrame:
+    """
+    Load a dataframe of sample data belonging to the given indexes.
+    The resulting dataframe will be indexed by given IDs with samples as rows.
+    """
     if len(sample_indexes) == 0:
         raise ValueError(f"No samples match query")
 

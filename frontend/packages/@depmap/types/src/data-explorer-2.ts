@@ -1,3 +1,5 @@
+import { SliceQuery } from "./SliceQuery";
+
 type PartialDeep<T> = { [P in keyof T]?: PartialDeep<T[P]> };
 
 export type DataExplorerPlotType =
@@ -6,12 +8,27 @@ export type DataExplorerPlotType =
   | "correlation_heatmap"
   | "waterfall";
 
+export type DataExplorerContextVariable = SliceQuery & {
+  source?: "metadata_column" | "tabular_dataset" | "matrix_dataset";
+  value_type?: "text" | "categorical" | "continuous" | "list_strings";
+  slice_type?: string;
+  label?: string;
+};
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type DataExplorerContextExpression = Record<string, any> | boolean;
+
 export type DataExplorerContext = {
   name: string;
   context_type: string;
-  // TODO: Add a ContextExpression type. It should be based on JSON logic but
-  // not necessarily tied to that library.
-  expr: Record<string, any> | boolean;
+  expr: DataExplorerContextExpression;
+};
+
+export type DataExplorerContextV2 = {
+  name: string;
+  dimension_type: string;
+  expr: DataExplorerContextExpression;
+  vars: Record<string, DataExplorerContextVariable>;
 };
 
 export type DataExplorerAnonymousContext = Omit<DataExplorerContext, "name">;
@@ -44,13 +61,12 @@ export interface DataExplorerPlotConfigDimension {
   aggregation: DataExplorerAggregation;
 }
 
-// HACK: This Metadata type is intended as a stopgap. It should be removed from
-// the data model when we migrate to BreadBox. Its purpose is to provide a way
-// to request series that can *only* be referenced by `slice_id`. Certain
-// pseudo-datasets (e.g. lineage) don't have a `dataset_id` or `slice_type`
-// and thus are incompatible with the above notion of a dimension. Such
-// datasets cannot be plotted directly but it's still useful to get data from
-// them for the purposes of coloring and filtering.
+export interface DataExplorerPlotConfigDimensionV2
+  extends Omit<DataExplorerPlotConfigDimension, "context"> {
+  context: DataExplorerContextV2;
+}
+
+// TODO: Rework this to work SliceQuery objects instead of Slice IDs.
 export type DataExplorerMetadata = Record<string, { slice_id: string }>;
 
 export interface DataExplorerPlotResponseDimension {
@@ -154,14 +170,14 @@ export interface DataExplorerDatasetDescriptor {
   slice_type: string;
   label: string;
   units: string;
-  priority: number;
+  priority: number | null;
 }
 
-type ContextWithoutExpr = {
+type ContextWithoutExprOrVars = {
   name: string;
   context_type: string;
   // HACK: This property is never saved in local storage. It's just a temporary
   // tag that loadContextsFromLocalStorage() creates.
   isLegacyList?: boolean;
 };
-export type StoredContexts = Record<string, ContextWithoutExpr>;
+export type StoredContexts = Record<string, ContextWithoutExprOrVars>;

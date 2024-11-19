@@ -9,35 +9,17 @@ import {
 } from "@rjsf/utils";
 import validator from "@rjsf/validator-ajv8";
 import { matrixFormSchema } from "../models/matrixDatasetFormSchema";
-import DatasetMetadataForm from "./DatasetMetadataForm";
+import { CustomDatasetMetadata } from "./DatasetMetadataForm";
 import { FormGroup, ControlLabel } from "react-bootstrap";
 import {
   DataType,
-  FeatureType,
+  FeatureDimensionType,
   Group,
   InvalidPrioritiesByDataType,
-  SampleType,
+  SampleDimensionType,
 } from "@depmap/types";
 import { Option, TagInput } from "@depmap/common-components";
 import { ActionMeta, ValueType } from "react-select";
-
-// TODO: copied from MatrixDatasetForm
-const CustomDatasetMetadata = function (props: FieldProps) {
-  const { onChange } = props;
-
-  return (
-    <div id="customDatasetMetadata">
-      <DatasetMetadataForm
-        isEdit={false} // TODO: Unhardcode
-        forwardDatasetMetadataDict={(metadataDict: {
-          [key: string]: string;
-        }) => {
-          onChange(metadataDict);
-        }}
-      />
-    </div>
-  );
-};
 
 function transformErrors(errors: RJSFValidationError[]) {
   // eslint-disable-next-line array-callback-return, consistent-return
@@ -220,8 +202,8 @@ const uiSchema: UiSchema = {
 };
 
 interface MatrixDatasetFormProps {
-  featureTypes: FeatureType[];
-  sampleTypes: SampleType[];
+  featureTypes: FeatureDimensionType[];
+  sampleTypes: SampleDimensionType[];
   dataTypes: DataType[];
   invalidDataTypePriorities: InvalidPrioritiesByDataType;
   groups: Group[];
@@ -249,8 +231,9 @@ export function MatrixDatasetForm({
 
   React.useEffect(() => {
     const featureTypeOptions = featureTypes.map((option) => {
-      return { title: option.name, const: option.name };
+      return option.name;
     });
+
     const sampleTypeOptions = sampleTypes.map((option) => {
       return { title: option.name, const: option.name };
     });
@@ -267,7 +250,9 @@ export function MatrixDatasetForm({
         ...matrixFormSchema.properties,
         feature_type: {
           ...(matrixFormSchema.properties.feature_type as object),
-          oneOf: featureTypeOptions,
+          default: null,
+          enum: [null, ...featureTypeOptions],
+          enumNames: ["None"].concat(featureTypeOptions),
         },
         sample_type: {
           ...(matrixFormSchema.properties.sample_type as object),

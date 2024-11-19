@@ -20,6 +20,9 @@ import {
   DatasetUpdateArgs,
   DatasetValueType,
   DimensionMetadata,
+  DimensionType,
+  DimensionTypeAddArgs,
+  DimensionTypeUpdateArgs,
   FeatureType,
   FeatureTypeUpdateArgs,
   Group,
@@ -71,7 +74,7 @@ function convertChildIdsToStrings(obj: {
   };
 }
 
-export class BreadboxApi {
+export class ElaraApi {
   urlPrefix: string;
 
   trace: Trace | null;
@@ -101,6 +104,44 @@ export class BreadboxApi {
     return fetch(fullUrl, {
       credentials: "include",
       headers,
+    }).then(
+      (response: Response): Promise<T> => {
+        log(`response arrived from ${fullUrl}`);
+        return response.json().then(
+          (body: T): Promise<T> => {
+            // nesting to access response.status
+            if (response.status >= 200 && response.status < 300) {
+              return Promise.resolve(body);
+            }
+            return Promise.reject(body);
+          }
+        );
+      }
+    );
+  };
+
+  _fetchWithJsonBody = <T>(
+    url: string,
+    method: string,
+    body_content: any
+  ): Promise<T> => {
+    const fullUrl = this.urlPrefix + url;
+    log(`${method} json to ${fullUrl}`);
+
+    const headers: { [key: string]: string } = {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    };
+    const traceParentField = this.getTraceParentField();
+    if (traceParentField) {
+      // eslint-disable-next-line @typescript-eslint/dot-notation
+      headers["traceparent"] = traceParentField;
+    }
+    return fetch(fullUrl, {
+      credentials: "include",
+      method,
+      headers,
+      body: JSON.stringify(body_content),
     }).then(
       (response: Response): Promise<T> => {
         log(`response arrived from ${fullUrl}`);
@@ -380,7 +421,7 @@ export class BreadboxApi {
     );
   }
 
-  updateDataset(datasetToUpdate: DatasetUpdateArgs) {
+  updateDataset(datasetId: string, datasetToUpdate: DatasetUpdateArgs) {
     return this.patchDataset(datasetToUpdate);
   }
 
@@ -430,6 +471,7 @@ export class BreadboxApi {
     );
   }
 
+  // NOTE: The endpoints for feature type and sample type are deprecated and should not be used. Currently still used in TypesPage.tsx
   getSampleTypes(): Promise<SampleType[]> {
     return this._fetch<SampleType[]>("/types/sample");
   }
@@ -460,24 +502,6 @@ export class BreadboxApi {
     return this._fetch<FeatureType[]>("/types/feature");
   }
 
-  searchDimensions({
-    prefix,
-    substring,
-    type_name,
-    limit,
-  }: SearchDimenionsRequest) {
-    const params = {
-      prefix,
-      substring,
-      type_name,
-      limit: Number.isFinite(limit) ? limit : 100,
-    };
-
-    return this._fetch<SearchDimenionsResponse>(
-      `/datasets/dimensions/?${encodeParams(params)}`
-    );
-  }
-
   postFeatureType(featureTypeArgs: any): Promise<FeatureType> {
     const args = { ...featureTypeArgs };
 
@@ -499,6 +523,24 @@ export class BreadboxApi {
 
   deleteFeatureType(name: string) {
     return this._delete("/types/feature", name);
+  }
+
+  searchDimensions({
+    prefix,
+    substring,
+    type_name,
+    limit,
+  }: SearchDimenionsRequest) {
+    const params = {
+      prefix,
+      substring,
+      type_name,
+      limit: Number.isFinite(limit) ? limit : 100,
+    };
+
+    return this._fetch<SearchDimenionsResponse>(
+      `/datasets/dimensions/?${encodeParams(params)}`
+    );
   }
 
   async getDataTypesAndPriorities(): Promise<InvalidPrioritiesByDataType> {
@@ -728,41 +770,28 @@ export class BreadboxApi {
     );
   }
 
-  _fetchWithJsonBody = <T>(
-    url: string,
-    method: string,
-    body_content: any
-  ): Promise<T> => {
-    const fullUrl = this.urlPrefix + url;
-    log(`${method} json to ${fullUrl}`);
+  getDimensionTypes(): Promise<DimensionType[]> {
+    return this._fetch<DimensionType[]>("/types/dimensions");
+  }
 
-    const headers: { [key: string]: string } = {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    };
-    const traceParentField = this.getTraceParentField();
-    if (traceParentField) {
-      // eslint-disable-next-line @typescript-eslint/dot-notation
-      headers["traceparent"] = traceParentField;
-    }
-    return fetch(fullUrl, {
-      credentials: "include",
-      method,
-      headers,
-      body: JSON.stringify(body_content),
-    }).then(
-      (response: Response): Promise<T> => {
-        log(`response arrived from ${fullUrl}`);
-        return response.json().then(
-          (body: T): Promise<T> => {
-            // nesting to access response.status
-            if (response.status >= 200 && response.status < 300) {
-              return Promise.resolve(body);
-            }
-            return Promise.reject(body);
-          }
-        );
-      }
+  postDimensionType(dimTypeArgs: DimensionTypeAddArgs): Promise<DimensionType> {
+    return this._fetchWithJsonBody<DimensionType>(
+      "/types/dimensions",
+      "POST",
+      dimTypeArgs
     );
-  };
+  }
+
+  updateDimensionType(
+    dimTypeName: string,
+    dimTypeArgs: DimensionTypeUpdateArgs
+  ): Promise<DimensionType> {
+    const url = `/types/dimensions/${dimTypeName}`;
+
+    return this._fetchWithJsonBody(url, "PATCH", dimTypeArgs);
+  }
+
+  deleteDimensionType(name: string) {
+    return this._delete("/types/dimensions", name);
+  }
 }

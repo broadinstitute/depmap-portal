@@ -1,3 +1,7 @@
+/**
+ * NOTE: Deprecated Type!! Do not use!
+ */
+
 import { Dataset } from "./Dataset";
 import { AnnotationTypeMap } from "./Metadata";
 

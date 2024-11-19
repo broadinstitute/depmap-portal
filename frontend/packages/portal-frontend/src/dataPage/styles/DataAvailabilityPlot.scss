@@ -32,6 +32,10 @@
 
     .selector {
       padding-bottom: 3px;
+
+      & > p {
+        margin-top: 5px;
+      }
     }
   }
 }

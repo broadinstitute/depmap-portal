@@ -120,10 +120,33 @@ def test_all_dimension_type_methods(client: TestClient, minimal_db, settings):
         "/types/dimensions/sample_id_name", headers={"X-Forwarded-Email": "not-admin"}
     )
     assert_status_not_ok(response)
+    minimal_db.reset_user(settings.admin_users[0])
+
+    # Make sure deleting cannot be done if nonmetadata dataset using dimension type
+    matrix_dataset = factories.matrix_dataset(
+        db, settings, sample_type=dim_type_fields["name"]
+    )
+    response = client.delete("/types/dimensions/sample_id_name", headers=admin_headers,)
+    assert response.status_code == 409
 
     # make sure we can delete it
+    # first delete dataset using dimension type we want to delete
+    res_del_dataset = client.delete(
+        f"/datasets/{matrix_dataset.id}", headers=admin_headers,
+    )
+    assert_status_ok(res_del_dataset)
+    # check metadata dataset exist first
+    metadata_dataset = (
+        minimal_db.query(Dataset).filter_by(id=new_metadata.id).one_or_none()
+    )
+    assert metadata_dataset.id == new_metadata.id
     response = client.delete("/types/dimensions/sample_id_name", headers=admin_headers,)
     assert_status_ok(response)
+    # verify metadata dataset deleted along with its dimension type
+    metadata_dataset = (
+        minimal_db.query(Dataset).filter_by(id=new_metadata.id).one_or_none()
+    )
+    assert metadata_dataset is None
 
     # and now reports as missing
     response = client.get("/types/dimensions/sample_id_name")
@@ -321,6 +344,145 @@ def test_add_sample_types(client: TestClient, settings, minimal_db):
     # and dimension endpoint can read it
     response = client.get("/types/dimensions/internal_sample")
     assert_status_ok(response)
+
+
+def test_get_dimension_type_dimension_identifiers(
+    client: TestClient, minimal_db, settings
+):
+    db = minimal_db
+    admin_headers = {"X-Forwarded-Email": settings.admin_users[0]}
+
+    dim_type_fields = {
+        "name": "sample_id_name",
+        "display_name": "Sample Name",
+        "axis": "sample",
+        "id_column": "sample_id",
+    }
+
+    # Create dimension type
+    dim_type_res = client.post(
+        "/types/dimensions", json=dim_type_fields, headers=admin_headers,
+    )
+    assert_status_ok(dim_type_res)
+    expected_dim_type_res = {
+        "name": "sample_id_name",
+        "display_name": "Sample Name",
+        "axis": "sample",
+        "id_column": "sample_id",
+        "properties_to_index": [],
+        "metadata_dataset_id": None,
+    }
+    assert dim_type_res.json() == expected_dim_type_res
+
+    # Confirm dimension type has no dimension identifiers
+    dim_type_ids_res = client.get(
+        f"types/dimensions/{dim_type_fields['name']}/identifiers",
+        headers=admin_headers,
+    )
+    assert_status_ok(dim_type_ids_res)
+    assert dim_type_ids_res.json() == []
+
+    # add a metadata table
+    # Create data type for metadata
+    factories.data_type(db, "metadata")
+    dim_type_metadata = factories.tabular_dataset(
+        db,
+        settings,
+        columns_metadata={
+            "label": ColumnMetadata(units=None, col_type=AnnotationType.text),
+            "sample_id": ColumnMetadata(units=None, col_type=AnnotationType.text),
+        },
+        index_type_name=dim_type_fields["name"],
+        data_type_="metadata",
+        data_df=pd.DataFrame(
+            {"sample_id": ["sample-1", "sample-2"], "label": ["Sample 1", "Sample 2"]}
+        ),
+    )
+
+    dim_type_metadata_res = client.patch(
+        f"/types/dimensions/{dim_type_fields['name']}",
+        json=(
+            {
+                "metadata_dataset_id": dim_type_metadata.id,
+                "properties_to_index": ["label"],
+            }
+        ),
+        headers=admin_headers,
+    )
+    assert_status_ok(dim_type_metadata_res)
+    expected_dim_type_res["metadata_dataset_id"] = dim_type_metadata.id
+    expected_dim_type_res["properties_to_index"] = ["label"]
+    assert dim_type_metadata_res.json() == expected_dim_type_res
+
+    # Confirm dimension type has new dimension identifiers
+    dim_type_ids_res = client.get(
+        f"types/dimensions/{dim_type_fields['name']}/identifiers",
+        headers=admin_headers,
+    )
+    assert_status_ok(dim_type_ids_res)
+    assert dim_type_ids_res.json() == [
+        {"id": "sample-1", "label": "Sample 1"},
+        {"id": "sample-2", "label": "Sample 2"},
+    ]
+
+    # test dim type doesn't exist
+    nonexistent_dim_type_res = client.get(
+        f"types/dimensions/nonexistentDimensionType/identifiers", headers=admin_headers,
+    )
+    assert_status_not_ok(nonexistent_dim_type_res)
+    assert nonexistent_dim_type_res.status_code == 404
+
+    # Test show_only_dimensions_in_datasets: Only identifiers in dataset and in metadata returned and identifiers only in metadata not returned
+    # If there is no dataset that uses the dimension type's identifiers return empty list
+    only_dims_in_dataset_res = client.get(
+        f"types/dimensions/{dim_type_fields['name']}/identifiers?show_only_dimensions_in_datasets=True",
+        headers=admin_headers,
+    )
+    assert only_dims_in_dataset_res.json() == []
+    # Create a matrix dataset that uses SOME of the dimension type identifiers and has an identifier not in metadata
+    # Create data type
+    factories.data_type(db, "dataType1")
+    matrix_values = factories.matrix_csv_data_file_with_values(
+        feature_ids=["feature-1", "feature-2", "feature-3"],
+        sample_ids=["sample-1", "sample-3"],
+        values=np.array([[1, 2, 3], [4, 5, 6]]),
+    )
+    matrix_dataset = factories.matrix_dataset(
+        db,
+        settings,
+        sample_type=dim_type_fields["name"],
+        data_file=matrix_values,
+        data_type="dataType1",
+    )
+    # Verify only dimension type identifiers defined in metadata are returned and dimension type identfiers not in matrix dataset is also omitted
+    only_dims_in_dataset_res = client.get(
+        f"types/dimensions/{dim_type_fields['name']}/identifiers?show_only_dimensions_in_datasets=True",
+        headers=admin_headers,
+    )
+    assert_status_ok(only_dims_in_dataset_res)
+    only_dims_in_dataset = only_dims_in_dataset_res.json()
+    assert len(only_dims_in_dataset) == 1
+    assert only_dims_in_dataset[0]["id"] == "sample-1"
+
+    # verify all identifiers for a specific data type are returned. Additionally, only identifiers that are defined in metadata are returned
+    all_dims_for_data_type_res = client.get(
+        f"types/dimensions/{dim_type_fields['name']}/identifiers?data_type=dataType1",
+        headers=admin_headers,
+    )
+    assert_status_ok(all_dims_for_data_type_res)
+    all_dims_for_data_type = all_dims_for_data_type_res.json()
+    assert len(all_dims_for_data_type) == 1
+    assert all_dims_for_data_type[0]["id"] == "sample-1"
+
+    # Test case if data type is metadata and show only dimensions in datasets is True. We expect that it returns an empty list since only the metadata dataset uses any identifiers
+    res = client.get(
+        f"types/dimensions/{dim_type_fields['name']}/identifiers?data_type=metadata?show_only_dimensions_in_datasets=True",
+        headers=admin_headers,
+    )
+    assert res.json() == []
+
+
+#### /types/sample and types/feature endpoints are deprecated!! ###
 
 
 def test_add_sample_type_with_taiga_id_no_dataset(client: TestClient, settings):

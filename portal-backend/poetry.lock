@@ -678,18 +678,23 @@ files = [
 
 [[package]]
 name = "depmap-compute"
-version = "0.1.8"
+version = "0.1.11"
 description = "Code related to computations shared between the Depmap Portal and BreadBox"
 optional = false
 python-versions = ">=3.9,<4.0"
 files = [
-    {file = "depmap_compute-0.1.8-py3-none-any.whl", hash = "sha256:c46963590e684ea2a5d284574770f3b4529d083016e9d6bbe8f70e942d7c15e2"},
-    {file = "depmap_compute-0.1.8.tar.gz", hash = "sha256:58e405922cd51b74a12aafaab15f68a2a0df655fe0cbd6543e00bcdc7ff18e0f"},
+    {file = "depmap_compute-0.1.11-py3-none-any.whl", hash = "sha256:9efe369ed029b0cfba6b2838d0122bd764b3166f49d4b4323cef07960857041a"},
+    {file = "depmap_compute-0.1.11.tar.gz", hash = "sha256:8d0ff872da4ee981ba6b562ce0978a3aefdfa9465acedc358d024fc174171e50"},
 ]
 
 [package.dependencies]
 attrs = ">=21.3.0"
 httpx = ">=0.15.4,<0.24.0"
+json-logic = ">=0.7.0-alpha,<0.8.0"
+opencensus = "0.8.0"
+opencensus-ext-flask = "0.7.6"
+opencensus-ext-stackdriver = "0.8.0"
+opencensus-ext-zipkin = "0.2.2"
 python-dateutil = ">=2.8.0,<3.0.0"
 
 [package.source]
@@ -5055,4 +5060,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "7a7d5ede0a7f1cbad9543af99f366a31eb98fda177bbf477cef0d0222dfa6177"
+content-hash = "f0301e85dc3e04f5bdd3689d932714575d7ce4cdf26d7ff7a5235fd4e8650518"

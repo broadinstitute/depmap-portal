@@ -22,15 +22,14 @@ import {
   DatasetUpdateArgs,
   DatasetValueType,
   DimensionMetadata,
-  FeatureType,
-  FeatureTypeUpdateArgs,
+  DimensionType,
+  DimensionTypeAddArgs,
+  DimensionTypeUpdateArgs,
   Group,
   GroupArgs,
   GroupEntry,
   GroupEntryArgs,
   InvalidPrioritiesByDataType,
-  SampleType,
-  SampleTypeUpdateArgs,
   SearchDimenionsRequest,
   SearchDimenionsResponse,
   UploadFileResponse,
@@ -295,57 +294,14 @@ export class BreadboxApi {
     return this._delete("/datasets", id);
   }
 
-  patchDataset(datasetToUpdate: DatasetUpdateArgs): Promise<Dataset> {
-    const data = new FormData();
-    const jsonFormParams = ["dataset_metadata"];
+  updateDataset(
+    datasetId: string,
+    datasetUpdateArgs: DatasetUpdateArgs
+  ): Promise<Dataset> {
+    const url = `/datasets/${datasetId}`;
+    log(`fetching ${url}`);
 
-    const updateDict = Object.fromEntries(
-      Object.entries(datasetToUpdate).filter(
-        /* eslint-disable-next-line @typescript-eslint/no-unused-vars */
-        ([_, val]) => val !== null && val !== undefined
-      )
-    );
-
-    const datasetArgsCopy = { ...updateDict };
-    // eslint-disable-next-line no-restricted-syntax
-    for (const prop of Object.keys(datasetArgsCopy)) {
-      if (jsonFormParams.includes(prop) && prop in datasetArgsCopy) {
-        datasetArgsCopy[prop] = JSON.stringify(datasetArgsCopy[prop]);
-      }
-      if (Object.prototype.hasOwnProperty.call(datasetArgsCopy, prop)) {
-        data.append(prop, datasetArgsCopy[prop]);
-      }
-    }
-
-    const url = `/datasets/${datasetToUpdate.id}`;
-    const fullUrl = this.urlPrefix + url;
-    log(`fetching ${fullUrl}`);
-
-    return fetch(fullUrl, {
-      credentials: "include",
-      method: "PATCH",
-      body: data,
-    }).then(
-      (response: Response): Promise<Dataset> => {
-        return response.json().then(
-          (body: any): Promise<Dataset> => {
-            // nesting to access response.status
-            if (response.status >= 200 && response.status < 300) {
-              return Promise.resolve(body);
-            }
-            // eslint-disable-next-line prefer-promise-reject-errors
-            return Promise.reject({ body, status: response.status } as {
-              body: any;
-              status: number;
-            });
-          }
-        );
-      }
-    );
-  }
-
-  updateDataset(datasetToUpdate: DatasetUpdateArgs) {
-    return this.patchDataset(datasetToUpdate);
+    return this._fetchWithJsonBody(url, "PATCH", datasetUpdateArgs);
   }
 
   postFileUpload(fileArgs: { file: File | Blob }): Promise<UploadFileResponse> {
@@ -401,36 +357,31 @@ export class BreadboxApi {
     );
   }
 
-  getSampleTypes(): Promise<SampleType[]> {
-    return this._fetch<SampleType[]>("/types/sample");
+  getDimensionTypes(): Promise<DimensionType[]> {
+    return this._fetch<DimensionType[]>("/types/dimensions");
   }
 
-  postSampleType(sampleTypeArgs: any): Promise<SampleType> {
-    const args = { ...sampleTypeArgs };
+  postDimensionType(dimTypeArgs: DimensionTypeAddArgs): Promise<DimensionType> {
+    console.log("In bbapi.ts: ", dimTypeArgs);
 
-    if ("annotation_type_mapping" in args) {
-      args.annotation_type_mapping = JSON.stringify(
-        args.annotation_type_mapping
-      );
-    }
-    return this._postMultipart<SampleType>("/types/sample", args);
+    return this._fetchWithJsonBody<DimensionType>(
+      "/types/dimensions",
+      "POST",
+      dimTypeArgs
+    );
   }
 
-  updateSampleType(sampleTypeArgs: SampleTypeUpdateArgs): Promise<SampleType> {
-    const sampleTypeName = sampleTypeArgs.name;
-    const url = `/types/sample/${sampleTypeName}/metadata`;
+  updateDimensionType(
+    dimTypeName: string,
+    dimTypeArgs: DimensionTypeUpdateArgs
+  ): Promise<DimensionType> {
+    const url = `/types/dimensions/${dimTypeName}`;
 
-    const args = { ...sampleTypeArgs };
-
-    return this._patchMultipart<SampleType>(url, args);
+    return this._fetchWithJsonBody(url, "PATCH", dimTypeArgs);
   }
 
-  deleteSampleType(name: string) {
-    return this._delete("/types/sample", name);
-  }
-
-  getFeatureTypes(): Promise<FeatureType[]> {
-    return this._fetch<FeatureType[]>("/types/feature");
+  deleteDimensionType(name: string) {
+    return this._delete("/types/dimensions", name);
   }
 
   searchDimensions({
@@ -449,33 +400,6 @@ export class BreadboxApi {
     return this._fetch<SearchDimenionsResponse>(
       `/datasets/dimensions/?${encodeParams(params)}`
     );
-  }
-
-  postFeatureType(featureTypeArgs: any): Promise<FeatureType> {
-    console.log("In bbapi.ts: ", featureTypeArgs);
-    const args = { ...featureTypeArgs };
-
-    if ("annotation_type_mapping" in args) {
-      args.annotation_type_mapping = JSON.stringify(
-        args.annotation_type_mapping
-      );
-    }
-    return this._postMultipart<FeatureType>("/types/feature", args);
-  }
-
-  updateFeatureType(
-    featureTypeArgs: FeatureTypeUpdateArgs
-  ): Promise<FeatureType> {
-    const featureTypeName = featureTypeArgs.name;
-
-    const url = `/types/feature/${featureTypeName}/metadata`;
-    const args = { ...featureTypeArgs };
-
-    return this._patchMultipart<FeatureType>(url, args);
-  }
-
-  deleteFeatureType(name: string) {
-    return this._delete("/types/feature", name);
   }
 
   async getDataTypesAndPriorities(): Promise<InvalidPrioritiesByDataType> {
@@ -752,4 +676,49 @@ export class BreadboxApi {
       }
     );
   };
+
+  /* eslint-disable @typescript-eslint/no-unused-vars */
+  // NOTE: These endpoints for feature type and sample type should not be used because they are deprecated
+  getSampleTypes() {
+    return Promise.reject(Error("Deprecated function! Use getDimensionTypes."));
+  }
+
+  postSampleType(sampleTypeArgs: any) {
+    return Promise.reject(Error("Deprecated function! Use postDimensionType."));
+  }
+
+  updateSampleType(sampleTypeArgs: any) {
+    return Promise.reject(
+      Error("Deprecated function! Use updateDimensionType.")
+    );
+  }
+
+  deleteSampleType(name: string) {
+    return Promise.reject(
+      Error("Deprecated function! Use deleteDimensionType.")
+    );
+  }
+
+  getFeatureTypes() {
+    return Promise.reject(Error("Deprecated function! Use getDimensionTypes."));
+  }
+
+  postFeatureType(featureTypeArgs: any) {
+    return Promise.reject(Error("Deprecated function! Use postDimensionType."));
+  }
+
+  updateFeatureType(featureTypeArgs: any) {
+    return Promise.reject(
+      Error("Deprecated function! Use updateDimensionType.")
+    );
+  }
+
+  deleteFeatureType(name: string) {
+    return Promise.reject(
+      Error("Deprecated function! Use deleteDimensionType.")
+    );
+  }
+
+  // NOTE: THe above endpoints for feature type and sample type are deprecated and should not be used.
+  // Endpoints with URI prefix /types/dimensions should be used instead
 }

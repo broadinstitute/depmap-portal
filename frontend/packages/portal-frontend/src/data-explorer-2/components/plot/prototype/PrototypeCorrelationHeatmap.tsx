@@ -44,6 +44,7 @@ interface Props {
   onSelectLabels?: (labels: string[]) => void;
   onLoad?: (plot: ExtendedPlotType) => void;
   palette?: DataExplorerColorPalette;
+  xAxisFontSize?: number;
   distinguish1Label: string | undefined;
   distinguish2Label: string | undefined;
 }
@@ -88,6 +89,7 @@ function PrototypeCorrelationHeatmap({
   selectedLabels = new Set(),
   onSelectLabels = () => {},
   palette = DEFAULT_PALETTE,
+  xAxisFontSize = 14,
   distinguish1Label = undefined,
   distinguish2Label = undefined,
   onLoad = () => {},
@@ -103,13 +105,11 @@ function PrototypeCorrelationHeatmap({
   }, []);
 
   const axes = useRef<Partial<Layout>>({
-    xaxis: undefined,
     yaxis: undefined,
   });
 
   useEffect(() => {
     axes.current = {
-      xaxis: undefined,
       yaxis: undefined,
     };
   }, [xKey, yKey, zLabel, z2Label, data]);
@@ -252,7 +252,7 @@ function PrototypeCorrelationHeatmap({
         tickvals: x,
         ticktext: xLabels ? xLabels.map(truncate) : x.map(truncate),
         domain: [0, z2Key ? doubleHeatMapRatio : 1],
-        title: { text: zLabel, standoff: 10 },
+        title: { text: zLabel, standoff: 10, font: { size: xAxisFontSize } },
       },
 
       yaxis,
@@ -352,7 +352,6 @@ function PrototypeCorrelationHeatmap({
 
     on("plotly_relayout", () => {
       axes.current = {
-        xaxis: { ...plot.layout.xaxis, autorange: false },
         yaxis: { ...plot.layout.yaxis, autorange: false },
       };
     });
@@ -388,6 +387,7 @@ function PrototypeCorrelationHeatmap({
     selectedLabels,
     onSelectLabels,
     palette,
+    xAxisFontSize,
     distinguish1Label,
     distinguish2Label,
     Plotly,

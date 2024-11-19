@@ -153,17 +153,17 @@ def check_api(path: str):
     existing_md5 = hashlib.md5(
         json.dumps(existing, sort_keys=True).encode("utf8")
     ).hexdigest()
+
+    comparison_message = f"(Generated api spec MD5: {openapi_md5}, last generated client spec MD5: {existing_md5})"
     assert (
         existing == openapi
     ), f"""The openapi spec that was used to generate the
      breadbox client doesn't match what the latest code generates. The breadbox 
      client likely needs to be updated. You can do this by running: ./bb update-client
      
-     (Generated api spec MD5: {openapi_md5}, last generated client spec MD5: {existing_md5})
+     {comparison_message}
      """
-    print(
-        f"Current spec MD5: {existing_md5}, last generated client spec MD5: {existing_md5}"
-    )
+    print(comparison_message)
 
 
 @cli.command()
@@ -334,6 +334,10 @@ def _populate_minimal_data(db: SessionWithUser, settings: Settings):
     existing_user_upload_data_type = data_type_crud.get_data_type(db, "User upload")
     if not existing_user_upload_data_type:
         data_type_crud.add_data_type(db, "User upload")
+
+    existing_metadata_data_type = data_type_crud.get_data_type(db, "metadata")
+    if not existing_metadata_data_type:
+        data_type_crud.add_data_type(db, "metadata")
 
 
 @cli.command()

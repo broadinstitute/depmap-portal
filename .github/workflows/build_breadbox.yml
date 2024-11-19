@@ -59,7 +59,7 @@ jobs:
       #        if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
       # We want to use the rules defined in breadbox/pyproject.toml
       - name: Check PR title
-        run: poetry run cz check -m "${{ github.event.pull_request.title }}"
+        run: poetry run cz check -m '${{ github.event.pull_request.title }}'
   pyright-breadbox-client:
     runs-on: ubuntu-latest
     steps:

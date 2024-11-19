@@ -165,7 +165,7 @@ class TestGet:
         assert_status_ok(given_id_response)
         assert given_id_response.json() == response.json()
 
-    def test_get_dataset_samples(
+    def test_get_matrix_dataset_samples(
         self, client: TestClient, minimal_db: SessionWithUser, settings
     ):
         given_id = "some_matrix_dataset"
@@ -2777,6 +2777,142 @@ class TestPost:
         )
         assert res.json() == {}
 
+    def test_get_dimension_data(
+        self, client: TestClient, minimal_db: SessionWithUser, public_group, settings,
+    ):
+        # Define label metadata for our features
+        factories.add_dimension_type(
+            minimal_db,
+            settings,
+            user=settings.admin_users[0],
+            name="feature-with-metadata",
+            display_name="Feature With Metadata",
+            id_column="ID",
+            annotation_type_mapping={
+                "ID": AnnotationType.text,
+                "label": AnnotationType.text,
+            },
+            axis="feature",
+            metadata_df=pd.DataFrame(
+                {
+                    "ID": ["featureID1", "featureID2", "featureID3"],
+                    "label": ["featureLabel1", "featureLabel2", "featureLabel3"],
+                }
+            ),
+        )
+
+        # Define a matrix dataset
+        # This matrix contains values which don't exist in the metadata
+        # (sampleID4, featureID4) and should therefor be ignored
+        example_matrix_values = factories.matrix_csv_data_file_with_values(
+            feature_ids=["featureID1", "featureID2", "featureID3", "featureID4"],
+            sample_ids=["sampleID1", "sampleID2", "sampleID3", "sampleID4"],
+            values=np.array(
+                [[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12], [13, 14, 15, 16]]
+            ),
+        )
+        dataset_given_id = "dataset_123"
+        dataset_with_metadata = factories.matrix_dataset(
+            minimal_db,
+            settings,
+            feature_type="feature-with-metadata",
+            data_file=example_matrix_values,
+            given_id=dataset_given_id,
+        )
+
+        # Test get by feature ID
+        response = client.post(
+            "/datasets/dimension/data",
+            json={
+                "dataset_id": dataset_with_metadata.id,
+                "identifier": "sampleID1",
+                "identifier_type": "sample_id",
+            },
+            headers={"X-Forwarded-User": "some-public-user"},
+        )
+
+        assert_status_ok(response)
+        response_content = response.json()
+        assert response_content is not None
+        assert response_content["ids"] == ["featureID1", "featureID2", "featureID3"]
+        assert response_content["labels"] == [
+            "featureLabel1",
+            "featureLabel2",
+            "featureLabel3",
+        ]
+        assert response_content["values"] == [1, 2, 3]
+
+    def test_get_dimension_data_not_found(
+        self, client: TestClient, minimal_db: SessionWithUser, public_group, settings,
+    ):
+        # Define label metadata for our features
+        factories.add_dimension_type(
+            minimal_db,
+            settings,
+            user=settings.admin_users[0],
+            name="feature-with-metadata",
+            display_name="Feature With Metadata",
+            id_column="ID",
+            annotation_type_mapping={
+                "ID": AnnotationType.text,
+                "label": AnnotationType.text,
+            },
+            axis="feature",
+            metadata_df=pd.DataFrame(
+                {
+                    "ID": ["featureID1", "featureID2", "featureID3"],
+                    "label": ["featureLabel1", "featureLabel2", "featureLabel3"],
+                }
+            ),
+        )
+
+        # Define a matrix dataset
+        # This matrix contains values which don't exist in the metadata
+        # (sampleID4, featureID4) and should therefor be ignored
+        example_matrix_values = factories.matrix_csv_data_file_with_values(
+            feature_ids=["featureID1", "featureID2", "featureID3", "featureID4"],
+            sample_ids=["sampleID1", "sampleID2", "sampleID3", "sampleID4"],
+            values=np.array(
+                [[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12], [13, 14, 15, 16]]
+            ),
+        )
+        dataset_given_id = "dataset_123"
+        dataset_with_metadata = factories.matrix_dataset(
+            minimal_db,
+            settings,
+            feature_type="feature-with-metadata",
+            data_file=example_matrix_values,
+            given_id=dataset_given_id,
+        )
+
+        # Test that lookups by non-existant datasets return 404s
+        response = client.post(
+            "/datasets/dimension/data",
+            json={
+                "dataset_id": "fake dataset ID",  # non-existant dataset ID
+                "identifier": "sampleID1",
+                "identifier_type": "sample_id",
+            },
+            headers={"X-Forwarded-User": "some-public-user"},
+        )
+
+        assert_status_not_ok(response)
+        assert response.status_code == 404
+
+        # Test that lookups by non-existant features return 404s
+        response = client.post(
+            "/datasets/dimension/data",
+            json={
+                "dataset_id": dataset_given_id,
+                "identifier": "fake sample id",  # non-existant sample ID
+                "identifier_type": "sample_id",
+            },
+            headers={"X-Forwarded-User": "some-public-user"},
+        )
+
+        assert_status_not_ok(response)
+        assert response.status_code == 404
+
 
 class TestPatch:
     def test_update_dataset(
@@ -2840,6 +2976,9 @@ class TestPatch:
         # Check that a well-formed request returns a happy result
         new_name = "UPDATED NAME"
         new_units = "UPDATED UNITS"
+        new_version = "updated version"
+        new_short_name = "updated short name"
+        new_description = "updated description"
         update_dataset_response = client.patch(
             f"/datasets/{dataset_id}",
             json={
@@ -2849,6 +2988,9 @@ class TestPatch:
                 "units": new_units,
                 "priority": "1",
                 "dataset_metadata": None,
+                "short_name": new_short_name,
+                "version": new_version,
+                "description": new_description,
             },
             headers=admin_headers,
         )
@@ -2858,6 +3000,9 @@ class TestPatch:
         assert update_dataset_response.json()["name"] == new_name
         assert update_dataset_response.json()["units"] == new_units
         assert update_dataset_response.json()["priority"] == 1
+        assert update_dataset_response.json()["short_name"] == new_short_name
+        assert update_dataset_response.json()["version"] == new_version
+        assert update_dataset_response.json()["description"] == new_description
         assert (
             update_dataset_response.json()["data_type"] == "User upload"
         )  # same value expected
@@ -2874,9 +3019,39 @@ class TestPatch:
         assert dataset_response_after_update.json()["name"] == new_name
         assert dataset_response_after_update.json()["units"] == new_units
         assert dataset_response_after_update.json()["priority"] == 1
+        assert dataset_response_after_update.json()["short_name"] == new_short_name
+        assert dataset_response_after_update.json()["version"] == new_version
+        assert dataset_response_after_update.json()["description"] == new_description
         assert (
             dataset_response_after_update.json()["data_type"] == "User upload"
         )  # same value expected
+
+        # Check that we can set the given_id to a non-null value and then reset it back to null
+        update_dataset_response = client.patch(
+            f"/datasets/{dataset_id}",
+            json={"format": "matrix", "given_id": "xyz"},
+            headers=admin_headers,
+        )
+        assert_status_ok(update_dataset_response)
+
+        dataset_response_after_update = client.get(
+            f"/datasets/{dataset_id}", headers=admin_headers
+        )
+        assert_status_ok(dataset_response_after_update)
+        assert dataset_response_after_update.json()["given_id"] == "xyz"
+
+        update_dataset_response = client.patch(
+            f"/datasets/{dataset_id}",
+            json={"format": "matrix", "given_id": None},
+            headers=admin_headers,
+        )
+        assert_status_ok(update_dataset_response)
+
+        dataset_response_after_update = client.get(
+            f"/datasets/{dataset_id}", headers=admin_headers
+        )
+        assert_status_ok(dataset_response_after_update)
+        assert dataset_response_after_update.json()["given_id"] is None
 
         # Check that the original dataset owner can no longer access it (because the group was changed)
         dataset_response_after_update = client.get(
