@@ -6,6 +6,9 @@ import pandas as pd
 
 
 def get_cell_line_selector_lines(db: SessionWithUser):
+    """
+    DEPRECATED: this can be removed once the Elara downloads page is updated to use newer functionality.
+    """
     cols = [
         "cell_line_name",
         "primary_disease",

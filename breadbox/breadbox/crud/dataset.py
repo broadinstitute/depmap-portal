@@ -4,24 +4,18 @@ from dataclasses import dataclass
 from typing import Any, Dict, Optional, List, Type, Union, Tuple, Set
 from uuid import UUID, uuid4
 import warnings
-import json
 
 import pandas as pd
 from sqlalchemy import and_, func, or_
 from sqlalchemy.orm import aliased, with_polymorphic
 
 from breadbox.db.session import SessionWithUser
-from ..io.data_validation import (
-    dimension_label_df_schema,
-    annotation_type_to_pandas_column_type,
-)
+from ..io.data_validation import dimension_label_df_schema
 from ..schemas.dataset import (
     MatrixDatasetIn,
     TabularDatasetIn,
     DimensionSearchIndexResponse,
-    FeatureSampleIdentifier,
     ColumnMetadata,
-    TabularDimensionsInfo,
     UpdateDatasetParams,
 )
 from ..schemas.custom_http_exception import (
@@ -317,10 +311,8 @@ def get_metadata_by_dataset(
         "label" in properties_to_index
     ), f"The code is assuming that label is present but dataset {dataset.id} had properties_to_index={properties_to_index}"
 
-    feature_query = get_feature_query_for_feature_type(
-        db=db,
-        feature_type_dataset_id=dataset.id,
-        properties_to_index=properties_to_index,
+    feature_query = get_properties_to_index_query_for_metadata_dataset(
+        db=db, metadata_dataset_id=dataset.id, properties_to_index=properties_to_index,
     )
     feature_df = pd.read_sql(
         feature_query.statement, feature_query.session.connection()
@@ -468,11 +460,11 @@ def create_index_records_for_row(
     return dimension_search_index_rows
 
 
-def get_feature_query_for_feature_type(
-    db: SessionWithUser, feature_type_dataset_id: str, properties_to_index: List[str],
+def get_properties_to_index_query_for_metadata_dataset(
+    db: SessionWithUser, metadata_dataset_id: str, properties_to_index: List[str],
 ):
     filter_clauses = [
-        DimensionType.dataset_id == feature_type_dataset_id,
+        DimensionType.dataset_id == metadata_dataset_id,
         Dimension.given_id.in_(properties_to_index),
     ]
 
@@ -586,6 +578,7 @@ def _populate_search_index_for_dataset(db: SessionWithUser, user: str, dataset_i
     _delete_dataset_dimension_search_index_records(db=db, dataset_id=dataset_id)
     log.info("_delete_dataset_dimension_search_index_records complete")
 
+    # Note: this query can be replaced with a call to crud.types.get_dimension_type_labels_by_id
     labels_by_feature_id_query = (
         db.query(TabularCell)
         .join(TabularColumn, TabularCell.tabular_column_id == TabularColumn.id,)
@@ -1131,87 +1124,6 @@ def get_feature_indexes_by_given_ids(
     return _get_indexes_by_given_id(db, user, dataset, DatasetFeature, given_ids)
 
 
-def get_dimension_indexes_of_labels(
-    db: SessionWithUser,
-    user: str,
-    dataset: MatrixDataset,
-    axis: str,
-    dimension_labels: List[str],
-) -> Tuple[List[int], List[str]]:
-    """
-    Get the set of numeric indices corresponding to the given dimension labels for the given dataset.
-    Note: The order of the result does not necessarily match the order of the input
-    """
-    assert_user_has_access_to_dataset(dataset, user)
-
-    # We could do this in one query, but it's unwieldy, so let's make two queries. First
-    # let's resolve dimension_labels to given_ids
-
-    def _query_given_id_and_label(type_name):
-        results = (
-            db.query(DimensionType)
-            .join(TabularDataset, DimensionType.dataset)
-            .join(TabularColumn, TabularDataset.dimensions)
-            .join(TabularCell, TabularColumn.tabular_cells)
-            .filter(
-                TabularColumn.given_id == "label",
-                DimensionType.name == type_name,
-                TabularCell.value.in_(dimension_labels),
-            )
-            .with_entities(TabularCell.dimension_given_id, TabularCell.value)
-            .all()
-        )
-        return results
-
-    if axis == "feature":
-        if dataset.feature_type_name is None:
-            # feature types are allowed to be None. If that's the case, the labels are the given_ids on the matrix
-            given_id_and_label = (
-                db.query(DatasetFeature)
-                .filter(
-                    DatasetFeature.dataset_id == dataset.id,
-                    DatasetFeature.given_id.in_(dimension_labels),
-                )
-                .with_entities(DatasetFeature.given_id, DatasetFeature.given_id)
-            )
-        else:
-            given_id_and_label = _query_given_id_and_label(dataset.feature_type_name)
-    else:
-        assert axis == "sample"
-        given_id_and_label = _query_given_id_and_label(dataset.sample_type_name)
-
-    # unpack into two columns
-    given_id_to_label = dict(given_id_and_label)
-
-    missing_labels = set(dimension_labels).difference(given_id_to_label.values())
-
-    # for the time being, just warn in the log about things that are missing. I'm not 100% confident that
-    # something won't break if we start treating missing things as an error. If we don't see warnings in the
-    # log from normal use, we can turn it into an error later
-    if len(missing_labels) > 0:
-        log.warning(
-            f"In get_dimension_indexes_of_labels, missing labels: {missing_labels}"
-        )
-
-    # now resolve those given_ids to indices
-    if axis == "feature":
-        indices, missing_given_ids = get_feature_indexes_by_given_ids(
-            db, user, dataset, list(given_id_to_label.keys())
-        )
-    else:
-        assert axis == "sample"
-        indices, missing_given_ids = get_sample_indexes_by_given_ids(
-            db, user, dataset, list(given_id_to_label.keys())
-        )
-
-    if len(missing_given_ids) > 0:
-        log.warning(
-            f"In get_dimension_indexes_of_labels, missing given_ids: {missing_given_ids}"
-        )
-
-    return indices, list(missing_labels)
-
-
 def get_dataset_feature_by_uuid(
     db: SessionWithUser, user: str, dataset: Dataset, feature_uuid: str
 ) -> DatasetFeature:
@@ -1363,196 +1275,36 @@ def get_dataset_sample_by_given_id(
     return sample
 
 
-def _get_column_types(columns_metadata, columns: Optional[List[str]]):
-    col_and_column_metadata_pairs = columns_metadata.items()
-    if columns is None:
-        return {
-            col: annotation_type_to_pandas_column_type(column_metadata.col_type)
-            for col, column_metadata in col_and_column_metadata_pairs
-        }
-
-    else:
-        column_types = {}
-        for col, column_metadata in col_and_column_metadata_pairs:
-            if col in columns:
-                column_types[col] = annotation_type_to_pandas_column_type(
-                    column_metadata.col_type
-                )
-
-        return column_types
-
-
-def get_subsetted_tabular_dataset_df(
+def get_subset_of_tabular_data_as_df(
     db: SessionWithUser,
-    user: str,
     dataset: TabularDataset,
-    tabular_dimensions_info: TabularDimensionsInfo,
-    strict: bool,
+    column_names: Optional[list[str]],
+    index_given_ids: Optional[list[str]],
 ) -> pd.DataFrame:
-    """
-    Load a dataframe containing data for the specified indices and columns.
-    If the indices are specified by label, then return a result indexed by labels
-    If either indices or columns are not specified, return all indices or columns
-    By default, if indices and identifier not specified, then dimension ids are used as identifier
-    """
-    if not user_has_access_to_group(dataset.group, user, write_access=True):
-        raise DatasetAccessError(f"User {user} does not have access to dataset")
-
     filter_statements = [TabularColumn.dataset_id == dataset.id]
-    # Filter columns if provided
-    if tabular_dimensions_info.columns:
-        filter_statements.append(
-            TabularColumn.given_id.in_(tabular_dimensions_info.columns)
+    if column_names is not None:
+        filter_statements.append(TabularColumn.given_id.in_(column_names))
+    if index_given_ids is not None:
+        filter_statements.append(TabularCell.dimension_given_id.in_(index_given_ids))
+    query = (
+        db.query(TabularColumn)
+        .join(TabularCell)
+        .filter(and_(True, *filter_statements))
+        .with_entities(
+            TabularCell.value, TabularCell.dimension_given_id, TabularColumn.given_id,
         )
-
-    if tabular_dimensions_info.identifier == FeatureSampleIdentifier.label:
-        # Get the corresponding dimension ids for the dimension labels from the dataset's dimension type and use the dimension ids to filter values by
-        dimension_type: DimensionType = db.query(DimensionType).filter(
-            DimensionType.name == dataset.index_type_name
-        ).one()
-
-        label_filter_statements = [
-            TabularColumn.dataset_id == dimension_type.dataset_id,
-            TabularColumn.given_id == "label",
-        ]
-        if tabular_dimensions_info.indices:
-            label_filter_statements.append(
-                TabularCell.value.in_(tabular_dimensions_info.indices)
-            )
-
-        ids_by_label = (
-            db.query(TabularCell)
-            .join(TabularColumn)
-            .filter(and_(True, *label_filter_statements))
-            .with_entities(TabularCell.value, TabularCell.dimension_given_id)
-            .all()
-        )
-        id_to_label_map = dict((x.dimension_given_id, x.value) for x in ids_by_label)
-        filter_statements.append(
-            TabularCell.dimension_given_id.in_(id_to_label_map.keys())
-        )
-        query = (
-            db.query(TabularColumn)
-            .join(TabularCell)
-            .filter(and_(True, *filter_statements))
-            .with_entities(
-                TabularCell.value,
-                TabularCell.dimension_given_id,
-                TabularColumn.given_id,
-            )
-        )
-
-        query_df = pd.read_sql(query.statement, query.session.connection())
-        # Rename the resulting column with dimension ids to their labels
-        query_df = query_df.replace({"dimension_given_id": id_to_label_map})
-
-    else:
-        if tabular_dimensions_info.indices:
-            filter_statements.append(
-                TabularCell.dimension_given_id.in_(tabular_dimensions_info.indices)
-            )
-
-        query = (
-            db.query(TabularColumn)
-            .join(TabularCell)
-            .filter(and_(True, *filter_statements))
-            .with_entities(
-                TabularCell.value,
-                TabularCell.dimension_given_id,
-                TabularColumn.given_id,
-            )
-        )
-
-        query_df = pd.read_sql(query.statement, query.session.connection())
+    )
+    query_df = pd.read_sql(query.statement, query.session.connection())
 
     # Pivot table so that the indices are the index of the df and the given columns are the columns of the df
     # NOTE: resulting df will have columns as multi index ("value", "given_id") so will need to index df by "value" to get final df
     pivot_df = query_df.pivot(index="dimension_given_id", columns="given_id")
 
-    # If 'strict' raise error
-    missing_columns, missing_indices = get_missing_tabular_columns_and_indices(
-        pivot_df,
-        tabular_dimensions_info.columns,
-        tabular_dimensions_info.indices,
-        dataset.id,
-    )
-    if strict and (missing_columns or missing_indices):
-        raise UserError(msg=get_truncated_message(missing_columns, missing_indices))
-
     # If df is empty, there is no 'value' key to index by
     if pivot_df.empty:
         return pivot_df
 
-    # Need to index by "value" after checking if empty db bc empty db has no 'value' keyword
-    subsetted_tabular_dataset_df = pivot_df["value"]
-    # set typing for columns
-    col_dtypes = _get_column_types(
-        dataset.columns_metadata, tabular_dimensions_info.columns
-    )
-    subsetted_tabular_dataset_df = _convert_subsetted_tabular_df_dtypes(
-        subsetted_tabular_dataset_df, col_dtypes, dataset.columns_metadata
-    )
-    return subsetted_tabular_dataset_df
-
-
-def _convert_subsetted_tabular_df_dtypes(
-    df: pd.DataFrame,
-    dtype_map: Dict[str, Any],
-    dataset_columns_metadata: Dict[str, ColumnMetadata],
-):
-    # Replace string boolean values with boolean
-    for col, dtype in dtype_map.items():
-        column = df[col]
-        if dtype == pd.BooleanDtype():
-            column = column.replace({"True": True, "False": False})
-        column = column.astype(dtype)
-        # NOTE: if col type is list string, convert to list. col dtype will be changed to object
-        if (
-            dtype == pd.StringDtype()
-            and dataset_columns_metadata[col].col_type == AnnotationType.list_strings
-        ):
-            column = column.apply(lambda x: json.loads(x) if x is not pd.NA else x)
-        df[col] = column
-    return df
-
-
-def get_truncated_message(missing_tabular_columns, missing_tabular_indices):
-    num_missing_cols = len(missing_tabular_columns)
-    num_missing_indices = len(missing_tabular_indices)
-    shown_missing_cols = (
-        missing_tabular_columns[:20] + ["..."]
-        if num_missing_cols >= 20
-        else missing_tabular_columns
-    )
-    shown_missing_indices = (
-        missing_tabular_indices[:20] + ["..."]
-        if num_missing_indices >= 20
-        else missing_tabular_indices
-    )
-    return f"{num_missing_cols} missing columns: {shown_missing_cols} and {num_missing_indices} missing indices: {shown_missing_indices}"
-
-
-def get_missing_tabular_columns_and_indices(
-    df, tabular_columns, tabular_indices, dataset_id
-):
-    missing_columns = set()
-    missing_indices = set()
-    if tabular_columns is not None:
-        found_columns = [x[1] for x in df.columns]
-        missing_columns = set(tabular_columns).difference(found_columns)
-        if len(missing_columns) > 0:
-            log.warning(
-                f"In get_subsetted_tabular_dataset_df, missing columns: {missing_columns} for dataset: {dataset_id}"
-            )
-
-    if tabular_indices is not None:
-        missing_indices = set(tabular_indices).difference(df.index)
-        if len(missing_indices) > 0:
-            log.warning(
-                f"In get_subsetted_tabular_dataset_df, missing indices: {missing_indices} for dataset: {dataset_id}"
-            )
-
-    return missing_columns, missing_indices
+    return pivot_df["value"]
 
 
 def get_unique_dimension_ids_from_datasets(
