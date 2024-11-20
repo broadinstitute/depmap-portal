@@ -48,6 +48,7 @@ function RelationalExpression({ expr, path, isLastOfList }: Props) {
         expr={expr}
         path={path}
         varName={varName}
+        value_type={domain?.value_type || null}
         isLoading={isLoading}
       />
       <div className={styles.rhsWrapper}>

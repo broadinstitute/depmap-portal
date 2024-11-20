@@ -27,21 +27,16 @@ const defaultValue = {
     variable: DataExplorerContextVariable
   ): Promise<
     | {
-        value_type: "text";
-        unique_values: string[];
-      }
-    | {
-        value_type: "categorical";
-        unique_values: string[];
-      }
-    | {
-        value_type: "list_strings";
-        unique_values: string[];
+        value_type: "binary";
       }
     | {
         value_type: "continuous";
         min: number;
         max: number;
+      }
+    | {
+        value_type: "text" | "categorical" | "list_strings";
+        unique_values: string[];
       }
   > => {
     window.console.log("fetchVariableDomain:", { variable });
