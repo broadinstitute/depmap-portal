@@ -19,6 +19,8 @@ from .body_get_dimension_data import BodyGetDimensionData
 from .body_update_feature_type_metadata import BodyUpdateFeatureTypeMetadata
 from .body_update_sample_type_metadata import BodyUpdateSampleTypeMetadata
 from .body_upload_file import BodyUploadFile
+from .cas_key import CASKey
+from .cas_value import CASValue
 from .column_metadata import ColumnMetadata
 from .compute_params import ComputeParams
 from .compute_response import ComputeResponse
@@ -31,6 +33,7 @@ from .data_type import DataType
 from .dataset_metadata import DatasetMetadata
 from .dataset_metadata_dataset_metadata import DatasetMetadataDatasetMetadata
 from .dimension_data_response import DimensionDataResponse
+from .dimension_identifiers import DimensionIdentifiers
 from .dimension_search_index_response import DimensionSearchIndexResponse
 from .dimension_search_index_response_matching_properties_item import (
     DimensionSearchIndexResponseMatchingPropertiesItem,
@@ -124,6 +127,8 @@ __all__ = (
     "BodyUpdateFeatureTypeMetadata",
     "BodyUpdateSampleTypeMetadata",
     "BodyUploadFile",
+    "CASKey",
+    "CASValue",
     "ColumnMetadata",
     "ComputeParams",
     "ComputeResponse",
@@ -136,6 +141,7 @@ __all__ = (
     "DatasetMetadataDatasetMetadata",
     "DataType",
     "DimensionDataResponse",
+    "DimensionIdentifiers",
     "DimensionSearchIndexResponse",
     "DimensionSearchIndexResponseMatchingPropertiesItem",
     "DimensionType",

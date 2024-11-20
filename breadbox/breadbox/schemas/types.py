@@ -9,6 +9,11 @@ from pydantic_settings import SettingsConfigDict
 from typing import List, Optional, Dict, Annotated
 
 
+class DimensionIdentifiers(BaseModel):
+    id: str
+    label: str
+
+
 class IdAndName(BaseModel):
     id: str
     name: str

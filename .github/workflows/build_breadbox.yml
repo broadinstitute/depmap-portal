@@ -59,7 +59,7 @@ jobs:
       #        if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
       # We want to use the rules defined in breadbox/pyproject.toml
       - name: Check PR title
-        run: poetry run cz check -m "${{ github.event.pull_request.title }}"
+        run: poetry run cz check -m '${{ github.event.pull_request.title }}'
   pyright-breadbox-client:
     runs-on: ubuntu-latest
     steps:
@@ -86,12 +86,11 @@ jobs:
           registry: us.gcr.io
           username: _json_key
           password: ${{ secrets.DEPMAP_DEPLOY_SVC_ACCT }}
-      # Temp remove Elara build which is paused for development
-      # - name: Build Elara
-      #   run: |
-      #     yarn --cwd frontend install
-      #     yarn --cwd frontend test
-      #     yarn --cwd frontend "build:elara"
+      - name: Build Elara
+        run: |
+          yarn --cwd frontend install
+          yarn --cwd frontend test
+          yarn --cwd frontend "build:elara"
       - name: build docker image
         run: bash breadbox/build-docker-image.sh ${{ env.DOCKER_REPO }}:${{ env.DOCKER_TAG }}
       - name: check that the breadbox client is in sync with the latest API spec

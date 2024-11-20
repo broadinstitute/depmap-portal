@@ -1,5 +1,5 @@
 import { get_operator, get_values } from "json-logic-js";
-import { VariableDomain } from "../../../contexts/DataExplorerApiContext";
+import { DataExplorerApiResponse } from "../../../contexts/DataExplorerApiContext";
 
 export const MAX_CONDITIONS = 10;
 
@@ -24,16 +24,20 @@ const supportedOperators = new Set(Object.keys(opLabels));
 
 export const operatorsByValueType = {
   continuous: new Set(["<", "<=", ">", ">="]),
+  text: new Set(["==", "!=", "in", "!in"]),
   categorical: new Set(["==", "!=", "in", "!in"]),
   list_strings: new Set(["has_any", "!has_any"]),
+  binary: new Set(["==", "!="]),
 };
 
 export type ValueType = keyof typeof operatorsByValueType;
 
 export const defaultOperatorByValueType: Record<ValueType, OperatorType> = {
   continuous: ">=",
+  text: "==",
   categorical: "==",
   list_strings: "has_any",
+  binary: "==",
 };
 
 export const isListOperator = (op: OperatorType) => {
@@ -104,7 +108,7 @@ export const round = (num: number) =>
 
 export const makeCompatibleExpression = (
   expr: Expr,
-  domain: VariableDomain | null
+  domain: DataExplorerApiResponse["fetchVariableDomain"] | null
 ) => {
   if (!isRelation(expr) || !domain) {
     return expr;
@@ -134,9 +138,12 @@ export const makeCompatibleExpression = (
     }
   }
 
-  if (value_type === "categorical") {
+  if (value_type === "text" || value_type === "categorical") {
     if (nextValue && Array.isArray(nextValue)) {
       nextValue = nextValue.filter((val) => domain.unique_values.includes(val));
+      if (nextValue.length === 0) {
+        nextValue = null;
+      }
     } else if (
       nextValue &&
       !domain.unique_values.find((val) => val === nextValue)

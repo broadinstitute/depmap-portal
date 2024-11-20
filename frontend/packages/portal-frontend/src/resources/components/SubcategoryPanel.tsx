@@ -31,20 +31,18 @@ export default function SubcategoryPanel({
         setIsOpen(e);
       }}
     >
-      <Panel.Heading className={styles.postHeading}>
-        <Panel.Toggle componentClass="div">
-          {subcategory.title}
+      <Panel.Heading>
+        <Panel.Toggle componentClass="div" className={styles.panelHeading}>
+          <span className={styles.headingTitle}>{subcategory.title}</span>
           <span
             className={
               isOpen ? "glyphicon glyphicon-minus" : "glyphicon glyphicon-plus"
             }
             aria-hidden="true"
             style={{
+              gridArea: "glyph-symbol",
               float: "right",
-              margin: "0",
-              position: "relative",
-              top: "50%",
-              lineHeight: "unset",
+              alignSelf: "center",
             }}
           />
         </Panel.Toggle>

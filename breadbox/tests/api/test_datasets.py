@@ -2806,10 +2806,14 @@ class TestPost:
         )
 
         # Define a matrix dataset
+        # This matrix contains values which don't exist in the metadata
+        # (sampleID4, featureID4) and should therefor be ignored
         example_matrix_values = factories.matrix_csv_data_file_with_values(
-            feature_ids=["featureID1", "featureID2", "featureID3"],
-            sample_ids=["sampleID1", "sampleID2", "sampleID3"],
-            values=np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]]),
+            feature_ids=["featureID1", "featureID2", "featureID3", "featureID4"],
+            sample_ids=["sampleID1", "sampleID2", "sampleID3", "sampleID4"],
+            values=np.array(
+                [[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12], [13, 14, 15, 16]]
+            ),
         )
         dataset_given_id = "dataset_123"
         dataset_with_metadata = factories.matrix_dataset(
@@ -2841,6 +2845,77 @@ class TestPost:
             "featureLabel3",
         ]
         assert response_content["values"] == [1, 2, 3]
+
+    def test_get_dimension_data_not_found(
+        self, client: TestClient, minimal_db: SessionWithUser, public_group, settings,
+    ):
+        # Define label metadata for our features
+        factories.add_dimension_type(
+            minimal_db,
+            settings,
+            user=settings.admin_users[0],
+            name="feature-with-metadata",
+            display_name="Feature With Metadata",
+            id_column="ID",
+            annotation_type_mapping={
+                "ID": AnnotationType.text,
+                "label": AnnotationType.text,
+            },
+            axis="feature",
+            metadata_df=pd.DataFrame(
+                {
+                    "ID": ["featureID1", "featureID2", "featureID3"],
+                    "label": ["featureLabel1", "featureLabel2", "featureLabel3"],
+                }
+            ),
+        )
+
+        # Define a matrix dataset
+        # This matrix contains values which don't exist in the metadata
+        # (sampleID4, featureID4) and should therefor be ignored
+        example_matrix_values = factories.matrix_csv_data_file_with_values(
+            feature_ids=["featureID1", "featureID2", "featureID3", "featureID4"],
+            sample_ids=["sampleID1", "sampleID2", "sampleID3", "sampleID4"],
+            values=np.array(
+                [[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12], [13, 14, 15, 16]]
+            ),
+        )
+        dataset_given_id = "dataset_123"
+        dataset_with_metadata = factories.matrix_dataset(
+            minimal_db,
+            settings,
+            feature_type="feature-with-metadata",
+            data_file=example_matrix_values,
+            given_id=dataset_given_id,
+        )
+
+        # Test that lookups by non-existant datasets return 404s
+        response = client.post(
+            "/datasets/dimension/data",
+            json={
+                "dataset_id": "fake dataset ID",  # non-existant dataset ID
+                "identifier": "sampleID1",
+                "identifier_type": "sample_id",
+            },
+            headers={"X-Forwarded-User": "some-public-user"},
+        )
+
+        assert_status_not_ok(response)
+        assert response.status_code == 404
+
+        # Test that lookups by non-existant features return 404s
+        response = client.post(
+            "/datasets/dimension/data",
+            json={
+                "dataset_id": dataset_given_id,
+                "identifier": "fake sample id",  # non-existant sample ID
+                "identifier_type": "sample_id",
+            },
+            headers={"X-Forwarded-User": "some-public-user"},
+        )
+
+        assert_status_not_ok(response)
+        assert response.status_code == 404
 
 
 class TestPatch:
