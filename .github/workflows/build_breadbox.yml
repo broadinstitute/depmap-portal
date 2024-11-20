@@ -69,7 +69,7 @@ jobs:
       - name: check that the breadbox client passes pyright
         working-directory: ./breadbox-client
         run: |
-          poetry install && poetry run pyright breadbox_facade
+          poetry run pyright breadbox_facade
   build-docker:
     runs-on: ubuntu-latest
     steps:
