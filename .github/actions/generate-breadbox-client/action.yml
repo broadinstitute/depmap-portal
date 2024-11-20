@@ -10,7 +10,7 @@ runs:
       with:
         version: 1.8.4
         virtualenvs-create: true
-        virtualenvs-in-project: false
+        virtualenvs-in-project: true
     - name: Install breadbox-client-generator python dependencies
       working-directory: ./breadbox-client-generator
       run: poetry install # Installs to /home/runner/work/depmap-portal/depmap-portal/breadbox-client-generator/.venv
