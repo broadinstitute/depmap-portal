@@ -1,4 +1,5 @@
 import {
+  AnnotationType,
   DataExplorerContextV2,
   DataExplorerContextVariable,
   DataExplorerDatasetDescriptor,
@@ -106,11 +107,42 @@ export async function evaluateContext(
   }>("/temp/context", contextToEval);
 }
 
+export function fetchDatasets() {
+  return fetchJson<Dataset[]>("/datasets/");
+}
+
 export async function fetchVariableDomain(
   variable: DataExplorerContextVariable
 ) {
   const { dataset_id, identifier, identifier_type } = variable;
   const sliceQuery = { dataset_id, identifier, identifier_type };
+  let value_type: AnnotationType | undefined;
+
+  const datasets = await fetchDatasets();
+  const dataset = datasets.find((d) => d.id === dataset_id);
+
+  if (dataset && dataset.format === "matrix_dataset") {
+    value_type = dataset.value_type as AnnotationType;
+  }
+
+  if (dataset && dataset.format === "tabular_dataset") {
+    if (identifier_type !== "column") {
+      throw new Error(
+        `Can't look up identifier_type "${identifier_type}"` +
+          "in a tabular dataset!"
+      );
+    }
+
+    const column = dataset.columns_metadata[identifier];
+
+    if (!column) {
+      throw new Error(
+        `Column "${identifier}" not found in dataset "${dataset.id}".`
+      );
+    }
+
+    value_type = column.col_type;
+  }
 
   const data = await postJson<{
     values: (string | string[] | number | null)[];
@@ -126,18 +158,18 @@ export async function fetchVariableDomain(
     );
   }
 
-  if (variable.value_type === "text" || variable.value_type === "categorical") {
+  if (value_type === "text" || value_type === "categorical") {
     const stringValues = data.values.filter(
       (val) => typeof val === "string"
     ) as string[];
 
     return Promise.resolve({
       unique_values: [...new Set(stringValues)].sort(),
-      value_type: variable.value_type,
+      value_type,
     });
   }
 
-  if (variable.value_type === "continuous") {
+  if (value_type === "continuous") {
     const numberValues = data.values.filter(
       (val) => typeof val === "number"
     ) as number[];
@@ -145,15 +177,11 @@ export async function fetchVariableDomain(
     return Promise.resolve({
       min: Math.min(...numberValues),
       max: Math.max(...numberValues),
-      value_type: variable.value_type,
+      value_type,
     });
   }
 
-  throw new Error(`Unsupported value_type "${variable.value_type}".`);
-}
-
-export function fetchDatasets() {
-  return fetchJson<Dataset[]>("/datasets/");
+  throw new Error(`Unsupported value_type "${value_type}".`);
 }
 
 let datasetsByIndexType: Record<

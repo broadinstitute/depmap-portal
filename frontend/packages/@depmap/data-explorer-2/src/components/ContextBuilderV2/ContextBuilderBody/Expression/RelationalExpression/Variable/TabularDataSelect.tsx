@@ -54,7 +54,6 @@ function TabularDataSelect({ varName }: Props) {
             dataset_id: dataset_id as string,
             source: "tabular_dataset",
             slice_type: undefined,
-            value_type: undefined,
           });
         }}
         placeholder="Choose dataset…"
@@ -84,7 +83,6 @@ function TabularDataSelect({ varName }: Props) {
             identifier: value,
             source: "tabular_dataset",
             slice_type: undefined,
-            value_type: col_type as "text" | "categorical" | "list_strings",
           });
         }}
         placeholder="Choose column…"

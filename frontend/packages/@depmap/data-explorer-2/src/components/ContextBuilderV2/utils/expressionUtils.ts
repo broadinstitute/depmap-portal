@@ -27,6 +27,7 @@ export const operatorsByValueType = {
   text: new Set(["==", "!=", "in", "!in"]),
   categorical: new Set(["==", "!=", "in", "!in"]),
   list_strings: new Set(["has_any", "!has_any"]),
+  binary: new Set(["==", "!="]),
 };
 
 export type ValueType = keyof typeof operatorsByValueType;
@@ -36,6 +37,7 @@ export const defaultOperatorByValueType: Record<ValueType, OperatorType> = {
   text: "==",
   categorical: "==",
   list_strings: "has_any",
+  binary: "==",
 };
 
 export const isListOperator = (op: OperatorType) => {
