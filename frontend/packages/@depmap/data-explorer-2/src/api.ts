@@ -2,9 +2,11 @@ import qs from "qs";
 import omit from "lodash.omit";
 import stableStringify from "json-stable-stringify";
 import { ComputeResponseResult } from "@depmap/compute";
+import { enabledFeatures } from "@depmap/globals";
 import {
   DataExplorerAnonymousContext,
   DataExplorerContext,
+  DataExplorerContextV2,
   DataExplorerDatasetDescriptor,
   DataExplorerFilters,
   DataExplorerMetadata,
@@ -568,15 +570,23 @@ export async function fetchMetadataSlices(dimension_type: string) {
 const CONTEXT_CACHE = "contexts-v1";
 const successfullyPersistedContexts = new Set<string>();
 // Fall back to using an in-memory cache if the user has caching disabled.
-const fallbackInMemoryCache: Record<string, DataExplorerContext> = {};
+const fallbackInMemoryCache: Record<
+  string,
+  DataExplorerContext | DataExplorerContextV2
+> = {};
+
+const getCasUrl = () => {
+  const prefix = fetchUrlPrefix().replace(/^\/$/, "");
+
+  return enabledFeatures.elara ? `${prefix}/temp/cas` : `${prefix}/cas`;
+};
 
 const getContextUrl = (hash: string) => {
-  const prefix = fetchUrlPrefix().replace(/^\/$/, "");
-  return `${prefix}/cas/${hash}`;
+  return `${getCasUrl()}/${hash}`;
 };
 
 export async function persistContext(
-  context: DataExplorerContext
+  context: DataExplorerContext | DataExplorerContextV2
 ): Promise<string> {
   const hash = await getContextHash(context);
 
@@ -609,10 +619,22 @@ export async function persistContext(
     fallbackInMemoryCache[hash] = context;
   }
 
-  const url = `${fetchUrlPrefix().replace(/^\/$/, "")}/cas/`;
-  const data = new URLSearchParams();
-  data.append("value", json);
-  const options = { method: "POST", body: data };
+  const url = enabledFeatures.elara ? getCasUrl() : `${getCasUrl()}/`;
+  const options = {
+    method: "POST",
+    headers: enabledFeatures.elara
+      ? {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        }
+      : {
+          Accept: "*/*",
+          "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
+        },
+    body: enabledFeatures.elara
+      ? JSON.stringify({ value: json })
+      : new URLSearchParams({ value: json }),
+  };
 
   if (cacheSuccess) {
     // Don't wait for this to finish since we just put a
@@ -636,7 +658,9 @@ export async function persistContext(
   return hash;
 }
 
-export async function fetchContext(hash: string): Promise<DataExplorerContext> {
+export async function fetchContext(
+  hash: string
+): Promise<DataExplorerContext | DataExplorerContextV2> {
   let cache: Cache | undefined;
   let response: Response | undefined;
   const request = new Request(getContextUrl(hash));

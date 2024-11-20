@@ -6,6 +6,7 @@ import { fetchContext, fetchDimensionLabels, persistContext } from "../../api";
 import {
   isContextAll,
   isNegatedContext,
+  isV2Context,
   negateContext,
 } from "../../utils/context";
 import getContextHash from "../../utils/get-context-hash";
@@ -166,7 +167,13 @@ export const makeChangeHandler = (
           hashToFetch
         );
       } else {
-        context = await fetchContext(hashToFetch);
+        const fetchedContext = await fetchContext(hashToFetch);
+
+        if (isV2Context(fetchedContext)) {
+          throw new Error("V2 contexts not supported!");
+        }
+
+        context = fetchedContext;
       }
 
       if (negate && context) {
