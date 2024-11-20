@@ -2780,7 +2780,6 @@ class TestPost:
             headers=admin_headers,
         )
         assert res.json() == {}
-        # TODO: consider writing an additional test or two for this
 
     def test_get_dimension_data(
         self, client: TestClient, minimal_db: SessionWithUser, public_group, settings,
