@@ -8,6 +8,7 @@ export interface ContextNode {
   name: string;
   node_level: number;
   subtype_code: string;
+  parent_subtype_code: string | null;
   model_ids: string[];
   children: ContextNode[];
 }
@@ -203,4 +204,9 @@ export enum TabTypes {
   Overview = 0,
   GeneDependency = 1,
   DrugSensitivity = 2,
+}
+
+export enum ContextSelectionTabTypes {
+  Lineage = 0,
+  MolecularSubtype = 1,
 }

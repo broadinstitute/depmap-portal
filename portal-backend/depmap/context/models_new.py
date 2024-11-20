@@ -12,13 +12,6 @@ from depmap.database import (
 
 class SubtypeNode(Model):
     __tablename__ = "subtype_node"
-    __table_args__ = (
-        db.UniqueConstraint(
-            "oncotree_code",
-            "depmap_model_type",
-            name="uc_oncotree_code_depmap_model_type",
-        ),
-    )
 
     subtype_code = Column(String, primary_key=True, index=True)
     oncotree_code = Column(String)

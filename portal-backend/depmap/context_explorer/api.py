@@ -141,6 +141,7 @@ class ContextInfo(
             context_trees,
             overview_data,
         ) = get_context_explorer_lineage_trees_and_table_data()
+
         context_name_info = _get_all_level_0_subtype_info(context_trees)
         return {
             "trees": context_trees,
@@ -227,7 +228,8 @@ def get_context_explorer_lineage_trees_and_table_data() -> Tuple[
         root_node = ContextNode(
             name=node_name,
             subtype_code=subtype_code,
-            model_ids=model_ids,
+            parent_subtype_code=None,
+            model_ids=list(model_ids.keys()),
             node_level=node_level,
         )
         tree = ContextExplorerTree(root_node)

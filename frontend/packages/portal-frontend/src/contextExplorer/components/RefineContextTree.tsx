@@ -1,12 +1,20 @@
 import React, { useEffect, useState } from "react";
 import { Button } from "react-bootstrap";
 import { Accordion, OpenCloseSymbol } from "@depmap/interactive";
+import {
+  TabsWithHistory,
+  TabList,
+  TabPanels,
+  Tab,
+  TabPanel,
+} from "src/common/components/tabs";
 import styles from "../styles/ContextExplorer.scss";
 import {
   ContextNameInfo,
   ContextNode,
   ContextExplorerTree,
   TabTypes,
+  ContextSelectionTabTypes,
 } from "../models/types";
 
 export interface RefineContextTreeProps {
@@ -28,33 +36,12 @@ export const RefineContextTree = (
     selectedTab,
   } = refineContextTreeProps;
   const [selectedTree, setSelectedTree] = useState<ContextExplorerTree>();
-  const [hasSmallContext, setHasSmallContext] = useState<boolean>(false);
 
   useEffect(() => {
     if (contextTrees && topContextNameInfo) {
       setSelectedTree(contextTrees[topContextNameInfo.subtype_code]);
     }
   }, [contextTrees, topContextNameInfo]);
-
-  useEffect(() => {
-    if (selectedTree) {
-      for (let index = 0; index < selectedTree.children.length; index++) {
-        // const node = selectedTree.children[index];
-        // if (selectedTab === TabTypes.GeneDependency) {
-        //   if (!node.has_gene_dep_data) {
-        //     setHasSmallContext(true);
-        //     break;
-        //   }
-        // } else if (selectedTab === TabTypes.DrugSensitivity) {
-        //   if (!node.has_drug_data) {
-        //     setHasSmallContext(true);
-        //     break;
-        //   }
-        // }
-        setHasSmallContext(false);
-      }
-    }
-  }, [selectedTree, selectedTab]);
 
   return (
     <div className="disabled_refine_context_tree">
@@ -142,7 +129,10 @@ export const RefineContextTree = (
                         (selectedTab === TabTypes.DrugSensitivity &&
                           false)) && (
                         <span
-                          style={{ color: "#994299", marginLeft: "3px" }}
+                          style={{
+                            color: "#994299",
+                            marginLeft: "3px",
+                          }}
                           className="glyphicon glyphicon-exclamation-sign"
                         />
                       )}
@@ -153,24 +143,6 @@ export const RefineContextTree = (
             </Accordion>
           </div>
         )}
-        {hasSmallContext &&
-          topContextNameInfo.name !== "All" &&
-          (selectedTab === TabTypes.GeneDependency ||
-            selectedTab === TabTypes.DrugSensitivity) && (
-            <p style={{ marginTop: "15px" }}>
-              <span
-                style={{ color: "#994299" }}
-                className="glyphicon glyphicon-exclamation-sign"
-              />{" "}
-              <i>
-                Context is too small to compute{" "}
-                {selectedTab === TabTypes.GeneDependency
-                  ? "gene dependency"
-                  : "drug sensitivity"}{" "}
-                results.
-              </i>
-            </p>
-          )}
       </div>
     </div>
   );

@@ -12,6 +12,12 @@ import qs from "qs";
 import { Filter } from "src/common/models/discoveryAppFilters";
 import { deleteSpecificQueryParams } from "@depmap/utils";
 
+export const NODE_LEVEL_TO_QUERY_STR_MAP = new Map<number, string>([
+  [0, "lineage"],
+  [1, "primary_disease"],
+  [2, "subtype"],
+]);
+
 export function getSelectivityValLabel(entityType: string) {
   return entityType === "gene" ? "log(OR)" : "Bimodality Coefficient";
 }
@@ -505,6 +511,7 @@ export function getSelectedContextNode(
 ) {
   let selectedNode = null;
   let topContextNameInfo = ALL_SEARCH_OPTION;
+
   if (contextTrees) {
     if (lineageQueryParam) {
       const selectedTree = contextTrees[lineageQueryParam];
@@ -526,9 +533,22 @@ export function getSelectedContextNode(
             selectedNode = node;
           }
         }
+        if (subtypeQueryParam) {
+          const node = selectedNode.children.find(
+            (child) => child.name === primaryDiseaseQueryParam
+          );
+
+          if (node) {
+            selectedNode = node;
+          }
+        }
       } else {
         // Invalid params, so default to loading All data
-        deleteSpecificQueryParams(["lineage", "primary_disease"]);
+        deleteSpecificQueryParams([
+          NODE_LEVEL_TO_QUERY_STR_MAP.get(0)!,
+          NODE_LEVEL_TO_QUERY_STR_MAP.get(1)!,
+          NODE_LEVEL_TO_QUERY_STR_MAP.get(2)!,
+        ]);
       }
     }
   }

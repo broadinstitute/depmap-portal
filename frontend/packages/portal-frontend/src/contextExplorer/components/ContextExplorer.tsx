@@ -19,6 +19,7 @@ import {
   ALL_SEARCH_OPTION,
   getSelectionInfo,
   getSelectedContextNode,
+  NODE_LEVEL_TO_QUERY_STR_MAP,
 } from "../utils";
 import ContextExplorerTabs from "./ContextExplorerTabs";
 import LineageSearch from "./LineageSearch";
@@ -60,7 +61,7 @@ export const ContextExplorer = () => {
     contextTrees,
     lineageQueryParam,
     primaryDiseaseQueryParam,
-    subtypeQueryParam // TODO LEFT OFF HERE!!!!!!
+    subtypeQueryParam
   );
 
   const {
@@ -101,6 +102,11 @@ export const ContextExplorer = () => {
         if (params.primary_disease) {
           const selectedPrimaryDiseaseName = params.primary_disease!.toString();
           setPrimaryDiseaseQueryParam(selectedPrimaryDiseaseName);
+
+          if (params.subtype) {
+            const selectedSubtypeName = params.subtype!.toString();
+            setSubtypeQueryParam(selectedSubtypeName);
+          }
         }
       }
     })();
@@ -124,32 +130,53 @@ export const ContextExplorer = () => {
     [checkedDatatypes]
   );
 
-  const queryStrFromNodeLevel = new Map<number, string>([
-    [0, "lineage"],
-    [1, "primary_disease"],
-    [2, "subtype"],
-  ]);
-
   const onRefineYourContext = useCallback(
     (
       contextNode: ContextNode | null,
       contextTree: ContextExplorerTree | null
     ) => {
-      deleteSpecificQueryParams(["lineage", "primary_disease", "subtype"]);
+      deleteSpecificQueryParams([
+        NODE_LEVEL_TO_QUERY_STR_MAP.get(0)!,
+        NODE_LEVEL_TO_QUERY_STR_MAP.get(1)!,
+        NODE_LEVEL_TO_QUERY_STR_MAP.get(2)!,
+      ]);
 
       if (allContextData && contextNode && contextTree) {
-        setLineageQueryParam(contextTree.root.name);
+        setLineageQueryParam(contextTree.root.subtype_code);
 
         setPrimaryDiseaseQueryParam(null);
-        setQueryStringWithoutPageReload("lineage", contextTree.root.name);
+        setSubtypeQueryParam(null);
+        setQueryStringWithoutPageReload(
+          NODE_LEVEL_TO_QUERY_STR_MAP.get(0)!,
+          contextTree.root.subtype_code
+        );
 
-        if (contextTree.root.name !== contextNode.name) {
-          setPrimaryDiseaseQueryParam(contextNode.name);
-          setQueryStringWithoutPageReload("primary_disease", contextNode.name);
+        if (contextTree.root.subtype_code !== contextNode.subtype_code) {
+          if (contextNode.node_level === 1) {
+            setPrimaryDiseaseQueryParam(contextNode.subtype_code);
+            setQueryStringWithoutPageReload(
+              NODE_LEVEL_TO_QUERY_STR_MAP.get(1)!,
+              contextNode.subtype_code
+            );
+            setSubtypeQueryParam(null);
+          } else {
+            // Has to be subtype
+            setPrimaryDiseaseQueryParam(contextNode.parent_subtype_code);
+            setQueryStringWithoutPageReload(
+              NODE_LEVEL_TO_QUERY_STR_MAP.get(1)!,
+              contextNode.parent_subtype_code
+            );
+            setSubtypeQueryParam(contextNode.subtype_code);
+            setQueryStringWithoutPageReload(
+              NODE_LEVEL_TO_QUERY_STR_MAP.get(2)!,
+              contextNode.subtype_code
+            );
+          }
         }
       } else {
         setLineageQueryParam(null);
         setPrimaryDiseaseQueryParam(null);
+        setSubtypeQueryParam(null);
       }
     },
     [allContextData]

@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from math import nextafter
+from operator import mod
 import sqlalchemy
 from sqlalchemy import and_, func, desc
 import enum
@@ -72,15 +73,17 @@ class ContextExplorerTree(dict):
 
         if len(child_subtype_codes) > 0:
             for child_subtype_code in child_subtype_codes:
-                model_ids = DepmapModel.get_model_ids_by_subtype_code_and_node_level(
+                model_ids_dict = DepmapModel.get_model_ids_by_subtype_code_and_node_level(
                     child_subtype_code, next_level
                 )
+                model_ids = list(model_ids_dict.keys())
 
                 current_child_codes = [child.subtype_code for child in self.children]
                 if len(model_ids) > 0 and child_subtype_code not in current_child_codes:
                     node = ContextNode(
                         name=SubtypeNode.get_by_code(child_subtype_code).node_name,
                         subtype_code=child_subtype_code,
+                        parent_subtype_code=current_node_code,
                         model_ids=model_ids,
                         node_level=next_level,
                     )
@@ -104,12 +107,13 @@ class ContextExplorerTree(dict):
 
 class ContextNode(dict):
     def __init__(
-        self, name, subtype_code, node_level, model_ids,
+        self, name, subtype_code, parent_subtype_code, node_level, model_ids,
     ):
         super().__init__()
         self.__dict__ = self
         self.name = name  # display name
         self.subtype_code = subtype_code  # unique key
+        self.parent_subtype_code = parent_subtype_code
         self.node_level = node_level
         self.model_ids = model_ids
         self.children = []
@@ -143,15 +147,17 @@ class ContextNode(dict):
 
         if len(child_subtype_codes) > 0:
             for child_subtype_code in child_subtype_codes:
-                model_ids = DepmapModel.get_model_ids_by_subtype_code_and_node_level(
+                model_ids_dict = DepmapModel.get_model_ids_by_subtype_code_and_node_level(
                     child_subtype_code, next_level
                 )
+                model_ids = list(model_ids_dict.keys())
 
                 current_child_codes = [child.subtype_code for child in self.children]
                 if len(model_ids) > 0 and child_subtype_code not in current_child_codes:
                     node = ContextNode(
                         name=SubtypeNode.get_by_code(child_subtype_code).node_name,
                         subtype_code=child_subtype_code,
+                        parent_subtype_code=current_node_code,
                         model_ids=model_ids,
                         node_level=next_level,
                     )
