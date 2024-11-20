@@ -22,7 +22,7 @@ runs:
     - name: print path to breadbox interpreter
       working-directory: ./breadbox
       run: |
-        poetry run which python                                                                                    (base)
+        poetry run which python
       shell: bash
     - name: print path to client generator interpreter
       working-directory: ./breadbox
