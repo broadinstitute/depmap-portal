@@ -1,0 +1,40 @@
+# A re-usable github action which generates the breadbox client
+name: "generate-breadbox-client"
+description: "Auto-generate the breadbox client"
+runs:
+  using: "composite"
+  steps:
+    - uses: actions/checkout@v2
+    - name: Install and configure Poetry
+      uses: snok/install-poetry@v1
+      with:
+        version: 1.8.4
+        virtualenvs-create: true
+        virtualenvs-in-project: false
+    - name: Install breadbox-client-generator python dependencies
+      working-directory: ./breadbox-client-generator
+      run: poetry install # Installs to /home/runner/work/depmap-portal/depmap-portal/breadbox-client-generator/.venv
+      shell: bash
+    - name: Install breadbox python dependencies
+      working-directory: ./breadbox
+      run: poetry install # Installs to /home/runner/work/depmap-portal/depmap-portal/breadbox/.venv
+      shell: bash
+    - name: print path to breadbox interpreter
+      working-directory: ./breadbox
+      run: |
+        poetry run which python
+      shell: bash
+    - name: print path to client generator interpreter
+      working-directory: ./breadbox
+      run: |
+        poetry run poetry run -C ../breadbox-client-generator which python
+      shell: bash
+    - name: Export the breadbox API spec
+      working-directory: ./breadbox
+      run: |
+        poetry run ./bb export-api-spec ../breadbox-client/latest-breadbox-api.json
+      shell: bash
+    - name: Generate the breadbox client
+      working-directory: ./breadbox
+      run: poetry run ./bb update-client
+      shell: bash

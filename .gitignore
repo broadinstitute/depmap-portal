@@ -174,9 +174,12 @@ app_datasets/
 breadbox/install
 breadbox/breadbox/static
 breadbox/breadbox/result
-# generated file
+
+# generated files
 portal-backend/depmap/utilities/color_palette.py
 breadbox/app_datasets
+breadbox_client/
+latest-breadbox-api.json
 secrets
 
 # data access logs
