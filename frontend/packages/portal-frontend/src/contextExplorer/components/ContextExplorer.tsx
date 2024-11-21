@@ -217,7 +217,7 @@ export const ContextExplorer = () => {
               contextTrees={contextTrees}
               onRefineYourContext={onRefineYourContext}
               topContextNameInfo={topContextNameInfo}
-              selectedContextName={selectedContextNameInfo.name}
+              selectedContextNode={selectedContextNode!}
               selectedTab={selectedTab}
               customInfoImg={customInfoImg}
             />

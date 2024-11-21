@@ -237,9 +237,6 @@ def get_context_explorer_lineage_trees_and_table_data() -> Tuple[
         tree.create_context_tree_from_root_info(
             tree_df=subtype_tree_df,
             current_node_code=subtype_code,
-            lineage_df=subtype_tree_df.loc[
-                subtype_tree_df[f"level_{node_level}"] == subtype_code
-            ],
             node_level=node_level,
         )
         trees[subtype_code] = tree

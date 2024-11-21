@@ -1,6 +1,4 @@
 from dataclasses import dataclass
-from math import nextafter
-from operator import mod
 import sqlalchemy
 from sqlalchemy import and_, func, desc
 import enum
@@ -31,17 +29,23 @@ class ContextNameInfo:
 
 
 def _get_child_lineages_next_lineage_level_from_root_info(
-    sorted: pd.DataFrame, current_level: str, current_code: str
-) -> Tuple[Optional[List[str]], Optional[str]]:
-    next_lineage_level_num = int(current_level) + 1
+    sorted: pd.DataFrame, current_level: int, current_code: str
+) -> Tuple[Optional[List[str]], Optional[int]]:
+    next_lineage_level_num = current_level + 1
     next_lineage_level = "level_" + str(next_lineage_level_num)
 
-    if next_lineage_level not in sorted:
+    children = sorted[
+        (sorted[f"level_{current_level}"] == current_code)
+        & (sorted["node_level"] == next_lineage_level_num)
+    ]
+
+    child_lineages = children[next_lineage_level].unique()
+
+    child_lineages = [child for child in child_lineages if child != ""]
+
+    if len(list(child_lineages)) == 0:
         return None, None
 
-    children = sorted[sorted[f"level_{current_level}"] == current_code]
-    child_lineages = children[next_lineage_level].unique()
-    child_lineages = [child for child in child_lineages if child != ""]
     return child_lineages, next_lineage_level_num
 
 
@@ -56,16 +60,14 @@ class ContextExplorerTree(dict):
         self.children.append(obj)
 
     def create_context_tree_from_root_info(
-        self, tree_df, current_node_code, lineage_df, node_level: int,
+        self, tree_df, current_node_code, node_level: int,
     ):
-        # Find all subtype nodes at this level
         sorted = tree_df.loc[tree_df[f"level_{node_level}"] == current_node_code]
-
         (
             child_subtype_codes,
             next_level,
         ) = _get_child_lineages_next_lineage_level_from_root_info(
-            sorted=tree_df, current_level=node_level, current_code=current_node_code
+            sorted=sorted, current_level=node_level, current_code=current_node_code
         )
 
         if next_level is None:
@@ -90,12 +92,12 @@ class ContextExplorerTree(dict):
                     self.add_node(node)
 
             for child in self.children:
-                child.create_context_tree_from_root_info(
-                    tree_df=sorted,
-                    current_node_code=child_subtype_code,
-                    lineage_df=lineage_df,
-                    node_level=next_level,
-                )
+                if child.subtype_code == child_subtype_code:
+                    child.create_context_tree_from_root_info(
+                        tree_df=sorted,
+                        current_node_code=child_subtype_code,
+                        node_level=next_level,
+                    )
 
     def get_all_nodes(self):
         for child in self.children:
@@ -130,11 +132,9 @@ class ContextNode(dict):
                 Tree.append(child)
 
     def create_context_tree_from_root_info(
-        self, tree_df, current_node_code, lineage_df, node_level: int
+        self, tree_df, current_node_code, node_level: int
     ):
-        # Find all subtype nodes at this level
         sorted = tree_df.loc[tree_df[f"level_{node_level}"] == current_node_code]
-
         (
             child_subtype_codes,
             next_level,
@@ -153,6 +153,7 @@ class ContextNode(dict):
                 model_ids = list(model_ids_dict.keys())
 
                 current_child_codes = [child.subtype_code for child in self.children]
+
                 if len(model_ids) > 0 and child_subtype_code not in current_child_codes:
                     node = ContextNode(
                         name=SubtypeNode.get_by_code(child_subtype_code).node_name,

@@ -25,7 +25,7 @@ export interface LineageSearchProps {
     tree: ContextExplorerTree | null
   ) => void;
   topContextNameInfo: ContextNameInfo;
-  selectedContextName: string;
+  selectedContextNode: ContextNode;
   selectedTab: TabTypes | null;
   customInfoImg: React.JSX.Element;
 }
@@ -36,7 +36,7 @@ const LineageSearch = (lineageSearchProps: LineageSearchProps) => {
     contextTrees,
     onRefineYourContext,
     topContextNameInfo,
-    selectedContextName,
+    selectedContextNode,
     selectedTab,
     customInfoImg,
   } = lineageSearchProps;
@@ -96,7 +96,7 @@ const LineageSearch = (lineageSearchProps: LineageSearchProps) => {
                 {searchOptions && (
                   <RefineContextTree
                     topContextNameInfo={topContextNameInfo}
-                    selectedContextName={selectedContextName}
+                    selectedContextNode={selectedContextNode}
                     contextTrees={contextTrees}
                     onRefineYourContext={onRefineYourContext}
                     selectedTab={selectedTab}
