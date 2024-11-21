@@ -46,14 +46,20 @@ const LineageSearch = (lineageSearchProps: LineageSearchProps) => {
   const [
     selectedContextSelectionTab,
     setSelectedContextSelectionTab,
-  ] = useState<ContextSelectionTabTypes | null>(null);
+  ] = useState<ContextSelectionTabTypes | null>(0);
+
+  const handleSetSelectedContextSelectionTab = (
+    index: ContextSelectionTabTypes
+  ) => {
+    setSelectedContextSelectionTab(index);
+  };
 
   return (
     <fieldset className={styles.lineageSelection}>
       <TabsWithHistory
         className={styles.Tabs}
-        onChange={(index) => setSelectedContextSelectionTab(index)}
-        onSetInitialIndex={(index) => setSelectedContextSelectionTab(index)}
+        onChange={(index) => handleSetSelectedContextSelectionTab(index)}
+        onSetInitialIndex={setSelectedContextSelectionTab}
         isManual
         isLazy
       >
@@ -66,7 +72,13 @@ const LineageSearch = (lineageSearchProps: LineageSearchProps) => {
         <section className={styles.lineageTabContents}>
           <TabPanels className={styles.TabPanels}>
             <TabPanel className={styles.TabPanel}>
-              <p className={styles.pHeader}>Select Lineage</p>
+              <p className={styles.pHeader}>
+                Select a{" "}
+                {selectedContextSelectionTab ===
+                ContextSelectionTabTypes.Lineage
+                  ? "Lineage"
+                  : "Molecular Subtype"}
+              </p>
               <Select
                 value={{
                   value: topContextNameInfo.subtype_code,
@@ -91,18 +103,15 @@ const LineageSearch = (lineageSearchProps: LineageSearchProps) => {
                 )}
                 id="context-explorer-lineage-selection"
               />
-              <div>
-                <p className={refineContextLabelClass}>Refine your context</p>
-                {searchOptions && (
-                  <RefineContextTree
-                    topContextNameInfo={topContextNameInfo}
-                    selectedContextNode={selectedContextNode}
-                    contextTrees={contextTrees}
-                    onRefineYourContext={onRefineYourContext}
-                    selectedTab={selectedTab}
-                  />
-                )}
-              </div>
+              {topContextNameInfo.name !== "All" && searchOptions && (
+                <RefineContextTree
+                  topContextNameInfo={topContextNameInfo}
+                  selectedContextNode={selectedContextNode}
+                  contextTrees={contextTrees}
+                  onRefineYourContext={onRefineYourContext}
+                  selectedTab={selectedTab}
+                />
+              )}
               {(selectedTab === TabTypes.GeneDependency ||
                 selectedTab === TabTypes.DrugSensitivity) && (
                 <>

@@ -210,7 +210,7 @@ export const ContextExplorer = () => {
         </p>
       </header>
       <main className={styles.main}>
-        <section className={styles.filters}>
+        <div className={styles.filters}>
           {searchOptions && contextTrees && (
             <LineageSearch
               searchOptions={searchOptions}
@@ -222,7 +222,7 @@ export const ContextExplorer = () => {
               customInfoImg={customInfoImg}
             />
           )}
-        </section>
+        </div>
         <section className={styles.tabContents}>
           <ContextExplorerTabs
             topContextNameInfo={topContextNameInfo}

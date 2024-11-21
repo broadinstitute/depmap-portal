@@ -160,8 +160,6 @@ class ContextInfo(
 def _get_overview_table_data(
     df: pd.DataFrame, summary_df: pd.DataFrame
 ) -> pd.DataFrame:
-    # TODO: Ask Alison, should I go to level_2 or 3. Not sure if "show 3 levels"
-    # was when we were calling the first level 0 or 1.
     overview_page_table = df
 
     cell_line_display_names = DepmapModel.get_cell_line_display_names(

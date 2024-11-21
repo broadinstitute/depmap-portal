@@ -1,4 +1,15 @@
 .refine_context_tree {
+  .top_button.btn.btn-link {
+    margin-left: 12px;
+    border: none;
+    text-align: left;
+    white-space: pre-line;
+    word-break: break-word;
+    color: #4479b2;
+    outline: none;
+    // text-decoration: none;
+    font-weight: 600;
+  }
   .depmap-accordion {
     .accordion-header {
       margin-left: 0px;
@@ -11,19 +22,16 @@
 
       .accordion_title_button.btn.btn-link {
         margin: 0px !important;
-        color: black;
-        text-decoration: none;
+        color: #4479b2;
+        // text-decoration: none;
         outline: none;
         padding-bottom: 5px;
+        font-weight: 600;
       }
 
       .accordion-title {
-        color: black;
+        color: #4479b2;
       }
-    }
-
-    .accordion_contents.btn.btn-link {
-      padding: 6px 4px 6px 10px !important;
     }
 
     .accordion_contents {
@@ -32,37 +40,15 @@
       text-align: left;
       white-space: pre-line;
       word-break: break-word;
-      color: black;
+      color: #4479b2;
       outline: 0;
-      text-decoration: none;
-
-      .btn:active {
-        font-weight: bolder;
-      }
+      // text-decoration: none;
     }
   }
 }
 
-.disabled_refine_context_tree {
-  .depmap-accordion {
-    .accordion-header {
-      background: transparent;
-      padding: 0px;
-      cursor: default;
-
-      .accordion-title {
-        color: black;
-      }
-    }
-
-    .accordion_contents {
-      margin-left: 14px;
-
-      .btn:active {
-        font-weight: bolder;
-      }
-    }
-  }
+.btn.btn-link {
+  padding: 6px 4px 6px 10px !important;
 }
 
 // This is probably bad/hacky, but the documented way of hiding the Plotly modebar

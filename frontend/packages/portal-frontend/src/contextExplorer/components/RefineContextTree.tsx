@@ -42,124 +42,78 @@ export const RefineContextTree = (
       setSelectedTree(contextTrees[topContextNameInfo.subtype_code]);
     }
   }, [contextTrees, topContextNameInfo]);
-  if (contextTrees && topContextNameInfo) {
-    console.log(contextTrees[topContextNameInfo.subtype_code]);
-  }
+
   return (
-    <div className="disabled_refine_context_tree">
-      {topContextNameInfo.name === "All" && (
-        <div className={styles.treeContainerDisabled}>
-          <Accordion
-            title=""
-            openCloseSymbol={OpenCloseSymbol.Caret}
-            openCloseSymbolStyle={{
-              float: "left",
-              marginRight: "10px",
-              position: "relative",
-              top: "50%",
-              lineHeight: "unset",
-              color: "#58585880",
-            }}
-            disabled
-          >
-            <Button
-              bsStyle="link"
-              className="accordion_contents"
-              value=""
-              disabled
-            />
-          </Accordion>
-        </div>
-      )}{" "}
+    <div>
       <div className="refine_context_tree">
-        {selectedTree && topContextNameInfo.name !== "All" && (
-          <div className={styles.treeContainer}>
-            <Accordion
-              // isOpen
-              title={
+        {selectedTree &&
+          topContextNameInfo.name !== "All" &&
+          selectedTree.children.length > 0 &&
+          selectedTree.children.map((primaryDiseaseNode: ContextNode) => (
+            <div className={styles.treeContainer}>
+              {primaryDiseaseNode.children.length == 0 && (
                 <Button
                   bsStyle="link"
-                  className="accordion_title_button"
-                  key={topContextNameInfo.subtype_code}
+                  className="top_button"
+                  key={primaryDiseaseNode.subtype_code}
                   onClick={() => {
-                    onRefineYourContext(selectedTree.root, selectedTree);
+                    onRefineYourContext(primaryDiseaseNode, selectedTree);
                   }}
-                  value={selectedTree.root.model_ids}
+                  value={primaryDiseaseNode.model_ids}
                 >
-                  {" "}
-                  <span
-                    style={
-                      selectedContextNode.subtype_code ===
-                      topContextNameInfo.subtype_code
-                        ? { fontWeight: "bold" }
-                        : { fontWeight: "normal" }
-                    }
-                  >
-                    {topContextNameInfo.name}
-                  </span>
+                  <p>
+                    <span>{primaryDiseaseNode.name}</span>
+                  </p>
                 </Button>
-              }
-              openCloseSymbol={OpenCloseSymbol.Caret}
-              openingTransition={"max-height 0.2s ease"}
-              openCloseSymbolStyle={{
-                float: "left",
-                marginRight: "5px",
-                marginTop: "1px",
-                position: "relative",
-                lineHeight: "unset",
-              }}
-            >
-              {selectedTree.children.length > 0 &&
-                selectedTree.children.map((primaryDiseaseNode: ContextNode) => (
-                  <Accordion
-                    // isOpen={selectedContextNode === primaryDiseaseNode}
-                    title={
+              )}
+              {primaryDiseaseNode.children.length > 0 && (
+                <Accordion
+                  // isOpen={selectedContextNode === primaryDiseaseNode}
+                  title={
+                    <Button
+                      bsStyle="link"
+                      className="accordion_title_button"
+                      key={primaryDiseaseNode.subtype_code}
+                      onClick={() => {
+                        onRefineYourContext(primaryDiseaseNode, selectedTree);
+                      }}
+                      value={primaryDiseaseNode.model_ids}
+                    >
+                      {" "}
+                      <span>{primaryDiseaseNode.name}</span>
+                    </Button>
+                  }
+                  openCloseSymbol={OpenCloseSymbol.Caret}
+                  openingTransition={"max-height 0.2s ease"}
+                  openCloseSymbolStyle={{
+                    float: "left",
+                    marginRight: "5px",
+                    marginTop: "1px",
+                    position: "relative",
+                    lineHeight: "unset",
+                  }}
+                >
+                  {primaryDiseaseNode.children.map(
+                    (subtypeNode: ContextNode) => (
                       <Button
                         bsStyle="link"
-                        className="accordion_title_button"
-                        key={primaryDiseaseNode.subtype_code}
+                        className="accordion_contents"
+                        key={subtypeNode.subtype_code}
                         onClick={() => {
-                          onRefineYourContext(primaryDiseaseNode, selectedTree);
+                          onRefineYourContext(subtypeNode, selectedTree);
                         }}
-                        value={primaryDiseaseNode.model_ids}
+                        value={subtypeNode.model_ids}
                       >
-                        {" "}
-                        <span>{primaryDiseaseNode.name}</span>
+                        <p>
+                          <span>{subtypeNode.name}</span>
+                        </p>
                       </Button>
-                    }
-                    openCloseSymbol={OpenCloseSymbol.Caret}
-                    openingTransition={"max-height 0.2s ease"}
-                    openCloseSymbolStyle={{
-                      float: "left",
-                      marginRight: "5px",
-                      marginTop: "1px",
-                      position: "relative",
-                      lineHeight: "unset",
-                    }}
-                  >
-                    {primaryDiseaseNode.children.length > 0 &&
-                      primaryDiseaseNode.children.map(
-                        (subtypeNode: ContextNode) => (
-                          <Button
-                            bsStyle="link"
-                            className="accordion_contents"
-                            key={subtypeNode.subtype_code}
-                            onClick={() => {
-                              onRefineYourContext(subtypeNode, selectedTree);
-                            }}
-                            value={subtypeNode.model_ids}
-                          >
-                            <p>
-                              <span>{subtypeNode.name}</span>
-                            </p>
-                          </Button>
-                        )
-                      )}
-                  </Accordion>
-                ))}
-            </Accordion>
-          </div>
-        )}
+                    )
+                  )}
+                </Accordion>
+              )}
+            </div>
+          ))}
       </div>
     </div>
   );
