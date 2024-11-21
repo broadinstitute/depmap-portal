@@ -9,7 +9,7 @@ import {
   DimensionTypeUpdateArgs,
 } from "@depmap/types";
 
-import { FormModal, Spinner } from "@depmap/common-components";
+import { FormModal, Spinner, ToggleSwitch } from "@depmap/common-components";
 import WideTable from "@depmap/wide-table";
 import Button from "react-bootstrap/lib/Button";
 
@@ -30,6 +30,7 @@ export default function Datasets() {
   // const [datasetSubmissionError, setDatasetSubmissionError] = useState<
   //   string | null
   // >(null);
+  const [isAdvancedMode, setIsAdvancedMode] = useState(false);
   const [selectedDatasetIds, setSelectedDatasetIds] = useState<Set<string>>(
     new Set()
   );
@@ -412,6 +413,16 @@ export default function Datasets() {
     <>
       <div className="container-fluid">
         <h1>Datasets</h1>
+        <ToggleSwitch
+          value={isAdvancedMode}
+          onChange={(newValue: boolean) => {
+            setIsAdvancedMode(newValue);
+          }}
+          options={[
+            { label: "Advanced", value: true },
+            { label: "Simple", value: false },
+          ]}
+        />
         <div className={styles.primaryButtons}>
           <Button bsStyle="primary" onClick={() => setShowDatasetModal(true)}>
             Upload New Dataset
