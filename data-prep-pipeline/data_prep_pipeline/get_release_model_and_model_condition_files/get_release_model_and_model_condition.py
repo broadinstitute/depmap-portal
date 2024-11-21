@@ -226,7 +226,7 @@ def main():
     drug_replacements = {"SN-38": "with drug"}
     if "internal" in quarterly_release_dataset_id:
         # make sure these are all here
-        assert set(model_condition_df_filtered["Drug"]).intersection(
+        assert set(model_condition_df_filtered["AnchorDrug"]).intersection(
             drug_replacements.keys()
         ) == set(drug_replacements.keys())
         print(
@@ -235,8 +235,8 @@ def main():
                 "red",
             )
         )
-        model_condition_df_filtered["Drug"] = model_condition_df_filtered[
-            "Drug"
+        model_condition_df_filtered["AnchorDrug"] = model_condition_df_filtered[
+            "AnchorDrug"
         ].replace(drug_replacements)
     elif "dmc" in quarterly_release_dataset_id:
         pass  # dont do anything
@@ -244,7 +244,7 @@ def main():
         # make sure none of these drugs are in public files
         assert (
             len(
-                set(model_condition_df_filtered["Drug"]).intersection(
+                set(model_condition_df_filtered["AnchorDrug"]).intersection(
                     drug_replacements.keys()
                 )
             )
