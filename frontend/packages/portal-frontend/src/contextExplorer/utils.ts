@@ -526,7 +526,7 @@ export function getSelectedContextNode(
         selectedNode = selectedTree.root;
         if (primaryDiseaseQueryParam) {
           const node = selectedTree.children.find(
-            (child) => child.name === primaryDiseaseQueryParam
+            (child) => child.subtype_code === primaryDiseaseQueryParam
           );
 
           if (node) {
@@ -535,7 +535,7 @@ export function getSelectedContextNode(
         }
         if (subtypeQueryParam) {
           const node = selectedNode.children.find(
-            (child) => child.name === primaryDiseaseQueryParam
+            (child) => child.subtype_code === subtypeQueryParam
           );
 
           if (node) {
@@ -552,6 +552,8 @@ export function getSelectedContextNode(
       }
     }
   }
-
+  console.log({ primaryDiseaseQueryParam });
+  console.log({ subtypeQueryParam });
+  console.log({ selectedNode });
   return { selectedContextNode: selectedNode, topContextNameInfo };
 }

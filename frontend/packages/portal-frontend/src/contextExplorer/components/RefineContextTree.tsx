@@ -1,20 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { Button } from "react-bootstrap";
 import { Accordion, OpenCloseSymbol } from "@depmap/interactive";
-import {
-  TabsWithHistory,
-  TabList,
-  TabPanels,
-  Tab,
-  TabPanel,
-} from "src/common/components/tabs";
 import styles from "../styles/ContextExplorer.scss";
 import {
   ContextNameInfo,
   ContextNode,
   ContextExplorerTree,
   TabTypes,
-  ContextSelectionTabTypes,
 } from "../models/types";
 
 export interface RefineContextTreeProps {
@@ -61,14 +53,30 @@ export const RefineContextTree = (
                   }}
                   value={primaryDiseaseNode.model_ids}
                 >
-                  <p>
-                    <span>{primaryDiseaseNode.name}</span>
-                  </p>
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "repeat(5, 1fr)",
+                    }}
+                  >
+                    <div style={{ gridColumn: "1/5", textAlign: "left" }}>
+                      {primaryDiseaseNode.name}{" "}
+                    </div>
+                    <div
+                      style={{
+                        gridColumn: "5/5",
+                        textAlign: "end",
+                        paddingRight: "24px",
+                      }}
+                    >
+                      {primaryDiseaseNode.model_ids.length}
+                    </div>
+                  </div>
                 </Button>
               )}
               {primaryDiseaseNode.children.length > 0 && (
                 <Accordion
-                  // isOpen={selectedContextNode === primaryDiseaseNode}
+                  isOpen
                   title={
                     <Button
                       bsStyle="link"
@@ -79,18 +87,30 @@ export const RefineContextTree = (
                       }}
                       value={primaryDiseaseNode.model_ids}
                     >
-                      {" "}
-                      <span>{primaryDiseaseNode.name}</span>
+                      <div
+                        style={{
+                          display: "grid",
+                          gridTemplateColumns: "repeat(2, 1fr)",
+                        }}
+                      >
+                        <div style={{ gridColumn: "1/2", textAlign: "left" }}>
+                          {primaryDiseaseNode.name}{" "}
+                        </div>
+                        <div style={{ gridColumn: "2/2", textAlign: "end" }}>
+                          {primaryDiseaseNode.model_ids.length}
+                        </div>
+                      </div>
                     </Button>
                   }
                   openCloseSymbol={OpenCloseSymbol.Caret}
-                  openingTransition={"max-height 0.2s ease"}
+                  openingTransition={"max-height 0.1s ease"}
                   openCloseSymbolStyle={{
                     float: "left",
                     marginRight: "5px",
                     marginTop: "1px",
                     position: "relative",
                     lineHeight: "unset",
+                    color: "#4479b2",
                   }}
                 >
                   {primaryDiseaseNode.children.map(
@@ -99,14 +119,31 @@ export const RefineContextTree = (
                         bsStyle="link"
                         className="accordion_contents"
                         key={subtypeNode.subtype_code}
-                        onClick={() => {
+                        onClick={(e) => {
                           onRefineYourContext(subtypeNode, selectedTree);
+                          e.preventDefault();
                         }}
                         value={subtypeNode.model_ids}
                       >
-                        <p>
-                          <span>{subtypeNode.name}</span>
-                        </p>
+                        <div
+                          style={{
+                            display: "grid",
+                            gridTemplateColumns: "repeat(4, 1fr)",
+                          }}
+                        >
+                          <div
+                            style={{
+                              gridColumn: "1/4",
+                              textAlign: "left",
+                              paddingLeft: "18px",
+                            }}
+                          >
+                            {subtypeNode.name}{" "}
+                          </div>
+                          <div style={{ gridColumn: "4/4", textAlign: "end" }}>
+                            {subtypeNode.model_ids.length}
+                          </div>
+                        </div>
                       </Button>
                     )
                   )}

@@ -1,6 +1,10 @@
+#context-explorer-lineage-selection {
+  font-weight: bolder;
+}
+
 .refine_context_tree {
   .top_button.btn.btn-link {
-    margin-left: 12px;
+    margin-left: 16px;
     border: none;
     text-align: left;
     white-space: pre-line;
@@ -9,8 +13,12 @@
     outline: none;
     // text-decoration: none;
     font-weight: 600;
+    width: 100%;
+    padding-right: 8px;
   }
   .depmap-accordion {
+    margin: 0px !important;
+    padding: 8px;
     .accordion-header {
       margin-left: 0px;
       background-color: #fff;
@@ -27,21 +35,24 @@
         outline: none;
         padding-bottom: 5px;
         font-weight: 600;
+        width: 92%;
       }
 
       .accordion-title {
         color: #4479b2;
+        width: 100% !important;
       }
     }
 
     .accordion_contents {
-      margin-left: 12px;
+      //margin-left: 12px;
       border: 0;
       text-align: left;
       white-space: pre-line;
       word-break: break-word;
       color: #4479b2;
       outline: 0;
+      width: 100%;
       // text-decoration: none;
     }
   }
