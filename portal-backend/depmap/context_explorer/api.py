@@ -213,7 +213,7 @@ def get_context_explorer_lineage_trees_and_table_data() -> Tuple[
     )
 
     # NOTE: TEMPORARY - per Barbara's instructions, dropping all but the first 2 lineage levels for the prototype
-    df = df.drop(columns=["lineage_3", "lineage_5", "lineage_6"])
+    df = df[["lineage_1", "lineage_2"]]
     lineage_1_sorted = df.sort_values("lineage_1")
     unique_lineage_1 = lineage_1_sorted["lineage_1"].unique()
 

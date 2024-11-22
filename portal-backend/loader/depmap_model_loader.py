@@ -89,7 +89,7 @@ def insert_cell_lines(df):
             # TODO: Lineage 4 seems to always be empty...
             # can probably delete this at some point
             (4, "",),
-            (5, row.get("legacy_sub_subtype")),
+            (5, "",),
             (6, row.get("legacy_molecular_subtype")),
         ]
 
@@ -167,7 +167,6 @@ def insert_cell_lines(df):
                 ccle_name=row["ccle_name"],
                 plate_coating=row["plate_coating"],
                 model_derivation_material=row["model_derivation_material"],
-                legacy_sub_subtype=row["legacy_sub_subtype"],
                 rrid=rrid,
                 image_filename=image_filename,
                 public_comments=public_comments,
