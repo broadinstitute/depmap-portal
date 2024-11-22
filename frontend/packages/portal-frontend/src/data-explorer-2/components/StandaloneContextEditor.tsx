@@ -2,7 +2,7 @@ import React from "react";
 import { ApiContext } from "@depmap/api";
 import {
   ContextBuilderModal,
-  saveContextToLocalStorage,
+  saveContextToLocalStorageAndPersist,
 } from "@depmap/data-explorer-2";
 import { DataExplorerContext } from "@depmap/types";
 import {
@@ -38,7 +38,10 @@ function StandaloneContextEditor({
   }
 
   const onClickSave = async (editedContext: DataExplorerContext) => {
-    const nextHash = await saveContextToLocalStorage(editedContext, hash);
+    const nextHash = await saveContextToLocalStorageAndPersist(
+      editedContext,
+      hash
+    );
     onSave(editedContext, nextHash);
     onHide();
 

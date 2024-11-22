@@ -4,6 +4,7 @@ import {
   fetchContextLabels,
   fetchContext,
   isNegatedContext,
+  isV2Context,
   negateContext,
   persistLegacyListAsContext,
   PlotConfigSelect,
@@ -86,6 +87,10 @@ const ContextEnabledDropdown = ({
         const hashWithoutPrefix = selectedContextHash.replace("not_", "");
         try {
           const context = await fetchContext(hashWithoutPrefix);
+
+          if (isV2Context(context)) {
+            throw new Error("V2 contexts not supported!");
+          }
 
           handleChange(
             selectedContextHash.startsWith("not_")

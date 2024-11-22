@@ -11,6 +11,7 @@ import {
   isContextAll,
   isNegatedContext,
   isPartialSliceId,
+  isV2Context,
   negateContext,
   persistContext,
 } from "@depmap/data-explorer-2";
@@ -392,6 +393,10 @@ async function replaceHashesWithContexts(plot: DataExplorerPlotConfig | null) {
         if ("hash" in dimension.context) {
           const context = await fetchContext(dimension.context.hash);
 
+          if (isV2Context(context)) {
+            throw new Error("V2 contexts not supported!");
+          }
+
           nextDimensions[dimensionKey] = {
             ...dimension,
             context: dimension.context.negated
@@ -419,6 +424,10 @@ async function replaceHashesWithContexts(plot: DataExplorerPlotConfig | null) {
 
         if ("hash" in filter) {
           const context = await fetchContext(filter.hash);
+
+          if (isV2Context(context)) {
+            throw new Error("V2 contexts not supported!");
+          }
 
           nextFilters[filterKey] = filter.negated
             ? negateContext(context)

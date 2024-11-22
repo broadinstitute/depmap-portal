@@ -85,14 +85,25 @@ export function loadContextsFromLocalStorage(context_type: string) {
   return out;
 }
 
-const stripExprFromContext = (context: DataExplorerContext) => {
-  const { expr, ...rest } = context;
-  return rest;
+export function isV2Context(
+  context: DataExplorerContext | DataExplorerContextV2
+): context is DataExplorerContextV2 {
+  return "dimension_type" in context;
+}
+
+const toStoredContext = (
+  context: DataExplorerContext | DataExplorerContextV2
+): StoredContexts[string] => {
+  return {
+    name: context.name,
+    context_type: isV2Context(context)
+      ? context.dimension_type
+      : context.context_type,
+  };
 };
 
-// TODO: Rename this to communicate that it also persists it to a bucket.
-export async function saveContextToLocalStorage(
-  context: DataExplorerContext,
+export async function saveContextToLocalStorageAndPersist(
+  context: DataExplorerContext | DataExplorerContextV2,
   hashToReplace?: string | null
 ) {
   let nextHash;
@@ -106,7 +117,7 @@ export async function saveContextToLocalStorage(
 
         return {
           hash: nextHash,
-          value: stripExprFromContext(context),
+          value: toStoredContext(context),
         };
       }
 
@@ -119,7 +130,7 @@ export async function saveContextToLocalStorage(
 
     updates.push({
       hash: nextHash,
-      value: stripExprFromContext(context),
+      value: toStoredContext(context),
     });
   }
 

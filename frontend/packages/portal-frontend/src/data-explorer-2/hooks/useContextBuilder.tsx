@@ -3,7 +3,7 @@ import { ApiContext } from "@depmap/api";
 import {
   ContextBuilderModal,
   negateContext,
-  saveContextToLocalStorage,
+  saveContextToLocalStorageAndPersist,
 } from "@depmap/data-explorer-2";
 import {
   DataExplorerContext,
@@ -68,7 +68,7 @@ export default function useContextBuilder(
       };
     }
 
-    await saveContextToLocalStorage(context);
+    await saveContextToLocalStorageAndPersist(context);
     const queryString = await plotToQueryString(nextPlot);
 
     setShowContextModal(false);

@@ -50,8 +50,9 @@ export {
   initializeDevContexts,
   isContextAll,
   isNegatedContext,
+  isV2Context,
   negateContext,
-  saveContextToLocalStorage,
+  saveContextToLocalStorageAndPersist,
 } from "./src/utils/context";
 
 export {
