@@ -566,7 +566,16 @@ export async function fetchMetadataSlices(dimension_type: string) {
 // `persistContext` and `fetchContext` use the browser's cache (instead of our
 // makeshift in-memory cache) so the data is persisted across sessions.
 // https://developer.mozilla.org/en-US/docs/Web/API/Cache
-
+//
+// The idea behind caching contexts this way is to speed up loading them in
+// specific scenarios. Imagine a user selects a large number of points and then
+// clicks the "visualize" button to plot them in a new tab. It's awkward to
+// pause and wait for the context to be persisted before opening the link. This
+// cache allows them to be immediately available while the upload happens in
+// the background.
+//
+// This is possible because the hashing function used by `getContextHash()`
+// exactly predicts the hash that will be returned by the /cas/ endpoint.
 const CONTEXT_CACHE = "contexts-v1";
 const successfullyPersistedContexts = new Set<string>();
 // Fall back to using an in-memory cache if the user has caching disabled.
@@ -575,6 +584,13 @@ const fallbackInMemoryCache: Record<
   DataExplorerContext | DataExplorerContextV2
 > = {};
 
+// Both the legacy Portal and Breadbox have /cas/ and /cas/{key} endpoints for
+// storing and retrieving content. This allows contexts to be sharable. Links
+// to Data Explorer plots contain hashes that reference this shared storage.
+// https://en.wikipedia.org/wiki/Content-addressable_storage
+// In the legacy Portal, these are persisted to an S3 bucket. Elara uses
+// Breadbox which implements the same set of endpoints but stores them in its
+// database instead.
 const getCasUrl = () => {
   const prefix = fetchUrlPrefix().replace(/^\/$/, "");
 
