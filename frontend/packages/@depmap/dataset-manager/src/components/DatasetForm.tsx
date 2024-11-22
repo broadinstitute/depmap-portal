@@ -66,8 +66,7 @@ interface DatasetFormProps {
   getGroups: () => Promise<Group[]>;
   uploadFile: (fileArgs: { file: File | Blob }) => Promise<UploadFileResponse>;
   uploadDataset: (datasetParams: DatasetParams) => Promise<any>;
-  // selectedDataset: Dataset | null;
-  // isEditMode: boolean;
+  isAdvancedMode: boolean;
 }
 
 export default function DatasetForm(props: DatasetFormProps) {
@@ -77,10 +76,11 @@ export default function DatasetForm(props: DatasetFormProps) {
     getDataTypesAndPriorities,
     uploadFile,
     uploadDataset,
+    isAdvancedMode,
   } = props;
   const [selectedFormat, setSelectedFormat] = useState<
     "matrix" | "table" | null
-  >(null);
+  >(isAdvancedMode ? null : "matrix");
   const [formContent, setFormContent] = useState({
     table: initDatasetForm("table"),
     matrix: initDatasetForm("matrix"),
@@ -248,27 +248,42 @@ export default function DatasetForm(props: DatasetFormProps) {
 
   return (
     <>
-      <legend>Step 1: Upload A File</legend>
-      <ChunkedFileUploader
-        uploadFile={uploadFile}
-        forwardFileIdsAndHash={forwardFileIdsAndHash}
-      />
-      <legend>Step 2: Choose Dataset Format</legend>
-      <FormGroup controlId="format" required>
-        <Radio
-          name="radioGroup"
-          inline
-          onChange={handleOnChange}
-          value="matrix"
-        >
-          Matrix
-        </Radio>
-        <Radio name="radioGroup" inline onChange={handleOnChange} value="table">
-          Table
-        </Radio>
-      </FormGroup>
+      <div>
+        <legend>Step 1: Upload A File</legend>
+        <ChunkedFileUploader
+          uploadFile={uploadFile}
+          forwardFileIdsAndHash={forwardFileIdsAndHash}
+        />
+      </div>
+
+      {isAdvancedMode ? (
+        <div>
+          <legend>Step 2: Choose Dataset Format</legend>
+          <FormGroup controlId="format" required>
+            <Radio
+              name="radioGroup"
+              inline
+              onChange={handleOnChange}
+              value="matrix"
+            >
+              Matrix
+            </Radio>
+            <Radio
+              name="radioGroup"
+              inline
+              onChange={handleOnChange}
+              value="table"
+            >
+              Table
+            </Radio>
+          </FormGroup>
+        </div>
+      ) : null}
+
       {formComponent ? (
-        <legend>Step 3: Fill Out Dataset Information</legend>
+        <legend>
+          {isAdvancedMode ? "Step 3:" : "Step 2:"} Fill Out Dataset Information
+        </legend>
       ) : null}
       {formComponent}
     </>

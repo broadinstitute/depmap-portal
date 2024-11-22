@@ -179,6 +179,7 @@ export default function Datasets() {
             getDataTypesAndPriorities={getDataTypesAndPriorities}
             uploadFile={postFileUpload}
             uploadDataset={postDatasetUpload}
+            isAdvancedMode={isAdvancedMode}
           />
         );
       }
@@ -206,6 +207,7 @@ export default function Datasets() {
     postFileUpload,
     showDatasetModal,
     updateDataset,
+    isAdvancedMode,
   ]);
 
   if (!datasets || !dimensionTypes) {
