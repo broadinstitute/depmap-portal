@@ -412,92 +412,94 @@ export default function Datasets() {
   return (
     <>
       <div className="container-fluid">
-        <h1>Datasets</h1>
-        <ToggleSwitch
-          value={isAdvancedMode}
-          onChange={(newValue: boolean) => {
-            setIsAdvancedMode(newValue);
-          }}
-          options={[
-            { label: "Advanced", value: true },
-            { label: "Simple", value: false },
-          ]}
-        />
-        <div className={styles.primaryButtons}>
-          <Button bsStyle="primary" onClick={() => setShowDatasetModal(true)}>
-            Upload New Dataset
-          </Button>
-          <Button
-            bsStyle="default"
-            onClick={() => handleEditDatasetButtonClick()}
-            disabled={selectedDatasetIds.size !== 1 || datasets.length === 1}
-          >
-            Edit Selected Dataset
-          </Button>
-          <Button
-            bsStyle="danger"
-            onClick={() => deleteDatasetButtonAction()}
-            disabled={selectedDatasetIds.size === 0 || datasets.length === 0}
-          >
-            Delete Selected Dataset
-          </Button>
-        </div>
-        <div className={styles.tableView}>
-          <WideTable
-            rowHeight={40}
-            idProp="id"
-            onChangeSelections={(selections) => {
-              setSelectedDatasetIds(new Set(selections));
-              // If only one dataset is selected, assign that as the dataset to edit
-              if (selections.length === 1) {
-                const selectedDataset = datasets.find(
-                  (dataset) => dataset.id === selections[0]
-                );
-                setDatasetToEdit(selectedDataset || null);
-              }
+        <div>
+          <h1>Datasets</h1>
+          <ToggleSwitch
+            value={isAdvancedMode}
+            onChange={(newValue: boolean) => {
+              setIsAdvancedMode(newValue);
             }}
-            data={formatDatasetTableData(datasets)}
-            columns={[
-              {
-                accessor: "name",
-                Header: "Name",
-                minWidth: 200,
-                maxWidth: 800,
-              },
-              {
-                accessor: "featureType",
-                Header: "Feature Type",
-                minWidth: 100,
-                maxWidth: 300,
-              },
-              {
-                accessor: "sampleType",
-                Header: "Sample Type",
-                minWidth: 100,
-                maxWidth: 300,
-              },
-              { accessor: "groupName", Header: "Group Name", maxWidth: 300 },
-              {
-                accessor: "dataType",
-                Header: "Data Type",
-                minWidth: 100,
-                maxWidth: 200,
-              },
-              {
-                accessor: "datasetMetadata",
-                Header: "Dataset Metadata",
-                width: 20,
-                disableFilters: true,
-                disableSortBy: true,
-              },
+            options={[
+              { label: "Simple", value: false },
+              { label: "Advanced", value: true },
             ]}
           />
+          <div className={styles.primaryButtons}>
+            <Button bsStyle="primary" onClick={() => setShowDatasetModal(true)}>
+              Upload New Dataset
+            </Button>
+            <Button
+              bsStyle="default"
+              onClick={() => handleEditDatasetButtonClick()}
+              disabled={selectedDatasetIds.size !== 1 || datasets.length === 1}
+            >
+              Edit Selected Dataset
+            </Button>
+            <Button
+              bsStyle="danger"
+              onClick={() => deleteDatasetButtonAction()}
+              disabled={selectedDatasetIds.size === 0 || datasets.length === 0}
+            >
+              Delete Selected Dataset
+            </Button>
+          </div>
+          <div className={styles.tableView}>
+            <WideTable
+              rowHeight={40}
+              idProp="id"
+              onChangeSelections={(selections) => {
+                setSelectedDatasetIds(new Set(selections));
+                // If only one dataset is selected, assign that as the dataset to edit
+                if (selections.length === 1) {
+                  const selectedDataset = datasets.find(
+                    (dataset) => dataset.id === selections[0]
+                  );
+                  setDatasetToEdit(selectedDataset || null);
+                }
+              }}
+              data={formatDatasetTableData(datasets)}
+              columns={[
+                {
+                  accessor: "name",
+                  Header: "Name",
+                  minWidth: 200,
+                  maxWidth: 800,
+                },
+                {
+                  accessor: "featureType",
+                  Header: "Feature Type",
+                  minWidth: 100,
+                  maxWidth: 300,
+                },
+                {
+                  accessor: "sampleType",
+                  Header: "Sample Type",
+                  minWidth: 100,
+                  maxWidth: 300,
+                },
+                { accessor: "groupName", Header: "Group Name", maxWidth: 300 },
+                {
+                  accessor: "dataType",
+                  Header: "Data Type",
+                  minWidth: 100,
+                  maxWidth: 200,
+                },
+                {
+                  accessor: "datasetMetadata",
+                  Header: "Dataset Metadata",
+                  width: 20,
+                  disableFilters: true,
+                  disableSortBy: true,
+                },
+              ]}
+            />
+          </div>
         </div>
 
         {datasetForm()}
         {datasetMetadataToShowForm(datasetMetadataToShow)}
 
-        {dimensionTypes ? (
+        {dimensionTypes && isAdvancedMode ? (
           <FormModal
             title={
               isEditDimensionTypeMode
@@ -513,66 +515,70 @@ export default function Datasets() {
           />
         ) : null}
 
-        <h1>Dimension Types</h1>
+        {isAdvancedMode ? (
+          <div>
+            <h1>Dimension Types</h1>
 
-        {showDeleteError && (
-          <Alert bsStyle="danger">
-            <strong>
-              Delete &quot;{selectedDimensionType.name}&quot; Failed!
-            </strong>{" "}
-            Make sure &quot;{selectedDimensionType.name}&quot; has no datasets
-            with its dimension type.
-          </Alert>
-        )}
+            {showDeleteError && (
+              <Alert bsStyle="danger">
+                <strong>
+                  Delete &quot;{selectedDimensionType.name}&quot; Failed!
+                </strong>{" "}
+                Make sure &quot;{selectedDimensionType.name}&quot; has no
+                datasets with its dimension type.
+              </Alert>
+            )}
 
-        <div className={styles.primaryButtons}>
-          <Button
-            bsStyle="primary"
-            onClick={() => setShowDimensionTypeModal(true)}
-          >
-            Create New Dimension Type
-          </Button>
-          <Button
-            bsStyle="default"
-            onClick={() => handleEditDimensionTypeButtonClick()}
-            disabled={!selectedDimensionType}
-          >
-            Edit Selected Dimension Type
-          </Button>
-          <Button
-            bsStyle="danger"
-            onClick={() => deleteDimensionType()}
-            disabled={!selectedDimensionType}
-          >
-            Delete Selected Dimension Type
-          </Button>
-        </div>
+            <div className={styles.primaryButtons}>
+              <Button
+                bsStyle="primary"
+                onClick={() => setShowDimensionTypeModal(true)}
+              >
+                Create New Dimension Type
+              </Button>
+              <Button
+                bsStyle="default"
+                onClick={() => handleEditDimensionTypeButtonClick()}
+                disabled={!selectedDimensionType}
+              >
+                Edit Selected Dimension Type
+              </Button>
+              <Button
+                bsStyle="danger"
+                onClick={() => deleteDimensionType()}
+                disabled={!selectedDimensionType}
+              >
+                Delete Selected Dimension Type
+              </Button>
+            </div>
 
-        <div className={styles.tableView}>
-          <WideTable
-            idProp="name"
-            onChangeSelections={(selections) => {
-              if (selections.length > 0) {
-                const selectedDimType = dimensionTypes.find(
-                  (dt) => dt.name === selections[0]
-                );
-                setSelectedDimensionType(selectedDimType || null);
-              } else {
-                setSelectedDimensionType(null);
-              }
-              setShowDeleteError(false);
-            }}
-            rowHeight={40}
-            columns={[
-              { accessor: "name", Header: "Name" },
-              { accessor: "display_name", Header: "Display Name" },
-              { accessor: "axis", Header: "Type" },
-              { accessor: "datasetsCount", Header: "Datasets" },
-            ]}
-            data={dimensionTypes}
-            singleSelectionMode
-          />
-        </div>
+            <div className={styles.tableView}>
+              <WideTable
+                idProp="name"
+                onChangeSelections={(selections) => {
+                  if (selections.length > 0) {
+                    const selectedDimType = dimensionTypes.find(
+                      (dt) => dt.name === selections[0]
+                    );
+                    setSelectedDimensionType(selectedDimType || null);
+                  } else {
+                    setSelectedDimensionType(null);
+                  }
+                  setShowDeleteError(false);
+                }}
+                rowHeight={40}
+                columns={[
+                  { accessor: "name", Header: "Name" },
+                  { accessor: "display_name", Header: "Display Name" },
+                  { accessor: "axis", Header: "Type" },
+                  { accessor: "datasetsCount", Header: "Datasets" },
+                ]}
+                data={dimensionTypes}
+                singleSelectionMode
+              />
+            </div>
+          </div>
+        ) : null}
       </div>
     </>
   );
