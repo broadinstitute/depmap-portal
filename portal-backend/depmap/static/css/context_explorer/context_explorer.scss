@@ -1,5 +1,9 @@
 #context-explorer-lineage-selection {
   font-weight: bolder;
+
+  .div {
+    border-radius: 0px;
+  }
 }
 
 .refine_context_tree {
@@ -59,7 +63,7 @@
 }
 
 .btn.btn-link {
-  padding: 6px 4px 6px 10px !important;
+  padding: 10px 4px 10px 10px !important;
 }
 
 // This is probably bad/hacky, but the documented way of hiding the Plotly modebar

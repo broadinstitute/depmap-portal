@@ -1,5 +1,6 @@
+import { redraw } from "plotly.js";
 import React, { useCallback, useState } from "react";
-import Select from "react-select";
+import Select, { Props as ReactSelectProps } from "react-select";
 import InfoIcon from "src/common/components/InfoIcon";
 import {
   Tab,
@@ -30,6 +31,20 @@ export interface LineageSearchProps {
   customInfoImg: React.JSX.Element;
 }
 
+const customStyles: ReactSelectProps["styles"] = {
+  control: (base) => ({
+    ...base,
+    borderRadius: "0px",
+    borderLeft: "none",
+    borderRight: "none",
+    borderBottom: "0.5px solid #697CAA",
+    borderTop: "0.5px solid #697CAA",
+  }),
+  menu: (base) => ({
+    ...base,
+  }),
+};
+
 const LineageSearch = (lineageSearchProps: LineageSearchProps) => {
   const {
     searchOptions,
@@ -41,8 +56,6 @@ const LineageSearch = (lineageSearchProps: LineageSearchProps) => {
     customInfoImg,
   } = lineageSearchProps;
 
-  const refineContextLabelClass =
-    topContextNameInfo.name === "All" ? styles.disabledHeader : styles.pHeader;
   const [
     selectedContextSelectionTab,
     setSelectedContextSelectionTab,
@@ -84,6 +97,7 @@ const LineageSearch = (lineageSearchProps: LineageSearchProps) => {
                   value: topContextNameInfo.subtype_code,
                   label: topContextNameInfo.name,
                 }}
+                styles={customStyles}
                 options={searchOptions}
                 isClearable
                 onChange={useCallback(
