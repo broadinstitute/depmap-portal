@@ -18,49 +18,7 @@ import {
 } from "@depmap/types";
 import ChunkedFileUploader from "./ChunkedFileUploader";
 
-const initDatasetForm = (format: "table" | "matrix") => {
-  const initForm: { [key: string]: any } = {};
-  if (format === "matrix") {
-    Object.keys(matrixFormSchema.properties)
-      .concat("allowed_values")
-      .forEach((key) => {
-        if (
-          typeof matrixFormSchema.properties[key] === "object" &&
-          // @ts-ignore
-          "default" in matrixFormSchema.properties[key]
-        ) {
-          // @ts-ignore
-          initForm[key] = matrixFormSchema.properties[key].default;
-        } else {
-          initForm[key] = null;
-        }
-      });
-    return initForm;
-  }
-  if (format === "table") {
-    Object.keys(tableFormSchema.properties).forEach((key) => {
-      if (
-        typeof tableFormSchema.properties[key] === "object" &&
-        // @ts-ignore
-        "default" in tableFormSchema.properties[key]
-      ) {
-        // @ts-ignore
-        initForm[key] = tableFormSchema.properties[key].default;
-      } else {
-        initForm[key] = null;
-      }
-    });
-    return initForm;
-  }
-  return initForm;
-};
-
 interface DatasetFormProps {
-  // onSubmitDatasetEdit: (
-  //   args: any,
-  //   clear_state_callback: (isSuccessfulSubmit: boolean) => void
-  // ) => void;
-  // datasetSubmissionError: string | null;
   getDimensionTypes: () => Promise<DimensionType[]>;
   getDataTypesAndPriorities: () => Promise<InvalidPrioritiesByDataType>;
   getGroups: () => Promise<Group[]>;
@@ -78,6 +36,49 @@ export default function DatasetForm(props: DatasetFormProps) {
     uploadDataset,
     isAdvancedMode,
   } = props;
+
+  const initDatasetForm = React.useCallback(
+    (format: "table" | "matrix") => {
+      const initForm: { [key: string]: any } = {};
+      if (format === "matrix") {
+        Object.keys(matrixFormSchema.properties)
+          .concat("allowed_values")
+          .forEach((key) => {
+            if (!isAdvancedMode && key === "value_type") {
+              initForm[key] = "continuous";
+            } else if (
+              typeof matrixFormSchema.properties[key] === "object" &&
+              // @ts-ignore
+              "default" in matrixFormSchema.properties[key]
+            ) {
+              // @ts-ignore
+              initForm[key] = matrixFormSchema.properties[key].default;
+            } else {
+              initForm[key] = null;
+            }
+          });
+        return initForm;
+      }
+      if (format === "table") {
+        Object.keys(tableFormSchema.properties).forEach((key) => {
+          if (
+            typeof tableFormSchema.properties[key] === "object" &&
+            // @ts-ignore
+            "default" in tableFormSchema.properties[key]
+          ) {
+            // @ts-ignore
+            initForm[key] = tableFormSchema.properties[key].default;
+          } else {
+            initForm[key] = null;
+          }
+        });
+        return initForm;
+      }
+      return initForm;
+    },
+    [isAdvancedMode]
+  );
+
   const [selectedFormat, setSelectedFormat] = useState<
     "matrix" | "table" | null
   >(isAdvancedMode ? null : "matrix");
@@ -177,6 +178,7 @@ export default function DatasetForm(props: DatasetFormProps) {
             });
           }}
           onSubmitForm={onSubmitForm}
+          isAdvancedMode={isAdvancedMode}
         />
       );
     }
@@ -216,6 +218,7 @@ export default function DatasetForm(props: DatasetFormProps) {
     formContent,
     fileIds,
     md5Hash,
+    isAdvancedMode,
   ]);
 
   const handleOnChange = (e: any) => {
