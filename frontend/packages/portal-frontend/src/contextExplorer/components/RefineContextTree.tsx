@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Button } from "react-bootstrap";
 import { Accordion, OpenCloseSymbol } from "@depmap/interactive";
 import styles from "../styles/ContextExplorer.scss";
@@ -35,13 +35,24 @@ export const RefineContextTree = (
     }
   }, [contextTrees, topContextNameInfo]);
 
+  const childrenSortedByModelCount = useMemo(() => {
+    return selectedTree?.children.sort((a, b) => {
+      if (!a.model_ids || a.model_ids.length > b.model_ids.length) {
+        return -1;
+      } else if (!b.model_ids || a.model_ids.length < b.model_ids.length) {
+        return 1;
+      }
+      return 0;
+    });
+  }, [selectedTree]);
+
   return (
     <div>
       <div className="refine_context_tree">
         {selectedTree &&
           topContextNameInfo.name !== "All" &&
           selectedTree.children.length > 0 &&
-          selectedTree.children.map((primaryDiseaseNode: ContextNode) => (
+          childrenSortedByModelCount?.map((primaryDiseaseNode: ContextNode) => (
             <div className={styles.treeContainer}>
               {primaryDiseaseNode.children.length == 0 && (
                 <Button
