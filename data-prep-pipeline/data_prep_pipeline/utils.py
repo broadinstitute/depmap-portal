@@ -17,8 +17,10 @@ def update_taiga(
     try:
         tc = create_taiga_client_v3()
         with tempfile.NamedTemporaryFile(suffix=".csv") as temp_file:
+            # Only keep the dataframe index for matrix datasets
+            keep_index = file_format == LocalFormat.CSV_MATRIX
             # Save the transformed data to the temporary file
-            df_to_upload.to_csv(temp_file.name, index=False)
+            df_to_upload.to_csv(temp_file.name, index=keep_index)
             temp_filename = temp_file.name
 
             # Update the dataset with the transformed data
