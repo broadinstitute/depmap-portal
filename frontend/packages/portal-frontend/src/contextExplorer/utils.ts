@@ -12,12 +12,6 @@ import qs from "qs";
 import { Filter } from "src/common/models/discoveryAppFilters";
 import { deleteSpecificQueryParams } from "@depmap/utils";
 
-export const NODE_LEVEL_TO_QUERY_STR_MAP = new Map<number, string>([
-  [0, "lineage"],
-  [1, "primary_disease"],
-  [2, "subtype"],
-]);
-
 export function getSelectivityValLabel(entityType: string) {
   return entityType === "gene" ? "log(OR)" : "Bimodality Coefficient";
 }
@@ -505,16 +499,14 @@ export function getSelectedContextNode(
         [key: string]: ContextExplorerTree;
       }
     | undefined,
-  lineageQueryParam: string | null,
-  primaryDiseaseQueryParam: string | null,
-  subtypeQueryParam: string | null
+  contextPath: string[] | null
 ) {
   let selectedNode = null;
   let topContextNameInfo = ALL_SEARCH_OPTION;
 
-  if (contextTrees) {
-    if (lineageQueryParam) {
-      const selectedTree = contextTrees[lineageQueryParam];
+  if (contextTrees && contextPath && contextPath.length > 0) {
+    if (contextPath[0]) {
+      const selectedTree = contextTrees[contextPath[0]];
 
       // Make sure the lineageQueryParam is a valid contextTree key
       if (selectedTree) {
@@ -524,18 +516,18 @@ export function getSelectedContextNode(
           node_level: 0,
         };
         selectedNode = selectedTree.root;
-        if (primaryDiseaseQueryParam) {
+        if (contextPath.length > 1 && contextPath[1]) {
           const node = selectedTree.children.find(
-            (child) => child.subtype_code === primaryDiseaseQueryParam
+            (child) => child.subtype_code === contextPath[1]
           );
 
           if (node) {
             selectedNode = node;
           }
         }
-        if (subtypeQueryParam) {
+        if (contextPath.length > 2 && contextPath[2]) {
           const node = selectedNode.children.find(
-            (child) => child.subtype_code === subtypeQueryParam
+            (child) => child.subtype_code === contextPath[2]
           );
 
           if (node) {
@@ -544,16 +536,9 @@ export function getSelectedContextNode(
         }
       } else {
         // Invalid params, so default to loading All data
-        deleteSpecificQueryParams([
-          NODE_LEVEL_TO_QUERY_STR_MAP.get(0)!,
-          NODE_LEVEL_TO_QUERY_STR_MAP.get(1)!,
-          NODE_LEVEL_TO_QUERY_STR_MAP.get(2)!,
-        ]);
+        deleteSpecificQueryParams(["context"]);
       }
     }
   }
-  console.log({ primaryDiseaseQueryParam });
-  console.log({ subtypeQueryParam });
-  console.log({ selectedNode });
   return { selectedContextNode: selectedNode, topContextNameInfo };
 }

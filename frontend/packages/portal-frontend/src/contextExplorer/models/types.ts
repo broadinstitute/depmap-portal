@@ -10,6 +10,7 @@ export interface ContextNode {
   subtype_code: string;
   parent_subtype_code: string | null;
   model_ids: string[];
+  path: string[];
   children: ContextNode[];
 }
 

@@ -1,4 +1,3 @@
-import { redraw } from "plotly.js";
 import React, { useCallback, useState } from "react";
 import Select, { Props as ReactSelectProps } from "react-select";
 import InfoIcon from "src/common/components/InfoIcon";

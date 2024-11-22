@@ -157,6 +157,28 @@ class ContextInfo(
         }
 
 
+@namespace.route("/context_path")
+class ContextPath(
+    Resource
+):  # the flask url_for endpoint is automagically the snake case of the namespace prefix plus class name
+    def get(self):
+        selected_code = request.args.get("selected_code")
+
+        node_obj = SubtypeNode.get_by_code(selected_code)
+
+        cols = [
+            node_obj.level_0,
+            node_obj.level_1,
+            node_obj.level_2,
+            node_obj.level_3,
+            node_obj.level_4,
+            node_obj.level_5,
+        ]
+        path = [col for col in cols if col != ""]
+
+        return path
+
+
 def _get_overview_table_data(
     df: pd.DataFrame, summary_df: pd.DataFrame
 ) -> pd.DataFrame:
@@ -229,6 +251,7 @@ def get_context_explorer_lineage_trees_and_table_data() -> Tuple[
             parent_subtype_code=None,
             model_ids=list(model_ids.keys()),
             node_level=node_level,
+            root=None,
         )
         tree = ContextExplorerTree(root_node)
 

@@ -19,7 +19,6 @@ import {
   ALL_SEARCH_OPTION,
   getSelectionInfo,
   getSelectedContextNode,
-  NODE_LEVEL_TO_QUERY_STR_MAP,
 } from "../utils";
 import ContextExplorerTabs from "./ContextExplorerTabs";
 import LineageSearch from "./LineageSearch";
@@ -41,15 +40,7 @@ export const ContextExplorer = () => {
     { [key: string]: string | boolean }[]
   >([]);
   const [plotElement, setPlotElement] = useState<ExtendedPlotType | null>(null);
-  const [lineageQueryParam, setLineageQueryParam] = useState<string | null>(
-    null
-  );
-  const [primaryDiseaseQueryParam, setPrimaryDiseaseQueryParam] = useState<
-    string | null
-  >(null);
-  const [subtypeQueryParam, setSubtypeQueryParam] = useState<string | null>(
-    null
-  );
+  const [contextPath, setContextPath] = useState<string[] | null>(null);
   const [checkedDatatypes, setCheckedDatatypes] = useState<Set<string>>(
     new Set()
   );
@@ -59,9 +50,7 @@ export const ContextExplorer = () => {
 
   const { selectedContextNode, topContextNameInfo } = getSelectedContextNode(
     contextTrees,
-    lineageQueryParam,
-    primaryDiseaseQueryParam,
-    subtypeQueryParam
+    contextPath
   );
 
   const {
@@ -95,19 +84,10 @@ export const ContextExplorer = () => {
       const params = qs.parse(window.location.search.substr(1));
       setAllContextData(contextData);
 
-      if (params.lineage) {
-        const selectedLineageName = params.lineage!.toString();
-        setLineageQueryParam(selectedLineageName);
-
-        if (params.primary_disease) {
-          const selectedPrimaryDiseaseName = params.primary_disease!.toString();
-          setPrimaryDiseaseQueryParam(selectedPrimaryDiseaseName);
-
-          if (params.subtype) {
-            const selectedSubtypeName = params.subtype!.toString();
-            setSubtypeQueryParam(selectedSubtypeName);
-          }
-        }
+      if (params.context) {
+        const selectedSubtypeCode = params.context!.toString();
+        const context = await dapi.getContextPath(selectedSubtypeCode);
+        setContextPath(context);
       }
     })();
   }, [dapi]);
@@ -131,52 +111,19 @@ export const ContextExplorer = () => {
   );
 
   const onRefineYourContext = useCallback(
-    (
+    async (
       contextNode: ContextNode | null,
       contextTree: ContextExplorerTree | null
     ) => {
-      deleteSpecificQueryParams([
-        NODE_LEVEL_TO_QUERY_STR_MAP.get(0)!,
-        NODE_LEVEL_TO_QUERY_STR_MAP.get(1)!,
-        NODE_LEVEL_TO_QUERY_STR_MAP.get(2)!,
-      ]);
+      deleteSpecificQueryParams(["context"]);
 
       if (allContextData && contextNode && contextTree) {
-        setLineageQueryParam(contextTree.root.subtype_code);
+        const context = await dapi.getContextPath(contextNode.subtype_code);
+        setContextPath(context);
 
-        setPrimaryDiseaseQueryParam(null);
-        setSubtypeQueryParam(null);
-        setQueryStringWithoutPageReload(
-          NODE_LEVEL_TO_QUERY_STR_MAP.get(0)!,
-          contextTree.root.subtype_code
-        );
-
-        if (contextTree.root.subtype_code !== contextNode.subtype_code) {
-          if (contextNode.node_level === 1) {
-            setPrimaryDiseaseQueryParam(contextNode.subtype_code);
-            setQueryStringWithoutPageReload(
-              NODE_LEVEL_TO_QUERY_STR_MAP.get(1)!,
-              contextNode.subtype_code
-            );
-            setSubtypeQueryParam(null);
-          } else {
-            // Has to be subtype
-            setPrimaryDiseaseQueryParam(contextNode.parent_subtype_code);
-            setQueryStringWithoutPageReload(
-              NODE_LEVEL_TO_QUERY_STR_MAP.get(1)!,
-              contextNode.parent_subtype_code
-            );
-            setSubtypeQueryParam(contextNode.subtype_code);
-            setQueryStringWithoutPageReload(
-              NODE_LEVEL_TO_QUERY_STR_MAP.get(2)!,
-              contextNode.subtype_code
-            );
-          }
-        }
+        setQueryStringWithoutPageReload("context", contextNode.subtype_code);
       } else {
-        setLineageQueryParam(null);
-        setPrimaryDiseaseQueryParam(null);
-        setSubtypeQueryParam(null);
+        setContextPath(null);
       }
     },
     [allContextData]

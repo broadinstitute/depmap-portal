@@ -566,6 +566,15 @@ export class DepmapApi {
     });
   }
 
+  getContextPath(selectedCode: string): Promise<string[]> {
+    const params = {
+      selected_code: selectedCode,
+    };
+
+    return this._fetch<string[]>(
+      `/api/context_explorer/context_path?${encodeParams(params)}`
+    );
+  }
   getContextExplorerContextInfo(): Promise<ContextInfo> {
     return this._fetch<ContextInfo>(`/api/context_explorer/context_info`);
   }
