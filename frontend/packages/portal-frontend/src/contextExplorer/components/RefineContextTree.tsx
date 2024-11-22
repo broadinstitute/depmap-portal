@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useCallback } from "react";
 import { Button } from "react-bootstrap";
 import { Accordion, OpenCloseSymbol } from "@depmap/interactive";
 import styles from "../styles/ContextExplorer.scss";
@@ -35,16 +35,25 @@ export const RefineContextTree = (
     }
   }, [contextTrees, topContextNameInfo]);
 
+  const getChildrenSortedByModelCount = useCallback(
+    (children: ContextNode[]) => {
+      return children.sort((a, b) => {
+        if (!a.model_ids || a.model_ids.length > b.model_ids.length) {
+          return -1;
+        } else if (!b.model_ids || a.model_ids.length < b.model_ids.length) {
+          return 1;
+        }
+        return 0;
+      });
+    },
+    []
+  );
+
   const childrenSortedByModelCount = useMemo(() => {
-    return selectedTree?.children.sort((a, b) => {
-      if (!a.model_ids || a.model_ids.length > b.model_ids.length) {
-        return -1;
-      } else if (!b.model_ids || a.model_ids.length < b.model_ids.length) {
-        return 1;
-      }
-      return 0;
-    });
-  }, [selectedTree]);
+    return selectedTree
+      ? getChildrenSortedByModelCount(selectedTree?.children)
+      : undefined;
+  }, [selectedTree, getChildrenSortedByModelCount]);
 
   return (
     <div>
@@ -124,40 +133,40 @@ export const RefineContextTree = (
                     color: "#4479b2",
                   }}
                 >
-                  {primaryDiseaseNode.children.map(
-                    (subtypeNode: ContextNode) => (
-                      <Button
-                        bsStyle="link"
-                        className="accordion_contents"
-                        key={subtypeNode.subtype_code}
-                        onClick={(e) => {
-                          onRefineYourContext(subtypeNode, selectedTree);
-                          e.preventDefault();
+                  {getChildrenSortedByModelCount(
+                    primaryDiseaseNode.children
+                  ).map((subtypeNode: ContextNode) => (
+                    <Button
+                      bsStyle="link"
+                      className="accordion_contents"
+                      key={subtypeNode.subtype_code}
+                      onClick={(e) => {
+                        onRefineYourContext(subtypeNode, selectedTree);
+                        e.preventDefault();
+                      }}
+                      value={subtypeNode.model_ids}
+                    >
+                      <div
+                        style={{
+                          display: "grid",
+                          gridTemplateColumns: "repeat(4, 1fr)",
                         }}
-                        value={subtypeNode.model_ids}
                       >
                         <div
                           style={{
-                            display: "grid",
-                            gridTemplateColumns: "repeat(4, 1fr)",
+                            gridColumn: "1/4",
+                            textAlign: "left",
+                            paddingLeft: "18px",
                           }}
                         >
-                          <div
-                            style={{
-                              gridColumn: "1/4",
-                              textAlign: "left",
-                              paddingLeft: "18px",
-                            }}
-                          >
-                            {subtypeNode.name}{" "}
-                          </div>
-                          <div style={{ gridColumn: "4/4", textAlign: "end" }}>
-                            {subtypeNode.model_ids.length}
-                          </div>
+                          {subtypeNode.name}{" "}
                         </div>
-                      </Button>
-                    )
-                  )}
+                        <div style={{ gridColumn: "4/4", textAlign: "end" }}>
+                          {subtypeNode.model_ids.length}
+                        </div>
+                      </div>
+                    </Button>
+                  ))}
                 </Accordion>
               )}
             </div>
