@@ -204,7 +204,8 @@ export type ContextPlotBoxData = {
 export enum TabTypes {
   Overview = 0,
   GeneDependency = 1,
-  DrugSensitivity = 2,
+  DrugSensitivityRepurposing = 2,
+  DrugSensitivityOncRef = 3,
 }
 
 export enum ContextSelectionTabTypes {
