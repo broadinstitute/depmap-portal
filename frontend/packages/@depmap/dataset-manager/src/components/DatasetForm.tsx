@@ -17,6 +17,8 @@ import {
   FeatureDimensionType,
 } from "@depmap/types";
 import ChunkedFileUploader from "./ChunkedFileUploader";
+import { CeleryTask } from "@depmap/compute";
+import styles from "@depmap/common-components/src/styles/ProgressTracker.scss";
 
 interface DatasetFormProps {
   getDimensionTypes: () => Promise<DimensionType[]>;
@@ -24,6 +26,7 @@ interface DatasetFormProps {
   getGroups: () => Promise<Group[]>;
   uploadFile: (fileArgs: { file: File | Blob }) => Promise<UploadFileResponse>;
   uploadDataset: (datasetParams: DatasetParams) => Promise<any>;
+  getTaskStatus: (taskIds: string) => Promise<CeleryTask>;
   isAdvancedMode: boolean;
 }
 
@@ -34,6 +37,7 @@ export default function DatasetForm(props: DatasetFormProps) {
     getDataTypesAndPriorities,
     uploadFile,
     uploadDataset,
+    getTaskStatus,
     isAdvancedMode,
   } = props;
 
@@ -102,6 +106,15 @@ export default function DatasetForm(props: DatasetFormProps) {
     setInvalidPrioritiesByDataType,
   ] = useState<InvalidPrioritiesByDataType>({});
   const [dataTypeOptions, setDataTypeOptions] = useState<DataType[]>([]);
+  const [taskRunning, setTaskRunning] = React.useState(false);
+  const [taskSubmissionResponse, setTaskSubmissionResponse] = React.useState<
+    Promise<CeleryTask> | undefined
+  >(undefined);
+  // Completed task (either failed or successful)
+  const [completedTask, setCompletedTask] = React.useState<
+    CeleryTask | undefined
+  >(undefined);
+
   console.log(selectedFormat);
   console.log(formContent);
 
@@ -136,13 +149,79 @@ export default function DatasetForm(props: DatasetFormProps) {
         setGroupsOptions(groups);
       } catch (e) {
         console.error(e);
-        // setInitFetchError(true);
       }
     })();
   }, [getDimensionTypes, getGroups, getDataTypesAndPriorities]);
 
+  useEffect(() => {
+    if (taskSubmissionResponse !== undefined) {
+      /**
+    About resolve and reject functions
+
+    For normal, expected user input errors, the back end returns 200 with state failure
+    For unexpected failure modes, the back end returns 500. This is so that the error gets sent to stackdriver
+    For these unexpected errors, we catch the 500, and mimic the response from a failed-gracefully-with-200
+
+    whether we return 200 (resolve) or 500 (reject), call updateStateFromResponse
+    just that in the 500 case, we need to mimic a fake response with a generic error message
+  */
+
+      const later = (delay: number): Promise<any> => {
+        return new Promise((res) => {
+          setTimeout(res, delay);
+        });
+      };
+
+      const reject = (response: any) => {
+        const isCeleryTask = (x: any): x is CeleryTask => x.state !== undefined;
+        if (isCeleryTask(response)) {
+          setCompletedTask({
+            id: "",
+            state: "FAILURE",
+            percentComplete: undefined,
+            message:
+              "Unexpected error. If you get this error consistently, please contact us with a screenshot and the actions that lead to this error.",
+            result: null,
+          });
+        } else {
+          setCompletedTask(response);
+        }
+      };
+
+      // eslint-disable-next-line consistent-return
+      const checkStatus = (response: CeleryTask) => {
+        function resolve(res: CeleryTask) {
+          setCompletedTask(response);
+          checkStatus(res);
+        }
+
+        if (response.state === "SUCCESS") {
+          setCompletedTask(response);
+          setTaskRunning(false);
+        } else if (response.state === "FAILURE") {
+          console.error("Upload dataset failed: ", response);
+          setCompletedTask(response);
+          setTaskRunning(false);
+        } else {
+          const nextPollDelay = response.nextPollDelay;
+
+          return later(nextPollDelay || 0)
+            .then(() => {
+              return getTaskStatus(response.id);
+            })
+            .then(resolve, reject);
+        }
+      };
+
+      taskSubmissionResponse.then((res) => {
+        setCompletedTask(res);
+        checkStatus(res);
+      }, reject);
+    }
+  }, [getTaskStatus, taskSubmissionResponse]);
+
   const formComponent = useMemo(() => {
-    const onSubmitForm = (formData: { [key: string]: any }) => {
+    const onSubmitForm = async (formData: { [key: string]: any }) => {
       // TODO: add callback to clear form? and try catch?
       let formToSubmit = { ...formData };
       if (
@@ -157,29 +236,45 @@ export default function DatasetForm(props: DatasetFormProps) {
         };
       }
       console.log("form submitted: ", formToSubmit);
-      uploadDataset(formToSubmit as DatasetParams);
+
+      setTaskRunning(true);
+      setTaskSubmissionResponse(uploadDataset(formToSubmit as DatasetParams));
     };
 
     if (selectedFormat === "matrix") {
       return (
-        <MatrixDatasetForm
-          featureTypes={featureTypeOptions}
-          sampleTypes={sampleTypeOptions}
-          groups={groupOptions}
-          dataTypes={dataTypeOptions}
-          invalidDataTypePriorities={invalidPrioritiesByDataType}
-          initFormData={formContent.matrix}
-          fileIds={fileIds}
-          md5Hash={md5Hash}
-          forwardFormData={(formData: { [key: string]: string }) => {
-            setFormContent({
-              ...formContent,
-              matrix: formData,
-            });
-          }}
-          onSubmitForm={onSubmitForm}
-          isAdvancedMode={isAdvancedMode}
-        />
+        <>
+          <MatrixDatasetForm
+            featureTypes={featureTypeOptions}
+            sampleTypes={sampleTypeOptions}
+            groups={groupOptions}
+            dataTypes={dataTypeOptions}
+            invalidDataTypePriorities={invalidPrioritiesByDataType}
+            initFormData={formContent.matrix}
+            fileIds={fileIds}
+            md5Hash={md5Hash}
+            forwardFormData={(formData: { [key: string]: string }) => {
+              setFormContent({
+                ...formContent,
+                matrix: formData,
+              });
+            }}
+            onSubmitForm={onSubmitForm}
+            isAdvancedMode={isAdvancedMode}
+          />
+          {taskRunning &&
+            taskSubmissionResponse &&
+            completedTask &&
+            completedTask.state === "PENDING" && (
+              <div className={styles.loadingEllipsis}>LOADING</div>
+            )}
+          {completedTask && completedTask.state === "SUCCESS" && (
+            <div>SUCCESS!</div>
+          )}
+          {completedTask && completedTask.state === "FAILURE" && (
+            <div>{completedTask.message}!</div>
+          )}
+        </>
       );
     }
     if (selectedFormat === "table") {
@@ -187,22 +282,36 @@ export default function DatasetForm(props: DatasetFormProps) {
         sampleTypeOptions
       );
       return (
-        <TableDatasetForm
-          dimensionTypes={dimensionTypeOptions}
-          groups={groupOptions}
-          dataTypes={dataTypeOptions}
-          invalidDataTypePriorities={invalidPrioritiesByDataType}
-          initFormData={formContent.table}
-          fileIds={fileIds}
-          md5Hash={md5Hash}
-          forwardFormData={(formData: { [key: string]: string }) => {
-            setFormContent({
-              ...formContent,
-              table: formData,
-            });
-          }}
-          onSubmitForm={onSubmitForm}
-        />
+        <>
+          <TableDatasetForm
+            dimensionTypes={dimensionTypeOptions}
+            groups={groupOptions}
+            dataTypes={dataTypeOptions}
+            invalidDataTypePriorities={invalidPrioritiesByDataType}
+            initFormData={formContent.table}
+            fileIds={fileIds}
+            md5Hash={md5Hash}
+            forwardFormData={(formData: { [key: string]: string }) => {
+              setFormContent({
+                ...formContent,
+                table: formData,
+              });
+            }}
+            onSubmitForm={onSubmitForm}
+          />
+          {taskRunning &&
+            taskSubmissionResponse &&
+            completedTask &&
+            completedTask.state === "PENDING" && (
+              <div className={styles.loadingEllipsis}>LOADING</div>
+            )}
+          {completedTask && completedTask.state === "SUCCESS" && (
+            <div>SUCCESS!</div>
+          )}
+          {completedTask && completedTask.state === "FAILURE" && (
+            <div>{completedTask.message}!</div>
+          )}
+        </>
       );
     }
 
@@ -219,6 +328,9 @@ export default function DatasetForm(props: DatasetFormProps) {
     fileIds,
     md5Hash,
     isAdvancedMode,
+    taskRunning,
+    taskSubmissionResponse,
+    completedTask,
   ]);
 
   const handleOnChange = (e: any) => {
