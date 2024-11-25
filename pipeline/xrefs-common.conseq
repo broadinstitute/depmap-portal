@@ -25,12 +25,6 @@ add-if-missing {
 }
 
 add-if-missing {
-  'type': 'biomarker-needing-transpose',
-  'dataset_id' : 'ccle-absolute-cn.5/CCLE_ABSOLUTE_gene_level',
-  'category': 'copy-number-absolute'
-}
-
-add-if-missing {
   'type': 'raw-rppa-matrix',
   'matrix_dataset_id' : 'depmap-rppa-1b43.3/CCLE_RPPA_20181003',
   'mapping_dataset_id' : 'depmap-rppa-1b43.3/CCLE_RPPA_Ab_info_20181226'
