@@ -139,7 +139,7 @@ const ReleaseTabs = ({
       {globalGenomicFeatureData && (
         <Tab
           className={styles.releaseTab}
-          eventKey={7}
+          eventKey={8}
           title={FileSubType.global_genomic_features}
         >
           <DataFilePanel
@@ -152,7 +152,7 @@ const ReleaseTabs = ({
       {readMeData && (
         <Tab
           className={styles.releaseTab}
-          eventKey={8}
+          eventKey={9}
           title={FileSubType.read_me}
         >
           <DataFilePanel
