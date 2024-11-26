@@ -32,7 +32,7 @@ function StartScreenExamples() {
       <StartScreenExample
         title="Biomarker relationship"
         imgSrc={toStaticUrl(
-          "img/data_explorer_2/example_thumbnails/biomarker-relationship.png"
+          "img/data_explorer_2/example_thumbnails/biomarker-relationship-v2.png"
         )}
         plot={examples["biomarker-relationship"] as DataExplorerPlotConfig}
         description={
