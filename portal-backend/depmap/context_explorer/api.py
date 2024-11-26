@@ -16,7 +16,7 @@ from depmap.tda.views import convert_series_to_json_safe_list
 from flask_restplus import Namespace, Resource
 from flask import current_app, request
 import pandas as pd
-from depmap.dataset.models import DependencyDataset
+from depmap.context.models_new import SubtypeContext
 from depmap.settings.shared import DATASET_METADATA
 from depmap.context_explorer.models import (
     ContextAnalysis,
@@ -130,17 +130,19 @@ def make_subtype_context_sample_data():
     all_models = DepmapModel.get_all()
     model_ids = [model.model_id for model in all_models]
 
-    index = model_ids
     column_headers = []
     rows = []
     for node in all_subtype_nodes:
         subtype_code = node.subtype_code
         models_present = []
         column_headers.append(subtype_code)
+        node_level = node.node_level
+        print(node)
         for model_id in model_ids:
-            includes_model = DepmapModel.has_depmap_model_type(
-                depmap_model_type=subtype_code, model_id=model_id
+            models = SubtypeNode.temporary_get_model_ids_by_subtype_code_and_node_level(
+                subtype_code=subtype_code, node_level=node_level
             )
+            includes_model = model_id in models
             models_present.append(includes_model)
 
         rows.append(models_present)
@@ -177,8 +179,9 @@ class ContextInfo(
         # breakpoint()
         # make_subtype_context_sample_data()
         # load_subtype_contexts(
-        #     "/Users/amourey/dev/depmap-portal2/depmap-portal/portal-backend/sample_subtype_matrix.csv"
+        #     "/Users/amourey/dev/Context Explorer Data/sample_subtype_matrix.csv"
         # )
+        # db.session.commit()
         # breakpoint()
         (
             context_trees,
@@ -227,24 +230,37 @@ def _get_overview_table_data(
 ) -> pd.DataFrame:
     overview_page_table = df
 
+    summary_df_by_model_id = summary_df.transpose()
+    summary_df_by_model_id = summary_df_by_model_id.rename_axis("model_id")
+
     cell_line_display_names = DepmapModel.get_cell_line_display_names(
-        list(summary_df.columns.values)
+        list(summary_df_by_model_id.index.values)
     )
 
-    overview_page_table["crispr"] = summary_df.loc["CRISPR"] > 0
-    overview_page_table["rnai"] = summary_df.loc["RNAi"] > 0
-    overview_page_table["wgs"] = summary_df.loc["WGS"] > 0
-    overview_page_table["wes"] = summary_df.loc["WES"] > 0
-    overview_page_table["prism"] = summary_df.loc["PRISM"] > 0
-    overview_page_table["rna_seq"] = summary_df.loc["RNASeq"] > 0
+    overview_page_table = overview_page_table.join(summary_df_by_model_id)
+
     overview_page_table["cell_line_display_name"] = cell_line_display_names[
-        overview_page_table.index
+        summary_df_by_model_id.index
     ]
+
+    overview_page_table = overview_page_table.rename(
+        columns={
+            "CRISPR": "crispr",
+            "RNAi": "rnai",
+            "WGS": "wgs",
+            "WES": "wes",
+            "PRISM": "prism",
+            "RNASeq": "rna_seq",
+        }
+    )
 
     dummy_value = ""
     overview_page_table = overview_page_table.fillna(dummy_value)
 
-    overview_page_table = overview_page_table.reset_index()
+    overview_page_table = overview_page_table.reset_index().drop_duplicates(
+        "model_id", keep="last"
+    )
+
     overview_data = overview_page_table.to_dict("records")
 
     return overview_data
@@ -257,23 +273,14 @@ def get_context_explorer_lineage_trees_and_table_data() -> Tuple[
     subtype_df = pd.read_sql(
         subtype_tree_query.statement, subtype_tree_query.session.connection()
     )
+    subtype_df = subtype_df.set_index("model_id")
 
     summary_df = _get_context_summary_df()
 
     overview_data = _get_overview_table_data(df=subtype_df, summary_df=summary_df)
 
     subtype_tree_df = subtype_df[
-        [
-            "subtype_code",
-            "node_name",
-            "node_level",
-            "level_0",
-            "level_1",
-            "level_2",
-            "level_3",
-            "level_4",
-            "level_5",
-        ]
+        ["subtype_code", "node_name", "node_level", "level_0", "level_1", "level_2",]
     ]
 
     subtype_codes_and_names = subtype_df.loc[subtype_df["node_level"] == 0]
@@ -284,15 +291,14 @@ def get_context_explorer_lineage_trees_and_table_data() -> Tuple[
     trees = {}
     for subtype_code in list(subtype_codes_and_names_dict.keys()):
         node_level = 0
-        model_ids = SubtypeNode.get_model_ids_by_subtype_code_and_node_level(
-            subtype_code, node_level
-        )
+        subtype_context = SubtypeContext.get_by_code(subtype_code)
+        model_ids = subtype_context.get_model_ids()
         node_name = subtype_codes_and_names_dict[subtype_code]
         root_node = ContextNode(
             name=node_name,
             subtype_code=subtype_code,
             parent_subtype_code=None,
-            model_ids=list(model_ids.keys()),
+            model_ids=model_ids,
             node_level=node_level,
             root=None,
         )

@@ -39,8 +39,36 @@ class SubtypeNode(Model):
             return q.one_or_none()
 
     @staticmethod
+    def get_by_code_and_level(
+        subtype_code: str, node_level: int
+    ) -> Optional[List["SubtypeNode"]]:
+        node_level_column = f"level_{node_level}"
+        return (
+            db.session.query(SubtypeNode)
+            .filter(getattr(SubtypeNode, node_level_column) == subtype_code)
+            .all()
+        )
+
+    @staticmethod
     def get_subtype_tree_query():
-        query = db.session.query(SubtypeNode).order_by(SubtypeNode.node_level)
+        query = (
+            db.session.query(SubtypeNode)
+            .join(
+                SubtypeContext, SubtypeContext.subtype_code == SubtypeNode.subtype_code
+            )
+            .join(DepmapModel, SubtypeContext.depmap_model)
+            .with_entities(
+                DepmapModel.model_id,
+                SubtypeNode.subtype_code,
+                SubtypeNode.level_0,
+                SubtypeNode.level_1,
+                SubtypeNode.level_2,
+                SubtypeNode.node_name,
+                SubtypeNode.node_level,
+            )
+            .order_by(SubtypeNode.node_level)
+        )
+
         return query
 
     @staticmethod
@@ -65,6 +93,24 @@ class SubtypeNode(Model):
             )
         )
         return cell_lines_dict
+
+    @staticmethod
+    def temporary_get_model_ids_by_subtype_code_and_node_level(
+        subtype_code: str, node_level: int
+    ) -> Dict[str, str]:
+        node_level_column = f"level_{node_level}"
+        query = (
+            db.session.query(SubtypeNode)
+            .join(
+                DepmapModel, DepmapModel.depmap_model_type == SubtypeNode.subtype_code
+            )
+            .filter(getattr(SubtypeNode, node_level_column) == subtype_code)
+            .with_entities(DepmapModel.model_id, DepmapModel.stripped_cell_line_name)
+        )
+
+        cell_lines = pd.read_sql(query.statement, query.session.connection())
+
+        return cell_lines["model_id"].values
 
 
 class SubtypeNodeAlias(Model):
@@ -95,12 +141,6 @@ class SubtypeContext(Model):
     )  # m2m
 
     @staticmethod
-    def get_all_names():
-        return [
-            x[0] for x in SubtypeContext.query.with_entities(SubtypeContext.name).all()
-        ]
-
-    @staticmethod
     def get_all_codes():
         return [
             x[0]
@@ -110,8 +150,8 @@ class SubtypeContext(Model):
         ]
 
     @classmethod
-    def get_by_name(cls, name, must=True) -> Optional["SubtypeContext"]:
-        q = db.session.query(SubtypeContext).filter(SubtypeContext.name == name)
+    def get_by_code(cls, name, must=True) -> Optional["SubtypeContext"]:
+        q = db.session.query(SubtypeContext).filter(SubtypeContext.subtype_code == name)
         if must:
             return q.one()
         else:
@@ -121,32 +161,9 @@ class SubtypeContext(Model):
         cell_lines = [cell_line.cell_line_name for cell_line in self.depmap_model]
         return cell_lines
 
-    def get_depmap_ids(self) -> List["str"]:
+    def get_model_ids(self) -> List["str"]:
         cell_lines = [cell_line.model_id for cell_line in self.depmap_model]
         return cell_lines
-
-    # TODO: This is used on the old context page. Do we take it out?
-    # @classmethod
-    # def get_cell_line_table_query(cls, name):
-    #     """
-    #     Returns query to display a cell line table, i.e. adding primary disease and primary/metastasis columns
-    #     with_entities is used to say we want a column of cell_line_name
-    #     The 'name' column for PrimaryDisease and TumorType are both called 'name', so add_column is used instead of with_entities to allow renaming with .label
-    #     """
-    #     query = (
-    #         Context.query.filter_by(name=name)
-    #         .join(CellLine, Context.cell_line)
-    #         .outerjoin(PrimaryDisease, TumorType)
-    #         .with_entities(CellLine.depmap_id)
-    #         .add_columns(
-    #             sa.column('"primary_disease".name', is_literal=True).label(
-    #                 "primary_disease"
-    #             ),
-    #             sa.column('"tumor_type".name', is_literal=True).label("tumor_type"),
-    #             sa.column("cell_line_display_name", is_literal=True),
-    #         )
-    #     )
-    #     return query
 
 
 class SubtypeContextEntity(Entity):

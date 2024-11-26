@@ -54,18 +54,18 @@ const ContextExplorerTabs = ({
   // Filters table data accoding to the selected context's depmap_ids
   const filteredData = overviewTableData.filter((row) => {
     return selectedContextData.all_depmap_ids.some(
-      (a) => a[1] === row.depmap_id
+      (a) => a[1] === row.model_id
     );
   });
 
   const formattedFilteredData: CellLineOverview[] = filteredData.map((row) => {
     return {
-      depmapId: row.depmap_id,
+      depmapId: row.model_id,
       cellLineDisplayName: row.cell_line_display_name,
-      lineage: row.lineage,
-      primaryDisease: row.primary_disease,
-      subtype: row.subtype,
-      molecularSubtype: row.molecular_subtype,
+      lineage: row.level_0,
+      primaryDisease: row.level_1,
+      subtype: row.level_2,
+      molecularSubtype: "",
       crispr: capitalizeFirstLetter(String(row.crispr)),
       rnai: capitalizeFirstLetter(String(row.rnai)),
       wgs: capitalizeFirstLetter(String(row.wgs)),
