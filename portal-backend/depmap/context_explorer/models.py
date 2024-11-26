@@ -7,6 +7,7 @@ import pandas as pd
 from depmap.gene.models import Gene
 from depmap.compound.models import CompoundExperiment
 from depmap.enums import DependencyEnum
+from depmap.dataset.models import DependencyDataset
 from depmap.context.models_new import SubtypeNode
 from depmap.cell_line.models_new import DepmapModel
 from depmap.database import (
@@ -75,7 +76,7 @@ class ContextExplorerTree(dict):
 
         if len(child_subtype_codes) > 0:
             for child_subtype_code in child_subtype_codes:
-                model_ids_dict = DepmapModel.get_model_ids_by_subtype_code_and_node_level(
+                model_ids_dict = SubtypeNode.get_model_ids_by_subtype_code_and_node_level(
                     child_subtype_code, next_level
                 )
                 model_ids = list(model_ids_dict.keys())
@@ -158,7 +159,7 @@ class ContextNode(dict):
 
         if len(child_subtype_codes) > 0:
             for child_subtype_code in child_subtype_codes:
-                model_ids_dict = DepmapModel.get_model_ids_by_subtype_code_and_node_level(
+                model_ids_dict = SubtypeNode.get_model_ids_by_subtype_code_and_node_level(
                     child_subtype_code, next_level
                 )
                 model_ids = list(model_ids_dict.keys())
@@ -247,12 +248,7 @@ class ContextAnalysis(Model):
         ),
     )
     context_analysis_id = Column(Integer, primary_key=True, autoincrement=True)
-    # context_name = Column(
-    #     String, ForeignKey("context.name"), nullable=False, index=True
-    # )
-    # context = relationship(
-    #     "Context", foreign_keys="ContextAnalysis.context_name", uselist=False
-    # )
+
     subtype_code = Column(
         String, ForeignKey("subtype_node.subtype_code"), nullable=False, index=True
     )
@@ -266,8 +262,16 @@ class ContextAnalysis(Model):
         "Entity", foreign_keys="ContextAnalysis.entity_id", uselist=False
     )
 
-    dataset_name: "Column[DependencyEnum]" = Column(
-        db.Enum(DependencyEnum, name="DependencyEnum"), nullable=False
+    dependency_dataset_id = Column(
+        Integer,
+        ForeignKey("dependency_dataset.dependency_dataset_id"),
+        nullable=False,
+        index=True,
+    )
+    dataset = relationship(
+        "DependencyDataset",
+        foreign_keys="ContextAnalysis.dependency_dataset_id",
+        uselist=False,
     )
 
     out_group = Column(String, nullable=False)
@@ -277,15 +281,10 @@ class ContextAnalysis(Model):
     effect_size = Column(Float)
     t_qval = Column(Float)
     t_qval_log = Column(Float)
-
-    # TODO: The columns n_dep_in, n_dep_out, frac_dep_in, frac_dep_out all depend on a binarized version of the data, which only
-    # makes sense for genes. So these columns will be the same for the gene page, but will be entirely NaNs for drug entities.
-    # The thought is that those columns should be dropped from the displayed version of the table for the two drug tabs
     n_dep_in = Column(Float)
     n_dep_out = Column(Float)
     frac_dep_in = Column(Float)
     frac_dep_out = Column(Float)
-    # TODO: selectivity_val is a different metric between gene and drug pages, so we'll also need to pick different colorscales to use.
     selectivity_val = Column(Float)
 
     def to_dict(self):
@@ -312,6 +311,10 @@ class ContextAnalysis(Model):
             "frac_dep_out": self.frac_dep_out,
             "selectivity_val": self.selectivity_val,
         }
+
+    @property
+    def dataset_name(self):
+        return DependencyDataset.get_dataset_by_id(self.dependency_dataset_id).name
 
     @staticmethod
     def find_context_analysis_by_subtype_code_out_group(

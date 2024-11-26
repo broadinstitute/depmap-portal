@@ -1,3 +1,4 @@
+from operator import mod
 from typing import Dict, List, Literal, Tuple, Union
 import os
 import re
@@ -25,18 +26,23 @@ from depmap.context_explorer.models import (
 )
 from depmap.context.models_new import SubtypeNode
 
-# from depmap.database import (
-#     Boolean,
-#     Column,
-#     ForeignKey,
-#     Integer,
-#     Model,
-#     String,
-#     Text,
-#     db,
-#     relationship,
-# )
-# from loader.context_explorer_loader import load_subtype_tree
+from depmap.database import (
+    Boolean,
+    Column,
+    ForeignKey,
+    Integer,
+    Model,
+    String,
+    Text,
+    db,
+    relationship,
+)
+
+from loader.context_explorer_loader import (
+    load_context_explorer_context_analysis_dev,
+    load_subtype_tree,
+)
+from loader.depmap_model_loader import load_subtype_contexts
 
 # from .development_scripts import dev
 
@@ -119,6 +125,35 @@ def _get_all_level_0_subtype_info(
     return context_name_info
 
 
+def make_subtype_context_sample_data():
+    all_subtype_nodes = SubtypeNode.get_all()
+    all_models = DepmapModel.get_all()
+    model_ids = [model.model_id for model in all_models]
+
+    index = model_ids
+    column_headers = []
+    rows = []
+    for node in all_subtype_nodes:
+        subtype_code = node.subtype_code
+        models_present = []
+        column_headers.append(subtype_code)
+        for model_id in model_ids:
+            includes_model = DepmapModel.has_depmap_model_type(
+                depmap_model_type=subtype_code, model_id=model_id
+            )
+            models_present.append(includes_model)
+
+        rows.append(models_present)
+
+    subtype_context_matrix = pd.DataFrame(
+        data=rows, index=column_headers, columns=model_ids
+    )
+    subtype_context_matrix = subtype_context_matrix.transpose()
+    breakpoint()
+    subtype_context_matrix.to_csv("sample_subtype_matrix.csv")
+    breakpoint()
+
+
 @namespace.route("/context_info")
 class ContextInfo(
     Resource
@@ -130,12 +165,20 @@ class ContextInfo(
         List of available context trees as a dictionary with keys as each available non-terminal node, and values
         as each available branch off of the key-node
         """
-
+        # breakpoint()
         # Getting the top level lineages by querying the Lineage table result in data inconsistencies. We
         # don't have datatype information for all level 1 lineages. As a result, we have to get the data trees
         # first, and then use the keys to get the list of top level lineages for the search bar.
         # load_subtype_tree("/Users/amourey/Downloads/SubtypeTree.csv")
+        # load_context_explorer_context_analysis_dev(
+        #     "/Users/amourey/Documents/CEv2_sample_data_with_codes.csv"
+        # )
         # db.session.commit()
+        # breakpoint()
+        # make_subtype_context_sample_data()
+        # load_subtype_contexts(
+        #     "/Users/amourey/dev/depmap-portal2/depmap-portal/portal-backend/sample_subtype_matrix.csv"
+        # )
         # breakpoint()
         (
             context_trees,
@@ -241,7 +284,7 @@ def get_context_explorer_lineage_trees_and_table_data() -> Tuple[
     trees = {}
     for subtype_code in list(subtype_codes_and_names_dict.keys()):
         node_level = 0
-        model_ids = DepmapModel.get_model_ids_by_subtype_code_and_node_level(
+        model_ids = SubtypeNode.get_model_ids_by_subtype_code_and_node_level(
             subtype_code, node_level
         )
         node_name = subtype_codes_and_names_dict[subtype_code]
@@ -292,7 +335,7 @@ def _get_analysis_data_table(
     #    out_group_type = "All Others"  # HACK: Temporary until we agree on value options for outgroup types
 
     data = ContextAnalysis.find_context_analysis_by_subtype_code_out_group(
-        context_name=in_group,
+        subtype_code=in_group,
         out_group=out_group_type,
         entity_type=entity_type,
         dataset_name=dataset_name,

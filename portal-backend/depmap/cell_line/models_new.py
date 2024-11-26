@@ -1,13 +1,11 @@
 # -*- coding: utf-8 -*-
 """Cell line models."""
 import enum
-from platform import node
 import re
 from typing import Dict, List, Optional, Sequence
 from depmap.cell_line.models import Lineage
 import numpy as np
 from collections import Counter
-from depmap.context.models_new import SubtypeNode
 
 
 import pandas as pd
@@ -18,21 +16,18 @@ from depmap.database import Column, ForeignKey, Integer, Model, String, db, rela
 
 Table = db.Table
 
-
-# TODO: Not used yet. Need to update Cell Line Selector to depend on new DepmapModel table instead of CellLine
-def add_depmap_model_table_columns(query):
-    """
-    Separated so that Dataset.get_cell_line_table_query can use this as well
-    Joins database tables required for cell line table columns
-    """
-    table_query = query.join(Lineage, DepmapModel.oncotree_lineage).add_columns(
-        sqlalchemy.column(
-            '"depmap_model".oncotree_primary_disease', is_literal=True
-        ).label("primary_disease"),
-        sqlalchemy.column('"lineage".name', is_literal=True).label("lineage"),
-        sqlalchemy.column('"lineage".level', is_literal=True).label("lineage_level"),
-    )
-    return table_query
+depmap_model_context_association = Table(
+    "depmap_model_context_association",
+    Column("model_id", String, ForeignKey("depmap_model.model_id"), nullable=False),
+    Column(
+        "subtype_code",
+        String,
+        ForeignKey("subtype_context.subtype_code"),
+        nullable=False,
+        index=True,
+    ),
+    db.UniqueConstraint("model_id", "subtype_code", name="uc_depmap_id_context_name"),
+)
 
 
 model_with_depmap_id_1 = re.compile("\\S+ \\(([^)]+)\\)")
@@ -248,27 +243,15 @@ class DepmapModel(Model):
         return s
 
     @staticmethod
-    def get_model_ids_by_subtype_code_and_node_level(
-        subtype_code: str, node_level: int
-    ) -> Dict[str, str]:
-        node_level_column = f"level_{node_level}"
-        query = (
-            db.session.query(DepmapModel)
-            .join(
-                SubtypeNode, SubtypeNode.subtype_code == DepmapModel.depmap_model_type
-            )
-            .filter(getattr(SubtypeNode, node_level_column) == subtype_code)
-            .with_entities(DepmapModel.model_id, DepmapModel.stripped_cell_line_name)
-        )
-
-        cell_lines = pd.read_sql(query.statement, query.session.connection())
-        cell_lines_dict = dict(
-            zip(
-                cell_lines["model_id"].values,
-                cell_lines["stripped_cell_line_name"].values,
-            )
-        )
-        return cell_lines_dict
+    def has_depmap_model_type(depmap_model_type: str, model_id: str):
+        return db.session.query(
+            DepmapModel.query.filter(
+                and_(
+                    DepmapModel.depmap_model_type == depmap_model_type,
+                    DepmapModel.model_id == model_id,
+                )
+            ).exists()
+        ).scalar()
 
     @staticmethod
     def get_model_ids_by_lineage_and_level(

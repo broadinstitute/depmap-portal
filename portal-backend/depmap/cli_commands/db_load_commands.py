@@ -624,6 +624,21 @@ def _load_real_data(
                 get_context_file(), must=False,
             )
 
+    # TODO: This might move. There's been talk of adding the new context matrix
+    # to the new data prep pipeline, but for now I'm modelling it off of the
+    # old context matrix data flow.
+    def get_subtype_context_file():
+        full_path = gcsc_depmap.read_json("metadata/subtype-context.json")[
+            "subtype_contexts"
+        ]["csv_filename"]
+        return gcsc_conseq_depmap.download_to_cache(full_path)
+
+    with checkpoint("subtype-context-data") as needed:
+        if needed:
+            depmap_model_loader.load_subtype_contexts(
+                get_subtype_context_file(), must=False
+            )
+
     def get_context_enrichment_file():
         full_path = gcsc_depmap.read_json("metadata/context-enrichment.json")[
             "enrichment"
@@ -1126,6 +1141,11 @@ def load_sample_data(
 
         depmap_model_loader.load_depmap_model_metadata(
             os.path.join(loader_data_dir, "cell_line/models_metadata.csv")
+        )
+
+        # TODO: This should eventually completely rreplace the old cell_line_loader.load_contexts
+        depmap_model_loader.load_subtype_contexts(
+            os.path.join(loader_data_dir, "cell_line/subtype_contexts.csv")
         )
 
         cell_line_loader.load_contexts(

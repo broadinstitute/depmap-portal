@@ -1,6 +1,7 @@
-from typing import Optional
+from typing import Dict, List, Optional
 from depmap.database import (
     Column,
+    Float,
     ForeignKey,
     Integer,
     Model,
@@ -8,6 +9,9 @@ from depmap.database import (
     db,
     relationship,
 )
+from depmap.entity.models import Entity
+import pandas as pd
+from depmap.cell_line.models_new import DepmapModel, depmap_model_context_association
 
 
 class SubtypeNode(Model):
@@ -39,6 +43,29 @@ class SubtypeNode(Model):
         query = db.session.query(SubtypeNode).order_by(SubtypeNode.node_level)
         return query
 
+    @staticmethod
+    def get_model_ids_by_subtype_code_and_node_level(
+        subtype_code: str, node_level: int
+    ) -> Dict[str, str]:
+        node_level_column = f"level_{node_level}"
+        query = (
+            db.session.query(SubtypeNode)
+            .join(
+                DepmapModel, DepmapModel.depmap_model_type == SubtypeNode.subtype_code
+            )
+            .filter(getattr(SubtypeNode, node_level_column) == subtype_code)
+            .with_entities(DepmapModel.model_id, DepmapModel.stripped_cell_line_name)
+        )
+
+        cell_lines = pd.read_sql(query.statement, query.session.connection())
+        cell_lines_dict = dict(
+            zip(
+                cell_lines["model_id"].values,
+                cell_lines["stripped_cell_line_name"].values,
+            )
+        )
+        return cell_lines_dict
+
 
 class SubtypeNodeAlias(Model):
     """
@@ -58,3 +85,90 @@ class SubtypeNodeAlias(Model):
         uselist=False,
         overlaps="subtype_node_alias",
     )
+
+
+class SubtypeContext(Model):
+    __tablename__ = "subtype_context"
+    subtype_code = Column(String, primary_key=True)
+    depmap_model = relationship(
+        "DepmapModel", secondary=depmap_model_context_association, backref=__tablename__
+    )  # m2m
+
+    @staticmethod
+    def get_all_names():
+        return [
+            x[0] for x in SubtypeContext.query.with_entities(SubtypeContext.name).all()
+        ]
+
+    @staticmethod
+    def get_all_codes():
+        return [
+            x[0]
+            for x in SubtypeContext.query.with_entities(
+                SubtypeContext.subtype_code
+            ).all()
+        ]
+
+    @classmethod
+    def get_by_name(cls, name, must=True) -> Optional["SubtypeContext"]:
+        q = db.session.query(SubtypeContext).filter(SubtypeContext.name == name)
+        if must:
+            return q.one()
+        else:
+            return q.one_or_none()
+
+    def get_cell_line_names(self) -> List["str"]:
+        cell_lines = [cell_line.cell_line_name for cell_line in self.depmap_model]
+        return cell_lines
+
+    def get_depmap_ids(self) -> List["str"]:
+        cell_lines = [cell_line.model_id for cell_line in self.depmap_model]
+        return cell_lines
+
+    # TODO: This is used on the old context page. Do we take it out?
+    # @classmethod
+    # def get_cell_line_table_query(cls, name):
+    #     """
+    #     Returns query to display a cell line table, i.e. adding primary disease and primary/metastasis columns
+    #     with_entities is used to say we want a column of cell_line_name
+    #     The 'name' column for PrimaryDisease and TumorType are both called 'name', so add_column is used instead of with_entities to allow renaming with .label
+    #     """
+    #     query = (
+    #         Context.query.filter_by(name=name)
+    #         .join(CellLine, Context.cell_line)
+    #         .outerjoin(PrimaryDisease, TumorType)
+    #         .with_entities(CellLine.depmap_id)
+    #         .add_columns(
+    #             sa.column('"primary_disease".name', is_literal=True).label(
+    #                 "primary_disease"
+    #             ),
+    #             sa.column('"tumor_type".name', is_literal=True).label("tumor_type"),
+    #             sa.column("cell_line_display_name", is_literal=True),
+    #         )
+    #     )
+    #     return query
+
+
+class SubtypeContextEntity(Entity):
+    entity_id = Column(Integer, ForeignKey("entity.entity_id"), primary_key=True)
+
+    subtype_code = Column(
+        String, ForeignKey("subtype_context.subtype_code"), nullable=False
+    )
+    subtype_context = relationship(
+        "SubtypeContext",
+        foreign_keys="SubtypeContextEntity.subtype_code",
+        uselist=False,
+    )
+
+    __mapper_args__ = {"polymorphic_identity": "subtype_context"}
+
+    @staticmethod
+    def get_by_label(label, must=True):
+        q = db.session.query(SubtypeContextEntity).filter(
+            SubtypeContextEntity.label == label
+        )
+        if must:
+            return q.one()
+        else:
+            return q.one_or_none()

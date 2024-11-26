@@ -76,17 +76,19 @@ def _read_context_analyses(dr, pbar, gene_cache, cell_line_cache):
         else:
             entity_id = compound.entity_id
 
-        context = context_cache.get(row["context_name"])
+        # TODO: This commented out code will come back once subtypes officially
+        # replace the context matrix.
+        # context = context_cache.get(row["context_name"])
 
-        if context is None:
-            skipped_context += 1
-            log_data_issue(
-                "ContextAnalysis",
-                "Missing context",
-                identifier=row["context_name"],
-                id_type="context_name",
-            )
-            continue
+        # if context is None:
+        #     skipped_context += 1
+        #     log_data_issue(
+        #         "ContextAnalysis",
+        #         "Missing context",
+        #         identifier=row["context_name"],
+        #         id_type="context_name",
+        #     )
+        #     continue
 
         # TODO: Is there a better way to do this??
         dependency_dataset = row["dataset"]
@@ -100,11 +102,13 @@ def _read_context_analyses(dr, pbar, gene_cache, cell_line_cache):
         dataset_name = DependencyDataset.DependencyEnum(
             dataset_str_to_name_mapping[dependency_dataset]
         )
+        dataset = DependencyDataset.get_dataset_by_name(dataset_name)
 
         analysis = dict(
-            context_name=context.name,
+            # TODO: Eventually subtype_code should come from the context cache
+            subtype_code=row["subtype_code"],
             entity_id=entity_id,
-            dataset_name=dataset_name,
+            dependency_dataset_id=dataset.dependency_dataset_id,
             out_group=row["out_group"],
             t_pval=float(_to_nan(row["t_pval"])),
             mean_in=float(_to_nan(row["mean_in"])),
