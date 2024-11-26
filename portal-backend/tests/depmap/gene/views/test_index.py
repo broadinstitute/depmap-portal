@@ -135,7 +135,6 @@ def test_gene_dependency_datasets_where_present(
                 "mutation_pearson",
                 "mutations_damaging",
                 "mutations_driver",
-                "rppa",
                 "rrbs",
                 "proteomics",
                 "sanger_proteomics",

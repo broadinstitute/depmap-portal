@@ -8,7 +8,7 @@ import pandas as pd
 import sqlalchemy as sa
 from sqlalchemy import UniqueConstraint, distinct, func, nullslast, case  # type: ignore
 from sqlalchemy.orm import backref
-
+from sqlalchemy.exc import NoResultFound  # pyright: ignore
 from depmap import enums
 from depmap.antibody.models import Antibody
 from depmap.cell_line.models import (
@@ -549,7 +549,10 @@ class BiomarkerDataset(Dataset):
             BiomarkerDataset.name == enum_name
         )
         if must:
-            return q.one()
+            try:
+                return q.one()
+            except NoResultFound:
+                raise NoResultFound(f"get_dataset_by_name did not find {enum_name}")
         else:
             return q.one_or_none()
 

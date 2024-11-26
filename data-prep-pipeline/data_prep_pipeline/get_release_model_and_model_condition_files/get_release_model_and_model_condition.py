@@ -222,36 +222,6 @@ def main():
         model_condition_df["ModelConditionID"].isin(model_condition_ids)
     ].copy()
 
-    # this was added per Sam Stoke's request: PedDep was uncomfortable with the name of the drug being
-    # released internally, and so we redacted it this release for the _internal_ release only.
-    drug_replacements = {"SN-38": "with drug"}
-    if "internal" in quarterly_release_dataset_id:
-        # make sure these are all here
-        assert set(model_condition_df_filtered["Drug"]).intersection(
-            drug_replacements.keys()
-        ) == set(drug_replacements.keys())
-        print(
-            colored(
-                f"redacting specific drug {drug_replacements}. Remove this hack after 24Q2!!",
-                "red",
-            )
-        )
-        model_condition_df_filtered["Drug"] = model_condition_df_filtered[
-            "Drug"
-        ].replace(drug_replacements)
-    elif "dmc" in quarterly_release_dataset_id:
-        pass  # dont do anything
-    else:
-        # make sure none of these drugs are in public files
-        assert (
-            len(
-                set(model_condition_df_filtered["Drug"]).intersection(
-                    drug_replacements.keys()
-                )
-            )
-            == 0
-        )
-
     model_condition_df_filtered.to_csv(model_condition_outfile, index=False)
     print(
         colored(
