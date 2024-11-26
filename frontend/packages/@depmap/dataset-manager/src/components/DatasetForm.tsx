@@ -18,56 +18,13 @@ import {
 } from "@depmap/types";
 import ChunkedFileUploader from "./ChunkedFileUploader";
 
-const initDatasetForm = (format: "table" | "matrix") => {
-  const initForm: { [key: string]: any } = {};
-  if (format === "matrix") {
-    Object.keys(matrixFormSchema.properties)
-      .concat("allowed_values")
-      .forEach((key) => {
-        if (
-          typeof matrixFormSchema.properties[key] === "object" &&
-          // @ts-ignore
-          "default" in matrixFormSchema.properties[key]
-        ) {
-          // @ts-ignore
-          initForm[key] = matrixFormSchema.properties[key].default;
-        } else {
-          initForm[key] = null;
-        }
-      });
-    return initForm;
-  }
-  if (format === "table") {
-    Object.keys(tableFormSchema.properties).forEach((key) => {
-      if (
-        typeof tableFormSchema.properties[key] === "object" &&
-        // @ts-ignore
-        "default" in tableFormSchema.properties[key]
-      ) {
-        // @ts-ignore
-        initForm[key] = tableFormSchema.properties[key].default;
-      } else {
-        initForm[key] = null;
-      }
-    });
-    return initForm;
-  }
-  return initForm;
-};
-
 interface DatasetFormProps {
-  // onSubmitDatasetEdit: (
-  //   args: any,
-  //   clear_state_callback: (isSuccessfulSubmit: boolean) => void
-  // ) => void;
-  // datasetSubmissionError: string | null;
   getDimensionTypes: () => Promise<DimensionType[]>;
   getDataTypesAndPriorities: () => Promise<InvalidPrioritiesByDataType>;
   getGroups: () => Promise<Group[]>;
   uploadFile: (fileArgs: { file: File | Blob }) => Promise<UploadFileResponse>;
   uploadDataset: (datasetParams: DatasetParams) => Promise<any>;
-  // selectedDataset: Dataset | null;
-  // isEditMode: boolean;
+  isAdvancedMode: boolean;
 }
 
 export default function DatasetForm(props: DatasetFormProps) {
@@ -77,10 +34,54 @@ export default function DatasetForm(props: DatasetFormProps) {
     getDataTypesAndPriorities,
     uploadFile,
     uploadDataset,
+    isAdvancedMode,
   } = props;
+
+  const initDatasetForm = React.useCallback(
+    (format: "table" | "matrix") => {
+      const initForm: { [key: string]: any } = {};
+      if (format === "matrix") {
+        Object.keys(matrixFormSchema.properties)
+          .concat("allowed_values")
+          .forEach((key) => {
+            if (!isAdvancedMode && key === "value_type") {
+              initForm[key] = "continuous";
+            } else if (
+              typeof matrixFormSchema.properties[key] === "object" &&
+              // @ts-ignore
+              "default" in matrixFormSchema.properties[key]
+            ) {
+              // @ts-ignore
+              initForm[key] = matrixFormSchema.properties[key].default;
+            } else {
+              initForm[key] = null;
+            }
+          });
+        return initForm;
+      }
+      if (format === "table") {
+        Object.keys(tableFormSchema.properties).forEach((key) => {
+          if (
+            typeof tableFormSchema.properties[key] === "object" &&
+            // @ts-ignore
+            "default" in tableFormSchema.properties[key]
+          ) {
+            // @ts-ignore
+            initForm[key] = tableFormSchema.properties[key].default;
+          } else {
+            initForm[key] = null;
+          }
+        });
+        return initForm;
+      }
+      return initForm;
+    },
+    [isAdvancedMode]
+  );
+
   const [selectedFormat, setSelectedFormat] = useState<
     "matrix" | "table" | null
-  >(null);
+  >(isAdvancedMode ? null : "matrix");
   const [formContent, setFormContent] = useState({
     table: initDatasetForm("table"),
     matrix: initDatasetForm("matrix"),
@@ -177,6 +178,7 @@ export default function DatasetForm(props: DatasetFormProps) {
             });
           }}
           onSubmitForm={onSubmitForm}
+          isAdvancedMode={isAdvancedMode}
         />
       );
     }
@@ -216,6 +218,7 @@ export default function DatasetForm(props: DatasetFormProps) {
     formContent,
     fileIds,
     md5Hash,
+    isAdvancedMode,
   ]);
 
   const handleOnChange = (e: any) => {
@@ -248,27 +251,42 @@ export default function DatasetForm(props: DatasetFormProps) {
 
   return (
     <>
-      <legend>Step 1: Upload A File</legend>
-      <ChunkedFileUploader
-        uploadFile={uploadFile}
-        forwardFileIdsAndHash={forwardFileIdsAndHash}
-      />
-      <legend>Step 2: Choose Dataset Format</legend>
-      <FormGroup controlId="format" required>
-        <Radio
-          name="radioGroup"
-          inline
-          onChange={handleOnChange}
-          value="matrix"
-        >
-          Matrix
-        </Radio>
-        <Radio name="radioGroup" inline onChange={handleOnChange} value="table">
-          Table
-        </Radio>
-      </FormGroup>
+      <div>
+        <legend>Step 1: Upload A File</legend>
+        <ChunkedFileUploader
+          uploadFile={uploadFile}
+          forwardFileIdsAndHash={forwardFileIdsAndHash}
+        />
+      </div>
+
+      {isAdvancedMode ? (
+        <div>
+          <legend>Step 2: Choose Dataset Format</legend>
+          <FormGroup controlId="format" required>
+            <Radio
+              name="radioGroup"
+              inline
+              onChange={handleOnChange}
+              value="matrix"
+            >
+              Matrix
+            </Radio>
+            <Radio
+              name="radioGroup"
+              inline
+              onChange={handleOnChange}
+              value="table"
+            >
+              Table
+            </Radio>
+          </FormGroup>
+        </div>
+      ) : null}
+
       {formComponent ? (
-        <legend>Step 3: Fill Out Dataset Information</legend>
+        <legend>
+          {isAdvancedMode ? "Step 3:" : "Step 2:"} Fill Out Dataset Information
+        </legend>
       ) : null}
       {formComponent}
     </>

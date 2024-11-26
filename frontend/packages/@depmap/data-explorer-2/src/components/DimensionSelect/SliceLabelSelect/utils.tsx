@@ -440,12 +440,12 @@ export function formatOptionLabel(
 
     return (
       <Tooltip
-        id="disabled-data-type"
+        id={`disabled-option-${option.label}`}
         className={styles.unblockable}
         content={<WordBreaker text={disabledReason} />}
         placement="top"
       >
-        <span style={{ cursor: "not-allowed" }}>{children}</span>
+        <span className={styles.disabledOption}>{children}</span>
       </Tooltip>
     );
   };

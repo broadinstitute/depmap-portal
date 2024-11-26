@@ -1,4 +1,5 @@
 import React, { useRef } from "react";
+import { AnnotationType } from "@depmap/types";
 import { useContextBuilderState } from "../../../state/ContextBuilderState";
 import PlotConfigSelect from "../../../../PlotConfigSelect";
 import {
@@ -6,7 +7,6 @@ import {
   operatorsByValueType,
   opLabels,
   RelationExpr,
-  ValueType,
 } from "../../../utils/expressionUtils";
 import { scrollParentIntoView } from "../../../utils/domUtils";
 import styles from "../../../../../styles/ContextBuilderV2.scss";
@@ -15,22 +15,20 @@ interface Props {
   expr: RelationExpr;
   path: (string | number)[];
   varName: string | null;
+  value_type: keyof typeof AnnotationType | null;
   isLoading: boolean;
 }
 
-function Operator({ expr, path, varName, isLoading }: Props) {
+function Operator({ expr, path, varName, value_type, isLoading }: Props) {
   const ref = useRef<HTMLDivElement>(null);
-  const { vars } = useContextBuilderState();
   const { dispatch, fullySpecifiedVars } = useContextBuilderState();
 
-  const variable = varName ? vars[varName] : null;
-  const value_type = variable?.value_type || null;
   const op = getOperator(expr);
 
   const options = value_type
     ? Object.fromEntries(
         Object.entries(opLabels).filter(([key]) => {
-          return operatorsByValueType[value_type as ValueType].has(key);
+          return operatorsByValueType[value_type].has(key);
         })
       )
     : [];

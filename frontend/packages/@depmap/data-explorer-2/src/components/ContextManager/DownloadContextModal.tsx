@@ -6,8 +6,8 @@ import {
   fetchContext,
   fetchMetadataColumn,
 } from "../../api";
-
 import { getDimensionTypeLabel, pluralize } from "../../utils/misc";
+import { isV2Context } from "../../utils/context";
 import styles from "../../styles/ContextManager.scss";
 
 interface Props {
@@ -32,7 +32,13 @@ function DownloadContextModal({
 
   // Pre-fetch the context so it downloads faster (these requests are cached).
   useEffect(() => {
-    fetchContext(contextHash).then(fetchContextLabels);
+    fetchContext(contextHash).then((context) => {
+      if (isV2Context(context)) {
+        throw new Error("V2 contexts not supported!");
+      }
+
+      return fetchContextLabels(context);
+    });
   }, [contextHash]);
 
   const handleClickDownload = () => {
@@ -42,7 +48,13 @@ function DownloadContextModal({
     }
 
     fetchContext(contextHash)
-      .then(fetchContextLabels)
+      .then((context) => {
+        if (isV2Context(context)) {
+          throw new Error("V2 contexts not supported!");
+        }
+
+        return fetchContextLabels(context);
+      })
       .then(async (contextLabels) => {
         let labels = contextLabels;
 

@@ -10,7 +10,7 @@ import ContextBuilderV2 from "../ContextBuilderV2";
 import {
   deleteContextFromLocalStorage,
   loadContextsFromLocalStorage,
-  saveContextToLocalStorage,
+  saveContextToLocalStorageAndPersist,
 } from "../../utils/context";
 import { persistLegacyListAsContext } from "../ContextSelector/context-selector-utils";
 import Welcome from "./Welcome";
@@ -78,7 +78,10 @@ function ContextManager({
 
     onClickSave.current = async (editedContext: DataExplorerContext) => {
       try {
-        const nextHash = await saveContextToLocalStorage(editedContext, hash);
+        const nextHash = await saveContextToLocalStorageAndPersist(
+          editedContext,
+          hash
+        );
         setShowContextModal(false);
         window.dispatchEvent(new Event("dx2_contexts_updated"));
 
@@ -139,7 +142,7 @@ function ContextManager({
       name: `Copy of ${context.name}`,
     };
 
-    await saveContextToLocalStorage(duplicateContext);
+    await saveContextToLocalStorageAndPersist(duplicateContext);
     window.dispatchEvent(new Event("dx2_contexts_updated"));
     forceRender({});
 
@@ -174,7 +177,7 @@ function ContextManager({
           return null;
         }
 
-        return saveContextToLocalStorage({
+        return saveContextToLocalStorageAndPersist({
           name: contextName,
           context_type: "depmap_model",
           expr: {

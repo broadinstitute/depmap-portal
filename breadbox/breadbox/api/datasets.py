@@ -356,7 +356,7 @@ def get_tabular_dataset_data(
     ] = False,
 ):
     try:
-        df = dataset_crud.get_subsetted_tabular_dataset_df(
+        df = dataset_service.get_subsetted_tabular_dataset_df(
             db, user, dataset, tabular_dimensions_info, strict
         )
     except UserError as e:

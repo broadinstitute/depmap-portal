@@ -363,7 +363,7 @@ export class ElaraApi {
   }
 
   getBreadboxUser(): Promise<string> {
-    return this._fetch<string>("/user");
+    return this._fetch<string>("/user/");
   }
 
   getBreadboxDatasets(): Promise<Dataset[]> {

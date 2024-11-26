@@ -10,7 +10,6 @@ export type DataExplorerPlotType =
 
 export type DataExplorerContextVariable = SliceQuery & {
   source?: "metadata_column" | "tabular_dataset" | "matrix_dataset";
-  value_type?: "text" | "categorical" | "continuous" | "list_strings";
   slice_type?: string;
   label?: string;
 };
