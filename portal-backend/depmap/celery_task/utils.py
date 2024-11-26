@@ -112,14 +112,15 @@ def format_task_status(task):
             percent_complete = task.result.get("percent_complete")
             start_time = task.result.get("start_time")
 
+            # For some reason, max time is occasionally null in tasks originating from the
+            # compound page's Genomic Associations tab. For now, just use a default value instead of throwing an error.
+            max_time = task.result.get("max_time", 45)
+
             if percent_complete is None and start_time is not None:
                 # if "start_time" is provided, compute a fake status bar
-                assert "max_time" in task.result
                 max_percent = 95
                 current_runtime = time.time() - task.result["start_time"]
-                percent_complete = (
-                    min(current_runtime / task.result["max_time"], 1) * max_percent
-                )
+                percent_complete = min(current_runtime / max_time, 1) * max_percent
 
     elif task.state == TaskState.SUCCESS.name:
         # done, return the result payload
