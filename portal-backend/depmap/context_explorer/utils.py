@@ -45,7 +45,7 @@ def get_other_context_dependencies(
 ):
 
     other_context_dependencies = ContextAnalysis.get_other_context_dependencies(
-        context_name=in_group,
+        subtype_code=in_group,
         out_group=out_group_type,
         entity_id=entity_id,
         entity_type=entity_type,
