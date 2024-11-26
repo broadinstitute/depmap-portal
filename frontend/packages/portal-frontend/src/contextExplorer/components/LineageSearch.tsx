@@ -287,14 +287,14 @@ const LineageSearch = (lineageSearchProps: LineageSearchProps) => {
                   </p>
                 </>
               )}
-              {
+              {selectedTab == TabTypes.Overview && (
                 <div className={styles.overviewText}>
                   Context Explorer helps researchers see how many datasets are
                   available for their chosen tissue context type and subtype, as
                   well as showing the overlap in data. To learn more, visit{" "}
                   <a>this resource.</a>
                 </div>
-              }
+              )}
             </TabPanel>
             <TabPanel className={styles.TabPanel}>Tab 2</TabPanel>
           </TabPanels>

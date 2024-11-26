@@ -190,13 +190,15 @@ def get_context_analysis_query(
 ):
     assert dataset_name in DependencyEnum.values()
 
-    dataset_enum_name = DependencyEnum(dataset_name)
+    dependency_dataset_id = DependencyDataset.get_dataset_by_name(
+        dataset_name
+    ).dependency_dataset_id
     if entity_type == "gene":
         query = (
             ContextAnalysis.query.filter_by(
                 subtype_code=subtype_code,
                 out_group=out_group,
-                dataset_name=dataset_enum_name,
+                dependency_dataset_id=dependency_dataset_id,
             )
             .join(Gene, Gene.entity_id == ContextAnalysis.entity_id)
             .add_columns(
@@ -211,7 +213,7 @@ def get_context_analysis_query(
             ContextAnalysis.query.filter_by(
                 subtype_code=subtype_code,
                 out_group=out_group,
-                dataset_name=dataset_enum_name,
+                dependency_dataset_id=dependency_dataset_id,
             )
             .join(
                 CompoundExperiment,

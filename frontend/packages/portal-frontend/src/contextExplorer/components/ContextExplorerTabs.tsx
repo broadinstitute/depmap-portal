@@ -65,7 +65,7 @@ const ContextExplorerTabs = ({
       lineage: row.level_0,
       primaryDisease: row.level_1,
       subtype: row.level_2,
-      molecularSubtype: "",
+      molecularSubtype: row.level_3,
       crispr: capitalizeFirstLetter(String(row.crispr)),
       rnai: capitalizeFirstLetter(String(row.rnai)),
       wgs: capitalizeFirstLetter(String(row.wgs)),

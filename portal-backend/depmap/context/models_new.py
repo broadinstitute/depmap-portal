@@ -63,6 +63,9 @@ class SubtypeNode(Model):
                 SubtypeNode.level_0,
                 SubtypeNode.level_1,
                 SubtypeNode.level_2,
+                SubtypeNode.level_3,
+                SubtypeNode.level_4,
+                SubtypeNode.level_5,
                 SubtypeNode.node_name,
                 SubtypeNode.node_level,
             )

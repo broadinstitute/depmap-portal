@@ -280,7 +280,17 @@ def get_context_explorer_lineage_trees_and_table_data() -> Tuple[
     overview_data = _get_overview_table_data(df=subtype_df, summary_df=summary_df)
 
     subtype_tree_df = subtype_df[
-        ["subtype_code", "node_name", "node_level", "level_0", "level_1", "level_2",]
+        [
+            "subtype_code",
+            "node_name",
+            "node_level",
+            "level_0",
+            "level_1",
+            "level_2",
+            "level_3",
+            "level_4",
+            "level_5",
+        ]
     ]
 
     subtype_codes_and_names = subtype_df.loc[subtype_df["node_level"] == 0]

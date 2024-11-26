@@ -159,7 +159,7 @@ function ContextAnalysis({
     setIsLoading(true);
     if (didValidateOutgroup) {
       const promise = dapi.getContextExplorerAnalysisData(
-        selectedContextNameInfo.name,
+        selectedContextNameInfo.subtype_code,
         outgroup.value,
         entityType,
         datasetId

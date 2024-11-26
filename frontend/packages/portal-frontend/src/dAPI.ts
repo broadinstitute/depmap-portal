@@ -598,13 +598,13 @@ export class DepmapApi {
   }
 
   getContextExplorerAnalysisData(
-    in_group: string,
+    in_group_code: string,
     out_group_type: string,
     entity_type: string,
     dataset_name: ContextExplorerDatasets
   ): Promise<ContextAnalysisTableType> {
     const params = {
-      in_group,
+      in_group: in_group_code,
       out_group_type: "All Others",
       entity_type,
       dataset_name,
