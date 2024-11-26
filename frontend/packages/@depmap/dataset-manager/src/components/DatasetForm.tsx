@@ -18,7 +18,7 @@ import {
 } from "@depmap/types";
 import ChunkedFileUploader from "./ChunkedFileUploader";
 import { CeleryTask } from "@depmap/compute";
-import styles from "@depmap/common-components/src/styles/ProgressTracker.scss";
+import progressTrackerStyles from "@depmap/common-components/src/styles/ProgressTracker.scss";
 
 interface DatasetFormProps {
   getDimensionTypes: () => Promise<DimensionType[]>;
@@ -156,14 +156,12 @@ export default function DatasetForm(props: DatasetFormProps) {
   useEffect(() => {
     if (taskSubmissionResponse !== undefined) {
       /**
-    About resolve and reject functions
+    About resolve and reject functions influenced by ProgressTracker.tsx
 
     For normal, expected user input errors, the back end returns 200 with state failure
+    Caught errors still return 200 in task poll but task state reflects failure
     For unexpected failure modes, the back end returns 500. This is so that the error gets sent to stackdriver
     For these unexpected errors, we catch the 500, and mimic the response from a failed-gracefully-with-200
-
-    whether we return 200 (resolve) or 500 (reject), call updateStateFromResponse
-    just that in the 500 case, we need to mimic a fake response with a generic error message
   */
 
       const later = (delay: number): Promise<any> => {
@@ -186,22 +184,23 @@ export default function DatasetForm(props: DatasetFormProps) {
         } else {
           setCompletedTask(response);
         }
+        setTaskRunning(false);
       };
 
       // eslint-disable-next-line consistent-return
       const checkStatus = (response: CeleryTask) => {
         function resolve(res: CeleryTask) {
-          setCompletedTask(response);
+          console.log(res);
           checkStatus(res);
         }
 
         if (response.state === "SUCCESS") {
-          setCompletedTask(response);
           setTaskRunning(false);
+          setCompletedTask(response);
         } else if (response.state === "FAILURE") {
           console.error("Upload dataset failed: ", response);
-          setCompletedTask(response);
           setTaskRunning(false);
+          setCompletedTask(response);
         } else {
           const nextPollDelay = response.nextPollDelay;
 
@@ -214,11 +213,37 @@ export default function DatasetForm(props: DatasetFormProps) {
       };
 
       taskSubmissionResponse.then((res) => {
-        setCompletedTask(res);
         checkStatus(res);
       }, reject);
     }
   }, [getTaskStatus, taskSubmissionResponse]);
+
+  const submissionMessage = useMemo(() => {
+    if (completedTask?.state === "SUCCESS") {
+      return (
+        <div>
+          <div style={{ color: "green" }}>SUCCESS!</div>
+          {completedTask.result.unknownIDs.length > 0 ? (
+            <div style={{ color: "goldenrod" }}>
+              WARNING: Unknown IDS:{" "}
+              {JSON.parse(completedTask.result.unknownIDs)}
+            </div>
+          ) : null}
+        </div>
+      );
+    }
+    if (completedTask?.state === "FAILURE") {
+      return (
+        <div style={{ color: "red" }}>FAILED: {completedTask.message}!</div>
+      );
+    }
+    if (taskRunning) {
+      return (
+        <div className={progressTrackerStyles.loadingEllipsis}>LOADING</div>
+      );
+    }
+    return null;
+  }, [taskRunning, completedTask]);
 
   const formComponent = useMemo(() => {
     const onSubmitForm = async (formData: { [key: string]: any }) => {
@@ -262,18 +287,7 @@ export default function DatasetForm(props: DatasetFormProps) {
             onSubmitForm={onSubmitForm}
             isAdvancedMode={isAdvancedMode}
           />
-          {taskRunning &&
-            taskSubmissionResponse &&
-            completedTask &&
-            completedTask.state === "PENDING" && (
-              <div className={styles.loadingEllipsis}>LOADING</div>
-            )}
-          {completedTask && completedTask.state === "SUCCESS" && (
-            <div>SUCCESS!</div>
-          )}
-          {completedTask && completedTask.state === "FAILURE" && (
-            <div>{completedTask.message}!</div>
-          )}
+          {submissionMessage}
         </>
       );
     }
@@ -299,18 +313,7 @@ export default function DatasetForm(props: DatasetFormProps) {
             }}
             onSubmitForm={onSubmitForm}
           />
-          {taskRunning &&
-            taskSubmissionResponse &&
-            completedTask &&
-            completedTask.state === "PENDING" && (
-              <div className={styles.loadingEllipsis}>LOADING</div>
-            )}
-          {completedTask && completedTask.state === "SUCCESS" && (
-            <div>SUCCESS!</div>
-          )}
-          {completedTask && completedTask.state === "FAILURE" && (
-            <div>{completedTask.message}!</div>
-          )}
+          {submissionMessage}
         </>
       );
     }
@@ -328,9 +331,7 @@ export default function DatasetForm(props: DatasetFormProps) {
     fileIds,
     md5Hash,
     isAdvancedMode,
-    taskRunning,
-    taskSubmissionResponse,
-    completedTask,
+    submissionMessage,
   ]);
 
   const handleOnChange = (e: any) => {
