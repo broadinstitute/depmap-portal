@@ -303,7 +303,7 @@ def get_context_explorer_lineage_trees_and_table_data() -> Tuple[
     for subtype_code in list(subtype_codes_and_names_dict.keys()):
         node_level = 0
         subtype_context = SubtypeContext.get_by_code(subtype_code)
-        model_ids = subtype_context.get_model_ids()
+        model_ids = SubtypeContext.get_model_ids(subtype_context)
         node_name = subtype_codes_and_names_dict[subtype_code]
         root_node = ContextNode(
             name=node_name,

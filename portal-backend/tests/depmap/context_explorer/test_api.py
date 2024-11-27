@@ -20,17 +20,22 @@ def test_get_context_info(populated_db):
 
         # Make sure all expected columns are present in the Overview Table
         assert list(overview_table_data[0].keys()) == [
-            "depmap_id",
-            "lineage",
-            "primary_disease",
-            "subtype",
-            "molecular_subtype",
-            "crispr",
-            "rnai",
-            "wgs",
-            "wes",
+            "model_id",
+            "subtype_code",
+            "level_0",
+            "level_1",
+            "level_2",
+            "level_3",
+            "level_4",
+            "level_5",
+            "node_name",
+            "node_level",
             "prism",
             "rna_seq",
+            "wgs",
+            "wes",
+            "rnai",
+            "crispr",
             "cell_line_display_name",
         ]
 
@@ -42,13 +47,13 @@ def test_get_context_info(populated_db):
         # Make sure everything that loads into the trees actually have data (depmap_ids list greater than 0)
         for tree_key in list(trees.keys()):
             tree = trees[str(tree_key)]
-            assert len(tree["root"]["depmap_ids"]) > 0
+            assert len(tree["root"]["model_ids"]) > 0
 
             if len(tree["children"]) > 0:
                 for child in tree["children"]:
-                    assert len(child["depmap_ids"]) > 0
+                    assert len(child["model_ids"]) > 0
 
-        context_names = [option["name"] for option in search_options]
+        context_names = [option["subtype_code"] for option in search_options]
         assert sorted(list(trees.keys())) == sorted(context_names)
 
 
