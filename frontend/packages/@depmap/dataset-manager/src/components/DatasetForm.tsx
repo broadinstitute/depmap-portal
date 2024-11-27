@@ -109,7 +109,7 @@ export default function DatasetForm(props: DatasetFormProps) {
     setInvalidPrioritiesByDataType,
   ] = useState<InvalidPrioritiesByDataType>({});
   const [dataTypeOptions, setDataTypeOptions] = useState<DataType[]>([]);
-  const [taskRunning, setTaskRunning] = React.useState(false);
+  const [isTaskRunning, setIsTaskRunning] = React.useState(false);
   // Completed task (either failed or successful)
   const [completedTask, setCompletedTask] = React.useState<
     CeleryTask | undefined
@@ -175,7 +175,7 @@ export default function DatasetForm(props: DatasetFormProps) {
     } else {
       setCompletedTask(res);
     }
-    setTaskRunning(false);
+    setIsTaskRunning(false);
   }, []);
 
   const checkStatus = useCallback(
@@ -188,11 +188,11 @@ export default function DatasetForm(props: DatasetFormProps) {
       };
 
       if (response.state === "SUCCESS") {
-        setTaskRunning(false);
+        setIsTaskRunning(false);
         setCompletedTask(response);
         onSuccess(response.result.dataset);
       } else if (response.state === "FAILURE") {
-        setTaskRunning(false);
+        setIsTaskRunning(false);
         setCompletedTask(response);
       } else {
         const nextPollDelay = response.nextPollDelay;
@@ -207,7 +207,7 @@ export default function DatasetForm(props: DatasetFormProps) {
   );
 
   const submissionMessage = useMemo(() => {
-    if (completedTask?.state === "SUCCESS") {
+    if (completedTask?.state === "SUCCESS" && !isTaskRunning) {
       return (
         <div>
           <div style={{ color: "green" }}>SUCCESS!</div>
@@ -220,18 +220,18 @@ export default function DatasetForm(props: DatasetFormProps) {
         </div>
       );
     }
-    if (completedTask?.state === "FAILURE") {
+    if (completedTask?.state === "FAILURE" && !isTaskRunning) {
       return (
         <div style={{ color: "red" }}>FAILED: {completedTask.message}!</div>
       );
     }
-    if (taskRunning) {
+    if (isTaskRunning) {
       return (
         <div className={progressTrackerStyles.loadingEllipsis}>LOADING</div>
       );
     }
     return null;
-  }, [taskRunning, completedTask]);
+  }, [isTaskRunning, completedTask]);
 
   const formComponent = useMemo(() => {
     const onSubmitForm = async (formData: { [key: string]: any }) => {
@@ -251,7 +251,7 @@ export default function DatasetForm(props: DatasetFormProps) {
       console.log("form submitted: ", formToSubmit);
 
       setCompletedTask(undefined);
-      setTaskRunning(true);
+      setIsTaskRunning(true);
       uploadDataset(formToSubmit as DatasetParams).then(checkStatus, reject);
     };
 
