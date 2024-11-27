@@ -303,9 +303,6 @@ class CompoundDoseReplicateFactory(SQLAlchemyModelFactory):
     label = factory.Sequence(lambda number: "CTRP:{} dose rep".format(number))
 
     compound_experiment_id = factory.Sequence(lambda number: number)
-    compound_experiment = factory.SubFactory(
-        CompoundExperimentFactory, entity_id="..compound_experiment_id"
-    )
     dose = factory.Sequence(lambda number: number)
     replicate = factory.Sequence(lambda number: number)
     is_masked = None
