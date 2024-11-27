@@ -3,7 +3,7 @@ import * as React from "react";
 import { MatrixDatasetForm } from "./MatrixDatasetForm";
 import { TableDatasetForm } from "./TableDatasetForm";
 import { FormGroup, Radio } from "react-bootstrap";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { matrixFormSchema } from "../models/matrixDatasetFormSchema";
 import { tableFormSchema } from "../models/tableDatasetFormSchema";
 import {
@@ -15,6 +15,7 @@ import {
   DimensionType,
   SampleDimensionType,
   FeatureDimensionType,
+  Dataset,
 } from "@depmap/types";
 import ChunkedFileUploader from "./ChunkedFileUploader";
 import { CeleryTask } from "@depmap/compute";
@@ -27,6 +28,7 @@ interface DatasetFormProps {
   uploadFile: (fileArgs: { file: File | Blob }) => Promise<UploadFileResponse>;
   uploadDataset: (datasetParams: DatasetParams) => Promise<any>;
   getTaskStatus: (taskIds: string) => Promise<CeleryTask>;
+  onSuccess: (dataset: Dataset) => void;
   isAdvancedMode: boolean;
 }
 
@@ -38,6 +40,7 @@ export default function DatasetForm(props: DatasetFormProps) {
     uploadFile,
     uploadDataset,
     getTaskStatus,
+    onSuccess,
     isAdvancedMode,
   } = props;
 
@@ -107,9 +110,6 @@ export default function DatasetForm(props: DatasetFormProps) {
   ] = useState<InvalidPrioritiesByDataType>({});
   const [dataTypeOptions, setDataTypeOptions] = useState<DataType[]>([]);
   const [taskRunning, setTaskRunning] = React.useState(false);
-  const [taskSubmissionResponse, setTaskSubmissionResponse] = React.useState<
-    Promise<CeleryTask> | undefined
-  >(undefined);
   // Completed task (either failed or successful)
   const [completedTask, setCompletedTask] = React.useState<
     CeleryTask | undefined
@@ -153,70 +153,58 @@ export default function DatasetForm(props: DatasetFormProps) {
     })();
   }, [getDimensionTypes, getGroups, getDataTypesAndPriorities]);
 
-  useEffect(() => {
-    if (taskSubmissionResponse !== undefined) {
-      /**
-    About resolve and reject functions influenced by ProgressTracker.tsx
+  /**
+    checkStatus and reject functions influenced by ProgressTracker.tsx
 
     For normal, expected user input errors, the back end returns 200 with state failure
     Caught errors still return 200 in task poll but task state reflects failure
     For unexpected failure modes, the back end returns 500. This is so that the error gets sent to stackdriver
     For these unexpected errors, we catch the 500, and mimic the response from a failed-gracefully-with-200
   */
+  const reject = useCallback((res: any) => {
+    const isCeleryTask = (x: any): x is CeleryTask => x.state !== undefined;
+    if (!isCeleryTask(res)) {
+      setCompletedTask({
+        id: "",
+        state: "FAILURE",
+        percentComplete: undefined,
+        message:
+          "Unexpected error. If you get this error consistently, please contact us with a screenshot and the actions that lead to this error.",
+        result: null,
+      });
+    } else {
+      setCompletedTask(res);
+    }
+    setTaskRunning(false);
+  }, []);
 
+  const checkStatus = useCallback(
+    (response: CeleryTask) => {
+      console.log("Polled Response", response);
       const later = (delay: number): Promise<any> => {
         return new Promise((res) => {
           setTimeout(res, delay);
         });
       };
 
-      const reject = (response: any) => {
-        const isCeleryTask = (x: any): x is CeleryTask => x.state !== undefined;
-        if (isCeleryTask(response)) {
-          setCompletedTask({
-            id: "",
-            state: "FAILURE",
-            percentComplete: undefined,
-            message:
-              "Unexpected error. If you get this error consistently, please contact us with a screenshot and the actions that lead to this error.",
-            result: null,
-          });
-        } else {
-          setCompletedTask(response);
-        }
+      if (response.state === "SUCCESS") {
         setTaskRunning(false);
-      };
-
-      // eslint-disable-next-line consistent-return
-      const checkStatus = (response: CeleryTask) => {
-        function resolve(res: CeleryTask) {
-          console.log(res);
-          checkStatus(res);
-        }
-
-        if (response.state === "SUCCESS") {
-          setTaskRunning(false);
-          setCompletedTask(response);
-        } else if (response.state === "FAILURE") {
-          console.error("Upload dataset failed: ", response);
-          setTaskRunning(false);
-          setCompletedTask(response);
-        } else {
-          const nextPollDelay = response.nextPollDelay;
-
-          return later(nextPollDelay || 0)
-            .then(() => {
-              return getTaskStatus(response.id);
-            })
-            .then(resolve, reject);
-        }
-      };
-
-      taskSubmissionResponse.then((res) => {
-        checkStatus(res);
-      }, reject);
-    }
-  }, [getTaskStatus, taskSubmissionResponse]);
+        setCompletedTask(response);
+        onSuccess(response.result.dataset);
+      } else if (response.state === "FAILURE") {
+        setTaskRunning(false);
+        setCompletedTask(response);
+      } else {
+        const nextPollDelay = response.nextPollDelay;
+        later(nextPollDelay || 0)
+          .then(() => {
+            return getTaskStatus(response.id);
+          })
+          .then(checkStatus, reject);
+      }
+    },
+    [getTaskStatus, onSuccess, reject]
+  );
 
   const submissionMessage = useMemo(() => {
     if (completedTask?.state === "SUCCESS") {
@@ -262,8 +250,9 @@ export default function DatasetForm(props: DatasetFormProps) {
       }
       console.log("form submitted: ", formToSubmit);
 
+      setCompletedTask(undefined);
       setTaskRunning(true);
-      setTaskSubmissionResponse(uploadDataset(formToSubmit as DatasetParams));
+      uploadDataset(formToSubmit as DatasetParams).then(checkStatus, reject);
     };
 
     if (selectedFormat === "matrix") {
@@ -322,6 +311,8 @@ export default function DatasetForm(props: DatasetFormProps) {
   }, [
     selectedFormat,
     uploadDataset,
+    checkStatus,
+    reject,
     featureTypeOptions,
     sampleTypeOptions,
     groupOptions,
