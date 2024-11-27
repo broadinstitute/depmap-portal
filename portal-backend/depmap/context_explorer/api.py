@@ -122,7 +122,8 @@ def _get_all_level_0_subtype_info(
             )
         )
 
-    return context_name_info
+    sorted_context_name_info_list = sorted(context_name_info, key=lambda x: x.name)
+    return sorted_context_name_info_list
 
 
 def make_subtype_context_sample_data():
