@@ -203,9 +203,6 @@ class DepmapModelFactory(SQLAlchemyModelFactory):
     depmap_model_type = factory.Sequence(
         lambda number: "depmap_model_type_{}".format(number)
     )
-    oncotree_primary_disease = factory.Sequence(
-        lambda number: "oncotree_primary_disease_{}".format(number)
-    )
     cell_line_name = factory.Sequence(lambda number: "cell_line_{}".format(number))
     cell_line_alias = factory.LazyAttribute(lambda o: [CellLineAliasFactory()])
     age_category = factory.Sequence(lambda number: "age_category_{}".format(number))
