@@ -1,44 +1,90 @@
-import { MatrixDataset } from "@depmap/types";
+import { compareCaseInsensitive, compareDisabledLast } from "@depmap/utils";
 import { useDataExplorerApi } from "../../../contexts/DataExplorerApiContext";
-import { isSampleType } from "../../../utils/misc";
+import { isSampleType, pluralize } from "../../../utils/misc";
 import { State } from "./types";
-
-const collator = new Intl.Collator("en", { sensitivity: "base" });
-const compareCaseInsensitive = collator.compare;
-
-const disabledLast = (
-  a: { isDisabled: boolean },
-  b: { isDisabled: boolean }
-) => {
-  if (a.isDisabled && !b.isDisabled) {
-    return 1;
-  }
-
-  if (!a.isDisabled && b.isDisabled) {
-    return -1;
-  }
-
-  return 0;
-};
 
 async function fetchIndexCompatibleDatasets(
   api: ReturnType<typeof useDataExplorerApi>,
   index_type: string | null
 ) {
-  const datasets = await api.fetchDatasets();
+  const datasets = await api.fetchDatasetsByIndexType();
 
-  return (
-    datasets
-      // TODO: Add support for tabular datasets
-      .filter((d) => d.format === "matrix_dataset")
-      .filter((d) => {
-        return (
-          !index_type ||
-          (d as MatrixDataset).sample_type_name === index_type ||
-          (d as MatrixDataset).feature_type_name === index_type
-        );
-      })
-  );
+  if (!index_type || !(index_type in datasets)) {
+    return [];
+  }
+
+  if (!(index_type in datasets)) {
+    throw new Error(`Unknown dimension type "${index_type}".`);
+  }
+
+  return datasets[index_type];
+}
+
+async function fetchContextCompatibleDatasets(
+  api: ReturnType<typeof useDataExplorerApi>,
+  dimension: State["dimension"]
+) {
+  if (!dimension.context) {
+    return null;
+  }
+
+  const expr = dimension.context.expr;
+
+  if (dimension.axis_type === "aggregated_slice") {
+    throw new Error("Aggregation not yet implemented!");
+  }
+
+  if (!(typeof expr === "object") || !("==" in expr)) {
+    throw new Error("Malformed context expression");
+  }
+
+  const dimensionTypes = await api.fetchDimensionTypes();
+  const axis = dimensionTypes.find((dt) => dt.name === dimension.slice_type)
+    ?.axis;
+
+  if (axis === "sample") {
+    return api.fetchDatasets({
+      sample_id: expr["=="][1],
+      sample_type: dimension.context.dimension_type,
+    });
+  }
+
+  return api.fetchDatasets({
+    feature_id: expr["=="][1],
+    feature_type: dimension.context.dimension_type,
+  });
+}
+
+async function fetchContextCompatibleDatasetIds(
+  api: ReturnType<typeof useDataExplorerApi>,
+  dimension: State["dimension"]
+) {
+  const datasets = await fetchContextCompatibleDatasets(api, dimension);
+
+  if (!datasets) {
+    return null;
+  }
+
+  return new Set(datasets.map(({ id }) => id));
+}
+
+async function fetchContextCompatibleDataTypes(
+  api: ReturnType<typeof useDataExplorerApi>,
+  dimension: State["dimension"]
+) {
+  const datasets = await fetchContextCompatibleDatasets(api, dimension);
+
+  if (!datasets) {
+    return null;
+  }
+
+  const dataTypes = new Set<string>();
+
+  datasets.forEach((d) => {
+    dataTypes.add(d.data_type);
+  });
+
+  return dataTypes;
 }
 
 async function computeDataTypeOptions(
@@ -46,17 +92,25 @@ async function computeDataTypeOptions(
   index_type: string | null,
   dimension: State["dimension"]
 ) {
-  const datasets = await fetchIndexCompatibleDatasets(api, index_type);
-  const dimensionTypes = await api.fetchDimensionTypes();
+  const [
+    datasets,
+    contextCompatibleDataTypes,
+    dimensionTypes,
+  ] = await Promise.all([
+    fetchIndexCompatibleDatasets(api, index_type),
+    fetchContextCompatibleDataTypes(api, dimension),
+    api.fetchDimensionTypes(),
+  ]);
 
-  const dataTypes = [
-    ...new Set(
-      datasets
-        // TODO: Add support for tabular datasets
-        .filter((d) => d.format === "matrix_dataset")
-        .map((d) => d.data_type)
-    ),
-  ].sort(compareCaseInsensitive);
+  const dataTypes = [...new Set(datasets.map((d) => d.data_type))].sort(
+    compareCaseInsensitive
+  );
+
+  const sliceDisplayName =
+    dimensionTypes.find((dt) => dt.name === dimension.slice_type)
+      ?.display_name ||
+    dimension.slice_type ||
+    "(unknown type)";
 
   return dataTypes
     .map((dataType) => {
@@ -65,12 +119,12 @@ async function computeDataTypeOptions(
 
       const isCompatibleWithSliceType =
         !dimension.slice_type ||
-        datasets.find(
-          (d) =>
-            d.data_type === dataType &&
-            ((d as MatrixDataset).sample_type_name === dimension.slice_type ||
-              (d as MatrixDataset).feature_type_name === dimension.slice_type)
-        ) !== undefined;
+        datasets.find((dataset) => {
+          return (
+            dataset.data_type === dataType &&
+            dataset.slice_type === dimension.slice_type
+          );
+        }) !== undefined;
 
       if (!isCompatibleWithSliceType) {
         isDisabled = true;
@@ -83,6 +137,25 @@ async function computeDataTypeOptions(
           `“${dimension.slice_type as string}”`,
           "is incompatible with this data type",
         ].join(" ");
+      } else if (
+        contextCompatibleDataTypes &&
+        !contextCompatibleDataTypes.has(dataType)
+      ) {
+        isDisabled = true;
+
+        const dimensionLabel = dimension.context!.name;
+
+        if (dimension.axis_type === "aggregated_slice") {
+          disabledReason = [
+            `The context “${dimensionLabel}”`,
+            `has no ${pluralize(sliceDisplayName)} associated with this type`,
+          ].join(" ");
+        } else {
+          disabledReason = [
+            `The ${sliceDisplayName} “${dimensionLabel}”`,
+            "is not found in any data versions associated with this type",
+          ].join(" ");
+        }
       }
 
       return {
@@ -92,7 +165,7 @@ async function computeDataTypeOptions(
         disabledReason,
       };
     })
-    .sort(disabledLast);
+    .sort(compareDisabledLast);
 }
 
 async function computeSliceTypeOptions(
@@ -100,74 +173,53 @@ async function computeSliceTypeOptions(
   index_type: string | null,
   selectedDataType: string | null
 ) {
-  const datasets = await fetchIndexCompatibleDatasets(api, index_type);
-
-  const dimensionTypes = await api.fetchDimensionTypes();
-  const indexAxis =
-    dimensionTypes.find((d) => (index_type ? d.name === index_type : false))
-      ?.axis || null;
+  const [datasets, dimensionTypes] = await Promise.all([
+    fetchIndexCompatibleDatasets(api, index_type),
+    api.fetchDimensionTypes(),
+  ]);
 
   const sliceTypeOptions: State["sliceTypeOptions"] = [];
   const seen = new Set<string>();
 
   datasets.forEach((dataset) => {
-    // TODO: Add support for tabular datasets
-    if (dataset.format === "matrix_dataset") {
-      let sliceTypes = [
-        dataset.feature_type_name,
-        dataset.sample_type_name,
-      ].filter(Boolean);
+    if (!seen.has(dataset.slice_type)) {
+      const label =
+        dimensionTypes.find((d) => d.name === dataset.slice_type)
+          ?.display_name || dataset.slice_type;
 
-      if (indexAxis === "sample" && dataset.feature_type_name) {
-        sliceTypes = [dataset.feature_type_name];
+      let isDisabled = false;
+      let disabledReason = "";
+
+      const isCompatibleWithDataType =
+        !selectedDataType ||
+        datasets.find(
+          (d) =>
+            d.data_type === selectedDataType &&
+            d.slice_type === dataset.slice_type
+        ) !== undefined;
+
+      if (!isCompatibleWithDataType) {
+        isDisabled = true;
+
+        disabledReason = [
+          "The data type",
+          `“${selectedDataType}”`,
+          "is incompatible with this",
+          isSampleType(dataset.slice_type, dimensionTypes)
+            ? "sample type"
+            : "feature type",
+        ].join(" ");
       }
 
-      if (indexAxis === "feature" && dataset.sample_type_name) {
-        sliceTypes = [dataset.sample_type_name];
-      }
-
-      sliceTypes.forEach((sliceType) => {
-        if (!seen.has(sliceType)) {
-          const label =
-            dimensionTypes.find((d) => d.name === sliceType)?.display_name ||
-            sliceType;
-
-          let isDisabled = false;
-          let disabledReason = "";
-
-          const isCompatibleWithDataType =
-            !selectedDataType ||
-            datasets.find(
-              (d) =>
-                d.data_type === selectedDataType &&
-                ((d as MatrixDataset).sample_type_name === sliceType ||
-                  (d as MatrixDataset).feature_type_name === sliceType)
-            ) !== undefined;
-
-          if (!isCompatibleWithDataType) {
-            isDisabled = true;
-
-            disabledReason = [
-              "The data type",
-              `“${selectedDataType}”`,
-              "is incompatible with this",
-              isSampleType(sliceType, dimensionTypes)
-                ? "sample type"
-                : "feature type",
-            ].join(" ");
-          }
-
-          sliceTypeOptions.push({
-            label,
-            value: sliceType,
-            isDisabled,
-            disabledReason,
-          });
-        }
-
-        seen.add(sliceType);
+      sliceTypeOptions.push({
+        label,
+        value: dataset.slice_type,
+        isDisabled,
+        disabledReason,
       });
     }
+
+    seen.add(dataset.slice_type);
   });
 
   return sliceTypeOptions.sort((a, b) => {
@@ -189,51 +241,72 @@ async function computeDataVersionOptions(
   selectedDataType: string | null,
   dimension: State["dimension"]
 ) {
-  const datasets = await fetchIndexCompatibleDatasets(api, index_type);
-  const dimensionTypes = await api.fetchDimensionTypes();
+  const [
+    datasets,
+    contextCompatibleDatasetIds,
+    dimensionTypes,
+  ] = await Promise.all([
+    fetchIndexCompatibleDatasets(api, index_type),
+    fetchContextCompatibleDatasetIds(api, dimension),
+    api.fetchDimensionTypes(),
+  ]);
 
-  return (
-    datasets
-      // TODO: Add support for tabular datasets
-      .filter((d) => d.format === "matrix_dataset")
-      .filter((d) => !selectedDataType || d.data_type === selectedDataType)
-      .sort((a, b) => compareCaseInsensitive(a.name, b.name))
-      .map((dataset) => {
-        const d = dataset as MatrixDataset;
-        let isDisabled = false;
-        let disabledReason = "";
+  // TODO:
+  //        disabledReason = [
+  //          "This version is only compatible with the measure",
+  //          `“${dataset.units}”`,
+  //        ].join(" ");
 
-        const sliceType =
-          d.sample_type_name === index_type
-            ? d.feature_type_name
-            : d.sample_type_name;
+  return datasets
+    .filter((d) => !selectedDataType || d.data_type === selectedDataType)
+    .sort((a, b) => compareCaseInsensitive(a.name, b.name))
+    .map((dataset) => {
+      let isDisabled = false;
+      let disabledReason = "";
 
-        if (dimension.slice_type && sliceType !== dimension.slice_type) {
-          isDisabled = true;
+      const typeDisplayName =
+        dimensionTypes.find((dt) => dt.name === dataset.slice_type)
+          ?.display_name || dataset.slice_type;
 
-          const typeDisplayName =
-            dimensionTypes.find((dt) => dt.name === sliceType)?.display_name ||
-            sliceType;
+      if (dimension.slice_type && dataset.slice_type !== dimension.slice_type) {
+        isDisabled = true;
 
+        disabledReason = [
+          "This version is only compatible with",
+          isSampleType(dimension.slice_type, dimensionTypes)
+            ? "sample"
+            : "feature",
+          `type “${typeDisplayName}”`,
+        ].join(" ");
+      } else if (
+        contextCompatibleDatasetIds &&
+        !contextCompatibleDatasetIds.has(dataset.id)
+      ) {
+        isDisabled = true;
+
+        if (dimension.axis_type === "aggregated_slice") {
           disabledReason = [
-            "This version is only compatible with",
-            isSampleType(dimension.slice_type, dimensionTypes)
-              ? "sample"
-              : "feature",
-            `type “${typeDisplayName}”`,
+            `The context “${dimension.context!.name}”`,
+            `has no ${pluralize(typeDisplayName)}`,
+            "found in this version",
+          ].join(" ");
+        } else {
+          disabledReason = [
+            `The ${typeDisplayName} “${dimension.context!.name}”`,
+            "is not found in this version",
           ].join(" ");
         }
+      }
 
-        return {
-          label: d.name,
-          value: d.id,
-          isDisabled,
-          disabledReason,
-          isDefault: false,
-        };
-      })
-      .sort(disabledLast)
-  );
+      return {
+        label: dataset.name,
+        value: dataset.id,
+        isDisabled,
+        disabledReason,
+        isDefault: false,
+      };
+    })
+    .sort(compareDisabledLast);
 }
 
 export default async function computeOptions(
@@ -242,20 +315,20 @@ export default async function computeOptions(
   selectedDataType: string | null,
   dimension: State["dimension"]
 ) {
-  return {
-    dataTypeOptions: await computeDataTypeOptions(api, index_type, dimension),
-    sliceTypeOptions: await computeSliceTypeOptions(
-      api,
-      index_type,
-      selectedDataType
-    ),
-    dataVersionOptions: await computeDataVersionOptions(
-      api,
-      index_type,
-      selectedDataType,
-      dimension
-    ),
+  const [
+    dataTypeOptions,
+    sliceTypeOptions,
+    dataVersionOptions,
+  ] = await Promise.all([
+    computeDataTypeOptions(api, index_type, dimension),
+    computeSliceTypeOptions(api, index_type, selectedDataType),
+    computeDataVersionOptions(api, index_type, selectedDataType, dimension),
+  ]);
 
+  return {
+    dataTypeOptions,
+    sliceTypeOptions,
+    dataVersionOptions,
     // FIXME
     unitsOptions: [] as State["unitsOptions"],
   };

@@ -16,7 +16,7 @@ export function getDataType(
   datasets: DataExplorerDatasetDescriptor[],
   dataset_id: string
 ) {
-  return datasets.find((d) => d.dataset_id === dataset_id)!.data_type;
+  return datasets.find((d) => d.id === dataset_id)!.data_type;
 }
 
 export function getDataTypes(
@@ -38,7 +38,7 @@ export function getFeatureType(
   datasets: DataExplorerDatasetDescriptor[],
   dataset_id: string
 ) {
-  return datasets.find((d) => d.dataset_id === dataset_id)!.slice_type;
+  return datasets.find((d) => d.id === dataset_id)!.slice_type;
 }
 
 export function getFeatureTypes(

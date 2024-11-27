@@ -140,8 +140,15 @@ const defaultValue = {
     throw new Error("Not implemented");
   },
 
-  fetchDatasets: (): Promise<Dataset[]> => {
-    window.console.log("fetchDatasets()");
+  fetchDatasets: (
+    options?: Partial<{
+      feature_id: string;
+      feature_type: string;
+      sample_id: string;
+      sample_type: string;
+    }>
+  ): Promise<Dataset[]> => {
+    window.console.log("fetchDatasets:", { options });
     throw new Error("Not implemented");
   },
 
@@ -151,9 +158,24 @@ const defaultValue = {
   },
 
   fetchDimensionIdentifiers: (
-    dimensionTypeName: string
+    dimensionTypeName: string,
+    dataType?: string
   ): Promise<{ id: string; label: string }[]> => {
-    window.console.log("fetchDimensionIdentifiers:", { dimensionTypeName });
+    window.console.log("fetchDimensionIdentifiers:", {
+      dimensionTypeName,
+      dataType,
+    });
+    throw new Error("Not implemented");
+  },
+
+  fetchDatasetIdentifiers: (
+    dimensionTypeName: string,
+    dataset_id: string
+  ): Promise<{ id: string; label: string }[]> => {
+    window.console.log("fetchDatasetIdentifiers:", {
+      dimensionTypeName,
+      dataset_id,
+    });
     throw new Error("Not implemented");
   },
 };

@@ -113,7 +113,7 @@ export default function resolveNextState({
     const ds = filterDatasets(datasets, { slice_type, dataType });
 
     if (ds.length === 1) {
-      dataset_id = ds[0].dataset_id;
+      dataset_id = ds[0].id;
     }
   }
 
@@ -145,7 +145,7 @@ export default function resolveNextState({
 
       const enabledDataTypes = new Set(
         datasets
-          .filter((d) => datasetIdsWithSelectedLabel.has(d.dataset_id))
+          .filter((d) => datasetIdsWithSelectedLabel.has(d.id))
           .map((d) => d.data_type)
       );
 
@@ -157,7 +157,7 @@ export default function resolveNextState({
 
   if ("dataset_id" in changes && dataset_id !== changes.dataset_id) {
     dataset_id = changes.dataset_id || undefined;
-    const dataset = datasets.find((d) => d.dataset_id === dataset_id);
+    const dataset = datasets.find((d) => d.id === dataset_id);
 
     if (dataset) {
       slice_type = dataset.slice_type;
@@ -177,7 +177,7 @@ export default function resolveNextState({
   }
 
   if (dataset_id) {
-    const dataset = datasets.find((d) => d.dataset_id === dataset_id);
+    const dataset = datasets.find((d) => d.id === dataset_id);
     if (!dataset) {
       throw new UnknownDatasetError(`Unknown dataset_id "${dataset_id}"`);
     }
@@ -230,7 +230,7 @@ export default function resolveNextState({
   // obscure an exceptional condition where a slice label is now missing from
   // the selected dataset.
   if (!dataType && dataset_id) {
-    const dataset = datasets.find((d) => d.dataset_id === dataset_id);
+    const dataset = datasets.find((d) => d.id === dataset_id);
 
     if (!dataset) {
       throw new UnknownDatasetError(`Unknown dataset_id "${dataset_id}"`);

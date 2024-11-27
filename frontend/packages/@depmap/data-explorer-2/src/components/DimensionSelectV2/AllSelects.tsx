@@ -93,7 +93,9 @@ function AllSelects({
       <SliceSelect
         show={Boolean(slice_type) && axis_type === "raw_slice"}
         index_type={index_type}
+        dataType={dataType}
         slice_type={slice_type as string}
+        dataset_id={dataset_id || null}
         value={context || null}
         onChange={onChangeContext}
       />
