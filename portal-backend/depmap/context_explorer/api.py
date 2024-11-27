@@ -26,18 +26,6 @@ from depmap.context_explorer.models import (
 )
 from depmap.context.models_new import SubtypeNode
 
-from depmap.database import (
-    Boolean,
-    Column,
-    ForeignKey,
-    Integer,
-    Model,
-    String,
-    Text,
-    db,
-    relationship,
-)
-
 from loader.context_explorer_loader import (
     load_context_explorer_context_analysis_dev,
     load_subtype_tree,

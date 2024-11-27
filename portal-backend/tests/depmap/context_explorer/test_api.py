@@ -100,6 +100,39 @@ def test_unknown_context_analysis_data(populated_db):
         assert r.json == None
 
 
+def test_get_context_path(populated_db):
+    with populated_db.app.test_client() as c:
+        # Test to level 0
+        r = c.get(
+            url_for("api.context_explorer_context_path", selected_code="BONE",),
+            content_type="application/json",
+        )
+
+        assert r.json == ["BONE"]
+
+        # Test to level 1
+        r = c.get(
+            url_for("api.context_explorer_context_path", selected_code="ES",),
+            content_type="application/json",
+        )
+
+        assert r.json == ["BONE", "ES"]
+
+        # Test to level 2
+        r = c.get(
+            url_for("api.context_explorer_context_path", selected_code="GB"),
+            content_type="application/json",
+        )
+        assert r.json == ["BRAIN", "DIFG", "GB"]
+
+        # Something is very wrong if we pass a nonsense code to this endpoint
+        with pytest.raises(Exception):
+            r = c.get(
+                url_for("api.context_explorer_context_path", selected_code="NONSENSE",),
+                content_type="application/json",
+            )
+
+
 def test_get_lineage_type_from_top_context():
     # Make sure all cases return the correct result
     top_context = "myeloid"
