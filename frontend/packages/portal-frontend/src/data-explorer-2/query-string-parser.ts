@@ -42,7 +42,9 @@ const makeFeatureParser = (dimensionKey: DimensionKey) => (
     return partialPlot;
   }
 
-  const dataset = datasets.depmap_model.find((d) => d.id === dataset_id);
+  const dataset = datasets.depmap_model.find((d) => {
+    return d.id === dataset_id || d.given_id === dataset_id;
+  });
 
   const slice_type = dataset ? dataset.slice_type : "custom";
 
@@ -189,7 +191,9 @@ const inferIndexType = (
     return "depmap_model";
   }
 
-  const dataset = datasets[slice_type].find((d) => d.id === dataset_id);
+  const dataset = datasets[slice_type].find((d) => {
+    return d.id === dataset_id || d.given_id === dataset_id;
+  });
 
   return dataset?.slice_type || null;
 };

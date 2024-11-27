@@ -134,7 +134,9 @@ export async function fetchVariableDomain(
   let value_type: AnnotationType | undefined;
 
   const datasets = await fetchDatasets();
-  const dataset = datasets.find((d) => d.id === dataset_id);
+  const dataset = datasets.find((d) => {
+    return d.id === dataset_id || d.given_id === dataset_id;
+  });
 
   if (dataset && dataset.format === "matrix_dataset") {
     value_type = dataset.value_type as AnnotationType;

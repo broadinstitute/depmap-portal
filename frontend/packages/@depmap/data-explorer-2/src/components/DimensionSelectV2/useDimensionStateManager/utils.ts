@@ -65,7 +65,9 @@ export async function inferTypesFromDatasetId(
   }
 
   const ds = await api.fetchDatasetsByIndexType();
-  const dataset = ds[index_type].find((d) => d.id === dataset_id);
+  const dataset = ds[index_type].find((d) => {
+    return d.id === dataset_id || d.given_id === dataset_id;
+  });
 
   if (!dataset) {
     window.console.warn(`Unknown dataset "${dataset_id}"!`);
@@ -108,7 +110,9 @@ export async function findDataType(
   dataset_id: string | null
 ) {
   const datasets = await api.fetchDatasets();
-  const dataset = datasets.find((d) => d.id === dataset_id);
+  const dataset = datasets.find((d) => {
+    return d.id === dataset_id || d.given_id === dataset_id;
+  });
 
   return dataset?.data_type || null;
 }

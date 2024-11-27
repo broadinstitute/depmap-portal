@@ -51,7 +51,9 @@ async function fetchDatasetName(
   }
 
   const datasets = await api.fetchDatasets();
-  const dataset = datasets.find((d) => d.id === dataset_id);
+  const dataset = datasets.find((d) => {
+    return d.id === dataset_id || d.given_id === dataset_id;
+  });
 
   if (!dataset) {
     throw new Error(`Unknown dataset "${dataset_id}".`);
