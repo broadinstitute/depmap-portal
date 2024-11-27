@@ -9,7 +9,6 @@ from depmap.compound.models import CompoundExperiment
 from depmap.enums import DependencyEnum
 from depmap.dataset.models import DependencyDataset
 from depmap.context.models_new import SubtypeNode
-from depmap.cell_line.models_new import DepmapModel
 from depmap.database import (
     Column,
     Float,

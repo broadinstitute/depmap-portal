@@ -40,17 +40,6 @@ class SubtypeNode(Model):
             return q.one_or_none()
 
     @staticmethod
-    def get_by_code_and_level(
-        subtype_code: str, node_level: int
-    ) -> Optional[List["SubtypeNode"]]:
-        node_level_column = f"level_{node_level}"
-        return (
-            db.session.query(SubtypeNode)
-            .filter(getattr(SubtypeNode, node_level_column) == subtype_code)
-            .all()
-        )
-
-    @staticmethod
     def get_subtype_tree_query():
         query = (
             db.session.query(SubtypeNode)

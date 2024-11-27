@@ -871,12 +871,11 @@ class SubtypeNodeFactory(SQLAlchemyModelFactory):
     )
     node_name = factory.Sequence(lambda number: "node_name_{}".format(number))
     node_level = factory.Sequence(lambda number: number)
-    level_0 = factory.Sequence(lambda number: "level_0_{}".format(number))
-    level_1 = factory.Sequence(lambda number: "level_1_{}".format(number))
-    level_2 = factory.Sequence(lambda number: "level_2_{}".format(number))
-    level_3 = factory.Sequence(lambda number: "level_3_{}".format(number))
-    level_4 = factory.Sequence(lambda number: "level_4_{}".format(number))
-    level_5 = factory.Sequence(lambda number: "level_5_{}".format(number))
+    if node_level == 0:
+        level_0 = subtype_code
+    else:
+        level_0 = factory.Sequence(lambda number: "level_0_{}".format(number))
+
     subtype_node_alias = factory.LazyAttribute(lambda o: [SubtypeNodeAliasFactory()])
 
 
