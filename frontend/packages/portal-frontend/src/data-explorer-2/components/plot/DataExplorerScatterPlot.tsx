@@ -399,18 +399,7 @@ function DataExplorerScatterPlot({
                 setSelectedLabels(null);
               }}
               onClickSetSelectionFromContext={async () => {
-                const datasetLabels = data!.index_labels.filter((_, i) => {
-                  return (
-                    data!.dimensions.x.values[i] !== null &&
-                    data!.dimensions.y?.values[i] !== null
-                  );
-                });
-
-                const labels = await promptForSelectionFromContext(
-                  data!.index_type,
-                  datasetLabels,
-                  data!.filters?.visible
-                );
+                const labels = await promptForSelectionFromContext(data!);
 
                 if (labels === null) {
                   return;

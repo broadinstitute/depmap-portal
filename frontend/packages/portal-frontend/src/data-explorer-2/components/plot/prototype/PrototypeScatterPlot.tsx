@@ -290,8 +290,21 @@ function PrototypeScatterPlot({
       // HACK: Settings coordinates to `null` is the most performant way to
       // hide them. We make sure to do this for both axes because it affects
       // autoscaling.
-      x: x.map((value: number, i) => (visible[i] ? value : null)),
-      y: y.map((value: number, i) => (visible[i] ? value : null)),
+      x: x.map((value: number, i) =>
+        visible[i] &&
+        // Make sure there's a value on the opposite axis, otherwise an
+        // unplottable outlier could affect the axis scale.
+        y[i] !== null
+          ? value
+          : null
+      ),
+      y: y.map((value: number, i) =>
+        visible[i] &&
+        // Same idea as above.
+        x[i] !== null
+          ? value
+          : null
+      ),
       name: "",
       text,
       hoverinfo: customHoverinfo || ("x+y+text" as const),

@@ -72,7 +72,13 @@
     outline: none;
 
     &:empty {
+      // vertically centers cursor in Chrome.
       line-height: 32px;
+
+      // vertically centers cursor in Firefox.
+      &::before {
+        content: "\200B";
+      }
     }
   }
 }
