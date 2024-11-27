@@ -20,7 +20,6 @@ import DatasetForm from "./DatasetForm";
 import { Alert } from "react-bootstrap";
 import DatasetEditForm from "./DatasetEditForm";
 import DimensionTypeForm from "./DimensionTypeForm";
-import { CeleryTask } from "@depmap/compute";
 
 export default function Datasets() {
   const { getApi } = useContext(ApiContext);

@@ -14,6 +14,7 @@
     "@depmap/common-components": "1.0.0",
     "@depmap/types": "1.0.0",
     "@depmap/wide-table": "1.0.0",
+    "@depmap/compute": "1.0.0",
     "@rjsf/core": "^5.18.3",
     "@rjsf/utils": "^5.18.3",
     "@rjsf/validator-ajv8": "^5.18.3",
