@@ -18,7 +18,7 @@ from tests.factories import (
     CellLineFactory,
     CompoundExperimentFactory,
     ContextAnalysisFactory,
-    ContextFactory,
+    SubtypeContextFactory,
     DependencyDatasetFactory,
     DepmapModelFactory,
     GeneFactory,
@@ -196,11 +196,11 @@ def _setup_factories(
         for num in range(5)
     ]
 
-    lung_context = ContextFactory(name="Lung")
-    es_context = ContextFactory(name="Ewing Sarcoma")
-    os_context = ContextFactory(name="Osteosarcoma")
-    myeloid_context = ContextFactory(name="Myeloid")
-    aml_context = ContextFactory(name="Acute Myeloid Leukemia")
+    lung_context = SubtypeContextFactory(subtype_code="Lung")
+    es_context = SubtypeContextFactory(subtype_code="Ewing Sarcoma")
+    os_context = SubtypeContextFactory(subtype_code="Osteosarcoma")
+    myeloid_context = SubtypeContextFactory(subtype_code="Myeloid")
+    aml_context = SubtypeContextFactory(subtype_code="Acute Myeloid Leukemia")
 
     matrix_cell_lines = (
         bone_es_cell_lines
@@ -225,12 +225,11 @@ def _setup_factories(
         matrix=matrix,
         priority=1,
     )
-    dependency_dataset_name = dataset.name
 
     ContextAnalysisFactory(
-        dataset_name=dependency_dataset_name,
-        context=es_context,
-        context_name="Ewing Sarcoma",
+        dataset=dataset,
+        subtype_context=es_context,
+        subtype_code="Ewing Sarcoma",
         out_group="All",
         entity=gene_a if use_genes else compound_a,
         t_pval=1.0,
@@ -240,9 +239,9 @@ def _setup_factories(
     )
 
     ContextAnalysisFactory(
-        dataset_name=dependency_dataset_name,
-        context=es_context,
-        context_name="Ewing Sarcoma",
+        dataset=dataset,
+        subtype_context=es_context,
+        subtype_code="Ewing Sarcoma",
         out_group="Type",
         entity=gene_a if use_genes else compound_a,
         t_pval=1,
@@ -252,9 +251,9 @@ def _setup_factories(
     )
 
     ContextAnalysisFactory(
-        dataset_name=dependency_dataset_name,
-        context=lung_context,
-        context_name="Lung",
+        dataset=dataset,
+        subtype_context=lung_context,
+        subtype_code="Lung",
         out_group="All",
         entity=gene_a if use_genes else compound_a,
         t_pval=1.0,
@@ -267,9 +266,9 @@ def _setup_factories(
 
     # Uses a wide filter, so filtered out if only_narrow_range
     ContextAnalysisFactory(
-        dataset_name=dependency_dataset_name,
-        context=os_context,
-        context_name="Osteosarcoma",
+        dataset=dataset,
+        subtype_context=os_context,
+        subtype_code="Osteosarcoma",
         out_group="All",
         entity=gene_a if use_genes else compound_a,
         t_qval=wide_filters.t_qval,
@@ -277,9 +276,9 @@ def _setup_factories(
         frac_dep_in=narrow_filters.frac_dep_in if use_genes else None,
     )
     ContextAnalysisFactory(
-        dataset_name=dependency_dataset_name,
-        context=es_context,
-        context_name="Ewing Sarcoma",
+        dataset=dataset,
+        subtype_context=es_context,
+        subtype_code="Ewing Sarcoma",
         out_group="Lineage",
         entity=gene_a if use_genes else compound_a,
         t_pval=3.0,
@@ -290,9 +289,9 @@ def _setup_factories(
         frac_dep_in=narrow_filters.frac_dep_in if use_genes else None,
     )
     ContextAnalysisFactory(
-        dataset_name=dependency_dataset_name,
-        context=myeloid_context,
-        context_name="Myeloid",
+        dataset=dataset,
+        subtype_context=myeloid_context,
+        subtype_code="Myeloid",
         out_group="All",
         entity=gene_a if use_genes else compound_a,
         t_qval=wide_filters.t_qval,
@@ -300,9 +299,9 @@ def _setup_factories(
         frac_dep_in=narrow_filters.frac_dep_in if use_genes else None,
     )
     ContextAnalysisFactory(
-        dataset_name=dependency_dataset_name,
-        context=aml_context,
-        context_name="Acute Myeloid Leukemia",
+        dataset=dataset,
+        subtype_context=aml_context,
+        subtype_code="Acute Myeloid Leukemia",
         out_group="All",
         entity=gene_a if use_genes else compound_a,
         t_qval=narrow_filters.t_qval,

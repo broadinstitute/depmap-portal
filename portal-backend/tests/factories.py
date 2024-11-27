@@ -926,8 +926,8 @@ class ContextAnalysisFactory(SQLAlchemyModelFactory):
         sqlalchemy_session = _db.session
 
     subtype_code = factory.Sequence(lambda number: "subtype_code_{}".format(number))
-    subtype_node = factory.SubFactory(
-        SubtypeNodeFactory, subtype_code=factory.SelfAttribute("..subtype_code")
+    subtype_context = factory.SubFactory(
+        SubtypeContextFactory, subtype_code=factory.SelfAttribute("..subtype_code")
     )
 
     dependency_dataset_id = factory.Sequence(lambda number: number)

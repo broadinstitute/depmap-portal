@@ -39,10 +39,18 @@ def add_depmap_model_table_columns(query):
     Separated so that Dataset.get_cell_line_table_query can use this as well
     Joins database tables required for cell line table columns
     """
-    table_query = query.with_entities(
-        DepmapModel.oncotree_lineage,
-        DepmapModel.oncotree_primary_disease,
-        DepmapModel.cell_line_name,
+    table_query = (
+        query.join(Lineage, DepmapModel.oncotree_lineage)
+        .with_entities(
+            DepmapModel.oncotree_primary_disease.label("primary_disease"),
+            DepmapModel.cell_line_name,
+        )
+        .add_columns(
+            sqlalchemy.column('"lineage".name', is_literal=True).label("lineage"),
+            sqlalchemy.column('"lineage".level', is_literal=True).label(
+                "lineage_level"
+            ),
+        )
     )
     return table_query
 

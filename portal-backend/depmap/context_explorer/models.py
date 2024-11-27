@@ -252,10 +252,10 @@ class ContextAnalysis(Model):
     context_analysis_id = Column(Integer, primary_key=True, autoincrement=True)
 
     subtype_code = Column(
-        String, ForeignKey("subtype_node.subtype_code"), nullable=False, index=True
+        String, ForeignKey("subtype_context.subtype_code"), nullable=False, index=True
     )
-    subtype = relationship(
-        "SubtypeNode", foreign_keys="ContextAnalysis.subtype_code", uselist=False
+    subtype_context = relationship(
+        "SubtypeContext", foreign_keys="ContextAnalysis.subtype_code", uselist=False
     )
     entity_id = Column(
         Integer, ForeignKey("entity.entity_id"), nullable=False, index=True
