@@ -9,6 +9,7 @@ from depmap.database import (
     db,
     relationship,
 )
+import sqlalchemy
 from depmap.entity.models import Entity
 import pandas as pd
 from depmap.cell_line.models_new import DepmapModel, depmap_model_context_association
@@ -160,13 +161,35 @@ class SubtypeContext(Model):
         else:
             return q.one_or_none()
 
+    @staticmethod
     def get_cell_line_names(self) -> List["str"]:
         cell_lines = [cell_line.cell_line_name for cell_line in self.depmap_model]
         return cell_lines
 
+    @staticmethod
     def get_model_ids(self) -> List["str"]:
         cell_lines = [cell_line.model_id for cell_line in self.depmap_model]
         return cell_lines
+
+    @classmethod
+    def get_cell_line_table_query(cls, subtype_code):
+        query = (
+            SubtypeContext.query.filter_by(subtype_code=subtype_code)
+            .join(DepmapModel, SubtypeContext.depmap_model)
+            .join(SubtypeNode, SubtypeNode.subtype_code == SubtypeContext.subtype_code)
+            .with_entities(
+                DepmapModel.model_id, SubtypeNode.level_1.label("primary_disease"),
+            )
+            .add_columns(
+                sqlalchemy.column("primary_or_metastasis", is_literal=True).label(
+                    "tumor_type"
+                ),
+                sqlalchemy.column("stripped_cell_line_name", is_literal=True).label(
+                    "cell_line_display_name"
+                ),
+            )
+        )
+        return query
 
 
 class SubtypeContextEntity(Entity):

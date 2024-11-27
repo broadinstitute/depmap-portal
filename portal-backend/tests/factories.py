@@ -26,6 +26,12 @@ from depmap.cell_line.models import (
     Conditions,
     STRProfile,
 )
+from depmap.context.models_new import (
+    SubtypeContext,
+    SubtypeContextEntity,
+    SubtypeNode,
+    SubtypeNodeAlias,
+)
 from depmap.context.models import Context, ContextEntity, ContextEnrichment
 from depmap.database import db as _db
 from depmap.dataset.models import (
@@ -194,7 +200,12 @@ class DepmapModelFactory(SQLAlchemyModelFactory):
     stripped_cell_line_name = factory.Sequence(lambda number: "{}".format(number))
     model_id = factory.Sequence(lambda number: "ACH-{}".format(number))
     patient_id = factory.Sequence(lambda number: "ACH-{}".format(number))
-
+    depmap_model_type = factory.Sequence(
+        lambda number: "depmap_model_type_{}".format(number)
+    )
+    oncotree_primary_disease = factory.Sequence(
+        lambda number: "oncotree_primary_disease_{}".format(number)
+    )
     cell_line_name = factory.Sequence(lambda number: "cell_line_{}".format(number))
     cell_line_alias = factory.LazyAttribute(lambda o: [CellLineAliasFactory()])
     age_category = factory.Sequence(lambda number: "age_category_{}".format(number))
@@ -218,37 +229,6 @@ class EntityFactory(SQLAlchemyModelFactory):
 
     label = factory.Sequence(lambda number: "entity_{}".format(number))
     type = "gene"
-
-
-class ContextAnalysisFactory(SQLAlchemyModelFactory):
-    class Meta:
-        model = ContextAnalysis
-
-        sqlalchemy_session = _db.session
-
-    dataset_name = factory.Sequence(lambda number: "dataset_{}".format(number))
-    context_name = factory.Sequence(lambda number: "context_{}".format(number))
-    context = factory.SubFactory(
-        ContextFactory, name=factory.SelfAttribute("..context_name")
-    )
-    entity_id = factory.Sequence(lambda number: number)
-    entity = factory.SubFactory(
-        EntityFactory, entity_id=factory.SelfAttribute("..entity_id")
-    )
-    out_group = factory.Sequence(lambda number: "out_group_{}".format(number))
-    t_pval = factory.Sequence(lambda number: number)
-    mean_in = factory.Sequence(lambda number: number)
-    mean_out = factory.Sequence(lambda number: number)
-    effect_size = factory.Sequence(lambda number: number)
-    t_qval = factory.Sequence(lambda number: number)
-    t_qval_log = factory.Sequence(lambda number: number)
-    # OR = factory.Sequence(lambda number: number)
-    n_dep_in = factory.Sequence(lambda number: number)
-    n_dep_out = factory.Sequence(lambda number: number)
-    frac_dep_in = factory.Sequence(lambda number: number)
-    frac_dep_out = factory.Sequence(lambda number: number)
-    selectivity_val = factory.Sequence(lambda number: number)
-    # log_OR = factory.Sequence(lambda number: number)
 
 
 class EntityAliasFactory(SQLAlchemyModelFactory):
@@ -881,6 +861,97 @@ def CustomCellLineGroupFactory(uuid=None, cell_lines=None, depmap_ids=None):
     group = CustomCellLineGroup(uuid=uuid, depmap_ids=json.dumps(depmap_ids))
     _db.session.add(group)
     return group
+
+
+class SubtypeNodeFactory(SQLAlchemyModelFactory):
+    class Meta:
+        model = SubtypeNode
+
+        sqlalchemy_session = _db.session
+
+    subtype_code = factory.Sequence(lambda number: "subtype_code_{}".format(number))
+
+    oncotree_code = factory.Sequence(lambda number: "oncotree_code_{}".format(number))
+    depmap_model_type = factory.Sequence(
+        lambda number: "depmap_model_type_{}".format(number)
+    )
+    node_name = factory.Sequence(lambda number: "node_name_{}".format(number))
+    node_level = factory.Sequence(lambda number: number)
+    level_0 = factory.Sequence(lambda number: "level_0_{}".format(number))
+    level_1 = factory.Sequence(lambda number: "level_1_{}".format(number))
+    level_2 = factory.Sequence(lambda number: "level_2_{}".format(number))
+    level_3 = factory.Sequence(lambda number: "level_3_{}".format(number))
+    level_4 = factory.Sequence(lambda number: "level_4_{}".format(number))
+    level_5 = factory.Sequence(lambda number: "level_5_{}".format(number))
+    subtype_node_alias = factory.LazyAttribute(lambda o: [SubtypeNodeAliasFactory()])
+
+
+class SubtypeNodeAliasFactory(SQLAlchemyModelFactory):
+    class Meta:
+        model = SubtypeNodeAlias
+        sqlalchemy_session = _db.session
+
+    alias_name = factory.Sequence(
+        lambda number: "subtype_node_alias_name_{}".format(number)
+    )
+    alias_subtype_code = factory.Sequence(
+        lambda number: "subtype_node_alias_subtype_code_{}".format(number)
+    )
+
+
+class SubtypeContextFactory(SQLAlchemyModelFactory):
+    class Meta:
+        model = SubtypeContext
+
+        sqlalchemy_session = _db.session
+
+    subtype_code = factory.Sequence(lambda number: "subtype_code_{}".format(number))
+
+
+def SubtypeContextEntityFactory(context=None):
+    if context is None:
+        context = SubtypeContextFactory()
+
+    context_entity = SubtypeContextEntity(
+        label=context.subtype_code, subtype_context=context
+    )
+    _db.session.add(context_entity)
+    return context_entity
+
+
+class ContextAnalysisFactory(SQLAlchemyModelFactory):
+    class Meta:
+        model = ContextAnalysis
+
+        sqlalchemy_session = _db.session
+
+    subtype_code = factory.Sequence(lambda number: "subtype_code_{}".format(number))
+    subtype_node = factory.SubFactory(
+        SubtypeNodeFactory, subtype_code=factory.SelfAttribute("..subtype_code")
+    )
+
+    dependency_dataset_id = factory.Sequence(lambda number: number)
+    dataset = factory.SubFactory(
+        DependencyDatasetFactory,
+        dependency_dataset_id=factory.SelfAttribute("..dependency_dataset_id"),
+    )
+
+    entity_id = factory.Sequence(lambda number: number)
+    entity = factory.SubFactory(
+        EntityFactory, entity_id=factory.SelfAttribute("..entity_id")
+    )
+    out_group = factory.Sequence(lambda number: "out_group_{}".format(number))
+    t_pval = factory.Sequence(lambda number: number)
+    mean_in = factory.Sequence(lambda number: number)
+    mean_out = factory.Sequence(lambda number: number)
+    effect_size = factory.Sequence(lambda number: number)
+    t_qval = factory.Sequence(lambda number: number)
+    t_qval_log = factory.Sequence(lambda number: number)
+    n_dep_in = factory.Sequence(lambda number: number)
+    n_dep_out = factory.Sequence(lambda number: number)
+    frac_dep_in = factory.Sequence(lambda number: number)
+    frac_dep_out = factory.Sequence(lambda number: number)
+    selectivity_val = factory.Sequence(lambda number: number)
 
 
 class ContextEnrichmentFactory(SQLAlchemyModelFactory):

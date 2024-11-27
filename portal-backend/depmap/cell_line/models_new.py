@@ -34,6 +34,19 @@ model_with_depmap_id_1 = re.compile("\\S+ \\(([^)]+)\\)")
 model_with_depmap_id_2 = re.compile("(ACH-\\d+)(?:-\\d+)?$")
 
 
+def add_depmap_model_table_columns(query):
+    """
+    Separated so that Dataset.get_cell_line_table_query can use this as well
+    Joins database tables required for cell line table columns
+    """
+    table_query = query.with_entities(
+        DepmapModel.oncotree_lineage,
+        DepmapModel.oncotree_primary_disease,
+        DepmapModel.cell_line_name,
+    )
+    return table_query
+
+
 # Used by Context Explorer
 class LineageType(enum.Enum):
     Heme = "heme"
