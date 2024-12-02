@@ -20,6 +20,8 @@ interface Props {
 interface CurveTrace {
   x: number[];
   y: number[];
+  text?: string;
+  hoverinfo?: string;
   customdata?: string[];
   label?: string[];
   replicate?: string[];
@@ -39,7 +41,7 @@ const samplePoints = (
   minExponent: number,
   rangeOfExponents: number
 ) => {
-  const data: { xs: number[]; ys: Float32Array }[] = [];
+  const data: { xs: number[]; ys: Float32Array; name: string }[] = [];
 
   for (let i = 0; i < curves.length; i++) {
     const lowerA = curves[i].lowerAsymptote;
@@ -48,6 +50,7 @@ const samplePoints = (
     const slope = curves[i].slope;
     const xs: number[] = [];
     const ys = new Float32Array(numPts);
+    const name = curves[i].displayName!;
 
     for (let j = 0; j < numPts; j++) {
       const x = 10 ** (minExponent + (j / (numPts - 1)) * rangeOfExponents);
@@ -56,7 +59,7 @@ const samplePoints = (
       ys[j] = lowerA + (upperA - lowerA) / (1 + (x / ec50) ** -slope);
     }
 
-    data.push({ xs, ys });
+    data.push({ xs, ys, name });
   }
 
   const medianYs: number[] = [];
@@ -160,6 +163,8 @@ const getTraces = (
       x: pt.xs,
       y: Array.from(pt.ys),
       name: "",
+      text: `${curves.data[index].name}`,
+      hoverinfo: "x+y+text",
       type: "curve",
       mode: "lines",
       marker: { color: "rgba(108, 122, 137, 0.5)" },

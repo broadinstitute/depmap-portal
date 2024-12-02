@@ -15,16 +15,13 @@ from depmap.context_explorer.utils import (
 from depmap.dataset.models import DependencyDataset
 import numpy as np
 from tests.factories import (
-    CellLineFactory,
     CompoundExperimentFactory,
     ContextAnalysisFactory,
     SubtypeContextFactory,
     DependencyDatasetFactory,
     DepmapModelFactory,
     GeneFactory,
-    LineageFactory,
     MatrixFactory,
-    PrimaryDiseaseFactory,
     DoseResponseCurveFactory,
     CompoundDoseReplicateFactory,
     SubtypeNodeFactory,
@@ -530,6 +527,7 @@ def test_get_dose_curves(empty_db_mock_downloads):
         "in_group_curve_params": [
             {
                 "id": "ACH-0es",
+                "displayName": "0es",
                 "ec50": 0,
                 "slope": 0,
                 "lowerAsymptote": 0,
@@ -537,6 +535,7 @@ def test_get_dose_curves(empty_db_mock_downloads):
             },
             {
                 "id": "ACH-1es",
+                "displayName": "1es",
                 "ec50": 0,
                 "slope": 0,
                 "lowerAsymptote": 0,
@@ -544,6 +543,7 @@ def test_get_dose_curves(empty_db_mock_downloads):
             },
             {
                 "id": "ACH-2es",
+                "displayName": "2es",
                 "ec50": 0,
                 "slope": 0,
                 "lowerAsymptote": 0,
@@ -551,6 +551,7 @@ def test_get_dose_curves(empty_db_mock_downloads):
             },
             {
                 "id": "ACH-3es",
+                "displayName": "3es",
                 "ec50": 0,
                 "slope": 0,
                 "lowerAsymptote": 0,
@@ -558,6 +559,7 @@ def test_get_dose_curves(empty_db_mock_downloads):
             },
             {
                 "id": "ACH-4es",
+                "displayName": "4es",
                 "ec50": 0,
                 "slope": 0,
                 "lowerAsymptote": 0,
@@ -567,6 +569,7 @@ def test_get_dose_curves(empty_db_mock_downloads):
         "out_group_curve_params": [
             {
                 "id": "ACH-0lung",
+                "displayName": "lung_line_0",
                 "ec50": 0,
                 "slope": 0,
                 "lowerAsymptote": 0,
@@ -574,6 +577,7 @@ def test_get_dose_curves(empty_db_mock_downloads):
             },
             {
                 "id": "ACH-1lung",
+                "displayName": "lung_line_1",
                 "ec50": 0,
                 "slope": 0,
                 "lowerAsymptote": 0,
@@ -581,6 +585,7 @@ def test_get_dose_curves(empty_db_mock_downloads):
             },
             {
                 "id": "ACH-2lung",
+                "displayName": "lung_line_2",
                 "ec50": 0,
                 "slope": 0,
                 "lowerAsymptote": 0,
@@ -588,6 +593,7 @@ def test_get_dose_curves(empty_db_mock_downloads):
             },
             {
                 "id": "ACH-3lung",
+                "displayName": "lung_line_3",
                 "ec50": 0,
                 "slope": 0,
                 "lowerAsymptote": 0,
@@ -595,6 +601,7 @@ def test_get_dose_curves(empty_db_mock_downloads):
             },
             {
                 "id": "ACH-4lung",
+                "displayName": "lung_line_4",
                 "ec50": 0,
                 "slope": 0,
                 "lowerAsymptote": 0,
@@ -602,6 +609,7 @@ def test_get_dose_curves(empty_db_mock_downloads):
             },
             {
                 "id": "ACH-0os",
+                "displayName": "0os",
                 "ec50": 0,
                 "slope": 0,
                 "lowerAsymptote": 0,
@@ -609,6 +617,7 @@ def test_get_dose_curves(empty_db_mock_downloads):
             },
             {
                 "id": "ACH-1os",
+                "displayName": "1os",
                 "ec50": 0,
                 "slope": 0,
                 "lowerAsymptote": 0,
@@ -616,6 +625,7 @@ def test_get_dose_curves(empty_db_mock_downloads):
             },
             {
                 "id": "ACH-2os",
+                "displayName": "2os",
                 "ec50": 0,
                 "slope": 0,
                 "lowerAsymptote": 0,
@@ -623,6 +633,7 @@ def test_get_dose_curves(empty_db_mock_downloads):
             },
             {
                 "id": "ACH-3os",
+                "displayName": "3os",
                 "ec50": 0,
                 "slope": 0,
                 "lowerAsymptote": 0,
@@ -630,6 +641,7 @@ def test_get_dose_curves(empty_db_mock_downloads):
             },
             {
                 "id": "ACH-4os",
+                "displayName": "4os",
                 "ec50": 0,
                 "slope": 0,
                 "lowerAsymptote": 0,
@@ -637,6 +649,7 @@ def test_get_dose_curves(empty_db_mock_downloads):
             },
             {
                 "id": "ACH-0myeloid",
+                "displayName": "myeloid_0",
                 "ec50": 0,
                 "slope": 0,
                 "lowerAsymptote": 0,
@@ -644,6 +657,7 @@ def test_get_dose_curves(empty_db_mock_downloads):
             },
             {
                 "id": "ACH-1myeloid",
+                "displayName": "myeloid_1",
                 "ec50": 0,
                 "slope": 0,
                 "lowerAsymptote": 0,
@@ -651,6 +665,7 @@ def test_get_dose_curves(empty_db_mock_downloads):
             },
             {
                 "id": "ACH-2myeloid",
+                "displayName": "myeloid_2",
                 "ec50": 0,
                 "slope": 0,
                 "lowerAsymptote": 0,
@@ -658,6 +673,7 @@ def test_get_dose_curves(empty_db_mock_downloads):
             },
             {
                 "id": "ACH-3myeloid",
+                "displayName": "myeloid_3",
                 "ec50": 0,
                 "slope": 0,
                 "lowerAsymptote": 0,
@@ -665,6 +681,7 @@ def test_get_dose_curves(empty_db_mock_downloads):
             },
             {
                 "id": "ACH-4myeloid",
+                "displayName": "myeloid_4",
                 "ec50": 0,
                 "slope": 0,
                 "lowerAsymptote": 0,

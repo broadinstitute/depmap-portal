@@ -267,16 +267,20 @@ def has_drug_data(drug_depmap_ids: List[str], context_depmap_ids: List[str]):
 
 
 def get_curve_params_for_model_ids(
-    compound_experiment: CompoundExperiment, model_ids: List[str]
+    compound_experiment: CompoundExperiment,
+    model_ids: List[str],
+    model_display_names_by_model_id: pd.Series,
 ):
     curve_objs = DoseResponseCurve.get_curve_params(
         compound_experiment=compound_experiment, model_ids=model_ids
     )
+
     curve_params = []
     for curve in curve_objs:
         if curve is not None:
             curve_param = {
                 "id": curve.depmap_id,
+                "displayName": model_display_names_by_model_id.loc[curve.depmap_id],
                 "ec50": curve.ec50,
                 "slope": curve.slope,
                 "lowerAsymptote": curve.lower_asymptote,
@@ -288,7 +292,7 @@ def get_curve_params_for_model_ids(
 
 
 def _get_dose_response_curves_per_model(
-    in_group_model_ids: List[str],
+    in_group_model_ids: Dict[str, str],
     out_group_model_ids: List[str],
     replicate_dataset_name: str,
     compound_experiment: CompoundExperiment,
@@ -305,11 +309,20 @@ def _get_dose_response_curves_per_model(
     ]
 
     in_group_curve_params = get_curve_params_for_model_ids(
-        model_ids=in_group_model_ids, compound_experiment=compound_experiment
+        model_ids=in_group_model_ids.keys(),
+        model_display_names_by_model_id=pd.Series(
+            data=in_group_model_ids.values(), index=in_group_model_ids.keys()
+        ),
+        compound_experiment=compound_experiment,
     )
 
+    out_group_model_display_names = DepmapModel.get_cell_line_display_names(
+        out_group_model_ids
+    )
     out_group_curve_params = get_curve_params_for_model_ids(
-        model_ids=out_group_model_ids, compound_experiment=compound_experiment
+        model_ids=out_group_model_ids,
+        model_display_names_by_model_id=out_group_model_display_names,
+        compound_experiment=compound_experiment,
     )
 
     return {

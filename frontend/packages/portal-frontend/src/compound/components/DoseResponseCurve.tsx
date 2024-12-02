@@ -20,6 +20,7 @@ export interface CurveParams {
   slope: number;
   lowerAsymptote: number;
   upperAsymptote: number;
+  displayName?: string;
   id?: string;
 }
 
