@@ -986,6 +986,8 @@ function ContextAnalysis({
           data && (
             <div className={styles.plotFrame}>
               <DoseCurvesTile
+                subtypeCode={selectedContextNameInfo.subtype_code}
+                selectedLevel={selectedContextNameInfo.node_level}
                 selectedContextName={selectedContextNameInfo.name}
                 selectedDrugLabel={[...selectedPlotLabels][0]}
                 datasetName={datasetId}

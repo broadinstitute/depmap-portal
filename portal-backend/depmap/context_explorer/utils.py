@@ -5,8 +5,8 @@ import pandas as pd
 import numpy as np
 
 from depmap import data_access
-from scipy.ndimage import uniform_filter1d
 from depmap.context.models import Context
+from depmap.context.models_new import SubtypeNode
 from depmap.dataset.models import Dataset, DependencyDataset
 from depmap.compound.models import (
     CompoundExperiment,
@@ -382,14 +382,14 @@ def get_entity_id_from_entity_full_label(
 def _get_in_group_out_group_model_ids(
     dataset_name: str,
     entity_full_label: str,
-    context_name: str,
+    subtype_code: str,
     level: int,
     out_group_type: str,
 ):
-    # TODO this needs to be updated to query the new context tree for the list of models
-    in_group_model_ids = DepmapModel.get_model_ids_by_lineage_and_level(
-        context_name, level
-    ).keys()
+    in_group_model_ids = SubtypeNode.get_model_ids_by_subtype_code_and_node_level(
+        subtype_code, level
+    )
+
     out_group_model_ids = _get_out_group_model_ids(
         out_group_type,
         dataset_name=dataset_name,
@@ -407,20 +407,19 @@ def _get_in_group_out_group_model_ids(
 def get_context_dose_curves(
     dataset_name: str,
     entity_full_label: str,
-    context_name: str,
+    subtype_code: str,
     level: int,
     out_group_type: str,
 ):
     assert dataset_name == DependencyDataset.DependencyEnum.Prism_oncology_AUC.name
     dataset = DependencyDataset.get_dataset_by_name(dataset_name)
     replicate_dataset_name = dataset.get_dose_replicate_enum().name
-
     compound_experiment = _get_compound_experiment(entity_full_label=entity_full_label)
 
     in_group_out_group_model_ids = _get_in_group_out_group_model_ids(
         dataset_name=dataset_name,
         entity_full_label=entity_full_label,
-        context_name=context_name,
+        subtype_code=subtype_code,
         level=level,
         out_group_type=out_group_type,
     )

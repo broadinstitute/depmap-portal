@@ -27,6 +27,7 @@ from tests.factories import (
     PrimaryDiseaseFactory,
     DoseResponseCurveFactory,
     CompoundDoseReplicateFactory,
+    SubtypeNodeFactory,
 )
 from tests.utilities import interactive_test_utils
 import pandas as pd
@@ -131,23 +132,11 @@ def _setup_factories(
 
     use_genes = entity_type == "gene"
 
-    es_primary_disease = PrimaryDiseaseFactory(name="Ewing Sarcoma")
-    os_primary_disease = PrimaryDiseaseFactory(name="Osteosarcoma")
-    myeloid_primary_disease = PrimaryDiseaseFactory(name="Acute Myeloid Leukemia")
-
     bone_es_cell_lines = [
         DepmapModelFactory(
             model_id=f"ACH-{num}es",
             stripped_cell_line_name=f"{num}es",
-            # cell_line needs to be explicitly defined to properly generate the lineages
-            cell_line=CellLineFactory(
-                depmap_id=f"ACH-{num}es",
-                lineage=[
-                    LineageFactory(level=1, name="Bone"),
-                    LineageFactory(level=2, name="Ewing Sarcoma"),
-                ],
-            ),
-            oncotree_primary_disease=es_primary_disease.name,
+            depmap_model_type="ES",
         )
         for num in range(5)
     ]
@@ -155,52 +144,90 @@ def _setup_factories(
         DepmapModelFactory(
             model_id=f"ACH-{num}os",
             stripped_cell_line_name=f"{num}os",
-            cell_line=CellLineFactory(
-                depmap_id=f"ACH-{num}os",
-                lineage=[
-                    LineageFactory(level=1, name="Bone"),
-                    LineageFactory(level=2, name="Osteosarcoma"),
-                ],
-            ),
-            oncotree_primary_disease=os_primary_disease.name,
+            depmap_model_type="OS",
         )
         for num in range(5)
     ]
+
+    bone_subtype_nodes = SubtypeNodeFactory(
+        subtype_code="BONE",
+        node_level=0,
+        level_0="BONE",
+        level_1=None,
+        level_2=None,
+        level_3=None,
+        level_4=None,
+        level_5=None,
+    )
+    bone_ES_nodes = SubtypeNodeFactory(
+        subtype_code="ES",
+        node_level=1,
+        level_0="BONE",
+        level_1="ES",
+        level_2=None,
+        level_3=None,
+        level_4=None,
+        level_5=None,
+    )
+    bone_OS_nodes = SubtypeNodeFactory(
+        subtype_code="OS",
+        node_level=1,
+        level_0="BONE",
+        level_1="OS",
+        level_2=None,
+        level_3=None,
+        level_4=None,
+        level_5=None,
+    )
+    bone_context = SubtypeContextFactory(
+        subtype_code="BONE", depmap_model=bone_es_cell_lines + bone_os_cell_lines
+    )
+    bone_ES_context = SubtypeContextFactory(
+        subtype_code="ES", depmap_model=bone_es_cell_lines
+    )
+    bone_OS_context = SubtypeContextFactory(
+        subtype_code="OS", depmap_model=bone_es_cell_lines
+    )
 
     lung_cell_lines = [
         DepmapModelFactory(
             model_id=f"ACH-{num}lung",
             stripped_cell_line_name=f"lung_line_{num}",
-            cell_line=CellLineFactory(
-                depmap_id=f"ACH-{num}lung",
-                lineage=[LineageFactory(level=1, name="Lung")],
-            ),
+            depmap_model_type="LUNG",
         )
         for num in range(5)
     ]
+
+    lung_subtype_nodes = SubtypeNodeFactory(
+        subtype_code="LUNG",
+        node_level=0,
+        level_0="LUNG",
+        level_1=None,
+        level_2=None,
+        level_3=None,
+        level_4=None,
+        level_5=None,
+    )
+    lung_context = SubtypeContextFactory(
+        subtype_code="LUNG", depmap_model=lung_cell_lines
+    )
 
     # So we have some Heme cell lines
     myeloid_cell_lines = [
         DepmapModelFactory(
             model_id=f"ACH-{num}myeloid",
             stripped_cell_line_name=f"myeloid_{num}",
-            cell_line=CellLineFactory(
-                depmap_id=f"ACH-{num}myeloid",
-                lineage=[
-                    LineageFactory(level=1, name="Myeloid"),
-                    LineageFactory(level=2, name="Acute Myeloid Leukemia"),
-                ],
-            ),
-            oncotree_primary_disease=myeloid_primary_disease.name,
+            depmap_model_type="MYELOID",
         )
         for num in range(5)
     ]
 
-    lung_context = SubtypeContextFactory(subtype_code="Lung")
-    es_context = SubtypeContextFactory(subtype_code="Ewing Sarcoma")
-    os_context = SubtypeContextFactory(subtype_code="Osteosarcoma")
-    myeloid_context = SubtypeContextFactory(subtype_code="Myeloid")
-    aml_context = SubtypeContextFactory(subtype_code="Acute Myeloid Leukemia")
+    myeloid_context = SubtypeContextFactory(
+        subtype_code="MYELOID", depmap_model=myeloid_cell_lines
+    )
+    aml_context = SubtypeContextFactory(
+        subtype_code="AML", depmap_model=myeloid_cell_lines
+    )
 
     matrix_cell_lines = (
         bone_es_cell_lines
@@ -228,8 +255,8 @@ def _setup_factories(
 
     ContextAnalysisFactory(
         dataset=dataset,
-        subtype_context=es_context,
-        subtype_code="Ewing Sarcoma",
+        subtype_context=bone_ES_context,
+        subtype_code="ES",
         out_group="All",
         entity=gene_a if use_genes else compound_a,
         t_pval=1.0,
@@ -240,8 +267,8 @@ def _setup_factories(
 
     ContextAnalysisFactory(
         dataset=dataset,
-        subtype_context=es_context,
-        subtype_code="Ewing Sarcoma",
+        subtype_context=bone_ES_context,
+        subtype_code="ES",
         out_group="Type",
         entity=gene_a if use_genes else compound_a,
         t_pval=1,
@@ -253,7 +280,7 @@ def _setup_factories(
     ContextAnalysisFactory(
         dataset=dataset,
         subtype_context=lung_context,
-        subtype_code="Lung",
+        subtype_code="LUNG",
         out_group="All",
         entity=gene_a if use_genes else compound_a,
         t_pval=1.0,
@@ -267,8 +294,8 @@ def _setup_factories(
     # Uses a wide filter, so filtered out if only_narrow_range
     ContextAnalysisFactory(
         dataset=dataset,
-        subtype_context=os_context,
-        subtype_code="Osteosarcoma",
+        subtype_context=bone_OS_context,
+        subtype_code="OS",
         out_group="All",
         entity=gene_a if use_genes else compound_a,
         t_qval=wide_filters.t_qval,
@@ -277,8 +304,8 @@ def _setup_factories(
     )
     ContextAnalysisFactory(
         dataset=dataset,
-        subtype_context=es_context,
-        subtype_code="Ewing Sarcoma",
+        subtype_context=bone_ES_context,
+        subtype_code="ES",
         out_group="Lineage",
         entity=gene_a if use_genes else compound_a,
         t_pval=3.0,
@@ -291,7 +318,7 @@ def _setup_factories(
     ContextAnalysisFactory(
         dataset=dataset,
         subtype_context=myeloid_context,
-        subtype_code="Myeloid",
+        subtype_code="MYELOID",
         out_group="All",
         entity=gene_a if use_genes else compound_a,
         t_qval=wide_filters.t_qval,
@@ -301,7 +328,7 @@ def _setup_factories(
     ContextAnalysisFactory(
         dataset=dataset,
         subtype_context=aml_context,
-        subtype_code="Acute Myeloid Leukemia",
+        subtype_code="AML",
         out_group="All",
         entity=gene_a if use_genes else compound_a,
         t_qval=narrow_filters.t_qval,
@@ -359,7 +386,7 @@ def test_get_anaysis_data(empty_db_mock_downloads, dataset_name):
     )
 
     ew_vs_all = _get_analysis_data_table(
-        in_group="Ewing Sarcoma",
+        in_group="ES",
         out_group_type="All",
         entity_type=entity_type,
         dataset_name=dataset_name,
@@ -416,7 +443,7 @@ def test_get_anaysis_data(empty_db_mock_downloads, dataset_name):
     assert ew_vs_all["depletion"] == ["False"]
 
     ew_vs_lineage = _get_analysis_data_table(
-        in_group="Ewing Sarcoma",
+        in_group="ES",
         out_group_type="Lineage",
         entity_type=entity_type,
         dataset_name=dataset_name,
@@ -433,7 +460,7 @@ def test_get_anaysis_data(empty_db_mock_downloads, dataset_name):
     assert ew_vs_lineage["depletion"] == ["True"]
 
     ew_vs_type = _get_analysis_data_table(
-        in_group="Ewing Sarcoma",
+        in_group="ES",
         out_group_type="Type",
         entity_type=entity_type,
         dataset_name=dataset_name,
@@ -483,7 +510,7 @@ def test_get_dose_curves(empty_db_mock_downloads):
     dose_curve_info = get_context_dose_curves(
         dataset_name=dataset_name,
         entity_full_label=selected_entity_label,
-        context_name="Lung",
+        subtype_code="ES",
         level=1,
         out_group_type="All",
     )
@@ -502,150 +529,150 @@ def test_get_dose_curves(empty_db_mock_downloads):
     assert dose_curve_info["dose_curve_info"] == {
         "in_group_curve_params": [
             {
+                "id": "ACH-0es",
                 "ec50": 0,
+                "slope": 0,
+                "lowerAsymptote": 0,
+                "upperAsymptote": 0,
+            },
+            {
+                "id": "ACH-1es",
+                "ec50": 0,
+                "slope": 0,
+                "lowerAsymptote": 0,
+                "upperAsymptote": 0,
+            },
+            {
+                "id": "ACH-2es",
+                "ec50": 0,
+                "slope": 0,
+                "lowerAsymptote": 0,
+                "upperAsymptote": 0,
+            },
+            {
+                "id": "ACH-3es",
+                "ec50": 0,
+                "slope": 0,
+                "lowerAsymptote": 0,
+                "upperAsymptote": 0,
+            },
+            {
+                "id": "ACH-4es",
+                "ec50": 0,
+                "slope": 0,
+                "lowerAsymptote": 0,
+                "upperAsymptote": 0,
+            },
+        ],
+        "out_group_curve_params": [
+            {
                 "id": "ACH-0lung",
-                "lowerAsymptote": 0,
+                "ec50": 0,
                 "slope": 0,
+                "lowerAsymptote": 0,
                 "upperAsymptote": 0,
             },
             {
-                "ec50": 0,
                 "id": "ACH-1lung",
-                "lowerAsymptote": 0,
+                "ec50": 0,
                 "slope": 0,
+                "lowerAsymptote": 0,
                 "upperAsymptote": 0,
             },
             {
-                "ec50": 0,
                 "id": "ACH-2lung",
-                "lowerAsymptote": 0,
+                "ec50": 0,
                 "slope": 0,
+                "lowerAsymptote": 0,
                 "upperAsymptote": 0,
             },
             {
-                "ec50": 0,
                 "id": "ACH-3lung",
-                "lowerAsymptote": 0,
+                "ec50": 0,
                 "slope": 0,
+                "lowerAsymptote": 0,
                 "upperAsymptote": 0,
             },
             {
-                "ec50": 0,
                 "id": "ACH-4lung",
-                "lowerAsymptote": 0,
+                "ec50": 0,
                 "slope": 0,
+                "lowerAsymptote": 0,
+                "upperAsymptote": 0,
+            },
+            {
+                "id": "ACH-0os",
+                "ec50": 0,
+                "slope": 0,
+                "lowerAsymptote": 0,
+                "upperAsymptote": 0,
+            },
+            {
+                "id": "ACH-1os",
+                "ec50": 0,
+                "slope": 0,
+                "lowerAsymptote": 0,
+                "upperAsymptote": 0,
+            },
+            {
+                "id": "ACH-2os",
+                "ec50": 0,
+                "slope": 0,
+                "lowerAsymptote": 0,
+                "upperAsymptote": 0,
+            },
+            {
+                "id": "ACH-3os",
+                "ec50": 0,
+                "slope": 0,
+                "lowerAsymptote": 0,
+                "upperAsymptote": 0,
+            },
+            {
+                "id": "ACH-4os",
+                "ec50": 0,
+                "slope": 0,
+                "lowerAsymptote": 0,
+                "upperAsymptote": 0,
+            },
+            {
+                "id": "ACH-0myeloid",
+                "ec50": 0,
+                "slope": 0,
+                "lowerAsymptote": 0,
+                "upperAsymptote": 0,
+            },
+            {
+                "id": "ACH-1myeloid",
+                "ec50": 0,
+                "slope": 0,
+                "lowerAsymptote": 0,
+                "upperAsymptote": 0,
+            },
+            {
+                "id": "ACH-2myeloid",
+                "ec50": 0,
+                "slope": 0,
+                "lowerAsymptote": 0,
+                "upperAsymptote": 0,
+            },
+            {
+                "id": "ACH-3myeloid",
+                "ec50": 0,
+                "slope": 0,
+                "lowerAsymptote": 0,
+                "upperAsymptote": 0,
+            },
+            {
+                "id": "ACH-4myeloid",
+                "ec50": 0,
+                "slope": 0,
+                "lowerAsymptote": 0,
                 "upperAsymptote": 0,
             },
         ],
         "max_dose": 0.3,
         "min_dose": 0.1,
-        "out_group_curve_params": [
-            {
-                "ec50": 0,
-                "id": "ACH-0es",
-                "lowerAsymptote": 0,
-                "slope": 0,
-                "upperAsymptote": 0,
-            },
-            {
-                "ec50": 0,
-                "id": "ACH-1es",
-                "lowerAsymptote": 0,
-                "slope": 0,
-                "upperAsymptote": 0,
-            },
-            {
-                "ec50": 0,
-                "id": "ACH-2es",
-                "lowerAsymptote": 0,
-                "slope": 0,
-                "upperAsymptote": 0,
-            },
-            {
-                "ec50": 0,
-                "id": "ACH-3es",
-                "lowerAsymptote": 0,
-                "slope": 0,
-                "upperAsymptote": 0,
-            },
-            {
-                "ec50": 0,
-                "id": "ACH-4es",
-                "lowerAsymptote": 0,
-                "slope": 0,
-                "upperAsymptote": 0,
-            },
-            {
-                "ec50": 0,
-                "id": "ACH-0os",
-                "lowerAsymptote": 0,
-                "slope": 0,
-                "upperAsymptote": 0,
-            },
-            {
-                "ec50": 0,
-                "id": "ACH-1os",
-                "lowerAsymptote": 0,
-                "slope": 0,
-                "upperAsymptote": 0,
-            },
-            {
-                "ec50": 0,
-                "id": "ACH-2os",
-                "lowerAsymptote": 0,
-                "slope": 0,
-                "upperAsymptote": 0,
-            },
-            {
-                "ec50": 0,
-                "id": "ACH-3os",
-                "lowerAsymptote": 0,
-                "slope": 0,
-                "upperAsymptote": 0,
-            },
-            {
-                "ec50": 0,
-                "id": "ACH-4os",
-                "lowerAsymptote": 0,
-                "slope": 0,
-                "upperAsymptote": 0,
-            },
-            {
-                "ec50": 0,
-                "id": "ACH-0myeloid",
-                "lowerAsymptote": 0,
-                "slope": 0,
-                "upperAsymptote": 0,
-            },
-            {
-                "ec50": 0,
-                "id": "ACH-1myeloid",
-                "lowerAsymptote": 0,
-                "slope": 0,
-                "upperAsymptote": 0,
-            },
-            {
-                "ec50": 0,
-                "id": "ACH-2myeloid",
-                "lowerAsymptote": 0,
-                "slope": 0,
-                "upperAsymptote": 0,
-            },
-            {
-                "ec50": 0,
-                "id": "ACH-3myeloid",
-                "lowerAsymptote": 0,
-                "slope": 0,
-                "upperAsymptote": 0,
-            },
-            {
-                "ec50": 0,
-                "id": "ACH-4myeloid",
-                "lowerAsymptote": 0,
-                "slope": 0,
-                "upperAsymptote": 0,
-            },
-        ],
     }
 
 

@@ -427,7 +427,7 @@ class ContextDoseCurves(Resource):
     def get(self):
         dataset_name = request.args.get("dataset_name")
         entity_full_label = request.args.get("entity_full_label")
-        context_name = request.args.get("context_name")
+        subtype_code = request.args.get("subtype_code")
         level = request.args.get("level")
 
         # TODO calculate outgroup median using outgroup type instead of always using All Others
@@ -436,7 +436,7 @@ class ContextDoseCurves(Resource):
         dose_curve_info = get_context_dose_curves(
             dataset_name=dataset_name,
             entity_full_label=entity_full_label,
-            context_name=context_name,
+            subtype_code=subtype_code,
             level=level,
             out_group_type=out_group_type,
         )

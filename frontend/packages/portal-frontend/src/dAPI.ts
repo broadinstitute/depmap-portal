@@ -581,14 +581,15 @@ export class DepmapApi {
 
   getContextExplorerDoseResponsePoints(
     datasetName: string,
-    selectedContextName: string,
-    compoundLabel: string
+    subtypeCode: string,
+    compoundLabel: string,
+    selectedLevel: number
   ): Promise<DoseCurveData> {
     const params = {
       dataset_name: datasetName,
-      context_name: selectedContextName,
+      subtype_code: subtypeCode,
       entity_full_label: compoundLabel,
-      level: 1,
+      level: selectedLevel,
       out_group_type: "All Others",
     };
 

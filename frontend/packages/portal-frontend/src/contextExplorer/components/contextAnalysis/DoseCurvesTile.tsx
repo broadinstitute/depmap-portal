@@ -7,19 +7,24 @@ import DoseCurvesPlot from "./DoseCurvesPlot";
 interface DoseCurvesTileProps {
   selectedDrugLabel: string | null;
   selectedContextName: string;
+  subtypeCode: string;
+  selectedLevel: number;
   selectedOutGroupType: string;
   datasetName: string;
   getContextExplorerDoseResponsePoints: (
     datasetName: string,
-    selectedContextName: string,
-    compoundLabel: string
+    subtypeCode: string,
+    compoundLabel: string,
+    selectedLevel: number
   ) => Promise<DoseCurveData>;
 }
 
 function DoseCurvesTile(props: DoseCurvesTileProps) {
   const {
     selectedDrugLabel,
+    subtypeCode,
     selectedContextName,
+    selectedLevel,
     selectedOutGroupType,
     datasetName,
     getContextExplorerDoseResponsePoints,
@@ -37,8 +42,9 @@ function DoseCurvesTile(props: DoseCurvesTileProps) {
       setIsLoading(true);
       const doseCurvesPromise = getContextExplorerDoseResponsePoints(
         datasetName,
-        selectedContextName,
-        selectedDrugLabel
+        subtypeCode,
+        selectedDrugLabel,
+        selectedLevel
       );
 
       doseCurvesLatestPromise.current = doseCurvesPromise;
@@ -59,8 +65,9 @@ function DoseCurvesTile(props: DoseCurvesTileProps) {
     }
   }, [
     datasetName,
-    selectedContextName,
+    subtypeCode,
     selectedDrugLabel,
+    selectedLevel,
     getContextExplorerDoseResponsePoints,
   ]);
 
