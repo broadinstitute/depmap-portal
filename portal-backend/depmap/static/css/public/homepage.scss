@@ -5,14 +5,19 @@
 .dmc_feature_content {
   display: grid;
   justify-items: center;
-  @media screen and (min-width: 992px) {
-    padding: 100px;
+
+  @media screen and (min-width: 1380px) {
+    padding: 0 150px 20px;
+  }
+
+  @media screen and (min-width: 992px) and (max-width: 1380px) {
+    padding: 0 100px 20px;
   }
   @media screen and (min-width: 768px) and (max-width: 991px) {
-    padding: 50px;
+    padding: 0 50px 10px;
   }
   @media screen and (max-width: 768px) {
-    padding: 20px;
+    padding: 0 10px 0;
   }
 
   .search_bar {
@@ -61,7 +66,7 @@
 }
 
 .dmc_about_div {
-  height: 500px;
+  height: 100%;
   background-size: cover;
 
   @media screen and (max-width: 992px) {
@@ -295,7 +300,7 @@
     // new dmc homepage styling
     @media screen and (min-width: 992px) {
       padding-left: 50px;
-      padding-bottom: 0px;
+      margin-bottom: 20px;
     }
     @media screen and (max-width: 992px) {
       padding-left: 20px;
@@ -363,6 +368,18 @@
   }
   @media screen and (max-width: 768px) {
     padding: 20px;
+  }
+
+  &.dmc {
+    @media screen and (min-width: 1366px) {
+      padding: 50px 100px;
+    }
+    @media screen and (min-width: 768px) and (max-width: 1365px) {
+      padding: 25px 50px;
+    }
+    @media screen and (max-width: 768px) {
+      padding: 10px 20px;
+    }
   }
 
   &.dmc_feature {
