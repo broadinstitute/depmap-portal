@@ -8,7 +8,7 @@ from googleapiclient.discovery import build
 
 from gumbo_rest_client import Client
 from taigapy import default_tc as taiga_client_v2
-from utils import (
+from .utils import (
     gumbo_df_preprocessing,
     get_model_ids,
     get_model_condition_ids,
@@ -16,7 +16,7 @@ from utils import (
 )
 import pandera as pa
 
-from files_to_check_models_to_exclude import model_id_exclusion_list
+from .files_to_check_models_to_exclude import model_id_exclusion_list
 
 
 def main():
@@ -52,6 +52,10 @@ def main():
         dest="readme_yaml",
         help="Used to specify where the yaml file is to update with the column name and descriptions for the generated files",
     )
+    parser.add_argument(
+        "--username",
+        help="Username to pass to gumbo client. Necessary when running on a hermit machine"
+        )
 
     args = parser.parse_args()
     quarterly_release_dataset_id = args.quarterly_release_dataset_id
@@ -60,12 +64,13 @@ def main():
     model_outfile = args.model_csv_outfile
     model_condition_outfile = args.model_condition_csv_outfile
     readme_yaml = args.readme_yaml
+    username = args.username
 
     ###############################################
     ### Get the original DataFrames from Gumbo ###
     ###############################################
 
-    gumbo_client = Client()
+    gumbo_client = Client(username=username)
     print(colored("Gumbo client successfully connected.", "green"))
     orig_model_df = gumbo_client.get("model")
     orig_model_condition_df = gumbo_client.get("model_condition")
@@ -127,7 +132,7 @@ def main():
 
     ## MODEL ##
     data_dictionary_model_df = grouped.get_group("model")
-    model_df = gumbo_df_preprocessing(data_dictionary_model_df, orig_model_df)
+    model_df = gumbo_df_preprocessing(gumbo_client, data_dictionary_model_df, orig_model_df)
     # print(colored(f"Shape of model_df: {model_df.shape}", "magenta"))
 
     model_ids = get_model_ids(quarterly_release_dataset_id)
@@ -206,7 +211,7 @@ def main():
 
     ## MODEL CONDITION ##
     data_dictionary_model_condition_df = grouped.get_group("model_condition")
-    model_condition_df = gumbo_df_preprocessing(
+    model_condition_df = gumbo_df_preprocessing(gumbo_client, 
         data_dictionary_model_condition_df, orig_model_condition_df
     )
     # print(colored(f"Shape of model_condition_df: {model_condition_df.shape}", "magenta"))

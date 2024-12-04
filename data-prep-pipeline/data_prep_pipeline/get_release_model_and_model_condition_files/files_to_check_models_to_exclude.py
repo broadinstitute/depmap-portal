@@ -3,7 +3,7 @@ quarterly_files_to_check = {
     "OmicsCNGene": "ModelID",
     "OmicsSomaticMutations": "ModelID",
     "OmicsFusionFiltered": "ModelID",
-    "PRISMOncologyReferenceAUCMatrix": "ModelID",
+#    "PRISMOncologyReferenceAUCMatrix": "ModelID",
 }
 
 model_id_exclusion_list = ["ACH-002185"]
