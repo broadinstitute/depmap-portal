@@ -24,3 +24,5 @@ export {
   mutationNumToColor,
   setSelectedCellLineListName,
 } from "./src/colorAndHighlights";
+
+export * from "./src/sort";

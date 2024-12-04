@@ -10,6 +10,7 @@ import {
   evaluateContext,
   fetchDatasets,
   fetchDatasetsByIndexType,
+  fetchDatasetIdentifiers,
   fetchDimensionIdentifiers,
   fetchDimensionTypes,
   fetchVariableDomain,
@@ -41,6 +42,7 @@ function ElaraContextManager({ onHide }: Props) {
         fetchVariableDomain={fetchVariableDomain}
         fetchDatasets={fetchDatasets}
         fetchDimensionTypes={fetchDimensionTypes}
+        fetchDatasetIdentifiers={fetchDatasetIdentifiers}
         fetchDimensionIdentifiers={fetchDimensionIdentifiers}
       >
         <ContextManager

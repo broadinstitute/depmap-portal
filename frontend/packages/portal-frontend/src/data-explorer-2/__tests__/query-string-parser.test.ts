@@ -1,14 +1,19 @@
 import qs from "qs";
+import { DataExplorerDatasetDescriptor } from "@depmap/types";
 import { parseShorthandParams } from "src/data-explorer-2/query-string-parser";
 
-const MOCK_DATASETS_BY_INDEX_TYPE = {
+const MOCK_DATASETS_BY_INDEX_TYPE: Record<
+  string,
+  DataExplorerDatasetDescriptor[]
+> = {
   depmap_model: [
     {
       data_type: "CRISPR",
-      dataset_id: "Chronos_Combined",
+      id: "1",
+      given_id: "Chronos_Combined",
       slice_type: "gene",
       index_type: "depmap_model",
-      label: "CRISPR (DepMap Internal 23Q2+Score, Chronos)",
+      name: "CRISPR (DepMap Internal 23Q2+Score, Chronos)",
       units: "Gene effect",
       priority: 42,
     },
@@ -16,10 +21,11 @@ const MOCK_DATASETS_BY_INDEX_TYPE = {
   gene: [
     {
       data_type: "CRISPR",
-      dataset_id: "Chronos_Combined",
+      id: "1",
+      given_id: "Chronos_Combined",
       slice_type: "depmap_model",
       index_type: "gene",
-      label: "CRISPR (DepMap Internal 23Q2+Score, Chronos)",
+      name: "CRISPR (DepMap Internal 23Q2+Score, Chronos)",
       units: "Gene effect",
       priority: 42,
     },

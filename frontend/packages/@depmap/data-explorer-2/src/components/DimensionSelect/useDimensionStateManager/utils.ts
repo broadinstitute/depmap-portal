@@ -55,12 +55,12 @@ export function findHighestPriorityDatasetId(
 
   filterDatasets(datasets, { slice_type, dataType, units }).forEach((d) => {
     if (
-      enabledDatasetIds.has(d.dataset_id) &&
+      enabledDatasetIds.has(d.id) &&
       d.priority !== null &&
       d.priority < bestPriority
     ) {
       bestPriority = d.priority;
-      bestId = d.dataset_id;
+      bestId = d.id;
     }
   });
 
@@ -83,7 +83,7 @@ function isHighestPriorityDataset(
     units
   );
 
-  return dataset.dataset_id === bestId;
+  return dataset.id === bestId;
 }
 
 export function getEnabledDatasetIds(
@@ -100,7 +100,7 @@ export function getEnabledDatasetIds(
     return new Set(
       datasets
         .filter((d) => !dataType || dataType === d.data_type)
-        .map((d) => d.dataset_id)
+        .map((d) => d.id)
     );
   }
 
@@ -114,9 +114,7 @@ export function getEnabledDatasetIds(
     datasets
       .filter((d) => d.units !== units)
       .forEach((d) => {
-        const index = sliceLabelMap.dataset_ids.findIndex(
-          (id) => id === d.dataset_id
-        );
+        const index = sliceLabelMap.dataset_ids.findIndex((id) => id === d.id);
         validDsIndices.delete(index);
       });
   }
@@ -279,7 +277,7 @@ export function computeOptions(
 
       const noEntities = !datasets
         .filter((d) => d.units === units)
-        .some((d) => enabledDatasetIds.has(d.dataset_id));
+        .some((d) => enabledDatasetIds.has(d.id));
 
       if (noEntities) {
         isDisabled = true;
@@ -358,7 +356,7 @@ export function computeOptions(
         ].join(" ");
       }
 
-      if (selectedContext && !enabledDatasetIds.has(dataset.dataset_id)) {
+      if (selectedContext && !enabledDatasetIds.has(dataset.id)) {
         isDisabled = true;
 
         if (selectedAxisType === "aggregated_slice") {
@@ -386,8 +384,8 @@ export function computeOptions(
       }
 
       return {
-        label: dataset.label,
-        value: dataset.dataset_id,
+        label: dataset.name,
+        value: dataset.id,
         isDefault: isHighestPriorityDataset(
           dataset,
           datasets,
