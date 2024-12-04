@@ -2,7 +2,7 @@ include "xrefs-common.conseq"
 
 # SET_TAIGA_PREPROCESSOR virtual_dataset_id "public-24q4-31a4.61"
 
-let RELEASE_LABEL="Public 24Q2"
+let RELEASE_LABEL="Public 24Q4"
 
 add-if-missing {
     "type": "depmap_data_taiga_id",
