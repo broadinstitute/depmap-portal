@@ -2,9 +2,9 @@ import pandas as pd
 import numpy as np
 
 from taigapy import create_taiga_client_v3
-from utils import update_taiga
-from datarelease_taiga_permanames import omics_somatic_mutations_taiga_permaname
-from config import oncokb_annotated_taiga_id
+from ..utils import update_taiga
+from ..datarelease_taiga_permanames import omics_somatic_mutations_taiga_permaname
+from ..config import oncokb_annotated_taiga_id
 
 
 def reformat_entrez_id(x):

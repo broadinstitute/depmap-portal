@@ -1,18 +1,18 @@
 import argparse
 
-from cn_gene.transform_cngene_to_log2 import process_and_update_cngene_log2
-from portal_compounds.transform_portal_compounds import (
+from .cn_gene.transform_cngene_to_log2 import process_and_update_cngene_log2
+from .portal_compounds.transform_portal_compounds import (
     process_and_update_portal_compounds,
 )
-from update_hgnc_gene import process_and_update_hgnc_gene
+from .update_hgnc_gene import process_and_update_hgnc_gene
 
-from predictability.transform_crispr_confounders import (
+from .predictability.transform_crispr_confounders import (
     process_and_update_crispr_confounders,
 )
-from predictability.transform_lineage import process_and_update_lineage
-from predictability.transform_fusion import process_and_update_fusion
-from predictability.transform_driver_events import process_and_update_driver_events
-from predictability.transform_genetic_derangement import (
+from .predictability.transform_lineage import process_and_update_lineage
+from .predictability.transform_fusion import process_and_update_fusion
+from .predictability.transform_driver_events import process_and_update_driver_events
+from .predictability.transform_genetic_derangement import (
     process_and_update_genetic_derangement,
 )
 
