@@ -6,8 +6,6 @@ from fastapi import Depends, HTTPException, Request
 from ..crud import dataset as dataset_crud
 from breadbox.db.session import SessionLocalWithUser, SessionWithUser
 from breadbox.config import get_settings
-from breadbox.celery_task.utils import check_celery
-from breadbox.schemas.custom_http_exception import CeleryConnectionError
 import os
 
 
@@ -54,10 +52,3 @@ def get_dataset(
     if dataset is None:
         raise HTTPException(404, detail="Dataset not found")
     return dataset
-
-
-def celery_is_running():
-    try:
-        check_celery()
-    except CeleryConnectionError as err:
-        raise err
