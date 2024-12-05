@@ -5,6 +5,7 @@
     { "path": "../api" },
     { "path": "../common-components" },
     { "path": "../types" },
-    { "path": "../wide-table" }
+    { "path": "../wide-table" },
+    { "path": "../compute" }
   ]
 }
