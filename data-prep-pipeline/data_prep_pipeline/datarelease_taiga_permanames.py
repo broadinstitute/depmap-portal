@@ -10,3 +10,4 @@ prism_oncref_auc_matrix_taiga_permaname = "PRISMOncologyReferenceAUCMatrix"
 
 cngene_log2_taiga_permaname = "PortalOmicsCNGeneLog2"
 subtype_tree_taiga_permaname = "SubtypeTree"
+molecular_subtypes_taiga_permaname = "OmicsInferredMolecularSubtypes"
