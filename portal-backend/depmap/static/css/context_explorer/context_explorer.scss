@@ -8,7 +8,7 @@
 
 .refine_context_tree {
   .top_button.btn.btn-link {
-    margin-left: 16px;
+    margin-left: 1px;
     border: none;
     text-align: left;
     white-space: pre-line;
@@ -44,7 +44,8 @@
 
       .accordion-title {
         color: #4479b2;
-        width: 100% !important;
+        float: right;
+        width: 93% !important;
       }
     }
 

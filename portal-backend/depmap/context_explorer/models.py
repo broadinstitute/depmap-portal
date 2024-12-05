@@ -130,17 +130,14 @@ class ContextNode(dict):
     def find_path_to_context_node(
         self, root, target_subtype_code: str, path: List[str] = []
     ):
-        path = path + [root.subtype_code]
+        path = path + [root.subtype_code] if root.subtype_code not in path else path
 
         if root.subtype_code == target_subtype_code:
             return path
 
-        for child in root.children:
-            result = child.find_path_to_context_node(child, target_subtype_code, path)
-            if result:
-                return result
+        path = path + [target_subtype_code]
 
-        return None
+        return path
 
     def create_context_tree_from_root_info(
         self, tree_df, current_node_code, node_level: int
@@ -178,6 +175,14 @@ class ContextNode(dict):
                         ),
                     )
                     self.add_node(node)
+
+            for child in self.children:
+                if child.subtype_code == child_subtype_code:
+                    child.create_context_tree_from_root_info(
+                        tree_df=sorted,
+                        current_node_code=child_subtype_code,
+                        node_level=next_level,
+                    )
 
 
 # Separated from the class method for testing purposes

@@ -22,7 +22,8 @@ export interface LineageSearchProps {
   contextTrees: { [key: string]: ContextExplorerTree };
   onRefineYourContext: (
     node: ContextNode | null,
-    tree: ContextExplorerTree | null
+    tree: ContextExplorerTree | null,
+    subtypeCode?: string
   ) => void;
   topContextNameInfo: ContextNameInfo;
   selectedContextNode: ContextNode;

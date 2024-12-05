@@ -113,15 +113,21 @@ export const ContextExplorer = () => {
   const onRefineYourContext = useCallback(
     async (
       contextNode: ContextNode | null,
-      contextTree: ContextExplorerTree | null
+      contextTree: ContextExplorerTree | null,
+      subtypeCode?: string
     ) => {
       deleteSpecificQueryParams(["context"]);
 
-      if (allContextData && contextNode && contextTree) {
-        const context = await dapi.getContextPath(contextNode.subtype_code);
+      if (allContextData && (contextNode || subtypeCode) && contextTree) {
+        const context = await dapi.getContextPath(
+          contextNode?.subtype_code || subtypeCode!
+        );
         setContextPath(context);
 
-        setQueryStringWithoutPageReload("context", contextNode.subtype_code);
+        setQueryStringWithoutPageReload(
+          "context",
+          contextNode?.subtype_code || subtypeCode!
+        );
       } else {
         setContextPath(null);
       }
