@@ -34,7 +34,7 @@ LOADER_DATA_DIR = DevConfig.LOADER_DATA_DIR
 WEBAPP_DATA_DIR = DevConfig.WEBAPP_DATA_DIR
 DOWNLOADS_PATHS = [
     os.path.join(Config.PROJECT_ROOT, f"../config/{base_settings.ENV_TYPE}/downloads",),
-    "../config/shared/shared_downloads",
+    "../config/shared/public_downloads",
 ]
 THEME_PATH = os.path.join(
     Config.PROJECT_ROOT, f"../config/{base_settings.ENV_TYPE}/theme/"
