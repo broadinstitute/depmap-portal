@@ -16,6 +16,7 @@ ERROR_CODES = [
     status.HTTP_403_FORBIDDEN,
     status.HTTP_404_NOT_FOUND,
     status.HTTP_409_CONFLICT,
+    status.HTTP_503_SERVICE_UNAVAILABLE,
 ]
 ERROR_RESPONSES = dict.fromkeys(ERROR_CODES, {"model": HTTPError})
 
@@ -64,3 +65,8 @@ class AnnotationValidationError(UserError):
 class ComputeLinearFitError(UserError):
     def __init__(self, msg):
         super().__init__(msg)
+
+
+class CeleryConnectionError(HTTPException):
+    def __init__(self, msg, error_code=503):
+        super().__init__(error_code, msg)
