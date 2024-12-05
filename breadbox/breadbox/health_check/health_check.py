@@ -28,6 +28,10 @@ def log_test():
     "/ok", operation_id="ok",
 )
 def ok():
+    try:
+        check_celery()
+    except CeleryConnectionError as err:
+        raise err
     task = site_check_task.is_ok.delay()
     task.wait(timeout=60, interval=0.5)
 

@@ -7,11 +7,11 @@ from fastapi import APIRouter, HTTPException, Depends
 from breadbox.config import Settings, get_settings
 from depmap_compute import models
 
-from breadbox.schemas.custom_http_exception import UserError, HTTPError
+from breadbox.schemas.custom_http_exception import UserError, CeleryConnectionError
 from ..schemas.compute import ComputeParams, ComputeResponse
 from ..compute import analysis_tasks
 from .dependencies import get_user
-from ..celery_task.utils import format_task_status, cast_celery_task
+from ..celery_task.utils import format_task_status, cast_celery_task, check_celery
 
 
 router = APIRouter(prefix="/compute", tags=["compute"])
@@ -69,6 +69,11 @@ def compute_univariate_associations(
     user: str = Depends(get_user),
     settings: Settings = Depends(get_settings),
 ):
+    try:
+        check_celery()
+    except CeleryConnectionError as err:
+        raise err
+
     resultsDirPrefix = settings.compute_results_location
     dataset_id = computeParams.datasetId
     vector_variable_type = computeParams.vectorVariableType
@@ -118,4 +123,8 @@ def compute_univariate_associations(
 
 @router.get("/test_task", operation_id="test_task")
 def test_task(message):
+    try:
+        check_celery()
+    except CeleryConnectionError as err:
+        raise err
     cast_celery_task(analysis_tasks.test_task).delay(message)
