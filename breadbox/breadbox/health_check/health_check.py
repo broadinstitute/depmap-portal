@@ -1,6 +1,8 @@
 from fastapi import APIRouter
 from breadbox.health_check import site_check_task
-from breadbox.celery_task.utils import format_task_status
+from breadbox.celery_task.utils import format_task_status, check_celery
+from breadbox.schemas.custom_http_exception import CeleryConnectionError
+
 import logging
 
 router = APIRouter(prefix="/health_check", tags=["health_check"])
@@ -26,6 +28,8 @@ def log_test():
     "/ok", operation_id="ok",
 )
 def ok():
+    check_celery()
+
     task = site_check_task.is_ok.delay()
     task.wait(timeout=60, interval=0.5)
 
@@ -35,3 +39,10 @@ def ok():
 @router.get("/simulate-error", operation_id="simulate_error")
 def simulate_error():
     raise Exception("Simulated error")
+
+
+@router.get("/celery", operation_id="celery_check")
+def celery_check():
+    check_celery()
+
+    return {"message": "ok"}
