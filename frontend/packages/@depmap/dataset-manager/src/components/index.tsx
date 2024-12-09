@@ -72,6 +72,11 @@ export default function Datasets() {
     [dapi]
   );
 
+  const getTaskStatus = useCallback(
+    (task_id: string) => dapi.getTaskStatus(task_id),
+    [dapi]
+  );
+
   const [dimensionTypes, setDimensionTypes] = useState<any[] | null>(null);
   const [selectedDimensionType, setSelectedDimensionType] = useState<
     any | null
@@ -180,6 +185,10 @@ export default function Datasets() {
             uploadFile={postFileUpload}
             uploadDataset={postDatasetUpload}
             isAdvancedMode={isAdvancedMode}
+            getTaskStatus={getTaskStatus}
+            onSuccess={(dataset: Dataset) =>
+              setDatasets([...datasets, dataset])
+            }
           />
         );
       }
@@ -197,17 +206,18 @@ export default function Datasets() {
     }
     return null;
   }, [
-    datasetToEdit,
     datasets,
-    getDataTypesAndPriorities,
-    getDimensionTypes,
-    getGroups,
     isEditDatasetMode,
-    postDatasetUpload,
-    postFileUpload,
+    datasetToEdit,
     showDatasetModal,
+    getGroups,
+    getDataTypesAndPriorities,
     updateDataset,
+    getDimensionTypes,
+    postFileUpload,
+    postDatasetUpload,
     isAdvancedMode,
+    getTaskStatus,
   ]);
 
   if (!datasets || !dimensionTypes) {
