@@ -260,6 +260,69 @@ class TestPost:
         assert bad_list_strings_file_ids_dataset.status_code == 202
         assert bad_list_strings_file_ids_dataset.json()["state"] == "FAILURE"
 
+    def test_categorical_dataset_uploads_task(
+        self,
+        client: TestClient,
+        minimal_db: SessionWithUser,
+        private_group: Dict,
+        mock_celery,
+        monkeypatch,
+    ):
+        user = "someone@private-group.com"
+        headers = {"X-Forwarded-User": user}
+
+        file = factories.matrix_csv_data_file_with_values(
+            values=["No mutation", "heterozygous", "homozygous"]
+        )
+        file_ids = []
+        chunk = file.readline()
+        while chunk:
+            response = client.post(
+                "/uploads/file", files={"file": ("filename", chunk, "text/csv")},
+            )
+            assert response.status_code == 200
+            file_ids.append(response.json()["file_id"])
+            chunk = file.readline()
+
+        assert len(file_ids) == 3
+        expected_md5 = "5c3f3e45850fbb63dc5cf1be6b9605f4"
+        matrix_dataset_given_id = "some_given_id"
+
+        categorical_matrix_dataset = client.post(
+            "/dataset-v2/",
+            json={
+                "format": "matrix",
+                "name": "a dataset",
+                "given_id": matrix_dataset_given_id,
+                "units": "a unit",
+                "feature_type": "generic",
+                "sample_type": "depmap_model",
+                "data_type": "User upload",
+                "file_ids": file_ids,
+                "dataset_md5": expected_md5,
+                "is_transient": False,
+                "group_id": private_group["id"],
+                "value_type": "categorical",
+                "allowed_values": ["No mutation", "heterozygous", "homozygous"],
+                "dataset_metadata": {"yah": "nah"},
+                "short_name": "m1",
+                "description": "a dataset",
+                "version": "v1",
+            },
+            headers=headers,
+        )
+        assert_status_ok(categorical_matrix_dataset)
+        assert categorical_matrix_dataset.status_code == 202
+        assert categorical_matrix_dataset.json()["state"] == "SUCCESS"
+        assert categorical_matrix_dataset.json()["result"]["datasetId"]
+        categorical_matrix_dataset_result = categorical_matrix_dataset.json()["result"][
+            "dataset"
+        ]
+        assert categorical_matrix_dataset_result is not None
+        assert (
+            categorical_matrix_dataset_result.get("given_id") == matrix_dataset_given_id
+        )
+
     def _setup_types(self, client, admin_headers):
         r_feature_metadata = client.post(
             "/types/feature",
