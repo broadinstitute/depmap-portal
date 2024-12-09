@@ -26,9 +26,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Transform CN gene expression data to log2 scale."
     )
-    parser.add_argument(
-        "cngene_dataset_id", help="Dataset ID of CN gene expression data"
-    )
+    parser.add_argument("cngene_dataset_id", help="Taiga ID of CN gene expression data")
     parser.add_argument("output", help="Path to write the output")
     parser.add_argument(
         "-u",
@@ -40,7 +38,8 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
     log2_transformed_data = transform_cngene_to_log2(args.cngene_dataset_id)
-    log2_transformed_data.to_csv(args.output)
+    if log2_transformed_data is not None:
+        log2_transformed_data.to_csv(args.output, index=False)
 
     if args.update:
         dataset_id = (

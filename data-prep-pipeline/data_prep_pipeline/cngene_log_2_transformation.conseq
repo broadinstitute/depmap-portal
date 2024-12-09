@@ -11,4 +11,4 @@ rule transform_cngene_log2:
             "filename": {"$filename": "cngene_log2.csv"},
             "orig_dataset_id": "{{inputs.cngene.dataset_id}}"
         }
-    run "python3 {{inputs.script.filename}} {{inputs.cngene.dataset_id}} cngene_log2.csv -u"
+    run "python3 {{inputs.script.filename}} {{inputs.cngene.dataset_id}} cngene_log2.csv"
