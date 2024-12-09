@@ -1,0 +1,7 @@
+let release_dataset = "internal-24q2-3719.88"
+
+add-if-missing {
+  "type": "cngene",
+  "dataset_id": "internal-24q2-3719.88/OmicsCNGene"
+}
+
