@@ -5,6 +5,14 @@ The data prep pipeline gets data from **Taiga** and prepares the data to make th
 1. **Transformed Data**: These datasets are generated from current release or a combination of current release and other relevant data such as hgnc gene table, onocokb annotated data, etc.
 2. **Legacy Data**: These datasets are not part of the currrent release anymore. However, they are still used for some analysis. E.g. RNAi data.
 
+## How to run the data prep pipeline
+
+First, make sure you have conseq installed from here: https://github.com/broadinstitute/conseq and conseq is executable.
+
+Then, assuming you are in depmap-portal/data-prep-pipeline where this readme is located, install and activate a poetry environment. To do so, you can run `poetry shell`. Once inside the poetry environment, run `conseq run common.conseq` which will run each rule mentioned there and produce the relevant output.
+
+NOTE: There are two primary configuration files, `release_inputs.conseq` which contains all the taiga ids of the initial inputs for different rules and `common.conseq` which contains all the available rules. If you would like to upload the output data, then please use a -u flag in the relevant conseq rule's python execution line. If a specific taiga id is provided after the -u flag as a parameter, then the output data will be uploaded to that particulartaiga id. If no parameter is provided, then the output data will be uploaded to the release dataset mentioned in `release_inputs.conseq`.
+
 ## How to add a dataset to the data prep pipeline
 
 #### If source data is from release only
@@ -49,11 +57,3 @@ ACH-000001,0,0.5,0.5
 ACH-000002,0.6,0.6,0.7
 ACH-000003,0.3,0.4,0.4
 ```
-
-## How to run the data prep pipeline
-
-The `data_prep.py` runs the data-prep-pipeline. It needs at least a taiga dataset id which is used as the source. It is optional to provide a new target dataset id where the output matrices would be uploaded. If no new dataset id is provided, then the script will write the output matrices to the dataset of the source taiga id.
-
-1. To write/upload files at the source dataset, run: `python data_prep.py source_dataset_taiga_id`. For example,
-   `python data_prep.py internal-23q4-ac2b.80` will get the required data from the source_dataset_taiga_id, transform them, and upload the transformed versions to the source_dataset_taiga_id.
-2. To write at a new dataset, run: `python data_prep.py source_dataset_taiga_id --new_dataset_id=new_dataset_id`. For example, `python data_prep.py internal-23q4-ac2b.80 --new_dataset_id=predictability-76d5` will get the required data from the source_dataset_taiga_id, transform them, and upload the transformed versions to the new_dataset_id.
