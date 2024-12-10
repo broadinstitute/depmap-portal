@@ -209,7 +209,7 @@ def update_state(
 def check_celery():
     """
     Checks to see if celery redis broker is connected.
-    Pings to see if any worker responds and returns true if successful response detected
+    Check worker stats to see if any workers are running
     """
     inspect = app.control.inspect()
     try:
@@ -220,9 +220,9 @@ def check_celery():
             "Failed to connect to celery redis broker!"
         ) from exc
     # Pings workers to see if any of them respond. Returns None if no response
-    ping = inspect.ping()
-    # NOTE alternative: app.control.broadcast("ping", reply=True, limit=1)
-    if ping is None:
+    stats = inspect.stats()
+    # NOTE: app.control.broadcast("ping", reply=True, limit=1) or inspect.ping() pings all workers but will not return if all workers are busy
+    if stats is None:
         raise CeleryConnectionError(
             "Celery workers are not responding. Check if workers are running!"
         )
