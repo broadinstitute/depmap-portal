@@ -180,10 +180,12 @@ class MatrixDatasetParams(SharedDatasetParams):
 
     @field_validator("allowed_values", mode="after")
     @classmethod
-    def check_valid_allowed_values(cls, v: List[str]):
+    def check_valid_allowed_values(cls, v: Optional[List[str]]):
         """
         Checks there are no empty strings and no repeated allowed values. Values in allowed values list are not case-sensitive.
         """
+        if v is None:
+            return v
         # Decision to make allowed values not case-sensitive in case user error in accidental repeats
         allowed_values_list_lower = [str(x).lower() for x in v]
         allowed_values_set = set(allowed_values_list_lower)
