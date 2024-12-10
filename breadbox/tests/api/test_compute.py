@@ -21,6 +21,7 @@ from depmap_compute.analysis_tasks_interface import (
 )
 from breadbox.compute import analysis_tasks
 from breadbox.compute.analysis_tasks import get_feature_data_slice_values
+from breadbox.celery_task import utils
 from breadbox.crud.dataset import get_dataset
 from tests import factories
 
@@ -690,6 +691,12 @@ def test_no_overlap(
 
     def get_test_settings():
         return settings
+
+    def mock_check_celery():
+        return True
+
+    # Monkeypatch check_celery and pretend celery is running for test
+    monkeypatch.setattr(utils, "check_celery", mock_check_celery)
 
     monkeypatch.setattr(
         analysis_tasks, "get_settings", get_test_settings,
