@@ -11,43 +11,28 @@ from sqlalchemy import and_
 
 from typing import Dict
 import hashlib
-from ..utils import assert_status_ok, assert_status_not_ok
+from ..utils import assert_status_ok
 import pytest
 import numpy as np
 
 
 def file_ids_and_md5_hash(client, file):
-    tabular_file_ids = []
+    file_ids = []
     chunk = file.readline()
     hasher = hashlib.md5(chunk)
     while chunk:
         response = client.post(
-            "/uploads/file", files={"file": ("table", chunk, "text/csv")},
+            "/uploads/file", files={"file": ("filename", chunk, "text/csv")},
         )
         assert response.status_code == 200
-        tabular_file_ids.append(response.json()["file_id"])
+        file_ids.append(response.json()["file_id"])
         chunk = file.readline()
         hasher.update(chunk)
     hash = hasher.hexdigest()
-    return tabular_file_ids, hash
+    return file_ids, hash
 
 
 class TestPost:
-    def _upload_file(self, client, file):
-        file_ids = []
-        chunk = file.readline()
-        hasher = hashlib.md5(chunk)
-        while chunk:
-            response = client.post(
-                "/uploads/file", files={"file": ("filename", chunk, "text/csv")},
-            )
-            assert response.status_code == 200
-            file_ids.append(response.json()["file_id"])
-            chunk = file.readline()
-            hasher.update(chunk)
-
-        return file_ids, hasher.hexdigest()
-
     def test_upload_data_as_parquet(
         self,
         client: TestClient,
@@ -127,7 +112,7 @@ class TestPost:
         user_db_session = SessionLocalWithUser(user)
 
         file = factories.continuous_matrix_csv_file()
-        file_ids, expected_md5 = self._upload_file(client, file)
+        file_ids, expected_md5 = file_ids_and_md5_hash(client, file)
         matrix_dataset_given_id = "some_given_id"
 
         matrix_dataset_w_simple_metadata = client.post(
@@ -279,7 +264,7 @@ class TestPost:
         file1 = factories.matrix_csv_data_file_with_values(
             values=["No mutation", "heterozygous", "homozygous"]
         )
-        file_ids, expected_md5 = self._upload_file(client, file1)
+        file_ids, expected_md5 = file_ids_and_md5_hash(client, file1)
         categorical_dataset1_given_id = "some_given_id"
 
         categorical_matrix_dataset = client.post(
@@ -320,7 +305,7 @@ class TestPost:
 
         # Test matrix with True and False
         file2 = factories.matrix_csv_data_file_with_values(values=[True, False])
-        file_ids, expected_md5 = self._upload_file(client, file2)
+        file_ids, expected_md5 = file_ids_and_md5_hash(client, file2)
         categorical_dataset2_given_id = "another given id"
         categorical_matrix_dataset2 = client.post(
             "/dataset-v2/",
@@ -358,7 +343,7 @@ class TestPost:
 
         # Test case insensitive values are fine for categorical datasets
         file3 = factories.matrix_csv_data_file_with_values(values=[True, False, "true"])
-        file_ids, expected_md5 = self._upload_file(client, file3)
+        file_ids, expected_md5 = file_ids_and_md5_hash(client, file3)
         categorical_dataset3_given_id = "yet another given id"
         categorical_matrix_dataset3 = client.post(
             "/dataset-v2/",
@@ -433,7 +418,7 @@ class TestPost:
         headers = {"X-Forwarded-User": user}
 
         file = factories.matrix_csv_data_file_with_values()
-        file_ids, expected_md5 = self._upload_file(client, file)
+        file_ids, expected_md5 = file_ids_and_md5_hash(client, file)
         categorical_dataset_given_id = "some_given_id"
 
         categorical_matrix_dataset = client.post(
@@ -537,7 +522,7 @@ class TestPost:
         self._setup_types(client, admin_headers)
 
         file = factories.continuous_matrix_csv_file()
-        file_ids, expected_md5 = self._upload_file(client, file)
+        file_ids, expected_md5 = file_ids_and_md5_hash(client, file)
 
         # If no metadata given, validate against feature type and sample type metadata. If not found, provide warning
         r_matrix_dataset_no_metadata_for_feature = client.post(
@@ -576,7 +561,7 @@ class TestPost:
         self._setup_types(client, admin_headers)
 
         file = factories.continuous_matrix_csv_file()
-        file_ids, expected_md5 = self._upload_file(client, file)
+        file_ids, expected_md5 = file_ids_and_md5_hash(client, file)
 
         # Even though there's no given_id explicitely set, it should get populated from the metadata
         given_id = "some_given_id"
@@ -622,7 +607,9 @@ class TestPost:
         file_with_duplicate_features = factories.continuous_matrix_csv_file(
             feature_ids=["A", "B", "A", "C"], sample_ids=["A", "B", "C"],
         )
-        file_ids, expected_md5 = self._upload_file(client, file_with_duplicate_features)
+        file_ids, expected_md5 = file_ids_and_md5_hash(
+            client, file_with_duplicate_features
+        )
 
         # This should fail because of the duplicate feature IDs
         matrix_dataset_response = client.post(
@@ -650,7 +637,9 @@ class TestPost:
         file_with_duplicate_samples = factories.continuous_matrix_csv_file(
             feature_ids=["A", "B", "C"], sample_ids=["A", "B", "A", "C"],
         )
-        file_ids, expected_md5 = self._upload_file(client, file_with_duplicate_samples)
+        file_ids, expected_md5 = file_ids_and_md5_hash(
+            client, file_with_duplicate_samples
+        )
 
         # This should fail because of the duplicate sample IDs
         matrix_dataset_response = client.post(
@@ -692,7 +681,9 @@ class TestPost:
             row_values=[["ACH-1", 1.0, 0, '["a"]'], ["ACH-3", 2.0, 1, '["d", "c"]']],
         )
 
-        tabular_file_ids, expected_md5 = self._upload_file(client, tabular_data_file)
+        tabular_file_ids, expected_md5 = file_ids_and_md5_hash(
+            client, tabular_data_file
+        )
 
         tabular_dataset = client.post(
             "/dataset-v2/",
@@ -742,7 +733,9 @@ class TestPost:
             ],
         )
 
-        tabular_file_ids, expected_md5 = self._upload_file(client, tabular_data_file)
+        tabular_file_ids, expected_md5 = file_ids_and_md5_hash(
+            client, tabular_data_file
+        )
 
         tabular_dataset = client.post(
             "/dataset-v2/",
@@ -888,7 +881,9 @@ class TestPost:
             ],
         )
 
-        tabular_file_ids, expected_md5 = self._upload_file(client, tabular_data_file)
+        tabular_file_ids, expected_md5 = file_ids_and_md5_hash(
+            client, tabular_data_file
+        )
 
         tabular_dataset = client.post(
             "/dataset-v2/",
