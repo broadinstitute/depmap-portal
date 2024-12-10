@@ -229,13 +229,6 @@ def add_matrix_dataset(
 
     allowed_values = dataset_in.allowed_values
 
-    def is_binary_category(allowed_values_list):
-        if allowed_values_list and len(allowed_values_list) == 2:
-            allowed_values_set = set(allowed_values_list)
-            return {"True", "False"} == allowed_values_set
-        else:
-            return False
-
     dataset = MatrixDataset(
         id=dataset_in.id,
         given_id=dataset_in.given_id,
