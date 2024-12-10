@@ -12,7 +12,7 @@ export type LegacyCellLineListsDropdownProps = {
   id?: string;
   defaultNone?: boolean;
   onListSelect: (cellLineList: CustomList) => void;
-  launchCellLineSelectorModal: () => void;
+  launchCellLineSelectorModal?: () => void;
 };
 
 type State = {
@@ -31,6 +31,7 @@ export default class LegacyCellLineListsDropdown extends React.Component<
   static defaultProps: Partial<LegacyCellLineListsDropdownProps> = {
     id: "",
     defaultNone: false,
+    launchCellLineSelectorModal: undefined,
   };
 
   constructor(props: LegacyCellLineListsDropdownProps) {
@@ -110,6 +111,15 @@ export default class LegacyCellLineListsDropdown extends React.Component<
           <MenuItem
             eventKey={cellLineLists.length}
             onSelect={() => {
+              if (!this.props.launchCellLineSelectorModal) {
+                throw new Error(
+                  [
+                    "`launchCellLineSelectorModal` was not",
+                    "passed as a prop to CellLineListsDropdown!",
+                  ].join(" ")
+                );
+              }
+
               this.props.launchCellLineSelectorModal();
             }}
           >

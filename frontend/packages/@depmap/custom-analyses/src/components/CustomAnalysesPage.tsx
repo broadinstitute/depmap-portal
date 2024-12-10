@@ -1,6 +1,5 @@
 import React from "react";
 import { Button, Radio } from "react-bootstrap";
-import { Navigate, useLocation } from "react-router-dom";
 import { enabledFeatures } from "@depmap/globals";
 import {
   AnalysisType,
@@ -12,19 +11,7 @@ import {
   QuerySelections,
   TwoClassQuery,
 } from "@depmap/compute";
-import {
-  ControlledPlotApi,
-  ControlledPlotState,
-  DropdownState,
-  formatPathToDropdown,
-  getRootOptionsAsPath,
-  OptionsInfoSelected,
-} from "@depmap/interactive";
-import {
-  CellData,
-  CellLineSelectorLines,
-  loadCellLines,
-} from "@depmap/cell-line-selector";
+import { ControlledPlotApi, ControlledPlotState } from "@depmap/interactive";
 import { ProgressTracker } from "@depmap/common-components";
 import { ApiContext } from "@depmap/api";
 import ResultsReadyModal from "./ResultsReadyModal";
@@ -36,7 +23,9 @@ import styles from "../styles/CustomAnalysis.scss";
 
 interface CustomAnalysesPageProps {
   launchCellLineSelectorModal: () => void;
-  updateReactLoadStatus?: () => void;
+  fetchSimplifiedCellLineData: () => Promise<
+    Map<string, { displayName: string }>
+  >;
 }
 
 interface CustomAnalysesPageState {
@@ -48,40 +37,8 @@ interface CustomAnalysesPageState {
   ) => void;
   analysisCurrentlyRunning: boolean;
   datasets: Dataset[];
-  continuousRootDropdowns: DropdownState[];
-  cellLineData: Map<string, CellData>;
-  goToInteractive: boolean;
+  cellLineData: Map<string, { displayName: string }>;
   customAnalysisResults: Partial<ControlledPlotState> | undefined;
-}
-// const TWO_CLASS_DESC = (<div>
-//     <p>In this analysis, we regress the dependent variable on the independent variable and
-//         report the regression coefficient along with its standard error. After repeating this
-//         procedure for each column of the selected dataset (either as the dependent or independent
-//         variable), we moderate the reported values using the adaptive shrinkage procedure described
-//         in doi:10.1093/biostatistics/kxw041. This procedure consists of an empirical Bayes method that
-//         aims to correct the selection bias due to the multiple models examined jointly. Finally,
-//         we report the posterior means, the standard deviations, and the corresponding q-values as the results.</p>
-//     <p>Please note, the significance of a linear association is identical to the significance of the
-//         corresponding Pearson correlation, modulo the shrinkage step we included at the end. However,
-//         the coefficients or effect sizes reported in these analyses should be interpreted slightly differently.
-//         In particular, the regression coefficients are directional quantities and answer the question of
-//         "How much would the dependent variable change if we increase the independent variable one unit
-//         (assuming there are not any unobserved confounding variables)?" However, the correlation
-//         coefficients are unitless and symmetric quantities that provided a scale-free measure of the concordance between two variables.</p>
-// </div>);
-
-function NavigateWithResults({
-  results,
-}: {
-  results: Partial<ControlledPlotState>;
-}) {
-  const location = useLocation();
-
-  if (enabledFeatures.data_explorer_2) {
-    return null;
-  }
-
-  return <Navigate to={`${location.pathname}/..`} state={results} />;
 }
 
 export default class CustomAnalysesPage extends React.Component<
@@ -89,10 +46,6 @@ export default class CustomAnalysesPage extends React.Component<
   Partial<CustomAnalysesPageState>
 > {
   declare context: React.ContextType<typeof ApiContext>;
-
-  static defaultProps = {
-    updateReactLoadStatus: () => {},
-  };
 
   static contextType = ApiContext;
 
@@ -108,7 +61,6 @@ export default class CustomAnalysesPage extends React.Component<
       analysisType: undefined,
       submissionResponse: undefined,
       analysisCurrentlyRunning: false,
-      goToInteractive: false,
     };
   }
 
@@ -116,51 +68,22 @@ export default class CustomAnalysesPage extends React.Component<
     // called on modal enter
     this.setState({
       submissionResponse: undefined,
-      goToInteractive: false,
     });
   };
 
-  initDropdowns = () => {
-    const { getVectorCatalogApi } = this.context;
-    getRootOptionsAsPath("continuous", getVectorCatalogApi).then(
-      (path: Array<OptionsInfoSelected>) => {
-        const [dropdowns] = formatPathToDropdown(path);
-        this.setState({
-          continuousRootDropdowns: dropdowns,
-        });
-      }
-    );
-  };
-
-  componentDidUpdate(props: CustomAnalysesPageProps) {
-    if (props.updateReactLoadStatus) {
-      props.updateReactLoadStatus();
-    }
-  }
-
   componentDidMount = () => {
-    const { analysisType } = this.state;
     this.clearPreviousRun();
-    if (analysisType && this.queryComponents[analysisType]) {
-      // onEnter first fires with no query component rendered yet, just the analysis select
-      this.queryComponents[analysisType].setStatesFromProps();
-    }
 
-    this.api
-      .getCellLineSelectorLines()
-      .then((cellLines: CellLineSelectorLines) => {
-        this.setState({
-          cellLineData: loadCellLines(cellLines),
-        });
-      })
-      .then(() => this.initDropdowns())
-      .then(() =>
-        this.api.getDatasets().then((availableDatasets: Dataset[]) => {
-          this.setState({
-            datasets: availableDatasets,
-          });
-        })
-      );
+    // This used to use /partials/data_table/cell_line_selector_lines which was
+    // part of Cell Line Selector's API. That endpoint is no longer supported
+    // so we're approximating its response here.
+    this.props.fetchSimplifiedCellLineData().then((cellLineData) => {
+      this.setState({ cellLineData });
+    });
+
+    this.api.getDatasets().then((availableDatasets: Dataset[]) => {
+      this.setState({ datasets: availableDatasets });
+    });
   };
 
   sendQueryGeneric = (
@@ -349,8 +272,6 @@ export default class CustomAnalysesPage extends React.Component<
       analysisType,
       cellLineData,
       datasets,
-      continuousRootDropdowns,
-      goToInteractive,
       customAnalysisResults,
     } = this.state;
 
@@ -380,8 +301,6 @@ export default class CustomAnalysesPage extends React.Component<
               queryInfo={{
                 cellLineData: cellLineData || new Map(),
                 datasets: datasets || [],
-                xDropdowns: continuousRootDropdowns,
-                yDropdowns: continuousRootDropdowns,
               }}
               onAssociationResultsComplete={(
                 numCellLinesUsed: number,
@@ -409,26 +328,19 @@ export default class CustomAnalysesPage extends React.Component<
                 };
                 this.setState({
                   customAnalysisResults: controlledPlotState,
-                  goToInteractive: true,
                 });
               }}
-              customAnalysisVectorDefault={continuousRootDropdowns}
               ref={(el) => {
                 this.queryComponents[analysisType] = el;
               }}
             />
           )}
-          {goToInteractive && customAnalysisResults && (
-            <NavigateWithResults results={customAnalysisResults} />
-          )}
         </div>
-        {enabledFeatures.data_explorer_2 && (
-          <ResultsReadyModal
-            results={customAnalysisResults}
-            analysisType={analysisType}
-            queryComponents={this.queryComponents}
-          />
-        )}
+        <ResultsReadyModal
+          results={customAnalysisResults}
+          analysisType={analysisType}
+          queryComponents={this.queryComponents}
+        />
       </div>
     );
   }

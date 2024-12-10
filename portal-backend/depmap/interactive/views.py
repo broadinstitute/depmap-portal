@@ -135,10 +135,14 @@ def get_cell_line_url_root():
 
 @blueprint.route("/api/getDatasets")
 def get_datasets():
-    """Return all matrix datasets (both breadbox and legacy datasets) sorted alphabetically."""
+    """
+    Returns matrix datasets (both breadbox and legacy datasets) sorted alphabetically.
+    Only matrices with a sample type of "depmap_model" are included.
+    Data Explorer 1 and Custom Analysis can't handle other sample types.
+    """
     combined_datasets = []
     for dataset in data_access.get_all_matrix_datasets():
-        if dataset.is_continuous:
+        if dataset.is_continuous and dataset.sample_type == "depmap_model":
             combined_datasets.append(dict(label=dataset.label, value=dataset.id,))
     combined_datasets = sorted(
         combined_datasets, key=lambda dataset: dataset.get("label"),
