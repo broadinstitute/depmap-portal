@@ -275,6 +275,7 @@ class TestPost:
         user = "someone@private-group.com"
         headers = {"X-Forwarded-User": user}
 
+        # Test categorical matrix
         file1 = factories.matrix_csv_data_file_with_values(
             values=["No mutation", "heterozygous", "homozygous"]
         )
@@ -317,6 +318,7 @@ class TestPost:
             == categorical_dataset1_given_id
         )
 
+        # Test matrix with True and False
         file2 = factories.matrix_csv_data_file_with_values(values=[True, False])
         file_ids, expected_md5 = self._upload_file(client, file2)
         categorical_dataset2_given_id = "another given id"
@@ -352,6 +354,44 @@ class TestPost:
         assert (
             categorical_matrix_dataset2_result.get("given_id")
             == categorical_dataset2_given_id
+        )
+
+        # Test case insensitive values are fine for categorical datasets
+        file3 = factories.matrix_csv_data_file_with_values(values=[True, False, "true"])
+        file_ids, expected_md5 = self._upload_file(client, file3)
+        categorical_dataset3_given_id = "yet another given id"
+        categorical_matrix_dataset3 = client.post(
+            "/dataset-v2/",
+            json={
+                "format": "matrix",
+                "name": "a dataset",
+                "given_id": categorical_dataset3_given_id,
+                "units": "a unit",
+                "feature_type": "generic",
+                "sample_type": "depmap_model",
+                "data_type": "User upload",
+                "file_ids": file_ids,
+                "dataset_md5": expected_md5,
+                "is_transient": False,
+                "group_id": private_group["id"],
+                "value_type": "categorical",
+                "allowed_values": ["True", "false"],  # case insensitve allowed values
+                "dataset_metadata": {"yah": "nah"},
+                "short_name": "m1",
+                "description": "a dataset",
+                "version": "v1",
+            },
+            headers=headers,
+        )
+        assert_status_ok(categorical_matrix_dataset3)
+        assert categorical_matrix_dataset3.json()["state"] == "SUCCESS"
+        assert categorical_matrix_dataset3.json()["result"]["datasetId"]
+        categorical_matrix_dataset3_result = categorical_matrix_dataset3.json()[
+            "result"
+        ]["dataset"]
+        assert (
+            categorical_matrix_dataset3_result.get("given_id")
+            == categorical_dataset3_given_id
         )
 
     @pytest.mark.parametrize(
