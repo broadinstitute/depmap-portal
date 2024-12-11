@@ -27,7 +27,6 @@ import {
   ValidationTextbox,
 } from "@depmap/data-slicer";
 import { ElaraApi } from "src/api";
-import { VectorCatalogApi } from "@depmap/interactive";
 import styles from "src/pages/Downloads/styles.scss";
 import { ApiContext } from "@depmap/api";
 
