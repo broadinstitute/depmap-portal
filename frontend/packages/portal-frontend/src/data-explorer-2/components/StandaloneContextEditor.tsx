@@ -5,10 +5,7 @@ import {
   saveContextToLocalStorageAndPersist,
 } from "@depmap/data-explorer-2";
 import { DataExplorerContext } from "@depmap/types";
-import {
-  getDapi as getApi,
-  getVectorCatalogApi,
-} from "src/common/utilities/context";
+import { getDapi as getApi } from "src/common/utilities/context";
 
 interface Props {
   /* The context to use as a starting point. This can be as simple as
@@ -25,6 +22,10 @@ interface Props {
   // Only called on save.
   onSave?: (context: DataExplorerContext, hash: string) => void;
 }
+
+const getVectorCatalogApi = () => {
+  throw new Error("Vector Catalog API is no longer supported!");
+};
 
 function StandaloneContextEditor({
   context,

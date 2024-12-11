@@ -18,8 +18,6 @@ import {
 import HelpTip from "src/data-explorer-2/components/HelpTip";
 import styles from "src/data-explorer-2/styles/ConfigurationPanel.scss";
 
-export { default as DatasetMetadataSelector } from "src/data-explorer-2/components/ConfigurationPanel/DatasetMetadataSelector";
-
 type DatasetsByIndexType = Record<string, DataExplorerDatasetDescriptor[]>;
 
 export function PlotTypeSelector({
