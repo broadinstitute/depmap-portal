@@ -1,2 +1,2 @@
-# include "cngene_log_2_transformation.conseq"
+include "cngene_log_2_transformation.conseq"
 include "filter_portal_compounds.conseq"
