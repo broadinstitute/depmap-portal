@@ -25,10 +25,14 @@ export interface ContextNameInfo {
   node_level: number;
 }
 
+export interface SearchOptionsByTreeType {
+  lineage: ContextNameInfo[];
+  molecularSubtype: ContextNameInfo[];
+}
+
 export interface ContextInfo {
-  trees: { [key: string]: ContextExplorerTree };
+  tree: ContextExplorerTree;
   table_data: { [key: string]: string | boolean }[];
-  search_options: ContextNameInfo[];
 }
 
 export interface Summary {
@@ -208,7 +212,7 @@ export enum TabTypes {
   DrugSensitivityOncRef = 3,
 }
 
-export enum ContextSelectionTabTypes {
-  Lineage = 0,
-  MolecularSubtype = 1,
+export enum TreeType {
+  Lineage = "Lineage",
+  MolecularSubtype = "MolecularSubtype",
 }

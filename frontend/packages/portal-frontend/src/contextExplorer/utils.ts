@@ -6,6 +6,8 @@ import {
   DataTypeStrings,
   OutGroupType,
   ContextExplorerDatasets,
+  ContextInfo,
+  TreeType,
 } from "./models/types";
 import { DataExplorerContext } from "@depmap/types";
 import qs from "qs";
@@ -494,19 +496,15 @@ export function getSelectionInfo(
 }
 
 export function getSelectedContextNode(
-  contextTrees:
-    | {
-        [key: string]: ContextExplorerTree;
-      }
-    | undefined,
-  contextPath: string[] | null
+  contextPath: string[] | null,
+  contextTree: ContextExplorerTree | undefined
 ) {
   let selectedNode = null;
   let topContextNameInfo = ALL_SEARCH_OPTION;
 
-  if (contextTrees && contextPath && contextPath.length > 0) {
+  if (contextTree && contextPath && contextPath.length > 0) {
     if (contextPath[0]) {
-      const selectedTree = contextTrees[contextPath[0]];
+      const selectedTree = contextTree;
 
       // Make sure the lineageQueryParam is a valid contextTree key
       if (selectedTree) {

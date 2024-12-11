@@ -1,3 +1,4 @@
+from operator import and_
 from typing import Dict, List, Optional
 from depmap.database import (
     Column,
@@ -9,10 +10,17 @@ from depmap.database import (
     db,
     relationship,
 )
+import enum
 import sqlalchemy
+from sqlalchemy import and_
 from depmap.entity.models import Entity
 import pandas as pd
 from depmap.cell_line.models_new import DepmapModel, depmap_model_context_association
+
+
+class TreeType(enum.Enum):
+    Lineage = "Lineage"
+    MolecularSubtype = "MolecularSubtype"
 
 
 class SubtypeNode(Model):
@@ -21,6 +29,10 @@ class SubtypeNode(Model):
     subtype_code = Column(String, primary_key=True, index=True)
     oncotree_code = Column(String)
     depmap_model_type = Column(String)
+    molecular_subtype_code = Column(String)
+    tree_type: "Column[TreeType]" = Column(
+        db.Enum(TreeType, name="TreeType"), nullable=False
+    )
     node_name = Column(String, nullable=False)
     node_level = Column(Integer, nullable=False)
     level_0 = Column(String, nullable=False)
@@ -39,12 +51,31 @@ class SubtypeNode(Model):
         else:
             return q.one_or_none()
 
+    # TODO: TEST
     @staticmethod
-    def get_subtype_tree_query():
-        query = (
+    def get_by_tree_type_and_level(tree_type, level) -> List["SubtypeNode"]:
+        results = (
             db.session.query(SubtypeNode)
-            .join(
-                SubtypeContext, SubtypeContext.subtype_code == SubtypeNode.subtype_code
+            .filter(
+                and_(
+                    SubtypeNode.tree_type == tree_type, SubtypeNode.node_level == level
+                )
+            )
+            .all()
+        )
+
+        return results
+
+    @staticmethod
+    def get_subtype_tree_query(tree_type, level_0_subtype_code: str):
+        query = (
+            db.session.query(SubtypeContext)
+            # .join(SubtypeNode, SubtypeNode.subtype_code == SubtypeContext.subtype_code)
+            .filter(
+                and_(
+                    SubtypeNode.tree_type == tree_type,
+                    SubtypeNode.level_0 == level_0_subtype_code,
+                )
             )
             .join(DepmapModel, SubtypeContext.depmap_model)
             .with_entities(

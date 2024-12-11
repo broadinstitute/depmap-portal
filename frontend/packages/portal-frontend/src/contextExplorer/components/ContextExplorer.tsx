@@ -8,11 +8,12 @@ import React, { useCallback, useEffect, useState } from "react";
 import { getDapi } from "src/common/utilities/context";
 import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
 import {
-  ContextNameInfo,
+  ContextInfo,
   ContextNode,
   ContextSummary,
   ContextExplorerTree,
   TabTypes,
+  TreeType,
 } from "../models/types";
 import styles from "../styles/ContextExplorer.scss";
 import {
@@ -24,21 +25,20 @@ import ContextExplorerTabs from "./ContextExplorerTabs";
 import LineageSearch from "./LineageSearch";
 
 export const ContextExplorer = () => {
-  const [searchOptions, setSearchOptions] = useState<
+  const [lineageSearchOptions, setLineageSearchOptions] = useState<
     { value: string; label: string }[]
   >([]);
-  const [contextTrees, setContextTrees] = useState<{
-    [key: string]: ContextExplorerTree;
-  }>();
+  const [
+    molecularSubtypeSearchOptions,
+    setMolecularSubtypeSearchOptions,
+  ] = useState<{ value: string; label: string }[]>([]);
+  const [contextInfo, setContextInfo] = useState<ContextInfo | null>(null);
   const [allContextData, setAllContextData] = useState<ContextSummary>({
     all_depmap_ids: [],
     data_types: [],
     values: [],
   });
 
-  const [overviewTableData, setOverviewTableData] = useState<
-    { [key: string]: string | boolean }[]
-  >([]);
   const [plotElement, setPlotElement] = useState<ExtendedPlotType | null>(null);
   const [contextPath, setContextPath] = useState<string[] | null>(null);
   const [checkedDatatypes, setCheckedDatatypes] = useState<Set<string>>(
@@ -46,11 +46,15 @@ export const ContextExplorer = () => {
   );
   const [selectedTab, setSelectedTab] = useState<TabTypes | null>(null);
 
+  const [selectedTreeType, setSelectedTreeType] = useState<TreeType>(
+    TreeType.Lineage
+  );
+
   const dapi = getDapi();
 
   const { selectedContextNode, topContextNameInfo } = getSelectedContextNode(
-    contextTrees,
-    contextPath
+    contextPath,
+    contextInfo?.tree
   );
 
   const {
@@ -65,25 +69,25 @@ export const ContextExplorer = () => {
       // A list of Lineage trees. The search options should be the root element of
       // each tree, which will always be at list index 0
       setPlotElement(null);
-      const contextInfo = await dapi.getContextExplorerContextInfo();
+      const options = await dapi.getContextSearchOptions();
 
-      const options = contextInfo.search_options as ContextNameInfo[];
-      options.unshift(ALL_SEARCH_OPTION);
-      setSearchOptions(
-        options.map((option) => {
+      options.lineage.unshift(ALL_SEARCH_OPTION);
+      setLineageSearchOptions(
+        options.lineage.map((option) => {
+          return { value: option.subtype_code, label: option.name };
+        })
+      );
+      options.molecularSubtype.unshift(ALL_SEARCH_OPTION);
+      setMolecularSubtypeSearchOptions(
+        options.molecularSubtype.map((option) => {
           return { value: option.subtype_code, label: option.name };
         })
       );
 
-      const trees = contextInfo.trees;
-      setContextTrees(trees);
-
-      setOverviewTableData(contextInfo.table_data);
-
       const contextData = await dapi.getContextDataAvailability();
-      const params = qs.parse(window.location.search.substr(1));
       setAllContextData(contextData);
 
+      const params = qs.parse(window.location.search.substr(1));
       if (params.context) {
         const selectedSubtypeCode = params.context!.toString();
         const context = await dapi.getContextPath(selectedSubtypeCode);
@@ -118,10 +122,20 @@ export const ContextExplorer = () => {
     ) => {
       deleteSpecificQueryParams(["context"]);
 
-      if (allContextData && (contextNode || subtypeCode) && contextTree) {
+      if (allContextData && (contextNode || subtypeCode)) {
         const context = await dapi.getContextPath(
           contextNode?.subtype_code || subtypeCode!
         );
+
+        if (
+          !contextInfo ||
+          (contextTree && context[0] !== contextTree.root.subtype_code)
+        ) {
+          const newContextInfo = await dapi.getContextExplorerContextInfo(
+            context[0]
+          );
+          setContextInfo(newContextInfo);
+        }
         setContextPath(context);
 
         setQueryStringWithoutPageReload(
@@ -150,6 +164,16 @@ export const ContextExplorer = () => {
     />
   );
 
+  console.log(lineageSearchOptions);
+
+  console.log(molecularSubtypeSearchOptions);
+
+  console.log(selectedTreeType);
+
+  console.log(contextInfo);
+
+  console.log(topContextNameInfo);
+
   return (
     <div className={styles.page}>
       <header className={styles.header}>
@@ -164,38 +188,46 @@ export const ContextExplorer = () => {
       </header>
       <main className={styles.main}>
         <div className={styles.filters}>
-          {searchOptions && contextTrees && (
-            <LineageSearch
-              searchOptions={searchOptions}
-              contextTrees={contextTrees}
-              onRefineYourContext={onRefineYourContext}
-              topContextNameInfo={topContextNameInfo}
-              selectedContextNode={selectedContextNode!}
-              selectedTab={selectedTab}
-              customInfoImg={customInfoImg}
-            />
-          )}
+          {lineageSearchOptions &&
+            molecularSubtypeSearchOptions &&
+            selectedTreeType &&
+            topContextNameInfo && (
+              <LineageSearch
+                lineageSearchOptions={lineageSearchOptions}
+                molecularSubtypeSearchOptions={molecularSubtypeSearchOptions}
+                contextTree={contextInfo?.tree || null}
+                onRefineYourContext={onRefineYourContext}
+                topContextNameInfo={topContextNameInfo}
+                selectedContextNode={selectedContextNode!}
+                selectedTab={selectedTab}
+                customInfoImg={customInfoImg}
+                selectedTreeType={selectedTreeType}
+                handleSetSelectedTreeType={setSelectedTreeType}
+              />
+            )}
         </div>
         <section className={styles.tabContents}>
-          <ContextExplorerTabs
-            topContextNameInfo={topContextNameInfo}
-            selectedContextNameInfo={selectedContextNameInfo}
-            selectedContextData={selectedContextData}
-            checkedDataValues={checkedDataValues}
-            checkedDatatypes={checkedDatatypes}
-            updateDatatypeSelection={updateDatatypeSelection}
-            overlappingDepmapIds={overlappingDepmapIds}
-            overviewTableData={overviewTableData}
-            getCellLineUrlRoot={cellLineUrlRoot}
-            handleSetSelectedTab={setSelectedTab}
-            customInfoImg={customInfoImg}
-            handleSetPlotElement={(element: ExtendedPlotType | null) => {
-              if (selectedContextData) {
-                setPlotElement(element);
-              }
-            }}
-            plotElement={plotElement}
-          />
+          {topContextNameInfo && (
+            <ContextExplorerTabs
+              topContextNameInfo={topContextNameInfo}
+              selectedContextNameInfo={selectedContextNameInfo}
+              selectedContextData={selectedContextData}
+              checkedDataValues={checkedDataValues}
+              checkedDatatypes={checkedDatatypes}
+              updateDatatypeSelection={updateDatatypeSelection}
+              overlappingDepmapIds={overlappingDepmapIds}
+              overviewTableData={contextInfo ? contextInfo.table_data : []}
+              getCellLineUrlRoot={cellLineUrlRoot}
+              handleSetSelectedTab={setSelectedTab}
+              customInfoImg={customInfoImg}
+              handleSetPlotElement={(element: ExtendedPlotType | null) => {
+                if (selectedContextData) {
+                  setPlotElement(element);
+                }
+              }}
+              plotElement={plotElement}
+            />
+          )}
         </section>
       </main>
     </div>

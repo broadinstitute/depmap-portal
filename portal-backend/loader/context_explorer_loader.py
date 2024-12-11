@@ -8,8 +8,10 @@ from depmap.utilities.caching import LazyCache
 from depmap.utilities.models import log_data_issue
 from loader.dataset_loader.biomarker_loader import _batch_load
 import pandas as pd
+import numpy as np
+from depmap.database import db
 from depmap.dataset.models import DependencyDataset
-from depmap.context.models_new import SubtypeNode, SubtypeNodeAlias
+from depmap.context.models_new import SubtypeNode, SubtypeNodeAlias, TreeType
 from flask import current_app
 
 
@@ -144,36 +146,77 @@ def load_context_explorer_context_analysis_dev(db_file):
 
 # TODO: Loading the subtype tree should probably eventually be moved to where
 # Contexts are currently loaded.
-def _read_subtype_tree(dr, pbar, gene_cache, cell_line_cache):
-    loaded = 0
+def _load_subtype_tree(df):
+    def get_subtype_code_from_node_name(node_name: str):
+        if node_name == "" or node_name is None:
+            return None
 
-    for row in dr:
+        subsetted_df = df[df["NodeName"] == node_name]
+
+        possible_depmap_model_type = subsetted_df["DepmapModelType"].tolist()
+        possible_oncotree_code = subsetted_df["OncotreeCode"].tolist()
+        possible_mol_subtype_code = subsetted_df["MolecularSubtypeCode"].tolist()
+
+        if possible_depmap_model_type[0]:
+            return possible_depmap_model_type[0]
+        elif possible_oncotree_code[0]:
+            return possible_oncotree_code[0]
+        elif possible_mol_subtype_code[0]:
+            return possible_mol_subtype_code[0]
+
+        return None
+
+    for index, row in df.iterrows():
         oncotree_code = row["OncotreeCode"]
         depmap_model_type = row["DepmapModelType"]
-        subtype_code = oncotree_code if oncotree_code else depmap_model_type
+        molecular_subtype_code = row["MolecularSubtypeCode"]
+        subtype_code = (
+            oncotree_code
+            if oncotree_code
+            else depmap_model_type
+            if depmap_model_type
+            else molecular_subtype_code
+        )
+        tree_type = row["TreeType"]
         node_name = row["NodeName"]
         node_level = row["NodeLevel"]
-        level_0 = row["Level0"]
-        level_1 = row["Level1"]
-        level_2 = row["Level2"]
-        level_3 = row["Level3"]
-        level_4 = row["Level4"]
-        level_5 = row["Level5"]
 
-        alias_names = row["NodeAliasName"].split(";")
-        alias_codes = row["NodeAliasCode"].split(";")
-        assert len(alias_names) == len(alias_codes)
-        subtype_node_aliases = [
-            SubtypeNodeAlias(
-                alias_name=alias.strip(), alias_subtype_code=alias_codes[i]
-            )
-            for i, alias in enumerate(alias_names)
-        ]
+        level_0 = get_subtype_code_from_node_name(row["Level0"])
 
-        subtype_node = dict(
+        level_1 = get_subtype_code_from_node_name(row["Level1"])
+
+        level_2 = get_subtype_code_from_node_name(row["Level2"])
+
+        level_3 = get_subtype_code_from_node_name(row["Level3"])
+
+        level_4 = get_subtype_code_from_node_name(row["Level4"])
+
+        level_5 = get_subtype_code_from_node_name(row["Level5"])
+
+        alias_names = (
+            None if row["NodeAliasName"] is None else row["NodeAliasName"].split(";")
+        )
+        alias_codes = (
+            None if row["NodeAliasCode"] is None else row["NodeAliasCode"].split(";")
+        )
+
+        if alias_names:
+            assert len(alias_names) == len(alias_codes)
+            subtype_node_aliases = [
+                SubtypeNodeAlias(
+                    alias_name=alias.strip(), alias_subtype_code=alias_codes[i]
+                )
+                for i, alias in enumerate(alias_names)
+            ]
+        else:
+            subtype_node_aliases = []
+
+        subtype_node = SubtypeNode(
             subtype_code=subtype_code,
             oncotree_code=oncotree_code,
             depmap_model_type=depmap_model_type,
+            molecular_subtype_code=molecular_subtype_code,
+            tree_type=tree_type,
             node_name=node_name,
             node_level=node_level,
             level_0=level_0,
@@ -185,12 +228,10 @@ def _read_subtype_tree(dr, pbar, gene_cache, cell_line_cache):
             subtype_node_alias=subtype_node_aliases,
         )
 
-        yield subtype_node
-        loaded += 1
-        pbar.update(1)
-
-    print("Loaded {} subtype records.".format(loaded))
+        db.session.add(subtype_node)
 
 
 def load_subtype_tree(db_file):
-    _batch_load(db_file, _read_subtype_tree, SubtypeNode.__table__)
+    df = pd.read_csv(db_file)
+    df = df.replace(np.nan, None)
+    _load_subtype_tree(df)

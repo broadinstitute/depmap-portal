@@ -189,6 +189,7 @@ function ContextAnalysis({
     setData,
     setIsLoading,
     selectedContextNameInfo.name,
+    selectedContextNameInfo.subtype_code,
     outgroup,
     datasetId,
     entityType,

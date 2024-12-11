@@ -77,6 +77,7 @@ import {
   Summary,
   ContextPlotBoxData,
   ContextExplorerDatasets,
+  SearchOptionsByTreeType,
 } from "src/contextExplorer/models/types";
 import {
   DataAvailability,
@@ -575,8 +576,21 @@ export class DepmapApi {
       `/api/context_explorer/context_path?${encodeParams(params)}`
     );
   }
-  getContextExplorerContextInfo(): Promise<ContextInfo> {
-    return this._fetch<ContextInfo>(`/api/context_explorer/context_info`);
+
+  getContextSearchOptions(): Promise<SearchOptionsByTreeType> {
+    return this._fetch<SearchOptionsByTreeType>(
+      `/api/context_explorer/context_search_options`
+    );
+  }
+
+  getContextExplorerContextInfo(subtypeCode: string): Promise<ContextInfo> {
+    const params = {
+      level_0_subtype_code: subtypeCode,
+    };
+
+    return this._fetch<ContextInfo>(
+      `/api/context_explorer/context_info?${encodeParams(params)}`
+    );
   }
 
   getContextExplorerDoseResponsePoints(

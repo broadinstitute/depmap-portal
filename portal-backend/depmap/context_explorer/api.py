@@ -24,8 +24,8 @@ from depmap.context_explorer.models import (
     ContextNode,
     ContextExplorerTree,
 )
-from depmap.context.models_new import SubtypeNode
-
+from depmap.context.models_new import SubtypeNode, TreeType
+from depmap.database import db
 from loader.context_explorer_loader import (
     load_context_explorer_context_analysis_dev,
     load_subtype_tree,
@@ -96,25 +96,34 @@ def _get_context_summary():
     return summary
 
 
-def _get_all_level_0_subtype_info(
-    all_trees: Dict[str, ContextExplorerTree],
-) -> List[ContextNameInfo]:
+def _get_all_level_0_subtype_info(tree_type: TreeType) -> List[dict]:
+    subtype_nodes = SubtypeNode.get_by_tree_type_and_level(tree_type=tree_type, level=0)
     context_name_info = []
 
-    for subtype_code in all_trees.keys():
+    for subtype_node in subtype_nodes:
         context_name_info.append(
-            ContextNameInfo(
-                name=all_trees[subtype_code].root.name,
-                subtype_code=subtype_code,
-                node_level=0,
-            )
+            {
+                "name": subtype_node.node_name,
+                "subtype_code": subtype_node.subtype_code,
+                "node_level": 0,
+            }
         )
 
-    sorted_context_name_info_list = sorted(context_name_info, key=lambda x: x.name)
+    sorted_context_name_info_list = sorted(context_name_info, key=lambda x: x["name"])
     return sorted_context_name_info_list
 
 
+from taigapy import create_taiga_client_v3
+
+
 def make_subtype_context_sample_data():
+    tc = create_taiga_client_v3()
+
+    molecular_subtype_df = tc.get(
+        "internal-24q4-8c04.116/OmicsInferredMolecularSubtypes"
+    )  # "TRUE" and "FALSE" values
+    molecular_subtype_df = molecular_subtype_df.dropna().set_index("ModelID")
+
     all_subtype_nodes = SubtypeNode.get_all()
     all_models = DepmapModel.get_all()
     model_ids = [model.model_id for model in all_models]
@@ -123,26 +132,65 @@ def make_subtype_context_sample_data():
     rows = []
     for node in all_subtype_nodes:
         subtype_code = node.subtype_code
-        models_present = []
-        column_headers.append(subtype_code)
-        node_level = node.node_level
-        print(node)
-        for model_id in model_ids:
-            models = SubtypeNode.temporary_get_model_ids_by_subtype_code_and_node_level(
-                subtype_code=subtype_code, node_level=node_level
-            )
-            includes_model = model_id in models
-            models_present.append(includes_model)
+        node_name = node.node_name
+        if node.molecular_subtype_code:
+            models_present = []
+            column_headers.append(subtype_code)
+            node_level = node.node_level
 
-        rows.append(models_present)
+            if (
+                subtype_code in molecular_subtype_df.columns.tolist()
+                or node_name in molecular_subtype_df.columns.tolist()
+            ):
+                for model_id in model_ids:
+                    models = molecular_subtype_df[
+                        molecular_subtype_df[node_name] == "True"
+                    ].index.tolist()
+
+                    includes_model = model_id in models
+                    models_present.append(includes_model)
+
+            rows.append(models_present)
+        else:
+            models_present = []
+            column_headers.append(subtype_code)
+            node_level = node.node_level
+
+            for model_id in model_ids:
+
+                models = SubtypeNode.temporary_get_model_ids_by_subtype_code_and_node_level(
+                    subtype_code=subtype_code, node_level=node_level
+                )
+                includes_model = model_id in models
+                models_present.append(includes_model)
+
+            rows.append(models_present)
 
     subtype_context_matrix = pd.DataFrame(
         data=rows, index=column_headers, columns=model_ids
     )
     subtype_context_matrix = subtype_context_matrix.transpose()
     breakpoint()
-    subtype_context_matrix.to_csv("sample_subtype_matrix.csv")
+    subtype_context_matrix.to_csv("sample_subtype_matrix_with_molecular_subtypes2.csv")
     breakpoint()
+
+
+@namespace.route("/context_search_options")
+class ContextSearchOptions(
+    Resource
+):  # the flask url_for endpoint is automagically the snake case of the namespace prefix plus class name
+    def get(self):
+        lineage_context_name_info = _get_all_level_0_subtype_info(
+            tree_type=TreeType.Lineage
+        )
+        molecular_subtype_context_name_info = _get_all_level_0_subtype_info(
+            tree_type=TreeType.MolecularSubtype
+        )
+
+        return {
+            "lineage": lineage_context_name_info,
+            "molecularSubtype": molecular_subtype_context_name_info,
+        }
 
 
 @namespace.route("/context_info")
@@ -157,39 +205,30 @@ class ContextInfo(
         as each available branch off of the key-node
         """
         # breakpoint()
-        # Getting the top level lineages by querying the Lineage table result in data inconsistencies. We
-        # don't have datatype information for all level 1 lineages. As a result, we have to get the data trees
-        # first, and then use the keys to get the list of top level lineages for the search bar.
-        # load_subtype_tree("/Users/amourey/Downloads/SubtypeTree.csv")
-        # load_context_explorer_context_analysis_dev(
-        #     "/Users/amourey/Documents/CEv2_sample_data_with_codes.csv"
-        # )
-        # db.session.commit()
-        # breakpoint()
+        # # Getting the top level lineages by querying the Lineage table result in data inconsistencies. We
+        # # don't have datatype information for all level 1 lineages. As a result, we have to get the data trees
+        # # first, and then use the keys to get the list of top level lineages for the search bar.
+        # load_subtype_tree("/Users/amourey/dev/Context Explorer Data/SubtypeTree2.csv")
+        # # load_context_explorer_context_analysis_dev(
+        # #     "/Users/amourey/Documents/CEv2_sample_data_with_codes.csv"
+        # # )
+        # # db.session.commit()
+        # # breakpoint()
         # make_subtype_context_sample_data()
         # load_subtype_contexts(
-        #     "/Users/amourey/dev/Context Explorer Data/sample_subtype_matrix.csv"
+        #     "/Users/amourey/dev/Context Explorer Data/sample_subtype_matrix_with_molecular_subtypes.csv"
         # )
         # db.session.commit()
         # breakpoint()
+        level_0_subtype_code = request.args.get("level_0_subtype_code")
         (
-            context_trees,
+            context_tree,
             overview_data,
-        ) = get_context_explorer_lineage_trees_and_table_data()
+        ) = get_context_explorer_lineage_trees_and_table_data(
+            level_0_subtype_code=level_0_subtype_code
+        )
 
-        context_name_info = _get_all_level_0_subtype_info(context_trees)
-        return {
-            "trees": context_trees,
-            "table_data": overview_data,
-            "search_options": [
-                {
-                    "subtype_code": name_info.subtype_code,
-                    "name": name_info.name,
-                    "node_level": name_info.node_level,
-                }
-                for name_info in context_name_info
-            ],
-        }
+        return {"tree": context_tree, "table_data": overview_data}
 
 
 @namespace.route("/context_path")
@@ -209,7 +248,7 @@ class ContextPath(
             node_obj.level_4,
             node_obj.level_5,
         ]
-        path = [col for col in cols if col != ""]
+        path = [col for col in cols if col != None]
 
         return path
 
@@ -255,15 +294,21 @@ def _get_overview_table_data(
     return overview_data
 
 
-def get_context_explorer_lineage_trees_and_table_data() -> Tuple[
-    Dict[str, ContextExplorerTree], List[Dict[str, Union[str, bool]]]
-]:
-    subtype_tree_query = SubtypeNode.get_subtype_tree_query()
+def get_context_explorer_lineage_trees_and_table_data(
+    level_0_subtype_code: str,
+) -> Tuple[Dict[str, ContextExplorerTree], List[Dict[str, Union[str, bool]]]]:
+    node = SubtypeNode.get_by_code(level_0_subtype_code)
+    breakpoint()
+
+    subtype_tree_query = SubtypeNode.get_subtype_tree_query(
+        node.tree_type, level_0_subtype_code
+    )
+
     subtype_df = pd.read_sql(
         subtype_tree_query.statement, subtype_tree_query.session.connection()
     )
-    subtype_df = subtype_df.set_index("model_id")
 
+    subtype_df = subtype_df.set_index("model_id")
     summary_df = _get_context_summary_df()
 
     overview_data = _get_overview_table_data(df=subtype_df, summary_df=summary_df)
@@ -282,35 +327,27 @@ def get_context_explorer_lineage_trees_and_table_data() -> Tuple[
         ]
     ]
 
-    subtype_codes_and_names = subtype_df.loc[subtype_df["node_level"] == 0]
-    subtype_codes_and_names_dict = subtype_codes_and_names.set_index(
-        "subtype_code"
-    ).to_dict()["node_name"]
+    node_level = 0
+    subtype_context = SubtypeContext.get_by_code(level_0_subtype_code)
+    model_ids = SubtypeContext.get_model_ids(subtype_context)
+    node_name = node.node_name
+    root_node = ContextNode(
+        name=node_name,
+        subtype_code=level_0_subtype_code,
+        parent_subtype_code=None,
+        model_ids=model_ids,
+        node_level=node_level,
+        root=None,
+    )
+    tree = ContextExplorerTree(root_node)
 
-    trees = {}
-    for subtype_code in list(subtype_codes_and_names_dict.keys()):
-        node_level = 0
-        subtype_context = SubtypeContext.get_by_code(subtype_code)
-        model_ids = SubtypeContext.get_model_ids(subtype_context)
-        node_name = subtype_codes_and_names_dict[subtype_code]
-        root_node = ContextNode(
-            name=node_name,
-            subtype_code=subtype_code,
-            parent_subtype_code=None,
-            model_ids=model_ids,
-            node_level=node_level,
-            root=None,
-        )
-        tree = ContextExplorerTree(root_node)
+    tree.create_context_tree_from_root_info(
+        tree_df=subtype_tree_df,
+        current_node_code=level_0_subtype_code,
+        node_level=node_level,
+    )
 
-        tree.create_context_tree_from_root_info(
-            tree_df=subtype_tree_df,
-            current_node_code=subtype_code,
-            node_level=node_level,
-        )
-        trees[subtype_code] = tree
-
-    return trees, overview_data
+    return tree, overview_data
 
 
 @namespace.route("/context_summary")

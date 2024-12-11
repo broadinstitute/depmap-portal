@@ -12,7 +12,7 @@ import {
 export interface RefineContextTreeProps {
   topContextNameInfo: ContextNameInfo;
   selectedContextNode: ContextNode;
-  contextTrees: { [key: string]: ContextExplorerTree };
+  contextTree: ContextExplorerTree;
   onRefineYourContext: (
     node: ContextNode | null,
     tree: ContextExplorerTree,
@@ -244,7 +244,7 @@ export const RefineContextTree = (
 ) => {
   const {
     topContextNameInfo,
-    contextTrees,
+    contextTree,
     onRefineYourContext,
     selectedContextNode,
     selectedTab,
@@ -255,10 +255,10 @@ export const RefineContextTree = (
   const [parentCodes, setParentCodes] = useState<string[] | null>(null);
 
   useEffect(() => {
-    if (contextTrees && topContextNameInfo) {
-      setSelectedTree(contextTrees[topContextNameInfo.subtype_code]);
+    if (contextTree && topContextNameInfo) {
+      setSelectedTree(contextTree);
     }
-  }, [contextTrees, topContextNameInfo, selectedContextNode]);
+  }, [contextTree, topContextNameInfo, selectedContextNode]);
 
   useEffect(() => {
     if (
