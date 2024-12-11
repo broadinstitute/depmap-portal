@@ -1,6 +1,7 @@
 import React from "react";
 import {
   ContextSelector,
+  DatasetMetadataSelector,
   DimensionSelect,
   SliceLabelSelect,
   useDataExplorerSettings,
@@ -9,7 +10,6 @@ import { ContextPath, DataExplorerContext, FilterKey } from "@depmap/types";
 import { PlotConfigReducerAction } from "src/data-explorer-2/reducers/plotConfigReducer";
 import {
   ColorByTypeSelector,
-  DatasetMetadataSelector,
   SortBySelector,
 } from "src/data-explorer-2/components/ConfigurationPanel/selectors";
 import styles from "src/data-explorer-2/styles/ConfigurationPanel.scss";

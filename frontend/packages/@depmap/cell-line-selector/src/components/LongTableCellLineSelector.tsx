@@ -1,6 +1,7 @@
 /* eslint-disable */
 import * as React from "react";
-import { Link, VectorCatalog } from "@depmap/interactive";
+import { fetchMetadataColumn } from "@depmap/data-explorer-2";
+import { Link } from "@depmap/interactive";
 import { Button } from "react-bootstrap";
 import { CellData } from "../models/cellLines";
 import update from "immutability-helper";
@@ -18,6 +19,7 @@ import {
   inferColumnType,
 } from "@depmap/long-table";
 import { ApiContext } from "@depmap/api";
+import DataColumnSelect from "./DataColumnSelect";
 
 export interface LongTableCellLineSelectorProps {
   idCol: string;
@@ -203,46 +205,26 @@ export class LongTableCellLineSelector extends React.Component<
         <div style={{ padding: "10px" }}>
           <strong>Add a data column</strong>
           <br />
-          <VectorCatalog
-            catalog="continuous_and_categorical"
-            onSelection={(id: string, labels: Array<Link>) => {
-              let colLabel = "";
-              for (let i = 1; i < labels.length; i++) {
-                colLabel = colLabel.concat(" ").concat(labels[i].label);
-              }
-
-              this.context
-                .getApi()
-                .getVector(id)
-                .then((response: VectorResponse) => {
-                  let newVector: Vector;
-                  let newColType: "continuous" | "categorical" | null = null;
-                  try {
-                    if (response.values) {
-                      newVector = {
-                        cellLines: response.cellLines,
-                        values: response.values,
-                      };
-                      newColType = "continuous";
-                    } else if (response.categoricalValues) {
-                      newVector = {
-                        cellLines: response.cellLines,
-                        values: response.categoricalValues,
-                      };
-                      newColType = "categorical";
-                    } else {
-                      throw "ERROR! neither continuous nor categorical values were returned";
-                    }
-                    this.setState({
-                      vector: newVector,
-                      vectorId: id,
-                      newColLabel: colLabel,
-                      newColType,
-                    });
-                  } catch (err) {
-                    console.log(err);
-                  }
+          <DataColumnSelect
+            onChange={(sliceId, valueType) => {
+              if (!sliceId) {
+                this.setState({
+                  vector: undefined,
+                  vectorId: undefined,
                 });
+              } else {
+                fetchMetadataColumn(sliceId).then((metadataColumn) => {
+                  this.setState({
+                    vector: {
+                      cellLines: Object.keys(metadataColumn.indexed_values),
+                      values: Object.values(metadataColumn.indexed_values),
+                    },
+                    vectorId: sliceId,
+                    newColLabel: metadataColumn.label,
+                    newColType: valueType,
+                  });
+                });
+              }
             }}
           />
         </div>

@@ -14,7 +14,6 @@ import { InteractivePage } from "@depmap/interactive";
 import { getQueryParams } from "@depmap/utils";
 import { renderCellLineSelectorModal } from "@depmap/cell-line-selector";
 import {
-  getVectorCatalogApi,
   getDapi,
   apiFunctions,
   fetchUrlPrefix,
@@ -41,11 +40,7 @@ const { showCustomAnalysis } = data;
 
 const App = () => {
   const launchCellLineSelectorModal = () =>
-    renderCellLineSelectorModal(
-      getDapi,
-      getVectorCatalogApi,
-      cellLineSelectorContainer
-    );
+    renderCellLineSelectorModal(getDapi, cellLineSelectorContainer);
 
   const relativeUrlPrefix = fetchUrlPrefix();
 

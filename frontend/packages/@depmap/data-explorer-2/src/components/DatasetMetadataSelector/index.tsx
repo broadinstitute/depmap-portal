@@ -1,10 +1,7 @@
 import React, { useEffect, useState } from "react";
-import {
-  fetchMetadataSlices,
-  MetadataSlices,
-  PlotConfigSelect,
-  SliceLabelSelector,
-} from "@depmap/data-explorer-2";
+import { fetchMetadataSlices, MetadataSlices } from "../../api";
+import PlotConfigSelect from "../PlotConfigSelect";
+import SliceLabelSelector from "../SliceLabelSelector";
 import {
   containsPartialSlice,
   getDatasetIdFromSlice,
@@ -12,8 +9,7 @@ import {
   getOptions,
   sliceLabel,
   slicePrefix,
-} from "src/data-explorer-2/components/ConfigurationPanel/DatasetMetadataSelector/utils";
-import styles from "src/data-explorer-2/styles/ConfigurationPanel.scss";
+} from "./utils";
 
 interface Props {
   show: boolean;
@@ -58,7 +54,7 @@ function DatasetMetadataSelector({
   }
 
   return (
-    <div className={styles.colorBySelector}>
+    <div>
       <PlotConfigSelect
         label={null}
         isClearable

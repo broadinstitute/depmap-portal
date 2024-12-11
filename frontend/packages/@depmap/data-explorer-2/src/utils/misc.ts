@@ -116,7 +116,7 @@ export const isSampleType = (
 };
 
 export function convertDimensionToSliceId(
-  dimension: DataExplorerPlotConfigDimension
+  dimension: Partial<DataExplorerPlotConfigDimension>
 ) {
   if (!isCompleteDimension(dimension)) {
     return null;
