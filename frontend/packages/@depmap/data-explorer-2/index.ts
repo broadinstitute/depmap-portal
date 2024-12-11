@@ -3,6 +3,7 @@ export { default as SliceLabelSelector } from "./src/components/SliceLabelSelect
 export { default as PlotConfigSelect } from "./src/components/PlotConfigSelect";
 export { default as renderConditionally } from "./src/utils/render-conditionally";
 export { default as DimensionSelect } from "./src/components/DimensionSelect";
+export { default as DimensionSelectV2 } from "./src/components/DimensionSelectV2";
 export { default as SliceLabelSelect } from "./src/components/DimensionSelect/SliceLabelSelect";
 export { default as ContextBuilderModal } from "./src/components/ContextBuilder/ContextBuilderModal";
 export { default as ContextManager } from "./src/components/ContextManager";
@@ -57,6 +58,7 @@ export {
 
 export {
   capitalize,
+  convertDimensionToSliceId,
   getDimensionTypeLabel,
   isCompleteDimension,
   isCompleteExpression,

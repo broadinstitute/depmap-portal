@@ -67,25 +67,6 @@ export function findHighestPriorityDatasetId(
   return bestId;
 }
 
-function isHighestPriorityDataset(
-  dataset: DataExplorerDatasetDescriptor,
-  datasets: DataExplorerDatasetDescriptor[],
-  enabledDatasetIds: Set<string>,
-  slice_type: string | undefined,
-  dataType: string | null,
-  units: string | null
-) {
-  const bestId = findHighestPriorityDatasetId(
-    datasets,
-    enabledDatasetIds,
-    slice_type,
-    dataType,
-    units
-  );
-
-  return dataset.id === bestId;
-}
-
 export function getEnabledDatasetIds(
   datasets: DataExplorerDatasetDescriptor[],
   sliceLabelMap: DimensionLabelsToDatasetsMapping,
@@ -340,6 +321,14 @@ export function computeOptions(
     })
     .sort(sortDisabledOptionsLast);
 
+  const highestPriorityDatasetId = findHighestPriorityDatasetId(
+    datasets,
+    enabledDatasetIds,
+    selectedSliceType,
+    selectedDataType,
+    selectedUnits
+  );
+
   const dataVersionOptions = filterDatasets(datasets, {
     dataType: selectedDataType,
   })
@@ -386,14 +375,7 @@ export function computeOptions(
       return {
         label: dataset.name,
         value: dataset.id,
-        isDefault: isHighestPriorityDataset(
-          dataset,
-          datasets,
-          enabledDatasetIds,
-          selectedSliceType,
-          selectedDataType,
-          selectedUnits
-        ),
+        isDefault: dataset.id === highestPriorityDatasetId,
         isDisabled,
         disabledReason,
       };
