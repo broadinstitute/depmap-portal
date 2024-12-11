@@ -124,10 +124,7 @@ def process_and_update_rnai():
     rnai = tc.get(rnai_taiga_id)
     rnai = rnai.T
     update_taiga(
-        rnai,
-        "Update rnai dep data for predictability",
-        target_dataset_id,
-        "RNAiDep",
+        rnai, "Update rnai dep data for predictability", target_dataset_id, "RNAiDep",
     )
 
 

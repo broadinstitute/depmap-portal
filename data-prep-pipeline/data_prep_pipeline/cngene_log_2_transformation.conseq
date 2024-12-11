@@ -3,8 +3,8 @@ include "release_inputs.conseq"
 rule transform_cngene_log2:
     inputs:
         cngene={"type": "cngene"},
-        script=fileref('cn_gene/transform_cngene_to_log2.py'),
-        utils_script=fileref('utils.py', copy_to='utils.py')
+        script=fileref('../conseq_scripts/cn_gene/transform_cngene_to_log2.py'),
+        update_taiga_script=fileref('upload_to_taiga.py', copy_to='upload_to_taiga.py')
     outputs:
         {
             "type": "cngene-log2",
@@ -12,3 +12,4 @@ rule transform_cngene_log2:
             "orig_dataset_id": "{{inputs.cngene.dataset_id}}"
         }
     run "python3 {{inputs.script.filename}} {{inputs.cngene.dataset_id}} cngene_log2.csv"
+    run "python3 upload_to_taiga.py cngene_log2.csv 'Transform CN gene expression data to log2 scale' {{inputs.cngene.dataset_id}} 'PortalOmicsCNGeneLog2' 'csv_matrix'"

@@ -1,10 +1,7 @@
 import argparse
-
 import pandas as pd
 from taigapy import create_taiga_client_v3
 from typing import Set
-
-from data_prep_pipeline.utils import update_taiga
 
 repsdrug_matrix_taiga_id = "repurposing-public-24q2-875f.4/Repurposing_Public_24Q2_Extended_Primary_Data_Matrix"
 repsdrug_auc_matrix_taiga_id = (
@@ -63,14 +60,7 @@ if __name__ == "__main__":
         help="Taiga ID of the PRISMOncologyReferenceAUCMatrix",
     )
     parser.add_argument("output", help="Path to write the output")
-    parser.add_argument(
-        "-u",
-        "--update",
-        nargs="?",
-        const=True,
-        default=False,
-        help="Update the dataset with the transformed data",
-    )
+
     args = parser.parse_args()
 
     tc = create_taiga_client_v3()
@@ -105,18 +95,3 @@ if __name__ == "__main__":
     print("Filtered portal compounds data")
     if portal_compounds_filtered is not None:
         portal_compounds_filtered.to_csv(args.output, index=False)
-
-    if args.update:
-        dataset_id = (
-            args.update
-            if isinstance(args.update, str)
-            else args.prism_oncology_reference_auc_matrix.split(".")[0]
-        )
-        update_taiga(
-            portal_compounds_filtered,
-            "Filter portal compounds data",
-            dataset_id,
-            "PortalCompounds",
-            file_format="csv_table",
-        )
-        print("Updated dataset with transformed data")

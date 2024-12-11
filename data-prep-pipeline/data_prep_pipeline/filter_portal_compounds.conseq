@@ -4,8 +4,8 @@ rule filter-portal-compounds:
     inputs:
         portal_compounds={"type": "portal_compounds"},
         prism_oncology_reference_auc_matrix={"type": "prism_oncology_reference_auc_matrix"},
-        script=fileref('portal_compounds/filter_portal_compounds.py'),
-        utils_script=fileref('utils.py', copy_to='utils.py')
+        script=fileref('../conseq_scripts/portal_compounds/filter_portal_compounds.py'),
+        update_taiga_script=fileref('upload_to_taiga.py', copy_to='upload_to_taiga.py')
     outputs:
         {
             "type": "filtered_portal_compounds",
@@ -13,3 +13,4 @@ rule filter-portal-compounds:
             "orig_dataset_id": "{{inputs.portal_compounds.dataset_id}}"
         }
     run "python3 {{inputs.script.filename}} {{inputs.portal_compounds.dataset_id}} {{inputs.prism_oncology_reference_auc_matrix.dataset_id}} filtered_portal_compounds.csv"
+    run "python3 upload_to_taiga.py filtered_portal_compounds.csv 'Filter portal compounds data' 'predictability-76d5.131' 'PortalCompounds' 'csv_table'"

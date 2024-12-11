@@ -8,7 +8,7 @@ from googleapiclient.discovery import build
 
 from gumbo_rest_client import Client
 from taigapy import create_taiga_client_v3
-from utils import (
+from model_utils import (
     gumbo_df_preprocessing,
     get_model_ids,
     get_model_condition_ids,
