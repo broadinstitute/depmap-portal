@@ -3,11 +3,6 @@ import pandas as pd
 from taigapy import create_taiga_client_v3
 from typing import Set
 
-repsdrug_matrix_taiga_id = "repurposing-public-24q2-875f.4/Repurposing_Public_24Q2_Extended_Primary_Data_Matrix"
-repsdrug_auc_matrix_taiga_id = (
-    "public-non-quarterly-processed-files-8e90.64/repsdrug-auc-matrix"
-)
-
 
 def filter_sample_ids(sample_ids: str, brd_ids: Set[str]) -> str:
     """
@@ -53,6 +48,14 @@ if __name__ == "__main__":
         description="Filter portal compounds data and upload to Taiga."
     )
     parser.add_argument(
+        "repsdrug_matrix_taiga_id",
+        help="Taiga ID of PRISM Repurposing primary screen data",
+    )
+    parser.add_argument(
+        "repsdrug_auc_matrix_taiga_id",
+        help="Taiga ID of PRISM Repurposing secondary screen data",
+    )
+    parser.add_argument(
         "portal_compounds_taiga_id", help="Taiga ID of portal compounds data"
     )
     parser.add_argument(
@@ -62,15 +65,14 @@ if __name__ == "__main__":
     parser.add_argument("output", help="Path to write the output")
 
     args = parser.parse_args()
-
     tc = create_taiga_client_v3()
 
     print("Getting PRISM Repurposing primary screen data...")
-    repsdrug_matrix = tc.get(repsdrug_matrix_taiga_id)
+    repsdrug_matrix = tc.get(args.repsdrug_matrix_taiga_id)
     assert not repsdrug_matrix.index.empty, "repsdrug_matrix index is empty"
 
     print("Getting PRISM Repurposing secondary screen data...")
-    repsdrug_auc = tc.get(repsdrug_auc_matrix_taiga_id)
+    repsdrug_auc = tc.get(args.repsdrug_auc_matrix_taiga_id)
 
     print("Getting portal compounds data...")
     portal_compounds_df = tc.get(args.portal_compounds_taiga_id)
@@ -93,5 +95,6 @@ if __name__ == "__main__":
     print("Filtering portal compounds data...")
     portal_compounds_filtered = filter_portal_compounds(portal_compounds_df, brd_ids)
     print("Filtered portal compounds data")
+
     if portal_compounds_filtered is not None:
         portal_compounds_filtered.to_csv(args.output, index=False)
