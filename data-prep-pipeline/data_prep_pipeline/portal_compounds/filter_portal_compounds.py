@@ -2,12 +2,9 @@ import argparse
 
 import pandas as pd
 from taigapy import create_taiga_client_v3
-from typing import Set, Optional
+from typing import Set
 
-import sys
-
-sys.path.append(".")
-from utils import update_taiga
+from data_prep_pipeline.utils import update_taiga
 
 repsdrug_matrix_taiga_id = "repurposing-public-24q2-875f.4/Repurposing_Public_24Q2_Extended_Primary_Data_Matrix"
 repsdrug_auc_matrix_taiga_id = (
