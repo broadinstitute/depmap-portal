@@ -866,9 +866,14 @@ class SubtypeNodeFactory(SQLAlchemyModelFactory):
     subtype_code = factory.Sequence(lambda number: "subtype_code_{}".format(number))
 
     oncotree_code = factory.Sequence(lambda number: "oncotree_code_{}".format(number))
+
     depmap_model_type = factory.Sequence(
         lambda number: "depmap_model_type_{}".format(number)
     )
+    molecular_subtype_code = None
+
+    tree_type = "Lineage" if molecular_subtype_code is None else "MolecularSubtype"
+
     node_name = factory.Sequence(lambda number: "node_name_{}".format(number))
     node_level = factory.Sequence(lambda number: number)
     if node_level == 0:

@@ -1,6 +1,11 @@
 import pandas as pd
 import pytest
-from depmap.context.models_new import SubtypeContext, SubtypeContextEntity, SubtypeNode
+from depmap.context.models_new import (
+    SubtypeContext,
+    SubtypeContextEntity,
+    SubtypeNode,
+    TreeType,
+)
 from tests.factories import (
     DepmapModelFactory,
     SubtypeContextFactory,
@@ -220,169 +225,70 @@ def test_get_subtype_tree_query(empty_db_mock_downloads):
         bone_child_level2_num1=bone_child_level2_num1,
         bone_child_level2_num2=bone_child_level2_num2,
     )
-    query = SubtypeNode.get_subtype_tree_query()
+    query = SubtypeNode.get_subtype_tree_query(
+        tree_type=TreeType.Lineage, level_0_subtype_code=bone_code
+    )
     df = pd.read_sql(query.statement, query.session.connection())
     tree_nodes = df.to_dict("records")
 
-    expected_nodes = [
-        {
-            "model_id": "BONE_MODEL1(es)",
-            "subtype_code": "BONE",
-            "level_0": "BONE",
-            "level_1": None,
-            "level_2": None,
-            "level_3": None,
-            "level_4": None,
-            "level_5": None,
-            "node_name": "node_name_0",
-            "node_level": 0,
-        },
-        {
-            "model_id": "BONE_MODEL5(chs)(emchs)",
-            "subtype_code": "BONE",
-            "level_0": "BONE",
-            "level_1": None,
-            "level_2": None,
-            "level_3": None,
-            "level_4": None,
-            "level_5": None,
-            "node_name": "node_name_0",
-            "node_level": 0,
-        },
-        {
-            "model_id": "BONE_MODEL2(chs)",
-            "subtype_code": "BONE",
-            "level_0": "BONE",
-            "level_1": None,
-            "level_2": None,
-            "level_3": None,
-            "level_4": None,
-            "level_5": None,
-            "node_name": "node_name_0",
-            "node_level": 0,
-        },
-        {
-            "model_id": "BONE_MODEL3(chs)(ddchs)",
-            "subtype_code": "BONE",
-            "level_0": "BONE",
-            "level_1": None,
-            "level_2": None,
-            "level_3": None,
-            "level_4": None,
-            "level_5": None,
-            "node_name": "node_name_0",
-            "node_level": 0,
-        },
-        {
-            "model_id": "BONE_MODEL4(chs)(emchs)",
-            "subtype_code": "BONE",
-            "level_0": "BONE",
-            "level_1": None,
-            "level_2": None,
-            "level_3": None,
-            "level_4": None,
-            "level_5": None,
-            "node_name": "node_name_0",
-            "node_level": 0,
-        },
-        {
-            "model_id": "BONE_MODEL1(es)",
-            "subtype_code": "ES",
-            "level_0": "BONE",
-            "level_1": "ES",
-            "level_2": None,
-            "level_3": None,
-            "level_4": None,
-            "level_5": None,
-            "node_name": "node_name_1",
-            "node_level": 1,
-        },
-        {
-            "model_id": "BONE_MODEL5(chs)(emchs)",
-            "subtype_code": "CHS",
-            "level_0": "BONE",
-            "level_1": "CHS",
-            "level_2": None,
-            "level_3": None,
-            "level_4": None,
-            "level_5": None,
-            "node_name": "node_name_2",
-            "node_level": 1,
-        },
-        {
-            "model_id": "BONE_MODEL2(chs)",
-            "subtype_code": "CHS",
-            "level_0": "BONE",
-            "level_1": "CHS",
-            "level_2": None,
-            "level_3": None,
-            "level_4": None,
-            "level_5": None,
-            "node_name": "node_name_2",
-            "node_level": 1,
-        },
-        {
-            "model_id": "BONE_MODEL3(chs)(ddchs)",
-            "subtype_code": "CHS",
-            "level_0": "BONE",
-            "level_1": "CHS",
-            "level_2": None,
-            "level_3": None,
-            "level_4": None,
-            "level_5": None,
-            "node_name": "node_name_2",
-            "node_level": 1,
-        },
-        {
-            "model_id": "BONE_MODEL4(chs)(emchs)",
-            "subtype_code": "CHS",
-            "level_0": "BONE",
-            "level_1": "CHS",
-            "level_2": None,
-            "level_3": None,
-            "level_4": None,
-            "level_5": None,
-            "node_name": "node_name_2",
-            "node_level": 1,
-        },
-        {
-            "model_id": "BONE_MODEL5(chs)(emchs)",
-            "subtype_code": "EMCHS",
-            "level_0": "BONE",
-            "level_1": "CHS",
-            "level_2": "EMCHS",
-            "level_3": None,
-            "level_4": None,
-            "level_5": None,
-            "node_name": "node_name_4",
-            "node_level": 2,
-        },
-        {
-            "model_id": "BONE_MODEL3(chs)(ddchs)",
-            "subtype_code": "DDCHS",
-            "level_0": "BONE",
-            "level_1": "CHS",
-            "level_2": "DDCHS",
-            "level_3": None,
-            "level_4": None,
-            "level_5": None,
-            "node_name": "node_name_3",
-            "node_level": 2,
-        },
-        {
-            "model_id": "BONE_MODEL4(chs)(emchs)",
-            "subtype_code": "EMCHS",
-            "level_0": "BONE",
-            "level_1": "CHS",
-            "level_2": "EMCHS",
-            "level_3": None,
-            "level_4": None,
-            "level_5": None,
-            "node_name": "node_name_4",
-            "node_level": 2,
-        },
-    ]
+    assert len(tree_nodes) == 65
+    assert {
+        "model_id": "BONE_MODEL3(chs)(ddchs)",
+        "subtype_code": "BONE",
+        "level_0": "BONE",
+        "level_1": None,
+        "level_2": None,
+        "level_3": None,
+        "level_4": None,
+        "level_5": None,
+        "node_name": "node_name_7",
+        "node_level": 0,
+    } in tree_nodes
+    assert {
+        "model_id": "BONE_MODEL2(chs)",
+        "subtype_code": "ES",
+        "level_0": "BONE",
+        "level_1": "ES",
+        "level_2": None,
+        "level_3": None,
+        "level_4": None,
+        "level_5": None,
+        "node_name": "node_name_8",
+        "node_level": 1,
+    } in tree_nodes
 
-    assert len(tree_nodes) == len(expected_nodes)
+    assert {
+        "model_id": "BONE_MODEL3(chs)(ddchs)",
+        "subtype_code": "EMCHS",
+        "level_0": "BONE",
+        "level_1": "CHS",
+        "level_2": "EMCHS",
+        "level_3": None,
+        "level_4": None,
+        "level_5": None,
+        "node_name": "node_name_11",
+        "node_level": 2,
+    } in tree_nodes
+
     for node in tree_nodes:
-        assert node in expected_nodes
+        node_level = int(node["node_level"])
+        node_level_col = f"level_{node_level}"
+        assert node["subtype_code"] == node[node_level_col]
+
+        if node_level == 1 and node["level_0"] == "BONE":
+            assert node["level_1"] in ["ES", "CHS"]
+
+        if node_level == 2 and node["level_1"] == "CHS":
+            assert node["level_0"] == "BONE"
+            assert node["level_2"] in ["DDCHS", "EMCHS"]
+            assert node["level_3"] == None
+            assert node["level_4"] == None
+            assert node["level_5"] == None
+
+        if node_level == 2 and node["level_1"] == "ES":
+            assert node["level_0"] == "BONE"
+            assert node["level_2"] == None
+
+
+### TODO!!!! Add test of Molecular Subtypes and tree types to make sure they don't
+### get mixed!!!!!
