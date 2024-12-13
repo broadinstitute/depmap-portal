@@ -35,8 +35,7 @@ def test_add_forum_link_to_html():
         "https://forum.depmap.org", 1, "topic-slug", html
     )
     assert 'href="https://forum.depmap.org/t/topic-slug/1"' in added_forum_link_to_html
-    assert "</p><a" in added_forum_link_to_html
-    assert added_forum_link_to_html.endswith("</a>")
+    assert added_forum_link_to_html.endswith("</a></div>")
 
 
 def test_remove_anchor_links():
