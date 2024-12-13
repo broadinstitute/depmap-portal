@@ -292,3 +292,5 @@ def test_get_subtype_tree_query(empty_db_mock_downloads):
 
 ### TODO!!!! Add test of Molecular Subtypes and tree types to make sure they don't
 ### get mixed!!!!!
+def test_get_subtype_tree_query_molecular_subtypes(empty_db_mock_downloads):
+    raise NotImplementedError

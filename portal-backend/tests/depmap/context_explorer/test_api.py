@@ -8,12 +8,12 @@ import pytest
 def test_get_context_info(populated_db):
     with populated_db.app.test_client() as c:
         r = c.get(
-            url_for("api.context_explorer_context_info"),
+            url_for("api.context_explorer_context_info", level_0_subtype_code="BONE",),
             content_type="application/json",
         )
         context_info = r.json
-        trees = context_info["trees"]
-        search_options = context_info["search_options"]
+        trees = context_info["tree"]
+
         assert len(list(trees.keys())) > 0
 
         overview_table_data = context_info["table_data"]
@@ -53,8 +53,27 @@ def test_get_context_info(populated_db):
                 for child in tree["children"]:
                     assert len(child["model_ids"]) > 0
 
-        context_names = [option["subtype_code"] for option in search_options]
-        assert sorted(list(trees.keys())) == sorted(context_names)
+
+def test_get_context_search_options(populated_db):
+    with populated_db.app.test_client() as c:
+        r = c.get(
+            url_for("api.context_explorer_context_search_options"),
+            content_type="application/json",
+        )
+        search_options = r.json
+
+        assert search_options == {
+            "lineage": [
+                {"name": "Bone", "subtype_code": "BONE", "node_level": 0},
+                {"name": "Lung", "subtype_code": "LUNG", "node_level": 0},
+                {"name": "Lymphoid", "subtype_code": "LYMPH", "node_level": 0},
+                {"name": "Myeloid", "subtype_code": "MYELOID", "node_level": 0},
+            ],
+            "molecularSubtype": [
+                {"name": "ALK Hotspot", "subtype_code": "ALKHotspot", "node_level": 0},
+                {"name": "EGFR", "subtype_code": "EGFR", "node_level": 0},
+            ],
+        }
 
 
 def test_get_context_summary(populated_db):
