@@ -12,9 +12,9 @@ def test_get_context_info(populated_db):
             content_type="application/json",
         )
         context_info = r.json
-        trees = context_info["tree"]
+        tree = context_info["tree"]
 
-        assert len(list(trees.keys())) > 0
+        assert len(list(tree.keys())) > 0
 
         overview_table_data = context_info["table_data"]
 
@@ -44,14 +44,11 @@ def test_get_context_info(populated_db):
                 if isinstance(value, float):
                     assert not np.isnan(value)
 
-        # Make sure everything that loads into the trees actually have data (depmap_ids list greater than 0)
-        for tree_key in list(trees.keys()):
-            tree = trees[str(tree_key)]
-            assert len(tree["root"]["model_ids"]) > 0
+        assert len(tree["root"]["model_ids"]) > 0
 
-            if len(tree["children"]) > 0:
-                for child in tree["children"]:
-                    assert len(child["model_ids"]) > 0
+        if len(tree["children"]) > 0:
+            for child in tree["children"]:
+                assert len(child["model_ids"]) > 0
 
 
 def test_get_context_search_options(populated_db):
