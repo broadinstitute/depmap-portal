@@ -136,10 +136,28 @@ def test_get_context_path(populated_db):
 
         # Test to level 2
         r = c.get(
-            url_for("api.context_explorer_context_path", selected_code="GB"),
+            url_for("api.context_explorer_context_path", selected_code="LUAD",),
             content_type="application/json",
         )
-        assert r.json == ["BRAIN", "DIFG", "GB"]
+
+        assert r.json == ["LUNG", "NSCLC", "LUAD"]
+
+        # Test level 3 / also test a data driven genetic subtype that's part of the Lineage tree
+        r = c.get(
+            url_for(
+                "api.context_explorer_context_path", selected_code="LUAD:EGFRp.L858R"
+            ),
+            content_type="application/json",
+        )
+        assert r.json == ["LUNG", "NSCLC", "LUAD", "LUAD:EGFRp.L858R"]
+
+        # Test a branch of the Molecular Subtype Tree
+        r = c.get(
+            url_for("api.context_explorer_context_path", selected_code="EGFRp.L858R"),
+            content_type="application/json",
+        )
+
+        assert r.json == ["EGFR", "EGFRp.L858R"]
 
         # Something is very wrong if we pass a nonsense code to this endpoint
         with pytest.raises(Exception):
