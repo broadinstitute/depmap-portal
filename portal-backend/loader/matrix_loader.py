@@ -181,6 +181,8 @@ def create_matrix_object(
 
     # Just make sure we found at least one row and column. That's a pretty low bar and if we don't something is
     # probably completely wrong with the dataset.
+    if len(row_index_objects) == 0 or len(col_index_objects) == 0:
+        breakpoint()
     assert len(row_index_objects) > 0
     assert len(col_index_objects) > 0
 

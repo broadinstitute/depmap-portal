@@ -83,6 +83,9 @@ def view_cell_line(cell_line_name):
         selected_cell_line = DepmapModel.get_by_name(cell_line_name=cell_line_name)
 
     if selected_cell_line is None:
+        selected_cell_line = DepmapModel.get_by_ccle_name(ccle_name=cell_line_name)
+
+    if selected_cell_line is None:
         abort(404)
 
     has_metmap_data = MetMap500.has_cell_line(selected_cell_line.model_id)

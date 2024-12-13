@@ -28,6 +28,7 @@ class DataIssue(Model):
 
 
 def log_data_issue(data_type, description, identifier=None, id_type=None):
+    print(f"log_data_issue {data_type}, {description}, {identifier}, {id_type}")
     issue = DataIssue(
         data_type=data_type,
         description=description,

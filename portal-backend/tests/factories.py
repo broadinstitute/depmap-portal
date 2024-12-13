@@ -193,11 +193,11 @@ class DepmapModelFactory(SQLAlchemyModelFactory):
 
     stripped_cell_line_name = factory.Sequence(lambda number: "{}".format(number))
     model_id = factory.Sequence(lambda number: "ACH-{}".format(number))
-    patient_id = factory.Sequence(lambda number: "ACH-{}".format(number))
-
+    # patient_id = factory.Sequence(lambda number: "ACH-{}".format(number))
+    #
     cell_line_name = factory.Sequence(lambda number: "cell_line_{}".format(number))
-    cell_line_alias = factory.LazyAttribute(lambda o: [CellLineAliasFactory()])
-    age_category = factory.Sequence(lambda number: "age_category_{}".format(number))
+    # cell_line_alias = factory.LazyAttribute(lambda o: [CellLineAliasFactory()])
+    # age_category = factory.Sequence(lambda number: "age_category_{}".format(number))
 
     cell_line = factory.SubFactory(
         CellLineFactory,
