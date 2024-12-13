@@ -1124,6 +1124,11 @@ def load_sample_data(
                 )
             )
 
+            proteomics_loader.load_protein_table(
+                os.path.join(loader_data_dir, "protein.csv"),
+                taiga_id="fake-protein-taiga-id.1/file",
+            )
+
         log.info("Adding compounds")
         compound_loader.load_compounds("sample_data/compound/compounds.csv")
 
@@ -1223,7 +1228,7 @@ def load_sample_data(
         dataset_loader.load_curve_parameters_csv(
             "sample_data/compound/prism_oncology_per_curve.csv"
         )
-
+    with transaction():
         log.info("Adding biomarker data")
 
         biomarker_datasets = [
