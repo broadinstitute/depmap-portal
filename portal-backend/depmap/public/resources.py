@@ -78,6 +78,8 @@ def add_forum_link_to_html(
     forum_url: str, topic_id: int, topic_slug: str, topic_html: str
 ):
     soup = BeautifulSoup(str(topic_html), features="html.parser")
+    # Add new div with link to forum
+    new_div = soup.new_tag("div")
     link_tag = soup.new_tag("a")
     link_tag.attrs.update(
         {
@@ -87,8 +89,10 @@ def add_forum_link_to_html(
         }
     )
     link_tag.string = "View Post in Forum"
-    last_element = soup.find_all()[-1]
-    last_element.insert_after(link_tag)
+    new_div.append(link_tag)
+    # add link to forum to end of post content
+    last_content = soup.contents[-1]
+    last_content.insert_after(new_div)
     return str(soup)
 
 
@@ -112,11 +116,11 @@ def modify_html(
 ):
     sanitized_html = sanitizer.sanitize(topic_html)
     modified_urls_html = modify_forum_relative_urls(forum_url, sanitized_html)
+    img_links_removed_html = remove_img_link(modified_urls_html)
     added_forum_link_html = add_forum_link_to_html(
-        forum_url, topic_id, topic_slug, modified_urls_html
+        forum_url, topic_id, topic_slug, img_links_removed_html
     )
-    img_links_removed_html = remove_img_link(added_forum_link_html)
-    return img_links_removed_html
+    return added_forum_link_html
 
 
 def get_root_category_subcategory_topics(
