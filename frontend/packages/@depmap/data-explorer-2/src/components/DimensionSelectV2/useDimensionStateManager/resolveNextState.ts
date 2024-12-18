@@ -2,7 +2,14 @@ import { DataExplorerAggregation } from "@depmap/types";
 import { useDataExplorerApi } from "../../../contexts/DataExplorerApiContext";
 import { contextsMatch } from "../../../utils/context";
 import { Changes, State } from "./types";
-import { inferDataType, inferSliceType } from "./utils";
+import {
+  findDataType,
+  findHighestPriorityDataset,
+  inferDataType,
+  inferDatasetId,
+  inferSliceType,
+  inferTypesFromDatasetId,
+} from "./utils";
 import computeOptions from "./computeOptions";
 
 async function resolveNextState(
@@ -63,7 +70,9 @@ async function resolveNextState(
     units = null;
     dataset_id = undefined;
 
-    // TODO: Try to infer `dataset_id`
+    if (dataType && slice_type) {
+      dataset_id = await inferDatasetId(api, index_type, slice_type, dataType);
+    }
   }
 
   if ("axis_type" in changes && axis_type !== changes.axis_type) {
@@ -92,7 +101,15 @@ async function resolveNextState(
   if ("dataset_id" in changes && dataset_id !== changes.dataset_id) {
     dataset_id = changes.dataset_id || undefined;
 
-    // TODO: set `slice_type` and `dataType` to that of the underlying dataset.
+    if (dataset_id) {
+      const {
+        inferredSliceType,
+        inferredDataType,
+      } = await inferTypesFromDatasetId(api, index_type, dataset_id);
+
+      slice_type = inferredSliceType;
+      dataType = inferredDataType;
+    }
   }
 
   if ("units" in changes && units !== changes.units) {
@@ -115,14 +132,33 @@ async function resolveNextState(
 
   const unitsChanged = units && units !== prev.units;
 
-  if (hasAllRequiredProps && (requiredPropChanged || unitsChanged)) {
-    // TODO: Set `dataset_id` to the highest priority dataset available.
+  if (
+    !dataset_id &&
+    hasAllRequiredProps &&
+    (requiredPropChanged || unitsChanged)
+  ) {
+    // FIXME: This should take into account `context` as well.
+    dataset_id = await findHighestPriorityDataset(
+      api,
+      index_type,
+      dataType as string,
+      slice_type as string
+    );
+
+    if (!dataset_id) {
+      dataset_id = await inferDatasetId(
+        api,
+        index_type,
+        dataType,
+        slice_type as string
+      );
+    }
   }
 
   // Initalize `dataType` if we already know the `dataset_id`. This needs to
-  // happen last.
+  // happen last to avoid triggering extra auto-selections.
   if (!dataType && dataset_id) {
-    // TODO: Set `dataType` by looking up the dataset.
+    dataType = await findDataType(api, dataset_id);
   }
 
   let dirty =

@@ -12,6 +12,7 @@ import {
   isValidSliceQuery,
 } from "@depmap/types";
 import { isCompleteExpression } from "../../../utils/misc";
+import simplifyVarNames from "../utils/simplifyVarNames";
 import expressionReducer, { ExprReducerAction } from "./expressionReducer";
 
 const DEFAULT_EMPTY_EXPR = { and: [{ "==": [null, null] }] };
@@ -92,12 +93,14 @@ export const ContextBuilderStateProvider = ({
       return;
     }
 
-    onChangeContext({
+    const nextContext = simplifyVarNames({
       name,
       dimension_type: contextToEdit.dimension_type as string,
       expr: mainExpr,
       vars: vars as Record<string, DataExplorerContextVariable>,
     });
+
+    onChangeContext(nextContext);
   }, [
     contextToEdit,
     fullySpecifiedVars,

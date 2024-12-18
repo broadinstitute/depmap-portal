@@ -159,48 +159,6 @@ const fields: RegistryFieldsType = {
   TagInputAllowedValues: CustomAllowedValues,
 };
 
-const uiSchema: UiSchema = {
-  "ui:title": "", // removes the title <legend> html element
-  "ui:order": [
-    "name",
-    "file_ids",
-    "dataset_md5",
-    "units",
-    "feature_type",
-    "sample_type",
-    "group_id",
-    "value_type",
-    "allowed_values",
-    "data_type",
-    "priority",
-    "dataset_metadata",
-    "is_transient",
-    "format",
-  ],
-  dataset_metadata: {
-    "ui:field": "TagInputMetadata",
-  },
-  allowed_values: {
-    "ui:field": "TagInputAllowedValues",
-    // "ui:emptyValue": null // This doesn't make default val 'null'. BUG: (see: https://github.com/rjsf-team/react-jsonschema-form/issues/1581                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             )
-  },
-  format: {
-    "ui:widget": "hidden",
-  },
-  file_ids: {
-    "ui:widget": "hidden",
-  },
-  dataset_md5: {
-    "ui:widget": "hidden",
-  },
-  is_transient: {
-    "ui:widget": "hidden",
-  },
-  group_id: {
-    "ui:title": "Group", // override original title from schema
-  },
-};
-
 interface MatrixDatasetFormProps {
   featureTypes: FeatureDimensionType[];
   sampleTypes: SampleDimensionType[];
@@ -210,6 +168,7 @@ interface MatrixDatasetFormProps {
   fileIds?: string[] | null;
   md5Hash?: string | null;
   initFormData: any;
+  isAdvancedMode: boolean;
   onSubmitForm: (formData: { [key: string]: any }) => void;
   forwardFormData?: (formData: { [key: string]: any }) => void;
 }
@@ -223,11 +182,64 @@ export function MatrixDatasetForm({
   fileIds = null,
   md5Hash = null,
   initFormData,
+  isAdvancedMode,
   onSubmitForm,
   forwardFormData = undefined,
 }: MatrixDatasetFormProps) {
   const [formData, setFormData] = React.useState(initFormData);
   const [schema, setSchema] = React.useState<RJSFSchema | null>(null);
+
+  const uiSchema = React.useMemo(() => {
+    const formUiSchema: UiSchema = {
+      "ui:title": "", // removes the title <legend> html element
+      "ui:order": [
+        "name",
+        "file_ids",
+        "dataset_md5",
+        "units",
+        "feature_type",
+        "sample_type",
+        "group_id",
+        "value_type",
+        "allowed_values",
+        "data_type",
+        "priority",
+        "dataset_metadata",
+        "is_transient",
+        "format",
+      ],
+      dataset_metadata: {
+        "ui:field": "TagInputMetadata",
+      },
+      allowed_values: {
+        "ui:field": "TagInputAllowedValues",
+        // "ui:emptyValue": null // This doesn't make default val 'null'. BUG: (see: https://github.com/rjsf-team/react-jsonschema-form/issues/1581                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             )
+      },
+      format: {
+        "ui:widget": "hidden",
+      },
+      file_ids: {
+        "ui:widget": "hidden",
+      },
+      dataset_md5: {
+        "ui:widget": "hidden",
+      },
+      is_transient: {
+        "ui:widget": "hidden",
+      },
+      group_id: {
+        "ui:title": "Group", // override original title from schema
+      },
+    };
+    if (!isAdvancedMode) {
+      ["feature_type", "value_type", "priority", "dataset_metadata"].forEach(
+        (key) => {
+          formUiSchema[key] = { "ui:widget": "hidden" };
+        }
+      );
+    }
+    return formUiSchema;
+  }, [isAdvancedMode]);
 
   React.useEffect(() => {
     const featureTypeOptions = featureTypes.map((option) => {

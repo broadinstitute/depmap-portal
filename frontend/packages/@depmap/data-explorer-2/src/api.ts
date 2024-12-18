@@ -2,9 +2,11 @@ import qs from "qs";
 import omit from "lodash.omit";
 import stableStringify from "json-stable-stringify";
 import { ComputeResponseResult } from "@depmap/compute";
+import { enabledFeatures } from "@depmap/globals";
 import {
   DataExplorerAnonymousContext,
   DataExplorerContext,
+  DataExplorerContextV2,
   DataExplorerDatasetDescriptor,
   DataExplorerFilters,
   DataExplorerMetadata,
@@ -274,7 +276,11 @@ export async function fetchContextSummary(
 
 export async function fetchMetadataColumn(
   slice_id: string
-): Promise<{ slice_id: string; indexed_values: Record<string, string> }> {
+): Promise<{
+  slice_id: string;
+  label: string;
+  indexed_values: Record<string, string>;
+}> {
   return postJson("/get_metadata", { metadata: { slice_id } });
 }
 
@@ -564,19 +570,43 @@ export async function fetchMetadataSlices(dimension_type: string) {
 // `persistContext` and `fetchContext` use the browser's cache (instead of our
 // makeshift in-memory cache) so the data is persisted across sessions.
 // https://developer.mozilla.org/en-US/docs/Web/API/Cache
-
+//
+// The idea behind caching contexts this way is to speed up loading them in
+// specific scenarios. Imagine a user selects a large number of points and then
+// clicks the "visualize" button to plot them in a new tab. It's awkward to
+// pause and wait for the context to be persisted before opening the link. This
+// cache allows them to be immediately available while the upload happens in
+// the background.
+//
+// This is possible because the hashing function used by `getContextHash()`
+// exactly predicts the hash that will be returned by the /cas/ endpoint.
 const CONTEXT_CACHE = "contexts-v1";
 const successfullyPersistedContexts = new Set<string>();
 // Fall back to using an in-memory cache if the user has caching disabled.
-const fallbackInMemoryCache: Record<string, DataExplorerContext> = {};
+const fallbackInMemoryCache: Record<
+  string,
+  DataExplorerContext | DataExplorerContextV2
+> = {};
+
+// Both the legacy Portal and Breadbox have /cas/ and /cas/{key} endpoints for
+// storing and retrieving content. This allows contexts to be sharable. Links
+// to Data Explorer plots contain hashes that reference this shared storage.
+// https://en.wikipedia.org/wiki/Content-addressable_storage
+// In the legacy Portal, these are persisted to an S3 bucket. Elara uses
+// Breadbox which implements the same set of endpoints but stores them in its
+// database instead.
+const getCasUrl = () => {
+  const prefix = fetchUrlPrefix().replace(/^\/$/, "");
+
+  return enabledFeatures.elara ? `${prefix}/temp/cas` : `${prefix}/cas`;
+};
 
 const getContextUrl = (hash: string) => {
-  const prefix = fetchUrlPrefix().replace(/^\/$/, "");
-  return `${prefix}/cas/${hash}`;
+  return `${getCasUrl()}/${hash}`;
 };
 
 export async function persistContext(
-  context: DataExplorerContext
+  context: DataExplorerContext | DataExplorerContextV2
 ): Promise<string> {
   const hash = await getContextHash(context);
 
@@ -609,10 +639,22 @@ export async function persistContext(
     fallbackInMemoryCache[hash] = context;
   }
 
-  const url = `${fetchUrlPrefix().replace(/^\/$/, "")}/cas/`;
-  const data = new URLSearchParams();
-  data.append("value", json);
-  const options = { method: "POST", body: data };
+  const url = enabledFeatures.elara ? getCasUrl() : `${getCasUrl()}/`;
+  const options = {
+    method: "POST",
+    headers: enabledFeatures.elara
+      ? {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        }
+      : {
+          Accept: "*/*",
+          "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
+        },
+    body: enabledFeatures.elara
+      ? JSON.stringify({ value: json })
+      : new URLSearchParams({ value: json }),
+  };
 
   if (cacheSuccess) {
     // Don't wait for this to finish since we just put a
@@ -636,7 +678,9 @@ export async function persistContext(
   return hash;
 }
 
-export async function fetchContext(hash: string): Promise<DataExplorerContext> {
+export async function fetchContext(
+  hash: string
+): Promise<DataExplorerContext | DataExplorerContextV2> {
   let cache: Cache | undefined;
   let response: Response | undefined;
   const request = new Request(getContextUrl(hash));

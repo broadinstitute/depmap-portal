@@ -13,10 +13,19 @@ import { DepMap } from "@depmap/globals";
 import { DataExplorerContext, DataExplorerPlotResponse } from "@depmap/types";
 
 export default async function promptForSelectionFromContext(
-  context_type: string,
-  datasetLabels: string[],
-  filter?: DataExplorerPlotResponse["filters"]["visible"]
+  data: DataExplorerPlotResponse
 ) {
+  const filter = data!.filters?.visible;
+
+  const datasetLabels = new Set(
+    data.index_labels.filter((_, i) => {
+      return (
+        data!.dimensions.x.values[i] !== null &&
+        data!.dimensions.y?.values[i] !== null
+      );
+    })
+  );
+
   const context = await promptForValue({
     title: "Set selection from context",
     defaultValue: null,
@@ -32,7 +41,7 @@ export default async function promptForSelectionFromContext(
       } | null>(null);
 
       const numberedEntities = (n: number) => {
-        const entity = getDimensionTypeLabel(context_type);
+        const entity = getDimensionTypeLabel(data.index_type);
         const entities = pluralize(entity);
 
         return [n.toLocaleString(), n === 1 ? entity : entities].join(" ");
@@ -50,15 +59,18 @@ export default async function promptForSelectionFromContext(
         const labels = await fetchContextLabels(nextContext);
         const contextLabels = new Set(labels);
 
-        const found = datasetLabels.filter((label) => {
+        const found = [...datasetLabels].filter((label) => {
           return contextLabels.has(label);
         }).length;
 
         const notFound = contextLabels.size - found;
 
-        const hiddenByFilters = datasetLabels
+        const hiddenByFilters = data.index_labels
           .map((label, i) => {
-            return [label, filter ? filter.values[i] : true];
+            return [
+              label,
+              datasetLabels.has(label) && filter ? filter.values[i] : true,
+            ];
           })
           .filter(([label]) => contextLabels.has(label as string))
           .filter(([, visible]) => !visible).length;
@@ -86,10 +98,14 @@ export default async function promptForSelectionFromContext(
             value={value}
             onChange={handleChange}
             onClickCreateContext={() => {
-              DepMap.saveNewContext({ context_type }, null, handleChange);
+              DepMap.saveNewContext(
+                { context_type: data.index_type },
+                null,
+                handleChange
+              );
             }}
             label="Choose a context"
-            context_type={context_type}
+            context_type={data.index_type}
             onClickSaveAsContext={() => {}}
             includeAllInOptions={false}
           />
@@ -127,8 +143,12 @@ export default async function promptForSelectionFromContext(
 
   const labels = await fetchContextLabels(context);
   const contextLabels = new Set(labels);
-  const matchingLabels = datasetLabels.filter((label, i) => {
-    return contextLabels.has(label) && (!filter || filter.values[i]);
+  const matchingLabels = data.index_labels.filter((label, i) => {
+    return (
+      datasetLabels.has(label) &&
+      contextLabels.has(label) &&
+      (filter ? filter.values[i] : true)
+    );
   });
 
   return matchingLabels.length ? new Set(matchingLabels) : null;

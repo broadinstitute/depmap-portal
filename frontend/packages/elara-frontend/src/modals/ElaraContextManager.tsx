@@ -4,12 +4,12 @@ import {
   ContextManager,
   DataExplorerApiProvider,
 } from "@depmap/data-explorer-2";
-import { VectorCatalogApi } from "@depmap/interactive";
 import { ElaraApi } from "src/api";
 import {
   evaluateContext,
   fetchDatasets,
   fetchDatasetsByIndexType,
+  fetchDatasetIdentifiers,
   fetchDimensionIdentifiers,
   fetchDimensionTypes,
   fetchVariableDomain,
@@ -29,9 +29,10 @@ function ElaraContextManager({ onHide }: Props) {
     () => new ElaraApi(basename === "" ? "/" : basename)
   );
 
-  const vectorCatalogApi = new VectorCatalogApi(bbapi);
   const getApi = () => bbapi;
-  const getVectorCatalogApi = () => vectorCatalogApi;
+  const getVectorCatalogApi = () => {
+    throw new Error("Vector Catalog API is no longer supported!");
+  };
 
   return (
     <ApiContext.Provider value={{ getApi, getVectorCatalogApi }}>
@@ -41,6 +42,7 @@ function ElaraContextManager({ onHide }: Props) {
         fetchVariableDomain={fetchVariableDomain}
         fetchDatasets={fetchDatasets}
         fetchDimensionTypes={fetchDimensionTypes}
+        fetchDatasetIdentifiers={fetchDatasetIdentifiers}
         fetchDimensionIdentifiers={fetchDimensionIdentifiers}
       >
         <ContextManager

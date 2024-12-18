@@ -2169,7 +2169,7 @@ class TestPost:
             "C": {"ACH-1": 2.0, "ACH-2": 5.0},
         }
 
-    def test_get_dataset_data_no_filters(
+    def test_get_matrix_dataset_data_no_filters(
         self, client: TestClient, minimal_db: SessionWithUser, settings, mock_celery
     ):
         dataset = factories.matrix_dataset(minimal_db, settings)
@@ -2187,7 +2187,7 @@ class TestPost:
             "C": {"ACH-1": 2.0, "ACH-2": 5.0},
         }
 
-    def test_get_dataset_data_generic_feature_type_labels(
+    def test_get_matrix_dataset_data_generic_feature_type_labels(
         self, client: TestClient, minimal_db: SessionWithUser, settings, mock_celery
     ):
         dataset = factories.matrix_dataset(minimal_db, settings, feature_type=None)
@@ -2248,7 +2248,7 @@ class TestPost:
             "A": {"ACH-1": 0.0},
         }
 
-    def test_get_dataset_data_by_ids(
+    def test_get_matrix_dataset_data_by_ids(
         self, client: TestClient, minimal_db: SessionWithUser, settings, mock_celery
     ):
         dataset = factories.matrix_dataset(minimal_db, settings)
@@ -2366,7 +2366,7 @@ class TestPost:
         assert response.status_code == 400
         assert response.json()["detail"]
 
-    def test_get_dataset_data_by_labels(
+    def test_get_matrix_dataset_data_by_labels(
         self, client: TestClient, minimal_db: SessionWithUser, settings, mock_celery
     ):
         sample_type = factories.add_dimension_type(
@@ -2471,6 +2471,9 @@ class TestPost:
         private_group: Dict,
         settings,
     ):
+        """
+        Test the loading of tabular data - including filtering by ID, label and column.
+        """
         admin_headers = {"X-Forwarded-Email": settings.admin_users[0]}
 
         # Give metadata for depmap model
@@ -2715,6 +2718,7 @@ class TestPost:
         private_group: Dict,
         settings,
     ):
+        """Get the data for a tabular dataset which has no metadata."""
         admin_headers = {"X-Forwarded-Email": settings.admin_users[0]}
 
         tabular_file_2 = factories.tabular_csv_data_file(

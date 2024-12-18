@@ -3,17 +3,14 @@ import { ApiContext } from "@depmap/api";
 import {
   ContextBuilderModal,
   negateContext,
-  saveContextToLocalStorage,
+  saveContextToLocalStorageAndPersist,
 } from "@depmap/data-explorer-2";
 import {
   DataExplorerContext,
   DataExplorerPlotConfig,
   ContextPath,
 } from "@depmap/types";
-import {
-  getDapi as getApi,
-  getVectorCatalogApi,
-} from "src/common/utilities/context";
+import { getDapi as getApi } from "src/common/utilities/context";
 import {
   plotToQueryString,
   plotsAreEquivalentWhenSerialized,
@@ -21,6 +18,10 @@ import {
 
 type SaveCallback = (context: DataExplorerContext) => void;
 const noop = () => {};
+
+const getVectorCatalogApi = () => {
+  throw new Error("Vector Catalog API is no longer supported!");
+};
 
 export default function useContextBuilder(
   plot: DataExplorerPlotConfig,
@@ -68,7 +69,7 @@ export default function useContextBuilder(
       };
     }
 
-    await saveContextToLocalStorage(context);
+    await saveContextToLocalStorageAndPersist(context);
     const queryString = await plotToQueryString(nextPlot);
 
     setShowContextModal(false);

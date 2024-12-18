@@ -114,7 +114,7 @@ function Variable({
       (datasets || []).reduce(
         (memo, dataset) => ({
           ...memo,
-          [makePartialSliceId(dataset.dataset_id)]: dataset.label,
+          [makePartialSliceId(dataset.id)]: dataset.name,
         }),
         {}
       ),
@@ -156,8 +156,7 @@ function Variable({
 
   const varDatasetId = extractDatasetIdFromSlice(value, variables);
 
-  const varSliceType = datasets?.find((d) => d.dataset_id === varDatasetId)
-    ?.slice_type;
+  const varSliceType = datasets?.find((d) => d.id === varDatasetId)?.slice_type;
 
   return (
     <div>

@@ -164,12 +164,13 @@ export type ContextPath =
 
 export interface DataExplorerDatasetDescriptor {
   data_type: string;
-  dataset_id: string;
+  id: string;
   index_type: string;
-  slice_type: string;
-  label: string;
-  units: string;
+  given_id: string | null;
+  name: string;
   priority: number | null;
+  slice_type: string;
+  units: string;
 }
 
 type ContextWithoutExprOrVars = {

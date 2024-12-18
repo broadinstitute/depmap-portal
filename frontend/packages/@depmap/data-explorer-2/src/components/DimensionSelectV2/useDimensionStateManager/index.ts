@@ -31,7 +31,10 @@ export default function useDimensionStateManager({
   const initialState = useRef({
     ...DEFAULT_STATE,
     dataType: initialDataType || null,
-    dimension: value || {},
+    dimension: value || {
+      axis_type: mode === "context-only" ? "aggregated_slice" : "raw_slice",
+      aggregation: mode === "context-only" ? undefined : "first",
+    },
   });
 
   const [state, setState] = useState<State>(initialState.current);

@@ -37,11 +37,9 @@ function DataTypes({
             featureType: selectedEntityType,
           })
             .filter((d) => {
-              return (
-                !contextDatasetIds || contextDatasetIds.includes(d.dataset_id)
-              );
+              return !contextDatasetIds || contextDatasetIds.includes(d.id);
             })
-            .map((d) => d.dataset_id)
+            .map((d) => d.id)
         );
 
         return (
@@ -51,9 +49,7 @@ function DataTypes({
             className={cx({
               [styles.disabled]:
                 (selectedDataType && dataType !== selectedDataType) ||
-                relevantDatasets.every(
-                  (d) => !viableDatasets.has(d.dataset_id)
-                ),
+                relevantDatasets.every((d) => !viableDatasets.has(d.id)),
             })}
             tooltip={
               <div>
@@ -75,7 +71,7 @@ function DataTypes({
                         <b>{featureType}</b>
                         <ul>
                           {ds.map((d) => (
-                            <li key={d.dataset_id}>{d.label}</li>
+                            <li key={d.id}>{d.name}</li>
                           ))}
                         </ul>
                       </li>
