@@ -180,7 +180,7 @@ def format_task_status(task):
         "id": task.id,
         "state": task.state,
         "message": message,
-        "percentComplete": int(percent_complete),
+        "percentComplete": int(percent_complete) if percent_complete else None,
         "nextPollDelay": 1000,  # units are miliseconds, this says once per second
         "result": result,
     }
