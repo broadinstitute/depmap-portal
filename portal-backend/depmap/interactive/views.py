@@ -135,16 +135,14 @@ def get_cell_line_url_root():
 
 @blueprint.route("/api/getDatasets")
 def get_datasets():
-    """Return all matrix datasets (both breadbox and legacy datasets)."""
+    """Return all matrix datasets (both breadbox and legacy datasets) sorted alphabetically."""
     combined_datasets = []
     for dataset in data_access.get_all_matrix_datasets():
         if dataset.is_continuous:
             combined_datasets.append(dict(label=dataset.label, value=dataset.id,))
     combined_datasets = sorted(
-        combined_datasets,
-        key=lambda dataset: data_access.get_sort_key(dataset["value"]),
+        combined_datasets, key=lambda dataset: dataset.get("label"),
     )
-
     return jsonify(combined_datasets)
 
 

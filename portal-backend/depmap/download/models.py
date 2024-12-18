@@ -81,6 +81,7 @@ class FileSubType(Enum):
     mutations = "mutations"
     expression = "expression"
     fusions = "fusions"
+    global_genomic_features = "global_genomic_features"
     read_me = "read_me"
 
     @property
@@ -94,6 +95,7 @@ class FileSubType(Enum):
             FileSubType.expression: "Expression",
             FileSubType.fusions: "Fusions",
             FileSubType.read_me: "READ ME",
+            FileSubType.global_genomic_features: "Global Genomic Features",
         }[self]
 
     @staticmethod

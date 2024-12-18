@@ -127,10 +127,10 @@ pipeline/state
 # celery/redis
 dump.rdb
 
-# ignore files downloaded in release-scripts
-release-scripts/**/*.csv
-release-scripts/**/*.md
-release-scripts/**/depmap-gumbo-pull-sa.json
+# ignore files downloaded in the data-prep-pipeline
+data-prep-pipeline/**/*.csv
+data-prep-pipeline/**/*.md
+data-prep-pipeline/**/depmap-gumbo-pull-sa.json
 # used for generating download entries
 metadata.csv
 pipeline/xrefs-internal-DO-NOT-EDIT-ME

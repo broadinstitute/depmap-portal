@@ -34,6 +34,8 @@ const ReleaseTabs = ({
   const mutationsData = releaseDataGroupedBySubtype[FileSubType.mutations];
   const expressionData = releaseDataGroupedBySubtype[FileSubType.expression];
   const fusionsData = releaseDataGroupedBySubtype[FileSubType.fusions];
+  const globalGenomicFeatureData =
+    releaseDataGroupedBySubtype[FileSubType.global_genomic_features];
   const readMeData = releaseDataGroupedBySubtype[FileSubType.read_me];
 
   return (
@@ -134,10 +136,23 @@ const ReleaseTabs = ({
           />
         </Tab>
       )}
-      {readMeData && (
+      {globalGenomicFeatureData && (
         <Tab
           className={styles.releaseTab}
           eventKey={8}
+          title={FileSubType.global_genomic_features}
+        >
+          <DataFilePanel
+            data={globalGenomicFeatureData}
+            termsDefinitions={termsDefinitions}
+            release={release}
+          />
+        </Tab>
+      )}
+      {readMeData && (
+        <Tab
+          className={styles.releaseTab}
+          eventKey={9}
           title={FileSubType.read_me}
         >
           <DataFilePanel
