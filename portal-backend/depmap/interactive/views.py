@@ -882,7 +882,7 @@ def download_csv_and_view_interactive():
         abort(400)
 
     result = upload_transient_csv.apply(
-        args=[display_name, units, True, csv_path, False]
+        args=[display_name, units, True, csv_path, True]
     )
 
     if result.state == TaskState.SUCCESS.value:
