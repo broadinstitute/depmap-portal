@@ -1,0 +1,25 @@
+transform_driver_events with inputs   update_taiga_script:
+     type: '$fileref'
+     name: 'upload_to_taiga.py'
+     filename: 'upload_to_taiga.py'
+     sha256: 'e19beb458c833f8928f9abc9f9ffd50b2dcd4365ee5075d6af50d4997d6453b7'
+     $manually-added: 'true'
+  script:
+     type: '$fileref'
+     name: '../conseq_scripts/predictability/transform_driver_events.py'
+     filename: '/Users/naquib/Github/depmap-portal/data-prep-pipeline/conseq_scripts/predictability/transform_driver_events.py'
+     sha256: '0a5679292829ea25aab8d55a4830da7110c11ecdb7edf81067e5a0c54e189fd5'
+     $manually-added: 'true'
+  predictability_taiga_id:
+     type: 'predictability_taiga_id'
+     dataset_id: 'predictability-76d5.132'
+     $manually-added: 'true'
+  oncokb_annotated:
+     type: 'oncokb_annotated'
+     dataset_id: 'oncokb-annotated-mutations-7e2e.17/oncokb_annotated'
+     $manually-added: 'true'
+  mutations:
+     type: 'mutations'
+     dataset_id: 'internal-24q2-3719.88/OmicsSomaticMutations'
+     $manually-added: 'true'
+ (state/r23)

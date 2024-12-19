@@ -1,0 +1,25 @@
+generate_model_and_model_condition with inputs   update_taiga_script:
+     type: '$fileref'
+     name: 'upload_to_taiga.py'
+     filename: 'upload_to_taiga.py'
+     sha256: 'e19beb458c833f8928f9abc9f9ffd50b2dcd4365ee5075d6af50d4997d6453b7'
+     $manually-added: 'true'
+  script:
+     type: '$fileref'
+     name: '../conseq_scripts/get_release_model_and_model_condition_files/get_release_model_and_model_condition.py'
+     filename: '/Users/naquib/Github/depmap-portal/data-prep-pipeline/conseq_scripts/get_release_model_and_model_condition_files/get_release_model_and_model_condition.py'
+     sha256: 'f2847bd19289492f7ac673c9754f31ff72eee7ff12c10a25f5e3770c32acfd07'
+     $manually-added: 'true'
+  data_dictionary:
+     type: 'data_dictionary'
+     dataset_id: 'predictability-76d5.142/DataDictionary_20241219_160756'
+     $manually-added: 'true'
+  previous_release_taiga_id:
+     type: 'previous_release_taiga_id'
+     dataset_id: 'internal-23q4-ac2b.86'
+     $manually-added: 'true'
+  release_taiga_id:
+     type: 'release_taiga_id'
+     dataset_id: 'internal-24q2-3719.88'
+     $manually-added: 'true'
+ (state/r22)

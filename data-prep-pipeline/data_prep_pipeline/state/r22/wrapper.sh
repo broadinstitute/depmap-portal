@@ -1,0 +1,16 @@
+set -ex
+cd /Users/naquib/Github/depmap-portal/data-prep-pipeline/data_prep_pipeline/state/r22
+
+EXIT_STATUS=0
+if [ $EXIT_STATUS == 0 ]; then
+  # Propagate kill if shell receives SIGTERM or SIGINT
+  trap 'kill -TERM $PID' TERM INT
+  python3 /Users/naquib/Github/depmap-portal/data-prep-pipeline/conseq_scripts/get_release_model_and_model_condition_files/get_release_model_and_model_condition.py predictability-76d5.142/DataDictionary_20241219_160756 internal-24q2-3719.88 internal-23q4-ac2b.86 model.csv model_condition.csv &
+  PID=$!
+  wait $PID
+  trap - TERM INT
+  wait $PID
+  EXIT_STATUS=$?
+fi
+
+echo $EXIT_STATUS > /Users/naquib/Github/depmap-portal/data-prep-pipeline/data_prep_pipeline/state/r22/retcode.txt

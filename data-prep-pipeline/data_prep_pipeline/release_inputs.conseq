@@ -6,8 +6,19 @@ add-if-missing {
 }
 
 add-if-missing {
+  "type": "previous_release_taiga_id",
+  "dataset_id": "internal-23q4-ac2b.86"
+}
+
+add-if-missing {
   "type": "predictability_taiga_id",
   "dataset_id": "predictability-76d5.132"
+}
+
+# Data Dictionary
+add-if-missing {
+  "type": "data_dictionary",
+  "dataset_id": "predictability-76d5.142/DataDictionary_20241219_160756"
 }
 
 # CN gene expression data

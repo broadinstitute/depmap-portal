@@ -1,0 +1,18 @@
+Gumbo client successfully connected.
+taiga_id internal-24q2-3719.88/OmicsExpressionProteinCodingGenesTPMLogp1
+taiga_id internal-24q2-3719.88/OmicsCNGene
+taiga_id internal-24q2-3719.88/OmicsSomaticMutations
+taiga_id internal-24q2-3719.88/OmicsFusionFiltered
+taiga_id internal-24q2-3719.88/PRISMOncologyReferenceAUCMatrix
+Number of model ids in previous release: 2306
+Number of model ids in current release: 2410
+Number of new model ids in current release: 105
+Number of model ids removed in current release: 1
+
+***  Wrote differences to internal-23q4-ac2b.86-internal-24q2-3719.88-diff.csv. Forward to Sam or the relevant stakeholder to make sure that is the correct number of new models that are being released  ***
+
+Model csv file written to model.csv
+Importing omics_profiles_taiga_id: internal-24q2-3719.88/OmicsProfiles
+Importing screen_sequence_map_taiga_id: internal-24q2-3719.88/ScreenSequenceMap
+Number of model condition ids: 3169
+Model Condition csv file written to model_condition.csv

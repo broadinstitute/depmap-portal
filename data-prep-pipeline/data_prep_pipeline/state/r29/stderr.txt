@@ -1,0 +1,16 @@
++ cd /Users/naquib/Github/depmap-portal/data-prep-pipeline/data_prep_pipeline/state/r29
++ EXIT_STATUS=0
++ '[' 0 == 0 ']'
++ trap 'kill -TERM $PID' TERM INT
++ PID=37814
++ wait 37814
++ python3 /Users/naquib/Github/depmap-portal/data-prep-pipeline/conseq_scripts/get_release_model_and_model_condition_files/get_release_model_and_model_condition.py predictability-76d5.142/DataDictionary_20241219_160756 internal-24q2-3719.88 internal-23q4-ac2b.86 model.csv model_condition.csv model_diff.csv --readme-yaml
+usage: get_release_model_and_model_condition.py [-h]
+                                                [--readme-yaml README_YAML]
+                                                data_dictionary_taiga_id
+                                                quarterly_release_dataset_id
+                                                previous_dataset_id
+                                                model_csv_outfile
+                                                model_condition_csv_outfile
+                                                model_diff_outfile
+get_release_model_and_model_condition.py: error: argument --readme-yaml: expected one argument

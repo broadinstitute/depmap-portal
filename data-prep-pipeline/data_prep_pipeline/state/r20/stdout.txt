@@ -1,0 +1,1 @@
+Gumbo client successfully connected.

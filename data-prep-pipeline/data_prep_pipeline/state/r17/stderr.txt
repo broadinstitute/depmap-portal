@@ -1,0 +1,21 @@
++ cd /Users/naquib/Github/depmap-portal/data-prep-pipeline/data_prep_pipeline/state/r17
++ EXIT_STATUS=0
++ '[' 0 == 0 ']'
++ trap 'kill -TERM $PID' TERM INT
++ PID=21974
++ wait 21974
++ python3 /Users/naquib/Github/depmap-portal/data-prep-pipeline/conseq_scripts/predictability/transform_genetic_derangement.py /Users/naquib/Github/depmap-portal/data-prep-pipeline/data_prep_pipeline/state/r1/cngene_log2.csv /Users/naquib/Github/depmap-portal/data-prep-pipeline/data_prep_pipeline/state/r3/hgnc_gene_table.csv genetic_derangement.csv
+/Users/naquib/Github/depmap-portal/data-prep-pipeline/conseq_scripts/predictability/transform_genetic_derangement.py:14: DtypeWarning: Columns (32,34,38,40,50) have mixed types. Specify dtype option on import or set low_memory=False.
+  hgnc_gene_table = pd.read_csv(hgnc_gene_table_csv)
++ trap - TERM INT
++ wait 21974
++ EXIT_STATUS=0
++ '[' 0 == 0 ']'
++ trap 'kill -TERM $PID' TERM INT
++ PID=22077
++ wait 22077
++ python3 upload_to_taiga.py genetic_derangement.csv 'Generated genetic derangement data for predictability' predictability-76d5.132 PredictabilityGeneticDerangementTransformed csv_matrix
++ trap - TERM INT
++ wait 22077
++ EXIT_STATUS=0
++ echo 0
