@@ -293,8 +293,14 @@ const LineageSearch = (lineageSearchProps: LineageSearchProps) => {
     <fieldset className={styles.lineageSelection}>
       <TabsWithHistory
         className={styles.Tabs}
-        onChange={(index) => handleSetSelectedTreeType(tabs[index])}
-        onSetInitialIndex={(index) => handleSetSelectedTreeType(tabs[index])}
+        onChange={(index) => {
+          handleSetSelectedTreeType(tabs[index]);
+          onRefineYourContext(null, null);
+        }}
+        onSetInitialIndex={(index) => {
+          handleSetSelectedTreeType(tabs[index]);
+          onRefineYourContext(null, null);
+        }}
         isManual
         isLazy
       >
