@@ -1,7 +1,0 @@
-
-from taigapy import create_taiga_client_v3
-
-tc = create_taiga_client_v3()
-print("Getting Rep Single Pt confounders data...")
-rep_single_pt_confounders_matrix = tc.get("repurposing-public-23q2-341f.10/Repurposing_Public_23Q2_Extended_Matrix_Confounders")
-rep_single_pt_confounders_matrix.to_csv("rep_single_pt_confounders.csv", index=False)

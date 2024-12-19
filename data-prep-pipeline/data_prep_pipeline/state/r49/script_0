@@ -1,7 +1,0 @@
-
-from taigapy import create_taiga_client_v3
-
-tc = create_taiga_client_v3()
-print("Getting Metabolomics data...")
-metabolomics_matrix = tc.get("metabolomics-cd0c.4/CCLE_metabolomics_20190502")
-metabolomics_matrix.to_csv("metabolomics.csv", index=False)

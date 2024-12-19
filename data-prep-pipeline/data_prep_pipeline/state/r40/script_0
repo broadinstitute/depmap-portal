@@ -1,8 +1,0 @@
-
-from taigapy import create_taiga_client_v3
-
-tc = create_taiga_client_v3()
-print("Getting RNAi confounders data...")
-rnai_confounders_matrix = tc.get("confounders-f38f.2/demeter2-combined-v12-confounders")
-rnai_confounders_matrix.set_index("Row.name", inplace=True)
-rnai_confounders_matrix.index.name = None
