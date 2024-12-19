@@ -1,0 +1,8 @@
+
+from taigapy import create_taiga_client_v3
+
+tc = create_taiga_client_v3()
+print("Getting RNAi data...")
+rnai = tc.get("demeter2-combined-dc9c.19/gene_means_proc")
+rnai = rnai.T
+rnai.to_csv("rnai_data.csv", index=False)

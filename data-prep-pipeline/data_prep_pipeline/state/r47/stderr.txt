@@ -1,0 +1,19 @@
++ cd /Users/naquib/Github/depmap-portal/data-prep-pipeline/data_prep_pipeline/state/r47
++ EXIT_STATUS=0
++ '[' 0 == 0 ']'
++ trap 'kill -TERM $PID' TERM INT
++ PID=46192
++ wait 46192
++ python3 script_0
++ trap - TERM INT
++ wait 46192
++ EXIT_STATUS=0
++ '[' 0 == 0 ']'
++ trap 'kill -TERM $PID' TERM INT
++ PID=46216
++ wait 46216
++ python3 /Users/naquib/Github/depmap-portal/data-prep-pipeline/data_prep_pipeline/upload_to_taiga.py oncref_confounders.csv 'Update OncoRef confounders data for predictability' predictability-76d5.132 OncoRefConfounders csv_matrix
++ trap - TERM INT
++ wait 46216
++ EXIT_STATUS=0
++ echo 0

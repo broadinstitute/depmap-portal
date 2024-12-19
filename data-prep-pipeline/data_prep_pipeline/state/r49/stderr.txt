@@ -1,0 +1,19 @@
++ cd /Users/naquib/Github/depmap-portal/data-prep-pipeline/data_prep_pipeline/state/r49
++ EXIT_STATUS=0
++ '[' 0 == 0 ']'
++ trap 'kill -TERM $PID' TERM INT
++ PID=46691
++ wait 46691
++ python3 script_0
++ trap - TERM INT
++ wait 46691
++ EXIT_STATUS=0
++ '[' 0 == 0 ']'
++ trap 'kill -TERM $PID' TERM INT
++ PID=46749
++ wait 46749
++ python3 /Users/naquib/Github/depmap-portal/data-prep-pipeline/data_prep_pipeline/upload_to_taiga.py metabolomics.csv 'Update Metabolomics data for predictability' predictability-76d5.132 Metabolomics csv_matrix
++ trap - TERM INT
++ wait 46749
++ EXIT_STATUS=0
++ echo 0

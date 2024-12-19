@@ -1,0 +1,15 @@
+update_rep_single_pt_confounders with inputs   update_taiga_script:
+     type: '$fileref'
+     name: 'upload_to_taiga.py'
+     filename: '/Users/naquib/Github/depmap-portal/data-prep-pipeline/data_prep_pipeline/upload_to_taiga.py'
+     sha256: 'e19beb458c833f8928f9abc9f9ffd50b2dcd4365ee5075d6af50d4997d6453b7'
+     $manually-added: 'true'
+  predictability_taiga_id:
+     type: 'predictability_taiga_id'
+     dataset_id: 'predictability-76d5.132'
+     $manually-added: 'true'
+  rep_single_pt_confounders:
+     type: 'rep_single_pt_confounders'
+     dataset_id: 'repurposing-public-23q2-341f.10/Repurposing_Public_23Q2_Extended_Matrix_Confounders'
+     $manually-added: 'true'
+ (state/r48)

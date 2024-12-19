@@ -1,0 +1,19 @@
++ cd /Users/naquib/Github/depmap-portal/data-prep-pipeline/data_prep_pipeline/state/r43
++ EXIT_STATUS=0
++ '[' 0 == 0 ']'
++ trap 'kill -TERM $PID' TERM INT
++ PID=7960
++ wait 7960
++ python3 script_0
++ trap - TERM INT
++ wait 7960
++ EXIT_STATUS=0
++ '[' 0 == 0 ']'
++ trap 'kill -TERM $PID' TERM INT
++ PID=7983
++ wait 7983
++ python3 /Users/naquib/Github/depmap-portal/data-prep-pipeline/data_prep_pipeline/upload_to_taiga.py rnai_confounders.csv 'Update RNAi Confounders data' predictability-76d5.132 RNAiConfounders csv_matrix
++ trap - TERM INT
++ wait 7983
++ EXIT_STATUS=0
++ echo 0

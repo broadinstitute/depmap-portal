@@ -1,0 +1,7 @@
+
+from taigapy import create_taiga_client_v3
+
+tc = create_taiga_client_v3()
+print("Getting OncoRef confounders data...")
+oncref_confounders_matrix = tc.get("prism-oncology-reference-set-23q4-1a7c.11/PRISM_Oncology_Reference_23Q4_Confounders")
+oncref_confounders_matrix.to_csv("oncref_confounders.csv", index=False)

@@ -1,0 +1,19 @@
++ cd /Users/naquib/Github/depmap-portal/data-prep-pipeline/data_prep_pipeline/state/r48
++ EXIT_STATUS=0
++ '[' 0 == 0 ']'
++ trap 'kill -TERM $PID' TERM INT
++ PID=46446
++ wait 46446
++ python3 script_0
++ trap - TERM INT
++ wait 46446
++ EXIT_STATUS=0
++ '[' 0 == 0 ']'
++ trap 'kill -TERM $PID' TERM INT
++ PID=46480
++ wait 46480
++ python3 /Users/naquib/Github/depmap-portal/data-prep-pipeline/data_prep_pipeline/upload_to_taiga.py rep_single_pt_confounders.csv 'Update Rep Single Pt confounders data for predictability' predictability-76d5.132 RepSinglePtConfounders csv_matrix
++ trap - TERM INT
++ wait 46480
++ EXIT_STATUS=0
++ echo 0
