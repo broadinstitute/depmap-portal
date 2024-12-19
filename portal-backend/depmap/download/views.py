@@ -80,10 +80,6 @@ def view_all():
 
 
 @blueprint.route("/data_page_citation/")
-def view_data_page_citation():
-    return render_template("downloads/data_page_citation.html")
-
-
 def render_download_page(mode):
     return render_template(
         "downloads/all_downloads.html",
