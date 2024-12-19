@@ -1,0 +1,11 @@
+Getting lineage data...
+Transforming lineage data...
+Transformed lineage data
+Created temporary upload session ac4eb83522d84cc38219e7560b549f50
+Uploading /var/folders/1_/pqthfbkj2zzf1jczkxqh99rr0000gq/T/tmp9u1_lyr_.csv to S3
+Finished uploading /var/folders/1_/pqthfbkj2zzf1jczkxqh99rr0000gq/T/tmp9u1_lyr_.csv to S3
+Completed uploading /var/folders/1_/pqthfbkj2zzf1jczkxqh99rr0000gq/T/tmp9u1_lyr_.csv to S3
+Added /var/folders/1_/pqthfbkj2zzf1jczkxqh99rr0000gq/T/tmp9u1_lyr_.csv to upload session ac4eb83522d84cc38219e7560b549f50
+Dataset created. Access it directly with this url: https://cds.team/taiga/dataset/predictability-76d5/156
+
+Updated dataset: predictability-76d5 to version number: 156

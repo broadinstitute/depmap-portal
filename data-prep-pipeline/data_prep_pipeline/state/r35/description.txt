@@ -1,0 +1,20 @@
+transform_lineage with inputs   update_taiga_script:
+     type: '$fileref'
+     name: 'upload_to_taiga.py'
+     filename: '/Users/naquib/Github/depmap-portal/data-prep-pipeline/data_prep_pipeline/upload_to_taiga.py'
+     sha256: 'e19beb458c833f8928f9abc9f9ffd50b2dcd4365ee5075d6af50d4997d6453b7'
+     $manually-added: 'true'
+  script:
+     type: '$fileref'
+     name: '../conseq_scripts/predictability/transform_lineage.py'
+     filename: '/Users/naquib/Github/depmap-portal/data-prep-pipeline/conseq_scripts/predictability/transform_lineage.py'
+     sha256: '41a6e82da0c27201945f12cf83e8eb1b3ff23028b938965ed81e603106b9a419'
+     $manually-added: 'true'
+  predictability_taiga_id:
+     type: 'predictability_taiga_id'
+     dataset_id: 'predictability-76d5.132'
+     $manually-added: 'true'
+  model:
+     type: 'model'
+     filename: '/Users/naquib/Github/depmap-portal/data-prep-pipeline/data_prep_pipeline/state/r30/model.csv'
+ (state/r35)

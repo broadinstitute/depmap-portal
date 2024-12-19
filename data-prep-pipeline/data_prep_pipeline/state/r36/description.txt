@@ -1,0 +1,28 @@
+transform_crispr_confounders with inputs   update_taiga_script:
+     type: '$fileref'
+     name: 'upload_to_taiga.py'
+     filename: '/Users/naquib/Github/depmap-portal/data-prep-pipeline/data_prep_pipeline/upload_to_taiga.py'
+     sha256: 'e19beb458c833f8928f9abc9f9ffd50b2dcd4365ee5075d6af50d4997d6453b7'
+     $manually-added: 'true'
+  script:
+     type: '$fileref'
+     name: '../conseq_scripts/predictability/transform_crispr_confounders.py'
+     filename: '/Users/naquib/Github/depmap-portal/data-prep-pipeline/conseq_scripts/predictability/transform_crispr_confounders.py'
+     sha256: '365d503e9bb2c77ccbd962da2dd8dcbe009c06069fbb3fc9922389feb14c401b'
+     $manually-added: 'true'
+  predictability_taiga_id:
+     type: 'predictability_taiga_id'
+     dataset_id: 'predictability-76d5.132'
+     $manually-added: 'true'
+  crispr_screen_map:
+     type: 'crispr_screen_map'
+     dataset_id: 'internal-24q2-3719.88/CRISPRScreensMap'
+     $manually-added: 'true'
+  achilles_screen_qc_report:
+     type: 'achilles_screen_qc_report'
+     dataset_id: 'internal-24q2-3719.88/AchievesScreenQCReport'
+     $manually-added: 'true'
+  model:
+     type: 'model'
+     filename: '/Users/naquib/Github/depmap-portal/data-prep-pipeline/data_prep_pipeline/state/r30/model.csv'
+ (state/r36)

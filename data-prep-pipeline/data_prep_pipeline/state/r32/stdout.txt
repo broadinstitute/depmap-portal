@@ -1,0 +1,11 @@
+Getting driver events data...
+Transforming driver events data...
+Transformed driver events data
+Created temporary upload session 7cfe406429ee4c60b786c2672b56b163
+Uploading /var/folders/1_/pqthfbkj2zzf1jczkxqh99rr0000gq/T/tmpqzrsvzb7.csv to S3
+Finished uploading /var/folders/1_/pqthfbkj2zzf1jczkxqh99rr0000gq/T/tmpqzrsvzb7.csv to S3
+Completed uploading /var/folders/1_/pqthfbkj2zzf1jczkxqh99rr0000gq/T/tmpqzrsvzb7.csv to S3
+Added /var/folders/1_/pqthfbkj2zzf1jczkxqh99rr0000gq/T/tmpqzrsvzb7.csv to upload session 7cfe406429ee4c60b786c2672b56b163
+Dataset created. Access it directly with this url: https://cds.team/taiga/dataset/predictability-76d5/153
+
+Updated dataset: predictability-76d5 to version number: 153

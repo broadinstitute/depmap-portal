@@ -1,0 +1,19 @@
++ cd /Users/naquib/Github/depmap-portal/data-prep-pipeline/data_prep_pipeline/state/r35
++ EXIT_STATUS=0
++ '[' 0 == 0 ']'
++ trap 'kill -TERM $PID' TERM INT
++ PID=73175
++ wait 73175
++ python3 /Users/naquib/Github/depmap-portal/data-prep-pipeline/conseq_scripts/predictability/transform_lineage.py /Users/naquib/Github/depmap-portal/data-prep-pipeline/data_prep_pipeline/state/r30/model.csv lineage.csv
++ trap - TERM INT
++ wait 73175
++ EXIT_STATUS=0
++ '[' 0 == 0 ']'
++ trap 'kill -TERM $PID' TERM INT
++ PID=73195
++ wait 73195
++ python3 /Users/naquib/Github/depmap-portal/data-prep-pipeline/data_prep_pipeline/upload_to_taiga.py lineage.csv 'Generated lineage data for predictability' predictability-76d5.132 PredictabilityLineageTransformed csv_matrix
++ trap - TERM INT
++ wait 73195
++ EXIT_STATUS=0
++ echo 0

@@ -1,10 +1,8 @@
+import argparse
 import pandas as pd
 from collections import defaultdict
 from typing import Dict, Set, List
 
-from taigapy import create_taiga_client_v3
-from utils import update_taiga
-from datarelease_taiga_permanames import context_taiga_permaname
 
 column_rename_map = {
     "ModelID": "model_id",
@@ -106,22 +104,29 @@ def generate_lineage_matrix(model_df: pd.DataFrame) -> pd.DataFrame:
     return bool_matrix.transpose()
 
 
-def process_and_update_lineage(source_dataset_id, target_dataset_id):
+def process_and_transform_lineage(model_csv):
 
-    """Transform lineage data for predictability and upload it to Taiga."""
-
-    tc = create_taiga_client_v3()
+    """Transform lineage data for predictability"""
 
     print("Getting lineage data...")
-    model_data = tc.get(f"{source_dataset_id}/{context_taiga_permaname}")
+    model_data = pd.read_csv(model_csv)
 
     print("Transforming lineage data...")
     lineage_matrix = generate_lineage_matrix(model_data)
     print("Transformed lineage data")
 
-    update_taiga(
-        lineage_matrix,
-        "Transform lineage data for predictability",
-        target_dataset_id,
-        "PredictabilityLineageTransformed",
+    return lineage_matrix
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description="Generate lineage matrix for predictability"
     )
+    parser.add_argument("model_csv", help="Path to model data CSV")
+    parser.add_argument("output", help="Path to write the output")
+    args = parser.parse_args()
+
+    lineage_matrix = process_and_transform_lineage(args.model_csv)
+
+    if lineage_matrix is not None:
+        lineage_matrix.to_csv(args.output, index=False)

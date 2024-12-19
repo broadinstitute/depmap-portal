@@ -1,0 +1,25 @@
+transform_genetic_derangement with inputs   update_taiga_script:
+     type: '$fileref'
+     name: 'upload_to_taiga.py'
+     filename: '/Users/naquib/Github/depmap-portal/data-prep-pipeline/data_prep_pipeline/upload_to_taiga.py'
+     sha256: 'e19beb458c833f8928f9abc9f9ffd50b2dcd4365ee5075d6af50d4997d6453b7'
+     $manually-added: 'true'
+  script:
+     type: '$fileref'
+     name: '../conseq_scripts/predictability/transform_genetic_derangement.py'
+     filename: '/Users/naquib/Github/depmap-portal/data-prep-pipeline/conseq_scripts/predictability/transform_genetic_derangement.py'
+     sha256: '8c1bcf6d758aa42b86b97af75988cf053a2affb45fddad9c4b43a8971ec51c62'
+     $manually-added: 'true'
+  predictability_taiga_id:
+     type: 'predictability_taiga_id'
+     dataset_id: 'predictability-76d5.132'
+     $manually-added: 'true'
+  gene:
+     type: 'gene'
+     filename: '/Users/naquib/Github/depmap-portal/data-prep-pipeline/data_prep_pipeline/state/r3/hgnc_gene_table.csv'
+     orig_dataset_id: 'hgnc-gene-table-e250.3/hgnc_complete_set'
+  cngene_log2:
+     type: 'cngene_log2'
+     filename: '/Users/naquib/Github/depmap-portal/data-prep-pipeline/data_prep_pipeline/state/r1/cngene_log2.csv'
+     orig_dataset_id: 'internal-24q2-3719.88/OmicsCNGene'
+ (state/r31)

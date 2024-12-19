@@ -74,11 +74,11 @@ add-if-missing {
 # CRISPR Confounders
 add-if-missing {
   "type": "achilles_screen_qc_report",
-  "dataset_id": "internal-24q2-3719.88/AchievesScreenQCReport"
+  "dataset_id": "internal-24q2-3719.88/AchillesScreenQCReport"
 }
 
 add-if-missing {
   "type": "crispr_screen_map",
-  "dataset_id": "internal-24q2-3719.88/CRISPRScreensMap"
+  "dataset_id": "internal-24q2-3719.88/CRISPRScreenMap"
 }
 

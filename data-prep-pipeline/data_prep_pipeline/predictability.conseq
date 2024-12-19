@@ -6,14 +6,14 @@ rule transform_genetic_derangement:
         gene={"type": "gene"},
         predictability_taiga_id={"type": "predictability_taiga_id"},
         script=fileref('../conseq_scripts/predictability/transform_genetic_derangement.py'),
-        update_taiga_script=fileref('upload_to_taiga.py', copy_to='upload_to_taiga.py')
+        update_taiga_script=fileref('upload_to_taiga.py')
     outputs:
         {
             "type": "predictability_genetic_derangement",
             "filename": {"$filename": "genetic_derangement.csv"},
         }
     run "python3 {{inputs.script.filename}} {{inputs.cngene_log2.filename}} {{inputs.gene.filename}} genetic_derangement.csv"
-    run "python3 upload_to_taiga.py genetic_derangement.csv 'Generated genetic derangement data for predictability' {{inputs.predictability_taiga_id.dataset_id}} 'PredictabilityGeneticDerangementTransformed' 'csv_matrix'"
+    run "python3 {{inputs.update_taiga_script.filename}} genetic_derangement.csv 'Generated genetic derangement data for predictability' {{inputs.predictability_taiga_id.dataset_id}} 'PredictabilityGeneticDerangementTransformed' 'csv_matrix'"
 
 
 rule transform_driver_events:
@@ -22,14 +22,14 @@ rule transform_driver_events:
         oncokb_annotated={"type": "oncokb_annotated"},
         predictability_taiga_id={"type": "predictability_taiga_id"},
         script=fileref('../conseq_scripts/predictability/transform_driver_events.py'),
-        update_taiga_script=fileref('upload_to_taiga.py', copy_to='upload_to_taiga.py')
+        update_taiga_script=fileref('upload_to_taiga.py')
     outputs:
         {
             "type": "predictability_driver_events",
             "filename": {"$filename": "driver_events.csv"},
         }
     run "python3 {{inputs.script.filename}} {{inputs.mutations.dataset_id}} {{inputs.oncokb_annotated.dataset_id}} driver_events.csv"
-    run "python3 upload_to_taiga.py driver_events.csv 'Generated driver events data for predictability' {{inputs.predictability_taiga_id.dataset_id}} 'PredictabilityDriverEventsTransformed' 'csv_matrix'"
+    run "python3 {{inputs.update_taiga_script.filename}} driver_events.csv 'Generated driver events data for predictability' {{inputs.predictability_taiga_id.dataset_id}} 'PredictabilityDriverEventsTransformed' 'csv_matrix'"
 
 
 rule transform_fusion:
@@ -38,43 +38,43 @@ rule transform_fusion:
         gene={"type": "gene"},
         predictability_taiga_id={"type": "predictability_taiga_id"},
         script=fileref('../conseq_scripts/predictability/transform_fusion.py'),
-        update_taiga_script=fileref('upload_to_taiga.py', copy_to='upload_to_taiga.py')
+        update_taiga_script=fileref('upload_to_taiga.py')
     outputs:
         {
             "type": "predictability_fusion",
             "filename": {"$filename": "fusion.csv"},
         }
     run "python3 {{inputs.script.filename}} {{inputs.fusion.dataset_id}} {{inputs.gene.filename}} fusion.csv"
-    run "python3 upload_to_taiga.py fusion.csv 'Generated fusion data for predictability' {{inputs.predictability_taiga_id.dataset_id}} 'PredictabilityFusionTransformed' 'csv_matrix'"
+    run "python3 {{inputs.update_taiga_script.filename}} fusion.csv 'Generated fusion data for predictability' {{inputs.predictability_taiga_id.dataset_id}} 'PredictabilityFusionTransformed' 'csv_matrix'"
 
 
-# rule transform_lineage:
-#     inputs:
-#         lineage={"type": "lineage"},
-#         predictability_taiga_id={"type": "predictability_taiga_id"},
-#         script=fileref('../conseq_scripts/predictability/transform_lineage.py'),
-#         update_taiga_script=fileref('upload_to_taiga.py', copy_to='upload_to_taiga.py')
-#     outputs:
-#         {
-#             "type": "predictability_lineage",
-#             "filename": {"$filename": "lineage.csv"},
-#         }
-#     run "python3 {{inputs.script.filename}} {{inputs.lineage.dataset_id}} lineage.csv"
-#     run "python3 upload_to_taiga.py lineage.csv 'Generated lineage data for predictability' {{inputs.predictability_taiga_id.dataset_id}} 'PredictabilityLineageTransformed' 'csv_matrix'"
+rule transform_lineage:
+    inputs:
+        model={"type": "model"},
+        predictability_taiga_id={"type": "predictability_taiga_id"},
+        script=fileref('../conseq_scripts/predictability/transform_lineage.py'),
+        update_taiga_script=fileref('upload_to_taiga.py')
+    outputs:
+        {
+            "type": "predictability_lineage",
+            "filename": {"$filename": "lineage.csv"},
+        }
+    run "python3 {{inputs.script.filename}} {{inputs.model.filename}} lineage.csv"
+    run "python3 {{inputs.update_taiga_script.filename}} lineage.csv 'Generated lineage data for predictability' {{inputs.predictability_taiga_id.dataset_id}} 'PredictabilityLineageTransformed' 'csv_matrix'"
 
 
-# rule transform_crispr_confounders:
-#     inputs:
-#         context={"type": "context"},
-#         achilles_screen_qc_report={"type": "achilles_screen_qc_report"},
-#         crispr_screen_map={"type": "crispr_screen_map"},
-#         predictability_taiga_id={"type": "predictability_taiga_id"},
-#         script=fileref('../conseq_scripts/predictability/transform_crispr_confounders.py'),
-#         update_taiga_script=fileref('upload_to_taiga.py', copy_to='upload_to_taiga.py')
-#     outputs:
-#         {
-#             "type": "predictability_crispr_confounders",
-#             "filename": {"$filename": "crispr_confounders.csv"},
-#         }
-#     run "python3 {{inputs.script.filename}} {{inputs.crispr.dataset_id}} {{inputs.gene.filename}} crispr_confounders.csv"
-#     run "python3 upload_to_taiga.py crispr_confounders.csv 'Generated CRISPR confounders data for predictability' {{inputs.predictability_taiga_id.dataset_id}} 'PredictabilityCRISPRConfounders' 'csv_matrix'"
+rule transform_crispr_confounders:
+    inputs:
+        model={"type": "model"},
+        achilles_screen_qc_report={"type": "achilles_screen_qc_report"},
+        crispr_screen_map={"type": "crispr_screen_map"},
+        predictability_taiga_id={"type": "predictability_taiga_id"},
+        script=fileref('../conseq_scripts/predictability/transform_crispr_confounders.py'),
+        update_taiga_script=fileref('upload_to_taiga.py')
+    outputs:
+        {
+            "type": "predictability_crispr_confounders",
+            "filename": {"$filename": "crispr_confounders.csv"},
+        }
+    run "python3 {{inputs.script.filename}} {{inputs.model.filename}} {{inputs.achilles_screen_qc_report.dataset_id}} {{inputs.crispr_screen_map.dataset_id}} crispr_confounders.csv"
+    run "python3 {{inputs.update_taiga_script.filename}} crispr_confounders.csv 'Generated CRISPR confounders data for predictability' {{inputs.predictability_taiga_id.dataset_id}} 'PredictabilityCRISPRConfoundersTransformed' 'csv_matrix'"

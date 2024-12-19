@@ -1,12 +1,6 @@
+import argparse
 import pandas as pd
-
 from taigapy import create_taiga_client_v3
-from utils import update_taiga
-from datarelease_taiga_permanames import (
-    context_taiga_permaname,
-    achilles_screen_qc_report_taiga_permaname,
-    crispr_screen_map_taiga_permaname,
-)
 
 
 def encode_one_hot(col_prefix: str, values: pd.Series) -> pd.DataFrame:
@@ -99,15 +93,15 @@ def generate_crispr_confounders_matrix(
     return all_confounders_per_model
 
 
-def process_and_update_crispr_confounders(source_dataset_id, target_dataset_id):
+def process_and_generate_crispr_confounders(
+    model_csv, achilles_screen_qc_report_taiga_id, crispr_screen_map_taiga_id
+):
     tc = create_taiga_client_v3()
 
     print("Getting CRISPR confounders source data...")
-    models = tc.get(f"{source_dataset_id}/{context_taiga_permaname}")
-    achilles_screen_qc_report = tc.get(
-        f"{source_dataset_id}/{achilles_screen_qc_report_taiga_permaname}"
-    )
-    crispr_map = tc.get(f"{source_dataset_id}/{crispr_screen_map_taiga_permaname}")
+    models = pd.read_csv(model_csv)
+    achilles_screen_qc_report = tc.get(achilles_screen_qc_report_taiga_id)
+    crispr_map = tc.get(crispr_screen_map_taiga_id)
 
     print("Transforming CRISPR confounders data...")
     crispr_confounder_matrix = generate_crispr_confounders_matrix(
@@ -115,9 +109,27 @@ def process_and_update_crispr_confounders(source_dataset_id, target_dataset_id):
     )
     print("Transformed CRISPR confounders data")
 
-    update_taiga(
-        crispr_confounder_matrix,
-        "Transformed CRISPR confounders data for predictability",
-        target_dataset_id,
-        "PredictabilityCRISPRConfoundersTransformed",
+    return crispr_confounder_matrix
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description="Generate CRISPR confounder matrix for predictability"
     )
+    parser.add_argument("model_csv", help="Path to model data")
+    parser.add_argument(
+        "achilles_screen_qc_report_taiga_id",
+        help="Taiga ID of Achilles screen QC report",
+    )
+    parser.add_argument(
+        "crispr_screen_map_taiga_id", help="Taiga ID of CRISPR screen map"
+    )
+    parser.add_argument("output", help="Path to write the output")
+    args = parser.parse_args()
+    crispr_confounder_matrix = process_and_generate_crispr_confounders(
+        args.model_csv,
+        args.achilles_screen_qc_report_taiga_id,
+        args.crispr_screen_map_taiga_id,
+    )
+    if crispr_confounder_matrix is not None:
+        crispr_confounder_matrix.to_csv(args.output, index=False)

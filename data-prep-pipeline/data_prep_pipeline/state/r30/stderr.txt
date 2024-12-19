@@ -14,3 +14,23 @@
 + PID=39930
 + wait 39930
 + python3 /Users/naquib/Github/depmap-portal/data-prep-pipeline/data_prep_pipeline/upload_to_taiga.py model.csv 'Generated model data' predictability-76d5.132 Model csv_table
++ trap - TERM INT
++ wait 39930
++ EXIT_STATUS=0
++ '[' 0 == 0 ']'
++ trap 'kill -TERM $PID' TERM INT
++ PID=40247
++ wait 40247
++ python3 /Users/naquib/Github/depmap-portal/data-prep-pipeline/data_prep_pipeline/upload_to_taiga.py model_condition.csv 'Generated model condition data' predictability-76d5.132 ModelCondition csv_table
++ trap - TERM INT
++ wait 40247
++ EXIT_STATUS=0
++ '[' 0 == 0 ']'
++ trap 'kill -TERM $PID' TERM INT
++ PID=40477
++ wait 40477
++ python3 /Users/naquib/Github/depmap-portal/data-prep-pipeline/data_prep_pipeline/upload_to_taiga.py model_diff.csv 'Generated model diff data' predictability-76d5.132 ModelDiff csv_table
++ trap - TERM INT
++ wait 40477
++ EXIT_STATUS=0
++ echo 0
