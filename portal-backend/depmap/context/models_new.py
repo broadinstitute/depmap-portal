@@ -51,7 +51,27 @@ class SubtypeNode(Model):
         else:
             return q.one_or_none()
 
-    # TODO: TEST
+    @staticmethod
+    def get_all_organized_descending_by_level():
+        return db.session.query(SubtypeNode).order_by(SubtypeNode.node_level.desc())
+
+    @staticmethod
+    def get_children_using_current_level_code(code, level) -> List["SubtypeNode"]:
+        node_level_column = f"level_{level}"
+
+        results = (
+            db.session.query(SubtypeNode)
+            .filter(
+                and_(
+                    getattr(SubtypeNode, node_level_column) == code,
+                    SubtypeNode.node_level > level,
+                )
+            )
+            .all()
+        )
+
+        return results
+
     @staticmethod
     def get_by_tree_type_and_level(tree_type, level) -> List["SubtypeNode"]:
         results = (
@@ -67,10 +87,10 @@ class SubtypeNode(Model):
         return results
 
     @staticmethod
-    def get_subtype_tree_query(tree_type, level_0_subtype_code: str):
+    def get_subtype_tree_by_models_query(tree_type, level_0_subtype_code: str):
         query = (
             db.session.query(SubtypeContext)
-            # .join(SubtypeNode, SubtypeNode.subtype_code == SubtypeContext.subtype_code)
+            .join(SubtypeNode, SubtypeNode.subtype_code == SubtypeContext.subtype_code)
             .filter(
                 and_(
                     SubtypeNode.tree_type == tree_type,
@@ -99,24 +119,27 @@ class SubtypeNode(Model):
     def get_model_ids_by_subtype_code_and_node_level(
         subtype_code: str, node_level: int
     ) -> Dict[str, str]:
-        node_level_column = f"level_{node_level}"
+        context = SubtypeContext.get_by_code(subtype_code)
+        model_ids = SubtypeContext.get_model_ids_by_node_level(context, node_level)
+
+        return model_ids
+
+    @staticmethod
+    def temporary_get_model_ids_of_children(
+        level_0_subtype_code: str,
+    ) -> Dict[str, str]:
         query = (
             db.session.query(SubtypeNode)
             .join(
                 DepmapModel, DepmapModel.depmap_model_type == SubtypeNode.subtype_code
             )
-            .filter(getattr(SubtypeNode, node_level_column) == subtype_code)
+            .filter(SubtypeNode.level_0 == level_0_subtype_code)
             .with_entities(DepmapModel.model_id, DepmapModel.stripped_cell_line_name)
         )
 
         cell_lines = pd.read_sql(query.statement, query.session.connection())
-        cell_lines_dict = dict(
-            zip(
-                cell_lines["model_id"].values,
-                cell_lines["stripped_cell_line_name"].values,
-            )
-        )
-        return cell_lines_dict
+
+        return cell_lines["model_id"].values
 
     @staticmethod
     def temporary_get_model_ids_by_subtype_code_and_node_level(
@@ -187,9 +210,24 @@ class SubtypeContext(Model):
         return cell_lines
 
     @staticmethod
-    def get_model_ids(self) -> List["str"]:
-        cell_lines = [cell_line.model_id for cell_line in self.depmap_model]
-        return cell_lines
+    def get_model_ids_by_node_level(self, level) -> List["str"]:
+        subtype_code = self.subtype_code
+        nodes = SubtypeNode.get_children_using_current_level_code(subtype_code, level)
+        codes = [node.subtype_code for node in nodes]
+        codes.append(subtype_code)
+
+        contexts = (
+            db.session.query(SubtypeContext)
+            .filter(SubtypeContext.subtype_code.in_(codes))
+            .all()
+        )
+
+        cell_lines = [
+            cell_line.model_id
+            for context in contexts
+            for cell_line in context.depmap_model
+        ]
+        return list(set(cell_lines))
 
     @classmethod
     def get_cell_line_table_query(cls, subtype_code):

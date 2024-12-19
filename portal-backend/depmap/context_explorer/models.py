@@ -8,7 +8,7 @@ from depmap.gene.models import Gene
 from depmap.compound.models import CompoundExperiment
 from depmap.enums import DependencyEnum
 from depmap.dataset.models import DependencyDataset
-from depmap.context.models_new import SubtypeNode
+from depmap.context.models_new import SubtypeNode, SubtypeContext
 from depmap.database import (
     Column,
     Float,
@@ -75,10 +75,10 @@ class ContextExplorerTree(dict):
 
         if len(child_subtype_codes) > 0:
             for child_subtype_code in child_subtype_codes:
-                model_ids_dict = SubtypeNode.get_model_ids_by_subtype_code_and_node_level(
-                    child_subtype_code, next_level
+                context = SubtypeContext.get_by_code(child_subtype_code)
+                model_ids = SubtypeContext.get_model_ids_by_node_level(
+                    context, next_level
                 )
-                model_ids = list(model_ids_dict.keys())
 
                 current_child_codes = [child.subtype_code for child in self.children]
                 if len(model_ids) > 0 and child_subtype_code not in current_child_codes:
@@ -155,11 +155,10 @@ class ContextNode(dict):
 
         if len(child_subtype_codes) > 0:
             for child_subtype_code in child_subtype_codes:
-                model_ids_dict = SubtypeNode.get_model_ids_by_subtype_code_and_node_level(
-                    child_subtype_code, next_level
+                context = SubtypeContext.get_by_code(child_subtype_code)
+                model_ids = SubtypeContext.get_model_ids_by_node_level(
+                    context, next_level
                 )
-                model_ids = list(model_ids_dict.keys())
-
                 current_child_codes = [child.subtype_code for child in self.children]
 
                 if len(model_ids) > 0 and child_subtype_code not in current_child_codes:

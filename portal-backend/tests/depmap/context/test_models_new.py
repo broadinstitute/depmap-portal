@@ -225,7 +225,7 @@ def test_get_subtype_tree_query(empty_db_mock_downloads):
         bone_child_level2_num1=bone_child_level2_num1,
         bone_child_level2_num2=bone_child_level2_num2,
     )
-    query = SubtypeNode.get_subtype_tree_query(
+    query = SubtypeNode.get_subtype_tree_by_models_query(
         tree_type=TreeType.Lineage, level_0_subtype_code=bone_code
     )
     df = pd.read_sql(query.statement, query.session.connection())
@@ -290,7 +290,90 @@ def test_get_subtype_tree_query(empty_db_mock_downloads):
             assert node["level_2"] == None
 
 
-### TODO!!!! Add test of Molecular Subtypes and tree types to make sure they don't
-### get mixed!!!!!
 def test_get_subtype_tree_query_molecular_subtypes(empty_db_mock_downloads):
-    raise NotImplementedError
+    parent_code = "EGFR"
+    child_code = "EGFRp.L858R"
+    parent_node = SubtypeNodeFactory(
+        subtype_code=parent_code,
+        tree_type=TreeType.MolecularSubtype,
+        node_level=0,
+        level_0=parent_code,
+        level_1=None,
+        level_2=None,
+        level_3=None,
+        level_4=None,
+        level_5=None,
+    )
+    child_node = SubtypeNodeFactory(
+        subtype_code=child_code,
+        tree_type=TreeType.MolecularSubtype,
+        node_level=1,
+        level_0=parent_code,
+        level_1=child_code,
+        level_2=None,
+        level_3=None,
+        level_4=None,
+        level_5=None,
+    )
+    parent_models = [
+        DepmapModelFactory(model_id="a"),
+        DepmapModelFactory(model_id="b"),
+    ]
+
+    child_models = [parent_models[0]]
+    parent_context = SubtypeContextFactory(
+        subtype_code=parent_code, depmap_model=parent_models
+    )
+    child_context = SubtypeContextFactory(
+        subtype_code=child_code, depmap_model=child_models
+    )
+    empty_db_mock_downloads.session.flush()
+
+    query = SubtypeNode.get_subtype_tree_by_models_query(
+        tree_type=TreeType.MolecularSubtype, level_0_subtype_code=parent_code
+    )
+    df = pd.read_sql(query.statement, query.session.connection())
+    tree_nodes = df.to_dict("records")
+    assert len(tree_nodes) == 3
+
+    assert tree_nodes == [
+        {
+            "model_id": "a",
+            "subtype_code": "EGFR",
+            "level_0": "EGFR",
+            "level_1": None,
+            "level_2": None,
+            "level_3": None,
+            "level_4": None,
+            "level_5": None,
+            "node_name": "node_name_0",
+            "node_level": 0,
+        },
+        {
+            "model_id": "b",
+            "subtype_code": "EGFR",
+            "level_0": "EGFR",
+            "level_1": None,
+            "level_2": None,
+            "level_3": None,
+            "level_4": None,
+            "level_5": None,
+            "node_name": "node_name_0",
+            "node_level": 0,
+        },
+        {
+            "model_id": "a",
+            "subtype_code": "EGFRp.L858R",
+            "level_0": "EGFR",
+            "level_1": "EGFRp.L858R",
+            "level_2": None,
+            "level_3": None,
+            "level_4": None,
+            "level_5": None,
+            "node_name": "node_name_1",
+            "node_level": 1,
+        },
+    ]
+
+
+# TODO: Make sure no molecular subtype codes could end up in the lineage tree and vice versa

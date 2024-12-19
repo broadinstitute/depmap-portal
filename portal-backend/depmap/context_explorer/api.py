@@ -124,33 +124,98 @@ def make_subtype_context_sample_data():
     )  # "TRUE" and "FALSE" values
     molecular_subtype_df = molecular_subtype_df.dropna().set_index("ModelID")
 
-    all_subtype_nodes = SubtypeNode.get_all()
+    all_subtype_nodes = SubtypeNode.get_all_organized_descending_by_level()
     all_models = DepmapModel.get_all()
     model_ids = [model.model_id for model in all_models]
 
     column_headers = []
     rows = []
+
     for node in all_subtype_nodes:
         subtype_code = node.subtype_code
+        print(subtype_code)
         node_name = node.node_name
-        if node.molecular_subtype_code:
-            models_present = []
-            column_headers.append(subtype_code)
-            node_level = node.node_level
 
+        if node.molecular_subtype_code:
+            node_level = node.node_level
+            children_nodes = SubtypeNode.get_children_using_current_level_code(
+                subtype_code, must=False
+            )
             if (
                 subtype_code in molecular_subtype_df.columns.tolist()
                 or node_name in molecular_subtype_df.columns.tolist()
+                or len(children_nodes) != 0
             ):
+                models_present = []
+                column_headers.append(subtype_code)
+
                 for model_id in model_ids:
-                    models = molecular_subtype_df[
-                        molecular_subtype_df[node_name] == "True"
-                    ].index.tolist()
+                    if (
+                        node_name in molecular_subtype_df.columns.tolist()
+                        and node_level != 0
+                    ):
+                        models = molecular_subtype_df[
+                            molecular_subtype_df[node_name] == True
+                        ].index.tolist()
+                        includes_model = model_id in models
+                        models_present.append(includes_model)
 
-                    includes_model = model_id in models
-                    models_present.append(includes_model)
+                    if node_level == 0:
+                        # combine the TRUEs of the children
+                        # children models would be adding the models present for every node level that has a level_0 of this code
 
-            rows.append(models_present)
+                        models_for_children = []
+                        node_level_1 = None
+                        node_level_2 = None
+                        node_level_3 = None
+                        node_level_4 = None
+                        node_level_5 = None
+                        for child in children_nodes:
+                            if child.node_level == 1:
+                                node_level_1 = child
+                            elif child.node_level == 2:
+                                node_level_2 = child
+                            elif child.node_level == 3:
+                                node_level_3 = child
+                            elif child.node_level == 4:
+                                node_level_4 = child
+                            elif child.node_level == 5:
+                                node_level_5 = child
+
+                        if node_level_1:
+                            models1 = molecular_subtype_df[
+                                molecular_subtype_df[node_level_1.node_name] == True
+                            ].index.tolist()
+                            models_for_children.extend(models1)
+
+                        if node_level_2:
+                            models2 = molecular_subtype_df[
+                                molecular_subtype_df[node_level_2.node_name] == True
+                            ].index.tolist()
+                            models_for_children.extend(models2)
+
+                        if node_level_3:
+                            models3 = molecular_subtype_df[
+                                molecular_subtype_df[node_level_3.node_name] == True
+                            ].index.tolist()
+                            models_for_children.extend(models3)
+
+                        if node_level_4:
+                            models4 = molecular_subtype_df[
+                                molecular_subtype_df[node_level_4.node_name] == True
+                            ].index.tolist()
+                            models_for_children.extend(models4)
+
+                        if node_level_5:
+                            models5 = molecular_subtype_df[
+                                molecular_subtype_df[node_level_5.node_name] == True
+                            ].index.tolist()
+                            models_for_children.extend(models5)
+
+                        includes_model = model_id in models_for_children
+                        models_present.append(includes_model)
+
+                rows.append(models_present)
         else:
             models_present = []
             column_headers.append(subtype_code)
@@ -170,9 +235,26 @@ def make_subtype_context_sample_data():
         data=rows, index=column_headers, columns=model_ids
     )
     subtype_context_matrix = subtype_context_matrix.transpose()
-    breakpoint()
-    subtype_context_matrix.to_csv("sample_subtype_matrix_with_molecular_subtypes2.csv")
-    breakpoint()
+    subtype_context_matrix.to_csv(
+        "sample_subtype_matrix_with_molecular_subtypesFINAlFIXED.csv"
+    )
+
+
+def load_context_exp_sample_data():
+    full_tree = pd.read_csv("/Users/amourey/Downloads/alison-test_v17-subtypetree.csv")
+
+    level_0_nodes_of_interest = [
+        "Bone",
+        "Brain",
+        "Lung",
+        "Lymphoid",
+        "Myeloid",
+        "ALK Hotspot",
+        "EGFR",
+    ]
+    subsetted_tree = full_tree[full_tree["Level0"].isin(level_0_nodes_of_interest)]
+
+    subsetted_tree.to_csv("subtype_tree.csv")
 
 
 @namespace.route("/context_search_options")
@@ -180,12 +262,22 @@ class ContextSearchOptions(
     Resource
 ):  # the flask url_for endpoint is automagically the snake case of the namespace prefix plus class name
     def get(self):
-        lineage_context_name_info = _get_all_level_0_subtype_info(
-            tree_type=TreeType.Lineage
-        )
         molecular_subtype_context_name_info = _get_all_level_0_subtype_info(
             tree_type=TreeType.MolecularSubtype
         )
+        lineage_context_name_info = _get_all_level_0_subtype_info(
+            tree_type=TreeType.Lineage
+        )
+
+        # load_context_exp_sample_data()
+        # print("HERE")
+        # make_subtype_context_sample_data()
+        # breakpoint()
+        # load_subtype_contexts(
+        #     "/Users/amourey/dev/Context Explorer Data/sample_subtype_matrix_with_molecular_subtypes.csv"
+        # )
+        # db.session.commit()
+        # breakpoint()
 
         return {
             "lineage": lineage_context_name_info,
@@ -298,9 +390,8 @@ def get_context_explorer_lineage_trees_and_table_data(
     level_0_subtype_code: str,
 ) -> Tuple[Dict[str, ContextExplorerTree], List[Dict[str, Union[str, bool]]]]:
     node = SubtypeNode.get_by_code(level_0_subtype_code)
-    breakpoint()
 
-    subtype_tree_query = SubtypeNode.get_subtype_tree_query(
+    subtype_tree_query = SubtypeNode.get_subtype_tree_by_models_query(
         node.tree_type, level_0_subtype_code
     )
 
@@ -329,7 +420,7 @@ def get_context_explorer_lineage_trees_and_table_data(
 
     node_level = 0
     subtype_context = SubtypeContext.get_by_code(level_0_subtype_code)
-    model_ids = SubtypeContext.get_model_ids(subtype_context)
+    model_ids = SubtypeContext.get_model_ids_by_node_level(subtype_context, node_level)
     node_name = node.node_name
     root_node = ContextNode(
         name=node_name,
