@@ -860,6 +860,7 @@ def download_csv_and_view_interactive():
     display_name = request.args["display_name"]
     units = request.args["units"]
     file_url = request.args["url"]
+    use_de2 = request.args.get("de2", "T") == "T"
 
     url_upload_whitelist = flask.current_app.config["URL_UPLOAD_WHITELIST"]
 
@@ -878,7 +879,7 @@ def download_csv_and_view_interactive():
         abort(400)
 
     result = upload_transient_csv.apply(
-        args=[display_name, units, True, csv_path, False]
+        args=[display_name, units, True, csv_path, False, use_de2]
     )
 
     if result.state == TaskState.SUCCESS.value:
