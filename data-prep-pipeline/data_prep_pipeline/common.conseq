@@ -1,2 +1,3 @@
 include "cngene_log_2_transformation.conseq"
 include "filter_portal_compounds.conseq"
+include "update_hgnc_gene_table.conseq"

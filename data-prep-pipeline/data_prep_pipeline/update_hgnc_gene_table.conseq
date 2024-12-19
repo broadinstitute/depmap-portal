@@ -1,0 +1,22 @@
+include "release_inputs.conseq"
+
+rule update_hgnc_gene_table:
+    inputs:
+        hgnc_gene_table={"type": "hgnc_gene_table"},
+        release_taiga_id={"type": "release_taiga_id"},
+        update_taiga_script=fileref('upload_to_taiga.py', copy_to='upload_to_taiga.py')
+    outputs:
+        {
+            "type": "gene",
+            "filename": {"$filename": "hgnc_gene_table.csv"},
+            "orig_dataset_id": "{{inputs.hgnc_gene_table.dataset_id}}"
+        }
+    run "python3" with """
+        from taigapy import create_taiga_client_v3
+
+        tc = create_taiga_client_v3()
+        print("Getting HGNC gene data...")
+        hgnc_gene_df = tc.get("{{inputs.hgnc_gene_table.dataset_id}}")
+        hgnc_gene_df.to_csv("hgnc_gene_table.csv", index=False)
+    """
+    run "python3 upload_to_taiga.py hgnc_gene_table.csv 'Update HGNC gene data' {{inputs.release_taiga_id.dataset_id}} 'Gene' 'csv_table'"

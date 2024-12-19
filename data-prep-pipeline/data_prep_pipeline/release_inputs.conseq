@@ -1,8 +1,17 @@
+# Dataset ID
+
+add-if-missing {
+  "type": "release_taiga_id",
+  "dataset_id": "internal-24q2-3719.88"
+}
+
+# CN gene expression data
 add-if-missing {
   "type": "cngene",
   "dataset_id": "internal-24q2-3719.88/OmicsCNGene"
 }
 
+# Portal Compounds
 add-if-missing {
   "type": "repsdrug_matrix",
   "dataset_id": "repurposing-public-24q2-875f.4/Repurposing_Public_24Q2_Extended_Primary_Data_Matrix"
@@ -21,4 +30,10 @@ add-if-missing {
 add-if-missing {
   "type": "prism_oncology_reference_auc_matrix",
   "dataset_id": "internal-24q2-3719.88/PRISMOncologyReferenceAUCMatrix"
+}
+
+# HGNC Gene Table
+add-if-missing {
+  "type": "hgnc_gene_table",
+  "dataset_id": "hgnc-gene-table-e250.3/hgnc_complete_set"
 }
