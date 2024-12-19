@@ -5,6 +5,11 @@ add-if-missing {
   "dataset_id": "internal-24q2-3719.88"
 }
 
+add-if-missing {
+  "type": "predictability_taiga_id",
+  "dataset_id": "predictability-76d5.132"
+}
+
 # CN gene expression data
 add-if-missing {
   "type": "cngene",
@@ -37,3 +42,32 @@ add-if-missing {
   "type": "hgnc_gene_table",
   "dataset_id": "hgnc-gene-table-e250.3/hgnc_complete_set"
 }
+
+# Driver Events
+add-if-missing {
+  "type": "mutations",
+  "dataset_id": "internal-24q2-3719.88/OmicsSomaticMutations"
+}
+
+add-if-missing {
+  "type": "oncokb_annotated",
+  "dataset_id": "oncokb-annotated-mutations-7e2e.17/oncokb_annotated"
+}
+
+# Fusion
+add-if-missing {
+  "type": "fusion",
+  "dataset_id": "internal-24q2-3719.88/OmicsFusionFiltered"
+}
+
+# CRISPR Confounders
+add-if-missing {
+  "type": "achilles_screen_qc_report",
+  "dataset_id": "internal-24q2-3719.88/AchievesScreenQCReport"
+}
+
+add-if-missing {
+  "type": "crispr_screen_map",
+  "dataset_id": "internal-24q2-3719.88/CRISPRScreensMap"
+}
+
