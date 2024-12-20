@@ -160,8 +160,6 @@ def get_cell_line_description_tile_data(model_id: str) -> dict:
 
     model_info = {
         "image": image,
-        "primary_metastasis": model.primary_or_metastasis,
-        "sample_collection_site": model.sample_collection_site,
         "oncotree_lineage": oncotree_lineage,
         "oncotree_primary_disease": oncotree_primary_disease,
         "oncotree_subtype_and_code": {
@@ -170,41 +168,17 @@ def get_cell_line_description_tile_data(model_id: str) -> dict:
         }
         if oncotree_subtype
         else None,
-        "legacy_molecular_subtype": model.legacy_molecular_subtype,
-        "engineered_model": model.engineered_model,
-        "growth_pattern": model.growth_pattern,
-        "tissue_origin": model.tissue_origin,
-        "source_type": model.source_type,
-        "catalog_number": model.catalog_number,
-        "model_derivation_material": model.model_derivation_material,
-    }
-
-    patient_info = {
-        "patient_id": model.patient_id,
-        "age": model.age,
-        "age_category": model.age_category,
-        "sex": model.sex,
-        "race": model.patient_race,
-        "patient_molecular_subtype": model.patient_molecular_subtype,
-        "treatment_status": model.treatment_status,
-        "treatment_details": model.treatment_details,
-        "related_models": related_models,
-    }
-
-    id_info = {
-        "rrid": model.rrid,
-        "sanger_model_id": model.sanger_model_id,
-        "cosmic_id": model.cosmic_id,
-        "ccle_name": model.ccle_name,
         "aliases": [
             ali.alias
             for ali in selected_cell_line.cell_line_alias
             if ali.alias
             != selected_cell_line.cell_line_name  # filter out ccle name, since already shown on the page
         ],
+        "related_models": related_models,
+        "metadata": json.loads(model.json_encoded_metadata),
     }
 
-    return {"model_info": model_info, "patient_info": patient_info, "id_info": id_info}
+    return model_info
 
 
 @blueprint.route("/prefdep/<data_type>/<model_id>")
