@@ -13,6 +13,7 @@ import {
   ContextNameInfo,
   ContextSummary,
   TabTypes,
+  TreeType,
 } from "../models/types";
 import ContextExplorerPlot from "src/contextExplorer/components/ContexExplorerPlot";
 import OverviewTable from "src/contextExplorer/components/OverviewTable";
@@ -23,6 +24,7 @@ import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
 interface Props {
   selectedContextNameInfo: ContextNameInfo;
   selectedContextData: ContextSummary;
+  treeType: TreeType;
   checkedDataValues: number[][];
   checkedDatatypes: Set<string>;
   updateDatatypeSelection: (clicked: string) => void;
@@ -38,6 +40,7 @@ interface Props {
 
 const ContextExplorerTabs = ({
   selectedContextNameInfo,
+  treeType,
   selectedContextData,
   checkedDataValues,
   checkedDatatypes,
@@ -133,6 +136,7 @@ const ContextExplorerTabs = ({
           <ContextAnalysis
             selectedContextNameInfo={selectedContextNameInfo}
             topContextNameInfo={topContextNameInfo}
+            treeType={treeType}
             entityType={"gene"}
             customInfoImg={customInfoImg}
             datasetId={ContextExplorerDatasets.Chronos_Combined}
@@ -143,6 +147,7 @@ const ContextExplorerTabs = ({
           <ContextAnalysis
             selectedContextNameInfo={selectedContextNameInfo}
             topContextNameInfo={topContextNameInfo}
+            treeType={treeType}
             entityType={"compound"}
             customInfoImg={customInfoImg}
             datasetId={ContextExplorerDatasets.Rep_all_single_pt}
@@ -153,6 +158,7 @@ const ContextExplorerTabs = ({
           <ContextAnalysis
             selectedContextNameInfo={selectedContextNameInfo}
             topContextNameInfo={topContextNameInfo}
+            treeType={treeType}
             entityType={"compound"}
             customInfoImg={customInfoImg}
             datasetId={ContextExplorerDatasets.Prism_oncology_AUC}

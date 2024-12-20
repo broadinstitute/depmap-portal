@@ -5,9 +5,8 @@ import re
 from depmap.cell_line.models_new import DepmapModel
 from depmap.compound.models import Compound, CompoundExperiment
 from depmap.context_explorer.utils import (
-    get_box_plot_data_for_primary_disease,
-    get_box_plot_data_for_selected_lineage,
-    get_other_context_dependencies,
+    get_box_plot_data_for_other_category,
+    get_box_plot_data_for_context,
     get_full_row_of_values_and_depmap_ids,
     get_context_dose_curves,
     get_entity_id_from_entity_full_label,
@@ -20,7 +19,6 @@ from depmap.context.models_new import SubtypeContext
 from depmap.settings.shared import DATASET_METADATA
 from depmap.context_explorer.models import (
     ContextAnalysis,
-    ContextNameInfo,
     ContextNode,
     ContextExplorerTree,
 )
@@ -609,20 +607,17 @@ class ContextBoxPlotData(Resource):
         description="",
     )  # the flask url_for endpoint is automagically the snake case of the namespace prefix plus class name
     def get(self):
-        # Used to get the main box plot data
-        selected_context = request.args.get("selected_context")
+        selected_subtype_code = request.args.get("selected_subtype_code")
+        tree_type = request.args.get("tree_type")
+        out_group = request.args.get("out_group")
         dataset_name = request.args.get("dataset_name")
-        top_context = request.args.get("top_context")
-
-        # Used to get Other Context Dependencies
-        out_group_type = request.args.get("out_group_type")
         entity_type = request.args.get("entity_type")
         entity_full_label = request.args.get("entity_full_label")
         fdr = request.args.getlist("fdr", type=float)
         abs_effect_size = request.args.getlist("abs_effect_size", type=float)
         frac_dep_in = request.args.getlist("frac_dep_in", type=float)
 
-        box_plot_data = []
+        box_plot_data_list = []
 
         entity_id_and_label = get_entity_id_from_entity_full_label(
             entity_type=entity_type, entity_full_label=entity_full_label
@@ -630,13 +625,29 @@ class ContextBoxPlotData(Resource):
         entity_id = entity_id_and_label["entity_id"]
         entity_label = entity_id_and_label["label"]
 
-        is_lineage = selected_context == top_context
-        lineage_depmap_ids_names_dict = DepmapModel.get_model_ids_by_lineage_and_level(
-            top_context
+        # find all of the other significant contexts
+        other_sig_contexts = ContextAnalysis.get_other_context_dependencies(
+            subtype_code=selected_subtype_code,
+            tree_type=tree_type,
+            out_group=out_group,
+            entity_id=entity_id,
+            dataset_name=dataset_name,
+            entity_type=entity_type,
+            fdr=fdr,
+            abs_effect_size=abs_effect_size,
+            frac_dep_in=frac_dep_in,
+        )
+
+        other_sig_contexts_subtype_codes = [
+            context.subtype_code for context in other_sig_contexts
+        ]
+
+        contexts_to_plot = SubtypeContext.get_model_ids_for_node_branch(
+            other_sig_contexts_subtype_codes
         )
 
         (entity_full_row_of_values) = get_full_row_of_values_and_depmap_ids(
-            dataset_name=dataset_name, label=entity_full_label
+            dataset_name=dataset_name, label=entity_label
         )
         entity_full_row_of_values.dropna(inplace=True)
 
@@ -644,36 +655,30 @@ class ContextBoxPlotData(Resource):
             entity_full_row_of_values.mean() if entity_type == "compound" else None
         )
 
-        if is_lineage:
-            box_plot_data = get_box_plot_data_for_selected_lineage(
-                top_context=top_context,
-                lineage_depmap_ids=list(lineage_depmap_ids_names_dict.keys()),
+        for subtype_code in contexts_to_plot.keys():
+            box_plot_data = get_box_plot_data_for_context(
+                subtype_code=subtype_code,
                 entity_full_row_of_values=entity_full_row_of_values,
-                lineage_depmap_ids_names_dict=lineage_depmap_ids_names_dict,
+                model_ids_per_context=contexts_to_plot[subtype_code],
             )
-        else:
-            box_plot_data = get_box_plot_data_for_primary_disease(
-                selected_context=selected_context,
-                top_context=top_context,
-                lineage_depmap_ids=list(lineage_depmap_ids_names_dict.keys()),
-                entity_full_row_of_values=entity_full_row_of_values,
-                lineage_depmap_ids_names_dict=lineage_depmap_ids_names_dict,
-            )
+            box_plot_data_list.append(box_plot_data)
 
-        other_context_dependencies = get_other_context_dependencies(
-            in_group=selected_context,
-            out_group_type=out_group_type,
-            entity_type=entity_type,
-            entity_id=entity_id,
-            fdr=fdr,
-            abs_effect_size=abs_effect_size,
-            frac_dep_in=frac_dep_in,
-            full_row_of_values=entity_full_row_of_values,
+        heme_box_plot_data = get_box_plot_data_for_other_category(
+            category="heme",
+            significant_subtype_codes=list(contexts_to_plot.keys()),
+            entity_full_row_of_values=entity_full_row_of_values,
+        )
+
+        solid_box_plot_data = get_box_plot_data_for_other_category(
+            category="solid",
+            significant_subtype_codes=list(contexts_to_plot.keys()),
+            entity_full_row_of_values=entity_full_row_of_values,
         )
 
         return {
-            "box_plot_data": box_plot_data,
-            "other_context_dependencies": other_context_dependencies,
+            "box_plot_data": box_plot_data_list,
+            "other_heme_data": heme_box_plot_data,
+            "other_solid_data": solid_box_plot_data,
             "drug_dotted_line": drug_dotted_line,
             "entity_label": entity_label,
         }

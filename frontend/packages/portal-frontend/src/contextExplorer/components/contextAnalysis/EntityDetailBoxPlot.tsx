@@ -1,12 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { Checkbox } from "react-bootstrap";
 import {
-  BoxPlotTypes,
   ContextNameInfo,
   ContextPlotBoxData,
 } from "src/contextExplorer/models/types";
 import {
-  BLOOD_LINEAGES,
   COMPOUND_BOX_PLOT_X_AXIS_TITLE,
   GENE_BOX_PLOT_X_AXIS_TITLE,
 } from "src/contextExplorer/utils";
@@ -24,18 +22,12 @@ interface Props {
   handleShowOtherContexts: () => void;
 }
 
-const EntityBoxColorMap = new Map<
-  BoxPlotTypes,
-  { r: number; g: number; b: number }
->([
-  [BoxPlotTypes.SelectedLineage, { r: 0, g: 109, b: 91 }], // example: Bone
-  [BoxPlotTypes.SelectedPrimaryDisease, { r: 0, g: 109, b: 91 }],
-  [BoxPlotTypes.SameLineageType, { r: 233, g: 116, b: 81 }], // example: Other Solid
-  [BoxPlotTypes.SameLineage, { r: 53, g: 15, b: 138 }],
-  [BoxPlotTypes.OtherLineageType, { r: 170, g: 51, b: 106 }],
-]);
-
-const OtherColorOptions = [
+const EntityBoxColorList = [
+  { r: 0, g: 109, b: 91 },
+  { r: 0, g: 109, b: 91 },
+  { r: 233, g: 116, b: 81 },
+  { r: 53, g: 15, b: 138 },
+  { r: 170, g: 51, b: 106 },
   { r: 139, g: 0, b: 0 },
   { r: 254, g: 52, b: 126 },
   { r: 0, g: 100, b: 0 },
@@ -44,39 +36,6 @@ const OtherColorOptions = [
   { r: 138, g: 43, b: 226 },
   { r: 0, g: 191, b: 255 },
 ];
-
-function getPlotName(
-  type: BoxPlotTypes,
-  selectedContextNameInfo: ContextNameInfo,
-  topContextNameInfo: ContextNameInfo,
-  otherDepName: string
-) {
-  // TODO: Redo this logic??? Heme/Solid are now built into the Subtype Tree???
-  const lineageType =
-    BLOOD_LINEAGES.includes(topContextNameInfo.name) ||
-    BLOOD_LINEAGES.includes(topContextNameInfo.subtype_code)
-      ? "Heme"
-      : "Solid";
-
-  const otherLineageType = lineageType === "Solid" ? "Heme" : "Solid";
-
-  switch (type) {
-    case BoxPlotTypes.SelectedLineage:
-      return topContextNameInfo.name;
-    case BoxPlotTypes.SelectedPrimaryDisease:
-      return selectedContextNameInfo.name;
-    case BoxPlotTypes.SameLineage:
-      return `Other ${topContextNameInfo.name}`;
-    case BoxPlotTypes.OtherLineageType:
-      return `${otherLineageType}`;
-    case BoxPlotTypes.SameLineageType:
-      return `Other ${lineageType}`;
-    case BoxPlotTypes.Other:
-      return otherDepName;
-    default:
-      throw new Error(`Unrecognized plot type: ${type}`);
-  }
-}
 
 function EntityDetailBoxPlot({
   selectedContextNameInfo,
@@ -103,56 +62,21 @@ function EntityDetailBoxPlot({
     if (boxPlotData) {
       const plotInfo: BoxPlotInfo[] = [];
       const otherContextDepsInfo: BoxPlotInfo[] = [];
-      boxPlotData.box_plot_data.forEach((plotData) => {
+      boxPlotData.box_plot_data.forEach((plotData, index) => {
         if (plotData.data.length > 0) {
           plotInfo.push({
-            name: getPlotName(
-              plotData.type,
-              selectedContextNameInfo,
-              topContextNameInfo,
-              ""
-            ),
+            name: plotData.label,
             hoverLabels: plotData.cell_line_display_names,
             xVals: plotData.data,
-            color: EntityBoxColorMap.get(plotData.type) ?? {
-              r: 170,
-              g: 51,
-              b: 106,
-            },
+            color: EntityBoxColorList[index],
             lineColor: "#000000",
           });
-        }
-      });
-      let otherColorIndex = 0;
-      boxPlotData.other_context_dependencies.forEach((plotData) => {
-        if (plotData.data.length > 0) {
-          otherContextDepsInfo.push({
-            name: getPlotName(
-              plotData.type,
-              selectedContextNameInfo,
-              topContextNameInfo,
-              plotData.name
-            ),
-            hoverLabels: plotData.cell_line_display_names,
-            xVals: plotData.data,
-            color: OtherColorOptions[otherColorIndex],
-            lineColor: "#000000",
-          });
-
-          otherColorIndex += 1;
-          if (otherColorIndex > OtherColorOptions.length - 1) {
-            otherColorIndex = 0;
-          }
         }
       });
 
       if (plotInfo.length > 0) {
         plotInfo.reverse();
         setBoxData(plotInfo);
-      }
-
-      if (otherContextDepsInfo.length > 0) {
-        setOtherBoxData(otherContextDepsInfo);
       }
     }
   }, [boxPlotData, selectedContextNameInfo, topContextNameInfo]);

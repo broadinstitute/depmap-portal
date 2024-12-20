@@ -631,10 +631,10 @@ export class DepmapApi {
   }
 
   getContextExplorerBoxPlotData(
-    selected_context: string,
+    selected_subtype_code: string,
+    tree_type: string,
+    out_group: string,
     dataset_name: ContextExplorerDatasets,
-    top_context: string,
-    out_group_type: string,
     entity_type: string,
     entity_full_label: string,
     fdr: number[],
@@ -642,10 +642,10 @@ export class DepmapApi {
     frac_dep_in: number[]
   ): Promise<ContextPlotBoxData> {
     const params: any = {
-      selected_context,
+      selected_subtype_code,
+      tree_type,
       dataset_name,
-      top_context,
-      out_group_type: "All Others",
+      out_group: "All Others",
       entity_type,
       entity_full_label,
       fdr,

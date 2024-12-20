@@ -376,4 +376,201 @@ def test_get_subtype_tree_query_molecular_subtypes(empty_db_mock_downloads):
     ]
 
 
+# Make sure molecular subtype tree codes and lineage codes
+# don't get mixed into these results. All unique level0s should
+# be from a single tree type.
+def test_get_unique_level_0s(empty_db_mock_downloads):
+    # Create Lineage Nodes
+    lineage_node_1 = SubtypeNodeFactory(
+        subtype_code="BONE",
+        tree_type=TreeType.Lineage,
+        node_level=0,
+        level_0="BONE",
+        level_1=None,
+        level_2=None,
+        level_3=None,
+        level_4=None,
+        level_5=None,
+    )
+
+    BONE_context = SubtypeContextFactory(
+        subtype_code="BONE", depmap_model=[DepmapModelFactory()],
+    )
+
+    child1_level1_of_lineage_node_1 = SubtypeNodeFactory(
+        subtype_code="ES",
+        tree_type=TreeType.Lineage,
+        node_level=1,
+        level_0="BONE",
+        level_1="ES",
+        level_2=None,
+        level_3=None,
+        level_4=None,
+        level_5=None,
+    )
+
+    ES_LEVEL1_context = SubtypeContextFactory(
+        subtype_code="ES_LEVEL1_context", depmap_model=[DepmapModelFactory()],
+    )
+
+    child1_level2_of_child1_level1 = SubtypeNodeFactory(
+        subtype_code="ES_LEVEL2",
+        tree_type=TreeType.Lineage,
+        node_level=2,
+        level_0="BONE",
+        level_1="ES",
+        level_2="ES_LEVEL2",
+        level_3=None,
+        level_4=None,
+        level_5=None,
+    )
+
+    ES_LEVEL2_context = SubtypeContextFactory(
+        subtype_code="ES_LEVEL1_context", depmap_model=[DepmapModelFactory()],
+    )
+
+    child1_level3_of_child1_level1 = SubtypeNodeFactory(
+        subtype_code="ES_LEVEL3",
+        tree_type=TreeType.Lineage,
+        node_level=3,
+        level_0="BONE",
+        level_1="ES",
+        level_2="ES_LEVEL2",
+        level_3="ES_LEVEL3",
+        level_4=None,
+        level_5=None,
+    )
+
+    ES_LEVEL3_context = SubtypeContextFactory(
+        subtype_code="ES_LEVEL3_context", depmap_model=[DepmapModelFactory()],
+    )
+
+    child1_level4_of_child1_level1 = SubtypeNodeFactory(
+        subtype_code="ES_LEVEL4",
+        tree_type=TreeType.Lineage,
+        node_level=4,
+        level_0="BONE",
+        level_1="ES",
+        level_2="ES_LEVEL2",
+        level_3="ES_LEVEL3",
+        level_4="ES_LEVEL4",
+        level_5=None,
+    )
+
+    ES_LEVEL4_context = SubtypeContextFactory(
+        subtype_code="ES_LEVEL4", depmap_model=[DepmapModelFactory()],
+    )
+
+    child1_level5_of_child1_level1 = SubtypeNodeFactory(
+        subtype_code="ES_LEVEL5",
+        tree_type=TreeType.Lineage,
+        node_level=5,
+        level_0="BONE",
+        level_1="ES",
+        level_2="ES_LEVEL2",
+        level_3="ES_LEVEL3",
+        level_4="ES_LEVEL4",
+        level_5="ES_LEVEL5",
+    )
+
+    ES_LEVEL5_context = SubtypeContextFactory(
+        subtype_code="ES_LEVEL5", depmap_model=[DepmapModelFactory()],
+    )
+
+    child2_level1_of_lineage_node_1 = SubtypeNodeFactory(
+        subtype_code="OST",
+        tree_type=TreeType.Lineage,
+        node_level=1,
+        level_0="BONE",
+        level_1="OST",
+        level_2=None,
+        level_3=None,
+        level_4=None,
+        level_5=None,
+    )
+
+    OST_context = SubtypeContextFactory(
+        subtype_code="OST", depmap_model=[DepmapModelFactory()],
+    )
+
+    lineage_node_2 = SubtypeNodeFactory(
+        subtype_code="LUNG",
+        tree_type=TreeType.Lineage,
+        node_level=0,
+        level_0="LUNG",
+        level_1=None,
+        level_2=None,
+        level_3=None,
+        level_4=None,
+        level_5=None,
+    )
+
+    LUNG_context = SubtypeContextFactory(
+        subtype_code="LUNG", depmap_model=[DepmapModelFactory()],
+    )
+
+    lineage_node_2_level_1 = SubtypeNodeFactory(
+        subtype_code="LUNG_LEVEl1",
+        tree_type=TreeType.Lineage,
+        node_level=0,
+        level_0="LUNG",
+        level_1="LUNG_LEVEl1",
+        level_2=None,
+        level_3=None,
+        level_4=None,
+        level_5=None,
+    )
+
+    selected_context = SubtypeContextFactory(
+        subtype_code="ES_LEVEL4",
+        depmap_model=[DepmapModelFactory(), DepmapModelFactory(), DepmapModelFactory()],
+    )
+
+    # Create Molecular Subtype Nodes
+    parent_code = "EGFR"
+    child_code = "EGFRp.L858R"
+    parent_node = SubtypeNodeFactory(
+        subtype_code=parent_code,
+        tree_type=TreeType.MolecularSubtype,
+        node_level=0,
+        level_0=parent_code,
+        level_1=None,
+        level_2=None,
+        level_3=None,
+        level_4=None,
+        level_5=None,
+    )
+    child_node = SubtypeNodeFactory(
+        subtype_code=child_code,
+        tree_type=TreeType.MolecularSubtype,
+        node_level=1,
+        level_0=parent_code,
+        level_1=child_code,
+        level_2=None,
+        level_3=None,
+        level_4=None,
+        level_5=None,
+    )
+    parent_models = [
+        DepmapModelFactory(model_id="a"),
+        DepmapModelFactory(model_id="b"),
+    ]
+
+    child_models = [parent_models[0]]
+    parent_context = SubtypeContextFactory(
+        subtype_code=parent_code, depmap_model=parent_models
+    )
+    child_context = SubtypeContextFactory(
+        subtype_code=child_code, depmap_model=child_models
+    )
+    empty_db_mock_downloads.session.flush()
+    expected_unique_level_0s = ["BONE", "LUNG"]
+
+    unique_level_0s = SubtypeContext.get_unique_level_0s(
+        ["ES_LEVEL2", "ES_LEVEL3", "ES_LEVEL4", "OST", "LUNG_LEVEl1"]
+    )
+
+    assert unique_level_0s == expected_unique_level_0s
+
+
 # TODO: Make sure no molecular subtype codes could end up in the lineage tree and vice versa

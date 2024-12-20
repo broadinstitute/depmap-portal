@@ -6,7 +6,7 @@ import numpy as np
 
 from depmap import data_access
 from depmap.context.models import Context
-from depmap.context.models_new import SubtypeNode
+from depmap.context.models_new import SubtypeNode, SubtypeContext
 from depmap.dataset.models import Dataset, DependencyDataset
 from depmap.compound.models import (
     CompoundExperiment,
@@ -15,10 +15,6 @@ from depmap.compound.models import (
     Compound,
 )
 from depmap.gene.models import Gene
-from depmap.context_explorer.models import (
-    BoxPlotTypes,
-    ContextAnalysis,
-)
 import re
 
 
@@ -33,225 +29,66 @@ def get_full_row_of_values_and_depmap_ids(dataset_name: str, label: str) -> pd.S
     return full_row_of_values
 
 
-def get_other_context_dependencies(
-    in_group: str,
-    out_group_type: str,
-    entity_type: Literal["gene", "compound"],
-    entity_id: int,
-    fdr: List[float],
-    abs_effect_size: List[float],
-    frac_dep_in: List[float],
-    full_row_of_values: pd.Series,
+def get_box_plot_data_for_other_category(
+    category: Literal["heme", "solid"],
+    significant_subtype_codes: List[str],
+    entity_full_row_of_values,
 ):
+    heme_model_ids = (
+        SubtypeContext.get_model_ids_for_other_heme_contexts(
+            subtype_codes_to_filter_out=significant_subtype_codes
+        )
+        if category == "heme"
+        else SubtypeContext.get_model_ids_for_other_solid_contexts(
+            subtype_codes_to_filter_out=significant_subtype_codes
+        )
+    )
+    heme_values = entity_full_row_of_values[
+        entity_full_row_of_values.index.isin(heme_model_ids)
+    ]
 
-    other_context_dependencies = ContextAnalysis.get_other_context_dependencies(
-        subtype_code=in_group,
-        out_group=out_group_type,
-        entity_id=entity_id,
-        entity_type=entity_type,
-        fdr=fdr,
-        abs_effect_size=abs_effect_size,
-        frac_dep_in=frac_dep_in,
+    heme_values.dropna(inplace=True)
+
+    display_names_series = DepmapModel.get_cell_line_display_names(
+        model_ids=heme_model_ids
+    )
+    display_names_dict = display_names_series.to_dict()
+
+    context_values_index_by_display_name = heme_model_ids.rename(
+        index=display_names_dict
     )
 
-    other_ctxt_dep_names = [dep[0] for dep in other_context_dependencies]
+    return {
+        "label": "Heme" if category == "heme" else "Solid",
+        "data": context_values_index_by_display_name.tolist(),
+        "cell_line_display_names": context_values_index_by_display_name.index.tolist(),
+    }
 
-    box_plot_data = []
-    for other_dep_name in other_ctxt_dep_names:
-        # Not sure how to tell whether the name is a primary_disease or lineage other than trying both
-        depmap_ids_names_dict = DepmapModel.get_model_ids_by_primary_disease(
-            other_dep_name
-        )
 
-        if not depmap_ids_names_dict:
-            depmap_ids_names_dict = DepmapModel.get_model_ids_by_lineage_and_level(
-                other_dep_name
-            )
+def get_box_plot_data_for_context(
+    subtype_code: str, entity_full_row_of_values, model_ids: List[str],
+):
+    context_values = entity_full_row_of_values[
+        entity_full_row_of_values.index.isin(model_ids)
+    ]
+    context_values.dropna(inplace=True)
 
-        box_plot_values = full_row_of_values[
-            full_row_of_values.index.isin(depmap_ids_names_dict.keys())
-        ]
-        box_plot_values.dropna(inplace=True)
-        box_plot_values_by_display_name = box_plot_values.rename(
-            index=depmap_ids_names_dict
-        )
-        display_name = Context.get_display_name(other_dep_name)
-        box_plot_data.append(
-            {
-                "name": display_name,
-                "type": BoxPlotTypes.Other.value,
-                "data": box_plot_values_by_display_name.tolist(),
-                "cell_line_display_names": box_plot_values_by_display_name.index.tolist(),
-            }
-        )
+    display_names_series = DepmapModel.get_cell_line_display_names(model_ids=model_ids)
+    display_names_dict = display_names_series.to_dict()
+
+    context_values_index_by_display_name = context_values.rename(
+        index=display_names_dict
+    )
+
+    node = SubtypeNode.get_by_code(subtype_code)
+
+    box_plot_data = {
+        "label": node.node_name,
+        "data": context_values_index_by_display_name.tolist(),
+        "cell_line_display_names": context_values_index_by_display_name.index.tolist(),
+    }
 
     return box_plot_data
-
-
-def _get_same_and_other_lineage_type_values(
-    lineage_type: LineageType, entity_full_row_of_values, selected_lineage_name: str,
-):
-    opposite_type = (
-        LineageType.Solid if lineage_type == LineageType.Heme else LineageType.Heme
-    )
-    same_lineage_type_depmap_ids_dict = DepmapModel.get_model_ids_by_lineage_type_filtering_out_specific_lineage(
-        lineage_type, selected_lineage_name
-    )
-
-    same_lineage_type_values = entity_full_row_of_values[
-        entity_full_row_of_values.index.isin(same_lineage_type_depmap_ids_dict.keys())
-    ]
-    same_lineage_type_values.dropna(inplace=True)
-    same_lineage_type_values_by_display_name = same_lineage_type_values.rename(
-        index=same_lineage_type_depmap_ids_dict
-    )
-
-    other_lineage_type_depmap_ids_dict = DepmapModel.get_model_ids_by_lineage_type_filtering_out_specific_lineage(
-        opposite_type, selected_lineage_name
-    )
-    other_lineage_type_values = entity_full_row_of_values[
-        entity_full_row_of_values.index.isin(other_lineage_type_depmap_ids_dict.keys())
-    ]
-    other_lineage_type_values.dropna(inplace=True)
-    other_lineage_type_values_by_display_name = other_lineage_type_values.rename(
-        index=other_lineage_type_depmap_ids_dict
-    )
-
-    return (
-        same_lineage_type_values_by_display_name,
-        other_lineage_type_values_by_display_name,
-    )
-
-
-def _get_lineage_type_from_top_context(top_context: str):
-    lineage_type = (
-        LineageType.Solid
-        if top_context.lower() != "myeloid" and top_context.lower() != "lymphoid"
-        else LineageType.Heme
-    )
-
-    return lineage_type
-
-
-def _get_lineage_type_box_plot_data(top_context: str, entity_full_row_of_values):
-    box_plot_data = []
-    lineage_type = _get_lineage_type_from_top_context(top_context=top_context)
-
-    (
-        same_lineage_type_values_by_display_name,
-        other_lineage_type_values_by_display_name,
-    ) = _get_same_and_other_lineage_type_values(
-        lineage_type=lineage_type,
-        entity_full_row_of_values=entity_full_row_of_values,
-        selected_lineage_name=top_context,
-    )
-
-    box_plot_data.append(
-        {
-            "type": BoxPlotTypes.SameLineageType.value,
-            "data": same_lineage_type_values_by_display_name.tolist(),
-            "cell_line_display_names": same_lineage_type_values_by_display_name.index.tolist(),
-        }
-    )
-
-    box_plot_data.append(
-        {
-            "type": BoxPlotTypes.OtherLineageType.value,
-            "data": other_lineage_type_values_by_display_name.tolist(),
-            "cell_line_display_names": other_lineage_type_values_by_display_name.index.tolist(),
-        }
-    )
-
-    return box_plot_data
-
-
-def get_box_plot_data_for_selected_lineage(
-    lineage_depmap_ids: List[str],
-    entity_full_row_of_values,
-    top_context: str,
-    lineage_depmap_ids_names_dict: Dict[str, str],
-):
-    box_plot_data = []
-    lineage_values = entity_full_row_of_values[
-        entity_full_row_of_values.index.isin(lineage_depmap_ids)
-    ]
-    lineage_values.dropna(inplace=True)
-    lineage_values_index_by_display_name = lineage_values.rename(
-        index=lineage_depmap_ids_names_dict
-    )
-
-    box_plot_data.append(
-        {
-            "type": BoxPlotTypes.SelectedLineage.value,
-            "data": lineage_values_index_by_display_name.tolist(),
-            "cell_line_display_names": lineage_values_index_by_display_name.index.tolist(),
-        }
-    )
-
-    lineage_type_box_plot_data = _get_lineage_type_box_plot_data(
-        top_context=top_context, entity_full_row_of_values=entity_full_row_of_values,
-    )
-
-    return box_plot_data + lineage_type_box_plot_data
-
-
-def get_box_plot_data_for_primary_disease(
-    selected_context: str,
-    top_context: str,
-    lineage_depmap_ids: List[str],
-    entity_full_row_of_values,
-    lineage_depmap_ids_names_dict: Dict[str, str],
-):
-    box_plot_data = []
-    primary_disease_depmap_ids_names_dict = DepmapModel.get_model_ids_by_primary_disease(
-        selected_context
-    )
-    primary_disease_values = entity_full_row_of_values[
-        entity_full_row_of_values.index.isin(
-            primary_disease_depmap_ids_names_dict.keys()
-        )
-    ]
-    primary_disease_values.dropna(inplace=True)
-
-    primary_disease_values_index_by_display_name = primary_disease_values.rename(
-        index=primary_disease_depmap_ids_names_dict
-    )
-
-    box_plot_data.append(
-        {
-            "type": BoxPlotTypes.SelectedPrimaryDisease.value,
-            "data": primary_disease_values_index_by_display_name.tolist(),
-            "cell_line_display_names": primary_disease_values_index_by_display_name.index.tolist(),
-        }
-    )
-
-    # e.g. Other Bone
-    same_lineage_ids = [
-        i
-        for i in lineage_depmap_ids
-        if not i in primary_disease_depmap_ids_names_dict.keys()
-    ]
-    same_lineage_values = entity_full_row_of_values[
-        entity_full_row_of_values.index.isin(same_lineage_ids)
-    ]
-    same_lineage_values.dropna(inplace=True)
-    same_lineage_values_by_display_name = same_lineage_values.rename(
-        index=lineage_depmap_ids_names_dict
-    )
-
-    box_plot_data.append(
-        {
-            "type": BoxPlotTypes.SameLineage.value,
-            "data": same_lineage_values_by_display_name.tolist(),
-            "cell_line_display_names": same_lineage_values_by_display_name.index.tolist(),
-        }
-    )
-
-    lineage_type_box_plot_data = _get_lineage_type_box_plot_data(
-        top_context=top_context, entity_full_row_of_values=entity_full_row_of_values
-    )
-
-    return box_plot_data + lineage_type_box_plot_data
 
 
 def has_gene_dep_data(cirspr_depmap_ids: List[str], context_depmap_ids: List[str]):

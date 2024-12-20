@@ -12,7 +12,7 @@ from depmap.database import (
 )
 import enum
 import sqlalchemy
-from sqlalchemy import and_
+from sqlalchemy import and_, or_
 from depmap.entity.models import Entity
 import pandas as pd
 from depmap.cell_line.models_new import DepmapModel, depmap_model_context_association
@@ -208,6 +208,128 @@ class SubtypeContext(Model):
     def get_cell_line_names(self) -> List["str"]:
         cell_lines = [cell_line.cell_line_name for cell_line in self.depmap_model]
         return cell_lines
+
+    @staticmethod
+    def get_model_ids_for_node_branch(
+        subtype_codes: List[str],
+    ) -> Optional[Dict[str, List[str]]]:
+        nodes = (
+            db.session.query(SubtypeNode)
+            .filter(
+                or_(
+                    SubtypeNode.level_0.in_(subtype_codes),
+                    SubtypeNode.level_1.in_(subtype_codes),
+                    SubtypeNode.level_2.in_(subtype_codes),
+                    SubtypeNode.level_3.in_(subtype_codes),
+                    SubtypeNode.level_4.in_(subtype_codes),
+                    SubtypeNode.level_5.in_(subtype_codes),
+                )
+            )
+            .all()
+        )
+
+        if len(nodes) == 0:
+            return None
+
+        node_models = {}
+        for node in nodes:
+            level_0 = SubtypeContext.get_by_code(node.level_0, must=False)
+            node_models[level_0.subtype_code] = [
+                model.model_id for model in level_0.depmap_model
+            ]
+
+            if node.level_1:
+                level_1 = SubtypeContext.get_by_code(node.level_1, must=False)
+
+                if level_1:
+                    node_models[level_1.subtype_code] = [
+                        model.model_id for model in level_1.depmap_model
+                    ]
+
+            if node.level_2:
+                level_2 = SubtypeContext.get_by_code(node.level_2, must=False)
+
+                if level_2:
+                    node_models[level_2.subtype_code] = [
+                        model.model_id for model in level_2.depmap_model
+                    ]
+
+            if node.level_3:
+                level_3 = SubtypeContext.get_by_code(node.level_3, must=False)
+
+                if level_3:
+                    node_models[level_3.subtype_code] = [
+                        model.model_id for model in level_3.depmap_model
+                    ]
+
+            if node.level_4:
+                level_4 = SubtypeContext.get_by_code(node.level_4, must=False)
+
+                if level_4:
+                    node_models[level_4.subtype_code] = [
+                        model.model_id for model in level_4.depmap_model
+                    ]
+
+            if node.level_5:
+                level_5 = SubtypeContext.get_by_code(node.level_5, must=False)
+
+                if level_5:
+                    node_models[level_5.subtype_code] = [
+                        model.model_id for model in level_5.depmap_model
+                    ]
+
+        return node_models
+
+    @staticmethod
+    def get_model_ids_for_other_solid_contexts(
+        subtype_codes_to_filter_out: List[str],
+    ) -> Dict[str, str]:
+        contexts = (
+            db.session.query(SubtypeContext)
+            .filter(
+                and_(
+                    SubtypeContext.subtype_code != "MYELOID",
+                    SubtypeContext.subtype_code != "LYMPH",
+                    SubtypeContext.subtype_code.notin_(subtype_codes_to_filter_out),
+                )
+            )
+            .all()
+        )
+
+        model_ids = [context.model_id for context in contexts]
+        display_name_series = DepmapModel.get_cell_line_display_names(
+            model_ids=model_ids
+        )
+        display_name_dict = display_name_series.to_dict()
+
+        return display_name_dict
+
+    @staticmethod
+    def get_model_ids_for_other_heme_contexts(
+        subtype_codes_to_filter_out: List[str],
+    ) -> Dict[str, str]:
+
+        contexts = (
+            db.session.query(SubtypeContext)
+            .filter(
+                and_(
+                    or_(
+                        SubtypeContext.subtype_code == "MYELOID",
+                        SubtypeContext.subtype_code == "LYMPH",
+                    ),
+                    SubtypeContext.subtype_code.notin_(subtype_codes_to_filter_out),
+                )
+            )
+            .all()
+        )
+
+        model_ids = [context.model_id for context in contexts]
+        display_name_series = DepmapModel.get_cell_line_display_names(
+            model_ids=model_ids
+        )
+        display_name_dict = display_name_series.to_dict()
+
+        return display_name_dict
 
     @staticmethod
     def get_model_ids_by_node_level(self, level) -> List["str"]:

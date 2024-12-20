@@ -230,18 +230,8 @@ def get_context_analysis_query(
     return query
 
 
-class OutGroupType(enum.Enum):
-    All = "All"
-    Lineage = "Lineage"
-    Type = "Type"
-
-
 class BoxPlotTypes(enum.Enum):
     SelectedLineage = "SelectedLineage"
-    SelectedPrimaryDisease = "SelectedPrimaryDisease"
-    SameLineage = "SameLineage"
-    SameLineageType = "SameLineageType"
-    OtherLineageType = "OtherLineageType"
     Other = "Other"
 
 
@@ -341,8 +331,10 @@ class ContextAnalysis(Model):
     @staticmethod
     def get_other_context_dependencies(
         subtype_code: str,
+        tree_type: str,
         out_group: str,
         entity_id: int,
+        dataset_name: str,
         entity_type: Literal["gene", "compound"],
         fdr: List[float],
         abs_effect_size: List[float],
@@ -354,6 +346,7 @@ class ContextAnalysis(Model):
                     and_(
                         ContextAnalysis.subtype_code != subtype_code,
                         ContextAnalysis.out_group == out_group,
+                        ContextAnalysis.dataset_name == dataset_name,
                         ContextAnalysis.entity_id == entity_id,
                         ContextAnalysis.t_qval >= fdr[0],
                         ContextAnalysis.t_qval <= fdr[1],
@@ -368,6 +361,7 @@ class ContextAnalysis(Model):
                     SubtypeNode,
                     SubtypeNode.subtype_code == ContextAnalysis.subtype_code,
                 )
+                .filter(SubtypeNode.tree_type == tree_type)
                 # Need the node name AND code, because node_names are not always unique, but codes are
                 .with_entities(SubtypeNode.node_name, SubtypeNode.subtype_code,)
                 .order_by(desc(ContextAnalysis.mean_in))
@@ -379,6 +373,7 @@ class ContextAnalysis(Model):
                     and_(
                         ContextAnalysis.subtype_code != subtype_code,
                         ContextAnalysis.out_group == out_group,
+                        ContextAnalysis.dataset_name == dataset_name,
                         ContextAnalysis.entity_id == entity_id,
                         ContextAnalysis.t_qval >= fdr[0],
                         ContextAnalysis.t_qval <= fdr[1],
@@ -394,6 +389,7 @@ class ContextAnalysis(Model):
                     SubtypeNode,
                     SubtypeNode.subtype_code == ContextAnalysis.subtype_code,
                 )
+                .filter(SubtypeNode.tree_type == tree_type)
                 # Need the node name AND code, because node_names are not always unique, but codes are
                 .with_entities(SubtypeNode.node_name, SubtypeNode.subtype_code,)
                 .order_by(desc(ContextAnalysis.mean_in))

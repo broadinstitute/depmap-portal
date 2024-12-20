@@ -180,24 +180,14 @@ export type ContextAnalysisTableType = {
   label: string[];
 };
 
-export enum BoxPlotTypes {
-  SelectedLineage = "SelectedLineage",
-  SelectedPrimaryDisease = "SelectedPrimaryDisease",
-  SameLineage = "SameLineage",
-  SameLineageType = "SameLineageType",
-  OtherLineageType = "OtherLineageType",
-  Other = "Other",
-}
-
 export type ContextPlotBoxData = {
   box_plot_data: {
-    type: BoxPlotTypes;
+    label: string;
     data: number[];
     cell_line_display_names: string[];
   }[];
   other_context_dependencies: {
-    name: string;
-    type: BoxPlotTypes;
+    label: string;
     data: number[];
     cell_line_display_names: string[];
   }[];

@@ -211,6 +211,7 @@ export const ContextExplorer = () => {
             <ContextExplorerTabs
               topContextNameInfo={topContextNameInfo}
               selectedContextNameInfo={selectedContextNameInfo}
+              treeType={selectedTreeType}
               selectedContextData={selectedContextData}
               checkedDataValues={checkedDataValues}
               checkedDatatypes={checkedDatatypes}

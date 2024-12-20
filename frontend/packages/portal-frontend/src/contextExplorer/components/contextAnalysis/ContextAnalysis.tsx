@@ -14,6 +14,7 @@ import {
   ContextNameInfo,
   ContextPlotBoxData,
   OutGroupType,
+  TreeType,
 } from "../../models/types";
 import {
   LEGEND_ALL,
@@ -60,6 +61,7 @@ import ApplyFilters from "./ApplyFilters";
 interface ContextAnalysisProps {
   selectedContextNameInfo: ContextNameInfo;
   topContextNameInfo: ContextNameInfo;
+  treeType: TreeType;
   entityType: string;
   customInfoImg: React.JSX.Element;
   datasetId: ContextExplorerDatasets;
@@ -68,6 +70,7 @@ interface ContextAnalysisProps {
 function ContextAnalysis({
   selectedContextNameInfo,
   topContextNameInfo,
+  treeType,
   entityType,
   customInfoImg,
   datasetId,
@@ -659,10 +662,10 @@ function ContextAnalysis({
       setEntityDetailPlotElement(null);
       setIsLoadingBoxplot(true);
       const boxplotPromise = dapi.getContextExplorerBoxPlotData(
-        selectedContextNameInfo.name,
-        datasetId,
-        topContextNameInfo.name,
+        selectedContextNameInfo.subtype_code,
+        treeType,
         outgroup.value,
+        datasetId,
         entityType,
         [...selectedPlotLabels][0],
         boxPlotFDRRange,
