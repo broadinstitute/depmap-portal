@@ -11,8 +11,8 @@ const OncogenicAlterationsTile = ({
   oncogenicAlterations,
   oncokbDatasetVersion,
 }: OncogenicAlterationsTileProps) => {
-  const tableRows = oncogenicAlterations.map((alteration) => (
-    <tr key={alteration.alteration}>
+  const tableRows = oncogenicAlterations.map((alteration, i) => (
+    <tr key={i}>
       <td>
         <a href={`https://www.oncokb.org/gene/${alteration.gene.name}`}>
           {alteration.gene.name}
