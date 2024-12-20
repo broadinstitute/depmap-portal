@@ -48,7 +48,7 @@ with open(args.output_filename, "w") as output_file:
   schema, we'll be able to detect any UI dependencies as long as they're typed using {type_name_}.
 */
 
-interface {type_name_} {{
+export interface {type_name_} {{
 {"".join([f'  {x}{nl}' for x in prop_types])}}};
     """
     )

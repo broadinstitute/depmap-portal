@@ -11,7 +11,7 @@
   schema, we'll be able to detect any UI dependencies as long as they're typed using ModelAnnotation.
 */
 
-interface ModelAnnotation {
+export interface ModelAnnotation {
   ModelID: string;
   PatientID: string;
   CellLineName: string;
