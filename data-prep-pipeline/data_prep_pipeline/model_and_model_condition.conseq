@@ -22,3 +22,4 @@ rule generate_model_and_model_condition:
     run "python3 {{inputs.update_taiga_script.filename}} model.csv 'Generated model data' {{inputs.predictability_taiga_id.dataset_id}} 'Model' 'csv_table'"
     run "python3 {{inputs.update_taiga_script.filename}} model_condition.csv 'Generated model condition data' {{inputs.predictability_taiga_id.dataset_id}} 'ModelCondition' 'csv_table'"
     run "python3 {{inputs.update_taiga_script.filename}} model_diff.csv 'Generated model diff data' {{inputs.predictability_taiga_id.dataset_id}} 'ModelDiff' 'csv_table'"
+    
