@@ -1,4 +1,6 @@
-import importlib
+# Creates a typescript interface definition based on pandantic schema definition from a python file
+# Used to ensure front end is aware of what the columns exist based on the definition that we have in python-land
+
 import sys
 from pandera import SchemaModel, Column
 import argparse

@@ -188,24 +188,17 @@ class CellLineFactory(SQLAlchemyModelFactory):
 class DepmapModelFactory(SQLAlchemyModelFactory):
     class Meta:
         model = DepmapModel
-
         sqlalchemy_session = _db.session
 
     stripped_cell_line_name = factory.Sequence(lambda number: "{}".format(number))
     model_id = factory.Sequence(lambda number: "ACH-{}".format(number))
-    # patient_id = factory.Sequence(lambda number: "ACH-{}".format(number))
-    #
     cell_line_name = factory.Sequence(lambda number: "cell_line_{}".format(number))
-    # cell_line_alias = factory.LazyAttribute(lambda o: [CellLineAliasFactory()])
-    # age_category = factory.Sequence(lambda number: "age_category_{}".format(number))
 
     cell_line = factory.SubFactory(
         CellLineFactory,
         depmap_id=factory.SelfAttribute("..model_id"),
         cell_line_display_name=factory.SelfAttribute("..stripped_cell_line_name"),
     )
-    # TODO: Add back in once we're fully reliant on DepmapModel table. For now, CellLineFactory creates the LineageFactory.
-    # oncotree_lineage = factory.LazyAttribute(lambda o: [LineageFactory()])
 
 
 class EntityFactory(SQLAlchemyModelFactory):
