@@ -133,6 +133,7 @@ def get_cell_line_description_tile_data(model_id: str) -> dict:
 
     if model is None:
         abort(404)
+    assert model is not None
 
     image = get_image_url(model.image_filename)
 
