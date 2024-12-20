@@ -65,12 +65,10 @@ const HowDoICiteSection = ({
               )}
               <div style={{ marginBottom: "35px" }}>
                 <b>If you’d like to cite The DepMap project:</b> <br />
-                Tsherniak A, Vazquez F, Montgomery PG, Weir BA, Kryukov G,
-                Cowley GS, Gill S, Harrington WF, Pantel S, Krill-Burger JM,
-                Meyers RM, Ali L, Goodale A, Lee Y, Jiang G, Hsiao J, Gerath
-                WFJ, Howell S, Merkel E, Ghandi M, Garraway LA, Root DE, Golub
-                TR, Boehm JS, Hahn WC. Defining a Cancer Dependency Map. Cell.
-                2017 Jul 27;170(3):564-576.
+                Arafeh, R., Shibue, T., Dempster, J. M., Hahn, W. C., & Vazquez,
+                F. (2024). The present and future of the Cancer Dependency Map.{" "}
+                <i>Nature Reviews</i>. Cancer.
+                https://doi.org/10.1038/s41568-024-00763-x
               </div>
               <div>
                 <b>Other datasets</b>
