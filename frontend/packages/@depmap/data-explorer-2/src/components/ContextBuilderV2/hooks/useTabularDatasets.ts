@@ -1,10 +1,10 @@
-import { useContext, useEffect, useState } from "react";
-import { ApiContext } from "@depmap/api";
+import { useEffect, useState } from "react";
 import { TabularDataset } from "@depmap/types";
+import { useDataExplorerApi } from "../../../contexts/DataExplorerApiContext";
 import { useContextBuilderState } from "../state/ContextBuilderState";
 
 export default function useTabularDatasets() {
-  const { getApi } = useContext(ApiContext);
+  const api = useDataExplorerApi();
   const { dimension_type } = useContextBuilderState();
   const [metadataDataset, setMetadataDataset] = useState<TabularDataset>();
   const [otherTabularDatasets, setOtherTabularDatasets] = useState<
@@ -17,8 +17,8 @@ export default function useTabularDatasets() {
   useEffect(() => {
     (async () => {
       const [types, datasets] = await Promise.all([
-        getApi().getDimensionTypes(),
-        getApi().getBreadboxDatasets(),
+        api.fetchDimensionTypes(),
+        api.fetchDatasets(),
       ]);
 
       const dimType = types.find((t) => t.name === dimension_type);
@@ -56,7 +56,7 @@ export default function useTabularDatasets() {
       setOtherTabularDatasets(others);
       setIsLoadingTabularDatasets(false);
     })();
-  }, [dimension_type, getApi]);
+  }, [api, dimension_type]);
 
   return {
     metadataDataset,

@@ -135,16 +135,18 @@ def get_cell_line_url_root():
 
 @blueprint.route("/api/getDatasets")
 def get_datasets():
-    """Return all matrix datasets (both breadbox and legacy datasets)."""
+    """
+    Returns matrix datasets (both breadbox and legacy datasets) sorted alphabetically.
+    Only matrices with a sample type of "depmap_model" are included.
+    Data Explorer 1 and Custom Analysis can't handle other sample types.
+    """
     combined_datasets = []
     for dataset in data_access.get_all_matrix_datasets():
-        if dataset.is_continuous:
+        if dataset.is_continuous and dataset.sample_type == "depmap_model":
             combined_datasets.append(dict(label=dataset.label, value=dataset.id,))
     combined_datasets = sorted(
-        combined_datasets,
-        key=lambda dataset: data_access.get_sort_key(dataset["value"]),
+        combined_datasets, key=lambda dataset: dataset.get("label"),
     )
-
     return jsonify(combined_datasets)
 
 
@@ -862,6 +864,7 @@ def download_csv_and_view_interactive():
     display_name = request.args["display_name"]
     units = request.args["units"]
     file_url = request.args["url"]
+    use_de2 = request.args.get("de2", "T") == "T"
 
     url_upload_whitelist = flask.current_app.config["URL_UPLOAD_WHITELIST"]
 
@@ -880,7 +883,7 @@ def download_csv_and_view_interactive():
         abort(400)
 
     result = upload_transient_csv.apply(
-        args=[display_name, units, True, csv_path, False]
+        args=[display_name, units, True, csv_path, False, use_de2]
     )
 
     if result.state == TaskState.SUCCESS.value:

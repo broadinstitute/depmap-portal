@@ -301,6 +301,7 @@ class BBClient:
         is_transient: bool = False,
         group_id: str = PUBLIC_GROUP_ID,
         value_type: str = ValueType.CONTINUOUS.value,
+        allowed_values: Optional[List[str]] = None,
         priority: Optional[int] = None,
         taiga_id: Optional[str] = None,
         given_id: Optional[str] = None,
@@ -313,14 +314,17 @@ class BBClient:
         metadata = MatrixDatasetParamsDatasetMetadataType0.from_dict(dataset_metadata) if dataset_metadata else None
 
         if upload_parquet:
-            log_status(f"uploading as parquet")
             with tempfile.NamedTemporaryFile() as tmp:
+                log_status(f"writing parquet")
                 data_df.to_parquet(tmp.name, index=False)
+                log_status(f"uploading parquet")
                 uploaded_file = self.upload_file(tmp)
             data_file_format=MatrixDatasetParamsDataFileFormat.PARQUET
         else:
-            log_status(f"uploading as csv")
-            uploaded_file = self.upload_file(file_handle=io.BytesIO(data_df.to_csv(index=False).encode("utf8")))
+            log_status("Writing CSV")
+            buffer = io.BytesIO(data_df.to_csv(index=False).encode("utf8"))
+            log_status(f"Uploading CSV")
+            uploaded_file = self.upload_file(file_handle=buffer)
             data_file_format=MatrixDatasetParamsDataFileFormat.CSV
 
         params = MatrixDatasetParams(
@@ -333,6 +337,7 @@ class BBClient:
             sample_type=sample_type,
             units=units,
             value_type=ValueType(value_type),
+            allowed_values=allowed_values if allowed_values else UNSET,
             dataset_metadata=metadata,
             feature_type=feature_type if feature_type else UNSET,
             is_transient=is_transient,

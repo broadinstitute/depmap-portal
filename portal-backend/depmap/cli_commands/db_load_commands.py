@@ -50,6 +50,7 @@ from loader import (
     dataset_loader,
     depmap_model_loader,
     gene_loader,
+    proteomics_loader,
     global_search_loader,
     match_related_loader,
     nonstandard_loader,
@@ -451,6 +452,22 @@ def _load_real_data(
             assert hgnc_file is not None
 
             gene_loader.load_hgnc_genes(hgnc_file, taiga_id=genes_hgnc_taiga_id)
+
+    with checkpoint("proteins-from-taiga") as needed:
+        if needed:
+            log.info("Adding protein table")
+
+            protein_metadata_taiga_id = (
+                "harmonized-public-proteomics-02cc.2/uniprot_hugo_entrez_id_mapping"
+            )
+            protein_metadata_file = taiga_client.download_to_cache(
+                protein_metadata_taiga_id, "csv_table"
+            )
+            assert protein_metadata_file is not None
+
+            proteomics_loader.load_protein_table(
+                protein_metadata_file, taiga_id=protein_metadata_taiga_id
+            )
 
     with checkpoint("compounds") as needed:
         if needed:

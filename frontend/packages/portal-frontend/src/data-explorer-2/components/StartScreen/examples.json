@@ -24,7 +24,7 @@
       "y": {
         "axis_type": "raw_slice",
         "slice_type": "gene",
-        "dataset_id": "copy_number_absolute",
+        "dataset_id": "OmicsAbsoluteCNGene",
         "aggregation": "first",
         "context": {
           "name": "VPS4B",

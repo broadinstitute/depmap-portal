@@ -271,7 +271,7 @@ export class ElaraApi {
       params.groupBy = groupBy;
     }
     return this._fetchWithJsonBody<BreadboxPlotFeatures>(
-      `/api/get-features?${encodeParams(params)}`,
+      `/api/get-features/?${encodeParams(params)}`,
       "POST",
       features
     );
@@ -282,7 +282,7 @@ export class ElaraApi {
   }
 
   getCellLineUrlRoot(): Promise<string> {
-    return this._fetch<string>(`/metadata/cellLineUrlRoot`);
+    return this._fetch<string>(`/metadata/cellLineUrlRoot/`);
   }
 
   getFeedbackUrl(): Promise<string> {
@@ -292,17 +292,17 @@ export class ElaraApi {
   // TODO: Need to move to bbAPI.ts?
   getCitationUrl(datasetId: string): Promise<string> {
     return this._fetch<string>(
-      `/download/citationUrl?${encodeParams({ dataset_id: datasetId })}`
+      `/download/citationUrl/?${encodeParams({ dataset_id: datasetId })}`
     );
   }
 
   exportData(query: ExportDataQuery): Promise<any> {
-    return this._fetchWithJsonBody<any>("/downloads/custom", "POST", query);
+    return this._fetchWithJsonBody<any>("/downloads/custom/", "POST", query);
   }
 
   exportDataForMerge(query: ExportMergedDataQuery): Promise<any> {
     return this._fetchWithJsonBody<any>(
-      "/downloads/custom_merged",
+      "/downloads/custom_merged/",
       "POST",
       query
     );
@@ -312,7 +312,7 @@ export class ElaraApi {
     query: FeatureValidationQuery
   ): Promise<ValidationResult> {
     return this._fetchWithJsonBody<any>(
-      "/downloads/data_slicer/validate_data_slicer_features",
+      "/downloads/data_slicer/validate_data_slicer_features/",
       "POST",
       query
     );
@@ -327,11 +327,11 @@ export class ElaraApi {
   }
 
   getDatasetsList(): Promise<DatasetDownloadMetadata[]> {
-    return this._fetch<DatasetDownloadMetadata[]>("/datasets");
+    return this._fetch<DatasetDownloadMetadata[]>("/datasets/");
   }
 
   getDatasets(): Promise<any> {
-    return this._fetch<Dataset[]>("/datasets").then((datasets) =>
+    return this._fetch<Dataset[]>("/datasets/").then((datasets) =>
       datasets.map(({ id, name }) => ({ label: name, value: id }))
     );
   }
@@ -344,7 +344,7 @@ export class ElaraApi {
   }
 
   postFileUpload(fileArgs: { file: File | Blob }): Promise<UploadFileResponse> {
-    return this._postMultipart<UploadFileResponse>("/uploads/file", fileArgs);
+    return this._postMultipart<UploadFileResponse>("/uploads/file/", fileArgs);
   }
 
   postDatasetUpload(datasetParams: DatasetParams): Promise<any> {
@@ -363,15 +363,15 @@ export class ElaraApi {
   }
 
   getBreadboxUser(): Promise<string> {
-    return this._fetch<string>("/user");
+    return this._fetch<string>("/user/");
   }
 
   getBreadboxDatasets(): Promise<Dataset[]> {
-    return this._fetch<Dataset[]>("/datasets");
+    return this._fetch<Dataset[]>("/datasets/");
   }
 
   deleteDatasets(id: string) {
-    return this._delete("/datasets", id);
+    return this._delete("/datasets/", id);
   }
 
   patchDataset(datasetToUpdate: DatasetUpdateArgs): Promise<Dataset> {
@@ -522,7 +522,7 @@ export class ElaraApi {
   }
 
   deleteFeatureType(name: string) {
-    return this._delete("/types/feature", name);
+    return this._delete("/types/feature/", name);
   }
 
   searchDimensions({
@@ -552,15 +552,15 @@ export class ElaraApi {
   }
 
   getGroups(): Promise<Group[]> {
-    return this._fetch<Group[]>("/groups");
+    return this._fetch<Group[]>("/groups/");
   }
 
   postGroup(groupArgs: GroupArgs): Promise<Group> {
-    return this._fetchWithJsonBody<Group>("/groups", "POST", groupArgs);
+    return this._fetchWithJsonBody<Group>("/groups/", "POST", groupArgs);
   }
 
   deleteGroup(id: string) {
-    return this._delete("/groups", id);
+    return this._delete("/groups/", id);
   }
 
   postGroupEntry(
@@ -568,7 +568,7 @@ export class ElaraApi {
     groupEntryArgs: GroupEntryArgs
   ): Promise<GroupEntry> {
     return this._fetchWithJsonBody<GroupEntry>(
-      `/groups/${groupId}/addAccess`,
+      `/groups/${groupId}/addAccess/`,
       "POST",
       groupEntryArgs
     );
@@ -718,7 +718,7 @@ export class ElaraApi {
       prefix,
     };
     return this._fetch<any>(
-      `/datasets/vector_catalog/data/catalog/children?${encodeParams(params)}`
+      `/datasets/vector_catalog/data/catalog/children/?${encodeParams(params)}`
     ).then((res) => {
       // FIXME: This is a workaround for the case where the response is empty.
       // The existing Data Explorer logic tries to rename properties of a
@@ -737,7 +737,7 @@ export class ElaraApi {
     // chances are, you shouldn't be using this. use getVectorCatalogPath in vectorCatalogApi, which wraps around this
     const params = { catalog, id };
     return this._fetch<Array<any>>(
-      `/datasets/vector_catalog/data/catalog/path?${encodeParams(params)}`
+      `/datasets/vector_catalog/data/catalog/path/?${encodeParams(params)}`
     );
   }
 
@@ -745,7 +745,7 @@ export class ElaraApi {
     // The Portal uses a dedicated endpoint to get a single feature. Here we're
     // using /api/get-features instead and re-formatting the response.
     return this._fetchWithJsonBody<BreadboxPlotFeatures>(
-      `/api/get-features`,
+      `/api/get-features/`,
       "POST",
       [featureCatalogNodeId]
     ).then((res) => {
@@ -764,7 +764,7 @@ export class ElaraApi {
     config: UnivariateAssociationsParams
   ): Promise<ComputeResponse> {
     return this._fetchWithJsonBody<ComputeResponse>(
-      "/compute/compute_univariate_associations",
+      "/compute/compute_univariate_associations/",
       "POST",
       config
     );

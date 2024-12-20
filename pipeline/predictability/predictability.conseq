@@ -349,6 +349,27 @@ add-if-missing {
     "category": "none"
 }
 
+rule prep_rppa_pred_biomarker_matrix:
+    inputs:
+        rppa={'type': 'harmonized-rppa'},
+        hdf5_utils=fileref("../scripts/hdf5_utils.py", copy_to="hdf5_utils.py")
+    outputs: {
+        'type':	'biomarker-matrix',
+        'source_dataset_id': '{{inputs.rppa.dataset_id}}',	
+        'category':	'rppa',
+        'filename':	{'$filename': 'rppa.hdf5'},
+        'testpred': ''
+        }
+    run "python3" with """
+        import hdf5_utils
+        from taigapy import create_taiga_client_v3
+
+        tc = create_taiga_client_v3()
+        df = tc.get("{{inputs.rppa.dataset_id}}")
+        hdf5_utils.write_hdf5(df.transpose(), "rppa.hdf5")
+    """
+
+
 # Construct the feature matrix for each target matrix (and its corresponding model config)
 rule assemble_feature_matrix:
     executor: dsub {"min_ram":"10", "docker_image": "us.gcr.io/broad-achilles/depmap-pipeline-tda:v10"}
@@ -360,12 +381,34 @@ rule assemble_feature_matrix:
         hotspot_mutations={'type': 'pred-biomarker-matrix-csv', 'category': 'mutations-hotspot'},
         fusions={'type': 'pred-biomarker-matrix-csv', 'category': 'fusions'},
         lineage={'type': 'pred-biomarker-matrix-csv', 'category': 'context'},
-        rppa={'type':'pred-biomarker-matrix-csv', 'category': 'rppa'},
         metabolomics={'type':'pred-biomarker-matrix-csv', 'category': 'metabolomics'},
         match_related={'type': 'match-related-matrix-csv'},
+        rppa={'type':'pred-biomarker-matrix-csv', 'category': 'rppa'},
         dep_ftr={'type': 'pred-dep-matrix-ftr', "label": label, "confounders_label" : confounders_label},
         model_config={"type": "ensemble-model-config", "label": label},
         confounders={'type' ~ 'pred-biomarker-matrix-csv|confounders-stub', 'category': confounders_label},
+#    construct-cache-key-run "python3" with """
+#        import json
+#        import hashlib
+#
+#        def get_md5(filename):
+#            with open(filename, "rb") as fd:
+#                return hashlib.md5(fd.read()).hexdigest()
+#
+#        key = {"version": 1}
+#        inputs = {{ inputs }}
+#        for k, v in inputs.items():
+#            if "source_dataset_id" in v:
+#                key[k+"_source_dataset_id"] = v["source_dataset_id"]
+#            elif "dataset_id" in v:
+#                key[k+"_source_dataset_id"] = v["dataset_id"]
+#            else:
+#                assert "filename" in v
+#                key[k+"_hash"] = get_md5(v["filename"])
+#
+#        with open("conseq-cache-key.json", "wt") as fd:
+#            fd.write(json.dumps(key))
+#    """
     run "python3" with """
         import pandas as pd
         import yaml
@@ -470,7 +513,6 @@ rule fit_predictive_model:
         'dataset': '{{ inputs.dep.label }}',
     }
     watch-regex: "(?:! .*)|task.*|Submitting job: .*" # print out the task status summary from sparkles or lines that start with a "!"
-    # hack to work around case where there is no related.ftr
     run """touch no-related-ftr"""
 
     run "python3" with """

@@ -1,4 +1,8 @@
-import { DataExplorerContext, StoredContexts } from "@depmap/types";
+import {
+  DataExplorerContext,
+  DataExplorerContextV2,
+  StoredContexts,
+} from "@depmap/types";
 import { LocalStorageListStore } from "@depmap/cell-line-selector";
 import { persistContext } from "../api";
 
@@ -56,9 +60,16 @@ export function loadContextsFromLocalStorage(context_type: string) {
   // storage but shares local storage. That means they can "see" each other's
   // contexts but can't actually fetch them. This mechanism corrects for that.
   if (["dev.cds.team", "127.0.0.1:5000"].includes(window.location.host)) {
-    const { rootUrl } = JSON.parse(
-      document.getElementById("webpack-config")!.textContent as string
-    );
+    const webpackConfig = document.getElementById("webpack-config");
+
+    let rootUrl = webpackConfig
+      ? JSON.parse(webpackConfig.textContent as string).rootUrl
+      : window.location.pathname.replace(/([^^])\/.*/, "$1");
+
+    if (window.location.pathname.includes("/breadbox")) {
+      rootUrl += "/breadbox";
+    }
+
     const devContextsByRootUrl = JSON.parse(
       window.localStorage.getItem("dev_contexts_by_root_url") || "{}"
     );
@@ -74,14 +85,25 @@ export function loadContextsFromLocalStorage(context_type: string) {
   return out;
 }
 
-const stripExprFromContext = (context: DataExplorerContext) => {
-  const { expr, ...rest } = context;
-  return rest;
+export function isV2Context(
+  context: DataExplorerContext | DataExplorerContextV2
+): context is DataExplorerContextV2 {
+  return "dimension_type" in context;
+}
+
+const toStoredContext = (
+  context: DataExplorerContext | DataExplorerContextV2
+): StoredContexts[string] => {
+  return {
+    name: context.name,
+    context_type: isV2Context(context)
+      ? context.dimension_type
+      : context.context_type,
+  };
 };
 
-// TODO: Rename this to communicate that it also persists it to a bucket.
-export async function saveContextToLocalStorage(
-  context: DataExplorerContext,
+export async function saveContextToLocalStorageAndPersist(
+  context: DataExplorerContext | DataExplorerContextV2,
   hashToReplace?: string | null
 ) {
   let nextHash;
@@ -95,7 +117,7 @@ export async function saveContextToLocalStorage(
 
         return {
           hash: nextHash,
-          value: stripExprFromContext(context),
+          value: toStoredContext(context),
         };
       }
 
@@ -108,7 +130,7 @@ export async function saveContextToLocalStorage(
 
     updates.push({
       hash: nextHash,
-      value: stripExprFromContext(context),
+      value: toStoredContext(context),
     });
   }
 
@@ -125,9 +147,15 @@ export async function saveContextToLocalStorage(
   // storage but shares local storage. That means they can "see" each other's
   // contexts but can't actually fetch them. This mechanism corrects for that.
   if (["dev.cds.team", "127.0.0.1:5000"].includes(window.location.host)) {
-    const { rootUrl } = JSON.parse(
-      document.getElementById("webpack-config")!.textContent as string
-    );
+    const webpackConfig = document.getElementById("webpack-config");
+
+    let rootUrl = webpackConfig
+      ? JSON.parse(webpackConfig.textContent as string).rootUrl
+      : window.location.pathname.replace(/([^^])\/.*/, "$1");
+
+    if (window.location.pathname.includes("/breadbox")) {
+      rootUrl += "/breadbox";
+    }
 
     const devContextsByRootUrl = JSON.parse(
       window.localStorage.getItem("dev_contexts_by_root_url") || "{}"
@@ -175,8 +203,8 @@ export function negateContext(context: DataExplorerContext) {
 }
 
 export function contextsMatch(
-  contextA: DataExplorerContext | null,
-  contextB: DataExplorerContext | null
+  contextA: DataExplorerContext | DataExplorerContextV2 | null,
+  contextB: DataExplorerContext | DataExplorerContextV2 | null
 ) {
   if (!contextA || !contextB) {
     return false;

@@ -50,6 +50,15 @@ class SliceQueryIdentifierType(enum.Enum):
 # NOTE: fastapi versions >= V0.100.0 supports Pydantic V2
 class SharedDatasetParams(BaseModel):
     name: Annotated[str, Field(description="Name of dataset", min_length=1)]
+    short_name: Annotated[
+        Optional[str], Field(description="an optional short label describing dataset")
+    ] = None
+    description: Annotated[
+        Optional[str], Field(description="an optional long description of the dataset")
+    ] = None
+    version: Annotated[
+        Optional[str], Field(description="an optional short version identifier")
+    ] = None
     file_ids: Annotated[
         List[str],
         Field(description="Ordered list of file ids from the chunked dataset uploads"),
@@ -106,20 +115,6 @@ class SharedDatasetParams(BaseModel):
             raise ValueError("Must be hex string")
 
 
-def check_allowed_values_not_empty(v):
-    if v == "":
-        raise UserError("Empty strings are not allowed.")
-    allowed_values_list_lower = [str(x).lower() for x in v]
-    if len(set(allowed_values_list_lower)) != len(v):
-        raise UserError(
-            msg="Make sure there are no repeats in allowed_values. Values are not considered case-sensitive",
-        )
-    return v
-
-
-AllowedValue = Annotated[str, AfterValidator(check_allowed_values_not_empty)]
-
-
 class MatrixDatasetParams(SharedDatasetParams):
     format: Literal["matrix"]
     units: Annotated[
@@ -138,7 +133,7 @@ class MatrixDatasetParams(SharedDatasetParams):
         ),
     ]
     allowed_values: Annotated[
-        Optional[List[AllowedValue]],
+        Optional[List[str]],
         Field(
             description="Only provide if 'value_type' is 'categorical'. Must contain all possible categorical values",
         ),
@@ -182,6 +177,27 @@ class MatrixDatasetParams(SharedDatasetParams):
                 "Must include allowed_values for categorical value type datasets!"
             )
         return self
+
+    @field_validator("allowed_values", mode="after")
+    @classmethod
+    def check_valid_allowed_values(cls, v: Optional[List[str]]):
+        """
+        Checks there are no empty strings and no repeated allowed values. Values in allowed values list are not case-sensitive.
+        """
+        if v is None:
+            return v
+        # Decision to make allowed values not case-sensitive in case user error in accidental repeats
+        allowed_values_list_lower = [str(x).lower() for x in v]
+        allowed_values_set = set(allowed_values_list_lower)
+        print(allowed_values_set, allowed_values_list_lower)
+        if len(allowed_values_set) != len(v):
+            raise UserError(
+                msg="Make sure there are no repeats in allowed_values. Values are not considered case-sensitive",
+            )
+        for val in allowed_values_set:
+            if val == "":
+                raise UserError("Empty strings are not allowed!")
+        return v
 
 
 class ColumnMetadata(BaseModel):
@@ -249,6 +265,15 @@ def check_uuid(id: str) -> str:
 
 class SharedDatasetFields(BaseModel):
     name: str
+    short_name: Annotated[
+        Optional[str], Field(description="an optional short label describing dataset")
+    ] = None
+    description: Annotated[
+        Optional[str], Field(description="an optional long description of the dataset")
+    ] = None
+    version: Annotated[
+        Optional[str], Field(description="an optional short version identifier")
+    ] = None
     data_type: str
     group_id: str
     given_id: Annotated[Optional[str], Field(default=None)]
@@ -435,6 +460,15 @@ class DatasetUpdateSharedParams(BaseModel):
     """Contains the shared subset of matrix and tabular dataset fields that may be updated after dataset creation."""
 
     name: Annotated[Optional[str], Field(description="Name of dataset")] = None
+    short_name: Annotated[
+        Optional[str], Field(description="an optional short label describing dataset")
+    ] = None
+    description: Annotated[
+        Optional[str], Field(description="an optional long description of the dataset")
+    ] = None
+    version: Annotated[
+        Optional[str], Field(description="an optional short version identifier")
+    ] = None
     data_type: Annotated[
         Optional[str], Field(description="Data type grouping for your dataset")
     ] = None

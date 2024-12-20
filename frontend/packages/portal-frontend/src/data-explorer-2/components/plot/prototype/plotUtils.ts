@@ -1452,6 +1452,38 @@ export function calcAnnotationPositions(
     return pointIndices.map((pointIndex) => ({ pointIndex, ax: -20, ay: -30 }));
   }
 
+  if (pixelRangeX === 0 && pixelRangeY !== 0) {
+    return pointIndices
+      .sort((a, b) => y[b] - y[a])
+      .map((pointIndex, i) => ({
+        pointIndex,
+        ax: 100 * (i % 2 ? -1 : 1),
+        ay: Math.min(Math.floor(i / 2) * 10, 100),
+      }));
+  }
+
+  if (pixelRangeY === 0 && pixelRangeX !== 0) {
+    const ax: number[] = [];
+    const ay: number[] = [];
+    let dx = -pixelRangeX;
+    let dy = -100;
+
+    for (let i = 0; i < pointIndices.length; i += 1) {
+      ax[i] = dx;
+      ay[i] = dy;
+      dx += (pixelRangeX * 2) / pointIndices.length;
+      dy += 100 / pointIndices.length;
+    }
+
+    return pointIndices
+      .sort((a, b) => x[a] - x[b])
+      .map((pointIndex, i) => ({
+        pointIndex,
+        ax: ax[i],
+        ay: i % 2 ? ay[i] : -ay[pointIndices.length - i - 1],
+      }));
+  }
+
   if (pixelRangeY > 300) {
     return pointIndices.map((pointIndex) => ({ pointIndex, ax: 100, ay: 0 }));
   }

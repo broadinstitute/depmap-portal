@@ -2,7 +2,11 @@ import React, { useCallback, useMemo } from "react";
 import VanillaAsycSelect from "react-select/async";
 import { WindowedMenuList } from "react-windowed-select";
 import extendReactSelect from "../../../../utils/extend-react-select";
-import { formatOptionLabel, toReactSelectOptions, useApi } from "../utils";
+import {
+  formatOptionLabel,
+  toReactSelectOptions,
+  useSharedApi,
+} from "../utils";
 
 interface Props {
   value: string | null;
@@ -21,7 +25,7 @@ function CompoundSearcher({
   compoundNames,
   swatchColor,
 }: Props) {
-  const api = useApi();
+  const api = useSharedApi();
   const handleChange = useCallback(
     (option?: { label: string; value: string } | null) => {
       onChange(option?.value || null);

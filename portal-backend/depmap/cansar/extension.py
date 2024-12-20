@@ -4,6 +4,7 @@ from collections import namedtuple
 
 CANSAR_SYNOPSIS_URL_TEMPLATE = "https://cansar.ai/target/{}/synopsis"
 CANSAR_API_URL_TEMPLATE = "https://cansar.ai/api/v1/uniprot/{}/external-collaborator"
+CANSAR_API_TIMEOUT = 5
 TOKEN_REQ_URL = (
     "https://cansar.ai/auth/realms/cansar-staging/protocol/openid-connect/token"
 )
@@ -58,7 +59,9 @@ class CansarClient:
         self.client = _create_client(client_id, client_secret)
 
     def get_protein(self, uniprot_id):
-        response = self.client.get(CANSAR_API_URL_TEMPLATE.format(uniprot_id))
+        response = self.client.get(
+            CANSAR_API_URL_TEMPLATE.format(uniprot_id), timeout=CANSAR_API_TIMEOUT
+        )
         if response.status_code == 404:
             return None
         else:

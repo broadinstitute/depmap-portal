@@ -99,7 +99,8 @@ def insert_or_update_cell_lines(df):
             (2, row["lineage_2"]),
             (3, row["lineage_3"]),
             (4, row["lineage_4"]),
-            (5, row.get("legacy_sub_subtype")),
+            #            legacy_sub_subtype has been removed, so don't add it
+            #            (5, row.get("legacy_sub_subtype")),
             (6, row.get("legacy_molecular_subtype")),
         ]
         lineages = [

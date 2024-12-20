@@ -1,28 +1,21 @@
 import logging
 from collections import defaultdict
 from dataclasses import dataclass
-from typing import Any, Dict, Optional, List, Type, Union, Tuple
+from typing import Any, Dict, Optional, List, Type, Union, Tuple, Set
 from uuid import UUID, uuid4
 import warnings
-import json
 
 import pandas as pd
 from sqlalchemy import and_, func, or_
 from sqlalchemy.orm import aliased, with_polymorphic
 
 from breadbox.db.session import SessionWithUser
-from ..io.data_validation import (
-    dimension_label_df_schema,
-    annotation_type_to_pandas_column_type,
-)
+from ..io.data_validation import dimension_label_df_schema
 from ..schemas.dataset import (
     MatrixDatasetIn,
     TabularDatasetIn,
     DimensionSearchIndexResponse,
-    FeatureSampleIdentifier,
-    MatrixDimensionsInfo,
     ColumnMetadata,
-    TabularDimensionsInfo,
     UpdateDatasetParams,
 )
 from ..schemas.custom_http_exception import (
@@ -53,10 +46,7 @@ from breadbox.crud.group import (
     TRANSIENT_GROUP_ID,
     get_transient_group,
 )
-from breadbox.io.filestore_crud import (
-    get_slice,
-    delete_data_files,
-)
+from breadbox.io.filestore_crud import delete_data_files
 from .metadata import cast_tabular_cell_value_type
 from .dataset_reference import add_id_mapping
 import typing
@@ -92,6 +82,7 @@ def get_datasets(
     sample_id: Optional[str] = None,
     sample_type: Optional[str] = None,
     value_type: Optional[ValueType] = None,
+    data_type: Optional[str] = None,
 ) -> list[Dataset]:
     assert (
         db.user == user
@@ -112,14 +103,28 @@ def get_datasets(
     dataset_poly = with_polymorphic(Dataset, [MatrixDataset, TabularDataset])
 
     filter_clauses = [Dataset.group_id.in_(group_ids)]  # pyright: ignore
+
     # Don't return transient datasets
     filter_clauses.append(Dataset.is_transient == False)
-    # TODO: Below filters only returns for matrix datasets!
+    # TODO: 'feature_id' and 'sample_id' filters only returns for matrix datasets!
     # Decide if should return for metadata when given feature id/type or sample id/type
+    # TODO: feature type can be none. How should we filter those datasets?
     if feature_type is not None:
-        filter_clauses.append(
-            dataset_poly.MatrixDataset.feature_type_name == feature_type
+        # Make sure that the `feature_type` dimension type is actually in the feature axis so tabular datasets are correctly filtered
+        feature_dimension_type = (
+            db.query(DimensionType).filter_by(name=feature_type).one_or_none()
         )
+        if feature_dimension_type and feature_dimension_type.axis == "feature":
+            filter_clauses.append(
+                or_(
+                    dataset_poly.MatrixDataset.feature_type_name == feature_type,
+                    dataset_poly.TabularDataset.index_type_name == feature_type,
+                )
+            )
+        else:
+            filter_clauses.append(
+                dataset_poly.MatrixDataset.feature_type_name == feature_type
+            )
 
         if feature_id is not None:
             dataset_ids = [
@@ -131,9 +136,21 @@ def get_datasets(
             filter_clauses.append(dataset_poly.MatrixDataset.id.in_(dataset_ids))
 
     if sample_type is not None:
-        filter_clauses.append(
-            dataset_poly.MatrixDataset.sample_type_name == sample_type
+        # Make sure that the `sample_type` dimension type is actually in the sample axis so tabular datasets are correctly filtered
+        sample_dimension_type = (
+            db.query(DimensionType).filter_by(name=sample_type).one_or_none()
         )
+        if sample_dimension_type and sample_dimension_type.axis == "sample":
+            filter_clauses.append(
+                or_(
+                    dataset_poly.MatrixDataset.sample_type_name == sample_type,
+                    dataset_poly.TabularDataset.index_type_name == sample_type,
+                )
+            )
+        else:
+            filter_clauses.append(
+                dataset_poly.MatrixDataset.sample_type_name == sample_type
+            )
 
         if sample_id is not None:
             dataset_ids = [
@@ -146,6 +163,9 @@ def get_datasets(
 
     if value_type is not None:
         filter_clauses.append(dataset_poly.MatrixDataset.value_type == value_type)
+
+    if data_type is not None:
+        filter_clauses.append(Dataset.data_type == data_type)
 
     datasets = db.query(dataset_poly).filter(and_(True, *filter_clauses)).all()
     return datasets
@@ -201,17 +221,13 @@ def add_matrix_dataset(
     sample_given_id_and_index_df: pd.DataFrame,
     feature_type: Optional[DimensionType],
     sample_type: DimensionType,
+    short_name: Optional[str],
+    version: Optional[str],
+    description: Optional[str],
 ):
     group = _get_dataset_group(db, user, dataset_in.group_id, dataset_in.is_transient)
 
     allowed_values = dataset_in.allowed_values
-
-    def is_binary_category(allowed_values_list):
-        if allowed_values_list and len(allowed_values_list) == 2:
-            allowed_values_set = set(allowed_values_list)
-            return {"True", "False"} == allowed_values_set
-        else:
-            return False
 
     dataset = MatrixDataset(
         id=dataset_in.id,
@@ -229,6 +245,9 @@ def add_matrix_dataset(
         allowed_values=allowed_values if allowed_values else None,
         dataset_metadata=dataset_in.dataset_metadata,
         md5_hash=dataset_in.dataset_md5,
+        short_name=short_name,
+        description=description,
+        version=version,
     )
     db.add(dataset)
     db.flush()
@@ -285,10 +304,8 @@ def get_metadata_by_dataset(
         "label" in properties_to_index
     ), f"The code is assuming that label is present but dataset {dataset.id} had properties_to_index={properties_to_index}"
 
-    feature_query = get_feature_query_for_feature_type(
-        db=db,
-        feature_type_dataset_id=dataset.id,
-        properties_to_index=properties_to_index,
+    feature_query = get_properties_to_index_query_for_metadata_dataset(
+        db=db, metadata_dataset_id=dataset.id, properties_to_index=properties_to_index,
     )
     feature_df = pd.read_sql(
         feature_query.statement, feature_query.session.connection()
@@ -436,11 +453,11 @@ def create_index_records_for_row(
     return dimension_search_index_rows
 
 
-def get_feature_query_for_feature_type(
-    db: SessionWithUser, feature_type_dataset_id: str, properties_to_index: List[str],
+def get_properties_to_index_query_for_metadata_dataset(
+    db: SessionWithUser, metadata_dataset_id: str, properties_to_index: List[str],
 ):
     filter_clauses = [
-        DimensionType.dataset_id == feature_type_dataset_id,
+        DimensionType.dataset_id == metadata_dataset_id,
         Dimension.given_id.in_(properties_to_index),
     ]
 
@@ -554,6 +571,7 @@ def _populate_search_index_for_dataset(db: SessionWithUser, user: str, dataset_i
     _delete_dataset_dimension_search_index_records(db=db, dataset_id=dataset_id)
     log.info("_delete_dataset_dimension_search_index_records complete")
 
+    # Note: this query can be replaced with a call to crud.types.get_dimension_type_labels_by_id
     labels_by_feature_id_query = (
         db.query(TabularCell)
         .join(TabularColumn, TabularCell.tabular_column_id == TabularColumn.id,)
@@ -686,6 +704,9 @@ def add_tabular_dataset(
     data_df: pd.DataFrame,
     columns_metadata: Dict[str, ColumnMetadata],
     dimension_type: DimensionType,
+    short_name: Optional[str],
+    version: Optional[str],
+    description: Optional[str],
 ):
     # verify the id_column is present in the data frame before proceeding and is of type string
     if dimension_type.id_column not in data_df.columns:
@@ -706,6 +727,9 @@ def add_tabular_dataset(
         taiga_id=dataset_in.taiga_id,
         dataset_metadata=dataset_in.dataset_metadata,
         md5_hash=dataset_in.dataset_md5,
+        short_name=short_name,
+        version=version,
+        description=description,
     )
     db.add(dataset)
     db.flush()
@@ -968,10 +992,10 @@ def get_dataset_feature_dimensions(db: SessionWithUser, user: str, dataset_id: s
     return dimensions
 
 
-def get_dataset_features(
-    db: SessionWithUser, dataset: MatrixDataset, user: str
+def get_matrix_dataset_features(
+    db: SessionWithUser, dataset: MatrixDataset
 ) -> list[DatasetFeature]:
-    assert_user_has_access_to_dataset(dataset, user)
+    assert_user_has_access_to_dataset(dataset, db.user)
 
     dataset_features = (
         db.query(DatasetFeature)
@@ -983,10 +1007,10 @@ def get_dataset_features(
     return dataset_features
 
 
-def get_dataset_samples(
-    db: SessionWithUser, dataset: MatrixDataset, user: str
+def get_matrix_dataset_samples(
+    db: SessionWithUser, dataset: MatrixDataset
 ) -> list[DatasetSample]:
-    assert_user_has_access_to_dataset(dataset, user)
+    assert_user_has_access_to_dataset(dataset, db.user)
 
     dataset_samples = (
         db.query(DatasetSample)
@@ -1026,141 +1050,11 @@ def get_tabular_dataset_index_given_ids(
     return [cell.dimension_given_id for cell in cells_in_id_column]
 
 
-def get_dataset_feature_labels_by_id(
-    db: SessionWithUser, user: str, dataset: Dataset,
-) -> dict[str, str]:
-    """
-    Try loading feature labels from metadata.
-    If there are no labels in the metadata or there is no metadata, then just return the feature names.
-    """
-    metadata_labels_by_given_id = get_dataset_feature_annotations(
-        db=db, user=user, dataset=dataset, metadata_col_name="label"
-    )
-
-    if metadata_labels_by_given_id:
-        return metadata_labels_by_given_id
-    else:
-        all_dataset_features = get_dataset_features(db=db, dataset=dataset, user=user)
-        return {feature.given_id: feature.given_id for feature in all_dataset_features}
-
-
-def get_dataset_sample_labels_by_id(
-    db: SessionWithUser, user: str, dataset: Dataset,
-) -> dict[str, str]:
-    """
-    Try loading sample labels from metadata.
-    If there are no labels in the metadata or there is no metadata, then just return the sample names.
-    """
-    metadata_labels = get_dataset_sample_annotations(
-        db=db, user=user, dataset=dataset, metadata_col_name="label"
-    )
-    if metadata_labels:
-        return metadata_labels
-    else:
-        samples = get_dataset_samples(db=db, dataset=dataset, user=user)
-        return {sample.given_id: sample.given_id for sample in samples}
-
-
-# TODO: This can probably be merged.
-def get_dataset_feature_annotations(
-    db: SessionWithUser, user: str, dataset: Dataset, metadata_col_name: str,
-) -> dict[str, Any]:
-    """
-    For the given dataset, load metadata of the specified type, keyed by feature id.
-    For example, if a dataset's feature type is "gene", and the requested metadata field name is "label",
-    then this will return a dictionary with entrez ids as keys and gene labels as values.
-    If there is no metadata of this type, return an empty dictionary.
-    Note: this may need to be updated eventually to support non-string types in metadata
-    """
-    assert_user_has_access_to_dataset(dataset, user)
-
-    # Try to find the associated metadata dataset
-    feature_metadata_dataset_id = None
-    if dataset.format == "matrix_dataset":
-        if dataset.feature_type is not None:
-            feature_type = (
-                db.query(DimensionType)
-                .filter(DimensionType.name == dataset.feature_type_name)
-                .one()
-            )
-            feature_metadata_dataset_id = feature_type.dataset_id
-    else:
-        feature_metadata_dataset_id = dataset.id
-
-    data_dataset_feature = aliased(DatasetFeature)
-
-    # Load the values and entity ids
-    annotation_vals_by_id: Dict[str, Any] = {
-        row[0]: cast_tabular_cell_value_type(row[1], row[2])
-        for row in db.query(TabularCell)
-        .join(
-            data_dataset_feature,
-            data_dataset_feature.given_id == TabularCell.dimension_given_id,
-        )  # join the given dataset's dimensions
-        .filter_by(dataset_id=dataset.id)
-        .join(TabularCell.tabular_column)  # join the metadata dimension
-        .filter_by(dataset_id=feature_metadata_dataset_id, given_id=metadata_col_name,)
-        .with_entities(
-            TabularCell.dimension_given_id,
-            TabularCell.value,
-            TabularColumn.annotation_type,
-        )
-    }
-
-    return annotation_vals_by_id
-
-
-def get_dataset_sample_annotations(
-    db: SessionWithUser, user: str, dataset: Dataset, metadata_col_name: str
-) -> dict[str, Any]:
-    """
-    For the given dataset, load metadata of the specified type, keyed by sample id.
-    For example, if a dataset's sample type is "depmap_model", and the requested metadata field name is "label",
-    then this will return a dictionary with depmap ids as keys and cell line names as values.
-    If there is no metadata of this type, return an empty dictionary.
-    Note: this may need to be updated eventually to support non-string types in metadata
-    """
-    assert_user_has_access_to_dataset(dataset, user)
-
-    # Try to find the associated metadata dataset
-    sample_metadata_dataset_id = None
-    if dataset.format == "matrix_dataset":
-        if dataset.sample_type is not None:
-            sample_type = (
-                db.query(DimensionType)
-                .filter(DimensionType.name == dataset.sample_type_name)
-                .one()
-            )
-            sample_metadata_dataset_id = sample_type.dataset_id
-    else:
-        sample_metadata_dataset_id = dataset.id
-
-    data_dataset_sample = aliased(DatasetSample)
-
-    # Load the labels and entity ids
-    annotation_vals_by_id = {
-        row[0]: cast_tabular_cell_value_type(row[1], row[2])
-        for row in db.query(TabularCell)
-        .join(
-            data_dataset_sample,
-            data_dataset_sample.given_id == TabularCell.dimension_given_id,
-        )
-        .filter_by(dataset_id=dataset.id)
-        .join(TabularCell.tabular_column)
-        .filter_by(dataset_id=sample_metadata_dataset_id, given_id=metadata_col_name,)
-        .with_entities(
-            TabularCell.dimension_given_id,
-            TabularCell.value,
-            TabularColumn.annotation_type,
-        )
-    }
-    return annotation_vals_by_id
-
-
 def get_matching_feature_metadata_labels(
     db: SessionWithUser, feature_labels: List[str]
 ) -> set[str]:
     """
+    DEPRECATED: this method should be removed when the old data_slicer functionality is replaced.
     Return the subset of the given list which matches any feature metadata label
     Use case-insensitive matching, but return a list of properly-cased labels.
     """
@@ -1221,87 +1115,6 @@ def get_feature_indexes_by_given_ids(
     db: SessionWithUser, user: str, dataset: Dataset, given_ids: List[str]
 ):
     return _get_indexes_by_given_id(db, user, dataset, DatasetFeature, given_ids)
-
-
-def get_dimension_indexes_of_labels(
-    db: SessionWithUser,
-    user: str,
-    dataset: MatrixDataset,
-    axis: str,
-    dimension_labels: List[str],
-) -> Tuple[List[int], List[str]]:
-    """
-    Get the set of numeric indices corresponding to the given dimension labels for the given dataset.
-    Note: The order of the result does not necessarily match the order of the input
-    """
-    assert_user_has_access_to_dataset(dataset, user)
-
-    # We could do this in one query, but it's unwieldy, so let's make two queries. First
-    # let's resolve dimension_labels to given_ids
-
-    def _query_given_id_and_label(type_name):
-        results = (
-            db.query(DimensionType)
-            .join(TabularDataset, DimensionType.dataset)
-            .join(TabularColumn, TabularDataset.dimensions)
-            .join(TabularCell, TabularColumn.tabular_cells)
-            .filter(
-                TabularColumn.given_id == "label",
-                DimensionType.name == type_name,
-                TabularCell.value.in_(dimension_labels),
-            )
-            .with_entities(TabularCell.dimension_given_id, TabularCell.value)
-            .all()
-        )
-        return results
-
-    if axis == "feature":
-        if dataset.feature_type_name is None:
-            # feature types are allowed to be None. If that's the case, the labels are the given_ids on the matrix
-            given_id_and_label = (
-                db.query(DatasetFeature)
-                .filter(
-                    DatasetFeature.dataset_id == dataset.id,
-                    DatasetFeature.given_id.in_(dimension_labels),
-                )
-                .with_entities(DatasetFeature.given_id, DatasetFeature.given_id)
-            )
-        else:
-            given_id_and_label = _query_given_id_and_label(dataset.feature_type_name)
-    else:
-        assert axis == "sample"
-        given_id_and_label = _query_given_id_and_label(dataset.sample_type_name)
-
-    # unpack into two columns
-    given_id_to_label = dict(given_id_and_label)
-
-    missing_labels = set(dimension_labels).difference(given_id_to_label.values())
-
-    # for the time being, just warn in the log about things that are missing. I'm not 100% confident that
-    # something won't break if we start treating missing things as an error. If we don't see warnings in the
-    # log from normal use, we can turn it into an error later
-    if len(missing_labels) > 0:
-        log.warning(
-            f"In get_dimension_indexes_of_labels, missing labels: {missing_labels}"
-        )
-
-    # now resolve those given_ids to indices
-    if axis == "feature":
-        indices, missing_given_ids = get_feature_indexes_by_given_ids(
-            db, user, dataset, list(given_id_to_label.keys())
-        )
-    else:
-        assert axis == "sample"
-        indices, missing_given_ids = get_sample_indexes_by_given_ids(
-            db, user, dataset, list(given_id_to_label.keys())
-        )
-
-    if len(missing_given_ids) > 0:
-        log.warning(
-            f"In get_dimension_indexes_of_labels, missing given_ids: {missing_given_ids}"
-        )
-
-    return indices, list(missing_labels)
 
 
 def get_dataset_feature_by_uuid(
@@ -1455,310 +1268,80 @@ def get_dataset_sample_by_given_id(
     return sample
 
 
-def get_dataset_feature_by_label(
-    db: SessionWithUser, dataset_id: str, feature_label: str
-) -> DatasetFeature:
-    """Load the dataset feature corresponding to the given dataset ID and feature label"""
-
-    dataset = get_dataset(db, db.user, dataset_id)
-    if dataset is None:
-        raise ResourceNotFoundError(f"Dataset '{dataset_id}' not found.")
-    assert_user_has_access_to_dataset(dataset, db.user)
-    assert isinstance(dataset, MatrixDataset)
-
-    labels_by_given_id = get_dataset_feature_labels_by_id(db, db.user, dataset)
-    given_ids_by_label = {label: id for id, label in labels_by_given_id.items()}
-    feature_given_id = given_ids_by_label.get(feature_label)
-    if feature_given_id is None:
-        raise ResourceNotFoundError(
-            f"Feature label '{feature_label}' not found in dataset '{dataset_id}'."
-        )
-
-    return get_dataset_feature_by_given_id(db, dataset_id, feature_given_id)
-
-
-def get_dataset_sample_by_label(
-    db: SessionWithUser, dataset_id: str, sample_label: str
-) -> DatasetSample:
-    """Load the dataset sample corresponding to the given dataset ID and sample label"""
-
-    dataset = get_dataset(db, db.user, dataset_id)
-    if dataset is None:
-        raise ResourceNotFoundError(f"Dataset '{dataset_id}' not found.")
-    assert_user_has_access_to_dataset(dataset, db.user)
-    assert isinstance(dataset, MatrixDataset)
-
-    labels_by_given_id = get_dataset_sample_labels_by_id(db, db.user, dataset)
-    given_ids_by_label = {label: id for id, label in labels_by_given_id.items()}
-    sample_given_id = given_ids_by_label.get(sample_label)
-    if sample_given_id is None:
-        raise ResourceNotFoundError(
-            f"Sample label '{sample_label}' not found in dataset '{dataset_id}'."
-        )
-
-    return get_dataset_sample_by_given_id(db, dataset_id, sample_given_id)
-
-
-def _get_column_types(columns_metadata, columns: Optional[List[str]]):
-    col_and_column_metadata_pairs = columns_metadata.items()
-    if columns is None:
-        return {
-            col: annotation_type_to_pandas_column_type(column_metadata.col_type)
-            for col, column_metadata in col_and_column_metadata_pairs
-        }
-
-    else:
-        column_types = {}
-        for col, column_metadata in col_and_column_metadata_pairs:
-            if col in columns:
-                column_types[col] = annotation_type_to_pandas_column_type(
-                    column_metadata.col_type
-                )
-
-        return column_types
-
-
-def get_subsetted_tabular_dataset_df(
+def get_subset_of_tabular_data_as_df(
     db: SessionWithUser,
-    user: str,
     dataset: TabularDataset,
-    tabular_dimensions_info: TabularDimensionsInfo,
-    strict: bool,
+    column_names: Optional[list[str]],
+    index_given_ids: Optional[list[str]],
 ) -> pd.DataFrame:
-    """
-    Load a dataframe containing data for the specified indices and columns.
-    If the indices are specified by label, then return a result indexed by labels
-    If either indices or columns are not specified, return all indices or columns
-    By default, if indices and identifier not specified, then dimension ids are used as identifier
-    """
-    if not user_has_access_to_group(dataset.group, user, write_access=True):
-        raise DatasetAccessError(f"User {user} does not have access to dataset")
-
     filter_statements = [TabularColumn.dataset_id == dataset.id]
-    # Filter columns if provided
-    if tabular_dimensions_info.columns:
-        filter_statements.append(
-            TabularColumn.given_id.in_(tabular_dimensions_info.columns)
+    if column_names is not None:
+        filter_statements.append(TabularColumn.given_id.in_(column_names))
+    if index_given_ids is not None:
+        filter_statements.append(TabularCell.dimension_given_id.in_(index_given_ids))
+    query = (
+        db.query(TabularColumn)
+        .join(TabularCell)
+        .filter(and_(True, *filter_statements))
+        .with_entities(
+            TabularCell.value, TabularCell.dimension_given_id, TabularColumn.given_id,
         )
-
-    if tabular_dimensions_info.identifier == FeatureSampleIdentifier.label:
-        # Get the corresponding dimension ids for the dimension labels from the dataset's dimension type and use the dimension ids to filter values by
-        dimension_type: DimensionType = db.query(DimensionType).filter(
-            DimensionType.name == dataset.index_type_name
-        ).one()
-
-        label_filter_statements = [
-            TabularColumn.dataset_id == dimension_type.dataset_id,
-            TabularColumn.given_id == "label",
-        ]
-        if tabular_dimensions_info.indices:
-            label_filter_statements.append(
-                TabularCell.value.in_(tabular_dimensions_info.indices)
-            )
-
-        ids_by_label = (
-            db.query(TabularCell)
-            .join(TabularColumn)
-            .filter(and_(True, *label_filter_statements))
-            .with_entities(TabularCell.value, TabularCell.dimension_given_id)
-            .all()
-        )
-        id_to_label_map = dict((x.dimension_given_id, x.value) for x in ids_by_label)
-        filter_statements.append(
-            TabularCell.dimension_given_id.in_(id_to_label_map.keys())
-        )
-        query = (
-            db.query(TabularColumn)
-            .join(TabularCell)
-            .filter(and_(True, *filter_statements))
-            .with_entities(
-                TabularCell.value,
-                TabularCell.dimension_given_id,
-                TabularColumn.given_id,
-            )
-        )
-
-        query_df = pd.read_sql(query.statement, query.session.connection())
-        # Rename the resulting column with dimension ids to their labels
-        query_df = query_df.replace({"dimension_given_id": id_to_label_map})
-
-    else:
-        if tabular_dimensions_info.indices:
-            filter_statements.append(
-                TabularCell.dimension_given_id.in_(tabular_dimensions_info.indices)
-            )
-
-        query = (
-            db.query(TabularColumn)
-            .join(TabularCell)
-            .filter(and_(True, *filter_statements))
-            .with_entities(
-                TabularCell.value,
-                TabularCell.dimension_given_id,
-                TabularColumn.given_id,
-            )
-        )
-
-        query_df = pd.read_sql(query.statement, query.session.connection())
+    )
+    query_df = pd.read_sql(query.statement, query.session.connection())
 
     # Pivot table so that the indices are the index of the df and the given columns are the columns of the df
     # NOTE: resulting df will have columns as multi index ("value", "given_id") so will need to index df by "value" to get final df
     pivot_df = query_df.pivot(index="dimension_given_id", columns="given_id")
 
-    # If 'strict' raise error
-    missing_columns, missing_indices = get_missing_tabular_columns_and_indices(
-        pivot_df,
-        tabular_dimensions_info.columns,
-        tabular_dimensions_info.indices,
-        dataset.id,
-    )
-    if strict and (missing_columns or missing_indices):
-        raise UserError(msg=get_truncated_message(missing_columns, missing_indices))
-
     # If df is empty, there is no 'value' key to index by
     if pivot_df.empty:
         return pivot_df
 
-    # Need to index by "value" after checking if empty db bc empty db has no 'value' keyword
-    subsetted_tabular_dataset_df = pivot_df["value"]
-    # set typing for columns
-    col_dtypes = _get_column_types(
-        dataset.columns_metadata, tabular_dimensions_info.columns
-    )
-    subsetted_tabular_dataset_df = _convert_subsetted_tabular_df_dtypes(
-        subsetted_tabular_dataset_df, col_dtypes, dataset.columns_metadata
-    )
-    return subsetted_tabular_dataset_df
+    return pivot_df["value"]
 
 
-def _convert_subsetted_tabular_df_dtypes(
-    df: pd.DataFrame,
-    dtype_map: Dict[str, Any],
-    dataset_columns_metadata: Dict[str, ColumnMetadata],
-):
-    # Replace string boolean values with boolean
-    for col, dtype in dtype_map.items():
-        column = df[col]
-        if dtype == pd.BooleanDtype():
-            column = column.replace({"True": True, "False": False})
-        column = column.astype(dtype)
-        # NOTE: if col type is list string, convert to list. col dtype will be changed to object
-        if (
-            dtype == pd.StringDtype()
-            and dataset_columns_metadata[col].col_type == AnnotationType.list_strings
-        ):
-            column = column.apply(lambda x: json.loads(x) if x is not pd.NA else x)
-        df[col] = column
-    return df
-
-
-def get_truncated_message(missing_tabular_columns, missing_tabular_indices):
-    num_missing_cols = len(missing_tabular_columns)
-    num_missing_indices = len(missing_tabular_indices)
-    shown_missing_cols = (
-        missing_tabular_columns[:20] + ["..."]
-        if num_missing_cols >= 20
-        else missing_tabular_columns
-    )
-    shown_missing_indices = (
-        missing_tabular_indices[:20] + ["..."]
-        if num_missing_indices >= 20
-        else missing_tabular_indices
-    )
-    return f"{num_missing_cols} missing columns: {shown_missing_cols} and {num_missing_indices} missing indices: {shown_missing_indices}"
-
-
-def get_missing_tabular_columns_and_indices(
-    df, tabular_columns, tabular_indices, dataset_id
-):
-    missing_columns = set()
-    missing_indices = set()
-    if tabular_columns is not None:
-        found_columns = [x[1] for x in df.columns]
-        missing_columns = set(tabular_columns).difference(found_columns)
-        if len(missing_columns) > 0:
-            log.warning(
-                f"In get_subsetted_tabular_dataset_df, missing columns: {missing_columns} for dataset: {dataset_id}"
-            )
-
-    if tabular_indices is not None:
-        missing_indices = set(tabular_indices).difference(df.index)
-        if len(missing_indices) > 0:
-            log.warning(
-                f"In get_subsetted_tabular_dataset_df, missing indices: {missing_indices} for dataset: {dataset_id}"
-            )
-
-    return missing_columns, missing_indices
-
-
-def get_subsetted_matrix_dataset_df(
-    db: SessionWithUser,
-    user: str,
-    dataset: Dataset,
-    dimensions_info: MatrixDimensionsInfo,
-    filestore_location,
-    strict: bool = False,  # False default for backwards compatibility
-):
+def get_unique_dimension_ids_from_datasets(
+    db: SessionWithUser, dataset_ids: List[str], dimension_type: DimensionType
+) -> Set[str]:
     """
-    Load a dataframe containing data for the specified dimensions.
-    If the dimensions are specified by label, then return a result indexed by labels
+    Returns a unique set of dimension given ids from matrix and tabular datasets based on the given dimension type
     """
-
-    missing_features = []
-    missing_samples = []
-
-    if dimensions_info.features is None:
-        feature_indexes = None
-    elif dimensions_info.feature_identifier.value == "id":
-        feature_indexes, missing_features = get_feature_indexes_by_given_ids(
-            db, user, dataset, dimensions_info.features
-        )
+    if dimension_type.axis == "feature":
+        matrix_dimension_class = DatasetFeature
     else:
-        assert dimensions_info.feature_identifier.value == "label"
-        feature_indexes, missing_features = get_dimension_indexes_of_labels(
-            db, user, dataset, axis="feature", dimension_labels=dimensions_info.features
+        matrix_dimension_class = DatasetSample
+
+    unique_dims = set()
+
+    # Get all matrix dimensions for that dimension type
+    matrix_dimensions = (
+        db.query(matrix_dimension_class)
+        .filter(
+            and_(
+                Dimension.dataset_id.in_(dataset_ids),
+                Dimension.dataset_dimension_type == dimension_type.name,
+            )
         )
-
-    if len(missing_features) > 0:
-        log.warning(f"Could not find features: {missing_features}")
-
-    if dimensions_info.samples is None:
-        sample_indexes = None
-    elif dimensions_info.sample_identifier.value == "id":
-        sample_indexes, missing_samples = get_sample_indexes_by_given_ids(
-            db, user, dataset, dimensions_info.samples
+        .all()
+    )
+    # Get all tabular identifiers for that dimension type
+    tabular_dimension_ids = (
+        db.query(TabularCell)
+        .join(TabularColumn)
+        .filter(
+            and_(
+                TabularColumn.dataset_id.in_(dataset_ids),
+                TabularColumn.given_id == dimension_type.id_column,
+                TabularColumn.dataset_dimension_type == dimension_type.name,
+            )
         )
-    else:
-        sample_indexes, missing_samples = get_dimension_indexes_of_labels(
-            db, user, dataset, axis="sample", dimension_labels=dimensions_info.samples
-        )
+        .all()
+    )
+    # Combine dimension type's dimension given ids from datasets
+    for m_dim in matrix_dimensions:
+        unique_dims.add(m_dim.given_id)
 
-    if len(missing_samples) > 0:
-        log.warning(f"Could not find samples: {missing_samples}")
+    for t_dim in tabular_dimension_ids:
+        unique_dims.add(t_dim.dimension_given_id)
 
-    if strict:
-        num_missing_features = len(missing_features)
-        missing_features_msg = f"{num_missing_features} missing features: {missing_features[:20] + ['...'] if num_missing_features >= 20 else missing_features}"
-        num_missing_samples = len(missing_samples)
-        missing_samples_msg = f"{num_missing_samples} missing samples: {missing_samples[:20] + ['...'] if num_missing_samples >= 20 else missing_samples}"
-        if len(missing_features) > 0 or len(missing_samples) > 0:
-            raise UserError(f"{missing_features_msg} and {missing_samples_msg}")
-
-    # call sort on the indices because hdf5_read requires indices be in ascending order
-    if feature_indexes is not None:
-        feature_indexes = sorted(feature_indexes)
-    if sample_indexes is not None:
-        sample_indexes = sorted(sample_indexes)
-
-    df = get_slice(dataset, feature_indexes, sample_indexes, filestore_location)
-
-    # Re-index by label if applicable
-    if dimensions_info.feature_identifier == FeatureSampleIdentifier.label:
-        labels_by_id = get_dataset_feature_labels_by_id(db, user, dataset)
-        df = df.rename(columns=labels_by_id)
-
-    if dimensions_info.sample_identifier == FeatureSampleIdentifier.label:
-        label_by_id = get_dataset_sample_labels_by_id(db, user, dataset)
-        df = df.rename(index=label_by_id)
-
-    return df
+    return unique_dims

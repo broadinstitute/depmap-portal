@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import { isValidSliceQuery } from "@depmap/types";
-import { VariableDomain } from "../../../../../../contexts/DataExplorerApiContext";
+import { DataExplorerApiResponse } from "../../../../../../contexts/DataExplorerApiContext";
 import { useContextBuilderState } from "../../../../state/ContextBuilderState";
 import {
   isListOperator,
@@ -16,7 +16,7 @@ interface Props {
   path: (string | number)[];
   varName: string | null;
   isLoading: boolean;
-  domain: VariableDomain | null;
+  domain: DataExplorerApiResponse["fetchVariableDomain"] | null;
 }
 
 function RightHandSide({ op, expr, path, varName, isLoading, domain }: Props) {
@@ -52,6 +52,10 @@ function RightHandSide({ op, expr, path, varName, isLoading, domain }: Props) {
         isLoading={isLoading}
       />
     );
+  }
+
+  if (domain?.value_type === "binary") {
+    throw new Error("binary variables not supported");
   }
 
   return (

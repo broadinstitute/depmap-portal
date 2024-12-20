@@ -2,7 +2,17 @@ import React, { useEffect, useState } from "react";
 import { Button, Modal } from "react-bootstrap";
 import { ApiContext } from "@depmap/api";
 import { Spinner } from "@depmap/common-components";
-import { ContextManager } from "@depmap/data-explorer-2";
+import {
+  ContextManager,
+  DataExplorerApiProvider,
+  fetchContextLabels,
+  fetchDatasetDetails,
+  fetchDatasetsByIndexType,
+  fetchDatasetsMatchingContextIncludingEntities,
+  fetchDimensionLabels,
+  fetchDimensionLabelsOfDataset,
+  fetchDimensionLabelsToDatasetsMapping,
+} from "@depmap/data-explorer-2";
 import {
   getDapi as getApi,
   getVectorCatalogApi,
@@ -84,11 +94,25 @@ function PortalContextManager({
     // ApiContext is needed to support Cell Line Selector inside of
     // ContextBuilder.
     <ApiContext.Provider value={{ getApi, getVectorCatalogApi }}>
-      <ContextManager
-        onHide={onHide}
-        initialContextType={initialContextType}
-        showHelpText={showHelpText}
-      />
+      <DataExplorerApiProvider
+        evaluateLegacyContext={fetchContextLabels}
+        fetchDatasetDetails={fetchDatasetDetails}
+        fetchDatasetsByIndexType={fetchDatasetsByIndexType}
+        fetchDimensionLabels={fetchDimensionLabels}
+        fetchDimensionLabelsOfDataset={fetchDimensionLabelsOfDataset}
+        fetchDimensionLabelsToDatasetsMapping={
+          fetchDimensionLabelsToDatasetsMapping
+        }
+        fetchDatasetsMatchingContextIncludingEntities={
+          fetchDatasetsMatchingContextIncludingEntities
+        }
+      >
+        <ContextManager
+          onHide={onHide}
+          initialContextType={initialContextType}
+          showHelpText={showHelpText}
+        />
+      </DataExplorerApiProvider>
     </ApiContext.Provider>
   );
 }

@@ -204,6 +204,15 @@ any) {
             inputProps.onBlur(e);
             isEditing.current = false;
           }}
+          onPaste={(e) => {
+            // Strip any formatting from pasted text. This approach is
+            // preferable to setting the `contentEditable` attribute to
+            // "plaintext-only" because Firefox does not support that.
+            // https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/contenteditable#browser_compatibility
+            e.preventDefault();
+            const text = e.clipboardData.getData("text/plain");
+            document.execCommand("insertText", false, text);
+          }}
         />
         <div ref={underlineRef} className={styles.underlineDiv} />
         {placeholder ? <div>{placeholder}</div> : null}
@@ -302,13 +311,18 @@ export default function extendReactSelect(
 
     return (
       <div ref={innerRef} className={styles.container} {...dataProps}>
-        {swatchColor && (
-          <span
-            className={styles.swatch}
-            style={{ backgroundColor: swatchColor }}
-          />
-        )}
         <span className={styles.ExtendedSelect} ref={ref}>
+          {swatchColor && (
+            <span className={styles.swatchContainer}>
+              <span
+                className={styles.swatch}
+                style={{
+                  backgroundColor: swatchColor,
+                  top: label ? 22 : 0,
+                }}
+              />
+            </span>
+          )}
           {label && (
             <div
               className={cx(styles.selectorLabel, {

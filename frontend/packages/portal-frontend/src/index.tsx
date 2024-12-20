@@ -8,7 +8,7 @@ import {
 } from "@depmap/cell-line-selector";
 
 import { getQueryParams } from "@depmap/utils";
-import { getDapi, getVectorCatalogApi } from "src/common/utilities/context";
+import { getDapi } from "src/common/utilities/context";
 
 import { DatasetOption } from "src/entity/components/EntitySummary";
 
@@ -105,7 +105,7 @@ const renderWithErrorBoundary = (
 export function launchCellLineSelectorModal() {
   const container = document.getElementById("cell_line_selector_modal"); // defined in layout.html
 
-  renderCellLineSelectorModal(getDapi, getVectorCatalogApi, container);
+  renderCellLineSelectorModal(getDapi, container);
 }
 
 export function showTermsAndConditionsModal() {
@@ -151,6 +151,7 @@ export function editContext(context: DataExplorerContext, hash: string) {
 }
 
 export function saveNewContext(
+  // TODO: Extend this to also work with DataExplorerContextV2
   context: DataExplorerContext,
   onHide?: () => void,
   onSave?: (context: DataExplorerContext, hash: string) => void

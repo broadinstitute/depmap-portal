@@ -114,7 +114,6 @@ class DepmapModel(Model):
     plate_coating = Column(String)
     model_derivation_material = Column(String)
     public_comments = Column(String)
-    legacy_sub_subtype = Column(String)
     image_filename = Column(String)
 
     def __eq__(self, other):

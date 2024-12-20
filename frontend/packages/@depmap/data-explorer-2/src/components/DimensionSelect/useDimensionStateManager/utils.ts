@@ -55,35 +55,16 @@ export function findHighestPriorityDatasetId(
 
   filterDatasets(datasets, { slice_type, dataType, units }).forEach((d) => {
     if (
-      enabledDatasetIds.has(d.dataset_id) &&
+      enabledDatasetIds.has(d.id) &&
       d.priority !== null &&
       d.priority < bestPriority
     ) {
       bestPriority = d.priority;
-      bestId = d.dataset_id;
+      bestId = d.id;
     }
   });
 
   return bestId;
-}
-
-function isHighestPriorityDataset(
-  dataset: DataExplorerDatasetDescriptor,
-  datasets: DataExplorerDatasetDescriptor[],
-  enabledDatasetIds: Set<string>,
-  slice_type: string | undefined,
-  dataType: string | null,
-  units: string | null
-) {
-  const bestId = findHighestPriorityDatasetId(
-    datasets,
-    enabledDatasetIds,
-    slice_type,
-    dataType,
-    units
-  );
-
-  return dataset.dataset_id === bestId;
 }
 
 export function getEnabledDatasetIds(
@@ -100,7 +81,7 @@ export function getEnabledDatasetIds(
     return new Set(
       datasets
         .filter((d) => !dataType || dataType === d.data_type)
-        .map((d) => d.dataset_id)
+        .map((d) => d.id)
     );
   }
 
@@ -114,9 +95,7 @@ export function getEnabledDatasetIds(
     datasets
       .filter((d) => d.units !== units)
       .forEach((d) => {
-        const index = sliceLabelMap.dataset_ids.findIndex(
-          (id) => id === d.dataset_id
-        );
+        const index = sliceLabelMap.dataset_ids.findIndex((id) => id === d.id);
         validDsIndices.delete(index);
       });
   }
@@ -279,7 +258,7 @@ export function computeOptions(
 
       const noEntities = !datasets
         .filter((d) => d.units === units)
-        .some((d) => enabledDatasetIds.has(d.dataset_id));
+        .some((d) => enabledDatasetIds.has(d.id));
 
       if (noEntities) {
         isDisabled = true;
@@ -342,6 +321,14 @@ export function computeOptions(
     })
     .sort(sortDisabledOptionsLast);
 
+  const highestPriorityDatasetId = findHighestPriorityDatasetId(
+    datasets,
+    enabledDatasetIds,
+    selectedSliceType,
+    selectedDataType,
+    selectedUnits
+  );
+
   const dataVersionOptions = filterDatasets(datasets, {
     dataType: selectedDataType,
   })
@@ -358,7 +345,7 @@ export function computeOptions(
         ].join(" ");
       }
 
-      if (selectedContext && !enabledDatasetIds.has(dataset.dataset_id)) {
+      if (selectedContext && !enabledDatasetIds.has(dataset.id)) {
         isDisabled = true;
 
         if (selectedAxisType === "aggregated_slice") {
@@ -386,16 +373,9 @@ export function computeOptions(
       }
 
       return {
-        label: dataset.label,
-        value: dataset.dataset_id,
-        isDefault: isHighestPriorityDataset(
-          dataset,
-          datasets,
-          enabledDatasetIds,
-          selectedSliceType,
-          selectedDataType,
-          selectedUnits
-        ),
+        label: dataset.name,
+        value: dataset.id,
+        isDefault: dataset.id === highestPriorityDatasetId,
         isDisabled,
         disabledReason,
       };

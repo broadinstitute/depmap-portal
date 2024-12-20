@@ -14,6 +14,14 @@ class Protein(Entity):
     __mapper_args__ = {"polymorphic_identity": "protein"}
 
     @staticmethod
+    def get_by_uniprot_id(uniprot_id, must=True):
+        q = Protein.query.filter(Protein.uniprot_id == uniprot_id)
+        if must:
+            return q.one()
+        else:
+            return q.one_or_none()
+
+    @staticmethod
     def get_by_label(label, must=True):
         q = Protein.query.filter(Protein.label == label)
         if must:

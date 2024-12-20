@@ -11,6 +11,7 @@ interface Props {
   backdrop: "static" | boolean;
   context: { dimension_type: string } | DataExplorerContextV2;
   isExistingContext: boolean;
+  onClickSave: (newContext: DataExplorerContextV2) => void;
   onHide: () => void;
   show: boolean;
 }
@@ -19,16 +20,14 @@ function ContextBuilderModal({
   backdrop,
   context,
   isExistingContext,
+  onClickSave,
   onHide,
   show,
 }: Props) {
   return (
     <ContextBuilderStateProvider
       contextToEdit={context}
-      onChangeContext={(nextContext) => {
-        const json = JSON.stringify(nextContext, null, 2);
-        window.alert(`TODO: Save context\n${json}`);
-      }}
+      onChangeContext={onClickSave}
     >
       <Modal
         className={styles.ContextBuilder}

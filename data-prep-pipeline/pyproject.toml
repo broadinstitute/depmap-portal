@@ -35,3 +35,6 @@ priority = "supplemental"
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.scripts]
+transform_portal_compounds = 'data_prep_pipeline.portal_compounds.transform_portal_compounds:main'
