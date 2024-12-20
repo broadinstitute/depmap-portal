@@ -221,9 +221,12 @@ def get_pref_dep_data_for_data_type(data_type: str, model_id: str) -> dict:
 
 @blueprint.route("/compound_sensitivity/<model_id>")
 def get_compound_sensitivity_data(model_id: str) -> dict:
-    dataset_name = DependencyDataset.get_dataset_by_data_type_priority(
+    dataset = DependencyDataset.get_dataset_by_data_type_priority(
         DependencyDataset.DataTypeEnum.drug_screen
-    ).name.name
+    )
+    if dataset is None:
+        abort(404)
+    dataset_name = dataset.name.name
     labels_by_index = get_compound_labels_by_index(dataset_name)
 
     return get_rows_with_lowest_z_score(dataset_name, model_id, labels_by_index)
