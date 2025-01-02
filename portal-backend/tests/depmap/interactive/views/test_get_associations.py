@@ -71,7 +71,7 @@ def test_get_breadbox_associations(empty_db_mock_downloads):
     empty_db_mock_downloads.session.flush()
     interactive_test_utils.reload_interactive_config()
 
-    params = {"x": "breadbox/someDatasetId/someFeatureId"}
+    params = {"x": "slice/breadbox%2F2e99edbc-30a5-445c-baa1-4be22ca8f31f/A2M/label"}
 
     with empty_db_mock_downloads.app.test_client() as c:
         r = c.get("/interactive/api/associations?" + urllib.parse.urlencode(params))
