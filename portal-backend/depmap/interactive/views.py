@@ -705,8 +705,10 @@ def get_associations_df(matrix_id, x_feature):
 
 @blueprint.route("/api/associations")
 def get_associations():
-    x_id = request.args.get("x")
-    if x_id.startswith("breadbox/"):
+    x_id = request.args.get("x")  # slice ID
+
+    x_dataset_id, x_feature = InteractiveTree.get_dataset_feature_from_id(x_id)
+    if x_dataset_id.startswith("breadbox/"):
         # Associations don't exist for breadbox features (yet at least)
         # but we don't want errors when this endpoint is called for a breadbox feature
         return jsonify(
@@ -718,12 +720,11 @@ def get_associations():
             }
         )
     # Everything below this point is deprecated: and not supported for breadbox datasets.
-    x_dataset, x_feature = InteractiveTree.get_dataset_feature_from_id(x_id)
-    dataset_label = interactive_utils.get_dataset_label(x_dataset)
+    dataset_label = interactive_utils.get_dataset_label(x_dataset_id)
     if not option_used(
-        x_feature, x_dataset, "DATASETS"
+        x_feature, x_dataset_id, "DATASETS"
     ) or not interactive_utils.is_standard(
-        x_dataset
+        x_dataset_id
     ):  # fixme test for this path
         return jsonify(
             {
@@ -733,7 +734,7 @@ def get_associations():
                 "featureLabel": x_feature,
             }
         )
-    matrix_id = interactive_utils.get_matrix_id(x_dataset)
+    matrix_id = interactive_utils.get_matrix_id(x_dataset_id)
 
     df = get_associations_df(matrix_id, x_feature)
 
