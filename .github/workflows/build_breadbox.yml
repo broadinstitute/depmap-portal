@@ -64,15 +64,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - name: Install and configure Poetry
-        uses: snok/install-poetry@v1
-        with:
-          version: 1.7.1
-          virtualenvs-create: true
-          virtualenvs-in-project: true
+      - name: Generate breadbox client
+        uses: ./.github/actions/generate-breadbox-client # defined as a re-usable action
       - name: check that the breadbox client passes pyright
+        working-directory: ./breadbox-client
         run: |
-          cd breadbox-client && poetry install && poetry run pyright breadbox_facade
+          poetry install && poetry run pyright breadbox_facade
   build-docker:
     runs-on: ubuntu-latest
     steps:
@@ -93,9 +90,6 @@ jobs:
           yarn --cwd frontend "build:elara"
       - name: build docker image
         run: bash breadbox/build-docker-image.sh ${{ env.DOCKER_REPO }}:${{ env.DOCKER_TAG }}
-      - name: check that the breadbox client is in sync with the latest API spec
-        run: |
-          docker run -v $PWD/breadbox-client/latest-breadbox-api.json:/latest-breadbox-api.json ${{ env.DOCKER_REPO }}:${{ env.DOCKER_TAG }} poetry run ./bb check-api /latest-breadbox-api.json
       - name: Run pyright-ratchet
         run: |
           docker run -v $PWD/breadbox/pyright-ratchet-errors.txt:/install/breadbox/pyright-ratchet-errors.txt ${{ env.DOCKER_REPO }}:${{ env.DOCKER_TAG }} poetry run pyright-ratchet
@@ -186,13 +180,10 @@ jobs:
       - name: Get bumped version
         run: echo "${{ steps.current-version.outputs.bumped_version}}"
 
-  publish-breadbox-and-client:
+  publish-breadbox-client:
     needs: bump-versions
     if: ${{ (needs.bump-versions.outputs.current_version != needs.bump-versions.outputs.bumped_version) && (github.ref_name == 'master') }}
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./breadbox
     steps:
       - name: Check out
         uses: actions/checkout@v3
@@ -218,17 +209,8 @@ jobs:
         with:
           path: .venv
           key: venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('**/poetry.lock') }}
-      - name: Install dependencies
-        run: poetry install
-        if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
-      - name: Set up for publishing breadbox
-        working-directory: ./breadbox
-        run: |
-          poetry self add keyrings.google-artifactregistry-auth
-          poetry config repositories.public-python https://us-central1-python.pkg.dev/cds-artifacts/public-python/
-      - name: Publish new breadbox version to Artifact Registry
-        working-directory: ./breadbox
-        run: poetry publish --build --repository public-python
+      - name: Generate breadbox client
+        uses: ./.github/actions/generate-breadbox-client # defined as a re-usable action
       - name: Set up for publishing breadbox client
         working-directory: ./breadbox-client
         run: |
