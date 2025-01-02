@@ -1,71 +1,80 @@
 import React from "react";
-import { IdInfo } from "../models/types";
+import { ModelAnnotation } from "../models/ModelAnnotation";
 import styles from "../styles/CellLinePage.scss";
 
 export interface IdTabProps {
-  idInfo: IdInfo;
+  idInfo: ModelAnnotation;
+  aliases: string[];
 }
 
-const IdTab = ({ idInfo }: IdTabProps) => {
-  const aliases = idInfo.aliases;
+const IdTab = ({ idInfo, aliases }: IdTabProps) => {
   if (idInfo) {
     return (
       <div className={styles.descriptionTileColumns}>
         <div className={styles.descriptionTileColumn}>
-          {idInfo.ccle_name && (
+          {idInfo.CellLineName && (
             <>
-              <h4>CCLE Name</h4>
-              <p>{idInfo.ccle_name}</p>
+              <h4>Cell Line Name</h4>
+              <p>{idInfo.CCLEName}</p>
             </>
           )}
+          {idInfo.CCLEName && (
+            <>
+              <h4>CCLE Name</h4>
+              <p>{idInfo.CCLEName}</p>
+            </>
+          )}
+
           {aliases && aliases.length > 0 && (
             <span>
               <h4>Aliases: </h4>
-              {aliases.map((alias, index) => (
-                // eslint-disable-next-line react/no-array-index-key
-                <span key={index}>
-                  <p>{alias}</p>
-                  {index < aliases.length - 1 ? ", " : ""}
-                </span>
-              ))}
+              <p>
+                {aliases.map((alias, index) => (
+                  // eslint-disable-next-line react/no-array-index-key
+                  <span key={index}>
+                    {alias}
+                    {index < aliases.length - 1 ? ", " : ""}
+                  </span>
+                ))}
+              </p>
             </span>
           )}
-          {idInfo.rrid && (
+          {idInfo.RRID && (
             <>
               <h4>Cellosaurus RRID</h4>
               <a
                 className={styles.descriptionLinks}
-                href={`http://web.expasy.org/cellosaurus/${idInfo.rrid}`}
+                href={`http://web.expasy.org/cellosaurus/${idInfo.RRID}`}
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                {idInfo.rrid}
+                {idInfo.RRID}
               </a>
             </>
           )}
-          {idInfo.sanger_model_id && (
+          {idInfo.SangerModelID && (
             <>
               <h4>Sanger Model ID</h4>
               <a
                 className={styles.descriptionLinks}
-                href={`https://cellmodelpassports.sanger.ac.uk/passports/${idInfo.sanger_model_id}`}
+                href={`https://cellmodelpassports.sanger.ac.uk/passports/${idInfo.SangerModelID}`}
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                {idInfo.sanger_model_id}
+                {idInfo.SangerModelID}
               </a>
             </>
           )}
-          {idInfo.cosmic_id && (
+          {idInfo.COSMICID && (
             <>
               <h4>COSMIC ID</h4>
               <a
                 className={styles.descriptionLinks}
-                href={`https://cancer.sanger.ac.uk/cell_lines/sample/overview?id=${idInfo.cosmic_id}`}
+                href={`https://cancer.sanger.ac.uk/cell_lines/sample/overview?id=${idInfo.COSMICID}`}
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                {idInfo.cosmic_id}
+                {idInfo.COSMICID}
               </a>
             </>
           )}
