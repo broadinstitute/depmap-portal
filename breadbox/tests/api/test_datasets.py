@@ -32,6 +32,7 @@ from breadbox.schemas.dataset import ColumnMetadata
 from tests import factories
 from breadbox.config import Settings
 from typing import Dict
+from ..utils import upload_and_get_file_ids
 
 
 def assert_dimensions_response_matches(a, b):
@@ -2522,7 +2523,7 @@ class TestPost:
             ],
         )
 
-        tabular_file_ids_1, tabular_file_1_hash = factories.upload_and_get_file_ids(
+        tabular_file_ids_1, tabular_file_1_hash = upload_and_get_file_ids(
             client, tabular_file_1
         )
 
@@ -2724,7 +2725,7 @@ class TestPost:
         tabular_file_2 = factories.tabular_csv_data_file(
             cols=["depmap_id", "col_1", "col_2"], row_values=[["ACH-1", 1, "hi"]],
         )
-        tabular_file_ids_2, tabular_file_2_hash = factories.upload_and_get_file_ids(
+        tabular_file_ids_2, tabular_file_2_hash = upload_and_get_file_ids(
             client, tabular_file_2
         )
         tabular_dataset_2_response = client.post(
@@ -2929,7 +2930,7 @@ class TestPatch:
     ):
         # Create a new matrix dataset
         test_user_headers = {"X-Forwarded-User": "someone@private-group.com"}
-        matrix_file_ids, matrix_hash = factories.upload_and_get_file_ids(
+        matrix_file_ids, matrix_hash = upload_and_get_file_ids(
             client, factories.continuous_matrix_csv_file()
         )
         matrix_dataset_res = client.post(
@@ -3068,7 +3069,7 @@ class TestPatch:
             cols=["depmap_id", "attr1"],
             row_values=[["ACH-1", 1.0,], ["ACH-3", np.NaN],],
         )
-        tabular_file_ids, tabular_hash = factories.upload_and_get_file_ids(
+        tabular_file_ids, tabular_hash = upload_and_get_file_ids(
             client, tabular_data_file
         )
         tabular_dataset_res = client.post(
@@ -3159,7 +3160,7 @@ class TestPatch:
             cols=["depmap_id", "attr1"],
             row_values=[["ACH-1", 1.0,], ["ACH-3", np.NaN],],
         )
-        tabular_file_ids, tabular_hash = factories.upload_and_get_file_ids(
+        tabular_file_ids, tabular_hash = upload_and_get_file_ids(
             client, tabular_data_file
         )
         tabular_dataset_res = client.post(

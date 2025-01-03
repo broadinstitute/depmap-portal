@@ -34,7 +34,7 @@ class TestPost:
             {"index": ["ACH-1", "ACH-2"], "A": [0.1, 0.2], "B": [0.3, 0.4]}
         ).to_parquet(data_path)
 
-        file_ids, expected_md5 = upload_and_get_file_ids(client, data_path)
+        file_ids, expected_md5 = upload_and_get_file_ids(client, filename=data_path)
 
         matrix_dataset = client.post(
             "/dataset-v2/",
@@ -85,7 +85,7 @@ class TestPost:
         user_db_session = SessionLocalWithUser(user)
 
         file = factories.continuous_matrix_csv_file()
-        file_ids, expected_md5 = upload_and_get_file_ids(client, file)
+        file_ids, expected_md5 = upload_and_get_file_ids(client, file, chunk_count=3)
         matrix_dataset_given_id = "some_given_id"
 
         matrix_dataset_w_simple_metadata = client.post(
@@ -132,7 +132,9 @@ class TestPost:
         )
         tabular_dataset_given_id = "some_other_given_id"
 
-        tabular_file_ids, hash = upload_and_get_file_ids(client, tabular_data_file)
+        tabular_file_ids, hash = upload_and_get_file_ids(
+            client, tabular_data_file, chunk_count=3
+        )
 
         assert len(tabular_file_ids) == 3
         tabular_dataset_response = client.post(
