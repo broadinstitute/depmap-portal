@@ -9,37 +9,9 @@ from breadbox.schemas.custom_http_exception import (
     ResourceNotFoundError,
     UserError,
 )
+from breadbox.service import slice as slice_service
 from breadbox.service import metadata as metadata_service
 from typing import Tuple
-
-
-def _resolve_slice(db: SessionWithUser, slice_query: SliceQuery) -> Tuple[str, str]:
-    dataset_id = slice_query.dataset_id
-
-    if slice_query.identifier_type == "column":
-        label = given_id = slice_query.identifier
-    elif slice_query.identifier_type == "feature_id":
-        given_id = slice_query.identifier
-        # TODO: fix this
-        label = given_id
-    elif slice_query.identifier_type == "feature_label":
-        feature = metadata_service.get_dataset_feature_by_label(
-            db, dataset_id, feature_label=slice_query.identifier,
-        )
-        given_id, label = feature.given_id, feature.label
-    elif slice_query.identifier_type == "sample_id":
-        given_id = slice_query.identifier
-        # TODO: fix this
-        label = given_id
-    else:
-        assert slice_query.identifier_type == "sample_label"
-        sample = metadata_service.get_dataset_sample_by_label(
-            db, dataset_id, sample_label=slice_query.identifier
-        )
-        given_id, label = sample.given_id, sample.label
-
-    return given_id, label
-
 
 from breadbox.crud.types import get_dimension_type_labels_by_id
 
@@ -72,7 +44,7 @@ def get_associations(
     datasets = []
     associated_dimensions = []
 
-    given_id, label = _resolve_slice(db, slice_query)
+    resolved_slice = slice_service.resolve_slice_to_components(db, slice_query)
 
     dim_label_cache = {}
 
@@ -111,7 +83,7 @@ def get_associations(
             filestore_location, precomputed_assoc_table.filename
         )
         for associated_given_id, correlation in _get_top_correlates(
-            precomputed_assoc_table_path, dimension, given_id
+            precomputed_assoc_table_path, dimension, resolved_slice.given_id
         ):
             associated_label = _get_dimension_label(
                 other_dimension_type, associated_given_id
@@ -127,7 +99,7 @@ def get_associations(
 
     return Associations(
         dataset_name=dataset.name,
-        dimension_label=label,
+        dimension_label=resolved_slice.label,
         associated_datasets=datasets,
         associated_dimensions=associated_dimensions,
     )
