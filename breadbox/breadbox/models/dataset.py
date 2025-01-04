@@ -354,3 +354,28 @@ class PropertyToIndex(Base, UUIDMixin, GroupMixin):
         Dataset, backref=backref("properties_to_index", cascade="all, delete-orphan"),
     )
     property = Column(String, nullable=False)
+
+
+class PrecomputedAssociation(Base, UUIDMixin):
+    """Models the path to a file which contains top correlations between two datasets. (We won't have a file for every pair of datasets.)"""
+
+    __tablename__ = "precomputed_association"
+    __table_args__ = (
+        CheckConstraint(
+            "(axis == 'feature') OR (axis == 'sample')", name="ck_assoc_axis"
+        ),
+        Index("idx_assoc_dataset_1", "dataset_1_id"),
+        Index("idx_assoc_dataset_2", "dataset_2_id"),
+        UniqueConstraint(
+            "dataset_1_id", "dataset_2_id", "axis", name="assoc_params_uc"
+        ),
+    )
+
+    dataset_1_id = Column(String, ForeignKey("dataset.id"), nullable=False)
+    dataset_1 = relationship(Dataset, foreign_keys=[dataset_1_id])
+    dataset_2_id = Column(String, ForeignKey("dataset.id"), nullable=False)
+    dataset_2 = relationship(Dataset, foreign_keys=[dataset_2_id])
+
+    axis = Column(String, nullable=False)  # "feature" or "sample" type
+
+    filename = Column(String, nullable=False)
