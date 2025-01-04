@@ -116,7 +116,7 @@ def test_associations(
         [["feature0", "feature0", 0.1], ["feature0", "feature1", 0.2]],
     )
 
-    file_ids, expected_md5 = upload_and_get_file_ids(client, assoc_table)
+    file_ids, expected_md5 = upload_and_get_file_ids(client, filename=assoc_table)
 
     # first upload attempt: should fail because user doesn't have access
     response = client.post(
