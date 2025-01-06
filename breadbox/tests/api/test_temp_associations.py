@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 from ..utils import assert_status_ok, assert_status_not_ok, upload_and_get_file_ids
-
+from typing import Literal
 from breadbox.db.session import SessionWithUser
 from breadbox.models.dataset import AnnotationType
 from fastapi.testclient import TestClient
@@ -69,7 +69,7 @@ def test_associations(
     def get_assoc_table_file_count():
         return len(glob(f"{settings.filestore_location}/associations/*.sqlite3"))
 
-    def create_dim_type(axis: str, count: int):
+    def create_dim_type(axis: Literal["feature", "sample"], count: int):
         # Define label metadata for our features
         factories.add_dimension_type(
             minimal_db,

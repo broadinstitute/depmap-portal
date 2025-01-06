@@ -74,7 +74,7 @@ def resolve_slice_to_components(
         given_id = sample.given_id
         label = slice_query.identifier
 
-    return ResolvedSlice(dataset=dataset, label=label, given_id=given_id)
+    return ResolvedSliceIdentifiers(dataset=dataset, label=label, given_id=given_id)
 
 
 def get_slice_data(
