@@ -107,6 +107,7 @@ def test_associations(
     dataset_2_feature_count = 2
     dataset_1 = create_matrix_dataset(3, dataset_1_feature_count)
     dataset_2 = create_matrix_dataset(3, dataset_2_feature_count)
+    minimal_db.commit()
 
     assoc_table = str(tmpdir.join("assoc.sqlite3"))
     create_assoc_table(
