@@ -1,14 +1,17 @@
 # Dataset ID
 
-add-if-missing {
-  "type": "release_taiga_id",
-  "dataset_id": "internal-24q2-3719.88"
-}
+# SET_TAIGA_PREPROCESSOR release_taiga_id "internal-24q2-3719.88"
 
-add-if-missing {
-  "type": "previous_release_taiga_id",
-  "dataset_id": "internal-23q4-ac2b.86"
-}
+# is this needed for anything? (We think these are just for model and model condition generation which is being moved out of this pipeline)
+# This is also used for uploading hgnc. (Can we remove the version number?)
+# add-if-missing {
+#  "type": "release_taiga_id",
+#  "dataset_id": "internal-24q2-3719.88"
+# }
+# add-if-missing {
+#  "type": "previous_release_taiga_id",
+#  "dataset_id": "internal-23q4-ac2b.86"
+# }
 
 add-if-missing {
   "type": "predictability_taiga_id",
@@ -24,7 +27,7 @@ add-if-missing {
 # CN gene expression data
 add-if-missing {
   "type": "cngene",
-  "dataset_id": "internal-24q2-3719.88/OmicsCNGene"
+  "dataset_id": PREPROCESS_TAIGA_ID(release_taiga_id, "OmicsCNGene") 
 }
 
 # Portal Compounds
@@ -45,7 +48,7 @@ add-if-missing {
 
 add-if-missing {
   "type": "prism_oncology_reference_auc_matrix",
-  "dataset_id": "internal-24q2-3719.88/PRISMOncologyReferenceAUCMatrix"
+  "dataset_id": PREPROCESS_TAIGA_ID(release_taiga_id, "PRISMOncologyReferenceAUCMatrix") 
 }
 
 # HGNC Gene Table
@@ -57,7 +60,7 @@ add-if-missing {
 # Driver Events
 add-if-missing {
   "type": "mutations",
-  "dataset_id": "internal-24q2-3719.88/OmicsSomaticMutations"
+  "dataset_id": PREPROCESS_TAIGA_ID(release_taiga_id, "OmicsSomaticMutations") 
 }
 
 add-if-missing {
@@ -68,18 +71,18 @@ add-if-missing {
 # Fusion
 add-if-missing {
   "type": "fusion",
-  "dataset_id": "internal-24q2-3719.88/OmicsFusionFiltered"
+  "dataset_id": PREPROCESS_TAIGA_ID(release_taiga_id, "OmicsFusionFiltered") 
 }
 
 # CRISPR Confounders
 add-if-missing {
   "type": "achilles_screen_qc_report",
-  "dataset_id": "internal-24q2-3719.88/AchillesScreenQCReport"
+  "dataset_id": PREPROCESS_TAIGA_ID(release_taiga_id, "AchillesScreenQCReport") 
 }
 
 add-if-missing {
   "type": "crispr_screen_map",
-  "dataset_id": "internal-24q2-3719.88/CRISPRScreenMap"
+  "dataset_id": PREPROCESS_TAIGA_ID(release_taiga_id, "CRISPRScreenMap") 
 }
 
 # Legacy Data

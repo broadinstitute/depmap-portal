@@ -1,4 +1,4 @@
-include "release_inputs.conseq"
+# 
 
 rule transform_cngene_log2:
     inputs:

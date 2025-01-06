@@ -1,4 +1,4 @@
-include "release_inputs.conseq"
+# 
 
 rule filter-portal-compounds:
     inputs:

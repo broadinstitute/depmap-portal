@@ -1,4 +1,11 @@
-include "model_and_model_condition.conseq"
+eval """
+import subprocess
+subprocess.check_call(["python", "../../pipeline/preprocess_taiga_ids.py", "release_inputs.template", "release_inputs-DO-NOT-EDIT-ME"])
+"""
+
+include "release_inputs-DO-NOT-EDIT-ME"
+
+# include "model_and_model_condition.conseq"
 include "cngene_log_2_transformation.conseq"
 include "filter_portal_compounds.conseq"
 include "update_hgnc_gene_table.conseq"

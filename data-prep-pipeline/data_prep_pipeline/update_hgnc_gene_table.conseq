@@ -1,4 +1,4 @@
-include "release_inputs.conseq"
+# 
 
 rule update_hgnc_gene_table:
     inputs:

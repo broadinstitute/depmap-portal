@@ -1,4 +1,4 @@
-include "release_inputs.conseq"
+# 
 
 rule generate_model_and_model_condition:
     inputs:
