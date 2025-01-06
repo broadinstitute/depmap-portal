@@ -218,11 +218,9 @@ def _get_version():
 @cli.command()
 def update_client():
     "Update the code for the breadbox client based. (Also saving out a new 'latest-breadbox-api.json' file)"
-    # every time we generate the client code also update ../breadbox-client/latest-breadbox-api.json. This will allow us to verify
-    # whether the client is using the latest version of the spec by running
-    # ./bb check-api ../breadbox-client/latest-breadbox-api.json
-    # NOTE: Make sure the latest breadbox version is installed first. Run `poetry install` first if necessary
-    _export_api_spec("../breadbox-client/latest-breadbox-api.json")
+
+    _export_api_spec("../breadbox-client/latest-breadbox-api.json")  # TODO: call helper
+
     # use the breadbox-client-generator directory which has a different virtual env with incompatible
     # libraries, but we need it in order to run the openapi-python-client generator
     subprocess.run(
