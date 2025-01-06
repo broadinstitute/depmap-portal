@@ -145,7 +145,6 @@ def delete_association_table(db: SessionWithUser, id: str, filestore_location: s
         )
 
     db.delete(table)
-    db.commit()
 
     # clean up sqlite file
     full_path = os.path.join(filestore_location, table.filename)

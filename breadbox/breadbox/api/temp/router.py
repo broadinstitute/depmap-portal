@@ -19,13 +19,14 @@ from breadbox.service import slice as slice_service
 
 from depmap_compute.context import ContextEvaluator
 from breadbox.io import cas
-from .uploads import construct_file_from_ids
-from ..schemas.associations import Associations
-from ..schemas.associations import AssociationTable, AssociationsIn, Association
+from breadbox.api.uploads import construct_file_from_ids
+from breadbox.schemas.associations import Associations
+from breadbox.schemas.associations import AssociationTable, AssociationsIn, Association
 from typing import List
-from ..service import associations as associations_service
-from ..crud import associations as associations_crud
+from breadbox.service import associations as associations_service
+from breadbox.crud import associations as associations_crud
 import uuid
+from breadbox.db.util import transaction
 
 # This temp prefix is intended to convey to API users that these contracts may change.
 # Most of these endpoints are intended to support feature-specific functionality
@@ -137,9 +138,10 @@ def delete_associations(
     settings: Annotated[Settings, Depends(get_settings)],
     id: str,
 ):
-    return associations_crud.delete_association_table(
-        db, id, settings.filestore_location
-    )
+    with transaction(db):
+        return associations_crud.delete_association_table(
+            db, id, settings.filestore_location
+        )
 
 
 @router.post(
@@ -176,14 +178,15 @@ def add_associations(
     os.rename(full_file, full_dest_filename)
 
     try:
-        assoc_table = associations_crud.add_association_table(
-            db,
-            associations_in.dataset_1_id,
-            associations_in.dataset_2_id,
-            associations_in.axis,
-            settings.filestore_location,
-            dest_filename,
-        )
+        with transaction(db):
+            assoc_table = associations_crud.add_association_table(
+                db,
+                associations_in.dataset_1_id,
+                associations_in.dataset_2_id,
+                associations_in.axis,
+                settings.filestore_location,
+                dest_filename,
+            )
     except:
         # if add_association_table fails, clean up the sqlite3 file
         os.remove(full_dest_filename)
