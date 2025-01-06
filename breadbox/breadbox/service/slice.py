@@ -21,7 +21,7 @@ from depmap_compute.slice import SliceQuery
 
 
 @dataclass
-class ResolvedSlice:
+class ResolvedSliceIdentifiers:
     dataset: Dataset
     label: str
     given_id: str
@@ -29,7 +29,7 @@ class ResolvedSlice:
 
 def resolve_slice_to_components(
     db: SessionWithUser, slice_query: SliceQuery
-) -> ResolvedSlice:
+) -> ResolvedSliceIdentifiers:
     dataset_id = slice_query.dataset_id
 
     dataset = dataset_crud.get_dataset(db, db.user, dataset_id)
