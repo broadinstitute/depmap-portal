@@ -12,7 +12,7 @@ def test_celligner_distance_cell_line_to_tumors(app, empty_db_with_celligner):
     with app.test_client() as c:
         r = c.get(
             url_for("celligner.celligner_distance_cell_line_to_tumors"),
-            query_string={"sampleId": "ACH-000425", "kNeighbors": 5},
+            query_string={"profileId": "PR-QmkJ5E", "kNeighbors": 5},
         )
         assert r.status_code == 200, r.status_code
         data = r.json
@@ -22,7 +22,7 @@ def test_celligner_distance_cell_line_to_tumors(app, empty_db_with_celligner):
             "color_indexes",
         }
         assert len(data["color_indexes"]) == 5
-        assert data["most_common_lineage"] == "Ovary/Fallopian Tube"
+        assert data["most_common_lineage"] == "Lung"
 
 
 def test_celligner_distance_tumors_to_cell_lines(app, empty_db_with_celligner):
