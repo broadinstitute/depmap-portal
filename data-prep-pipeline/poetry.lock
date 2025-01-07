@@ -2037,13 +2037,13 @@ tests = ["cython", "littleutils", "pygments", "pytest", "typeguard"]
 
 [[package]]
 name = "taigapy"
-version = "3.8.3"
+version = "3.10.0"
 description = "Client library for fetching data from Taiga"
 optional = false
 python-versions = ">=3.9"
 files = [
-    {file = "taigapy-3.8.3-py3-none-any.whl", hash = "sha256:af080b7596f85b0bcb2c41fdedba62b22ada1b7614b55b79002e3e4b5d900765"},
-    {file = "taigapy-3.8.3.tar.gz", hash = "sha256:21ecafd3b2f9b08fc66d19ed62469e82e98f537816d04d3382b8840b84d7cfc4"},
+    {file = "taigapy-3.10.0-py3-none-any.whl", hash = "sha256:348daa1b57d913ca3152d62af95d0a6502d6c54d1d309b4d01aeb129bf1e6225"},
+    {file = "taigapy-3.10.0.tar.gz", hash = "sha256:8442b16f066d183e7f0ccaab14fb5deedf4ffca166c2464b098387ee19eb9cd6"},
 ]
 
 [package.dependencies]
@@ -2052,7 +2052,7 @@ boto3 = ">=1.26.0,<2.0.0"
 colorful = ">=0.5.5,<0.6.0"
 google-cloud-storage = ">=2.2.0,<3.0.0"
 h5py = ">=3.10.0,<4.0.0"
-pandas = ">=1.0.0,<2.0.0"
+pandas = ">=1.0.0"
 pre-commit = ">=3.7.0,<4.0.0"
 progressbar2 = ">=3.3.0,<4.0.0"
 pyarrow = ">3.0.0"
@@ -2366,4 +2366,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "5fc136f1ef4561ab4178f29792b5cbda240a95392697cdc26c326f32af5d3b37"
+content-hash = "6b8d91286823706ee1a5bbdab09fe229eefbf587c6abd84ca12808b15837c200"
