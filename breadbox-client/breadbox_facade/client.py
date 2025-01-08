@@ -31,28 +31,28 @@ from breadbox_client.api.groups import add_group_entry as add_group_entry_client
 from breadbox_client.api.groups import remove_group_access as remove_group_access_client
 from breadbox_client.api.groups import get_groups as get_groups_client
 from breadbox_client.api.types import add_dimension_type as add_dimension_type_client
-from breadbox_client.api.types import add_feature_type as add_feature_type_client
-from breadbox_client.api.types import add_sample_type as add_sample_type_client
 from breadbox_client.api.types import get_dimension_type as get_dimension_type_client
 from breadbox_client.api.types import get_dimension_types as get_dimension_types_client
 from breadbox_client.api.types import get_feature_types as get_feature_types_client
 from breadbox_client.api.types import get_sample_types as get_sample_types_client
 from breadbox_client.api.types import remove_dimension_type as remove_dimension_type_client
 from breadbox_client.api.types import update_dimension_type as update_dimension_type_client
-from breadbox_client.api.types import update_feature_type_metadata as update_feature_type_metadata_client
-from breadbox_client.api.types import update_sample_type_metadata as update_sample_type_metadata_client
+from breadbox_client.api.temp import get_associations as get_associations_client
+from breadbox_client.api.temp import add_associations as add_associations_client
+from breadbox_client.api.temp import get_associations_for_slice as get_associations_for_slice_client
+#
+
 from breadbox_client.models import (
     AccessType,
     AddDatasetResponse,
     AddDimensionType,
+    Associations,
+    AssociationTable,
+    AssociationsIn,
+    AssociationsInAxis,
     AddDimensionTypeAxis,
-    AnnotationTypeMap,
     BodyAddDataType,
-    BodyAddFeatureType,
-    BodyAddSampleType,
     BodyGetDatasetData,
-    BodyUpdateFeatureTypeMetadata,
-    BodyUpdateSampleTypeMetadata,
     BodyUploadFile,
     ColumnMetadata,
     ComputeParams,
@@ -66,12 +66,13 @@ from breadbox_client.models import (
     GroupEntry,
     GroupEntryIn,
     GroupOut,
-    IdMapping,
     MatrixDatasetParams,
     MatrixDatasetParamsDatasetMetadataType0,
     MatrixDatasetParamsFormat,
     MatrixDatasetResponse,
     SampleTypeOut,
+    SliceQuery,
+    SliceQueryIdentifierType,
     TableDatasetParams,
     TableDatasetParamsColumnsMetadata,
     TableDatasetParamsDatasetMetadataType0,
@@ -472,6 +473,24 @@ class BBClient:
         breadbox_response = remove_group_access_client.sync_detailed(client=self.client, group_entry_id=group_entry_id)
         return self._parse_client_response(breadbox_response)
 
+    # ASSOCIATIONS
+    def get_associations(self) -> List[AssociationTable]:
+        breadbox_response = get_associations_client.sync_detailed(client=self.client)
+        return self._parse_client_response(breadbox_response)
+
+    def add_associations(self, dataset_1_id:str, dataset_2_id: str, axis :str, associations_table_filename : str) -> AssociationTable:
+        with open(associations_table_filename, "rb") as fd:
+            uploaded_file = self.upload_file(fd)
+
+        associations_in = AssociationsIn(axis = AssociationsInAxis(axis), dataset_1_id=dataset_1_id, dataset_2_id=dataset_2_id, file_ids=uploaded_file.file_ids, md5=uploaded_file.md5)
+        breadbox_response = add_associations_client.sync_detailed(client=self.client, body=associations_in)
+
+        return self._parse_client_response(breadbox_response)
+
+    def get_associations_for_slice(self, dataset_id: str, identifier: str, identifier_type: str) -> Associations:
+        breadbox_response = get_associations_for_slice_client.sync_detailed(client=self.client, body=SliceQuery(dataset_id=dataset_id, identifier=identifier,
+                                                                                    identifier_type=SliceQueryIdentifierType(identifier_type)))
+        return self._parse_client_response(breadbox_response)
 
     # API
 
