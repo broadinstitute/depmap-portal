@@ -1,10 +1,6 @@
-# 
-
 rule update_hgnc_gene_table:
     inputs:
-        hgnc_gene_table={"type": "hgnc_gene_table"},
-        release_taiga_id={"type": "release_taiga_id"},
-        update_taiga_script=fileref('upload_to_taiga.py', copy_to='upload_to_taiga.py')
+        hgnc_gene_table={"type": "hgnc_gene_table"}
     outputs:
         {
             "type": "gene",
@@ -19,4 +15,4 @@ rule update_hgnc_gene_table:
         hgnc_gene_df = tc.get("{{inputs.hgnc_gene_table.dataset_id}}")
         hgnc_gene_df.to_csv("hgnc_gene_table.csv", index=False)
     """
-    run "python3 upload_to_taiga.py hgnc_gene_table.csv 'Update HGNC gene data' {{inputs.release_taiga_id.dataset_id}} 'Gene' 'csv_table'"
+    

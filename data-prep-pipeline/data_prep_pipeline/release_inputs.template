@@ -1,23 +1,18 @@
-# Dataset ID
+# It is very important to have the latest versions of the destination Taiga IDs.
+# The version number is needed to check the taiga metadata for duplicate checking
 
-# SET_TAIGA_PREPROCESSOR release_taiga_id "internal-24q2-3719.88"
+# SET_TAIGA_PREPROCESSOR release_taiga_id "internal-24q2-3719.108"
 
-# is this needed for anything? (We think these are just for model and model condition generation which is being moved out of this pipeline)
-# This is also used for uploading hgnc. (Can we remove the version number?)
+# Destination Taiga ID
 add-if-missing {
  "type": "release_taiga_id",
  "dataset_id": PREPROCESS_TAIGA_ID(release_taiga_id)
 }
 
+# Destination Taiga ID Test
 add-if-missing {
   "type": "predictability_taiga_id",
-  "dataset_id": "predictability-76d5.132"
-}
-
-# Data Dictionary
-add-if-missing {
-  "type": "data_dictionary",
-  "dataset_id": "predictability-76d5.142/DataDictionary_20241219_160756"
+  "dataset_id": "predictability-76d5.186"
 }
 
 # CN gene expression data

@@ -5,9 +5,10 @@ subprocess.check_call(["python", "../../pipeline/preprocess_taiga_ids.py", "rele
 
 include "release_inputs-DO-NOT-EDIT-ME"
 
-# include "model_and_model_condition.conseq"
+include "update_hgnc_gene_table.conseq"
 include "cngene_log_2_transformation.conseq"
 include "filter_portal_compounds.conseq"
-include "update_hgnc_gene_table.conseq"
 include "predictability.conseq"
-include "legacy_data.conseq"
+# include "legacy_data.conseq"
+
+include "publish.conseq"
