@@ -27,7 +27,8 @@
 }
 
 .swatchContainer {
-  position: absolute;
+  position: relative;
+  top: -9px;
 }
 
 .swatch {
@@ -35,7 +36,7 @@
   width: 10px;
   height: 38px;
   left: -10px;
-  position: relative;
+  position: absolute;
   border: 1px solid #ccc;
   border-right: none;
   border-radius: 4px 0 0 4px;

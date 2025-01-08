@@ -1,10 +1,12 @@
 import React, { useCallback, useEffect, useReducer } from "react";
-import { isCompleteDimension } from "@depmap/data-explorer-2";
-import { PartialDataExplorerPlotConfig } from "@depmap/types";
-import { logInitialPlot, logReducerTransform } from "src/data-explorer-2/debug";
-import plotConfigReducer, {
+import {
+  isCompleteDimension,
+  logInitialPlot,
+  logReducerTransform,
+  plotConfigReducer,
   PlotConfigReducerAction,
-} from "src/data-explorer-2/reducers/plotConfigReducer";
+} from "@depmap/data-explorer-2";
+import { PartialDataExplorerPlotConfig } from "@depmap/types";
 import Config from "src/secretDataViewer/components/Config";
 import Stats from "src/secretDataViewer/components/Stats";
 import styles from "src/secretDataViewer/styles/DataViewer.scss";
