@@ -24,7 +24,7 @@ export function getDimensionTypeLabel(dimension_type: string) {
       // no underscores
       .replace(/_/g, " ")
       // strip out version suffixes
-      .replace(/\s*[vV]?\d+$/, "")
+      .replace(/\s*v?\d+$/i, "")
   );
 }
 
