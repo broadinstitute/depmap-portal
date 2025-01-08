@@ -16,6 +16,7 @@ from breadbox.service import associations as associations_service
 from breadbox.crud import associations as associations_crud
 import uuid
 from breadbox.db.util import transaction
+from typing import cast, Literal
 
 from .router import router
 
@@ -124,5 +125,5 @@ def add_associations(
         dataset_2_id=assoc_table.dataset_2_id,
         dataset_1_name=assoc_table.dataset_1.name,
         dataset_2_name=assoc_table.dataset_2.name,
-        axis=assoc_table.axis,
+        axis=cast(Literal["sample", "feature"], assoc_table.axis),
     )
