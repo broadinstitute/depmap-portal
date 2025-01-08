@@ -36,5 +36,8 @@ class AssociationsIn(BaseModel):
 
 class AssociationTable(BaseModel):
     id: str
+    dataset_1_name: str
+    dataset_2_name: str
+    axis: Literal["sample", "feature"]
     dataset_1_id: str
     dataset_2_id: str
