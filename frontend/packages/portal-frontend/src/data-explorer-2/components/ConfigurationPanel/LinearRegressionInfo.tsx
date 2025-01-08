@@ -1,8 +1,8 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import cx from "classnames";
 import {
-  fetchLinearRegression,
   renderConditionally,
+  useDeprecatedDataExplorerApi,
 } from "@depmap/data-explorer-2";
 import { PartialDataExplorerPlotConfig } from "@depmap/types";
 import { PlotConfigReducerAction } from "src/data-explorer-2/reducers/plotConfigReducer";
@@ -25,6 +25,7 @@ function LinearRegressionTable({
   plot: PartialDataExplorerPlotConfig;
   onLoad: () => void;
 }) {
+  const api = useDeprecatedDataExplorerApi();
   const [loading, setLoading] = useState(false);
   const [table, setTable] = useState<ReturnType<
     typeof reformatLinRegTable
@@ -37,7 +38,7 @@ function LinearRegressionTable({
       if (plot.plot_type === "scatter" && isCompletePlot(plot)) {
         try {
           setLoading(true);
-          const linreg_by_group = await fetchLinearRegression(
+          const linreg_by_group = await api.fetchLinearRegression(
             plot.index_type,
             plot.dimensions,
             plot.filters,
@@ -65,7 +66,7 @@ function LinearRegressionTable({
         }
       }
     })();
-  }, [plot, onLoad]);
+  }, [api, plot, onLoad]);
 
   return (
     <div

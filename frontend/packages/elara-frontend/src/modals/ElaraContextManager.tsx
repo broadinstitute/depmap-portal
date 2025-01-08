@@ -8,7 +8,6 @@ import { ElaraApi } from "src/api";
 import {
   evaluateContext,
   fetchDatasets,
-  fetchDatasetsByIndexType,
   fetchDatasetIdentifiers,
   fetchDimensionIdentifiers,
   fetchDimensionTypes,
@@ -38,7 +37,6 @@ function ElaraContextManager({ onHide }: Props) {
     <ApiContext.Provider value={{ getApi, getVectorCatalogApi }}>
       <DataExplorerApiProvider
         evaluateContext={evaluateContext}
-        fetchDatasetsByIndexType={fetchDatasetsByIndexType}
         fetchVariableDomain={fetchVariableDomain}
         fetchDatasets={fetchDatasets}
         fetchDimensionTypes={fetchDimensionTypes}

@@ -59,7 +59,9 @@ function Datasets({
               (selectedDataType && d.data_type !== selectedDataType) ||
               (selectedEntityType && d.slice_type !== selectedEntityType) ||
               (contextDatasetIds && !contextDatasetIds.includes(d.id)),
-            [styles.selected]: d.id === dataset_id || d.given_id === dataset_id,
+            [styles.selected]:
+              d.id === dataset_id ||
+              (d.given_id !== null && d.given_id === dataset_id),
           })}
           key={d.id}
           value={

@@ -1,6 +1,5 @@
 /* eslint-disable */
 import * as React from "react";
-import { fetchMetadataColumn } from "@depmap/data-explorer-2";
 import { Link } from "@depmap/interactive";
 import { Button } from "react-bootstrap";
 import { CellData } from "../models/cellLines";
@@ -206,14 +205,14 @@ export class LongTableCellLineSelector extends React.Component<
           <strong>Add a data column</strong>
           <br />
           <DataColumnSelect
-            onChange={(sliceId, valueType) => {
+            onChange={(sliceId, valueType, api) => {
               if (!sliceId) {
                 this.setState({
                   vector: undefined,
                   vectorId: undefined,
                 });
               } else {
-                fetchMetadataColumn(sliceId).then((metadataColumn) => {
+                api.fetchMetadataColumn(sliceId).then((metadataColumn) => {
                   this.setState({
                     vector: {
                       cellLines: Object.keys(metadataColumn.indexed_values),

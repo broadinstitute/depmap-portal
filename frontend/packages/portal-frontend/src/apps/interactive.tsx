@@ -2,23 +2,23 @@ import "src/public-path";
 import * as React from "react";
 import * as ReactDOM from "react-dom";
 import ErrorBoundary from "src/common/components/ErrorBoundary";
+import { ApiContext } from "@depmap/api";
+import { DeprecatedDataExplorerApiProvider } from "@depmap/data-explorer-2";
+import { InteractivePage } from "@depmap/interactive";
+import { getQueryParams } from "@depmap/utils";
+import { renderCellLineSelectorModal } from "@depmap/cell-line-selector";
 import {
-  DataExplorerApiProvider,
   fetchDatasetDetails,
   fetchDatasetsByIndexType,
   fetchDatasetsMatchingContextIncludingEntities,
   fetchDimensionLabels,
   fetchDimensionLabelsToDatasetsMapping,
-} from "@depmap/data-explorer-2";
-import { InteractivePage } from "@depmap/interactive";
-import { getQueryParams } from "@depmap/utils";
-import { renderCellLineSelectorModal } from "@depmap/cell-line-selector";
+} from "src/data-explorer-2/deprecated-api";
 import {
   getDapi,
   apiFunctions,
   fetchUrlPrefix,
 } from "src/common/utilities/context";
-import { ApiContext } from "@depmap/api";
 import PlotlyLoader from "src/plot/components/PlotlyLoader";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Spinner } from "@depmap/common-components";
@@ -61,10 +61,10 @@ const App = () => {
   return (
     <ErrorBoundary>
       <ApiContext.Provider value={apiFunctions.depmap}>
-        <DataExplorerApiProvider
+        <DeprecatedDataExplorerApiProvider
           fetchDatasetDetails={fetchDatasetDetails}
-          fetchDimensionLabels={fetchDimensionLabels}
           fetchDatasetsByIndexType={fetchDatasetsByIndexType}
+          fetchDimensionLabels={fetchDimensionLabels}
           fetchDimensionLabelsToDatasetsMapping={
             fetchDimensionLabelsToDatasetsMapping
           }
@@ -112,7 +112,7 @@ const App = () => {
               />
             </Routes>
           </BrowserRouter>
-        </DataExplorerApiProvider>
+        </DeprecatedDataExplorerApiProvider>
       </ApiContext.Provider>
     </ErrorBoundary>
   );

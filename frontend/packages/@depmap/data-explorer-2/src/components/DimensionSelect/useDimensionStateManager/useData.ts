@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { DataExplorerContext } from "@depmap/types";
-import { useDataExplorerApi } from "../../../contexts/DataExplorerApiContext";
+import { useDeprecatedDataExplorerApi } from "../../../contexts/DeprecatedDataExplorerApiContext";
 import { DatasetsByIndexType, DimensionLabelsToDatasetsMapping } from "./types";
 
 interface Props {
@@ -25,7 +25,7 @@ export default function useDatasets({
   axis_type,
   context,
 }: Props) {
-  const api = useDataExplorerApi();
+  const api = useDeprecatedDataExplorerApi();
 
   const [
     datasetsByIndexType,

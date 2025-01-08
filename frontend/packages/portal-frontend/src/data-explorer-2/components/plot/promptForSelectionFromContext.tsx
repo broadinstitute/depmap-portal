@@ -5,14 +5,15 @@ import {
 } from "@depmap/common-components";
 import {
   ContextSelector,
-  fetchContextLabels,
   getDimensionTypeLabel,
   pluralize,
+  useDeprecatedDataExplorerApi,
 } from "@depmap/data-explorer-2";
 import { DepMap } from "@depmap/globals";
 import { DataExplorerContext, DataExplorerPlotResponse } from "@depmap/types";
 
 export default async function promptForSelectionFromContext(
+  api: ReturnType<typeof useDeprecatedDataExplorerApi>,
   data: DataExplorerPlotResponse
 ) {
   const filter = data!.filters?.visible;
@@ -56,7 +57,7 @@ export default async function promptForSelectionFromContext(
           return;
         }
 
-        const labels = await fetchContextLabels(nextContext);
+        const labels = await api.evaluateLegacyContext(nextContext);
         const contextLabels = new Set(labels);
 
         const found = [...datasetLabels].filter((label) => {
@@ -141,7 +142,7 @@ export default async function promptForSelectionFromContext(
     return null;
   }
 
-  const labels = await fetchContextLabels(context);
+  const labels = await api.evaluateLegacyContext(context);
   const contextLabels = new Set(labels);
   const matchingLabels = data.index_labels.filter((label, i) => {
     return (

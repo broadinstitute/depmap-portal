@@ -669,7 +669,6 @@ function PrototypeScatterPlot({
         return;
       }
 
-      // eslint-disable-next-line no-underscore-dangle
       const fullLayout = (plot as any)._fullLayout;
 
       calcAnnotationPositions(x, y, pointIndices, fullLayout).forEach(
@@ -936,12 +935,7 @@ export default function LazyPrototypeScatterPlot({
     <PlotlyLoader version="module">
       {(Plotly: PlotlyType) =>
         data ? (
-          <PrototypeScatterPlot
-            data={data}
-            Plotly={Plotly}
-            // eslint-disable-next-line react/jsx-props-no-spreading
-            {...otherProps}
-          />
+          <PrototypeScatterPlot data={data} Plotly={Plotly} {...otherProps} />
         ) : null
       }
     </PlotlyLoader>

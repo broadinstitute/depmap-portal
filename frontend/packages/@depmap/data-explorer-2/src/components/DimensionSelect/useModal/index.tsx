@@ -3,9 +3,9 @@ import ReactDOM from "react-dom";
 import { ApiContext } from "@depmap/api";
 import { DataExplorerPlotConfigDimension } from "@depmap/types";
 import {
-  DataExplorerApiProvider,
-  useDataExplorerApi,
-} from "../../../contexts/DataExplorerApiContext";
+  DeprecatedDataExplorerApiProvider,
+  useDeprecatedDataExplorerApi,
+} from "../../../contexts/DeprecatedDataExplorerApiContext";
 import { Mode, State } from "../useDimensionStateManager/types";
 import DimensionDetailsModal from "./DimensionDetailsModal";
 
@@ -24,8 +24,10 @@ export default function useModal({
   onChange,
   state,
 }: Props) {
+  // We need to create duplicate providers for each of these contexts because
+  // we're rendering a new React root with its own scope.
   const sharedApi = useContext(ApiContext);
-  const dataExplorerApi = useDataExplorerApi();
+  const dataExplorerApi = useDeprecatedDataExplorerApi();
 
   const onClickShowModal = useCallback(() => {
     const container = document.createElement("div");
@@ -39,7 +41,7 @@ export default function useModal({
 
     ReactDOM.render(
       <ApiContext.Provider value={sharedApi}>
-        <DataExplorerApiProvider {...dataExplorerApi}>
+        <DeprecatedDataExplorerApiProvider {...dataExplorerApi}>
           <DimensionDetailsModal
             mode={mode}
             index_type={index_type}
@@ -51,7 +53,7 @@ export default function useModal({
             }}
             includeAllInContextOptions={includeAllInContextOptions}
           />
-        </DataExplorerApiProvider>
+        </DeprecatedDataExplorerApiProvider>
       </ApiContext.Provider>,
       container
     );

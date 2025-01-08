@@ -6,7 +6,6 @@ import stableStringify from "json-stable-stringify";
 import {
   contextsMatch,
   fetchContext,
-  fetchDatasetsByIndexType,
   isCompleteDimension,
   isContextAll,
   isNegatedContext,
@@ -14,6 +13,7 @@ import {
   isV2Context,
   negateContext,
   persistContext,
+  useDeprecatedDataExplorerApi,
 } from "@depmap/data-explorer-2";
 import {
   hasSomeShorthandParams,
@@ -29,7 +29,6 @@ import {
   DimensionKey,
   FilterKey,
   PartialDataExplorerPlotConfig,
-  StoredContexts,
 } from "@depmap/types";
 
 export function isCompletePlot(
@@ -572,7 +571,9 @@ const replaceLegacyPropertyNames = (plot: DataExplorerPlotConfig | null) => {
   return plot;
 };
 
-export async function readPlotFromQueryString(): Promise<DataExplorerPlotConfig> {
+export async function readPlotFromQueryString(
+  api: ReturnType<typeof useDeprecatedDataExplorerApi>
+): Promise<DataExplorerPlotConfig> {
   const params = qs.parse(window.location.search.substr(1));
   let plot: DataExplorerPlotConfig | null = null;
 
@@ -582,7 +583,7 @@ export async function readPlotFromQueryString(): Promise<DataExplorerPlotConfig>
   // below (which are typical of auto-generated URLs) but those params can
   // override any values parsed here.
   if (hasSomeShorthandParams(params)) {
-    const datasets = await fetchDatasetsByIndexType();
+    const datasets = await api.fetchDatasetsByIndexType();
     plot = parseShorthandParams(params, datasets);
   }
 
@@ -624,44 +625,6 @@ export function plotsAreEquivalentWhenSerialized(
     stableStringify(normalizePlot(plotA)) ===
     stableStringify(normalizePlot(plotB))
   );
-}
-
-export function someLegacyContextsExist() {
-  const LEGACY_KEY = "dx2_prototype_user_contexts";
-
-  return Boolean(window.localStorage.getItem(LEGACY_KEY));
-}
-
-export async function convertLegacyContexts() {
-  const contexts: StoredContexts = {};
-  const LEGACY_KEY = "dx2_prototype_user_contexts";
-  const legacyFormat = window.localStorage.getItem(LEGACY_KEY);
-
-  if (!legacyFormat) {
-    return {};
-  }
-
-  // Ignore the old hashes; they're no longer useful.
-  const legacyContexts = Object.values(decompress(legacyFormat));
-
-  const persisted = await Promise.all(
-    legacyContexts.map((context: DataExplorerContext) => {
-      return persistContext(context).then((hash) => ({ ...context, hash }));
-    })
-  );
-
-  persisted.forEach(
-    (contextWithHash: DataExplorerContext & { hash: string }) => {
-      const { hash, name, context_type } = contextWithHash;
-      contexts[hash] = { name, context_type };
-    }
-  );
-
-  const MODERN_KEY = "user_contexts";
-  localStorage.setItem(MODERN_KEY, JSON.stringify(contexts));
-  window.localStorage.removeItem(LEGACY_KEY);
-
-  return contexts;
 }
 
 export function findPathsToContext(

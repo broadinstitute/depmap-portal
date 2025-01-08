@@ -1,12 +1,10 @@
-/* eslint-disable @typescript-eslint/naming-convention */
-/* eslint-disable react/jsx-props-no-spreading */
 import React, { useCallback, useEffect, useState } from "react";
 import { Button, Modal } from "react-bootstrap";
 import { Spinner } from "@depmap/common-components";
 import { saveNewContext } from "src/index";
 import {
-  fetchGeneTeaTermContext,
   renderConditionally,
+  useDeprecatedDataExplorerApi,
 } from "@depmap/data-explorer-2";
 import GeneTeaTerm from "src/data-explorer-2/components/plot/integrations/GeneTea/GeneTeaTerm";
 import styles from "src/data-explorer-2/styles/DataExplorer2.scss";
@@ -26,6 +24,7 @@ function GeneTeaContextModal({
   matchingGenes,
   onClose,
 }: Props) {
+  const api = useDeprecatedDataExplorerApi();
   const [show, setShow] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [data, setData] = useState<Record<string, string> | null>(null);
@@ -37,7 +36,10 @@ function GeneTeaContextModal({
       setError(false);
 
       try {
-        const fetchedData = await fetchGeneTeaTermContext(term, matchingGenes);
+        const fetchedData = await api.fetchGeneTeaTermContext(
+          term,
+          matchingGenes
+        );
         setData(fetchedData);
       } catch (e) {
         setError(true);
@@ -46,7 +48,7 @@ function GeneTeaContextModal({
         setIsLoading(false);
       }
     })();
-  }, [term, matchingGenes]);
+  }, [api, term, matchingGenes]);
 
   const handleClickCreateContext = useCallback(() => {
     setShow(false);

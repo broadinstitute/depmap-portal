@@ -1,17 +1,7 @@
 import React, { useEffect, useState } from "react";
-import {
-  DataExplorerApiProvider,
-  fetchContextLabels,
-  fetchDatasetDetails,
-  fetchDatasetsByIndexType,
-  fetchDatasetsMatchingContextIncludingEntities,
-  fetchDimensionLabels,
-  fetchDimensionLabelsOfDataset,
-  fetchDimensionLabelsToDatasetsMapping,
-} from "@depmap/data-explorer-2";
+import { useDeprecatedDataExplorerApi } from "@depmap/data-explorer-2";
 import { PartialDataExplorerPlotConfig } from "@depmap/types";
 import {
-  convertLegacyContexts,
   readPlotFromQueryString,
   DEFAULT_EMPTY_PLOT,
 } from "src/data-explorer-2/utils";
@@ -26,6 +16,8 @@ interface PageProps {
 }
 
 function DataExplorer2({ feedbackUrl, contactEmail, tutorialLink }: PageProps) {
+  const api = useDeprecatedDataExplorerApi();
+
   const [
     initialPlot,
     setInitialPlot,
@@ -35,44 +27,22 @@ function DataExplorer2({ feedbackUrl, contactEmail, tutorialLink }: PageProps) {
   useEffect(() => {
     (async () => {
       try {
-        // Prior to the 23Q2 release, contexts were saved to local storage. Now
-        // only the hashes reside there and the actual content is persisted to
-        // a bucket. These two formats are incompatible (with a different
-        // hashing method) so we do one big wholesale conversion before trying
-        // to load anything. This can probably be removed after a reasonable
-        // amount of time has gone by.
-        await convertLegacyContexts();
-
-        const plot = await readPlotFromQueryString();
+        const plot = await readPlotFromQueryString(api);
         setInitialPlot(plot);
       } catch (e) {
         window.console.error(e);
         setError(true);
       }
     })();
-  }, []);
+  }, [api]);
 
   return initialPlot ? (
-    <DataExplorerApiProvider
-      evaluateLegacyContext={fetchContextLabels}
-      fetchDatasetDetails={fetchDatasetDetails}
-      fetchDatasetsByIndexType={fetchDatasetsByIndexType}
-      fetchDimensionLabels={fetchDimensionLabels}
-      fetchDimensionLabelsOfDataset={fetchDimensionLabelsOfDataset}
-      fetchDimensionLabelsToDatasetsMapping={
-        fetchDimensionLabelsToDatasetsMapping
-      }
-      fetchDatasetsMatchingContextIncludingEntities={
-        fetchDatasetsMatchingContextIncludingEntities
-      }
-    >
-      <DataExplorer2MainContent
-        initialPlot={initialPlot}
-        feedbackUrl={feedbackUrl}
-        contactEmail={contactEmail}
-        tutorialLink={tutorialLink}
-      />
-    </DataExplorerApiProvider>
+    <DataExplorer2MainContent
+      initialPlot={initialPlot}
+      feedbackUrl={feedbackUrl}
+      contactEmail={contactEmail}
+      tutorialLink={tutorialLink}
+    />
   ) : (
     <div className={styles.initialLoadingSpinner}>
       {!error && <SpinnerOverlay />}

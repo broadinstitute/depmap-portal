@@ -1,12 +1,14 @@
 import { useEffect, useState } from "react";
-import { fetchAssociations } from "@depmap/data-explorer-2";
+import {
+  DeprecatedDataExplorerApiResponse,
+  useDeprecatedDataExplorerApi,
+} from "@depmap/data-explorer-2";
 import {
   DataExplorerContext,
   PartialDataExplorerPlotConfig,
 } from "@depmap/types";
 
-export type Associations = Awaited<ReturnType<typeof fetchAssociations>>;
-
+export type Associations = DeprecatedDataExplorerApiResponse["fetchAssociations"];
 export const sliceToDataset = (slice_id: string) => {
   return slice_id.replace("slice/", "").replace(/\/\d+\/entity_id/, "");
 };
@@ -27,6 +29,7 @@ const labelFromContext = (context: DataExplorerContext | undefined) => {
 };
 
 export function useAssociationsData(plot: PartialDataExplorerPlotConfig) {
+  const api = useDeprecatedDataExplorerApi();
   const [isLoading, setIsLoading] = useState(false);
   const [associations, setAssociations] = useState<Associations | null>(null);
 
@@ -44,11 +47,11 @@ export function useAssociationsData(plot: PartialDataExplorerPlotConfig) {
   useEffect(() => {
     setIsLoading(true);
 
-    fetchAssociations(xDatasetId, xEntityLabel).then((data) => {
+    api.fetchAssociations(xDatasetId, xEntityLabel).then((data) => {
       setAssociations(data);
       setIsLoading(false);
     });
-  }, [xDatasetId, xEntityLabel]);
+  }, [api, xDatasetId, xEntityLabel]);
 
   return {
     xDatasetId,

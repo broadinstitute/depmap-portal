@@ -1,4 +1,3 @@
-/* eslint-disable react/require-default-props */
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import type {
   Config,
@@ -547,7 +546,6 @@ function PrototypeDensity1D({
         return;
       }
 
-      // eslint-disable-next-line no-underscore-dangle
       const fullLayout = (plot as any)._fullLayout;
 
       calcAnnotationPositions(x, y, pointIndices, fullLayout).forEach(
@@ -773,12 +771,7 @@ export default function LazyPrototypeDensity1D({ data, ...otherProps }: Props) {
     <PlotlyLoader version="module">
       {(Plotly: PlotlyType) =>
         data ? (
-          <PrototypeDensity1D
-            data={data}
-            Plotly={Plotly}
-            // eslint-disable-next-line react/jsx-props-no-spreading
-            {...otherProps}
-          />
+          <PrototypeDensity1D data={data} Plotly={Plotly} {...otherProps} />
         ) : null
       }
     </PlotlyLoader>
