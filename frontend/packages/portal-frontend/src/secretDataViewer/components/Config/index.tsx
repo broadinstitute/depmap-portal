@@ -1,5 +1,9 @@
 import React, { useCallback } from "react";
-import { DeprecatedDataExplorerApiProvider } from "@depmap/data-explorer-2";
+import {
+  DeprecatedDataExplorerApiProvider,
+  PointsSelector,
+  PlotConfigReducerAction,
+} from "@depmap/data-explorer-2";
 import {
   DataExplorerPlotConfigDimension,
   PartialDataExplorerPlotConfig,
@@ -13,8 +17,6 @@ import {
   fetchDimensionLabelsOfDataset,
   fetchDimensionLabelsToDatasetsMapping,
 } from "src/data-explorer-2/deprecated-api";
-import { PlotConfigReducerAction } from "src/data-explorer-2/reducers/plotConfigReducer";
-import { PointsSelector } from "src/data-explorer-2/components/ConfigurationPanel/selectors";
 import HackedDimensionSelect from "src/secretDataViewer/components/Config/HackedDimensionSelect";
 import styles from "src/secretDataViewer/styles/DataViewer.scss";
 

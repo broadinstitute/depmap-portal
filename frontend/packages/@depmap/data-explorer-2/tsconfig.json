@@ -10,6 +10,7 @@
     { "path": "../globals" },
     { "path": "../interactive" },
     { "path": "../types" },
+    { "path": "../user-upload" },
     { "path": "../utils" }
   ]
 }

@@ -8,6 +8,7 @@ export { default as SliceLabelSelect } from "./src/components/DimensionSelect/Sl
 export { default as ContextBuilderModal } from "./src/components/ContextBuilder/ContextBuilderModal";
 export { default as ContextManager } from "./src/components/ContextManager";
 export { default as DatasetMetadataSelector } from "./src/components/DatasetMetadataSelector";
+export { default as DataExplorerPage } from "./src/components/DataExplorerPage/components/DataExplorer2";
 
 export {
   DataExplorerApiProvider,
@@ -25,6 +26,11 @@ export {
   useDataExplorerSettings,
   useLaunchSettingsModal,
 } from "./src/contexts/DataExplorerSettingsContext";
+
+export {
+  PlotlyLoaderProvider,
+  usePlotlyLoader,
+} from "./src/contexts/PlotlyLoaderContext";
 
 export {
   contextsMatch,
@@ -52,3 +58,29 @@ export {
 } from "./src/utils/misc";
 
 export { persistLegacyListAsContext } from "./src/components/ContextSelector/context-selector-utils";
+
+export {
+  logInitialPlot,
+  logReducerTransform,
+} from "./src/components/DataExplorerPage/debug";
+export { PointsSelector } from "./src/components/DataExplorerPage/components/ConfigurationPanel/selectors";
+export {
+  default as plotConfigReducer,
+  PlotConfigReducerAction,
+} from "./src/components/DataExplorerPage/reducers/plotConfigReducer";
+export {
+  DEFAULT_PALETTE,
+  LEGEND_ALL,
+  LEGEND_BOTH,
+  LEGEND_RANGE_1,
+  LEGEND_RANGE_2,
+  LEGEND_RANGE_3,
+  LEGEND_RANGE_4,
+  LEGEND_RANGE_5,
+  LEGEND_RANGE_6,
+  LEGEND_RANGE_7,
+  LEGEND_RANGE_8,
+  LEGEND_RANGE_9,
+  LEGEND_RANGE_10,
+  LegendKey,
+} from "./src/components/DataExplorerPage/components/plot/prototype/plotUtils";
