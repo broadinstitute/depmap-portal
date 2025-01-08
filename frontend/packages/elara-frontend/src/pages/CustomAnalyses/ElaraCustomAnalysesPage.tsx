@@ -6,7 +6,6 @@ import { CustomAnalysesPage } from "@depmap/custom-analyses";
 import { DataExplorerApiProvider } from "@depmap/data-explorer-2";
 import {
   fetchDatasets,
-  fetchDatasetsByIndexType,
   fetchDatasetIdentifiers,
   fetchDimensionIdentifiers,
   fetchDimensionTypes,
@@ -33,7 +32,6 @@ export default function ElaraCustomAnalysesPage() {
   return (
     <DataExplorerApiProvider
       fetchDatasets={fetchDatasets}
-      fetchDatasetsByIndexType={fetchDatasetsByIndexType}
       fetchDatasetIdentifiers={fetchDatasetIdentifiers}
       fetchDimensionIdentifiers={fetchDimensionIdentifiers}
       fetchDimensionTypes={fetchDimensionTypes}

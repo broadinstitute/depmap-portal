@@ -1,5 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { useDataExplorerSettings } from "@depmap/data-explorer-2";
+import {
+  useDataExplorerSettings,
+  useDeprecatedDataExplorerApi,
+} from "@depmap/data-explorer-2";
 import { enabledFeatures } from "@depmap/globals";
 import SpinnerOverlay from "src/data-explorer-2/components/plot/SpinnerOverlay";
 import type ExtendedPlotType from "src/plot/models/ExtendedPlotType";
@@ -59,6 +62,7 @@ function DataExplorerScatterPlot({
   onClickVisualizeSelected,
   plotConfig,
 }: Props) {
+  const api = useDeprecatedDataExplorerApi();
   const [plotElement, setPlotElement] = useState<ExtendedPlotType | null>(null);
   const [selectedLabels, setSelectedLabels] = useState<Set<string> | null>(
     null
@@ -399,7 +403,7 @@ function DataExplorerScatterPlot({
                 setSelectedLabels(null);
               }}
               onClickSetSelectionFromContext={async () => {
-                const labels = await promptForSelectionFromContext(data!);
+                const labels = await promptForSelectionFromContext(api, data!);
 
                 if (labels === null) {
                   return;

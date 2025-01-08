@@ -1,4 +1,6 @@
-import { MetadataSlices } from "../../api";
+import { DeprecatedDataExplorerApiResponse } from "../../contexts/DeprecatedDataExplorerApiContext";
+
+type MetadataSlices = DeprecatedDataExplorerApiResponse["fetchMetadataSlices"];
 
 export const slicePrefix = (slices: MetadataSlices, value: string) => {
   let out = "";

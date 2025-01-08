@@ -1,5 +1,5 @@
-/* eslint-disable @typescript-eslint/naming-convention */
 import React, { useCallback, useEffect, useReducer, useState } from "react";
+import { useDeprecatedDataExplorerApi } from "@depmap/data-explorer-2";
 import {
   DEFAULT_EMPTY_PLOT,
   isCompletePlot,
@@ -34,6 +34,8 @@ function DataExplorer2MainContent({
   contactEmail,
   tutorialLink,
 }: Props) {
+  const api = useDeprecatedDataExplorerApi();
+
   useEffect(() => {
     logInitialPlot(initialPlot);
   }, [initialPlot]);
@@ -57,7 +59,7 @@ function DataExplorer2MainContent({
 
       if (isCompletePlot(nextPlot)) {
         setIsInitialPageLoad(false);
-        const prevPlot = await readPlotFromQueryString();
+        const prevPlot = await readPlotFromQueryString(api);
 
         if (!plotsAreEquivalentWhenSerialized(prevPlot, nextPlot)) {
           const queryString = await plotToQueryString(nextPlot);
@@ -65,7 +67,7 @@ function DataExplorer2MainContent({
         }
       }
     },
-    [plot]
+    [api, plot]
   );
 
   useEffect(() => {
@@ -85,7 +87,7 @@ function DataExplorer2MainContent({
 
   useEffect(() => {
     const onPopState = (e: PopStateEvent) => {
-      readPlotFromQueryString().then((nextPlot) => {
+      readPlotFromQueryString(api).then((nextPlot) => {
         setPlot(nextPlot);
 
         const initial = window.location.search.substr(1) === "";
@@ -100,7 +102,7 @@ function DataExplorer2MainContent({
 
     window.addEventListener("popstate", onPopState);
     return () => window.removeEventListener("popstate", onPopState);
-  }, []);
+  }, [api]);
 
   const {
     ContextBuilder,

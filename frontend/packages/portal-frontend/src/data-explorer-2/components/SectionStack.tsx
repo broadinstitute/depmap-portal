@@ -31,9 +31,7 @@ interface InternalProps extends StackableSectionProps {
   onRender: (info: SectionInfo) => void;
 }
 
-// eslint-disable-next-line react/require-default-props
 export const StackableSection = (props: StackableSectionProps) => {
-  // eslint-disable-next-line react/prop-types
   const {
     defaultOpen,
     onRender,

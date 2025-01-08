@@ -2,12 +2,13 @@ import { compareCaseInsensitive, compareDisabledLast } from "@depmap/utils";
 import { useDataExplorerApi } from "../../../contexts/DataExplorerApiContext";
 import { isSampleType, pluralize } from "../../../utils/misc";
 import { State } from "./types";
+import { fetchDatasetsByIndexType } from "./utils";
 
 async function fetchIndexCompatibleDatasets(
   api: ReturnType<typeof useDataExplorerApi>,
   index_type: string | null
 ) {
-  const datasets = await api.fetchDatasetsByIndexType();
+  const datasets = await fetchDatasetsByIndexType(api);
 
   if (!index_type || !(index_type in datasets)) {
     return [];

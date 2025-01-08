@@ -1,5 +1,8 @@
 import React, { useEffect, useState } from "react";
-import { fetchMetadataSlices, MetadataSlices } from "../../api";
+import {
+  DeprecatedDataExplorerApiResponse,
+  useDeprecatedDataExplorerApi,
+} from "../../contexts/DeprecatedDataExplorerApiContext";
 import PlotConfigSelect from "../PlotConfigSelect";
 import SliceLabelSelector from "../SliceLabelSelector";
 import {
@@ -26,19 +29,22 @@ function DatasetMetadataSelector({
   value,
   onChange,
 }: Props) {
+  const api = useDeprecatedDataExplorerApi();
   const [isLoading, setIsLoading] = useState(false);
-  const [metadataSlices, setMetadataSlices] = useState<MetadataSlices>({});
+  const [metadataSlices, setMetadataSlices] = useState<
+    DeprecatedDataExplorerApiResponse["fetchMetadataSlices"]
+  >({});
 
   useEffect(() => {
     (async () => {
       setIsLoading(true);
 
-      const slices = await fetchMetadataSlices(slice_type);
+      const slices = await api.fetchMetadataSlices(slice_type);
       setMetadataSlices(slices);
 
       setIsLoading(false);
     })();
-  }, [slice_type]);
+  }, [api, slice_type]);
 
   const hasDynamicLabel = containsPartialSlice(metadataSlices, value);
 

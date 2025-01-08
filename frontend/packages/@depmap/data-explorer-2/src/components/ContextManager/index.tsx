@@ -3,7 +3,8 @@ import cx from "classnames";
 import { Button, Modal } from "react-bootstrap";
 import { LocalStorageListStore } from "@depmap/cell-line-selector";
 import { DataExplorerContext } from "@depmap/types";
-import { fetchContext } from "../../api";
+import { useDeprecatedDataExplorerApi } from "../../contexts/DeprecatedDataExplorerApiContext";
+import { fetchContext } from "../../utils/context-storage";
 import ContextBuilderModal from "../ContextBuilder/ContextBuilderModal";
 import useCellLineSelectorModal from "../ContextBuilder/CellLineSelector/useCellLineSelectorModal";
 import ContextBuilderV2 from "../ContextBuilderV2";
@@ -33,6 +34,7 @@ function ContextManager({
   initialContextType = "depmap_model",
   useContextBuilderV2 = false,
 }: Props) {
+  const api = useDeprecatedDataExplorerApi();
   const [showContextModal, setShowContextModal] = useState(false);
   const [contextType, setContextType] = useState(initialContextType);
   const [, forceRender] = useState({});
@@ -116,7 +118,10 @@ function ContextManager({
     let context;
 
     if (isLegacyList) {
-      [hash, context] = await persistLegacyListAsContext(hashOrLegacyListName);
+      [hash, context] = await persistLegacyListAsContext(
+        api,
+        hashOrLegacyListName
+      );
     } else {
       hash = hashOrLegacyListName;
       context = await fetchContext(hash);
@@ -132,7 +137,7 @@ function ContextManager({
     let context;
 
     if (isLegacyList) {
-      [, context] = await persistLegacyListAsContext(hashOrLegacyListName);
+      [, context] = await persistLegacyListAsContext(api, hashOrLegacyListName);
     } else {
       context = await fetchContext(hashOrLegacyListName);
     }

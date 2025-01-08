@@ -1,4 +1,3 @@
-/* eslint-disable react/require-default-props */
 import React, { useEffect, useRef, useState } from "react";
 import type {
   Config,
@@ -407,7 +406,6 @@ export default function LazyPrototypeCorrelationHeatmap({
           <PrototypeCorrelationHeatmap
             data={data}
             Plotly={Plotly}
-            // eslint-disable-next-line react/jsx-props-no-spreading
             {...otherProps}
           />
         ) : null

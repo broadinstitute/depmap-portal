@@ -7,11 +7,13 @@ import React, {
 } from "react";
 import cx from "classnames";
 import { Tooltip, WordBreaker } from "@depmap/common-components";
-import { GeneTeaEnrichedTerms } from "@depmap/data-explorer-2";
+import { DeprecatedDataExplorerApiResponse } from "@depmap/data-explorer-2";
 import { DataExplorerContext } from "@depmap/types";
 import { SectionStackContext } from "src/data-explorer-2/components/SectionStack";
 import GeneTeaTerm from "src/data-explorer-2/components/plot/integrations/GeneTea/GeneTeaTerm";
 import styles from "src/data-explorer-2/styles/DataExplorer2.scss";
+
+type GeneTeaEnrichedTerms = DeprecatedDataExplorerApiResponse["fetchGeneTeaEnrichment"];
 
 interface Props {
   data: GeneTeaEnrichedTerms;

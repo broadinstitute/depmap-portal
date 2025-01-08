@@ -2,13 +2,12 @@ import React, { useEffect, useState } from "react";
 import { Checkbox } from "react-bootstrap";
 import {
   capitalize,
-  fetchDatasetsByIndexType,
-  fetchMetadataSlices,
   getDimensionTypeLabel,
   PlotConfigSelect,
   pluralize,
   renderConditionally,
   sortDimensionTypes,
+  useDeprecatedDataExplorerApi,
 } from "@depmap/data-explorer-2";
 import {
   colorByValue,
@@ -58,6 +57,8 @@ export function PointsSelector({
   plot_type,
   onChange,
 }: any) {
+  const api = useDeprecatedDataExplorerApi();
+
   const [
     datasetsByIndexType,
     setDatasetsByIndexType,
@@ -66,13 +67,13 @@ export function PointsSelector({
   useEffect(() => {
     (async () => {
       try {
-        const data = await fetchDatasetsByIndexType();
+        const data = await api.fetchDatasetsByIndexType();
         setDatasetsByIndexType(data);
       } catch (e) {
         window.console.error(e);
       }
     })();
-  }, []);
+  }, [api]);
 
   const types = sortDimensionTypes(
     Object.keys(datasetsByIndexType || {})
@@ -140,16 +141,17 @@ export function ColorByTypeSelector({
   slice_type: string;
   onChange: (nextValue: DataExplorerPlotConfig["color_by"]) => void;
 }) {
+  const api = useDeprecatedDataExplorerApi();
   const sliceTypeLabel = capitalize(getDimensionTypeLabel(slice_type));
   const [hasSomeColorProperty, setHasSomeColorProperty] = useState(false);
 
   useEffect(() => {
     (async () => {
-      const keyedSlices = await fetchMetadataSlices(slice_type);
+      const keyedSlices = await api.fetchMetadataSlices(slice_type);
       const slices = Object.values(keyedSlices);
       setHasSomeColorProperty(slices.some((slice) => !slice.isHighCardinality));
     })();
-  }, [slice_type]);
+  }, [api, slice_type]);
 
   const options: Partial<Record<colorByValue, string>> = {
     raw_slice: sliceTypeLabel,

@@ -10,37 +10,15 @@ export { default as ContextManager } from "./src/components/ContextManager";
 export { default as DatasetMetadataSelector } from "./src/components/DatasetMetadataSelector";
 
 export {
-  fetchAnalysisResult,
-  fetchAssociations,
-  fetchContext,
-  fetchContextLabels,
-  fetchCorrelation,
-  fetchDatasetDetails,
-  fetchDatasetsByIndexType,
-  fetchDatasetsMatchingContextIncludingEntities,
-  fetchDimensionLabels,
-  fetchDimensionLabelsOfDataset,
-  fetchDimensionLabelsToDatasetsMapping,
-  fetchGeneTeaEnrichment,
-  fetchGeneTeaTermContext,
-  fetchLinearRegression,
-  fetchMetadataColumn,
-  fetchMetadataSlices,
-  fetchPlotDimensions,
-  fetchWaterfall,
-  persistContext,
-} from "./src/api";
-
-export type {
-  GeneTeaEnrichedTerms,
-  GeneTeaTermContext,
-  MetadataSlices,
-} from "./src/api";
-
-export {
   DataExplorerApiProvider,
   useDataExplorerApi,
 } from "./src/contexts/DataExplorerApiContext";
+
+export {
+  DeprecatedDataExplorerApiProvider,
+  DeprecatedDataExplorerApiResponse,
+  useDeprecatedDataExplorerApi,
+} from "./src/contexts/DeprecatedDataExplorerApiContext";
 
 export {
   DataExplorerSettingsProvider,
@@ -57,6 +35,8 @@ export {
   negateContext,
   saveContextToLocalStorageAndPersist,
 } from "./src/utils/context";
+
+export { fetchContext, persistContext } from "./src/utils/context-storage";
 
 export {
   capitalize,
