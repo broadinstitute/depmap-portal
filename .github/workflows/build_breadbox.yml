@@ -218,6 +218,11 @@ jobs:
         run: ls -l ${{ env.GOOGLE_APPLICATION_CREDENTIALS }}
       - name: Generate breadbox client
         uses: ./.github/actions/generate-breadbox-client # defined as a re-usable action
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          # See instructions here: https://github.com/google-github-actions/auth?tab=readme-ov-file#service-account-key-json
+          credentials_json: ${{ secrets.DEPMAP_ARTIFACTS_SVC_ACCT }}
       - name: debug cred issue 2.2
         run: ls -l ${{ env.GOOGLE_APPLICATION_CREDENTIALS }}
       - name: Set up for publishing breadbox client
