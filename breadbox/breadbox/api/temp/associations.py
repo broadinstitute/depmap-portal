@@ -46,7 +46,12 @@ def query_associations_for_slice(
 def get_associations(db: Annotated[SessionWithUser, Depends(get_db_with_user)]):
     return [
         AssociationTable(
-            id=a.id, dataset_1_id=a.dataset_1_id, dataset_2_id=a.dataset_2_id
+            id=a.id,
+            dataset_1_id=a.dataset_1_id,
+            dataset_2_id=a.dataset_2_id,
+            dataset_1_name=a.dataset_1.name,
+            dataset_2_name=a.dataset_2.name,
+            axis=a.axis,
         )
         for a in associations_crud.get_association_tables(db, None)
     ]
@@ -117,4 +122,7 @@ def add_associations(
         id=assoc_table.id,
         dataset_1_id=assoc_table.dataset_1_id,
         dataset_2_id=assoc_table.dataset_2_id,
+        dataset_1_name=assoc_table.dataset_1.name,
+        dataset_2_name=assoc_table.dataset_2.name,
+        axis=assoc_table.axis,
     )
