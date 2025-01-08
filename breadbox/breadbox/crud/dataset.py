@@ -18,6 +18,7 @@ from ..schemas.dataset import (
     ColumnMetadata,
     UpdateDatasetParams,
 )
+
 from ..schemas.custom_http_exception import (
     DatasetAccessError,
     ResourceNotFoundError,
@@ -39,6 +40,7 @@ from breadbox.models.dataset import (
     PropertyToIndex,
     ValueType,
     DimensionType,
+    PrecomputedAssociation,
 )
 from breadbox.crud.group import (
     get_group,
@@ -1202,8 +1204,23 @@ def update_dataset(
 def delete_dataset(
     db: SessionWithUser, user: str, dataset: Dataset, filestore_location: str
 ):
+    from .associations import delete_association_table
+
     if not user_has_access_to_group(dataset.group, user, write_access=True):
         return False
+
+    log.info("delete any referenced precomputed associations")
+    for associations in (
+        db.query(PrecomputedAssociation)
+        .filter(
+            or_(
+                PrecomputedAssociation.dataset_1_id == dataset.id,
+                PrecomputedAssociation.dataset_2_id == dataset.id,
+            )
+        )
+        .all()
+    ):
+        delete_association_table(db, associations.id, filestore_location)
 
     log.info("delete Dimension")
     db.query(Dimension).filter(Dimension.dataset_id == dataset.id).delete()
