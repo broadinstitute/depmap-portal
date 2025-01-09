@@ -198,8 +198,6 @@ jobs:
         with:
           # See instructions here: https://github.com/google-github-actions/auth?tab=readme-ov-file#service-account-key-json
           credentials_json: ${{ secrets.DEPMAP_ARTIFACTS_SVC_ACCT }}
-      - name: debug cred issue 1
-        run: ls -l ${{ env.GOOGLE_APPLICATION_CREDENTIALS }}
       - name: Install and configure Poetry
         uses: snok/install-poetry@v1
         with:
@@ -212,26 +210,19 @@ jobs:
         with:
           path: .venv
           key: venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('**/poetry.lock') }}
-      - name: debug cred issue 2
-        run: ls -l ${{ env.GOOGLE_APPLICATION_CREDENTIALS }}
-      - name: debug cred issue 2.1
-        run: ls -l ${{ env.GOOGLE_APPLICATION_CREDENTIALS }}
       - name: Generate breadbox client
         uses: ./.github/actions/generate-breadbox-client # defined as a re-usable action
+        # the above does a checkout which deletes the credential file, so we need to execute authenticate to google cloud after it
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
           # See instructions here: https://github.com/google-github-actions/auth?tab=readme-ov-file#service-account-key-json
           credentials_json: ${{ secrets.DEPMAP_ARTIFACTS_SVC_ACCT }}
-      - name: debug cred issue 2.2
-        run: ls -l ${{ env.GOOGLE_APPLICATION_CREDENTIALS }}
       - name: Set up for publishing breadbox client
         working-directory: ./breadbox-client
         run: |
           poetry self add keyrings.google-artifactregistry-auth
           poetry config repositories.public-python https://us-central1-python.pkg.dev/cds-artifacts/public-python/
-      - name: debug cred issue 3
-        run: ls -l ${{ env.GOOGLE_APPLICATION_CREDENTIALS }}
       - name: Publish new breadbox client version to Artifact Registry
         working-directory: ./breadbox-client
         run: poetry publish --build --repository public-python
