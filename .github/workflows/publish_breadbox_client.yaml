@@ -51,4 +51,6 @@ jobs:
           poetry config repositories.public-python https://us-central1-python.pkg.dev/cds-artifacts/public-python/
       - name: Publish new breadbox client version to Artifact Registry
         working-directory: ./breadbox-client
-        run: poetry publish --build --repository public-python
+        run: |
+          find ./breadbox_client 
+          poetry publish --build --repository public-python
