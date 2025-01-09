@@ -1,19 +1,8 @@
 name: "publish-breadbox-client"
 description: "Publishes breadbox client to google artifact service"
-inputs:
-  credentials_json:
-    description: |-
-      the "credentials_json" (which should be stored as a secret).
-    required: false
 runs:
   using: "composite"
   steps:
-    - name: "Authenticate to Google Cloud"
-      uses: google-github-actions/auth@v2
-      with:
-        # See instructions here: https://github.com/google-github-actions/auth?tab=readme-ov-file#service-account-key-json
-        credentials_json: ${{ env.INPUT_CREDENTIALS_JSON }}
-
     - name: "Set up authentication for publishing breadbox client"
       working-directory: "./breadbox-client"
       run: |
