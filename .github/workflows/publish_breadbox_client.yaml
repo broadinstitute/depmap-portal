@@ -36,17 +36,17 @@ jobs:
           path: "${{ steps.poetry-cachedir.outputs.POETRY_CACHEDIR }}"
           key: "breadbox-venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('breadbox*/**/poetry.lock') }}"
 
-      - name: "Install breadbox python dependencies"
+      - name: "Export the OpenAPI spec"
         working-directory: "./breadbox"
-        run: "poetry install"
+        run: |
+          poetry install
+          poetry run ./bb export-api-spec ../breadbox-client/latest-breadbox-api.json"
 
-      - name: "Install breadbox client generator dependencies"
+      - name: "Create client from spec"
         working-directory: "./breadbox-client-generator"
-        run: "poetry install"
-
-      - name: "Recreate the breadbox_client package"
-        working-directory: "./breadbox"
-        run: "poetry run ./bb update-client"
+        run: |
+          poetry install
+          poetry run ./bb export-api-spec ../breadbox-client/latest-breadbox-api.json
 
       - name: "peek at poetry cachedir"
         run: "ls -l ${{ steps.poetry-cachedir.outputs.POETRY_CACHEDIR }}/*"
