@@ -9,11 +9,11 @@ from breadbox_client.models import (
     FeatureResponse,
     ValueType,
 )
-from depmap import data_access
 from depmap.data_access.response_parsing import (
     format_breadbox_task_status,
     get_breadbox_slice_id,
     parse_breadbox_slice_id,
+    remove_breadbox_prefix,
 )
 from depmap.interactive.config.categories import CustomCellLinesConfig
 from depmap.vector_catalog.models import Node, NodeType
@@ -233,7 +233,7 @@ def run_custom_analysis(
     or a legacy portal feature (specified with the given feature_data).
     Return a task status.
     """
-    dataset_uuid = parse_breadbox_slice_id(dataset_slice_id).dataset_id
+    bb_dataset_id = remove_breadbox_prefix(dataset_slice_id)
     if slice_query:
         # Temporary hack: for now, this slice query ALWAYS specifies a feature by label.
         # This should always be true for our current feature selection component.
@@ -259,7 +259,7 @@ def run_custom_analysis(
         query_dataset_id = ""
     bb_task_status = extensions.breadbox.client.compute_univariate_associations(
         analysis_type=analysis_type,
-        dataset_id=dataset_uuid,
+        dataset_id=bb_dataset_id,
         query_feature_id=feature_id,
         query_dataset_id=query_dataset_id,
         vector_variable_type=vector_variable_type,

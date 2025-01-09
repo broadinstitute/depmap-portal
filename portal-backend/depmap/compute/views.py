@@ -144,6 +144,7 @@ class ComputeUnivariateAssociations(Resource):
                 query_cell_lines: list[
                     str
                 ] = legacy_data_slice.index.tolist()  # pyright: ignore
+                slice_query = None
             return breadbox_shim.run_custom_analysis(
                 analysis_type=analysis_type,
                 dataset_slice_id=dataset_id,
