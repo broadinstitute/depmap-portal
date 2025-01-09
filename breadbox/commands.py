@@ -227,19 +227,17 @@ def update_client():
         [
             "poetry",
             "run",
-            "-C",
-            "breadbox-client-generator",
             "openapi-python-client",
             "generate",
             "--meta=none",
             "--output-path",
-            "breadbox-client/breadbox_client",
+            "../breadbox-client/breadbox_client",
             "--path",
-            "breadbox-client/latest-breadbox-api.json",
+            "../breadbox-client/latest-breadbox-api.json",
             "--overwrite",
         ],
         check=True,
-        cwd="..",
+        cwd="../breadbox-client-generator",
     )
 
 
