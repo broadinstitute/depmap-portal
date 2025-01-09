@@ -3,33 +3,32 @@ name: Publish breadbox client
 
 on:
   workflow_dispatch:
-    inputs:
-      tag:
-        description: "The tag/branch to checkout"
-        required: true
-        default: "master"
-env:
-  POETRY_CACHE_DIR: "${{ env.HOME }}/.cache/pypoetry"
+
 jobs:
   publish-breadbox-client:
+    env:
+      POETRY_CACHE_DIR: "${{ env.HOME }}/.cache/pypoetry"
     runs-on: ubuntu-latest
     steps:
-      - name: Check out
+      - name: "Check out"
         uses: actions/checkout@v3
         with:
           token: "${{ secrets.GITHUB_TOKEN }}"
           fetch-depth: 0
-      - name: Authenticate to Google Cloud
+
+      - name: "Authenticate to Google Cloud"
         uses: google-github-actions/auth@v2
         with:
           # See instructions here: https://github.com/google-github-actions/auth?tab=readme-ov-file#service-account-key-json
           credentials_json: ${{ secrets.DEPMAP_ARTIFACTS_SVC_ACCT }}
-      - name: Install and configure Poetry
+
+      - name: "Install and configure Poetry"
         uses: snok/install-poetry@v1
         with:
           version: 1.7.1
           virtualenvs-create: true
-      - name: Set up cache
+
+      - name: "Set up poetry cache"
         uses: actions/cache@v2
         id: cached-poetry-dependencies
         with:
@@ -44,14 +43,14 @@ jobs:
         working-directory: "./breadbox-client-generator"
         run: "poetry install"
 
-      - name: "Export the breadbox API spec"
+      - name: "Recreate the breadbox_client package"
         working-directory: "./breadbox"
         run: "poetry run ./bb update-client"
 
       - name: "peek at poetry cachedir"
         run: "ls -l ${{ env.POETRY_CACHE_DIR }}/*"
 
-      - name: "Set up for publishing breadbox client"
+      - name: "Set up authentication for publishing breadbox client"
         working-directory: "./breadbox-client"
         run: |
           find ./breadbox_client 
