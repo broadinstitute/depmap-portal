@@ -46,7 +46,7 @@ jobs:
         working-directory: "./breadbox-client-generator"
         run: |
           poetry install
-          poetry run ./bb export-api-spec ../breadbox-client/latest-breadbox-api.json
+          poetry run ./generate.sh
 
       - name: "peek at poetry cachedir"
         run: "ls -l ${{ steps.poetry-cachedir.outputs.POETRY_CACHEDIR }}/*"
