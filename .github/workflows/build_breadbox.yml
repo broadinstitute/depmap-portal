@@ -182,8 +182,7 @@ jobs:
 
   publish-breadbox-client:
     needs: bump-versions
-    if: ${{ (github.ref_name == 'master') }}
-    #    if: ${{ (needs.bump-versions.outputs.current_version != needs.bump-versions.outputs.bumped_version) && (github.ref_name == 'master') }}
+    if: ${{ (needs.bump-versions.outputs.current_version != needs.bump-versions.outputs.bumped_version) && (github.ref_name == 'master') }}
     runs-on: ubuntu-latest
     steps:
       - name: Check out
