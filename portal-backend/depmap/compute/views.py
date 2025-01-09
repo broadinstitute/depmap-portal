@@ -15,6 +15,7 @@ from depmap.celery_task.utils import (
 from depmap.extensions import csrf_protect, restplus_handle_exception
 from depmap.compute import analysis_tasks
 from depmap_compute.models import AnalysisType
+from depmap_compute.slice import slice_id_to_slice_query
 from depmap.user_uploads.utils.task_utils import get_current_result_dir
 
 blueprint = Blueprint(
@@ -113,18 +114,22 @@ class ComputeUnivariateAssociations(Resource):
         else:
             raise ValueError("Unexpected analysis type {}".format(analysis_type))
 
+        # Parse the slice ID if one was provided
+        if query_id:
+            slice_query = slice_id_to_slice_query(query_id)
+        else:
+            slice_query = None
+
         # Forward requests to breadbox a breadbox dataset is requested
         if dataset_id.startswith("breadbox/"):
-            # If the query feature is from a legacy dataset, load it now and pass the values to breadbox
+            # If the query slice is from a legacy dataset, load it now and pass the values to breadbox
             # The query_cell_lines parameter needs to be the same order/length as the query_values when passed to breadbox.
-            if query_id and not query_id.startswith("breadbox/"):
-                legacy_feature_series: pd.Series = interactive_utils.get_row_of_values_from_slice_id(
-                    query_id
-                )
+            if slice_query and not slice_query.dataset_id.startswith("breadbox/"):
+                legacy_data_slice = data_access.get_slice_data(slice_query)
                 if query_cell_lines is not None:
                     # When the cell lines have been filtered by the user,
                     # the legacy feature series also needs to be filtered before being passed to breadbox.
-                    feature_cell_lines = legacy_feature_series.index.tolist()
+                    feature_cell_lines = legacy_data_slice.index.tolist()
                     unordered_cell_lines_interesection = list(
                         set(query_cell_lines).intersection(set(feature_cell_lines))
                     )
@@ -132,16 +137,17 @@ class ComputeUnivariateAssociations(Resource):
                         return format_taskless_error_message(
                             "No cell lines in common between query and dataset searched"
                         )
-                    legacy_feature_series = legacy_feature_series.loc[
+                    legacy_data_slice = legacy_data_slice.loc[
                         unordered_cell_lines_interesection
                     ]
-                query_values = legacy_feature_series.tolist()
-                query_cell_lines = legacy_feature_series.index.tolist()
-                query_id = None
+                query_values = legacy_data_slice.tolist()
+                query_cell_lines: list[
+                    str
+                ] = legacy_data_slice.index.tolist()  # pyright: ignore
             return breadbox_shim.run_custom_analysis(
                 analysis_type=analysis_type,
                 dataset_slice_id=dataset_id,
-                query_feature_slice_id=query_id,
+                slice_query=slice_query,
                 vector_variable_type=vector_variable_type,
                 query_cell_lines=query_cell_lines,
                 query_values=query_values,
@@ -164,12 +170,8 @@ class ComputeUnivariateAssociations(Resource):
             # 1. main query vector
             # 2. which is dependent/independent, the matrix or the vector
             # 3. optionally, a list of cell line depmap ids
-            if query_id.startswith("breadbox/"):
-                query_series = breadbox_shim.get_feature_data_slice(slice_id=query_id)
-            else:
-                query_series = interactive_utils.get_row_of_values_from_slice_id(
-                    query_id
-                )
+            assert slice_query is not None
+            query_series = data_access.get_slice_data(slice_query)
 
             # cl_query_vector is the intersection of cell lines in both data tracts plus the cell line subset
             (
