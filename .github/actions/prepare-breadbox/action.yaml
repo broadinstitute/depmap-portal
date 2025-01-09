@@ -23,3 +23,4 @@ runs:
 
     - name: "peek at poetry cachedir (for debugging)"
       run: "ls -l ${{ steps.poetry-cachedir.outputs.POETRY_CACHEDIR }}/* || true"
+      shell: bash
