@@ -21,10 +21,13 @@ export function getDimensionTypeLabel(dimension_type: string) {
 
   return (
     dimension_type
+      // Explicitly limit the size of input (for no other reason than to shut
+      // up GitHub CodeQL which thinks someone might used this to DDoS us 🤦)
+      .slice(0, 1000)
       // no underscores
       .replace(/_/g, " ")
       // strip out version suffixes
-      .replace(/\s*[vV]?\d+$/, "")
+      .replace(/\s*v?\d+$/i, "")
   );
 }
 

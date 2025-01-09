@@ -2,11 +2,11 @@ import numpy as np
 import pandas as pd
 from taigapy import create_taiga_client_v3
 
-from datarelease_taiga_permanames import (
+from ..datarelease_taiga_permanames import (
     cngene_taiga_permaname,
     cngene_log2_taiga_permaname,
 )
-from utils import update_taiga
+from ..utils import update_taiga
 
 
 def transform_cngene_to_log2(df: pd.DataFrame):

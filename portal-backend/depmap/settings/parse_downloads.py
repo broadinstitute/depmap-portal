@@ -71,10 +71,12 @@ def get_summary_stats(stats: List[Dict[str, Any]]) -> SummaryStats:
 
 def get_bucket(url: dict):
     if url.get("bucket", "") == DmcBucketUrl.BUCKET:
-        return DmcBucketUrl(url.get("file_name", ""))
+        return DmcBucketUrl(url.get("file_name", ""), dl_name=url.get("dl_name", ""))
     else:
         return BucketUrl(
-            url.get("bucket", ""), url.get("file_name", ""), url.get("dl_name", "")
+            url.get("bucket", ""),
+            url.get("file_name", ""),
+            dl_name=url.get("dl_name", ""),
         )
 
 

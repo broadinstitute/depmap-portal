@@ -63,7 +63,7 @@ import { encodeParams } from "@depmap/utils";
 import {
   OncogenicAlteration,
   CellLineDataMatrix,
-  CellLineDescriptionData,
+  ModelInfo,
 } from "src/cellLine/models/types";
 import TopFeatureValue from "src/celfie/models/celfie";
 import { Trace, ActiveSpan, NoOpSpan } from "src/trace";
@@ -533,12 +533,8 @@ export class DepmapApi {
     );
   }
 
-  getCellLineDescriptionTileData(
-    modelId: string
-  ): Promise<CellLineDescriptionData> {
-    return this._fetch<CellLineDescriptionData>(
-      `/cell_line/description_tile/${modelId}`
-    );
+  getCellLineDescriptionTileData(modelId: string): Promise<ModelInfo> {
+    return this._fetch<ModelInfo>(`/cell_line/description_tile/${modelId}`);
   }
 
   getCellLineCompoundSensitivityData(

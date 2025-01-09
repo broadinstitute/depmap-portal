@@ -3,10 +3,8 @@ import {
   AnnotationType,
   DataExplorerContextV2,
   DataExplorerContextVariable,
-  DataExplorerDatasetDescriptor,
   Dataset,
   DimensionType,
-  MatrixDataset,
 } from "@depmap/types";
 import { compareCaseInsensitive } from "@depmap/utils";
 
@@ -88,8 +86,8 @@ export async function evaluateContext(
       varName,
       {
         // The `DataExplorerContextVariable` type has some extra fields that
-        // aren't part of the SliceQuery format. We'll strip those out so
-        // the backend doesn't get confused.
+        // aren't part of the SliceQuery format. We'll only include the
+        // relevant fields so the backend doesn't get confused.
         dataset_id: variable.dataset_id,
         identifier: variable.identifier,
         identifier_type: variable.identifier_type,
@@ -199,77 +197,6 @@ export async function fetchVariableDomain(
   }
 
   throw new Error(`Unsupported value_type "${value_type}".`);
-}
-
-let datasetsByIndexType: Record<
-  string,
-  DataExplorerDatasetDescriptor[]
-> | null = null;
-
-export async function fetchDatasetsByIndexType() {
-  if (datasetsByIndexType) {
-    return datasetsByIndexType;
-  }
-
-  const datasets = await fetchDatasets();
-  datasetsByIndexType = {};
-
-  datasets.forEach((dataset) => {
-    // TODO: add support for tabular datasets
-    if (dataset.format !== "matrix_dataset") {
-      return;
-    }
-
-    // TODO: add support for other value types
-    if (dataset.value_type !== "continuous") {
-      return;
-    }
-
-    // TODO: add support for `null` dimension types
-    if (!dataset.sample_type_name || !dataset.feature_type_name) {
-      return;
-    }
-
-    const {
-      data_type,
-      id,
-      given_id,
-      name,
-      priority,
-      units,
-      sample_type_name,
-      feature_type_name,
-    } = dataset as MatrixDataset;
-
-    const commonProperties = {
-      data_type,
-      given_id,
-      id,
-      name,
-      priority,
-      units,
-    };
-
-    datasetsByIndexType![sample_type_name] = [
-      ...(datasetsByIndexType![sample_type_name] || []),
-      {
-        ...commonProperties,
-        index_type: sample_type_name,
-        slice_type: feature_type_name,
-      },
-    ];
-
-    datasetsByIndexType![feature_type_name] = [
-      ...(datasetsByIndexType![feature_type_name] || []),
-      {
-        ...commonProperties,
-        index_type: feature_type_name,
-        slice_type: sample_type_name,
-      },
-    ];
-  });
-
-  return datasetsByIndexType;
 }
 
 export function fetchDimensionTypes() {

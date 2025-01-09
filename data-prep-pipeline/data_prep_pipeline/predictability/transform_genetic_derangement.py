@@ -1,7 +1,7 @@
 from taigapy import create_taiga_client_v3
-from utils import update_taiga
-from datarelease_taiga_permanames import cngene_log2_taiga_permaname
-from config import hgnc_gene_table_taiga_id
+from ..utils import update_taiga
+from ..datarelease_taiga_permanames import cngene_log2_taiga_permaname
+from ..config import hgnc_gene_table_taiga_id
 
 
 def process_and_update_genetic_derangement(source_dataset_id, target_dataset_id):

@@ -1,4 +1,8 @@
-import { DataExplorerPlotConfigDimensionV2 } from "@depmap/types";
+import {
+  DataExplorerDatasetDescriptor,
+  DataExplorerPlotConfigDimensionV2,
+  MatrixDataset,
+} from "@depmap/types";
 import { useDataExplorerApi } from "../../../contexts/DataExplorerApiContext";
 
 export async function validateDimension(
@@ -10,6 +14,79 @@ export async function validateDimension(
   }
 }
 
+let datasetsByIndexType: Record<
+  string,
+  DataExplorerDatasetDescriptor[]
+> | null = null;
+
+export async function fetchDatasetsByIndexType(
+  api: ReturnType<typeof useDataExplorerApi>
+) {
+  if (datasetsByIndexType) {
+    return datasetsByIndexType;
+  }
+
+  const datasets = await api.fetchDatasets();
+  datasetsByIndexType = {};
+
+  datasets.forEach((dataset) => {
+    // TODO: add support for tabular datasets
+    if (dataset.format !== "matrix_dataset") {
+      return;
+    }
+
+    // TODO: add support for other value types
+    if (dataset.value_type !== "continuous") {
+      return;
+    }
+
+    // TODO: add support for `null` dimension types
+    if (!dataset.sample_type_name || !dataset.feature_type_name) {
+      return;
+    }
+
+    const {
+      data_type,
+      id,
+      given_id,
+      name,
+      priority,
+      units,
+      sample_type_name,
+      feature_type_name,
+    } = dataset as MatrixDataset;
+
+    const commonProperties = {
+      data_type,
+      given_id,
+      id,
+      name,
+      priority,
+      units,
+    };
+
+    datasetsByIndexType![sample_type_name] = [
+      ...(datasetsByIndexType![sample_type_name] || []),
+      {
+        ...commonProperties,
+        index_type: sample_type_name,
+        slice_type: feature_type_name,
+      },
+    ];
+
+    datasetsByIndexType![feature_type_name] = [
+      ...(datasetsByIndexType![feature_type_name] || []),
+      {
+        ...commonProperties,
+        index_type: feature_type_name,
+        slice_type: sample_type_name,
+      },
+    ];
+  });
+
+  return datasetsByIndexType;
+}
+
 export async function inferSliceType(
   api: ReturnType<typeof useDataExplorerApi>,
   index_type: string | null,
@@ -19,7 +96,7 @@ export async function inferSliceType(
     return undefined;
   }
 
-  const ds = await api.fetchDatasetsByIndexType();
+  const ds = await fetchDatasetsByIndexType(api);
   const sliceTypes = new Set<string>();
 
   ds[index_type].forEach((dataset) => {
@@ -40,7 +117,7 @@ export async function inferDataType(
     return null;
   }
 
-  const ds = await api.fetchDatasetsByIndexType();
+  const ds = await fetchDatasetsByIndexType(api);
   const dataTypes = new Set<string>();
 
   ds[index_type].forEach((dataset) => {
@@ -64,7 +141,7 @@ export async function inferTypesFromDatasetId(
     };
   }
 
-  const ds = await api.fetchDatasetsByIndexType();
+  const ds = await fetchDatasetsByIndexType(api);
   const dataset = ds[index_type].find((d) => {
     return d.id === dataset_id || d.given_id === dataset_id;
   });
@@ -93,7 +170,7 @@ export async function inferDatasetId(
     return undefined;
   }
 
-  const datasets = await api.fetchDatasetsByIndexType();
+  const datasets = await fetchDatasetsByIndexType(api);
   const ids = new Set<string>();
 
   datasets[index_type].forEach((dataset) => {
@@ -127,7 +204,7 @@ export async function findHighestPriorityDataset(
     return undefined;
   }
 
-  const datasets = await api.fetchDatasetsByIndexType();
+  const datasets = await fetchDatasetsByIndexType(api);
   const dataset = datasets[index_type]
     .filter((d) => {
       return (

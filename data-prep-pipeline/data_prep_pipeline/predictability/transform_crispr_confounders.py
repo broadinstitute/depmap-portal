@@ -1,8 +1,8 @@
 import pandas as pd
 
 from taigapy import create_taiga_client_v3
-from utils import update_taiga
-from datarelease_taiga_permanames import (
+from ..utils import update_taiga
+from ..datarelease_taiga_permanames import (
     context_taiga_permaname,
     achilles_screen_qc_report_taiga_permaname,
     crispr_screen_map_taiga_permaname,

@@ -285,7 +285,7 @@ class Config(object):
     DMC_SYMPOSIA_PATH = os.path.join(ADDITIONAL_MOUNTS_DIR, "dmc_symposia.yaml")
     DOWNLOADS_PATHS = [
         os.path.join(ADDITIONAL_MOUNTS_DIR, "downloads"),
-        os.path.join(ADDITIONAL_MOUNTS_DIR, "shared/shared_downloads"),
+        os.path.join(ADDITIONAL_MOUNTS_DIR, "shared/public_downloads"),
     ]
     BREADBOX_PROXY_TARGET = os.environ.get(
         "BREADBOX_PROXY_TARGET", "http://127.0.0.1:8000"

@@ -1,5 +1,10 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { fetchMetadataSlices, MetadataSlices } from "../../api";
+import {
+  DeprecatedDataExplorerApiResponse,
+  useDeprecatedDataExplorerApi,
+} from "../../contexts/DeprecatedDataExplorerApiContext";
+
+type MetadataSlices = DeprecatedDataExplorerApiResponse["fetchMetadataSlices"];
 
 const ContextBuilderContext = createContext({
   metadataSlices: {} as MetadataSlices,
@@ -17,6 +22,7 @@ export const ContextBuilderContextProvider = ({
   dimension_type: string | undefined;
   children: React.ReactNode;
 }) => {
+  const api = useDeprecatedDataExplorerApi();
   const [isLoading, setIsLoading] = useState(true);
   const [metadataSlices, setMetadataSlices] = useState<MetadataSlices>({});
 
@@ -25,13 +31,13 @@ export const ContextBuilderContextProvider = ({
       if (dimension_type) {
         setIsLoading(true);
 
-        const slices = await fetchMetadataSlices(dimension_type);
+        const slices = await api.fetchMetadataSlices(dimension_type);
         setMetadataSlices(slices);
 
         setIsLoading(false);
       }
     })();
-  }, [dimension_type]);
+  }, [api, dimension_type]);
 
   return (
     <ContextBuilderContext.Provider

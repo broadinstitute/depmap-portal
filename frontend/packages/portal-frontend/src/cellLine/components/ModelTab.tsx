@@ -90,16 +90,16 @@ const ModelTab = ({ modelInfo }: ModelTabProps) => {
               <p>{modelInfo.legacy_molecular_subtype}</p>
             </>
           )}
-          {modelInfo.primary_metastasis && (
+          {modelInfo.metadata.PrimaryOrMetastasis && (
             <>
               <h6 className={styles.propertyHeader}>Primary/Metastasis</h6>
-              <p>{modelInfo.primary_metastasis}</p>
+              <p>{modelInfo.metadata.PrimaryOrMetastasis}</p>
             </>
           )}
-          {modelInfo.sample_collection_site && (
+          {modelInfo.metadata.SampleCollectionSite && (
             <>
               <h6 className={styles.propertyHeader}>Collection Site</h6>
-              <p>{modelInfo.sample_collection_site}</p>
+              <p>{modelInfo.metadata.SampleCollectionSite}</p>
             </>
           )}
           {modelInfo.image && (
@@ -136,22 +136,22 @@ const ModelTab = ({ modelInfo }: ModelTabProps) => {
           {showSourceInformation && (
             <h4 className={styles.propertyGroupHeader}>Source Information</h4>
           )}
-          {modelInfo.source_type && (
+          {modelInfo.metadata.SourceType && (
             <>
               <h6 className={styles.propertyHeader}>Source</h6>
-              <p>{modelInfo.source_type}</p>
+              <p>{modelInfo.metadata.SourceType}</p>
             </>
           )}
-          {modelInfo.tissue_origin && (
+          {modelInfo.metadata.TissueOrigin && (
             <>
               <h6 className={styles.propertyHeader}>Tissue Origin</h6>
               <p>{modelInfo.tissue_origin}</p>
             </>
           )}
-          {modelInfo.catalog_number && (
+          {modelInfo.metadata.CatalogNumber && (
             <>
               <h6 className={styles.propertyHeader}>Catalog Number</h6>
-              <p>{modelInfo.catalog_number}</p>
+              <p>{modelInfo.metadata.CatalogNumber}</p>
             </>
           )}
         </div>

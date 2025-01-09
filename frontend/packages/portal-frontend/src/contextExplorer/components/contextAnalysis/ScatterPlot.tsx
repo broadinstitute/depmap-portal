@@ -6,10 +6,8 @@ import type {
   PlotlyHTMLElement,
   PlotMouseEvent,
 } from "plotly.js";
-import PlotlyLoader, {
-  PlotlyType,
-} from "src/data-explorer-2/components/plot/PlotlyLoader";
-import { DEFAULT_PALETTE } from "src/data-explorer-2/components/plot/prototype/plotUtils";
+import PlotlyLoader, { PlotlyType } from "src/plot/components/PlotlyLoader";
+import { DEFAULT_PALETTE } from "@depmap/data-explorer-2";
 import type ExtendedPlotType from "src/plot/models/ExtendedPlotType";
 import styles from "src/plot/styles/ScatterPlot.scss";
 

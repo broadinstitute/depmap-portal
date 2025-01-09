@@ -1,4 +1,4 @@
-import React from "react";
+import React, { Fragment } from "react";
 import { Accordion } from "@depmap/interactive";
 import { DatasetDataTypes } from "../models/types";
 
@@ -14,8 +14,8 @@ const DatasetsTile = ({ cellLineDatasets }: DatasetsTileProps) => {
           Sequenced and profiled in the following datasets:
         </h2>
         <div className="card_padding">
-          {cellLineDatasets.map((datasetDataType) => (
-            <>
+          {cellLineDatasets.map((datasetDataType, i) => (
+            <Fragment key={i}>
               {" "}
               {datasetDataType.datasets.length > 0 && (
                 <Accordion
@@ -32,7 +32,7 @@ const DatasetsTile = ({ cellLineDatasets }: DatasetsTileProps) => {
                   ))}
                 </Accordion>
               )}
-            </>
+            </Fragment>
           ))}
         </div>
       </div>

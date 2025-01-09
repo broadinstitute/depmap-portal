@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { downloadCsv } from "@depmap/utils";
 import { satisfiesFilters } from "src/common/models/discoveryAppFilters";
-import downloadCsv from "src/common/utilities/downloadCsv";
 import Glossary from "src/common/components/Glossary";
 import FilterControls from "src/common/components/FilterControls";
 import useDiscoveryAppHandlers from "src/common/hooks/useDiscoveryAppHandlers";
