@@ -7,6 +7,7 @@ runs:
     - name: "Compute poetry cache dir"
       id: "poetry-cachedir"
       run: 'echo POETRY_CACHEDIR="$HOME/.cache/pypoetry" >> "$GITHUB_OUTPUT"'
+      shell: bash
 
     - name: "Install and configure Poetry"
       uses: snok/install-poetry@v1
