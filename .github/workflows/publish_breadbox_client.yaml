@@ -22,3 +22,5 @@ jobs:
 
       - name: Publish breadbox client
         uses: ./.github/actions/publish-breadbox-client
+        with:
+          credentials_json: "${{ secrets.DEPMAP_ARTIFACTS_SVC_ACCT }}"
