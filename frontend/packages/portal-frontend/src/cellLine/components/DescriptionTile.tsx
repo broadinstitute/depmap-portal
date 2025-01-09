@@ -1,13 +1,13 @@
 import React from "react";
 import { Tab, Tabs } from "react-bootstrap";
-import { CellLineDescriptionData } from "../models/types";
+import { ModelInfo } from "../models/types";
 import IdTab from "./IdTab";
 import ModelTab from "./ModelTab";
 import PatientTab from "./PatientTab";
 import styles from "../styles/CellLinePage.scss";
 
 export interface DescriptionTileProps {
-  data: CellLineDescriptionData;
+  data: ModelInfo;
 }
 
 const DescriptionTile = ({ data }: DescriptionTileProps) => {
@@ -22,13 +22,16 @@ const DescriptionTile = ({ data }: DescriptionTileProps) => {
             id="cell_line_description_tile_tabs"
           >
             <Tab eventKey={1} title="Model">
-              <ModelTab modelInfo={data.model_info} />
+              <ModelTab modelInfo={data} />
             </Tab>
             <Tab eventKey={2} title="Patient">
-              <PatientTab patientInfo={data.patient_info} />
+              <PatientTab
+                patientInfo={data.metadata}
+                relatedModels={data.related_models}
+              />
             </Tab>
             <Tab eventKey={3} title="IDs">
-              <IdTab idInfo={data.id_info} />
+              <IdTab idInfo={data.metadata} aliases={data.aliases} />
             </Tab>
           </Tabs>
         </div>

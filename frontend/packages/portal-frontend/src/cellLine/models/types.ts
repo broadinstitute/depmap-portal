@@ -1,3 +1,5 @@
+import { ModelAnnotation } from "./ModelAnnotation";
+
 export interface DatasetDataTypes {
   dataType: string;
   datasets: { display_name: string; download_url: string }[];
@@ -47,33 +49,10 @@ export interface ModelInfo {
   source_type: string;
   catalog_number: string;
   model_derivation_material: string;
-}
-
-export interface IdInfo {
-  rrid: string;
-  sanger_model_id: string;
-  cosmic_id: number;
-  ccle_name: string;
-  aliases: string[];
-}
-
-export interface PatientInfo {
-  patient_id: string;
-  age: number;
-  age_category: string;
-  sex: string;
-  race: string;
-  patient_molecular_subtype: string;
-  treatment_status: string;
-  treatment_details: string;
   related_models: {
     model_id: string;
     url: string;
   }[];
-}
-
-export interface CellLineDescriptionData {
-  model_info: ModelInfo;
-  patient_info: PatientInfo;
-  id_info: IdInfo;
+  aliases: string[];
+  metadata: ModelAnnotation;
 }
