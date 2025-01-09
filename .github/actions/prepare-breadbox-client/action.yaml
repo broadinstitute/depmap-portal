@@ -1,0 +1,23 @@
+# A re-usable github action which generates the breadbox client
+name: "prepare-breadbox-client"
+description: "Auto-generate the breadbox client"
+runs:
+  using: "composite"
+  steps:
+    - name: Prepare breadbox client
+      uses: ./.github/actions/prepare-breadbox # checks out and installs poetry
+
+    - name: "Export the OpenAPI spec"
+      working-directory: "./breadbox"
+      run: |
+        poetry install
+        poetry run ./bb export-api-spec ../breadbox-client/latest-breadbox-api.json
+
+    - name: "Create client from spec"
+      working-directory: "./breadbox-client-generator"
+      run: |
+        poetry install
+        poetry run ./generate.sh
+
+    - name: "peek at poetry cachedir"
+      run: "ls -l ${{ steps.poetry-cachedir.outputs.POETRY_CACHEDIR }}/*"

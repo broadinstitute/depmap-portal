@@ -60,16 +60,17 @@ jobs:
       # We want to use the rules defined in breadbox/pyproject.toml
       - name: Check PR title
         run: poetry run cz check -m '${{ github.event.pull_request.title }}'
+
   pyright-breadbox-client:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - name: Generate breadbox client
-        uses: ./.github/actions/generate-breadbox-client # defined as a re-usable action
-      - name: check that the breadbox client passes pyright
+      - name: Prepare breadbox client
+        uses: ./.github/actions/prepare-breadbox-client # checks out and generates breadbox client code
+
+      - name: Check that the breadbox client passes pyright
         working-directory: ./breadbox-client
-        run: |
-          poetry install && poetry run pyright breadbox_facade
+        run: "run pyright breadbox_facade"
+
   build-docker:
     runs-on: ubuntu-latest
     steps:
