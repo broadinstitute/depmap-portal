@@ -3,6 +3,9 @@ name: Publish breadbox client
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - "debug-publish-bb"
 
 jobs:
   publish-breadbox-client:
