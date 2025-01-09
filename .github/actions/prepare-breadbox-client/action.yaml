@@ -20,7 +20,3 @@ runs:
         poetry install
         poetry run ./generate.sh
       shell: bash
-
-    - name: "peek at poetry cachedir"
-      run: "ls -l ${{ steps.poetry-cachedir.outputs.POETRY_CACHEDIR }}/*"
-      shell: bash
