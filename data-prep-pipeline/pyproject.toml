@@ -38,3 +38,5 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.scripts]
 transform_portal_compounds = 'data_prep_pipeline.portal_compounds.transform_portal_compounds:main'
+get_release_model_and_model_condition = 'data_prep_pipeline.get_release_model_and_model_condition_files.get_release_model_and_model_condition:main'
+data_prep = "data_prep_pipeline.data_prep:main"

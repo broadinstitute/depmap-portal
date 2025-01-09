@@ -45,7 +45,7 @@ class ExternalConfig(RemoteConfig):
         PROJECT_ROOT, "profiling"
     )  # hardcoded mount point in ansible
     DATA_LOAD_CONFIG = external_datasets
-    S3_DIR = "depmap-pipeline/external-24q2"
+    S3_DIR = "depmap-pipeline/external-24q4"
     FEEDBACK_FORM_URL = "https://forum.depmap.org/"
     THEME_PATH = os.path.join(Config.ADDITIONAL_MOUNTS_DIR, "theme")
     RELEASE_NOTES_URL = "https://forum.depmap.org/c/announcements/15"

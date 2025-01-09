@@ -3,9 +3,9 @@ import pandas as pd
 from typing import Dict
 
 from taigapy import create_taiga_client_v3
-from utils import update_taiga
-from datarelease_taiga_permanames import omics_fusion_filtered_taiga_permaname
-from config import hgnc_gene_table_taiga_id
+from ..utils import update_taiga
+from ..datarelease_taiga_permanames import omics_fusion_filtered_taiga_permaname
+from ..config import hgnc_gene_table_taiga_id
 
 
 def extract_id(x: str) -> str:

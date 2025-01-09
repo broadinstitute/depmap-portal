@@ -1,7 +1,7 @@
 from gumbo_rest_client import Client
 from taigapy import create_taiga_client_v3
 import pandas as pd
-from files_to_check_models_to_exclude import quarterly_files_to_check
+from .files_to_check_models_to_exclude import quarterly_files_to_check
 import io
 import yaml
 import re
@@ -37,7 +37,9 @@ def filter_empty_strings(list_with_empty_strings: list) -> list:
     return [item for item in list_with_empty_strings if item]
 
 
-def multi_join(primary_df: pd.DataFrame, join_instructions: list) -> pd.DataFrame:
+def multi_join(
+    gumbo_client: Client, primary_df: pd.DataFrame, join_instructions: list
+) -> pd.DataFrame:
     """
     Perform multiple joins on a DataFrame given a list of join instructions.
 
@@ -50,8 +52,6 @@ def multi_join(primary_df: pd.DataFrame, join_instructions: list) -> pd.DataFram
     Returns:
         pd.DataFrame: Resulting DataFrame after performing multiple joins
     """
-
-    gumbo_client = Client()
 
     result_df = primary_df
     for instruction in join_instructions:
@@ -73,7 +73,7 @@ def multi_join(primary_df: pd.DataFrame, join_instructions: list) -> pd.DataFram
 
 
 def gumbo_df_preprocessing(
-    data_dictionary_table_df: pd.DataFrame, gumbo_table_df
+    gumbo_client: Client, data_dictionary_table_df: pd.DataFrame, gumbo_table_df
 ) -> pd.DataFrame:
     """
     This function takes a DataFrame containing the data dictionary for a single table and returns a DataFrame containing the data from the Gumbo table.
@@ -96,7 +96,7 @@ def gumbo_df_preprocessing(
     join_instructions = filter_empty_strings(join_instructions)
 
     # Perform multiple joins on a DataFrame given a list of join instructions
-    df = multi_join(gumbo_table_df, join_instructions)
+    df = multi_join(gumbo_client, gumbo_table_df, join_instructions)
 
     missing_columns = set(gumbo_column_names) - set(df.columns)
     assert (
