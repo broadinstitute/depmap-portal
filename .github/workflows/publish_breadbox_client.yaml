@@ -40,7 +40,7 @@ jobs:
         working-directory: "./breadbox"
         run: |
           poetry install
-          poetry run ./bb export-api-spec ../breadbox-client/latest-breadbox-api.json"
+          poetry run ./bb export-api-spec ../breadbox-client/latest-breadbox-api.json
 
       - name: "Create client from spec"
         working-directory: "./breadbox-client-generator"
