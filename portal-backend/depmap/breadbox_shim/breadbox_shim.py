@@ -5,12 +5,11 @@ from typing import Any, Optional, Union
 from breadbox_client.models.compute_response import ComputeResponse
 from breadbox_client.models import (
     MatrixDatasetResponse,
-    MatrixDatasetResponseFormat,
     TabularDatasetResponse,
     FeatureResponse,
     ValueType,
 )
-
+from depmap import data_access
 from depmap.data_access.response_parsing import (
     format_breadbox_task_status,
     get_breadbox_slice_id,
@@ -21,6 +20,7 @@ from depmap.vector_catalog.models import Node, NodeType
 from depmap.vector_catalog.trees import Trees
 from depmap.partials.matrix.models import CellLineSeries
 from depmap import extensions
+from depmap_compute.slice import SliceQuery
 
 # Since breadbox and the legacy backend contain different datasets, we need to combine
 # values from each of their responses before returning a value.
@@ -56,7 +56,7 @@ class BreadboxVectorCatalogChildNode(Node):
 
 
 class BreadboxVectorCatalogNodeInfo:
-    """
+    """ 
     Vector Catalog endpoints return a specific dictionary structure for each parent node 
     in the vector catalog tree. This class reflects that same structure and contains
     some defaults specific to breadbox.
@@ -222,7 +222,7 @@ def _get_feature_node_info_with_siblings(
 def run_custom_analysis(
     analysis_type: str,
     dataset_slice_id: str,
-    query_feature_slice_id: str,
+    slice_query: Optional[SliceQuery],
     vector_variable_type: str,
     query_cell_lines: Optional[list[str]],
     query_values: Optional[list[Any]],
@@ -234,12 +234,26 @@ def run_custom_analysis(
     Return a task status.
     """
     dataset_uuid = parse_breadbox_slice_id(dataset_slice_id).dataset_id
-    if query_feature_slice_id:
-        feature_id = parse_breadbox_slice_id(query_feature_slice_id).feature_id
-        query_dataset_id = parse_breadbox_slice_id(query_feature_slice_id).dataset_id
+    if slice_query:
+        # Temporary hack: for now, this slice query ALWAYS specifies a feature by label.
+        # This should always be true for our current feature selection component.
+        # Soon, this "breadbox_shim" should be removed entirely, along with this hack.
+        assert slice_query.identifier_type == "feature_label"
+
+        # Hack part 2: Custom analysis in Breadbox was set up to take a feature's given ID.
+        # We have the label here and need to use that to load the given ID.
+        query_dataset_id = parse_breadbox_slice_id(slice_query.dataset_id).dataset_id
+        all_dataset_features = extensions.breadbox.client.get_dataset_features(
+            query_dataset_id
+        )
+        feature_id = None
+        for bb_feature in all_dataset_features:
+            if bb_feature["label"] == slice_query.identifier:
+                feature_id = bb_feature["id"]
         assert (
             feature_id is not None
-        ), "query_feature_slice_id must contain a feature ID"
+        ), f"Unexpected feature label passed to breadbox custom analysis: '{slice_query.identifier}'"
+
     else:
         feature_id = ""
         query_dataset_id = ""

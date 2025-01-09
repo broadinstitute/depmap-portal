@@ -24,7 +24,7 @@ def parse_breadbox_slice_id(slice_id: str) -> ParsedBreadboxSliceId:
     """
     Parse the breadbox dataset ID and feature ID from the given slice ID. If the given 
     slice ID is malformed, throw a Bad Request error. Slice IDs should be formatted like 
-    'breadbox/<dataset-uuid>/<feature-uuid>' or 'breadbox/<dataset-uuid>'.
+    'breadbox/<dataset-uuid>/<feature-given-id>' or 'breadbox/<dataset-uuid>'.
     """
     match = re.match(BREADBOX_SLICE_ID_REGEX, slice_id)
     assert match, f"Breadbox slice id '{slice_id}' does not match the expected format."
