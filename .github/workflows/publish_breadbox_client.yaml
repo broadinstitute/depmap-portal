@@ -20,20 +20,5 @@ jobs:
       - name: Prepare breadbox client
         uses: ./.github/actions/prepare-breadbox-client # checks out and generates breadbox client code
 
-      - name: "Authenticate to Google Cloud"
-        uses: google-github-actions/auth@v2
-        with:
-          # See instructions here: https://github.com/google-github-actions/auth?tab=readme-ov-file#service-account-key-json
-          credentials_json: ${{ secrets.DEPMAP_ARTIFACTS_SVC_ACCT }}
-
-      - name: "Set up authentication for publishing breadbox client"
-        working-directory: "./breadbox-client"
-        run: |
-          find ./breadbox_client 
-          poetry self add keyrings.google-artifactregistry-auth
-          poetry config repositories.public-python https://us-central1-python.pkg.dev/cds-artifacts/public-python/
-
-      - name: "Publish new breadbox client version to Artifact Registry"
-        working-directory: "./breadbox-client"
-        run: |
-          poetry publish --build --repository public-python
+      - name: Publish breadbox client
+        uses: ./.github/actions/publish-breadbox-client
