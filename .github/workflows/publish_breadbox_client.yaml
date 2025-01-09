@@ -17,8 +17,6 @@ jobs:
         with:
           token: "${{ secrets.GITHUB_TOKEN }}"
           fetch-depth: 0
-      - run: |
-          git pull origin HEAD:${{ inputs.tag }}
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
