@@ -21,7 +21,6 @@ runs:
       with:
         path: "${{ steps.poetry-cachedir.outputs.POETRY_CACHEDIR }}"
         key: "breadbox-venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('breadbox*/**/poetry.lock') }}"
-
-    - name: "peek at poetry cachedir (for debugging)"
-      run: "ls -l ${{ steps.poetry-cachedir.outputs.POETRY_CACHEDIR }}/* || true"
-      shell: bash
+#    - name: "peek at poetry cachedir (for debugging)"
+#      run: "ls -l ${{ steps.poetry-cachedir.outputs.POETRY_CACHEDIR }}/* || true"
+#      shell: bash
