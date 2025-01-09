@@ -6,7 +6,6 @@ runs:
     - name: "Set up authentication for publishing breadbox client"
       working-directory: "./breadbox-client"
       run: |
-        find ./breadbox_client 
         poetry self add keyrings.google-artifactregistry-auth
         poetry config repositories.public-python https://us-central1-python.pkg.dev/cds-artifacts/public-python/
       shell: bash
