@@ -56,7 +56,7 @@ class BreadboxVectorCatalogChildNode(Node):
 
 
 class BreadboxVectorCatalogNodeInfo:
-    """ TODO: Could remove this. BB datasets don't need to appear in Vector Catalog at this point. 
+    """ 
     Vector Catalog endpoints return a specific dictionary structure for each parent node 
     in the vector catalog tree. This class reflects that same structure and contains
     some defaults specific to breadbox.
