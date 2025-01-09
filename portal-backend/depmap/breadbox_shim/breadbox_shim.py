@@ -243,10 +243,10 @@ def run_custom_analysis(
         # Hack part 2: Custom analysis in Breadbox was set up to take a feature's given ID.
         # We have the label here and need to use that to load the given ID.
         query_dataset_id = parse_breadbox_slice_id(slice_query.dataset_id).dataset_id
-        feature_id = None
         all_dataset_features = extensions.breadbox.client.get_dataset_features(
-            slice_query.dataset_id
+            query_dataset_id
         )
+        feature_id = None
         for bb_feature in all_dataset_features:
             if bb_feature["label"] == slice_query.identifier:
                 feature_id = bb_feature["id"]
