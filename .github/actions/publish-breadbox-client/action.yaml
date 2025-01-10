@@ -1,0 +1,17 @@
+name: "publish-breadbox-client"
+description: "Publishes breadbox client to google artifact service"
+runs:
+  using: "composite"
+  steps:
+    - name: "Set up authentication for publishing breadbox client"
+      working-directory: "./breadbox-client"
+      run: |
+        poetry self add keyrings.google-artifactregistry-auth
+        poetry config repositories.public-python https://us-central1-python.pkg.dev/cds-artifacts/public-python/
+      shell: bash
+
+    - name: "Publish new breadbox client version to Artifact Registry"
+      working-directory: "./breadbox-client"
+      run: |
+        poetry publish --build --repository public-python
+      shell: bash
