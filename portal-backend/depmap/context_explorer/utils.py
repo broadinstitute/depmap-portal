@@ -34,7 +34,7 @@ def get_box_plot_data_for_other_category(
     significant_subtype_codes: List[str],
     entity_full_row_of_values,
 ):
-    heme_model_ids = (
+    heme_model_id_series = (
         SubtypeContext.get_model_ids_for_other_heme_contexts(
             subtype_codes_to_filter_out=significant_subtype_codes
         )
@@ -43,6 +43,15 @@ def get_box_plot_data_for_other_category(
             subtype_codes_to_filter_out=significant_subtype_codes
         )
     )
+
+    if heme_model_id_series.empty:
+        return {
+            "label": "Heme" if category == "heme" else "Solid",
+            "data": [],
+            "cell_line_display_names": [],
+        }
+
+    heme_model_ids = list(heme_model_id_series.keys())
     heme_values = entity_full_row_of_values[
         entity_full_row_of_values.index.isin(heme_model_ids)
     ]
@@ -54,9 +63,7 @@ def get_box_plot_data_for_other_category(
     )
     display_names_dict = display_names_series.to_dict()
 
-    context_values_index_by_display_name = heme_model_ids.rename(
-        index=display_names_dict
-    )
+    context_values_index_by_display_name = heme_values.rename(index=display_names_dict)
 
     return {
         "label": "Heme" if category == "heme" else "Solid",
@@ -73,7 +80,9 @@ def get_box_plot_data_for_context(
     ]
     context_values.dropna(inplace=True)
 
-    display_names_series = DepmapModel.get_cell_line_display_names(model_ids=model_ids)
+    display_names_series = DepmapModel.get_cell_line_display_names(
+        model_ids=list(set(model_ids))
+    )
     display_names_dict = display_names_series.to_dict()
 
     context_values_index_by_display_name = context_values.rename(
@@ -146,15 +155,15 @@ def _get_dose_response_curves_per_model(
     ]
 
     in_group_curve_params = get_curve_params_for_model_ids(
-        model_ids=in_group_model_ids.keys(),
+        model_ids=in_group_model_ids,
         model_display_names_by_model_id=pd.Series(
-            data=in_group_model_ids.values(), index=in_group_model_ids.keys()
+            data=in_group_model_ids, index=in_group_model_ids
         ),
         compound_experiment=compound_experiment,
     )
 
     out_group_model_display_names = DepmapModel.get_cell_line_display_names(
-        out_group_model_ids
+        list(set(out_group_model_ids))
     )
     out_group_curve_params = get_curve_params_for_model_ids(
         model_ids=out_group_model_ids,

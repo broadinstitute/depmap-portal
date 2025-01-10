@@ -655,25 +655,29 @@ class ContextBoxPlotData(Resource):
             entity_full_row_of_values.mean() if entity_type == "compound" else None
         )
 
-        for subtype_code in contexts_to_plot.keys():
-            box_plot_data = get_box_plot_data_for_context(
-                subtype_code=subtype_code,
+        heme_box_plot_data = {}
+        solid_box_plot_data = {}
+
+        if contexts_to_plot != None:
+            for subtype_code in contexts_to_plot.keys():
+                box_plot_data = get_box_plot_data_for_context(
+                    subtype_code=subtype_code,
+                    entity_full_row_of_values=entity_full_row_of_values,
+                    model_ids_per_context=contexts_to_plot[subtype_code],
+                )
+                box_plot_data_list.append(box_plot_data)
+
+            heme_box_plot_data = get_box_plot_data_for_other_category(
+                category="heme",
+                significant_subtype_codes=list(contexts_to_plot.keys()),
                 entity_full_row_of_values=entity_full_row_of_values,
-                model_ids_per_context=contexts_to_plot[subtype_code],
             )
-            box_plot_data_list.append(box_plot_data)
 
-        heme_box_plot_data = get_box_plot_data_for_other_category(
-            category="heme",
-            significant_subtype_codes=list(contexts_to_plot.keys()),
-            entity_full_row_of_values=entity_full_row_of_values,
-        )
-
-        solid_box_plot_data = get_box_plot_data_for_other_category(
-            category="solid",
-            significant_subtype_codes=list(contexts_to_plot.keys()),
-            entity_full_row_of_values=entity_full_row_of_values,
-        )
+            solid_box_plot_data = get_box_plot_data_for_other_category(
+                category="solid",
+                significant_subtype_codes=list(contexts_to_plot.keys()),
+                entity_full_row_of_values=entity_full_row_of_values,
+            )
 
         return {
             "box_plot_data": box_plot_data_list,

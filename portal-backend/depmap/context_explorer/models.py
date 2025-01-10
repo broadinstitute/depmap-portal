@@ -340,13 +340,18 @@ class ContextAnalysis(Model):
         abs_effect_size: List[float],
         frac_dep_in: List[float],
     ):
+        assert dataset_name in DependencyEnum.values()
+
+        dependency_dataset_id = DependencyDataset.get_dataset_by_name(
+            dataset_name
+        ).dependency_dataset_id
         if entity_type == "gene":
             return (
                 ContextAnalysis.query.filter(
                     and_(
                         ContextAnalysis.subtype_code != subtype_code,
                         ContextAnalysis.out_group == out_group,
-                        ContextAnalysis.dataset_name == dataset_name,
+                        ContextAnalysis.dependency_dataset_id == dependency_dataset_id,
                         ContextAnalysis.entity_id == entity_id,
                         ContextAnalysis.t_qval >= fdr[0],
                         ContextAnalysis.t_qval <= fdr[1],
@@ -373,7 +378,7 @@ class ContextAnalysis(Model):
                     and_(
                         ContextAnalysis.subtype_code != subtype_code,
                         ContextAnalysis.out_group == out_group,
-                        ContextAnalysis.dataset_name == dataset_name,
+                        ContextAnalysis.dependency_dataset_id == dependency_dataset_id,
                         ContextAnalysis.entity_id == entity_id,
                         ContextAnalysis.t_qval >= fdr[0],
                         ContextAnalysis.t_qval <= fdr[1],

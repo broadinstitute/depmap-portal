@@ -1,5 +1,4 @@
 from depmap.cell_line.models_new import LineageType
-from depmap.context_explorer.utils import _get_lineage_type_from_top_context
 from flask import url_for
 import numpy as np
 import pytest
@@ -165,34 +164,6 @@ def test_get_context_path(populated_db):
                 url_for("api.context_explorer_context_path", selected_code="NONSENSE",),
                 content_type="application/json",
             )
-
-
-def test_get_lineage_type_from_top_context():
-    # Make sure all cases return the correct result
-    top_context = "myeloid"
-
-    lineage_type = _get_lineage_type_from_top_context(top_context)
-    assert lineage_type == LineageType.Heme
-
-    top_context = "Myeloid"
-
-    lineage_type = _get_lineage_type_from_top_context(top_context)
-    assert lineage_type == LineageType.Heme
-
-    top_context = "MYELOID"
-
-    lineage_type = _get_lineage_type_from_top_context(top_context)
-    assert lineage_type == LineageType.Heme
-
-    top_context = "solid"
-
-    lineage_type = _get_lineage_type_from_top_context(top_context)
-    assert lineage_type == LineageType.Solid
-
-    top_context = "Solid"
-
-    lineage_type = _get_lineage_type_from_top_context(top_context)
-    assert lineage_type == LineageType.Solid
 
 
 def test_get_context_dose_curves_invalid_request_arguments(populated_db):

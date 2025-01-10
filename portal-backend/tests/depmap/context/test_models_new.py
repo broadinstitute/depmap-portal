@@ -162,11 +162,12 @@ def test_get_model_ids_for_subtype_context(empty_db_mock_downloads):
     bone_child_level2_num1 = ddchs_code
     bone_child_level2_num2 = emchs_code
 
-    def _test_get_model_ids(current_context_code, expected_models):
+    def _test_get_model_ids(current_context_code, node_level, expected_models):
         expected_model_ids = [model.model_id for model in expected_models]
-        current_context = SubtypeContext.get_by_code(current_context_code)
-        context_model_ids = SubtypeContext.get_model_ids(current_context)
-        assert context_model_ids == expected_model_ids
+        context_model_ids = SubtypeNode.get_model_ids_by_subtype_code_and_node_level(
+            current_context_code, node_level
+        )
+        assert set(expected_model_ids) == set(context_model_ids)
 
     bone_models, es_models, chs_models, ddchs_models, emchs_models = _setup_factories(
         empty_db_mock_downloads=empty_db_mock_downloads,
@@ -181,11 +182,11 @@ def test_get_model_ids_for_subtype_context(empty_db_mock_downloads):
         bone_child_level2_num2=bone_child_level2_num2,
     )
 
-    _test_get_model_ids(bone_code, bone_models)
-    _test_get_model_ids(es_code, es_models)
-    _test_get_model_ids(chs_code, chs_models)
-    _test_get_model_ids(ddchs_code, ddchs_models)
-    _test_get_model_ids(emchs_code, emchs_models)
+    _test_get_model_ids(bone_code, 0, bone_models)
+    _test_get_model_ids(es_code, 1, es_models)
+    _test_get_model_ids(chs_code, 2, chs_models)
+    _test_get_model_ids(ddchs_code, 2, ddchs_models)
+    _test_get_model_ids(emchs_code, 2, emchs_models)
 
     with pytest.raises(Exception):
         _test_get_model_ids("NONSENSE_CODE", [])
@@ -231,9 +232,9 @@ def test_get_subtype_tree_query(empty_db_mock_downloads):
     df = pd.read_sql(query.statement, query.session.connection())
     tree_nodes = df.to_dict("records")
 
-    assert len(tree_nodes) == 65
+    assert len(tree_nodes) == 13
     assert {
-        "model_id": "BONE_MODEL3(chs)(ddchs)",
+        "model_id": "BONE_MODEL5(chs)(emchs)",
         "subtype_code": "BONE",
         "level_0": "BONE",
         "level_1": None,
@@ -245,20 +246,20 @@ def test_get_subtype_tree_query(empty_db_mock_downloads):
         "node_level": 0,
     } in tree_nodes
     assert {
-        "model_id": "BONE_MODEL2(chs)",
-        "subtype_code": "ES",
+        "model_id": "BONE_MODEL5(chs)(emchs)",
+        "subtype_code": "CHS",
         "level_0": "BONE",
-        "level_1": "ES",
+        "level_1": "CHS",
         "level_2": None,
         "level_3": None,
         "level_4": None,
         "level_5": None,
-        "node_name": "node_name_8",
+        "node_name": "node_name_9",
         "node_level": 1,
     } in tree_nodes
 
     assert {
-        "model_id": "BONE_MODEL3(chs)(ddchs)",
+        "model_id": "BONE_MODEL4(chs)(emchs)",
         "subtype_code": "EMCHS",
         "level_0": "BONE",
         "level_1": "CHS",
@@ -336,44 +337,42 @@ def test_get_subtype_tree_query_molecular_subtypes(empty_db_mock_downloads):
     tree_nodes = df.to_dict("records")
     assert len(tree_nodes) == 3
 
-    assert tree_nodes == [
-        {
-            "model_id": "a",
-            "subtype_code": "EGFR",
-            "level_0": "EGFR",
-            "level_1": None,
-            "level_2": None,
-            "level_3": None,
-            "level_4": None,
-            "level_5": None,
-            "node_name": "node_name_0",
-            "node_level": 0,
-        },
-        {
-            "model_id": "b",
-            "subtype_code": "EGFR",
-            "level_0": "EGFR",
-            "level_1": None,
-            "level_2": None,
-            "level_3": None,
-            "level_4": None,
-            "level_5": None,
-            "node_name": "node_name_0",
-            "node_level": 0,
-        },
-        {
-            "model_id": "a",
-            "subtype_code": "EGFRp.L858R",
-            "level_0": "EGFR",
-            "level_1": "EGFRp.L858R",
-            "level_2": None,
-            "level_3": None,
-            "level_4": None,
-            "level_5": None,
-            "node_name": "node_name_1",
-            "node_level": 1,
-        },
-    ]
+    assert {
+        "model_id": "a",
+        "subtype_code": "EGFR",
+        "level_0": "EGFR",
+        "level_1": None,
+        "level_2": None,
+        "level_3": None,
+        "level_4": None,
+        "level_5": None,
+        "node_name": "node_name_12",
+        "node_level": 0,
+    } in tree_nodes
+    assert {
+        "model_id": "b",
+        "subtype_code": "EGFR",
+        "level_0": "EGFR",
+        "level_1": None,
+        "level_2": None,
+        "level_3": None,
+        "level_4": None,
+        "level_5": None,
+        "node_name": "node_name_12",
+        "node_level": 0,
+    } in tree_nodes
+    assert {
+        "model_id": "a",
+        "subtype_code": "EGFRp.L858R",
+        "level_0": "EGFR",
+        "level_1": "EGFRp.L858R",
+        "level_2": None,
+        "level_3": None,
+        "level_4": None,
+        "level_5": None,
+        "node_name": "node_name_13",
+        "node_level": 1,
+    } in tree_nodes
 
 
 # Make sure molecular subtype tree codes and lineage codes
@@ -410,7 +409,7 @@ def test_get_unique_level_0s(empty_db_mock_downloads):
     )
 
     ES_LEVEL1_context = SubtypeContextFactory(
-        subtype_code="ES_LEVEL1_context", depmap_model=[DepmapModelFactory()],
+        subtype_code="ES_LEVEL1", depmap_model=[DepmapModelFactory()],
     )
 
     child1_level2_of_child1_level1 = SubtypeNodeFactory(
@@ -426,7 +425,7 @@ def test_get_unique_level_0s(empty_db_mock_downloads):
     )
 
     ES_LEVEL2_context = SubtypeContextFactory(
-        subtype_code="ES_LEVEL1_context", depmap_model=[DepmapModelFactory()],
+        subtype_code="ES_LEVEL2", depmap_model=[DepmapModelFactory()],
     )
 
     child1_level3_of_child1_level1 = SubtypeNodeFactory(
@@ -442,7 +441,7 @@ def test_get_unique_level_0s(empty_db_mock_downloads):
     )
 
     ES_LEVEL3_context = SubtypeContextFactory(
-        subtype_code="ES_LEVEL3_context", depmap_model=[DepmapModelFactory()],
+        subtype_code="ES_LEVEL3", depmap_model=[DepmapModelFactory()],
     )
 
     child1_level4_of_child1_level1 = SubtypeNodeFactory(
@@ -512,7 +511,7 @@ def test_get_unique_level_0s(empty_db_mock_downloads):
     lineage_node_2_level_1 = SubtypeNodeFactory(
         subtype_code="LUNG_LEVEl1",
         tree_type=TreeType.Lineage,
-        node_level=0,
+        node_level=1,
         level_0="LUNG",
         level_1="LUNG_LEVEl1",
         level_2=None,
@@ -522,7 +521,7 @@ def test_get_unique_level_0s(empty_db_mock_downloads):
     )
 
     selected_context = SubtypeContextFactory(
-        subtype_code="ES_LEVEL4",
+        subtype_code="LUNG_LEVEl1",
         depmap_model=[DepmapModelFactory(), DepmapModelFactory(), DepmapModelFactory()],
     )
 
@@ -566,11 +565,6 @@ def test_get_unique_level_0s(empty_db_mock_downloads):
     empty_db_mock_downloads.session.flush()
     expected_unique_level_0s = ["BONE", "LUNG"]
 
-    unique_level_0s = SubtypeContext.get_unique_level_0s(
-        ["ES_LEVEL2", "ES_LEVEL3", "ES_LEVEL4", "OST", "LUNG_LEVEl1"]
-    )
-
-    assert unique_level_0s == expected_unique_level_0s
-
-
-# TODO: Make sure no molecular subtype codes could end up in the lineage tree and vice versa
+    unique_level_0s = SubtypeNode.get_by_tree_type_and_level(TreeType.Lineage, 0)
+    unique_level_0s_codes = [code.subtype_code for code in unique_level_0s]
+    assert unique_level_0s_codes == expected_unique_level_0s
