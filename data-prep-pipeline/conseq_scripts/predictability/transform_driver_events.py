@@ -101,4 +101,4 @@ if __name__ == "__main__":
     )
 
     if driver_events_matrix is not None:
-        driver_events_matrix.to_csv(args.output, index=False)
+        driver_events_matrix.to_csv(args.output)

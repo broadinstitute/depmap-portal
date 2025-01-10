@@ -95,4 +95,4 @@ if __name__ == "__main__":
     )
 
     if fusion_matrix is not None:
-        fusion_matrix.to_csv(args.output, index=False)
+        fusion_matrix.to_csv(args.output)

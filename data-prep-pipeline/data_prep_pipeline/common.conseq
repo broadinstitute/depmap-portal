@@ -9,6 +9,6 @@ include "update_hgnc_gene_table.conseq"
 include "cngene_log_2_transformation.conseq"
 include "filter_portal_compounds.conseq"
 include "predictability.conseq"
-# include "legacy_data.conseq"
+include "legacy_data.conseq"
 
 include "publish.conseq"

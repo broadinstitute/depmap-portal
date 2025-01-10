@@ -132,4 +132,4 @@ if __name__ == "__main__":
         args.crispr_screen_map_taiga_id,
     )
     if crispr_confounder_matrix is not None:
-        crispr_confounder_matrix.to_csv(args.output, index=False)
+        crispr_confounder_matrix.to_csv(args.output)

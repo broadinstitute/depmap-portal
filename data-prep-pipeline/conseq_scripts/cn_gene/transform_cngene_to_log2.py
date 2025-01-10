@@ -26,4 +26,4 @@ if __name__ == "__main__":
     args = parser.parse_args()
     log2_transformed_data = transform_cngene_to_log2(args.cngene_taiga_id)
     if log2_transformed_data is not None:
-        log2_transformed_data.to_csv(args.output, index=False)
+        log2_transformed_data.to_csv(args.output)

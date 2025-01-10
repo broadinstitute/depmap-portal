@@ -36,4 +36,4 @@ if __name__ == "__main__":
     )
 
     if genetic_derangement_matrix is not None:
-        genetic_derangement_matrix.to_csv(args.output, index=False)
+        genetic_derangement_matrix.to_csv(args.output)

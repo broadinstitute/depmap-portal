@@ -129,4 +129,4 @@ if __name__ == "__main__":
     lineage_matrix = process_and_transform_lineage(args.model_csv)
 
     if lineage_matrix is not None:
-        lineage_matrix.to_csv(args.output, index=False)
+        lineage_matrix.to_csv(args.output)

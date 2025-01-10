@@ -76,4 +76,53 @@ rule publish_crispr_confounders:
     outputs:{"type": "predictability_crispr_confounders_published"}
 
     run "python3 {{inputs.update_taiga_script.filename}} {{inputs.predictability_taiga_id.dataset_id}} 'Generated CRISPR confounders data for predictability'  'PredictabilityCRISPRConfoundersTransformed' {{inputs.crispr_confounders_data.filename}} 'csv_matrix'"
+
+
+rule publish_rnai_confounders:
+    inputs:
+        rnai_confounders_data={"type": "predictability_rnai_confounders"},
+        predictability_taiga_id={"type": "predictability_taiga_id"},
+        update_taiga_script=fileref('upload_to_taiga.py')
+    outputs:{"type": "predictability_rnai_confounders_published"}
+
+    run "python3 {{inputs.update_taiga_script.filename}} {{inputs.predictability_taiga_id.dataset_id}} 'Generated RNAi confounders data for predictability'  'PredictabilityRNAiConfoundersTransformed' {{inputs.rnai_confounders_data.filename}} 'csv_matrix'"
     
+
+rule publish_rnai_dep:
+    inputs:
+        rnai_dep_data={"type": "predictability_rnai_dep"},
+        predictability_taiga_id={"type": "predictability_taiga_id"},
+        update_taiga_script=fileref('upload_to_taiga.py')
+    outputs:{"type": "predictability_rnai_dep_published"}
+
+    run "python3 {{inputs.update_taiga_script.filename}} {{inputs.predictability_taiga_id.dataset_id}} 'Generated RNAi dependency data for predictability'  'PredictabilityRNAiDepTransformed' {{inputs.rnai_dep_data.filename}} 'csv_matrix'"
+
+
+rule publish_oncref_confounders:
+    inputs:
+        oncref_confounders_data={"type": "predictability_oncref_confounders"},
+        predictability_taiga_id={"type": "predictability_taiga_id"},
+        update_taiga_script=fileref('upload_to_taiga.py')
+    outputs:{"type": "predictability_oncref_confounders_published"}
+
+    run "python3 {{inputs.update_taiga_script.filename}} {{inputs.predictability_taiga_id.dataset_id}} 'Generated OncoRef confounders data for predictability'  'PredictabilityOncoRefConfoundersTransformed' {{inputs.oncref_confounders_data.filename}} 'csv_matrix'"
+
+
+rule publish_rep_single_pt_confounders:
+    inputs:
+        rep_single_pt_confounders_data={"type": "predictability_rep_single_pt_confounders"},
+        predictability_taiga_id={"type": "predictability_taiga_id"},
+        update_taiga_script=fileref('upload_to_taiga.py')
+    outputs:{"type": "predictability_rep_single_pt_confounders_published"}
+
+    run "python3 {{inputs.update_taiga_script.filename}} {{inputs.predictability_taiga_id.dataset_id}} 'Generated Rep Single Pt confounders data for predictability'  'PredictabilityRepSinglePtConfoundersTransformed' {{inputs.rep_single_pt_confounders_data.filename}} 'csv_matrix'"
+
+
+rule publish_metabolomics:
+    inputs:
+        metabolomics_data={"type": "predictability_metabolomics"},
+        predictability_taiga_id={"type": "predictability_taiga_id"},
+        update_taiga_script=fileref('upload_to_taiga.py')
+    outputs:{"type": "predictability_metabolomics_published"}
+
+    run "python3 {{inputs.update_taiga_script.filename}} {{inputs.predictability_taiga_id.dataset_id}} 'Generated metabolomics data for predictability'  'PredictabilityMetabolomicsTransformed' {{inputs.metabolomics_data.filename}} 'csv_matrix'"

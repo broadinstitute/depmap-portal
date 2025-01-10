@@ -1,13 +1,9 @@
-# 
-
 rule update_rnai_confounders:
     inputs:
         rnai_confounders={"type": "rnai_confounders"},
-        predictability_taiga_id={"type": "predictability_taiga_id"},
-        update_taiga_script=fileref('upload_to_taiga.py')
     outputs:
         {
-            "type": "rnai_confounders_predictability",
+            "type": "predictability_rnai_confounders",
             "filename": {"$filename": "rnai_confounders.csv"},
             "orig_dataset_id": "{{inputs.rnai_confounders.dataset_id}}"
         }
@@ -19,19 +15,16 @@ rule update_rnai_confounders:
         rnai_confounders_matrix = tc.get("{{inputs.rnai_confounders.dataset_id}}")
         rnai_confounders_matrix.set_index("Row.name", inplace=True)
         rnai_confounders_matrix.index.name = None
-        rnai_confounders_matrix.to_csv("rnai_confounders.csv", index=False)
+        rnai_confounders_matrix.to_csv("rnai_confounders.csv")
     """
-    run "python3 {{inputs.update_taiga_script.filename}} rnai_confounders.csv 'Update RNAi Confounders data' {{inputs.predictability_taiga_id.dataset_id}} 'RNAiConfounders' 'csv_matrix'"
 
 
 rule update_rnai_data:
     inputs:
         rnai_data={"type": "rnai_data"},
-        predictability_taiga_id={"type": "predictability_taiga_id"},
-        update_taiga_script=fileref('upload_to_taiga.py')
     outputs:
         {
-            "type": "rnai_dep_predictability",
+            "type": "predictability_rnai_dep",
             "filename": {"$filename": "rnai_data.csv"},
             "orig_dataset_id": "{{inputs.rnai_data.dataset_id}}"
         }
@@ -42,19 +35,16 @@ rule update_rnai_data:
         print("Getting RNAi data...")
         rnai = tc.get("{{inputs.rnai_data.dataset_id}}")
         rnai = rnai.T
-        rnai.to_csv("rnai_data.csv", index=False)
+        rnai.to_csv("rnai_data.csv")
     """
-    run "python3 {{inputs.update_taiga_script.filename}} rnai_data.csv 'Update RNAi dep data for predictability' {{inputs.predictability_taiga_id.dataset_id}} 'RNAiDep' 'csv_matrix'"
 
 
 rule update_oncref_confounders:
     inputs:
         oncref_confounders={"type": "oncref_confounders"},
-        predictability_taiga_id={"type": "predictability_taiga_id"},
-        update_taiga_script=fileref('upload_to_taiga.py')
     outputs:
         {
-            "type": "oncref_confounders_predictability",
+            "type": "predictability_oncref_confounders",
             "filename": {"$filename": "oncref_confounders.csv"},
             "orig_dataset_id": "{{inputs.oncref_confounders.dataset_id}}"
         }
@@ -64,16 +54,13 @@ rule update_oncref_confounders:
         tc = create_taiga_client_v3()
         print("Getting OncoRef confounders data...")
         oncref_confounders_matrix = tc.get("{{inputs.oncref_confounders.dataset_id}}")
-        oncref_confounders_matrix.to_csv("oncref_confounders.csv", index=False)
+        oncref_confounders_matrix.to_csv("oncref_confounders.csv")
     """
-    run "python3 {{inputs.update_taiga_script.filename}} oncref_confounders.csv 'Update OncoRef confounders data for predictability' {{inputs.predictability_taiga_id.dataset_id}} 'OncoRefConfounders' 'csv_matrix'"
 
 
 rule update_rep_single_pt_confounders:
     inputs:
         rep_single_pt_confounders={"type": "rep_single_pt_confounders"},
-        predictability_taiga_id={"type": "predictability_taiga_id"},
-        update_taiga_script=fileref('upload_to_taiga.py')
     outputs:
         {
             "type": "rep_single_pt_confounders_predictability",
@@ -86,19 +73,16 @@ rule update_rep_single_pt_confounders:
         tc = create_taiga_client_v3()
         print("Getting Rep Single Pt confounders data...")
         rep_single_pt_confounders_matrix = tc.get("{{inputs.rep_single_pt_confounders.dataset_id}}")
-        rep_single_pt_confounders_matrix.to_csv("rep_single_pt_confounders.csv", index=False)
+        rep_single_pt_confounders_matrix.to_csv("rep_single_pt_confounders.csv")
     """
-    run "python3 {{inputs.update_taiga_script.filename}} rep_single_pt_confounders.csv 'Update Rep Single Pt confounders data for predictability' {{inputs.predictability_taiga_id.dataset_id}} 'RepSinglePtConfounders' 'csv_matrix'"
 
 
 rule update_metabolomics:
     inputs:
         metabolomics={"type": "metabolomics"},
-        predictability_taiga_id={"type": "predictability_taiga_id"},
-        update_taiga_script=fileref('upload_to_taiga.py')
     outputs:
         {
-            "type": "metabolomics_predictability",
+            "type": "predictability_metabolomics",
             "filename": {"$filename": "metabolomics.csv"},
             "orig_dataset_id": "{{inputs.metabolomics.dataset_id}}"
         }
@@ -108,6 +92,5 @@ rule update_metabolomics:
         tc = create_taiga_client_v3()
         print("Getting Metabolomics data...")
         metabolomics_matrix = tc.get("{{inputs.metabolomics.dataset_id}}")
-        metabolomics_matrix.to_csv("metabolomics.csv", index=False)
+        metabolomics_matrix.to_csv("metabolomics.csv")
     """
-    run "python3 {{inputs.update_taiga_script.filename}} metabolomics.csv 'Update Metabolomics data for predictability' {{inputs.predictability_taiga_id.dataset_id}} 'Metabolomics' 'csv_matrix'"

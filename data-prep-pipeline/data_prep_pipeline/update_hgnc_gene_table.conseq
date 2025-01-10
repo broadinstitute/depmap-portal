@@ -13,6 +13,6 @@ rule update_hgnc_gene_table:
         tc = create_taiga_client_v3()
         print("Getting HGNC gene data...")
         hgnc_gene_df = tc.get("{{inputs.hgnc_gene_table.dataset_id}}")
-        hgnc_gene_df.to_csv("hgnc_gene_table.csv", index=False)
+        hgnc_gene_df.to_csv("hgnc_gene_table.csv")
     """
     

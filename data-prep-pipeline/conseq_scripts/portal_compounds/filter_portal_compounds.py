@@ -97,4 +97,4 @@ if __name__ == "__main__":
     print("Filtered portal compounds data")
 
     if portal_compounds_filtered is not None:
-        portal_compounds_filtered.to_csv(args.output, index=False)
+        portal_compounds_filtered.to_csv(args.output)
