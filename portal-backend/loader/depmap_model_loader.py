@@ -51,8 +51,8 @@ def insert_cell_lines(df):
         cell_line = CellLine.get_by_depmap_id(model_id)
 
         cell_line_name = temp_cell_line_name_fixup(model_id, row["CellLineName"])
-        oncotree_primary_disease = row["OncotreePrimaryDisease"]
-        oncotree_subtype = row["OncotreeSubtype"]
+        oncotree_primary_disease = _coerce_na(row["OncotreePrimaryDisease"])
+        oncotree_subtype = _coerce_na(row["OncotreeSubtype"])
         oncotree_code = _coerce_na(row["OncotreeCode"])
         image_filename = _coerce_na(row["ImageFilename"])
         public_comments = _coerce_na(row["PublicComments"])
