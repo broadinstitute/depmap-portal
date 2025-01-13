@@ -1,7 +1,7 @@
 eval """
 import subprocess
 print("Running data_prep_pipeline/preprocess_taiga_ids.py")
-subprocess.check_call(["python", "data_prep_pipeline/preprocess_taiga_ids.py", "data_prep_pipeline/release_inputs.template", "data_prep_pipeline/release_inputs-DO-NOT-EDIT-ME"])
+subprocess.check_call(["python", "preprocess_taiga_ids.py", "data_prep_pipeline/release_inputs.template", "data_prep_pipeline/release_inputs-DO-NOT-EDIT-ME"])
 """
 let publish_dest = "INVALID"
 
