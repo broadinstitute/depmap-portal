@@ -73,7 +73,6 @@ function run_via_container {
 
     # Had to add --security-opt seccomp=unconfined because after dev.cds.team upgrade, getting error due to sec profile. remove this after docker issue fixed
     docker run \
-      --security-opt seccomp=unconfined \
       --rm \
       -v "$PWD":/work \
       -v "${PIPELINE_RUNNER_CREDS_DIR}/broad-paquitas:/aws-keys/broad-paquitas" \

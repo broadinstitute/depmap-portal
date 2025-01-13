@@ -1,6 +1,6 @@
 FROM ubuntu:jammy
 
-RUN apt-get update
+RUN apt-get update -y
 RUN apt-get upgrade -y
 
 RUN DEBIAN_FRONTEND=noninteractive apt-get install -y tzdata
