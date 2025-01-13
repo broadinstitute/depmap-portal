@@ -70,6 +70,7 @@ RUN poetry config virtualenvs.in-project true
 # Copy your project files to the container
 COPY pyproject.toml README.md /install/depmap-py/
 COPY data_prep_pipeline /install/depmap-py/data_prep_pipeline/
+COPY conseq_scripts /install/depmap-py/conseq_scripts/
 
 # # Install dependencies using Poetry
 RUN cd /install/depmap-py && poetry install
