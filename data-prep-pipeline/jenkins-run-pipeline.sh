@@ -8,7 +8,7 @@ if [ "$1" == "" ]; then
 fi
 
 ENV_NAME="$1"
-CONSEQ_FILE="common.conseq"
+CONSEQ_FILE="data-prep-pipeline/common.conseq"
 # CONSEQ_FILE="run_$ENV_NAME.conseq"
 
 if [ "$2" == "" ]; then
