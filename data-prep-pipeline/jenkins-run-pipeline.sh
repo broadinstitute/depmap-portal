@@ -21,93 +21,92 @@ JOB_NAME="$2"
 echo $JOB_NAME;
 echo $CONSEQ_FILE;
 
-
-# # if [ "$3" != "" ]; then
-# # # required: s3 path override
-# #     PUBLISH_DEST="$3"
-# #     echo "let publish_dest = \"$PUBLISH_DEST\"" > "pipeline/overriden-$CONSEQ_FILE"
-# #     # append the result of the conseq file, except for the previous assignment of publish_dest
-# #     grep -v 'let publish_dest' "pipeline/$CONSEQ_FILE" >> "pipeline/overriden-$CONSEQ_FILE"
-# #     CONSEQ_FILE="overriden-$CONSEQ_FILE"
-# # else
-# #     echo "No s3 path override specified"
-# # fi
-
-# # set DOCKER_IMAGE from pipeline-run-docker/image-name
-# SCRIPT_PATH=`dirname $0`
-# source "$SCRIPT_PATH/image-name"
-
-# COMMIT_SHA=`git rev-parse HEAD`
-# if [ "${COMMIT_SHA}" == "" ]; then
-#   COMMIT_SHA="unknown"
+# if [ "$3" != "" ]; then
+# # required: s3 path override
+#     PUBLISH_DEST="$3"
+#     echo "let publish_dest = \"$PUBLISH_DEST\"" > "pipeline/overriden-$CONSEQ_FILE"
+#     # append the result of the conseq file, except for the previous assignment of publish_dest
+#     grep -v 'let publish_dest' "pipeline/$CONSEQ_FILE" >> "pipeline/overriden-$CONSEQ_FILE"
+#     CONSEQ_FILE="overriden-$CONSEQ_FILE"
+# else
+#     echo "No s3 path override specified"
 # fi
 
-# set -ex
-# GOOGLE_APPLICATION_CREDENTIALS=/etc/google/auth/application_default_credentials.json docker pull ${DOCKER_IMAGE}
+# set DOCKER_IMAGE from pipeline-run-docker/image-name
+SCRIPT_PATH=`dirname $0`
+source "$SCRIPT_PATH/image-name"
 
-# # Copy all logs. I'm copying this to a new directory because each time we run we gc the state directory and that 
-# # causes old logs to be deleted which makes it harder to investigate what happened.
-# function backup_conseq_logs {
-#     file_list=`mktemp`
-#     if [ -e data-prep-pipeline/data_prep_pipeline/state ] ; then
-#         ( cd data-prep-pipeline/data_prep_pipeline/state && \
-#             find . -name "std*.txt" > ${file_list} && \
-#             find . -name "*.sh" >> ${file_list} && \
-#             find . -name "*.log" >> ${file_list} )
-#         rsync -a data-prep-pipeline/state preprocess-logs --files-from=${file_list}
-#         rm ${file_list}
-#     fi
-# }
+COMMIT_SHA=`git rev-parse HEAD`
+if [ "${COMMIT_SHA}" == "" ]; then
+  COMMIT_SHA="unknown"
+fi
 
-# if [ "$TAIGA_DIR" == "" ] ; then
-#     TAIGA_DIR="/data2/depmap-pipeline-taiga"
-# fi
+set -ex
+GOOGLE_APPLICATION_CREDENTIALS=/etc/google/auth/application_default_credentials.json docker pull ${DOCKER_IMAGE}
 
-# if [ "$PIPELINE_RUNNER_CREDS_DIR" == "" ] ; then
-#     PIPELINE_RUNNER_CREDS_DIR='/etc/depmap-pipeline-runner-creds'
-# fi
+# Copy all logs. I'm copying this to a new directory because each time we run we gc the state directory and that 
+# causes old logs to be deleted which makes it harder to investigate what happened.
+function backup_conseq_logs {
+    file_list=`mktemp`
+    if [ -e data-prep-pipeline/data_prep_pipeline/state ] ; then
+        ( cd data-prep-pipeline/data_prep_pipeline/state && \
+            find . -name "std*.txt" > ${file_list} && \
+            find . -name "*.sh" >> ${file_list} && \
+            find . -name "*.log" >> ${file_list} )
+        rsync -a data-prep-pipeline/state preprocess-logs --files-from=${file_list}
+        rm ${file_list}
+    fi
+}
 
-# if [ ! "${PIPELINE_RUNNER_CREDS_DIR}/broad-paquitas" -o ! "${PIPELINE_RUNNER_CREDS_DIR}/sparkles" -o ! "${PIPELINE_RUNNER_CREDS_DIR}/depmap-pipeline-runner.json" ] ; then
-#     echo "Could not find required file"
-#     exit 1
-# fi
+if [ "$TAIGA_DIR" == "" ] ; then
+    TAIGA_DIR="/data2/depmap-pipeline-taiga"
+fi
 
-# function run_via_container {
-#     COMMAND="$1"
+if [ "$PIPELINE_RUNNER_CREDS_DIR" == "" ] ; then
+    PIPELINE_RUNNER_CREDS_DIR='/etc/depmap-pipeline-runner-creds'
+fi
 
-#     # Had to add --security-opt seccomp=unconfined because after dev.cds.team upgrade, getting error due to sec profile. remove this after docker issue fixed
-#     docker run \
-#       --security-opt seccomp=unconfined \
-#       --rm \
-#       -v "$PWD":/work \
-#       -w /work/data-prep-pipeline/data_prep_pipeline \
-#       -v "${PIPELINE_RUNNER_CREDS_DIR}/broad-paquitas:/aws-keys/broad-paquitas" \
-#       -v "${PIPELINE_RUNNER_CREDS_DIR}/sparkles:/root/.sparkles-cache" \
-#       -v "${PIPELINE_RUNNER_CREDS_DIR}/depmap-pipeline-runner.json":/etc/google_default_creds.json \
-#       -v "${TAIGA_DIR}:/root/.taiga" \
-#       -e GOOGLE_APPLICATION_CREDENTIALS=/etc/google_default_creds.json \
-#       -w /work/data-prep-pipeline/data_prep_pipeline \
-#       --name "$JOB_NAME" \
-#       ${DOCKER_IMAGE} \
-#       bash -c "source /aws-keys/broad-paquitas && cd /install/depmap-py && poetry run $COMMAND"
-# }
+if [ ! "${PIPELINE_RUNNER_CREDS_DIR}/broad-paquitas" -o ! "${PIPELINE_RUNNER_CREDS_DIR}/sparkles" -o ! "${PIPELINE_RUNNER_CREDS_DIR}/depmap-pipeline-runner.json" ] ; then
+    echo "Could not find required file"
+    exit 1
+fi
 
-# # use /data2/depmap-pipeline-taiga as the taiga dir because
-# # different versions of taigapy seem to conflict in pickle format
+function run_via_container {
+    COMMAND="$1"
+
+    # Had to add --security-opt seccomp=unconfined because after dev.cds.team upgrade, getting error due to sec profile. remove this after docker issue fixed
+    docker run \
+      --security-opt seccomp=unconfined \
+      --rm \
+      -v "$PWD":/work \
+      -w /work/data-prep-pipeline/data_prep_pipeline \
+      -v "${PIPELINE_RUNNER_CREDS_DIR}/broad-paquitas:/aws-keys/broad-paquitas" \
+      -v "${PIPELINE_RUNNER_CREDS_DIR}/sparkles:/root/.sparkles-cache" \
+      -v "${PIPELINE_RUNNER_CREDS_DIR}/depmap-pipeline-runner.json":/etc/google_default_creds.json \
+      -v "${TAIGA_DIR}:/root/.taiga" \
+      -e GOOGLE_APPLICATION_CREDENTIALS=/etc/google_default_creds.json \
+      -w /work/data-prep-pipeline/data_prep_pipeline \
+      --name "$JOB_NAME" \
+      ${DOCKER_IMAGE} \
+      bash -c "source /aws-keys/broad-paquitas && cd /install/depmap-py && poetry run $COMMAND"
+}
+
+# use /data2/depmap-pipeline-taiga as the taiga dir because
+# different versions of taigapy seem to conflict in pickle format
 
 
-# # backup logs before running GC
-# backup_conseq_logs
+# backup logs before running GC
+backup_conseq_logs
 
-# if [ "$START_WITH" != "" ]; then
-#     # clean out old invocation
-#     sudo chown -R ubuntu data-prep-pipeline
-#     rm -rf data-prep-pipeline/data_prep_pipeline/state
-#     bash -c "source ${PIPELINE_RUNNER_CREDS_DIR}/broad-paquitas && gsutil cp $START_WITH data-prep-pipeline/data_prep_pipeline/downloaded-export.conseq"
-#     run_via_container "conseq run downloaded-export.conseq"
-#     # forget all the executions of "publish" rules because the publish location has changed
-#     run_via_container "conseq forget --regex publish.*"
-# fi
+if [ "$START_WITH" != "" ]; then
+    # clean out old invocation
+    sudo chown -R ubuntu data-prep-pipeline
+    rm -rf data-prep-pipeline/data_prep_pipeline/state
+    bash -c "source ${PIPELINE_RUNNER_CREDS_DIR}/broad-paquitas && gsutil cp $START_WITH data-prep-pipeline/data_prep_pipeline/downloaded-export.conseq"
+    run_via_container "conseq run downloaded-export.conseq"
+    # forget all the executions of "publish" rules because the publish location has changed
+    run_via_container "conseq forget --regex publish.*"
+fi
 
 # if [ "$MANUALLY_RUN_CONSEQ" = "true" ]; then
 #   echo "executing: conseq $CONSEQ_ARGS"
