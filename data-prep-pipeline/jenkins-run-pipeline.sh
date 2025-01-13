@@ -104,8 +104,8 @@ if [ "$START_WITH" != "" ]; then
     run_via_container "conseq forget --regex publish.*"
 fi
 
-echo "Poetry Show Taigapy"
-echo $(poetry show | grep taigapy)
+echo "Poetry Show Taigapy";
+echo $(poetry show);
 
 if [ "$MANUALLY_RUN_CONSEQ" = "true" ]; then
   echo "executing: conseq $CONSEQ_ARGS"
