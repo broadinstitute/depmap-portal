@@ -64,6 +64,9 @@ RUN curl -sSL https://install.python-poetry.org | python3 - && \
 # Set environment path for Poetry
 ENV PATH="/root/.local/bin:${PATH}"
 
+# Configure Poetry to create virtualenv in project directory
+RUN poetry config virtualenvs.in-project true
+
 # Copy your project files to the container
 COPY pyproject.toml README.md /install/depmap-py/
 COPY data_prep_pipeline /install/depmap-py/data_prep_pipeline/
