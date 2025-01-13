@@ -84,11 +84,7 @@ function run_via_container {
       -w /work/data-prep-pipeline \
       --name "$JOB_NAME" \
       ${DOCKER_IMAGE} \
-      bash -c "cd /work/data-prep-pipeline && \
-               source .venv/bin/activate && \
-               source /aws-keys/broad-paquitas && \
-               $COMMAND"
-      # bash -c "source /aws-keys/broad-paquitas && poetry run $COMMAND"
+      bash -c "source /aws-keys/broad-paquitas && poetry run $COMMAND"
 }
 
 # use /data2/depmap-pipeline-taiga as the taiga dir because

@@ -1,9 +1,3 @@
-#################################################################################
-#
-# Bump the version in pipeline-run-docker/image-name whenever you make a change
-#
-#################################################################################
-
 FROM ubuntu:jammy
 
 RUN apt-get update
@@ -66,14 +60,8 @@ RUN curl -sSL https://install.python-poetry.org | python3 - && \
 # Set environment path for Poetry
 ENV PATH="/root/.local/bin:${PATH}"
 
-# Configure Poetry to create virtualenv in project directory
-RUN poetry config virtualenvs.in-project true
-
 # Copy the project files to the container
 COPY pyproject.toml /work/data-prep-pipeline/pyproject.toml
 
 # Install dependencies using Poetry
 RUN poetry install
-
-# Set the path for the installed environment
-ENV PATH="/work/data-prep-pipeline/.venv/bin:${PATH}"
