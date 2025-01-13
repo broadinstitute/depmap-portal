@@ -18,12 +18,6 @@ fi
 
 JOB_NAME="$2"
 
-echo "Directory listing:"
-echo $(ls -la)
-
-echo "Current path:"
-echo $(pwd)
-
 # if [ "$3" != "" ]; then
 # # required: s3 path override
 #     PUBLISH_DEST="$3"
@@ -90,7 +84,7 @@ function run_via_container {
       -w /work/data-prep-pipeline \
       --name "$JOB_NAME" \
       ${DOCKER_IMAGE} \
-      bash -c "source /aws-keys/broad-paquitas && poetry shell && $COMMAND"
+      bash -c "source /aws-keys/broad-paquitas && poetry run $COMMAND"
 }
 
 # use /data2/depmap-pipeline-taiga as the taiga dir because
@@ -109,6 +103,9 @@ if [ "$START_WITH" != "" ]; then
     # forget all the executions of "publish" rules because the publish location has changed
     run_via_container "conseq forget --regex publish.*"
 fi
+
+echo "Poetry Show Taigapy"
+echo $(poetry show | grep taigapy)
 
 if [ "$MANUALLY_RUN_CONSEQ" = "true" ]; then
   echo "executing: conseq $CONSEQ_ARGS"
