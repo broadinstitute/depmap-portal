@@ -77,6 +77,7 @@ function run_via_container {
       --security-opt seccomp=unconfined \
       --rm \
       -v "$PWD":/work \
+      -v /install/depmap-py/.venv:/install/depmap-py/.venv \
       -w /work/data-prep-pipeline \
       -v "${PIPELINE_RUNNER_CREDS_DIR}/broad-paquitas:/aws-keys/broad-paquitas" \
       -v "${PIPELINE_RUNNER_CREDS_DIR}/sparkles:/root/.sparkles-cache" \
