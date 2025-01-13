@@ -18,10 +18,11 @@ fi
 
 JOB_NAME="$2"
 
-echo $JOB_NAME;
-echo $CONSEQ_FILE;
-echo ls -la;
-echo pwd;
+echo "Directory listing:"
+echo $(ls -la)
+
+echo "Current path:"
+echo $(pwd)
 
 # if [ "$3" != "" ]; then
 # # required: s3 path override
@@ -124,16 +125,17 @@ else
   set -e
   
   # Generate export
-  # run_via_container "conseq export $CONSEQ_FILE $EXPORT_PATH"
+  run_via_container "conseq export $CONSEQ_FILE $EXPORT_PATH"
   
-#   # Generate report
-#   run_via_container "conseq report html"
+  # Generate report
+  run_via_container "conseq report html"
 
-#   # copy the latest logs
-#   backup_conseq_logs
-# fi
-# echo "Pipeline run complete"
-# # docker container is writing files as root. Fix up permissions after job completes
-# sudo chown -R ubuntu .
+  # copy the latest logs
+  backup_conseq_logs
+fi
 
-# exit $RUN_EXIT_STATUS
+echo "Pipeline run complete"
+# docker container is writing files as root. Fix up permissions after job completes
+sudo chown -R ubuntu .
+
+exit $RUN_EXIT_STATUS
