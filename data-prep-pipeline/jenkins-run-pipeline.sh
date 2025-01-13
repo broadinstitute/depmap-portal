@@ -85,10 +85,9 @@ function run_via_container {
       --name "$JOB_NAME" \
       ${DOCKER_IMAGE} \
       bash -c "cd /work/data-prep-pipeline && \
-               if [ ! -d '.venv' ]; then poetry install; fi && \
+               source .venv/bin/activate && \
                source /aws-keys/broad-paquitas && \
-               poetry env info && \  # Debug info
-               poetry run $COMMAND"
+               $COMMAND"
       # bash -c "source /aws-keys/broad-paquitas && poetry run $COMMAND"
 }
 
