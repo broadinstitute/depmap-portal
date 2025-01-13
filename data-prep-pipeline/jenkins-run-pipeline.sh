@@ -33,10 +33,10 @@ JOB_NAME="$2"
 SCRIPT_PATH=`dirname $0`
 source "$SCRIPT_PATH/image-name"
 
-# COMMIT_SHA=`git rev-parse HEAD`
-# if [ "${COMMIT_SHA}" == "" ]; then
-#   COMMIT_SHA="unknown"
-# fi
+COMMIT_SHA=`git rev-parse HEAD`
+if [ "${COMMIT_SHA}" == "" ]; then
+  COMMIT_SHA="unknown"
+fi
 
 set -ex
 GOOGLE_APPLICATION_CREDENTIALS=/etc/google/auth/application_default_credentials.json docker pull ${DOCKER_IMAGE}
