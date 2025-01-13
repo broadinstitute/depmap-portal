@@ -68,12 +68,12 @@ ENV PATH="/root/.local/bin:${PATH}"
 RUN poetry config virtualenvs.in-project true
 
 # Copy your project files to the container
-COPY pyproject.toml README.md /install/depmap-py/
-COPY data_prep_pipeline /install/depmap-py/data_prep_pipeline/
-COPY conseq_scripts /install/depmap-py/conseq_scripts/
+COPY pyproject.toml README.md /work/data-prep-pipeline/
+COPY data_prep_pipeline /work/data-prep-pipeline/data_prep_pipeline/
+COPY conseq_scripts /work/data-prep-pipeline/conseq_scripts/
 
 # # Install dependencies using Poetry
-RUN cd /install/depmap-py && poetry install
+RUN cd /work/data-prep-pipeline && poetry install
 
 # Set the path for the installed environment
-ENV PATH="/install/depmap-py/.venv/bin:${PATH}"
+ENV PATH="/work/data-prep-pipeline/.venv/bin:${PATH}"
