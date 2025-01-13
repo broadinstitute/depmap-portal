@@ -3,7 +3,6 @@ name = "data-prep-pipeline"
 version = "0.1.1"
 description = "Scripts for running the data prep pipeline"
 authors = ["Nayeem Aquib <naquib@broadinsitute.org>"]
-readme = "README.md"
 packages = [{include = "data_prep_pipeline"}]
 
 

@@ -69,10 +69,9 @@ ENV PATH="/root/.local/bin:${PATH}"
 # Configure Poetry to create virtualenv in project directory
 RUN poetry config virtualenvs.in-project true
 
-# Copy your project files to the container
-COPY pyproject.toml README.md ./
-COPY data_prep_pipeline ./data_prep_pipeline/
-COPY conseq_scripts ./conseq_scripts/
+# Copy the project files to the container
+COPY pyproject.toml /work/data-prep-pipeline/pyproject.toml
+COPY data_prep_pipeline/__init__.py /work/data-prep-pipeline/data_prep_pipeline/__init__.py
 
 # Install dependencies using Poetry
 RUN poetry install

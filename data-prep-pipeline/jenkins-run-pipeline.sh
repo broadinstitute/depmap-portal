@@ -110,8 +110,7 @@ if [ "$MANUALLY_RUN_CONSEQ" = "true" ]; then
 else
   # Clean up unused directories from past runs
   run_via_container "conseq gc"
-  echo "Poetry Show Taigapy";
-  echo $(poetry show);
+
   # Kick off new run
   set +e
   run_via_container "conseq run --addlabel commitsha=${COMMIT_SHA} --no-reattach --maxfail 20 --remove-unknown-artifacts -D sparkles_path=/install/sparkles/bin/sparkles $CONSEQ_FILE $CONSEQ_ARGS"
