@@ -20,6 +20,8 @@ JOB_NAME="$2"
 
 echo $JOB_NAME;
 echo $CONSEQ_FILE;
+echo ls -la;
+echo pwd;
 
 # if [ "$3" != "" ]; then
 # # required: s3 path override
@@ -108,21 +110,21 @@ if [ "$START_WITH" != "" ]; then
     run_via_container "conseq forget --regex publish.*"
 fi
 
-# if [ "$MANUALLY_RUN_CONSEQ" = "true" ]; then
-#   echo "executing: conseq $CONSEQ_ARGS"
-#   run_via_container "conseq $CONSEQ_ARGS"
-# else
-#   # Clean up unused directories from past runs
-#   run_via_container "conseq gc"
+if [ "$MANUALLY_RUN_CONSEQ" = "true" ]; then
+  echo "executing: conseq $CONSEQ_ARGS"
+  run_via_container "conseq $CONSEQ_ARGS"
+else
+  # Clean up unused directories from past runs
+  run_via_container "conseq gc"
 
-#   # Kick off new run
-#   set +e
-#   run_via_container "conseq run --addlabel commitsha=${COMMIT_SHA} --no-reattach --maxfail 20 --remove-unknown-artifacts -D sparkles_path=/install/sparkles/bin/sparkles $CONSEQ_FILE $CONSEQ_ARGS"
-#   RUN_EXIT_STATUS=$?
-#   set -e
+  # Kick off new run
+  set +e
+  run_via_container "conseq run --addlabel commitsha=${COMMIT_SHA} --no-reattach --maxfail 20 --remove-unknown-artifacts -D sparkles_path=/install/sparkles/bin/sparkles $CONSEQ_FILE $CONSEQ_ARGS"
+  RUN_EXIT_STATUS=$?
+  set -e
   
-#   # Generate export
-#   run_via_container "conseq export $CONSEQ_FILE $EXPORT_PATH"
+  # Generate export
+  # run_via_container "conseq export $CONSEQ_FILE $EXPORT_PATH"
   
 #   # Generate report
 #   run_via_container "conseq report html"
