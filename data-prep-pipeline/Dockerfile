@@ -57,6 +57,8 @@ RUN cd /tmp && \
     ln -s /install/conseq/bin/conseq /usr/bin/conseq
 RUN cp /install/conseq/lib/python3.9/site-packages/conseq/helper.py /helper.py
 
+WORKDIR /work/data-prep-pipeline
+
 # Install poetry
 RUN curl -sSL https://install.python-poetry.org | python3 - && \
     ln -s /opt/poetry/bin/poetry /usr/local/bin/poetry
@@ -68,12 +70,12 @@ ENV PATH="/root/.local/bin:${PATH}"
 RUN poetry config virtualenvs.in-project true
 
 # Copy your project files to the container
-COPY pyproject.toml README.md /work/data-prep-pipeline/
-COPY data_prep_pipeline /work/data-prep-pipeline/data_prep_pipeline/
-COPY conseq_scripts /work/data-prep-pipeline/conseq_scripts/
+COPY pyproject.toml README.md ./
+COPY data_prep_pipeline ./data_prep_pipeline/
+COPY conseq_scripts ./conseq_scripts/
 
-# # Install dependencies using Poetry
-RUN cd /work/data-prep-pipeline && poetry install
+# Install dependencies using Poetry
+RUN poetry install
 
 # Set the path for the installed environment
 ENV PATH="/work/data-prep-pipeline/.venv/bin:${PATH}"

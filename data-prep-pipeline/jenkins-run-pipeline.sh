@@ -81,17 +81,16 @@ function run_via_container {
     docker run \
       --security-opt seccomp=unconfined \
       --rm \
-      -v "$PWD":/work \
-      -w /work/data-prep-pipeline/data_prep_pipeline \
+      -v "$PWD":/work/data-prep-pipeline \
       -v "${PIPELINE_RUNNER_CREDS_DIR}/broad-paquitas:/aws-keys/broad-paquitas" \
       -v "${PIPELINE_RUNNER_CREDS_DIR}/sparkles:/root/.sparkles-cache" \
       -v "${PIPELINE_RUNNER_CREDS_DIR}/depmap-pipeline-runner.json":/etc/google_default_creds.json \
       -v "${TAIGA_DIR}:/root/.taiga" \
       -e GOOGLE_APPLICATION_CREDENTIALS=/etc/google_default_creds.json \
-      -w /work/data-prep-pipeline/data_prep_pipeline \
+      -w /work/data-prep-pipeline \
       --name "$JOB_NAME" \
       ${DOCKER_IMAGE} \
-      bash -c "source /aws-keys/broad-paquitas && cd /work/data-prep-pipeline && poetry run $COMMAND"
+      bash -c "source /aws-keys/broad-paquitas && poetry run $COMMAND"
 }
 
 # use /data2/depmap-pipeline-taiga as the taiga dir because
