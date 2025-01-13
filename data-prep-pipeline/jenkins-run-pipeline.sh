@@ -128,7 +128,7 @@ else
   # copy the latest logs
   backup_conseq_logs
 fi
-
+echo "Pipeline run complete"
 # docker container is writing files as root. Fix up permissions after job completes
 sudo chown -R ubuntu .
 

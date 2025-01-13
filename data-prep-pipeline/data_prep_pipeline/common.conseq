@@ -13,4 +13,3 @@ include "predictability.conseq"
 include "legacy_data.conseq"
 
 include "publish.conseq"
-# Test the pipeline
