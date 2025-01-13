@@ -1,5 +1,4 @@
 #!/bin/bash
-# pipeline/jenkins-run-pipeline.sh iqa demap-pipeline-run-iqa gs://preprocessing-pipeline-outputs/depmap-pipeline/iqa/metadata
 
 if [ "$1" == "" ]; then
 # required: env name
@@ -8,7 +7,7 @@ if [ "$1" == "" ]; then
 fi
 
 ENV_NAME="$1"
-CONSEQ_FILE="data_prep_pipeline/common.conseq"
+CONSEQ_FILE="common.conseq"
 # CONSEQ_FILE="run_$ENV_NAME.conseq"
 
 if [ "$2" == "" ]; then
@@ -46,12 +45,12 @@ GOOGLE_APPLICATION_CREDENTIALS=/etc/google/auth/application_default_credentials.
 # causes old logs to be deleted which makes it harder to investigate what happened.
 function backup_conseq_logs {
     file_list=`mktemp`
-    if [ -e data-prep-pipeline/state ] ; then
-        ( cd data-prep-pipeline/state && \
+    if [ -e data-prep-pipeline/data_prep_pipeline/state ] ; then
+        ( cd data-prep-pipeline/data_prep_pipeline/state && \
             find . -name "std*.txt" > ${file_list} && \
             find . -name "*.sh" >> ${file_list} && \
             find . -name "*.log" >> ${file_list} )
-        rsync -a pipeline/state preprocess-logs --files-from=${file_list}
+        rsync -a data-prep-pipeline/state preprocess-logs --files-from=${file_list}
         rm ${file_list}
     fi
 }
@@ -77,13 +76,13 @@ function run_via_container {
       --security-opt seccomp=unconfined \
       --rm \
       -v "$PWD":/work \
-      -w /work/data-prep-pipeline \
+      -w /work/data-prep-pipeline/data_prep_pipeline \
       -v "${PIPELINE_RUNNER_CREDS_DIR}/broad-paquitas:/aws-keys/broad-paquitas" \
       -v "${PIPELINE_RUNNER_CREDS_DIR}/sparkles:/root/.sparkles-cache" \
       -v "${PIPELINE_RUNNER_CREDS_DIR}/depmap-pipeline-runner.json":/etc/google_default_creds.json \
       -v "${TAIGA_DIR}:/root/.taiga" \
       -e GOOGLE_APPLICATION_CREDENTIALS=/etc/google_default_creds.json \
-      -w /work/data-prep-pipeline \
+      -w /work/data-prep-pipeline/data_prep_pipeline \
       --name "$JOB_NAME" \
       ${DOCKER_IMAGE} \
       bash -c "source /aws-keys/broad-paquitas && cd /install/depmap-py && poetry run $COMMAND"
@@ -98,9 +97,9 @@ backup_conseq_logs
 
 if [ "$START_WITH" != "" ]; then
     # clean out old invocation
-    sudo chown -R ubuntu pipeline
-    rm -rf pipeline/state
-    bash -c "source ${PIPELINE_RUNNER_CREDS_DIR}/broad-paquitas && gsutil cp $START_WITH pipeline/downloaded-export.conseq"
+    sudo chown -R ubuntu data-prep-pipeline
+    rm -rf data-prep-pipeline/data_prep_pipeline/state
+    bash -c "source ${PIPELINE_RUNNER_CREDS_DIR}/broad-paquitas && gsutil cp $START_WITH data-prep-pipeline/data_prep_pipeline/downloaded-export.conseq"
     run_via_container "conseq run downloaded-export.conseq"
     # forget all the executions of "publish" rules because the publish location has changed
     run_via_container "conseq forget --regex publish.*"
