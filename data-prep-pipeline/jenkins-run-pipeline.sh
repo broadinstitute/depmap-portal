@@ -77,7 +77,6 @@ function run_via_container {
       --security-opt seccomp=unconfined \
       --rm \
       -v "$PWD":/work \
-      -v /install/depmap-py/.venv:/install/depmap-py/.venv \
       -w /work/data-prep-pipeline \
       -v "${PIPELINE_RUNNER_CREDS_DIR}/broad-paquitas:/aws-keys/broad-paquitas" \
       -v "${PIPELINE_RUNNER_CREDS_DIR}/sparkles:/root/.sparkles-cache" \
@@ -87,7 +86,7 @@ function run_via_container {
       -w /work/data-prep-pipeline \
       --name "$JOB_NAME" \
       ${DOCKER_IMAGE} \
-      bash -c "source /aws-keys/broad-paquitas && source /install/depmap-py/.venv/bin/activate && $COMMAND"
+      bash -c "source /aws-keys/broad-paquitas && cd /install/depmap-py && poetry run $COMMAND"
 }
 
 # use /data2/depmap-pipeline-taiga as the taiga dir because
