@@ -4,6 +4,7 @@ version = "0.1.1"
 description = "Scripts for running the data prep pipeline"
 authors = ["Nayeem Aquib <naquib@broadinsitute.org>"]
 packages = [{include = "data_prep_pipeline"}]
+package-mode = false
 
 
 [tool.poetry.dependencies]

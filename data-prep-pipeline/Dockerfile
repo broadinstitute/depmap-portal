@@ -71,7 +71,6 @@ RUN poetry config virtualenvs.in-project true
 
 # Copy the project files to the container
 COPY pyproject.toml /work/data-prep-pipeline/pyproject.toml
-COPY data_prep_pipeline/__init__.py /work/data-prep-pipeline/data_prep_pipeline/__init__.py
 
 # Install dependencies using Poetry
 RUN poetry install
