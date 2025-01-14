@@ -74,9 +74,9 @@ function run_via_container {
     # Had to add --security-opt seccomp=unconfined because after dev.cds.team upgrade, getting error due to sec profile. remove this after docker issue fixed
     docker run \
       --rm \
-      -v "$PWD/data_prep_pipeline/":/work/data_prep_pipeline \
-      -v "$PWD/conseq_scripts/":/work/conseq_scripts \
-      -v "$PWD/image-name":/work/conseq_scripts/image-name \
+      -v "$PWD/data-prep-pipeline/data_prep_pipeline":/work/data-prep-pipeline/data_prep_pipeline \
+      -v "$PWD/data-prep-pipeline/conseq_scripts":/work/data-prep-pipeline/conseq_scripts \
+      -v "$PWD/data-prep-pipeline/image-name":/work/data-prep-pipeline/image-name \
       -v "${PIPELINE_RUNNER_CREDS_DIR}/broad-paquitas:/aws-keys/broad-paquitas" \
       -v "${PIPELINE_RUNNER_CREDS_DIR}/sparkles:/root/.sparkles-cache" \
       -v "${PIPELINE_RUNNER_CREDS_DIR}/depmap-pipeline-runner.json":/etc/google_default_creds.json \
