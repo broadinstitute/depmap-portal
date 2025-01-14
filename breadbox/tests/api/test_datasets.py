@@ -972,7 +972,7 @@ class TestGet:
             search_index_entries.append(
                 {
                     "dimension_given_id": item.dimension_given_id,
-                    "axis": item.axis,
+                    "axis": "feature",
                     "label": item.label,
                     "property": item.property,
                     "value": item.value,
@@ -1219,12 +1219,21 @@ class TestGet:
                 "value": "B",
             },
         ]
-        assert search_index_entries == expected_search_index_entries
+
+        def sort_entries(entries):
+            return sorted(
+                entries,
+                key=lambda x: (x["dimension_given_id"], x["property"], x["label"]),
+            )
+
+        assert sort_entries(search_index_entries) == sort_entries(
+            expected_search_index_entries
+        )
 
         dimensions_response = client.get("/datasets/dimensions/?limit=100")
 
-        # Leave limit at 100 to return everything. Should be ordered by priority and then label.
-        assert dimensions_response.json() == [
+        # Leave limit at 100 to return everything. Should be ordered by label, then by type_name and id.
+        expected_response = [
             {
                 "type_name": "oncref_condition",
                 "id": "ab",
@@ -1316,6 +1325,8 @@ class TestGet:
                 ],
             },
         ]
+
+        assert dimensions_response.json() == expected_response
 
         # Filter on type_name
         dimensions_response = client.get(

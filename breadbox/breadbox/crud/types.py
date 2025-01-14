@@ -573,13 +573,7 @@ def get_dimension_type_metadata_col(
                 TabularColumn.given_id == col_name,
             )
         )
-        .with_entities(
-            TabularColumn.id, TabularCell.dimension_given_id, TabularCell.value
-        )
+        .with_entities(TabularCell.dimension_given_id, TabularCell.value)
         .all()
     )
-
-    if index_by_given_id:
-        return {given_id: value for id, given_id, value in values_by_id_tuples}
-    else:
-        return {id: value for id, given_id, value in values_by_id_tuples}
+    return {id: value for id, value in values_by_id_tuples}

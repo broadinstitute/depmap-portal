@@ -317,7 +317,6 @@ def get_metadata_by_dataset(
 
 @dataclass
 class MetadataCacheEntry:
-    dimension_id_by_given_id: Dict[str, str]
     properties_to_index_df: pd.DataFrame
     columns_metadata: Dict[str, ColumnMetadata]
     label_by_given_id: Dict[str, str]
@@ -360,22 +359,11 @@ class MetadataCache:
 
                 columns_metadata = dimension_type.dataset.columns_metadata
 
-                given_id_by_dimension_id = types_crud.get_dimension_type_metadata_col(
-                    self.db,
-                    dimension_type_name=dimension_type.name,
-                    col_name=dimension_type.id_column,
-                    index_by_given_id=False,
-                )
-                dimension_id_by_given_id = {
-                    v: k for k, v in given_id_by_dimension_id.items()
-                }
-
                 label_by_given_id = types_crud.get_dimension_type_metadata_col(
                     self.db, dimension_type_name=dimension_type.name, col_name="label"
                 )
 
             entry = MetadataCacheEntry(
-                dimension_id_by_given_id=dimension_id_by_given_id,
                 properties_to_index_df=properties_to_index_df,
                 columns_metadata=columns_metadata,
                 label_by_given_id=label_by_given_id,
@@ -388,7 +376,6 @@ class MetadataCache:
 def get_property_value_pairs_for_given_id(
     db, dimension_type_name: str, given_id: str, metadata_cache: MetadataCache
 ) -> List[PropertyValuePair]:
-
     dimension_search_index_rows = []
 
     md_entry = metadata_cache.get(dimension_type_name)
@@ -542,18 +529,18 @@ def _refresh_search_index_for_dimension_type(
             given_id=given_id,
             metadata_cache=metadata_cache,
         ):
-            if given_id in cache_entry.dimension_id_by_given_id:
-                dimension_search_index_rows.append(
-                    DimensionSearchIndex(
-                        dimension_id=cache_entry.dimension_id_by_given_id[given_id],
-                        property=record.property,
-                        value=record.value,
-                        group_id=dimension_type.dataset.group_id,
-                        type_name=dimension_type.name,
-                        dimension_given_id=given_id,
-                        label=cache_entry.label_by_given_id[given_id],
-                    )
+            # if given_id in cache_entry.dimension_id_by_given_id:
+            dimension_search_index_rows.append(
+                DimensionSearchIndex(
+                    # dimension_id=cache_entry.dimension_id_by_given_id[given_id],
+                    property=record.property,
+                    value=record.value,
+                    group_id=dimension_type.dataset.group_id,
+                    dimension_type_name=dimension_type.name,
+                    dimension_given_id=given_id,
+                    label=cache_entry.label_by_given_id[given_id],
                 )
+            )
 
     log.info("_refresh_search_index_for_dimension_type generated records. Writing...")
 
@@ -572,7 +559,7 @@ def populate_search_index(db: SessionWithUser, dimension_type: DimensionType):
 
 def _delete_search_index_records(db: SessionWithUser, dimension_type: DimensionType):
     db.query(DimensionSearchIndex).filter(
-        DimensionSearchIndex.type_name == dimension_type.name
+        DimensionSearchIndex.dimension_type_name == dimension_type.name
     ).delete()
 
     db.flush()
@@ -789,7 +776,9 @@ def get_dataset_dimension_search_index_entries(
     outer = aliased(DimensionSearchIndex)
 
     if dimension_type_name:
-        search_index_filter_clauses.append(outer.type_name == dimension_type_name)
+        search_index_filter_clauses.append(
+            outer.dimension_type_name == dimension_type_name
+        )
 
     def filter_per_value(values, predicate_constructor):
         if len(values) == 0:
@@ -797,17 +786,18 @@ def get_dataset_dimension_search_index_entries(
 
         exists_clause_per_value = [
             db.query(DimensionSearchIndex)
-            .join(Dimension)
             .filter(
                 and_(
                     predicate_constructor(DimensionSearchIndex, value),
                     *search_index_filter_clauses,
-                    outer.type_name == DimensionSearchIndex.type_name,
-                    outer.dimension_id == DimensionSearchIndex.dimension_id,
+                    outer.dimension_type_name
+                    == DimensionSearchIndex.dimension_type_name,
+                    outer.dimension_given_id == DimensionSearchIndex.dimension_given_id,
                 )
             )
             .with_entities(
-                DimensionSearchIndex.type_name, DimensionSearchIndex.dimension_id,
+                DimensionSearchIndex.dimension_type_name,
+                DimensionSearchIndex.dimension_given_id,
             )
             .exists()
             for value in values
@@ -832,7 +822,6 @@ def get_dataset_dimension_search_index_entries(
 
     search_index_query = (
         db.query(outer)
-        # .join(Dimension)
         .filter(
             and_(
                 True,
@@ -845,7 +834,7 @@ def get_dataset_dimension_search_index_entries(
         )
         .limit(limit)
         .with_entities(
-            outer.type_name,
+            outer.dimension_type_name,
             outer.dimension_given_id,
             outer.label,
             outer.property,
@@ -859,7 +848,7 @@ def get_dataset_dimension_search_index_entries(
     #    search_index_entries.columns = ["type_name", "dimension_given_id", "label", "property", "value"]
 
     grouped_search_index_entries = search_index_entries.groupby(
-        ["dimension_given_id", "type_name"],
+        ["dimension_given_id", "dimension_type_name"],
         sort=False,  # set sort=False to preserve the ordering from the original search_index_query
     )
 
@@ -890,7 +879,7 @@ def get_dataset_dimension_search_index_entries(
 
     # sort at the end. This has been moved out of the sql query because we
     # want the sort to happen after "limit" has been applied.
-    group_entries.sort(key=lambda x: x.label)
+    group_entries.sort(key=lambda x: (x.label, x.type_name))
 
     return group_entries
 

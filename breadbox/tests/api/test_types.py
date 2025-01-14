@@ -651,7 +651,8 @@ def test_update_ref_col_map(client: TestClient, settings, minimal_db):
     # make sure that we have 2 records: 1 for the label of the child and one for the label of the parent
     records = (
         minimal_db.query(DimensionSearchIndex)
-        .filter(DimensionSearchIndex.type_name == "child")
+        .filter(DimensionSearchIndex.dimension_type_name == "child")
+        .filter(DimensionSearchIndex.dimension_given_id == "3")
         .all()
     )
     assert len(records) == 2

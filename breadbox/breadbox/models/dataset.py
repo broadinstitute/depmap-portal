@@ -289,33 +289,41 @@ class DimensionSearchIndex(Base, UUIDMixin, GroupMixin):
     __tablename__ = "dimension_search_index"
 
     __table_args__ = (
-        Index("idx_dimension_search_index_dimension_id", "dimension_id",),
         # the following indices are for speeding up querying to search index, but
         # not 100% confident this is the optimal combination of indices. However,
         # testing the get dimensions endpoint suggests that these are "good enough"
         # for now.
         Index("idx_dim_search_index_perf_1", "value"),
-        Index("idx_dim_search_index_perf_2", "type_name", "value"),
-        Index("idx_dim_search_index_perf_3", "dimension_id", "type_name", "value"),
+        Index("idx_dim_search_index_perf_2", "dimension_type_name", "value"),
+        Index(
+            "idx_dim_search_index_perf_4",
+            "dimension_given_id",
+            "dimension_type_name",
+            "value",
+        ),
     )
 
     # The dimension which owns the property. (One should be able to group by dimension_id to get the bag of words associated with that dimension)
-    dimension_id = Column(
-        String, ForeignKey("dimension.id", ondelete="CASCADE"), nullable=False
-    )
-    dimension = relationship(
-        Dimension,
-        backref=backref(
-            "dimension_search_indexes",
-            cascade="all, delete-orphan",
-            passive_deletes=True,
-        ),
-    )
+    # dimension_id = Column(
+    #     String, ForeignKey("dimension.id", ondelete="CASCADE"), nullable=False
+    # )
+    # dimension = relationship(
+    #     Dimension,
+    #     backref=backref(
+    #         "dimension_search_indexes",
+    #         cascade="all, delete-orphan",
+    #         passive_deletes=True,
+    #     ),
+    # )
     property = Column(String, nullable=False)
     value = Column(String, nullable=True)
-    type_name = Column(String, nullable=False)
-    dimension_given_id = Column(String, nullable=False)
     label = Column(String, nullable=False)
+    # the uk for the bag of words
+    dimension_type_name = Column(
+        String, ForeignKey("dimension_type.name", ondelete="CASCADE"), nullable=False
+    )
+    dimension_type = relationship(DimensionType,)
+    dimension_given_id = Column(String, nullable=False)
 
 
 class PropertyToIndex(Base, UUIDMixin, GroupMixin):
