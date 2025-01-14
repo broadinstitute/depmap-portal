@@ -45,8 +45,8 @@ GOOGLE_APPLICATION_CREDENTIALS=/etc/google/auth/application_default_credentials.
 # causes old logs to be deleted which makes it harder to investigate what happened.
 function backup_conseq_logs {
     file_list=`mktemp`
-    if [ -e data-prep-pipeline/data_prep_pipeline/state ] ; then
-        ( cd data-prep-pipeline/data_prep_pipeline/state && \
+    if [ -e data-prep-pipeline/state ] ; then
+        ( cd data-prep-pipeline/state && \
             find . -name "std*.txt" > ${file_list} && \
             find . -name "*.sh" >> ${file_list} && \
             find . -name "*.log" >> ${file_list} )
@@ -74,9 +74,7 @@ function run_via_container {
     # Had to add --security-opt seccomp=unconfined because after dev.cds.team upgrade, getting error due to sec profile. remove this after docker issue fixed
     docker run \
       --rm \
-      -v "$PWD/data-prep-pipeline/data_prep_pipeline":/work/data-prep-pipeline/data_prep_pipeline \
-      -v "$PWD/data-prep-pipeline/conseq_scripts":/work/data-prep-pipeline/conseq_scripts \
-      -v "$PWD/data-prep-pipeline/image-name":/work/data-prep-pipeline/image-name \
+      -v "$PWD":/work \
       -v "${PIPELINE_RUNNER_CREDS_DIR}/broad-paquitas:/aws-keys/broad-paquitas" \
       -v "${PIPELINE_RUNNER_CREDS_DIR}/sparkles:/root/.sparkles-cache" \
       -v "${PIPELINE_RUNNER_CREDS_DIR}/depmap-pipeline-runner.json":/etc/google_default_creds.json \
@@ -98,7 +96,7 @@ backup_conseq_logs
 if [ "$START_WITH" != "" ]; then
     # clean out old invocation
     sudo chown -R ubuntu data-prep-pipeline
-    rm -rf data-prep-pipeline/data_prep_pipeline/state
+    rm -rf data-prep-pipeline/state
     bash -c "source ${PIPELINE_RUNNER_CREDS_DIR}/broad-paquitas && gsutil cp $START_WITH data-prep-pipeline/data_prep_pipeline/downloaded-export.conseq"
     run_via_container "conseq run downloaded-export.conseq"
     # forget all the executions of "publish" rules because the publish location has changed
