@@ -3,6 +3,8 @@ import json
 import uuid
 import numpy as np
 import pandas as pd
+
+from breadbox.crud.types import get_dimension_type
 from ..utils import assert_status_not_ok, assert_status_ok, assert_task_failure
 
 from sqlalchemy import and_
@@ -23,7 +25,7 @@ from breadbox.models.dataset import (
 from fastapi.testclient import TestClient
 from breadbox.api.dependencies import get_dataset
 from breadbox.io.filestore_crud import get_slice
-from breadbox.models.dataset import DimensionSearchIndex, DatasetReference
+from breadbox.models.dataset import DimensionSearchIndex
 from breadbox.crud.dataset import get_datasets, populate_search_index
 
 from breadbox.models.dataset import PropertyToIndex
@@ -129,8 +131,11 @@ class TestGet:
             settings,
             data_df=pd.DataFrame({"ID": ["ID2"]}),
             index_type_name="sample-type",
-            id_mapping={"ID": "sample-type"},
-            columns_metadata={"ID": ColumnMetadata(col_type=AnnotationType.text)},
+            columns_metadata={
+                "ID": ColumnMetadata(
+                    col_type=AnnotationType.text, references="sample-type"
+                )
+            },
         )
 
         response = client.get(
@@ -464,8 +469,8 @@ class TestGet:
         assert_status_ok(braf_gene_feature_type_response)
         assert_status_ok(compound_feature_type_response)
 
-        dataset_references = minimal_db.query(DatasetReference).all()
-        assert len(dataset_references) == 1
+        columns = minimal_db.query(TabularColumn).all()
+        assert len([column for column in columns if column.reference is not None]) == 1
 
         dimension_search_index_entries = minimal_db.query(DimensionSearchIndex).all()
 
@@ -948,10 +953,10 @@ class TestGet:
             headers=admin_headers,
         )
 
-        datasets = get_datasets(minimal_db, admin_user, None, None, None, None, None)
-
-        for dataset in datasets:
-            populate_search_index(minimal_db, admin_user, dataset.id)
+        for dimension_type_name in ["gene", "compound", "oncref_condition"]:
+            dimension_type = get_dimension_type(minimal_db, dimension_type_name)
+            assert dimension_type is not None
+            populate_search_index(minimal_db, dimension_type)
 
         search_index_entries = []
         for item in minimal_db.query(DimensionSearchIndex).all():

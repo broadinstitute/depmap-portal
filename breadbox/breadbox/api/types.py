@@ -650,7 +650,7 @@ def update_dimension_type_endpoint(
 def _dim_type_to_response(type: DimensionTypeModel):
     properties_to_index = []
     if type.dataset is not None:
-        properties_to_index = [x.property for x in type.dataset.properties_to_index]
+        properties_to_index = [x.property for x in type.properties_to_index]
 
     return DimensionType(
         name=type.name,

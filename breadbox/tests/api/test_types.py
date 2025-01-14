@@ -1,6 +1,7 @@
 from io import BytesIO
+
+from breadbox.crud.types import get_dimension_type
 from breadbox.schemas.types import IdMapping
-from breadbox.crud.dataset import _get_impacted_dataset_ids
 from fastapi.testclient import TestClient
 from sqlalchemy import and_
 from breadbox.models.dataset import DimensionType, Dataset
@@ -19,6 +20,7 @@ from breadbox.models.dataset import AnnotationType
 from breadbox.schemas.dataset import ColumnMetadata
 import pandas as pd
 from ..utils import assert_status_ok, assert_status_not_ok
+from breadbox.crud.dataset import _get_datatypes_referencing
 
 
 def test_all_dimension_type_methods(client: TestClient, minimal_db, settings):
@@ -205,11 +207,10 @@ def test_get_impacted_dataset_ids(client: TestClient, minimal_db, settings):
         properties_to_index=["label"],
     )
 
-    user = settings.admin_users[0]
-    parent_impacted_datasets = _get_impacted_dataset_ids(db, parent.dataset_id)
+    parent_dim_type = get_dimension_type(db, "parent")
+    parent_impacted_datasets = _get_datatypes_referencing(db, parent_dim_type.name)
 
-    assert len(parent_impacted_datasets) == 1
-    assert parent.dataset_id in parent_impacted_datasets
+    assert parent_impacted_datasets == {"parent"}
 
     child1 = factories.feature_type_with_metadata(
         db,
@@ -221,11 +222,11 @@ def test_get_impacted_dataset_ids(client: TestClient, minimal_db, settings):
         id_mapping=IdMapping(reference_column_mappings={"parent": "parent"}),
     )
 
-    child1_impacted_datasets = _get_impacted_dataset_ids(db, child1.dataset_id)
+    child1_impacted_datasets = _get_datatypes_referencing(db, "child1")
+    assert child1_impacted_datasets == {"child1"}
 
-    assert len(child1_impacted_datasets) == 2
-    assert child1.dataset_id in child1_impacted_datasets
-    assert parent.dataset_id in child1_impacted_datasets
+    parent_impacted_datasets = _get_datatypes_referencing(db, "parent")
+    assert parent_impacted_datasets == {"child1", "parent"}
 
     grandchild1 = factories.feature_type_with_metadata(
         db,
@@ -237,14 +238,8 @@ def test_get_impacted_dataset_ids(client: TestClient, minimal_db, settings):
         id_mapping=IdMapping(reference_column_mappings={"child1": "child1"}),
     )
 
-    grandchild1_impacted_datasets = _get_impacted_dataset_ids(
-        db, grandchild1.dataset_id
-    )
-
-    assert len(grandchild1_impacted_datasets) == 3
-    assert grandchild1.dataset_id in grandchild1_impacted_datasets
-    assert child1.dataset_id in grandchild1_impacted_datasets
-    assert parent.dataset_id in grandchild1_impacted_datasets
+    parent_impacted_datasets = _get_datatypes_referencing(db, "parent")
+    assert parent_impacted_datasets == {"grandchild1", "child1", "parent"}
 
     child2 = factories.feature_type_with_metadata(
         db,
@@ -256,11 +251,11 @@ def test_get_impacted_dataset_ids(client: TestClient, minimal_db, settings):
         id_mapping=IdMapping(reference_column_mappings={"parent": "parent"}),
     )
 
-    child2_impacted_datasets = _get_impacted_dataset_ids(db, child2.dataset_id)
+    child2_impacted_datasets = _get_datatypes_referencing(db, "child2")
+    assert child2_impacted_datasets == {"child2"}
 
-    assert len(child2_impacted_datasets) == 2
-    assert child2.dataset_id in child2_impacted_datasets
-    assert parent.dataset_id in child2_impacted_datasets
+    parent_impacted_datasets = _get_datatypes_referencing(db, "parent")
+    assert parent_impacted_datasets == {"grandchild1", "child1", "child2", "parent"}
 
     parent2 = factories.feature_type_with_metadata(
         db,
@@ -271,11 +266,9 @@ def test_get_impacted_dataset_ids(client: TestClient, minimal_db, settings):
         properties_to_index=["label"],
     )
 
-    parent_2_impacted_datasets = _get_impacted_dataset_ids(db, parent2.dataset_id)
+    parent_2_impacted_datasets = _get_datatypes_referencing(db, "parent2")
 
-    assert len(parent_2_impacted_datasets) == 1
-    assert parent2.dataset_id in parent_2_impacted_datasets
-    assert parent2.dataset_id in parent_2_impacted_datasets
+    assert parent_2_impacted_datasets == {"parent2"}
 
     child_of_parent_2 = factories.feature_type_with_metadata(
         db,
@@ -287,19 +280,9 @@ def test_get_impacted_dataset_ids(client: TestClient, minimal_db, settings):
         id_mapping=IdMapping(reference_column_mappings={"parent2": "parent2"}),
     )
 
-    child_of_parent_2_impacted_datasets = _get_impacted_dataset_ids(
-        db, child_of_parent_2.dataset_id
-    )
+    child_of_parent_2_impacted_datasets = _get_datatypes_referencing(db, "parent2")
 
-    assert len(child_of_parent_2_impacted_datasets) == 2
-    assert parent2.dataset_id in child_of_parent_2_impacted_datasets
-    assert child_of_parent_2.dataset_id in child_of_parent_2_impacted_datasets
-
-
-# def test_tiny(client: TestClient, settings, minimal_db):
-#     from breadbox.schemas.types import AnnotationTypeMap
-#     AnnotationTypeMap.model_validate({"annotation_type_mapping": {"label": "text", "attr2": "continuous", "sample_id": "text"}})
-#     AnnotationTypeMap.model_validate_strings('{"annotation_type_mapping": {"label": "text", "attr2": "continuous", "sample_id": "text"}}')
+    assert child_of_parent_2_impacted_datasets == {"parent2", "child_of_parent2"}
 
 
 def test_add_sample_types(client: TestClient, settings, minimal_db):
@@ -668,7 +651,7 @@ def test_update_ref_col_map(client: TestClient, settings, minimal_db):
     # make sure that we have 2 records: 1 for the label of the child and one for the label of the parent
     records = (
         minimal_db.query(DimensionSearchIndex)
-        .filter(DimensionSearchIndex.label == "child_c")
+        .filter(DimensionSearchIndex.type_name == "child")
         .all()
     )
     assert len(records) == 2

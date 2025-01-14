@@ -1,6 +1,7 @@
 from typing import Any, Dict, List, Literal, Optional, Type, Union
 from uuid import uuid4
 
+from markdown_it.rules_block import reference
 from sqlalchemy import and_
 
 import pandas as pd
@@ -12,11 +13,9 @@ from breadbox.config import Settings
 from breadbox.crud.access_control import PUBLIC_GROUP_ID
 from breadbox.crud.dataset import (
     delete_dataset,
-    get_properties_to_index,
     populate_search_index,
     get_dataset,
 )
-from breadbox.crud.dataset_reference import add_id_mapping
 from breadbox.io.data_validation import validate_all_columns_have_types
 from breadbox.schemas.custom_http_exception import UserError, ResourceNotFoundError
 from breadbox.schemas.dataset import TabularDatasetIn
@@ -33,16 +32,25 @@ from breadbox.models.dataset import (
 
 
 def _set_properties_to_index(
-    db: SessionWithUser, properties_to_index: List[str], dataset_id: str, group_id: str,
+    db: SessionWithUser,
+    properties_to_index: List[str],
+    dimension_type_name: str,
+    group_id: str,
 ):
     property_to_index_rows = []
 
-    db.query(PropertyToIndex).filter_by(dataset_id=dataset_id).delete()
+    db.query(PropertyToIndex).filter(
+        PropertyToIndex.dimension_type_name == dimension_type_name
+    ).delete()
     db.flush()
 
     for property in properties_to_index:
         property_to_index_rows.append(
-            PropertyToIndex(dataset_id=dataset_id, property=property, group_id=group_id)
+            PropertyToIndex(
+                dimension_type_name=dimension_type_name,
+                property=property,
+                group_id=group_id,
+            )
         )
 
     if len(property_to_index_rows) > 0:
@@ -58,6 +66,7 @@ def _add_metadata_dimensions(
     id_column: str,
     dataset: TabularDataset,
     units_per_column: Dict[str, str],
+    reference_column_mappings: Dict[str, str],
 ):
     col_annotations: List[TabularColumn] = []
     col_annotation_ids: Dict = {}
@@ -66,6 +75,7 @@ def _add_metadata_dimensions(
     for col in annotations_df.columns:
         annotation_id = str(uuid4())
         annotation_type = annotation_type_mapping[col]
+        references_dimension_type_name = reference_column_mappings.get(col)
         units = None
         if annotation_type == AnnotationType.continuous:
             units = units_per_column.get(col)
@@ -81,6 +91,7 @@ def _add_metadata_dimensions(
                 annotation_type=annotation_type,
                 units=units,
                 group_id=dataset.group_id,
+                references_dimension_type_name=references_dimension_type_name,
             )
         )
         annotation_values.extend(
@@ -141,13 +152,14 @@ def _add_dimension_type(
     db.flush()
 
     if dataset_in is not None and metadata_df is not None:
+        group_id = str(dataset_in.group_id)
         metadata_dataset = TabularDataset(
             id=dataset_in.id,
             name=dataset_in.name,
             index_type_name=dataset_in.index_type_name,
             data_type=dataset_in.data_type,
             is_transient=dataset_in.is_transient,
-            group_id=str(dataset_in.group_id),
+            group_id=group_id,
             taiga_id=dataset_in.taiga_id,
         )
         db.add(metadata_dataset)
@@ -165,19 +177,15 @@ def _add_dimension_type(
             id_column=id_column,
             dataset=metadata_dataset,
             units_per_column=units_per_column,
+            reference_column_mappings=reference_column_mappings,
         )
 
-        # Add a mapping that identifies which feature type datasets have columns that refer to other
-        # feature type datasets.
-        add_id_mapping(db, reference_column_mappings, dataset=metadata_dataset)
-
-        _set_properties_to_index(
-            db, properties_to_index, dataset_id, dataset_in.group_id
-        )
-
-        populate_search_index(db, user, dataset_id)
+        db.flush()
+        _set_properties_to_index(db, properties_to_index, dimension_type.name, group_id)
 
     db.flush()
+
+    populate_search_index(db, dimension_type)
 
     return dimension_type
 
@@ -371,14 +379,15 @@ def update_dimension_type(
             if old_dataset is not None:
                 delete_dataset(db, user, old_dataset, filestore_location)
 
+        db.flush()
         _set_properties_to_index(
             db,
             given_updated_fields["properties_to_index"],
-            metadata_dataset.id,
+            dimension_type.name,
             metadata_dataset.group_id,
         )
 
-        populate_search_index(db, user, metadata_dataset.id)
+        populate_search_index(db, dimension_type)
 
     if "display_name" in given_updated_fields:
         dimension_type.display_name = given_updated_fields["display_name"]
@@ -395,20 +404,23 @@ def update_dimension_type_metadata(
     metadata_df: pd.DataFrame,
     annotation_type_mapping: Dict[str, AnnotationType],
     taiga_id: Optional[str],
-    reference_column_mappings: Optional[Dict[str, Any]] = None,
+    reference_column_mappings: Optional[Dict[str, str]] = None,
     properties_to_index: Optional[List[str]] = None,
     units_per_column: Optional[Dict[str, str]] = None,
 ) -> DimensionType:
     if units_per_column is None:
         units_per_column = {}
 
+    if reference_column_mappings is None:
+        reference_column_mappings = {}
+
     if dimension_type.dataset is not None:
         # before deleting the dataset, save the current list of properties to index if the caller didn't supply
         # a list.
         if properties_to_index is None:
-            properties_to_index = get_properties_to_index(
-                db, user, dimension_type.dataset.id
-            )
+            properties_to_index = [
+                x.property for x in dimension_type.dataset.properties_to_index
+            ]
 
         # Delete dataset; cascade deletes annotation dimensions which then deletes all annotation values
         is_deleted = delete_dataset(
@@ -432,6 +444,9 @@ def update_dimension_type_metadata(
     db.flush()
     dimension_type.dataset_id = dataset_id
     db.flush()
+    db.refresh(dimension_type)
+    # if dataset_id is not None:
+    #     breakpoint()
 
     _add_metadata_dimensions(
         db=db,
@@ -441,18 +456,22 @@ def update_dimension_type_metadata(
         id_column=dimension_type.id_column,
         dataset=dimension_type_metadata,
         units_per_column=units_per_column,
+        reference_column_mappings=reference_column_mappings,
     )
     _update_dataset_dimensions_with_dimension_type(db, dimension_type, metadata_df)
 
-    if reference_column_mappings and len(reference_column_mappings.keys()) > 0:
-        add_id_mapping(db, reference_column_mappings, dataset=dimension_type_metadata)
-
     if properties_to_index and len(properties_to_index) > 0:
+        db.flush()
         _set_properties_to_index(
-            db, properties_to_index, dataset_id, dimension_type_metadata.group_id
+            db,
+            properties_to_index,
+            dimension_type.name,
+            dimension_type_metadata.group_id,
         )
 
-    populate_search_index(db, user, dataset_id)
+    db.flush()
+
+    populate_search_index(db, dimension_type)
 
     db.flush()
     return dimension_type
@@ -503,9 +522,34 @@ def get_dimension_type_labels_by_id(
     return get_dimension_type_metadata_col(db, dimension_type_name, col_name="label")
 
 
+def get_given_id_to_dimension_id_mapping(
+    db: SessionWithUser, dimension_type_name: str
+) -> Dict[str, str]:
+    dimension_type = get_dimension_type(db=db, name=dimension_type_name)
+
+    if dimension_type is None:
+        raise ResourceNotFoundError(
+            f"Dimension type '{dimension_type_name}' not found. "
+        )
+    if dimension_type.dataset_id is None:
+        return {}
+
+    from ..models.dataset import Dimension
+
+    dim_id_and_given_ids = (
+        db.query(Dimension)
+        .filter(Dimension.dataset_id == dimension_type.dataset_id,)
+        .with_entities(Dimension.id, Dimension.given_id)
+        .all()
+    )
+    return {given_id: dim_id for dim_id, given_id in dim_id_and_given_ids}
+
+
 def get_dimension_type_metadata_col(
-    db: SessionWithUser, dimension_type_name: str, col_name: str
-) -> dict[str, Any]:
+    db: SessionWithUser, dimension_type_name: str, col_name: str, index_by_given_id=True
+) -> dict[str, str]:
+    assert isinstance(col_name, str)
+
     """
     Get a column of values from the dimension type's metadata. 
     Return a dictionary of values indexed by given ID.
@@ -529,7 +573,13 @@ def get_dimension_type_metadata_col(
                 TabularColumn.given_id == col_name,
             )
         )
-        .with_entities(TabularCell.dimension_given_id, TabularCell.value)
+        .with_entities(
+            TabularColumn.id, TabularCell.dimension_given_id, TabularCell.value
+        )
         .all()
     )
-    return {id: value for id, value in values_by_id_tuples}
+
+    if index_by_given_id:
+        return {given_id: value for id, given_id, value in values_by_id_tuples}
+    else:
+        return {id: value for id, given_id, value in values_by_id_tuples}

@@ -127,18 +127,12 @@ class TabularDataset(Dataset):
         # I'm not sure that this is the best way to approach this, but computed properties are
         # the smallest change I can think of to accommodate how things work already.
 
-        # first populate a map so we can look up the data type names per column
-        column_refs = {}
-        for column_ref in self.dataset_references:
-            column_refs[
-                column_ref.column
-            ] = column_ref.referenced_dataset.index_type_name
         columns = {}
         for dimension in self.dimensions:
             columns[dimension.given_id] = ColumnMetadata(
                 units=dimension.units,
                 col_type=dimension.annotation_type,
-                references=column_refs.get(dimension.given_id),
+                references=dimension.references_dimension_type_name,
             )
         return columns
 
@@ -259,6 +253,11 @@ class TabularColumn(Dimension):
         uselist=True,
     )
 
+    references_dimension_type_name = Column(
+        String, ForeignKey("dimension_type.name"), nullable=True
+    )
+    references_dimension_type = relationship(DimensionType)
+
 
 class TabularCell(Base, GroupMixin):
     """
@@ -297,11 +296,10 @@ class DimensionSearchIndex(Base, UUIDMixin, GroupMixin):
         # for now.
         Index("idx_dim_search_index_perf_1", "value"),
         Index("idx_dim_search_index_perf_2", "type_name", "value"),
-        Index(
-            "idx_dim_search_index_perf_3", "dimension_given_id", "type_name", "value"
-        ),
+        Index("idx_dim_search_index_perf_3", "dimension_id", "type_name", "value"),
     )
 
+    # The dimension which owns the property. (One should be able to group by dimension_id to get the bag of words associated with that dimension)
     dimension_id = Column(
         String, ForeignKey("dimension.id", ondelete="CASCADE"), nullable=False
     )
@@ -313,45 +311,22 @@ class DimensionSearchIndex(Base, UUIDMixin, GroupMixin):
             passive_deletes=True,
         ),
     )
-    dimension_given_id = Column(String, nullable=False)
-    label = Column(String, nullable=False)
     property = Column(String, nullable=False)
     value = Column(String, nullable=True)
-    priority = Column(Integer, nullable=True)
-    axis = Column(String, nullable=False)
     type_name = Column(String, nullable=False)
-
-
-class DatasetReference(Base, UUIDMixin, GroupMixin, ReferencedGroupMixin):
-    __tablename__ = "dataset_reference"
-
-    dataset_id = Column(
-        String, ForeignKey("dataset.id", ondelete="CASCADE"), nullable=False
-    )
-    dataset = relationship(
-        Dataset,
-        foreign_keys=[dataset_id],
-        backref=backref("dataset_references", cascade="all, delete-orphan"),
-    )
-    column = Column(String, nullable=False)
-    referenced_dataset_id = Column(
-        String, ForeignKey("dataset.id", ondelete="CASCADE"), nullable=False
-    )
-    referenced_dataset = relationship(
-        Dataset,
-        foreign_keys=[referenced_dataset_id],
-        backref=backref("referred_by_dataset", cascade="all, delete-orphan"),
-    )
+    dimension_given_id = Column(String, nullable=False)
+    label = Column(String, nullable=False)
 
 
 class PropertyToIndex(Base, UUIDMixin, GroupMixin):
     __tablename__ = "property_to_index"
 
-    dataset_id = Column(
-        String, ForeignKey("dataset.id", ondelete="CASCADE"), nullable=False
+    dimension_type_name = Column(
+        String, ForeignKey("dimension_type.name", ondelete="CASCADE"), nullable=False
     )
-    dataset = relationship(
-        Dataset, backref=backref("properties_to_index", cascade="all, delete-orphan"),
+    dimension_type = relationship(
+        DimensionType,
+        backref=backref("properties_to_index", cascade="all, delete-orphan"),
     )
     property = Column(String, nullable=False)
 

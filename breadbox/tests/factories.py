@@ -312,7 +312,6 @@ def tabular_dataset(
     is_transient=False,
     index_type_name=None,
     user=None,
-    id_mapping=None,
     short_name=None,
     description=None,
     version=None,
@@ -372,11 +371,6 @@ def tabular_dataset(
         version=version,
         description=description,
     )
-
-    if id_mapping is not None:
-        from breadbox.crud.dataset_reference import add_id_mapping
-
-        add_id_mapping(db, id_mapping, added_dataset)
 
     return added_dataset
 

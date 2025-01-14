@@ -266,23 +266,6 @@ def recreate_dev_db():
     db.close()
 
 
-@cli.command("populate-index")
-@click.option("--dataset-id")
-def populate_index(dataset_id: Optional[str] = None):
-    db = _get_db_connection()
-    settings = get_settings()
-    user = settings.admin_users[0]
-
-    if dataset_id:
-        populate_search_index(db, user, dataset_id)
-    else:
-        datasets = dataset_crud.get_datasets(db, user, None, None, None, None, None)
-        for dataset in datasets:
-            populate_search_index(db, user, dataset.id)
-    db.commit()
-    db.close()
-
-
 def _populate_minimal_data(db: SessionWithUser, settings: Settings):
     """Populate the database with essential data if it does not already have it."""
     admin_user = settings.admin_users[0]
