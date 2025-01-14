@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "breadbox-client"
-version = "3.20.1"
+version = "3.21.0"
 description = "A client library for accessing Breadbox"
 
 authors = []
@@ -10,7 +10,7 @@ packages = [
     {include = "breadbox_client"},
     {include = "breadbox_facade"},
 ]
-include = ["CHANGELOG.md", "breadbox_client/py.typed"]
+include = ["CHANGELOG.md", "breadbox_client/py.typed", "breadbox_client/**/*"]
 
 [tool.poetry.dependencies]
 python = "^3.9"
