@@ -1,1 +1,1 @@
-DOCKER_IMAGE=us.gcr.io/broad-achilles/data-prep-pipeline-run:v5
+DOCKER_IMAGE=us.gcr.io/broad-achilles/data-prep-pipeline-run:v6
