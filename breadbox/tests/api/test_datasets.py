@@ -470,7 +470,16 @@ class TestGet:
         assert_status_ok(compound_feature_type_response)
 
         columns = minimal_db.query(TabularColumn).all()
-        assert len([column for column in columns if column.reference is not None]) == 1
+        assert (
+            len(
+                [
+                    column
+                    for column in columns
+                    if column.references_dimension_type_name is not None
+                ]
+            )
+            == 1
+        )
 
         dimension_search_index_entries = minimal_db.query(DimensionSearchIndex).all()
 

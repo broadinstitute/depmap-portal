@@ -407,16 +407,19 @@ def get_property_value_pairs_for_given_id(
     if row is not None:
         # create one or more search index record for each column in properties_to_index_df
         for property in properties_to_index_df.columns:
+            property_value = row[property]
             cm = columns_metadata[property]
 
             # now, check to see if we have a single value or multiple
-            if cm.col_type == AnnotationType.list_strings:
+            if property_value is None:
+                values = []
+            elif cm.col_type == AnnotationType.list_strings:
                 values = cast_tabular_cell_value_type(
-                    row[property], AnnotationType.list_strings
+                    property_value, AnnotationType.list_strings
                 )
                 assert isinstance(values, list)
             else:
-                values = [row[property]]
+                values = [property_value]
 
             # are these values references to a keys in a different table
             if cm.references is not None:
