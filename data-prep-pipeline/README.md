@@ -22,6 +22,14 @@ Go to the Data Prep Pipeline 1.0 jenkins job here: https://datascidev.broadinsti
 
 Then click on build. Optionally choose one of the parameters if you would like a clean start or start with a specific export or want to automatically rebuild the db once done.
 
+## How to add a new dataset
+
+Please follow these steps:
+
+1. Write your conseq script and add that to the `data-prep-pipeline/data_prep_pipeline` directory.
+2. If it consumes a python script, then please add that to the `data-prep-pipeline/scripts` directory.
+3. If you would like the output file to be uploaded to Taiga, then please add that to the `data-prep-pipeline/data_prep_pipeline/publish.conseq` file. There's a `upload_to_taiga.py` script that can be used to upload in a simplified manner.
+
 #### Note
 
 Transformed and uploaded data should have samples as the row header/index and feature names as the column headers.
