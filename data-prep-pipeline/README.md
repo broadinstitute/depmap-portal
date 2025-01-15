@@ -9,10 +9,10 @@ The data prep pipeline gets data from **Taiga** and prepares the data to make th
 
 First, make sure you have conseq installed from here: https://github.com/broadinstitute/conseq and conseq is executable.
 
-Then, assuming you are in depmap-portal/data-prep-pipeline where this readme is located, install and activate a poetry environment. To do so:
+Then, assuming you are in `depmap-portal/data-prep-pipeline` where this readme is located, install and activate a poetry environment. Then:
 
-1. Run `poetry shell`. Once inside the poetry environment:
-2. Run `data_prep_pipeline/common.conseq` which will run each rule mentioned there and produce the relevant output.
+1. Run `poetry shell`.
+2. Once inside the poetry environment, run `data_prep_pipeline/common.conseq` which will run each rule mentioned there and produce the relevant output.
 
 Note that there are two primary configuration files, `release_inputs.conseq` which contains all the taiga ids of the initial inputs for different rules and `common.conseq` which contains all the available rules. There's a `data_prep_pipeline/publish.conseq` file where each upload to taiga is configured and executed. If you would like to modify or skip the upload for a particular rule, then do so in that file.
 
