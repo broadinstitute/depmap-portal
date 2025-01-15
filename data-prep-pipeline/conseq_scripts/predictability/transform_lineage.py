@@ -3,6 +3,8 @@ import pandas as pd
 from collections import defaultdict
 from typing import Dict, Set, List
 
+from taigapy import create_taiga_client_v3
+
 
 column_rename_map = {
     "ModelID": "model_id",
@@ -104,12 +106,14 @@ def generate_lineage_matrix(model_df: pd.DataFrame) -> pd.DataFrame:
     return bool_matrix.transpose()
 
 
-def process_and_transform_lineage(model_csv):
+def process_and_transform_lineage(model_taiga_id: str) -> pd.DataFrame:
 
     """Transform lineage data for predictability"""
 
+    tc = create_taiga_client_v3()
+
     print("Getting lineage data...")
-    model_data = pd.read_csv(model_csv)
+    model_data = tc.get(model_taiga_id)
 
     print("Transforming lineage data...")
     lineage_matrix = generate_lineage_matrix(model_data)
@@ -122,11 +126,11 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Generate lineage matrix for predictability"
     )
-    parser.add_argument("model_csv", help="Path to model data CSV")
+    parser.add_argument("model_taiga_id", help="Taiga ID of model data")
     parser.add_argument("output", help="Path to write the output")
     args = parser.parse_args()
 
-    lineage_matrix = process_and_transform_lineage(args.model_csv)
+    lineage_matrix = process_and_transform_lineage(args.model_taiga_id)
 
     if lineage_matrix is not None:
         lineage_matrix.to_csv(args.output)

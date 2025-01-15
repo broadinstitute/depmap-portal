@@ -94,12 +94,12 @@ def generate_crispr_confounders_matrix(
 
 
 def process_and_generate_crispr_confounders(
-    model_csv, achilles_screen_qc_report_taiga_id, crispr_screen_map_taiga_id
+    model_taiga_id, achilles_screen_qc_report_taiga_id, crispr_screen_map_taiga_id
 ):
     tc = create_taiga_client_v3()
 
     print("Getting CRISPR confounders source data...")
-    models = pd.read_csv(model_csv)
+    models = tc.get(model_taiga_id)
     achilles_screen_qc_report = tc.get(achilles_screen_qc_report_taiga_id)
     crispr_map = tc.get(crispr_screen_map_taiga_id)
 
@@ -116,7 +116,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Generate CRISPR confounder matrix for predictability"
     )
-    parser.add_argument("model_csv", help="Path to model data")
+    parser.add_argument("model_taiga_id", help="Taiga ID of model data")
     parser.add_argument(
         "achilles_screen_qc_report_taiga_id",
         help="Taiga ID of Achilles screen QC report",
@@ -127,7 +127,7 @@ if __name__ == "__main__":
     parser.add_argument("output", help="Path to write the output")
     args = parser.parse_args()
     crispr_confounder_matrix = process_and_generate_crispr_confounders(
-        args.model_csv,
+        args.model_taiga_id,
         args.achilles_screen_qc_report_taiga_id,
         args.crispr_screen_map_taiga_id,
     )

@@ -63,7 +63,7 @@ rule update_rep_single_pt_confounders:
         rep_single_pt_confounders={"type": "rep_single_pt_confounders"},
     outputs:
         {
-            "type": "rep_single_pt_confounders_predictability",
+            "type": "predictability_rep_single_pt_confounders",
             "filename": {"$filename": "rep_single_pt_confounders.csv"},
             "orig_dataset_id": "{{inputs.rep_single_pt_confounders.dataset_id}}"
         }

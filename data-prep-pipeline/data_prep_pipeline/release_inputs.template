@@ -1,7 +1,7 @@
 # It is very important to have the latest versions of the destination Taiga IDs.
 # The version number is needed to check the taiga metadata for duplicate checking
 
-# SET_TAIGA_PREPROCESSOR release_taiga_id "internal-24q2-3719.108"
+# SET_TAIGA_PREPROCESSOR release_taiga_id "internal-24q2-3719.131"
 
 # Destination Taiga ID
 add-if-missing {
@@ -12,13 +12,19 @@ add-if-missing {
 # Destination Taiga ID Test
 add-if-missing {
   "type": "predictability_taiga_id",
-  "dataset_id": "predictability-76d5.186"
+  "dataset_id": "predictability-76d5.254"
 }
 
 # CN gene expression data
 add-if-missing {
   "type": "cngene",
   "dataset_id": PREPROCESS_TAIGA_ID(release_taiga_id, "OmicsCNGene") 
+}
+
+# Model
+add-if-missing {
+  "type": "model",
+  "dataset_id": PREPROCESS_TAIGA_ID(release_taiga_id, "Model") 
 }
 
 # Portal Compounds

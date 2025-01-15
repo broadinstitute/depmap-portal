@@ -47,7 +47,7 @@ rule transform_lineage:
             "type": "predictability_lineage",
             "filename": {"$filename": "lineage.csv"},
         }
-    run "python3 {{inputs.script.filename}} {{inputs.model.filename}} lineage.csv"
+    run "python3 {{inputs.script.filename}} {{inputs.model.dataset_id}} lineage.csv"
 
 
 rule transform_crispr_confounders:
@@ -61,4 +61,4 @@ rule transform_crispr_confounders:
             "type": "predictability_crispr_confounders",
             "filename": {"$filename": "crispr_confounders.csv"},
         }
-    run "python3 {{inputs.script.filename}} {{inputs.model.filename}} {{inputs.achilles_screen_qc_report.dataset_id}} {{inputs.crispr_screen_map.dataset_id}} crispr_confounders.csv"
+    run "python3 {{inputs.script.filename}} {{inputs.model.dataset_id}} {{inputs.achilles_screen_qc_report.dataset_id}} {{inputs.crispr_screen_map.dataset_id}} crispr_confounders.csv"

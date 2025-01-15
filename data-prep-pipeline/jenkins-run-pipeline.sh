@@ -70,8 +70,6 @@ fi
 
 function run_via_container {
     COMMAND="$1"
-
-    # Had to add --security-opt seccomp=unconfined because after dev.cds.team upgrade, getting error due to sec profile. remove this after docker issue fixed
     docker run \
       --rm \
       -v "$PWD":/work \
