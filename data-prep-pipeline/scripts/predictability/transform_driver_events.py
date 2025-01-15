@@ -5,7 +5,7 @@ import numpy as np
 from taigapy import create_taiga_client_v3
 
 
-def reformat_entrez_id(x):
+def reformat_entrez_id(x: str) -> str:
     """Reformat the Entrez ID to a string"""
 
     if pd.isna(x):
@@ -22,7 +22,9 @@ def reformat_entrez_id(x):
     return x
 
 
-def process_and_generate_driver_events(mutations_taiga_id, oncokb_annotated_taiga_id):
+def process_and_generate_driver_events(
+    mutations_taiga_id: str, oncokb_annotated_taiga_id: str
+) -> pd.DataFrame:
     """Transform driver events data for predictability and upload it to Taiga."""
 
     tc = create_taiga_client_v3()

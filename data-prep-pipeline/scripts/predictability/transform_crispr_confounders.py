@@ -94,8 +94,10 @@ def generate_crispr_confounders_matrix(
 
 
 def process_and_generate_crispr_confounders(
-    model_taiga_id, achilles_screen_qc_report_taiga_id, crispr_screen_map_taiga_id
-):
+    model_taiga_id: str,
+    achilles_screen_qc_report_taiga_id: str,
+    crispr_screen_map_taiga_id: str,
+) -> pd.DataFrame:
     tc = create_taiga_client_v3()
 
     print("Getting CRISPR confounders source data...")

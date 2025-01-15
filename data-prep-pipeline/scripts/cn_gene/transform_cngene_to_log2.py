@@ -1,9 +1,10 @@
 import argparse
 import numpy as np
+import pandas as pd
 from taigapy import create_taiga_client_v3
 
 
-def transform_cngene_to_log2(cngene_dataset_id):
+def transform_cngene_to_log2(cngene_dataset_id: str) -> pd.DataFrame:
     """Transform CN gene expression data to log2 scale"""
     tc = create_taiga_client_v3()
 

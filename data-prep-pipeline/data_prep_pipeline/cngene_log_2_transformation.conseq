@@ -1,7 +1,7 @@
 rule transform_cngene_log2:
     inputs:
         cngene={"type": "cngene"},
-        script=fileref('../conseq_scripts/cn_gene/transform_cngene_to_log2.py'),
+        script=fileref('../scripts/cn_gene/transform_cngene_to_log2.py'),
     outputs:
         {
             "type": "cngene_log2",

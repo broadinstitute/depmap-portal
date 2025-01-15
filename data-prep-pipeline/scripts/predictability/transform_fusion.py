@@ -3,6 +3,7 @@ import re
 import pandas as pd
 from typing import Dict
 from taigapy import create_taiga_client_v3
+from pathlib import Path
 
 
 def extract_id(x: str) -> str:
@@ -63,7 +64,9 @@ def generate_fusion_matrix(
     return one_hot
 
 
-def process_and_transform_fusion(fusion_taiga_id, hgnc_gene_table_csv):
+def process_and_transform_fusion(
+    fusion_taiga_id: str, hgnc_gene_table_csv: Path
+) -> pd.DataFrame:
 
     """Transform fusion data for predictability and upload it to Taiga."""
 

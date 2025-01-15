@@ -4,7 +4,7 @@ rule filter-portal-compounds:
         repsdrug_auc_matrix={"type": "repsdrug_auc_matrix"},
         portal_compounds={"type": "portal_compounds"},
         prism_oncology_reference_auc_matrix={"type": "prism_oncology_reference_auc_matrix"},
-        script=fileref('../conseq_scripts/portal_compounds/filter_portal_compounds.py'),
+        script=fileref('../scripts/portal_compounds/filter_portal_compounds.py'),
     outputs:
         {
             "type": "filtered_portal_compounds",

@@ -1,8 +1,11 @@
 import argparse
 import pandas as pd
+from pathlib import Path
 
 
-def process_and_generate_genetic_derangement(cngene_log2_csv, hgnc_gene_table_csv):
+def process_and_generate_genetic_derangement(
+    cngene_log2_csv: Path, hgnc_gene_table_csv: Path
+) -> pd.DataFrame:
 
     """Generate genetic derangement data for predictability"""
 
