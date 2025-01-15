@@ -115,10 +115,10 @@ else
   set -e
   
   # Generate export
-  run_via_container "conseq export $CONSEQ_FILE $EXPORT_PATH"
+  # run_via_container "conseq export $CONSEQ_FILE $EXPORT_PATH"
   
   # Generate report
-  run_via_container "conseq report html"
+  # run_via_container "conseq report html"
 
   # copy the latest logs
   backup_conseq_logs
