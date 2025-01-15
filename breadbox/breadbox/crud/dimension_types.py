@@ -112,7 +112,7 @@ def add_dimension_type(
     display_name: Optional[str] = None,
     dataset_in: Optional[TabularDatasetIn] = None,
     metadata_df: Optional[pd.DataFrame] = None,
-    annotation_type_mapping: Dict[str, AnnotationType] = None,
+    annotation_type_mapping: Optional[Dict[str, AnnotationType]] = None,
     reference_column_mappings: Optional[Dict[str, str]] = None,
     properties_to_index: Optional[List[str]] = None,
     units_per_column: Optional[Dict[str, str]] = None,
@@ -155,7 +155,7 @@ def add_dimension_type(
 
         dataset_id = dataset_in.id
         db.flush()
-        dimension_type.dataset_id = dataset_id
+        dimension_type.dataset_id = dataset_id  # pyright: ignore
         db.flush()
 
         add_metadata_dimensions(
@@ -217,7 +217,9 @@ def update_dataset_dimensions_with_dimension_type(
     for dataset_key in dims_grouped_by_dataset_df.groups.keys():
         dataset_dims_df = dims_grouped_by_dataset_df.get_group(dataset_key)
         # Rename dimension 'id' column in case of collision in naming where dimension type identifier is also named 'id'
-        dataset_dims_df.rename(columns={"id": "dimension_id"}, inplace=True)
+        dataset_dims_df.rename(
+            columns={"id": "dimension_id"}, inplace=True
+        )  # pyright: ignore
         dimensions_df = dataset_dims_df.merge(
             metadata_df, "left", left_on="given_id", right_on=dimension_type.id_column
         ).replace({np.nan: None})

@@ -232,12 +232,14 @@ def add_feature_type(
         annotation_type_mapping_ = annotation_type_mapping.annotation_type_mapping
 
     if isinstance(id_mapping, IdMappingInsanity):
-        id_mapping = id_mapping.id_mapping
+        id_mapping_ = id_mapping.id_mapping
+    else:
+        id_mapping_ = id_mapping
 
-    assert isinstance(id_mapping, IdMapping) or id_mapping is None
+    assert isinstance(id_mapping_, IdMapping) or id_mapping_ is None
     reference_column_mappings: Dict[str, str] = {}
-    if id_mapping is not None:
-        reference_column_mappings = id_mapping.reference_column_mappings
+    if id_mapping_ is not None:
+        reference_column_mappings = id_mapping_.reference_column_mappings
 
     # hack: this endpoint is going away so for the time being and we don't have continous values in our
     # metadata at this time, don't worry about the units -- but not providing units causes an assert later
@@ -324,23 +326,31 @@ def update_sample_type_metadata(
     if metadata_file is None:
         raise HTTPException(400, f"Sample type metadata needs a 'metadata_file'.")
 
+    from typing import Any
+
     if isinstance(id_mapping, IdMappingInsanity):
-        id_mapping = id_mapping.id_mapping
+        id_mapping_ = cast(Dict[str, Any], id_mapping.id_mapping)
+    else:
+        id_mapping_ = id_mapping
+    assert isinstance(id_mapping_, dict) or id_mapping_ is None
 
     annotation_type_mapping_: Dict[str, AnnotationType] = {}
     if annotation_type_mapping is not None:
         annotation_type_mapping_ = annotation_type_mapping.annotation_type_mapping
 
+    axis = cast(Literal["sample", "feature"], sample_type.axis)
+
     sample_type_in = TypeMetadataIn(
         name=sample_type_name,
         id_column=sample_type.id_column,
-        axis=sample_type.axis,
+        axis=axis,
         metadata_file=metadata_file,
         taiga_id=taiga_id,
         annotation_type_mapping=annotation_type_mapping_,
-        id_mapping=id_mapping,
+        id_mapping=id_mapping_,
     )
 
+    assert isinstance(sample_type_in.annotation_type_mapping, dict)
     with transaction(db):
         try:
             metadata_df = validate_dimension_type_metadata(
@@ -425,12 +435,14 @@ def update_feature_type_metadata(
         annotation_type_mapping_ = annotation_type_mapping.annotation_type_mapping
 
     if isinstance(id_mapping, IdMappingInsanity):
-        id_mapping = id_mapping.id_mapping
+        id_mapping_ = id_mapping.id_mapping
+    else:
+        id_mapping_ = id_mapping
 
-    assert isinstance(id_mapping, IdMapping) or id_mapping is None
+    assert isinstance(id_mapping_, IdMapping) or id_mapping_ is None
     reference_column_mappings: Dict[str, str] = {}
-    if id_mapping is not None:
-        reference_column_mappings = id_mapping.reference_column_mappings
+    if id_mapping_ is not None:
+        reference_column_mappings = id_mapping_.reference_column_mappings
 
     # always create a new dataset ID when the data changes
     # note: This is leaking datasets. This is a short term issue, as we want to replace these endpoints
@@ -659,7 +671,7 @@ def _dim_type_to_response(type: DimensionTypeModel):
         name=type.name,
         display_name=type.display_name,
         id_column=type.id_column,
-        axis=type.axis,
+        axis=cast(Literal["sample", "feature"], type.axis),
         metadata_dataset_id=type.dataset_id,
         properties_to_index=properties_to_index,
     )
