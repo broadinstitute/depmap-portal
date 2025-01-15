@@ -3,7 +3,7 @@ from typing import Any, List, Optional, Union
 import typing
 from breadbox.api.groups import add_group
 import breadbox.api.types as types_api
-from breadbox.crud.types import add_dimension_type
+from breadbox.service.dataset import add_dimension_type, add_tabular_dataset
 from breadbox.crud.data_type import add_data_type
 from breadbox.crud import dataset as dataset_crud
 
@@ -360,7 +360,7 @@ def tabular_dataset(
     index_type = types_crud.get_dimension_type(db, index_type_name)
     assert index_type is not None
 
-    added_dataset = dataset_crud.add_tabular_dataset(
+    added_dataset = add_tabular_dataset(
         db,
         user,
         dataset_in,

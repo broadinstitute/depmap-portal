@@ -1,11 +1,7 @@
 import pandas as pd
 
 from breadbox.db.session import SessionWithUser
-from breadbox.crud.types import add_dimension_type
-from breadbox.models.dataset import (
-    TabularDataset,
-    DimensionType,
-)
+from breadbox.service.dataset import add_dimension_type
 from breadbox.schemas.types import AnnotationType
 from breadbox.schemas.dataset import ColumnMetadata
 

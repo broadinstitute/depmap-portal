@@ -20,7 +20,7 @@ from breadbox.models.dataset import AnnotationType
 from breadbox.schemas.dataset import ColumnMetadata
 import pandas as pd
 from ..utils import assert_status_ok, assert_status_not_ok
-from breadbox.crud.dataset import _get_datatypes_referencing
+from breadbox.service.search import _get_datatypes_referencing
 
 
 def test_all_dimension_type_methods(client: TestClient, minimal_db, settings):
@@ -208,6 +208,7 @@ def test_get_impacted_dataset_ids(client: TestClient, minimal_db, settings):
     )
 
     parent_dim_type = get_dimension_type(db, "parent")
+    assert parent_dim_type is not None
     parent_impacted_datasets = _get_datatypes_referencing(db, parent_dim_type.name)
 
     assert parent_impacted_datasets == {"parent"}

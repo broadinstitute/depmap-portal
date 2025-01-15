@@ -26,7 +26,8 @@ from fastapi.testclient import TestClient
 from breadbox.api.dependencies import get_dataset
 from breadbox.io.filestore_crud import get_slice
 from breadbox.models.dataset import DimensionSearchIndex
-from breadbox.crud.dataset import get_datasets, populate_search_index
+from breadbox.crud.dataset import get_datasets
+from breadbox.service.search import populate_search_index
 
 from breadbox.models.dataset import PropertyToIndex
 from breadbox.schemas.dataset import ColumnMetadata
