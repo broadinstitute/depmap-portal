@@ -27,7 +27,7 @@ from breadbox.schemas.custom_http_exception import ResourceNotFoundError, UserEr
 from breadbox.schemas.dataset import MatrixDatasetIn
 from breadbox.service import metadata as metadata_service
 
-from ..crud.types import get_dimension_type
+from ..crud.dimension_types import get_dimension_type
 from ..crud import dataset as dataset_crud
 from ..service import dataset as dataset_service
 from ..crud import group as group_crud

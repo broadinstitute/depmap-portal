@@ -4,7 +4,7 @@ from typing import Dict, List
 
 import pandas as pd
 from ..crud.metadata import cast_tabular_cell_value_type
-from ..crud import types as types_crud
+from ..crud import dimension_types as types_crud
 
 from breadbox.db.session import SessionWithUser
 from ..schemas.dataset import ColumnMetadata
@@ -18,7 +18,7 @@ from breadbox.models.dataset import (
     TabularColumn,
     DimensionType,
 )
-from ..crud.types import get_dimension_type, get_dimension_type_metadata_col
+from ..crud.dimension_types import get_dimension_type, get_dimension_type_metadata_col
 
 log = logging.getLogger(__name__)
 

@@ -1,6 +1,6 @@
 from io import BytesIO
 
-from breadbox.crud.types import get_dimension_type
+from breadbox.crud.dimension_types import get_dimension_type
 from breadbox.schemas.types import IdMapping
 from fastapi.testclient import TestClient
 from sqlalchemy import and_

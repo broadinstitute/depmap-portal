@@ -22,14 +22,14 @@ from breadbox.crud.group import (
     TRANSIENT_GROUP_ID,
     get_transient_group,
 )
-from ..crud.types import get_dimension_type
+from ..crud.dimension_types import get_dimension_type
 from ..crud.dataset import add_tabular_dimensions, add_matrix_dataset_dimensions
-from ..crud.types import (
-    add_dimension_type,
+from ..crud.dimension_types import (
     set_properties_to_index,
     add_metadata_dimensions,
     update_dataset_dimensions_with_dimension_type,
 )
+from ..crud import dimension_types as types_crud
 
 from ..service.search import populate_search_index
 from typing import Any, Dict, List, Literal, Optional, Type, Union
@@ -503,7 +503,7 @@ def add_dimension_type(
 
         check_id_mapping_is_valid(db, reference_column_mappings)
 
-        dimension_type = add_dimension_type(
+        dimension_type = types_crud.add_dimension_type(
             db,
             name=name,
             display_name=display_name,
@@ -523,7 +523,7 @@ def add_dimension_type(
                 "If taiga ID is specified, you must also provide a metadata file"
             )
 
-        dimension_type = add_dimension_type(
+        dimension_type = types_crud.add_dimension_type(
             db, name=name, display_name=display_name, id_column=id_column, axis=axis,
         )
 

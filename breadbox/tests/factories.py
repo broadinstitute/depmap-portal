@@ -2,7 +2,7 @@ from typing import Any, List, Optional, Union
 
 import typing
 from breadbox.api.groups import add_group
-import breadbox.api.types as types_api
+import breadbox.api.dimension_types as types_api
 from breadbox.service.dataset import add_dimension_type, add_tabular_dataset
 from breadbox.crud.data_type import add_data_type
 from breadbox.crud import dataset as dataset_crud
@@ -29,7 +29,7 @@ from breadbox.compute import dataset_tasks
 from breadbox.schemas.dataset import ColumnMetadata, AnnotationType
 from breadbox.schemas.dataset import TabularDatasetIn
 import uuid
-import breadbox.crud.types as types_crud
+import breadbox.crud.dimension_types as types_crud
 import pandas as pd
 import hashlib
 

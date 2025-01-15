@@ -10,7 +10,7 @@ from breadbox.db.session import SessionWithUser
 from breadbox.config import Settings, get_settings
 from breadbox.crud.access_control import PUBLIC_GROUP_ID, TRANSIENT_GROUP_ID
 from breadbox.crud import group as group_crud
-from breadbox.crud import types as types_crud
+from breadbox.crud import dimension_types as types_crud
 from breadbox.crud import data_type as data_type_crud
 from breadbox.models.group import AccessType
 from breadbox.schemas.group import GroupIn, GroupEntryIn

@@ -20,7 +20,7 @@ from typing import Annotated
 from breadbox.db.session import SessionWithUser
 from .dependencies import get_db_with_user, get_user
 from ..config import Settings, get_settings
-from ..crud import types as type_crud
+from ..crud import dimension_types as type_crud
 from ..crud.dataset import get_datasets
 from ..schemas.types import (
     AnnotationTypeMap,

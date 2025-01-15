@@ -20,7 +20,7 @@ from breadbox.models.dataset import DimensionType
 from fastapi import HTTPException
 from breadbox.io.filestore_crud import save_dataset_file
 from ..service import dataset as dataset_service
-from ..crud import types as type_crud
+from ..crud import dimension_types as type_crud
 from ..crud import group as group_crud
 from ..crud import data_type as data_type_crud
 from ..crud import dataset as dataset_crud
