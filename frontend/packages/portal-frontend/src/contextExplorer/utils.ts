@@ -6,8 +6,6 @@ import {
   DataTypeStrings,
   OutGroupType,
   ContextExplorerDatasets,
-  ContextInfo,
-  TreeType,
 } from "./models/types";
 import { DataExplorerContext } from "@depmap/types";
 import qs from "qs";
@@ -499,14 +497,13 @@ export function getSelectedContextNode(
   contextPath: string[] | null,
   contextTree: ContextExplorerTree | undefined
 ) {
-  let selectedNode = null;
+  let selectedNode: ContextNode | null = null;
   let topContextNameInfo = ALL_SEARCH_OPTION;
 
   if (contextTree && contextPath && contextPath.length > 0) {
     if (contextPath[0]) {
       const selectedTree = contextTree;
 
-      // Make sure the lineageQueryParam is a valid contextTree key
       if (selectedTree) {
         topContextNameInfo = {
           subtype_code: selectedTree.root.subtype_code,
@@ -514,24 +511,45 @@ export function getSelectedContextNode(
           node_level: 0,
         };
         selectedNode = selectedTree.root;
-        if (contextPath.length > 1 && contextPath[1]) {
+
+        if (contextPath.length > 1 && selectedTree.children.length > 0) {
+          // For each subtype code in contextPath, find the node amongst the children
+          const getSelectedNode = (
+            node: ContextNode,
+            selectedCode: string
+          ): ContextNode | null => {
+            if (!node) {
+              return null; // Base case: reached the end of a branch without finding the target
+            }
+
+            if (node?.subtype_code === selectedCode) {
+              return node; // Base case: found the target node
+            }
+
+            // Recursive case: search in children
+            for (let index = 0; index < node.children.length; index++) {
+              const child = node.children[index];
+              const result: ContextNode | null = getSelectedNode(
+                child,
+                selectedCode
+              );
+              if (result !== null) {
+                return result; // Found the target in a child node
+              }
+            }
+
+            return null; // Target not found in this subtree
+          };
+
           const node = selectedTree.children.find(
-            (child) => child.subtype_code === contextPath[1]
+            (childNode) => childNode.subtype_code === contextPath[1]
           );
-
-          if (node) {
-            selectedNode = node;
-          }
-        }
-        if (contextPath.length > 2 && contextPath[2]) {
-          const node = selectedNode.children.find(
-            (child) => child.subtype_code === contextPath[2]
+          selectedNode = getSelectedNode(
+            node!,
+            contextPath[contextPath.length - 1]
           );
-
-          if (node) {
-            selectedNode = node;
-          }
         }
+        console.log(selectedNode);
       } else {
         // Invalid params, so default to loading All data
         deleteSpecificQueryParams(["context"]);

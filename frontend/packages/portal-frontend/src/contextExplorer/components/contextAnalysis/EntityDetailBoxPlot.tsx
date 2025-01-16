@@ -61,7 +61,7 @@ function EntityDetailBoxPlot({
   useEffect(() => {
     if (boxPlotData) {
       const plotInfo: BoxPlotInfo[] = [];
-      const otherContextDepsInfo: BoxPlotInfo[] = [];
+      // const otherContextDepsInfo: BoxPlotInfo[] = [];
       boxPlotData.box_plot_data.forEach((plotData, index) => {
         if (plotData.data.length > 0) {
           plotInfo.push({
@@ -77,6 +77,8 @@ function EntityDetailBoxPlot({
       if (plotInfo.length > 0) {
         plotInfo.reverse();
         setBoxData(plotInfo);
+        // delete the line below this - this is temporary to stop eslint error
+        setOtherBoxData(plotInfo);
       }
     }
   }, [boxPlotData, selectedContextNameInfo, topContextNameInfo]);

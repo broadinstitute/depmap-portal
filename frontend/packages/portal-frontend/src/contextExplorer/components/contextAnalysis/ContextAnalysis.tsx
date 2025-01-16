@@ -27,9 +27,6 @@ import {
   LEGEND_RANGE_6,
   LegendKey,
   LEGEND_RANGE_7,
-  LEGEND_RANGE_8,
-  LEGEND_RANGE_9,
-  LEGEND_RANGE_10,
   calcMinMax,
 } from "src/data-explorer-2/components/plot/prototype/plotUtils";
 import ContextAnalysisPlotPanel from "./ContextAnalysisPlotPanel";
@@ -507,6 +504,7 @@ function ContextAnalysis({
       }
 
       const { min, max } = calcMinMax(values);
+      console.log(min);
 
       if (entityType !== "gene") {
         const binNumber = 5;
@@ -539,7 +537,7 @@ function ContextAnalysis({
         [LEGEND_RANGE_7]: bins[6],
       };
     },
-    [entityType]
+    [entityType, getBins]
   );
 
   const continuousBins = useMemo(
@@ -696,6 +694,7 @@ function ContextAnalysis({
     datasetId,
     selectedPlotLabels,
     entityType,
+    treeType,
     dapi,
     topContextNameInfo,
     boxPlotFDRRange,

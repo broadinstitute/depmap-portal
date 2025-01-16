@@ -16,6 +16,26 @@
   outline: none;
 }
 
+.pseudoLink {
+  all: unset;
+  cursor: pointer;
+  color: #337ab7;
+  text-decoration: underline;
+  cursor: pointer;
+  padding-left: 3px;
+  padding-right: 3px;
+
+  &:hover,
+  &:focus {
+    color: #23527c;
+  }
+
+  &:focus-visible {
+    outline: 5px auto -webkit-focus-ring-color;
+    outline-offset: 3px;
+  }
+}
+
 .Tab:focus-visible {
   box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.6);
 }
@@ -130,6 +150,12 @@
   .pHeader {
     margin-top: 25px;
     font-size: 16px;
+    font-weight: bold;
+  }
+
+  .pSubHeader {
+    margin-top: 25px;
+    font-size: 14px;
     font-weight: bold;
   }
 

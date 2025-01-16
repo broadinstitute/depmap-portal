@@ -188,7 +188,8 @@ const ThreeTieredAccordion = (props: ThreeTieredAccordionProps) => {
       return children.sort((a, b) => {
         if (!a.model_ids || a.model_ids.length > b.model_ids.length) {
           return -1;
-        } else if (!b.model_ids || a.model_ids.length < b.model_ids.length) {
+        }
+        if (!b.model_ids || a.model_ids.length < b.model_ids.length) {
           return 1;
         }
         return 0;
@@ -210,7 +211,7 @@ const ThreeTieredAccordion = (props: ThreeTieredAccordionProps) => {
     } else {
       setStartingNode(null);
     }
-  }, [parentCodes]);
+  }, [parentCodes, node]);
 
   return (
     <>
@@ -218,8 +219,11 @@ const ThreeTieredAccordion = (props: ThreeTieredAccordionProps) => {
         topContextNameInfo.name !== "All" &&
         selectedTree.children.length > 0 &&
         childrenSortedByModelCount?.map((primaryDiseaseNode: ContextNode) => (
-          <div className={styles.treeContainer}>
-            {primaryDiseaseNode.children.length == 0 ? (
+          <div
+            className={styles.treeContainer}
+            key={primaryDiseaseNode.subtype_code}
+          >
+            {primaryDiseaseNode.children.length === 0 ? (
               <ContextSelectorButton
                 node={primaryDiseaseNode}
                 onRefineYourContext={onRefineYourContext}
@@ -247,7 +251,6 @@ export const RefineContextTree = (
     contextTree,
     onRefineYourContext,
     selectedContextNode,
-    selectedTab,
   } = refineContextTreeProps;
   const [selectedTree, setSelectedTree] = useState<ContextExplorerTree>();
 

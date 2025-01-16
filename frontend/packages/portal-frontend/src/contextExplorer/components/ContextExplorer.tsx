@@ -22,7 +22,8 @@ import {
   getSelectedContextNode,
 } from "../utils";
 import ContextExplorerTabs from "./ContextExplorerTabs";
-import LineageSearch from "./LineageSearch";
+import LeftSearchPanel from "./LeftSearchPanel";
+// import LineageSearch from "./LineageSearch";
 
 export const ContextExplorer = () => {
   const [lineageSearchOptions, setLineageSearchOptions] = useState<
@@ -146,7 +147,7 @@ export const ContextExplorer = () => {
         setContextPath(null);
       }
     },
-    [allContextData]
+    [allContextData, contextInfo, dapi]
   );
 
   const cellLineUrlRoot = useCallback(() => dapi.getCellLineUrlRoot(), [dapi]);
@@ -163,16 +164,6 @@ export const ContextExplorer = () => {
       className="icon"
     />
   );
-
-  console.log(lineageSearchOptions);
-
-  console.log(molecularSubtypeSearchOptions);
-
-  console.log(selectedTreeType);
-
-  console.log(contextInfo);
-
-  console.log(topContextNameInfo);
 
   return (
     <div className={styles.page}>
@@ -192,7 +183,7 @@ export const ContextExplorer = () => {
             molecularSubtypeSearchOptions &&
             selectedTreeType &&
             topContextNameInfo && (
-              <LineageSearch
+              <LeftSearchPanel
                 lineageSearchOptions={lineageSearchOptions}
                 molecularSubtypeSearchOptions={molecularSubtypeSearchOptions}
                 contextTree={contextInfo?.tree || null}
