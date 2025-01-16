@@ -12,11 +12,7 @@ export default function ElaraCustomAnalysesPage() {
   const apiContext = useContext(ApiContext);
 
   const launchCellLineSelectorModal = () =>
-    renderCellLineSelectorModal(
-      apiContext.getApi,
-      apiContext.getVectorCatalogApi,
-      cellLineSelectorContainer
-    );
+    renderCellLineSelectorModal(apiContext.getApi, cellLineSelectorContainer);
 
   return (
     <CustomAnalysesPage

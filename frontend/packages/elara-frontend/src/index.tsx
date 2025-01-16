@@ -12,7 +12,6 @@ import "bootstrap/dist/css/bootstrap.css";
 // Include this after bootstrap so we can override its styles.
 import "./index.scss";
 import { ApiContext } from "@depmap/api";
-import { VectorCatalogApi } from "@depmap/interactive";
 
 const DataExplorer = React.lazy(() => import("src/pages/DataExplorer"));
 const Datasets = React.lazy(() => import("@depmap/dataset-manager"));
@@ -45,9 +44,10 @@ const App = () => {
     })();
   }, [bbapi]);
 
-  const vectorCatalogApi = new VectorCatalogApi(bbapi);
   const getApi = () => bbapi;
-  const getVectorCatalogApi = () => vectorCatalogApi;
+  const getVectorCatalogApi = () => {
+    throw new Error("Vector Catalog API is no longer supported!");
+  };
 
   return (
     <ApiContext.Provider value={{ getApi, getVectorCatalogApi }}>
