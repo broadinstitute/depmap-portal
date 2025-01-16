@@ -77,7 +77,7 @@ function CellLineSelectorModal({
     Set<string>
   >(new Set());
 
-  const { getApi, getVectorCatalogApi } = useContext(ApiContext);
+  const { getApi } = useContext(ApiContext);
 
   useEffect(() => {
     getApi()
@@ -91,7 +91,7 @@ function CellLineSelectorModal({
           setSelection(modelNamesToIDs(initialSelection, td));
         }
       });
-  }, [useModelNames, initialSelection, getApi, getVectorCatalogApi]);
+  }, [useModelNames, initialSelection, getApi]);
 
   useEffect(() => {
     getApi()

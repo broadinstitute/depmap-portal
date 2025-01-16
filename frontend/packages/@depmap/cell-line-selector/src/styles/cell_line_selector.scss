@@ -3,6 +3,10 @@ $link_blue_hover: #23527c;
 $modal-height: 72vh;
 $bottom-div-height: 35px;
 
+.DimensionSelect {
+  margin-top: 12px;
+}
+
 // TODO: Get rid of :global and convert the corresponding component to CSS
 // Module format.
 :global {
