@@ -386,20 +386,14 @@ export default class ElaraDataSlicer extends React.Component<
 
   renderCellLineSelection = (): any => {
     const dapi = new ElaraApi("/");
-    const vectorCatalogApi = new VectorCatalogApi(dapi);
 
     const getDapi = () => dapi;
-    const getVectorCatalogApi = () => vectorCatalogApi;
     const cellLineSelectorContainer = document.getElementById(
       "cell_line_selector_modal"
     );
 
     const launchCellLineSelectorModal = () =>
-      renderCellLineSelectorModal(
-        getDapi,
-        getVectorCatalogApi,
-        cellLineSelectorContainer
-      );
+      renderCellLineSelectorModal(getDapi, cellLineSelectorContainer);
     const onCellLineLinkClick = () => {
       launchCellLineSelectorModal();
       // Need this click so that the tooltip doesn't stay open in front of the cell line modal

@@ -1,4 +1,4 @@
-import { MetadataSlices } from "@depmap/data-explorer-2";
+import { MetadataSlices } from "../../api";
 
 export const slicePrefix = (slices: MetadataSlices, value: string) => {
   let out = "";
