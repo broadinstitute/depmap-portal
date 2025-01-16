@@ -13,7 +13,7 @@ from breadbox.service import slice as slice_service
 from breadbox.service import metadata as metadata_service
 from typing import Tuple
 
-from breadbox.crud.types import get_dimension_type_labels_by_id
+from breadbox.crud.dimension_types import get_dimension_type_labels_by_id
 
 
 def _get_top_correlates(precomputed_assoc_table_path, dimension, given_id):

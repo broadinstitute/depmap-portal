@@ -20,7 +20,7 @@ from typing import Annotated
 from breadbox.db.session import SessionWithUser
 from .dependencies import get_db_with_user, get_user
 from ..config import Settings, get_settings
-from ..crud import types as type_crud
+from ..crud import dimension_types as type_crud
 from ..crud.dataset import get_datasets
 from ..schemas.types import (
     AnnotationTypeMap,
@@ -29,10 +29,11 @@ from ..schemas.types import (
     FeatureTypeOut,
     SampleTypeOut,
 )
+from typing import cast
 from ..io.data_validation import validate_dimension_type_metadata
 from ..schemas.custom_http_exception import UserError, ResourceNotFoundError
 from breadbox.models.dataset import AnnotationType
-import breadbox.crud.dataset as dataset_crud
+import breadbox.service.dataset as dataset_service
 from breadbox.schemas.types import (
     DimensionType,
     UpdateDimensionType,
@@ -42,6 +43,10 @@ from breadbox.schemas.types import (
 from breadbox.service import metadata as metadata_service
 from .settings import assert_is_admin_user
 from breadbox.db.util import transaction
+
+
+from breadbox.service import dataset as dataset_service
+from breadbox.service.dataset import check_id_mapping_is_valid
 
 router = APIRouter(prefix="/types", tags=["types"])
 log = getLogger(__name__)
@@ -162,7 +167,7 @@ def add_dimension_type(
             raise HTTPException(400, detail=str(e)) from e
 
     with transaction(db):
-        dimension_type = type_crud.add_dimension_type(
+        dimension_type = dataset_service.add_dimension_type(
             db,
             settings,
             user,
@@ -227,12 +232,14 @@ def add_feature_type(
         annotation_type_mapping_ = annotation_type_mapping.annotation_type_mapping
 
     if isinstance(id_mapping, IdMappingInsanity):
-        id_mapping = id_mapping.id_mapping
+        id_mapping_ = id_mapping.id_mapping
+    else:
+        id_mapping_ = id_mapping
 
-    assert isinstance(id_mapping, IdMapping) or id_mapping is None
+    assert isinstance(id_mapping_, IdMapping) or id_mapping_ is None
     reference_column_mappings: Dict[str, str] = {}
-    if id_mapping is not None:
-        reference_column_mappings = id_mapping.reference_column_mappings
+    if id_mapping_ is not None:
+        reference_column_mappings = id_mapping_.reference_column_mappings
 
     # hack: this endpoint is going away so for the time being and we don't have continous values in our
     # metadata at this time, don't worry about the units -- but not providing units causes an assert later
@@ -319,26 +326,31 @@ def update_sample_type_metadata(
     if metadata_file is None:
         raise HTTPException(400, f"Sample type metadata needs a 'metadata_file'.")
 
+    from typing import Any
+
     if isinstance(id_mapping, IdMappingInsanity):
-        id_mapping = id_mapping.id_mapping
+        id_mapping_ = cast(Dict[str, Any], id_mapping.id_mapping)
+    else:
+        id_mapping_ = id_mapping
+    assert isinstance(id_mapping_, dict) or id_mapping_ is None
 
     annotation_type_mapping_: Dict[str, AnnotationType] = {}
     if annotation_type_mapping is not None:
         annotation_type_mapping_ = annotation_type_mapping.annotation_type_mapping
 
-    try:
-        sample_type_in = TypeMetadataIn(
-            name=sample_type_name,
-            id_column=sample_type.id_column,
-            axis=sample_type.axis,
-            metadata_file=metadata_file,
-            taiga_id=taiga_id,
-            annotation_type_mapping=annotation_type_mapping_,
-            id_mapping=id_mapping,
-        )
-    except UserError as e:
-        raise e
+    axis = cast(Literal["sample", "feature"], sample_type.axis)
 
+    sample_type_in = TypeMetadataIn(
+        name=sample_type_name,
+        id_column=sample_type.id_column,
+        axis=axis,
+        metadata_file=metadata_file,
+        taiga_id=taiga_id,
+        annotation_type_mapping=annotation_type_mapping_,
+        id_mapping=id_mapping_,
+    )
+
+    assert isinstance(sample_type_in.annotation_type_mapping, dict)
     with transaction(db):
         try:
             metadata_df = validate_dimension_type_metadata(
@@ -347,12 +359,13 @@ def update_sample_type_metadata(
                 sample_type_in.name,
                 sample_type.id_column,
             )
-
-        except Exception as e:
+        except UserError as e:
             log.error(e)
-            raise HTTPException(400, detail=str(e))
+            raise e
 
-        type_crud.check_id_mapping_is_valid(db, sample_type_in.id_mapping)
+        _id_mapping = cast(Optional[Dict[str, str]], sample_type_in.id_mapping)
+        if _id_mapping is not None:
+            check_id_mapping_is_valid(db, _id_mapping)
 
         # hack: this endpoint is going away so for the time being and we don't have continous values in our
         # metadata at this time, don't worry about the units -- but not providing units causes an assert later
@@ -360,14 +373,14 @@ def update_sample_type_metadata(
             column_name: "value" for column_name in annotation_type_mapping_
         }
 
-        updated_sample_type = type_crud.update_dimension_type_metadata(
+        updated_sample_type = dataset_service.update_dimension_type_metadata(
             db,
             user,
             settings.filestore_location,
             sample_type,
             metadata_file.filename,
             metadata_df,
-            sample_type_in.annotation_type_mapping,
+            annotation_type_mapping_,
             taiga_id,
             reference_column_mappings=(
                 None
@@ -422,12 +435,14 @@ def update_feature_type_metadata(
         annotation_type_mapping_ = annotation_type_mapping.annotation_type_mapping
 
     if isinstance(id_mapping, IdMappingInsanity):
-        id_mapping = id_mapping.id_mapping
+        id_mapping_ = id_mapping.id_mapping
+    else:
+        id_mapping_ = id_mapping
 
-    assert isinstance(id_mapping, IdMapping) or id_mapping is None
+    assert isinstance(id_mapping_, IdMapping) or id_mapping_ is None
     reference_column_mappings: Dict[str, str] = {}
-    if id_mapping is not None:
-        reference_column_mappings = id_mapping.reference_column_mappings
+    if id_mapping_ is not None:
+        reference_column_mappings = id_mapping_.reference_column_mappings
 
     # always create a new dataset ID when the data changes
     # note: This is leaking datasets. This is a short term issue, as we want to replace these endpoints
@@ -441,7 +456,7 @@ def update_feature_type_metadata(
             feature_type.id_column,
         )
 
-        type_crud.check_id_mapping_is_valid(db, reference_column_mappings)
+        check_id_mapping_is_valid(db, reference_column_mappings)
 
         # hack: this endpoint is going away so for the time being and we don't have continous values in our
         # metadata at this time, don't worry about the units -- but not providing units causes an assert later
@@ -449,7 +464,7 @@ def update_feature_type_metadata(
             column_name: "value" for column_name in annotation_type_mapping_
         }
 
-        updated_feature_type = type_crud.update_dimension_type_metadata(
+        updated_feature_type = dataset_service.update_dimension_type_metadata(
             db,
             user,
             settings.filestore_location,
@@ -558,7 +573,7 @@ def add_dimension_type_endpoint(
     assert_is_admin_user(user, settings)
 
     with transaction(db):
-        result = type_crud.add_dimension_type(
+        result = dataset_service.add_dimension_type(
             db,
             settings,
             user,
@@ -639,7 +654,7 @@ def update_dimension_type_endpoint(
         raise ResourceNotFoundError(f"Dimension type {name} not found")
 
     with transaction(db):
-        type_crud.update_dimension_type(
+        dataset_service.update_dimension_type(
             db, user, settings.filestore_location, dimension_type, dimension_type_update
         )
 
@@ -656,7 +671,7 @@ def _dim_type_to_response(type: DimensionTypeModel):
         name=type.name,
         display_name=type.display_name,
         id_column=type.id_column,
-        axis=type.axis,
+        axis=cast(Literal["sample", "feature"], type.axis),
         metadata_dataset_id=type.dataset_id,
         properties_to_index=properties_to_index,
     )

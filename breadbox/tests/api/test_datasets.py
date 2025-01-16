@@ -4,7 +4,7 @@ import uuid
 import numpy as np
 import pandas as pd
 
-from breadbox.crud.types import get_dimension_type
+from breadbox.crud.dimension_types import get_dimension_type
 from ..utils import assert_status_not_ok, assert_status_ok, assert_task_failure
 
 from sqlalchemy import and_
@@ -26,7 +26,8 @@ from fastapi.testclient import TestClient
 from breadbox.api.dependencies import get_dataset
 from breadbox.io.filestore_crud import get_slice
 from breadbox.models.dataset import DimensionSearchIndex
-from breadbox.crud.dataset import get_datasets, populate_search_index
+from breadbox.crud.dataset import get_datasets
+from breadbox.service.search import populate_search_index
 
 from breadbox.models.dataset import PropertyToIndex
 from breadbox.schemas.dataset import ColumnMetadata

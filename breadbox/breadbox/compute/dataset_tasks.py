@@ -28,8 +28,8 @@ from breadbox.schemas.dataset import (
     DatasetResponse,
 )
 from ..config import get_settings
-from ..crud import dataset as dataset_crud
-from ..crud import types as type_crud
+from ..service import dataset as dataset_service
+from ..crud import dimension_types as type_crud
 from ..crud import group as group_crud
 from ..crud import data_type as data_type_crud
 from ..io.data_validation import validate_and_upload_dataset_files
@@ -263,7 +263,7 @@ def upload_dataset(
         dataset_md5=None,
     )
 
-    added_dataset = dataset_crud.add_matrix_dataset(
+    added_dataset = dataset_service.add_matrix_dataset(
         db,
         user,
         dataset,

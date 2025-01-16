@@ -4,7 +4,7 @@ from fastapi import Body, Depends, HTTPException
 
 from breadbox.api.dependencies import get_db_with_user
 from breadbox.config import Settings, get_settings
-from breadbox.crud import types as types_crud
+from breadbox.crud import dimension_types as types_crud
 from breadbox.schemas.custom_http_exception import UserError
 from breadbox.db.session import SessionWithUser
 from breadbox.schemas.context import (

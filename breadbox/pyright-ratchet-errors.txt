@@ -26,14 +26,4 @@ hdf5_utils.py: error: "__getitem__" method not defined on type "Datatype" (repor
 health_check.py: error: Cannot access attribute "delay" for class "function"
 proxy.py: error: Argument of type "bytes" cannot be assigned to parameter "data" of type "RequestData | None" in function "post"
 test_compute.py: error: Argument missing for parameter "self" (reportCallIssue)
-types.py: error: Argument of type "Dict[str, AnnotationType] | None" cannot be assigned to parameter "annotation_type_mapping" of type "Dict[str, AnnotationType]" in function "update_dimension_type_metadata"
-types.py: error: Argument of type "Dict[str, AnnotationType] | None" cannot be assigned to parameter "annotation_type_mapping" of type "Dict[str, AnnotationType]" in function "validate_dimension_type_metadata"
-types.py: error: Argument of type "Dict[str, Any] | None" cannot be assigned to parameter "reference_column_mappings" of type "Dict[str, str]" in function "check_id_mapping_is_valid"
-types.py: error: Argument of type "Json[IdMappingInsanity] | None" cannot be assigned to parameter "id_mapping" of type "Dict[str, Any] | None" in function "__init__" (reportArgumentType)
-types.py: error: Argument of type "Text" cannot be assigned to parameter "axis" of type "Literal['feature', 'sample']" in function "__init__"
-types.py: error: Argument of type "str | None" cannot be assigned to parameter "file_name" of type "str" in function "update_dimension_type_metadata"
-types.py: error: Cannot assign to attribute "dataset_id" for class "DimensionType"
-types.py: error: Expression of type "IdMapping" is incompatible with declared type "Json[IdMappingInsanity] | None"
-types.py: error: Expression of type "None" cannot be assigned to parameter of type "Dict[str, AnnotationType]"
-types.py: error: No overloads for "rename" match the provided arguments
 utils.py: error: Cannot access attribute "detail" for class "Exception"

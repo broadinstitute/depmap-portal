@@ -10,13 +10,12 @@ from breadbox.db.session import SessionWithUser
 from breadbox.config import Settings, get_settings
 from breadbox.crud.access_control import PUBLIC_GROUP_ID, TRANSIENT_GROUP_ID
 from breadbox.crud import group as group_crud
-from breadbox.crud import types as types_crud
-from breadbox.crud import dataset as dataset_crud
+from breadbox.crud import dimension_types as types_crud
 from breadbox.crud import data_type as data_type_crud
 from breadbox.models.group import AccessType
 from breadbox.schemas.group import GroupIn, GroupEntryIn
-from breadbox.crud.dataset import populate_search_index
 from pydantic import ValidationError
+from breadbox.service.dataset import add_dimension_type
 
 import os
 import shutil
@@ -289,7 +288,7 @@ def _populate_minimal_data(db: SessionWithUser, settings: Settings):
     # Define the generic type
     existing_generic_type = types_crud.get_dimension_type(db, name="generic")
     if not existing_generic_type:
-        types_crud.add_dimension_type(
+        add_dimension_type(
             db,
             settings,
             user=admin_user,
