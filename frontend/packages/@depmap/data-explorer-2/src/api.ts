@@ -271,7 +271,11 @@ export async function fetchContextSummary(
 
 export async function fetchMetadataColumn(
   slice_id: string
-): Promise<{ slice_id: string; indexed_values: Record<string, string> }> {
+): Promise<{
+  slice_id: string;
+  label: string;
+  indexed_values: Record<string, string>;
+}> {
   return postJson("/get_metadata", { metadata: { slice_id } });
 }
 

@@ -5,11 +5,7 @@ import ErrorBoundary from "src/common/components/ErrorBoundary";
 import { InteractivePage } from "@depmap/interactive";
 import { getQueryParams } from "@depmap/utils";
 import { renderCellLineSelectorModalUsingBBApi } from "@depmap/cell-line-selector";
-import {
-  getBreadboxApi,
-  apiFunctions,
-  bbGetVectorCatalogApi,
-} from "src/common/utilities/context";
+import { getBreadboxApi, apiFunctions } from "src/common/utilities/context";
 import PlotlyLoader from "src/plot/components/PlotlyLoader";
 import { ApiContext } from "@depmap/api";
 
@@ -31,7 +27,6 @@ const App = () => {
   const launchCellLineSelectorModal = () =>
     renderCellLineSelectorModalUsingBBApi(
       getBreadboxApi,
-      bbGetVectorCatalogApi,
       cellLineSelectorContainer
     );
 

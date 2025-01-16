@@ -3,7 +3,7 @@ import { Grid, Row, Col, Tabs, Tab, SelectCallback } from "react-bootstrap";
 
 import { enabledFeatures } from "@depmap/globals";
 import { DepmapApi } from "src/dAPI";
-import { getDapi, getVectorCatalogApi } from "src/common/utilities/context";
+import { getDapi } from "src/common/utilities/context";
 import WideTable, { WideTableColumns } from "@depmap/wide-table";
 import { titleCase } from "@depmap/utils";
 import CellignerCellLinesForTumorsControlPanel from "./CellignerCellLinesForTumorsControlPanel";
@@ -201,7 +201,7 @@ export default class CellignerPage extends React.Component<Props, State> {
   launchCellLineSelectorModal() {
     const container = document.getElementById("cell_line_selector_modal"); // defined in layout.html
 
-    renderCellLineSelectorModal(getDapi, getVectorCatalogApi, container);
+    renderCellLineSelectorModal(getDapi, container);
   }
 
   handleSelectTab(activeTab: ValidTab) {

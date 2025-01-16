@@ -6,6 +6,7 @@ export { default as DimensionSelect } from "./src/components/DimensionSelect";
 export { default as SliceLabelSelect } from "./src/components/DimensionSelect/SliceLabelSelect";
 export { default as ContextBuilderModal } from "./src/components/ContextBuilder/ContextBuilderModal";
 export { default as ContextManager } from "./src/components/ContextManager";
+export { default as DatasetMetadataSelector } from "./src/components/DatasetMetadataSelector";
 
 export {
   fetchContextLabels,
@@ -18,6 +19,7 @@ export {
   fetchGeneTeaEnrichment,
   fetchGeneTeaTermContext,
   fetchLinearRegression,
+  fetchMetadataColumn,
   fetchMetadataSlices,
   fetchPlotDimensions,
   fetchWaterfall,
@@ -52,6 +54,7 @@ export {
 
 export {
   capitalize,
+  convertDimensionToSliceId,
   getDimensionTypeLabel,
   isCompleteDimension,
   isCompleteExpression,
