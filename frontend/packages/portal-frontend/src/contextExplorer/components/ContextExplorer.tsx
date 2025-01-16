@@ -93,6 +93,10 @@ export const ContextExplorer = () => {
         const selectedSubtypeCode = params.context!.toString();
         const context = await dapi.getContextPath(selectedSubtypeCode);
         setContextPath(context);
+        const newContextInfo = await dapi.getContextExplorerContextInfo(
+          context[0]
+        );
+        setContextInfo(newContextInfo);
       }
     })();
   }, [dapi]);
