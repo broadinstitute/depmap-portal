@@ -73,7 +73,7 @@ const lowerLevelSelectCustomStyles: any = {
   }),
   menu: (base: any) => ({
     ...base,
-    minWidth: 500, // Set the desired width here
+    minWidth: 400, // Set the desired width here
     maxWidth: 600,
     width: "fit-content",
     zIndex: 999,
@@ -91,11 +91,25 @@ const formatOptionLabel = (
   menuIsOpen: boolean
 ) => {
   let marginLeft = (option.level - 1) * 35;
+  const numModelsStr = ` (${option.numModels})`;
   if (!menuIsOpen) {
     marginLeft = 0;
+
+    return (
+      <div
+        style={{
+          overflow: "hidden",
+          paddingLeft: marginLeft,
+          maxWidth: "100%",
+          whiteSpace: "nowrap",
+          textOverflow: "ellipsis",
+        }}
+      >
+        <strong>{option.value}</strong> {numModelsStr} {option.label}
+      </div>
+    );
   }
 
-  const numModelsStr = ` (${option.numModels})`;
   return (
     <div
       style={{
@@ -105,9 +119,7 @@ const formatOptionLabel = (
         height: "100%",
       }}
     >
-      <p style={{ margin: 0 }}>
-        <strong>{option.value}</strong> {numModelsStr} {option.label}
-      </p>
+      <strong>{option.value}</strong> {numModelsStr} {option.label}
     </div>
   );
 };
@@ -245,7 +257,6 @@ const ContextTree = (props: ContextTreeProps) => {
             }
             onChange={(option: any) => {
               if (option) {
-                console.log(option);
                 onRefineYourContext(null, contextTree, option.value);
               } else {
                 onRefineYourContext(
