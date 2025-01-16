@@ -271,8 +271,12 @@ class ContextSearchOptions(
         # print("HERE")
         # make_subtype_context_sample_data()
         # breakpoint()
+        # load_subtype_tree(
+        #     "/Users/amourey/dev/Context Explorer Data/SubtypeTree_FINAL.csv"
+        # )
+        # db.session.commit()
         # load_subtype_contexts(
-        #     "/Users/amourey/dev/Context Explorer Data/sample_subtype_matrix_with_molecular_subtypes.csv"
+        #     "/Users/amourey/dev/Context Explorer Data/ContextMatrix_FINAL.csv"
         # )
         # db.session.commit()
         # breakpoint()

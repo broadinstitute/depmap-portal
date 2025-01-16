@@ -184,7 +184,7 @@ def load_subtype_contexts(subtype_context_file_path, must=True):
     First get a dict of for every subtype context, all the depmap models in it
     """
     models_per_context = get_depmap_models_in_subtype_context(
-        subtype_context_file_path, must=must
+        subtype_context_file_path, must=False
     )
     for subtype_code, models in models_per_context.items():
         db.session.add(

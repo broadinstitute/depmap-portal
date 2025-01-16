@@ -166,6 +166,7 @@ def _load_subtype_tree(df):
 
         return None
 
+    seen_codes = []
     for index, row in df.iterrows():
         oncotree_code = row["OncotreeCode"]
         depmap_model_type = row["DepmapModelType"]
@@ -215,4 +216,5 @@ def _load_subtype_tree(df):
 def load_subtype_tree(db_file):
     df = pd.read_csv(db_file)
     df = df.replace(np.nan, None)
+
     _load_subtype_tree(df)

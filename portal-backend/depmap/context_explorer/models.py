@@ -34,6 +34,9 @@ def _get_child_lineages_next_lineage_level_from_root_info(
     next_lineage_level_num = current_level + 1
     next_lineage_level = "level_" + str(next_lineage_level_num)
 
+    if next_lineage_level not in sorted:
+        return None, None
+
     children = sorted[
         (sorted[f"level_{current_level}"] == current_code)
         & (sorted["node_level"] == next_lineage_level_num)
@@ -94,12 +97,11 @@ class ContextExplorerTree(dict):
                     self.add_node(node)
 
             for child in self.children:
-                if child.subtype_code == child_subtype_code:
-                    child.create_context_tree_from_root_info(
-                        tree_df=sorted,
-                        current_node_code=child_subtype_code,
-                        node_level=next_level,
-                    )
+                child.create_context_tree_from_root_info(
+                    tree_df=sorted,
+                    current_node_code=child.subtype_code,
+                    node_level=next_level,
+                )
 
 
 class ContextNode(dict):
@@ -176,12 +178,11 @@ class ContextNode(dict):
                     self.add_node(node)
 
             for child in self.children:
-                if child.subtype_code == child_subtype_code:
-                    child.create_context_tree_from_root_info(
-                        tree_df=sorted,
-                        current_node_code=child_subtype_code,
-                        node_level=next_level,
-                    )
+                child.create_context_tree_from_root_info(
+                    tree_df=sorted,
+                    current_node_code=child.subtype_code,
+                    node_level=next_level,
+                )
 
 
 # Separated from the class method for testing purposes
