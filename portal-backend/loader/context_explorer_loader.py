@@ -11,7 +11,7 @@ import pandas as pd
 import numpy as np
 from depmap.database import db
 from depmap.dataset.models import DependencyDataset
-from depmap.context.models_new import SubtypeNode, SubtypeNodeAlias, TreeType
+from depmap.context.models_new import SubtypeNode
 from flask import current_app
 
 
@@ -193,24 +193,6 @@ def _load_subtype_tree(df):
 
         level_5 = get_subtype_code_from_node_name(row["Level5"])
 
-        alias_names = (
-            None if row["NodeAliasName"] is None else row["NodeAliasName"].split(";")
-        )
-        alias_codes = (
-            None if row["NodeAliasCode"] is None else row["NodeAliasCode"].split(";")
-        )
-
-        if alias_names:
-            assert len(alias_names) == len(alias_codes)
-            subtype_node_aliases = [
-                SubtypeNodeAlias(
-                    alias_name=alias.strip(), alias_subtype_code=alias_codes[i]
-                )
-                for i, alias in enumerate(alias_names)
-            ]
-        else:
-            subtype_node_aliases = []
-
         subtype_node = SubtypeNode(
             subtype_code=subtype_code,
             oncotree_code=oncotree_code,
@@ -225,7 +207,6 @@ def _load_subtype_tree(df):
             level_3=level_3,
             level_4=level_4,
             level_5=level_5,
-            subtype_node_alias=subtype_node_aliases,
         )
 
         db.session.add(subtype_node)

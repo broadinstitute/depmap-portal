@@ -26,12 +26,7 @@ from depmap.cell_line.models import (
     Conditions,
     STRProfile,
 )
-from depmap.context.models_new import (
-    SubtypeContext,
-    SubtypeContextEntity,
-    SubtypeNode,
-    SubtypeNodeAlias,
-)
+from depmap.context.models_new import SubtypeContext, SubtypeContextEntity, SubtypeNode
 from depmap.context.models import Context, ContextEntity, ContextEnrichment
 from depmap.database import db as _db
 from depmap.dataset.models import (
@@ -880,21 +875,6 @@ class SubtypeNodeFactory(SQLAlchemyModelFactory):
         level_0 = subtype_code
     else:
         level_0 = factory.Sequence(lambda number: "level_0_{}".format(number))
-
-    subtype_node_alias = factory.LazyAttribute(lambda o: [SubtypeNodeAliasFactory()])
-
-
-class SubtypeNodeAliasFactory(SQLAlchemyModelFactory):
-    class Meta:
-        model = SubtypeNodeAlias
-        sqlalchemy_session = _db.session
-
-    alias_name = factory.Sequence(
-        lambda number: "subtype_node_alias_name_{}".format(number)
-    )
-    alias_subtype_code = factory.Sequence(
-        lambda number: "subtype_node_alias_subtype_code_{}".format(number)
-    )
 
 
 class SubtypeContextFactory(SQLAlchemyModelFactory):
