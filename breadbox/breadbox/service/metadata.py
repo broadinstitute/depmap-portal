@@ -2,7 +2,7 @@ import logging
 from typing import Any, Optional
 
 from breadbox.crud import dataset as dataset_crud
-from breadbox.crud import types as types_crud
+from breadbox.crud import dimension_types as types_crud
 from breadbox.db.session import SessionWithUser
 from breadbox.schemas.custom_http_exception import ResourceNotFoundError
 from breadbox.models.dataset import (

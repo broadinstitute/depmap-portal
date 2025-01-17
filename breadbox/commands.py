@@ -10,13 +10,14 @@ from breadbox.db.session import SessionWithUser
 from breadbox.config import Settings, get_settings
 from breadbox.crud.access_control import PUBLIC_GROUP_ID, TRANSIENT_GROUP_ID
 from breadbox.crud import group as group_crud
-from breadbox.crud import types as types_crud
-from breadbox.crud import dataset as dataset_crud
+from breadbox.crud import dimension_types as types_crud
 from breadbox.crud import data_type as data_type_crud
+from breadbox.db.util import transaction
 from breadbox.models.group import AccessType
 from breadbox.schemas.group import GroupIn, GroupEntryIn
-from breadbox.crud.dataset import populate_search_index
 from pydantic import ValidationError
+from breadbox.service.dataset import add_dimension_type
+import logging
 
 import os
 import shutil
@@ -63,6 +64,8 @@ def shell():
 
 @cli.command()
 def upgrade_db():
+    logging.basicConfig(level=logging.INFO)
+
     # Create and/or upgrade the database
     _upgrade_db()
 
@@ -87,9 +90,49 @@ def _get_db_connection():
     return db
 
 
+def _regenerate_entire_search_index(db: SessionWithUser):
+    from breadbox.crud.dimension_types import get_dimension_types, get_dimension_type
+    from breadbox.service.search import populate_search_index_after_update
+
+    dimension_type_names = [x.name for x in get_dimension_types(db)]
+    # re-look up each dimension_type by name to make sure the instance of dimension_type we have is associated with
+    # the session after we clear it each loop. If we were looping over instances of dimension_types, the call to expunge_all
+    # could cause problems, because the next instance would be in a "detached" state.
+    with transaction(db):
+        for dimension_type_name in dimension_type_names:
+            dimension_type = get_dimension_type(db, dimension_type_name)
+            assert dimension_type is not None
+            populate_search_index_after_update(db, dimension_type)
+            # I'm concerned about sqlalchemy collecting too many objects in memory, so write everything to the DB
+            # and then clear the db session for each call to populate_search_index_after_update
+            db.flush()
+            db.expunge_all()
+
+
+def _post_alembic_upgrade(db: SessionWithUser):
+    """This method is called after we apply alembic schema migrations. Alembic migrations are great for cases which are
+    simple enough that they can be achieved with SQL or a small amount of Python. However, we can't use any
+    crud/service methods until the schema is fully updated. If there's anything you want to run _after_ the schema is
+    fully up to date, you can put it here. (And if it's not something very quick, you may want to add something to
+    record that that step was run so that it doesn't happen every time the DB is upgraded)"""
+
+    # if we've done anything to the schema for the search index, it's easiest to just delete all the
+    # contents and regenerate it. So, check to see if the search index is empty, and if so, that's a sign we've
+    # truncated it, and we should regenerate the whole thing.
+    from breadbox.models.dataset import DimensionSearchIndex
+
+    if db.query(DimensionSearchIndex).count() == 0:
+        print(
+            "No entries in DimensionSearchIndex -- proceeding to regenerate the search index"
+        )
+        _regenerate_entire_search_index(db)
+        print("The search index is regenerated")
+
+
 def _upgrade_db():
     # This has the side effect of create a SQLite database if one doesn't already exist
     subprocess.run(["alembic", "upgrade", "head"], check=True)
+    _post_alembic_upgrade(_get_db_connection())
 
 
 @cli.command()
@@ -253,23 +296,6 @@ def recreate_dev_db():
     db.close()
 
 
-@cli.command("populate-index")
-@click.option("--dataset-id")
-def populate_index(dataset_id: Optional[str] = None):
-    db = _get_db_connection()
-    settings = get_settings()
-    user = settings.admin_users[0]
-
-    if dataset_id:
-        populate_search_index(db, user, dataset_id)
-    else:
-        datasets = dataset_crud.get_datasets(db, user, None, None, None, None, None)
-        for dataset in datasets:
-            populate_search_index(db, user, dataset.id)
-    db.commit()
-    db.close()
-
-
 def _populate_minimal_data(db: SessionWithUser, settings: Settings):
     """Populate the database with essential data if it does not already have it."""
     admin_user = settings.admin_users[0]
@@ -306,7 +332,7 @@ def _populate_minimal_data(db: SessionWithUser, settings: Settings):
     # Define the generic type
     existing_generic_type = types_crud.get_dimension_type(db, name="generic")
     if not existing_generic_type:
-        types_crud.add_dimension_type(
+        add_dimension_type(
             db,
             settings,
             user=admin_user,

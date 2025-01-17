@@ -16,9 +16,8 @@ from sqlalchemy.orm import relationship, backref
 from sqlalchemy.sql import func
 from breadbox.schemas.dataset import ColumnMetadata
 
-# from sqlalchemy.orm.decl_api import declared_attr
 from breadbox.db.base_class import Base, UUIDMixin
-from breadbox.models.group import Group, GroupMixin, ReferencedGroupMixin
+from breadbox.models.group import GroupMixin
 from breadbox.models.data_type import DataType
 from typing import Any, TypeVar, Type, TYPE_CHECKING
 from ..schemas.dataset import ValueType, AnnotationType
@@ -127,18 +126,12 @@ class TabularDataset(Dataset):
         # I'm not sure that this is the best way to approach this, but computed properties are
         # the smallest change I can think of to accommodate how things work already.
 
-        # first populate a map so we can look up the data type names per column
-        column_refs = {}
-        for column_ref in self.dataset_references:
-            column_refs[
-                column_ref.column
-            ] = column_ref.referenced_dataset.index_type_name
         columns = {}
         for dimension in self.dimensions:
             columns[dimension.given_id] = ColumnMetadata(
                 units=dimension.units,
                 col_type=dimension.annotation_type,
-                references=column_refs.get(dimension.given_id),
+                references=dimension.references_dimension_type_name,
             )
         return columns
 
@@ -259,6 +252,11 @@ class TabularColumn(Dimension):
         uselist=True,
     )
 
+    references_dimension_type_name = Column(
+        String, ForeignKey("dimension_type.name"), nullable=True
+    )
+    references_dimension_type = relationship(DimensionType)
+
 
 class TabularCell(Base, GroupMixin):
     """
@@ -290,68 +288,40 @@ class DimensionSearchIndex(Base, UUIDMixin, GroupMixin):
     __tablename__ = "dimension_search_index"
 
     __table_args__ = (
-        Index("idx_dimension_search_index_dimension_id", "dimension_id",),
         # the following indices are for speeding up querying to search index, but
         # not 100% confident this is the optimal combination of indices. However,
         # testing the get dimensions endpoint suggests that these are "good enough"
         # for now.
         Index("idx_dim_search_index_perf_1", "value"),
-        Index("idx_dim_search_index_perf_2", "type_name", "value"),
+        Index("idx_dim_search_index_perf_2", "dimension_type_name", "value"),
         Index(
-            "idx_dim_search_index_perf_3", "dimension_given_id", "type_name", "value"
+            "idx_dim_search_index_perf_4",
+            "dimension_given_id",
+            "dimension_type_name",
+            "value",
         ),
     )
 
-    dimension_id = Column(
-        String, ForeignKey("dimension.id", ondelete="CASCADE"), nullable=False
-    )
-    dimension = relationship(
-        Dimension,
-        backref=backref(
-            "dimension_search_indexes",
-            cascade="all, delete-orphan",
-            passive_deletes=True,
-        ),
-    )
-    dimension_given_id = Column(String, nullable=False)
-    label = Column(String, nullable=False)
     property = Column(String, nullable=False)
     value = Column(String, nullable=True)
-    priority = Column(Integer, nullable=True)
-    axis = Column(String, nullable=False)
-    type_name = Column(String, nullable=False)
-
-
-class DatasetReference(Base, UUIDMixin, GroupMixin, ReferencedGroupMixin):
-    __tablename__ = "dataset_reference"
-
-    dataset_id = Column(
-        String, ForeignKey("dataset.id", ondelete="CASCADE"), nullable=False
+    label = Column(String, nullable=False)
+    # the uk for the bag of words
+    dimension_type_name = Column(
+        String, ForeignKey("dimension_type.name", ondelete="CASCADE"), nullable=False
     )
-    dataset = relationship(
-        Dataset,
-        foreign_keys=[dataset_id],
-        backref=backref("dataset_references", cascade="all, delete-orphan"),
-    )
-    column = Column(String, nullable=False)
-    referenced_dataset_id = Column(
-        String, ForeignKey("dataset.id", ondelete="CASCADE"), nullable=False
-    )
-    referenced_dataset = relationship(
-        Dataset,
-        foreign_keys=[referenced_dataset_id],
-        backref=backref("referred_by_dataset", cascade="all, delete-orphan"),
-    )
+    dimension_type = relationship(DimensionType,)
+    dimension_given_id = Column(String, nullable=False)
 
 
 class PropertyToIndex(Base, UUIDMixin, GroupMixin):
     __tablename__ = "property_to_index"
 
-    dataset_id = Column(
-        String, ForeignKey("dataset.id", ondelete="CASCADE"), nullable=False
+    dimension_type_name = Column(
+        String, ForeignKey("dimension_type.name", ondelete="CASCADE"), nullable=False
     )
-    dataset = relationship(
-        Dataset, backref=backref("properties_to_index", cascade="all, delete-orphan"),
+    dimension_type = relationship(
+        DimensionType,
+        backref=backref("properties_to_index", cascade="all, delete-orphan"),
     )
     property = Column(String, nullable=False)
 
