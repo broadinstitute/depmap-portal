@@ -11,8 +11,7 @@ from depmap.cell_line.views import (
     get_all_cell_line_gene_effects,
     get_all_cell_line_compound_sensitivity,
     get_cell_line_col_index,
-    get_compound_labels_by_index,
-    get_gene_labels_by_index,
+    get_compound_labels_by_experiment_id,
     get_related_models,
     get_rows_with_lowest_z_score,
 )
@@ -258,9 +257,8 @@ def test_get_all_cell_line_gene_effects(empty_db_mock_downloads):
     empty_db_mock_downloads.session.flush()
     interactive_test_utils.reload_interactive_config()
 
-    cell_line_col_index = 0
     actual_df = get_all_cell_line_gene_effects(
-        dataset_name=dataset_name.name, cell_line_col_index=cell_line_col_index
+        dataset_name=dataset_name.name, model_id=cell_lines[0].model_id
     )
 
     # Check that all non-null rows are included and have the correct gene names
@@ -298,9 +296,8 @@ def test_get_all_cell_line_compound_sensitivities(empty_db_mock_downloads):
     empty_db_mock_downloads.session.flush()
     interactive_test_utils.reload_interactive_config()
 
-    cell_line_col_index = 0
     actual_df = get_all_cell_line_compound_sensitivity(
-        dataset_name=dataset_name.name, cell_line_col_index=cell_line_col_index
+        dataset_name=dataset_name.name, model_id=cell_lines[0].model_id
     )
 
     # Check that all non-null rows are included and have the correct gene names
@@ -396,7 +393,6 @@ def test_get_rows_with_lowest_z_score(empty_db_mock_downloads):
     actual_result = get_rows_with_lowest_z_score(
         dataset_name=dataset_name.name,
         model_id=cell_lines[col_index].model_id,
-        labels_by_row_index=get_gene_labels_by_index(dataset_name.name),
     )
     assert actual_result["model_id"] == cell_lines[col_index].model_id
     assert actual_result["cell_line_col_index"] == col_index
