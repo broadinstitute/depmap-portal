@@ -58,6 +58,7 @@ def insert_cell_lines(df):
         public_comments = _coerce_na(row["PublicComments"])
         age_category = _coerce_na(row["AgeCategory"])
         ccle_name = _coerce_na(row["CCLEName"])
+        patient_id = _coerce_na(row["PatientID"])
 
         json_encoded_metadata = json.dumps({k: _coerce_na(v) for k, v in row.items()})
 
