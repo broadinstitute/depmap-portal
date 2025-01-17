@@ -73,6 +73,7 @@ def insert_cell_lines(df):
             image_filename=image_filename,
             public_comments=public_comments,
             age_category=age_category,
+            patient_id=patient_id,
             json_encoded_metadata=json_encoded_metadata,
         )
 
