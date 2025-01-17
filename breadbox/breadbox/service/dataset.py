@@ -31,7 +31,7 @@ from ..crud.dimension_types import (
 )
 from ..crud import dimension_types as types_crud
 
-from ..service.search import populate_search_index
+from ..service.search import populate_search_index_after_update
 from typing import Any, Dict, List, Literal, Optional, Type, Union
 from uuid import uuid4
 
@@ -527,7 +527,7 @@ def add_dimension_type(
             db, name=name, display_name=display_name, id_column=id_column, axis=axis,
         )
 
-    populate_search_index(db, dimension_type)
+    populate_search_index_after_update(db, dimension_type)
 
     return dimension_type
 
@@ -613,7 +613,7 @@ def update_dimension_type(
             metadata_dataset.group_id,
         )
 
-        populate_search_index(db, dimension_type)
+        populate_search_index_after_update(db, dimension_type)
 
     if "display_name" in given_updated_fields:
         dimension_type.display_name = given_updated_fields["display_name"]
@@ -698,7 +698,7 @@ def update_dimension_type_metadata(
 
     db.flush()
 
-    populate_search_index(db, dimension_type)
+    populate_search_index_after_update(db, dimension_type)
 
     db.flush()
     return dimension_type

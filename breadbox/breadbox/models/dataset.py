@@ -16,9 +16,8 @@ from sqlalchemy.orm import relationship, backref
 from sqlalchemy.sql import func
 from breadbox.schemas.dataset import ColumnMetadata
 
-# from sqlalchemy.orm.decl_api import declared_attr
 from breadbox.db.base_class import Base, UUIDMixin
-from breadbox.models.group import Group, GroupMixin, ReferencedGroupMixin
+from breadbox.models.group import GroupMixin
 from breadbox.models.data_type import DataType
 from typing import Any, TypeVar, Type, TYPE_CHECKING
 from ..schemas.dataset import ValueType, AnnotationType
@@ -303,18 +302,6 @@ class DimensionSearchIndex(Base, UUIDMixin, GroupMixin):
         ),
     )
 
-    # The dimension which owns the property. (One should be able to group by dimension_id to get the bag of words associated with that dimension)
-    # dimension_id = Column(
-    #     String, ForeignKey("dimension.id", ondelete="CASCADE"), nullable=False
-    # )
-    # dimension = relationship(
-    #     Dimension,
-    #     backref=backref(
-    #         "dimension_search_indexes",
-    #         cascade="all, delete-orphan",
-    #         passive_deletes=True,
-    #     ),
-    # )
     property = Column(String, nullable=False)
     value = Column(String, nullable=True)
     label = Column(String, nullable=False)

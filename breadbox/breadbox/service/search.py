@@ -34,6 +34,10 @@ class MetadataCacheEntry:
     properties_to_index_df: pd.DataFrame
     columns_metadata: Dict[str, ColumnMetadata]
     label_by_given_id: Dict[str, str]
+    rows_by_index: Dict[str, Dict[str, str]]
+
+    def get_properties_dict(self, given_id: str):
+        return self.rows_by_index.get(given_id)
 
 
 class MetadataCache:
@@ -53,11 +57,8 @@ class MetadataCache:
             if dimension_type.dataset is None:
                 columns_metadata = {}
                 properties_to_index_df = pd.DataFrame({})
-                dimension_id_by_given_id = {}
                 label_by_given_id = {}
             else:
-                print(dimension_type.dataset.index_type_name)
-
                 properties_to_index = [
                     x.property for x in dimension_type.properties_to_index
                 ]
@@ -68,28 +69,38 @@ class MetadataCache:
                     properties_to_index=properties_to_index,
                 )
 
-                columns_metadata = dimension_type.dataset.columns_metadata
+                columns_metadata = dict(dimension_type.dataset.columns_metadata)
 
                 label_by_given_id = get_dimension_type_metadata_col(
                     self.db, dimension_type_name=dimension_type.name, col_name="label"
                 )
 
+            rows_by_index = {}
+            for record in properties_to_index_df.to_records():
+                rows_by_index[record.index] = record
+
             entry = MetadataCacheEntry(
                 properties_to_index_df=properties_to_index_df,
                 columns_metadata=columns_metadata,
                 label_by_given_id=label_by_given_id,
+                rows_by_index=rows_by_index,
             )
             self.cache[dimension_type_name] = entry
 
         return entry
 
 
-def populate_search_index(db: SessionWithUser, dimension_type: DimensionType):
+def populate_search_index_after_update(
+    db: SessionWithUser, dimension_type: DimensionType
+):
+    """
+    Update the search index for all dimension_types impacted by `dimension_type` changing in some way.
+    """
     impacted_dimension_types = _get_datatypes_referencing(db, dimension_type.name)
 
     md = MetadataCache(db)
     for impacted_dimension_types in impacted_dimension_types:
-        _refresh_search_index_for_dimension_type(db, impacted_dimension_types, md)
+        refresh_search_index_for_dimension_type(db, impacted_dimension_types, md)
     db.flush()
 
 
@@ -102,12 +113,15 @@ def _delete_search_index_records(db: SessionWithUser, dimension_type: DimensionT
     return True
 
 
-def _refresh_search_index_for_dimension_type(
+def refresh_search_index_for_dimension_type(
     db: SessionWithUser, dimension_type_name: str, metadata_cache: MetadataCache
 ):
-    log.info(
-        "_refresh_search_index_for_dimension_type %s starting", dimension_type_name
-    )
+    """
+    Populates search index for a single dimension type. If you need to regenerate the index because the
+    dimension_type has changed, call `populate_search_index_after_update` instead of calling this
+    directly.
+    """
+    log.info("refresh_search_index_for_dimension_type %s starting", dimension_type_name)
 
     dimension_type = get_dimension_type(db, dimension_type_name)
     assert dimension_type is not None
@@ -147,10 +161,12 @@ def _refresh_search_index_for_dimension_type(
                 )
             )
 
-    log.info("_refresh_search_index_for_dimension_type generated records. Writing...")
+    log.info(
+        f"refresh_search_index_for_dimension_type generated {len(dimension_search_index_rows)} search index records for {len(cache_entry.properties_to_index_df.index)} rows in {dimension_type_name}. Writing..."
+    )
 
     db.bulk_save_objects(dimension_search_index_rows)
-    log.info("_refresh_search_index_for_dimension_type complete")
+    log.info("refresh_search_index_for_dimension_type complete")
 
 
 def _get_datatypes_referencing(db, dimension_type_name):
@@ -190,19 +206,14 @@ def get_property_value_pairs_for_given_id(
     properties_to_index_df = md_entry.properties_to_index_df
     columns_metadata = md_entry.columns_metadata
 
-    # TODO: Rewrite
-    print("warning: inefficient. Rewrite")
-    rows_by_index = {}
-    for record in properties_to_index_df.to_records():
-        rows_by_index[record.index] = record
-
-    row = rows_by_index[given_id]
-
+    row = md_entry.get_properties_dict(given_id)
     # if this ID is not specified, then just move on.
     if row is not None:
         # create one or more search index record for each column in properties_to_index_df
         for property in properties_to_index_df.columns:
             property_value = row[property]
+            if property not in columns_metadata:
+                continue
             cm = columns_metadata[property]
 
             # now, check to see if we have a single value or multiple

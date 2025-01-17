@@ -26,8 +26,7 @@ from fastapi.testclient import TestClient
 from breadbox.api.dependencies import get_dataset
 from breadbox.io.filestore_crud import get_slice
 from breadbox.models.dataset import DimensionSearchIndex
-from breadbox.crud.dataset import get_datasets
-from breadbox.service.search import populate_search_index
+from breadbox.service.search import populate_search_index_after_update
 
 from breadbox.models.dataset import PropertyToIndex
 from breadbox.schemas.dataset import ColumnMetadata
@@ -966,7 +965,7 @@ class TestGet:
         for dimension_type_name in ["gene", "compound", "oncref_condition"]:
             dimension_type = get_dimension_type(minimal_db, dimension_type_name)
             assert dimension_type is not None
-            populate_search_index(minimal_db, dimension_type)
+            populate_search_index_after_update(minimal_db, dimension_type)
 
         search_index_entries = []
         for item in minimal_db.query(DimensionSearchIndex).all():
