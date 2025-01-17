@@ -201,13 +201,13 @@ def get_compound_sensitivity_data(model_id: str) -> dict:
     if dataset is None:
         abort(404)
     dataset_name = dataset.name.name
-    labels_by_exp_id = get_compound_labels_by_experiment_id(dataset_name) # TODO: use
+    labels_by_exp_id = get_compound_labels_by_experiment_id(dataset_name)
 
-    return get_rows_with_lowest_z_score(dataset_name, model_id)
+    return get_rows_with_lowest_z_score(dataset_name, model_id, index_renaming_dict=labels_by_exp_id)
 
 
 def get_rows_with_lowest_z_score(
-    dataset_name: str, model_id: str
+    dataset_name: str, model_id: str, index_renaming_dict: dict[str, str] = {}
 ):
     """Gets data for the top 10 rows of the given dataset, where top values have the 
     lowest z-scores for the cell line (matching the given depmap id). For example, 
@@ -224,7 +224,10 @@ def get_rows_with_lowest_z_score(
     }
 
     df = data_access.get_subsetted_df_by_labels(dataset_name)
-    if model_id in df.columns: # TODO: confirm that the depmap ids would be columns
+    if index_renaming_dict:
+        df = df.rename(index=index_renaming_dict) # TODO: run frontend to confirm this still works (no test for this)
+
+    if model_id in df.columns:
         # Get the full matrix of gene effect dat        
         df = df[np.isfinite(df[model_id])]  # filter nulls
         # sort the matrix using cell line z-scores
@@ -271,11 +274,12 @@ def download_gene_effects(dataset_type: str, model_id: str):
     else:
         abort(404)
 
+    all_model_ids = data_access.get_dataset_sample_ids(dataset_name)
+    if model_id not in all_model_ids:
+        abort(404)
+
     # Get the gene effect data that relates to this cell line
     df = get_all_cell_line_gene_effects(dataset_name, model_id)
-
-    if model_id not in df.columns:
-        abort(404)
 
     # return the dataframe as a CSV
     response = make_response(df.to_csv())
@@ -360,7 +364,7 @@ def get_stats_for_dataframe(df: pd.DataFrame, model_id: str):
 
 def get_compound_labels_by_experiment_id(dataset_name: str) -> dict[str, str]:
     """Compound labels by row matrix index."""
-    # TODO: move this elsewhere to be replaced
+    # TODO: move this elsewhere to be replaced - or figure out if it already exists elsewhere
     # Data access details should be in interactive config
     # (Using SQLAlchemy to join the compound object to the matrix)
     matrix_id = data_access.get_matrix_id(dataset_name)

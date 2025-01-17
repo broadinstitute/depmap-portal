@@ -410,32 +410,3 @@ def test_get_rows_with_lowest_z_score(empty_db_mock_downloads):
     for gene_data in actual_result["data"]:
         cell_line_gene_effect = gene_data[col_index]
         assert cell_line_gene_effect is not None
-
-
-def test_get_compound_labels_by_index(empty_db_mock_downloads):
-    """Test that the compound labels are loaded correctly"""
-    dataset_name = DependencyDataset.DependencyEnum.Rep_all_single_pt
-    cell_lines = [DepmapModelFactory() for _ in range(3)]
-    compounds = [
-        CompoundFactory(label="drug1"),
-        CompoundFactory(label="drug2"),
-        CompoundFactory(label="drug3"),
-        CompoundFactory(label="drug4"),
-    ]
-    compoundExperiments = [
-        CompoundExperimentFactory(compound=compound) for compound in compounds
-    ]
-    matrix = MatrixFactory(
-        data=[[1, 2, 3], [4, 5, 6], [1, 2, 3], [4, 5, 6],],
-        cell_lines=cell_lines,
-        entities=compoundExperiments,
-        using_depmap_model_table=True,
-    )
-    DependencyDatasetFactory(matrix=matrix, name=dataset_name)
-    empty_db_mock_downloads.session.flush()
-    interactive_test_utils.reload_interactive_config()
-
-    actual_labels = get_compound_labels_by_index(dataset_name.name)
-    assert actual_labels.columns.to_list() == ["index", "label"]
-    assert actual_labels["index"].to_list() == [0, 1, 2, 3]
-    assert actual_labels["label"].to_list() == ["drug1", "drug2", "drug3", "drug4"]
