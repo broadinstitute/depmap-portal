@@ -30,13 +30,13 @@ export default function useSync({
         return { ...prev, justSynced: false };
       }
 
-      if (prev.dirty || !value) {
+      if (prev.dirty) {
         return prev;
       }
 
-      let axis_type = value.axis_type || prev.dimension.axis_type;
+      let axis_type = value?.axis_type || prev.dimension.axis_type;
       let aggregation =
-        value.aggregation || prev.dimension.aggregation || "first";
+        value?.aggregation || prev.dimension.aggregation || "first";
 
       if (!axis_type || mode === "entity-only") {
         axis_type = "raw_slice";
@@ -53,7 +53,7 @@ export default function useSync({
 
       // Force `dataType` to be re-initialized when dataset_id changes
       const dataType =
-        value.dataset_id === prev.dimension.dataset_id ? prev.dataType : null;
+        value?.dataset_id === prev.dimension.dataset_id ? prev.dataType : null;
 
       return {
         ...prev,

@@ -24,8 +24,6 @@ class DatasetSelectProps {
   datasets?: Array<Dataset>;
 
   onChange?: (newValue: string) => any;
-
-  defaultSelectedDataset?: Dataset;
 }
 
 interface DatasetSelectState {
@@ -51,7 +49,7 @@ export class DatasetSelect extends React.Component<
 
     this.state = {
       inputType: "dropdowns",
-      dropdownDataset: props.defaultSelectedDataset ?? {
+      dropdownDataset: {
         label: "",
         value: "",
       },

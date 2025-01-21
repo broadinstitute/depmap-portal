@@ -10,9 +10,12 @@ const CellLineSelectorModal = React.lazy(
     )
 );
 
+const getVectorCatalogApi = () => {
+  throw new Error("Vector Catalog API is no longer supported!");
+};
+
 export default function renderCellLineSelectorModal(
   getApi: ApiContextInterface["getApi"],
-  getVectorCatalogApi: ApiContextInterface["getVectorCatalogApi"],
   container: HTMLElement | null
 ) {
   if (!container) {
@@ -23,18 +26,12 @@ export default function renderCellLineSelectorModal(
   }
 
   const dapi = getApi();
-  const apiFunctions = {
-    depmap: {
-      getApi,
-      getVectorCatalogApi,
-    },
-  };
 
   // Unmount a previous instance if any (otherwise this is a no-op).
   ReactDOM.unmountComponentAtNode(container);
 
   ReactDOM.render(
-    <ApiContext.Provider value={apiFunctions.depmap}>
+    <ApiContext.Provider value={{ getApi, getVectorCatalogApi }}>
       <React.Suspense fallback={null}>
         <CellLineSelectorModal
           getCellLineSelectorLines={() => dapi.getCellLineSelectorLines()}
@@ -50,7 +47,6 @@ export default function renderCellLineSelectorModal(
 
 export function renderCellLineSelectorModalUsingBBApi(
   getApi: ApiContextInterface["getApi"],
-  getVectorCatalogApi: ApiContextInterface["getVectorCatalogApi"],
   container: HTMLElement | null
 ) {
   if (!container) {
@@ -61,17 +57,12 @@ export function renderCellLineSelectorModalUsingBBApi(
   }
 
   const bbapi = getApi();
-  const apiFunctions = {
-    breadbox: {
-      getApi,
-      getVectorCatalogApi,
-    },
-  };
+
   // Unmount a previous instance if any (otherwise this is a no-op).
   ReactDOM.unmountComponentAtNode(container);
 
   ReactDOM.render(
-    <ApiContext.Provider value={apiFunctions.breadbox}>
+    <ApiContext.Provider value={{ getApi, getVectorCatalogApi }}>
       <React.Suspense fallback={null}>
         <CellLineSelectorModal
           getCellLineSelectorLines={() => bbapi.getCellLineSelectorLines()}

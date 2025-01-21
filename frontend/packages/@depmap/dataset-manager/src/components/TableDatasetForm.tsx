@@ -10,33 +10,14 @@ import {
 } from "@rjsf/utils";
 import validator from "@rjsf/validator-ajv8";
 import { tableFormSchema } from "../models/tableDatasetFormSchema";
-import DatasetMetadataForm from "./DatasetMetadataForm";
+import { CustomDatasetMetadata } from "./DatasetMetadataForm";
 import { FormGroup, FormControl, ControlLabel } from "react-bootstrap";
 import {
   DataType,
-  FeatureType,
+  DimensionType,
   Group,
   InvalidPrioritiesByDataType,
-  SampleType,
 } from "@depmap/types";
-
-// TODO: copied from MatrixDatasetForm
-const CustomDatasetMetadata = function (props: FieldProps) {
-  const { onChange } = props;
-
-  return (
-    <div id="customDatasetMetadata">
-      <DatasetMetadataForm
-        isEdit={false} // TODO: Unhardcode
-        forwardDatasetMetadataDict={(metadataDict: {
-          [key: string]: string;
-        }) => {
-          onChange(metadataDict);
-        }}
-      />
-    </div>
-  );
-};
 
 const CustomColumnsMetadata = function (props: FieldProps) {
   const { schema, onChange, required } = props;
@@ -156,8 +137,7 @@ function isObject(x: any) {
 }
 
 interface TableDatasetFormProps {
-  featureTypes: FeatureType[];
-  sampleTypes: SampleType[];
+  dimensionTypes: DimensionType[];
   dataTypes: DataType[];
   invalidDataTypePriorities: InvalidPrioritiesByDataType;
   groups: Group[];
@@ -169,8 +149,7 @@ interface TableDatasetFormProps {
 }
 
 export function TableDatasetForm({
-  featureTypes,
-  sampleTypes,
+  dimensionTypes,
   dataTypes,
   invalidDataTypePriorities,
   groups,
@@ -184,7 +163,7 @@ export function TableDatasetForm({
   const [schema, setSchema] = React.useState<RJSFSchema | null>(null);
 
   React.useEffect(() => {
-    const indexOptions = featureTypes.concat(sampleTypes).map((option) => {
+    const indexOptions = dimensionTypes.map((option) => {
       return { title: option.name, const: option.name };
     });
     const dataTypeOptions = dataTypes.map((option) => {
@@ -213,7 +192,7 @@ export function TableDatasetForm({
       },
     };
     setSchema(schemaWithOptions);
-  }, [featureTypes, sampleTypes, dataTypes, groups]);
+  }, [dataTypes, groups, dimensionTypes]);
 
   React.useEffect(() => {
     if (fileIds !== formData.file_ids || md5Hash !== formData.dataset_md5) {

@@ -29,6 +29,7 @@ module.exports = {
     contextExplorer: "./src/apps/contextExplorer.tsx",
     dataPage: "./src/apps/dataPage.tsx",
     resourcesPage: "./src/apps/resourcesPage.tsx",
+    secretDataViewer: "./src/apps/secretDataViewer.tsx",
   },
 
   plugins: [

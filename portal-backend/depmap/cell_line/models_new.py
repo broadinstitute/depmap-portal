@@ -2,8 +2,11 @@
 """Cell line models."""
 import enum
 import re
-from typing import Dict, Optional, Sequence
+from typing import Dict, List, Optional, Sequence
 from depmap.cell_line.models import Lineage
+import numpy as np
+from collections import Counter
+
 
 import pandas as pd
 import sqlalchemy
@@ -54,6 +57,9 @@ class DepmapModel(Model):
     model_id = Column(String, primary_key=True)
 
     cell_line_name = Column(String, index=True, unique=True, nullable=True)
+    ccle_name = Column(String, index=True, unique=True, nullable=True)
+    patient_id = Column(String, index=True, nullable=True)
+
     # TODO: Update CellLineAlias and dependencies to only use DepmapModel table instead of CellLine
     cell_line_alias = relationship(
         "CellLineAlias",
@@ -63,16 +69,6 @@ class DepmapModel(Model):
     )
 
     stripped_cell_line_name = Column(String, nullable=False)  # stripped cell line name
-    patient_id = Column(String)
-    depmap_model_type = Column(String)
-    wtsi_master_cell_id = Column(Integer, index=True)  # wtsi is wellcome trust sanger
-
-    # same as cell_line_passport_id in CellLine table
-    sanger_model_id = Column(
-        String, index=True
-    )  # Sanger cell line passport is Sanger ID in https://cellmodelpassports.sanger.ac.uk/
-
-    cosmic_id = Column(Integer, index=True)
 
     oncotree_lineage = relationship(
         "Lineage",
@@ -84,35 +80,19 @@ class DepmapModel(Model):
 
     oncotree_primary_disease = Column(String)
     oncotree_subtype = Column(String)
-
     oncotree_code = Column(String)
-    legacy_molecular_subtype = Column(String)
-    patient_molecular_subtype = Column(String)
-    rrid = Column(String)
-    age = Column(Integer)
-    age_category = Column(String)
-    sex = Column(String)
-    patient_race = Column(String)
-    tissue_origin = Column(String)
-
-    primary_or_metastasis = Column(String)
-
-    sample_collection_site = Column(String)
-    source_type = Column(String)
-    source_detail = Column(String)
-    treatment_status = Column(String)
-    treatment_details = Column(String)
-    growth_pattern = Column(String)
-    onboarded_media = Column(String)
-    formulation_id = Column(String)
-    engineered_model = Column(String)
-    ccle_name = Column(String)
-    catalog_number = Column(String, nullable=True)
-    plate_coating = Column(String)
-    model_derivation_material = Column(String)
     public_comments = Column(String)
-    legacy_sub_subtype = Column(String)
     image_filename = Column(String)
+    age_category = Column(String)
+
+    # in json_encoded_metadata, we're storing a json encoded dictionary of column_name -> column_value
+    # directly taken from full row taken from the Model.csv table. Those fields which the portal's python code depends
+    # on should be explicitly modeled as columns, however, there are many columns which the python
+    # code doesn't care about. However, the front end _does_ need them to display in the UI.
+    # by storing this unstructured dictionary, we're minimizing the number of boilerplate changes
+    # required when a column is added/changed. (We're also making it explicit which columns the portal
+    # backend depends on.)
+    json_encoded_metadata = Column(String)
 
     def __eq__(self, other):
         if isinstance(other, DepmapModel):
@@ -154,6 +134,43 @@ class DepmapModel(Model):
             return q.one_or_none()
 
     @staticmethod
+    def get_lineage_primary_disease_counts(model_ids: List[str]) -> Dict[str, dict]:
+        q = (
+            db.session.query(DepmapModel)
+            .filter(DepmapModel.model_id.in_(model_ids))
+            .join(Lineage, DepmapModel.oncotree_lineage)
+            .filter(Lineage.level == 1)
+            .with_entities(
+                DepmapModel.model_id,
+                Lineage.name.label("lineage"),
+                DepmapModel.oncotree_primary_disease.label("primary_disease"),
+            )
+            .order_by(Lineage.name)
+            .all()
+        )
+
+        df = pd.DataFrame(q)
+
+        if df.empty:
+            return {}
+
+        df_agg = (
+            df.fillna("unknown").groupby(["lineage"]).agg({"primary_disease": list})
+        )
+
+        assert isinstance(df_agg, pd.DataFrame)
+
+        def count_primary_disease_occurences(x):
+            if isinstance(x, list):
+                return {key: str(val) for key, val in dict(Counter(x)).items()}
+
+        df_agg = df_agg[["primary_disease"]].apply(
+            np.vectorize(count_primary_disease_occurences)
+        )["primary_disease"]
+
+        return dict(df_agg)
+
+    @staticmethod
     def get_valid_cell_line_names_in(cell_line_names):
         """
         Returns (valid) cell line names contained in the provided list/set cell_line_names 
@@ -178,6 +195,14 @@ class DepmapModel(Model):
         q = db.session.query(DepmapModel).filter(
             DepmapModel.cell_line_name == cell_line_name
         )
+        if must:
+            return q.one()
+        else:
+            return q.one_or_none()
+
+    @staticmethod
+    def get_by_ccle_name(ccle_name, must=False) -> "DepmapModel":
+        q = db.session.query(DepmapModel).filter(DepmapModel.ccle_name == ccle_name)
         if must:
             return q.one()
         else:

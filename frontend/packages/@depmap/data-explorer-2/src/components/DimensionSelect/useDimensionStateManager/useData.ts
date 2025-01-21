@@ -1,10 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { DataExplorerContext } from "@depmap/types";
-import {
-  fetchContextLabels,
-  fetchDatasetsByIndexType,
-  fetchDimensionLabelsToDatasetsMapping,
-} from "../../../api";
+import { useDeprecatedDataExplorerApi } from "../../../contexts/DeprecatedDataExplorerApiContext";
 import { DatasetsByIndexType, DimensionLabelsToDatasetsMapping } from "./types";
 
 interface Props {
@@ -29,6 +25,8 @@ export default function useDatasets({
   axis_type,
   context,
 }: Props) {
+  const api = useDeprecatedDataExplorerApi();
+
   const [
     datasetsByIndexType,
     setDatasetsByIndexType,
@@ -48,14 +46,14 @@ export default function useDatasets({
   useEffect(() => {
     (async () => {
       try {
-        const data = await fetchDatasetsByIndexType();
+        const data = await api.fetchDatasetsByIndexType();
         setDatasetsByIndexType(data);
       } catch (e) {
         window.console.error(e);
         throw new Error("DimensionSelect: Error fetching datasets");
       }
     })();
-  }, []);
+  }, [api]);
 
   useEffect(() => {
     (async () => {
@@ -63,7 +61,7 @@ export default function useDatasets({
 
       try {
         if (slice_type) {
-          const mapping = await fetchDimensionLabelsToDatasetsMapping(
+          const mapping = await api.fetchDimensionLabelsToDatasetsMapping(
             slice_type
           );
           setSliceMap(mapping);
@@ -77,7 +75,7 @@ export default function useDatasets({
         );
       }
     })();
-  }, [slice_type]);
+  }, [api, slice_type]);
 
   useEffect(() => {
     setContextLabels(new Set());
@@ -85,11 +83,11 @@ export default function useDatasets({
     if (axis_type === "aggregated_slice" && context) {
       setContextLabels(null);
 
-      fetchContextLabels(context).then((labels) => {
+      api.evaluateLegacyContext(context).then((labels) => {
         setContextLabels(new Set(labels));
       });
     }
-  }, [axis_type, context]);
+  }, [api, axis_type, context]);
 
   const datasets = useMemo(() => {
     return datasetsByIndexType && index_type

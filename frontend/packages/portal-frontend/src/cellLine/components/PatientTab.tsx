@@ -1,24 +1,28 @@
 import React from "react";
-import { PatientInfo } from "../models/types";
+import { ModelAnnotation } from "../models/ModelAnnotation";
 import styles from "../styles/CellLinePage.scss";
 
 export interface PatientTabProps {
-  patientInfo: PatientInfo;
+  patientInfo: ModelAnnotation;
+  relatedModels: {
+    model_id: string;
+    url: string;
+  }[];
 }
 
-const PatientTab = ({ patientInfo }: PatientTabProps) => {
+const PatientTab = ({ patientInfo, relatedModels }: PatientTabProps) => {
   const showOverview =
-    patientInfo.age ||
-    patientInfo.age_category ||
-    patientInfo.sex ||
-    patientInfo.race;
+    patientInfo.Age ||
+    patientInfo.AgeCategory ||
+    patientInfo.Sex ||
+    patientInfo.PatientRace;
 
   const showDiagnosisAndTreatment =
-    patientInfo.patient_molecular_subtype ||
-    patientInfo.treatment_status ||
-    patientInfo.treatment_details;
+    patientInfo.PatientSubtypeFeatures ||
+    patientInfo.PatientTreatmentStatus ||
+    patientInfo.PatientTreatmentDetails;
 
-  const showRelatedModels = patientInfo.related_models.length > 0;
+  const showRelatedModels = relatedModels.length > 0;
 
   if (patientInfo) {
     return (
@@ -27,28 +31,28 @@ const PatientTab = ({ patientInfo }: PatientTabProps) => {
           {showOverview && (
             <h4 className={styles.propertyGroupHeader}>Overview</h4>
           )}
-          {(patientInfo.age || patientInfo.age_category) && (
+          {(patientInfo.Age || patientInfo.AgeCategory) && (
             <>
               <h6 className={styles.propertyHeader}>Age and Category</h6>
               <p>
-                {patientInfo.age && <span>{patientInfo.age}</span>}
-                {patientInfo.age && patientInfo.age_category && <span>,</span>}
-                {patientInfo.age_category && (
-                  <span>{patientInfo.age_category}</span>
+                {patientInfo.Age && <span>{patientInfo.Age}</span>}
+                {patientInfo.Age && patientInfo.AgeCategory && <span>, </span>}
+                {patientInfo.AgeCategory && (
+                  <span>{patientInfo.AgeCategory}</span>
                 )}
               </p>
             </>
           )}
-          {patientInfo.sex && (
+          {patientInfo.Sex && (
             <>
               <h6 className={styles.propertyHeader}>Sex</h6>
-              <p>{patientInfo.sex}</p>
+              <p>{patientInfo.Sex}</p>
             </>
           )}
-          {patientInfo.race && (
+          {patientInfo.PatientRace && (
             <>
               <h6 className={styles.propertyHeader}>Race</h6>
-              <p>{patientInfo.race}</p>
+              <p>{patientInfo.PatientRace}</p>
             </>
           )}
           <br />
@@ -57,24 +61,24 @@ const PatientTab = ({ patientInfo }: PatientTabProps) => {
               Diagnosis and Treatment
             </h4>
           )}
-          {patientInfo.patient_molecular_subtype && (
+          {patientInfo.PatientSubtypeFeatures && (
             <>
               <h6 className={styles.propertyHeader}>
                 Patient Molecular Subtype
               </h6>
-              <p>{patientInfo.patient_molecular_subtype}</p>
+              <p>{patientInfo.PatientSubtypeFeatures}</p>
             </>
           )}
-          {patientInfo.treatment_status && (
+          {patientInfo.PatientTreatmentStatus && (
             <>
               <h6 className={styles.propertyHeader}>Treatment Status</h6>
-              <p>{patientInfo.treatment_status}</p>
+              <p>{patientInfo.PatientTreatmentStatus}</p>
             </>
           )}
-          {patientInfo.treatment_details && (
+          {patientInfo.PatientTreatmentDetails && (
             <>
               <h6 className={styles.propertyHeader}>Treatment Details</h6>
-              <p>{patientInfo.treatment_details}</p>
+              <p>{patientInfo.PatientTreatmentDetails}</p>
             </>
           )}
         </div>
@@ -82,7 +86,7 @@ const PatientTab = ({ patientInfo }: PatientTabProps) => {
           {showRelatedModels && (
             <span>
               <h4 className={styles.propertyGroupHeader}>Related Models</h4>
-              {patientInfo.related_models.map((model) => (
+              {relatedModels.map((model) => (
                 <div key={model.model_id}>
                   <a className={styles.descriptionLinks} href={model.url}>
                     {model.model_id}

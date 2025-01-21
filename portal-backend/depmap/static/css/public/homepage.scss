@@ -1,34 +1,127 @@
 /*Color variables*/
 @import "../shared/variables";
 
+// New DMC Homepage stylings
+.dmc_feature_content {
+  display: grid;
+  justify-items: center;
+
+  @media screen and (min-width: 1380px) {
+    padding: 0 150px 20px;
+  }
+
+  @media screen and (min-width: 992px) and (max-width: 1380px) {
+    padding: 0 100px 20px;
+  }
+  @media screen and (min-width: 768px) and (max-width: 991px) {
+    padding: 0 50px 10px;
+  }
+  @media screen and (max-width: 768px) {
+    padding: 0 10px 0;
+  }
+
+  .search_bar {
+    @media screen and (min-width: 992px) {
+      width: 70%;
+    }
+    @media screen and (max-width: 991px) {
+      width: 100%;
+    }
+  }
+}
+
+.featured_tools_title {
+  h2 {
+    font-size: 42px !important;
+    font-weight: 600 !important;
+    color: #771e70;
+    text-align: center;
+  }
+}
+
+.featured_portal_tools {
+  display: grid;
+  @media screen and (min-width: 992px) {
+    grid-template-columns: repeat(4, 1fr);
+  }
+  @media screen and (max-width: 992px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  gap: 2rem;
+  text-align: center;
+  filter: drop-shadow(1px 5px 3px #d9d9d9);
+  .thumbnail {
+    padding: 20px;
+    a {
+      text-decoration: none;
+      color: inherit;
+    }
+    img {
+      // margin-top: 20px;
+      // margin-bottom: 20px;
+      transform: scale(0.7);
+    }
+  }
+}
+
+.dmc_about_div {
+  height: 100%;
+  background-size: cover;
+
+  @media screen and (max-width: 992px) {
+    padding-top: 25px;
+  }
+
+  .dmc_about {
+    @media screen and (min-width: 992px) {
+      padding-left: 50px;
+      padding-right: 50px;
+    }
+    @media screen and (max-width: 992px) {
+      padding-left: 20px;
+      padding-right: 20px;
+    }
+
+    h1 {
+      color: #771e70;
+    }
+    h4 {
+      color: #771e70;
+      margin-bottom: 20px;
+    }
+  }
+}
+
+// original homepage styling
 .explore_tools_background {
   color: white;
   &.public {
     background-image: linear-gradient(#6790f7, #16215b);
   }
-}
 
-.cards_section {
-  display: flex;
-  gap: 2%;
-  min-height: 500px;
+  .cards_section {
+    display: flex;
+    gap: 2%;
+    min-height: 500px;
 
-  @media screen and (min-width: 992px) {
-    flex-direction: row;
+    @media screen and (min-width: 992px) {
+      flex-direction: row;
+    }
+    @media screen and (max-width: 991px) {
+      flex-direction: column;
+    }
   }
-  @media screen and (max-width: 991px) {
-    flex-direction: column;
-  }
-}
-.thumbnail {
-  color: #303030;
-  padding: 0 20px 0px 20px;
-  border-radius: 6px;
-  flex: 1 1 0px;
-  position: relative;
+  .thumbnail {
+    color: #303030;
+    padding: 0 20px 0px 20px;
+    border-radius: 6px;
+    flex: 1 1 0px;
+    position: relative;
 
-  img {
-    width: 100%;
+    img {
+      width: 100%;
+    }
   }
 }
 
@@ -164,6 +257,25 @@
       font-weight: 600;
     }
   }
+
+  &.dmc {
+    // new dmc homepage styling
+    h2 {
+      font-size: 42;
+      font-weight: 600;
+    }
+
+    h4 {
+      font-size: 24px;
+      font-weight: 600;
+      line-height: 30px;
+    }
+
+    h5 {
+      font-size: 18px;
+      line-height: 26px;
+    }
+  }
 }
 
 .announcements_section {
@@ -182,6 +294,26 @@
 
   h6 {
     font-weight: 600;
+  }
+
+  &.dmc {
+    // new dmc homepage styling
+    @media screen and (min-width: 992px) {
+      padding-left: 50px;
+      margin-bottom: 20px;
+    }
+    @media screen and (max-width: 992px) {
+      padding-left: 20px;
+      border-bottom: 0.5mm solid #999999;
+      padding-bottom: 20px;
+    }
+    h1 {
+      color: #771e70;
+    }
+    h4 {
+      color: #771e70;
+      margin-bottom: 20px;
+    }
   }
 }
 
@@ -233,6 +365,39 @@
   }
   @media screen and (min-width: 768px) and (max-width: 1365px) {
     padding: 50px;
+  }
+  @media screen and (max-width: 768px) {
+    padding: 20px;
+  }
+
+  &.dmc {
+    @media screen and (min-width: 1366px) {
+      padding: 50px 100px;
+    }
+    @media screen and (min-width: 768px) and (max-width: 1365px) {
+      padding: 25px 50px;
+    }
+    @media screen and (max-width: 768px) {
+      padding: 10px 20px;
+    }
+  }
+
+  &.dmc_feature {
+    // new dmc homepage styling
+    background-size: cover;
+    color: white;
+    text-align: center;
+
+    h1 {
+      font-size: 60px;
+      font-weight: 700;
+      margin: 0px 0px 30px;
+    }
+    h2 {
+      font-size: 32px;
+      font-weight: 400;
+      margin: 0px 0px 30px;
+    }
   }
   &.nonpublic_feature {
     @media screen and (min-width: 1366px) {

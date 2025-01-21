@@ -1,5 +1,8 @@
 import { useEffect, useState } from "react";
-import { ContextSummaryResponse, fetchContextSummary } from "../../../api";
+import {
+  DeprecatedDataExplorerApiResponse,
+  useDeprecatedDataExplorerApi,
+} from "../../../contexts/DeprecatedDataExplorerApiContext";
 import { isCompleteExpression, isPartialSliceId } from "../../../utils/misc";
 import {
   Expr,
@@ -42,13 +45,16 @@ export const useEvaluatedExpressionResult = (
   slice_type: string,
   expr: Expr
 ) => {
-  const [result, setResult] = useState<ContextSummaryResponse | null>(null);
+  const api = useDeprecatedDataExplorerApi();
+  const [result, setResult] = useState<
+    DeprecatedDataExplorerApiResponse["fetchContextSummary"] | null
+  >(null);
 
   // TODO: re-implement this by calling the other endpoint
   useEffect(() => {
     (async () => {
       if (isCompleteExpression(expr)) {
-        const fetchedResult = await fetchContextSummary({
+        const fetchedResult = await api.fetchContextSummary({
           context_type: slice_type,
           expr: normalizeExpr(expr),
         });
@@ -58,7 +64,7 @@ export const useEvaluatedExpressionResult = (
         setResult(null);
       }
     })();
-  }, [expr, slice_type]);
+  }, [api, expr, slice_type]);
 
   return result;
 };

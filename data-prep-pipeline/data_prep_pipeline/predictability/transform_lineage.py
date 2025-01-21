@@ -3,8 +3,8 @@ from collections import defaultdict
 from typing import Dict, Set, List
 
 from taigapy import create_taiga_client_v3
-from utils import update_taiga
-from datarelease_taiga_permanames import context_taiga_permaname
+from ..utils import update_taiga
+from ..datarelease_taiga_permanames import context_taiga_permaname
 
 column_rename_map = {
     "ModelID": "model_id",

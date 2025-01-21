@@ -25,7 +25,7 @@ import {
   LEGEND_RANGE_6,
   LegendKey,
   LEGEND_RANGE_7,
-} from "src/data-explorer-2/components/plot/prototype/plotUtils";
+} from "@depmap/data-explorer-2";
 import ContextAnalysisPlotPanel from "./ContextAnalysisPlotPanel";
 import ScatterPlotLegend from "./ScatterPlotLegend";
 import {
@@ -215,7 +215,10 @@ function ContextAnalysis({
   ] = useState<ExtendedPlotType | null>(null);
   const [entityUrlRoot, setEntityUrlRoot] = useState<string | null>(null);
 
-  const stickyFiltersMode = true;
+  // TODO: In the future, we should take stickyFiltersMode out since it's always turned off. The decision
+  // to turn this off was made right before the 24q4 release, so it was decided that it's temporarily less risky to
+  // turn off the stickyFiltersMode instead of completely removing the ability to set stickyFiltersMode.
+  const stickyFiltersMode = false; // DO NOT CHANGE THIS TO TRUE.
 
   // useContextExplorerFilters is very similar to useDiscoveryAppFilters. They
   // are temporarily separated out into 2 different files while the stickyFiltersMode

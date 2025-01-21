@@ -40,17 +40,16 @@ import {
   Dataset as BreadboxDataset,
   DatasetParams,
   DatasetUpdateArgs,
-  FeatureType,
-  FeatureTypeUpdateArgs,
   Group,
   GroupArgs,
   GroupEntry,
   GroupEntryArgs,
-  SampleType,
-  SampleTypeUpdateArgs,
   InvalidPrioritiesByDataType,
   SearchDimenionsRequest,
   SearchDimenionsResponse,
+  DimensionType,
+  DimensionTypeAddArgs,
+  DimensionTypeUpdateArgs,
 } from "@depmap/types";
 import { TDASummaryTable } from "src/tda/models/types";
 import { CompoundSummaryTableRaw } from "src/compoundDashboard/models/types";
@@ -64,7 +63,7 @@ import { encodeParams } from "@depmap/utils";
 import {
   OncogenicAlteration,
   CellLineDataMatrix,
-  CellLineDescriptionData,
+  ModelInfo,
 } from "src/cellLine/models/types";
 import TopFeatureValue from "src/celfie/models/celfie";
 import { Trace, ActiveSpan, NoOpSpan } from "src/trace";
@@ -82,6 +81,7 @@ import {
   DataAvailSummary,
   DataPageDataType,
   getDataPageDataTypeColorCategory,
+  LineageAvailability,
 } from "./dataPage/models/types";
 
 export interface RenderTile {
@@ -533,12 +533,8 @@ export class DepmapApi {
     );
   }
 
-  getCellLineDescriptionTileData(
-    modelId: string
-  ): Promise<CellLineDescriptionData> {
-    return this._fetch<CellLineDescriptionData>(
-      `/cell_line/description_tile/${modelId}`
-    );
+  getCellLineDescriptionTileData(modelId: string): Promise<ModelInfo> {
+    return this._fetch<ModelInfo>(`/cell_line/description_tile/${modelId}`);
   }
 
   getCellLineCompoundSensitivityData(
@@ -661,6 +657,15 @@ export class DepmapApi {
       values: dataAvailVals,
       data_types: boolSummary.data_types,
     };
+  }
+
+  getLineageDataAvailability(dataType: string): Promise<LineageAvailability> {
+    const params = {
+      data_type: dataType,
+    };
+    return this._fetch<LineageAvailability>(
+      `/api/data_page/lineage_availability?${encodeParams(params)}`
+    );
   }
 
   getOncogenicAlterations(
@@ -991,7 +996,10 @@ export class DepmapApi {
     return Promise.reject(Error("Wrong api used. Check ApiContext"));
   };
 
-  updateDataset(datasetToUpdate: DatasetUpdateArgs): Promise<BreadboxDataset> {
+  updateDataset(
+    datasetId: string,
+    datasetToUpdate: DatasetUpdateArgs
+  ): Promise<BreadboxDataset> {
     return Promise.reject(Error("Wrong api used. Check ApiContext"));
   }
 
@@ -999,17 +1007,16 @@ export class DepmapApi {
     return Promise.reject(Error("Wrong api used. Check ApiContext"));
   };
 
-  getSampleTypes = (): Promise<SampleType[]> => {
+  // NOTE: These endpoints for feature type and sample type should not be used because they are deprecated
+  getSampleTypes = () => {
     return Promise.reject(Error("Wrong api used. Check ApiContext"));
   };
 
-  postSampleType = (sampleTypeArgs: any): Promise<SampleType> => {
+  postSampleType = (sampleTypeArgs: any) => {
     return Promise.reject(Error("Wrong api used. Check ApiContext"));
   };
 
-  updateSampleType = (
-    sampleTypeArgs: SampleTypeUpdateArgs
-  ): Promise<SampleType> => {
+  updateSampleType = (sampleTypeArgs: any) => {
     return Promise.reject(Error("Wrong api used. Check ApiContext"));
   };
 
@@ -1017,7 +1024,42 @@ export class DepmapApi {
     return Promise.reject(Error("Wrong api used. Check ApiContext"));
   };
 
-  getFeatureTypes = (): Promise<FeatureType[]> => {
+  getFeatureTypes = () => {
+    return Promise.reject(Error("Wrong api used. Check ApiContext"));
+  };
+
+  postFeatureType = (featureTypeArgs: any) => {
+    return Promise.reject(Error("Wrong api used. Check ApiContext"));
+  };
+
+  updateFeatureType = (featureTypeArgs: any) => {
+    return Promise.reject(Error("Wrong api used. Check ApiContext"));
+  };
+
+  deleteFeatureType = (name: string) => {
+    return Promise.reject(Error("Wrong api used. Check ApiContext"));
+  };
+  // NOTE: THe above endpoints for feature type and sample type are deprecated and should not be used.
+  // Endpoints with URI prefix /types/dimensions should be used instead
+
+  getDimensionTypes = (): Promise<DimensionType[]> => {
+    return Promise.reject(Error("Wrong api used. Check ApiContext"));
+  };
+
+  postDimensionType = (
+    dimTypeArgs: DimensionTypeAddArgs
+  ): Promise<DimensionType> => {
+    return Promise.reject(Error("Wrong api used. Check ApiContext"));
+  };
+
+  updateDimensionType = (
+    dimTypeName: string,
+    dimTypeArgs: DimensionTypeUpdateArgs
+  ): Promise<DimensionType> => {
+    return Promise.reject(Error("Wrong api used. Check ApiContext"));
+  };
+
+  deleteDimensionType = (name: string) => {
     return Promise.reject(Error("Wrong api used. Check ApiContext"));
   };
 
@@ -1040,20 +1082,6 @@ export class DepmapApi {
   }
 
   getDataTypesAndPriorities = (): Promise<InvalidPrioritiesByDataType> => {
-    return Promise.reject(Error("Wrong api used. Check ApiContext"));
-  };
-
-  postFeatureType = (featureTypeArgs: any): Promise<FeatureType> => {
-    return Promise.reject(Error("Wrong api used. Check ApiContext"));
-  };
-
-  updateFeatureType = (
-    featureTypeArgs: FeatureTypeUpdateArgs
-  ): Promise<FeatureType> => {
-    return Promise.reject(Error("Wrong api used. Check ApiContext"));
-  };
-
-  deleteFeatureType = (name: string) => {
     return Promise.reject(Error("Wrong api used. Check ApiContext"));
   };
 

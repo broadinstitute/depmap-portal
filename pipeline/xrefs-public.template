@@ -31,3 +31,11 @@ add-if-missing {
     'label' : 'Rep_all_single_pt',
     'dataset_id' : PREPROCESS_TAIGA_ID(repurposing_taiga_id, "Repurposing_Public_24Q2_Treatment_Meta_Data")
 }
+add-if-missing {
+  "type": "download_from_taiga",
+  "target_type": "drug-metadata",
+  "dataset_id":  PREPROCESS_TAIGA_ID(virtual_dataset_id, "PortalCompounds"),
+  "name": "merged-drugs",
+  "label": "compound_metadata",
+  "format": "csv"
+}

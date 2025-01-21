@@ -9,35 +9,17 @@ import {
 } from "@rjsf/utils";
 import validator from "@rjsf/validator-ajv8";
 import { matrixFormSchema } from "../models/matrixDatasetFormSchema";
-import DatasetMetadataForm from "./DatasetMetadataForm";
+import { CustomDatasetMetadata } from "./DatasetMetadataForm";
 import { FormGroup, ControlLabel } from "react-bootstrap";
 import {
   DataType,
-  FeatureType,
+  FeatureDimensionType,
   Group,
   InvalidPrioritiesByDataType,
-  SampleType,
+  SampleDimensionType,
 } from "@depmap/types";
 import { Option, TagInput } from "@depmap/common-components";
 import { ActionMeta, ValueType } from "react-select";
-
-// TODO: copied from MatrixDatasetForm
-const CustomDatasetMetadata = function (props: FieldProps) {
-  const { onChange } = props;
-
-  return (
-    <div id="customDatasetMetadata">
-      <DatasetMetadataForm
-        isEdit={false} // TODO: Unhardcode
-        forwardDatasetMetadataDict={(metadataDict: {
-          [key: string]: string;
-        }) => {
-          onChange(metadataDict);
-        }}
-      />
-    </div>
-  );
-};
 
 function transformErrors(errors: RJSFValidationError[]) {
   // eslint-disable-next-line array-callback-return, consistent-return
@@ -177,57 +159,16 @@ const fields: RegistryFieldsType = {
   TagInputAllowedValues: CustomAllowedValues,
 };
 
-const uiSchema: UiSchema = {
-  "ui:title": "", // removes the title <legend> html element
-  "ui:order": [
-    "name",
-    "file_ids",
-    "dataset_md5",
-    "units",
-    "feature_type",
-    "sample_type",
-    "group_id",
-    "value_type",
-    "allowed_values",
-    "data_type",
-    "priority",
-    "dataset_metadata",
-    "is_transient",
-    "format",
-  ],
-  dataset_metadata: {
-    "ui:field": "TagInputMetadata",
-  },
-  allowed_values: {
-    "ui:field": "TagInputAllowedValues",
-    // "ui:emptyValue": null // This doesn't make default val 'null'. BUG: (see: https://github.com/rjsf-team/react-jsonschema-form/issues/1581                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             )
-  },
-  format: {
-    "ui:widget": "hidden",
-  },
-  file_ids: {
-    "ui:widget": "hidden",
-  },
-  dataset_md5: {
-    "ui:widget": "hidden",
-  },
-  is_transient: {
-    "ui:widget": "hidden",
-  },
-  group_id: {
-    "ui:title": "Group", // override original title from schema
-  },
-};
-
 interface MatrixDatasetFormProps {
-  featureTypes: FeatureType[];
-  sampleTypes: SampleType[];
+  featureTypes: FeatureDimensionType[];
+  sampleTypes: SampleDimensionType[];
   dataTypes: DataType[];
   invalidDataTypePriorities: InvalidPrioritiesByDataType;
   groups: Group[];
   fileIds?: string[] | null;
   md5Hash?: string | null;
   initFormData: any;
+  isAdvancedMode: boolean;
   onSubmitForm: (formData: { [key: string]: any }) => void;
   forwardFormData?: (formData: { [key: string]: any }) => void;
 }
@@ -241,16 +182,70 @@ export function MatrixDatasetForm({
   fileIds = null,
   md5Hash = null,
   initFormData,
+  isAdvancedMode,
   onSubmitForm,
   forwardFormData = undefined,
 }: MatrixDatasetFormProps) {
   const [formData, setFormData] = React.useState(initFormData);
   const [schema, setSchema] = React.useState<RJSFSchema | null>(null);
 
+  const uiSchema = React.useMemo(() => {
+    const formUiSchema: UiSchema = {
+      "ui:title": "", // removes the title <legend> html element
+      "ui:order": [
+        "name",
+        "file_ids",
+        "dataset_md5",
+        "units",
+        "feature_type",
+        "sample_type",
+        "group_id",
+        "value_type",
+        "allowed_values",
+        "data_type",
+        "priority",
+        "dataset_metadata",
+        "is_transient",
+        "format",
+      ],
+      dataset_metadata: {
+        "ui:field": "TagInputMetadata",
+      },
+      allowed_values: {
+        "ui:field": "TagInputAllowedValues",
+        // "ui:emptyValue": null // This doesn't make default val 'null'. BUG: (see: https://github.com/rjsf-team/react-jsonschema-form/issues/1581                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             )
+      },
+      format: {
+        "ui:widget": "hidden",
+      },
+      file_ids: {
+        "ui:widget": "hidden",
+      },
+      dataset_md5: {
+        "ui:widget": "hidden",
+      },
+      is_transient: {
+        "ui:widget": "hidden",
+      },
+      group_id: {
+        "ui:title": "Group", // override original title from schema
+      },
+    };
+    if (!isAdvancedMode) {
+      ["feature_type", "value_type", "priority", "dataset_metadata"].forEach(
+        (key) => {
+          formUiSchema[key] = { "ui:widget": "hidden" };
+        }
+      );
+    }
+    return formUiSchema;
+  }, [isAdvancedMode]);
+
   React.useEffect(() => {
     const featureTypeOptions = featureTypes.map((option) => {
-      return { title: option.name, const: option.name };
+      return option.name;
     });
+
     const sampleTypeOptions = sampleTypes.map((option) => {
       return { title: option.name, const: option.name };
     });
@@ -267,7 +262,9 @@ export function MatrixDatasetForm({
         ...matrixFormSchema.properties,
         feature_type: {
           ...(matrixFormSchema.properties.feature_type as object),
-          oneOf: featureTypeOptions,
+          default: null,
+          enum: [null, ...featureTypeOptions],
+          enumNames: ["None"].concat(featureTypeOptions),
         },
         sample_type: {
           ...(matrixFormSchema.properties.sample_type as object),

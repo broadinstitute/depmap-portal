@@ -4,7 +4,8 @@ from flask import abort
 from typing import Literal, Optional
 from collections import defaultdict
 
-from depmap_compute.context import LegacyContextEvaluator, decode_slice_id
+from depmap_compute.context import LegacyContextEvaluator
+from depmap_compute.slice import decode_slice_id
 from depmap import data_access
 from depmap.data_access.models import MatrixDataset
 from depmap.utilities.data_access_log import log_dataset_access
@@ -117,7 +118,7 @@ def compute_filter(input_filter):
 def compute_metadata(metadata):
     slice_id = metadata["slice_id"]
     indexed_values = slice_to_dict(slice_id)
-    label = slice_id
+    label = None
 
     # HACK: Look up a label for the `slice_id` in `hardcoded_metadata_slices`.
     # When we stop relying on Slice IDs and start using SliceQuery objects,
@@ -129,6 +130,11 @@ def compute_metadata(metadata):
             elif info.get("isPartialSliceId", False) and m_slice_id in slice_id:
                 _, identifier, _ = decode_slice_id(slice_id)
                 label = f"{info['name']} ({info['sliceTypeLabel']} = {identifier})"
+
+    if label is None:
+        dataset_id, identifier, _ = decode_slice_id(slice_id)
+        dataset = data_access.get_matrix_dataset(dataset_id)
+        label = f"{identifier} {dataset.label}"
 
     return {
         "label": label,

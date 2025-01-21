@@ -83,6 +83,9 @@ def view_cell_line(cell_line_name):
         selected_cell_line = DepmapModel.get_by_name(cell_line_name=cell_line_name)
 
     if selected_cell_line is None:
+        selected_cell_line = DepmapModel.get_by_ccle_name(ccle_name=cell_line_name)
+
+    if selected_cell_line is None:
         abort(404)
 
     has_metmap_data = MetMap500.has_cell_line(selected_cell_line.model_id)
@@ -130,6 +133,7 @@ def get_cell_line_description_tile_data(model_id: str) -> dict:
 
     if model is None:
         abort(404)
+    assert model is not None
 
     image = get_image_url(model.image_filename)
 
@@ -157,8 +161,6 @@ def get_cell_line_description_tile_data(model_id: str) -> dict:
 
     model_info = {
         "image": image,
-        "primary_metastasis": model.primary_or_metastasis,
-        "sample_collection_site": model.sample_collection_site,
         "oncotree_lineage": oncotree_lineage,
         "oncotree_primary_disease": oncotree_primary_disease,
         "oncotree_subtype_and_code": {
@@ -167,41 +169,17 @@ def get_cell_line_description_tile_data(model_id: str) -> dict:
         }
         if oncotree_subtype
         else None,
-        "legacy_molecular_subtype": model.legacy_molecular_subtype,
-        "engineered_model": model.engineered_model,
-        "growth_pattern": model.growth_pattern,
-        "tissue_origin": model.tissue_origin,
-        "source_type": model.source_type,
-        "catalog_number": model.catalog_number,
-        "model_derivation_material": model.model_derivation_material,
-    }
-
-    patient_info = {
-        "patient_id": model.patient_id,
-        "age": model.age,
-        "age_category": model.age_category,
-        "sex": model.sex,
-        "race": model.patient_race,
-        "patient_molecular_subtype": model.patient_molecular_subtype,
-        "treatment_status": model.treatment_status,
-        "treatment_details": model.treatment_details,
-        "related_models": related_models,
-    }
-
-    id_info = {
-        "rrid": model.rrid,
-        "sanger_model_id": model.sanger_model_id,
-        "cosmic_id": model.cosmic_id,
-        "ccle_name": model.ccle_name,
         "aliases": [
             ali.alias
             for ali in selected_cell_line.cell_line_alias
             if ali.alias
             != selected_cell_line.cell_line_name  # filter out ccle name, since already shown on the page
         ],
+        "related_models": related_models,
+        "metadata": json.loads(model.json_encoded_metadata),
     }
 
-    return {"model_info": model_info, "patient_info": patient_info, "id_info": id_info}
+    return model_info
 
 
 @blueprint.route("/prefdep/<data_type>/<model_id>")
@@ -218,9 +196,12 @@ def get_pref_dep_data_for_data_type(data_type: str, model_id: str) -> dict:
 
 @blueprint.route("/compound_sensitivity/<model_id>")
 def get_compound_sensitivity_data(model_id: str) -> dict:
-    dataset_name = DependencyDataset.get_dataset_by_data_type_priority(
+    dataset = DependencyDataset.get_dataset_by_data_type_priority(
         DependencyDataset.DataTypeEnum.drug_screen
-    ).name.name
+    )
+    if dataset is None:
+        abort(404)
+    dataset_name = dataset.name.name
     labels_by_index = get_compound_labels_by_index(dataset_name)
 
     return get_rows_with_lowest_z_score(dataset_name, model_id, labels_by_index)

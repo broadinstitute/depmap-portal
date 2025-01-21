@@ -26,8 +26,7 @@ import {
   ValidationResult,
   ValidationTextbox,
 } from "@depmap/data-slicer";
-import { BreadboxApi } from "src/api";
-import { VectorCatalogApi } from "@depmap/interactive";
+import { ElaraApi } from "src/api";
 import styles from "src/pages/Downloads/styles.scss";
 import { ApiContext } from "@depmap/api";
 
@@ -385,21 +384,15 @@ export default class ElaraDataSlicer extends React.Component<
   };
 
   renderCellLineSelection = (): any => {
-    const dapi = new BreadboxApi("/");
-    const vectorCatalogApi = new VectorCatalogApi(dapi);
+    const dapi = new ElaraApi("/");
 
     const getDapi = () => dapi;
-    const getVectorCatalogApi = () => vectorCatalogApi;
     const cellLineSelectorContainer = document.getElementById(
       "cell_line_selector_modal"
     );
 
     const launchCellLineSelectorModal = () =>
-      renderCellLineSelectorModal(
-        getDapi,
-        getVectorCatalogApi,
-        cellLineSelectorContainer
-      );
+      renderCellLineSelectorModal(getDapi, cellLineSelectorContainer);
     const onCellLineLinkClick = () => {
       launchCellLineSelectorModal();
       // Need this click so that the tooltip doesn't stay open in front of the cell line modal

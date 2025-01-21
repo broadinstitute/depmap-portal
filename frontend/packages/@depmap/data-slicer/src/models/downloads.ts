@@ -32,6 +32,7 @@ export enum FileSubType {
   mutations = "Mutations",
   expression = "Expression",
   fusions = "Fusions",
+  global_genomic_features = "Global Genomic Features",
   read_me = "READ ME",
 }
 

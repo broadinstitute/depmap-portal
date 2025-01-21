@@ -48,11 +48,8 @@ from depmap.data_explorer_2.datatypes import hardcoded_metadata_slices
 from depmap.download.models import ReleaseTerms
 from depmap.download.views import get_file_record, get_release_record
 
-from depmap_compute.context import (
-    decode_slice_id,
-    LegacyContextEvaluator,
-    ContextEvaluator,
-)
+from depmap_compute.context import LegacyContextEvaluator
+from depmap_compute.slice import decode_slice_id
 
 blueprint = Blueprint(
     "data_explorer_2",
@@ -340,9 +337,9 @@ def datasets_by_index_type():
     for dataset in get_all_supported_continuous_datasets():
         common_props = {
             "data_type": dataset.data_type,
-            "dataset_id": dataset.id,
+            "id": dataset.id,
             "given_id": dataset.given_id,
-            "label": dataset.label,
+            "name": dataset.label,
             "units": dataset.units,
             "priority": dataset.priority,
         }
@@ -364,7 +361,7 @@ def datasets_by_index_type():
         )
 
     for index_type, dataset in output.items():
-        output[index_type] = sorted(dataset, key=lambda dataset: dataset["label"],)
+        output[index_type] = sorted(dataset, key=lambda dataset: dataset["name"])
 
     return make_gzipped_json_response(output)
 
@@ -482,7 +479,7 @@ def evaluate_v2_context():
 
     matching_ids, matching_labels = get_ids_and_labels_matching_context(context)
 
-    return make_gzipped_json_response({"ids": matching_ids, "labels": matching_labels,})
+    return make_gzipped_json_response({"ids": matching_ids, "labels": matching_labels})
 
 
 @blueprint.route("/v2/context/summary", methods=["POST"])

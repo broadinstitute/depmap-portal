@@ -5,8 +5,9 @@ from depmap import data_access
 from depmap.dataset.models import BiomarkerDataset, DependencyDataset
 from depmap.download.utils import get_download_url
 from depmap.enums import BiomarkerEnum, DependencyEnum
+from depmap.cell_line.models_new import DepmapModel
 from flask_restplus import Namespace, Resource
-from flask import current_app
+from flask import current_app, request
 import pandas as pd
 
 namespace = Namespace("data_page", description="View data availability in the portal")
@@ -85,7 +86,9 @@ def _get_data_type_url_mapping(data_types: List[str]):
 
     full_mapping = {
         "CRISPR_Achilles_Broad": _get_dataset_url(DependencyEnum.Chronos_Combined.name),
-        "CRISPR_Score_Sanger": _get_dataset_url(DependencyEnum.Chronos_Score.name),
+        # CRISPR_Score_Sanger url is set to None by request. _get_dataset_url WILL return
+        # a url for crispr sanger, but we do not want this url to show up in the data availability graph.
+        "CRISPR_Score_Sanger": None,
         "CRISPR_ParalogsScreens": None,
         "RNAi_Marcotte": None,
         "RNAi_Achilles_Broad": _get_dataset_url(DependencyEnum.RNAi_merged.name),
@@ -145,16 +148,17 @@ def _get_formatted_all_data_avail_df(overall_summary: pd.DataFrame) -> pd.DataFr
 
 
 def _format_data_availability_summary_dict(summary_df: pd.DataFrame):
-    data_types_by_url = _get_data_type_url_mapping(summary_df.index.values.tolist())
+    summary_df_index = summary_df.index.tolist()
+    data_types_by_url = _get_data_type_url_mapping(summary_df_index)
 
-    drug_count_mapping = _get_drug_count_mapping(summary_df.index.values.tolist())
+    drug_count_mapping = _get_drug_count_mapping(summary_df_index)
 
     summary = {
-        "values": [row.values.tolist() for _, row in summary_df.iterrows()],
+        "values": summary_df.values.tolist(),
         "data_type_url_mapping": data_types_by_url,
         "drug_count_mapping": drug_count_mapping,
         # For keeping track of data_type order
-        "data_types": summary_df.index.values.tolist(),
+        "data_types": summary_df_index,
     }
 
     summary["all_depmap_ids"] = [
@@ -179,3 +183,40 @@ class DataAvailability(
         all_data_dict = _format_data_availability_summary_dict(formatted_df)
 
         return all_data_dict
+
+
+def _format_lineage_availability_summary_dict(summary_df: pd.DataFrame, data_type: str):
+    models_available = (
+        summary_df.loc[data_type]
+        .explode()[summary_df.loc[data_type].explode() == True]
+        .index.tolist()
+    )
+
+    lineage_counts = DepmapModel.get_lineage_primary_disease_counts(models_available)
+
+    summary = {
+        "lineage_counts": lineage_counts,
+    }
+
+    return summary
+
+
+@namespace.route("/lineage_availability")
+class LineageAvailability(
+    Resource
+):  # the flask url_for endpoint is automagically the snake case of the namespace prefix plus class name
+    def get(self):
+        # Note: docstrings to restplus methods end up in the swagger documentation.
+        # DO NOT put a docstring here that you would not want exposed to users of the API. Use # for comments instead
+        """
+        Lineage data availability across all of the portal
+        """
+        data_type = request.args.get("data_type")
+
+        all_data_df = _get_all_data_avail_df()
+        formatted_df = _get_formatted_all_data_avail_df(all_data_df)
+        lineage_dict = _format_lineage_availability_summary_dict(
+            formatted_df, data_type
+        )
+
+        return lineage_dict

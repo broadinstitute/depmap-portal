@@ -33,20 +33,10 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 @app.exception_handler(StarletteHTTPException)
 async def custom_http_exception_handler(request: Request, exc: StarletteHTTPException):
-    if exception_reporter.disabled is False:
+    if (exception_reporter.disabled is False) and (500 <= exc.status_code < 600):
         exception_reporter.report(request, exc.status_code, get_user(request))
 
     return await http_exception_handler(request, exc)
-
-
-@app.exception_handler(RequestValidationError)
-async def custom_request_validation_exception_handler(
-    request: Request, exc: RequestValidationError
-):
-    exception_reporter.report(
-        request, status.HTTP_422_UNPROCESSABLE_ENTITY, get_user(request)
-    )
-    return await request_validation_exception_handler(request, exc)
 
 
 @app.exception_handler(Exception)

@@ -2,8 +2,8 @@ from typing import Any, List, Optional, Union
 
 import typing
 from breadbox.api.groups import add_group
-import breadbox.api.types as types_api
-from breadbox.crud.types import add_dimension_type
+import breadbox.api.dimension_types as types_api
+from breadbox.service.dataset import add_dimension_type, add_tabular_dataset
 from breadbox.crud.data_type import add_data_type
 from breadbox.crud import dataset as dataset_crud
 
@@ -29,7 +29,7 @@ from breadbox.compute import dataset_tasks
 from breadbox.schemas.dataset import ColumnMetadata, AnnotationType
 from breadbox.schemas.dataset import TabularDatasetIn
 import uuid
-import breadbox.crud.types as types_crud
+import breadbox.crud.dimension_types as types_crud
 import pandas as pd
 import hashlib
 
@@ -312,7 +312,9 @@ def tabular_dataset(
     is_transient=False,
     index_type_name=None,
     user=None,
-    id_mapping=None,
+    short_name=None,
+    description=None,
+    version=None,
 ):
 
     if group_id is None:
@@ -358,14 +360,17 @@ def tabular_dataset(
     index_type = types_crud.get_dimension_type(db, index_type_name)
     assert index_type is not None
 
-    added_dataset = dataset_crud.add_tabular_dataset(
-        db, user, dataset_in, data_df, columns_metadata, index_type
+    added_dataset = add_tabular_dataset(
+        db,
+        user,
+        dataset_in,
+        data_df,
+        columns_metadata,
+        index_type,
+        short_name=short_name,
+        version=version,
+        description=description,
     )
-
-    if id_mapping is not None:
-        from breadbox.crud.dataset_reference import add_id_mapping
-
-        add_id_mapping(db, id_mapping, added_dataset)
 
     return added_dataset
 

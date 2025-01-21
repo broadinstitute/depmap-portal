@@ -55,6 +55,7 @@ class Context(Model):
 
     @classmethod
     def get_lineage_primary_disease_pairs(cls):
+        # Used by building global search index
         query = (
             Context.query.join(CellLine, Context.cell_line)
             .join(Lineage, Lineage.name == Context.name)

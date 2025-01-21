@@ -376,31 +376,21 @@ def test_compute_univariate_associations_with_breadbox_feature(
     empty_db_mock_downloads.session.flush()
     interactive_test_utils.reload_interactive_config()
 
-    # Mock the breadbox client response
-    mock_breadbox_feature_data = [
-        FeatureResponse(
-            feature_id="foo",
-            dataset_id="bar",
-            values=FeatureResponseValues.from_dict(
-                {
-                    cell_lines[0].depmap_id: 0.1,
-                    cell_lines[1].depmap_id: 0.2,
-                    cell_lines[2].depmap_id: 0.3,
-                }
-            ),
-            label="feature_foo",
-            units="inches",
-            dataset_label="dataset_bar",
+    mock_breadbox_client.get_dataset_data = MagicMock(
+        return_value=pd.DataFrame(
+            data={"foo": [0.1, 0.2, 0.3]},
+            index=[
+                cell_lines[0].depmap_id,
+                cell_lines[1].depmap_id,
+                cell_lines[2].depmap_id,
+            ],
         )
-    ]
-    mock_breadbox_client.get_feature_data = MagicMock(
-        return_value=mock_breadbox_feature_data
     )
 
     with app.test_client() as c:
         # assemble query parameters
         dataset_id = gene_dataset.name.name
-        breadbox_slice_id = "breadbox/foo/bar"
+        breadbox_slice_id = "slice/breadbox%2Ffoo/feature_foo/label"
 
         parameters = {
             "analysisType": "pearson",

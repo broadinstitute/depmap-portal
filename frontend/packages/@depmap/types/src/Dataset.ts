@@ -9,7 +9,7 @@ export interface MatrixDatasetParams {
   priority: number | null;
   taiga_id: string | null;
   is_transient: boolean;
-  dataset_metadata?: any;
+  dataset_metadata?: { [key: string]: string } | null;
   format: "matrix";
   units: string;
   feature_type: string;
@@ -27,7 +27,7 @@ export interface TableDatasetParams {
   priority: number | null;
   taiga_id: string | null;
   is_transient: boolean;
-  dataset_metadata?: any;
+  dataset_metadata?: { [key: string]: string } | null;
   format: "table";
   index_type: string;
   columns_metadata: { [key: string]: any };
@@ -51,8 +51,8 @@ export interface MatrixDataset {
   is_transient: boolean;
   value_type: string | null;
   allowed_values: string[] | null;
-  dataset_metadata?: any;
-  [key: string]: any; // This appears to have been added as support for in case new properties introduced
+  dataset_metadata: { [key: string]: string } | null;
+  given_id: string | null;
 }
 
 export interface TabularDataset {
@@ -64,25 +64,25 @@ export interface TabularDataset {
   data_type: string;
   priority: number | null;
   taiga_id: string | null;
-  group_id: any;
+  group_id: string;
+  group: any;
   is_transient: boolean;
   value_type: string | null;
   columns_metadata: { [key: string]: ColumnMetadata };
-  dataset_metadata?: any;
-  [key: string]: any; // This appears to have been added as support for in case new properties introduced
+  dataset_metadata: { [key: string]: string } | null;
+  given_id: string | null;
 }
 
 export type Dataset = TabularDataset | MatrixDataset;
 
 export interface DatasetUpdateArgs {
   [key: string]: any;
-  id: string;
-  group_id: any;
+  group_id?: any;
   name?: string;
   data_type?: string | null;
   priority?: number | null;
   units?: string;
-  dataset_metadata?: any;
+  dataset_metadata?: { [key: string]: string } | null;
 }
 
 export interface AddCustDatasetArgs {

@@ -9,6 +9,8 @@
     { "path": "../downloads" },
     { "path": "../globals" },
     { "path": "../interactive" },
-    { "path": "../types" }
+    { "path": "../types" },
+    { "path": "../user-upload" },
+    { "path": "../utils" }
   ]
 }

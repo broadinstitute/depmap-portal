@@ -13,6 +13,7 @@ import { CellLineSelectorLines } from "@depmap/cell-line-selector";
 
 import { enabledFeatures } from "@depmap/globals";
 
+(window as any).enabledFeaturesOverrides.data_explorer_2 = true;
 (window as any).enabledFeaturesOverrides.precomputed_associations = true;
 (window as any).enabledFeaturesOverrides.use_taiga_urls = true;
 

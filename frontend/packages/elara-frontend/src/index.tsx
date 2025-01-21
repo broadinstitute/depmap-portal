@@ -4,7 +4,7 @@ import { BrowserRouter, Navigate, Routes, Route } from "react-router-dom";
 import ErrorBoundary from "src/common/components/ErrorBoundary";
 import NotFound from "src/pages/NotFound";
 import { Spinner } from "@depmap/common-components";
-import { BreadboxApi } from "src/api";
+import { ElaraApi } from "src/api";
 import ElaraNavbar from "src/ElaraNavbar";
 import TypesPage from "src/pages/Types/TypesPage";
 
@@ -12,7 +12,6 @@ import "bootstrap/dist/css/bootstrap.css";
 // Include this after bootstrap so we can override its styles.
 import "./index.scss";
 import { ApiContext } from "@depmap/api";
-import { VectorCatalogApi } from "@depmap/interactive";
 
 const DataExplorer = React.lazy(() => import("src/pages/DataExplorer"));
 const Datasets = React.lazy(() => import("@depmap/dataset-manager"));
@@ -34,7 +33,7 @@ const App = () => {
     basename = window.location.pathname.replace(/\/elara\/.*$/, "");
   }
   const [bbapi] = useState(
-    () => new BreadboxApi(basename === "" ? "/" : basename)
+    () => new ElaraApi(basename === "" ? "/" : basename)
   );
   const [user, setUser] = useState<string | null>(null);
 
@@ -45,9 +44,10 @@ const App = () => {
     })();
   }, [bbapi]);
 
-  const vectorCatalogApi = new VectorCatalogApi(bbapi);
   const getApi = () => bbapi;
-  const getVectorCatalogApi = () => vectorCatalogApi;
+  const getVectorCatalogApi = () => {
+    throw new Error("Vector Catalog API is no longer supported!");
+  };
 
   return (
     <ApiContext.Provider value={{ getApi, getVectorCatalogApi }}>

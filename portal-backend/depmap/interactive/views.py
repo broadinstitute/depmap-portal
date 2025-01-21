@@ -135,16 +135,18 @@ def get_cell_line_url_root():
 
 @blueprint.route("/api/getDatasets")
 def get_datasets():
-    """Return all matrix datasets (both breadbox and legacy datasets)."""
+    """
+    Returns matrix datasets (both breadbox and legacy datasets) sorted alphabetically.
+    Only matrices with a sample type of "depmap_model" are included.
+    Data Explorer 1 and Custom Analysis can't handle other sample types.
+    """
     combined_datasets = []
     for dataset in data_access.get_all_matrix_datasets():
-        if dataset.is_continuous:
+        if dataset.is_continuous and dataset.sample_type == "depmap_model":
             combined_datasets.append(dict(label=dataset.label, value=dataset.id,))
     combined_datasets = sorted(
-        combined_datasets,
-        key=lambda dataset: data_access.get_sort_key(dataset["value"]),
+        combined_datasets, key=lambda dataset: dataset.get("label"),
     )
-
     return jsonify(combined_datasets)
 
 
@@ -703,8 +705,10 @@ def get_associations_df(matrix_id, x_feature):
 
 @blueprint.route("/api/associations")
 def get_associations():
-    x_id = request.args.get("x")
-    if x_id.startswith("breadbox/"):
+    x_id = request.args.get("x")  # slice ID
+
+    x_dataset_id, x_feature = InteractiveTree.get_dataset_feature_from_id(x_id)
+    if x_dataset_id.startswith("breadbox/"):
         # Associations don't exist for breadbox features (yet at least)
         # but we don't want errors when this endpoint is called for a breadbox feature
         return jsonify(
@@ -716,12 +720,11 @@ def get_associations():
             }
         )
     # Everything below this point is deprecated: and not supported for breadbox datasets.
-    x_dataset, x_feature = InteractiveTree.get_dataset_feature_from_id(x_id)
-    dataset_label = interactive_utils.get_dataset_label(x_dataset)
+    dataset_label = interactive_utils.get_dataset_label(x_dataset_id)
     if not option_used(
-        x_feature, x_dataset, "DATASETS"
+        x_feature, x_dataset_id, "DATASETS"
     ) or not interactive_utils.is_standard(
-        x_dataset
+        x_dataset_id
     ):  # fixme test for this path
         return jsonify(
             {
@@ -731,7 +734,7 @@ def get_associations():
                 "featureLabel": x_feature,
             }
         )
-    matrix_id = interactive_utils.get_matrix_id(x_dataset)
+    matrix_id = interactive_utils.get_matrix_id(x_dataset_id)
 
     df = get_associations_df(matrix_id, x_feature)
 
@@ -862,6 +865,7 @@ def download_csv_and_view_interactive():
     display_name = request.args["display_name"]
     units = request.args["units"]
     file_url = request.args["url"]
+    use_de2 = request.args.get("de2", "T") == "T"
 
     url_upload_whitelist = flask.current_app.config["URL_UPLOAD_WHITELIST"]
 
@@ -880,7 +884,7 @@ def download_csv_and_view_interactive():
         abort(400)
 
     result = upload_transient_csv.apply(
-        args=[display_name, units, True, csv_path, False]
+        args=[display_name, units, True, csv_path, False, use_de2]
     )
 
     if result.state == TaskState.SUCCESS.value:

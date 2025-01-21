@@ -81,6 +81,7 @@ class FileSubType(Enum):
     mutations = "mutations"
     expression = "expression"
     fusions = "fusions"
+    global_genomic_features = "global_genomic_features"
     read_me = "read_me"
 
     @property
@@ -94,6 +95,7 @@ class FileSubType(Enum):
             FileSubType.expression: "Expression",
             FileSubType.fusions: "Fusions",
             FileSubType.read_me: "READ ME",
+            FileSubType.global_genomic_features: "Global Genomic Features",
         }[self]
 
     @staticmethod
@@ -178,8 +180,8 @@ class ExternalBucketUrl(BucketUrl):
 class DmcBucketUrl(BucketUrl):
     BUCKET = "depmap-dmc-downloads"
 
-    def __init__(self, file_name):
-        super().__init__(DmcBucketUrl.BUCKET, file_name)
+    def __init__(self, file_name, dl_name=None):
+        super().__init__(DmcBucketUrl.BUCKET, file_name=file_name, dl_name=dl_name)
 
     def __repr__(self):
         return "DmcBucketUrl({})".format(repr(self.file_name))
@@ -648,20 +650,9 @@ class DownloadFile:
 
     @property
     def url(self):
-        if (
-            current_app.config["ENABLED_FEATURES"].use_taiga_urls_downloads_page
-            and isinstance(self._url, TaigaOnly)
-        ) or (
-            current_app.config["ENABLED_FEATURES"].use_taiga_urls
-            and isinstance(self._url, DmcBucketUrl)
-        ):
-            # files with DmcBucketUrl are hosted on the dmc bucket just so that the consortium can download it
-            # for these files, in skyros there should not be a download icon because
-            #   this will cause inconsistencies in which files have a download icon,
-            #   and may imply that the data is public
-            # the way this if statement is split allows dev to just change
-            # ENV_TYPE
-
+        if current_app.config[
+            "ENABLED_FEATURES"
+        ].use_taiga_urls_downloads_page and isinstance(self._url, TaigaOnly):
             # queries to the db use .taiga_id. outward links use .original_taiga_id
             assert self.original_taiga_id is not None
             return None  # front end will use taiga_id field

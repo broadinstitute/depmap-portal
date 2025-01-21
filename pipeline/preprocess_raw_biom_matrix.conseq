@@ -74,22 +74,6 @@ rule process_maf_file:
         data.to_csv("maf.csv", index=False)
     """
 
-rule process_rppa_matrix:
-    inputs: 
-        in={"type": "raw-rppa-matrix"},
-        script=fileref("scripts/process_rppa_matrix.py"),
-        hdf5_utils=fileref('scripts/hdf5_utils.py', copy_to='hdf5_utils.py'),
-        cleanup_script=fileref("scripts/cleanup_hdf5.py"),
-        meta={'type': 'cell_line_metadata'},
-    outputs: {
-      'type': 'biomarker-matrix',
-      'source_dataset_id' : '{{ inputs.in.matrix_dataset_id }}',
-      'category': 'rppa',
-      'filename': {"$filename": "out-c.hdf5"}
-    }
-    run "python3 {{inputs.script.filename}} {{ config.SCRIPT_DIR }} {{ inputs.in.matrix_dataset_id }} {{ inputs.in.mapping_dataset_id }} out.hdf5"
-    run "python3 {{inputs.cleanup_script.filename}} out.hdf5 out-c.hdf5 --add-arxspan-to-cols -m {{inputs.meta.filename}}"
-
 rule process_mutations_matrices:
     inputs:
         mutation_bool={"type": "raw-mutations-bool-matrix"},

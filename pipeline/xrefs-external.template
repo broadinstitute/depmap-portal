@@ -1,8 +1,8 @@
 include "xrefs-common.conseq"
 
-# SET_TAIGA_PREPROCESSOR virtual_dataset_id "public-24q2-356f.42"
+# SET_TAIGA_PREPROCESSOR virtual_dataset_id "public-24q4-31a4.61"
 
-let RELEASE_LABEL="Public 24Q2"
+let RELEASE_LABEL="Public 24Q4"
 
 add-if-missing {
     "type": "depmap_data_taiga_id",
@@ -34,11 +34,6 @@ add-if-missing {
   "dataset_id": PREPROCESS_TAIGA_ID(virtual_dataset_id, "ScreenSequenceMap")
 }
 
-add-if-missing {
-  'type': 'biomarker-needing-transpose',
-  'dataset_id' : PREPROCESS_TAIGA_ID(virtual_dataset_id, "OmicsExpressionGeneSetEnrichment"),
-  'category': 'ssgsea'
-}
 
 add-if-missing {
   "type": "raw-dep-matrix",

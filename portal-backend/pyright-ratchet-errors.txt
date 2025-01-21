@@ -62,7 +62,6 @@ cell_line_loader.py: error: "comments" is not a known member of "None" (reportOp
 cell_line_loader.py: error: "cosmic_id" is not a known member of "None" (reportOptionalMemberAccess)
 cell_line_loader.py: error: "disease_subtype" is not a known member of "None" (reportOptionalMemberAccess)
 cell_line_loader.py: error: "gender" is not a known member of "None" (reportOptionalMemberAccess)
-cell_line_loader.py: error: "group" is not a known member of "None" (reportOptionalMemberAccess)
 cell_line_loader.py: error: "image_filename" is not a known member of "None" (reportOptionalMemberAccess)
 cell_line_loader.py: error: "lineage" is not a known member of "None" (reportOptionalMemberAccess)
 cell_line_loader.py: error: "primary_disease" is not a known member of "None" (reportOptionalMemberAccess)
@@ -364,14 +363,11 @@ overrides.py: error: Cannot access member "NONSTANDARD_DATA_DIR" for type "str"
 overrides.py: error: Cannot access member "PROJECT_ROOT" for type "str"
 overrides.py: error: Cannot access member "TAIGA_CACHE_DIR" for type "str"
 overrides.py: error: Cannot access member "WEBAPP_DATA_DIR" for type "str"
-parse_downloads.py: error: Argument of type "Literal['DOWNLOADS_PATH']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
-parse_downloads.py: error: Argument of type "Literal['SHARED_DOWNLOADS_PATH']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
 parse_downloads.py: error: Cannot access member "get" for type "list[str]"
 parse_downloads.py: error: Expression of type "List[dict[Unknown, Unknown]]" cannot be assigned to return type "str"
 parse_downloads.py: error: Expression of type "None" cannot be assigned to return type "List[FileSource]"
 parse_downloads.py: error: Expression of type "None" cannot be assigned to return type "SummaryStats"
 parse_downloads.py: error: Expression of type "tuple[Unknown | None, DownloadRelease]" cannot be assigned to return type "Tuple[str, DownloadRelease]"
-parse_downloads.py: error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
 parse_resources.py: error: Argument of type "None" cannot be assigned to parameter "__default" of type "_T@get" in function "get"
 parse_resources.py: error: No overloads for "get" match the provided arguments (reportCallIssue)
 predictability_loader.py: error: "dataset_id" is not a known member of "None" (reportOptionalMemberAccess)
@@ -529,7 +525,6 @@ test_models.py: error: Cannot access member "dataset_id" for type "BiomarkerData
 test_models.py: error: Cannot access member "dataset_id" for type "DependencyDatasetFactory"
 test_models.py: error: Cannot access member "dataset_id" for type "PrivateDatasetMetadataFactory"
 test_models.py: error: Cannot access member "dependency_dataset_id" for type "DependencyDatasetFactory"
-test_models.py: error: Cannot access member "depmap_id" for type "SubFactory"
 test_models.py: error: Cannot access member "display_name" for type "SubFactory"
 test_models.py: error: Cannot access member "entity_id" for type "CompoundFactory"
 test_models.py: error: Cannot access member "entity_id" for type "GeneFactory"
@@ -578,10 +573,6 @@ test_views.py: error: "__getitem__" method not defined on type "LazyAttribute" (
 test_views.py: error: "__getitem__" method not defined on type "Sequence" (reportIndexIssue)
 test_views.py: error: "display_name" is not a known member of "None" (reportOptionalMemberAccess)
 test_views.py: error: Argument of type "Sequence" cannot be assigned to parameter "feature" of type "str | int" in function "get_id_from_dataset_feature"
-test_views.py: error: Argument of type "Sequence" cannot be assigned to parameter "model_id" of type "str" in function "get_related_models"
-test_views.py: error: Argument of type "Sequence" cannot be assigned to parameter "model_id" of type "str" in function "get_rows_with_lowest_z_score"
-test_views.py: error: Argument of type "Sequence" cannot be assigned to parameter "patient_id" of type "str" in function "get_related_models"
-test_views.py: error: Argument of type "dict[Sequence, float]" cannot be assigned to parameter "src_dict" of type "Dict[str, Any]" in function "from_dict"
 test_views.py: error: Argument of type "str" cannot be assigned to parameter "__value" of type "int" in function "index"
 test_views.py: error: Cannot access member "entity_id" for type "CompoundDoseFactory"
 test_views.py: error: Cannot access member "entity_id" for type "CompoundDoseReplicateFactory"
@@ -629,47 +620,21 @@ utils.py: error: Second argument to "isinstance" must be a class or tuple of cla
 views.py: error: "IGNORECASE" is not a known member of module "natsort" (reportAttributeAccessIssue)
 views.py: error: "Unbound" is not iterable (reportGeneralTypeIssues)
 views.py: error: "__getitem__" method not defined on type "Datatype" (reportIndexIssue)
-views.py: error: "age" is not a known member of "None" (reportOptionalMemberAccess)
-views.py: error: "age_category" is not a known member of "None" (reportOptionalMemberAccess)
-views.py: error: "catalog_number" is not a known member of "None" (reportOptionalMemberAccess)
-views.py: error: "ccle_name" is not a known member of "None" (reportOptionalMemberAccess)
 views.py: error: "cell_line" is not a known member of "None" (reportOptionalMemberAccess)
-views.py: error: "cosmic_id" is not a known member of "None" (reportOptionalMemberAccess)
 views.py: error: "csv_path" is possibly unbound (reportPossiblyUnboundVariable)
 views.py: error: "dataset_id" is not a known member of "None" (reportOptionalMemberAccess)
 views.py: error: "dataset_name" is possibly unbound (reportPossiblyUnboundVariable)
 views.py: error: "display_name" is not a known member of "None" (reportOptionalMemberAccess)
-views.py: error: "engineered_model" is not a known member of "None" (reportOptionalMemberAccess)
 views.py: error: "enrichment_boxes" is possibly unbound (reportPossiblyUnboundVariable)
 views.py: error: "get" is not a known member of "None" (reportOptionalMemberAccess)
 views.py: error: "group_by_category_config" is possibly unbound (reportPossiblyUnboundVariable)
 views.py: error: "group_by_feature" is possibly unbound (reportPossiblyUnboundVariable)
-views.py: error: "growth_pattern" is not a known member of "None" (reportOptionalMemberAccess)
 views.py: error: "html" is possibly unbound (reportPossiblyUnboundVariable)
-views.py: error: "image_filename" is not a known member of "None" (reportOptionalMemberAccess)
 views.py: error: "index" is not a known member of "None" (reportOptionalMemberAccess)
-views.py: error: "legacy_molecular_subtype" is not a known member of "None" (reportOptionalMemberAccess)
-views.py: error: "level_1_lineage" is not a known member of "None" (reportOptionalMemberAccess)
 views.py: error: "matrix" is not a known member of "None" (reportOptionalMemberAccess)
-views.py: error: "model_derivation_material" is not a known member of "None" (reportOptionalMemberAccess)
 views.py: error: "model_id" is not a known member of "None" (reportOptionalMemberAccess)
 views.py: error: "name" is not a known member of "None" (reportOptionalMemberAccess)
-views.py: error: "oncotree_code" is not a known member of "None" (reportOptionalMemberAccess)
-views.py: error: "oncotree_lineage" is not a known member of "None" (reportOptionalMemberAccess)
-views.py: error: "oncotree_subtype" is not a known member of "None" (reportOptionalMemberAccess)
-views.py: error: "patient_id" is not a known member of "None" (reportOptionalMemberAccess)
-views.py: error: "patient_molecular_subtype" is not a known member of "None" (reportOptionalMemberAccess)
-views.py: error: "patient_race" is not a known member of "None" (reportOptionalMemberAccess)
-views.py: error: "primary_or_metastasis" is not a known member of "None" (reportOptionalMemberAccess)
-views.py: error: "rrid" is not a known member of "None" (reportOptionalMemberAccess)
-views.py: error: "sample_collection_site" is not a known member of "None" (reportOptionalMemberAccess)
-views.py: error: "sanger_model_id" is not a known member of "None" (reportOptionalMemberAccess)
-views.py: error: "sex" is not a known member of "None" (reportOptionalMemberAccess)
 views.py: error: "source_dir" is possibly unbound (reportPossiblyUnboundVariable)
-views.py: error: "source_type" is not a known member of "None" (reportOptionalMemberAccess)
-views.py: error: "tissue_origin" is not a known member of "None" (reportOptionalMemberAccess)
-views.py: error: "treatment_details" is not a known member of "None" (reportOptionalMemberAccess)
-views.py: error: "treatment_status" is not a known member of "None" (reportOptionalMemberAccess)
 views.py: error: Argument expression after ** must be a mapping with a "str" key type (reportCallIssue)
 views.py: error: Argument of type "DownloadRelease | None" cannot be assigned to parameter "release" of type "DownloadRelease" in function "get_file_record"
 views.py: error: Argument of type "DownloadRelease | None" cannot be assigned to parameter "release" of type "DownloadRelease" in function "get_release_record"
@@ -701,7 +666,6 @@ views.py: error: Argument of type "Literal['url']" cannot be assigned to paramet
 views.py: error: Argument of type "Literal['user_id']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
 views.py: error: Argument of type "Literal['value']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
 views.py: error: Argument of type "Literal[DependencyEnum.Avana]" cannot be assigned to parameter "dependency_dataset_name" of type "str" in function "get_dataset_by_name"
-views.py: error: Argument of type "Unknown | Any | None" cannot be assigned to parameter "query_feature_slice_id" of type "str" in function "run_custom_analysis"
 views.py: error: Argument of type "Unknown | FileStorage" cannot be assigned to parameter "filepath_or_buffer" of type "FilePath | ReadCsvBuffer[bytes] | ReadCsvBuffer[str]" in function "read_csv" (reportArgumentType)
 views.py: error: Argument of type "Unknown | Hashable" cannot be assigned to parameter "group_name" of type "str" in function "__init__"
 views.py: error: Argument of type "Unknown | None" cannot be assigned to parameter "cell_line_col_index" of type "int" in function "get_all_cell_line_compound_sensitivity"
@@ -709,7 +673,6 @@ views.py: error: Argument of type "Unknown | None" cannot be assigned to paramet
 views.py: error: Argument of type "Unknown | int | list[Unknown]" cannot be assigned to parameter "color_num" of type "str | int" in function "__init__" (reportArgumentType)
 views.py: error: Argument of type "list[BreadboxVectorCatalogNodeInfo]" cannot be assigned to parameter "__iterable" of type "Iterable[dict[Unknown, Unknown]]" in function "extend"
 views.py: error: Argument of type "list[CellLineSeries]" cannot be assigned to parameter "breadbox_feature_data" of type "list[Series]" in function "get_df_from_feature_list"
-views.py: error: Argument of type "list[Unknown] | Any | list[int] | Unknown" cannot be assigned to parameter "query_cell_lines" of type "list[str] | None" in function "run_custom_analysis" (reportArgumentType)
 views.py: error: Argument of type "list[list[Unknown]] | None" cannot be assigned to parameter "compound_experiment_and_datasets" of type "List[Tuple[CompoundExperiment, DependencyDataset]]" in function "format_dep_dist_caption"
 views.py: error: Argument of type "str | Any" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
 views.py: error: Argument of type "str | None" cannot be assigned to parameter "s" of type "str | bytes | bytearray" in function "loads" (reportArgumentType)

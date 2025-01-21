@@ -50,6 +50,7 @@ from loader import (
     dataset_loader,
     depmap_model_loader,
     gene_loader,
+    proteomics_loader,
     global_search_loader,
     match_related_loader,
     nonstandard_loader,
@@ -451,6 +452,22 @@ def _load_real_data(
             assert hgnc_file is not None
 
             gene_loader.load_hgnc_genes(hgnc_file, taiga_id=genes_hgnc_taiga_id)
+
+    with checkpoint("proteins-from-taiga") as needed:
+        if needed:
+            log.info("Adding protein table")
+
+            protein_metadata_taiga_id = (
+                "harmonized-public-proteomics-02cc.2/uniprot_hugo_entrez_id_mapping"
+            )
+            protein_metadata_file = taiga_client.download_to_cache(
+                protein_metadata_taiga_id, "csv_table"
+            )
+            assert protein_metadata_file is not None
+
+            proteomics_loader.load_protein_table(
+                protein_metadata_file, taiga_id=protein_metadata_taiga_id
+            )
 
     with checkpoint("compounds") as needed:
         if needed:
@@ -1107,6 +1124,11 @@ def load_sample_data(
                 )
             )
 
+            proteomics_loader.load_protein_table(
+                os.path.join(loader_data_dir, "protein.csv"),
+                taiga_id="fake-protein-taiga-id.1/file",
+            )
+
         log.info("Adding compounds")
         compound_loader.load_compounds("sample_data/compound/compounds.csv")
 
@@ -1206,7 +1228,7 @@ def load_sample_data(
         dataset_loader.load_curve_parameters_csv(
             "sample_data/compound/prism_oncology_per_curve.csv"
         )
-
+    with transaction():
         log.info("Adding biomarker data")
 
         biomarker_datasets = [

@@ -30,6 +30,7 @@ module.exports = {
         linear_association: false,
         use_taiga_urls: false,
         precomputed_associations: false,
+        elara: true,
       }),
       "window.depmapContactUrl": JSON.stringify(
         "mailto:dmc-questions@broadinstitute.org"
