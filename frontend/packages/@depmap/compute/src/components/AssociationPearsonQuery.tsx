@@ -86,7 +86,7 @@ export default class AssociationPearsonQuery extends React.Component<
   };
 
   renderSelectCellLines = () => {
-    const { analysisType, launchCellLineSelectorModal } = this.props;
+    const { analysisType } = this.props;
     const { usingSubsetOfLines } = this.state;
 
     const stepNumber = analysisType === "pearson" ? "3" : "4";
@@ -124,7 +124,6 @@ export default class AssociationPearsonQuery extends React.Component<
           {usingSubsetOfLines === true && (
             <CellLineListsDropdown
               defaultNone
-              launchCellLineSelectorModal={launchCellLineSelectorModal}
               onListSelect={(cellLinelist: CustomList) => {
                 this.setState({
                   selectedList: cellLinelist,

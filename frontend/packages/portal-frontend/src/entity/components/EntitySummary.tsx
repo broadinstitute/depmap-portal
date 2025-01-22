@@ -13,7 +13,6 @@ import {
 import { Checkbox } from "@depmap/common-components";
 import DropdownButton from "src/common/components/DropdownButton";
 import { CellLineListsDropdown, CustomList } from "@depmap/cell-line-selector";
-import { launchCellLineSelectorModal } from "src/index";
 import { getDapi } from "src/common/utilities/context";
 import { DepmapApi, EntitySummaryResponse } from "src/dAPI";
 import { PlotHTMLElement } from "@depmap/plotly-wrapper";
@@ -278,7 +277,6 @@ class EntitySummary extends React.Component<Props, State> {
         <div>Find cell lines:</div>
         <CellLineListsDropdown
           key={this.state.listKey}
-          launchCellLineSelectorModal={launchCellLineSelectorModal}
           onListSelect={(cellLineList) => {
             this.setState({ cellLineList });
 
