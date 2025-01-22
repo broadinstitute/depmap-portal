@@ -7,7 +7,6 @@
     { "path": "./packages/@depmap/data-explorer-2" },
     { "path": "./packages/@depmap/data-slicer" },
     { "path": "./packages/@depmap/globals" },
-    { "path": "./packages/@depmap/interactive" },
     { "path": "./packages/@depmap/long-table" },
     { "path": "./packages/@depmap/plotly-wrapper" },
     { "path": "./packages/@depmap/types" },

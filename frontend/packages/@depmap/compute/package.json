@@ -12,7 +12,6 @@
     "@depmap/compute": "1.0.0",
     "@depmap/data-explorer-2": "1.0.0",
     "@depmap/globals": "1.0.0",
-    "@depmap/interactive": "1.0.0",
     "@depmap/long-table": "1.0.0",
     "@depmap/types": "1.0.0",
     "@depmap/user-upload": "1.0.0",

@@ -1,15 +1,16 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import cx from "classnames";
 import { Spinner } from "@depmap/common-components";
-import { reformatLinRegTable, StaticTable } from "@depmap/interactive";
+import { StaticTable } from "./StaticTable";
+import { reformatLinRegTable } from "./reformatLinRegTable";
 import { PartialDataExplorerPlotConfig } from "@depmap/types";
-import renderConditionally from "../../../../utils/render-conditionally";
-import { useDeprecatedDataExplorerApi } from "../../../../contexts/DeprecatedDataExplorerApiContext";
-import { PlotConfigReducerAction } from "../../reducers/plotConfigReducer";
-import { isCompletePlot } from "../../validation";
-import Section from "../Section";
-import { ShowRegressionLineCheckbox } from "./selectors";
-import styles from "../../styles/ConfigurationPanel.scss";
+import renderConditionally from "../../../../../utils/render-conditionally";
+import { useDeprecatedDataExplorerApi } from "../../../../../contexts/DeprecatedDataExplorerApiContext";
+import { PlotConfigReducerAction } from "../../../reducers/plotConfigReducer";
+import { isCompletePlot } from "../../../validation";
+import Section from "../../Section";
+import { ShowRegressionLineCheckbox } from "../selectors";
+import styles from "../../../styles/ConfigurationPanel.scss";
 
 interface Props {
   plot: PartialDataExplorerPlotConfig;

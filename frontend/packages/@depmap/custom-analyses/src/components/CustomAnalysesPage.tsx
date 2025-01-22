@@ -4,6 +4,7 @@ import { enabledFeatures } from "@depmap/globals";
 import {
   AnalysisType,
   AssociationPearsonQuery,
+  CeleryTask,
   CommonQueryProps,
   ComputeResponse,
   ComputeResponseResult,
@@ -11,7 +12,6 @@ import {
   QuerySelections,
   TwoClassQuery,
 } from "@depmap/compute";
-import { ControlledPlotApi, ControlledPlotState } from "@depmap/interactive";
 import { ProgressTracker } from "@depmap/common-components";
 import { ApiContext } from "@depmap/api";
 import ResultsReadyModal from "./ResultsReadyModal";
@@ -28,6 +28,13 @@ interface CustomAnalysesPageProps {
   >;
 }
 
+interface ResultsWrapper {
+  customAnalysisResult: {
+    result?: ComputeResponseResult;
+    type?: AnalysisType;
+  };
+}
+
 interface CustomAnalysesPageState {
   analysisType: AnalysisType;
   submissionResponse: Promise<ComputeResponse>;
@@ -38,7 +45,7 @@ interface CustomAnalysesPageState {
   analysisCurrentlyRunning: boolean;
   datasets: Dataset[];
   cellLineData: Map<string, { displayName: string }>;
-  customAnalysisResults: Partial<ControlledPlotState> | undefined;
+  customAnalysisResults: Partial<ResultsWrapper> | undefined;
 }
 
 export default class CustomAnalysesPage extends React.Component<
@@ -51,7 +58,10 @@ export default class CustomAnalysesPage extends React.Component<
 
   private queryComponents: Partial<Record<AnalysisType, any>> = {};
 
-  api: ControlledPlotApi;
+  api: {
+    getDatasets: () => Promise<Dataset[]>;
+    getTaskStatus: (id: string) => Promise<CeleryTask>;
+  };
 
   constructor(props: any, context: any) {
     super(props, context);
@@ -310,24 +320,15 @@ export default class CustomAnalysesPage extends React.Component<
                 overrideFilterState: string,
                 analysis: AnalysisType
               ) => {
-                const controlledPlotState: Partial<ControlledPlotState> = {
-                  numCellLinesUsed,
-                  showingCustomAnalysis: true,
-                  queryVectorId,
+                const resultsWrapper: Partial<ResultsWrapper> = {
                   customAnalysisResult:
                     {
                       result,
                       type: analysis,
                     } || undefined,
-                  override: {
-                    // get rid of any previous overrides, unless specified later
-                    color: overrideColorState,
-                    filter: overrideFilterState,
-                  },
-                  queryLimit: 1000,
                 };
                 this.setState({
-                  customAnalysisResults: controlledPlotState,
+                  customAnalysisResults: resultsWrapper,
                 });
               }}
               ref={(el) => {

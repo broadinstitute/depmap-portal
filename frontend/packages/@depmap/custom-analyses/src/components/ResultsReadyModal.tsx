@@ -1,13 +1,19 @@
 import React, { useEffect, useState } from "react";
 import { Button, Modal } from "react-bootstrap";
 import { CustomList } from "@depmap/cell-line-selector";
-import { AnalysisType, ComputeResponseResult } from "@depmap/compute";
-import { ControlledPlotState, Link } from "@depmap/interactive";
+import { AnalysisType, ComputeResponseResult, Link } from "@depmap/compute";
 import { getDataExplorer2Url } from "../utils";
 import styles from "../styles/CustomAnalysis.scss";
 
 interface Props {
-  results: Partial<ControlledPlotState> | undefined;
+  results:
+    | Partial<{
+        customAnalysisResult: {
+          result?: ComputeResponseResult;
+          type?: AnalysisType;
+        };
+      }>
+    | undefined;
   analysisType: AnalysisType | undefined;
   queryComponents: Partial<
     Record<

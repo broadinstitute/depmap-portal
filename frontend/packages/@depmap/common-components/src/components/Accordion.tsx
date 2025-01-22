@@ -7,6 +7,10 @@ export enum OpenCloseSymbol {
   Caret = "Caret",
   Empty = "Empty",
 }
+
+// This Accordion component is buggy and hard to use. It's recommended to use
+// the React Bootstrap <Panel> (with expanded/onToggle props) instead.
+// https://react-bootstrap-v3.netlify.app/components/panel/#panels-props
 interface Props {
   title: React.ReactNode;
   isOpen?: boolean;

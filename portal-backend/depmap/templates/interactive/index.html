@@ -39,10 +39,5 @@ relationships between DepMap datasets {% endblock %} {% block content %}
   </div>
 </div>
 {% endblock %} {% block js %}
-<script id="react-interactive-data" type="application/json">
-  {
-    "showCustomAnalysis": true
-  }
-</script>
-<script src="{{ webpack_url('interactive.js') }}"></script>
+<script src="{{ webpack_url('customAnalysis.js') }}"></script>
 {% endblock %}

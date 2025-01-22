@@ -24,10 +24,9 @@ In the ./packages directory you'll find two main projects:
 - [portal-frontend](https://github.com/broadinstitute/depmap-portal/tree/master/frontend/packages/portal-frontend#readme)
 
 Each of these represents a different set of UI features. The Elara frontend is
-limited to Data Explorer (the original version, also known as the "interactive
-page"), Custom Analyses, Downloads and a few other management pages (Datasets,
-Groups, etc). The Portal frontend is much more full featured and includes many
-interactive tools and pages.
+limited to Data Explorer, Custom Analyses, Downloads and a few other management
+pages (Datasets, Groups, etc). The Portal frontend is much more full featured
+and includes many interactive tools and pages.
 
 ### Developing
 

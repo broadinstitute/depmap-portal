@@ -1,7 +1,8 @@
 /* eslint-disable */
 // converts y axis data to log10
 import * as React from "react";
-import { PlotlyWrapper, PlotlyCallbacks } from "@depmap/plotly-wrapper";
+import PlotlyWrapper from "./PlotlyWrapper";
+import type { PlotlyCallbacks } from "../models/plotlyPlot";
 import {
   getHighlightArrayOrDefault,
   getHighlightLineColor,
@@ -21,11 +22,6 @@ export interface VolcanoTrace {
   name: string;
   color?: number;
   size?: number;
-}
-
-export interface Bounds {
-  width: number;
-  height: number;
 }
 
 interface VolcanoPlotProps {
