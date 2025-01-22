@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
 import { Button, Modal } from "react-bootstrap";
 import { CustomList } from "@depmap/cell-line-selector";
 import { AnalysisType, ComputeResponseResult } from "@depmap/compute";
@@ -26,8 +25,6 @@ interface Props {
 }
 
 function ResultsReadyModal({ results, analysisType, queryComponents }: Props) {
-  const location = useLocation();
-  const navigate = useNavigate();
   const [url, setUrl] = useState<string | null>(null);
 
   useEffect(() => {
@@ -58,18 +55,10 @@ function ResultsReadyModal({ results, analysisType, queryComponents }: Props) {
       </Modal.Header>
       <Modal.Body className={styles.resultsModal}>
         <span className="glyphicon glyphicon-ok-circle" />
-        <p>Custom analysis results are ready to view in Data Explorer.</p>
+        <p>Custom analysis results are ready to view.</p>
       </Modal.Body>
       <Modal.Footer>
         <Button onClick={() => setUrl(null)}>Cancel</Button>
-        <Button
-          bsStyle="info"
-          onClick={() => {
-            navigate(`${location.pathname}/..`, { state: results });
-          }}
-        >
-          Open in Data Explorer 1
-        </Button>
         <Button
           bsStyle="primary"
           onClick={() => {
@@ -77,7 +66,7 @@ function ResultsReadyModal({ results, analysisType, queryComponents }: Props) {
             setUrl(null);
           }}
         >
-          Open in Data Explorer 2
+          Open in Data Explorer
         </Button>
       </Modal.Footer>
     </Modal>

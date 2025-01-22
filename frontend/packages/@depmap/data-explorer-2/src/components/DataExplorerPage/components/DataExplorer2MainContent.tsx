@@ -16,7 +16,6 @@ import { logInitialPlot, logReducerTransform } from "../debug";
 import plotConfigReducer, {
   PlotConfigReducerAction,
 } from "../reducers/plotConfigReducer";
-import NewVersionBanner from "./NewVersionBanner";
 import ConfigurationPanel from "./ConfigurationPanel";
 import VisualizationPanel from "./VisualizationPanel";
 import styles from "../styles/DataExplorer2.scss";
@@ -121,7 +120,6 @@ function DataExplorer2MainContent({
 
   return (
     <>
-      <NewVersionBanner isInitialPageLoad={isInitialPageLoad} />
       <main className={styles.DataExplorer2}>
         <ConfigurationPanel
           plot={plot}
