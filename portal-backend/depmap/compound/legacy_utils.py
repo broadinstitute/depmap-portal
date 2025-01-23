@@ -34,7 +34,7 @@ def get_compound_labels_for_compound_experiment_dataset(dataset_name: str) -> di
 
 def get_dataset_data_indexed_by_compound_label(dataset_id: str) -> pd.DataFrame:
     feature_type = interactive_utils.get_entity_type(dataset_id)
-    assert feature_type == "compound", f"Cannot re-index a non-compound dataset '{dataset_id}' by compound label"
+    assert feature_type == "compound_experiment", f"Dataset '{dataset_id}' is indexed by '{feature_type}', cannot be re-indexed by compound label"
     compound_labels_by_experiment = get_compound_labels_for_compound_experiment_dataset(dataset_id)
     compound_experiment_df = interactive_utils.get_subsetted_df_by_labels(dataset_id, None, None)
     compound_df = compound_experiment_df.rename(index=compound_labels_by_experiment)

@@ -323,7 +323,7 @@ def get_dataset_data_indexed_by_compound_label(dataset_id) -> pd.DataFrame:
     except that for legacy compound datasets, the result will be indexed by compound 
     (to match breadbox).
     """
-    if is_breadbox_id:
+    if is_breadbox_id(dataset_id):
         return get_subsetted_df_by_labels(dataset_id)
     else:
         return legacy_compound_utils.get_dataset_data_indexed_by_compound_label(dataset_id)
