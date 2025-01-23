@@ -226,6 +226,12 @@ def mock_celery(minimal_db, settings, monkeypatch, celery_app):
     def get_test_settings():
         return settings
 
+    def mock_check_celery():
+        return True
+
+    # Monkeypatch check_celery and pretend celery is running for test
+    monkeypatch.setattr(utils, "check_celery", mock_check_celery)
+
     # The endpoint uses celery, and needs monkeypatching to replace db_context and get_settings,
     # which are not passed in as params due to the limits of redis serialization.
     monkeypatch.setattr(dataset_tasks, "db_context", mock_db_context)

@@ -20,6 +20,8 @@ from breadbox.crud.dataset import get_matching_feature_metadata_labels
 
 from ..config import Settings, get_settings
 from .dependencies import get_user, get_db_with_user
+from breadbox.schemas.custom_http_exception import CeleryConnectionError
+
 
 router = APIRouter(prefix="/downloads", tags=["downloads"])
 log = getLogger(__name__)
@@ -67,6 +69,7 @@ def export_dataset(
     user: str = Depends(get_user),
     settings: Settings = Depends(get_settings),
 ):
+    utils.check_celery()
 
     dataset_id = exportParams.datasetId
     feature_labels = exportParams.featureLabels
@@ -103,6 +106,8 @@ def export_merged_dataset(
     user: str = Depends(get_user),
     settings: Settings = Depends(get_settings),
 ):
+    utils.check_celery()
+
     dataset_ids = exportParams.datasetIds
     feature_labels = exportParams.featureLabels
     sample_ids = exportParams.cellLineIds
