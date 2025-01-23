@@ -215,11 +215,10 @@ def get_lowest_z_scores_response(
     Returns: Top labels (ex. genes) and values (ex. gene effects) across all cell lines
     as well as index of the column containing data for the given cell line. 
 
-    TODO: After these datasets are migrated to breadbox, the performance of this method can be 
+    Note: After these datasets are migrated to breadbox, the performance of this method can be 
     subsantially improved by calling breadbox's aggregation endpoint instead of loading 
     the full matrix here. 
     """
-    # TODO: refactor the params here
     cell_line = DepmapModel.get_by_model_id(model_id, must=False)
     result = {
         "model_id": cell_line.model_id,
