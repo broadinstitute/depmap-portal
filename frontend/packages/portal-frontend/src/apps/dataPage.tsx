@@ -1,6 +1,8 @@
 import "src/public-path";
 import * as React from "react";
 import * as ReactDOM from "react-dom";
+import { DeprecatedDataExplorerApiProvider } from "@depmap/data-explorer-2";
+import { evaluateLegacyContext } from "src/data-explorer-2/deprecated-api";
 import ErrorBoundary from "src/common/components/ErrorBoundary";
 import "react-bootstrap-typeahead/css/Typeahead.css";
 import "src/common/styles/typeahead_fix.scss";
@@ -23,11 +25,15 @@ const { termsDefinitions, releaseNotesUrl, forumUrl } = data;
 const App = () => {
   return (
     <ErrorBoundary>
-      <DataPage
-        termsDefinitions={termsDefinitions}
-        releaseNotesUrl={releaseNotesUrl}
-        forumUrl={forumUrl}
-      />
+      <DeprecatedDataExplorerApiProvider
+        evaluateLegacyContext={evaluateLegacyContext}
+      >
+        <DataPage
+          termsDefinitions={termsDefinitions}
+          releaseNotesUrl={releaseNotesUrl}
+          forumUrl={forumUrl}
+        />
+      </DeprecatedDataExplorerApiProvider>
     </ErrorBoundary>
   );
 };

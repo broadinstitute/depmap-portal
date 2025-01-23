@@ -8,6 +8,7 @@ import { InteractivePage } from "@depmap/interactive";
 import { getQueryParams } from "@depmap/utils";
 import { renderCellLineSelectorModal } from "@depmap/cell-line-selector";
 import {
+  evaluateLegacyContext,
   fetchDatasetDetails,
   fetchDatasetsByIndexType,
   fetchDatasetsMatchingContextIncludingEntities,
@@ -62,6 +63,7 @@ const App = () => {
     <ErrorBoundary>
       <ApiContext.Provider value={apiFunctions.depmap}>
         <DeprecatedDataExplorerApiProvider
+          evaluateLegacyContext={evaluateLegacyContext}
           fetchDatasetDetails={fetchDatasetDetails}
           fetchDatasetsByIndexType={fetchDatasetsByIndexType}
           fetchDimensionLabels={fetchDimensionLabels}
