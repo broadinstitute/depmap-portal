@@ -1,3 +1,5 @@
+import logging
+import pandas as pd
 import sqlalchemy as sa
 
 from depmap.interactive import interactive_utils
@@ -6,6 +8,10 @@ from depmap.dataset.models import (
     CompoundExperiment,
 )
 from depmap.partials.matrix.models import Matrix, RowMatrixIndex
+
+# These methods can all be deleted once compound datasets are migrated to breadbox.
+
+log = logging.getLogger(__name__)
 
 def get_compound_labels_for_compound_experiment_dataset(dataset_name: str) -> dict[str, str]:
     """
@@ -25,3 +31,16 @@ def get_compound_labels_for_compound_experiment_dataset(dataset_name: str) -> di
         .all()
     )
     return {experiment_id: compound_label for experiment_id, compound_label in labels_by_indeces}
+
+def get_dataset_data_indexed_by_compound_label(dataset_id: str) -> pd.DataFrame:
+    feature_type = interactive_utils.get_entity_type(dataset_id)
+    assert feature_type == "compound", f"Cannot re-index a non-compound dataset '{dataset_id}' by compound label"
+    compound_labels_by_experiment = get_compound_labels_for_compound_experiment_dataset(dataset_id)
+    compound_experiment_df = interactive_utils.get_subsetted_df_by_labels(dataset_id, None, None)
+    compound_df = compound_experiment_df.rename(index=compound_labels_by_experiment)
+
+    # Check for duplicate compound labels (which is possible since there are multiple CEs per compound)
+    if compound_df.index.duplicated().any():
+        log.warning(f"Found duplicate compounds in the dataset {dataset_id}. Keeping first occurance, dropping others.")
+        compound_df = compound_df.reset_index().drop_duplicates(subset="index").set_index("index") # pyright: ignore
+    return compound_df

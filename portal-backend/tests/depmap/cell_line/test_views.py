@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
+from depmap import data_access
 from depmap.cell_line.views import (
     convert_to_z_score_matrix,
     get_all_cell_line_gene_effects,
@@ -300,7 +301,7 @@ def test_get_all_cell_line_compound_sensitivities(empty_db_mock_downloads):
     )
 
     # Check that all non-null rows are included and have the correct gene names
-    assert actual_df.index.values.tolist() == [compounds[0].label, compounds[1].label]
+    assert actual_df.index.values.tolist() == [compounds[0].label, compounds[1].label] # TODO: is this not compound label??
 
     # validate each column's values: compound_sensitivity, z_score, mean, stddev
     expected_sensitivities = [2, 0]
@@ -392,6 +393,7 @@ def test_get_rows_with_lowest_z_score(empty_db_mock_downloads):
     actual_result = get_rows_with_lowest_z_score(
         dataset_name=dataset_name.name,
         model_id=cell_lines[col_index].model_id,
+        df=data_access.get_subsetted_df_by_labels(dataset_name.name)
     )
     assert actual_result["model_id"] == cell_lines[col_index].model_id
     assert actual_result["cell_line_col_index"] == col_index

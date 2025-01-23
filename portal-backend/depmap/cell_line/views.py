@@ -189,7 +189,8 @@ def get_pref_dep_data_for_data_type(data_type: str, model_id: str) -> dict:
         abort(404)
     # dataset_name is dataset enum name
     dataset_name = dataset.name.name
-    rows = get_rows_with_lowest_z_score(dataset_name, model_id)
+    df = data_access.get_subsetted_df_by_labels(dataset_name)
+    rows = get_rows_with_lowest_z_score(dataset_name, model_id, df)
     return rows
 
 
@@ -201,13 +202,13 @@ def get_compound_sensitivity_data(model_id: str) -> dict:
     if dataset is None:
         abort(404)
     dataset_name = dataset.name.name
-    labels_by_exp_id = get_compound_labels_for_compound_experiment_dataset(dataset_name)
+    df = data_access.get_dataset_data_indexed_by_compound_label(dataset_name)
 
-    return get_rows_with_lowest_z_score(dataset_name, model_id, index_renaming_dict=labels_by_exp_id)
+    return get_rows_with_lowest_z_score(dataset_name, model_id, df)
 
 
 def get_rows_with_lowest_z_score(
-    dataset_name: str, model_id: str, index_renaming_dict: dict[str, str] = {}
+    dataset_name: str, model_id: str, df: pd.DataFrame
 ):
     """Gets data for the top 10 rows of the given dataset, where top values have the 
     lowest z-scores for the cell line (matching the given depmap id). For example, 
@@ -221,15 +222,12 @@ def get_rows_with_lowest_z_score(
     subsantially improved by calling breadbox's aggregation endpoint instead of loading 
     the full matrix here. 
     """
+    # TODO: refactor the params here
     cell_line = DepmapModel.get_by_model_id(model_id, must=False)
     result = {
         "model_id": cell_line.model_id,
         "dataset_label": data_access.get_dataset_label(dataset_name),
     }
-
-    df = data_access.get_subsetted_df_by_labels(dataset_name)
-    if index_renaming_dict:
-        df = df.rename(index=index_renaming_dict) # TODO: run frontend to confirm this still works (no test for this)
 
     if model_id in df.columns:
         # Get the full matrix of gene effect dat        
@@ -295,7 +293,7 @@ def download_gene_effects(dataset_type: str, model_id: str):
 
 
 def get_all_cell_line_gene_effects(
-    dataset_name: str, model_id: int
+    dataset_name: str, model_id: str
 ) -> pd.DataFrame:
     """Get all gene effect data related to the cell line. Include five columns:
         gene, gene_effect, z_score, mean, stddev"""
@@ -336,12 +334,8 @@ def get_all_cell_line_compound_sensitivity(
 ) -> pd.DataFrame:
     """Get all compound sensitivity data related to the cell line. Include five columns:
         compound, compound_sensitivity, z_score, mean, stddev"""
-    sensitivity_df = data_access.get_subsetted_df_by_ids(dataset_name)
+    sensitivity_df = data_access.get_dataset_data_indexed_by_compound_label(dataset_name)
     sensitivity_df = sensitivity_df[np.isfinite(sensitivity_df[model_id])]
-
-    # The dataframe is currently indexed by compound experiment. Re-index by compound.
-    labels_by_exp_id = get_compound_labels_for_compound_experiment_dataset(dataset_name)
-    sensitivity_df = sensitivity_df.rename(index=labels_by_exp_id)
 
     result_df = get_stats_for_dataframe(sensitivity_df, model_id)
 

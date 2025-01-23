@@ -18,6 +18,8 @@ from .interface import (
     get_slice_data,
     is_categorical,
     is_continuous,
+    # compound-specific methods
+    get_dataset_data_indexed_by_compound_label,
     # methods that will be supported with modified contracts
     get_private_datasets,
     get_row_of_values,
