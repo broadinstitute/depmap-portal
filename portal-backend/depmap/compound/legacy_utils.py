@@ -14,8 +14,7 @@ from depmap.partials.matrix.models import Matrix, RowMatrixIndex
 log = logging.getLogger(__name__)
 
 def get_compound_labels_for_compound_experiment_dataset(dataset_name: str) -> dict[str, str]:
-    """
-    In the future, all drug screen datasets will be indexed by compound instead of compound experiment. 
+    """ 
     This method loads a mapping between the old index (compound experiment label) and 
     method is used to re-index datasets which are indexed by compound experiment. 
     """
@@ -33,6 +32,10 @@ def get_compound_labels_for_compound_experiment_dataset(dataset_name: str) -> di
     return {experiment_id: compound_label for experiment_id, compound_label in labels_by_indeces}
 
 def get_dataset_data_indexed_by_compound_label(dataset_id: str) -> pd.DataFrame:
+    """
+    Load the data for a drug screen dataset. This is similar to get_subsetted_df_by_labels,
+    except that for compound datasets, the result will be indexed by compound (to match breadbox).
+    """
     feature_type = interactive_utils.get_entity_type(dataset_id)
     assert feature_type == "compound_experiment", f"Dataset '{dataset_id}' is indexed by '{feature_type}', cannot be re-indexed by compound label"
     compound_labels_by_experiment = get_compound_labels_for_compound_experiment_dataset(dataset_id)

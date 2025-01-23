@@ -22,8 +22,6 @@ from depmap.partials.matrix.models import ColMatrixIndex
 from oauth2client.service_account import ServiceAccountCredentials
 
 from depmap.dataset.models import (
-    Compound,
-    CompoundExperiment,
     DependencyDataset,
     BiomarkerDataset,
     TabularDataset,
@@ -203,6 +201,7 @@ def get_compound_sensitivity_data(model_id: str) -> dict:
         abort(404)
     dataset_name = dataset.name.name
     df = data_access.get_dataset_data_indexed_by_compound_label(dataset_name)
+    print(df)
 
     return get_rows_with_lowest_z_score(dataset_name, model_id, df)
 
@@ -358,28 +357,6 @@ def get_stats_for_dataframe(df: pd.DataFrame, model_id: str):
     sorted_index = cell_line_z_scores.sort_values().index
     result_df = result_df.loc[sorted_index]
     return result_df
-
-
-def get_compound_labels_for_compound_experiment_dataset(dataset_name: str) -> dict[str, str]:
-    """Compound labels by compund experiment labels."""
-    # TODO: move this elsewhere to be replaced. It doesn't seem to exist elsewhere
-    # TODO: maybe just make a new util like "get_compound_dataset_by_new_index"?? or add a flag to some of the existing utils like get_subsetted_df
-    # TODO: maybe just make a function that takes a DF indexed by CEs and returns one indexed by compounds. Ex. 'reindex_by_compound'
-    #        - could put new version in compound/utils.py or something
-    # Data access details should be in interactive config
-    # (Using SQLAlchemy to join the compound object to the matrix)
-    matrix_id = data_access.get_matrix_id(dataset_name)
-    comp_exp_alias = sa.orm.aliased(CompoundExperiment)
-    compound_alias = sa.orm.aliased(Compound)
-    labels_by_indeces = (
-        Matrix.query.filter_by(matrix_id=matrix_id)
-        .join(RowMatrixIndex)
-        .join(comp_exp_alias)
-        .join(compound_alias, compound_alias.entity_id == comp_exp_alias.compound_id)
-        .with_entities(comp_exp_alias.label, compound_alias.label)
-        .all()
-    )
-    return {experiment_id: compound_label for experiment_id, compound_label in labels_by_indeces}
 
 
 @blueprint.route("/datasets/<model_id>")
