@@ -6,3 +6,6 @@ Note that there is a model-config.yaml file which has the config of all the mode
 Once conseq is installed, you can run `conseq run fit.conseq` to start.
 
 The `fit.conseq` works as follows:
+
+1. It first creates model input json files based on the `model-config.yaml` file.
+2. Once the input json file is created, daintree is run to produce the output for predictability.
