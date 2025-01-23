@@ -58,7 +58,7 @@ class DepmapModel(Model):
 
     cell_line_name = Column(String, index=True, unique=True, nullable=True)
     ccle_name = Column(String, index=True, unique=True, nullable=True)
-    patient_id = Column(String, index=True, nullable=True)
+    patient_id = Column(String, index=True, nullable=False)
 
     # TODO: Update CellLineAlias and dependencies to only use DepmapModel table instead of CellLine
     cell_line_alias = relationship(
