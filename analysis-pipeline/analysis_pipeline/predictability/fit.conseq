@@ -1,0 +1,134 @@
+add-if-missing {
+    "type": "target_matrix",
+    "label": "crispr_gene_effect",
+    "source_dataset_id": "internal-24q2-3719.82/CRISPRGeneEffect"
+}
+
+add-if-missing {
+    "type": "feature",
+    "label": "lineage",
+    "source_dataset_id": "predictability-76d5.94/PredictabilityLineageTransformed"
+}
+
+add-if-missing {
+    "type": "feature",
+    "label": "confounder",
+    "source_dataset_id": "predictability-76d5.111/PredictabilityCRISPRConfoundersTransformed"
+}
+
+add-if-missing {
+    "type": "feature",
+    "label": "driver_events",
+    "source_dataset_id": "predictability-76d5.99/DriverEvents"
+}
+
+add-if-missing {
+    "type": "target_matrix",
+    "label": "RNAi",
+    "source_dataset_id": "predictability-legacy-datasets-8c54.14/RNAiDep"
+}
+
+
+rule process_model_config:
+    inputs:
+        crispr_gene_effect={"type": "target_matrix", "label": "crispr_gene_effect"},
+        rnai={"type": "target_matrix", "label": "RNAi"},
+        lineage={"type": "feature", "label": "lineage"},
+        confounder={"type": "feature", "label": "confounder"},
+        driver_events={"type": "feature", "label": "driver_events"},
+        model_config=fileref("model-config.yaml")
+    outputs:
+        {
+        "type": "input-model-file",
+        "filename": {"$filename": "model-map.json"}
+        },
+
+    run "python" with """
+    import json
+    import yaml
+    import subprocess
+    import os
+
+    model_config_file = "{{ inputs.model_config.filename }}"
+    with open(model_config_file, 'r') as file:
+        config = yaml.safe_load(file)
+    
+    # Process each model in the YAML
+    for model_name, model_config in config.items():
+        output_json = {
+            "model_name": model_name,
+            "screen_name": model_config["Screen"],
+            "data": {}
+        }
+        
+        target = model_config["Target"][0]
+
+        # Choose the correct target based on screen name
+        if model_config["Screen"] == "CRISPR":
+            target_id = "{{ inputs.crispr_gene_effect.source_dataset_id }}"
+        elif model_config["Screen"] == "RNAi":
+            target_id = "{{ inputs.rnai.source_dataset_id }}"
+
+        output_json["data"][target] = {
+            "taiga_id": target_id,
+            "table_type": "target_matrix",
+            "relation": model_config["Relation"]
+        }
+        
+        for feature in model_config["Features"]:
+            if feature.lower() == "lineage":
+                feature_input = {{ inputs.lineage }}
+            elif feature.lower() == "confounder":
+                feature_input = {{ inputs.confounder }}
+            elif feature.lower() == "driverevents":
+                feature_input = {{ inputs.driver_events }}
+            
+            output_json["data"][feature] = {
+                "taiga_id": feature_input["source_dataset_id"],
+                "table_type": feature_input["type"],
+                "dim_type": feature_input["label"].lower(),
+                "required": feature in model_config["Required"],
+                "exempt": False
+            }
+        
+        output_file = f"{model_name.lower()}_config.json"
+        output_file_path = os.path.abspath(output_file)
+
+        with open(output_file, 'w') as f:
+            json.dump(output_json, f, indent=2)
+        print(f"Created {output_file}")
+
+        
+        docker_command = [
+            "docker", "run",
+            "-w", "/daintree",
+            "--pull=always",
+            "-v", f"{output_file_path}:/daintree/{output_file}",
+            "us.gcr.io/broad-achilles/daintree-sparkles:v4",
+            "/install/depmap-py/bin/python3.9", "-u", "run_fit_models.py",
+            "collect-and-fit-generate-config",
+            "--input-files", output_file,
+            "--sparkles-path", "/install/sparkles/bin/sparkles",
+            "--sparkles-config", "/daintree/sparkles-config",
+            "--save-dir", "/daintree/output_data/nayeem-test",
+            "--test", "True",
+            "--skipfit", "False"
+        ]
+
+        try:
+            result = subprocess.run(
+                docker_command,
+                check=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True
+            )
+            
+            print("STDOUT:", result.stdout)
+            print("STDERR:", result.stderr)
+
+        except subprocess.CalledProcessError as e:
+            print(f"Command failed with return code {e.returncode}")
+            print("STDOUT:", e.stdout)
+            print("STDERR:", e.stderr)
+    """

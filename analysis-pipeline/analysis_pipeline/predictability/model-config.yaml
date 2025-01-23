@@ -1,0 +1,25 @@
+CellContext:
+  Screen: CRISPR
+  Target:
+    - CRISPR
+  Features:
+    - Lineage
+    - Confounder
+  Required:
+    - Lineage
+    - Confounder
+  Relation: All
+
+DriverEvents:
+  Screen: CRISPR
+  Target:
+    - CRISPR
+  Features:
+    - Lineage
+    - Confounder
+    - DriverEvents
+  Required:
+    - Lineage
+    - Confounder
+    - DriverEvents
+  Relation: All
