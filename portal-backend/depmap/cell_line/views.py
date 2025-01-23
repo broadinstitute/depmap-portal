@@ -15,7 +15,6 @@ from flask import (
 )
 import numpy as np
 import pandas as pd
-import sqlalchemy as sa
 
 from depmap import data_access
 from depmap.partials.matrix.models import ColMatrixIndex
@@ -32,7 +31,6 @@ from depmap.download.utils import get_download_url
 from depmap.extensions import csrf_protect
 from depmap.metmap.models import MetMap500
 from depmap.utilities.sign_bucket_url import sign_url
-from depmap.partials.matrix.models import Matrix, RowMatrixIndex
 from depmap.partials.data_table.factories import (
     get_mutation_by_cell_line_table,
     get_fusion_by_cell_line_table,
