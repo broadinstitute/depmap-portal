@@ -31,7 +31,7 @@ def get_compound_labels_for_compound_experiment_dataset(dataset_name: str) -> di
     )
     return {experiment_id: compound_label for experiment_id, compound_label in labels_by_indeces}
 
-def get_dataset_data_indexed_by_compound_label(dataset_id: str) -> pd.DataFrame:
+def get_subsetted_df_by_compound_labels(dataset_id: str) -> pd.DataFrame:
     """
     Load the data for a drug screen dataset. This is similar to get_subsetted_df_by_labels,
     except that for compound datasets, the result will be indexed by compound (to match breadbox).

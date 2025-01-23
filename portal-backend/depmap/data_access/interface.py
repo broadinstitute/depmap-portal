@@ -317,16 +317,18 @@ def get_slice_data(slice_query: SliceQuery) -> pd.Series:
 # These methods exist to ensure that both the legacy backend and breadbox are returning the same 
 # data while we are in this transitionary period. 
 
-def get_dataset_data_indexed_by_compound_label(dataset_id) -> pd.DataFrame:
+def get_subsetted_df_by_compound_labels(dataset_id) -> pd.DataFrame:
     """
     Load the data for a drug screen dataset. This is similar to get_subsetted_df_by_labels,
     except that for legacy compound datasets, the result will be indexed by compound 
     (to match breadbox).
     """
-    if is_breadbox_id(dataset_id):
-        return get_subsetted_df_by_labels(dataset_id)
+    dataset = get_matrix_dataset(dataset_id)
+    # Legacy datasets indexed by compound experiment get re-indexed by compound label
+    if not is_breadbox_id(dataset_id) and dataset.feature_type == "compound_experiment":
+        return legacy_compound_utils.get_subsetted_df_by_compound_labels(dataset_id)
     else:
-        return legacy_compound_utils.get_dataset_data_indexed_by_compound_label(dataset_id)
+        return get_subsetted_df_by_labels(dataset_id)
 
 
 ##################################################
