@@ -188,8 +188,7 @@ def get_pref_dep_data_for_data_type(data_type: str, model_id: str) -> dict:
     # dataset_name is dataset enum name
     dataset_name = dataset.name.name
     df = data_access.get_subsetted_df_by_labels(dataset_name)
-    rows = get_rows_with_lowest_z_score(dataset_name, model_id, df)
-    return rows
+    return get_lowest_z_scores_response(dataset_name, model_id, df)
 
 
 @blueprint.route("/compound_sensitivity/<model_id>")
@@ -201,13 +200,12 @@ def get_compound_sensitivity_data(model_id: str) -> dict:
         abort(404)
     dataset_name = dataset.name.name
     df = data_access.get_dataset_data_indexed_by_compound_label(dataset_name)
-    print(df)
 
-    return get_rows_with_lowest_z_score(dataset_name, model_id, df)
+    return get_lowest_z_scores_response(dataset_name, model_id, df)
 
 
-def get_rows_with_lowest_z_score(
-    dataset_name: str, model_id: str, df: pd.DataFrame
+def get_lowest_z_scores_response(
+    dataset_name: str, model_id: str, dataset_df: pd.DataFrame
 ):
     """Gets data for the top 10 rows of the given dataset, where top values have the 
     lowest z-scores for the cell line (matching the given depmap id). For example, 
@@ -228,13 +226,13 @@ def get_rows_with_lowest_z_score(
         "dataset_label": data_access.get_dataset_label(dataset_name),
     }
 
-    if model_id in df.columns:
-        # Get the full matrix of gene effect dat        
-        df = df[np.isfinite(df[model_id])]  # filter nulls
+    if model_id in dataset_df.columns:
+        # filter nulls     
+        dataset_df = dataset_df[np.isfinite(dataset_df[model_id])] 
         # sort the matrix using cell line z-scores
-        cell_line_z_scores = convert_to_z_score_matrix(df)[model_id]
+        cell_line_z_scores = convert_to_z_score_matrix(dataset_df)[model_id]
         sorted_index = cell_line_z_scores.sort_values().index
-        sorted_df = df.loc[sorted_index]
+        sorted_df = dataset_df.loc[sorted_index]
         result_df = sorted_df.head(10)  # return data for the top 10 genes
         # Construct result
         result["labels"] = result_df.index.values.tolist()
