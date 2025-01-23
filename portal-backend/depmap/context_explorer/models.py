@@ -52,67 +52,9 @@ def _get_child_lineages_next_lineage_level_from_root_info(
     return child_lineages, next_lineage_level_num
 
 
-class ContextExplorerTree(dict):
-    def __init__(self, root):
-        super().__init__()
-        self.__dict__ = self
-        self.root = root
-        self.children = []
-
-    def add_node(self, obj):
-        self.children.append(obj)
-
-    def create_context_tree_from_root_info(
-        self, tree_df, current_node_code, node_level: int,
-    ):
-        sorted = tree_df.loc[tree_df[f"level_{node_level}"] == current_node_code]
-        (
-            child_subtype_codes,
-            next_level,
-        ) = _get_child_lineages_next_lineage_level_from_root_info(
-            sorted=sorted, current_level=node_level, current_code=current_node_code
-        )
-
-        if next_level is None:
-            return
-
-        if len(child_subtype_codes) > 0:
-            for child_subtype_code in child_subtype_codes:
-                model_ids = SubtypeNode.get_model_ids_by_subtype_code_and_node_level(
-                    child_subtype_code, next_level
-                )
-
-                current_child_codes = [child.subtype_code for child in self.children]
-                if len(model_ids) > 0 and child_subtype_code not in current_child_codes:
-                    node = ContextNode(
-                        name=SubtypeNode.get_by_code(child_subtype_code).node_name,
-                        subtype_code=child_subtype_code,
-                        parent_subtype_code=current_node_code,
-                        model_ids=model_ids,
-                        node_level=next_level,
-                        root=self.root,
-                        path=[self.root.subtype_code, child_subtype_code],
-                    )
-                    self.add_node(node)
-
-            for child in self.children:
-                child.create_context_tree_from_root_info(
-                    tree_df=sorted,
-                    current_node_code=child.subtype_code,
-                    node_level=next_level,
-                )
-
-
 class ContextNode(dict):
     def __init__(
-        self,
-        name,
-        subtype_code,
-        parent_subtype_code,
-        node_level,
-        model_ids,
-        root,
-        path=[],
+        self, name, subtype_code, parent_subtype_code, node_level, model_ids, path=[],
     ):
         super().__init__()
         self.__dict__ = self
@@ -121,19 +63,16 @@ class ContextNode(dict):
         self.parent_subtype_code = parent_subtype_code
         self.node_level = node_level
         self.model_ids = model_ids
-        self.root = root
         self.path = path
         self.children = []
 
     def add_node(self, obj):
         self.children.append(obj)
 
-    def find_path_to_context_node(
-        self, root, target_subtype_code: str, path: List[str] = []
-    ):
-        path = path + [root.subtype_code] if root.subtype_code not in path else path
+    def find_path_to_context_node(self, target_subtype_code: str, path: List[str] = []):
+        path = path + [self.subtype_code] if self.subtype_code not in path else path
 
-        if root.subtype_code == target_subtype_code:
+        if self.subtype_code == target_subtype_code:
             return path
 
         path = path + [target_subtype_code]
@@ -168,9 +107,8 @@ class ContextNode(dict):
                         parent_subtype_code=current_node_code,
                         model_ids=model_ids,
                         node_level=next_level,
-                        root=self.root,
                         path=self.find_path_to_context_node(
-                            self.root, child_subtype_code, self.path
+                            child_subtype_code, self.path
                         ),
                     )
                     self.add_node(node)

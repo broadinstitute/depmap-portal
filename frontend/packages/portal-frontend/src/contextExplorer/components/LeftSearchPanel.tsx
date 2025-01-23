@@ -11,7 +11,6 @@ import {
 import {
   ContextNameInfo,
   ContextNode,
-  ContextExplorerTree,
   TabTypes,
   TreeType,
 } from "../models/types";
@@ -20,10 +19,10 @@ import styles from "../styles/ContextExplorer.scss";
 export interface LeftSearchPanelProps {
   lineageSearchOptions: { value: string; label: string }[];
   molecularSubtypeSearchOptions: { value: string; label: string }[];
-  contextTree: ContextExplorerTree | null;
+  contextTreeRoot: ContextNode | null;
   onRefineYourContext: (
     node: ContextNode | null,
-    tree: ContextExplorerTree | null,
+    tree: ContextNode | null,
     subtypeCode?: string
   ) => void;
   topContextNameInfo: ContextNameInfo;
@@ -36,10 +35,10 @@ export interface LeftSearchPanelProps {
 
 export interface ContextTreeProps {
   searchOptions: { value: string; label: string }[];
-  contextTree: ContextExplorerTree | null;
+  contextTree: ContextNode | null;
   onRefineYourContext: (
     node: ContextNode | null,
-    tree: ContextExplorerTree | null,
+    tree: ContextNode | null,
     subtypeCode?: string
   ) => void;
   topContextNameInfo: ContextNameInfo;
@@ -435,7 +434,7 @@ const LeftSearchPanel = (lineageSearchProps: LeftSearchPanelProps) => {
   const {
     lineageSearchOptions,
     molecularSubtypeSearchOptions,
-    contextTree,
+    contextTreeRoot: contextTree,
     onRefineYourContext,
     topContextNameInfo,
     selectedContextNode,

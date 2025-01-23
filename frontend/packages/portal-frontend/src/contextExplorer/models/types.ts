@@ -14,11 +14,6 @@ export interface ContextNode {
   children: ContextNode[];
 }
 
-export interface ContextExplorerTree {
-  root: ContextNode;
-  children: ContextNode[];
-}
-
 export interface ContextNameInfo {
   name: string;
   subtype_code: string;
@@ -31,13 +26,13 @@ export interface SearchOptionsByTreeType {
 }
 
 export interface ContextInfoInitial {
-  tree: ContextExplorerTree;
+  tree: ContextNode;
   table_data: { [key: string]: string | boolean }[];
   data_availability: Summary;
 }
 
 export interface ContextInfo {
-  tree: ContextExplorerTree;
+  tree: ContextNode;
   table_data: { [key: string]: string | boolean }[];
   data_availability: ContextSummary;
 }

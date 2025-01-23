@@ -11,7 +11,6 @@ import {
   ContextInfo,
   ContextNode,
   ContextSummary,
-  ContextExplorerTree,
   TabTypes,
   TreeType,
 } from "../models/types";
@@ -143,7 +142,7 @@ export const ContextExplorer = () => {
   const onRefineYourContext = useCallback(
     async (
       contextNode: ContextNode | null,
-      contextTree: ContextExplorerTree | null,
+      contextTreeRoot: ContextNode | null,
       subtypeCode?: string
     ) => {
       deleteSpecificQueryParams(["context"]);
@@ -155,15 +154,13 @@ export const ContextExplorer = () => {
 
         if (
           !contextInfo ||
-          (contextTree && context[0] !== contextTree.root.subtype_code)
+          (contextTreeRoot && context[0] !== contextTreeRoot.subtype_code)
         ) {
           const newContextInfo = await dapi.getContextExplorerContextInfo(
             context[0]
           );
           setContextInfo(newContextInfo);
           setContextDataAvailability(newContextInfo.data_availability);
-          console.log("NEW INFO");
-          console.log(newContextInfo.data_availability);
         }
         setContextPath(context);
 
@@ -214,7 +211,7 @@ export const ContextExplorer = () => {
               <LeftSearchPanel
                 lineageSearchOptions={lineageSearchOptions}
                 molecularSubtypeSearchOptions={molecularSubtypeSearchOptions}
-                contextTree={contextInfo?.tree || null}
+                contextTreeRoot={contextInfo?.tree || null}
                 onRefineYourContext={onRefineYourContext}
                 topContextNameInfo={topContextNameInfo}
                 selectedContextNode={selectedContextNode!}

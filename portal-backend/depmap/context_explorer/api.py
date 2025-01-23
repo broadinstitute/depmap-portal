@@ -21,7 +21,6 @@ from depmap.settings.shared import DATASET_METADATA
 from depmap.context_explorer.models import (
     ContextAnalysis,
     ContextNode,
-    ContextExplorerTree,
 )
 from depmap.context.models_new import SubtypeNode, TreeType
 from depmap.database import db
@@ -434,7 +433,7 @@ def get_child_subtype_summary_df(level_0_subtype_code: str, summary_df: pd.DataF
 
 def get_context_explorer_lineage_trees_and_table_data(
     level_0_subtype_code: str,
-) -> Tuple[Dict[str, ContextExplorerTree], List[Dict[str, Union[str, bool]]]]:
+) -> Tuple[Dict[str, ContextNode], List[Dict[str, Union[str, bool]]]]:
     node = SubtypeNode.get_by_code(level_0_subtype_code)
 
     subtype_tree_query = SubtypeNode.get_subtype_tree_by_models_query(
@@ -495,17 +494,15 @@ def get_context_explorer_lineage_trees_and_table_data(
         parent_subtype_code=None,
         model_ids=model_ids,
         node_level=node_level,
-        root=None,
     )
-    tree = ContextExplorerTree(root_node)
 
-    tree.create_context_tree_from_root_info(
+    root_node.create_context_tree_from_root_info(
         tree_df=subtype_tree_df,
         current_node_code=level_0_subtype_code,
         node_level=node_level,
     )
 
-    return tree, overview_data, data_availability
+    return root_node, overview_data, data_availability
 
 
 @namespace.route("/context_summary")

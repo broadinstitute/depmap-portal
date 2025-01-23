@@ -1,7 +1,6 @@
 import {
   ContextNode,
   ContextSummary,
-  ContextExplorerTree,
   DataType,
   DataTypeStrings,
   OutGroupType,
@@ -538,7 +537,7 @@ export function getSelectionInfo(
 
 export function getSelectedContextNode(
   contextPath: string[] | null,
-  contextTree: ContextExplorerTree | undefined
+  contextTree: ContextNode | undefined
 ) {
   let selectedNode: ContextNode | null = null;
   let topContextNameInfo = ALL_SEARCH_OPTION;
@@ -549,11 +548,11 @@ export function getSelectedContextNode(
 
       if (selectedTree) {
         topContextNameInfo = {
-          subtype_code: selectedTree.root.subtype_code,
-          name: selectedTree.root.name,
+          subtype_code: selectedTree.subtype_code,
+          name: selectedTree.name,
           node_level: 0,
         };
-        selectedNode = selectedTree.root;
+        selectedNode = selectedTree;
 
         if (contextPath.length > 1 && selectedTree.children.length > 0) {
           // For each subtype code in contextPath, find the node amongst the children
@@ -592,7 +591,6 @@ export function getSelectedContextNode(
             contextPath[contextPath.length - 1]
           );
         }
-        console.log(selectedNode);
       } else {
         // Invalid params, so default to loading All data
         deleteSpecificQueryParams(["context"]);
