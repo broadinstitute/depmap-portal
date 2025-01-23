@@ -269,7 +269,6 @@ initialize_current_auth.py: error: Argument of type "str | None" cannot be assig
 initialize_current_auth.py: error: Cannot access member "groups" for type "list[str]"
 initialize_current_auth.py: error: Cannot access member "is_admin" for type "list[str]"
 initialize_current_auth.py: error: Cannot assign member "is_everything_visible" for type "list[str]"
-interface.py: error: Expression of type "Unknown | None" cannot be assigned to return type "int"
 iter.py: error: Argument of type "TranslateCRtoNL" cannot be assigned to parameter "__value" of type "int" in function "__setitem__"
 json_dump.py: error: Argument of type "Literal['JSONIFY_MIMETYPE']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
 json_dump.py: error: Argument of type "Literal['JSONIFY_PRETTYPRINT_REGULAR']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"

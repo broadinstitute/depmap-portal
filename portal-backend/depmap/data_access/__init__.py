@@ -30,9 +30,5 @@ from .interface import (
     get_all_row_indices_labels_entity_ids,
     get_context_dataset,
     get_custom_cell_lines_dataset,
-    get_matrix_id,
-    get_sort_key,
     has_config,
-    is_filter,
-    is_standard,
 )
