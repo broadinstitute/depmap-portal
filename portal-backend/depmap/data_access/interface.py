@@ -1,4 +1,5 @@
 from typing import Any, Literal, Optional
+import logging
 import pandas as pd
 
 from depmap_compute.slice import SliceQuery
@@ -9,6 +10,7 @@ from depmap.interactive import interactive_utils
 from depmap.interactive.common_utils import RowSummary
 from depmap.interactive.config.models import Config, DatasetSortKey
 from depmap.partials.matrix.models import CellLineSeries
+from depmap.compound import legacy_utils as legacy_compound_utils
 
 # This data access interface will eventually only contains functions
 # which can be supported through both breadbox and the legacy backend.
@@ -16,6 +18,7 @@ from depmap.partials.matrix.models import CellLineSeries
 # from the interface that will be used going forward. The majority of the
 # portal should use this module for data access exclusively (and not interactive_utils).
 
+log = logging.getLogger(__name__)
 
 def get_all_matrix_datasets() -> list[MatrixDataset]:
     """
@@ -308,6 +311,33 @@ def get_slice_data(slice_query: SliceQuery) -> pd.Series:
 
     else:
         raise Exception("Unrecognized slice query identifier type")
+    
+###############################################################
+# METHODS BELOW ARE SPECIAL WORKAROUNDS FOR COMPOUND DATASETS #
+###############################################################
+    
+# should return identical data regardlesss of whether a dataset
+# is stored in breadbox or the legacy backend.
+def get_dataset_data_indexed_by_compound_label(dataset_id) -> pd.DataFrame:
+    """"""
+    dataset = get_matrix_dataset(dataset_id)
+
+    if is_breadbox_id:
+        # Drug screen datasets in breadbox should already be indexed 
+        return get_subsetted_df_by_labels(dataset_id)
+    else:
+        assert dataset.feature_type == "compound_experiment" # TODO: confirm name and if this is consistent
+        compound_labels_by_experiment = legacy_compound_utils.get_compound_labels_for_compound_experiment_dataset(dataset_id)
+        compound_experiment_df = get_subsetted_df_by_labels(dataset_id)
+        compound_df = compound_experiment_df.rename(index=compound_labels_by_experiment)
+
+        # Check for duplicate compound labels (which is possible since there are multiple CEs per compound)
+        if compound_df.index.duplicated().any():
+            log.warning(f"Found duplicate comopounds in the dataset {dataset_id}. Keeping first occurance, dropping others.")
+            compound_df = compound_df.reset_index().drop_duplicates(subset="index").set_index("index")
+        return compound_df
+
+
 
 
 ##################################################

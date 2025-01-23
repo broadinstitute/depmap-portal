@@ -11,7 +11,6 @@ from depmap.cell_line.views import (
     get_all_cell_line_gene_effects,
     get_all_cell_line_compound_sensitivity,
     get_cell_line_col_index,
-    get_compound_labels_by_experiment_id,
     get_related_models,
     get_rows_with_lowest_z_score,
 )

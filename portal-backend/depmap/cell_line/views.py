@@ -201,7 +201,7 @@ def get_compound_sensitivity_data(model_id: str) -> dict:
     if dataset is None:
         abort(404)
     dataset_name = dataset.name.name
-    labels_by_exp_id = get_compound_labels_by_experiment_id(dataset_name)
+    labels_by_exp_id = get_compound_labels_for_compound_experiment_dataset(dataset_name)
 
     return get_rows_with_lowest_z_score(dataset_name, model_id, index_renaming_dict=labels_by_exp_id)
 
@@ -216,6 +216,10 @@ def get_rows_with_lowest_z_score(
 
     Returns: Top labels (ex. genes) and values (ex. gene effects) across all cell lines
     as well as index of the column containing data for the given cell line. 
+
+    TODO: After these datasets are migrated to breadbox, the performance of this method can be 
+    subsantially improved by calling breadbox's aggregation endpoint instead of loading 
+    the full matrix here. 
     """
     cell_line = DepmapModel.get_by_model_id(model_id, must=False)
     result = {
@@ -336,7 +340,7 @@ def get_all_cell_line_compound_sensitivity(
     sensitivity_df = sensitivity_df[np.isfinite(sensitivity_df[model_id])]
 
     # The dataframe is currently indexed by compound experiment. Re-index by compound.
-    labels_by_exp_id = get_compound_labels_by_experiment_id(dataset_name)
+    labels_by_exp_id = get_compound_labels_for_compound_experiment_dataset(dataset_name)
     sensitivity_df = sensitivity_df.rename(index=labels_by_exp_id)
 
     result_df = get_stats_for_dataframe(sensitivity_df, model_id)
@@ -362,9 +366,12 @@ def get_stats_for_dataframe(df: pd.DataFrame, model_id: str):
     return result_df
 
 
-def get_compound_labels_by_experiment_id(dataset_name: str) -> dict[str, str]:
-    """Compound labels by row matrix index."""
-    # TODO: move this elsewhere to be replaced - or figure out if it already exists elsewhere
+def get_compound_labels_for_compound_experiment_dataset(dataset_name: str) -> dict[str, str]:
+    """Compound labels by compund experiment labels."""
+    # TODO: move this elsewhere to be replaced. It doesn't seem to exist elsewhere
+    # TODO: maybe just make a new util like "get_compound_dataset_by_new_index"?? or add a flag to some of the existing utils like get_subsetted_df
+    # TODO: maybe just make a function that takes a DF indexed by CEs and returns one indexed by compounds. Ex. 'reindex_by_compound'
+    #        - could put new version in compound/utils.py or something
     # Data access details should be in interactive config
     # (Using SQLAlchemy to join the compound object to the matrix)
     matrix_id = data_access.get_matrix_id(dataset_name)
