@@ -301,7 +301,7 @@ def test_get_all_cell_line_compound_sensitivities(empty_db_mock_downloads):
     )
 
     # Check that all non-null rows are included and have the correct gene names
-    assert actual_df.index.values.tolist() == [compounds[0].label, compounds[1].label] # TODO: is this not compound label??
+    assert actual_df.index.values.tolist() == [compounds[0].label, compounds[1].label]
 
     # validate each column's values: compound_sensitivity, z_score, mean, stddev
     expected_sensitivities = [2, 0]
