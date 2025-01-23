@@ -627,10 +627,12 @@ export default class DataSlicer extends React.Component<
             launchCellLineSelectorModal={launchCellLineSelectorModal}
             id="cellLineDropdown"
             defaultNone
-            onListSelect={(e: CustomList) => {
-              this.setState({
-                selectedCellLineList: e,
-              });
+            onListSelect={(nextList: CustomList) => {
+              if (nextList.name === "" && nextList.lines.size === 0) {
+                this.setState({ selectedCellLineList: null });
+              } else {
+                this.setState({ selectedCellLineList: nextList });
+              }
             }}
           />
         )}
