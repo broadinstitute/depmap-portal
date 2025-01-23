@@ -1,3 +1,4 @@
+from audioop import reverse
 from operator import mod
 from typing import Dict, List, Literal, Tuple, Union
 import os
@@ -96,6 +97,7 @@ def _get_context_summary():
 
 def _get_all_level_0_subtype_info(tree_type: TreeType) -> List[dict]:
     subtype_nodes = SubtypeNode.get_by_tree_type_and_level(tree_type=tree_type, level=0)
+
     context_name_info = []
 
     for subtype_node in subtype_nodes:
@@ -318,11 +320,16 @@ class ContextInfo(
         (
             context_tree,
             overview_data,
+            data_availability,
         ) = get_context_explorer_lineage_trees_and_table_data(
             level_0_subtype_code=level_0_subtype_code
         )
 
-        return {"tree": context_tree, "table_data": overview_data}
+        return {
+            "tree": context_tree,
+            "table_data": overview_data,
+            "data_availability": data_availability,
+        }
 
 
 @namespace.route("/context_path")
@@ -350,9 +357,9 @@ class ContextPath(
 def _get_overview_table_data(
     df: pd.DataFrame, summary_df: pd.DataFrame
 ) -> pd.DataFrame:
+    summary_df_by_model_id = summary_df.transpose()
     overview_page_table = df
 
-    summary_df_by_model_id = summary_df.transpose()
     summary_df_by_model_id = summary_df_by_model_id.rename_axis("model_id")
 
     cell_line_display_names = DepmapModel.get_cell_line_display_names(
@@ -388,6 +395,43 @@ def _get_overview_table_data(
     return overview_data
 
 
+def get_child_subtype_summary_df(level_0_subtype_code: str, summary_df: pd.DataFrame):
+    # Get the children for displaying in the data availability chart
+    node_children = SubtypeNode.get_children_using_current_level_code(
+        level_0_subtype_code, 0
+    )
+    node_children_code_names = [
+        (child.subtype_code, child.node_name) for child in node_children
+    ]
+
+    def is_model_available(model_id: str, node_model_ids: List[str]):
+        return model_id in node_model_ids
+
+    model_avail_by_node_code = {}
+    all_model_ids = summary_df.columns.values.tolist()
+    for code, node_name in node_children_code_names:
+        model_ids = SubtypeNode.get_model_ids_by_subtype_code_and_node_level(
+            level_0_subtype_code, 0
+        )
+        if len(model_ids) == 0:
+            continue
+        model_id_availability = [
+            is_model_available(model_id=model_id, node_model_ids=model_ids)
+            for model_id in all_model_ids
+        ]
+        model_avail_by_node_code[code] = model_id_availability
+
+    subtype_avail_df = pd.DataFrame(
+        data=model_avail_by_node_code, index=pd.Index(all_model_ids, name="ModelID"),
+    )
+
+    subtype_avail_summary_merged = pd.merge(
+        subtype_avail_df, summary_df.transpose(), left_index=True, right_index=True
+    )
+
+    return subtype_avail_summary_merged
+
+
 def get_context_explorer_lineage_trees_and_table_data(
     level_0_subtype_code: str,
 ) -> Tuple[Dict[str, ContextExplorerTree], List[Dict[str, Union[str, bool]]]]:
@@ -401,8 +445,27 @@ def get_context_explorer_lineage_trees_and_table_data(
         subtype_tree_query.statement, subtype_tree_query.session.connection()
     )
 
-    subtype_df = subtype_df.set_index("model_id")
     summary_df = _get_context_summary_df()
+    subtype_avail_summary_merged = get_child_subtype_summary_df(
+        level_0_subtype_code=level_0_subtype_code, summary_df=summary_df
+    )
+
+    transposed_subtype_avail_summary_merged = subtype_avail_summary_merged.transpose()
+    data_availability = {
+        "values": [
+            row.values.tolist()
+            for _, row in transposed_subtype_avail_summary_merged.iterrows()
+        ],
+        "data_types": transposed_subtype_avail_summary_merged.index.values.tolist(),
+    }
+    data_availability["all_depmap_ids"] = [
+        (i, depmap_id)
+        for i, depmap_id in enumerate(
+            transposed_subtype_avail_summary_merged.columns.tolist()
+        )
+    ]
+
+    subtype_df = subtype_df.set_index("model_id")
 
     overview_data = _get_overview_table_data(df=subtype_df, summary_df=summary_df)
 
@@ -421,8 +484,10 @@ def get_context_explorer_lineage_trees_and_table_data(
     ]
 
     node_level = 0
-    subtype_context = SubtypeContext.get_by_code(level_0_subtype_code)
-    model_ids = SubtypeContext.get_model_ids_by_node_level(subtype_context, node_level)
+
+    model_ids = SubtypeNode.get_model_ids_by_subtype_code_and_node_level(
+        level_0_subtype_code, node_level
+    )
     node_name = node.node_name
     root_node = ContextNode(
         name=node_name,
@@ -440,7 +505,7 @@ def get_context_explorer_lineage_trees_and_table_data(
         node_level=node_level,
     )
 
-    return tree, overview_data
+    return tree, overview_data, data_availability
 
 
 @namespace.route("/context_summary")

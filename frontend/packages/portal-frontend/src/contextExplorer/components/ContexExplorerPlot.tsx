@@ -4,13 +4,14 @@ import PlotSpinner from "src/plot/components/PlotSpinner";
 import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
 import Heatmap from "src/plot/components/Heatmap";
 import { Button } from "react-bootstrap";
-import { ContextSummary } from "../models/types";
+import { ContextNode, ContextSummary, DataType } from "../models/types";
 import DatatypeSelector from "./DatatypeSelector";
 import { saveNewContext } from "src";
 import { getDataExplorerContextFromSelections } from "../utils";
 
 interface ContextExplorerPlotProps {
   selectedContextName: string;
+  selectedContextNode: ContextNode | null;
   data: ContextSummary;
   checkedDataValues: number[][];
   checkedDatatypes: Set<string>;
@@ -25,6 +26,7 @@ interface ContextExplorerPlotProps {
 function ContextExplorerPlot(props: ContextExplorerPlotProps) {
   const {
     data,
+    selectedContextNode,
     checkedDataValues,
     selectedContextName,
     checkedDatatypes,
@@ -51,6 +53,7 @@ function ContextExplorerPlot(props: ContextExplorerPlotProps) {
   // An integer+0.5 means that at least 2 datatypes of been selected on the graph's y-axis. On selection
   // of the 2nd datatype, unselected datatype rows get 0.5 added to every value. All this does is decrease
   // the opacity of that row so that the user can visualize their selected datatypes of interest.
+
   const cellLineCountsBackwards = useMemo(() => {
     return checkedDataValues.map((datatypeVals) => {
       return [...datatypeVals].filter((x) => x > 0.5).length;

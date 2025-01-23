@@ -78,6 +78,7 @@ import {
   ContextPlotBoxData,
   ContextExplorerDatasets,
   SearchOptionsByTreeType,
+  ContextInfoInitial,
 } from "src/contextExplorer/models/types";
 import {
   DataAvailability,
@@ -583,14 +584,47 @@ export class DepmapApi {
     );
   }
 
-  getContextExplorerContextInfo(subtypeCode: string): Promise<ContextInfo> {
+  async getContextExplorerContextInfo(
+    subtypeCode: string
+  ): Promise<ContextInfo> {
     const params = {
       level_0_subtype_code: subtypeCode,
     };
 
-    return this._fetch<ContextInfo>(
+    const context_info = await this._fetch<ContextInfoInitial>(
       `/api/context_explorer/context_info?${encodeParams(params)}`
     );
+
+    // const dataAvailVals = context_info.data_availability.values.map(
+    //   (datatypeVals: boolean[], index: number) => {
+    //     return datatypeVals.map((val: boolean) => {
+    //       return getDataTypeColorCategoryFromDataTypeValue(index, val);
+    //     });
+    //   }
+    // );
+
+    const dataAvailVals = context_info.data_availability.values.map(
+      (datatypeVals: boolean[], index: number) =>
+        datatypeVals.map((val: boolean) => {
+          const dType =
+            DataType[
+              context_info.data_availability.data_types[
+                index
+              ] as keyof typeof DataType
+            ];
+          return getDataTypeColorCategoryFromDataTypeValue(dType, val);
+        })
+    );
+
+    return {
+      tree: context_info.tree,
+      table_data: context_info.table_data,
+      data_availability: {
+        all_depmap_ids: context_info.data_availability.all_depmap_ids,
+        data_types: context_info.data_availability.data_types,
+        values: dataAvailVals,
+      },
+    };
   }
 
   getContextExplorerDoseResponsePoints(

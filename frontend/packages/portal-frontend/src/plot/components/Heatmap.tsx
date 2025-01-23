@@ -78,6 +78,9 @@ function Heatmap({
           [0.3, "rgba(255, 186, 122, 1)"], // 100% opacity
           [0.35, "rgba(255, 186, 122, .4)"], // 40% opacity (datatype not selected)
 
+          [0.4, "rgba(185, 86, 122, 1)"], // 100% opacity
+          [0.45, "rgba(185, 86, 122, .4)"], // 40% opacity (datatype not selected)
+
           // Not used. Just added as an endpoint to the colorscale
           [1.0, "rgb(0, 0, 0)"],
         ],

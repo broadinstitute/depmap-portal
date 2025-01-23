@@ -421,17 +421,54 @@ export const getUpdatedGraphInfoForSelection = (
   };
 };
 
+function getFilteredData(
+  selectedContextNode: ContextNode,
+  data: ContextSummary
+) {
+  if (!selectedContextNode) {
+    return data;
+  }
+  const nodeChildrenCodes = selectedContextNode.children.map(
+    (node) => node.subtype_code
+  );
+  const datasetDataTypes = Object.keys(DataType).filter((item) => {
+    return isNaN(Number(item));
+  });
+
+  const includedDataTypes: string[] = [];
+  const includedValueRows: number[][] = [];
+  data.values.forEach((row: number[], index) => {
+    const dataType = data.data_types[index];
+
+    if (
+      datasetDataTypes.includes(dataType) ||
+      nodeChildrenCodes.includes(dataType)
+    ) {
+      includedDataTypes.push(dataType);
+      includedValueRows.push(row);
+    }
+  });
+
+  return {
+    all_depmap_ids: data.all_depmap_ids,
+    values: includedValueRows,
+    data_types: includedDataTypes,
+  };
+}
+
 function getSelectedContextData(
   selectedContextNode: ContextNode,
-  allContextData: ContextSummary
+  allContextData: ContextSummary,
+  tableData: { [key: string]: string | boolean }[] | undefined
 ) {
-  const filteredDepmapIds = allContextData.all_depmap_ids.filter((item) =>
+  const filteredData = getFilteredData(selectedContextNode, allContextData);
+  const filteredDepmapIds = filteredData.all_depmap_ids.filter((item) =>
     selectedContextNode.model_ids.includes(item[1])
   );
 
   const newDataVals = [];
-  for (let index = 0; index < allContextData.values.length; index += 1) {
-    const dataTypeVals = allContextData.values[index];
+  for (let index = 0; index < filteredData.values.length; index += 1) {
+    const dataTypeVals = filteredData.values[index];
     const newDataTypeVals = filteredDepmapIds.map(
       (item) => dataTypeVals[item[0]]
     );
@@ -440,7 +477,7 @@ function getSelectedContextData(
 
   const newContextData = {
     values: newDataVals,
-    data_types: allContextData.data_types,
+    data_types: filteredData.data_types,
     all_depmap_ids: filteredDepmapIds,
   };
 
@@ -456,13 +493,19 @@ function getSelectedContextData(
 
 export function getSelectionInfo(
   allContextData: ContextSummary,
+  selectedContextDataAvailability: ContextSummary,
   selectedContextNode: ContextNode | null,
-  checkedDatatypes: Set<string>
+  checkedDatatypes: Set<string>,
+  tableData: { [key: string]: string | boolean }[] | undefined
 ) {
   let overlappingDepmapIds: string[] = [];
 
   const { selectedContextData, selectedContextNameInfo } = selectedContextNode
-    ? getSelectedContextData(selectedContextNode, allContextData)
+    ? getSelectedContextData(
+        selectedContextNode,
+        selectedContextDataAvailability,
+        tableData
+      )
     : {
         selectedContextData: allContextData,
         selectedContextNameInfo: ALL_SEARCH_OPTION,

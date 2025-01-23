@@ -203,7 +203,7 @@ const ContextTree = (props: ContextTreeProps) => {
               onRefineYourContext(
                 null,
                 contextTree && option.value !== "All" ? contextTree : null,
-                option.value
+                option.value !== "All" ? option.value : null
               );
             } else {
               onRefineYourContext(null, null);
@@ -219,7 +219,7 @@ const ContextTree = (props: ContextTreeProps) => {
           <div style={{ paddingBottom: "5px" }}>
             {selectedContextNode &&
               selectedContextNode.path &&
-              selectedContextNode.path?.map((code) => (
+              selectedContextNode.path?.map((code, i) => (
                 <>
                   <button
                     type="button"
@@ -231,7 +231,7 @@ const ContextTree = (props: ContextTreeProps) => {
                   >
                     {code}
                   </button>
-                  <span>/</span>
+                  {i < selectedContextNode.path.length - 1 && <span>/</span>}
                 </>
               ))}
           </div>

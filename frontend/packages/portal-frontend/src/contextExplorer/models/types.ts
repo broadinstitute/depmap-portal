@@ -30,9 +30,16 @@ export interface SearchOptionsByTreeType {
   molecularSubtype: ContextNameInfo[];
 }
 
+export interface ContextInfoInitial {
+  tree: ContextExplorerTree;
+  table_data: { [key: string]: string | boolean }[];
+  data_availability: Summary;
+}
+
 export interface ContextInfo {
   tree: ContextExplorerTree;
   table_data: { [key: string]: string | boolean }[];
+  data_availability: ContextSummary;
 }
 
 export interface Summary {
@@ -67,12 +74,13 @@ export interface CellLineOverview {
 }
 
 export enum DataType {
-  PRISM,
-  RNASeq,
-  WGS,
-  WES,
-  RNAi,
   CRISPR,
+  RNAi,
+  WES,
+  WGS,
+  RNASeq,
+  PRISM,
+  default = 6,
 }
 
 export enum DataTypeStrings {
@@ -88,17 +96,18 @@ export enum DataTypeCategory {
   LossOfFunction = 1,
   OMICS = 2,
   CompoundViability = 3,
+  Subtype = 4,
 }
 
 export function getDataTypeColorCategoryFromDataTypeValue(
-  datatype: DataType,
+  datatypeIndex: number,
   cellLineAvailable: boolean
 ) {
   if (!cellLineAvailable) {
     return 0;
   }
 
-  switch (datatype) {
+  switch (datatypeIndex) {
     case DataType.CRISPR:
     case DataType.RNAi:
       return DataTypeCategory.LossOfFunction;
@@ -109,7 +118,7 @@ export function getDataTypeColorCategoryFromDataTypeValue(
     case DataType.PRISM:
       return DataTypeCategory.CompoundViability;
     default:
-      throw new Error(`Cannot map datatype ${datatype} to color category`);
+      return DataTypeCategory.Subtype;
   }
 }
 

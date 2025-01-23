@@ -11,6 +11,7 @@ import {
   CellLineOverview,
   ContextExplorerDatasets,
   ContextNameInfo,
+  ContextNode,
   ContextSummary,
   TabTypes,
   TreeType,
@@ -23,7 +24,9 @@ import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
 
 interface Props {
   selectedContextNameInfo: ContextNameInfo;
+  selectedContextNode: ContextNode | null;
   selectedContextData: ContextSummary;
+
   treeType: TreeType;
   checkedDataValues: number[][];
   checkedDatatypes: Set<string>;
@@ -40,6 +43,7 @@ interface Props {
 
 const ContextExplorerTabs = ({
   selectedContextNameInfo,
+  selectedContextNode,
   treeType,
   selectedContextData,
   checkedDataValues,
@@ -54,7 +58,7 @@ const ContextExplorerTabs = ({
   handleSetPlotElement,
   plotElement,
 }: Props) => {
-  // Filters table data accoding to the selected context's depmap_ids
+  // Filters table data according to the selected context's depmap_ids
   const filteredData = overviewTableData.filter((row) => {
     return selectedContextData.all_depmap_ids.some(
       (a) => a[1] === row.model_id
@@ -108,6 +112,7 @@ const ContextExplorerTabs = ({
               <ContextExplorerPlot
                 topContextName={topContextNameInfo.name}
                 selectedContextName={selectedContextNameInfo.name}
+                selectedContextNode={selectedContextNode}
                 data={selectedContextData}
                 checkedDataValues={checkedDataValues}
                 checkedDatatypes={checkedDatatypes}

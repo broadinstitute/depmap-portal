@@ -34,7 +34,17 @@ export const ContextExplorer = () => {
     setMolecularSubtypeSearchOptions,
   ] = useState<{ value: string; label: string }[]>([]);
   const [contextInfo, setContextInfo] = useState<ContextInfo | null>(null);
+
   const [allContextData, setAllContextData] = useState<ContextSummary>({
+    all_depmap_ids: [],
+    data_types: [],
+    values: [],
+  });
+
+  const [
+    contextDataAvailability,
+    setContextDataAvailability,
+  ] = useState<ContextSummary>({
     all_depmap_ids: [],
     data_types: [],
     values: [],
@@ -63,7 +73,13 @@ export const ContextExplorer = () => {
     selectedContextData,
     checkedDataValues,
     overlappingDepmapIds,
-  } = getSelectionInfo(allContextData, selectedContextNode, checkedDatatypes);
+  } = getSelectionInfo(
+    allContextData,
+    contextDataAvailability,
+    selectedContextNode,
+    checkedDatatypes,
+    contextInfo?.table_data
+  );
 
   useEffect(() => {
     (async () => {
@@ -86,6 +102,7 @@ export const ContextExplorer = () => {
       );
 
       const contextData = await dapi.getContextDataAvailability();
+      setContextDataAvailability(contextData);
       setAllContextData(contextData);
 
       const params = qs.parse(window.location.search.substr(1));
@@ -97,6 +114,10 @@ export const ContextExplorer = () => {
           context[0]
         );
         setContextInfo(newContextInfo);
+        setContextDataAvailability(newContextInfo.data_availability);
+      } else {
+        setContextPath(null);
+        setContextInfo(null);
       }
     })();
   }, [dapi]);
@@ -140,6 +161,9 @@ export const ContextExplorer = () => {
             context[0]
           );
           setContextInfo(newContextInfo);
+          setContextDataAvailability(newContextInfo.data_availability);
+          console.log("NEW INFO");
+          console.log(newContextInfo.data_availability);
         }
         setContextPath(context);
 
@@ -151,7 +175,7 @@ export const ContextExplorer = () => {
         setContextPath(null);
       }
     },
-    [allContextData, contextInfo, dapi]
+    [allContextData, contextDataAvailability, contextInfo, dapi]
   );
 
   const cellLineUrlRoot = useCallback(() => dapi.getCellLineUrlRoot(), [dapi]);
@@ -206,6 +230,7 @@ export const ContextExplorer = () => {
             <ContextExplorerTabs
               topContextNameInfo={topContextNameInfo}
               selectedContextNameInfo={selectedContextNameInfo}
+              selectedContextNode={selectedContextNode}
               treeType={selectedTreeType}
               selectedContextData={selectedContextData}
               checkedDataValues={checkedDataValues}

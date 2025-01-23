@@ -72,9 +72,32 @@ class SubtypeNode(Model):
         return results
 
     @staticmethod
+    def get_next_level_nodes_using_current_level_code(
+        code, level
+    ) -> List["SubtypeNode"]:
+        node_level_column = f"level_{level}"
+
+        results = (
+            db.session.query(SubtypeNode)
+            .filter(
+                and_(
+                    getattr(SubtypeNode, node_level_column) == code,
+                    SubtypeNode.node_level == level + 1,
+                )
+            )
+            .all()
+        )
+
+        return results
+
+    @staticmethod
     def get_by_tree_type_and_level(tree_type, level) -> List["SubtypeNode"]:
         results = (
             db.session.query(SubtypeNode)
+            # Join with SubtypeContext to filter out nodes with 0 depmap models.
+            .join(
+                SubtypeContext, SubtypeContext.subtype_code == SubtypeNode.subtype_code
+            )
             .filter(
                 and_(
                     SubtypeNode.tree_type == tree_type, SubtypeNode.node_level == level

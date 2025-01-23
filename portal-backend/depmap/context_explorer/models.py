@@ -78,9 +78,8 @@ class ContextExplorerTree(dict):
 
         if len(child_subtype_codes) > 0:
             for child_subtype_code in child_subtype_codes:
-                context = SubtypeContext.get_by_code(child_subtype_code)
-                model_ids = SubtypeContext.get_model_ids_by_node_level(
-                    context, next_level
+                model_ids = SubtypeNode.get_model_ids_by_subtype_code_and_node_level(
+                    child_subtype_code, next_level
                 )
 
                 current_child_codes = [child.subtype_code for child in self.children]
@@ -157,9 +156,8 @@ class ContextNode(dict):
 
         if len(child_subtype_codes) > 0:
             for child_subtype_code in child_subtype_codes:
-                context = SubtypeContext.get_by_code(child_subtype_code)
-                model_ids = SubtypeContext.get_model_ids_by_node_level(
-                    context, next_level
+                model_ids = SubtypeNode.get_model_ids_by_subtype_code_and_node_level(
+                    child_subtype_code, next_level
                 )
                 current_child_codes = [child.subtype_code for child in self.children]
 
