@@ -14,7 +14,7 @@ from ..schemas.dataset import (
     ColumnMetadata,
 )
 
-from ..schemas.custom_http_exception import DatasetAccessError
+from ..schemas.custom_http_exception import DatasetAccessError, FileValidationError
 from breadbox.crud.access_control import user_has_access_to_group
 from breadbox.models.dataset import MatrixDataset
 from breadbox.crud.group import (
@@ -346,18 +346,18 @@ def _validate_tabular_dimensions(
 ):
     # verify the id_column is present in the data frame before proceeding
     if dimension_type.id_column not in data_df.columns:
-        raise ValueError(
+        raise FileValidationError(
             f'The dimension type "{dimension_type.name}" uses "{dimension_type.id_column}" for the ID, however that column is not present in the table. The actual columns were: {data_df.columns.to_list()}'
         )
 
     missing_metadata = set(data_df.columns).difference(columns_metadata)
     if len(missing_metadata) > 0:
-        raise ValueError(
+        raise FileValidationError(
             f"The following columns are missing metadata: {', '.join(missing_metadata)}"
         )
     extra_metadata = set(columns_metadata).difference(data_df.columns)
     if len(extra_metadata) > 0:
-        raise ValueError(
+        raise FileValidationError(
             f"The following columns had metadata but are not present in the table: {', '.join(extra_metadata)}"
         )
 
@@ -365,7 +365,7 @@ def _validate_tabular_dimensions(
         if column_metadata.references is not None:
             dim_type = get_dimension_type(db, column_metadata.references)
             if dim_type is None:
-                raise ValueError(
+                raise FileValidationError(
                     f"The column {column_name} references {column_metadata.references} which does not exit"
                 )
 
