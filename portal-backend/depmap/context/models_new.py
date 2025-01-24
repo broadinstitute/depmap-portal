@@ -79,6 +79,9 @@ class SubtypeNode(Model):
 
         results = (
             db.session.query(SubtypeNode)
+            .join(
+                SubtypeContext, SubtypeContext.subtype_code == SubtypeNode.subtype_code
+            )
             .filter(
                 and_(
                     getattr(SubtypeNode, node_level_column) == code,

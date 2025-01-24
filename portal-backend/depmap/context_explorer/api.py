@@ -319,16 +319,11 @@ class ContextInfo(
         (
             context_tree,
             overview_data,
-            data_availability,
         ) = get_context_explorer_lineage_trees_and_table_data(
             level_0_subtype_code=level_0_subtype_code
         )
 
-        return {
-            "tree": context_tree,
-            "table_data": overview_data,
-            "data_availability": data_availability,
-        }
+        return {"tree": context_tree, "table_data": overview_data}
 
 
 @namespace.route("/context_path")
@@ -351,6 +346,67 @@ class ContextPath(
         path = [col for col in cols if col != None]
 
         return path
+
+
+def get_child_subtype_summary_df(subtype_code: str):
+    # Get the children for displaying in the data availability chart
+    node = SubtypeNode.get_by_code(subtype_code)
+    node_children = SubtypeNode.get_next_level_nodes_using_current_level_code(
+        subtype_code, node.node_level
+    )
+
+    def is_model_available(model_id: str, node_model_ids: List[str]):
+        return model_id in node_model_ids
+
+    model_avail_by_node_code = {}
+    all_model_ids = SubtypeNode.get_model_ids_by_subtype_code_and_node_level(
+        subtype_code, node.node_level
+    )
+    for child_node in node_children:
+        model_ids = SubtypeNode.get_model_ids_by_subtype_code_and_node_level(
+            subtype_code=child_node.subtype_code, node_level=child_node.node_level
+        )
+        if len(model_ids) == 0:
+            continue
+        model_id_availability = [
+            is_model_available(model_id=model_id, node_model_ids=model_ids)
+            for model_id in all_model_ids
+        ]
+        model_avail_by_node_code[child_node.subtype_code] = model_id_availability
+
+    subtype_avail_df = pd.DataFrame(
+        data=model_avail_by_node_code, index=pd.Index(all_model_ids, name="ModelID"),
+    )
+
+    return subtype_avail_df
+
+
+@namespace.route("/subtype_data_availability")
+class SubtypeDataAvailability(
+    Resource
+):  # the flask url_for endpoint is automagically the snake case of the namespace prefix plus class name
+    def get(self):
+        selected_code = request.args.get("selected_code")
+
+        subtype_avail_summary = get_child_subtype_summary_df(subtype_code=selected_code)
+
+        transposed_subtype_avail_summary = subtype_avail_summary.transpose()
+        data_availability = {
+            "values": [
+                row.values.tolist()
+                for _, row in transposed_subtype_avail_summary.iterrows()
+            ],
+            "data_types": transposed_subtype_avail_summary.index.values.tolist(),
+        }
+
+        data_availability["all_depmap_ids"] = [
+            (i, depmap_id)
+            for i, depmap_id in enumerate(
+                transposed_subtype_avail_summary.columns.tolist()
+            )
+        ]
+
+        return data_availability
 
 
 def _get_overview_table_data(
@@ -394,43 +450,6 @@ def _get_overview_table_data(
     return overview_data
 
 
-def get_child_subtype_summary_df(level_0_subtype_code: str, summary_df: pd.DataFrame):
-    # Get the children for displaying in the data availability chart
-    node_children = SubtypeNode.get_children_using_current_level_code(
-        level_0_subtype_code, 0
-    )
-    node_children_code_names = [
-        (child.subtype_code, child.node_name) for child in node_children
-    ]
-
-    def is_model_available(model_id: str, node_model_ids: List[str]):
-        return model_id in node_model_ids
-
-    model_avail_by_node_code = {}
-    all_model_ids = summary_df.columns.values.tolist()
-    for code, node_name in node_children_code_names:
-        model_ids = SubtypeNode.get_model_ids_by_subtype_code_and_node_level(
-            level_0_subtype_code, 0
-        )
-        if len(model_ids) == 0:
-            continue
-        model_id_availability = [
-            is_model_available(model_id=model_id, node_model_ids=model_ids)
-            for model_id in all_model_ids
-        ]
-        model_avail_by_node_code[code] = model_id_availability
-
-    subtype_avail_df = pd.DataFrame(
-        data=model_avail_by_node_code, index=pd.Index(all_model_ids, name="ModelID"),
-    )
-
-    subtype_avail_summary_merged = pd.merge(
-        subtype_avail_df, summary_df.transpose(), left_index=True, right_index=True
-    )
-
-    return subtype_avail_summary_merged
-
-
 def get_context_explorer_lineage_trees_and_table_data(
     level_0_subtype_code: str,
 ) -> Tuple[Dict[str, ContextNode], List[Dict[str, Union[str, bool]]]]:
@@ -445,24 +464,6 @@ def get_context_explorer_lineage_trees_and_table_data(
     )
 
     summary_df = _get_context_summary_df()
-    subtype_avail_summary_merged = get_child_subtype_summary_df(
-        level_0_subtype_code=level_0_subtype_code, summary_df=summary_df
-    )
-
-    transposed_subtype_avail_summary_merged = subtype_avail_summary_merged.transpose()
-    data_availability = {
-        "values": [
-            row.values.tolist()
-            for _, row in transposed_subtype_avail_summary_merged.iterrows()
-        ],
-        "data_types": transposed_subtype_avail_summary_merged.index.values.tolist(),
-    }
-    data_availability["all_depmap_ids"] = [
-        (i, depmap_id)
-        for i, depmap_id in enumerate(
-            transposed_subtype_avail_summary_merged.columns.tolist()
-        )
-    ]
 
     subtype_df = subtype_df.set_index("model_id")
 
@@ -502,7 +503,7 @@ def get_context_explorer_lineage_trees_and_table_data(
         node_level=node_level,
     )
 
-    return root_node, overview_data, data_availability
+    return root_node, overview_data
 
 
 @namespace.route("/context_summary")

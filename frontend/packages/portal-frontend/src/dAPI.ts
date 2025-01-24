@@ -78,7 +78,6 @@ import {
   ContextPlotBoxData,
   ContextExplorerDatasets,
   SearchOptionsByTreeType,
-  ContextInfoInitial,
 } from "src/contextExplorer/models/types";
 import {
   DataAvailability,
@@ -578,53 +577,49 @@ export class DepmapApi {
     );
   }
 
-  getContextSearchOptions(): Promise<SearchOptionsByTreeType> {
-    return this._fetch<SearchOptionsByTreeType>(
-      `/api/context_explorer/context_search_options`
-    );
-  }
-
-  async getContextExplorerContextInfo(
-    subtypeCode: string
-  ): Promise<ContextInfo> {
+  async getSubtypeDataAvailability(
+    selectedCode: string
+  ): Promise<ContextSummary> {
     const params = {
-      level_0_subtype_code: subtypeCode,
+      selected_code: selectedCode,
     };
 
-    const context_info = await this._fetch<ContextInfoInitial>(
-      `/api/context_explorer/context_info?${encodeParams(params)}`
+    const subtypeDataAvail = await this._fetch<Summary>(
+      `/api/context_explorer/subtype_data_availability?${encodeParams(params)}`
     );
 
-    // const dataAvailVals = context_info.data_availability.values.map(
-    //   (datatypeVals: boolean[], index: number) => {
-    //     return datatypeVals.map((val: boolean) => {
-    //       return getDataTypeColorCategoryFromDataTypeValue(index, val);
-    //     });
-    //   }
-    // );
-
-    const dataAvailVals = context_info.data_availability.values.map(
+    const dataAvailVals = subtypeDataAvail.values.map(
       (datatypeVals: boolean[], index: number) =>
         datatypeVals.map((val: boolean) => {
           const dType =
             DataType[
-              context_info.data_availability.data_types[
-                index
-              ] as keyof typeof DataType
+              subtypeDataAvail.data_types[index] as keyof typeof DataType
             ];
           return getDataTypeColorCategoryFromDataTypeValue(dType, val);
         })
     );
 
     return {
-      tree: context_info.tree,
-      table_data: context_info.table_data,
-      data_availability: {
-        all_depmap_ids: context_info.data_availability.all_depmap_ids,
-        data_types: context_info.data_availability.data_types,
-        values: dataAvailVals,
-      },
+      all_depmap_ids: subtypeDataAvail.all_depmap_ids,
+      data_types: subtypeDataAvail.data_types,
+      values: dataAvailVals,
     };
+  }
+
+  getContextSearchOptions(): Promise<SearchOptionsByTreeType> {
+    return this._fetch<SearchOptionsByTreeType>(
+      `/api/context_explorer/context_search_options`
+    );
+  }
+
+  getContextExplorerContextInfo(subtypeCode: string): Promise<ContextInfo> {
+    const params = {
+      level_0_subtype_code: subtypeCode,
+    };
+
+    return this._fetch<ContextInfo>(
+      `/api/context_explorer/context_info?${encodeParams(params)}`
+    );
   }
 
   getContextExplorerDoseResponsePoints(

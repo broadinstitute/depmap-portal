@@ -457,10 +457,18 @@ function getFilteredData(
 
 function getSelectedContextData(
   selectedContextNode: ContextNode,
-  allContextData: ContextSummary,
+  allContextDatasetDataAvail: ContextSummary,
+  selectedContextDataAvailability: ContextSummary,
   tableData: { [key: string]: string | boolean }[] | undefined
 ) {
-  const filteredData = getFilteredData(selectedContextNode, allContextData);
+  const mergedDataAvailability = mergeDataAvailability(
+    allContextDatasetDataAvail,
+    selectedContextDataAvailability
+  );
+  const filteredData = getFilteredData(
+    selectedContextNode,
+    mergedDataAvailability
+  );
   const filteredDepmapIds = filteredData.all_depmap_ids.filter((item) =>
     selectedContextNode.model_ids.includes(item[1])
   );
@@ -490,8 +498,41 @@ function getSelectedContextData(
   };
 }
 
+function mergeDataAvailability(
+  allContextDatasetDataAvail: ContextSummary,
+  subtypeDataAvail: ContextSummary
+) {
+  const selectedModelIds = subtypeDataAvail.all_depmap_ids.map(
+    (item) => item[1]
+  );
+
+  const vals: number[][] = [];
+  const dataTypes: string[] = [];
+  allContextDatasetDataAvail.values.forEach((row: number[], index: number) => {
+    const filteredRow = row.filter((rowVals: number, j: number) => {
+      if (
+        selectedModelIds.includes(
+          allContextDatasetDataAvail.all_depmap_ids[j][1]
+        )
+      ) {
+        return row;
+      }
+    });
+    vals.push(filteredRow);
+    dataTypes.push(allContextDatasetDataAvail.data_types[index]);
+  });
+
+  const mergedDataAvail = {
+    all_depmap_ids: subtypeDataAvail.all_depmap_ids,
+    data_types: [...dataTypes.reverse(), ...subtypeDataAvail.data_types],
+    values: [...vals.reverse(), ...subtypeDataAvail.values],
+  };
+
+  return mergedDataAvail;
+}
+
 export function getSelectionInfo(
-  allContextData: ContextSummary,
+  allContextDatasetDataAvail: ContextSummary,
   selectedContextDataAvailability: ContextSummary,
   selectedContextNode: ContextNode | null,
   checkedDatatypes: Set<string>,
@@ -502,17 +543,18 @@ export function getSelectionInfo(
   const { selectedContextData, selectedContextNameInfo } = selectedContextNode
     ? getSelectedContextData(
         selectedContextNode,
+        allContextDatasetDataAvail,
         selectedContextDataAvailability,
         tableData
       )
     : {
-        selectedContextData: allContextData,
+        selectedContextData: allContextDatasetDataAvail,
         selectedContextNameInfo: ALL_SEARCH_OPTION,
       };
 
   let checkedDataValues = selectedContextNode
     ? selectedContextData.values
-    : allContextData.values;
+    : allContextDatasetDataAvail.values;
 
   if (selectedContextData && checkedDatatypes.size > 0) {
     const newSelectedValuesOverlap = getUpdatedGraphInfoForSelection(

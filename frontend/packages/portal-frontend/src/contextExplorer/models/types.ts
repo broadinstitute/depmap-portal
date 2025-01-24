@@ -25,16 +25,9 @@ export interface SearchOptionsByTreeType {
   molecularSubtype: ContextNameInfo[];
 }
 
-export interface ContextInfoInitial {
-  tree: ContextNode;
-  table_data: { [key: string]: string | boolean }[];
-  data_availability: Summary;
-}
-
 export interface ContextInfo {
   tree: ContextNode;
   table_data: { [key: string]: string | boolean }[];
-  data_availability: ContextSummary;
 }
 
 export interface Summary {
@@ -69,12 +62,12 @@ export interface CellLineOverview {
 }
 
 export enum DataType {
-  CRISPR,
-  RNAi,
-  WES,
-  WGS,
-  RNASeq,
   PRISM,
+  RNASeq,
+  WGS,
+  WES,
+  RNAi,
+  CRISPR,
   default = 6,
 }
 

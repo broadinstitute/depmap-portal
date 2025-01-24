@@ -122,7 +122,7 @@ function ContextExplorerPlot(props: ContextExplorerPlotProps) {
       </div>
       <div className={styles.overviewPlotWrapper}>
         <DatatypeSelector
-          datatypes={[...data.data_types].reverse()}
+          datatypes={[...data.data_types]}
           checked={checkedDatatypes}
           onClick={updateDatatypeSelection}
           customInfoImg={customInfoImg}
@@ -134,7 +134,7 @@ function ContextExplorerPlot(props: ContextExplorerPlotProps) {
           {(!plotElement || !totalCellLines) && <PlotSpinner height="auto" />}
           <Heatmap
             dataTypeLabels={data.data_types}
-            zVals={checkedDataValues}
+            zVals={checkedDataValues.reverse()}
             xVals={getXVals()}
             onLoad={handleSetPlotElement}
           />
@@ -152,7 +152,7 @@ function ContextExplorerPlot(props: ContextExplorerPlotProps) {
         {plotElement && (
           <fieldset className={styles.numbersAxis}>
             <h5># OF CELL LINES</h5>
-            {cellLineCountsForwards.map((count, index) => (
+            {cellLineCountsBackwards.map((count, index) => (
               <div key={index}>{count}</div>
             ))}
           </fieldset>

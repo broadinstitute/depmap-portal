@@ -101,7 +101,6 @@ export const ContextExplorer = () => {
       );
 
       const contextData = await dapi.getContextDataAvailability();
-      setContextDataAvailability(contextData);
       setAllContextData(contextData);
 
       const params = qs.parse(window.location.search.substr(1));
@@ -113,7 +112,10 @@ export const ContextExplorer = () => {
           context[0]
         );
         setContextInfo(newContextInfo);
-        setContextDataAvailability(newContextInfo.data_availability);
+
+        const dataAvail = await dapi.getSubtypeDataAvailability(context[0]);
+
+        setContextDataAvailability(dataAvail);
       } else {
         setContextPath(null);
         setContextInfo(null);
@@ -151,6 +153,9 @@ export const ContextExplorer = () => {
         const context = await dapi.getContextPath(
           contextNode?.subtype_code || subtypeCode!
         );
+        const subtypeDataAvail = await dapi.getSubtypeDataAvailability(
+          contextNode?.subtype_code || subtypeCode!
+        );
 
         if (
           !contextInfo ||
@@ -160,8 +165,8 @@ export const ContextExplorer = () => {
             context[0]
           );
           setContextInfo(newContextInfo);
-          setContextDataAvailability(newContextInfo.data_availability);
         }
+        setContextDataAvailability(subtypeDataAvail);
         setContextPath(context);
 
         setQueryStringWithoutPageReload(
