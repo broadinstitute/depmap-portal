@@ -148,7 +148,7 @@ class BBClient:
             feature_type=feature_type if feature_type else UNSET,
             sample_id=sample_id if sample_id else UNSET,
             sample_type=sample_type if sample_type else UNSET,
-            value_type=value_type if value_type else UNSET,
+            value_type=ValueType(value_type) if value_type else UNSET,
             )
         return self._parse_client_response(breadbox_response)
 
