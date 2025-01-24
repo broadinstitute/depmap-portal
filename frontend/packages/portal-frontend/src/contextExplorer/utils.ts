@@ -11,7 +11,7 @@ import qs from "qs";
 import { Filter } from "src/common/models/discoveryAppFilters";
 import { deleteSpecificQueryParams } from "@depmap/utils";
 
-export const CONTEXT_EXPL_BAR_THICKNESS = 52;
+export const CONTEXT_EXPL_BAR_THICKNESS = 40;
 
 export function getSelectivityValLabel(entityType: string) {
   return entityType === "gene" ? "log(OR)" : "Bimodality Coefficient";
@@ -159,17 +159,17 @@ export function changeSelectedDataAvailGraphVals(
 ) {
   const newVals: number[][] = [];
   const selectedRowIndexes: number[] = [];
-  originalData.data_types.forEach((datatype: string) => {
-    const typeIndex = DataType[datatype as keyof typeof DataType];
+  originalData.data_types.forEach((datatype: string, index: number) => {
+    // const typeIndex = DataType[datatype as keyof typeof DataType];
 
     if (selectedDataTypes.size > 0 && !selectedDataTypes.has(datatype)) {
-      const newValues = originalData.values[typeIndex].map(
+      const newValues = originalData.values[index].map(
         (oldValue: number) => oldValue + 0.5
       );
       newVals.push(newValues);
     } else {
-      newVals.push(originalData.values[typeIndex]);
-      selectedRowIndexes.push(typeIndex);
+      newVals.push(originalData.values[index]);
+      selectedRowIndexes.push(index);
     }
   });
 

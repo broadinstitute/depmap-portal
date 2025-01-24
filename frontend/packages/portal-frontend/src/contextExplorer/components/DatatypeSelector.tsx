@@ -45,9 +45,9 @@ const DatatypeSelector = (props: Props) => {
         style={{
           display: "grid",
           alignItems: "center",
-          gridTemplateRows: `repeat(${
-            datatypes.length + 1
-          }, ${CONTEXT_EXPL_BAR_THICKNESS}px)`,
+          gridTemplateRows: `repeat(${datatypes.length + 1}, ${
+            CONTEXT_EXPL_BAR_THICKNESS - 1
+          }px)`,
         }}
       >
         <div>

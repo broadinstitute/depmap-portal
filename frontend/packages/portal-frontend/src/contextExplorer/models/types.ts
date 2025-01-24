@@ -68,7 +68,7 @@ export enum DataType {
   WES,
   RNAi,
   CRISPR,
-  default = 6,
+  default,
 }
 
 export enum DataTypeStrings {

@@ -148,7 +148,7 @@ function ContextExplorerPlot(props: ContextExplorerPlotProps) {
 
               b: 0,
 
-              t: 20,
+              t: 25,
 
               pad: 0,
             }}
@@ -173,7 +173,7 @@ function ContextExplorerPlot(props: ContextExplorerPlotProps) {
                 display: "grid",
                 gridTemplateRows: `repeat(${
                   cellLineCountsBackwards.length + 1
-                }, ${CONTEXT_EXPL_BAR_THICKNESS}px)`,
+                }, ${CONTEXT_EXPL_BAR_THICKNESS - 1}px)`,
                 marginLeft: "5px",
               }}
             >

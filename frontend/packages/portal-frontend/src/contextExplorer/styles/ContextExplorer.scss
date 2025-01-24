@@ -284,6 +284,7 @@
   display: flex;
   flex-direction: row;
   flex-grow: 1;
+  padding-top: 10px;
 
   & > div.lofBox {
     background: #e68bdb;
@@ -310,6 +311,17 @@
     }
   }
   & > div.compoundBox {
+    background: #ffba7a;
+    width: 16px;
+    height: 16px;
+    margin-left: 35px;
+    margin-right: 10px;
+    @media (max-width: 1050px) {
+      margin-left: 8px;
+      margin-right: 3px;
+    }
+  }
+  & > div.subtypeBox {
     background: #ffba7a;
     width: 16px;
     height: 16px;
