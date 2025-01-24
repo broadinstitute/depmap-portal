@@ -366,7 +366,7 @@ def _validate_tabular_dimensions(
             dim_type = get_dimension_type(db, column_metadata.references)
             if dim_type is None:
                 raise FileValidationError(
-                    f"The column {column_name} references {column_metadata.references} which does not exit"
+                    f"The column '{column_name}' references '{column_metadata.references}' which is not an existing dimension type"
                 )
 
 
