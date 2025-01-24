@@ -523,7 +523,7 @@ def read_and_validate_matrix_df(
     return df
 
 
-def read_and_validate_tabular_df(
+def validate_tabular_df_schema(
     file_path: str,
     columns_metadata: Dict[str, ColumnMetadata],
     dimension_type_identifier: str,

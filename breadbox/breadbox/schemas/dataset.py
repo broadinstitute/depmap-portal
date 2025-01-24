@@ -189,7 +189,6 @@ class MatrixDatasetParams(SharedDatasetParams):
         # Decision to make allowed values not case-sensitive in case user error in accidental repeats
         allowed_values_list_lower = [str(x).lower() for x in v]
         allowed_values_set = set(allowed_values_list_lower)
-        print(allowed_values_set, allowed_values_list_lower)
         if len(allowed_values_set) != len(v):
             raise UserError(
                 msg="Make sure there are no repeats in allowed_values. Values are not considered case-sensitive",
