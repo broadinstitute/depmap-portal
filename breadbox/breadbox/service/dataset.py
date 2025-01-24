@@ -307,11 +307,7 @@ def add_tabular_dataset(
     version: Optional[str],
     description: Optional[str],
 ):
-    # verify the id_column is present in the data frame before proceeding and is of type string
-    if dimension_type.id_column not in data_df.columns:
-        raise ValueError(
-            f'The dimension type "{dimension_type.name}" uses "{dimension_type.id_column}" for the ID, however that column is not present in the table. The actual columns were: {data_df.columns.to_list()}'
-        )
+    _validate_tabular_dimensions(db, dimension_type, columns_metadata, data_df)
 
     group = _get_dataset_group(db, user, dataset_in.group_id, dataset_in.is_transient)
     dataset = TabularDataset(
@@ -333,7 +329,6 @@ def add_tabular_dataset(
     db.add(dataset)
     db.flush()
 
-    _validate_tabular_dimensions(db, dimension_type, columns_metadata, data_df)
     add_tabular_dimensions(
         db, data_df, columns_metadata, dataset.id, dimension_type, group_id=group.id
     )
@@ -349,10 +344,11 @@ def _validate_tabular_dimensions(
     columns_metadata: Dict[str, ColumnMetadata],
     data_df: pd.DataFrame,
 ):
-
-    assert (
-        dimension_type.id_column in data_df.columns
-    ), f"id column was specified as {dimension_type.id_column} but dataframe only had columns {data_df.columns}"
+    # verify the id_column is present in the data frame before proceeding
+    if dimension_type.id_column not in data_df.columns:
+        raise ValueError(
+            f'The dimension type "{dimension_type.name}" uses "{dimension_type.id_column}" for the ID, however that column is not present in the table. The actual columns were: {data_df.columns.to_list()}'
+        )
 
     missing_metadata = set(data_df.columns).difference(columns_metadata)
     if len(missing_metadata) > 0:
