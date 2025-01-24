@@ -135,9 +135,21 @@ class BBClient:
 
     def get_datasets(
         self,
+        feature_id: Optional[str] = None,
+        feature_type: Optional[str] = None,
+        sample_id: Optional[str] = None,
+        sample_type: Optional[str] = None,
+        value_type: Optional[str] = None,
     ) -> list[Union[MatrixDatasetResponse, TabularDatasetResponse]]:
         """Get metadata for all datasets available to current user."""
-        breadbox_response = get_datasets_client.sync_detailed(client=self.client)
+        breadbox_response = get_datasets_client.sync_detailed(
+            client=self.client,
+            feature_id=feature_id if feature_id else UNSET,
+            feature_type=feature_type if feature_type else UNSET,
+            sample_id=sample_id if sample_id else UNSET,
+            sample_type=sample_type if sample_type else UNSET,
+            value_type=value_type if value_type else UNSET,
+            )
         return self._parse_client_response(breadbox_response)
 
     def remove_dataset(self, dataset_id: str):
