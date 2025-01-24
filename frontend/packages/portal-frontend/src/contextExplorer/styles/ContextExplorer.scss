@@ -177,11 +177,14 @@
 .overviewPlotWrapper {
   display: flex;
   flex-direction: row;
-  flex-grow: 1;
   .datatypeSelector {
-    margin-left: 30px;
+    // grid-column: 1;
+    margin-right: 10px;
+    align-self: normal;
+    font-family: roboto;
     font-size: 16px;
-    min-width: 101px;
+    font-weight: 500;
+    margin-top: 5px;
 
     & > h5 {
       font-style: normal;
@@ -193,6 +196,9 @@
 
     .selector {
       padding-bottom: 3px;
+      & > p {
+        margin-top: 5px;
+      }
     }
   }
 
@@ -225,7 +231,7 @@
         font-style: normal;
         font-size: 14px;
         font-weight: bold;
-        margin-top: 4px;
+        margin-top: 14px;
       }
     }
   }

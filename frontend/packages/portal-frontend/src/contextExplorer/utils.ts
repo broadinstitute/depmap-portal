@@ -11,6 +11,8 @@ import qs from "qs";
 import { Filter } from "src/common/models/discoveryAppFilters";
 import { deleteSpecificQueryParams } from "@depmap/utils";
 
+export const CONTEXT_EXPL_BAR_THICKNESS = 52;
+
 export function getSelectivityValLabel(entityType: string) {
   return entityType === "gene" ? "log(OR)" : "Bimodality Coefficient";
 }

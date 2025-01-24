@@ -7,7 +7,10 @@ import { Button } from "react-bootstrap";
 import { ContextNode, ContextSummary, DataType } from "../models/types";
 import DatatypeSelector from "./DatatypeSelector";
 import { saveNewContext } from "src";
-import { getDataExplorerContextFromSelections } from "../utils";
+import {
+  CONTEXT_EXPL_BAR_THICKNESS,
+  getDataExplorerContextFromSelections,
+} from "../utils";
 
 interface ContextExplorerPlotProps {
   selectedContextName: string;
@@ -137,6 +140,18 @@ function ContextExplorerPlot(props: ContextExplorerPlotProps) {
             zVals={checkedDataValues.reverse()}
             xVals={getXVals()}
             onLoad={handleSetPlotElement}
+            height={CONTEXT_EXPL_BAR_THICKNESS * data.data_types.length}
+            margin={{
+              l: 0,
+
+              r: 0,
+
+              b: 0,
+
+              t: 20,
+
+              pad: 0,
+            }}
           />
           {plotElement && (
             <fieldset className={styles.bottomLegend}>
@@ -146,16 +161,45 @@ function ContextExplorerPlot(props: ContextExplorerPlotProps) {
               <div className={styles.lofLabel}>OMICS</div>
               <div className={styles.compoundBox} />
               <div className={styles.lofLabel}>Compound Viability</div>
+              <div className={styles.subtypeBox} />
+              <div className={styles.subtypeLabel}>Subtype</div>
             </fieldset>
           )}
         </fieldset>
         {plotElement && (
-          <fieldset className={styles.numbersAxis}>
-            <h5># OF CELL LINES</h5>
-            {cellLineCountsBackwards.map((count, index) => (
-              <div key={index}>{count}</div>
-            ))}
-          </fieldset>
+          <>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateRows: `repeat(${
+                  cellLineCountsBackwards.length + 1
+                }, ${CONTEXT_EXPL_BAR_THICKNESS}px)`,
+                marginLeft: "5px",
+              }}
+            >
+              <div
+                style={{
+                  margin: 0,
+                  gridRow: `${1}`,
+                  alignSelf: "center",
+                }}
+              >
+                <h5 style={{ paddingBottom: "10px" }}># OF CELL LINES</h5>
+              </div>
+              {cellLineCountsBackwards.map((count, index) => (
+                <div
+                  style={{
+                    margin: 0,
+                    gridRow: `${index + 2}`,
+                    alignSelf: "center",
+                  }}
+                  key={index}
+                >
+                  {count}
+                </div>
+              ))}
+            </div>
+          </>
         )}
       </div>
       {plotElement && (
