@@ -27,6 +27,7 @@ from breadbox.schemas.custom_http_exception import (
     AnnotationValidationError,
 )
 from breadbox.schemas.dataset import ColumnMetadata
+from ..crud.dimension_types import get_dimension_type
 
 pd.set_option("mode.use_inf_as_na", True)
 
@@ -523,7 +524,52 @@ def read_and_validate_matrix_df(
     return df
 
 
-def validate_tabular_df_schema(
+def read_and_validate_tabular_df(
+    db: SessionWithUser,
+    index_type: DimensionType,
+    file_path: str,
+    columns_metadata: Dict[str, ColumnMetadata],
+):
+    data_df = _validate_tabular_df_schema(
+        file_path, columns_metadata, index_type.id_column
+    )
+    _validate_tabular_dimensions(db, index_type, columns_metadata, data_df)
+    return data_df
+
+
+def _validate_tabular_dimensions(
+    db: SessionWithUser,
+    dimension_type: DimensionType,
+    columns_metadata: Dict[str, ColumnMetadata],
+    data_df: pd.DataFrame,
+):
+    # verify the id_column is present in the data frame before proceeding
+    if dimension_type.id_column not in data_df.columns:
+        raise FileValidationError(
+            f'The dimension type "{dimension_type.name}" uses "{dimension_type.id_column}" for the ID, however that column is not present in the dataset file. The actual columns in the dataset are: {data_df.columns.to_list()}'
+        )
+
+    missing_metadata = set(data_df.columns).difference(columns_metadata)
+    if len(missing_metadata) > 0:
+        raise FileValidationError(
+            f"The following columns are missing metadata: {', '.join(missing_metadata)}"
+        )
+    extra_metadata = set(columns_metadata).difference(data_df.columns)
+    if len(extra_metadata) > 0:
+        raise FileValidationError(
+            f"The following columns had metadata but are not present in the table: {', '.join(extra_metadata)}"
+        )
+
+    for column_name, column_metadata in columns_metadata.items():
+        if column_metadata.references is not None:
+            referenced_dim_type = get_dimension_type(db, column_metadata.references)
+            if referenced_dim_type is None:
+                raise FileValidationError(
+                    f"The column '{column_name}' references '{column_metadata.references}' which is not an existing dimension type"
+                )
+
+
+def _validate_tabular_df_schema(
     file_path: str,
     columns_metadata: Dict[str, ColumnMetadata],
     dimension_type_identifier: str,

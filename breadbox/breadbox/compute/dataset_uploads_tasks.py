@@ -29,7 +29,7 @@ from ..api.uploads import construct_file_from_ids
 from ..io.data_validation import (
     read_and_validate_matrix_df,
     _get_dimension_labels_and_warnings,
-    validate_tabular_df_schema,
+    read_and_validate_tabular_df,
 )
 from .celery import app
 import celery
@@ -159,8 +159,8 @@ def dataset_upload(
 
     else:
         index_type = _get_dimension_type(db, dataset_params.index_type)
-        data_df = validate_tabular_df_schema(
-            file_path, dataset_params.columns_metadata, index_type.id_column
+        data_df = read_and_validate_tabular_df(
+            db, index_type, file_path, dataset_params.columns_metadata
         )
         dimension_labels_and_warnings = _get_dimension_labels_and_warnings(
             db, data_df[index_type.id_column], index_type

@@ -7,7 +7,7 @@ from breadbox.io.data_validation import (
     AnnotationType,
     FileValidationError,
     read_and_validate_matrix_df,
-    validate_tabular_df_schema,
+    _validate_tabular_df_schema,
     ValueType,
 )
 import pytest
@@ -104,7 +104,7 @@ def test_validate_tabular_df_schema(tmpdir):
 
     # fewer edge cases with tables. Just exercise columns with numbers to see if
     # anything weird happens
-    df = validate_tabular_df_schema(
+    df = _validate_tabular_df_schema(
         to_csv(pd.DataFrame("0", columns=["13", "10", "11"], index=[1]), index=False),
         {
             "10": ColumnMetadata(col_type=AnnotationType.text),
@@ -121,7 +121,7 @@ def test_validate_tabular_df_schema(tmpdir):
     import json
 
     # didn't test parsing str lists, so do that here
-    df = validate_tabular_df_schema(
+    df = _validate_tabular_df_schema(
         to_csv(
             pd.DataFrame([["0", json.dumps(["1", "2"])]], columns=["ID", "list"]),
             index=False,
