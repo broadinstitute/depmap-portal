@@ -120,22 +120,9 @@ rule process_model_config:
                 "--skipfit", "False"
             ]
 
-            print(f"Docker command: {docker_command}")
-
-            try:
-                result = subprocess.run(
+            subprocess.run(
                     docker_command,
-                    check=True,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE,
-                    text=True
+                    check=True
                 )
-                
-                print("STDOUT:", result.stdout)
-                print("STDERR:", result.stderr)
 
-            except subprocess.CalledProcessError as e:
-                print(f"Command failed with return code {e.returncode}")
-                print("STDOUT:", e.stdout)
-                print("STDERR:", e.stderr)
     """
