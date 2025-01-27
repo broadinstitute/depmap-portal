@@ -23,12 +23,16 @@ rule process_model_config:
         loh={"type": "feature", "label": "loh"},
         rnaseq={"type": "feature", "label": "rnaseq"},
 
-        
     outputs:
         {
-        "type": "input-model-file",
-        "filename": {"$filename": "model-map.json"}
+        "type": "combined-output-config-file",
+        "filename": {"$filename": "combined_output_config.json"}
         },
+
+    # Three Steps:
+    # 1. Generate a model map for each model and screen
+    # 2. Run the model fitting
+    # 3. Combine the output config files
 
     run "python" with """
     import json
@@ -55,7 +59,7 @@ rule process_model_config:
             target = screen
             if screen == "CRISPR":
                 target_id = "{{ inputs.crispr_gene_effect.source_dataset_id }}"
-            else:  # RNAi
+            else:
                 target_id = "{{ inputs.rnai.source_dataset_id }}"
 
             output_json["data"][target] = {
@@ -97,7 +101,7 @@ rule process_model_config:
                 }
             
             # Generate output filename
-            output_file = f"model-map-{model_name.lower()}-{screen.lower()}.json"
+            output_file = f"model-map-{model_name}-{screen}.json"
             output_file_path = os.path.abspath(output_file)
 
             with open(output_file, 'w') as f:
@@ -117,12 +121,43 @@ rule process_model_config:
                 "--sparkles-config", "/daintree/sparkles-config",
                 "--save-dir", "/daintree/output_data/nayeem-test",
                 "--test", "True",
-                "--skipfit", "False"
+                "--upload-to-taiga", "predictability-76d5",
             ]
 
             subprocess.run(
                     docker_command,
                     check=True
                 )
+    
+    
+    # Make a list of the files in the output_config_files directory
+    output_config_files = os.listdir("output_config_files")
+    print(f"Output config files: {output_config_files}")
+
+    # Initialize the combined output structure
+    combined_output = {"CRISPR": {}, "RNAi": {}}
+
+    # Read and combine all config files
+    for config_file in output_config_files:
+        with open(os.path.join("output_config_files", config_file), 'r') as f:
+            data = json.load(f)
+            
+        # Extract model name and screen type from filename
+        filename = config_file.replace("OutputConfig", "").replace(".json", "")
+        if filename.endswith("CRISPR"):
+            screen = "CRISPR"
+            model_name = filename[:-6]  # Remove "CRISPR"
+        else:
+            screen = "RNAi"
+            model_name = filename[:-4]  # Remove "RNAi"
+        
+        # Add to combined structure
+        combined_output[screen][model_name] = data[model_name]
+
+    # Write the combined output
+    with open("combined_output_config.json", 'w') as f:
+        json.dump(combined_output, f, indent=2)
+    
+    print(f"Created Combined Output Config File: combined_output_config.json")
 
     """
