@@ -304,8 +304,8 @@ def get_slice_data(slice_query: SliceQuery) -> pd.Series:
 # METHODS BELOW ARE SPECIAL WORKAROUNDS FOR COMPOUND DATASETS #
 ###############################################################
 # In the future, all drug screen datasets will be indexed by compound instead of compound experiment.
-# These methods exist to ensure that both the legacy backend and breadbox are returning the same 
-# data while we are in this transitionary period. 
+# These methods exist to ensure that both the legacy backend and breadbox are returning 
+# same shaped data while we are in this transitionary period. 
 
 def get_subsetted_df_by_compound_labels(dataset_id) -> pd.DataFrame:
     """
