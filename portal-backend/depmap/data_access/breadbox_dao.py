@@ -14,12 +14,25 @@ from depmap.partials.matrix.models import CellLineSeries
 from depmap.interactive.config.models import DatasetSortKey, DatasetSortFirstKey
 
 
-def get_all_matrix_datasets() -> list[MatrixDataset]:
+def get_all_matrix_datasets(
+        feature_id: Optional[str] = None,
+        feature_type: Optional[str] = None,
+        sample_id: Optional[str] = None,
+        sample_type: Optional[str] = None,
+        value_type: Optional[str] = None,
+) -> list[MatrixDataset]:
     """
     Return all breadbox matrix datasets.
     """
+    all_bb_datasets = extensions.breadbox.client.get_datasets(
+        feature_id=feature_id,
+        feature_type=feature_type,
+        sample_id=sample_id,
+        sample_type=sample_type,
+        value_type=value_type,
+    )
     matrix_datasets = []
-    for dataset in extensions.breadbox.client.get_datasets():
+    for dataset in all_bb_datasets:
         if dataset.format_ == MatrixDatasetResponseFormat.MATRIX_DATASET:
             assert isinstance(dataset, MatrixDatasetResponse)
             parsed_dataset = parse_matrix_dataset_response(dataset)
