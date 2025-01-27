@@ -14,7 +14,6 @@ import {
 
 interface ContextExplorerPlotProps {
   selectedContextName: string;
-  selectedContextNode: ContextNode | null;
   data: ContextSummary;
   checkedDataValues: number[][];
   checkedDatatypes: Set<string>;
@@ -29,7 +28,6 @@ interface ContextExplorerPlotProps {
 function ContextExplorerPlot(props: ContextExplorerPlotProps) {
   const {
     data,
-    selectedContextNode,
     checkedDataValues,
     selectedContextName,
     checkedDatatypes,
@@ -81,7 +79,7 @@ function ContextExplorerPlot(props: ContextExplorerPlotProps) {
     saveNewContext(context);
   };
 
-  const getXVals = useCallback(() => {
+  const xVals = useMemo(() => {
     return data.all_depmap_ids.map((item) => item[1]);
   }, [data]);
 
@@ -125,7 +123,7 @@ function ContextExplorerPlot(props: ContextExplorerPlotProps) {
       </div>
       <div className={styles.overviewPlotWrapper}>
         <DatatypeSelector
-          datatypes={[...data.data_types]}
+          datatypes={[...data.data_types].reverse()}
           checked={checkedDatatypes}
           onClick={updateDatatypeSelection}
           customInfoImg={customInfoImg}
@@ -137,8 +135,8 @@ function ContextExplorerPlot(props: ContextExplorerPlotProps) {
           {(!plotElement || !totalCellLines) && <PlotSpinner height="auto" />}
           <Heatmap
             dataTypeLabels={data.data_types}
-            zVals={checkedDataValues.reverse()}
-            xVals={getXVals()}
+            zVals={checkedDataValues}
+            xVals={xVals}
             onLoad={handleSetPlotElement}
             height={CONTEXT_EXPL_BAR_THICKNESS * data.data_types.length}
             margin={{
@@ -172,7 +170,7 @@ function ContextExplorerPlot(props: ContextExplorerPlotProps) {
               style={{
                 display: "grid",
                 gridTemplateRows: `repeat(${
-                  cellLineCountsBackwards.length + 1
+                  cellLineCountsForwards.length + 1
                 }, ${CONTEXT_EXPL_BAR_THICKNESS - 1}px)`,
                 marginLeft: "5px",
               }}
@@ -186,7 +184,7 @@ function ContextExplorerPlot(props: ContextExplorerPlotProps) {
               >
                 <h5 style={{ paddingBottom: "10px" }}># OF CELL LINES</h5>
               </div>
-              {cellLineCountsBackwards.map((count, index) => (
+              {cellLineCountsForwards.map((count, index) => (
                 <div
                   style={{
                     margin: 0,

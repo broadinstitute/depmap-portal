@@ -22,7 +22,6 @@ import {
 } from "../utils";
 import ContextExplorerTabs from "./ContextExplorerTabs";
 import LeftSearchPanel from "./LeftSearchPanel";
-// import LineageSearch from "./LineageSearch";
 
 export const ContextExplorer = () => {
   const [lineageSearchOptions, setLineageSearchOptions] = useState<
@@ -76,8 +75,7 @@ export const ContextExplorer = () => {
     allContextData,
     contextDataAvailability,
     selectedContextNode,
-    checkedDatatypes,
-    contextInfo?.table_data
+    checkedDatatypes
   );
 
   useEffect(() => {

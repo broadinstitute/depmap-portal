@@ -112,7 +112,6 @@ const ContextExplorerTabs = ({
               <ContextExplorerPlot
                 topContextName={topContextNameInfo.name}
                 selectedContextName={selectedContextNameInfo.name}
-                selectedContextNode={selectedContextNode}
                 data={selectedContextData}
                 checkedDataValues={checkedDataValues}
                 checkedDatatypes={checkedDatatypes}

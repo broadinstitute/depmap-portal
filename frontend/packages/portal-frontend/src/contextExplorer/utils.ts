@@ -6,6 +6,7 @@ import {
   OutGroupType,
   ContextExplorerDatasets,
 } from "./models/types";
+import update from "immutability-helper";
 import { DataExplorerContext } from "@depmap/types";
 import qs from "qs";
 import { Filter } from "src/common/models/discoveryAppFilters";
@@ -80,6 +81,11 @@ export function getSortedDataAvailVals(
 
     checkedValuesByDepmapId.push(rowDicts);
   }
+
+  console.log(checkedValues);
+  console.log(checkedRowIndexes);
+  console.log(allDepmapIds);
+  console.log(checkedValuesByDepmapId);
 
   const transpose = (
     matrix: {
@@ -160,8 +166,6 @@ export function changeSelectedDataAvailGraphVals(
   const newVals: number[][] = [];
   const selectedRowIndexes: number[] = [];
   originalData.data_types.forEach((datatype: string, index: number) => {
-    // const typeIndex = DataType[datatype as keyof typeof DataType];
-
     if (selectedDataTypes.size > 0 && !selectedDataTypes.has(datatype)) {
       const newValues = originalData.values[index].map(
         (oldValue: number) => oldValue + 0.5
@@ -457,49 +461,6 @@ function getFilteredData(
   };
 }
 
-function getSelectedContextData(
-  selectedContextNode: ContextNode,
-  allContextDatasetDataAvail: ContextSummary,
-  selectedContextDataAvailability: ContextSummary,
-  tableData: { [key: string]: string | boolean }[] | undefined
-) {
-  const mergedDataAvailability = mergeDataAvailability(
-    allContextDatasetDataAvail,
-    selectedContextDataAvailability
-  );
-  const filteredData = getFilteredData(
-    selectedContextNode,
-    mergedDataAvailability
-  );
-  const filteredDepmapIds = filteredData.all_depmap_ids.filter((item) =>
-    selectedContextNode.model_ids.includes(item[1])
-  );
-
-  const newDataVals = [];
-  for (let index = 0; index < filteredData.values.length; index += 1) {
-    const dataTypeVals = filteredData.values[index];
-    const newDataTypeVals = filteredDepmapIds.map(
-      (item) => dataTypeVals[item[0]]
-    );
-    newDataVals.push(newDataTypeVals);
-  }
-
-  const newContextData = {
-    values: newDataVals,
-    data_types: filteredData.data_types,
-    all_depmap_ids: filteredDepmapIds,
-  };
-
-  return {
-    selectedContextData: newContextData,
-    selectedContextNameInfo: {
-      subtype_code: selectedContextNode.subtype_code,
-      name: selectedContextNode.name,
-      node_level: selectedContextNode.node_level,
-    },
-  };
-}
-
 function mergeDataAvailability(
   allContextDatasetDataAvail: ContextSummary,
   subtypeDataAvail: ContextSummary
@@ -524,30 +485,84 @@ function mergeDataAvailability(
     dataTypes.push(allContextDatasetDataAvail.data_types[index]);
   });
 
+  const orderedDataTypes = [...dataTypes].reverse();
+  const orderedVals = [...vals].reverse();
   const mergedDataAvail = {
     all_depmap_ids: subtypeDataAvail.all_depmap_ids,
-    data_types: [...dataTypes.reverse(), ...subtypeDataAvail.data_types],
-    values: [...vals.reverse(), ...subtypeDataAvail.values],
+    data_types: [...orderedDataTypes, ...subtypeDataAvail.data_types].reverse(),
+    values: [...orderedVals, ...subtypeDataAvail.values].reverse(),
   };
 
   return mergedDataAvail;
+}
+
+function getSelectedContextData(
+  selectedContextNode: ContextNode,
+  allContextDatasetDataAvail: ContextSummary,
+  selectedContextDataAvailability: ContextSummary
+) {
+  const mergedDataAvailability = mergeDataAvailability(
+    allContextDatasetDataAvail,
+    selectedContextDataAvailability
+  );
+
+  const filteredData = getFilteredData(
+    selectedContextNode,
+    mergedDataAvailability
+  );
+  const availableDepmapIds = mergedDataAvailability.all_depmap_ids;
+
+  const newDataVals = [];
+  for (let index = 0; index < filteredData.values.length; index += 1) {
+    const dataTypeVals = filteredData.values[index];
+    const newDataTypeVals = availableDepmapIds.map(
+      (item) => dataTypeVals[item[0]]
+    );
+    newDataVals.push(newDataTypeVals);
+  }
+
+  const newContextData = {
+    values: newDataVals,
+    data_types: filteredData.data_types,
+    all_depmap_ids: availableDepmapIds,
+  };
+
+  return {
+    selectedContextData: newContextData,
+    selectedContextNameInfo: {
+      subtype_code: selectedContextNode.subtype_code,
+      name: selectedContextNode.name,
+      node_level: selectedContextNode.node_level,
+    },
+  };
 }
 
 export function getSelectionInfo(
   allContextDatasetDataAvail: ContextSummary,
   selectedContextDataAvailability: ContextSummary,
   selectedContextNode: ContextNode | null,
-  checkedDatatypes: Set<string>,
-  tableData: { [key: string]: string | boolean }[] | undefined
+  checkedDatatypes: Set<string>
 ) {
   let overlappingDepmapIds: string[] = [];
+
+  let validCheckedDataTypes: Set<string> = new Set();
+  checkedDatatypes.forEach((dataType) => {
+    if (!Object.values(DataTypeStrings)) {
+      validCheckedDataTypes = update(checkedDatatypes, {
+        $remove: [dataType],
+      });
+    } else {
+      validCheckedDataTypes = update(checkedDatatypes, {
+        $add: [dataType],
+      });
+    }
+  });
 
   const { selectedContextData, selectedContextNameInfo } = selectedContextNode
     ? getSelectedContextData(
         selectedContextNode,
         allContextDatasetDataAvail,
-        selectedContextDataAvailability,
-        tableData
+        selectedContextDataAvailability
       )
     : {
         selectedContextData: allContextDatasetDataAvail,
@@ -558,9 +573,11 @@ export function getSelectionInfo(
     ? selectedContextData.values
     : allContextDatasetDataAvail.values;
 
-  if (selectedContextData && checkedDatatypes.size > 0) {
+  if (selectedContextData && validCheckedDataTypes.size > 0) {
+    console.log(selectedContextData);
+    console.log(allContextDatasetDataAvail);
     const newSelectedValuesOverlap = getUpdatedGraphInfoForSelection(
-      checkedDatatypes,
+      validCheckedDataTypes,
       selectedContextData
     );
 

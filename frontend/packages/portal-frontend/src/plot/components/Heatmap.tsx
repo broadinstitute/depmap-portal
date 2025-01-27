@@ -66,20 +66,21 @@ function Heatmap({
           // Loss of Function colors
           // Because we have a zmin of 0 and zmax of 10, we
           // can use these colors via using a zVal of 1 or 1.5.
-          [0.1, "rgba(230, 136, 219, 1)"], // 100% opacity
-          [0.15, "rgba(230, 136, 219, .4)"], // 40% opacity (datatype not selected)
+          [0.1, "rgba(47, 169, 208, 1)"], // 100% opacity
+          [0.15, "rgba(47, 169, 208, .4)"], // 40% opacity (datatype not selected)
 
           // OMICS colors
           // (to use, set zVal to 2 or 2.5)
-          [0.2, "rgba(133, 166, 220, 1)"], // 100% opacity
-          [0.25, "rgba(133, 166, 220, .4)"], // 40% opacity (datatype not selected)
+          [0.2, "rgba(36, 74, 139, 1)"], // 100% opacity
+          [0.25, "rgba(36, 74, 139, .4)"], // 40% opacity (datatype not selected)
 
           // Compound Viability colors
-          [0.3, "rgba(255, 186, 122, 1)"], // 100% opacity
-          [0.35, "rgba(255, 186, 122, .4)"], // 40% opacity (datatype not selected)
+          [0.3, "rgba(197, 82, 82, 1)"], // 100% opacity
+          [0.35, "rgba(197, 82, 82, .4)"], // 40% opacity (datatype not selected)
 
-          [0.4, "rgba(185, 86, 122, 1)"], // 100% opacity
-          [0.45, "rgba(185, 86, 122, .4)"], // 40% opacity (datatype not selected)
+          // Disease Subtype colors
+          [0.4, "rgba(225, 121, 14, 1)"], // 100% opacity
+          [0.45, "rgba(225, 121, 14, .4)"], // 40% opacity (datatype not selected)
 
           // Not used. Just added as an endpoint to the colorscale
           [1.0, "rgb(0, 0, 0)"],
