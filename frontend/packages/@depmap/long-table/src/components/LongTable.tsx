@@ -1476,12 +1476,6 @@ export class LongTable extends React.Component<LongTableProps, LongTableState> {
   }
 }
 
-export interface VectorResponse {
-  cellLines: string[]; // array of depmapIDs
-  values?: number[];
-  categoricalValues?: string[];
-}
-
 export interface Vector {
   cellLines: string[]; // array of depmapIDs
   values?: number[] | string[];

@@ -45,12 +45,9 @@ const App = () => {
   }, [bbapi]);
 
   const getApi = () => bbapi;
-  const getVectorCatalogApi = () => {
-    throw new Error("Vector Catalog API is no longer supported!");
-  };
 
   return (
-    <ApiContext.Provider value={{ getApi, getVectorCatalogApi }}>
+    <ApiContext.Provider value={{ getApi }}>
       <ErrorBoundary>
         <BrowserRouter basename={basename}>
           <ElaraNavbar />

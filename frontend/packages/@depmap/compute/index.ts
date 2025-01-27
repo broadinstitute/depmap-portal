@@ -5,6 +5,7 @@ export { TwoClassQuery } from "./src/components/TwoClassQuery";
 export { default as AssociationPearsonQuery } from "./src/components/AssociationPearsonQuery";
 
 export type { Dataset } from "./src/components/DatasetSelect";
+export type { Link } from "./src/models/legacy";
 
 export type {
   AnalysisType,

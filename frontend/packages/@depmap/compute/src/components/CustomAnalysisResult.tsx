@@ -1,6 +1,6 @@
 /* eslint-disable */
 import * as React from "react";
-import { VolcanoPlot, VolcanoTrace } from "@depmap/interactive";
+import { VolcanoPlot, VolcanoTrace } from "@depmap/plotly-wrapper";
 import { Tab, Tabs } from "react-bootstrap";
 
 import {

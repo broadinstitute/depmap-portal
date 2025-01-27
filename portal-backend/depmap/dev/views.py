@@ -36,22 +36,6 @@ def whoami():
     )
 
 
-@blueprint.route("/lineup")
-def lineup():
-    if not current_app.config["ENABLED_FEATURES"].interactive_table:
-        abort(404)
-
-    return render_template("dev/lineup.html")
-
-
-@blueprint.route("/interactive_table")
-def interactive_table():
-    if not current_app.config["ENABLED_FEATURES"].interactive_table:
-        abort(404)
-
-    return render_template("interactive_table/index.html")
-
-
 @blueprint.route("/datasets")
 def datasets():
     return render_template("dev/datasets.html")

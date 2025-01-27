@@ -1,5 +1,5 @@
-/* eslint-disable */
-import * as React from "react";
+/* eslint-disable max-classes-per-file, react/prefer-stateless-function */
+import React from "react";
 
 interface StaticTableRowProps {
   data: (string | number)[];
@@ -7,6 +7,15 @@ interface StaticTableRowProps {
 
 interface StaticTableProps {
   data: (string | number)[][];
+}
+
+class StaticTableRow extends React.Component<StaticTableRowProps, any> {
+  render() {
+    const tableData = this.props.data.map((data, index) => (
+      <td key={index}>{data}</td>
+    ));
+    return <tr>{tableData}</tr>;
+  }
 }
 
 export class StaticTable extends React.Component<StaticTableProps, any> {
@@ -26,14 +35,5 @@ export class StaticTable extends React.Component<StaticTableProps, any> {
         <tbody>{tableRows}</tbody>
       </table>
     );
-  }
-}
-
-class StaticTableRow extends React.Component<StaticTableRowProps, any> {
-  render() {
-    const tableData = this.props.data.map((data, index) => (
-      <td key={index}>{data}</td>
-    ));
-    return <tr>{tableData}</tr>;
   }
 }

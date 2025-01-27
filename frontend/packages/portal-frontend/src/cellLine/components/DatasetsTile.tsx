@@ -1,5 +1,5 @@
 import React, { Fragment } from "react";
-import { Accordion } from "@depmap/interactive";
+import { Accordion } from "@depmap/common-components";
 import { DatasetDataTypes } from "../models/types";
 
 interface DatasetsTileProps {

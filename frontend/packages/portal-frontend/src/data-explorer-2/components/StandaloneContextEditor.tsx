@@ -37,10 +37,6 @@ interface Props {
   onSave?: (context: DataExplorerContext, hash: string) => void;
 }
 
-const getVectorCatalogApi = () => {
-  throw new Error("Vector Catalog API is no longer supported!");
-};
-
 function StandaloneContextEditor({
   context,
   hash,
@@ -75,7 +71,7 @@ function StandaloneContextEditor({
   };
 
   return (
-    <ApiContext.Provider value={{ getApi, getVectorCatalogApi }}>
+    <ApiContext.Provider value={{ getApi }}>
       <DeprecatedDataExplorerApiProvider
         evaluateLegacyContext={evaluateLegacyContext}
         fetchContextSummary={fetchContextSummary}

@@ -2,7 +2,7 @@
 import React from "react";
 import { Radio } from "react-bootstrap";
 import { assert } from "@depmap/utils";
-import { Link } from "@depmap/interactive";
+import { Link } from "../models/legacy";
 import { ApiContext } from "@depmap/api";
 import { CellLineListsDropdown, CustomList } from "@depmap/cell-line-selector";
 import {
