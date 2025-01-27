@@ -11,6 +11,8 @@ from depmap.interactive.config.models import Config, DatasetSortKey
 from depmap.partials.matrix.models import CellLineSeries
 from depmap.compound import legacy_utils as legacy_compound_utils
 
+from depmap.dataset.models import DependencyDataset
+
 # This data access interface will eventually only contains functions
 # which can be supported through both breadbox and the legacy backend.
 # It is being used to more clearly delineate "legacy" data access utilities
@@ -307,6 +309,30 @@ def get_slice_data(slice_query: SliceQuery) -> pd.Series:
 # These methods exist to ensure that both the legacy backend and breadbox are returning 
 # same shaped data while we are in this transitionary period. 
 
+
+def get_all_datasets_containing_compound(compound_id: str) -> list[MatrixDataset]:
+    """
+    Return IDs for all datasets which contain data for the given compound, sorted by priority.
+    This should include both:
+        - Datasets indexed by compound (from breadbox)
+        - Datasets indexed by compound experiment (from the legacy backend)
+    """
+    bb_compound_datasets = breadbox_dao.get_all_matrix_datasets(
+        feature_type="compound",
+        feature_id=compound_id
+    )
+    bb_compound_datasets.sort(key=lambda dataset: dataset.priority)
+
+    # If a dataset is defined in both breadbox and the legacy DB, use the breadbox version
+    legacy_ce_datasets = legacy_compound_utils.get_compound_experiment_priority_sorted_datasets(
+        compound_id
+    )
+    bb_given_ids = [dataset.given_id for dataset in bb_compound_datasets]
+    visible_legacy_datasets = [dataset for dataset in legacy_ce_datasets if dataset.id not in bb_given_ids]
+
+    return bb_compound_datasets + visible_legacy_datasets
+
+
 def get_subsetted_df_by_compound_labels(dataset_id) -> pd.DataFrame:
     """
     Load the data for a drug screen dataset. This is similar to get_subsetted_df_by_labels,
@@ -319,7 +345,7 @@ def get_subsetted_df_by_compound_labels(dataset_id) -> pd.DataFrame:
         return legacy_compound_utils.get_subsetted_df_by_compound_labels(dataset_id)
     else:
         return get_subsetted_df_by_labels(dataset_id)
-
+    
 
 ##################################################
 # METHODS BELOW ARE ONLY SUPPORTABLE BY BREADBOX #

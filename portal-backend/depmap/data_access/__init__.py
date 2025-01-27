@@ -19,6 +19,7 @@ from .interface import (
     is_categorical,
     is_continuous,
     # compound-specific methods
+    get_all_datasets_containing_compound,
     get_subsetted_df_by_compound_labels,
     # methods that will be supported with modified contracts
     get_private_datasets,

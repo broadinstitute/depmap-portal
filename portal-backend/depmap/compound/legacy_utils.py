@@ -1,11 +1,14 @@
 import logging
 import pandas as pd
 import sqlalchemy as sa
+from sqlalchemy import nullslast, case  # type: ignore
 
 from depmap.interactive import interactive_utils
+from depmap.database import db
 from depmap.dataset.models import (
     Compound,
     CompoundExperiment,
+    DependencyDataset,
 )
 from depmap.partials.matrix.models import Matrix, RowMatrixIndex
 
@@ -47,3 +50,26 @@ def get_subsetted_df_by_compound_labels(dataset_id: str) -> pd.DataFrame:
         log.warning(f"Found duplicate compounds in the dataset {dataset_id}. Keeping first occurance, dropping others.")
         compound_df = compound_df.reset_index().drop_duplicates(subset="index").set_index("index") # pyright: ignore
     return compound_df
+
+
+def get_compound_experiment_priority_sorted_datasets(compound_id) -> list[str]:
+    """Get a list of dataset ids in priority order"""
+    return (
+        db.session.query(CompoundExperiment, DependencyDataset)
+        .join(
+            Matrix, DependencyDataset.matrix_id == Matrix.matrix_id
+        )  # NOTE: I'm not sure if this join is necessary since RowMatrixIndex already has a matrix_id
+        .join(RowMatrixIndex)
+        .join(
+            CompoundExperiment,
+            RowMatrixIndex.entity_id == CompoundExperiment.entity_id,
+        )
+        .join(Compound, Compound.entity_id == CompoundExperiment.compound_id)
+        .filter(Compound.entity_id == compound_id)
+        .order_by(
+            nullslast(DependencyDataset.priority),
+            CompoundExperiment.entity_id,
+            case([(DependencyDataset.data_type == "drug_screen", 0)], else_=1),
+        )
+        .with_entities(DependencyDataset.name.name)
+    )
