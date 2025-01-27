@@ -6,15 +6,14 @@ import numpy as np
 import pandas as pd
 import pytest
 
+from depmap import data_access
 from depmap.cell_line.views import (
     convert_to_z_score_matrix,
     get_all_cell_line_gene_effects,
     get_all_cell_line_compound_sensitivity,
     get_cell_line_col_index,
-    get_compound_labels_by_index,
-    get_gene_labels_by_index,
     get_related_models,
-    get_rows_with_lowest_z_score,
+    get_lowest_z_scores_response,
 )
 from depmap.dataset.models import DependencyDataset
 from tests.factories import (
@@ -258,9 +257,8 @@ def test_get_all_cell_line_gene_effects(empty_db_mock_downloads):
     empty_db_mock_downloads.session.flush()
     interactive_test_utils.reload_interactive_config()
 
-    cell_line_col_index = 0
     actual_df = get_all_cell_line_gene_effects(
-        dataset_name=dataset_name.name, cell_line_col_index=cell_line_col_index
+        dataset_name=dataset_name.name, model_id=cell_lines[0].model_id
     )
 
     # Check that all non-null rows are included and have the correct gene names
@@ -298,9 +296,8 @@ def test_get_all_cell_line_compound_sensitivities(empty_db_mock_downloads):
     empty_db_mock_downloads.session.flush()
     interactive_test_utils.reload_interactive_config()
 
-    cell_line_col_index = 0
     actual_df = get_all_cell_line_compound_sensitivity(
-        dataset_name=dataset_name.name, cell_line_col_index=cell_line_col_index
+        dataset_name=dataset_name.name, model_id=cell_lines[0].model_id
     )
 
     # Check that all non-null rows are included and have the correct gene names
@@ -359,7 +356,7 @@ def test_convert_to_z_score_matrix():
         assert a == pytest.approx(b, 0.001)
 
 
-def test_get_rows_with_lowest_z_score(empty_db_mock_downloads):
+def test_get_lowest_z_scores_response(empty_db_mock_downloads):
     """Test that this outputs the expected format, ordered by z-score.
     Note: z-score calculations are tested above in test_convert_to_z_score_matrix.
     """
@@ -393,10 +390,10 @@ def test_get_rows_with_lowest_z_score(empty_db_mock_downloads):
     # Validate that a result is returned for the correct cell line
     col_index = 1
 
-    actual_result = get_rows_with_lowest_z_score(
+    actual_result = get_lowest_z_scores_response(
         dataset_name=dataset_name.name,
         model_id=cell_lines[col_index].model_id,
-        labels_by_row_index=get_gene_labels_by_index(dataset_name.name),
+        dataset_df=data_access.get_subsetted_df_by_labels(dataset_name.name)
     )
     assert actual_result["model_id"] == cell_lines[col_index].model_id
     assert actual_result["cell_line_col_index"] == col_index
@@ -414,32 +411,3 @@ def test_get_rows_with_lowest_z_score(empty_db_mock_downloads):
     for gene_data in actual_result["data"]:
         cell_line_gene_effect = gene_data[col_index]
         assert cell_line_gene_effect is not None
-
-
-def test_get_compound_labels_by_index(empty_db_mock_downloads):
-    """Test that the compound labels are loaded correctly"""
-    dataset_name = DependencyDataset.DependencyEnum.Rep_all_single_pt
-    cell_lines = [DepmapModelFactory() for _ in range(3)]
-    compounds = [
-        CompoundFactory(label="drug1"),
-        CompoundFactory(label="drug2"),
-        CompoundFactory(label="drug3"),
-        CompoundFactory(label="drug4"),
-    ]
-    compoundExperiments = [
-        CompoundExperimentFactory(compound=compound) for compound in compounds
-    ]
-    matrix = MatrixFactory(
-        data=[[1, 2, 3], [4, 5, 6], [1, 2, 3], [4, 5, 6],],
-        cell_lines=cell_lines,
-        entities=compoundExperiments,
-        using_depmap_model_table=True,
-    )
-    DependencyDatasetFactory(matrix=matrix, name=dataset_name)
-    empty_db_mock_downloads.session.flush()
-    interactive_test_utils.reload_interactive_config()
-
-    actual_labels = get_compound_labels_by_index(dataset_name.name)
-    assert actual_labels.columns.to_list() == ["index", "label"]
-    assert actual_labels["index"].to_list() == [0, 1, 2, 3]
-    assert actual_labels["label"].to_list() == ["drug1", "drug2", "drug3", "drug4"]
