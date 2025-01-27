@@ -170,14 +170,6 @@ class FeatureFlags:
         return True
 
     @property
-    def precomputed_associations(self):
-        return True
-
-    @property
-    def data_explorer_2(self):
-        return True
-
-    @property
     def interactive_table(self):
         return self.is_skyros()
 

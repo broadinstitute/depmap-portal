@@ -30,12 +30,8 @@
         <li class="dropdown">
           <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Tools <i class="fas fa-caret-down" aria-hidden="true"></i></a>
           <ul class="dropdown-menu">
-            {% if config.ENABLED_FEATURES.data_explorer_2 %}
-                <li><a href="{{ url_for('data_explorer_2.view_data_explorer_2')}}">Data Explorer</a></li>
-            {% else %}
-                <li><a href="{{ url_for('interactive.view_interactive') }}">Data Explorer</a></li>
-            {% endif %}
-            <li><a href="{{ url_for('interactive.view_custom_analysis') }}">Custom Analyses</a></li>
+              <li><a href="{{ url_for('data_explorer_2.view_data_explorer_2')}}">Data Explorer</a></li>
+              <li><a href="{{ url_for('interactive.view_custom_analysis') }}">Custom Analyses</a></li>
               <li><a href="{{ url_for('celligner.view_celligner') }}">Celligner</a></li>
             {% if config.ENABLED_FEATURES.morpheus %}
               <li><a href="{{ url_for('experimental.morpheus') }}">Morpheus <i class="alpha-tag"><b>Alpha</b></i></a></li>
@@ -53,12 +49,7 @@
               <li><a href="{{ url_for('dev.interactive_table') }}">LineUp Interactive Table <i class="alpha-tag"><b>Preview</b></i></a></li>
             {% endif %}
             <li role="separator" class="divider"></li>
-            {% if config.ENABLED_FEATURES.data_explorer_2 %}
-                <li><a class="cursor-pointer" onclick="DepMap.launchContextManagerModal()">Context Manager</a></li>
-                <li><a class="cursor-pointer" onclick="DepMap.launchContextManagerModal({ showHelpText: true })">Cell Line Selector</a></li>
-            {% else %}
-                <li><a class="cursor-pointer" onclick="DepMap.launchCellLineSelectorModal();return false;">Cell Line Selector</a></li>
-            {% endif %}
+              <li><a class="cursor-pointer" onclick="DepMap.launchContextManagerModal()">Context Manager</a></li>
             {% if config.ENABLED_FEATURES.private_datasets %}
               <li><a href="{{ url_for('private_dataset.home') }}">Private Datasets</a></li>          
             {% endif %}

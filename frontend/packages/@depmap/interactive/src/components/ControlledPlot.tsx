@@ -607,7 +607,7 @@ export class ControlledPlot extends React.Component<
           console.log("mismatched state");
         }
       });
-    if (getAssociations && enabledFeatures.precomputed_associations) {
+    if (getAssociations) {
       if (x == "") {
         // while we're here, setStates called before getNewData may not have updated state
         const newState: Partial<ControlledPlotState> = {
@@ -1134,9 +1134,7 @@ export class ControlledPlot extends React.Component<
             : "controlled-plot-two-rows"
         }`}
       >
-        {enabledFeatures.data_explorer_2 && (
-          <EndOfSupportBanner className="de1-end-of-support-banner" />
-        )}
+        <EndOfSupportBanner className="de1-end-of-support-banner" />
         <div className="header-pane" />
         <div className="controls-pane">
           {!this.state.showingCustomAnalysis && (
@@ -1201,13 +1199,11 @@ export class ControlledPlot extends React.Component<
               )}
           </div>
 
-          {enabledFeatures.precomputed_associations &&
-            this.state.show.xHasBeenSet &&
-            !this.overrideExists() && (
-              <div className="checkbox-wrapper">
-                <Checkbox {...showAssociation} />
-              </div>
-            )}
+          {this.state.show.xHasBeenSet && !this.overrideExists() && (
+            <div className="checkbox-wrapper">
+              <Checkbox {...showAssociation} />
+            </div>
+          )}
           <div className="section">
             <span className="button-wrapper">
               <ButtonGroup
@@ -1224,7 +1220,6 @@ export class ControlledPlot extends React.Component<
                 }}
                 saveCellLineSet={saveCellLineSet}
                 renderOpenInDE2Button={() =>
-                  enabledFeatures.data_explorer_2 &&
                   !this.state.showingCustomAnalysis && (
                     <OpenInDE2Button
                       xSliceId={this.state.x.id}
@@ -1291,9 +1286,6 @@ export class ControlledPlot extends React.Component<
                   <span className="label-wrapper">Find cell lines</span>
                   <span className="button-wrapper">
                     <CellLineListsDropdown
-                      launchCellLineSelectorModal={
-                        this.props.launchCellLineSelectorModal
-                      }
                       onListSelect={this.updateSelectedCellLineListName.bind(
                         this
                       )}

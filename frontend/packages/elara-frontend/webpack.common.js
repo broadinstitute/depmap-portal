@@ -29,7 +29,6 @@ module.exports = {
       "window.enabledFeatures": JSON.stringify({
         linear_association: false,
         use_taiga_urls: false,
-        precomputed_associations: false,
         elara: true,
       }),
       "window.depmapContactUrl": JSON.stringify(

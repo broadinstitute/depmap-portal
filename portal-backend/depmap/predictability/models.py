@@ -219,54 +219,38 @@ class PredictiveFeature(Model):
         )
 
         if self.dataset_id == "context":
-            if current_app.config["ENABLED_FEATURES"].data_explorer_2:
-                lineage_level = "1"
+            lineage_level = "1"
 
-                for level in ["2", "3"]:
-                    for lineage, _ in Lineage.get_lineage_ids_by_level(level):
-                        if lineage == self.feature_name:
-                            lineage_level = level
+            for level in ["2", "3"]:
+                for lineage, _ in Lineage.get_lineage_ids_by_level(level):
+                    if lineage == self.feature_name:
+                        lineage_level = level
 
-                return url_for(
-                    "data_explorer_2.view_data_explorer_2",
-                    xDataset=dep_dataset.name.name,
-                    xFeature=entity.label,
-                    color1=json_dumps(
-                        {
-                            "name": self.feature_name,
-                            "context_type": "depmap_model",
-                            "expr": {
-                                "==": [
-                                    {"var": f"slice/lineage/{lineage_level}/label"},
-                                    self.feature_name,
-                                ]
-                            },
-                        }
-                    ),
-                )
-            else:
-                color = InteractiveTree.get_id_from_dataset_feature(
-                    data_access.get_context_dataset(),
-                    self.feature_name,
-                    feature_is_entity_id=False,
-                )
-
-                return url_for("interactive.view_interactive", x=x, color=color)
-
-        y = InteractiveTree.get_id_from_dataset_feature(
-            self.dataset_id, self.feature_name, feature_is_entity_id=False,
-        )
-
-        if current_app.config["ENABLED_FEATURES"].data_explorer_2:
             return url_for(
                 "data_explorer_2.view_data_explorer_2",
                 xDataset=dep_dataset.name.name,
                 xFeature=entity.label,
-                yDataset=self.dataset_id,
-                yFeature=self.feature_name,
+                color1=json_dumps(
+                    {
+                        "name": self.feature_name,
+                        "context_type": "depmap_model",
+                        "expr": {
+                            "==": [
+                                {"var": f"slice/lineage/{lineage_level}/label"},
+                                self.feature_name,
+                            ]
+                        },
+                    }
+                ),
             )
-        else:
-            return url_for("interactive.view_interactive", x=x, y=y)
+
+        return url_for(
+            "data_explorer_2.view_data_explorer_2",
+            xDataset=dep_dataset.name.name,
+            xFeature=entity.label,
+            yDataset=self.dataset_id,
+            yFeature=self.feature_name,
+        )
 
     def get_correlation_for_entity(
         self, dep_dataset: DependencyDataset, entity: Entity
