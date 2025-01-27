@@ -1,42 +1,29 @@
-add-if-missing {
-    "type": "target_matrix",
-    "label": "crispr_gene_effect",
-    "source_dataset_id": "internal-24q2-3719.82/CRISPRGeneEffect"
-}
-
-add-if-missing {
-    "type": "feature",
-    "label": "lineage",
-    "source_dataset_id": "predictability-76d5.94/PredictabilityLineageTransformed"
-}
-
-add-if-missing {
-    "type": "feature",
-    "label": "confounder",
-    "source_dataset_id": "predictability-76d5.111/PredictabilityCRISPRConfoundersTransformed"
-}
-
-add-if-missing {
-    "type": "feature",
-    "label": "driver_events",
-    "source_dataset_id": "predictability-76d5.99/DriverEvents"
-}
-
-add-if-missing {
-    "type": "target_matrix",
-    "label": "RNAi",
-    "source_dataset_id": "predictability-legacy-datasets-8c54.14/RNAiDep"
-}
-
+include "predictability_inputs.conseq"
 
 rule process_model_config:
     inputs:
+        # One model config
+        model_config=fileref("model-config.yaml"),
+
+        # Two target matrices
         crispr_gene_effect={"type": "target_matrix", "label": "crispr_gene_effect"},
-        rnai={"type": "target_matrix", "label": "RNAi"},
+        rnai={"type": "target_matrix", "label": "rnai"},
+
+        # Twelve features
         lineage={"type": "feature", "label": "lineage"},
-        confounder={"type": "feature", "label": "confounder"},
+        crispr_confounder={"type": "feature", "label": "crispr_confounder"},
+        rnai_confounder={"type": "feature", "label": "rnai_confounder"},
         driver_events={"type": "feature", "label": "driver_events"},
-        model_config=fileref("model-config.yaml")
+        armlevel_cna={"type": "feature", "label": "armlevel_cna"},
+        cytoband_cn={"type": "feature", "label": "cytoband_cn"},
+        genetic_signature={"type": "feature", "label": "genetic_signature"},
+        mutations_hotspot={"type": "feature", "label": "mutations_hotspot"},
+        mutations_damaging={"type": "feature", "label": "mutations_damaging"},
+        gene_cn={"type": "feature", "label": "gene_cn"},
+        loh={"type": "feature", "label": "loh"},
+        rnaseq={"type": "feature", "label": "rnaseq"},
+
+        
     outputs:
         {
         "type": "input-model-file",
@@ -53,82 +40,102 @@ rule process_model_config:
     with open(model_config_file, 'r') as file:
         config = yaml.safe_load(file)
     
-    # Process each model in the YAML
+    # Process each model for both CRISPR and RNAi screens
+    screens = ["CRISPR", "RNAi"]
+    
     for model_name, model_config in config.items():
-        output_json = {
-            "model_name": model_name,
-            "screen_name": model_config["Screen"],
-            "data": {}
-        }
-        
-        target = model_config["Target"][0]
-
-        # Choose the correct target based on screen name
-        if model_config["Screen"] == "CRISPR":
-            target_id = "{{ inputs.crispr_gene_effect.source_dataset_id }}"
-        elif model_config["Screen"] == "RNAi":
-            target_id = "{{ inputs.rnai.source_dataset_id }}"
-
-        output_json["data"][target] = {
-            "taiga_id": target_id,
-            "table_type": "target_matrix",
-            "relation": model_config["Relation"]
-        }
-        
-        for feature in model_config["Features"]:
-            if feature.lower() == "lineage":
-                feature_input = {{ inputs.lineage }}
-            elif feature.lower() == "confounder":
-                feature_input = {{ inputs.confounder }}
-            elif feature.lower() == "driverevents":
-                feature_input = {{ inputs.driver_events }}
-            
-            output_json["data"][feature] = {
-                "taiga_id": feature_input["source_dataset_id"],
-                "table_type": feature_input["type"],
-                "dim_type": feature_input["label"].lower(),
-                "required": feature in model_config["Required"],
-                "exempt": False
+        for screen in screens:
+            output_json = {
+                "model_name": model_name,
+                "screen_name": screen,
+                "data": {}
             }
-        
-        output_file = f"{model_name.lower()}_config.json"
-        output_file_path = os.path.abspath(output_file)
-
-        with open(output_file, 'w') as f:
-            json.dump(output_json, f, indent=2)
-        print(f"Created {output_file}")
-
-        
-        docker_command = [
-            "docker", "run",
-            "-w", "/daintree",
-            "--pull=always",
-            "-v", f"{output_file_path}:/daintree/{output_file}",
-            "us.gcr.io/broad-achilles/daintree-sparkles:v4",
-            "/install/depmap-py/bin/python3.9", "-u", "run_fit_models.py",
-            "collect-and-fit-generate-config",
-            "--input-files", output_file,
-            "--sparkles-path", "/install/sparkles/bin/sparkles",
-            "--sparkles-config", "/daintree/sparkles-config",
-            "--save-dir", "/daintree/output_data/nayeem-test",
-            "--test", "True",
-            "--skipfit", "False"
-        ]
-
-        try:
-            result = subprocess.run(
-                docker_command,
-                check=True,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                text=True
-            )
             
-            print("STDOUT:", result.stdout)
-            print("STDERR:", result.stderr)
+            # Set target based on screen type
+            target = screen
+            if screen == "CRISPR":
+                target_id = "{{ inputs.crispr_gene_effect.source_dataset_id }}"
+            else:  # RNAi
+                target_id = "{{ inputs.rnai.source_dataset_id }}"
 
-        except subprocess.CalledProcessError as e:
-            print(f"Command failed with return code {e.returncode}")
-            print("STDOUT:", e.stdout)
-            print("STDERR:", e.stderr)
+            output_json["data"][target] = {
+                "taiga_id": target_id,
+                "table_type": "target_matrix",
+                "relation": model_config["Relation"]
+            }
+            
+            # Map features to their corresponding inputs
+            feature_mapping = {
+                "lineage": {{ inputs.lineage }},
+                "confounder": ({{ inputs.crispr_confounder }} if screen == "CRISPR" 
+                             else {{ inputs.rnai_confounder }}),
+                "driver_events": {{ inputs.driver_events }},
+                "armlevel_cn": {{ inputs.armlevel_cna }},
+                "cytoband_cn": {{ inputs.cytoband_cn }},
+                "genetic_signature": {{ inputs.genetic_signature }},
+                "mutations_hotspot": {{ inputs.mutations_hotspot }},
+                "mutations_damaging": {{ inputs.mutations_damaging }},
+                "gene_cn": {{ inputs.gene_cn }},
+                "loh": {{ inputs.loh }},
+                "rnaseq": {{ inputs.rnaseq }}
+            }
+            
+            for feature in model_config["Features"]:
+                feature_input = feature_mapping[feature]
+                
+                # Special handling for confounder naming in output
+                feature_name = feature
+                if feature == "confounder":
+                    feature_name = f"{screen.lower()}_confounder"
+                
+                output_json["data"][feature_name] = {
+                    "taiga_id": feature_input["source_dataset_id"],
+                    "table_type": feature_input["type"],
+                    "dim_type": feature_input["category"],
+                    "required": feature in model_config["Required"],
+                    "exempt": False
+                }
+            
+            # Generate output filename
+            output_file = f"model-map-{model_name.lower()}-{screen.lower()}.json"
+            output_file_path = os.path.abspath(output_file)
+
+            with open(output_file, 'w') as f:
+                json.dump(output_json, f, indent=2)
+            print(f"Created {output_file}")
+            print(f"Output_file_path: {output_file_path}")
+
+            docker_command = [
+                "docker", "run",
+                "--pull=always",
+                "-v", f"{output_file_path}:/daintree/{output_file}",
+                "-v", f"{os.getcwd()}/output_data:/daintree/output_data", 
+                "us.gcr.io/broad-achilles/daintree-sparkles:v4",
+                "/install/depmap-py/bin/python3.9", "-u", "run_fit_models.py",
+                "collect-and-fit-generate-config",
+                "--input-files", output_file,
+                "--sparkles-config", "/daintree/sparkles-config",
+                "--save-dir", "/daintree/output_data/nayeem-test",
+                "--test", "True",
+                "--skipfit", "False"
+            ]
+
+            print(f"Docker command: {docker_command}")
+
+            try:
+                result = subprocess.run(
+                    docker_command,
+                    check=True,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    text=True
+                )
+                
+                print("STDOUT:", result.stdout)
+                print("STDERR:", result.stderr)
+
+            except subprocess.CalledProcessError as e:
+                print(f"Command failed with return code {e.returncode}")
+                print("STDOUT:", e.stdout)
+                print("STDERR:", e.stderr)
     """

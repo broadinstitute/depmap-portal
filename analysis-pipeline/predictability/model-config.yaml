@@ -1,25 +1,86 @@
 CellContext:
-  Screen: CRISPR
-  Target:
-    - CRISPR
   Features:
-    - Lineage
-    - Confounder
+    - lineage
+    - confounder # Will map to crispr_confounder or rnai_confounder based on screen
   Required:
-    - Lineage
-    - Confounder
+    - lineage
+    - confounder
   Relation: All
 
 DriverEvents:
-  Screen: CRISPR
-  Target:
-    - CRISPR
   Features:
-    - Lineage
-    - Confounder
-    - DriverEvents
+    - lineage
+    - confounder
+    - driver_events
   Required:
-    - Lineage
-    - Confounder
-    - DriverEvents
+    - lineage
+    - confounder
+    - driver_events
+  Relation: All
+
+GeneticDerangement:
+  Features:
+    - lineage
+    - confounder
+    - driver_events
+    - armlevel_cn
+    - cytoband_cn
+    - genetic_signature
+  Required:
+    - lineage
+    - confounder
+    - driver_events
+    - armlevel_cn
+    - cytoband_cn
+    - genetic_signature
+  Relation: All
+
+DNA:
+  Features:
+    - lineage
+    - confounder
+    - driver_events
+    - armlevel_cn
+    - cytoband_cn
+    - genetic_signature
+    - mutations_hotspot
+    - mutations_damaging
+    - gene_cn
+    - loh
+  Required:
+    - lineage
+    - confounder
+    - driver_events
+    - armlevel_cn
+    - cytoband_cn
+    - genetic_signature
+    - mutations_hotspot
+    - mutations_damaging
+    - gene_cn
+  Relation: All
+
+RNASeq:
+  Features:
+    - lineage
+    - confounder
+    - driver_events
+    - armlevel_cn
+    - cytoband_cn
+    - genetic_signature
+    - mutations_hotspot
+    - mutations_damaging
+    - gene_cn
+    - loh
+    - rnaseq
+  Required:
+    - lineage
+    - confounder
+    - driver_events
+    - armlevel_cn
+    - cytoband_cn
+    - genetic_signature
+    - mutations_hotspot
+    - mutations_damaging
+    - gene_cn
+    - rnaseq
   Relation: All
