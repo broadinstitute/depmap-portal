@@ -591,6 +591,7 @@ def get_predictability_files():
 
 @blueprint.route("/<path:compound_name>/genomic_associations")
 def view_genomic_associations(compound_name: str):
+    # DEPRECATED: Being redesigned/replaced
     compound = Compound.query.filter_by(label=compound_name).one_or_none()
     if compound is None:
         compound_experiment = CompoundExperiment.get_by_label(compound_name, must=False)

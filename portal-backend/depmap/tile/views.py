@@ -2,6 +2,8 @@ from flask.globals import current_app
 import pandas as pd
 import depmap.celfie.utils as celfie_utils
 from flask import Blueprint, render_template, abort, jsonify, url_for, request
+
+from depmap import data_access
 from depmap.enums import GeneTileEnum, CompoundTileEnum, CellLineTileEnum
 from depmap.predictability.models import TDPredictiveModel
 from depmap.entity.views.executive import (
@@ -365,7 +367,9 @@ def get_targeting_compounds_html(gene):
 
 
 def get_enrichment_html(
-    entity, compound_experiment_and_datasets=None, query_params_dict={}
+    entity, 
+    compound_experiment_and_datasets=None, # Only passed in for compound dashboard
+    query_params_dict={} # Only passed in for Compound dashboard
 ):
     entity_type = entity.get_entity_type()
     if entity_type == "gene":
@@ -582,6 +586,7 @@ def get_tractability_html(gene):
 def get_sensitivity_html(
     compound, compound_experiment_and_datasets, query_params_dict={}
 ):
+    # DEPRECATED: Will be redesigned/replaced
     best_ce_and_d = determine_compound_experiment_and_dataset(
         compound_experiment_and_datasets
     )
@@ -595,6 +600,7 @@ def get_sensitivity_html(
 def get_correlations_html(
     compound, compound_experiment_and_datasets, query_params_dict={}
 ):
+    # DEPRECATED: will be redesigned/replaced
     return render_template(
         "tiles/correlations.html",
         correlations=format_top_corr_table(compound_experiment_and_datasets),
