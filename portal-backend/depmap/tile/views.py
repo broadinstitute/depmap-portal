@@ -206,8 +206,8 @@ def render_gene_tile(tile_name, gene):
 def render_compound_tile(
     tile_name, 
     compound, 
-    compound_datasets: list[MatrixDataset],
-    cpd_exp_and_datasets=None, 
+    compound_datasets: list[MatrixDataset], # Includes breadbox datasets
+    cpd_exp_and_datasets=None, # Deprecated: legacy datasets only
     query_params_dict={}
 ):
     tiles = {
@@ -222,7 +222,7 @@ def render_compound_tile(
     if tile_name not in tiles:
         abort(400)
     tile_html = tiles[tile_name]
-    html = tile_html(compound, datasets, cpd_exp_and_datasets, query_params_dict)
+    html = tile_html(compound, compound_datasets, cpd_exp_and_datasets, query_params_dict)
     return html
 
 
@@ -282,15 +282,14 @@ def get_tda_predictability_html(entity):
 
 def get_predictability_html(
     entity: Entity,
-    compound_datasets: Optional[list[MatrixDataset]]=None,
-    cpd_exp_and_datasets: List[Tuple[CompoundExperiment, DependencyDataset]] = None,
+    compound_datasets: Optional[list[MatrixDataset]]=None, # Includes breadbox datasets
+    cpd_exp_and_datasets: List[Tuple[CompoundExperiment, DependencyDataset]] = None, # Deprecated: legacy datasets only
     query_params_dict={},
 ):
     """
     This is the predictability tile on the gene page
     This is distinct from the predictability tile on the td app, which has different source data and uses the get_tda_predictability_html function
     """
-    # TODO: update this to use the new datasets list
     entity_type = entity.type
     if entity_type == "gene":
         default_crispr_dataset = DependencyDataset.get_dataset_by_data_type_priority(
@@ -381,9 +380,9 @@ def get_targeting_compounds_html(gene):
 
 def get_enrichment_html(
     entity, 
-    compound_datasets: Optional[list[MatrixDataset]]=None,
-    compound_experiment_and_datasets=None, # Only passed in for compound dashboard
-    query_params_dict={} # Only passed in for Compound dashboard
+    compound_datasets: Optional[list[MatrixDataset]]=None, # Includes breadbox datasets
+    compound_experiment_and_datasets=None, # Deprecated: legacy datasets only
+    query_params_dict={}
 ):
     # TODO: update this to use the new datasets list
     entity_type = entity.get_entity_type()
@@ -518,8 +517,8 @@ def get_omics_html(gene):
 
 def get_description_html(
     entity, 
-    compound_datasets: Optional[list[MatrixDataset]]=None,
-    cpd_exp_and_datasets=None,
+    compound_datasets: Optional[list[MatrixDataset]]=None, # Includes breadbox datasets
+    cpd_exp_and_datasets=None, # Deprecated: legacy datasets only
     query_params_dict={}
 ):
     entity_type = entity.type
@@ -605,8 +604,8 @@ def get_tractability_html(gene):
 
 def get_sensitivity_html(
     compound, 
-    compound_datasets: list[MatrixDataset],
-    compound_experiment_and_datasets, 
+    compound_datasets: list[MatrixDataset], # Includes breadbox datasets
+    compound_experiment_and_datasets, # Deprecated: legacy datasets only
     query_params_dict={}
 ):
     # TODO: update this to use the new datasets list
@@ -623,8 +622,8 @@ def get_sensitivity_html(
 
 def get_correlations_html(
     compound, 
-    compound_datasets: list[MatrixDataset],
-    compound_experiment_and_datasets, 
+    compound_datasets: list[MatrixDataset], # Includes breadbox datasets
+    compound_experiment_and_datasets, # Deprecated: legacy datasets only
     query_params_dict={}
 ):
     # TODO: update this to use the new datasets list
@@ -637,8 +636,8 @@ def get_correlations_html(
 
 def get_availability_html(
     compound,
-    compound_datasets: list[MatrixDataset],
-    compound_experiment_and_datasets, 
+    compound_datasets: list[MatrixDataset], # Includes breadbox datasets
+    compound_experiment_and_datasets, # Deprecated: legacy datasets only
     query_params_dict={},
 ):
     compound_id = compound.entity_id
@@ -715,8 +714,8 @@ def get_correlations_for_celfie_react_tile(
 
 def get_celfie_html(
     entity, 
-    compound_datasets: Optional[list[MatrixDataset]]=None,
-    compound_experiment_and_datasets=None, 
+    compound_datasets: Optional[list[MatrixDataset]]=None, # Includes breadbox datasets
+    compound_experiment_and_datasets=None, # Deprecated: legacy datasets only
     query_params_dict={}
 ):
     # DEPRECATED: This is being replaced. All code related to genomics associations can be considered dead.
