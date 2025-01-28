@@ -14,7 +14,7 @@ from ..schemas.dataset import (
     ColumnMetadata,
 )
 
-from ..schemas.custom_http_exception import DatasetAccessError
+from ..schemas.custom_http_exception import DatasetAccessError, FileValidationError
 from breadbox.crud.access_control import user_has_access_to_group
 from breadbox.models.dataset import MatrixDataset
 from breadbox.crud.group import (
@@ -22,7 +22,7 @@ from breadbox.crud.group import (
     TRANSIENT_GROUP_ID,
     get_transient_group,
 )
-from ..crud.dimension_types import get_dimension_type
+
 from ..crud.dataset import add_tabular_dimensions, add_matrix_dataset_dimensions
 from ..crud.dimension_types import (
     set_properties_to_index,
@@ -307,12 +307,6 @@ def add_tabular_dataset(
     version: Optional[str],
     description: Optional[str],
 ):
-    # verify the id_column is present in the data frame before proceeding and is of type string
-    if dimension_type.id_column not in data_df.columns:
-        raise ValueError(
-            f'The dimension type "{dimension_type.name}" uses "{dimension_type.id_column}" for the ID, however that column is not present in the table. The actual columns were: {data_df.columns.to_list()}'
-        )
-
     group = _get_dataset_group(db, user, dataset_in.group_id, dataset_in.is_transient)
     dataset = TabularDataset(
         id=dataset_in.id,
@@ -333,7 +327,6 @@ def add_tabular_dataset(
     db.add(dataset)
     db.flush()
 
-    _validate_tabular_dimensions(db, dimension_type, columns_metadata, data_df)
     add_tabular_dimensions(
         db, data_df, columns_metadata, dataset.id, dimension_type, group_id=group.id
     )
@@ -341,37 +334,6 @@ def add_tabular_dataset(
     db.flush()
 
     return dataset
-
-
-def _validate_tabular_dimensions(
-    db: SessionWithUser,
-    dimension_type: DimensionType,
-    columns_metadata: Dict[str, ColumnMetadata],
-    data_df: pd.DataFrame,
-):
-
-    assert (
-        dimension_type.id_column in data_df.columns
-    ), f"id column was specified as {dimension_type.id_column} but dataframe only had columns {data_df.columns}"
-
-    missing_metadata = set(data_df.columns).difference(columns_metadata)
-    if len(missing_metadata) > 0:
-        raise ValueError(
-            f"The following columns are missing metadata: {', '.join(missing_metadata)}"
-        )
-    extra_metadata = set(columns_metadata).difference(data_df.columns)
-    if len(extra_metadata) > 0:
-        raise ValueError(
-            f"The following columns had metadata but are not present in the table: {', '.join(extra_metadata)}"
-        )
-
-    for column_name, column_metadata in columns_metadata.items():
-        if column_metadata.references is not None:
-            dim_type = get_dimension_type(db, column_metadata.references)
-            if dim_type is None:
-                raise ValueError(
-                    f"The column {column_name} references {column_metadata.references} which does not exit"
-                )
 
 
 def _get_dataset_group(
