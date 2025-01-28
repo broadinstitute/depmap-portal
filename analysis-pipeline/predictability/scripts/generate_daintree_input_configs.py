@@ -17,9 +17,6 @@ def generate_daintree_configs(
         input_config_path: A json file that contains the configuration for the input data
     Returns:
         List of artifacts containing the generated config information
-    Raises:
-        FileNotFoundError: If config files don't exist
-        ValueError: If config files have wrong format or missing required fields
     """
     # add a check to make sure the files exist
     if not os.path.exists(model_config_path):

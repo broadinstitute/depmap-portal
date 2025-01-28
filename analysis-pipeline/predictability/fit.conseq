@@ -34,11 +34,7 @@ rule process_model_config:
     run "python" with """
     import json
 
-    config_dict = {}
-
-    for key, value in {{inputs}}.items():
-        config_dict[key] = value
-
+    config_dict = {{inputs}}
     with open("daintree_input_config.json", 'w') as f:
         json.dump(config_dict, f, indent=2)   
 
