@@ -137,7 +137,8 @@ rule run_fit_models:
 
       docker_command = [
         "docker", "run",
-        "--pull=always",
+        "--rm",
+        "--memory", "20g",
         "-v", f"{input_config_filepath}:/daintree/{input_config_filename}",
         "-v", f"{os.getcwd()}/output_data:/daintree/output_data", 
         "us.gcr.io/broad-achilles/daintree-sparkles:v4",
