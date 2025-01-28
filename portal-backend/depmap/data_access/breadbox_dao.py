@@ -12,6 +12,20 @@ from depmap.data_access.models import MatrixDataset
 from depmap import extensions
 from depmap.partials.matrix.models import CellLineSeries
 from depmap.interactive.config.models import DatasetSortKey, DatasetSortFirstKey
+import flask
+
+
+def _get_breadbox_datasets_with_caching():
+    """
+    Cache the results of breadbox's get_datasets function (scoped to the flask request) because
+    some operations (ie: predictability) result in a _lot_ of calls in order
+    to answer the question is an ID in breadbox or not in the course of handling the request.
+    """
+    if hasattr(flask.g, "__cached_get_datasets"):
+        return flask.g.__cached_get_datasets
+    else:
+        flask.g.__cached_get_datasets = extensions.breadbox.client.get_datasets()
+        return flask.g.__cached_get_datasets
 
 
 def get_all_matrix_datasets() -> list[MatrixDataset]:
@@ -19,7 +33,7 @@ def get_all_matrix_datasets() -> list[MatrixDataset]:
     Return all breadbox matrix datasets.
     """
     matrix_datasets = []
-    for dataset in extensions.breadbox.client.get_datasets():
+    for dataset in _get_breadbox_datasets_with_caching():
         if dataset.format_ == MatrixDatasetResponseFormat.MATRIX_DATASET:
             assert isinstance(dataset, MatrixDatasetResponse)
             parsed_dataset = parse_matrix_dataset_response(dataset)
@@ -29,7 +43,7 @@ def get_all_matrix_datasets() -> list[MatrixDataset]:
 
 def get_breadbox_given_ids() -> set[str]:
     given_ids = set()
-    for dataset in extensions.breadbox.client.get_datasets():
+    for dataset in _get_breadbox_datasets_with_caching():
         if dataset.given_id is not None:
             given_ids.add(dataset.given_id)
     return given_ids
