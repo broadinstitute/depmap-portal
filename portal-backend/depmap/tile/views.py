@@ -384,7 +384,6 @@ def get_enrichment_html(
     compound_experiment_and_datasets=None, # Deprecated: legacy datasets only
     query_params_dict={}
 ):
-    # TODO: update this to use the new datasets list
     entity_type = entity.get_entity_type()
     if entity_type == "gene":
         crispr_dataset = get_dependency_dataset_for_entity(
@@ -608,8 +607,7 @@ def get_sensitivity_html(
     compound_experiment_and_datasets, # Deprecated: legacy datasets only
     query_params_dict={}
 ):
-    # TODO: update this to use the new datasets list
-    # DEPRECATED: Will be redesigned/replaced
+    # DEPRECATED: will be redesigned/replaced
     best_ce_and_d = determine_compound_experiment_and_dataset(
         compound_experiment_and_datasets
     )
@@ -626,7 +624,6 @@ def get_correlations_html(
     compound_experiment_and_datasets, # Deprecated: legacy datasets only
     query_params_dict={}
 ):
-    # TODO: update this to use the new datasets list
     # DEPRECATED: will be redesigned/replaced
     return render_template(
         "tiles/correlations.html",

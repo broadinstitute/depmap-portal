@@ -267,10 +267,11 @@ def format_availability_tile(compound_id):
     # indexed by compound_experiment, not compound_id
     compound_experiments_ids = [
         ce.entity_id for ce in CompoundExperiment.get_all_by_compound_id(compound_id)
-    ]
+    ] # TODO: update this
 
     results = []
     for data_availability_dataset in data_availability_datasets:
+        # TODO: update this to use compound ID instead
         cell_line_count = get_cell_line_count(
             data_availability_dataset.dataset, compound_experiments_ids
         )
