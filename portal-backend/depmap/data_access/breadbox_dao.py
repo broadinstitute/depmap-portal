@@ -1,7 +1,11 @@
 import pandas as pd
-from typing import Optional
+from typing import Optional, Union, cast
 
-from breadbox_client.models import MatrixDatasetResponse, MatrixDatasetResponseFormat
+from breadbox_client.models import (
+    MatrixDatasetResponse,
+    MatrixDatasetResponseFormat,
+    TabularDatasetResponse,
+)
 from depmap.data_access.response_parsing import (
     is_breadbox_id_format,
     parse_breadbox_slice_id,
@@ -15,14 +19,19 @@ from depmap.interactive.config.models import DatasetSortKey, DatasetSortFirstKey
 import flask
 
 
-def _get_breadbox_datasets_with_caching():
+def _get_breadbox_datasets_with_caching() -> list[
+    Union[MatrixDatasetResponse, TabularDatasetResponse]
+]:
     """
     Cache the results of breadbox's get_datasets function (scoped to the flask request) because
     some operations (ie: predictability) result in a _lot_ of calls in order
     to answer the question is an ID in breadbox or not in the course of handling the request.
     """
     if hasattr(flask.g, "__cached_get_datasets"):
-        return flask.g.__cached_get_datasets
+        return cast(
+            list[Union[MatrixDatasetResponse, TabularDatasetResponse]],
+            flask.g.__cached_get_datasets,
+        )
     else:
         flask.g.__cached_get_datasets = extensions.breadbox.client.get_datasets()
         return flask.g.__cached_get_datasets
