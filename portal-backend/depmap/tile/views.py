@@ -4,6 +4,7 @@ import depmap.celfie.utils as celfie_utils
 from flask import Blueprint, render_template, abort, jsonify, url_for, request
 
 from depmap import data_access
+from depmap.data_access.models import MatrixDataset
 from depmap.enums import GeneTileEnum, CompoundTileEnum, CellLineTileEnum
 from depmap.predictability.models import TDPredictiveModel
 from depmap.entity.views.executive import (
@@ -72,17 +73,24 @@ def render_tile(subject_type, tile_name, identifier):
         compound = Compound.query.filter_by(label=identifier).one_or_none()
         if compound is None:
             abort(404)
-        # Figure out membership in different datasets
+        # Figure out membership in different datasets 
+        datasets = data_access.get_all_datasets_containing_compound(compound.entity_id)
+        # filter for non ic50 or dose replicate datasets
+        datasets = [
+            d for d in datasets
+            if d.units != "log2(IC50) (μM)" and d.units != "ln(IC50) (μM)" and d.units != "Viability"
+        ]  
+        # TODO: refactor this
         compound_experiment_and_datasets = DependencyDataset.get_compound_experiment_priority_sorted_datasets_with_compound(
             compound.entity_id
         )
         compound_experiment_and_datasets = [
             x
             for x in compound_experiment_and_datasets
-            if not x[1].is_ic50 and not x[1].is_dose_replicate
+            if not x[1].is_ic50 and not x[1].is_dose_replicate # TODO: delete these function definitions
         ]  # filter for non ic50 or dose replicate datasets
         html = render_compound_tile(
-            tile_name, compound, compound_experiment_and_datasets, args_dict
+            tile_name, compound, datasets, compound_experiment_and_datasets, args_dict
         )
     elif subject_type == "cell_line":
         cell_line = DepmapModel.query.filter_by(model_id=identifier).one_or_none()
@@ -196,7 +204,11 @@ def render_gene_tile(tile_name, gene):
 
 
 def render_compound_tile(
-    tile_name, compound, cpd_exp_and_datasets=None, query_params_dict={}
+    tile_name, 
+    compound, 
+    datasets: list[MatrixDataset],
+    cpd_exp_and_datasets=None, 
+    query_params_dict={}
 ):
     tiles = {
         CompoundTileEnum.predictability.value: get_predictability_html,
@@ -210,7 +222,7 @@ def render_compound_tile(
     if tile_name not in tiles:
         abort(400)
     tile_html = tiles[tile_name]
-    html = tile_html(compound, cpd_exp_and_datasets, query_params_dict)
+    html = tile_html(compound, datasets, cpd_exp_and_datasets, query_params_dict)
     return html
 
 
@@ -270,6 +282,7 @@ def get_tda_predictability_html(entity):
 
 def get_predictability_html(
     entity: Entity,
+    datasets: Optional[list[MatrixDataset]]=None,
     cpd_exp_and_datasets: List[Tuple[CompoundExperiment, DependencyDataset]] = None,
     query_params_dict={},
 ):
@@ -368,6 +381,7 @@ def get_targeting_compounds_html(gene):
 
 def get_enrichment_html(
     entity, 
+    datasets: Optional[list[MatrixDataset]]=None,
     compound_experiment_and_datasets=None, # Only passed in for compound dashboard
     query_params_dict={} # Only passed in for Compound dashboard
 ):
@@ -501,7 +515,12 @@ def get_omics_html(gene):
     return render_template("tiles/omics.html", omics=omics,)
 
 
-def get_description_html(entity, cpd_exp_and_datasets=None, query_params_dict={}):
+def get_description_html(
+    entity, 
+    datasets: Optional[list[MatrixDataset]]=None,
+    cpd_exp_and_datasets=None,
+    query_params_dict={}
+):
     entity_type = entity.type
     if entity_type == "gene":
         return render_template(
@@ -584,7 +603,10 @@ def get_tractability_html(gene):
 
 
 def get_sensitivity_html(
-    compound, compound_experiment_and_datasets, query_params_dict={}
+    compound, 
+    datasets: list[MatrixDataset],
+    compound_experiment_and_datasets, 
+    query_params_dict={}
 ):
     # DEPRECATED: Will be redesigned/replaced
     best_ce_and_d = determine_compound_experiment_and_dataset(
@@ -598,7 +620,10 @@ def get_sensitivity_html(
 
 
 def get_correlations_html(
-    compound, compound_experiment_and_datasets, query_params_dict={}
+    compound, 
+    datasets: list[MatrixDataset],
+    compound_experiment_and_datasets, 
+    query_params_dict={}
 ):
     # DEPRECATED: will be redesigned/replaced
     return render_template(
@@ -608,7 +633,10 @@ def get_correlations_html(
 
 
 def get_availability_html(
-    compound, compound_experiment_and_datasets, query_params_dict={}
+    compound,
+    datasets: list[MatrixDataset],
+    compound_experiment_and_datasets, 
+    query_params_dict={},
 ):
     compound_id = compound.entity_id
     return render_template(
@@ -683,7 +711,10 @@ def get_correlations_for_celfie_react_tile(
 
 
 def get_celfie_html(
-    entity, compound_experiment_and_datasets=None, query_params_dict={}
+    entity, 
+    datasets: Optional[list[MatrixDataset]]=None,
+    compound_experiment_and_datasets=None, 
+    query_params_dict={}
 ):
     # show tile only if env is skyros/dev
     show_celfie = current_app.config["ENABLED_FEATURES"].celfie

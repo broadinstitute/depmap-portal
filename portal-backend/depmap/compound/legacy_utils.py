@@ -56,7 +56,7 @@ def get_subsetted_df_by_compound_labels(dataset_id: str) -> pd.DataFrame:
 def get_compound_experiment_priority_sorted_datasets(compound_id) -> list[str]:
     """Get a list of dataset ids in priority order"""
     # Get a list of dataset IDs with an initial priority order sorting
-    dataset_ids =  (
+    datasets =  (
         db.session.query(CompoundExperiment, DependencyDataset)
         .join(
             Matrix, DependencyDataset.matrix_id == Matrix.matrix_id
@@ -73,7 +73,7 @@ def get_compound_experiment_priority_sorted_datasets(compound_id) -> list[str]:
             CompoundExperiment.entity_id,
             case([(DependencyDataset.data_type == "drug_screen", 0)], else_=1),
         )
-        .with_entities(DependencyDataset.name.name)
+        .with_entities(DependencyDataset)
     )
     # For the compound page, an additional prioritization step has been done as well.
     # I'm not sure why this was done, but want to keep the same functionality for legacy datasets.
@@ -85,7 +85,8 @@ def get_compound_experiment_priority_sorted_datasets(compound_id) -> list[str]:
     ]
     result = []
     for regexp in dataset_regexp_ranking:
-        for dataset_id in dataset_ids:
+        for dataset in datasets:
+            dataset_id = dataset.name.name
             pattern = re.compile(regexp)
             if pattern.match(dataset_id) and dataset_id not in result:
                 result.append(dataset_id)

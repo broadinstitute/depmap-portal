@@ -138,7 +138,7 @@ def get_order(has_predictability: bool):
     return order
 
 
-def determine_compound_experiment_and_dataset(compound_experiment_and_datasets) -> Tuple[CompoundExperiment, DependencyDataset]:
+def determine_compound_experiment_and_dataset(compound_experiment_and_datasets):
     # TODO: replace calls to this
     dataset_regexp_ranking = [
         "Prism_oncology.*",

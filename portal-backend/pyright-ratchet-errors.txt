@@ -454,12 +454,6 @@ test_dataset_loader.py: error: Argument of type "Literal[DependencyEnum.Avana]" 
 test_dataset_sort_key.py: error: Cannot access member "entity_id" for type "GeneFactory"
 test_db.py: error: Cannot access member "Column" for type "SQLAlchemy"
 test_db.py: error: Cannot access member "String" for type "SQLAlchemy"
-test_entity_utils.py: error: Argument of type "Sequence" cannot be assigned to parameter "entity_label" of type "str" in function "get_matching_entity_ids_for_label"
-test_entity_utils.py: error: Cannot access member "entity_id" for type "CompoundDoseReplicateFactory"
-test_entity_utils.py: error: Cannot access member "entity_id" for type "CompoundExperimentFactory"
-test_entity_utils.py: error: Cannot access member "entity_id" for type "CompoundFactory"
-test_entity_utils.py: error: Cannot access member "entity_id" for type "ProteinFactory"
-test_entity_utils.py: error: Cannot access member "label" for type "SubFactory"
 test_executive.py: error: "keys" is not a known member of "None" (reportOptionalMemberAccess)
 test_executive.py: error: Argument of type "DependencyDatasetFactory" cannot be assigned to parameter "crispr_dataset" of type "DependencyDataset | None" in function "format_dep_dist_info"
 test_executive.py: error: Argument of type "DependencyDatasetFactory" cannot be assigned to parameter "rnai_dataset" of type "DependencyDataset | None" in function "format_dep_dist_info"
@@ -670,7 +664,6 @@ views.py: error: Argument of type "Unknown | Hashable" cannot be assigned to par
 views.py: error: Argument of type "Unknown | int | list[Unknown]" cannot be assigned to parameter "color_num" of type "str | int" in function "__init__" (reportArgumentType)
 views.py: error: Argument of type "list[BreadboxVectorCatalogNodeInfo]" cannot be assigned to parameter "__iterable" of type "Iterable[dict[Unknown, Unknown]]" in function "extend"
 views.py: error: Argument of type "list[CellLineSeries]" cannot be assigned to parameter "breadbox_feature_data" of type "list[Series]" in function "get_df_from_feature_list"
-views.py: error: Argument of type "list[list[Unknown]] | None" cannot be assigned to parameter "compound_experiment_and_datasets" of type "List[Tuple[CompoundExperiment, DependencyDataset]]" in function "format_dep_dist_caption"
 views.py: error: Argument of type "str | Any" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
 views.py: error: Argument of type "str | None" cannot be assigned to parameter "s" of type "str | bytes | bytearray" in function "loads" (reportArgumentType)
 views.py: error: Argument of type "str" cannot be assigned to parameter "__value" of type "_VT@dict" in function "__setitem__"

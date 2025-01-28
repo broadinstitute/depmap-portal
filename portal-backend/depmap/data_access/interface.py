@@ -321,14 +321,17 @@ def get_all_datasets_containing_compound(compound_id: str) -> list[MatrixDataset
         feature_type="compound",
         feature_id=compound_id
     )
-    bb_compound_datasets.sort(key=lambda dataset: dataset.priority)
+    bb_compound_datasets.sort(key=lambda dataset: dataset.priority if dataset.priority else 999)
 
     # If a dataset is defined in both breadbox and the legacy DB, use the breadbox version
-    legacy_ce_datasets = legacy_compound_utils.get_compound_experiment_priority_sorted_datasets(
+    legacy_ce_dataset_ids = legacy_compound_utils.get_compound_experiment_priority_sorted_datasets(
         compound_id
     )
     bb_given_ids = [dataset.given_id for dataset in bb_compound_datasets]
-    visible_legacy_datasets = [dataset for dataset in legacy_ce_datasets if dataset.id not in bb_given_ids]
+    visible_legacy_datasets = [
+        _get_legacy_matrix_dataset(dataset_id) for dataset_id in legacy_ce_dataset_ids 
+        if dataset_id not in bb_given_ids
+    ]
 
     return bb_compound_datasets + visible_legacy_datasets
 
