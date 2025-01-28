@@ -111,9 +111,6 @@ rule process_model_config:
 
             with open("results.json", 'w') as f:
                 f.write(json.dumps({"outputs": artifacts}))
-
-      print("Created daintree_input_config.json")
-
       """
 
 
@@ -170,8 +167,6 @@ rule run_fit_models:
           output_config = json.load(f)
       with open("daintree_output_config.json", 'w') as f:
           json.dump(output_config, f, indent=2)
-
-      print("Created daintree_output_config.json")
     """
 
 
@@ -216,7 +211,4 @@ rule combine_output_configs:
 
       with open("combined_daintree_output_config.json", 'w') as f:
           json.dump(combined_output_config, f, indent=2)
-
-      print("Created combined_daintree_output_config.json")
-
     """
