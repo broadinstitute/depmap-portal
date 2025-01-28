@@ -4,7 +4,7 @@ import yaml
 import os
 from typing import List, Dict, Any
 
-screens = ["CRISPR", "RNAi"]
+screens = ["crispr", "rnai"]
 
 
 def generate_daintree_configs(
@@ -66,7 +66,7 @@ def generate_daintree_configs(
             # Map features to their corresponding inputs
             feature_mapping = {
                 "lineage": "lineage",
-                "confounder": f"{screen.lower()}_confounder",
+                "confounder": f"{screen}_confounder",
                 "driver_events": "driver_events",
                 "armlevel_cn": "armlevel_cna",
                 "cytoband_cn": "cytoband_cn",
@@ -85,7 +85,7 @@ def generate_daintree_configs(
                 # Special handling for confounder naming in output
                 feature_name = feature
                 if feature == "confounder":
-                    feature_name = f"{screen.lower()}_confounder"
+                    feature_name = f"{screen}_confounder"
 
                 output_json["data"][feature_name] = {
                     "taiga_id": feature_input["source_dataset_id"],
