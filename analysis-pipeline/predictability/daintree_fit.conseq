@@ -1,0 +1,221 @@
+include "predictability_inputs.conseq"
+
+# Three Steps:
+# 1. Generate a model map for each model and screen
+# 2. Run the model fitting
+# 3. Combine the output config files
+
+rule process_model_config:
+    inputs:
+        # One model config
+        model_config=fileref("model-config.yaml"),
+
+        # Two target matrices
+        crispr_gene_effect={"type": "target_matrix", "label": "crispr_gene_effect"},
+        rnai={"type": "target_matrix", "label": "rnai"},
+
+        # Twelve features
+        lineage={"type": "feature", "label": "lineage"},
+        crispr_confounder={"type": "feature", "label": "crispr_confounder"},
+        rnai_confounder={"type": "feature", "label": "rnai_confounder"},
+        driver_events={"type": "feature", "label": "driver_events"},
+        armlevel_cna={"type": "feature", "label": "armlevel_cna"},
+        cytoband_cn={"type": "feature", "label": "cytoband_cn"},
+        genetic_signature={"type": "feature", "label": "genetic_signature"},
+        mutations_hotspot={"type": "feature", "label": "mutations_hotspot"},
+        mutations_damaging={"type": "feature", "label": "mutations_damaging"},
+        gene_cn={"type": "feature", "label": "gene_cn"},
+        loh={"type": "feature", "label": "loh"},
+        rnaseq={"type": "feature", "label": "rnaseq"},
+
+    run "python" with """
+    import json
+    import yaml
+    import subprocess
+    import os
+
+    artifacts = []
+
+    model_config_file = "{{ inputs.model_config.filename }}"
+    with open(model_config_file, 'r') as file:
+        config = yaml.safe_load(file)
+    
+    # Process each model for both CRISPR and RNAi screens
+    screens = ["CRISPR", "RNAi"]
+    
+    for model_name, model_config in config.items():
+        for screen in screens:# Daintree input json
+            output_json = { 
+                "model_name": model_name,
+                "screen_name": screen,
+                "data": {}
+            }
+            
+            # Set target based on screen type
+            target = screen
+            if screen == "CRISPR":
+                target_id = "{{ inputs.crispr_gene_effect.source_dataset_id }}"
+            else:
+                target_id = "{{ inputs.rnai.source_dataset_id }}"
+
+            output_json["data"][target] = {
+                "taiga_id": target_id,
+                "table_type": "target_matrix",
+                "relation": model_config["Relation"]
+            }
+            
+            # Map features to their corresponding inputs
+            feature_mapping = {
+                "lineage": {{ inputs.lineage }},
+                "confounder": ({{ inputs.crispr_confounder }} if screen == "CRISPR" 
+                             else {{ inputs.rnai_confounder }}),
+                "driver_events": {{ inputs.driver_events }},
+                "armlevel_cn": {{ inputs.armlevel_cna }},
+                "cytoband_cn": {{ inputs.cytoband_cn }},
+                "genetic_signature": {{ inputs.genetic_signature }},
+                "mutations_hotspot": {{ inputs.mutations_hotspot }},
+                "mutations_damaging": {{ inputs.mutations_damaging }},
+                "gene_cn": {{ inputs.gene_cn }},
+                "loh": {{ inputs.loh }},
+                "rnaseq": {{ inputs.rnaseq }}
+            }
+            
+            for feature in model_config["Features"]:
+                feature_input = feature_mapping[feature]
+                
+                # Special handling for confounder naming in output
+                feature_name = feature
+                if feature == "confounder":
+                    feature_name = f"{screen.lower()}_confounder"
+                
+                output_json["data"][feature_name] = {
+                    "taiga_id": feature_input["source_dataset_id"],
+                    "table_type": feature_input["type"],
+                    "dim_type": feature_input["category"],
+                    "required": feature in model_config["Required"],
+                    "exempt": False
+                }
+            
+            # Generate output filename
+            model_and_screen = f"{model_name}{screen}"
+            output_filename = f"DaintreeInputConfig{model_and_screen}.json"
+
+            with open(output_filename, 'w') as f:
+                json.dump(output_json, f, indent=2)
+                artifacts.append({
+                  "type": "daintree_input_config",
+                  "model_and_screen": model_and_screen,
+                  "label": f"DaintreeInputConfig{model_and_screen}",
+                  "filename": {"$filename": output_filename},
+                })
+
+            with open("results.json", 'w') as f:
+                f.write(json.dumps({"outputs": artifacts}))
+
+      """
+
+
+rule run_fit_models:
+    resources: {'slots': "0.05"} # let up to 20 of these run in parallel
+    inputs:
+        daintree_input_config={
+          "type": "daintree_input_config"
+          }
+    outputs:
+        {
+          "type": "daintree_output_config",
+          "name": "{{ inputs.daintree_input_config.label }}",
+          "filename": {"$filename": "daintree_output_config.json"}
+        }
+    run "python" with """
+      import subprocess
+      import os
+      import glob
+      import json
+
+      input_config_filepath = "{{ inputs.daintree_input_config.filename }}"
+      input_config_filename = "{{ inputs.daintree_input_config.label }}.json"
+
+      print(f"input_config_filepath: {input_config_filepath}")
+      print(f"input_config_filename: {input_config_filename}")
+
+      docker_command = [
+        "docker", "run",
+        "--pull=always",
+        "-v", f"{input_config_filepath}:/daintree/{input_config_filename}",
+        "-v", f"{os.getcwd()}/output_data:/daintree/output_data", 
+        "us.gcr.io/broad-achilles/daintree-sparkles:v4",
+        "/install/depmap-py/bin/python3.9", "-u", "run_fit_models.py",
+        "collect-and-fit-generate-config",
+        "--input-files", input_config_filename,
+        "--sparkles-config", "/daintree/sparkles-config",
+        "--save-dir", "/daintree/output_data",
+        "--test", "True",
+        "--upload-to-taiga", "predictability-76d5",
+      ]
+
+      subprocess.run(
+          docker_command,
+          check=True
+      )
+      
+      # Find the output config file using glob
+      output_config_files = glob.glob(os.path.join(os.getcwd(), "output_data", "output_config_files", "*.json"))
+      if not output_config_files:
+          raise FileNotFoundError("No output config files found")
+      
+      # Use the first (and should be only) matching file
+      output_config_file = output_config_files[0]
+      
+      with open(output_config_file, 'r') as f:
+          output_config = json.load(f)
+      with open("daintree_output_config.json", 'w') as f:
+          json.dump(output_config, f, indent=2)
+    """
+
+
+rule combine_output_configs:
+    inputs:
+        daintree_output_config = all{
+          "type": "daintree_output_config"
+          }
+    outputs:
+        {
+          "type": "combined_daintree_output_config",
+          "filename": {"$filename": "combined_daintree_output_config.json"}
+        }
+    run "python" with """
+      def merge_json_files(json_files):
+        combined = {}
+        
+        for file_path in json_files:
+            with open(file_path, 'r') as f:
+                data = json.load(f)
+                
+            model_name = list(data.keys())[0]
+            screen_name = data[model_name]["input"]["screen_name"]
+            
+            # Initialize the screen in combined if it doesn't exist
+            if screen_name not in combined:
+                combined[screen_name] = {}
+                
+            # Add the model data to the appropriate screen
+            combined[screen_name][model_name] = data[model_name]
+        
+        return combined
+
+      import json
+      import os
+
+      artifacts = {{ inputs.daintree_output_config }}
+
+      list_of_files = [artifact['filename'] for artifact in artifacts]
+
+      combined_output_config = merge_json_files(list_of_files)
+
+      with open("combined_daintree_output_config.json", 'w') as f:
+          json.dump(combined_output_config, f, indent=2)
+
+      print("Created combined_daintree_output_config.json")
+
+    """
