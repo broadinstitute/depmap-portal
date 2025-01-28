@@ -30,7 +30,12 @@ const DatatypeSelector = (props: Props) => {
             {datatype}
             <InfoIcon
               target={customInfoImg}
-              popoverContent={<p>{DATATYPE_TOOLTIP_TEXT.get(datatype)}</p>}
+              popoverContent={
+                <p>
+                  {DATATYPE_TOOLTIP_TEXT.get(datatype) ||
+                    "A disease subtype. Use the 'Refine Context' option, located within the left sidebar, to investigate this subtype in more detail."}
+                </p>
+              }
               popoverId={`datatype-popover`}
               trigger={["hover", "focus"]}
             />
