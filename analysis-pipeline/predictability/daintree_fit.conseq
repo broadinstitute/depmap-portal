@@ -1,7 +1,7 @@
 include "predictability_inputs.conseq"
 
 # Three Steps:
-# 1. Generate a model map for each model and screen
+# 1. Generate a daintree input config file for each model and screen
 # 2. Run the model fitting
 # 3. Combine the output config files
 
@@ -112,6 +112,8 @@ rule process_model_config:
             with open("results.json", 'w') as f:
                 f.write(json.dumps({"outputs": artifacts}))
 
+      print("Created daintree_input_config.json")
+
       """
 
 
@@ -135,9 +137,6 @@ rule run_fit_models:
 
       input_config_filepath = "{{ inputs.daintree_input_config.filename }}"
       input_config_filename = "{{ inputs.daintree_input_config.label }}.json"
-
-      print(f"input_config_filepath: {input_config_filepath}")
-      print(f"input_config_filename: {input_config_filename}")
 
       docker_command = [
         "docker", "run",
@@ -171,6 +170,8 @@ rule run_fit_models:
           output_config = json.load(f)
       with open("daintree_output_config.json", 'w') as f:
           json.dump(output_config, f, indent=2)
+
+      print("Created daintree_output_config.json")
     """
 
 
