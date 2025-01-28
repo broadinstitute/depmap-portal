@@ -39,23 +39,6 @@ rule update_rnai_data:
     """
 
 
-rule update_oncref_confounders:
-    inputs:
-        oncref_confounders={"type": "oncref_confounders"},
-    outputs:
-        {
-            "type": "predictability_oncref_confounders",
-            "filename": {"$filename": "oncref_confounders.csv"},
-            "orig_dataset_id": "{{inputs.oncref_confounders.dataset_id}}"
-        }
-    run "python3" with """
-        from taigapy import create_taiga_client_v3
-
-        tc = create_taiga_client_v3()
-        print("Getting OncoRef confounders data...")
-        oncref_confounders_matrix = tc.get("{{inputs.oncref_confounders.dataset_id}}")
-        oncref_confounders_matrix.to_csv("oncref_confounders.csv")
-    """
 
 
 rule update_rep_single_pt_confounders:
