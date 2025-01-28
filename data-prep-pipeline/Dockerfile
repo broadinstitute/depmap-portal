@@ -53,10 +53,6 @@ RUN /install/dsub/bin/pip install git+https://github.com/pgm/dsub.git@patched-0.
 
 RUN pip install boto google.cloud.storage
 
-# Set up configuration files
-COPY gsutil-boto-config /root/.boto
-COPY conseq-settings /root/.conseq
-
 # Install conseq
 COPY conseq-2.0.2.tar.gz /tmp/
 RUN mkdir -p /tmp/conseq-install && \
