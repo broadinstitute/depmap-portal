@@ -7,11 +7,10 @@ from depmap.data_access.breadbox_dao import is_breadbox_id
 from depmap.data_access.models import MatrixDataset
 from depmap.interactive import interactive_utils
 from depmap.interactive.common_utils import RowSummary
-from depmap.interactive.config.models import Config, DatasetSortKey
+from depmap.interactive.config.models import Config
 from depmap.partials.matrix.models import CellLineSeries
 from depmap.compound import legacy_utils as legacy_compound_utils
 
-from depmap.dataset.models import DependencyDataset
 
 # This data access interface will eventually only contains functions
 # which can be supported through both breadbox and the legacy backend.

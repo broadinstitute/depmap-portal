@@ -206,7 +206,7 @@ def render_gene_tile(tile_name, gene):
 def render_compound_tile(
     tile_name, 
     compound, 
-    datasets: list[MatrixDataset],
+    compound_datasets: list[MatrixDataset],
     cpd_exp_and_datasets=None, 
     query_params_dict={}
 ):
@@ -282,7 +282,7 @@ def get_tda_predictability_html(entity):
 
 def get_predictability_html(
     entity: Entity,
-    datasets: Optional[list[MatrixDataset]]=None,
+    compound_datasets: Optional[list[MatrixDataset]]=None,
     cpd_exp_and_datasets: List[Tuple[CompoundExperiment, DependencyDataset]] = None,
     query_params_dict={},
 ):
@@ -290,7 +290,7 @@ def get_predictability_html(
     This is the predictability tile on the gene page
     This is distinct from the predictability tile on the td app, which has different source data and uses the get_tda_predictability_html function
     """
-
+    # TODO: update this to use the new datasets list
     entity_type = entity.type
     if entity_type == "gene":
         default_crispr_dataset = DependencyDataset.get_dataset_by_data_type_priority(
@@ -381,10 +381,11 @@ def get_targeting_compounds_html(gene):
 
 def get_enrichment_html(
     entity, 
-    datasets: Optional[list[MatrixDataset]]=None,
+    compound_datasets: Optional[list[MatrixDataset]]=None,
     compound_experiment_and_datasets=None, # Only passed in for compound dashboard
     query_params_dict={} # Only passed in for Compound dashboard
 ):
+    # TODO: update this to use the new datasets list
     entity_type = entity.get_entity_type()
     if entity_type == "gene":
         crispr_dataset = get_dependency_dataset_for_entity(
@@ -517,7 +518,7 @@ def get_omics_html(gene):
 
 def get_description_html(
     entity, 
-    datasets: Optional[list[MatrixDataset]]=None,
+    compound_datasets: Optional[list[MatrixDataset]]=None,
     cpd_exp_and_datasets=None,
     query_params_dict={}
 ):
@@ -604,10 +605,11 @@ def get_tractability_html(gene):
 
 def get_sensitivity_html(
     compound, 
-    datasets: list[MatrixDataset],
+    compound_datasets: list[MatrixDataset],
     compound_experiment_and_datasets, 
     query_params_dict={}
 ):
+    # TODO: update this to use the new datasets list
     # DEPRECATED: Will be redesigned/replaced
     best_ce_and_d = determine_compound_experiment_and_dataset(
         compound_experiment_and_datasets
@@ -621,10 +623,11 @@ def get_sensitivity_html(
 
 def get_correlations_html(
     compound, 
-    datasets: list[MatrixDataset],
+    compound_datasets: list[MatrixDataset],
     compound_experiment_and_datasets, 
     query_params_dict={}
 ):
+    # TODO: update this to use the new datasets list
     # DEPRECATED: will be redesigned/replaced
     return render_template(
         "tiles/correlations.html",
@@ -634,7 +637,7 @@ def get_correlations_html(
 
 def get_availability_html(
     compound,
-    datasets: list[MatrixDataset],
+    compound_datasets: list[MatrixDataset],
     compound_experiment_and_datasets, 
     query_params_dict={},
 ):
@@ -712,17 +715,18 @@ def get_correlations_for_celfie_react_tile(
 
 def get_celfie_html(
     entity, 
-    datasets: Optional[list[MatrixDataset]]=None,
+    compound_datasets: Optional[list[MatrixDataset]]=None,
     compound_experiment_and_datasets=None, 
     query_params_dict={}
 ):
+    # DEPRECATED: This is being replaced. All code related to genomics associations can be considered dead.
     # show tile only if env is skyros/dev
     show_celfie = current_app.config["ENABLED_FEATURES"].celfie
 
     if show_celfie:
         # Get correlations for dependency datasets vs omics datasets
         # For compound, look into get_top_correlated_expression but
-        # generate_correlations_table_from_datasets should be the same idea..
+        # generate_correlations_table_from_datasets should be the same idea.
         correlations = get_correlations_for_celfie_react_tile(
             entity, show_celfie, compound_experiment_and_datasets
         )
