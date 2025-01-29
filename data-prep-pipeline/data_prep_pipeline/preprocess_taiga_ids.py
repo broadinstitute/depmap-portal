@@ -48,16 +48,20 @@ def _rewrite_stream(vars, in_name, in_lines, out_fd):
         )
         if m is not None:
             orig_taiga_dataset_var_name = m.group(2)
-            taiga_filename = m.group(3)
             line_prefix = m.group(1)
             line_suffix = m.group(4)
-            taiga_id = vars[orig_taiga_dataset_var_name] + "/" + taiga_filename
+
+            taiga_filename = m.group(3)
+            taiga_permaname = vars[orig_taiga_dataset_var_name]
+            taiga_dataset_id_with_latest_version = tc.get_latest_version_id(
+                taiga_permaname
+            )
+            taiga_id = taiga_dataset_id_with_latest_version + "/" + taiga_filename
             try:
                 tc.get_canonical_id(taiga_id)
             except:
                 print(f"failed to get data from canonical taiga id for {taiga_id}")
             line = line_prefix + '"' + tc.get_canonical_id(taiga_id) + '"' + line_suffix
-
         fd.write(line)
 
 

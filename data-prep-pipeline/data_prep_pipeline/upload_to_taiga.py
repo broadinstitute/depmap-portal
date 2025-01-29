@@ -74,12 +74,13 @@ if __name__ == "__main__":
     parser.add_argument("file_format", help="Format of the file to upload")
     args = parser.parse_args()
 
-    dataset_id_without_version = args.dataset_id.split(".")[0]
-
-    existing_file_taiga_id = f"{args.dataset_id}/{args.matrix_name_in_taiga}"
-    print(f"Taiga ID of the existing file: {existing_file_taiga_id}")
-
     tc = create_taiga_client_v3()
+
+    dataset_id_with_latest_version = tc.get_latest_version_id(args.dataset_id)
+    existing_file_taiga_id = (
+        f"{dataset_id_with_latest_version}/{args.matrix_name_in_taiga}"
+    )
+    print(f"Taiga ID of the existing file: {existing_file_taiga_id}")
 
     # Check if the file with the same name already exists in the dataset
     if tc.get_datafile_metadata(existing_file_taiga_id) is None:
@@ -87,7 +88,7 @@ if __name__ == "__main__":
             f"File with Taiga ID {existing_file_taiga_id} does not exist. Uploading a new file."
         )
         update_taiga(
-            dataset_id_without_version,
+            args.dataset_id,
             args.description_of_changes,
             args.matrix_name_in_taiga,
             args.file_local_path,
@@ -110,7 +111,7 @@ if __name__ == "__main__":
         else:
             # If the file to upload is different from the existing file in Taiga, update the dataset
             update_taiga(
-                dataset_id_without_version,
+                args.dataset_id,
                 args.description_of_changes,
                 args.matrix_name_in_taiga,
                 args.file_local_path,
