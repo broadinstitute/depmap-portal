@@ -650,6 +650,10 @@ def _validate_tabular_df_schema(
             if isinstance(schema_error.check, str):
                 error_msg = schema_error.check
             # error message returned for failed json deserialization is long so truncate it
+        if schema_error.reason_code == SchemaErrorReason.COLUMN_NOT_IN_SCHEMA:
+            # Original error msg: "column '{column_name}' not in DataFrameSchema <schema>"
+            # Modify error message vocabulary to be more intuitive to users
+            error_msg = error_msg.split("DataFrameSchema")[0] + "Columns Metadata"
 
         raise FileValidationError(error_msg) from schema_error
     return validated_df
