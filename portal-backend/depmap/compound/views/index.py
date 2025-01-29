@@ -2,7 +2,7 @@ from itertools import groupby
 import math
 import os
 import tempfile
-from typing import List
+from typing import Any, List, Optional
 import zipfile
 import requests
 import urllib.parse
@@ -21,6 +21,8 @@ from flask import (
     send_file,
 )
 
+from depmap import data_access
+from depmap.data_access.models import MatrixDataset
 from depmap.cell_line.models_new import DepmapModel
 from depmap.compound.models import (
     Compound,
@@ -66,11 +68,6 @@ def view_compound(name):
     # Figure out entity_id
     compound_id = compound.entity_id
 
-    # Figure out membership in different datasets
-    compound_experiment_and_datasets = DependencyDataset.get_compound_experiment_priority_sorted_datasets_with_compound(
-        compound_id
-    )
-
     units = compound.units
 
     aliases = Compound.get_aliases_by_entity_id(compound_id)
@@ -78,23 +75,29 @@ def view_compound(name):
         [alias for alias in aliases if alias.lower() != name.lower()]
     )
 
+    compound_experiment_and_datasets = DependencyDataset.get_compound_experiment_priority_sorted_datasets_with_compound(
+        compound_id
+    )
     has_predictability: bool = len(
         get_predictive_models_for_compound(compound_experiment_and_datasets)
     ) != 0
 
-    has_datasets = len(compound_experiment_and_datasets) != 0
-    summary = format_compound_summary(compound_experiment_and_datasets)
+
+    # Figure out membership in different datasets
+    compound_datasets = data_access.get_all_datasets_containing_compound(compound_id)
+    has_datasets = len(compound_datasets) != 0
+    sensitivity_tab_compound_summary = get_sensitivity_tab_info(compound, compound_datasets) # format_compound_summary(compound_experiment_and_datasets) 
 
     has_celfie = current_app.config["ENABLED_FEATURES"].celfie and has_datasets
     if has_celfie:
-        celfie = format_celfie(name, summary["summary_options"])
+        celfie = format_celfie(name, sensitivity_tab_compound_summary["summary_options"])
 
     return render_template(
         "compounds/index.html",
         name=name,
         title=name,
         compound_aliases=compound_aliases,
-        summary=summary,
+        summary=sensitivity_tab_compound_summary, # TODO: rename this field, there's no reason to call it "summary"
         about=format_about(compound),
         has_predictability=has_predictability,
         predictability_custom_downloads_link=get_predictability_input_files_downloads_link(),
@@ -109,8 +112,32 @@ def view_compound(name):
         compound_units=units,
     )
 
+def get_sensitivity_tab_info(compound: Compound, compound_datasets: list[MatrixDataset]) -> Optional[dict[str, Any]]:
+    """Get a dictionary of values containing layout information for the sensitivity tab."""
+    if len(compound_datasets) == 0:
+        return None
+    
+    top_priority_dataset_id = compound_datasets[0].id
+    # Define the options that will appear in the datasets dropdown
+    dataset_options = []
+    for dataset in compound_datasets:
+        dataset_summary = {
+            "label": dataset.label,
+            "id": dataset.id,
+            "dataset": dataset.id,
+            "entity": compound.entity_id,
+        }
+        dataset_options.append(dataset_summary)
 
-def format_compound_summary(compound_experiment_and_datasets):
+    return format_summary( # TODO: completely just update this. 
+        summary_options=dataset_options, 
+        first_entity=compound, # TODO: this needs to be refactored eventually to use BB metadata
+        first_dep_enum_name=top_priority_dataset_id, 
+        show_auc_message=True,
+    )
+
+
+def format_compound_summary(compound_experiment_and_datasets) -> Optional[dict[str, Any]]:
     if len(compound_experiment_and_datasets) == 0:
         return None
 
