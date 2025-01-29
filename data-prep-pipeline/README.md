@@ -22,7 +22,7 @@ Go to the Data Prep Pipeline 1.0 jenkins job here: https://datascidev.broadinsti
 
 Then click on build. Optionally choose one of the parameters if you would like a clean start or start with a specific export or want to automatically rebuild the db once done.
 
-## How to add a new dataset
+## How to extend the pipeline to add additional files to the release
 
 Please follow these steps:
 
