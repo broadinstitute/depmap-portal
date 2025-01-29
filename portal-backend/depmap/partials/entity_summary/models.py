@@ -1,13 +1,16 @@
-from depmap.enums import DataTypeEnum
 from flask import url_for, current_app
 from json import dumps as json_dumps
-from depmap.dataset.models import Dataset, BiomarkerDataset, Mutation
-from depmap.context.models import ContextEnrichment, Context
-from depmap.cell_line.models import CellLine, Lineage
-from depmap.interactive.url_utils import get_interactive_url
-from depmap.utilities import color_utils
 import numpy as np
 import pandas as pd
+
+from depmap import data_access
+from depmap.enums import DataTypeEnum
+from depmap.dataset.models import Dataset, BiomarkerDataset
+from depmap.cell_line.models import CellLine
+from depmap.interactive.url_utils import get_interactive_url
+from depmap.utilities import color_utils
+from depmap_compute.slice import SliceQuery
+
 
 # abstracted out here so that tests can import it.
 expression_to_size = (
@@ -159,7 +162,7 @@ class EntitySummary:
         metadata = {}
         legend = {}
         metadata, srs = integrate_dep_data(
-            metadata, self.dep_enum, self.label, self.entity_id
+            metadata, self.dep_enum.name, self.label, self.entity_id
         )
         df = integrate_cell_line_information(srs)
 
@@ -213,10 +216,11 @@ class EntitySummary:
             There are three parts to this, because there are three inflection points. There are two datasets where a gene may or may not be present, plus an option of whether to color by mutation
         2) Given this metadata and df, structuring the data as desired by plotly
         """
+        # TODO: confirm that this now works with a breadbox dataset
         metadata = {}
         legend = {}
         metadata, srs = integrate_dep_data(
-            metadata, self.dep_enum, self.label, self.entity_id
+            metadata, self.dep_enum.name, self.label, self.entity_id
         )
         df = integrate_cell_line_information(srs)
         df, legend = integrate_size_and_label_data(
@@ -241,38 +245,47 @@ class EntitySummary:
         return json_dumps(response)
 
 
-def integrate_dep_data(metadata, dep_enum, entity_label, entity_id):
+def integrate_dep_data(metadata, dataset_id: str, entity_label: str, entity_id: str):
     """
     Returns:
         x_range, the range the x axis should be displayed at
         series, index is arxspan id and values are dependency scores
     """
-    assert Dataset.has_entity(dep_enum, entity_id)
+    dataset = data_access.get_matrix_dataset(dataset_id)
+    data_series = data_access.get_slice_data(
+        slice_query=SliceQuery(
+            dataset_id=dataset_id,
+            identifier=entity_id,
+            identifier_type="feature_label",
+        )
+    ) # TODO: this is empty because it's not looking up data by compound ID. I need to fix that.
+    data_series.name = "value"
+    breakpoint()
 
-    dep_dataset = Dataset.get_dataset_by_name(dep_enum.name, must=True)
-    srs = dep_dataset.matrix.get_cell_line_values_and_depmap_ids(entity_id)
-    srs.name = "value"
-
-    metadata["x_range"] = _get_x_range(dep_dataset, srs)
-    metadata["x_label"] = dep_dataset.matrix.units
-    metadata["interactive_url"] = get_interactive_url(
-        dep_dataset, entity_label, None, None
+    metadata["x_range"] = _get_x_range(data_series)
+    metadata["x_label"] = dataset.units
+    metadata["interactive_url"] = url_for(
+            "data_explorer_2.view_data_explorer_2",
+            xDataset=dataset.id,
+            xFeature=entity_label,
+            yDataset=None,
+            yFeature=None,
     )
 
-    if dep_dataset.data_type == DataTypeEnum.crispr:
+    if dataset.data_type == DataTypeEnum.crispr.name:
         metadata["description"] = "crispr"
         metadata["line"] = -1
-    elif dep_dataset.data_type == DataTypeEnum.rnai:
+    elif dataset.data_type == DataTypeEnum.rnai.name:
         metadata["description"] = "rnai"
         metadata["line"] = -1
     else:
         metadata["description"] = ""
 
-    return metadata, srs
+    return metadata, data_series
 
 
-def _get_x_range(values_dataset, srs):
-    min, max = values_dataset.nominal_range
+def _get_x_range(srs: pd.Series):
+    min, max = (-2, 2) # TODO: for now, setting to NORMALIZED_RANGE, which seems to be the default
 
     series_min = srs.values.min()
     series_max = srs.values.max()

@@ -138,6 +138,7 @@ def get_sensitivity_tab_info(compound_id: int, compound_datasets: list[MatrixDat
 
 
 def format_compound_summary(compound_experiment_and_datasets) -> Optional[dict[str, Any]]:
+    # DEPRECATED: this is only being used by features that are being removed/replaced
     if len(compound_experiment_and_datasets) == 0:
         return None
 
