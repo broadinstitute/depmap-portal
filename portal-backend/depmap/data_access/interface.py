@@ -309,7 +309,7 @@ def get_slice_data(slice_query: SliceQuery) -> pd.Series:
 # same shaped data while we are in this transitionary period. 
 
 
-def get_all_datasets_containing_compound(compound_id: str) -> list[MatrixDataset]:
+def get_all_datasets_containing_compound(compound_id: int) -> list[MatrixDataset]:
     """
     Return IDs for all datasets which contain data for the given compound, sorted by priority.
     This should include both:
@@ -318,7 +318,7 @@ def get_all_datasets_containing_compound(compound_id: str) -> list[MatrixDataset
     """
     bb_compound_datasets = breadbox_dao.get_all_matrix_datasets(
         feature_type="compound",
-        feature_id=compound_id
+        feature_id=str(compound_id)
     )
     bb_compound_datasets.sort(key=lambda dataset: dataset.priority if dataset.priority else 999)
 

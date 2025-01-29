@@ -53,7 +53,7 @@ def get_subsetted_df_by_compound_labels(dataset_id: str) -> pd.DataFrame:
     return compound_df
 
 
-def get_compound_experiment_priority_sorted_datasets(compound_id) -> list[str]:
+def get_compound_experiment_priority_sorted_datasets(compound_id: int) -> list[str]:
     """Get a list of dataset ids in priority order"""
     # Get a list of dataset IDs with an initial priority order sorting
     datasets =  (

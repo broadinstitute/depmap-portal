@@ -86,7 +86,7 @@ def view_compound(name):
     # Figure out membership in different datasets
     compound_datasets = data_access.get_all_datasets_containing_compound(compound_id)
     has_datasets = len(compound_datasets) != 0
-    sensitivity_tab_compound_summary = get_sensitivity_tab_info(compound, compound_datasets) # format_compound_summary(compound_experiment_and_datasets) 
+    sensitivity_tab_compound_summary = get_sensitivity_tab_info(compound.entity_id, compound_datasets) # format_compound_summary(compound_experiment_and_datasets) 
 
     has_celfie = current_app.config["ENABLED_FEATURES"].celfie and has_datasets
     if has_celfie:
@@ -112,12 +112,11 @@ def view_compound(name):
         compound_units=units,
     )
 
-def get_sensitivity_tab_info(compound: Compound, compound_datasets: list[MatrixDataset]) -> Optional[dict[str, Any]]:
+def get_sensitivity_tab_info(compound_id: int, compound_datasets: list[MatrixDataset]) -> Optional[dict[str, Any]]:
     """Get a dictionary of values containing layout information for the sensitivity tab."""
     if len(compound_datasets) == 0:
         return None
     
-    top_priority_dataset_id = compound_datasets[0].id
     # Define the options that will appear in the datasets dropdown
     dataset_options = []
     for dataset in compound_datasets:
@@ -125,16 +124,17 @@ def get_sensitivity_tab_info(compound: Compound, compound_datasets: list[MatrixD
             "label": dataset.label,
             "id": dataset.id,
             "dataset": dataset.id,
-            "entity": compound.entity_id,
+            "entity": compound_id,
         }
         dataset_options.append(dataset_summary)
 
-    return format_summary( # TODO: completely just update this. 
-        summary_options=dataset_options, 
-        first_entity=compound, # TODO: this needs to be refactored eventually to use BB metadata
-        first_dep_enum_name=top_priority_dataset_id, 
-        show_auc_message=True,
-    )
+    return {
+        "figure": {"name": compound_id},
+        "summary_options": dataset_options,
+        "show_auc_message": True,
+        "size_biom_enum_name": None,
+        "color": None,
+    }
 
 
 def format_compound_summary(compound_experiment_and_datasets) -> Optional[dict[str, Any]]:

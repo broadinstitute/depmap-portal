@@ -7,7 +7,7 @@ import depmap.celfie.utils as celfie_utils
 
 
 def format_summary(
-    summary_options,
+    summary_options: list[dict[str, str]],
     first_entity,
     first_dep_enum_name,
     default_size_enum=None,

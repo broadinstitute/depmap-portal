@@ -408,7 +408,7 @@ class DependencyDataset(Dataset):
 
     @staticmethod
     def get_compound_experiment_priority_sorted_datasets_with_compound(
-        compound_id,
+        compound_id: int,
     ) -> List[Tuple["CompoundExperiment", "DependencyDataset"]]:
         # TODO: get rid of this old version (replaced with get_compound_experiment_priority_sorted_datasets in legacy utils)
         """

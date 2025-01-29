@@ -68,12 +68,14 @@ def data_table_download_temp(type):
 @cache_without_user_permissions()
 def entity_summary_json_data():
     """
+
     Not using _parse_args_and_call_func just because we need to get entity label, and process the size biom enum 
     """
+    # Called by the compound sensitivity page TODO: update this method to work when given a breadbox dataset id
     entity_id = request.args.get("entity_id")
-    dep_enum_name = request.args.get("dep_enum_name")
-    size_biom_enum_name = request.args.get("size_biom_enum_name")
-    color = request.args.get("color")
+    dep_enum_name = request.args.get("dep_enum_name") # Dataset ID. Ex: Rep_all_single_pt
+    size_biom_enum_name = request.args.get("size_biom_enum_name") # None
+    color = request.args.get("color") # None
 
     entity = Entity.query.get(entity_id)
     if size_biom_enum_name == "none":
