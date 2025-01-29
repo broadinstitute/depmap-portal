@@ -1,18 +1,35 @@
 rule update_hgnc_gene_table:
     inputs:
-        hgnc_gene_table={"type": "hgnc_gene_table"}
-    outputs:
-        {
-            "type": "gene",
-            "filename": {"$filename": "hgnc_gene_table.csv"},
-            "orig_dataset_id": "{{inputs.hgnc_gene_table.dataset_id}}"
-        }
+        hgnc_gene_table={"type": "hgnc_gene_table"},
+        release_taiga_id={"type": "release_taiga_id"},
+    outputs:{
+        "type": "gene",
+        "filename": {"$filename": "hgnc_gene_table.csv"},
+        "orig_dataset_id": "{{inputs.hgnc_gene_table.dataset_id}}"
+    }
+    
     run "python3" with """
         from taigapy import create_taiga_client_v3
+        from taigapy.client_v3 import TaigaReference
 
         tc = create_taiga_client_v3()
         print("Getting HGNC gene data...")
         hgnc_gene_df = tc.get("{{inputs.hgnc_gene_table.dataset_id}}")
         hgnc_gene_df.to_csv("hgnc_gene_table.csv", index=False)
+
+        release_taiga_id = "{{ inputs.release_taiga_id.dataset_id }}"
+
+        version = tc.update_dataset(
+            release_taiga_id.split(".")[0],
+            "Updated HGNC gene data for release",
+            additions=[
+                TaigaReference(
+                    name="Gene",
+                    taiga_id="hgnc-gene-table-e250.3/hgnc_complete_set",
+                    custom_metadata={}
+                )
+            ]
+        )
+        print(f"Updated HGNC gene data for release {version.permaname} {version.version_number}")
     """
     
