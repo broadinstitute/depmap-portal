@@ -18,6 +18,7 @@ rule update_hgnc_gene_table:
         hgnc_gene_df.to_csv("hgnc_gene_table.csv", index=False)
 
         release_taiga_id = "{{ inputs.release_taiga_id.dataset_id }}"
+        hgnc_taiga_id = "{{ inputs.hgnc_gene_table.dataset_id }}"
 
         version = tc.update_dataset(
             release_taiga_id.split(".")[0],
@@ -25,11 +26,10 @@ rule update_hgnc_gene_table:
             additions=[
                 TaigaReference(
                     name="Gene",
-                    taiga_id="hgnc-gene-table-e250.3/hgnc_complete_set",
+                    taiga_id=hgnc_taiga_id,
                     custom_metadata={}
                 )
             ]
         )
         print(f"Updated HGNC gene data for release {version.permaname} {version.version_number}")
     """
-    
