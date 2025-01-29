@@ -335,11 +335,12 @@ def get_all_datasets_containing_compound(compound_id: int) -> list[MatrixDataset
     return bb_compound_datasets + visible_legacy_datasets
 
 
-def get_subsetted_df_by_compound_labels(dataset_id) -> pd.DataFrame:
+def get_subsetted_df_by_labels_compound_friendly(dataset_id: str) -> pd.DataFrame:
     """
     Load the data for a drug screen dataset. This is similar to get_subsetted_df_by_labels,
     except that for legacy compound datasets, the result will be indexed by compound 
     (to match breadbox).
+    All non-compound datasets should work normally with this method as well.
     """
     dataset = get_matrix_dataset(dataset_id)
     # Legacy datasets indexed by compound experiment get re-indexed by compound label
@@ -347,7 +348,7 @@ def get_subsetted_df_by_compound_labels(dataset_id) -> pd.DataFrame:
         return legacy_compound_utils.get_subsetted_df_by_compound_labels(dataset_id)
     else:
         return get_subsetted_df_by_labels(dataset_id)
-    
+
 
 ##################################################
 # METHODS BELOW ARE ONLY SUPPORTABLE BY BREADBOX #

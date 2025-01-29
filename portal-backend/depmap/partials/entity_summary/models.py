@@ -252,22 +252,16 @@ def integrate_dep_data(metadata, dataset_id: str, entity_label: str, entity_id: 
         series, index is arxspan id and values are dependency scores
     """
     dataset = data_access.get_matrix_dataset(dataset_id)
-    data_series = data_access.get_slice_data(
-        slice_query=SliceQuery(
-            dataset_id=dataset_id,
-            identifier=entity_id,
-            identifier_type="feature_label",
-        )
-    ) # TODO: this is empty because it's not looking up data by compound ID. I need to fix that.
+    dataset_data = data_access.get_subsetted_df_by_labels_compound_friendly(dataset_id)
+    data_series = dataset_data.loc[entity_label].dropna()
     data_series.name = "value"
-    breakpoint()
 
     metadata["x_range"] = _get_x_range(data_series)
     metadata["x_label"] = dataset.units
     metadata["interactive_url"] = url_for(
             "data_explorer_2.view_data_explorer_2",
             xDataset=dataset.id,
-            xFeature=entity_label,
+            xFeature=entity_id, # TODO: this link breaks because DE2 isn't prepared to index by compound
             yDataset=None,
             yFeature=None,
     )
