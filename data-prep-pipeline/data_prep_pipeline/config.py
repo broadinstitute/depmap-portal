@@ -4,7 +4,13 @@ hgnc_gene_table_taiga_id = (
 )
 oncokb_annotated_taiga_id = "oncokb-annotated-mutations-7e2e.17/oncokb_annotated"  # This is needed for driver events data
 
+portal_compounds_taiga_id = "compound-metadata-de37.32/PortalCompounds"
+
+#Subtype Tree Variables
 oncotree_json_taiga_id = (
     "oncotree-42c7.2/oncotree"
 )
-portal_compounds_taiga_id = "compound-metadata-de37.32/PortalCompounds"
+
+genetic_subtype_whitelist_taiga_id = (
+    'subtypetree-919e.2/lineage_tree_genetic_subtype_whitelist'
+)

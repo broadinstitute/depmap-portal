@@ -16,6 +16,7 @@ from predictability.transform_genetic_derangement import (
     process_and_update_genetic_derangement,
 )
 from subtype_tree.create_subtype_tree import create_subtype_tree
+from subtype_tree.create_context_matrix import create_context_matrix
 
 
 def parse_args() -> tuple[str, str]:
@@ -49,6 +50,7 @@ def main():
     # process_and_update_driver_events(source_dataset_id, target_dataset_id)
     # process_and_update_genetic_derangement(source_dataset_id, target_dataset_id)
     create_subtype_tree(source_dataset_id, target_dataset_id)
+    create_context_matrix(source_dataset_id, target_dataset_id)
 
 
 if __name__ == "__main__":

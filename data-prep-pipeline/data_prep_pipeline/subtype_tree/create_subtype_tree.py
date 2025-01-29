@@ -4,26 +4,35 @@ import numpy as np
 import pandas as pd
 from taigapy import create_taiga_client_v3
 
+from utils import update_taiga
+
 from datarelease_taiga_permanames import (
     context_taiga_permaname,
     subtype_tree_taiga_permaname,
     molecular_subtypes_taiga_permaname
 )
-from config import oncotree_json_taiga_id
-from utils import update_taiga
+from config import (
+    oncotree_json_taiga_id,
+    genetic_subtype_whitelist_taiga_id
+)
 
-def load_data(source_dataset_id,
-              context_taiga_permaname,
-              oncotree_json_taiga_id):
+# TODO FOR 25Q2: REMOVE THE USE OF THIS TEMPORARY MODEL FILE
+temp_model_id = 'alison-test-649a.18/Model_temp_between_24q4_25q2'
+
+### HELPER FUNCTIONS ### 
+def load_data(source_dataset_id):
     tc = create_taiga_client_v3()
 
     ## Load the models table
-    models = tc.get(f"{source_dataset_id}/{context_taiga_permaname}")\
+    #TODO FOR 25Q2: change taiga id to be f"{source_dataset_id}/{context_taiga_permaname}"
+    models = tc.get(temp_model_id)\
             .loc[:,
                 ['ModelID', 'OncotreeCode', 'DepmapModelType',
                 'OncotreeLineage', 'OncotreePrimaryDisease',
                 'OncotreeSubtype']
-            ]
+            ].dropna(subset=[
+                'OncotreeLineage', 'OncotreeSubtype'
+            ])
 
     ## Load oncotree
     oncotree = tc.get(oncotree_json_taiga_id)\
@@ -44,8 +53,9 @@ def load_data(source_dataset_id,
     genetic_subtypes = tc.get(f"{source_dataset_id}/{molecular_subtypes_taiga_permaname}")\
                             .set_index('ModelID')
     
-    return models, oncotree, genetic_subtypes
-
+    gs_whitelist = tc.get(genetic_subtype_whitelist_taiga_id)
+    
+    return models, oncotree, genetic_subtypes, gs_whitelist
 
 def create_oncotable(oncotree):
 
@@ -86,7 +96,6 @@ def create_oncotable(oncotree):
     
     return oncotable
 
-
 def construct_new_table_node(new_code,
                             new_name,
                             new_source,
@@ -109,281 +118,128 @@ def construct_new_table_node(new_code,
 
     return new_node
 
-
 def add_depmap_nodes(models, oncotable):
-    #identify nodes to add
+
+    def add_non_cancerous_lineages(non_cancerous_types, oncotable):
+        nc_nodes = []
+        for lin in non_cancerous_types.OncotreeLineage.unique():
+            if lin in oncotable.NodeName.unique(): 
+                #create a Non-Cancerous node at level 1
+                parent_code = oncotable[oncotable.NodeName == lin]\
+                                .DepmapModelType.iloc[0]
+            
+                nc_nodes.append(
+                            construct_new_table_node(
+                                new_code=f'Z{parent_code}',
+                                new_name=f"{lin} Non-Cancerous",
+                                new_source='Depmap',
+                                parent_code=parent_code,
+                                oncotable=oncotable,
+                                code_col='DepmapModelType'
+                ))
+
+            elif lin not in oncotable.NodeName.unique():
+                #create a level 0 node
+                lvl0_code = lin.upper().replace(' ', '_')
+
+                #check to see if there is a code that should be used
+                lvl0_test = non_cancerous_types[
+                    (non_cancerous_types.OncotreeLineage == lin)
+                    & (non_cancerous_types.OncotreeSubtype == lin)
+                ]
+                if lvl0_test.shape[0] > 0:
+                     lvl0_code = lvl0_test.DepmapModelType.iloc[0]
+
+                nc_nodes.append(
+                    pd.Series({
+                        'DepmapModelType':lvl0_code,
+                        'NodeName':lin,
+                        'NodeLevel':0,
+                        'NodeSource':'Depmap',
+                        'Level0':lvl0_code,
+                }))
+
+        return pd.concat([oncotable, pd.DataFrame(nc_nodes)])
+
+    # find the types that don't exist in the oncotable
+    # drop custom nodes with duplicate names or codes
     custom_nodes = models.drop(columns='ModelID')\
-                         .drop_duplicates()\
-                         .query('DepmapModelType != OncotreeCode '\
-                              '& OncotreePrimaryDisease != "Non-Cancerous" '\
-                              '& ~DepmapModelType.isin(["HSP", "PROC"])')
+                    .drop_duplicates()\
+                    .query(
+                        '~DepmapModelType.isin(@oncotable.DepmapModelType) '\
+                        '& ~OncotreeSubtype.isin(@oncotable.NodeName) '
+                    ).drop_duplicates(
+                        subset=['DepmapModelType'],
+                        keep=False
+                    ).drop_duplicates(
+                        subset=['OncotreeSubtype'],
+                        keep=False
+                    )
+
+    non_cancerous_types = custom_nodes.query('OncotreePrimaryDisease == "Non-Cancerous"')
+
+    oncotable_nc = add_non_cancerous_lineages(non_cancerous_types, oncotable)
 
     #create and add new nodes to the oncotable
     new_nodes = []
     for idx, new_type in custom_nodes.iterrows():
-        parent_code = oncotable[oncotable.NodeName == new_type.OncotreeLineage]\
-                        .DepmapModelType.iloc[0]
+        #code has already been added at lineage level
+        if new_type.DepmapModelType in oncotable_nc.DepmapModelType.values: continue
+
+        #code is a subtype, add it at a lower level
+        lin_node = oncotable_nc[
+                        oncotable_nc.NodeName == new_type.OncotreeLineage
+                    ].iloc[0]
+        
+        if new_type.OncotreePrimaryDisease != 'Non-Cancerous':
+            ## DECISION: Add cancerous nodes at level 1, right underneath lineage
+            parent_code = lin_node.DepmapModelType
+        
+        elif new_type.OncotreePrimaryDisease == 'Non-Cancerous':
+            if lin_node.NodeSource == 'Oncotree':
+                ## DECISION: Add underneath the Non-Cancerous Level 1 node
+                parent_code = 'Z'+str(lin_node.DepmapModelType)
+            
+            elif lin_node.NodeSource == 'Depmap':
+                ## DECISION: Add at level 1, right underneath custom lineage node
+                parent_code = lin_node.DepmapModelType
+
         new_nodes.append(
-            construct_new_table_node(
-                new_code=new_type.DepmapModelType,
-                new_name=new_type.OncotreeSubtype,
-                new_source='Depmap',
-                ## DECISION: Add all custom nodes at level 1, right underneath lineage
-                parent_code=parent_code,
-                oncotable=oncotable
+                construct_new_table_node(
+                    new_code=new_type.DepmapModelType,
+                    new_name=new_type.OncotreeSubtype,
+                    new_source='Depmap',
+                    parent_code=parent_code,
+                    oncotable=oncotable_nc
+                )
             )
-        )
 
     custom_table = pd.concat([
-        oncotable,
+        oncotable_nc,
         pd.DataFrame(new_nodes)
     ])
 
     return custom_table
 
-
-def create_disease_restricted_genetic_node(subtype,
-                                           model_tree,
-                                           genetic_subtypes,
-                                           subtype_tree,
-                                           perc_threshold=0.8):
-    ## find the models with that molecular subtype & their oncotree information
-    subtype_model_ids = genetic_subtypes[genetic_subtypes[subtype]==True].index
-    subtype_models = model_tree[model_tree.ModelID.isin(subtype_model_ids)]
-
-    ## for each level, find the most common disease type for the subtype models
-    st_vals = pd.DataFrame(columns=['level', 'top_node', 'n_models'])
-    for i in range(6):
-        lvl_vals = subtype_models[f'Level{i}']\
-                    .value_counts().nlargest(1)\
-                    .to_frame(name='n_models')\
-                    .reset_index(names='top_node')\
-                    .assign(level=f'Level{i}')
-        
-        #skip over levels where all models have nan as the annotation
-        if lvl_vals.shape[0] > 0:
-            st_vals = pd.concat([
-                st_vals,
-                lvl_vals
-            ])
-
-    #calculate the percentage of subtype models that are this top disease type
-    st_vals['perc_models'] = st_vals.n_models / len(subtype_model_ids)
-
-    #determine if any of the disease types pass our percentage threshold
-    dis_restricted = st_vals[st_vals.perc_models >= perc_threshold]
-
-    #it is disease-type restricted! add the new node
-    if dis_restricted.shape[0] > 0:
-        #find the lowest level where it is disease-type restricted
-        parent = dis_restricted.sort_values('level').iloc[-1]
-        parent_name = subtype_tree[subtype_tree.DepmapModelType == parent.top_node]\
-                        .NodeName.iloc[0]
-        
-        #construct a new node
-        new_node = construct_new_table_node(
-            new_code=f"{parent.top_node}: {subtype}".replace(' ', ''),
-            new_name=f"{parent_name}: {subtype}",
-            new_source="Data-driven genetic subtype",
-            parent_code=parent.top_node,
-            oncotable=subtype_tree
+def add_disease_restricted_genetic_subtypes(gs_whitelist, subtype_tree):
+    gs_nodes = []
+    for idx, gs in gs_whitelist.iterrows():
+        #create new node
+        gs_node = construct_new_table_node(
+            new_code=gs.MolecularSubtypeCode,
+            new_name=f'{gs.parent_name}: {gs.subtype_name}',
+            new_source='Data-driven genetic subtype',
+            parent_code=gs.parent_code,
+            oncotable=subtype_tree,
         )
-        #DepmapModelType should be null --> reassign value to new column
-        new_node['MolecularSubtypeCode'] = new_node.DepmapModelType
-        new_node['DepmapModelType'] = np.nan
-        
-        return new_node
+        gs_nodes.append(gs_node)
+
+    gs_tree = pd.DataFrame(gs_nodes)\
+                .rename(columns={
+                    'DepmapModelType':'MolecularSubtypeCode'
+                })
     
-    #it is not disease-type restricted, do not create a new node
-    else:
-        return None
-    
-
-def add_disease_restricted_genetic_subtypes(genetic_subtypes,
-                                            models,
-                                            subtype_tree):
-    model_tree = models.loc[:,['ModelID', 'DepmapModelType']]\
-                    .merge(subtype_tree)
-
-    subtype_tree['MolecularSubtypeCode'] = np.nan
-    for subtype in list(genetic_subtypes.columns):
-        new_node = create_disease_restricted_genetic_node(
-                        subtype,
-                        model_tree,
-                        genetic_subtypes,
-                        subtype_tree
-                    )
-        if new_node is not None:
-            subtype_tree.loc[subtype_tree.shape[0]] = new_node
-
-    return subtype_tree
-
-
-def move_branch_up(node_to_collapse, subtype_tree):
-    #identify old branch of the tree
-    branch = subtype_tree[
-                subtype_tree[node_to_collapse.new_node_level] == node_to_collapse.NodeAliasCode
-            ]
-    
-    #create column mapping for those that need to move up
-    col_renaming = dict(zip(
-        [f'Level{i}' for i in range(int(node_to_collapse.old_node_level[-1]), 6)], #old column names
-        [f'Level{i}' for i in range(int(node_to_collapse.new_node_level[-1]), 5)] #new column names
-    ))
-
-    #drop old parent node and parent columns
-    new_branch = branch\
-                    [branch.DepmapModelType != node_to_collapse.NodeAliasCode]\
-                    .drop(
-                        columns=node_to_collapse.new_node_level
-                    ).rename(
-                        columns=col_renaming
-                    )
-    
-    if not('NodeAliasCode' in new_branch.columns):
-        new_branch = new_branch.assign(
-                        NodeAliasCode = np.nan
-                    ).astype('object')
-    
-    #move all nodes up one level in their NodeLevel annotation
-    new_branch['NodeLevel'] = new_branch.NodeLevel - 1
-
-    #drop the old branch
-    subtype_tree = subtype_tree.drop(branch.index)
-
-    #add new branch back in
-    subtype_tree = pd.concat([subtype_tree, new_branch])\
-                    .sort_values([f"Level{i}" for i in range(6)])\
-                    .reset_index(drop=True)
-
-    return subtype_tree
-
-
-def remove_level1_node(node_to_collapse, subtype_tree):
-    #add alias column the Level0 node
-    subtype_tree.loc[
-        subtype_tree.DepmapModelType == node_to_collapse.NodeAliasCode,
-        'NodeAliasCode'
-    ] = node_to_collapse.DepmapModelType
-
-    #find every child of the level 1 node
-    lvl2s = subtype_tree[
-                (subtype_tree.Level1 == node_to_collapse.DepmapModelType)
-                & (~subtype_tree.Level2.isna())
-            ].Level2.unique()
-    
-    lvl2_mappings = pd.DataFrame({
-        'NodeAliasCode':node_to_collapse.DepmapModelType,
-        'DepmapModelType':lvl2s,
-        'old_node_level':'Level2',
-        'new_node_level':'Level1'
-    })
-
-    for idx, lvl2_collapse in lvl2_mappings.iterrows():
-        #move the new branch up one level
-        subtype_tree = move_branch_up(lvl2_collapse, subtype_tree)
-
-    return subtype_tree
-
-
-def search_and_collapse_at_level(lvl, model_tree, subtype_tree):
-
-    #define function to determine if parent-child nodes should be collapsed
-    def determine_collapse(df, parent_lvl, child_lvl):
-        children = df[[parent_lvl, child_lvl]].drop_duplicates()
-        if children.shape[0]==1 and not pd.isnull(children[child_lvl].iloc[0]):
-            return pd.Series({
-                'DepmapModelType':children[child_lvl].iloc[0]
-            })
-    
-    cur_lvl = f'Level{lvl}'
-    child_lvl = f'Level{lvl+1}'
-
-    #use custom function to find nodes to collapse
-    mapping = model_tree\
-                .groupby(cur_lvl)\
-                [[cur_lvl, child_lvl]]\
-                .apply(
-                    determine_collapse, 
-                    **{'parent_lvl':cur_lvl,
-                        'child_lvl':child_lvl}
-                ).dropna()\
-                .reset_index(
-                    names='NodeAliasCode'
-                ).assign(
-                    old_node_level=child_lvl,
-                    new_node_level=cur_lvl
-                )
-    
-    #iterate through list of nodes and collapse those branches
-    for idx, node_to_collapse in mapping.iterrows():
-        #different process if we are checking between L0 and L1
-        if lvl == 0:
-            #verify that there are no models with the code we are removing
-            n_mod = model_tree.loc[
-                        model_tree.DepmapModelType == node_to_collapse.DepmapModelType
-                    ].shape[0]
-            if n_mod > 0: continue
-
-            subtype_tree = remove_level1_node(node_to_collapse, subtype_tree)
-
-        elif lvl > 0:
-            #verify that there are no models with the code we are removing
-            n_mod = model_tree.loc[
-                        model_tree.DepmapModelType == node_to_collapse.NodeAliasCode
-                    ].shape[0]
-            if n_mod > 0: continue
-
-            #move the new branch up one level
-            subtype_tree = move_branch_up(node_to_collapse, subtype_tree)
-            
-            #add alias column for the removed node
-            subtype_tree.loc[
-                subtype_tree.DepmapModelType == node_to_collapse.DepmapModelType,
-                'NodeAliasCode'
-            ] = node_to_collapse.NodeAliasCode
-
-    return subtype_tree
-
-
-def collapse_parent_child_nodes(models, oncotable_plus):
-    model_tree = models.loc[:,
-                            ['ModelID', 'OncotreeCode', 'DepmapModelType']
-                        ].merge(oncotable_plus)
-        
-    # filter the tree/table to only include contexts that exist in our model table
-    #   more complex than just filtering on DepmapModelType codes, because that
-    #   will drop Level0's and Level1's that we want in the table
-    max_lvl = max([int(i[-1]) for i in oncotable_plus.columns if i.startswith('Level')])
-
-    filter_query = []
-    for i in range(max_lvl+1):
-        #Level0 and Level1 need to manually add nan to the list of values
-        if i <= 1:
-            filter_query.append(
-                f'(Level{i}.isin(@model_tree.Level{i}) | Level{i}.isna())'
-            )
-        else:
-            filter_query.append(
-                f'Level{i}.isin(@model_tree.Level{i})'
-            )
-    filter_query = ' & '.join(filter_query)
-
-    subtype_tree = oncotable_plus.query(filter_query).copy()
-    
-    code_to_name = dict(zip(oncotable_plus.DepmapModelType, oncotable_plus.NodeName))
-    
-    # for each parent level, search for children that can be moved up
-    for lvl in reversed(range(max_lvl)):
-        subtype_tree = search_and_collapse_at_level(
-                            lvl,
-                            model_tree,
-                            subtype_tree
-                        )
-
-    subtype_tree['NodeAliasName'] = subtype_tree.NodeAliasCode.map(code_to_name)    
-    return subtype_tree
-
+    return pd.concat([subtype_tree, gs_tree])
 
 def add_molecular_subtype_subtree(df, mst_tree):
     oims = 'Omics Inferred Molecular Subtype'
@@ -430,7 +286,6 @@ def add_molecular_subtype_subtree(df, mst_tree):
         )
 
     return mst_tree
-
 
 def create_molecular_subtype_tree(genetic_subtypes):
     #determine how many subtypes are associated with each gene
@@ -489,7 +344,6 @@ def create_molecular_subtype_tree(genetic_subtypes):
 
     return mst_tree
 
-
 def create_subtype_tree_with_names(subtype_tree):
     onco_to_name = dict(zip(subtype_tree.DepmapModelType, subtype_tree.NodeName))
     gs_to_name = dict(zip(subtype_tree.MolecularSubtypeCode, subtype_tree.NodeName))
@@ -505,7 +359,7 @@ def create_subtype_tree_with_names(subtype_tree):
     col_order = [
         'DepmapModelType','MolecularSubtypeCode','NodeName','NodeLevel','NodeSource',
         'TreeType','Level0','Level1','Level2','Level3','Level4','Level5',
-        'OncotreeCode','NodeAliasCode','NodeAliasName'
+        'OncotreeCode'
     ]
 
     subtype_formatted = subtype_tree_names\
@@ -514,30 +368,39 @@ def create_subtype_tree_with_names(subtype_tree):
                             .sort_values([
                                 'Level0','Level1','Level2','Level3','Level4','Level5'
                             ])\
-                            .copy()
+                            .copy()\
+                            .reset_index(drop=True)
 
     return subtype_formatted
 
+def sanity_check_results(subtype_tree):
+    #assert that depmap codes are unique
+    assert(all(subtype_tree.groupby('DepmapModelType').size() == 1))
 
+    #assert that molecular codes are unique
+    assert(all(subtype_tree.groupby('MolecularSubtypeCode').size() == 1))
+
+    #assert there's no overlap between depmap and molecular codes
+    assert(len(
+        set.intersection(
+            set(subtype_tree.DepmapModelType.dropna().unique()),
+            set(subtype_tree.MolecularSubtypeCode.dropna().unique())    
+        )
+    ) == 0)
+
+    #assert that node names are unique
+    assert(all(subtype_tree.groupby('NodeName').size() == 1))
+
+
+### MAIN FUNCTION ###
 def create_subtype_tree(source_dataset_id, target_dataset_id):
-
-    models, oncotree, genetic_subtypes = load_data(
-                                source_dataset_id,
-                                context_taiga_permaname,
-                                oncotree_json_taiga_id
-                            )
+    models, oncotree, genetic_subtypes, gs_whitelist = load_data(source_dataset_id)
 
     oncotable = create_oncotable(oncotree)
 
     oncotable_plus = add_depmap_nodes(models, oncotable)
 
-    subtype_tree_codes = collapse_parent_child_nodes(models, oncotable_plus)
-
-    subtype_tree_gs = add_disease_restricted_genetic_subtypes(
-                                genetic_subtypes,
-                                models,
-                                subtype_tree_codes
-                            )
+    subtype_tree_gs = add_disease_restricted_genetic_subtypes(gs_whitelist, oncotable_plus)
 
     molecular_subtype_tree = create_molecular_subtype_tree(genetic_subtypes)
 
@@ -548,10 +411,14 @@ def create_subtype_tree(source_dataset_id, target_dataset_id):
 
     subtype_tree = create_subtype_tree_with_names(all_subtypes)
 
-    #UPLOAD NAME VERSION TO TAIGA
+    # Verify results
+    sanity_check_results(subtype_tree)
+
+    # Upload results to taiga
     update_taiga(
         subtype_tree,
-        "Create SubtypeTree for Depmap Lineage-based Context Hierarchy",
+        "Create the SubtypeTree: A hierarchical cancer classification system "\
+        "based on Oncotree and extended with custom Depmap nodes",
         target_dataset_id,
         subtype_tree_taiga_permaname,
         file_format='csv_table'
