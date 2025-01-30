@@ -1,13 +1,11 @@
+import argparse
 import pandas as pd
 import numpy as np
 
 from taigapy import create_taiga_client_v3
-from ..utils import update_taiga
-from ..datarelease_taiga_permanames import omics_somatic_mutations_taiga_permaname
-from ..config import oncokb_annotated_taiga_id
 
 
-def reformat_entrez_id(x):
+def reformat_entrez_id(x: str) -> str:
     """Reformat the Entrez ID to a string"""
 
     if pd.isna(x):
@@ -24,13 +22,15 @@ def reformat_entrez_id(x):
     return x
 
 
-def process_and_update_driver_events(source_dataset_id, target_dataset_id):
+def process_and_generate_driver_events(
+    mutations_taiga_id: str, oncokb_annotated_taiga_id: str
+) -> pd.DataFrame:
     """Transform driver events data for predictability and upload it to Taiga."""
 
     tc = create_taiga_client_v3()
 
     print("Getting driver events data...")
-    mutations = tc.get(f"{source_dataset_id}/{omics_somatic_mutations_taiga_permaname}")
+    mutations = tc.get(mutations_taiga_id)
     oncokb_annotated = tc.get(oncokb_annotated_taiga_id)
 
     print("Transforming driver events data...")
@@ -82,9 +82,25 @@ def process_and_update_driver_events(source_dataset_id, target_dataset_id):
 
     driver_events_matrix = driver_events_matrix.replace({True: 1.0, False: 0.0})
 
-    update_taiga(
-        driver_events_matrix,
-        "Transform and update driver events data for predictability",
-        target_dataset_id,
-        "PredictabilityDriverEvents",
+    print("Transformed driver events data")
+
+    return driver_events_matrix
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description="Generate driver events matrix for predictability"
     )
+    parser.add_argument("mutations_taiga_id", help="Taiga ID of somatic mutations data")
+    parser.add_argument(
+        "oncokb_annotated_taiga_id", help="Taiga ID of OncoKB annotated data"
+    )
+    parser.add_argument("output", help="Path to write the output")
+    args = parser.parse_args()
+
+    driver_events_matrix = process_and_generate_driver_events(
+        args.mutations_taiga_id, args.oncokb_annotated_taiga_id
+    )
+
+    if driver_events_matrix is not None:
+        driver_events_matrix.to_csv(args.output)

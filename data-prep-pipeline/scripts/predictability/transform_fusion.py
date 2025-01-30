@@ -1,11 +1,9 @@
+import argparse
 import re
 import pandas as pd
 from typing import Dict
-
 from taigapy import create_taiga_client_v3
-from ..utils import update_taiga
-from ..datarelease_taiga_permanames import omics_fusion_filtered_taiga_permaname
-from ..config import hgnc_gene_table_taiga_id
+from pathlib import Path
 
 
 def extract_id(x: str) -> str:
@@ -66,26 +64,38 @@ def generate_fusion_matrix(
     return one_hot
 
 
-def process_and_update_fusion(source_dataset_id, target_dataset_id):
+def process_and_transform_fusion(
+    fusion_taiga_id: str, hgnc_gene_table_csv: Path
+) -> pd.DataFrame:
 
     """Transform fusion data for predictability and upload it to Taiga."""
 
     tc = create_taiga_client_v3()
 
     print("Getting fusion data...")
-    fusion_filtered_data = tc.get(
-        f"{source_dataset_id}/{omics_fusion_filtered_taiga_permaname}"
-    )
-    sym_map_df = tc.get(f"{hgnc_gene_table_taiga_id}")
+    fusion_filtered_data = tc.get(fusion_taiga_id)
+    sym_map_df = pd.read_csv(hgnc_gene_table_csv)
     symbol_by_ensembl = sym_map_df.set_index("ensembl_gene_id")["symbol"].to_dict()
 
     print("Transforming fusion data...")
     fusion_matrix = generate_fusion_matrix(fusion_filtered_data, symbol_by_ensembl)
     print("Transformed fusion data")
 
-    update_taiga(
-        fusion_matrix,
-        "Transform fusion data for predictability",
-        target_dataset_id,
-        "PredictabilityFusionTransformed",
+    return fusion_matrix
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description="Generate fusion matrix for predictability"
     )
+    parser.add_argument("fusion_taiga_id", help="Taiga ID of fusion data")
+    parser.add_argument("hgnc_gene_table_csv", help="Path to HGNC gene table")
+    parser.add_argument("output", help="Path to write the output")
+    args = parser.parse_args()
+
+    fusion_matrix = process_and_transform_fusion(
+        args.fusion_taiga_id, args.hgnc_gene_table_csv
+    )
+
+    if fusion_matrix is not None:
+        fusion_matrix.to_csv(args.output)

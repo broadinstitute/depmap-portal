@@ -1,14 +1,7 @@
+import argparse
 import pandas as pd
 from taigapy import create_taiga_client_v3
 from typing import Set
-from ..config import portal_compounds_taiga_id
-from ..datarelease_taiga_permanames import prism_oncref_auc_matrix_taiga_permaname
-from ..utils import update_taiga
-
-repsdrug_matrix_taiga_id = "repurposing-public-24q2-875f.4/Repurposing_Public_24Q2_Extended_Primary_Data_Matrix"
-repsdrug_auc_matrix_taiga_id = (
-    "public-non-quarterly-processed-files-8e90.64/repsdrug-auc-matrix"
-)
 
 
 def filter_sample_ids(sample_ids: str, brd_ids: Set[str]) -> str:
@@ -50,36 +43,46 @@ def filter_portal_compounds(df: pd.DataFrame, brd_ids: Set[str],) -> pd.DataFram
     return df_filtered
 
 
-from typing import Optional
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description="Filter portal compounds data and upload to Taiga."
+    )
+    parser.add_argument(
+        "repsdrug_matrix_taiga_id",
+        help="Taiga ID of PRISM Repurposing primary screen data",
+    )
+    parser.add_argument(
+        "repsdrug_auc_matrix_taiga_id",
+        help="Taiga ID of PRISM Repurposing secondary screen data",
+    )
+    parser.add_argument(
+        "portal_compounds_taiga_id", help="Taiga ID of portal compounds data"
+    )
+    parser.add_argument(
+        "prism_oncology_reference_auc_matrix_taiga_id",
+        help="Taiga ID of the PRISMOncologyReferenceAUCMatrix",
+    )
+    parser.add_argument("output", help="Path to write the output")
 
-
-def process_and_update_portal_compounds(
-    source_dataset_id: str,
-    target_dataset_id: Optional[str] = None,
-    output_file: Optional[str] = None,
-):
-    """Filter portal compounds data and upload to Taiga."""
+    args = parser.parse_args()
     tc = create_taiga_client_v3()
 
-    print("Getting portal compounds data...")
-    portal_compounds_df = tc.get(portal_compounds_taiga_id)
-    assert not portal_compounds_df.empty, "portal_compounds_df is empty"
-
     print("Getting PRISM Repurposing primary screen data...")
-    repsdrug_matrix = tc.get(repsdrug_matrix_taiga_id)
+    repsdrug_matrix = tc.get(args.repsdrug_matrix_taiga_id)
     assert not repsdrug_matrix.index.empty, "repsdrug_matrix index is empty"
 
     print("Getting PRISM Repurposing secondary screen data...")
-    repsdrug_auc = tc.get(repsdrug_auc_matrix_taiga_id)
-    assert not repsdrug_auc.index.empty, "repsdrug_auc index is empty"
+    repsdrug_auc = tc.get(args.repsdrug_auc_matrix_taiga_id)
+
+    print("Getting portal compounds data...")
+    portal_compounds_df = tc.get(args.portal_compounds_taiga_id)
+    assert not portal_compounds_df.empty, "portal_compounds_df is empty"
 
     print("Getting oncref AUC matrix data...")
-    if source_dataset_id.startswith("public"):
+    if args.prism_oncology_reference_auc_matrix_taiga_id.startswith("public"):
         oncrefauc_matrix = pd.DataFrame()
     else:
-        oncrefauc_matrix = tc.get(
-            f"{source_dataset_id}/{prism_oncref_auc_matrix_taiga_permaname}"
-        )
+        oncrefauc_matrix = tc.get(args.prism_oncology_reference_auc_matrix_taiga_id)
         assert not oncrefauc_matrix.columns.empty, "oncrefauc_matrix columns are empty"
 
     print("Computing IDs for filtering...")
@@ -93,23 +96,5 @@ def process_and_update_portal_compounds(
     portal_compounds_filtered = filter_portal_compounds(portal_compounds_df, brd_ids)
     print("Filtered portal compounds data")
 
-    if target_dataset_id is not None:
-        # Update Taiga
-        update_taiga(
-            portal_compounds_filtered,
-            "Filter portal compounds data",
-            target_dataset_id,
-            "PortalCompounds",
-            file_format="csv_table",
-        )
-
-    if output_file is not None:
-        portal_compounds_filtered.to_csv(output_file, index=False)
-
-
-import sys
-
-
-def main():
-    source_dataset_id, output_file = sys.argv[1:3]
-    process_and_update_portal_compounds(source_dataset_id, output_file=output_file)
+    if portal_compounds_filtered is not None:
+        portal_compounds_filtered.to_csv(args.output, index=False)
