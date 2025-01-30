@@ -1,6 +1,3 @@
-# It is very important to have the latest versions of the destination Taiga IDs.
-# The version number is needed to check the taiga metadata for duplicate checking
-
 # SET_TAIGA_PREPROCESSOR release_taiga_id "internal-24q2-3719"
 
 # Destination Taiga ID
