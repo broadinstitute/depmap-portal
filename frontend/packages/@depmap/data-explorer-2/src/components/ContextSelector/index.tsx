@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { DataExplorerContext } from "@depmap/types";
+import { useDeprecatedDataExplorerApi } from "../../contexts/DeprecatedDataExplorerApiContext";
 import renderConditionally from "../../utils/render-conditionally";
 import {
   isContextAll,
@@ -42,6 +43,7 @@ function ContextSelector({
   includeAllInOptions = false,
   hasError = false,
 }: Props) {
+  const api = useDeprecatedDataExplorerApi();
   const loadedContexts = loadContextsFromLocalStorage(context_type);
   const [hashOfSelectedValue, setHashOfSelectedValue] = useState<string | null>(
     null
@@ -107,6 +109,7 @@ function ContextSelector({
     : hashOfSelectedValue;
 
   const handleChange = makeChangeHandler(
+    api,
     value,
     context_type,
     forceRefresh,

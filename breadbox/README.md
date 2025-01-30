@@ -93,14 +93,20 @@ The celery workers share an instance of redis which can be run with:
 
 ### Updating the Breadbox client
 
-Install the openapi-python-client tool following the directions at https://github.com/openapi-generators/openapi-python-client.
+When changes are merged to master, the `breadbox-client/breadbox_client` directory will be auto-generated before the breadbox-client module is published.
 
-To update the breadbox client, run:
+To generate the client for local development:
 
-    cd breadbox-client-generator/
-    poetry install && poetry shell
-    cd ../breadbox
-    ./bb update-client
+1. Make sure you have the `breadbox-client-generator` poetry project installed:
+   ```
+   cd ../breadbox-client-generator
+   poetry install
+   ```
+2. Generate the breadbox client:
+   ```
+   cd ../breadbox
+   poetry run ./bb update-client
+   ```
 
 ### Versioning and Publishing the Breadbox client
 

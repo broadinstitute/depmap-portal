@@ -6,7 +6,7 @@ from .datasets import router as datasets_router
 from .dataset_uploads import router as dataset_uploads_router
 from .downloads import router as downloads_router
 from .groups import router as groups_router
-from .types import router as types_router
+from .dimension_types import router as types_router
 from .data_types import router as data_types_router
 from .apis import router as apis_router
 from .partials import router as partials_router

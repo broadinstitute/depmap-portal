@@ -125,7 +125,6 @@ def upload_private(
                 config,
                 group_id,
             )
-        node_id = f"{OTHER_DATASET_NON_PREPOPULATE_ID_BASE}/{dataset_uuid}"
         return {
             "datasetId": dataset_uuid,
             "warnings": warnings,
@@ -135,13 +134,6 @@ def upload_private(
                 # support linking to a partially defined plot)
                 xFeature=nonstandard_utils.get_random_row_name(dataset_uuid),
                 xDataset=dataset_uuid,
-            )
-            if current_app.config["ENABLED_FEATURES"].data_explorer_2
-            else url_for(
-                "interactive.view_interactive",
-                x=node_id,
-                y=node_id,
-                defaultCustomAnalysisToX=True,
             ),
         }  # fixme, this is not the actual contract. return warnings and what??
 

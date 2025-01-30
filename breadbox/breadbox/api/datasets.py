@@ -29,7 +29,7 @@ from ..schemas.custom_http_exception import UserError
 from ..config import Settings, get_settings
 from breadbox.crud.access_control import PUBLIC_GROUP_ID
 from ..crud import dataset as dataset_crud
-from ..crud import types as type_crud
+from ..crud import dimension_types as type_crud
 
 from ..models.dataset import (
     Dataset as DatasetModel,

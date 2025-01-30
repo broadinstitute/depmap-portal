@@ -1,0 +1,13 @@
+// We use css to hide Plotly's toolbar (instead of configuring it not to have
+// one) so we can still dispatch clicks on its buttons (the only way to trigger
+// a zoom).
+.ScatterPlot :global .modebar {
+  display: none;
+}
+
+.ScatterPlot :global {
+  .infolayer {
+    -webkit-font-smoothing: subpixel-antialiased;
+    -webkit-transform: translateZ(0) scale(1, 1);
+  }
+}

@@ -311,13 +311,18 @@ export default function extendReactSelect(
 
     return (
       <div ref={innerRef} className={styles.container} {...dataProps}>
-        {swatchColor && (
-          <span
-            className={styles.swatch}
-            style={{ backgroundColor: swatchColor }}
-          />
-        )}
         <span className={styles.ExtendedSelect} ref={ref}>
+          {swatchColor && (
+            <span className={styles.swatchContainer}>
+              <span
+                className={styles.swatch}
+                style={{
+                  backgroundColor: swatchColor,
+                  top: label ? 22 : 0,
+                }}
+              />
+            </span>
+          )}
           {label && (
             <div
               className={cx(styles.selectorLabel, {

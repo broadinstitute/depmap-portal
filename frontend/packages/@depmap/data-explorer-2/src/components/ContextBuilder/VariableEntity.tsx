@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { fetchDimensionLabelsOfDataset } from "../../api";
+import { useDeprecatedDataExplorerApi } from "../../contexts/DeprecatedDataExplorerApiContext";
 import { getDimensionTypeLabel, isPartialSliceId } from "../../utils/misc";
 import PlotConfigSelect from "../PlotConfigSelect";
 import { sliceLabelFromSliceId, makeSliceId } from "./contextBuilderUtils";
@@ -28,6 +28,7 @@ function VariableEntity({
   dispatch,
   shouldShowValidation,
 }: Props) {
+  const api = useDeprecatedDataExplorerApi();
   const ref = useRef<HTMLDivElement | null>(null);
   const [sliceLabels, setSliceLabels] = useState<string[] | null>(null);
 
@@ -46,7 +47,7 @@ function VariableEntity({
     (async () => {
       if (dataset_id) {
         try {
-          const { labels } = await fetchDimensionLabelsOfDataset(
+          const { labels } = await api.fetchDimensionLabelsOfDataset(
             slice_type,
             dataset_id
           );
@@ -63,7 +64,7 @@ function VariableEntity({
     return () => {
       unmounted = true;
     };
-  }, [slice_type, dataset_id]);
+  }, [api, slice_type, dataset_id]);
 
   const options = useMemo(() => {
     const out: {

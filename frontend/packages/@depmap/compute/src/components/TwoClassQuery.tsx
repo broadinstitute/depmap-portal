@@ -1,11 +1,7 @@
 /* eslint-disable */
 import * as React from "react";
 import { errorHandler } from "@depmap/globals";
-import {
-  CellData,
-  CellLineListsDropdown,
-  CustomList,
-} from "@depmap/cell-line-selector";
+import { CellLineListsDropdown, CustomList } from "@depmap/cell-line-selector";
 import { Radio } from "react-bootstrap";
 
 import {
@@ -30,7 +26,6 @@ interface TwoClassQueryState {
   vectorVariableType: VariableType;
   inGroup: CustomList;
   outGroup: CustomList;
-  defaultDataset: Dataset;
 }
 
 export class TwoClassQuery extends React.Component<
@@ -43,20 +38,8 @@ export class TwoClassQuery extends React.Component<
   constructor(props: any) {
     super(props);
 
-    const { customAnalysisVectorDefault } = props;
-
-    const defaultDataset =
-      customAnalysisVectorDefault && customAnalysisVectorDefault.length > 1
-        ? {
-            label: customAnalysisVectorDefault[1].selected.label,
-            value: customAnalysisVectorDefault[1].selected.optionValue,
-          }
-        : undefined;
-
     this.state = {
       useAllOtherLinesForOutGroup: undefined,
-      dataset: defaultDataset?.value, // the selected dataset
-      defaultDataset,
       vectorVariableType: "independent",
       inGroup: {
         name: "",
@@ -69,23 +52,13 @@ export class TwoClassQuery extends React.Component<
     };
   }
 
-  componentDidMount = () => {
-    this.setStatesFromProps(); // reuse this function
-  };
-
-  setStatesFromProps = () => {
-    // doesn't do anything anymore. removed prepopoulate for dataset
-  };
-
   renderSelectDataset = () => {
     const { queryInfo } = this.props;
-    const { defaultDataset } = this.state;
     return (
       <div style={{ flex: 1 }}>
         <DatasetSelect
           label="1. Select a dataset:"
           datasets={queryInfo.datasets}
-          defaultSelectedDataset={defaultDataset}
           onChange={(e) => {
             this.setState({
               dataset: e,
@@ -99,11 +72,9 @@ export class TwoClassQuery extends React.Component<
   renderSelectInGroup = () => {
     return (
       <div>
-        <strong>3. Select {'"in"'} group cell lines</strong>
+        <strong>2. Select {'"in"'} group cell lines</strong>
         <div style={{ marginTop: "10px" }}>
           <CellLineListsDropdown
-            launchCellLineSelectorModal={this.props.launchCellLineSelectorModal}
-            id="in-group-selection-dropdown"
             defaultNone
             onListSelect={(e: CustomList) => {
               this.setState({ inGroup: e });
@@ -117,7 +88,7 @@ export class TwoClassQuery extends React.Component<
   renderSelectOutGroup = () => {
     return (
       <div>
-        <strong>4. Select {'"out"'} group cell lines</strong>
+        <strong>3. Select {'"out"'} group cell lines</strong>
         <div>
           <Radio
             name="subsetOutGroup"
@@ -150,10 +121,6 @@ export class TwoClassQuery extends React.Component<
           {this.state.useAllOtherLinesForOutGroup == false &&
             this.props.queryInfo.cellLineData && (
               <CellLineListsDropdown
-                launchCellLineSelectorModal={
-                  this.props.launchCellLineSelectorModal
-                }
-                id="out-group-selection-dropdown"
                 defaultNone
                 onListSelect={(e: CustomList) => {
                   this.setState({ outGroup: e });
@@ -283,7 +250,7 @@ export class TwoClassQuery extends React.Component<
 interface OverlappingLinesProps {
   inGroup: CustomList;
   outGroup: CustomList;
-  cellLineData: Map<string, CellData>;
+  cellLineData: Map<string, { displayName: string }>;
 }
 
 export class OverlappingLines extends React.Component<

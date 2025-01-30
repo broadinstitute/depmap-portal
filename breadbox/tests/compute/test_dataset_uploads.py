@@ -181,7 +181,6 @@ def test_tabular_uploads(
     assert dataset.upload_date is not None
     assert dataset.md5_hash == hash
     assert len(dataset.dimensions) == 5
-    assert len(dataset.dataset_references) == 1
 
     tabular_attr2 = (
         minimal_db.query(TabularColumn).filter(TabularColumn.given_id == "attr2").one()

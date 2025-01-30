@@ -2,7 +2,7 @@
 import React from "react";
 import { Radio } from "react-bootstrap";
 import { assert } from "@depmap/utils";
-import { Link } from "@depmap/interactive";
+import { Link } from "../models/legacy";
 import { ApiContext } from "@depmap/api";
 import { CellLineListsDropdown, CustomList } from "@depmap/cell-line-selector";
 import {
@@ -52,17 +52,7 @@ export default class AssociationPearsonQuery extends React.Component<
     };
   }
 
-  setStatesFromProps = () => {
-    /**
-      This function deliberately does nothing
-      It is a vestige from when we used to prepopulate the vector select based on x dropdowns
-      CustomAnalysisModal still calls this method, and so the easier change is to just delete the contents here
-      We anticipate a future where neither component will have to prepopulate
-    */
-  };
-
   renderSelectVector = () => {
-    const { customAnalysisVectorDefault } = this.props;
     const updateQueryVectorId = (
       queryVectorId?: string,
       vectorCatalogSelections?: Link[]
@@ -72,10 +62,7 @@ export default class AssociationPearsonQuery extends React.Component<
     return (
       <div style={{ flex: 1 }}>
         <strong>1. Select a data slice:</strong>
-        <CustomOrCatalogVectorSelect
-          onChange={updateQueryVectorId}
-          vectorDefault={customAnalysisVectorDefault}
-        />
+        <CustomOrCatalogVectorSelect onChange={updateQueryVectorId} />
       </div>
     );
   };
@@ -99,7 +86,7 @@ export default class AssociationPearsonQuery extends React.Component<
   };
 
   renderSelectCellLines = () => {
-    const { analysisType, launchCellLineSelectorModal } = this.props;
+    const { analysisType } = this.props;
     const { usingSubsetOfLines } = this.state;
 
     const stepNumber = analysisType === "pearson" ? "3" : "4";
@@ -137,7 +124,6 @@ export default class AssociationPearsonQuery extends React.Component<
           {usingSubsetOfLines === true && (
             <CellLineListsDropdown
               defaultNone
-              launchCellLineSelectorModal={launchCellLineSelectorModal}
               onListSelect={(cellLinelist: CustomList) => {
                 this.setState({
                   selectedList: cellLinelist,

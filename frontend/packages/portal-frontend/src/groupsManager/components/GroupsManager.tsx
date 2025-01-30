@@ -4,7 +4,7 @@ import { ApiContext } from "@depmap/api";
 import { useCallback, useContext, useEffect, useState } from "react";
 import { GroupArgs, GroupEntryArgs } from "@depmap/types";
 
-import { GroupsPage } from "@depmap/groups-manager";
+import GroupsPage from "@depmap/groups-manager";
 
 export default function GroupsManager() {
   const { getApi } = useContext(ApiContext);

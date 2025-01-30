@@ -1,7 +1,10 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { DataExplorerDatasetDescriptor } from "@depmap/types";
 import { capitalize, getDimensionTypeLabel } from "../../utils/misc";
-import { fetchDatasetsByIndexType, MetadataSlices } from "../../api";
+import {
+  DeprecatedDataExplorerApiResponse,
+  useDeprecatedDataExplorerApi,
+} from "../../contexts/DeprecatedDataExplorerApiContext";
 import SliceLabelSelector from "../SliceLabelSelector";
 import PlotConfigSelect from "../PlotConfigSelect";
 import { ContextBuilderReducerAction } from "./contextBuilderReducer";
@@ -59,7 +62,9 @@ const extractDatasetIdFromSlice = (
   return decodeURIComponent(match.replace("slice/", "").slice(0, -1));
 };
 
-const getMetadataLookupTable = (slices: MetadataSlices) => {
+const getMetadataLookupTable = (
+  slices: DeprecatedDataExplorerApiResponse["fetchMetadataSlices"]
+) => {
   const out: Record<string, string> = {};
 
   Object.entries(slices).forEach(([key, value]) => {
@@ -83,6 +88,8 @@ function Variable({
   slice_type,
   shouldShowValidation,
 }: Props) {
+  const api = useDeprecatedDataExplorerApi();
+
   const [datasets, setDatasets] = useState<
     DataExplorerDatasetDescriptor[] | null
   >(null);
@@ -94,7 +101,7 @@ function Variable({
 
     (async () => {
       try {
-        const data = await fetchDatasetsByIndexType();
+        const data = await api.fetchDatasetsByIndexType();
         const fetchedDatasets = data?.[slice_type] || [];
         if (mounted) {
           setDatasets(fetchedDatasets);
@@ -107,14 +114,14 @@ function Variable({
     return () => {
       mounted = false;
     };
-  }, [slice_type]);
+  }, [api, slice_type]);
 
   const continuousDatasetSliceLookupTable = useMemo(
     () =>
       (datasets || []).reduce(
         (memo, dataset) => ({
           ...memo,
-          [makePartialSliceId(dataset.dataset_id)]: dataset.label,
+          [makePartialSliceId(dataset.id)]: dataset.name,
         }),
         {}
       ),
@@ -156,8 +163,7 @@ function Variable({
 
   const varDatasetId = extractDatasetIdFromSlice(value, variables);
 
-  const varSliceType = datasets?.find((d) => d.dataset_id === varDatasetId)
-    ?.slice_type;
+  const varSliceType = datasets?.find((d) => d.id === varDatasetId)?.slice_type;
 
   return (
     <div>

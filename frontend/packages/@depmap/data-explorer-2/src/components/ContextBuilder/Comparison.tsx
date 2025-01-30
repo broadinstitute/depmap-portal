@@ -7,7 +7,7 @@ import React, {
 } from "react";
 import { get_values } from "json-logic-js";
 import { isPartialSliceId } from "../../utils/misc";
-import { fetchDimensionLabels, fetchUniqueValuesOrRange } from "../../api";
+import { useDeprecatedDataExplorerApi } from "../../contexts/DeprecatedDataExplorerApiContext";
 import {
   Expr,
   floor,
@@ -68,6 +68,7 @@ function Comparison({
   slice_type,
   shouldShowValidation,
 }: Props) {
+  const api = useDeprecatedDataExplorerApi();
   const [summary, setSummary] = useState<Summary | null>(null);
   const [, forceRender] = useState<null>();
   const ref = useRef<HTMLDivElement | null>(null);
@@ -135,14 +136,14 @@ function Comparison({
 
         try {
           if (slice_id === "entity_label") {
-            const data = await fetchDimensionLabels(slice_type);
+            const data = await api.fetchDimensionLabels(slice_type);
             const labels = data.labels.sort(collator.compare);
             setSummary({
               value_type: "categorical",
               unique_values: labels,
             });
           } else {
-            const fetchedOptions = await fetchUniqueValuesOrRange(slice_id);
+            const fetchedOptions = await api.fetchUniqueValuesOrRange(slice_id);
             if (mounted) {
               setSummary(fetchedOptions);
             }
@@ -158,7 +159,7 @@ function Comparison({
     return () => {
       mounted = false;
     };
-  }, [slice_type, slice_id]);
+  }, [api, slice_type, slice_id]);
 
   useEffect(() => {
     if (summary && summary.value_type === "continuous") {

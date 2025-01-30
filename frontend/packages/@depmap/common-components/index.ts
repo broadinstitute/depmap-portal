@@ -7,6 +7,10 @@ export { default as getConfirmation } from "./src/utils/getConfirmation";
 export { default as promptForValue } from "./src/utils/promptForValue";
 export { default as WordBreaker } from "./src/components/WordBreaker";
 export { default as Highlighter } from "./src/components/Highlighter";
+export {
+  default as Accordion,
+  OpenCloseSymbol,
+} from "./src/components/Accordion";
 export { Histogram } from "./src/components/Histogram";
 export { HistosliderContainer as Histoslider } from "./src/components/HistoSlider";
 export { Spinner } from "./src/components/Spinner";
@@ -22,7 +26,6 @@ export {
 
 export {
   AssociationsCsvButton,
-  ButtonGroup,
   Checkbox,
   SwapXYButton,
 } from "./src/components/Buttons";

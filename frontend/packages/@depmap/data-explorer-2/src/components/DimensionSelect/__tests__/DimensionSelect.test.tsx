@@ -4,11 +4,11 @@ import * as React from "react";
 import DimensionSelect from "../index";
 import { NULL_MAPPING } from "../useDimensionStateManager/useData";
 import * as api from "../../../api";
-import { DataExplorerApiProvider } from "../../../contexts/DataExplorerApiContext";
+import { DeprecatedDataExplorerApiProvider } from "../../../contexts/DeprecatedDataExplorerApiContext";
 
 test("hides the aggregation select for the special case of correlation", async () => {
   render(
-    <DataExplorerApiProvider
+    <DeprecatedDataExplorerApiProvider
       fetchDatasetsByIndexType={() => Promise.resolve({ depmap_model: [] })}
       fetchDimensionLabelsToDatasetsMapping={() => {
         return Promise.resolve(NULL_MAPPING);
@@ -26,7 +26,7 @@ test("hides the aggregation select for the special case of correlation", async (
           aggregation: "correlation",
         }}
       />
-    </DataExplorerApiProvider>
+    </DeprecatedDataExplorerApiProvider>
   );
 
   await waitFor(() => {

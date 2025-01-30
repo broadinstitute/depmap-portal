@@ -149,6 +149,10 @@ def _check_download_data(downloads):
         # taiga ids that start with 'derived-data:[uuid]' are created within portal and are not in taiga.
         # They don't necessarily have download files
         "derived-data:",
+        # this is a dataset which is getting confused by the "satisfied_by_taiga_id" field
+        # not 100% sure what's changed, but as we're moving to BB, hopefully all of this checking code can
+        # be deleted soon.
+        "rrbs-4b29.7/CCLE_RRBS_TSS1kb_20181022_matrix",
     }
 
     issues = DownloadIssues()
@@ -270,17 +274,12 @@ def _get_canonical_taiga_ids():
     downloads = get_download_list()
     for release in downloads:
         for file in release.all_files:
-            taiga_id = (
-                file.taiga_id
-                if file.original_satisfies_db_taiga_id is None
-                else file.original_satisfies_db_taiga_id
-            )
-
-            if taiga_id is not None:
-                if file.is_retracted:
-                    retracted_taiga_ids.add(taiga_id)
-                else:
-                    taiga_ids.add(taiga_id)
+            for taiga_id in [file.taiga_id, file.original_satisfies_db_taiga_id]:
+                if taiga_id is not None:
+                    if file.is_retracted:
+                        retracted_taiga_ids.add(taiga_id)
+                    else:
+                        taiga_ids.add(taiga_id)
 
     return taiga_ids, retracted_taiga_ids
 

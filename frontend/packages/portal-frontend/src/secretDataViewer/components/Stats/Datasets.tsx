@@ -32,7 +32,7 @@ function isHighestPriorityOfDataType(
       if (
         d.priority !== null &&
         d.priority < best &&
-        (!contextDatasetIds || contextDatasetIds.includes(d.dataset_id))
+        (!contextDatasetIds || contextDatasetIds.includes(d.id))
       ) {
         best = d.priority;
       }
@@ -58,13 +58,15 @@ function Datasets({
             [styles.disabled]:
               (selectedDataType && d.data_type !== selectedDataType) ||
               (selectedEntityType && d.slice_type !== selectedEntityType) ||
-              (contextDatasetIds && !contextDatasetIds.includes(d.dataset_id)),
-            [styles.selected]: d.dataset_id === dataset_id,
+              (contextDatasetIds && !contextDatasetIds.includes(d.id)),
+            [styles.selected]:
+              d.id === dataset_id ||
+              (d.given_id !== null && d.given_id === dataset_id),
           })}
-          key={d.dataset_id}
+          key={d.id}
           value={
             <span>
-              {d.label}{" "}
+              {d.name}{" "}
               <span className={styles.star}>
                 {isHighestPriorityOfDataType(
                   datasets,
@@ -87,7 +89,7 @@ function Datasets({
                     selectedDataType && d.data_type !== selectedDataType,
                 })}
               >
-                {getDataType(datasets, d.dataset_id)}
+                {getDataType(datasets, d.id)}
               </div>
               <br />
               <h3>Feature Type</h3>
@@ -97,12 +99,12 @@ function Datasets({
                     selectedEntityType && d.slice_type !== selectedEntityType,
                 })}
               >
-                {getFeatureType(datasets, d.dataset_id)}
+                {getFeatureType(datasets, d.id)}
               </div>
               <br />
               <h3>Dataset ID</h3>
               <div>
-                <WordBreaker text={d.dataset_id} />
+                <WordBreaker text={d.id} />
               </div>
               <br />
               <h3>Priority</h3>

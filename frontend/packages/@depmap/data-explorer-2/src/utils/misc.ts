@@ -21,10 +21,13 @@ export function getDimensionTypeLabel(dimension_type: string) {
 
   return (
     dimension_type
+      // Explicitly limit the size of input (for no other reason than to shut
+      // up GitHub CodeQL which thinks someone might used this to DDoS us 🤦)
+      .slice(0, 1000)
       // no underscores
       .replace(/_/g, " ")
       // strip out version suffixes
-      .replace(/\s*[vV]?\d+$/, "")
+      .replace(/\s*v?\d+$/i, "")
   );
 }
 
@@ -98,13 +101,50 @@ export const isSampleType = (
   }
 
   if (dimensionTypes) {
-    // ...
+    const dimensionType = dimensionTypes.find(
+      (d) => d.name === dimensionTypeName
+    );
+
+    if (dimensionType) {
+      return dimensionType.axis === "sample";
+    }
   }
 
-  return ["depmap_model", "screen", "model_condition"].includes(
-    dimensionTypeName
-  );
+  return [
+    "depmap_model",
+    "screen",
+    "Screen metadata",
+    "model_condition",
+  ].includes(dimensionTypeName);
 };
+
+export function convertDimensionToSliceId(
+  dimension: Partial<DataExplorerPlotConfigDimension>
+) {
+  if (!isCompleteDimension(dimension)) {
+    return null;
+  }
+
+  if (dimension.axis_type !== "raw_slice") {
+    throw new Error("Cannot convert a context to a slice ID!");
+  }
+
+  if (isSampleType(dimension.slice_type)) {
+    throw new Error(
+      "Cannot convert a sample to a slice ID! Only features are supported."
+    );
+  }
+
+  const expr = dimension.context.expr as { "==": [object, string] };
+  const feature = expr["=="][1];
+
+  return [
+    "slice",
+    urlLibEncode(dimension.dataset_id),
+    urlLibEncode(feature),
+    "label",
+  ].join("/");
+}
 
 export const useDimensionType = (dimensionTypeName: string | null) => {
   const api = useDataExplorerApi();

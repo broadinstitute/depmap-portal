@@ -3,11 +3,11 @@ import {
   DataExplorerDatasetDescriptor,
   DataExplorerPlotConfigDimension,
 } from "@depmap/types";
-import { DataExplorerApiResponse } from "../../../contexts/DataExplorerApiContext";
+import { DeprecatedDataExplorerApiResponse } from "../../../contexts/DeprecatedDataExplorerApiContext";
 
 export type Mode = "entity-only" | "context-only" | "entity-or-context";
 export type PartialDimension = Partial<DataExplorerPlotConfigDimension>;
-export type DimensionLabelsToDatasetsMapping = DataExplorerApiResponse["fetchDimensionLabelsToDatasetsMapping"];
+export type DimensionLabelsToDatasetsMapping = DeprecatedDataExplorerApiResponse["fetchDimensionLabelsToDatasetsMapping"];
 
 type Option = {
   label: string;

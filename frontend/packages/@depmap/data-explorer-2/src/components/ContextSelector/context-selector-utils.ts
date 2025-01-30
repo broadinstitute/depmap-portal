@@ -2,7 +2,8 @@ import omit from "lodash.omit";
 import { DepMap } from "@depmap/globals";
 import { DataExplorerContext } from "@depmap/types";
 import { LocalStorageListStore } from "@depmap/cell-line-selector";
-import { fetchContext, fetchDimensionLabels, persistContext } from "../../api";
+import { useDeprecatedDataExplorerApi } from "../../contexts/DeprecatedDataExplorerApiContext";
+import { fetchContext, persistContext } from "../../utils/context-storage";
 import {
   isContextAll,
   isNegatedContext,
@@ -47,10 +48,13 @@ export const toContextSelectorHash = async (
 type ContextWithoutExpr = { name: string; context_type: string };
 type StoredContexts = Record<string, ContextWithoutExpr>;
 
-const depmapIDsToDisplayNames = async (lines: ReadonlySet<string>) => {
+const depmapIDsToDisplayNames = async (
+  api: ReturnType<typeof useDeprecatedDataExplorerApi>,
+  lines: ReadonlySet<string>
+) => {
   const out: string[] = [];
 
-  const data = await fetchDimensionLabels("depmap_model");
+  const data = await api.fetchDimensionLabels("depmap_model");
   const names = data.aliases.find((alias) => alias.label === "Cell Line Name")!
     .values;
 
@@ -64,11 +68,12 @@ const depmapIDsToDisplayNames = async (lines: ReadonlySet<string>) => {
 };
 
 export const persistLegacyListAsContext = async (
+  api: ReturnType<typeof useDeprecatedDataExplorerApi>,
   listName: string
 ): Promise<[string, DataExplorerContext]> => {
   const store = new LocalStorageListStore();
   const list = store.readList(listName);
-  const displayNames = await depmapIDsToDisplayNames(list.lines);
+  const displayNames = await depmapIDsToDisplayNames(api, list.lines);
 
   const context: DataExplorerContext = {
     name: listName,
@@ -108,6 +113,7 @@ export const persistLegacyListAsContext = async (
 };
 
 export const makeChangeHandler = (
+  api: ReturnType<typeof useDeprecatedDataExplorerApi>,
   value: DataExplorerContext | null,
   context_type: string,
   forceRefresh: () => void,
@@ -164,6 +170,7 @@ export const makeChangeHandler = (
 
       if (isLegacyList) {
         [persistedHash, context] = await persistLegacyListAsContext(
+          api,
           hashToFetch
         );
       } else {

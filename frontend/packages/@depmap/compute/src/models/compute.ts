@@ -1,5 +1,3 @@
-import { CellData } from "@depmap/cell-line-selector";
-import { DropdownState } from "@depmap/interactive";
 import { CeleryTask } from "./celery";
 
 export type AssociationOrPearsonAnalysisType = "association" | "pearson";
@@ -81,10 +79,8 @@ export interface CommonQueryProps {
     onResultsComplete: (response: any) => void
   ) => void;
   queryInfo: {
-    cellLineData: Map<string, CellData>; // map with key = depmapId, value = object with cell line data
+    cellLineData: Map<string, { displayName: string }>; // map with key = depmapId
     datasets: Array<SelectNSOption>;
-    xDropdowns?: Array<DropdownState>;
-    yDropdowns?: Array<DropdownState>;
   };
   onAssociationResultsComplete: (
     numCellLinesUsed: number,
@@ -94,6 +90,5 @@ export interface CommonQueryProps {
     overrideFilterState: string,
     analysisType: AnalysisType
   ) => void;
-  customAnalysisVectorDefault?: Array<DropdownState>; // this is from the query param, and thus should not change
   launchCellLineSelectorModal: () => void;
 }

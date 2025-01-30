@@ -55,7 +55,7 @@ function FeatureTypes({
                       <b>{dataType}</b>
                       <ul>
                         {ds.map((d) => (
-                          <li key={d.dataset_id}>{d.label}</li>
+                          <li key={d.id}>{d.name}</li>
                         ))}
                       </ul>
                     </li>
