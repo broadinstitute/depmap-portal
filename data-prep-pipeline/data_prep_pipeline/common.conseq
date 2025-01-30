@@ -4,7 +4,6 @@ subprocess.check_call(["python", "data_prep_pipeline/preprocess_taiga_ids.py",
                         "data_prep_pipeline/release_inputs.template", 
                         "data_prep_pipeline/release_inputs-DO-NOT-EDIT-ME"])
 """
-let publish_dest = "INVALID"
 
 include "data_prep_pipeline/release_inputs-DO-NOT-EDIT-ME"
 
@@ -13,4 +12,8 @@ include "data_prep_pipeline/cngene_log_2_transformation.conseq"
 include "data_prep_pipeline/filter_portal_compounds.conseq"
 include "data_prep_pipeline/predictability.conseq"
 
-include "data_prep_pipeline/publish.conseq"
+# include "data_prep_pipeline/publish.conseq"
+
+if "config.get('is_dev', 'True') != 'True'":
+  include "publish.conseq"
+endif

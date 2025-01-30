@@ -103,14 +103,14 @@ fi
 
 if [ "$MANUALLY_RUN_CONSEQ" = "true" ]; then
   echo "executing: conseq $CONSEQ_ARGS"
-  run_via_container "conseq $CONSEQ_ARGS"
+  run_via_container "conseq -D is_dev=False $CONSEQ_ARGS"
 else
   # Clean up unused directories from past runs
   run_via_container "conseq gc"
 
   # Kick off new run
   set +e
-  run_via_container "conseq run --addlabel commitsha=${COMMIT_SHA} --no-reattach --maxfail 20 --remove-unknown-artifacts -D sparkles_path=/install/sparkles/bin/sparkles $CONSEQ_FILE $CONSEQ_ARGS"
+  run_via_container "conseq run --addlabel commitsha=${COMMIT_SHA} --no-reattach --maxfail 20 --remove-unknown-artifacts -D sparkles_path=/install/sparkles/bin/sparkles -D is_dev=False $CONSEQ_FILE $CONSEQ_ARGS"
   RUN_EXIT_STATUS=$?
   set -e
   
