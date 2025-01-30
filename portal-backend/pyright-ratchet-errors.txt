@@ -292,7 +292,6 @@ mock_gcs.py: error: Cannot assign member "_content" for type "MockBlob*"
 mock_gcs.py: error: Expression of type "None" cannot be assigned to parameter of type "MockClient"
 mock_gcs.py: error: Expression of type "None" cannot be assigned to parameter of type "str"
 models.py: error: "child_lineage" is possibly unbound (reportPossiblyUnboundVariable)
-models.py: error: "data_type" is not a known member of "None" (reportOptionalMemberAccess)
 models.py: error: "display_name" is not a known member of "None" (reportOptionalMemberAccess)
 models.py: error: "entity_type" is not a known member of "None" (reportOptionalMemberAccess)
 models.py: error: "group" is not a known member of "None" (reportOptionalMemberAccess)

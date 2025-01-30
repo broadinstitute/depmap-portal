@@ -17,23 +17,60 @@ from depmap.partials.matrix.models import Matrix, RowMatrixIndex
 
 log = logging.getLogger(__name__)
 
-def get_compound_labels_for_compound_experiment_dataset(dataset_name: str) -> dict[str, str]:
+def _get_deduplicated_experiment_compound_mapping(dataset_id: str) -> list[tuple[CompoundExperiment, Compound]]:
+    # TODO: write a test for this
     """ 
-    This method loads a mapping between the old index (compound experiment label) and 
-    method is used to re-index datasets which are indexed by compound experiment. 
+    Returns a 1-1 mapping between CompoundExperiments and Compounds within the given dataset. 
+    All compound experiments not in the mapping should be dropped. 
     """
-    matrix_id = interactive_utils.get_matrix_id(dataset_name)
+    matrix_id = interactive_utils.get_matrix_id(dataset_id)
     comp_exp_alias = sa.orm.aliased(CompoundExperiment)
     compound_alias = sa.orm.aliased(Compound)
-    labels_by_indeces = (
+    comp_exp_info = (
         Matrix.query.filter_by(matrix_id=matrix_id)
         .join(RowMatrixIndex)
         .join(comp_exp_alias)
         .join(compound_alias, compound_alias.entity_id == comp_exp_alias.compound_id)
-        .with_entities(comp_exp_alias.label, compound_alias.label)
+        .with_entities(comp_exp_alias, compound_alias)
         .all()
     )
-    return {experiment_id: compound_label for experiment_id, compound_label in labels_by_indeces}
+    # Organize values by compound ID
+    experiments_by_compound_id: dict[str, list] = {}
+    compounds_by_compound_id: dict[str, Compound] = {}
+    for comp_exp, compound in comp_exp_info:
+        compound_id = compound.entity_id
+        if compound_id in experiments_by_compound_id:
+            # Add to the existing list of experiments
+            experiments_by_compound_id[compound_id].append(comp_exp)
+        else:
+            # Add records to both dictionaries
+            experiments_by_compound_id[compound_id] = [comp_exp]
+            compounds_by_compound_id[compound_id] = compound
+
+    # Remove duplicate compound experiments, re-index by compound experiment
+    result = []
+    for compound_id, compound in compounds_by_compound_id.items():
+        experiments = experiments_by_compound_id[compound_id]
+        selected_experiment = sorted(experiments, key=lambda e: e.entity_id)[0]
+        result.append((selected_experiment, compound))
+    return result
+
+
+def get_compound_labels_by_experiment_label(dataset_id: str) -> dict[str, str]:
+    result = {}
+    experiment_compound_pairs = _get_deduplicated_experiment_compound_mapping(dataset_id)
+    for experiment, compound in experiment_compound_pairs:
+        result[experiment.label] = compound.label
+    return result
+
+
+def get_compound_ids_by_experiment_id(dataset_id: str) -> dict[int, int]:
+    result = {}
+    experiment_compound_pairs = _get_deduplicated_experiment_compound_mapping(dataset_id)
+    for experiment, compound in experiment_compound_pairs:
+        result[experiment.entity_id] = compound.entity_id
+    return result
+
 
 def get_subsetted_df_by_compound_labels(dataset_id: str) -> pd.DataFrame:
     """
@@ -42,14 +79,9 @@ def get_subsetted_df_by_compound_labels(dataset_id: str) -> pd.DataFrame:
     """
     feature_type = interactive_utils.get_entity_type(dataset_id)
     assert feature_type == "compound_experiment", f"Dataset '{dataset_id}' is indexed by '{feature_type}', cannot be re-indexed by compound label"
-    compound_labels_by_experiment = get_compound_labels_for_compound_experiment_dataset(dataset_id)
+    compound_labels_by_experiment = get_compound_labels_by_experiment_label(dataset_id)
     compound_experiment_df = interactive_utils.get_subsetted_df_by_labels(dataset_id, None, None)
-    compound_df = compound_experiment_df.rename(index=compound_labels_by_experiment)
-
-    # Check for duplicate compound labels (which is possible since there are multiple CEs per compound)
-    if compound_df.index.duplicated().any():
-        log.warning(f"Found duplicate compounds in the dataset {dataset_id}. Keeping first occurance, dropping others.")
-        compound_df = compound_df.reset_index().drop_duplicates(subset="index").set_index("index") # pyright: ignore
+    compound_df = compound_experiment_df.loc[list(compound_labels_by_experiment.keys()),:].rename(index=compound_labels_by_experiment)
     return compound_df
 
 
