@@ -138,6 +138,7 @@ const ContextExplorerTabs = ({
         </TabPanel>
         <TabPanel className={styles.TabPanel}>
           <ContextAnalysis
+            selectedContextNode={selectedContextNode}
             selectedContextNameInfo={selectedContextNameInfo}
             topContextNameInfo={topContextNameInfo}
             treeType={treeType}
@@ -149,6 +150,7 @@ const ContextExplorerTabs = ({
         <TabPanel className={styles.TabPanel}>
           {" "}
           <ContextAnalysis
+            selectedContextNode={selectedContextNode}
             selectedContextNameInfo={selectedContextNameInfo}
             topContextNameInfo={topContextNameInfo}
             treeType={treeType}
@@ -160,6 +162,7 @@ const ContextExplorerTabs = ({
         <TabPanel className={styles.TabPanel}>
           {" "}
           <ContextAnalysis
+            selectedContextNode={selectedContextNode}
             selectedContextNameInfo={selectedContextNameInfo}
             topContextNameInfo={topContextNameInfo}
             treeType={treeType}

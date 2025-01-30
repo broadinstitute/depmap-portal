@@ -13,6 +13,7 @@ from depmap.context_explorer.utils import (
     get_entity_id_from_entity_full_label,
     get_box_plot_card_data,
     get_branch_subtype_codes_organized_by_code,
+    get_path_to_node,
 )
 from depmap.tda.views import convert_series_to_json_safe_list
 from flask_restplus import Namespace, Resource
@@ -162,17 +163,7 @@ class ContextPath(
     def get(self):
         selected_code = request.args.get("selected_code")
 
-        node_obj = SubtypeNode.get_by_code(selected_code)
-
-        cols = [
-            node_obj.level_0,
-            node_obj.level_1,
-            node_obj.level_2,
-            node_obj.level_3,
-            node_obj.level_4,
-            node_obj.level_5,
-        ]
-        path = [col for col in cols if col != None]
+        path = get_path_to_node(selected_code)
 
         return path
 
@@ -606,7 +597,7 @@ class ContextBoxPlotData(Resource):
         sig_contexts_by_level_0 = sig_contexts_agg.set_index("level_0").to_dict()[
             "subtype_code"
         ]
-        breakpoint()
+        sig_contexts_by_level_0 = {"BONE": ["BONE", "ES", "CHDM", "CHS"]}
 
         branch_contexts = get_branch_subtype_codes_organized_by_code(
             contexts=sig_contexts_by_level_0, level_0=level_0
@@ -646,7 +637,7 @@ class ContextBoxPlotData(Resource):
                     )
                     if len(context_model_ids) >= 5:
                         box_plot = get_box_plot_data_for_context(
-                            label=level_0,
+                            subtype_code=level_0,
                             entity_full_row_of_values=entity_full_row_of_values,
                             model_ids=context_model_ids,
                         )

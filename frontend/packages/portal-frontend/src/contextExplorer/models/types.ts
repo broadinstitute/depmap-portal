@@ -185,10 +185,10 @@ export interface BoxData {
 
 export interface ContextPlotBoxData {
   significant_selection: { [key: string]: BoxData };
-  insignifcant_selection: { [key: string]: BoxData };
+  insignifcant_selection: BoxData;
   significant_other: { [key: string]: BoxData };
-  insignificant_heme_data: { [key: string]: BoxData };
-  insignificant_solid_data: { [key: string]: BoxData };
+  insignificant_heme_data: BoxData;
+  insignificant_solid_data: BoxData;
   drug_dotted_line: number;
   entity_label: string;
 }

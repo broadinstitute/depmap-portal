@@ -8,6 +8,7 @@ export interface BoxPlotInfo {
   xVals: number[];
   color: { r: number; b: number; g: number };
   lineColor: string;
+  pointLineColor?: string;
 }
 
 export interface BoxPlotProps {
@@ -75,6 +76,10 @@ function BoxPlot({
         fillcolor: `RGBA(${box.color.r.toString()}, ${box.color.g.toString()}, ${box.color.b.toString()}, 0.4)`,
         marker: {
           color: `RGBA(${box.color.r.toString()}, ${box.color.g.toString()}, ${box.color.b.toString()}, 1)`,
+          line: {
+            color: `RGBA(0, 0, 0, 0.3)`,
+            width: 1,
+          },
         },
         line: {
           color: "#000000",
@@ -87,6 +92,7 @@ function BoxPlot({
         hoveron: "points",
       };
     });
+    console.log(data);
 
     const layout: Partial<Plotly.Layout> = {
       margin: { t: topMargin, r: 80, b: bottomMargin, l: 130 },

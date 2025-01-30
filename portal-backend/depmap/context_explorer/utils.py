@@ -1,4 +1,5 @@
-from typing import Dict, List, Literal
+from sysconfig import get_path
+from typing import Dict, List, Literal, Optional
 from depmap.cell_line.models_new import DepmapModel
 import pandas as pd
 import numpy as np
@@ -45,7 +46,7 @@ def get_box_plot_card_data(
             # something is wrong with our pipeline script.
             if len(context_model_ids) >= 5:
                 box_plot = get_box_plot_data_for_context(
-                    label=child,
+                    subtype_code=child,
                     entity_full_row_of_values=entity_full_row_of_values,
                     model_ids=context_model_ids,
                 )
@@ -56,6 +57,7 @@ def get_box_plot_card_data(
     if len(other_models) >= 5:
         insignificant_box_plot_data = get_box_plot_data_for_context(
             label=f"Other {level_0_code}",
+            subtype_code=level_0_code,
             entity_full_row_of_values=entity_full_row_of_values,
             model_ids=other_models,
         )
@@ -109,8 +111,27 @@ def get_box_plot_data_for_other_category(
     }
 
 
+def get_path_to_node(selected_code: str):
+    node_obj = SubtypeNode.get_by_code(selected_code)
+
+    cols = [
+        node_obj.level_0,
+        node_obj.level_1,
+        node_obj.level_2,
+        node_obj.level_3,
+        node_obj.level_4,
+        node_obj.level_5,
+    ]
+    path = [col for col in cols if col != None]
+
+    return path
+
+
 def get_box_plot_data_for_context(
-    label: str, entity_full_row_of_values, model_ids: List[str],
+    subtype_code: str,
+    entity_full_row_of_values,
+    model_ids: List[str],
+    label: Optional[str] = None,
 ):
     context_values = entity_full_row_of_values[
         entity_full_row_of_values.index.isin(model_ids)
@@ -126,8 +147,14 @@ def get_box_plot_data_for_context(
         index=display_names_dict
     )
 
+    node = SubtypeNode.get_by_code(subtype_code)
+    path = get_path_to_node(node.subtype_code)
+    delim = "/"
+
+    plotLabel = delim.join(path) if not label else label
+
     box_plot_data = {
-        "label": label,
+        "label": plotLabel,
         "data": context_values_index_by_display_name.tolist(),
         "cell_line_display_names": context_values_index_by_display_name.index.tolist(),
     }

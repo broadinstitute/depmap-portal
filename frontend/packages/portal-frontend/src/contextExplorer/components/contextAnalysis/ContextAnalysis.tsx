@@ -58,7 +58,7 @@ import ApplyFilters from "./ApplyFilters";
 
 interface ContextAnalysisProps {
   selectedContextNameInfo: ContextNameInfo;
-  selectedContextNode: ContextNode;
+  selectedContextNode: ContextNode | null;
   topContextNameInfo: ContextNameInfo;
   treeType: TreeType;
   entityType: string;
@@ -1004,7 +1004,7 @@ function ContextAnalysis({
                     (!entityDetailPlotElement || isLoadingBoxplot) && (
                       <PlotSpinner />
                     )}
-                  {!boxplotError && boxPlotData && (
+                  {!boxplotError && boxPlotData && selectedContextNode && (
                     <EntityDetailBoxPlot
                       handleSetPlotElement={(
                         element: ExtendedPlotType | null
@@ -1018,8 +1018,6 @@ function ContextAnalysis({
                       boxPlotData={boxPlotData}
                       entityType={entityType}
                       mainPlot={entityDetailPlotElement}
-                      showOtherContexts={showOtherContexts}
-                      handleShowOtherContexts={handleShowOtherContexts}
                     />
                   )}
                 </div>

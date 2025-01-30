@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import { Checkbox } from "react-bootstrap";
 import {
   ContextNameInfo,
   ContextNode,
@@ -19,8 +18,6 @@ interface Props {
   entityType: string;
   handleSetPlotElement: (element: any) => void;
   mainPlot: ExtendedPlotType | null;
-  showOtherContexts: boolean;
-  handleShowOtherContexts: () => void;
 }
 
 const EntityBoxColorList = [
@@ -38,18 +35,20 @@ const EntityBoxColorList = [
   { r: 0, g: 191, b: 255 },
 ];
 
+const InsignificantColor = { r: 255, g: 255, b: 255 };
+
 function EntityDetailBoxPlot({
-  selectedContextNode,
   topContextNameInfo,
   boxPlotData,
   entityType,
   handleSetPlotElement,
   mainPlot,
-  showOtherContexts,
-  handleShowOtherContexts,
 }: Props) {
-  const [boxData, setBoxData] = useState<BoxPlotInfo[] | null>(null);
-  const [otherBoxData, setOtherBoxData] = useState<BoxPlotInfo[] | null>(null);
+  const [selectedContextBoxData, setSelectedContextBoxData] = useState<
+    BoxPlotInfo[] | null
+  >(null);
+  const [otherBoxData, setOtherBoxData] = useState<BoxPlotInfo[]>([]);
+
   const [xAxisRange, setXAxisRange] = useState<any>(null);
 
   const X_AXIS_TITLE =
@@ -77,51 +76,91 @@ function EntityDetailBoxPlot({
         }
       );
 
+      const insigPlotData = boxPlotData.insignifcant_selection;
+      if (insigPlotData.data.length > 0) {
+        plotInfo.push({
+          name: insigPlotData.label,
+          hoverLabels: insigPlotData.cell_line_display_names,
+          xVals: insigPlotData.data,
+          color: InsignificantColor,
+          lineColor: "#000000",
+          pointLineColor: "#000000",
+        });
+      }
+
+      const hemePlotData = boxPlotData.insignificant_heme_data;
+      const otherData = [];
+      if (hemePlotData.data.length > 0) {
+        otherData.push({
+          name: hemePlotData.label,
+          hoverLabels: hemePlotData.cell_line_display_names,
+          xVals: hemePlotData.data,
+          color: InsignificantColor,
+          lineColor: "#000000",
+          pointLineColor: "#000000",
+        });
+      }
+
+      const solidPlotData = boxPlotData.insignificant_solid_data;
+      if (solidPlotData.data.length > 0) {
+        otherData.push({
+          name: solidPlotData.label,
+          hoverLabels: solidPlotData.cell_line_display_names,
+          xVals: solidPlotData.data,
+          color: InsignificantColor,
+          lineColor: "#000000",
+          pointLineColor: "#000000",
+        });
+      }
+
+      setOtherBoxData(otherData);
+
       if (plotInfo.length > 0) {
         plotInfo.reverse();
-        setBoxData(plotInfo);
-        // delete the line below this - this is temporary to stop eslint error
-        setOtherBoxData(plotInfo);
+        setSelectedContextBoxData(plotInfo);
       }
     }
   }, [boxPlotData, topContextNameInfo]);
 
   return (
-    <div>
-      {boxData && (
-        <BoxPlot
-          plotName="main"
-          boxData={boxData}
-          onLoad={handleSetPlotElement}
-          setXAxisRange={setXAxisRange}
-          xAxisRange={xAxisRange}
-          plotHeight={boxData.length * 95 + 80}
-          xAxisTitle={X_AXIS_TITLE}
-          bottomMargin={80}
-          topMargin={100}
-          dottedLinePosition={
-            entityType === "gene" ? -1 : drugDottedLine || -1.74
-          }
-        />
-      )}
-      {otherBoxData && showOtherContexts && mainPlot && (
-        <BoxPlot
-          plotName="other"
-          boxData={otherBoxData}
-          plotHeight={otherBoxData.length * 95 + 80}
-          xAxisRange={xAxisRange}
-          xAxisTitle={
-            entityType === "gene"
-              ? GENE_BOX_PLOT_X_AXIS_TITLE
-              : COMPOUND_BOX_PLOT_X_AXIS_TITLE
-          }
-          bottomMargin={80}
-          dottedLinePosition={
-            entityType === "gene" ? -1 : drugDottedLine || -1.74
-          }
-        />
-      )}
-    </div>
+    <>
+      <div>
+        {selectedContextBoxData && (
+          <BoxPlot
+            plotName="main"
+            boxData={selectedContextBoxData}
+            onLoad={handleSetPlotElement}
+            setXAxisRange={setXAxisRange}
+            xAxisRange={xAxisRange}
+            plotHeight={selectedContextBoxData.length * 90 + 80}
+            xAxisTitle={X_AXIS_TITLE}
+            bottomMargin={80}
+            topMargin={100}
+            dottedLinePosition={
+              entityType === "gene" ? -1 : drugDottedLine || -1.74
+            }
+          />
+        )}
+      </div>
+      <div style={{ marginTop: "100px" }}>
+        {otherBoxData.length > 0 && (
+          <BoxPlot
+            plotName="other solid and heme"
+            boxData={otherBoxData}
+            onLoad={handleSetPlotElement}
+            setXAxisRange={setXAxisRange}
+            xAxisRange={xAxisRange}
+            plotHeight={2 * 105 + 80}
+            xAxisTitle={X_AXIS_TITLE}
+            bottomMargin={80}
+            topMargin={100}
+            dottedLinePosition={
+              entityType === "gene" ? -1 : drugDottedLine || -1.74
+            }
+          />
+        )}
+      </div>
+    </>
   );
 }
 
