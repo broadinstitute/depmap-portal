@@ -1,0 +1,97 @@
+# Target Matrices
+add-if-missing {
+    "type": "target_matrix",
+    "label": "crispr_gene_effect",
+    "source_dataset_id": "internal-24q2-3719.82/CRISPRGeneEffect"
+}
+
+add-if-missing {
+    "type": "target_matrix",
+    "label": "rnai",
+    "source_dataset_id": "predictability-legacy-datasets-8c54.14/RNAiDep"
+}
+
+# Feature Matrices
+add-if-missing {
+    "type": "feature",
+    "label": "lineage",
+    "category": "lineage",
+    "source_dataset_id": "predictability-76d5.94/PredictabilityLineageTransformed"
+}
+
+add-if-missing {
+    "type": "feature",
+    "label": "crispr_confounder",
+    "category": "confounder",
+    "source_dataset_id": "predictability-76d5.111/PredictabilityCRISPRConfoundersTransformed"
+}
+
+add-if-missing {
+    "type": "feature",
+    "label": "rnai_confounder",
+    "category": "confounder",
+    "source_dataset_id": "predictability-legacy-datasets-8c54.14/RNAiConfounders"
+}
+
+add-if-missing {
+    "type": "feature",
+    "label": "driver_events",
+    "category": "driverevents",
+    "source_dataset_id": "predictability-76d5.99/DriverEvents"
+}
+
+add-if-missing {
+    "type": "feature",
+    "label": "armlevel_cna",
+    "category": "armlevel",
+    "source_dataset_id": "internal-24q2-3719.82/OmicsArmLevelCNA"
+}
+
+add-if-missing {
+    "type": "feature",
+    "label": "cytoband_cn",
+    "category": "cytoband",
+    "source_dataset_id": "predictability-76d5.99/PredictabilityGenticDerangementTransformed"
+}
+
+add-if-missing {
+    "type": "feature",
+    "label": "genetic_signature",
+    "category": "geneticsignature",
+    "source_dataset_id": "internal-24q2-3719.82/OmicsSignatures"
+}
+
+add-if-missing {
+    "type": "feature",
+    "label": "mutations_hotspot",
+    "category": "gene",
+    "source_dataset_id": "internal-24q2-3719.82/OmicsSomaticMutationsMatrixHotspot"
+}
+
+add-if-missing {
+    "type": "feature",
+    "label": "mutations_damaging",
+    "category": "gene",
+    "source_dataset_id": "internal-24q2-3719.82/OmicsSomaticMutationsMatrixDamaging"
+}
+
+add-if-missing {
+    "type": "feature",
+    "label": "gene_cn",
+    "category": "gene",
+    "source_dataset_id": "internal-24q2-3719.82/OmicsCNGene"
+}
+
+add-if-missing {
+    "type": "feature",
+    "label": "loh",
+    "category": "gene",
+    "source_dataset_id": "internal-24q2-3719.82/OmicsLoH"
+}
+
+add-if-missing {
+    "type": "feature",
+    "label": "rnaseq",
+    "category": "gene",
+    "source_dataset_id": "internal-24q2-3719.82/OmicsExpressionProteinCodingGenesTPMLogp1"
+}
