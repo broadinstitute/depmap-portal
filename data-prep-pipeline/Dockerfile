@@ -71,5 +71,5 @@ RUN curl -sSL https://install.python-poetry.org | python3 - && \
     ln -s /opt/poetry/bin/poetry /usr/local/bin/poetry
 
 WORKDIR /work/data-prep-pipeline
-COPY pyproject.toml ./
-RUN poetry install 
+COPY pyproject.toml poetry.lock ./
+RUN poetry install

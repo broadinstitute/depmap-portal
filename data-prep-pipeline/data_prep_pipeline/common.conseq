@@ -15,5 +15,5 @@ include "data_prep_pipeline/predictability.conseq"
 # include "data_prep_pipeline/publish.conseq"
 
 if "config.get('is_dev', 'True') != 'True'":
-  include "publish.conseq"
+  include "data_prep_pipeline/publish.conseq"
 endif
