@@ -2577,6 +2577,50 @@ class TestPost:
         """
         assert response.json() == {"Id1": 2, "Id3": 3}
 
+    def test_bad_matrix_dataset_categorical_aggregation(
+        self,
+        client: TestClient,
+        minimal_db: SessionWithUser,
+        settings,
+        mock_celery,
+        public_group,
+        tmpdir,
+    ):
+        data_path = str(tmpdir.join("dataset.csv"))
+        pd.DataFrame(
+            {"A": ["Yes", "No", "Yes"], "B": ["No", pd.NA, "Yes"]},
+            index=["Id1", "Id2", "Id3"],
+        ).to_csv(data_path)
+
+        file_ids, expected_md5 = upload_and_get_file_ids(client, filename=data_path)
+
+        admin_headers = {"X-Forwarded-Email": settings.admin_users[0]}
+        matrix_dataset = client.post(
+            "/dataset-v2/",
+            json={
+                "format": "matrix",
+                "name": "Test Aggregation Categorical Dataset",
+                "units": "a unit",
+                "feature_type": "generic",
+                "sample_type": "depmap_model",
+                "data_type": "User upload",
+                "file_ids": file_ids,
+                "dataset_md5": expected_md5,
+                "is_transient": False,
+                "group_id": public_group.id,
+                "value_type": "categorical",
+                "allowed_values": ["Yes", "No"],
+            },
+            headers=admin_headers,
+        )
+        assert_status_ok(matrix_dataset)
+
+        response = client.post(
+            f"/datasets/matrix/{matrix_dataset.json()['result']['datasetId']}",
+            json={"aggregate": {"aggregate_by": "samples", "aggregation": "mean"}},
+        )
+        assert_status_not_ok(response)
+
     def test_get_tabular_dataset_data(
         self,
         client: TestClient,

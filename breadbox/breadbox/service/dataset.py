@@ -147,29 +147,37 @@ def get_subsetted_matrix_dataset_df(
         df = df.rename(index=label_by_id)
 
     if dimensions_info.aggregate:
-        aggregate_by, aggregation = (
-            dimensions_info.aggregate.aggregate_by,
-            dimensions_info.aggregate.aggregation,
-        )
-
         if dataset.value_type != ValueType.continuous:
             raise UserError(
                 f"The 'value_type' of {dataset.name} is {dataset.value_type}. Dataset must have continuous values! "
             )
 
-        enum_to_agg_method = {
-            AggregationMethod.mean: np.mean,
-            AggregationMethod.median: np.median,
-            AggregationMethod.per25: lambda x: np.nanpercentile(x, q=0.25),
-            AggregationMethod.per75: lambda x: np.nanpercentile(x, q=0.75),
-        }
-
-        # Replace None with numpy nan so np.nanpercentile works
-        df = df.replace({pd.NA: np.nan})
-
-        df = df.agg(
-            enum_to_agg_method[aggregation], axis=0 if aggregate_by == "samples" else 1
+        df = _aggregate_matrix_df(
+            df,
+            dimensions_info.aggregate.aggregate_by,
+            dimensions_info.aggregate.aggregation,
         )
+    return df
+
+
+def _aggregate_matrix_df(
+    df: pd.DataFrame,
+    aggregate_by: Literal["features", "samples"],
+    aggregation: AggregationMethod,
+):
+    enum_to_agg_method = {
+        AggregationMethod.mean: np.mean,
+        AggregationMethod.median: np.median,
+        AggregationMethod.per25: lambda x: np.nanpercentile(x, q=0.25),
+        AggregationMethod.per75: lambda x: np.nanpercentile(x, q=0.75),
+    }
+
+    # Replace None with numpy nan so np.nanpercentile works
+    df = df.replace({pd.NA: np.nan})
+
+    df = df.agg(
+        enum_to_agg_method[aggregation], axis=0 if aggregate_by == "samples" else 1
+    )
     return df
 
 
