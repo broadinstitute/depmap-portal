@@ -1,11 +1,9 @@
-import math
-from typing import Dict, List, Literal, Optional
-from depmap.cell_line.models_new import DepmapModel, LineageType
+from typing import Dict, List, Literal
+from depmap.cell_line.models_new import DepmapModel
 import pandas as pd
 import numpy as np
 
 from depmap import data_access
-from depmap.context.models import Context
 from depmap.context.models_new import SubtypeNode, SubtypeContext
 from depmap.dataset.models import Dataset, DependencyDataset
 from depmap.compound.models import (
@@ -29,6 +27,45 @@ def get_full_row_of_values_and_depmap_ids(dataset_name: str, label: str) -> pd.S
     return full_row_of_values
 
 
+def get_box_plot_card_data(
+    level_0_code: str,
+    all_sig_context_codes: List[str],
+    model_ids_by_code: Dict[str, List[str]],
+    entity_full_row_of_values: pd.Series,
+):
+    significant_box_plot_data = {}
+    other_models = []
+
+    child_codes = model_ids_by_code.keys()
+    for child in child_codes:
+        if child in all_sig_context_codes:
+            context_model_ids = model_ids_by_code[child]
+
+            # This rule should be enforced in get_context_analysis.py. If this assertion gets hit,
+            # something is wrong with our pipeline script.
+            if len(context_model_ids) >= 5:
+                box_plot = get_box_plot_data_for_context(
+                    label=child,
+                    entity_full_row_of_values=entity_full_row_of_values,
+                    model_ids=context_model_ids,
+                )
+                significant_box_plot_data[child] = box_plot
+        else:
+            other_models.extend(context_model_ids)
+
+    if len(other_models) >= 5:
+        insignificant_box_plot_data = get_box_plot_data_for_context(
+            label=f"Other {level_0_code}",
+            entity_full_row_of_values=entity_full_row_of_values,
+            model_ids=other_models,
+        )
+
+    return {
+        "significant": significant_box_plot_data,
+        "insignificant": insignificant_box_plot_data,
+    }
+
+
 def get_box_plot_data_for_other_category(
     category: Literal["heme", "solid"],
     significant_subtype_codes: List[str],
@@ -46,7 +83,7 @@ def get_box_plot_data_for_other_category(
 
     if heme_model_id_series.empty:
         return {
-            "label": "Heme" if category == "heme" else "Solid",
+            "label": "Other Heme" if category == "heme" else "Other Solid",
             "data": [],
             "cell_line_display_names": [],
         }
@@ -66,14 +103,14 @@ def get_box_plot_data_for_other_category(
     context_values_index_by_display_name = heme_values.rename(index=display_names_dict)
 
     return {
-        "label": "Heme" if category == "heme" else "Solid",
+        "label": "Other Heme" if category == "heme" else "Other Solid",
         "data": context_values_index_by_display_name.tolist(),
         "cell_line_display_names": context_values_index_by_display_name.index.tolist(),
     }
 
 
 def get_box_plot_data_for_context(
-    subtype_code: str, entity_full_row_of_values, model_ids: List[str],
+    label: str, entity_full_row_of_values, model_ids: List[str],
 ):
     context_values = entity_full_row_of_values[
         entity_full_row_of_values.index.isin(model_ids)
@@ -89,10 +126,8 @@ def get_box_plot_data_for_context(
         index=display_names_dict
     )
 
-    node = SubtypeNode.get_by_code(subtype_code)
-
     box_plot_data = {
-        "label": node.node_name,
+        "label": label,
         "data": context_values_index_by_display_name.tolist(),
         "cell_line_display_names": context_values_index_by_display_name.index.tolist(),
     }
@@ -100,16 +135,18 @@ def get_box_plot_data_for_context(
     return box_plot_data
 
 
-def has_gene_dep_data(cirspr_depmap_ids: List[str], context_depmap_ids: List[str]):
-    intersection = list(set(context_depmap_ids).intersection(set(cirspr_depmap_ids)))
+def get_branch_subtype_codes_organized_by_code(
+    contexts: Dict[str, List[str]], level_0: str
+):
+    branch_contexts = {}
+    for level_0 in contexts.keys():
+        branch = SubtypeContext.get_model_ids_for_node_branch(
+            subtype_codes=contexts[level_0], level_0_subtype_code=level_0
+        )
 
-    return len(intersection) >= 5
+        branch_contexts[level_0] = branch
 
-
-def has_drug_data(drug_depmap_ids: List[str], context_depmap_ids: List[str]):
-    intersection = list(set(context_depmap_ids).intersection(set(drug_depmap_ids)))
-
-    return len(intersection) >= 5
+    return branch_contexts
 
 
 def get_curve_params_for_model_ids(

@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 import sqlalchemy
-from sqlalchemy import and_, func, desc
+from sqlalchemy import and_, or_, func, desc
 import enum
 from typing import List, Literal, Optional, Tuple
 import pandas as pd
@@ -8,7 +8,7 @@ from depmap.gene.models import Gene
 from depmap.compound.models import CompoundExperiment
 from depmap.enums import DependencyEnum
 from depmap.dataset.models import DependencyDataset
-from depmap.context.models_new import SubtypeNode, SubtypeContext
+from depmap.context.models_new import SubtypeNode
 from depmap.database import (
     Column,
     Float,
@@ -266,10 +266,10 @@ class ContextAnalysis(Model):
         return context_analysis_df
 
     @staticmethod
-    def get_other_context_dependencies(
-        subtype_code: str,
+    def get_context_dependencies(
+        level_0_code: str,
+        do_get_other_branch_0s: bool,
         tree_type: str,
-        out_group: str,
         entity_id: int,
         dataset_name: str,
         entity_type: Literal["gene", "compound"],
@@ -279,15 +279,31 @@ class ContextAnalysis(Model):
     ):
         assert dataset_name in DependencyEnum.values()
 
+        subtype_node_filter = (
+            or_(
+                and_(
+                    SubtypeNode.tree_type == tree_type,
+                    SubtypeNode.level_0 == level_0_code,
+                ),
+                and_(
+                    SubtypeNode.tree_type == tree_type,
+                    SubtypeNode.level_0 != level_0_code,
+                    SubtypeNode.level_1 == None,
+                ),
+            )
+            if do_get_other_branch_0s
+            else and_(
+                SubtypeNode.tree_type == tree_type, SubtypeNode.level_0 == level_0_code,
+            )
+        )
+
         dependency_dataset_id = DependencyDataset.get_dataset_by_name(
             dataset_name
         ).dependency_dataset_id
         if entity_type == "gene":
-            return (
+            analyses = (
                 ContextAnalysis.query.filter(
                     and_(
-                        ContextAnalysis.subtype_code != subtype_code,
-                        ContextAnalysis.out_group == out_group,
                         ContextAnalysis.dependency_dataset_id == dependency_dataset_id,
                         ContextAnalysis.entity_id == entity_id,
                         ContextAnalysis.t_qval >= fdr[0],
@@ -303,18 +319,31 @@ class ContextAnalysis(Model):
                     SubtypeNode,
                     SubtypeNode.subtype_code == ContextAnalysis.subtype_code,
                 )
-                .filter(SubtypeNode.tree_type == tree_type)
-                # Need the node name AND code, because node_names are not always unique, but codes are
-                .with_entities(SubtypeNode.node_name, SubtypeNode.subtype_code,)
+                .filter(
+                    or_(
+                        and_(
+                            SubtypeNode.tree_type == tree_type,
+                            SubtypeNode.level_0 == level_0_code,
+                        ),
+                        and_(
+                            SubtypeNode.tree_type == tree_type,
+                            SubtypeNode.level_0 != level_0_code,
+                            SubtypeNode.level_1 == None,
+                        ),
+                    )
+                )
+                # frontend will be organized into cards based on level 0, so we need to make sure we know
+                # the level 0 of each subtype_code returned
+                .with_entities(SubtypeNode.level_0, SubtypeNode.subtype_code)
                 .order_by(desc(ContextAnalysis.mean_in))
                 .all()
             )
+
+            return pd.DataFrame(analyses)
         else:
-            return (
+            analyses = (
                 ContextAnalysis.query.filter(
                     and_(
-                        ContextAnalysis.subtype_code != subtype_code,
-                        ContextAnalysis.out_group == out_group,
                         ContextAnalysis.dependency_dataset_id == dependency_dataset_id,
                         ContextAnalysis.entity_id == entity_id,
                         ContextAnalysis.t_qval >= fdr[0],
@@ -331,12 +360,15 @@ class ContextAnalysis(Model):
                     SubtypeNode,
                     SubtypeNode.subtype_code == ContextAnalysis.subtype_code,
                 )
-                .filter(SubtypeNode.tree_type == tree_type)
-                # Need the node name AND code, because node_names are not always unique, but codes are
-                .with_entities(SubtypeNode.node_name, SubtypeNode.subtype_code,)
+                .filter(*subtype_node_filter)
+                # frontend will be organized into cards based on level 0, so we need to make sure we know
+                # the level 0 of each subtype_code returned
+                .with_entities(SubtypeNode.level_0, SubtypeNode.subtype_code)
                 .order_by(desc(ContextAnalysis.mean_in))
                 .all()
             )
+
+            return pd.DataFrame(analyses)
 
 
 class ContextExplorerGlobalSearch(Model):

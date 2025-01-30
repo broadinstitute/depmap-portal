@@ -82,11 +82,6 @@ export function getSortedDataAvailVals(
     checkedValuesByDepmapId.push(rowDicts);
   }
 
-  console.log(checkedValues);
-  console.log(checkedRowIndexes);
-  console.log(allDepmapIds);
-  console.log(checkedValuesByDepmapId);
-
   const transpose = (
     matrix: {
       depmapId: string;
@@ -276,7 +271,7 @@ export function getGeneDependencyContexts(
     outgroup: OutGroupType,
     inGroupSliceId: string | number | symbol | undefined,
     lSliceId: string | number | symbol | undefined,
-    topContext: string,
+    outGroupSubtypeCode: string,
     ingroupName: string
   ) {
     switch (outgroup) {
@@ -288,43 +283,17 @@ export function getGeneDependencyContexts(
             and: [{ "!=": [{ var: inGroupSliceId }, ingroupName] }],
           },
         };
-      case OutGroupType.Lineage:
+      case OutGroupType.OtherOfSameLineage:
         return {
-          name: `Other ${topContext}`,
+          name: `Other ${outGroupSubtypeCode}`,
           context_type: "depmap_model",
           expr: {
             and: [
               { "!=": [{ var: inGroupSliceId }, ingroupName] },
-              { "==": [{ var: lSliceId }, topContext] },
+              { "==": [{ var: lSliceId }, outGroupSubtypeCode] },
             ],
           },
         };
-      case OutGroupType.Type: {
-        const bloodLineages = ["Myeloid", "Lymphoid"];
-        if (bloodLineages.includes(topContext)) {
-          return {
-            name: `Other Heme`,
-            context_type: "depmap_model",
-            expr: {
-              and: [
-                { "!=": [{ var: inGroupSliceId }, ingroupName] },
-                { in: [{ var: lSliceId }, bloodLineages] },
-              ],
-            },
-          };
-        }
-        return {
-          name: `Other Solid`,
-          context_type: "depmap_model",
-          expr: {
-            and: [
-              { "!=": [{ var: inGroupSliceId }, ingroupName] },
-              { "!=": [{ var: lSliceId }, "Myeloid"] },
-              { "!=": [{ var: lSliceId }, "Lymphoid"] },
-            ],
-          },
-        };
-      }
       default:
         throw new Error(`Unrecognized outgroup type: ${outgroup}`);
     }

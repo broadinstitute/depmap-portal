@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Checkbox } from "react-bootstrap";
 import {
   ContextNameInfo,
+  ContextNode,
   ContextPlotBoxData,
 } from "src/contextExplorer/models/types";
 import {
@@ -12,7 +13,7 @@ import BoxPlot, { BoxPlotInfo } from "src/plot/components/BoxPlot";
 import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
 
 interface Props {
-  selectedContextNameInfo: ContextNameInfo;
+  selectedContextNode: ContextNode;
   topContextNameInfo: ContextNameInfo;
   boxPlotData: ContextPlotBoxData | null;
   entityType: string;
@@ -38,7 +39,7 @@ const EntityBoxColorList = [
 ];
 
 function EntityDetailBoxPlot({
-  selectedContextNameInfo,
+  selectedContextNode,
   topContextNameInfo,
   boxPlotData,
   entityType,
@@ -61,18 +62,20 @@ function EntityDetailBoxPlot({
   useEffect(() => {
     if (boxPlotData) {
       const plotInfo: BoxPlotInfo[] = [];
-      // const otherContextDepsInfo: BoxPlotInfo[] = [];
-      boxPlotData.box_plot_data.forEach((plotData, index) => {
-        if (plotData.data.length > 0) {
-          plotInfo.push({
-            name: plotData.label,
-            hoverLabels: plotData.cell_line_display_names,
-            xVals: plotData.data,
-            color: EntityBoxColorList[index],
-            lineColor: "#000000",
-          });
+      Object.keys(boxPlotData.significant_selection).forEach(
+        (plotTitle, index) => {
+          const plotData = boxPlotData.significant_selection[plotTitle];
+          if (plotData.data.length > 0) {
+            plotInfo.push({
+              name: plotData.label,
+              hoverLabels: plotData.cell_line_display_names,
+              xVals: plotData.data,
+              color: EntityBoxColorList[index],
+              lineColor: "#000000",
+            });
+          }
         }
-      });
+      );
 
       if (plotInfo.length > 0) {
         plotInfo.reverse();
@@ -81,7 +84,7 @@ function EntityDetailBoxPlot({
         setOtherBoxData(plotInfo);
       }
     }
-  }, [boxPlotData, selectedContextNameInfo, topContextNameInfo]);
+  }, [boxPlotData, topContextNameInfo]);
 
   return (
     <div>
@@ -101,25 +104,6 @@ function EntityDetailBoxPlot({
           }
         />
       )}
-      <Checkbox
-        checked={showOtherContexts}
-        disabled={!otherBoxData}
-        onChange={handleShowOtherContexts}
-      >
-        {otherBoxData && otherBoxData.length > 0 && mainPlot ? (
-          <p>
-            {entityType === "gene"
-              ? "Show other disease contexts where gene is a selective dependency"
-              : "Show other disease contexts where drug is a selective sensitivity"}
-          </p>
-        ) : (
-          <p>
-            {entityType} is not a selective{" "}
-            {entityType === "gene" ? "dependency" : "sensitivity"} in other
-            contexts
-          </p>
-        )}{" "}
-      </Checkbox>
       {otherBoxData && showOtherContexts && mainPlot && (
         <BoxPlot
           plotName="other"

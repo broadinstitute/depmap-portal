@@ -662,7 +662,6 @@ export class DepmapApi {
   getContextExplorerBoxPlotData(
     selected_subtype_code: string,
     tree_type: string,
-    out_group: string,
     dataset_name: ContextExplorerDatasets,
     entity_type: string,
     entity_full_label: string,

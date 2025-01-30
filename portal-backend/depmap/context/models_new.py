@@ -214,74 +214,105 @@ class SubtypeContext(Model):
         cell_lines = [cell_line.cell_line_name for cell_line in self.depmap_model]
         return cell_lines
 
+    # Only used for Context Explorer box plots
     @staticmethod
     def get_model_ids_for_node_branch(
-        subtype_codes: List[str],
+        subtype_codes: List[str], level_0_subtype_code: str, do_get_other_level_0s=False
     ) -> Optional[Dict[str, List[str]]]:
-        nodes = (
-            db.session.query(SubtypeNode)
-            .filter(
-                or_(
-                    SubtypeNode.level_0.in_(subtype_codes),
-                    SubtypeNode.level_1.in_(subtype_codes),
-                    SubtypeNode.level_2.in_(subtype_codes),
-                    SubtypeNode.level_3.in_(subtype_codes),
-                    SubtypeNode.level_4.in_(subtype_codes),
-                    SubtypeNode.level_5.in_(subtype_codes),
-                )
-            )
-            .all()
+
+        include_other_level_0_filters = or_(
+            SubtypeNode.level_0.in_(subtype_codes),
+            and_(
+                SubtypeNode.level_1.in_(subtype_codes),
+                SubtypeNode.level_0 == level_0_subtype_code,
+            ),
+            and_(
+                SubtypeNode.level_2.in_(subtype_codes),
+                SubtypeNode.level_0 == level_0_subtype_code,
+            ),
+            and_(
+                SubtypeNode.level_3.in_(subtype_codes),
+                SubtypeNode.level_0 == level_0_subtype_code,
+            ),
+            and_(
+                SubtypeNode.level_4.in_(subtype_codes),
+                SubtypeNode.level_0 == level_0_subtype_code,
+            ),
+            and_(
+                SubtypeNode.level_5.in_(subtype_codes),
+                SubtypeNode.level_0 == level_0_subtype_code,
+            ),
         )
+
+        only_get_nodes_on_this_branch_filters = and_(
+            SubtypeNode.level_0 == level_0_subtype_code,
+            or_(
+                SubtypeNode.level_1.in_(subtype_codes),
+                SubtypeNode.level_2.in_(subtype_codes),
+                SubtypeNode.level_3.in_(subtype_codes),
+                SubtypeNode.level_4.in_(subtype_codes),
+                SubtypeNode.level_5.in_(subtype_codes),
+            ),
+        )
+
+        filters = (
+            include_other_level_0_filters
+            if do_get_other_level_0s
+            else only_get_nodes_on_this_branch_filters
+        )
+
+        nodes = db.session.query(SubtypeNode).filter(*filters).all()
 
         if len(nodes) == 0:
             return None
 
         node_models = {}
+
         for node in nodes:
             level_0 = SubtypeContext.get_by_code(node.level_0, must=False)
-            node_models[level_0.subtype_code] = [
-                model.model_id for model in level_0.depmap_model
-            ]
+            model_ids = [model.model_id for model in level_0.depmap_model]
+            if len(model_ids) > 0:
+                node_models[level_0.subtype_code] = model_ids
 
             if node.level_1:
                 level_1 = SubtypeContext.get_by_code(node.level_1, must=False)
 
                 if level_1:
-                    node_models[level_1.subtype_code] = [
-                        model.model_id for model in level_1.depmap_model
-                    ]
+                    model_ids = [model.model_id for model in level_1.depmap_model]
+                    if len(model_ids) > 0:
+                        node_models[level_1.subtype_code] = model_ids
 
             if node.level_2:
                 level_2 = SubtypeContext.get_by_code(node.level_2, must=False)
 
                 if level_2:
-                    node_models[level_2.subtype_code] = [
-                        model.model_id for model in level_2.depmap_model
-                    ]
+                    model_ids = [model.model_id for model in level_2.depmap_model]
+                    if len(model_ids) > 0:
+                        node_models[level_2.subtype_code] = model_ids
 
             if node.level_3:
                 level_3 = SubtypeContext.get_by_code(node.level_3, must=False)
 
                 if level_3:
-                    node_models[level_3.subtype_code] = [
-                        model.model_id for model in level_3.depmap_model
-                    ]
+                    model_ids = [model.model_id for model in level_3.depmap_model]
+                    if len(model_ids) > 0:
+                        node_models[level_3.subtype_code] = model_ids
 
             if node.level_4:
                 level_4 = SubtypeContext.get_by_code(node.level_4, must=False)
 
                 if level_4:
-                    node_models[level_4.subtype_code] = [
-                        model.model_id for model in level_4.depmap_model
-                    ]
+                    model_ids = [model.model_id for model in level_4.depmap_model]
+                    if len(model_ids) > 0:
+                        node_models[level_4.subtype_code] = model_ids
 
             if node.level_5:
                 level_5 = SubtypeContext.get_by_code(node.level_5, must=False)
 
                 if level_5:
-                    node_models[level_5.subtype_code] = [
-                        model.model_id for model in level_5.depmap_model
-                    ]
+                    model_ids = [model.model_id for model in level_5.depmap_model]
+                    if len(model_ids) > 0:
+                        node_models[level_5.subtype_code] = model_ids
 
         return node_models
 

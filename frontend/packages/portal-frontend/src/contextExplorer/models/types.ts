@@ -118,9 +118,9 @@ export enum ContextAnalysisPlotType {
 }
 
 export enum OutGroupType {
-  All = "All",
-  Lineage = "Lineage",
-  Type = "Type",
+  All = "All Other",
+  OtherOfSameLineage = "Other Lineage",
+  Type = "Type", // Other Heme, Other Solid
 }
 
 export interface ContextAnalysisPlotData {
@@ -177,20 +177,21 @@ export type ContextAnalysisTableType = {
   label: string[];
 };
 
-export type ContextPlotBoxData = {
-  box_plot_data: {
-    label: string;
-    data: number[];
-    cell_line_display_names: string[];
-  }[];
-  other_context_dependencies: {
-    label: string;
-    data: number[];
-    cell_line_display_names: string[];
-  }[];
+export interface BoxData {
+  label: string;
+  data: number[];
+  cell_line_display_names: string[];
+}
+
+export interface ContextPlotBoxData {
+  significant_selection: { [key: string]: BoxData };
+  insignifcant_selection: { [key: string]: BoxData };
+  significant_other: { [key: string]: BoxData };
+  insignificant_heme_data: { [key: string]: BoxData };
+  insignificant_solid_data: { [key: string]: BoxData };
   drug_dotted_line: number;
   entity_label: string;
-};
+}
 
 export enum TabTypes {
   Overview = 0,

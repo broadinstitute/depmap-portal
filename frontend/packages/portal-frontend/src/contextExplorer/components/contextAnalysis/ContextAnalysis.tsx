@@ -12,6 +12,7 @@ import {
   ContextAnalysisTableType,
   ContextExplorerDatasets,
   ContextNameInfo,
+  ContextNode,
   ContextPlotBoxData,
   OutGroupType,
   TreeType,
@@ -57,6 +58,7 @@ import ApplyFilters from "./ApplyFilters";
 
 interface ContextAnalysisProps {
   selectedContextNameInfo: ContextNameInfo;
+  selectedContextNode: ContextNode;
   topContextNameInfo: ContextNameInfo;
   treeType: TreeType;
   entityType: string;
@@ -66,6 +68,7 @@ interface ContextAnalysisProps {
 
 function ContextAnalysis({
   selectedContextNameInfo,
+  selectedContextNode,
   topContextNameInfo,
   treeType,
   entityType,
@@ -105,7 +108,7 @@ function ContextAnalysis({
       // Bone vs Other Bone wouldn't make sense, so only include this if the selected
       // context is a subset of Bone
       outGroupOpts.push({
-        value: OutGroupType.Lineage,
+        value: OutGroupType.OtherOfSameLineage,
         label: `Other ${topContextNameInfo.name}`,
       });
     }
@@ -603,10 +606,7 @@ function ContextAnalysis({
   ] = useState<ExtendedPlotType | null>(null);
 
   const [isLoadingBoxplot, setIsLoadingBoxplot] = useState<boolean>(true);
-  const [
-    useScatterPlotFiltersOnBoxPlot,
-    setUseScatterPlotFiltersOnBoxPlot,
-  ] = useState<boolean>(false);
+
   const [boxPlotFDRRange, setBoxPlotFDRRange] = useState<number[] | null>(null);
   const [boxPlotEffectSizeRange, setBoxPlotEffectSizeRange] = useState<
     number[] | null
@@ -623,9 +623,7 @@ function ContextAnalysis({
       [...selectedPlotLabels][0]
     ) {
       const boxPlotFilters =
-        !useScatterPlotFiltersOnBoxPlot &&
-        defaultFilters &&
-        defaultFilters.current
+        defaultFilters && defaultFilters.current
           ? defaultFilters.current
           : filters;
 
@@ -637,12 +635,7 @@ function ContextAnalysis({
       setBoxPlotEffectSizeRange(effectSize);
       setBoxPlotFracDepInRange(fracDepIn);
     }
-  }, [
-    useScatterPlotFiltersOnBoxPlot,
-    filters,
-    selectedPlotLabels,
-    defaultFilters,
-  ]);
+  }, [filters, selectedPlotLabels, defaultFilters]);
 
   const [boxplotError, setBoxplotError] = useState(false);
   const boxplotLatestPromise = useRef<Promise<ContextPlotBoxData> | null>(null);
@@ -662,7 +655,6 @@ function ContextAnalysis({
       const boxplotPromise = dapi.getContextExplorerBoxPlotData(
         selectedContextNameInfo.subtype_code,
         treeType,
-        outgroup.value,
         datasetId,
         entityType,
         [...selectedPlotLabels][0],
@@ -701,10 +693,6 @@ function ContextAnalysis({
     boxPlotEffectSizeRange,
     boxPlotFracDepInRange,
   ]);
-
-  const handleUseScatterPlotFiltersClicked = () => {
-    setUseScatterPlotFiltersOnBoxPlot(!useScatterPlotFiltersOnBoxPlot);
-  };
 
   const [showOtherContexts, setShowOtherContexts] = useState<boolean>(false);
 
@@ -1025,7 +1013,7 @@ function ContextAnalysis({
                           setEntityDetailPlotElement(element);
                         }
                       }}
-                      selectedContextNameInfo={selectedContextNameInfo}
+                      selectedContextNode={selectedContextNode}
                       topContextNameInfo={topContextNameInfo}
                       boxPlotData={boxPlotData}
                       entityType={entityType}
@@ -1081,19 +1069,6 @@ function ContextAnalysis({
                     Open as 1D Density in Data Explorer
                   </Button>
                 </div>
-                <ApplyFilters
-                  entityType={entityType}
-                  useScatterPlotFiltersOnBoxPlot={
-                    useScatterPlotFiltersOnBoxPlot
-                  }
-                  handleUseScatterPlotFiltersClicked={
-                    handleUseScatterPlotFiltersClicked
-                  }
-                  boxPlotFDRRange={boxPlotFDRRange}
-                  boxPlotEffectSizeRange={boxPlotEffectSizeRange}
-                  boxPlotFracDepInRange={boxPlotFracDepInRange}
-                  customInfoImg={customInfoImg}
-                />
               </>
             )}
           </div>

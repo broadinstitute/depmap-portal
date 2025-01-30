@@ -807,7 +807,7 @@ def _get_box_plot_data(
     abs_effect_size,
     frac_dep_in,
 ) -> Optional[list]:
-    other_sig_contexts = ContextAnalysis.get_other_context_dependencies(
+    other_sig_contexts = ContextAnalysis.get_context_dependencies(
         subtype_code=selected_subtype_code,
         tree_type=tree_type,
         out_group=out_group,
