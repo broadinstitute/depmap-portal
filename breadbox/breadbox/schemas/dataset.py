@@ -43,6 +43,13 @@ class SliceQueryIdentifierType(enum.Enum):
     column = "column"
 
 
+class AggregationMethod(enum.Enum):
+    mean = "mean"
+    median = "median"
+    per25 = "25%tile"
+    per75 = "75%tile"
+
+
 # NOTE: `param: Annotated[Optional[str], Field(None)]` gives pydantic error 'ValueError: `Field` default cannot be set in `Annotated` for 'param''.
 # `param: Annotated[Optional[str], Field()] = None` solves the default issue
 # According to https://github.com/pydantic/pydantic/issues/8118 this issue is only in Pydantic V1.10 not V2.0.
@@ -425,6 +432,10 @@ class MatrixDimensionsInfo(BaseModel):
             description="Denotes whether the list of samples are given as ids or sample labels"
         ),
     ] = None
+    aggregate: Annotated[
+        Optional[MatrixAggregation],
+        Field(description="Aggregates features or samples into a single series"),
+    ] = None
 
     @model_validator(mode="after")
     def check_valid_values(self):
@@ -444,6 +455,13 @@ class MatrixDimensionsInfo(BaseModel):
             )
         else:
             return self
+
+
+class MatrixAggregation(BaseModel):
+    aggregate_by: Literal[
+        "features", "samples"
+    ]  # collapse features or samples into a single series
+    aggregation: AggregationMethod  # Literal["mean", "median", "25%tile", "75%tile"]
 
 
 class FeatureResponse(BaseModel):
