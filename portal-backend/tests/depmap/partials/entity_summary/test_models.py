@@ -90,7 +90,7 @@ def test_integrate_dep_data(
 
     metadata = {}
     metadata, srs = models.integrate_dep_data(
-        metadata, dep_enum, entity.label, entity.entity_id
+        metadata, dep_enum.name, entity.label, entity.entity_id
     )
 
     assert srs.equals(expected_srs)
@@ -128,13 +128,12 @@ def test_integrate_dep_data(
         ),  # stretch max only
     ],
 )
-def test_get_x_range(empty_db_mock_downloads, dep_enum, value_range, expected):
+def test_get_x_range(empty_db_mock_downloads, dep_enum, value_range: list[int], expected: list[int]):
     dataset = DependencyDatasetFactory(name=dep_enum)
     empty_db_mock_downloads.session.flush()
     interactive_test_utils.reload_interactive_config()
-    df = pd.DataFrame({"value": value_range})
-
-    assert models._get_x_range(dataset, df) == expected
+    df = pd.Series(value_range)
+    assert models._get_x_range(df) == expected
 
 
 def test_integrate_cell_line_information(empty_db_mock_downloads):
@@ -162,7 +161,7 @@ def test_integrate_cell_line_information(empty_db_mock_downloads):
     interactive_test_utils.reload_interactive_config()
 
     metadata, srs = models.integrate_dep_data(
-        {}, dep_dataset.name, gene.label, gene.entity_id
+        {}, dep_dataset.name.name, gene.label, gene.entity_id
     )
     df = models.integrate_cell_line_information(srs)
 

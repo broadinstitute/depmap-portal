@@ -7,9 +7,8 @@ from depmap import data_access
 from depmap.enums import DataTypeEnum
 from depmap.dataset.models import Dataset, BiomarkerDataset
 from depmap.cell_line.models import CellLine
-from depmap.interactive.url_utils import get_interactive_url
 from depmap.utilities import color_utils
-from depmap_compute.slice import SliceQuery
+from depmap.settings.shared import NORMALIZED_RANGE
 
 
 # abstracted out here so that tests can import it.
@@ -279,10 +278,10 @@ def integrate_dep_data(metadata, dataset_id: str, entity_label: str, entity_id: 
 
 
 def _get_x_range(srs: pd.Series):
-    min, max = (-2, 2) # TODO: for now, setting to NORMALIZED_RANGE, which seems to be the default
+    min, max = NORMALIZED_RANGE
 
-    series_min = srs.values.min()
-    series_max = srs.values.max()
+    series_min: float = srs.min() # pyright: ignore
+    series_max: float = srs.max() # pyright: ignore
     if series_min < min:
         min = series_min - 1
     if series_max > max:
