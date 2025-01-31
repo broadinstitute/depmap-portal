@@ -173,12 +173,11 @@ def _aggregate_matrix_df(
     }
 
     # Replace None with numpy nan so np.nanpercentile works
-    df = df.replace({pd.NA: np.nan})
+    nan_df: pd.DataFrame = df.replace({pd.NA: np.nan})
 
-    df = df.agg(
+    return nan_df.agg(
         enum_to_agg_method[aggregation], axis=0 if aggregate_by == "samples" else 1
     )
-    return df
 
 
 def get_subsetted_tabular_dataset_df(
