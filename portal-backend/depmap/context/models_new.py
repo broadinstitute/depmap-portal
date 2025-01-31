@@ -244,7 +244,7 @@ class SubtypeContext(Model):
             ),
         )
 
-        only_get_nodes_on_this_branch_filters = and_(
+        only_get_nodes_on_this_branch_filters = or_(
             SubtypeNode.level_0 == level_0_subtype_code,
             or_(
                 SubtypeNode.level_1.in_(subtype_codes),
@@ -261,7 +261,7 @@ class SubtypeContext(Model):
             else only_get_nodes_on_this_branch_filters
         )
 
-        nodes = db.session.query(SubtypeNode).filter(*filters).all()
+        nodes = db.session.query(SubtypeNode).filter(filters).all()
 
         if len(nodes) == 0:
             return None

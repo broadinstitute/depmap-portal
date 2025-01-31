@@ -38,12 +38,15 @@ const EntityBoxColorList = [
 const InsignificantColor = { r: 255, g: 255, b: 255 };
 
 function EntityDetailBoxPlot({
+  selectedContextNode,
   topContextNameInfo,
   boxPlotData,
   entityType,
   handleSetPlotElement,
   mainPlot,
 }: Props) {
+  console.log(mainPlot);
+  console.log(selectedContextNode);
   const [selectedContextBoxData, setSelectedContextBoxData] = useState<
     BoxPlotInfo[] | null
   >(null);
@@ -59,7 +62,11 @@ function EntityDetailBoxPlot({
   const drugDottedLine = boxPlotData?.drug_dotted_line;
 
   useEffect(() => {
-    if (boxPlotData) {
+    if (
+      boxPlotData &&
+      boxPlotData.significant_selection &&
+      Object.keys(boxPlotData.significant_selection).length > 0
+    ) {
       const plotInfo: BoxPlotInfo[] = [];
       Object.keys(boxPlotData.significant_selection).forEach(
         (plotTitle, index) => {

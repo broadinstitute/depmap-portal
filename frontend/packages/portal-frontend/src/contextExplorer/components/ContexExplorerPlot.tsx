@@ -1,10 +1,10 @@
-import React, { useCallback, useMemo } from "react";
+import React, { useMemo } from "react";
 import styles from "src/contextExplorer/styles/ContextExplorer.scss";
 import PlotSpinner from "src/plot/components/PlotSpinner";
 import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
 import Heatmap from "src/plot/components/Heatmap";
 import { Button } from "react-bootstrap";
-import { ContextNode, ContextSummary, DataType } from "../models/types";
+import { ContextSummary } from "../models/types";
 import DatatypeSelector from "./DatatypeSelector";
 import { saveNewContext } from "src";
 import {

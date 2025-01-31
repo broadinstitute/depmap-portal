@@ -175,7 +175,7 @@ export const ContextExplorer = () => {
         setContextPath(null);
       }
     },
-    [allContextData, contextDataAvailability, contextInfo, dapi]
+    [allContextData, contextInfo, dapi]
   );
 
   const cellLineUrlRoot = useCallback(() => dapi.getCellLineUrlRoot(), [dapi]);

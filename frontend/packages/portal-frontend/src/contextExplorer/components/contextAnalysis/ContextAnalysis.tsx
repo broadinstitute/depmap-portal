@@ -54,7 +54,6 @@ import { Button } from "react-bootstrap";
 import useContextExplorerFilters from "src/contextExplorer/hooks/useContextExplorerFilters";
 import EntityDetailBoxPlot from "./EntityDetailBoxPlot";
 import DoseCurvesTile from "./DoseCurvesTile";
-import ApplyFilters from "./ApplyFilters";
 
 interface ContextAnalysisProps {
   selectedContextNameInfo: ContextNameInfo;
@@ -75,6 +74,7 @@ function ContextAnalysis({
   customInfoImg,
   datasetId,
 }: ContextAnalysisProps) {
+  console.log(customInfoImg);
   const dapi = getDapi();
   const [outgroup, setOutgroup] = useState<{
     value: OutGroupType;
@@ -669,12 +669,17 @@ function ContextAnalysis({
         .then((dataVals) => {
           if (boxplotPromise === boxplotLatestPromise.current) {
             setBoxPlotData(dataVals);
+            console.log(dataVals);
+            console.log("JUST SET BOXPLOT DATA!!!!!");
           }
         })
         .catch((e) => {
           if (boxplotPromise === boxplotLatestPromise.current) {
             window.console.error(e);
             setBoxplotError(true);
+            console.log("SET BOXPLOT ERROR");
+            console.log(selectedPlotLabels);
+            console.log(boxPlotFDRRange);
           }
         })
         .finally(() => setIsLoadingBoxplot(false));
@@ -693,12 +698,6 @@ function ContextAnalysis({
     boxPlotEffectSizeRange,
     boxPlotFracDepInRange,
   ]);
-
-  const [showOtherContexts, setShowOtherContexts] = useState<boolean>(false);
-
-  const handleShowOtherContexts = useCallback(() => {
-    setShowOtherContexts(!showOtherContexts);
-  }, [showOtherContexts]);
 
   return (
     <div className={styles.geneDepPage}>

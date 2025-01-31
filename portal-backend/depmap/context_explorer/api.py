@@ -1,8 +1,5 @@
-from audioop import reverse
-from operator import mod
 from typing import Dict, List, Literal, Tuple, Union
 import os
-import re
 from depmap.cell_line.models_new import DepmapModel
 from depmap.compound.models import Compound, CompoundExperiment
 from depmap.context_explorer.utils import (
@@ -144,6 +141,11 @@ class ContextInfo(
         List of available context trees as a dictionary with keys as each available non-terminal node, and values
         as each available branch off of the key-node
         """
+        # load_context_explorer_context_analysis_dev(
+        #     "/Users/amourey/dev/Context Explorer Data/ContextAnalysisDataSample.csv"
+        # )
+        # db.session.commit()
+        # breakpoint()
 
         level_0_subtype_code = request.args.get("level_0_subtype_code")
         (
@@ -534,7 +536,7 @@ class SubtypeBranchBoxPlotData(Resource):
             all_sig_context_codes, level_0_subtype_code=level_0_code
         )
 
-        if model_ids_by_code is None:
+        if model_ids_by_code is {}:
             {
                 "significant_box_plot_data": None,
                 "insignificant_box_plot_data": None,
@@ -568,6 +570,8 @@ class ContextBoxPlotData(Resource):
         abs_effect_size = request.args.getlist("abs_effect_size", type=float)
         frac_dep_in = request.args.getlist("frac_dep_in", type=float)
 
+        # If this doesn't find the node, something is wrong with how we
+        # loaded the SubtypeNode database table data.
         selected_node = SubtypeNode.get_by_code(selected_subtype_code)
         level_0 = selected_node.level_0
 
@@ -597,7 +601,6 @@ class ContextBoxPlotData(Resource):
         sig_contexts_by_level_0 = sig_contexts_agg.set_index("level_0").to_dict()[
             "subtype_code"
         ]
-        sig_contexts_by_level_0 = {"BONE": ["BONE", "ES", "CHDM", "CHS"]}
 
         branch_contexts = get_branch_subtype_codes_organized_by_code(
             contexts=sig_contexts_by_level_0, level_0=level_0
@@ -619,7 +622,7 @@ class ContextBoxPlotData(Resource):
         box_plot_card_data = {}
 
         if branch_contexts != None:
-            # selected context
+            assert level_0 in branch_contexts.keys()
             selected_context_level_0 = branch_contexts[level_0]
             if selected_context_level_0 != None:
                 box_plot_card_data = get_box_plot_card_data(
@@ -629,19 +632,19 @@ class ContextBoxPlotData(Resource):
                     entity_full_row_of_values=entity_full_row_of_values,
                 )
 
-            for level_0 in all_significant_level_0_codes:
+            for other_level_0 in all_significant_level_0_codes:
                 # Is it another signficant level 0? We need a new box plot grouping.
-                if level_0 != level_0:
+                if level_0 != other_level_0:
                     context_model_ids = SubtypeNode.get_model_ids_by_subtype_code_and_node_level(
-                        subtype_code=level_0, node_level=0
+                        subtype_code=other_level_0, node_level=0
                     )
                     if len(context_model_ids) >= 5:
                         box_plot = get_box_plot_data_for_context(
-                            subtype_code=level_0,
+                            subtype_code=other_level_0,
                             entity_full_row_of_values=entity_full_row_of_values,
                             model_ids=context_model_ids,
                         )
-                        other_sig_level_0_box_plot_data[level_0] = box_plot
+                        other_sig_level_0_box_plot_data[other_level_0] = box_plot
 
             heme_box_plot_data = get_box_plot_data_for_other_category(
                 category="heme",

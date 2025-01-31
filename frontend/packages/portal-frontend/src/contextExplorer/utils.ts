@@ -406,7 +406,7 @@ function getFilteredData(
     (node) => node.subtype_code
   );
   const datasetDataTypes = Object.keys(DataType).filter((item) => {
-    return isNaN(Number(item));
+    return Number.isNaN(Number(item));
   });
 
   const includedDataTypes: string[] = [];
@@ -441,15 +441,9 @@ function mergeDataAvailability(
   const vals: number[][] = [];
   const dataTypes: string[] = [];
   allContextDatasetDataAvail.values.forEach((row: number[], index: number) => {
-    const filteredRow = row.filter((rowVals: number, j: number) => {
-      if (
-        selectedModelIds.includes(
-          allContextDatasetDataAvail.all_depmap_ids[j][1]
-        )
-      ) {
-        return row;
-      }
-    });
+    const filteredRow = row.filter((rowVals: number, j: number) =>
+      selectedModelIds.includes(allContextDatasetDataAvail.all_depmap_ids[j][1])
+    );
     vals.push(filteredRow);
     dataTypes.push(allContextDatasetDataAvail.data_types[index]);
   });
