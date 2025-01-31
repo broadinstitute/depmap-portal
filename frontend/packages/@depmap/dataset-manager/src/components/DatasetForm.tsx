@@ -51,8 +51,13 @@ export default function DatasetForm(props: DatasetFormProps) {
         Object.keys(matrixFormSchema.properties)
           .concat("allowed_values")
           .forEach((key) => {
-            if (!isAdvancedMode && key === "value_type") {
-              initForm[key] = "continuous";
+            if (!isAdvancedMode) {
+              if (key === "value_type") {
+                initForm[key] = "continuous";
+              }
+              if (key === "data_type") {
+                initForm[key] = "User upload";
+              }
             } else if (
               typeof matrixFormSchema.properties[key] === "object" &&
               // @ts-ignore
