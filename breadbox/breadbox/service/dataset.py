@@ -149,7 +149,7 @@ def get_subsetted_matrix_dataset_df(
     if dimensions_info.aggregate:
         if dataset.value_type != ValueType.continuous:
             raise UserError(
-                f"The 'value_type' of {dataset.name} is {dataset.value_type}. Dataset must have continuous values! "
+                f"The `value_type` of '{dataset.name}' is '{dataset.value_type.value}'. Dataset must have continuous values! "
             )
 
         df = _aggregate_matrix_df(
