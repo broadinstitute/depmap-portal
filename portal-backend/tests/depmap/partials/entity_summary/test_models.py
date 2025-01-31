@@ -13,7 +13,6 @@ from tests.factories import (
     BiomarkerDatasetFactory,
     CellLineFactory,
     LineageFactory,
-    MutationFactory,
     CompoundExperimentFactory,
 )
 from tests.utilities import interactive_test_utils
@@ -42,8 +41,8 @@ def test_entity_summary_structure(empty_db_mock_downloads):
 
     data_for_ajax_partial = entity_summary.data_for_ajax_partial()
     assert set(data_for_ajax_partial.keys()) == {"name"}
-    json_data = json_loads(entity_summary.json_data())
 
+    json_data = json_loads(entity_summary.json_data())
     assert set(json_data.keys()) == {
         "strip",
         "x_range",
@@ -88,9 +87,19 @@ def test_integrate_dep_data(
 
     expected_srs = dataset.matrix.get_cell_line_values_and_depmap_ids(entity.entity_id)
 
+    # Since compound datasets will be indexed by compound going forward, 
+    # the integrate_dep_data function expects to be called by compound, even
+    # when the underlying dataset is indexed by compound experiment.
+    if entity.type == "compound_experiment":
+        entity_label = entity.compound.label 
+        entity_id = entity.compound_id
+    else:
+        entity_label = entity.label
+        entity_id = entity.entity_id
+
     metadata = {}
     metadata, srs = models.integrate_dep_data(
-        metadata, dep_enum.name, entity.label, entity.entity_id
+        metadata, dep_enum.name, entity_label, entity_id
     )
 
     assert srs.equals(expected_srs)
@@ -103,37 +112,6 @@ def test_integrate_dep_data(
         assert "line" in metadata
     else:
         assert "line" not in metadata
-
-
-@pytest.mark.parametrize(
-    "dep_enum, value_range, expected",
-    [
-        (DependencyDataset.DependencyEnum.Avana, [0, 0], [-2, 2]),
-        (DependencyDataset.DependencyEnum.GDSC1_AUC, [0, 0], [0, 1.1]),
-        (DependencyDataset.DependencyEnum.GDSC1_IC50, [0, 0], [0, 0]),
-        (
-            DependencyDataset.DependencyEnum.Avana,
-            [-4, 4],
-            [-4 - 1, 4 + 1],
-        ),  # stretch both sides
-        (
-            DependencyDataset.DependencyEnum.Avana,
-            [-20, 1],
-            [-20 - 1, 2],
-        ),  # stretch min only
-        (
-            DependencyDataset.DependencyEnum.GDSC1_AUC,
-            [1, 4],
-            [0, 4 + 1],
-        ),  # stretch max only
-    ],
-)
-def test_get_x_range(empty_db_mock_downloads, dep_enum, value_range: list[int], expected: list[int]):
-    dataset = DependencyDatasetFactory(name=dep_enum)
-    empty_db_mock_downloads.session.flush()
-    interactive_test_utils.reload_interactive_config()
-    df = pd.Series(value_range)
-    assert models._get_x_range(df) == expected
 
 
 def test_integrate_cell_line_information(empty_db_mock_downloads):

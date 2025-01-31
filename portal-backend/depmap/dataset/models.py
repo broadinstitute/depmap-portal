@@ -105,7 +105,7 @@ class Dataset(Model):
     __mapper_args__ = {"polymorphic_identity": "dataset", "polymorphic_on": type}
 
     @property
-    def nominal_range(self):
+    def nominal_range(self): # No longer used
         return DATASET_METADATA[self.name].nominal_range
 
     @property

@@ -265,10 +265,10 @@ def integrate_dep_data(metadata, dataset_id: str, entity_label: str, entity_id: 
             yFeature=None,
     )
 
-    if dataset.data_type == DataTypeEnum.crispr.name:
+    if dataset.data_type == DataTypeEnum.crispr.value:
         metadata["description"] = "crispr"
         metadata["line"] = -1
-    elif dataset.data_type == DataTypeEnum.rnai.name:
+    elif dataset.data_type == DataTypeEnum.rnai.value:
         metadata["description"] = "rnai"
         metadata["line"] = -1
     else:
@@ -277,19 +277,11 @@ def integrate_dep_data(metadata, dataset_id: str, entity_label: str, entity_id: 
     return metadata, data_series
 
 
-def _get_x_range(srs: pd.Series):
-    min, max = NORMALIZED_RANGE
+def _get_x_range(srs: pd.Series) -> list[float]:
+    series_min = float(srs.min()) 
+    series_max = float(srs.max())
 
-    series_min: float = srs.min() # pyright: ignore
-    series_max: float = srs.max() # pyright: ignore
-    if series_min < min:
-        min = series_min - 1
-    if series_max > max:
-        max = series_max + 1
-
-    x_range = [min, max]
-    return x_range
-
+    return [series_min - 1, series_max + 1]
 
 def integrate_cell_line_information(srs):
     info_to_merge = CellLine.get_cell_line_information_df(srs.index, levels=[1, 2])
