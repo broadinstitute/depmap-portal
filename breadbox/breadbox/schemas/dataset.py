@@ -461,7 +461,26 @@ class MatrixAggregation(BaseModel):
     aggregate_by: Literal[
         "features", "samples"
     ]  # collapse features or samples into a single series
-    aggregation: AggregationMethod  # Literal["mean", "median", "25%tile", "75%tile"]
+    aggregation: AggregationMethod
+
+    @model_validator(mode="before")
+    def check_valid_fields(self):
+        # Type checker complains about using "in" operator for literals and self so transform self to dict
+        self_dict = dict(self)
+        if "aggregate_by" not in self_dict or "aggregation" not in self_dict:
+            raise UserError("Both 'aggregate_by' and 'aggregation' must be included!")
+        return self
+
+    @field_validator("aggregation", mode="before")
+    def valid_aggregation_methods(cls, v):
+        try:
+            AggregationMethod(v)
+        except ValueError as err:
+            raise UserError(
+                "Aggregations method must be one of ['mean', 'median', '25%tile', '75%tile']"
+            ) from err
+
+        return v
 
 
 class FeatureResponse(BaseModel):
