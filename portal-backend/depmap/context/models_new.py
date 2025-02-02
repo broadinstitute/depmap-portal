@@ -348,13 +348,22 @@ class SubtypeContext(Model):
     def get_model_ids_for_other_heme_contexts(
         subtype_codes_to_filter_out: List[str],
     ) -> Dict[str, str]:
-
+        # Nodes with "MYELOID" or "LYMPHOID" at level 0 are considered "Heme contexts".
+        # We want to find the insignficant heme contexts, leaving out branches that
+        # have a signficant leaf node. Hence, the filter: SubtypeNode.level_0.notin_(subtype_codes_to_filter_out).
+        # For example, if a Myeloid subtype is selected, and Lymph is signficant, we should not
+        # get any "other heme" contexts from this query.
         contexts = (
             db.session.query(SubtypeContext)
-            .filter(SubtypeContext.subtype_code.notin_(subtype_codes_to_filter_out),)
+            .filter(SubtypeContext.subtype_code.notin_(subtype_codes_to_filter_out))
             .join(SubtypeNode, SubtypeNode.subtype_code == SubtypeContext.subtype_code)
             .filter(
-                or_(SubtypeNode.level_0 == "MYELOID", SubtypeNode.level_0 == "LYMPH",)
+                and_(
+                    or_(
+                        SubtypeNode.level_0 == "MYELOID", SubtypeNode.level_0 == "LYMPH"
+                    ),
+                    SubtypeNode.level_0.notin_(subtype_codes_to_filter_out),
+                )
             )
             .all()
         )
