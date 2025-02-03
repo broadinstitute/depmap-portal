@@ -1,0 +1,23 @@
+{% extends "full_page.html" %} 
+
+{% block page_title %}
+    Univariate Analysis | Depmap Portal
+{% endblock %}
+
+{% block content %}
+    <div class="full-screen-div">
+        {% include "nav_footer/nav.html" %}
+        <div id="react-univariate-analysis-page"></div>
+    </div>
+{% endblock %}
+
+{% block js %}
+<script id="react-univariate-analysis-page-data" type="application/json">
+    {
+        "data": {{ data|tojson|safe }}
+    }
+</script>
+
+<script src="{{ webpack_url('univariateAnalysis.js') }}"></script>
+
+{% endblock %}

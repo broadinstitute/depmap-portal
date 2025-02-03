@@ -3,6 +3,9 @@
 import logging
 import os
 import re
+
+from graphviz import render
+
 from depmap.extensions import cache_without_user_permissions
 from depmap.download.views import _get_latest_release
 from depmap.public.fetch_forum_resources import pull_resource_topics_from_forum
@@ -168,6 +171,11 @@ def resources_reloads():
         else:
             raise err
     return render_template("public/resources_reload.html")
+
+
+@blueprint.route("/univariate-analysis")
+def univariate_analysis():
+    return render_template("public/univariate_analysis.html", data={"name": "Steve"})
 
 
 @blueprint.route("/resources")
