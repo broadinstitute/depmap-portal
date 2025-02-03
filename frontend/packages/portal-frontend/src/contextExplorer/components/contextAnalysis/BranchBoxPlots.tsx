@@ -91,7 +91,6 @@ function BranchBoxPlots({
     if (isLazy) {
       setBoxPlotData([]);
       setIsLoadingBranchPlots(true);
-      let branchPlotData = null;
       const boxplotPromise = dapi.getSubtypeBranchBoxPlotData(
         levelZeroCode,
         treeType,

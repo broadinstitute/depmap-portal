@@ -63,6 +63,10 @@
   }
 }
 
+.panel-default > .panel-heading {
+  background-color: transparent !important;
+}
+
 .btn.btn-link {
   padding: 10px 4px 10px 10px !important;
 }

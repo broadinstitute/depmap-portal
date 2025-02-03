@@ -230,7 +230,7 @@ function ContextAnalysis({
   ] = useState<ExtendedPlotType | null>(null);
   const [entityUrlRoot, setEntityUrlRoot] = useState<string | null>(null);
 
-  const stickyFiltersMode = true;
+  const stickyFiltersMode = false;
 
   // useContextExplorerFilters is very similar to useDiscoveryAppFilters. They
   // are temporarily separated out into 2 different files while the stickyFiltersMode
@@ -622,10 +622,7 @@ function ContextAnalysis({
       selectedPlotLabels.size > 0 &&
       [...selectedPlotLabels][0]
     ) {
-      const boxPlotFilters =
-        defaultFilters && defaultFilters.current
-          ? defaultFilters.current
-          : filters;
+      const boxPlotFilters = defaultFilters.current || filters;
 
       const { fdr, effectSize, fracDepIn } = getBoxPlotFilterVariables(
         boxPlotFilters

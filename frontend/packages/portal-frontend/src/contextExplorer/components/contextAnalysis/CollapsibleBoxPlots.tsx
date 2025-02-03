@@ -8,6 +8,7 @@ import {
   ContextPlotBoxData,
   TreeType,
 } from "src/contextExplorer/models/types";
+import { ApiContext } from "@depmap/api";
 import {
   COMPOUND_BOX_PLOT_X_AXIS_TITLE,
   GENE_BOX_PLOT_X_AXIS_TITLE,
@@ -16,6 +17,7 @@ import { DepmapApi } from "src/dAPI";
 import BoxPlot, { BoxPlotInfo } from "src/plot/components/BoxPlot";
 import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
 import BranchBoxPlots from "./BranchBoxPlots";
+import { defaultPoints } from "src/compound/components/DoseResponseCurve";
 
 const EntityBoxColorList = [
   { r: 0, g: 109, b: 91 },
@@ -73,7 +75,6 @@ function CollapsibleBoxPlots({
     BoxPlotInfo[]
   >([]);
   const [otherBoxData, setOtherBoxData] = useState<BoxPlotInfo[]>([]);
-
   const [xAxisRange, setXAxisRange] = useState<any>(null);
 
   const X_AXIS_TITLE =
@@ -90,6 +91,7 @@ function CollapsibleBoxPlots({
       Object.keys(boxPlotData.significant_selection).length > 0
     ) {
       const plotInfo: BoxPlotInfo[] = [];
+
       Object.keys(boxPlotData.significant_selection).forEach(
         (plotTitle, index) => {
           const plotData = boxPlotData.significant_selection[plotTitle];
@@ -104,7 +106,7 @@ function CollapsibleBoxPlots({
               });
             } else {
               plotInfo.push({
-                name: plotData.label,
+                name: plotData.path.join("/"),
                 hoverLabels: plotData.cell_line_display_names,
                 xVals: plotData.data,
                 color: EntityBoxColorList[index],
@@ -185,8 +187,6 @@ function CollapsibleBoxPlots({
   const handleAccordionClick = (index: string) => {
     setActiveKey((prevIndex) => (prevIndex === index ? null : index));
   };
-
-  console.log(otherSigLevelZeroBoxData);
 
   return (
     <PanelGroup

@@ -179,6 +179,7 @@ export type ContextAnalysisTableType = {
 
 export interface BoxData {
   label: string;
+  path: string[];
   data: number[];
   cell_line_display_names: string[];
 }

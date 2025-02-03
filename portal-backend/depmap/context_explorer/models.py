@@ -288,7 +288,7 @@ class ContextAnalysis(Model):
                 and_(
                     SubtypeNode.tree_type == tree_type,
                     SubtypeNode.level_0 != level_0_code,
-                    SubtypeNode.level_1 == None,
+                    SubtypeNode.node_level == 0,
                 ),
             )
             if do_get_other_branch_0s
@@ -306,12 +306,12 @@ class ContextAnalysis(Model):
                     and_(
                         ContextAnalysis.dependency_dataset_id == dependency_dataset_id,
                         ContextAnalysis.entity_id == entity_id,
-                        ContextAnalysis.t_qval >= fdr[0],
+                        # ContextAnalysis.t_qval >= fdr[0],
                         ContextAnalysis.t_qval <= fdr[1],
                         func.abs(ContextAnalysis.effect_size) >= abs_effect_size[0],
-                        func.abs(ContextAnalysis.effect_size) <= abs_effect_size[1],
+                        # func.abs(ContextAnalysis.effect_size) <= abs_effect_size[1],
                         ContextAnalysis.frac_dep_in >= frac_dep_in[0],
-                        ContextAnalysis.frac_dep_in <= frac_dep_in[1],
+                        # ContextAnalysis.frac_dep_in <= frac_dep_in[1],
                     )
                 )
                 .join(Gene, Gene.entity_id == ContextAnalysis.entity_id)

@@ -1,4 +1,4 @@
-from sysconfig import get_path
+from flask import url_for
 from typing import Dict, List, Literal, Optional
 from depmap.cell_line.models_new import DepmapModel
 import pandas as pd
@@ -35,13 +35,12 @@ def get_box_plot_card_data(
     entity_full_row_of_values: pd.Series,
 ):
     significant_box_plot_data = {}
-    other_models = []
+    all_sig_models = []
 
     child_codes = model_ids_by_code.keys()
     for child in child_codes:
         if child in all_sig_context_codes:
             context_model_ids = model_ids_by_code[child]
-
             # This rule should be enforced in get_context_analysis.py. If this assertion gets hit,
             # something is wrong with our pipeline script.
             if len(context_model_ids) >= 5:
@@ -51,15 +50,17 @@ def get_box_plot_card_data(
                     model_ids=context_model_ids,
                 )
                 significant_box_plot_data[child] = box_plot
-        else:
-            other_models.extend(context_model_ids)
+                all_sig_models.extend(context_model_ids)
 
-    if len(other_models) >= 5:
+    all_other_model_ids = list(
+        set(entity_full_row_of_values.index.tolist()) - set(all_sig_models)
+    )
+    if len(all_other_model_ids) >= 5:
         insignificant_box_plot_data = get_box_plot_data_for_context(
             label=f"Other {level_0_code}",
             subtype_code=level_0_code,
             entity_full_row_of_values=entity_full_row_of_values,
-            model_ids=other_models,
+            model_ids=all_other_model_ids,
         )
 
     return {
@@ -155,6 +156,7 @@ def get_box_plot_data_for_context(
 
     box_plot_data = {
         "label": plotLabel,
+        "path": path,
         "data": context_values_index_by_display_name.tolist(),
         "cell_line_display_names": context_values_index_by_display_name.index.tolist(),
     }

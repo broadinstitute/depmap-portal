@@ -450,6 +450,10 @@ export class DepmapApi {
     return this._fetch<string>("/compound/compoundUrlRoot");
   }
 
+  getContextExplorerUrlRoot(): Promise<string> {
+    return this._fetch<string>("/context_explorer");
+  }
+
   getDatasets(): Promise<Array<Dataset>> {
     return this._fetch<Dataset[]>("/interactive/api/getDatasets");
   }
