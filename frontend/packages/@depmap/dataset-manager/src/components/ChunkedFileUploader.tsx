@@ -1,3 +1,4 @@
+/* eslint-disable jsx-a11y/control-has-associated-label */
 import * as React from "react";
 import { FormControl, HelpBlock, ProgressBar } from "react-bootstrap";
 import { useState } from "react";
@@ -28,12 +29,15 @@ export default function ChunkedFileUploader({
         </div>
 
         <details>
-          <summary>Formatting Example</summary>
+          <summary>Formatting Examples</summary>
           <div>
+            <b>
+              Matrix Dataset <i>(DEFAULT)</i>
+            </b>
             <p>
-              Samples (e.g. depmap models with 'depmap_id' as their identifiers)
-              are row headers and features (e.g. genes with 'entrez_id' as their
-              identifiers) are column headers
+              Samples (e.g. depmap models with &apos;depmap_id&apos; as their
+              identifiers) are row headers and features (e.g. genes with
+              &apos;entrez_id&apos; as their identifiers) are column headers
             </p>
           </div>
           <table className={styles.uploadExampleTable}>
@@ -63,6 +67,43 @@ export default function ChunkedFileUploader({
             <div>,6663,4893</div>
             <div>ACH-00001,0.05,0.34</div>
             <div>ACH-00002,0.4,</div>
+          </pre>
+
+          <div>
+            <b>Tabular Dataset</b>
+            <p>
+              Samples or features as row headers and additional metadata are
+              columns.
+            </p>
+          </div>
+          <table className={styles.uploadExampleTable}>
+            <thead>
+              <tr>
+                <th />
+                <th>symbol</th>
+                <th>status</th>
+                <th>other metadata</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>6663</td>
+                <td>SOX10</td>
+                <td>Yes</td>
+                <td>NA</td>
+              </tr>
+              <tr>
+                <td>4839</td>
+                <td>NRAS</td>
+                <td>No</td>
+                <td>123</td>
+              </tr>
+            </tbody>
+          </table>
+          <pre>
+            <div>,symbol,status,other metadata</div>
+            <div>6663,SOX10,Yes,</div>
+            <div>4839,NRAS,No,123</div>
           </pre>
         </details>
       </div>
