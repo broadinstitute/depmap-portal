@@ -1,8 +1,10 @@
 import * as React from "react";
-import { FormControl, ProgressBar } from "react-bootstrap";
+import { FormControl, HelpBlock, ProgressBar } from "react-bootstrap";
 import { useState } from "react";
 import { UploadFileResponse } from "@depmap/types";
 import * as SparkMD5 from "spark-md5";
+
+import styles from "../styles/ChunkedFileUploader.scss";
 
 interface ChunkedFileUploaderProps {
   uploadFile: (fileArgs: { file: File | Blob }) => Promise<UploadFileResponse>;
@@ -16,6 +18,56 @@ export default function ChunkedFileUploader({
   const [selectedFileUpload, setSelectedFileUpload] = useState<any>(null);
   const [progress, setProgress] = useState(0);
   const [uploadSuccessful, setUploadSuccessful] = useState<boolean>(true);
+
+  const FormattingHelp = () => {
+    return (
+      <div>
+        <div>
+          Upload a dataset CSV file with <i>samples</i> and/or <i>features</i>.
+          See below examples for more details.
+        </div>
+
+        <details>
+          <summary>Formatting Example</summary>
+          <div>
+            <p>
+              Samples (e.g. depmap models with 'depmap_id' as their identifiers)
+              are row headers and features (e.g. genes with 'entrez_id' as their
+              identifiers) are column headers
+            </p>
+          </div>
+          <table className={styles.uploadExampleTable}>
+            <thead>
+              <tr>
+                <th />
+                <th>6663</th>
+                <th>4893</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>ACH-00001</td>
+                <td>0.05</td>
+                <td>0.34</td>
+              </tr>
+              <tr>
+                <td>ACH-00002</td>
+                <td>0.4</td>
+                <td>NA</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div>Which in CSV format would be:</div>
+          <pre>
+            <div>,6663,4893</div>
+            <div>ACH-00001,0.05,0.34</div>
+            <div>ACH-00002,0.4,</div>
+          </pre>
+        </details>
+      </div>
+    );
+  };
 
   const chunkedUpload = async (file: File) => {
     const chunkSize = 5 * 1024 * 1024; // Arbitrarily set to 5MB. Adjust if necessary
@@ -84,6 +136,7 @@ export default function ChunkedFileUploader({
 
   return (
     <div style={{ marginBottom: "10px" }}>
+      <HelpBlock>{FormattingHelp()}</HelpBlock>
       <FormControl
         name="file_upload"
         type="file"
