@@ -26,7 +26,6 @@ interface Props {
   selectedContextNameInfo: ContextNameInfo;
   selectedContextNode: ContextNode | null;
   selectedContextData: ContextSummary;
-
   treeType: TreeType;
   checkedDataValues: number[][];
   checkedDatatypes: Set<string>;

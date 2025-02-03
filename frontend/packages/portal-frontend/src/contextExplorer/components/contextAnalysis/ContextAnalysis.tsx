@@ -52,8 +52,8 @@ import PlotSpinner from "src/plot/components/PlotSpinner";
 import { getDapi } from "src/common/utilities/context";
 import { Button } from "react-bootstrap";
 import useContextExplorerFilters from "src/contextExplorer/hooks/useContextExplorerFilters";
-import EntityDetailBoxPlot from "./EntityDetailBoxPlot";
 import DoseCurvesTile from "./DoseCurvesTile";
+import CollapsibleBoxPlots from "./CollapsibleBoxPlots";
 
 interface ContextAnalysisProps {
   selectedContextNameInfo: ContextNameInfo;
@@ -601,8 +601,8 @@ function ContextAnalysis({
     null
   );
   const [
-    entityDetailPlotElement,
-    setEntityDetailPlotElement,
+    entityDetailMainPlotElement,
+    setEntityDetailMainPlotElement,
   ] = useState<ExtendedPlotType | null>(null);
 
   const [isLoadingBoxplot, setIsLoadingBoxplot] = useState<boolean>(true);
@@ -650,7 +650,7 @@ function ContextAnalysis({
       boxPlotFracDepInRange
     ) {
       setBoxPlotData(null);
-      setEntityDetailPlotElement(null);
+      setEntityDetailMainPlotElement(null);
       setIsLoadingBoxplot(true);
       const boxplotPromise = dapi.getContextExplorerBoxPlotData(
         selectedContextNameInfo.subtype_code,
@@ -669,17 +669,12 @@ function ContextAnalysis({
         .then((dataVals) => {
           if (boxplotPromise === boxplotLatestPromise.current) {
             setBoxPlotData(dataVals);
-            console.log(dataVals);
-            console.log("JUST SET BOXPLOT DATA!!!!!");
           }
         })
         .catch((e) => {
           if (boxplotPromise === boxplotLatestPromise.current) {
             window.console.error(e);
             setBoxplotError(true);
-            console.log("SET BOXPLOT ERROR");
-            console.log(selectedPlotLabels);
-            console.log(boxPlotFDRRange);
           }
         })
         .finally(() => setIsLoadingBoxplot(false));
@@ -1000,25 +995,35 @@ function ContextAnalysis({
                     </div>
                   )}
                   {!boxplotError &&
-                    (!entityDetailPlotElement || isLoadingBoxplot) && (
+                    (!entityDetailMainPlotElement || isLoadingBoxplot) && (
                       <PlotSpinner />
                     )}
-                  {!boxplotError && boxPlotData && selectedContextNode && (
-                    <EntityDetailBoxPlot
-                      handleSetPlotElement={(
-                        element: ExtendedPlotType | null
-                      ) => {
-                        if (element) {
-                          setEntityDetailPlotElement(element);
-                        }
-                      }}
-                      selectedContextNode={selectedContextNode}
-                      topContextNameInfo={topContextNameInfo}
-                      boxPlotData={boxPlotData}
-                      entityType={entityType}
-                      mainPlot={entityDetailPlotElement}
-                    />
-                  )}
+                  {!boxplotError &&
+                    boxPlotData &&
+                    selectedContextNode &&
+                    boxPlotFDRRange &&
+                    boxPlotEffectSizeRange &&
+                    boxPlotFracDepInRange && (
+                      <CollapsibleBoxPlots
+                        handleSetMainPlotElement={(
+                          element: ExtendedPlotType | null
+                        ) => {
+                          if (element) {
+                            setEntityDetailMainPlotElement(element);
+                          }
+                        }}
+                        topContextNameInfo={topContextNameInfo}
+                        boxPlotData={boxPlotData}
+                        entityType={entityType}
+                        entityFullLabel={[...selectedPlotLabels][0]}
+                        fdr={boxPlotFDRRange}
+                        absEffectSize={boxPlotEffectSizeRange}
+                        fracDepIn={boxPlotFracDepInRange}
+                        treeType={treeType}
+                        datasetName={datasetId}
+                        dapi={dapi}
+                      />
+                    )}
                 </div>
               ) : (
                 <div className={styles.boxPlotHeader}>
@@ -1044,7 +1049,7 @@ function ContextAnalysis({
               )}
             </div>
 
-            {entityDetailPlotElement && (
+            {entityDetailMainPlotElement && (
               <>
                 <div className={styles.deButtonContainerCentered}>
                   <Button

@@ -9,6 +9,7 @@ export interface BoxPlotInfo {
   color: { r: number; b: number; g: number };
   lineColor: string;
   pointLineColor?: string;
+  code?: string;
 }
 
 export interface BoxPlotProps {

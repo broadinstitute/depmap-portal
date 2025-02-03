@@ -498,7 +498,7 @@ class SubtypeBranchBoxPlotData(Resource):
         # On click we want to load the signficant children of that level_0. Include the level_0
         # for if they collapse it again. Any children non signficant sort into
         # "Other {level_0_code}"
-        level_0_code = request.args.get("level_0_code")
+        level_0_code = request.args.get("selected_subtype_code")
         tree_type = request.args.get("tree_type")
         dataset_name = request.args.get("dataset_name")
         entity_type = request.args.get("entity_type")

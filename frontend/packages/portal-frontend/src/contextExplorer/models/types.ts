@@ -193,6 +193,11 @@ export interface ContextPlotBoxData {
   entity_label: string;
 }
 
+export interface SubtypeBranchBoxPlotData {
+  significant_box_plot_data: { [key: string]: BoxData };
+  insignificant_box_plot_data: BoxData;
+}
+
 export enum TabTypes {
   Overview = 0,
   GeneDependency = 1,

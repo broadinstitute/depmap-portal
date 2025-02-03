@@ -78,6 +78,7 @@ import {
   ContextPlotBoxData,
   ContextExplorerDatasets,
   SearchOptionsByTreeType,
+  SubtypeBranchBoxPlotData,
 } from "src/contextExplorer/models/types";
 import {
   DataAvailability,
@@ -683,6 +684,35 @@ export class DepmapApi {
 
     return this._fetch<ContextPlotBoxData>(
       `/api/context_explorer/context_box_plot_data?${encodeParams(params)}`
+    );
+  }
+
+  getSubtypeBranchBoxPlotData(
+    selected_subtype_code: string,
+    tree_type: string,
+    dataset_name: ContextExplorerDatasets,
+    entity_type: string,
+    entity_full_label: string,
+    fdr: number[],
+    abs_effect_size: number[],
+    frac_dep_in: number[]
+  ): Promise<SubtypeBranchBoxPlotData> {
+    const params: any = {
+      selected_subtype_code,
+      tree_type,
+      dataset_name,
+      out_group: "All Others",
+      entity_type,
+      entity_full_label,
+      fdr,
+      abs_effect_size,
+      frac_dep_in,
+    };
+
+    return this._fetch<SubtypeBranchBoxPlotData>(
+      `/api/context_explorer/subtype_branch_box_plot_data?${encodeParams(
+        params
+      )}`
     );
   }
 
