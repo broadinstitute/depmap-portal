@@ -263,7 +263,7 @@ def compute_waterfall(index_type, dimensions, filters, metadata):
         computed_metadata = {}
 
         if metadata_key == "color_property":
-            computed_metadata = categorical_colors
+            computed_metadata = categorical_colors or {}
         else:
             computed_metadata = compute_metadata(input_metadata)
 
