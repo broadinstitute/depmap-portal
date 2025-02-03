@@ -201,7 +201,7 @@ def compute_waterfall(index_type, dimensions, filters, metadata):
     # Handle the special case where we want to recompute the index to be
     # grouped by categorical colors (Josh has dubbed this type of thing a
     # "Sidney plot")
-    if metadata and metadata["color_property"]:
+    if metadata and "color_property" in metadata:
         grouped = defaultdict(list)
         input_metadata = metadata["color_property"]
         categorical_colors = compute_metadata(input_metadata)
@@ -269,6 +269,7 @@ def compute_waterfall(index_type, dimensions, filters, metadata):
 
         indexed_values = computed_metadata["indexed_values"]  # type: ignore
         output_metadata[metadata_key] = {
+            "label": computed_metadata["label"],
             "slice_id": input_metadata["slice_id"],
             "values": [indexed_values.get(label, None) for label in index_labels],
         }
