@@ -1,0 +1,20 @@
+# SET_TAIGA_PREPROCESSOR release_taiga_id "public-24q2-356f"
+
+# Destination Taiga ID
+add-if-missing {
+ "type": "release_taiga_id",
+ "dataset_id": PREPROCESS_TAIGA_ID(release_taiga_id)
+}
+
+# Destination Taiga ID Test
+add-if-missing {
+  "type": "predictability_taiga_id",
+  "dataset_id": "predictability-76d5"
+}
+
+# CN gene expression data
+add-if-missing {
+  "type": "cngene",
+  "dataset_id": PREPROCESS_TAIGA_ID(release_taiga_id, "OmicsCNGene") 
+}
+

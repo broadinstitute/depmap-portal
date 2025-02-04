@@ -1,5 +1,5 @@
 import { enabledFeatures } from "@depmap/globals";
-import { Accordion } from "@depmap/interactive";
+import { Accordion } from "@depmap/common-components";
 import React from "react";
 import styles from "src/dataPage/styles/DataPage.scss";
 import { allDataTabHref } from "./utils";

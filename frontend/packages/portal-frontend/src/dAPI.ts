@@ -1,10 +1,4 @@
 import {
-  AssociationAndCheckbox,
-  AddDatasetOneRowArgs,
-  Catalog,
-  PlotFeatures,
-} from "@depmap/interactive";
-import {
   DatasetDownloadMetadata,
   Downloads,
   ExportDataQuery,
@@ -25,7 +19,6 @@ import {
   GenePredictiveModelResults,
   CompoundDosePredictiveModelResults,
 } from "src/predictability/models/predictive";
-import { isNullOrUndefined } from "util";
 import {
   CellignerColorsForCellLineSelector,
   CellLineSelectorLines,
@@ -37,6 +30,8 @@ import {
   CurveParams,
 } from "src/compound/components/DoseResponseCurve";
 import {
+  AddDatasetOneRowArgs,
+  AssociationAndCheckbox,
   Dataset as BreadboxDataset,
   DatasetParams,
   DatasetUpdateArgs,
@@ -351,26 +346,6 @@ export class DepmapApi {
       body: JSON.stringify(args),
     });
   };
-
-  getFeaturePlot(
-    features: string[],
-    groupBy: string,
-    filter: string,
-    computeLinearFit: boolean
-  ): Promise<PlotFeatures> {
-    const params: any = {
-      features,
-      groupBy,
-      filter,
-      computeLinearFit,
-    };
-    if (!isNullOrUndefined(groupBy)) {
-      params.groupBy = groupBy;
-    }
-    return this._fetch<PlotFeatures>(
-      `/interactive/api/get-features?${encodeParams(params)}`
-    );
-  }
 
   getAssociations(x: string): Promise<AssociationAndCheckbox> {
     const params: any = {
@@ -718,40 +693,6 @@ export class DepmapApi {
 
   getDoseResponseTable(datasetName: string, xrefFull: string): Promise<any> {
     return this._fetch<any>(`/compound/dosetable/${datasetName}/${xrefFull}`);
-  }
-
-  getVectorCatalogChildren(
-    catalog: Catalog,
-    id: string,
-    prefix = ""
-  ): Promise<any> {
-    // chances are, you shouldn't be using this. use getVectorCatalogOptions in vectorCatalogApi, which wraps around this
-    const params = {
-      catalog,
-      id,
-      prefix,
-      limit: 1000,
-    };
-    return this._fetch<any>(
-      `/vector_catalog/data/catalog/children?${encodeParams(params)}`
-    );
-  }
-
-  getVectorCatalogPath(catalog: Catalog, id: string): Promise<Array<any>> {
-    // chances are, you shouldn't be using this. use getVectorCatalogPath in vectorCatalogApi, which wraps around this
-    const params = {
-      catalog,
-      id,
-    };
-    return this._fetch<Array<any>>(
-      `/vector_catalog/data/catalog/path?${encodeParams(params)}`
-    );
-  }
-
-  getVector(id: string): Promise<any> {
-    return this._fetch<Array<any>>(
-      `/vector_catalog/data/vector/${encodeURIComponent(id)}`
-    );
   }
 
   getCellignerDistancesToTumors(

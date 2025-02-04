@@ -17,10 +17,7 @@ import {
   fetchMetadataSlices,
   fetchUniqueValuesOrRange,
 } from "src/data-explorer-2/deprecated-api";
-import {
-  getDapi as getApi,
-  getVectorCatalogApi,
-} from "src/common/utilities/context";
+import { getDapi as getApi } from "src/common/utilities/context";
 
 interface Props {
   onHide: () => void;
@@ -36,7 +33,7 @@ function PortalContextManager({
   return (
     // ApiContext is needed to support Cell Line Selector inside of
     // ContextBuilder.
-    <ApiContext.Provider value={{ getApi, getVectorCatalogApi }}>
+    <ApiContext.Provider value={{ getApi }}>
       <DeprecatedDataExplorerApiProvider
         evaluateLegacyContext={evaluateLegacyContext}
         fetchContextSummary={fetchContextSummary}

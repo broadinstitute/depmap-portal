@@ -15,7 +15,6 @@ type Props = {
   colorByCategory: GroupingCategory;
   onColorByCategoryChange: (newCategory: GroupingCategory) => void;
   onSubtypeSelected: (subtype: string) => void;
-  launchCellLineSelectorModal: () => void;
   onCellLineListChange: (cellLineList: CustomList) => void;
 };
 
@@ -104,7 +103,6 @@ export default class CellignerGraphFilter extends React.Component<Props> {
       selectedPrimarySite,
       colorByCategory,
       onColorByCategoryChange,
-      launchCellLineSelectorModal,
       onCellLineListChange,
     } = this.props;
     const options: Array<{
@@ -123,9 +121,7 @@ export default class CellignerGraphFilter extends React.Component<Props> {
       },
       {
         value: "cellLineSet",
-        label: enabledFeatures.data_explorer_2
-          ? "Model Context"
-          : "Cell line list",
+        label: "Model Context",
       },
     ];
 
@@ -184,10 +180,7 @@ export default class CellignerGraphFilter extends React.Component<Props> {
         />
         {colorByCategory === "cellLineSet" && (
           <div className={styles.cellLineListsDropdown}>
-            <CellLineListsDropdown
-              launchCellLineSelectorModal={launchCellLineSelectorModal}
-              onListSelect={onCellLineListChange}
-            />
+            <CellLineListsDropdown onListSelect={onCellLineListChange} />
           </div>
         )}
       </fieldset>

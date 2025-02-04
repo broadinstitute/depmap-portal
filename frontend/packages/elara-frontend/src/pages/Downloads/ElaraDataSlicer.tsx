@@ -468,8 +468,6 @@ export default class ElaraDataSlicer extends React.Component<
         </div>
         {!this.state.useAllCellLines && (
           <CellLineListsDropdown
-            launchCellLineSelectorModal={launchCellLineSelectorModal}
-            id="cellLineDropdown"
             defaultNone
             onListSelect={(e: CustomList) => {
               this.setState({

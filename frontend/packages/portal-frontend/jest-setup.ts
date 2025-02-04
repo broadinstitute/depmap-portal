@@ -18,7 +18,6 @@ jest.mock(
 
 const mockContext = {
   getDapi: jest.fn(),
-  getVectorCatalogApi: jest.fn(),
   fetchUrlPrefix: () => "/",
 };
 
@@ -31,9 +30,5 @@ Enzyme.configure({
 beforeEach(() => {
   mockContext.getDapi.mockImplementation(() => {
     throw new Error("getDapi has not been mocked");
-  });
-
-  mockContext.getVectorCatalogApi.mockImplementation(() => {
-    throw new Error("getVectorCatalogApi has not been mocked");
   });
 });

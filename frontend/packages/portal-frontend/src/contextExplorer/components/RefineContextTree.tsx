@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Button } from "react-bootstrap";
-import { Accordion, OpenCloseSymbol } from "@depmap/interactive";
+import { Accordion, OpenCloseSymbol } from "@depmap/common-components";
 import styles from "../styles/ContextExplorer.scss";
 import {
   ContextNameInfo,

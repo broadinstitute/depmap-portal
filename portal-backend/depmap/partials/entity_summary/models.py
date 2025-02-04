@@ -134,9 +134,7 @@ class EntitySummary:
             # it is separate because unlike the entity summary, the toolbar for characterization box plots is created eagerly/not async
             # we thus need it for the template render
             "interactive_url": url_for(
-                "data_explorer_2.view_data_explorer_2"
-                if current_app.config["ENABLED_FEATURES"].data_explorer_2
-                else "interactive.view_interactive",
+                "data_explorer_2.view_data_explorer_2",
                 xDataset=dataset_enum_name,
                 xFeature=gene_symbol
                 if not associated_non_gene_entity

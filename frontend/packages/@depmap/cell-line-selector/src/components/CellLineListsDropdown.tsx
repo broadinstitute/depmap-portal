@@ -9,15 +9,18 @@ import {
   PlotConfigSelect,
   useDeprecatedDataExplorerApi,
 } from "@depmap/data-explorer-2";
-import { DepMap, enabledFeatures } from "@depmap/globals";
+import { DepMap } from "@depmap/globals";
 import { DataExplorerContext } from "@depmap/types";
 import {
   getSelectedCellLineListName,
   setSelectedCellLineListName,
 } from "@depmap/utils";
-import LegacyCellLineListsDropdown, {
-  LegacyCellLineListsDropdownProps,
-} from "./LegacyCellLineListsDropdown";
+import { CustomList } from "./ListStorage";
+
+type LegacyCellLineListsDropdownProps = {
+  defaultNone?: boolean;
+  onListSelect: (cellLineList: CustomList) => void;
+};
 
 const getSelectedContextHash = () => {
   return window.localStorage.getItem("model_context_to_highlight") || null;
@@ -147,17 +150,16 @@ const ContextEnabledDropdown = ({
   );
 };
 
-function CellLineListsDropdown(props: LegacyCellLineListsDropdownProps) {
-  if (enabledFeatures.data_explorer_2) {
-    return (
-      <ContextEnabledDropdown
-        defaultNone={Boolean(props.defaultNone)}
-        onListSelect={props.onListSelect}
-      />
-    );
-  }
-
-  return <LegacyCellLineListsDropdown {...props} />;
+function CellLineListsDropdown({
+  defaultNone = false,
+  onListSelect,
+}: LegacyCellLineListsDropdownProps) {
+  return (
+    <ContextEnabledDropdown
+      defaultNone={defaultNone}
+      onListSelect={onListSelect}
+    />
+  );
 }
 
 export default CellLineListsDropdown;
