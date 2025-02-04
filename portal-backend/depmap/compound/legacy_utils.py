@@ -72,7 +72,7 @@ def get_compound_ids_by_experiment_id(dataset_id: str) -> dict[int, int]:
     return result
 
 
-def get_experiment_label_for_compound_label(dataset_id: str, compoound_label: int) -> Optional[int]:
+def get_experiment_label_for_compound_label(dataset_id: str, compoound_label: str) -> Optional[str]:
     """
     For a given compound label, find the compound experiment that's used to index the underlying dataset.
     This should only be called for datasets where the feature_type is "compound_experiment".

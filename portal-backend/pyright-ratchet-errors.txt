@@ -169,7 +169,6 @@ executive.py: error: "num_lines_with_data" is not a known member of "None" (repo
 executive.py: error: "plot_param" is possibly unbound (reportPossiblyUnboundVariable)
 executive.py: error: "taiga_id" is not a known member of "None" (reportOptionalMemberAccess)
 executive.py: error: Argument of type "Literal['All']" cannot be assigned to parameter "__value" of type "int" in function "__setitem__"
-executive.py: error: Argument of type "Literal['ENABLED_FEATURES']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
 executive.py: error: Argument of type "str | Any" cannot be assigned to parameter "__value" of type "list[Unknown]" in function "__setitem__"
 executive.py: error: Cannot access member "barh" for type "ndarray[Any, dtype[Any]]"
 executive.py: error: Cannot access member "spines" for type "ndarray[Any, dtype[Any]]"
@@ -181,7 +180,6 @@ executive.py: error: Expression of type "dict[Any, Any]" cannot be assigned to d
 executive.py: error: Expression of type "dict[Any, Any]" cannot be assigned to declared type "GeneExecutiveInfoDict" (reportAssignmentType)
 executive.py: error: Expression of type "tuple[CompoundExperiment | None, Unknown | None]" cannot be assigned to return type "Tuple[CompoundExperiment, DependencyDataset]"
 executive.py: error: Incorrect keyword arguments for __init_subclass__ method (reportGeneralTypeIssues)
-executive.py: error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
 executive.py: error: No overloads for "__setitem__" match the provided arguments (reportCallIssue)
 executive.py: error: No parameter named "total" (reportCallIssue)
 extension.py: error: "methylation_db" is not a known member of "None" (reportOptionalMemberAccess)
@@ -275,8 +273,6 @@ json_dump.py: error: Argument of type "Literal['JSONIFY_PRETTYPRINT_REGULAR']" c
 json_dump.py: error: Method "default" overrides class "JSONEncoder" in an incompatible manner
 json_dump.py: error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
 json_dump.py: error: Object of type "list[str]" is not callable (reportCallIssue)
-links.py: error: Argument of type "Literal['ENABLED_FEATURES']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
-links.py: error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
 match_related_loader.py: error: Argument of type "Hashable" cannot be assigned to parameter "__x" of type "ConvertibleToInt" in function "__new__"
 matrix_loader.py: error: Argument of type "Group | Dataset | Datatype" cannot be assigned to parameter "__iterable" of type "Iterable[_T@list]" in function "__init__"
 matrix_loader.py: error: Argument of type "Group | Dataset | Datatype" cannot be assigned to parameter "__obj" of type "Sized" in function "len"
@@ -416,7 +412,6 @@ tasks.py: error: "FileStorage" is unknown import symbol (reportAttributeAccessIs
 tasks.py: error: "tolist" is not a known member of "None" (reportOptionalMemberAccess)
 tasks.py: error: Argument of type "ArrayLike" cannot be assigned to parameter "column_labels" of type "List[str] | None" in function "_handle_df_nas" (reportArgumentType)
 tasks.py: error: Argument of type "Literal['COMPUTE_RESULTS_ROOT']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
-tasks.py: error: Argument of type "Literal['ENABLED_FEATURES']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
 tasks.py: error: Argument of type "Literal['NONSTANDARD_DATA_DIR']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
 tasks.py: error: Argument of type "list[Unknown]" cannot be assigned to parameter "gene_ids" of type "MutationTableSpec" in function "get_subsetted_mutations_df_by_ids"
 tasks.py: error: Argument of type "str | None" cannot be assigned to parameter "data_type" of type "str" in function "format_config"
@@ -577,11 +572,9 @@ test_views.py: error: Cannot access member "get_dose_enum" for type "DependencyD
 test_views.py: error: Cannot access member "label_without_compound_name" for type "CompoundDoseFactory"
 test_views.py: error: Cannot access member "label_without_compound_name" for type "CompoundDoseReplicateFactory"
 test_views.py: error: Object of type "None" is not subscriptable (reportOptionalSubscript)
-url_utils.py: error: Argument of type "Literal['ENABLED_FEATURES']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
 url_utils.py: error: Argument of type "Unknown | Literal['all'] | None" cannot be assigned to parameter "feature" of type "str | int" in function "get_id_from_dataset_feature" (reportArgumentType)
 url_utils.py: error: Argument of type "Unknown | None" cannot be assigned to parameter "feature" of type "str | int" in function "get_id_from_dataset_feature" (reportArgumentType)
 url_utils.py: error: Argument of type "tuple[str]" cannot be assigned to parameter "__value" of type "str" in function "__setitem__"
-url_utils.py: error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
 util.py: error: Argument of type "Literal['CAS_BUCKET']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
 util.py: error: Argument of type "Literal['DOWNLOADS_KEY']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
 util.py: error: Expression of type "None" cannot be assigned to parameter of type "Client"

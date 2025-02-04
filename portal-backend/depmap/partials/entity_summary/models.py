@@ -241,7 +241,7 @@ class EntitySummary:
         return json_dumps(response)
 
 
-def integrate_dep_data(metadata, dataset_id: str, entity_label: str, entity_id: str):
+def integrate_dep_data(metadata, dataset_id: str, entity_label: str, entity_id: int):
     """
     Returns:
         x_range, the range the x axis should be displayed at
@@ -255,7 +255,7 @@ def integrate_dep_data(metadata, dataset_id: str, entity_label: str, entity_id: 
     # Temporary workaround while DE2 still indexes by compound experiment
     if dataset.feature_type == "compound_experiment":
         # If it's indexed by compound experiment, assume it's a legacy dataset
-        entity_label = legacy_utils.get_experiment_label_for_compound_label(dataset_id, entity_label)
+        entity_label = legacy_utils.get_experiment_label_for_compound_label(dataset_id, entity_label) # pyright: ignore
         assert entity_label is not None, f"Unable to find CompoundExperiment for Compound {entity_id} in dataset {dataset_id}"
 
     metadata["x_range"] = _get_x_range(data_series)
@@ -280,9 +280,9 @@ def integrate_dep_data(metadata, dataset_id: str, entity_label: str, entity_id: 
     return metadata, data_series
 
 
-def _get_x_range(srs: pd.Series) -> list[float]:
-    series_min = float(srs.min()) 
-    series_max = float(srs.max())
+def _get_x_range(srs: pd.Series) -> list:
+    series_min = pd.to_numeric(srs.min()) 
+    series_max = pd.to_numeric(srs.max())
 
     return [series_min - 1, series_max + 1]
 

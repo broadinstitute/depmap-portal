@@ -3,7 +3,8 @@ import pandas as pd
 import numpy as np
 import pytest
 
-from depmap.dataset.models import DependencyDataset, BiomarkerDataset, TabularDataset
+from depmap.dataset.models import DependencyDataset, BiomarkerDataset
+from depmap.gene.models import Gene
 from depmap.partials.entity_summary.factories import get_entity_summary
 from depmap.partials.entity_summary import models
 from tests.factories import (
@@ -122,7 +123,7 @@ def test_integrate_cell_line_information(empty_db_mock_downloads):
     cell_line_1 = CellLineFactory()
     cell_line_na = CellLineFactory()
     cell_line_3 = CellLineFactory()
-    gene = GeneFactory()
+    gene: Gene = GeneFactory() # pyright: ignore
 
     cell_line_objs = [
         cell_line_3,

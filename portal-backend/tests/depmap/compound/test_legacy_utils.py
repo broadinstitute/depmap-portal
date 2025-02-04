@@ -1,7 +1,7 @@
 from depmap.compound.legacy_utils import (
     get_compound_ids_by_experiment_id,
     get_compound_labels_by_experiment_label,
-    )
+)
 from tests.factories import (
     CompoundExperimentFactory,
     CompoundFactory,
@@ -40,9 +40,9 @@ def test_get_compound_ids_by_experiment_id(empty_db_mock_downloads):
     interactive_test_utils.reload_interactive_config()
 
     result = get_compound_ids_by_experiment_id(dataset_id)
-    assert list(result.keys()) == [compound_experiment_1A.entity_id, compound_experiment_2.entity_id]
-    assert result[compound_experiment_1A.entity_id] == compound1.entity_id
-    assert result[compound_experiment_2.entity_id] == compound2.entity_id
+    assert list(result.keys()) == [compound_experiment_1A.entity_id, compound_experiment_2.entity_id] # pyright: ignore
+    assert result[compound_experiment_1A.entity_id] == compound1.entity_id # pyright: ignore
+    assert result[compound_experiment_2.entity_id] == compound2.entity_id # pyright: ignore
 
 
 def test_get_compound_labels_by_experiment_labels(empty_db_mock_downloads):
@@ -74,5 +74,5 @@ def test_get_compound_labels_by_experiment_labels(empty_db_mock_downloads):
 
     result = get_compound_labels_by_experiment_label(dataset_id)
     assert list(result.keys()) == [compound_experiment_1A.label, compound_experiment_2.label]
-    assert result[compound_experiment_1A.label] == compound1.label
-    assert result[compound_experiment_2.label] == compound2.label
+    assert result[compound_experiment_1A.label] == compound1.label # pyright: ignore
+    assert result[compound_experiment_2.label] == compound2.label # pyright: ignore
