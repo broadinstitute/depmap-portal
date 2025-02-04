@@ -97,7 +97,7 @@ def view_compound(name):
         name=name,
         title=name,
         compound_aliases=compound_aliases,
-        summary=sensitivity_tab_compound_summary, # TODO: rename this field, there's no reason to call it "summary"
+        summary=sensitivity_tab_compound_summary,
         about=format_about(compound),
         has_predictability=has_predictability,
         predictability_custom_downloads_link=get_predictability_input_files_downloads_link(),
@@ -111,6 +111,7 @@ def view_compound(name):
         celfie=celfie if has_celfie else None,
         compound_units=units,
     )
+
 
 def get_sensitivity_tab_info(compound_id: int, compound_datasets: list[MatrixDataset]) -> Optional[dict[str, Any]]:
     """Get a dictionary of values containing layout information for the sensitivity tab."""

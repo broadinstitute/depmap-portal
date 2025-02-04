@@ -410,7 +410,8 @@ class DependencyDataset(Dataset):
     def get_compound_experiment_priority_sorted_datasets_with_compound(
         compound_id: int,
     ) -> List[Tuple["CompoundExperiment", "DependencyDataset"]]:
-        # TODO: get rid of this old version (replaced with get_compound_experiment_priority_sorted_datasets in legacy utils)
+        # DEPRECATED: this will not work with breadbox datasets. 
+        # Calls to this should be replaced with get_all_datasets_containing_compound
         """
         :compound_id: entity id of compound object
         :return: List of (compound experiment object, dependency dataset object) tuples sorted by dataset priority first and secondly by compound experiment entity id

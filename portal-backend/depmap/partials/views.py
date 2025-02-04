@@ -71,7 +71,6 @@ def entity_summary_json_data():
     Not using _parse_args_and_call_func just because we need to get entity label, and process the size biom enum 
     """
     # Called by the compound sensitivity page 
-    # TODO: update this method to work when given a breadbox dataset id
     entity_id = request.args.get("entity_id")
     dep_enum_name = request.args.get("dep_enum_name") # Dataset ID
     size_biom_enum_name = request.args.get("size_biom_enum_name")
@@ -86,7 +85,6 @@ def entity_summary_json_data():
     if color == "none":
         color = None
 
-    # TODO: update the functions called for the below
     summary = get_entity_summary(entity, dep_enum_name, size_biom_enum, color)
     return Response(summary.json_data(), mimetype="application/json")
 

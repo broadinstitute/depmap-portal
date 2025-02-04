@@ -213,7 +213,6 @@ class EntitySummary:
             There are three parts to this, because there are three inflection points. There are two datasets where a gene may or may not be present, plus an option of whether to color by mutation
         2) Given this metadata and df, structuring the data as desired by plotly
         """
-        # TODO: confirm that this now works with a breadbox dataset
         metadata = {}
         legend = {}
         metadata, srs = integrate_dep_data(
