@@ -8,7 +8,7 @@ from depmap.enums import DataTypeEnum
 from depmap.dataset.models import Dataset, BiomarkerDataset
 from depmap.cell_line.models import CellLine
 from depmap.utilities import color_utils
-from depmap.settings.shared import NORMALIZED_RANGE
+from depmap.compound import legacy_utils 
 
 
 # abstracted out here so that tests can import it.
@@ -253,12 +253,18 @@ def integrate_dep_data(metadata, dataset_id: str, entity_label: str, entity_id: 
     data_series = dataset_data.loc[entity_label].dropna()
     data_series.name = "value"
 
+    # Temporary workaround while DE2 still indexes by compound experiment
+    if dataset.feature_type == "compound_experiment":
+        # If it's indexed by compound experiment, assume it's a legacy dataset
+        entity_label = legacy_utils.get_experiment_label_for_compound_label(dataset_id, entity_label)
+        assert entity_label is not None, f"Unable to find CompoundExperiment for Compound {entity_id} in dataset {dataset_id}"
+
     metadata["x_range"] = _get_x_range(data_series)
     metadata["x_label"] = dataset.units
     metadata["interactive_url"] = url_for(
             "data_explorer_2.view_data_explorer_2",
             xDataset=dataset.id,
-            xFeature=entity_id, # TODO: this link breaks because DE2 isn't prepared to index by compound
+            xFeature=entity_label,
             yDataset=None,
             yFeature=None,
     )

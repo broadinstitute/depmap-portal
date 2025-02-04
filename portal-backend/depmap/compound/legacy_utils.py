@@ -3,6 +3,7 @@ import pandas as pd
 import re
 import sqlalchemy as sa
 from sqlalchemy import nullslast, case  # type: ignore
+from typing import Optional
 
 from depmap.interactive import interactive_utils
 from depmap.database import db
@@ -18,7 +19,6 @@ from depmap.partials.matrix.models import Matrix, RowMatrixIndex
 log = logging.getLogger(__name__)
 
 def _get_deduplicated_experiment_compound_mapping(dataset_id: str) -> list[tuple[CompoundExperiment, Compound]]:
-    # TODO: write a test for this
     """ 
     Returns a 1-1 mapping between CompoundExperiments and Compounds within the given dataset. 
     All compound experiments not in the mapping should be dropped. 
@@ -70,6 +70,18 @@ def get_compound_ids_by_experiment_id(dataset_id: str) -> dict[int, int]:
     for experiment, compound in experiment_compound_pairs:
         result[experiment.entity_id] = compound.entity_id
     return result
+
+
+def get_experiment_label_for_compound_label(dataset_id: str, compoound_label: int) -> Optional[int]:
+    """
+    For a given compound label, find the compound experiment that's used to index the underlying dataset.
+    This should only be called for datasets where the feature_type is "compound_experiment".
+    This can be used to generate backwards compatible links to DE2. 
+    """
+    for exp_label, c_label in get_compound_labels_by_experiment_label(dataset_id).items():
+        if c_label == compoound_label:
+            return exp_label
+    return None
 
 
 def get_subsetted_df_by_compound_labels(dataset_id: str) -> pd.DataFrame:
