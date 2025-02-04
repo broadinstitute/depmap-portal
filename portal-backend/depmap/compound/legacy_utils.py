@@ -119,19 +119,4 @@ def get_compound_experiment_priority_sorted_datasets(compound_id: int) -> list[s
         )
         .with_entities(DependencyDataset)
     )
-    # For the compound page, an additional prioritization step has been done as well.
-    # I'm not sure why this was done, but want to keep the same functionality for legacy datasets.
-    dataset_regexp_ranking = [
-        "Prism_oncology.*",
-        "Repurposing_secondary.*",
-        "Rep_all_single_pt.*",
-        ".*",
-    ]
-    result = []
-    for regexp in dataset_regexp_ranking:
-        for dataset in datasets:
-            dataset_id = dataset.name.name
-            pattern = re.compile(regexp)
-            if pattern.match(dataset_id) and dataset_id not in result:
-                result.append(dataset_id)
-    return result 
+    return [dataset.name.name for dataset in datasets]
