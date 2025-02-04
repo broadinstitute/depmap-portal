@@ -351,9 +351,6 @@ def _get_analysis_data_table(
     if in_group == "All":
         return None
 
-    # if out_group_type == "All":
-    #    out_group_type = "All Others"  # HACK: Temporary until we agree on value options for outgroup types
-
     data = ContextAnalysis.find_context_analysis_by_subtype_code_out_group(
         subtype_code=in_group,
         out_group=out_group_type,
@@ -547,6 +544,7 @@ class SubtypeBranchBoxPlotData(Resource):
             all_sig_context_codes=all_sig_context_codes,
             model_ids_by_code=model_ids_by_code,
             entity_full_row_of_values=entity_full_row_of_values,
+            include_level_0=False,
         )
 
         return {

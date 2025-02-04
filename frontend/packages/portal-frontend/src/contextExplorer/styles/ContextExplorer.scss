@@ -565,9 +565,9 @@
   padding-left: 25px;
   padding-right: 35px;
   .plotFrame {
-    border: 1px solid #d9d9d9;
+    // border: 1px solid #d9d9d9;
     margin-bottom: 20px;
-    background-color: white;
+    // background-color: white;
   }
 }
 
@@ -719,9 +719,6 @@
 }
 
 .boxPlotHeader {
-  margin-left: 8px;
-  margin-right: 8px;
-
   & > h2 {
     font-weight: 600;
   }

@@ -1,3 +1,4 @@
+from xmlrpc.client import boolean
 from flask import url_for
 from typing import Dict, List, Literal, Optional
 from depmap.cell_line.models_new import DepmapModel
@@ -33,6 +34,7 @@ def get_box_plot_card_data(
     all_sig_context_codes: List[str],
     model_ids_by_code: Dict[str, List[str]],
     entity_full_row_of_values: pd.Series,
+    include_level_0: bool = True,
 ):
     significant_box_plot_data = {}
     all_sig_models = []
@@ -44,12 +46,13 @@ def get_box_plot_card_data(
             # This rule should be enforced in get_context_analysis.py. If this assertion gets hit,
             # something is wrong with our pipeline script.
             if len(context_model_ids) >= 5:
-                box_plot = get_box_plot_data_for_context(
-                    subtype_code=child,
-                    entity_full_row_of_values=entity_full_row_of_values,
-                    model_ids=context_model_ids,
-                )
-                significant_box_plot_data[child] = box_plot
+                if include_level_0 or child != level_0_code:
+                    box_plot = get_box_plot_data_for_context(
+                        subtype_code=child,
+                        entity_full_row_of_values=entity_full_row_of_values,
+                        model_ids=context_model_ids,
+                    )
+                    significant_box_plot_data[child] = box_plot
                 all_sig_models.extend(context_model_ids)
 
     all_other_model_ids = list(

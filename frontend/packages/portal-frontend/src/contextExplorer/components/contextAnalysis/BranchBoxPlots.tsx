@@ -179,10 +179,10 @@ function BranchBoxPlots({
             onLoad={() => {}}
             setXAxisRange={setXAxisRange}
             xAxisRange={xAxisRange}
-            plotHeight={2 * 105 + 80}
+            plotHeight={boxPlotData.length * 60 + 80}
             xAxisTitle={X_AXIS_TITLE}
             bottomMargin={80}
-            topMargin={100}
+            topMargin={20}
             dottedLinePosition={dottedLinePosition}
           />
         </div>

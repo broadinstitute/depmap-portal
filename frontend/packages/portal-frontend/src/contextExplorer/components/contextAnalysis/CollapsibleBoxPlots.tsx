@@ -94,24 +94,30 @@ function CollapsibleBoxPlots({
 
       Object.keys(boxPlotData.significant_selection).forEach(
         (plotTitle, index) => {
-          const plotData = boxPlotData.significant_selection[plotTitle];
-          if (plotData.data.length > 0) {
+          if (boxPlotData.significant_selection[plotTitle].data.length > 0) {
             if (plotTitle === topContextNameInfo.subtype_code) {
               setSelectedLevelZeroBoxData({
-                name: plotData.label,
-                hoverLabels: plotData.cell_line_display_names,
-                xVals: plotData.data,
+                name: boxPlotData.significant_selection[plotTitle].label,
+                hoverLabels:
+                  boxPlotData.significant_selection[plotTitle]
+                    .cell_line_display_names,
+                xVals: boxPlotData.significant_selection[plotTitle].data,
                 color: EntityBoxColorList[index],
                 lineColor: "#000000",
               });
             } else {
-              plotInfo.push({
-                name: plotData.path.join("/"),
-                hoverLabels: plotData.cell_line_display_names,
-                xVals: plotData.data,
+              const info = {
+                name: boxPlotData.significant_selection[plotTitle].path!.join(
+                  "/"
+                ),
+                hoverLabels:
+                  boxPlotData.significant_selection[plotTitle]
+                    .cell_line_display_names,
+                xVals: boxPlotData.significant_selection[plotTitle].data,
                 color: EntityBoxColorList[index],
                 lineColor: "#000000",
-              });
+              };
+              plotInfo.push(info);
             }
           }
         }
@@ -206,7 +212,7 @@ function CollapsibleBoxPlots({
                   boxData={[selectedLevelZeroBoxData]}
                   setXAxisRange={setXAxisRange}
                   xAxisRange={xAxisRange}
-                  plotHeight={40}
+                  plotHeight={90}
                   xAxisTitle={""}
                   bottomMargin={0}
                   topMargin={10}
@@ -232,7 +238,7 @@ function CollapsibleBoxPlots({
                 plotHeight={selectedContextBoxData.length * 90 + 80}
                 xAxisTitle={X_AXIS_TITLE}
                 bottomMargin={80}
-                topMargin={100}
+                topMargin={20}
                 dottedLinePosition={
                   entityType === "gene" ? -1 : drugDottedLine || -1.74
                 }
@@ -255,7 +261,7 @@ function CollapsibleBoxPlots({
                     boxData={[levelOBoxData]}
                     setXAxisRange={setXAxisRange}
                     xAxisRange={xAxisRange}
-                    plotHeight={40}
+                    plotHeight={60}
                     xAxisTitle={""}
                     bottomMargin={0}
                     topMargin={10}
@@ -294,17 +300,17 @@ function CollapsibleBoxPlots({
         </Panel.Heading>
         <Panel.Body>
           {" "}
-          <div style={{ marginTop: "100px" }}>
+          <div>
             {otherBoxData.length > 0 && (
               <BoxPlot
                 plotName="other solid and heme"
                 boxData={otherBoxData}
                 setXAxisRange={setXAxisRange}
                 xAxisRange={xAxisRange}
-                plotHeight={2 * 105 + 80}
+                plotHeight={otherBoxData.length * 60 + 80}
                 xAxisTitle={X_AXIS_TITLE}
                 bottomMargin={80}
-                topMargin={100}
+                topMargin={20}
                 dottedLinePosition={
                   entityType === "gene" ? -1 : drugDottedLine || -1.74
                 }
