@@ -1,8 +1,7 @@
-from flask import url_for, current_app
+from flask import url_for
 from json import dumps as json_dumps
 import numpy as np
 import pandas as pd
-import urllib.parse
 
 from depmap import data_access
 from depmap.enums import DataTypeEnum
