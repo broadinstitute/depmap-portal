@@ -316,7 +316,7 @@ def get_all_datasets_containing_compound(compound_id: int) -> list[MatrixDataset
         - Datasets indexed by compound (from breadbox)
         - Datasets indexed by compound experiment (from the legacy backend)
     """
-    bb_compound_datasets = breadbox_dao.get_all_matrix_datasets(
+    bb_compound_datasets = breadbox_dao.get_filtered_matrix_datasets(
         feature_type="compound",
         feature_id=str(compound_id)
     )
