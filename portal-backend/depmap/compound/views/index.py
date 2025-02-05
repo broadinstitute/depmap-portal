@@ -86,8 +86,7 @@ def view_compound(name):
     # Figure out membership in different datasets
     compound_datasets = data_access.get_all_datasets_containing_compound(compound_id)
     has_datasets = len(compound_datasets) != 0
-    sensitivity_tab_compound_summary = get_sensitivity_tab_info(compound.entity_id, compound_datasets) # format_compound_summary(compound_experiment_and_datasets) 
-
+    sensitivity_tab_compound_summary = get_sensitivity_tab_info(compound.entity_id, compound_datasets)
     has_celfie = current_app.config["ENABLED_FEATURES"].celfie and has_datasets
     if has_celfie:
         celfie = format_celfie(name, sensitivity_tab_compound_summary["summary_options"])

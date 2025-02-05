@@ -49,9 +49,9 @@ def test_entity_summary(empty_db_mock_downloads):
 
 def test_compound_summary(empty_db_mock_downloads):
     cell_line = CellLineFactory()
-    compound = CompoundExperimentFactory()
+    compound_experiment = CompoundExperimentFactory()
 
-    dep_matrix = MatrixFactory(entities=[compound], cell_lines=[cell_line])
+    dep_matrix = MatrixFactory(entities=[compound_experiment], cell_lines=[cell_line])
 
     DependencyDatasetFactory(
         matrix=dep_matrix, name=DependencyDataset.DependencyEnum.GDSC1_AUC
@@ -59,8 +59,11 @@ def test_compound_summary(empty_db_mock_downloads):
     empty_db_mock_downloads.session.flush()
     interactive_test_utils.reload_interactive_config()
 
+    # Since compound datasets will be indexed by compound going forward, 
+    # the get_entity_summary function expects to be called by compound, even
+    # when the underlying dataset is indexed by compound experiment.
     entity_summary = get_entity_summary(
-        compound, DependencyDataset.DependencyEnum.GDSC1_AUC.name, None, None
+        compound_experiment.compound, DependencyDataset.DependencyEnum.GDSC1_AUC.name, None, None
     )
     assert isinstance(entity_summary, EntitySummary)
     assert entity_summary.json_data() is not None

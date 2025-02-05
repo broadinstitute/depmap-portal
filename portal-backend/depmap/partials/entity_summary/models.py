@@ -281,9 +281,9 @@ def integrate_dep_data(metadata, dataset_id: str, entity_label: str, entity_id: 
     return metadata, data_series
 
 
-def _get_x_range(srs: pd.Series) -> list:
-    series_min = pd.to_numeric(srs.min()) 
-    series_max = pd.to_numeric(srs.max())
+def _get_x_range(srs: pd.Series) -> list[float]:
+    series_min = float(pd.to_numeric(srs.min())) 
+    series_max = float(pd.to_numeric(srs.max()))
 
     return [series_min - 1, series_max + 1]
 
