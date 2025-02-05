@@ -2,6 +2,7 @@ from flask import url_for, current_app
 from json import dumps as json_dumps
 import numpy as np
 import pandas as pd
+import urllib.parse
 
 from depmap import data_access
 from depmap.enums import DataTypeEnum
@@ -266,6 +267,7 @@ def integrate_dep_data(metadata, dataset_id: str, entity_label: str, entity_id: 
             xFeature=entity_label,
             yDataset=None,
             yFeature=None,
+            color_property='slice/lineage/1/label',
     )
 
     if dataset.data_type == DataTypeEnum.crispr.value:
