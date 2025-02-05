@@ -51,7 +51,7 @@ def generate_daintree_configs(
 
             # Set target based on screen type
             target = screen
-            target_key = "crispr_gene_effect" if screen == "CRISPR" else "rnai"
+            target_key = "crispr_gene_effect" if screen == "crispr" else "rnai"
             target_input = input_config[target_key]
 
             output_json["data"][target] = {
