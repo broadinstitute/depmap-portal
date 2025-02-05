@@ -38,6 +38,7 @@ const InsignificantColor = { r: 255, g: 255, b: 255 };
 
 interface Props {
   dapi: DepmapApi;
+  urlPrefix: string;
   treeType: string;
   datasetName: ContextExplorerDatasets;
   entityType: string;
@@ -69,6 +70,7 @@ function BranchBoxPlots({
   levelZeroCode,
   entityType,
   entityFullLabel,
+  urlPrefix,
   xAxisTitle = "",
   xAxisRange = undefined,
   bottomMargin = undefined,
@@ -179,6 +181,7 @@ function BranchBoxPlots({
         {isLoadingBranchPlots && <PlotSpinner />}
         {boxPlotData && !isLoadingBranchPlots && (
           <BoxPlot
+            urlPrefix={urlPrefix}
             plotName={`${levelZeroCode} box plot`}
             boxData={boxPlotData}
             onLoad={() => {}}

@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from "react";
-import { BOX_THICKNESS } from "src/contextExplorer/utils";
+import { fetchUrlPrefix } from "src/common/utilities/context";
+import { BOX_THICKNESS, getNewContextUrl } from "src/contextExplorer/utils";
 import ExtendedPlotType from "../models/ExtendedPlotType";
 import PlotlyLoader, { PlotlyType } from "./PlotlyLoader";
 
@@ -24,6 +25,7 @@ export interface BoxPlotProps {
   xAxisTitle?: string;
   bottomMargin?: number;
   topMargin?: number;
+  urlPrefix?: string;
 }
 
 type BoxPlotWithPlotly = BoxPlotProps & { Plotly: PlotlyType };
@@ -33,6 +35,7 @@ function BoxPlot({
   plotName,
   dottedLinePosition,
   onLoad = () => {},
+  urlPrefix = undefined,
   plotHeight = undefined,
   xAxisRange = undefined,
   xAxisTitle = undefined,
@@ -200,7 +203,11 @@ function BoxPlot({
   return <div ref={ref} />;
 }
 
-export default function LazyBoxPlot({ boxData, ...otherProps }: BoxPlotProps) {
+export default function LazyBoxPlot({
+  boxData,
+  urlPrefix,
+  ...otherProps
+}: BoxPlotProps) {
   return (
     <PlotlyLoader version="module">
       {(Plotly) =>
@@ -223,7 +230,15 @@ export default function LazyBoxPlot({ boxData, ...otherProps }: BoxPlotProps) {
                     fontSize: "12px",
                   }}
                 >
-                  {box.name}
+                  {boxData.length > 1 ? (
+                    box.name.split("/").map((code) => (
+                      <>
+                        <a href={getNewContextUrl(code)}>{code}</a>/
+                      </>
+                    ))
+                  ) : (
+                    <div>{box.name}</div>
+                  )}
                 </div>
               ))}
             </div>

@@ -626,3 +626,16 @@ export function getSelectedContextNode(
   }
   return { selectedContextNode: selectedNode, topContextNameInfo };
 }
+
+export function getNewContextUrl(newCode: string) {
+  const currentLocation = window.location.href;
+  const currentUrl = new URL(currentLocation);
+
+  const currentContext = currentUrl.searchParams.get("context");
+  const newUrl = currentLocation.replace(
+    `&context=${currentContext}`,
+    `&context=${newCode}`
+  );
+
+  return newUrl;
+}

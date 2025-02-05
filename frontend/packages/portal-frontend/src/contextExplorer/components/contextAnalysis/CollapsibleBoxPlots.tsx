@@ -22,6 +22,7 @@ import BoxPlot, { BoxPlotInfo } from "src/plot/components/BoxPlot";
 import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
 import BranchBoxPlots from "./BranchBoxPlots";
 import { defaultPoints } from "src/compound/components/DoseResponseCurve";
+import { fetchUrlPrefix } from "src/common/utilities/context";
 
 const EntityBoxColorList = [
   { r: 0, g: 109, b: 91 },
@@ -67,6 +68,14 @@ function CollapsibleBoxPlots({
   fracDepIn,
   dapi,
 }: Props) {
+  let relativeUrlPrefix = fetchUrlPrefix();
+
+  if (relativeUrlPrefix === "/") {
+    relativeUrlPrefix = "";
+  }
+
+  const urlPrefix = `${window.location.protocol}//${window.location.host}${relativeUrlPrefix}`;
+
   // API call to get the data under this level_0. Cache this!!!
   const [
     selectedLevelZeroBoxData,
@@ -267,6 +276,7 @@ function CollapsibleBoxPlots({
               <Panel.Title toggle>
                 <div>
                   <BoxPlot
+                    urlPrefix={urlPrefix}
                     plotName={`${levelOBoxData}-header`}
                     boxData={[levelOBoxData]}
                     setXAxisRange={setXAxisRange}
@@ -289,6 +299,7 @@ function CollapsibleBoxPlots({
             <Panel.Body collapsible>
               {activeKey === levelOBoxData.name && (
                 <BranchBoxPlots
+                  urlPrefix={urlPrefix}
                   dapi={dapi}
                   treeType={treeType}
                   datasetName={datasetName}
@@ -309,14 +320,12 @@ function CollapsibleBoxPlots({
         ))}
       </>
       <Panel eventKey="OTHER">
-        <Panel.Heading>
-          <Panel.Title>Other</Panel.Title>
-        </Panel.Heading>
         <Panel.Body>
           {" "}
           <div>
             {otherBoxData.length > 0 && (
               <BoxPlot
+                urlPrefix={urlPrefix}
                 plotName="other solid and heme"
                 boxData={otherBoxData}
                 setXAxisRange={setXAxisRange}
