@@ -1,5 +1,5 @@
 from pydantic import Field, BaseModel
-from typing import Annotated, Optional, Union
+from typing import Annotated, Any, Optional, Union
 
 
 class ContextMatchResponse(BaseModel):
@@ -9,7 +9,7 @@ class ContextMatchResponse(BaseModel):
 
 
 ContextExpression = Annotated[
-    Union[bool, dict[str, list]], Field(union_mode="left_to_right")
+    Union[bool, dict[str, Any]], Field(union_mode="left_to_right")
 ]
 
 
