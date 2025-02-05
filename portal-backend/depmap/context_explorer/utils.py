@@ -153,6 +153,7 @@ def get_box_plot_data_for_context(
 
     node = SubtypeNode.get_by_code(subtype_code)
     path = get_path_to_node(node.subtype_code)
+    path = path[1:] if len(path) > 1 else path
     delim = "/"
 
     plotLabel = delim.join(path) if not label else label

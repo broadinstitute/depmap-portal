@@ -8,8 +8,12 @@ import {
   ContextPlotBoxData,
   TreeType,
 } from "src/contextExplorer/models/types";
+import styles from "src/contextExplorer/styles/ContextExplorer.scss";
 import { ApiContext } from "@depmap/api";
 import {
+  BOX_PLOT_BOTTOM_MARGIN,
+  BOX_PLOT_TOP_MARGIN,
+  BOX_THICKNESS,
   COMPOUND_BOX_PLOT_X_AXIS_TITLE,
   GENE_BOX_PLOT_X_AXIS_TITLE,
 } from "src/contextExplorer/utils";
@@ -77,10 +81,10 @@ function CollapsibleBoxPlots({
   const [otherBoxData, setOtherBoxData] = useState<BoxPlotInfo[]>([]);
   const [xAxisRange, setXAxisRange] = useState<any>(null);
 
-  const X_AXIS_TITLE =
-    entityType === "gene"
-      ? GENE_BOX_PLOT_X_AXIS_TITLE
-      : COMPOUND_BOX_PLOT_X_AXIS_TITLE;
+  const X_AXIS_TITLE = "";
+  // entityType === "gene"
+  //   ? GENE_BOX_PLOT_X_AXIS_TITLE
+  //   : COMPOUND_BOX_PLOT_X_AXIS_TITLE;
 
   const drugDottedLine = boxPlotData?.drug_dotted_line;
 
@@ -212,10 +216,12 @@ function CollapsibleBoxPlots({
                   boxData={[selectedLevelZeroBoxData]}
                   setXAxisRange={setXAxisRange}
                   xAxisRange={xAxisRange}
-                  plotHeight={90}
+                  plotHeight={
+                    BOX_THICKNESS + BOX_PLOT_TOP_MARGIN + BOX_PLOT_BOTTOM_MARGIN
+                  }
                   xAxisTitle={""}
-                  bottomMargin={0}
-                  topMargin={10}
+                  bottomMargin={BOX_PLOT_BOTTOM_MARGIN}
+                  topMargin={BOX_PLOT_TOP_MARGIN}
                   dottedLinePosition={
                     entityType === "gene" ? -1 : drugDottedLine || -1.74
                   }
@@ -227,24 +233,28 @@ function CollapsibleBoxPlots({
 
         <Panel.Body collapsible>
           {" "}
-          <div>
-            {selectedContextBoxData && (
+          {selectedContextBoxData && (
+            <div>
               <BoxPlot
                 plotName="main"
                 boxData={selectedContextBoxData}
                 onLoad={handleSetMainPlotElement}
                 setXAxisRange={setXAxisRange}
                 xAxisRange={xAxisRange}
-                plotHeight={selectedContextBoxData.length * 90 + 80}
+                plotHeight={
+                  selectedContextBoxData.length * BOX_THICKNESS +
+                  BOX_PLOT_TOP_MARGIN +
+                  BOX_PLOT_BOTTOM_MARGIN
+                }
                 xAxisTitle={X_AXIS_TITLE}
-                bottomMargin={80}
-                topMargin={20}
+                bottomMargin={BOX_PLOT_BOTTOM_MARGIN}
+                topMargin={BOX_PLOT_TOP_MARGIN}
                 dottedLinePosition={
                   entityType === "gene" ? -1 : drugDottedLine || -1.74
                 }
               />
-            )}
-          </div>
+            </div>
+          )}
         </Panel.Body>
       </Panel>
       <>
@@ -261,10 +271,14 @@ function CollapsibleBoxPlots({
                     boxData={[levelOBoxData]}
                     setXAxisRange={setXAxisRange}
                     xAxisRange={xAxisRange}
-                    plotHeight={60}
+                    plotHeight={
+                      BOX_THICKNESS +
+                      BOX_PLOT_TOP_MARGIN +
+                      BOX_PLOT_BOTTOM_MARGIN
+                    }
                     xAxisTitle={""}
-                    bottomMargin={0}
-                    topMargin={10}
+                    bottomMargin={BOX_PLOT_BOTTOM_MARGIN}
+                    topMargin={BOX_PLOT_TOP_MARGIN}
                     dottedLinePosition={
                       entityType === "gene" ? -1 : drugDottedLine || -1.74
                     }
@@ -307,10 +321,14 @@ function CollapsibleBoxPlots({
                 boxData={otherBoxData}
                 setXAxisRange={setXAxisRange}
                 xAxisRange={xAxisRange}
-                plotHeight={otherBoxData.length * 60 + 80}
+                plotHeight={
+                  otherBoxData.length * BOX_THICKNESS +
+                  BOX_PLOT_TOP_MARGIN +
+                  BOX_PLOT_BOTTOM_MARGIN
+                }
                 xAxisTitle={X_AXIS_TITLE}
-                bottomMargin={80}
-                topMargin={20}
+                bottomMargin={BOX_PLOT_BOTTOM_MARGIN}
+                topMargin={BOX_PLOT_TOP_MARGIN}
                 dottedLinePosition={
                   entityType === "gene" ? -1 : drugDottedLine || -1.74
                 }

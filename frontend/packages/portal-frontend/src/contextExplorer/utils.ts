@@ -13,6 +13,9 @@ import { Filter } from "src/common/models/discoveryAppFilters";
 import { deleteSpecificQueryParams } from "@depmap/utils";
 
 export const CONTEXT_EXPL_BAR_THICKNESS = 40;
+export const BOX_THICKNESS = 40;
+export const BOX_PLOT_BOTTOM_MARGIN = 0;
+export const BOX_PLOT_TOP_MARGIN = 0;
 
 export function getSelectivityValLabel(entityType: string) {
   return entityType === "gene" ? "log(OR)" : "Bimodality Coefficient";

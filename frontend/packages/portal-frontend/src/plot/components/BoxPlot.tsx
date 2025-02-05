@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from "react";
+import { BOX_THICKNESS } from "src/contextExplorer/utils";
 import ExtendedPlotType from "../models/ExtendedPlotType";
 import PlotlyLoader, { PlotlyType } from "./PlotlyLoader";
 
@@ -37,7 +38,7 @@ function BoxPlot({
   xAxisTitle = undefined,
   setXAxisRange = undefined,
   bottomMargin = 0,
-  topMargin = 25,
+  topMargin = 0,
   Plotly,
 }: BoxPlotWithPlotly) {
   const ref = useRef<ExtendedPlotType>(null);
@@ -93,14 +94,13 @@ function BoxPlot({
         hoveron: "points",
       };
     });
-    console.log(data);
 
     const layout: Partial<Plotly.Layout> = {
-      margin: { t: topMargin, r: 80, b: bottomMargin, l: 130 },
-      autosize: plotHeight === undefined,
+      margin: { t: topMargin, r: 15, b: bottomMargin, l: 0 },
+      autosize: true,
       dragmode: false,
       height: plotHeight,
-      width: 370,
+      width: 240,
       showlegend: false,
       yaxis: {
         zeroline: false,
@@ -168,7 +168,7 @@ function BoxPlot({
       Plotly.relayout(ref.current, update);
     } else if (ref.current?.layout && plotName === "main") {
       const update: Partial<Plotly.Layout> = {
-        margin: { t: topMargin, r: 80, b: bottomMargin, l: 130 },
+        margin: { t: topMargin, r: 15, b: bottomMargin, l: 0 },
         xaxis: {
           range: xAxisRange ?? ref.current.layout.xaxis.range,
           title: xAxisTitle ?? "",
@@ -177,7 +177,15 @@ function BoxPlot({
 
       Plotly.relayout(ref.current, update);
     }
-  }, [xAxisRange, xAxisTitle, Plotly, bottomMargin, topMargin, plotName]);
+  }, [
+    xAxisRange,
+    xAxisTitle,
+    Plotly,
+    bottomMargin,
+    topMargin,
+    plotName,
+    plotHeight,
+  ]);
 
   useEffect(() => {
     if (
@@ -197,12 +205,35 @@ export default function LazyBoxPlot({ boxData, ...otherProps }: BoxPlotProps) {
     <PlotlyLoader version="module">
       {(Plotly) =>
         boxData ? (
-          <BoxPlot
-            boxData={boxData}
-            Plotly={Plotly}
-            // eslint-disable-next-line react/jsx-props-no-spreading
-            {...otherProps}
-          />
+          <div style={{ display: "grid", gridTemplateColumns: "120px auto" }}>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateRows: `repeat(${boxData.length}, ${BOX_THICKNESS}px)`,
+                alignItems: "center",
+              }}
+            >
+              {boxData.map((box, index) => (
+                <div
+                  style={{
+                    gridRow: index,
+                    maxWidth: "120px",
+                    overflow: "hidden",
+                    overflowWrap: "break-word",
+                    fontSize: "12px",
+                  }}
+                >
+                  {box.name}
+                </div>
+              ))}
+            </div>
+            <BoxPlot
+              boxData={boxData}
+              Plotly={Plotly}
+              // eslint-disable-next-line react/jsx-props-no-spreading
+              {...otherProps}
+            />
+          </div>
         ) : null
       }
     </PlotlyLoader>

@@ -8,11 +8,15 @@ import {
   SubtypeBranchBoxPlotData,
 } from "src/contextExplorer/models/types";
 import {
+  BOX_PLOT_BOTTOM_MARGIN,
+  BOX_PLOT_TOP_MARGIN,
+  BOX_THICKNESS,
   COMPOUND_BOX_PLOT_X_AXIS_TITLE,
   GENE_BOX_PLOT_X_AXIS_TITLE,
 } from "src/contextExplorer/utils";
 import { DepmapApi } from "src/dAPI";
 import BoxPlot, { BoxPlotInfo } from "src/plot/components/BoxPlot";
+import PlotSpinner from "src/plot/components/PlotSpinner";
 import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
 
 const EntityBoxColorList = [
@@ -171,22 +175,27 @@ function BranchBoxPlots({
 
   return (
     <>
-      {boxPlotData && (
-        <div>
+      <div>
+        {isLoadingBranchPlots && <PlotSpinner />}
+        {boxPlotData && !isLoadingBranchPlots && (
           <BoxPlot
             plotName={`${levelZeroCode} box plot`}
             boxData={boxPlotData}
             onLoad={() => {}}
             setXAxisRange={setXAxisRange}
             xAxisRange={xAxisRange}
-            plotHeight={boxPlotData.length * 60 + 80}
-            xAxisTitle={X_AXIS_TITLE}
-            bottomMargin={80}
-            topMargin={20}
+            plotHeight={
+              boxPlotData.length * BOX_THICKNESS +
+              BOX_PLOT_TOP_MARGIN +
+              BOX_PLOT_BOTTOM_MARGIN
+            }
+            xAxisTitle={""}
+            bottomMargin={BOX_PLOT_BOTTOM_MARGIN}
+            topMargin={BOX_PLOT_TOP_MARGIN}
             dottedLinePosition={dottedLinePosition}
           />
-        </div>
-      )}
+        )}
+      </div>
     </>
   );
 }
