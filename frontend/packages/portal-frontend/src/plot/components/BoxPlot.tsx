@@ -35,7 +35,6 @@ function BoxPlot({
   plotName,
   dottedLinePosition,
   onLoad = () => {},
-  urlPrefix = undefined,
   plotHeight = undefined,
   xAxisRange = undefined,
   xAxisTitle = undefined,
@@ -103,7 +102,7 @@ function BoxPlot({
       autosize: true,
       dragmode: false,
       height: plotHeight,
-      width: 240,
+      width: 220,
       showlegend: false,
       yaxis: {
         zeroline: false,
@@ -203,11 +202,7 @@ function BoxPlot({
   return <div ref={ref} />;
 }
 
-export default function LazyBoxPlot({
-  boxData,
-  urlPrefix,
-  ...otherProps
-}: BoxPlotProps) {
+export default function LazyBoxPlot({ boxData, ...otherProps }: BoxPlotProps) {
   return (
     <PlotlyLoader version="module">
       {(Plotly) =>
@@ -220,7 +215,7 @@ export default function LazyBoxPlot({
                 alignItems: "center",
               }}
             >
-              {boxData.map((box, index) => (
+              {[...boxData.slice(1), boxData[0]].reverse().map((box, index) => (
                 <div
                   style={{
                     gridRow: index,
@@ -230,10 +225,11 @@ export default function LazyBoxPlot({
                     fontSize: "12px",
                   }}
                 >
-                  {boxData.length > 1 ? (
-                    box.name.split("/").map((code) => (
+                  {boxData.length > 1 && index !== 0 ? (
+                    box.name.split("/").map((code, j) => (
                       <>
-                        <a href={getNewContextUrl(code)}>{code}</a>/
+                        <a href={getNewContextUrl(code)}>{code}</a>
+                        {j < box.name.split("/").length - 1 && "/"}
                       </>
                     ))
                   ) : (

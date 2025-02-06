@@ -218,7 +218,19 @@ function CollapsibleBoxPlots({
         <Panel.Heading>
           <Panel.Title toggle>
             {" "}
-            <div>
+            <div style={{ display: "flex", flexDirection: "row" }}>
+              <span
+                style={{
+                  paddingRight: "8px",
+                  paddingTop: "12px",
+                  fontSize: "12px",
+                }}
+                className={
+                  activeKey === "SELECTED"
+                    ? "glyphicon glyphicon-chevron-up"
+                    : "glyphicon glyphicon-chevron-down"
+                }
+              />
               {selectedLevelZeroBoxData && (
                 <BoxPlot
                   plotName="main-header"
@@ -274,7 +286,19 @@ function CollapsibleBoxPlots({
           >
             <Panel.Heading>
               <Panel.Title toggle>
-                <div>
+                <div style={{ display: "flex", flexDirection: "row" }}>
+                  <span
+                    style={{
+                      paddingRight: "8px",
+                      paddingTop: "12px",
+                      fontSize: "12px",
+                    }}
+                    className={
+                      activeKey === levelOBoxData.name
+                        ? "glyphicon glyphicon-chevron-up"
+                        : "glyphicon glyphicon-chevron-down"
+                    }
+                  />
                   <BoxPlot
                     urlPrefix={urlPrefix}
                     plotName={`${levelOBoxData}-header`}

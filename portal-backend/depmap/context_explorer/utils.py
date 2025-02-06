@@ -37,6 +37,7 @@ def get_box_plot_card_data(
     include_level_0: bool = True,
 ):
     significant_box_plot_data = {}
+    insignificant_box_plot_data = {}
     all_sig_models = []
 
     child_codes = model_ids_by_code.keys()
