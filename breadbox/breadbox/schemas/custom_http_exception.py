@@ -64,3 +64,8 @@ class AnnotationValidationError(UserError):
 class ComputeLinearFitError(UserError):
     def __init__(self, msg):
         super().__init__(msg)
+
+
+class CeleryConnectionError(HTTPException):
+    def __init__(self, msg, error_code=503):
+        super().__init__(error_code, msg)
