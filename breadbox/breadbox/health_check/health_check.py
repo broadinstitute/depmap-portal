@@ -1,7 +1,7 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, status
 from breadbox.health_check import site_check_task
 from breadbox.celery_task.utils import format_task_status, check_celery
-from breadbox.schemas.custom_http_exception import CeleryConnectionError
+from breadbox.schemas.custom_http_exception import HTTPError
 
 import logging
 
@@ -24,9 +24,7 @@ def log_test():
     return {"message": "ok"}
 
 
-@router.get(
-    "/ok", operation_id="ok",
-)
+@router.get("/ok", operation_id="ok")
 def ok():
     check_celery()
 
@@ -41,7 +39,11 @@ def simulate_error():
     raise Exception("Simulated error")
 
 
-@router.get("/celery", operation_id="celery_check")
+@router.get(
+    "/celery",
+    operation_id="celery_check",
+    responses={status.HTTP_503_SERVICE_UNAVAILABLE: {"model": HTTPError}},
+)
 def celery_check():
     check_celery()
 

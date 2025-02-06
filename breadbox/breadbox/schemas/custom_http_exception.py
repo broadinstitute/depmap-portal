@@ -16,7 +16,6 @@ ERROR_CODES = [
     status.HTTP_403_FORBIDDEN,
     status.HTTP_404_NOT_FOUND,
     status.HTTP_409_CONFLICT,
-    status.HTTP_503_SERVICE_UNAVAILABLE,
 ]
 ERROR_RESPONSES = dict.fromkeys(ERROR_CODES, {"model": HTTPError})
 
