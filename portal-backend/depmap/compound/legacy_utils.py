@@ -1,3 +1,4 @@
+import collections
 import logging
 import pandas as pd
 import re
@@ -34,18 +35,13 @@ def _get_deduplicated_experiment_compound_mapping(dataset_id: str) -> list[tuple
         .with_entities(comp_exp_alias, compound_alias)
         .all()
     )
-    # Organize values by compound ID
-    experiments_by_compound_id: dict[str, list] = {}
+
+    experiments_by_compound_id = collections.defaultdict(lambda: [])
     compounds_by_compound_id: dict[str, Compound] = {}
     for comp_exp, compound in comp_exp_info:
         compound_id = compound.entity_id
-        if compound_id in experiments_by_compound_id:
-            # Add to the existing list of experiments
-            experiments_by_compound_id[compound_id].append(comp_exp)
-        else:
-            # Add records to both dictionaries
-            experiments_by_compound_id[compound_id] = [comp_exp]
-            compounds_by_compound_id[compound_id] = compound
+        experiments_by_compound_id[compound_id].append(comp_exp)
+        compounds_by_compound_id[compound_id] = compound
 
     # Remove duplicate compound experiments, re-index by compound experiment
     result = []
