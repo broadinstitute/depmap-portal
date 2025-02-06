@@ -2539,12 +2539,13 @@ class TestPost:
         )
         """
         Expected:
+            mean
         ------------------- 
         A     2
         B     3.5
         C     3
         """
-        assert response.json() == {"A": 2, "B": 3.5, "C": 3}
+        assert response.json() == {"mean": {"A": 2, "B": 3.5, "C": 3}}
 
         response = client.post(
             f"/datasets/matrix/{matrix_dataset.json()['result']['datasetId']}",
@@ -2552,12 +2553,13 @@ class TestPost:
         )
         """
         Expected:
+            25%tile
         ------------------- 
         A    1.0050
         B    3.0025
         C    2.0050
         """
-        assert response.json() == {"A": 1.0050, "B": 3.0025, "C": 2.0050}
+        assert response.json() == {"25%tile": {"A": 1.0050, "B": 3.0025, "C": 2.0050}}
 
         response = client.post(
             f"/datasets/matrix/{matrix_dataset.json()['result']['datasetId']}",
@@ -2571,11 +2573,12 @@ class TestPost:
         )
         """
         Expected:
+                mean
         ------------------- 
         Id1     2
         Id3     3
         """
-        assert response.json() == {"Id1": 2, "Id3": 3}
+        assert response.json() == {"mean": {"Id1": 2, "Id3": 3}}
 
     def test_bad_matrix_dataset_categorical_aggregation(
         self,

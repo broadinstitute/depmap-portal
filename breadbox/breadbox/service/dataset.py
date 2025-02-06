@@ -177,7 +177,7 @@ def _aggregate_matrix_df(
 
     return nan_df.agg(
         enum_to_agg_method[aggregation], axis=0 if aggregate_by == "samples" else 1
-    )
+    ).to_frame(name=aggregation.value)
 
 
 def get_subsetted_tabular_dataset_df(
