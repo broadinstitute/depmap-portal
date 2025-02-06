@@ -7,7 +7,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from breadbox.config import Settings, get_settings
 from depmap_compute import models
 
-from breadbox.schemas.custom_http_exception import UserError, CeleryConnectionError
+from breadbox.schemas.custom_http_exception import UserError
 from ..schemas.compute import ComputeParams, ComputeResponse
 from ..compute import analysis_tasks
 from .dependencies import get_user

@@ -6,7 +6,6 @@ from ..schemas.dataset import DatasetParams, AddDatasetResponse
 from .dependencies import get_user
 
 from ..celery_task import utils
-from breadbox.schemas.custom_http_exception import CeleryConnectionError
 
 router = APIRouter(prefix="/dataset-v2", tags=["datasets"])
 
