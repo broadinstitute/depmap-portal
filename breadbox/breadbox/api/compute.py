@@ -7,11 +7,11 @@ from fastapi import APIRouter, HTTPException, Depends
 from breadbox.config import Settings, get_settings
 from depmap_compute import models
 
-from breadbox.schemas.custom_http_exception import UserError, HTTPError
+from breadbox.schemas.custom_http_exception import UserError
 from ..schemas.compute import ComputeParams, ComputeResponse
 from ..compute import analysis_tasks
 from .dependencies import get_user
-from ..celery_task.utils import format_task_status, cast_celery_task
+from ..celery_task import utils
 
 
 router = APIRouter(prefix="/compute", tags=["compute"])
@@ -69,6 +69,8 @@ def compute_univariate_associations(
     user: str = Depends(get_user),
     settings: Settings = Depends(get_settings),
 ):
+    utils.check_celery()
+
     resultsDirPrefix = settings.compute_results_location
     dataset_id = computeParams.datasetId
     vector_variable_type = computeParams.vectorVariableType
@@ -97,7 +99,7 @@ def compute_univariate_associations(
     )
 
     try:
-        result = cast_celery_task(analysis_tasks.run_custom_analysis).delay(
+        result = utils.cast_celery_task(analysis_tasks.run_custom_analysis).delay(
             user=user,
             analysis_type=analysis_type,
             query_node_id=computeParams.queryId,
@@ -113,9 +115,11 @@ def compute_univariate_associations(
     except PermissionError as e:
         raise HTTPException(403, detail=str(e))
 
-    return format_task_status(result)
+    return utils.format_task_status(result)
 
 
 @router.get("/test_task", operation_id="test_task")
 def test_task(message):
-    cast_celery_task(analysis_tasks.test_task).delay(message)
+    utils.check_celery()
+
+    utils.cast_celery_task(analysis_tasks.test_task).delay(message)

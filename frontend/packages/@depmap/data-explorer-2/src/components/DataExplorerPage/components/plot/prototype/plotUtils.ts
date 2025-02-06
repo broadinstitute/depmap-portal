@@ -242,10 +242,6 @@ export function formatDataForScatterPlot(
         colorInfo.push(data.filters.color2!.name);
       }
 
-      if (catValues && catValues[i] !== null) {
-        colorInfo.push(catValues[i]);
-      }
-
       if (contValues && contValues[i] !== null) {
         colorInfo.push(
           [
@@ -260,9 +256,21 @@ export function formatDataForScatterPlot(
           ? label.replace(/\s+\(BRD:.*\)/, "")
           : label;
 
-      return aliases.length > 0
-        ? [...aliases, `${formattedLabel}`, ...colorInfo].join("<br>")
-        : [`<b>${formattedLabel}</b>`, ...colorInfo].join("<br>");
+      const formattedLines =
+        aliases.length > 0
+          ? [...aliases, `${formattedLabel}`, ...colorInfo]
+          : [`<b>${formattedLabel}</b>`, ...colorInfo];
+
+      Object.keys(data.metadata || {}).forEach((key) => {
+        const { label: hoverLabel, values } = data.metadata[key]!;
+
+        let val = values[i] != null ? values[i].toString() : "<b>N/A</b>";
+        val = val.length > 40 ? `${val.substr(0, 40)}…` : val;
+
+        formattedLines.push(`${hoverLabel}: ${val}`);
+      });
+
+      return formattedLines.join("<br>");
     }),
 
     annotationText: data.index_labels.map((label: string, i: number) => {

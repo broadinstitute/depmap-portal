@@ -160,7 +160,7 @@ def dataset_upload(
     else:
         index_type = _get_dimension_type(db, dataset_params.index_type)
         data_df = read_and_validate_tabular_df(
-            file_path, dataset_params.columns_metadata, index_type.id_column
+            db, index_type, file_path, dataset_params.columns_metadata
         )
         dimension_labels_and_warnings = _get_dimension_labels_and_warnings(
             db, data_df[index_type.id_column], index_type

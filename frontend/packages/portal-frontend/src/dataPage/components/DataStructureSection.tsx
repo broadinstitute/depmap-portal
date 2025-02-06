@@ -1,4 +1,4 @@
-import { Accordion } from "@depmap/interactive";
+import { Accordion } from "@depmap/common-components";
 import React from "react";
 import { getDapi } from "src/common/utilities/context";
 

@@ -409,6 +409,31 @@ export async function fetchMetadataSlices(
   return fetchJson(`/metadata_slices?${query}`);
 }
 
+function getExtraMetadata(index_type: string, metadata?: DataExplorerMetadata) {
+  const extraMetadata = {} as DataExplorerMetadata;
+  // HACK: Always include this info about models so we can show it in hover
+  // tips. In the future, we should make it configurable what information is
+  // shown there.
+  if (index_type === "depmap_model") {
+    const primaryDisaseSliceId = "slice/primary_disease/all/label";
+    const lineageSliceId = "slice/lineage/1/label";
+
+    if (metadata?.color_property?.slice_id !== primaryDisaseSliceId) {
+      extraMetadata.extra1 = {
+        slice_id: primaryDisaseSliceId,
+      };
+    }
+
+    if (metadata?.color_property?.slice_id !== lineageSliceId) {
+      extraMetadata.extra2 = {
+        slice_id: lineageSliceId,
+      };
+    }
+  }
+
+  return extraMetadata;
+}
+
 // Makes several concurrent requests and stitches them togther into a
 // DataExplorerPlotResponse.
 export async function fetchPlotDimensions(
@@ -417,6 +442,9 @@ export async function fetchPlotDimensions(
   filters?: DataExplorerFilters,
   metadata?: DataExplorerMetadata
 ): Promise<DataExplorerPlotResponse> {
+  // eslint-disable-next-line no-param-reassign
+  metadata = { ...metadata, ...getExtraMetadata(index_type, metadata) };
+
   const dimensionKeys = Object.keys(dimensions).filter((key) => {
     return isCompleteDimension(dimensions[key]);
   });
@@ -504,10 +532,8 @@ export async function fetchWaterfall(
   filters?: DataExplorerFilters,
   metadata?: DataExplorerMetadata
 ): Promise<DataExplorerPlotResponse> {
-  const isValidMetadata =
-    metadata &&
-    metadata.color_property &&
-    !isPartialSliceId(metadata.color_property.slice_id);
+  // eslint-disable-next-line no-param-reassign
+  metadata = { ...metadata, ...getExtraMetadata(index_type, metadata) };
 
   const json = {
     index_type,
@@ -516,7 +542,7 @@ export async function fetchWaterfall(
       ? dimensions
       : omit(dimensions, "color"),
 
-    metadata: isValidMetadata ? metadata : null,
+    metadata,
     filters,
   };
 

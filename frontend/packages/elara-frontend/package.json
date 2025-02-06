@@ -24,7 +24,6 @@
     "@depmap/dataset-manager": "1.0.0",
     "@depmap/downloads": "1.0.0",
     "@depmap/groups-manager": "1.0.0",
-    "@depmap/interactive": "1.0.0",
     "@depmap/long-table": "1.0.0",
     "@depmap/types": "1.0.0",
     "@depmap/user-upload": "1.0.0",

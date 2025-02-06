@@ -44,12 +44,6 @@ def home():
                 # support linking to a partially defined plot)
                 xFeature=nonstandard_utils.get_random_row_name(dataset_id),
                 xDataset=dataset_id,
-            )
-            if current_app.config["ENABLED_FEATURES"].data_explorer_2
-            else url_for(
-                "interactive.view_interactive",
-                # HACK: https://app.asana.com/0/1165651979405609/1200725631412715
-                x=f"{OTHER_DATASET_NON_PREPOPULATE_ID_BASE}/{dataset_id}",
             ),
         }
         for dataset_id, config in datasets.items()
@@ -60,9 +54,7 @@ def home():
     return render_template(
         "private_dataset/index.html",
         datasets=datasets,
-        data_explorer_url=url_for("data_explorer_2.view_data_explorer_2")
-        if current_app.config["ENABLED_FEATURES"].data_explorer_2
-        else url_for("interactive.view_interactive"),
+        data_explorer_url=url_for("data_explorer_2.view_data_explorer_2"),
         groups=[
             {"groupId": k, "displayName": v.display_name}
             for k, v in visible_owner_ids.items()

@@ -1,13 +1,5 @@
 /* eslint @typescript-eslint/no-explicit-any: 0 */
 import {
-  AssociationAndCheckbox,
-  Catalog,
-  AddDatasetOneRowArgs,
-  Feature,
-  PlotFeatures,
-} from "@depmap/interactive";
-import { VectorResponse } from "@depmap/long-table";
-import {
   CeleryTask,
   FailedCeleryTask,
   UnivariateAssociationsParams,
@@ -15,6 +7,8 @@ import {
 } from "@depmap/compute";
 import {
   AddCustDatasetArgs,
+  AddDatasetOneRowArgs,
+  AssociationAndCheckbox,
   Dataset,
   DatasetParams,
   DatasetUpdateArgs,
@@ -52,27 +46,12 @@ import {
 } from "@depmap/data-slicer";
 import { SearchResponse } from "./pages/SearchBar";
 
-// The Breadbox API includes a bit more information than the Portal.
-type FeatureWithCatalog = Feature & { catalog: Catalog };
-interface BreadboxPlotFeatures extends PlotFeatures {
-  features: FeatureWithCatalog[];
-}
-
 interface ValidationResult {
   valid: Set<string>; // These are upper/lower case-corrected, and may thus differ from the casing of query input
   invalid: Set<string>;
 }
 
 const log = window.console.debug.bind(console);
-
-function convertChildIdsToStrings(obj: {
-  children: [{ id: number | string }];
-}) {
-  return {
-    ...obj,
-    children: obj.children.map((child) => ({ ...child, id: String(child.id) })),
-  };
-}
 
 export class ElaraApi {
   urlPrefix: string;
@@ -255,27 +234,6 @@ export class ElaraApi {
       }
     );
   };
-
-  getFeaturePlot(
-    features: string[],
-    groupBy: string,
-    filter: string,
-    computeLinearFit: boolean
-  ): Promise<BreadboxPlotFeatures> {
-    const params: any = {
-      groupBy,
-      filter,
-      computeLinearFit,
-    };
-    if (groupBy !== null && groupBy !== undefined) {
-      params.groupBy = groupBy;
-    }
-    return this._fetchWithJsonBody<BreadboxPlotFeatures>(
-      `/api/get-features/?${encodeParams(params)}`,
-      "POST",
-      features
-    );
-  }
 
   getAssociations(): Promise<AssociationAndCheckbox> {
     return Promise.reject(new Error("getAssociations() not implemented"));
@@ -704,60 +662,6 @@ export class ElaraApi {
 
   getCellignerColorMap(): Promise<CellignerColorsForCellLineSelector> {
     return Promise.reject(new Error("getCellignerColorMap() not implemented"));
-  }
-
-  getVectorCatalogChildren(
-    catalog: Catalog,
-    id: string,
-    prefix = ""
-  ): Promise<any> {
-    // chances are, you shouldn't be using this. use getVectorCatalogOptions in vectorCatalogApi, which wraps around this
-    const params = {
-      catalog,
-      id,
-      prefix,
-    };
-    return this._fetch<any>(
-      `/datasets/vector_catalog/data/catalog/children/?${encodeParams(params)}`
-    ).then((res) => {
-      // FIXME: This is a workaround for the case where the response is empty.
-      // The existing Data Explorer logic tries to rename properties of a
-      // nonexistent object.
-      const dummyObject = {
-        category: null,
-        persistChildIfNotFound: false,
-        children: [],
-      };
-
-      return res.length ? convertChildIdsToStrings(res[0]) : dummyObject;
-    });
-  }
-
-  getVectorCatalogPath(catalog: Catalog, id: string): Promise<Array<any>> {
-    // chances are, you shouldn't be using this. use getVectorCatalogPath in vectorCatalogApi, which wraps around this
-    const params = { catalog, id };
-    return this._fetch<Array<any>>(
-      `/datasets/vector_catalog/data/catalog/path/?${encodeParams(params)}`
-    );
-  }
-
-  getVector(featureCatalogNodeId: string): Promise<VectorResponse> {
-    // The Portal uses a dedicated endpoint to get a single feature. Here we're
-    // using /api/get-features instead and re-formatting the response.
-    return this._fetchWithJsonBody<BreadboxPlotFeatures>(
-      `/api/get-features/`,
-      "POST",
-      [featureCatalogNodeId]
-    ).then((res) => {
-      const feature = res.features[0];
-      const isCategorical = feature.catalog === "categorical";
-      const valuesKey = isCategorical ? "categoricalValues" : "values";
-
-      return {
-        cellLines: res.depmap_ids,
-        [valuesKey]: feature.values,
-      };
-    });
   }
 
   computeUnivariateAssociations(

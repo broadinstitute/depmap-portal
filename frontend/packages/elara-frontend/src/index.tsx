@@ -21,7 +21,7 @@ const ElaraCustomAnalysesPage = React.lazy(
 const CustomDownloads = React.lazy(
   () => import("src/pages/Downloads/CustomDownloads")
 );
-const GroupsPage = React.lazy(() => import("src/pages/Groups/GroupsPage"));
+const GroupsPage = React.lazy(() => import("@depmap/groups-manager"));
 const Metadata = React.lazy(() => import("src/pages/Metadata/Metadata"));
 
 const container = document.getElementById("root");
@@ -45,12 +45,9 @@ const App = () => {
   }, [bbapi]);
 
   const getApi = () => bbapi;
-  const getVectorCatalogApi = () => {
-    throw new Error("Vector Catalog API is no longer supported!");
-  };
 
   return (
-    <ApiContext.Provider value={{ getApi, getVectorCatalogApi }}>
+    <ApiContext.Provider value={{ getApi }}>
       <ErrorBoundary>
         <BrowserRouter basename={basename}>
           <ElaraNavbar />

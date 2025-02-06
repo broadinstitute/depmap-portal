@@ -5,7 +5,7 @@ import Form from "@rjsf/core";
 import { addDimensionTypeSchema } from "../models/addDimensionTypeSchema";
 import { RJSFSchema, UiSchema } from "@rjsf/utils";
 import { updateDimensionTypeSchema } from "../models/updateDimensionTypeSchema";
-import { Dataset } from "@depmap/types";
+import { Dataset, instanceOfErrorDetail } from "@depmap/types";
 
 interface DimensionTypeFormProps {
   onSubmit: (formData: any) => Promise<void>;
@@ -90,7 +90,7 @@ export default function DimensionTypeForm(props: DimensionTypeFormProps) {
     } catch (e: any) {
       console.log(e);
       setHasError(true);
-      if ("detail" in e) {
+      if (instanceOfErrorDetail(e)) {
         setSubmissionMsg(e.detail as string);
       } else {
         setSubmissionMsg("An unknown error occurred!");

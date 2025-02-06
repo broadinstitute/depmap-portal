@@ -103,7 +103,7 @@ export default function TypesPage(props: TypesPageProps) {
     } catch (e) {
       console.error(e);
       if (instanceOfErrorDetail(e)) {
-        setTypeSubmissionError(e.body.detail);
+        setTypeSubmissionError(e.detail);
       }
     }
     // In case of 400/500 error
@@ -164,7 +164,7 @@ export default function TypesPage(props: TypesPageProps) {
     } catch (e) {
       console.error(e);
       if (instanceOfErrorDetail(e)) {
-        setTypeSubmissionError(e.body.detail);
+        setTypeSubmissionError(e.detail);
       }
     }
     // In case of 400/500 error

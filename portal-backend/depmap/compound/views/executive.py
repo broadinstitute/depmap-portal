@@ -205,9 +205,7 @@ def format_top_corr_table(compound_experiment_and_datasets):
     table = []
     for _, tc in top_correlations.items():
         interactive_url = url_for(
-            "data_explorer_2.view_data_explorer_2"
-            if current_app.config["ENABLED_FEATURES"].data_explorer_2
-            else "interactive.view_interactive",
+            "data_explorer_2.view_data_explorer_2",
             xDataset=tc["compound_dataset"].values[0],
             xFeature=tc["compound_label"].values[0],
             yDataset="expression",
@@ -320,9 +318,7 @@ def format_corr_table(compound_label, top_correlations):
     table = []
     for _, tc in top_correlations.items():
         interactive_url = url_for(
-            "data_explorer_2.view_data_explorer_2"
-            if current_app.config["ENABLED_FEATURES"].data_explorer_2
-            else "interactive.view_interactive",
+            "data_explorer_2.view_data_explorer_2",
             xDataset=tc["compound_dataset"].values[0],
             yDataset="expression",
             xFeature=compound_label,
