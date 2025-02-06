@@ -10,14 +10,16 @@ rule process_model_config:
         # Model config yaml file
         model_config=fileref("model-config.yaml"),
 
-        # Two target matrices
+        # Target matrices
         crispr_gene_effect={"type": "target_matrix", "label": "crispr_gene_effect"},
         rnai={"type": "target_matrix", "label": "rnai"},
+        oncref={"type": "target_matrix", "label": "oncref"},
 
-        # Twelve features
+        # Features
         lineage={"type": "feature", "label": "lineage"},
         crispr_confounder={"type": "feature", "label": "crispr_confounder"},
         rnai_confounder={"type": "feature", "label": "rnai_confounder"},
+        oncref_confounder={"type": "feature", "label": "oncref_confounder"},
         driver_events={"type": "feature", "label": "driver_events"},
         armlevel_cna={"type": "feature", "label": "armlevel_cna"},
         cytoband_cn={"type": "feature", "label": "cytoband_cn"},
@@ -70,9 +72,9 @@ rule run_fit_models:
         "-v", f"{input_config_filepath}:/daintree/{input_config_filename}",
         "-v", f"{os.getcwd()}/output_data:/daintree/output_data",
         "-v", f"{os.getcwd()}/sparkles-config:/daintree/sparkles-config",
-        "us.gcr.io/broad-achilles/daintree:v1",
-        "/install/depmap-py/bin/python3.9", "-u", "/daintree_scripts/run_fit_models.py",
-        "collect-and-fit-generate-config",
+        "us.gcr.io/broad-achilles/daintree:v2",
+        "/install/depmap-py/bin/python3.9", "-u", "/daintree/daintree_scripts/run_fit_models.py",
+        "collect-and-fit",
         "--input-files", input_config_filename,
         "--sparkles-config", "/daintree/sparkles-config",
         "--save-dir", "/daintree/output_data",

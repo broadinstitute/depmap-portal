@@ -4,7 +4,7 @@ import yaml
 import os
 from typing import List, Dict, Any
 
-screens = ["crispr", "rnai"]
+screens = ["crispr", "rnai", "oncref"]
 
 
 def generate_daintree_configs(
@@ -51,7 +51,12 @@ def generate_daintree_configs(
 
             # Set target based on screen type
             target = screen
-            target_key = "crispr_gene_effect" if screen == "crispr" else "rnai"
+            if screen == "crispr":
+                target_key = "crispr_gene_effect"
+            elif screen == "rnai":
+                target_key = "rnai"
+            elif screen == "oncref":
+                target_key = "oncref"
             target_input = input_config[target_key]
 
             output_json["data"][target] = {
