@@ -61,9 +61,6 @@ blueprint = Blueprint(
 
 @blueprint.route("/")
 def view_data_explorer_2():
-    if not current_app.config["ENABLED_FEATURES"].data_explorer_2:
-        abort(404)
-
     return render_template(
         "data_explorer_2/index.html", tutorial_link=get_tutorial_link()
     )
@@ -337,9 +334,9 @@ def datasets_by_index_type():
     for dataset in get_all_supported_continuous_datasets():
         common_props = {
             "data_type": dataset.data_type,
-            "dataset_id": dataset.id,
+            "id": dataset.id,
             "given_id": dataset.given_id,
-            "label": dataset.label,
+            "name": dataset.label,
             "units": dataset.units,
             "priority": dataset.priority,
         }
@@ -361,7 +358,7 @@ def datasets_by_index_type():
         )
 
     for index_type, dataset in output.items():
-        output[index_type] = sorted(dataset, key=lambda dataset: dataset["label"],)
+        output[index_type] = sorted(dataset, key=lambda dataset: dataset["name"])
 
     return make_gzipped_json_response(output)
 
@@ -479,7 +476,7 @@ def evaluate_v2_context():
 
     matching_ids, matching_labels = get_ids_and_labels_matching_context(context)
 
-    return make_gzipped_json_response({"ids": matching_ids, "labels": matching_labels,})
+    return make_gzipped_json_response({"ids": matching_ids, "labels": matching_labels})
 
 
 @blueprint.route("/v2/context/summary", methods=["POST"])

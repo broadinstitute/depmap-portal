@@ -10,26 +10,10 @@ from breadbox.models.dataset import TabularDataset, TabularCell, TabularColumn
 from sqlalchemy import and_
 
 from typing import Dict
-import hashlib
-from ..utils import assert_status_ok, assert_status_not_ok
+from ..utils import assert_status_ok
 import pytest
 import numpy as np
-
-
-def file_ids_and_md5_hash(client, file):
-    tabular_file_ids = []
-    chunk = file.readline()
-    hasher = hashlib.md5(chunk)
-    while chunk:
-        response = client.post(
-            "/uploads/file", files={"file": ("table", chunk, "text/csv")},
-        )
-        assert response.status_code == 200
-        tabular_file_ids.append(response.json()["file_id"])
-        chunk = file.readline()
-        hasher.update(chunk)
-    hash = hasher.hexdigest()
-    return tabular_file_ids, hash
+from ..utils import upload_and_get_file_ids
 
 
 class TestPost:
@@ -50,18 +34,7 @@ class TestPost:
             {"index": ["ACH-1", "ACH-2"], "A": [0.1, 0.2], "B": [0.3, 0.4]}
         ).to_parquet(data_path)
 
-        file_ids = []
-        with open(data_path, "rb") as fd:
-            chunk = fd.read()
-
-        response = client.post(
-            "/uploads/file",
-            files={"file": ("filename", chunk, "application/vnd.apache.parquet")},
-        )
-        assert response.status_code == 200
-        file_ids.append(response.json()["file_id"])
-
-        expected_md5 = hashlib.md5(chunk).hexdigest()
+        file_ids, expected_md5 = upload_and_get_file_ids(client, filename=data_path)
 
         matrix_dataset = client.post(
             "/dataset-v2/",
@@ -112,18 +85,7 @@ class TestPost:
         user_db_session = SessionLocalWithUser(user)
 
         file = factories.continuous_matrix_csv_file()
-        file_ids = []
-        chunk = file.readline()
-        while chunk:
-            response = client.post(
-                "/uploads/file", files={"file": ("filename", chunk, "text/csv")},
-            )
-            assert response.status_code == 200
-            file_ids.append(response.json()["file_id"])
-            chunk = file.readline()
-
-        assert len(file_ids) == 3
-        expected_md5 = "820882fc8dc0df48728c74db24c64fa1"
+        file_ids, expected_md5 = upload_and_get_file_ids(client, file, chunk_count=3)
         matrix_dataset_given_id = "some_given_id"
 
         matrix_dataset_w_simple_metadata = client.post(
@@ -170,7 +132,9 @@ class TestPost:
         )
         tabular_dataset_given_id = "some_other_given_id"
 
-        tabular_file_ids, hash = file_ids_and_md5_hash(client, tabular_data_file)
+        tabular_file_ids, hash = upload_and_get_file_ids(
+            client, tabular_data_file, chunk_count=3
+        )
 
         assert len(tabular_file_ids) == 3
         tabular_dataset_response = client.post(
@@ -213,7 +177,7 @@ class TestPost:
             cols=["depmap_id", "attr1", "attr2", "attr3"],
             row_values=[["ACH-1", 1.0, 0, '["a"]'], ["ACH-2", 2.0, 1, '[1, "c"]']],
         )
-        bad_list_strings_file_ids, bad_list_strings_hash = file_ids_and_md5_hash(
+        bad_list_strings_file_ids, bad_list_strings_hash = upload_and_get_file_ids(
             client, tabular_data_file_bad_list_strings
         )
 
@@ -259,6 +223,203 @@ class TestPost:
         )
         assert bad_list_strings_file_ids_dataset.status_code == 202
         assert bad_list_strings_file_ids_dataset.json()["state"] == "FAILURE"
+
+    def test_categorical_dataset_uploads_task(
+        self,
+        client: TestClient,
+        minimal_db: SessionWithUser,
+        private_group: Dict,
+        mock_celery,
+        monkeypatch,
+    ):
+        user = "someone@private-group.com"
+        headers = {"X-Forwarded-User": user}
+
+        # Test categorical matrix
+        file1 = factories.matrix_csv_data_file_with_values(
+            values=["No mutation", "heterozygous", "homozygous"]
+        )
+        file_ids, expected_md5 = upload_and_get_file_ids(client, file1)
+        categorical_dataset1_given_id = "some_given_id"
+
+        categorical_matrix_dataset = client.post(
+            "/dataset-v2/",
+            json={
+                "format": "matrix",
+                "name": "a dataset",
+                "given_id": categorical_dataset1_given_id,
+                "units": "a unit",
+                "feature_type": "generic",
+                "sample_type": "depmap_model",
+                "data_type": "User upload",
+                "file_ids": file_ids,
+                "dataset_md5": expected_md5,
+                "is_transient": False,
+                "group_id": private_group["id"],
+                "value_type": "categorical",
+                "allowed_values": ["No mutation", "heterozygous", "homozygous"],
+                "dataset_metadata": {"yah": "nah"},
+                "short_name": "m1",
+                "description": "a dataset",
+                "version": "v1",
+            },
+            headers=headers,
+        )
+        assert_status_ok(categorical_matrix_dataset)
+        assert categorical_matrix_dataset.status_code == 202
+        assert categorical_matrix_dataset.json()["state"] == "SUCCESS"
+        assert categorical_matrix_dataset.json()["result"]["datasetId"]
+        categorical_matrix_dataset_result = categorical_matrix_dataset.json()["result"][
+            "dataset"
+        ]
+        assert categorical_matrix_dataset_result is not None
+        assert (
+            categorical_matrix_dataset_result.get("given_id")
+            == categorical_dataset1_given_id
+        )
+
+        # Test matrix with True and False
+        file2 = factories.matrix_csv_data_file_with_values(values=[True, False])
+        file_ids, expected_md5 = upload_and_get_file_ids(client, file2)
+        categorical_dataset2_given_id = "another given id"
+        categorical_matrix_dataset2 = client.post(
+            "/dataset-v2/",
+            json={
+                "format": "matrix",
+                "name": "a dataset",
+                "given_id": categorical_dataset2_given_id,
+                "units": "a unit",
+                "feature_type": "generic",
+                "sample_type": "depmap_model",
+                "data_type": "User upload",
+                "file_ids": file_ids,
+                "dataset_md5": expected_md5,
+                "is_transient": False,
+                "group_id": private_group["id"],
+                "value_type": "categorical",
+                "allowed_values": ["True", "False"],
+                "dataset_metadata": {"yah": "nah"},
+                "short_name": "m1",
+                "description": "a dataset",
+                "version": "v1",
+            },
+            headers=headers,
+        )
+        assert_status_ok(categorical_matrix_dataset2)
+        assert categorical_matrix_dataset2.json()["state"] == "SUCCESS"
+        assert categorical_matrix_dataset2.json()["result"]["datasetId"]
+        categorical_matrix_dataset2_result = categorical_matrix_dataset2.json()[
+            "result"
+        ]["dataset"]
+        assert (
+            categorical_matrix_dataset2_result.get("given_id")
+            == categorical_dataset2_given_id
+        )
+
+        # Test case insensitive values are fine for categorical datasets
+        file3 = factories.matrix_csv_data_file_with_values(values=[True, False, "true"])
+        file_ids, expected_md5 = upload_and_get_file_ids(client, file3)
+        categorical_dataset3_given_id = "yet another given id"
+        categorical_matrix_dataset3 = client.post(
+            "/dataset-v2/",
+            json={
+                "format": "matrix",
+                "name": "a dataset",
+                "given_id": categorical_dataset3_given_id,
+                "units": "a unit",
+                "feature_type": "generic",
+                "sample_type": "depmap_model",
+                "data_type": "User upload",
+                "file_ids": file_ids,
+                "dataset_md5": expected_md5,
+                "is_transient": False,
+                "group_id": private_group["id"],
+                "value_type": "categorical",
+                "allowed_values": ["True", "false"],  # case insensitve allowed values
+                "dataset_metadata": {"yah": "nah"},
+                "short_name": "m1",
+                "description": "a dataset",
+                "version": "v1",
+            },
+            headers=headers,
+        )
+        assert_status_ok(categorical_matrix_dataset3)
+        assert categorical_matrix_dataset3.json()["state"] == "SUCCESS"
+        assert categorical_matrix_dataset3.json()["result"]["datasetId"]
+        categorical_matrix_dataset3_result = categorical_matrix_dataset3.json()[
+            "result"
+        ]["dataset"]
+        assert (
+            categorical_matrix_dataset3_result.get("given_id")
+            == categorical_dataset3_given_id
+        )
+
+    @pytest.mark.parametrize(
+        "value_type, allowed_values, status_code",
+        [
+            (
+                "continuous",
+                ["Thing1", "Thing2", "Thing3"],
+                422,
+            ),  # continuous datasets should not have allowed values
+            (
+                "categorical",
+                ["Thing1", "Thing2", "Thing3", "Thing4"],
+                202,
+            ),  # allowed values have a value (Thing4) not in dataset. This is acceptable
+            (
+                "categorical",
+                ["Thing1", "Thing2"],
+                400,
+            ),  # missing allowed value/dataset have value not in allowed values
+            (
+                "categorical",
+                ["Thing1", "thing1", "Thing2", "Thing3"],
+                400,
+            ),  # repeated allowed values due to case
+        ],
+    )
+    def test_incorrect_allowed_values(
+        self,
+        client: TestClient,
+        minimal_db: SessionWithUser,
+        private_group: Dict,
+        mock_celery,
+        value_type,
+        allowed_values,
+        status_code,
+    ):
+        user = "someone@private-group.com"
+        headers = {"X-Forwarded-User": user}
+
+        file = factories.matrix_csv_data_file_with_values()
+        file_ids, expected_md5 = upload_and_get_file_ids(client, file)
+        categorical_dataset_given_id = "some_given_id"
+
+        categorical_matrix_dataset = client.post(
+            "/dataset-v2/",
+            json={
+                "format": "matrix",
+                "name": "a dataset",
+                "given_id": categorical_dataset_given_id,
+                "units": "a unit",
+                "feature_type": "generic",
+                "sample_type": "depmap_model",
+                "data_type": "User upload",
+                "file_ids": file_ids,
+                "dataset_md5": expected_md5,
+                "is_transient": False,
+                "group_id": private_group["id"],
+                "value_type": value_type,
+                "allowed_values": allowed_values,
+                "dataset_metadata": {"yah": "nah"},
+                "short_name": "m1",
+                "description": "a dataset",
+                "version": "v1",
+            },
+            headers=headers,
+        )
+        assert categorical_matrix_dataset.status_code == status_code
 
     def _setup_types(self, client, admin_headers):
         r_feature_metadata = client.post(
@@ -324,21 +485,6 @@ class TestPost:
         )
         assert r_sample_metadata.status_code == 200, r_sample_metadata.content
 
-    def _upload_file(self, client, file):
-        file_ids = []
-        chunk = file.readline()
-        hasher = hashlib.md5(chunk)
-        while chunk:
-            response = client.post(
-                "/uploads/file", files={"file": ("filename", chunk, "text/csv")},
-            )
-            assert response.status_code == 200
-            file_ids.append(response.json()["file_id"])
-            chunk = file.readline()
-            hasher.update(chunk)
-
-        return file_ids, hasher.hexdigest()
-
     def test_add_matrix_dataset_with_dim_type_annotations(
         self,
         client: TestClient,
@@ -351,7 +497,7 @@ class TestPost:
         self._setup_types(client, admin_headers)
 
         file = factories.continuous_matrix_csv_file()
-        file_ids, expected_md5 = self._upload_file(client, file)
+        file_ids, expected_md5 = upload_and_get_file_ids(client, file)
 
         # If no metadata given, validate against feature type and sample type metadata. If not found, provide warning
         r_matrix_dataset_no_metadata_for_feature = client.post(
@@ -390,7 +536,7 @@ class TestPost:
         self._setup_types(client, admin_headers)
 
         file = factories.continuous_matrix_csv_file()
-        file_ids, expected_md5 = self._upload_file(client, file)
+        file_ids, expected_md5 = upload_and_get_file_ids(client, file)
 
         # Even though there's no given_id explicitely set, it should get populated from the metadata
         given_id = "some_given_id"
@@ -436,7 +582,9 @@ class TestPost:
         file_with_duplicate_features = factories.continuous_matrix_csv_file(
             feature_ids=["A", "B", "A", "C"], sample_ids=["A", "B", "C"],
         )
-        file_ids, expected_md5 = self._upload_file(client, file_with_duplicate_features)
+        file_ids, expected_md5 = upload_and_get_file_ids(
+            client, file_with_duplicate_features
+        )
 
         # This should fail because of the duplicate feature IDs
         matrix_dataset_response = client.post(
@@ -464,7 +612,9 @@ class TestPost:
         file_with_duplicate_samples = factories.continuous_matrix_csv_file(
             feature_ids=["A", "B", "C"], sample_ids=["A", "B", "A", "C"],
         )
-        file_ids, expected_md5 = self._upload_file(client, file_with_duplicate_samples)
+        file_ids, expected_md5 = upload_and_get_file_ids(
+            client, file_with_duplicate_samples
+        )
 
         # This should fail because of the duplicate sample IDs
         matrix_dataset_response = client.post(
@@ -506,7 +656,9 @@ class TestPost:
             row_values=[["ACH-1", 1.0, 0, '["a"]'], ["ACH-3", 2.0, 1, '["d", "c"]']],
         )
 
-        tabular_file_ids, expected_md5 = self._upload_file(client, tabular_data_file)
+        tabular_file_ids, expected_md5 = upload_and_get_file_ids(
+            client, tabular_data_file
+        )
 
         tabular_dataset = client.post(
             "/dataset-v2/",
@@ -556,7 +708,9 @@ class TestPost:
             ],
         )
 
-        tabular_file_ids, expected_md5 = self._upload_file(client, tabular_data_file)
+        tabular_file_ids, expected_md5 = upload_and_get_file_ids(
+            client, tabular_data_file
+        )
 
         tabular_dataset = client.post(
             "/dataset-v2/",
@@ -702,7 +856,9 @@ class TestPost:
             ],
         )
 
-        tabular_file_ids, expected_md5 = self._upload_file(client, tabular_data_file)
+        tabular_file_ids, expected_md5 = upload_and_get_file_ids(
+            client, tabular_data_file
+        )
 
         tabular_dataset = client.post(
             "/dataset-v2/",
@@ -813,7 +969,7 @@ def test_end_to_end_with_mismatched_metadata(
     )
     file = io.BytesIO(matrix_df.to_csv().encode("utf8"))
 
-    file_ids, expected_md5 = file_ids_and_md5_hash(client, file)
+    file_ids, expected_md5 = upload_and_get_file_ids(client, file)
 
     matrix_dataset = client.post(
         "/dataset-v2/",

@@ -7,9 +7,9 @@ import {
   DataExplorerPlotConfigDimension,
 } from "@depmap/types";
 import {
-  DataExplorerApiResponse,
-  useDataExplorerApi,
-} from "../../../contexts/DataExplorerApiContext";
+  DeprecatedDataExplorerApiResponse,
+  useDeprecatedDataExplorerApi,
+} from "../../../contexts/DeprecatedDataExplorerApiContext";
 import { Mode, State } from "../useDimensionStateManager/types";
 import ModalDimensionSelect from "./ModalDimensionSelect";
 import DatasetDetails from "./DatasetDetails";
@@ -32,12 +32,12 @@ function DimensionDetailsModal({
   onCancel,
   initialState,
 }: Props) {
-  const api = useDataExplorerApi();
+  const api = useDeprecatedDataExplorerApi();
   const [isLoading, setIsLoading] = useState(false);
   const [dimension, setDimension] = useState(initialState.dimension);
 
   const [details, setDetails] = useState<
-    DataExplorerApiResponse["fetchDatasetDetails"] | null
+    DeprecatedDataExplorerApiResponse["fetchDatasetDetails"] | null
   >(null);
 
   useEffect(() => {

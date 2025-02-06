@@ -1,16 +1,23 @@
-import React, { useEffect, useState } from "react";
-import { Button, Modal } from "react-bootstrap";
+import React from "react";
 import { ApiContext } from "@depmap/api";
-import { Spinner } from "@depmap/common-components";
-import { ContextManager } from "@depmap/data-explorer-2";
 import {
-  getDapi as getApi,
-  getVectorCatalogApi,
-} from "src/common/utilities/context";
+  ContextManager,
+  DeprecatedDataExplorerApiProvider,
+} from "@depmap/data-explorer-2";
 import {
-  convertLegacyContexts,
-  someLegacyContextsExist,
-} from "src/data-explorer-2/utils";
+  evaluateLegacyContext,
+  fetchContextSummary,
+  fetchDatasetDetails,
+  fetchDatasetsByIndexType,
+  fetchDatasetsMatchingContextIncludingEntities,
+  fetchDimensionLabels,
+  fetchDimensionLabelsOfDataset,
+  fetchDimensionLabelsToDatasetsMapping,
+  fetchMetadataColumn,
+  fetchMetadataSlices,
+  fetchUniqueValuesOrRange,
+} from "src/data-explorer-2/deprecated-api";
+import { getDapi as getApi } from "src/common/utilities/context";
 
 interface Props {
   onHide: () => void;
@@ -23,72 +30,33 @@ function PortalContextManager({
   showHelpText = false,
   initialContextType = undefined,
 }: Props) {
-  const [loading, setLoading] = useState(someLegacyContextsExist());
-  const [error, setError] = useState(false);
-
-  useEffect(() => {
-    (async () => {
-      try {
-        // Prior to the 23Q2 release, contexts were saved to local storage. Now
-        // only the hashes reside there and the acutal content is persisted to
-        // a bucket. These two formats are incompatible (with a different
-        // hashing method) so we do one big wholesale conversion before trying
-        // to load anything. This can probably be removed after a reasonable
-        // amount of time has gone by.
-        if (someLegacyContextsExist()) {
-          setLoading(true);
-          await convertLegacyContexts();
-          setLoading(false);
-        }
-      } catch (e) {
-        setError(true);
-      }
-    })();
-  }, []);
-
-  if (error) {
-    return (
-      <Modal show onHide={onHide}>
-        <Modal.Header closeButton>
-          <Modal.Title>Error</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <div>
-            There was a problem opening the Context Manager. Please try again
-            later. If this problem persists, use the feedback form to report it.
-          </div>
-        </Modal.Body>
-        <Modal.Footer>
-          <Button bsStyle="primary" onClick={onHide}>
-            Cancel
-          </Button>
-        </Modal.Footer>
-      </Modal>
-    );
-  }
-
-  return loading ? (
-    <Modal show onHide={() => {}}>
-      <Modal.Header>
-        <Modal.Title>Converting your contexts</Modal.Title>
-      </Modal.Header>
-      <Modal.Body>
-        <div>
-          Please wait while we convert your contexts to a new format. Don’t
-          close this tab or navigate away until this process completes...
-        </div>
-        <Spinner left="0px" position="static" />
-      </Modal.Body>
-    </Modal>
-  ) : (
+  return (
     // ApiContext is needed to support Cell Line Selector inside of
     // ContextBuilder.
-    <ApiContext.Provider value={{ getApi, getVectorCatalogApi }}>
-      <ContextManager
-        onHide={onHide}
-        initialContextType={initialContextType}
-        showHelpText={showHelpText}
-      />
+    <ApiContext.Provider value={{ getApi }}>
+      <DeprecatedDataExplorerApiProvider
+        evaluateLegacyContext={evaluateLegacyContext}
+        fetchContextSummary={fetchContextSummary}
+        fetchDatasetDetails={fetchDatasetDetails}
+        fetchDatasetsByIndexType={fetchDatasetsByIndexType}
+        fetchDimensionLabels={fetchDimensionLabels}
+        fetchDimensionLabelsOfDataset={fetchDimensionLabelsOfDataset}
+        fetchDimensionLabelsToDatasetsMapping={
+          fetchDimensionLabelsToDatasetsMapping
+        }
+        fetchDatasetsMatchingContextIncludingEntities={
+          fetchDatasetsMatchingContextIncludingEntities
+        }
+        fetchMetadataColumn={fetchMetadataColumn}
+        fetchMetadataSlices={fetchMetadataSlices}
+        fetchUniqueValuesOrRange={fetchUniqueValuesOrRange}
+      >
+        <ContextManager
+          onHide={onHide}
+          initialContextType={initialContextType}
+          showHelpText={showHelpText}
+        />
+      </DeprecatedDataExplorerApiProvider>
     </ApiContext.Provider>
   );
 }

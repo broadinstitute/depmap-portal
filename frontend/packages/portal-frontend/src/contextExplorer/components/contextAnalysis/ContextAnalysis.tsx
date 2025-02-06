@@ -25,7 +25,7 @@ import {
   LEGEND_RANGE_6,
   LegendKey,
   LEGEND_RANGE_7,
-} from "src/data-explorer-2/components/plot/prototype/plotUtils";
+} from "@depmap/data-explorer-2";
 import ContextAnalysisPlotPanel from "./ContextAnalysisPlotPanel";
 import ScatterPlotLegend from "./ScatterPlotLegend";
 import {

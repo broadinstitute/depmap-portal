@@ -1,5 +1,8 @@
+from dataclasses import dataclass
+
 import pandas as pd
 
+from breadbox.models.dataset import Dataset
 from breadbox.db.session import SessionWithUser
 import breadbox.crud.dataset as dataset_crud
 from breadbox.schemas.dataset import TabularDimensionsInfo
@@ -15,6 +18,63 @@ from breadbox.service import metadata as metadata_service
 from breadbox.service import dataset as dataset_service
 
 from depmap_compute.slice import SliceQuery
+
+
+@dataclass
+class ResolvedSliceIdentifiers:
+    dataset: Dataset
+    label: str
+    given_id: str
+
+
+def resolve_slice_to_components(
+    db: SessionWithUser, slice_query: SliceQuery
+) -> ResolvedSliceIdentifiers:
+    dataset_id = slice_query.dataset_id
+
+    dataset = dataset_crud.get_dataset(db, db.user, dataset_id)
+    if dataset is None:
+        raise ResourceNotFoundError(f"Could not find dataset {dataset_id}")
+
+    if slice_query.identifier_type == "column":
+        label = given_id = slice_query.identifier
+    elif slice_query.identifier_type == "feature_id":
+        given_id = slice_query.identifier
+        label = metadata_service.get_dataset_feature_label_by_id(db, dataset, given_id)
+        if label is None:
+            raise ResourceNotFoundError(
+                f"Could not find feature {given_id} in dataset {dataset_id}"
+            )
+    elif slice_query.identifier_type == "feature_label":
+        feature = metadata_service.get_dataset_feature_by_label(
+            db, dataset_id, feature_label=slice_query.identifier,
+        )
+        if feature is None:
+            raise ResourceNotFoundError(
+                f"Could not find feature with label {slice_query.identifier} in dataset {dataset_id}"
+            )
+        label = slice_query.identifier
+        given_id = feature.given_id
+    elif slice_query.identifier_type == "sample_id":
+        given_id = slice_query.identifier
+        label = metadata_service.get_dataset_sample_label_by_id(db, dataset, given_id)
+        if label is None:
+            raise ResourceNotFoundError(
+                f"Could not find sample {given_id} in dataset {dataset_id}"
+            )
+    else:
+        assert slice_query.identifier_type == "sample_label"
+        sample = metadata_service.get_dataset_sample_by_label(
+            db, dataset_id, sample_label=slice_query.identifier
+        )
+        if sample is None:
+            raise ResourceNotFoundError(
+                f"Could not find sample with label {slice_query.identifier} in dataset {dataset_id}"
+            )
+        given_id = sample.given_id
+        label = slice_query.identifier
+
+    return ResolvedSliceIdentifiers(dataset=dataset, label=label, given_id=given_id)
 
 
 def get_slice_data(

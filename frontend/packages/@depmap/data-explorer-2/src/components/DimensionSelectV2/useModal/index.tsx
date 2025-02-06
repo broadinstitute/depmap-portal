@@ -24,6 +24,8 @@ export default function useModal({
   onChange,
   state,
 }: Props) {
+  // We need to create duplicate providers for each of these contexts because
+  // we're rendering a new React root with its own scope.
   const sharedApi = useContext(ApiContext);
   const dataExplorerApi = useDataExplorerApi();
 

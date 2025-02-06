@@ -13,6 +13,7 @@ from collections import defaultdict
 from factory.alchemy import SQLAlchemyModelFactory
 from depmap.proteomics.models import Protein
 from depmap.settings.shared import DATASET_METADATA
+import typing
 
 from loader.dataset_loader.biomarker_loader import GENERIC_ENTITY_BIOMARKER_ENUMS
 from depmap.cell_line.models import (
@@ -188,24 +189,28 @@ class CellLineFactory(SQLAlchemyModelFactory):
 class DepmapModelFactory(SQLAlchemyModelFactory):
     class Meta:
         model = DepmapModel
-
         sqlalchemy_session = _db.session
 
-    stripped_cell_line_name = factory.Sequence(lambda number: "{}".format(number))
-    model_id = factory.Sequence(lambda number: "ACH-{}".format(number))
-    patient_id = factory.Sequence(lambda number: "ACH-{}".format(number))
-
-    cell_line_name = factory.Sequence(lambda number: "cell_line_{}".format(number))
-    cell_line_alias = factory.LazyAttribute(lambda o: [CellLineAliasFactory()])
-    age_category = factory.Sequence(lambda number: "age_category_{}".format(number))
-
-    cell_line = factory.SubFactory(
-        CellLineFactory,
-        depmap_id=factory.SelfAttribute("..model_id"),
-        cell_line_display_name=factory.SelfAttribute("..stripped_cell_line_name"),
+    stripped_cell_line_name = typing.cast(
+        str, factory.Sequence(lambda number: "{}".format(number))
     )
-    # TODO: Add back in once we're fully reliant on DepmapModel table. For now, CellLineFactory creates the LineageFactory.
-    # oncotree_lineage = factory.LazyAttribute(lambda o: [LineageFactory()])
+    model_id = typing.cast(
+        str, factory.Sequence(lambda number: "ACH-{}".format(number))
+    )
+    cell_line_name = typing.cast(
+        str, factory.Sequence(lambda number: "cell_line_{}".format(number))
+    )
+
+    cell_line = typing.cast(
+        CellLine,
+        factory.SubFactory(
+            CellLineFactory,
+            depmap_id=factory.SelfAttribute("..model_id"),
+            cell_line_display_name=factory.SelfAttribute("..stripped_cell_line_name"),
+        ),
+    )
+
+    patient_id = typing.cast(str, factory.Sequence(lambda number: f"PT-{number}"))
 
 
 class EntityFactory(SQLAlchemyModelFactory):

@@ -15,7 +15,7 @@ from breadbox.db.session import SessionWithUser, SessionLocalWithUser
 from breadbox.config import Settings
 from breadbox.startup import create_app
 from breadbox.crud.access_control import PUBLIC_GROUP_ID, TRANSIENT_GROUP_ID
-from breadbox.crud.types import add_dimension_type
+from breadbox.service.dataset import add_dimension_type
 from breadbox.crud.data_type import add_data_type
 from breadbox.crud.group import (
     add_group,

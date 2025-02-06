@@ -21,6 +21,16 @@ export interface Props {
    */
   mode?: "entity-only" | "context-only" | "entity-or-context";
 
+  /**
+   * If defined, filters the available dataset options to only ones that match
+   * the specified value types.
+   *
+   * @default undefined (included all value types)
+   */
+  valueTypes?: Set<
+    "continuous" | "text" | "categorical" | "list_strings" | "binary"
+  >;
+
   /** Called when the height of the container <div> changes. Useful for modals
    * where the available height might be confined. */
   onHeightChange?: (el: HTMLDivElement, prevHeight: number) => void;
@@ -46,6 +56,7 @@ function DimensionSelect({
   onChange,
   className = undefined,
   mode = "entity-or-context",
+  valueTypes = undefined,
   onHeightChange = undefined,
   removeWrapperDiv = false,
   onClickCreateContext = () => {},
@@ -67,6 +78,12 @@ function DimensionSelect({
     onChange,
   });
 
+  if (valueTypes && valueTypes !== DimensionSelect.CONTINUOUS_ONLY) {
+    window.console.warn(
+      "The `valueTypes` prop is not yet implemented and wil be ignored."
+    );
+  }
+
   return (
     <AllSelects
       mode={mode}
@@ -84,4 +101,9 @@ function DimensionSelect({
   );
 }
 
-export default wrapWithErrorBoundary(DimensionSelect);
+// Common sets of value types.
+DimensionSelect.CONTINUOUS_ONLY = new Set(["continuous"]);
+
+export default wrapWithErrorBoundary(
+  DimensionSelect
+) as typeof DimensionSelect & { CONTINUOUS_ONLY: Props["valueTypes"] };

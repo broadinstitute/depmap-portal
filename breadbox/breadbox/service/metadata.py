@@ -2,7 +2,7 @@ import logging
 from typing import Any, Optional
 
 from breadbox.crud import dataset as dataset_crud
-from breadbox.crud import types as types_crud
+from breadbox.crud import dimension_types as types_crud
 from breadbox.db.session import SessionWithUser
 from breadbox.schemas.custom_http_exception import ResourceNotFoundError
 from breadbox.models.dataset import (
@@ -160,6 +160,28 @@ def get_labels_for_slice_type(
         raise ResourceNotFoundError(
             f"Unknown identifier type: '{slice_query.identifier_type}'"
         )
+
+
+def get_dataset_feature_label_by_id(
+    db: SessionWithUser, dataset: MatrixDataset, given_id: str
+):
+    """Looks up a single label for a given_id in a dataset. Internally this is implemented inefficiently so only
+    call this if you really want a single label. If you want to loop through many IDs, use get_matrix_dataset_sample_labels_by_id instead
+    (or we rewrite this function to make a DB query to fetch only the data we actually need)
+    """
+    labels = get_matrix_dataset_feature_labels_by_id(db, db.user, dataset)
+    return labels.get(given_id)
+
+
+def get_dataset_sample_label_by_id(
+    db: SessionWithUser, dataset: MatrixDataset, given_id: str
+):
+    """Looks up a single label for a given_id in a dataset. Internally this is implemented inefficiently so only
+    call this if you really want a single label. If you want to loop through many IDs, use get_matrix_dataset_sample_labels_by_id instead
+    (or we rewrite this function to make a DB query to fetch only the data we actually need)
+    """
+    labels = get_matrix_dataset_sample_labels_by_id(db, db.user, dataset)
+    return labels.get(given_id)
 
 
 def get_dataset_feature_by_label(

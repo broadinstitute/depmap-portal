@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from "react";
-import { fetchDatasetsByIndexType } from "@depmap/data-explorer-2";
 import {
   DataExplorerDatasetDescriptor,
   DataExplorerPlotConfigDimension,
 } from "@depmap/types";
+import { fetchDatasetsByIndexType } from "src/data-explorer-2/deprecated-api";
 import DataTypes from "src/secretDataViewer/components/Stats/DataTypes";
 import FeatureTypes from "src/secretDataViewer/components/Stats/FeatureTypes";
 import Datasets from "src/secretDataViewer/components/Stats/Datasets";

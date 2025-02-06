@@ -4,7 +4,7 @@ import {
   StoredContexts,
 } from "@depmap/types";
 import { LocalStorageListStore } from "@depmap/cell-line-selector";
-import { persistContext } from "../api";
+import { persistContext } from "./context-storage";
 
 export const isContextAll = (context: DataExplorerContext) => {
   // `true` is a special value used to match on anything.

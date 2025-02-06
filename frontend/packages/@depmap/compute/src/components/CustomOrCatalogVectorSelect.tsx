@@ -1,10 +1,20 @@
-/* eslint-disable */
-import * as React from "react";
+import React from "react";
 import { Radio } from "react-bootstrap";
-import { DropdownState, Link, VectorCatalog } from "@depmap/interactive";
+import {
+  convertDimensionToSliceId,
+  DimensionSelect,
+  DimensionSelectV2,
+  isCompleteDimension,
+} from "@depmap/data-explorer-2";
+import { enabledFeatures } from "@depmap/globals";
+import { Link } from "../models/legacy";
+import {
+  DataExplorerPlotConfigDimension,
+  DataExplorerPlotConfigDimensionV2,
+} from "@depmap/types";
 import { UploadTask } from "@depmap/user-upload";
-import { FileUpload } from "@depmap/compute";
 import { ApiContext } from "@depmap/api";
+import { FileUpload } from "./FileUpload";
 import uniqueId from "lodash.uniqueid";
 
 import "../styles/CustomOrCatalogVectorSelect.scss";
@@ -13,7 +23,6 @@ type vectorSelectInputType = "catalog" | "custom";
 
 interface CustomOrCatalogVectorSelectProps {
   onChange: (queryVectorId?: string, labels?: Link[]) => void;
-  vectorDefault?: Array<DropdownState>; // this is from the query param, and thus should not change
 }
 
 interface CustomOrCatalogVectorSelectState {
@@ -21,6 +30,9 @@ interface CustomOrCatalogVectorSelectState {
   messageWarning: string;
   messageDetail: string;
   isLoading: boolean;
+  selectedDimension: Partial<
+    DataExplorerPlotConfigDimension | DataExplorerPlotConfigDimensionV2
+  > | null;
 }
 
 export class CustomOrCatalogVectorSelect extends React.Component<
@@ -28,11 +40,12 @@ export class CustomOrCatalogVectorSelect extends React.Component<
   CustomOrCatalogVectorSelectState
 > {
   declare context: React.ContextType<typeof ApiContext>;
+
   static contextType = ApiContext;
 
   private radioName = `vectorSelectInputType-${uniqueId()}`;
 
-  constructor(props: any) {
+  constructor(props: CustomOrCatalogVectorSelectProps) {
     super(props);
 
     this.state = {
@@ -40,15 +53,59 @@ export class CustomOrCatalogVectorSelect extends React.Component<
       messageWarning: "",
       messageDetail: "",
       isLoading: false,
+      selectedDimension: null,
     };
   }
 
   renderVectorCatalog = () => {
+    const onChangeDimension = (dimension: any) => {
+      this.setState({ selectedDimension: dimension });
+
+      if (isCompleteDimension(dimension)) {
+        const sliceId = convertDimensionToSliceId(dimension);
+
+        const simulatedVectorCatalogSelections = [
+          dimension.slice_type,
+
+          dimension.slice_type === "gene"
+            ? dimension.context.name
+            : dimension.dataset_id,
+
+          dimension.slice_type === "gene"
+            ? dimension.dataset_id
+            : dimension.context.name,
+        ].map((value) => ({ value, link: "", label: "" }));
+
+        this.props.onChange(
+          sliceId as string,
+          simulatedVectorCatalogSelections
+        );
+      } else {
+        this.props.onChange("");
+      }
+    };
+
+    if (enabledFeatures.elara) {
+      return (
+        <DimensionSelectV2
+          mode="entity-only"
+          index_type="depmap_model"
+          valueTypes={DimensionSelectV2.CONTINUOUS_ONLY}
+          value={
+            this.state.selectedDimension as DataExplorerPlotConfigDimensionV2
+          }
+          onChange={onChangeDimension}
+        />
+      );
+    }
+
     return (
-      <VectorCatalog
-        onSelection={this.props.onChange}
-        catalog="continuous"
-        initialDropdowns={this.props.vectorDefault} // may be null (passed down null) or undefined (not specified in props)
+      <DimensionSelect
+        mode="entity-only"
+        index_type="depmap_model"
+        valueTypes={DimensionSelect.CONTINUOUS_ONLY}
+        value={this.state.selectedDimension as DataExplorerPlotConfigDimension}
+        onChange={onChangeDimension}
       />
     );
   };
@@ -94,11 +151,11 @@ export class CustomOrCatalogVectorSelect extends React.Component<
   handleUploadResponse = (uploadTask: UploadTask) => {
     let messageWarning = "";
 
-    if (uploadTask.state == "FAILURE") {
+    if (uploadTask.state === "FAILURE") {
       messageWarning = `Error: ${uploadTask.message}`;
 
       this.props.onChange();
-    } else if (uploadTask.state == "SUCCESS") {
+    } else if (uploadTask.state === "SUCCESS") {
       if (uploadTask.result.warnings.length > 0) {
         messageWarning = uploadTask.result.warnings.join("\n");
       }
@@ -132,7 +189,7 @@ export class CustomOrCatalogVectorSelect extends React.Component<
   };
 
   customUploadOnChange = (uploadFile: any) => {
-    if (!uploadFile || uploadFile.filename == "") {
+    if (!uploadFile || uploadFile.filename === "") {
       this.props.onChange();
       this.setState({
         messageWarning: "",

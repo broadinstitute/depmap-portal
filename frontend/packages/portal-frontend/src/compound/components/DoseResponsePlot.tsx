@@ -1,5 +1,4 @@
 /* eslint-disable */
-// adapted from @depmap/interactive/src/components/Plot.tsx
 
 import * as React from "react";
 import * as Plotly from "plotly.js";

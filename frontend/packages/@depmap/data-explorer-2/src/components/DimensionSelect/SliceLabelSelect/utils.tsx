@@ -7,7 +7,7 @@ import React, {
 } from "react";
 import { ApiContext, SharedApi } from "@depmap/api";
 import { Highlighter, Tooltip, WordBreaker } from "@depmap/common-components";
-import { useDataExplorerApi } from "../../../contexts/DataExplorerApiContext";
+import { useDeprecatedDataExplorerApi } from "../../../contexts/DeprecatedDataExplorerApiContext";
 import { getDimensionTypeLabel } from "../../../utils/misc";
 import { SearchDimenionsResponse } from "@depmap/types";
 import styles from "../../../styles/DimensionSelect.scss";
@@ -80,7 +80,7 @@ function doNotOverlap(a: number[], b: number[]) {
 }
 
 async function fetchSliceLabelsAndAliases(
-  api: ReturnType<typeof useDataExplorerApi>,
+  api: ReturnType<typeof useDeprecatedDataExplorerApi>,
   slice_type: string | null,
   dataType: string | null,
   dataset_id: string | null,
@@ -150,7 +150,7 @@ export function useSliceLabels(
   dataset_id: string | null,
   units: string | null
 ) {
-  const api = useDataExplorerApi();
+  const api = useDeprecatedDataExplorerApi();
   const [error, setError] = useState(false);
   const [sliceLabels, setSliceLabels] = useState<string[] | null>(null);
   const [aliases, setAliases] = useState<Aliases | null>(null);

@@ -1,12 +1,12 @@
+import qs from "qs";
 import {
   AnnotationType,
   DataExplorerContextV2,
   DataExplorerContextVariable,
-  DataExplorerDatasetDescriptor,
   Dataset,
   DimensionType,
-  MatrixDataset,
 } from "@depmap/types";
+import { compareCaseInsensitive } from "@depmap/utils";
 
 let urlPrefix = "";
 
@@ -86,8 +86,8 @@ export async function evaluateContext(
       varName,
       {
         // The `DataExplorerContextVariable` type has some extra fields that
-        // aren't part of the SliceQuery format. We'll strip those out so
-        // the backend doesn't get confused.
+        // aren't part of the SliceQuery format. We'll only include the
+        // relevant fields so the backend doesn't get confused.
         dataset_id: variable.dataset_id,
         identifier: variable.identifier,
         identifier_type: variable.identifier_type,
@@ -107,8 +107,21 @@ export async function evaluateContext(
   }>("/temp/context", contextToEval);
 }
 
-export function fetchDatasets() {
-  return fetchJson<Dataset[]>("/datasets/");
+export function fetchDatasets(
+  options?: Partial<{
+    feature_id: string;
+    feature_type: string;
+    sample_id: string;
+    sample_type: string;
+  }>
+) {
+  let url = "/datasets/";
+
+  if (options) {
+    url += `?${qs.stringify(options)}`;
+  }
+
+  return fetchJson<Dataset[]>(url);
 }
 
 export async function fetchVariableDomain(
@@ -119,7 +132,9 @@ export async function fetchVariableDomain(
   let value_type: AnnotationType | undefined;
 
   const datasets = await fetchDatasets();
-  const dataset = datasets.find((d) => d.id === dataset_id);
+  const dataset = datasets.find((d) => {
+    return d.id === dataset_id || d.given_id === dataset_id;
+  });
 
   if (dataset && dataset.format === "matrix_dataset") {
     value_type = dataset.value_type as AnnotationType;
@@ -164,7 +179,7 @@ export async function fetchVariableDomain(
     ) as string[];
 
     return Promise.resolve({
-      unique_values: [...new Set(stringValues)].sort(),
+      unique_values: [...new Set(stringValues)].sort(compareCaseInsensitive),
       value_type,
     });
   }
@@ -184,67 +199,16 @@ export async function fetchVariableDomain(
   throw new Error(`Unsupported value_type "${value_type}".`);
 }
 
-let datasetsByIndexType: Record<
-  string,
-  DataExplorerDatasetDescriptor[]
-> | null = null;
-
-export async function fetchDatasetsByIndexType() {
-  if (datasetsByIndexType) {
-    return datasetsByIndexType;
-  }
-
-  const datasets = await fetchDatasets();
-  datasetsByIndexType = {};
-
-  datasets.forEach((dataset) => {
-    if (dataset.format !== "matrix_dataset") {
-      return;
-    }
-
-    if (dataset.value_type !== "continuous") {
-      return;
-    }
-
-    const md = dataset as MatrixDataset;
-
-    const commonProperties = {
-      data_type: md.data_type,
-      dataset_id: md.id,
-      given_id: md.given_id,
-      label: md.name,
-      priority: md.priority,
-      units: md.units,
-    };
-
-    datasetsByIndexType![md.sample_type_name] = [
-      ...(datasetsByIndexType![md.sample_type_name] || []),
-      {
-        ...commonProperties,
-        index_type: md.sample_type_name,
-        slice_type: md.feature_type_name,
-      },
-    ];
-
-    datasetsByIndexType![md.feature_type_name] = [
-      ...(datasetsByIndexType![md.feature_type_name] || []),
-      {
-        ...commonProperties,
-        index_type: md.feature_type_name,
-        slice_type: md.sample_type_name,
-      },
-    ];
-  });
-
-  return datasetsByIndexType;
-}
-
 export function fetchDimensionTypes() {
   return fetchJson<DimensionType[]>("/types/dimensions");
 }
 
-// TODO: Rewrite this to use /types/dimensions/{name}/identifiers
-export async function fetchDimensionIdentifiers(dimensionTypeName: string) {
+type Identifiers = { id: string; label: string }[];
+
+export async function fetchDimensionIdentifiers(
+  dimensionTypeName: string,
+  dataType?: string
+) {
   const dimensionTypes = await fetchDimensionTypes();
   const dimType = dimensionTypes.find((t) => t.name === dimensionTypeName);
 
@@ -252,19 +216,27 @@ export async function fetchDimensionIdentifiers(dimensionTypeName: string) {
     throw new Error(`Unrecognized dimension type "${dimensionTypeName}"!`);
   }
 
-  const data = await postJson<{
-    ids: string[];
-    // labels: string[];
-    values: string[];
-  }>("/datasets/dimension/data/", {
-    dataset_id: dimType.metadata_dataset_id,
-    // HACK: There's a bug where the labels we get are actually ids! We'll
-    // request "label" as the identifier instead.
-    identifier: "label",
-    identifier_type: "column",
-  });
+  const url = [
+    `/types/dimensions/${dimensionTypeName}/identifiers`,
+    "?show_only_dimensions_in_datasets=true",
+    dataType ? `&data_type=${dataType}` : "",
+  ].join("");
 
-  return data.ids
-    .map((id, index) => ({ id, label: data.values[index] }))
-    .sort((a, b) => (a.label.toLowerCase() < b.label.toLowerCase() ? -1 : 1));
+  return fetchJson<Identifiers>(url);
+}
+
+export async function fetchDatasetIdentifiers(
+  dimensionTypeName: string,
+  dataset_id: string
+) {
+  const dimensionTypes = await fetchDimensionTypes();
+  const dimType = dimensionTypes.find((t) => t.name === dimensionTypeName);
+
+  if (!dimType) {
+    throw new Error(`Unrecognized dimension type "${dimensionTypeName}"!`);
+  }
+
+  const featuresOrSamples = dimType.axis === "feature" ? "features" : "samples";
+
+  return fetchJson<Identifiers>(`/datasets/${featuresOrSamples}/${dataset_id}`);
 }

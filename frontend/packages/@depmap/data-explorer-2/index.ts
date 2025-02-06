@@ -3,36 +3,12 @@ export { default as SliceLabelSelector } from "./src/components/SliceLabelSelect
 export { default as PlotConfigSelect } from "./src/components/PlotConfigSelect";
 export { default as renderConditionally } from "./src/utils/render-conditionally";
 export { default as DimensionSelect } from "./src/components/DimensionSelect";
+export { default as DimensionSelectV2 } from "./src/components/DimensionSelectV2";
 export { default as SliceLabelSelect } from "./src/components/DimensionSelect/SliceLabelSelect";
 export { default as ContextBuilderModal } from "./src/components/ContextBuilder/ContextBuilderModal";
 export { default as ContextManager } from "./src/components/ContextManager";
-
-export {
-  fetchAnalysisResult,
-  fetchAssociations,
-  fetchContext,
-  fetchContextLabels,
-  fetchCorrelation,
-  fetchDatasetDetails,
-  fetchDatasetsByIndexType,
-  fetchDatasetsMatchingContextIncludingEntities,
-  fetchDimensionLabels,
-  fetchDimensionLabelsOfDataset,
-  fetchDimensionLabelsToDatasetsMapping,
-  fetchGeneTeaEnrichment,
-  fetchGeneTeaTermContext,
-  fetchLinearRegression,
-  fetchMetadataSlices,
-  fetchPlotDimensions,
-  fetchWaterfall,
-  persistContext,
-} from "./src/api";
-
-export type {
-  GeneTeaEnrichedTerms,
-  GeneTeaTermContext,
-  MetadataSlices,
-} from "./src/api";
+export { default as DatasetMetadataSelector } from "./src/components/DatasetMetadataSelector";
+export { default as DataExplorerPage } from "./src/components/DataExplorerPage/components/DataExplorer2";
 
 export {
   DataExplorerApiProvider,
@@ -40,10 +16,21 @@ export {
 } from "./src/contexts/DataExplorerApiContext";
 
 export {
+  DeprecatedDataExplorerApiProvider,
+  DeprecatedDataExplorerApiResponse,
+  useDeprecatedDataExplorerApi,
+} from "./src/contexts/DeprecatedDataExplorerApiContext";
+
+export {
   DataExplorerSettingsProvider,
   useDataExplorerSettings,
   useLaunchSettingsModal,
 } from "./src/contexts/DataExplorerSettingsContext";
+
+export {
+  PlotlyLoaderProvider,
+  usePlotlyLoader,
+} from "./src/contexts/PlotlyLoaderContext";
 
 export {
   contextsMatch,
@@ -55,8 +42,11 @@ export {
   saveContextToLocalStorageAndPersist,
 } from "./src/utils/context";
 
+export { fetchContext, persistContext } from "./src/utils/context-storage";
+
 export {
   capitalize,
+  convertDimensionToSliceId,
   getDimensionTypeLabel,
   isCompleteDimension,
   isCompleteExpression,
@@ -68,3 +58,29 @@ export {
 } from "./src/utils/misc";
 
 export { persistLegacyListAsContext } from "./src/components/ContextSelector/context-selector-utils";
+
+export {
+  logInitialPlot,
+  logReducerTransform,
+} from "./src/components/DataExplorerPage/debug";
+export { PointsSelector } from "./src/components/DataExplorerPage/components/ConfigurationPanel/selectors";
+export {
+  default as plotConfigReducer,
+  PlotConfigReducerAction,
+} from "./src/components/DataExplorerPage/reducers/plotConfigReducer";
+export {
+  DEFAULT_PALETTE,
+  LEGEND_ALL,
+  LEGEND_BOTH,
+  LEGEND_RANGE_1,
+  LEGEND_RANGE_2,
+  LEGEND_RANGE_3,
+  LEGEND_RANGE_4,
+  LEGEND_RANGE_5,
+  LEGEND_RANGE_6,
+  LEGEND_RANGE_7,
+  LEGEND_RANGE_8,
+  LEGEND_RANGE_9,
+  LEGEND_RANGE_10,
+  LegendKey,
+} from "./src/components/DataExplorerPage/components/plot/prototype/plotUtils";

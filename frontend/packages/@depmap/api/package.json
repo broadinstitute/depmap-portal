@@ -10,7 +10,6 @@
     "@depmap/cell-line-selector": "1.0.0",
     "@depmap/compute": "1.0.0",
     "@depmap/data-slicer": "1.0.0",
-    "@depmap/interactive": "1.0.0",
     "@depmap/types": "1.0.0",
     "@depmap/user-upload": "1.0.0"
   },

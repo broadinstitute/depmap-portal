@@ -1,11 +1,8 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Button, Modal, Radio } from "react-bootstrap";
+import { useDeprecatedDataExplorerApi } from "../../contexts/DeprecatedDataExplorerApiContext";
 import ContextNameForm from "../ContextBuilder/ContextNameForm";
-import {
-  fetchContextLabels,
-  fetchContext,
-  fetchMetadataColumn,
-} from "../../api";
+import { fetchContext } from "../../utils/context-storage";
 import { getDimensionTypeLabel, pluralize } from "../../utils/misc";
 import { isV2Context } from "../../utils/context";
 import styles from "../../styles/ContextManager.scss";
@@ -23,6 +20,7 @@ function DownloadContextModal({
   contextHash,
   onHide,
 }: Props) {
+  const api = useDeprecatedDataExplorerApi();
   const [shouldShowValidation, setShouldShowValidation] = useState(false);
   const [filename, setFilename] = useState(contextName);
   const [format, setFormat] = useState<"list" | "csv">("list");
@@ -37,9 +35,9 @@ function DownloadContextModal({
         throw new Error("V2 contexts not supported!");
       }
 
-      return fetchContextLabels(context);
+      return api.evaluateLegacyContext(context);
     });
-  }, [contextHash]);
+  }, [api, contextHash]);
 
   const handleClickDownload = () => {
     if (!filename) {
@@ -53,7 +51,7 @@ function DownloadContextModal({
           throw new Error("V2 contexts not supported!");
         }
 
-        return fetchContextLabels(context);
+        return api.evaluateLegacyContext(context);
       })
       .then(async (contextLabels) => {
         let labels = contextLabels;
@@ -67,7 +65,7 @@ function DownloadContextModal({
           }
 
           const sliceId = "slice/cell_line_display_name/all/label";
-          labels = await fetchMetadataColumn(sliceId).then((column) => {
+          labels = await api.fetchMetadataColumn(sliceId).then((column) => {
             return labels.map((depmap_id) => column.indexed_values[depmap_id]);
           });
         }
