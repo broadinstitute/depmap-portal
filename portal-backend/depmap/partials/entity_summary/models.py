@@ -160,8 +160,8 @@ def legacy_dataset_contains_entity(legacy_dataset_enum, entity_id: int):
 def get_download_data(
         dataset_id: str, 
         entity: Entity, 
-        size_dataset_enum: str, # TODO: this is really expecting an enum
-        color_dataset_id: str # TODO: this is something else
+        size_dataset_enum, 
+        color_dataset_id,
     ):
     """
     Returns the dataframe for the dependency data
@@ -185,21 +185,21 @@ def get_download_data(
     df = lin1.merge(lin2, how="left", on="Depmap ID")
 
     if legacy_dataset_contains_entity(size_dataset_enum, entity.entity_id): # TODO: this is passing the wrong type now
-        df, legend = integrate_size_and_label_data(
+        df, _ = integrate_size_and_label_data(
             df, metadata["x_label"], size_dataset_enum, entity.entity_id
         )
         df = df.drop(columns=["label", "size"]).rename(
             columns={
-                "expression": Dataset.get_dataset_by_name(size_dataset_enum).display_name,
+                "expression": Dataset.get_dataset_by_name(size_dataset_enum.name).display_name,
             }
         )
 
     if color_dataset_id:
-        df, legend = integrate_color_data(df, legend, color_dataset_id, entity.label)
+        df, _ = integrate_color_data(df, {}, color_dataset_id, entity.label)
         df["mutation_num"] = df["mutation_num"].map(
             lambda x: color_utils.rna_mutations_color_num_to_category(x)
         )
-        df.rename(columns={"mutation_num": self.color.title()}, inplace=True)
+        df.rename(columns={"mutation_num": color_dataset_id.title()}, inplace=True)
 
     dep_name = Dataset.get_dataset_by_name(dataset_id).display_name
     df.rename(
