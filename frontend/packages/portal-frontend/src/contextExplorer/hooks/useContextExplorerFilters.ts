@@ -37,7 +37,6 @@ export default function useContextExplorerFilters(
 
   useEffect(() => {
     if (data) {
-      console.log({ data });
       defaultFilters.current = normalizeFilters(data, filterDefinitions);
       initialFilters.current = normalizeFilters(
         data,

@@ -135,7 +135,7 @@ function BranchBoxPlots({
               );
 
               const insigPlotData = branchPlotData.insignificant_box_plot_data;
-              if (insigPlotData.data.length > 0) {
+              if (insigPlotData.data && insigPlotData.data.length > 0) {
                 plotInfo.push({
                   name: insigPlotData.label,
                   hoverLabels: insigPlotData.cell_line_display_names,
@@ -157,6 +157,7 @@ function BranchBoxPlots({
           if (boxplotPromise === boxplotLatestPromise.current) {
             window.console.error(e);
             //setBoxplotError(true);
+            setIsLoadingBranchPlots(false);
           }
         })
         .finally(() => setIsLoadingBranchPlots(false));
@@ -179,9 +180,8 @@ function BranchBoxPlots({
     <>
       <div>
         {isLoadingBranchPlots && <PlotSpinner />}
-        {boxPlotData && !isLoadingBranchPlots && (
+        {boxPlotData?.length > 0 && !isLoadingBranchPlots && (
           <BoxPlot
-            urlPrefix={urlPrefix}
             plotName={`${levelZeroCode} box plot`}
             boxData={boxPlotData}
             onLoad={() => {}}
@@ -197,6 +197,11 @@ function BranchBoxPlots({
             topMargin={BOX_PLOT_TOP_MARGIN}
             dottedLinePosition={dottedLinePosition}
           />
+        )}
+        {boxPlotData?.length === 0 && !isLoadingBranchPlots && (
+          <div>
+            <h4>No significant sub-contexts</h4>
+          </div>
         )}
       </div>
     </>

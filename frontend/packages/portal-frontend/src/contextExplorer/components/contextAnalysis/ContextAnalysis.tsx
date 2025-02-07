@@ -61,7 +61,6 @@ interface ContextAnalysisProps {
   topContextNameInfo: ContextNameInfo;
   treeType: TreeType;
   entityType: string;
-  customInfoImg: React.JSX.Element;
   datasetId: ContextExplorerDatasets;
 }
 
@@ -71,10 +70,8 @@ function ContextAnalysis({
   topContextNameInfo,
   treeType,
   entityType,
-  customInfoImg,
   datasetId,
 }: ContextAnalysisProps) {
-  console.log(customInfoImg);
   const dapi = getDapi();
   const [outgroup, setOutgroup] = useState<{
     value: OutGroupType;
@@ -231,7 +228,6 @@ function ContextAnalysis({
   const [entityUrlRoot, setEntityUrlRoot] = useState<string | null>(null);
 
   const stickyFiltersMode = false;
-
   // useContextExplorerFilters is very similar to useDiscoveryAppFilters. They
   // are temporarily separated out into 2 different files while the stickyFiltersMode
   // and Context Explorer is new. This is to reduce the risk of breaking Context Explorer,
@@ -251,10 +247,12 @@ function ContextAnalysis({
   const [pointVisibility, setPointVisibility] = useState<boolean[]>([]);
 
   useEffect(() => {
+    console.log("HITTTT");
     setSelectedPlotLabels(null);
     setSelectedTableLabels(null);
     setPointVisibilityFiltered(null);
-  }, [selectedContextNameInfo]);
+    console.log(selectedPlotLabels);
+  }, [selectedContextNameInfo, topContextNameInfo]);
 
   useEffect(() => {
     if (data && filters) {
@@ -328,6 +326,7 @@ function ContextAnalysis({
 
   const handleClickRowAndPoint = useCallback(
     (pointIndex: number) => {
+      console.log("HELLO CLICK ROW AND POINT");
       if (plotData && plotData.indexLabels) {
         const label = plotData?.indexLabels[pointIndex];
 
@@ -382,6 +381,7 @@ function ContextAnalysis({
 
   const handleSelectRowAndPoint = useCallback(
     (entityLabel: string) => {
+      console.log("HELLO SELECT ROW AND POINT");
       if (plotData && plotData.indexLabels) {
         const label = entityLabel;
 
@@ -508,7 +508,6 @@ function ContextAnalysis({
 
       const { min, max } = calcMinMax(values);
       console.log(min);
-
       if (entityType !== "gene") {
         const binNumber = 5;
         const legendMin = 0;
@@ -649,6 +648,7 @@ function ContextAnalysis({
       setBoxPlotData(null);
       setEntityDetailMainPlotElement(null);
       setIsLoadingBoxplot(true);
+      setBoxplotError(false);
       const boxplotPromise = dapi.getContextExplorerBoxPlotData(
         selectedContextNameInfo.subtype_code,
         treeType,
@@ -930,7 +930,7 @@ function ContextAnalysis({
         </div>
       </section>
       <div className={styles.right}>
-        {selectedPlotLabels && boxPlotData && (
+        {selectedPlotLabels && boxPlotData && selectedPlotLabels.size > 0 && (
           <>
             <h2
               style={{
@@ -959,11 +959,9 @@ function ContextAnalysis({
             )}
           </>
         )}
-        {boxPlotData &&
-          selectedPlotLabels &&
+        {selectedPlotLabels &&
           selectedPlotLabels.size > 0 &&
           datasetId === ContextExplorerDatasets.Prism_oncology_AUC &&
-          selectedContextNameInfo.name !== "All" &&
           !isLoading &&
           data && (
             <div className={styles.plotFrame}>
@@ -985,7 +983,7 @@ function ContextAnalysis({
             <div className={styles.plotFrame}>
               {selectedPlotLabels && selectedPlotLabels.size > 0 ? (
                 <div className={styles.boxPlotHeader}>
-                  {boxplotError && (
+                  {boxplotError && !isLoadingBoxplot && (
                     <div className={styles.initialLoadError}>
                       <h1>Sorry, an error occurred</h1>
                       <p>There was an error loading this plot.</p>
@@ -1046,7 +1044,7 @@ function ContextAnalysis({
               )}
             </div>
 
-            {entityDetailMainPlotElement && (
+            {false && (
               <>
                 <div className={styles.deButtonContainerCentered}>
                   <Button

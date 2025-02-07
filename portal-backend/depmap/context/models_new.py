@@ -143,7 +143,7 @@ class SubtypeNode(Model):
     @staticmethod
     def get_model_ids_by_subtype_code_and_node_level(
         subtype_code: str, node_level: int
-    ) -> Dict[str, str]:
+    ) -> List[str]:
         context = SubtypeContext.get_by_code(subtype_code)
         model_ids = SubtypeContext.get_model_ids_by_node_level(context, node_level)
 

@@ -592,19 +592,6 @@ class ContextBoxPlotData(Resource):
             do_get_other_branch_0s=True,
         )
 
-        all_sig_context_codes = sig_contexts["subtype_code"].to_list()
-        sig_contexts_agg = (
-            sig_contexts.groupby("level_0").agg({"subtype_code": list}).reset_index()
-        )
-        sig_contexts_by_level_0 = sig_contexts_agg.set_index("level_0").to_dict()[
-            "subtype_code"
-        ]
-
-        branch_contexts = get_branch_subtype_codes_organized_by_code(
-            contexts=sig_contexts_by_level_0, level_0=level_0
-        )
-        all_significant_level_0_codes = branch_contexts.keys()
-
         (entity_full_row_of_values) = get_full_row_of_values_and_depmap_ids(
             dataset_name=dataset_name, label=entity_label
         )
@@ -618,31 +605,49 @@ class ContextBoxPlotData(Resource):
         solid_box_plot_data = {}
         other_sig_level_0_box_plot_data = {}
         box_plot_card_data = {}
+        if len(sig_contexts) > 0:
+            all_sig_context_codes = sig_contexts["subtype_code"].to_list()
+            sig_contexts_agg = (
+                sig_contexts.groupby("level_0")
+                .agg({"subtype_code": list})
+                .reset_index()
+            )
+            sig_contexts_by_level_0 = sig_contexts_agg.set_index("level_0").to_dict()[
+                "subtype_code"
+            ]
 
-        if branch_contexts != None:
-            assert level_0 in branch_contexts.keys()
-            selected_context_level_0 = branch_contexts[level_0]
-            if selected_context_level_0 != None:
-                box_plot_card_data = get_box_plot_card_data(
-                    level_0_code=level_0,
-                    all_sig_context_codes=all_sig_context_codes,
-                    model_ids_by_code=selected_context_level_0,
-                    entity_full_row_of_values=entity_full_row_of_values,
-                )
+            branch_contexts = get_branch_subtype_codes_organized_by_code(
+                contexts=sig_contexts_by_level_0, level_0=level_0
+            )
 
-            for other_level_0 in all_significant_level_0_codes:
-                # Is it another signficant level 0? We need a new box plot grouping.
-                if level_0 != other_level_0:
-                    context_model_ids = SubtypeNode.get_model_ids_by_subtype_code_and_node_level(
-                        subtype_code=other_level_0, node_level=0
+            all_significant_level_0_codes = branch_contexts.keys()
+
+            if branch_contexts != None:
+                assert (
+                    level_0 in branch_contexts.keys()
+                ), f" level_0: {level_0}, entity_label {entity_label}, node {selected_node.node_name}"
+                selected_context_level_0 = branch_contexts[level_0]
+                if selected_context_level_0 != None:
+                    box_plot_card_data = get_box_plot_card_data(
+                        level_0_code=level_0,
+                        all_sig_context_codes=all_sig_context_codes,
+                        model_ids_by_code=selected_context_level_0,
+                        entity_full_row_of_values=entity_full_row_of_values,
                     )
-                    if len(context_model_ids) >= 5:
-                        box_plot = get_box_plot_data_for_context(
-                            subtype_code=other_level_0,
-                            entity_full_row_of_values=entity_full_row_of_values,
-                            model_ids=context_model_ids,
+
+                for other_level_0 in all_significant_level_0_codes:
+                    # Is it another signficant level 0? We need a new box plot grouping.
+                    if level_0 != other_level_0:
+                        context_model_ids = SubtypeNode.get_model_ids_by_subtype_code_and_node_level(
+                            subtype_code=other_level_0, node_level=0
                         )
-                        other_sig_level_0_box_plot_data[other_level_0] = box_plot
+                        if len(context_model_ids) >= 5:
+                            box_plot = get_box_plot_data_for_context(
+                                subtype_code=other_level_0,
+                                entity_full_row_of_values=entity_full_row_of_values,
+                                model_ids=context_model_ids,
+                            )
+                            other_sig_level_0_box_plot_data[other_level_0] = box_plot
 
             heme_box_plot_data = get_box_plot_data_for_other_category(
                 category="heme",
@@ -666,8 +671,6 @@ class ContextBoxPlotData(Resource):
         return {
             "significant_selection": significant_selection,
             "insignifcant_selection": insignifcant_selection,
-            # For "signficant_other", only grab the level_0s. We will lazy load the
-            # children of each level_0 as its boxplot "card" is clicked
             "significant_other": other_sig_level_0_box_plot_data,
             "insignificant_heme_data": heme_box_plot_data,
             "insignificant_solid_data": solid_box_plot_data,

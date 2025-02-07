@@ -39,6 +39,7 @@ def get_box_plot_card_data(
     significant_box_plot_data = {}
     insignificant_box_plot_data = {}
     all_sig_models = []
+    codes_with_less_than_5_models = []
 
     child_codes = model_ids_by_code.keys()
     for child in child_codes:
@@ -55,16 +56,41 @@ def get_box_plot_card_data(
                     )
                     significant_box_plot_data[child] = box_plot
                 all_sig_models.extend(context_model_ids)
+            else:
+                codes_with_less_than_5_models.extend(context_model_ids)
 
-    all_other_model_ids = list(
-        set(entity_full_row_of_values.index.tolist()) - set(all_sig_models)
-    )
-    if len(all_other_model_ids) >= 5:
-        insignificant_box_plot_data = get_box_plot_data_for_context(
-            label=f"Other {level_0_code}",
+    if level_0_code not in all_sig_context_codes:
+        significant_box_plot_data[level_0_code] = get_box_plot_data_for_context(
             subtype_code=level_0_code,
             entity_full_row_of_values=entity_full_row_of_values,
-            model_ids=all_other_model_ids,
+            model_ids=all_sig_models,
+        )
+        level_0_model_ids = SubtypeNode.get_model_ids_by_subtype_code_and_node_level(
+            level_0_code, 0
+        )
+        level_0_model_ids.extend(codes_with_less_than_5_models)
+
+        all_other_model_ids = list(set(level_0_model_ids) - set(all_sig_models))
+        insignificant_box_plot_data = (
+            get_box_plot_data_for_context(
+                label=f"Other {level_0_code}",
+                subtype_code=level_0_code,
+                entity_full_row_of_values=entity_full_row_of_values,
+                model_ids=all_other_model_ids,
+            )
+            if len(all_other_model_ids) >= 5
+            else {f"Other {level_0_code}": []}
+        )
+    else:
+        insignificant_box_plot_data = (
+            get_box_plot_data_for_context(
+                label=f"Other {level_0_code}",
+                subtype_code=level_0_code,
+                entity_full_row_of_values=entity_full_row_of_values,
+                model_ids=codes_with_less_than_5_models,
+            )
+            if len(codes_with_less_than_5_models) >= 5
+            else {f"Other {level_0_code}": []}
         )
 
     return {

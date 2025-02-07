@@ -1,5 +1,4 @@
 import React, { useEffect, useRef } from "react";
-import { fetchUrlPrefix } from "src/common/utilities/context";
 import { BOX_THICKNESS, getNewContextUrl } from "src/contextExplorer/utils";
 import ExtendedPlotType from "../models/ExtendedPlotType";
 import PlotlyLoader, { PlotlyType } from "./PlotlyLoader";
@@ -25,7 +24,6 @@ export interface BoxPlotProps {
   xAxisTitle?: string;
   bottomMargin?: number;
   topMargin?: number;
-  urlPrefix?: string;
 }
 
 type BoxPlotWithPlotly = BoxPlotProps & { Plotly: PlotlyType };
@@ -217,6 +215,7 @@ export default function LazyBoxPlot({ boxData, ...otherProps }: BoxPlotProps) {
             >
               {[...boxData.slice(1), boxData[0]].reverse().map((box, index) => (
                 <div
+                  key={box.name}
                   style={{
                     gridRow: index,
                     maxWidth: "120px",
@@ -225,12 +224,12 @@ export default function LazyBoxPlot({ boxData, ...otherProps }: BoxPlotProps) {
                     fontSize: "12px",
                   }}
                 >
-                  {boxData.length > 1 && index !== 0 ? (
-                    box.name.split("/").map((code, j) => (
-                      <>
+                  {boxData.length > 1 && !box?.name.includes("Other") ? (
+                    box?.name.split("/").map((code, j) => (
+                      <React.Fragment key={code}>
                         <a href={getNewContextUrl(code)}>{code}</a>
-                        {j < box.name.split("/").length - 1 && "/"}
-                      </>
+                        {j < box?.name.split("/").length - 1 && "/"}
+                      </React.Fragment>
                     ))
                   ) : (
                     <div>{box.name}</div>

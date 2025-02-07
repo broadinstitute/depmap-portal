@@ -314,7 +314,6 @@ class ContextAnalysis(Model):
                         # ContextAnalysis.frac_dep_in <= frac_dep_in[1],
                     )
                 )
-                .join(Gene, Gene.entity_id == ContextAnalysis.entity_id)
                 .join(
                     SubtypeNode,
                     SubtypeNode.subtype_code == ContextAnalysis.subtype_code,
@@ -339,10 +338,6 @@ class ContextAnalysis(Model):
                         func.abs(ContextAnalysis.effect_size) >= abs_effect_size[0],
                         func.abs(ContextAnalysis.effect_size) <= abs_effect_size[1],
                     )
-                )
-                .join(
-                    CompoundExperiment,
-                    CompoundExperiment.entity_id == ContextAnalysis.entity_id,
                 )
                 .join(
                     SubtypeNode,

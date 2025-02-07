@@ -1,27 +1,20 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Panel, PanelGroup } from "react-bootstrap";
 import {
-  BoxData,
   ContextExplorerDatasets,
   ContextNameInfo,
-  ContextNode,
   ContextPlotBoxData,
   TreeType,
 } from "src/contextExplorer/models/types";
 import styles from "src/contextExplorer/styles/ContextExplorer.scss";
-import { ApiContext } from "@depmap/api";
 import {
   BOX_PLOT_BOTTOM_MARGIN,
   BOX_PLOT_TOP_MARGIN,
   BOX_THICKNESS,
-  COMPOUND_BOX_PLOT_X_AXIS_TITLE,
-  GENE_BOX_PLOT_X_AXIS_TITLE,
 } from "src/contextExplorer/utils";
 import { DepmapApi } from "src/dAPI";
 import BoxPlot, { BoxPlotInfo } from "src/plot/components/BoxPlot";
-import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
 import BranchBoxPlots from "./BranchBoxPlots";
-import { defaultPoints } from "src/compound/components/DoseResponseCurve";
 import { fetchUrlPrefix } from "src/common/utilities/context";
 
 const EntityBoxColorList = [
@@ -137,7 +130,7 @@ function CollapsibleBoxPlots({
       );
 
       const insigPlotData = boxPlotData.insignifcant_selection;
-      if (insigPlotData.data.length > 0) {
+      if (insigPlotData.data && insigPlotData.data.length > 0) {
         plotInfo.push({
           name: insigPlotData.label,
           hoverLabels: insigPlotData.cell_line_display_names,
@@ -219,23 +212,26 @@ function CollapsibleBoxPlots({
           <Panel.Title toggle>
             {" "}
             <div style={{ display: "flex", flexDirection: "row" }}>
-              <span
-                style={{
-                  paddingRight: "8px",
-                  paddingTop: "12px",
-                  fontSize: "12px",
-                }}
-                className={
-                  activeKey === "SELECTED"
-                    ? "glyphicon glyphicon-chevron-up"
-                    : "glyphicon glyphicon-chevron-down"
-                }
-              />
+              {selectedContextBoxData && selectedContextBoxData.length > 0 && (
+                <span
+                  style={{
+                    paddingRight: "8px",
+                    paddingTop: "12px",
+                    fontSize: "12px",
+                  }}
+                  className={
+                    activeKey === "SELECTED"
+                      ? "glyphicon glyphicon-chevron-up"
+                      : "glyphicon glyphicon-chevron-down"
+                  }
+                />
+              )}
               {selectedLevelZeroBoxData && (
                 <BoxPlot
                   plotName="main-header"
                   boxData={[selectedLevelZeroBoxData]}
                   setXAxisRange={setXAxisRange}
+                  onLoad={handleSetMainPlotElement}
                   xAxisRange={xAxisRange}
                   plotHeight={
                     BOX_THICKNESS + BOX_PLOT_TOP_MARGIN + BOX_PLOT_BOTTOM_MARGIN
@@ -252,9 +248,9 @@ function CollapsibleBoxPlots({
           </Panel.Title>
         </Panel.Heading>
 
-        <Panel.Body collapsible>
-          {" "}
-          {selectedContextBoxData && (
+        {selectedContextBoxData && selectedContextBoxData.length > 0 && (
+          <Panel.Body collapsible>
+            {" "}
             <div>
               <BoxPlot
                 plotName="main"
@@ -275,14 +271,14 @@ function CollapsibleBoxPlots({
                 }
               />
             </div>
-          )}
-        </Panel.Body>
+          </Panel.Body>
+        )}
       </Panel>
       <>
         {otherSigLevelZeroBoxData?.map((levelOBoxData: BoxPlotInfo) => (
           <Panel
             eventKey={levelOBoxData.name}
-            key={`otherSigLevelZeroBoxData${levelOBoxData}`}
+            key={`otherSigLevelZeroBoxData${levelOBoxData.name}`}
           >
             <Panel.Heading>
               <Panel.Title toggle>
@@ -300,7 +296,6 @@ function CollapsibleBoxPlots({
                     }
                   />
                   <BoxPlot
-                    urlPrefix={urlPrefix}
                     plotName={`${levelOBoxData}-header`}
                     boxData={[levelOBoxData]}
                     setXAxisRange={setXAxisRange}
@@ -347,9 +342,8 @@ function CollapsibleBoxPlots({
         <Panel.Body>
           {" "}
           <div>
-            {otherBoxData.length > 0 && (
+            {otherBoxData.length > 0 ? (
               <BoxPlot
-                urlPrefix={urlPrefix}
                 plotName="other solid and heme"
                 boxData={otherBoxData}
                 setXAxisRange={setXAxisRange}
@@ -366,6 +360,10 @@ function CollapsibleBoxPlots({
                   entityType === "gene" ? -1 : drugDottedLine || -1.74
                 }
               />
+            ) : (
+              <div>
+                <h4>No Other Solid or Heme Models Available</h4>
+              </div>
             )}
           </div>
         </Panel.Body>
