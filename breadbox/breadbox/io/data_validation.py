@@ -628,7 +628,7 @@ def _validate_tabular_df_schema(
     )
 
     # NOTE: missing values are denoted as pd.NA
-    df = pd.read_csv(file_path)
+    df = pd.read_csv(file_path, dtype=str)
     try:
         validated_df = schema.validate(df)
     except SchemaError as schema_error:

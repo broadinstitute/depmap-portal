@@ -137,3 +137,43 @@ def test_validate_tabular_df_schema(tmpdir):
     # I think it's make sense for read_and_validate_tabular_df to parse the list column, but it doesn't today
     # so leaving it this way and just reflecting that in the test case
     assert df["list"].to_list() == ['["1", "2"]']
+
+    df = _validate_tabular_df_schema(
+        to_csv(
+            pd.DataFrame(
+                {
+                    "ID": ["id1", "id2", "id3"],
+                    "col1": [1, 2.1, 3],
+                    "col2": ["1", "2.1", "3"],
+                    "col3": [1, 1.1, 1],
+                    "col4": [1, 0, 1],
+                    "col5": ["1", "1.1", "1"],
+                },
+                columns=["ID", "col1", "col2", "col3", "col4", "col5"],
+            ),
+            index=False,
+        ),
+        {
+            "ID": ColumnMetadata(col_type=AnnotationType.text),
+            "col1": ColumnMetadata(col_type=AnnotationType.continuous, units="units"),
+            "col2": ColumnMetadata(col_type=AnnotationType.text),
+            "col3": ColumnMetadata(col_type=AnnotationType.categorical),
+            "col4": ColumnMetadata(col_type=AnnotationType.categorical),
+            "col5": ColumnMetadata(col_type=AnnotationType.categorical),
+        },
+        "ID",
+    )
+    assert df["col1"].to_list() == [1.0, 2.1, 3.0]
+    assert df["col1"].dtype == pd.Float64Dtype()
+    assert df["col2"].to_list() == ["1", "2.1", "3"]
+    assert df["col2"].dtype == pd.StringDtype()
+    assert df["col3"].to_list() == ["1.0", "1.1", "1.0"]
+    assert df["col3"].dtype == pd.CategoricalDtype(
+        categories=["1.0", "1.1"], ordered=False
+    )
+    assert df["col4"].to_list() == ["1", "0", "1"]
+    assert df["col4"].dtype == pd.CategoricalDtype(categories=["0", "1"], ordered=False)
+    assert df["col5"].to_list() == ["1", "1.1", "1"]
+    assert df["col5"].dtype == pd.CategoricalDtype(
+        categories=["1", "1.1"], ordered=False
+    )
