@@ -58,6 +58,7 @@ def view_compound(name):
     compound = Compound.get_by_label(name, must=False)
 
     if compound is None:
+        # TODO: revisit this
         compound_experiment = CompoundExperiment.get_by_label(name, must=False)
         if compound_experiment is None:
             abort(404)
@@ -65,18 +66,15 @@ def view_compound(name):
             compound_name = compound_experiment.compound.label
             return redirect(url_for("compound.view_compound", name=compound_name))
 
-    # Figure out entity_id
-    compound_id = compound.entity_id
-
     units = compound.units
 
-    aliases = Compound.get_aliases_by_entity_id(compound_id)
+    aliases = Compound.get_aliases_by_entity_id(compound.entity_id)
     compound_aliases = ", ".join(
         [alias for alias in aliases if alias.lower() != name.lower()]
     )
 
     compound_experiment_and_datasets = DependencyDataset.get_compound_experiment_priority_sorted_datasets_with_compound(
-        compound_id
+        compound.entity_id
     )
     has_predictability: bool = len(
         get_predictive_models_for_compound(compound_experiment_and_datasets)
@@ -84,7 +82,7 @@ def view_compound(name):
 
 
     # Figure out membership in different datasets
-    compound_datasets = data_access.get_all_datasets_containing_compound(compound_id)
+    compound_datasets = data_access.get_all_datasets_containing_compound(compound.compound_id)
     has_datasets = len(compound_datasets) != 0
     sensitivity_tab_compound_summary = get_sensitivity_tab_info(compound.entity_id, compound_datasets)
     has_celfie = current_app.config["ENABLED_FEATURES"].celfie and has_datasets
@@ -112,7 +110,7 @@ def view_compound(name):
     )
 
 
-def get_sensitivity_tab_info(compound_id: int, compound_datasets: list[MatrixDataset]) -> Optional[dict[str, Any]]:
+def get_sensitivity_tab_info(compound_entity_id: int, compound_datasets: list[MatrixDataset]) -> Optional[dict[str, Any]]:
     """Get a dictionary of values containing layout information for the sensitivity tab."""
     if len(compound_datasets) == 0:
         return None
@@ -124,12 +122,12 @@ def get_sensitivity_tab_info(compound_id: int, compound_datasets: list[MatrixDat
             "label": dataset.label,
             "id": dataset.id,
             "dataset": dataset.id,
-            "entity": compound_id,
+            "entity": compound_entity_id,
         }
         dataset_options.append(dataset_summary)
 
     return {
-        "figure": {"name": compound_id},
+        "figure": {"name": compound_entity_id},
         "summary_options": dataset_options,
         "show_auc_message": True,
         "size_biom_enum_name": None,

@@ -2,6 +2,7 @@ from flask import url_for
 from json import dumps as json_dumps
 import numpy as np
 import pandas as pd
+from typing import Any
 
 from depmap import data_access
 from depmap.enums import DataTypeEnum
@@ -10,6 +11,7 @@ from depmap.cell_line.models import CellLine
 from depmap.utilities import color_utils
 from depmap.compound import legacy_utils 
 
+# TODO: remove older unused stuff from this file
 
 # abstracted out here so that tests can import it.
 expression_to_size = (
@@ -84,6 +86,7 @@ class EntitySummary:
             color is None
             or color == BiomarkerDataset.BiomarkerEnum.mutations_prioritized.name
         )
+        # TODO: add a given ID field here
         self.label = entity.label
         self.entity_id = entity.entity_id
         self.dep_enum = dep_enum
@@ -207,63 +210,69 @@ class EntitySummary:
         )
         return df
 
-    def json_data(self):
-        """
-        1) Assembling the data needed for this plot
-            There are three parts to this, because there are three inflection points. There are two datasets where a gene may or may not be present, plus an option of whether to color by mutation
-        2) Given this metadata and df, structuring the data as desired by plotly
-        """
-        metadata = {}
-        legend = {}
-        metadata, srs = integrate_dep_data(
-            metadata, self.dep_enum.name, self.label, self.entity_id
-        )
-        df = integrate_cell_line_information(srs)
-        df, legend = integrate_size_and_label_data(
-            df, metadata, legend, self.size_biom_enum, self.entity_id
-        )
-        df, legend = integrate_color_data(df, legend, self.color, self.label)
+    # def json_data(self):
+    #     """
+    #     1) Assembling the data needed for this plot
+    #         There are three parts to this, because there are three inflection points. There are two datasets where a gene may or may not be present, plus an option of whether to color by mutation
+    #     2) Given this metadata and df, structuring the data as desired by plotly
+    #     """
+    #     metadata = {}
+    #     legend = {}
+    #     metadata, srs = integrate_dep_data(
+    #         metadata, self.dep_enum.name, self.label, self.entity_id
+    #     )
+    #     df = integrate_cell_line_information(srs)
+    #     df, legend = integrate_size_and_label_data(
+    #         df, metadata, legend, self.size_biom_enum, self.entity_id
+    #     )
+    #     df, legend = integrate_color_data(df, legend, self.color, self.label)
 
-        response = {
-            "legend": legend,
-            "x_range": metadata["x_range"],
-            "x_label": metadata["x_label"],
-            "description": metadata["description"],
-            "interactive_url": metadata["interactive_url"],
-            "entity_type": self.type,
-        }
-        if "line" in metadata:
-            response["line"] = metadata["line"]
+    #     response = {
+    #         "legend": legend,
+    #         "x_range": metadata["x_range"],
+    #         "x_label": metadata["x_label"],
+    #         "description": metadata["description"],
+    #         "interactive_url": metadata["interactive_url"],
+    #         "entity_type": self.type,
+    #     }
+    #     if "line" in metadata:
+    #         response["line"] = metadata["line"]
 
-        # histogram just uses the data from the strip plot
-        response["strip"] = format_strip_plot(df, self.strip_url_root)
+    #     # histogram just uses the data from the strip plot
+    #     response["strip"] = format_strip_plot(df, self.strip_url_root)
 
-        return json_dumps(response)
+    #     return json_dumps(response)
 
 
-def integrate_dep_data(metadata, dataset_id: str, entity_label: str, entity_id: int):
+def get_feature_data(dataset_id: str, feature_label: str) -> pd.Series:
+    dataset_data = data_access.get_subsetted_df_by_labels_compound_friendly(dataset_id)
+    data_series = dataset_data.loc[feature_label].dropna()
+    data_series.name = "value"
+    return data_series
+
+
+def get_entity_summary_metadata(dataset_id: str, feature_data: pd.Series, feature_label: str) -> dict[str, Any]:
     """
     Returns:
         x_range, the range the x axis should be displayed at
         series, index is arxspan id and values are dependency scores
+    This does work with breadbox datasets. 
     """
     dataset = data_access.get_matrix_dataset(dataset_id)
-    dataset_data = data_access.get_subsetted_df_by_labels_compound_friendly(dataset_id)
-    data_series = dataset_data.loc[entity_label].dropna()
-    data_series.name = "value"
 
     # Temporary workaround while DE2 still indexes by compound experiment
     if dataset.feature_type == "compound_experiment":
         # If it's indexed by compound experiment, assume it's a legacy dataset
-        entity_label = legacy_utils.get_experiment_label_for_compound_label(dataset_id, entity_label) # pyright: ignore
-        assert entity_label is not None, f"Unable to find CompoundExperiment for Compound {entity_id} in dataset {dataset_id}"
+        feature_label = legacy_utils.get_experiment_label_for_compound_label(dataset_id, feature_label) # pyright: ignore
+        assert feature_label is not None, f"Unable to find CompoundExperiment for Compound {feature_label} in dataset {dataset_id}"
 
-    metadata["x_range"] = _get_x_range(data_series)
+    metadata = {}
+    metadata["x_range"] = _get_x_range(feature_data)
     metadata["x_label"] = dataset.units
     metadata["interactive_url"] = url_for(
             "data_explorer_2.view_data_explorer_2",
             xDataset=dataset.id,
-            xFeature=entity_label,
+            xFeature=feature_label,
             yDataset=None,
             yFeature=None,
             color_property='slice/lineage/1/label',
@@ -278,7 +287,7 @@ def integrate_dep_data(metadata, dataset_id: str, entity_label: str, entity_id: 
     else:
         metadata["description"] = ""
 
-    return metadata, data_series
+    return metadata
 
 
 def _get_x_range(srs: pd.Series) -> list[float]:
@@ -287,15 +296,21 @@ def _get_x_range(srs: pd.Series) -> list[float]:
 
     return [series_min - 1, series_max + 1]
 
-def integrate_cell_line_information(srs):
+def integrate_cell_line_information(srs: pd.Series) -> pd.DataFrame:
     info_to_merge = CellLine.get_cell_line_information_df(srs.index, levels=[1, 2])
     df = pd.merge(srs.to_frame(), info_to_merge, left_index=True, right_index=True)
     return df
 
 
-def integrate_size_and_label_data(df, metadata, legend, size_biom_enum, entity_id):
-    if EntitySummary.has_size_biom_enum(size_biom_enum, entity_id):
-        size_dataset = Dataset.get_dataset_by_name(size_biom_enum.name, must=True)
+def integrate_size_and_label_data(
+    df: pd.DataFrame, 
+    x_label: str,
+    size_dataset_id: str, # Assumed to be a dataset that exists outside of breadbox
+    entity_id,
+):
+    legend = {}
+    if EntitySummary.has_size_biom_enum(size_dataset_id, entity_id):
+        size_dataset = Dataset.get_dataset_by_name(size_dataset_id.name, must=True) # TODO: make BB friendly???
         size = size_dataset.matrix.get_cell_line_values_and_depmap_ids(entity_id)
         df = pd.merge(
             df,
@@ -312,7 +327,7 @@ def integrate_size_and_label_data(df, metadata, legend, size_biom_enum, entity_i
             lambda row: "<b>{}</b><br>Disease: {}<br>{}: {:.3G}<br>Expression ({}): {:.3G}".format(
                 row["cell_line_display_name"],
                 row["primary_disease"],
-                metadata["x_label"],
+                x_label,
                 row["value"],
                 size_dataset.matrix.units,
                 row["expression"],
@@ -333,7 +348,7 @@ def integrate_size_and_label_data(df, metadata, legend, size_biom_enum, entity_i
             lambda row: "<b>{}</b><br>Disease: {}<br>{}: {:.3G}".format(
                 row["cell_line_display_name"],
                 row["primary_disease"],
-                metadata["x_label"],
+                x_label,
                 row["value"],
             ),
             axis=1,
@@ -376,10 +391,11 @@ def integrate_color_data(df, legend, color, label):
     return df, legend
 
 
-def format_strip_plot(df, strip_url_root):
+def format_strip_plot(df):
     # Was previously sorted by color ascending
     # Now sort by summary type descending by mean (since plotly draws bottom to top)
     # use mergesort in df.sort_values for a stable sort
+    strip_url_root = url_for("cell_line.view_cell_line", cell_line_name="")
 
     # add a column for level 1 lineage
     cell_line_to_level_1_lineage = df[df["lineage_level"] == 1]["lineage_display_name"]

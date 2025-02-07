@@ -61,10 +61,11 @@ def get_compound_labels_by_experiment_label(dataset_id: str) -> dict[str, str]:
 
 
 def get_compound_ids_by_experiment_id(dataset_id: str) -> dict[int, int]:
+    """Get a mapping between compound entity IDs and experiment entity IDs (not given IDs)."""
     result = {}
     experiment_compound_pairs = _get_deduplicated_experiment_compound_mapping(dataset_id)
     for experiment, compound in experiment_compound_pairs:
-        result[experiment.entity_id] = compound.entity_id
+        result[experiment.entity_id] = compound.compound_id
     return result
 
 
@@ -93,8 +94,8 @@ def get_subsetted_df_by_compound_labels(dataset_id: str) -> pd.DataFrame:
     return compound_df
 
 
-def get_compound_experiment_priority_sorted_datasets(compound_id: int) -> list[str]:
-    """Get a list of dataset ids in priority order"""
+def get_compound_experiment_priority_sorted_datasets(compound_id: str) -> list[str]:
+    """Get a list of dataset ids in priority order for the given compound ID (the given ID, not the entity ID)"""
     # Get a list of dataset IDs with an initial priority order sorting
     datasets =  (
         db.session.query(CompoundExperiment, DependencyDataset)
@@ -107,12 +108,13 @@ def get_compound_experiment_priority_sorted_datasets(compound_id: int) -> list[s
             RowMatrixIndex.entity_id == CompoundExperiment.entity_id,
         )
         .join(Compound, Compound.entity_id == CompoundExperiment.compound_id)
-        .filter(Compound.entity_id == compound_id)
+        .filter(Compound.compound_id == compound_id)
         .order_by(
             nullslast(DependencyDataset.priority),
             CompoundExperiment.entity_id,
             case([(DependencyDataset.data_type == "drug_screen", 0)], else_=1),
         )
         .with_entities(DependencyDataset)
+        .all()
     )
     return [dataset.name.name for dataset in datasets]

@@ -309,17 +309,17 @@ def get_slice_data(slice_query: SliceQuery) -> pd.Series:
 # same shaped data while we are in this transitionary period. 
 
 
-def get_all_datasets_containing_compound(compound_id: int) -> list[MatrixDataset]:
+def get_all_datasets_containing_compound(compound_id: str) -> list[MatrixDataset]:
     """
     Return IDs for all datasets which contain data for the given compound, sorted by priority.
     This should include both:
         - Datasets indexed by compound (from breadbox)
         - Datasets indexed by compound experiment (from the legacy backend)
     """
-    bb_compound_datasets = breadbox_dao.get_filtered_matrix_datasets(
-        feature_type="compound",
-        feature_id=str(compound_id)
+    bb_compound_datasets = breadbox_dao.get_filtered_matrix_datasets(feature_type="compound_v2",
+        feature_id=compound_id
     )
+    # TODO: the breadbox compound IDs are things like `DPC-004236`, not integers. Is this different from entity ID?
     bb_compound_datasets.sort(key=lambda dataset: dataset.priority if dataset.priority else 999)
 
     # If a dataset is defined in both breadbox and the legacy DB, use the breadbox version

@@ -408,7 +408,7 @@ class DependencyDataset(Dataset):
 
     @staticmethod
     def get_compound_experiment_priority_sorted_datasets_with_compound(
-        compound_id: int,
+        compound_id: int, # Expects compound.entity_id, not compound.compound_id
     ) -> List[Tuple["CompoundExperiment", "DependencyDataset"]]:
         # DEPRECATED: this will not work with breadbox datasets. 
         # Calls to this should be replaced with get_all_datasets_containing_compound
