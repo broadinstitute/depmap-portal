@@ -106,11 +106,22 @@ function ContextAnalysis({
       // context is a subset of Bone
       outGroupOpts.push({
         value: OutGroupType.OtherOfSameLineage,
-        label: `Other ${topContextNameInfo.name}`,
+        label: `Other ${topContextNameInfo.subtype_code}`,
       });
     }
 
-    // Other Solid
+    selectedContextNode?.path.forEach((subtype_code) => {
+      if (
+        subtype_code !== selectedContextNode.subtype_code &&
+        subtype_code !== topContextNameInfo.subtype_code
+      ) {
+        outGroupOpts.push({
+          value: subtype_code,
+          label: `Other ${subtype_code}`,
+        });
+      }
+    });
+
     if (
       BLOOD_LINEAGES.includes(topContextNameInfo.name) ||
       BLOOD_LINEAGES.includes(topContextNameInfo.subtype_code)
@@ -118,11 +129,6 @@ function ContextAnalysis({
       outGroupOpts.push({
         value: OutGroupType.Type,
         label: "Other Heme",
-      });
-    } else {
-      outGroupOpts.push({
-        value: OutGroupType.Type,
-        label: "Other Solid",
       });
     }
     setOutgroupOptions(outGroupOpts);

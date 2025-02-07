@@ -298,7 +298,16 @@ export function getGeneDependencyContexts(
           },
         };
       default:
-        throw new Error(`Unrecognized outgroup type: ${outgroup}`);
+        return {
+          name: `Other ${outGroupSubtypeCode}`,
+          context_type: "depmap_model",
+          expr: {
+            and: [
+              { "!=": [{ var: inGroupSliceId }, ingroupName] },
+              { "==": [{ var: lSliceId }, outGroupSubtypeCode] },
+            ],
+          },
+        };
     }
   }
 
