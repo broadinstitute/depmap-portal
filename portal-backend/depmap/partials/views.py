@@ -5,6 +5,7 @@ from json import dumps as json_dumps
 import flask
 from flask import Blueprint, Response, request
 
+from depmap import data_access
 from depmap.dataset.models import BiomarkerDataset, Dataset
 from depmap.entity.models import Entity
 from depmap.extensions import cache_without_user_permissions
@@ -12,6 +13,7 @@ from depmap.partials.data_table.factories import get_data_table
 from depmap.partials.entity_summary.factories import get_entity_summary
 from depmap.partials.entity_summary.models import (
     format_strip_plot,
+    get_download_data,
     get_feature_data, 
     get_entity_summary_metadata,
     integrate_cell_line_information,
@@ -93,19 +95,19 @@ def entity_summary_json_data():
     color = request.args.get("color") # Ex. 'mutations_prioritized'
 
     if size_dataset_id == "none":
-        size_dataset_id = None
+        size_dataset_enum = None
     else:
-        size_dataset_id = BiomarkerDataset.BiomarkerEnum(size_dataset_id)
+        size_dataset_enum = BiomarkerDataset.BiomarkerEnum(size_dataset_id)
 
     if color == "none":
         color = None
 
-    feature_data = get_feature_data(dataset_id, entity.label) # TODO: get given ID for breadbox dataset
+    feature_data = get_feature_data(dataset_id, entity.label)
     metadata = get_entity_summary_metadata(dataset_id, feature_data, entity.label)
 
     df = integrate_cell_line_information(feature_data)
     df, legend = integrate_size_and_label_data( # TODO: size biom enum is a dataset ID???
-        df, metadata["x_label"], size_dataset_id, entity_id
+        df, metadata["x_label"], size_dataset_enum, entity_id
     )
     df, legend = integrate_color_data(df, legend, color, entity.label)
 
@@ -131,23 +133,27 @@ def entity_summary_download():
     Endpoint to download entity summary data 
     """
     entity_id = request.args.get("entity_id")
-    dep_enum_name = request.args.get("dep_enum_name")
-    size_biom_enum_name = request.args.get("size_biom_enum_name")
+    dataset_id = request.args.get("dep_enum_name")
+    size_dataset_id = request.args.get("size_biom_enum_name")
     color = request.args.get("color")
 
     entity = Entity.query.get(entity_id)
-    if size_biom_enum_name == "none":
-        size_biom_enum = None
+    if size_dataset_id == "none":
+        size_dataset_enum = None
     else:
-        size_biom_enum = BiomarkerDataset.BiomarkerEnum(size_biom_enum_name)
+        size_dataset_enum = BiomarkerDataset.BiomarkerEnum(size_dataset_id)
 
     if color == "none":
         color = None
 
-    summary = get_entity_summary(entity, dep_enum_name, size_biom_enum, color)
-    df = summary.download_data() # TODO: update this as well, move shared stuff to different place
-    dep_display_name = Dataset.get_dataset_by_name(summary.dep_enum.name).display_name
-    filename = "{} {}".format(summary.label, dep_display_name)
+    df = get_download_data(
+        dataset_id=dataset_id,
+        entity=entity,
+        size_dataset_enum=size_dataset_enum,
+        color_dataset_id=color,
+    )
+    dataset = data_access.get_matrix_dataset(dataset_id)
+    filename = "{} {}".format(entity.label, dataset.label)
     return format_csv_response(df, filename)
 
 

@@ -1,11 +1,11 @@
 from flask import url_for
-from json import dumps as json_dumps
 import numpy as np
 import pandas as pd
 from typing import Any
 
 from depmap import data_access
 from depmap.enums import DataTypeEnum
+from depmap.entity.models import Entity
 from depmap.dataset.models import Dataset, BiomarkerDataset
 from depmap.cell_line.models import CellLine
 from depmap.utilities import color_utils
@@ -104,11 +104,6 @@ class EntitySummary:
         """
         return {"name": self.name}
 
-    @staticmethod
-    def has_size_biom_enum(size_biom_enum, entity_id):
-        return size_biom_enum is not None and Dataset.has_entity(
-            size_biom_enum, entity_id
-        )
 
     @staticmethod
     def data_for_characterization_partial(
@@ -154,94 +149,68 @@ class EntitySummary:
             ),
         }
         return summary
+    
 
-    def download_data(self):
-        """
-        Returns the dataframe for the dependency data
-        """
-        metadata = {}
-        legend = {}
-        metadata, srs = integrate_dep_data(
-            metadata, self.dep_enum.name, self.label, self.entity_id
+def legacy_dataset_contains_entity(legacy_dataset_enum, entity_id: int):
+    # At this point it's assumed anyway that this is either 
+    return legacy_dataset_enum is not None and Dataset.has_entity(
+        legacy_dataset_enum, entity_id
+    )
+
+def get_download_data(
+        dataset_id: str, 
+        entity: Entity, 
+        size_dataset_enum: str, # TODO: this is really expecting an enum
+        color_dataset_id: str # TODO: this is something else
+    ):
+    """
+    Returns the dataframe for the dependency data
+    """
+    feature_data = get_feature_data(dataset_id, entity.label)
+    metadata = get_entity_summary_metadata(dataset_id, feature_data, entity.label)
+    df = integrate_cell_line_information(feature_data)
+
+    df.index.name = "Depmap ID"
+
+    lin1 = (
+        df.query("lineage_level == 1")
+        .drop(columns=["lineage_level", "lineage_name"])
+        .rename(columns={"lineage_display_name": "Lineage"})
+    )
+    lin2 = (
+        df.query("lineage_level == 2")
+        .filter(items=["lineage_display_name"])
+        .rename(columns={"lineage_display_name": "Lineage Subtype"})
+    )
+    df = lin1.merge(lin2, how="left", on="Depmap ID")
+
+    if legacy_dataset_contains_entity(size_dataset_enum, entity.entity_id): # TODO: this is passing the wrong type now
+        df, legend = integrate_size_and_label_data(
+            df, metadata["x_label"], size_dataset_enum, entity.entity_id
         )
-        df = integrate_cell_line_information(srs)
-
-        df.index.name = "Depmap ID"
-
-        lin1 = (
-            df.query("lineage_level == 1")
-            .drop(columns=["lineage_level", "lineage_name"])
-            .rename(columns={"lineage_display_name": "Lineage"})
-        )
-        lin2 = (
-            df.query("lineage_level == 2")
-            .filter(items=["lineage_display_name"])
-            .rename(columns={"lineage_display_name": "Lineage Subtype"})
-        )
-        df = lin1.merge(lin2, how="left", on="Depmap ID")
-
-        if EntitySummary.has_size_biom_enum(self.size_biom_enum, self.entity_id):
-            df, legend = integrate_size_and_label_data(
-                df, metadata, legend, self.size_biom_enum, self.entity_id
-            )
-            df = df.drop(columns=["label", "size"]).rename(
-                columns={
-                    "expression": Dataset.get_dataset_by_name(
-                        self.size_biom_enum.name
-                    ).display_name,
-                }
-            )
-
-        if self.color:
-            df, legend = integrate_color_data(df, legend, self.color, self.label)
-            df["mutation_num"] = df["mutation_num"].map(
-                lambda x: color_utils.rna_mutations_color_num_to_category(x)
-            )
-            df.rename(columns={"mutation_num": self.color.title()}, inplace=True)
-
-        dep_name = Dataset.get_dataset_by_name(self.dep_enum.name).display_name
-        df.rename(
+        df = df.drop(columns=["label", "size"]).rename(
             columns={
-                "cell_line_display_name": "Cell Line Name",
-                "primary_disease": "Primary Disease",
-                "value": dep_name,
-            },
-            inplace=True,
+                "expression": Dataset.get_dataset_by_name(size_dataset_enum).display_name,
+            }
         )
-        return df
 
-    # def json_data(self):
-    #     """
-    #     1) Assembling the data needed for this plot
-    #         There are three parts to this, because there are three inflection points. There are two datasets where a gene may or may not be present, plus an option of whether to color by mutation
-    #     2) Given this metadata and df, structuring the data as desired by plotly
-    #     """
-    #     metadata = {}
-    #     legend = {}
-    #     metadata, srs = integrate_dep_data(
-    #         metadata, self.dep_enum.name, self.label, self.entity_id
-    #     )
-    #     df = integrate_cell_line_information(srs)
-    #     df, legend = integrate_size_and_label_data(
-    #         df, metadata, legend, self.size_biom_enum, self.entity_id
-    #     )
-    #     df, legend = integrate_color_data(df, legend, self.color, self.label)
+    if color_dataset_id:
+        df, legend = integrate_color_data(df, legend, color_dataset_id, entity.label)
+        df["mutation_num"] = df["mutation_num"].map(
+            lambda x: color_utils.rna_mutations_color_num_to_category(x)
+        )
+        df.rename(columns={"mutation_num": self.color.title()}, inplace=True)
 
-    #     response = {
-    #         "legend": legend,
-    #         "x_range": metadata["x_range"],
-    #         "x_label": metadata["x_label"],
-    #         "description": metadata["description"],
-    #         "interactive_url": metadata["interactive_url"],
-    #         "entity_type": self.type,
-    #     }
-    #     if "line" in metadata:
-    #         response["line"] = metadata["line"]
-
-    #     # histogram just uses the data from the strip plot
-    #     response["strip"] = format_strip_plot(df, self.strip_url_root)
-
-    #     return json_dumps(response)
+    dep_name = Dataset.get_dataset_by_name(dataset_id).display_name
+    df.rename(
+        columns={
+            "cell_line_display_name": "Cell Line Name",
+            "primary_disease": "Primary Disease",
+            "value": dep_name,
+        },
+        inplace=True,
+    )
+    return df
 
 
 def get_feature_data(dataset_id: str, feature_label: str) -> pd.Series:
@@ -305,12 +274,12 @@ def integrate_cell_line_information(srs: pd.Series) -> pd.DataFrame:
 def integrate_size_and_label_data(
     df: pd.DataFrame, 
     x_label: str,
-    size_dataset_id: str, # Assumed to be a dataset that exists outside of breadbox
-    entity_id,
+    size_dataset_enum, # Assumed to be a dataset that exists outside of breadbox
+    entity_id: int,
 ):
     legend = {}
-    if EntitySummary.has_size_biom_enum(size_dataset_id, entity_id):
-        size_dataset = Dataset.get_dataset_by_name(size_dataset_id.name, must=True) # TODO: make BB friendly???
+    if legacy_dataset_contains_entity(size_dataset_enum, entity_id):
+        size_dataset = Dataset.get_dataset_by_name(size_dataset_enum.name, must=True) # TODO: make BB friendly???
         size = size_dataset.matrix.get_cell_line_values_and_depmap_ids(entity_id)
         df = pd.merge(
             df,
