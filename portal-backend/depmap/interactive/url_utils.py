@@ -117,24 +117,20 @@ def get_interactive_url(
             InteractiveTree.get_id_from_dataset_feature(color_dataset, color_feature),
         )
 
-    if flask.current_app.config["ENABLED_FEATURES"].data_explorer_2:
-        q = Serializer.quote
+    q = Serializer.quote
 
-        url = flask.url_for("data_explorer_2.view_data_explorer_2")
-        url += f"?xDataset={ q(x_dataset_id) }"
-        url += f"&xFeature={ q(x_feature) }"
+    url = flask.url_for("data_explorer_2.view_data_explorer_2")
+    url += f"?xDataset={ q(x_dataset_id) }"
+    url += f"&xFeature={ q(x_feature) }"
 
-        if y_dataset_id:
-            url += f"&yDataset={ q(y_dataset_id) }"
-            url += f"&yFeature={ q(y_feature or x_feature) }"
+    if y_dataset_id:
+        url += f"&yDataset={ q(y_dataset_id) }"
+        url += f"&yFeature={ q(y_feature or x_feature) }"
 
-        if color_dataset:
-            color_property = kwargs["color"][0].replace("/lineage/all/", "/lineage/1/")
-            url += f"&color_property={ q(color_property) }"
+    if color_dataset:
+        color_property = kwargs["color"][0].replace("/lineage/all/", "/lineage/1/")
+        url += f"&color_property={ q(color_property) }"
 
-        return url
-
-    url = flask.url_for("interactive.view_interactive", **kwargs)
     return url
 
 

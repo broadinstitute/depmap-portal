@@ -29,12 +29,9 @@ function ElaraContextManager({ onHide }: Props) {
   );
 
   const getApi = () => bbapi;
-  const getVectorCatalogApi = () => {
-    throw new Error("Vector Catalog API is no longer supported!");
-  };
 
   return (
-    <ApiContext.Provider value={{ getApi, getVectorCatalogApi }}>
+    <ApiContext.Provider value={{ getApi }}>
       <DataExplorerApiProvider
         evaluateContext={evaluateContext}
         fetchVariableDomain={fetchVariableDomain}

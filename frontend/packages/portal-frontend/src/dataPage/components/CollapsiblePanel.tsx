@@ -1,4 +1,4 @@
-import { Accordion, OpenCloseSymbol } from "@depmap/interactive";
+import { Accordion, OpenCloseSymbol } from "@depmap/common-components";
 import React from "react";
 
 export interface CollapsiblePanelProps {

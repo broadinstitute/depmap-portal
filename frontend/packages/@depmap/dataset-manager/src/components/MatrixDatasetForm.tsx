@@ -232,11 +232,15 @@ export function MatrixDatasetForm({
       },
     };
     if (!isAdvancedMode) {
-      ["feature_type", "value_type", "priority", "dataset_metadata"].forEach(
-        (key) => {
-          formUiSchema[key] = { "ui:widget": "hidden" };
-        }
-      );
+      [
+        "feature_type",
+        "value_type",
+        "priority",
+        "dataset_metadata",
+        "data_type",
+      ].forEach((key) => {
+        formUiSchema[key] = { "ui:widget": "hidden" };
+      });
     }
     return formUiSchema;
   }, [isAdvancedMode]);

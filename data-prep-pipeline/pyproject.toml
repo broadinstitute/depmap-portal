@@ -1,10 +1,10 @@
 [tool.poetry]
 name = "data-prep-pipeline"
-version = "0.1.0"
+version = "0.1.1"
 description = "Scripts for running the data prep pipeline"
 authors = ["Nayeem Aquib <naquib@broadinsitute.org>"]
-readme = "README.md"
 packages = [{include = "data_prep_pipeline"}]
+package-mode = false
 
 
 [tool.poetry.dependencies]
@@ -12,12 +12,7 @@ python = "^3.9"
 pandas = "1.5.3"
 click = "^8.1.7"
 numpy = "^1.25.1"
-taigapy = {version = "3.8.3", source = "gcp-artifact-registry"}
-termcolor = "^2.4.0"
-tqdm = "^4.66.1"
-pandera = "^0.19.2"
-google-api-python-client = "^2.112.0"
-gumbo-rest-client = {version = "^2.0.4", source = "public-python"}
+taigapy = {version = "3.12.0", source = "gcp-artifact-registry"}
 ipykernel = "^6.29.5"
 
 

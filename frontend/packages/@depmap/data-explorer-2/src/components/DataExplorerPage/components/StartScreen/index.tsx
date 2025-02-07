@@ -19,7 +19,7 @@ function StartScreen({ tutorialLink }: Props) {
       <h2>Welcome to Data Explorer 2.0</h2>
       <p>
         Data Explorer 2.0 is a new app that expands on the capabilities of the
-        existing Data Explorer. It’s focused on providing greater power in terms
+        original Data Explorer. It’s focused on providing greater power in terms
         of what you can plot and how you can visualize relationships.{" "}
         <a href={tutorialLink} rel="noreferrer" target="_blank">
           View the tutorial

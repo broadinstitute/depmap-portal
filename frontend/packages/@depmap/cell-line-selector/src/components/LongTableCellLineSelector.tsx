@@ -1,6 +1,5 @@
 /* eslint-disable */
 import * as React from "react";
-import { Link } from "@depmap/interactive";
 import { Button } from "react-bootstrap";
 import { CellData } from "../models/cellLines";
 import update from "immutability-helper";
@@ -14,7 +13,6 @@ import {
   LongTableColors,
   LongTableColumn,
   Vector,
-  VectorResponse,
   inferColumnType,
 } from "@depmap/long-table";
 import { ApiContext } from "@depmap/api";

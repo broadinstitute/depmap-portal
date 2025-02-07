@@ -61,9 +61,6 @@ blueprint = Blueprint(
 
 @blueprint.route("/")
 def view_data_explorer_2():
-    if not current_app.config["ENABLED_FEATURES"].data_explorer_2:
-        abort(404)
-
     return render_template(
         "data_explorer_2/index.html", tutorial_link=get_tutorial_link()
     )

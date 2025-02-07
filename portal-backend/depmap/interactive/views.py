@@ -57,51 +57,16 @@ class CellLineInfoFeatures(Enum):
     lineage_display_name = "lineage_display_name"
 
 
-def _setup_interactive_args_dict(request) -> Tuple[bool, dict]:
-    # request.args is an ImmutableMultiDict
-    # below warns that conversion to a dict must be done with .to_dict()
-    # https://werkzeug.palletsprojects.com/en/0.14.x/datastructures/#werkzeug.datastructures.OrderedMultiDict
-    # ^ applies to OrderedMultiDict but would also seem to apply to ImmutableMultiDict
-    args_dict = request.args.to_dict()
-
-    args_modified = False
-    if is_mobile(request) and request.args.get("associationTable") == "true":
-        args_dict["associationTable"] = "false"
-        args_modified = True
-
-    for section in ["x", "y", "color", "filter"]:
-
-        dataset = "{}Dataset".format(section)
-        feature = "{}Feature".format(section)
-        if (
-            dataset in args_dict
-            and feature in args_dict
-            and args_dict[dataset]
-            and args_dict[feature]
-        ):  # blank strings are falsy
-            # we have previously hit some bugs over these being lists vs stirngs, so just making sure
-            assert type(args_dict[dataset]) == str and type(args_dict[feature]) == str
-            args_dict[section] = InteractiveTree.get_id_from_dataset_feature(
-                args_dict[dataset], args_dict[feature]
-            )
-            del args_dict[dataset]
-            del args_dict[feature]
-            args_modified = True
-
-    return args_modified, args_dict
-
-
 @blueprint.route("/")
 def view_interactive():
     """
-    Entry point for interactive section
-    """
-    args_modified, args_dict = _setup_interactive_args_dict(request)
+    Former Entry point for Data Explorer 1. Now redirects to Data Explorer 2.
 
-    if args_modified:
-        return redirect(url_for("interactive.view_interactive", **args_dict))
-    else:
-        return render_template("interactive/index.html")
+    Note that any query paramters will be parsed by the DE2 frontend.
+    """
+    # args_modified, args_dict = _setup_interactive_args_dict(request)
+
+    return redirect(url_for("data_explorer_2.view_data_explorer_2", **request.args))
 
 
 @blueprint.route("/custom_analysis")
@@ -112,22 +77,7 @@ def view_custom_analysis():
     return render_template("interactive/index.html")
 
 
-@blueprint.route("/v2")
-def view_interactive_v2():
-    """
-    Entry point for interactive section
-    """
-    args_modified, args_dict = _setup_interactive_args_dict(request)
-
-    if args_modified:
-        return redirect(url_for("interactive.view_interactive_v2", **args_dict))
-    else:
-        return render_template("interactive/index_v2.html")
-
-
 ## Cell line url root. This is a weird endpoint, unsure where else to put it ##
-
-
 @blueprint.route("/api/cellLineUrlRoot")
 def get_cell_line_url_root():
     return jsonify(url_for("cell_line.view_cell_line", cell_line_name=""))

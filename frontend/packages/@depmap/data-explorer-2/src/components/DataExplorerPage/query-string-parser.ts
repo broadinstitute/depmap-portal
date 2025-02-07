@@ -144,6 +144,23 @@ const makeRegressionLineParser = () => (
   return p;
 };
 
+const makeColorDatasetParser = () => (
+  partialPlot: PartialDataExplorerPlotConfig,
+  colorDataset: string,
+  allParams: qs.ParsedQs
+) => {
+  const e = window.encodeURIComponent;
+  const colorFeature = allParams.colorFeature as string;
+
+  if (!colorFeature) {
+    return {};
+  }
+
+  const slice_id = `slice/${e(colorDataset)}/${e(colorFeature)}/label`;
+
+  return makeMetadataParser("color_property")(partialPlot, slice_id);
+};
+
 const parsers = {
   xDataset: makeDatasetParser("x"),
   yDataset: makeDatasetParser("y"),
@@ -160,6 +177,8 @@ const parsers = {
 
   color_property: makeMetadataParser("color_property"),
   regressionLine: makeRegressionLineParser(),
+
+  colorDataset: makeColorDatasetParser(),
 };
 
 const parse = (params: qs.ParsedQs, datasets: Datasets) => {
@@ -313,6 +332,11 @@ export function parseShorthandParams(params: qs.ParsedQs, datasets: Datasets) {
     if (params.yContext && !params.yDataset) {
       message +=
         "- `yContext` was specified without a corresponding `yDataset`\n";
+    }
+
+    if (params.colorDataset && !params.colorFeature) {
+      message +=
+        "- `colorDataset` was specified without a corresponding `colorFeature`\n";
     }
 
     throw new Error(message);

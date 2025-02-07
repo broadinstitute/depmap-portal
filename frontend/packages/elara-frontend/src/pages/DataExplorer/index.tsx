@@ -20,13 +20,10 @@ export default function DataExplorer() {
   );
 
   const getApi = () => bbapi;
-  const getVectorCatalogApi = () => {
-    throw new Error("Vector Catalog API is no longer supported!");
-  };
 
   return (
     <PlotlyLoaderProvider PlotlyLoader={PlotlyLoader}>
-      <ApiContext.Provider value={{ getApi, getVectorCatalogApi }}>
+      <ApiContext.Provider value={{ getApi }}>
         <DeprecatedDataExplorerApiProvider>
           <DataExplorerSettingsProvider>
             <DataExplorerPage

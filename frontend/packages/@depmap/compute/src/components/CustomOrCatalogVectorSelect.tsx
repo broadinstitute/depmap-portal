@@ -7,7 +7,7 @@ import {
   isCompleteDimension,
 } from "@depmap/data-explorer-2";
 import { enabledFeatures } from "@depmap/globals";
-import { Link } from "@depmap/interactive";
+import { Link } from "../models/legacy";
 import {
   DataExplorerPlotConfigDimension,
   DataExplorerPlotConfigDimensionV2,
