@@ -150,6 +150,8 @@ const PAGE_URL_ROOTS: Map<PageUrl, string> = new Map([
   ["constellation.view_constellation", "/constellation/"],
 ]);
 
+const contextExplRequestCache: Record<string, Promise<unknown> | null> = {};
+
 export type GeneCharacterizationData = {
   dataset: string;
   display_name: string;
@@ -208,6 +210,42 @@ export class DepmapApi {
         );
       }
     );
+  };
+
+  _fetchIncludeContextExplCache = async <T>(url: string): Promise<T> => {
+    if (!contextExplRequestCache[url]) {
+      const headers: { [key: string]: string } = {};
+      const traceParentField = this.getTraceParentField();
+      if (traceParentField) {
+        headers.traceparent = traceParentField;
+      }
+      const fullUrl = this.urlPrefix + url;
+      log(`fetching ${fullUrl}`);
+      contextExplRequestCache[url] = new Promise((resolve, reject) => {
+        fetch(fullUrl, {
+          credentials: "include",
+          headers,
+        })
+          .then((response) => {
+            return response.json().then((body) => {
+              if (response.status >= 200 && response.status < 300) {
+                const result = body;
+                contextExplRequestCache[url] = Promise.resolve(result);
+                resolve(result);
+              } else {
+                contextExplRequestCache[url] = null;
+                reject(body);
+              }
+            });
+          })
+          .catch((e) => {
+            contextExplRequestCache[url] = null;
+            reject(e);
+          });
+      });
+    }
+
+    return contextExplRequestCache[url] as Promise<T>;
   };
 
   _fetchText = (url: string): Promise<string> => {
@@ -641,7 +679,7 @@ export class DepmapApi {
       out_group_type: "All Others",
     };
 
-    return this._fetch<DoseCurveData>(
+    return this._fetchIncludeContextExplCache<DoseCurveData>(
       `/api/context_explorer/context_dose_curves?${encodeParams(params)}`
     );
   }
@@ -686,7 +724,7 @@ export class DepmapApi {
       frac_dep_in,
     };
 
-    return this._fetch<ContextPlotBoxData>(
+    return this._fetchIncludeContextExplCache<ContextPlotBoxData>(
       `/api/context_explorer/context_box_plot_data?${encodeParams(params)}`
     );
   }
@@ -713,7 +751,7 @@ export class DepmapApi {
       frac_dep_in,
     };
 
-    return this._fetch<SubtypeBranchBoxPlotData>(
+    return this._fetchIncludeContextExplCache<SubtypeBranchBoxPlotData>(
       `/api/context_explorer/subtype_branch_box_plot_data?${encodeParams(
         params
       )}`
