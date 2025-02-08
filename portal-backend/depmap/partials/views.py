@@ -80,12 +80,6 @@ def entity_summary_json_data():
     """
     Not using _parse_args_and_call_func just because we need to get entity label, and process the size biom enum 
     """
-    # TODO: decision for now: 
-    # - this API should continue taking entity ID instead of given ID. 
-    # - IF it's called with a breadbox dataset, use the entity ID to get the given ID, then go from there. 
-    # - Remove a lot of the "EntitySummary" object stuff if possible. 
-    # - If this breaks the gene page, undo entity summary changes & make separate endpoints.
-
     # Note: this entity ID param is NOT what breadbox uses as feature IDs. 
     entity_id = request.args.get("entity_id")
     entity = Entity.query.get(entity_id) # Compound, Gene

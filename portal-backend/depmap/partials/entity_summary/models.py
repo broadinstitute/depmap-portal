@@ -69,41 +69,7 @@ class EntitySummaryExpressionLegend(EntitySummaryLegend):
         return {"diameter": expression_to_size(value), "label": label}
 
 
-class EntitySummaryCellLinesLegend(EntitySummaryLegend):
-    def __init__(self):
-        legend = {}
-        super().__init__(legend)
-        # todo
-
-
 class EntitySummary:
-    def __init__(self, entity, dep_enum, size_biom_enum, color):
-        # want these to fail on page render, not ajax cal
-        assert size_biom_enum is None or isinstance(
-            size_biom_enum, BiomarkerDataset.BiomarkerEnum
-        )
-        assert (
-            color is None
-            or color == BiomarkerDataset.BiomarkerEnum.mutations_prioritized.name
-        )
-        # TODO: add a given ID field here
-        self.label = entity.label
-        self.entity_id = entity.entity_id
-        self.dep_enum = dep_enum
-        self.size_biom_enum = size_biom_enum
-        self.color = color
-        self.type = entity.type
-        self.name = (
-            entity.entity_id
-        )  # some compound experiments have labels with spaces, symbols
-        self.strip_url_root = url_for("cell_line.view_cell_line", cell_line_name="")
-
-    def data_for_ajax_partial(self):
-        """
-        Format to inject variables for the macro
-        """
-        return {"name": self.name}
-
 
     @staticmethod
     def data_for_characterization_partial(
@@ -149,7 +115,7 @@ class EntitySummary:
             ),
         }
         return summary
-    
+
 
 def legacy_dataset_contains_entity(legacy_dataset_enum, entity_id: int):
     # At this point it's assumed anyway that this is either 
