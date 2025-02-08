@@ -23,7 +23,7 @@ def _validate_association_table(
     cur = conn.cursor()
 
     def check_given_ids(expected_given_ids: set[str], dim: str):
-        cur.execute(f"SELECT label from dim_{dim}_label_position")
+        cur.execute(f"SELECT given_id from dim_{dim}_given_id")
         assoc_dataset_given_ids = set([x[0] for x in cur.fetchall()])
         missing = expected_given_ids.difference(assoc_dataset_given_ids)
         if len(missing) > 0:
@@ -112,14 +112,9 @@ def get_association_tables(db: SessionWithUser, dataset_id: Optional[str]):
     from sqlalchemy.orm import aliased
 
     d1 = aliased(MatrixDataset)
-    d2 = aliased(MatrixDataset)
-    query = (
-        db.query(PrecomputedAssociation)
-        .join(d1, PrecomputedAssociation.dataset_1)
-        .join(d2, PrecomputedAssociation.dataset_2)
-    )
+    query = db.query(PrecomputedAssociation).join(d1, PrecomputedAssociation.dataset_1)
     if dataset_id is not None:
-        query = query.filter(or_(d1.id == dataset_id, d2.id == dataset_id,))
+        query = query.filter(d1.id == dataset_id)
     return query.all()
 
 
