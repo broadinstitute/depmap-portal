@@ -6,11 +6,10 @@ import flask
 from flask import Blueprint, Response, request
 
 from depmap import data_access
-from depmap.dataset.models import BiomarkerDataset, Dataset
+from depmap.dataset.models import BiomarkerDataset
 from depmap.entity.models import Entity
 from depmap.extensions import cache_without_user_permissions
 from depmap.partials.data_table.factories import get_data_table
-from depmap.partials.entity_summary.factories import get_entity_summary
 from depmap.partials.entity_summary.models import (
     format_strip_plot,
     get_download_data,

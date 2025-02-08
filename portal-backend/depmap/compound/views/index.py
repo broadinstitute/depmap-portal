@@ -14,7 +14,6 @@ from flask import (
     abort,
     current_app,
     jsonify,
-    redirect,
     render_template,
     request,
     url_for,
@@ -35,7 +34,7 @@ from depmap.compound.views.executive import (
     get_predictive_models_for_compound,
 )
 from depmap.dataset.models import Dataset, DependencyDataset
-from depmap.entity.views.index import format_celfie, format_summary
+from depmap.entity.views.index import format_celfie
 from depmap.enums import DependencyEnum
 from depmap.partials.matrix.models import ColMatrixIndex
 from depmap.predictability.models import PredictiveFeatureResult, PredictiveModel
@@ -56,18 +55,6 @@ blueprint = Blueprint(
 @blueprint.route("/<path:name>")
 def view_compound(name):
     compound = Compound.get_by_label(name, must=False)
-
-    if compound is None:
-        # TODO: revisit this
-        compound_experiment = CompoundExperiment.get_by_label(name, must=False)
-        if compound_experiment is None:
-            abort(404)
-        else:
-            compound_name = compound_experiment.compound.label
-            return redirect(url_for("compound.view_compound", name=compound_name))
-
-    units = compound.units
-
     aliases = Compound.get_aliases_by_entity_id(compound.entity_id)
     compound_aliases = ", ".join(
         [alias for alias in aliases if alias.lower() != name.lower()]
@@ -106,7 +93,7 @@ def view_compound(name):
         dose_curve_options=format_dose_curve_options(compound_experiment_and_datasets),
         has_celfie=has_celfie,
         celfie=celfie if has_celfie else None,
-        compound_units=units,
+        compound_units=compound.units,
     )
 
 
@@ -133,33 +120,6 @@ def get_sensitivity_tab_info(compound_entity_id: int, compound_datasets: list[Ma
         "size_biom_enum_name": None,
         "color": None,
     }
-
-
-def format_compound_summary(compound_experiment_and_datasets) -> Optional[dict[str, Any]]:
-    # DEPRECATED: this is only being used by features that are being removed/replaced
-    if len(compound_experiment_and_datasets) == 0:
-        return None
-
-    first_entity = None
-    first_dep_enum_name = None
-    summary_options = []
-
-    for compound_experiment, dataset in compound_experiment_and_datasets:
-        if first_entity is None and first_dep_enum_name is None:
-            first_dep_enum_name = dataset.name.name
-            first_entity = compound_experiment
-
-        summary_options.append(
-            format_summary_option(
-                dataset,
-                compound_experiment,
-                "{} {}".format(compound_experiment.label, dataset.display_name),
-            )
-        )
-
-    return format_summary(
-        summary_options, first_entity, first_dep_enum_name, show_auc_message=True,
-    )
 
 
 def format_summary_option(dataset, entity, label):
@@ -617,34 +577,8 @@ def get_predictability_files():
 
 @blueprint.route("/<path:compound_name>/genomic_associations")
 def view_genomic_associations(compound_name: str):
-    # DEPRECATED: Being redesigned/replaced
-    compound = Compound.query.filter_by(label=compound_name).one_or_none()
-    if compound is None:
-        compound_experiment = CompoundExperiment.get_by_label(compound_name, must=False)
-        if compound_experiment is None:
-            abort(404)
-        else:
-            compound_name = compound_experiment.compound.label
-            return redirect(
-                url_for("compound.view_genomic_associations", name=compound_name)
-            )
-
-    # Figure out entity_id
-    compound_id = compound.entity_id
-
-    # Figure out membership in different datasets
-    compound_experiment_and_datasets = DependencyDataset.get_compound_experiment_priority_sorted_datasets_with_compound(
-        compound_id
-    )
-
-    has_datasets = len(compound_experiment_and_datasets) != 0
-    summary = format_compound_summary(compound_experiment_and_datasets)
-    has_celfie = current_app.config["ENABLED_FEATURES"].celfie and has_datasets
-    celfie = format_celfie(compound_name, summary["summary_options"])
-
-    return render_template(
-        "entities/celfie_page.html", celfie=celfie if has_celfie else None
-    )
+    # This is broken and being replaced
+    return render_template("entities/celfie_page.html", celfie=None)
 
 
 # %%
