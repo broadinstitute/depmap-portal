@@ -1,0 +1,91 @@
+
+add-if-missing {
+ 'type': 'cor-analysis-a',
+ 'given_id': 'oncref-viability',
+ 'taiga_id': 'internal-24q4-8c04.117/PRISMOncologyReferenceLog2ViabilityCollapsedMatrix',
+ 'feature_id_format': 'compound+dose',
+ 'features_taiga_id': 'internal-24q4-8c04.117/PRISMOncologyReferenceLog2ViabilityCollapsedConditions',
+ 'compounds_taiga_id': 'internal-24q4-8c04.117/PortalCompounds'
+ }
+
+add-if-missing {
+ 'type': 'cor-analysis-a',
+ 'given_id': 'oncref-auc',
+ 'taiga_id': 'internal-24q4-8c04.117/PRISMOncologyReferenceAUCMatrix',
+ 'feature_id_format': 'compound',
+ 'compounds_taiga_id': 'internal-24q4-8c04.117/PortalCompounds'
+ }
+
+add-if-missing {
+ 'type': 'cor-analysis-a',
+ 'given_id': 'oncref-ic50',
+ 'taiga_id': 'internal-24q4-8c04.117/PRISMOncologyReferenceLog2IC50Matrix',
+ 'feature_id_format': 'compound',
+ 'compounds_taiga_id': 'internal-24q4-8c04.117/PortalCompounds'
+ }
+
+add-if-missing {
+'type': 'cor-analysis-b',
+'given_id': 'crispr',
+'taiga_id': 'internal-24q4-8c04.117/CRISPRGeneEffect',
+'feature_id_format': 'gene'
+}
+
+add-if-missing {
+ 'type': 'cor-analysis-b',
+ 'given_id': 'cn',
+ 'taiga_id': 'internal-24q4-8c04.117/OmicsCNGene',
+ 'feature_id_format': 'gene'
+ }
+
+add-if-missing {
+'type': 'cor-analysis-b',
+'given_id': 'expression',
+'taiga_id': 'internal-24q4-8c04.117/OmicsExpressionProteinCodingGenesTPMLogp1',
+'feature_id_format': 'gene'
+}
+
+rule create_cor_analysis_pairs:
+    inputs:
+        a_set=all {'type': 'cor-analysis-a'},
+        b_set=all {'type': 'cor-analysis-b'},
+        script=fileref("scripts/create_cor_analysis_pairs.py")
+    
+    run "bash" with """
+        cat > inputs.json <<EOF
+        {{inputs|quoted}}
+        EOF
+        """
+    run "python3 {{inputs.script.filename}} inputs.json results.json"
+
+rule run_cor_analysis_pair:
+    inputs:
+        pair={'type': 'cor_input_pair'},
+        script=fileref("scripts/correlation_with_qvalue.py")    
+    outputs:
+        {
+            "type": "cor_table", 
+            "a_given_id": "{{inputs.pair.a_given_id}}",
+            "b_given_id": "{{inputs.pair.b_given_id}}", 
+            "a_taiga_id": "{{inputs.pair.a_taiga_id}}",
+            "b_taiga_id": "{{inputs.pair.b_taiga_id}}",
+            "a_feature_id_format": "{{inputs.pair.a_feature_id_format}}",
+                "a_features_taiga_id": "{{inputs.pair.a_features_taiga_id|default('')}}",
+            "a_compounds_taiga_id": "{{inputs.pair.a_compounds_taiga_id|default('')}}",
+            "b_feature_id_format": "{{inputs.pair.b_feature_id_format}}",
+            "b_features_taiga_id": "{{inputs.pair.b_features_taiga_id|default('')}}",
+            "b_compounds_taiga_id": "{{inputs.pair.b_compounds_taiga_id|default('')}}",
+            "filename": {"$filename": "{{inputs.pair.a_given_id}}.{{inputs.pair.b_given_id}}.cor" }
+        }
+    run "bash" with """
+        cat > inputs.json <<EOF
+        {{inputs.pair|quoted}}
+        EOF
+        """
+    run "python3 {{inputs.script.filename}} inputs.json {{inputs.pair.a_given_id}}.{{inputs.pair.b_given_id}}.cor"
+
+let publish_dest = "gs://preprocessing-pipeline-outputs/depmap-pipeline/pgm-test"
+let S3_STAGING_URL = "gs://preprocessing-pipeline-outputs/depmap-pipeline/pgm-test/staging"
+rule publish_cor_tables:
+    inputs: cor_tables=all {"type": "cor_table"}
+    publish: "{{config.publish_dest}}/cor_tables.json"
