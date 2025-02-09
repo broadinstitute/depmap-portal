@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "packed-cor-tables"
+version = "0.1.1"
+description = "Library for reading/writing compressed correlation tables"
+authors = ["Your Name <you@example.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.9"
+pandas = "^1.1.0"
+numpy = "^1.26.3" # no real direct dependency, but pandas 1 is dependent on numpy <2 
+
+[tool.poetry.group.dev.dependencies]
+pyright = "^1.1.393"
+pytest = "^8.3.4"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
