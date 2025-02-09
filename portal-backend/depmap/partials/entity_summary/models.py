@@ -181,6 +181,7 @@ def get_download_data(
 
 def get_feature_data(dataset_id: str, feature_label: str) -> pd.Series:
     dataset_data = data_access.get_subsetted_df_by_labels_compound_friendly(dataset_id)
+    assert feature_label in dataset_data.index, f"Label {feature_label} not found in dataset {dataset_id}. Do the labels match between breadbox and the legacy DB?"
     data_series = dataset_data.loc[feature_label].dropna()
     data_series.name = "value"
     return data_series

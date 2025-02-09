@@ -315,23 +315,23 @@ def get_all_datasets_containing_compound(compound_id: str) -> list[MatrixDataset
     This should include both:
         - Datasets indexed by compound (from breadbox)
         - Datasets indexed by compound experiment (from the legacy backend)
+    Note: There are a couple of cases where the legacy dataset contains the compound but the breadbox 
+    version does not (ex. CTRP_AUC changed feature types). In this case, the dataset will be hidden.
     """
     bb_compound_datasets = breadbox_dao.get_filtered_matrix_datasets(feature_type="compound_v2",
         feature_id=compound_id
     )
-    # TODO: the breadbox compound IDs are things like `DPC-004236`, not integers. Is this different from entity ID?
     bb_compound_datasets.sort(key=lambda dataset: dataset.priority if dataset.priority else 999)
 
     # If a dataset is defined in both breadbox and the legacy DB, use the breadbox version
     legacy_ce_dataset_ids = legacy_compound_utils.get_compound_experiment_priority_sorted_datasets(
         compound_id
     )
-    bb_given_ids = [dataset.given_id for dataset in bb_compound_datasets]
+    all_bb_given_ids = breadbox_dao.get_breadbox_given_ids()
     visible_legacy_datasets = [
         _get_legacy_matrix_dataset(dataset_id) for dataset_id in legacy_ce_dataset_ids 
-        if dataset_id not in bb_given_ids
+        if dataset_id not in all_bb_given_ids
     ]
-
     return bb_compound_datasets + visible_legacy_datasets
 
 

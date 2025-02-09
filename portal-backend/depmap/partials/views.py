@@ -99,7 +99,7 @@ def entity_summary_json_data():
     metadata = get_entity_summary_metadata(dataset_id, feature_data, entity.label)
 
     df = integrate_cell_line_information(feature_data)
-    df, legend = integrate_size_and_label_data( # TODO: size biom enum is a dataset ID???
+    df, legend = integrate_size_and_label_data(
         df, metadata["x_label"], size_dataset_enum, entity_id
     )
     df, legend = integrate_color_data(df, legend, color, entity.label)
