@@ -556,14 +556,15 @@
 .right {
   display: flex;
   flex-direction: column;
-  width: 480px;
+  width: 400px;
+  min-width: 400px;
   overflow: hidden;
   margin-left: 0;
   margin-right: 0;
   height: 100%;
   background: #697caa1a;
-  padding-left: 25px;
-  padding-right: 35px;
+  padding-left: 15px;
+  padding-right: 15px;
   .plotFrame {
     // border: 1px solid #d9d9d9;
     margin-bottom: 20px;

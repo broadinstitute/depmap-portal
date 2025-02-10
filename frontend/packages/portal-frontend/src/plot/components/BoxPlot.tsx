@@ -7,7 +7,7 @@ export interface BoxPlotInfo {
   name: string;
   hoverLabels: string[];
   xVals: number[];
-  color: { r: number; b: number; g: number };
+  color: { r: number; b: number; g: number; a?: number };
   lineColor: string;
   pointLineColor?: string;
   code?: string;
@@ -17,6 +17,8 @@ export interface BoxPlotProps {
   plotName: string;
   boxData: BoxPlotInfo[];
   dottedLinePosition: number;
+  doLinkYAxisLabels?: boolean;
+  selectedCode?: string;
   onLoad?: (plot: ExtendedPlotType) => void;
   setXAxisRange?: (range: any[]) => void;
   plotHeight?: number;
@@ -33,6 +35,8 @@ function BoxPlot({
   plotName,
   dottedLinePosition,
   onLoad = () => {},
+  doLinkYAxisLabels = true,
+  selectedCode = undefined,
   plotHeight = undefined,
   xAxisRange = undefined,
   xAxisTitle = undefined,
@@ -75,7 +79,9 @@ function BoxPlot({
         jitter: 0.5,
         pointpos: 0,
         type: "box",
-        fillcolor: `RGBA(${box.color.r.toString()}, ${box.color.g.toString()}, ${box.color.b.toString()}, 0.4)`,
+        fillcolor: `RGBA(${box.color.r.toString()}, ${box.color.g.toString()}, ${box.color.b.toString()}, ${
+          box.color.a?.toString() || (0.4).toString()
+        })`,
         marker: {
           color: `RGBA(${box.color.r.toString()}, ${box.color.g.toString()}, ${box.color.b.toString()}, 1)`,
           line: {
@@ -96,11 +102,11 @@ function BoxPlot({
     });
 
     const layout: Partial<Plotly.Layout> = {
-      margin: { t: topMargin, r: 15, b: bottomMargin, l: 0 },
+      margin: { t: topMargin, r: 10, b: bottomMargin, l: 3 },
       autosize: true,
       dragmode: false,
       height: plotHeight,
-      width: 220,
+      width: 200,
       showlegend: false,
       yaxis: {
         zeroline: false,
@@ -168,7 +174,7 @@ function BoxPlot({
       Plotly.relayout(ref.current, update);
     } else if (ref.current?.layout && plotName === "main") {
       const update: Partial<Plotly.Layout> = {
-        margin: { t: topMargin, r: 15, b: bottomMargin, l: 0 },
+        margin: { t: topMargin, r: 15, b: bottomMargin, l: 3 },
         xaxis: {
           range: xAxisRange ?? ref.current.layout.xaxis.range,
           title: xAxisTitle ?? "",
@@ -200,12 +206,23 @@ function BoxPlot({
   return <div ref={ref} />;
 }
 
-export default function LazyBoxPlot({ boxData, ...otherProps }: BoxPlotProps) {
+export default function LazyBoxPlot({
+  boxData,
+  selectedCode,
+  doLinkYAxisLabels,
+  ...otherProps
+}: BoxPlotProps) {
   return (
     <PlotlyLoader version="module">
       {(Plotly) =>
         boxData ? (
-          <div style={{ display: "grid", gridTemplateColumns: "120px auto" }}>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "120px auto",
+              color: "#4479B2",
+            }}
+          >
             <div
               style={{
                 display: "grid",
@@ -227,12 +244,35 @@ export default function LazyBoxPlot({ boxData, ...otherProps }: BoxPlotProps) {
                   {boxData.length > 1 && !box?.name.includes("Other") ? (
                     box?.name.split("/").map((code, j) => (
                       <React.Fragment key={code}>
-                        <a href={getNewContextUrl(code)}>{code}</a>
+                        {code === selectedCode ? (
+                          <span style={{ color: "#333333", fontWeight: "600" }}>
+                            {code}
+                          </span>
+                        ) : (
+                          <a href={getNewContextUrl(code)}>{code}</a>
+                        )}
                         {j < box?.name.split("/").length - 1 && "/"}
                       </React.Fragment>
                     ))
                   ) : (
-                    <div>{box.name}</div>
+                    <div>
+                      {box.name === selectedCode ||
+                      box?.name.includes("Other") ? (
+                        <span
+                          style={{
+                            color: "#333333",
+                            fontWeight: "600",
+                            fontSize: box?.name.includes("Other")
+                              ? "14px"
+                              : "12px",
+                          }}
+                        >
+                          {box.name}
+                        </span>
+                      ) : (
+                        <span>{box.name}</span>
+                      )}
+                    </div>
                   )}
                 </div>
               ))}

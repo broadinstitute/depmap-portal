@@ -1014,6 +1014,7 @@ function ContextAnalysis({
                           }
                         }}
                         topContextNameInfo={topContextNameInfo}
+                        selectedCode={selectedContextNameInfo.subtype_code}
                         boxPlotData={boxPlotData}
                         entityType={entityType}
                         entityFullLabel={[...selectedPlotLabels][0]}

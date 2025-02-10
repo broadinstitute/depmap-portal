@@ -19,24 +19,10 @@ import BoxPlot, { BoxPlotInfo } from "src/plot/components/BoxPlot";
 import PlotSpinner from "src/plot/components/PlotSpinner";
 import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
 
-const EntityBoxColorList = [
-  { r: 0, g: 109, b: 91 },
-  { r: 0, g: 109, b: 91 },
-  { r: 233, g: 116, b: 81 },
-  { r: 53, g: 15, b: 138 },
-  { r: 170, g: 51, b: 106 },
-  { r: 139, g: 0, b: 0 },
-  { r: 254, g: 52, b: 126 },
-  { r: 0, g: 100, b: 0 },
-  { r: 138, g: 154, b: 91 },
-  { r: 152, g: 251, b: 152 },
-  { r: 138, g: 43, b: 226 },
-  { r: 0, g: 191, b: 255 },
-];
-
 const InsignificantColor = { r: 255, g: 255, b: 255 };
 
 interface Props {
+  color: { r: number; g: number; b: number; a?: number };
   dapi: DepmapApi;
   urlPrefix: string;
   treeType: string;
@@ -71,6 +57,7 @@ function BranchBoxPlots({
   entityType,
   entityFullLabel,
   urlPrefix,
+  color,
   xAxisTitle = "",
   xAxisRange = undefined,
   bottomMargin = undefined,
@@ -127,7 +114,12 @@ function BranchBoxPlots({
                       name: plotData.label,
                       hoverLabels: plotData.cell_line_display_names,
                       xVals: plotData.data,
-                      color: EntityBoxColorList[index],
+                      color: {
+                        r: color.r,
+                        g: color.g,
+                        b: color.b,
+                        a: 1 / (index + 0.3),
+                      },
                       lineColor: "#000000",
                     });
                   }
