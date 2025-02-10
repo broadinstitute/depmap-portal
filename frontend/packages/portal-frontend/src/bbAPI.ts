@@ -368,8 +368,9 @@ export class BreadboxApi {
     return dataTypesPriorities;
   }
 
-  getGroups(): Promise<Group[]> {
-    return this._fetch<Group[]>("/groups/");
+  getGroups(writeAccess: boolean = false): Promise<Group[]> {
+    const queryParams = { write_access: writeAccess };
+    return this._fetch<Group[]>(`/groups/?${encodeParams(queryParams)}`);
   }
 
   postGroup(groupArgs: GroupArgs): Promise<Group> {
