@@ -11,7 +11,6 @@ from depmap.cell_line.models import CellLine
 from depmap.utilities import color_utils
 from depmap.compound import legacy_utils 
 
-# TODO: remove older unused stuff from this file
 
 # abstracted out here so that tests can import it.
 expression_to_size = (
@@ -150,7 +149,7 @@ def get_download_data(
     )
     df = lin1.merge(lin2, how="left", on="Depmap ID")
 
-    if legacy_dataset_contains_entity(size_dataset_enum, entity.entity_id): # TODO: this is passing the wrong type now
+    if legacy_dataset_contains_entity(size_dataset_enum, entity.entity_id):
         df, _ = integrate_size_and_label_data(
             df, metadata["x_label"], size_dataset_enum, entity.entity_id
         )
@@ -246,7 +245,7 @@ def integrate_size_and_label_data(
 ):
     legend = {}
     if legacy_dataset_contains_entity(size_dataset_enum, entity_id):
-        size_dataset = Dataset.get_dataset_by_name(size_dataset_enum.name, must=True) # TODO: make BB friendly???
+        size_dataset = Dataset.get_dataset_by_name(size_dataset_enum.name, must=True)
         size = size_dataset.matrix.get_cell_line_values_and_depmap_ids(entity_id)
         df = pd.merge(
             df,

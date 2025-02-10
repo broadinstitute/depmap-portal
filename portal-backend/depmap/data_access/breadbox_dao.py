@@ -56,7 +56,7 @@ def get_filtered_matrix_datasets(
         sample_id: Optional[str] = None,
         sample_type: Optional[str] = None,
         value_type: Optional[str] = None,
-) -> list[MatrixDataset]: # TODO: make this less duplicate code - if possible
+) -> list[MatrixDataset]:
     """Load a filtered set of datasets (no caching used). Filtering is done on the breadbox side."""
     datasets = extensions.breadbox.client.get_datasets(
         feature_id=feature_id,

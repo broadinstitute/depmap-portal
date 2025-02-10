@@ -41,8 +41,8 @@ def test_get_compound_ids_by_experiment_id(empty_db_mock_downloads):
 
     result = get_compound_ids_by_experiment_id(dataset_id)
     assert list(result.keys()) == [compound_experiment_1A.entity_id, compound_experiment_2.entity_id] # pyright: ignore
-    assert result[compound_experiment_1A.entity_id] == compound1.entity_id # pyright: ignore
-    assert result[compound_experiment_2.entity_id] == compound2.entity_id # pyright: ignore
+    assert result[compound_experiment_1A.entity_id] == compound1.compound_id # pyright: ignore
+    assert result[compound_experiment_2.entity_id] == compound2.compound_id # pyright: ignore
 
 
 def test_get_compound_labels_by_experiment_labels(empty_db_mock_downloads):
