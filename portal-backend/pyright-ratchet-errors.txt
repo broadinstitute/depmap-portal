@@ -558,7 +558,6 @@ test_utils.py: error: Cannot access member "entity_id" for type "GeneFactory"
 test_utils.py: error: Cannot access member "matrix_id" for type "LazyAttribute"
 test_views.py: error: "__getitem__" method not defined on type "LazyAttribute" (reportIndexIssue)
 test_views.py: error: "__getitem__" method not defined on type "Sequence" (reportIndexIssue)
-test_views.py: error: "display_name" is not a known member of "None" (reportOptionalMemberAccess)
 test_views.py: error: Argument of type "Sequence" cannot be assigned to parameter "feature" of type "str | int" in function "get_id_from_dataset_feature"
 test_views.py: error: Argument of type "str" cannot be assigned to parameter "__value" of type "int" in function "index"
 test_views.py: error: Cannot access member "entity_id" for type "CompoundDoseFactory"
