@@ -84,6 +84,10 @@ export default function Datasets() {
   const [showDimensionTypeModal, setShowDimensionTypeModal] = useState(false);
   const [showDeleteError, setShowDeleteError] = useState(false);
 
+  const [showDatasetDeleteError, setShowDatasetDeleteError] = useState(false);
+  const [datasetDeleteError, setDatasetDeleteError] = useState<str | null>(
+    null
+  );
   const [showDimTypeDeleteError, setShowDimTypeDeleteError] = useState(false);
   const [dimTypeDeleteError, setDimTypeDeleteError] = useState<str | null>(
     null
@@ -371,18 +375,23 @@ export default function Datasets() {
   const deleteDatasetButtonAction = async () => {
     let isDeleted = false;
     const datasetIdsSet = new Set(selectedDatasetIds);
-    try {
-      await Promise.all(
-        Array.from(datasetIdsSet).map((dataset_id) => {
-          return dapi.deleteDatasets(dataset_id);
-        })
-      );
-      isDeleted = true;
-      setShowDeleteError(false);
-    } catch (e) {
-      setShowDeleteError(true);
-      console.error(e);
-    }
+
+    await Promise.all(
+      Array.from(datasetIdsSet).map((dataset_id) => {
+        return dapi.deleteDatasets(dataset_id);
+      })
+    )
+      .then((vals) => {
+        isDeleted = true;
+      })
+      .catch((e) => {
+        setShowDatasetDeleteError(true);
+        console.error(e);
+        if (instanceOfErrorDetail(e)) {
+          setDatasetDeleteError(e.detail);
+        }
+      });
+
     if (isDeleted) {
       const datasetsRemaining = datasets.filter(
         (dataset) => !datasetIdsSet.has(dataset.id)
@@ -434,6 +443,12 @@ export default function Datasets() {
       <div className="container-fluid">
         <div>
           <h1>Datasets</h1>
+          {showDatasetDeleteError && (selectedDatasetIds.size !== 0) !== null && (
+            <Alert bsStyle="danger">
+              <strong>Dataset Delete Failed!</strong>{" "}
+              {datasetDeleteError !== null ? datasetDeleteError : null}
+            </Alert>
+          )}
           <ToggleSwitch
             value={isAdvancedMode}
             onChange={(newValue: boolean) => {
@@ -476,6 +491,8 @@ export default function Datasets() {
                   );
                   setDatasetToEdit(selectedDataset || null);
                 }
+                setShowDatasetDeleteError(false);
+                setDatasetDeleteError(null);
               }}
               data={formatDatasetTableData(datasets)}
               columns={[
