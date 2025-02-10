@@ -7,6 +7,7 @@ import {
   // instanceOfErrorDetail,
   DimensionTypeAddArgs,
   DimensionTypeUpdateArgs,
+  instanceOfErrorDetail,
 } from "@depmap/types";
 
 import { FormModal, Spinner, ToggleSwitch } from "@depmap/common-components";
@@ -27,9 +28,7 @@ export default function Datasets() {
   const [datasets, setDatasets] = useState<Dataset[] | null>(null);
 
   const [initError, setInitError] = useState(false);
-  // const [datasetSubmissionError, setDatasetSubmissionError] = useState<
-  //   string | null
-  // >(null);
+
   const [isAdvancedMode, setIsAdvancedMode] = useState(false);
   const [selectedDatasetIds, setSelectedDatasetIds] = useState<Set<string>>(
     new Set()
@@ -84,6 +83,11 @@ export default function Datasets() {
   const [isEditDimensionTypeMode, setIsEditDimensionTypeMode] = useState(false);
   const [showDimensionTypeModal, setShowDimensionTypeModal] = useState(false);
   const [showDeleteError, setShowDeleteError] = useState(false);
+
+  const [showDimTypeDeleteError, setShowDimTypeDeleteError] = useState(false);
+  const [dimTypeDeleteError, setDimTypeDeleteError] = useState<str | null>(
+    null
+  );
 
   const dimensionTypeDatasetCount = (datasetsList: Dataset[]) =>
     datasetsList.reduce(
@@ -407,11 +411,15 @@ export default function Datasets() {
         }
 
         isDeleted = true;
-        setShowDeleteError(false);
+        setShowDimTypeDeleteError(false);
+        setDimTypeDeleteError(null);
       }
     } catch (e) {
-      setShowDeleteError(true);
+      setShowDimTypeDeleteError(true);
       console.error(e);
+      if (instanceOfErrorDetail(e)) {
+        setDimTypeDeleteError(e.detail);
+      }
     }
     if (isDeleted) {
       setDimensionTypes(
@@ -531,13 +539,12 @@ export default function Datasets() {
           <div>
             <h1>Dimension Types</h1>
 
-            {showDeleteError && (
+            {showDimTypeDeleteError && selectedDimensionType !== null && (
               <Alert bsStyle="danger">
                 <strong>
                   Delete &quot;{selectedDimensionType.name}&quot; Failed!
                 </strong>{" "}
-                Make sure &quot;{selectedDimensionType.name}&quot; has no
-                datasets with its dimension type.
+                {dimTypeDeleteError !== null ? dimTypeDeleteError : null}
               </Alert>
             )}
 
@@ -576,7 +583,8 @@ export default function Datasets() {
                   } else {
                     setSelectedDimensionType(null);
                   }
-                  setShowDeleteError(false);
+                  setShowDimTypeDeleteError(false);
+                  setDimTypeDeleteError(null);
                 }}
                 rowHeight={40}
                 columns={[
