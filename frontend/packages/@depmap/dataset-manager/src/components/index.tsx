@@ -82,14 +82,13 @@ export default function Datasets() {
   >(null);
   const [isEditDimensionTypeMode, setIsEditDimensionTypeMode] = useState(false);
   const [showDimensionTypeModal, setShowDimensionTypeModal] = useState(false);
-  const [showDeleteError, setShowDeleteError] = useState(false);
 
   const [showDatasetDeleteError, setShowDatasetDeleteError] = useState(false);
-  const [datasetDeleteError, setDatasetDeleteError] = useState<str | null>(
+  const [datasetDeleteError, setDatasetDeleteError] = useState<string | null>(
     null
   );
   const [showDimTypeDeleteError, setShowDimTypeDeleteError] = useState(false);
-  const [dimTypeDeleteError, setDimTypeDeleteError] = useState<str | null>(
+  const [dimTypeDeleteError, setDimTypeDeleteError] = useState<string | null>(
     null
   );
 
@@ -381,6 +380,7 @@ export default function Datasets() {
         return dapi.deleteDatasets(dataset_id);
       })
     )
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       .then((vals) => {
         isDeleted = true;
       })
