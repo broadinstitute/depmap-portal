@@ -401,9 +401,9 @@ export default function Datasets() {
           (dt) => dt.name === selectedDimensionType.name
         );
         if (dimensionType.axis === "feature") {
-          await dapi.deleteFeatureType(dimensionType.name);
+          await dapi.deleteDimensionType(dimensionType.name);
         } else {
-          await dapi.deleteSampleType(dimensionType.name);
+          await dapi.deleteDimensionType(dimensionType.name);
         }
 
         isDeleted = true;
