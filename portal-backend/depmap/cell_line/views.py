@@ -197,7 +197,7 @@ def get_compound_sensitivity_data(model_id: str) -> dict:
     if dataset is None:
         abort(404)
     dataset_name = dataset.name.name
-    df = data_access.get_subsetted_df_by_compound_labels(dataset_name)
+    df = data_access.get_subsetted_df_by_labels_compound_friendly(dataset_name)
 
     return get_lowest_z_scores_response(dataset_name, model_id, df)
 
@@ -328,7 +328,7 @@ def get_all_cell_line_compound_sensitivity(
 ) -> pd.DataFrame:
     """Get all compound sensitivity data related to the cell line. Include five columns:
         compound, compound_sensitivity, z_score, mean, stddev"""
-    sensitivity_df = data_access.get_subsetted_df_by_compound_labels(dataset_name)
+    sensitivity_df = data_access.get_subsetted_df_by_labels_compound_friendly(dataset_name)
     sensitivity_df = sensitivity_df[np.isfinite(sensitivity_df[model_id])]
 
     result_df = get_stats_for_dataframe(sensitivity_df, model_id)

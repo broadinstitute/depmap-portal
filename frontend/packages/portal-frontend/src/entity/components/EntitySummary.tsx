@@ -365,7 +365,7 @@ class EntitySummary extends React.Component<Props, State> {
         {this.state.datasetEntitySummary && (
           <SublineagePlot
             datasetEntitySummary={this.state.datasetEntitySummary}
-            elementId={`sublineage_plot_${this.props.figure.name}`}
+            elementId={`sublineage_plot`}
             attachEventListenerForPlotShown={
               this.attachEventListenerForPlotShown
             }

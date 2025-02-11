@@ -105,7 +105,7 @@ class Dataset(Model):
     __mapper_args__ = {"polymorphic_identity": "dataset", "polymorphic_on": type}
 
     @property
-    def nominal_range(self):
+    def nominal_range(self): # No longer used
         return DATASET_METADATA[self.name].nominal_range
 
     @property
@@ -408,8 +408,10 @@ class DependencyDataset(Dataset):
 
     @staticmethod
     def get_compound_experiment_priority_sorted_datasets_with_compound(
-        compound_id,
+        compound_id: int, # Expects compound.entity_id, not compound.compound_id
     ) -> List[Tuple["CompoundExperiment", "DependencyDataset"]]:
+        # DEPRECATED: this will not work with breadbox datasets. 
+        # Calls to this should be replaced with get_all_datasets_containing_compound
         """
         :compound_id: entity id of compound object
         :return: List of (compound experiment object, dependency dataset object) tuples sorted by dataset priority first and secondly by compound experiment entity id

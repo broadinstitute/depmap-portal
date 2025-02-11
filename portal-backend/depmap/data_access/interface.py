@@ -7,9 +7,10 @@ from depmap.data_access.breadbox_dao import is_breadbox_id
 from depmap.data_access.models import MatrixDataset
 from depmap.interactive import interactive_utils
 from depmap.interactive.common_utils import RowSummary
-from depmap.interactive.config.models import Config, DatasetSortKey
+from depmap.interactive.config.models import Config
 from depmap.partials.matrix.models import CellLineSeries
 from depmap.compound import legacy_utils as legacy_compound_utils
+
 
 # This data access interface will eventually only contains functions
 # which can be supported through both breadbox and the legacy backend.
@@ -307,11 +308,39 @@ def get_slice_data(slice_query: SliceQuery) -> pd.Series:
 # These methods exist to ensure that both the legacy backend and breadbox are returning 
 # same shaped data while we are in this transitionary period. 
 
-def get_subsetted_df_by_compound_labels(dataset_id) -> pd.DataFrame:
+
+def get_all_datasets_containing_compound(compound_id: str) -> list[MatrixDataset]:
+    """
+    Return IDs for all datasets which contain data for the given compound, sorted by priority.
+    This should include both:
+        - Datasets indexed by compound (from breadbox)
+        - Datasets indexed by compound experiment (from the legacy backend)
+    Note: There are a couple of cases where the legacy dataset contains the compound but the breadbox 
+    version does not (ex. CTRP_AUC changed feature types). In this case, the dataset will be hidden.
+    """
+    bb_compound_datasets = breadbox_dao.get_filtered_matrix_datasets(feature_type="compound_v2",
+        feature_id=compound_id
+    )
+    bb_compound_datasets.sort(key=lambda dataset: dataset.priority if dataset.priority else 999)
+
+    # If a dataset is defined in both breadbox and the legacy DB, use the breadbox version
+    legacy_ce_dataset_ids = legacy_compound_utils.get_compound_experiment_priority_sorted_datasets(
+        compound_id
+    )
+    all_bb_given_ids = breadbox_dao.get_breadbox_given_ids()
+    visible_legacy_datasets = [
+        _get_legacy_matrix_dataset(dataset_id) for dataset_id in legacy_ce_dataset_ids 
+        if dataset_id not in all_bb_given_ids
+    ]
+    return bb_compound_datasets + visible_legacy_datasets
+
+
+def get_subsetted_df_by_labels_compound_friendly(dataset_id: str) -> pd.DataFrame:
     """
     Load the data for a drug screen dataset. This is similar to get_subsetted_df_by_labels,
     except that for legacy compound datasets, the result will be indexed by compound 
     (to match breadbox).
+    All non-compound datasets should work normally with this method as well.
     """
     dataset = get_matrix_dataset(dataset_id)
     # Legacy datasets indexed by compound experiment get re-indexed by compound label
