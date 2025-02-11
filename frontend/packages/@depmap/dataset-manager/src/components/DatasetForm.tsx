@@ -16,6 +16,7 @@ import {
   SampleDimensionType,
   FeatureDimensionType,
   Dataset,
+  instanceOfErrorDetail,
 } from "@depmap/types";
 import ChunkedFileUploader from "./ChunkedFileUploader";
 import { CeleryTask } from "@depmap/compute";
@@ -51,8 +52,13 @@ export default function DatasetForm(props: DatasetFormProps) {
         Object.keys(matrixFormSchema.properties)
           .concat("allowed_values")
           .forEach((key) => {
-            if (!isAdvancedMode && key === "value_type") {
-              initForm[key] = "continuous";
+            if (!isAdvancedMode) {
+              if (key === "value_type") {
+                initForm[key] = "continuous";
+              }
+              if (key === "data_type") {
+                initForm[key] = "User upload";
+              }
             } else if (
               typeof matrixFormSchema.properties[key] === "object" &&
               // @ts-ignore
@@ -163,7 +169,18 @@ export default function DatasetForm(props: DatasetFormProps) {
   */
   const reject = useCallback((res: any) => {
     const isCeleryTask = (x: any): x is CeleryTask => x.state !== undefined;
-    if (!isCeleryTask(res)) {
+    if (isCeleryTask(res)) {
+      setCompletedTask(res);
+    } else if (instanceOfErrorDetail(res)) {
+      // can occur when error happens before task passed to celery (ex: 'units' missing in 'continuous' col_type)
+      setCompletedTask({
+        id: "",
+        state: "FAILURE",
+        percentComplete: undefined,
+        message: res.detail,
+        result: null,
+      });
+    } else {
       setCompletedTask({
         id: "",
         state: "FAILURE",
@@ -172,8 +189,6 @@ export default function DatasetForm(props: DatasetFormProps) {
           "Unexpected error. If you get this error consistently, please contact us with a screenshot and the actions that lead to this error.",
         result: null,
       });
-    } else {
-      setCompletedTask(res);
     }
     setIsTaskRunning(false);
   }, []);
