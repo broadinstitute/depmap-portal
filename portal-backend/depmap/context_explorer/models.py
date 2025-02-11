@@ -333,10 +333,10 @@ class ContextAnalysis(Model):
                     and_(
                         ContextAnalysis.dependency_dataset_id == dependency_dataset_id,
                         ContextAnalysis.entity_id == entity_id,
-                        ContextAnalysis.t_qval >= fdr[0],
+                        # ContextAnalysis.t_qval >= fdr[0],
                         ContextAnalysis.t_qval <= fdr[1],
                         func.abs(ContextAnalysis.effect_size) >= abs_effect_size[0],
-                        func.abs(ContextAnalysis.effect_size) <= abs_effect_size[1],
+                        # func.abs(ContextAnalysis.effect_size) <= abs_effect_size[1],
                     )
                 )
                 .join(
@@ -344,8 +344,6 @@ class ContextAnalysis(Model):
                     SubtypeNode.subtype_code == ContextAnalysis.subtype_code,
                 )
                 .filter(subtype_node_filter)
-                # frontend will be organized into cards based on level 0, so we need to make sure we know
-                # the level 0 of each subtype_code returned
                 .with_entities(SubtypeNode.level_0, SubtypeNode.subtype_code)
                 .order_by(desc(ContextAnalysis.mean_in))
                 .all()

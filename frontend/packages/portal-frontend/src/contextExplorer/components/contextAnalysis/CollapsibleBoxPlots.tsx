@@ -219,66 +219,91 @@ function CollapsibleBoxPlots({
     >
       <Panel eventKey="SELECTED">
         <Panel.Heading>
-          <Panel.Title toggle>
-            {" "}
-            <div style={{ display: "flex", flexDirection: "row" }}>
-              {selectedLevelZeroBoxData &&
-                selectedContextBoxData &&
-                selectedContextBoxData.length > 0 && (
-                  <span
-                    style={{
-                      paddingRight: "8px",
-                      paddingTop: activeKey === "SELECTED" ? "0px" : "12px",
-                      fontSize: "12px",
-                      color: "#4479B2",
-                    }}
-                    className={
-                      activeKey === "SELECTED"
-                        ? "glyphicon glyphicon-chevron-up"
-                        : "glyphicon glyphicon-chevron-down"
+          {selectedLevelZeroBoxData && selectedContextBoxData === null ? (
+            <Panel.Title>
+              {" "}
+              <BoxPlot
+                plotName="main-header"
+                boxData={[selectedLevelZeroBoxData]}
+                setXAxisRange={setXAxisRange}
+                onLoad={handleSetMainPlotElement}
+                xAxisRange={xAxisRange}
+                selectedCode={selectedCode}
+                plotHeight={
+                  BOX_THICKNESS + BOX_PLOT_TOP_MARGIN + BOX_PLOT_BOTTOM_MARGIN
+                }
+                xAxisTitle={""}
+                bottomMargin={BOX_PLOT_BOTTOM_MARGIN}
+                topMargin={BOX_PLOT_TOP_MARGIN}
+                dottedLinePosition={
+                  entityType === "gene" ? -1 : drugDottedLine || -1.74
+                }
+              />
+            </Panel.Title>
+          ) : (
+            <Panel.Title toggle>
+              {" "}
+              <div style={{ display: "flex", flexDirection: "row" }}>
+                {selectedLevelZeroBoxData &&
+                  selectedContextBoxData &&
+                  selectedContextBoxData.length > 0 && (
+                    <span
+                      style={{
+                        paddingRight: "8px",
+                        paddingTop: activeKey === "SELECTED" ? "0px" : "12px",
+                        fontSize: "12px",
+                        color: "#4479B2",
+                      }}
+                      className={
+                        activeKey === "SELECTED"
+                          ? "glyphicon glyphicon-chevron-up"
+                          : "glyphicon glyphicon-chevron-down"
+                      }
+                    />
+                  )}
+                {selectedLevelZeroBoxData && activeKey !== "SELECTED" ? (
+                  <BoxPlot
+                    plotName="main-header"
+                    boxData={[selectedLevelZeroBoxData]}
+                    setXAxisRange={setXAxisRange}
+                    onLoad={handleSetMainPlotElement}
+                    xAxisRange={xAxisRange}
+                    selectedCode={selectedCode}
+                    plotHeight={
+                      BOX_THICKNESS +
+                      BOX_PLOT_TOP_MARGIN +
+                      BOX_PLOT_BOTTOM_MARGIN
+                    }
+                    xAxisTitle={""}
+                    bottomMargin={BOX_PLOT_BOTTOM_MARGIN}
+                    topMargin={BOX_PLOT_TOP_MARGIN}
+                    dottedLinePosition={
+                      entityType === "gene" ? -1 : drugDottedLine || -1.74
                     }
                   />
+                ) : (
+                  selectedLevelZeroBoxData &&
+                  activeKey === "SELECTED" && (
+                    <span
+                      style={{
+                        fontSize: "12px",
+                        fontWeight:
+                          selectedCode === selectedLevelZeroBoxData.name
+                            ? "600"
+                            : "normal",
+                        color:
+                          selectedCode === selectedLevelZeroBoxData.name
+                            ? "#333333"
+                            : "#4479B2",
+                      }}
+                    >
+                      {selectedLevelZeroBoxData.name}
+                    </span>
+                  )
                 )}
-              {selectedLevelZeroBoxData && activeKey !== "SELECTED" ? (
-                <BoxPlot
-                  plotName="main-header"
-                  boxData={[selectedLevelZeroBoxData]}
-                  setXAxisRange={setXAxisRange}
-                  onLoad={handleSetMainPlotElement}
-                  xAxisRange={xAxisRange}
-                  selectedCode={selectedCode}
-                  plotHeight={
-                    BOX_THICKNESS + BOX_PLOT_TOP_MARGIN + BOX_PLOT_BOTTOM_MARGIN
-                  }
-                  xAxisTitle={""}
-                  bottomMargin={BOX_PLOT_BOTTOM_MARGIN}
-                  topMargin={BOX_PLOT_TOP_MARGIN}
-                  dottedLinePosition={
-                    entityType === "gene" ? -1 : drugDottedLine || -1.74
-                  }
-                />
-              ) : (
-                selectedLevelZeroBoxData &&
-                activeKey === "SELECTED" && (
-                  <span
-                    style={{
-                      fontSize: "12px",
-                      fontWeight:
-                        selectedCode === selectedLevelZeroBoxData.name
-                          ? "600"
-                          : "normal",
-                      color:
-                        selectedCode === selectedLevelZeroBoxData.name
-                          ? "#333333"
-                          : "#4479B2",
-                    }}
-                  >
-                    {selectedLevelZeroBoxData.name}
-                  </span>
-                )
-              )}
-            </div>
-          </Panel.Title>
+              </div>
+            </Panel.Title>
+          )}
         </Panel.Heading>
 
         {selectedContextBoxData && selectedContextBoxData.length > 0 && (

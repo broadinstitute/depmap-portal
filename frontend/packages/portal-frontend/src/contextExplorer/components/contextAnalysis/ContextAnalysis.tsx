@@ -40,7 +40,8 @@ import {
   getSelectivityValLabel,
 } from "../../utils";
 import geneDepFilterDefinitions from "../../json/geneDepFilters.json";
-import drugFilterDefinitions from "../../json/drugFilters.json";
+import repurposingFilterDefinitions from "../../json/repurposingFilters.json";
+import oncrefFilterDefinitions from "../../json/oncrefFilters.json";
 import Select from "react-select";
 import filterLayoutGene from "../../json/filterLayoutGene.json";
 import filterLayoutDrug from "../../json/filterLayoutDrug.json";
@@ -238,6 +239,17 @@ function ContextAnalysis({
   // are temporarily separated out into 2 different files while the stickyFiltersMode
   // and Context Explorer is new. This is to reduce the risk of breaking Context Explorer,
   // TDA, and Compound Dashboard all at once.
+
+  const getFilterDefinitions = useCallback(() => {
+    if (datasetId === ContextExplorerDatasets.Prism_oncology_AUC) {
+      return oncrefFilterDefinitions;
+    } else if (datasetId === ContextExplorerDatasets.Rep_all_single_pt) {
+      return repurposingFilterDefinitions;
+    } else {
+      return geneDepFilterDefinitions;
+    }
+  }, [datasetId]);
+
   const {
     transientFilterState,
     filters,
@@ -246,14 +258,13 @@ function ContextAnalysis({
     defaultFilters,
   } = useContextExplorerFilters(
     data,
-    entityType === "gene" ? geneDepFilterDefinitions : drugFilterDefinitions,
+    getFilterDefinitions(),
     stickyFiltersMode
   );
 
   const [pointVisibility, setPointVisibility] = useState<boolean[]>([]);
 
   useEffect(() => {
-    console.log("HITTTT");
     setSelectedPlotLabels(null);
     setSelectedTableLabels(null);
     setPointVisibilityFiltered(null);

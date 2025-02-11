@@ -102,14 +102,15 @@ function BoxPlot({
     });
 
     const layout: Partial<Plotly.Layout> = {
-      margin: { t: topMargin, r: 10, b: bottomMargin, l: 3 },
+      margin: { t: topMargin, r: 10, b: bottomMargin, l: 10 },
       autosize: true,
-      dragmode: false,
+      dragmode: "pan",
       height: plotHeight,
       width: 200,
       showlegend: false,
       yaxis: {
         zeroline: false,
+        visible: false,
       },
       xaxis: {
         zeroline: true,
@@ -174,7 +175,7 @@ function BoxPlot({
       Plotly.relayout(ref.current, update);
     } else if (ref.current?.layout && plotName === "main") {
       const update: Partial<Plotly.Layout> = {
-        margin: { t: topMargin, r: 15, b: bottomMargin, l: 3 },
+        margin: { t: topMargin, r: 15, b: bottomMargin, l: 0 },
         xaxis: {
           range: xAxisRange ?? ref.current.layout.xaxis.range,
           title: xAxisTitle ?? "",
