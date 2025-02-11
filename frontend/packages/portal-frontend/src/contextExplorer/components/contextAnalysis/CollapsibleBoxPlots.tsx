@@ -160,7 +160,7 @@ function CollapsibleBoxPlots({
                 xVals: plotData.data,
                 color: {
                   ...EntityBoxColorList[boxCardCount],
-                  a: 0.8,
+                  a: 0.7,
                 },
                 lineColor: "#000000",
               });

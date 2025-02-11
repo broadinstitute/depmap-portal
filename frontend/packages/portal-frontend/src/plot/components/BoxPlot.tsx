@@ -173,7 +173,10 @@ function BoxPlot({
       };
 
       Plotly.relayout(ref.current, update);
-    } else if (ref.current?.layout && plotName === "main") {
+    } else if (
+      ref.current?.layout &&
+      (plotName === "main" || plotName === "main-header")
+    ) {
       const update: Partial<Plotly.Layout> = {
         margin: { t: topMargin, r: 15, b: bottomMargin, l: 0 },
         xaxis: {
@@ -198,7 +201,7 @@ function BoxPlot({
     if (
       ref.current?.layout.xaxis.range &&
       setXAxisRange &&
-      plotName === "main"
+      (plotName === "main" || plotName === "main-header")
     ) {
       setXAxisRange(ref.current?.layout.xaxis.range);
     }

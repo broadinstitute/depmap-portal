@@ -343,7 +343,6 @@ function ContextAnalysis({
 
   const handleClickRowAndPoint = useCallback(
     (pointIndex: number) => {
-      console.log("HELLO CLICK ROW AND POINT");
       if (plotData && plotData.indexLabels) {
         const label = plotData?.indexLabels[pointIndex];
 
@@ -398,7 +397,6 @@ function ContextAnalysis({
 
   const handleSelectRowAndPoint = useCallback(
     (entityLabel: string) => {
-      console.log("HELLO SELECT ROW AND POINT");
       if (plotData && plotData.indexLabels) {
         const label = entityLabel;
 
