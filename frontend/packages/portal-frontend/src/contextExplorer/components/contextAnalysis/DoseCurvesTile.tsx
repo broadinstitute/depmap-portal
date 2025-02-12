@@ -81,7 +81,13 @@ function DoseCurvesTile(props: DoseCurvesTileProps) {
       )}
       {!isError && isLoading && <PlotSpinner />}
       {data && (
-        <>
+        <div
+          style={{
+            backgroundColor: "#ffffff",
+            paddingBottom: "5px",
+            marginTop: "10px",
+          }}
+        >
           <DoseCurvesPlot
             minDose={data.min_dose}
             maxDose={data.max_dose}
@@ -102,7 +108,7 @@ function DoseCurvesTile(props: DoseCurvesTileProps) {
               Median of {selectedOutGroupType}
             </div>
           </fieldset>
-        </>
+        </div>
       )}
     </div>
   );

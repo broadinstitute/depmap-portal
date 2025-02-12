@@ -163,8 +163,8 @@ function ContextAnalysis({
 
   useEffect(() => {
     setData(null);
-    setIsLoading(true);
     if (didValidateOutgroup) {
+      setIsLoading(true);
       const promise = dapi.getContextExplorerAnalysisData(
         selectedContextNameInfo.subtype_code,
         outgroup.value,
@@ -183,6 +183,7 @@ function ContextAnalysis({
           if (promise === latestPromise.current) {
             window.console.error(e);
             setError(true);
+            setIsLoading(false);
           }
         })
         .finally(() => {
@@ -732,7 +733,7 @@ function ContextAnalysis({
               <p>There was an error loading these plots.</p>
             </div>
           )}
-          {!error && selectedContextNameInfo.name === "All" ? (
+          {!error && !isLoading && selectedContextNameInfo.name === "All" ? (
             <h1 style={{ textAlign: "center", color: "#808080" }}>
               Select A More Specific Context
             </h1>
@@ -945,7 +946,7 @@ function ContextAnalysis({
         </div>
       </section>
       <div className={styles.right}>
-        {selectedPlotLabels && boxPlotData && selectedPlotLabels.size > 0 && (
+        {selectedPlotLabels && selectedPlotLabels.size > 0 && (
           <>
             <h2
               style={{

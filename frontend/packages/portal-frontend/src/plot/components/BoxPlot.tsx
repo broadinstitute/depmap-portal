@@ -245,7 +245,7 @@ export default function LazyBoxPlot({
                     fontSize: "12px",
                   }}
                 >
-                  {boxData.length > 1 && !box?.name.includes("Other") ? (
+                  {boxData.length > 0 && !box?.name.includes("Other") ? (
                     box?.name.split("/").map((code, j) => (
                       <React.Fragment key={code}>
                         {code === selectedCode ? (
