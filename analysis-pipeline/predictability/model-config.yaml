@@ -1,7 +1,7 @@
 CellContext:
   Features:
     - lineage
-    - confounder # Will map to crispr_confounder or rnai_confounder based on screen
+    - confounder # Will map to crispr_confounder or rnai_confounder or oncref_confounder based on screen
   Required:
     - lineage
     - confounder
