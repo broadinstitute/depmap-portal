@@ -1,11 +1,9 @@
 from dataclasses import dataclass
-from re import X
-from depmap.cell_line.models_new import DepmapModel
 from depmap.context_explorer.api import _get_analysis_data_table
 import pytest
 from typing import List, Literal, Optional
 from depmap.context_explorer.models import ContextAnalysis
-from depmap.context.models_new import SubtypeContext
+from depmap.context.models_new import SubtypeContext, SubtypeNode
 from depmap.context_explorer.utils import (
     get_full_row_of_values_and_depmap_ids,
     get_context_dose_curves,
@@ -807,8 +805,10 @@ def _get_box_plot_data(
     abs_effect_size,
     frac_dep_in,
 ) -> Optional[list]:
+    selected_node = SubtypeNode.get_by_code(selected_subtype_code)
+    level_0 = selected_node.level_0
     other_sig_contexts = ContextAnalysis.get_context_dependencies(
-        subtype_code=selected_subtype_code,
+        level_0_code=level_0,
         tree_type=tree_type,
         out_group=out_group,
         dataset_name=dataset_name,

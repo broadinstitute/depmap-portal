@@ -1,8 +1,9 @@
 from dataclasses import dataclass
+import json
 import sqlalchemy
 from sqlalchemy import and_, or_, func, desc
 import enum
-from typing import List, Literal, Optional, Tuple
+from typing import Any, Dict, List, Literal, Optional, Tuple
 import pandas as pd
 from depmap.gene.models import Gene
 from depmap.compound.models import CompoundExperiment
@@ -19,6 +20,39 @@ from depmap.database import (
     db,
     relationship,
 )
+
+
+@dataclass
+class BoxData:
+    label: str
+    data: List[float]
+    cell_line_display_names: List[str]
+    path: Optional[List[str]] = None
+
+
+@dataclass
+class ContextPlotBoxData:
+    significant_selection: Dict[str, BoxData]
+    insignifcant_selection: BoxData
+    significant_other: Dict[str, BoxData]
+    insignificant_heme_data: BoxData
+    insignificant_solid_data: BoxData
+    drug_dotted_line: Any
+    entity_label: str
+
+
+@dataclass
+class SubtypeBranchBoxPlotData:
+    significant_box_plot_data: Dict[str, BoxData]
+    insignificant_box_plot_data: BoxData
+
+
+@dataclass
+class NodeEntityData:
+    selected_node: SubtypeNode
+    entity_id: str
+    entity_label: str
+    entity_full_row_of_values: pd.Series
 
 
 @dataclass
