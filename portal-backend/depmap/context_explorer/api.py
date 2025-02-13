@@ -494,7 +494,7 @@ class ContextBoxPlotData(Resource):
         abs_effect_size = request.args.getlist("abs_effect_size", type=float)
         frac_dep_in = request.args.getlist("frac_dep_in", type=float)
 
-        context_box_plot_data = box_plot_utils.get_organized_significant_contexts(
+        context_box_plot_data = box_plot_utils.get_organized_contexts(
             selected_subtype_code=selected_subtype_code,
             tree_type=tree_type,
             entity_type=entity_type,

@@ -260,6 +260,7 @@ class DepmapModel(Model):
         s = pd.DataFrame(cell_line_names).set_index("model_id")[
             "cell_line_display_name"
         ]
+
         assert len(s) == len(model_ids)
         return s
 
