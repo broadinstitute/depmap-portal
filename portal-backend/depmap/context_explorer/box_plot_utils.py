@@ -166,7 +166,7 @@ def get_box_plot_data_for_context(
     )
 
     node = SubtypeNode.get_by_code(subtype_code)
-    path = utils.get_path_to_node(node.subtype_code)
+    path = utils.get_path_to_node(node.subtype_code).path
     path = path[1:] if len(path) > 1 else path
     delim = "/"
 
@@ -252,7 +252,7 @@ def get_context_plot_box_data(
     node_entity_data: NodeEntityData,
     entity_full_row_of_values: pd.Series,
     drug_dotted_line: Any,
-):
+) -> Optional[ContextPlotBoxData]:
     heme_box_plot_data = {}
     solid_box_plot_data = {}
     other_box_plot_data = []
@@ -322,15 +322,7 @@ def get_context_plot_box_data(
             entity_label=node_entity_data.entity_label,
         )
 
-    return ContextPlotBoxData(
-        significant_selection={},
-        insignifcant_selection=None,
-        other_cards=[],
-        insignificant_heme_data={},
-        insignificant_solid_data={},
-        drug_dotted_line=None,
-        entity_label=None,
-    )
+    return None
 
 
 def get_organized_contexts(

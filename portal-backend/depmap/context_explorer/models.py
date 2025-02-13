@@ -23,6 +23,12 @@ from depmap.database import (
 
 
 @dataclass
+class ContextPathInfo:
+    path: List[str]
+    tree_type: Literal["Lineage", "MolecularSubtype"]
+
+
+@dataclass
 class BoxData:
     label: str
     data: List[float]

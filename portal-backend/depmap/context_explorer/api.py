@@ -162,7 +162,7 @@ class ContextPath(
 
         path = get_path_to_node(selected_code)
 
-        return path
+        return dataclasses.asdict(path)
 
 
 def get_child_subtype_summary_df(subtype_code: str):
@@ -504,5 +504,8 @@ class ContextBoxPlotData(Resource):
             abs_effect_size=abs_effect_size,
             frac_dep_in=frac_dep_in,
         )
+
+        if context_box_plot_data is None:
+            return None
 
         return dataclasses.asdict(context_box_plot_data)

@@ -59,6 +59,8 @@ export const ContextExplorer = () => {
     TreeType.Lineage
   );
 
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+
   const dapi = getDapi();
 
   const { selectedContextNode, topContextNameInfo } = getSelectedContextNode(
@@ -83,6 +85,7 @@ export const ContextExplorer = () => {
       // A list of Lineage trees. The search options should be the root element of
       // each tree, which will always be at list index 0
       setPlotElement(null);
+      setIsLoading(true);
       const options = await dapi.getContextSearchOptions();
 
       options.lineage.unshift(ALL_SEARCH_OPTION);
@@ -105,19 +108,27 @@ export const ContextExplorer = () => {
       if (params.context) {
         const selectedSubtypeCode = params.context!.toString();
         const context = await dapi.getContextPath(selectedSubtypeCode);
-        setContextPath(context);
+        const path = context.path;
+        const selectedTree = context.tree_type;
+        setContextPath(path);
+        setSelectedTreeType(
+          selectedTree == TreeType.Lineage.toString()
+            ? TreeType.Lineage
+            : TreeType.MolecularSubtype
+        );
         const newContextInfo = await dapi.getContextExplorerContextInfo(
-          context[0]
+          path[0]
         );
         setContextInfo(newContextInfo);
 
-        const dataAvail = await dapi.getSubtypeDataAvailability(context[0]);
+        const dataAvail = await dapi.getSubtypeDataAvailability(path[0]);
 
         setContextDataAvailability(dataAvail);
       } else {
         setContextPath(null);
         setContextInfo(null);
       }
+      setIsLoading(false);
     })();
   }, [dapi]);
 
@@ -145,27 +156,29 @@ export const ContextExplorer = () => {
       contextTreeRoot: ContextNode | null,
       subtypeCode?: string
     ) => {
+      setIsLoading(true);
       deleteSpecificQueryParams(["context"]);
 
       if (allContextData && (contextNode || subtypeCode)) {
         const context = await dapi.getContextPath(
           contextNode?.subtype_code || subtypeCode!
         );
+        const path = context.path;
         const subtypeDataAvail = await dapi.getSubtypeDataAvailability(
           contextNode?.subtype_code || subtypeCode!
         );
 
         if (
           !contextInfo ||
-          (contextTreeRoot && context[0] !== contextTreeRoot.subtype_code)
+          (contextTreeRoot && path[0] !== contextTreeRoot.subtype_code)
         ) {
           const newContextInfo = await dapi.getContextExplorerContextInfo(
-            context[0]
+            path[0]
           );
           setContextInfo(newContextInfo);
         }
         setContextDataAvailability(subtypeDataAvail);
-        setContextPath(context);
+        setContextPath(path);
 
         setQueryStringWithoutPageReload(
           "context",
@@ -174,6 +187,7 @@ export const ContextExplorer = () => {
       } else {
         setContextPath(null);
       }
+      setIsLoading(false);
     },
     [allContextData, contextInfo, dapi]
   );
@@ -228,6 +242,7 @@ export const ContextExplorer = () => {
         <section className={styles.tabContents}>
           {topContextNameInfo && (
             <ContextExplorerTabs
+              isLoadingInitialData={isLoading}
               topContextNameInfo={topContextNameInfo}
               selectedContextNameInfo={selectedContextNameInfo}
               selectedContextNode={selectedContextNode}

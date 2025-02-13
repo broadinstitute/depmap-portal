@@ -2,6 +2,7 @@ import pandas as pd
 
 from depmap import data_access
 from depmap.context.models_new import SubtypeNode
+from depmap.context_explorer.models import ContextPathInfo
 from depmap.compound.models import (
     CompoundExperiment,
     Compound,
@@ -21,7 +22,7 @@ def get_full_row_of_values_and_depmap_ids(dataset_name: str, label: str) -> pd.S
     return full_row_of_values
 
 
-def get_path_to_node(selected_code: str):
+def get_path_to_node(selected_code: str) -> ContextPathInfo:
     node_obj = SubtypeNode.get_by_code(selected_code)
 
     cols = [
@@ -34,7 +35,7 @@ def get_path_to_node(selected_code: str):
     ]
     path = [col for col in cols if col != None]
 
-    return path
+    return ContextPathInfo(path=path, tree_type=str(node_obj.tree_type.value))
 
 
 def _get_compound_experiment_id_from_entity_label(entity_full_label: str):

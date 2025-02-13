@@ -16,6 +16,11 @@ export interface ContextNode {
   children: ContextNode[];
 }
 
+export interface ContextPathInfo {
+  path: string[];
+  tree_type: string;
+}
+
 export interface ContextNameInfo {
   name: string;
   subtype_code: string;

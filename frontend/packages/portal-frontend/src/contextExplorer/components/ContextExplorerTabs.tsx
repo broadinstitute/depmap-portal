@@ -23,6 +23,7 @@ import ContextAnalysis from "src/contextExplorer/components/contextAnalysis/Cont
 import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
 
 interface Props {
+  isLoadingInitialData: boolean;
   selectedContextNameInfo: ContextNameInfo;
   selectedContextNode: ContextNode | null;
   selectedContextData: ContextSummary;
@@ -41,6 +42,7 @@ interface Props {
 }
 
 const ContextExplorerTabs = ({
+  isLoadingInitialData,
   selectedContextNameInfo,
   selectedContextNode,
   treeType,
@@ -107,65 +109,78 @@ const ContextExplorerTabs = ({
       <TabPanels className={styles.TabPanels}>
         <TabPanel className={styles.TabPanel}>
           <div className={styles.plot}>
-            {checkedDataValues && selectedContextData && (
-              <ContextExplorerPlot
-                topContextName={topContextNameInfo.name}
-                selectedContextName={selectedContextNameInfo.name}
-                data={selectedContextData}
-                checkedDataValues={checkedDataValues}
-                checkedDatatypes={checkedDatatypes}
-                updateDatatypeSelection={updateDatatypeSelection}
-                customInfoImg={customInfoImg}
-                overlappingDepmapIds={overlappingDepmapIds}
-                handleSetPlotElement={handleSetPlotElement}
-                plotElement={plotElement}
-              />
-            )}
+            {checkedDataValues &&
+              selectedContextData &&
+              !isLoadingInitialData && (
+                <ContextExplorerPlot
+                  topContextName={topContextNameInfo.name}
+                  selectedContextName={selectedContextNameInfo.name}
+                  data={selectedContextData}
+                  checkedDataValues={checkedDataValues}
+                  checkedDatatypes={checkedDatatypes}
+                  updateDatatypeSelection={updateDatatypeSelection}
+                  customInfoImg={customInfoImg}
+                  overlappingDepmapIds={overlappingDepmapIds}
+                  handleSetPlotElement={handleSetPlotElement}
+                  plotElement={plotElement}
+                />
+              )}
           </div>
           <div className={styles.plot}>
-            <OverviewTable
-              cellLineData={
-                overlappingDepmapIds.length > 0
-                  ? formattedFilteredData.filter((dataItem: CellLineOverview) =>
-                      overlappingDepmapIds.includes(dataItem.depmapId)
-                    )
-                  : formattedFilteredData
-              }
-              getCellLineUrlRoot={getCellLineUrlRoot}
-            />
+            {checkedDataValues &&
+              selectedContextData &&
+              !isLoadingInitialData && (
+                <OverviewTable
+                  cellLineData={
+                    overlappingDepmapIds.length > 0
+                      ? formattedFilteredData.filter(
+                          (dataItem: CellLineOverview) =>
+                            overlappingDepmapIds.includes(dataItem.depmapId)
+                        )
+                      : formattedFilteredData
+                  }
+                  getCellLineUrlRoot={getCellLineUrlRoot}
+                />
+              )}
           </div>
         </TabPanel>
         <TabPanel className={styles.TabPanel}>
-          <ContextAnalysis
-            selectedContextNode={selectedContextNode}
-            selectedContextNameInfo={selectedContextNameInfo}
-            topContextNameInfo={topContextNameInfo}
-            treeType={treeType}
-            entityType={"gene"}
-            datasetId={ContextExplorerDatasets.Chronos_Combined}
-          />
+          {!isLoadingInitialData && (
+            <ContextAnalysis
+              selectedContextNode={selectedContextNode}
+              selectedContextNameInfo={selectedContextNameInfo}
+              topContextNameInfo={topContextNameInfo}
+              treeType={treeType}
+              entityType={"gene"}
+              datasetId={ContextExplorerDatasets.Chronos_Combined}
+            />
+          )}
         </TabPanel>
         <TabPanel className={styles.TabPanel}>
           {" "}
-          <ContextAnalysis
-            selectedContextNode={selectedContextNode}
-            selectedContextNameInfo={selectedContextNameInfo}
-            topContextNameInfo={topContextNameInfo}
-            treeType={treeType}
-            entityType={"compound"}
-            datasetId={ContextExplorerDatasets.Rep_all_single_pt}
-          />
+          {!isLoadingInitialData && (
+            <ContextAnalysis
+              selectedContextNode={selectedContextNode}
+              selectedContextNameInfo={selectedContextNameInfo}
+              topContextNameInfo={topContextNameInfo}
+              treeType={treeType}
+              entityType={"compound"}
+              datasetId={ContextExplorerDatasets.Rep_all_single_pt}
+            />
+          )}
         </TabPanel>
         <TabPanel className={styles.TabPanel}>
           {" "}
-          <ContextAnalysis
-            selectedContextNode={selectedContextNode}
-            selectedContextNameInfo={selectedContextNameInfo}
-            topContextNameInfo={topContextNameInfo}
-            treeType={treeType}
-            entityType={"compound"}
-            datasetId={ContextExplorerDatasets.Prism_oncology_AUC}
-          />
+          {!isLoadingInitialData && (
+            <ContextAnalysis
+              selectedContextNode={selectedContextNode}
+              selectedContextNameInfo={selectedContextNameInfo}
+              topContextNameInfo={topContextNameInfo}
+              treeType={treeType}
+              entityType={"compound"}
+              datasetId={ContextExplorerDatasets.Prism_oncology_AUC}
+            />
+          )}
         </TabPanel>
       </TabPanels>
     </TabsWithHistory>

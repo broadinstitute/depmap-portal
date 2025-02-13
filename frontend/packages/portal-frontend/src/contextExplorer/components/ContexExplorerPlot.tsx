@@ -122,17 +122,19 @@ function ContextExplorerPlot(props: ContextExplorerPlotProps) {
         )}
       </div>
       <div className={styles.overviewPlotWrapper}>
-        <DatatypeSelector
-          datatypes={[...data.data_types].reverse()}
-          checked={checkedDatatypes}
-          onClick={updateDatatypeSelection}
-          customInfoImg={customInfoImg}
-        />
+        {plotElement && (
+          <DatatypeSelector
+            datatypes={[...data.data_types].reverse()}
+            checked={checkedDatatypes}
+            onClick={updateDatatypeSelection}
+            customInfoImg={customInfoImg}
+          />
+        )}
         <fieldset className={styles.plot}>
           <div className={styles.plotHeaders}>
-            <h5>CELL LINES</h5>
+            {plotElement && <h5>CELL LINES</h5>}
           </div>
-          {(!plotElement || !totalCellLines) && <PlotSpinner height="auto" />}
+          {!plotElement && <PlotSpinner height="auto" />}
           <Heatmap
             dataTypeLabels={data.data_types}
             zVals={checkedDataValues}
