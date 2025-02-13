@@ -29,24 +29,70 @@ export function Story() {
         (record) => record[colName]
       ))
   );
-  const volcanoData: Array<VolcanoData> = [
-    {
-      x: columnData["Correlation Coefficient"],
-      y: columnData["-log10 qval"].map((x) => {
-        return Math.exp(-x);
-      }),
-      label: columnData["imatinib Dose"],
-      text: columnData["Feature"],
-      isSignificant: new Array(correlationAnalysisData.length).fill(false),
-    },
-  ];
-
   console.log(columnNames);
   console.log(columnData);
-  console.log(volcanoData);
+
+  // const volcanoData: Array<VolcanoData> = [
+  //   {
+  //     x: columnData["Correlation Coefficient"],
+  //     y: columnData["-log10 qval"].map((x) => {
+  //       return Math.exp(-x);
+  //     }),
+  //     label: columnData["imatinib Dose"],
+  //     text: columnData["Feature"],
+  //     isSignificant: new Array(correlationAnalysisData.length).fill(false),
+  //   },
+  // ];
+  // console.log(volcanoData);
+
+  const columnNamesToPlotVariables = {
+    "Correlation Coefficient": "x",
+    "-log10 qval": "y",
+    "imatinib Dose": "label",
+    Feature: "text",
+  };
+  const volcanoDataForFeatureType = correlationAnalysisData.reduce(
+    (acc, curRecord) => {
+      const key = curRecord["Feature Type"];
+      if (!acc[key]) {
+        acc[key] = { x: [], y: [], label: [], text: [], isSignificant: [] };
+      }
+      columnNames.forEach((colName) => {
+        if (colName in columnNamesToPlotVariables) {
+          const value = curRecord[colName];
+          if (colName == "-log10 qval") {
+            // VolcanoPlotProp `y` data by default log transforms values. To do the complement: Math.exp(-x)
+            acc[key][columnNamesToPlotVariables[colName]].push(
+              Math.exp(-value)
+            );
+          } else {
+            acc[key][columnNamesToPlotVariables[colName]].push(value);
+          }
+        }
+      });
+      acc[key]["isSignificant"].push(false);
+      return acc;
+    },
+    {}
+  );
+  console.log(volcanoDataForFeatureType);
 
   return (
     <div>
+      {["Gene expression", "CRISPR knock-out", "Repurposing compounds"].map(
+        (selectedFeatureType) => {
+          return (
+            <VolcanoPlot
+              Plotly={Plotly}
+              // ref={plotlyRef}
+              xLabel="Correlation Coefficient"
+              yLabel="-log10 (q value"
+              data={[volcanoDataForFeatureType[selectedFeatureType]]}
+            />
+          );
+        }
+      )}
+
       <WideTable
         columns={[
           { accessor: "Compound" },
