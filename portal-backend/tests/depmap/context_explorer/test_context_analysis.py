@@ -1,15 +1,20 @@
 from dataclasses import dataclass
+import dataclasses
 from depmap.context_explorer.api import _get_analysis_data_table
 import pytest
 from typing import List, Literal, Optional
 from depmap.context_explorer.models import ContextAnalysis
 from depmap.context.models_new import SubtypeContext, SubtypeNode
+from depmap.context_explorer.dose_curve_utils import get_context_dose_curves
 from depmap.context_explorer.utils import (
     get_full_row_of_values_and_depmap_ids,
-    get_context_dose_curves,
     _get_compound_experiment_id_from_entity_label,
-    get_box_plot_data_for_context,
-    get_box_plot_data_for_other_category,
+)
+from depmap.context_explorer.box_plot_utils import (
+    _get_node_entity_data,
+    _get_sig_context_dataframe,
+    get_context_plot_box_data,
+    get_subtype_branch_box_plot_data,
 )
 from depmap.dataset.models import DependencyDataset
 import numpy as np
@@ -245,12 +250,26 @@ def _setup_factories(
         level_4=None,
         level_5=None,
     )
+    CHILD_OF_MYELOID_node = SubtypeNodeFactory(
+        node_name="CHILD_OF_MYELOID_node",
+        subtype_code="CHILD_OF_MYELOID",
+        node_level=1,
+        level_0="MYELOID",
+        level_1="CHILD_OF_MYELOID",
+        level_2=None,
+        level_3=None,
+        level_4=None,
+        level_5=None,
+    )
 
     myeloid_context = SubtypeContextFactory(
         subtype_code="MYELOID", depmap_model=myeloid_cell_lines
     )
     aml_context = SubtypeContextFactory(
         subtype_code="AML", depmap_model=myeloid_cell_lines
+    )
+    CHILD_OF_MYELOID_context = SubtypeContextFactory(
+        subtype_code="CHILD_OF_MYELOID", depmap_model=myeloid_cell_lines
     )
     # Added so we get 1 result for the Others - heme boxplot
     lymph_cell_lines = [
@@ -364,15 +383,16 @@ def _setup_factories(
         effect_size=narrow_filters.effect_size,
         frac_dep_in=narrow_filters.frac_dep_in if use_genes else None,
     )
+    # never want this to be signficant
     ContextAnalysisFactory(
         dataset=dataset,
         subtype_context=myeloid_context,
         subtype_code="MYELOID",
         out_group="All",
         entity=gene_a if use_genes else compound_a,
-        t_qval=wide_filters.t_qval,
-        effect_size=narrow_filters.effect_size,
-        frac_dep_in=narrow_filters.frac_dep_in if use_genes else None,
+        t_qval=1000,
+        effect_size=1000,
+        frac_dep_in=1000 if use_genes else None,
     )
     ContextAnalysisFactory(
         dataset=dataset,
@@ -383,6 +403,17 @@ def _setup_factories(
         t_qval=narrow_filters.t_qval,
         effect_size=wide_filters.effect_size,
         frac_dep_in=wide_filters.frac_dep_in if use_genes else None,
+    )
+
+    ContextAnalysisFactory(
+        dataset=dataset,
+        subtype_context=CHILD_OF_MYELOID_context,
+        subtype_code="CHILD_OF_MYELOID",
+        out_group="All",
+        entity=gene_a if use_genes else compound_a,
+        t_qval=wide_filters.t_qval,
+        effect_size=narrow_filters.effect_size,
+        frac_dep_in=narrow_filters.frac_dep_in if use_genes else None,
     )
 
     # Added so we get 1 result for the Others - heme boxplot
@@ -793,104 +824,76 @@ def test_get_drug_dotted_line(empty_db_mock_downloads, dataset_name):
     assert drug_dotted_line == None if use_genes else 7.0
 
 
-def _get_box_plot_data(
+def _get_initial_box_plot_data(
     dataset_name: str,
     selected_entity_label: int,
     selected_subtype_code: str,
     tree_type: str,
     entity_type: str,
     selected_entity_id: int,
-    out_group: str,
     fdr,
     abs_effect_size,
     frac_dep_in,
 ) -> Optional[list]:
-    selected_node = SubtypeNode.get_by_code(selected_subtype_code)
-    level_0 = selected_node.level_0
-    other_sig_contexts = ContextAnalysis.get_context_dependencies(
-        level_0_code=level_0,
-        tree_type=tree_type,
-        out_group=out_group,
+    node_entity_data = _get_node_entity_data(
         dataset_name=dataset_name,
+        subtype_code=selected_subtype_code,
         entity_type=entity_type,
-        entity_id=selected_entity_id,
+        entity_full_label=selected_entity_label,
+    )
+    assert node_entity_data.entity_id == selected_entity_id
+
+    level_0 = node_entity_data.selected_node.level_0
+    entity_full_row_of_values = node_entity_data.entity_full_row_of_values
+
+    sig_contexts = _get_sig_context_dataframe(
+        selected_subtype_node=node_entity_data.selected_node,
+        tree_type=tree_type,
+        entity_type=entity_type,
+        entity_id=node_entity_data.entity_id,
+        dataset_name=dataset_name,
         fdr=fdr,
         abs_effect_size=abs_effect_size,
         frac_dep_in=frac_dep_in,
     )
 
-    other_sig_contexts_subtype_codes = [
-        context.subtype_code for context in other_sig_contexts
-    ]
-
-    contexts_to_plot = SubtypeContext.get_model_ids_for_node_branch(
-        other_sig_contexts_subtype_codes
+    drug_dotted_line = (
+        entity_full_row_of_values.mean() if entity_type == "compound" else None
     )
 
-    (entity_full_row_of_values) = get_full_row_of_values_and_depmap_ids(
-        dataset_name=dataset_name, label=selected_entity_label
-    )
-    entity_full_row_of_values.dropna(inplace=True)
-
-    box_plot_data_list = []
-
-    if contexts_to_plot is None:
-        return {
-            "box_plot_data": None,
-            "heme_box_plot_data": None,
-            "solid_box_plot_data": None,
-        }
-
-    for subtype_code in contexts_to_plot.keys():
-        box_plot_data = get_box_plot_data_for_context(
-            subtype_code=subtype_code,
-            entity_full_row_of_values=entity_full_row_of_values,
-            model_ids=contexts_to_plot[subtype_code],
-        )
-        box_plot_data_list.append(box_plot_data)
-
-    heme_box_plot_data = get_box_plot_data_for_other_category(
-        category="heme",
-        significant_subtype_codes=list(contexts_to_plot.keys()),
+    context_box_plot_data = get_context_plot_box_data(
+        sig_contexts=sig_contexts,
+        level_0=level_0,
+        node_entity_data=node_entity_data,
         entity_full_row_of_values=entity_full_row_of_values,
+        drug_dotted_line=drug_dotted_line,
     )
 
-    solid_box_plot_data = get_box_plot_data_for_other_category(
-        category="solid",
-        significant_subtype_codes=list(contexts_to_plot.keys()),
-        entity_full_row_of_values=entity_full_row_of_values,
+    return dataclasses.asdict(context_box_plot_data)
+
+
+def _get_subtype_branch_box_plot_data(
+    level_0_code: str,
+    tree_type: str,
+    entity_type: str,
+    entity_full_label: str,
+    dataset_name: str,
+    fdr: List[float],
+    abs_effect_size: List[float],
+    frac_dep_in: List[float],
+) -> Optional[list]:
+    subtype_branch_plot_data = get_subtype_branch_box_plot_data(
+        selected_subtype_code=level_0_code,
+        tree_type=tree_type,
+        entity_type=entity_type,
+        entity_full_label=entity_full_label,
+        dataset_name=dataset_name,
+        fdr=fdr,
+        abs_effect_size=abs_effect_size,
+        frac_dep_in=frac_dep_in,
     )
 
-    assert entity_full_row_of_values.values.tolist() == [num for num in range(21)]
-    assert entity_full_row_of_values.index.tolist() == [
-        "ACH-0es",
-        "ACH-1es",
-        "ACH-2es",
-        "ACH-3es",
-        "ACH-4es",
-        "ACH-0lung",
-        "ACH-1lung",
-        "ACH-2lung",
-        "ACH-3lung",
-        "ACH-4lung",
-        "ACH-0os",
-        "ACH-1os",
-        "ACH-2os",
-        "ACH-3os",
-        "ACH-4os",
-        "ACH-0myeloid",
-        "ACH-1myeloid",
-        "ACH-2myeloid",
-        "ACH-3myeloid",
-        "ACH-4myeloid",
-        "ACH-1LYMPH",
-    ]
-
-    return {
-        "box_plot_data": box_plot_data_list,
-        "heme_box_plot_data": heme_box_plot_data,
-        "solid_box_plot_data": solid_box_plot_data,
-    }
+    return dataclasses.asdict(subtype_branch_plot_data)
 
 
 @pytest.mark.parametrize(
@@ -910,27 +913,42 @@ def test_get_box_plot_data(empty_db_mock_downloads, dataset_name):
     selected_entity_label = gene_a.label if use_genes else compound_a.label
     selected_entity_id = gene_a.entity_id if use_genes else compound_a.entity_id
 
+    ### Test - the User is on the Lineage tab and selects "BONE". Then, the
+    ### user selects a specific gene/compound from either the scatter plots or
+    ### the data table.
     selected_subtype_code = "BONE"
     tree_type = "Lineage"
 
-    data = _get_box_plot_data(
+    data = _get_initial_box_plot_data(
         dataset_name,
         selected_entity_label,
         selected_subtype_code,
         tree_type,
         entity_type,
         selected_entity_id,
-        out_group="All",
         fdr=all_range.fdr,
         abs_effect_size=all_range.abs_effect_size,
         frac_dep_in=all_range.frac_dep_in,
     )
 
-    box_plot_data = data["box_plot_data"]
+    breakpoint()
 
-    assert box_plot_data == [
-        {
-            "label": "BONE_NODE",
+    assert data["significant_selection"] == {
+        "ES": {
+            "label": "ES",
+            "path": ["ES"],
+            "data": [0, 1, 2, 3, 4],
+            "cell_line_display_names": ["0es", "1es", "2es", "3es", "4es"],
+        },
+        "OS": {
+            "label": "OS",
+            "path": ["OS"],
+            "data": [10, 11, 12, 13, 14],
+            "cell_line_display_names": ["0os", "1os", "2os", "3os", "4os"],
+        },
+        "BONE": {
+            "label": "BONE",
+            "path": ["BONE"],
             "data": [0, 1, 2, 3, 4, 10, 11, 12, 13, 14],
             "cell_line_display_names": [
                 "0es",
@@ -945,18 +963,15 @@ def test_get_box_plot_data(empty_db_mock_downloads, dataset_name):
                 "4os",
             ],
         },
-        {
-            "label": "ES_NODE",
-            "data": [0, 1, 2, 3, 4],
-            "cell_line_display_names": ["0es", "1es", "2es", "3es", "4es"],
-        },
-        {
-            "label": "OS_NODE",
-            "data": [10, 11, 12, 13, 14],
-            "cell_line_display_names": ["0os", "1os", "2os", "3os", "4os"],
-        },
-        {
-            "label": "LUNG_NODE",
+    }
+    assert data["insignifcant_selection"] == {"Other BONE": []}
+
+    ## IMPORTANT - significant_other should only contain level_0 nodes
+    ## so that the rest can be lazy loaded with the endpoint subtype_branch_box_plot_data
+    assert data["significant_other"] == {
+        "LUNG": {
+            "label": "LUNG",
+            "path": ["LUNG"],
             "data": [5, 6, 7, 8, 9],
             "cell_line_display_names": [
                 "lung_line_0",
@@ -965,45 +980,110 @@ def test_get_box_plot_data(empty_db_mock_downloads, dataset_name):
                 "lung_line_3",
                 "lung_line_4",
             ],
-        },
-        {
-            "label": "MYELOID_NODE",
-            "data": [15, 16, 17, 18, 19],
-            "cell_line_display_names": [
-                "myeloid_0",
-                "myeloid_1",
-                "myeloid_2",
-                "myeloid_3",
-                "myeloid_4",
-            ],
-        },
-        {
-            "label": "AML_NODE",
-            "data": [15, 16, 17, 18, 19],
-            "cell_line_display_names": [
-                "myeloid_0",
-                "myeloid_1",
-                "myeloid_2",
-                "myeloid_3",
-                "myeloid_4",
-            ],
-        },
-    ]
-
-    assert data["heme_box_plot_data"] == {
-        "label": "Heme",
-        "data": [20],
-        "cell_line_display_names": ["LYMPH_1"],
+        }
     }
-    assert data["solid_box_plot_data"] == {
-        "label": "Solid",
-        "data": [],
-        "cell_line_display_names": [],
+    assert data["insignificant_heme_data"] == {
+        "label": "Other Heme",
+        "data": [15, 16, 17, 18, 19, 20],
+        "cell_line_display_names": [
+            "myeloid_0",
+            "myeloid_1",
+            "myeloid_2",
+            "myeloid_3",
+            "myeloid_4",
+            "LYMPH_1",
+        ],
+        "path": None,
+    }
+    assert data["insignificant_solid_data"] == {
+        "label": "Other Solid",
+        "data": [0, 1, 2, 3, 4, 10, 11, 12, 13, 14],
+        "cell_line_display_names": [
+            "0es",
+            "1es",
+            "2es",
+            "3es",
+            "4es",
+            "0os",
+            "1os",
+            "2os",
+            "3os",
+            "4os",
+        ],
+        "path": None,
+    }
+
+    ### Test selecting another level 0 with signficant sub contexts but
+    ### no data for "Other <Lineage>"
+    branch_data_0 = _get_subtype_branch_box_plot_data(
+        level_0_code="MYELOID",
+        tree_type=tree_type,
+        entity_type=entity_type,
+        entity_full_label=selected_entity_label,
+        dataset_name=dataset_name,
+        fdr=only_narrow_range.fdr,
+        abs_effect_size=all_range.abs_effect_size,
+        frac_dep_in=all_range.frac_dep_in,
+    )
+    branch_data_1 = _get_subtype_branch_box_plot_data(
+        level_0_code="MYELOID",
+        tree_type=tree_type,
+        entity_type=entity_type,
+        entity_full_label=selected_entity_label,
+        dataset_name=dataset_name,
+        fdr=all_range.fdr,
+        abs_effect_size=all_range.abs_effect_size,
+        frac_dep_in=all_range.frac_dep_in,
+    )
+    breakpoint()
+    assert branch_data_0 == {
+        "significant_box_plot_data": {
+            "AML": {
+                "label": "AML",
+                "path": ["AML"],
+                "data": [15, 16, 17, 18, 19],
+                "cell_line_display_names": [
+                    "myeloid_0",
+                    "myeloid_1",
+                    "myeloid_2",
+                    "myeloid_3",
+                    "myeloid_4",
+                ],
+            }
+        },
+        "insignificant_box_plot_data": {"Other MYELOID": []},  # "Other <Lineage>"
+    }
+
+    branch_data = _get_subtype_branch_box_plot_data(
+        level_0_code="MYELOID",
+        tree_type=tree_type,
+        entity_type=entity_type,
+        entity_full_label=selected_entity_label,
+        dataset_name=dataset_name,
+        fdr=all_range.fdr,
+        abs_effect_size=wide_filters.abs_effect_size,
+        frac_dep_in=all_range.frac_dep_in,
+    )
+
+    ### Test selecting another level 0 with no significant sub-contexts
+    no_sig_sub_contexts_branch_data = _get_subtype_branch_box_plot_data(
+        level_0_code="LUNG",
+        tree_type=tree_type,
+        entity_type=entity_type,
+        entity_full_label=selected_entity_label,
+        dataset_name=dataset_name,
+        fdr=all_range.fdr,
+        abs_effect_size=all_range.abs_effect_size,
+        frac_dep_in=all_range.frac_dep_in,
+    )
+    assert no_sig_sub_contexts_branch_data == {
+        "significant_box_plot_data": {},
+        "insignificant_box_plot_data": {"Other LUNG": []},
     }
 
     # 2. Test selected context is a primary disease.
     selected_subtype_code = "ES"
-    data = _get_box_plot_data(
+    data = _get_initial_box_plot_data(
         dataset_name,
         selected_entity_label,
         selected_subtype_code,
@@ -1033,7 +1113,7 @@ def test_get_box_plot_data(empty_db_mock_downloads, dataset_name):
 
     # test nothing_range
     selected_subtype_code = "ES"
-    data = _get_box_plot_data(
+    data = _get_initial_box_plot_data(
         dataset_name,
         selected_entity_label,
         selected_subtype_code,

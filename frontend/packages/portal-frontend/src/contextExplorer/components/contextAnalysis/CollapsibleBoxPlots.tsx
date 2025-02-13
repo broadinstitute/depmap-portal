@@ -1,9 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { Panel, PanelGroup } from "react-bootstrap";
 import {
+  BoxCardData,
+  BoxData,
   ContextExplorerDatasets,
   ContextNameInfo,
   ContextPlotBoxData,
+  OtherBoxCardData,
   TreeType,
 } from "src/contextExplorer/models/types";
 import styles from "src/contextExplorer/styles/ContextExplorer.scss";
@@ -14,7 +17,6 @@ import {
 } from "src/contextExplorer/utils";
 import { DepmapApi } from "src/dAPI";
 import BoxPlot, { BoxPlotInfo } from "src/plot/components/BoxPlot";
-import BranchBoxPlots from "./BranchBoxPlots";
 import { fetchUrlPrefix } from "src/common/utilities/context";
 
 const EntityBoxColorList = [
@@ -70,7 +72,6 @@ function CollapsibleBoxPlots({
 
   const urlPrefix = `${window.location.protocol}//${window.location.host}${relativeUrlPrefix}`;
 
-  // API call to get the data under this level_0. Cache this!!!
   const [
     selectedLevelZeroBoxData,
     setSelectedLevelZeroBoxData,
@@ -78,9 +79,11 @@ function CollapsibleBoxPlots({
   const [selectedContextBoxData, setSelectedContextBoxData] = useState<
     BoxPlotInfo[] | null
   >(null);
-  const [otherSigLevelZeroBoxData, setOtherSigLevelZeroBoxData] = useState<
-    BoxPlotInfo[]
-  >([]);
+
+  const [otherSigBoxData, setOtherSigBoxData] = useState<OtherBoxCardData[]>(
+    []
+  );
+
   const [otherBoxData, setOtherBoxData] = useState<BoxPlotInfo[]>([]);
   const [xAxisRange, setXAxisRange] = useState<any>(null);
 
@@ -90,6 +93,49 @@ function CollapsibleBoxPlots({
   //   : COMPOUND_BOX_PLOT_X_AXIS_TITLE;
 
   const drugDottedLine = boxPlotData?.drug_dotted_line;
+
+  const formatBoxData = (
+    boxData: { [key: string]: BoxData },
+    insigBoxData: BoxData,
+    levelZeroCode: string,
+    count: number
+  ) => {
+    const formattedBoxData: BoxPlotInfo[] = [];
+    const codes = Object.keys(boxData);
+    for (let index = 0; index < codes.length; index++) {
+      const code = codes[index];
+      const box = boxData[code];
+
+      if (code === levelZeroCode) {
+        continue;
+      }
+
+      const info = {
+        name: box.path!.join("/"),
+        hoverLabels: box.cell_line_display_names,
+        xVals: box.data,
+        color: {
+          ...EntityBoxColorList[count],
+          a: 1 / (index + 0.3),
+        },
+        lineColor: "#000000",
+      };
+      formattedBoxData.push(info);
+    }
+
+    if (insigBoxData?.data && insigBoxData.data.length > 0) {
+      formattedBoxData.push({
+        name: insigBoxData.label,
+        hoverLabels: insigBoxData.cell_line_display_names,
+        xVals: insigBoxData.data,
+        color: InsignificantColor,
+        lineColor: "#000000",
+        pointLineColor: "#000000",
+      });
+    }
+
+    return formattedBoxData;
+  };
 
   useEffect(() => {
     if (
@@ -147,29 +193,33 @@ function CollapsibleBoxPlots({
         });
       }
 
-      const otherSigLevel0PlotInfo: BoxPlotInfo[] = [];
-      if (boxPlotData.significant_other) {
-        Object.keys(boxPlotData.significant_other).forEach(
-          (plotTitle, index) => {
-            const plotData = boxPlotData.significant_other[plotTitle];
-            if (plotData.data.length > 0) {
-              otherSigLevel0PlotInfo.push({
-                name: plotData.label,
-                code: plotData.label,
-                hoverLabels: plotData.cell_line_display_names,
-                xVals: plotData.data,
-                color: {
-                  ...EntityBoxColorList[boxCardCount],
-                  a: 0.7,
+      if (boxPlotData.other_cards) {
+        const otherBoxCards = boxPlotData.other_cards.map(
+          (cardData: BoxCardData) => {
+            boxCardCount = boxCardCount + 1;
+            const level0Data = cardData.significant[cardData.level_0_code];
+            return {
+              [cardData.level_0_code]: {
+                levelZeroPlotInfo: {
+                  name: level0Data.label,
+                  hoverLabels: level0Data.cell_line_display_names,
+                  xVals: level0Data.data,
+                  color: { ...EntityBoxColorList[boxCardCount], a: 0.7 },
+                  lineColor: "#000000",
                 },
-                lineColor: "#000000",
-              });
-              boxCardCount = boxCardCount + 1;
-            }
+                subContextInfo: formatBoxData(
+                  cardData.significant,
+                  cardData.insignifcant,
+                  cardData.level_0_code,
+                  boxCardCount
+                ),
+              },
+            };
           }
         );
+
+        setOtherSigBoxData(otherBoxCards);
       }
-      setOtherSigLevelZeroBoxData(otherSigLevel0PlotInfo);
 
       const hemePlotData = boxPlotData.insignificant_heme_data;
       const otherData = [];
@@ -334,36 +384,78 @@ function CollapsibleBoxPlots({
         )}
       </Panel>
       <>
-        {otherSigLevelZeroBoxData?.map((levelOBoxData: BoxPlotInfo) => (
-          <Panel
-            eventKey={levelOBoxData.name}
-            key={`otherSigLevelZeroBoxData${levelOBoxData.name}`}
-          >
-            <Panel.Heading>
-              <Panel.Title toggle>
-                <div style={{ display: "flex", flexDirection: "row" }}>
-                  <span
-                    style={{
-                      paddingRight: "8px",
-                      paddingTop:
-                        activeKey === levelOBoxData.name ? "0px" : "12px",
-                      fontSize: "12px",
-                      color: "#4479B2",
-                    }}
-                    className={
-                      activeKey === levelOBoxData.name
-                        ? "glyphicon glyphicon-chevron-up"
-                        : "glyphicon glyphicon-chevron-down"
-                    }
-                  />
-                  {activeKey !== levelOBoxData.name ? (
+        {otherSigBoxData?.map((otherCard: OtherBoxCardData) =>
+          Object.keys(otherCard).map((level0Code) => (
+            <Panel
+              eventKey={level0Code}
+              key={`otherSigLevelZeroBoxData${level0Code}`}
+            >
+              <Panel.Heading>
+                <Panel.Title toggle>
+                  <div style={{ display: "flex", flexDirection: "row" }}>
+                    <span
+                      style={{
+                        paddingRight: "8px",
+                        paddingTop: activeKey === level0Code ? "0px" : "12px",
+                        fontSize: "12px",
+                        color: "#4479B2",
+                      }}
+                      className={
+                        activeKey === level0Code
+                          ? "glyphicon glyphicon-chevron-up"
+                          : "glyphicon glyphicon-chevron-down"
+                      }
+                    />
+                    {activeKey !== level0Code ? (
+                      <BoxPlot
+                        plotName={`${level0Code}-header`}
+                        boxData={[otherCard[level0Code].levelZeroPlotInfo]}
+                        setXAxisRange={setXAxisRange}
+                        xAxisRange={xAxisRange}
+                        plotHeight={
+                          BOX_THICKNESS +
+                          BOX_PLOT_TOP_MARGIN +
+                          BOX_PLOT_BOTTOM_MARGIN
+                        }
+                        xAxisTitle={""}
+                        bottomMargin={BOX_PLOT_BOTTOM_MARGIN}
+                        topMargin={BOX_PLOT_TOP_MARGIN}
+                        dottedLinePosition={
+                          entityType === "gene" ? -1 : drugDottedLine || -1.74
+                        }
+                      />
+                    ) : (
+                      activeKey === level0Code && (
+                        <span
+                          style={{
+                            fontSize: "12px",
+                            fontWeight:
+                              selectedCode === level0Code ? "600" : "normal",
+                            color:
+                              selectedCode === level0Code
+                                ? "#333333"
+                                : "#4479B2",
+                          }}
+                        >
+                          {level0Code}
+                        </span>
+                      )
+                    )}
+                  </div>
+                </Panel.Title>
+              </Panel.Heading>
+              <Panel.Body collapsible>
+                {activeKey === level0Code &&
+                  otherCard[level0Code].subContextInfo.length > 0 && (
                     <BoxPlot
-                      plotName={`${levelOBoxData}-header`}
-                      boxData={[levelOBoxData]}
+                      plotName={`${level0Code} box plot`}
+                      boxData={otherCard[level0Code].subContextInfo}
+                      onLoad={() => {}}
                       setXAxisRange={setXAxisRange}
                       xAxisRange={xAxisRange}
                       plotHeight={
-                        BOX_THICKNESS +
+                        otherCard[level0Code].subContextInfo.length *
+                          BOX_THICKNESS +
                         BOX_PLOT_TOP_MARGIN +
                         BOX_PLOT_BOTTOM_MARGIN
                       }
@@ -374,52 +466,11 @@ function CollapsibleBoxPlots({
                         entityType === "gene" ? -1 : drugDottedLine || -1.74
                       }
                     />
-                  ) : (
-                    levelOBoxData &&
-                    activeKey === levelOBoxData.name && (
-                      <span
-                        style={{
-                          fontSize: "12px",
-                          fontWeight:
-                            selectedCode === levelOBoxData.name
-                              ? "600"
-                              : "normal",
-                          color:
-                            selectedCode === levelOBoxData.name
-                              ? "#333333"
-                              : "#4479B2",
-                        }}
-                      >
-                        {levelOBoxData.name}
-                      </span>
-                    )
                   )}
-                </div>
-              </Panel.Title>
-            </Panel.Heading>
-            <Panel.Body collapsible>
-              {activeKey === levelOBoxData.name && (
-                <BranchBoxPlots
-                  color={levelOBoxData.color}
-                  urlPrefix={urlPrefix}
-                  dapi={dapi}
-                  treeType={treeType}
-                  datasetName={datasetName}
-                  entityType={entityType}
-                  entityFullLabel={entityFullLabel}
-                  fdr={fdr}
-                  absEffectSize={absEffectSize}
-                  levelZeroCode={levelOBoxData.code!}
-                  fracDepIn={fracDepIn}
-                  dottedLinePosition={
-                    entityType === "gene" ? -1 : drugDottedLine || -1.74
-                  }
-                  isLazy
-                />
-              )}
-            </Panel.Body>
-          </Panel>
-        ))}
+              </Panel.Body>
+            </Panel>
+          ))
+        )}
       </>
       <Panel eventKey="OTHER">
         <Panel.Body>

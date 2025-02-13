@@ -5,6 +5,7 @@ import {
   DataTypeStrings,
   OutGroupType,
   ContextExplorerDatasets,
+  BoxData,
 } from "./models/types";
 import update from "immutability-helper";
 import { DataExplorerContext } from "@depmap/types";

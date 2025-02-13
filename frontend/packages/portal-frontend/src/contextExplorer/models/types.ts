@@ -1,3 +1,5 @@
+import { BoxPlotInfo } from "src/plot/components/BoxPlot";
+
 export enum ContextExplorerDatasets {
   Chronos_Combined = "Chronos_Combined",
   Rep_all_single_pt = "Rep_all_single_pt",
@@ -185,19 +187,27 @@ export interface BoxData {
   cell_line_display_names: string[];
 }
 
+export interface BoxCardData {
+  significant: { [key: string]: BoxData };
+  insignifcant: BoxData;
+  level_0_code: string;
+}
+
 export interface ContextPlotBoxData {
   significant_selection: { [key: string]: BoxData };
   insignifcant_selection: BoxData;
-  significant_other: { [key: string]: BoxData };
+  other_cards: BoxCardData[];
   insignificant_heme_data: BoxData;
   insignificant_solid_data: BoxData;
   drug_dotted_line: number;
   entity_label: string;
 }
 
-export interface SubtypeBranchBoxPlotData {
-  significant_box_plot_data: { [key: string]: BoxData };
-  insignificant_box_plot_data: BoxData;
+export interface OtherBoxCardData {
+  [key: string]: {
+    levelZeroPlotInfo: BoxPlotInfo;
+    subContextInfo: BoxPlotInfo[];
+  };
 }
 
 export enum TabTypes {

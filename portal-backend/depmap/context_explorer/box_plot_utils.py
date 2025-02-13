@@ -1,22 +1,17 @@
-from typing import Dict, List, Literal, Optional
+from dataclasses import dataclass
+from typing import Any, Dict, List, Literal, Optional
 from depmap.cell_line.models_new import DepmapModel
 from depmap.context_explorer.models import ContextAnalysis
 import pandas as pd
 
 from depmap.context_explorer import utils
 from depmap.context.models_new import SubtypeNode, SubtypeContext
-from depmap.context_explorer.models import (
-    ContextPlotBoxData,
-    BoxData,
-    NodeEntityData,
-    SubtypeBranchBoxPlotData,
-)
+from depmap.context_explorer.models import ContextPlotBoxData, BoxData, NodeEntityData
 
 
 def _get_node_entity_data(
-    dataset_name: str, subtype_code: str, entity_type: str, entity_full_label: str
+    dataset_name: str, entity_type: str, entity_full_label: str
 ) -> NodeEntityData:
-    selected_node = SubtypeNode.get_by_code(subtype_code)
     entity_id_and_label = utils.get_entity_id_from_entity_full_label(
         entity_type=entity_type, entity_full_label=entity_full_label
     )
@@ -29,7 +24,6 @@ def _get_node_entity_data(
     entity_full_row_of_values.dropna(inplace=True)
 
     return NodeEntityData(
-        selected_node=selected_node,
         entity_id=entity_id,
         entity_label=entity_label,
         entity_full_row_of_values=entity_full_row_of_values,
@@ -41,7 +35,6 @@ def get_box_plot_card_data(
     all_sig_context_codes: List[str],
     model_ids_by_code: Dict[str, List[str]],
     entity_full_row_of_values: pd.Series,
-    include_level_0: bool = True,
 ):
     significant_box_plot_data = {}
     insignificant_box_plot_data = {}
@@ -49,19 +42,19 @@ def get_box_plot_card_data(
     codes_with_less_than_5_models = []
 
     child_codes = model_ids_by_code.keys()
+
     for child in child_codes:
         if child in all_sig_context_codes:
             context_model_ids = model_ids_by_code[child]
             # This rule should be enforced in get_context_analysis.py. If this assertion gets hit,
             # something is wrong with our pipeline script.
             if len(context_model_ids) >= 5:
-                if include_level_0 or child != level_0_code:
-                    box_plot = get_box_plot_data_for_context(
-                        subtype_code=child,
-                        entity_full_row_of_values=entity_full_row_of_values,
-                        model_ids=context_model_ids,
-                    )
-                    significant_box_plot_data[child] = box_plot
+                box_plot = get_box_plot_data_for_context(
+                    subtype_code=child,
+                    entity_full_row_of_values=entity_full_row_of_values,
+                    model_ids=context_model_ids,
+                )
+                significant_box_plot_data[child] = box_plot
                 all_sig_models.extend(context_model_ids)
             else:
                 codes_with_less_than_5_models.extend(context_model_ids)
@@ -103,6 +96,7 @@ def get_box_plot_card_data(
     return {
         "significant": significant_box_plot_data,
         "insignificant": insignificant_box_plot_data,
+        "level_0_code": level_0_code,
     }
 
 
@@ -201,7 +195,6 @@ def get_branch_subtype_codes_organized_by_code(
 
 
 def _get_sig_context_dataframe(
-    selected_subtype_node: SubtypeNode,
     tree_type: str,
     entity_type: str,
     entity_id: str,
@@ -209,14 +202,10 @@ def _get_sig_context_dataframe(
     fdr: List[float],
     abs_effect_size: List[float],
     frac_dep_in: List[float],
-    do_get_other_branch_0s: bool = True,
 ) -> pd.DataFrame:
     # If this doesn't find the node, something is wrong with how we
     # loaded the SubtypeNode database table data.
-    level_0 = selected_subtype_node.level_0
-
     sig_contexts = ContextAnalysis.get_context_dependencies(
-        level_0_code=level_0,
         tree_type=tree_type,
         entity_id=entity_id,
         dataset_name=dataset_name,
@@ -224,56 +213,48 @@ def _get_sig_context_dataframe(
         fdr=fdr,
         abs_effect_size=abs_effect_size,
         frac_dep_in=frac_dep_in,
-        do_get_other_branch_0s=do_get_other_branch_0s,
     )
 
     return sig_contexts
 
 
-def get_organized_significant_contexts(
-    selected_subtype_code: str,
-    tree_type: str,
-    entity_type: str,
-    entity_full_label: str,
-    dataset_name: str,
-    fdr: List[float],
-    abs_effect_size: List[float],
-    frac_dep_in: List[float],
-    do_get_other_branch_0s: bool = True,
-) -> ContextPlotBoxData:
-    node_entity_data = _get_node_entity_data(
-        dataset_name=dataset_name,
-        subtype_code=selected_subtype_code,
-        entity_type=entity_type,
-        entity_full_label=entity_full_label,
-    )
-    level_0 = node_entity_data.selected_node.level_0
-    entity_full_row_of_values = node_entity_data.entity_full_row_of_values
+def get_card_data(
+    level_0: str,
+    branch_contexts: dict,
+    node_entity_data: NodeEntityData,
+    all_sig_context_codes: List[str],
+    entity_full_row_of_values: pd.Series,
+):
+    # These are all the level_0 codes that need a box plot "card," but these
+    # codes aren't necessarily all significant. If a code appears in this list,
+    # either the code and/or 1 or more of it's children are significant.
+    if branch_contexts != None:
+        assert (
+            level_0 in branch_contexts.keys()
+        ), f" level_0: {level_0}, entity_label {node_entity_data.entity_label}, node {node_entity_data.selected_node.node_name}"
+        selected_context_level_0 = branch_contexts[level_0]
+        if selected_context_level_0 != None:
+            box_plot_card_data = get_box_plot_card_data(
+                level_0_code=level_0,
+                all_sig_context_codes=all_sig_context_codes,
+                model_ids_by_code=selected_context_level_0,
+                entity_full_row_of_values=entity_full_row_of_values,
+            )
 
-    sig_contexts = _get_sig_context_dataframe(
-        selected_subtype_node=node_entity_data.selected_node,
-        tree_type=tree_type,
-        entity_type=entity_type,
-        entity_id=node_entity_data.entity_id,
-        dataset_name=dataset_name,
-        fdr=fdr,
-        abs_effect_size=abs_effect_size,
-        frac_dep_in=frac_dep_in,
-        do_get_other_branch_0s=do_get_other_branch_0s,
-    )
-    (entity_full_row_of_values) = utils.get_full_row_of_values_and_depmap_ids(
-        dataset_name=dataset_name, label=node_entity_data.entity_label
-    )
-    entity_full_row_of_values.dropna(inplace=True)
+            return box_plot_card_data
 
-    drug_dotted_line = (
-        entity_full_row_of_values.mean() if entity_type == "compound" else None
-    )
 
+def get_context_plot_box_data(
+    sig_contexts: pd.DataFrame,
+    level_0: str,
+    node_entity_data: NodeEntityData,
+    entity_full_row_of_values: pd.Series,
+    drug_dotted_line: Any,
+):
     heme_box_plot_data = {}
     solid_box_plot_data = {}
-    other_sig_level_0_box_plot_data = {}
-    box_plot_card_data = {}
+    other_box_plot_data = []
+    selected_sig_box_plot_card_data = {}
     if len(sig_contexts) > 0:
         all_sig_context_codes = sig_contexts["subtype_code"].to_list()
         sig_contexts_agg = (
@@ -282,39 +263,29 @@ def get_organized_significant_contexts(
         sig_contexts_by_level_0 = sig_contexts_agg.set_index("level_0").to_dict()[
             "subtype_code"
         ]
-
         branch_contexts = get_branch_subtype_codes_organized_by_code(
             contexts=sig_contexts_by_level_0, level_0=level_0
         )
+        selected_sig_box_plot_card_data = get_card_data(
+            level_0=level_0,
+            branch_contexts=branch_contexts,
+            node_entity_data=node_entity_data,
+            all_sig_context_codes=all_sig_context_codes,
+            entity_full_row_of_values=entity_full_row_of_values,
+        )
 
-        all_significant_level_0_codes = branch_contexts.keys()
-
-        if branch_contexts != None:
-            assert (
-                level_0 in branch_contexts.keys()
-            ), f" level_0: {level_0}, entity_label {node_entity_data.entity_label}, node {node_entity_data.selected_node.node_name}"
-            selected_context_level_0 = branch_contexts[level_0]
-            if selected_context_level_0 != None:
-                box_plot_card_data = get_box_plot_card_data(
-                    level_0_code=level_0,
+        all_level_0_codes = branch_contexts.keys()
+        for other_level_0 in all_level_0_codes:
+            if level_0 != other_level_0:
+                other_sig_data = get_card_data(
+                    level_0=other_level_0,
+                    branch_contexts=branch_contexts,
+                    node_entity_data=node_entity_data,
                     all_sig_context_codes=all_sig_context_codes,
-                    model_ids_by_code=selected_context_level_0,
                     entity_full_row_of_values=entity_full_row_of_values,
                 )
-
-            for other_level_0 in all_significant_level_0_codes:
-                # Is it another signficant level 0? We need a new box plot grouping.
-                if level_0 != other_level_0:
-                    context_model_ids = SubtypeNode.get_model_ids_by_subtype_code_and_node_level(
-                        subtype_code=other_level_0, node_level=0
-                    )
-                    if len(context_model_ids) >= 5:
-                        box_plot = get_box_plot_data_for_context(
-                            subtype_code=other_level_0,
-                            entity_full_row_of_values=entity_full_row_of_values,
-                            model_ids=context_model_ids,
-                        )
-                        other_sig_level_0_box_plot_data[other_level_0] = box_plot
+                if other_sig_data is not None:
+                    other_box_plot_data.append(other_sig_data)
 
         heme_box_plot_data = get_box_plot_data_for_other_category(
             category="heme",
@@ -329,16 +300,20 @@ def get_organized_significant_contexts(
         )
 
         significant_selection = (
-            None if not box_plot_card_data else box_plot_card_data["significant"]
+            None
+            if not selected_sig_box_plot_card_data
+            else selected_sig_box_plot_card_data["significant"]
         )
         insignifcant_selection = (
-            None if not box_plot_card_data else box_plot_card_data["insignificant"]
+            None
+            if not selected_sig_box_plot_card_data
+            else selected_sig_box_plot_card_data["insignificant"]
         )
 
         return ContextPlotBoxData(
             significant_selection=significant_selection,
             insignifcant_selection=insignifcant_selection,
-            significant_other=other_sig_level_0_box_plot_data,
+            other_cards=other_box_plot_data,
             insignificant_heme_data=heme_box_plot_data,
             insignificant_solid_data=solid_box_plot_data,
             drug_dotted_line=drug_dotted_line,
@@ -346,7 +321,7 @@ def get_organized_significant_contexts(
         )
 
 
-def get_subtype_branch_box_plot_data(
+def get_organized_significant_contexts(
     selected_subtype_code: str,
     tree_type: str,
     entity_type: str,
@@ -355,18 +330,16 @@ def get_subtype_branch_box_plot_data(
     fdr: List[float],
     abs_effect_size: List[float],
     frac_dep_in: List[float],
-):
+) -> ContextPlotBoxData:
+    level_0 = SubtypeNode.get_by_code(selected_subtype_code).level_0
     node_entity_data = _get_node_entity_data(
         dataset_name=dataset_name,
-        subtype_code=selected_subtype_code,
         entity_type=entity_type,
         entity_full_label=entity_full_label,
     )
-    level_0 = node_entity_data.selected_node.level_0
     entity_full_row_of_values = node_entity_data.entity_full_row_of_values
 
     sig_contexts = _get_sig_context_dataframe(
-        selected_subtype_node=node_entity_data.selected_node,
         tree_type=tree_type,
         entity_type=entity_type,
         entity_id=node_entity_data.entity_id,
@@ -374,29 +347,22 @@ def get_subtype_branch_box_plot_data(
         fdr=fdr,
         abs_effect_size=abs_effect_size,
         frac_dep_in=frac_dep_in,
-        do_get_other_branch_0s=False,
+    )
+    (entity_full_row_of_values) = utils.get_full_row_of_values_and_depmap_ids(
+        dataset_name=dataset_name, label=node_entity_data.entity_label
+    )
+    entity_full_row_of_values.dropna(inplace=True)
+
+    drug_dotted_line = (
+        entity_full_row_of_values.mean() if entity_type == "compound" else None
     )
 
-    all_sig_context_codes = sig_contexts["subtype_code"].to_list()
-    model_ids_by_code = SubtypeContext.get_model_ids_for_node_branch(
-        all_sig_context_codes, level_0_subtype_code=level_0
-    )
-
-    if model_ids_by_code is {}:
-        {
-            "significant_box_plot_data": None,
-            "insignificant_box_plot_data": None,
-        }
-
-    box_plot_card_data = get_box_plot_card_data(
-        level_0_code=level_0,
-        all_sig_context_codes=all_sig_context_codes,
-        model_ids_by_code=model_ids_by_code,
+    context_box_plot_data = get_context_plot_box_data(
+        sig_contexts=sig_contexts,
+        level_0=level_0,
+        node_entity_data=node_entity_data,
         entity_full_row_of_values=entity_full_row_of_values,
-        include_level_0=False,
+        drug_dotted_line=drug_dotted_line,
     )
 
-    return SubtypeBranchBoxPlotData(
-        significant_box_plot_data=box_plot_card_data["significant"],
-        insignificant_box_plot_data=box_plot_card_data["insignificant"],
-    )
+    return context_box_plot_data

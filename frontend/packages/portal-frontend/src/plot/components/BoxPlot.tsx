@@ -35,8 +35,6 @@ function BoxPlot({
   plotName,
   dottedLinePosition,
   onLoad = () => {},
-  doLinkYAxisLabels = true,
-  selectedCode = undefined,
   plotHeight = undefined,
   xAxisRange = undefined,
   xAxisTitle = undefined,

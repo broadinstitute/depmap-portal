@@ -31,10 +31,17 @@ class BoxData:
 
 
 @dataclass
+class BoxCardData:
+    significant: Dict[str, BoxData]
+    insignifcant: BoxData
+    level_0_code: str
+
+
+@dataclass
 class ContextPlotBoxData:
     significant_selection: Dict[str, BoxData]
     insignifcant_selection: BoxData
-    significant_other: Dict[str, BoxData]
+    other_cards: List[BoxCardData]
     insignificant_heme_data: BoxData
     insignificant_solid_data: BoxData
     drug_dotted_line: Any
@@ -42,14 +49,7 @@ class ContextPlotBoxData:
 
 
 @dataclass
-class SubtypeBranchBoxPlotData:
-    significant_box_plot_data: Dict[str, BoxData]
-    insignificant_box_plot_data: BoxData
-
-
-@dataclass
 class NodeEntityData:
-    selected_node: SubtypeNode
     entity_id: str
     entity_label: str
     entity_full_row_of_values: pd.Series
@@ -301,8 +301,6 @@ class ContextAnalysis(Model):
 
     @staticmethod
     def get_context_dependencies(
-        level_0_code: str,
-        do_get_other_branch_0s: bool,
         tree_type: str,
         entity_id: int,
         dataset_name: str,
@@ -312,24 +310,6 @@ class ContextAnalysis(Model):
         frac_dep_in: List[float],
     ):
         assert dataset_name in DependencyEnum.values()
-
-        subtype_node_filter = (
-            or_(
-                and_(
-                    SubtypeNode.tree_type == tree_type,
-                    SubtypeNode.level_0 == level_0_code,
-                ),
-                and_(
-                    SubtypeNode.tree_type == tree_type,
-                    SubtypeNode.level_0 != level_0_code,
-                    SubtypeNode.node_level == 0,
-                ),
-            )
-            if do_get_other_branch_0s
-            else and_(
-                SubtypeNode.tree_type == tree_type, SubtypeNode.level_0 == level_0_code,
-            )
-        )
 
         dependency_dataset_id = DependencyDataset.get_dataset_by_name(
             dataset_name
@@ -352,7 +332,7 @@ class ContextAnalysis(Model):
                     SubtypeNode,
                     SubtypeNode.subtype_code == ContextAnalysis.subtype_code,
                 )
-                .filter(subtype_node_filter)
+                .filter(SubtypeNode.tree_type == tree_type)
                 # frontend will be organized into cards based on level 0, so we need to make sure we know
                 # the level 0 of each subtype_code returned
                 .with_entities(SubtypeNode.level_0, SubtypeNode.subtype_code)
@@ -377,7 +357,7 @@ class ContextAnalysis(Model):
                     SubtypeNode,
                     SubtypeNode.subtype_code == ContextAnalysis.subtype_code,
                 )
-                .filter(subtype_node_filter)
+                .filter(SubtypeNode.tree_type == tree_type)
                 .with_entities(SubtypeNode.level_0, SubtypeNode.subtype_code)
                 .order_by(desc(ContextAnalysis.mean_in))
                 .all()

@@ -3,11 +3,7 @@ from typing import Dict, List, Literal, Tuple, Union
 import os
 from depmap.cell_line.models_new import DepmapModel
 from depmap.compound.models import Compound, CompoundExperiment
-from depmap.context_explorer.utils import (
-    get_full_row_of_values_and_depmap_ids,
-    get_entity_id_from_entity_full_label,
-    get_path_to_node,
-)
+from depmap.context_explorer.utils import get_path_to_node
 from depmap.context_explorer import box_plot_utils, dose_curve_utils
 from depmap.tda.views import convert_series_to_json_safe_list
 from flask_restplus import Namespace, Resource
@@ -481,40 +477,6 @@ class ContextDoseCurves(Resource):
             "min_dose": dose_curve_info["dose_curve_info"]["min_dose"],
             "dose_curve_metadata": dose_curve_metadata,
         }
-
-
-@namespace.route("/subtype_branch_box_plot_data")
-class SubtypeBranchBoxPlotData(Resource):
-    @namespace.doc(
-        description="",
-    )  # the flask url_for endpoint is automagically the snake case of the namespace prefix plus class name
-    def get(self):
-        # The level_0 context will be displayed on a accordion card with its box plot
-        # The user can click the carot to open the card.
-        # On click we want to load the signficant children of that level_0. Include the level_0
-        # for if they collapse it again. Any children non signficant sort into
-        # "Other {level_0_code}"
-        level_0_code = request.args.get("selected_subtype_code")
-        tree_type = request.args.get("tree_type")
-        dataset_name = request.args.get("dataset_name")
-        entity_type = request.args.get("entity_type")
-        entity_full_label = request.args.get("entity_full_label")
-        fdr = request.args.getlist("fdr", type=float)
-        abs_effect_size = request.args.getlist("abs_effect_size", type=float)
-        frac_dep_in = request.args.getlist("frac_dep_in", type=float)
-
-        subtype_branch_box_plot_data = box_plot_utils.get_subtype_branch_box_plot_data(
-            selected_subtype_code=level_0_code,
-            tree_type=tree_type,
-            entity_type=entity_type,
-            entity_full_label=entity_full_label,
-            dataset_name=dataset_name,
-            fdr=fdr,
-            abs_effect_size=abs_effect_size,
-            frac_dep_in=frac_dep_in,
-        )
-
-        return dataclasses.asdict(subtype_branch_box_plot_data)
 
 
 @namespace.route("/context_box_plot_data")

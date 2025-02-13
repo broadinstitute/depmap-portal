@@ -217,34 +217,10 @@ class SubtypeContext(Model):
     # Only used for Context Explorer box plots
     @staticmethod
     def get_model_ids_for_node_branch(
-        subtype_codes: List[str], level_0_subtype_code: str, do_get_other_level_0s=False
+        subtype_codes: List[str], level_0_subtype_code: str
     ) -> Optional[Dict[str, List[str]]]:
 
-        include_other_level_0_filters = or_(
-            SubtypeNode.level_0.in_(subtype_codes),
-            and_(
-                SubtypeNode.level_1.in_(subtype_codes),
-                SubtypeNode.level_0 == level_0_subtype_code,
-            ),
-            and_(
-                SubtypeNode.level_2.in_(subtype_codes),
-                SubtypeNode.level_0 == level_0_subtype_code,
-            ),
-            and_(
-                SubtypeNode.level_3.in_(subtype_codes),
-                SubtypeNode.level_0 == level_0_subtype_code,
-            ),
-            and_(
-                SubtypeNode.level_4.in_(subtype_codes),
-                SubtypeNode.level_0 == level_0_subtype_code,
-            ),
-            and_(
-                SubtypeNode.level_5.in_(subtype_codes),
-                SubtypeNode.level_0 == level_0_subtype_code,
-            ),
-        )
-
-        only_get_nodes_on_this_branch_filters = or_(
+        only_get_nodes_on_this_branch_filters = and_(
             SubtypeNode.level_0 == level_0_subtype_code,
             or_(
                 SubtypeNode.level_1.in_(subtype_codes),
@@ -255,11 +231,7 @@ class SubtypeContext(Model):
             ),
         )
 
-        filters = (
-            include_other_level_0_filters
-            if do_get_other_level_0s
-            else only_get_nodes_on_this_branch_filters
-        )
+        filters = only_get_nodes_on_this_branch_filters
 
         nodes = db.session.query(SubtypeNode).filter(filters).all()
 
