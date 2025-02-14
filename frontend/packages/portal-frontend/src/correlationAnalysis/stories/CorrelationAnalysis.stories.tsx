@@ -3,8 +3,11 @@ import * as Plotly from "plotly.js";
 
 import WideTable from "@depmap/wide-table";
 import { correlationAnalysisData } from "./correlationAnalysisData";
-import { VolcanoPlot } from "../../plot/components/VolcanoPlot";
+import { VolcanoPlot as VolcanoPlotOld } from "../../plot/components/VolcanoPlot";
 import { VolcanoData } from "../../plot/models/volcanoPlotModels";
+import { VolcanoPlot } from "@depmap/plotly-wrapper";
+import { VolcanoTrace } from "@depmap/plotly-wrapper";
+
 export default {
   title: "Components/CorrelationAnalysis",
   component: WideTable,
@@ -17,6 +20,16 @@ export default {
 // "Correlation Coefficient": number;
 // "-log10 qval": number;
 // Rank: number;
+const featureTypes = [
+  "CRISPR knock-out",
+  "Copy number",
+  "Gene expression",
+  "Metabolomics",
+  "Micro RNA",
+  "Proteomics",
+  "Repurposing compounds",
+  "shRNA knockdown",
+];
 
 export function Story() {
   const plotlyRef = React.useRef(null);
@@ -31,19 +44,6 @@ export function Story() {
   );
   console.log(columnNames);
   console.log(columnData);
-
-  // const volcanoData: Array<VolcanoData> = [
-  //   {
-  //     x: columnData["Correlation Coefficient"],
-  //     y: columnData["-log10 qval"].map((x) => {
-  //       return Math.exp(-x);
-  //     }),
-  //     label: columnData["imatinib Dose"],
-  //     text: columnData["Feature"],
-  //     isSignificant: new Array(correlationAnalysisData.length).fill(false),
-  //   },
-  // ];
-  // console.log(volcanoData);
 
   const columnNamesToPlotVariables = {
     "Correlation Coefficient": "x",
@@ -82,13 +82,29 @@ export function Story() {
       {["Gene expression", "CRISPR knock-out", "Repurposing compounds"].map(
         (selectedFeatureType) => {
           return (
-            <VolcanoPlot
-              Plotly={Plotly}
-              // ref={plotlyRef}
-              xLabel="Correlation Coefficient"
-              yLabel="-log10 (q value"
-              data={[volcanoDataForFeatureType[selectedFeatureType]]}
-            />
+            <>
+              <header>Volcano Plot {selectedFeatureType}</header>
+              <VolcanoPlot
+                Plotly={Plotly}
+                xLabel="Correlation Coefficient"
+                yLabel="(q value)"
+                traces={[volcanoDataForFeatureType[selectedFeatureType]]}
+                showAxesOnSameScale={false}
+                cellLinesToHighlight={new Set([])}
+                onPointClick={(point) => {
+                  console.log(point);
+                }}
+                downloadData={[]}
+              />
+              <header>Volcano Plot OLD {selectedFeatureType}</header>
+              <VolcanoPlotOld
+                Plotly={Plotly}
+                // ref={plotlyRef}
+                xLabel="Correlation Coefficient"
+                yLabel="-log10 (q value)"
+                data={[volcanoDataForFeatureType[selectedFeatureType]]}
+              />
+            </>
           );
         }
       )}
