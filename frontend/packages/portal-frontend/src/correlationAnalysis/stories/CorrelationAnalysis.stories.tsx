@@ -55,22 +55,35 @@ export function Story() {
     (acc, curRecord) => {
       const key = curRecord["Feature Type"];
       if (!acc[key]) {
-        acc[key] = { x: [], y: [], label: [], text: [], isSignificant: [] };
+        acc[key] = {};
+      }
+      const doseCategory = curRecord["imatinib Dose"];
+      if (!(doseCategory in acc[key])) {
+        acc[key][doseCategory] = {
+          x: [],
+          y: [],
+          label: [],
+          text: [],
+          isSignificant: [],
+          name: doseCategory,
+        };
       }
       columnNames.forEach((colName) => {
         if (colName in columnNamesToPlotVariables) {
           const value = curRecord[colName];
           if (colName == "-log10 qval") {
             // VolcanoPlotProp `y` data by default log transforms values. To do the complement: Math.exp(-x)
-            acc[key][columnNamesToPlotVariables[colName]].push(
+            acc[key][doseCategory][columnNamesToPlotVariables[colName]].push(
               Math.exp(-value)
             );
           } else {
-            acc[key][columnNamesToPlotVariables[colName]].push(value);
+            acc[key][doseCategory][columnNamesToPlotVariables[colName]].push(
+              value
+            );
           }
         }
       });
-      acc[key]["isSignificant"].push(false);
+      acc[key][doseCategory]["isSignificant"].push(false);
       return acc;
     },
     {}
@@ -88,7 +101,9 @@ export function Story() {
                 Plotly={Plotly}
                 xLabel="Correlation Coefficient"
                 yLabel="(q value)"
-                traces={[volcanoDataForFeatureType[selectedFeatureType]]}
+                traces={Object.values(
+                  volcanoDataForFeatureType[selectedFeatureType]
+                )}
                 showAxesOnSameScale={false}
                 cellLinesToHighlight={new Set([])}
                 onPointClick={(point) => {
@@ -96,13 +111,16 @@ export function Story() {
                 }}
                 downloadData={[]}
               />
+
               <header>Volcano Plot OLD {selectedFeatureType}</header>
               <VolcanoPlotOld
                 Plotly={Plotly}
                 // ref={plotlyRef}
                 xLabel="Correlation Coefficient"
                 yLabel="-log10 (q value)"
-                data={[volcanoDataForFeatureType[selectedFeatureType]]}
+                data={Object.values(
+                  volcanoDataForFeatureType[selectedFeatureType]
+                )}
               />
             </>
           );
