@@ -266,13 +266,13 @@ def get_slice_data(slice_query: SliceQuery) -> pd.Series:
         values_by_sample_id = get_subsetted_df_by_labels(
             slice_query.dataset_id, feature_row_labels=[query_feature_label]
         ).squeeze()
-        return values_by_sample_id
+        result_series = values_by_sample_id
 
     elif slice_query.identifier_type == "feature_label":
         values_by_sample_id = get_subsetted_df_by_labels(
             slice_query.dataset_id, feature_row_labels=[slice_query.identifier]
         ).squeeze()
-        return values_by_sample_id
+        result_series = values_by_sample_id
 
     elif slice_query.identifier_type == "sample_id":
         values_by_feature_label: pd.Series = get_subsetted_df_by_labels(
@@ -281,7 +281,7 @@ def get_slice_data(slice_query: SliceQuery) -> pd.Series:
         feature_ids_by_label = get_dataset_dimension_ids_by_label(
             dataset_id, axis="feature"
         )
-        return values_by_feature_label.rename(feature_ids_by_label)
+        result_series = values_by_feature_label.rename(feature_ids_by_label)
 
     elif slice_query.identifier_type == "sample_label":
         ids_by_label = get_dataset_dimension_ids_by_label(dataset_id, axis="sample")
@@ -293,13 +293,17 @@ def get_slice_data(slice_query: SliceQuery) -> pd.Series:
         feature_ids_by_label = get_dataset_dimension_ids_by_label(
             dataset_id, axis="feature"
         )
-        return values_by_feature_label.rename(feature_ids_by_label)
+        result_series = values_by_feature_label.rename(feature_ids_by_label)
 
     elif slice_query.identifier_type == "column":
-        return get_tabular_dataset_column(dataset_id, slice_query.identifier)
+        result_series = get_tabular_dataset_column(dataset_id, slice_query.identifier)
 
     else:
         raise Exception("Unrecognized slice query identifier type")
+    
+    # remove missing entries
+    result_series = result_series.dropna()
+    return result_series
     
 ###############################################################
 # METHODS BELOW ARE SPECIAL WORKAROUNDS FOR COMPOUND DATASETS #

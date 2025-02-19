@@ -173,8 +173,6 @@ class ComputeUnivariateAssociations(Resource):
             # 3. optionally, a list of cell line depmap ids
             assert slice_query is not None
             query_series = data_access.get_slice_data(slice_query)
-            # remove missing entries because the intersection is assuming we have values for everything. perhaps this should be put into get_slice_data?
-            query_series = query_series[~query_series.isna()]
 
             # cl_query_vector is the intersection of cell lines in both data tracts plus the cell line subset
             (
