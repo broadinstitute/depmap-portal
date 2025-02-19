@@ -595,6 +595,7 @@ export default class CellignerPage extends React.Component<Props, State> {
                   )
                 )
               }
+              allowDownloadFromTableDataWithMenu
               hideSelectAllCheckbox
             />
           </div>
