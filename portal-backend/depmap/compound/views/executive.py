@@ -9,6 +9,7 @@ matplotlib.use(
 import pandas as pd
 
 from depmap import data_access
+from depmap.data_access.models import MatrixDataset
 from depmap.entity.views.executive import (
     format_enrichment_box_for_dataset,
     format_generic_distribution_plot,
@@ -28,7 +29,7 @@ colors = {
 from depmap.correlation.utils import get_all_correlations
 
 from depmap.dataset.models import BiomarkerDataset, DependencyDataset
-from depmap.compound.models import CompoundExperiment
+from depmap.compound.models import Compound, CompoundExperiment
 from depmap.predictability.models import PredictiveModel
 
 from depmap.download.utils import get_download_url
@@ -42,9 +43,10 @@ class DataAvailabilityDataset:
     label: str
     dose_range: str
     assay: str
-    legacy_enum: DependencyEnum
-    # If the dataset exists in breadbox, the breadbox version should be displayed
-    breadbox_given_id: Optional[str]
+    # There are multiple given IDs we may use to load the relevant dataset 
+    # If a re-indexed dataset exists in breadbox, that should be displayed.
+    # Otherwise, just display the legacy version
+    given_ids: list[str]
 
 
 # The set of information to show on the tile on the compound page
@@ -53,43 +55,37 @@ data_availability_datasets = [
         label="CTRP", 
         dose_range="1nM - 10μM", 
         assay="CellTitreGlo", 
-        legacy_enum=DependencyEnum.CTRP_AUC, 
-        breadbox_given_id="CTRP_AUC_collapsed"
+        given_ids=["CTRP_AUC_collapsed", DependencyEnum.CTRP_AUC.name],
     ),
     DataAvailabilityDataset(
         label="GDSC1", 
         dose_range="1nM - 10μM", 
         assay="Resazurin or Syto60", 
-        legacy_enum=DependencyEnum.GDSC1_AUC, 
-        breadbox_given_id="GDSC1_AUC_collapsed"
+        given_ids=["GDSC1_AUC_collapsed", DependencyEnum.GDSC1_AUC.name],
     ),
     DataAvailabilityDataset(
         label="GDSC2", 
         dose_range="1nM - 10μM", 
         assay="CellTitreGlo", 
-        legacy_enum=DependencyEnum.GDSC2_AUC, 
-        breadbox_given_id="GDSC2_AUC_collapsed"
+        given_ids=["GDSC2_AUC_collapsed", DependencyEnum.GDSC2_AUC.name],
     ),
     DataAvailabilityDataset(
         label="Repurposing single point", 
         dose_range="2.5μM", 
         assay="PRISM", 
-        legacy_enum=DependencyEnum.Rep_all_single_pt, 
-        breadbox_given_id="Repurposing_AUC_collapsed"
+        given_ids=["Repurposing_AUC_collapsed", DependencyEnum.Rep_all_single_pt.name],
     ),
     DataAvailabilityDataset(
         label="Repurposing multi-dose",
         dose_range="1nM - 10μM",
         assay="PRISM",
-        legacy_enum=DependencyEnum.Repurposing_secondary_AUC,
-        breadbox_given_id=None,
+        given_ids=[DependencyEnum.Repurposing_secondary_AUC.name],
     ),
     DataAvailabilityDataset(
         label="OncRef", 
         dose_range="1nM - 10μM", 
         assay="PRISM", 
-        legacy_enum=DependencyEnum.Prism_oncology_AUC, 
-        breadbox_given_id=None
+        given_ids=[DependencyEnum.Prism_oncology_AUC.name],
     ),
 ]
 
@@ -283,7 +279,7 @@ def get_top_correlated_expression(compound_experiment_and_datasets):
     return top_correlations
 
 
-def format_availability_tile(compound_id):
+def format_availability_tile(compound: Compound):
     """
     Load high-level information about which datasets the given compound
     appears in. This does NOT load the full list of datasets, but instead
@@ -291,29 +287,34 @@ def format_availability_tile(compound_id):
     For example, we want to show whether there is "Repurposing" data, but don't need
     to list all of the oncref datasets (AUC, IC50, etc.).
     """
+    compound_id = compound.compound_id
     # First, load ALL portal datasets containing the compound (for performance reasons).
-    # This is faster than iterating through the datasets and checking their contents one-by-one.
-    # all_compound_datasets = data_access.get_all_datasets_containing_compound(compound_id=compound_id)
-    # datasets_by_id = {dataset.id: dataset for dataset in all_compound_datasets}
-    # TODO: show both for now?
+    # This is faster than iterating through the datasets and checking their full contents one-by-one.
+    all_compound_datasets = data_access.get_all_datasets_containing_compound(compound_id)
+    datasets_with_compound_by_id = {}
+    for dataset in all_compound_datasets:
+        if dataset.given_id:
+            datasets_with_compound_by_id[dataset.given_id] = dataset
+        else:
+            datasets_with_compound_by_id[dataset.id] = dataset
 
-    breadbox_given_ids = data_access.get_breadbox_given_ids()
     # Only return datasets which both 1) contain the compound and 2) exist in our hard-coded list
     results = []
     for dataset_config in data_availability_datasets:
+        # Use the highest priority dataset that exists
+        dataset: Optional[MatrixDataset] = None
+        for given_id in dataset_config.given_ids:
+            if dataset is None and given_id in datasets_with_compound_by_id:
+                dataset = datasets_with_compound_by_id[given_id]
 
-        # If the dataset exists in breadbox, use that version.
-        bb_id = dataset_config.breadbox_given_id
-        if bb_id is not None and bb_id in breadbox_given_ids:
-            matrix_dataset = data_access.get_matrix_dataset(bb_id)
-        # Otherwise, use the legacy version
-        else:
-            # TODO: do I need to keep a special check in case this dataset doesn't exist in either place?
-            matrix_dataset = data_access.get_matrix_dataset(dataset_config.legacy_enum.name)
+        if dataset is not None:
+            # Load data for this compound to determine how many cell lines have data for it
+            df = data_access.get_subsetted_df_by_labels_compound_friendly(dataset.id)
+            feature_data = df.loc[compound.label]
+            cell_line_count = feature_data.dropna().size
 
-        if matrix_dataset is not None:
-            dataset_url = get_download_url(matrix_dataset.taiga_id)
-            cell_line_count = len(data_access.get_dataset_sample_ids(matrix_dataset.id))
+            dataset_url = get_download_url(dataset.taiga_id) # TODO: this does not seem to be working for bb datasets
+            # TODO: see if there's a bb-friendly way to do this
             results.append(
                 {
                     "dataset_name": dataset_config.label,
@@ -328,30 +329,6 @@ def format_availability_tile(compound_id):
     # per dataset has both dose_range and assay in its corresponding metadata
     results.sort(key=lambda x: x["dataset_name"])
     return results
-
-
-def get_cell_line_count(dataset: DependencyEnum, entity_ids: List[int]):
-    # given a set of entity_ids, return the number of cell lines which have
-    # values for any of those entity_ids
-
-    if not data_access.has_config(dataset.value):
-        return 0
-
-    # map entity_ids to row_indices
-    row_summaries = data_access.get_all_row_indices_labels_entity_ids(dataset.value)
-    row_index_by_entity_id = {x.entity_id: x.index for x in row_summaries}
-    row_indices = []
-    for entity_id in entity_ids:
-        if entity_id in row_index_by_entity_id:
-            row_indices.append(row_index_by_entity_id[entity_id])
-
-    # get the corresponding data
-    df: pd.DataFrame = data_access.get_subsetted_df(
-        dataset_id=dataset.value, row_indices=row_indices, col_indices=None
-    )
-
-    # compute the number of columns which have at least one non-na
-    return sum((~df.applymap(pd.isna)).apply(any, axis=0))
 
 
 def format_corr_table(compound_label, top_correlations):

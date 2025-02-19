@@ -33,7 +33,3 @@ from .interface import (
     get_custom_cell_lines_dataset,
     has_config,
 )
-
-from .breadbox_dao import (
-    get_breadbox_given_ids
-)
