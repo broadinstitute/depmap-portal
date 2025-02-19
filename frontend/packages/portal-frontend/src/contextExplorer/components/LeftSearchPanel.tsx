@@ -1,12 +1,7 @@
 import React, { useCallback, useEffect, useState } from "react";
+import { Tabs, Tab } from "react-bootstrap";
 import Select, { Props as ReactSelectProps } from "react-select";
 import InfoIcon from "src/common/components/InfoIcon";
-import {
-  Tab,
-  TabPanel,
-  TabPanels,
-  TabsWithHistory,
-} from "src/common/components/tabs";
 import {
   ContextNameInfo,
   ContextNode,
@@ -179,7 +174,7 @@ const ContextTree = (props: ContextTreeProps) => {
 
   return (
     <>
-      <p className={styles.pHeader}>
+      <p style={{ paddingTop: "25px", fontSize: "16px", fontWeight: "bold" }}>
         Select a{" "}
         {selectedTreeType === TreeType.Lineage
           ? "Lineage"
@@ -445,59 +440,70 @@ const LeftSearchPanel = (lineageSearchProps: LeftSearchPanelProps) => {
   const tabs = [TreeType.Lineage, TreeType.MolecularSubtype];
   return (
     <fieldset className={styles.lineageSelection}>
-      <TabsWithHistory
+      <Tabs
         className={styles.Tabs}
-        onChange={(index) => {
-          handleSetSelectedTreeType(tabs[index]);
+        id={"context-explorer-tree-tabs"}
+        activeKey={selectedTreeType}
+        onSelect={(index) => {
+          console.log(index);
+          handleSetSelectedTreeType(index);
           onRefineYourContext(null, null);
         }}
-        onSetInitialIndex={(index) => {
-          handleSetSelectedTreeType(tabs[index]);
-          onRefineYourContext(null, null);
-        }}
-        isManual
-        isLazy
       >
-        <Tab id="lineage" className={styles.Tab}>
-          Lineage
-        </Tab>
-        <Tab id="molecularSubtype" className={styles.Tab}>
-          Molecular Subtype
-        </Tab>
-        <section
-          style={{ overflow: "visible" }}
-          className={styles.lineageTabContents}
+        <Tab
+          id="lineage"
+          eventKey={TreeType.Lineage.toString()}
+          title={"Lineage"}
+          className={styles.Tab}
         >
-          <TabPanels className={styles.TabPanels}>
-            <TabPanel className={styles.TabPanel}>
-              <ContextTree
-                key="lineage"
-                searchOptions={lineageSearchOptions}
-                contextTree={contextTree}
-                onRefineYourContext={onRefineYourContext}
-                topContextNameInfo={topContextNameInfo}
-                selectedContextNode={selectedContextNode}
-                selectedTab={selectedTab}
-                selectedTreeType={selectedTreeType}
-                customInfoImg={customInfoImg}
-              />
-            </TabPanel>
-            <TabPanel className={styles.TabPanel}>
-              <ContextTree
-                key="molecularySubtype"
-                searchOptions={molecularSubtypeSearchOptions}
-                contextTree={contextTree}
-                onRefineYourContext={onRefineYourContext}
-                topContextNameInfo={topContextNameInfo}
-                selectedContextNode={selectedContextNode}
-                selectedTab={selectedTab}
-                selectedTreeType={selectedTreeType}
-                customInfoImg={customInfoImg}
-              />
-            </TabPanel>
-          </TabPanels>
-        </section>
-      </TabsWithHistory>
+          <section
+            style={{ overflow: "visible" }}
+            className={styles.lineageTabContents}
+          >
+            <div className={styles.TabPanels}>
+              <div className={styles.TabPanel}>
+                <ContextTree
+                  key="lineage"
+                  searchOptions={lineageSearchOptions}
+                  contextTree={contextTree}
+                  onRefineYourContext={onRefineYourContext}
+                  topContextNameInfo={topContextNameInfo}
+                  selectedContextNode={selectedContextNode}
+                  selectedTab={selectedTab}
+                  selectedTreeType={selectedTreeType}
+                  customInfoImg={customInfoImg}
+                />
+              </div>
+            </div>
+          </section>
+        </Tab>
+        <Tab
+          title={"Molecular Subtype"}
+          eventKey={TreeType.MolecularSubtype.toString()}
+          className={styles.Tab}
+        >
+          <section
+            style={{ overflow: "visible" }}
+            className={styles.lineageTabContents}
+          >
+            <div className={styles.TabPanels}>
+              <div className={styles.TabPanel}>
+                <ContextTree
+                  key="molecularySubtype"
+                  searchOptions={molecularSubtypeSearchOptions}
+                  contextTree={contextTree}
+                  onRefineYourContext={onRefineYourContext}
+                  topContextNameInfo={topContextNameInfo}
+                  selectedContextNode={selectedContextNode}
+                  selectedTab={selectedTab}
+                  selectedTreeType={selectedTreeType}
+                  customInfoImg={customInfoImg}
+                />
+              </div>
+            </div>
+          </section>
+        </Tab>
+      </Tabs>
     </fieldset>
   );
 };
