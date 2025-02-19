@@ -42,31 +42,54 @@ class DataAvailabilityDataset:
     label: str
     dose_range: str
     assay: str
-    dataset: DependencyEnum
+    legacy_enum: DependencyEnum
+    # If the dataset exists in breadbox, the breadbox version should be displayed
+    breadbox_given_id: Optional[str]
 
 
 # The set of information to show on the tile on the compound page
 data_availability_datasets = [
     DataAvailabilityDataset(
-        "CTRP", "1nM - 10μM", "CellTitreGlo", DependencyEnum.CTRP_AUC
+        label="CTRP", 
+        dose_range="1nM - 10μM", 
+        assay="CellTitreGlo", 
+        legacy_enum=DependencyEnum.CTRP_AUC, 
+        breadbox_given_id="CTRP_AUC_collapsed"
     ),
     DataAvailabilityDataset(
-        "GDSC1", "1nM - 10μM", "Resazurin or Syto60", DependencyEnum.GDSC1_AUC
+        label="GDSC1", 
+        dose_range="1nM - 10μM", 
+        assay="Resazurin or Syto60", 
+        legacy_enum=DependencyEnum.GDSC1_AUC, 
+        breadbox_given_id="GDSC1_AUC_collapsed"
     ),
     DataAvailabilityDataset(
-        "GDSC2", "1nM - 10μM", "CellTitreGlo", DependencyEnum.GDSC2_AUC
+        label="GDSC2", 
+        dose_range="1nM - 10μM", 
+        assay="CellTitreGlo", 
+        legacy_enum=DependencyEnum.GDSC2_AUC, 
+        breadbox_given_id="GDSC2_AUC_collapsed"
     ),
     DataAvailabilityDataset(
-        "Repurposing single point", "2.5μM", "PRISM", DependencyEnum.Rep_all_single_pt
+        label="Repurposing single point", 
+        dose_range="2.5μM", 
+        assay="PRISM", 
+        legacy_enum=DependencyEnum.Rep_all_single_pt, 
+        breadbox_given_id="Repurposing_AUC_collapsed"
     ),
     DataAvailabilityDataset(
-        "Repurposing multi-dose",
-        "1nM - 10μM",
-        "PRISM",
-        DependencyEnum.Repurposing_secondary_AUC,
+        label="Repurposing multi-dose",
+        dose_range="1nM - 10μM",
+        assay="PRISM",
+        legacy_enum=DependencyEnum.Repurposing_secondary_AUC,
+        breadbox_given_id=None,
     ),
     DataAvailabilityDataset(
-        "OncRef", "1nM - 10μM", "PRISM", DependencyEnum.Prism_oncology_AUC
+        label="OncRef", 
+        dose_range="1nM - 10μM", 
+        assay="PRISM", 
+        legacy_enum=DependencyEnum.Prism_oncology_AUC, 
+        breadbox_given_id=None
     ),
 ]
 
@@ -261,32 +284,45 @@ def get_top_correlated_expression(compound_experiment_and_datasets):
 
 
 def format_availability_tile(compound_id):
-    # find all the compound experiment IDs because the data is stored in the AUC matrices
-    # indexed by compound_experiment, not compound_id
-    compound_experiments_ids = [
-        ce.entity_id for ce in CompoundExperiment.get_all_by_compound_id(compound_id)
-    ]
+    """
+    Load high-level information about which datasets the given compound
+    appears in. This does NOT load the full list of datasets, but instead
+    returns a curated subset that users are most interested in. 
+    For example, we want to show whether there is "Repurposing" data, but don't need
+    to list all of the oncref datasets (AUC, IC50, etc.).
+    """
+    # First, load ALL portal datasets containing the compound (for performance reasons).
+    # This is faster than iterating through the datasets and checking their contents one-by-one.
+    # all_compound_datasets = data_access.get_all_datasets_containing_compound(compound_id=compound_id)
+    # datasets_by_id = {dataset.id: dataset for dataset in all_compound_datasets}
+    # TODO: show both for now?
 
+    breadbox_given_ids = data_access.get_breadbox_given_ids()
+    # Only return datasets which both 1) contain the compound and 2) exist in our hard-coded list
     results = []
-    for data_availability_dataset in data_availability_datasets:
-        cell_line_count = get_cell_line_count(
-            data_availability_dataset.dataset, compound_experiments_ids
-        )
-        if cell_line_count == 0:
-            continue
-        dataset = DependencyDataset.get_dataset_by_name(
-            data_availability_dataset.dataset.value
-        )
-        dataset_url = get_download_url(dataset.taiga_id)
-        results.append(
-            {
-                "dataset_name": data_availability_dataset.label,
-                "dose_range": data_availability_dataset.dose_range,
-                "assay": data_availability_dataset.assay,
-                "cell_lines": cell_line_count,
-                "dataset_url": dataset_url,
-            }
-        )
+    for dataset_config in data_availability_datasets:
+
+        # If the dataset exists in breadbox, use that version.
+        bb_id = dataset_config.breadbox_given_id
+        if bb_id is not None and bb_id in breadbox_given_ids:
+            matrix_dataset = data_access.get_matrix_dataset(bb_id)
+        # Otherwise, use the legacy version
+        else:
+            # TODO: do I need to keep a special check in case this dataset doesn't exist in either place?
+            matrix_dataset = data_access.get_matrix_dataset(dataset_config.legacy_enum.name)
+
+        if matrix_dataset is not None:
+            dataset_url = get_download_url(matrix_dataset.taiga_id)
+            cell_line_count = len(data_access.get_dataset_sample_ids(matrix_dataset.id))
+            results.append(
+                {
+                    "dataset_name": dataset_config.label,
+                    "dose_range": dataset_config.dose_range,
+                    "assay": dataset_config.assay,
+                    "cell_lines": cell_line_count,
+                    "dataset_url": dataset_url,
+                }
+            )
 
     # Currently no filtering needs to happen here because only one DependencyDataset
     # per dataset has both dose_range and assay in its corresponding metadata
