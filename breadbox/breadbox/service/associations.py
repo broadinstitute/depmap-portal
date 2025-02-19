@@ -97,7 +97,7 @@ def get_associations(
     if dataset is None:
         raise ResourceNotFoundError(f"Could not find dataset {dataset_id}")
 
-    precomputed_assoc_tables = associations_crud.get_association_tables(db, dataset_id)
+    precomputed_assoc_tables = associations_crud.get_association_tables(db, dataset.id)
     datasets = []
     associated_dimensions = []
 
@@ -119,7 +119,7 @@ def get_associations(
             )
 
     for precomputed_assoc_table in precomputed_assoc_tables:
-        assert precomputed_assoc_table.dataset_1_id == dataset_id
+        assert precomputed_assoc_table.dataset_1_id == dataset.id
         other_dataset = precomputed_assoc_table.dataset_2
 
         if slice_query.identifier_type in ["feature_id", "feature_label", "column"]:
