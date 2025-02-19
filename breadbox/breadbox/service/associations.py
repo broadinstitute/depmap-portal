@@ -12,13 +12,15 @@ from breadbox.schemas.custom_http_exception import (
 from breadbox.service import slice as slice_service
 from breadbox.service import metadata as metadata_service
 from typing import Tuple
-
+import logging
 from breadbox.crud.dimension_types import get_dimension_type_labels_by_id
 import zlib
 import numpy as np
 import pandas as pd
 
 ROW_BYTE_SIZE = 4 + 4 + 4  # 32 bit int, 32 bit float, 32 bit float
+
+log = logging.getLogger(__name__)
 
 
 def _get_top_correlates(filename, given_id):
@@ -114,9 +116,7 @@ def get_associations(
         if given_id in labels_by_id:
             return labels_by_id[given_id]
         else:
-            raise AssertionError(
-                f"Could not find {given_id} in dimension_type {dimension_type}"
-            )
+            return None
 
     for precomputed_assoc_table in precomputed_assoc_tables:
         assert precomputed_assoc_table.dataset_1_id == dataset.id
@@ -146,15 +146,22 @@ def get_associations(
         )
 
         for row in correlation_df.to_records():
+            other_dimension_given_id = row["feature_given_id_1"]
             associated_label = _get_dimension_label(
-                other_dimension_type, row["feature_given_id_1"]
+                other_dimension_type, other_dimension_given_id
             )
+            if associated_label is None:
+                log.warning(
+                    f"Could not find {other_dimension_type} with id {other_dimension_given_id}"
+                )
+                continue
+
             associated_dimensions.append(
                 Association(
                     correlation=row["cor"],
                     log10qvalue=row["log10qvalue"],
                     other_dataset_id=other_dataset.id,
-                    other_dimension_given_id=row["feature_given_id_1"],
+                    other_dimension_given_id=other_dimension_given_id,
                     other_dimension_label=associated_label,
                 )
             )
