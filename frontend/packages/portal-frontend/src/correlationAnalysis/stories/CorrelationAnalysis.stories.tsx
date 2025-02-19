@@ -7,6 +7,14 @@ import { VolcanoPlot as VolcanoPlotOld } from "../../plot/components/VolcanoPlot
 import { VolcanoData } from "../../plot/models/volcanoPlotModels";
 import { VolcanoPlot } from "@depmap/plotly-wrapper";
 import { VolcanoTrace } from "@depmap/plotly-wrapper";
+import AsyncSelect from "react-select/async";
+import { TagOption } from "@depmap/common-components";
+import Select, {
+  OptionsType,
+  ValueType,
+  ActionMeta,
+  ActionTypes,
+} from "react-select";
 
 export default {
   title: "Components/CorrelationAnalysis",
@@ -20,19 +28,42 @@ export default {
 // "Correlation Coefficient": number;
 // "-log10 qval": number;
 // Rank: number;
-const featureTypes = [
-  "CRISPR knock-out",
-  "Copy number",
-  "Gene expression",
-  "Metabolomics",
-  "Micro RNA",
-  "Proteomics",
-  "Repurposing compounds",
-  "shRNA knockdown",
+
+const featureTypeOptions: TagOption[] = [
+  { label: "CRISPR knock-out", value: "CRISPR knock-out", isDisabled: false },
+  { label: "Copy number", value: "Copy number", isDisabled: true },
+  { label: "Gene expression", value: "Gene expression", isDisabled: false },
+  { label: "Metabolomics", value: "Metabolomics", isDisabled: true },
+  { label: "Micro RNA", value: "Micro RNA", isDisabled: true },
+  { label: "Proteomics", value: "Proteomics", isDisabled: true },
+  {
+    label: "Repurposing compounds",
+    value: "Repurposing compounds",
+    isDisabled: false,
+  },
+  { label: "shRNA knockdown", value: "shRNA knockdown", isDisabled: true },
 ];
+
+const filterOptions = (inputValue: string) =>
+  featureTypeOptions.filter((val) =>
+    val.label.toLowerCase().includes(inputValue.toLowerCase())
+  );
+
+const featureTypesPromise = (inputValue: string) => {
+  return new Promise<TagOption[]>((resolve) => {
+    setTimeout(() => {
+      resolve(filterOptions(inputValue));
+    }, 1000);
+  });
+};
 
 export function Story() {
   const plotlyRef = React.useRef(null);
+
+  const [selectedFeatureTypes, setSelectedFeatureTypes] = React.useState<
+    string[]
+  >([]);
+
   console.log(correlationAnalysisData);
   const columnData = {};
   const columnNames = Object.keys(correlationAnalysisData[0]);
@@ -66,15 +97,17 @@ export function Story() {
           text: [],
           isSignificant: [],
           name: doseCategory,
+          color: "blue", // causes marker.color undefined
         };
       }
       columnNames.forEach((colName) => {
         if (colName in columnNamesToPlotVariables) {
           const value = curRecord[colName];
           if (colName == "-log10 qval") {
+            const val = Math.exp(-value * 2.3);
             // VolcanoPlotProp `y` data by default log transforms values. To do the complement: Math.exp(-x)
             acc[key][doseCategory][columnNamesToPlotVariables[colName]].push(
-              Math.exp(-value)
+              val
             );
           } else {
             acc[key][doseCategory][columnNamesToPlotVariables[colName]].push(
@@ -92,27 +125,40 @@ export function Story() {
 
   return (
     <div>
-      {["Gene expression", "CRISPR knock-out", "Repurposing compounds"].map(
-        (selectedFeatureType) => {
-          return (
-            <>
-              <header>Volcano Plot {selectedFeatureType}</header>
-              <VolcanoPlot
-                Plotly={Plotly}
-                xLabel="Correlation Coefficient"
-                yLabel="(q value)"
-                traces={Object.values(
-                  volcanoDataForFeatureType[selectedFeatureType]
-                )}
-                showAxesOnSameScale={false}
-                cellLinesToHighlight={new Set([])}
-                onPointClick={(point) => {
-                  console.log(point);
-                }}
-                downloadData={[]}
-              />
+      {JSON.stringify(selectedFeatureTypes)}
+      <AsyncSelect
+        defaultOptions
+        loadOptions={featureTypesPromise}
+        isMulti
+        onChange={(value, action) => {
+          console.log(value, action);
+          setSelectedFeatureTypes(
+            value !== null
+              ? value.map((selectedFeatureType) => selectedFeatureType.value)
+              : []
+          );
+        }}
+      />
+      {selectedFeatureTypes.map((selectedFeatureType) => {
+        return (
+          <>
+            <header>Volcano Plot {selectedFeatureType}</header>
+            <VolcanoPlot
+              Plotly={Plotly}
+              xLabel="Correlation Coefficient"
+              yLabel="q value"
+              traces={Object.values(
+                volcanoDataForFeatureType[selectedFeatureType]
+              )}
+              showAxesOnSameScale={false}
+              cellLinesToHighlight={new Set([])}
+              onPointClick={(point) => {
+                console.log(point);
+              }}
+              downloadData={[]}
+            />
 
-              <header>Volcano Plot OLD {selectedFeatureType}</header>
+            {/* <header>Volcano Plot OLD {selectedFeatureType}</header>
               <VolcanoPlotOld
                 Plotly={Plotly}
                 // ref={plotlyRef}
@@ -121,11 +167,10 @@ export function Story() {
                 data={Object.values(
                   volcanoDataForFeatureType[selectedFeatureType]
                 )}
-              />
-            </>
-          );
-        }
-      )}
+              /> */}
+          </>
+        );
+      })}
 
       <WideTable
         columns={[
