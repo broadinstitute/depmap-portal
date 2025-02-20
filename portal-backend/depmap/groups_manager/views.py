@@ -14,6 +14,6 @@ def view_groups_manager():
     """
     Entry point for groups manager
     """
-    if current_app.config["ENABLED_FEATURES"].is_public():
+    if not current_app.config["ENABLED_FEATURES"].access_control_and_private_resources:
         abort(404)
     return render_template("groups_manager/index.html")
