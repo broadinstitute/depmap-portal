@@ -128,45 +128,19 @@ def load_file_search_index():
 
 
 from depmap.context.models import Context
+from depmap.context.models_new import SubtypeContext, SubtypeNode
 
 
 def __load_context_search_index():
     if current_app.config["ENABLED_FEATURES"].context_explorer:
-        lineage_primary_disease_pairs = Context.get_lineage_primary_disease_pairs()
-
-        if len(lineage_primary_disease_pairs) > 0:
-            for (lineage_name, primary_disease_name,) in lineage_primary_disease_pairs:
-                null_checked_lineage_name = (
-                    "unknown" if pd.isnull(lineage_name) else lineage_name
-                )
-                lineage_display_name = Context.get_display_name(
-                    null_checked_lineage_name
-                )
-                if pd.isna(primary_disease_name):
-                    primary_disease_name = "unknown"
-                primary_disease_display_name = Context.get_display_name(
-                    primary_disease_name
-                )
-                context_explorer = ContextExplorerGlobalSearch(
-                    lineage_name=null_checked_lineage_name,
-                    primary_disease_name=primary_disease_name,
-                )
-                db.session.add(
-                    ContextExplorerSearchIndex(
-                        label=f"{primary_disease_display_name} in {lineage_display_name}",
-                        context_explorer=context_explorer,
-                    )
-                )
-
-                context_explorer = ContextExplorerGlobalSearch(
-                    lineage_name=null_checked_lineage_name, primary_disease_name=None,
-                )
-                db.session.add(
-                    ContextExplorerSearchIndex(
-                        label=f"{lineage_display_name}",
-                        context_explorer=context_explorer,
-                    )
-                )
+        # Use SubtypeContext because SubtypeNode might have codes that don't have depmap models, and
+        # therefore should not be searchable.
+        for subtype_code in SubtypeContext.query.all():
+            node = SubtypeNode.get_by_code(subtype_code)
+            label = f"{node.node_name} ({node.subtype_code})"
+            db.session.add(
+                ContextExplorerSearchIndex(label=label, context=subtype_code)
+            )
     else:
         for context in Context.query.all():
             db.session.add(
