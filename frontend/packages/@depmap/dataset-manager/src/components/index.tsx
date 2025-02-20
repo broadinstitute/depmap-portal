@@ -121,7 +121,7 @@ export default function Datasets() {
         let currentDatasets = await dapi.getBreadboxDatasets();
 
         if (!isAdvancedMode) {
-          const writeGroups = await getGroups();
+          const writeGroups = await dapi.getGroups(!isAdvancedMode);
           const group_ids = writeGroups.map((group) => {
             return group.id;
           });
