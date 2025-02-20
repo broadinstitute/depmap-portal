@@ -372,7 +372,6 @@ export default function Datasets() {
   };
 
   const deleteDatasetButtonAction = async () => {
-    let isDeleted = false;
     const datasetIdsSet = new Set(selectedDatasetIds);
 
     await Promise.all(
@@ -380,9 +379,16 @@ export default function Datasets() {
         return dapi.deleteDatasets(dataset_id);
       })
     )
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      .then((vals) => {
-        isDeleted = true;
+      .then(() => {
+        const datasetsRemaining = datasets.filter(
+          (dataset) => !datasetIdsSet.has(dataset.id)
+        );
+        setDatasets(datasetsRemaining);
+        const dimTypeDatasetsNum = dimensionTypeDatasetCount(datasetsRemaining);
+        const updatedDimensionTypeCounts = dimensionTypes.map((dt) => {
+          return { ...dt, datasetsCount: dimTypeDatasetsNum[dt.name] };
+        });
+        setDimensionTypes(updatedDimensionTypeCounts);
       })
       .catch((e) => {
         setShowDatasetDeleteError(true);
@@ -391,50 +397,33 @@ export default function Datasets() {
           setDatasetDeleteError(e.detail);
         }
       });
-
-    if (isDeleted) {
-      const datasetsRemaining = datasets.filter(
-        (dataset) => !datasetIdsSet.has(dataset.id)
-      );
-      setDatasets(datasetsRemaining);
-      const dimTypeDatasetsNum = dimensionTypeDatasetCount(datasetsRemaining);
-      const updatedDimensionTypeCounts = dimensionTypes.map((dt) => {
-        return { ...dt, datasetsCount: dimTypeDatasetsNum[dt.name] };
-      });
-      setDimensionTypes(updatedDimensionTypeCounts);
-    }
   };
 
   const deleteDimensionType = async () => {
-    let isDeleted = false;
-
-    try {
-      if (selectedDimensionType != null) {
-        const dimensionType = dimensionTypes.find(
-          (dt) => dt.name === selectedDimensionType.name
-        );
-        if (dimensionType.axis === "feature") {
-          await dapi.deleteDimensionType(dimensionType.name);
-        } else {
-          await dapi.deleteDimensionType(dimensionType.name);
-        }
-
-        isDeleted = true;
-        setShowDimTypeDeleteError(false);
-        setDimTypeDeleteError(null);
-      }
-    } catch (e) {
-      setShowDimTypeDeleteError(true);
-      console.error(e);
-      if (instanceOfErrorDetail(e)) {
-        setDimTypeDeleteError(e.detail);
-      }
-    }
-    if (isDeleted) {
-      setDimensionTypes(
-        dimensionTypes.filter((dt) => dt.name !== selectedDimensionType.name)
+    if (selectedDimensionType != null) {
+      const dimensionType = dimensionTypes.find(
+        (dt) => dt.name === selectedDimensionType.name
       );
-      setSelectedDimensionType(null);
+
+      await dapi
+        .deleteDimensionType(dimensionType.name)
+        .then(() => {
+          setShowDimTypeDeleteError(false);
+          setDimTypeDeleteError(null);
+          setDimensionTypes(
+            dimensionTypes.filter(
+              (dt) => dt.name !== selectedDimensionType.name
+            )
+          );
+          setSelectedDimensionType(null);
+        })
+        .catch((e) => {
+          setShowDimTypeDeleteError(true);
+          console.error(e);
+          if (instanceOfErrorDetail(e)) {
+            setDimTypeDeleteError(e.detail);
+          }
+        });
     }
   };
 
