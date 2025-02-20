@@ -21,6 +21,7 @@ import {
 import ChunkedFileUploader from "./ChunkedFileUploader";
 import { CeleryTask } from "@depmap/compute";
 import progressTrackerStyles from "@depmap/common-components/src/styles/ProgressTracker.scss";
+import styles from "../styles/styles.scss";
 
 interface DatasetFormProps {
   getDimensionTypes: () => Promise<DimensionType[]>;
@@ -225,19 +226,51 @@ export default function DatasetForm(props: DatasetFormProps) {
     if (completedTask?.state === "SUCCESS" && !isTaskRunning) {
       return (
         <div>
-          <div style={{ color: "green" }}>SUCCESS!</div>
-          {completedTask.result.unknownIDs.length > 0 ? (
-            <div style={{ color: "goldenrod" }}>
-              WARNING: Unknown IDS:{" "}
-              {JSON.parse(completedTask.result.unknownIDs)}
-            </div>
-          ) : null}
+          <div style={{ color: "green" }}>
+            <b>
+              <i>SUCCESS!</i>
+            </b>
+          </div>
+          <div style={{ color: "goldenrod" }}>
+            {completedTask.result.unknownIDs.map(
+              (unknownIDGroup: {
+                axis: string;
+                dimensionType: string;
+                IDs: string[];
+              }) => {
+                // shorten list if list of IDs is long and add ellipsis at the end
+                const sublistIDs = unknownIDGroup.IDs.slice(0, 10);
+                return (
+                  <>
+                    <div>
+                      <p style={{ margin: "10px 0 0 0" }}>
+                        <i>
+                          {unknownIDGroup.IDs.length} unknown{" "}
+                          {unknownIDGroup.axis} IDs for{" "}
+                          {unknownIDGroup.dimensionType}:
+                        </i>
+                      </p>
+                      <div className={styles.unknownIDsText}>
+                        <p>
+                          <i>{sublistIDs.toString() + "..."}</i>
+                        </p>
+                      </div>
+                    </div>
+                  </>
+                );
+              }
+            )}
+          </div>
         </div>
       );
     }
     if (completedTask?.state === "FAILURE" && !isTaskRunning) {
       return (
-        <div style={{ color: "red" }}>FAILED: {completedTask.message}!</div>
+        <div style={{ color: "red" }}>
+          <b>
+            <i>FAILED: {completedTask.message}!</i>
+          </b>
+        </div>
       );
     }
     if (isTaskRunning) {
