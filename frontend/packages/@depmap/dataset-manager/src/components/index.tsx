@@ -4,6 +4,7 @@ import {
   DatasetParams,
   DatasetTableData,
   DatasetUpdateArgs,
+  DimensionType,
   // instanceOfErrorDetail,
   DimensionTypeAddArgs,
   DimensionTypeUpdateArgs,
@@ -193,9 +194,22 @@ export default function Datasets() {
             uploadDataset={postDatasetUpload}
             isAdvancedMode={isAdvancedMode}
             getTaskStatus={getTaskStatus}
-            onSuccess={(dataset: Dataset) =>
-              setDatasets([...datasets, dataset])
-            }
+            onSuccess={(dataset: Dataset) => {
+              const addedDatasets = [...datasets, dataset];
+              setDatasets(addedDatasets);
+              const dimTypeDatasetsNum = dimensionTypeDatasetCount(
+                addedDatasets
+              );
+              setDimensionTypes((oldDimensionTypes) => {
+                if (oldDimensionTypes == null) {
+                  // condition to make eslint happy. TBD: consider changing typing
+                  return null;
+                }
+                return oldDimensionTypes.map((dt) => {
+                  return { ...dt, datasetsCount: dimTypeDatasetsNum[dt.name] };
+                });
+              });
+            }}
           />
         );
       }
