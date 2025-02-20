@@ -374,10 +374,7 @@ class ContextAnalysis(Model):
 
 class ContextExplorerGlobalSearch(Model):
     __tablename__ = "context_explorer"
-    context_id = Column(Integer, primary_key=True, autoincrement=True)
-    lineage_name = Column(String)
-    primary_disease_name = Column(String)
+    subtype_code = Column(String, primary_key=True)
 
-    def __init__(self, lineage_name, primary_disease_name):
-        self.lineage_name = lineage_name
-        self.primary_disease_name = primary_disease_name
+    def __init__(self, subtype_code):
+        self.subtype_code = subtype_code

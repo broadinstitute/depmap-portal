@@ -135,11 +135,11 @@ def __load_context_search_index():
     if current_app.config["ENABLED_FEATURES"].context_explorer:
         # Use SubtypeContext because SubtypeNode might have codes that don't have depmap models, and
         # therefore should not be searchable.
-        for subtype_code in SubtypeContext.query.all():
-            node = SubtypeNode.get_by_code(subtype_code)
-            label = f"{node.node_name} ({node.subtype_code})"
+        for context in SubtypeNode.query.all():
             db.session.add(
-                ContextExplorerSearchIndex(label=label, context=subtype_code)
+                ContextExplorerSearchIndex(
+                    label=context.subtype_code, subtype_code=context.subtype_code
+                )
             )
     else:
         for context in Context.query.all():
