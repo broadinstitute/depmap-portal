@@ -7,6 +7,7 @@ import {
   // instanceOfErrorDetail,
   DimensionTypeAddArgs,
   DimensionTypeUpdateArgs,
+  instanceOfErrorDetail,
 } from "@depmap/types";
 
 import { FormModal, Spinner, ToggleSwitch } from "@depmap/common-components";
@@ -27,9 +28,7 @@ export default function Datasets() {
   const [datasets, setDatasets] = useState<Dataset[] | null>(null);
 
   const [initError, setInitError] = useState(false);
-  // const [datasetSubmissionError, setDatasetSubmissionError] = useState<
-  //   string | null
-  // >(null);
+
   const [isAdvancedMode, setIsAdvancedMode] = useState(false);
   const [selectedDatasetIds, setSelectedDatasetIds] = useState<Set<string>>(
     new Set()
@@ -86,7 +85,15 @@ export default function Datasets() {
   >(null);
   const [isEditDimensionTypeMode, setIsEditDimensionTypeMode] = useState(false);
   const [showDimensionTypeModal, setShowDimensionTypeModal] = useState(false);
-  const [showDeleteError, setShowDeleteError] = useState(false);
+
+  const [showDatasetDeleteError, setShowDatasetDeleteError] = useState(false);
+  const [datasetDeleteError, setDatasetDeleteError] = useState<string | null>(
+    null
+  );
+  const [showDimTypeDeleteError, setShowDimTypeDeleteError] = useState(false);
+  const [dimTypeDeleteError, setDimTypeDeleteError] = useState<string | null>(
+    null
+  );
 
   const dimensionTypeDatasetCount = (datasetsList: Dataset[]) =>
     datasetsList.reduce(
@@ -199,9 +206,22 @@ export default function Datasets() {
             uploadDataset={postDatasetUpload}
             isAdvancedMode={isAdvancedMode}
             getTaskStatus={getTaskStatus}
-            onSuccess={(dataset: Dataset) =>
-              setDatasets([...datasets, dataset])
-            }
+            onSuccess={(dataset: Dataset) => {
+              const addedDatasets = [...datasets, dataset];
+              setDatasets(addedDatasets);
+              const dimTypeDatasetsNum = dimensionTypeDatasetCount(
+                addedDatasets
+              );
+              setDimensionTypes((oldDimensionTypes) => {
+                if (oldDimensionTypes == null) {
+                  // condition to make eslint happy. TBD: consider changing typing
+                  return null;
+                }
+                return oldDimensionTypes.map((dt) => {
+                  return { ...dt, datasetsCount: dimTypeDatasetsNum[dt.name] };
+                });
+              });
+            }}
           />
         );
       }
@@ -378,59 +398,58 @@ export default function Datasets() {
   };
 
   const deleteDatasetButtonAction = async () => {
-    let isDeleted = false;
     const datasetIdsSet = new Set(selectedDatasetIds);
-    try {
-      await Promise.all(
-        Array.from(datasetIdsSet).map((dataset_id) => {
-          return dapi.deleteDatasets(dataset_id);
-        })
-      );
-      isDeleted = true;
-      setShowDeleteError(false);
-    } catch (e) {
-      setShowDeleteError(true);
-      console.error(e);
-    }
-    if (isDeleted) {
-      const datasetsRemaining = datasets.filter(
-        (dataset) => !datasetIdsSet.has(dataset.id)
-      );
-      setDatasets(datasetsRemaining);
-      const dimTypeDatasetsNum = dimensionTypeDatasetCount(datasetsRemaining);
-      const updatedDimensionTypeCounts = dimensionTypes.map((dt) => {
-        return { ...dt, datasetsCount: dimTypeDatasetsNum[dt.name] };
+
+    await Promise.all(
+      Array.from(datasetIdsSet).map((dataset_id) => {
+        return dapi.deleteDatasets(dataset_id);
+      })
+    )
+      .then(() => {
+        const datasetsRemaining = datasets.filter(
+          (dataset) => !datasetIdsSet.has(dataset.id)
+        );
+        setDatasets(datasetsRemaining);
+        const dimTypeDatasetsNum = dimensionTypeDatasetCount(datasetsRemaining);
+        const updatedDimensionTypeCounts = dimensionTypes.map((dt) => {
+          return { ...dt, datasetsCount: dimTypeDatasetsNum[dt.name] };
+        });
+        setDimensionTypes(updatedDimensionTypeCounts);
+      })
+      .catch((e) => {
+        setShowDatasetDeleteError(true);
+        console.error(e);
+        if (instanceOfErrorDetail(e)) {
+          setDatasetDeleteError(e.detail);
+        }
       });
-      setDimensionTypes(updatedDimensionTypeCounts);
-    }
   };
 
   const deleteDimensionType = async () => {
-    let isDeleted = false;
-
-    try {
-      if (selectedDimensionType != null) {
-        const dimensionType = dimensionTypes.find(
-          (dt) => dt.name === selectedDimensionType.name
-        );
-        if (dimensionType.axis === "feature") {
-          await dapi.deleteFeatureType(dimensionType.name);
-        } else {
-          await dapi.deleteSampleType(dimensionType.name);
-        }
-
-        isDeleted = true;
-        setShowDeleteError(false);
-      }
-    } catch (e) {
-      setShowDeleteError(true);
-      console.error(e);
-    }
-    if (isDeleted) {
-      setDimensionTypes(
-        dimensionTypes.filter((dt) => dt.name !== selectedDimensionType.name)
+    if (selectedDimensionType != null) {
+      const dimensionType = dimensionTypes.find(
+        (dt) => dt.name === selectedDimensionType.name
       );
-      setSelectedDimensionType(null);
+
+      await dapi
+        .deleteDimensionType(dimensionType.name)
+        .then(() => {
+          setShowDimTypeDeleteError(false);
+          setDimTypeDeleteError(null);
+          setDimensionTypes(
+            dimensionTypes.filter(
+              (dt) => dt.name !== selectedDimensionType.name
+            )
+          );
+          setSelectedDimensionType(null);
+        })
+        .catch((e) => {
+          setShowDimTypeDeleteError(true);
+          console.error(e);
+          if (instanceOfErrorDetail(e)) {
+            setDimTypeDeleteError(e.detail);
+          }
+        });
     }
   };
 
@@ -439,6 +458,12 @@ export default function Datasets() {
       <div className="container-fluid">
         <div>
           <h1>Datasets</h1>
+          {showDatasetDeleteError && (selectedDatasetIds.size !== 0) !== null && (
+            <Alert bsStyle="danger">
+              <strong>Dataset Delete Failed!</strong>{" "}
+              {datasetDeleteError !== null ? datasetDeleteError : null}
+            </Alert>
+          )}
           <ToggleSwitch
             value={isAdvancedMode}
             onChange={(newValue: boolean) => {
@@ -481,6 +506,8 @@ export default function Datasets() {
                   );
                   setDatasetToEdit(selectedDataset || null);
                 }
+                setShowDatasetDeleteError(false);
+                setDatasetDeleteError(null);
               }}
               data={formatDatasetTableData(datasets)}
               columns={[
@@ -544,13 +571,12 @@ export default function Datasets() {
           <div>
             <h1>Dimension Types</h1>
 
-            {showDeleteError && (
+            {showDimTypeDeleteError && selectedDimensionType !== null && (
               <Alert bsStyle="danger">
                 <strong>
                   Delete &quot;{selectedDimensionType.name}&quot; Failed!
                 </strong>{" "}
-                Make sure &quot;{selectedDimensionType.name}&quot; has no
-                datasets with its dimension type.
+                {dimTypeDeleteError !== null ? dimTypeDeleteError : null}
               </Alert>
             )}
 
@@ -589,7 +615,8 @@ export default function Datasets() {
                   } else {
                     setSelectedDimensionType(null);
                   }
-                  setShowDeleteError(false);
+                  setShowDimTypeDeleteError(false);
+                  setDimTypeDeleteError(null);
                 }}
                 rowHeight={40}
                 columns={[
