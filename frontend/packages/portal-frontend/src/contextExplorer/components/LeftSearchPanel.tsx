@@ -437,7 +437,6 @@ const LeftSearchPanel = (lineageSearchProps: LeftSearchPanelProps) => {
     selectedTreeType,
     handleSetSelectedTreeType,
   } = lineageSearchProps;
-  const tabs = [TreeType.Lineage, TreeType.MolecularSubtype];
   return (
     <fieldset className={styles.lineageSelection}>
       <Tabs

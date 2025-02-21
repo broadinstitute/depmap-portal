@@ -112,7 +112,7 @@ export const ContextExplorer = () => {
         const selectedTree = context.tree_type;
         setContextPath(path);
         setSelectedTreeType(
-          selectedTree == TreeType.Lineage.toString()
+          selectedTree === TreeType.Lineage.toString()
             ? TreeType.Lineage
             : TreeType.MolecularSubtype
         );

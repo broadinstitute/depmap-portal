@@ -3,21 +3,17 @@ import { Panel, PanelGroup } from "react-bootstrap";
 import {
   BoxCardData,
   BoxData,
-  ContextExplorerDatasets,
   ContextNameInfo,
   ContextPlotBoxData,
   OtherBoxCardData,
-  TreeType,
 } from "src/contextExplorer/models/types";
-import styles from "src/contextExplorer/styles/ContextExplorer.scss";
+// import styles from "src/contextExplorer/styles/ContextExplorer.scss";
 import {
   BOX_PLOT_BOTTOM_MARGIN,
   BOX_PLOT_TOP_MARGIN,
   BOX_THICKNESS,
 } from "src/contextExplorer/utils";
-import { DepmapApi } from "src/dAPI";
 import BoxPlot, { BoxPlotInfo } from "src/plot/components/BoxPlot";
-import { fetchUrlPrefix } from "src/common/utilities/context";
 
 const EntityBoxColorList = [
   { r: 53, g: 15, b: 138 },
@@ -41,13 +37,6 @@ interface Props {
   selectedCode: string;
   boxPlotData: ContextPlotBoxData | null;
   entityType: string;
-  entityFullLabel: string;
-  treeType: TreeType;
-  datasetName: ContextExplorerDatasets;
-  fdr: number[];
-  absEffectSize: number[];
-  fracDepIn: number[];
-  dapi: DepmapApi;
 }
 
 function CollapsibleBoxPlots({
@@ -56,22 +45,7 @@ function CollapsibleBoxPlots({
   selectedCode,
   boxPlotData,
   entityType,
-  treeType,
-  datasetName,
-  entityFullLabel,
-  fdr,
-  absEffectSize,
-  fracDepIn,
-  dapi,
 }: Props) {
-  let relativeUrlPrefix = fetchUrlPrefix();
-
-  if (relativeUrlPrefix === "/") {
-    relativeUrlPrefix = "";
-  }
-
-  const urlPrefix = `${window.location.protocol}//${window.location.host}${relativeUrlPrefix}`;
-
   const [
     selectedLevelZeroBoxData,
     setSelectedLevelZeroBoxData,
@@ -106,21 +80,19 @@ function CollapsibleBoxPlots({
       const code = codes[index];
       const box = boxData[code];
 
-      if (code === levelZeroCode) {
-        continue;
+      if (code !== levelZeroCode) {
+        const info = {
+          name: box.path!.join("/"),
+          hoverLabels: box.cell_line_display_names,
+          xVals: box.data,
+          color: {
+            ...EntityBoxColorList[count],
+            a: 1 / (index + 0.3),
+          },
+          lineColor: "#000000",
+        };
+        formattedBoxData.push(info);
       }
-
-      const info = {
-        name: box.path!.join("/"),
-        hoverLabels: box.cell_line_display_names,
-        xVals: box.data,
-        color: {
-          ...EntityBoxColorList[count],
-          a: 1 / (index + 0.3),
-        },
-        lineColor: "#000000",
-      };
-      formattedBoxData.push(info);
     }
 
     if (insigBoxData?.data && insigBoxData.data.length > 0) {
@@ -179,7 +151,7 @@ function CollapsibleBoxPlots({
           }
         }
       );
-      boxCardCount = boxCardCount + 1;
+      boxCardCount += 1;
 
       const insigPlotData = boxPlotData.insignifcant_selection;
       if (insigPlotData.data && insigPlotData.data.length > 0) {
@@ -196,7 +168,7 @@ function CollapsibleBoxPlots({
       if (boxPlotData.other_cards) {
         const otherBoxCards = boxPlotData.other_cards.map(
           (cardData: BoxCardData) => {
-            boxCardCount = boxCardCount + 1;
+            boxCardCount += 1;
             const level0Data = cardData.significant[cardData.level_0_code];
             return {
               [cardData.level_0_code]: {
@@ -493,7 +465,6 @@ function CollapsibleBoxPlots({
                 dottedLinePosition={
                   entityType === "gene" ? -1 : drugDottedLine || -1.74
                 }
-                doLinkYAxisLabels={false}
               />
             ) : (
               <div>

@@ -17,7 +17,6 @@ export interface BoxPlotProps {
   plotName: string;
   boxData: BoxPlotInfo[];
   dottedLinePosition: number;
-  doLinkYAxisLabels?: boolean;
   selectedCode?: string;
   onLoad?: (plot: ExtendedPlotType) => void;
   setXAxisRange?: (range: any[]) => void;
@@ -34,6 +33,7 @@ function BoxPlot({
   boxData,
   plotName,
   dottedLinePosition,
+  selectedCode = undefined,
   onLoad = () => {},
   plotHeight = undefined,
   xAxisRange = undefined,
@@ -158,6 +158,7 @@ function BoxPlot({
     topMargin,
     xAxisTitle,
     dottedLinePosition,
+    selectedCode,
     onLoad,
   ]);
 
@@ -210,8 +211,7 @@ function BoxPlot({
 
 export default function LazyBoxPlot({
   boxData,
-  selectedCode,
-  doLinkYAxisLabels,
+  selectedCode = undefined,
   ...otherProps
 }: BoxPlotProps) {
   return (

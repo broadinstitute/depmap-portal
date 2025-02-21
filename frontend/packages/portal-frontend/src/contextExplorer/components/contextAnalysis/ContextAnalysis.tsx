@@ -133,7 +133,7 @@ function ContextAnalysis({
       });
     }
     setOutgroupOptions(outGroupOpts);
-  }, [topContextNameInfo, selectedContextNameInfo.name]);
+  }, [topContextNameInfo, selectedContextNode, selectedContextNameInfo.name]);
 
   useEffect(() => {
     const outgroupLabels = outgroupOptions.map((outgr) => outgr.label);
@@ -244,11 +244,13 @@ function ContextAnalysis({
   const getFilterDefinitions = useCallback(() => {
     if (datasetId === ContextExplorerDatasets.Prism_oncology_AUC) {
       return oncrefFilterDefinitions;
-    } else if (datasetId === ContextExplorerDatasets.Rep_all_single_pt) {
-      return repurposingFilterDefinitions;
-    } else {
-      return geneDepFilterDefinitions;
     }
+
+    if (datasetId === ContextExplorerDatasets.Rep_all_single_pt) {
+      return repurposingFilterDefinitions;
+    }
+
+    return geneDepFilterDefinitions;
   }, [datasetId]);
 
   const {
@@ -269,7 +271,6 @@ function ContextAnalysis({
     setSelectedPlotLabels(null);
     setSelectedTableLabels(null);
     setPointVisibilityFiltered(null);
-    console.log(selectedPlotLabels);
   }, [selectedContextNameInfo, topContextNameInfo]);
 
   useEffect(() => {
@@ -1027,13 +1028,6 @@ function ContextAnalysis({
                         selectedCode={selectedContextNameInfo.subtype_code}
                         boxPlotData={boxPlotData}
                         entityType={entityType}
-                        entityFullLabel={[...selectedPlotLabels][0]}
-                        fdr={boxPlotFDRRange}
-                        absEffectSize={boxPlotEffectSizeRange}
-                        fracDepIn={boxPlotFracDepInRange}
-                        treeType={treeType}
-                        datasetName={datasetId}
-                        dapi={dapi}
                       />
                     )}
                 </div>
