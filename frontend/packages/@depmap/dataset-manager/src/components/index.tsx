@@ -4,7 +4,6 @@ import {
   DatasetParams,
   DatasetTableData,
   DatasetUpdateArgs,
-  DimensionType,
   // instanceOfErrorDetail,
   DimensionTypeAddArgs,
   DimensionTypeUpdateArgs,
