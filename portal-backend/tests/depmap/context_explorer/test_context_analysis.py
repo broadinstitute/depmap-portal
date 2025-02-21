@@ -430,8 +430,8 @@ def _setup_factories(
 
 
 def _setup_entities_and_dataset_id(empty_db_mock_downloads, entity_type, dataset_name):
-    gene_a = GeneFactory(label="gene_0 (0)")
-    gene_b = GeneFactory(label="gene_1 (1)")
+    gene_a = GeneFactory(label="gene_0 (0)", entrez_id=0)
+    gene_b = GeneFactory(label="gene_1 (1)", entrez_id=1)
 
     xref_type = "BRD"
     xref = "PRC-003465060-210-01"
@@ -776,6 +776,54 @@ def test_get_dose_curves(empty_db_mock_downloads):
                 "upperAsymptote": 0,
             },
             {
+                "id": "ACH-5myeloid",
+                "displayName": "myeloid_5",
+                "ec50": 0,
+                "slope": 0,
+                "lowerAsymptote": 0,
+                "upperAsymptote": 0,
+            },
+            {
+                "id": "ACH-6myeloid",
+                "displayName": "myeloid_6",
+                "ec50": 0,
+                "slope": 0,
+                "lowerAsymptote": 0,
+                "upperAsymptote": 0,
+            },
+            {
+                "id": "ACH-7myeloid",
+                "displayName": "myeloid_7",
+                "ec50": 0,
+                "slope": 0,
+                "lowerAsymptote": 0,
+                "upperAsymptote": 0,
+            },
+            {
+                "id": "ACH-8myeloid",
+                "displayName": "myeloid_8",
+                "ec50": 0,
+                "slope": 0,
+                "lowerAsymptote": 0,
+                "upperAsymptote": 0,
+            },
+            {
+                "id": "ACH-9myeloid",
+                "displayName": "myeloid_9",
+                "ec50": 0,
+                "slope": 0,
+                "lowerAsymptote": 0,
+                "upperAsymptote": 0,
+            },
+            {
+                "id": "ACH-10myeloid",
+                "displayName": "myeloid_10",
+                "ec50": 0,
+                "slope": 0,
+                "lowerAsymptote": 0,
+                "upperAsymptote": 0,
+            },
+            {
                 "id": "ACH-1LYMPH",
                 "displayName": "LYMPH_1",
                 "ec50": 0,
@@ -838,6 +886,9 @@ def _get_box_plot_data(
         abs_effect_size=abs_effect_size,
         frac_dep_in=frac_dep_in,
     )
+
+    if context_box_plot_data is None:
+        return None
 
     return dataclasses.asdict(context_box_plot_data)
 
@@ -1121,15 +1172,7 @@ def test_get_box_plot_data(empty_db_mock_downloads, dataset_name):
         frac_dep_in=nothing_range.frac_dep_in,
     )
 
-    assert data == {
-        "significant_selection": {},
-        "insignifcant_selection": None,
-        "other_cards": [],
-        "insignificant_heme_data": {},
-        "insignificant_solid_data": {},
-        "drug_dotted_line": None,
-        "entity_label": None,
-    }
+    assert data == None
 
 
 def test_get_compound_experiment_id_from_entity_label():
