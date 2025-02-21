@@ -84,6 +84,7 @@ export function Story() {
   };
 
   const filteredTableCorrelationAnalysisData = React.useMemo(() => {
+    // if no selected feature types, show all correlation analysis data
     if (selectedFeatureTypes.length == 0) {
       return correlationAnalysisData;
     }
@@ -133,6 +134,19 @@ export function Story() {
   );
   console.log(volcanoDataForFeatureType);
 
+  const filteredVolcanoPlotFeatureTypes = React.useMemo(() => {
+    if (selectedFeatureTypes.length == 0) {
+      // if no selected feature types, return all feature types that have volcano plot data
+      return featureTypeOptions
+        .filter(
+          (featureTypeOption) =>
+            featureTypeOption.value in volcanoDataForFeatureType
+        )
+        .map((featureTypeOption) => featureTypeOption.value);
+    }
+    return selectedFeatureTypes;
+  }, [selectedFeatureTypes]);
+
   return (
     <div>
       {JSON.stringify(selectedFeatureTypes)}
@@ -149,7 +163,7 @@ export function Story() {
           );
         }}
       />
-      {selectedFeatureTypes.map((selectedFeatureType) => {
+      {filteredVolcanoPlotFeatureTypes.map((selectedFeatureType) => {
         return (
           <>
             <header>Volcano Plot {selectedFeatureType}</header>
