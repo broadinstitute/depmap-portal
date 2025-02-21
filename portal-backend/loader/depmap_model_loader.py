@@ -187,7 +187,8 @@ def load_subtype_contexts(subtype_context_file_path, must=True):
         subtype_context_file_path, must
     )
     for subtype_code, models in models_per_context.items():
-        assert len(models) != 0
+        if len(models) == 0:
+            continue
         db.session.add(
             SubtypeContextEntity(
                 label=subtype_code,  # this is duplicated, but not sure how to do otherwise

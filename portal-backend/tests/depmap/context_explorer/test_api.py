@@ -43,10 +43,13 @@ def test_get_context_info(populated_db):
                 if isinstance(value, float):
                     assert not np.isnan(value)
 
-        assert len(tree["root"]["model_ids"]) > 0
+        assert tree["node_level"] == 0
+        assert tree["subtype_code"] == "BONE"
+        assert len(tree["model_ids"]) > 0
 
         if len(tree["children"]) > 0:
             for child in tree["children"]:
+                assert child["node_level"] > 0
                 assert len(child["model_ids"]) > 0
 
 
