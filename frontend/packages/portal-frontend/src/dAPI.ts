@@ -944,7 +944,7 @@ export class DepmapApi {
     return Promise.reject(Error("Wrong api used. Check ApiContext"));
   }
 
-  getGroups = (): Promise<Group[]> => {
+  getGroups = (writeAccess: boolean = false): Promise<Group[]> => {
     return Promise.reject(Error("Wrong api used. Check ApiContext"));
   };
 
