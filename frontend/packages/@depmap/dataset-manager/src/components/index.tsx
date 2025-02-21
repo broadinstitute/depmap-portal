@@ -53,7 +53,10 @@ export default function Datasets() {
       dapi.updateDimensionType(dimTypeName, dimTypeArgs),
     [dapi]
   );
-  const getGroups = useCallback(() => dapi.getGroups(), [dapi]);
+  const getGroups = useCallback(() => dapi.getGroups(!isAdvancedMode), [
+    dapi,
+    isAdvancedMode,
+  ]); // write access set to true if not advanced mode
   const getDataTypesAndPriorities = useCallback(
     () => dapi.getDataTypesAndPriorities(),
     [dapi]
@@ -115,7 +118,17 @@ export default function Datasets() {
   useEffect(() => {
     (async () => {
       try {
-        const currentDatasets = await dapi.getBreadboxDatasets();
+        let currentDatasets = await dapi.getBreadboxDatasets();
+
+        if (!isAdvancedMode) {
+          const writeGroups = await dapi.getGroups(!isAdvancedMode);
+          const group_ids = writeGroups.map((group) => {
+            return group.id;
+          });
+          currentDatasets = currentDatasets.filter((dataset) =>
+            group_ids.includes(dataset.group_id)
+          );
+        }
 
         setDatasets(currentDatasets);
         const dimensionTypeDatasetNum = dimensionTypeDatasetCount(
@@ -139,7 +152,7 @@ export default function Datasets() {
         setInitError(true);
       }
     })();
-  }, [dapi, getDimensionTypes]);
+  }, [dapi, getDimensionTypes, getGroups, isAdvancedMode]);
 
   const datasetForm = useCallback(() => {
     if (datasets) {
