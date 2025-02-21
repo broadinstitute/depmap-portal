@@ -82,6 +82,16 @@ export function Story() {
     "imatinib Dose": "label",
     Feature: "text",
   };
+
+  const filteredTableCorrelationAnalysisData = React.useMemo(() => {
+    if (selectedFeatureTypes.length == 0) {
+      return correlationAnalysisData;
+    }
+    return correlationAnalysisData.filter((data) =>
+      selectedFeatureTypes.includes(data["Feature Type"])
+    );
+  }, [selectedFeatureTypes]);
+
   const volcanoDataForFeatureType = correlationAnalysisData.reduce(
     (acc, curRecord) => {
       const key = curRecord["Feature Type"];
@@ -182,8 +192,12 @@ export function Story() {
           { accessor: "-log10 qval" },
           { accessor: "Rank" },
         ]}
-        data={correlationAnalysisData}
+        data={filteredTableCorrelationAnalysisData}
       />
+      <p>
+        Showing {filteredTableCorrelationAnalysisData.length} of{" "}
+        {correlationAnalysisData.length} entries
+      </p>
     </div>
   );
 }
