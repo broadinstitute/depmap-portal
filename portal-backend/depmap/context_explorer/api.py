@@ -491,9 +491,9 @@ class ContextBoxPlotData(Resource):
         dataset_name = request.args.get("dataset_name")
         entity_type = request.args.get("entity_type")
         entity_full_label = request.args.get("entity_full_label")
-        max_fdr = request.args.get("max_fdr")
-        min_abs_effect_size = request.args.get("min_abs_effect_size")
-        min_frac_dep_in = request.args.get("min_frac_dep_in")
+        max_fdr = request.args.get("max_fdr", type=float)
+        min_abs_effect_size = request.args.get("min_abs_effect_size", type=float)
+        min_frac_dep_in = request.args.get("min_frac_dep_in", type=float)
 
         context_box_plot_data = box_plot_utils.get_organized_contexts(
             selected_subtype_code=selected_subtype_code,

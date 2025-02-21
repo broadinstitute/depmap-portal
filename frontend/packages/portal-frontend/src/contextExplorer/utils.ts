@@ -354,9 +354,9 @@ export function getDataExplorerUrl(
 }
 
 export function getBoxPlotFilterVariables(filters: Filter[]) {
-  let maxFdr: number | undefined;
-  let minEffectSize: number | undefined;
-  let minFracDepIn: number | undefined;
+  let maxFdr: number = 0.1;
+  let minEffectSize: number = 0.1;
+  let minFracDepIn: number = 0.1;
 
   filters.forEach((filter) => {
     if (filter.kind === "numberInput") {

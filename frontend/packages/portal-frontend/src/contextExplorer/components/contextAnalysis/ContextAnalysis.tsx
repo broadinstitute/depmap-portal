@@ -661,7 +661,8 @@ function ContextAnalysis({
       selectedPlotLabels.size > 0 &&
       [...selectedPlotLabels][0] &&
       boxPlotMaxFDR &&
-      boxPlotMinEffectSize
+      boxPlotMinEffectSize &&
+      boxPlotMinFracDepIn
     ) {
       setBoxPlotData(null);
       setEntityDetailMainPlotElement(null);
@@ -675,7 +676,7 @@ function ContextAnalysis({
         [...selectedPlotLabels][0],
         boxPlotMaxFDR,
         boxPlotMinEffectSize,
-        boxPlotMinFracDepIn ?? 0
+        boxPlotMinFracDepIn
       );
 
       boxplotLatestPromise.current = boxplotPromise;
