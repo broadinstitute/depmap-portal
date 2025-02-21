@@ -126,7 +126,7 @@ def test_get_context_path(populated_db):
             content_type="application/json",
         )
 
-        assert r.json == ["BONE"]
+        assert r.json == {"path": ["BONE"], "tree_type": "Lineage"}
 
         # Test to level 1
         r = c.get(
@@ -134,7 +134,7 @@ def test_get_context_path(populated_db):
             content_type="application/json",
         )
 
-        assert r.json == ["BONE", "ES"]
+        assert r.json == {"path": ["BONE", "ES"], "tree_type": "Lineage"}
 
         # Test to level 2
         r = c.get(
@@ -142,7 +142,7 @@ def test_get_context_path(populated_db):
             content_type="application/json",
         )
 
-        assert r.json == ["LUNG", "NSCLC", "LUAD"]
+        assert r.json == {"path": ["LUNG", "NSCLC", "LUAD"], "tree_type": "Lineage"}
 
         # Test level 3 / also test a data driven genetic subtype that's part of the Lineage tree
         r = c.get(
@@ -151,7 +151,10 @@ def test_get_context_path(populated_db):
             ),
             content_type="application/json",
         )
-        assert r.json == ["LUNG", "NSCLC", "LUAD", "LUAD:EGFRp.L858R"]
+        assert r.json == {
+            "path": ["LUNG", "NSCLC", "LUAD", "LUAD:EGFRp.L858R"],
+            "tree_type": "Lineage",
+        }
 
         # Test a branch of the Molecular Subtype Tree
         r = c.get(
@@ -159,7 +162,10 @@ def test_get_context_path(populated_db):
             content_type="application/json",
         )
 
-        assert r.json == ["EGFR", "EGFRp.L858R"]
+        assert r.json == {
+            "path": ["EGFR", "EGFRp.L858R"],
+            "tree_type": "MolecularSubtype",
+        }
 
         # Something is very wrong if we pass a nonsense code to this endpoint
         with pytest.raises(Exception):
