@@ -73,7 +73,7 @@ data_availability_datasets = [
         label="Repurposing single point", 
         dose_range="2.5μM", 
         assay="PRISM", 
-        given_ids=["Repurposing_AUC_collapsed", DependencyEnum.Rep_all_single_pt.name],
+        given_ids=["REPURPOSING_AUC_collapsed", DependencyEnum.Rep_all_single_pt.name],
     ),
     DataAvailabilityDataset(
         label="Repurposing multi-dose",
