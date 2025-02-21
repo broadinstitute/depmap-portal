@@ -628,7 +628,16 @@ def _validate_tabular_df_schema(
     )
 
     # NOTE: missing values are denoted as pd.NA
-    df = pd.read_csv(file_path, dtype=str)
+    try:
+        df = pd.read_csv(
+            file_path,
+            dtype={
+                k: annotation_type_to_pandas_column_type(v.col_type)
+                for k, v in columns_metadata.items()
+            },
+        )
+    except ValueError as val_e:
+        raise FileValidationError(str(val_e)) from val_e
     try:
         validated_df = schema.validate(df)
     except SchemaError as schema_error:

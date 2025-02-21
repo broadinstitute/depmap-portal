@@ -148,8 +148,10 @@ def test_validate_tabular_df_schema(tmpdir):
                     "col3": [1, 1.1, 1],
                     "col4": [1, 0, 1],
                     "col5": ["1", "1.1", "1"],
+                    "col6": [1, 0, 1],
+                    "col7": [True, False, True],
                 },
-                columns=["ID", "col1", "col2", "col3", "col4", "col5"],
+                columns=["ID", "col1", "col2", "col3", "col4", "col5", "col6", "col7"],
             ),
             index=False,
         ),
@@ -160,6 +162,8 @@ def test_validate_tabular_df_schema(tmpdir):
             "col3": ColumnMetadata(col_type=AnnotationType.categorical),
             "col4": ColumnMetadata(col_type=AnnotationType.categorical),
             "col5": ColumnMetadata(col_type=AnnotationType.categorical),
+            "col6": ColumnMetadata(col_type=AnnotationType.binary),
+            "col7": ColumnMetadata(col_type=AnnotationType.binary),
         },
         "ID",
     )
@@ -171,9 +175,45 @@ def test_validate_tabular_df_schema(tmpdir):
     assert df["col3"].dtype == pd.CategoricalDtype(
         categories=["1.0", "1.1"], ordered=False
     )
-    assert df["col4"].to_list() == ["1", "0", "1"]
+    assert df["col4"].to_list() == [
+        "1",
+        "0",
+        "1",
+    ]  # TODO: This is an error where value type is changed. Noting here to address later
     assert df["col4"].dtype == pd.CategoricalDtype(categories=["0", "1"], ordered=False)
-    assert df["col5"].to_list() == ["1", "1.1", "1"]
+    assert df["col5"].to_list() == [
+        "1",
+        "1.1",
+        "1",
+    ]  # TODO: This is an error where value type is changed. Noting here to address later
     assert df["col5"].dtype == pd.CategoricalDtype(
         categories=["1", "1.1"], ordered=False
     )
+    assert df["col6"].to_list() == [1, 0, 1]
+    assert df["col6"].dtype == pd.BooleanDtype()
+    assert df["col7"].to_list() == [True, False, True]
+    assert df["col7"].dtype == pd.BooleanDtype()
+
+
+def test_incorrect_typing_tabular_df_schema(tmpdir):
+    def to_csv(*args, **kwargs):
+        return _to_csv(tmpdir, *args, **kwargs)
+
+    with pytest.raises(FileValidationError) as ex:
+        _validate_tabular_df_schema(
+            to_csv(
+                pd.DataFrame(
+                    {"ID": ["id1", "id2", "id3"], "col1": ["val1", "val2", "val3"]},
+                    columns=["ID", "col1"],
+                ),
+                index=False,
+            ),
+            {
+                "ID": ColumnMetadata(col_type=AnnotationType.text),
+                "col1": ColumnMetadata(
+                    col_type=AnnotationType.continuous, units="unit"
+                ),
+            },
+            "ID",
+        )
+    assert 'Unable to parse string "val1" at position 0' == ex.value.detail
