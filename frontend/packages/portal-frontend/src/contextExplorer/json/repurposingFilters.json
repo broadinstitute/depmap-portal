@@ -7,15 +7,19 @@
     "match": "False"
   },
   {
-    "kind": "range",
+    "kind": "numberInput",
     "key": "t_qval",
-    "label": "FDR",
-    "value": { "max": 0.05 }
+    "label": "Max. FDR",
+    "minOrMax": "max",
+    "step": 0.01,
+    "value": 0.5
   },
   {
-    "kind": "range",
+    "kind": "numberInput",
     "key": "abs_effect_size",
     "label": "Min absolute effect size",
-    "value": { "min": 0.5 }
+    "minOrMax": "min",
+    "step": 0.01,
+    "value": 0.5
   }
 ]

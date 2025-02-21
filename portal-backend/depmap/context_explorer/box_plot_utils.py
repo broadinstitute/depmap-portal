@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Any, Dict, List, Literal, Optional
+from typing import Any, Dict, List, Literal, Optional, Union
 from depmap.cell_line.models_new import DepmapModel
 from depmap.context_explorer.models import ContextAnalysis
 import pandas as pd
@@ -201,9 +201,9 @@ def _get_sig_context_dataframe(
     entity_type: str,
     entity_id: str,
     dataset_name: str,
-    fdr: List[float],
-    abs_effect_size: List[float],
-    frac_dep_in: List[float],
+    max_fdr: float,
+    min_abs_effect_size: float,
+    min_frac_dep_in: float,
 ) -> pd.DataFrame:
     # If this doesn't find the node, something is wrong with how we
     # loaded the SubtypeNode database table data.
@@ -212,9 +212,9 @@ def _get_sig_context_dataframe(
         entity_id=entity_id,
         dataset_name=dataset_name,
         entity_type=entity_type,
-        fdr=fdr,
-        abs_effect_size=abs_effect_size,
-        frac_dep_in=frac_dep_in,
+        max_fdr=max_fdr,
+        min_abs_effect_size=min_abs_effect_size,
+        min_frac_dep_in=min_frac_dep_in,
     )
 
     return sig_contexts
@@ -331,9 +331,9 @@ def get_organized_contexts(
     entity_type: str,
     entity_full_label: str,
     dataset_name: str,
-    fdr: List[float],
-    abs_effect_size: List[float],
-    frac_dep_in: List[float],
+    max_fdr: float,
+    min_abs_effect_size: float,
+    min_frac_dep_in: float,
 ) -> ContextPlotBoxData:
     level_0 = SubtypeNode.get_by_code(selected_subtype_code).level_0
     node_entity_data = _get_node_entity_data(
@@ -349,9 +349,9 @@ def get_organized_contexts(
         entity_type=entity_type,
         entity_id=node_entity_data.entity_id,
         dataset_name=dataset_name,
-        fdr=fdr,
-        abs_effect_size=abs_effect_size,
-        frac_dep_in=frac_dep_in,
+        max_fdr=max_fdr,
+        min_abs_effect_size=min_abs_effect_size,
+        min_frac_dep_in=min_frac_dep_in,
     )
     (entity_full_row_of_values) = utils.get_full_row_of_values_and_depmap_ids(
         dataset_name=dataset_name, label=node_entity_data.entity_label

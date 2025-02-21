@@ -708,9 +708,9 @@ export class DepmapApi {
     dataset_name: ContextExplorerDatasets,
     entity_type: string,
     entity_full_label: string,
-    fdr: number[],
-    abs_effect_size: number[],
-    frac_dep_in: number[]
+    max_fdr: number,
+    min_abs_effect_size: number,
+    min_frac_dep_in: number
   ): Promise<ContextPlotBoxData> {
     const params: any = {
       selected_subtype_code,
@@ -719,9 +719,9 @@ export class DepmapApi {
       out_group: "All Others",
       entity_type,
       entity_full_label,
-      fdr,
-      abs_effect_size,
-      frac_dep_in,
+      max_fdr,
+      min_abs_effect_size,
+      min_frac_dep_in,
     };
 
     return this._fetchIncludeContextExplCache<ContextPlotBoxData>(

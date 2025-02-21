@@ -7,21 +7,27 @@
     "match": "False"
   },
   {
-    "kind": "range",
+    "kind": "numberInput",
     "key": "t_qval",
-    "label": "T-test q-value",
-    "value": { "max": 0.05 }
+    "label": " Max. T-test q-value",
+    "minOrMax": "max",
+    "step": 0.01,
+    "value": 0.5
   },
   {
-    "kind": "range",
+    "kind": "numberInput",
     "key": "abs_effect_size",
-    "label": "Abs(effect size)",
-    "value": { "min": 0.1 }
+    "label": "Min. Abs(effect size)",
+    "minOrMax": "min",
+    "step": 0.01,
+    "value": 0.1
   },
   {
-    "kind": "range",
+    "kind": "numberInput",
     "key": "frac_dep_in",
-    "label": " % of in-context lines dependent",
-    "value": { "min": 0.1 }
+    "label": "Min. % of in-context lines dependent",
+    "minOrMax": "min",
+    "step": 0.01,
+    "value": 0.1
   }
 ]

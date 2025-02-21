@@ -354,24 +354,24 @@ export function getDataExplorerUrl(
 }
 
 export function getBoxPlotFilterVariables(filters: Filter[]) {
-  let fdr: number[] = [];
-  let effectSize: number[] = [];
-  let fracDepIn: number[] = [];
+  let maxFdr: number | undefined;
+  let minEffectSize: number | undefined;
+  let minFracDepIn: number | undefined;
 
   filters.forEach((filter) => {
-    if (filter.kind === "range") {
-      const valueRange = filter.value;
+    if (filter.kind === "numberInput") {
+      const value = filter.value;
       if (filter.key === "t_qval") {
-        fdr = valueRange;
+        maxFdr = value;
       } else if (filter.key === "abs_effect_size") {
-        effectSize = valueRange;
+        minEffectSize = value;
       } else if (filter.key === "frac_dep_in") {
-        fracDepIn = valueRange;
+        minFracDepIn = value;
       }
     }
   });
 
-  return { fdr, effectSize, fracDepIn };
+  return { maxFdr, minEffectSize, minFracDepIn };
 }
 
 export const getUpdatedGraphInfoForSelection = (

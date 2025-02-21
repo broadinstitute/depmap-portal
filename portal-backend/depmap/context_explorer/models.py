@@ -3,7 +3,7 @@ import json
 import sqlalchemy
 from sqlalchemy import and_, or_, func, desc
 import enum
-from typing import Any, Dict, List, Literal, Optional, Tuple
+from typing import Any, Dict, List, Literal, Optional, Tuple, Union
 import pandas as pd
 from depmap.gene.models import Gene
 from depmap.compound.models import CompoundExperiment
@@ -311,9 +311,9 @@ class ContextAnalysis(Model):
         entity_id: int,
         dataset_name: str,
         entity_type: Literal["gene", "compound"],
-        fdr: List[float],
-        abs_effect_size: List[float],
-        frac_dep_in: List[float],
+        max_fdr: float,
+        min_abs_effect_size: float,
+        min_frac_dep_in: float,
     ):
         assert dataset_name in DependencyEnum.values()
 
@@ -326,12 +326,9 @@ class ContextAnalysis(Model):
                     and_(
                         ContextAnalysis.dependency_dataset_id == dependency_dataset_id,
                         ContextAnalysis.entity_id == entity_id,
-                        # ContextAnalysis.t_qval >= fdr[0],
-                        ContextAnalysis.t_qval <= fdr[1],
-                        func.abs(ContextAnalysis.effect_size) >= abs_effect_size[0],
-                        # func.abs(ContextAnalysis.effect_size) <= abs_effect_size[1],
-                        ContextAnalysis.frac_dep_in >= frac_dep_in[0],
-                        # ContextAnalysis.frac_dep_in <= frac_dep_in[1],
+                        ContextAnalysis.t_qval <= max_fdr,
+                        func.abs(ContextAnalysis.effect_size) >= min_abs_effect_size,
+                        ContextAnalysis.frac_dep_in >= min_frac_dep_in,
                     )
                 )
                 .join(
@@ -353,10 +350,8 @@ class ContextAnalysis(Model):
                     and_(
                         ContextAnalysis.dependency_dataset_id == dependency_dataset_id,
                         ContextAnalysis.entity_id == entity_id,
-                        # ContextAnalysis.t_qval >= fdr[0],
-                        ContextAnalysis.t_qval <= fdr[1],
-                        func.abs(ContextAnalysis.effect_size) >= abs_effect_size[0],
-                        # func.abs(ContextAnalysis.effect_size) <= abs_effect_size[1],
+                        ContextAnalysis.t_qval <= max_fdr,
+                        func.abs(ContextAnalysis.effect_size) >= min_abs_effect_size,
                     )
                 )
                 .join(

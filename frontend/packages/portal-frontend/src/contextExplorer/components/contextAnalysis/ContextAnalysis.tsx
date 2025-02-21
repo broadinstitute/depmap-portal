@@ -623,13 +623,15 @@ function ContextAnalysis({
 
   const [isLoadingBoxplot, setIsLoadingBoxplot] = useState<boolean>(true);
 
-  const [boxPlotFDRRange, setBoxPlotFDRRange] = useState<number[] | null>(null);
-  const [boxPlotEffectSizeRange, setBoxPlotEffectSizeRange] = useState<
-    number[] | null
-  >(null);
-  const [boxPlotFracDepInRange, setBoxPlotFracDepInRange] = useState<
-    number[] | null
-  >(null);
+  const [boxPlotMaxFDR, setBoxPlotMaxFDR] = useState<number | undefined>(
+    undefined
+  );
+  const [boxPlotMinEffectSize, setBoxPlotMinEffectSize] = useState<
+    number | undefined
+  >(undefined);
+  const [boxPlotMinFracDepIn, setBoxPlotMinFracDepIn] = useState<
+    number | undefined
+  >(undefined);
 
   useEffect(() => {
     if (
@@ -640,13 +642,13 @@ function ContextAnalysis({
     ) {
       const boxPlotFilters = defaultFilters.current || filters;
 
-      const { fdr, effectSize, fracDepIn } = getBoxPlotFilterVariables(
+      const { maxFdr, minEffectSize, minFracDepIn } = getBoxPlotFilterVariables(
         boxPlotFilters
       );
 
-      setBoxPlotFDRRange(fdr);
-      setBoxPlotEffectSizeRange(effectSize);
-      setBoxPlotFracDepInRange(fracDepIn);
+      setBoxPlotMaxFDR(maxFdr);
+      setBoxPlotMinEffectSize(minEffectSize);
+      setBoxPlotMinFracDepIn(minFracDepIn);
     }
   }, [filters, selectedPlotLabels, defaultFilters]);
 
@@ -658,9 +660,8 @@ function ContextAnalysis({
       selectedPlotLabels &&
       selectedPlotLabels.size > 0 &&
       [...selectedPlotLabels][0] &&
-      boxPlotFDRRange &&
-      boxPlotEffectSizeRange &&
-      boxPlotFracDepInRange
+      boxPlotMaxFDR &&
+      boxPlotMinEffectSize
     ) {
       setBoxPlotData(null);
       setEntityDetailMainPlotElement(null);
@@ -672,9 +673,9 @@ function ContextAnalysis({
         datasetId,
         entityType,
         [...selectedPlotLabels][0],
-        boxPlotFDRRange,
-        boxPlotEffectSizeRange,
-        boxPlotFracDepInRange
+        boxPlotMaxFDR,
+        boxPlotMinEffectSize,
+        boxPlotMinFracDepIn ?? 0
       );
 
       boxplotLatestPromise.current = boxplotPromise;
@@ -703,9 +704,9 @@ function ContextAnalysis({
     treeType,
     dapi,
     topContextNameInfo,
-    boxPlotFDRRange,
-    boxPlotEffectSizeRange,
-    boxPlotFracDepInRange,
+    boxPlotMaxFDR,
+    boxPlotMinEffectSize,
+    boxPlotMinFracDepIn,
   ]);
 
   return (
@@ -878,28 +879,36 @@ function ContextAnalysis({
                   borderTop: "1px solid #7d7d7d",
                 }}
               />
-              <h3>Data Table and Filters</h3>
+              <h3>Table and Scatter Plot Filters</h3>
               {entityType === "gene" ? (
-                <p style={{ fontSize: "14px", paddingRight: "35px" }}>
-                  Use the filters in order to adjust the data shown in the plots
-                  above and the table below. To see stronger results, restrict
-                  the range of FDR adjusted T-test p-values, the range of
-                  absolute value of the effect size, and the percentage of
-                  in-context lines that are dependent on the gene. Including
-                  genes with positive effect sizes will display genes that are
-                  weaker dependencies in the selected context as compared to the
-                  out-group.
+                <p
+                  style={{
+                    fontSize: "14px",
+                    paddingRight: "35px",
+                    maxWidth: "750px",
+                  }}
+                >
+                  To see stronger results, restrict the range of FDR adjusted
+                  T-test p-values, the range of absolute value of the effect
+                  size, and the percentage of in-context lines that are
+                  dependent on the gene. Including genes with positive effect
+                  sizes will display genes that are weaker dependencies in the
+                  selected context as compared to the out-group.
                 </p>
               ) : (
-                <p style={{ fontSize: "14px", paddingRight: "35px" }}>
-                  Use the filters in order to adjust the data shown in the plots
-                  above and the table below. To see stronger results, restrict
-                  the range of FDR adjusted T-test p-values, the range of
-                  absolute value of the effect size, and the percentage of
-                  in-context lines that are sensitive to the drug. Including
-                  drugs with positive effect sizes will display drugs that are
-                  weaker sensitivities in the selected context as compared to
-                  the out-group.
+                <p
+                  style={{
+                    fontSize: "14px",
+                    paddingRight: "35px",
+                    maxWidth: "750px",
+                  }}
+                >
+                  To see stronger results, restrict the range of FDR adjusted
+                  T-test p-values, the range of absolute value of the effect
+                  size, and the percentage of in-context lines that are
+                  sensitive to the drug. Including drugs with positive effect
+                  sizes will display drugs that are weaker sensitivities in the
+                  selected context as compared to the out-group.
                 </p>
               )}
               <div
@@ -1013,9 +1022,9 @@ function ContextAnalysis({
                   {!boxplotError &&
                     boxPlotData &&
                     selectedContextNode &&
-                    boxPlotFDRRange &&
-                    boxPlotEffectSizeRange &&
-                    boxPlotFracDepInRange && (
+                    boxPlotMaxFDR &&
+                    boxPlotMinEffectSize &&
+                    boxPlotMinFracDepIn && (
                       <CollapsibleBoxPlots
                         handleSetMainPlotElement={(
                           element: ExtendedPlotType | null

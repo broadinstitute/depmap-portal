@@ -143,6 +143,7 @@ class ContextInfo(
         # breakpoint()
 
         level_0_subtype_code = request.args.get("level_0_subtype_code")
+
         (
             context_tree,
             overview_data,
@@ -490,9 +491,9 @@ class ContextBoxPlotData(Resource):
         dataset_name = request.args.get("dataset_name")
         entity_type = request.args.get("entity_type")
         entity_full_label = request.args.get("entity_full_label")
-        fdr = request.args.getlist("fdr", type=float)
-        abs_effect_size = request.args.getlist("abs_effect_size", type=float)
-        frac_dep_in = request.args.getlist("frac_dep_in", type=float)
+        max_fdr = request.args.get("max_fdr")
+        min_abs_effect_size = request.args.get("min_abs_effect_size")
+        min_frac_dep_in = request.args.get("min_frac_dep_in")
 
         context_box_plot_data = box_plot_utils.get_organized_contexts(
             selected_subtype_code=selected_subtype_code,
@@ -500,9 +501,9 @@ class ContextBoxPlotData(Resource):
             entity_type=entity_type,
             entity_full_label=entity_full_label,
             dataset_name=dataset_name,
-            fdr=fdr,
-            abs_effect_size=abs_effect_size,
-            frac_dep_in=frac_dep_in,
+            max_fdr=max_fdr,
+            min_abs_effect_size=min_abs_effect_size,
+            min_frac_dep_in=min_frac_dep_in,
         )
 
         if context_box_plot_data is None:

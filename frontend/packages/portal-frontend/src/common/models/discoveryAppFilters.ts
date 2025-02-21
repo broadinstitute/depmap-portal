@@ -11,6 +11,15 @@ export type RangeFilter = {
   value: [number, number];
 };
 
+export type NumberInputFilter = {
+  kind: "numberInput";
+  key: string;
+  label: string;
+  minOrMax: "min" | "max";
+  step: number;
+  value: number;
+};
+
 export type CheckboxFilter = {
   kind: "checkbox";
   subtype?: string;
@@ -31,7 +40,17 @@ export type MultiSelectFilter = {
   blocklist: string[] | null;
 };
 
-export type Filter = RangeFilter | CheckboxFilter | MultiSelectFilter;
+export type Filter =
+  | RangeFilter
+  | CheckboxFilter
+  | MultiSelectFilter
+  | NumberInputFilter;
+
+export function isNumberInputFilter(
+  filter: Filter
+): filter is NumberInputFilter {
+  return filter.kind === "numberInput";
+}
 
 export function isRangeFilter(filter: Filter): filter is RangeFilter {
   return filter.kind === "range";
@@ -155,6 +174,13 @@ function areFiltersEqual(a: Filter, b: Filter) {
     return aMin === bMin && aMax === bMax;
   }
 
+  if (isNumberInputFilter(a) && isNumberInputFilter(b)) {
+    const aVal = a.value;
+    const bVal = b.value;
+
+    return aVal === bVal && a.minOrMax === b.minOrMax && a.step === b.step;
+  }
+
   if (isMultiSelectFilter(a) && isMultiSelectFilter(b)) {
     if (a.value.length !== b.value.length) {
       return false;
@@ -184,6 +210,15 @@ export function normalizeFilters(data: Data, partialFilters: any[]): Filter[] {
 
     if (typeof filter.label !== "string") {
       throw new Error("filter must have a `label` property");
+    }
+
+    if (filter.kind === "numberInput") {
+      const { kind, key, minOrMax, label } = filter;
+
+      const value = filter.value;
+      const step = filter.step ?? 1;
+
+      return { kind, key, label, minOrMax, value, step };
     }
 
     if (filter.kind === "range") {
@@ -295,6 +330,14 @@ const applyFilter = memoize(
           typeof dataValue === "number" &&
           dataValue >= filter.value[0] &&
           dataValue <= filter.value[1]
+        ) {
+          out[i] = true;
+        }
+      } else if (isNumberInputFilter(filter)) {
+        if (
+          typeof dataValue === "number" &&
+          ((filter.minOrMax === "min" && dataValue >= filter.value) ||
+            (filter.minOrMax === "max" && dataValue <= filter.value))
         ) {
           out[i] = true;
         }

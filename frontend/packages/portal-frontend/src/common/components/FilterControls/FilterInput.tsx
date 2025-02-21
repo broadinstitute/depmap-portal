@@ -1,4 +1,5 @@
 import React, {
+  ChangeEvent,
   memo,
   useCallback,
   useLayoutEffect,
@@ -14,6 +15,7 @@ import {
   isRangeFilter,
   isCheckboxFilter,
   isMultiSelectFilter,
+  isNumberInputFilter,
 } from "src/common/models/discoveryAppFilters";
 import styles from "src/common/styles/FilterControls.scss";
 
@@ -69,6 +71,25 @@ function FilterInput({
           selection={value}
           rangeHandler={rangeHandler}
           disableHistogram={disableHistogram}
+        />
+      </div>
+    );
+  }
+
+  if (isNumberInputFilter(filter)) {
+    const { value, step } = filter;
+
+    return (
+      <div className={styles.numInputFilter}>
+        <div>{label}</div>
+        <input
+          style={{ width: "55px" }}
+          type="number"
+          value={value}
+          step={step}
+          onChange={(event: ChangeEvent<HTMLInputElement>) =>
+            onChangeFilter(key, Number(event.target.value))
+          }
         />
       </div>
     );

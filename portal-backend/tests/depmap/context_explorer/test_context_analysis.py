@@ -882,9 +882,9 @@ def _get_box_plot_data(
         entity_type=entity_type,
         entity_full_label=selected_entity_label,
         dataset_name=dataset_name,
-        fdr=fdr,
-        abs_effect_size=abs_effect_size,
-        frac_dep_in=frac_dep_in,
+        max_fdr=fdr,
+        min_abs_effect_size=abs_effect_size,
+        min_frac_dep_in=frac_dep_in,
     )
 
     if context_box_plot_data is None:

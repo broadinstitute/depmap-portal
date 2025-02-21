@@ -81,13 +81,7 @@ function DoseCurvesTile(props: DoseCurvesTileProps) {
       )}
       {!isError && isLoading && <PlotSpinner />}
       {data && (
-        <div
-          style={{
-            backgroundColor: "#ffffff",
-            paddingBottom: "5px",
-            marginTop: "10px",
-          }}
-        >
+        <div className={styles.doseCurvesTile}>
           <DoseCurvesPlot
             minDose={data.min_dose}
             maxDose={data.max_dose}

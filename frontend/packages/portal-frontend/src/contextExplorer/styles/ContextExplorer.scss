@@ -348,6 +348,12 @@
   margin-bottom: 12px;
   overflow: hidden;
 
+  @media (max-width: 1050px) {
+    margin-left: 14px;
+    margin-right: 14px;
+    width: auto;
+  }
+
   .overviewTable {
     margin-left: 20px;
     margin-bottom: 20px;
@@ -362,6 +368,10 @@
   display: flex;
   flex-direction: row;
   height: 100%;
+
+  @media (max-width: 1050px) {
+    flex-direction: column;
+  }
 }
 
 .deButtonRow {
@@ -553,6 +563,16 @@
   }
 }
 
+.doseCurvesTile {
+  background-color: #ffffff;
+  padding-bottom: 5px;
+  margin-top: 10px;
+
+  @media (max-width: 1050px) {
+    border: 1px solid #d9d9d9;
+  }
+}
+
 .right {
   display: flex;
   flex-direction: column;
@@ -569,6 +589,18 @@
     // border: 1px solid #d9d9d9;
     margin-bottom: 20px;
     // background-color: white;
+    @media (max-width: 1050px) {
+      background-color: white;
+    }
+  }
+
+  @media (max-width: 1050px) {
+    height: auto;
+    background-color: white;
+    border: 1px solid #d9d9d9;
+    margin-left: 14px;
+    margin-right: 14px;
+    width: auto;
   }
 }
 
@@ -681,7 +713,7 @@
   display: flex;
   flex-direction: row;
   margin-top: 15px;
-  margin-bottom: 85px;
+  margin-bottom: 15px;
   @media (max-width: 1610px) {
     flex-direction: column;
     height: auto;
@@ -695,25 +727,18 @@
     & > div {
       display: flex;
       flex-direction: row;
-      height: 40px;
-      margin-bottom: 20px;
+      // height: 40px;
+      margin-bottom: 40px;
       padding-bottom: 8px;
-      @media (max-width: 1610px) {
-        flex-direction: column;
-        height: auto;
-        margin-bottom: 0;
-      }
+      max-width: 520px;
+
       & > div {
         display: flex;
         flex-direction: column;
-        margin-right: 55px;
+        margin-right: 25px;
         margin-top: auto;
-        text-align: center;
+        text-align: left;
         font-weight: bold;
-
-        .slider .div {
-          width: 300px;
-        }
       }
     }
   }
