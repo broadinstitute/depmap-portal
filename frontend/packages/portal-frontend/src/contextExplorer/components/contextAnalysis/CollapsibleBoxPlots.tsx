@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { Panel, PanelGroup } from "react-bootstrap";
 import {
   BoxCardData,
@@ -424,7 +424,9 @@ function CollapsibleBoxPlots({
                   otherCard[level0Code].subContextInfo.length > 0 && (
                     <BoxPlot
                       plotName={`${level0Code} box plot`}
-                      boxData={otherCard[level0Code].subContextInfo.reverse()}
+                      boxData={[
+                        ...otherCard[level0Code].subContextInfo,
+                      ].reverse()}
                       onLoad={() => {}}
                       setXAxisRange={setXAxisRange}
                       xAxisRange={xAxisRange}
