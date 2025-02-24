@@ -79,7 +79,7 @@ export default function ChunkedFileUploader({
           <table className={styles.uploadExampleTable}>
             <thead>
               <tr>
-                <th />
+                <th>entrez_id</th>
                 <th>symbol</th>
                 <th>status</th>
                 <th>other metadata</th>
@@ -101,7 +101,7 @@ export default function ChunkedFileUploader({
             </tbody>
           </table>
           <pre>
-            <div>,symbol,status,other metadata</div>
+            <div>entrez_id,symbol,status,other metadata</div>
             <div>6663,SOX10,Yes,</div>
             <div>4839,NRAS,No,123</div>
           </pre>
