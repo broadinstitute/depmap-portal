@@ -39,14 +39,14 @@ class BoxData:
 @dataclass
 class BoxCardData:
     significant: Dict[str, BoxData]
-    insignifcant: BoxData
+    insignificant: BoxData
     level_0_code: str
 
 
 @dataclass
 class ContextPlotBoxData:
     significant_selection: Dict[str, BoxData]
-    insignifcant_selection: BoxData
+    insignificant_selection: BoxData
     other_cards: List[BoxCardData]
     insignificant_heme_data: BoxData
     insignificant_solid_data: BoxData

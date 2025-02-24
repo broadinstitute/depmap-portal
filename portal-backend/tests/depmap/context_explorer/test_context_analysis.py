@@ -958,7 +958,7 @@ def test_get_box_plot_data(empty_db_mock_downloads, dataset_name):
             ],
         },
     }
-    assert data["insignifcant_selection"] == {"Other BONE": []}
+    assert data["insignificant_selection"] == {"Other BONE": []}
 
     # Test the funk case where a level_0 subtype is NOT signficant, but some of its
     # children are. We still want a card to show up in the UI, so we need to return
@@ -1099,8 +1099,8 @@ def test_get_box_plot_data(empty_db_mock_downloads, dataset_name):
 
     # TODO: Fix typo. Should be insignificant selection. Not insignifcant. Notice the i after
     # the "f" is missing. I suspect this typo carries through everywhere and could cause future
-    # confusion.
-    assert data["insignifcant_selection"] == {"Other BONE": []}
+    # confusion. --> Fixed as of Feb 24. Leaving here until I have a chance to double check this test
+    assert data["insignificant_selection"] == {"Other BONE": []}
 
     assert data["other_cards"] == [
         {

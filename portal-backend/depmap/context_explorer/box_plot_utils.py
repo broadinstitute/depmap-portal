@@ -39,13 +39,13 @@ def get_box_plot_card_data(
     significant_box_plot_data = {}
     insignificant_box_plot_data = {}
     all_sig_models = []
-    codes_with_less_than_5_models = []
+    other_lineage_plot_model_ids = []
 
     child_codes = model_ids_by_code.keys()
 
     for child in child_codes:
+        context_model_ids = model_ids_by_code[child]
         if child in all_sig_context_codes:
-            context_model_ids = model_ids_by_code[child]
             # This rule should be enforced in get_context_analysis.py. If this assertion gets hit,
             # something is wrong with our pipeline script.
             if len(context_model_ids) >= 5:
@@ -57,7 +57,9 @@ def get_box_plot_card_data(
                 significant_box_plot_data[child] = box_plot
                 all_sig_models.extend(context_model_ids)
             else:
-                codes_with_less_than_5_models.extend(context_model_ids)
+                other_lineage_plot_model_ids.extend(context_model_ids)
+        else:
+            other_lineage_plot_model_ids.extend(context_model_ids)
 
     if level_0_code not in all_sig_context_codes:
         if len(all_sig_models) >= 5:
@@ -70,7 +72,7 @@ def get_box_plot_card_data(
             level_0_model_ids = SubtypeNode.get_model_ids_by_subtype_code_and_node_level(
                 level_0_code, 0
             )
-            level_0_model_ids.extend(codes_with_less_than_5_models)
+            level_0_model_ids.extend(other_lineage_plot_model_ids)
 
             all_other_model_ids = list(set(level_0_model_ids) - set(all_sig_models))
             insignificant_box_plot_data = (
@@ -86,12 +88,12 @@ def get_box_plot_card_data(
     else:
         insignificant_box_plot_data = (
             {f"Other {level_0_code}": []}
-            if len(codes_with_less_than_5_models) < 5
+            if len(other_lineage_plot_model_ids) < 5
             else get_box_plot_data_for_context(
                 label=f"Other {level_0_code}",
                 subtype_code=level_0_code,
                 entity_full_row_of_values=entity_full_row_of_values,
-                model_ids=codes_with_less_than_5_models,
+                model_ids=other_lineage_plot_model_ids,
             )
         )
 
@@ -306,7 +308,7 @@ def get_context_plot_box_data(
             if not selected_sig_box_plot_card_data
             else selected_sig_box_plot_card_data["significant"]
         )
-        insignifcant_selection = (
+        insignificant_selection = (
             None
             if not selected_sig_box_plot_card_data
             else selected_sig_box_plot_card_data["insignificant"]
@@ -314,7 +316,7 @@ def get_context_plot_box_data(
 
         return ContextPlotBoxData(
             significant_selection=significant_selection,
-            insignifcant_selection=insignifcant_selection,
+            insignificant_selection=insignificant_selection,
             other_cards=other_box_plot_data,
             insignificant_heme_data=heme_box_plot_data,
             insignificant_solid_data=solid_box_plot_data,

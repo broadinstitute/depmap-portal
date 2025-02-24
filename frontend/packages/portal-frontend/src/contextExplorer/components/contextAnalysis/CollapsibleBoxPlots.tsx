@@ -153,7 +153,7 @@ function CollapsibleBoxPlots({
       );
       boxCardCount += 1;
 
-      const insigPlotData = boxPlotData.insignifcant_selection;
+      const insigPlotData = boxPlotData.insignificant_selection;
       if (insigPlotData.data && insigPlotData.data.length > 0) {
         plotInfo.push({
           name: insigPlotData.label,
@@ -184,7 +184,7 @@ function CollapsibleBoxPlots({
                 },
                 subContextInfo: formatBoxData(
                   cardData.significant,
-                  cardData.insignifcant,
+                  cardData.insignificant,
                   cardData.level_0_code,
                   boxCardCount
                 ),
@@ -424,7 +424,7 @@ function CollapsibleBoxPlots({
                   otherCard[level0Code].subContextInfo.length > 0 && (
                     <BoxPlot
                       plotName={`${level0Code} box plot`}
-                      boxData={otherCard[level0Code].subContextInfo}
+                      boxData={otherCard[level0Code].subContextInfo.reverse()}
                       onLoad={() => {}}
                       setXAxisRange={setXAxisRange}
                       xAxisRange={xAxisRange}
