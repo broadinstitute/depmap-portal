@@ -169,6 +169,9 @@ function CollapsibleBoxPlots({
         const otherBoxCards = boxPlotData.other_cards.map(
           (cardData: BoxCardData) => {
             boxCardCount += 1;
+            if (boxCardCount > EntityBoxColorList.length - 1) {
+              boxCardCount = 1;
+            }
             const level0Data = cardData.significant[cardData.level_0_code];
             return {
               [cardData.level_0_code]: {
