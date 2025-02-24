@@ -82,10 +82,10 @@ data_availability_datasets = [
         given_ids=[DependencyEnum.Repurposing_secondary_AUC.name],
     ),
     DataAvailabilityDataset(
-        label="OncRef", 
+        label="OncRef",
         dose_range="1nM - 10μM", 
         assay="PRISM", 
-        given_ids=[DependencyEnum.Prism_oncology_AUC.name],
+        given_ids=["Prism_oncology_AUC_collapsed", DependencyEnum.Prism_oncology_AUC.name],
     ),
 ]
 
