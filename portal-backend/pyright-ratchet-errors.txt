@@ -304,9 +304,6 @@ models.py: error: Cannot access member "compound" for type "_Compound*"
 models.py: error: Cannot access member "context_explorer" for type "_ContextExp*"
 models.py: error: Cannot access member "download_file" for type "_File*"
 models.py: error: Cannot access member "gene" for type "_Gene*"
-models.py: error: Cannot access member "get_attrs_from_slice_id" for type "NodeFactory"
-models.py: error: Cannot access member "get_attrs_from_slice_id" for type "NodeFactory*"
-models.py: error: Cannot access member "get_slice_id" for type "NodeFactory*"
 models.py: error: Cannot access member "nominal_range" for type "TabularDatasetMeta"
 models.py: error: Cannot access member "relationship" for type "SQLAlchemy"
 models.py: error: Cannot access member "unquote" for type "type[Serializer]"
@@ -531,10 +528,6 @@ test_tasks.py: error: Argument missing for parameter "taiga_id" (reportCallIssue
 test_tasks.py: error: Argument of type "Group | Dataset | Datatype | Unknown" cannot be assigned to parameter "__iterable" of type "Iterable[_T@list]" in function "__init__"
 test_tasks.py: error: Argument of type "Group | Dataset | Datatype" cannot be assigned to parameter "__iterable" of type "Iterable[_T@list]" in function "__init__"
 test_tasks.py: error: Cannot access member "entity_id" for type "GeneFactory"
-test_tree.py: error: Method "create" overrides class "NodeFactory" in an incompatible manner
-test_tree.py: error: Method "get_added_attrs" overrides class "NodeFactory" in an incompatible manner
-test_tree_utils.py: error: Method "create" overrides class "NodeFactory" in an incompatible manner
-test_tree_utils.py: error: Method "get_added_attrs" overrides class "NodeFactory" in an incompatible manner
 test_trees.py: error: Argument of type "Sequence" cannot be assigned to parameter "feature" of type "str | int" in function "get_id_from_dataset_feature"
 test_trees.py: error: Cannot access member "entity_id" for type "GeneFactory"
 test_utils.py: error: "__get_taiga_id_to_download_url" is unknown import symbol (reportAttributeAccessIssue)

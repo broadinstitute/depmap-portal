@@ -1,9 +1,8 @@
-from typing import Any, Tuple, Iterable, Union
+from typing import Iterable, Union
 
 from sqlalchemy.orm.exc import NoResultFound
 from depmap.interactive import interactive_utils
 from depmap.vector_catalog.models import (
-    Tree,
     SliceRowType,
     SliceSerializer,
 )
@@ -11,7 +10,7 @@ from depmap.vector_catalog.models import (
 OTHER_DATASET_NON_PREPOPULATE_ID_BASE = "other_label_dataset_non_prepopulate"
 
 
-class InteractiveTree(Tree):
+class InteractiveTree:
     @staticmethod
     def get_dataset_feature_from_id(id):
         """Given a feature's slice ID, Get the dataset ID and feature's entity class."""

@@ -9,7 +9,7 @@ import pytest
 from flask import url_for
 
 from depmap import data_access
-from depmap.vector_catalog.trees import ContinuousValuesTree, InteractiveTree
+from depmap.vector_catalog.trees import InteractiveTree
 from depmap.vector_catalog.models import SliceSerializer, SliceRowType
 from depmap.interactive.nonstandard.models import CustomDatasetConfig
 from tests.factories import CellLineFactory
@@ -108,7 +108,7 @@ def test_full_custom_taiga_workflow(
             [
                 (
                     "features",
-                    ContinuousValuesTree.get_id_from_dataset_feature(
+                    InteractiveTree.get_id_from_dataset_feature( # slice id for the feature
                         dataset_id, mock_taiga_client_feature
                     ),
                 )
@@ -176,7 +176,7 @@ def test_full_custom_csv_workflow(
             [
                 (
                     "features",
-                    ContinuousValuesTree.get_id_from_dataset_feature(
+                    InteractiveTree.get_id_from_dataset_feature(
                         dataset_id, custom_csv_feature
                     ),
                 )
