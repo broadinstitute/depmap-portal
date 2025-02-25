@@ -1,5 +1,4 @@
-from dataclasses import dataclass
-from typing import Any, Dict, List, Literal, Optional, Union
+from typing import Any, Dict, List, Literal, Optional
 from depmap.cell_line.models_new import DepmapModel
 from depmap.context_explorer.models import ContextAnalysis
 import pandas as pd
@@ -32,8 +31,12 @@ def _get_node_entity_data(
 
 def get_box_plot_card_data(
     level_0_code: str,
-    all_sig_context_codes: List[str],
-    model_ids_by_code: Dict[str, List[str]],
+    all_sig_context_codes: List[
+        str
+    ],  # Use this list to keep track of significant codes
+    model_ids_by_code: Dict[
+        str, List[str]
+    ],  # Includes insignificant codes we need for "Other <Lineage>"
     entity_full_row_of_values: pd.Series,
 ):
     significant_box_plot_data = {}
@@ -184,13 +187,14 @@ def get_box_plot_data_for_context(
     return box_plot_data
 
 
-def get_branch_subtype_codes_organized_by_code(
-    contexts: Dict[str, List[str]], level_0: str
-):
+def get_branch_subtype_codes_organized_by_code(sig_contexts: Dict[str, List[str]]):
     branch_contexts = {}
-    for level_0 in contexts.keys():
+
+    for level_0 in sig_contexts.keys():
+        child_nodes = SubtypeNode.get_children_using_current_level_code(level_0, 0)
+        child_codes = [node.subtype_code for node in child_nodes]
         branch = SubtypeContext.get_model_ids_for_node_branch(
-            subtype_codes=contexts[level_0], level_0_subtype_code=level_0
+            subtype_codes=child_codes, level_0_subtype_code=level_0
         )
 
         branch_contexts[level_0] = branch
@@ -267,8 +271,11 @@ def get_context_plot_box_data(
         sig_contexts_by_level_0 = sig_contexts_agg.set_index("level_0").to_dict()[
             "subtype_code"
         ]
+
+        # Includes insignificant codes for graphing the "Other <Lineage>"
+        # plots.
         branch_contexts = get_branch_subtype_codes_organized_by_code(
-            contexts=sig_contexts_by_level_0, level_0=level_0
+            sig_contexts=sig_contexts_by_level_0
         )
         selected_sig_box_plot_card_data = get_card_data(
             level_0=level_0,
