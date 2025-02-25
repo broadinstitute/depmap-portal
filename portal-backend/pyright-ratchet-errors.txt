@@ -39,7 +39,6 @@ biomarker_loader.py: error: Argument of type "Literal['LOADER_DATA_DIR']" cannot
 biomarker_loader.py: error: Argument of type "Literal[DependencyEnum.CTRP_AUC, 'expression', 'copy_number_absolute', 'copy_number_relative', 'mutation_pearson', 'mutations_damaging', 'mutations_hotspot', 'mutations_driver', 'mutations_prioritized', 'context', 'rppa', 'rrbs', 'proteomics', 'sanger_proteomics', 'fusions', 'ssgsea', 'metabolomics', 'crispr_confounders', 'rnai_confounders', 'oncref_confounders', 'rep_all_single_pt_confounders', 'rep1m_confounders', 'CRISPRGeneDependency', 'OmicsAbsoluteCNGene', 'OmicsSignatures', 'OmicsLoH', 'Chronos_Combined', 'Chronos_Achilles', 'Chronos_Score', 'CERES_Combined', 'Avana', 'Sanger_CRISPR', 'OrganoidGeneEffect', 'GeCKO', 'RNAi_merged', 'RNAi_Ach', 'RNAi_Nov_DEM', 'GDSC1_AUC', 'GDSC2_AUC', 'GDSC1_IC50', 'GDSC2_IC50', 'CTRP_AUC', 'Repurposing_secondary_AUC', 'CTRP_dose_replicate', 'GDSC1_dose_replicate', 'GDSC2_dose_replicate', 'Repurposing_secondary_dose', 'Repurposing_secondary_dose_replicate', 'Rep1M', 'Rep_all_single_pt', 'Prism_oncology_AUC', 'Prism_oncology_IC50', 'Prism_oncology_dose_replicate']" cannot be assigned to parameter "dependency_dataset_name" of type "str" in function "get_dataset_by_name"
 biomarker_loader.py: error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
 breadbox_shim.py: error: Argument of type "list[str | None]" cannot be assigned to parameter "feature_ids" of type "list[str]" in function "get_feature_data"
-breadbox_shim.py: error: Expression of type "None" cannot be assigned to parameter of type "str"
 bucket_utils.py: error: "csv_path" is not a known member of "None" (reportOptionalMemberAccess)
 bucket_utils.py: error: "delete" is not a known member of "None" (reportOptionalMemberAccess)
 bucket_utils.py: error: Argument of type "Literal['DOWNLOADS_KEY']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
@@ -556,20 +555,9 @@ test_utils.py: error: "__get_taiga_id_to_download_url" is unknown import symbol 
 test_utils.py: error: Cannot access member "dataset_id" for type "DependencyDatasetFactory"
 test_utils.py: error: Cannot access member "entity_id" for type "GeneFactory"
 test_utils.py: error: Cannot access member "matrix_id" for type "LazyAttribute"
-test_views.py: error: "__getitem__" method not defined on type "LazyAttribute" (reportIndexIssue)
-test_views.py: error: "__getitem__" method not defined on type "Sequence" (reportIndexIssue)
-test_views.py: error: Argument of type "Sequence" cannot be assigned to parameter "feature" of type "str | int" in function "get_id_from_dataset_feature"
 test_views.py: error: Argument of type "str" cannot be assigned to parameter "__value" of type "int" in function "index"
-test_views.py: error: Cannot access member "entity_id" for type "CompoundDoseFactory"
-test_views.py: error: Cannot access member "entity_id" for type "CompoundDoseReplicateFactory"
-test_views.py: error: Cannot access member "entity_id" for type "CompoundExperimentFactory"
-test_views.py: error: Cannot access member "entity_id" for type "CompoundFactory"
 test_views.py: error: Cannot access member "entity_id" for type "GeneFactory"
-test_views.py: error: Cannot access member "entity_id" for type "GenericEntityFactory"
 test_views.py: error: Cannot access member "entity_id" for type "SubFactory"
-test_views.py: error: Cannot access member "get_dose_enum" for type "DependencyDatasetFactory"
-test_views.py: error: Cannot access member "label_without_compound_name" for type "CompoundDoseFactory"
-test_views.py: error: Cannot access member "label_without_compound_name" for type "CompoundDoseReplicateFactory"
 test_views.py: error: Object of type "None" is not subscriptable (reportOptionalSubscript)
 util.py: error: Argument of type "Literal['CAS_BUCKET']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
 util.py: error: Argument of type "Literal['DOWNLOADS_KEY']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
@@ -649,7 +637,6 @@ views.py: error: Argument of type "Literal[DependencyEnum.Avana]" cannot be assi
 views.py: error: Argument of type "Unknown | FileStorage" cannot be assigned to parameter "filepath_or_buffer" of type "FilePath | ReadCsvBuffer[bytes] | ReadCsvBuffer[str]" in function "read_csv" (reportArgumentType)
 views.py: error: Argument of type "Unknown | Hashable" cannot be assigned to parameter "group_name" of type "str" in function "__init__"
 views.py: error: Argument of type "Unknown | int | list[Unknown]" cannot be assigned to parameter "color_num" of type "str | int" in function "__init__" (reportArgumentType)
-views.py: error: Argument of type "list[BreadboxVectorCatalogNodeInfo]" cannot be assigned to parameter "__iterable" of type "Iterable[dict[Unknown, Unknown]]" in function "extend"
 views.py: error: Argument of type "list[CellLineSeries]" cannot be assigned to parameter "breadbox_feature_data" of type "list[Series]" in function "get_df_from_feature_list"
 views.py: error: Argument of type "list[list[Unknown]] | None" cannot be assigned to parameter "compound_experiment_and_datasets" of type "List[Tuple[CompoundExperiment, DependencyDataset]]" in function "format_dep_dist_caption"
 views.py: error: Argument of type "str | Any" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
