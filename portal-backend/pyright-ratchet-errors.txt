@@ -283,10 +283,8 @@ models.py: error: "display_name" is not a known member of "None" (reportOptional
 models.py: error: "entity_type" is not a known member of "None" (reportOptionalMemberAccess)
 models.py: error: "group" is not a known member of "None" (reportOptionalMemberAccess)
 models.py: error: "index" is not a known member of "None" (reportOptionalMemberAccess)
-models.py: error: "is_dose_replicate" is not a known member of "None" (reportOptionalMemberAccess)
 models.py: error: "matrix" is not a known member of "None" (reportOptionalMemberAccess)
 models.py: error: "tolist" is not a known member of "None" (reportOptionalMemberAccess)
-models.py: error: Argument of type "DependencyEnum" cannot be assigned to parameter "dependency_dataset_name" of type "str" in function "get_dataset_by_name"
 models.py: error: Argument of type "List[str] | None" cannot be assigned to parameter "__obj" of type "Sized" in function "len"
 models.py: error: Argument of type "Literal['ENABLED_FEATURES']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
 models.py: error: Argument of type "Literal['GET_NONSTANDARD_DATASETS']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
