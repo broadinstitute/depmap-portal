@@ -1,11 +1,6 @@
-from flask import url_for
-from typing import Dict, List, Literal, Optional
+from typing import Dict, List
 from depmap.cell_line.models_new import DepmapModel
-from depmap.context_explorer.models import ContextAnalysis
 import pandas as pd
-import numpy as np
-
-from depmap import data_access
 from depmap.context_explorer import utils
 from depmap.context.models_new import SubtypeNode, SubtypeContext
 from depmap.dataset.models import Dataset, DependencyDataset
@@ -13,25 +8,41 @@ from depmap.compound.models import (
     CompoundExperiment,
     CompoundDoseReplicate,
     DoseResponseCurve,
-    Compound,
 )
-from depmap.gene.models import Gene
-import re
 
 
+# TODO: Test this
 def _get_out_group_model_ids(out_group_type, dataset_name, in_group_model_ids, label):
     (entity_full_row_of_values) = utils.get_full_row_of_values_and_depmap_ids(
         dataset_name=dataset_name, label=label
     )
     entity_full_row_of_values.dropna(inplace=True)
-    if out_group_type == "All Others" or out_group_type == "All":
+    if out_group_type == "All Others":
         return entity_full_row_of_values[
             ~entity_full_row_of_values.index.isin(in_group_model_ids)
         ].index.tolist()
     else:
-        raise NotImplementedError(
-            "Need to implement logic for getting model ids for none 'All Others' outgroup types"
-        )
+        # Get list of model ids for out_group_type which will be the subtype_code of the out group
+        # or "All Others" or "Other Heme".
+        # TODO: out_group_type as named is super confusing. Make it easier to figure out this could be
+        # a subtype code
+        if out_group_type == "Other Heme":
+            # find the Heme model ids
+            other_heme_model_ids = SubtypeContext.get_model_ids_for_other_heme_contexts(
+                in_group_model_ids
+            )
+            return other_heme_model_ids
+        else:
+            # The outgroup better be a subtype code. This will be a parent of the selected
+            # code. So we need to subtract the in group model ids from the out group ids
+            node = SubtypeNode.get_by_code(out_group_type)
+            all_node_model_ids = SubtypeNode.get_model_ids_by_subtype_code_and_node_level(
+                subtype_code=out_group_type, node_level=node.node_level
+            )
+            out_group_model_ids = list(set(all_node_model_ids)) - list(
+                set(in_group_model_ids)
+            )
+            return out_group_model_ids
 
 
 def _get_in_group_out_group_model_ids(

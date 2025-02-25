@@ -286,17 +286,6 @@ export function getGeneDependencyContexts(
             and: [{ "!=": [{ var: inGroupSliceId }, ingroupName] }],
           },
         };
-      case OutGroupType.OtherOfSameLineage:
-        return {
-          name: `Other ${outGroupSubtypeCode}`,
-          context_type: "depmap_model",
-          expr: {
-            and: [
-              { "!=": [{ var: inGroupSliceId }, ingroupName] },
-              { "==": [{ var: lSliceId }, outGroupSubtypeCode] },
-            ],
-          },
-        };
       default:
         return {
           name: `Other ${outGroupSubtypeCode}`,

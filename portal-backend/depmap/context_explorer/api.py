@@ -23,6 +23,7 @@ from depmap.context.models_new import SubtypeNode, TreeType
 #     load_context_explorer_context_analysis_dev,
 #     load_subtype_tree,
 # )
+
 # from loader.depmap_model_loader import load_subtype_contexts
 
 # from .development_scripts import dev
@@ -136,11 +137,6 @@ class ContextInfo(
         List of available context trees as a dictionary with keys as each available non-terminal node, and values
         as each available branch off of the key-node
         """
-        # load_context_explorer_context_analysis_dev(
-        #     "/Users/amourey/dev/Context Explorer Data/ContextAnalysisDataSample.csv"
-        # )
-        # db.session.commit()
-        # breakpoint()
 
         level_0_subtype_code = request.args.get("level_0_subtype_code")
 
@@ -434,9 +430,7 @@ class ContextDoseCurves(Resource):
         entity_full_label = request.args.get("entity_full_label")
         subtype_code = request.args.get("subtype_code")
         level = request.args.get("level")
-
-        # TODO calculate outgroup median using outgroup type instead of always using All Others
-        out_group_type = "All Others"  # request.args.get("out_group_type")
+        out_group_type = request.args.get("out_group_type")
 
         dose_curve_info = dose_curve_utils.get_context_dose_curves(
             dataset_name=dataset_name,

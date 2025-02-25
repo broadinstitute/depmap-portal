@@ -668,6 +668,7 @@ export class DepmapApi {
   getContextExplorerDoseResponsePoints(
     datasetName: string,
     subtypeCode: string,
+    outGroupType: string,
     compoundLabel: string,
     selectedLevel: number
   ): Promise<DoseCurveData> {
@@ -676,7 +677,7 @@ export class DepmapApi {
       subtype_code: subtypeCode,
       entity_full_label: compoundLabel,
       level: selectedLevel,
-      out_group_type: "All Others",
+      out_group_type: outGroupType,
     };
 
     return this._fetchIncludeContextExplCache<DoseCurveData>(
@@ -692,7 +693,7 @@ export class DepmapApi {
   ): Promise<ContextAnalysisTableType> {
     const params = {
       in_group: in_group_code,
-      out_group_type: "All Others",
+      out_group_type,
       entity_type,
       dataset_name,
     };

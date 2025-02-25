@@ -101,21 +101,8 @@ function ContextAnalysis({
     // All other cell lines
     outGroupOpts.push(OUTGROUP_TYPE_ALL_OPTION);
 
-    // Other Bone
-    if (topContextNameInfo.name !== selectedContextNameInfo.name) {
-      // Bone vs Other Bone wouldn't make sense, so only include this if the selected
-      // context is a subset of Bone
-      outGroupOpts.push({
-        value: OutGroupType.OtherOfSameLineage,
-        label: `Other ${topContextNameInfo.subtype_code}`,
-      });
-    }
-
     selectedContextNode?.path.forEach((subtype_code) => {
-      if (
-        subtype_code !== selectedContextNode.subtype_code &&
-        subtype_code !== topContextNameInfo.subtype_code
-      ) {
+      if (subtype_code !== selectedContextNode.subtype_code) {
         outGroupOpts.push({
           value: subtype_code,
           label: `Other ${subtype_code}`,
@@ -128,7 +115,7 @@ function ContextAnalysis({
       BLOOD_LINEAGES.includes(topContextNameInfo.subtype_code)
     ) {
       outGroupOpts.push({
-        value: OutGroupType.Type,
+        value: "Other Heme",
         label: "Other Heme",
       });
     }

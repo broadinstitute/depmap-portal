@@ -125,9 +125,7 @@ export enum ContextAnalysisPlotType {
 }
 
 export enum OutGroupType {
-  All = "All Other",
-  OtherOfSameLineage = "Other Lineage",
-  Type = "Type", // Other Heme, Other Solid
+  All = "All Others",
   default = "Code",
 }
 
