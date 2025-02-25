@@ -15,6 +15,7 @@ import Select, {
   ActionMeta,
   ActionTypes,
 } from "react-select";
+import { Button } from "react-bootstrap";
 
 export default {
   title: "Components/CorrelationAnalysis",
@@ -250,6 +251,11 @@ export function Story() {
             </>
           );
         })}
+      </div>
+      <div
+        style={{ display: "flex", justifyContent: "flex-end", padding: "10px" }}
+      >
+        <Button active>CSV</Button>
       </div>
 
       <div style={{ height: "300px" }}>
