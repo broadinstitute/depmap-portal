@@ -116,7 +116,7 @@ export function Story() {
         if (colName in columnNamesToPlotVariables) {
           const value = curRecord[colName];
           if (colName == "-log10 qval") {
-            const val = Math.exp(-value * 2.3);
+            const val = Math.pow(10, -value);
             // VolcanoPlotProp `y` data by default log transforms values. To do the complement: Math.exp(-x)
             acc[key][doseCategory][columnNamesToPlotVariables[colName]].push(
               val
