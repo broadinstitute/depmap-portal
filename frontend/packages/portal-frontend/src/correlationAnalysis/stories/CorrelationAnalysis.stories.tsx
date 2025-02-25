@@ -79,8 +79,8 @@ export function Story() {
   const columnNamesToPlotVariables = {
     "Correlation Coefficient": "x",
     "-log10 qval": "y",
-    "imatinib Dose": "label",
-    Feature: "text",
+    Feature: "label",
+    // Feature: "text",
   };
 
   const filteredTableCorrelationAnalysisData = React.useMemo(() => {
@@ -149,40 +149,95 @@ export function Story() {
 
   return (
     <div>
-      {JSON.stringify(selectedFeatureTypes)}
-      <AsyncSelect
-        defaultOptions
-        loadOptions={featureTypesPromise}
-        isMulti
-        onChange={(value, action) => {
-          console.log(value, action);
-          setSelectedFeatureTypes(
-            value !== null
-              ? value.map((selectedFeatureType) => selectedFeatureType.value)
-              : []
-          );
+      {/* {JSON.stringify(selectedFeatureTypes)} */}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(3, 1fr)",
+          gap: "2rem",
+          marginBottom: "50px",
         }}
-      />
-      {filteredVolcanoPlotFeatureTypes.map((selectedFeatureType) => {
-        return (
-          <>
-            <header>Volcano Plot {selectedFeatureType}</header>
-            <VolcanoPlot
-              Plotly={Plotly}
-              xLabel="Correlation Coefficient"
-              yLabel="q value"
-              traces={Object.values(
-                volcanoDataForFeatureType[selectedFeatureType]
-              )}
-              showAxesOnSameScale={false}
-              cellLinesToHighlight={new Set([])}
-              onPointClick={(point) => {
-                console.log(point);
-              }}
-              downloadData={[]}
-            />
+      >
+        <AsyncSelect
+          placeholder="imatinib Doses(uM)"
+          defaultOptions
+          loadOptions={featureTypesPromise}
+          isMulti
+          onChange={(value, action) => {
+            console.log(value, action);
+            setSelectedFeatureTypes(
+              value !== null
+                ? value.map((selectedFeatureType) => selectedFeatureType.value)
+                : []
+            );
+          }}
+        />
+        <AsyncSelect
+          placeholder="Select Feature Types..."
+          defaultOptions
+          loadOptions={featureTypesPromise}
+          isMulti
+          onChange={(value, action) => {
+            console.log(value, action);
+            setSelectedFeatureTypes(
+              value !== null
+                ? value.map((selectedFeatureType) => selectedFeatureType.value)
+                : []
+            );
+          }}
+        />
+        <AsyncSelect
+          placeholder="Select Features"
+          defaultOptions
+          loadOptions={featureTypesPromise}
+          isMulti
+          onChange={(value, action) => {
+            console.log(value, action);
+            setSelectedFeatureTypes(
+              value !== null
+                ? value.map((selectedFeatureType) => selectedFeatureType.value)
+                : []
+            );
+          }}
+        />
+      </div>
 
-            {/* <header>Volcano Plot OLD {selectedFeatureType}</header>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(3, 1fr)",
+          gap: "2rem",
+          marginBottom: "50px",
+        }}
+      >
+        {filteredVolcanoPlotFeatureTypes.map((selectedFeatureType) => {
+          return (
+            <>
+              <div>
+                <header
+                  style={{
+                    textAlign: "center",
+                    fontSize: "18px",
+                    backgroundColor: "lightgray",
+                  }}
+                >{`${selectedFeatureType}`}</header>
+                <VolcanoPlot
+                  Plotly={Plotly}
+                  xLabel="Correlation Coefficient"
+                  yLabel="q value"
+                  traces={Object.values(
+                    volcanoDataForFeatureType[selectedFeatureType]
+                  )}
+                  showAxesOnSameScale={false}
+                  cellLinesToHighlight={new Set([])}
+                  onPointClick={(point) => {
+                    console.log(point);
+                  }}
+                  downloadData={[]}
+                />
+              </div>
+
+              {/* <header>Volcano Plot OLD {selectedFeatureType}</header>
               <VolcanoPlotOld
                 Plotly={Plotly}
                 // ref={plotlyRef}
@@ -192,22 +247,27 @@ export function Story() {
                   volcanoDataForFeatureType[selectedFeatureType]
                 )}
               /> */}
-          </>
-        );
-      })}
+            </>
+          );
+        })}
+      </div>
 
-      <WideTable
-        columns={[
-          { accessor: "Compound" },
-          { accessor: "imatinib Dose" },
-          { accessor: "Feature Type" },
-          { accessor: "Feature" },
-          { accessor: "Correlation Coefficient" },
-          { accessor: "-log10 qval" },
-          { accessor: "Rank" },
-        ]}
-        data={filteredTableCorrelationAnalysisData}
-      />
+      <div style={{ height: "300px" }}>
+        <WideTable
+          columns={[
+            { accessor: "Compound" },
+            { accessor: "imatinib Dose" },
+            { accessor: "Feature Type" },
+            { accessor: "Feature" },
+            { accessor: "Correlation Coefficient" },
+            { accessor: "-log10 qval" },
+            { accessor: "Rank" },
+          ]}
+          data={filteredTableCorrelationAnalysisData}
+          rowHeight={40}
+        />
+      </div>
+
       <p>
         Showing {filteredTableCorrelationAnalysisData.length} of{" "}
         {correlationAnalysisData.length} entries
