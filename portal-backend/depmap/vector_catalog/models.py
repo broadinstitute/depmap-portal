@@ -297,53 +297,6 @@ class NodeFactory:
         )
 
 
-class SingleNodeFactory(NodeFactory):
-    def __init__(
-        self,
-        label,
-        is_terminal,
-        value,
-        children_list_type=None,
-        children_category=None,
-        url=None,
-        group=None,
-        parent_attr_names=[],
-    ):
-        """
-        This class cannot be used with is_terminal True without subclassing and implementing the get_slice_id and get_attrs_from_slice_id methods
-        """
-        NodeFactory.__init__(
-            self,
-            parent_attr_names,
-            [],
-            is_terminal,
-            children_list_type,
-            children_category,
-        )
-        self.label = label
-        self.is_terminal = is_terminal
-        self.value = value
-        self.url = url
-        self.group = group
-
-    # Note: this class SHOULD NOT implement get_slice_id and get_attrs_from_slice_id functions, even if the implementation raises NotImplementedErrors.
-    # see explanation on NodeFactory
-
-    def get_added_attrs(self):
-        return [{}]
-
-    def create(self, tree_id_encoder, key):
-        return self.create_node(
-            tree_id_encoder,
-            key,
-            self.get_attrs(locals()),
-            label=self.label,
-            value=self.value,
-            url=self.url,
-            group=self.group,
-        )
-
-
 ## functions for parsing/creating IDs
 
 
