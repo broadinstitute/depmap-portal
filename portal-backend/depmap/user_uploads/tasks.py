@@ -56,7 +56,6 @@ from depmap.access_control import (
     PUBLIC_ACCESS_GROUP,
 )
 from loader.taiga_id_loader import _ensure_canonical_id_stored
-from depmap.vector_catalog.trees import OTHER_DATASET_NON_PREPOPULATE_ID_BASE
 
 
 def update_state(
