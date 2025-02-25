@@ -385,12 +385,6 @@ export class DepmapApi {
     return this._fetch<Array<Compound>>(`/gene/compound/${geneSymbol}`);
   }
 
-  getGeneHasRepHub(geneSymbol: string): Promise<{ hasRepHub: boolean }> {
-    return this._fetch<{ hasRepHub: boolean }>(
-      `/gene/has_rephub/${geneSymbol}`
-    );
-  }
-
   getGeneCharacterizationData(
     geneSymbol: string
   ): Promise<GeneCharacterizationData> {
