@@ -1,30 +1,22 @@
-import re
-import itertools
-import numpy as np
+import argparse
 import pandas as pd
 from taigapy import create_taiga_client_v3
-from taigapy.client_v3 import LocalFormat
-
-from utils import update_taiga
-
-from datarelease_taiga_permanames import (
-    context_taiga_permaname,
-    subtype_tree_taiga_permaname,
-    molecular_subtypes_taiga_permaname,
-    context_matrix_taiga_permaname
-)
 
 # TODO FOR 25Q2: REMOVE THE USE OF THIS TEMPORARY MODEL FILE
 temp_model_id = 'alison-test-649a.18/Model_temp_between_24q4_25q2'
 
-def load_data(source_dataset_id, target_dataset_id):
+def load_data(
+        model_taiga_id,
+        molecular_subtypes_taiga_id,
+        subtype_tree_path
+    ):
     '''
     A function to load all data necessary to create the context matrix
     '''
     tc = create_taiga_client_v3()
 
     ## Load the models table
-    #TODO FOR 25Q2: change taiga id to be f"{source_dataset_id}/{context_taiga_permaname}"
+    #TODO FOR 25Q2: change taiga id to be model_taiga_id
     models = tc.get(temp_model_id)\
             .loc[:,
                 ['ModelID', 'OncotreeCode', 'DepmapModelType',
@@ -36,19 +28,17 @@ def load_data(source_dataset_id, target_dataset_id):
 
     ## Load the subtype tree
     # the subtype tree is created using a different script within the data prep pipeline
-    # we want to grab it from where it was just uploaded (the target dataset id, unknown version)
-    subtype_tree = tc.get(name=target_dataset_id, file=subtype_tree_taiga_permaname)
+    # we want to grab it from where it was just saved
+    subtype_tree = pd.read_csv(subtype_tree_path)
     
     ## Load genetic subtypes
-    genetic_subtypes = tc.get(f"{source_dataset_id}/{molecular_subtypes_taiga_permaname}")\
-                            .set_index('ModelID')
+    genetic_subtypes = tc.get(molecular_subtypes_taiga_id).set_index('ModelID')
 
     ## construct the Model-Tree
     model_tree = models.loc[:,
                     ['ModelID', 'OncotreeCode', 'DepmapModelType']
                 ].merge(subtype_tree)   
 
-    
     return model_tree, subtype_tree, genetic_subtypes
 
 def get_context_models(
@@ -211,8 +201,16 @@ def sanity_check_results(subtype_tree, context_matrix):
 
     assert(set.intersection(cm_nodes, st_nodes) == set.union(cm_nodes, st_nodes))
 
-def create_context_matrix(source_dataset_id, target_dataset_id):
-    model_tree, subtype_tree, genetic_subtypes = load_data(source_dataset_id, target_dataset_id)
+def create_context_matrix(
+        model_taiga_id,
+        molecular_subtypes_taiga_id,
+        subtype_tree_path
+    ):
+    model_tree, subtype_tree, genetic_subtypes = load_data(
+        model_taiga_id,
+        molecular_subtypes_taiga_id,
+        subtype_tree_path
+    )
 
     context_matrix = construct_matrix(
         model_tree,
@@ -222,13 +220,25 @@ def create_context_matrix(source_dataset_id, target_dataset_id):
 
     sanity_check_results(subtype_tree, context_matrix)
 
-    # Upload results to taiga
-    update_taiga(
-        context_matrix,
-        "Create the ContextMatrix: a one-hot encoded matrix describing which models are members of which contexts",
-        target_dataset_id,
-        context_matrix_taiga_permaname,
-        file_format=LocalFormat.CSV_MATRIX
+    return context_matrix
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description="Create ContextMatrix"
+    )
+    parser.add_argument("model", help="Taiga ID of model table")
+    parser.add_argument("molecular_subtypes", help="Taiga ID of Omics Inferred Molecular Subtypes")
+    parser.add_argument("subtype_tree", help="Filepath for the SubtypeTree")
+    parser.add_argument("output", help="filepath to write the output")
+    args = parser.parse_args()
+
+    context_matrix = create_context_matrix(
+        args.model,
+        args.molecular_subtypes,
+        args.subtype_tree
     )
 
-    return
+    if context_matrix is not None:
+        context_matrix.to_csv(args.output)
+
+# python3 create_context_matrix.py internal-24q4-8c04.117/Model internal-24q4-8c04.117/OmicsInferredMolecularSubtypes SubtypeTree.csv ContextMatrix.csv

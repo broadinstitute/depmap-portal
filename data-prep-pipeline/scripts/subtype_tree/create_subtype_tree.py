@@ -1,31 +1,25 @@
+import argparse
 import re
 import itertools
 import numpy as np
 import pandas as pd
 from taigapy import create_taiga_client_v3
 
-from utils import update_taiga
-
-from datarelease_taiga_permanames import (
-    context_taiga_permaname,
-    subtype_tree_taiga_permaname,
-    molecular_subtypes_taiga_permaname
-)
-from config import (
-    oncotree_json_taiga_id,
-    genetic_subtype_whitelist_taiga_id
-)
-
 # TODO FOR 25Q2: REMOVE THE USE OF THIS TEMPORARY MODEL FILE
 temp_model_id = 'alison-test-649a.18/Model_temp_between_24q4_25q2'
 
 ### HELPER FUNCTIONS ### 
-def load_data(source_dataset_id):
+def load_data(
+    model_taiga_id,
+    oncotree_taiga_id,
+    molecular_subtypes_taiga_id,
+    genetic_subtypes_whitelist_taiga_id
+):
     '''
     Loads and formats all of the inputs necessary to create the SubtypeTree
 
     Inputs:
-        - source_dataset_id (str): the taiga dataset id (with version) of the source data
+        - taiga id's for all of the source data
 
     Outputs:
         - models (pandas df): The Model table with a subset of columns that are 
@@ -42,7 +36,7 @@ def load_data(source_dataset_id):
     tc = create_taiga_client_v3()
 
     ## Load the models table
-    #TODO FOR 25Q2: change taiga id to be f"{source_dataset_id}/{context_taiga_permaname}"
+    #TODO FOR 25Q2: change taiga id to be model_taiga_id"
     models = tc.get(temp_model_id)\
             .loc[:,
                 ['ModelID', 'OncotreeCode', 'DepmapModelType',
@@ -53,7 +47,7 @@ def load_data(source_dataset_id):
             ])
 
     ## Load oncotree
-    oncotree = tc.get(oncotree_json_taiga_id)\
+    oncotree = tc.get(oncotree_taiga_id)\
                     .rename(
                         columns={
                             'code':'OncotreeCode',
@@ -68,10 +62,9 @@ def load_data(source_dataset_id):
                     ]
     
     ## Load genetic subtypes
-    genetic_subtypes = tc.get(f"{source_dataset_id}/{molecular_subtypes_taiga_permaname}")\
-                            .set_index('ModelID')
+    genetic_subtypes = tc.get(molecular_subtypes_taiga_id).set_index('ModelID')
     
-    gs_whitelist = tc.get(genetic_subtype_whitelist_taiga_id)
+    gs_whitelist = tc.get(genetic_subtypes_whitelist_taiga_id)
     
     return models, oncotree, genetic_subtypes, gs_whitelist
 
@@ -564,8 +557,18 @@ def sanity_check_results(subtype_tree):
 
 
 ### MAIN FUNCTION ###
-def create_subtype_tree(source_dataset_id, target_dataset_id):
-    models, oncotree, genetic_subtypes, gs_whitelist = load_data(source_dataset_id)
+def create_subtype_tree(
+        model_taiga_id,
+        oncotree_taiga_id,
+        molecular_subtypes_taiga_id,
+        genetic_subtypes_whitelist_taiga_id
+    ):
+    models, oncotree, genetic_subtypes, gs_whitelist = load_data(
+        model_taiga_id,
+        oncotree_taiga_id,
+        molecular_subtypes_taiga_id,
+        genetic_subtypes_whitelist_taiga_id
+    )
 
     oncotable = create_oncotable(oncotree)
 
@@ -585,14 +588,27 @@ def create_subtype_tree(source_dataset_id, target_dataset_id):
     # Verify results
     sanity_check_results(subtype_tree)
 
-    # Upload results to taiga
-    update_taiga(
-        subtype_tree,
-        "Create the SubtypeTree: A hierarchical cancer classification system "\
-        "based on Oncotree and extended with custom Depmap nodes",
-        target_dataset_id,
-        subtype_tree_taiga_permaname,
-        file_format='csv_table'
+    return subtype_tree
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description="Create SubtypeTree"
+    )
+    parser.add_argument("model", help="Taiga ID of model table")
+    parser.add_argument("oncotree", help="Taiga ID of oncotree")
+    parser.add_argument("molecular_subtypes", help="Taiga ID of Omics Inferred Molecular Subtypes")
+    parser.add_argument("genetic_subtypes_whitelist", help="Taiga ID of lineage-based genetic subtype whitelist")
+    parser.add_argument("output", help="filepath to write the output")
+    args = parser.parse_args()
+
+    subtype_tree = create_subtype_tree(
+        args.model,
+        args.oncotree,
+        args.molecular_subtypes,
+        args.genetic_subtypes_whitelist
     )
 
-    return
+    if subtype_tree is not None:
+        subtype_tree.to_csv(args.output)
+
+# python3 create_subtype_tree.py internal-24q4-8c04.117/Model subtypetree-919e.7/oncotree internal-24q4-8c04.117/OmicsInferredMolecularSubtypes subtypetree-919e.7/lineage_tree_genetic_subtype_whitelist SubtypeTree.csv

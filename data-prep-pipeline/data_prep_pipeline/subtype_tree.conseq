@@ -1,0 +1,27 @@
+rule create_subtype_tree:
+    inputs:
+        model={"type": "model"},
+        oncotree={"type": "oncotree"},
+        molecular_subtypes={"type": "omics_inferred_molecular_subtype"},
+        genetic_subtype_whitelist={"type": "lineage_tree_genetic_subtype_whitelist"},
+        script=fileref('../scripts/subtype_tree/create_subtype_tree.py'),
+    outputs:
+        {
+            "type": "subtype_tree",
+            "filename": {"$filename": "SubtypeTree.csv"},
+        }
+    run "python3 {{inputs.script.filename}} {{inputs.model.dataset_id}} {{inputs.oncotree.dataset_id}} {{inputs.molecular_subtypes.dataset_id}} {{inputs.genetic_subtype_whitelist.dataset_id}} SubtypeTree.csv"
+
+
+rule create_context_matrix:
+    inputs:
+        model={"type": "model"},
+        molecular_subtypes={"type": "omics_inferred_molecular_subtype"},
+        subtype_tree={"type": "subtype_tree"}
+        script=fileref('../scripts/subtype_tree/create_context_matrix.py'),
+    outputs:
+        {
+            "type": "context_matrix",
+            "filename": {"$filename": "ContextMatrix.csv"},
+        }
+    run "python3 {{inputs.script.filename}} {{inputs.model.dataset_id}} {{inputs.molecular_subtypes.dataset_id}} {{inputs.subtype_tree.filename}} ContextMatrix.csv"
