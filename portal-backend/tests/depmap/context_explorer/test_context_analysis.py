@@ -180,6 +180,9 @@ def _setup_factories(
     bone_ES_context = SubtypeContextFactory(
         subtype_code="ES", depmap_model=bone_es_cell_lines
     )
+    insig_bone_child_context = SubtypeContextFactory(
+        subtype_code="INSIG_BONE_CHILD", depmap_model=bone_es_cell_lines
+    )
     bone_OS_context = SubtypeContextFactory(
         subtype_code="OS", depmap_model=bone_os_cell_lines
     )
@@ -314,7 +317,7 @@ def _setup_factories(
         dataset=dataset,
         subtype_context=bone_ES_context,
         subtype_code="ES",
-        out_group="All",
+        out_group="All Others",
         entity=gene_a if use_genes else compound_a,
         t_pval=1.0,
         mean_in=6,
@@ -326,9 +329,9 @@ def _setup_factories(
 
     ContextAnalysisFactory(
         dataset=dataset,
-        subtype_context=bone_ES_context,
-        subtype_code="ES",
-        out_group="Type",
+        subtype_context=myeloid_context,
+        subtype_code="MYELOID",
+        out_group="Other Heme",
         entity=gene_a if use_genes else compound_a,
         t_pval=1,
         mean_in=2,
@@ -340,7 +343,7 @@ def _setup_factories(
         dataset=dataset,
         subtype_context=lung_context,
         subtype_code="LUNG",
-        out_group="All",
+        out_group="All Others",
         entity=gene_a if use_genes else compound_a,
         t_pval=1.0,
         mean_in=6,
@@ -355,7 +358,7 @@ def _setup_factories(
         dataset=dataset,
         subtype_context=bone_OS_context,
         subtype_code="OS",
-        out_group="All",
+        out_group="All Others",
         entity=gene_a if use_genes else compound_a,
         t_qval=wide_filters.t_qval,
         effect_size=narrow_filters.effect_size,
@@ -365,7 +368,23 @@ def _setup_factories(
         dataset=dataset,
         subtype_context=bone_ES_context,
         subtype_code="ES",
-        out_group="Lineage",
+        out_group="BONE",  # outgroup encoded as BONE. Technically, "Other BONE"
+        entity=gene_a if use_genes else compound_a,
+        t_pval=3.0,
+        mean_in=0.1,
+        mean_out=8,
+        t_qval=narrow_filters.t_qval,
+        effect_size=narrow_filters.effect_size,
+        frac_dep_in=narrow_filters.frac_dep_in if use_genes else None,
+    )
+    # Added this because there was a bug with the Context Explorer box plots that prevented
+    # the Other <Lineage> plot from showing up if the level_0 itself was significant, but 1
+    #  or more of its children were not.
+    ContextAnalysisFactory(
+        dataset=dataset,
+        subtype_context=insig_bone_child_context,
+        subtype_code="INSIG_BONE_CHILD",
+        out_group="All Others",
         entity=gene_a if use_genes else compound_a,
         t_pval=3.0,
         mean_in=0.1,
@@ -379,7 +398,7 @@ def _setup_factories(
         dataset=dataset,
         subtype_context=myeloid_context,
         subtype_code="MYELOID",
-        out_group="All",
+        out_group="All Others",
         entity=gene_a if use_genes else compound_a,
         t_qval=1000,
         effect_size=1000,
@@ -389,7 +408,7 @@ def _setup_factories(
         dataset=dataset,
         subtype_context=aml_context,
         subtype_code="AML",
-        out_group="All",
+        out_group="All Others",
         entity=gene_a if use_genes else compound_a,
         t_qval=narrow_filters.t_qval,
         effect_size=wide_filters.effect_size,
@@ -400,7 +419,7 @@ def _setup_factories(
         dataset=dataset,
         subtype_context=CHILD_OF_MYELOID_context,
         subtype_code="CHILD_OF_MYELOID",
-        out_group="All",
+        out_group="All Others",
         entity=gene_a if use_genes else compound_a,
         t_qval=wide_filters.t_qval,
         effect_size=narrow_filters.effect_size,
@@ -412,7 +431,7 @@ def _setup_factories(
         dataset=dataset,
         subtype_context=lymph_context,
         subtype_code="LYMPH",
-        out_group="All",
+        out_group="All Others",
         entity=gene_a if use_genes else compound_a,
         t_qval=90,
         effect_size=90,
@@ -470,7 +489,7 @@ def test_get_anaysis_data(empty_db_mock_downloads, dataset_name):
 
     ew_vs_all = _get_analysis_data_table(
         in_group="ES",
-        out_group_type="All",
+        out_group_type="All Others",
         entity_type=entity_type,
         dataset_name=dataset_name,
     )
@@ -527,7 +546,7 @@ def test_get_anaysis_data(empty_db_mock_downloads, dataset_name):
 
     ew_vs_lineage = _get_analysis_data_table(
         in_group="ES",
-        out_group_type="Lineage",
+        out_group_type="BONE",
         entity_type=entity_type,
         dataset_name=dataset_name,
     )
@@ -542,26 +561,26 @@ def test_get_anaysis_data(empty_db_mock_downloads, dataset_name):
     assert ew_vs_lineage["abs_effect_size"] == [0.06]
     assert ew_vs_lineage["depletion"] == ["True"]
 
-    ew_vs_type = _get_analysis_data_table(
-        in_group="ES",
-        out_group_type="Type",
+    myeloid_vs_other_heme = _get_analysis_data_table(
+        in_group="MYELOID",
+        out_group_type="Other Heme",
         entity_type=entity_type,
         dataset_name=dataset_name,
     )
 
-    assert ew_vs_type["entity"] == [
+    assert myeloid_vs_other_heme["entity"] == [
         f"{gene_a.label} ({gene_a.entrez_id})" if use_genes else compound_a.label
     ]
-    assert ew_vs_type["t_pval"] == [1]
-    assert ew_vs_type["mean_in"] == [2]
-    assert ew_vs_type["mean_out"] == [3]
-    assert ew_vs_type["effect_size"] == [4]
-    assert ew_vs_type["abs_effect_size"] == [4]
-    assert ew_vs_type["depletion"] == ["True"]
+    assert myeloid_vs_other_heme["t_pval"] == [1]
+    assert myeloid_vs_other_heme["mean_in"] == [2]
+    assert myeloid_vs_other_heme["mean_out"] == [3]
+    assert myeloid_vs_other_heme["effect_size"] == [4]
+    assert myeloid_vs_other_heme["abs_effect_size"] == [4]
+    assert myeloid_vs_other_heme["depletion"] == ["True"]
 
     empty_data = _get_analysis_data_table(
         in_group="Skin",
-        out_group_type="All",
+        out_group_type="All Others",
         entity_type=entity_type,
         dataset_name=dataset_name,
     )
@@ -570,7 +589,7 @@ def test_get_anaysis_data(empty_db_mock_downloads, dataset_name):
 
     all_in_group = _get_analysis_data_table(
         in_group="All",
-        out_group_type="All",
+        out_group_type="All Others",
         entity_type=entity_type,
         dataset_name=dataset_name,
     )
