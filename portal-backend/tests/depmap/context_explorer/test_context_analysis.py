@@ -29,25 +29,23 @@ import pandas as pd
 
 # Filter ranges to be used as params for get_other_context_dependencies.
 @dataclass
-class FilterRanges:
-    fdr: List[float]
-    abs_effect_size: List[float]
-    frac_dep_in: List[float]
+class FilterValues:
+    max_fdr: float
+    min_abs_effect_size: float
+    min_frac_dep_in: float
 
 
 # Will only capture ContextAnalysis objects made with narrow_filters.
-only_narrow_range = FilterRanges(
-    fdr=[0.002, 0.2], abs_effect_size=[0.028, 0.1], frac_dep_in=[0, 0.1]
+only_narrow_range = FilterValues(
+    max_fdr=0.2, min_abs_effect_size=0.1, min_frac_dep_in=0
 )
 
 # Will capture narrow_filters and wide_filters.
-all_range = FilterRanges(
-    fdr=[0.002, 10], abs_effect_size=[0.02, 10], frac_dep_in=[0, 10]
-)
+all_range = FilterValues(max_fdr=10, min_abs_effect_size=0.02, min_frac_dep_in=0)
 
 # Will filter out all ContextAnalysis objects so that nothing is returned.
-nothing_range = FilterRanges(
-    fdr=[0.002, 0.0021], abs_effect_size=[0.02, 0.021], frac_dep_in=[0, 0.0001]
+nothing_range = FilterValues(
+    max_fdr=0.002, min_abs_effect_size=0.02, min_frac_dep_in=0.0001
 )
 
 # Filter values of ContextAnalysis objects.
@@ -597,7 +595,7 @@ def test_get_dose_curves(empty_db_mock_downloads):
         entity_full_label=selected_entity_label,
         subtype_code="ES",
         level=1,
-        out_group_type="All",
+        out_group_type="All Others",
     )
 
     assert list(dose_curve_info.keys()) == [
@@ -908,7 +906,6 @@ def test_get_box_plot_data(empty_db_mock_downloads, dataset_name):
     interactive_test_utils.reload_interactive_config()
 
     selected_entity_label = gene_a.label if use_genes else compound_a.label
-    selected_entity_id = gene_a.entity_id if use_genes else compound_a.entity_id
 
     ### Test - the User is on the Lineage tab and selects "BONE". Then, the
     ### user selects a specific gene/compound from either the scatter plots or
@@ -922,9 +919,9 @@ def test_get_box_plot_data(empty_db_mock_downloads, dataset_name):
         selected_subtype_code=selected_subtype_code,
         tree_type=tree_type,
         entity_type=entity_type,
-        fdr=all_range.fdr,
-        abs_effect_size=all_range.abs_effect_size,
-        frac_dep_in=all_range.frac_dep_in,
+        fdr=all_range.max_fdr,
+        abs_effect_size=all_range.min_abs_effect_size,
+        frac_dep_in=all_range.min_frac_dep_in,
     )
 
     assert data["significant_selection"] == {
@@ -1060,9 +1057,9 @@ def test_get_box_plot_data(empty_db_mock_downloads, dataset_name):
         selected_subtype_code=selected_subtype_code,
         tree_type=tree_type,
         entity_type=entity_type,
-        fdr=all_range.fdr,
-        abs_effect_size=all_range.abs_effect_size,
-        frac_dep_in=all_range.frac_dep_in,
+        fdr=all_range.max_fdr,
+        abs_effect_size=all_range.min_abs_effect_size,
+        frac_dep_in=all_range.min_frac_dep_in,
     )
 
     assert data["significant_selection"] == {
@@ -1167,9 +1164,9 @@ def test_get_box_plot_data(empty_db_mock_downloads, dataset_name):
         selected_subtype_code=selected_subtype_code,
         tree_type=tree_type,
         entity_type=entity_type,
-        fdr=nothing_range.fdr,
-        abs_effect_size=nothing_range.abs_effect_size,
-        frac_dep_in=nothing_range.frac_dep_in,
+        fdr=nothing_range.max_fdr,
+        abs_effect_size=nothing_range.min_abs_effect_size,
+        frac_dep_in=nothing_range.min_frac_dep_in,
     )
 
     assert data == None
