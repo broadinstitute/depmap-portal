@@ -12,7 +12,6 @@ from depmap.user_uploads.utils import (
     update_user_upload_records,
     get_task,
 )
-from depmap.vector_catalog.trees import OTHER_DATASET_NON_PREPOPULATE_ID_BASE
 from depmap.interactive.nonstandard import nonstandard_utils
 from depmap.utilities.data_access_log import log_legacy_private_dataset_access
 
