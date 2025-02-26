@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useDataExplorerApi } from "../../../../contexts/DataExplorerApiContext";
+import { useDeprecatedDataExplorerApi } from "../../../../contexts/DeprecatedDataExplorerApiContext";
 import CompoundSearcher from "./CompoundSearcher";
 import { extractCompoundNames, fetchCompoundDatasets } from "./utils";
 
@@ -20,7 +20,7 @@ function CompoundNameSelect({
   isColorSelector,
   dataset_id,
 }: Props) {
-  const api = useDataExplorerApi();
+  const api = useDeprecatedDataExplorerApi();
   const [isLoading, setIsLoading] = useState(false);
   const [options, setOptions] = useState<{ label: string; value: string }[]>(
     []

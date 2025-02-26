@@ -1,10 +1,12 @@
 import { Base64 } from "js-base64";
 import stableStringify from "json-stable-stringify";
-import { DataExplorerContext } from "@depmap/types";
+import { DataExplorerContext, DataExplorerContextV2 } from "@depmap/types";
 
 // This function needed to live in its own file to avoid a dependency cycle
 // ¯\_(ツ)_/¯
-export default async function getContextHash(context: DataExplorerContext) {
+export default async function getContextHash(
+  context: DataExplorerContext | DataExplorerContextV2
+) {
   const json = stableStringify(context);
   const encoded = new TextEncoder().encode(json);
   const buffer = await crypto.subtle.digest("SHA-256", encoded);

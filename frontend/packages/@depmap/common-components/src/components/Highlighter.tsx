@@ -11,7 +11,7 @@ interface Props {
 }
 
 export const colors = [
-  "yellow",
+  "#FFEE00",
   "#FF8152",
   "#32CD32",
   "#03A9F4",

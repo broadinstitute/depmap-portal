@@ -104,16 +104,6 @@ def get_dataset_sample_ids(dataset_id: str) -> list[str]:
     return [sample["id"] for sample in samples]
 
 
-def get_sort_key(dataset_id: str) -> DatasetSortKey:
-    """
-    Sort breadbox datasets in with private datasets.
-    This method is only used in DE1. DE2 uses the 'priority' field instead.
-    """
-    return DatasetSortKey(
-        DatasetSortFirstKey.custom_or_private.value, 0, get_dataset_label(dataset_id),
-    )
-
-
 def get_dataset_taiga_id(dataset_id: str) -> Optional[str]:
     return get_matrix_dataset(dataset_id).taiga_id
 

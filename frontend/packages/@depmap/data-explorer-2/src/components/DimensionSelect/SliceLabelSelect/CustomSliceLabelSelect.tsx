@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { DataExplorerContext } from "@depmap/types";
-import { useDataExplorerApi } from "../../../contexts/DataExplorerApiContext";
+import { useDeprecatedDataExplorerApi } from "../../../contexts/DeprecatedDataExplorerApiContext";
 import PlotConfigSelect from "../../PlotConfigSelect";
 import { toOutputValue } from "./utils";
 
@@ -23,7 +23,7 @@ function CustomSliceLabelSelect({
   onChange,
   swatchColor = undefined,
 }: Props) {
-  const api = useDataExplorerApi();
+  const api = useDeprecatedDataExplorerApi();
   const [dsError, setDsError] = useState(false);
   const [sliceLabels, setSliceLabels] = useState<string[] | null>(null);
 

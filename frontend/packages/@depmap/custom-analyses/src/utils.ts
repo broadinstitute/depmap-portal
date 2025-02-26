@@ -1,6 +1,5 @@
 import qs from "qs";
 import stableStringify from "json-stable-stringify";
-import { Link } from "@depmap/interactive";
 import { CustomList } from "@depmap/cell-line-selector";
 import { AnalysisType, ComputeResponseResult } from "@depmap/compute";
 
@@ -43,7 +42,7 @@ export async function getDataExplorer2Url(
   analysisType: AnalysisType,
   result: ComputeResponseResult,
   cellLineLists: Record<string, CustomList>,
-  vectorCatalogSelections?: Link[]
+  vectorCatalogSelections?: any[]
 ): Promise<string> {
   const task = result.taskId;
   const firstFeature = result.data[0].label;

@@ -16,7 +16,6 @@
     { "path": "../depmap/data-slicer" },
     { "path": "../depmap/downloads" },
     { "path": "../depmap/groups-manager" },
-    { "path": "../depmap/interactive" },
     { "path": "../depmap/long-table" },
     { "path": "../depmap/types" },
     { "path": "../depmap/user-upload" },

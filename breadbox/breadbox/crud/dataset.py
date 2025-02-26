@@ -1,29 +1,21 @@
 import logging
 from collections import defaultdict
-from dataclasses import dataclass
 from typing import Any, Dict, Optional, List, Type, Union, Tuple, Set
 from uuid import UUID, uuid4
 import warnings
-import json
 
 import pandas as pd
 from sqlalchemy import and_, func, or_
 from sqlalchemy.orm import aliased, with_polymorphic
 
 from breadbox.db.session import SessionWithUser
-from ..io.data_validation import (
-    dimension_label_df_schema,
-    annotation_type_to_pandas_column_type,
-)
+from ..io.data_validation import dimension_label_df_schema
 from ..schemas.dataset import (
-    MatrixDatasetIn,
-    TabularDatasetIn,
     DimensionSearchIndexResponse,
-    FeatureSampleIdentifier,
     ColumnMetadata,
-    TabularDimensionsInfo,
     UpdateDatasetParams,
 )
+
 from ..schemas.custom_http_exception import (
     DatasetAccessError,
     ResourceNotFoundError,
@@ -31,30 +23,24 @@ from ..schemas.custom_http_exception import (
 )
 from breadbox.crud.access_control import user_has_access_to_group
 from breadbox.models.dataset import (
-    AnnotationType,
     Dataset,
     MatrixDataset,
     TabularDataset,
     DatasetFeature,
-    DatasetReference,
     DatasetSample,
     Dimension,
     DimensionSearchIndex,
     TabularColumn,
     TabularCell,
-    PropertyToIndex,
     ValueType,
     DimensionType,
+    PrecomputedAssociation,
 )
 from breadbox.crud.group import (
     get_group,
     get_groups_with_visible_contents,
-    TRANSIENT_GROUP_ID,
-    get_transient_group,
 )
 from breadbox.io.filestore_crud import delete_data_files
-from .metadata import cast_tabular_cell_value_type
-from .dataset_reference import add_id_mapping
 import typing
 
 log = logging.getLogger(__name__)
@@ -198,488 +184,7 @@ def get_dataset(
     return dataset
 
 
-def _get_dataset_group(
-    db: SessionWithUser, user: str, group_id: str, is_transient: bool
-):
-    # I don't really like this approach, but it's needed to support create_cell_line_group which
-    # creates some transient datasets. I think we haven't really thought through the role of groups
-    # and transient datasets. Every dataset needs a group, and so we have TRANSIENT_GROUP_ID that should be the
-    # owner of all transient datasets. Perhaps we should make group optional if isTransient is set? Or
-    # we could silently ignore the group_id in this case. For now, assert it's set appropriately
-
-    if is_transient:
-        if str(group_id) != TRANSIENT_GROUP_ID:
-            raise UserError(
-                f"If creating a transient dataset, the group must be set to {TRANSIENT_GROUP_ID}"
-            )
-        group = get_transient_group(db)
-    else:
-        group = get_group(db, user, group_id, write_access=True)
-    assert group is not None
-    return group
-
-
-def add_matrix_dataset(
-    db: SessionWithUser,
-    user: str,
-    dataset_in: MatrixDatasetIn,
-    feature_given_id_and_index_df: pd.DataFrame,
-    sample_given_id_and_index_df: pd.DataFrame,
-    feature_type: Optional[DimensionType],
-    sample_type: DimensionType,
-    short_name: Optional[str],
-    version: Optional[str],
-    description: Optional[str],
-):
-    group = _get_dataset_group(db, user, dataset_in.group_id, dataset_in.is_transient)
-
-    allowed_values = dataset_in.allowed_values
-
-    def is_binary_category(allowed_values_list):
-        if allowed_values_list and len(allowed_values_list) == 2:
-            allowed_values_set = set(allowed_values_list)
-            return {"True", "False"} == allowed_values_set
-        else:
-            return False
-
-    dataset = MatrixDataset(
-        id=dataset_in.id,
-        given_id=dataset_in.given_id,
-        name=dataset_in.name,
-        units=dataset_in.units,
-        feature_type_name=dataset_in.feature_type_name,
-        sample_type_name=dataset_in.sample_type_name,
-        data_type=dataset_in.data_type,
-        is_transient=dataset_in.is_transient,
-        group_id=group.id,
-        value_type=dataset_in.value_type,
-        priority=dataset_in.priority,
-        taiga_id=dataset_in.taiga_id,
-        allowed_values=allowed_values if allowed_values else None,
-        dataset_metadata=dataset_in.dataset_metadata,
-        md5_hash=dataset_in.dataset_md5,
-        short_name=short_name,
-        description=description,
-        version=version,
-    )
-    db.add(dataset)
-    db.flush()
-
-    _add_matrix_dataset_dimensions(
-        db=db,
-        index_and_given_id=feature_given_id_and_index_df,
-        dimension_subtype_cls=DatasetFeature,
-        dimension_type_name=feature_type.name if feature_type else None,
-        dataset=dataset,
-    )
-    _add_matrix_dataset_dimensions(
-        db=db,
-        index_and_given_id=sample_given_id_and_index_df,
-        dimension_subtype_cls=DatasetSample,
-        dimension_type_name=sample_type.name,
-        dataset=dataset,
-    )
-
-    populate_search_index(db, user, dataset.id)
-    db.flush()
-
-    return dataset
-
-
-@dataclass
-class PropertyMetadata:
-    value: str
-    dimension_id: str
-    annotation_type: AnnotationType
-
-
-@dataclass
-class DatasetDimensionMetadata:
-    dimension_given_id: str
-    axis: str
-    type_name: str
-    label: str
-    property_metadata: Dict[str, PropertyMetadata]
-
-
-@dataclass
-class SearchIndexRecord:
-    property: str
-    value: str
-    dimension_id: str
-
-
-def get_metadata_by_dataset(
-    db: SessionWithUser, dataset: Dataset, properties_to_index: List[str]
-) -> Dict[str, DatasetDimensionMetadata]:
-
-    assert (
-        "label" in properties_to_index
-    ), f"The code is assuming that label is present but dataset {dataset.id} had properties_to_index={properties_to_index}"
-
-    feature_query = get_feature_query_for_feature_type(
-        db=db,
-        feature_type_dataset_id=dataset.id,
-        properties_to_index=properties_to_index,
-    )
-    feature_df = pd.read_sql(
-        feature_query.statement, feature_query.session.connection()
-    )
-    grouped_feature_df = feature_df.groupby("dimension_given_id")
-
-    def format_property_metadata(group) -> Dict[str, PropertyMetadata]:
-        property_metadata = {}
-        for _, row in group.iterrows():
-            if row["value"] is not None:
-                property_metadata[row["given_id"]] = PropertyMetadata(
-                    value=row["value"],
-                    dimension_id=row["dimension_id"],
-                    annotation_type=row["annotation_type"],
-                )
-
-        return property_metadata
-
-    rows = {}
-    for dimension_given_id, group in grouped_feature_df:
-        rows[dimension_given_id] = DatasetDimensionMetadata(
-            dimension_given_id=dimension_given_id,
-            axis=group.head(1)["axis"].values[0],
-            type_name=group.head(1)["dataset_dimension_type"].values[0],
-            label=group["value"][group["given_id"] == "label"].values[0],
-            property_metadata=format_property_metadata(group),
-        )
-
-    return rows
-
-
-@dataclass
-class CachedQueries:
-    properties_to_index: List[str]
-    rows: Dict[str, DatasetDimensionMetadata]
-    dataset_column_ref: Dict[str, str]
-
-
-def create_index_records_for_row(
-    db,
-    dataset: Dataset,
-    user: str,
-    user_supplied_id: str,
-    row_cache: Dict[str, CachedQueries],
-) -> List[SearchIndexRecord]:
-
-    dimension_search_index_rows = []
-
-    if dataset.id in row_cache:
-        entry = row_cache[dataset.id]
-        properties_to_index = entry.properties_to_index
-        rows = entry.rows
-        dataset_column_ref = entry.dataset_column_ref
-    else:
-        properties_to_index = get_properties_to_index(db, user, dataset.id)
-        rows = get_metadata_by_dataset(
-            db=db, dataset=dataset, properties_to_index=properties_to_index
-        )
-        dataset_column_ref = get_dataset_column_reference(
-            db, user, dataset_id=dataset.id
-        )
-
-        row_cache[dataset.id] = CachedQueries(
-            properties_to_index, rows, dataset_column_ref
-        )
-
-    row = rows.get(user_supplied_id)
-    # if this ID is not specified, then just move on.
-    if row is not None:
-        for property in properties_to_index:
-            # if this column is a fk, get the property/value pairs that we'd add to the index from the reference row
-            if dataset_column_ref and property in dataset_column_ref:
-                referenced_dataset_id = dataset_column_ref[property]
-                referenced_dataset = (
-                    db.query(Dataset).filter(Dataset.id == referenced_dataset_id).one()
-                )
-
-                if property not in row.property_metadata:
-                    # if the property doesn't exist, just skip it instead of throwing an exception
-                    # This often happens when updating datasets because the properties to index
-                    # will include a property which hasn't been uploaded yet.
-                    continue
-                else:
-                    if (
-                        row.property_metadata[property].annotation_type
-                        == AnnotationType.list_strings
-                    ):
-                        values = cast_tabular_cell_value_type(
-                            row.property_metadata[property].value,
-                            row.property_metadata[property].annotation_type,
-                        )
-                    else:
-                        values = [row.property_metadata[property].value]
-
-                assert isinstance(values, list)
-                parent_dimension_id = row.property_metadata[property].dimension_id
-                for user_supplied_id_val in values:
-                    for search_index_record in create_index_records_for_row(
-                        db,
-                        dataset=referenced_dataset,
-                        user=user,
-                        user_supplied_id=user_supplied_id_val,
-                        row_cache=row_cache,
-                    ):
-                        # prefix the property name before adding to the index with the name
-                        # of the relationship that we traversed to get it. (this let's us
-                        # distinguish those properties which have the same name. For example, for
-                        # a compound, we'll get "alias" which is an alternative name for the
-                        # compound and "target.alias" which is an alternative name for the gene targeted
-                        # by the compound)
-                        dimension_search_index_rows.append(
-                            SearchIndexRecord(
-                                property=f"{property}.{search_index_record.property}",
-                                value=search_index_record.value,
-                                dimension_id=parent_dimension_id,
-                            )
-                        )
-            else:
-                property_metadata = row.property_metadata
-                if property in property_metadata:
-                    value = property_metadata[property].value
-
-                    if (
-                        property_metadata[property].annotation_type
-                        == AnnotationType.list_strings
-                    ):
-                        values = cast_tabular_cell_value_type(
-                            value=value,
-                            type=property_metadata[property].annotation_type,
-                        )
-                    else:
-                        values = [value]
-
-                    assert isinstance(values, list)
-
-                    for value in values:
-                        dimension_search_index_rows.append(
-                            SearchIndexRecord(
-                                property=property,
-                                value=value,
-                                dimension_id=property_metadata[property].dimension_id,
-                            ),
-                        )
-
-    return dimension_search_index_rows
-
-
-def get_feature_query_for_feature_type(
-    db: SessionWithUser, feature_type_dataset_id: str, properties_to_index: List[str],
-):
-    filter_clauses = [
-        DimensionType.dataset_id == feature_type_dataset_id,
-        Dimension.given_id.in_(properties_to_index),
-    ]
-
-    feature_query = (
-        db.query(TabularCell)
-        .join(TabularColumn, TabularCell.tabular_column_id == TabularColumn.id,)
-        .join(DimensionType, TabularColumn.dataset_id == DimensionType.dataset_id,)
-        .filter(and_(True, *filter_clauses))
-        .with_entities(
-            TabularCell.dimension_given_id,
-            TabularCell.value,
-            TabularCell.tabular_column_id,
-            TabularColumn.annotation_type,
-            DimensionType.id_column,
-            DimensionType.axis,
-            Dimension.dataset_dimension_type,
-            Dimension.given_id,
-            Dimension.id.label("dimension_id"),
-        )
-    )
-
-    return feature_query
-
-
-def get_properties_to_index(
-    db: SessionWithUser, user: str, dataset_id: str
-) -> list[str]:
-    dataset = get_dataset(db=db, user=user, dataset_id=dataset_id)
-    if dataset is None:
-        raise ResourceNotFoundError(f"Dataset '{dataset_id}' not found.")
-    assert user_has_access_to_group(dataset.group, user)
-
-    property_to_index_rows = (
-        db.query(PropertyToIndex)
-        .filter(PropertyToIndex.dataset_id == dataset_id)
-        .with_entities(PropertyToIndex.property)
-        .all()
-    )
-
-    return [property_name for property_name, in property_to_index_rows]
-
-
-def get_dataset_column_reference(
-    db: SessionWithUser, user: str, dataset_id: str
-) -> dict[str, str]:
-    dataset = get_dataset(db=db, user=user, dataset_id=dataset_id)
-    if dataset is None:
-        raise ResourceNotFoundError(f"Dataset '{dataset_id}' not found.")
-    assert user_has_access_to_group(dataset.group, user)
-
-    reference_columns = (
-        db.query(DatasetReference)
-        .filter(DatasetReference.dataset_id == dataset_id)
-        .all()
-    )
-
-    return {
-        ref_col.column: ref_col.referenced_dataset_id for ref_col in reference_columns
-    }
-
-
-def _get_impacted_dataset_ids(db, orig_dataset_id):
-    seen_ids = []
-    seen_ids.append(orig_dataset_id)
-
-    def _get_dataset_ids(dataset_id):
-        datasets_result = (
-            db.query(DatasetReference)
-            .filter(DatasetReference.dataset_id == dataset_id)
-            .with_entities(
-                DatasetReference.referenced_dataset_id, DatasetReference.dataset_id,
-            )
-            .all()
-        )
-        ref_datasets_result = (
-            db.query(DatasetReference)
-            .filter(DatasetReference.referenced_dataset_id == dataset_id)
-            .with_entities(DatasetReference.referenced_dataset_id)
-            .all()
-        )
-
-        datasets = [d for dr in datasets_result for d in dr]
-        ref_datastet_ids = [r for r, in ref_datasets_result]
-        all_dataset_ids = datasets + ref_datastet_ids
-
-        for d_id in all_dataset_ids:
-            if d_id not in seen_ids:
-                seen_ids.append(d_id)
-                _get_dataset_ids(d_id)
-
-    _get_dataset_ids(orig_dataset_id)
-    return seen_ids
-
-
-def _populate_search_index_for_dataset(db: SessionWithUser, user: str, dataset_id: str):
-    log.info("_populate_search_index_for_dataset %s", dataset_id)
-    dataset = get_dataset(db=db, user=user, dataset_id=dataset_id)
-    if not dataset or not user_has_access_to_group(
-        dataset.group, user, write_access=True
-    ):
-        return None
-
-    properties_to_index = get_properties_to_index(
-        db=db, user=user, dataset_id=dataset_id
-    )
-
-    if not properties_to_index or len(properties_to_index) == 0:
-        return None
-
-    log.info("_delete_dataset_dimension_search_index_records start")
-    _delete_dataset_dimension_search_index_records(db=db, dataset_id=dataset_id)
-    log.info("_delete_dataset_dimension_search_index_records complete")
-
-    labels_by_feature_id_query = (
-        db.query(TabularCell)
-        .join(TabularColumn, TabularCell.tabular_column_id == TabularColumn.id,)
-        .join(DimensionType, TabularColumn.dataset_id == DimensionType.dataset_id,)
-        .filter(
-            and_(DimensionType.dataset_id == dataset_id, Dimension.given_id == "label")
-        )
-        .with_entities(TabularCell.dimension_given_id, TabularCell.value)
-    )
-
-    labels_by_dimension_given_id = dict(labels_by_feature_id_query)
-
-    dimension_search_index_rows = []
-    rows = get_metadata_by_dataset(
-        db=db, dataset=dataset, properties_to_index=properties_to_index
-    )
-    row_cache = {}
-
-    for row in rows.values():
-        for record in create_index_records_for_row(
-            db=db,
-            dataset=dataset,
-            user=user,
-            user_supplied_id=row.dimension_given_id,
-            row_cache=row_cache,
-        ):
-            if record:
-                dimension_search_index_rows.append(
-                    DimensionSearchIndex(
-                        dimension_id=record.dimension_id,
-                        dimension_given_id=row.dimension_given_id,
-                        label=labels_by_dimension_given_id[
-                            row.dimension_given_id
-                        ],  # value where "dimension_given_id" == "label"
-                        property=record.property,
-                        priority=0,
-                        axis=row.axis,  # "feature" vs. "sample"
-                        value=record.value,
-                        type_name=row.type_name,
-                        group_id=dataset.group_id,
-                    )
-                )
-    log.info("_populate_search_index_for_dataset complete")
-
-    return dimension_search_index_rows
-
-
-def populate_search_index(db: SessionWithUser, user: str, dataset_id: str):
-    dataset = get_dataset(db=db, user=user, dataset_id=dataset_id)
-    if not dataset or not user_has_access_to_group(
-        dataset.group, user, write_access=True
-    ):
-        return False
-
-    properties_to_index = get_properties_to_index(
-        db=db, user=user, dataset_id=dataset_id
-    )
-
-    if not properties_to_index or len(properties_to_index) == 0:
-        return False
-
-    impacted_dataset_ids = _get_impacted_dataset_ids(db, dataset_id)
-
-    dimension_search_index_rows = []
-    for impacted_id in impacted_dataset_ids:
-        rows = _populate_search_index_for_dataset(db, user, impacted_id)
-        if rows and len(rows) > 0:
-            dimension_search_index_rows.extend(rows)
-
-    db.bulk_save_objects(dimension_search_index_rows)
-    db.flush()
-
-
-def _delete_dataset_dimension_search_index_records(
-    db: SessionWithUser, dataset_id: str
-):
-    dimensions_to_delete = [
-        id
-        for id, in db.query(DimensionSearchIndex)
-        .join(Dimension)
-        .filter(Dimension.dataset_id == dataset_id)
-        .with_entities(Dimension.id)
-        .distinct()
-    ]
-
-    db.query(DimensionSearchIndex).filter(
-        DimensionSearchIndex.dimension_id.in_(list(dimensions_to_delete))
-    ).delete()
-
-    db.flush()
-    return True
-
-
-def _add_matrix_dataset_dimensions(
+def add_matrix_dataset_dimensions(
     db: SessionWithUser,
     index_and_given_id: pd.DataFrame,
     dimension_subtype_cls: Union[Type[DatasetFeature], Type[DatasetSample]],
@@ -711,61 +216,7 @@ def _add_matrix_dataset_dimensions(
     db.flush()
 
 
-def add_tabular_dataset(
-    db: SessionWithUser,
-    user: str,
-    dataset_in: TabularDatasetIn,
-    data_df: pd.DataFrame,
-    columns_metadata: Dict[str, ColumnMetadata],
-    dimension_type: DimensionType,
-    short_name: Optional[str],
-    version: Optional[str],
-    description: Optional[str],
-):
-    # verify the id_column is present in the data frame before proceeding and is of type string
-    if dimension_type.id_column not in data_df.columns:
-        raise ValueError(
-            f'The dimension type "{dimension_type.name}" uses "{dimension_type.id_column}" for the ID, however that column is not present in the table. The actual columns were: {data_df.columns.to_list()}'
-        )
-
-    group = _get_dataset_group(db, user, dataset_in.group_id, dataset_in.is_transient)
-    dataset = TabularDataset(
-        id=dataset_in.id,
-        given_id=dataset_in.given_id,
-        name=dataset_in.name,
-        index_type_name=dataset_in.index_type_name,
-        data_type=dataset_in.data_type,
-        is_transient=dataset_in.is_transient,
-        group_id=group.id,
-        priority=dataset_in.priority,
-        taiga_id=dataset_in.taiga_id,
-        dataset_metadata=dataset_in.dataset_metadata,
-        md5_hash=dataset_in.dataset_md5,
-        short_name=short_name,
-        version=version,
-        description=description,
-    )
-    db.add(dataset)
-    db.flush()
-
-    reference_column_mappings = {
-        name: metadata.references
-        for name, metadata in columns_metadata.items()
-        if metadata.references is not None
-    }
-    add_id_mapping(db, reference_column_mappings, dataset)
-
-    _add_tabular_dimensions(
-        db, data_df, columns_metadata, dataset.id, dimension_type, group_id=group.id
-    )
-
-    populate_search_index(db, user, dataset.id)
-    db.flush()
-
-    return dataset
-
-
-def _add_tabular_dimensions(
+def add_tabular_dimensions(
     db: SessionWithUser,
     data_df: pd.DataFrame,
     columns_metadata: Dict[str, ColumnMetadata],
@@ -779,21 +230,6 @@ def _add_tabular_dimensions(
     dimensions = []
     values = []
 
-    assert (
-        dimension_type.id_column in data_df.columns
-    ), f"id column was specified as {dimension_type.id_column} but dataframe only had columns {data_df.columns}"
-
-    missing_metadata = set(data_df.columns).difference(columns_metadata)
-    if len(missing_metadata) > 0:
-        raise ValueError(
-            f"The following columns are missing metadata: {', '.join(missing_metadata)}"
-        )
-    extra_metadata = set(columns_metadata).difference(data_df.columns)
-    if len(extra_metadata) > 0:
-        raise ValueError(
-            f"The following columns had metadata but are not present in the table: {', '.join(extra_metadata)}"
-        )
-
     for col in data_df.columns:
         annotation_id = str(uuid4())
         dimensions.append(
@@ -805,6 +241,7 @@ def _add_tabular_dimensions(
                 annotation_type=columns_metadata[col].col_type,
                 units=columns_metadata[col].units,
                 group_id=group_id,
+                references_dimension_type_name=columns_metadata[col].references,
             )
         )
         values.extend(
@@ -886,7 +323,9 @@ def get_dataset_dimension_search_index_entries(
     outer = aliased(DimensionSearchIndex)
 
     if dimension_type_name:
-        search_index_filter_clauses.append(outer.type_name == dimension_type_name)
+        search_index_filter_clauses.append(
+            outer.dimension_type_name == dimension_type_name
+        )
 
     def filter_per_value(values, predicate_constructor):
         if len(values) == 0:
@@ -894,17 +333,18 @@ def get_dataset_dimension_search_index_entries(
 
         exists_clause_per_value = [
             db.query(DimensionSearchIndex)
-            .join(Dimension)
             .filter(
                 and_(
                     predicate_constructor(DimensionSearchIndex, value),
                     *search_index_filter_clauses,
-                    outer.type_name == DimensionSearchIndex.type_name,
+                    outer.dimension_type_name
+                    == DimensionSearchIndex.dimension_type_name,
                     outer.dimension_given_id == DimensionSearchIndex.dimension_given_id,
                 )
             )
             .with_entities(
-                DimensionSearchIndex.type_name, DimensionSearchIndex.dimension_given_id,
+                DimensionSearchIndex.dimension_type_name,
+                DimensionSearchIndex.dimension_given_id,
             )
             .exists()
             for value in values
@@ -927,7 +367,6 @@ def get_dataset_dimension_search_index_entries(
 
     search_index_query = (
         db.query(outer)
-        # .join(Dimension)
         .filter(
             and_(
                 True,
@@ -940,7 +379,7 @@ def get_dataset_dimension_search_index_entries(
         )
         .limit(limit)
         .with_entities(
-            outer.type_name,
+            outer.dimension_type_name,
             outer.dimension_given_id,
             outer.label,
             outer.property,
@@ -951,9 +390,10 @@ def get_dataset_dimension_search_index_entries(
     search_index_entries = pd.read_sql(
         search_index_query.statement, search_index_query.session.connection()
     )
+    #    search_index_entries.columns = ["type_name", "dimension_given_id", "label", "property", "value"]
 
     grouped_search_index_entries = search_index_entries.groupby(
-        ["dimension_given_id", "type_name"],
+        ["dimension_given_id", "dimension_type_name"],
         sort=False,  # set sort=False to preserve the ordering from the original search_index_query
     )
 
@@ -984,7 +424,7 @@ def get_dataset_dimension_search_index_entries(
 
     # sort at the end. This has been moved out of the sql query because we
     # want the sort to happen after "limit" has been applied.
-    group_entries.sort(key=lambda x: x.label)
+    group_entries.sort(key=lambda x: (x.label, x.type_name))
 
     return group_entries
 
@@ -1131,87 +571,6 @@ def get_feature_indexes_by_given_ids(
     return _get_indexes_by_given_id(db, user, dataset, DatasetFeature, given_ids)
 
 
-def get_dimension_indexes_of_labels(
-    db: SessionWithUser,
-    user: str,
-    dataset: MatrixDataset,
-    axis: str,
-    dimension_labels: List[str],
-) -> Tuple[List[int], List[str]]:
-    """
-    Get the set of numeric indices corresponding to the given dimension labels for the given dataset.
-    Note: The order of the result does not necessarily match the order of the input
-    """
-    assert_user_has_access_to_dataset(dataset, user)
-
-    # We could do this in one query, but it's unwieldy, so let's make two queries. First
-    # let's resolve dimension_labels to given_ids
-
-    def _query_given_id_and_label(type_name):
-        results = (
-            db.query(DimensionType)
-            .join(TabularDataset, DimensionType.dataset)
-            .join(TabularColumn, TabularDataset.dimensions)
-            .join(TabularCell, TabularColumn.tabular_cells)
-            .filter(
-                TabularColumn.given_id == "label",
-                DimensionType.name == type_name,
-                TabularCell.value.in_(dimension_labels),
-            )
-            .with_entities(TabularCell.dimension_given_id, TabularCell.value)
-            .all()
-        )
-        return results
-
-    if axis == "feature":
-        if dataset.feature_type_name is None:
-            # feature types are allowed to be None. If that's the case, the labels are the given_ids on the matrix
-            given_id_and_label = (
-                db.query(DatasetFeature)
-                .filter(
-                    DatasetFeature.dataset_id == dataset.id,
-                    DatasetFeature.given_id.in_(dimension_labels),
-                )
-                .with_entities(DatasetFeature.given_id, DatasetFeature.given_id)
-            )
-        else:
-            given_id_and_label = _query_given_id_and_label(dataset.feature_type_name)
-    else:
-        assert axis == "sample"
-        given_id_and_label = _query_given_id_and_label(dataset.sample_type_name)
-
-    # unpack into two columns
-    given_id_to_label = dict(given_id_and_label)
-
-    missing_labels = set(dimension_labels).difference(given_id_to_label.values())
-
-    # for the time being, just warn in the log about things that are missing. I'm not 100% confident that
-    # something won't break if we start treating missing things as an error. If we don't see warnings in the
-    # log from normal use, we can turn it into an error later
-    if len(missing_labels) > 0:
-        log.warning(
-            f"In get_dimension_indexes_of_labels, missing labels: {missing_labels}"
-        )
-
-    # now resolve those given_ids to indices
-    if axis == "feature":
-        indices, missing_given_ids = get_feature_indexes_by_given_ids(
-            db, user, dataset, list(given_id_to_label.keys())
-        )
-    else:
-        assert axis == "sample"
-        indices, missing_given_ids = get_sample_indexes_by_given_ids(
-            db, user, dataset, list(given_id_to_label.keys())
-        )
-
-    if len(missing_given_ids) > 0:
-        log.warning(
-            f"In get_dimension_indexes_of_labels, missing given_ids: {missing_given_ids}"
-        )
-
-    return indices, list(missing_labels)
-
-
 def get_dataset_feature_by_uuid(
     db: SessionWithUser, user: str, dataset: Dataset, feature_uuid: str
 ) -> DatasetFeature:
@@ -1297,8 +656,23 @@ def update_dataset(
 def delete_dataset(
     db: SessionWithUser, user: str, dataset: Dataset, filestore_location: str
 ):
+    from .associations import delete_association_table
+
     if not user_has_access_to_group(dataset.group, user, write_access=True):
         return False
+
+    log.info("delete any referenced precomputed associations")
+    for associations in (
+        db.query(PrecomputedAssociation)
+        .filter(
+            or_(
+                PrecomputedAssociation.dataset_1_id == dataset.id,
+                PrecomputedAssociation.dataset_2_id == dataset.id,
+            )
+        )
+        .all()
+    ):
+        delete_association_table(db, associations.id, filestore_location)
 
     log.info("delete Dimension")
     db.query(Dimension).filter(Dimension.dataset_id == dataset.id).delete()
@@ -1363,196 +737,36 @@ def get_dataset_sample_by_given_id(
     return sample
 
 
-def _get_column_types(columns_metadata, columns: Optional[List[str]]):
-    col_and_column_metadata_pairs = columns_metadata.items()
-    if columns is None:
-        return {
-            col: annotation_type_to_pandas_column_type(column_metadata.col_type)
-            for col, column_metadata in col_and_column_metadata_pairs
-        }
-
-    else:
-        column_types = {}
-        for col, column_metadata in col_and_column_metadata_pairs:
-            if col in columns:
-                column_types[col] = annotation_type_to_pandas_column_type(
-                    column_metadata.col_type
-                )
-
-        return column_types
-
-
-def get_subsetted_tabular_dataset_df(
+def get_subset_of_tabular_data_as_df(
     db: SessionWithUser,
-    user: str,
     dataset: TabularDataset,
-    tabular_dimensions_info: TabularDimensionsInfo,
-    strict: bool,
+    column_names: Optional[list[str]],
+    index_given_ids: Optional[list[str]],
 ) -> pd.DataFrame:
-    """
-    Load a dataframe containing data for the specified indices and columns.
-    If the indices are specified by label, then return a result indexed by labels
-    If either indices or columns are not specified, return all indices or columns
-    By default, if indices and identifier not specified, then dimension ids are used as identifier
-    """
-    if not user_has_access_to_group(dataset.group, user, write_access=True):
-        raise DatasetAccessError(f"User {user} does not have access to dataset")
-
     filter_statements = [TabularColumn.dataset_id == dataset.id]
-    # Filter columns if provided
-    if tabular_dimensions_info.columns:
-        filter_statements.append(
-            TabularColumn.given_id.in_(tabular_dimensions_info.columns)
+    if column_names is not None:
+        filter_statements.append(TabularColumn.given_id.in_(column_names))
+    if index_given_ids is not None:
+        filter_statements.append(TabularCell.dimension_given_id.in_(index_given_ids))
+    query = (
+        db.query(TabularColumn)
+        .join(TabularCell)
+        .filter(and_(True, *filter_statements))
+        .with_entities(
+            TabularCell.value, TabularCell.dimension_given_id, TabularColumn.given_id,
         )
-
-    if tabular_dimensions_info.identifier == FeatureSampleIdentifier.label:
-        # Get the corresponding dimension ids for the dimension labels from the dataset's dimension type and use the dimension ids to filter values by
-        dimension_type: DimensionType = db.query(DimensionType).filter(
-            DimensionType.name == dataset.index_type_name
-        ).one()
-
-        label_filter_statements = [
-            TabularColumn.dataset_id == dimension_type.dataset_id,
-            TabularColumn.given_id == "label",
-        ]
-        if tabular_dimensions_info.indices:
-            label_filter_statements.append(
-                TabularCell.value.in_(tabular_dimensions_info.indices)
-            )
-
-        ids_by_label = (
-            db.query(TabularCell)
-            .join(TabularColumn)
-            .filter(and_(True, *label_filter_statements))
-            .with_entities(TabularCell.value, TabularCell.dimension_given_id)
-            .all()
-        )
-        id_to_label_map = dict((x.dimension_given_id, x.value) for x in ids_by_label)
-        filter_statements.append(
-            TabularCell.dimension_given_id.in_(id_to_label_map.keys())
-        )
-        query = (
-            db.query(TabularColumn)
-            .join(TabularCell)
-            .filter(and_(True, *filter_statements))
-            .with_entities(
-                TabularCell.value,
-                TabularCell.dimension_given_id,
-                TabularColumn.given_id,
-            )
-        )
-
-        query_df = pd.read_sql(query.statement, query.session.connection())
-        # Rename the resulting column with dimension ids to their labels
-        query_df = query_df.replace({"dimension_given_id": id_to_label_map})
-
-    else:
-        if tabular_dimensions_info.indices:
-            filter_statements.append(
-                TabularCell.dimension_given_id.in_(tabular_dimensions_info.indices)
-            )
-
-        query = (
-            db.query(TabularColumn)
-            .join(TabularCell)
-            .filter(and_(True, *filter_statements))
-            .with_entities(
-                TabularCell.value,
-                TabularCell.dimension_given_id,
-                TabularColumn.given_id,
-            )
-        )
-
-        query_df = pd.read_sql(query.statement, query.session.connection())
+    )
+    query_df = pd.read_sql(query.statement, query.session.connection())
 
     # Pivot table so that the indices are the index of the df and the given columns are the columns of the df
     # NOTE: resulting df will have columns as multi index ("value", "given_id") so will need to index df by "value" to get final df
     pivot_df = query_df.pivot(index="dimension_given_id", columns="given_id")
 
-    # If 'strict' raise error
-    missing_columns, missing_indices = get_missing_tabular_columns_and_indices(
-        pivot_df,
-        tabular_dimensions_info.columns,
-        tabular_dimensions_info.indices,
-        dataset.id,
-    )
-    if strict and (missing_columns or missing_indices):
-        raise UserError(msg=get_truncated_message(missing_columns, missing_indices))
-
     # If df is empty, there is no 'value' key to index by
     if pivot_df.empty:
         return pivot_df
 
-    # Need to index by "value" after checking if empty db bc empty db has no 'value' keyword
-    subsetted_tabular_dataset_df = pivot_df["value"]
-    # set typing for columns
-    col_dtypes = _get_column_types(
-        dataset.columns_metadata, tabular_dimensions_info.columns
-    )
-    subsetted_tabular_dataset_df = _convert_subsetted_tabular_df_dtypes(
-        subsetted_tabular_dataset_df, col_dtypes, dataset.columns_metadata
-    )
-    return subsetted_tabular_dataset_df
-
-
-def _convert_subsetted_tabular_df_dtypes(
-    df: pd.DataFrame,
-    dtype_map: Dict[str, Any],
-    dataset_columns_metadata: Dict[str, ColumnMetadata],
-):
-    # Replace string boolean values with boolean
-    for col, dtype in dtype_map.items():
-        column = df[col]
-        if dtype == pd.BooleanDtype():
-            column = column.replace({"True": True, "False": False})
-        column = column.astype(dtype)
-        # NOTE: if col type is list string, convert to list. col dtype will be changed to object
-        if (
-            dtype == pd.StringDtype()
-            and dataset_columns_metadata[col].col_type == AnnotationType.list_strings
-        ):
-            column = column.apply(lambda x: json.loads(x) if x is not pd.NA else x)
-        df[col] = column
-    return df
-
-
-def get_truncated_message(missing_tabular_columns, missing_tabular_indices):
-    num_missing_cols = len(missing_tabular_columns)
-    num_missing_indices = len(missing_tabular_indices)
-    shown_missing_cols = (
-        missing_tabular_columns[:20] + ["..."]
-        if num_missing_cols >= 20
-        else missing_tabular_columns
-    )
-    shown_missing_indices = (
-        missing_tabular_indices[:20] + ["..."]
-        if num_missing_indices >= 20
-        else missing_tabular_indices
-    )
-    return f"{num_missing_cols} missing columns: {shown_missing_cols} and {num_missing_indices} missing indices: {shown_missing_indices}"
-
-
-def get_missing_tabular_columns_and_indices(
-    df, tabular_columns, tabular_indices, dataset_id
-):
-    missing_columns = set()
-    missing_indices = set()
-    if tabular_columns is not None:
-        found_columns = [x[1] for x in df.columns]
-        missing_columns = set(tabular_columns).difference(found_columns)
-        if len(missing_columns) > 0:
-            log.warning(
-                f"In get_subsetted_tabular_dataset_df, missing columns: {missing_columns} for dataset: {dataset_id}"
-            )
-
-    if tabular_indices is not None:
-        missing_indices = set(tabular_indices).difference(df.index)
-        if len(missing_indices) > 0:
-            log.warning(
-                f"In get_subsetted_tabular_dataset_df, missing indices: {missing_indices} for dataset: {dataset_id}"
-            )
-
-    return missing_columns, missing_indices
+    return pivot_df["value"]
 
 
 def get_unique_dimension_ids_from_datasets(

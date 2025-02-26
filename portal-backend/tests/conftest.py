@@ -410,7 +410,7 @@ def load_interactive_db_data():
         )
 
         biomarker_datasets = {
-            BiomarkerDataset.BiomarkerEnum.rppa: {"taiga_id": "test-taiga-id.1",},
+            # BiomarkerDataset.BiomarkerEnum.rppa: {"taiga_id": "test-taiga-id.1",},
             BiomarkerDataset.BiomarkerEnum.mutations_prioritized: {
                 "taiga_id": "test-taiga-id.1",
             },
@@ -621,9 +621,9 @@ def load_populated_db_data():
             BiomarkerDataset.BiomarkerEnum.mutations_driver: {
                 "taiga_id": "placeholder-taiga-id.1",
             },
-            BiomarkerDataset.BiomarkerEnum.rppa: {
-                "taiga_id": "placeholder-taiga-id.1",
-            },
+            # BiomarkerDataset.BiomarkerEnum.rppa: {
+            #     "taiga_id": "placeholder-taiga-id.1",
+            # },
             BiomarkerDataset.BiomarkerEnum.rrbs: {
                 "taiga_id": "placeholder-taiga-id.1",
             },

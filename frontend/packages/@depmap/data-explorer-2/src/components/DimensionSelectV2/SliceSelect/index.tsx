@@ -1,60 +1,59 @@
-import React, { useCallback } from "react";
+import React, { useEffect, useRef } from "react";
 import VanillaAsycSelect from "react-select/async";
 import { WindowedMenuList } from "react-windowed-select";
 import { DataExplorerContextV2 } from "@depmap/types";
 import extendReactSelect from "../../../utils/extend-react-select";
 import renderConditionally from "../../../utils/render-conditionally";
 import {
-  getIdentifier,
-  toOutputValue,
   useDefaultOptions,
   useLabel,
   usePlaceholder,
   useSearch,
-} from "./utils";
+} from "./hooks";
+import { getIdentifier, toOutputValue } from "./utils";
+import formatOptionLabel from "./formatOptionLabel";
 
 const AsyncSelect = extendReactSelect(VanillaAsycSelect);
 
 interface Props {
   index_type: string | null;
   slice_type: string;
+  dataset_id: string | null;
   value: DataExplorerContextV2 | null;
   onChange: (context: DataExplorerContextV2 | null) => void;
-  //  dataType: string | null;
-  //  dataset_id: string | null;
+  dataType: string | null;
   //  units: string | null;
-  //  swatchColor?: string;
+  swatchColor?: string;
 }
 
-function SliceSelect({ index_type, slice_type, value, onChange }: Props) {
-  const search = useSearch();
+function SliceSelect({
+  index_type,
+  dataType,
+  slice_type,
+  dataset_id,
+  value,
+  onChange,
+  swatchColor = undefined,
+}: Props) {
+  const searchQuery = useRef("");
+
+  useEffect(() => {
+    searchQuery.current = "";
+  }, [slice_type, dataType, dataset_id]);
 
   const displayValue = !value
     ? null
     : { value: getIdentifier(value) as string, label: value.name };
 
+  const loadOptions = useSearch(slice_type, dataType, dataset_id);
+
   const { defaultOptions, isLoadingDefaultOptions } = useDefaultOptions(
-    slice_type
+    slice_type,
+    dataType,
+    dataset_id
   );
 
   const placeholder = usePlaceholder(slice_type);
-
-  const loadOptions = useCallback(
-    async (inputValue: string) => {
-      const results = await search(inputValue, slice_type);
-
-      return (
-        results
-          // FIXME: Only searching on labels for now
-          .filter(
-            ({ matching_properties }) =>
-              matching_properties[0].property === "label"
-          )
-          .map(({ id, label }) => ({ value: id, label }))
-      );
-    },
-    [search, slice_type]
-  );
 
   return (
     <AsyncSelect
@@ -67,16 +66,16 @@ function SliceSelect({ index_type, slice_type, value, onChange }: Props) {
       isLoading={isLoadingDefaultOptions}
       loadOptions={loadOptions}
       defaultOptions={defaultOptions}
-      // formatOptionLabel={formatOptionLabel}
+      formatOptionLabel={formatOptionLabel}
       components={{ MenuList: WindowedMenuList }}
       // cacheOptions={`${slice_type}-${dataType}-${units}-${dataset_id}`}
-      // swatchColor={swatchColor}
+      swatchColor={swatchColor}
       isClearable
-      // isEditable
-      // editableInputValue={searchQuery.current}
-      // onEditInputValue={(editedText) => {
-      //   searchQuery.current = editedText;
-      // }}
+      isEditable
+      editableInputValue={searchQuery.current}
+      onEditInputValue={(editedText) => {
+        searchQuery.current = editedText;
+      }}
     />
   );
 }

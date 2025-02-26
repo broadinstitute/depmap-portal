@@ -13,5 +13,4 @@ export type {
   LongTableColumn,
   LongTableProps,
   Vector,
-  VectorResponse,
 } from "./src/components/LongTable";

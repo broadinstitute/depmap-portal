@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { WordBreaker } from "@depmap/common-components";
 import renderConditionally from "../../../../utils/render-conditionally";
-import { useDataExplorerApi } from "../../../../contexts/DataExplorerApiContext";
+import { useDeprecatedDataExplorerApi } from "../../../../contexts/DeprecatedDataExplorerApiContext";
 import PlotConfigSelect from "../../../PlotConfigSelect";
 import { extractExperiment, fetchCompoundDatasets } from "./utils";
 import styles from "../../../../styles/DimensionSelect.scss";
@@ -21,7 +21,7 @@ function CompoundExperimentSelect({
   onChange,
   isColorSelector,
 }: Props) {
-  const api = useDataExplorerApi();
+  const api = useDeprecatedDataExplorerApi();
   const [isLoading, setIsLoading] = useState(false);
   const [datasetsWithEntities, setDatasetsWithEntities] = useState<
     | {

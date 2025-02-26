@@ -9,6 +9,7 @@ from depmap.interactive import interactive_utils
 from depmap.interactive.common_utils import RowSummary
 from depmap.interactive.config.models import Config, DatasetSortKey
 from depmap.partials.matrix.models import CellLineSeries
+from depmap.compound import legacy_utils as legacy_compound_utils
 
 # This data access interface will eventually only contains functions
 # which can be supported through both breadbox and the legacy backend.
@@ -221,16 +222,6 @@ def get_dataset_sample_ids(dataset_id: str) -> list[str]:
     return interactive_utils.get_dataset_sample_ids(dataset_id)
 
 
-def get_sort_key(dataset_id: str) -> DatasetSortKey:
-    """
-    Get a DatasetSortKey to order datasets as they should appear in vector catalog.
-    This method is only used in DE1. DE2 uses the 'priority' field instead.
-    """
-    if is_breadbox_id(dataset_id):
-        return breadbox_dao.get_sort_key(dataset_id)
-    return interactive_utils.get_sort_key(dataset_id)
-
-
 def is_categorical(dataset_id: str) -> bool:
     """
     Check whether the given dataset is made up of categorical values
@@ -308,6 +299,26 @@ def get_slice_data(slice_query: SliceQuery) -> pd.Series:
 
     else:
         raise Exception("Unrecognized slice query identifier type")
+    
+###############################################################
+# METHODS BELOW ARE SPECIAL WORKAROUNDS FOR COMPOUND DATASETS #
+###############################################################
+# In the future, all drug screen datasets will be indexed by compound instead of compound experiment.
+# These methods exist to ensure that both the legacy backend and breadbox are returning 
+# same shaped data while we are in this transitionary period. 
+
+def get_subsetted_df_by_compound_labels(dataset_id) -> pd.DataFrame:
+    """
+    Load the data for a drug screen dataset. This is similar to get_subsetted_df_by_labels,
+    except that for legacy compound datasets, the result will be indexed by compound 
+    (to match breadbox).
+    """
+    dataset = get_matrix_dataset(dataset_id)
+    # Legacy datasets indexed by compound experiment get re-indexed by compound label
+    if not is_breadbox_id(dataset_id) and dataset.feature_type == "compound_experiment":
+        return legacy_compound_utils.get_subsetted_df_by_compound_labels(dataset_id)
+    else:
+        return get_subsetted_df_by_labels(dataset_id)
 
 
 ##################################################
@@ -399,34 +410,11 @@ def get_custom_cell_lines_dataset() -> str:
     return interactive_utils.get_custom_cell_lines_dataset()
 
 
-def get_matrix_id(dataset_id: str) -> int:
-    """
-    Load the matrix id for the given dataset.
-    Matrices are specific to the legacy data access implementation
-    """
-    return interactive_utils.get_matrix_id(dataset_id)
-
-
 def has_config(dataset_id: str) -> bool:
     """
     Check whether the given dataset exists in interactive config
     """
     return interactive_utils.has_config(dataset_id)
-
-
-def is_filter(dataset_id: str) -> bool:
-    """
-    Check whether the given dataset is a context or custom cell lines dataset.
-    """
-    return interactive_utils.is_filter(dataset_id)
-
-
-def is_standard(dataset_id: str) -> bool:
-    """
-    Check whether the given dataset is standard or nonstandard. 
-    Only applicable for the legacy data access implementation.
-    """
-    return interactive_utils.is_standard(dataset_id)
 
 
 def _get_visible_legacy_dataset_ids():

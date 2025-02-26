@@ -17,7 +17,6 @@
     { "path": "../@depmap/downloads" },
     { "path": "../@depmap/globals" },
     { "path": "../@depmap/groups-manager" },
-    { "path": "../@depmap/interactive" },
     { "path": "../@depmap/long-table" },
     { "path": "../@depmap/plotly-wrapper" },
     { "path": "../@depmap/types" },

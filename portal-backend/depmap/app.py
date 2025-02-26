@@ -409,12 +409,14 @@ def register_errorhandlers(app: Flask):
         user_agent = request.headers.get("User-Agent", "")
 
         # we're really only interested in exceptions from real people going in stack driver
-        if "bot" in user_agent.lower():
-            log.warning(
-                "Not logging exception to stackdriver because user_agent contained 'bot'"
-            )
-        else:
-            exception_reporter.report()
+        if 500 <= error_code < 600:
+            if "bot" in user_agent.lower():
+                log.warning(
+                    "Not logging exception to stackdriver because user_agent contained 'bot'"
+                )
+            else:
+                exception_reporter.report()
+
         # If a HTTPException, pull the `code` attribute; default to 500
         return render_template("{0}.html".format(error_code)), error_code
 

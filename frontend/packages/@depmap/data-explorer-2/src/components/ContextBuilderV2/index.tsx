@@ -19,8 +19,6 @@ interface Props {
 function ContextBuilderV2({
   show,
   context,
-  // FIXME
-  // eslint-disable-next-line
   onClickSave,
   onHide,
   backdrop = "static",
@@ -43,6 +41,7 @@ function ContextBuilderV2({
     <ContextBuilderModal
       key={`${show}`}
       show={show}
+      onClickSave={onClickSave}
       onHide={onHide}
       backdrop={backdrop}
       context={contextToEdit}

@@ -56,7 +56,6 @@ def config(request):
 @pytest.mark.parametrize(
     "dataset_id, prefix, expected",
     [
-        ("rppa", "ampk", ["AMPK_alpha", "AMPK_pT172"]),  # Standard rppa, no aliases
         (
             nonstandard_nonaliased_dataset_id,
             "met",  # nonstandard, no aliases

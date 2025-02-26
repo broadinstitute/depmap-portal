@@ -5,6 +5,7 @@ description = ""
 authors = ["Your Name <you@example.com>"]
 readme = "README.md"
 packages = [{include = "breadbox_client_generator"}]
+package-mode = false
 
 [tool.poetry.dependencies]
 python = "^3.9"

@@ -119,6 +119,7 @@ def _ask_taiga_for_canonical_taiga_id(taiga_id: str):
             "placeholder-gdsc-id.1",
             "test-taiga-id.1",
             "placeholder-onc-id.1",
+            "fake-protein-taiga-id.1/file",
         }
         if taiga_id in fake_taiga_ids:
             return taiga_id

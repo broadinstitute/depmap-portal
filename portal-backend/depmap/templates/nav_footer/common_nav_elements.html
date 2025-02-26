@@ -30,12 +30,8 @@
         <li class="dropdown">
           <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Tools <i class="fas fa-caret-down" aria-hidden="true"></i></a>
           <ul class="dropdown-menu">
-            {% if config.ENABLED_FEATURES.data_explorer_2 %}
-                <li><a href="{{ url_for('data_explorer_2.view_data_explorer_2')}}">Data Explorer</a></li>
-            {% else %}
-                <li><a href="{{ url_for('interactive.view_interactive') }}">Data Explorer</a></li>
-            {% endif %}
-            <li><a href="{{ url_for('interactive.view_custom_analysis') }}">Custom Analyses</a></li>
+              <li><a href="{{ url_for('data_explorer_2.view_data_explorer_2')}}">Data Explorer</a></li>
+              <li><a href="{{ url_for('interactive.view_custom_analysis') }}">Custom Analyses</a></li>
               <li><a href="{{ url_for('celligner.view_celligner') }}">Celligner</a></li>
             {% if config.ENABLED_FEATURES.morpheus %}
               <li><a href="{{ url_for('experimental.morpheus') }}">Morpheus <i class="alpha-tag"><b>Alpha</b></i></a></li>
@@ -49,16 +45,8 @@
             {% if config.ENABLED_FEATURES.compound_dashboard_app %}
               <li><a href="{{ url_for('compound_dashboard.view_compound_dashboard') }}">Compound Dashboard <i class="alpha-tag"><b>Alpha</b></i></a></li>
             {% endif %}
-            {% if config.ENABLED_FEATURES.interactive_table %}
-              <li><a href="{{ url_for('dev.interactive_table') }}">LineUp Interactive Table <i class="alpha-tag"><b>Preview</b></i></a></li>
-            {% endif %}
             <li role="separator" class="divider"></li>
-            {% if config.ENABLED_FEATURES.data_explorer_2 %}
-                <li><a class="cursor-pointer" onclick="DepMap.launchContextManagerModal()">Context Manager</a></li>
-                <li><a class="cursor-pointer" onclick="DepMap.launchContextManagerModal({ showHelpText: true })">Cell Line Selector</a></li>
-            {% else %}
-                <li><a class="cursor-pointer" onclick="DepMap.launchCellLineSelectorModal();return false;">Cell Line Selector</a></li>
-            {% endif %}
+              <li><a class="cursor-pointer" onclick="DepMap.launchContextManagerModal()">Context Manager</a></li>
             {% if config.ENABLED_FEATURES.private_datasets %}
               <li><a href="{{ url_for('private_dataset.home') }}">Private Datasets</a></li>          
             {% endif %}
@@ -84,7 +72,6 @@
             <li><a target="_blank" rel="noreferrer noopener" href="https://depmap.org/portal/home">About DepMap</a></li>
             <li><a target="_blank" rel="noreferrer noopener" href="{{ url_for('data_page.view_data_page', tab='overview', _anchor='how-to-cite') }}">How to cite</a></li>
             <li><a target="_blank" rel="noreferrer noopener" href="https://depmap.org/portal/home/#/publications">Publications</a></li>
-            <li><a target="_blank" rel="noreferrer noopener" href="{{ url_for('public.resources') }}">Resources</a></li>
             {{ include_theme_snippet("about_menu.html") }}
           </ul>
         <li class="visible-xs-block"><a href="mailto:{{ config.CONTACT_EMAIL }}"><i class="fas fa-envelope-open"></i> {{config.CONTACT_EMAIL}}</a></li>

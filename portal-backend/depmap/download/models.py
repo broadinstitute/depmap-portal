@@ -81,6 +81,7 @@ class FileSubType(Enum):
     mutations = "mutations"
     expression = "expression"
     fusions = "fusions"
+    global_genomic_features = "global_genomic_features"
     read_me = "read_me"
 
     @property
@@ -94,6 +95,7 @@ class FileSubType(Enum):
             FileSubType.expression: "Expression",
             FileSubType.fusions: "Fusions",
             FileSubType.read_me: "READ ME",
+            FileSubType.global_genomic_features: "Global Genomic Features",
         }[self]
 
     @staticmethod
@@ -178,8 +180,8 @@ class ExternalBucketUrl(BucketUrl):
 class DmcBucketUrl(BucketUrl):
     BUCKET = "depmap-dmc-downloads"
 
-    def __init__(self, file_name):
-        super().__init__(DmcBucketUrl.BUCKET, file_name)
+    def __init__(self, file_name, dl_name=None):
+        super().__init__(DmcBucketUrl.BUCKET, file_name=file_name, dl_name=dl_name)
 
     def __repr__(self):
         return "DmcBucketUrl({})".format(repr(self.file_name))

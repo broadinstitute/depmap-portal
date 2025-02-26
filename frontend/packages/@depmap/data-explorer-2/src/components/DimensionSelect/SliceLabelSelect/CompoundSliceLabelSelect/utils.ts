@@ -1,4 +1,4 @@
-import { useDataExplorerApi } from "../../../../contexts/DataExplorerApiContext";
+import { useDeprecatedDataExplorerApi } from "../../../../contexts/DeprecatedDataExplorerApiContext";
 
 const REGEX = /(.*) ((?<!-)\(.*)/;
 const getCaptureGroup = (s: string, n: number) => (REGEX.exec(s) || [])[n];
@@ -25,7 +25,7 @@ export const extractCompoundNames = (labels: string[]) => {
 };
 
 export const fetchCompoundDatasets = async (
-  api: ReturnType<typeof useDataExplorerApi>,
+  api: ReturnType<typeof useDeprecatedDataExplorerApi>,
   compoundName: string
 ) => {
   const datasets = await api.fetchDatasetsMatchingContextIncludingEntities({

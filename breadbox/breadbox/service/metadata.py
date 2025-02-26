@@ -2,7 +2,7 @@ import logging
 from typing import Any, Optional
 
 from breadbox.crud import dataset as dataset_crud
-from breadbox.crud import types as types_crud
+from breadbox.crud import dimension_types as types_crud
 from breadbox.db.session import SessionWithUser
 from breadbox.schemas.custom_http_exception import ResourceNotFoundError
 from breadbox.models.dataset import (
@@ -162,6 +162,28 @@ def get_labels_for_slice_type(
         )
 
 
+def get_dataset_feature_label_by_id(
+    db: SessionWithUser, dataset: MatrixDataset, given_id: str
+):
+    """Looks up a single label for a given_id in a dataset. Internally this is implemented inefficiently so only
+    call this if you really want a single label. If you want to loop through many IDs, use get_matrix_dataset_sample_labels_by_id instead
+    (or we rewrite this function to make a DB query to fetch only the data we actually need)
+    """
+    labels = get_matrix_dataset_feature_labels_by_id(db, db.user, dataset)
+    return labels.get(given_id)
+
+
+def get_dataset_sample_label_by_id(
+    db: SessionWithUser, dataset: MatrixDataset, given_id: str
+):
+    """Looks up a single label for a given_id in a dataset. Internally this is implemented inefficiently so only
+    call this if you really want a single label. If you want to loop through many IDs, use get_matrix_dataset_sample_labels_by_id instead
+    (or we rewrite this function to make a DB query to fetch only the data we actually need)
+    """
+    labels = get_matrix_dataset_sample_labels_by_id(db, db.user, dataset)
+    return labels.get(given_id)
+
+
 def get_dataset_feature_by_label(
     db: SessionWithUser, dataset_id: str, feature_label: str
 ) -> DatasetFeature:
@@ -204,6 +226,65 @@ def get_dataset_sample_by_label(
         )
 
     return dataset_crud.get_dataset_sample_by_given_id(db, dataset_id, sample_given_id)
+
+
+def get_dimension_indexes_of_labels(
+    db: SessionWithUser,
+    user: str,
+    dataset: MatrixDataset,
+    axis: str,
+    dimension_labels: list[str],
+) -> tuple[list[int], list[str]]:
+    """
+    Get the set of numeric indices corresponding to the given dimension labels for the given dataset.
+    Note: The order of the result does not necessarily match the order of the input
+    """
+
+    # We could do this in one query, but it's unwieldy, so let's make two queries. First
+    # let's resolve dimension_labels to given_ids
+    if axis == "feature":
+        all_given_ids_to_labels = get_matrix_dataset_feature_labels_by_id(
+            db, user, dataset
+        )
+    else:
+        assert axis == "sample"
+        all_given_ids_to_labels = get_matrix_dataset_sample_labels_by_id(
+            db, user, dataset
+        )
+    filtered_given_ids_to_labels = {
+        id: label
+        for id, label in all_given_ids_to_labels.items()
+        if label in dimension_labels
+    }
+    missing_labels = set(dimension_labels).difference(
+        filtered_given_ids_to_labels.values()
+    )
+
+    # for the time being, just warn in the log about things that are missing. I'm not 100% confident that
+    # something won't break if we start treating missing things as an error. If we don't see warnings in the
+    # log from normal use, we can turn it into an error later
+    if len(missing_labels) > 0:
+        log.warning(
+            f"In get_dimension_indexes_of_labels, missing labels: {missing_labels}"
+        )
+
+    # now resolve those given_ids to indices
+    if axis == "feature":
+        indices, missing_given_ids = dataset_crud.get_feature_indexes_by_given_ids(
+            db, user, dataset, list(filtered_given_ids_to_labels.keys())
+        )
+    else:
+        assert axis == "sample"
+        indices, missing_given_ids = dataset_crud.get_sample_indexes_by_given_ids(
+            db, user, dataset, list(filtered_given_ids_to_labels.keys())
+        )
+
+    if len(missing_given_ids) > 0:
+        log.warning(
+            f"In get_dimension_indexes_of_labels, missing given_ids: {missing_given_ids}"
+        )
+
+    return indices, list(missing_labels)
 
 
 def get_dimension_type_identifiers(

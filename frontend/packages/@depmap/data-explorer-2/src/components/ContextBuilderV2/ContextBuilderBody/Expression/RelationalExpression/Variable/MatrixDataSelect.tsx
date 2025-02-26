@@ -48,7 +48,6 @@ function MatrixDataSelect({ varName }: Props) {
           identifier,
           identifier_type,
           source: "matrix_dataset",
-          value_type: "continuous",
           slice_type: nextDimension.slice_type,
           label: nextDimension.context?.name,
         });

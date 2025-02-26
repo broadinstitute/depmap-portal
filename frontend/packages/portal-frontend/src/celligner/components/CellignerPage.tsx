@@ -3,7 +3,7 @@ import { Grid, Row, Col, Tabs, Tab, SelectCallback } from "react-bootstrap";
 
 import { enabledFeatures } from "@depmap/globals";
 import { DepmapApi } from "src/dAPI";
-import { getDapi, getVectorCatalogApi } from "src/common/utilities/context";
+import { getDapi } from "src/common/utilities/context";
 import WideTable, { WideTableColumns } from "@depmap/wide-table";
 import { titleCase } from "@depmap/utils";
 import CellignerCellLinesForTumorsControlPanel from "./CellignerCellLinesForTumorsControlPanel";
@@ -12,10 +12,7 @@ import CellignerGraph from "./CellignerGraph";
 import CellignerViolinPlot from "./CellignerViolinPlots";
 import { Alignments, Model, Tumor, GroupingCategory } from "../models/types";
 import "src/celligner/styles/celligner.scss";
-import {
-  CustomList,
-  renderCellLineSelectorModal,
-} from "@depmap/cell-line-selector";
+import { CustomList } from "@depmap/cell-line-selector";
 import {
   createFormattedAnnotatedPoints,
   sampleTypeToLabel,
@@ -192,16 +189,7 @@ export default class CellignerPage extends React.Component<Props, State> {
       this
     );
     this.handleCellLineSelected = this.handleCellLineSelected.bind(this);
-    this.launchCellLineSelectorModal = this.launchCellLineSelectorModal.bind(
-      this
-    );
     this.handleCellLineListChange = this.handleCellLineListChange.bind(this);
-  }
-
-  launchCellLineSelectorModal() {
-    const container = document.getElementById("cell_line_selector_modal"); // defined in layout.html
-
-    renderCellLineSelectorModal(getDapi, getVectorCatalogApi, container);
   }
 
   handleSelectTab(activeTab: ValidTab) {
@@ -335,7 +323,6 @@ export default class CellignerPage extends React.Component<Props, State> {
           colorByCategory={colorByCategory}
           onColorByCategoryChange={this.handleColorByCategoryChange}
           onSubtypeSelected={this.handleSelectedSubtypeChange}
-          launchCellLineSelectorModal={this.launchCellLineSelectorModal}
           onCellLineListChange={this.handleCellLineListChange}
         />
       );

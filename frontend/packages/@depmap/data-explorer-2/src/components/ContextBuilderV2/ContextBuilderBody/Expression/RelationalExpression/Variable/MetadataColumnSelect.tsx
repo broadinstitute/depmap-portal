@@ -50,7 +50,6 @@ function MetadataColumnSelect({ varName }: Props) {
             identifier: value,
             source: "metadata_column",
             slice_type: undefined,
-            value_type: col_type as "text" | "categorical",
           });
         }}
         placeholder="Choose property…"

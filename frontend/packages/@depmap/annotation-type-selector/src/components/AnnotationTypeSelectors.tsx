@@ -108,7 +108,10 @@ export default function AnnotationTypingSelectors({
             remainingOptions,
             selectedStringListAnnotations: selectedOptions,
           });
-          setAnnotationTypeMapping(selectedOptions, AnnotationType.listStrings);
+          setAnnotationTypeMapping(
+            selectedOptions,
+            AnnotationType.list_strings
+          );
         }}
       />
     </>

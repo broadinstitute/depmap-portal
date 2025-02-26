@@ -54,6 +54,10 @@ function RightHandSide({ op, expr, path, varName, isLoading, domain }: Props) {
     );
   }
 
+  if (domain?.value_type === "binary") {
+    throw new Error("binary variables not supported");
+  }
+
   return (
     <StringConstant
       expr={expr as string | null}
