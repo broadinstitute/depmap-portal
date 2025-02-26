@@ -27,19 +27,6 @@ const fields: RegistryFieldsType = {
   TagInputMetadata: CustomDatasetMetadata,
 };
 
-const uiSchema: UiSchema = {
-  "ui:title": "", // removes the title <legend> html element
-  dataset_metadata: {
-    "ui:field": "TagInputMetadata",
-  },
-  format: {
-    "ui:widget": "hidden",
-  },
-  group_id: {
-    "ui:title": "Group", // override original title from schema
-  },
-};
-
 export default function DatasetForm(props: DatasetEditFormProps) {
   const {
     getDataTypesAndPriorities,
@@ -53,6 +40,40 @@ export default function DatasetForm(props: DatasetEditFormProps) {
   console.log(formDataVals);
 
   console.log(datasetToEdit);
+
+  const submitButtonIsDisabled = React.useMemo(() => {
+    const requiredProperties: string[] | undefined = schema?.required;
+    if (requiredProperties !== undefined) {
+      const requiredFormValues = requiredProperties.map((prop) => {
+        return formDataVals[prop];
+      });
+      return !requiredFormValues.every((val) => {
+        return val !== undefined && val !== null;
+      });
+    }
+    return true;
+  }, [formDataVals, schema?.required]);
+
+  const uiSchema = React.useMemo(() => {
+    const formUiSchema: UiSchema = {
+      "ui:title": "", // removes the title <legend> html element
+      dataset_metadata: {
+        "ui:field": "TagInputMetadata",
+      },
+      format: {
+        "ui:widget": "hidden",
+      },
+      group_id: {
+        "ui:title": "Group", // override original title from schema
+      },
+      "ui:submitButtonOptions": {
+        props: {
+          disabled: submitButtonIsDisabled,
+        },
+      },
+    };
+    return formUiSchema;
+  }, [submitButtonIsDisabled]);
 
   useEffect(() => {
     (async () => {
