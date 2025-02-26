@@ -225,7 +225,7 @@ def create_context_matrix(source_dataset_id, target_dataset_id):
     # Upload results to taiga
     update_taiga(
         context_matrix,
-        "Create the ContextMatrix: ",
+        "Create the ContextMatrix: a one-hot encoded matrix describing which models are members of which contexts",
         target_dataset_id,
         context_matrix_taiga_permaname,
         file_format=LocalFormat.CSV_MATRIX
