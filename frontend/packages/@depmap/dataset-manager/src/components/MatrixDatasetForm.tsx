@@ -189,6 +189,19 @@ export function MatrixDatasetForm({
   const [formData, setFormData] = React.useState(initFormData);
   const [schema, setSchema] = React.useState<RJSFSchema | null>(null);
 
+  const submitButtonIsDisabled = React.useMemo(() => {
+    const requiredProperties: string[] | undefined = schema?.required;
+    if (requiredProperties !== undefined) {
+      const requiredFormValues = requiredProperties.map((prop) => {
+        return formData[prop];
+      });
+      return !requiredFormValues.every((val) => {
+        return val !== undefined && val !== null;
+      });
+    }
+    return true;
+  }, [formData, schema?.required]);
+
   const uiSchema = React.useMemo(() => {
     const formUiSchema: UiSchema = {
       "ui:title": "", // removes the title <legend> html element
@@ -230,6 +243,11 @@ export function MatrixDatasetForm({
       group_id: {
         "ui:title": "Group", // override original title from schema
       },
+      "ui:submitButtonOptions": {
+        props: {
+          disabled: submitButtonIsDisabled,
+        },
+      },
     };
     if (!isAdvancedMode) {
       [
@@ -243,7 +261,7 @@ export function MatrixDatasetForm({
       });
     }
     return formUiSchema;
-  }, [isAdvancedMode]);
+  }, [isAdvancedMode, submitButtonIsDisabled]);
 
   React.useEffect(() => {
     const featureTypeOptions = featureTypes.map((option) => {

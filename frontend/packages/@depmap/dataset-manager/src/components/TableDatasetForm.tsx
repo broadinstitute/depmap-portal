@@ -54,44 +54,6 @@ const fields: RegistryFieldsType = {
   JSONInputColumns: CustomColumnsMetadata,
 };
 
-const uiSchema: UiSchema = {
-  "ui:title": "", // removes the title <legend> html element
-  "ui:order": [
-    "name",
-    "file_ids",
-    "dataset_md5",
-    "index_type",
-    "columns_metadata",
-    "group_id",
-    "data_type",
-    "priority",
-    "dataset_metadata",
-    "is_transient",
-    "format",
-  ],
-  dataset_metadata: {
-    "ui:field": "TagInputMetadata",
-  },
-  columns_metadata: {
-    "ui:field": "JSONInputColumns",
-  },
-  format: {
-    "ui:widget": "hidden",
-  },
-  file_ids: {
-    "ui:widget": "hidden",
-  },
-  dataset_md5: {
-    "ui:widget": "hidden",
-  },
-  is_transient: {
-    "ui:widget": "hidden",
-  },
-  group_id: {
-    "ui:title": "Group", // override original title from schema
-  },
-};
-
 function transformErrors(errors: RJSFValidationError[]) {
   // Override list of errors returned to not include check for column_metadata value to be an object.
   // Since we are making the value a JSON string, checking if value is object would cause error to appear
@@ -161,6 +123,65 @@ export function TableDatasetForm({
 }: TableDatasetFormProps) {
   const [formData, setFormData] = React.useState(initFormData);
   const [schema, setSchema] = React.useState<RJSFSchema | null>(null);
+
+  const submitButtonIsDisabled = React.useMemo(() => {
+    const requiredProperties: string[] | undefined = schema?.required;
+    if (requiredProperties !== undefined) {
+      const requiredFormValues = requiredProperties.map((prop) => {
+        return formData[prop];
+      });
+      return !requiredFormValues.every((val) => {
+        return val !== undefined && val !== null;
+      });
+    }
+    return true;
+  }, [formData, schema?.required]);
+
+  const uiSchema = React.useMemo(() => {
+    const formUiSchema: UiSchema = {
+      "ui:title": "", // removes the title <legend> html element
+      "ui:order": [
+        "name",
+        "file_ids",
+        "dataset_md5",
+        "index_type",
+        "columns_metadata",
+        "group_id",
+        "data_type",
+        "priority",
+        "dataset_metadata",
+        "is_transient",
+        "format",
+      ],
+      dataset_metadata: {
+        "ui:field": "TagInputMetadata",
+      },
+      columns_metadata: {
+        "ui:field": "JSONInputColumns",
+      },
+      format: {
+        "ui:widget": "hidden",
+      },
+      file_ids: {
+        "ui:widget": "hidden",
+      },
+      dataset_md5: {
+        "ui:widget": "hidden",
+      },
+      is_transient: {
+        "ui:widget": "hidden",
+      },
+      group_id: {
+        "ui:title": "Group", // override original title from schema
+      },
+      "ui:submitButtonOptions": {
+        props: {
+          disabled: submitButtonIsDisabled,
+        },
+      },
+    };
+    return formUiSchema;
+  }, [submitButtonIsDisabled]);
 
   React.useEffect(() => {
     const indexOptions = dimensionTypes.map((option) => {
