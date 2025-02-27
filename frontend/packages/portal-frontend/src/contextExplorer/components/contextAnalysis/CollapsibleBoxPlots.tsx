@@ -69,16 +69,20 @@ function CollapsibleBoxPlots({
   const drugDottedLine = boxPlotData?.drug_dotted_line;
 
   const formatBoxData = (
-    boxData: { [key: string]: BoxData },
+    boxData: BoxData[],
     insigBoxData: BoxData,
     levelZeroCode: string,
     count: number
   ) => {
     const formattedBoxData: BoxPlotInfo[] = [];
-    const codes = Object.keys(boxData);
-    for (let index = 0; index < codes.length; index++) {
-      const code = codes[index];
-      const box = boxData[code];
+
+    for (let index = 0; index < boxData.length; index++) {
+      const code =
+        boxData[index].path.length === 1
+          ? boxData[index].path[0]
+          : boxData[index].path[-1];
+
+      const box = boxData[index];
 
       if (code !== levelZeroCode) {
         const info = {
@@ -87,7 +91,7 @@ function CollapsibleBoxPlots({
           xVals: box.data,
           color: {
             ...EntityBoxColorList[count],
-            a: 1 / (index + 0.3),
+            a: 0.2 + 0.15 * index,
           },
           lineColor: "#000000",
         };
@@ -96,7 +100,7 @@ function CollapsibleBoxPlots({
     }
 
     if (insigBoxData?.data && insigBoxData.data.length > 0) {
-      formattedBoxData.push({
+      formattedBoxData.unshift({
         name: insigBoxData.label,
         hoverLabels: insigBoxData.cell_line_display_names,
         xVals: insigBoxData.data,
@@ -106,63 +110,59 @@ function CollapsibleBoxPlots({
       });
     }
 
-    return formattedBoxData;
+    return [...formattedBoxData].reverse();
   };
 
   useEffect(() => {
     if (
       boxPlotData &&
       boxPlotData.significant_selection &&
-      Object.keys(boxPlotData.significant_selection).length > 0
+      boxPlotData.significant_selection.length > 0
     ) {
       const plotInfo: BoxPlotInfo[] = [];
       let boxCardCount = 0;
 
-      Object.keys(boxPlotData.significant_selection).forEach(
-        (plotTitle, index) => {
-          if (boxPlotData.significant_selection[plotTitle].data.length > 0) {
-            if (plotTitle === topContextNameInfo.subtype_code) {
-              setSelectedLevelZeroBoxData({
-                name: boxPlotData.significant_selection[plotTitle].label,
-                hoverLabels:
-                  boxPlotData.significant_selection[plotTitle]
-                    .cell_line_display_names,
-                xVals: boxPlotData.significant_selection[plotTitle].data,
-                color: { ...EntityBoxColorList[boxCardCount], a: 0.7 },
-                lineColor: "#000000",
-              });
-            } else {
-              const info = {
-                name: boxPlotData.significant_selection[plotTitle].path!.join(
-                  "/"
-                ),
-                hoverLabels:
-                  boxPlotData.significant_selection[plotTitle]
-                    .cell_line_display_names,
-                xVals: boxPlotData.significant_selection[plotTitle].data,
-                color: {
-                  ...EntityBoxColorList[boxCardCount],
-                  a: 1 / (index + 0.3),
-                },
-                lineColor: "#000000",
-              };
-              plotInfo.push(info);
-            }
+      boxPlotData.significant_selection.forEach((plotData, index) => {
+        if (plotData.data.length > 0) {
+          if (
+            plotData.path.length === 1 &&
+            plotData.path[0] === topContextNameInfo.subtype_code
+          ) {
+            setSelectedLevelZeroBoxData({
+              name: plotData.label,
+              hoverLabels: plotData.cell_line_display_names,
+              xVals: plotData.data,
+              color: { ...EntityBoxColorList[boxCardCount], a: 0.7 },
+              lineColor: "#000000",
+            });
+          } else {
+            const info = {
+              name: plotData.path!.join("/"),
+              hoverLabels: plotData.cell_line_display_names,
+              xVals: plotData.data,
+              color: {
+                ...EntityBoxColorList[boxCardCount],
+                a: 0.2 + 0.05 * index,
+              },
+              lineColor: "#000000",
+            };
+            plotInfo.push(info);
           }
         }
-      );
+      });
       boxCardCount += 1;
 
       const insigPlotData = boxPlotData.insignificant_selection;
+      let otherPlot;
       if (insigPlotData.data && insigPlotData.data.length > 0) {
-        plotInfo.push({
+        otherPlot = {
           name: insigPlotData.label,
           hoverLabels: insigPlotData.cell_line_display_names,
           xVals: insigPlotData.data,
           color: InsignificantColor,
           lineColor: "#000000",
           pointLineColor: "#000000",
-        });
+        };
       }
 
       if (boxPlotData.other_cards) {
@@ -172,7 +172,10 @@ function CollapsibleBoxPlots({
             if (boxCardCount > EntityBoxColorList.length - 1) {
               boxCardCount = 1;
             }
-            const level0Data = cardData.significant[cardData.level_0_code];
+            const level0Data = cardData.significant.find(
+              (val) =>
+                val.path.length === 1 && val.path[0] === cardData.level_0_code
+            )!;
             return {
               [cardData.level_0_code]: {
                 levelZeroPlotInfo: {
@@ -224,7 +227,9 @@ function CollapsibleBoxPlots({
       setOtherBoxData(otherData);
 
       if (plotInfo.length > 0) {
-        plotInfo.reverse();
+        if (otherPlot) {
+          plotInfo.unshift(otherPlot);
+        }
         setSelectedContextBoxData(plotInfo);
       }
     }

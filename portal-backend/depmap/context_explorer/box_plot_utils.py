@@ -34,12 +34,13 @@ def get_box_plot_card_data(
     all_sig_context_codes: List[
         str
     ],  # Use this list to keep track of significant codes
+    ordered_sig_subtype_codes: List[str],
     model_ids_by_code: Dict[
         str, List[str]
     ],  # Includes insignificant codes we need for "Other <Lineage>"
     entity_full_row_of_values: pd.Series,
 ):
-    significant_box_plot_data = {}
+    significant_box_plot_data = []
     insignificant_box_plot_data = {}
     all_sig_models = []
     other_lineage_plot_model_ids = []
@@ -57,7 +58,7 @@ def get_box_plot_card_data(
                     entity_full_row_of_values=entity_full_row_of_values,
                     model_ids=context_model_ids,
                 )
-                significant_box_plot_data[child] = box_plot
+                significant_box_plot_data.append(box_plot)
                 all_sig_models.extend(context_model_ids)
             else:
                 other_lineage_plot_model_ids.extend(context_model_ids)
@@ -66,11 +67,12 @@ def get_box_plot_card_data(
 
     if level_0_code not in all_sig_context_codes:
         if len(all_sig_models) >= 5:
-            significant_box_plot_data[level_0_code] = get_box_plot_data_for_context(
+            plot_data = get_box_plot_data_for_context(
                 subtype_code=level_0_code,
                 entity_full_row_of_values=entity_full_row_of_values,
                 model_ids=all_sig_models,
             )
+            significant_box_plot_data.append(plot_data)
 
             level_0_model_ids = SubtypeNode.get_model_ids_by_subtype_code_and_node_level(
                 level_0_code, 0
@@ -100,8 +102,28 @@ def get_box_plot_card_data(
             )
         )
 
+    def get_code_or_child(code):
+        if code in ordered_sig_subtype_codes:
+            return code
+
+        node = SubtypeNode.get_by_code(code)
+        node_children = SubtypeNode.get_children_using_current_level_code(
+            code, node.node_level
+        )
+
+        child_codes = [node.subtype_code for node in node_children]
+        for subtype_code in child_codes:
+            if subtype_code in ordered_sig_subtype_codes:
+                return subtype_code
+
+        return 100
+
+    sorted_sig_plot_data = sorted(
+        significant_box_plot_data,
+        key=lambda x: ordered_sig_subtype_codes.index(get_code_or_child(x["path"][-1])),
+    )
     return {
-        "significant": significant_box_plot_data,
+        "significant": sorted_sig_plot_data,
         "insignificant": insignificant_box_plot_data,
         "level_0_code": level_0_code,
     }
@@ -231,6 +253,7 @@ def get_card_data(
     branch_contexts: dict,
     node_entity_data: NodeEntityData,
     all_sig_context_codes: List[str],
+    ordered_sig_subtype_codes: List[str],
     entity_full_row_of_values: pd.Series,
 ):
     # These are all the level_0 codes that need a box plot "card," but these
@@ -247,6 +270,7 @@ def get_card_data(
                 all_sig_context_codes=all_sig_context_codes,
                 model_ids_by_code=selected_context_level_0,
                 entity_full_row_of_values=entity_full_row_of_values,
+                ordered_sig_subtype_codes=ordered_sig_subtype_codes,
             )
 
             return box_plot_card_data
@@ -265,6 +289,9 @@ def get_context_plot_box_data(
     selected_sig_box_plot_card_data = {}
     if len(sig_contexts) > 0:
         all_sig_context_codes = sig_contexts["subtype_code"].to_list()
+        ordered_sig_subtype_codes = (
+            sig_contexts["subtype_code"].drop_duplicates(keep="first").tolist()
+        )
         sig_contexts_agg = (
             sig_contexts.groupby("level_0").agg({"subtype_code": list}).reset_index()
         )
@@ -283,6 +310,7 @@ def get_context_plot_box_data(
             node_entity_data=node_entity_data,
             all_sig_context_codes=all_sig_context_codes,
             entity_full_row_of_values=entity_full_row_of_values,
+            ordered_sig_subtype_codes=ordered_sig_subtype_codes,
         )
 
         all_level_0_codes = branch_contexts.keys()
@@ -294,6 +322,7 @@ def get_context_plot_box_data(
                     node_entity_data=node_entity_data,
                     all_sig_context_codes=all_sig_context_codes,
                     entity_full_row_of_values=entity_full_row_of_values,
+                    ordered_sig_subtype_codes=ordered_sig_subtype_codes,
                 )
                 if other_sig_data is not None:
                     other_box_plot_data.append(other_sig_data)
@@ -362,6 +391,7 @@ def get_organized_contexts(
         min_abs_effect_size=min_abs_effect_size,
         min_frac_dep_in=min_frac_dep_in,
     )
+
     (entity_full_row_of_values) = utils.get_full_row_of_values_and_depmap_ids(
         dataset_name=dataset_name, label=node_entity_data.entity_label
     )
@@ -379,4 +409,18 @@ def get_organized_contexts(
         drug_dotted_line=drug_dotted_line,
     )
 
-    return context_box_plot_data
+    level_0_sort_order = sig_contexts["level_0"].drop_duplicates(keep="first").tolist()
+    sorted_other_cards = sorted(
+        context_box_plot_data.other_cards,
+        key=lambda x: level_0_sort_order.index(x["level_0_code"]),
+    )
+    ordered_box_plot_data = ContextPlotBoxData(
+        significant_selection=context_box_plot_data.significant_selection,
+        insignificant_selection=context_box_plot_data.insignificant_selection,
+        other_cards=sorted_other_cards,
+        insignificant_heme_data=context_box_plot_data.insignificant_heme_data,
+        insignificant_solid_data=context_box_plot_data.insignificant_solid_data,
+        drug_dotted_line=context_box_plot_data.drug_dotted_line,
+        entity_label=context_box_plot_data.entity_label,
+    )
+    return ordered_box_plot_data

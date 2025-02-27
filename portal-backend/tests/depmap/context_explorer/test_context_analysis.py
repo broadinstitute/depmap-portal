@@ -65,7 +65,7 @@ narrow_filters = OtherContextFilterVals(
 
 # If you want a ContextAnalysis to be filtered out in other context dependency results,
 # use these wide_filters with the only_narrow_range.
-wide_filters = OtherContextFilterVals(t_qval=8.5, effect_size=8.5, frac_dep_in=8.5)
+wide_filters = OtherContextFilterVals(t_qval=8.5, effect_size=0, frac_dep_in=0)
 
 
 def _setup_dose_response_curves(models: List[DepmapModelFactory], compound_exps: list):
@@ -132,6 +132,14 @@ def _setup_factories(
         )
         for num in range(5)
     ]
+    bone_insig_child_cell_lines = [
+        DepmapModelFactory(
+            model_id=f"ACH-{num}insig",
+            stripped_cell_line_name=f"{num}insig",
+            depmap_model_type="INSIG_BONE_CHILD",
+        )
+        for num in range(5)
+    ]
     bone_os_cell_lines = [
         DepmapModelFactory(
             model_id=f"ACH-{num}os",
@@ -175,13 +183,16 @@ def _setup_factories(
         level_5=None,
     )
     bone_context = SubtypeContextFactory(
-        subtype_code="BONE", depmap_model=bone_es_cell_lines + bone_os_cell_lines
+        subtype_code="BONE",
+        depmap_model=bone_es_cell_lines
+        + bone_os_cell_lines
+        + bone_insig_child_cell_lines,
     )
     bone_ES_context = SubtypeContextFactory(
         subtype_code="ES", depmap_model=bone_es_cell_lines
     )
     insig_bone_child_context = SubtypeContextFactory(
-        subtype_code="INSIG_BONE_CHILD", depmap_model=bone_es_cell_lines
+        subtype_code="INSIG_BONE_CHILD", depmap_model=bone_insig_child_cell_lines
     )
     bone_OS_context = SubtypeContextFactory(
         subtype_code="OS", depmap_model=bone_os_cell_lines
@@ -212,14 +223,25 @@ def _setup_factories(
     )
 
     # So we have some Heme cell lines
-    myeloid_cell_lines = [
+    aml_cell_lines = [
         DepmapModelFactory(
             model_id=f"ACH-{num}myeloid",
             stripped_cell_line_name=f"myeloid_{num}",
             depmap_model_type="MYELOID",
         )
-        for num in range(11)
+        for num in range(5)
     ]
+
+    child_of_myeloid_cell_lines = [
+        DepmapModelFactory(
+            model_id=f"ACH-{num}_child_myeloid",
+            stripped_cell_line_name=f"child_myeloid_{num}",
+            depmap_model_type="CHILD_OF_MYELOID",
+        )
+        for num in range(5)
+    ]
+
+    myeloid_cell_lines = aml_cell_lines + child_of_myeloid_cell_lines
 
     myeloid_node = SubtypeNodeFactory(
         node_name="MYELOID_NODE",
@@ -257,13 +279,11 @@ def _setup_factories(
     )
 
     myeloid_context = SubtypeContextFactory(
-        subtype_code="MYELOID", depmap_model=myeloid_cell_lines[5:11]
+        subtype_code="MYELOID", depmap_model=myeloid_cell_lines
     )
-    aml_context = SubtypeContextFactory(
-        subtype_code="AML", depmap_model=myeloid_cell_lines[0:5]
-    )
+    aml_context = SubtypeContextFactory(subtype_code="AML", depmap_model=aml_cell_lines)
     CHILD_OF_MYELOID_context = SubtypeContextFactory(
-        subtype_code="CHILD_OF_MYELOID", depmap_model=myeloid_cell_lines[0:5]
+        subtype_code="CHILD_OF_MYELOID", depmap_model=child_of_myeloid_cell_lines
     )
     # Added so we get 1 result for the Others - heme boxplot
     lymph_cell_lines = [
@@ -292,8 +312,9 @@ def _setup_factories(
         bone_es_cell_lines
         + lung_cell_lines
         + bone_os_cell_lines
-        + myeloid_cell_lines  # all acute myeloid leukemia
+        + myeloid_cell_lines
         + lymph_cell_lines
+        + bone_insig_child_cell_lines
     )
 
     matrix = MatrixFactory(
@@ -301,7 +322,7 @@ def _setup_factories(
             gene_a if use_genes else compound_a,
             gene_b if use_genes else compound_b,
         ],
-        data=np.array([[num for num in range(27)], [num for num in range(27)]]),
+        data=np.array([[num for num in range(31)], [num for num in range(31)]]),
         cell_lines=matrix_cell_lines,
         using_depmap_model_table=True,
     )
@@ -389,9 +410,9 @@ def _setup_factories(
         t_pval=3.0,
         mean_in=0.1,
         mean_out=8,
-        t_qval=narrow_filters.t_qval,
-        effect_size=narrow_filters.effect_size,
-        frac_dep_in=narrow_filters.frac_dep_in if use_genes else None,
+        t_qval=0,
+        effect_size=1000,
+        frac_dep_in=1000 if use_genes else None,
     )
     # never want this to be signficant
     ContextAnalysisFactory(
@@ -793,48 +814,40 @@ def test_get_dose_curves(empty_db_mock_downloads):
                 "upperAsymptote": 0,
             },
             {
-                "id": "ACH-5myeloid",
-                "displayName": "myeloid_5",
+                "id": "ACH-0_child_myeloid",
+                "displayName": "child_myeloid_0",
                 "ec50": 0,
                 "slope": 0,
                 "lowerAsymptote": 0,
                 "upperAsymptote": 0,
             },
             {
-                "id": "ACH-6myeloid",
-                "displayName": "myeloid_6",
+                "id": "ACH-1_child_myeloid",
+                "displayName": "child_myeloid_1",
                 "ec50": 0,
                 "slope": 0,
                 "lowerAsymptote": 0,
                 "upperAsymptote": 0,
             },
             {
-                "id": "ACH-7myeloid",
-                "displayName": "myeloid_7",
+                "id": "ACH-2_child_myeloid",
+                "displayName": "child_myeloid_2",
                 "ec50": 0,
                 "slope": 0,
                 "lowerAsymptote": 0,
                 "upperAsymptote": 0,
             },
             {
-                "id": "ACH-8myeloid",
-                "displayName": "myeloid_8",
+                "id": "ACH-3_child_myeloid",
+                "displayName": "child_myeloid_3",
                 "ec50": 0,
                 "slope": 0,
                 "lowerAsymptote": 0,
                 "upperAsymptote": 0,
             },
             {
-                "id": "ACH-9myeloid",
-                "displayName": "myeloid_9",
-                "ec50": 0,
-                "slope": 0,
-                "lowerAsymptote": 0,
-                "upperAsymptote": 0,
-            },
-            {
-                "id": "ACH-10myeloid",
-                "displayName": "myeloid_10",
+                "id": "ACH-4_child_myeloid",
+                "displayName": "child_myeloid_4",
                 "ec50": 0,
                 "slope": 0,
                 "lowerAsymptote": 0,
@@ -843,6 +856,46 @@ def test_get_dose_curves(empty_db_mock_downloads):
             {
                 "id": "ACH-1LYMPH",
                 "displayName": "LYMPH_1",
+                "ec50": 0,
+                "slope": 0,
+                "lowerAsymptote": 0,
+                "upperAsymptote": 0,
+            },
+            {
+                "id": "ACH-0insig",
+                "displayName": "0insig",
+                "ec50": 0,
+                "slope": 0,
+                "lowerAsymptote": 0,
+                "upperAsymptote": 0,
+            },
+            {
+                "id": "ACH-1insig",
+                "displayName": "1insig",
+                "ec50": 0,
+                "slope": 0,
+                "lowerAsymptote": 0,
+                "upperAsymptote": 0,
+            },
+            {
+                "id": "ACH-2insig",
+                "displayName": "2insig",
+                "ec50": 0,
+                "slope": 0,
+                "lowerAsymptote": 0,
+                "upperAsymptote": 0,
+            },
+            {
+                "id": "ACH-3insig",
+                "displayName": "3insig",
+                "ec50": 0,
+                "slope": 0,
+                "lowerAsymptote": 0,
+                "upperAsymptote": 0,
+            },
+            {
+                "id": "ACH-4insig",
+                "displayName": "4insig",
                 "ec50": 0,
                 "slope": 0,
                 "lowerAsymptote": 0,
@@ -974,85 +1027,68 @@ def test_get_box_plot_data(empty_db_mock_downloads, dataset_name):
             ],
         },
     }
-    assert data["insignificant_selection"] == {"Other BONE": []}
 
-    # Test the funk case where a level_0 subtype is NOT signficant, but some of its
+    # Bone, OS, and ES factories were all created to be signficant. Bone has another
+    # child INSIG_BONE_CHILD. This was created to be insignificant to make sure we get
+    # the data for the Other <Lineage> box plot.
+    assert data["insignificant_selection"] == {
+        "label": "Other BONE",
+        "path": ["BONE"],
+        "data": [26, 27, 28, 29, 30],
+        "cell_line_display_names": ["0insig", "1insig", "2insig", "3insig", "4insig"],
+    }
+
+    # Test the funky case where a level_0 subtype is NOT signficant, but some of its
     # children are. We still want a card to show up in the UI, so we need to return
     # this data.
-    assert data["other_cards"] == [
-        {
-            "significant": {
-                "AML": {
-                    "label": "AML",
-                    "path": ["AML"],
-                    "data": [15, 16, 17, 18, 19],
-                    "cell_line_display_names": [
-                        "myeloid_0",
-                        "myeloid_1",
-                        "myeloid_2",
-                        "myeloid_3",
-                        "myeloid_4",
-                    ],
-                },
-                "CHILD_OF_MYELOID": {
-                    "label": "CHILD_OF_MYELOID",
-                    "path": ["CHILD_OF_MYELOID"],
-                    "data": [15, 16, 17, 18, 19],
-                    "cell_line_display_names": [
-                        "myeloid_0",
-                        "myeloid_1",
-                        "myeloid_2",
-                        "myeloid_3",
-                        "myeloid_4",
-                    ],
-                },
-                "MYELOID": {
-                    "label": "MYELOID",
-                    "path": ["MYELOID"],
-                    "data": [15, 16, 17, 18, 19],
-                    "cell_line_display_names": [
-                        "myeloid_0",
-                        "myeloid_1",
-                        "myeloid_2",
-                        "myeloid_3",
-                        "myeloid_4",
-                    ],
-                },
-            },
-            "insignificant": {
-                "label": "Other MYELOID",
-                "path": ["MYELOID"],
-                "data": [20, 21, 22, 23, 24, 25],
-                "cell_line_display_names": [
-                    "myeloid_5",
-                    "myeloid_6",
-                    "myeloid_7",
-                    "myeloid_8",
-                    "myeloid_9",
-                    "myeloid_10",
-                ],
-            },
-            "level_0_code": "MYELOID",
-        }
-    ]
+    assert data["other_cards"][0]["significant"]["CHILD_OF_MYELOID"] == {
+        "label": "CHILD_OF_MYELOID",
+        "path": ["CHILD_OF_MYELOID"],
+        "data": [20, 21, 22, 23, 24],
+        "cell_line_display_names": [
+            "child_myeloid_0",
+            "child_myeloid_1",
+            "child_myeloid_2",
+            "child_myeloid_3",
+            "child_myeloid_4",
+        ],
+    }
+
+    assert data["other_cards"][0]["significant"]["MYELOID"] == {
+        "label": "MYELOID",
+        "path": ["MYELOID"],
+        "data": [20, 21, 22, 23, 24],
+        "cell_line_display_names": [
+            "child_myeloid_0",
+            "child_myeloid_1",
+            "child_myeloid_2",
+            "child_myeloid_3",
+            "child_myeloid_4",
+        ],
+    }
+
+    assert data["other_cards"][0]["insignificant"] == {
+        "label": "Other MYELOID",
+        "path": ["MYELOID"],
+        "data": [15, 16, 17, 18, 19],
+        "cell_line_display_names": [
+            "myeloid_0",
+            "myeloid_1",
+            "myeloid_2",
+            "myeloid_3",
+            "myeloid_4",
+        ],
+    }
 
     assert data["insignificant_heme_data"] == {
         "label": "Other Heme",
-        "data": [20, 21, 22, 23, 24, 25, 26],
-        "cell_line_display_names": [
-            "myeloid_5",
-            "myeloid_6",
-            "myeloid_7",
-            "myeloid_8",
-            "myeloid_9",
-            "myeloid_10",
-            "LYMPH_1",
-        ],
+        "data": [25],
+        "cell_line_display_names": ["LYMPH_1"],
         "path": None,
     }
     assert data["insignificant_solid_data"] == {
         "label": "Other Solid",
-        "data": [0, 1, 2, 3, 4, 10, 11, 12, 13, 14],
+        "data": [0, 1, 2, 3, 4, 10, 11, 12, 13, 14, 26, 27, 28, 29, 30],
         "cell_line_display_names": [
             "0es",
             "1es",
@@ -1064,6 +1100,11 @@ def test_get_box_plot_data(empty_db_mock_downloads, dataset_name):
             "2os",
             "3os",
             "4os",
+            "0insig",
+            "1insig",
+            "2insig",
+            "3insig",
+            "4insig",
         ],
         "path": None,
     }
@@ -1113,62 +1154,56 @@ def test_get_box_plot_data(empty_db_mock_downloads, dataset_name):
         },
     }
 
-    # TODO: Fix typo. Should be insignificant selection. Not insignifcant. Notice the i after
-    # the "f" is missing. I suspect this typo carries through everywhere and could cause future
-    # confusion. --> Fixed as of Feb 24. Leaving here until I have a chance to double check this test
-    assert data["insignificant_selection"] == {"Other BONE": []}
+    assert data["insignificant_selection"] == {
+        "label": "Other BONE",
+        "path": ["BONE"],
+        "data": [26, 27, 28, 29, 30],
+        "cell_line_display_names": ["0insig", "1insig", "2insig", "3insig", "4insig"],
+    }
 
     assert data["other_cards"] == [
         {
             "significant": {
-                "AML": {
-                    "label": "AML",
-                    "path": ["AML"],
-                    "data": [15, 16, 17, 18, 19],
+                "MYELOID": {
+                    "label": "MYELOID",
+                    "path": ["MYELOID"],
+                    "data": [15, 16, 17, 18, 19, 20, 21, 22, 23, 24],
                     "cell_line_display_names": [
                         "myeloid_0",
                         "myeloid_1",
                         "myeloid_2",
                         "myeloid_3",
                         "myeloid_4",
+                        "child_myeloid_0",
+                        "child_myeloid_1",
+                        "child_myeloid_2",
+                        "child_myeloid_3",
+                        "child_myeloid_4",
                     ],
                 },
                 "CHILD_OF_MYELOID": {
                     "label": "CHILD_OF_MYELOID",
                     "path": ["CHILD_OF_MYELOID"],
-                    "data": [15, 16, 17, 18, 19],
+                    "data": [20, 21, 22, 23, 24],
                     "cell_line_display_names": [
-                        "myeloid_0",
-                        "myeloid_1",
-                        "myeloid_2",
-                        "myeloid_3",
-                        "myeloid_4",
-                    ],
-                },
-                "MYELOID": {
-                    "label": "MYELOID",
-                    "path": ["MYELOID"],
-                    "data": [15, 16, 17, 18, 19],
-                    "cell_line_display_names": [
-                        "myeloid_0",
-                        "myeloid_1",
-                        "myeloid_2",
-                        "myeloid_3",
-                        "myeloid_4",
+                        "child_myeloid_0",
+                        "child_myeloid_1",
+                        "child_myeloid_2",
+                        "child_myeloid_3",
+                        "child_myeloid_4",
                     ],
                 },
             },
             "insignificant": {
                 "label": "Other MYELOID",
                 "path": ["MYELOID"],
-                "data": [20, 21, 22, 23, 24, 25],
+                "data": [15, 16, 17, 18, 19],
                 "cell_line_display_names": [
-                    "myeloid_5",
-                    "myeloid_6",
-                    "myeloid_7",
-                    "myeloid_8",
-                    "myeloid_9",
-                    "myeloid_10",
+                    "myeloid_0",
+                    "myeloid_1",
+                    "myeloid_2",
+                    "myeloid_3",
+                    "myeloid_4",
                 ],
             },
             "level_0_code": "MYELOID",

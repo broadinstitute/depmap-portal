@@ -191,13 +191,13 @@ export interface BoxData {
 }
 
 export interface BoxCardData {
-  significant: { [key: string]: BoxData };
+  significant: BoxData[];
   insignificant: BoxData;
   level_0_code: string;
 }
 
 export interface ContextPlotBoxData {
-  significant_selection: { [key: string]: BoxData };
+  significant_selection: BoxData[];
   insignificant_selection: BoxData;
   other_cards: BoxCardData[];
   insignificant_heme_data: BoxData;
