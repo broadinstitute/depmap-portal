@@ -14,6 +14,7 @@ export type {
 
 export type {
   DimensionType,
+  DimensionTypeWithCounts,
   SampleDimensionType,
   FeatureDimensionType,
   DimensionTypeAddArgs,

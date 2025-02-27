@@ -5,13 +5,17 @@ import Form from "@rjsf/core";
 import { addDimensionTypeSchema } from "../models/addDimensionTypeSchema";
 import { RJSFSchema, UiSchema } from "@rjsf/utils";
 import { updateDimensionTypeSchema } from "../models/updateDimensionTypeSchema";
-import { Dataset, instanceOfErrorDetail } from "@depmap/types";
+import {
+  DimensionTypeWithCounts,
+  instanceOfErrorDetail,
+  TabularDataset,
+} from "@depmap/types";
 
 interface DimensionTypeFormProps {
   onSubmit: (formData: any) => Promise<void>;
-  dimensionTypeToEdit: any | null;
+  dimensionTypeToEdit: DimensionTypeWithCounts | null;
   isEditMode: boolean;
-  datasets: Dataset[];
+  datasets: TabularDataset[];
 }
 
 const uiSchema: UiSchema = {
@@ -44,6 +48,11 @@ export default function DimensionTypeForm(props: DimensionTypeFormProps) {
 
   React.useEffect(() => {
     if (isEditMode && dimensionTypeToEdit) {
+      const datasetsWithDimensionType: TabularDataset[] = datasets.filter(
+        (d) => {
+          return d.index_type_name === dimensionTypeToEdit.name;
+        }
+      );
       const dimensionTypeEditSchemaWithOptions = {
         ...updateDimensionTypeSchema,
         properties: {
@@ -54,13 +63,13 @@ export default function DimensionTypeForm(props: DimensionTypeFormProps) {
             default: null, // must include default null with enum options otherwise UI renders 2 null options
             enum: [
               null,
-              ...datasets.map((d) => {
+              ...datasetsWithDimensionType.map((d) => {
                 return d.id;
               }),
             ],
             enumNames: [
               "None",
-              ...datasets.map((d) => {
+              ...datasetsWithDimensionType.map((d) => {
                 return d.name;
               }),
             ],
@@ -73,7 +82,7 @@ export default function DimensionTypeForm(props: DimensionTypeFormProps) {
       const initForm: { [key: string]: any } = {};
       Object.keys(updateDimensionTypeSchema.properties).forEach((key) => {
         if (key in dimensionTypeToEdit) {
-          initForm[key] = dimensionTypeToEdit[key];
+          initForm[key] = (dimensionTypeToEdit as any)[key];
         }
       });
       setEditFormData(initForm);
