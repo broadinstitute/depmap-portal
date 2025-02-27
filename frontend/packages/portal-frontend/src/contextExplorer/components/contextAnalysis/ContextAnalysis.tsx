@@ -757,6 +757,7 @@ function ContextAnalysis({
                     onChange={(value: any) => {
                       if (value) {
                         handleOutGroupChanged(value);
+                        handleSetSelectedPlotLabels(null);
                       }
                     }}
                     id="context-explorer-outgroup-selection"

@@ -149,41 +149,6 @@ class SubtypeNode(Model):
 
         return model_ids
 
-    @staticmethod
-    def temporary_get_model_ids_of_children(
-        level_0_subtype_code: str,
-    ) -> Dict[str, str]:
-        query = (
-            db.session.query(SubtypeNode)
-            .join(
-                DepmapModel, DepmapModel.depmap_model_type == SubtypeNode.subtype_code
-            )
-            .filter(SubtypeNode.level_0 == level_0_subtype_code)
-            .with_entities(DepmapModel.model_id, DepmapModel.stripped_cell_line_name)
-        )
-
-        cell_lines = pd.read_sql(query.statement, query.session.connection())
-
-        return cell_lines["model_id"].values
-
-    @staticmethod
-    def temporary_get_model_ids_by_subtype_code_and_node_level(
-        subtype_code: str, node_level: int
-    ) -> Dict[str, str]:
-        node_level_column = f"level_{node_level}"
-        query = (
-            db.session.query(SubtypeNode)
-            .join(
-                DepmapModel, DepmapModel.depmap_model_type == SubtypeNode.subtype_code
-            )
-            .filter(getattr(SubtypeNode, node_level_column) == subtype_code)
-            .with_entities(DepmapModel.model_id, DepmapModel.stripped_cell_line_name)
-        )
-
-        cell_lines = pd.read_sql(query.statement, query.session.connection())
-
-        return cell_lines["model_id"].values
-
 
 class SubtypeContext(Model):
     __tablename__ = "subtype_context"

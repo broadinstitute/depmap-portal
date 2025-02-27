@@ -70,6 +70,7 @@ function DoseCurvesTile(props: DoseCurvesTileProps) {
     subtypeCode,
     selectedDrugLabel,
     selectedLevel,
+    selectedOutGroupType,
     getContextExplorerDoseResponsePoints,
   ]);
 
