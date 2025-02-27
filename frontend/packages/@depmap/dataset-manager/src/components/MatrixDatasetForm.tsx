@@ -189,7 +189,9 @@ export function MatrixDatasetForm({
   const [formData, setFormData] = React.useState(initFormData);
   const [schema, setSchema] = React.useState<RJSFSchema | null>(null);
 
+  // TODO: Refactor duplicate
   const submitButtonIsDisabled = React.useMemo(() => {
+    // NOTE: file_ids is set when file upload is complete
     const requiredProperties: string[] | undefined = schema?.required;
     if (requiredProperties !== undefined) {
       const requiredFormValues = requiredProperties.map((prop) => {

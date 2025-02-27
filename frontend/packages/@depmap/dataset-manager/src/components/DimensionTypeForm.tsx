@@ -23,6 +23,7 @@ export default function DimensionTypeForm(props: DimensionTypeFormProps) {
   const [submissionMsg, setSubmissionMsg] = useState<string | null>(null);
   const [hasError, setHasError] = useState<boolean>(false);
 
+  // TODO: Refactor duplicate
   const submitButtonIsDisabled = React.useMemo(() => {
     const requiredProperties: string[] | undefined = schema?.required;
     if (requiredProperties !== undefined) {

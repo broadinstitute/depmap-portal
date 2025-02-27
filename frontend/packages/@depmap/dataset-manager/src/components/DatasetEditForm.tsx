@@ -41,6 +41,7 @@ export default function DatasetForm(props: DatasetEditFormProps) {
 
   console.log(datasetToEdit);
 
+  // TODO: Refactor duplicate
   const submitButtonIsDisabled = React.useMemo(() => {
     const requiredProperties: string[] | undefined = schema?.required;
     if (requiredProperties !== undefined) {
@@ -51,7 +52,7 @@ export default function DatasetForm(props: DatasetEditFormProps) {
         return val !== undefined && val !== null;
       });
     }
-    return true;
+    return false;
   }, [formDataVals, schema?.required]);
 
   const uiSchema = React.useMemo(() => {
