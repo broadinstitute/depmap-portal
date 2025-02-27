@@ -199,7 +199,7 @@ export function MatrixDatasetForm({
         return val !== undefined && val !== null;
       });
     }
-    return true;
+    return false;
   }, [formData, schema?.required]);
 
   const uiSchema = React.useMemo(() => {
