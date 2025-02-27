@@ -13,7 +13,8 @@ def load_data(
     model_taiga_id,
     oncotree_taiga_id,
     molecular_subtypes_taiga_id,
-    genetic_subtypes_whitelist_taiga_id
+    genetic_subtypes_whitelist_folder,
+    genetic_subtypes_whitelist_filename
 ):
     '''
     Loads and formats all of the inputs necessary to create the SubtypeTree
@@ -64,7 +65,7 @@ def load_data(
     ## Load genetic subtypes
     genetic_subtypes = tc.get(molecular_subtypes_taiga_id).set_index('ModelID')
     
-    gs_whitelist = tc.get(genetic_subtypes_whitelist_taiga_id)
+    gs_whitelist = tc.get(name=genetic_subtypes_whitelist_folder, file=genetic_subtypes_whitelist_filename)
     
     return models, oncotree, genetic_subtypes, gs_whitelist
 
@@ -561,13 +562,15 @@ def create_subtype_tree(
         model_taiga_id,
         oncotree_taiga_id,
         molecular_subtypes_taiga_id,
-        genetic_subtypes_whitelist_taiga_id
+        genetic_subtypes_whitelist_folder,
+        genetic_subtypes_whitelist_filename
     ):
     models, oncotree, genetic_subtypes, gs_whitelist = load_data(
         model_taiga_id,
         oncotree_taiga_id,
         molecular_subtypes_taiga_id,
-        genetic_subtypes_whitelist_taiga_id
+        genetic_subtypes_whitelist_folder,
+        genetic_subtypes_whitelist_filename
     )
 
     oncotable = create_oncotable(oncotree)
@@ -597,7 +600,8 @@ if __name__ == "__main__":
     parser.add_argument("model", help="Taiga ID of model table")
     parser.add_argument("oncotree", help="Taiga ID of oncotree")
     parser.add_argument("molecular_subtypes", help="Taiga ID of Omics Inferred Molecular Subtypes")
-    parser.add_argument("genetic_subtypes_whitelist", help="Taiga ID of lineage-based genetic subtype whitelist")
+    parser.add_argument("genetic_subtypes_whitelist_folder", help="Taiga folder of lineage-based genetic subtype whitelist")
+    parser.add_argument("genetic_subtypes_whitelist_filename", help="Taiga filename of lineage-based genetic subtype whitelist")
     parser.add_argument("output", help="filepath to write the output")
     args = parser.parse_args()
 
@@ -605,7 +609,8 @@ if __name__ == "__main__":
         args.model,
         args.oncotree,
         args.molecular_subtypes,
-        args.genetic_subtypes_whitelist
+        args.genetic_subtypes_whitelist_folder,
+        args.genetic_subtypes_whitelist_filename
     )
 
     if subtype_tree is not None:
