@@ -7,7 +7,9 @@ import {
   // instanceOfErrorDetail,
   DimensionTypeAddArgs,
   DimensionTypeUpdateArgs,
+  DimensionTypeWithCounts,
   instanceOfErrorDetail,
+  TabularDataset,
 } from "@depmap/types";
 
 import { FormModal, Spinner, ToggleSwitch } from "@depmap/common-components";
@@ -79,7 +81,9 @@ export default function Datasets() {
     [dapi]
   );
 
-  const [dimensionTypes, setDimensionTypes] = useState<any[] | null>(null);
+  const [dimensionTypes, setDimensionTypes] = useState<
+    DimensionTypeWithCounts[] | null
+  >(null);
   const [selectedDimensionType, setSelectedDimensionType] = useState<
     any | null
   >(null);
@@ -357,9 +361,11 @@ export default function Datasets() {
       onSubmit={onSubmitDimensionType}
       isEditMode={isEditDimensionTypeMode}
       dimensionTypeToEdit={selectedDimensionType}
-      datasets={datasets.filter(
-        (dataset) => dataset.format === "tabular_dataset"
-      )}
+      datasets={
+        datasets.filter(
+          (dataset) => dataset.format === "tabular_dataset"
+        ) as TabularDataset[]
+      }
     />
   );
 
@@ -430,26 +436,27 @@ export default function Datasets() {
       const dimensionType = dimensionTypes.find(
         (dt) => dt.name === selectedDimensionType.name
       );
-
-      await dapi
-        .deleteDimensionType(dimensionType.name)
-        .then(() => {
-          setShowDimTypeDeleteError(false);
-          setDimTypeDeleteError(null);
-          setDimensionTypes(
-            dimensionTypes.filter(
-              (dt) => dt.name !== selectedDimensionType.name
-            )
-          );
-          setSelectedDimensionType(null);
-        })
-        .catch((e) => {
-          setShowDimTypeDeleteError(true);
-          console.error(e);
-          if (instanceOfErrorDetail(e)) {
-            setDimTypeDeleteError(e.detail);
-          }
-        });
+      if (dimensionType) {
+        await dapi
+          .deleteDimensionType(dimensionType.name)
+          .then(() => {
+            setShowDimTypeDeleteError(false);
+            setDimTypeDeleteError(null);
+            setDimensionTypes(
+              dimensionTypes.filter(
+                (dt) => dt.name !== selectedDimensionType.name
+              )
+            );
+            setSelectedDimensionType(null);
+          })
+          .catch((e) => {
+            setShowDimTypeDeleteError(true);
+            console.error(e);
+            if (instanceOfErrorDetail(e)) {
+              setDimTypeDeleteError(e.detail);
+            }
+          });
+      }
     }
   };
 
