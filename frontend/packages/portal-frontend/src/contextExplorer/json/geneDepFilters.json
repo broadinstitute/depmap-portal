@@ -12,7 +12,9 @@
     "label": " Max. T-test q-value",
     "minOrMax": "max",
     "step": 0.01,
-    "value": 0.5
+    "value": 0.5,
+    "minBound": 0,
+    "maxBound": 1
   },
   {
     "kind": "numberInput",
@@ -20,7 +22,8 @@
     "label": "Min. Abs(effect size)",
     "minOrMax": "min",
     "step": 0.01,
-    "value": 0.1
+    "value": 0.1,
+    "minBound": 0
   },
   {
     "kind": "numberInput",
@@ -28,6 +31,8 @@
     "label": "Min. % of in-context lines dependent",
     "minOrMax": "min",
     "step": 0.01,
-    "value": 0.1
+    "value": 0.1,
+    "minBound": 0,
+    "maxBound": 1
   }
 ]

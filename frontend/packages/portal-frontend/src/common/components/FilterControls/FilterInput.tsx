@@ -77,7 +77,7 @@ function FilterInput({
   }
 
   if (isNumberInputFilter(filter)) {
-    const { value, step } = filter;
+    const { value, step, minBound, maxBound } = filter;
 
     return (
       <div className={styles.numInputFilter}>
@@ -87,6 +87,8 @@ function FilterInput({
           type="number"
           value={value}
           step={step}
+          min={minBound}
+          max={maxBound}
           onChange={(event: ChangeEvent<HTMLInputElement>) =>
             onChangeFilter(key, Number(event.target.value))
           }

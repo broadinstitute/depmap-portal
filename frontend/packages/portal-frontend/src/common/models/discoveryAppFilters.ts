@@ -18,6 +18,8 @@ export type NumberInputFilter = {
   minOrMax: "min" | "max";
   step: number;
   value: number;
+  minBound?: number;
+  maxBound?: number;
 };
 
 export type CheckboxFilter = {
@@ -213,12 +215,12 @@ export function normalizeFilters(data: Data, partialFilters: any[]): Filter[] {
     }
 
     if (filter.kind === "numberInput") {
-      const { kind, key, minOrMax, label } = filter;
+      const { kind, key, minOrMax, minBound, maxBound, label } = filter;
 
       const value = filter.value;
       const step = filter.step ?? 1;
 
-      return { kind, key, label, minOrMax, value, step };
+      return { kind, key, label, minOrMax, value, minBound, maxBound, step };
     }
 
     if (filter.kind === "range") {
