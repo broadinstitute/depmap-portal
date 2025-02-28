@@ -416,6 +416,18 @@
   }
 }
 
+.resetButton {
+  border: none;
+  background-color: transparent;
+  padding-left: 5px;
+  color: #337ab7;
+  font-size: 14px;
+}
+
+.resetButton:hover {
+  color: #000;
+}
+
 .deButton {
   color: #ffffff;
   background-color: #4479b2;

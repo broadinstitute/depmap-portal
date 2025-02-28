@@ -244,6 +244,7 @@ function ContextAnalysis({
     transientFilterState,
     filters,
     updateFilter,
+    resetFilters,
     changedFilters,
     defaultFilters,
   } = useContextExplorerFilters(
@@ -868,7 +869,19 @@ function ContextAnalysis({
                   borderTop: "1px solid #7d7d7d",
                 }}
               />
-              <h3>Table and Scatter Plot Filters</h3>
+              <h3>
+                Table and Scatter Plot Filters{" "}
+                <span>
+                  <button
+                    type="button"
+                    className={styles.resetButton}
+                    onClick={resetFilters}
+                  >
+                    reset all
+                  </button>
+                </span>
+              </h3>
+
               {entityType === "gene" ? (
                 <p
                   style={{
