@@ -13,8 +13,8 @@ interface DoseCurvesTileProps {
   datasetName: string;
   getContextExplorerDoseResponsePoints: (
     datasetName: string,
-    outGroupType: string,
     subtypeCode: string,
+    outGroupType: string,
     compoundLabel: string,
     selectedLevel: number
   ) => Promise<DoseCurveData>;
@@ -43,8 +43,8 @@ function DoseCurvesTile(props: DoseCurvesTileProps) {
       setIsLoading(true);
       const doseCurvesPromise = getContextExplorerDoseResponsePoints(
         datasetName,
-        selectedOutGroupType,
         subtypeCode,
+        selectedOutGroupType,
         selectedDrugLabel,
         selectedLevel
       );
