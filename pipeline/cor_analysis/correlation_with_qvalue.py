@@ -18,8 +18,7 @@ class Thresholds:
     max_qvalue: float
 
 
-sys.path.append(".")
-from cor_table_packer import write_cor_df, InputMatrixDesc, read_cor_for_given_id
+from packed_cor_tables import write_cor_df, InputMatrixDesc, read_cor_for_given_id
 import json
 
 

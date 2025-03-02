@@ -38,8 +38,8 @@ rule run_cor_analysis_pair:
         """
     run "python3 {{inputs.script.filename}} inputs.json {{inputs.pair.a_given_id}}.{{inputs.pair.b_given_id}}.cor"
 
-let publish_dest = "gs://preprocessing-pipeline-outputs/depmap-pipeline/pgm-test"
-let S3_STAGING_URL = "gs://preprocessing-pipeline-outputs/depmap-pipeline/pgm-test/staging"
-rule publish_cor_tables:
-    inputs: cor_tables=all {"type": "cor_table"}
-    publish: "{{config.publish_dest}}/cor_tables.json"
+#let publish_dest = "gs://preprocessing-pipeline-outputs/depmap-pipeline/pgm-test"
+#let S3_STAGING_URL = "gs://preprocessing-pipeline-outputs/depmap-pipeline/pgm-test/staging"
+#rule publish_cor_tables:
+#    inputs: cor_tables=all {"type": "cor_table"}
+#    publish: "{{config.publish_dest}}/cor_tables.json"

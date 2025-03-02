@@ -80,6 +80,54 @@ def write_cor_df(
     conn.close()
 
 
+def read_full(filename):
+    "return dataframe of all correlations"
+
+    conn = sqlite3.connect(filename)
+
+    # fetch the blob for the given feature
+    cursor = conn.cursor()
+    cursor.execute(
+        "select f.given_id, c.cbuf from correlation c join dim_0_given_id f on f.dim_0=c.dim_0",
+    )
+    dfs = []
+    for f_givenid, cbuf in cursor.fetchall():
+        df = _unpack(cbuf)
+        df["feature_given_id_0"] = f_givenid
+        df["feature_given_id_1"] = _map_dim_index_to_given_ids(cursor, 1, df["dim_1"])
+        df.drop(columns=["dim_1"], inplace=True)
+        dfs.append(df)
+    return pd.concat(dfs, ignore_index=True)
+
+
+def _unpack(cbuf):
+    buf = zlib.decompress(cbuf)
+    row_count = len(buf) // ROW_BYTE_SIZE
+    start = 0
+    end = 4 * row_count
+    dim_1 = np.frombuffer(buf[start:end], dtype="int32")
+    start = end
+    end += 4 * row_count
+    cor = np.frombuffer(buf[start:end], dtype="float32")
+    start = end
+    end += 4 * row_count
+    log10qvalue = np.frombuffer(buf[start:end], dtype="float32")
+
+    df = pd.DataFrame({"dim_1": dim_1, "cor": cor, "log10qvalue": log10qvalue})
+    return df
+
+
+def _map_dim_index_to_given_ids(cursor, dim_i, positions):
+    indices = list(set(positions))
+    param_str = ",".join(["?"] * len(indices))
+    cursor.execute(
+        f"select given_id, dim_{dim_i} from dim_{dim_i}_given_id where dim_{dim_i} in ({ param_str })",
+        indices,
+    )
+    position_to_label = {i: given_id for given_id, i in cursor.fetchall()}
+    return [position_to_label[position] for position in positions]
+
+
 def read_cor_for_given_id(filename, feature_id):
     conn = sqlite3.connect(filename)
 
@@ -105,39 +153,16 @@ def read_cor_for_given_id(filename, feature_id):
         )
     index, cbuf = row
     # now unpack the value
-    buf = zlib.decompress(cbuf)
-    row_count = len(buf) // ROW_BYTE_SIZE
-    start = 0
-    end = 4 * row_count
-    dim_1 = np.frombuffer(buf[start:end], dtype="int32")
-    start = end
-    end += 4 * row_count
-    cor = np.frombuffer(buf[start:end], dtype="float32")
-    start = end
-    end += 4 * row_count
-    log10qvalue = np.frombuffer(buf[start:end], dtype="float32")
-
-    df = pd.DataFrame(
-        {"dim_0": index, "dim_1": dim_1, "cor": cor, "log10qvalue": log10qvalue}
-    )
-
-    def map_dim_index_to_given_ids(dim_i, positions):
-        indices = list(set(positions))
-        param_str = ",".join(["?"] * len(indices))
-        cursor.execute(
-            f"select given_id, dim_{dim_i} from dim_{dim_i}_given_id where dim_{dim_i} in ({ param_str })",
-            indices,
-        )
-        position_to_label = {i: given_id for given_id, i in cursor.fetchall()}
-        return [position_to_label[position] for position in positions]
+    df = _unpack(cbuf)
+    df["dim_0"] = index
 
     cursor.execute("select dim_index, dataset_given_id from dataset")
     given_id_by_dataset_index = {
         dim_index: given_id for dim_index, given_id in cursor.fetchall()
     }
 
-    df["feature_given_id_0"] = map_dim_index_to_given_ids(0, df["dim_0"])
-    df["feature_given_id_1"] = map_dim_index_to_given_ids(1, df["dim_1"])
+    df["feature_given_id_0"] = _map_dim_index_to_given_ids(cursor, 0, df["dim_0"])
+    df["feature_given_id_1"] = _map_dim_index_to_given_ids(cursor, 1, df["dim_1"])
     df["dataset_given_id_0"] = given_id_by_dataset_index[0]
     df["dataset_given_id_1"] = given_id_by_dataset_index[1]
 
