@@ -2,6 +2,7 @@
 
 import argparse
 import json
+import hashlib
 
 
 def main():
@@ -14,8 +15,6 @@ def main():
         inputs = json.load(fd)
         print("warning: ignoring input: ", inputs)
         # todo change this so we take the taiga IDs from inputs
-
-    pairs = []
 
     def make_pairs():
         for mat_a in inputs["a_set"]:
@@ -35,6 +34,10 @@ def main():
             ]:
                 if name in src_artifact:
                     artifact[f"{prefix}_{name}"] = src_artifact[name]
+
+        # compute job name based on the inputs so that we can use it as a cache key
+        hasher = hashlib.sha256(json.dumps(artifact, sort_keys=True).encode("utf-8"))
+        artifact["job_name"] = f"cor-pair-{hasher.hexdigest()[:10]}"
 
         return artifact
 
