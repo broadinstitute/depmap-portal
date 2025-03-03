@@ -1,15 +1,11 @@
 from enum import Enum
 from datetime import date
-import sqlalchemy
-import pandas as pd
 from typing_extensions import TypedDict
 from depmap.database import Column, Integer, Model, String
 
 from flask import current_app, url_for
-from depmap.dataset.models import Dataset
 from typing import Optional, Callable, List, Dict, Set, Union
-from depmap.utilities.exception import DownloadHeadlinersException
-from depmap.taiga_id.models import TaigaAlias
+from depmap.taiga_id.models import TaigaAlias, NoSuchTaigaAlias
 from depmap.access_control import get_owner_id_from_group_display_name
 
 
@@ -628,9 +624,22 @@ class DownloadFile:
         if self.canonical_taiga_id:
             canonical_taiga_id = self.canonical_taiga_id
         else:
-            canonical_taiga_id = TaigaAlias.get_canonical_taiga_id(
-                self.original_taiga_id
-            )
+            try:
+                canonical_taiga_id = TaigaAlias.get_canonical_taiga_id(
+                    self.original_taiga_id
+                )
+            except NoSuchTaigaAlias as ex:
+                if current_app.config["ENV"] == "dev":
+                    # this is a bit of a hack but it is handy for locally
+                    # testing themes without having the taiga aliases all
+                    # loaded into the DB correctly. It's only the really
+                    # old releases which are missing canonical taiga IDs
+                    # so just assume those IDs are canonical already because
+                    # they don't matter.
+                    print(f"Warning: {ex}, assuming ID is canonical ID")
+                    canonical_taiga_id = self.original_taiga_id
+                else:
+                    raise
 
         return canonical_taiga_id
 
