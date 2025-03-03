@@ -629,7 +629,7 @@ class DownloadFile:
                     self.original_taiga_id
                 )
             except NoSuchTaigaAlias as ex:
-                if current_app.config["ENV"] == "dev":
+                if current_app.config["ENV"] == "dev":  # pyright: ignore
                     # this is a bit of a hack but it is handy for locally
                     # testing themes without having the taiga aliases all
                     # loaded into the DB correctly. It's only the really
