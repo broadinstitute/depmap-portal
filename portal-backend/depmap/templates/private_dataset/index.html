@@ -10,6 +10,16 @@ Private datasets | DepMap
 {% endassets %}
 {% endblock %}
 
+{% block highlight %}
+    <div class="container-fluid">
+    <div class="row" style="padding: 15px ; background: red">
+        <div class="col-md-12">
+            <div style="display: flex; flex-direction: row; justify-content: center">
+            <div style="color: white">This interface is being replaced with the new "Data Manager" UI (accessible from the "Tools" menu). All data visible on this page will be migrated to Data Manager and the "Private Datasets" interface will be removed on March 31st.</div>
+        </div></div>
+    </div>
+    </div>
+{%  endblock %}
 {% block content %}
     <h1>Private datasets</h1>
     <p>Upload private datasets to use in <a href="{{ data_explorer_url }}">Data Explorer</a> that are visible only to members of your group.</p>
