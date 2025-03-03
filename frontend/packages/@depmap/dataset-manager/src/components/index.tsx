@@ -478,7 +478,8 @@ export default function Datasets() {
               At the very top of this page, you will see a control for choosing
               between the "Advanced" or the "Simple" modes of the UI. Most users
               should use the "Simple" mode as this streamline the process of
-              uploading data.
+              uploading data. Using this mode, data that is uploaded will appear
+              in Data Explorer under the data type "User Uploads".
             </p>
             <p>
               To upload a dataset, click the "Upload new dataset" button and
