@@ -17,7 +17,8 @@ rule run_cor_analysis_pair:
     inputs:
         pair={'type': 'cor_input_pair'},
         script=fileref("correlation_with_qvalue.py"),
-        sparkles_config=fileref('../sparkles-config')
+        sparkles_config=fileref('../sparkles-config'),
+        taiga_token={'type': 'config-file', 'name': 'taiga-token'},
     outputs:
         {
             "type": "cor_table", 
@@ -46,9 +47,10 @@ rule run_cor_analysis_pair:
         {{ config.sparkles_path }} \
         --config {{ inputs.sparkles_config.filename }} \
         sub \
-        -i {{ config.pipeline_docker_image }} \
+        -i {{ config.DEFAULT_DOCKER_IMAGE }} \
         -u inputs.json \
         -u {{ inputs.script.filename }}:cor.py \
+        -u {{ inputs.taiga_token.filename}}:.taiga-token \
         --skipifexists \
         -n {{ inputs.pair.job_name }} \
         python3 ./cor.py inputs.json {{inputs.pair.a_given_id}}.{{inputs.pair.b_given_id}}.cor

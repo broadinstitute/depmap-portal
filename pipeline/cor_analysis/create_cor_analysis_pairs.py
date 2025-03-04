@@ -37,7 +37,7 @@ def main():
 
         # compute job name based on the inputs so that we can use it as a cache key
         hasher = hashlib.sha256(json.dumps(artifact, sort_keys=True).encode("utf-8"))
-        hasher.update("v2".encode("utf-8"))
+        hasher.update("v3".encode("utf-8"))
         artifact["job_name"] = f"cor-pair-{hasher.hexdigest()[:10]}"
 
         return artifact
