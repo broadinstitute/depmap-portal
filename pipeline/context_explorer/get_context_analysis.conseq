@@ -2,10 +2,13 @@
 rule get_context_analysis:
     inputs:
         script=fileref("./get_context_analysis.py"),
-        depmap_data_taiga_id={"type": "depmap_data_taiga_id"},
+        subtype_tree_taiga_id={"type":"subtype_tree"},
+        context_matrix_taiga_id={"type":"context_matrix"},
+        gene_effect_taiga_id={"type":"raw-dep-matrix"},
+        gene_dependency_taiga_id={"type":"raw-dep-prob-matrix"},
         repurposing_matrix_taiga_id={"type": "repurposing_matrix_taiga_id"},
-        repurposing_list_taiga_id={"type": "repurposing_list_taiga_id"}
-        tda_table={"type": "tda-table"}
+        repurposing_list_taiga_id={"type": "repurposing_list_taiga_id"},
+        oncref_auc_taiga_id={"type":"prism_oncref_auc_matrix"}
         repurposing_table={'type': 'compound-summary','dataset': "Rep_all_single_pt"}
         oncref_table={'type': 'compound-summary','dataset': "Prism_oncology_AUC"}
     outputs:
@@ -13,10 +16,13 @@ rule get_context_analysis:
     run """
         python \
           {{ inputs.script.filename }} \
-          {{ inputs.depmap_data_taiga_id.dataset_id }} \
+          {{ inputs.subtype_tree_taiga_id.dataset_id }} \
+          {{ inputs.context_matrix_taiga_id.dataset_id }} \
+          {{ inputs.gene_effect_taiga_id.dataset_id }} \
+          {{ inputs.gene_dependency_taiga_id.dataset_id }} \
           {{ inputs.repurposing_matrix_taiga_id.dataset_id }} \
           {{ inputs.repurposing_list_taiga_id.dataset_id }} \
-          {{ inputs.tda_table }} \
+          {{ inputs.oncref_auc_taiga_id.dataset_id }} \
           {{ inputs.repurposing_table }} \
           {{ inputs.oncref_table }} \
           context_analysis.csv
