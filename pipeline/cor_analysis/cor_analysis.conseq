@@ -46,12 +46,12 @@ rule run_cor_analysis_pair:
         {{ config.sparkles_path }} \
         --config {{ inputs.sparkles_config.filename }} \
         sub \
-        -i us.gcr.io/broad-achilles/depmap-pipeline-run:v4 \
+        -i {{ config.pipeline_docker_image }} \
         -u inputs.json \
-        -u {{ inputs.script.filename }}:cor.py
+        -u {{ inputs.script.filename }}:cor.py \
         --skipifexists \
         -n {{ inputs.pair.job_name }} \
-        python ./cor.py inputs.json {{inputs.pair.a_given_id}}.{{inputs.pair.b_given_id}}.cor
+        python3 ./cor.py inputs.json {{inputs.pair.a_given_id}}.{{inputs.pair.b_given_id}}.cor
     """
 
     # if the job isn't complete, wait for it to finish
@@ -62,12 +62,6 @@ rule run_cor_analysis_pair:
     # copy the results back
     run "bash" with """
         default_url_prefix=$(awk -F "=" '/default_url_prefix/ {print $2}' "{{ inputs.sparkles_config.filename }}")
-        gsutil -m cp ${default_url_prefix}/{{job_name}}/1/{{inputs.pair.a_given_id}}.{{inputs.pair.b_given_id}}.cor .
+        gsutil -m cp ${default_url_prefix}/{{inputs.pair.job_name}}/1/{{inputs.pair.a_given_id}}.{{inputs.pair.b_given_id}}.cor .
         """
 
-
-#let publish_dest = "gs://preprocessing-pipeline-outputs/depmap-pipeline/pgm-test"
-#let S3_STAGING_URL = "gs://preprocessing-pipeline-outputs/depmap-pipeline/pgm-test/staging"
-#rule publish_cor_tables:
-#    inputs: cor_tables=all {"type": "cor_table"}
-#    publish: "{{config.publish_dest}}/cor_tables.json"

@@ -1,12 +1,10 @@
 import argparse
-import sqlite3
-import sys
 import numpy as np
 import pandas as pd
 import taigapy
-from taigapy.client_v3 import LocalFormat
 from tqdm import tqdm
 from dataclasses import dataclass
+from packed_cor_tables import write_cor_df, InputMatrixDesc, read_cor_for_given_id
 
 
 @dataclass
@@ -18,7 +16,6 @@ class Thresholds:
     max_qvalue: float
 
 
-from packed_cor_tables import write_cor_df, InputMatrixDesc, read_cor_for_given_id
 import json
 
 
