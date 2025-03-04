@@ -12,6 +12,7 @@ import { RegistryFieldsType, RJSFSchema, UiSchema } from "@rjsf/utils";
 import validator from "@rjsf/validator-ajv8";
 import { CustomDatasetMetadata } from "./DatasetMetadataForm";
 import Form from "@rjsf/core";
+import { useSubmitButtonIsDisabled } from "../../utils/disableSubmitButton";
 
 interface DatasetEditFormProps {
   getDataTypesAndPriorities: () => Promise<InvalidPrioritiesByDataType>;
@@ -40,41 +41,6 @@ export default function DatasetForm(props: DatasetEditFormProps) {
   console.log(formDataVals);
 
   console.log(datasetToEdit);
-
-  // TODO: Refactor duplicate
-  const submitButtonIsDisabled = React.useMemo(() => {
-    const requiredProperties: string[] | undefined = schema?.required;
-    if (requiredProperties !== undefined) {
-      const requiredFormValues = requiredProperties.map((prop) => {
-        return formDataVals[prop];
-      });
-      return !requiredFormValues.every((val) => {
-        return val !== undefined && val !== null;
-      });
-    }
-    return false;
-  }, [formDataVals, schema?.required]);
-
-  const uiSchema = React.useMemo(() => {
-    const formUiSchema: UiSchema = {
-      "ui:title": "", // removes the title <legend> html element
-      dataset_metadata: {
-        "ui:field": "TagInputMetadata",
-      },
-      format: {
-        "ui:widget": "hidden",
-      },
-      group_id: {
-        "ui:title": "Group", // override original title from schema
-      },
-      "ui:submitButtonOptions": {
-        props: {
-          disabled: submitButtonIsDisabled,
-        },
-      },
-    };
-    return formUiSchema;
-  }, [submitButtonIsDisabled]);
 
   useEffect(() => {
     (async () => {
@@ -139,6 +105,32 @@ export default function DatasetForm(props: DatasetEditFormProps) {
       }
     })();
   }, [getGroups, getDataTypesAndPriorities, datasetToEdit]);
+
+  const submitButtonIsDisabled = useSubmitButtonIsDisabled(
+    schema?.required,
+    formDataVals
+  );
+
+  const uiSchema = React.useMemo(() => {
+    const formUiSchema: UiSchema = {
+      "ui:title": "", // removes the title <legend> html element
+      dataset_metadata: {
+        "ui:field": "TagInputMetadata",
+      },
+      format: {
+        "ui:widget": "hidden",
+      },
+      group_id: {
+        "ui:title": "Group", // override original title from schema
+      },
+      "ui:submitButtonOptions": {
+        props: {
+          disabled: submitButtonIsDisabled,
+        },
+      },
+    };
+    return formUiSchema;
+  }, [submitButtonIsDisabled]);
 
   return schema && formDataVals ? (
     <Form

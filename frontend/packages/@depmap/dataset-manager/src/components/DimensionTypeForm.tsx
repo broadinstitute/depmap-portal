@@ -6,6 +6,7 @@ import { addDimensionTypeSchema } from "../models/addDimensionTypeSchema";
 import { RJSFSchema, UiSchema } from "@rjsf/utils";
 import { updateDimensionTypeSchema } from "../models/updateDimensionTypeSchema";
 import { Dataset, instanceOfErrorDetail } from "@depmap/types";
+import { useSubmitButtonIsDisabled } from "../../utils/disableSubmitButton";
 
 interface DimensionTypeFormProps {
   onSubmit: (formData: any) => Promise<void>;
@@ -22,49 +23,6 @@ export default function DimensionTypeForm(props: DimensionTypeFormProps) {
   const [schema, setSchema] = useState<RJSFSchema | null>(null);
   const [submissionMsg, setSubmissionMsg] = useState<string | null>(null);
   const [hasError, setHasError] = useState<boolean>(false);
-
-  // TODO: Refactor duplicate
-  const submitButtonIsDisabled = React.useMemo(() => {
-    const requiredProperties: string[] | undefined = schema?.required;
-    if (requiredProperties !== undefined) {
-      const requiredFormValues = requiredProperties.map((prop) => {
-        return dimensionTypeFormData[prop];
-      });
-      return !requiredFormValues.every((val) => {
-        return val !== undefined && val !== null;
-      });
-    }
-    return false;
-  }, [dimensionTypeFormData, schema?.required]);
-
-  const uiSchema = React.useMemo(() => {
-    const formUiSchema: UiSchema = {
-      "ui:title": "", // removes the title <legend> html element,
-      id_column: {
-        "ui:help":
-          "Identifier name for the dimension type. Ex: For sample type gene, the identifier is entrez_id. entrez_id must then be a column in the metadata file.",
-      },
-      axis: {
-        "ui:help":
-          "Dimensions are either feature or sample. When used in a matrix dataset, features are oriented as columns and samples are oriented as rows.",
-      },
-      metadata_dataset_id: {
-        "ui:title": "Dataset Metadata",
-        "ui:help":
-          "This dataset contains metadata about your dimension type. At mininum one of the columns must match the ID Column of the dimension type and contain a column called 'label'.",
-      },
-      properties_to_index: {
-        "ui:help":
-          "Columns in the dataset file that you would like to index by or search by.",
-      },
-      "ui:submitButtonOptions": {
-        props: {
-          disabled: submitButtonIsDisabled,
-        },
-      },
-    };
-    return formUiSchema;
-  }, [submitButtonIsDisabled]);
 
   React.useEffect(() => {
     if (isEditMode && dimensionTypeToEdit) {
@@ -106,6 +64,40 @@ export default function DimensionTypeForm(props: DimensionTypeFormProps) {
       setDimensionTypeFormData({});
     }
   }, [dimensionTypeToEdit, isEditMode, datasets]);
+
+  const submitButtonIsDisabled = useSubmitButtonIsDisabled(
+    schema?.required,
+    dimensionTypeFormData
+  );
+
+  const uiSchema = React.useMemo(() => {
+    const formUiSchema: UiSchema = {
+      "ui:title": "", // removes the title <legend> html element,
+      id_column: {
+        "ui:help":
+          "Identifier name for the dimension type. Ex: For sample type gene, the identifier is entrez_id. entrez_id must then be a column in the metadata file.",
+      },
+      axis: {
+        "ui:help":
+          "Dimensions are either feature or sample. When used in a matrix dataset, features are oriented as columns and samples are oriented as rows.",
+      },
+      metadata_dataset_id: {
+        "ui:title": "Dataset Metadata",
+        "ui:help":
+          "This dataset contains metadata about your dimension type. At mininum one of the columns must match the ID Column of the dimension type and contain a column called 'label'.",
+      },
+      properties_to_index: {
+        "ui:help":
+          "Columns in the dataset file that you would like to index by or search by.",
+      },
+      "ui:submitButtonOptions": {
+        props: {
+          disabled: submitButtonIsDisabled,
+        },
+      },
+    };
+    return formUiSchema;
+  }, [submitButtonIsDisabled]);
 
   const onSubmission = async ({ formData }: any) => {
     setSubmissionMsg("Loading...");

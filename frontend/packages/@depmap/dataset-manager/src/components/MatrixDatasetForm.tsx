@@ -20,6 +20,7 @@ import {
 } from "@depmap/types";
 import { Option, TagInput } from "@depmap/common-components";
 import { ActionMeta, ValueType } from "react-select";
+import { useSubmitButtonIsDisabled } from "../../utils/disableSubmitButton";
 
 function transformErrors(errors: RJSFValidationError[]) {
   // eslint-disable-next-line array-callback-return, consistent-return
@@ -189,20 +190,63 @@ export function MatrixDatasetForm({
   const [formData, setFormData] = React.useState(initFormData);
   const [schema, setSchema] = React.useState<RJSFSchema | null>(null);
 
-  // TODO: Refactor duplicate
-  const submitButtonIsDisabled = React.useMemo(() => {
-    // NOTE: file_ids is set when file upload is complete
-    const requiredProperties: string[] | undefined = schema?.required;
-    if (requiredProperties !== undefined) {
-      const requiredFormValues = requiredProperties.map((prop) => {
-        return formData[prop];
-      });
-      return !requiredFormValues.every((val) => {
-        return val !== undefined && val !== null;
-      });
+  React.useEffect(() => {
+    const featureTypeOptions = featureTypes.map((option) => {
+      return option.name;
+    });
+
+    const sampleTypeOptions = sampleTypes.map((option) => {
+      return { title: option.name, const: option.name };
+    });
+    const dataTypeOptions = dataTypes.map((option) => {
+      return { title: option.name, const: option.name };
+    });
+    const groupOptions = groups.map((option) => {
+      return { title: option.name, const: option.id };
+    });
+    // Update schema with dropdown options retrieved from bbapi
+    const schemaWithOptions = {
+      ...matrixFormSchema,
+      properties: {
+        ...matrixFormSchema.properties,
+        feature_type: {
+          ...(matrixFormSchema.properties.feature_type as object),
+          default: null,
+          enum: [null, ...featureTypeOptions],
+          enumNames: ["None"].concat(featureTypeOptions),
+        },
+        sample_type: {
+          ...(matrixFormSchema.properties.sample_type as object),
+          oneOf: sampleTypeOptions,
+        },
+        data_type: {
+          ...(matrixFormSchema.properties.data_type as object),
+          oneOf: dataTypeOptions,
+        },
+        group_id: {
+          ...(matrixFormSchema.properties.group_id as object),
+          oneOf: groupOptions,
+        },
+      },
+    };
+    setSchema(schemaWithOptions);
+  }, [featureTypes, sampleTypes, dataTypes, groups]);
+
+  React.useEffect(() => {
+    if (fileIds !== formData.file_ids || md5Hash !== formData.dataset_md5) {
+      const newFormData = {
+        ...formData,
+        file_ids: fileIds,
+        dataset_md5: md5Hash,
+      };
+      setFormData(newFormData);
     }
-    return false;
-  }, [formData, schema?.required]);
+  }, [fileIds, md5Hash, formData]);
+
+  const submitButtonIsDisabled = useSubmitButtonIsDisabled(
+    schema?.required,
+    formData
+  );
 
   const uiSchema = React.useMemo(() => {
     const formUiSchema: UiSchema = {
@@ -264,59 +308,6 @@ export function MatrixDatasetForm({
     }
     return formUiSchema;
   }, [isAdvancedMode, submitButtonIsDisabled]);
-
-  React.useEffect(() => {
-    const featureTypeOptions = featureTypes.map((option) => {
-      return option.name;
-    });
-
-    const sampleTypeOptions = sampleTypes.map((option) => {
-      return { title: option.name, const: option.name };
-    });
-    const dataTypeOptions = dataTypes.map((option) => {
-      return { title: option.name, const: option.name };
-    });
-    const groupOptions = groups.map((option) => {
-      return { title: option.name, const: option.id };
-    });
-    // Update schema with dropdown options retrieved from bbapi
-    const schemaWithOptions = {
-      ...matrixFormSchema,
-      properties: {
-        ...matrixFormSchema.properties,
-        feature_type: {
-          ...(matrixFormSchema.properties.feature_type as object),
-          default: null,
-          enum: [null, ...featureTypeOptions],
-          enumNames: ["None"].concat(featureTypeOptions),
-        },
-        sample_type: {
-          ...(matrixFormSchema.properties.sample_type as object),
-          oneOf: sampleTypeOptions,
-        },
-        data_type: {
-          ...(matrixFormSchema.properties.data_type as object),
-          oneOf: dataTypeOptions,
-        },
-        group_id: {
-          ...(matrixFormSchema.properties.group_id as object),
-          oneOf: groupOptions,
-        },
-      },
-    };
-    setSchema(schemaWithOptions);
-  }, [featureTypes, sampleTypes, dataTypes, groups]);
-
-  React.useEffect(() => {
-    if (fileIds !== formData.file_ids || md5Hash !== formData.dataset_md5) {
-      const newFormData = {
-        ...formData,
-        file_ids: fileIds,
-        dataset_md5: md5Hash,
-      };
-      setFormData(newFormData);
-    }
-  }, [fileIds, md5Hash, formData]);
 
   const handleOnChange = (e: any) => {
     // Need to set allowed_values with continuous value_type back to null if value_type switches from categorical

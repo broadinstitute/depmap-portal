@@ -18,6 +18,7 @@ import {
   Group,
   InvalidPrioritiesByDataType,
 } from "@depmap/types";
+import { useSubmitButtonIsDisabled } from "../../utils/disableSubmitButton";
 
 const CustomColumnsMetadata = function (props: FieldProps) {
   const { schema, onChange, required } = props;
@@ -124,20 +125,53 @@ export function TableDatasetForm({
   const [formData, setFormData] = React.useState(initFormData);
   const [schema, setSchema] = React.useState<RJSFSchema | null>(null);
 
-  // TODO: Refactor duplicate
-  const submitButtonIsDisabled = React.useMemo(() => {
-    // NOTE: file_ids is set when file upload is complete
-    const requiredProperties: string[] | undefined = schema?.required;
-    if (requiredProperties !== undefined) {
-      const requiredFormValues = requiredProperties.map((prop) => {
-        return formData[prop];
-      });
-      return !requiredFormValues.every((val) => {
-        return val !== undefined && val !== null;
-      });
+  React.useEffect(() => {
+    const indexOptions = dimensionTypes.map((option) => {
+      return { title: option.name, const: option.name };
+    });
+    const dataTypeOptions = dataTypes.map((option) => {
+      return { title: option.name, const: option.name };
+    });
+    const groupOptions = groups.map((option) => {
+      return { title: option.name, const: option.id };
+    });
+    // Update schema with dropdown options retrieved from bbapi
+    const schemaWithOptions = {
+      ...tableFormSchema,
+      properties: {
+        ...tableFormSchema.properties,
+        index_type: {
+          ...(tableFormSchema.properties.index_type as object),
+          oneOf: indexOptions,
+        },
+        data_type: {
+          ...(tableFormSchema.properties.data_type as object),
+          oneOf: dataTypeOptions,
+        },
+        group_id: {
+          ...(tableFormSchema.properties.group_id as object),
+          oneOf: groupOptions,
+        },
+      },
+    };
+    setSchema(schemaWithOptions);
+  }, [dataTypes, groups, dimensionTypes]);
+
+  React.useEffect(() => {
+    if (fileIds !== formData.file_ids || md5Hash !== formData.dataset_md5) {
+      const newFormData = {
+        ...formData,
+        file_ids: fileIds,
+        dataset_md5: md5Hash,
+      };
+      setFormData(newFormData);
     }
-    return false;
-  }, [formData, schema?.required]);
+  }, [fileIds, md5Hash, formData]);
+
+  const submitButtonIsDisabled = useSubmitButtonIsDisabled(
+    schema?.required,
+    formData
+  );
 
   const uiSchema = React.useMemo(() => {
     const formUiSchema: UiSchema = {
@@ -184,49 +218,6 @@ export function TableDatasetForm({
     };
     return formUiSchema;
   }, [submitButtonIsDisabled]);
-
-  React.useEffect(() => {
-    const indexOptions = dimensionTypes.map((option) => {
-      return { title: option.name, const: option.name };
-    });
-    const dataTypeOptions = dataTypes.map((option) => {
-      return { title: option.name, const: option.name };
-    });
-    const groupOptions = groups.map((option) => {
-      return { title: option.name, const: option.id };
-    });
-    // Update schema with dropdown options retrieved from bbapi
-    const schemaWithOptions = {
-      ...tableFormSchema,
-      properties: {
-        ...tableFormSchema.properties,
-        index_type: {
-          ...(tableFormSchema.properties.index_type as object),
-          oneOf: indexOptions,
-        },
-        data_type: {
-          ...(tableFormSchema.properties.data_type as object),
-          oneOf: dataTypeOptions,
-        },
-        group_id: {
-          ...(tableFormSchema.properties.group_id as object),
-          oneOf: groupOptions,
-        },
-      },
-    };
-    setSchema(schemaWithOptions);
-  }, [dataTypes, groups, dimensionTypes]);
-
-  React.useEffect(() => {
-    if (fileIds !== formData.file_ids || md5Hash !== formData.dataset_md5) {
-      const newFormData = {
-        ...formData,
-        file_ids: fileIds,
-        dataset_md5: md5Hash,
-      };
-      setFormData(newFormData);
-    }
-  }, [fileIds, md5Hash, formData]);
 
   function customValidate(formDataToValidate: any, errors: any) {
     let jsonParsed;
