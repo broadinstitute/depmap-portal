@@ -10,84 +10,12 @@ from breadbox.schemas.custom_http_exception import (
     UserError,
 )
 from breadbox.service import slice as slice_service
-from breadbox.service import metadata as metadata_service
-from typing import Tuple
 import logging
 from breadbox.crud.dimension_types import get_dimension_type_labels_by_id
-import zlib
-import numpy as np
-import pandas as pd
 
-ROW_BYTE_SIZE = 4 + 4 + 4  # 32 bit int, 32 bit float, 32 bit float
+import packed_cor_tables
 
 log = logging.getLogger(__name__)
-
-
-def _get_top_correlates(filename, given_id):
-    conn = sqlite3.connect(filename)
-
-    # fetch the blob for the given feature
-    cursor = conn.cursor()
-    cursor.execute(
-        "select c.dim_0, c.cbuf from correlation c join dim_0_given_id f on f.dim_0=c.dim_0 where f.given_id = ?",
-        [given_id],
-    )
-    row = cursor.fetchone()
-    if row is None:
-        return pd.DataFrame(
-            {
-                "dim_0": [],
-                "dim_1": [],
-                "cor": [],
-                "log10qvalue": [],
-                "feature_given_id_0": [],
-                "dataset_given_id_0": [],
-                "feature_given_id_1": [],
-                "dataset_given_id_1": [],
-            }
-        )
-    index, cbuf = row
-    # now unpack the value
-    buf = zlib.decompress(cbuf)
-    row_count = len(buf) // ROW_BYTE_SIZE
-    start = 0
-    end = 4 * row_count
-    dim_1 = np.frombuffer(buf[start:end], dtype="int32")
-    start = end
-    end += 4 * row_count
-    cor = np.frombuffer(buf[start:end], dtype="float32")
-    start = end
-    end += 4 * row_count
-    log10qvalue = np.frombuffer(buf[start:end], dtype="float32")
-
-    df = pd.DataFrame(
-        {"dim_0": index, "dim_1": dim_1, "cor": cor, "log10qvalue": log10qvalue}
-    )
-
-    def map_dim_index_to_given_ids(dim_i, positions):
-        indices = list(set(positions))
-        param_str = ",".join(["?"] * len(indices))
-        cursor.execute(
-            f"select given_id, dim_{dim_i} from dim_{dim_i}_given_id where dim_{dim_i} in ({param_str})",
-            indices,
-        )
-        position_to_label = {i: given_id for given_id, i in cursor.fetchall()}
-        return [position_to_label[position] for position in positions]
-
-    cursor.execute("select dim_index, dataset_given_id from dataset")
-    given_id_by_dataset_index = {
-        dim_index: given_id for dim_index, given_id in cursor.fetchall()
-    }
-
-    df["feature_given_id_0"] = map_dim_index_to_given_ids(0, df["dim_0"])
-    df["feature_given_id_1"] = map_dim_index_to_given_ids(1, df["dim_1"])
-    df["dataset_given_id_0"] = given_id_by_dataset_index[0]
-    df["dataset_given_id_1"] = given_id_by_dataset_index[1]
-
-    cursor.close()
-    conn.close()
-
-    return df.drop(columns=["dim_0", "dim_1"])
 
 
 def get_associations(
@@ -141,7 +69,7 @@ def get_associations(
             filestore_location, precomputed_assoc_table.filename
         )
 
-        correlation_df = _get_top_correlates(
+        correlation_df = packed_cor_tables.read_cor_for_given_id(
             precomputed_assoc_table_path, resolved_slice.given_id
         )
 
