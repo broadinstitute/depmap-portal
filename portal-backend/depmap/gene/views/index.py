@@ -206,20 +206,6 @@ def get_compounds_targeting_gene(gene_symbol):
     )
 
 
-@blueprint.route("/has_rephub/<gene_symbol>")
-def get_has_rephub(gene_symbol):
-    has_rephub = (
-        CompoundExperiment.query.join(
-            Compound, CompoundExperiment.compound_id == Compound.entity_id
-        )
-        .filter(CompoundExperiment.xref_type == "BRD")
-        .filter(Compound.target_gene.any(Gene.label == gene_symbol))
-        .first()
-        is not None
-    )
-    return jsonify({"hasRepHub": has_rephub})
-
-
 def format_gene_summary(gene, dependency_datasets):
     if len(dependency_datasets) == 0:
         return None

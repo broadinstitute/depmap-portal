@@ -16,10 +16,12 @@ import {
   SampleDimensionType,
   FeatureDimensionType,
   Dataset,
+  instanceOfErrorDetail,
 } from "@depmap/types";
 import ChunkedFileUploader from "./ChunkedFileUploader";
 import { CeleryTask } from "@depmap/compute";
 import progressTrackerStyles from "@depmap/common-components/src/styles/ProgressTracker.scss";
+import styles from "../styles/styles.scss";
 
 interface DatasetFormProps {
   getDimensionTypes: () => Promise<DimensionType[]>;
@@ -51,8 +53,13 @@ export default function DatasetForm(props: DatasetFormProps) {
         Object.keys(matrixFormSchema.properties)
           .concat("allowed_values")
           .forEach((key) => {
-            if (!isAdvancedMode && key === "value_type") {
-              initForm[key] = "continuous";
+            if (!isAdvancedMode) {
+              if (key === "value_type") {
+                initForm[key] = "continuous";
+              }
+              if (key === "data_type") {
+                initForm[key] = "User upload";
+              }
             } else if (
               typeof matrixFormSchema.properties[key] === "object" &&
               // @ts-ignore
@@ -163,7 +170,18 @@ export default function DatasetForm(props: DatasetFormProps) {
   */
   const reject = useCallback((res: any) => {
     const isCeleryTask = (x: any): x is CeleryTask => x.state !== undefined;
-    if (!isCeleryTask(res)) {
+    if (isCeleryTask(res)) {
+      setCompletedTask(res);
+    } else if (instanceOfErrorDetail(res)) {
+      // can occur when error happens before task passed to celery (ex: 'units' missing in 'continuous' col_type)
+      setCompletedTask({
+        id: "",
+        state: "FAILURE",
+        percentComplete: undefined,
+        message: res.detail,
+        result: null,
+      });
+    } else {
       setCompletedTask({
         id: "",
         state: "FAILURE",
@@ -172,8 +190,6 @@ export default function DatasetForm(props: DatasetFormProps) {
           "Unexpected error. If you get this error consistently, please contact us with a screenshot and the actions that lead to this error.",
         result: null,
       });
-    } else {
-      setCompletedTask(res);
     }
     setIsTaskRunning(false);
   }, []);
@@ -210,19 +226,51 @@ export default function DatasetForm(props: DatasetFormProps) {
     if (completedTask?.state === "SUCCESS" && !isTaskRunning) {
       return (
         <div>
-          <div style={{ color: "green" }}>SUCCESS!</div>
-          {completedTask.result.unknownIDs.length > 0 ? (
-            <div style={{ color: "goldenrod" }}>
-              WARNING: Unknown IDS:{" "}
-              {JSON.parse(completedTask.result.unknownIDs)}
-            </div>
-          ) : null}
+          <div style={{ color: "green" }}>
+            <b>
+              <i>SUCCESS!</i>
+            </b>
+          </div>
+          <div style={{ color: "goldenrod" }}>
+            {completedTask.result.unknownIDs.map(
+              (unknownIDGroup: {
+                axis: string;
+                dimensionType: string;
+                IDs: string[];
+              }) => {
+                // shorten list if list of IDs is long and add ellipsis at the end
+                const sublistIDs = unknownIDGroup.IDs.slice(0, 10);
+                return (
+                  <>
+                    <div>
+                      <p style={{ margin: "10px 0 0 0" }}>
+                        <i>
+                          {unknownIDGroup.IDs.length} unknown{" "}
+                          {unknownIDGroup.axis} IDs for{" "}
+                          {unknownIDGroup.dimensionType}:
+                        </i>
+                      </p>
+                      <div className={styles.unknownIDsText}>
+                        <p>
+                          <i>{sublistIDs.toString() + "..."}</i>
+                        </p>
+                      </div>
+                    </div>
+                  </>
+                );
+              }
+            )}
+          </div>
         </div>
       );
     }
     if (completedTask?.state === "FAILURE" && !isTaskRunning) {
       return (
-        <div style={{ color: "red" }}>FAILED: {completedTask.message}!</div>
+        <div style={{ color: "red" }}>
+          <b>
+            <i>FAILED: {completedTask.message}!</i>
+          </b>
+        </div>
       );
     }
     if (isTaskRunning) {

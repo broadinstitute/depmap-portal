@@ -297,6 +297,7 @@ def format_dep_dist_info(
     gene_executive_info: GeneExecutiveInfoDict = {}
 
     if crispr_dataset:
+        # Note: this often encounters an error with the dev database (deprecated, so not worth fixing now)
         crispr_info = GeneExecutiveInfo.get(gene.entity_id, crispr_dataset.name)
         gene_executive_info["crispr"] = {
             "num_lines": "{}/{}".format(

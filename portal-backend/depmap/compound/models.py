@@ -140,16 +140,6 @@ class CompoundExperiment(Entity):
             return q.one_or_none()
 
     @staticmethod
-    def find_by_name_prefix(prefix, limit):
-        compounds = (
-            CompoundExperiment.query.filter(CompoundExperiment.label.startswith(prefix))
-            .order_by(CompoundExperiment.label)
-            .limit(limit)
-            .all()
-        )
-        return compounds
-
-    @staticmethod
     def get_by_xref(xref, xref_type, must=True):
         q = CompoundExperiment.query.filter_by(xref=xref, xref_type=xref_type)
         if must:
