@@ -123,53 +123,27 @@ export default function DimensionTypeForm(props: DimensionTypeFormProps) {
     setSubmissionMsg(null);
   };
   if (schema) {
-    if (isEditMode) {
-      return (
-        <>
-          <Form
-            formData={dimensionTypeFormData}
-            onChange={handleOnChange}
-            schema={schema}
-            uiSchema={uiSchema}
-            validator={validator}
-            onSubmit={onSubmission}
-          />
-          <p
-            style={{
-              color: hasError ? "red" : "gray",
-              paddingTop: "5px",
-              fontStyle: "italic",
-            }}
-          >
-            {submissionMsg}
-          </p>
-        </>
-      );
-    }
-    // eslint-disable-next-line no-else-return
-    else {
-      return (
-        <>
-          <Form
-            formData={dimensionTypeFormData}
-            onChange={handleOnChange}
-            schema={schema}
-            uiSchema={uiSchema}
-            validator={validator}
-            onSubmit={onSubmission}
-          />
-          <p
-            style={{
-              color: hasError ? "red" : "gray",
-              paddingTop: "5px",
-              fontStyle: "italic",
-            }}
-          >
-            {submissionMsg}
-          </p>
-        </>
-      );
-    }
+    return (
+      <>
+        <Form
+          formData={dimensionTypeFormData}
+          onChange={handleOnChange}
+          schema={schema}
+          uiSchema={uiSchema}
+          validator={validator}
+          onSubmit={onSubmission}
+        />
+        <p
+          style={{
+            color: hasError ? "red" : "gray",
+            paddingTop: "5px",
+            fontStyle: "italic",
+          }}
+        >
+          {submissionMsg}
+        </p>
+      </>
+    );
   }
   // eslint-disable-next-line no-else-return
   else {
