@@ -7,6 +7,7 @@ import {
   // instanceOfErrorDetail,
   DimensionTypeAddArgs,
   DimensionTypeUpdateArgs,
+  Group,
   instanceOfErrorDetail,
 } from "@depmap/types";
 
@@ -26,6 +27,7 @@ export default function Datasets() {
   const { getApi } = useContext(ApiContext);
   const [dapi] = useState(() => getApi());
   const [datasets, setDatasets] = useState<Dataset[] | null>(null);
+  const [groups, setGroups] = useState<Group[]>(null);
 
   const [initError, setInitError] = useState(false);
 
@@ -52,10 +54,7 @@ export default function Datasets() {
       dapi.updateDimensionType(dimTypeName, dimTypeArgs),
     [dapi]
   );
-  const getGroups = useCallback(() => dapi.getGroups(!isAdvancedMode), [
-    dapi,
-    isAdvancedMode,
-  ]); // write access set to true if not advanced mode
+
   const getDataTypesAndPriorities = useCallback(
     () => dapi.getDataTypesAndPriorities(),
     [dapi]
@@ -126,10 +125,12 @@ export default function Datasets() {
     (async () => {
       try {
         let currentDatasets = await dapi.getBreadboxDatasets();
+        // write access set to true if not advanced mode
+        const userGroups = await dapi.getGroups(!isAdvancedMode);
+        setGroups(userGroups);
 
         if (!isAdvancedMode) {
-          const writeGroups = await dapi.getGroups(!isAdvancedMode);
-          const group_ids = writeGroups.map((group) => {
+          const group_ids = userGroups.map((group) => {
             return group.id;
           });
           currentDatasets = currentDatasets.filter((dataset) =>
@@ -159,7 +160,7 @@ export default function Datasets() {
         setInitError(true);
       }
     })();
-  }, [dapi, getDimensionTypes, getGroups, isAdvancedMode]);
+  }, [dapi, getDimensionTypes, isAdvancedMode]);
 
   const datasetForm = useCallback(() => {
     if (datasets) {
@@ -170,7 +171,7 @@ export default function Datasets() {
         formTitle = "Edit Dataset";
         datasetFormComponent = (
           <DatasetEditForm
-            getGroups={getGroups}
+            groups={groups}
             getDataTypesAndPriorities={getDataTypesAndPriorities}
             onSubmit={async (
               datasetId: string,
@@ -200,7 +201,7 @@ export default function Datasets() {
         datasetFormComponent = (
           <DatasetForm
             getDimensionTypes={getDimensionTypes}
-            getGroups={getGroups}
+            groups={groups}
             getDataTypesAndPriorities={getDataTypesAndPriorities}
             uploadFile={postFileUpload}
             uploadDataset={postDatasetUpload}
@@ -243,7 +244,7 @@ export default function Datasets() {
     isEditDatasetMode,
     datasetToEdit,
     showDatasetModal,
-    getGroups,
+    groups,
     getDataTypesAndPriorities,
     updateDataset,
     getDimensionTypes,
