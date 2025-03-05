@@ -357,8 +357,8 @@ function CollapsibleBoxPlots({
                     }
                   />
                 ) : (
-                  !selectedContextBoxData &&
-                  activeKey === "SELECTED" && (
+                  (!selectedContextBoxData && activeKey === "SELECTED") ||
+                  (selectedLevelZeroBoxData && activeKey === "SELECTED" && (
                     <span
                       style={{
                         fontSize: "12px",
@@ -374,7 +374,7 @@ function CollapsibleBoxPlots({
                     >
                       {topContextNameInfo.subtype_code}
                     </span>
-                  )
+                  ))
                 )}
               </div>
             </Panel.Title>

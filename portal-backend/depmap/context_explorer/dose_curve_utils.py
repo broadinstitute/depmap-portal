@@ -11,7 +11,6 @@ from depmap.compound.models import (
 )
 
 
-# TODO: Test this
 def _get_out_group_model_ids(out_group_type, dataset_name, in_group_model_ids, label):
     (entity_full_row_of_values) = utils.get_full_row_of_values_and_depmap_ids(
         dataset_name=dataset_name, label=label
@@ -31,7 +30,7 @@ def _get_out_group_model_ids(out_group_type, dataset_name, in_group_model_ids, l
             other_heme_model_ids = SubtypeContext.get_model_ids_for_other_heme_contexts(
                 in_group_model_ids
             )
-            return other_heme_model_ids
+            return list(other_heme_model_ids.keys())
         else:
             # The outgroup better be a subtype code. This will be a parent of the selected
             # code. So we need to subtract the in group model ids from the out group ids
@@ -39,9 +38,10 @@ def _get_out_group_model_ids(out_group_type, dataset_name, in_group_model_ids, l
             all_node_model_ids = SubtypeNode.get_model_ids_by_subtype_code_and_node_level(
                 subtype_code=out_group_type, node_level=node.node_level
             )
-            out_group_model_ids = list(set(all_node_model_ids)) - list(
-                set(in_group_model_ids)
+            out_group_model_ids = list(
+                set(all_node_model_ids) - set(in_group_model_ids)
             )
+
             return out_group_model_ids
 
 
