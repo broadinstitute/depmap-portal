@@ -2,7 +2,6 @@ import os
 from breadbox.db.session import SessionWithUser
 from depmap_compute.slice import SliceQuery
 from breadbox.schemas.associations import Associations, Association, DatasetSummary
-import sqlite3
 from breadbox.crud import associations as associations_crud
 from breadbox.crud import dataset as dataset_crud
 from breadbox.schemas.custom_http_exception import (

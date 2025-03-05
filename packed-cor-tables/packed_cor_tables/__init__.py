@@ -170,3 +170,21 @@ def read_cor_for_given_id(filename, feature_id):
     conn.close()
 
     return df.drop(columns=["dim_0", "dim_1"])
+
+
+class InvalidAssociationTable(Exception):
+    pass
+
+
+def get_given_ids(filename: str, dim: str):
+    conn = sqlite3.connect(filename)
+    cur = conn.cursor()
+    try:
+        cur.execute(f"SELECT given_id from dim_{dim}_given_id")
+        assoc_dataset_given_ids = set([x[0] for x in cur.fetchall()])
+        return assoc_dataset_given_ids
+    except sqlite3.OperationalError as ex:
+        raise InvalidAssociationTable() from ex
+    finally:
+        cur.close()
+        conn.close()
