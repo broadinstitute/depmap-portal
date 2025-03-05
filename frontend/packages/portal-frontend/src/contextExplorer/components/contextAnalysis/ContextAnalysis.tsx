@@ -1017,10 +1017,7 @@ function ContextAnalysis({
                       <p>There was an error loading this plot.</p>
                     </div>
                   )}
-                  {!boxplotError &&
-                    (!entityDetailMainPlotElement || isLoadingBoxplot) && (
-                      <PlotSpinner />
-                    )}
+                  {!boxplotError && isLoadingBoxplot && <PlotSpinner />}
                   {!boxplotError &&
                     boxPlotData &&
                     selectedContextNode &&

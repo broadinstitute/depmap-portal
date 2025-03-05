@@ -114,11 +114,7 @@ function CollapsibleBoxPlots({
   };
 
   useEffect(() => {
-    if (
-      boxPlotData &&
-      boxPlotData.significant_selection &&
-      boxPlotData.significant_selection.length > 0
-    ) {
+    if (boxPlotData) {
       const plotInfo: BoxPlotInfo[] = [];
       let boxCardCount = 0;
 
@@ -231,6 +227,11 @@ function CollapsibleBoxPlots({
           plotInfo.unshift(otherPlot);
         }
         setSelectedContextBoxData(plotInfo);
+      } else {
+        // Rarely will be hit. This is an edge case.
+        if (otherPlot) {
+          setSelectedContextBoxData([otherPlot]);
+        }
       }
     }
   }, [boxPlotData, topContextNameInfo]);
@@ -274,9 +275,9 @@ function CollapsibleBoxPlots({
             <Panel.Title toggle>
               {" "}
               <div style={{ display: "flex", flexDirection: "row" }}>
-                {selectedLevelZeroBoxData &&
-                  selectedContextBoxData &&
-                  selectedContextBoxData.length > 0 && (
+                {selectedContextBoxData &&
+                  selectedContextBoxData.length > 0 &&
+                  selectedLevelZeroBoxData !== null && (
                     <span
                       style={{
                         paddingRight: "8px",
@@ -291,6 +292,50 @@ function CollapsibleBoxPlots({
                       }
                     />
                   )}
+                {selectedContextBoxData &&
+                  selectedContextBoxData.length > 0 &&
+                  selectedLevelZeroBoxData === null && (
+                    <div>
+                      <span
+                        style={{
+                          paddingRight: "8px",
+                          paddingTop: activeKey === "SELECTED" ? "0px" : "12px",
+                          fontSize: "12px",
+                          fontWeight:
+                            selectedCode === topContextNameInfo.subtype_code
+                              ? "600"
+                              : "normal",
+                          color:
+                            selectedCode === topContextNameInfo.subtype_code
+                              ? "#333333"
+                              : "#4479B2",
+                        }}
+                        className={
+                          activeKey === "SELECTED"
+                            ? "glyphicon glyphicon-chevron-up"
+                            : "glyphicon glyphicon-chevron-down"
+                        }
+                      />
+                      <span
+                        style={{
+                          paddingTop: activeKey === "SELECTED" ? "0px" : "12px",
+                          fontSize: "12px",
+                          fontWeight:
+                            selectedCode === topContextNameInfo.subtype_code
+                              ? "600"
+                              : "normal",
+                          color:
+                            selectedCode === topContextNameInfo.subtype_code
+                              ? "#333333"
+                              : "#4479B2",
+                        }}
+                      >
+                        {" "}
+                        {topContextNameInfo.subtype_code}
+                      </span>
+                    </div>
+                  )}
+
                 {selectedLevelZeroBoxData && activeKey !== "SELECTED" ? (
                   <BoxPlot
                     plotName="main-header"
@@ -312,22 +357,22 @@ function CollapsibleBoxPlots({
                     }
                   />
                 ) : (
-                  selectedLevelZeroBoxData &&
+                  !selectedContextBoxData &&
                   activeKey === "SELECTED" && (
                     <span
                       style={{
                         fontSize: "12px",
                         fontWeight:
-                          selectedCode === selectedLevelZeroBoxData.name
+                          selectedCode === topContextNameInfo.subtype_code
                             ? "600"
                             : "normal",
                         color:
-                          selectedCode === selectedLevelZeroBoxData.name
+                          selectedCode === topContextNameInfo.subtype_code
                             ? "#333333"
                             : "#4479B2",
                       }}
                     >
-                      {selectedLevelZeroBoxData.name}
+                      {topContextNameInfo.subtype_code}
                     </span>
                   )
                 )}
