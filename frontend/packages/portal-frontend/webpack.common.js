@@ -27,7 +27,6 @@ module.exports = {
     dataPage: "./src/apps/dataPage.tsx",
     resourcesPage: "./src/apps/resourcesPage.tsx",
     secretDataViewer: "./src/apps/secretDataViewer.tsx",
-    univariateAnalysis: "./src/apps/univariateAnalysis.tsx",
   },
 
   plugins: [
