@@ -27,7 +27,10 @@ export default function Datasets() {
   const { getApi } = useContext(ApiContext);
   const [dapi] = useState(() => getApi());
   const [datasets, setDatasets] = useState<Dataset[] | null>(null);
-  const [groups, setGroups] = useState<Group[]>(null);
+  const [userGroups, setUserGroups] = useState<{
+    availableGroups: Group[];
+    writeGroups: Group[];
+  }>({ availableGroups: [], writeGroups: [] });
 
   const [initError, setInitError] = useState(false);
 
@@ -125,17 +128,20 @@ export default function Datasets() {
     (async () => {
       try {
         let currentDatasets = await dapi.getBreadboxDatasets();
-        // write access set to true if not advanced mode
-        const userGroups = await dapi.getGroups(!isAdvancedMode);
-        setGroups(userGroups);
 
+        // write access set to true if not advanced mode
+        const availableGroups = await dapi.getGroups(!isAdvancedMode);
         if (!isAdvancedMode) {
-          const group_ids = userGroups.map((group) => {
+          const group_ids = availableGroups.map((group) => {
             return group.id;
           });
           currentDatasets = currentDatasets.filter((dataset) =>
             group_ids.includes(dataset.group_id)
           );
+          setUserGroups({ availableGroups, writeGroups: availableGroups });
+        } else {
+          const writeGroups = await dapi.getGroups(true);
+          setUserGroups({ availableGroups, writeGroups });
         }
 
         setDatasets(currentDatasets);
@@ -171,7 +177,7 @@ export default function Datasets() {
         formTitle = "Edit Dataset";
         datasetFormComponent = (
           <DatasetEditForm
-            groups={groups}
+            groups={userGroups.availableGroups}
             getDataTypesAndPriorities={getDataTypesAndPriorities}
             onSubmit={async (
               datasetId: string,
@@ -201,7 +207,7 @@ export default function Datasets() {
         datasetFormComponent = (
           <DatasetForm
             getDimensionTypes={getDimensionTypes}
-            groups={groups}
+            groups={userGroups.availableGroups}
             getDataTypesAndPriorities={getDataTypesAndPriorities}
             uploadFile={postFileUpload}
             uploadDataset={postDatasetUpload}
@@ -244,7 +250,7 @@ export default function Datasets() {
     isEditDatasetMode,
     datasetToEdit,
     showDatasetModal,
-    groups,
+    userGroups.availableGroups,
     getDataTypesAndPriorities,
     updateDataset,
     getDimensionTypes,
@@ -476,7 +482,11 @@ export default function Datasets() {
             ]}
           />
           <div className={styles.primaryButtons}>
-            <Button bsStyle="primary" onClick={() => setShowDatasetModal(true)}>
+            <Button
+              bsStyle="primary"
+              onClick={() => setShowDatasetModal(true)}
+              disabled={userGroups.writeGroups.length === 0}
+            >
               Upload New Dataset
             </Button>
             <Button
