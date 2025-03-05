@@ -100,5 +100,3 @@ if __name__ == "__main__":
         args.rnai_taiga_id,
         args.out_filename,
     )
-
-#python3 get_data_availability.py internal-24q4-8c04.117/Model internal-24q4-8c04.117/ScreenSequenceMap internal-24q4-8c04.117/OmicsProfiles repurposing-public-24q2-875f.4/Repurposing_Public_24Q2_Extended_Primary_Data_Matrix internal-24q4-8c04.117/PRISMOncologyReferenceAUCMatrix demeter2-combined-dc9c.19/CL_data_comb data-avail.csv

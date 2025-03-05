@@ -368,8 +368,10 @@ def add_molecular_subtype_subtree(df, mst_tree):
             sub-tree added in 
     '''
     
-    #sorting by full subtype name is important so that the level and parent
-    #assignments don't get jumbled
+    #sorting by full subtype name
+    #this is important because we are using regex to determine parent-child relationships
+    #for the molecular subtypes. If we do not check these regex relationships in
+    #the right order, then the parent-child relationships will not be correct.
     df = df.sort_values(
             'full_st'
         ).assign(
@@ -613,7 +615,4 @@ if __name__ == "__main__":
         args.genetic_subtypes_whitelist_filename
     )
 
-    if subtype_tree is not None:
-        subtype_tree.to_csv(args.output)
-
-# python3 create_subtype_tree.py internal-24q4-8c04.117/Model subtypetree-919e.7/oncotree internal-24q4-8c04.117/OmicsInferredMolecularSubtypes subtypetree-919e.7/lineage_tree_genetic_subtype_whitelist SubtypeTree.csv
+    subtype_tree.to_csv(args.output)

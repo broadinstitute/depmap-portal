@@ -476,14 +476,3 @@ if __name__ == "__main__":
         args.oncref_table,
     )
 
-#python3 get_context_analysis.py
-#   subtypetree-919e.7/SubtypeTree
-#   subtypetree-919e.7/ContextMatrix
-#   internal-24q4-8c04.117/CRISPRGeneEffect
-#   internal-24q4-8c04.117/CRISPRGeneDependency
-#   repurposing-public-24q2-875f.4/Repurposing_Public_24Q2_Extended_Primary_Data_Matrix
-#   repurposing-public-24q2-875f.4/Repurposing_Public_24Q2_Extended_Primary_Compound_List
-#   internal-24q4-8c04.117/PRISMOncologyReferenceAUCMatrix
-#   repurposing_table.csv
-#   oncref_table.csv
-#   context_analysis.csv

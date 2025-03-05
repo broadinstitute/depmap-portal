@@ -238,7 +238,4 @@ if __name__ == "__main__":
         args.subtype_tree
     )
 
-    if context_matrix is not None:
-        context_matrix.to_csv(args.output)
-
-# python3 create_context_matrix.py internal-24q4-8c04.117/Model internal-24q4-8c04.117/OmicsInferredMolecularSubtypes SubtypeTree.csv ContextMatrix.csv
+    context_matrix.to_csv(args.output)
