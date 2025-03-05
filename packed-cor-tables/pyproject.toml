@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "packed-cor-tables"
-version = "0.1.1"
+version = "0.2.0"
 description = "Library for reading/writing compressed correlation tables"
 authors = ["Your Name <you@example.com>"]
 readme = "README.md"

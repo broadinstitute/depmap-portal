@@ -33,7 +33,7 @@ depmap-compute = {version = "0.1.13", source = "public-python"}
 # depmap-compute = {path = "../depmap-compute", develop = true}
 fastparquet = "^2024.5.0"
 sqlitedict="^2.1.0"
-packed-cor-tables = {version = "^0.1.1", source = "public-python"}
+packed-cor-tables = {version = "^0.2.0", source = "public-python"}
 
 [tool.poetry.group.dev.dependencies]
 pyright-ratchet = {git = "https://github.com/pgm/pyright-ratchet.git", rev = "v0.3.1"}

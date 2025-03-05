@@ -2355,13 +2355,13 @@ files = [
 
 [[package]]
 name = "packed-cor-tables"
-version = "0.1.1"
+version = "0.2.0"
 description = "Library for reading/writing compressed correlation tables"
 optional = false
 python-versions = ">=3.9,<4.0"
 files = [
-    {file = "packed_cor_tables-0.1.1-py3-none-any.whl", hash = "sha256:3470a285d87d94edf7eea2e377dbe1f6de32632c9673e6b14890843f7aaf7ec4"},
-    {file = "packed_cor_tables-0.1.1.tar.gz", hash = "sha256:60fd28fd1b8db3d9bb5a6baf0306ec6b54319205588ccc483ec6c16c404b311d"},
+    {file = "packed_cor_tables-0.2.0-py3-none-any.whl", hash = "sha256:618a001722fb78449ddbe3c34357ec96216d0f07531841b8af26bf70ac684d6c"},
+    {file = "packed_cor_tables-0.2.0.tar.gz", hash = "sha256:e04df111aec7e7b1b1757484c691a266f75af228ec399ae1ac485d8fadaf6afc"},
 ]
 
 [package.dependencies]
@@ -4052,4 +4052,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "jaraco.test", "more
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "59677ad83a7b5009b3075d746de67c66c70a104942320b26100bf6af3d54018d"
+content-hash = "ca40b118a0bbfe629df6ba988d655bd74bc2c58394b64430b656a0a686c839aa"
