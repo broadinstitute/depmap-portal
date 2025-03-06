@@ -20,7 +20,7 @@ export const matrixUpdateFormSchema: Required<Pick<RJSFSchema, "properties">> &
       type: "string",
       format: "uuid",
       title: "Group Id",
-      description: "Id of the group the dataset belongs to",
+      description: "The group the dataset belongs to",
     },
     priority: {
       type: ["integer", "null"],
