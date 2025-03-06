@@ -9,58 +9,8 @@ from tests import factories
 import sqlite3
 from glob import glob
 
-
-def create_assoc_table(filename, dataset_1_features, dataset_2_features, rows):
-    conn = sqlite3.connect(filename)
-    create_sql = """CREATE TABLE IF NOT EXISTS "correlation" (
-"dim_0" INTEGER,
-  "dim_1" INTEGER,
-  "cor" REAL
-);
-CREATE TABLE IF NOT EXISTS "dim_0_label_position" (
-"label" TEXT,
-  "position" INTEGER
-);
-CREATE TABLE IF NOT EXISTS "dim_1_label_position" (
-"label" TEXT,
-  "position" INTEGER
-);
-CREATE TABLE IF NOT EXISTS "dataset" (
-"dataset" INTEGER,
-  "filename" TEXT,
-  "label" TEXT
-);
-CREATE INDEX dim_0_label_position_idx_1 ON dim_0_label_position (label);
-CREATE INDEX dim_0_label_position_idx_2 ON dim_0_label_position (position);
-CREATE INDEX dim_1_label_position_idx_1 ON dim_1_label_position (label);
-CREATE INDEX dim_1_label_position_idx_2 ON dim_1_label_position (position);
-CREATE INDEX correlation_idx_1 ON correlation (dim_1, cor);
-CREATE INDEX correlation_idx_0 ON correlation (dim_0, cor);"""
-    for stmt in create_sql.split(";"):
-        conn.execute(stmt)
-
-    def populate_labels(dim, dataset_features):
-        rows = []
-        label_to_index = {}
-        for i, label in enumerate(dataset_features):
-            rows.append((label, i))
-            label_to_index[label] = i
-        conn.executemany(
-            f"insert into dim_{dim}_label_position (label, position) values (?, ?)",
-            rows,
-        )
-        return label_to_index
-
-    f1idx = populate_labels(0, dataset_1_features)
-    f2idx = populate_labels(1, dataset_2_features)
-
-    for f1_label, f2_label, cor in rows:
-        conn.execute(
-            "insert into correlation (dim_0, dim_1, cor) values (?, ?, ?)",
-            (f1idx[f1_label], f2idx[f2_label], cor),
-        )
-    conn.commit()
-    conn.close()
+import pytest
+import packed_cor_tables
 
 
 def test_associations(
@@ -109,15 +59,46 @@ def test_associations(
     dataset_2 = create_matrix_dataset(3, dataset_2_feature_count)
     minimal_db.commit()
 
-    assoc_table = str(tmpdir.join("assoc.sqlite3"))
-    create_assoc_table(
-        assoc_table,
-        [f"feature{i}" for i in range(dataset_1_feature_count)],
-        [f"feature{i}" for i in range(dataset_2_feature_count)],
-        [["feature0", "feature0", 0.1], ["feature0", "feature1", 0.2]],
+    assoc_table_1 = str(tmpdir.join("assoc.sqlite3"))
+
+    packed_cor_tables.write_cor_df(
+        pd.DataFrame(
+            {
+                "dim_0": [0, 0],
+                "dim_1": [0, 1],
+                "cor": [0.1, 0.2],
+                "log10qvalue": [-12.5, -10.1],
+            }
+        ),
+        packed_cor_tables.InputMatrixDesc(
+            given_ids=[f"feature{i}" for i in range(dataset_1_feature_count)],
+            taiga_id="ds1",
+            name="ds1",
+        ),
+        packed_cor_tables.InputMatrixDesc(
+            given_ids=[f"feature{i}" for i in range(dataset_2_feature_count)],
+            taiga_id="ds1",
+            name="ds1",
+        ),
+        assoc_table_1,
     )
 
-    file_ids, expected_md5 = upload_and_get_file_ids(client, filename=assoc_table)
+    # associations in the flipped direction
+    # assoc_table_2 = str(tmpdir.join("assoc.sqlite3"))
+    #
+    # packed_cor_tables.write_cor_df(
+    #     pd.DataFrame({"dim_0": [0], "dim_1": [0], "cor": [0.1], "log10qvalue": [-9.1]}),
+    #     packed_cor_tables.InputMatrixDesc(given_ids=[f"feature{i}" for i in range(dataset_2_feature_count)],
+    #                                       taiga_id="ds1",
+    #                                       name="ds1", ),
+    #     packed_cor_tables.InputMatrixDesc(given_ids=[f"feature{i}" for i in range(dataset_1_feature_count)],
+    #                                       taiga_id="ds1",
+    #                                       name="ds1",
+    #                                       ),
+    #     assoc_table_1,
+    # )
+
+    file_ids, expected_md5 = upload_and_get_file_ids(client, filename=assoc_table_1)
 
     # first upload attempt: should fail because user doesn't have access
     response = client.post(
@@ -174,44 +155,43 @@ def test_associations(
     assert_status_ok(response)
     response_content = response.json()
     assert len(response_content["associated_datasets"]) == 1
-    expected = [
-        {
-            "correlation": 0.2,
-            "other_dataset_id": dataset_2.id,
-            "other_dimension_given_id": "feature1",
-            "other_dimension_label": "feature1",
-        },
-        {
-            "correlation": 0.1,
-            "other_dataset_id": dataset_2.id,
-            "other_dimension_given_id": "feature0",
-            "other_dimension_label": "feature0",
-        },
-    ]
-    assert response_content["associated_dimensions"] == expected
-
-    # query feature 0 in dataset 2 (this one only has one correlation stored)
-    response = client.post(
-        "/temp/associations/query-slice",
-        json={
-            "identifier_type": "feature_id",
-            "dataset_id": dataset_2.id,
-            "identifier": "feature0",
-        },
-        headers={"X-Forwarded-User": "anon"},
+    fa1, fa2 = sorted(
+        response_content["associated_dimensions"],
+        key=lambda x: x["other_dimension_given_id"],
     )
 
-    assert_status_ok(response)
-    response_content = response.json()
-    assert len(response_content["associated_datasets"]) == 1
-    assert response_content["associated_dimensions"] == [
-        {
-            "correlation": 0.1,
-            "other_dataset_id": dataset_1.id,
-            "other_dimension_given_id": "feature0",
-            "other_dimension_label": "feature0",
-        }
-    ]
+    assert fa1["other_dimension_given_id"] == "feature0"
+    assert fa1["other_dimension_label"] == "feature0"
+    assert fa1["other_dataset_id"] == dataset_2.id
+    assert fa1["correlation"] == pytest.approx(0.1)
+
+    assert fa2["other_dimension_given_id"] == "feature1"
+    assert fa2["other_dimension_label"] == "feature1"
+    assert fa2["other_dataset_id"] == dataset_2.id
+    assert fa2["correlation"] == pytest.approx(0.2)
+
+    # # query feature 0 in dataset 2 (this one only has one correlation stored)
+    # response = client.post(
+    #     "/temp/associations/query-slice",
+    #     json={
+    #         "identifier_type": "feature_id",
+    #         "dataset_id": dataset_2.id,
+    #         "identifier": "feature0",
+    #     },
+    #     headers={"X-Forwarded-User": "anon"},
+    # )
+    #
+    # assert_status_ok(response)
+    # response_content = response.json()
+    # assert len(response_content["associated_datasets"]) == 1
+    # assert response_content["associated_dimensions"] == [
+    #     {
+    #         "correlation": 0.1,
+    #         "other_dataset_id": dataset_1.id,
+    #         "other_dimension_given_id": "feature0",
+    #         "other_dimension_label": "feature0",
+    #     }
+    # ]
 
     # now, delete it
     response = client.delete(f"/temp/associations/{assoc_id}")

@@ -4,10 +4,12 @@ import {
   DatasetParams,
   DatasetTableData,
   DatasetUpdateArgs,
-  // instanceOfErrorDetail,
   DimensionTypeAddArgs,
   DimensionTypeUpdateArgs,
+  DimensionTypeWithCounts,
+  Group,
   instanceOfErrorDetail,
+  TabularDataset,
 } from "@depmap/types";
 
 import { FormModal, Spinner, ToggleSwitch } from "@depmap/common-components";
@@ -26,6 +28,10 @@ export default function Datasets() {
   const { getApi } = useContext(ApiContext);
   const [dapi] = useState(() => getApi());
   const [datasets, setDatasets] = useState<Dataset[] | null>(null);
+  const [userGroups, setUserGroups] = useState<{
+    availableGroups: Group[];
+    writeGroups: Group[];
+  }>({ availableGroups: [], writeGroups: [] });
 
   const [initError, setInitError] = useState(false);
 
@@ -52,10 +58,7 @@ export default function Datasets() {
       dapi.updateDimensionType(dimTypeName, dimTypeArgs),
     [dapi]
   );
-  const getGroups = useCallback(() => dapi.getGroups(!isAdvancedMode), [
-    dapi,
-    isAdvancedMode,
-  ]); // write access set to true if not advanced mode
+
   const getDataTypesAndPriorities = useCallback(
     () => dapi.getDataTypesAndPriorities(),
     [dapi]
@@ -79,7 +82,9 @@ export default function Datasets() {
     [dapi]
   );
 
-  const [dimensionTypes, setDimensionTypes] = useState<any[] | null>(null);
+  const [dimensionTypes, setDimensionTypes] = useState<
+    DimensionTypeWithCounts[] | null
+  >(null);
   const [selectedDimensionType, setSelectedDimensionType] = useState<
     any | null
   >(null);
@@ -127,14 +132,19 @@ export default function Datasets() {
       try {
         let currentDatasets = await dapi.getBreadboxDatasets();
 
+        // write access set to true if not advanced mode
+        const availableGroups = await dapi.getGroups(!isAdvancedMode);
         if (!isAdvancedMode) {
-          const writeGroups = await dapi.getGroups(!isAdvancedMode);
-          const group_ids = writeGroups.map((group) => {
+          const group_ids = availableGroups.map((group) => {
             return group.id;
           });
           currentDatasets = currentDatasets.filter((dataset) =>
             group_ids.includes(dataset.group_id)
           );
+          setUserGroups({ availableGroups, writeGroups: availableGroups });
+        } else {
+          const writeGroups = await dapi.getGroups(true);
+          setUserGroups({ availableGroups, writeGroups });
         }
 
         setDatasets(currentDatasets);
@@ -159,7 +169,7 @@ export default function Datasets() {
         setInitError(true);
       }
     })();
-  }, [dapi, getDimensionTypes, getGroups, isAdvancedMode]);
+  }, [dapi, getDimensionTypes, isAdvancedMode]);
 
   const datasetForm = useCallback(() => {
     if (datasets) {
@@ -170,7 +180,7 @@ export default function Datasets() {
         formTitle = "Edit Dataset";
         datasetFormComponent = (
           <DatasetEditForm
-            getGroups={getGroups}
+            groups={userGroups.availableGroups}
             getDataTypesAndPriorities={getDataTypesAndPriorities}
             onSubmit={async (
               datasetId: string,
@@ -200,7 +210,7 @@ export default function Datasets() {
         datasetFormComponent = (
           <DatasetForm
             getDimensionTypes={getDimensionTypes}
-            getGroups={getGroups}
+            groups={userGroups.availableGroups}
             getDataTypesAndPriorities={getDataTypesAndPriorities}
             uploadFile={postFileUpload}
             uploadDataset={postDatasetUpload}
@@ -243,7 +253,7 @@ export default function Datasets() {
     isEditDatasetMode,
     datasetToEdit,
     showDatasetModal,
-    getGroups,
+    userGroups.availableGroups,
     getDataTypesAndPriorities,
     updateDataset,
     getDimensionTypes,
@@ -357,9 +367,11 @@ export default function Datasets() {
       onSubmit={onSubmitDimensionType}
       isEditMode={isEditDimensionTypeMode}
       dimensionTypeToEdit={selectedDimensionType}
-      datasets={datasets.filter(
-        (dataset) => dataset.format === "tabular_dataset"
-      )}
+      datasets={
+        datasets.filter(
+          (dataset) => dataset.format === "tabular_dataset"
+        ) as TabularDataset[]
+      }
     />
   );
 
@@ -430,26 +442,27 @@ export default function Datasets() {
       const dimensionType = dimensionTypes.find(
         (dt) => dt.name === selectedDimensionType.name
       );
-
-      await dapi
-        .deleteDimensionType(dimensionType.name)
-        .then(() => {
-          setShowDimTypeDeleteError(false);
-          setDimTypeDeleteError(null);
-          setDimensionTypes(
-            dimensionTypes.filter(
-              (dt) => dt.name !== selectedDimensionType.name
-            )
-          );
-          setSelectedDimensionType(null);
-        })
-        .catch((e) => {
-          setShowDimTypeDeleteError(true);
-          console.error(e);
-          if (instanceOfErrorDetail(e)) {
-            setDimTypeDeleteError(e.detail);
-          }
-        });
+      if (dimensionType) {
+        await dapi
+          .deleteDimensionType(dimensionType.name)
+          .then(() => {
+            setShowDimTypeDeleteError(false);
+            setDimTypeDeleteError(null);
+            setDimensionTypes(
+              dimensionTypes.filter(
+                (dt) => dt.name !== selectedDimensionType.name
+              )
+            );
+            setSelectedDimensionType(null);
+          })
+          .catch((e) => {
+            setShowDimTypeDeleteError(true);
+            console.error(e);
+            if (instanceOfErrorDetail(e)) {
+              setDimTypeDeleteError(e.detail);
+            }
+          });
+      }
     }
   };
 
@@ -475,7 +488,11 @@ export default function Datasets() {
             ]}
           />
           <div className={styles.primaryButtons}>
-            <Button bsStyle="primary" onClick={() => setShowDatasetModal(true)}>
+            <Button
+              bsStyle="primary"
+              onClick={() => setShowDatasetModal(true)}
+              disabled={userGroups.writeGroups.length === 0}
+            >
               Upload New Dataset
             </Button>
             <Button
