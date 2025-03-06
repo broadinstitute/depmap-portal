@@ -2,7 +2,7 @@ export function useSubmitButtonIsDisabled(
   requiredProperties: string[] | undefined,
   formData: any
 ) {
-  if (requiredProperties !== undefined) {
+  if (requiredProperties && formData) {
     const requiredFormValues = requiredProperties.map((prop) => {
       return formData[prop];
     });
