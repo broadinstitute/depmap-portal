@@ -27,9 +27,7 @@ export interface Props {
    *
    * @default undefined (included all value types)
    */
-  valueTypes?: Set<
-    "continuous" | "text" | "categorical" | "list_strings" | "binary"
-  >;
+  valueTypes?: Set<"continuous" | "text" | "categorical" | "list_strings">;
 
   /** Called when the height of the container <div> changes. Useful for modals
    * where the available height might be confined. */

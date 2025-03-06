@@ -1,5 +1,5 @@
 import React from "react";
-import { DepMap, enabledFeatures } from "@depmap/globals";
+import { DepMap, isElara } from "@depmap/globals";
 import { DataExplorerPlotConfig } from "@depmap/types";
 import StartScreenExample from "./StartScreenExample";
 import examples from "./examples.json";
@@ -8,7 +8,7 @@ import styles from "../../styles/DataExplorer2.scss";
 function toStaticUrl(relativeUrl: string) {
   const assetUrl = relativeUrl.trim().replace(/^\//, "");
 
-  if (enabledFeatures.elara) {
+  if (isElara) {
     return `static/${assetUrl}`;
   }
 
