@@ -11,6 +11,7 @@ import {
   ContextInfo,
   ContextNode,
   ContextSummary,
+  DataAvailabilitySummary,
   TabTypes,
   TreeType,
 } from "../models/types";
@@ -33,10 +34,27 @@ export const ContextExplorer = () => {
   ] = useState<{ value: string; label: string }[]>([]);
   const [contextInfo, setContextInfo] = useState<ContextInfo | null>(null);
 
-  const [allContextData, setAllContextData] = useState<ContextSummary>({
-    all_depmap_ids: [],
-    data_types: [],
-    values: [],
+  const [
+    allLineageContextData,
+    setAllLineageContextData,
+  ] = useState<DataAvailabilitySummary>({
+    summary: {
+      all_depmap_ids: [],
+      data_types: [],
+      values: [],
+    },
+    table: [],
+  });
+  const [
+    allMolecularSubtypeContextData,
+    setAllMolecularSubtypeContextData,
+  ] = useState<DataAvailabilitySummary>({
+    summary: {
+      all_depmap_ids: [],
+      data_types: [],
+      values: [],
+    },
+    table: [],
   });
 
   const [
@@ -74,7 +92,9 @@ export const ContextExplorer = () => {
     checkedDataValues,
     overlappingDepmapIds,
   } = getSelectionInfo(
-    allContextData,
+    selectedTreeType === TreeType.Lineage
+      ? allLineageContextData.summary
+      : allMolecularSubtypeContextData.summary,
     contextDataAvailability,
     selectedContextNode,
     checkedDatatypes
@@ -101,8 +121,14 @@ export const ContextExplorer = () => {
         })
       );
 
-      const contextData = await dapi.getContextDataAvailability();
-      setAllContextData(contextData);
+      const lineageContextData = await dapi.getContextDataAvailability(
+        TreeType.Lineage.toString()
+      );
+      const molSubtypeContextData = await dapi.getContextDataAvailability(
+        TreeType.MolecularSubtype.toString()
+      );
+      setAllLineageContextData(lineageContextData);
+      setAllMolecularSubtypeContextData(molSubtypeContextData);
 
       const params = qs.parse(window.location.search.substr(1));
       if (params.context) {
@@ -159,7 +185,10 @@ export const ContextExplorer = () => {
       setIsLoading(true);
       deleteSpecificQueryParams(["context"]);
 
-      if (allContextData && (contextNode || subtypeCode)) {
+      if (
+        (allMolecularSubtypeContextData || allLineageContextData) &&
+        (contextNode || subtypeCode)
+      ) {
         const context = await dapi.getContextPath(
           contextNode?.subtype_code || subtypeCode!
         );
@@ -189,7 +218,7 @@ export const ContextExplorer = () => {
       }
       setIsLoading(false);
     },
-    [allContextData, contextInfo, dapi]
+    [allLineageContextData, allMolecularSubtypeContextData, contextInfo, dapi]
   );
 
   const cellLineUrlRoot = useCallback(() => dapi.getCellLineUrlRoot(), [dapi]);
@@ -240,30 +269,38 @@ export const ContextExplorer = () => {
             )}
         </div>
         <section className={styles.tabContents}>
-          {topContextNameInfo && (
-            <ContextExplorerTabs
-              isLoadingInitialData={isLoading}
-              topContextNameInfo={topContextNameInfo}
-              selectedContextNameInfo={selectedContextNameInfo}
-              selectedContextNode={selectedContextNode}
-              treeType={selectedTreeType}
-              selectedContextData={selectedContextData}
-              checkedDataValues={checkedDataValues}
-              checkedDatatypes={checkedDatatypes}
-              updateDatatypeSelection={updateDatatypeSelection}
-              overlappingDepmapIds={overlappingDepmapIds}
-              overviewTableData={contextInfo ? contextInfo.table_data : []}
-              getCellLineUrlRoot={cellLineUrlRoot}
-              handleSetSelectedTab={setSelectedTab}
-              customInfoImg={customInfoImg}
-              handleSetPlotElement={(element: ExtendedPlotType | null) => {
-                if (selectedContextData) {
-                  setPlotElement(element);
+          {topContextNameInfo &&
+            (allLineageContextData.table.length > 0 ||
+              allMolecularSubtypeContextData.table.length > 0) && (
+              <ContextExplorerTabs
+                isLoadingInitialData={isLoading}
+                topContextNameInfo={topContextNameInfo}
+                selectedContextNameInfo={selectedContextNameInfo}
+                selectedContextNode={selectedContextNode}
+                treeType={selectedTreeType}
+                selectedContextData={selectedContextData}
+                checkedDataValues={checkedDataValues}
+                checkedDatatypes={checkedDatatypes}
+                updateDatatypeSelection={updateDatatypeSelection}
+                overlappingDepmapIds={overlappingDepmapIds}
+                overviewTableData={
+                  contextInfo
+                    ? contextInfo.table_data
+                    : allLineageContextData.table.length > 0
+                    ? allLineageContextData.table
+                    : allMolecularSubtypeContextData.table
                 }
-              }}
-              plotElement={plotElement}
-            />
-          )}
+                getCellLineUrlRoot={cellLineUrlRoot}
+                handleSetSelectedTab={setSelectedTab}
+                customInfoImg={customInfoImg}
+                handleSetPlotElement={(element: ExtendedPlotType | null) => {
+                  if (selectedContextData) {
+                    setPlotElement(element);
+                  }
+                }}
+                plotElement={plotElement}
+              />
+            )}
         </section>
       </main>
     </div>

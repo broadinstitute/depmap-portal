@@ -43,10 +43,20 @@ export interface Summary {
   values: boolean[][];
 }
 
+export interface AvailabilitySummary {
+  summary: Summary;
+  table: { [key: string]: string | boolean }[];
+}
+
 export interface ContextSummary {
   all_depmap_ids: [number, string][];
   data_types: string[];
   values: number[][];
+}
+
+export interface DataAvailabilitySummary {
+  summary: ContextSummary;
+  table: { [key: string]: string | boolean }[];
 }
 
 export interface ContextSelectionInfo {

@@ -538,8 +538,6 @@ export function getSelectionInfo(
     : allContextDatasetDataAvail.values;
 
   if (selectedContextData && validCheckedDataTypes.size > 0) {
-    console.log(selectedContextData);
-    console.log(allContextDatasetDataAvail);
     const newSelectedValuesOverlap = getUpdatedGraphInfoForSelection(
       validCheckedDataTypes,
       selectedContextData

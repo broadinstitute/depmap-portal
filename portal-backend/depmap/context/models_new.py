@@ -141,6 +141,30 @@ class SubtypeNode(Model):
         return query
 
     @staticmethod
+    def get_all_by_models_query(tree_type: TreeType):
+        query = (
+            db.session.query(SubtypeContext)
+            .join(SubtypeNode, SubtypeNode.subtype_code == SubtypeContext.subtype_code)
+            .filter(SubtypeNode.tree_type == TreeType(tree_type))
+            .join(DepmapModel, SubtypeContext.depmap_model)
+            .with_entities(
+                DepmapModel.model_id,
+                SubtypeNode.subtype_code,
+                SubtypeNode.level_0,
+                SubtypeNode.level_1,
+                SubtypeNode.level_2,
+                SubtypeNode.level_3,
+                SubtypeNode.level_4,
+                SubtypeNode.level_5,
+                SubtypeNode.node_name,
+                SubtypeNode.node_level,
+            )
+            .order_by(SubtypeNode.node_level)
+        )
+
+        return query
+
+    @staticmethod
     def get_model_ids_by_subtype_code_and_node_level(
         subtype_code: str, node_level: int
     ) -> List[str]:

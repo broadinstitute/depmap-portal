@@ -79,6 +79,8 @@ import {
   ContextExplorerDatasets,
   SearchOptionsByTreeType,
   ContextPathInfo,
+  AvailabilitySummary,
+  DataAvailabilitySummary,
 } from "src/contextExplorer/models/types";
 import {
   DataAvailability,
@@ -730,10 +732,16 @@ export class DepmapApi {
     );
   }
 
-  async getContextDataAvailability(): Promise<ContextSummary> {
-    const boolSummary = await this._fetch<Summary>(
-      "/api/context_explorer/context_summary"
+  async getContextDataAvailability(
+    tree_type: string
+  ): Promise<DataAvailabilitySummary> {
+    const params: any = { tree_type };
+    const summaryAndTable = await this._fetch<AvailabilitySummary>(
+      `/api/context_explorer/context_summary?${encodeParams(params)}`
     );
+
+    const boolSummary = summaryAndTable.summary;
+    const table = summaryAndTable.table;
 
     const dataAvailVals = boolSummary.values.map(
       (datatypeVals: boolean[], index: number) =>
@@ -744,13 +752,18 @@ export class DepmapApi {
         })
     );
 
-    return {
+    const contextSummary = {
       all_depmap_ids: boolSummary.all_depmap_ids,
       data_types: boolSummary.data_types,
       // The original True/False values returned from the backend are
       // mapped to color category integers. The integer maps to Heatmap.tsx's
       // color scale.
       values: dataAvailVals,
+    };
+
+    return {
+      summary: contextSummary,
+      table,
     };
   }
 

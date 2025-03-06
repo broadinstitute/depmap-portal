@@ -75,19 +75,44 @@ def _get_context_summary_df() -> pd.DataFrame:
     return transposed_summary
 
 
-def _get_context_summary():
+def _get_context_summary(tree_type: str):
+    subtype_tree_query = SubtypeNode.get_all_by_models_query(tree_type)
+
+    subtype_df = pd.read_sql(
+        subtype_tree_query.statement, subtype_tree_query.session.connection()
+    )
+    valid_models = subtype_df["model_id"].tolist()
+
     summary_df = _get_context_summary_df()
 
+    valid_models_summary_intersection = set.intersection(
+        set(summary_df.columns.tolist()), valid_models
+    )
+    subsetted_summary_df = summary_df[list(valid_models_summary_intersection)]
+
+    sorted_summary_df = (
+        subsetted_summary_df.transpose()
+        .sort_values(
+            by=["CRISPR", "RNAi", "WES", "WGS", "RNASeq", "PRISM"], ascending=False
+        )
+        .transpose()
+    )
+
     summary = {
-        "values": [row.values.tolist() for _, row in summary_df.iterrows()],
-        "data_types": summary_df.index.values.tolist(),
+        "values": [row.values.tolist() for _, row in sorted_summary_df.iterrows()],
+        "data_types": sorted_summary_df.index.values.tolist(),
     }
 
     summary["all_depmap_ids"] = [
-        (i, depmap_id) for i, depmap_id in enumerate(summary_df.columns.tolist())
+        (i, depmap_id) for i, depmap_id in enumerate(sorted_summary_df.columns.tolist())
     ]
 
-    return summary
+    subtype_df = subtype_df.set_index("model_id")
+    overview_data = _get_overview_table_data(
+        df=subtype_df, summary_df=sorted_summary_df
+    )
+
+    return summary, overview_data
 
 
 def _get_all_level_0_subtype_info(tree_type: TreeType) -> List[dict]:
@@ -223,14 +248,7 @@ class SubtypeDataAvailability(
         return data_availability
 
 
-def _get_overview_table_data(
-    df: pd.DataFrame, summary_df: pd.DataFrame
-) -> pd.DataFrame:
-    summary_df_by_model_id = summary_df.transpose()
-    overview_page_table = df
-
-    summary_df_by_model_id = summary_df_by_model_id.rename_axis("model_id")
-
+def _get_overview_table(overview_page_table, summary_df_by_model_id):
     cell_line_display_names = DepmapModel.get_cell_line_display_names(
         list(summary_df_by_model_id.index.values)
     )
@@ -260,6 +278,22 @@ def _get_overview_table_data(
     )
 
     overview_data = overview_page_table.to_dict("records")
+
+    return overview_data
+
+
+def _get_overview_table_data(
+    df: pd.DataFrame, summary_df: pd.DataFrame
+) -> pd.DataFrame:
+    summary_df_by_model_id = summary_df.transpose()
+    overview_page_table = df
+
+    summary_df_by_model_id = summary_df_by_model_id.rename_axis("model_id")
+
+    overview_data = _get_overview_table(
+        overview_page_table=overview_page_table,
+        summary_df_by_model_id=summary_df_by_model_id,
+    )
 
     return overview_data
 
@@ -331,7 +365,10 @@ class ContextSummary(
         List of available context trees as a dictionary with keys as each available non-terminal node, and values
         as each available branch off of the key-node
         """
-        return _get_context_summary()
+        tree_type = request.args.get("tree_type")
+        summary, overview_data = _get_context_summary(tree_type)
+
+        return {"summary": summary, "table": overview_data}
 
 
 def _get_analysis_data_table(
