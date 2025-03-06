@@ -526,14 +526,22 @@ export default function Datasets() {
             <Button
               bsStyle="default"
               onClick={() => handleEditDatasetButtonClick()}
-              disabled={selectedDatasetIds.size !== 1 || datasets.length === 1}
+              disabled={
+                selectedDatasetIds.size !== 1 ||
+                datasets.length === 1 ||
+                userGroups.writeGroups.length === 0
+              }
             >
               Edit Selected Dataset
             </Button>
             <Button
               bsStyle="danger"
               onClick={() => deleteDatasetButtonAction()}
-              disabled={selectedDatasetIds.size === 0 || datasets.length === 0}
+              disabled={
+                selectedDatasetIds.size === 0 ||
+                datasets.length === 0 ||
+                userGroups.writeGroups.length === 0
+              }
             >
               Delete Selected Dataset
             </Button>
