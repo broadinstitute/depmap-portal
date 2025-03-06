@@ -16,7 +16,7 @@ import { useSubmitButtonIsDisabled } from "../../utils/disableSubmitButton";
 
 interface DatasetEditFormProps {
   getDataTypesAndPriorities: () => Promise<InvalidPrioritiesByDataType>;
-  getGroups: () => Promise<Group[]>;
+  groups: Group[];
   datasetToEdit: Dataset;
   onSubmit: (
     datasetId: string,
@@ -29,12 +29,7 @@ const fields: RegistryFieldsType = {
 };
 
 export default function DatasetForm(props: DatasetEditFormProps) {
-  const {
-    getDataTypesAndPriorities,
-    getGroups,
-    datasetToEdit,
-    onSubmit,
-  } = props;
+  const { getDataTypesAndPriorities, groups, datasetToEdit, onSubmit } = props;
 
   const [schema, setSchema] = useState<RJSFSchema | null>(null);
   const [formDataVals, setFormDataVals] = useState<any>(null);
@@ -45,10 +40,7 @@ export default function DatasetForm(props: DatasetEditFormProps) {
   useEffect(() => {
     (async () => {
       try {
-        const [dataTypesPriorities, groups] = await Promise.all([
-          getDataTypesAndPriorities(),
-          getGroups(),
-        ]);
+        const dataTypesPriorities = await getDataTypesAndPriorities();
 
         const dataTypeOptions = Object.keys(dataTypesPriorities).map(
           (dType) => {
@@ -104,7 +96,7 @@ export default function DatasetForm(props: DatasetEditFormProps) {
         console.error(e);
       }
     })();
-  }, [getGroups, getDataTypesAndPriorities, datasetToEdit]);
+  }, [groups, getDataTypesAndPriorities, datasetToEdit]);
 
   const submitButtonIsDisabled = useSubmitButtonIsDisabled(
     schema?.required,
