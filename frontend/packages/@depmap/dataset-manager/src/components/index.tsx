@@ -4,10 +4,10 @@ import {
   DatasetParams,
   DatasetTableData,
   DatasetUpdateArgs,
-  // instanceOfErrorDetail,
   DimensionTypeAddArgs,
   DimensionTypeUpdateArgs,
   DimensionTypeWithCounts,
+  Group,
   instanceOfErrorDetail,
   TabularDataset,
 } from "@depmap/types";
@@ -28,6 +28,10 @@ export default function Datasets() {
   const { getApi } = useContext(ApiContext);
   const [dapi] = useState(() => getApi());
   const [datasets, setDatasets] = useState<Dataset[] | null>(null);
+  const [userGroups, setUserGroups] = useState<{
+    availableGroups: Group[];
+    writeGroups: Group[];
+  }>({ availableGroups: [], writeGroups: [] });
 
   const [initError, setInitError] = useState(false);
 
@@ -54,10 +58,7 @@ export default function Datasets() {
       dapi.updateDimensionType(dimTypeName, dimTypeArgs),
     [dapi]
   );
-  const getGroups = useCallback(() => dapi.getGroups(!isAdvancedMode), [
-    dapi,
-    isAdvancedMode,
-  ]); // write access set to true if not advanced mode
+
   const getDataTypesAndPriorities = useCallback(
     () => dapi.getDataTypesAndPriorities(),
     [dapi]
@@ -131,14 +132,19 @@ export default function Datasets() {
       try {
         let currentDatasets = await dapi.getBreadboxDatasets();
 
+        // write access set to true if not advanced mode
+        const availableGroups = await dapi.getGroups(!isAdvancedMode);
         if (!isAdvancedMode) {
-          const writeGroups = await dapi.getGroups(!isAdvancedMode);
-          const group_ids = writeGroups.map((group) => {
+          const group_ids = availableGroups.map((group) => {
             return group.id;
           });
           currentDatasets = currentDatasets.filter((dataset) =>
             group_ids.includes(dataset.group_id)
           );
+          setUserGroups({ availableGroups, writeGroups: availableGroups });
+        } else {
+          const writeGroups = await dapi.getGroups(true);
+          setUserGroups({ availableGroups, writeGroups });
         }
 
         setDatasets(currentDatasets);
@@ -163,7 +169,7 @@ export default function Datasets() {
         setInitError(true);
       }
     })();
-  }, [dapi, getDimensionTypes, getGroups, isAdvancedMode]);
+  }, [dapi, getDimensionTypes, isAdvancedMode]);
 
   const datasetForm = useCallback(() => {
     if (datasets) {
@@ -174,7 +180,7 @@ export default function Datasets() {
         formTitle = "Edit Dataset";
         datasetFormComponent = (
           <DatasetEditForm
-            getGroups={getGroups}
+            groups={userGroups.availableGroups}
             getDataTypesAndPriorities={getDataTypesAndPriorities}
             onSubmit={async (
               datasetId: string,
@@ -204,7 +210,7 @@ export default function Datasets() {
         datasetFormComponent = (
           <DatasetForm
             getDimensionTypes={getDimensionTypes}
-            getGroups={getGroups}
+            groups={userGroups.availableGroups}
             getDataTypesAndPriorities={getDataTypesAndPriorities}
             uploadFile={postFileUpload}
             uploadDataset={postDatasetUpload}
@@ -247,7 +253,7 @@ export default function Datasets() {
     isEditDatasetMode,
     datasetToEdit,
     showDatasetModal,
-    getGroups,
+    userGroups.availableGroups,
     getDataTypesAndPriorities,
     updateDataset,
     getDimensionTypes,
@@ -482,7 +488,11 @@ export default function Datasets() {
             ]}
           />
           <div className={styles.primaryButtons}>
-            <Button bsStyle="primary" onClick={() => setShowDatasetModal(true)}>
+            <Button
+              bsStyle="primary"
+              onClick={() => setShowDatasetModal(true)}
+              disabled={userGroups.writeGroups.length === 0}
+            >
               Upload New Dataset
             </Button>
             <Button

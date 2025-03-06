@@ -26,7 +26,7 @@ import styles from "../styles/styles.scss";
 interface DatasetFormProps {
   getDimensionTypes: () => Promise<DimensionType[]>;
   getDataTypesAndPriorities: () => Promise<InvalidPrioritiesByDataType>;
-  getGroups: () => Promise<Group[]>;
+  groups: Group[];
   uploadFile: (fileArgs: { file: File | Blob }) => Promise<UploadFileResponse>;
   uploadDataset: (datasetParams: DatasetParams) => Promise<any>;
   getTaskStatus: (taskIds: string) => Promise<CeleryTask>;
@@ -37,7 +37,7 @@ interface DatasetFormProps {
 export default function DatasetForm(props: DatasetFormProps) {
   const {
     getDimensionTypes,
-    getGroups,
+    groups,
     getDataTypesAndPriorities,
     uploadFile,
     uploadDataset,
@@ -110,7 +110,6 @@ export default function DatasetForm(props: DatasetFormProps) {
   const [sampleTypeOptions, setSampleTypesOptions] = useState<
     SampleDimensionType[]
   >([]);
-  const [groupOptions, setGroupsOptions] = useState<Group[]>([]);
   const [
     invalidPrioritiesByDataType,
     setInvalidPrioritiesByDataType,
@@ -128,14 +127,9 @@ export default function DatasetForm(props: DatasetFormProps) {
   useEffect(() => {
     (async () => {
       try {
-        const [
-          dataTypesPriorities,
-          dimensionTypes,
-          groups,
-        ] = await Promise.all([
+        const [dataTypesPriorities, dimensionTypes] = await Promise.all([
           getDataTypesAndPriorities(),
           getDimensionTypes(),
-          getGroups(),
         ]);
 
         const dataTypes = Object.keys(dataTypesPriorities).map((dType) => {
@@ -153,12 +147,11 @@ export default function DatasetForm(props: DatasetFormProps) {
         setDataTypeOptions(dataTypes);
         setFeatureTypesOptions(featureTypes);
         setSampleTypesOptions(sampleTypes);
-        setGroupsOptions(groups);
       } catch (e) {
         console.error(e);
       }
     })();
-  }, [getDimensionTypes, getGroups, getDataTypesAndPriorities]);
+  }, [getDimensionTypes, groups, getDataTypesAndPriorities]);
 
   /**
     checkStatus and reject functions influenced by ProgressTracker.tsx
@@ -309,7 +302,7 @@ export default function DatasetForm(props: DatasetFormProps) {
           <MatrixDatasetForm
             featureTypes={featureTypeOptions}
             sampleTypes={sampleTypeOptions}
-            groups={groupOptions}
+            groups={groups}
             dataTypes={dataTypeOptions}
             invalidDataTypePriorities={invalidPrioritiesByDataType}
             initFormData={formContent.matrix}
@@ -336,7 +329,7 @@ export default function DatasetForm(props: DatasetFormProps) {
         <>
           <TableDatasetForm
             dimensionTypes={dimensionTypeOptions}
-            groups={groupOptions}
+            groups={groups}
             dataTypes={dataTypeOptions}
             invalidDataTypePriorities={invalidPrioritiesByDataType}
             initFormData={formContent.table}
@@ -363,7 +356,7 @@ export default function DatasetForm(props: DatasetFormProps) {
     reject,
     featureTypeOptions,
     sampleTypeOptions,
-    groupOptions,
+    groups,
     dataTypeOptions,
     invalidPrioritiesByDataType,
     formContent,
