@@ -1,7 +1,6 @@
 import argparse
 import re
 import itertools
-import numpy as np
 import pandas as pd
 from taigapy import create_taiga_client_v3
 
@@ -36,9 +35,18 @@ def load_data(
     '''
     tc = create_taiga_client_v3()
 
+    # HACK   
+    # This is intended to use a temporary model file while waiting for a change in 
+    # the model table that is coming in 25q2. 
+    release_quarter = re.search('2[0-9]q[2|4]', model_taiga_id).group()
+    if release_quarter == '24q4':
+        model_taiga_id = temp_model_id
+
+    assert release_quarter == '24q4' 'If this assert gets hit, take out the above hack. We do not want to change the model_taiga_id\'s value anymore. This will also need to be removed in create_context_matrix.py on lines 18-25.'
+
     ## Load the models table
     #TODO FOR 25Q2: change taiga id to be model_taiga_id"
-    models = tc.get(temp_model_id)\
+    models = tc.get(model_taiga_id)\
             .loc[:,
                 ['ModelID', 'OncotreeCode', 'DepmapModelType',
                 'OncotreeLineage', 'OncotreePrimaryDisease',
@@ -167,7 +175,7 @@ def construct_new_table_node(new_code,
     new_node['NodeName'] = new_name
     new_node['NodeSource'] = new_source
     new_node[code_col] = new_code
-    new_node['OncotreeCode'] = np.nan #if we are adding a custom node, there is no existing Oncotree code
+    new_node['OncotreeCode'] = pd.NA #if we are adding a custom node, there is no existing Oncotree code
 
     #add code to the correct level
     new_node[f"Level{new_node.NodeLevel}"] = new_code
@@ -468,11 +476,11 @@ def create_molecular_subtype_tree(genetic_subtypes):
     #turn top level nodes into a dataframe
     mst_tree = pd.DataFrame(top_nodes)\
                 .assign(
-                    Level1=np.nan,
-                    Level2=np.nan,
-                    Level3=np.nan,
-                    Level4=np.nan,
-                    Level5=np.nan
+                    Level1=pd.NA,
+                    Level2=pd.NA,
+                    Level3=pd.NA,
+                    Level4=pd.NA,
+                    Level5=pd.NA
                 )
 
     #now for each gene with multiple subtypes, construct and add the subtree
@@ -505,7 +513,7 @@ def create_subtype_tree_with_names(subtype_tree):
     codes_to_names = {**onco_to_name, **gs_to_name}
     
     #force nans to be nans
-    codes_to_names[np.nan] = np.nan
+    codes_to_names[pd.NA] = pd.NA
 
     #copy the subtype tree and map all level columns to the names
     subtype_tree_names = subtype_tree.copy()

@@ -15,6 +15,16 @@ def load_data(
     '''
     tc = create_taiga_client_v3()
 
+    # HACK   
+    # This is intended to use a temporary model file while waiting for a change in 
+    # the model table that is coming in 25q2. 
+    release_quarter = re.search('2[0-9]q[2|4]', model_taiga_id).group()
+    if release_quarter == '24q4':
+        model_taiga_id = temp_model_id
+
+    assert release_quarter == '24q4' 'If this assert gets hit, take out the above hack. We do not want to change the model_taiga_id\'s value anymore.'
+
+
     ## Load the models table
     #TODO FOR 25Q2: change taiga id to be model_taiga_id
     models = tc.get(temp_model_id)\

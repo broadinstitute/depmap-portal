@@ -17,7 +17,7 @@ rule create_context_matrix:
     inputs:
         model={"type": "model"},
         molecular_subtypes={"type": "omics_inferred_molecular_subtype"},
-        subtype_tree={"type": "subtype_tree"}
+        subtype_tree={"type": "subtype_tree"},
         script=fileref('../scripts/subtype_tree/create_context_matrix.py'),
     outputs:
         {
