@@ -168,7 +168,7 @@
             {% include "entities/partials/async_cards.js" %}
             {% for group in order %}
               {% for tile_name, _ in group %}
-                loadAsyncTile("{{ config.APPLICATION_ROOT }}", "compound", "{{tile_name}}", "{{name}}", "{{tile_name}}_placeholder")
+                loadAsyncTile("{{ config.APPLICATION_ROOT }}", "compound", {{tile_name | tojson}}, {{name | tojson }}, "{{tile_name}}_placeholder")
               {% endfor %}
             {% endfor %}
         });
@@ -181,11 +181,11 @@
             $(function () { // document ready for middle-of-html js
                 DepMap.initPredictiveTab(
                     'predictive-tab-root',
-                    "{{ name }}",
-                    "{{ name }}",
+                    {{ name | tojson }},
+                    {{ name | tojson }},
                     "compound",
-                    "{{ predictability_custom_downloads_link }}",
-                    "{{ predictability_methodology_link | safe}}"
+                    {{ predictability_custom_downloads_link | tojson }} ,
+                    {{ predictability_methodology_link | tojson }}
                 );
             });
         </script>
