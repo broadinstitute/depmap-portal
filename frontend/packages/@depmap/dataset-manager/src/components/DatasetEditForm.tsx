@@ -124,32 +124,6 @@ export default function DatasetForm(props: DatasetEditFormProps) {
     return formUiSchema;
   }, [submitButtonIsDisabled]);
 
-  const submitButtonIsDisabled = useSubmitButtonIsDisabled(
-    schema?.required,
-    formDataVals
-  );
-
-  const uiSchema = React.useMemo(() => {
-    const formUiSchema: UiSchema = {
-      "ui:title": "", // removes the title <legend> html element
-      dataset_metadata: {
-        "ui:field": "TagInputMetadata",
-      },
-      format: {
-        "ui:widget": "hidden",
-      },
-      group_id: {
-        "ui:title": "Group", // override original title from schema
-      },
-      "ui:submitButtonOptions": {
-        props: {
-          disabled: submitButtonIsDisabled,
-        },
-      },
-    };
-    return formUiSchema;
-  }, [submitButtonIsDisabled]);
-
   return schema && formDataVals ? (
     <Form
       formData={formDataVals}
