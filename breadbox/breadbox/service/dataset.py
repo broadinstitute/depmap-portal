@@ -583,6 +583,9 @@ def update_dimension_type(
                 f"Metadata table {given_updated_fields['metadata_dataset_id']} was not indexed by {dimension_type.name}",
             )
 
+        if metadata_dataset.group_id != PUBLIC_GROUP_ID:
+            raise DatasetAccessError("Metadata dataset must be from 'Public' group!")
+
         if dimension_type.dataset != metadata_dataset:
             assert metadata_dataset.index_type_name == dimension_type.name
             old_dataset = dimension_type.dataset
