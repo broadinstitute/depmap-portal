@@ -41,7 +41,6 @@ from breadbox.schemas.types import (
     DimensionIdentifiers,
 )
 from breadbox.service import metadata as metadata_service
-from .settings import assert_is_admin_user
 from breadbox.db.util import transaction
 
 
@@ -57,6 +56,13 @@ log = getLogger(__name__)
 from breadbox.schemas.custom_http_exception import FileValidationError
 from typing import Dict
 from pydantic import Json
+
+
+def assert_is_admin_user(user: str, settings: Settings):
+    if user not in settings.admin_users:
+        raise HTTPException(
+            403, "You do not have permission to modify dimension types."
+        )
 
 
 @router.post(
