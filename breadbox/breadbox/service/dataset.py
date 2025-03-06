@@ -564,10 +564,7 @@ def update_dimension_type(
 ):
     given_updated_fields = dimension_type_update_fields.dict(exclude_unset=True)
 
-    if (
-        "metadata_dataset_id" in given_updated_fields
-        and "properties_to_index" in given_updated_fields
-    ):
+    if "metadata_dataset_id" in given_updated_fields:
         metadata_dataset = get_dataset(
             db, user, given_updated_fields["metadata_dataset_id"]
         )
@@ -602,12 +599,13 @@ def update_dimension_type(
                 delete_dataset(db, user, old_dataset, filestore_location)
 
         db.flush()
-        set_properties_to_index(
-            db,
-            given_updated_fields["properties_to_index"],
-            dimension_type.name,
-            metadata_dataset.group_id,
-        )
+        if "properties_to_index" in given_updated_fields:
+            set_properties_to_index(
+                db,
+                given_updated_fields["properties_to_index"],
+                dimension_type.name,
+                metadata_dataset.group_id,
+            )
 
         populate_search_index_after_update(db, dimension_type)
 

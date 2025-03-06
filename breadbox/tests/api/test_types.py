@@ -65,13 +65,13 @@ def test_all_dimension_type_methods(client: TestClient, minimal_db, settings):
         data_df=pd.DataFrame({"sample_id": ["Y"], "label": ["X"]}),
     )
 
-    # Make sure if only metadata_dataset_id or properties_to_index is provided, throw and error. Both should be provided when dimension type metadata is changed
+    # Make sure if only properties_to_index is provided, throw and error. It should only be provided when there is dimension type metadata
     response = client.patch(
         "/types/dimensions/sample_id_name",
         json=({"metadata_dataset_id": new_metadata.id}),
         headers=admin_headers,
     )
-    assert_status_not_ok(response)
+    assert_status_ok(response)
     response = client.patch(
         "/types/dimensions/sample_id_name",
         json=({"properties_to_index": ["label"]}),
