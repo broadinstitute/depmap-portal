@@ -2434,6 +2434,26 @@ files = [
 ]
 
 [[package]]
+name = "packed-cor-tables"
+version = "0.2.0"
+description = "Library for reading/writing compressed correlation tables"
+optional = false
+python-versions = ">=3.9,<4.0"
+files = [
+    {file = "packed_cor_tables-0.2.0-py3-none-any.whl", hash = "sha256:618a001722fb78449ddbe3c34357ec96216d0f07531841b8af26bf70ac684d6c"},
+    {file = "packed_cor_tables-0.2.0.tar.gz", hash = "sha256:e04df111aec7e7b1b1757484c691a266f75af228ec399ae1ac485d8fadaf6afc"},
+]
+
+[package.dependencies]
+numpy = ">=1.26.3,<2.0.0"
+pandas = ">=1.1.0,<2.0.0"
+
+[package.source]
+type = "legacy"
+url = "https://us-central1-python.pkg.dev/cds-artifacts/public-python/simple"
+reference = "public-python"
+
+[[package]]
 name = "pandas"
 version = "1.5.3"
 description = "Powerful data structures for data analysis, time series, and statistics"
@@ -4112,4 +4132,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "jaraco.test", "more
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "fe151add93a3cea5e9d1a35919b58e25484391a047a250de78d235c51cd393e9"
+content-hash = "d20c69418b20883ccfa0ae382389645abe2d168b50ec619576fb93399178c201"

@@ -187,3 +187,6 @@ portal-backend/access.log
 
 # predictability output_data from local run
 output_data/
+data-prep-pipeline/state
+
+portal-backend/gcscache
