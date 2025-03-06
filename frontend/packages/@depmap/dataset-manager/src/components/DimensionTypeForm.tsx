@@ -12,7 +12,6 @@ import {
 } from "@depmap/types";
 import { useSubmitButtonIsDisabled } from "../../utils/disableSubmitButton";
 
-
 interface DimensionTypeFormProps {
   onSubmit: (formData: any) => Promise<void>;
   dimensionTypeToEdit: DimensionTypeWithCounts | null;
@@ -31,9 +30,12 @@ export default function DimensionTypeForm(props: DimensionTypeFormProps) {
 
   React.useEffect(() => {
     if (isEditMode && dimensionTypeToEdit) {
-      const datasetsWithDimensionType: TabularDataset[] = datasets.filter(
+      const publicDatasetsWithDimensionType: TabularDataset[] = datasets.filter(
         (d) => {
-          return d.index_type_name === dimensionTypeToEdit.name;
+          return (
+            d.index_type_name === dimensionTypeToEdit.name &&
+            d.group.name === "Public"
+          );
         }
       );
       const dimensionTypeEditSchemaWithOptions = {
@@ -46,13 +48,13 @@ export default function DimensionTypeForm(props: DimensionTypeFormProps) {
             default: null, // must include default null with enum options otherwise UI renders 2 null options
             enum: [
               null,
-              ...datasetsWithDimensionType.map((d) => {
+              ...publicDatasetsWithDimensionType.map((d) => {
                 return d.id;
               }),
             ],
             enumNames: [
               "None",
-              ...datasetsWithDimensionType.map((d) => {
+              ...publicDatasetsWithDimensionType.map((d) => {
                 return d.name;
               }),
             ],
