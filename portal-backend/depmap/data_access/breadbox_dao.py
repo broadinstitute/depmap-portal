@@ -50,6 +50,32 @@ def get_all_matrix_datasets() -> list[MatrixDataset]:
     return matrix_datasets
 
 
+def get_filtered_matrix_datasets(
+        feature_id: Optional[str] = None,
+        feature_type: Optional[str] = None,
+        sample_id: Optional[str] = None,
+        sample_type: Optional[str] = None,
+        value_type: Optional[str] = None,
+) -> list[MatrixDataset]:
+    """Load a filtered set of datasets (no caching used). Filtering is done on the breadbox side."""
+    datasets = extensions.breadbox.client.get_datasets(
+        feature_id=feature_id,
+        feature_type=feature_type,
+        sample_id=sample_id,
+        sample_type=sample_type,
+        value_type=value_type,
+    )
+    matrix_datasets = []
+    for dataset in datasets:
+        if dataset.format_ == MatrixDatasetResponseFormat.MATRIX_DATASET:
+            assert isinstance(dataset, MatrixDatasetResponse)
+            parsed_dataset = parse_matrix_dataset_response(dataset)
+            matrix_datasets.append(parsed_dataset)
+    return matrix_datasets
+
+
+
+
 def get_breadbox_given_ids() -> set[str]:
     given_ids = set()
     for dataset in _get_breadbox_datasets_with_caching():

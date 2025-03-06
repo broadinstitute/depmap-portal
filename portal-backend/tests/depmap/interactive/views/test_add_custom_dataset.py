@@ -9,7 +9,7 @@ import pytest
 from flask import url_for
 
 from depmap import data_access
-from depmap.vector_catalog.trees import ContinuousValuesTree, InteractiveTree
+from depmap.vector_catalog.trees import InteractiveTree
 from depmap.vector_catalog.models import SliceSerializer, SliceRowType
 from depmap.interactive.nonstandard.models import CustomDatasetConfig
 from tests.factories import CellLineFactory
@@ -82,33 +82,12 @@ def test_full_custom_taiga_workflow(
         assert "datasetId" in response["result"]
         dataset_id = response["result"]["datasetId"]
 
-        # Test that can get feature
-        params = {
-            "catalog": "continuous",
-            "id": "custom_dataset/" + dataset_id,
-            "prefix": mock_taiga_client_feature,
-        }
-        r = c.get(url_for("vector_catalog.catalog_children", **params))
-        assert r.status_code == 200
-        response = json.loads(r.data.decode("utf8"))
-
-        assert {
-            "id": SliceSerializer.encode_slice_id(
-                dataset_id, mock_taiga_client_feature, SliceRowType.label
-            ),
-            "childValue": mock_taiga_client_feature,
-            "label": mock_taiga_client_feature,
-            "terminal": True,
-            "url": None,
-            "group": None,
-        } in response["children"]
-
         # Test that can get features
         params = MultiDict(
             [
                 (
                     "features",
-                    ContinuousValuesTree.get_id_from_dataset_feature(
+                    InteractiveTree.get_id_from_dataset_feature( # slice id for the feature
                         dataset_id, mock_taiga_client_feature
                     ),
                 )
@@ -150,33 +129,12 @@ def test_full_custom_csv_workflow(
         assert "datasetId" in response["result"]
         dataset_id = response["result"]["datasetId"]
 
-        # Test that can get feature
-        params = {
-            "catalog": "continuous",
-            "id": "custom_dataset/" + dataset_id,
-            "prefix": custom_csv_feature,
-        }
-        r = c.get(url_for("vector_catalog.catalog_children", **params))
-
-        assert r.status_code == 200
-        response = json.loads(r.data.decode("utf8"))
-        assert {
-            "id": SliceSerializer.encode_slice_id(
-                dataset_id, custom_csv_feature, SliceRowType.label
-            ),
-            "childValue": custom_csv_feature,
-            "label": custom_csv_feature,
-            "terminal": True,
-            "url": None,
-            "group": None,
-        } in response["children"]
-
         # Test that can get plot points
         params = MultiDict(
             [
                 (
                     "features",
-                    ContinuousValuesTree.get_id_from_dataset_feature(
+                    InteractiveTree.get_id_from_dataset_feature(
                         dataset_id, custom_csv_feature
                     ),
                 )

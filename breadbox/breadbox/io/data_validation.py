@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 from pandas.api.types import is_numeric_dtype, is_string_dtype, is_bool_dtype
 import pandera as pa
-from pandera.errors import SchemaError
+from pandera.errors import SchemaError, SchemaErrorReason
 from fastapi import UploadFile
 from sqlalchemy import and_, or_
 
@@ -613,43 +613,39 @@ def _validate_tabular_df_schema(
     schema = pa.DataFrameSchema(
         {
             k: pa.Column(
-                annotation_type_to_pandas_column_type(
-                    v.col_type
-                ),  # annotation_type_to_pandera_column_type(v.col_type),
-                nullable=False if dimension_type_identifier == k else True,
+                annotation_type_to_pandas_column_type(v.col_type),
+                coerce=True,  # SchemaErrorReason: DATATYPE_COERCION
+                nullable=False
+                if dimension_type_identifier == k
+                else True,  # SchemaErrorReason: SERIES_CONTAINS_NULLS
                 checks=get_checks_for_col(v.col_type),
-                unique=dimension_type_identifier == k,
+                unique=dimension_type_identifier == k,  # SchemaErrorReason: DUPLICATES
             )
             for k, v in columns_metadata.items()
         },
         index=None,
-        strict=True,  # Df only contains columns in schema
+        strict=True,  # Df only contains columns in schema. SchemaErrorReason: COLUMN_NOT_IN_SCHEMA or COLUMN_NOT_IN_DATAFRAME
     )
 
     # NOTE: missing values are denoted as pd.NA
-    df = pd.read_csv(
-        file_path,
-        dtype={
-            k: annotation_type_to_pandas_column_type(v.col_type)
-            for k, v in columns_metadata.items()
-        },
-    )
+    try:
+        df = pd.read_csv(
+            file_path,
+            dtype={
+                k: annotation_type_to_pandas_column_type(v.col_type)
+                for k, v in columns_metadata.items()
+            },
+        )
+    except ValueError as val_e:
+        raise FileValidationError(str(val_e)) from val_e
     try:
         validated_df = schema.validate(df)
     except SchemaError as schema_error:
         error_msg = str(schema_error)
-        if schema_error.check is not None:
-            if (
-                hasattr(schema_error.check, "name")
-                and schema_error.check.name == "can_parse_list_strings"
-            ):
-                if schema_error.failure_cases is not None and hasattr(
-                    schema_error.failure_cases, "failure_case"
-                ):
-                    error_msg = str(schema_error.failure_cases.failure_case[0])
-            if isinstance(schema_error.check, str):
-                error_msg = schema_error.check
-            # error message returned for failed json deserialization is long so truncate it
+        if schema_error.reason_code == SchemaErrorReason.COLUMN_NOT_IN_SCHEMA:
+            # Original error msg: "column '{column_name}' not in DataFrameSchema <schema>"
+            # Modify error message vocabulary to be more intuitive to users
+            error_msg = error_msg.split("DataFrameSchema")[0] + "Columns Metadata"
 
         raise FileValidationError(error_msg) from schema_error
     return validated_df

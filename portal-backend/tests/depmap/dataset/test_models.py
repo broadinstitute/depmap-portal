@@ -11,7 +11,6 @@ from depmap.dataset.models import (
     Fusion,
 )
 from depmap.gene.models import Gene
-from depmap.compound.models import CompoundExperiment
 from depmap.database import transaction
 from depmap.utilities.exception import InvalidDatasetEnumError
 from loader.cell_line_loader import load_cell_lines_metadata
@@ -31,10 +30,8 @@ from tests.factories import (
     TranslocationFactory,
     CompoundFactory,
     CompoundExperimentFactory,
-    CompoundDoseReplicateFactory,
 )
 from tests.utilities.df_test_utils import load_sample_cell_lines
-from tests.utilities import interactive_test_utils
 from tests.utilities.override_fixture import override
 from depmap.settings.settings import TestConfig
 from depmap.access_control import PUBLIC_ACCESS_GROUP
@@ -358,82 +355,6 @@ def test_get_compound_experiment_datasets_with_compound(empty_db_mock_downloads)
     assert len(expected_pairs) == len(result)
 
     assert result == expected_pairs
-
-
-def test_get_compound_experiments_in_dataset_with_compound(empty_db_mock_downloads):
-    """
-    This funciton can retrieve CompoundExperiments or CompoundDoseReplicates depending on the dataset
-    Test both cases
-    """
-    # test for compound experiment
-    compound = CompoundFactory()
-    compound_exp_1 = CompoundExperimentFactory(compound=compound)  # in two datasets
-    compound_exp_2 = CompoundExperimentFactory(compound=compound)
-    compound_exp_other_dataset = CompoundExperimentFactory(compound=compound)
-
-    compound_exp_no_dataset = CompoundExperimentFactory(
-        compound=compound
-    )  # unused variable because name describes purpose
-    compound_exp_different_compound = CompoundExperimentFactory()
-
-    matrix_1 = MatrixFactory(
-        entities=[compound_exp_1, compound_exp_2, compound_exp_different_compound]
-    )
-    dataset_1 = DependencyDatasetFactory(
-        name=DependencyDataset.DependencyEnum.GDSC1_AUC, matrix=matrix_1
-    )
-    matrix_2 = MatrixFactory(entities=[compound_exp_other_dataset])
-    dataset_2 = DependencyDatasetFactory(
-        name=DependencyDataset.DependencyEnum.CTRP_AUC, matrix=matrix_2
-    )
-    empty_db_mock_downloads.session.flush()
-
-    result = DependencyDataset.get_compound_experiments_in_dataset_with_compound(
-        DependencyDataset.DependencyEnum.GDSC1_AUC.name, compound.entity_id
-    )
-
-    assert set(result) == {compound_exp_1, compound_exp_2}
-
-    # test for compound dose replicate
-    compound_dose_replicate_1 = CompoundDoseReplicateFactory(
-        compound_experiment=compound_exp_1
-    )  # in two datasets
-    compound_dose_replicate_2 = CompoundDoseReplicateFactory(
-        compound_experiment=compound_exp_2
-    )
-    compound_dose_replicate_other_dataset = CompoundDoseReplicateFactory(
-        compound_experiment=compound_exp_other_dataset
-    )
-
-    compound_dose_replicate_no_dataset = CompoundDoseReplicateFactory(
-        compound_experiment=compound_exp_no_dataset
-    )  # unused variable because name describes purpose
-    compound_dose_replicate_different_compound = CompoundDoseReplicateFactory()
-
-    matrix_1 = MatrixFactory(
-        entities=[
-            compound_dose_replicate_1,
-            compound_dose_replicate_2,
-            compound_dose_replicate_different_compound,
-        ]
-    )
-    dataset_1 = DependencyDatasetFactory(
-        name=DependencyDataset.DependencyEnum.CTRP_dose_replicate, matrix=matrix_1
-    )
-    matrix_2 = MatrixFactory(entities=[compound_dose_replicate_other_dataset])
-    dataset_2 = DependencyDatasetFactory(
-        name=DependencyDataset.DependencyEnum.Repurposing_secondary_dose_replicate,
-        matrix=matrix_2,
-    )
-    empty_db_mock_downloads.session.flush()
-
-    result = DependencyDataset.get_compound_experiments_in_dataset_with_compound(
-        DependencyDataset.DependencyEnum.CTRP_dose_replicate.name, compound.entity_id
-    )
-
-    # this should still return compound EXPERIMENTS, not dose replicates. But it correctly surmises that this dose replicate dataset contains this compound
-    assert all([isinstance(entity, CompoundExperiment) for entity in result])
-    assert set(result) == {compound_exp_1, compound_exp_2}
 
 
 def test_dependency_dataset_has_entity(empty_db_mock_downloads):
@@ -785,95 +706,6 @@ def test_mutation_get_non_silent_rows(empty_db_mock_downloads):
     mutation_ids = df["mutation_id"].values
     for mutation in [mut1, mut2]:
         assert mutation.mutation_id in mutation_ids
-
-
-def test_get_dose_replicate_datasets_info_by_compound_id(empty_db_mock_downloads):
-    """
-    Tests that the dataframe returns dose replicate datasets
-    """
-    # Unqueried compound example
-    compound_1 = CompoundFactory()
-
-    compound_2 = CompoundFactory()
-    compound_experiment_1 = CompoundExperimentFactory(
-        label="exp_label_1", compound=compound_2
-    )
-    compound_experiment_2 = CompoundExperimentFactory(
-        label="exp_label_2", compound=compound_2
-    )
-
-    # Unqueried compound experiment example
-    compound_experiment_3 = CompoundExperimentFactory(
-        label="exp_label_3", compound=compound_1
-    )
-
-    cpd_dose_rep_1 = CompoundDoseReplicateFactory(
-        compound_experiment=compound_experiment_1, dose=10
-    )
-    cpd_dose_rep_2 = CompoundDoseReplicateFactory(
-        compound_experiment=compound_experiment_1, dose=20
-    )
-    cpd_dose_rep_3 = CompoundDoseReplicateFactory(
-        compound_experiment=compound_experiment_2, dose=0.0005
-    )
-
-    # Unqueried compound dose replicate example
-    cpd_dose_rep_4 = CompoundDoseReplicateFactory(
-        compound_experiment=compound_experiment_3, dose=0.02
-    )
-
-    cell_lines = [CellLineFactory(), CellLineFactory(), CellLineFactory()]
-
-    matrix_1 = MatrixFactory(
-        entities=[cpd_dose_rep_1, cpd_dose_rep_2], cell_lines=cell_lines,
-    )
-    matrix_2 = MatrixFactory(
-        entities=[cpd_dose_rep_3],
-        cell_lines=[CellLineFactory(), CellLineFactory(), CellLineFactory()],
-    )
-
-    # Unqueried matrix example
-    matrix_3 = MatrixFactory(
-        entities=[cpd_dose_rep_4],
-        cell_lines=[CellLineFactory(), CellLineFactory(), CellLineFactory()],
-    )
-
-    dataset_1 = DependencyDatasetFactory(
-        name=DependencyDataset.DependencyEnum.GDSC1_dose_replicate, matrix=matrix_1
-    )
-    dataset_2 = DependencyDatasetFactory(
-        name=DependencyDataset.DependencyEnum.CTRP_dose_replicate, matrix=matrix_2
-    )
-
-    # Unqueried dataset example
-    dataset_3 = DependencyDatasetFactory(
-        name=DependencyDataset.DependencyEnum.GDSC2_dose_replicate, matrix=matrix_3
-    )
-
-    empty_db_mock_downloads.session.flush()
-
-    # we just created a new datasets so reload the datasets from the DB
-    interactive_test_utils.reload_interactive_config()
-
-    df = DependencyDataset.get_dose_replicate_datasets_info_by_compound_id(
-        compound_2.entity_id
-    )
-    expected_cols = [
-        "dataset_id",
-        "name",
-        "display_name",
-        "taiga_id",
-        "cell_line_count",
-        "compound_experiment_id",
-        "compound_id",
-        "max_dose",
-        "min_dose",
-    ]
-    assert set(df.columns) == set(expected_cols)
-    # There should be 2 datasets returned
-    assert len(df) == 2
-    # Compound id check
-    assert all(x == compound_2.entity_id for x in df["compound_id"])
 
 
 def test_get_datasets_in_order(empty_db_mock_downloads):
