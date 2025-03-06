@@ -54,6 +54,11 @@ def home():
         "private_dataset/index.html",
         datasets=datasets,
         data_explorer_url=url_for("data_explorer_2.view_data_explorer_2"),
+        data_manager_instructions_url=url_for(
+            "public.resources",
+            subcategory="ortal-custom-uploads-downloads-and-api",
+            topic="portal-custom-uploads-downloads-and-api",
+        ),
         groups=[
             {"groupId": k, "displayName": v.display_name}
             for k, v in visible_owner_ids.items()

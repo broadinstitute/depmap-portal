@@ -470,23 +470,51 @@ export default function Datasets() {
     <>
       <div className="container-fluid">
         <div>
-          <h1>Datasets</h1>
-          {showDatasetDeleteError && (selectedDatasetIds.size !== 0) !== null && (
-            <Alert bsStyle="danger">
-              <strong>Dataset Delete Failed!</strong>{" "}
-              {datasetDeleteError !== null ? datasetDeleteError : null}
-            </Alert>
-          )}
+          <h1>Data Manager</h1>
           <ToggleSwitch
             value={isAdvancedMode}
             onChange={(newValue: boolean) => {
               setIsAdvancedMode(newValue);
             }}
             options={[
-              { label: "Simple", value: false },
+              { label: "UI Mode: Simple", value: false },
               { label: "Advanced", value: true },
             ]}
           />
+
+          <div style={{ margin: "10px", width: "800px" }}>
+            <p>
+              Data Manager allows users to upload custom data into the portal
+              for use along side any DepMap produced datasets.
+            </p>
+            <p>
+              At the very top of this page, you will see a control for choosing
+              between the &quot;Advanced&quot; or the &quot;Simple&quot; modes
+              of the UI. Most users should use the &quot;Simple&quot; mode as
+              this streamline the process of uploading data. Using this mode,
+              data that is uploaded will appear in Data Explorer under the data
+              type &quot;User Uploads&quot;.
+            </p>
+            <p>
+              To upload a dataset, click the &quot;Upload new dataset&quot;
+              button and fill out the corresponding form. Upon clicking
+              &quot;Submit&quot; the process will start and may take a few
+              seconds to complete. Once the upload is complete, either
+              &quot;Success&quot; or a validation error will be reported at the
+              bottom of the form. Once &quot;Success&quot; has been reported,
+              you can close the form to return to the list of
+              &quot;Datasets&quot; which should now include your newly added
+              dataset.
+            </p>
+          </div>
+
+          <h2>Datasets</h2>
+          {showDatasetDeleteError && (selectedDatasetIds.size !== 0) !== null && (
+            <Alert bsStyle="danger">
+              <strong>Dataset Delete Failed!</strong>{" "}
+              {datasetDeleteError !== null ? datasetDeleteError : null}
+            </Alert>
+          )}
           <div className={styles.primaryButtons}>
             <Button
               bsStyle="primary"
@@ -586,7 +614,7 @@ export default function Datasets() {
 
         {isAdvancedMode ? (
           <div>
-            <h1>Dimension Types</h1>
+            <h2>Dimension Types</h2>
 
             {showDimTypeDeleteError && selectedDimensionType !== null && (
               <Alert bsStyle="danger">
