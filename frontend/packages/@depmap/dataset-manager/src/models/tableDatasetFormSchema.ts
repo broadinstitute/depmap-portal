@@ -120,7 +120,7 @@ export const tableFormSchema: Required<Pick<RJSFSchema, "properties">> &
         $ref: "#/definitions/ColumnMetadata",
       },
       description:
-        "Dictionary containing info about each column in the table dataset format.",
+        "Information about each column in the dataset such as its type and any references",
     },
   },
 };
