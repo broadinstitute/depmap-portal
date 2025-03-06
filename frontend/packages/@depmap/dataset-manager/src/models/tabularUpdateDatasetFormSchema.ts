@@ -19,19 +19,19 @@ export const tabularUpdateFormSchema: Required<Pick<RJSFSchema, "properties">> &
       type: "string",
       format: "uuid",
       title: "Group Id",
-      description: "Id of the group the dataset belongs to",
+      description: "The group the dataset belongs to",
     },
     priority: {
       type: ["integer", "null"],
       title: "Priority",
       description:
-        "Numeric value representing priority of the dataset within its `data_type`",
+        "Numeric value representing priority of the dataset within its data type, with `1` being highest priority",
     },
     dataset_metadata: {
       type: ["object", "null"],
       title: "Dataset Metadata",
       description:
-        "A dictionary of additional dataset metadata that is not already provided",
+        "Additional dataset information that is not already provided in above form",
     },
     format: {
       type: "string",
