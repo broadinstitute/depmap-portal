@@ -7,7 +7,8 @@ import plotlyCore from "plotly.js/lib/core";
 import scattergl from "plotly.js/lib/scattergl";
 import violin from "plotly.js/lib/violin";
 import groupby from "plotly.js/lib/groupby";
+import heatmap from "plotly.js/lib/heatmap";
 
-plotlyCore.register([scattergl, violin, groupby]);
+plotlyCore.register([scattergl, violin, heatmap, groupby]);
 
 export default plotlyCore;

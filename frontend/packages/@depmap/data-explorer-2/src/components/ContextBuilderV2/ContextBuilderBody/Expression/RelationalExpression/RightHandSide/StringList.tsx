@@ -1,6 +1,12 @@
-import React, { useRef } from "react";
+import React, {
+  ClipboardEventHandler,
+  useCallback,
+  useMemo,
+  useRef,
+} from "react";
 import cx from "classnames";
 import Select, { Props as ReactSelectProps } from "react-select";
+import { getConfirmation } from "@depmap/common-components";
 import { useContextBuilderState } from "../../../../state/ContextBuilderState";
 import { scrollParentIntoView } from "../../../../utils/domUtils";
 import OptimizedSelectOption from "../../../../../OptimizedSelectOption";
@@ -26,21 +32,127 @@ const selectStyles: ReactSelectProps["styles"] = {
   }),
 };
 
+const confirmPasteUnknownTokens = (unknownTokens: string[]) => {
+  return getConfirmation({
+    title: "Unknown data detected",
+    message: (
+      <div>
+        <div>No DepMap data could be found for the following values:</div>
+        {unknownTokens.map((token) => (
+          <div key={token}>{token}</div>
+        ))}
+        <br />
+        <div>Are you sure you want to paste those values?</div>
+      </div>
+    ),
+    yesText: "Yes, I know what I’m doing",
+    noText: "No, discard them",
+    showModalBackdrop: false,
+  });
+};
+
+async function pastedTextToSliceLabels(
+  pastedText: string,
+  options: { label: string }[] | undefined
+) {
+  if (!options) {
+    return [];
+  }
+
+  const text = pastedText.trim();
+  let separator: string | RegExp = /\s+/;
+
+  if (/\r?\n/.test(text)) {
+    separator = /\r?\n/;
+  }
+
+  if (text.includes(",")) {
+    separator = ",";
+  }
+
+  if (text.includes("\t")) {
+    separator = "\t";
+  }
+
+  const setOfOptions = new Set(options.map((o) => o.label));
+
+  const tokens = text
+    .split(separator)
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+  const filtered = tokens.filter((s) => setOfOptions.has(s));
+
+  if (filtered.length > 50000) {
+    // eslint-disable-next-line no-alert
+    window.alert("Sorry, too many values.");
+    return [];
+  }
+
+  if (filtered.length < tokens.length) {
+    const unknownTokens = tokens.filter((s) => !setOfOptions.has(s));
+    const ok = await confirmPasteUnknownTokens(unknownTokens);
+
+    return ok ? tokens : filtered;
+  }
+
+  return filtered;
+}
+
 function StringList({ expr, path, domain, isLoading }: Props) {
   const ref = useRef<HTMLDivElement>(null);
   const { dispatch, shouldShowValidation } = useContextBuilderState();
 
-  const options = domain
-    ? domain.unique_values.map((value) => ({ value, label: value }))
-    : [];
+  const options = useMemo(
+    () =>
+      domain
+        ? domain.unique_values?.map((value) => ({ value, label: value }))
+        : [],
+    [domain]
+  );
 
-  // TODO: Implement copy/paste
+  const handleCopy: ClipboardEventHandler<HTMLDivElement> = useCallback(
+    (e) => {
+      if (expr) {
+        e.clipboardData.setData("text/plain", expr.join("\r\n"));
+      }
+
+      e.preventDefault();
+    },
+    [expr]
+  );
+
+  const handlePaste: ClipboardEventHandler<HTMLDivElement> = useCallback(
+    async (e) => {
+      const pastedText = (e.clipboardData || window.clipboardData).getData(
+        "text"
+      );
+
+      e.preventDefault();
+      e.currentTarget?.blur();
+
+      const pastedLabels = await pastedTextToSliceLabels(pastedText, options);
+      const uniqueLabels = new Set([...(expr || []), ...pastedLabels]);
+
+      if (uniqueLabels.size > 0) {
+        dispatch({
+          type: "update-value",
+          payload: {
+            path,
+            value: [...uniqueLabels],
+          },
+        });
+      }
+    },
+    [expr, path, options, dispatch]
+  );
+
   return (
     <div
       className={styles.ListSelect}
       ref={ref}
-      // onCopy={handleCopy}
-      // onPaste={handlePaste}
+      onCopy={handleCopy}
+      onPaste={handlePaste}
     >
       <Select
         isMulti
