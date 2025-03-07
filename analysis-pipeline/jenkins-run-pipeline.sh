@@ -107,6 +107,9 @@ else
   # Clean up unused directories from past runs
   run_via_container "conseq gc"
 
+  # Add diagnostic commands to check conseq's Python environment
+  run_via_container "which conseq && conseq --version && which python && python -c 'import sys; print(sys.executable)' && python -c 'import sys; print(sys.path)' && python -m pip list | grep taiga"
+
   # Kick off new run
   set +e
   run_via_container "conseq run --addlabel commitsha=${COMMIT_SHA} --no-reattach --maxfail 20 --remove-unknown-artifacts -D sparkles_path=/install/sparkles/bin/sparkles -D is_dev=False $CONSEQ_FILE $CONSEQ_ARGS"
