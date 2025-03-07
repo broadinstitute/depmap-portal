@@ -76,11 +76,12 @@ function run_via_container {
       -v "${PIPELINE_RUNNER_CREDS_DIR}/sparkles:/root/.sparkles-cache" \
       -v "${PIPELINE_RUNNER_CREDS_DIR}/depmap-pipeline-runner.json":/etc/google_default_creds.json \
       -v "${TAIGA_DIR}:/root/.taiga" \
+      -v /var/run/docker.sock:/var/run/docker.sock \
       -e GOOGLE_APPLICATION_CREDENTIALS=/etc/google_default_creds.json \
       -w /work/analysis-pipeline \
       --name "$JOB_NAME" \
       ${DOCKER_IMAGE} \
-      bash -c "source /aws-keys/broad-paquitas && POETRY_ENV=\$(poetry env info -p) && export PATH=\$POETRY_ENV/bin:\$PATH && echo 'Python path:' && which python && echo 'Python version:' && python --version && echo 'Installed packages:' && pip list | grep taiga && echo 'Running command:' && $COMMAND"
+      bash -c "source /aws-keys/broad-paquitas && $COMMAND"
 }
 
 # use /data2/depmap-pipeline-taiga as the taiga dir because
@@ -109,8 +110,7 @@ else
 
   # Kick off new run
   set +e
-  # Add debugging to see which Python is being used by conseq
-  run_via_container "which conseq && cat \$(which conseq) | head -n 5 && conseq run --addlabel commitsha=${COMMIT_SHA} --no-reattach --maxfail 20 --remove-unknown-artifacts -D sparkles_path=/install/sparkles/bin/sparkles -D is_dev=False $CONSEQ_FILE $CONSEQ_ARGS"
+  run_via_container "conseq run --addlabel commitsha=${COMMIT_SHA} --no-reattach --maxfail 20 --remove-unknown-artifacts -D sparkles_path=/install/sparkles/bin/sparkles -D is_dev=False $CONSEQ_FILE $CONSEQ_ARGS"
   RUN_EXIT_STATUS=$?
   set -e
   
