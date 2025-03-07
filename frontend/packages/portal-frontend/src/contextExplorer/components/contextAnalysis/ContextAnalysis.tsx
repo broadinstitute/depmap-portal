@@ -725,9 +725,11 @@ function ContextAnalysis({
             </div>
           )}
           {!error && !isLoading && selectedContextNameInfo.name === "All" ? (
-            <h1 style={{ textAlign: "center", color: "#808080" }}>
-              Select A More Specific Context
-            </h1>
+            <div style={{ height: "100vh" }}>
+              <h1 style={{ textAlign: "center", color: "#808080" }}>
+                Select A More Specific Context
+              </h1>
+            </div>
           ) : (
             !error &&
             !isLoading &&

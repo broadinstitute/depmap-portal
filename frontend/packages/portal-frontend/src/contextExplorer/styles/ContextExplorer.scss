@@ -70,7 +70,7 @@
   margin: 2px auto;
   padding-top: 20px;
   padding-bottom: none;
-  // height: calc(100vh - 50px);
+  height: calc(100vh - 50px);
 }
 
 .header {
@@ -164,13 +164,13 @@
   flex-direction: column;
   margin-left: 0px;
   overflow: visible;
+  height: 100%;
 }
 
 .overviewPlotWrapper {
   display: flex;
   flex-direction: row;
   .datatypeSelector {
-    // grid-column: 1;
     margin-right: 10px;
     align-self: normal;
     font-family: roboto;
@@ -334,7 +334,6 @@
 .plotContainer {
   display: flex;
   flex-direction: column;
-  width: 71%;
   margin-left: 14px;
   margin-right: 14px;
   margin-bottom: 12px;
@@ -357,12 +356,11 @@
 }
 
 .geneDepPage {
-  display: flex;
-  flex-direction: row;
-  height: 100%;
+  display: grid;
+  grid-template-columns: 3fr 1fr;
 
   @media (max-width: 1050px) {
-    flex-direction: column;
+    grid-template-columns: auto;
   }
 }
 
@@ -580,8 +578,6 @@
 .right {
   display: flex;
   flex-direction: column;
-  width: 400px;
-  min-width: 400px;
   overflow: hidden;
   margin-left: 0;
   margin-right: 0;
@@ -589,6 +585,8 @@
   background: #697caa1a;
   padding-left: 15px;
   padding-right: 15px;
+  min-width: 400px;
+  max-width: 400px;
   .plotFrame {
     margin-bottom: 20px;
     @media (max-width: 1050px) {

@@ -438,7 +438,7 @@ const LeftSearchPanel = (lineageSearchProps: LeftSearchPanelProps) => {
     handleSetSelectedTreeType,
   } = lineageSearchProps;
   return (
-    <div style={{ height: "100%", color: "red", gridColumn: 1 }}>
+    <div style={{ height: "100%", gridColumn: 1 }}>
       <fieldset className={styles.lineageSelection}>
         <Tabs
           className={styles.Tabs}
