@@ -1,0 +1,26 @@
+# Legacy Data
+
+add-if-missing {
+  "type": "rnai_data",
+  "dataset_id": "demeter2-combined-dc9c.19/gene_means_proc"
+}
+
+add-if-missing {
+  "type": "rnai_confounders",
+  "dataset_id": "confounders-f38f.2/demeter2-combined-v12-confounders"
+}
+
+add-if-missing {
+  "type": "oncref_confounders",
+  "dataset_id": "prism-oncology-reference-set-23q4-1a7c.11/PRISM_Oncology_Reference_23Q4_Confounders"
+}
+
+add-if-missing {
+  "type": "rep_single_pt_confounders",
+  "dataset_id": "repurposing-public-23q2-341f.10/Repurposing_Public_23Q2_Extended_Matrix_Confounders"
+}
+
+add-if-missing {
+  "type": "metabolomics",
+  "dataset_id": "metabolomics-cd0c.4/CCLE_metabolomics_20190502"
+}

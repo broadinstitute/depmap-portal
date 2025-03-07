@@ -1,0 +1,10 @@
+eval """
+import subprocess
+subprocess.check_call(["python", "preprocess_taiga_ids.py", 
+                        "predictability_inputs_internal.template", 
+                        "predictability_inputs_internal-DO-NOT-EDIT-ME"])
+"""
+
+include "predictability_inputs_internal-DO-NOT-EDIT-ME"
+
+include "fit.conseq"

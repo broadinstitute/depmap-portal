@@ -1,5 +1,3 @@
-include "predictability_inputs.conseq"
-
 # Three Steps:
 # 1. Generate a daintree input config file for each model and screen
 # 2. Run the model fitting
@@ -50,6 +48,9 @@ rule run_fit_models:
         daintree_input_config={
           "type": "daintree_input_config"
           },
+        release_taiga_id={
+          "type": "release_taiga_id"
+          },
         sparkles_config=fileref("sparkles-config", copy_to="sparkles-config")
     outputs:
         {
@@ -78,7 +79,7 @@ rule run_fit_models:
         "--sparkles-config", "/daintree/sparkles-config",
         "--out", "/daintree/output_data",
         "--test", "True",
-        "--upload-to-taiga", "predictability-76d5",
+        "--upload-to-taiga", "{{ inputs.release_taiga_id.dataset_id }}",
       ]
 
       subprocess.run(
