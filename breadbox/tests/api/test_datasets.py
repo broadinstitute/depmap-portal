@@ -2704,7 +2704,7 @@ class TestPost:
                     "label": {"col_type": "text"},
                     "col_1": {"units": "a unit", "col_type": "continuous"},
                     "col_2": {"col_type": "text"},
-                    "col_3": {"col_type": "binary"},
+                    "col_3": {"col_type": "categorical"},
                     "col_4": {"col_type": "categorical"},
                     "col_5": {"col_type": "list_strings"},
                 },
@@ -2772,7 +2772,7 @@ class TestPost:
             "label": {"ACH-1": "other_label_1"},
             "col_1": {"ACH-1": 1},
             "col_2": {"ACH-1": "hi"},
-            "col_3": {"ACH-1": False},
+            "col_3": {"ACH-1": "False"},
             "col_4": {"ACH-1": "cat1"},
             "col_5": {"ACH-1": ["a"]},
         }
@@ -2788,7 +2788,7 @@ class TestPost:
             "label": {"ACH-1": "other_label_1", "ACH-2": "other_label_2"},
             "col_1": {"ACH-1": 1, "ACH-2": None},
             "col_2": {"ACH-1": "hi", "ACH-2": "bye"},
-            "col_3": {"ACH-1": False, "ACH-2": None},
+            "col_3": {"ACH-1": "False", "ACH-2": None},
             "col_4": {"ACH-1": "cat1", "ACH-2": "cat2"},
             "col_5": {"ACH-1": ["a"], "ACH-2": None},
         }
@@ -2800,7 +2800,7 @@ class TestPost:
             "label": {"ACH-1": "other_label_1", "ACH-2": "other_label_2"},
             "col_1": {"ACH-1": 1, "ACH-2": None},
             "col_2": {"ACH-1": "hi", "ACH-2": "bye"},
-            "col_3": {"ACH-1": False, "ACH-2": None},
+            "col_3": {"ACH-1": "False", "ACH-2": None},
             "col_4": {"ACH-1": "cat1", "ACH-2": "cat2"},
             "col_5": {"ACH-1": ["a"], "ACH-2": None},
         }

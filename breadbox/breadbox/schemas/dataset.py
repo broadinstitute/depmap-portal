@@ -29,7 +29,6 @@ class ValueType(enum.Enum):
 class AnnotationType(enum.Enum):
     continuous = "continuous"
     categorical = "categorical"
-    binary = "binary"
     text = "text"
     list_strings = "list_strings"
 
@@ -215,7 +214,7 @@ class ColumnMetadata(BaseModel):
     col_type: Annotated[
         AnnotationType,
         Field(
-            description="Annotation type for the column. Annotation types may include: `continuous`, `categorical`, `binary`, `text`, or `list_strings`."
+            description="Annotation type for the column. Annotation types may include: `continuous`, `categorical`, `text`, or `list_strings`."
         ),
     ]
 
