@@ -70,7 +70,7 @@ def _get_in_group_out_group_model_ids(
 
 
 def _get_dose_response_curves_per_model(
-    in_group_model_ids: Dict[str, str],
+    in_group_model_ids: List[str],
     out_group_model_ids: List[str],
     replicate_dataset_name: str,
     compound_experiment: CompoundExperiment,
@@ -86,11 +86,13 @@ def _get_dose_response_curves_per_model(
         if DependencyDataset.has_entity(dataset.name, dose_rep.entity_id)
     ]
 
+    in_group_model_display_names = DepmapModel.get_cell_line_display_names(
+        list(set(in_group_model_ids))
+    )
+
     in_group_curve_params = get_curve_params_for_model_ids(
         model_ids=in_group_model_ids,
-        model_display_names_by_model_id=pd.Series(
-            data=in_group_model_ids, index=in_group_model_ids
-        ),
+        model_display_names_by_model_id=in_group_model_display_names,
         compound_experiment=compound_experiment,
     )
 
