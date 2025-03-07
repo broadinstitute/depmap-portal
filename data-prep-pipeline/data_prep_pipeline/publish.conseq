@@ -21,48 +21,48 @@ rule publish_filtered_portal_compounds:
 rule publish_driver_events:
     inputs:
         driver_events_data={"type": "predictability_driver_events"},
-        predictability_taiga_id={"type": "predictability_taiga_id"},
+        release_taiga_id={"type": "release_taiga_id"},
         update_taiga_script=fileref('upload_to_taiga.py')
     outputs:{"type": "predictability_driver_events_published"}
 
-    run "python3 {{inputs.update_taiga_script.filename}} {{inputs.predictability_taiga_id.dataset_id}} 'Generated driver events data for predictability'  'PredictabilityDriverEventsTransformed' {{inputs.driver_events_data.filename}} 'csv_matrix'"
+    run "python3 {{inputs.update_taiga_script.filename}} {{inputs.release_taiga_id.dataset_id}} 'Generated driver events data for predictability'  'PredictabilityDriverEventsTransformed' {{inputs.driver_events_data.filename}} 'csv_matrix'"
 
 
 rule publish_genetic_derangement:
     inputs:
         genetic_derangement_data={"type": "predictability_genetic_derangement"},
-        predictability_taiga_id={"type": "predictability_taiga_id"},
+        release_taiga_id={"type": "release_taiga_id"},
         update_taiga_script=fileref('upload_to_taiga.py')
     outputs:{"type": "predictability_genetic_derangement_published"}
 
-    run "python3 {{inputs.update_taiga_script.filename}} {{inputs.predictability_taiga_id.dataset_id}} 'Generated genetic derangement data for predictability'  'PredictabilityGeneticDerangementTransformed' {{inputs.genetic_derangement_data.filename}} 'csv_matrix'"
+    run "python3 {{inputs.update_taiga_script.filename}} {{inputs.release_taiga_id.dataset_id}} 'Generated genetic derangement data for predictability'  'PredictabilityGeneticDerangementTransformed' {{inputs.genetic_derangement_data.filename}} 'csv_matrix'"
 
 
 rule publish_fusion:
     inputs:
         fusion_data={"type": "predictability_fusion"},
-        predictability_taiga_id={"type": "predictability_taiga_id"},
+        release_taiga_id={"type": "release_taiga_id"},
         update_taiga_script=fileref('upload_to_taiga.py')
     outputs:{"type": "predictability_fusion_published"}
 
-    run "python3 {{inputs.update_taiga_script.filename}} {{inputs.predictability_taiga_id.dataset_id}} 'Generated fusion data for predictability'  'PredictabilityFusionTransformed' {{inputs.fusion_data.filename}} 'csv_matrix'"
+    run "python3 {{inputs.update_taiga_script.filename}} {{inputs.release_taiga_id.dataset_id}} 'Generated fusion data for predictability'  'PredictabilityFusionTransformed' {{inputs.fusion_data.filename}} 'csv_matrix'"
 
 
 rule publish_lineage:
     inputs:
         lineage_data={"type": "predictability_lineage"},
-        predictability_taiga_id={"type": "predictability_taiga_id"},
+        release_taiga_id={"type": "release_taiga_id"},
         update_taiga_script=fileref('upload_to_taiga.py')
     outputs:{"type": "predictability_lineage_published"}
 
-    run "python3 {{inputs.update_taiga_script.filename}} {{inputs.predictability_taiga_id.dataset_id}} 'Generated lineage data for predictability'  'PredictabilityLineageTransformed' {{inputs.lineage_data.filename}} 'csv_matrix'"
+    run "python3 {{inputs.update_taiga_script.filename}} {{inputs.release_taiga_id.dataset_id}} 'Generated lineage data for predictability'  'PredictabilityLineageTransformed' {{inputs.lineage_data.filename}} 'csv_matrix'"
 
 
 rule publish_crispr_confounders:
     inputs:
         crispr_confounders_data={"type": "predictability_crispr_confounders"},
-        predictability_taiga_id={"type": "predictability_taiga_id"},
+        release_taiga_id={"type": "release_taiga_id"},
         update_taiga_script=fileref('upload_to_taiga.py')
     outputs:{"type": "predictability_crispr_confounders_published"}
 
-    run "python3 {{inputs.update_taiga_script.filename}} {{inputs.predictability_taiga_id.dataset_id}} 'Generated CRISPR confounders data for predictability'  'PredictabilityCRISPRConfoundersTransformed' {{inputs.crispr_confounders_data.filename}} 'csv_matrix'"
+    run "python3 {{inputs.update_taiga_script.filename}} {{inputs.release_taiga_id.dataset_id}} 'Generated CRISPR confounders data for predictability'  'PredictabilityCRISPRConfoundersTransformed' {{inputs.crispr_confounders_data.filename}} 'csv_matrix'"
