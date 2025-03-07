@@ -47,8 +47,10 @@
             {% endif %}
             <li role="separator" class="divider"></li>
               <li><a class="cursor-pointer" onclick="DepMap.launchContextManagerModal()">Context Manager</a></li>
-            {% if config.ENABLED_FEATURES.private_datasets %}
+            {% if config.ENABLED_FEATURES.data_manager %}
                 <li><a href="{{ url_for("datasets.view_dataset_manager") }}">Data Manager</a></li>
+            {% endif %}
+            {% if config.ENABLED_FEATURES.private_datasets %}
                 <li><a href="{{ url_for('private_dataset.home') }}">Private Datasets <i class="alpha-tag"><b>Deprecated</b></i></a></li>
             {% endif %}
             {% if config.EXTERNAL_TOOLS %}

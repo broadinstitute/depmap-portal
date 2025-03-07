@@ -15,6 +15,6 @@ def view_dataset_manager():
     """
     Entry point for dataset manager
     """
-    if not current_app.config["ENABLED_FEATURES"].access_control_and_private_resources:
+    if not current_app.config["ENABLED_FEATURES"].data_manager:
         abort(404)
     return render_template("dataset_manager/index.html")

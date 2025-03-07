@@ -128,10 +128,6 @@ class FeatureFlags:
         return self.is_dmc_like()
 
     @property
-    def access_control_and_private_resources(self):
-        return self.is_skyros() or self.is_dmc_like()
-
-    @property
     def resources_page(self):
         return not self.is_only_peddep_and_i_have_a_good_reason()
 
@@ -163,6 +159,12 @@ class FeatureFlags:
 
     @property
     def private_datasets(self):
+        # for the moment, we'll keep private datasets in DMC until the
+        # migration
+        return self.is_only_dmc_and_i_have_a_good_reason()
+
+    @property
+    def data_manager(self):
         return self.is_prerelease_env()
 
     @property
