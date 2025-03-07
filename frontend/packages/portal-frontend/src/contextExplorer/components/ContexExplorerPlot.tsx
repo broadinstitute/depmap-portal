@@ -78,8 +78,7 @@ function ContextExplorerPlot(props: ContextExplorerPlotProps) {
 
     saveNewContext(context);
   };
-  console.log("here!!!!!");
-  console.log(data);
+
   const xVals = useMemo(() => {
     return data.all_depmap_ids.map((item) => item[1]);
   }, [data]);
@@ -149,7 +148,7 @@ function ContextExplorerPlot(props: ContextExplorerPlotProps) {
 
               b: 0,
 
-              t: 25,
+              t: 0,
 
               pad: 0,
             }}
@@ -174,7 +173,7 @@ function ContextExplorerPlot(props: ContextExplorerPlotProps) {
                 display: "grid",
                 gridTemplateRows: `repeat(${
                   cellLineCountsForwards.length + 1
-                }, ${CONTEXT_EXPL_BAR_THICKNESS - 1}px)`,
+                }, ${CONTEXT_EXPL_BAR_THICKNESS}px)`,
                 marginLeft: "5px",
               }}
             >
@@ -185,7 +184,9 @@ function ContextExplorerPlot(props: ContextExplorerPlotProps) {
                   alignSelf: "center",
                 }}
               >
-                <h5 style={{ paddingBottom: "10px" }}># OF CELL LINES</h5>
+                <h5 style={{ paddingBottom: "0px", fontStyle: "normal" }}>
+                  # OF CELL LINES
+                </h5>
               </div>
               {cellLineCountsForwards.map((count, index) => (
                 <div

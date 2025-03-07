@@ -92,8 +92,8 @@ function Heatmap({
     ];
 
     const axisTemplate: Partial<Plotly.LayoutAxis> = {
-      showgrid: false,
-      visible: false,
+      showgrid: true,
+      visible: true,
     };
 
     const layout: Partial<Plotly.Layout> = customWidth

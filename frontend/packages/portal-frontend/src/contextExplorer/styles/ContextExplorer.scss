@@ -197,11 +197,10 @@
   .numbersAxis {
     margin-left: 6px;
     margin-right: 15px;
-    min-width: 105px;
+    min-width: 115px;
 
     & > div {
       font-size: 16px;
-      padding-bottom: 22px;
       margin: 2px;
     }
 
@@ -209,8 +208,8 @@
       font-style: normal;
       font-size: 14px;
       font-weight: bold;
-      padding-bottom: 11px;
-      margin-top: 4px;
+      padding-bottom: 12px;
+      margin-top: 14px;
     }
   }
 
@@ -219,11 +218,12 @@
     width: 75%;
 
     .plotHeaders {
+      align-content: flex-start;
       & > h5 {
         font-style: normal;
         font-size: 14px;
         font-weight: bold;
-        margin-top: 14px;
+        padding-bottom: 12px;
       }
     }
   }

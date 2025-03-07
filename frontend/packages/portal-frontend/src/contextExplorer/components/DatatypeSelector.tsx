@@ -50,13 +50,13 @@ const DatatypeSelector = (props: Props) => {
         style={{
           display: "grid",
           alignItems: "center",
-          gridTemplateRows: `repeat(${datatypes.length + 1}, ${
-            CONTEXT_EXPL_BAR_THICKNESS - 1
-          }px)`,
+          gridTemplateRows: `repeat(${
+            datatypes.length + 1
+          }, ${CONTEXT_EXPL_BAR_THICKNESS}px)`,
         }}
       >
         <div>
-          <h5>DATASETS</h5>
+          <h5 style={{ fontStyle: "normal" }}>DATASETS</h5>
         </div>
         {display}
       </div>

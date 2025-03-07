@@ -201,6 +201,18 @@ def get_child_subtype_summary_df(subtype_code: str):
     all_model_ids = SubtypeNode.get_model_ids_by_subtype_code_and_node_level(
         subtype_code, node.node_level
     )
+
+    #####################
+    # TEMP HACK... I think.
+    #######################
+    test = _get_context_summary_df()
+    valid_model_ids = set(test.columns.tolist())
+    corrected_all_model_ids = list(
+        set.intersection(valid_model_ids, set(all_model_ids))
+    )
+    ########################
+    #######################
+
     for child_node in node_children:
         model_ids = SubtypeNode.get_model_ids_by_subtype_code_and_node_level(
             subtype_code=child_node.subtype_code, node_level=child_node.node_level
@@ -209,12 +221,13 @@ def get_child_subtype_summary_df(subtype_code: str):
             continue
         model_id_availability = [
             is_model_available(model_id=model_id, node_model_ids=model_ids)
-            for model_id in all_model_ids
+            for model_id in corrected_all_model_ids
         ]
         model_avail_by_node_code[child_node.subtype_code] = model_id_availability
 
     subtype_avail_df = pd.DataFrame(
-        data=model_avail_by_node_code, index=pd.Index(all_model_ids, name="ModelID"),
+        data=model_avail_by_node_code,
+        index=pd.Index(corrected_all_model_ids, name="ModelID"),
     )
 
     return subtype_avail_df
