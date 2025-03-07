@@ -249,7 +249,7 @@ export const ContextExplorer = () => {
         </p>
       </header>
       <main className={styles.main}>
-        <div className={styles.filters}>
+        <div className={styles.mainContent}>
           {lineageSearchOptions &&
             molecularSubtypeSearchOptions &&
             selectedTreeType &&
@@ -267,41 +267,41 @@ export const ContextExplorer = () => {
                 handleSetSelectedTreeType={setSelectedTreeType}
               />
             )}
-        </div>
-        <section className={styles.tabContents}>
-          {topContextNameInfo &&
-            (allLineageContextData.table.length > 0 ||
-              allMolecularSubtypeContextData.table.length > 0) && (
-              <ContextExplorerTabs
-                isLoadingInitialData={isLoading}
-                topContextNameInfo={topContextNameInfo}
-                selectedContextNameInfo={selectedContextNameInfo}
-                selectedContextNode={selectedContextNode}
-                treeType={selectedTreeType}
-                selectedContextData={selectedContextData}
-                checkedDataValues={checkedDataValues}
-                checkedDatatypes={checkedDatatypes}
-                updateDatatypeSelection={updateDatatypeSelection}
-                overlappingDepmapIds={overlappingDepmapIds}
-                overviewTableData={
-                  contextInfo
-                    ? contextInfo.table_data
-                    : allLineageContextData.table.length > 0
-                    ? allLineageContextData.table
-                    : allMolecularSubtypeContextData.table
-                }
-                getCellLineUrlRoot={cellLineUrlRoot}
-                handleSetSelectedTab={setSelectedTab}
-                customInfoImg={customInfoImg}
-                handleSetPlotElement={(element: ExtendedPlotType | null) => {
-                  if (selectedContextData) {
-                    setPlotElement(element);
+          <section className={styles.tabContents}>
+            {topContextNameInfo &&
+              (allLineageContextData.table.length > 0 ||
+                allMolecularSubtypeContextData.table.length > 0) && (
+                <ContextExplorerTabs
+                  isLoadingInitialData={isLoading}
+                  topContextNameInfo={topContextNameInfo}
+                  selectedContextNameInfo={selectedContextNameInfo}
+                  selectedContextNode={selectedContextNode}
+                  treeType={selectedTreeType}
+                  selectedContextData={selectedContextData}
+                  checkedDataValues={checkedDataValues}
+                  checkedDatatypes={checkedDatatypes}
+                  updateDatatypeSelection={updateDatatypeSelection}
+                  overlappingDepmapIds={overlappingDepmapIds}
+                  overviewTableData={
+                    contextInfo
+                      ? contextInfo.table_data
+                      : allLineageContextData.table.length > 0
+                      ? allLineageContextData.table
+                      : allMolecularSubtypeContextData.table
                   }
-                }}
-                plotElement={plotElement}
-              />
-            )}
-        </section>
+                  getCellLineUrlRoot={cellLineUrlRoot}
+                  handleSetSelectedTab={setSelectedTab}
+                  customInfoImg={customInfoImg}
+                  handleSetPlotElement={(element: ExtendedPlotType | null) => {
+                    if (selectedContextData) {
+                      setPlotElement(element);
+                    }
+                  }}
+                  plotElement={plotElement}
+                />
+              )}
+          </section>
+        </div>
       </main>
     </div>
   );

@@ -438,72 +438,73 @@ const LeftSearchPanel = (lineageSearchProps: LeftSearchPanelProps) => {
     handleSetSelectedTreeType,
   } = lineageSearchProps;
   return (
-    <fieldset className={styles.lineageSelection}>
-      <Tabs
-        className={styles.Tabs}
-        id={"context-explorer-tree-tabs"}
-        activeKey={selectedTreeType}
-        onSelect={(index) => {
-          console.log(index);
-          handleSetSelectedTreeType(index);
-          onRefineYourContext(null, null);
-        }}
-      >
-        <Tab
-          id="lineage"
-          eventKey={TreeType.Lineage.toString()}
-          title={"Lineage"}
-          className={styles.Tab}
+    <div style={{ height: "100%", color: "red", gridColumn: 1 }}>
+      <fieldset className={styles.lineageSelection}>
+        <Tabs
+          className={styles.Tabs}
+          id={"context-explorer-tree-tabs"}
+          activeKey={selectedTreeType}
+          onSelect={(index) => {
+            handleSetSelectedTreeType(index);
+            onRefineYourContext(null, null);
+          }}
         >
-          <section
-            style={{ overflow: "visible" }}
-            className={styles.lineageTabContents}
+          <Tab
+            id="lineage"
+            eventKey={TreeType.Lineage.toString()}
+            title={"Lineage"}
+            className={styles.Tab}
           >
-            <div className={styles.TabPanels}>
-              <div className={styles.TabPanel}>
-                <ContextTree
-                  key="lineage"
-                  searchOptions={lineageSearchOptions}
-                  contextTree={contextTree}
-                  onRefineYourContext={onRefineYourContext}
-                  topContextNameInfo={topContextNameInfo}
-                  selectedContextNode={selectedContextNode}
-                  selectedTab={selectedTab}
-                  selectedTreeType={selectedTreeType}
-                  customInfoImg={customInfoImg}
-                />
+            <section
+              style={{ overflow: "visible" }}
+              className={styles.lineageTabContents}
+            >
+              <div className={styles.TabPanels}>
+                <div className={styles.TabPanel}>
+                  <ContextTree
+                    key="lineage"
+                    searchOptions={lineageSearchOptions}
+                    contextTree={contextTree}
+                    onRefineYourContext={onRefineYourContext}
+                    topContextNameInfo={topContextNameInfo}
+                    selectedContextNode={selectedContextNode}
+                    selectedTab={selectedTab}
+                    selectedTreeType={selectedTreeType}
+                    customInfoImg={customInfoImg}
+                  />
+                </div>
               </div>
-            </div>
-          </section>
-        </Tab>
-        <Tab
-          title={"Molecular Subtype"}
-          eventKey={TreeType.MolecularSubtype.toString()}
-          className={styles.Tab}
-        >
-          <section
-            style={{ overflow: "visible" }}
-            className={styles.lineageTabContents}
+            </section>
+          </Tab>
+          <Tab
+            title={"Molecular Subtype"}
+            eventKey={TreeType.MolecularSubtype.toString()}
+            className={styles.Tab}
           >
-            <div className={styles.TabPanels}>
-              <div className={styles.TabPanel}>
-                <ContextTree
-                  key="molecularySubtype"
-                  searchOptions={molecularSubtypeSearchOptions}
-                  contextTree={contextTree}
-                  onRefineYourContext={onRefineYourContext}
-                  topContextNameInfo={topContextNameInfo}
-                  selectedContextNode={selectedContextNode}
-                  selectedTab={selectedTab}
-                  selectedTreeType={selectedTreeType}
-                  customInfoImg={customInfoImg}
-                />
+            <section
+              style={{ overflow: "visible" }}
+              className={styles.lineageTabContents}
+            >
+              <div className={styles.TabPanels}>
+                <div className={styles.TabPanel}>
+                  <ContextTree
+                    key="molecularySubtype"
+                    searchOptions={molecularSubtypeSearchOptions}
+                    contextTree={contextTree}
+                    onRefineYourContext={onRefineYourContext}
+                    topContextNameInfo={topContextNameInfo}
+                    selectedContextNode={selectedContextNode}
+                    selectedTab={selectedTab}
+                    selectedTreeType={selectedTreeType}
+                    customInfoImg={customInfoImg}
+                  />
+                </div>
               </div>
-            </div>
-          </section>
-        </Tab>
-      </Tabs>
-    </fieldset>
+            </section>
+          </Tab>
+        </Tabs>
+      </fieldset>
+    </div>
   );
 };
 

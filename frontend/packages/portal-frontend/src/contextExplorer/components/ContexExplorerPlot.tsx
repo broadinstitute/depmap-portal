@@ -78,6 +78,7 @@ function ContextExplorerPlot(props: ContextExplorerPlotProps) {
 
     saveNewContext(context);
   };
+  console.log("here!!!!!");
   console.log(data);
   const xVals = useMemo(() => {
     return data.all_depmap_ids.map((item) => item[1]);

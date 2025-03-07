@@ -70,7 +70,7 @@
   margin: 2px auto;
   padding-top: 20px;
   padding-bottom: none;
-  height: calc(100vh - 50px);
+  // height: calc(100vh - 50px);
 }
 
 .header {
@@ -93,25 +93,22 @@
   width: 100%;
 }
 
-.filters {
-  display: flex;
-  float: left;
-  min-width: 260px;
-  width: 260px;
-  max-width: 260px;
-  margin-top: 0px;
-  margin-right: 0px;
-  margin-bottom: 750px;
-  overflow: visible;
+.mainContent {
+  display: grid;
+  // Defines columns for left side bar and the "tab contents"
+  // which includes the right side bar on the sensitivity and
+  // dependency tabs.
+  grid-template-columns: 0.3fr auto;
 }
 
 .lineageSelection {
+  height: 100%;
   margin-right: 0px;
   padding-bottom: 35px;
-  min-height: 100%;
   margin-top: 30.5px;
   border-top: 1px solid #000000;
   width: 325px;
+  overflow: visible;
 
   .overviewText {
     margin-top: 25px;
@@ -119,10 +116,6 @@
     padding: 14px;
     border-radius: 4px;
     box-shadow: 1px 2px 2px 1px #0000001a;
-  }
-
-  .Tabs {
-    height: 200vh !important;
   }
 
   .Tab[aria-selected="true"] {
@@ -144,7 +137,6 @@
     background-color: #f6f8fa;
     padding-left: 15px;
     padding-right: 15px;
-    height: 200vh;
   }
 
   .pHeader {
@@ -598,9 +590,7 @@
   padding-left: 15px;
   padding-right: 15px;
   .plotFrame {
-    // border: 1px solid #d9d9d9;
     margin-bottom: 20px;
-    // background-color: white;
     @media (max-width: 1050px) {
       background-color: white;
     }
@@ -739,7 +729,6 @@
     & > div {
       display: flex;
       flex-direction: row;
-      // height: 40px;
       margin-bottom: 40px;
       padding-bottom: 8px;
       max-width: 520px;
