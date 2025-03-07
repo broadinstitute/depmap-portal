@@ -1,5 +1,4 @@
 #!/bin/bash
-
 if [ "$1" == "" ]; then
 # required: env name
   echo "needs name of environment"
@@ -7,7 +6,7 @@ if [ "$1" == "" ]; then
 fi
 
 ENV_NAME="$1"
-CONSEQ_FILE="predictability/fit.conseq"
+CONSEQ_FILE="predictability/run_internal_analysis.conseq"
 # CONSEQ_FILE="run_$ENV_NAME.conseq"
 
 if [ "$2" == "" ]; then
