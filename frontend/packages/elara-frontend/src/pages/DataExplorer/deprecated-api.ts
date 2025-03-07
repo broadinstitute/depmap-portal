@@ -283,7 +283,7 @@ const correlateDimension = memoize(
 
     const response = await postJson<{
       [key: string]: Record<string, number>;
-    }>(`/datasets/matrix/${dataset_id}/`, requestParams);
+    }>(`/datasets/matrix/${dataset_id}`, requestParams);
 
     let data = {} as Record<string, number[]>;
 

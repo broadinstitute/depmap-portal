@@ -179,7 +179,7 @@ async function fetchPlotDimensions(
 
     const response = await postJson<{
       [key: string]: Record<string, number>;
-    }>(`/datasets/matrix/${dataset_id}/`, {
+    }>(`/datasets/matrix/${dataset_id}`, {
       sample_identifier: "id",
       feature_identifier: "id",
       samples: aggregate_by === "samples" ? ids : null,
