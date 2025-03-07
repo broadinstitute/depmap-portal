@@ -91,7 +91,7 @@ function CollapsibleBoxPlots({
           xVals: box.data,
           color: {
             ...EntityBoxColorList[count],
-            a: 0.2 + 0.15 * index,
+            a: 0.4,
           },
           lineColor: "#000000",
         };
@@ -128,7 +128,7 @@ function CollapsibleBoxPlots({
               name: plotData.label,
               hoverLabels: plotData.cell_line_display_names,
               xVals: plotData.data,
-              color: { ...EntityBoxColorList[boxCardCount], a: 0.7 },
+              color: { ...EntityBoxColorList[boxCardCount], a: 0.4 },
               lineColor: "#000000",
             });
           } else {
@@ -138,7 +138,7 @@ function CollapsibleBoxPlots({
               xVals: plotData.data,
               color: {
                 ...EntityBoxColorList[boxCardCount],
-                a: 0.2 + 0.05 * index,
+                a: 0.4,
               },
               lineColor: "#000000",
             };
@@ -178,7 +178,7 @@ function CollapsibleBoxPlots({
                   name: level0Data.label,
                   hoverLabels: level0Data.cell_line_display_names,
                   xVals: level0Data.data,
-                  color: { ...EntityBoxColorList[boxCardCount], a: 0.7 },
+                  color: { ...EntityBoxColorList[boxCardCount], a: 0.4 },
                   lineColor: "#000000",
                 },
                 subContextInfo: formatBoxData(

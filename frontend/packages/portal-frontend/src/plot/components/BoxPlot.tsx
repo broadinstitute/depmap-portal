@@ -78,7 +78,7 @@ function BoxPlot({
         pointpos: 0,
         type: "box",
         fillcolor: `RGBA(${box.color.r.toString()}, ${box.color.g.toString()}, ${box.color.b.toString()}, ${
-          box.color.a?.toString() || (0.4).toString()
+          box.color.a?.toString() || (0.3).toString()
         })`,
         marker: {
           color: `RGBA(${box.color.r.toString()}, ${box.color.g.toString()}, ${box.color.b.toString()}, 1)`,
