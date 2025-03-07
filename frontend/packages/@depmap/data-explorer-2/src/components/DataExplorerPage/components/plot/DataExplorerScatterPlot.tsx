@@ -1,15 +1,15 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { useDeprecatedDataExplorerApi } from "../../../../contexts/DeprecatedDataExplorerApiContext";
-import { useDataExplorerSettings } from "../../../../contexts/DataExplorerSettingsContext";
-import { enabledFeatures } from "@depmap/globals";
-import SpinnerOverlay from "./SpinnerOverlay";
-import type ExtendedPlotType from "../../ExtendedPlotType";
+import { enabledFeatures, isElara } from "@depmap/globals";
 import {
   DataExplorerContext,
   DataExplorerPlotConfig,
   DataExplorerPlotResponse,
   LinRegInfo,
 } from "@depmap/types";
+import { useDeprecatedDataExplorerApi } from "../../../../contexts/DeprecatedDataExplorerApiContext";
+import { useDataExplorerSettings } from "../../../../contexts/DataExplorerSettingsContext";
+import type ExtendedPlotType from "../../ExtendedPlotType";
+import SpinnerOverlay from "./SpinnerOverlay";
 import {
   calcBins,
   calcVisibility,
@@ -268,19 +268,23 @@ function DataExplorerScatterPlot({
     }
 
     return linreg_by_group.map((linreg) => {
-      let label: LegendKey = linreg.group_label;
+      // HACK: `linreg.group_label` is always a string or null but, in order to
+      // highlight some special cases, we temporarily set `label` a LegendKey
+      // symbol below.
+      let label: string | null | LegendKey = linreg.group_label;
 
       // FIXME: The backend should return a property to indicate this is the
       // case rather than parsing the label.
       if (typeof label === "string" && label.startsWith("Both (")) {
         label = LEGEND_BOTH;
       }
+
       if (label === null) {
         label = linreg_by_group.length === 1 ? LEGEND_ALL : LEGEND_OTHER;
       }
 
       let hidden =
-        linreg.number_of_points < 2 ||
+        linreg.number_of_points < 3 ||
         !plotConfig.show_regression_line ||
         hiddenLegendValues.has(label);
 
@@ -398,16 +402,24 @@ function DataExplorerScatterPlot({
               onClickClearSelection={() => {
                 setSelectedLabels(null);
               }}
-              onClickSetSelectionFromContext={async () => {
-                const labels = await promptForSelectionFromContext(api, data!);
+              onClickSetSelectionFromContext={
+                // TODO: Add support for this in Elara.
+                isElara
+                  ? undefined
+                  : async () => {
+                      const labels = await promptForSelectionFromContext(
+                        api,
+                        data!
+                      );
 
-                if (labels === null) {
-                  return;
-                }
+                      if (labels === null) {
+                        return;
+                      }
 
-                setSelectedLabels(labels);
-                plotElement?.annotateSelected();
-              }}
+                      setSelectedLabels(labels);
+                      plotElement?.annotateSelected();
+                    }
+              }
             />
           </StackableSection>
           {enabledFeatures.gene_tea && plotConfig.index_type === "gene" ? (
