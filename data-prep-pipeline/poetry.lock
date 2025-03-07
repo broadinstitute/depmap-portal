@@ -1684,13 +1684,13 @@ tests = ["cython", "littleutils", "pygments", "pytest", "typeguard"]
 
 [[package]]
 name = "taigapy"
-version = "3.12.0"
+version = "3.13.0"
 description = "Client library for fetching data from Taiga"
 optional = false
 python-versions = ">=3.9"
 files = [
-    {file = "taigapy-3.12.0-py3-none-any.whl", hash = "sha256:9f006a003e555f534eba730b9c914e365b15ebaf94c7d1822222d441ab5e3c49"},
-    {file = "taigapy-3.12.0.tar.gz", hash = "sha256:a0364e727fcb98845de9cc3a571934d76d1e86212b08a03a0404f5335fb8c318"},
+    {file = "taigapy-3.13.0-py3-none-any.whl", hash = "sha256:f8005d1e830555d3f6132a507daa33ec9772c4de6ca55b2ff81be6dadd3b8689"},
+    {file = "taigapy-3.13.0.tar.gz", hash = "sha256:d0a07824a9db34a7008768bb9b9fcfc3e3dc9ee4f33a3f347771bc3b5b02db21"},
 ]
 
 [package.dependencies]
@@ -1885,4 +1885,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "15d931f1ae02e4166645480f30cb9f9e261d24d2d601323b283ffdb28b6f2221"
+content-hash = "d6861640c55e3b2c8f525c28a4d7b44bf2b3bc56bc7410920d8b947211d729e3"
