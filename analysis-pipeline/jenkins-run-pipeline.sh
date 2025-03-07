@@ -80,7 +80,7 @@ function run_via_container {
       -w /work/analysis-pipeline \
       --name "$JOB_NAME" \
       ${DOCKER_IMAGE} \
-      bash -c "source /aws-keys/broad-paquitas && $COMMAND"
+      bash -c "source /aws-keys/broad-paquitas && echo 'Python path:' && which python && echo 'Python version:' && python --version && echo 'Installed packages:' && pip list | grep taiga && echo 'Running command:' && $COMMAND"
 }
 
 # use /data2/depmap-pipeline-taiga as the taiga dir because
@@ -109,7 +109,8 @@ else
 
   # Kick off new run
   set +e
-  run_via_container "conseq run --addlabel commitsha=${COMMIT_SHA} --no-reattach --maxfail 20 --remove-unknown-artifacts -D sparkles_path=/install/sparkles/bin/sparkles -D is_dev=False $CONSEQ_FILE $CONSEQ_ARGS"
+  # Add debugging to see which Python is being used by conseq
+  run_via_container "which conseq && cat \$(which conseq) | head -n 5 && conseq run --addlabel commitsha=${COMMIT_SHA} --no-reattach --maxfail 20 --remove-unknown-artifacts -D sparkles_path=/install/sparkles/bin/sparkles -D is_dev=False $CONSEQ_FILE $CONSEQ_ARGS"
   RUN_EXIT_STATUS=$?
   set -e
   
