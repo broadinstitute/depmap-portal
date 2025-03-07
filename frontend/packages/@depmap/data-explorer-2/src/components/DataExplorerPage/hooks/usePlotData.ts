@@ -31,6 +31,10 @@ export default function usePlotData(plotConfig: DataExplorerPlotConfig | null) {
         return;
       }
 
+      if (fetchedPlotConfig === plotConfig) {
+        return;
+      }
+
       if (
         fetchedPlotConfig &&
         fetchedPlotConfig.plot_type !== plotConfig.plot_type
@@ -73,6 +77,7 @@ export default function usePlotData(plotConfig: DataExplorerPlotConfig | null) {
         setFetchedPlotConfig(plotConfig);
       } catch (e) {
         setHadError(true);
+        window.console.error(e);
       }
     })();
   }, [api, plotConfig, fetchedPlotConfig]);

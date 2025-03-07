@@ -1,13 +1,26 @@
 import React from "react";
+import { isElara } from "@depmap/globals";
 import { ContextPath, DataExplorerContext, FilterKey } from "@depmap/types";
 import ContextSelector from "../../../ContextSelector";
 import DatasetMetadataSelector from "../../../DatasetMetadataSelector";
-import DimensionSelect from "../../../DimensionSelect";
-import SliceLabelSelect from "../../../DimensionSelect/SliceLabelSelect";
+import DimensionSelectV1 from "../../../DimensionSelect";
+import DimensionSelectV2 from "../../../DimensionSelectV2";
+import SliceLabelSelectV1 from "../../../DimensionSelect/SliceLabelSelect";
+import SliceLabelSelectV2 from "../../../DimensionSelectV2/SliceSelect";
 import { useDataExplorerSettings } from "../../../../contexts/DataExplorerSettingsContext";
 import { PlotConfigReducerAction } from "../../reducers/plotConfigReducer";
 import { ColorByTypeSelector, SortBySelector } from "./selectors";
+import MetadataColumnSelect from "./MetadataColumnSelect";
+import TabularDatasetSelect from "./TabularDatasetSelect";
 import styles from "../../styles/ConfigurationPanel.scss";
+
+const DimensionSelect = isElara
+  ? (DimensionSelectV2 as typeof DimensionSelectV1)
+  : DimensionSelectV1;
+
+const SliceLabelSelect = isElara
+  ? ((SliceLabelSelectV2 as unknown) as typeof SliceLabelSelectV1)
+  : SliceLabelSelectV1;
 
 interface Props {
   show: boolean;
@@ -112,16 +125,39 @@ function ColorByViewOptions({
         value={metadata?.color_property?.slice_id}
         onChange={(slice_id: string | null) => {
           dispatch({
-            type: "select_color_property",
+            type: "select_legacy_color_property",
             payload: { slice_id },
+          });
+        }}
+      />
+      <MetadataColumnSelect
+        show={color_by === "metadata_column"}
+        slice_type={index_type as string}
+        value={metadata?.color_property}
+        onChange={(sliceQuery) => {
+          dispatch({
+            type: "select_color_property",
+            payload: sliceQuery,
+          });
+        }}
+      />
+      <TabularDatasetSelect
+        show={color_by === "tabular_dataset"}
+        slice_type={index_type as string}
+        value={metadata?.color_property}
+        onChange={(sliceQuery) => {
+          dispatch({
+            type: "select_color_property",
+            payload: sliceQuery,
           });
         }}
       />
       <div className={styles.sortByContainer}>
         <SortBySelector
           show={
-            color_by === "property" &&
-            ["density_1d", "waterfall"].includes(plot_type)
+            ["property", "metadata_column", "tabular_dataset"].includes(
+              color_by
+            ) && ["density_1d", "waterfall"].includes(plot_type)
           }
           enable
           value={sort_by}

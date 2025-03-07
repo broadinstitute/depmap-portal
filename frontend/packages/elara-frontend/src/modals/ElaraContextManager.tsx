@@ -16,9 +16,13 @@ import {
 
 interface Props {
   onHide: () => void;
+  initialContextType?: string;
 }
 
-function ElaraContextManager({ onHide }: Props) {
+function ElaraContextManager({
+  onHide,
+  initialContextType = undefined,
+}: Props) {
   let basename = "";
   //  hack for setting urlPrefix when Elara is served behind Depmap portal proxy
   if (window.location.pathname.includes("/breadbox/elara")) {
@@ -42,7 +46,7 @@ function ElaraContextManager({ onHide }: Props) {
       >
         <ContextManager
           onHide={onHide}
-          initialContextType="depmap_model"
+          initialContextType={initialContextType}
           useContextBuilderV2
           showHelpText={false}
         />

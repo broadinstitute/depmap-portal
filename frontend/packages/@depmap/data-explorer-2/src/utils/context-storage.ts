@@ -1,5 +1,5 @@
 import stableStringify from "json-stable-stringify";
-import { enabledFeatures } from "@depmap/globals";
+import { isElara } from "@depmap/globals";
 import { DataExplorerContext, DataExplorerContextV2 } from "@depmap/types";
 import getContextHash from "./get-context-hash";
 
@@ -53,7 +53,7 @@ const fallbackInMemoryCache: Record<
 const getCasUrl = () => {
   const prefix = fetchUrlPrefix().replace(/^\/$/, "");
 
-  return enabledFeatures.elara ? `${prefix}/temp/cas` : `${prefix}/cas`;
+  return isElara ? `${prefix}/temp/cas` : `${prefix}/cas`;
 };
 
 const getContextUrl = (hash: string) => {
@@ -94,10 +94,10 @@ export async function persistContext(
     fallbackInMemoryCache[hash] = context;
   }
 
-  const url = enabledFeatures.elara ? getCasUrl() : `${getCasUrl()}/`;
+  const url = isElara ? getCasUrl() : `${getCasUrl()}/`;
   const options = {
     method: "POST",
-    headers: enabledFeatures.elara
+    headers: isElara
       ? {
           Accept: "application/json",
           "Content-Type": "application/json",
@@ -106,7 +106,7 @@ export async function persistContext(
           Accept: "*/*",
           "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
         },
-    body: enabledFeatures.elara
+    body: isElara
       ? JSON.stringify({ value: json })
       : new URLSearchParams({ value: json }),
   };
