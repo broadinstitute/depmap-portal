@@ -80,7 +80,7 @@ function run_via_container {
       -w /work/analysis-pipeline \
       --name "$JOB_NAME" \
       ${DOCKER_IMAGE} \
-      bash -c "source /aws-keys/broad-paquitas && source /root/.bashrc && echo 'Python path:' && which python && echo 'Python version:' && python --version && echo 'Installed packages:' && pip list | grep taiga && echo 'Running command:' && $COMMAND"
+      bash -c "source /aws-keys/broad-paquitas && POETRY_ENV=\$(poetry env info -p) && export PATH=\$POETRY_ENV/bin:\$PATH && echo 'Python path:' && which python && echo 'Python version:' && python --version && echo 'Installed packages:' && pip list | grep taiga && echo 'Running command:' && $COMMAND"
 }
 
 # use /data2/depmap-pipeline-taiga as the taiga dir because
