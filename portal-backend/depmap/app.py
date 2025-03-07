@@ -387,7 +387,7 @@ def register_blueprints(app: Flask):
     app.register_blueprint(api_blueprint)
 
     with app.app_context():
-        if not app.config["ENABLED_FEATURES"].access_control_and_private_resources:
+        if not app.config["ENABLED_FEATURES"].private_datasets:
             access_control_namespace.hide(AccessControlRESTResource)
             private_dataset_namespace.hide(PrivateDatasetRESTResource)
 
