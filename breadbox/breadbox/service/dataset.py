@@ -6,6 +6,8 @@ from breadbox.schemas.dataset import (
     FeatureSampleIdentifier,
     MatrixDimensionsInfo,
     TabularDimensionsInfo,
+    AggregationMethod,
+    ValueType,
 )
 from breadbox.service import metadata as metadata_service
 import logging
@@ -36,6 +38,7 @@ from typing import Any, Dict, List, Literal, Optional, Type, Union
 from uuid import uuid4
 
 import pandas as pd
+import numpy as np
 
 from breadbox.schemas.types import UpdateDimensionType
 from breadbox.db.session import SessionWithUser
@@ -143,7 +146,38 @@ def get_subsetted_matrix_dataset_df(
         )
         df = df.rename(index=label_by_id)
 
+    if dimensions_info.aggregate:
+        if dataset.value_type != ValueType.continuous:
+            raise UserError(
+                f"The `value_type` of '{dataset.name}' is '{dataset.value_type.value}'. Dataset must have continuous values! "
+            )
+
+        df = _aggregate_matrix_df(
+            df,
+            dimensions_info.aggregate.aggregate_by,
+            dimensions_info.aggregate.aggregation,
+        )
     return df
+
+
+def _aggregate_matrix_df(
+    df: pd.DataFrame,
+    aggregate_by: Literal["features", "samples"],
+    aggregation: AggregationMethod,
+):
+    enum_to_agg_method = {
+        AggregationMethod.mean: np.mean,
+        AggregationMethod.median: np.median,
+        AggregationMethod.per25: lambda x: np.nanpercentile(x, q=0.25),
+        AggregationMethod.per75: lambda x: np.nanpercentile(x, q=0.75),
+    }
+
+    # Replace None with numpy nan so np.nanpercentile works
+    nan_df: pd.DataFrame = df.replace({pd.NA: np.nan})
+
+    return nan_df.agg(
+        enum_to_agg_method[aggregation], axis=0 if aggregate_by == "samples" else 1
+    ).to_frame(name=aggregation.value)
 
 
 def get_subsetted_tabular_dataset_df(
@@ -530,10 +564,7 @@ def update_dimension_type(
 ):
     given_updated_fields = dimension_type_update_fields.dict(exclude_unset=True)
 
-    if (
-        "metadata_dataset_id" in given_updated_fields
-        and "properties_to_index" in given_updated_fields
-    ):
+    if "metadata_dataset_id" in given_updated_fields:
         metadata_dataset = get_dataset(
             db, user, given_updated_fields["metadata_dataset_id"]
         )
@@ -568,12 +599,13 @@ def update_dimension_type(
                 delete_dataset(db, user, old_dataset, filestore_location)
 
         db.flush()
-        set_properties_to_index(
-            db,
-            given_updated_fields["properties_to_index"],
-            dimension_type.name,
-            metadata_dataset.group_id,
-        )
+        if "properties_to_index" in given_updated_fields:
+            set_properties_to_index(
+                db,
+                given_updated_fields["properties_to_index"],
+                dimension_type.name,
+                metadata_dataset.group_id,
+            )
 
         populate_search_index_after_update(db, dimension_type)
 

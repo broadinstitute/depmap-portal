@@ -214,10 +214,6 @@ class PredictiveFeature(Model):
         if not self._get_feature_is_loaded():
             return None
 
-        x = InteractiveTree.get_id_from_dataset_feature(
-            dep_dataset.name.name, entity.entity_id, feature_is_entity_id=True
-        )
-
         if self.dataset_id == "context":
             lineage_level = "1"
 

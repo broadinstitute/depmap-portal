@@ -77,7 +77,7 @@ export interface SharedApi {
     datasetId: string,
     datasetToUpdate: DatasetUpdateArgs
   ) => Promise<BreadboxDataset>;
-  getGroups: () => Promise<Group[]>;
+  getGroups: (writeAccess?: boolean) => Promise<Group[]>;
   postGroup: (groupArgs: GroupArgs) => Promise<Group>;
   deleteGroup: (id: string) => Promise<any>;
   postGroupEntry: (
