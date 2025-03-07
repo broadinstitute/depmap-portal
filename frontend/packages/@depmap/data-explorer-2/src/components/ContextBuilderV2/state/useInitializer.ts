@@ -24,7 +24,7 @@ function useInitializer(
   // easily break. A more robust implementation would walk the entire
   // expression looking for these variables.
   const shouldConvertGivenIdToMetadataColumn = useRef(
-    mainExpr.and[0]?.in?.[0]?.var === "given_id"
+    mainExpr?.and?.[0]?.in?.[0]?.var === "given_id"
   );
 
   const [isInitializing, setIsInitializing] = useState(
