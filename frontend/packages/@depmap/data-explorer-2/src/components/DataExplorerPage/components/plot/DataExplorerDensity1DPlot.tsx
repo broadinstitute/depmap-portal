@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useDataExplorerSettings } from "../../../../contexts/DataExplorerSettingsContext";
 import { useDeprecatedDataExplorerApi } from "../../../../contexts/DeprecatedDataExplorerApiContext";
-import { enabledFeatures } from "@depmap/globals";
+import { enabledFeatures, isElara } from "@depmap/globals";
 import SpinnerOverlay from "./SpinnerOverlay";
 import type ExtendedPlotType from "../../ExtendedPlotType";
 import {
@@ -314,16 +314,24 @@ function DataExplorerDensity1DPlot({
               onClickClearSelection={() => {
                 setSelectedLabels(null);
               }}
-              onClickSetSelectionFromContext={async () => {
-                const labels = await promptForSelectionFromContext(api, data!);
+              onClickSetSelectionFromContext={
+                // TODO: Add support for this in Elara.
+                isElara
+                  ? undefined
+                  : async () => {
+                      const labels = await promptForSelectionFromContext(
+                        api,
+                        data!
+                      );
 
-                if (labels === null) {
-                  return;
-                }
+                      if (labels === null) {
+                        return;
+                      }
 
-                setSelectedLabels(labels);
-                plotElement?.annotateSelected();
-              }}
+                      setSelectedLabels(labels);
+                      plotElement?.annotateSelected();
+                    }
+              }
             />
           </StackableSection>
           {enabledFeatures.gene_tea && plotConfig.index_type === "gene" ? (

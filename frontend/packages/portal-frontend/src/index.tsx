@@ -151,7 +151,6 @@ export function editContext(context: DataExplorerContext, hash: string) {
 }
 
 export function saveNewContext(
-  // TODO: Extend this to also work with DataExplorerContextV2
   context: DataExplorerContext,
   onHide?: () => void,
   onSave?: (context: DataExplorerContext, hash: string) => void

@@ -53,11 +53,12 @@ function SliceSelect({
     dataset_id
   );
 
+  const label = useLabel(index_type);
   const placeholder = usePlaceholder(slice_type);
 
   return (
     <AsyncSelect
-      label={useLabel(index_type)}
+      label={!swatchColor ? label : null}
       value={displayValue}
       // hasError={Boolean(notFound || error)}
       onChange={(option) => onChange(toOutputValue(slice_type, option))}

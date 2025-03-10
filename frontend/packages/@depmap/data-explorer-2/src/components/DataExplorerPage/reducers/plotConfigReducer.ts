@@ -7,6 +7,7 @@ import {
   DimensionKey,
   FilterKey,
   PartialDataExplorerPlotConfig,
+  SliceQuery,
 } from "@depmap/types";
 
 export type PlotConfigReducerAction =
@@ -29,7 +30,14 @@ export type PlotConfigReducerAction =
     }
   | { type: "select_color_by"; payload: DataExplorerPlotConfig["color_by"] }
   | { type: "select_sort_by"; payload: DataExplorerPlotConfig["sort_by"] }
-  | { type: "select_color_property"; payload: { slice_id: string | null } }
+  | {
+      type: "select_color_property";
+      payload: SliceQuery | null;
+    }
+  | {
+      type: "select_legacy_color_property";
+      payload: { slice_id: string | null };
+    }
   | { type: "select_hide_points"; payload: boolean }
   | { type: "select_hide_identity_line"; payload: boolean }
   | { type: "select_use_clustering"; payload: boolean }
@@ -165,6 +173,13 @@ function plotConfigReducer(
         },
       };
 
+      if (
+        plot.plot_type === "correlation_heatmap" &&
+        nextPlotType !== "correlation_heatmap"
+      ) {
+        nextPlot = omit(nextPlot, ["filters"]);
+      }
+
       if (nextPlotType === "correlation_heatmap") {
         nextPlot = omit(nextPlot, [
           "color_by",
@@ -290,6 +305,26 @@ function plotConfigReducer(
     }
 
     case "select_color_property": {
+      const sliceQuery = action.payload;
+
+      if (sliceQuery === null) {
+        return normalize({
+          ...plot,
+          metadata: omit(plot.metadata, "color_property"),
+        });
+      }
+
+      return {
+        ...plot,
+        metadata: {
+          ...plot.metadata,
+          color_property: sliceQuery,
+        },
+      };
+    }
+
+    // legacy version used a slice ID instead of SliceQuery
+    case "select_legacy_color_property": {
       const { slice_id } = action.payload;
 
       if (slice_id === null) {

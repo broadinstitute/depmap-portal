@@ -18,6 +18,7 @@ import {
   Group,
   InvalidPrioritiesByDataType,
 } from "@depmap/types";
+import { useSubmitButtonIsDisabled } from "../../utils/disableSubmitButton";
 
 const CustomColumnsMetadata = function (props: FieldProps) {
   const { schema, onChange, required } = props;
@@ -52,44 +53,6 @@ const CustomColumnsMetadata = function (props: FieldProps) {
 const fields: RegistryFieldsType = {
   TagInputMetadata: CustomDatasetMetadata,
   JSONInputColumns: CustomColumnsMetadata,
-};
-
-const uiSchema: UiSchema = {
-  "ui:title": "", // removes the title <legend> html element
-  "ui:order": [
-    "name",
-    "file_ids",
-    "dataset_md5",
-    "index_type",
-    "columns_metadata",
-    "group_id",
-    "data_type",
-    "priority",
-    "dataset_metadata",
-    "is_transient",
-    "format",
-  ],
-  dataset_metadata: {
-    "ui:field": "TagInputMetadata",
-  },
-  columns_metadata: {
-    "ui:field": "JSONInputColumns",
-  },
-  format: {
-    "ui:widget": "hidden",
-  },
-  file_ids: {
-    "ui:widget": "hidden",
-  },
-  dataset_md5: {
-    "ui:widget": "hidden",
-  },
-  is_transient: {
-    "ui:widget": "hidden",
-  },
-  group_id: {
-    "ui:title": "Group", // override original title from schema
-  },
 };
 
 function transformErrors(errors: RJSFValidationError[]) {
@@ -204,6 +167,57 @@ export function TableDatasetForm({
       setFormData(newFormData);
     }
   }, [fileIds, md5Hash, formData]);
+
+  const submitButtonIsDisabled = useSubmitButtonIsDisabled(
+    schema?.required,
+    formData
+  );
+
+  const uiSchema = React.useMemo(() => {
+    const formUiSchema: UiSchema = {
+      "ui:title": "", // removes the title <legend> html element
+      "ui:order": [
+        "name",
+        "file_ids",
+        "dataset_md5",
+        "index_type",
+        "columns_metadata",
+        "group_id",
+        "data_type",
+        "priority",
+        "dataset_metadata",
+        "is_transient",
+        "format",
+      ],
+      dataset_metadata: {
+        "ui:field": "TagInputMetadata",
+      },
+      columns_metadata: {
+        "ui:field": "JSONInputColumns",
+      },
+      format: {
+        "ui:widget": "hidden",
+      },
+      file_ids: {
+        "ui:widget": "hidden",
+      },
+      dataset_md5: {
+        "ui:widget": "hidden",
+      },
+      is_transient: {
+        "ui:widget": "hidden",
+      },
+      group_id: {
+        "ui:title": "Group", // override original title from schema
+      },
+      "ui:submitButtonOptions": {
+        props: {
+          disabled: submitButtonIsDisabled,
+        },
+      },
+    };
+    return formUiSchema;
+  }, [submitButtonIsDisabled]);
 
   function customValidate(formDataToValidate: any, errors: any) {
     let jsonParsed;

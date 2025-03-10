@@ -48,7 +48,8 @@
             <li role="separator" class="divider"></li>
               <li><a class="cursor-pointer" onclick="DepMap.launchContextManagerModal()">Context Manager</a></li>
             {% if config.ENABLED_FEATURES.private_datasets %}
-              <li><a href="{{ url_for('private_dataset.home') }}">Private Datasets</a></li>          
+                <li><a href="{{ url_for("datasets.view_dataset_manager") }}">Data Manager</a></li>
+                <li><a href="{{ url_for('private_dataset.home') }}">Private Datasets <i class="alpha-tag"><b>Deprecated</b></i></a></li>
             {% endif %}
             {% if config.EXTERNAL_TOOLS %}
               <li role="separator" class="divider"></li>
@@ -59,8 +60,7 @@
             {% if is_admin_user %}
                 <li role="separator" class="divider"></li>
                 <li><a href="{{ url_for("access_control.override") }}">Impersonate User</a></li>
-                <li><a href="{{ url_for("datasets.view_dataset_manager") }}">Breadbox data manager</a></li>
-                <li><a href="{{ url_for("groups.view_groups_manager") }}">Breadbox group manager</a></li>
+                <li><a href="{{ url_for("groups.view_groups_manager") }}">Access Group Manager</a></li>
             {% endif %}
           </ul>
         </li>

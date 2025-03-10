@@ -2,10 +2,12 @@ import pandas as pd
 import pytest
 from flask import url_for
 from json import loads as json_loads
+
+from depmap import data_access
 from depmap.dataset.models import DependencyDataset
 from depmap.compound.models import Compound
 from depmap.compound.views.index import (
-    format_compound_summary,
+    get_sensitivity_tab_info,
     format_summary_option,
     format_dose_curve_options,
     format_dose_curve,
@@ -24,6 +26,7 @@ from tests.factories import (
     PredictiveFeatureResultFactory,
     PredictiveModelFactory,
 )
+from tests.utilities import interactive_test_utils
 
 
 def test_render_view_compound(populated_db):
@@ -42,7 +45,8 @@ def test_format_compound_summary(empty_db_mock_downloads):
         the label of summary options includes the compound experiment label
     E.g. if first_dep_enum_name was a dataset instead of an enum, format_summary would error
     """
-    compound = CompoundFactory()
+    compound: Compound = CompoundFactory() # pyright: ignore
+
     # two compound experiments just so that get_compound_experiment_datasets_with_compound returns a list
     compound_exp_1 = CompoundExperimentFactory(compound=compound)
     compound_exp_2 = CompoundExperimentFactory(compound=compound)
@@ -52,17 +56,14 @@ def test_format_compound_summary(empty_db_mock_downloads):
         matrix=matrix, name=DependencyDataset.DependencyEnum.GDSC1_IC50
     )  # no dose dataset
     empty_db_mock_downloads.session.flush()
+    interactive_test_utils.reload_interactive_config()
 
-    compound_experiment_and_datasets = DependencyDataset.get_compound_experiment_priority_sorted_datasets_with_compound(
-        compound.entity_id
-    )
-    summary = format_compound_summary(compound_experiment_and_datasets)
-    # test that we reach here without error
 
-    expected_option_labels = {
-        "{} {}".format(compound_exp_1.label, dataset.display_name),
-        "{} {}".format(compound_exp_2.label, dataset.display_name),
-    }
+    datasets = data_access.get_all_datasets_containing_compound(compound.compound_id)
+    summary = get_sensitivity_tab_info(compound_entity_id=compound.entity_id, compound_datasets=datasets)
+
+    # Even though there are two compound experiments, the dataset should appear once in the result
+    expected_option_labels = {dataset.display_name}
     summary_option_labels = {option["label"] for option in summary["summary_options"]}
 
     assert summary_option_labels == expected_option_labels

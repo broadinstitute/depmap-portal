@@ -35,14 +35,10 @@ from depmap.interactive.config.utils import (
     is_categorical,
     is_standard,
 )
-from depmap.interactive.config import categories
 from depmap.interactive.standard import standard_utils
 from depmap.interactive.nonstandard import nonstandard_utils
 from depmap.partials.matrix.models import CellLineSeries
 from depmap.interactive.common_utils import RowSummary
-from depmap.vector_catalog.nodes.categorical_tree_nodes import (
-    MUTATION_DETAILS_DATASET_ID,
-)
 from depmap.utilities.data_access_log import log_legacy_private_dataset_access
 
 
@@ -399,7 +395,7 @@ def get_row_of_values(dataset_id, feature):
     elif dataset_id == get_growth_pattern_dataset():
         series = CellLine.get_cell_line_growth_pattern_series()
 
-    elif dataset_id == MUTATION_DETAILS_DATASET_ID:
+    elif dataset_id == "mutation_details":
         series = Mutation.get_mutation_detail_label(feature)
 
     elif has_config(dataset_id):

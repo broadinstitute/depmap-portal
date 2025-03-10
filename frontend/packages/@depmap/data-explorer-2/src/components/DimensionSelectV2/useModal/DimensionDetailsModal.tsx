@@ -6,10 +6,7 @@ import {
   DataExplorerContextV2,
   DataExplorerPlotConfigDimensionV2,
 } from "@depmap/types";
-import {
-  DataExplorerApiResponse,
-  useDataExplorerApi,
-} from "../../../contexts/DataExplorerApiContext";
+import { useDataExplorerApi } from "../../../contexts/DataExplorerApiContext";
 import { Mode, State } from "../useDimensionStateManager/types";
 import ModalDimensionSelect from "./ModalDimensionSelect";
 import DatasetDetails from "./DatasetDetails";
@@ -36,9 +33,7 @@ function DimensionDetailsModal({
   const [isLoading, setIsLoading] = useState(false);
   const [dimension, setDimension] = useState(initialState.dimension);
 
-  const [details, setDetails] = useState<
-    DataExplorerApiResponse["fetchDatasetDetails"] | null
-  >(null);
+  const [details, setDetails] = useState<any>(null);
 
   useEffect(() => {
     if (!dimension.dataset_id) {
@@ -48,10 +43,11 @@ function DimensionDetailsModal({
         setIsLoading(true);
 
         try {
-          const fetchedDetails = await api.fetchDatasetDetails(
-            dimension.dataset_id as string
-          );
-          setDetails(fetchedDetails);
+          // FIXME: fetchDatasetDetails is not implemented on DataExplorerApi yet.
+          // const fetchedDetails = await api.fetchDatasetDetails(
+          //   dimension.dataset_id as string
+          // );
+          // setDetails(fetchedDetails);
         } catch (e) {
           window.console.error(e);
         } finally {
