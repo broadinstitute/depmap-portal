@@ -98,11 +98,11 @@ const ContextExplorerTabs = ({
         <Tab id="geneDependency" className={styles.Tab}>
           CRISPR Gene Dependency
         </Tab>
-        <Tab id="repurposing" className={styles.Tab}>
-          Repurposing Sensitivity
-        </Tab>
         <Tab id="oncref" className={styles.Tab}>
           OncRef Sensitivity
+        </Tab>
+        <Tab id="repurposing" className={styles.Tab}>
+          Repurposing Sensitivity
         </Tab>
       </TabList>
 
@@ -165,24 +165,25 @@ const ContextExplorerTabs = ({
               topContextNameInfo={topContextNameInfo}
               treeType={treeType}
               entityType={"compound"}
-              datasetId={ContextExplorerDatasets.Rep_all_single_pt}
-            />
-          )}
-        </TabPanel>
-        <TabPanel className={styles.TabPanel}>
-          {" "}
-          {!isLoadingInitialData && (
-            <ContextAnalysis
-              selectedContextNode={selectedContextNode}
-              selectedContextNameInfo={selectedContextNameInfo}
-              topContextNameInfo={topContextNameInfo}
-              treeType={treeType}
-              entityType={"compound"}
               datasetId={ContextExplorerDatasets.Prism_oncology_AUC}
             />
           )}
         </TabPanel>
       </TabPanels>
+
+      <TabPanel className={styles.TabPanel}>
+        {" "}
+        {!isLoadingInitialData && (
+          <ContextAnalysis
+            selectedContextNode={selectedContextNode}
+            selectedContextNameInfo={selectedContextNameInfo}
+            topContextNameInfo={topContextNameInfo}
+            treeType={treeType}
+            entityType={"compound"}
+            datasetId={ContextExplorerDatasets.Rep_all_single_pt}
+          />
+        )}
+      </TabPanel>
     </TabsWithHistory>
   );
 };
