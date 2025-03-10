@@ -10,7 +10,6 @@ include "predictability/predictability.conseq"
 include "reformat_repurposing_data.conseq"
 include "dose_replicate_reformat.conseq"
 include "pref_essential_genes.conseq"
-include "proteomics.conseq"
 include "validation.conseq"
 include "oncokb_import.conseq"
 include "tda_table_generator.conseq"
@@ -19,6 +18,7 @@ include "context_explorer/get_context_analysis.conseq"
 include "data_page/get_all_data_availability.conseq"
 include "celligner/celligner.conseq"
 include "make_compound_summary_table.conseq"
+include "cor_analysis/cor_analysis.conseq"
 
 # all of the run_xxx.conseq files define publish_dest as INVALID because
 # this variable is overriden when run from jenkins. If the valid is still 

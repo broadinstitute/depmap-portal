@@ -79,23 +79,6 @@ class GroupMixin:
         return relationship(Group, foreign_keys=[cls.group_id])  # pyright: ignore
 
 
-class ReferencedGroupMixin:
-    """
-    For models.dataset.DatasetReference: defines a second group for access controls.
-    This is used by the global filter below to avoid accidental leakage of private data.
-    """
-
-    @declared_attr
-    def referenced_group_id(cls) -> str:
-        return Column(String, ForeignKey("group.id"), nullable=False)  # pyright: ignore
-
-    @declared_attr
-    def referenced_group(cls) -> Group:
-        return relationship(  # pyright: ignore
-            Group, foreign_keys=[cls.referenced_group_id], backref="dataset_references"
-        )
-
-
 @event.listens_for(Session, "do_orm_execute")
 def _add_filtering_criteria(execute_state):
     """Intercept all ORM queries. Add with_loader_criteria options to all
@@ -120,13 +103,6 @@ def _add_filtering_criteria(execute_state):
             with_loader_criteria(
                 GroupMixin,
                 lambda cls: cls.group_id.in_(filter_group_ids),
-                include_aliases=True,
-            )
-        )
-        execute_state.statement = execute_state.statement.options(
-            with_loader_criteria(
-                ReferencedGroupMixin,
-                lambda cls: cls.referenced_group_id.in_(filter_group_ids),
                 include_aliases=True,
             )
         )

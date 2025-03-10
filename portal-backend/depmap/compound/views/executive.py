@@ -74,6 +74,7 @@ data_availability_datasets = [
 def format_dep_dist_caption(
     compound_experiment_and_datasets: List[Tuple[CompoundExperiment, DependencyDataset]]
 ):
+    # DEPRECATED: will be redesigned/replaced
     if compound_experiment_and_datasets is None:
         return None
     if any((dataset.units == "AUC" for _, dataset in compound_experiment_and_datasets)):
@@ -138,6 +139,7 @@ def get_order(has_predictability: bool):
 
 
 def determine_compound_experiment_and_dataset(compound_experiment_and_datasets):
+    # DEPRECATED: this method will not work with breadbox datasets. Calls to it should be replaced.
     dataset_regexp_ranking = [
         "Prism_oncology.*",
         "Repurposing_secondary.*",
@@ -154,6 +156,7 @@ def determine_compound_experiment_and_dataset(compound_experiment_and_datasets):
 
 
 def format_dep_dists(compound_experiment_and_datasets):
+    # DEPRECATED: will be redesigned/replaced
     if compound_experiment_and_datasets is None:
         return None
     dep_dists = []
@@ -201,13 +204,12 @@ def format_enrichment_boxes(compound_experiment_and_datasets):
 
 
 def format_top_corr_table(compound_experiment_and_datasets):
+    # DEPRECATED: will be replaced/redesigned
     top_correlations = get_top_correlated_expression(compound_experiment_and_datasets)
     table = []
     for _, tc in top_correlations.items():
         interactive_url = url_for(
-            "data_explorer_2.view_data_explorer_2"
-            if current_app.config["ENABLED_FEATURES"].data_explorer_2
-            else "interactive.view_interactive",
+            "data_explorer_2.view_data_explorer_2",
             xDataset=tc["compound_dataset"].values[0],
             xFeature=tc["compound_label"].values[0],
             yDataset="expression",
@@ -320,9 +322,7 @@ def format_corr_table(compound_label, top_correlations):
     table = []
     for _, tc in top_correlations.items():
         interactive_url = url_for(
-            "data_explorer_2.view_data_explorer_2"
-            if current_app.config["ENABLED_FEATURES"].data_explorer_2
-            else "interactive.view_interactive",
+            "data_explorer_2.view_data_explorer_2",
             xDataset=tc["compound_dataset"].values[0],
             yDataset="expression",
             xFeature=compound_label,

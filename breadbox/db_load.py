@@ -6,10 +6,10 @@ from breadbox.models.dataset import ValueType, AnnotationType
 import enum
 from breadbox.crud.data_type import add_data_type, get_data_type
 import pandas as pd
-from breadbox.crud.types import add_dimension_type
+from breadbox.service.dataset import add_dimension_type
 
 from breadbox.crud.data_type import get_data_types
-from breadbox.api.types import Settings
+from breadbox.api.dimension_types import Settings
 from breadbox.schemas.types import IdMapping, AnnotationTypeMap
 import os
 from typing import Protocol, Any

@@ -1,4 +1,6 @@
-import { DataExplorerPlotConfigDimension } from "@depmap/types";
+import { useEffect, useState } from "react";
+import { DataExplorerPlotConfigDimension, DimensionType } from "@depmap/types";
+import { useDataExplorerApi } from "../contexts/DataExplorerApiContext";
 
 export function getDimensionTypeLabel(dimension_type: string) {
   if (!dimension_type) {
@@ -19,16 +21,23 @@ export function getDimensionTypeLabel(dimension_type: string) {
 
   return (
     dimension_type
+      // Explicitly limit the size of input (for no other reason than to shut
+      // up GitHub CodeQL which thinks someone might used this to DDoS us 🤦)
+      .slice(0, 1000)
       // no underscores
       .replace(/_/g, " ")
       // strip out version suffixes
-      .replace(/\s*[vV]?\d+$/, "")
+      .replace(/\s*v?\d+$/i, "")
   );
 }
 
 export const isCompleteExpression = (expr: any) => {
   if (expr == null) {
     return false;
+  }
+
+  if (typeof expr === "boolean") {
+    return true;
   }
 
   if (expr.and && expr.and.length === 0) {
@@ -83,12 +92,80 @@ export const urlLibEncode = (s: string) => {
   );
 };
 
-// TODO: Remove this helper in favor of getting this info from the backend. It
-// could be part of the response of the /datasets_by_index_type endpoint.
-export const isSampleType = (dimensionType: string | null | undefined) => {
-  return ["depmap_model", "screen", "model_condition"].includes(
-    dimensionType as string
+export const isSampleType = (
+  dimensionTypeName: string | null | undefined,
+  dimensionTypes?: DimensionType[]
+) => {
+  if (!dimensionTypeName) {
+    return false;
+  }
+
+  if (dimensionTypes) {
+    const dimensionType = dimensionTypes.find(
+      (d) => d.name === dimensionTypeName
+    );
+
+    if (dimensionType) {
+      return dimensionType.axis === "sample";
+    }
+  }
+
+  return [
+    "depmap_model",
+    "screen",
+    "Screen metadata",
+    "model_condition",
+  ].includes(dimensionTypeName);
+};
+
+export function convertDimensionToSliceId(
+  dimension: Partial<DataExplorerPlotConfigDimension>
+) {
+  if (!isCompleteDimension(dimension)) {
+    return null;
+  }
+
+  if (dimension.axis_type !== "raw_slice") {
+    throw new Error("Cannot convert a context to a slice ID!");
+  }
+
+  if (isSampleType(dimension.slice_type)) {
+    throw new Error(
+      "Cannot convert a sample to a slice ID! Only features are supported."
+    );
+  }
+
+  const expr = dimension.context.expr as { "==": [object, string] };
+  const feature = expr["=="][1];
+
+  return [
+    "slice",
+    urlLibEncode(dimension.dataset_id),
+    urlLibEncode(feature),
+    "label",
+  ].join("/");
+}
+
+export const useDimensionType = (dimensionTypeName: string | null) => {
+  const api = useDataExplorerApi();
+  const [dimensionType, setDimensionType] = useState<DimensionType | null>(
+    null
   );
+  const [isDimensionTypeLoading, setIsDimensionTypeLoading] = useState(true);
+
+  useEffect(() => {
+    api.fetchDimensionTypes().then((types) => {
+      const dt = types.find((t) => t.name === dimensionTypeName);
+
+      if (dt) {
+        setDimensionType(dt);
+      }
+
+      setIsDimensionTypeLoading(false);
+    });
+  }, [api, dimensionTypeName]);
+
+  return { dimensionType, isDimensionTypeLoading };
 };
 
 export const capitalize = (str: string) => {
@@ -122,6 +199,7 @@ export const sortDimensionTypes = (types: string[]) => {
           "depmap_model",
           "gene",
           "gene pair",
+          "compound",
           "compound_experiment",
           "other",
           "custom",
@@ -129,12 +207,13 @@ export const sortDimensionTypes = (types: string[]) => {
     )
     .sort(Intl.Collator("en").compare);
 
-  // prioritize { depmap_model, gene, compound_experiment } and stick
-  // { other, custom } last
+  // prioritize { depmap_model, gene, etc... }
+  // and stick { other, custom } last
   return [
     set.has("depmap_model") ? "depmap_model" : null,
     set.has("gene") ? "gene" : null,
     set.has("gene pair") ? "gene pair" : null,
+    set.has("compound") ? "compound" : null,
     set.has("compound_experiment") ? "compound_experiment" : null,
     ...middle,
     set.has("other") ? "other" : null,

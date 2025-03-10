@@ -9,9 +9,9 @@ export type DataExplorerPlotType =
   | "waterfall";
 
 export type DataExplorerContextVariable = SliceQuery & {
-  source?: "metadata_column" | "annotation" | "matrix";
-  value_type?: "categorical" | "continuous" | "list_strings";
+  source?: "metadata_column" | "tabular_dataset" | "matrix_dataset";
   slice_type?: string;
+  label?: string;
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -49,7 +49,7 @@ export type FilterKey =
   | "distinguish2";
 
 export type DataExplorerFilters = Partial<
-  Record<FilterKey, DataExplorerContext>
+  Record<FilterKey, DataExplorerContext | DataExplorerContextV2>
 >;
 
 export interface DataExplorerPlotConfigDimension {
@@ -60,8 +60,15 @@ export interface DataExplorerPlotConfigDimension {
   aggregation: DataExplorerAggregation;
 }
 
-// TODO: Rework this to work SliceQuery objects instead of Slice IDs.
-export type DataExplorerMetadata = Record<string, { slice_id: string }>;
+export interface DataExplorerPlotConfigDimensionV2
+  extends Omit<DataExplorerPlotConfigDimension, "context"> {
+  context: DataExplorerContextV2;
+}
+
+export type DataExplorerMetadata = Record<
+  string,
+  { slice_id: string } | SliceQuery
+>;
 
 export interface DataExplorerPlotResponseDimension {
   axis_label: string;
@@ -71,11 +78,14 @@ export interface DataExplorerPlotResponseDimension {
   values: number[];
 }
 
-export type colorByValue =
+export type ColorByValue =
   | "raw_slice"
   | "aggregated_slice"
   | "property"
-  | "custom";
+  | "custom"
+  // Only supported in Elara. These map to how data is stored in Breadbox.
+  | "metadata_column"
+  | "tabular_dataset";
 
 // A DataExplorerPlotConfig is an object with all the configurable parameters
 // used to generate a plot. Note that some properties only make sense with
@@ -85,7 +95,7 @@ export interface DataExplorerPlotConfig {
   plot_type: DataExplorerPlotType;
   index_type: string;
   dimensions: Partial<Record<DimensionKey, DataExplorerPlotConfigDimension>>;
-  color_by?: colorByValue;
+  color_by?: ColorByValue;
   filters?: DataExplorerFilters;
   metadata?: DataExplorerMetadata;
 
@@ -159,12 +169,13 @@ export type ContextPath =
 
 export interface DataExplorerDatasetDescriptor {
   data_type: string;
-  dataset_id: string;
+  id: string;
   index_type: string;
+  given_id: string | null;
+  name: string;
+  priority: number | null;
   slice_type: string;
-  label: string;
   units: string;
-  priority: number;
 }
 
 type ContextWithoutExprOrVars = {

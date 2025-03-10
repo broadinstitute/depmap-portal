@@ -28,8 +28,7 @@ import {
   LEGEND_RANGE_6,
   LegendKey,
   LEGEND_RANGE_7,
-  calcMinMax,
-} from "src/data-explorer-2/components/plot/prototype/plotUtils";
+} from "@depmap/data-explorer-2";
 import ContextAnalysisPlotPanel from "./ContextAnalysisPlotPanel";
 import ScatterPlotLegend from "./ScatterPlotLegend";
 import {
@@ -55,6 +54,7 @@ import { Button } from "react-bootstrap";
 import useContextExplorerFilters from "src/contextExplorer/hooks/useContextExplorerFilters";
 import DoseCurvesTile from "./DoseCurvesTile";
 import CollapsibleBoxPlots from "./CollapsibleBoxPlots";
+import { calcMinMax } from "@depmap/data-explorer-2/src/components/DataExplorerPage/components/plot/prototype/plotUtils";
 
 interface ContextAnalysisProps {
   selectedContextNameInfo: ContextNameInfo;
@@ -222,7 +222,11 @@ function ContextAnalysis({
   ] = useState<ExtendedPlotType | null>(null);
   const [entityUrlRoot, setEntityUrlRoot] = useState<string | null>(null);
 
-  const stickyFiltersMode = false;
+  // TODO: In the future, we should take stickyFiltersMode out since it's always turned off. The decision
+  // to turn this off was made right before the 24q4 release, so it was decided that it's temporarily less risky to
+  // turn off the stickyFiltersMode instead of completely removing the ability to set stickyFiltersMode.
+  const stickyFiltersMode = false; // DO NOT CHANGE THIS TO TRUE.
+
   // useContextExplorerFilters is very similar to useDiscoveryAppFilters. They
   // are temporarily separated out into 2 different files while the stickyFiltersMode
   // and Context Explorer is new. This is to reduce the risk of breaking Context Explorer,

@@ -1,11 +1,29 @@
 import React from "react";
 import styles from "src/contextExplorer/styles/ContextExplorer.scss";
-import {
-  ceil,
-  floor,
-  LegendKey,
-  precision,
-} from "src/data-explorer-2/components/plot/prototype/plotUtils";
+import { LegendKey } from "@depmap/data-explorer-2";
+
+const ceil = (n: number, p: number) => Math.ceil(n * p) / p;
+const floor = (n: number, p: number) => Math.floor(n * p) / p;
+
+function precision(n: number) {
+  const decimalPart = `${n}`.split(".")[1];
+
+  if (!decimalPart) {
+    return 1;
+  }
+
+  let e = 10;
+
+  for (let i = 0; i < decimalPart.length; i += 1) {
+    if (decimalPart[i] !== "0") {
+      return e * 10;
+    }
+
+    e *= 10;
+  }
+
+  return 100;
+}
 
 function GeneDepLegendLabels({
   colorMap,

@@ -3,6 +3,8 @@ import json
 import uuid
 import numpy as np
 import pandas as pd
+
+from breadbox.crud.dimension_types import get_dimension_type
 from ..utils import assert_status_not_ok, assert_status_ok, assert_task_failure
 
 from sqlalchemy import and_
@@ -23,8 +25,8 @@ from breadbox.models.dataset import (
 from fastapi.testclient import TestClient
 from breadbox.api.dependencies import get_dataset
 from breadbox.io.filestore_crud import get_slice
-from breadbox.models.dataset import DimensionSearchIndex, DatasetReference
-from breadbox.crud.dataset import get_datasets, populate_search_index
+from breadbox.models.dataset import DimensionSearchIndex
+from breadbox.service.search import populate_search_index_after_update
 
 from breadbox.models.dataset import PropertyToIndex
 from breadbox.schemas.dataset import ColumnMetadata
@@ -32,6 +34,7 @@ from breadbox.schemas.dataset import ColumnMetadata
 from tests import factories
 from breadbox.config import Settings
 from typing import Dict
+from ..utils import upload_and_get_file_ids
 
 
 def assert_dimensions_response_matches(a, b):
@@ -128,8 +131,11 @@ class TestGet:
             settings,
             data_df=pd.DataFrame({"ID": ["ID2"]}),
             index_type_name="sample-type",
-            id_mapping={"ID": "sample-type"},
-            columns_metadata={"ID": ColumnMetadata(col_type=AnnotationType.text)},
+            columns_metadata={
+                "ID": ColumnMetadata(
+                    col_type=AnnotationType.text, references="sample-type"
+                )
+            },
         )
 
         response = client.get(
@@ -165,7 +171,7 @@ class TestGet:
         assert_status_ok(given_id_response)
         assert given_id_response.json() == response.json()
 
-    def test_get_dataset_samples(
+    def test_get_matrix_dataset_samples(
         self, client: TestClient, minimal_db: SessionWithUser, settings
     ):
         given_id = "some_matrix_dataset"
@@ -463,8 +469,17 @@ class TestGet:
         assert_status_ok(braf_gene_feature_type_response)
         assert_status_ok(compound_feature_type_response)
 
-        dataset_references = minimal_db.query(DatasetReference).all()
-        assert len(dataset_references) == 1
+        columns = minimal_db.query(TabularColumn).all()
+        assert (
+            len(
+                [
+                    column
+                    for column in columns
+                    if column.references_dimension_type_name is not None
+                ]
+            )
+            == 1
+        )
 
         dimension_search_index_entries = minimal_db.query(DimensionSearchIndex).all()
 
@@ -947,17 +962,17 @@ class TestGet:
             headers=admin_headers,
         )
 
-        datasets = get_datasets(minimal_db, admin_user, None, None, None, None, None)
-
-        for dataset in datasets:
-            populate_search_index(minimal_db, admin_user, dataset.id)
+        for dimension_type_name in ["gene", "compound", "oncref_condition"]:
+            dimension_type = get_dimension_type(minimal_db, dimension_type_name)
+            assert dimension_type is not None
+            populate_search_index_after_update(minimal_db, dimension_type)
 
         search_index_entries = []
         for item in minimal_db.query(DimensionSearchIndex).all():
             search_index_entries.append(
                 {
                     "dimension_given_id": item.dimension_given_id,
-                    "axis": item.axis,
+                    "axis": "feature",
                     "label": item.label,
                     "property": item.property,
                     "value": item.value,
@@ -1204,12 +1219,21 @@ class TestGet:
                 "value": "B",
             },
         ]
-        assert search_index_entries == expected_search_index_entries
+
+        def sort_entries(entries):
+            return sorted(
+                entries,
+                key=lambda x: (x["dimension_given_id"], x["property"], x["label"]),
+            )
+
+        assert sort_entries(search_index_entries) == sort_entries(
+            expected_search_index_entries
+        )
 
         dimensions_response = client.get("/datasets/dimensions/?limit=100")
 
-        # Leave limit at 100 to return everything. Should be ordered by priority and then label.
-        assert dimensions_response.json() == [
+        # Leave limit at 100 to return everything. Should be ordered by label, then by type_name and id.
+        expected_response = [
             {
                 "type_name": "oncref_condition",
                 "id": "ab",
@@ -1301,6 +1325,8 @@ class TestGet:
                 ],
             },
         ]
+
+        assert dimensions_response.json() == expected_response
 
         # Filter on type_name
         dimensions_response = client.get(
@@ -2169,7 +2195,7 @@ class TestPost:
             "C": {"ACH-1": 2.0, "ACH-2": 5.0},
         }
 
-    def test_get_dataset_data_no_filters(
+    def test_get_matrix_dataset_data_no_filters(
         self, client: TestClient, minimal_db: SessionWithUser, settings, mock_celery
     ):
         dataset = factories.matrix_dataset(minimal_db, settings)
@@ -2187,7 +2213,7 @@ class TestPost:
             "C": {"ACH-1": 2.0, "ACH-2": 5.0},
         }
 
-    def test_get_dataset_data_generic_feature_type_labels(
+    def test_get_matrix_dataset_data_generic_feature_type_labels(
         self, client: TestClient, minimal_db: SessionWithUser, settings, mock_celery
     ):
         dataset = factories.matrix_dataset(minimal_db, settings, feature_type=None)
@@ -2248,7 +2274,7 @@ class TestPost:
             "A": {"ACH-1": 0.0},
         }
 
-    def test_get_dataset_data_by_ids(
+    def test_get_matrix_dataset_data_by_ids(
         self, client: TestClient, minimal_db: SessionWithUser, settings, mock_celery
     ):
         dataset = factories.matrix_dataset(minimal_db, settings)
@@ -2366,7 +2392,7 @@ class TestPost:
         assert response.status_code == 400
         assert response.json()["detail"]
 
-    def test_get_dataset_data_by_labels(
+    def test_get_matrix_dataset_data_by_labels(
         self, client: TestClient, minimal_db: SessionWithUser, settings, mock_celery
     ):
         sample_type = factories.add_dimension_type(
@@ -2463,6 +2489,141 @@ class TestPost:
             == "1 missing features: ['INVALID_FEATURE'] and 1 missing samples: ['INVALID_SAMPLE']"
         )
 
+    def test_get_aggregated_matrix_dataset_data(
+        self,
+        client: TestClient,
+        minimal_db: SessionWithUser,
+        settings,
+        mock_celery,
+        public_group,
+        tmpdir,
+    ):
+        data_path = str(tmpdir.join("dataset.csv"))
+        pd.DataFrame(
+            {"A": [1, 2, 3], "B": [3, 4, pd.NA], "C": [4, 3, 2]},
+            index=["Id1", "Id2", "Id3"],
+        ).to_csv(data_path)
+        """
+                A   B   C
+        ------------------- 
+        Id1     1   3   4
+        Id2     2   4   3
+        Id3     3   NA  2
+        """
+        file_ids, expected_md5 = upload_and_get_file_ids(client, filename=data_path)
+
+        admin_headers = {"X-Forwarded-Email": settings.admin_users[0]}
+        matrix_dataset = client.post(
+            "/dataset-v2/",
+            json={
+                "format": "matrix",
+                "name": "Test Aggregation dataset",
+                "units": "a unit",
+                "feature_type": "generic",
+                "sample_type": "depmap_model",
+                "data_type": "User upload",
+                "file_ids": file_ids,
+                "dataset_md5": expected_md5,
+                "is_transient": False,
+                "group_id": public_group.id,
+                "value_type": "continuous",
+                "allowed_values": None,
+            },
+            headers=admin_headers,
+        )
+        assert_status_ok(matrix_dataset)
+
+        response = client.post(
+            f"/datasets/matrix/{matrix_dataset.json()['result']['datasetId']}",
+            json={"aggregate": {"aggregate_by": "samples", "aggregation": "mean"}},
+        )
+        """
+        Expected:
+            mean
+        ------------------- 
+        A     2
+        B     3.5
+        C     3
+        """
+        assert response.json() == {"mean": {"A": 2, "B": 3.5, "C": 3}}
+
+        response = client.post(
+            f"/datasets/matrix/{matrix_dataset.json()['result']['datasetId']}",
+            json={"aggregate": {"aggregate_by": "samples", "aggregation": "25%tile"}},
+        )
+        """
+        Expected:
+            25%tile
+        ------------------- 
+        A    1.0050
+        B    3.0025
+        C    2.0050
+        """
+        assert response.json() == {"25%tile": {"A": 1.0050, "B": 3.0025, "C": 2.0050}}
+
+        response = client.post(
+            f"/datasets/matrix/{matrix_dataset.json()['result']['datasetId']}",
+            json={
+                "feature_identifier": "id",
+                "features": ["A", "B"],
+                "sample_identifier": "id",
+                "samples": ["Id1", "Id3"],
+                "aggregate": {"aggregate_by": "features", "aggregation": "mean"},
+            },
+        )
+        """
+        Expected:
+                mean
+        ------------------- 
+        Id1     2
+        Id3     3
+        """
+        assert response.json() == {"mean": {"Id1": 2, "Id3": 3}}
+
+    def test_bad_matrix_dataset_categorical_aggregation(
+        self,
+        client: TestClient,
+        minimal_db: SessionWithUser,
+        settings,
+        mock_celery,
+        public_group,
+        tmpdir,
+    ):
+        data_path = str(tmpdir.join("dataset.csv"))
+        pd.DataFrame(
+            {"A": ["Yes", "No", "Yes"], "B": ["No", pd.NA, "Yes"]},
+            index=["Id1", "Id2", "Id3"],
+        ).to_csv(data_path)
+
+        file_ids, expected_md5 = upload_and_get_file_ids(client, filename=data_path)
+
+        admin_headers = {"X-Forwarded-Email": settings.admin_users[0]}
+        matrix_dataset = client.post(
+            "/dataset-v2/",
+            json={
+                "format": "matrix",
+                "name": "Test Aggregation Categorical Dataset",
+                "units": "a unit",
+                "feature_type": "generic",
+                "sample_type": "depmap_model",
+                "data_type": "User upload",
+                "file_ids": file_ids,
+                "dataset_md5": expected_md5,
+                "is_transient": False,
+                "group_id": public_group.id,
+                "value_type": "categorical",
+                "allowed_values": ["Yes", "No"],
+            },
+            headers=admin_headers,
+        )
+        assert_status_ok(matrix_dataset)
+
+        response = client.post(
+            f"/datasets/matrix/{matrix_dataset.json()['result']['datasetId']}",
+            json={"aggregate": {"aggregate_by": "samples", "aggregation": "mean"}},
+        )
+        assert_status_not_ok(response)
+
     def test_get_tabular_dataset_data(
         self,
         client: TestClient,
@@ -2471,6 +2632,9 @@ class TestPost:
         private_group: Dict,
         settings,
     ):
+        """
+        Test the loading of tabular data - including filtering by ID, label and column.
+        """
         admin_headers = {"X-Forwarded-Email": settings.admin_users[0]}
 
         # Give metadata for depmap model
@@ -2519,7 +2683,7 @@ class TestPost:
             ],
         )
 
-        tabular_file_ids_1, tabular_file_1_hash = factories.file_ids_and_md5_hash(
+        tabular_file_ids_1, tabular_file_1_hash = upload_and_get_file_ids(
             client, tabular_file_1
         )
 
@@ -2715,12 +2879,13 @@ class TestPost:
         private_group: Dict,
         settings,
     ):
+        """Get the data for a tabular dataset which has no metadata."""
         admin_headers = {"X-Forwarded-Email": settings.admin_users[0]}
 
         tabular_file_2 = factories.tabular_csv_data_file(
             cols=["depmap_id", "col_1", "col_2"], row_values=[["ACH-1", 1, "hi"]],
         )
-        tabular_file_ids_2, tabular_file_2_hash = factories.file_ids_and_md5_hash(
+        tabular_file_ids_2, tabular_file_2_hash = upload_and_get_file_ids(
             client, tabular_file_2
         )
         tabular_dataset_2_response = client.post(
@@ -2802,10 +2967,14 @@ class TestPost:
         )
 
         # Define a matrix dataset
+        # This matrix contains values which don't exist in the metadata
+        # (sampleID4, featureID4) and should therefor be ignored
         example_matrix_values = factories.matrix_csv_data_file_with_values(
-            feature_ids=["featureID1", "featureID2", "featureID3"],
-            sample_ids=["sampleID1", "sampleID2", "sampleID3"],
-            values=np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]]),
+            feature_ids=["featureID1", "featureID2", "featureID3", "featureID4"],
+            sample_ids=["sampleID1", "sampleID2", "sampleID3", "sampleID4"],
+            values=np.array(
+                [[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12], [13, 14, 15, 16]]
+            ),
         )
         dataset_given_id = "dataset_123"
         dataset_with_metadata = factories.matrix_dataset(
@@ -2838,6 +3007,77 @@ class TestPost:
         ]
         assert response_content["values"] == [1, 2, 3]
 
+    def test_get_dimension_data_not_found(
+        self, client: TestClient, minimal_db: SessionWithUser, public_group, settings,
+    ):
+        # Define label metadata for our features
+        factories.add_dimension_type(
+            minimal_db,
+            settings,
+            user=settings.admin_users[0],
+            name="feature-with-metadata",
+            display_name="Feature With Metadata",
+            id_column="ID",
+            annotation_type_mapping={
+                "ID": AnnotationType.text,
+                "label": AnnotationType.text,
+            },
+            axis="feature",
+            metadata_df=pd.DataFrame(
+                {
+                    "ID": ["featureID1", "featureID2", "featureID3"],
+                    "label": ["featureLabel1", "featureLabel2", "featureLabel3"],
+                }
+            ),
+        )
+
+        # Define a matrix dataset
+        # This matrix contains values which don't exist in the metadata
+        # (sampleID4, featureID4) and should therefor be ignored
+        example_matrix_values = factories.matrix_csv_data_file_with_values(
+            feature_ids=["featureID1", "featureID2", "featureID3", "featureID4"],
+            sample_ids=["sampleID1", "sampleID2", "sampleID3", "sampleID4"],
+            values=np.array(
+                [[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12], [13, 14, 15, 16]]
+            ),
+        )
+        dataset_given_id = "dataset_123"
+        dataset_with_metadata = factories.matrix_dataset(
+            minimal_db,
+            settings,
+            feature_type="feature-with-metadata",
+            data_file=example_matrix_values,
+            given_id=dataset_given_id,
+        )
+
+        # Test that lookups by non-existant datasets return 404s
+        response = client.post(
+            "/datasets/dimension/data",
+            json={
+                "dataset_id": "fake dataset ID",  # non-existant dataset ID
+                "identifier": "sampleID1",
+                "identifier_type": "sample_id",
+            },
+            headers={"X-Forwarded-User": "some-public-user"},
+        )
+
+        assert_status_not_ok(response)
+        assert response.status_code == 404
+
+        # Test that lookups by non-existant features return 404s
+        response = client.post(
+            "/datasets/dimension/data",
+            json={
+                "dataset_id": dataset_given_id,
+                "identifier": "fake sample id",  # non-existant sample ID
+                "identifier_type": "sample_id",
+            },
+            headers={"X-Forwarded-User": "some-public-user"},
+        )
+
+        assert_status_not_ok(response)
+        assert response.status_code == 404
+
 
 class TestPatch:
     def test_update_dataset(
@@ -2850,7 +3090,7 @@ class TestPatch:
     ):
         # Create a new matrix dataset
         test_user_headers = {"X-Forwarded-User": "someone@private-group.com"}
-        matrix_file_ids, matrix_hash = factories.file_ids_and_md5_hash(
+        matrix_file_ids, matrix_hash = upload_and_get_file_ids(
             client, factories.continuous_matrix_csv_file()
         )
         matrix_dataset_res = client.post(
@@ -2989,7 +3229,7 @@ class TestPatch:
             cols=["depmap_id", "attr1"],
             row_values=[["ACH-1", 1.0,], ["ACH-3", np.NaN],],
         )
-        tabular_file_ids, tabular_hash = factories.file_ids_and_md5_hash(
+        tabular_file_ids, tabular_hash = upload_and_get_file_ids(
             client, tabular_data_file
         )
         tabular_dataset_res = client.post(
@@ -3080,7 +3320,7 @@ class TestPatch:
             cols=["depmap_id", "attr1"],
             row_values=[["ACH-1", 1.0,], ["ACH-3", np.NaN],],
         )
-        tabular_file_ids, tabular_hash = factories.file_ids_and_md5_hash(
+        tabular_file_ids, tabular_hash = upload_and_get_file_ids(
             client, tabular_data_file
         )
         tabular_dataset_res = client.post(

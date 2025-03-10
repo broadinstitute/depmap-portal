@@ -46,6 +46,7 @@ export default class CellignerTumorsForCellLineControlPanel extends React.Compon
     const { cellLine } = this.state;
 
     const kNeighbors = parseInt(formEvent.currentTarget.value, 10);
+
     this.setState({ kNeighbors });
     if (cellLine) {
       onCellLineSelected(cellLine, kNeighbors);
@@ -77,7 +78,8 @@ export default class CellignerTumorsForCellLineControlPanel extends React.Compon
         <FormGroup controlId="selectK">
           <ControlLabel>2. Select K nearest neighbors</ControlLabel>
           <FormControl
-            type="text"
+            type="number"
+            min="0"
             value={kNeighbors}
             onChange={this.handleKNeighborsChange}
           />

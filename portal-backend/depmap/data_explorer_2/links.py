@@ -9,9 +9,6 @@ from depmap.context.models import Lineage
 
 
 def get_tutorial_link():
-    if not current_app.config["ENABLED_FEATURES"].data_explorer_2:
-        return None
-
     return "https://sites.google.com/broadinstitute.org/depmap-de2-tutorial/home"
 
 

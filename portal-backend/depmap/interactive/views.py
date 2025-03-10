@@ -57,51 +57,16 @@ class CellLineInfoFeatures(Enum):
     lineage_display_name = "lineage_display_name"
 
 
-def _setup_interactive_args_dict(request) -> Tuple[bool, dict]:
-    # request.args is an ImmutableMultiDict
-    # below warns that conversion to a dict must be done with .to_dict()
-    # https://werkzeug.palletsprojects.com/en/0.14.x/datastructures/#werkzeug.datastructures.OrderedMultiDict
-    # ^ applies to OrderedMultiDict but would also seem to apply to ImmutableMultiDict
-    args_dict = request.args.to_dict()
-
-    args_modified = False
-    if is_mobile(request) and request.args.get("associationTable") == "true":
-        args_dict["associationTable"] = "false"
-        args_modified = True
-
-    for section in ["x", "y", "color", "filter"]:
-
-        dataset = "{}Dataset".format(section)
-        feature = "{}Feature".format(section)
-        if (
-            dataset in args_dict
-            and feature in args_dict
-            and args_dict[dataset]
-            and args_dict[feature]
-        ):  # blank strings are falsy
-            # we have previously hit some bugs over these being lists vs stirngs, so just making sure
-            assert type(args_dict[dataset]) == str and type(args_dict[feature]) == str
-            args_dict[section] = InteractiveTree.get_id_from_dataset_feature(
-                args_dict[dataset], args_dict[feature]
-            )
-            del args_dict[dataset]
-            del args_dict[feature]
-            args_modified = True
-
-    return args_modified, args_dict
-
-
 @blueprint.route("/")
 def view_interactive():
     """
-    Entry point for interactive section
-    """
-    args_modified, args_dict = _setup_interactive_args_dict(request)
+    Former Entry point for Data Explorer 1. Now redirects to Data Explorer 2.
 
-    if args_modified:
-        return redirect(url_for("interactive.view_interactive", **args_dict))
-    else:
-        return render_template("interactive/index.html")
+    Note that any query paramters will be parsed by the DE2 frontend.
+    """
+    # args_modified, args_dict = _setup_interactive_args_dict(request)
+
+    return redirect(url_for("data_explorer_2.view_data_explorer_2", **request.args))
 
 
 @blueprint.route("/custom_analysis")
@@ -112,22 +77,7 @@ def view_custom_analysis():
     return render_template("interactive/index.html")
 
 
-@blueprint.route("/v2")
-def view_interactive_v2():
-    """
-    Entry point for interactive section
-    """
-    args_modified, args_dict = _setup_interactive_args_dict(request)
-
-    if args_modified:
-        return redirect(url_for("interactive.view_interactive_v2", **args_dict))
-    else:
-        return render_template("interactive/index_v2.html")
-
-
 ## Cell line url root. This is a weird endpoint, unsure where else to put it ##
-
-
 @blueprint.route("/api/cellLineUrlRoot")
 def get_cell_line_url_root():
     return jsonify(url_for("cell_line.view_cell_line", cell_line_name=""))
@@ -135,16 +85,18 @@ def get_cell_line_url_root():
 
 @blueprint.route("/api/getDatasets")
 def get_datasets():
-    """Return all matrix datasets (both breadbox and legacy datasets)."""
+    """
+    Returns matrix datasets (both breadbox and legacy datasets) sorted alphabetically.
+    Only matrices with a sample type of "depmap_model" are included.
+    Data Explorer 1 and Custom Analysis can't handle other sample types.
+    """
     combined_datasets = []
     for dataset in data_access.get_all_matrix_datasets():
-        if dataset.is_continuous:
+        if dataset.is_continuous and dataset.sample_type == "depmap_model":
             combined_datasets.append(dict(label=dataset.label, value=dataset.id,))
     combined_datasets = sorted(
-        combined_datasets,
-        key=lambda dataset: data_access.get_sort_key(dataset["value"]),
+        combined_datasets, key=lambda dataset: dataset.get("label"),
     )
-
     return jsonify(combined_datasets)
 
 
@@ -703,8 +655,10 @@ def get_associations_df(matrix_id, x_feature):
 
 @blueprint.route("/api/associations")
 def get_associations():
-    x_id = request.args.get("x")
-    if x_id.startswith("breadbox/"):
+    x_id = request.args.get("x")  # slice ID
+
+    x_dataset_id, x_feature = InteractiveTree.get_dataset_feature_from_id(x_id)
+    if x_dataset_id.startswith("breadbox/"):
         # Associations don't exist for breadbox features (yet at least)
         # but we don't want errors when this endpoint is called for a breadbox feature
         return jsonify(
@@ -716,12 +670,11 @@ def get_associations():
             }
         )
     # Everything below this point is deprecated: and not supported for breadbox datasets.
-    x_dataset, x_feature = InteractiveTree.get_dataset_feature_from_id(x_id)
-    dataset_label = interactive_utils.get_dataset_label(x_dataset)
+    dataset_label = interactive_utils.get_dataset_label(x_dataset_id)
     if not option_used(
-        x_feature, x_dataset, "DATASETS"
+        x_feature, x_dataset_id, "DATASETS"
     ) or not interactive_utils.is_standard(
-        x_dataset
+        x_dataset_id
     ):  # fixme test for this path
         return jsonify(
             {
@@ -731,7 +684,7 @@ def get_associations():
                 "featureLabel": x_feature,
             }
         )
-    matrix_id = interactive_utils.get_matrix_id(x_dataset)
+    matrix_id = interactive_utils.get_matrix_id(x_dataset_id)
 
     df = get_associations_df(matrix_id, x_feature)
 
@@ -862,6 +815,7 @@ def download_csv_and_view_interactive():
     display_name = request.args["display_name"]
     units = request.args["units"]
     file_url = request.args["url"]
+    use_de2 = request.args.get("de2", "T") == "T"
 
     url_upload_whitelist = flask.current_app.config["URL_UPLOAD_WHITELIST"]
 
@@ -880,7 +834,7 @@ def download_csv_and_view_interactive():
         abort(400)
 
     result = upload_transient_csv.apply(
-        args=[display_name, units, True, csv_path, False]
+        args=[display_name, units, True, csv_path, False, use_de2]
     )
 
     if result.state == TaskState.SUCCESS.value:

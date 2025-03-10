@@ -1,7 +1,7 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import ReactSelect from "react-select";
-import { ApiContext } from "@depmap/api";
-import { fetchDatasetsByIndexType } from "../../api";
+import { useDataExplorerApi } from "../../contexts/DataExplorerApiContext";
+import { useDeprecatedDataExplorerApi } from "../../contexts/DeprecatedDataExplorerApiContext";
 import {
   capitalize,
   sortDimensionTypes,
@@ -16,7 +16,8 @@ interface Props {
 }
 
 function ContextTypeSelect({ value, onChange, useContextBuilderV2 }: Props) {
-  const apiContext = useContext(ApiContext);
+  const api = useDataExplorerApi();
+  const deprecatedApi = useDeprecatedDataExplorerApi();
   const [options, setOptions] = useState<{ label: string; value: string }[]>(
     []
   );
@@ -25,7 +26,7 @@ function ContextTypeSelect({ value, onChange, useContextBuilderV2 }: Props) {
     (async () => {
       try {
         if (useContextBuilderV2) {
-          const dimensionTypes = await apiContext.getApi().getDimensionTypes();
+          const dimensionTypes = await api.fetchDimensionTypes();
           const sorted = sortDimensionTypes(
             dimensionTypes.map(({ name }) => name)
           );
@@ -43,7 +44,7 @@ function ContextTypeSelect({ value, onChange, useContextBuilderV2 }: Props) {
 
           setOptions(opts);
         } else {
-          const datasetByIndexType = await fetchDatasetsByIndexType();
+          const datasetByIndexType = await deprecatedApi.fetchDatasetsByIndexType();
           const indexTypes = Object.keys(datasetByIndexType);
 
           const opts = sortDimensionTypes(indexTypes || [])
@@ -59,7 +60,7 @@ function ContextTypeSelect({ value, onChange, useContextBuilderV2 }: Props) {
         window.console.error(e);
       }
     })();
-  }, [apiContext, useContextBuilderV2]);
+  }, [api, deprecatedApi, useContextBuilderV2]);
 
   const selectedValue = options.find((option) => {
     return option.value === value;

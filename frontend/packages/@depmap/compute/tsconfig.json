@@ -4,9 +4,10 @@
     { "path": "../api" },
     { "path": "../cell-line-selector" },
     { "path": "../compute" },
+    { "path": "../data-explorer-2" },
     { "path": "../globals" },
-    { "path": "../interactive" },
     { "path": "../long-table" },
+    { "path": "../types" },
     { "path": "../user-upload" },
     { "path": "../utils" }
   ]

@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 import React, { useCallback, useMemo } from "react";
-import styles from "src/data-explorer-2/styles/DataExplorer2.scss";
 
 import ScatterPlot from "./ScatterPlot";
 
@@ -50,7 +49,7 @@ function ContextAnalysisScatterPlot({
   );
 
   return (
-    <div className={styles.scatterPlot}>
+    <div>
       <ScatterPlot
         data={data}
         colorVariable={colorVariable}

@@ -21,7 +21,6 @@ from depmap.compound.models import CompoundExperiment
 from depmap.transcription_start_site.models import TranscriptionStartSite
 from depmap.proteomics.models import Protein
 from loader.matrix_loader import create_matrix_object, create_transposed_hdf5
-from loader.antibody_loader import format_index_antibody_list
 from loader.proteomics_loader import load_proteins
 from loader.dataset_loader.utils import add_biomarker_dataset, add_tabular_dataset
 from depmap.utilities.iter import estimate_line_count
@@ -70,20 +69,7 @@ def load_biomarker_dataset(
     ):  # TODO: Shouldn't be needed since no transpose property
         file_path = create_transposed_hdf5(file_path)
 
-    if biomarker_enum == BiomarkerDataset.BiomarkerEnum.rppa:
-        with db.session.no_autoflush:
-            index_antibody_list = format_index_antibody_list(
-                file_path, allow_missing_entities=allow_missing_entities
-            )
-        matrix = create_matrix_object(
-            matrix_name,
-            file_path,
-            biomarker_metadata["units"],
-            owner_id,
-            index_entity_list=index_antibody_list,
-        )
-        entity_type = "antibody"
-    elif biomarker_enum == BiomarkerDataset.BiomarkerEnum.context:
+    if biomarker_enum == BiomarkerDataset.BiomarkerEnum.context:
         entity_lookup = lambda x: ContextEntity.get_by_label(x, must=False)
         matrix = create_matrix_object(
             matrix_name,
@@ -103,6 +89,16 @@ def load_biomarker_dataset(
             non_gene_lookup=entity_lookup,
         )
         entity_type = "transcription_start_site"
+    elif biomarker_enum == BiomarkerDataset.BiomarkerEnum.rppa:
+        entity_lookup = lambda x: Protein.get_by_uniprot_id(x, must=False)
+        matrix = create_matrix_object(
+            matrix_name,
+            file_path,
+            biomarker_metadata["units"],
+            owner_id,
+            non_gene_lookup=entity_lookup,
+        )
+        entity_type = "protein"
     elif (biomarker_enum == BiomarkerDataset.BiomarkerEnum.proteomics) or (
         biomarker_enum == BiomarkerDataset.BiomarkerEnum.sanger_proteomics
     ):

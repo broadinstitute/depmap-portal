@@ -297,6 +297,7 @@ def format_dep_dist_info(
     gene_executive_info: GeneExecutiveInfoDict = {}
 
     if crispr_dataset:
+        # Note: this often encounters an error with the dev database (deprecated, so not worth fixing now)
         crispr_info = GeneExecutiveInfo.get(gene.entity_id, crispr_dataset.name)
         gene_executive_info["crispr"] = {
             "num_lines": "{}/{}".format(
@@ -413,9 +414,7 @@ def make_correlations_table(gene_symbol: str, dataset, df, has_omics_dataset_ids
     for rec in df.iloc[:5, :].to_dict("records"):
         gene_url = url_for("gene.view_gene", gene_symbol=rec["other_entity_label"])
         interactive_url = url_for(
-            "data_explorer_2.view_data_explorer_2"
-            if current_app.config["ENABLED_FEATURES"].data_explorer_2
-            else "interactive.view_interactive",
+            "data_explorer_2.view_data_explorer_2",
             xDataset=dataset.name.value,
             yDataset=rec["other_dataset_name"].value
             if has_omics_dataset_ids

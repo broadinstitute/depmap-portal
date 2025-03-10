@@ -29,6 +29,11 @@
   display: block !important;
 }
 
+.disabledOption {
+  display: inline-flex;
+  cursor: not-allowed;
+}
+
 @mixin chip {
   color: #fff;
   border-width: 1px;

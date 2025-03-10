@@ -64,6 +64,8 @@ def add_dataset_uploads(
         - `col_type`: Annotation type for the column. Annotation types may include: `continuous`, `categorical`, `binary`, `text`, or `list_strings`
 
     """
+    utils.check_celery()
+
     # Converts a data type (like a Pydantic model) to something compatible with JSON, in this case a dict. Although Celery uses a JSON serializer to serialize arguments to tasks by default, pydantic models are too complex for their default serializer. Pydantic models have a built-in .dict() method but it turns out it doesn't convert enums to strings which celery can't JSON serialize, so I opted to use fastapi's jsonable_encoder() which appears to successfully json serialize enums
     dataset_json = jsonable_encoder(dataset)
     result = run_dataset_upload.delay(dataset_json, user)  # pyright: ignore

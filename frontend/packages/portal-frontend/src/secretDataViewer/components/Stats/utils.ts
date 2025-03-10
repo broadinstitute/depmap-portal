@@ -3,10 +3,8 @@ import {
   DataExplorerContext,
   DataExplorerDatasetDescriptor,
 } from "@depmap/types";
-import {
-  fetchDatasetsMatchingContextIncludingEntities,
-  isCompleteExpression,
-} from "@depmap/data-explorer-2";
+import { isCompleteExpression } from "@depmap/data-explorer-2";
+import { fetchDatasetsMatchingContextIncludingEntities } from "src/data-explorer-2/deprecated-api";
 
 const compareCaseInsenstive = (a: string, b: string) => {
   return a.toLowerCase() < b.toLowerCase() ? -1 : 1;
@@ -16,7 +14,8 @@ export function getDataType(
   datasets: DataExplorerDatasetDescriptor[],
   dataset_id: string
 ) {
-  return datasets.find((d) => d.dataset_id === dataset_id)!.data_type;
+  return datasets.find((d) => d.id === dataset_id || d.given_id === dataset_id)!
+    .data_type;
 }
 
 export function getDataTypes(
@@ -38,7 +37,8 @@ export function getFeatureType(
   datasets: DataExplorerDatasetDescriptor[],
   dataset_id: string
 ) {
-  return datasets.find((d) => d.dataset_id === dataset_id)!.slice_type;
+  return datasets.find((d) => d.id === dataset_id || d.given_id === dataset_id)!
+    .slice_type;
 }
 
 export function getFeatureTypes(

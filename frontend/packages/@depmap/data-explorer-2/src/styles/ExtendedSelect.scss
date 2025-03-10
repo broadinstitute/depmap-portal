@@ -12,19 +12,6 @@
   }
 }
 
-.swatch {
-  display: inline-block;
-  position: relative;
-  top: 0;
-  left: -10px;
-  margin-right: 0;
-  min-width: 10px;
-  min-height: 38px;
-  border: 1px solid #ccc;
-  border-right: none;
-  border-radius: 4px 0 0 4px;
-}
-
 .selectorLabel {
   text-align: start;
   font-size: 12px;
@@ -39,14 +26,28 @@
   }
 }
 
+.swatchContainer {
+  position: relative;
+  top: -9px;
+}
+
+.swatch {
+  display: inline-block;
+  width: 10px;
+  height: 38px;
+  left: -10px;
+  position: absolute;
+  border: 1px solid #ccc;
+  border-right: none;
+  border-radius: 4px 0 0 4px;
+}
+
 .Select {
   display: inline-block;
   width: 162px;
   font-size: 12px;
 
   &.withSwatch {
-    margin-left: -10px;
-
     & > div {
       border-radius: 0 4px 4px 0;
     }
@@ -72,7 +73,13 @@
     outline: none;
 
     &:empty {
+      // vertically centers cursor in Chrome.
       line-height: 32px;
+
+      // vertically centers cursor in Firefox.
+      &::before {
+        content: "\200B";
+      }
     }
   }
 }

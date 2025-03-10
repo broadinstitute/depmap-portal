@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import downloadCsv from "src/common/utilities/downloadCsv";
+import { downloadCsv } from "@depmap/utils";
 import type ExtendedPlotType from "src/plot/models/ExtendedPlotType";
 import PlotControls from "src/plot/components/PlotControls";
 import ScatterPlot from "src/plot/components/ScatterPlot";

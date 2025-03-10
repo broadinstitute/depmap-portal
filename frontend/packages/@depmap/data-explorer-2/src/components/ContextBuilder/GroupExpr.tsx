@@ -1,7 +1,7 @@
 import React, { useRef, useEffect } from "react";
 import cx from "classnames";
 import { get_values } from "json-logic-js";
-import { ContextSummaryResponse } from "../../api";
+import { DeprecatedDataExplorerApiResponse } from "../../contexts/DeprecatedDataExplorerApiContext";
 import { getDimensionTypeLabel, pluralize } from "../../utils/misc";
 import AnyAllSelect from "./AnyAllSelect";
 import { Expr, getOperator } from "./contextBuilderUtils";
@@ -17,7 +17,7 @@ interface Props {
   dispatch: React.Dispatch<ContextBuilderReducerAction>;
   slice_type: string;
   shouldShowValidation: boolean;
-  result: ContextSummaryResponse | null;
+  result: DeprecatedDataExplorerApiResponse["fetchContextSummary"] | null;
   editInCellLineSelector: (
     modelNamesOrIDs: string[],
     shouldUseModelNames: boolean
@@ -30,7 +30,7 @@ function Result({
   isTopLevel,
   slice_type,
 }: {
-  result: ContextSummaryResponse;
+  result: DeprecatedDataExplorerApiResponse["fetchContextSummary"];
   isTopLevel: boolean;
   slice_type: string;
 }) {

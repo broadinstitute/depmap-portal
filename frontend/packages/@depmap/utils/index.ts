@@ -3,6 +3,7 @@ export { default as encodeParams } from "./src/encodeParams";
 export { encodeUrl, getQueryParams } from "./src/route";
 export { useCombinedRefs } from "./src/hooks";
 export { titleCase } from "./src/titleCase";
+export { downloadCsv } from "./src/csv";
 
 export {
   deleteQueryParams,
@@ -24,3 +25,5 @@ export {
   mutationNumToColor,
   setSelectedCellLineListName,
 } from "./src/colorAndHighlights";
+
+export * from "./src/sort";

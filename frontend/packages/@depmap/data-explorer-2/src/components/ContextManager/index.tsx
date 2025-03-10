@@ -3,14 +3,15 @@ import cx from "classnames";
 import { Button, Modal } from "react-bootstrap";
 import { LocalStorageListStore } from "@depmap/cell-line-selector";
 import { DataExplorerContext } from "@depmap/types";
-import { fetchContext } from "../../api";
+import { useDeprecatedDataExplorerApi } from "../../contexts/DeprecatedDataExplorerApiContext";
+import { fetchContext } from "../../utils/context-storage";
 import ContextBuilderModal from "../ContextBuilder/ContextBuilderModal";
 import useCellLineSelectorModal from "../ContextBuilder/CellLineSelector/useCellLineSelectorModal";
 import ContextBuilderV2 from "../ContextBuilderV2";
 import {
   deleteContextFromLocalStorage,
   loadContextsFromLocalStorage,
-  saveContextToLocalStorage,
+  saveContextToLocalStorageAndPersist,
 } from "../../utils/context";
 import { persistLegacyListAsContext } from "../ContextSelector/context-selector-utils";
 import Welcome from "./Welcome";
@@ -33,6 +34,7 @@ function ContextManager({
   initialContextType = "depmap_model",
   useContextBuilderV2 = false,
 }: Props) {
+  const api = useDeprecatedDataExplorerApi();
   const [showContextModal, setShowContextModal] = useState(false);
   const [contextType, setContextType] = useState(initialContextType);
   const [, forceRender] = useState({});
@@ -78,7 +80,10 @@ function ContextManager({
 
     onClickSave.current = async (editedContext: DataExplorerContext) => {
       try {
-        const nextHash = await saveContextToLocalStorage(editedContext, hash);
+        const nextHash = await saveContextToLocalStorageAndPersist(
+          editedContext,
+          hash
+        );
         setShowContextModal(false);
         window.dispatchEvent(new Event("dx2_contexts_updated"));
 
@@ -113,7 +118,10 @@ function ContextManager({
     let context;
 
     if (isLegacyList) {
-      [hash, context] = await persistLegacyListAsContext(hashOrLegacyListName);
+      [hash, context] = await persistLegacyListAsContext(
+        api,
+        hashOrLegacyListName
+      );
     } else {
       hash = hashOrLegacyListName;
       context = await fetchContext(hash);
@@ -129,7 +137,7 @@ function ContextManager({
     let context;
 
     if (isLegacyList) {
-      [, context] = await persistLegacyListAsContext(hashOrLegacyListName);
+      [, context] = await persistLegacyListAsContext(api, hashOrLegacyListName);
     } else {
       context = await fetchContext(hashOrLegacyListName);
     }
@@ -139,7 +147,7 @@ function ContextManager({
       name: `Copy of ${context.name}`,
     };
 
-    await saveContextToLocalStorage(duplicateContext);
+    await saveContextToLocalStorageAndPersist(duplicateContext);
     window.dispatchEvent(new Event("dx2_contexts_updated"));
     forceRender({});
 
@@ -174,7 +182,7 @@ function ContextManager({
           return null;
         }
 
-        return saveContextToLocalStorage({
+        return saveContextToLocalStorageAndPersist({
           name: contextName,
           context_type: "depmap_model",
           expr: {

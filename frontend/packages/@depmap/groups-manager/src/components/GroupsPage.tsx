@@ -113,7 +113,7 @@ export default function GroupsPage(props: GroupsPageProps) {
     } catch (e) {
       console.error(e);
       if (instanceOfErrorDetail(e)) {
-        setAddGroupError(e.body.detail);
+        setAddGroupError(e.detail);
       }
     }
   };
@@ -127,7 +127,7 @@ export default function GroupsPage(props: GroupsPageProps) {
     } catch (e) {
       console.error(e);
       if (instanceOfErrorDetail(e)) {
-        setAddGroupError(e.body.detail);
+        setAddGroupError(e.detail);
       }
     }
   };
@@ -171,7 +171,7 @@ export default function GroupsPage(props: GroupsPageProps) {
       if (instanceOfErrorDetail(e)) {
         setGroupEntryErrors({
           ...groupEntryErrors,
-          addGroupEntryError: e.body.detail,
+          addGroupEntryError: e.detail,
         });
       }
     }
@@ -240,7 +240,7 @@ export default function GroupsPage(props: GroupsPageProps) {
       if (instanceOfErrorDetail(e)) {
         setGroupEntryErrors({
           ...groupEntryErrors,
-          updateGroupEntryError: e.body.detail,
+          updateGroupEntryError: e.detail,
         });
       }
     }

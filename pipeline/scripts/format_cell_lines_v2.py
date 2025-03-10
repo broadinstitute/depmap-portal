@@ -101,8 +101,7 @@ def main():
         "WTSIMasterCellID": "wtsi_master_cell_id",
         "CellLineName": "full_cell_line_name",
         "SangerModelID": "cell_line_passport_id",
-        "LegacySubSubtype": "legacy_sub_subtype",
-        "LegacyMolecularSubtype": "legacy_molecular_subtype",
+        "ModelSubtypeFeatures": "legacy_molecular_subtype",
     }
 
     sample_info.rename(columns=column_rename_map, inplace=True)
@@ -141,6 +140,10 @@ def main():
 
     sample_info.drop_duplicates(inplace=True)
     assert not any(sample_info["arxspan_id"].duplicated())
+
+    # this column was removed from the data dictionary, so populate it with NAs until
+    # we've updated the data loader to stop trying to read the column
+    sample_info["legacy_sub_subtype"] = pd.NA
 
     # only keep the expected columns. Add column name if you want it to appear in output csv
 

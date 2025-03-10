@@ -4,18 +4,25 @@ import {
   ContextManager,
   DataExplorerApiProvider,
 } from "@depmap/data-explorer-2";
-import { VectorCatalogApi } from "@depmap/interactive";
 import { ElaraApi } from "src/api";
 import {
   evaluateContext,
+  fetchDatasets,
+  fetchDatasetIdentifiers,
+  fetchDimensionIdentifiers,
+  fetchDimensionTypes,
   fetchVariableDomain,
 } from "src/pages/DataExplorer/api";
 
 interface Props {
   onHide: () => void;
+  initialContextType?: string;
 }
 
-function ElaraContextManager({ onHide }: Props) {
+function ElaraContextManager({
+  onHide,
+  initialContextType = undefined,
+}: Props) {
   let basename = "";
   //  hack for setting urlPrefix when Elara is served behind Depmap portal proxy
   if (window.location.pathname.includes("/breadbox/elara")) {
@@ -25,19 +32,21 @@ function ElaraContextManager({ onHide }: Props) {
     () => new ElaraApi(basename === "" ? "/" : basename)
   );
 
-  const vectorCatalogApi = new VectorCatalogApi(bbapi);
   const getApi = () => bbapi;
-  const getVectorCatalogApi = () => vectorCatalogApi;
 
   return (
-    <ApiContext.Provider value={{ getApi, getVectorCatalogApi }}>
+    <ApiContext.Provider value={{ getApi }}>
       <DataExplorerApiProvider
         evaluateContext={evaluateContext}
         fetchVariableDomain={fetchVariableDomain}
+        fetchDatasets={fetchDatasets}
+        fetchDimensionTypes={fetchDimensionTypes}
+        fetchDatasetIdentifiers={fetchDatasetIdentifiers}
+        fetchDimensionIdentifiers={fetchDimensionIdentifiers}
       >
         <ContextManager
           onHide={onHide}
-          initialContextType="depmap_model"
+          initialContextType={initialContextType}
           useContextBuilderV2
           showHelpText={false}
         />

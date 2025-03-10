@@ -119,6 +119,7 @@ class TabularEnum(enum.Enum):
     fusion = "fusion"
     translocation = "translocation"
     metmap = "metmap"
+    protein = "protein"
 
 
 class CellLineTileEnum(enum.Enum):

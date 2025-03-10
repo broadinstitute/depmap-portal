@@ -118,7 +118,7 @@ def compute_filter(input_filter):
 def compute_metadata(metadata):
     slice_id = metadata["slice_id"]
     indexed_values = slice_to_dict(slice_id)
-    label = slice_id
+    label = None
 
     # HACK: Look up a label for the `slice_id` in `hardcoded_metadata_slices`.
     # When we stop relying on Slice IDs and start using SliceQuery objects,
@@ -130,6 +130,11 @@ def compute_metadata(metadata):
             elif info.get("isPartialSliceId", False) and m_slice_id in slice_id:
                 _, identifier, _ = decode_slice_id(slice_id)
                 label = f"{info['name']} ({info['sliceTypeLabel']} = {identifier})"
+
+    if label is None:
+        dataset_id, identifier, _ = decode_slice_id(slice_id)
+        dataset = data_access.get_matrix_dataset(dataset_id)
+        label = f"{identifier} {dataset.label}"
 
     return {
         "label": label,
@@ -196,7 +201,7 @@ def compute_waterfall(index_type, dimensions, filters, metadata):
     # Handle the special case where we want to recompute the index to be
     # grouped by categorical colors (Josh has dubbed this type of thing a
     # "Sidney plot")
-    if metadata and metadata["color_property"]:
+    if metadata and "color_property" in metadata:
         grouped = defaultdict(list)
         input_metadata = metadata["color_property"]
         categorical_colors = compute_metadata(input_metadata)
@@ -258,12 +263,13 @@ def compute_waterfall(index_type, dimensions, filters, metadata):
         computed_metadata = {}
 
         if metadata_key == "color_property":
-            computed_metadata = categorical_colors
+            computed_metadata = categorical_colors or {}
         else:
             computed_metadata = compute_metadata(input_metadata)
 
         indexed_values = computed_metadata["indexed_values"]  # type: ignore
         output_metadata[metadata_key] = {
+            "label": computed_metadata["label"],
             "slice_id": input_metadata["slice_id"],
             "values": [indexed_values.get(label, None) for label in index_labels],
         }

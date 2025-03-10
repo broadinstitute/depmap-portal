@@ -1,10 +1,4 @@
 import {
-  AssociationAndCheckbox,
-  AddDatasetOneRowArgs,
-  Catalog,
-  PlotFeatures,
-} from "@depmap/interactive";
-import {
   DatasetDownloadMetadata,
   Downloads,
   ExportDataQuery,
@@ -25,7 +19,6 @@ import {
   GenePredictiveModelResults,
   CompoundDosePredictiveModelResults,
 } from "src/predictability/models/predictive";
-import { isNullOrUndefined } from "util";
 import {
   CellignerColorsForCellLineSelector,
   CellLineSelectorLines,
@@ -38,6 +31,8 @@ import {
   DoseCurveData,
 } from "src/compound/components/DoseResponseCurve";
 import {
+  AddDatasetOneRowArgs,
+  AssociationAndCheckbox,
   Dataset as BreadboxDataset,
   DatasetParams,
   DatasetUpdateArgs,
@@ -64,7 +59,7 @@ import { encodeParams } from "@depmap/utils";
 import {
   OncogenicAlteration,
   CellLineDataMatrix,
-  CellLineDescriptionData,
+  ModelInfo,
 } from "src/cellLine/models/types";
 import TopFeatureValue from "src/celfie/models/celfie";
 import { Trace, ActiveSpan, NoOpSpan } from "src/trace";
@@ -396,26 +391,6 @@ export class DepmapApi {
     });
   };
 
-  getFeaturePlot(
-    features: string[],
-    groupBy: string,
-    filter: string,
-    computeLinearFit: boolean
-  ): Promise<PlotFeatures> {
-    const params: any = {
-      features,
-      groupBy,
-      filter,
-      computeLinearFit,
-    };
-    if (!isNullOrUndefined(groupBy)) {
-      params.groupBy = groupBy;
-    }
-    return this._fetch<PlotFeatures>(
-      `/interactive/api/get-features?${encodeParams(params)}`
-    );
-  }
-
   getAssociations(x: string): Promise<AssociationAndCheckbox> {
     const params: any = {
       x,
@@ -452,12 +427,6 @@ export class DepmapApi {
 
   getCompoundsTargetingGene(geneSymbol: string): Promise<Array<Compound>> {
     return this._fetch<Array<Compound>>(`/gene/compound/${geneSymbol}`);
-  }
-
-  getGeneHasRepHub(geneSymbol: string): Promise<{ hasRepHub: boolean }> {
-    return this._fetch<{ hasRepHub: boolean }>(
-      `/gene/has_rephub/${geneSymbol}`
-    );
   }
 
   getGeneCharacterizationData(
@@ -581,12 +550,8 @@ export class DepmapApi {
     );
   }
 
-  getCellLineDescriptionTileData(
-    modelId: string
-  ): Promise<CellLineDescriptionData> {
-    return this._fetch<CellLineDescriptionData>(
-      `/cell_line/description_tile/${modelId}`
-    );
+  getCellLineDescriptionTileData(modelId: string): Promise<ModelInfo> {
+    return this._fetch<ModelInfo>(`/cell_line/description_tile/${modelId}`);
   }
 
   getCellLineCompoundSensitivityData(
@@ -855,40 +820,6 @@ export class DepmapApi {
     return this._fetch<any>(`/compound/dosetable/${datasetName}/${xrefFull}`);
   }
 
-  getVectorCatalogChildren(
-    catalog: Catalog,
-    id: string,
-    prefix = ""
-  ): Promise<any> {
-    // chances are, you shouldn't be using this. use getVectorCatalogOptions in vectorCatalogApi, which wraps around this
-    const params = {
-      catalog,
-      id,
-      prefix,
-      limit: 1000,
-    };
-    return this._fetch<any>(
-      `/vector_catalog/data/catalog/children?${encodeParams(params)}`
-    );
-  }
-
-  getVectorCatalogPath(catalog: Catalog, id: string): Promise<Array<any>> {
-    // chances are, you shouldn't be using this. use getVectorCatalogPath in vectorCatalogApi, which wraps around this
-    const params = {
-      catalog,
-      id,
-    };
-    return this._fetch<Array<any>>(
-      `/vector_catalog/data/catalog/path?${encodeParams(params)}`
-    );
-  }
-
-  getVector(id: string): Promise<any> {
-    return this._fetch<Array<any>>(
-      `/vector_catalog/data/vector/${encodeURIComponent(id)}`
-    );
-  }
-
   getCellignerDistancesToTumors(
     primarySite: string,
     subtype: string
@@ -1138,7 +1069,7 @@ export class DepmapApi {
     return Promise.reject(Error("Wrong api used. Check ApiContext"));
   }
 
-  getGroups = (): Promise<Group[]> => {
+  getGroups = (writeAccess: boolean = false): Promise<Group[]> => {
     return Promise.reject(Error("Wrong api used. Check ApiContext"));
   };
 

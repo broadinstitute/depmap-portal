@@ -582,6 +582,7 @@ def get_tractability_html(gene):
 def get_sensitivity_html(
     compound, compound_experiment_and_datasets, query_params_dict={}
 ):
+    # DEPRECATED: will be redesigned/replaced
     best_ce_and_d = determine_compound_experiment_and_dataset(
         compound_experiment_and_datasets
     )
@@ -595,6 +596,7 @@ def get_sensitivity_html(
 def get_correlations_html(
     compound, compound_experiment_and_datasets, query_params_dict={}
 ):
+    # DEPRECATED: will be redesigned/replaced
     return render_template(
         "tiles/correlations.html",
         correlations=format_top_corr_table(compound_experiment_and_datasets),
@@ -679,6 +681,7 @@ def get_correlations_for_celfie_react_tile(
 def get_celfie_html(
     entity, compound_experiment_and_datasets=None, query_params_dict={}
 ):
+    # DEPRECATED: will be redesigned/replaced
     # show tile only if env is skyros/dev
     show_celfie = current_app.config["ENABLED_FEATURES"].celfie
 

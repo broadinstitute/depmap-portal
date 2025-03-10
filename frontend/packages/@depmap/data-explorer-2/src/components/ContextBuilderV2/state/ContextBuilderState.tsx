@@ -12,6 +12,9 @@ import {
   isValidSliceQuery,
 } from "@depmap/types";
 import { isCompleteExpression } from "../../../utils/misc";
+import { Expr, isBoolean } from "../utils/expressionUtils";
+import simplifyVarNames from "../utils/simplifyVarNames";
+import useInitializer from "./useInitializer";
 import expressionReducer, { ExprReducerAction } from "./expressionReducer";
 
 const DEFAULT_EMPTY_EXPR = { and: [{ "==": [null, null] }] };
@@ -34,10 +37,16 @@ const ContextBuilderState = createContext({
   dispatch: (() => {}) as React.Dispatch<ExprReducerAction>,
   onClickSave: () => {},
   shouldShowValidation: false,
+  isInitializing: false,
 });
 
 export const useContextBuilderState = () => {
   return useContext(ContextBuilderState);
+};
+
+// HACK: The UI behaves oddly if we don't have an array at the top level.
+const toTopLevelBooleanExpr = (expr: DataExplorerContextV2["expr"]) => {
+  return isBoolean(expr as Expr) ? expr : { and: [expr] };
 };
 
 export const ContextBuilderStateProvider = ({
@@ -56,7 +65,7 @@ export const ContextBuilderStateProvider = ({
   const [shouldShowValidation, setShouldShowValidation] = useState(false);
   const [mainExpr, dispatch] = useReducer(
     expressionReducer,
-    contextToEdit.expr || DEFAULT_EMPTY_EXPR
+    toTopLevelBooleanExpr(contextToEdit.expr || DEFAULT_EMPTY_EXPR)
   );
 
   const setVar = useCallback(
@@ -64,6 +73,13 @@ export const ContextBuilderStateProvider = ({
       setVars((prev) => ({ ...prev, [key]: value }));
     },
     []
+  );
+
+  const isInitializing = useInitializer(
+    mainExpr,
+    contextToEdit.dimension_type!,
+    setVar,
+    dispatch
   );
 
   const deleteVar = useCallback((keyToRemove: string) => {
@@ -92,12 +108,14 @@ export const ContextBuilderStateProvider = ({
       return;
     }
 
-    onChangeContext({
+    const nextContext = simplifyVarNames({
       name,
       dimension_type: contextToEdit.dimension_type as string,
       expr: mainExpr,
       vars: vars as Record<string, DataExplorerContextVariable>,
     });
+
+    onChangeContext(nextContext);
   }, [
     contextToEdit,
     fullySpecifiedVars,
@@ -120,6 +138,7 @@ export const ContextBuilderStateProvider = ({
         dispatch,
         shouldShowValidation,
         onClickSave,
+        isInitializing,
         dimension_type: contextToEdit.dimension_type as string,
       }}
     >

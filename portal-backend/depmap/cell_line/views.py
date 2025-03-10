@@ -15,15 +15,12 @@ from flask import (
 )
 import numpy as np
 import pandas as pd
-import sqlalchemy as sa
 
 from depmap import data_access
 from depmap.partials.matrix.models import ColMatrixIndex
 from oauth2client.service_account import ServiceAccountCredentials
 
 from depmap.dataset.models import (
-    Compound,
-    CompoundExperiment,
     DependencyDataset,
     BiomarkerDataset,
     TabularDataset,
@@ -34,7 +31,6 @@ from depmap.download.utils import get_download_url
 from depmap.extensions import csrf_protect
 from depmap.metmap.models import MetMap500
 from depmap.utilities.sign_bucket_url import sign_url
-from depmap.partials.matrix.models import Matrix, RowMatrixIndex
 from depmap.partials.data_table.factories import (
     get_mutation_by_cell_line_table,
     get_fusion_by_cell_line_table,
@@ -81,6 +77,9 @@ def view_cell_line(cell_line_name):
 
     if selected_cell_line is None:
         selected_cell_line = DepmapModel.get_by_name(cell_line_name=cell_line_name)
+
+    if selected_cell_line is None:
+        selected_cell_line = DepmapModel.get_by_ccle_name(ccle_name=cell_line_name)
 
     if selected_cell_line is None:
         abort(404)
@@ -130,6 +129,7 @@ def get_cell_line_description_tile_data(model_id: str) -> dict:
 
     if model is None:
         abort(404)
+    assert model is not None
 
     image = get_image_url(model.image_filename)
 
@@ -157,8 +157,6 @@ def get_cell_line_description_tile_data(model_id: str) -> dict:
 
     model_info = {
         "image": image,
-        "primary_metastasis": model.primary_or_metastasis,
-        "sample_collection_site": model.sample_collection_site,
         "oncotree_lineage": oncotree_lineage,
         "oncotree_primary_disease": oncotree_primary_disease,
         "oncotree_subtype_and_code": {
@@ -167,41 +165,17 @@ def get_cell_line_description_tile_data(model_id: str) -> dict:
         }
         if oncotree_subtype
         else None,
-        "legacy_molecular_subtype": model.legacy_molecular_subtype,
-        "engineered_model": model.engineered_model,
-        "growth_pattern": model.growth_pattern,
-        "tissue_origin": model.tissue_origin,
-        "source_type": model.source_type,
-        "catalog_number": model.catalog_number,
-        "model_derivation_material": model.model_derivation_material,
-    }
-
-    patient_info = {
-        "patient_id": model.patient_id,
-        "age": model.age,
-        "age_category": model.age_category,
-        "sex": model.sex,
-        "race": model.patient_race,
-        "patient_molecular_subtype": model.patient_molecular_subtype,
-        "treatment_status": model.treatment_status,
-        "treatment_details": model.treatment_details,
-        "related_models": related_models,
-    }
-
-    id_info = {
-        "rrid": model.rrid,
-        "sanger_model_id": model.sanger_model_id,
-        "cosmic_id": model.cosmic_id,
-        "ccle_name": model.ccle_name,
         "aliases": [
             ali.alias
             for ali in selected_cell_line.cell_line_alias
             if ali.alias
             != selected_cell_line.cell_line_name  # filter out ccle name, since already shown on the page
         ],
+        "related_models": related_models,
+        "metadata": json.loads(model.json_encoded_metadata),
     }
 
-    return {"model_info": model_info, "patient_info": patient_info, "id_info": id_info}
+    return model_info
 
 
 @blueprint.route("/prefdep/<data_type>/<model_id>")
@@ -211,23 +185,25 @@ def get_pref_dep_data_for_data_type(data_type: str, model_id: str) -> dict:
         abort(404)
     # dataset_name is dataset enum name
     dataset_name = dataset.name.name
-    labels_by_index = get_gene_labels_by_index(dataset_name)
-    rows = get_rows_with_lowest_z_score(dataset_name, model_id, labels_by_index)
-    return rows
+    df = data_access.get_subsetted_df_by_labels(dataset_name)
+    return get_lowest_z_scores_response(dataset_name, model_id, df)
 
 
 @blueprint.route("/compound_sensitivity/<model_id>")
 def get_compound_sensitivity_data(model_id: str) -> dict:
-    dataset_name = DependencyDataset.get_dataset_by_data_type_priority(
+    dataset = DependencyDataset.get_dataset_by_data_type_priority(
         DependencyDataset.DataTypeEnum.drug_screen
-    ).name.name
-    labels_by_index = get_compound_labels_by_index(dataset_name)
+    )
+    if dataset is None:
+        abort(404)
+    dataset_name = dataset.name.name
+    df = data_access.get_subsetted_df_by_labels_compound_friendly(dataset_name)
 
-    return get_rows_with_lowest_z_score(dataset_name, model_id, labels_by_index)
+    return get_lowest_z_scores_response(dataset_name, model_id, df)
 
 
-def get_rows_with_lowest_z_score(
-    dataset_name: str, model_id: str, labels_by_row_index: pd.DataFrame
+def get_lowest_z_scores_response(
+    dataset_name: str, model_id: str, dataset_df: pd.DataFrame
 ):
     """Gets data for the top 10 rows of the given dataset, where top values have the 
     lowest z-scores for the cell line (matching the given depmap id). For example, 
@@ -236,6 +212,10 @@ def get_rows_with_lowest_z_score(
 
     Returns: Top labels (ex. genes) and values (ex. gene effects) across all cell lines
     as well as index of the column containing data for the given cell line. 
+
+    Note: After these datasets are migrated to breadbox, the performance of this method can be 
+    subsantially improved by calling breadbox's aggregation endpoint instead of loading 
+    the full matrix here. 
     """
     cell_line = DepmapModel.get_by_model_id(model_id, must=False)
     result = {
@@ -243,20 +223,18 @@ def get_rows_with_lowest_z_score(
         "dataset_label": data_access.get_dataset_label(dataset_name),
     }
 
-    cell_line_col_index = get_cell_line_col_index(dataset_name, model_id)
-    if cell_line_col_index is not None:
-        # Get the full matrix of gene effect data
-        df = get_all_labeled_values(dataset_name, labels_by_row_index)
-        df = df[np.isfinite(df[cell_line_col_index])]  # filter nulls
+    if model_id in dataset_df.columns:
+        # filter nulls     
+        dataset_df = dataset_df[np.isfinite(dataset_df[model_id])] 
         # sort the matrix using cell line z-scores
-        cell_line_z_scores = convert_to_z_score_matrix(df)[cell_line_col_index]
+        cell_line_z_scores = convert_to_z_score_matrix(dataset_df)[model_id]
         sorted_index = cell_line_z_scores.sort_values().index
-        sorted_df = df.loc[sorted_index]
+        sorted_df = dataset_df.loc[sorted_index]
         result_df = sorted_df.head(10)  # return data for the top 10 genes
         # Construct result
         result["labels"] = result_df.index.values.tolist()
         result["data"] = result_df.replace({np.nan: None}).values.tolist()
-        result["cell_line_col_index"] = cell_line_col_index
+        result["cell_line_col_index"] = result_df.columns.get_loc(model_id)
     return result
 
 
@@ -292,12 +270,12 @@ def download_gene_effects(dataset_type: str, model_id: str):
     else:
         abort(404)
 
-    cell_line_col_index = get_cell_line_col_index(dataset_name, model_id)
-    if cell_line_col_index is None:
+    all_model_ids = data_access.get_dataset_sample_ids(dataset_name)
+    if model_id not in all_model_ids:
         abort(404)
 
     # Get the gene effect data that relates to this cell line
-    df = get_all_cell_line_gene_effects(dataset_name, cell_line_col_index)
+    df = get_all_cell_line_gene_effects(dataset_name, model_id)
 
     # return the dataframe as a CSV
     response = make_response(df.to_csv())
@@ -309,15 +287,14 @@ def download_gene_effects(dataset_type: str, model_id: str):
 
 
 def get_all_cell_line_gene_effects(
-    dataset_name: str, cell_line_col_index: int
+    dataset_name: str, model_id: str
 ) -> pd.DataFrame:
     """Get all gene effect data related to the cell line. Include five columns:
         gene, gene_effect, z_score, mean, stddev"""
-    gene_labels_by_index = get_gene_labels_by_index(dataset_name)
-    gene_effect_df = get_all_labeled_values(dataset_name, gene_labels_by_index)
-    gene_effect_df = gene_effect_df[np.isfinite(gene_effect_df[cell_line_col_index])]
+    gene_effect_df = data_access.get_subsetted_df_by_labels(dataset_name)
+    gene_effect_df = gene_effect_df[np.isfinite(gene_effect_df[model_id])]
 
-    result_df = get_stats_for_dataframe(gene_effect_df, cell_line_col_index)
+    result_df = get_stats_for_dataframe(gene_effect_df, model_id)
 
     result_df = result_df.rename(columns={"val": "gene_effect"})
     result_df.index.rename("gene", inplace=True)
@@ -335,7 +312,7 @@ def download_compound_sensitivities(model_id: str):
         abort(404)
 
     # Get the gene effect data that relates to this cell line
-    df = get_all_cell_line_compound_sensitivity(dataset_name, cell_line_col_index)
+    df = get_all_cell_line_compound_sensitivity(dataset_name, model_id)
 
     # return the dataframe as a CSV
     response = make_response(df.to_csv())
@@ -347,27 +324,26 @@ def download_compound_sensitivities(model_id: str):
 
 
 def get_all_cell_line_compound_sensitivity(
-    dataset_name: str, cell_line_col_index: int
+    dataset_name: str, model_id: str
 ) -> pd.DataFrame:
     """Get all compound sensitivity data related to the cell line. Include five columns:
         compound, compound_sensitivity, z_score, mean, stddev"""
-    compound_labels_by_index = get_compound_labels_by_index(dataset_name)
-    sensitivity_df = get_all_labeled_values(dataset_name, compound_labels_by_index)
-    sensitivity_df = sensitivity_df[np.isfinite(sensitivity_df[cell_line_col_index])]
+    sensitivity_df = data_access.get_subsetted_df_by_labels_compound_friendly(dataset_name)
+    sensitivity_df = sensitivity_df[np.isfinite(sensitivity_df[model_id])]
 
-    result_df = get_stats_for_dataframe(sensitivity_df, cell_line_col_index)
+    result_df = get_stats_for_dataframe(sensitivity_df, model_id)
 
     result_df = result_df.rename(columns={"val": "compound_sensitivity"})
     result_df.index.rename("compound", inplace=True)
     return result_df
 
 
-def get_stats_for_dataframe(df: pd.DataFrame, cell_line_col_index: int):
+def get_stats_for_dataframe(df: pd.DataFrame, model_id: str):
     """Get the mean, stddev, and given cell line's value and z_score for each row in a matrix of numeric values.
     Sort the result by z-score."""
     means = df.mean(axis=1).rename("mean")
     standard_devs = df.std(axis=1).rename("stddev")
-    cell_line_vals = df[cell_line_col_index].rename("val")
+    cell_line_vals = df[model_id].rename("val")
     cell_line_z_scores = cell_line_vals.sub(means).div(standard_devs).rename("z_score")
     result_df = pd.concat(
         [cell_line_vals, cell_line_z_scores, means, standard_devs,], axis=1
@@ -376,48 +352,6 @@ def get_stats_for_dataframe(df: pd.DataFrame, cell_line_col_index: int):
     sorted_index = cell_line_z_scores.sort_values().index
     result_df = result_df.loc[sorted_index]
     return result_df
-
-
-def get_all_labeled_values(
-    dataset_name: str, labels_by_index: pd.DataFrame
-) -> pd.DataFrame:
-    """Get a dataframe of gene effect data, indexed by gene names from the given dataset. 
-    Rows represent genes and columns represent cell lines."""
-    # read data from matrices, calculate z scores
-    full_gene_effect_matrix: pd.DataFrame = data_access.get_subsetted_df(
-        dataset_id=dataset_name, row_indices=None, col_indices=None
-    )
-    # Merge entity info with the z score dataframe (in order to filter out obsolete rows)
-    merged_df = pd.merge(
-        labels_by_index, full_gene_effect_matrix.reset_index(), on="index"
-    )
-    # Move the label column to the index, remove the other entity info columns
-    merged_df = merged_df.drop(["index"], axis=1)
-    merged_df = merged_df.set_index("label")
-    return merged_df
-
-
-def get_compound_labels_by_index(dataset_name: str):
-    # Data access details should be in interactive config
-    # (Using SQLAlchemy to join the compound object to the matrix)
-    matrix_id = data_access.get_matrix_id(dataset_name)
-    comp_exp_alias = sa.orm.aliased(CompoundExperiment)
-    compound_alias = sa.orm.aliased(Compound)
-    labels_by_indeces = (
-        Matrix.query.filter_by(matrix_id=matrix_id)
-        .join(RowMatrixIndex)
-        .join(comp_exp_alias)
-        .join(compound_alias, compound_alias.entity_id == comp_exp_alias.compound_id)
-        .with_entities(RowMatrixIndex.index, compound_alias.label)
-        .all()
-    )
-    return pd.DataFrame(labels_by_indeces, columns=["index", "label"])
-
-
-def get_gene_labels_by_index(dataset_name: str):
-    return pd.DataFrame(
-        data_access.get_all_row_indices_labels_entity_ids(dataset_name)
-    ).drop(["entity_id"], axis=1)
 
 
 @blueprint.route("/datasets/<model_id>")
