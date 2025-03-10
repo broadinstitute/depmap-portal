@@ -651,11 +651,14 @@ def test_get_dose_curves(empty_db_mock_downloads):
     assert dose_curve_info["compound_experiment"].xref == "PRC-003465060-210-01"
     assert dose_curve_info["compound_experiment"].xref_type == "BRD"
     assert dose_curve_info["compound_experiment"].label == "BRD:PRC-003465060-210-01"
+
+    # If this breaks, double check that nothing changed with the id or displayName. In the past
+    # this assertion broke because both "id" and "displanName" were being filled with the model_id.
     assert dose_curve_info["dose_curve_info"] == {
         "in_group_curve_params": [
             {
                 "id": "ACH-0es",
-                "displayName": "ACH-0es",
+                "displayName": "0es",
                 "ec50": 0,
                 "slope": 0,
                 "lowerAsymptote": 0,
@@ -663,7 +666,7 @@ def test_get_dose_curves(empty_db_mock_downloads):
             },
             {
                 "id": "ACH-1es",
-                "displayName": "ACH-1es",
+                "displayName": "1es",
                 "ec50": 0,
                 "slope": 0,
                 "lowerAsymptote": 0,
@@ -671,7 +674,7 @@ def test_get_dose_curves(empty_db_mock_downloads):
             },
             {
                 "id": "ACH-2es",
-                "displayName": "ACH-2es",
+                "displayName": "2es",
                 "ec50": 0,
                 "slope": 0,
                 "lowerAsymptote": 0,
@@ -679,7 +682,7 @@ def test_get_dose_curves(empty_db_mock_downloads):
             },
             {
                 "id": "ACH-3es",
-                "displayName": "ACH-3es",
+                "displayName": "3es",
                 "ec50": 0,
                 "slope": 0,
                 "lowerAsymptote": 0,
@@ -687,7 +690,7 @@ def test_get_dose_curves(empty_db_mock_downloads):
             },
             {
                 "id": "ACH-4es",
-                "displayName": "ACH-4es",
+                "displayName": "4es",
                 "ec50": 0,
                 "slope": 0,
                 "lowerAsymptote": 0,
@@ -907,7 +910,6 @@ def test_get_dose_curves(empty_db_mock_downloads):
         "max_dose": 0.3,
         "min_dose": 0.1,
     }
-
     # Test other bone outgroup
     dose_curve_info = get_context_dose_curves(
         dataset_name=dataset_name,
@@ -920,7 +922,7 @@ def test_get_dose_curves(empty_db_mock_downloads):
         "in_group_curve_params": [
             {
                 "id": "ACH-0es",
-                "displayName": "ACH-0es",
+                "displayName": "0es",
                 "ec50": 0,
                 "slope": 0,
                 "lowerAsymptote": 0,
@@ -928,7 +930,7 @@ def test_get_dose_curves(empty_db_mock_downloads):
             },
             {
                 "id": "ACH-1es",
-                "displayName": "ACH-1es",
+                "displayName": "1es",
                 "ec50": 0,
                 "slope": 0,
                 "lowerAsymptote": 0,
@@ -936,7 +938,7 @@ def test_get_dose_curves(empty_db_mock_downloads):
             },
             {
                 "id": "ACH-2es",
-                "displayName": "ACH-2es",
+                "displayName": "2es",
                 "ec50": 0,
                 "slope": 0,
                 "lowerAsymptote": 0,
@@ -944,7 +946,7 @@ def test_get_dose_curves(empty_db_mock_downloads):
             },
             {
                 "id": "ACH-3es",
-                "displayName": "ACH-3es",
+                "displayName": "3es",
                 "ec50": 0,
                 "slope": 0,
                 "lowerAsymptote": 0,
@@ -952,7 +954,7 @@ def test_get_dose_curves(empty_db_mock_downloads):
             },
             {
                 "id": "ACH-4es",
-                "displayName": "ACH-4es",
+                "displayName": "4es",
                 "ec50": 0,
                 "slope": 0,
                 "lowerAsymptote": 0,
