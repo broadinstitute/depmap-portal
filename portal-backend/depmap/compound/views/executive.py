@@ -313,8 +313,7 @@ def format_availability_tile(compound: Compound):
             feature_data = df.loc[compound.label]
             cell_line_count = feature_data.dropna().size
 
-            dataset_url = get_download_url(dataset.taiga_id) # TODO: this does not seem to be working for bb datasets
-            # TODO: see if there's a bb-friendly way to do this
+            dataset_url = get_download_url(dataset.taiga_id)
             results.append(
                 {
                     "dataset_name": dataset_config.label,
