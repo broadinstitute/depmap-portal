@@ -8,7 +8,7 @@ package-mode = false
 
 
 [tool.poetry.dependencies]
-python = "^3.9"
+python = ">3.9,<3.10"
 pandas = "1.5.3"
 click = "^8.1.7"
 numpy = "^1.25.1"
@@ -18,6 +18,8 @@ statsmodels = "^0.14.4"
 pandera = "^0.22.1"
 sklearn = "0.0"
 packed-cor-tables = {version = "^0.1.1", source = "public-python"}
+tqdm = "^4.67.1"
+scipy = "1.12.0"
 
 
 [[tool.poetry.source]]

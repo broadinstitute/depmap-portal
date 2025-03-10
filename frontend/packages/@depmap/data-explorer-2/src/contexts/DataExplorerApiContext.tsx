@@ -18,9 +18,6 @@ const defaultValue = {
     variable: DataExplorerContextVariable
   ): Promise<
     | {
-        value_type: "binary";
-      }
-    | {
         value_type: "continuous";
         min: number;
         max: number;

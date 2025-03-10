@@ -1,5 +1,6 @@
 import os.path
 from typing import Annotated
+import shutil
 
 from depmap_compute.slice import SliceQuery
 from fastapi import Body, Depends
@@ -101,7 +102,7 @@ def add_associations(
     # make sure the directory exists before trying to move the file to it's final name
     os.makedirs(os.path.dirname(full_dest_filename), exist_ok=True)
 
-    os.rename(full_file, full_dest_filename)
+    shutil.move(full_file, full_dest_filename)
 
     try:
         with transaction(db):

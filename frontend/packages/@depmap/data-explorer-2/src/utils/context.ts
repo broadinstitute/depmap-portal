@@ -1,3 +1,4 @@
+import { isElara } from "@depmap/globals";
 import {
   DataExplorerContext,
   DataExplorerContextV2,
@@ -6,12 +7,16 @@ import {
 import { LocalStorageListStore } from "@depmap/cell-line-selector";
 import { persistContext } from "./context-storage";
 
-export const isContextAll = (context: DataExplorerContext) => {
+export const isContextAll = (
+  context: DataExplorerContext | DataExplorerContextV2
+) => {
   // `true` is a special value used to match on anything.
   return Boolean(context) && context.expr === true;
 };
 
-export function isNegatedContext(context: DataExplorerContext | null) {
+export function isNegatedContext(
+  context: DataExplorerContext | DataExplorerContextV2 | null
+) {
   if (!context) {
     return false;
   }
@@ -23,6 +28,10 @@ export function isNegatedContext(context: DataExplorerContext | null) {
   return "!" in context.expr;
 }
 
+export const userContextStorageKey = () => {
+  return isElara ? "elara_contexts" : "user_contexts";
+};
+
 export function loadContextsFromLocalStorage(context_type: string) {
   const out: StoredContexts = {};
 
@@ -30,7 +39,7 @@ export function loadContextsFromLocalStorage(context_type: string) {
   // ContextSelector component has smarts that will convert them to proper
   // contexts upon selection. This means they will gradually disappear over
   // time.
-  if (context_type === "depmap_model") {
+  if (context_type === "depmap_model" && !isElara) {
     const store = new LocalStorageListStore();
     store.importFromOldCellLineHighlighterIfExists();
 
@@ -46,7 +55,7 @@ export function loadContextsFromLocalStorage(context_type: string) {
       });
   }
 
-  const json = window.localStorage.getItem("user_contexts");
+  const json = window.localStorage.getItem(userContextStorageKey());
   const contexts: StoredContexts = json ? JSON.parse(json) : {};
 
   Object.entries(contexts).forEach(([contextHash, context]) => {
@@ -107,7 +116,7 @@ export async function saveContextToLocalStorageAndPersist(
   hashToReplace?: string | null
 ) {
   let nextHash;
-  const json = window.localStorage.getItem("user_contexts");
+  const json = window.localStorage.getItem(userContextStorageKey());
   const existingContexts: StoredContexts = json ? JSON.parse(json) : {};
 
   const updates = await Promise.all(
@@ -140,7 +149,10 @@ export async function saveContextToLocalStorageAndPersist(
     updatedContexts[hash] = value;
   });
 
-  window.localStorage.setItem("user_contexts", JSON.stringify(updatedContexts));
+  window.localStorage.setItem(
+    userContextStorageKey(),
+    JSON.stringify(updatedContexts)
+  );
 
   // WORKAROUND: These hosts are special in that they simulates multiple
   // environments (public, Skyros, DMC, PedDep). Each env has its own external
@@ -176,7 +188,7 @@ export async function saveContextToLocalStorageAndPersist(
 // This only deletes the entry from the map of hashes to names. The content of
 // the context still persists in the CAS.
 export function deleteContextFromLocalStorage(hashToDelete: string) {
-  const json = window.localStorage.getItem("user_contexts");
+  const json = window.localStorage.getItem(userContextStorageKey());
   const existingContexts: StoredContexts = json ? JSON.parse(json) : {};
 
   const updatedContexts: StoredContexts = {};
@@ -187,18 +199,40 @@ export function deleteContextFromLocalStorage(hashToDelete: string) {
     }
   });
 
-  window.localStorage.setItem("user_contexts", JSON.stringify(updatedContexts));
+  window.localStorage.setItem(
+    userContextStorageKey(),
+    JSON.stringify(updatedContexts)
+  );
 }
 
-export function negateContext(context: DataExplorerContext) {
-  const negateExpr = (expr: any) => (expr["!"] ? expr["!"] : { "!": expr });
+// https://www.typescriptlang.org/docs/handbook/2/functions.html#function-overloads
+// prettier-ignore
+export function negateContext(context: DataExplorerContext): DataExplorerContext;
+// prettier-ignore
+export function negateContext(context: DataExplorerContextV2): DataExplorerContextV2;
+export function negateContext(
+  context: DataExplorerContext | DataExplorerContextV2
+) {
+  const name = context.name.startsWith("Not ")
+    ? context.name.slice(4)
+    : `Not ${context.name}`;
+
+  const prevExpr = context.expr as any;
+  const expr = prevExpr["!"] ? prevExpr["!"] : { "!": prevExpr };
+
+  if (isV2Context(context)) {
+    return {
+      name,
+      dimension_type: context.dimension_type,
+      expr,
+      vars: context.vars,
+    };
+  }
 
   return {
-    name: context.name.startsWith("Not ")
-      ? context.name.slice(4)
-      : `Not ${context.name}`,
+    name,
     context_type: context.context_type,
-    expr: negateExpr(context.expr),
+    expr,
   };
 }
 
@@ -243,7 +277,7 @@ export function sliceLabelFromContext(
 // share a common domain so extra care is needed to make sure that they can't
 // see each other's contexts in local storage.
 export async function initializeDevContexts() {
-  // Only run in local and dev environments.
+  // Only run  in local and dev environments.
   if (!["dev.cds.team", "127.0.0.1:5000"].includes(window.location.host)) {
     return;
   }
@@ -257,7 +291,9 @@ export async function initializeDevContexts() {
   const cache = await window.caches.open("contexts-v1");
   const keys = await cache.keys();
 
-  const contexts = JSON.parse(localStorage.getItem("user_contexts") || "{}");
+  const contexts = JSON.parse(
+    localStorage.getItem(userContextStorageKey()) || "{}"
+  );
   const devContexts: Record<string, string[]> = {};
 
   // Now organize them by their url prefix.

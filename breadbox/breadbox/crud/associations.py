@@ -1,7 +1,7 @@
+from pyasn1.codec.ber.encoder import encode
+
 from breadbox.models.dataset import PrecomputedAssociation, Dataset, MatrixDataset
-from sqlalchemy import or_
 from breadbox.db.session import SessionWithUser
-import sqlite3
 from . import dataset as dataset_crud
 from breadbox.schemas.custom_http_exception import (
     ResourceNotFoundError,
@@ -12,6 +12,7 @@ import os
 from ..service import metadata
 from ..crud import access_control
 from typing import Optional
+import packed_cor_tables
 
 
 def _validate_association_table(
@@ -19,12 +20,8 @@ def _validate_association_table(
 ):
     """Opens file as a sqlite3 db and verifies the dimensions have the expected IDs. Raises an UserError if any issues found"""
 
-    conn = sqlite3.connect(filename)
-    cur = conn.cursor()
-
     def check_given_ids(expected_given_ids: set[str], dim: str):
-        cur.execute(f"SELECT label from dim_{dim}_label_position")
-        assoc_dataset_given_ids = set([x[0] for x in cur.fetchall()])
+        assoc_dataset_given_ids = packed_cor_tables.get_given_ids(filename, dim)
         missing = expected_given_ids.difference(assoc_dataset_given_ids)
         if len(missing) > 0:
             assoc_sample = sorted(assoc_dataset_given_ids)[:10]
@@ -37,11 +34,8 @@ def _validate_association_table(
     try:
         check_given_ids(dataset_1_given_ids, "0")
         check_given_ids(dataset_2_given_ids, "1")
-    except sqlite3.OperationalError as ex:
+    except packed_cor_tables.InvalidAssociationTable as ex:
         raise UserError("Invalid association table") from ex
-    finally:
-        cur.close()
-        conn.close()
 
 
 def add_association_table(
@@ -112,14 +106,9 @@ def get_association_tables(db: SessionWithUser, dataset_id: Optional[str]):
     from sqlalchemy.orm import aliased
 
     d1 = aliased(MatrixDataset)
-    d2 = aliased(MatrixDataset)
-    query = (
-        db.query(PrecomputedAssociation)
-        .join(d1, PrecomputedAssociation.dataset_1)
-        .join(d2, PrecomputedAssociation.dataset_2)
-    )
+    query = db.query(PrecomputedAssociation).join(d1, PrecomputedAssociation.dataset_1)
     if dataset_id is not None:
-        query = query.filter(or_(d1.id == dataset_id, d2.id == dataset_id,))
+        query = query.filter(d1.id == dataset_id)
     return query.all()
 
 

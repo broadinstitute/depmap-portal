@@ -84,7 +84,6 @@ from depmap.tile.views import blueprint as tile_blueprint
 from depmap.compound_dashboard.views import blueprint as compound_dashboard_blueprint
 from depmap.utilities import color_palette
 from depmap.utilities.mobile_utils import is_mobile
-from depmap.vector_catalog.views import blueprint as vector_catalog_blueprint
 from depmap.external_tools.views import blueprint as external_tools_blueprint
 from depmap.data_explorer_2.views import blueprint as data_explorer_2_blueprint
 from depmap.groups_manager.views import blueprint as groups_manager_blueprint
@@ -370,7 +369,6 @@ def register_blueprints(app: Flask):
     app.register_blueprint(cas_blueprint)
     app.register_blueprint(access_control_blueprint)
     app.register_blueprint(tda_blueprint)
-    app.register_blueprint(vector_catalog_blueprint)
     app.register_blueprint(private_dataset_blueprint)
     app.register_blueprint(constellation_blueprint)
     app.register_blueprint(tile_blueprint)

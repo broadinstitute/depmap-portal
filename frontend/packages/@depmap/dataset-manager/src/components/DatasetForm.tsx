@@ -21,11 +21,12 @@ import {
 import ChunkedFileUploader from "./ChunkedFileUploader";
 import { CeleryTask } from "@depmap/compute";
 import progressTrackerStyles from "@depmap/common-components/src/styles/ProgressTracker.scss";
+import styles from "../styles/styles.scss";
 
 interface DatasetFormProps {
   getDimensionTypes: () => Promise<DimensionType[]>;
   getDataTypesAndPriorities: () => Promise<InvalidPrioritiesByDataType>;
-  getGroups: () => Promise<Group[]>;
+  groups: Group[];
   uploadFile: (fileArgs: { file: File | Blob }) => Promise<UploadFileResponse>;
   uploadDataset: (datasetParams: DatasetParams) => Promise<any>;
   getTaskStatus: (taskIds: string) => Promise<CeleryTask>;
@@ -36,7 +37,7 @@ interface DatasetFormProps {
 export default function DatasetForm(props: DatasetFormProps) {
   const {
     getDimensionTypes,
-    getGroups,
+    groups,
     getDataTypesAndPriorities,
     uploadFile,
     uploadDataset,
@@ -109,7 +110,6 @@ export default function DatasetForm(props: DatasetFormProps) {
   const [sampleTypeOptions, setSampleTypesOptions] = useState<
     SampleDimensionType[]
   >([]);
-  const [groupOptions, setGroupsOptions] = useState<Group[]>([]);
   const [
     invalidPrioritiesByDataType,
     setInvalidPrioritiesByDataType,
@@ -127,14 +127,9 @@ export default function DatasetForm(props: DatasetFormProps) {
   useEffect(() => {
     (async () => {
       try {
-        const [
-          dataTypesPriorities,
-          dimensionTypes,
-          groups,
-        ] = await Promise.all([
+        const [dataTypesPriorities, dimensionTypes] = await Promise.all([
           getDataTypesAndPriorities(),
           getDimensionTypes(),
-          getGroups(),
         ]);
 
         const dataTypes = Object.keys(dataTypesPriorities).map((dType) => {
@@ -152,12 +147,11 @@ export default function DatasetForm(props: DatasetFormProps) {
         setDataTypeOptions(dataTypes);
         setFeatureTypesOptions(featureTypes);
         setSampleTypesOptions(sampleTypes);
-        setGroupsOptions(groups);
       } catch (e) {
         console.error(e);
       }
     })();
-  }, [getDimensionTypes, getGroups, getDataTypesAndPriorities]);
+  }, [getDimensionTypes, groups, getDataTypesAndPriorities]);
 
   /**
     checkStatus and reject functions influenced by ProgressTracker.tsx
@@ -225,19 +219,51 @@ export default function DatasetForm(props: DatasetFormProps) {
     if (completedTask?.state === "SUCCESS" && !isTaskRunning) {
       return (
         <div>
-          <div style={{ color: "green" }}>SUCCESS!</div>
-          {completedTask.result.unknownIDs.length > 0 ? (
-            <div style={{ color: "goldenrod" }}>
-              WARNING: Unknown IDS:{" "}
-              {JSON.parse(completedTask.result.unknownIDs)}
-            </div>
-          ) : null}
+          <div style={{ color: "green" }}>
+            <b>
+              <i>SUCCESS!</i>
+            </b>
+          </div>
+          <div style={{ color: "goldenrod" }}>
+            {completedTask.result.unknownIDs.map(
+              (unknownIDGroup: {
+                axis: string;
+                dimensionType: string;
+                IDs: string[];
+              }) => {
+                // shorten list if list of IDs is long and add ellipsis at the end
+                const sublistIDs = unknownIDGroup.IDs.slice(0, 10);
+                return (
+                  <>
+                    <div>
+                      <p style={{ margin: "10px 0 0 0" }}>
+                        <i>
+                          {unknownIDGroup.IDs.length} unknown{" "}
+                          {unknownIDGroup.axis} IDs for{" "}
+                          {unknownIDGroup.dimensionType}:
+                        </i>
+                      </p>
+                      <div className={styles.unknownIDsText}>
+                        <p>
+                          <i>{sublistIDs.toString() + "..."}</i>
+                        </p>
+                      </div>
+                    </div>
+                  </>
+                );
+              }
+            )}
+          </div>
         </div>
       );
     }
     if (completedTask?.state === "FAILURE" && !isTaskRunning) {
       return (
-        <div style={{ color: "red" }}>FAILED: {completedTask.message}!</div>
+        <div style={{ color: "red" }}>
+          <b>
+            <i>FAILED: {completedTask.message}!</i>
+          </b>
+        </div>
       );
     }
     if (isTaskRunning) {
@@ -276,7 +302,7 @@ export default function DatasetForm(props: DatasetFormProps) {
           <MatrixDatasetForm
             featureTypes={featureTypeOptions}
             sampleTypes={sampleTypeOptions}
-            groups={groupOptions}
+            groups={groups}
             dataTypes={dataTypeOptions}
             invalidDataTypePriorities={invalidPrioritiesByDataType}
             initFormData={formContent.matrix}
@@ -303,7 +329,7 @@ export default function DatasetForm(props: DatasetFormProps) {
         <>
           <TableDatasetForm
             dimensionTypes={dimensionTypeOptions}
-            groups={groupOptions}
+            groups={groups}
             dataTypes={dataTypeOptions}
             invalidDataTypePriorities={invalidPrioritiesByDataType}
             initFormData={formContent.table}
@@ -330,7 +356,7 @@ export default function DatasetForm(props: DatasetFormProps) {
     reject,
     featureTypeOptions,
     sampleTypeOptions,
-    groupOptions,
+    groups,
     dataTypeOptions,
     invalidPrioritiesByDataType,
     formContent,
