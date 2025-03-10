@@ -76,10 +76,8 @@ function run_via_container {
       -v "${PIPELINE_RUNNER_CREDS_DIR}/sparkles:/root/.sparkles-cache" \
       -v "${PIPELINE_RUNNER_CREDS_DIR}/depmap-pipeline-runner.json":/etc/google_default_creds.json \
       -v "${TAIGA_DIR}:/root/.taiga" \
-      # -v /var/run/docker.sock:/var/run/docker.sock \
       -v /etc/google/auth/application_default_credentials.json:/etc/google/auth/application_default_credentials.json \
       -e GOOGLE_APPLICATION_CREDENTIALS=/etc/google/auth/application_default_credentials.json \
-      # -e GOOGLE_APPLICATION_CREDENTIALS=/etc/google_default_creds.json \
       -w /work/analysis-pipeline \
       --name "$JOB_NAME" \
       ${DOCKER_IMAGE} \
