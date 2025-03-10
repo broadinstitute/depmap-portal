@@ -781,8 +781,6 @@ def get_unique_dimension_ids_from_datasets(
     else:
         matrix_dimension_class = DatasetSample
 
-    unique_dims = set()
-
     # Get all matrix dimensions for that dimension type
     matrix_dimension_ids = {
         given_id for (given_id,) in
@@ -809,7 +807,6 @@ def get_unique_dimension_ids_from_datasets(
         )
         .all()
     }
-    # Combine dimension type's dimension given ids from datasets
-    unique_dims = tabular_dimension_ids.union(matrix_dimension_ids)
+    # Combine the unique given ids from the tabular and matrix datasets
+    return tabular_dimension_ids.union(matrix_dimension_ids)
 
-    return unique_dims
