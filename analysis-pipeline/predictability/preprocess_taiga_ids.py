@@ -1,7 +1,6 @@
 import sys
 import re
 from taigapy import create_taiga_client_v3
-import requests
 import os
 
 # this script exists to rewrite any Taiga IDs into their canonical form. (This allows conseq to recognize when data files are the same by just comparing taiga IDs)
