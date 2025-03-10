@@ -82,7 +82,7 @@ function run_via_container {
       -w /work/analysis-pipeline \
       --name "$JOB_NAME" \
       ${DOCKER_IMAGE} \
-      bash -c "source /aws-keys/broad-paquitas && $COMMAND"
+      bash -c "gcloud auth configure-docker us.gcr.io && source /aws-keys/broad-paquitas && $COMMAND"
 }
 
 # use /data2/depmap-pipeline-taiga as the taiga dir because
