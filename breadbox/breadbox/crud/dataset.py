@@ -798,7 +798,8 @@ def get_unique_dimension_ids_from_datasets(
     # Get all tabular identifiers for that dimension type
     tabular_dimension_ids = {
         given_id for (given_id,) in
-        db.query(distinct(TabularColumn.given_id))
+        db.query(distinct(TabularCell.dimension_given_id))
+        .join(TabularColumn)
         .filter(
             and_(
                 TabularColumn.dataset_id.in_(dataset_ids),
