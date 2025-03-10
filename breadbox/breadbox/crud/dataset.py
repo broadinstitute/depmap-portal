@@ -6,6 +6,7 @@ import warnings
 
 import pandas as pd
 from sqlalchemy import and_, func, or_
+from sqlalchemy.sql import distinct
 from sqlalchemy.orm import aliased, with_polymorphic
 
 from breadbox.db.session import SessionWithUser
@@ -783,8 +784,9 @@ def get_unique_dimension_ids_from_datasets(
     unique_dims = set()
 
     # Get all matrix dimensions for that dimension type
-    matrix_dimensions = (
-        db.query(matrix_dimension_class)
+    matrix_dimension_ids = {
+        given_id for (given_id,) in
+        db.query(distinct(matrix_dimension_class.given_id))
         .filter(
             and_(
                 Dimension.dataset_id.in_(dataset_ids),
@@ -792,11 +794,11 @@ def get_unique_dimension_ids_from_datasets(
             )
         )
         .all()
-    )
+    }
     # Get all tabular identifiers for that dimension type
-    tabular_dimension_ids = (
-        db.query(TabularCell)
-        .join(TabularColumn)
+    tabular_dimension_ids = {
+        given_id for (given_id,) in
+        db.query(distinct(TabularColumn.given_id))
         .filter(
             and_(
                 TabularColumn.dataset_id.in_(dataset_ids),
@@ -805,12 +807,8 @@ def get_unique_dimension_ids_from_datasets(
             )
         )
         .all()
-    )
+    }
     # Combine dimension type's dimension given ids from datasets
-    for m_dim in matrix_dimensions:
-        unique_dims.add(m_dim.given_id)
-
-    for t_dim in tabular_dimension_ids:
-        unique_dims.add(t_dim.dimension_given_id)
+    unique_dims = tabular_dimension_ids.union(matrix_dimension_ids)
 
     return unique_dims
