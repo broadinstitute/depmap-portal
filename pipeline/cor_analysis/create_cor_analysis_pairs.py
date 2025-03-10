@@ -17,9 +17,14 @@ def main():
         # todo change this so we take the taiga IDs from inputs
 
     def make_pairs():
+        # correlate each perturbational dataset with itself
         for mat_a in inputs["a_set"]:
+            yield mat_a, mat_a
+
+            # correlation each perturbational dataset with each biomarker dataset
             for mat_b in inputs["b_set"]:
                 yield mat_a, mat_b
+                yield mat_b, mat_a
 
     def make_artifact(a, b):
         artifact = {"type": "cor_input_pair"}

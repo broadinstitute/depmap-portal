@@ -5,6 +5,7 @@ import taigapy
 from tqdm import tqdm
 from dataclasses import dataclass
 from packed_cor_tables import write_cor_df, InputMatrixDesc, read_cor_for_given_id
+import json
 
 
 @dataclass
@@ -14,9 +15,6 @@ class Thresholds:
     minsamples: int
     limit_per_sign: int
     max_qvalue: float
-
-
-import json
 
 
 def read_parameters(filename):
