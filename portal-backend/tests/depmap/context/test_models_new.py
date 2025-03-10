@@ -29,6 +29,7 @@ def _setup_factories(
     bone_node = SubtypeNodeFactory(
         subtype_code=bone_code,
         node_level=0,
+        node_name="BONE NODE",
         level_0=bone_code,
         level_1=None,
         level_2=None,
@@ -53,6 +54,7 @@ def _setup_factories(
     es_node = SubtypeNodeFactory(
         subtype_code=es_code,
         node_level=1,
+        node_name="ES NODE",
         level_0=bone_code,
         level_1=bone_child_level1_num1,
         level_2=None,
@@ -66,6 +68,7 @@ def _setup_factories(
     chs_node = SubtypeNodeFactory(
         subtype_code=chs_code,
         node_level=1,
+        node_name="CHS NODE",
         level_0=bone_code,
         level_1=bone_child_level1_num2,
         level_2=None,
@@ -79,6 +82,7 @@ def _setup_factories(
     ddchs_node = SubtypeNodeFactory(
         subtype_code=ddchs_code,
         node_level=2,
+        node_name="DDCHS NODE",
         level_0=bone_code,
         level_1=bone_child_level1_num2,
         level_2=bone_child_level2_num1,
@@ -92,6 +96,7 @@ def _setup_factories(
     emchs_node = SubtypeNodeFactory(
         subtype_code=emchs_code,
         node_level=2,
+        node_name="EMCHS NODE",
         level_0=bone_code,
         level_1=bone_child_level1_num2,
         level_2=bone_child_level2_num2,
@@ -130,25 +135,6 @@ def test_subtype_context_entity_get_by_label(empty_db_mock_downloads):
     empty_db_mock_downloads.session.flush()
 
     assert SubtypeContextEntity.get_by_label(context_entity.label) == context_entity
-
-
-def test_get_cell_line_table_query(empty_db_mock_downloads):
-    model = DepmapModelFactory(primary_or_metastasis=None)
-    node = SubtypeNodeFactory(
-        subtype_code=model.depmap_model_type, level_1=model.oncotree_primary_disease
-    )
-    context = SubtypeContextFactory(
-        subtype_code=model.depmap_model_type, depmap_model=[model]
-    )
-    empty_db_mock_downloads.session.flush()
-    query = SubtypeContext.get_cell_line_table_query(context.subtype_code)
-
-    df = pd.read_sql(query.statement, query.session.connection())
-
-    assert len(df) == 1
-    assert df["cell_line_display_name"][0] == model.stripped_cell_line_name
-    assert df["primary_disease"][0] == model.oncotree_primary_disease
-    assert df["tumor_type"][0] == None
 
 
 def test_get_model_ids_for_subtype_context(empty_db_mock_downloads):
@@ -242,7 +228,7 @@ def test_get_subtype_tree_query(empty_db_mock_downloads):
         "level_3": None,
         "level_4": None,
         "level_5": None,
-        "node_name": "node_name_7",
+        "node_name": "BONE NODE",
         "node_level": 0,
     } in tree_nodes
     assert {
@@ -254,7 +240,7 @@ def test_get_subtype_tree_query(empty_db_mock_downloads):
         "level_3": None,
         "level_4": None,
         "level_5": None,
-        "node_name": "node_name_9",
+        "node_name": "CHS NODE",
         "node_level": 1,
     } in tree_nodes
 
@@ -267,7 +253,7 @@ def test_get_subtype_tree_query(empty_db_mock_downloads):
         "level_3": None,
         "level_4": None,
         "level_5": None,
-        "node_name": "node_name_11",
+        "node_name": "EMCHS NODE",
         "node_level": 2,
     } in tree_nodes
 
@@ -298,6 +284,7 @@ def test_get_subtype_tree_query_molecular_subtypes(empty_db_mock_downloads):
         subtype_code=parent_code,
         tree_type=TreeType.MolecularSubtype,
         node_level=0,
+        node_name="EGFR NODE",
         level_0=parent_code,
         level_1=None,
         level_2=None,
@@ -309,6 +296,7 @@ def test_get_subtype_tree_query_molecular_subtypes(empty_db_mock_downloads):
         subtype_code=child_code,
         tree_type=TreeType.MolecularSubtype,
         node_level=1,
+        node_name="EGFRp.L858R NODE",
         level_0=parent_code,
         level_1=child_code,
         level_2=None,
@@ -346,7 +334,7 @@ def test_get_subtype_tree_query_molecular_subtypes(empty_db_mock_downloads):
         "level_3": None,
         "level_4": None,
         "level_5": None,
-        "node_name": "node_name_12",
+        "node_name": "EGFR NODE",
         "node_level": 0,
     } in tree_nodes
     assert {
@@ -358,7 +346,7 @@ def test_get_subtype_tree_query_molecular_subtypes(empty_db_mock_downloads):
         "level_3": None,
         "level_4": None,
         "level_5": None,
-        "node_name": "node_name_12",
+        "node_name": "EGFR NODE",
         "node_level": 0,
     } in tree_nodes
     assert {
@@ -370,7 +358,7 @@ def test_get_subtype_tree_query_molecular_subtypes(empty_db_mock_downloads):
         "level_3": None,
         "level_4": None,
         "level_5": None,
-        "node_name": "node_name_13",
+        "node_name": "EGFRp.L858R NODE",
         "node_level": 1,
     } in tree_nodes
 

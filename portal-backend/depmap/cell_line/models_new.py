@@ -103,6 +103,12 @@ class DepmapModel(Model):
     image_filename = Column(String)
     age_category = Column(String)
 
+    # TODO: Added back because needed for Context Explorer V2,
+    # while was being developed in parallel when the json_encoded_metadata change
+    # was made. Still need to figure out what other changes might
+    # need to happen to work with the json_encoded_metadata change.
+    depmap_model_type = Column(String)
+
     # in json_encoded_metadata, we're storing a json encoded dictionary of column_name -> column_value
     # directly taken from full row taken from the Model.csv table. Those fields which the portal's python code depends
     # on should be explicitly modeled as columns, however, there are many columns which the python
