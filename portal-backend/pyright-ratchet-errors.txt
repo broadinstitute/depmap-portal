@@ -160,7 +160,6 @@ executive.py: error: "name" is not a known member of "None" (reportOptionalMembe
 executive.py: error: "num_dependent_cell_lines" is not a known member of "None" (reportOptionalMemberAccess)
 executive.py: error: "num_lines_with_data" is not a known member of "None" (reportOptionalMemberAccess)
 executive.py: error: "plot_param" is possibly unbound (reportPossiblyUnboundVariable)
-executive.py: error: "taiga_id" is not a known member of "None" (reportOptionalMemberAccess)
 executive.py: error: Argument of type "Literal['All']" cannot be assigned to parameter "__value" of type "int" in function "__setitem__"
 executive.py: error: Argument of type "str | Any" cannot be assigned to parameter "__value" of type "list[Unknown]" in function "__setitem__"
 executive.py: error: Cannot access member "barh" for type "ndarray[Any, dtype[Any]]"
@@ -438,7 +437,6 @@ test_executive.py: error: Argument of type "list[DependencyDatasetFactory]" cann
 test_executive.py: error: Argument of type "list[Unknown] | None" cannot be assigned to parameter "__obj" of type "Sized" in function "len"
 test_executive.py: error: Cannot access member "dataset_id" for type "DependencyDatasetFactory"
 test_executive.py: error: Cannot access member "entity_id" for type "CompoundExperimentFactory"
-test_executive.py: error: Cannot access member "entity_id" for type "CompoundFactory"
 test_executive.py: error: Cannot access member "units" for type "LazyAttribute"
 test_executive.py: error: Object of type "None" cannot be used as iterable value (reportOptionalIterable)
 test_executive.py: error: Object of type "None" is not subscriptable (reportOptionalSubscript)
