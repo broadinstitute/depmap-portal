@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Layout } from "plotly.js";
 import {
+  DataExplorerMetadata,
   DataExplorerPlotConfig,
   DataExplorerPlotResponse,
+  SliceQuery,
 } from "@depmap/types";
 
 // HACK: Copied from the "depmap-shared" directory.
@@ -242,10 +244,6 @@ export function formatDataForScatterPlot(
         colorInfo.push(data.filters.color2!.name);
       }
 
-      if (catValues && catValues[i] !== null) {
-        colorInfo.push(catValues[i]);
-      }
-
       if (contValues && contValues[i] !== null) {
         colorInfo.push(
           [
@@ -260,9 +258,21 @@ export function formatDataForScatterPlot(
           ? label.replace(/\s+\(BRD:.*\)/, "")
           : label;
 
-      return aliases.length > 0
-        ? [...aliases, `${formattedLabel}`, ...colorInfo].join("<br>")
-        : [`<b>${formattedLabel}</b>`, ...colorInfo].join("<br>");
+      const formattedLines =
+        aliases.length > 0
+          ? [...aliases, `${formattedLabel}`, ...colorInfo]
+          : [`<b>${formattedLabel}</b>`, ...colorInfo];
+
+      Object.keys(data.metadata || {}).forEach((key) => {
+        const { label: hoverLabel, values } = data.metadata[key]!;
+
+        let val = values[i] != null ? values[i].toString() : "<b>N/A</b>";
+        val = val.length > 40 ? `${val.substr(0, 40)}…` : val;
+
+        formattedLines.push(`${hoverLabel}: ${val}`);
+      });
+
+      return formattedLines.join("<br>");
     }),
 
     annotationText: data.index_labels.map((label: string, i: number) => {
@@ -339,6 +349,39 @@ export function formatDataForWaterfall(
   return { ...formatted, x };
 }
 
+function colorMetadataChanged(
+  ma?: DataExplorerMetadata,
+  mb?: DataExplorerMetadata
+) {
+  const a = ma?.color_property;
+  const b = mb?.color_property;
+
+  if (!a && !b) {
+    return false;
+  }
+
+  if (!a) {
+    return true;
+  }
+
+  if (!b) {
+    return true;
+  }
+
+  if ("slice_id" in a && "slice_id" in b) {
+    return a.slice_id !== b.slice_id;
+  }
+
+  const sqA = a as SliceQuery;
+  const sqB = b as SliceQuery;
+
+  return (
+    sqA.dataset_id !== sqB.dataset_id ||
+    sqA.identifier !== sqB.identifier ||
+    sqA.identifier_type !== sqB.identifier_type
+  );
+}
+
 export function useLegendState(
   plotConfig: DataExplorerPlotConfig,
   legendKeysWithNoData?: any
@@ -352,8 +395,7 @@ export function useLegendState(
     let hasChanges = false;
 
     if (
-      prevPlotConfig.current.metadata?.color_property?.slice_id !==
-      plotConfig.metadata?.color_property?.slice_id
+      colorMetadataChanged(prevPlotConfig.current.metadata, plotConfig.metadata)
     ) {
       hasChanges = true;
     }

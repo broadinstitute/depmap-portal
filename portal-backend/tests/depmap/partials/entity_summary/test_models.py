@@ -1,10 +1,12 @@
+from io import StringIO
+from flask import url_for
 from json import loads as json_loads
 import pandas as pd
 import numpy as np
 import pytest
 
-from depmap.dataset.models import DependencyDataset, BiomarkerDataset, TabularDataset
-from depmap.partials.entity_summary.factories import get_entity_summary
+from depmap.dataset.models import DependencyDataset, BiomarkerDataset, Dataset
+from depmap.gene.models import Gene
 from depmap.partials.entity_summary import models
 from tests.factories import (
     GeneFactory,
@@ -13,47 +15,10 @@ from tests.factories import (
     BiomarkerDatasetFactory,
     CellLineFactory,
     LineageFactory,
-    MutationFactory,
     CompoundExperimentFactory,
 )
 from tests.utilities import interactive_test_utils
 from tests.utilities.df_test_utils import dfs_equal_ignoring_column_order
-
-
-def test_entity_summary_structure(empty_db_mock_downloads):
-    cell_line = CellLineFactory()
-    gene = GeneFactory()
-
-    dep_matrix = MatrixFactory(entities=[gene], cell_lines=[cell_line])
-
-    DependencyDatasetFactory(
-        matrix=dep_matrix, name=DependencyDataset.DependencyEnum.Avana
-    )
-    BiomarkerDatasetFactory(name=BiomarkerDataset.BiomarkerEnum.expression)
-    empty_db_mock_downloads.session.flush()
-    interactive_test_utils.reload_interactive_config()
-
-    entity_summary = get_entity_summary(
-        gene,
-        DependencyDataset.DependencyEnum.Avana.name,
-        BiomarkerDataset.BiomarkerEnum.expression,
-        BiomarkerDataset.BiomarkerEnum.mutations_prioritized.name,
-    )
-
-    data_for_ajax_partial = entity_summary.data_for_ajax_partial()
-    assert set(data_for_ajax_partial.keys()) == {"name"}
-    json_data = json_loads(entity_summary.json_data())
-
-    assert set(json_data.keys()) == {
-        "strip",
-        "x_range",
-        "x_label",
-        "legend",
-        "line",
-        "description",
-        "interactive_url",
-        "entity_type",
-    }
 
 
 @pytest.mark.parametrize(
@@ -88,12 +53,18 @@ def test_integrate_dep_data(
 
     expected_srs = dataset.matrix.get_cell_line_values_and_depmap_ids(entity.entity_id)
 
-    metadata = {}
-    metadata, srs = models.integrate_dep_data(
-        metadata, dep_enum, entity.label, entity.entity_id
-    )
+    # Since compound datasets will be indexed by compound going forward, 
+    # the integrate_dep_data function expects to be called by compound, even
+    # when the underlying dataset is indexed by compound experiment.
+    if entity.type == "compound_experiment":
+        entity_label = entity.compound.label
+    else:
+        entity_label = entity.label
 
-    assert srs.equals(expected_srs)
+    feature_data_srs = models.get_feature_data(dep_enum.name, entity_label)
+    metadata = models.get_entity_summary_metadata(dep_enum.name, feature_data_srs, entity_label)
+
+    assert feature_data_srs.equals(expected_srs)
 
     assert "x_range" in metadata
     assert metadata["x_label"] == dataset.matrix.units
@@ -105,38 +76,6 @@ def test_integrate_dep_data(
         assert "line" not in metadata
 
 
-@pytest.mark.parametrize(
-    "dep_enum, value_range, expected",
-    [
-        (DependencyDataset.DependencyEnum.Avana, [0, 0], [-2, 2]),
-        (DependencyDataset.DependencyEnum.GDSC1_AUC, [0, 0], [0, 1.1]),
-        (DependencyDataset.DependencyEnum.GDSC1_IC50, [0, 0], [0, 0]),
-        (
-            DependencyDataset.DependencyEnum.Avana,
-            [-4, 4],
-            [-4 - 1, 4 + 1],
-        ),  # stretch both sides
-        (
-            DependencyDataset.DependencyEnum.Avana,
-            [-20, 1],
-            [-20 - 1, 2],
-        ),  # stretch min only
-        (
-            DependencyDataset.DependencyEnum.GDSC1_AUC,
-            [1, 4],
-            [0, 4 + 1],
-        ),  # stretch max only
-    ],
-)
-def test_get_x_range(empty_db_mock_downloads, dep_enum, value_range, expected):
-    dataset = DependencyDatasetFactory(name=dep_enum)
-    empty_db_mock_downloads.session.flush()
-    interactive_test_utils.reload_interactive_config()
-    df = pd.DataFrame({"value": value_range})
-
-    assert models._get_x_range(dataset, df) == expected
-
-
 def test_integrate_cell_line_information(empty_db_mock_downloads):
     """
     Test that
@@ -145,7 +84,7 @@ def test_integrate_cell_line_information(empty_db_mock_downloads):
     cell_line_1 = CellLineFactory()
     cell_line_na = CellLineFactory()
     cell_line_3 = CellLineFactory()
-    gene = GeneFactory()
+    gene: Gene = GeneFactory() # pyright: ignore
 
     cell_line_objs = [
         cell_line_3,
@@ -161,10 +100,12 @@ def test_integrate_cell_line_information(empty_db_mock_downloads):
     empty_db_mock_downloads.session.flush()
     interactive_test_utils.reload_interactive_config()
 
-    metadata, srs = models.integrate_dep_data(
-        {}, dep_dataset.name, gene.label, gene.entity_id
-    )
-    df = models.integrate_cell_line_information(srs)
+    dataset_id = dep_dataset.name.name
+    feature_data_srs = models.get_feature_data(dataset_id, gene.label)
+    metadata = models.get_entity_summary_metadata(dataset_id, feature_data_srs, gene.label)
+
+    
+    df = models.integrate_cell_line_information(feature_data_srs)
 
     assert df.shape == (
         2,
@@ -208,10 +149,8 @@ def test_integrate_size_and_label_data(empty_db_mock_downloads):
         "cell_line_display_name": [x.cell_line_display_name for x in cell_line_objs],
     }
     test_df = pd.DataFrame(data, index=depmap_ids)
-    metadata = {"x_label": "test dep units"}
-    legend = {}
     df, legend = models.integrate_size_and_label_data(
-        test_df, metadata, legend, size_biom_enum, gene.entity_id
+        test_df, "test dep units", size_biom_enum, gene.entity_id
     )
 
     expression = [1, 2]
@@ -259,10 +198,8 @@ def test_integrate_size_and_label_data_no_data(empty_db_mock_downloads, entity_f
         "cell_line_display_name": [x.cell_line_display_name for x in cell_line_objs],
     }
     test_df = pd.DataFrame(data, index=depmap_ids)
-    metadata = {"x_label": "test dep units"}
-    legend = {}
     df, legend = models.integrate_size_and_label_data(
-        test_df, metadata, legend, size_biom_enum, entity.entity_id
+        test_df, "test dep units", size_biom_enum, entity.entity_id
     )
 
     expected_df = pd.DataFrame(
@@ -427,7 +364,6 @@ def test_format_strip_plot(empty_db_mock_downloads):
     ]
     mutation_nums = [0, 0, 0, 1, 1]
     depmap_ids = [x.depmap_id for x, _ in cell_lines_and_lineage_level]
-    strip_url_root = "/cell_line"
     lineages = [
         [lineage for lineage in x.lineage.all() if lineage.level == level][0]
         for x, level in cell_lines_and_lineage_level
@@ -453,7 +389,7 @@ def test_format_strip_plot(empty_db_mock_downloads):
     test_df = pd.DataFrame(data, index=depmap_ids)
 
     expected = {
-        "url_root": "/cell_line",
+        "url_root": "/cell_line/",
         "traces": [
             {
                 "data": {
@@ -543,4 +479,62 @@ def test_format_strip_plot(empty_db_mock_downloads):
         ],
     }
 
-    assert models.format_strip_plot(test_df, strip_url_root) == expected
+    assert models.format_strip_plot(test_df) == expected
+
+
+
+def test_get_download_data(app, empty_db_mock_downloads):
+    """
+    Tests that endpoint outputs a csv, that can be then read by pandas
+    The expected filename should be the gene with the dependency dataset name
+    """
+    cell_line = CellLineFactory()
+    gene: Gene = GeneFactory() # pyright: ignore
+
+    expression_matrix = MatrixFactory(entities=[gene], cell_lines=[cell_line])
+
+    BiomarkerDatasetFactory(
+        matrix=expression_matrix, name=BiomarkerDataset.BiomarkerEnum.expression
+    )
+    empty_db_mock_downloads.session.flush()
+    interactive_test_utils.reload_interactive_config()
+
+    dataset_enum_name = BiomarkerDataset.BiomarkerEnum.expression.name
+
+
+    result = models.get_download_data(
+        dataset_id=dataset_enum_name,
+        entity=gene,
+        size_dataset_enum=None,
+        color_dataset_id=None,
+    )
+    assert result is not None
+    with app.test_client() as c:
+        res = c.get(
+            url_for(
+                "partials.entity_summary_download",
+                entity_id=gene.entity_id,
+                dep_enum_name=dataset_enum_name,
+                size_biom_enum_name="none",
+                color="none",
+            )
+        )
+        assert res.status_code == 200, res.status_code
+        df = pd.read_csv(StringIO(res.data.decode("utf-8")))
+        assert len(df) == 1
+        dataset = Dataset.get_dataset_by_name(dataset_enum_name)
+        assert dataset is not None
+        expected_filename = dataset.display_name
+        assert (
+            "filename={} {}.csv".format(gene.label, expected_filename)
+            in res.headers["Content-Disposition"]
+        )
+        expected_column_names = [
+            "Depmap ID",
+            "Cell Line Name",
+            "Primary Disease",
+            "Lineage",
+            "Lineage Subtype",
+            expected_filename,
+        ]
+        assert set(expected_column_names) == set(df.columns)

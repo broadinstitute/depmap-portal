@@ -128,3 +128,6 @@ rule publish_annotated-celligner-output:
     inputs: in={"type": "annotated-celligner-output"}
     publish: "{{config.publish_dest}}/annotated-celligner-output.json"
 
+rule publish_cor_tables:
+    inputs: cor_tables=all {"type": "cor_table"}
+    publish: "{{config.publish_dest}}/cor_tables.json"

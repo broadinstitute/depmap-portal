@@ -83,21 +83,27 @@ installed by brew and when using `poetry self ...` it's not updating the
 environment in the right directory. `poetry self update` flat out aborts
 saying it cannot do that when installed via brew.)
 
+## Usage
+
 ### To install this module outside this repo:
 
 ```
 poetry source add --priority=supplemental public-python https://us-central1-python.pkg.dev/cds-artifacts/public-python/simple/
-poetry add --source public-python breadbox-facade
+poetry add --source public-python breadbox-client
 ```
-
-## Usage
 
 First, create a client:
 
 ```python
-from breadbox_client import Client
+from breadbox_facade import BBClient
 
-client = Client(base_url="https://api.example.com")
+client = BBClient(base_url="https://depmap.org/portal/breadbox/", user="someusername")
+
+
+# If you're connnecting to the public portal or a local instance, you can now go ahead and use the client.
+# For example:
+datasets = client.get_datasets()
+dimension_types = client.get_dimension_types()
 ```
 
 If the endpoints you're going to hit require authentication, use `AuthenticatedClient` instead:

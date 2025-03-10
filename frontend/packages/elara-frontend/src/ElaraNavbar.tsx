@@ -120,7 +120,7 @@ function ElaraNavbar() {
           </MenuItemLink>
           <MenuItemLink to="/elara/groups">Manage Groups</MenuItemLink>
           <MenuItem divider />
-          <MenuItem onClick={launchContextManagerModal}>
+          <MenuItem onClick={() => launchContextManagerModal()}>
             Context Manager
           </MenuItem>
         </NavDropdown>

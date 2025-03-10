@@ -2,6 +2,7 @@ import qs from "qs";
 import omit from "lodash.omit";
 import { ComputeResponseResult } from "@depmap/compute";
 import { isCompleteDimension, isPartialSliceId } from "@depmap/data-explorer-2";
+import { linregress, pearsonr, spearmanr } from "@depmap/statistics";
 import {
   DataExplorerAnonymousContext,
   DataExplorerContext,
@@ -11,7 +12,6 @@ import {
   DataExplorerPlotConfigDimension,
   DataExplorerPlotResponse,
   FilterKey,
-  LinRegInfo,
 } from "@depmap/types";
 
 function fetchUrlPrefix() {
@@ -27,6 +27,25 @@ function fetchUrlPrefix() {
 
 const urlPrefix = `${fetchUrlPrefix().replace(/^\/$/, "")}/data_explorer_2`;
 const fetchJsonCache: Record<string, Promise<unknown> | null> = {};
+
+// Historically, all computations happened on the backend and were cached
+// according to the corresponding endpoint. Many of those calculations now happen
+// on the frontend. This function is used to cache those results.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const memoize = <T>(computeResponse: (...args: any[]) => Promise<T>) => {
+  const cache: Record<string, Promise<T>> = {};
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return async (...args: any[]): Promise<T> => {
+    const cacheKey = JSON.stringify(args);
+
+    if (!cache[cacheKey]) {
+      cache[cacheKey] = computeResponse(...args);
+    }
+
+    return cache[cacheKey] as Promise<T>;
+  };
+};
 
 const fetchJson = async <T>(
   url: string,
@@ -355,31 +374,6 @@ export async function fetchGeneTeaTermContext(
   );
 }
 
-export async function fetchLinearRegression(
-  index_type: string,
-  dimensions: Record<string, DataExplorerPlotConfigDimension>,
-  filters?: DataExplorerFilters,
-  metadata?: DataExplorerMetadata
-): Promise<LinRegInfo[]> {
-  const isValidMetadata =
-    metadata &&
-    metadata.color_property &&
-    !isPartialSliceId(metadata.color_property.slice_id);
-
-  const json = {
-    index_type,
-
-    dimensions: isCompleteDimension(dimensions.color)
-      ? dimensions
-      : omit(dimensions, "color"),
-
-    metadata: isValidMetadata ? metadata : null,
-    filters,
-  };
-
-  return postJson("/linear_regression", json);
-}
-
 export async function fetchMetadataColumn(
   slice_id: string
 ): Promise<{
@@ -409,6 +403,37 @@ export async function fetchMetadataSlices(
   return fetchJson(`/metadata_slices?${query}`);
 }
 
+// Legacy metadata did not support the SliceQuery format.
+type LegacyDataExplorerMetadata = Record<string, { slice_id: string }>;
+
+function getExtraMetadata(
+  index_type: string,
+  metadata?: LegacyDataExplorerMetadata
+) {
+  const extraMetadata = {} as LegacyDataExplorerMetadata;
+  // HACK: Always include this info about models so we can show it in hover
+  // tips. In the future, we should make it configurable what information is
+  // shown there.
+  if (index_type === "depmap_model") {
+    const primaryDisaseSliceId = "slice/primary_disease/all/label";
+    const lineageSliceId = "slice/lineage/1/label";
+
+    if (metadata?.color_property?.slice_id !== primaryDisaseSliceId) {
+      extraMetadata.extra1 = {
+        slice_id: primaryDisaseSliceId,
+      };
+    }
+
+    if (metadata?.color_property?.slice_id !== lineageSliceId) {
+      extraMetadata.extra2 = {
+        slice_id: lineageSliceId,
+      };
+    }
+  }
+
+  return extraMetadata;
+}
+
 // Makes several concurrent requests and stitches them togther into a
 // DataExplorerPlotResponse.
 export async function fetchPlotDimensions(
@@ -417,6 +442,12 @@ export async function fetchPlotDimensions(
   filters?: DataExplorerFilters,
   metadata?: DataExplorerMetadata
 ): Promise<DataExplorerPlotResponse> {
+  // eslint-disable-next-line no-param-reassign
+  metadata = {
+    ...metadata,
+    ...getExtraMetadata(index_type, metadata as LegacyDataExplorerMetadata),
+  };
+
   const dimensionKeys = Object.keys(dimensions).filter((key) => {
     return isCompleteDimension(dimensions[key]);
   });
@@ -424,7 +455,9 @@ export async function fetchPlotDimensions(
   const filterKeys = Object.keys(filters || {}) as FilterKey[];
 
   const metadataKeys = Object.keys(metadata || {}).filter((key) => {
-    return !isPartialSliceId(metadata![key].slice_id);
+    return !isPartialSliceId(
+      (metadata as LegacyDataExplorerMetadata)![key].slice_id
+    );
   });
 
   const responses = await Promise.all(
@@ -504,10 +537,11 @@ export async function fetchWaterfall(
   filters?: DataExplorerFilters,
   metadata?: DataExplorerMetadata
 ): Promise<DataExplorerPlotResponse> {
-  const isValidMetadata =
-    metadata &&
-    metadata.color_property &&
-    !isPartialSliceId(metadata.color_property.slice_id);
+  // eslint-disable-next-line no-param-reassign
+  metadata = {
+    ...metadata,
+    ...getExtraMetadata(index_type, metadata as LegacyDataExplorerMetadata),
+  };
 
   const json = {
     index_type,
@@ -516,7 +550,7 @@ export async function fetchWaterfall(
       ? dimensions
       : omit(dimensions, "color"),
 
-    metadata: isValidMetadata ? metadata : null,
+    metadata,
     filters,
   };
 
@@ -549,3 +583,97 @@ export function fetchUniqueValuesOrRange(
 
   return fetchJson(`/unique_values_or_range?${query}`);
 }
+
+export const fetchLinearRegression = memoize(
+  async (
+    index_type: string,
+    dimensions: Record<string, DataExplorerPlotConfigDimension>,
+    filters?: DataExplorerFilters,
+    metadata?: DataExplorerMetadata
+  ) => {
+    const data = await fetchPlotDimensions(
+      index_type,
+      dimensions,
+      filters,
+      metadata
+    );
+
+    const xs = data.dimensions.x!.values;
+    const ys = data.dimensions.y!.values;
+    const visible = data.filters?.visible?.values || xs.map(() => true);
+    let categories: (string | number | null)[] = xs.map(() => null);
+
+    if (data.metadata?.color_property) {
+      categories = data.metadata.color_property.values;
+    }
+
+    if (data.filters?.color1 || data.filters?.color2) {
+      const name1 = data.filters?.color1?.name || null;
+      const name2 = data.filters?.color2?.name || null;
+      const color1 = data.filters?.color1?.values || xs.map(() => false);
+      const color2 = data.filters?.color2?.values || xs.map(() => false);
+
+      categories = xs.map((_, i) => {
+        if (color1[i] && color2[i]) {
+          return `Both (${name1} & ${name2})`;
+        }
+
+        if (color1[i] || color2[i]) {
+          return color1[i] ? name1 : name2;
+        }
+
+        return null;
+      });
+    }
+
+    const compareNullLast = (
+      a: typeof categories[number],
+      b: typeof categories[number]
+    ) => {
+      if (a === b) {
+        return 0;
+      }
+
+      if (a === null) {
+        return 1;
+      }
+
+      if (b === null) {
+        return -1;
+      }
+
+      return a < b ? -1 : 1;
+    };
+
+    return [...new Set(categories)].sort(compareNullLast).map((category) => {
+      const x: number[] = [];
+      const y: number[] = [];
+
+      for (let i = 0; i < xs.length; i += 1) {
+        if (
+          visible[i] &&
+          category === categories[i] &&
+          Number.isFinite(xs[i]) &&
+          Number.isFinite(ys[i])
+        ) {
+          x.push(xs[i]);
+          y.push(ys[i]);
+        }
+      }
+
+      const pearson = pearsonr(x, y);
+      const spearman = spearmanr(x, y);
+      const regression = linregress(x, y);
+
+      return {
+        group_label: category as string | null,
+        number_of_points: x.length,
+        pearson: pearson.statistic,
+        spearman: spearman.statistic,
+        slope: regression.slope,
+        intercept: regression.intercept,
+        p_value: regression.pvalue,
+      };
+    });
+  }
+);

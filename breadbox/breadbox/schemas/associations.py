@@ -11,6 +11,7 @@ class DatasetSummary(BaseModel):
 
 class Association(BaseModel):
     correlation: float
+    log10qvalue: float
     other_dataset_id: str
     other_dimension_given_id: str
     other_dimension_label: str

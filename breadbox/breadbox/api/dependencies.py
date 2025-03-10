@@ -18,6 +18,11 @@ def get_db_with_user(request: Request):
         db.close()
 
 
+def get_legacy_cas_bucket():
+    settings = get_settings()
+    return settings.LEGACY_CAS_BUCKET
+
+
 def get_cas_db_path():
     settings = get_settings()
     return os.path.join(settings.filestore_location, "cas.sqlite3")

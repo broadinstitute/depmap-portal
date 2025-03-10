@@ -85,8 +85,7 @@ export const matrixFormSchema: Required<Pick<RJSFSchema, "properties">> &
     group_id: {
       title: "Group Id",
       type: "string",
-      description:
-        "ID of the group the dataset belongs to. Required for non-transient datasets.",
+      description: "The group the dataset belongs to",
       format: "uuid",
     },
     priority: {
