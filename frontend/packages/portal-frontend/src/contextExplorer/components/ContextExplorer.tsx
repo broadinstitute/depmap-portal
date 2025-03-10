@@ -215,6 +215,7 @@ export const ContextExplorer = () => {
         );
       } else {
         setContextPath(null);
+        setContextInfo(null);
       }
       setIsLoading(false);
     },

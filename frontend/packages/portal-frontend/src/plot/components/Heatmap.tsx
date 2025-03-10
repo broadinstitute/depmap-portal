@@ -92,7 +92,7 @@ function Heatmap({
     ];
 
     const axisTemplate: Partial<Plotly.LayoutAxis> = {
-      showgrid: true,
+      showgrid: false,
       visible: true,
     };
 

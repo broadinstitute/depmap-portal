@@ -205,8 +205,13 @@ def get_child_subtype_summary_df(subtype_code: str):
     #####################
     # TEMP HACK... I think.
     #######################
-    test = _get_context_summary_df()
+    test = (
+        _get_context_summary_df()
+    )  # gets data from the get_data_availability.py output
     valid_model_ids = set(test.columns.tolist())
+
+    # gets the intersection of models from get_data_availability.py and the models
+    # included in the subtype context.
     corrected_all_model_ids = list(
         set.intersection(valid_model_ids, set(all_model_ids))
     )

@@ -107,8 +107,12 @@
   padding-bottom: 35px;
   margin-top: 30.5px;
   border-top: 1px solid #000000;
-  width: 325px;
+  width: 275px;
   overflow: visible;
+
+  @media (max-width: 850px) {
+    width: 232px;
+  }
 
   .overviewText {
     margin-top: 25px;
@@ -216,6 +220,10 @@
   .plot {
     text-align: center;
     width: 75%;
+
+    @media (max-width: 1150px) {
+      width: 40%;
+    }
 
     .plotHeaders {
       align-content: flex-start;
