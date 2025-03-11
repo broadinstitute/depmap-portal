@@ -237,14 +237,21 @@ export async function fetchDimensionIdentifiers(
     throw new Error(`Unrecognized dimension type "${dimensionTypeName}"!`);
   }
 
-  const url = [
-    `/types/dimensions/${dimensionTypeName}/identifiers`,
-    // FIXME: This query param makes things incredibly slow. I'm commenting it
-    // out for now because it might not be adding much value. Only about 8% of
-    // genes are not represented in a dataset somewhere.
-    // "?show_only_dimensions_in_datasets=true",
-    dataType ? `&data_type=${dataType}` : "",
-  ].join("");
+  const queryParams: string[] = [];
+
+  if (dataType) {
+    queryParams.push(`data_type=${dataType}`);
+  }
+
+  // FIXME: This query param makes things incredibly slow. I'm commenting it
+  // out for now because it might not be adding much value. Only about 8% of
+  // genes are not represented in a dataset somewhere.
+  // queryParams.push("show_only_dimensions_in_datasets=true");
+
+  const url =
+    `/types/dimensions/${dimensionTypeName}/identifiers` +
+    (queryParams.length ? `?` : "") +
+    queryParams.join("&");
 
   return fetchJson<Identifiers>(url);
 }
