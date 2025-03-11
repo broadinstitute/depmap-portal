@@ -6,6 +6,7 @@ import {
   Dataset,
   DatasetUpdateArgs,
   Group,
+  instanceOfErrorDetail,
   InvalidPrioritiesByDataType,
 } from "@depmap/types";
 import { RegistryFieldsType, RJSFSchema, UiSchema } from "@rjsf/utils";
@@ -33,6 +34,8 @@ export default function DatasetForm(props: DatasetEditFormProps) {
 
   const [schema, setSchema] = useState<RJSFSchema | null>(null);
   const [formDataVals, setFormDataVals] = useState<any>(null);
+  const [submissionMsg, setSubmissionMsg] = useState<string | null>(null);
+  const [hasError, setHasError] = useState<boolean>(false);
   console.log(formDataVals);
 
   console.log(datasetToEdit);
@@ -125,16 +128,38 @@ export default function DatasetForm(props: DatasetEditFormProps) {
   }, [submitButtonIsDisabled]);
 
   return schema && formDataVals ? (
-    <Form
-      formData={formDataVals}
-      schema={schema}
-      uiSchema={uiSchema}
-      validator={validator}
-      fields={fields}
-      onSubmit={async ({ formData }) => {
-        console.log(formData);
-        await onSubmit(datasetToEdit.id, formData);
-      }}
-    />
+    <>
+      <Form
+        formData={formDataVals}
+        schema={schema}
+        uiSchema={uiSchema}
+        validator={validator}
+        fields={fields}
+        onSubmit={async ({ formData }) => {
+          console.log(formData);
+          setSubmissionMsg("Loading...");
+          setHasError(false);
+          try {
+            await onSubmit(datasetToEdit.id, formData);
+            setSubmissionMsg("SUCCESS!");
+          } catch (e) {
+            console.error(e);
+            if (instanceOfErrorDetail(e)) {
+              setSubmissionMsg(e.detail);
+              setHasError(true);
+            }
+          }
+        }}
+      />
+      <p
+        style={{
+          color: hasError ? "red" : "gray",
+          paddingTop: "5px",
+          fontStyle: "italic",
+        }}
+      >
+        {submissionMsg}
+      </p>
+    </>
   ) : null;
 }
