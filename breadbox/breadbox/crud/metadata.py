@@ -35,9 +35,6 @@ from typing import List, Union, cast
 def cast_tabular_cell_value_type(value, type) -> Union[None, str, float, List[str]]:
     if value == None:
         return None
-    if type == AnnotationType.binary:
-        # NOTE: pandas dtype boolean in _validate_dimension_type_metadata_file standardizes booleans to True and False
-        return True if value == "True" else False
     if type == AnnotationType.categorical:
         return str(value)
     if type == AnnotationType.continuous:

@@ -103,7 +103,7 @@ class TestGet:
             self.feature_attr1_title: AnnotationType.text,
             self.feature_attr2_title: AnnotationType.continuous,
             self.feature_attr3_title: AnnotationType.list_strings,
-            self.feature_attr4_title: AnnotationType.binary,
+            self.feature_attr4_title: AnnotationType.categorical,
             self.feature_attr5_title: AnnotationType.categorical,
             self.feature_id_col: AnnotationType.text,
         }
@@ -179,8 +179,8 @@ class TestGet:
                 },
                 {
                     "given_id": self.feature_attr4_title,
-                    "value": True,
-                    "annotation_type": "binary",
+                    "value": "true",
+                    "annotation_type": "categorical",
                 },
                 {
                     "given_id": self.feature_attr5_title,
@@ -229,8 +229,8 @@ class TestGet:
                 },
                 {
                     "given_id": self.feature_attr4_title,
-                    "value": 0,
-                    "annotation_type": "binary",
+                    "value": "0",
+                    "annotation_type": "categorical",
                 },
                 {
                     "given_id": self.feature_attr5_title,
