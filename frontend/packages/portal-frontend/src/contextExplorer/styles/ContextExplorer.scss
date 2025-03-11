@@ -6,21 +6,38 @@
 
 .Tab[aria-selected="true"] {
   font-weight: bold !important;
-  color: #a9529e !important;
-  background-color: #cda0c74d;
-  background-image: none !important;
+  color: #405587 !important;
+  margin-bottom: 1px;
+  background-size: 100% 3px !important;
+  background-image: linear-gradient(#405587, #405587) !important;
 }
 
 .Tab:focus {
   outline: none;
 }
 
-.Tab:focus-visible {
-  box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.6);
+.pseudoLink {
+  all: unset;
+  cursor: pointer;
+  color: #337ab7;
+  text-decoration: underline;
+  cursor: pointer;
+  padding-left: 3px;
+  padding-right: 3px;
+
+  &:hover,
+  &:focus {
+    color: #23527c;
+  }
+
+  &:focus-visible {
+    outline: 5px auto -webkit-focus-ring-color;
+    outline-offset: 3px;
+  }
 }
 
-.Tab:active {
-  background-color: #a9529e important;
+.Tab:focus-visible {
+  box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.6);
 }
 
 .Tab:disabled {
@@ -29,6 +46,10 @@
 }
 .TabPanel {
   width: 100%;
+}
+
+.TabPanels {
+  padding: 0px !important;
 }
 
 .TabList {
@@ -72,28 +93,55 @@
   width: 100%;
 }
 
-.filters {
-  display: flex;
-  float: left;
-  min-width: 222px;
-  width: 264px;
-  max-width: 264px;
-  margin-top: 0px;
-  margin-right: 0px;
-  margin-bottom: 750px;
-  overflow: visible;
+.mainContent {
+  display: grid;
+  // Defines columns for left side bar and the "tab contents"
+  // which includes the right side bar on the sensitivity and
+  // dependency tabs.
+  grid-template-columns: 0.3fr auto;
 }
 
 .lineageSelection {
-  padding-right: 17px;
-  padding-left: 17px;
+  height: 100%;
   margin-right: 0px;
-  padding-bottom: 15px;
-  height: fit-content;
-  margin-top: 29.5px;
-  background-color: #f6f8fa;
+  padding-bottom: 35px;
+  margin-top: 30.5px;
   border-top: 1px solid #000000;
-  width: 264px;
+  width: 275px;
+  overflow: visible;
+
+  @media (max-width: 850px) {
+    width: 232px;
+  }
+
+  .overviewText {
+    margin-top: 25px;
+    background: white;
+    padding: 14px;
+    border-radius: 4px;
+    box-shadow: 1px 2px 2px 1px #0000001a;
+  }
+
+  .Tab[aria-selected="true"] {
+    font-weight: bold !important;
+    color: #35a5a5 !important;
+    margin-bottom: 0px;
+    background-size: 100% 3px !important;
+    background-image: linear-gradient(#35a5a5, #35a5a5) !important;
+  }
+
+  .Tab {
+    padding-top: 0px;
+    padding-bottom: 0px;
+    padding-left: 0px;
+    padding-right: 0px;
+  }
+
+  .TabPanel {
+    background-color: #f6f8fa;
+    padding-left: 15px;
+    padding-right: 15px;
+  }
 
   .pHeader {
     margin-top: 25px;
@@ -101,23 +149,17 @@
     font-weight: bold;
   }
 
-  .disabledHeader {
+  .pSubHeader {
     margin-top: 25px;
     font-size: 16px;
+    text-overflow: ellipsis;
     font-weight: bold;
-    color: #8b8b8b;
   }
 
   .treeContainer {
-    border: 1px solid #cccccc;
-    border-radius: 4px;
+    border-bottom: 0.5px solid #697caa;
+    border-radius: 0px;
     background-color: #fcfdfe;
-  }
-
-  .treeContainerDisabled {
-    border: 1px solid #e2e1e1b3;
-    border-radius: 4px;
-    background-color: #e2e1e1b3;
   }
 }
 
@@ -125,18 +167,20 @@
   display: flex;
   flex-direction: column;
   margin-left: 0px;
-  margin-right: 24px;
   overflow: visible;
+  height: 100%;
 }
 
 .overviewPlotWrapper {
   display: flex;
   flex-direction: row;
-  flex-grow: 1;
   .datatypeSelector {
-    margin-left: 30px;
+    margin-right: 10px;
+    align-self: normal;
+    font-family: roboto;
     font-size: 16px;
-    min-width: 101px;
+    font-weight: 500;
+    margin-top: 5px;
 
     & > h5 {
       font-style: normal;
@@ -148,17 +192,19 @@
 
     .selector {
       padding-bottom: 3px;
+      & > p {
+        margin-top: 5px;
+      }
     }
   }
 
   .numbersAxis {
     margin-left: 6px;
     margin-right: 15px;
-    min-width: 105px;
+    min-width: 115px;
 
     & > div {
       font-size: 16px;
-      padding-bottom: 22px;
       margin: 2px;
     }
 
@@ -166,8 +212,8 @@
       font-style: normal;
       font-size: 14px;
       font-weight: bold;
-      padding-bottom: 11px;
-      margin-top: 4px;
+      padding-bottom: 12px;
+      margin-top: 14px;
     }
   }
 
@@ -175,14 +221,62 @@
     text-align: center;
     width: 75%;
 
+    @media (max-width: 1150px) {
+      width: 40%;
+    }
+
     .plotHeaders {
+      align-content: flex-start;
       & > h5 {
         font-style: normal;
         font-size: 14px;
         font-weight: bold;
-        margin-top: 4px;
+        padding-bottom: 12px;
       }
     }
+  }
+}
+
+.doseCurvesLegend {
+  display: flex;
+  flex-direction: row;
+  flex-grow: 1;
+  border: 1px solid #d9d9d9;
+  margin-left: 10px;
+  margin-right: 10px;
+  margin-bottom: 10px;
+  margin-top: 15px;
+  padding: 5px;
+  & > div.medianInGroupBox {
+    background: #016d5b;
+    width: 10px;
+    height: 5px;
+    margin-right: 5px;
+    margin-left: 20px;
+    align-self: center;
+  }
+
+  & > div.medianOutGroupBox {
+    background: #e97451;
+    width: 10px;
+    height: 5px;
+    margin-right: 5px;
+    margin-left: 20px;
+    align-self: center;
+  }
+
+  & > div.modelsBox {
+    background: #d9d9d9;
+    width: 8px;
+    height: 5px;
+    margin-right: 5px;
+    margin-left: 20px;
+    align-self: center;
+  }
+
+  & > div.doseCurvesLegendLabel {
+    font-size: 10px;
+    font-weight: bold;
   }
 }
 
@@ -190,9 +284,10 @@
   display: flex;
   flex-direction: row;
   flex-grow: 1;
+  padding-top: 10px;
 
   & > div.lofBox {
-    background: #e68bdb;
+    background: #2fa9d0;
     width: 16px;
     height: 16px;
     margin-right: 5px;
@@ -205,7 +300,7 @@
   }
 
   & > div.omicsBox {
-    background: #85a6c8;
+    background: #244a95;
     width: 16px;
     height: 16px;
     margin-left: 35px;
@@ -216,7 +311,18 @@
     }
   }
   & > div.compoundBox {
-    background: #ffba7a;
+    background: #c55252;
+    width: 16px;
+    height: 16px;
+    margin-left: 35px;
+    margin-right: 10px;
+    @media (max-width: 1050px) {
+      margin-left: 8px;
+      margin-right: 3px;
+    }
+  }
+  & > div.subtypeBox {
+    background: #e1790e;
     width: 16px;
     height: 16px;
     margin-left: 35px;
@@ -236,12 +342,16 @@
 .plotContainer {
   display: flex;
   flex-direction: column;
-  width: 71%;
   margin-left: 14px;
   margin-right: 14px;
   margin-bottom: 12px;
   overflow: hidden;
-  border: 1px solid #d9d9d9;
+
+  @media (max-width: 1050px) {
+    margin-left: 14px;
+    margin-right: 14px;
+    width: auto;
+  }
 
   .overviewTable {
     margin-left: 20px;
@@ -254,9 +364,12 @@
 }
 
 .geneDepPage {
-  display: flex;
-  flex-direction: row;
-  height: 100%;
+  display: grid;
+  grid-template-columns: 3fr 1fr;
+
+  @media (max-width: 1050px) {
+    grid-template-columns: auto;
+  }
 }
 
 .deButtonRow {
@@ -285,6 +398,32 @@
     width: 100%;
     align-content: flex-start;
   }
+}
+
+.deButtonContainerCentered {
+  display: flex;
+  flex-direction: column;
+  flex-wrap: wrap;
+  align-content: center;
+  margin-bottom: 20px;
+  margin-top: 20px;
+  @media (max-width: 1280px) {
+    margin-left: 0px;
+    width: 100%;
+    align-content: flex-start;
+  }
+}
+
+.resetButton {
+  border: none;
+  background-color: transparent;
+  padding-left: 5px;
+  color: #337ab7;
+  font-size: 14px;
+}
+
+.resetButton:hover {
+  color: #000;
 }
 
 .deButton {
@@ -434,17 +573,43 @@
   }
 }
 
+.doseCurvesTile {
+  background-color: #ffffff;
+  padding-bottom: 5px;
+  margin-top: 10px;
+
+  @media (max-width: 1050px) {
+    border: 1px solid #d9d9d9;
+  }
+}
+
 .right {
   display: flex;
   flex-direction: column;
-  width: 440px;
-  min-width: 280;
   overflow: hidden;
   margin-left: 0;
   margin-right: 0;
-  height: fit-content;
-  padding-bottom: 20px;
-  border: 1px solid #d9d9d9;
+  height: 100%;
+  background: #697caa1a;
+  padding-left: 15px;
+  padding-right: 15px;
+  min-width: 400px;
+  max-width: 400px;
+  .plotFrame {
+    margin-bottom: 20px;
+    @media (max-width: 1050px) {
+      background-color: white;
+    }
+  }
+
+  @media (max-width: 1050px) {
+    height: auto;
+    background-color: white;
+    border: 1px solid #d9d9d9;
+    margin-left: 14px;
+    margin-right: 14px;
+    width: auto;
+  }
 }
 
 .scatterPlot {
@@ -556,7 +721,7 @@
   display: flex;
   flex-direction: row;
   margin-top: 15px;
-  margin-bottom: 85px;
+  margin-bottom: 15px;
   @media (max-width: 1610px) {
     flex-direction: column;
     height: auto;
@@ -570,34 +735,23 @@
     & > div {
       display: flex;
       flex-direction: row;
-      height: 40px;
-      margin-bottom: 20px;
+      margin-bottom: 40px;
       padding-bottom: 8px;
-      @media (max-width: 1610px) {
-        flex-direction: column;
-        height: auto;
-        margin-bottom: 0;
-      }
+      max-width: 520px;
+
       & > div {
         display: flex;
         flex-direction: column;
-        margin-right: 55px;
+        margin-right: 25px;
         margin-top: auto;
-        text-align: center;
+        text-align: left;
         font-weight: bold;
-
-        .slider .div {
-          width: 300px;
-        }
       }
     }
   }
 }
 
 .boxPlotHeader {
-  margin-left: 10px;
-  margin-right: 10px;
-
   & > h2 {
     font-weight: 600;
   }

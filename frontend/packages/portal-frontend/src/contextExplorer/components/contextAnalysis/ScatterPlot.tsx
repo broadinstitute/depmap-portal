@@ -17,7 +17,7 @@ const MAX_POINTS_TO_ANNOTATE = 1;
 
 interface Props {
   data: Data;
-  logOR: number[];
+  colorVariable: number[];
   xKey: string;
   yKey: string;
   xLabel: string;
@@ -49,7 +49,7 @@ const calcPlotHeight = (plot: HTMLDivElement) => {
 
 function ContextScatterPlot({
   data,
-  logOR,
+  colorVariable,
   xKey,
   yKey,
   xLabel,
@@ -132,7 +132,7 @@ function ContextScatterPlot({
     const text = hoverTextKey ? data[hoverTextKey] : null;
     const visible = pointVisibility ?? x.map(() => true);
 
-    const contColorData = logOR;
+    const contColorData = colorVariable;
 
     const color = contColorData.map((c: any) =>
       c === null ? DEFAULT_PALETTE.other : c
@@ -471,7 +471,7 @@ function ContextScatterPlot({
     };
   }, [
     data,
-    logOR,
+    colorVariable,
     xKey,
     yKey,
     continuousColorKey,

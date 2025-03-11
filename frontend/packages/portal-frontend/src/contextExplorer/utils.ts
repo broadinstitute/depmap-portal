@@ -1,15 +1,25 @@
 import {
   ContextNode,
   ContextSummary,
-  ContextTree,
   DataType,
   DataTypeStrings,
   OutGroupType,
+  ContextExplorerDatasets,
 } from "./models/types";
+import update from "immutability-helper";
 import { DataExplorerContext } from "@depmap/types";
 import qs from "qs";
 import { Filter } from "src/common/models/discoveryAppFilters";
 import { deleteSpecificQueryParams } from "@depmap/utils";
+
+export const CONTEXT_EXPL_BAR_THICKNESS = 40;
+export const BOX_THICKNESS = 40;
+export const BOX_PLOT_BOTTOM_MARGIN = 20;
+export const BOX_PLOT_TOP_MARGIN = 0;
+
+export function getSelectivityValLabel(entityType: string) {
+  return entityType === "gene" ? "log(OR)" : "Bimodality Coefficient";
+}
 
 function isWholeNumberNotZero(num: number) {
   return num % 1 === 0 && num !== 0;
@@ -17,7 +27,8 @@ function isWholeNumberNotZero(num: number) {
 
 export const ALL_SEARCH_OPTION = {
   name: "All",
-  display_name: "All",
+  subtype_code: "All",
+  node_level: 0,
 };
 
 export const OUTGROUP_TYPE_ALL_OPTION = {
@@ -152,17 +163,15 @@ export function changeSelectedDataAvailGraphVals(
 ) {
   const newVals: number[][] = [];
   const selectedRowIndexes: number[] = [];
-  originalData.data_types.forEach((datatype: string) => {
-    const typeIndex = DataType[datatype as keyof typeof DataType];
-
+  originalData.data_types.forEach((datatype: string, index: number) => {
     if (selectedDataTypes.size > 0 && !selectedDataTypes.has(datatype)) {
-      const newValues = originalData.values[typeIndex].map(
+      const newValues = originalData.values[index].map(
         (oldValue: number) => oldValue + 0.5
       );
       newVals.push(newValues);
     } else {
-      newVals.push(originalData.values[typeIndex]);
-      selectedRowIndexes.push(typeIndex);
+      newVals.push(originalData.values[index]);
+      selectedRowIndexes.push(index);
     }
   });
 
@@ -265,7 +274,7 @@ export function getGeneDependencyContexts(
     outgroup: OutGroupType,
     inGroupSliceId: string | number | symbol | undefined,
     lSliceId: string | number | symbol | undefined,
-    topContext: string,
+    outGroupSubtypeCode: string,
     ingroupName: string
   ) {
     switch (outgroup) {
@@ -277,45 +286,17 @@ export function getGeneDependencyContexts(
             and: [{ "!=": [{ var: inGroupSliceId }, ingroupName] }],
           },
         };
-      case OutGroupType.Lineage:
-        return {
-          name: `Other ${topContext}`,
-          context_type: "depmap_model",
-          expr: {
-            and: [
-              { "!=": [{ var: inGroupSliceId }, ingroupName] },
-              { "==": [{ var: lSliceId }, topContext] },
-            ],
-          },
-        };
-      case OutGroupType.Type: {
-        const bloodLineages = ["Myeloid", "Lymphoid"];
-        if (bloodLineages.includes(topContext)) {
-          return {
-            name: `Other Heme`,
-            context_type: "depmap_model",
-            expr: {
-              and: [
-                { "!=": [{ var: inGroupSliceId }, ingroupName] },
-                { in: [{ var: lSliceId }, bloodLineages] },
-              ],
-            },
-          };
-        }
-        return {
-          name: `Other Solid`,
-          context_type: "depmap_model",
-          expr: {
-            and: [
-              { "!=": [{ var: inGroupSliceId }, ingroupName] },
-              { "!=": [{ var: lSliceId }, "Myeloid"] },
-              { "!=": [{ var: lSliceId }, "Lymphoid"] },
-            ],
-          },
-        };
-      }
       default:
-        throw new Error(`Unrecognized outgroup type: ${outgroup}`);
+        return {
+          name: `Other ${outGroupSubtypeCode}`,
+          context_type: "depmap_model",
+          expr: {
+            and: [
+              { "!=": [{ var: inGroupSliceId }, ingroupName] },
+              { "==": [{ var: lSliceId }, outGroupSubtypeCode] },
+            ],
+          },
+        };
     }
   }
 
@@ -330,9 +311,6 @@ export function getGeneDependencyContexts(
   return { inGroupContext, outGroupContext };
 }
 
-export const GENE_DATASET_ID = "Chronos_Combined";
-export const COMPOUND_DATASET_ID = "Rep_all_single_pt";
-
 export const GENE_BOX_PLOT_X_AXIS_TITLE = "CRISPR Gene Effect";
 export const COMPOUND_BOX_PLOT_X_AXIS_TITLE = "log2(viability)";
 
@@ -344,12 +322,10 @@ export function getDataExplorerUrl(
   topContextName: string,
   ingroupName: string,
   outgroupType: OutGroupType,
-  entityType: string
+  datasetId: ContextExplorerDatasets
 ): string {
-  const xDataset =
-    entityType === "gene" ? GENE_DATASET_ID : COMPOUND_DATASET_ID;
-  const yDataset =
-    entityType === "gene" ? GENE_DATASET_ID : COMPOUND_DATASET_ID;
+  const xDataset = datasetId;
+  const yDataset = datasetId;
   const { inGroupContext, outGroupContext } = getGeneDependencyContexts(
     ingroupName,
     topContextName,
@@ -367,24 +343,24 @@ export function getDataExplorerUrl(
 }
 
 export function getBoxPlotFilterVariables(filters: Filter[]) {
-  let fdr: number[] = [];
-  let effectSize: number[] = [];
-  let fracDepIn: number[] = [];
+  let maxFdr: number = 0.1;
+  let minEffectSize: number = 0.1;
+  let minFracDepIn: number = 0.1;
 
   filters.forEach((filter) => {
-    if (filter.kind === "range") {
-      const valueRange = filter.value;
+    if (filter.kind === "numberInput") {
+      const value = filter.value;
       if (filter.key === "t_qval") {
-        fdr = valueRange;
+        maxFdr = value;
       } else if (filter.key === "abs_effect_size") {
-        effectSize = valueRange;
+        minEffectSize = value;
       } else if (filter.key === "frac_dep_in") {
-        fracDepIn = valueRange;
+        minFracDepIn = value;
       }
     }
   });
 
-  return { fdr, effectSize, fracDepIn };
+  return { maxFdr, minEffectSize, minFracDepIn };
 }
 
 export const getUpdatedGraphInfoForSelection = (
@@ -420,18 +396,90 @@ export const getUpdatedGraphInfoForSelection = (
   };
 };
 
-function getSelectedContextData(
+function getFilteredData(
   selectedContextNode: ContextNode,
-  allContextData: ContextSummary
+  data: ContextSummary
 ) {
-  const filteredDepmapIds = allContextData.all_depmap_ids.filter((item) =>
-    selectedContextNode.depmap_ids.includes(item[1])
+  if (!selectedContextNode) {
+    return data;
+  }
+  const nodeChildrenCodes = selectedContextNode.children.map(
+    (node) => node.subtype_code
+  );
+  const datasetDataTypes = Object.keys(DataType).filter((item) => {
+    return Number.isNaN(Number(item));
+  });
+
+  const includedDataTypes: string[] = [];
+  const includedValueRows: number[][] = [];
+  data.values.forEach((row: number[], index) => {
+    const dataType = data.data_types[index];
+
+    if (
+      datasetDataTypes.includes(dataType) ||
+      nodeChildrenCodes.includes(dataType)
+    ) {
+      includedDataTypes.push(dataType);
+      includedValueRows.push(row);
+    }
+  });
+
+  return {
+    all_depmap_ids: data.all_depmap_ids,
+    values: includedValueRows,
+    data_types: includedDataTypes,
+  };
+}
+
+function mergeDataAvailability(
+  allContextDatasetDataAvail: ContextSummary,
+  subtypeDataAvail: ContextSummary
+) {
+  const selectedModelIds = subtypeDataAvail.all_depmap_ids.map(
+    (item) => item[1]
   );
 
+  const vals: number[][] = [];
+  const dataTypes: string[] = [];
+  allContextDatasetDataAvail.values.forEach((row: number[], index: number) => {
+    const filteredRow = row.filter((rowVals: number, j: number) =>
+      selectedModelIds.includes(allContextDatasetDataAvail.all_depmap_ids[j][1])
+    );
+    vals.push(filteredRow);
+    dataTypes.push(allContextDatasetDataAvail.data_types[index]);
+  });
+
+  const orderedDataTypes = [...dataTypes].reverse();
+  const orderedVals = [...vals].reverse();
+  const mergedDataAvail = {
+    all_depmap_ids: subtypeDataAvail.all_depmap_ids,
+    data_types: [...orderedDataTypes, ...subtypeDataAvail.data_types].reverse(),
+    values: [...orderedVals, ...subtypeDataAvail.values].reverse(),
+  };
+
+  return mergedDataAvail;
+}
+
+function getSelectedContextData(
+  selectedContextNode: ContextNode,
+  allContextDatasetDataAvail: ContextSummary,
+  selectedContextDataAvailability: ContextSummary
+) {
+  const mergedDataAvailability = mergeDataAvailability(
+    allContextDatasetDataAvail,
+    selectedContextDataAvailability
+  );
+
+  const filteredData = getFilteredData(
+    selectedContextNode,
+    mergedDataAvailability
+  );
+  const availableDepmapIds = mergedDataAvailability.all_depmap_ids;
+
   const newDataVals = [];
-  for (let index = 0; index < allContextData.values.length; index += 1) {
-    const dataTypeVals = allContextData.values[index];
-    const newDataTypeVals = filteredDepmapIds.map(
+  for (let index = 0; index < filteredData.values.length; index += 1) {
+    const dataTypeVals = filteredData.values[index];
+    const newDataTypeVals = availableDepmapIds.map(
       (item) => dataTypeVals[item[0]]
     );
     newDataVals.push(newDataTypeVals);
@@ -439,40 +487,59 @@ function getSelectedContextData(
 
   const newContextData = {
     values: newDataVals,
-    data_types: allContextData.data_types,
-    all_depmap_ids: filteredDepmapIds,
+    data_types: filteredData.data_types,
+    all_depmap_ids: availableDepmapIds,
   };
 
   return {
     selectedContextData: newContextData,
     selectedContextNameInfo: {
+      subtype_code: selectedContextNode.subtype_code,
       name: selectedContextNode.name,
-      display_name: selectedContextNode.display_name,
+      node_level: selectedContextNode.node_level,
     },
   };
 }
 
 export function getSelectionInfo(
-  allContextData: ContextSummary,
+  allContextDatasetDataAvail: ContextSummary,
+  selectedContextDataAvailability: ContextSummary,
   selectedContextNode: ContextNode | null,
   checkedDatatypes: Set<string>
 ) {
   let overlappingDepmapIds: string[] = [];
 
+  let validCheckedDataTypes: Set<string> = new Set();
+  checkedDatatypes.forEach((dataType) => {
+    if (!Object.values(DataTypeStrings)) {
+      validCheckedDataTypes = update(checkedDatatypes, {
+        $remove: [dataType],
+      });
+    } else {
+      validCheckedDataTypes = update(checkedDatatypes, {
+        $add: [dataType],
+      });
+    }
+  });
+
   const { selectedContextData, selectedContextNameInfo } = selectedContextNode
-    ? getSelectedContextData(selectedContextNode, allContextData)
+    ? getSelectedContextData(
+        selectedContextNode,
+        allContextDatasetDataAvail,
+        selectedContextDataAvailability
+      )
     : {
-        selectedContextData: allContextData,
+        selectedContextData: allContextDatasetDataAvail,
         selectedContextNameInfo: ALL_SEARCH_OPTION,
       };
 
   let checkedDataValues = selectedContextNode
     ? selectedContextData.values
-    : allContextData.values;
+    : allContextDatasetDataAvail.values;
 
-  if (selectedContextData && checkedDatatypes.size > 0) {
+  if (selectedContextData && validCheckedDataTypes.size > 0) {
     const newSelectedValuesOverlap = getUpdatedGraphInfoForSelection(
-      checkedDatatypes,
+      validCheckedDataTypes,
       selectedContextData
     );
 
@@ -492,42 +559,79 @@ export function getSelectionInfo(
 }
 
 export function getSelectedContextNode(
-  contextTrees:
-    | {
-        [key: string]: ContextTree;
-      }
-    | undefined,
-  lineageQueryParam: string | null,
-  primaryDiseaseQueryParam: string | null
+  contextPath: string[] | null,
+  contextTree: ContextNode | undefined
 ) {
-  let selectedNode = null;
+  let selectedNode: ContextNode | null = null;
   let topContextNameInfo = ALL_SEARCH_OPTION;
-  if (contextTrees) {
-    if (lineageQueryParam) {
-      const selectedTree = contextTrees[lineageQueryParam];
 
-      // Make sure the lineageQueryParam is a valid contextTree key
+  if (contextTree && contextPath && contextPath.length > 0) {
+    if (contextPath[0]) {
+      const selectedTree = contextTree;
+
       if (selectedTree) {
         topContextNameInfo = {
-          name: selectedTree.root.name,
-          display_name: selectedTree.root.display_name,
+          subtype_code: selectedTree.subtype_code,
+          name: selectedTree.name,
+          node_level: 0,
         };
-        selectedNode = selectedTree.root;
-        if (primaryDiseaseQueryParam) {
-          const node = selectedTree.children.find(
-            (child) => child.name === primaryDiseaseQueryParam
-          );
+        selectedNode = selectedTree;
 
-          if (node) {
-            selectedNode = node;
-          }
+        if (contextPath.length > 1 && selectedTree.children.length > 0) {
+          // For each subtype code in contextPath, find the node amongst the children
+          const getSelectedNode = (
+            node: ContextNode,
+            selectedCode: string
+          ): ContextNode | null => {
+            if (!node) {
+              return null; // Base case: reached the end of a branch without finding the target
+            }
+
+            if (node?.subtype_code === selectedCode) {
+              return node; // Base case: found the target node
+            }
+
+            // Recursive case: search in children
+            for (let index = 0; index < node.children.length; index++) {
+              const child = node.children[index];
+              const result: ContextNode | null = getSelectedNode(
+                child,
+                selectedCode
+              );
+              if (result !== null) {
+                return result; // Found the target in a child node
+              }
+            }
+
+            return null; // Target not found in this subtree
+          };
+
+          const node = selectedTree.children.find(
+            (childNode) => childNode.subtype_code === contextPath[1]
+          );
+          selectedNode = getSelectedNode(
+            node!,
+            contextPath[contextPath.length - 1]
+          );
         }
       } else {
         // Invalid params, so default to loading All data
-        deleteSpecificQueryParams(["lineage", "primary_disease"]);
+        deleteSpecificQueryParams(["context"]);
       }
     }
   }
-
   return { selectedContextNode: selectedNode, topContextNameInfo };
+}
+
+export function getNewContextUrl(newCode: string) {
+  const currentLocation = window.location.href;
+  const currentUrl = new URL(currentLocation);
+
+  const currentContext = currentUrl.searchParams.get("context");
+  const newUrl = currentLocation.replace(
+    `&context=${currentContext}`,
+    `&context=${newCode}`
+  );
+
+  return newUrl;
 }

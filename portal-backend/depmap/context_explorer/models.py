@@ -1,12 +1,15 @@
 from dataclasses import dataclass
+import json
 import sqlalchemy
-from sqlalchemy import and_, func, desc
+from sqlalchemy import and_, or_, func, desc
 import enum
-from typing import List, Literal, Optional, Tuple
-from depmap.cell_line.models import Lineage
+from typing import Any, Dict, List, Literal, Optional, Tuple, Union
 import pandas as pd
 from depmap.gene.models import Gene
 from depmap.compound.models import CompoundExperiment
+from depmap.enums import DependencyEnum
+from depmap.dataset.models import DependencyDataset
+from depmap.context.models_new import SubtypeNode
 from depmap.database import (
     Column,
     Float,
@@ -20,191 +23,162 @@ from depmap.database import (
 
 
 @dataclass
+class ContextPathInfo:
+    path: List[str]
+    tree_type: Literal["Lineage", "MolecularSubtype"]
+
+
+@dataclass
+class BoxData:
+    label: str
+    data: List[float]
+    cell_line_display_names: List[str]
+    path: Optional[List[str]] = None
+
+
+@dataclass
+class BoxCardData:
+    significant: List[BoxData]
+    insignificant: BoxData
+    level_0_code: str
+
+
+@dataclass
+class ContextPlotBoxData:
+    significant_selection: List[BoxData]
+    insignificant_selection: BoxData
+    other_cards: List[BoxCardData]
+    insignificant_heme_data: BoxData
+    insignificant_solid_data: BoxData
+    drug_dotted_line: Any
+    entity_label: str
+
+
+@dataclass
+class NodeEntityData:
+    entity_id: str
+    entity_label: str
+    entity_full_row_of_values: pd.Series
+
+
+@dataclass
 class ContextNameInfo:
     name: str
-    display_name: str
+    subtype_code: str
+    node_level: int
 
 
 def _get_child_lineages_next_lineage_level_from_root_info(
-    sorted: pd.DataFrame, current_level: str,
-) -> Tuple[Optional[List[str]], Optional[str]]:
-    next_lineage_level_num = int(current_level) + 1
-    next_lineage_level = "lineage_" + str(next_lineage_level_num)
+    sorted: pd.DataFrame, current_level: int, current_code: str
+) -> Tuple[Optional[List[str]], Optional[int]]:
+    next_lineage_level_num = current_level + 1
+    next_lineage_level = "level_" + str(next_lineage_level_num)
 
     if next_lineage_level not in sorted:
         return None, None
 
-    child_lineages = sorted[next_lineage_level].unique()
+    children = sorted[
+        (sorted[f"level_{current_level}"] == current_code)
+        & (sorted["node_level"] == next_lineage_level_num)
+    ]
 
-    return child_lineages, next_lineage_level
+    child_lineages = children[next_lineage_level].unique()
+
+    child_lineages = [child for child in child_lineages if child != ""]
+
+    if len(list(child_lineages)) == 0:
+        return None, None
+
+    return child_lineages, next_lineage_level_num
 
 
-class ContextTree(dict):
-    def __init__(self, root):
+class ContextNode(dict):
+    def __init__(
+        self, name, subtype_code, parent_subtype_code, node_level, model_ids, path=[],
+    ):
         super().__init__()
         self.__dict__ = self
-        self.root = root
+        self.name = name  # display name
+        self.subtype_code = subtype_code  # unique key
+        self.parent_subtype_code = parent_subtype_code
+        self.node_level = node_level
+        self.model_ids = model_ids
+        self.path = path
         self.children = []
 
     def add_node(self, obj):
         self.children.append(obj)
 
-    def create_context_tree_from_root_info(
-        self,
-        tree_df,
-        current_lineage,
-        lineage_df,
-        current_lineage_level: str,  # e.g.: "lineage_2"
-        has_gene_dep_data,
-        has_drug_data,
-        crispr_depmap_ids,
-        drug_depmap_ids,
-    ):
-        _, current_level = current_lineage_level.split("_")
-        sorted = tree_df.loc[tree_df[current_lineage_level] == current_lineage]
+    def find_path_to_context_node(self, target_subtype_code: str, path: List[str] = []):
+        path = path + [self.subtype_code] if self.subtype_code not in path else path
 
+        if self.subtype_code == target_subtype_code:
+            return path
+
+        path = path + [target_subtype_code]
+
+        return path
+
+    def create_context_tree_from_root_info(
+        self, tree_df, current_node_code, node_level: int
+    ):
+        sorted = tree_df.loc[tree_df[f"level_{node_level}"] == current_node_code]
         (
-            child_lineages,
-            next_lineage_level,
+            child_subtype_codes,
+            next_level,
         ) = _get_child_lineages_next_lineage_level_from_root_info(
-            sorted=sorted, current_level=current_level,
+            sorted=sorted, current_level=node_level, current_code=current_node_code
         )
-        if next_lineage_level is None:
+
+        if next_level is None:
             return
 
-        _, next_level = next_lineage_level.split("_")
-
-        if len(child_lineages) > 0:
-            for child_lineage in child_lineages:
-                lineage_row = lineage_df.loc[
-                    lineage_df.index == (child_lineage, int(next_level))
-                ]
-
-                depmap_ids = (
-                    list(set(lineage_row["depmap_id"].values.tolist()[0]))
-                    if len(lineage_row["depmap_id"]) != 0
-                    else []
+        if len(child_subtype_codes) > 0:
+            for child_subtype_code in child_subtype_codes:
+                model_ids = SubtypeNode.get_model_ids_by_subtype_code_and_node_level(
+                    child_subtype_code, next_level
                 )
+                current_child_codes = [child.subtype_code for child in self.children]
 
-                current_child_names = [child.name for child in self.children]
-                if len(depmap_ids) > 0 and child_lineage not in current_child_names:
+                if len(model_ids) > 0 and child_subtype_code not in current_child_codes:
                     node = ContextNode(
-                        name=child_lineage,
-                        depmap_ids=depmap_ids,
-                        has_gene_dep_data=has_gene_dep_data,
-                        has_drug_data=has_drug_data,
-                        crispr_depmap_ids=crispr_depmap_ids,
-                        drug_depmap_ids=drug_depmap_ids,
+                        name=SubtypeNode.get_by_code(child_subtype_code).node_name,
+                        subtype_code=child_subtype_code,
+                        parent_subtype_code=current_node_code,
+                        model_ids=model_ids,
+                        node_level=next_level,
+                        path=self.find_path_to_context_node(
+                            child_subtype_code, self.path
+                        ),
                     )
                     self.add_node(node)
 
             for child in self.children:
                 child.create_context_tree_from_root_info(
                     tree_df=sorted,
-                    current_lineage=child_lineage,
-                    lineage_df=lineage_df,
-                    current_lineage_level=next_lineage_level,
-                    has_gene_dep_data=child.has_gene_dep_data,
-                    has_drug_data=child.has_drug_data,
-                    crispr_depmap_ids=crispr_depmap_ids,
-                    drug_depmap_ids=drug_depmap_ids,
+                    current_node_code=child.subtype_code,
+                    node_level=next_level,
                 )
-
-    def get_all_nodes(self):
-        for child in self.children:
-            if child.get_child_nodes(self) != None:
-                child.get_child_nodes(self)
-        print(*self.children, sep="\n")
-        print("Tree Size:" + str(len(self.children)))
-
-
-class ContextNode(dict):
-    def __init__(
-        self,
-        name,
-        depmap_ids,
-        has_gene_dep_data,
-        has_drug_data,
-        crispr_depmap_ids,
-        drug_depmap_ids,
-    ):
-        super().__init__()
-        self.__dict__ = self
-        self.name = name
-        self.display_name = Lineage.get_display_name(self.name)
-        self.depmap_ids = depmap_ids
-        self.has_gene_dep_data = has_gene_dep_data(crispr_depmap_ids, depmap_ids)
-        self.has_drug_data = has_drug_data(drug_depmap_ids, depmap_ids)
-        self.children = []
-
-    def add_node(self, obj):
-        self.children.append(obj)
-
-    def get_child_nodes(self, Tree):
-        for child in self.children:
-            if child.children:
-                child.get_child_nodes(Tree)
-                Tree.append(child)
-            else:
-                Tree.append(child)
-
-    def create_context_tree_from_root_info(
-        self,
-        tree_df,
-        current_lineage,
-        lineage_df,
-        current_lineage_level: str,  # e.g.: "lineage_2"
-        has_gene_dep_data,
-        has_drug_data,
-        crispr_depmap_ids,
-        drug_depmap_ids,
-    ):
-        _, current_level = current_lineage_level.split("_")
-        sorted = tree_df.loc[tree_df[current_lineage_level] == current_lineage]
-        (
-            child_lineages,
-            next_lineage_level,
-        ) = _get_child_lineages_next_lineage_level_from_root_info(
-            sorted=sorted, current_level=current_level,
-        )
-
-        if next_lineage_level is None:
-            return
-
-        _, next_level = next_lineage_level.split("_")
-
-        if len(child_lineages) > 0:
-            for child_lineage in child_lineages:
-                lineage_row = lineage_df.loc[
-                    lineage_df.index == (child_lineage, int(next_level))
-                ]
-                depmap_ids = (
-                    list(set(lineage_row["depmap_id"].iloc[[0]].values[0]))
-                    if len(lineage_row["depmap_id"]) != 0
-                    else []
-                )
-
-                current_child_names = [child.name for child in self.children]
-                if len(depmap_ids) > 0 and child_lineage not in current_child_names:
-                    node = ContextNode(
-                        name=child_lineage,
-                        depmap_ids=depmap_ids,
-                        has_gene_dep_data=has_gene_dep_data,
-                        has_drug_data=has_drug_data,
-                        crispr_depmap_ids=crispr_depmap_ids,
-                        drug_depmap_ids=drug_depmap_ids,
-                    )
-                    self.add_node(node)
 
 
 # Separated from the class method for testing purposes
 def get_context_analysis_query(
-    context_name: str, out_group: str, entity_type: Literal["gene", "compound"]
+    subtype_code: str,
+    out_group: str,
+    entity_type: Literal["gene", "compound"],
+    dataset_name: str,
 ):
+    assert dataset_name in DependencyEnum.values()
+
+    dependency_dataset_id = DependencyDataset.get_dataset_by_name(
+        dataset_name
+    ).dependency_dataset_id
     if entity_type == "gene":
         query = (
             ContextAnalysis.query.filter_by(
-                context_name=context_name, out_group=out_group
+                subtype_code=subtype_code,
+                out_group=out_group,
+                dependency_dataset_id=dependency_dataset_id,
             )
             .join(Gene, Gene.entity_id == ContextAnalysis.entity_id)
             .add_columns(
@@ -217,7 +191,9 @@ def get_context_analysis_query(
     else:
         query = (
             ContextAnalysis.query.filter_by(
-                context_name=context_name, out_group=out_group
+                subtype_code=subtype_code,
+                out_group=out_group,
+                dependency_dataset_id=dependency_dataset_id,
             )
             .join(
                 CompoundExperiment,
@@ -231,18 +207,8 @@ def get_context_analysis_query(
     return query
 
 
-class OutGroupType(enum.Enum):
-    All = "All"
-    Lineage = "Lineage"
-    Type = "Type"
-
-
 class BoxPlotTypes(enum.Enum):
     SelectedLineage = "SelectedLineage"
-    SelectedPrimaryDisease = "SelectedPrimaryDisease"
-    SameLineage = "SameLineage"
-    SameLineageType = "SameLineageType"
-    OtherLineageType = "OtherLineageType"
     Other = "Other"
 
 
@@ -250,21 +216,34 @@ class ContextAnalysis(Model):
     __table_args__ = (
         db.Index("context_analysis_idx_1", "entity_id", "out_group"),
         db.UniqueConstraint(
-            "context_name", "out_group", "entity_id", name="uc_context_outgroup_entity",
+            "subtype_code", "out_group", "entity_id", name="uc_context_outgroup_entity",
         ),
     )
     context_analysis_id = Column(Integer, primary_key=True, autoincrement=True)
-    context_name = Column(
-        String, ForeignKey("context.name"), nullable=False, index=True
+
+    subtype_code = Column(
+        String, ForeignKey("subtype_context.subtype_code"), nullable=False, index=True
     )
-    context = relationship(
-        "Context", foreign_keys="ContextAnalysis.context_name", uselist=False
+    subtype_context = relationship(
+        "SubtypeContext", foreign_keys="ContextAnalysis.subtype_code", uselist=False
     )
     entity_id = Column(
         Integer, ForeignKey("entity.entity_id"), nullable=False, index=True
     )
     entity = relationship(
         "Entity", foreign_keys="ContextAnalysis.entity_id", uselist=False
+    )
+
+    dependency_dataset_id = Column(
+        Integer,
+        ForeignKey("dependency_dataset.dependency_dataset_id"),
+        nullable=False,
+        index=True,
+    )
+    dataset = relationship(
+        "DependencyDataset",
+        foreign_keys="ContextAnalysis.dependency_dataset_id",
+        uselist=False,
     )
 
     out_group = Column(String, nullable=False)
@@ -274,12 +253,11 @@ class ContextAnalysis(Model):
     effect_size = Column(Float)
     t_qval = Column(Float)
     t_qval_log = Column(Float)
-    OR = Column(Float)
     n_dep_in = Column(Float)
     n_dep_out = Column(Float)
     frac_dep_in = Column(Float)
     frac_dep_out = Column(Float)
-    log_OR = Column(Float)
+    selectivity_val = Column(Float)
 
     def to_dict(self):
         entity_label = self.entity.label
@@ -290,7 +268,8 @@ class ContextAnalysis(Model):
 
         return {
             "entity": entity_label,
-            "context_name": self.context_name,
+            "subtype_code": self.subtype_code,
+            "dataset_name": self.dataset_name,
             "out_group": self.out_group,
             "t_pval": self.t_pval,
             "mean_in": self.mean_in,
@@ -298,87 +277,99 @@ class ContextAnalysis(Model):
             "effect_size": self.effect_size,
             "t_qval": self.t_qval,
             "t_qval_log": self.t_qval_log,
-            "OR": self.OR,
             "n_dep_in": self.n_dep_in,
             "n_dep_out": self.n_dep_out,
             "frac_dep_in": self.frac_dep_in,
             "frac_dep_out": self.frac_dep_out,
-            "log_OR": self.log_OR,
+            "selectivity_val": self.selectivity_val,
         }
 
-    @staticmethod
-    def find_context_analysis_by_context_name_out_group(
-        context_name: str, out_group: str, entity_type: Literal["gene", "compound"]
-    ):
+    @property
+    def dataset_name(self):
+        return DependencyDataset.get_dataset_by_id(self.dependency_dataset_id).name
 
+    @staticmethod
+    def find_context_analysis_by_subtype_code_out_group(
+        subtype_code: str,
+        out_group: str,
+        entity_type: Literal["gene", "compound"],
+        dataset_name: str,
+    ):
         query = get_context_analysis_query(
-            context_name=context_name, out_group=out_group, entity_type=entity_type
+            subtype_code=subtype_code,
+            out_group=out_group,
+            entity_type=entity_type,
+            dataset_name=dataset_name,
         )
         context_analysis_df = pd.read_sql(query.statement, query.session.connection())
 
         return context_analysis_df
 
     @staticmethod
-    def get_other_context_dependencies(
-        context_name: str,
-        out_group: str,
+    def get_context_dependencies(
+        tree_type: str,
         entity_id: int,
+        dataset_name: str,
         entity_type: Literal["gene", "compound"],
-        fdr: List[float],
-        abs_effect_size: List[float],
-        frac_dep_in: List[float],
+        max_fdr: float,
+        min_abs_effect_size: float,
+        min_frac_dep_in: float,
     ):
+        assert dataset_name in DependencyEnum.values()
+
+        dependency_dataset_id = DependencyDataset.get_dataset_by_name(
+            dataset_name
+        ).dependency_dataset_id
         if entity_type == "gene":
-            return (
+            analyses = (
                 ContextAnalysis.query.filter(
                     and_(
-                        ContextAnalysis.context_name != context_name,
-                        ContextAnalysis.out_group == out_group,
+                        ContextAnalysis.dependency_dataset_id == dependency_dataset_id,
                         ContextAnalysis.entity_id == entity_id,
-                        ContextAnalysis.t_qval >= fdr[0],
-                        ContextAnalysis.t_qval <= fdr[1],
-                        func.abs(ContextAnalysis.effect_size) >= abs_effect_size[0],
-                        func.abs(ContextAnalysis.effect_size) <= abs_effect_size[1],
-                        ContextAnalysis.frac_dep_in >= frac_dep_in[0],
-                        ContextAnalysis.frac_dep_in <= frac_dep_in[1],
-                    )
-                )
-                .join(Gene, Gene.entity_id == ContextAnalysis.entity_id)
-                .with_entities(ContextAnalysis.context_name)
-                .order_by(desc(ContextAnalysis.mean_in))
-                .all()
-            )
-        else:
-            return (
-                ContextAnalysis.query.filter(
-                    and_(
-                        ContextAnalysis.context_name != context_name,
-                        ContextAnalysis.out_group == out_group,
-                        ContextAnalysis.entity_id == entity_id,
-                        ContextAnalysis.t_qval >= fdr[0],
-                        ContextAnalysis.t_qval <= fdr[1],
-                        func.abs(ContextAnalysis.effect_size) >= abs_effect_size[0],
-                        func.abs(ContextAnalysis.effect_size) <= abs_effect_size[1],
-                        ContextAnalysis.frac_dep_in >= frac_dep_in[0],
-                        ContextAnalysis.frac_dep_in <= frac_dep_in[1],
+                        ContextAnalysis.t_qval <= max_fdr,
+                        func.abs(ContextAnalysis.effect_size) >= min_abs_effect_size,
+                        ContextAnalysis.frac_dep_in >= min_frac_dep_in,
                     )
                 )
                 .join(
-                    CompoundExperiment,
-                    CompoundExperiment.entity_id == ContextAnalysis.entity_id,
+                    SubtypeNode,
+                    SubtypeNode.subtype_code == ContextAnalysis.subtype_code,
                 )
-                .with_entities(ContextAnalysis.context_name)
+                .filter(SubtypeNode.tree_type == tree_type)
+                # frontend will be organized into cards based on level 0, so we need to make sure we know
+                # the level 0 of each subtype_code returned
+                .with_entities(SubtypeNode.level_0, SubtypeNode.subtype_code)
                 .order_by(desc(ContextAnalysis.mean_in))
                 .all()
             )
+
+            return pd.DataFrame(analyses)
+        else:
+            analyses = (
+                ContextAnalysis.query.filter(
+                    and_(
+                        ContextAnalysis.dependency_dataset_id == dependency_dataset_id,
+                        ContextAnalysis.entity_id == entity_id,
+                        ContextAnalysis.t_qval <= max_fdr,
+                        func.abs(ContextAnalysis.effect_size) >= min_abs_effect_size,
+                    )
+                )
+                .join(
+                    SubtypeNode,
+                    SubtypeNode.subtype_code == ContextAnalysis.subtype_code,
+                )
+                .filter(SubtypeNode.tree_type == tree_type)
+                .with_entities(SubtypeNode.level_0, SubtypeNode.subtype_code)
+                .order_by(desc(ContextAnalysis.mean_in))
+                .all()
+            )
+
+            return pd.DataFrame(analyses)
 
 
 class ContextExplorerGlobalSearch(Model):
     __tablename__ = "context_explorer"
-    context_id = Column(Integer, primary_key=True, autoincrement=True)
-    lineage_name = Column(String)
-    primary_disease_name = Column(String)
+    subtype_code = Column(String, primary_key=True)
 
-    def __init__(self, lineage_name, primary_disease_name):
-        self.lineage_name = lineage_name
-        self.primary_disease_name = primary_disease_name
+    def __init__(self, subtype_code):
+        self.subtype_code = subtype_code

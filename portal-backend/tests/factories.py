@@ -27,6 +27,7 @@ from depmap.cell_line.models import (
     Conditions,
     STRProfile,
 )
+from depmap.context.models_new import SubtypeContext, SubtypeContextEntity, SubtypeNode
 from depmap.context.models import Context, ContextEntity, ContextEnrichment
 from depmap.database import db as _db
 from depmap.dataset.models import (
@@ -191,8 +192,22 @@ class DepmapModelFactory(SQLAlchemyModelFactory):
         model = DepmapModel
         sqlalchemy_session = _db.session
 
-    stripped_cell_line_name = typing.cast(
+    stripped_cell_line_name = stripped_cell_line_name = typing.cast(
         str, factory.Sequence(lambda number: "{}".format(number))
+    )
+    model_id = factory.Sequence(lambda number: "ACH-{}".format(number))
+    patient_id = factory.Sequence(lambda number: "ACH-{}".format(number))
+    depmap_model_type = factory.Sequence(
+        lambda number: "depmap_model_type_{}".format(number)
+    )
+    cell_line_name = factory.Sequence(lambda number: "cell_line_{}".format(number))
+    cell_line_alias = factory.LazyAttribute(lambda o: [CellLineAliasFactory()])
+    age_category = factory.Sequence(lambda number: "age_category_{}".format(number))
+
+    cell_line = factory.SubFactory(
+        CellLineFactory,
+        depmap_id=factory.SelfAttribute("..model_id"),
+        cell_line_display_name=factory.SelfAttribute("..stripped_cell_line_name"),
     )
     model_id = typing.cast(
         str, factory.Sequence(lambda number: "ACH-{}".format(number))
@@ -223,35 +238,6 @@ class EntityFactory(SQLAlchemyModelFactory):
 
     label = factory.Sequence(lambda number: "entity_{}".format(number))
     type = "gene"
-
-
-class ContextAnalysisFactory(SQLAlchemyModelFactory):
-    class Meta:
-        model = ContextAnalysis
-
-        sqlalchemy_session = _db.session
-
-    context_name = factory.Sequence(lambda number: "context_{}".format(number))
-    context = factory.SubFactory(
-        ContextFactory, name=factory.SelfAttribute("..context_name")
-    )
-    entity_id = factory.Sequence(lambda number: number)
-    entity = factory.SubFactory(
-        EntityFactory, entity_id=factory.SelfAttribute("..entity_id")
-    )
-    out_group = factory.Sequence(lambda number: "out_group_{}".format(number))
-    t_pval = factory.Sequence(lambda number: number)
-    mean_in = factory.Sequence(lambda number: number)
-    mean_out = factory.Sequence(lambda number: number)
-    effect_size = factory.Sequence(lambda number: number)
-    t_qval = factory.Sequence(lambda number: number)
-    t_qval_log = factory.Sequence(lambda number: number)
-    OR = factory.Sequence(lambda number: number)
-    n_dep_in = factory.Sequence(lambda number: number)
-    n_dep_out = factory.Sequence(lambda number: number)
-    frac_dep_in = factory.Sequence(lambda number: number)
-    frac_dep_out = factory.Sequence(lambda number: number)
-    log_OR = factory.Sequence(lambda number: number)
 
 
 class EntityAliasFactory(SQLAlchemyModelFactory):
@@ -294,7 +280,10 @@ class CompoundExperimentFactory(SQLAlchemyModelFactory):
     xref = factory.Sequence(lambda number: "{}".format(number))
 
     type = "compound_experiment"
-    compound = factory.LazyAttribute(lambda o: CompoundFactory())
+    compound_id = factory.Sequence(lambda number: number)
+    compound = factory.SubFactory(
+        CompoundFactory, compound_id=factory.SelfAttribute("..compound_id")
+    )
     label = factory.Sequence(lambda number: "CTRP:{}".format(number))
     entity_alias = factory.LazyAttribute(lambda o: [EntityAliasFactory()])
 
@@ -325,7 +314,7 @@ class CompoundDoseReplicateFactory(SQLAlchemyModelFactory):
     type = "compound_dose_replicate"
     label = factory.Sequence(lambda number: "CTRP:{} dose rep".format(number))
 
-    compound_experiment = factory.LazyAttribute(lambda o: CompoundExperimentFactory())
+    compound_experiment_id = factory.Sequence(lambda number: number)
     dose = factory.Sequence(lambda number: number)
     replicate = factory.Sequence(lambda number: number)
     is_masked = None
@@ -878,6 +867,86 @@ def CustomCellLineGroupFactory(uuid=None, cell_lines=None, depmap_ids=None):
     group = CustomCellLineGroup(uuid=uuid, depmap_ids=json.dumps(depmap_ids))
     _db.session.add(group)
     return group
+
+
+class SubtypeNodeFactory(SQLAlchemyModelFactory):
+    class Meta:
+        model = SubtypeNode
+
+        sqlalchemy_session = _db.session
+
+    subtype_code = factory.Sequence(lambda number: "subtype_code_{}".format(number))
+
+    oncotree_code = factory.Sequence(lambda number: "oncotree_code_{}".format(number))
+
+    depmap_model_type = factory.Sequence(
+        lambda number: "depmap_model_type_{}".format(number)
+    )
+    molecular_subtype_code = None
+
+    tree_type = "Lineage" if molecular_subtype_code is None else "MolecularSubtype"
+
+    node_name = factory.Sequence(lambda number: "node_name_{}".format(number))
+    node_level = factory.Sequence(lambda number: number)
+    if node_level == 0:
+        level_0 = subtype_code
+    else:
+        level_0 = factory.Sequence(lambda number: "level_0_{}".format(number))
+
+
+class SubtypeContextFactory(SQLAlchemyModelFactory):
+    class Meta:
+        model = SubtypeContext
+
+        sqlalchemy_session = _db.session
+
+    subtype_code = factory.Sequence(lambda number: "subtype_code_{}".format(number))
+
+
+def SubtypeContextEntityFactory(context=None):
+    if context is None:
+        context = SubtypeContextFactory()
+
+    context_entity = SubtypeContextEntity(
+        label=context.subtype_code, subtype_context=context
+    )
+    _db.session.add(context_entity)
+    return context_entity
+
+
+class ContextAnalysisFactory(SQLAlchemyModelFactory):
+    class Meta:
+        model = ContextAnalysis
+
+        sqlalchemy_session = _db.session
+
+    subtype_code = factory.Sequence(lambda number: "subtype_code_{}".format(number))
+    subtype_context = factory.SubFactory(
+        SubtypeContextFactory, subtype_code=factory.SelfAttribute("..subtype_code")
+    )
+
+    dependency_dataset_id = factory.Sequence(lambda number: number)
+    dataset = factory.SubFactory(
+        DependencyDatasetFactory,
+        dependency_dataset_id=factory.SelfAttribute("..dependency_dataset_id"),
+    )
+
+    entity_id = factory.Sequence(lambda number: number)
+    entity = factory.SubFactory(
+        EntityFactory, entity_id=factory.SelfAttribute("..entity_id")
+    )
+    out_group = factory.Sequence(lambda number: "out_group_{}".format(number))
+    t_pval = factory.Sequence(lambda number: number)
+    mean_in = factory.Sequence(lambda number: number)
+    mean_out = factory.Sequence(lambda number: number)
+    effect_size = factory.Sequence(lambda number: number)
+    t_qval = factory.Sequence(lambda number: number)
+    t_qval_log = factory.Sequence(lambda number: number)
+    n_dep_in = factory.Sequence(lambda number: number)
+    n_dep_out = factory.Sequence(lambda number: number)
+    frac_dep_in = factory.Sequence(lambda number: number)
+    frac_dep_out = factory.Sequence(lambda number: number)
+    selectivity_val = factory.Sequence(lambda number: number)
 
 
 class ContextEnrichmentFactory(SQLAlchemyModelFactory):

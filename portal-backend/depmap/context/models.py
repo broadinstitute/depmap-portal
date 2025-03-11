@@ -172,16 +172,7 @@ class ContextEnrichment(Model):
     t_statistic = Column(Float, nullable=False)
     effect_size_means_difference = Column(Float, nullable=False)
 
-    @classmethod
-    def find_by_entity(cls, entity_id):
-        return cls.query.filter_by(entity_id=entity_id).all()
-
-    @classmethod
-    def find_by_entity_and_dataset(cls, entity_id, dataset_id):
-        return cls.query.filter_by(
-            entity_id=entity_id, dependency_dataset_id=dataset_id
-        ).all()
-
+    # The following 2 class methods are used for the old context page.
     @classmethod
     def get_enriched_context_cell_line_p_value_effect_size(
         cls, entity_id, dataset_id, negative_only=False

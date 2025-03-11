@@ -1,26 +1,40 @@
+import { BoxPlotInfo } from "src/plot/components/BoxPlot";
+
+export enum ContextExplorerDatasets {
+  Chronos_Combined = "Chronos_Combined",
+  Rep_all_single_pt = "Rep_all_single_pt",
+  Prism_oncology_AUC = "Prism_oncology_AUC",
+}
+
 export interface ContextNode {
   name: string;
-  display_name: string;
-  has_gene_dep_data: boolean;
-  has_drug_data: boolean;
-  depmap_ids: string[];
+  node_level: number;
+  subtype_code: string;
+  parent_subtype_code: string | null;
+  model_ids: string[];
+  path: string[];
   children: ContextNode[];
 }
 
-export interface ContextTree {
-  root: ContextNode;
-  children: ContextNode[];
+export interface ContextPathInfo {
+  path: string[];
+  tree_type: string;
 }
 
 export interface ContextNameInfo {
   name: string;
-  display_name: string;
+  subtype_code: string;
+  node_level: number;
+}
+
+export interface SearchOptionsByTreeType {
+  lineage: ContextNameInfo[];
+  molecularSubtype: ContextNameInfo[];
 }
 
 export interface ContextInfo {
-  trees: { [key: string]: ContextTree };
+  tree: ContextNode;
   table_data: { [key: string]: string | boolean }[];
-  search_options: ContextNameInfo[];
 }
 
 export interface Summary {
@@ -29,10 +43,20 @@ export interface Summary {
   values: boolean[][];
 }
 
+export interface AvailabilitySummary {
+  summary: Summary;
+  table: { [key: string]: string | boolean }[];
+}
+
 export interface ContextSummary {
   all_depmap_ids: [number, string][];
   data_types: string[];
   values: number[][];
+}
+
+export interface DataAvailabilitySummary {
+  summary: ContextSummary;
+  table: { [key: string]: string | boolean }[];
 }
 
 export interface ContextSelectionInfo {
@@ -61,6 +85,7 @@ export enum DataType {
   WES,
   RNAi,
   CRISPR,
+  default,
 }
 
 export enum DataTypeStrings {
@@ -76,17 +101,18 @@ export enum DataTypeCategory {
   LossOfFunction = 1,
   OMICS = 2,
   CompoundViability = 3,
+  Subtype = 4,
 }
 
 export function getDataTypeColorCategoryFromDataTypeValue(
-  datatype: DataType,
+  datatypeIndex: number,
   cellLineAvailable: boolean
 ) {
   if (!cellLineAvailable) {
     return 0;
   }
 
-  switch (datatype) {
+  switch (datatypeIndex) {
     case DataType.CRISPR:
     case DataType.RNAi:
       return DataTypeCategory.LossOfFunction;
@@ -97,7 +123,7 @@ export function getDataTypeColorCategoryFromDataTypeValue(
     case DataType.PRISM:
       return DataTypeCategory.CompoundViability;
     default:
-      throw new Error(`Cannot map datatype ${datatype} to color category`);
+      return DataTypeCategory.Subtype;
   }
 }
 
@@ -109,14 +135,13 @@ export enum ContextAnalysisPlotType {
 }
 
 export enum OutGroupType {
-  All = "All",
-  Lineage = "Lineage",
-  Type = "Type",
+  All = "All Others",
+  default = "Code",
 }
 
 export interface ContextAnalysisPlotData {
   indexLabels: string[];
-  logOR: number[];
+  selectivityVal: number[];
   tTest: {
     x: {
       axisLabel: string;
@@ -145,9 +170,9 @@ export interface ContextAnalysisTableRow {
   inContextMean: number;
   outGroupMean: number;
   effectSize: number;
-  fractionInContextLinesDependent: number;
-  fractionOutGroupLinesDependent: number;
-  or: number;
+  fractionInContextLinesDependent?: number; // only valid for genes
+  fractionOutGroupLinesDependent?: number; // only valid for genes
+  selectivityVal: number;
 }
 
 export type ContextAnalysisTableType = {
@@ -159,43 +184,53 @@ export type ContextAnalysisTableType = {
   abs_effect_size: number[];
   t_qval: number[];
   t_qval_log: number[];
-  OR: number[];
   n_dep_in: number[];
   n_dep_out: number[];
   frac_dep_in: number[];
   frac_dep_out: number[];
-  log_OR: number[];
+  selectivity_val: number[];
   depletion: string[];
   label: string[];
 };
 
-export enum BoxPlotTypes {
-  SelectedLineage = "SelectedLineage",
-  SelectedPrimaryDisease = "SelectedPrimaryDisease",
-  SameLineage = "SameLineage",
-  SameLineageType = "SameLineageType",
-  OtherLineageType = "OtherLineageType",
-  Other = "Other",
+export interface BoxData {
+  label: string;
+  path: string[];
+  data: number[];
+  cell_line_display_names: string[];
 }
 
-export type ContextPlotBoxData = {
-  box_plot_data: {
-    type: BoxPlotTypes;
-    data: number[];
-    cell_line_display_names: string[];
-  }[];
-  other_context_dependencies: {
-    name: string;
-    type: BoxPlotTypes;
-    data: number[];
-    cell_line_display_names: string[];
-  }[];
+export interface BoxCardData {
+  significant: BoxData[];
+  insignificant: BoxData;
+  level_0_code: string;
+}
+
+export interface ContextPlotBoxData {
+  significant_selection: BoxData[];
+  insignificant_selection: BoxData;
+  other_cards: BoxCardData[];
+  insignificant_heme_data: BoxData;
+  insignificant_solid_data: BoxData;
   drug_dotted_line: number;
   entity_label: string;
-};
+}
+
+export interface OtherBoxCardData {
+  [key: string]: {
+    levelZeroPlotInfo: BoxPlotInfo;
+    subContextInfo: BoxPlotInfo[];
+  };
+}
 
 export enum TabTypes {
   Overview = 0,
   GeneDependency = 1,
-  DrugSensitivity = 2,
+  DrugSensitivityRepurposing = 2,
+  DrugSensitivityOncRef = 3,
+}
+
+export enum TreeType {
+  Lineage = "Lineage",
+  MolecularSubtype = "MolecularSubtype",
 }

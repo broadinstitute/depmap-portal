@@ -469,9 +469,15 @@ def load_populated_db_data():
         depmap_model_loader.load_depmap_model_metadata(
             os.path.join(loader_data_dir, "cell_line/models_metadata.csv")
         )
-
         cell_line_loader.load_contexts(
             os.path.join(loader_data_dir, "cell_line/contexts.csv")
+        )
+
+        depmap_model_loader.load_subtype_contexts(
+            os.path.join(loader_data_dir, "cell_line/subtype_contexts.csv")
+        )
+        context_explorer_loader.load_subtype_tree(
+            os.path.join(loader_data_dir, "cell_line/subtype_tree.csv")
         )
 
         dataset_loader.load_translocations(
@@ -573,7 +579,7 @@ def load_populated_db_data():
             current_app.config["WEBAPP_DATA_DIR"], context_explorer_data_avail
         )
         context_explorer_loader.load_context_explorer_context_analysis(
-            os.path.join(loader_data_dir, "context_explorer", "context_analysis.csv")
+            os.path.join(loader_data_dir, "context_explorer", "context_analysis_v2.csv")
         )
 
         data_page_all_data_avail = pd.read_csv(
