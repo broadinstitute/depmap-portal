@@ -612,6 +612,7 @@ function ContextAnalysis({
     entityDetailMainPlotElement,
     setEntityDetailMainPlotElement,
   ] = useState<ExtendedPlotType | null>(null);
+  console.log(entityDetailMainPlotElement);
 
   const [isLoadingBoxplot, setIsLoadingBoxplot] = useState<boolean>(true);
 
@@ -657,7 +658,7 @@ function ContextAnalysis({
       boxPlotMinFracDepIn
     ) {
       setBoxPlotData(null);
-      setEntityDetailMainPlotElement(null);
+      // setEntityDetailMainPlotElement(null);
       setIsLoadingBoxplot(true);
       setBoxplotError(false);
       const boxplotPromise = dapi.getContextExplorerBoxPlotData(

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Panel, PanelGroup } from "react-bootstrap";
 import {
   BoxCardData,
@@ -118,7 +118,7 @@ function CollapsibleBoxPlots({
       const plotInfo: BoxPlotInfo[] = [];
       let boxCardCount = 0;
 
-      boxPlotData.significant_selection.forEach((plotData, index) => {
+      boxPlotData.significant_selection.forEach((plotData) => {
         if (plotData.data.length > 0) {
           if (
             plotData.path.length === 1 &&
@@ -227,11 +227,9 @@ function CollapsibleBoxPlots({
           plotInfo.unshift(otherPlot);
         }
         setSelectedContextBoxData(plotInfo);
-      } else {
+      } else if (otherPlot) {
         // Rarely will be hit. This is an edge case.
-        if (otherPlot) {
-          setSelectedContextBoxData([otherPlot]);
-        }
+        setSelectedContextBoxData([otherPlot]);
       }
     }
   }, [boxPlotData, topContextNameInfo]);

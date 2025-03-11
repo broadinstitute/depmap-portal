@@ -284,11 +284,13 @@ export const ContextExplorer = () => {
                   updateDatatypeSelection={updateDatatypeSelection}
                   overlappingDepmapIds={overlappingDepmapIds}
                   overviewTableData={
+                    /* eslint-disable no-nested-ternary */
                     contextInfo
                       ? contextInfo.table_data
                       : allLineageContextData.table.length > 0
                       ? allLineageContextData.table
                       : allMolecularSubtypeContextData.table
+                    /* eslint-enable no-nested-ternary */
                   }
                   getCellLineUrlRoot={cellLineUrlRoot}
                   handleSetSelectedTab={setSelectedTab}
