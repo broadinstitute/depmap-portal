@@ -102,7 +102,7 @@ if [ "$START_WITH" != "" ]; then
     # for commands _other_than_ gcloud. Instead set HOME to a temp location and activate service account
     # we override home so this doesn't interfere with the default service account for this user.
     mytmphomedir=$(mktemp -d)
-    HOME=${mytmphomedir} gcloud auth activate-service-account /etc/depmap-pipeline-runner-creds/depmap-pipeline-runner.json
+    HOME=${mytmphomedir} gcloud auth activate-service-account --key-file /etc/depmap-pipeline-runner-creds/depmap-pipeline-runner.json
     HOME=${mytmphomedir} gcloud storage cp "$START_WITH" pipeline/downloaded-export.conseq
     # cleanup
     rm -r "${mytmphomedir}"
