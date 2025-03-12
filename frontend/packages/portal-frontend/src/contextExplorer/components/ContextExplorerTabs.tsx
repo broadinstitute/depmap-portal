@@ -169,21 +169,20 @@ const ContextExplorerTabs = ({
             />
           )}
         </TabPanel>
+        <TabPanel className={styles.TabPanel}>
+          {" "}
+          {!isLoadingInitialData && (
+            <ContextAnalysis
+              selectedContextNode={selectedContextNode}
+              selectedContextNameInfo={selectedContextNameInfo}
+              topContextNameInfo={topContextNameInfo}
+              treeType={treeType}
+              entityType={"compound"}
+              datasetId={ContextExplorerDatasets.Rep_all_single_pt}
+            />
+          )}
+        </TabPanel>
       </TabPanels>
-
-      <TabPanel className={styles.TabPanel}>
-        {" "}
-        {!isLoadingInitialData && (
-          <ContextAnalysis
-            selectedContextNode={selectedContextNode}
-            selectedContextNameInfo={selectedContextNameInfo}
-            topContextNameInfo={topContextNameInfo}
-            treeType={treeType}
-            entityType={"compound"}
-            datasetId={ContextExplorerDatasets.Rep_all_single_pt}
-          />
-        )}
-      </TabPanel>
     </TabsWithHistory>
   );
 };
