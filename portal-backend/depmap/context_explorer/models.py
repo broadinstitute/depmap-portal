@@ -317,9 +317,10 @@ class ContextAnalysis(Model):
     ):
         assert dataset_name in DependencyEnum.values()
 
-        dependency_dataset_id = DependencyDataset.get_dataset_by_name(
-            dataset_name
-        ).dependency_dataset_id
+        dependency_dataset = DependencyDataset.get_dataset_by_name(dataset_name)
+        assert dependency_dataset is not None
+        dependency_dataset_id = dependency_dataset.dependency_dataset_id
+
         if entity_type == "gene":
             analyses = (
                 ContextAnalysis.query.filter(

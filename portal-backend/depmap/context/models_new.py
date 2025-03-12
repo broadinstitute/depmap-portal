@@ -231,6 +231,7 @@ class SubtypeContext(Model):
 
         for node in nodes:
             level_0 = SubtypeContext.get_by_code(node.level_0, must=False)
+            assert level_0 is not None
             model_ids = [model.model_id for model in level_0.depmap_model]
             if len(model_ids) > 0:
                 node_models[level_0.subtype_code] = model_ids

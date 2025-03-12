@@ -195,20 +195,19 @@ def get_box_plot_data_for_context(
     )
 
     node = SubtypeNode.get_by_code(subtype_code)
+    assert node is not None
     path = utils.get_path_to_node(node.subtype_code).path
     path = path[1:] if len(path) > 1 else path
     delim = "/"
 
     plotLabel = delim.join(path) if not label else label
 
-    box_plot_data = {
-        "label": plotLabel,
-        "path": path,
-        "data": context_values_index_by_display_name.tolist(),
-        "cell_line_display_names": context_values_index_by_display_name.index.tolist(),
-    }
-
-    return box_plot_data
+    return BoxData(
+        label=plotLabel,
+        path=path,
+        data=context_values_index_by_display_name.tolist(),
+        cell_line_display_names=context_values_index_by_display_name.index.tolist(),
+    )
 
 
 def get_branch_subtype_codes_organized_by_code(sig_contexts: Dict[str, List[str]]):
@@ -380,7 +379,9 @@ def get_organized_contexts(
     min_abs_effect_size: float,
     min_frac_dep_in: float,
 ) -> ContextPlotBoxData:
-    level_0 = SubtypeNode.get_by_code(selected_subtype_code).level_0
+    node = SubtypeNode.get_by_code(selected_subtype_code)
+    assert node is not None
+    level_0 = node.level_0
     node_entity_data = _get_node_entity_data(
         dataset_name=dataset_name,
         entity_type=entity_type,

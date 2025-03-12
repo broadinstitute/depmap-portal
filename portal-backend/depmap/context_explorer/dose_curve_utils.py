@@ -80,6 +80,7 @@ def _get_dose_response_curves_per_model(
     dose_min_max_df = CompoundDoseReplicate.get_dose_min_max_of_replicates_with_compound_experiment_id(
         compound_experiment.entity_id
     )
+    assert dataset is not None
     compound_dose_replicates = [
         dose_rep
         for dose_rep in dose_min_max_df
@@ -147,7 +148,10 @@ def get_context_dose_curves(
 ):
     assert dataset_name == DependencyDataset.DependencyEnum.Prism_oncology_AUC.name
     dataset = DependencyDataset.get_dataset_by_name(dataset_name)
-    replicate_dataset_name = dataset.get_dose_replicate_enum().name
+    assert dataset is not None
+    replicate_dataset = dataset.get_dose_replicate_enum()
+    assert replicate_dataset is not None
+    replicate_dataset_name = replicate_dataset.name
     compound_experiment = utils.get_compound_experiment(
         entity_full_label=entity_full_label
     )

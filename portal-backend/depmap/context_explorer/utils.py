@@ -1,7 +1,8 @@
+from typing import Literal
 import pandas as pd
 
 from depmap import data_access
-from depmap.context.models_new import SubtypeNode
+from depmap.context.models_new import SubtypeNode, TreeType
 from depmap.context_explorer.models import ContextPathInfo
 from depmap.compound.models import (
     CompoundExperiment,
@@ -24,6 +25,7 @@ def get_full_row_of_values_and_depmap_ids(dataset_name: str, label: str) -> pd.S
 
 def get_path_to_node(selected_code: str) -> ContextPathInfo:
     node_obj = SubtypeNode.get_by_code(selected_code)
+    assert node_obj is not None
 
     cols = [
         node_obj.level_0,
@@ -35,11 +37,13 @@ def get_path_to_node(selected_code: str) -> ContextPathInfo:
     ]
     path = [col for col in cols if col != None]
 
+    tree_type: Literal["Lineage", "MolecularSubtype"] = node_obj.tree_type.value
     return ContextPathInfo(path=path, tree_type=str(node_obj.tree_type.value))
 
 
 def _get_compound_experiment_id_from_entity_label(entity_full_label: str):
     m = re.search(r"([A-Z0-9]*:[A-Z0-9-]*)", entity_full_label)
+    assert m is not None
     compound_experiment_id = m.group(1)
 
     return compound_experiment_id

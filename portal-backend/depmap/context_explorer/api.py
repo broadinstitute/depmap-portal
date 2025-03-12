@@ -190,6 +190,7 @@ class ContextPath(
 def get_child_subtype_summary_df(subtype_code: str):
     # Get the children for displaying in the data availability chart
     node = SubtypeNode.get_by_code(subtype_code)
+    assert node is not None
     node_children = SubtypeNode.get_next_level_nodes_using_current_level_code(
         subtype_code, node.node_level
     )
@@ -320,6 +321,7 @@ def get_context_explorer_lineage_trees_and_table_data(
     level_0_subtype_code: str,
 ) -> Tuple[Dict[str, ContextNode], List[Dict[str, Union[str, bool]]]]:
     node = SubtypeNode.get_by_code(level_0_subtype_code)
+    assert node is not None
 
     subtype_tree_query = SubtypeNode.get_subtype_tree_by_models_query(
         node.tree_type, level_0_subtype_code

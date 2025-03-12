@@ -175,7 +175,7 @@ def test_get_model_ids_for_subtype_context(empty_db_mock_downloads):
     _test_get_model_ids(emchs_code, 2, emchs_models)
 
     with pytest.raises(Exception):
-        _test_get_model_ids("NONSENSE_CODE", [])
+        _test_get_model_ids("NONSENSE_CODE", 0, [])
 
 
 ############ SubtypeNode Tests ##############
@@ -185,8 +185,9 @@ def test_get_subtype_node_by_code(empty_db_mock_downloads):
     expected_code = "ES"
     node = SubtypeNodeFactory(subtype_code=expected_code)
     empty_db_mock_downloads.session.flush()
-
-    assert SubtypeNode.get_by_code(node.subtype_code).subtype_code == expected_code
+    subtype_node = SubtypeNode.get_by_code(node.subtype_code)
+    assert subtype_node is not None
+    assert subtype_node.subtype_code == expected_code
 
 
 def test_get_subtype_tree_query(empty_db_mock_downloads):

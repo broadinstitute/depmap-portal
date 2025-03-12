@@ -1079,13 +1079,13 @@ def test_get_drug_dotted_line(empty_db_mock_downloads, dataset_name):
 def _get_box_plot_data(
     selected_subtype_code: str,
     dataset_name: str,
-    selected_entity_label: int,
+    selected_entity_label: str,
     tree_type: str,
     entity_type: str,
     max_fdr,
     min_abs_effect_size,
     min_frac_dep_in,
-) -> Optional[list]:
+) -> Optional[dict]:
 
     context_box_plot_data = get_organized_contexts(
         selected_subtype_code=selected_subtype_code,
