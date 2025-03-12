@@ -5,6 +5,7 @@ from depmap.compound.views.executive import (
     format_enrichment_boxes,
     format_top_corr_table,
 )
+from depmap.compound.models import Compound
 from depmap.context.models import ContextEnrichment
 from depmap.dataset.models import DependencyDataset
 from depmap.enums import BiomarkerEnum
@@ -139,7 +140,7 @@ def test_format_top_corr_table(tmpdir, empty_db_mock_downloads):
 
 
 def test_format_availability_tile(empty_db_mock_downloads):
-    compound = CompoundFactory()
+    compound: Compound = CompoundFactory() # pyright: ignore
     compound_experiment_1 = CompoundExperimentFactory(
         label="exp_label_1", compound=compound
     )
@@ -186,7 +187,7 @@ def test_format_availability_tile(empty_db_mock_downloads):
             "dataset_url": "/download/all/?release=test+name+version&file=test+file+name+2",
         },
     ]
-    availability = format_availability_tile(compound.entity_id)
+    availability = format_availability_tile(compound)
 
     assert expected == availability
 
