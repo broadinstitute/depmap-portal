@@ -98,7 +98,15 @@ if [ "$START_WITH" != "" ]; then
     # clean out old invocation
     sudo chown -R ubuntu pipeline
     rm -rf pipeline/state
-    GOOGLE_APPLICATION_CREDENTIALS="${PIPELINE_RUNNER_CREDS_DIR}/depmap-pipeline-runner.json" gsutil cp "$START_WITH" pipeline/downloaded-export.conseq
+    # We can't use GOOGLE_APPLICATION_CREDENTIALS because that only affects the default account
+    # for commands _other_than_ gcloud. Instead set HOME to a temp location and activate service account
+    # we override home so this doesn't interfere with the default service account for this user.
+    mytmphomedir=$(mktemp -d)
+    HOME=${mytmphomedir} gcloud auth activate-service-account /etc/depmap-pipeline-runner-creds/depmap-pipeline-runner.json
+    HOME=${mytmphomedir} gcloud storage cp "$START_WITH" pipeline/downloaded-export.conseq
+    # cleanup
+    rm -r "${mytmphomedir}"
+
     run_via_container "conseq run downloaded-export.conseq"
     # forget all the executions of "publish" rules because the publish location has changed
     run_via_container "conseq forget --regex 'publish.*'"
