@@ -72,12 +72,17 @@ rule run_fit_models:
       # Copy the input config file to the current directory
       shutil.copy(input_config_filepath, local_input_config)
 
+      relative_path = os.path.relpath(os.getcwd(), '/work/analysis-pipeline')
+      host_work_dir = os.environ.get('HOST_WORKSPACE_PATH', '/data1/jenkins/workspace/Analysis_Pipeline/analysis-pipeline')
+      host_current_dir = os.path.join(host_work_dir, relative_path)
+        
+
       docker_command = [
         "docker", "run",
         "--rm",
-        "-v", f"{os.getcwd()}:/daintree",
-        "-v", f"{os.environ['HOME']}/.taiga/token:/root/.taiga/token",
-        "-v", f"{os.environ['HOME']}/.sparkles-cache/service-keys/broad-achilles.json:/root/.sparkles-cache/service-keys/broad-achilles.json",
+        "-v", f"{host_current_dir}:/daintree",
+        "-v", f"/home/ubuntu/.taiga/token:/root/.taiga/token",
+        "-v", f"/home/ubuntu/.sparkles-cache/service-keys/broad-achilles.json:/root/.sparkles-cache/service-keys/broad-achilles.json",
         "--entrypoint", "/bin/bash",
         "us.gcr.io/broad-achilles/daintree:v1",
         "-c", f"mkdir -p /daintree/daintree_scripts/ && cp -r /daintree_scripts/* /daintree/daintree_scripts/ && /install/depmap-py/bin/python3.9 -u /daintree/daintree_scripts/run_fit_models.py collect-and-fit \
