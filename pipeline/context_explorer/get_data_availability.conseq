@@ -2,16 +2,22 @@
 rule get_data_availability:
     inputs:
         script=fileref("./get_data_availability.py"),
-        depmap_data_taiga_id={"type": "depmap_data_taiga_id"},
+        model_taiga_id={"type": "sample_info_dataset_id"},
+        screen_sequence_map_taiga_id={"type": "crispr-screen-sequence-map"},
+        omics_profiles_taiga_id={"type": "omics_profiles"},
         repurposing_matrix_taiga_id={"type": "repurposing_matrix_taiga_id"},
+        oncref_auc_taiga_id={"type":"prism_oncref_auc_matrix"}
         rnai_cell_lines_taiga_id={"type": "rnai_cell_lines_taiga_id"}
     outputs:
         {"type": "data-avail", "filename": { "$filename": "data-avail.csv"} }
     run """
         python \
           {{ inputs.script.filename }} \
-          {{ inputs.depmap_data_taiga_id.dataset_id }} \
+          {{ inputs.model_taiga_id.dataset_id }} \
+          {{ inputs.screen_sequence_map_taiga_id.dataset_id }} \
+          {{ inputs.omics_profiles_taiga_id.dataset_id }} \
           {{ inputs.repurposing_matrix_taiga_id.dataset_id }} \
+          {{ inputs.oncref_auc_taiga_id.dataset_id }} \
           {{ inputs.rnai_cell_lines_taiga_id.dataset_id }} \
           data-avail.csv
         """
