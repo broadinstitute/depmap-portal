@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List, Optional, Literal
 
 import h5py
 import numpy as np
@@ -21,10 +21,15 @@ def create_index_dataset(f: h5py.File, key: str, idx: pd.Index):
     )
 
 
-def write_hdf5_file(path: str, df: pd.DataFrame):
+def write_hdf5_file(path: str, df: pd.DataFrame, dtype: Literal["float", "str"]):
     f = h5py.File(path, mode="w")
     try:
-        f.create_dataset("data", shape=df.shape, dtype=np.float64, data=df.values)
+        f.create_dataset(
+            "data",
+            shape=df.shape,
+            dtype=h5py.string_dtype() if dtype == "str" else np.float64,
+            data=df.values,
+        )
 
         create_index_dataset(f, "features", df.columns)
         create_index_dataset(f, "samples", df.index)

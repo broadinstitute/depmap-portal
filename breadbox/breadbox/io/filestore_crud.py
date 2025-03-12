@@ -11,13 +11,21 @@ DATA_FILE: str = "data.hdf5"
 
 
 def save_dataset_file(
-    dataset_id: str, data_df: pd.DataFrame, filestore_location: str,
+    dataset_id: str,
+    data_df: pd.DataFrame,
+    value_type: ValueType,
+    filestore_location: str,
 ):
     base_path = os.path.join(filestore_location, dataset_id)
     os.makedirs(base_path)
 
+    if value_type == ValueType.list_strings:
+        dtype = "str"
+    else:
+        dtype = "float"
+
     write_hdf5_file(
-        get_file_location(dataset_id, filestore_location, DATA_FILE), data_df
+        get_file_location(dataset_id, filestore_location, DATA_FILE), data_df, dtype
     )
 
 

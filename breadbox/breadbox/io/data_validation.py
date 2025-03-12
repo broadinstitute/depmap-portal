@@ -170,6 +170,8 @@ def _validate_data_value_type(
 
         int_df = int_df.astype(int)
         return int_df
+    elif value_type == ValueType.list_strings:
+        return df.astype(str)
     else:
         if not all([is_numeric_dtype(df[col].dtypes) for col in df.columns]):
             raise FileValidationError(
@@ -217,7 +219,7 @@ def _read_csv(file: BinaryIO, value_type: ValueType) -> pd.DataFrame:
 
     if value_type == ValueType.continuous:
         dtypes_ = dict(zip(cols, ["string"] + (["Float64"] * (len(cols) - 1))))
-    elif value_type == ValueType.categorical:
+    elif value_type == ValueType.categorical or value_type == ValueType.list_strings:
         dtypes_ = dict(zip(cols, ["string"] * len(cols)))
     else:
         raise ValueError(f"Invalid value type: {value_type}")
@@ -422,7 +424,7 @@ def validate_and_upload_dataset_files(
     )
 
     # TODO: Move save function to api layer. Need to make sure the db save is successful first
-    save_dataset_file(dataset_id, data_df, filestore_location)
+    save_dataset_file(dataset_id, data_df, value_type, filestore_location)
 
     return dataframe_validated_dimensions
 
