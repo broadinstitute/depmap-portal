@@ -1,34 +1,39 @@
+import dataclasses
 from typing import Dict, List, Literal, Tuple, Union
 import os
-import re
 from depmap.cell_line.models_new import DepmapModel
 from depmap.compound.models import Compound, CompoundExperiment
-from depmap.context_explorer.utils import (
-    get_box_plot_data_for_primary_disease,
-    get_box_plot_data_for_selected_lineage,
-    get_other_context_dependencies,
-    get_full_row_of_values_and_depmap_ids,
-    has_drug_data,
-    has_gene_dep_data,
-)
-from depmap.gene.models import Gene
+from depmap.context_explorer.utils import get_path_to_node
+from depmap.context_explorer import box_plot_utils, dose_curve_utils
 from depmap.tda.views import convert_series_to_json_safe_list
 from flask_restplus import Namespace, Resource
 from flask import current_app, request
 import pandas as pd
+from depmap.context.models_new import SubtypeContext
+from depmap.settings.shared import DATASET_METADATA
 from depmap.context_explorer.models import (
     ContextAnalysis,
-    ContextNameInfo,
     ContextNode,
-    ContextTree,
 )
+from depmap.context.models_new import SubtypeNode, TreeType
+
+# from depmap.database import db
+
+# from loader.context_explorer_loader import (
+#     load_context_explorer_context_analysis_dev,
+#     load_subtype_tree,
+# )
+
+# from loader.depmap_model_loader import load_subtype_contexts
+
+# from .development_scripts import dev
 
 namespace = Namespace("context_explorer", description="View context data in the portal")
 
 
 DATA_AVAIL_FILE = "data_avail.csv"
 
-INOUT_ANALYSIS_COLS = {
+GENE_INOUT_ANALYSIS_COLS = {
     "entity": str,
     "t_pval": float,
     "mean_in": float,
@@ -37,12 +42,25 @@ INOUT_ANALYSIS_COLS = {
     "abs_effect_size": float,
     "t_qval": float,
     "t_qval_log": float,
-    "OR": float,
     "n_dep_in": float,
     "n_dep_out": float,
     "frac_dep_in": float,
     "frac_dep_out": float,
-    "log_OR": float,
+    "selectivity_val": float,
+    "depletion": str,
+    "label": str,
+}
+
+DRUG_INOUT_ANALYSIS_COLS = {
+    "entity": str,
+    "t_pval": float,
+    "mean_in": float,
+    "mean_out": float,
+    "effect_size": float,
+    "abs_effect_size": float,
+    "t_qval": float,
+    "t_qval_log": float,
+    "selectivity_val": float,
     "depletion": str,
     "label": str,
 }
@@ -57,37 +75,80 @@ def _get_context_summary_df() -> pd.DataFrame:
     return transposed_summary
 
 
-def _get_context_summary():
+def _get_context_summary(tree_type: str):
+    subtype_tree_query = SubtypeNode.get_all_by_models_query(tree_type)
+
+    subtype_df = pd.read_sql(
+        subtype_tree_query.statement, subtype_tree_query.session.connection()
+    )
+    valid_models = subtype_df["model_id"].tolist()
+
     summary_df = _get_context_summary_df()
 
+    valid_models_summary_intersection = set.intersection(
+        set(summary_df.columns.tolist()), valid_models
+    )
+    subsetted_summary_df = summary_df[list(valid_models_summary_intersection)]
+
+    sorted_summary_df = (
+        subsetted_summary_df.transpose()
+        .sort_values(
+            by=["CRISPR", "RNAi", "WES", "WGS", "RNASeq", "PRISM"], ascending=False
+        )
+        .transpose()
+    )
+
     summary = {
-        "values": [row.values.tolist() for _, row in summary_df.iterrows()],
-        "data_types": summary_df.index.values.tolist(),
+        "values": [row.values.tolist() for _, row in sorted_summary_df.iterrows()],
+        "data_types": sorted_summary_df.index.values.tolist(),
     }
 
     summary["all_depmap_ids"] = [
-        (i, depmap_id) for i, depmap_id in enumerate(summary_df.columns.tolist())
+        (i, depmap_id) for i, depmap_id in enumerate(sorted_summary_df.columns.tolist())
     ]
 
-    return summary
+    subtype_df = subtype_df.set_index("model_id")
+    overview_data = _get_overview_table_data(
+        df=subtype_df, summary_df=sorted_summary_df
+    )
+
+    return summary, overview_data
 
 
-def _get_all_top_level_lineages(
-    all_lineages: Dict[str, ContextTree],
-) -> List[ContextNameInfo]:
-    unique_top_level_lineages = []
+def _get_all_level_0_subtype_info(tree_type: TreeType) -> List[dict]:
+    subtype_nodes = SubtypeNode.get_by_tree_type_and_level(tree_type=tree_type, level=0)
 
-    seen_lineage_names = []
-    for lineage in all_lineages.keys():
-        if lineage not in seen_lineage_names:
-            unique_top_level_lineages.append(
-                ContextNameInfo(
-                    name=lineage, display_name=all_lineages[lineage].root.display_name
-                )
-            )
-            seen_lineage_names.append(lineage)
+    context_name_info = []
 
-    return unique_top_level_lineages
+    for subtype_node in subtype_nodes:
+        context_name_info.append(
+            {
+                "name": subtype_node.node_name,
+                "subtype_code": subtype_node.subtype_code,
+                "node_level": 0,
+            }
+        )
+
+    sorted_context_name_info_list = sorted(context_name_info, key=lambda x: x["name"])
+    return sorted_context_name_info_list
+
+
+@namespace.route("/context_search_options")
+class ContextSearchOptions(
+    Resource
+):  # the flask url_for endpoint is automagically the snake case of the namespace prefix plus class name
+    def get(self):
+        molecular_subtype_context_name_info = _get_all_level_0_subtype_info(
+            tree_type=TreeType.MolecularSubtype
+        )
+        lineage_context_name_info = _get_all_level_0_subtype_info(
+            tree_type=TreeType.Lineage
+        )
+
+        return {
+            "lineage": lineage_context_name_info,
+            "molecularSubtype": molecular_subtype_context_name_info,
+        }
 
 
 @namespace.route("/context_info")
@@ -102,161 +163,213 @@ class ContextInfo(
         as each available branch off of the key-node
         """
 
-        # Getting the top level lineages by querying the Lineage table result in data inconsistencies. We
-        # don't have datatype information for all level 1 lineages. As a result, we have to get the data trees
-        # first, and then use the keys to get the list of top level lineages for the search bar.
+        level_0_subtype_code = request.args.get("level_0_subtype_code")
+
         (
-            context_trees,
+            context_tree,
             overview_data,
-        ) = get_context_explorer_lineage_trees_and_table_data()
-        context_name_info = _get_all_top_level_lineages(context_trees)
-        return {
-            "trees": context_trees,
-            "table_data": overview_data,
-            "search_options": [
-                {"name": name_info.name, "display_name": name_info.display_name}
-                for name_info in context_name_info
+        ) = get_context_explorer_lineage_trees_and_table_data(
+            level_0_subtype_code=level_0_subtype_code
+        )
+
+        return {"tree": context_tree, "table_data": overview_data}
+
+
+@namespace.route("/context_path")
+class ContextPath(
+    Resource
+):  # the flask url_for endpoint is automagically the snake case of the namespace prefix plus class name
+    def get(self):
+        selected_code = request.args.get("selected_code")
+
+        path = get_path_to_node(selected_code)
+
+        return dataclasses.asdict(path)
+
+
+def get_child_subtype_summary_df(subtype_code: str):
+    # Get the children for displaying in the data availability chart
+    node = SubtypeNode.get_by_code(subtype_code)
+    node_children = SubtypeNode.get_next_level_nodes_using_current_level_code(
+        subtype_code, node.node_level
+    )
+
+    def is_model_available(model_id: str, node_model_ids: List[str]):
+        return model_id in node_model_ids
+
+    model_avail_by_node_code = {}
+    all_model_ids = SubtypeNode.get_model_ids_by_subtype_code_and_node_level(
+        subtype_code, node.node_level
+    )
+
+    #####################
+    # TEMP HACK... I think.
+    #######################
+    test = (
+        _get_context_summary_df()
+    )  # gets data from the get_data_availability.py output
+    valid_model_ids = set(test.columns.tolist())
+
+    # gets the intersection of models from get_data_availability.py and the models
+    # included in the subtype context.
+    corrected_all_model_ids = list(
+        set.intersection(valid_model_ids, set(all_model_ids))
+    )
+    ########################
+    #######################
+
+    for child_node in node_children:
+        model_ids = SubtypeNode.get_model_ids_by_subtype_code_and_node_level(
+            subtype_code=child_node.subtype_code, node_level=child_node.node_level
+        )
+        if len(model_ids) == 0:
+            continue
+        model_id_availability = [
+            is_model_available(model_id=model_id, node_model_ids=model_ids)
+            for model_id in corrected_all_model_ids
+        ]
+        model_avail_by_node_code[child_node.subtype_code] = model_id_availability
+
+    subtype_avail_df = pd.DataFrame(
+        data=model_avail_by_node_code,
+        index=pd.Index(corrected_all_model_ids, name="ModelID"),
+    )
+
+    return subtype_avail_df
+
+
+@namespace.route("/subtype_data_availability")
+class SubtypeDataAvailability(
+    Resource
+):  # the flask url_for endpoint is automagically the snake case of the namespace prefix plus class name
+    def get(self):
+        selected_code = request.args.get("selected_code")
+
+        subtype_avail_summary = get_child_subtype_summary_df(subtype_code=selected_code)
+
+        transposed_subtype_avail_summary = subtype_avail_summary.transpose()
+        data_availability = {
+            "values": [
+                row.values.tolist()
+                for _, row in transposed_subtype_avail_summary.iterrows()
             ],
+            "data_types": transposed_subtype_avail_summary.index.values.tolist(),
         }
+
+        data_availability["all_depmap_ids"] = [
+            (i, depmap_id)
+            for i, depmap_id in enumerate(
+                transposed_subtype_avail_summary.columns.tolist()
+            )
+        ]
+
+        return data_availability
+
+
+def _get_overview_table(overview_page_table, summary_df_by_model_id):
+    cell_line_display_names = DepmapModel.get_cell_line_display_names(
+        list(summary_df_by_model_id.index.values)
+    )
+
+    overview_page_table = overview_page_table.join(summary_df_by_model_id)
+
+    overview_page_table["cell_line_display_name"] = cell_line_display_names[
+        summary_df_by_model_id.index
+    ]
+
+    overview_page_table = overview_page_table.rename(
+        columns={
+            "CRISPR": "crispr",
+            "RNAi": "rnai",
+            "WGS": "wgs",
+            "WES": "wes",
+            "PRISM": "prism",
+            "RNASeq": "rna_seq",
+        }
+    )
+
+    dummy_value = ""
+    overview_page_table = overview_page_table.fillna(dummy_value)
+
+    overview_page_table = overview_page_table.reset_index().drop_duplicates(
+        "model_id", keep="last"
+    )
+
+    overview_data = overview_page_table.to_dict("records")
+
+    return overview_data
 
 
 def _get_overview_table_data(
     df: pd.DataFrame, summary_df: pd.DataFrame
 ) -> pd.DataFrame:
-    overview_page_table = df[["lineage_1", "lineage_2", "lineage_3", "lineage_6"]]
-    overview_page_table.rename(
-        columns={
-            "lineage_1": "lineage",
-            "lineage_2": "primary_disease",
-            "lineage_3": "subtype",
-            "lineage_6": "molecular_subtype",
-        },
-        inplace=True,
+    summary_df_by_model_id = summary_df.transpose()
+    overview_page_table = df
+
+    summary_df_by_model_id = summary_df_by_model_id.rename_axis("model_id")
+
+    overview_data = _get_overview_table(
+        overview_page_table=overview_page_table,
+        summary_df_by_model_id=summary_df_by_model_id,
     )
 
-    cell_line_display_names = DepmapModel.get_cell_line_display_names(
-        list(summary_df.columns.values)
+    return overview_data
+
+
+def get_context_explorer_lineage_trees_and_table_data(
+    level_0_subtype_code: str,
+) -> Tuple[Dict[str, ContextNode], List[Dict[str, Union[str, bool]]]]:
+    node = SubtypeNode.get_by_code(level_0_subtype_code)
+
+    subtype_tree_query = SubtypeNode.get_subtype_tree_by_models_query(
+        node.tree_type, level_0_subtype_code
     )
 
-    overview_page_table["crispr"] = summary_df.loc["CRISPR"] > 0
-    overview_page_table["rnai"] = summary_df.loc["RNAi"] > 0
-    overview_page_table["wgs"] = summary_df.loc["WGS"] > 0
-    overview_page_table["wes"] = summary_df.loc["WES"] > 0
-    overview_page_table["prism"] = summary_df.loc["PRISM"] > 0
-    overview_page_table["rna_seq"] = summary_df.loc["RNASeq"] > 0
-    overview_page_table["cell_line_display_name"] = cell_line_display_names[
-        overview_page_table.index
+    subtype_df = pd.read_sql(
+        subtype_tree_query.statement, subtype_tree_query.session.connection()
+    )
+
+    summary_df = _get_context_summary_df()
+
+    subtype_df = subtype_df.set_index("model_id")
+
+    overview_data = _get_overview_table_data(df=subtype_df, summary_df=summary_df)
+
+    subtype_tree_df = subtype_df[
+        [
+            "subtype_code",
+            "node_name",
+            "node_level",
+            "level_0",
+            "level_1",
+            "level_2",
+            "level_3",
+            "level_4",
+            "level_5",
+        ]
     ]
 
-    dummy_value = ""
-    overview_page_table = overview_page_table.fillna(dummy_value)
+    node_level = 0
 
-    # Get a list of crispr_depmap_ids and prism_depmap_ids so that we can store
-    # hasGenDepData and hasDrugData as fields in the ContextTree.
-    crispr_depmap_ids = overview_page_table[
-        overview_page_table["crispr"] == True
-    ].index.tolist()
-    drug_depmap_ids = overview_page_table[
-        overview_page_table["prism"] == True
-    ].index.tolist()
-
-    overview_page_table = overview_page_table.reset_index()
-    overview_data = overview_page_table.to_dict("records")
-
-    return overview_data, crispr_depmap_ids, drug_depmap_ids
-
-
-# lineage_1: oncotree_lineage
-# lineage_2: oncotree_primary_disease
-# lineage_3: oncotree_subtype
-# lineage_6: legacy_molecular_subtype
-
-
-def get_context_explorer_lineage_trees_and_table_data() -> Tuple[
-    Dict[str, ContextTree], List[Dict[str, Union[str, bool]]]
-]:
-    query = DepmapModel.get_context_tree_query()
-    df = pd.read_sql(query.statement, query.session.connection())
-    df = df.rename(columns={"model_id": "depmap_id"})
-
-    # Filter out lineages that don't have depmap_ids in the summary data
-    summary_df = _get_context_summary_df()
-    df = df[df["depmap_id"].isin(list(summary_df.columns))]
-
-    # Get lineage_df (with list of depmap_ids per lineage), so that given a lineage
-    # name, we can easily get the list of depmap_ids for that lienage
-    lineage_by_level = df.copy()
-    lineage_by_level["lineage_by_level"] = lineage_by_level[
-        ["lineage", "lineage_level"]
-    ].values.tolist()
-    lineage_by_level["lineage_by_level"] = lineage_by_level["lineage_by_level"].apply(
-        tuple
+    model_ids = SubtypeNode.get_model_ids_by_subtype_code_and_node_level(
+        level_0_subtype_code, node_level
+    )
+    node_name = node.node_name
+    root_node = ContextNode(
+        name=node_name,
+        subtype_code=level_0_subtype_code,
+        parent_subtype_code=None,
+        model_ids=model_ids,
+        node_level=node_level,
     )
 
-    lineage_df = pd.pivot_table(
-        lineage_by_level,
-        values=["lineage", "depmap_id", "lineage_level"],
-        index="lineage_by_level",
-        aggfunc={"depmap_id": list, "lineage_level": list},
+    root_node.create_context_tree_from_root_info(
+        tree_df=subtype_tree_df,
+        current_node_code=level_0_subtype_code,
+        node_level=node_level,
     )
 
-    df["lineage_level"] = "lineage_" + df["lineage_level"].astype(str)
-    inds = df.columns.difference(["lineage_level", "lineage"]).tolist()
-    dummy_value = ""
-    df = df.fillna(dummy_value)
-    df = df.pivot_table(
-        index=inds, columns="lineage_level", values="lineage", aggfunc="first"
-    )
-
-    overview_data, crispr_depmap_ids, drug_depmap_ids = _get_overview_table_data(
-        df=df, summary_df=summary_df
-    )
-
-    # NOTE: TEMPORARY - per Barbara's instructions, dropping all but the first 2 lineage levels for the prototype
-    df = df[["lineage_1", "lineage_2"]]
-    lineage_1_sorted = df.sort_values("lineage_1")
-    unique_lineage_1 = lineage_1_sorted["lineage_1"].unique()
-
-    trees = {}
-    for unique_lineage in unique_lineage_1:
-        if pd.isna(unique_lineage):
-            continue
-
-        lineage_row = lineage_df.loc[lineage_df.index == (unique_lineage, 1)]
-
-        # If we don't take the unique depmap_ids, some depmap_ids are
-        # counted twice if they have the same lineage listed at 2 different
-        # levels (for example: Bone --> Ewing Sarcoma --> Ewing Sarcoma)
-        depmap_ids = (
-            list(set(lineage_row["depmap_id"].iloc[[0]].values[0]))
-            if len(lineage_row["depmap_id"]) != 0
-            else []
-        )
-        root_node = ContextNode(
-            name=unique_lineage,
-            depmap_ids=depmap_ids,
-            has_gene_dep_data=has_gene_dep_data,
-            has_drug_data=has_drug_data,
-            crispr_depmap_ids=crispr_depmap_ids,
-            drug_depmap_ids=drug_depmap_ids,
-        )
-        tree = ContextTree(root_node)
-
-        tree_df = lineage_1_sorted.loc[lineage_1_sorted["lineage_1"] == unique_lineage]
-
-        tree.create_context_tree_from_root_info(
-            tree_df=tree_df,
-            current_lineage=unique_lineage,
-            lineage_df=lineage_df,
-            current_lineage_level="lineage_1",
-            has_gene_dep_data=has_gene_dep_data,
-            has_drug_data=has_drug_data,
-            crispr_depmap_ids=crispr_depmap_ids,
-            drug_depmap_ids=drug_depmap_ids,
-        )
-        trees[unique_lineage] = tree
-
-    return trees, overview_data
+    return root_node, overview_data
 
 
 @namespace.route("/context_summary")
@@ -270,17 +383,26 @@ class ContextSummary(
         List of available context trees as a dictionary with keys as each available non-terminal node, and values
         as each available branch off of the key-node
         """
-        return _get_context_summary()
+        tree_type = request.args.get("tree_type")
+        summary, overview_data = _get_context_summary(tree_type)
+
+        return {"summary": summary, "table": overview_data}
 
 
 def _get_analysis_data_table(
-    in_group: str, out_group_type: str, entity_type: Literal["gene", "compound"]
+    in_group: str,
+    out_group_type: str,
+    entity_type: Literal["gene", "compound"],
+    dataset_name: str,
 ):
     if in_group == "All":
         return None
 
-    data = ContextAnalysis.find_context_analysis_by_context_name_out_group(
-        context_name=in_group, out_group=out_group_type, entity_type=entity_type
+    data = ContextAnalysis.find_context_analysis_by_subtype_code_out_group(
+        subtype_code=in_group,
+        out_group=out_group_type,
+        entity_type=entity_type,
+        dataset_name=dataset_name,
     )
 
     if data.empty:
@@ -299,6 +421,10 @@ def _get_analysis_data_table(
             return compound.label
 
         data["label"] = data["entity"].apply(get_compound_label_for_compound_experiment)
+        # These columns don't make sense for compounds and will always be NaNs, so just drop them
+        data = data.drop(
+            ["n_dep_in", "n_dep_out", "frac_dep_in", "frac_dep_out"], axis=1
+        )
 
     data["depletion"] = data["effect_size"] > 0
     data["depletion"] = data["depletion"].map({True: "True", False: "False"})
@@ -307,9 +433,15 @@ def _get_analysis_data_table(
     data_table = data.reset_index()
     data_table = data_table.round(decimals=3)
 
+    # TODO: Add test for this endpoint to assert the proper columns are returned
+    #  depending on "gene" or "compound" entity_type
+    in_out_analysis_cols = (
+        GENE_INOUT_ANALYSIS_COLS if entity_type == "gene" else DRUG_INOUT_ANALYSIS_COLS
+    )
+
     data_table = {
         column: convert_series_to_json_safe_list(data_table[column], dtype=dtype)
-        for column, dtype in INOUT_ANALYSIS_COLS.items()
+        for column, dtype in in_out_analysis_cols.items()
     }
 
     return data_table
@@ -327,55 +459,74 @@ class AnalysisData(Resource):
         out_group_type = request.args.get("out_group_type")
         entity_type = request.args.get("entity_type")
 
+        # Can be either
+        # DependencyEnum.Chronos_Combined.name
+        # Repurposing aka DependencyEnum.Rep_all_single_pt.name
+        # OncRef aka DependencyEnum.Prism_oncology_AUC.name
+        dataset_name = request.args.get("dataset_name")
+
         data_table = _get_analysis_data_table(
-            in_group=in_group, out_group_type=out_group_type, entity_type=entity_type
+            in_group=in_group,
+            out_group_type=out_group_type,
+            entity_type=entity_type,
+            dataset_name=dataset_name,
         )
 
         return data_table
 
 
-def _get_compound_experiment_id_from_entity_label(entity_full_label: str):
-    m = re.search(r"([A-Z0-9]*:[A-Z0-9-]*)", entity_full_label)
-    compound_experiment_id = m.group(1)
+@namespace.route("/context_dose_curves")
+class ContextDoseCurves(Resource):
+    @namespace.doc(
+        description="",
+    )  # the flask url_for endpoint is automagically the snake case of the namespace prefix plus class name
+    def get(self):
+        dataset_name = request.args.get("dataset_name")
+        entity_full_label = request.args.get("entity_full_label")
+        subtype_code = request.args.get("subtype_code")
+        level = request.args.get("level")
+        out_group_type = request.args.get("out_group_type")
 
-    return compound_experiment_id
-
-
-def _get_compound_experiment(entity_full_label: str):
-    compound_experiment_id = _get_compound_experiment_id_from_entity_label(
-        entity_full_label=entity_full_label
-    )
-
-    assert ":" in compound_experiment_id
-    compound_experiment = CompoundExperiment.get_by_xref_full(
-        compound_experiment_id, must=False
-    )
-
-    return compound_experiment
-
-
-def _get_entity_id_from_entity_full_label(
-    entity_type: str, entity_full_label: str
-) -> dict:
-    entity = None
-    if entity_type == "gene":
-        m = re.match("\\S+ \\((\\d+)\\)", entity_full_label)
-
-        assert m is not None
-        entrez_id = int(m.group(1))
-        gene = Gene.get_gene_by_entrez(entrez_id)
-        assert gene is not None
-        label = gene.label
-        entity = gene
-        entity_id = entity.entity_id
-    else:
-        compound_experiment = _get_compound_experiment(
-            entity_full_label=entity_full_label
+        dose_curve_info = dose_curve_utils.get_context_dose_curves(
+            dataset_name=dataset_name,
+            entity_full_label=entity_full_label,
+            subtype_code=subtype_code,
+            level=level,
+            out_group_type=out_group_type,
         )
-        entity_id = compound_experiment.entity_id
-        label = Compound.get_by_entity_id(entity_id).label
 
-    return {"entity_id": entity_id, "label": label}
+        compound_experiment = dose_curve_info["compound_experiment"]
+        dataset = dose_curve_info["dataset"]
+        replicate_dataset_name = dose_curve_info["replicate_dataset_name"]
+
+        label = f"{compound_experiment.label} {dataset.display_name}"
+
+        # TODO not sure if I need this metadata yet
+        dose_curve_metadata = {
+            "label": label,
+            "id": f"{dataset.name.name}_{compound_experiment.entity_id}",  # used for uniqueness
+            "dataset": dataset.name.name,
+            "entity": compound_experiment.entity_id,
+            "dose_replicate_dataset": replicate_dataset_name,
+            "auc_dataset_display_name": dataset.display_name,
+            "compound_label": compound_experiment.label,
+            "compound_xref_full": compound_experiment.xref_full,
+            "dose_replicate_level_yunits": DATASET_METADATA[
+                dataset.get_dose_replicate_enum()
+            ].units,
+        }
+
+        return {
+            "in_group_curve_params": dose_curve_info["dose_curve_info"][
+                "in_group_curve_params"
+            ],
+            "out_group_curve_params": dose_curve_info["dose_curve_info"][
+                "out_group_curve_params"
+            ],
+            "max_dose": min(dose_curve_info["dose_curve_info"]["max_dose"], 1.0),
+            "min_dose": dose_curve_info["dose_curve_info"]["min_dose"],
+            "dose_curve_metadata": dose_curve_metadata,
+        }
 
 
 @namespace.route("/context_box_plot_data")
@@ -384,71 +535,27 @@ class ContextBoxPlotData(Resource):
         description="",
     )  # the flask url_for endpoint is automagically the snake case of the namespace prefix plus class name
     def get(self):
-        # Used to get the main box plot data
-        selected_context = request.args.get("selected_context")
-        dataset_id = request.args.get("dataset_id")
-        top_context = request.args.get("top_context")
-
-        # Used to get Other Context Dependencies
-        out_group_type = request.args.get("out_group_type")
+        selected_subtype_code = request.args.get("selected_subtype_code")
+        tree_type = request.args.get("tree_type")
+        dataset_name = request.args.get("dataset_name")
         entity_type = request.args.get("entity_type")
         entity_full_label = request.args.get("entity_full_label")
-        fdr = request.args.getlist("fdr", type=float)
-        abs_effect_size = request.args.getlist("abs_effect_size", type=float)
-        frac_dep_in = request.args.getlist("frac_dep_in", type=float)
+        max_fdr = request.args.get("max_fdr", type=float)
+        min_abs_effect_size = request.args.get("min_abs_effect_size", type=float)
+        min_frac_dep_in = request.args.get("min_frac_dep_in", type=float)
 
-        box_plot_data = []
-
-        entity_id_and_label = _get_entity_id_from_entity_full_label(
-            entity_type=entity_type, entity_full_label=entity_full_label
-        )
-        entity_id = entity_id_and_label["entity_id"]
-        entity_label = entity_id_and_label["label"]
-
-        is_lineage = selected_context == top_context
-        lineage_depmap_ids_names_dict = DepmapModel.get_model_ids_by_lineage(
-            top_context
-        )
-
-        (entity_full_row_of_values) = get_full_row_of_values_and_depmap_ids(
-            dataset_id=dataset_id, entity_id=entity_id
-        )
-        entity_full_row_of_values.dropna(inplace=True)
-
-        drug_dotted_line = (
-            entity_full_row_of_values.mean() if entity_type == "compound" else None
-        )
-
-        if is_lineage:
-            box_plot_data = get_box_plot_data_for_selected_lineage(
-                top_context=top_context,
-                lineage_depmap_ids=list(lineage_depmap_ids_names_dict.keys()),
-                entity_full_row_of_values=entity_full_row_of_values,
-                lineage_depmap_ids_names_dict=lineage_depmap_ids_names_dict,
-            )
-        else:
-            box_plot_data = get_box_plot_data_for_primary_disease(
-                selected_context=selected_context,
-                top_context=top_context,
-                lineage_depmap_ids=list(lineage_depmap_ids_names_dict.keys()),
-                entity_full_row_of_values=entity_full_row_of_values,
-                lineage_depmap_ids_names_dict=lineage_depmap_ids_names_dict,
-            )
-
-        other_context_dependencies = get_other_context_dependencies(
-            dataset_id=dataset_id,
-            in_group=selected_context,
-            out_group_type=out_group_type,
+        context_box_plot_data = box_plot_utils.get_organized_contexts(
+            selected_subtype_code=selected_subtype_code,
+            tree_type=tree_type,
             entity_type=entity_type,
-            entity_id=entity_id,
-            fdr=fdr,
-            abs_effect_size=abs_effect_size,
-            frac_dep_in=frac_dep_in,
+            entity_full_label=entity_full_label,
+            dataset_name=dataset_name,
+            max_fdr=max_fdr,
+            min_abs_effect_size=min_abs_effect_size,
+            min_frac_dep_in=min_frac_dep_in,
         )
 
-        return {
-            "box_plot_data": box_plot_data,
-            "other_context_dependencies": other_context_dependencies,
-            "drug_dotted_line": drug_dotted_line,
-            "entity_label": entity_label,
-        }
+        if context_box_plot_data is None:
+            return None
+
+        return dataclasses.asdict(context_box_plot_data)

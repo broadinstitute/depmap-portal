@@ -7,7 +7,7 @@ interface Props {
   data: any;
   pointVisibility: boolean[];
   indexLabels: string[];
-  logOR: number[];
+  colorVariable: number[];
   handleClickPoint: (pointIndex: number) => void;
   handleSetSelectedLabels: (labels: Set<string> | null) => void;
   handleSetPlotElement: (element: any) => void;
@@ -19,7 +19,7 @@ function ContextAnalysisScatterPlot({
   data,
   pointVisibility,
   indexLabels,
-  logOR,
+  colorVariable,
   handleClickPoint,
   handleSetSelectedLabels,
   handleSetPlotElement,
@@ -52,7 +52,7 @@ function ContextAnalysisScatterPlot({
     <div>
       <ScatterPlot
         data={data}
-        logOR={logOR}
+        colorVariable={colorVariable}
         height={387}
         xKey="x"
         yKey="y"

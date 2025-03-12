@@ -7,6 +7,7 @@ from depmap.gene.models import Gene
 from depmap.entity.models import EntityAlias
 from depmap.cell_line.models import CellLine
 from depmap.context.models import Context
+from depmap.context.models_new import SubtypeNode
 from depmap.download.models import DownloadFileGlobalSearch
 from depmap.context_explorer.models import ContextExplorerGlobalSearch
 
@@ -43,8 +44,9 @@ class GlobalSearchIndex(Model):
     gene_id = Column(Integer, ForeignKey("gene.entity_id"))
     depmap_id = Column(String, ForeignKey("cell_line.depmap_id"))
     file_id = Column(Integer, ForeignKey("download_file.file_id"))
-    context_id = Column(Integer, ForeignKey("context_explorer.context_id"))
+    subtype_code = Column(Integer, ForeignKey("context_explorer.subtype_code"))
 
+    # TODO: Remove when context_explorer goes public
     context_name = Column(String, ForeignKey("context.name"))
 
     compound = relationship(
@@ -55,6 +57,8 @@ class GlobalSearchIndex(Model):
     cell_line = relationship(
         "CellLine", foreign_keys="GlobalSearchIndex.depmap_id", uselist=False
     )
+
+    # TODO: Remove when context_explorer goes public
     context = relationship(
         "Context", foreign_keys="GlobalSearchIndex.context_name", uselist=False
     )
@@ -67,7 +71,7 @@ class GlobalSearchIndex(Model):
 
     context_explorer = relationship(
         "ContextExplorerGlobalSearch",
-        foreign_keys="GlobalSearchIndex.context_id",
+        foreign_keys="GlobalSearchIndex.subtype_code",
         uselist=False,
     )
 
@@ -212,6 +216,7 @@ class CellLineAliasSearchIndex(_CellLine, GlobalSearchIndex):
         )
 
 
+# TODO: Remove when context_explorer goes public
 class ContextSearchIndex(GlobalSearchIndex):
     __mapper_args__ = {"polymorphic_identity": "context"}
 
@@ -229,7 +234,8 @@ class ContextSearchIndex(GlobalSearchIndex):
 
 class _ContextExp:
     def get_label(self):
-        return Context.get_display_name(self.context_explorer.lineage_name)
+        node = SubtypeNode.get_by_code(self.context_explorer.subtype_code)
+        return f"{node.node_name} ({node.subtype_code})"
 
     def get_description(self):
         return "Find cell lines which are members of {} context".format(
@@ -239,8 +245,7 @@ class _ContextExp:
     def get_url(self):
         return url_for(
             "context_explorer.view_context_explorer",
-            lineage=self.context_explorer.lineage_name,
-            primary_disease=self.context_explorer.primary_disease_name,
+            context=self.context_explorer.subtype_code,
         )
 
 

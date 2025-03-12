@@ -6,6 +6,7 @@ import {
   ContextAnalysisTableRow,
   ContextAnalysisTableType,
 } from "src/contextExplorer/models/types";
+import { getSelectivityValLabel } from "src/contextExplorer/utils";
 
 interface ContextAnalysisTableProps {
   data: ContextAnalysisTableType | null;
@@ -45,16 +46,27 @@ function ContextAnalysisTable(props: ContextAnalysisTableProps) {
     if (data) {
       for (let index = 0; index < data?.entity.length; index++) {
         if (pointVisibility[index]) {
-          iData.push({
-            entity: data.entity[index],
-            tTestQVal: data.t_qval[index],
-            inContextMean: data.mean_in[index],
-            outGroupMean: data.mean_out[index],
-            effectSize: data.effect_size[index],
-            fractionInContextLinesDependent: data.frac_dep_in[index],
-            fractionOutGroupLinesDependent: data.frac_dep_out[index],
-            or: data.OR[index],
-          });
+          if (entityType === "gene") {
+            iData.push({
+              entity: data.entity[index],
+              tTestQVal: data.t_qval[index],
+              inContextMean: data.mean_in[index],
+              outGroupMean: data.mean_out[index],
+              effectSize: data.effect_size[index],
+              fractionInContextLinesDependent: data.frac_dep_in[index],
+              fractionOutGroupLinesDependent: data.frac_dep_out[index],
+              selectivityVal: data.selectivity_val[index],
+            });
+          } else {
+            iData.push({
+              entity: data.entity[index],
+              tTestQVal: data.t_qval[index],
+              inContextMean: data.mean_in[index],
+              outGroupMean: data.mean_out[index],
+              effectSize: data.effect_size[index],
+              selectivityVal: data.selectivity_val[index],
+            });
+          }
 
           entityLabelMap[data.entity[index]] = data.label[index];
         }
@@ -76,7 +88,9 @@ function ContextAnalysisTable(props: ContextAnalysisTableProps) {
       );
     };
 
-    const initialCols = [
+    const selectivityValLabel = getSelectivityValLabel(entityType);
+
+    let initialCols = [
       {
         accessor: "entity",
         Header: entityType === "gene" ? "Gene" : "Drug",
@@ -103,6 +117,13 @@ function ContextAnalysisTable(props: ContextAnalysisTableProps) {
         ),
       },
       {
+        accessor: "selectivityVal",
+        id: "selectivityVal",
+        Header: selectivityValLabel,
+        maxWidth: 90,
+        minWidth: 90,
+      },
+      {
         accessor: "tTestQVal",
         id: "tTestQVal",
         Header: "T-test q-value",
@@ -114,14 +135,6 @@ function ContextAnalysisTable(props: ContextAnalysisTableProps) {
         accessor: "effectSize",
         id: "effectSize",
         Header: "Effect Size",
-        maxWidth: 90,
-        minWidth: 90,
-        disableFilters: true,
-      },
-      {
-        accessor: "or",
-        id: "or",
-        Header: "FET Odds Ratio",
         maxWidth: 90,
         minWidth: 90,
         disableFilters: true,
@@ -148,29 +161,37 @@ function ContextAnalysisTable(props: ContextAnalysisTableProps) {
         minWidth: 90,
         disableFilters: true,
       },
-      {
-        accessor: "fractionInContextLinesDependent",
-        id: "fractionInContextLinesDependent",
-        Header:
-          entityType === "gene"
-            ? "% of in-context lines dependent"
-            : "% of in-context lines sensitive",
-        maxWidth: 90,
-        minWidth: 90,
-        disableFilters: true,
-      },
-      {
-        accessor: "fractionOutGroupLinesDependent",
-        id: "fractionOutGroupLinesDependent",
-        Header:
-          entityType === "gene"
-            ? "% of out-group lines dependent"
-            : "% of out-group lines sensitive",
-        maxWidth: 90,
-        minWidth: 90,
-        disableFilters: true,
-      },
     ];
+
+    if (entityType === "gene") {
+      const geneOnlyColumns = [
+        {
+          accessor: "fractionInContextLinesDependent",
+          id: "fractionInContextLinesDependent",
+          Header:
+            entityType === "gene"
+              ? "% of in-context lines dependent"
+              : "% of in-context lines sensitive",
+          maxWidth: 90,
+          minWidth: 90,
+
+          disableFilters: true,
+        },
+        {
+          accessor: "fractionOutGroupLinesDependent",
+          id: "fractionOutGroupLinesDependent",
+          Header:
+            entityType === "gene"
+              ? "% of out-group lines dependent"
+              : "% of out-group lines sensitive",
+          maxWidth: 90,
+          minWidth: 90,
+          disableFilters: true,
+        },
+      ];
+
+      initialCols = [...initialCols, ...geneOnlyColumns];
+    }
     setColumns(initialCols);
   }, [data, pointVisibility, entityUrlRoot, entityType]);
 

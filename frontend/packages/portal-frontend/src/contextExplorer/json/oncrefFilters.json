@@ -9,30 +9,20 @@
   {
     "kind": "numberInput",
     "key": "t_qval",
-    "label": " Max. T-test q-value",
+    "label": "Max. FDR",
     "minOrMax": "max",
     "step": 0.01,
-    "value": 0.5,
+    "value": 0.05,
     "minBound": 0,
     "maxBound": 1
   },
   {
     "kind": "numberInput",
     "key": "abs_effect_size",
-    "label": "Min. Abs(effect size)",
+    "label": "Min. absolute effect size",
     "minOrMax": "min",
     "step": 0.01,
     "value": 0.1,
     "minBound": 0
-  },
-  {
-    "kind": "numberInput",
-    "key": "frac_dep_in",
-    "label": "Min. % of in-context lines dependent",
-    "minOrMax": "min",
-    "step": 0.01,
-    "value": 0.1,
-    "minBound": 0,
-    "maxBound": 1
   }
 ]

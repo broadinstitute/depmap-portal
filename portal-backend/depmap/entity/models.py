@@ -11,6 +11,7 @@ entity_type_db_enum = db.Enum(
     "transcription_start_site",
     "compound_experiment",
     "context",
+    "subtype_context",
     "compound_dose",
     "compound_dose_replicate",
     "protein",
