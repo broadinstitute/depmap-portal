@@ -98,7 +98,7 @@ if [ "$START_WITH" != "" ]; then
     # clean out old invocation
     sudo chown -R ubuntu pipeline
     rm -rf pipeline/state
-    bash -c "source ${PIPELINE_RUNNER_CREDS_DIR}/broad-paquitas && gsutil cp $START_WITH pipeline/downloaded-export.conseq"
+    GOOGLE_APPLICATION_CREDENTIALS="${PIPELINE_RUNNER_CREDS_DIR}/depmap-pipeline-runner.json" gsutil cp "$START_WITH" pipeline/downloaded-export.conseq
     run_via_container "conseq run downloaded-export.conseq"
     # forget all the executions of "publish" rules because the publish location has changed
     run_via_container "conseq forget --regex 'publish.*'"
