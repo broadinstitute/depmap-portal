@@ -173,15 +173,13 @@ def test_context_search_index_context_explorer_enabled(populated_db):
     assert isinstance(obj[0], ContextExplorerSearchIndex)
 
     expected = {
-        "label": "Melanoma in Skin",
-        "description": "Find cell lines which are members of Skin context",
-        "type": "context_explorer",
-        "value": "context_explorer:Melanoma in Skin:Find cell lines which are members of Skin context",
-        "url": "/context_explorer/?lineage=skin&primary_disease=melanoma",
+        "label": "ES",
+        "description": "Find cell lines which are members of ES context",
+        "type": "subtype_context",
+        "value": "subtype_context:ES:Find cell lines which are members of ES context",
+        "url": "/context_explorer/?context=ES",
     }
     assert (
-        GlobalSearchIndex.query.filter_by(label="Melanoma in Skin")
-        .one()
-        .format_for_dropdown()
+        GlobalSearchIndex.query.filter_by(label="ES").one().format_for_dropdown()
         == expected
     )

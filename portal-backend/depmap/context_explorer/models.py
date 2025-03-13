@@ -373,11 +373,3 @@ class ContextAnalysis(Model):
             )
 
             return pd.DataFrame(analyses)
-
-
-class ContextExplorerGlobalSearch(Model):
-    __tablename__ = "context_explorer"
-    subtype_code = Column(String, primary_key=True)
-
-    def __init__(self, subtype_code):
-        self.subtype_code = subtype_code
