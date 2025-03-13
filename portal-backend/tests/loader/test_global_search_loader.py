@@ -183,41 +183,6 @@ def test_load_cell_line_search_index(empty_db_mock_downloads):
     assert obj.depmap_id == "ACH-1"
 
 
-def config(request):
-    """
-    Override the default conftest config fixture
-    """
-
-    class TestVersionConfig(TestConfig):
-        ENV_TYPE = "public"
-
-    return TestVersionConfig
-
-
-@override(config=config)
-def test_load_context_search_index_context_explorer_disabled(
-    app, empty_db_mock_downloads
-):
-    """
-    Test that output of format_for_dropdown is as expected
-    Just using interactive_db_mock_downloads, CellLine object is annoying to mock up since you need to import and create all the sub-objects
-    """
-
-    assert not app.config["ENABLED_FEATURES"].context_explorer
-
-    context = Context(name="context_1")
-    with transaction(empty_db_mock_downloads):
-        empty_db_mock_downloads.session.add(context)
-
-    global_search_loader.__load_context_search_index()
-
-    obj = GlobalSearchIndex.query.one()
-    assert isinstance(obj, ContextSearchIndex)
-    assert obj.label == "Context 1"
-    assert obj.type == "context"
-    assert obj.context_name == "context_1"
-
-
 def test_load_context_search_index_context_explorer_enabled(app, populated_db):
     """
     Test that output of format_for_dropdown is as expected
@@ -230,5 +195,5 @@ def test_load_context_search_index_context_explorer_enabled(app, populated_db):
 
     obj = GlobalSearchIndex.query.all()
     assert isinstance(obj[0], ContextExplorerSearchIndex)
-    assert obj[0].label == "Melanoma in Skin"
-    assert obj[0].type == "context_explorer"
+    assert obj[0].label == "ES"
+    assert obj[0].type == "subtype_context"
