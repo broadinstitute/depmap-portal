@@ -112,55 +112,6 @@ def test_cell_line_search_index(empty_db_mock_downloads):
     )
 
 
-def config(request):
-    """
-    Override the default conftest config fixture
-    """
-
-    class TestVersionConfig(TestConfig):
-        ENV_TYPE = "public"
-
-    return TestVersionConfig
-
-
-@override(config=config)
-def test_context_search_index_context_explorer_disabled(empty_db_mock_downloads):
-    """
-    Test that output of format_for_dropdown is as expected
-    """
-    primary_disease = cell_line_models.PrimaryDisease(name="a")
-    cell_line_obj = cell_line_models.CellLine(
-        cell_line_name="cell_line_1",
-        depmap_id="depmap_id_1",
-        cell_line_display_name="1",
-        primary_disease=primary_disease,
-        disease_subtype=cell_line_models.DiseaseSubtype(
-            name="a", primary_disease=primary_disease
-        ),
-        tumor_type=cell_line_models.TumorType(name="a"),
-        culture_medium=cell_line_models.CultureMedium(name="a"),
-        conditions=cell_line_models.Conditions(name="a"),
-        context=[Context(name="context_1")],
-    )
-    with transaction(empty_db_mock_downloads):
-        empty_db_mock_downloads.session.add(cell_line_obj)
-
-    global_search_loader.__load_context_search_index()
-
-    expected = {
-        "label": "Context 1",
-        "description": "Find cell lines which are members of Context 1 context",
-        "type": "context",
-        "value": "context:Context 1:Find cell lines which are members of Context 1 context",
-        # it is ok for value to have spaces, etc. the use is in global_search/dropdown.html, where it is attached to the dropdown but only used as a key to get associated url
-        "url": "/context/context_1",
-    }
-    assert (
-        GlobalSearchIndex.query.filter_by(label="Context 1").one().format_for_dropdown()
-        == expected
-    )
-
-
 def test_context_search_index_context_explorer_enabled(populated_db):
     """
     Test that output of format_for_dropdown is as expected
