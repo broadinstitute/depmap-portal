@@ -135,6 +135,7 @@ def _validate_dimension_type_metadata_file(
 
 
 def _parse_list_strings(val):
+    example_list_string = '["x", "y"]'
     try:
         deserialized_str_list = json.loads(val)
     except Exception as e:
@@ -147,7 +148,6 @@ def _parse_list_strings(val):
             f"Value: {val} must be able to be deserialized into a list. Please make sure values for columns of type list_strings are a stringified list (ex: {example_list_string})"
         )
 
-    example_list_string = '["x", "y"]'
     if not all(isinstance(x, str) for x in deserialized_str_list):
         raise FileValidationError(
             f"All values in {deserialized_str_list} must be a string (ex: {example_list_string})"
