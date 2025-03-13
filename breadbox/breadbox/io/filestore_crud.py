@@ -1,5 +1,6 @@
 import os
 import shutil
+import json
 from typing import Any, List, Optional, Union
 
 import pandas as pd
@@ -102,6 +103,9 @@ def get_df_by_value_type(
         # Convert numerical values back to origincal categorical value
         df = df.astype(int)
         df = df.applymap(lambda x: dataset_allowed_values[x])
+    elif value_type == ValueType.list_strings:
+        # len of byte encoded empty string should be 0
+        df = df.applymap(lambda x: json.loads(x) if len(x) != 0 else None)
     return df
 
 

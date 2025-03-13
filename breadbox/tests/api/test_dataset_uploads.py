@@ -503,8 +503,8 @@ class TestPost:
                 '["V600E","P9095"]',
                 pd.NA,
                 None,
-                '["N405R"]',
                 '["G586T","P858R","Q725Z","J356W"]',
+                np.nan,
             ]
         )
         file_ids, expected_md5 = upload_and_get_file_ids(client, file)
@@ -541,6 +541,24 @@ class TestPost:
         ]["dataset"]
         assert list_strings_matrix_dataset_result is not None
         assert list_strings_matrix_dataset_result.get("given_id") == ls_dataset_given_id
+
+        # Read out list of string dataset values
+        matrix_subset = client.post(
+            f"/datasets/matrix/{ls_dataset_given_id}",
+            json={
+                "features": ["A", "C"],
+                "feature_identifier": "id",
+                "samples": ["ACH-1", "ACH-2"],
+                "sample_identifier": "id",
+            },
+            headers=headers,
+        )
+        assert_status_ok(matrix_subset)
+        matrix_subset_result = matrix_subset.json()
+        assert matrix_subset_result == {
+            "A": {"ACH-1": ["V600E", "P9095", "N405R"], "ACH-2": None},
+            "C": {"ACH-1": None, "ACH-2": None},
+        }
 
     def test_add_matrix_dataset_with_dim_type_annotations(
         self,
