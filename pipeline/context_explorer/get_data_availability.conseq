@@ -21,6 +21,12 @@ rule get_data_availability:
     
         artifacts = {{ inputs.artifacts }}
 
+        transformed = {
+            # handle the ones that couldn't uniquely be identified by type specially
+            "script": {{ inputs.script }}            
+        }
+
+
         by_type = { artifact['type'] : artifact for artifact in artifacts }
         assert len(by_type) == len(artifacts), "Some type was duplicated?"
 
