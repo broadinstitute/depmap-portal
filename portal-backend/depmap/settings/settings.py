@@ -105,6 +105,10 @@ class FeatureFlags:
 
     @property
     def context_explorer(self):
+        return True
+
+    @property
+    def context_explorer_prerelease_datasets(self):
         return self.is_prerelease_env()
 
     @property

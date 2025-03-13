@@ -90,6 +90,7 @@ function GeneDepLegendLabels({
 }
 
 function ScatterPlotPlotLegend({
+  legendTitle,
   colorMap,
   continuousBins,
   legendKeysWithNoData,
@@ -99,7 +100,7 @@ function ScatterPlotPlotLegend({
     <div className={styles.legendContainer}>
       <div className={disabled ? styles.legendDisabled : styles.legend}>
         <div className={styles.colorDimensionLabels}>
-          <p>log(OR)</p>
+          <p>{legendTitle}</p>
         </div>
         <GeneDepLegendLabels
           colorMap={colorMap}

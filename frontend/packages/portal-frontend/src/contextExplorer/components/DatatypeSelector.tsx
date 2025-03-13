@@ -2,7 +2,7 @@ import React from "react";
 import { Checkbox } from "react-bootstrap";
 import styles from "src/contextExplorer/styles/ContextExplorer.scss";
 import InfoIcon from "src/common/components/InfoIcon";
-import { DATATYPE_TOOLTIP_TEXT } from "../utils";
+import { CONTEXT_EXPL_BAR_THICKNESS, DATATYPE_TOOLTIP_TEXT } from "../utils";
 
 interface Props {
   datatypes: string[];
@@ -30,7 +30,12 @@ const DatatypeSelector = (props: Props) => {
             {datatype}
             <InfoIcon
               target={customInfoImg}
-              popoverContent={<p>{DATATYPE_TOOLTIP_TEXT.get(datatype)}</p>}
+              popoverContent={
+                <p>
+                  {DATATYPE_TOOLTIP_TEXT.get(datatype) ||
+                    "A disease subtype. Use the 'Refine Context' option, located within the left sidebar, to investigate this subtype in more detail."}
+                </p>
+              }
               popoverId={`datatype-popover`}
               trigger={["hover", "focus"]}
             />
@@ -41,8 +46,20 @@ const DatatypeSelector = (props: Props) => {
   });
   return (
     <div className={styles.datatypeSelector}>
-      <h5>DATASETS</h5>
-      {display}
+      <div
+        style={{
+          display: "grid",
+          alignItems: "center",
+          gridTemplateRows: `repeat(${
+            datatypes.length + 1
+          }, ${CONTEXT_EXPL_BAR_THICKNESS}px)`,
+        }}
+      >
+        <div>
+          <h5 style={{ fontStyle: "normal" }}>DATASETS</h5>
+        </div>
+        {display}
+      </div>
     </div>
   );
 };
