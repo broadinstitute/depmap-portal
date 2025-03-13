@@ -9,8 +9,8 @@ rule get_context_analysis:
 #        gene_dependency_taiga_id=all {"type":"raw-dep-prob-matrix"},
 #        repurposing_matrix_taiga_id=all {"type": "repurposing_matrix_taiga_id"},
 #        repurposing_list_taiga_id=all {"type": "repurposing_list_taiga_id"},
-#        oncref_auc_taiga_id=all {"type":"prism_oncref_auc_matrix"}
-         repurposing_table=all {'type': 'compound-summary','dataset': "Rep_all_single_pt"}
+#        oncref_auc_taiga_id=all {"type":"prism_oncref_auc_matrix"},
+         repurposing_table=all {'type': 'compound-summary','dataset': "Rep_all_single_pt"},
          oncref_table=all {'type': 'compound-summary','dataset': "Prism_oncology_AUC"}
     outputs:
         {"type": "context_analysis", "filename": { "$filename": "context_analysis.csv"} }
