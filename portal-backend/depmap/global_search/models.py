@@ -229,7 +229,9 @@ class ContextSearchIndex(GlobalSearchIndex):
         return url_for("context.view_context", context_name=self.context.name)
 
 
-class _ContextExp:
+class ContextExplorerSearchIndex(GlobalSearchIndex):
+    __mapper_args__ = {"polymorphic_identity": "subtype_context"}
+
     def get_label(self):
         context = SubtypeContext.get_by_code(self.subtype_context.subtype_code)
         assert context is not None
@@ -245,7 +247,3 @@ class _ContextExp:
             "context_explorer.view_context_explorer",
             context=self.subtype_context.subtype_code,
         )
-
-
-class ContextExplorerSearchIndex(_ContextExp, GlobalSearchIndex):
-    __mapper_args__ = {"polymorphic_identity": "subtype_context"}
