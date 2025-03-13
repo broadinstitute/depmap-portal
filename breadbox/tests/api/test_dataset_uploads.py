@@ -499,11 +499,12 @@ class TestPost:
         # Test list of strings matrix
         file = factories.matrix_csv_data_file_with_values(
             values=[
-                "[V600E,P9095,N405R]",
-                "[V600E,P9095]",
+                '["V600E","P9095","N405R"]',
+                '["V600E","P9095"]',
+                pd.NA,
                 None,
-                "[N405R]",
-                "[G586T,P858R,Q725Z,J356W]",
+                '["N405R"]',
+                '["G586T","P858R","Q725Z","J356W"]',
             ]
         )
         file_ids, expected_md5 = upload_and_get_file_ids(client, file)
