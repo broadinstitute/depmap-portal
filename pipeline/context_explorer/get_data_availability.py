@@ -14,12 +14,22 @@ def main(
     with open(inputs, "rt") as input_json:
         taiga_ids = json.load(input_json)
 
-    model_taiga_id = get_id(taiga_ids["model_taiga_id"])
+    # If any of these are an empty list and error because of [0], that is a problem. Each
+    # of these get_id's should return a list with 1 element.
+    model_taiga_id = get_id(taiga_ids["model_taiga_id"])[0]
+    omics_profiles_taiga_id = get_id(taiga_ids["omics_profiles_taiga_id"])[0]
+    screen_sequence_map_taiga_id = get_id(taiga_ids["screen_sequence_map_taiga_id"])[0]
+    rnai_taiga_id = get_id(taiga_ids["rnai_taiga_id"])[0]
+    repurposing_matrix_taiga_id = get_id(taiga_ids["repurposing_matrix_taiga_id"])[0]
+
+    # TODO: Use the subtype_context_matrix to add models that don't appear in the above datasets to the
+    # output csv.
+    subtype_context_matrix_taiga_id = get_id(
+        taiga_ids["subtype_context_matrix_taiga_id"]
+    )[0]
+
+    # Cannot assume there is an id for oncref
     prism_oncref_auc_matrix = get_id(taiga_ids["prism_oncref_auc_matrix"])
-    omics_profiles_taiga_id = get_id(taiga_ids["omics_profiles_taiga_id"])
-    screen_sequence_map_taiga_id = get_id(taiga_ids["screen_sequence_map_taiga_id"])
-    rnai_taiga_id = get_id(taiga_ids["rnai_taiga_id"])
-    repurposing_matrix_taiga_id = get_id(taiga_ids["repurposing_matrix_taiga_id"])
 
     tc = create_taiga_client_v3()
     # Data for CRISPR, RNAi, Omics, PRISM
