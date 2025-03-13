@@ -11,7 +11,7 @@ import pandas as pd
 import numpy as np
 from depmap.database import db
 from depmap.dataset.models import DependencyDataset
-from depmap.context.models_new import SubtypeNode
+from depmap.context.models_new import SubtypeContext, SubtypeNode
 from flask import current_app
 
 
@@ -36,7 +36,7 @@ def load_context_explorer(filename):
 
 def _read_context_analyses(dr, pbar, gene_cache, cell_line_cache):
     gene_cache = LazyCache(lambda name: Gene.get_gene_from_rowname(name, must=False))
-    context_cache = LazyCache(lambda name: Context.get_by_name(name, must=False))
+    context_cache = LazyCache(lambda code: SubtypeContext.get_by_code(code, must=False))
     compound_cache = LazyCache(
         lambda xref: CompoundExperiment.get_by_xref_full_return_none_if_invalid_id(
             xref, must=False
@@ -78,19 +78,17 @@ def _read_context_analyses(dr, pbar, gene_cache, cell_line_cache):
         else:
             entity_id = compound.entity_id
 
-        # TODO: This commented out code will come back once subtypes officially
-        # replace the context matrix.
-        # context = context_cache.get(row["context_name"])
+        context = context_cache.get(row["subtype_code"])
 
-        # if context is None:
-        #     skipped_context += 1
-        #     log_data_issue(
-        #         "ContextAnalysis",
-        #         "Missing context",
-        #         identifier=row["context_name"],
-        #         id_type="context_name",
-        #     )
-        #     continue
+        if context is None:
+            skipped_context += 1
+            log_data_issue(
+                "ContextAnalysis",
+                "Missing context",
+                identifier=row["subtype_code"],
+                id_type="subtype_code",
+            )
+            continue
 
         # TODO: Is there a better way to do this??
         dependency_dataset = row["dataset"]

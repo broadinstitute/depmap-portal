@@ -21,6 +21,7 @@ import OverviewTable from "src/contextExplorer/components/OverviewTable";
 import { capitalizeFirstLetter } from "../utils";
 import ContextAnalysis from "src/contextExplorer/components/contextAnalysis/ContextAnalysis";
 import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
+import { enabledFeatures } from "@depmap/globals";
 
 interface Props {
   isLoadingInitialData: boolean;
@@ -98,9 +99,11 @@ const ContextExplorerTabs = ({
         <Tab id="geneDependency" className={styles.Tab}>
           CRISPR Gene Dependency
         </Tab>
-        <Tab id="oncref" className={styles.Tab}>
-          OncRef Sensitivity
-        </Tab>
+        {enabledFeatures.context_explorer_prerelease_datasets && (
+          <Tab id="oncref" className={styles.Tab}>
+            OncRef Sensitivity
+          </Tab>
+        )}
         <Tab id="repurposing" className={styles.Tab}>
           Repurposing Sensitivity
         </Tab>
@@ -156,19 +159,21 @@ const ContextExplorerTabs = ({
             />
           )}
         </TabPanel>
-        <TabPanel className={styles.TabPanel}>
-          {" "}
-          {!isLoadingInitialData && (
-            <ContextAnalysis
-              selectedContextNode={selectedContextNode}
-              selectedContextNameInfo={selectedContextNameInfo}
-              topContextNameInfo={topContextNameInfo}
-              treeType={treeType}
-              entityType={"compound"}
-              datasetId={ContextExplorerDatasets.Prism_oncology_AUC}
-            />
-          )}
-        </TabPanel>
+        {enabledFeatures.context_explorer_prerelease_datasets && (
+          <TabPanel className={styles.TabPanel}>
+            {" "}
+            {!isLoadingInitialData && (
+              <ContextAnalysis
+                selectedContextNode={selectedContextNode}
+                selectedContextNameInfo={selectedContextNameInfo}
+                topContextNameInfo={topContextNameInfo}
+                treeType={treeType}
+                entityType={"compound"}
+                datasetId={ContextExplorerDatasets.Prism_oncology_AUC}
+              />
+            )}
+          </TabPanel>
+        )}
         <TabPanel className={styles.TabPanel}>
           {" "}
           {!isLoadingInitialData && (
