@@ -171,6 +171,32 @@ def _validate_data_value_type(
         int_df = int_df.astype(int)
         return int_df
     elif value_type == ValueType.list_strings:
+
+        def can_parse_list_strings(val):
+            example_list_string = '["x", "y"]'
+            if not pd.isnull(val):
+                try:
+                    deserialized_str_list = json.loads(val)
+                except Exception as e:
+                    raise FileValidationError(
+                        f"Value: {val} must be able to be deserialized into a list. Please make sure values for columns of type list_strings are a stringified list (ex: {example_list_string})"
+                    ) from e
+
+                if not isinstance(deserialized_str_list, list):
+                    raise FileValidationError(
+                        f"Value: {val} must be able to be deserialized into a list. Please make sure values for columns of type list_strings are a stringified list (ex: {example_list_string})"
+                    )
+
+                if not all(isinstance(x, str) for x in deserialized_str_list):
+                    raise FileValidationError(
+                        f"All values in {deserialized_str_list} must be a string (ex: {example_list_string})"
+                    )
+                return val
+            else:
+                # hdf5 will stringify 'None' or '<NA>'. Use empty string to represent NAs instead
+                return ""
+
+        df = df.applymap(can_parse_list_strings)
         return df.astype(str)
     else:
         if not all([is_numeric_dtype(df[col].dtypes) for col in df.columns]):
@@ -192,7 +218,7 @@ def _read_parquet(file, value_type: ValueType) -> pd.DataFrame:
     # parquet files have the types encoded in the file, so we'll convert after the fact
     if value_type == ValueType.continuous:
         dtype = "Float64"
-    elif value_type == ValueType.categorical:
+    elif value_type == ValueType.categorical or value_type == ValueType.list_strings:
         dtype = "string"
     else:
         raise ValueError(f"Invalid value type: {value_type}")
