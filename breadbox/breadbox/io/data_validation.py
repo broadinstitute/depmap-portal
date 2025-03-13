@@ -134,6 +134,26 @@ def _validate_dimension_type_metadata_file(
     return df
 
 
+def _parse_list_strings(val):
+    try:
+        deserialized_str_list = json.loads(val)
+    except Exception as e:
+        raise FileValidationError(
+            f"Value: {val} must be able to be deserialized into a list. Please make sure values for columns of type list_strings are a stringified list (ex: {example_list_string})"
+        ) from e
+
+    if not isinstance(deserialized_str_list, list):
+        raise FileValidationError(
+            f"Value: {val} must be able to be deserialized into a list. Please make sure values for columns of type list_strings are a stringified list (ex: {example_list_string})"
+        )
+
+    example_list_string = '["x", "y"]'
+    if not all(isinstance(x, str) for x in deserialized_str_list):
+        raise FileValidationError(
+            f"All values in {deserialized_str_list} must be a string (ex: {example_list_string})"
+        )
+
+
 def _validate_data_value_type(
     df: pd.DataFrame, value_type: ValueType, allowed_values: Optional[List]
 ):
@@ -172,31 +192,15 @@ def _validate_data_value_type(
         return int_df
     elif value_type == ValueType.list_strings:
 
-        def can_parse_list_strings(val):
-            example_list_string = '["x", "y"]'
+        def validate_list_strings(val):
             if not pd.isnull(val):
-                try:
-                    deserialized_str_list = json.loads(val)
-                except Exception as e:
-                    raise FileValidationError(
-                        f"Value: {val} must be able to be deserialized into a list. Please make sure values for columns of type list_strings are a stringified list (ex: {example_list_string})"
-                    ) from e
-
-                if not isinstance(deserialized_str_list, list):
-                    raise FileValidationError(
-                        f"Value: {val} must be able to be deserialized into a list. Please make sure values for columns of type list_strings are a stringified list (ex: {example_list_string})"
-                    )
-
-                if not all(isinstance(x, str) for x in deserialized_str_list):
-                    raise FileValidationError(
-                        f"All values in {deserialized_str_list} must be a string (ex: {example_list_string})"
-                    )
+                _parse_list_strings(val)
                 return val
             else:
                 # hdf5 will stringify 'None' or '<NA>'. Use empty string to represent NAs instead
                 return ""
 
-        df = df.applymap(can_parse_list_strings)
+        df = df.applymap(validate_list_strings)
         return df.astype(str)
     else:
         if not all([is_numeric_dtype(df[col].dtypes) for col in df.columns]):
@@ -603,27 +607,9 @@ def _validate_tabular_df_schema(
     dimension_type_identifier: str,
 ):
     def can_parse_list_strings(val):
-        example_list_string = '["x", "y"]'
-        if val is not None and not pd.isnull(val):
-            try:
-                deserialized_str_list = json.loads(val)
-            except Exception as e:
-                raise FileValidationError(
-                    f"Value: {val} must be able to be deserialized into a list. Please make sure values for columns of type list_strings are a stringified list (ex: {example_list_string})"
-                ) from e
-
-            if not isinstance(deserialized_str_list, list):
-                raise FileValidationError(
-                    f"Value: {val} must be able to be deserialized into a list. Please make sure values for columns of type list_strings are a stringified list (ex: {example_list_string})"
-                )
-
-            if not all(isinstance(x, str) for x in deserialized_str_list):
-                raise FileValidationError(
-                    f"All values in {deserialized_str_list} must be a string (ex: {example_list_string})"
-                )
-            return True
-        else:
-            return True
+        if not pd.isnull(val):
+            _parse_list_strings(val)
+        return True
 
     def get_checks_for_col(annotation_type: AnnotationType):
         checks = []
