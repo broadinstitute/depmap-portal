@@ -1,4 +1,3 @@
-from depmap.context_explorer.models import ContextExplorerGlobalSearch
 from flask import current_app
 from depmap.download.models import DownloadFileGlobalSearch
 from depmap.extensions import db
@@ -128,17 +127,17 @@ def load_file_search_index():
 
 
 from depmap.context.models import Context
-from depmap.context.models_new import SubtypeContext, SubtypeNode
+from depmap.context.models_new import SubtypeContext
 
 
 def __load_context_search_index():
     if current_app.config["ENABLED_FEATURES"].context_explorer:
         # Use SubtypeContext because SubtypeNode might have codes that don't have depmap models, and
         # therefore should not be searchable.
-        for context in SubtypeNode.query.all():
+        for context in SubtypeContext.query.all():
             db.session.add(
                 ContextExplorerSearchIndex(
-                    label=context.subtype_code, subtype_code=context.subtype_code
+                    label=context.subtype_code, subtype_context=context
                 )
             )
     else:
