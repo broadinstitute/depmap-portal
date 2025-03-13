@@ -3,13 +3,11 @@ from depmap.download.models import DownloadFileGlobalSearch
 from depmap.extensions import db
 from depmap.global_search.models import (
     ContextExplorerSearchIndex,
-    ContextSearchIndex,
     FileSearchIndex,
 )
 from depmap.settings.download_settings import get_download_list
 from depmap.compound.models import Compound
 import re
-import pandas as pd
 
 
 def load_global_search_index():
@@ -126,7 +124,6 @@ def load_file_search_index():
             )
 
 
-from depmap.context.models import Context
 from depmap.context.models_new import SubtypeContext
 
 
@@ -138,12 +135,5 @@ def __load_context_search_index():
             db.session.add(
                 ContextExplorerSearchIndex(
                     label=context.subtype_code, subtype_context=context
-                )
-            )
-    else:
-        for context in Context.query.all():
-            db.session.add(
-                ContextSearchIndex(
-                    label=context.get_display_name(context.name), context=context
                 )
             )
