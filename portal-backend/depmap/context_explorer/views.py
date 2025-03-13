@@ -1,4 +1,4 @@
-from flask import Blueprint, redirect, render_template, url_for, current_app
+from flask import Blueprint, render_template
 
 blueprint = Blueprint(
     "context_explorer",
@@ -10,7 +10,4 @@ blueprint = Blueprint(
 
 @blueprint.route("/")
 def view_context_explorer():
-    if not current_app.config["ENABLED_FEATURES"].context_explorer:
-        return redirect(url_for("context.view_context", context_name="Melanoma"))
-    else:
-        return render_template("context_explorer/index.html")
+    return render_template("context_explorer/index.html")

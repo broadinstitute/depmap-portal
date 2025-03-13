@@ -157,6 +157,8 @@ class DepmapModel(Model):
         else:
             return q.one_or_none()
 
+    # Used for the Data Page lineage availability graph that pops up when the user clicks on the cell line
+    # count to the right of the heatmap.
     @staticmethod
     def get_lineage_primary_disease_counts(model_ids: List[str]) -> Dict[str, dict]:
         q = (
