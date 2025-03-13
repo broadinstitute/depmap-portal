@@ -10,7 +10,7 @@ from collections import Counter
 
 import pandas as pd
 import sqlalchemy
-from sqlalchemy import and_, or_
+from sqlalchemy import and_, or_, UniqueConstraint
 
 from depmap.database import Column, ForeignKey, Integer, Model, String, db, relationship
 
@@ -26,7 +26,7 @@ depmap_model_context_association = Table(
         nullable=False,
         index=True,
     ),
-    db.UniqueConstraint("model_id", "subtype_code", name="uc_depmap_id_context_name"),
+    UniqueConstraint("model_id", "subtype_code", name="uc_depmap_id_context_name"),
 )
 
 

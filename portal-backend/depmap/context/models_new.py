@@ -1,8 +1,7 @@
 from operator import and_
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Type
 from depmap.database import (
     Column,
-    Float,
     ForeignKey,
     Integer,
     Model,
@@ -10,11 +9,12 @@ from depmap.database import (
     db,
     relationship,
 )
+
 import enum
 import sqlalchemy
+from typing import Any, TypeVar, Type
 from sqlalchemy import and_, or_
 from depmap.entity.models import Entity
-import pandas as pd
 from depmap.cell_line.models_new import DepmapModel, depmap_model_context_association
 
 
@@ -30,9 +30,7 @@ class SubtypeNode(Model):
     oncotree_code = Column(String)
     depmap_model_type = Column(String)
     molecular_subtype_code = Column(String)
-    tree_type: "Column[TreeType]" = Column(
-        db.Enum(TreeType, name="TreeType"), nullable=False
-    )
+    tree_type = Column(String, nullable=False)
     node_name = Column(String, nullable=False)
     node_level = Column(Integer, nullable=False)
     level_0 = Column(String, nullable=False)
@@ -141,11 +139,11 @@ class SubtypeNode(Model):
         return query
 
     @staticmethod
-    def get_all_by_models_query(tree_type: TreeType):
+    def get_all_by_models_query(tree_type: str):
         query = (
             db.session.query(SubtypeContext)
             .join(SubtypeNode, SubtypeNode.subtype_code == SubtypeContext.subtype_code)
-            .filter(SubtypeNode.tree_type == TreeType(tree_type))
+            .filter(SubtypeNode.tree_type == tree_type)
             .join(DepmapModel, SubtypeContext.depmap_model)
             .with_entities(
                 DepmapModel.model_id,
@@ -293,7 +291,7 @@ class SubtypeContext(Model):
         )
 
         if len(contexts) == 0:
-            return pd.Series()
+            return {}
 
         model_ids = [
             cell_line.model_id
@@ -304,7 +302,7 @@ class SubtypeContext(Model):
             model_ids=list(set(model_ids))
         )
 
-        return display_name_series
+        return display_name_series.to_dict()
 
     @staticmethod
     def get_model_ids_for_other_heme_contexts(
@@ -331,7 +329,7 @@ class SubtypeContext(Model):
         )
 
         if len(contexts) == 0:
-            return pd.Series()
+            return {}
 
         model_ids = [
             cell_line.model_id
@@ -342,7 +340,7 @@ class SubtypeContext(Model):
             model_ids=list(set(model_ids))
         )
 
-        return display_name_series
+        return display_name_series.to_dict()
 
     @staticmethod
     def get_model_ids_by_node_level(self, level) -> List["str"]:

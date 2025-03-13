@@ -214,7 +214,7 @@ def test_get_subtype_tree_query(empty_db_mock_downloads):
         bone_child_level2_num2=bone_child_level2_num2,
     )
     query = SubtypeNode.get_subtype_tree_by_models_query(
-        tree_type=TreeType.Lineage, level_0_subtype_code=bone_code
+        tree_type=TreeType.Lineage.value, level_0_subtype_code=bone_code
     )
     df = pd.read_sql(query.statement, query.session.connection())
     tree_nodes = df.to_dict("records")
@@ -283,7 +283,7 @@ def test_get_subtype_tree_query_molecular_subtypes(empty_db_mock_downloads):
     child_code = "EGFRp.L858R"
     parent_node = SubtypeNodeFactory(
         subtype_code=parent_code,
-        tree_type=TreeType.MolecularSubtype,
+        tree_type=TreeType.MolecularSubtype.value,
         node_level=0,
         node_name="EGFR NODE",
         level_0=parent_code,
@@ -295,7 +295,7 @@ def test_get_subtype_tree_query_molecular_subtypes(empty_db_mock_downloads):
     )
     child_node = SubtypeNodeFactory(
         subtype_code=child_code,
-        tree_type=TreeType.MolecularSubtype,
+        tree_type=TreeType.MolecularSubtype.value,
         node_level=1,
         node_name="EGFRp.L858R NODE",
         level_0=parent_code,
@@ -320,7 +320,7 @@ def test_get_subtype_tree_query_molecular_subtypes(empty_db_mock_downloads):
     empty_db_mock_downloads.session.flush()
 
     query = SubtypeNode.get_subtype_tree_by_models_query(
-        tree_type=TreeType.MolecularSubtype, level_0_subtype_code=parent_code
+        tree_type=TreeType.MolecularSubtype.value, level_0_subtype_code=parent_code
     )
     df = pd.read_sql(query.statement, query.session.connection())
     tree_nodes = df.to_dict("records")
@@ -371,7 +371,7 @@ def test_get_unique_level_0s(empty_db_mock_downloads):
     # Create Lineage Nodes
     lineage_node_1 = SubtypeNodeFactory(
         subtype_code="BONE",
-        tree_type=TreeType.Lineage,
+        tree_type=TreeType.Lineage.value,
         node_level=0,
         level_0="BONE",
         level_1=None,
@@ -387,7 +387,7 @@ def test_get_unique_level_0s(empty_db_mock_downloads):
 
     child1_level1_of_lineage_node_1 = SubtypeNodeFactory(
         subtype_code="ES",
-        tree_type=TreeType.Lineage,
+        tree_type=TreeType.Lineage.value,
         node_level=1,
         level_0="BONE",
         level_1="ES",
@@ -403,7 +403,7 @@ def test_get_unique_level_0s(empty_db_mock_downloads):
 
     child1_level2_of_child1_level1 = SubtypeNodeFactory(
         subtype_code="ES_LEVEL2",
-        tree_type=TreeType.Lineage,
+        tree_type=TreeType.Lineage.value,
         node_level=2,
         level_0="BONE",
         level_1="ES",
@@ -419,7 +419,7 @@ def test_get_unique_level_0s(empty_db_mock_downloads):
 
     child1_level3_of_child1_level1 = SubtypeNodeFactory(
         subtype_code="ES_LEVEL3",
-        tree_type=TreeType.Lineage,
+        tree_type=TreeType.Lineage.value,
         node_level=3,
         level_0="BONE",
         level_1="ES",
@@ -435,7 +435,7 @@ def test_get_unique_level_0s(empty_db_mock_downloads):
 
     child1_level4_of_child1_level1 = SubtypeNodeFactory(
         subtype_code="ES_LEVEL4",
-        tree_type=TreeType.Lineage,
+        tree_type=TreeType.Lineage.value,
         node_level=4,
         level_0="BONE",
         level_1="ES",
@@ -451,7 +451,7 @@ def test_get_unique_level_0s(empty_db_mock_downloads):
 
     child1_level5_of_child1_level1 = SubtypeNodeFactory(
         subtype_code="ES_LEVEL5",
-        tree_type=TreeType.Lineage,
+        tree_type=TreeType.Lineage.value,
         node_level=5,
         level_0="BONE",
         level_1="ES",
@@ -467,7 +467,7 @@ def test_get_unique_level_0s(empty_db_mock_downloads):
 
     child2_level1_of_lineage_node_1 = SubtypeNodeFactory(
         subtype_code="OST",
-        tree_type=TreeType.Lineage,
+        tree_type=TreeType.Lineage.value,
         node_level=1,
         level_0="BONE",
         level_1="OST",
@@ -483,7 +483,7 @@ def test_get_unique_level_0s(empty_db_mock_downloads):
 
     lineage_node_2 = SubtypeNodeFactory(
         subtype_code="LUNG",
-        tree_type=TreeType.Lineage,
+        tree_type=TreeType.Lineage.value,
         node_level=0,
         level_0="LUNG",
         level_1=None,
@@ -499,7 +499,7 @@ def test_get_unique_level_0s(empty_db_mock_downloads):
 
     lineage_node_2_level_1 = SubtypeNodeFactory(
         subtype_code="LUNG_LEVEl1",
-        tree_type=TreeType.Lineage,
+        tree_type=TreeType.Lineage.value,
         node_level=1,
         level_0="LUNG",
         level_1="LUNG_LEVEl1",
@@ -519,7 +519,7 @@ def test_get_unique_level_0s(empty_db_mock_downloads):
     child_code = "EGFRp.L858R"
     parent_node = SubtypeNodeFactory(
         subtype_code=parent_code,
-        tree_type=TreeType.MolecularSubtype,
+        tree_type=TreeType.MolecularSubtype.value,
         node_level=0,
         level_0=parent_code,
         level_1=None,
@@ -530,7 +530,7 @@ def test_get_unique_level_0s(empty_db_mock_downloads):
     )
     child_node = SubtypeNodeFactory(
         subtype_code=child_code,
-        tree_type=TreeType.MolecularSubtype,
+        tree_type=TreeType.MolecularSubtype.value,
         node_level=1,
         level_0=parent_code,
         level_1=child_code,
@@ -554,6 +554,6 @@ def test_get_unique_level_0s(empty_db_mock_downloads):
     empty_db_mock_downloads.session.flush()
     expected_unique_level_0s = ["BONE", "LUNG"]
 
-    unique_level_0s = SubtypeNode.get_by_tree_type_and_level(TreeType.Lineage, 0)
+    unique_level_0s = SubtypeNode.get_by_tree_type_and_level(TreeType.Lineage.value, 0)
     unique_level_0s_codes = [code.subtype_code for code in unique_level_0s]
     assert unique_level_0s_codes == expected_unique_level_0s

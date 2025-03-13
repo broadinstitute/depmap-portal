@@ -1,4 +1,5 @@
 from typing import Literal
+from depmap.partials.matrix.models import CellLineSeries
 import pandas as pd
 
 from depmap import data_access
@@ -17,10 +18,10 @@ def get_full_row_of_values_and_depmap_ids(dataset_name: str, label: str) -> pd.S
         dataset_id=dataset_name, feature=label
     )
 
-    if full_row_of_values.empty:
+    if len(full_row_of_values.cell_lines) == 0:
         return pd.Series()
 
-    return full_row_of_values
+    return pd.Series(data=full_row_of_values.values, index=full_row_of_values.index)
 
 
 def get_path_to_node(selected_code: str) -> ContextPathInfo:
@@ -37,8 +38,10 @@ def get_path_to_node(selected_code: str) -> ContextPathInfo:
     ]
     path = [col for col in cols if col != None]
 
-    tree_type: Literal["Lineage", "MolecularSubtype"] = node_obj.tree_type.value
-    return ContextPathInfo(path=path, tree_type=str(node_obj.tree_type.value))
+    tree_type: Literal["Lineage", "MolecularSubtype"] = TreeType(
+        node_obj.tree_type
+    ).value
+    return ContextPathInfo(path=path, tree_type=tree_type)
 
 
 def _get_compound_experiment_id_from_entity_label(entity_full_label: str):

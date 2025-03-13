@@ -1,5 +1,5 @@
 import dataclasses
-from typing import Dict, List, Literal, Tuple, Union
+from typing import Any, Dict, List, Literal, Tuple, Union
 import os
 from depmap.cell_line.models_new import DepmapModel
 from depmap.compound.models import Compound, CompoundExperiment
@@ -116,7 +116,9 @@ def _get_context_summary(tree_type: str):
 
 
 def _get_all_level_0_subtype_info(tree_type: TreeType) -> List[dict]:
-    subtype_nodes = SubtypeNode.get_by_tree_type_and_level(tree_type=tree_type, level=0)
+    subtype_nodes = SubtypeNode.get_by_tree_type_and_level(
+        tree_type=tree_type.value, level=0
+    )
 
     context_name_info = []
 
@@ -303,7 +305,7 @@ def _get_overview_table(overview_page_table, summary_df_by_model_id):
 
 def _get_overview_table_data(
     df: pd.DataFrame, summary_df: pd.DataFrame
-) -> pd.DataFrame:
+) -> List[Dict[str, Any]]:
     summary_df_by_model_id = summary_df.transpose()
     overview_page_table = df
 

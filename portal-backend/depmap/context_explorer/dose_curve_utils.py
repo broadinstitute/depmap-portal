@@ -1,5 +1,6 @@
 from typing import Dict, List
 from depmap.cell_line.models_new import DepmapModel
+from depmap.partials.matrix.models import CellLineSeries
 import pandas as pd
 from depmap.context_explorer import utils
 from depmap.context.models_new import SubtypeNode, SubtypeContext
@@ -16,6 +17,8 @@ def _get_out_group_model_ids(out_group_type, dataset_name, in_group_model_ids, l
         dataset_name=dataset_name, label=label
     )
     entity_full_row_of_values.dropna(inplace=True)
+    entity_full_row_of_values = pd.DataFrame(entity_full_row_of_values)
+
     if out_group_type == "All Others":
         return entity_full_row_of_values[
             ~entity_full_row_of_values.index.isin(in_group_model_ids)
@@ -35,6 +38,7 @@ def _get_out_group_model_ids(out_group_type, dataset_name, in_group_model_ids, l
             # The outgroup better be a subtype code. This will be a parent of the selected
             # code. So we need to subtract the in group model ids from the out group ids
             node = SubtypeNode.get_by_code(out_group_type)
+            assert node is not None
             all_node_model_ids = SubtypeNode.get_model_ids_by_subtype_code_and_node_level(
                 subtype_code=out_group_type, node_level=node.node_level
             )
