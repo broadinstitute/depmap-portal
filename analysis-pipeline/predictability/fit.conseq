@@ -43,7 +43,7 @@ rule process_model_config:
 
 
 rule run_fit_models:
-    resources: {'slots': "0.5"} # let up to 20 of these run in parallel
+    resources: {'slots': "0.25"} # let up to 20 of these run in parallel
     inputs:
         daintree_input_config={
           "type": "daintree_input_config"

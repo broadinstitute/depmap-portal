@@ -4,7 +4,7 @@ import yaml
 import os
 from typing import List, Dict, Any
 
-screens = ["crispr"]
+screens = ["crispr", "rnai", "oncref"]
 
 
 def generate_daintree_configs(
