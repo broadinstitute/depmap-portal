@@ -104,6 +104,7 @@ def get_df_by_value_type(
         df = df.astype(int)
         df = df.applymap(lambda x: dataset_allowed_values[x])
     elif value_type == ValueType.list_strings:
+        # NOTE: String data in HDF5 datasets is read as bytes by default
         # len of byte encoded empty string should be 0
         df = df.applymap(lambda x: json.loads(x) if len(x) != 0 else None)
     return df
