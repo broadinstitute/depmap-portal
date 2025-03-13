@@ -90,16 +90,12 @@ def _get_context_summary(tree_type: str):
     )
     subsetted_summary_df = summary_df[list(valid_models_summary_intersection)]
 
-    sorted_summary_df = (
-        subsetted_summary_df.transpose()
-        .sort_values(
-            by=["CRISPR", "RNAi", "WES", "WGS", "RNASeq", "PRISM"], ascending=False
-        )
-        .transpose()
+    sorted_summary_df = subsetted_summary_df.sort_values(
+        by=["CRISPR", "RNAi", "WES", "WGS", "RNASeq", "PRISM"], axis=1, ascending=False
     )
 
     summary = {
-        "values": [row.values.tolist() for _, row in sorted_summary_df.iterrows()],
+        "values": sorted_summary_df.values.tolist(),
         "data_types": sorted_summary_df.index.values.tolist(),
     }
 
@@ -274,13 +270,13 @@ def _get_overview_table(overview_page_table, summary_df_by_model_id):
         list(summary_df_by_model_id.index.values)
     )
 
-    overview_page_table = overview_page_table.join(summary_df_by_model_id)
+    overview_page_table_joined = overview_page_table.join(summary_df_by_model_id)
 
-    overview_page_table["cell_line_display_name"] = cell_line_display_names[
+    overview_page_table_joined["cell_line_display_name"] = cell_line_display_names[
         summary_df_by_model_id.index
     ]
 
-    overview_page_table = overview_page_table.rename(
+    overview_page_table_joined = overview_page_table_joined.rename(
         columns={
             "CRISPR": "crispr",
             "RNAi": "rnai",
@@ -292,15 +288,15 @@ def _get_overview_table(overview_page_table, summary_df_by_model_id):
     )
 
     dummy_value = ""
-    overview_page_table = overview_page_table.fillna(dummy_value)
+    overview_page_table_joined = overview_page_table_joined.fillna(dummy_value)
 
-    overview_page_table = overview_page_table.reset_index().drop_duplicates(
+    overview_page_table_joined = overview_page_table_joined.reset_index().drop_duplicates(
         "model_id", keep="last"
     )
 
-    overview_data = overview_page_table.to_dict("records")
+    overview_page_table_joined = overview_page_table_joined.to_dict("records")
 
-    return overview_data
+    return overview_page_table_joined
 
 
 def _get_overview_table_data(
