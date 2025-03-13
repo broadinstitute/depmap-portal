@@ -90,19 +90,27 @@ def _get_context_summary(tree_type: str):
     )
     subsetted_summary_df = summary_df[list(valid_models_summary_intersection)]
 
-    sorted_summary_df = subsetted_summary_df.sort_values(
-        by=[
-            "CRISPR",
-            "RNAi",
-            "WES",
-            "WGS",
-            "RNASeq",
-            "PRISMOncref",
-            "PRISMRepurposing",
-        ],
-        axis=1,
-        ascending=False,
-    )
+    sorted_summary_df = None
+    if current_app.config.get("ENABLED_FEATURES").context_explorer_prerelease_datasets:
+        sorted_summary_df = subsetted_summary_df.sort_values(
+            by=[
+                "CRISPR",
+                "RNAi",
+                "WES",
+                "WGS",
+                "RNASeq",
+                "PRISMOncref",
+                "PRISMRepurposing",
+            ],
+            axis=1,
+            ascending=False,
+        )
+    else:
+        sorted_summary_df = subsetted_summary_df.sort_values(
+            by=["CRISPR", "RNAi", "WES", "WGS", "RNASeq", "PRISMRepurposing",],
+            axis=1,
+            ascending=False,
+        )
 
     summary = {
         "values": sorted_summary_df.values.tolist(),
