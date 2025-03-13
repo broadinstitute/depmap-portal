@@ -79,7 +79,8 @@ export interface CellLineOverview {
 }
 
 export enum DataType {
-  PRISM,
+  PRISMRepurposing,
+  PRISMOncref,
   RNASeq,
   WGS,
   WES,
@@ -89,7 +90,8 @@ export enum DataType {
 }
 
 export enum DataTypeStrings {
-  PRISM = "PRISM",
+  PRISMRepurposing = "PRISMRepurposing",
+  PRISMOncref = "PRISMOncref",
   RNASeq = "RNASeq",
   WGS = "WGS",
   WES = "WES",
@@ -120,7 +122,8 @@ export function getDataTypeColorCategoryFromDataTypeValue(
     case DataType.WGS:
     case DataType.RNASeq:
       return DataTypeCategory.OMICS;
-    case DataType.PRISM:
+    case DataType.PRISMRepurposing:
+    case DataType.PRISMOncref:
       return DataTypeCategory.CompoundViability;
     default:
       return DataTypeCategory.Subtype;

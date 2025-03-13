@@ -1,17 +1,26 @@
 from taigapy import create_taiga_client_v3
 import pandas as pd
 import argparse
+import json
+
+
+def get_id(possible_id, id_key="dataset_id"):
+    return [] if len(possible_id) == 0 else [possible_id[0][id_key]]
 
 
 def main(
-    model_taiga_id,
-    screen_sequence_map_taiga_id,
-    omics_profiles_taiga_id,
-    repurposing_matrix_taiga_id,
-    prism_oncref_auc_matrix,
-    rnai_taiga_id,
-    out_filename
+    inputs, out_filename,
 ):
+    with open(inputs, "rt") as input_json:
+        taiga_ids = json.load(input_json)
+
+    model_taiga_id = get_id(taiga_ids["model_taiga_id"])
+    prism_oncref_auc_matrix = get_id(taiga_ids["prism_oncref_auc_matrix"])
+    omics_profiles_taiga_id = get_id(taiga_ids["omics_profiles_taiga_id"])
+    screen_sequence_map_taiga_id = get_id(taiga_ids["screen_sequence_map_taiga_id"])
+    rnai_taiga_id = get_id(taiga_ids["rnai_taiga_id"])
+    repurposing_matrix_taiga_id = get_id(taiga_ids["repurposing_matrix_taiga_id"])
+
     tc = create_taiga_client_v3()
     # Data for CRISPR, RNAi, Omics, PRISM
     ScreenSequenceMap = tc.get(screen_sequence_map_taiga_id)
@@ -26,8 +35,9 @@ def main(
     Repurposing_Matrix = tc.get(repurposing_matrix_taiga_id)
     assert Repurposing_Matrix is not None
 
-    OncRef_Matrix = tc.get(prism_oncref_auc_matrix)
-    assert OncRef_Matrix is not None
+    OncRef_Matrix = None
+    if len(prism_oncref_auc_matrix) > 0:
+        OncRef_Matrix = tc.get(prism_oncref_auc_matrix)
 
     Model = tc.get(model_taiga_id)
     assert Model is not None
@@ -56,19 +66,30 @@ def main(
     )
     omics_summary = omics_summary.rename(columns={"RNA": "RNASeq"})
     repurposing_summary = pd.DataFrame({"depmap_id": Repurposing_Matrix.columns})
-    repurposing_summary = repurposing_summary.assign(PRISMRepurposing=True).set_index("depmap_id")
+    repurposing_summary = repurposing_summary.assign(PRISMRepurposing=True).set_index(
+        "depmap_id"
+    )
 
-    oncref_summary = pd.DataFrame({"depmap_id": OncRef_Matrix.index})
-    oncref_summary = oncref_summary.assign(PRISMOncref=True).set_index("depmap_id")
+    oncref_summary = None
+    if len(prism_oncref_auc_matrix) > 0:
+        oncref_summary = pd.DataFrame({"depmap_id": OncRef_Matrix.index})
+        oncref_summary = oncref_summary.assign(PRISMOncref=True).set_index("depmap_id")
 
+    # pd.concat should drop any Nones
     overall_summary = pd.concat(
-        [oncref_summary, repurposing_summary, omics_summary, rnai_summary, crispr_summary,],
+        [
+            oncref_summary,
+            repurposing_summary,
+            omics_summary,
+            rnai_summary,
+            crispr_summary,
+        ],
         axis=1,
     )
     overall_summary = overall_summary.fillna(False).astype(bool)
     overall_summary = overall_summary.sort_values(
         ["CRISPR", "RNAi", "RNASeq", "WGS", "WES", "PRISMOncref", "PRISMRepurposing"],
-        ascending=False
+        ascending=False,
     )
     overall_summary.index.rename("ModelID", inplace=True)
 
@@ -83,20 +104,9 @@ def main(
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("model_taiga_id")
-    parser.add_argument("screen_sequence_map_taiga_id")
-    parser.add_argument("omics_profiles_taiga_id")
-    parser.add_argument("repurposing_matrix_taiga_id")
-    parser.add_argument("prism_oncref_auc_matrix")
-    parser.add_argument("rnai_taiga_id")
+    parser.add_argument("inputs")
     parser.add_argument("out_filename")
     args = parser.parse_args()
     main(
-        args.model_taiga_id,
-        args.screen_sequence_map_taiga_id,
-        args.omics_profiles_taiga_id,
-        args.repurposing_matrix_taiga_id,
-        args.prism_oncref_auc_matrix,
-        args.rnai_taiga_id,
-        args.out_filename,
+        args.inputs, args.out_filename,
     )

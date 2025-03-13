@@ -91,7 +91,17 @@ def _get_context_summary(tree_type: str):
     subsetted_summary_df = summary_df[list(valid_models_summary_intersection)]
 
     sorted_summary_df = subsetted_summary_df.sort_values(
-        by=["CRISPR", "RNAi", "WES", "WGS", "RNASeq", "PRISM"], axis=1, ascending=False
+        by=[
+            "CRISPR",
+            "RNAi",
+            "WES",
+            "WGS",
+            "RNASeq",
+            "PRISMOncref",
+            "PRISMRepurposing",
+        ],
+        axis=1,
+        ascending=False,
     )
 
     summary = {
@@ -282,7 +292,8 @@ def _get_overview_table(overview_page_table, summary_df_by_model_id):
             "RNAi": "rnai",
             "WGS": "wgs",
             "WES": "wes",
-            "PRISM": "prism",
+            "PRISMOncref": "oncref",
+            "PRISMRepurposing": "repurposing",
             "RNASeq": "rna_seq",
         }
     )

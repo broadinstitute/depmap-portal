@@ -28,12 +28,13 @@ def test_get_context_info(populated_db):
             "level_5",
             "node_name",
             "node_level",
-            "prism",
+            "repurposing",
             "rna_seq",
             "wgs",
             "wes",
             "rnai",
             "crispr",
+            "oncref",
             "cell_line_display_name",
         ]
 
@@ -83,12 +84,13 @@ def test_get_context_summary(populated_db):
         # The data type list determines the number and order of rows on
         # the Context Explorer Data Availability graph.
         assert context_summary["summary"]["data_types"] == [
-            "PRISM",
+            "PRISMRepurposing",
             "RNASeq",
             "WGS",
             "WES",
             "RNAi",
             "CRISPR",
+            "PRISMOncref",
         ]
 
         # There should be a value row for each data type.
@@ -111,12 +113,13 @@ def test_get_context_summary(populated_db):
             "level_5": "",
             "node_name": "Ewing Sarcoma",
             "node_level": 1,
-            "prism": True,
+            "repurposing": True,
             "rna_seq": True,
             "wgs": False,
             "wes": True,
             "rnai": True,
             "crispr": True,
+            "oncref": False,
             "cell_line_display_name": "A673",
         } in context_summary["table"]
 
@@ -131,12 +134,13 @@ def test_get_context_summary(populated_db):
             "level_5": "",
             "node_name": "Ewing Sarcoma",
             "node_level": 1,
-            "prism": True,
+            "repurposing": True,
             "rna_seq": True,
             "wgs": False,
             "wes": True,
             "rnai": True,
             "crispr": False,
+            "oncref": False,
             "cell_line_display_name": "CADOES1",
         } in context_summary["table"]
         assert {
@@ -150,12 +154,13 @@ def test_get_context_summary(populated_db):
             "level_5": "",
             "node_name": "Ewing Sarcoma",
             "node_level": 1,
-            "prism": True,
+            "repurposing": True,
             "rna_seq": True,
             "wgs": False,
             "wes": True,
             "rnai": True,
             "crispr": True,
+            "oncref": False,
             "cell_line_display_name": "EWS502",
         } in context_summary["table"]
         assert {
@@ -169,12 +174,13 @@ def test_get_context_summary(populated_db):
             "level_5": "",
             "node_name": "Lung Squamous Cell Carcinoma",
             "node_level": 2,
-            "prism": False,
+            "repurposing": False,
             "rna_seq": True,
             "wgs": False,
             "wes": True,
             "rnai": True,
             "crispr": True,
+            "oncref": False,
             "cell_line_display_name": "EPLC272H",
         } in context_summary["table"]
         assert {
@@ -188,12 +194,13 @@ def test_get_context_summary(populated_db):
             "level_5": "",
             "node_name": "Lung Adenocarcinoma",
             "node_level": 2,
-            "prism": True,
+            "repurposing": True,
             "rna_seq": True,
             "wgs": False,
             "wes": True,
             "rnai": True,
             "crispr": True,
+            "oncref": False,
             "cell_line_display_name": "EKVX",
         } in context_summary["table"]
         assert {
@@ -207,12 +214,13 @@ def test_get_context_summary(populated_db):
             "level_5": "",
             "node_name": "Osteosarcoma",
             "node_level": 1,
-            "prism": True,
+            "repurposing": True,
             "rna_seq": True,
             "wgs": True,
             "wes": True,
             "rnai": True,
             "crispr": True,
+            "oncref": True,
             "cell_line_display_name": "143B",
         } in context_summary["table"]
         assert {
@@ -226,12 +234,13 @@ def test_get_context_summary(populated_db):
             "level_5": "",
             "node_name": "Ewing Sarcoma",
             "node_level": 1,
-            "prism": True,
+            "repurposing": True,
             "rna_seq": False,
             "wgs": False,
             "wes": True,
             "rnai": False,
             "crispr": True,
+            "oncref": False,
             "cell_line_display_name": "TC32",
         } in context_summary["table"]
 
@@ -244,12 +253,13 @@ def test_get_context_summary(populated_db):
         context_summary = r.json
 
         assert context_summary["summary"]["data_types"] == [
-            "PRISM",
+            "PRISMRepurposing",
             "RNASeq",
             "WGS",
             "WES",
             "RNAi",
             "CRISPR",
+            "PRISMOncref",
         ]
 
         model_id_indices = {}
@@ -261,7 +271,7 @@ def test_get_context_summary(populated_db):
             row[model_id_indices["ACH-000552"]]
             for row in context_summary["summary"]["values"]
         ]
-        expected_552 = [True, True, True, True, True, True]
+        expected_552 = [True, True, True, True, True, True, False]
         assert actual_552 == expected_552
 
         # 001001
@@ -269,7 +279,7 @@ def test_get_context_summary(populated_db):
             row[model_id_indices["ACH-001001"]]
             for row in context_summary["summary"]["values"]
         ]
-        expected_001001 = [True, True, True, True, True, True]
+        expected_001001 = [True, True, True, True, True, True, True]
 
         assert actual_001001 == expected_001001
 
@@ -278,7 +288,7 @@ def test_get_context_summary(populated_db):
             row[model_id_indices["ACH-000706"]]
             for row in context_summary["summary"]["values"]
         ]
-        expected_000706 = [True, True, False, True, True, True]
+        expected_000706 = [True, True, False, True, True, True, False]
         assert actual_000706 == expected_000706
 
         # 000279
@@ -286,7 +296,7 @@ def test_get_context_summary(populated_db):
             row[model_id_indices["ACH-000279"]]
             for row in context_summary["summary"]["values"]
         ]
-        expected_000279 = [True, True, False, True, True, True]
+        expected_000279 = [True, True, False, True, True, True, False]
         assert actual_000279 == expected_000279
 
         # 001170
@@ -294,7 +304,7 @@ def test_get_context_summary(populated_db):
             row[model_id_indices["ACH-001170"]]
             for row in context_summary["summary"]["values"]
         ]
-        expected_001170 = [False, False, False, False, True, False]
+        expected_001170 = [False, False, False, False, True, False, False]
         assert actual_001170 == expected_001170
 
         assert {
@@ -308,12 +318,13 @@ def test_get_context_summary(populated_db):
             "level_5": "",
             "node_name": "ALK Hotspot",
             "node_level": 0,
-            "prism": False,
+            "repurposing": False,
             "rna_seq": False,
             "wgs": False,
             "wes": False,
             "rnai": True,
             "crispr": False,
+            "oncref": False,
             "cell_line_display_name": "PETA",
         } in context_summary["table"]
         assert {
@@ -327,12 +338,13 @@ def test_get_context_summary(populated_db):
             "level_5": "",
             "node_name": "ALK Hotspot",
             "node_level": 0,
-            "prism": True,
+            "repurposing": True,
             "rna_seq": True,
             "wgs": False,
             "wes": True,
             "rnai": True,
             "crispr": False,
+            "oncref": False,
             "cell_line_display_name": "CADOES1",
         } in context_summary["table"]
         assert {
@@ -346,12 +358,13 @@ def test_get_context_summary(populated_db):
             "level_5": "",
             "node_name": "ALK Hotspot",
             "node_level": 0,
-            "prism": True,
+            "repurposing": True,
             "rna_seq": True,
             "wgs": False,
             "wes": True,
             "rnai": True,
             "crispr": True,
+            "oncref": False,
             "cell_line_display_name": "EWS502",
         } in context_summary["table"]
         assert {
@@ -365,12 +378,13 @@ def test_get_context_summary(populated_db):
             "level_5": "",
             "node_name": "ALK Hotspot",
             "node_level": 0,
-            "prism": True,
+            "repurposing": True,
             "rna_seq": False,
             "wgs": False,
             "wes": True,
             "rnai": False,
             "crispr": True,
+            "oncref": False,
             "cell_line_display_name": "TC32",
         } in context_summary["table"]
         assert {
@@ -384,12 +398,13 @@ def test_get_context_summary(populated_db):
             "level_5": "",
             "node_name": "EGFR",
             "node_level": 0,
-            "prism": True,
+            "repurposing": True,
             "rna_seq": True,
             "wgs": True,
             "wes": True,
             "rnai": True,
             "crispr": True,
+            "oncref": False,
             "cell_line_display_name": "HT29",
         } in context_summary["table"]
         assert {
@@ -403,12 +418,13 @@ def test_get_context_summary(populated_db):
             "level_5": "",
             "node_name": "EGFR",
             "node_level": 0,
-            "prism": True,
+            "repurposing": True,
             "rna_seq": True,
             "wgs": False,
             "wes": True,
             "rnai": True,
             "crispr": True,
+            "oncref": False,
             "cell_line_display_name": "EKVX",
         } in context_summary["table"]
         assert {
@@ -422,12 +438,13 @@ def test_get_context_summary(populated_db):
             "level_5": "",
             "node_name": "EGFR",
             "node_level": 0,
-            "prism": True,
+            "repurposing": True,
             "rna_seq": True,
             "wgs": True,
             "wes": True,
             "rnai": True,
             "crispr": True,
+            "oncref": True,
             "cell_line_display_name": "143B",
         } in context_summary["table"]
         assert {
@@ -441,12 +458,13 @@ def test_get_context_summary(populated_db):
             "level_5": "",
             "node_name": "EGFR",
             "node_level": 0,
-            "prism": True,
+            "repurposing": True,
             "rna_seq": True,
             "wgs": False,
             "wes": False,
             "rnai": True,
             "crispr": True,
+            "oncref": False,
             "cell_line_display_name": "HS294T",
         } in context_summary["table"]
 
