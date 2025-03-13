@@ -129,7 +129,7 @@ def get_dataset_units(dataset_id: str) -> Optional[str]:
 
 
 def get_row_of_values(
-    dataset_id: str, feature: str, feature_identifier: Optional[str] = "label"
+    dataset_id: str, feature: str, feature_identifier: Literal["id", "label"] = "label"
 ) -> CellLineSeries:
     """
     Gets a row of numeric or string values, indexed by depmap_id

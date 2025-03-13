@@ -1,5 +1,5 @@
 import dataclasses
-from typing import Dict, List, Literal, Tuple, Union
+from typing import Any, Dict, List, Literal, Tuple, Union
 import os
 from depmap.cell_line.models_new import DepmapModel
 from depmap.compound.models import Compound, CompoundExperiment
@@ -116,7 +116,9 @@ def _get_context_summary(tree_type: str):
 
 
 def _get_all_level_0_subtype_info(tree_type: TreeType) -> List[dict]:
-    subtype_nodes = SubtypeNode.get_by_tree_type_and_level(tree_type=tree_type, level=0)
+    subtype_nodes = SubtypeNode.get_by_tree_type_and_level(
+        tree_type=tree_type.value, level=0
+    )
 
     context_name_info = []
 
@@ -190,6 +192,7 @@ class ContextPath(
 def get_child_subtype_summary_df(subtype_code: str):
     # Get the children for displaying in the data availability chart
     node = SubtypeNode.get_by_code(subtype_code)
+    assert node is not None
     node_children = SubtypeNode.get_next_level_nodes_using_current_level_code(
         subtype_code, node.node_level
     )
@@ -302,7 +305,7 @@ def _get_overview_table(overview_page_table, summary_df_by_model_id):
 
 def _get_overview_table_data(
     df: pd.DataFrame, summary_df: pd.DataFrame
-) -> pd.DataFrame:
+) -> List[Dict[str, Any]]:
     summary_df_by_model_id = summary_df.transpose()
     overview_page_table = df
 
@@ -320,6 +323,7 @@ def get_context_explorer_lineage_trees_and_table_data(
     level_0_subtype_code: str,
 ) -> Tuple[Dict[str, ContextNode], List[Dict[str, Union[str, bool]]]]:
     node = SubtypeNode.get_by_code(level_0_subtype_code)
+    assert node is not None
 
     subtype_tree_query = SubtypeNode.get_subtype_tree_by_models_query(
         node.tree_type, level_0_subtype_code

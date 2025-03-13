@@ -45,8 +45,8 @@ class BoxCardData:
 
 @dataclass
 class ContextPlotBoxData:
-    significant_selection: List[BoxData]
-    insignificant_selection: BoxData
+    significant_selection: Union[List[BoxData], None]
+    insignificant_selection: Union[BoxData, None]
     other_cards: List[BoxCardData]
     insignificant_heme_data: BoxData
     insignificant_solid_data: BoxData
@@ -56,7 +56,7 @@ class ContextPlotBoxData:
 
 @dataclass
 class NodeEntityData:
-    entity_id: str
+    entity_id: int
     entity_label: str
     entity_full_row_of_values: pd.Series
 
@@ -141,8 +141,10 @@ class ContextNode(dict):
                 current_child_codes = [child.subtype_code for child in self.children]
 
                 if len(model_ids) > 0 and child_subtype_code not in current_child_codes:
+                    subtype_node = SubtypeNode.get_by_code(child_subtype_code)
+                    assert subtype_node is not None
                     node = ContextNode(
-                        name=SubtypeNode.get_by_code(child_subtype_code).node_name,
+                        name=subtype_node.node_name,
                         subtype_code=child_subtype_code,
                         parent_subtype_code=current_node_code,
                         model_ids=model_ids,
@@ -170,9 +172,10 @@ def get_context_analysis_query(
 ):
     assert dataset_name in DependencyEnum.values()
 
-    dependency_dataset_id = DependencyDataset.get_dataset_by_name(
-        dataset_name
-    ).dependency_dataset_id
+    dependency_dataset = DependencyDataset.get_dataset_by_name(dataset_name)
+    assert dependency_dataset is not None
+    dependency_dataset_id = dependency_dataset.dependency_dataset_id
+
     if entity_type == "gene":
         query = (
             ContextAnalysis.query.filter_by(
@@ -286,7 +289,11 @@ class ContextAnalysis(Model):
 
     @property
     def dataset_name(self):
-        return DependencyDataset.get_dataset_by_id(self.dependency_dataset_id).name
+        dependency_dataset = DependencyDataset.get_dataset_by_id(
+            self.dependency_dataset_id
+        )
+        assert dependency_dataset is not None
+        return dependency_dataset.name
 
     @staticmethod
     def find_context_analysis_by_subtype_code_out_group(
@@ -310,16 +317,17 @@ class ContextAnalysis(Model):
         tree_type: str,
         entity_id: int,
         dataset_name: str,
-        entity_type: Literal["gene", "compound"],
+        entity_type: str,
         max_fdr: float,
         min_abs_effect_size: float,
         min_frac_dep_in: float,
     ):
         assert dataset_name in DependencyEnum.values()
 
-        dependency_dataset_id = DependencyDataset.get_dataset_by_name(
-            dataset_name
-        ).dependency_dataset_id
+        dependency_dataset = DependencyDataset.get_dataset_by_name(dataset_name)
+        assert dependency_dataset is not None
+        dependency_dataset_id = dependency_dataset.dependency_dataset_id
+
         if entity_type == "gene":
             analyses = (
                 ContextAnalysis.query.filter(

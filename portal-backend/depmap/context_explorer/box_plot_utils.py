@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Literal, Optional
 from depmap.cell_line.models_new import DepmapModel
-from depmap.context_explorer.models import ContextAnalysis
+from depmap.context_explorer.models import BoxCardData, ContextAnalysis
 import pandas as pd
 
 from depmap.context_explorer import utils
@@ -39,7 +39,7 @@ def get_box_plot_card_data(
         str, List[str]
     ],  # Includes insignificant codes we need for "Other <Lineage>"
     entity_full_row_of_values: pd.Series,
-):
+) -> BoxCardData:
     significant_box_plot_data = []
     insignificant_box_plot_data = {}
     all_sig_models = []
@@ -83,8 +83,8 @@ def get_box_plot_card_data(
 
         all_other_model_ids = list(set(level_0_model_ids) - set(all_sig_models))
         insignificant_box_plot_data = (
-            {f"Other {level_0_code}": []}
-            if len(all_other_model_ids) < 5
+            BoxData(label=f"Other {level_0_code}", data=[], cell_line_display_names=[])
+            if len(other_lineage_plot_model_ids) < 5
             else get_box_plot_data_for_context(
                 label=f"Other {level_0_code}",
                 subtype_code=level_0_code,
@@ -94,7 +94,7 @@ def get_box_plot_card_data(
         )
     else:
         insignificant_box_plot_data = (
-            {f"Other {level_0_code}": []}
+            BoxData(label=f"Other {level_0_code}", data=[], cell_line_display_names=[])
             if len(other_lineage_plot_model_ids) < 5
             else get_box_plot_data_for_context(
                 label=f"Other {level_0_code}",
@@ -109,6 +109,7 @@ def get_box_plot_card_data(
             return code
 
         node = SubtypeNode.get_by_code(code)
+        assert node is not None
         node_children = SubtypeNode.get_children_using_current_level_code(
             code, node.node_level
         )
@@ -118,24 +119,24 @@ def get_box_plot_card_data(
             if subtype_code in ordered_sig_subtype_codes:
                 return subtype_code
 
-        return 100
+        return code
 
     sorted_sig_plot_data = sorted(
         significant_box_plot_data,
-        key=lambda x: ordered_sig_subtype_codes.index(get_code_or_child(x["path"][-1])),
+        key=lambda x: ordered_sig_subtype_codes.index(get_code_or_child(x.path[-1])),
     )
-    return {
-        "significant": sorted_sig_plot_data,
-        "insignificant": insignificant_box_plot_data,
-        "level_0_code": level_0_code,
-    }
+    return BoxCardData(
+        significant=sorted_sig_plot_data,
+        insignificant=insignificant_box_plot_data,
+        level_0_code=level_0_code,
+    )
 
 
 def get_box_plot_data_for_other_category(
     category: Literal["heme", "solid"],
     significant_subtype_codes: List[str],
     entity_full_row_of_values,
-) -> str:
+) -> BoxData:
     heme_model_id_series = (
         SubtypeContext.get_model_ids_for_other_heme_contexts(
             subtype_codes_to_filter_out=significant_subtype_codes
@@ -146,7 +147,7 @@ def get_box_plot_data_for_other_category(
         )
     )
 
-    if heme_model_id_series.empty:
+    if heme_model_id_series == {}:
         return BoxData(
             label="Other Heme" if category == "heme" else "Other Solid",
             data=[],
@@ -195,20 +196,19 @@ def get_box_plot_data_for_context(
     )
 
     node = SubtypeNode.get_by_code(subtype_code)
+    assert node is not None
     path = utils.get_path_to_node(node.subtype_code).path
     path = path[1:] if len(path) > 1 else path
     delim = "/"
 
     plotLabel = delim.join(path) if not label else label
 
-    box_plot_data = {
-        "label": plotLabel,
-        "path": path,
-        "data": context_values_index_by_display_name.tolist(),
-        "cell_line_display_names": context_values_index_by_display_name.index.tolist(),
-    }
-
-    return box_plot_data
+    return BoxData(
+        label=plotLabel,
+        path=path,
+        data=context_values_index_by_display_name.tolist(),
+        cell_line_display_names=context_values_index_by_display_name.index.tolist(),
+    )
 
 
 def get_branch_subtype_codes_organized_by_code(sig_contexts: Dict[str, List[str]]):
@@ -229,7 +229,7 @@ def get_branch_subtype_codes_organized_by_code(sig_contexts: Dict[str, List[str]
 def _get_sig_context_dataframe(
     tree_type: str,
     entity_type: str,
-    entity_id: str,
+    entity_id: int,
     dataset_name: str,
     max_fdr: float,
     min_abs_effect_size: float,
@@ -302,9 +302,12 @@ def get_context_plot_box_data(
         ordered_sig_subtype_codes = (
             sig_contexts["subtype_code"].drop_duplicates(keep="first").tolist()
         )
-        sig_contexts_agg = (
-            sig_contexts.groupby("level_0").agg({"subtype_code": list}).reset_index()
+        sig_contexts_agg_indexed = sig_contexts.groupby("level_0").agg(
+            {"subtype_code": list}
         )
+        assert isinstance(sig_contexts_agg_indexed, pd.DataFrame)
+        sig_contexts_agg = sig_contexts_agg_indexed.reset_index()
+
         sig_contexts_by_level_0 = sig_contexts_agg.set_index("level_0").to_dict()[
             "subtype_code"
         ]
@@ -349,12 +352,12 @@ def get_context_plot_box_data(
         significant_selection = (
             None
             if not selected_sig_box_plot_card_data
-            else selected_sig_box_plot_card_data["significant"]
+            else selected_sig_box_plot_card_data.significant
         )
         insignificant_selection = (
             None
             if not selected_sig_box_plot_card_data
-            else selected_sig_box_plot_card_data["insignificant"]
+            else selected_sig_box_plot_card_data.insignificant
         )
 
         return ContextPlotBoxData(
@@ -379,8 +382,10 @@ def get_organized_contexts(
     max_fdr: float,
     min_abs_effect_size: float,
     min_frac_dep_in: float,
-) -> ContextPlotBoxData:
-    level_0 = SubtypeNode.get_by_code(selected_subtype_code).level_0
+) -> Optional[ContextPlotBoxData]:
+    node = SubtypeNode.get_by_code(selected_subtype_code)
+    assert node is not None
+    level_0 = node.level_0
     node_entity_data = _get_node_entity_data(
         dataset_name=dataset_name,
         entity_type=entity_type,
@@ -420,9 +425,10 @@ def get_organized_contexts(
         return None
 
     level_0_sort_order = sig_contexts["level_0"].drop_duplicates(keep="first").tolist()
+    context_box_plot_data_other_cards = context_box_plot_data.other_cards
     sorted_other_cards = sorted(
-        context_box_plot_data.other_cards,
-        key=lambda x: level_0_sort_order.index(x["level_0_code"]),
+        context_box_plot_data_other_cards,
+        key=lambda x: level_0_sort_order.index(x.level_0_code),
     )
 
     ordered_box_plot_data = ContextPlotBoxData(

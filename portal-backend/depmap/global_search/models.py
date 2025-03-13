@@ -235,6 +235,7 @@ class ContextSearchIndex(GlobalSearchIndex):
 class _ContextExp:
     def get_label(self):
         node = SubtypeNode.get_by_code(self.context_explorer.subtype_code)
+        assert node is not None
         return f"{node.node_name} ({node.subtype_code})"
 
     def get_description(self):

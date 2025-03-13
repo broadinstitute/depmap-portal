@@ -195,20 +195,15 @@ class DepmapModelFactory(SQLAlchemyModelFactory):
     stripped_cell_line_name = stripped_cell_line_name = typing.cast(
         str, factory.Sequence(lambda number: "{}".format(number))
     )
-    model_id = factory.Sequence(lambda number: "ACH-{}".format(number))
-    patient_id = factory.Sequence(lambda number: "ACH-{}".format(number))
-    depmap_model_type = factory.Sequence(
-        lambda number: "depmap_model_type_{}".format(number)
+    patient_id = typing.cast(
+        str, factory.Sequence(lambda number: "ACH-{}".format(number))
     )
-    cell_line_name = factory.Sequence(lambda number: "cell_line_{}".format(number))
+    depmap_model_type = typing.cast(
+        str, factory.Sequence(lambda number: "depmap_model_type_{}".format(number))
+    )
     cell_line_alias = factory.LazyAttribute(lambda o: [CellLineAliasFactory()])
     age_category = factory.Sequence(lambda number: "age_category_{}".format(number))
 
-    cell_line = factory.SubFactory(
-        CellLineFactory,
-        depmap_id=factory.SelfAttribute("..model_id"),
-        cell_line_display_name=factory.SelfAttribute("..stripped_cell_line_name"),
-    )
     model_id = typing.cast(
         str, factory.Sequence(lambda number: "ACH-{}".format(number))
     )
@@ -236,7 +231,9 @@ class EntityFactory(SQLAlchemyModelFactory):
         # Warning: DO NOT USE common.Session()!
         sqlalchemy_session = _db.session
 
-    label = factory.Sequence(lambda number: "entity_{}".format(number))
+    label = typing.cast(
+        str, factory.Sequence(lambda number: "entity_{}".format(number))
+    )
     type = "gene"
 
 
@@ -263,7 +260,9 @@ class CompoundFactory(SQLAlchemyModelFactory):
     compound_id = factory.Sequence(
         lambda n: f"DPC-{n:06d}"
     )  # Generates IDs like DPC-000001, DPC-000002, etc.
-    label = factory.Sequence(lambda number: "compound_{}".format(number))
+    label = typing.cast(
+        str, factory.Sequence(lambda number: "compound_{}".format(number))
+    )
     entity_alias = factory.LazyAttribute(lambda o: [EntityAliasFactory()])
     units = "μM"
 
@@ -284,7 +283,7 @@ class CompoundExperimentFactory(SQLAlchemyModelFactory):
     compound = factory.SubFactory(
         CompoundFactory, compound_id=factory.SelfAttribute("..compound_id")
     )
-    label = factory.Sequence(lambda number: "CTRP:{}".format(number))
+    label = typing.cast(str, factory.Sequence(lambda number: "CTRP:{}".format(number)))
     entity_alias = factory.LazyAttribute(lambda o: [EntityAliasFactory()])
 
 
@@ -345,7 +344,7 @@ class GeneFactory(SQLAlchemyModelFactory):
         sqlalchemy_session = _db.session
 
     type = "gene"
-    label = factory.Sequence(lambda number: "gene_{}".format(number))
+    label = typing.cast(str, factory.Sequence(lambda number: "gene_{}".format(number)))
     entity_alias = factory.LazyAttribute(lambda o: [EntityAliasFactory()])
     name = factory.Sequence(lambda number: "Gene {}".format(number))
     description = factory.Sequence(lambda number: "description_{}".format(number))
