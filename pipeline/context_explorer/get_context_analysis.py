@@ -95,28 +95,31 @@ def load_oncref_data(tc, oncref_auc_taiga_id):
     return auc_matrix, log_auc_matrix
 
 
-def format_selectivity_vals(repurposing_table, oncref_table):
+def format_selectivity_vals(repurposing_table_path, oncref_table_path):
+    selectivity_dfs = []
 
     # reformat repurposing compounds
+    repurposing_table = pd.read_csv(repurposing_table_path)
     repurposing_table["entity_id"] = repurposing_table.apply(
         lambda x: f"BRD:{x.BroadID}", axis=1
     )
     repurposing_selectivity = repurposing_table.rename(
         columns={"BimodalityCoefficient": "selectivity_val"}
     )[["entity_id", "selectivity_val"]]
+    
+    selectivity_dfs.append(repurposing_selectivity)
 
     # reformat oncref compounds
-    oncref_selectivity = oncref_table.rename(
-        columns={"BroadID": "entity_id", "BimodalityCoefficient": "selectivity_val"}
-    )[["entity_id", "selectivity_val"]]
+    if oncref_table_path is not None:
+        oncref_table = pd.read_csv(oncref_table_path)
+        oncref_selectivity = oncref_table.rename(
+            columns={"BroadID": "entity_id", "BimodalityCoefficient": "selectivity_val"}
+        )[["entity_id", "selectivity_val"]]
+
+        selectivity_dfs.append(oncref_selectivity)
 
     # put them all together
-    selectivity_vals = pd.concat(
-        [
-            repurposing_selectivity.assign(dataset="PRISMRepurposing"),
-            oncref_selectivity.assign(dataset="PRISMOncRef"),
-        ]
-    )
+    selectivity_vals = pd.concat(selectivity_dfs)
 
     return selectivity_vals
 
@@ -132,41 +135,51 @@ def load_all_data(
     repurposing_table_path,
     oncref_table_path,
 ):
+
+    all_data_dict = dict()
+    datasets_to_test = dict()
+    data_for_extra_cols = dict()
+
     tc = create_taiga_client_v3()
     subtype_tree, context_matrix = load_subtype_tree(
         tc=tc,
         subtype_tree_taiga_id=subtype_tree_taiga_id,
         context_matrix_taiga_id=context_matrix_taiga_id,
     )
+    all_data_dict["subtype_tree"] = subtype_tree
+    all_data_dict["context_matrix"] = context_matrix
+
     gene_effect, gene_dependency = load_crispr_data(
         tc=tc,
         gene_effect_taiga_id=gene_effect_taiga_id,
         gene_dependency_taiga_id=gene_dependency_taiga_id,
     )
+    datasets_to_test["CRISPR"] = gene_effect
+    data_for_extra_cols["gene_dependency"] = gene_dependency
+
     rep_sensitivity = load_prism_data(
         tc=tc,
         repurposing_matrix_taiga_id=repurposing_matrix_taiga_id,
         repurposing_list_taiga_id=repurposing_list_taiga_id,
     )
+    datasets_to_test["PRISMRepurposing"] = rep_sensitivity
 
-    oncref_aucs, oncref_log_aucs = load_oncref_data(
-        tc=tc, oncref_auc_taiga_id=oncref_auc_taiga_id
-    )
+    if oncref_auc_taiga_id is not None:
+        oncref_aucs, oncref_log_aucs = load_oncref_data(
+            tc=tc, oncref_auc_taiga_id=oncref_auc_taiga_id
+        )
+        datasets_to_test["PRISMOncRef"] = oncref_log_aucs
+        data_for_extra_cols["oncref_aucs"] = oncref_aucs
 
     selectivity_vals = format_selectivity_vals(
-        pd.read_csv(repurposing_table_path), pd.read_csv(oncref_table_path)
+        repurposing_table_path, oncref_table_path
     )
+    data_for_extra_cols["selectivity_vals"] = selectivity_vals
 
-    return {
-        "subtype_tree": subtype_tree,
-        "context_matrix": context_matrix,
-        "gene_effect": gene_effect,
-        "gene_dependency": gene_dependency,
-        "rep_sensitivity": rep_sensitivity,
-        "oncref_log_aucs": oncref_log_aucs,
-        "oncref_aucs": oncref_aucs,
-        "selectivity_vals": selectivity_vals,
-    }
+    all_data_dict["datasets_to_test"] = datasets_to_test
+    all_data_dict["data_for_extra_cols"] = data_for_extra_cols
+    
+    return all_data_dict
 
 
 ### ----- CONTEXT ENRICHMENT FUNCTIONS ----- ###
@@ -249,20 +262,10 @@ def compute_context_results(
     in_group,
     out_group,
     out_label,
-    gene_effect,
-    gene_dependency,
-    rep_sensitivity,
-    oncref_log_aucs,
-    oncref_aucs,
-    selectivity_vals,
+    datasets_to_test,
+    data_for_extra_cols,
     verbose=False,
 ):
-
-    datasets = {
-        "CRISPR": gene_effect,
-        "PRISMRepurposing": rep_sensitivity,
-        "PRISMOncRef": oncref_log_aucs,
-    }
 
     col_order = [
         "subtype_code",
@@ -283,7 +286,7 @@ def compute_context_results(
     ]
 
     ctx_res_dfs = []
-    for ds_name, ds in datasets.items():
+    for ds_name, ds in datasets_to_test.items():
         ds_in_group = list(set(in_group).intersection(set(ds.index.values)))
         ds_out_group = list(set(out_group).intersection(set(ds.index.values)))
 
@@ -301,18 +304,22 @@ def compute_context_results(
 
         if ds_name == "CRISPR":
             ds_res = add_crispr_columns(
-                ds_res, gene_dependency, ds_in_group, ds_out_group
+                ds_res, data_for_extra_cols['gene_dependency'], ds_in_group, ds_out_group
             ).reset_index(names="entity_id")
 
         elif ds_name == "PRISMOncRef":
             # replace mean_in, mean_out, and effect size with non-logged versions
-            ds_res["mean_in"] = oncref_aucs.loc[ds_in_group].mean()
-            ds_res["mean_out"] = oncref_aucs.loc[ds_out_group].mean()
+            ds_res["mean_in"] = data_for_extra_cols['oncref_aucs'].loc[ds_in_group].mean()
+            ds_res["mean_out"] = data_for_extra_cols['oncref_aucs'].loc[ds_out_group].mean()
             ds_res["effect_size"] = ds_res.mean_in - ds_res.mean_out
 
         if ds_name in ["PRISMRepurposing", "PRISMOncRef"]:
             # merge with selectivity vals
-            ds_res = ds_res.reset_index(names="entity_id").merge(selectivity_vals)
+            ds_res = ds_res.reset_index(
+                names="entity_id"
+            ).merge(
+                data_for_extra_cols['selectivity_vals']
+            )
 
         ctx_res_dfs.append(ds_res)
 
@@ -322,12 +329,8 @@ def compute_context_results(
 def compute_in_out_groups(
     subtype_tree,
     context_matrix,
-    gene_effect,
-    gene_dependency,
-    rep_sensitivity,
-    oncref_log_aucs,
-    oncref_aucs,
-    selectivity_vals,
+    datasets_to_test,
+    data_for_extra_cols
 ):
     name_to_code_onco = dict(
         zip(
@@ -343,15 +346,6 @@ def compute_in_out_groups(
     )
     names_to_codes = {**name_to_code_onco, **name_to_code_gs}
 
-    data_dict = {
-        "gene_effect": gene_effect,
-        "gene_dependency": gene_dependency,
-        "rep_sensitivity": rep_sensitivity,
-        "oncref_log_aucs": oncref_log_aucs,
-        "oncref_aucs": oncref_aucs,
-        "selectivity_vals": selectivity_vals,
-    }
-
     all_results = []
     for idx, ctx_row in subtype_tree.iterrows():
         ctx_code = names_to_codes[ctx_row.NodeName]
@@ -364,7 +358,8 @@ def compute_in_out_groups(
         ctx_out = context_matrix[context_matrix[ctx_code] != True].index
         all_results.append(
             compute_context_results(
-                ctx_code, ctx_in, ctx_out, "All Others", **data_dict
+                ctx_code, ctx_in, ctx_out, "All Others", 
+                datasets_to_test, data_for_extra_cols
             )
         )
 
@@ -379,7 +374,8 @@ def compute_in_out_groups(
             ].index
             all_results.append(
                 compute_context_results(
-                    ctx_code, ctx_in, ctx_out, "Other Heme", **data_dict
+                    ctx_code, ctx_in, ctx_out, "Other Heme",  
+                    datasets_to_test, data_for_extra_cols
                 )
             )
 
@@ -396,7 +392,8 @@ def compute_in_out_groups(
 
             all_results.append(
                 compute_context_results(
-                    ctx_code, ctx_in, ctx_out, out_code, **data_dict
+                    ctx_code, ctx_in, ctx_out, out_code,  
+                    datasets_to_test, data_for_extra_cols
                 )
             )
 
@@ -404,7 +401,7 @@ def compute_in_out_groups(
 
 
 def get_id_or_file_name(possible_id, id_key="dataset_id"):
-    return [] if len(possible_id) == 0 else [possible_id[0][id_key]]
+    return None if len(possible_id) == 0 else possible_id[0][id_key]
 
 
 ### ----- MAIN ----- ###
@@ -441,26 +438,21 @@ def compute_context_explorer_results(inputs, out_filename):
         taiga_ids_or_file_name["oncref_table_path"], id_key="filename"
     )
 
-    OUT_FILE = out_filename
-
     ### ---- LOAD DATA ---- ###
-    assert (
-        len(oncref_auc_taiga_id) == 1
-    ), "If this is 0, we are still waiting for the rest of the script to be updated to handle the public env"
     data_dict = load_all_data(
-        subtype_tree_taiga_id[0],
-        context_matrix_taiga_id[0],
-        gene_effect_taiga_id[0],
-        gene_dependency_taiga_id[0],
-        repurposing_matrix_taiga_id[0],
-        repurposing_list_taiga_id[0],
-        oncref_auc_taiga_id[0],
-        repurposing_table_path[0],
-        oncref_table_path[0],
+        subtype_tree_taiga_id,
+        context_matrix_taiga_id,
+        gene_effect_taiga_id,
+        gene_dependency_taiga_id,
+        repurposing_matrix_taiga_id,
+        repurposing_list_taiga_id,
+        oncref_auc_taiga_id,
+        repurposing_table_path,
+        oncref_table_path,
     )
 
     context_explorer_results = compute_in_out_groups(**data_dict)
-    context_explorer_results.to_csv(OUT_FILE, index=False)
+    context_explorer_results.to_csv(out_filename, index=False)
 
     return
 
