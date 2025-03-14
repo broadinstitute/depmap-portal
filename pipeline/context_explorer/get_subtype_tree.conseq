@@ -13,4 +13,3 @@ rule get_subtype_tree:
         
         subtype_tree.to_csv("subtype_tree.csv", index=True)
         """
-    run """ python {{ inputs.script.filename }} inputs.json subtype_tree.csv """

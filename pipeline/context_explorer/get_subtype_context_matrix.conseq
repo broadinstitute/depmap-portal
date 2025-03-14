@@ -12,4 +12,3 @@ rule get_subtype_context_matrix:
         
         subtype_context_matrix.to_csv("subtype_context_matrix.csv", index=True)
         """
-    run """ python {{ inputs.script.filename }} inputs.json subtype_context_matrix.csv """
