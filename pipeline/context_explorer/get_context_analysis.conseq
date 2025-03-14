@@ -35,8 +35,8 @@ rule get_context_analysis:
 
         # now unpack those inputs into ids the script was using
         for dest_name, type_name in [
-                ('subtype_tree_taiga_id','subtype_tree'), 
-                ('context_matrix_taiga_id', 'context_matrix'), 
+                ('subtype_tree_taiga_id','subtype_tree_out'), 
+                ('context_matrix_taiga_id', 'context_matrix_out'), 
                 ('gene_effect_taiga_id', 'raw-dep-matrix'), 
                 ('gene_dependency_taiga_id', 'raw-dep-prob-matrix'), 
                 ('repurposing_matrix_taiga_id', 'repurposing_list_taiga_id'), 
