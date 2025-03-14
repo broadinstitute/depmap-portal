@@ -16,11 +16,11 @@ def main(
 
     # If any of these are an empty list and error because of [0], that is a problem. Each
     # of these get_id's should return a list with 1 element.
-    model_taiga_id = get_id(taiga_ids["model_taiga_id"])[0]
-    omics_profiles_taiga_id = get_id(taiga_ids["omics_profiles_taiga_id"])[0]
-    screen_sequence_map_taiga_id = get_id(taiga_ids["screen_sequence_map_taiga_id"])[0]
-    rnai_taiga_id = get_id(taiga_ids["rnai_taiga_id"])[0]
-    repurposing_matrix_taiga_id = get_id(taiga_ids["repurposing_matrix_taiga_id"])[0]
+    model_taiga_id = get_id(taiga_ids["model_taiga_id"])
+    omics_profiles_taiga_id = get_id(taiga_ids["omics_profiles_taiga_id"])
+    screen_sequence_map_taiga_id = get_id(taiga_ids["screen_sequence_map_taiga_id"])
+    rnai_taiga_id = get_id(taiga_ids["rnai_cell_lines_taiga_id"])
+    repurposing_matrix_taiga_id = get_id(taiga_ids["repurposing_matrix_taiga_id"])
 
     # TODO: Use the subtype_context_matrix to add models that don't appear in the above datasets to the
     # output csv.
@@ -33,23 +33,23 @@ def main(
 
     tc = create_taiga_client_v3()
     # Data for CRISPR, RNAi, Omics, PRISM
-    ScreenSequenceMap = tc.get(screen_sequence_map_taiga_id)
+    ScreenSequenceMap = tc.get(screen_sequence_map_taiga_id[0])
     assert ScreenSequenceMap is not None
 
-    CL_data_comb = tc.get(rnai_taiga_id)
+    CL_data_comb = tc.get(rnai_taiga_id[0])
     assert CL_data_comb is not None
 
-    OmicsProfiles = tc.get(omics_profiles_taiga_id)
+    OmicsProfiles = tc.get(omics_profiles_taiga_id[0])
     assert OmicsProfiles is not None
 
-    Repurposing_Matrix = tc.get(repurposing_matrix_taiga_id)
+    Repurposing_Matrix = tc.get(repurposing_matrix_taiga_id[0])
     assert Repurposing_Matrix is not None
 
     OncRef_Matrix = None
     if len(prism_oncref_auc_matrix) > 0:
-        OncRef_Matrix = tc.get(prism_oncref_auc_matrix)
+        OncRef_Matrix = tc.get(prism_oncref_auc_matrix[0])
 
-    Model = tc.get(model_taiga_id)
+    Model = tc.get(model_taiga_id[0])
     assert Model is not None
 
     crispr_summary = ScreenSequenceMap[
