@@ -1,0 +1,51 @@
+// Styles copied from a different version of
+// Bootstrap to fix the Typeahead component.
+:global .rbt {
+  .form-control {
+    display: block;
+    width: 100%;
+    height: calc(1.5em + 0.75rem + 2px);
+    padding: 0.375rem 0.75rem;
+    font-weight: 400;
+    line-height: 1.5;
+    color: #495057;
+    background-color: #fff;
+    background-clip: padding-box;
+    border: 1px solid #ced4da;
+    border-radius: 0.25rem;
+  }
+
+  .dropdown-item {
+    display: block;
+    width: 100%;
+    padding: 0.25rem 1.5rem;
+    clear: both;
+    font-weight: 400;
+    color: #212529;
+    text-align: inherit;
+    white-space: nowrap;
+    background-color: transparent;
+    border: 0;
+  }
+
+  .dropdown-item:hover,
+  .dropdown-item:focus {
+    color: #16181b;
+    text-decoration: none;
+    background-color: #f8f9fa;
+  }
+
+  .dropdown-item.active,
+  .dropdown-item:active {
+    color: #fff;
+    text-decoration: none;
+    background-color: #007bff;
+  }
+
+  .dropdown-item.disabled,
+  .dropdown-item:disabled {
+    color: #6c757d;
+    pointer-events: none;
+    background-color: transparent;
+  }
+}

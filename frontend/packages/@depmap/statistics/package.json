@@ -1,0 +1,15 @@
+{
+  "name": "@depmap/statistics",
+  "version": "1.0.0",
+  "main": "index.ts",
+  "types": "index.d.ts",
+  "license": "MIT",
+  "scripts": {
+    "test": "echo 'no tests to run'"
+  },
+  "dependencies": {
+    "jstat": "^1.9.6",
+    "ml-hclust": "^3.1.0",
+    "simple-statistics": "^7.8.7"
+  }
+}

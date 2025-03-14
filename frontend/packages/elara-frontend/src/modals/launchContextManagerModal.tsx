@@ -9,7 +9,9 @@ const ElaraContextManager = React.lazy(
     )
 );
 
-export default function launchContextManagerModal() {
+export default function launchContextManagerModal(options?: {
+  initialContextType: string;
+}) {
   const container = document.getElementById("cell_line_selector_modal");
   const hide = () => ReactDOM.unmountComponentAtNode(container as HTMLElement);
 
@@ -18,7 +20,10 @@ export default function launchContextManagerModal() {
 
   ReactDOM.render(
     <React.Suspense fallback={null}>
-      <ElaraContextManager onHide={hide} />
+      <ElaraContextManager
+        onHide={hide}
+        initialContextType={options?.initialContextType}
+      />
     </React.Suspense>,
     container
   );

@@ -33,34 +33,47 @@ function PlotSelections({
   const { sectionHeights } = useContext(SectionStackContext);
 
   const maxHeightOfList =
-    selectedLabels && selectedLabels.size > 0
+    selectedLabels &&
+    selectedLabels.size > 0 &&
+    plot_type !== "correlation_heatmap"
       ? sectionHeights[1] - SECTION_HEIGHT_WITHOUT_LIST
       : Infinity;
 
-  const labels: string[] = useMemo(() => [...(selectedLabels || [])], [
-    selectedLabels,
-  ]);
+  const [ids, labels] = useMemo(() => {
+    const indexLabels = data?.index_labels || [];
+    const modelLabels = data?.index_aliases?.[0]?.values || [];
+    const mapping = new Map(
+      indexLabels.map((label, i) => [label, modelLabels[i]])
+    );
+
+    const outIds: string[] = [];
+    const outLabels: string[] = [];
+
+    for (let i = 0; i < indexLabels.length; i += 1) {
+      const label = indexLabels[i];
+
+      if (selectedLabels?.has(label)) {
+        const alias = mapping.get(label);
+
+        if (alias) {
+          outIds.push(label);
+          outLabels.push(alias);
+        } else {
+          outLabels.push(label);
+        }
+      }
+    }
+
+    return [outIds, outLabels];
+  }, [data?.index_aliases, data?.index_labels, selectedLabels]);
 
   const handleCopy = useCallback(() => {
     const w = window.open("");
 
     if (w) {
-      w.document.write(selectionsToHtml(labels));
+      w.document.write(selectionsToHtml(ids.length > 0 ? ids : labels));
     }
-  }, [labels]);
-
-  const modelLabelToDisplayNameMap = new Map<string, string>();
-  const cell_line_names =
-    data?.index_aliases && data?.index_aliases.length > 0
-      ? data?.index_aliases.find((alias) => alias.label === "Cell Line Name")!
-          .values
-      : null;
-
-  if (cell_line_names) {
-    data?.index_labels.forEach((label: string, i: number) => {
-      modelLabelToDisplayNameMap.set(label, cell_line_names[i]);
-    });
-  }
+  }, [ids, labels]);
 
   return (
     <div>
@@ -97,20 +110,11 @@ function PlotSelections({
       <div className={styles.plotSelectionsContent}>
         <div ref={listRef}>
           <LabelsVirtualList
-            displayLabels={
-              modelLabelToDisplayNameMap
-                ? labels.map((label: string) => {
-                    const displayName = modelLabelToDisplayNameMap.get(label);
-                    if (displayName) {
-                      return `${displayName} (${label})`;
-                    }
-                    return label;
-                  })
-                : labels
-            }
+            ids={ids}
             labels={labels}
             maxHeight={maxHeightOfList}
             index_type={data?.index_type as string}
+            slice_type={data?.dimensions?.x?.slice_type as string}
             plot_type={plot_type as string}
           />
         </div>

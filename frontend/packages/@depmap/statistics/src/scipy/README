@@ -1,0 +1,5 @@
+These functions are designed to mimic their scipy counterparts.
+
+https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.mstats.linregress.html#linregress
+https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.pearsonr.html#pearsonr
+https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.spearmanr.html#spearmanr

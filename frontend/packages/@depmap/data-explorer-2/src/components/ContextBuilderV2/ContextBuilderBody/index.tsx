@@ -7,15 +7,21 @@ import DebugInfo from "./DebugInfo";
 import styles from "../../../styles/ContextBuilderV2.scss";
 
 function ContextBuilderBody() {
-  const { mainExpr } = useContextBuilderState();
+  const { isInitializing, mainExpr } = useContextBuilderState();
 
   return (
     <Modal.Body>
-      <NameInput />
-      <div className={styles.mainExpr}>
-        <Expression expr={mainExpr} path={[]} />
-      </div>
-      <DebugInfo />
+      {isInitializing ? (
+        <h2>Loading...</h2>
+      ) : (
+        <>
+          <NameInput />
+          <div className={styles.mainExpr}>
+            <Expression expr={mainExpr} path={[]} />
+          </div>
+          <DebugInfo />
+        </>
+      )}
     </Modal.Body>
   );
 }

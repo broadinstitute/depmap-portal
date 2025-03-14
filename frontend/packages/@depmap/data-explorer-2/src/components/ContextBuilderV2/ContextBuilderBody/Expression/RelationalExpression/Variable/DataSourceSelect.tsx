@@ -52,7 +52,8 @@ function DataSourceSelect({ expr, path }: Props) {
       options={options}
       isLoading={isLoadingTabularDatasets}
       onChange={(nextSource) => {
-        let nextVarName = varName;
+        // The name "given_id" has special meaning and is reserved.
+        let nextVarName = varName === "given_id" ? null : varName;
 
         // Create a var reference if one doesn't exist.
         if (!nextVarName) {

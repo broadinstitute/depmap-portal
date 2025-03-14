@@ -23,7 +23,20 @@ function PlotlyLoader({ children }: Props) {
     })();
   }, []);
 
-  return Plotly ? children(Plotly) : <Spinner />;
+  return Plotly ? (
+    children(Plotly)
+  ) : (
+    <div
+      style={{
+        display: "flex",
+        height: "100%",
+        flexDirection: "column",
+        justifyContent: "center",
+      }}
+    >
+      <Spinner position="relative" left="-2px" />
+    </div>
+  );
 }
 
 export default PlotlyLoader;

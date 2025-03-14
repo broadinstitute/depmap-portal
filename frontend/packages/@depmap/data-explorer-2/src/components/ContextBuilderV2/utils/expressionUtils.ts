@@ -27,7 +27,6 @@ export const operatorsByValueType = {
   text: new Set(["==", "!=", "in", "!in"]),
   categorical: new Set(["==", "!=", "in", "!in"]),
   list_strings: new Set(["has_any", "!has_any"]),
-  binary: new Set(["==", "!="]),
 };
 
 export type ValueType = keyof typeof operatorsByValueType;
@@ -37,7 +36,6 @@ export const defaultOperatorByValueType: Record<ValueType, OperatorType> = {
   text: "==",
   categorical: "==",
   list_strings: "has_any",
-  binary: "==",
 };
 
 export const isListOperator = (op: OperatorType) => {
@@ -140,13 +138,15 @@ export const makeCompatibleExpression = (
 
   if (value_type === "text" || value_type === "categorical") {
     if (nextValue && Array.isArray(nextValue)) {
-      nextValue = nextValue.filter((val) => domain.unique_values.includes(val));
+      nextValue = nextValue.filter((val) =>
+        domain.unique_values?.includes(val)
+      );
       if (nextValue.length === 0) {
         nextValue = null;
       }
     } else if (
       nextValue &&
-      !domain.unique_values.find((val) => val === nextValue)
+      !domain.unique_values?.find((val) => val === nextValue)
     ) {
       nextValue = null;
     }

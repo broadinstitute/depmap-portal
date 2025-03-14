@@ -31,17 +31,22 @@ async function fetchContextCompatibleDatasets(
 
   const expr = dimension.context.expr;
 
+  const dimensionTypes = await api.fetchDimensionTypes();
+  const axis = dimensionTypes.find((dt) => dt.name === dimension.slice_type)
+    ?.axis;
+
   if (dimension.axis_type === "aggregated_slice") {
-    throw new Error("Aggregation not yet implemented!");
+    // HACK: It would be difficult to compute what datasets match the context
+    // so just return them all.
+    return api.fetchDatasets({
+      [axis === "sample" ? "sample_type" : "feature_type"]: dimension.context
+        .dimension_type,
+    });
   }
 
   if (!(typeof expr === "object") || !("==" in expr)) {
     throw new Error("Malformed context expression");
   }
-
-  const dimensionTypes = await api.fetchDimensionTypes();
-  const axis = dimensionTypes.find((dt) => dt.name === dimension.slice_type)
-    ?.axis;
 
   if (axis === "sample") {
     return api.fetchDatasets({

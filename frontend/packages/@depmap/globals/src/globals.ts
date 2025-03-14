@@ -34,6 +34,9 @@ export const depmapContactUrl: string = (window as any).depmapContactUrl;
 export const enabledFeatures: Record<string, boolean> =
   (window as any).enabledFeatures || makeMockEnabledFeatures();
 
+// Just a convenience function for looking up this flag.
+export const isElara: boolean = Boolean(enabledFeatures.elara);
+
 // Currently, the `errorHandler` doesn't really do anything special outside of
 // logging to the console. In the Portal, it's defined here:
 // https://github.com/broadinstitute/depmap-portal/blob/a2e2cc9/portal-backend/depmap/templates/nav_footer/layout.html#L103
@@ -55,18 +58,26 @@ export const DepMap: Record<string, Function> =
     ? new Proxy(
         {},
         {
-          get(obj, prop) {
-            if ((window as any).DepMap) {
-              return (window as any).DepMap[prop];
+          get(_, prop) {
+            const win = window as any;
+
+            if (win.DepMap && prop in win.DepMap) {
+              return win.DepMap[prop];
             }
 
             const message = [
               `Cannot call \`window.DepMap.${
                 prop as string
-              }()\` because \`window.DepMap\` is not defined. `,
-              "Currently it is only defined in the portal-frontend project. ",
-              "You'll need to find a workaround if you're trying to use it in Elara.",
-            ].join("");
+              }()\` because that function is not defined. `,
+              isElara &&
+                "Elara only supports a subset of the global DepMap object's properties.",
+              !isElara &&
+                "Only exported functions from " +
+                  "frontend/packages/portal-frontend/src/index.tsx " +
+                  "are callable.",
+            ]
+              .filter(Boolean)
+              .join("");
 
             throw new Error(message);
           },
@@ -86,7 +97,6 @@ function polyfillProxy() {
     "log",
     "tailLog",
     "getLogCount",
-    "launchCellLineSelectorModal",
     "launchContextManagerModal",
     "saveNewContext",
     "editContext",

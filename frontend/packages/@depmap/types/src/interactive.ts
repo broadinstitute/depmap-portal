@@ -5,7 +5,7 @@ export interface LinRegInfo {
   pearson: number;
   spearman: number;
   p_value: number;
-  group_label: string;
+  group_label: string | null;
 }
 
 export interface AddDatasetOneRowArgs {

@@ -3,14 +3,17 @@ import pako from "pako";
 import omit from "lodash.omit";
 import { Base64 } from "js-base64";
 import stableStringify from "json-stable-stringify";
+import { isElara } from "@depmap/globals";
 import {
   ContextPath,
   DataExplorerContext,
+  DataExplorerContextV2,
   DataExplorerFilters,
   DataExplorerPlotConfig,
   DataExplorerPlotConfigDimension,
   DimensionKey,
   FilterKey,
+  isValidSliceQuery,
   PartialDataExplorerPlotConfig,
 } from "@depmap/types";
 import {
@@ -29,18 +32,99 @@ import {
   parseShorthandParams,
 } from "./query-string-parser";
 
-// NOTE: isCompletePlot moved to validation.ts
-
 export const defaultContextName = (numLabels: number) => {
   return ["(", numLabels, " selected", ")"].join("");
 };
 
 export function toRelatedPlot(
   plot: DataExplorerPlotConfig,
-  selectedLabels: Set<string>
+  selectedLabels: Set<string>,
+  identifiers: { id: string; label: string }[]
 ): DataExplorerPlotConfig {
   const numDimensions = Math.min(selectedLabels.size, 2);
   const slice_labels = [...selectedLabels];
+
+  const idToLabelMap = Object.fromEntries(
+    identifiers.map(({ id, label }) => [id, label])
+  );
+
+  const labelToIdMap = Object.fromEntries(
+    identifiers.map(({ label, id }) => [label, id])
+  );
+
+  const toSliceName = (label: string, slice_type: string) => {
+    if (isElara && slice_type === "depmap_model") {
+      return idToLabelMap[label];
+    }
+
+    return label;
+  };
+
+  const toVarEqualityExpression = (label: string, slice_type: string) => {
+    if (isElara) {
+      let given_id = labelToIdMap[label];
+
+      if (
+        (plot.plot_type === "correlation_heatmap" &&
+          slice_type === "depmap_model") ||
+        (plot.plot_type !== "correlation_heatmap" &&
+          plot.index_type === "depmap_model")
+      ) {
+        given_id = label;
+      }
+
+      return { "==": [{ var: "given_id" }, given_id] };
+    }
+
+    return { "==": [{ var: "entity_label" }, label] };
+  };
+
+  const toVarInclusionExpression = (labels: string[]) => {
+    if (isElara) {
+      const ids =
+        plot.index_type === "depmap_model"
+          ? labels
+          : labels.map((label) => labelToIdMap[label]);
+
+      return { in: [{ var: "given_id" }, ids] };
+    }
+
+    return { in: [{ var: "entity_label" }, labels] };
+  };
+
+  const toSingleSliceContext = (slice_type: string, label: string) => {
+    if (isElara) {
+      return {
+        name: toSliceName(label, slice_type),
+        dimension_type: slice_type,
+        expr: toVarEqualityExpression(label, slice_type),
+        vars: {},
+      };
+    }
+
+    return {
+      name: toSliceName(label, slice_type),
+      context_type: slice_type,
+      expr: toVarEqualityExpression(label, slice_type),
+    };
+  };
+
+  const toMultiSliceContext = (slice_type: string, labels: string[]) => {
+    if (isElara) {
+      return {
+        name: defaultContextName(selectedLabels.size),
+        dimension_type: slice_type,
+        expr: toVarInclusionExpression(labels),
+        vars: {},
+      } as DataExplorerContextV2;
+    }
+
+    return {
+      name: defaultContextName(selectedLabels.size),
+      context_type: slice_type,
+      expr: toVarInclusionExpression(labels),
+    } as DataExplorerContext;
+  };
 
   // correlation_heatmap -> any
   // Linking from a correlation heatmap is weird. We don't want to flip the
@@ -79,14 +163,10 @@ export function toRelatedPlot(
           ...dimensions,
           [dimensionKey]: {
             slice_type,
-            axis_type: "raw_slice",
             dataset_id,
-            context: {
-              name: slice_labels[index],
-              context_type: slice_type,
-              expr: { "==": [{ var: "entity_label" }, slice_labels[index]] },
-            },
+            axis_type: "raw_slice",
             aggregation: "first",
+            context: toSingleSliceContext(slice_type, slice_labels[index]),
           },
         }),
         {}
@@ -101,13 +181,7 @@ export function toRelatedPlot(
 
   // { density_1d, waterfall, scatter } -> correlation_heatmap
   if (selectedLabels.size > 2) {
-    const context = {
-      name: defaultContextName(selectedLabels.size),
-      context_type: slice_type,
-      expr: {
-        in: [{ var: "entity_label" }, slice_labels],
-      },
-    };
+    const context = toMultiSliceContext(slice_type, slice_labels);
 
     const isCompatibleTwoContextComparison =
       plot.dimensions.x!.axis_type === "aggregated_slice" &&
@@ -126,7 +200,7 @@ export function toRelatedPlot(
           // they could be different. Should we force them to be the same?
           slice_type,
           dataset_id,
-          context,
+          context: context as DataExplorerContext,
           aggregation: "correlation",
         },
       },
@@ -177,14 +251,10 @@ export function toRelatedPlot(
         ...dimensions,
         [dimensionKey]: {
           axis_type: "raw_slice",
+          aggregation: "first",
           slice_type,
           dataset_id,
-          context: {
-            name: slice_labels[index],
-            context_type: slice_type,
-            expr: { "==": [{ var: "entity_label" }, slice_labels[index]] },
-          },
-          aggregation: "first",
+          context: toSingleSliceContext(slice_type, slice_labels[index]),
         },
       }),
       {}
@@ -305,7 +375,11 @@ function normalizePlot(plot: DataExplorerPlotConfig) {
     if (
       color_by &&
       metadata &&
-      !Object.values(metadata).some((m) => isPartialSliceId(m.slice_id))
+      !Object.values(metadata).some((m) => {
+        return "slice_id" in m
+          ? isPartialSliceId(m.slice_id)
+          : !isValidSliceQuery(m);
+      })
     ) {
       normalized.color_by = color_by;
       normalized.metadata = metadata;
@@ -359,13 +433,14 @@ async function replaceHashesWithContexts(plot: DataExplorerPlotConfig | null) {
           const context = await fetchContext(dimension.context.hash);
 
           if (isV2Context(context)) {
-            throw new Error("V2 contexts not supported!");
+            // FIXME: Is this true? can we get rid of this check?
+            // throw new Error("V2 contexts not supported!");
           }
 
           nextDimensions[dimensionKey] = {
             ...dimension,
             context: dimension.context.negated
-              ? negateContext(context)
+              ? negateContext(context as DataExplorerContext)
               : context,
           };
         } else {
@@ -390,12 +465,8 @@ async function replaceHashesWithContexts(plot: DataExplorerPlotConfig | null) {
         if ("hash" in filter) {
           const context = await fetchContext(filter.hash);
 
-          if (isV2Context(context)) {
-            throw new Error("V2 contexts not supported!");
-          }
-
           nextFilters[filterKey] = filter.negated
-            ? negateContext(context)
+            ? negateContext(context as DataExplorerContext)
             : context;
         } else {
           nextFilters[filterKey] = filter;
@@ -411,7 +482,9 @@ async function replaceHashesWithContexts(plot: DataExplorerPlotConfig | null) {
   };
 }
 
-const isTrivialContext = (context: DataExplorerContext) => {
+const isTrivialContext = (
+  context: DataExplorerContext | DataExplorerContextV2
+) => {
   // FIXME: Figure out why this is happening.
   if (!context || !context.expr) {
     return true;
@@ -425,9 +498,13 @@ const isTrivialContext = (context: DataExplorerContext) => {
   return Boolean(expr["=="]) && expr["=="].length === 2;
 };
 
-const toContextDescriptor = async (context: DataExplorerContext) => {
+const toContextDescriptor = async (
+  context: DataExplorerContext | DataExplorerContextV2
+) => {
   const negated = isNegatedContext(context);
-  const contextToHash = negated ? negateContext(context) : context;
+  const contextToHash = negated
+    ? negateContext(context as DataExplorerContext)
+    : context;
 
   if (isTrivialContext(contextToHash)) {
     return context;

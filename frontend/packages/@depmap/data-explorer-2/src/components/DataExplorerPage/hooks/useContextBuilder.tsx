@@ -1,4 +1,5 @@
 import React, { useRef, useState } from "react";
+import { isElara } from "@depmap/globals";
 import {
   DataExplorerContext,
   DataExplorerPlotConfig,
@@ -9,7 +10,13 @@ import {
   saveContextToLocalStorageAndPersist,
 } from "../../../utils/context";
 import ContextBuilderModal from "../../ContextBuilder/ContextBuilderModal";
+import ContextBuilderV2 from "../../ContextBuilderV2";
 import { plotToQueryString, plotsAreEquivalentWhenSerialized } from "../utils";
+import { isCompletePlot } from "../validation";
+
+const ContextBuilder = isElara
+  ? (ContextBuilderV2 as any)
+  : ContextBuilderModal;
 
 type SaveCallback = (context: DataExplorerContext) => void;
 const noop = () => {};
@@ -66,11 +73,17 @@ export default function useContextBuilder(
     setShowContextModal(false);
 
     if (isNew) {
-      window.history.pushState(null, "", queryString);
       setPlot(nextPlot);
+
+      if (isCompletePlot(nextPlot)) {
+        window.history.pushState(null, "", queryString);
+      }
     } else if (!plotsAreEquivalentWhenSerialized(plot, nextPlot)) {
-      window.history.replaceState(null, "", queryString);
       setPlot(nextPlot);
+
+      if (isCompletePlot(nextPlot)) {
+        window.history.replaceState(null, "", queryString);
+      }
     }
 
     window.dispatchEvent(new Event("dx2_contexts_updated"));
@@ -117,7 +130,7 @@ export default function useContextBuilder(
     onClickCreateContext,
     onClickSaveAsContext,
     ContextBuilder: () => (
-      <ContextBuilderModal
+      <ContextBuilder
         show={showContextModal}
         context={contextToEdit.current}
         onClickSave={onClickSave.current as SaveCallback}

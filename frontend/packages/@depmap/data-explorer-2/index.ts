@@ -6,6 +6,7 @@ export { default as DimensionSelect } from "./src/components/DimensionSelect";
 export { default as DimensionSelectV2 } from "./src/components/DimensionSelectV2";
 export { default as SliceLabelSelect } from "./src/components/DimensionSelect/SliceLabelSelect";
 export { default as ContextBuilderModal } from "./src/components/ContextBuilder/ContextBuilderModal";
+export { default as ContextBuilderV2 } from "./src/components/ContextBuilderV2";
 export { default as ContextManager } from "./src/components/ContextManager";
 export { default as DatasetMetadataSelector } from "./src/components/DatasetMetadataSelector";
 export { default as DataExplorerPage } from "./src/components/DataExplorerPage/components/DataExplorer2";

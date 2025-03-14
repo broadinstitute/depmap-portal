@@ -6,7 +6,7 @@ import {
   DimensionSelectV2,
   isCompleteDimension,
 } from "@depmap/data-explorer-2";
-import { enabledFeatures } from "@depmap/globals";
+import { isElara } from "@depmap/globals";
 import { Link } from "../models/legacy";
 import {
   DataExplorerPlotConfigDimension,
@@ -85,7 +85,7 @@ export class CustomOrCatalogVectorSelect extends React.Component<
       }
     };
 
-    if (enabledFeatures.elara) {
+    if (isElara) {
       return (
         <DimensionSelectV2
           mode="entity-only"

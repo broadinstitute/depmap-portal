@@ -199,6 +199,7 @@ export const sortDimensionTypes = (types: string[]) => {
           "depmap_model",
           "gene",
           "gene pair",
+          "compound",
           "compound_experiment",
           "other",
           "custom",
@@ -206,12 +207,13 @@ export const sortDimensionTypes = (types: string[]) => {
     )
     .sort(Intl.Collator("en").compare);
 
-  // prioritize { depmap_model, gene, compound_experiment } and stick
-  // { other, custom } last
+  // prioritize { depmap_model, gene, etc... }
+  // and stick { other, custom } last
   return [
     set.has("depmap_model") ? "depmap_model" : null,
     set.has("gene") ? "gene" : null,
     set.has("gene pair") ? "gene pair" : null,
+    set.has("compound") ? "compound" : null,
     set.has("compound_experiment") ? "compound_experiment" : null,
     ...middle,
     set.has("other") ? "other" : null,

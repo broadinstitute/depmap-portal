@@ -3,7 +3,6 @@ import { useDataExplorerApi } from "../../../contexts/DataExplorerApiContext";
 import { contextsMatch } from "../../../utils/context";
 import { Changes, State } from "./types";
 import {
-  findDataType,
   findHighestPriorityDataset,
   inferDataType,
   inferDatasetId,
@@ -31,10 +30,12 @@ async function resolveNextState(
     aggregation = changes.aggregation as DataExplorerAggregation;
   }
 
-  if ("index_type" in changes && !dataset_id) {
+  if ("index_type" in changes) {
     dataType = null;
+    units = null;
     slice_type = undefined;
     context = undefined;
+    dataset_id = undefined;
   }
 
   if ("dataType" in changes && dataType !== changes.dataType) {
@@ -153,12 +154,6 @@ async function resolveNextState(
         slice_type as string
       );
     }
-  }
-
-  // Initalize `dataType` if we already know the `dataset_id`. This needs to
-  // happen last to avoid triggering extra auto-selections.
-  if (!dataType && dataset_id) {
-    dataType = await findDataType(api, dataset_id);
   }
 
   let dirty =

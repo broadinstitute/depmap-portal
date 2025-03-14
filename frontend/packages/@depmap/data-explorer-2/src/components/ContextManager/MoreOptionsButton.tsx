@@ -1,6 +1,7 @@
 import React, { useRef } from "react";
 import { DropdownButton, MenuItem } from "react-bootstrap";
 import { Tooltip } from "@depmap/common-components";
+import { isElara } from "@depmap/globals";
 import styles from "../../styles/ContextManager.scss";
 
 interface Props {
@@ -34,7 +35,8 @@ function MoreOptionsButton({ onClickDelete, onClickDownload }: Props) {
             }
           }}
         >
-          <MenuItem onClick={onClickDownload}>Download…</MenuItem>
+          {/* TODO: Support download button in Elara */}
+          {!isElara && <MenuItem onClick={onClickDownload}>Download…</MenuItem>}
           <MenuItem className={styles.deleteContext} onClick={onClickDelete}>
             Delete
           </MenuItem>

@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Checkbox } from "react-bootstrap";
+import { isElara } from "@depmap/globals";
+import { useDataExplorerApi } from "../../../../contexts/DataExplorerApiContext";
 import { useDeprecatedDataExplorerApi } from "../../../../contexts/DeprecatedDataExplorerApiContext";
 import {
   capitalize,
@@ -8,9 +10,10 @@ import {
   sortDimensionTypes,
 } from "../../../../utils/misc";
 import renderConditionally from "../../../../utils/render-conditionally";
+import { fetchMetadataAndOtherTabularDatasets } from "../../../../utils/api-helpers";
 import PlotConfigSelect from "../../../PlotConfigSelect";
 import {
-  colorByValue,
+  ColorByValue,
   DataExplorerDatasetDescriptor,
   DataExplorerPlotConfig,
 } from "@depmap/types";
@@ -141,19 +144,40 @@ export function ColorByTypeSelector({
   slice_type: string;
   onChange: (nextValue: DataExplorerPlotConfig["color_by"]) => void;
 }) {
-  const api = useDeprecatedDataExplorerApi();
+  const api = useDataExplorerApi();
+  const deprecatedApi = useDeprecatedDataExplorerApi();
+
   const sliceTypeLabel = capitalize(getDimensionTypeLabel(slice_type));
-  const [hasSomeColorProperty, setHasSomeColorProperty] = useState(false);
+  const [hasLegacyColorProperty, setHasLegacyColorProperty] = useState(false);
+  const [hasMetadataDataset, setHasMetadataDataset] = useState(false);
+  const [
+    hasSomeCategoricalTabularColumns,
+    setHasSomeCategoricalTabularColumns,
+  ] = useState(false);
 
   useEffect(() => {
     (async () => {
-      const keyedSlices = await api.fetchMetadataSlices(slice_type);
-      const slices = Object.values(keyedSlices);
-      setHasSomeColorProperty(slices.some((slice) => !slice.isHighCardinality));
-    })();
-  }, [api, slice_type]);
+      if (isElara) {
+        const {
+          metadataDataset,
+          otherTabularDatasets,
+        } = await fetchMetadataAndOtherTabularDatasets(api, slice_type, [
+          "categorical",
+        ]);
 
-  const options: Partial<Record<colorByValue, string>> = {
+        setHasMetadataDataset(Boolean(metadataDataset));
+        setHasSomeCategoricalTabularColumns(otherTabularDatasets.length > 0);
+      } else {
+        const keyedSlices = await deprecatedApi.fetchMetadataSlices(slice_type);
+        const slices = Object.values(keyedSlices);
+        setHasLegacyColorProperty(
+          slices.some((slice) => !slice.isHighCardinality)
+        );
+      }
+    })();
+  }, [api, deprecatedApi, slice_type]);
+
+  const options: Partial<Record<ColorByValue, string>> = {
     raw_slice: sliceTypeLabel,
   };
 
@@ -173,7 +197,7 @@ export function ColorByTypeSelector({
     );
   }
 
-  if (hasSomeColorProperty || value === "property") {
+  if (hasLegacyColorProperty || value === "property") {
     options.property = `${sliceTypeLabel} Property`;
     helpContent.push(
       <p key={2}>
@@ -184,8 +208,16 @@ export function ColorByTypeSelector({
     );
   }
 
+  if (isElara && hasMetadataDataset) {
+    options.metadata_column = `${sliceTypeLabel} Annotation`;
+  }
+
+  if (isElara && hasSomeCategoricalTabularColumns) {
+    options.tabular_dataset = "Tabular Dataset";
+  }
+
   if (slice_type !== "other") {
-    options.custom = "Custom";
+    options.custom = isElara ? "Matrix Data" : "Custom";
     helpContent.push(
       <p key={3}>
         Choose <b>Custom</b> to treat color as a third axis, letting you choose
@@ -201,7 +233,10 @@ export function ColorByTypeSelector({
           <span>
             Color by
             {slice_type && (
-              <HelpTip id="color-by-help" customContent={helpContent} />
+              <HelpTip
+                id="color-by-help"
+                customContent={isElara ? "TODO: Elara help" : helpContent}
+              />
             )}
           </span>
         }

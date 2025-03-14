@@ -318,7 +318,7 @@ export default function extendReactSelect(
                 className={styles.swatch}
                 style={{
                   backgroundColor: swatchColor,
-                  top: label ? 22 : 0,
+                  top: label ? 22 : 1,
                 }}
               />
             </span>
