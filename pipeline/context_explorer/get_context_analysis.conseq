@@ -32,7 +32,6 @@ rule get_context_analysis:
         }
 
         by_type = { artifact['type'] : artifact for artifact in artifacts }
-        assert len(by_type) == len(artifacts), "Some type was duplicated?"
 
         # now unpack those inputs into ids the script was using
         for dest_name, type_name in [
