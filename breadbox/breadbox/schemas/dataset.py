@@ -24,6 +24,7 @@ class FeatureSampleIdentifier(enum.Enum):
 class ValueType(enum.Enum):
     continuous = "continuous"
     categorical = "categorical"
+    list_strings = "list_strings"
 
 
 class AnnotationType(enum.Enum):

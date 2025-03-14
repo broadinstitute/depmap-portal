@@ -224,6 +224,70 @@ class TestPost:
         assert bad_list_strings_file_ids_dataset.status_code == 202
         assert bad_list_strings_file_ids_dataset.json()["state"] == "FAILURE"
 
+    def test_continuous_with_nas_dataset_uploads_task(
+        self,
+        client: TestClient,
+        minimal_db: SessionWithUser,
+        private_group: Dict,
+        mock_celery,
+        monkeypatch,
+    ):
+        user = "someone@private-group.com"
+        headers = {"X-Forwarded-User": user}
+        user_db_session = SessionLocalWithUser(user)
+
+        file = factories.matrix_csv_data_file_with_values(
+            values=[1.01, 2, np.nan, None, 3.0, pd.NA]
+        )
+        file_ids, expected_md5 = upload_and_get_file_ids(client, file, chunk_count=3)
+        matrix_dataset_given_id = "some_given_id"
+
+        matrix_dataset_w_simple_metadata = client.post(
+            "/dataset-v2/",
+            json={
+                "format": "matrix",
+                "name": "a dataset",
+                "given_id": matrix_dataset_given_id,
+                "units": "a unit",
+                "feature_type": "generic",
+                "sample_type": "depmap_model",
+                "data_type": "User upload",
+                "file_ids": file_ids,
+                "dataset_md5": expected_md5,
+                "is_transient": False,
+                "group_id": private_group["id"],
+                "value_type": "continuous",
+                "allowed_values": None,
+                "dataset_metadata": {"yah": "nah"},
+                "short_name": "m1",
+                "description": "a dataset",
+                "version": "v1",
+            },
+            headers=headers,
+        )
+        assert_status_ok(matrix_dataset_w_simple_metadata)
+        assert matrix_dataset_w_simple_metadata.status_code == 202
+        assert matrix_dataset_w_simple_metadata.json()["state"] == "SUCCESS"
+
+        # Read out continuous with NAs dataset values
+        matrix_subset = client.post(
+            f"/datasets/matrix/{matrix_dataset_given_id}",
+            json={
+                "features": ["A", "B", "C"],
+                "feature_identifier": "id",
+                "samples": ["ACH-1", "ACH-2"],
+                "sample_identifier": "id",
+            },
+            headers=headers,
+        )
+        assert_status_ok(matrix_subset)
+        matrix_subset_result = matrix_subset.json()
+        assert matrix_subset_result == {
+            "A": {"ACH-1": 1.01, "ACH-2": None},
+            "B": {"ACH-1": 2, "ACH-2": 3.0},
+            "C": {"ACH-1": None, "ACH-2": None},
+        }
+
     def test_categorical_dataset_uploads_task(
         self,
         client: TestClient,
@@ -316,8 +380,10 @@ class TestPost:
             == categorical_dataset2_given_id
         )
 
-        # Test case insensitive values are fine for categorical datasets
-        file3 = factories.matrix_csv_data_file_with_values(values=[True, False, "true"])
+        # Test case insensitive values are fine for categorical datasets and NAs
+        file3 = factories.matrix_csv_data_file_with_values(
+            values=[True, False, pd.NA, np.nan, "true", None]
+        )
         file_ids, expected_md5 = upload_and_get_file_ids(client, file3)
         categorical_dataset3_given_id = "yet another given id"
         categorical_matrix_dataset3 = client.post(
@@ -353,6 +419,25 @@ class TestPost:
             categorical_matrix_dataset3_result.get("given_id")
             == categorical_dataset3_given_id
         )
+
+        # Read out list of string with NAs dataset values
+        matrix_subset = client.post(
+            f"/datasets/matrix/{categorical_dataset3_given_id}",
+            json={
+                "features": ["A", "B", "C"],
+                "feature_identifier": "id",
+                "samples": ["ACH-1", "ACH-2"],
+                "sample_identifier": "id",
+            },
+            headers=headers,
+        )
+        assert_status_ok(matrix_subset)
+        matrix_subset_result = matrix_subset.json()
+        assert matrix_subset_result == {
+            "A": {"ACH-1": "True", "ACH-2": None},
+            "B": {"ACH-1": "false", "ACH-2": "True"},
+            "C": {"ACH-1": None, "ACH-2": None},
+        }
 
     @pytest.mark.parametrize(
         "value_type, allowed_values, status_code",
@@ -484,6 +569,81 @@ class TestPost:
             headers=admin_headers,
         )
         assert r_sample_metadata.status_code == 200, r_sample_metadata.content
+
+    def test_list_strings_dataset_uploads_task(
+        self,
+        client: TestClient,
+        minimal_db: SessionWithUser,
+        private_group: Dict,
+        mock_celery,
+        monkeypatch,
+    ):
+        user = "someone@private-group.com"
+        headers = {"X-Forwarded-User": user}
+
+        # Test list of strings matrix
+        file = factories.matrix_csv_data_file_with_values(
+            values=[
+                '["V600E","P9095","N405R"]',
+                '["V600E","P9095"]',
+                pd.NA,
+                None,
+                '["G586T","P858R","Q725Z","J356W"]',
+                np.nan,
+            ]
+        )
+        file_ids, expected_md5 = upload_and_get_file_ids(client, file)
+        ls_dataset_given_id = "some_given_id"
+
+        list_strings_matrix_dataset = client.post(
+            "/dataset-v2/",
+            json={
+                "format": "matrix",
+                "name": "List String Dataset",
+                "given_id": ls_dataset_given_id,
+                "units": "a unit",
+                "feature_type": "generic",
+                "sample_type": "depmap_model",
+                "data_type": "User upload",
+                "file_ids": file_ids,
+                "dataset_md5": expected_md5,
+                "is_transient": False,
+                "group_id": private_group["id"],
+                "value_type": "list_strings",
+                "dataset_metadata": {"yah": "nah"},
+                "short_name": "shortie",
+                "description": "a dataset",
+                "version": "v1",
+            },
+            headers=headers,
+        )
+        assert_status_ok(list_strings_matrix_dataset)
+        assert list_strings_matrix_dataset.status_code == 202
+        assert list_strings_matrix_dataset.json()["state"] == "SUCCESS"
+        assert list_strings_matrix_dataset.json()["result"]["datasetId"]
+        list_strings_matrix_dataset_result = list_strings_matrix_dataset.json()[
+            "result"
+        ]["dataset"]
+        assert list_strings_matrix_dataset_result is not None
+        assert list_strings_matrix_dataset_result.get("given_id") == ls_dataset_given_id
+
+        # Read out list of string with NAs dataset values
+        matrix_subset = client.post(
+            f"/datasets/matrix/{ls_dataset_given_id}",
+            json={
+                "features": ["A", "C"],
+                "feature_identifier": "id",
+                "samples": ["ACH-1", "ACH-2"],
+                "sample_identifier": "id",
+            },
+            headers=headers,
+        )
+        assert_status_ok(matrix_subset)
+        matrix_subset_result = matrix_subset.json()
+        assert matrix_subset_result == {
+            "A": {"ACH-1": ["V600E", "P9095", "N405R"], "ACH-2": None},
+            "C": {"ACH-1": None, "ACH-2": None},
+        }
 
     def test_add_matrix_dataset_with_dim_type_annotations(
         self,
