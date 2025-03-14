@@ -2,9 +2,9 @@
 rule get_context_analysis:
     inputs:
         script=fileref("./get_context_analysis.py"),
-        artifacts=all {"type" ~ "subtype_tree|context_matrix|raw-dep-matrix|raw-dep-prob-matrix|repurposing_matrix_taiga_id|repurposing_list_taiga_id|prism_oncref_auc_matrix"},
-#        subtype_tree_taiga_id=all {"type":"subtype_tree"},
-#        context_matrix_taiga_id=all {"type":"context_matrix"},
+        artifacts=all {"type" ~ "subtype_tree_out|context_matrix_out|raw-dep-matrix|raw-dep-prob-matrix|repurposing_matrix_taiga_id|repurposing_list_taiga_id|prism_oncref_auc_matrix"},
+#        subtype_tree_taiga_id=all {"type":"subtype_tree_out"},
+#        context_matrix_taiga_id=all {"type":"context_matrix_out"},
 #        gene_effect_taiga_id=all {"type":"raw-dep-matrix"},
 #        gene_dependency_taiga_id=all {"type":"raw-dep-prob-matrix"},
 #        repurposing_matrix_taiga_id=all {"type": "repurposing_matrix_taiga_id"},
