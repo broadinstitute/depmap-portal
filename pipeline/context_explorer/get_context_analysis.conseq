@@ -18,7 +18,8 @@ rule get_context_analysis:
     
         artifacts = {{ inputs.artifacts }}
 
-        compound_summary_by_dataset = { artifact.dataset: artifact for artifact in inputs.compound_summary }
+        compound_summary_artifact = {{ inputs.compound_summary }}
+        compound_summary_by_dataset = { artifact.dataset: artifact for artifact in compound_summary_artifact }
         oncref_table_artifact = compound_summary_by_dataset.get("Prism_oncology_AUC")
         repurposing_table_artifact = compound_summary_by_dataset.get("Rep_all_single_pt")
 

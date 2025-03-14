@@ -29,7 +29,7 @@ def main(
     )[0]
 
     # Cannot assume there is an id for oncref
-    prism_oncref_auc_matrix = get_id(taiga_ids["prism_oncref_auc_matrix"])
+    prism_oncref_auc_matrix = get_id(taiga_ids["oncref_auc_taiga_id"])
 
     tc = create_taiga_client_v3()
     # Data for CRISPR, RNAi, Omics, PRISM
