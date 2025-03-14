@@ -10,7 +10,8 @@ rule get_context_analysis:
 #        repurposing_matrix_taiga_id=all {"type": "repurposing_matrix_taiga_id"},
 #        repurposing_list_taiga_id=all {"type": "repurposing_list_taiga_id"},
 #        oncref_auc_taiga_id=all {"type":"prism_oncref_auc_matrix"},
-        compound_summary={"type": "compound-summary", "dataset" ~ "Rep_all_single_pt|Prism_oncology_AUC"},  #'[Prism_oncology_AUC, Rep_all_single_pt]'
+        compound_summary_repurposing={"type": "compound-summary", "dataset": "Rep_all_single_pt"},
+        compound_summary_oncref={"type": "compound-summary", "dataset": "Prism_oncology_AUC"},
     outputs:
         {"type": "context_analysis", "filename": { "$filename": "context_analysis.csv"} }
     run "python3" with """
@@ -18,16 +19,11 @@ rule get_context_analysis:
     
         artifacts = {{ inputs.artifacts }}
 
-        compound_summary_artifact = {{ inputs.compound_summary }}
-        compound_summary_by_dataset = { artifact['dataset']: artifact for artifact in compound_summary_artifact }
-        oncref_table_artifact = compound_summary_by_dataset.get("Prism_oncology_AUC")
-        repurposing_table_artifact = compound_summary_by_dataset.get("Rep_all_single_pt")
-
         # transformed will be our newly constructed dict of name -> artifact
         transformed = {
             # handle the ones that couldn't uniquely be identified by type specially
-            "repurposing_table_path": [oncref_table_artifact],
-            "oncref_table_path": [repurposing_table_artifact],
+            "repurposing_table_path": [compound_summary_repurposing],
+            "oncref_table_path": [compound_summary_oncref],
             "gene_effect_taiga_id": [ {{ inputs.gene_effect_taiga_id }} ],
             "gene_dependency_taiga_id": [ {{ inputs.gene_dependency_taiga_id }} ],
             "script": {{ inputs.script }}            
