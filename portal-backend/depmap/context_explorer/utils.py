@@ -72,13 +72,19 @@ def get_entity_id_from_entity_full_label(
     if entity_type == "gene":
         m = re.match("\\S+ \\((\\d+)\\)", entity_full_label)
 
-        assert m is not None
-        entrez_id = int(m.group(1))
-        gene = Gene.get_gene_by_entrez(entrez_id)
-        assert gene is not None
-        label = gene.label
-        entity = gene
-        entity_id = entity.entity_id
+        # HACK TEMP
+        if m is None:
+            label = entity_full_label
+            entity = Gene.get_by_label(entity_full_label)
+            entity_id = entity.entity_id
+        else:
+            assert m is not None
+            entrez_id = int(m.group(1))
+            gene = Gene.get_gene_by_entrez(entrez_id)
+            assert gene is not None
+            label = gene.label
+            entity = gene
+            entity_id = entity.entity_id
     else:
         compound_experiment = get_compound_experiment(
             entity_full_label=entity_full_label

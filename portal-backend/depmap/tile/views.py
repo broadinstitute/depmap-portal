@@ -1,3 +1,5 @@
+import dataclasses
+from depmap.context_explorer import box_plot_utils
 from flask.globals import current_app
 import pandas as pd
 import depmap.celfie.utils as celfie_utils
@@ -361,6 +363,40 @@ def get_targeting_compounds_html(gene):
         "tiles/targeting_compounds.html",
         targeting_compounds=targeting_compounds,
         gene_symbol=gene_symbol,
+    )
+
+
+def get_lineage_subtype_selectivity_box_plots(entity):
+    crispr_dataset = get_dependency_dataset_for_entity(
+        DependencyDataset.get_dataset_by_data_type_priority(
+            DependencyDataset.DataTypeEnum.crispr
+        ).name,
+        entity.entity_id,
+    )
+    if crispr_dataset.name != DependencyEnum.Chronos_Combined.value:
+        # We only have subtype analysis data for Chronos_Combined.
+        return None
+
+    sig_contexts = box_plot_utils.get_sig_context_dataframe(
+        tree_type="Lineage",
+        entity_type=entity.type,
+        entity_id=entity.entity_id,
+        dataset_name=crispr_dataset.name,
+    )
+
+    selected_subtype_code = sig_contexts["level_0"].tolist()[0]
+    context_box_plot_data = box_plot_utils.get_organized_contexts(
+        selected_subtype_code=selected_subtype_code,
+        entity_type=entity.type,
+        entity_label=entity.label,
+        dataset_name=crispr_dataset.name,
+    )
+
+    if context_box_plot_data is not None:
+        context_box_plot_data = dataclasses.asdict(context_box_plot_data)
+
+    return render_template(
+        "tiles/subtype_box_plots.html", context_box_plot_data=context_box_plot_data
     )
 
 

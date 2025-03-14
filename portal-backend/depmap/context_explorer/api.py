@@ -3,6 +3,7 @@ from typing import Any, Dict, List, Literal, Tuple, Union
 import os
 from depmap.cell_line.models_new import DepmapModel
 from depmap.compound.models import Compound, CompoundExperiment
+from depmap.context_explorer import utils
 from depmap.context_explorer.utils import get_path_to_node
 from depmap.context_explorer import box_plot_utils, dose_curve_utils
 from depmap.tda.views import convert_series_to_json_safe_list
@@ -563,15 +564,30 @@ class ContextBoxPlotData(Resource):
         min_abs_effect_size = request.args.get("min_abs_effect_size", type=float)
         min_frac_dep_in = request.args.get("min_frac_dep_in", type=float)
 
-        context_box_plot_data = box_plot_utils.get_organized_contexts(
-            selected_subtype_code=selected_subtype_code,
+        entity_id_and_label = utils.get_entity_id_from_entity_full_label(
+            entity_type=entity_type, entity_full_label=entity_full_label
+        )
+        entity_id = entity_id_and_label["entity_id"]
+        entity_label = entity_id_and_label["label"]
+
+        sig_contexts = box_plot_utils.get_sig_context_dataframe(
             tree_type=tree_type,
             entity_type=entity_type,
-            entity_full_label=entity_full_label,
+            entity_id=entity_id,
             dataset_name=dataset_name,
             max_fdr=max_fdr,
             min_abs_effect_size=min_abs_effect_size,
             min_frac_dep_in=min_frac_dep_in,
+        )
+
+        context_box_plot_data = box_plot_utils.get_organized_contexts(
+            selected_subtype_code=selected_subtype_code,
+            sig_contexts=sig_contexts,
+            tree_type=tree_type,
+            entity_type=entity_type,
+            entity_id=entity_id,
+            entity_label=entity_label,
+            dataset_name=dataset_name,
         )
 
         if context_box_plot_data is None:

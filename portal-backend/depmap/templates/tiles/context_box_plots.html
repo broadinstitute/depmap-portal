@@ -1,0 +1,28 @@
+{% block css %} {% assets filters="libsass",
+output="public/css/context_explorer.css",
+"css/context_explorer/context_explorer.scss" %}
+<link rel="stylesheet" href="{{ ASSET_URL }}" />
+{% endassets %} {% endblock %} {% if context_box_plot_data %}
+<div class="card_wrapper">
+  <div class="card_border">
+    <div class="card_padding">
+      <div id="react-context-box-plot-tile"></div>
+      <script id="react-context-box-plots-data" type="application/json">
+        {{ context_box_plot_data |tojson|safe }}
+      </script>
+      <div>
+        {% if not is_mobile %}
+        <p class="view-details-text">
+          <span
+            >View details in the
+            <a href="javascript:clickTab('#dependency')"
+              >{% if is_gene_entity_type %}Perturbation Effects{% else
+              %}Sensitivity{% endif %} tab</a
+            ></span
+          >
+        </p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>

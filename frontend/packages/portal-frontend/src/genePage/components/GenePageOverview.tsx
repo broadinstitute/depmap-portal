@@ -1,6 +1,14 @@
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 import AsyncTile from "src/common/components/AsyncTile";
 import { CardContainer, CardColumn } from "src/common/components/Card";
+import { getDapi } from "src/common/utilities/context";
+import CollapsibleBoxPlots from "src/contextExplorer/components/contextAnalysis/CollapsibleBoxPlots";
+import geneDepFilterDefinitions from "src/contextExplorer/json/geneDepFilters.json";
+import {
+  ContextExplorerDatasets,
+  ContextPlotBoxData,
+} from "src/contextExplorer/models/types";
+import PlotSpinner from "src/plot/components/PlotSpinner";
 
 interface Props {
   symbol: string;
@@ -93,6 +101,46 @@ const GenePageOverview = ({
 
     return resultTile;
   };
+
+  const [boxPlotData, setBoxPlotData] = useState<ContextPlotBoxData | null>(
+    null
+  );
+  const [isLoadingBoxplot, setIsLoadingBoxplot] = useState<boolean>(true);
+  const [boxplotError, setBoxplotError] = useState(false);
+  const boxplotLatestPromise = useRef<Promise<ContextPlotBoxData> | null>(null);
+  const dapi = getDapi();
+  useEffect(() => {
+    setBoxPlotData(null);
+    // setEntityDetailMainPlotElement(null);
+    setIsLoadingBoxplot(true);
+    setBoxplotError(false);
+    const boxplotPromise = dapi.getContextExplorerBoxPlotData(
+      "BONE",
+      "LINEAGE",
+      ContextExplorerDatasets.Chronos_Combined,
+      "gene",
+      symbol,
+      0.5,
+      0.1,
+      0.1
+    );
+
+    boxplotLatestPromise.current = boxplotPromise;
+
+    boxplotPromise
+      .then((dataVals) => {
+        if (boxplotPromise === boxplotLatestPromise.current) {
+          setBoxPlotData(dataVals);
+        }
+      })
+      .catch((e) => {
+        if (boxplotPromise === boxplotLatestPromise.current) {
+          window.console.error(e);
+          setBoxplotError(true);
+        }
+      })
+      .finally(() => setIsLoadingBoxplot(false));
+  }, [setIsLoadingBoxplot, dapi]);
 
   return (
     <>

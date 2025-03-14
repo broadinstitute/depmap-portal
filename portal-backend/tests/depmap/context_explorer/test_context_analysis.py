@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 import dataclasses
+from depmap.context_explorer import utils
 from depmap.context_explorer.api import _get_analysis_data_table
 import pytest
 from typing import List, Literal, Optional
@@ -8,7 +9,10 @@ from depmap.context_explorer.utils import (
     get_full_row_of_values_and_depmap_ids,
     _get_compound_experiment_id_from_entity_label,
 )
-from depmap.context_explorer.box_plot_utils import get_organized_contexts
+from depmap.context_explorer.box_plot_utils import (
+    get_organized_contexts,
+    get_sig_context_dataframe,
+)
 from depmap.dataset.models import DependencyDataset
 import numpy as np
 from tests.factories import (
@@ -1087,11 +1091,29 @@ def _get_box_plot_data(
     min_frac_dep_in,
 ) -> Optional[dict]:
 
-    context_box_plot_data = get_organized_contexts(
-        selected_subtype_code=selected_subtype_code,
+    entity_id_and_label = utils.get_entity_id_from_entity_full_label(
+        entity_type=entity_type, entity_full_label=selected_entity_label
+    )
+    entity_id = entity_id_and_label["entity_id"]
+    entity_label = entity_id_and_label["label"]
+
+    sig_contexts = get_sig_context_dataframe(
         tree_type=tree_type,
         entity_type=entity_type,
-        entity_full_label=selected_entity_label,
+        entity_id=entity_id,
+        dataset_name=dataset_name,
+        max_fdr=max_fdr,
+        min_abs_effect_size=min_abs_effect_size,
+        min_frac_dep_in=min_frac_dep_in,
+    )
+
+    context_box_plot_data = get_organized_contexts(
+        selected_subtype_code=selected_subtype_code,
+        sig_contexts=sig_contexts,
+        tree_type=tree_type,
+        entity_type=entity_type,
+        entity_id=entity_id,
+        entity_label=entity_label,
         dataset_name=dataset_name,
         max_fdr=max_fdr,
         min_abs_effect_size=min_abs_effect_size,
