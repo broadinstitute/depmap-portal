@@ -642,7 +642,9 @@ def _load_real_data(
             )
 
     def get_subtype_context_file():
-        metadata = gcsc_depmap.read_json("metadata/subtype_context_matrix.json")["in"]
+        metadata = gcsc_depmap.read_json("metadata/subtype_context_matrix_out.json")[
+            "in"
+        ]
         full_path = metadata["filename"]
         return gcsc_conseq_depmap.download_to_cache(full_path)
 
@@ -653,7 +655,7 @@ def _load_real_data(
             )
 
     def get_subtype_tree_file():
-        metadata = gcsc_depmap.read_json("metadata/subtype_tree.json")["in"]
+        metadata = gcsc_depmap.read_json("metadata/subtype_tree_out.json")["in"]
         full_path = metadata["filename"]
         return gcsc_conseq_depmap.download_to_cache(full_path)
 

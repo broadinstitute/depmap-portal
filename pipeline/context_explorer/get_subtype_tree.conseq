@@ -3,7 +3,7 @@ rule get_subtype_tree:
     inputs:
         subtype_tree_taiga_id={"type":"subtype_tree"},
     outputs:
-        {"type": "subtype_tree", "filename": { "$filename": "subtype_tree.csv"} }
+        {"type": "subtype_tree_out", "filename": { "$filename": "subtype_tree_out.csv"} }
     run "python3" with """
         subtype_tree_taiga_id = {{ inputs.subtype_tree_taiga_id.dataset_id }}
         from taigapy import create_taiga_client_v3
@@ -11,5 +11,5 @@ rule get_subtype_tree:
         tc = create_taiga_client_v3()
         subtype_tree = tc.get(subtype_tree_taiga_id)
         
-        subtype_tree.to_csv("subtype_tree.csv", index=True)
+        subtype_tree.to_csv("subtype_tree_out.csv", index=True)
         """
