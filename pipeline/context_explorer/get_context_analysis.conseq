@@ -26,8 +26,8 @@ rule get_context_analysis:
         # transformed will be our newly constructed dict of name -> artifact
         transformed = {
             # handle the ones that couldn't uniquely be identified by type specially
-            "repurposing_table_path": oncref_table_artifact,
-            "oncref_table_path": repurposing_table_artifact,
+            "repurposing_table_path": [oncref_table_artifact],
+            "oncref_table_path": [repurposing_table_artifact],
             "script": {{ inputs.script }}            
         }
 
