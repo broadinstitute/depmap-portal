@@ -403,24 +403,43 @@ def compute_in_out_groups(
     return pd.concat(all_results)
 
 
-def get_id(possible_id, id_key="dataset_id"):
+def get_id_or_file_name(possible_id, id_key="dataset_id"):
     return [] if len(possible_id) == 0 else [possible_id[0][id_key]]
 
 
 ### ----- MAIN ----- ###
 def compute_context_explorer_results(inputs, out_filename):
     with open(inputs, "rt") as input_json:
-        taiga_ids = json.load(input_json)
+        taiga_ids_or_file_name = json.load(input_json)
 
-    subtype_tree_taiga_id = get_id(taiga_ids["subtype_tree_taiga_id"])
-    context_matrix_taiga_id = get_id(taiga_ids["context_matrix_taiga_id"])
-    gene_effect_taiga_id = get_id(taiga_ids["gene_effect_taiga_id"])
-    gene_dependency_taiga_id = get_id(taiga_ids["gene_dependency_taiga_id"])
-    repurposing_matrix_taiga_id = get_id(taiga_ids["repurposing_matrix_taiga_id"])
-    repurposing_list_taiga_id = get_id(taiga_ids["repurposing_list_taiga_id"])
-    oncref_auc_taiga_id = get_id(taiga_ids["oncref_auc_taiga_id"])
-    repurposing_table_path = get_id(taiga_ids["repurposing_table_path"])
-    oncref_table_path = get_id(taiga_ids["oncref_table_path"])
+    subtype_tree_taiga_id = get_id_or_file_name(
+        taiga_ids_or_file_name["subtype_tree_taiga_id"]
+    )
+    context_matrix_taiga_id = get_id_or_file_name(
+        taiga_ids_or_file_name["context_matrix_taiga_id"]
+    )
+    gene_effect_taiga_id = get_id_or_file_name(
+        taiga_ids_or_file_name["gene_effect_taiga_id"]
+    )
+    gene_dependency_taiga_id = get_id_or_file_name(
+        taiga_ids_or_file_name["gene_dependency_taiga_id"]
+    )
+    repurposing_matrix_taiga_id = get_id_or_file_name(
+        taiga_ids_or_file_name["repurposing_matrix_taiga_id"]
+    )
+    repurposing_list_taiga_id = get_id_or_file_name(
+        taiga_ids_or_file_name["repurposing_list_taiga_id"]
+    )
+    oncref_auc_taiga_id = get_id_or_file_name(
+        taiga_ids_or_file_name["oncref_auc_taiga_id"]
+    )
+
+    repurposing_table_path = get_id_or_file_name(
+        taiga_ids_or_file_name["repurposing_table_path"], id_key="filename"
+    )
+    oncref_table_path = get_id_or_file_name(
+        taiga_ids_or_file_name["oncref_table_path"], id_key="filename"
+    )
 
     OUT_FILE = out_filename
 
