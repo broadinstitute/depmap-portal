@@ -5,12 +5,12 @@ rule get_context_analysis:
         artifacts=all {"type" ~ "subtype_tree|context_matrix|repurposing_matrix_taiga_id|repurposing_list_taiga_id|prism_oncref_auc_matrix"},
 #        subtype_tree_taiga_id=all {"type":"subtype_tree"},
 #        context_matrix_taiga_id=all {"type":"context_matrix"},
-        gene_effect_taiga_id=all {"type":"raw-dep-matrix", "label": 'Chronos_Combined'},
-        gene_dependency_taiga_id=all {"type":"raw-dep-prob-matrix", "label": 'Chronos_Combined'},
+        gene_effect_taiga_id={"type":"raw-dep-matrix", "label": 'Chronos_Combined'},
+        gene_dependency_taiga_id={"type":"raw-dep-prob-matrix", "label": 'Chronos_Combined'},
 #        repurposing_matrix_taiga_id=all {"type": "repurposing_matrix_taiga_id"},
 #        repurposing_list_taiga_id=all {"type": "repurposing_list_taiga_id"},
 #        oncref_auc_taiga_id=all {"type":"prism_oncref_auc_matrix"},
-        compound_summary=all {"type": "compound-summary", "dataset" ~ "Rep_all_single_pt|Prism_oncology_AUC"},  #'[Prism_oncology_AUC, Rep_all_single_pt]'
+        compound_summary={"type": "compound-summary", "dataset" ~ "Rep_all_single_pt|Prism_oncology_AUC"},  #'[Prism_oncology_AUC, Rep_all_single_pt]'
     outputs:
         {"type": "context_analysis", "filename": { "$filename": "context_analysis.csv"} }
     run "python3" with """
