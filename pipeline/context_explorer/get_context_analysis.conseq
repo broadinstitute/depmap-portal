@@ -35,7 +35,7 @@ rule get_context_analysis:
         for dest_name, type_name in [
                 ('subtype_tree_taiga_id','subtype_tree'), 
                 ('context_matrix_taiga_id', 'subtype_context_matrix'),   
-                ('repurposing_matrix_taiga_id', 'repurposing_list_taiga_id'), 
+                ('repurposing_matrix_taiga_id', 'repurposing_matrix_taiga_id'), 
                 ('repurposing_list_taiga_id', 'repurposing_list_taiga_id'), 
                 ('oncref_auc_taiga_id', 'prism_oncref_auc_matrix')]:
             artifact = by_type.get(type_name)
