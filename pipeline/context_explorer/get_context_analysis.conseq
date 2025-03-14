@@ -10,8 +10,7 @@ rule get_context_analysis:
 #        repurposing_matrix_taiga_id=all {"type": "repurposing_matrix_taiga_id"},
 #        repurposing_list_taiga_id=all {"type": "repurposing_list_taiga_id"},
 #        oncref_auc_taiga_id=all {"type":"prism_oncref_auc_matrix"},
-         repurposing_table=all {'type': 'compound-summary','dataset': "Rep_all_single_pt"},
-         oncref_table=all {'type': 'compound-summary','dataset': "Prism_oncology_AUC"}
+         compound_summary=all {"type": "compound-summary", "dataset" ~ "Rep_all_single_pt|Prism_oncology_AUC"},  #'[Prism_oncology_AUC, Rep_all_single_pt]'
     outputs:
         {"type": "context_analysis", "filename": { "$filename": "context_analysis.csv"} }
     run "python3" with """
@@ -19,11 +18,15 @@ rule get_context_analysis:
     
         artifacts = {{ inputs.artifacts }}
 
+        compound_summary_by_dataset = { artifact.dataset: artifact for artifact in inputs.compound_summary }
+        oncref_table_artifact = compound_summary_by_dataset.get("Prism_oncology_AUC")
+        repurposing_table_artifact = compound_summary_by_dataset.get("Rep_all_single_pt")
+
         # transformed will be our newly constructed dict of name -> artifact
         transformed = {
             # handle the ones that couldn't uniquely be identified by type specially
-            "repurposing_table_path": [{{ inputs.repurposing_table }}],
-            "oncref_table_path": [ {{ inputs.oncref_table }} ],
+            "repurposing_table_path": oncref_table_artifact,
+            "oncref_table_path": repurposing_table_artifact,
             "script": {{ inputs.script }}            
         }
 
