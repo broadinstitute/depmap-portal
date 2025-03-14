@@ -4,11 +4,10 @@ rule get_subtype_context_matrix:
     outputs:
         {"type": "subtype_context_matrix_out", "filename": { "$filename": "subtype_context_matrix_out.csv"} }
     run "python3" with """
-        subtype_context_matrix_taiga_id = {{ inputs.subtype_context_matrix_taiga_id.dataset_id }}
         from taigapy import create_taiga_client_v3
         
         tc = create_taiga_client_v3()
-        subtype_context_matrix = tc.get(subtype_context_matrix_taiga_id)
+        subtype_context_matrix = tc.get("{{inputs.subtype_context_matrix_taiga_id.dataset_id}}")
         
         subtype_context_matrix.to_csv("subtype_context_matrix_out.csv", index=True)
         """
