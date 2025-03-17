@@ -162,4 +162,18 @@ rule combine_output_configs:
         except json.JSONDecodeError as e:
             logger.error(f"Invalid JSON in combined output config: {e}")
             raise
+
+        # Publish the combined output config file to gcp bucket
+        import subprocess
+        import os
+        import datetime
+
+        # Get the bucket name from the environment variable
+        bucket_name = "preprocessing-pipeline-outputs"
+        
+        # Upload the combined output config file to the gcp bucket
+        subprocess.run([
+            "gsutil", "cp", "combined_daintree_output_config.json", f"gs://{bucket_name}/analysis-pipeline/combined_daintree_output_config-{datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S')}.json"
+        ])
+        
     """
