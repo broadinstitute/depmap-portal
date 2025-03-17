@@ -72,7 +72,7 @@ rule run_fit_models:
       # Copy the input config file to the current directory
       shutil.copy(input_config_filepath, local_input_config)
 
-      relative_path = os.path.relpath(os.getcwd(), '/work/analysis-pipeline')
+      relative_path = os.path.relpath(os.getcwd(), '/work')
       host_work_dir = os.environ.get('HOST_WORKSPACE_PATH', '/data1/jenkins/workspace/Analysis_Pipeline/analysis-pipeline')
       host_current_dir = os.path.join(host_work_dir, relative_path)
 

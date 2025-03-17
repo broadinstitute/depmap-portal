@@ -77,6 +77,7 @@ function run_via_container {
       -v "${TAIGA_DIR}:/root/.taiga" \
       -v /etc/google/auth/application_default_credentials.json:/etc/google/auth/application_default_credentials.json \
       -e GOOGLE_APPLICATION_CREDENTIALS=/etc/google/auth/application_default_credentials.json \
+      -e HOST_WORKSPACE_PATH="$PWD" \
       -v /var/run/docker.sock:/var/run/docker.sock \
       -w /work/analysis-pipeline \
       --name "$JOB_NAME" \
