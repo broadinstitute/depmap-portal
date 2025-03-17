@@ -165,7 +165,6 @@ rule combine_output_configs:
 
         # Publish the combined output config file to gcp bucket
         import subprocess
-        import os
         import datetime
 
         os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "/etc/google_default_creds.json"
