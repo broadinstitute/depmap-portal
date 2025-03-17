@@ -84,7 +84,7 @@ def get_box_plot_card_data(
         all_other_model_ids = list(set(level_0_model_ids) - set(all_sig_models))
         insignificant_box_plot_data = (
             BoxData(label=f"Other {level_0_code}", data=[], cell_line_display_names=[])
-            if len(other_lineage_plot_model_ids) < 5
+            if len(all_other_model_ids) < 5
             else get_box_plot_data_for_context(
                 label=f"Other {level_0_code}",
                 subtype_code=level_0_code,
