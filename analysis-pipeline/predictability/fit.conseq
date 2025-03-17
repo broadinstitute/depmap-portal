@@ -68,8 +68,6 @@ rule run_fit_models:
       # Get the input config file and copy it to current directory
       input_config_filepath = "{{ inputs.daintree_input_config.filename }}"
       local_input_config = "{{ inputs.daintree_input_config.label }}.json"
-      
-      # Copy the input config file to the current directory
       shutil.copy(input_config_filepath, local_input_config)
 
       relative_path = os.path.relpath(os.getcwd(), '/work')
