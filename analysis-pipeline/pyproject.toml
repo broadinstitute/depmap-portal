@@ -1,0 +1,27 @@
+[tool.poetry]
+name = "analysis-pipeline"
+version = "0.1.1"
+description = "Scripts for running the analysis pipeline"
+authors = ["Nayeem Aquib <naquib@broadinsitute.org>"]
+packages = [{include = "analysis_pipeline"}]
+package-mode = false
+
+
+[tool.poetry.dependencies]
+python = "^3.9"
+taigapy = {version = "3.13.0", source = "gcp-artifact-registry"}
+
+
+[[tool.poetry.source]]
+name = "gcp-artifact-registry"
+url = "https://us-central1-python.pkg.dev/cds-artifacts/public-python/simple"
+priority = "explicit"
+
+[[tool.poetry.source]]
+name = "public-python"
+url = "https://us-central1-python.pkg.dev/cds-artifacts/public-python/simple/"
+priority = "supplemental"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
