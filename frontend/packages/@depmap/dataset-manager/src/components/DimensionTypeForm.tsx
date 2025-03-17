@@ -34,7 +34,7 @@ export default function DimensionTypeForm(props: DimensionTypeFormProps) {
         (d) => {
           return (
             d.index_type_name === dimensionTypeToEdit.name &&
-            d.group.name === "Public"
+            d.group.id === "00000000-0000-0000-0000-000000000000"
           );
         }
       );
