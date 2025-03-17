@@ -6,7 +6,7 @@ if [ "$1" == "" ]; then
 fi
 
 ENV_NAME="$1"
-CONSEQ_FILE="predictability/run_internal_analysis.conseq"
+CONSEQ_FILE="predictability/run_internal_analysis.conseq" # TODO: change to run_$ENV_NAME.conseq in future
 # CONSEQ_FILE="run_$ENV_NAME.conseq"
 
 if [ "$2" == "" ]; then
@@ -18,14 +18,13 @@ fi
 JOB_NAME="$2"
 
 if [ "$3" != "" ]; then
-# required: s3 path override
-    PUBLISH_DEST="$3"
-    echo "let publish_dest = \"$PUBLISH_DEST\"" > "pipeline/overriden-$CONSEQ_FILE"
-    # append the result of the conseq file, except for the previous assignment of publish_dest
-    grep -v 'let publish_dest' "pipeline/$CONSEQ_FILE" >> "pipeline/overriden-$CONSEQ_FILE"
-    CONSEQ_FILE="overriden-$CONSEQ_FILE"
+# optional: export path
+    EXPORT_PATH="$3"
+    echo "Using export path: $EXPORT_PATH"
 else
-    echo "No s3 path override specified"
+    # Default export path if not provided
+    EXPORT_PATH="gs://preprocessing-pipeline-outputs/analysis-pipeline/$ENV_NAME/export"
+    echo "Using default export path: $EXPORT_PATH"
 fi
 
 # set DOCKER_IMAGE from pipeline-run-docker/image-name
