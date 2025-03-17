@@ -6,8 +6,7 @@ if [ "$1" == "" ]; then
 fi
 
 ENV_NAME="$1"
-CONSEQ_FILE="predictability/run_internal_analysis.conseq" # TODO: change to run_$ENV_NAME.conseq in future
-# CONSEQ_FILE="run_$ENV_NAME.conseq"
+CONSEQ_FILE="predictability/run_${ENV_NAME}_analysis.conseq"
 
 if [ "$2" == "" ]; then
 # required: job name
