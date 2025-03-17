@@ -17,16 +17,16 @@ fi
 
 JOB_NAME="$2"
 
-# if [ "$3" != "" ]; then
-# # required: s3 path override
-#     PUBLISH_DEST="$3"
-#     echo "let publish_dest = \"$PUBLISH_DEST\"" > "pipeline/overriden-$CONSEQ_FILE"
-#     # append the result of the conseq file, except for the previous assignment of publish_dest
-#     grep -v 'let publish_dest' "pipeline/$CONSEQ_FILE" >> "pipeline/overriden-$CONSEQ_FILE"
-#     CONSEQ_FILE="overriden-$CONSEQ_FILE"
-# else
-#     echo "No s3 path override specified"
-# fi
+if [ "$3" != "" ]; then
+# required: s3 path override
+    PUBLISH_DEST="$3"
+    echo "let publish_dest = \"$PUBLISH_DEST\"" > "pipeline/overriden-$CONSEQ_FILE"
+    # append the result of the conseq file, except for the previous assignment of publish_dest
+    grep -v 'let publish_dest' "pipeline/$CONSEQ_FILE" >> "pipeline/overriden-$CONSEQ_FILE"
+    CONSEQ_FILE="overriden-$CONSEQ_FILE"
+else
+    echo "No s3 path override specified"
+fi
 
 # set DOCKER_IMAGE from pipeline-run-docker/image-name
 SCRIPT_PATH=`dirname $0`
