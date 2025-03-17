@@ -168,12 +168,14 @@ rule combine_output_configs:
         import os
         import datetime
 
-        # Get the bucket name from the environment variable
+        os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "/etc/google_default_creds.json"
         bucket_name = "preprocessing-pipeline-outputs"
-        
-        # Upload the combined output config file to the gcp bucket
+        timestamp = datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
+
         subprocess.run([
-            "gsutil", "cp", "combined_daintree_output_config.json", f"gs://{bucket_name}/analysis-pipeline/combined_daintree_output_config-{datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S')}.json"
+            "gsutil", "-o", f"Credentials:gs_service_key_file=/etc/google_default_creds.json",
+            "cp", "combined_daintree_output_config.json", 
+            f"gs://{bucket_name}/analysis-pipeline/combined_daintree_output_config-{timestamp}.json"
         ])
         
     """
