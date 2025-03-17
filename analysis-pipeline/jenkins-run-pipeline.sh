@@ -52,6 +52,8 @@ function backup_conseq_logs {
     fi
 }
 
+# use /data2/depmap-pipeline-taiga as the taiga dir because
+# different versions of taigapy seem to conflict in pickle format
 if [ "$TAIGA_DIR" == "" ] ; then
     TAIGA_DIR="/data2/depmap-pipeline-taiga"
 fi
@@ -82,22 +84,8 @@ function run_via_container {
       bash -c "gcloud auth configure-docker us.gcr.io && $COMMAND"
 }
 
-# use /data2/depmap-pipeline-taiga as the taiga dir because
-# different versions of taigapy seem to conflict in pickle format
-
-
 # backup logs before running GC
 backup_conseq_logs
-
-if [ "$START_WITH" != "" ]; then
-    # clean out old invocation
-    sudo chown -R ubuntu analysis-pipeline
-    rm -rf analysis-pipeline/state
-    bash -c "source ${PIPELINE_RUNNER_CREDS_DIR}/broad-paquitas && gsutil cp $START_WITH analysis-pipeline/analysis_pipeline/downloaded-export.conseq"
-    run_via_container "conseq run downloaded-export.conseq"
-    # forget all the executions of "publish" rules because the publish location has changed
-    run_via_container "conseq forget --regex publish.*"
-fi
 
 if [ "$MANUALLY_RUN_CONSEQ" = "true" ]; then
   echo "executing: conseq $CONSEQ_ARGS"
