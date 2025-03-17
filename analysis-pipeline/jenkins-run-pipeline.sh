@@ -70,7 +70,6 @@ function run_via_container {
     docker run \
       --rm \
       -v "$PWD":/work \
-      -v "${PIPELINE_RUNNER_CREDS_DIR}/broad-paquitas:/aws-keys/broad-paquitas" \
       -v "${PIPELINE_RUNNER_CREDS_DIR}/sparkles:/root/.sparkles-cache" \
       -v "${PIPELINE_RUNNER_CREDS_DIR}/depmap-pipeline-runner.json":/etc/google_default_creds.json \
       -v "${TAIGA_DIR}:/root/.taiga" \
@@ -80,7 +79,7 @@ function run_via_container {
       -w /work/analysis-pipeline \
       --name "$JOB_NAME" \
       ${DOCKER_IMAGE} \
-      bash -c "gcloud auth configure-docker us.gcr.io && source /aws-keys/broad-paquitas && $COMMAND"
+      bash -c "gcloud auth configure-docker us.gcr.io && $COMMAND"
 }
 
 # use /data2/depmap-pipeline-taiga as the taiga dir because
