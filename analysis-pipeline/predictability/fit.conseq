@@ -75,7 +75,10 @@ rule run_fit_models:
       relative_path = os.path.relpath(os.getcwd(), '/work/analysis-pipeline')
       host_work_dir = os.environ.get('HOST_WORKSPACE_PATH', '/data1/jenkins/workspace/Analysis_Pipeline/analysis-pipeline')
       host_current_dir = os.path.join(host_work_dir, relative_path)
-        
+
+      print(f"relative_path: {relative_path}")
+      print(f"host_work_dir: {host_work_dir}")
+      print(f"host_current_dir: {host_current_dir}")
 
       docker_command = [
         "docker", "run",
