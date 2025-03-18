@@ -462,7 +462,7 @@ def get_matrix_dataset_features(
     return dataset_features
 
 
-def get_matrix_dataset_samples(
+def get_matrix_dataset_samples( # TODO: replace this?
     db: SessionWithUser, dataset: MatrixDataset
 ) -> list[DatasetSample]:
     assert_user_has_access_to_dataset(dataset, db.user)
@@ -475,6 +475,27 @@ def get_matrix_dataset_samples(
     )
 
     return dataset_samples
+
+def get_matrix_dataset_given_ids(
+    db: SessionWithUser, dataset: Dataset, axis: str
+) -> List[str]:
+    assert_user_has_access_to_dataset(dataset, db.user)
+
+    if axis == "feature":
+        dimension_class = DatasetFeature
+    elif axis == "sample":
+        dimension_class = DatasetSample
+    else:
+        raise ValueError(f"Invalid axis: {axis}")
+
+    given_ids = (
+        db.query(dimension_class.given_id)
+        .filter(dimension_class.dataset_id == dataset.id)
+        .order_by(dimension_class.given_id)
+        .all()
+    )
+
+    return [given_id for (given_id,) in given_ids]
 
 
 def get_tabular_dataset_index_given_ids(
