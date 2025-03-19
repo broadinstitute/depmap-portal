@@ -181,7 +181,7 @@ def construct_matrix(model_tree, subtype_tree, genetic_subtypes):
         # save the series to the list of columns
         ctx_cols.append(st_ctx)
 
-    context_matrix = pd.DataFrame(ctx_cols).T
+    context_matrix = pd.DataFrame(ctx_cols).T.sort_index(axis=0).sort_index(axis=1)
 
     return context_matrix
 

@@ -10,5 +10,5 @@ rule get_subtype_tree:
         tc = create_taiga_client_v3()
         subtype_tree = tc.get("{{ inputs.subtype_tree_taiga_id.dataset_id }}")
         
-        subtype_tree.to_csv("subtype_tree_out.csv", index=True)
+        subtype_tree.to_csv("subtype_tree_out.csv", index=False)
         """
