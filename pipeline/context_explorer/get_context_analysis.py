@@ -137,7 +137,11 @@ def load_all_data(
 ):
 
     all_data_dict = dict()
+
+    #dictionary for the dataframes that we will actually perform t-tests on
     datasets_to_test = dict()
+
+    #dictionary for dataframes used to add extra information to the results
     data_for_extra_cols = dict()
 
     tc = create_taiga_client_v3()
@@ -164,11 +168,20 @@ def load_all_data(
     )
     datasets_to_test["PRISMRepurposing"] = rep_sensitivity
 
+    #OncRef will be None on the public portal
     if oncref_auc_taiga_id is not None:
         oncref_aucs, oncref_log_aucs = load_oncref_data(
             tc=tc, oncref_auc_taiga_id=oncref_auc_taiga_id
         )
         datasets_to_test["PRISMOncRef"] = oncref_log_aucs
+
+        # for OncRef we compute the t-test on the logged AUCs,
+        # but want to set the mean_in and mean_out columns based on 
+        # un-logged AUCs. Therefore the un-logged AUC matrix is a 
+        # dataset used for "extra columns". In order to handle the 
+        # possibility of OncRef being None, these dataframes are in a 
+        # dictionary rather than expected named inputs to the 
+        # compute_context_results function.
         data_for_extra_cols["oncref_aucs"] = oncref_aucs
 
     selectivity_vals = format_selectivity_vals(
