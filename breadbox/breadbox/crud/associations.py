@@ -31,11 +31,11 @@ def _validate_association_table(
                 f"The given IDs in the association table do not match the IDs in the dataset. ({len(missing)} IDs missing). Examples from association table: {assoc_sample}, examples from dataset: {expected_sample}, examples of missing IDs: {missing_sample}"
             )
 
-        try:
-            check_given_ids(dataset_1_given_ids, "0")
-            check_given_ids(dataset_2_given_ids, "1")
-        except packed_cor_tables.InvalidAssociationTable as ex:
-            raise UserError("Invalid association table") from ex
+    try:
+        check_given_ids(dataset_1_given_ids, "0")
+        check_given_ids(dataset_2_given_ids, "1")
+    except packed_cor_tables.InvalidAssociationTable as ex:
+        raise UserError("Invalid association table") from ex
 
 
 def add_association_table(

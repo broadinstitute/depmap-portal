@@ -1,4 +1,6 @@
 import os
+import numpy as np
+
 from breadbox.db.session import SessionWithUser
 from depmap_compute.slice import SliceQuery
 from breadbox.schemas.associations import Associations, Association, DatasetSummary
@@ -83,10 +85,17 @@ def get_associations(
                 )
                 continue
 
+            log10qvalue = row["log10qvalue"]
+
+            # if correlation is 1 then the qvalue can be 0 which results in log10 qvalue to be -inf
+            # if we see this, bound it at -1e100 to avoid json serialization error
+            if np.isinf(log10qvalue):
+                log10qvalue = -1e100
+
             associated_dimensions.append(
                 Association(
                     correlation=row["cor"],
-                    log10qvalue=row["log10qvalue"],
+                    log10qvalue=log10qvalue,
                     other_dataset_id=other_dataset.id,
                     other_dimension_given_id=other_dimension_given_id,
                     other_dimension_label=associated_label,

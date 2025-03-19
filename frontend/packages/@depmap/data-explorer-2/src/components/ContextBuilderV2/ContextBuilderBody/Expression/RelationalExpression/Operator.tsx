@@ -1,5 +1,5 @@
 import React, { useRef } from "react";
-import { AnnotationType } from "@depmap/types";
+// import { AnnotationType } from "@depmap/types";
 import { useContextBuilderState } from "../../../state/ContextBuilderState";
 import PlotConfigSelect from "../../../../PlotConfigSelect";
 import {
@@ -15,7 +15,8 @@ interface Props {
   expr: RelationExpr;
   path: (string | number)[];
   varName: string | null;
-  value_type: keyof typeof AnnotationType | null;
+  // FIXME: Use `keyof typeof AnnotationType` for this after "binary" is removed
+  value_type: "continuous" | "categorical" | "text" | "list_strings" | null;
   isLoading: boolean;
 }
 

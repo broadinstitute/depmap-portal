@@ -19,6 +19,7 @@
     { "path": "../@depmap/groups-manager" },
     { "path": "../@depmap/long-table" },
     { "path": "../@depmap/plotly-wrapper" },
+    { "path": "../@depmap/statistics" },
     { "path": "../@depmap/types" },
     { "path": "../@depmap/user-upload" },
     { "path": "../@depmap/utils" },

@@ -9,6 +9,7 @@ import {
   isNegatedContext,
   isV2Context,
   negateContext,
+  userContextStorageKey,
 } from "../../utils/context";
 import getContextHash from "../../utils/get-context-hash";
 import { getDimensionTypeLabel } from "../../utils/misc";
@@ -88,7 +89,7 @@ export const persistLegacyListAsContext = async (
   try {
     hash = await persistContext(context);
 
-    const json = window.localStorage.getItem("user_contexts");
+    const json = window.localStorage.getItem(userContextStorageKey());
     const existingContexts: StoredContexts = json ? JSON.parse(json) : {};
 
     const updatedContexts = {
@@ -97,7 +98,7 @@ export const persistLegacyListAsContext = async (
     };
 
     window.localStorage.setItem(
-      "user_contexts",
+      userContextStorageKey(),
       JSON.stringify(updatedContexts)
     );
 
