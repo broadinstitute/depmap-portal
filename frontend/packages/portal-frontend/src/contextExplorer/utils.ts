@@ -46,7 +46,7 @@ export const DATATYPE_TOOLTIP_TEXT = new Map<string, string>([
     "Cell lines that have been screened in at least one of PRISM’s Repurposing screens.",
   ],
   [
-    DataTypeStrings.PRISMOncref.toString(),
+    DataTypeStrings.PRISMOncRef.toString(),
     "Cell lines that have been screened in PRISM OncRef.",
   ],
   [

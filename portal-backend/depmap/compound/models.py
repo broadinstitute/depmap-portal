@@ -156,7 +156,7 @@ class CompoundExperiment(Entity):
         Used by various loaders
         """
         if re.match(r"PRC-\d{9}-\d{3}-\d{2}", xref_full):
-            # This is to use as catch all for the Sample IDs(e.g. PRC-000964908-468-05 from PrismOncRefResponseCurves)
+            # This is to use as catch all for the Sample IDs(e.g. PRC-000964908-468-05 from PRISMOncRefResponseCurves)
             xref_type, xref = (
                 "BRD",
                 xref_full,

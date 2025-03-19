@@ -90,7 +90,7 @@ def test_get_context_summary(populated_db):
             "WES",
             "RNAi",
             "CRISPR",
-            "PRISMOncref",
+            "PRISMOncRef",
         ]
 
         # There should be a value row for each data type.
@@ -259,7 +259,7 @@ def test_get_context_summary(populated_db):
             "WES",
             "RNAi",
             "CRISPR",
-            "PRISMOncref",
+            "PRISMOncRef",
         ]
 
         model_id_indices = {}

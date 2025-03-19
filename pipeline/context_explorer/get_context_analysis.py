@@ -106,7 +106,7 @@ def format_selectivity_vals(repurposing_table_path, oncref_table_path):
     repurposing_selectivity = repurposing_table.rename(
         columns={"BimodalityCoefficient": "selectivity_val"}
     )[["entity_id", "selectivity_val"]]
-    
+
     selectivity_dfs.append(repurposing_selectivity)
 
     # reformat oncref compounds
@@ -138,10 +138,10 @@ def load_all_data(
 
     all_data_dict = dict()
 
-    #dictionary for the dataframes that we will actually perform t-tests on
+    # dictionary for the dataframes that we will actually perform t-tests on
     datasets_to_test = dict()
 
-    #dictionary for dataframes used to add extra information to the results
+    # dictionary for dataframes used to add extra information to the results
     data_for_extra_cols = dict()
 
     tc = create_taiga_client_v3()
@@ -168,7 +168,7 @@ def load_all_data(
     )
     datasets_to_test["PRISMRepurposing"] = rep_sensitivity
 
-    #OncRef will be None on the public portal
+    # OncRef will be None on the public portal
     if oncref_auc_taiga_id is not None:
         oncref_aucs, oncref_log_aucs = load_oncref_data(
             tc=tc, oncref_auc_taiga_id=oncref_auc_taiga_id
@@ -176,11 +176,11 @@ def load_all_data(
         datasets_to_test["PRISMOncRef"] = oncref_log_aucs
 
         # for OncRef we compute the t-test on the logged AUCs,
-        # but want to set the mean_in and mean_out columns based on 
-        # un-logged AUCs. Therefore the un-logged AUC matrix is a 
-        # dataset used for "extra columns". In order to handle the 
-        # possibility of OncRef being None, these dataframes are in a 
-        # dictionary rather than expected named inputs to the 
+        # but want to set the mean_in and mean_out columns based on
+        # un-logged AUCs. Therefore the un-logged AUC matrix is a
+        # dataset used for "extra columns". In order to handle the
+        # possibility of OncRef being None, these dataframes are in a
+        # dictionary rather than expected named inputs to the
         # compute_context_results function.
         data_for_extra_cols["oncref_aucs"] = oncref_aucs
 
@@ -191,7 +191,7 @@ def load_all_data(
 
     all_data_dict["datasets_to_test"] = datasets_to_test
     all_data_dict["data_for_extra_cols"] = data_for_extra_cols
-    
+
     return all_data_dict
 
 
@@ -317,21 +317,26 @@ def compute_context_results(
 
         if ds_name == "CRISPR":
             ds_res = add_crispr_columns(
-                ds_res, data_for_extra_cols['gene_dependency'], ds_in_group, ds_out_group
+                ds_res,
+                data_for_extra_cols["gene_dependency"],
+                ds_in_group,
+                ds_out_group,
             ).reset_index(names="entity_id")
 
         elif ds_name == "PRISMOncRef":
             # replace mean_in, mean_out, and effect size with non-logged versions
-            ds_res["mean_in"] = data_for_extra_cols['oncref_aucs'].loc[ds_in_group].mean()
-            ds_res["mean_out"] = data_for_extra_cols['oncref_aucs'].loc[ds_out_group].mean()
+            ds_res["mean_in"] = (
+                data_for_extra_cols["oncref_aucs"].loc[ds_in_group].mean()
+            )
+            ds_res["mean_out"] = (
+                data_for_extra_cols["oncref_aucs"].loc[ds_out_group].mean()
+            )
             ds_res["effect_size"] = ds_res.mean_in - ds_res.mean_out
 
         if ds_name in ["PRISMRepurposing", "PRISMOncRef"]:
             # merge with selectivity vals
-            ds_res = ds_res.reset_index(
-                names="entity_id"
-            ).merge(
-                data_for_extra_cols['selectivity_vals']
+            ds_res = ds_res.reset_index(names="entity_id").merge(
+                data_for_extra_cols["selectivity_vals"]
             )
 
         ctx_res_dfs.append(ds_res)
@@ -340,10 +345,7 @@ def compute_context_results(
 
 
 def compute_in_out_groups(
-    subtype_tree,
-    context_matrix,
-    datasets_to_test,
-    data_for_extra_cols
+    subtype_tree, context_matrix, datasets_to_test, data_for_extra_cols
 ):
     name_to_code_onco = dict(
         zip(
@@ -371,8 +373,12 @@ def compute_in_out_groups(
         ctx_out = context_matrix[context_matrix[ctx_code] != True].index
         all_results.append(
             compute_context_results(
-                ctx_code, ctx_in, ctx_out, "All Others", 
-                datasets_to_test, data_for_extra_cols
+                ctx_code,
+                ctx_in,
+                ctx_out,
+                "All Others",
+                datasets_to_test,
+                data_for_extra_cols,
             )
         )
 
@@ -387,8 +393,12 @@ def compute_in_out_groups(
             ].index
             all_results.append(
                 compute_context_results(
-                    ctx_code, ctx_in, ctx_out, "Other Heme",  
-                    datasets_to_test, data_for_extra_cols
+                    ctx_code,
+                    ctx_in,
+                    ctx_out,
+                    "Other Heme",
+                    datasets_to_test,
+                    data_for_extra_cols,
                 )
             )
 
@@ -405,8 +415,12 @@ def compute_in_out_groups(
 
             all_results.append(
                 compute_context_results(
-                    ctx_code, ctx_in, ctx_out, out_code,  
-                    datasets_to_test, data_for_extra_cols
+                    ctx_code,
+                    ctx_in,
+                    ctx_out,
+                    out_code,
+                    datasets_to_test,
+                    data_for_extra_cols,
                 )
             )
 
