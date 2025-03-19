@@ -1,0 +1,15 @@
+rule create_biomarker_matrix_contexts: 
+    inputs: 
+        in={'type': 'subtype_context'},
+        make_biomarker_matrix_contexts=fileref('scripts/make_biomarker_matrix_contexts.py'),
+    outputs: {
+      'type': 'context-matrix',
+      'hdf5_filename': {"$filename": "contexts.hdf5"},
+      'csv_filename': {"$filename": "out.csv"},
+    },
+    { 'type': 'biomarker-matrix',
+      'source_dataset_id': '{{inputs.in.sample_info_id}}',
+      'category': 'context',
+      'filename': {'$filename': 'contexts.hdf5'}
+    }
+    run "python3 {{inputs.make_biomarker_matrix_contexts.filename}} {{inputs.in}} temp-out.hdf5 out.csv"

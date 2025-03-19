@@ -1,7 +1,5 @@
-import collections
 import logging
 import pandas as pd
-import re
 from depmap.database import db
 from depmap.cell_line.models import (
     CellLine,
@@ -11,7 +9,6 @@ from depmap.cell_line.models import (
     DiseaseSubtype,
     TumorType,
 )
-from depmap.context.models import Context, ContextEntity
 
 
 log = logging.getLogger(__name__)
