@@ -49,6 +49,21 @@ class SubtypeNode(Model):
             return q.one_or_none()
 
     @staticmethod
+    def get_display_name(subtype_code: str, must=True) -> Optional[str]:
+        q = db.session.query(SubtypeNode).filter(
+            SubtypeNode.subtype_code == subtype_code
+        )
+        if must:
+            node = q.one()
+            return node.node_name
+        else:
+            node = q.one_or_none()
+            if node is None:
+                return node
+            else:
+                return node.node_name
+
+    @staticmethod
     def get_all_organized_descending_by_level():
         return db.session.query(SubtypeNode).order_by(SubtypeNode.node_level.desc())
 

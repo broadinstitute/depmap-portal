@@ -1,7 +1,7 @@
 from flask import current_app
 
 from depmap.antibody.models import Antibody
-from depmap.context.models import Context
+from depmap.context.models_new import SubtypeContext, SubtypeNode
 from depmap.dataset.models import BiomarkerDataset, TabularDataset
 from depmap.transcription_start_site.models import TranscriptionStartSite
 from depmap.partials.data_table.factories import get_data_table_for_view
@@ -137,11 +137,11 @@ def format_fusions(gene_id):
 
 
 def format_methylation_viewer():
-    contest_names = Context.get_all_names()
+    subtype_codes = SubtypeContext.get_all_codes()
     options = sorted(
         [
-            {"name": Context.get_display_name(context_name), "value": context_name}
-            for context_name in contest_names
+            {"name": SubtypeNode.get_display_name(subtype_code), "value": subtype_code}
+            for subtype_code in subtype_codes
         ],
         key=lambda x: x["name"],  # need to sort post- getting display names
     )

@@ -93,21 +93,13 @@ def _get_context_summary(tree_type: str):
     sorted_summary_df = None
     if current_app.config.get("ENABLED_FEATURES").context_explorer_prerelease_datasets:
         sorted_summary_df = subsetted_summary_df.sort_values(
-            by=[
-                "CRISPR",
-                "RNAi",
-                "WES",
-                "WGS",
-                "RNASeq",
-                "PRISMOncref",
-                "PRISMRepurposing",
-            ],
+            by=["CRISPR", "RNAi", "WES", "WGS", "RNASeq", "PRISM",],
             axis=1,
             ascending=False,
         )
     else:
         sorted_summary_df = subsetted_summary_df.sort_values(
-            by=["CRISPR", "RNAi", "WES", "WGS", "RNASeq", "PRISMRepurposing",],
+            by=["CRISPR", "RNAi", "WES", "WGS", "RNASeq", "PRISM"],
             axis=1,
             ascending=False,
         )
