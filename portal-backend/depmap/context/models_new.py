@@ -225,6 +225,7 @@ class SubtypeContext(Model):
         only_get_nodes_on_this_branch_filters = and_(
             SubtypeNode.level_0 == level_0_subtype_code,
             or_(
+                SubtypeNode.level_1 == None,
                 SubtypeNode.level_1.in_(subtype_codes),
                 SubtypeNode.level_2.in_(subtype_codes),
                 SubtypeNode.level_3.in_(subtype_codes),
