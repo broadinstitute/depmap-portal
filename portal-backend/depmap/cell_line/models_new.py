@@ -281,21 +281,6 @@ class DepmapModel(Model):
         return cell_lines_dict
 
     @staticmethod
-    def get_model_ids_by_primary_disease(primary_disease_name) -> Dict[str, str]:
-        display_name_by_model_id = {}
-        cell_lines = (
-            db.session.query(DepmapModel)
-            .filter(DepmapModel.oncotree_primary_disease == primary_disease_name)
-            .with_entities(DepmapModel.model_id, DepmapModel.stripped_cell_line_name)
-            .all()
-        )
-
-        for depmap_id, display_name in cell_lines:
-            display_name_by_model_id[depmap_id] = display_name
-
-        return display_name_by_model_id
-
-    @staticmethod
     def __get_models_age_category_tuples():
         """
         :return: List of (depmap_id, cell_line_display_name) tuples

@@ -40,16 +40,7 @@ const ModelTab = ({ modelInfo }: ModelTabProps) => {
               <h6 className={styles.propertyHeader}>
                 Oncotree Subtype and Code
               </h6>
-              {modelInfo.oncotree_subtype_and_code.url ? (
-                <a
-                  className={styles.descriptionLinks}
-                  href={`${urlPrefix}${modelInfo.oncotree_subtype_and_code.url}`}
-                >
-                  {modelInfo.oncotree_subtype_and_code.display_name}
-                </a>
-              ) : (
-                <p>{modelInfo.oncotree_subtype_and_code.display_name}</p>
-              )}
+              <p>{modelInfo.oncotree_subtype_and_code}</p>
             </>
           )}
           {modelInfo.oncotree_primary_disease && (
@@ -57,31 +48,13 @@ const ModelTab = ({ modelInfo }: ModelTabProps) => {
               <h6 className={styles.propertyHeader}>
                 Oncotree Primary Disease
               </h6>
-              {modelInfo.oncotree_primary_disease.url ? (
-                <a
-                  className={styles.descriptionLinks}
-                  href={`${urlPrefix}${modelInfo.oncotree_primary_disease.url}`}
-                >
-                  {modelInfo.oncotree_primary_disease.display_name}
-                </a>
-              ) : (
-                <p>{modelInfo.oncotree_primary_disease.display_name}</p>
-              )}
+              <p>{modelInfo.oncotree_primary_disease}</p>
             </>
           )}
           {modelInfo.oncotree_lineage && (
             <>
               <h6 className={styles.propertyHeader}>Oncotree Lineage</h6>
-              {modelInfo.oncotree_lineage.url ? (
-                <a
-                  className={styles.descriptionLinks}
-                  href={`${urlPrefix}${modelInfo.oncotree_lineage.url}`}
-                >
-                  {modelInfo.oncotree_lineage.display_name}
-                </a>
-              ) : (
-                <p>{modelInfo.oncotree_lineage.display_name}</p>
-              )}
+              <p>{modelInfo.oncotree_lineage}</p>
             </>
           )}
           {modelInfo.legacy_molecular_subtype && (

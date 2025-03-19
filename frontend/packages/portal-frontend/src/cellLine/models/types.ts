@@ -30,18 +30,9 @@ export interface ModelInfo {
   // cell_line_name: string;
   primary_metastasis: string;
   sample_collection_site: string;
-  oncotree_lineage: {
-    display_name: string;
-    url: string;
-  };
-  oncotree_primary_disease: {
-    display_name: string;
-    url: string;
-  };
-  oncotree_subtype_and_code: {
-    display_name: string;
-    url: string;
-  };
+  oncotree_lineage: string;
+  oncotree_primary_disease: string;
+  oncotree_subtype_and_code: string;
   legacy_molecular_subtype: string;
   engineered_model: string;
   growth_pattern: string;
