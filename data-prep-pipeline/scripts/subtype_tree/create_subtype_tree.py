@@ -664,4 +664,4 @@ if __name__ == "__main__":
         args.genetic_subtypes_whitelist_filename,
     )
 
-    subtype_tree.to_csv(args.output)
+    subtype_tree.to_csv(args.output, index=False)
