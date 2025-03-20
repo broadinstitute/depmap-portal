@@ -34,7 +34,6 @@ from ..io.data_validation import (
 from .celery import app
 import celery
 from ..config import get_settings
-import time
 
 
 @app.task(bind=True)
@@ -93,16 +92,12 @@ def dataset_upload(
         )
         sample_type = _get_dimension_type(db, dataset_params.sample_type, "sample")
 
-        start_time = time.perf_counter()
         data_df = read_and_validate_matrix_df(
             file_path,
             dataset_params.value_type,
             dataset_params.allowed_values,
             dataset_params.data_file_format,
         )
-        end_time = time.perf_counter()
-        execution_time = end_time - start_time
-        print(f"Validation Execution time: {execution_time:.4f} seconds")
 
         feature_labels_and_warnings = _get_dimension_labels_and_warnings(
             db, data_df.columns.to_list(), feature_type
@@ -160,15 +155,9 @@ def dataset_upload(
             dataset_params.version,
             dataset_params.description,
         )
-        print(f"Starting write...")
-        start_time = time.perf_counter()
         save_dataset_file(
             dataset_id, data_df, dataset_params.value_type, settings.filestore_location
         )
-        # Code to be timed
-        end_time = time.perf_counter()
-        execution_time = end_time - start_time
-        print(f"WRITE Execution time: {execution_time:.4f} seconds")
 
     else:
         index_type = _get_dimension_type(db, dataset_params.index_type)
