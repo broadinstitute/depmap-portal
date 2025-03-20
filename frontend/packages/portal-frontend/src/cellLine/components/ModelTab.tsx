@@ -7,8 +7,6 @@ export interface ModelTabProps {
 }
 
 const ModelTab = ({ modelInfo }: ModelTabProps) => {
-  const urlPrefix = `${window.location.protocol}//${window.location.host}`;
-
   const showOverview =
     modelInfo.oncotree_subtype_and_code ||
     modelInfo.oncotree_primary_disease ||

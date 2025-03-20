@@ -12,14 +12,16 @@ from depmap.dataset.models import DependencyDataset
 from depmap.utilities import color_palette
 from depmap.enums import DependencyEnum, BiomarkerEnum
 from tests.factories import (
+    ContextAnalysisFactory,
+    DepmapModelFactory,
     GeneFactory,
     GeneExecutiveInfoFactory,
     MatrixFactory,
     DependencyDatasetFactory,
     BiomarkerDatasetFactory,
     CellLineFactory,
-    ContextFactory,
-    ContextEnrichmentFactory,
+    SubtypeContextFactory,
+    SubtypeNodeFactory,
 )
 from tests.depmap.utilities.test_svg_utils import assert_is_svg
 from depmap.settings.settings import TestConfig
@@ -71,18 +73,6 @@ def test_format_dep_dist_and_enrichment_boxes_default_crispr_enum_chronos(
             gene=gene, dataset=DependencyEnum.Chronos_Combined,
         )
 
-    if has_rnai:
-        rnai_dataset = DependencyDatasetFactory(
-            matrix=MatrixFactory(
-                entities=[gene], cell_lines=[CellLineFactory(), CellLineFactory()]
-            ),
-            name=DependencyEnum.RNAi_merged,
-            priority=1,
-        )
-        GeneExecutiveInfoFactory(
-            gene=gene, dataset=DependencyEnum.RNAi_merged,
-        )
-
     if is_dropped_by_chronos:
         DependencyDatasetFactory(
             matrix=MatrixFactory(),  # does not contain the gene
@@ -98,9 +88,9 @@ def test_format_dep_dist_and_enrichment_boxes_default_crispr_enum_chronos(
     empty_db_mock_downloads.session.flush()
 
     dep_dist, enrichment_boxes = format_dep_dist_and_enrichment_boxes(
-        gene, crispr_dataset=crispr_dataset, rnai_dataset=rnai_dataset
+        gene, crispr_dataset=crispr_dataset
     )
-    if has_chronos or has_rnai:
+    if has_chronos:
         assert enrichment_boxes is not None
         assert "svg" in dep_dist
     else:
@@ -117,10 +107,7 @@ def test_format_dep_dist_and_enrichment_boxes_default_crispr_enum_chronos(
             not dep_dist or "info" not in dep_dist or "crispr" not in dep_dist["info"]
         )
 
-    if has_rnai:
-        assert "rnai" in dep_dist["info"]
-    else:
-        assert not dep_dist or "info" not in dep_dist or "rnai" not in dep_dist["info"]
+    assert not dep_dist or "info" not in dep_dist or "rnai" not in dep_dist["info"]
 
     if is_dropped_by_chronos:
         assert "should_show_dropped_by_chronos" in dep_dist["info"]["crispr"]
@@ -171,22 +158,10 @@ def test_format_dep_dist_and_enrichment_boxes_default_crispr_enum_not_chronos(
             is_dropped_by_chronos=True,
         )
 
-    if has_rnai:
-        rnai_dataset = DependencyDatasetFactory(
-            matrix=MatrixFactory(
-                entities=[gene], cell_lines=[CellLineFactory(), CellLineFactory()]
-            ),
-            name=DependencyEnum.RNAi_merged,
-            priority=1,
-        )
-        GeneExecutiveInfoFactory(
-            gene=gene, dataset=DependencyEnum.RNAi_merged,
-        )
-
     empty_db_mock_downloads.session.flush()
 
     dep_dist, enrichment_boxes = format_dep_dist_and_enrichment_boxes(
-        gene, crispr_dataset=crispr_dataset, rnai_dataset=rnai_dataset
+        gene, crispr_dataset=crispr_dataset
     )
     if has_avana or has_rnai:
         assert enrichment_boxes is not None
@@ -202,10 +177,7 @@ def test_format_dep_dist_and_enrichment_boxes_default_crispr_enum_not_chronos(
             not dep_dist or "info" not in dep_dist or "crispr" not in dep_dist["info"]
         )
 
-    if has_rnai:
-        assert "rnai" in dep_dist["info"]
-    else:
-        assert not dep_dist or "info" not in dep_dist or "rnai" not in dep_dist["info"]
+    assert not dep_dist or "info" not in dep_dist or "rnai" not in dep_dist["info"]
 
     # never show dropped by chronos
     assert (
@@ -304,28 +276,49 @@ def test_format_enrichment_boxes(empty_db_mock_downloads):
     """
     Test that negative t_statistic enrichments are filtered out
     """
-    cell_line_A = CellLineFactory(cell_line_name="cell_line_A")
-    cell_line_B = CellLineFactory(cell_line_name="cell_line_B")
+    cell_line_A = DepmapModelFactory(
+        model_id="cell_line_A", depmap_model_type="context_A"
+    )
+    cell_line_B = DepmapModelFactory(
+        model_id="cell_line_B", depmap_model_type="context_B"
+    )
 
-    context_A = ContextFactory(name="context_A", cell_line=[cell_line_A])
-    context_B = ContextFactory(name="context_B", cell_line=[cell_line_B])
-    entity = GeneFactory()
+    context_A = SubtypeContextFactory(
+        subtype_code="context_A", depmap_model=[cell_line_A]
+    )
+    context_B = SubtypeContextFactory(
+        subtype_code="context_B", depmap_model=[cell_line_B]
+    )
+    SubtypeNodeFactory(subtype_code="context_A", node_name="display_name_context_A")
+    SubtypeNodeFactory(subtype_code="context_B", node_name="display_name_context_B")
+    entity = GeneFactory(label="gene_0 (0)", entrez_id=0)
 
-    matrix = MatrixFactory(entities=[entity], cell_lines=[cell_line_A, cell_line_B])
+    matrix = MatrixFactory(
+        entities=[entity],
+        cell_lines=[cell_line_A, cell_line_B],
+        using_depmap_model_table=True,
+    )
     dataset = DependencyDatasetFactory(
-        name=DependencyDataset.DependencyEnum.Avana, matrix=matrix
+        name=DependencyDataset.DependencyEnum("Chronos_Combined"), matrix=matrix
     )
 
-    ContextEnrichmentFactory(
-        context=context_A, entity=entity, dataset=dataset, t_statistic=1
+    ContextAnalysisFactory(
+        subtype_code="context_A",
+        subtype_context=context_A,
+        entity=entity,
+        dataset=dataset,
+        t_pval=1,
     )
-    ContextEnrichmentFactory(
-        context=context_B, entity=entity, dataset=dataset, t_statistic=-1
+    b = ContextAnalysisFactory(
+        subtype_code="context_B",
+        subtype_context=context_B,
+        entity=entity,
+        dataset=dataset,
+        t_pval=-1,
     )
 
     empty_db_mock_downloads.session.flush()
-
-    enrichment_boxes = format_enrichment_boxes(entity, dataset, None)
+    enrichment_boxes = format_enrichment_boxes(entity, dataset)
 
     assert len(enrichment_boxes) == 1  # only one dataset
     assert (

@@ -318,7 +318,6 @@ def get_context_plot_box_data(
             sig_contexts=sig_contexts_by_level_0,
             all_sig_context_codes=all_sig_context_codes,
         )
-        breakpoint()
 
         selected_sig_box_plot_card_data = get_card_data(
             level_0=level_0,

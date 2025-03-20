@@ -28,7 +28,6 @@ from depmap.cell_line.models import (
     STRProfile,
 )
 from depmap.context.models_new import SubtypeContext, SubtypeContextEntity, SubtypeNode
-from depmap.context.models import Context, ContextEntity, ContextEnrichment
 from depmap.database import db as _db
 from depmap.dataset.models import (
     Dataset,
@@ -882,12 +881,12 @@ class SubtypeContextFactory(SQLAlchemyModelFactory):
     subtype_code = factory.Sequence(lambda number: "subtype_code_{}".format(number))
 
 
-def SubtypeContextEntityFactory(context=None):
-    if context is None:
-        context = SubtypeContextFactory()
+def SubtypeContextEntityFactory(subtype_context=None):
+    if subtype_context is None:
+        subtype_context = SubtypeContextFactory()
 
     context_entity = SubtypeContextEntity(
-        label=context.subtype_code, subtype_context=context
+        label=subtype_context.subtype_code, subtype_context=subtype_context
     )
     _db.session.add(context_entity)
     return context_entity

@@ -1,8 +1,3 @@
-import collections
-import pandas as pd
-import sys
-import h5py
-import pandas as pd
 import argparse
 from pipeline.scripts.hdf5_utils import write_hdf5
 

@@ -1,4 +1,4 @@
-ModelID,PRISMRepurposing,RNASeq,WGS,WES,RNAi,CRISPR,PRISMOncref
+ModelID,PRISMRepurposing,RNASeq,WGS,WES,RNAi,CRISPR,PRISMOncRef
 ACH-000788,True,True,True,True,True,True,False
 ACH-000810,True,True,True,True,True,True,False
 ACH-000552,True,True,True,True,True,True,False

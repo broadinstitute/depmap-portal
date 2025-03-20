@@ -376,16 +376,9 @@ def get_enrichment_html(
             entity.entity_id,
         )
 
-        rnai_dataset = get_dependency_dataset_for_entity(
-            DependencyDataset.get_dataset_by_data_type_priority(
-                DependencyDataset.DataTypeEnum.rnai
-            ).name,
-            entity.entity_id,
-        )
-
-        enrichment_boxes = format_dep_dist_and_enrichment_boxes(
-            entity, crispr_dataset, rnai_dataset
-        )[1]
+        enrichment_boxes = format_dep_dist_and_enrichment_boxes(entity, crispr_dataset)[
+            1
+        ]
     elif entity_type == "compound":
         best_ce_and_d = determine_compound_experiment_and_dataset(
             compound_experiment_and_datasets

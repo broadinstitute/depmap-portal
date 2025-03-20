@@ -16,7 +16,7 @@ from depmap.utilities.exception import InvalidDatasetEnumError
 from loader.cell_line_loader import load_cell_lines_metadata
 from loader.gene_loader import load_hgnc_genes
 from loader.transcription_start_site_loader import load_transcription_start_sites
-from loader import dataset_loader
+from loader import dataset_loader, depmap_model_loader
 from tests.factories import (
     DependencyDatasetFactory,
     BiomarkerDatasetFactory,
@@ -367,6 +367,9 @@ def test_dependency_dataset_has_entity(empty_db_mock_downloads):
         load_hgnc_genes(os.path.join(loader_data_dir, "gene/hgnc-database-1a29.1.csv"))
         load_cell_lines_metadata(
             os.path.join(loader_data_dir, "cell_line/cell_line_metadata.csv"),
+        )
+        depmap_model_loader.load_depmap_model_metadata(
+            os.path.join(loader_data_dir, "cell_line/models_metadata.csv")
         )
         dependency_datasets = {
             DependencyDataset.DependencyEnum.Avana: {

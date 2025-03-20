@@ -73,8 +73,8 @@ def test_insert_or_update_cell_lines(empty_db_mock_downloads):
     Other cell line still exists (total 3 lines)
     """
     cell_line_1 = DepmapModelFactory(model_id="line_1")
-    cell_line_2 = CellLineFactory(depmap_id="line_2")
-    SubtypeContextFactory(name="test_context", cell_line=[cell_line_1, cell_line_2])
+    cell_line_2 = DepmapModelFactory(model_id="line_2")
+    SubtypeContextFactory(name="test_context", depmap_model=[cell_line_1, cell_line_2])
     empty_db_mock_downloads.session.flush()
 
     assert len(cell_line_1.lineage.all()) == 1

@@ -93,13 +93,21 @@ def _get_context_summary(tree_type: str):
     sorted_summary_df = None
     if current_app.config.get("ENABLED_FEATURES").context_explorer_prerelease_datasets:
         sorted_summary_df = subsetted_summary_df.sort_values(
-            by=["CRISPR", "RNAi", "WES", "WGS", "RNASeq", "PRISM",],
+            by=[
+                "CRISPR",
+                "RNAi",
+                "WES",
+                "WGS",
+                "RNASeq",
+                "PRISMOncRef",
+                "PRISMRepurposing",
+            ],
             axis=1,
             ascending=False,
         )
     else:
         sorted_summary_df = subsetted_summary_df.sort_values(
-            by=["CRISPR", "RNAi", "WES", "WGS", "RNASeq", "PRISM"],
+            by=["CRISPR", "RNAi", "WES", "WGS", "RNASeq", "PRISMRepurposing",],
             axis=1,
             ascending=False,
         )
@@ -275,7 +283,7 @@ def _get_overview_table(overview_page_table, summary_df_by_model_id):
             "RNAi": "rnai",
             "WGS": "wgs",
             "WES": "wes",
-            "PRISMOncref": "oncref",
+            "PRISMOncRef": "oncref",
             "PRISMRepurposing": "repurposing",
             "RNASeq": "rna_seq",
         }

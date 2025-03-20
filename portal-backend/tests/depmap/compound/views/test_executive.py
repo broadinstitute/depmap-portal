@@ -5,7 +5,6 @@ from depmap.compound.views.executive import (
     format_enrichment_boxes,
     format_top_corr_table,
 )
-from depmap.context.models import ContextEnrichment
 from depmap.context_explorer.models import ContextAnalysis
 from depmap.dataset.models import DependencyDataset
 from depmap.enums import BiomarkerEnum
@@ -21,6 +20,7 @@ from tests.factories import (
     DepmapModelFactory,
     GeneFactory,
     MatrixFactory,
+    SubtypeNodeFactory,
 )
 from tests.utilities import interactive_test_utils
 
@@ -66,11 +66,13 @@ def test_format_enrichment_boxes(empty_db_mock_downloads):
     """
     Test that positive t_statistic enrichment is filtered out
     """
-    model_A = DepmapModelFactory(cell_line_name="cell_line_A")
-    model_B = DepmapModelFactory(cell_line_name="cell_line_B")
+    model_A = DepmapModelFactory(model_id="cell_line_A", depmap_model_type="context_A")
+    model_B = DepmapModelFactory(model_id="cell_line_B", depmap_model_type="context_b")
 
     context_A = SubtypeContextFactory(subtype_code="context_A", depmap_model=[model_A])
     context_B = SubtypeContextFactory(subtype_code="context_B", depmap_model=[model_B])
+    SubtypeNodeFactory(subtype_code="context_A", node_name="display_name_context_A")
+    SubtypeNodeFactory(subtype_code="context_B", node_name="display_name_context_B")
     entity = CompoundExperimentFactory()
 
     matrix = MatrixFactory(
@@ -81,10 +83,10 @@ def test_format_enrichment_boxes(empty_db_mock_downloads):
     )
 
     ContextAnalysisFactory(
-        subtype_context=context_A, entity=entity, dataset=dataset, t_qval=1
+        subtype_context=context_A, entity=entity, dataset=dataset, t_pval=1
     )
     ContextAnalysisFactory(
-        subtype_context=context_B, entity=entity, dataset=dataset, t_qval=-1
+        subtype_context=context_B, entity=entity, dataset=dataset, t_pval=-1
     )
 
     empty_db_mock_downloads.session.flush()
