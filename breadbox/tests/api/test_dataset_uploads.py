@@ -645,6 +645,81 @@ class TestPost:
             "C": {"ACH-1": None, "ACH-2": None},
         }
 
+    def test_list_strings_sparse_dataset_uploads_task(
+        self,
+        client: TestClient,
+        minimal_db: SessionWithUser,
+        private_group: Dict,
+        mock_celery,
+        monkeypatch,
+    ):
+        user = "someone@private-group.com"
+        headers = {"X-Forwarded-User": user}
+
+        # Test sparse list of strings matrix
+        file = factories.matrix_csv_data_file_with_values(
+            values=[
+                '["V600E","P9095","N405R"]',
+                pd.NA,
+                pd.NA,
+                None,
+                '["G586T","P858R","Q725Z","J356W"]',
+                np.nan,
+            ]
+        )
+        file_ids, expected_md5 = upload_and_get_file_ids(client, file)
+        ls_dataset_given_id = "some_given_id"
+
+        list_strings_matrix_dataset = client.post(
+            "/dataset-v2/",
+            json={
+                "format": "matrix",
+                "name": "List String Dataset",
+                "given_id": ls_dataset_given_id,
+                "units": "a unit",
+                "feature_type": "generic",
+                "sample_type": "depmap_model",
+                "data_type": "User upload",
+                "file_ids": file_ids,
+                "dataset_md5": expected_md5,
+                "is_transient": False,
+                "group_id": private_group["id"],
+                "value_type": "list_strings",
+                "dataset_metadata": {"yah": "nah"},
+                "short_name": "shortie",
+                "description": "a dataset",
+                "version": "v1",
+            },
+            headers=headers,
+        )
+        assert_status_ok(list_strings_matrix_dataset)
+        assert list_strings_matrix_dataset.status_code == 202
+        assert list_strings_matrix_dataset.json()["state"] == "SUCCESS"
+        assert list_strings_matrix_dataset.json()["result"]["datasetId"]
+        list_strings_matrix_dataset_result = list_strings_matrix_dataset.json()[
+            "result"
+        ]["dataset"]
+        assert list_strings_matrix_dataset_result is not None
+        assert list_strings_matrix_dataset_result.get("given_id") == ls_dataset_given_id
+
+        # Read out list of string with NAs dataset values
+        matrix_subset = client.post(
+            f"/datasets/matrix/{ls_dataset_given_id}",
+            json={
+                "features": ["A", "C"],
+                "feature_identifier": "id",
+                "samples": ["ACH-1", "ACH-2"],
+                "sample_identifier": "id",
+            },
+            headers=headers,
+        )
+        assert_status_ok(matrix_subset)
+        matrix_subset_result = matrix_subset.json()
+        assert matrix_subset_result == {
+            "A": {"ACH-1": ["V600E", "P9095", "N405R"], "ACH-2": None},
+            "C": {"ACH-1": None, "ACH-2": None},
+        }
+
     def test_add_matrix_dataset_with_dim_type_annotations(
         self,
         client: TestClient,
