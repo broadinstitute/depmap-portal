@@ -7,16 +7,13 @@ from fastapi import File, Form, HTTPException, UploadFile, Body
 from pydantic import BaseModel, Field, field_validator, model_validator
 from pydantic_settings import SettingsConfigDict
 from typing import List, Optional, Dict, Annotated
+from typing_extensions import TypedDict
 
-
-class DimensionIdentifiers(BaseModel):
+# TypedDict has much better performance for nested structures than pydantic models.
+# See: https://docs.pydantic.dev/latest/concepts/performance/#use-typeddict-over-nested-models
+class DimensionIdentifiers(TypedDict):
     id: str
     label: str
-
-
-class IdAndName(BaseModel):
-    id: str
-    name: str
 
 
 class DimensionType(BaseModel):
@@ -59,14 +56,6 @@ class UpdateDimensionType(BaseModel):
             )
 
         return self
-
-
-# class DimensionTypeIn(DimensionType):
-#     metadata_file_ids: List[str]
-#
-#
-# class DimensionTypeOut(DimensionType):
-#     dataset: IdAndName
 
 
 class FeatureTypeOut(BaseModel):
