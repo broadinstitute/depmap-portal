@@ -24,12 +24,32 @@ def create_index_dataset(f: h5py.File, key: str, idx: pd.Index):
 def write_hdf5_file(path: str, df: pd.DataFrame, dtype: Literal["float", "str"]):
     f = h5py.File(path, mode="w")
     try:
-        f.create_dataset(
+        dataset = f.create_dataset(
             "data",
             shape=df.shape,
             dtype=h5py.string_dtype() if dtype == "str" else np.float64,
-            data=df.values,
+            # data=df.values,
+            chunks=(1, 1),
         )
+        rows, cols = np.where(df.notnull())
+        for row, col in zip(rows, cols):
+            dataset[row, col] = df.iloc[row, col]
+
+        # also took far too long
+        # for col in range(df.shape[1]):
+        #     if (~(pd.isna(df.iloc[:,col]))).sum() == 0:
+        #         continue
+        #     for row in range(df.shape[0]):
+        #         value = df.iloc[row, col]
+        #         if not pd.isna(value):
+        #             dataset[row, col] = value
+
+        # this literally took forever
+        # for row in range(df.shape[0]):
+        #     for col in range(df.shape[1]):
+        #         value = df.iloc[row, col]
+        #         if not pd.isna(value):
+        #             dataset[row, col] = value
 
         create_index_dataset(f, "features", df.columns)
         create_index_dataset(f, "samples", df.index)

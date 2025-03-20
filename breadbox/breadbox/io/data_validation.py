@@ -198,10 +198,10 @@ def _validate_data_value_type(
                 return val
             else:
                 # hdf5 will stringify 'None' or '<NA>'. Use empty string to represent NAs instead
-                return ""
+                return pd.NA
 
         df = df.applymap(validate_list_strings)
-        return df.astype(str)
+        return df.astype(pd.StringDtype())
     else:
         if not all([is_numeric_dtype(df[col].dtypes) for col in df.columns]):
             raise FileValidationError(
