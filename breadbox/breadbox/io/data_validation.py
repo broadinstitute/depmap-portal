@@ -64,7 +64,6 @@ def map_annotation_type_to_pandas_dtype(annotation_type: AnnotationType):
     annotation_type_to_pandas_type_mappings = {
         AnnotationType.continuous: "float",
         AnnotationType.categorical: "category",
-        AnnotationType.binary: "boolean",
         AnnotationType.text: "string",
         AnnotationType.list_strings: "string",
     }
@@ -75,7 +74,6 @@ def annotation_type_to_pandas_column_type(annotation_type: AnnotationType):
     annotation_type_to_pandas_type_mappings = {
         AnnotationType.continuous: pd.Float64Dtype(),
         AnnotationType.categorical: pd.CategoricalDtype(),
-        AnnotationType.binary: pd.BooleanDtype(),
         AnnotationType.text: pd.StringDtype(),
         AnnotationType.list_strings: pd.StringDtype(),
     }

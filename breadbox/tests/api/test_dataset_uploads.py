@@ -153,7 +153,7 @@ class TestPost:
                 "columns_metadata": {
                     "depmap_id": {"units": None, "col_type": "text"},
                     "attr1": {"units": "some units", "col_type": "continuous"},
-                    "attr2": {"units": None, "col_type": "binary"},
+                    "attr2": {"units": None, "col_type": "categorical"},
                     "attr3": {"units": None, "col_type": "list_strings"},
                 },
                 "short_name": "t1",
@@ -839,7 +839,7 @@ class TestPost:
                         "references": "sample",
                     },
                     "attr1": {"units": "some units", "col_type": "continuous"},
-                    "attr2": {"units": None, "col_type": "binary"},
+                    "attr2": {"units": None, "col_type": "categorical"},
                     "attr3": {"units": None, "col_type": "list_strings"},
                 },
             },
@@ -891,7 +891,7 @@ class TestPost:
                         "references": "sample",
                     },
                     "attr1": {"units": "some units", "col_type": "continuous"},
-                    "attr2": {"units": None, "col_type": "binary"},
+                    "attr2": {"units": None, "col_type": "categorical"},
                     "attr3": {"units": None, "col_type": "list_strings"},
                     "attr4": {"units": None, "col_type": "text"},
                     "attr5": {"units": None, "col_type": "categorical"},
@@ -968,7 +968,7 @@ class TestPost:
         )
         assert subsetted_by_id_res.status_code == 200
         expected_res = {
-            "attr2": {"ACH-1": False},
+            "attr2": {"ACH-1": "0"},
             "attr3": {"ACH-1": None},
             "attr4": {"ACH-1": None},
             "attr5": {"ACH-1": "cat1"},
@@ -1039,7 +1039,7 @@ class TestPost:
                         "references": "sample",
                     },
                     "attr1": {"units": "some units", "col_type": "continuous"},
-                    "attr2": {"units": None, "col_type": "binary"},
+                    "attr2": {"units": None, "col_type": "categorical"},
                     "attr3": {"units": None, "col_type": "list_strings"},
                     "attr4": {"units": None, "col_type": "text"},
                     "attr5": {"units": None, "col_type": "categorical"},
