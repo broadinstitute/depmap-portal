@@ -277,14 +277,14 @@ def get_dimension_type_metadata_col(
         return {}
 
     values_by_id_tuples = (
-        db.query(TabularCell)
-        .join(TabularColumn)
+        db.query(TabularColumn)
         .filter(
             and_(
                 TabularColumn.dataset_id == dimension_type.dataset_id,
                 TabularColumn.given_id == col_name,
             )
         )
+        .join(TabularCell)
         .with_entities(TabularCell.dimension_given_id, TabularCell.value)
         .all()
     )
