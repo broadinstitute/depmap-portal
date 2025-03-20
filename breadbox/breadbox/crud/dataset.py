@@ -770,19 +770,22 @@ def get_subset_of_tabular_data_as_df(
     return pivot_df["value"]
 
 
+from time import perf_counter 
+
 def get_unique_dimension_ids_from_datasets(
     db: SessionWithUser, dataset_ids: List[str], dimension_type: DimensionType
 ) -> Set[str]:
     """
     Returns a unique set of dimension given ids from matrix and tabular datasets based on the given dimension type
     """
+    start = perf_counter()
     if dimension_type.axis == "feature":
         matrix_dimension_class = DatasetFeature
     else:
         matrix_dimension_class = DatasetSample
 
     # Get all matrix dimensions for that dimension type
-    matrix_dimension_ids = {
+    matrix_given_ids = {
         given_id for (given_id,) in
         db.query(distinct(matrix_dimension_class.given_id))
         .filter(
@@ -793,11 +796,11 @@ def get_unique_dimension_ids_from_datasets(
         )
         .all()
     }
+    print(f"Time taken to get MATRIX dimension ids: {perf_counter() - start}") # below this point is neglegible
     # Get all tabular identifiers for that dimension type
-    tabular_dimension_ids = {
+    tabular_given_ids = {
         given_id for (given_id,) in
-        db.query(distinct(TabularCell.dimension_given_id))
-        .join(TabularColumn)
+        db.query(TabularColumn)
         .filter(
             and_(
                 TabularColumn.dataset_id.in_(dataset_ids),
@@ -805,8 +808,13 @@ def get_unique_dimension_ids_from_datasets(
                 TabularColumn.dataset_dimension_type == dimension_type.name,
             )
         )
+        .join(TabularCell)
+        .distinct(TabularCell.dimension_given_id)
+        .with_entities(TabularCell.dimension_given_id)
         .all()
     }
+    result = matrix_given_ids.union(tabular_given_ids)
     # Combine the unique given ids from the tabular and matrix datasets
-    return tabular_dimension_ids.union(matrix_dimension_ids)
+    print(f"Time taken to get total dimension ids: {perf_counter() - start}")
+    return given_ids
 
