@@ -3,11 +3,11 @@ from breadbox.models.dataset import AnnotationType
 from breadbox.schemas.custom_http_exception import AnnotationValidationError, UserError
 from breadbox.schemas.dataset import TabularDatasetResponse
 from fastapi import File, Form, HTTPException, UploadFile, Body
+from typing_extensions import TypedDict
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 from pydantic_settings import SettingsConfigDict
 from typing import List, Optional, Dict, Annotated
-from typing_extensions import TypedDict
 
 # TypedDict has much better performance for nested structures than pydantic models.
 # See: https://docs.pydantic.dev/latest/concepts/performance/#use-typeddict-over-nested-models
