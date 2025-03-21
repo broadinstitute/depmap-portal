@@ -1,5 +1,6 @@
 import logging
 from typing import Any, Optional
+from time import perf_counter
 
 from breadbox.crud import dataset as dataset_crud
 from breadbox.crud import dimension_types as types_crud
@@ -49,16 +50,23 @@ def get_matrix_dataset_feature_metadata(
     For the given matrix dataset, load a column from the associated metadata.
     The result will only include given ids which exist in both the dataset and the metadata.
     """
+    start = perf_counter()
     full_metadata_col = types_crud.get_dimension_type_metadata_col(
         db, dimension_type_name=dataset.feature_type_name, col_name=metadata_col_name
     )
+    print(f"- get_dimension_type_metadata_col: {perf_counter() - start}")
+    start = perf_counter()
     # Filter the metadata to only include the given IDs belonging to this dataset
-    dataset_features = dataset_crud.get_matrix_dataset_features(db, dataset)
+    dataset_feature_given_ids = dataset_crud.get_matrix_dataset_given_ids(db, dataset, axis="feature")
+    # TODO: if this helps, then update the sample method as well
+    print(f"- get features: {perf_counter() - start}")
+    
+    # Below takes basically no time
     filtered_metadata_vals = {}
-    for feature in dataset_features:
-        metadata_val = full_metadata_col.get(feature.given_id)
+    for given_id in dataset_feature_given_ids:
+        metadata_val = full_metadata_col.get(given_id)
         if metadata_val is not None:
-            filtered_metadata_vals[feature.given_id] = metadata_val
+            filtered_metadata_vals[given_id] = metadata_val
     return filtered_metadata_vals
 
 
@@ -73,12 +81,12 @@ def get_matrix_dataset_sample_metadata(
         db, dimension_type_name=dataset.sample_type_name, col_name=metadata_col_name
     )
     # Filter the metadata to only include the given IDs belonging to this dataset
-    dataset_samples = dataset_crud.get_matrix_dataset_samples(db, dataset)
+    sample_given_ids = dataset_crud.get_matrix_dataset_given_ids(db, dataset, axis="sample")
     filtered_metadata_vals = {}
-    for sample in dataset_samples:
-        metadata_val = full_metadata_col.get(sample.given_id)
+    for given_id in sample_given_ids:
+        metadata_val = full_metadata_col.get(given_id)
         if metadata_val is not None:
-            filtered_metadata_vals[sample.given_id] = metadata_val
+            filtered_metadata_vals[given_id] = metadata_val
     return filtered_metadata_vals
 
 
@@ -97,8 +105,8 @@ def get_matrix_dataset_feature_labels_by_id(
             return metadata_labels_by_given_id
 
     # If there are no labels or there is no feature type, return the given IDs
-    all_dataset_features = dataset_crud.get_matrix_dataset_features(db, dataset)
-    return {feature.given_id: feature.given_id for feature in all_dataset_features}
+    feature_given_ids = dataset_crud.get_matrix_dataset_given_ids(db, dataset, axis="feature")
+    return {given_id: given_id for given_id in feature_given_ids}
 
 
 def get_matrix_dataset_sample_labels_by_id(
@@ -114,8 +122,8 @@ def get_matrix_dataset_sample_labels_by_id(
     if metadata_labels:
         return metadata_labels
     else:
-        samples = dataset_crud.get_matrix_dataset_samples(db=db, dataset=dataset)
-        return {sample.given_id: sample.given_id for sample in samples}
+        sample_given_ids = dataset_crud.get_matrix_dataset_given_ids(db=db, dataset=dataset)
+        return {given_id: given_id for given_id in sample_given_ids}
 
 
 def get_tabular_dataset_labels_by_id(
