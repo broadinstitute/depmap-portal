@@ -816,5 +816,5 @@ def get_unique_dimension_ids_from_datasets(
     result = matrix_given_ids.union(tabular_given_ids)
     # Combine the unique given ids from the tabular and matrix datasets
     print(f"Time taken to get total dimension ids: {perf_counter() - start}")
-    return given_ids
+    return result
 
