@@ -119,9 +119,7 @@ def get_dataset_features(
     feature_labels_by_id = metadata_service.get_matrix_dataset_feature_labels_by_id(  # TODO: this takes almost all of the time
         db=db, user=user, dataset=dataset,
     )
-    print(f"Time taken to get feature labels: {perf_counter() - labels_start}")
     result = [{"id": id, "label": label} for id, label in feature_labels_by_id.items()]
-    print(f"Time taken to complete: {perf_counter() - start}")
     return result
 
 

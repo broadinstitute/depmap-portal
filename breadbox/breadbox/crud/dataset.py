@@ -476,6 +476,7 @@ def get_matrix_dataset_samples( # TODO: replace this?
 
     return dataset_samples
 
+
 def get_matrix_dataset_given_ids(
     db: SessionWithUser, dataset: Dataset, axis: str
 ) -> List[str]:
@@ -799,7 +800,6 @@ def get_unique_dimension_ids_from_datasets(
     """
     Returns a unique set of dimension given ids from matrix and tabular datasets based on the given dimension type
     """
-    start = perf_counter()
     if dimension_type.axis == "feature":
         matrix_dimension_class = DatasetFeature
     else:
@@ -817,7 +817,6 @@ def get_unique_dimension_ids_from_datasets(
         )
         .all()
     }
-    print(f"Time taken to get MATRIX dimension ids: {perf_counter() - start}") # below this point is neglegible
     # Get all tabular identifiers for that dimension type
     tabular_given_ids = {
         given_id for (given_id,) in
@@ -834,8 +833,45 @@ def get_unique_dimension_ids_from_datasets(
         .with_entities(TabularCell.dimension_given_id)
         .all()
     }
-    result = matrix_given_ids.union(tabular_given_ids)
     # Combine the unique given ids from the tabular and matrix datasets
-    print(f"Time taken to get total dimension ids: {perf_counter() - start}")
-    return result
+    return matrix_given_ids.union(tabular_given_ids)
 
+
+def get_metadata_used_in_matrix_dataset(
+    db: SessionWithUser, 
+    dimension_type: DimensionType,
+    matrix_dataset: MatrixDataset, 
+    dimension_subtype_cls: Union[Type[DatasetFeature], Type[DatasetSample]],
+    metadata_col_name: str
+) -> dict[str, str]:
+    """
+    For the given matrix dataset, load a column from the associated metadata.
+    The result will only include given ids which exist in both the dataset and the metadata.
+    For example, if a dataset's sample type is "depmap_model", and the requested metadata field name is "label",
+    then this will return a dictionary with depmap ids as keys and cell line names as values.
+    """
+    assert_user_has_access_to_dataset(matrix_dataset, db.user)
+    matrix_dataset_id = matrix_dataset.id
+
+    # Using a subquery makes this MUCH faster than two separate queries would be 
+    # because it reduces the number of rows that need to be fetched and constructed 
+    # into python objects (which is usually by far the slowest part of SQLAlchemy queries).
+    given_id_subquery = (
+        db.query(dimension_subtype_cls.given_id)
+        .filter(dimension_subtype_cls.dataset_id == matrix_dataset_id)
+        .subquery()
+    )
+    metadata_vals_by_id = (
+        db.query(TabularColumn)
+        .filter(
+            and_(
+                TabularColumn.dataset_id == dimension_type.dataset_id,
+                TabularColumn.given_id == metadata_col_name,
+            )
+        )
+        .join(TabularCell)
+        .filter(TabularCell.dimension_given_id.in_(given_id_subquery))
+        .with_entities(TabularCell.dimension_given_id, TabularCell.value)
+        .all()
+    )
+    return {id: val for id, val in metadata_vals_by_id}
