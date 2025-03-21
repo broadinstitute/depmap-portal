@@ -163,7 +163,7 @@ class FeatureFlags:
 
     @property
     def private_datasets(self):
-        return self.is_prerelease_env()
+        return False
 
     @property
     def target_discovery_app(self):
