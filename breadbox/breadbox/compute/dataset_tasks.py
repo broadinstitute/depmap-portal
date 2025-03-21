@@ -2,10 +2,11 @@ from dataclasses import dataclass
 import dataclasses
 from io import BytesIO
 import time
-from typing import Any, Callable, Dict, List, Optional, Set, TypedDict, Union, Literal
+from typing import Any, Callable, Dict, List, Optional, Set, Union, Literal
 from logging import getLogger
 from uuid import UUID, uuid4
 from breadbox.io.upload_utils import create_upload_file
+from typing_extensions import TypedDict
 
 import celery
 
