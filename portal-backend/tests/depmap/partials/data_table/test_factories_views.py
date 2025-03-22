@@ -33,8 +33,6 @@ def test_data_table_factories_json_data(populated_db):
         ("mutation_by_cell_line", {"model_id": model_id}),
         ("translocation_by_cell_line", {"model_id": model_id}),
         ("fusion_by_cell_line", {"model_id": model_id}),
-        ("context_cell_lines", {"context": "melanoma"}),
-        ("context_dependency_enrichment", {"context": "melanoma"}),
         ("cell_line_selector_lines", {}),
     ]
 

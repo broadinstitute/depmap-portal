@@ -16,8 +16,9 @@ from depmap.enums import DependencyEnum
 from depmap.gene.views.executive import (
     format_mutation_profile,
     format_codependencies,
-    format_dep_dist_and_enrichment_boxes,
     generate_correlations_table_from_datasets,
+    get_dependency_distribution,
+    get_enrichment_boxes,
 )
 from depmap.compound.views.executive import (
     determine_compound_experiment_and_dataset,
@@ -376,9 +377,7 @@ def get_enrichment_html(
             entity.entity_id,
         )
 
-        enrichment_boxes = format_dep_dist_and_enrichment_boxes(entity, crispr_dataset)[
-            1
-        ]
+        enrichment_boxes = get_enrichment_boxes(entity, crispr_dataset)[1]
     elif entity_type == "compound":
         best_ce_and_d = determine_compound_experiment_and_dataset(
             compound_experiment_and_datasets
@@ -521,9 +520,7 @@ def get_essentiality_html(gene):
         gene.entity_id,
     )
 
-    dep_dist, _ = format_dep_dist_and_enrichment_boxes(
-        gene, crispr_dataset, rnai_dataset
-    )
+    dep_dist = get_dependency_distribution(gene, crispr_dataset, rnai_dataset)
 
     return render_template("tiles/essentiality.html", dep_dist=dep_dist,)
 

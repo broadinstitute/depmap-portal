@@ -89,7 +89,8 @@ export enum DataType {
 }
 
 export enum DataTypeStrings {
-  PRISM = "PRISM",
+  PRISMRepurposing = "PRISMRepurposing",
+  PRISMOncRef = "PRISMOncRef",
   RNASeq = "RNASeq",
   WGS = "WGS",
   WES = "WES",

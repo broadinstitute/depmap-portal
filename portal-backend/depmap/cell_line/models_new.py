@@ -143,6 +143,11 @@ class DepmapModel(Model):
         return self.level_1_lineage.name == "unknown"
 
     @staticmethod
+    def all():
+        all_models = db.session.query(DepmapModel).all()
+        return all_models
+
+    @staticmethod
     def exists(cell_line_name):
         return db.session.query(
             DepmapModel.query.filter_by(cell_line_name=cell_line_name).exists()

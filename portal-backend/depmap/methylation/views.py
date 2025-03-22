@@ -1,6 +1,6 @@
+from depmap.context.models_new import SubtypeContext
 from depmap.methylation.util import merge_results
 from depmap.extensions import methylation_db
-from depmap.context.models import Context
 from flask import (
     Blueprint,
     render_template,
@@ -19,11 +19,11 @@ blueprint = Blueprint(
 
 @blueprint.route("/<gene_symbol>")
 def query_contexts(gene_symbol):
-    context_names = request.args.getlist("context")
+    codes = request.args.getlist("context")
     cell_lines = set()
-    for context_name in context_names:
-        context = Context.get_by_name(context_name)
-        cell_lines.update(context.cell_line)
+    for code in codes:
+        context = SubtypeContext.get_by_code(code)
+        cell_lines.update(context.depmap_model)
     results = [
         methylation_db.connection.get(gene_symbol, cell_line)
         for cell_line in cell_lines

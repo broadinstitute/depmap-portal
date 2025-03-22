@@ -1,9 +1,10 @@
 import pytest
 import pandas as pd
 from depmap.gene.views.executive import (
-    format_dep_dist_and_enrichment_boxes,
     format_dep_dist_info,
     format_crispr_possible_missing_reason,
+    get_dependency_distribution,
+    get_enrichment_boxes,
     plot_mutation_profile,
     format_enrichment_boxes,
     format_codependencies,
@@ -53,7 +54,7 @@ from tests.utilities.override_fixture import override
         (False, False, True),
     ],
 )
-def test_format_dep_dist_and_enrichment_boxes_default_crispr_enum_chronos(
+def test_get_dep_dist_and_enrichment_boxes_default_crispr_enum_chronos(
     empty_db_mock_downloads, has_chronos, has_rnai, is_dropped_by_chronos
 ):
     gene = GeneFactory()
@@ -72,6 +73,18 @@ def test_format_dep_dist_and_enrichment_boxes_default_crispr_enum_chronos(
         GeneExecutiveInfoFactory(
             gene=gene, dataset=DependencyEnum.Chronos_Combined,
         )
+    if has_rnai:
+        rnai_dataset = DependencyDatasetFactory(
+            matrix=MatrixFactory(
+                entities=[gene], cell_lines=[CellLineFactory(), CellLineFactory()]
+            ),
+            name=DependencyEnum.RNAi_merged,
+            priority=1,
+        )
+
+        GeneExecutiveInfoFactory(
+            gene=gene, dataset=DependencyEnum.RNAi_merged,
+        )
 
     if is_dropped_by_chronos:
         DependencyDatasetFactory(
@@ -87,11 +100,17 @@ def test_format_dep_dist_and_enrichment_boxes_default_crispr_enum_chronos(
 
     empty_db_mock_downloads.session.flush()
 
-    dep_dist, enrichment_boxes = format_dep_dist_and_enrichment_boxes(
-        gene, crispr_dataset=crispr_dataset
+    dep_dist = get_dependency_distribution(
+        gene, crispr_dataset=crispr_dataset, rnai_dataset=rnai_dataset
     )
+
+    enrichment_boxes = get_enrichment_boxes(gene, crispr_dataset=crispr_dataset)
+
     if has_chronos:
         assert enrichment_boxes is not None
+        assert "svg" in dep_dist
+    elif has_rnai:
+        assert enrichment_boxes is None
         assert "svg" in dep_dist
     else:
         assert enrichment_boxes is None
@@ -107,7 +126,11 @@ def test_format_dep_dist_and_enrichment_boxes_default_crispr_enum_chronos(
             not dep_dist or "info" not in dep_dist or "crispr" not in dep_dist["info"]
         )
 
-    assert not dep_dist or "info" not in dep_dist or "rnai" not in dep_dist["info"]
+    if has_rnai:
+        assert "rnai" in dep_dist["info"]
+
+    else:
+        assert not dep_dist or "info" not in dep_dist or "rnai" not in dep_dist["info"]
 
     if is_dropped_by_chronos:
         assert "should_show_dropped_by_chronos" in dep_dist["info"]["crispr"]
@@ -123,7 +146,7 @@ def test_format_dep_dist_and_enrichment_boxes_default_crispr_enum_chronos(
 @pytest.mark.parametrize(
     "has_avana, has_rnai", [(True, True), (False, True), (True, False), (False, False)],
 )
-def test_format_dep_dist_and_enrichment_boxes_default_crispr_enum_not_chronos(
+def test_get_dep_dist_and_enrichment_boxes_default_crispr_enum_not_chronos(
     empty_db_mock_downloads, has_avana, has_rnai
 ):
     """
@@ -158,13 +181,28 @@ def test_format_dep_dist_and_enrichment_boxes_default_crispr_enum_not_chronos(
             is_dropped_by_chronos=True,
         )
 
+    if has_rnai:
+        rnai_dataset = DependencyDatasetFactory(
+            matrix=MatrixFactory(
+                entities=[gene], cell_lines=[CellLineFactory(), CellLineFactory()]
+            ),
+            name=DependencyEnum.RNAi_merged,
+            priority=1,
+        )
+        GeneExecutiveInfoFactory(
+            gene=gene, dataset=DependencyEnum.RNAi_merged,
+        )
+
     empty_db_mock_downloads.session.flush()
 
-    dep_dist, enrichment_boxes = format_dep_dist_and_enrichment_boxes(
-        gene, crispr_dataset=crispr_dataset
+    dep_dist = get_dependency_distribution(
+        gene, crispr_dataset=crispr_dataset, rnai_dataset=rnai_dataset
     )
+
+    enrichment_boxes = get_enrichment_boxes(gene, crispr_dataset=crispr_dataset)
     if has_avana or has_rnai:
-        assert enrichment_boxes is not None
+        if has_rnai and not has_avana:
+            assert enrichment_boxes is None
         assert "svg" in dep_dist
     else:
         assert enrichment_boxes is None
@@ -177,7 +215,10 @@ def test_format_dep_dist_and_enrichment_boxes_default_crispr_enum_not_chronos(
             not dep_dist or "info" not in dep_dist or "crispr" not in dep_dist["info"]
         )
 
-    assert not dep_dist or "info" not in dep_dist or "rnai" not in dep_dist["info"]
+    if has_rnai:
+        assert "rnai" in dep_dist["info"]
+    else:
+        assert not dep_dist or "info" not in dep_dist or "rnai" not in dep_dist["info"]
 
     # never show dropped by chronos
     assert (

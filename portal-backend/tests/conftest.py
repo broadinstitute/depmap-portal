@@ -392,6 +392,9 @@ def load_interactive_db_data():
                 loader_data_dir, "interactive/small-hgnc-2a89.2_without_MED1.csv"
             )
         )
+        cell_line_loader.load_cell_lines_metadata(
+            os.path.join(loader_data_dir, "cell_line/cell_line_metadata.csv")
+        )
         load_sample_cell_lines()
         depmap_model_loader.load_subtype_contexts(
             os.path.join(loader_data_dir, "cell_line/subtype_contexts.csv")

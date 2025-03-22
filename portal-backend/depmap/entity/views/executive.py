@@ -116,7 +116,7 @@ def format_enrichment_box_for_dataset(
     entity, dataset, color, title_color_override=None, negative_only=False
 ):
     enriched_contexts = ContextAnalysis.get_enriched_context_cell_line_p_value_effect_size(
-        entity.entity_id, dataset.dataset_id, negative_only
+        entity.entity_id, dataset.dependency_dataset_id, negative_only
     )
     all_values_series = dataset.matrix.get_cell_line_values_and_depmap_ids(
         entity.entity_id

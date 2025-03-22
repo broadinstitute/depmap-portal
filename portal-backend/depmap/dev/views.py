@@ -61,9 +61,6 @@ def crawl_start():
         "cell_line_alias": url_for(
             "cell_line.view_cell_line", cell_line_name="ACH-000425"
         ),
-        "context": url_for(
-            "context.view_context", context_name="Melanoma"
-        ),  # TODO: Remove?
         "download_file": url_for("download.view_all"),
         "context_explorer": url_for(
             "context_explorer.view_context_explorer", context="BONE"

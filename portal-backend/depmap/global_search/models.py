@@ -6,7 +6,6 @@ from depmap.database import Column, ForeignKey, Integer, Model, String, db, rela
 from depmap.gene.models import Gene
 from depmap.entity.models import EntityAlias
 from depmap.cell_line.models import CellLine
-from depmap.context.models import Context
 from depmap.context.models_new import SubtypeContext
 from depmap.download.models import DownloadFileGlobalSearch
 
@@ -211,22 +210,6 @@ class CellLineAliasSearchIndex(_CellLine, GlobalSearchIndex):
             self.cell_line.cell_line_display_name,
             _get_name_if_not_none(self.cell_line.primary_disease, "Unknown disease"),
         )
-
-
-# TODO: Remove when context_explorer goes public
-class ContextSearchIndex(GlobalSearchIndex):
-    __mapper_args__ = {"polymorphic_identity": "context"}
-
-    def get_label(self):
-        return Context.get_display_name(self.context.name)
-
-    def get_description(self):
-        return "Find cell lines which are members of {} context".format(
-            self.get_label()
-        )
-
-    def get_url(self):
-        return url_for("context.view_context", context_name=self.context.name)
 
 
 class ContextExplorerSearchIndex(GlobalSearchIndex):

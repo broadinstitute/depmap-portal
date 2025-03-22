@@ -1,5 +1,6 @@
 from operator import and_
 from typing import Dict, List, Optional, Type
+from depmap.cell_line.models import CellLine
 from depmap.database import (
     Column,
     ForeignKey,

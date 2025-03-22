@@ -9,7 +9,6 @@ from depmap.tda.views import convert_series_to_json_safe_list
 from flask_restplus import Namespace, Resource
 from flask import current_app, request
 import pandas as pd
-from depmap.context.models_new import SubtypeContext
 from depmap.settings.shared import DATASET_METADATA
 from depmap.context_explorer.models import (
     ContextAnalysis,
