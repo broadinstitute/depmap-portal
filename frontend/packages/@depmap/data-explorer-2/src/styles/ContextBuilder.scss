@@ -201,3 +201,20 @@
 .cellLineContextName {
   margin-bottom: 15px;
 }
+
+.dataSourceOption {
+  :global .glyphicon {
+    float: right;
+    padding: 10px;
+    margin-top: -10px;
+    margin-right: -10px;
+
+    &:hover {
+      color: inherit !important;
+    }
+  }
+}
+
+.unblockable {
+  display: block !important;
+}

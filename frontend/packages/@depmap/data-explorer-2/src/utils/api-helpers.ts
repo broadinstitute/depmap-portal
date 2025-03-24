@@ -28,6 +28,8 @@ export async function fetchMetadataAndOtherTabularDatasets(
     );
   });
 
+  const metadataIdColumn = dimType?.id_column;
+
   const otherTabularDatasets = allTabularDatasets
     .filter((d) => {
       return (
@@ -42,5 +44,5 @@ export async function fetchMetadataAndOtherTabularDatasets(
       });
     });
 
-  return { metadataDataset, otherTabularDatasets };
+  return { metadataDataset, metadataIdColumn, otherTabularDatasets };
 }

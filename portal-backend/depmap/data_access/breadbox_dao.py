@@ -216,3 +216,17 @@ def get_tabular_dataset_column(dataset_id: str, column_name: str) -> pd.Series:
         strict=True,
     )
     return df.squeeze()
+
+
+def get_metadata_dataset_id(dimension_type: str) -> str:
+    if not hasattr(flask.g, "__cached_dimension_types"):
+        flask.g.__cached_dimension_types = (
+            extensions.breadbox.client.get_dimension_types()
+        )
+
+    dimension_types = flask.g.__cached_dimension_types
+
+    return next(
+        (dt.metadata_dataset_id for dt in dimension_types if dt.name == dimension_type),
+        None,
+    )

@@ -95,6 +95,20 @@ def get_series_from_de2_slice_id(slice_id: str) -> pd.Series:
         return get_compound_experiment_compound_instance_series()
     if slice_id.startswith("slice/mutations_prioritized/"):
         return get_mutations_prioritized_series(dataset_id, feature_label)
+    if slice_id.startswith("slice/depmap_model_metadata/"):
+        metadata_dataset_id = data_access.breadbox_dao.get_metadata_dataset_id(
+            "depmap_model"
+        )
+        return data_access.breadbox_dao.get_tabular_dataset_column(
+            metadata_dataset_id, feature_label
+        )
+    if slice_id.startswith("slice/screen_metadata/"):
+        metadata_dataset_id = data_access.breadbox_dao.get_metadata_dataset_id(
+            "Screen metadata"
+        )
+        return data_access.breadbox_dao.get_tabular_dataset_column(
+            metadata_dataset_id, feature_label
+        )
 
     is_transpose = feature_type == "transpose_label"
     if is_transpose and data_access.is_continuous(dataset_id):

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { DataExplorerContextVariable } from "@depmap/types";
 import { useDataExplorerApi } from "../../../contexts/DataExplorerApiContext";
+import { fetchMetadataAndOtherTabularDatasets } from "../../../utils/api-helpers";
 import type { ExprReducerAction } from "./expressionReducer";
 
 function useInitializer(
@@ -32,42 +33,50 @@ function useInitializer(
   );
 
   useEffect(() => {
-    if (shouldConvertGivenIdToMetadataColumn.current) {
+    if (!shouldConvertGivenIdToMetadataColumn.current) {
+      return;
+    }
+
+    shouldConvertGivenIdToMetadataColumn.current = false;
+
+    (async () => {
+      const {
+        metadataDataset,
+        metadataIdColumn,
+      } = await fetchMetadataAndOtherTabularDatasets(api, dimension_type);
+
+      if (!metadataDataset) {
+        throw new Error(
+          `Dimension type "${dimension_type}" has no metadata dataset!`
+        );
+      }
+
+      if (!metadataIdColumn) {
+        throw new Error(
+          `Dimension type "${dimension_type}" has no \`id_column\` set!`
+        );
+      }
+
       const nextVarName = crypto.randomUUID();
       const ids = mainExpr.and[0].in[1];
 
-      api.fetchDimensionTypes().then((types) => {
-        const dimensionType = types.find((t) => t.name === dimension_type);
-
-        if (!dimensionType) {
-          throw new Error(`Unknown dimension type "${dimension_type}"`);
-        }
-
-        if (!dimensionType.metadata_dataset_id) {
-          throw new Error(
-            `Dimension type "${dimension_type}" has no metadata dataset!`
-          );
-        }
-
-        dispatch({
-          type: "update-value",
-          payload: {
-            path: ["and", 0],
-            value: { in: [{ var: nextVarName }, ids] },
-          },
-        });
-
-        setVar(nextVarName, {
-          source: "metadata_column",
-          dataset_id: dimensionType.metadata_dataset_id,
-          identifier: dimensionType.id_column,
-          identifier_type: "column",
-        });
-
-        shouldConvertGivenIdToMetadataColumn.current = false;
-        setIsInitializing(false);
+      dispatch({
+        type: "update-value",
+        payload: {
+          path: ["and", 0],
+          value: { in: [{ var: nextVarName }, ids] },
+        },
       });
-    }
+
+      setVar(nextVarName, {
+        source: "metadata_column",
+        dataset_id: metadataDataset.given_id || metadataDataset.id,
+        identifier: metadataIdColumn,
+        identifier_type: "column",
+      });
+
+      setIsInitializing(false);
+    })();
   }, [api, dimension_type, mainExpr, setVar, dispatch]);
 
   return isInitializing;

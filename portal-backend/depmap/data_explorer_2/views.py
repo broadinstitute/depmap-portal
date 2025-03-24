@@ -575,6 +575,19 @@ def metadata_slices():
         but this has a specific use on the frontend. The UI interprets
         isHighCardinality=True to mean "you can use this as context variable
         but it would make no sense to try to color by it."
+    "isBreadboxMetadata" (boolean):
+        The legacy Portal backend has a hack to read some metadata from
+        Breadbox tables. This is intended as a stopgap measure. Soon we will
+        remove all of these legacy enpoints and everything will be sourced from
+        Breadbox.
+    "isIdColumn" (boolean):
+        Indicates whether a column is the one associated with a Breadbox
+        dimension type's id_column This is used by the frontend to sort this
+        near at the top of the options.
+    "isLabelColumn" (boolean):
+        Indicates whether a column is the one associated with the special
+        "label" column in Breadbox. This is used by the frontend to sort this
+        near the top of the options.
     """
     dimension_type = request.args.get("dimension_type")
 
