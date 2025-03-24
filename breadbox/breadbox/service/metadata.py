@@ -1,6 +1,5 @@
 import logging
 from typing import Any, Optional
-from time import perf_counter
 
 from breadbox.crud import dataset as dataset_crud
 from breadbox.crud import dimension_types as types_crud

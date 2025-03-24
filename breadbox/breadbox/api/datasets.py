@@ -2,7 +2,6 @@ from typing import List, Optional, Set, Union
 from logging import getLogger
 from uuid import UUID
 from ..db.util import transaction
-from time import perf_counter
 
 from fastapi import (
     APIRouter,
@@ -109,18 +108,14 @@ def get_dataset_features(
     """
     Get information about each feature belonging to a given dataset.
     """
-    start = perf_counter()
     dataset = dataset_crud.get_dataset(db=db, user=user, dataset_id=dataset_id)
     if dataset is None:
         raise HTTPException(404, "Dataset not found")
 
-    # start perf counter
-    labels_start = perf_counter()
     feature_labels_by_id = metadata_service.get_matrix_dataset_feature_labels_by_id(  # TODO: this takes almost all of the time
         db=db, user=user, dataset=dataset,
     )
-    result = [{"id": id, "label": label} for id, label in feature_labels_by_id.items()]
-    return result
+    return [{"id": id, "label": label} for id, label in feature_labels_by_id.items()]
 
 
 @router.get(

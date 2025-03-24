@@ -462,7 +462,7 @@ def get_matrix_dataset_features(
     return dataset_features
 
 
-def get_matrix_dataset_samples( # TODO: replace this?
+def get_matrix_dataset_samples( 
     db: SessionWithUser, dataset: MatrixDataset
 ) -> list[DatasetSample]:
     assert_user_has_access_to_dataset(dataset, db.user)
@@ -791,8 +791,6 @@ def get_subset_of_tabular_data_as_df(
 
     return pivot_df["value"]
 
-
-from time import perf_counter 
 
 def get_unique_dimension_ids_from_datasets(
     db: SessionWithUser, dataset_ids: List[str], dimension_type: DimensionType
