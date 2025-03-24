@@ -265,6 +265,7 @@ def get_dimension_type_identifiers(
     dimension_type: DimensionType,
     data_type: Optional[str] = None,
     show_only_dimensions_in_datasets: Optional[bool] = False,
+    limit: Optional[int] = None,
 ):
     """
     For the given dimension type,
@@ -277,7 +278,7 @@ def get_dimension_type_identifiers(
     """
     # Get all dimension identifiers in a dimension type
     dim_type_ids_and_labels = types_crud.get_dimension_type_labels_by_id(
-        db, dimension_type.name
+        db, dimension_type.name, limit=limit,
     )
 
     if data_type is None and not show_only_dimensions_in_datasets:

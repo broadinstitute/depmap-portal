@@ -409,6 +409,17 @@ def test_get_dimension_type_dimension_identifiers(
         {"id": "sample-2", "label": "Sample 2"},
     ]
 
+    # Test that the limit parameter works
+    dim_type_ids_res = client.get(
+        f"types/dimensions/{dim_type_fields['name']}/identifiers?limit=1",
+        headers=admin_headers,
+    )
+    assert_status_ok(dim_type_ids_res)
+    assert dim_type_ids_res.json() == [
+        {"id": "sample-1", "label": "Sample 1"},
+    ]
+
+
     # test dim type doesn't exist
     nonexistent_dim_type_res = client.get(
         f"types/dimensions/nonexistentDimensionType/identifiers", headers=admin_headers,

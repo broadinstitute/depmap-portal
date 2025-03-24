@@ -625,6 +625,7 @@ def get_dimension_type_identifiers(
     name: str,
     data_type: Annotated[Union[str, None], Query()] = None,
     show_only_dimensions_in_datasets: Annotated[bool, Query()] = False,
+    limit: Annotated[Union[int, None], Query()] = None,
     db: SessionWithUser = Depends(get_db_with_user),
 ):
     dim_type = type_crud.get_dimension_type(db, name)
@@ -632,7 +633,7 @@ def get_dimension_type_identifiers(
         raise HTTPException(404, f"Dimension type {name} not found")
 
     dimension_ids_and_labels = metadata_service.get_dimension_type_identifiers(
-        db, dim_type, data_type, show_only_dimensions_in_datasets
+        db, dim_type, data_type, show_only_dimensions_in_datasets, limit=limit,
     )
 
     return [
