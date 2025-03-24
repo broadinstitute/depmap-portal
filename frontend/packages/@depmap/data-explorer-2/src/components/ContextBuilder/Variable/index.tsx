@@ -1,21 +1,28 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { DataExplorerDatasetDescriptor } from "@depmap/types";
-import { capitalize, getDimensionTypeLabel } from "../../utils/misc";
+import { capitalize, getDimensionTypeLabel } from "../../../utils/misc";
 import {
   DeprecatedDataExplorerApiResponse,
   useDeprecatedDataExplorerApi,
-} from "../../contexts/DeprecatedDataExplorerApiContext";
-import SliceLabelSelector from "../SliceLabelSelector";
-import PlotConfigSelect from "../PlotConfigSelect";
-import { ContextBuilderReducerAction } from "./contextBuilderReducer";
-import { getValueType, makePartialSliceId } from "./contextBuilderUtils";
-import { useContextBuilderContext } from "./ContextBuilderContext";
+} from "../../../contexts/DeprecatedDataExplorerApiContext";
+import SliceLabelSelector from "../../SliceLabelSelector";
+import { ContextBuilderReducerAction } from "../contextBuilderReducer";
+import { getValueType, makePartialSliceId } from "../contextBuilderUtils";
+import { useContextBuilderContext } from "../ContextBuilderContext";
 import VariableEntity from "./VariableEntity";
-import styles from "../../styles/ContextBuilder.scss";
+import DataSourceSelect from "./DataSourceSelect";
+import SlicePrefixSelect from "./SlicePrefixSelect";
+import styles from "../../../styles/ContextBuilder.scss";
 
 type SliceId = string;
 
 interface Props {
+  // HACK: This temp property fills a hole in the data model. We're
+  // dependent on a slice ID (or at least part of one) to figure out what
+  // "source" (annotation vs matrix dataset) the selected dataset comes
+  // from. Because we first prompt the user to choose a data source, so
+  // we need a placeholder to keep track of that selection.
+  placeholderDataSource: string | null;
   value: "entity_label" | SliceId | null;
   path: (string | number)[];
   onChangeDataSelect: (option: { label: string; value: string } | null) => void;
@@ -74,13 +81,35 @@ const getMetadataLookupTable = (
   return out;
 };
 
-const toOptions = (variables: Record<string, string>) =>
-  Object.entries(variables).map(([value, label]) => ({
-    value,
-    label,
-  }));
+const inferDataSource = (
+  value: string | null,
+  metadataSlices: DeprecatedDataExplorerApiResponse["fetchMetadataSlices"],
+  isParitalContinuousSliceId: boolean,
+  isParitalCategoricalSliceId: boolean
+) => {
+  if (value === SLICE_LABEL_VARIABLE || isParitalCategoricalSliceId) {
+    return "legacy_metadata_slice";
+  }
+
+  const slice = value && metadataSlices[value];
+
+  if (slice && !slice.isBreadboxMetadata) {
+    return "legacy_metadata_slice";
+  }
+
+  if (slice && slice.isBreadboxMetadata) {
+    return "breadbox_metadata_column";
+  }
+
+  if (isParitalContinuousSliceId) {
+    return "matrix_dataset";
+  }
+
+  return null;
+};
 
 function Variable({
+  placeholderDataSource,
   value,
   path,
   onChangeDataSelect,
@@ -94,7 +123,7 @@ function Variable({
     DataExplorerDatasetDescriptor[] | null
   >(null);
 
-  const { metadataSlices, isLoading } = useContextBuilderContext();
+  const { metadataSlices } = useContextBuilderContext();
 
   useEffect(() => {
     let mounted = true;
@@ -122,6 +151,18 @@ function Variable({
         (memo, dataset) => ({
           ...memo,
           [makePartialSliceId(dataset.id)]: dataset.name,
+        }),
+        {}
+      ),
+    [datasets]
+  );
+
+  const continuousDatasetDataTypes = useMemo(
+    () =>
+      (datasets || []).reduce(
+        (memo, dataset) => ({
+          ...memo,
+          [makePartialSliceId(dataset.id)]: dataset.data_type,
         }),
         {}
       ),
@@ -165,28 +206,46 @@ function Variable({
 
   const varSliceType = datasets?.find((d) => d.id === varDatasetId)?.slice_type;
 
+  const dataSource = (placeholderDataSource ||
+    inferDataSource(
+      value,
+      metadataSlices,
+      isParitalContinuousSliceId,
+      isParitalCategoricalSliceId
+    )) as
+    | "legacy_metadata_slice"
+    | "breadbox_metadata_column"
+    | "matrix_dataset"
+    | null;
+
   return (
     <div>
-      <PlotConfigSelect
-        show
-        enable={!isLoading && Boolean(continuousDatasetSliceLookupTable)}
-        className={styles.varSelect}
-        hasError={shouldShowValidation && !valueOrPartialSlice}
-        isLoading={isLoading || !continuousDatasetSliceLookupTable}
-        value={
-          valueOrPartialSlice
-            ? {
-                value: valueOrPartialSlice,
-                label: variables[valueOrPartialSlice] || "(unknown property)",
-              }
-            : null
-        }
-        options={toOptions(variables)}
-        onChange={onChangeDataSelect as () => void}
-        onChangeUsesWrappedValue
-        placeholder="Select data…"
-        menuPortalTarget={document.querySelector("#modal-container")}
+      <DataSourceSelect
+        slice_type={slice_type}
+        value={dataSource}
+        onChange={(nextDataSource) => {
+          dispatch({
+            type: "update-value",
+            payload: {
+              path: path.slice(0, -2),
+              value: {
+                "==": [{ placeholderDataSource: nextDataSource }, null],
+              },
+            },
+          });
+        }}
       />
+      {dataSource && (
+        <SlicePrefixSelect
+          dataSource={dataSource}
+          onChangeDataSelect={onChangeDataSelect}
+          shouldShowValidation={shouldShowValidation}
+          slice_type={slice_type}
+          valueOrPartialSlice={valueOrPartialSlice}
+          continuousDatasetSliceLookupTable={continuousDatasetSliceLookupTable}
+          continuousDatasetDataTypes={continuousDatasetDataTypes}
+        />
+      )}
       {isParitalContinuousSliceId && (
         <VariableEntity
           value={value}
