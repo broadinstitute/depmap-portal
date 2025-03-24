@@ -377,7 +377,7 @@ def get_enrichment_html(
             entity.entity_id,
         )
 
-        enrichment_boxes = get_enrichment_boxes(entity, crispr_dataset)[1]
+        enrichment_boxes = get_enrichment_boxes(entity, crispr_dataset)
     elif entity_type == "compound":
         best_ce_and_d = determine_compound_experiment_and_dataset(
             compound_experiment_and_datasets

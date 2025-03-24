@@ -23,8 +23,7 @@ from tests.utilities.df_test_utils import load_sample_cell_lines
 
 
 def test_alt_names_or_aliases(empty_db_mock_downloads):
-    cell_line_1 = DepmapModelFactory(model_id="depmap_id_1")
-    SubtypeContextFactory(subtype_code="test_context", depmap_model=[cell_line_1])
+    cell_line_1 = CellLineFactory(depmap_id="depmap_id_1")
     empty_db_mock_downloads.session.flush()
 
     # line_1 updated to have lineage test, no aliases, and new arxspan_id
@@ -34,19 +33,19 @@ def test_alt_names_or_aliases(empty_db_mock_downloads):
         "display_name": ["line"],
         "aliases": ["abcd, xyz"],
         "alt_names": ["theanswertolife"],
-        "catalog_number": [cell_line_1.cell_line.catalog_number],
-        "growth_pattern": [cell_line_1.cell_line.growth_pattern],
+        "catalog_number": [cell_line_1.catalog_number],
+        "growth_pattern": [cell_line_1.growth_pattern],
         "lineage_1": ["test"],
         "lineage_2": [nan],
         "lineage_3": [nan],
         "lineage_4": [nan],
         "arxspan_id": ["depmap_id_1"],
-        "wtsi_master_cell_id": [cell_line_1.cell_line.wtsi_master_cell_id],
-        "cosmic_id": [cell_line_1.cell_line.cosmic_id],
-        "cell_line_passport_id": [cell_line_1.cell_line.cell_line_passport_id],
-        "primary_disease_name": [cell_line_1.cell_line.primary_disease.name],
-        "subtype_name": [cell_line_1.cell_line.disease_subtype.name],
-        "tumor_type_name": [cell_line_1.cell_line.tumor_type.name],
+        "wtsi_master_cell_id": [cell_line_1.wtsi_master_cell_id],
+        "cosmic_id": [cell_line_1.cosmic_id],
+        "cell_line_passport_id": [cell_line_1.cell_line_passport_id],
+        "primary_disease_name": [cell_line_1.primary_disease.name],
+        "subtype_name": [cell_line_1.disease_subtype.name],
+        "tumor_type_name": [cell_line_1.tumor_type.name],
         "cclf_gender": ["new gender"],
         "original_source": ["new source"],
         "rrid": ["test rrid"],
@@ -56,10 +55,10 @@ def test_alt_names_or_aliases(empty_db_mock_downloads):
     }
 
     df = pd.DataFrame(new_cell_line_data)
-    insert_cell_lines(df)
+    insert_or_update_cell_lines(df)
 
     # line 1 was updated, and context is fine
-    cell_line_1 = DepmapModel.get_by_model_id("depmap_id_1")
+    cell_line_1 = CellLine.get_by_depmap_id("depmap_id_1")
     assert sorted([ali.alias for ali in cell_line_1.cell_line_alias]) == sorted(
         ["abcd", "xyz", "theanswertolife", "line_1", "line-6000"]
     )

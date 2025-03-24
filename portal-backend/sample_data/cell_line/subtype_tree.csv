@@ -1,93 +1,19 @@
-,DepmapModelType,MolecularSubtypeCode,NodeName,NodeLevel,NodeSource,TreeType,Level0,Level1,Level2,Level3,Level4,Level5,OncotreeCode
-0,,ALKHotspot,ALK Hotspot,0,Omics Inferred Molecular Subtype,MolecularSubtype,ALK Hotspot,,,,,,
-16,DDCHS,,Dedifferentiated Chondrosarcoma,2,Oncotree,Lineage,Bone,Chondrosarcoma,Dedifferentiated Chondrosarcoma,,,,DDCHS
-17,EMCHS,,Extraskeletal Myxoid Chondrosarcoma,2,Oncotree,Lineage,Bone,Chondrosarcoma,Extraskeletal Myxoid Chondrosarcoma,,,,EMCHS
-18,CHS,,Chondrosarcoma,1,Oncotree,Lineage,Bone,Chondrosarcoma,,,,,CHS
-19,DDCHDM,,Dedifferentiated Chordoma,2,Oncotree,Lineage,Bone,Chordoma,Dedifferentiated Chordoma,,,,DDCHDM
-20,CHDM,,Chordoma,1,Oncotree,Lineage,Bone,Chordoma,,,,,CHDM
-21,,ES:EWSR1-ERG,Ewing Sarcoma: EWSR1-ERG,2,Data-driven genetic subtype,Lineage,Bone,Ewing Sarcoma,Ewing Sarcoma: EWSR1-ERG,,,,
-22,,ES:EWSR1-FEV,Ewing Sarcoma: EWSR1-FEV,2,Data-driven genetic subtype,Lineage,Bone,Ewing Sarcoma,Ewing Sarcoma: EWSR1-FEV,,,,
-23,,ES:EWSR1-FLI1,Ewing Sarcoma: EWSR1-FLI1,2,Data-driven genetic subtype,Lineage,Bone,Ewing Sarcoma,Ewing Sarcoma: EWSR1-FLI1,,,,
-24,ES,,Ewing Sarcoma,1,Oncotree,Lineage,Bone,Ewing Sarcoma,,,,,ES
-25,GCTB,,Giant Cell Tumor of Bone,1,Oncotree,Lineage,Bone,Giant Cell Tumor of Bone,,,,,GCTB
-26,OSOS,,Osteoblastic Osteosarcoma,2,Oncotree,Lineage,Bone,Osteosarcoma,Osteoblastic Osteosarcoma,,,,OSOS
-27,OS,,Osteosarcoma,1,Oncotree,Lineage,Bone,Osteosarcoma,,,,,OS
-28,BONE,,Bone,0,Oncotree,Lineage,Bone,,,,,,BONE
-76,,EGFRexon19del,EGFR exon 19 del,1,Omics Inferred Molecular Subtype,MolecularSubtype,EGFR,EGFR exon 19 del,,,,,
-77,,EGFRp.L858R,EGFR p.L858R,1,Omics Inferred Molecular Subtype,MolecularSubtype,EGFR,EGFR p.L858R,,,,,
-78,,EGFR,EGFR,0,Omics Inferred Molecular Subtype,MolecularSubtype,EGFR,,,,,,
-135,LUCA,,Lung Carcinoid,2,Oncotree,Lineage,Lung,Lung Neuroendocrine Tumor,Lung Carcinoid,,,,LUCA
-136,SCLC,,Small Cell Lung Cancer,2,Oncotree,Lineage,Lung,Lung Neuroendocrine Tumor,Small Cell Lung Cancer,,,,SCLC
-137,LNET,,Lung Neuroendocrine Tumor,1,Oncotree,Lineage,Lung,Lung Neuroendocrine Tumor,,,,,LNET
-138,GCLC,,Giant Cell Carcinoma of the Lung,3,Oncotree,Lineage,Lung,Non-Small Cell Lung Cancer,Large Cell Lung Carcinoma,Giant Cell Carcinoma of the Lung,,,GCLC
-139,LCLC,,Large Cell Lung Carcinoma,2,Oncotree,Lineage,Lung,Non-Small Cell Lung Cancer,Large Cell Lung Carcinoma,,,,LCLC
-140,,LUAD:EGFRp.L858R,Lung Adenocarcinoma: EGFR p.L858R,3,Data-driven genetic subtype,Lineage,Lung,Non-Small Cell Lung Cancer,Lung Adenocarcinoma,Lung Adenocarcinoma: EGFR p.L858R,,,
-141,LUAD,,Lung Adenocarcinoma,2,Oncotree,Lineage,Lung,Non-Small Cell Lung Cancer,Lung Adenocarcinoma,,,,LUAD
-142,LUAS,,Lung Adenosquamous Carcinoma,2,Oncotree,Lineage,Lung,Non-Small Cell Lung Cancer,Lung Adenosquamous Carcinoma,,,,LUAS
-143,LUSC,,Lung Squamous Cell Carcinoma,2,Oncotree,Lineage,Lung,Non-Small Cell Lung Cancer,Lung Squamous Cell Carcinoma,,,,LUSC
-144,LUMEC,,Mucoepidermoid Carcinoma of the Lung,2,Oncotree,Lineage,Lung,Non-Small Cell Lung Cancer,Mucoepidermoid Carcinoma of the Lung,,,,LUMEC
-145,NUTCL,,NUT Carcinoma of the Lung,2,Oncotree,Lineage,Lung,Non-Small Cell Lung Cancer,NUT Carcinoma of the Lung,,,,NUTCL
-146,,NSCLC:EGFRexon19del,Non-Small Cell Lung Cancer: EGFR exon 19 del,2,Data-driven genetic subtype,Lineage,Lung,Non-Small Cell Lung Cancer,Non-Small Cell Lung Cancer: EGFR exon 19 del,,,,
-147,NSCLCPD,,Poorly Differentiated Non-Small Cell Lung Cancer,2,Oncotree,Lineage,Lung,Non-Small Cell Lung Cancer,Poorly Differentiated Non-Small Cell Lung Cancer,,,,NSCLCPD
-148,NSCLC,,Non-Small Cell Lung Cancer,1,Oncotree,Lineage,Lung,Non-Small Cell Lung Cancer,,,,,NSCLC
-149,SMARCA4-UT,,SMARCA4-deficient undifferentiated tumor,1,Depmap,Lineage,Lung,SMARCA4-deficient undifferentiated tumor,,,,,
-150,LUNG,,Lung,0,Oncotree,Lineage,Lung,,,,,,LUNG
-151,BLLHYPO,,B-Lymphoblastic Leukemia/Lymphoma with Hypodiploidy,4,Oncotree,Lineage,Lymphoid,Lymphoid Neoplasm,B-Lymphoblastic Leukemia/Lymphoma,B-Lymphoblastic Leukemia/Lymphoma with Recurrent Genetic Abnormalities,B-Lymphoblastic Leukemia/Lymphoma with Hypodiploidy,,BLLHYPO
-152,BLLETV6RUNX1,,B-Lymphoblastic Leukemia/Lymphoma with t(12;21)(p13.2;q22.1); ETV6-RUNX1,4,Oncotree,Lineage,Lymphoid,Lymphoid Neoplasm,B-Lymphoblastic Leukemia/Lymphoma,B-Lymphoblastic Leukemia/Lymphoma with Recurrent Genetic Abnormalities,B-Lymphoblastic Leukemia/Lymphoma with t(12;21)(p13.2;q22.1); ETV6-RUNX1,,BLLETV6RUNX1
-153,BLLTCF3PBX1,,B-Lymphoblastic Leukemia/Lymphoma with t(1;19)(q23;p13.3);TCF3-PBX1,4,Oncotree,Lineage,Lymphoid,Lymphoid Neoplasm,B-Lymphoblastic Leukemia/Lymphoma,B-Lymphoblastic Leukemia/Lymphoma with Recurrent Genetic Abnormalities,B-Lymphoblastic Leukemia/Lymphoma with t(1;19)(q23;p13.3);TCF3-PBX1,,BLLTCF3PBX1
-154,BLLBCRABL1,,B-Lymphoblastic Leukemia/Lymphoma with t(9;22)(q34.1;q11.2);BCR-ABL1,4,Oncotree,Lineage,Lymphoid,Lymphoid Neoplasm,B-Lymphoblastic Leukemia/Lymphoma,B-Lymphoblastic Leukemia/Lymphoma with Recurrent Genetic Abnormalities,B-Lymphoblastic Leukemia/Lymphoma with t(9;22)(q34.1;q11.2);BCR-ABL1,,BLLBCRABL1
-155,BLLKMT2A,,B-Lymphoblastic Leukemia/Lymphoma with t(v;11q23.3);KMT2A Rearranged,4,Oncotree,Lineage,Lymphoid,Lymphoid Neoplasm,B-Lymphoblastic Leukemia/Lymphoma,B-Lymphoblastic Leukemia/Lymphoma with Recurrent Genetic Abnormalities,B-Lymphoblastic Leukemia/Lymphoma with t(v;11q23.3);KMT2A Rearranged,,BLLKMT2A
-156,BLLBCRABL1L,,"B-Lymphoblastic Leukemia/Lymphoma, BCR-ABL1 Like",4,Oncotree,Lineage,Lymphoid,Lymphoid Neoplasm,B-Lymphoblastic Leukemia/Lymphoma,B-Lymphoblastic Leukemia/Lymphoma with Recurrent Genetic Abnormalities,"B-Lymphoblastic Leukemia/Lymphoma, BCR-ABL1 Like",,BLLBCRABL1L
-157,BLLRGA,,B-Lymphoblastic Leukemia/Lymphoma with Recurrent Genetic Abnormalities,3,Oncotree,Lineage,Lymphoid,Lymphoid Neoplasm,B-Lymphoblastic Leukemia/Lymphoma,B-Lymphoblastic Leukemia/Lymphoma with Recurrent Genetic Abnormalities,,,BLLRGA
-158,,BLL:MEF2DFusions,B-Lymphoblastic Leukemia/Lymphoma: MEF2D Fusions,3,Data-driven genetic subtype,Lineage,Lymphoid,Lymphoid Neoplasm,B-Lymphoblastic Leukemia/Lymphoma,B-Lymphoblastic Leukemia/Lymphoma: MEF2D Fusions,,,
-159,BLL,,B-Lymphoblastic Leukemia/Lymphoma,2,Oncotree,Lineage,Lymphoid,Lymphoid Neoplasm,B-Lymphoblastic Leukemia/Lymphoma,,,,BLL
-160,HL,,Hodgkin Lymphoma,2,Oncotree,Lineage,Lymphoid,Lymphoid Neoplasm,Hodgkin Lymphoma,,,,HL
-161,BPLL,,B-Cell Prolymphocytic Leukemia,4,Oncotree,Lineage,Lymphoid,Lymphoid Neoplasm,Non-Hodgkin Lymphoma,Mature B-Cell Neoplasms,B-Cell Prolymphocytic Leukemia,,BPLL
-162,BL,,Burkitt Lymphoma,4,Oncotree,Lineage,Lymphoid,Lymphoid Neoplasm,Non-Hodgkin Lymphoma,Mature B-Cell Neoplasms,Burkitt Lymphoma,,BL
-163,CLLSLL,,Chronic Lymphocytic Leukemia/Small Lymphocytic Lymphoma,4,Oncotree,Lineage,Lymphoid,Lymphoid Neoplasm,Non-Hodgkin Lymphoma,Mature B-Cell Neoplasms,Chronic Lymphocytic Leukemia/Small Lymphocytic Lymphoma,,CLLSLL
-164,ABC,,Activated B-cell Type,5,Oncotree,Lineage,Lymphoid,Lymphoid Neoplasm,Non-Hodgkin Lymphoma,Mature B-Cell Neoplasms,"Diffuse Large B-Cell Lymphoma, NOS",Activated B-cell Type,ABC
-165,GCB,,Germinal Center B-Cell Type,5,Oncotree,Lineage,Lymphoid,Lymphoid Neoplasm,Non-Hodgkin Lymphoma,Mature B-Cell Neoplasms,"Diffuse Large B-Cell Lymphoma, NOS",Germinal Center B-Cell Type,GCB
-166,DLBCLNOS,,"Diffuse Large B-Cell Lymphoma, NOS",4,Oncotree,Lineage,Lymphoid,Lymphoid Neoplasm,Non-Hodgkin Lymphoma,Mature B-Cell Neoplasms,"Diffuse Large B-Cell Lymphoma, NOS",,DLBCLNOS
-167,FL,,Follicular Lymphoma,4,Oncotree,Lineage,Lymphoid,Lymphoid Neoplasm,Non-Hodgkin Lymphoma,Mature B-Cell Neoplasms,Follicular Lymphoma,,FL
-168,HCL,,Hairy Cell Leukemia,4,Oncotree,Lineage,Lymphoid,Lymphoid Neoplasm,Non-Hodgkin Lymphoma,Mature B-Cell Neoplasms,Hairy Cell Leukemia,,HCL
-169,HGBCLMYCBCL2,,"High-Grade B-Cell Lymphoma, with MYC and BCL2 and/or BCL6 Rearrangements",4,Oncotree,Lineage,Lymphoid,Lymphoid Neoplasm,Non-Hodgkin Lymphoma,Mature B-Cell Neoplasms,"High-Grade B-Cell Lymphoma, with MYC and BCL2 and/or BCL6 Rearrangements",,HGBCLMYCBCL2
-170,MCL,,Mantle Cell Lymphoma,4,Oncotree,Lineage,Lymphoid,Lymphoid Neoplasm,Non-Hodgkin Lymphoma,Mature B-Cell Neoplasms,Mantle Cell Lymphoma,,MCL
-171,PCM,,Plasma Cell Myeloma,4,Oncotree,Lineage,Lymphoid,Lymphoid Neoplasm,Non-Hodgkin Lymphoma,Mature B-Cell Neoplasms,Plasma Cell Myeloma,,PCM
-172,PEL,,Primary Effusion Lymphoma,4,Oncotree,Lineage,Lymphoid,Lymphoid Neoplasm,Non-Hodgkin Lymphoma,Mature B-Cell Neoplasms,Primary Effusion Lymphoma,,PEL
-173,PMBL,,Primary Mediastinal (Thymic) Large B-Cell Lymphoma,4,Oncotree,Lineage,Lymphoid,Lymphoid Neoplasm,Non-Hodgkin Lymphoma,Mature B-Cell Neoplasms,Primary Mediastinal (Thymic) Large B-Cell Lymphoma,,PMBL
-174,SMZL,,Splenic Marginal Zone Lymphoma,4,Oncotree,Lineage,Lymphoid,Lymphoid Neoplasm,Non-Hodgkin Lymphoma,Mature B-Cell Neoplasms,Splenic Marginal Zone Lymphoma,,SMZL
-175,MBN,,Mature B-Cell Neoplasms,3,Oncotree,Lineage,Lymphoid,Lymphoid Neoplasm,Non-Hodgkin Lymphoma,Mature B-Cell Neoplasms,,,MBN
-176,ATLL,,Adult T-Cell Leukemia/Lymphoma,4,Oncotree,Lineage,Lymphoid,Lymphoid Neoplasm,Non-Hodgkin Lymphoma,Mature T and NK Neoplasms,Adult T-Cell Leukemia/Lymphoma,,ATLL
-177,ALCLALKN,,Anaplastic Large-Cell Lymphoma ALK Negative,5,Oncotree,Lineage,Lymphoid,Lymphoid Neoplasm,Non-Hodgkin Lymphoma,Mature T and NK Neoplasms,Anaplastic Large Cell Lymphoma,Anaplastic Large-Cell Lymphoma ALK Negative,ALCLALKN
-178,ALCLALKP,,Anaplastic Large-Cell Lymphoma ALK Positive,5,Oncotree,Lineage,Lymphoid,Lymphoid Neoplasm,Non-Hodgkin Lymphoma,Mature T and NK Neoplasms,Anaplastic Large Cell Lymphoma,Anaplastic Large-Cell Lymphoma ALK Positive,ALCLALKP
-179,ALCL,,Anaplastic Large Cell Lymphoma,4,Oncotree,Lineage,Lymphoid,Lymphoid Neoplasm,Non-Hodgkin Lymphoma,Mature T and NK Neoplasms,Anaplastic Large Cell Lymphoma,,ALCL
-180,FTCL,,Follicular T-Cell Lymphoma,4,Oncotree,Lineage,Lymphoid,Lymphoid Neoplasm,Non-Hodgkin Lymphoma,Mature T and NK Neoplasms,Follicular T-Cell Lymphoma,,FTCL
-181,HSTCL,,Hepatosplenic T-cell Lymphoma,4,Oncotree,Lineage,Lymphoid,Lymphoid Neoplasm,Non-Hodgkin Lymphoma,Mature T and NK Neoplasms,Hepatosplenic T-cell Lymphoma,,HSTCL
-182,MYCF,,Mycosis Fungoides,4,Oncotree,Lineage,Lymphoid,Lymphoid Neoplasm,Non-Hodgkin Lymphoma,Mature T and NK Neoplasms,Mycosis Fungoides,,MYCF
-183,SS,,Sezary Syndrome,4,Oncotree,Lineage,Lymphoid,Lymphoid Neoplasm,Non-Hodgkin Lymphoma,Mature T and NK Neoplasms,Sezary Syndrome,,SS
-184,TLGL,,T-Cell Large Granular Lymphocytic Leukemia,4,Oncotree,Lineage,Lymphoid,Lymphoid Neoplasm,Non-Hodgkin Lymphoma,Mature T and NK Neoplasms,T-Cell Large Granular Lymphocytic Leukemia,,TLGL
-185,TPLL,,T-Cell Prolymphocytic Leukemia,4,Oncotree,Lineage,Lymphoid,Lymphoid Neoplasm,Non-Hodgkin Lymphoma,Mature T and NK Neoplasms,T-Cell Prolymphocytic Leukemia,,TPLL
-186,MTNN,,Mature T and NK Neoplasms,3,Oncotree,Lineage,Lymphoid,Lymphoid Neoplasm,Non-Hodgkin Lymphoma,Mature T and NK Neoplasms,,,MTNN
-187,NHL,,Non-Hodgkin Lymphoma,2,Oncotree,Lineage,Lymphoid,Lymphoid Neoplasm,Non-Hodgkin Lymphoma,,,,NHL
-188,ETPLL,,Early T-Cell Precursor Lymphoblastic Leukemia,3,Oncotree,Lineage,Lymphoid,Lymphoid Neoplasm,T-Lymphoblastic Leukemia/Lymphoma,Early T-Cell Precursor Lymphoblastic Leukemia,,,ETPLL
-189,NKCLL,,Natural Killer (NK) Cell Lymphoblastic Leukemia/Lymphoma,3,Oncotree,Lineage,Lymphoid,Lymphoid Neoplasm,T-Lymphoblastic Leukemia/Lymphoma,Natural Killer (NK) Cell Lymphoblastic Leukemia/Lymphoma,,,NKCLL
-190,,TLL:LMO2-STAG2,T-Lymphoblastic Leukemia/Lymphoma: LMO2-STAG2,3,Data-driven genetic subtype,Lineage,Lymphoid,Lymphoid Neoplasm,T-Lymphoblastic Leukemia/Lymphoma,T-Lymphoblastic Leukemia/Lymphoma: LMO2-STAG2,,,
-191,TLL,,T-Lymphoblastic Leukemia/Lymphoma,2,Oncotree,Lineage,Lymphoid,Lymphoid Neoplasm,T-Lymphoblastic Leukemia/Lymphoma,,,,TLL
-192,LNM,,Lymphoid Neoplasm,1,Oncotree,Lineage,Lymphoid,Lymphoid Neoplasm,,,,,LNM
-193,LYMPH,,Lymphoid,0,Oncotree,Lineage,Lymphoid,,,,,,LYMPH
-195,ALAL,,Acute Leukemias of Ambiguous Lineage,1,Oncotree,Lineage,Myeloid,Acute Leukemias of Ambiguous Lineage,,,,,ALAL
-196,AMLGATA2MECOM,,"AML with inv(3)(q21.3q26.2) or t(3;3)(q21.3;q26.2); GATA2, MECOM",2,Oncotree,Lineage,Myeloid,Acute Myeloid Leukemia,"AML with inv(3)(q21.3q26.2) or t(3;3)(q21.3;q26.2); GATA2, MECOM",,,,AMLGATA2MECOM
-197,AM,,AML with Maturation,3,Oncotree,Lineage,Myeloid,Acute Myeloid Leukemia,"AML, NOS",AML with Maturation,,,AM
-198,AMLMD,,AML with Minimal Differentiation,3,Oncotree,Lineage,Myeloid,Acute Myeloid Leukemia,"AML, NOS",AML with Minimal Differentiation,,,AMLMD
-199,AMKL,,Acute Megakaryoblastic Leukemia,3,Oncotree,Lineage,Myeloid,Acute Myeloid Leukemia,"AML, NOS",Acute Megakaryoblastic Leukemia,,,AMKL
-200,AMOL,,Acute Monoblastic/Monocytic Leukemia,3,Oncotree,Lineage,Myeloid,Acute Myeloid Leukemia,"AML, NOS",Acute Monoblastic/Monocytic Leukemia,,,AMOL
-201,AMML,,Acute Myelomonocytic Leukemia,3,Oncotree,Lineage,Myeloid,Acute Myeloid Leukemia,"AML, NOS",Acute Myelomonocytic Leukemia,,,AMML
-202,AMLNOS,,"AML, NOS",2,Oncotree,Lineage,Myeloid,Acute Myeloid Leukemia,"AML, NOS",,,,AMLNOS
-203,,AML:JAK2p.V617F,Acute Myeloid Leukemia: JAK2 p.V617F,2,Data-driven genetic subtype,Lineage,Myeloid,Acute Myeloid Leukemia,Acute Myeloid Leukemia: JAK2 p.V617F,,,,
-204,MLADS,,Myeloid Leukemia Associated with Down Syndrome,2,Oncotree,Lineage,Myeloid,Acute Myeloid Leukemia,Myeloid Leukemia Associated with Down Syndrome,,,,MLADS
-205,AML,,Acute Myeloid Leukemia,1,Oncotree,Lineage,Myeloid,Acute Myeloid Leukemia,,,,,AML
-206,MDS,,Myelodysplastic Syndromes,1,Oncotree,Lineage,Myeloid,Myelodysplastic Syndromes,,,,,MDS
-207,CELNOS,,"Chronic Eosinophilic Leukemia, NOS",2,Oncotree,Lineage,Myeloid,Myeloproliferative Neoplasms,"Chronic Eosinophilic Leukemia, NOS",,,,CELNOS
-208,CMLBCRABL1,,"Chronic Myeloid Leukemia, BCR-ABL1+",2,Oncotree,Lineage,Myeloid,Myeloproliferative Neoplasms,"Chronic Myeloid Leukemia, BCR-ABL1+",,,,CMLBCRABL1
-209,MPN,,Myeloproliferative Neoplasms,1,Oncotree,Lineage,Myeloid,Myeloproliferative Neoplasms,,,,,MPN
-210,MYELOID,,Myeloid,0,Oncotree,Lineage,Myeloid,,,,,,MYELOID
+DepmapModelType,MolecularSubtypeCode,NodeName,NodeLevel,NodeSource,TreeType,Level0,Level1,Level2,Level3,Level4,Level5,OncotreeCode
+,ALKHotspot,ALK Hotspot,0,Omics Inferred Molecular Subtype,MolecularSubtype,ALK Hotspot,,,,,,
+ES,,Ewing Sarcoma,1,Oncotree,Lineage,Bone,Ewing Sarcoma,,,,,ES
+OS,,Osteosarcoma,1,Oncotree,Lineage,Bone,Osteosarcoma,,,,,OS
+BONE,,Bone,0,Oncotree,Lineage,Bone,,,,,,BONE
+LUAD,,Lung Adenocarcinoma,2,Oncotree,Lineage,Lung,Non-Small Cell Lung Cancer,Lung Adenocarcinoma,,,,LUAD
+LUSC,,Lung Squamous Cell Carcinoma,2,Oncotree,Lineage,Lung,Non-Small Cell Lung Cancer,Lung Squamous Cell Carcinoma,,,,LUSC
+NSCLC,,Non-Small Cell Lung Cancer,1,Oncotree,Lineage,Lung,Non-Small Cell Lung Cancer,,,,,NSCLC
+LUNG,,Lung,0,Oncotree,Lineage,Lung,,,,,,LUNG
+LYMPH,,Lymphoid,0,Oncotree,Lineage,Lymphoid,,,,,,LYMPH
+MLADS,,Myeloid Leukemia Associated with Down Syndrome,2,Oncotree,Lineage,Myeloid,Acute Myeloid Leukemia,Myeloid Leukemia Associated with Down Syndrome,,,,MLADS
+AML,,Acute Myeloid Leukemia,1,Oncotree,Lineage,Myeloid,Acute Myeloid Leukemia,,,,,AML
+MYELOID,,Myeloid,0,Oncotree,Lineage,Myeloid,,,,,,MYELOID
+MCC,,Merkel Cell Carcinoma,1,Oncotree,Lineage,Skin,Merkel Cell Carcinoma,,,,,MCC
+BLADDER,,Bladder/Urinary Tract,0,Oncotree,Lineage,Bladder/Urinary Tract,,,,,,BLADDER
+PNS,,Peripheral Nervous System,0,Oncotree,Lineage,Peripheral Nervous System,,,,,,PNS
+,EGFR,EGFR,0,Omics Inferred Molecular Subtype,MolecularSubtype,EGFR,,,,,,
+MEL,,Melanoma,1,Oncotree,Lineage,Skin,Melanoma,,,,,MEL
+SKIN,,Skin,0,Oncotree,Lineage,Skin,,,,,,SKIN

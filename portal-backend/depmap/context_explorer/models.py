@@ -301,17 +301,22 @@ class ContextAnalysis(Model):
         cls, entity_id, dataset_id, negative_only=False
     ):
         base_query = cls.query.filter_by(
-            entity_id=entity_id, dependency_dataset_id=dataset_id
+            entity_id=entity_id,
+            dependency_dataset_id=dataset_id,
+            out_group="All Others",
         )
         if negative_only:
             base_query = base_query.filter(cls.t_pval < 0)
 
         context_cell_line_p_value_tuples = (
-            base_query.join(SubtypeContext)
+            base_query.join(SubtypeNode, SubtypeNode.subtype_code == cls.subtype_code)
+            .filter(SubtypeNode.tree_type == "Lineage")
+            .join(SubtypeContext)
             .join(DepmapModel, SubtypeContext.depmap_model)
             .with_entities(
                 cls.subtype_code, DepmapModel.model_id, cls.t_pval, cls.effect_size,
             )
+            .limit(250)
             .all()
         )
 
