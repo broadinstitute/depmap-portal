@@ -226,7 +226,7 @@ def get_metadata_dataset_id(dimension_type_name: str) -> Union[str, None]:
             extensions.breadbox.client.get_dimension_types()
         )
 
-    dimension_types = cast(list[DimensionType], flask.g.__cached_get_datasets,)
+    dimension_types = cast(list[DimensionType], flask.g.__cached_dimension_types,)
 
     dataset_id = next(
         (

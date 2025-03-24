@@ -95,40 +95,23 @@ def get_series_from_de2_slice_id(slice_id: str) -> pd.Series:
         return get_compound_experiment_compound_instance_series()
     if slice_id.startswith("slice/mutations_prioritized/"):
         return get_mutations_prioritized_series(dataset_id, feature_label)
-
-    if slice_id.startswith("slice/depmap_model_metadata/"):
-        dimension_type_name = "depmap_model"
+    # HACK: These aren't real dataset IDs, just magic strings
+    if dataset_id in ("depmap_model_metadata", "screen_metadata"):
+        dimension_type_name = (
+            "depmap_model"
+            if dataset_id == "depmap_model_metadata"
+            else "Screen metadata"
+        )
         metadata_dataset_id = data_access.get_metadata_dataset_id(dimension_type_name)
 
         if metadata_dataset_id is None:
-            raise Exception(
+            raise LookupError(
                 f"Could not find metadata_dataset_id for dimension type '{dimension_type_name}'!"
             )
 
-        slice_query = SliceQuery(
-            dataset_id=metadata_dataset_id,
-            identifier=feature_label,
-            identifier_type="column",
+        return data_access.breadbox_dao.get_tabular_dataset_column(  # pyright: ignore
+            metadata_dataset_id, feature_label
         )
-
-        return data_access.get_slice_data(slice_query)
-
-    if slice_id.startswith("slice/screen_metadata/"):
-        dimension_type_name = "Screen metadata"
-        metadata_dataset_id = data_access.get_metadata_dataset_id(dimension_type_name)
-
-        if metadata_dataset_id is None:
-            raise Exception(
-                f"Could not find metadata_dataset_id for dimension type '{dimension_type_name}'!"
-            )
-
-        slice_query = SliceQuery(
-            dataset_id=metadata_dataset_id,
-            identifier=feature_label,
-            identifier_type="column",
-        )
-
-        return data_access.get_slice_data(slice_query)
 
     is_transpose = feature_type == "transpose_label"
     if is_transpose and data_access.is_continuous(dataset_id):
