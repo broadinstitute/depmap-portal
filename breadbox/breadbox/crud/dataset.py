@@ -806,8 +806,7 @@ def get_unique_dimension_ids_from_datasets(
         matrix_dimension_class = DatasetSample
 
     # Get all matrix dimensions for that dimension type
-    matrix_given_ids = {
-        given_id for (given_id,) in
+    matrix_given_id_subquery = (
         db.query(distinct(matrix_dimension_class.given_id))
         .filter(
             and_(
@@ -815,26 +814,23 @@ def get_unique_dimension_ids_from_datasets(
                 Dimension.dataset_dimension_type == dimension_type.name,
             )
         )
-        .all()
-    }
+    )
     # Get all tabular identifiers for that dimension type
-    tabular_given_ids = {
-        given_id for (given_id,) in
+    tabular_given_id_subquery = (
         db.query(TabularColumn)
         .filter(
             and_(
-                TabularColumn.dataset_id.in_(dataset_ids),
                 TabularColumn.given_id == dimension_type.id_column,
                 TabularColumn.dataset_dimension_type == dimension_type.name,
+                TabularColumn.dataset_id.in_(dataset_ids),
             )
         )
         .join(TabularCell)
         .distinct(TabularCell.dimension_given_id)
         .with_entities(TabularCell.dimension_given_id)
-        .all()
-    }
-    # Combine the unique given ids from the tabular and matrix datasets
-    return matrix_given_ids.union(tabular_given_ids)
+    )
+    combined_query = matrix_given_id_subquery.union(tabular_given_id_subquery)
+    return {given_id for (given_id,) in combined_query.all()}
 
 
 def get_metadata_used_in_matrix_dataset(
