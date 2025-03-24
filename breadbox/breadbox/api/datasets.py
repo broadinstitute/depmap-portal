@@ -112,7 +112,7 @@ def get_dataset_features(
     if dataset is None:
         raise HTTPException(404, "Dataset not found")
 
-    feature_labels_by_id = metadata_service.get_matrix_dataset_feature_labels_by_id(  # TODO: this takes almost all of the time
+    feature_labels_by_id = metadata_service.get_matrix_dataset_feature_labels_by_id(
         db=db, user=user, dataset=dataset,
     )
     return [{"id": id, "label": label} for id, label in feature_labels_by_id.items()]
