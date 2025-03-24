@@ -162,8 +162,8 @@ def test_validate_tabular_df_schema(tmpdir):
             "col3": ColumnMetadata(col_type=AnnotationType.categorical),
             "col4": ColumnMetadata(col_type=AnnotationType.categorical),
             "col5": ColumnMetadata(col_type=AnnotationType.categorical),
-            "col6": ColumnMetadata(col_type=AnnotationType.binary),
-            "col7": ColumnMetadata(col_type=AnnotationType.binary),
+            "col6": ColumnMetadata(col_type=AnnotationType.categorical),
+            "col7": ColumnMetadata(col_type=AnnotationType.categorical),
         },
         "ID",
     )
@@ -189,10 +189,10 @@ def test_validate_tabular_df_schema(tmpdir):
     assert df["col5"].dtype == pd.CategoricalDtype(
         categories=["1", "1.1"], ordered=False
     )
-    assert df["col6"].to_list() == [1, 0, 1]
-    assert df["col6"].dtype == pd.BooleanDtype()
-    assert df["col7"].to_list() == [True, False, True]
-    assert df["col7"].dtype == pd.BooleanDtype()
+    assert df["col6"].to_list() == ["1", "0", "1"]
+    assert df["col6"].dtype == pd.CategoricalDtype(categories=["0", "1"])
+    assert df["col7"].to_list() == ["True", "False", "True"]
+    assert df["col7"].dtype == pd.CategoricalDtype(categories=["True", "False"])
 
 
 def test_incorrect_typing_tabular_df_schema(tmpdir):
