@@ -214,7 +214,7 @@ export function Story() {
         {filteredVolcanoPlotFeatureTypes.map((selectedFeatureType) => {
           return (
             <>
-              <div>
+              {/* <div>
                 <header
                   style={{
                     textAlign: "center",
@@ -236,18 +236,27 @@ export function Story() {
                   }}
                   downloadData={[]}
                 />
+              </div> */}
+              <div>
+                <header
+                  style={{
+                    textAlign: "center",
+                    fontSize: "18px",
+                    backgroundColor: "lightgray",
+                  }}
+                >
+                  {selectedFeatureType}
+                </header>
+                <VolcanoPlotOld
+                  Plotly={Plotly}
+                  // ref={plotlyRef}
+                  xLabel="Correlation Coefficient"
+                  yLabel="q value"
+                  data={Object.values(
+                    volcanoDataForFeatureType[selectedFeatureType]
+                  )}
+                />
               </div>
-
-              {/* <header>Volcano Plot OLD {selectedFeatureType}</header>
-              <VolcanoPlotOld
-                Plotly={Plotly}
-                // ref={plotlyRef}
-                xLabel="Correlation Coefficient"
-                yLabel="-log10 (q value)"
-                data={Object.values(
-                  volcanoDataForFeatureType[selectedFeatureType]
-                )}
-              /> */}
             </>
           );
         })}
