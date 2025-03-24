@@ -31,5 +31,6 @@ from .interface import (
     get_all_row_indices_labels_entity_ids,
     get_context_dataset,
     get_custom_cell_lines_dataset,
+    get_metadata_dataset_id,
     has_config,
 )

@@ -98,10 +98,7 @@ function GroupExpr({
       <div className={styles.groupExpr}>
         <div ref={container} className={cx({ [styles.mainExpr]: isTopLevel })}>
           {expr[op].map((subExpr, i: number) => (
-            <div
-              key={[...path, op, i].toString()}
-              style={{ marginTop: i > 0 ? 10 : 0 }}
-            >
+            <div key={[...path, op, i].toString()} style={{ marginTop: 20 }}>
               <Expression
                 expr={subExpr}
                 path={[...path, op, i]}
