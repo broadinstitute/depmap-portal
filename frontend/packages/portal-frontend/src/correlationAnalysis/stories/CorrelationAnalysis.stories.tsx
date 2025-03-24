@@ -16,6 +16,7 @@ import Select, {
   ActionTypes,
 } from "react-select";
 import { Button } from "react-bootstrap";
+import { getHighlightLineColor } from "@depmap/utils";
 
 export default {
   title: "Components/CorrelationAnalysis",
@@ -109,7 +110,7 @@ export function Story() {
           text: [],
           isSignificant: [],
           name: doseCategory,
-          color: "blue", // causes marker.color undefined
+          color: undefined, // "blue", // causes marker.color undefined
         };
       }
       columnNames.forEach((colName) => {
@@ -270,9 +271,8 @@ export function Story() {
       <div style={{ height: "300px" }}>
         <WideTable
           columns={[
-            { accessor: "Compound" },
-            { accessor: "imatinib Dose" },
             { accessor: "Feature Type" },
+            { accessor: "imatinib Dose" },
             { accessor: "Feature" },
             { accessor: "Correlation Coefficient" },
             { accessor: "-log10 qval" },
