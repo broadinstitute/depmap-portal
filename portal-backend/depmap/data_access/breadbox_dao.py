@@ -2,10 +2,12 @@ import pandas as pd
 from typing import Optional, Union, cast
 
 from breadbox_client.models import (
+    DimensionType,
     MatrixDatasetResponse,
     MatrixDatasetResponseFormat,
     TabularDatasetResponse,
 )
+from breadbox_client.types import Unset
 from depmap.data_access.response_parsing import (
     is_breadbox_id_format,
     parse_breadbox_slice_id,
@@ -218,15 +220,21 @@ def get_tabular_dataset_column(dataset_id: str, column_name: str) -> pd.Series:
     return df.squeeze()
 
 
-def get_metadata_dataset_id(dimension_type: str) -> str:
+def get_metadata_dataset_id(dimension_type_name: str) -> Union[str, None]:
     if not hasattr(flask.g, "__cached_dimension_types"):
         flask.g.__cached_dimension_types = (
             extensions.breadbox.client.get_dimension_types()
         )
 
-    dimension_types = flask.g.__cached_dimension_types
+    dimension_types = cast(list[DimensionType], flask.g.__cached_get_datasets,)
 
-    return next(
-        (dt.metadata_dataset_id for dt in dimension_types if dt.name == dimension_type),
+    dataset_id = next(
+        (
+            dt.metadata_dataset_id
+            for dt in dimension_types
+            if dt.name == dimension_type_name
+        ),
         None,
     )
+
+    return None if dataset_id is Unset else cast(Union[str, None], dataset_id)

@@ -12,7 +12,7 @@ from depmap_compute.context import (
     ContextEvaluator,
     LegacyContextEvaluator,
 )
-from depmap_compute.slice import decode_slice_id
+from depmap_compute.slice import decode_slice_id, SliceQuery
 from depmap import data_access
 from depmap.data_access.models import MatrixDataset
 from depmap.settings.download_settings import get_download_list
@@ -95,20 +95,40 @@ def get_series_from_de2_slice_id(slice_id: str) -> pd.Series:
         return get_compound_experiment_compound_instance_series()
     if slice_id.startswith("slice/mutations_prioritized/"):
         return get_mutations_prioritized_series(dataset_id, feature_label)
+
     if slice_id.startswith("slice/depmap_model_metadata/"):
-        metadata_dataset_id = data_access.breadbox_dao.get_metadata_dataset_id(
-            "depmap_model"
+        dimension_type_name = "depmap_model"
+        metadata_dataset_id = data_access.get_metadata_dataset_id(dimension_type_name)
+
+        if metadata_dataset_id is None:
+            raise Exception(
+                f"Could not find metadata_dataset_id for dimension type '{dimension_type_name}'!"
+            )
+
+        slice_query = SliceQuery(
+            dataset_id=metadata_dataset_id,
+            identifier=feature_label,
+            identifier_type="column",
         )
-        return data_access.breadbox_dao.get_tabular_dataset_column(
-            metadata_dataset_id, feature_label
-        )
+
+        return data_access.get_slice_data(slice_query)
+
     if slice_id.startswith("slice/screen_metadata/"):
-        metadata_dataset_id = data_access.breadbox_dao.get_metadata_dataset_id(
-            "Screen metadata"
+        dimension_type_name = "Screen metadata"
+        metadata_dataset_id = data_access.get_metadata_dataset_id(dimension_type_name)
+
+        if metadata_dataset_id is None:
+            raise Exception(
+                f"Could not find metadata_dataset_id for dimension type '{dimension_type_name}'!"
+            )
+
+        slice_query = SliceQuery(
+            dataset_id=metadata_dataset_id,
+            identifier=feature_label,
+            identifier_type="column",
         )
-        return data_access.breadbox_dao.get_tabular_dataset_column(
-            metadata_dataset_id, feature_label
-        )
+
+        return data_access.get_slice_data(slice_query)
 
     is_transpose = feature_type == "transpose_label"
     if is_transpose and data_access.is_continuous(dataset_id):
