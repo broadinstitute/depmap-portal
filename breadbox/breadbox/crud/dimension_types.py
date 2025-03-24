@@ -249,16 +249,16 @@ def delete_dimension_type(db: SessionWithUser, dimension_type: DimensionType):
 
 
 def get_dimension_type_labels_by_id(
-    db: SessionWithUser, dimension_type_name: str
+    db: SessionWithUser, dimension_type_name: str, limit: Optional[int] = None
 ) -> dict[str, str]:
     """
     For a given dimension, get all IDs and labels that exist in the metadata.
     """
-    return get_dimension_type_metadata_col(db, dimension_type_name, col_name="label")
+    return get_dimension_type_metadata_col(db, dimension_type_name, col_name="label", limit=limit)
 
 
 def get_dimension_type_metadata_col(
-    db: SessionWithUser, dimension_type_name: str, col_name: str, index_by_given_id=True
+    db: SessionWithUser, dimension_type_name: str, col_name: str, limit: Optional[int] = None,
 ) -> dict[str, str]:
     assert isinstance(col_name, str)
 
@@ -277,14 +277,15 @@ def get_dimension_type_metadata_col(
         return {}
 
     values_by_id_tuples = (
-        db.query(TabularCell)
-        .join(TabularColumn)
+        db.query(TabularColumn)
         .filter(
             and_(
                 TabularColumn.dataset_id == dimension_type.dataset_id,
                 TabularColumn.given_id == col_name,
             )
         )
+        .join(TabularCell)
+        .limit(limit)
         .with_entities(TabularCell.dimension_given_id, TabularCell.value)
         .all()
     )

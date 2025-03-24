@@ -2,6 +2,7 @@ from __future__ import annotations
 from uuid import UUID
 from typing import Optional, List, Dict, Any, Annotated, Union, Literal
 from pydantic import AfterValidator, BaseModel, Field, model_validator, field_validator
+from typing_extensions import TypedDict
 
 from breadbox.schemas.common import DBBase
 from fastapi import Body
@@ -9,7 +10,6 @@ from breadbox.schemas.custom_http_exception import UserError
 from .group import Group
 import enum
 
-from depmap_compute.slice import SliceQuery
 
 
 # NOTE: Using multivalue Literals seems to be creating errors in pydantic models and fastapi request params.
@@ -549,7 +549,7 @@ UpdateDatasetParams = Annotated[
 ]
 
 
-class NameAndID(BaseModel):
+class NameAndID(TypedDict):
     name: str
     id: str
 

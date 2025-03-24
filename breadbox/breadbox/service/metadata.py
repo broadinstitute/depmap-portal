@@ -8,6 +8,7 @@ from breadbox.schemas.custom_http_exception import ResourceNotFoundError
 from breadbox.models.dataset import (
     DatasetFeature,
     DatasetSample,
+    Dataset, 
     MatrixDataset,
     TabularDataset,
     DimensionType,
@@ -42,46 +43,6 @@ def get_tabular_dataset_metadata_annotations(
     return filtered_metadata_vals
 
 
-def get_matrix_dataset_feature_metadata(
-    db: SessionWithUser, dataset: MatrixDataset, metadata_col_name: str,
-) -> dict[str, Any]:
-    """
-    For the given matrix dataset, load a column from the associated metadata.
-    The result will only include given ids which exist in both the dataset and the metadata.
-    """
-    full_metadata_col = types_crud.get_dimension_type_metadata_col(
-        db, dimension_type_name=dataset.feature_type_name, col_name=metadata_col_name
-    )
-    # Filter the metadata to only include the given IDs belonging to this dataset
-    dataset_features = dataset_crud.get_matrix_dataset_features(db, dataset)
-    filtered_metadata_vals = {}
-    for feature in dataset_features:
-        metadata_val = full_metadata_col.get(feature.given_id)
-        if metadata_val is not None:
-            filtered_metadata_vals[feature.given_id] = metadata_val
-    return filtered_metadata_vals
-
-
-def get_matrix_dataset_sample_metadata(
-    db: SessionWithUser, dataset: MatrixDataset, metadata_col_name: str,
-) -> dict[str, Any]:
-    """
-    For the given matrix dataset, load a column from the associated metadata.
-    The result will only include given ids which exist in both the dataset and the metadata.
-    """
-    full_metadata_col = types_crud.get_dimension_type_metadata_col(
-        db, dimension_type_name=dataset.sample_type_name, col_name=metadata_col_name
-    )
-    # Filter the metadata to only include the given IDs belonging to this dataset
-    dataset_samples = dataset_crud.get_matrix_dataset_samples(db, dataset)
-    filtered_metadata_vals = {}
-    for sample in dataset_samples:
-        metadata_val = full_metadata_col.get(sample.given_id)
-        if metadata_val is not None:
-            filtered_metadata_vals[sample.given_id] = metadata_val
-    return filtered_metadata_vals
-
-
 def get_matrix_dataset_feature_labels_by_id(
     db: SessionWithUser, user: str, dataset: MatrixDataset,
 ) -> dict[str, str]:
@@ -90,15 +51,20 @@ def get_matrix_dataset_feature_labels_by_id(
     If there are no labels in the metadata or there is no metadata, then just return the feature names.
     """
     if dataset.feature_type_name is not None:
-        metadata_labels_by_given_id = get_matrix_dataset_feature_metadata(
-            db=db, dataset=dataset, metadata_col_name="label"
+        dimension_type = types_crud.get_dimension_type(db=db, name=dataset.feature_type_name)
+        metadata_labels_by_given_id = dataset_crud.get_metadata_used_in_matrix_dataset(
+            db=db, 
+            dimension_type=dimension_type, 
+            matrix_dataset=dataset, 
+            dimension_subtype_cls=DatasetFeature,
+            metadata_col_name="label",
         )
         if metadata_labels_by_given_id:
             return metadata_labels_by_given_id
 
     # If there are no labels or there is no feature type, return the given IDs
-    all_dataset_features = dataset_crud.get_matrix_dataset_features(db, dataset)
-    return {feature.given_id: feature.given_id for feature in all_dataset_features}
+    feature_given_ids = dataset_crud.get_matrix_dataset_given_ids(db, dataset, axis="feature")
+    return {given_id: given_id for given_id in feature_given_ids}
 
 
 def get_matrix_dataset_sample_labels_by_id(
@@ -108,14 +74,20 @@ def get_matrix_dataset_sample_labels_by_id(
     Try loading sample labels from metadata.
     If there are no labels in the metadata or there is no metadata, then just return the sample names.
     """
-    metadata_labels = get_matrix_dataset_sample_metadata(
-        db=db, dataset=dataset, metadata_col_name="label"
+    
+    dimension_type = types_crud.get_dimension_type(db=db, name=dataset.sample_type_name)
+    metadata_labels_by_given_id = dataset_crud.get_metadata_used_in_matrix_dataset(
+        db=db, 
+        dimension_type=dimension_type, 
+        matrix_dataset=dataset, 
+        dimension_subtype_cls=DatasetSample,
+        metadata_col_name="label",
     )
-    if metadata_labels:
-        return metadata_labels
+    if metadata_labels_by_given_id:
+        return metadata_labels_by_given_id
     else:
-        samples = dataset_crud.get_matrix_dataset_samples(db=db, dataset=dataset)
-        return {sample.given_id: sample.given_id for sample in samples}
+        sample_given_ids = dataset_crud.get_matrix_dataset_given_ids(db=db, dataset=dataset, axis="sample")
+        return {given_id: given_id for given_id in sample_given_ids}
 
 
 def get_tabular_dataset_labels_by_id(
@@ -292,6 +264,7 @@ def get_dimension_type_identifiers(
     dimension_type: DimensionType,
     data_type: Optional[str] = None,
     show_only_dimensions_in_datasets: Optional[bool] = False,
+    limit: Optional[int] = None,
 ):
     """
     For the given dimension type,
@@ -304,7 +277,7 @@ def get_dimension_type_identifiers(
     """
     # Get all dimension identifiers in a dimension type
     dim_type_ids_and_labels = types_crud.get_dimension_type_labels_by_id(
-        db, dimension_type.name
+        db, dimension_type.name, limit=limit,
     )
 
     if data_type is None and not show_only_dimensions_in_datasets:
