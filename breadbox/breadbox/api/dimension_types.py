@@ -615,7 +615,7 @@ def list_dimension_types_endpoint(db: SessionWithUser = Depends(get_db_with_user
     dim_types = type_crud.get_dimension_types(db)
     return [_dim_type_to_response(x) for x in dim_types]
 
-
+from time import perf_counter
 @router.get(
     "/dimensions/{name}/identifiers",
     operation_id="get_dimension_type_identifiers",
@@ -628,6 +628,7 @@ def get_dimension_type_identifiers(
     limit: Annotated[Union[int, None], Query()] = None,
     db: SessionWithUser = Depends(get_db_with_user),
 ):
+    start = perf_counter()
     dim_type = type_crud.get_dimension_type(db, name)
     if dim_type is None:
         raise HTTPException(404, f"Dimension type {name} not found")
@@ -636,10 +637,12 @@ def get_dimension_type_identifiers(
         db, dim_type, data_type, show_only_dimensions_in_datasets, limit=limit,
     )
 
-    return [
+    result = [
         DimensionIdentifiers(id=id, label=label)
         for id, label in dimension_ids_and_labels.items()
     ]
+    print(f"Full modifiable portion of backend execution took {perf_counter() - start} seconds")
+    return result
 
 
 @router.patch(

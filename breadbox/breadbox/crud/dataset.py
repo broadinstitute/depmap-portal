@@ -791,13 +791,14 @@ def get_subset_of_tabular_data_as_df(
 
     return pivot_df["value"]
 
-
+from time import perf_counter
 def get_unique_dimension_ids_from_datasets(
     db: SessionWithUser, dataset_ids: List[str], dimension_type: DimensionType
 ) -> Set[str]:
     """
     Returns a unique set of dimension given ids from matrix and tabular datasets based on the given dimension type
     """
+    start = perf_counter()
     if dimension_type.axis == "feature":
         matrix_dimension_class = DatasetFeature
     else:
@@ -832,7 +833,9 @@ def get_unique_dimension_ids_from_datasets(
         .all()
     }
     # Combine the unique given ids from the tabular and matrix datasets
-    return matrix_given_ids.union(tabular_given_ids)
+    result = matrix_given_ids.union(tabular_given_ids)
+    print(f"dataset_crud.get_unique_dimension_ids_from_datasets took: {perf_counter() - start}")
+    return result
 
 
 def get_metadata_used_in_matrix_dataset(
@@ -857,7 +860,6 @@ def get_metadata_used_in_matrix_dataset(
     given_id_subquery = (
         db.query(dimension_subtype_cls.given_id)
         .filter(dimension_subtype_cls.dataset_id == matrix_dataset_id)
-        .subquery()
     )
     metadata_vals_by_id = (
         db.query(TabularColumn)

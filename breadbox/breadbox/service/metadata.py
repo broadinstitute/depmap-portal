@@ -258,6 +258,7 @@ def get_dimension_indexes_of_labels(
 
     return indices, list(missing_labels)
 
+from time import perf_counter
 
 def get_dimension_type_identifiers(
     db: SessionWithUser,
@@ -275,12 +276,14 @@ def get_dimension_type_identifiers(
     Additionally, the dimension identifiers returned will be from datasets that the user has access to.
     Otherwise, if neither `data_type` is given nor `show_only_dimensions_in_datasets` is True, all dimension identifiers from the given dimension type are returned.
     """
+    start = perf_counter()
     # Get all dimension identifiers in a dimension type
     dim_type_ids_and_labels = types_crud.get_dimension_type_labels_by_id(
         db, dimension_type.name, limit=limit,
     )
 
     if data_type is None and not show_only_dimensions_in_datasets:
+        print(f"Service layer (including calls to CRUD) took {perf_counter() - start} seconds")
         return dim_type_ids_and_labels
 
     # Note that this also only returns datasets the user has access to as well
@@ -305,8 +308,10 @@ def get_dimension_type_identifiers(
     )
 
     # Further filters only dimensions that have identifiers that exist in the metadata
-    return {
+    result = {
         given_id: dim_type_ids_and_labels[given_id]
         for given_id in unique_dimension_given_ids
         if given_id in dim_type_ids_and_labels
     }
+    print(f"Service layer (including calls to CRUD) took {perf_counter() - start} seconds")
+    return result

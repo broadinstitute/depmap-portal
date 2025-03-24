@@ -247,6 +247,7 @@ def delete_dimension_type(db: SessionWithUser, dimension_type: DimensionType):
     db.flush()
     return True
 
+from time import perf_counter
 
 def get_dimension_type_labels_by_id(
     db: SessionWithUser, dimension_type_name: str, limit: Optional[int] = None
@@ -254,7 +255,10 @@ def get_dimension_type_labels_by_id(
     """
     For a given dimension, get all IDs and labels that exist in the metadata.
     """
-    return get_dimension_type_metadata_col(db, dimension_type_name, col_name="label", limit=limit)
+    start = perf_counter()
+    result = get_dimension_type_metadata_col(db, dimension_type_name, col_name="label", limit=limit)
+    print(f"types_crud.get_dimension_type_labels_by_id took {perf_counter() - start} seconds")
+    return result
 
 
 def get_dimension_type_metadata_col(
