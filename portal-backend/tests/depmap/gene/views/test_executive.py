@@ -332,7 +332,7 @@ def test_format_enrichment_boxes(empty_db_mock_downloads):
     )
     SubtypeNodeFactory(subtype_code="context_A", node_name="display_name_context_A")
     SubtypeNodeFactory(subtype_code="context_B", node_name="display_name_context_B")
-    entity = GeneFactory(label="gene_0 (0)", entrez_id=0)
+    entity = GeneFactory()
 
     matrix = MatrixFactory(
         entities=[entity],
@@ -340,25 +340,26 @@ def test_format_enrichment_boxes(empty_db_mock_downloads):
         using_depmap_model_table=True,
     )
     dataset = DependencyDatasetFactory(
-        name=DependencyDataset.DependencyEnum("Chronos_Combined"), matrix=matrix
+        name=DependencyDataset.DependencyEnum.Chronos_Combined, matrix=matrix
     )
 
     ContextAnalysisFactory(
-        subtype_code="context_A",
         subtype_context=context_A,
         entity=entity,
         dataset=dataset,
         t_pval=1,
+        out_group="All Others",
     )
     b = ContextAnalysisFactory(
-        subtype_code="context_B",
         subtype_context=context_B,
         entity=entity,
         dataset=dataset,
         t_pval=-1,
+        out_group="All Others",
     )
 
     empty_db_mock_downloads.session.flush()
+
     enrichment_boxes = format_enrichment_boxes(entity, dataset)
 
     assert len(enrichment_boxes) == 1  # only one dataset

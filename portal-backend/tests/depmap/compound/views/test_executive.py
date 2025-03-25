@@ -83,10 +83,18 @@ def test_format_enrichment_boxes(empty_db_mock_downloads):
     )
 
     ContextAnalysisFactory(
-        subtype_context=context_A, entity=entity, dataset=dataset, t_pval=1
+        subtype_context=context_A,
+        entity=entity,
+        dataset=dataset,
+        t_pval=1,
+        out_group="All Others",
     )
     ContextAnalysisFactory(
-        subtype_context=context_B, entity=entity, dataset=dataset, t_pval=-1
+        subtype_context=context_B,
+        entity=entity,
+        dataset=dataset,
+        t_pval=-1,
+        out_group="All Others",
     )
 
     empty_db_mock_downloads.session.flush()

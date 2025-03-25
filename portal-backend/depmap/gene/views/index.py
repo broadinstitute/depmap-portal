@@ -119,18 +119,18 @@ def _get_gene_page_template_parameters(gene_symbol):
     characterizations = characterization.format_characterizations(
         entity_id, gene_symbol, biomarker_datasets
     )
-    # has_predictability = False
-    has_predictability = (
-        crispr_dataset is not None
-        and PredictiveModel.get_top_models_features(
-            crispr_dataset.dataset_id, entity_id
-        )
-        is not None
-    ) or (
-        rnai_dataset is not None
-        and PredictiveModel.get_top_models_features(rnai_dataset.dataset_id, entity_id)
-        is not None
-    )
+    has_predictability = False
+    # has_predictability = (
+    #     crispr_dataset is not None
+    #     and PredictiveModel.get_top_models_features(
+    #         crispr_dataset.dataset_id, entity_id
+    #     )
+    #     is not None
+    # ) or (
+    #     rnai_dataset is not None
+    #     and PredictiveModel.get_top_models_features(rnai_dataset.dataset_id, entity_id)
+    #     is not None
+    # )
 
     has_celfie = (
         current_app.config["ENABLED_FEATURES"].celfie and crispr_dataset is not None
