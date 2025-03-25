@@ -9,6 +9,9 @@ export default function useTabularDatasets() {
   const { dimension_type } = useContextBuilderState();
 
   const [metadataDataset, setMetadataDataset] = useState<TabularDataset>();
+  const [metadataIdColumn, setMetadataIdColumn] = useState<string | undefined>(
+    undefined
+  );
   const [otherTabularDatasets, setOtherTabularDatasets] = useState<
     TabularDataset[]
   >([]);
@@ -27,6 +30,7 @@ export default function useTabularDatasets() {
       const {
         metadataDataset: metaDs,
         otherTabularDatasets: others,
+        metadataIdColumn: metaIdCol,
       } = await fetchMetadataAndOtherTabularDatasets(
         api,
         dimension_type,
@@ -34,6 +38,7 @@ export default function useTabularDatasets() {
       );
 
       setMetadataDataset(metaDs);
+      setMetadataIdColumn(metaIdCol);
       setOtherTabularDatasets(others);
       setIsLoadingTabularDatasets(false);
     })();
@@ -41,6 +46,7 @@ export default function useTabularDatasets() {
 
   return {
     metadataDataset,
+    metadataIdColumn,
     otherTabularDatasets,
     isLoadingTabularDatasets,
   };

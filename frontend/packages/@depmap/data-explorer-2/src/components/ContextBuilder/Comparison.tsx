@@ -180,6 +180,12 @@ function Comparison({
   return (
     <div ref={ref} style={{ scrollMargin: 22 }}>
       <Variable
+        // HACK: This temp property fills a hole in the data model. We're
+        // dependent on a slice ID (or at least part of one) to figure out what
+        // "source" (annotation vs matrix dataset) the selected dataset comes
+        // from. Because we first prompt the user to choose a data source, so
+        // we need a placeholder to keep track of that selection.
+        placeholderDataSource={(left as any)?.placeholderDataSource}
         value={isVar(left) ? left.var : null}
         path={leftPath}
         dispatch={dispatch}

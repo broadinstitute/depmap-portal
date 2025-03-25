@@ -216,6 +216,9 @@ const defaultValue = {
         isHighCardinality?: boolean;
         isPartialSliceId?: boolean;
         sliceTypeLabel?: string;
+        isBreadboxMetadata?: boolean;
+        isIdColumn?: boolean;
+        isLabelColumn?: boolean;
       }
     >
   > => {
