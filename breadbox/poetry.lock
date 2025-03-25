@@ -2875,13 +2875,13 @@ windows-terminal = ["colorama (>=0.4.6)"]
 
 [[package]]
 name = "pypatch-and-run"
-version = "0.2.0"
+version = "0.2.1"
 description = ""
 optional = false
 python-versions = ">=3.9,<4.0"
 files = [
-    {file = "pypatch_and_run-0.2.0-py3-none-any.whl", hash = "sha256:186936f75c3a087315703a1fb7d40d501f878fe6d45b71fc775db124f6f381f0"},
-    {file = "pypatch_and_run-0.2.0.tar.gz", hash = "sha256:8a72549a671f8b6b27685620e40719713c1ab1ef722488268a1b7a3eb5f359f8"},
+    {file = "pypatch_and_run-0.2.1-py3-none-any.whl", hash = "sha256:6a9e27137712d0ad6868ea386a531eb15a11ed4f38aad612bad0d08dd7b12464"},
+    {file = "pypatch_and_run-0.2.1.tar.gz", hash = "sha256:ebde292c6107af55fc515cb73e92d9d5e4fa25bd9997507aec57b5fd399248c2"},
 ]
 
 [package.source]
@@ -4148,4 +4148,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "jaraco.test", "more
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "f16b99289a3d12509abdb96ad937efc0011eb63baa87a689777108bf974e716f"
+content-hash = "5552aca4976b7f76076c4facb6a66bd501e0ed4f7c543fd3cc301b30f33b54dc"

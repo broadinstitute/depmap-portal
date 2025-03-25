@@ -35,7 +35,7 @@ fastparquet = "^2024.5.0"
 sqlitedict="^2.1.0"
 google-cloud-storage = "^3.1.0"
 packed-cor-tables = {version = "^0.2.0", source = "public-python"}
-pypatch-and-run = {version = "^0.2.0", source = "public-python"}
+pypatch-and-run = {version = "^0.2.1", source = "public-python"}
 
 [tool.poetry.group.dev.dependencies]
 pyright-ratchet = {git = "https://github.com/pgm/pyright-ratchet.git", rev = "v0.3.1"}

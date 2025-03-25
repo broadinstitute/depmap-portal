@@ -101,7 +101,7 @@ multidict = "^6.0.4"
 html-sanitizer = "^2.3.0"
 depmap-compute = {version = "^0.1.11", source = "public-python"}
 # depmap-compute = {path = "../depmap-compute", develop = true}
-pypatch-and-run = {version = "^0.2.0", source = "public-python"}
+pypatch-and-run = {version = "^0.2.1", source = "public-python"}
 
 
 [tool.poetry.group.dev.dependencies]
