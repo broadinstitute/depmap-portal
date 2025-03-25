@@ -1,6 +1,5 @@
 from operator import and_
-from typing import Dict, List, Optional, Type
-from depmap.cell_line.models import CellLine
+from typing import Dict, List, Optional
 from depmap.database import (
     Column,
     ForeignKey,
@@ -12,8 +11,7 @@ from depmap.database import (
 )
 
 import enum
-import sqlalchemy
-from typing import Any, TypeVar, Type
+from typing import Type
 from sqlalchemy import and_, or_
 from depmap.entity.models import Entity
 from depmap.cell_line.models_new import DepmapModel, depmap_model_context_association

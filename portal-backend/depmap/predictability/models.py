@@ -25,8 +25,7 @@ from depmap.dataset.models import (
 from depmap.entity.models import Entity
 from depmap.gene.models import Gene
 from depmap.match_related.models import RelatedEntityIndex
-from depmap.vector_catalog.trees import InteractiveTree
-from depmap.context.models import Lineage
+from depmap.cell_line.models import Lineage
 
 
 class TDPredictiveModel(Model):
