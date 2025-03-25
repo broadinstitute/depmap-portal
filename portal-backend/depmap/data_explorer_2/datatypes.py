@@ -86,14 +86,14 @@ hardcoded_metadata_slices = {
         #                Breadbox Metadata                #
         ###################################################
         "slice/depmap_model_metadata/depmap_id/label": {
-            "name": "depmap_id",
+            "name": "ModelID",
             "valueType": "categorical",
             "isBreadboxMetadata": True,
             "isHighCardinality": True,
             "isIdColumn": True,
         },
         "slice/depmap_model_metadata/label/label": {
-            "name": "label",
+            "name": "CellLineName",
             "valueType": "categorical",
             "isBreadboxMetadata": True,
             "isHighCardinality": True,
@@ -124,12 +124,6 @@ hardcoded_metadata_slices = {
         },
         "slice/depmap_model_metadata/CatalogNumber/label": {
             "name": "CatalogNumber",
-            "valueType": "categorical",
-            "isBreadboxMetadata": True,
-            "isHighCardinality": True,
-        },
-        "slice/depmap_model_metadata/CellLineName/label": {
-            "name": "CellLineName",
             "valueType": "categorical",
             "isBreadboxMetadata": True,
             "isHighCardinality": True,
@@ -182,12 +176,6 @@ hardcoded_metadata_slices = {
             "name": "ModelDerivationMaterial",
             "valueType": "categorical",
             "isBreadboxMetadata": True,
-        },
-        "slice/depmap_model_metadata/ModelID/label": {
-            "name": "ModelID",
-            "valueType": "categorical",
-            "isBreadboxMetadata": True,
-            "isHighCardinality": True,
         },
         "slice/depmap_model_metadata/ModelSubtypeFeatures/label": {
             "name": "ModelSubtypeFeatures",
@@ -387,7 +375,7 @@ hardcoded_metadata_slices = {
             "valueType": "categorical",
             "isBreadboxMetadata": True,
             "isHighCardinality": True,
-            "isLabelColumn": True,
+            "isIdColumn": True,
         },
         "slice/screen_metadata/CasActivity/label": {
             "name": "CasActivity",

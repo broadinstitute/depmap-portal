@@ -19,12 +19,12 @@ interface Props {
 function DataSourceSelect({ slice_type, value, onChange }: Props) {
   let options = [
     {
-      label: "Legacy Annotation",
-      value: "legacy_metadata_slice",
-    },
-    {
       label: "Annotation",
       value: "breadbox_metadata_column",
+    },
+    {
+      label: "Legacy Annotation",
+      value: "legacy_metadata_slice",
     },
     {
       label: "Matrix Dataset",
@@ -82,7 +82,12 @@ function DataSourceSelect({ slice_type, value, onChange }: Props) {
             <Tooltip
               id={`${option.label}-tooltip`}
               className={styles.unblockable}
-              content={<HelpText dataSourceOption={option.value} />}
+              content={
+                <HelpText
+                  dataSourceOption={option.value}
+                  slice_type={slice_type}
+                />
+              }
               placement="right"
             >
               <span
