@@ -1,7 +1,9 @@
 from typing import Dict, List, Literal, Optional, Type, Union
+from logging import getLogger
 from uuid import uuid4
 
 from sqlalchemy import and_
+from contextlib import closing
 
 import pandas as pd
 import numpy as np
@@ -20,6 +22,7 @@ from breadbox.models.dataset import (
     PropertyToIndex,
 )
 
+log = getLogger(__name__)
 
 def set_properties_to_index(
     db: SessionWithUser,
@@ -247,6 +250,7 @@ def delete_dimension_type(db: SessionWithUser, dimension_type: DimensionType):
     db.flush()
     return True
 
+from time import perf_counter
 
 def get_dimension_type_labels_by_id(
     db: SessionWithUser, dimension_type_name: str, limit: Optional[int] = None
@@ -254,8 +258,12 @@ def get_dimension_type_labels_by_id(
     """
     For a given dimension, get all IDs and labels that exist in the metadata.
     """
-    return get_dimension_type_metadata_col(db, dimension_type_name, col_name="label", limit=limit)
+    start = perf_counter()
+    result = get_dimension_type_metadata_col(db, dimension_type_name, col_name="label", limit=limit)
+    log.info(f"types_crud.get_dimension_type_labels_by_id took {perf_counter() - start} seconds")
+    return result
 
+from time import perf_counter
 
 def get_dimension_type_metadata_col(
     db: SessionWithUser, dimension_type_name: str, col_name: str, limit: Optional[int] = None,
@@ -276,17 +284,25 @@ def get_dimension_type_metadata_col(
     if dimension_type.dataset_id is None:
         return {}
 
-    values_by_id_tuples = (
-        db.query(TabularColumn)
-        .filter(
+    # Create a subquery to find the column ID
+    column_id = (
+        db.query(TabularColumn.id)
+        .where(
             and_(
                 TabularColumn.dataset_id == dimension_type.dataset_id,
                 TabularColumn.given_id == col_name,
             )
-        )
-        .join(TabularCell)
-        .limit(limit)
+        ).scalar()
+    )
+
+    start = perf_counter()
+    # Use the subquery in the main query
+    values_by_id_tuples = (
+        db.query(TabularCell)
+        .filter(TabularCell.tabular_column_id == column_id)
         .with_entities(TabularCell.dimension_given_id, TabularCell.value)
+        .limit(limit)
         .all()
     )
-    return {id: value for id, value in values_by_id_tuples}
+    log.info(f"SQLAlchemy query (labels by ID) took {perf_counter() - start} seconds")
+    return {}

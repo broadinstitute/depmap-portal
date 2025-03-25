@@ -800,6 +800,7 @@ def get_unique_dimension_ids_from_datasets(
     """
     Returns a unique set of dimension given ids from matrix and tabular datasets based on the given dimension type
     """
+    start = perf_counter()
     if dimension_type.axis == "feature":
         matrix_dimension_class = DatasetFeature
     else:
@@ -830,7 +831,9 @@ def get_unique_dimension_ids_from_datasets(
         .with_entities(TabularCell.dimension_given_id)
     )
     combined_query = matrix_given_id_subquery.union(tabular_given_id_subquery)
-    return {given_id for (given_id,) in combined_query.all()}
+    result = {given_id for (given_id,) in combined_query.all()}
+    log.info(f"dataset_crud.get_unique_dimension_ids_from_datasets took: {perf_counter() - start}")
+    return result
 
 
 def get_metadata_used_in_matrix_dataset(
@@ -855,7 +858,6 @@ def get_metadata_used_in_matrix_dataset(
     given_id_subquery = (
         db.query(dimension_subtype_cls.given_id)
         .filter(dimension_subtype_cls.dataset_id == matrix_dataset_id)
-        .subquery()
     )
     metadata_vals_by_id = (
         db.query(TabularColumn)
