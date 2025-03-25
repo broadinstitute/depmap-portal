@@ -5,6 +5,9 @@ import taigapy
 from tqdm import tqdm
 from dataclasses import dataclass
 from packed_cor_tables import write_cor_df, InputMatrixDesc, read_cor_for_given_id
+import json
+from typing import List
+import re
 
 
 @dataclass
@@ -16,7 +19,99 @@ class Thresholds:
     max_qvalue: float
 
 
-import json
+def _reindex_matrix(mat, given_ids):
+    new_mat = mat.loc[:, mat.columns[[x is not None for x in given_ids]]].copy()
+    new_mat.columns = given_ids
+    return new_mat
+
+
+def map_to_given_ids(mat: pd.DataFrame, parameters: dict) -> pd.DataFrame:
+    feature_names = list(mat.columns)
+    feature_id_format = parameters["feature_id_format"]
+    if feature_id_format == "gene":
+        given_ids = _get_paren_values(feature_names)
+    elif feature_id_format == "compound":
+        given_ids = _lookup_compound(feature_names, parameters["compounds_taiga_id"])
+    elif feature_id_format == "compound+dose":
+        given_ids = _lookup_compound_dose(
+            feature_names,
+            parameters["compounds_taiga_id"],
+            parameters["features_taiga_id"],
+        )
+    else:
+        raise Exception(f"unknown feature_id_format: {feature_id_format}")
+
+    new_mat = _reindex_matrix(mat, given_ids)
+
+    return new_mat
+
+
+def _get_compound_id_by_sample_id(compound_metadata):
+    # create a mapping from sample_id to compound_id
+    compound_id_by_sample_id = {}
+    for row in compound_metadata.to_records():
+        for sample_id in row["SampleIDs"].split(";"):
+            compound_id_by_sample_id[sample_id] = row["CompoundID"]
+    return compound_id_by_sample_id
+
+
+def _lookup_compound(feature_names: str, compounds_taiga_id: str) -> List[str]:
+    tc = taigapy.create_taiga_client_v3()
+    compound_metadata = tc.get(compounds_taiga_id)
+    compound_id_by_sample_id = _get_compound_id_by_sample_id(compound_metadata)
+
+    def _lookup(sample_id):
+        if (sample_id not in compound_id_by_sample_id) and (
+            f"BRD:{sample_id}" in compound_id_by_sample_id
+        ):
+            sample_id = f"BRD:{sample_id}"
+        if sample_id not in compound_id_by_sample_id:
+            compound_id = None
+        else:
+            compound_id = compound_id_by_sample_id[sample_id]
+        return compound_id
+
+    return [_lookup(x) for x in feature_names]
+
+
+def _lookup_compound_dose(
+    feature_names: str, compounds_taiga_id: str, compound_dose_annot_taiga_id
+) -> List[str]:
+    tc = taigapy.create_taiga_client_v3()
+    compound_metadata = tc.get(compounds_taiga_id)
+    compound_id_by_sample_id = _get_compound_id_by_sample_id(compound_metadata)
+    compound_dose_annot = tc.get(compound_dose_annot_taiga_id)
+
+    given_id_by_column = {}
+    for record in compound_dose_annot.to_dict("records"):
+        compound_id = compound_id_by_sample_id.get("BRD:" + record["SampleID"])
+        if compound_id is None:
+            continue
+        dose = record["Dose"]
+        dose_unit = record["DoseUnit"]
+        given_id = f"{compound_id} {dose} {dose_unit}"
+        original_column_name = record["Label"]
+        given_id_by_column[original_column_name] = given_id
+
+    assert len(given_id_by_column) > len(compound_dose_annot) * 0.5
+
+    def _lookup(name):
+        return given_id_by_column.get(name)
+
+    return [_lookup(x) for x in feature_names]
+
+
+def _get_paren_values(feature_names: str) -> List[str]:
+    regex = re.compile("\\S+\\s+\\(([A-Z0-9-]+)\\)")
+
+    def _lookup(name):
+        # given labels of the form "SYMBOL (entrez_id)" returns the entrez_id portion. (Or None if not in that format)
+        m = regex.match(name)
+        if m:
+            return m.group(1)
+        return None
+
+    return [_lookup(x) for x in feature_names]
 
 
 def read_parameters(filename):
@@ -25,8 +120,17 @@ def read_parameters(filename):
     with open(filename, "rt") as fd:
         parameters = json.load(fd)
 
+    def _subset_params(prefix, parameters):
+        new_parameters = {}
+        for k, v in parameters.items():
+            if k.startswith(prefix):
+                new_parameters[k[len(prefix) :]] = v
+        return new_parameters
+
     a_mat = tc.get(parameters["a_taiga_id"])
+    a_mat = map_to_given_ids(a_mat, _subset_params("a_", parameters))
     b_mat = tc.get(parameters["b_taiga_id"])
+    b_mat = map_to_given_ids(b_mat, _subset_params("b_", parameters))
 
     return (
         a_mat,
@@ -400,6 +504,56 @@ def test_small_end_to_end(tmpdir):
     assert rows[1]["feature_given_id_0"] == "A"
     assert rows[1]["feature_given_id_1"] == "D"
     assert abs(rows[1]["cor"] - 0.0) < 1e-5
+
+
+def test_map_to_given_ids_compound():
+    tc = taigapy.create_taiga_client_v3()
+    mat = tc.get(
+        "prism-oncology-reference-set-24q4-c0d0.1/PRISMOncologyReferenceAUCMatrix"
+    )
+
+    new_mat = map_to_given_ids(
+        mat,
+        {
+            "compounds_taiga_id": "internal-24q4-8c04.115/PortalCompounds",
+            "feature_id_format": "compound",
+        },
+    )
+    print("before")
+    print(mat)
+    print("after")
+    print(new_mat)
+
+
+def test_map_to_given_ids_gene():
+    tc = taigapy.create_taiga_client_v3()
+    mat = tc.get("internal-24q4-8c04.13/OmicsExpressionProteinCodingGenesTPMLogp1")
+
+    new_mat = map_to_given_ids(mat, {"feature_id_format": "gene"})
+    print("before")
+    print(mat)
+    print("after")
+    print(new_mat)
+
+
+def test_map_to_given_ids_compound_dose():
+    tc = taigapy.create_taiga_client_v3()
+    mat = tc.get(
+        "prism-oncology-reference-set-24q4-c0d0.1/PRISMOncologyReferenceLog2ViabilityCollapsedMatrix"
+    )
+
+    new_mat = map_to_given_ids(
+        mat,
+        {
+            "features_taiga_id": "prism-oncology-reference-set-24q4-c0d0.1/PRISMOncologyReferenceLog2ViabilityCollapsedConditions",
+            "compounds_taiga_id": "internal-24q4-8c04.115/PortalCompounds",
+            "feature_id_format": "compound+dose",
+        },
+    )
+    print("before")
+    print(mat)
+    print("after")
+    print(new_mat)
 
 
 if __name__ == "__main__":
