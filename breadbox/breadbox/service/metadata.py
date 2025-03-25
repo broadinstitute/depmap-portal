@@ -283,7 +283,7 @@ def get_dimension_type_identifiers(
     )
 
     if data_type is None and not show_only_dimensions_in_datasets:
-        print(f"Service layer (including calls to CRUD) took {perf_counter() - start} seconds")
+        log.info(f"Service layer (including calls to CRUD) took {perf_counter() - start} seconds")
         return dim_type_ids_and_labels
 
     # Note that this also only returns datasets the user has access to as well
@@ -313,5 +313,5 @@ def get_dimension_type_identifiers(
         for given_id in unique_dimension_given_ids
         if given_id in dim_type_ids_and_labels
     }
-    print(f"Service layer (including calls to CRUD) took {perf_counter() - start} seconds")
+    log.info(f"Service layer (including calls to CRUD) took {perf_counter() - start} seconds")
     return result

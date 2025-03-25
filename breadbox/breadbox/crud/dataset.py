@@ -830,7 +830,7 @@ def get_unique_dimension_ids_from_datasets(
     )
     combined_query = matrix_given_id_subquery.union(tabular_given_id_subquery)
     result = {given_id for (given_id,) in combined_query.all()}
-    print(f"dataset_crud.get_unique_dimension_ids_from_datasets took: {perf_counter() - start}")
+    log.info(f"dataset_crud.get_unique_dimension_ids_from_datasets took: {perf_counter() - start}")
     return result
 
 

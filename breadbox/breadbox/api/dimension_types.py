@@ -641,7 +641,7 @@ def get_dimension_type_identifiers(
         DimensionIdentifiers(id=id, label=label)
         for id, label in dimension_ids_and_labels.items()
     ]
-    print(f"Full modifiable portion of backend execution took {perf_counter() - start} seconds")
+    log.info(f"Full modifiable portion of backend execution took {perf_counter() - start} seconds")
     return result
 
 
