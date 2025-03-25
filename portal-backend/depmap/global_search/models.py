@@ -25,7 +25,6 @@ class GlobalSearchIndex(Model):
             "compound_target_or_mechanism",
             "cell_line",
             "cell_line_alias",
-            "context",
             "download_file",
             "compound_target",
             "subtype_context",
@@ -44,9 +43,6 @@ class GlobalSearchIndex(Model):
     file_id = Column(Integer, ForeignKey("download_file.file_id"))
     subtype_code = Column(Integer, ForeignKey("subtype_context.subtype_code"))
 
-    # TODO: Remove when context_explorer goes public
-    context_name = Column(String, ForeignKey("context.name"))
-
     compound = relationship(
         "Compound", foreign_keys="GlobalSearchIndex.compound_id", uselist=False
     )
@@ -54,11 +50,6 @@ class GlobalSearchIndex(Model):
     gene = relationship("Gene", foreign_keys="GlobalSearchIndex.gene_id", uselist=False)
     cell_line = relationship(
         "CellLine", foreign_keys="GlobalSearchIndex.depmap_id", uselist=False
-    )
-
-    # TODO: Remove when context_explorer goes public
-    context = relationship(
-        "Context", foreign_keys="GlobalSearchIndex.context_name", uselist=False
     )
 
     download_file = relationship(

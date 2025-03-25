@@ -12,7 +12,7 @@
     "label": "Max. FDR",
     "minOrMax": "max",
     "step": 0.01,
-    "value": 0.5,
+    "value": 0.05,
     "minBound": 0,
     "maxBound": 1
   },
