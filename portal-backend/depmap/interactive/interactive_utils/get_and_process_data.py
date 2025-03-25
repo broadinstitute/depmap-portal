@@ -365,6 +365,7 @@ def get_row_of_values(dataset_id, feature):
     """
     if dataset_id == get_context_dataset():
         context = SubtypeContext.get_by_code(feature)
+        assert context is not None
         # TODO: Not sure if we should be using the SubtypeNode hierarchy to get the model ids of the
         # child contexts, too
         series = pd.Series(

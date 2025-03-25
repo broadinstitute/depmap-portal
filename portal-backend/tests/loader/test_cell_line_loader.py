@@ -128,6 +128,7 @@ def test_insert_or_update_cell_lines(empty_db_mock_downloads):
     # assert cell_line_1.cell_line_name == 'name_1'
 
     context = SubtypeContext.get_by_code("test_context")
+    assert context is not None
     assert len(context.depmap_model) == 2
 
     assert cell_line_1.gender == "new gender"
@@ -168,6 +169,7 @@ def test_get_models_in_context(empty_db_mock_downloads):
     }
 
     context = SubtypeContext.get_by_code("BONE")
+    assert context is not None
     model_ids = [model.model_id for model in context.depmap_model]
     assert sorted(model_ids) == sorted([model.model_id for model in bone_cell_lines])
 

@@ -138,11 +138,11 @@ def format_fusions(gene_id):
 
 def format_methylation_viewer():
     subtype_codes = SubtypeContext.get_all_codes()
+    subtypes = [
+        {"name": SubtypeNode.get_display_name(subtype_code), "value": subtype_code}
+        for subtype_code in subtype_codes
+    ]
     options = sorted(
-        [
-            {"name": SubtypeNode.get_display_name(subtype_code), "value": subtype_code}
-            for subtype_code in subtype_codes
-        ],
-        key=lambda x: x["name"],  # need to sort post- getting display names
+        subtypes, key=lambda x: x["name"],  # need to sort post- getting display names
     )
     return options
