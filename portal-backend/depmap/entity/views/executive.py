@@ -1,4 +1,6 @@
 import re
+from depmap.context.models_new import SubtypeNode
+from depmap.context_explorer.models import ContextAnalysis
 from depmap.enums import DataTypeEnum
 import matplotlib
 import matplotlib.pyplot as plt
@@ -15,7 +17,6 @@ matplotlib.use(
     "svg", force=True
 )  # this line must come before this import, otherwise matplotlib complains about python not being installed as a framework
 
-from depmap.context.models import Context, ContextEnrichment
 from depmap.dataset.models import DependencyDataset
 from depmap.entity.models import Entity
 from depmap.predictability.models import (
@@ -114,8 +115,8 @@ def format_generic_distribution_plot(values, color, y_axis_at_zero=False):
 def format_enrichment_box_for_dataset(
     entity, dataset, color, title_color_override=None, negative_only=False
 ):
-    enriched_contexts = ContextEnrichment.get_enriched_context_cell_line_p_value_effect_size(
-        entity.entity_id, dataset.dataset_id, negative_only
+    enriched_contexts = ContextAnalysis.get_enriched_context_cell_line_p_value_effect_size(
+        entity.entity_id, dataset.dependency_dataset_id, negative_only
     )
     all_values_series = dataset.matrix.get_cell_line_values_and_depmap_ids(
         entity.entity_id
@@ -147,9 +148,9 @@ def format_enrichments_for_svg(enriched_contexts, all_values_series):
     enriched_values = []
     enriched_text_labels = []
 
-    enriched_contexts = enriched_contexts.sort_values(["effect_size_means_difference"])
+    enriched_contexts = enriched_contexts.sort_values(["effect_size"])
     for enriched_context in enriched_contexts.itertuples():
-        context_display_name = Context.get_display_name(enriched_context.Index)
+        context_display_name = SubtypeNode.get_display_name(enriched_context.Index)
 
         # use index.isin instead of series.loc[enriched_context.cell_line]. the latter expects all cell lines to be present, and will generate NaN rows that need to be re-dropped
         in_series = all_values_series.loc[

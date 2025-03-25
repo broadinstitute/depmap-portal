@@ -2,7 +2,6 @@ from depmap.global_search.models import ContextExplorerSearchIndex, GlobalSearch
 from depmap.gene.models import Gene
 from depmap.entity.models import EntityAlias
 from depmap.cell_line import models as cell_line_models
-from depmap.context.models import Context
 from depmap.database import transaction
 from depmap.settings.settings import TestConfig
 from loader import global_search_loader
@@ -92,7 +91,7 @@ def test_cell_line_search_index(empty_db_mock_downloads):
         tumor_type=cell_line_models.TumorType(name="a"),
         culture_medium=cell_line_models.CultureMedium(name="a"),
         conditions=cell_line_models.Conditions(name="a"),
-        context=[Context(name="a")],
+        # context=[Context(name="a")],
     )
     with transaction(empty_db_mock_downloads):
         empty_db_mock_downloads.session.add(cell_line_obj)

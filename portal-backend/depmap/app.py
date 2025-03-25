@@ -33,7 +33,6 @@ from depmap.celligner.views import blueprint as celligner_blueprint
 from depmap.compound.views.index import blueprint as compound_blueprint
 from depmap.compute.views import blueprint as compute_blueprint
 from depmap.constellation.views import blueprint as constellation_blueprint
-from depmap.context.views import blueprint as context_blueprint
 
 from depmap.dataset.models import (
     ColMatrixIndex,
@@ -356,7 +355,6 @@ def register_blueprints(app: Flask):
     app.register_blueprint(cell_line_blueprint)
     app.register_blueprint(celligner_blueprint)
     app.register_blueprint(dev_blueprint)
-    app.register_blueprint(context_blueprint)
     app.register_blueprint(interactive_blueprint)
     app.register_blueprint(global_search_blueprint)
     app.register_blueprint(partials_blueprint)

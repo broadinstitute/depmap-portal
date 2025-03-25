@@ -27,14 +27,6 @@ rule publish_models_metadata:
     inputs: metadata={"type":"models_metadata"}
     publish: "{{config.publish_dest}}/models-metadata.json"
 
-rule publish_context_matrix:
-    inputs: in={"type": "context-matrix"}
-    publish: "{{config.publish_dest}}/context-matrix.json"
-
-rule publish_enrichment:
-    inputs: enrichment={"type": "context-enrichment"}, contexts={"type": "context-matrix"}
-    publish: "{{config.publish_dest}}/context-enrichment.json"
-
 rule publish_correlations:
     inputs: in=all {'type': 'dep-matrix-pearson-cor'}
     publish: "{{config.publish_dest}}/correlations.json"

@@ -1,3 +1,4 @@
+from depmap.context.models_new import SubtypeNode
 import pytest
 from numpy import NaN
 import pandas as pd
@@ -26,6 +27,7 @@ from tests.factories import (
     PredictiveModelFactory,
     PredictiveFeatureResultFactory,
     PredictiveBackgroundFactory,
+    SubtypeNodeFactory,
 )
 from depmap.dataset.models import DependencyDataset
 
@@ -77,11 +79,15 @@ def test_format_enrichment_box_for_dataset(empty_db_mock_downloads):
     assert enrichment_box["title_color"] == "test_override"
 
 
-def test_format_enrichments_for_svg():
+def test_format_enrichments_for_svg(empty_db_mock_downloads):
+    subtype_nodeA = SubtypeNodeFactory(subtype_code="context_A", node_name="Context A")
+    subtype_nodeB = SubtypeNodeFactory(subtype_code="context_B", node_name="Context B")
+    subtype_nodeC = SubtypeNodeFactory(subtype_code="context_C", node_name="Context C")
+
     enriched_contexts = pd.DataFrame(
         {
             "p_value": [1e-5, 1e-5, 1e-5],
-            "effect_size_means_difference": [0.5, 0.5, 0.5],
+            "effect_size": [0.5, 0.5, 0.5],
             "cell_line": [
                 ["cell_line_A1", "cell_line_AB2"],
                 ["cell_line_AB2", "cell_line_B3", "cell_line_NaN"],
@@ -89,7 +95,7 @@ def test_format_enrichments_for_svg():
             ],
         },
         index=["context_A", "context_B", "context_C"],
-        columns=["cell_line", "p_value", "effect_size_means_difference"],
+        columns=["cell_line", "p_value", "effect_size"],
     )
 
     all_values_series = pd.Series(

@@ -1,7 +1,6 @@
 from cmath import nan
 import os
 from depmap.compound.models import CompoundExperiment
-from depmap.context.models import Context
 from depmap.context_explorer.models import ContextAnalysis
 from depmap.gene.models import Gene
 from depmap.utilities.caching import LazyCache

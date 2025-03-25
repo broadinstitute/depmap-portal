@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 import json
+from depmap.cell_line.models_new import DepmapModel
 import sqlalchemy
 from sqlalchemy import and_, or_, func, desc
 import enum
@@ -9,7 +10,7 @@ from depmap.gene.models import Gene
 from depmap.compound.models import CompoundExperiment
 from depmap.enums import DependencyEnum
 from depmap.dataset.models import DependencyDataset
-from depmap.context.models_new import SubtypeNode
+from depmap.context.models_new import SubtypeContext, SubtypeNode
 from depmap.database import (
     Column,
     Float,
@@ -294,6 +295,51 @@ class ContextAnalysis(Model):
         )
         assert dependency_dataset is not None
         return dependency_dataset.name
+
+    @classmethod
+    def get_enriched_context_cell_line_p_value_effect_size(
+        cls, entity_id, dataset_id, negative_only=False
+    ):
+        base_query = cls.query.filter_by(
+            entity_id=entity_id,
+            dependency_dataset_id=dataset_id,
+            out_group="All Others",
+        )
+        if negative_only:
+            base_query = base_query.filter(cls.t_pval < 0)
+
+        context_cell_line_p_value_tuples = (
+            base_query.join(SubtypeNode, SubtypeNode.subtype_code == cls.subtype_code)
+            .filter(SubtypeNode.tree_type == "Lineage")
+            .join(SubtypeContext)
+            .join(DepmapModel, SubtypeContext.depmap_model)
+            .with_entities(
+                cls.subtype_code, DepmapModel.model_id, cls.t_pval, cls.effect_size,
+            )
+            .limit(250)
+            .all()
+        )
+
+        def assert_one_or_none_and_get(series):
+            if len(series.index != 0):
+                values = series.values.tolist()
+                assert len(set(values)) == 1
+                return values[0]
+
+        df = pd.DataFrame(
+            context_cell_line_p_value_tuples,
+            columns=["context", "cell_line", "p_value", "effect_size"],
+        )
+
+        df = df.groupby("context").aggregate(
+            {
+                "cell_line": lambda x: set(x),
+                "p_value": lambda x: assert_one_or_none_and_get(x),
+                "effect_size": lambda x: assert_one_or_none_and_get(x),
+            }
+        )
+
+        return df
 
     @staticmethod
     def find_context_analysis_by_subtype_code_out_group(

@@ -143,6 +143,11 @@ class DepmapModel(Model):
         return self.level_1_lineage.name == "unknown"
 
     @staticmethod
+    def all():
+        all_models = db.session.query(DepmapModel).all()
+        return all_models
+
+    @staticmethod
     def exists(cell_line_name):
         return db.session.query(
             DepmapModel.query.filter_by(cell_line_name=cell_line_name).exists()
@@ -279,21 +284,6 @@ class DepmapModel(Model):
             )
         )
         return cell_lines_dict
-
-    @staticmethod
-    def get_model_ids_by_primary_disease(primary_disease_name) -> Dict[str, str]:
-        display_name_by_model_id = {}
-        cell_lines = (
-            db.session.query(DepmapModel)
-            .filter(DepmapModel.oncotree_primary_disease == primary_disease_name)
-            .with_entities(DepmapModel.model_id, DepmapModel.stripped_cell_line_name)
-            .all()
-        )
-
-        for depmap_id, display_name in cell_lines:
-            display_name_by_model_id[depmap_id] = display_name
-
-        return display_name_by_model_id
 
     @staticmethod
     def __get_models_age_category_tuples():

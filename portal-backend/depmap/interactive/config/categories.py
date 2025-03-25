@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-from depmap.context.models import Context
 from depmap.cell_line.models import (
     Lineage,
     PrimaryDisease,
@@ -8,6 +7,7 @@ from depmap.cell_line.models import (
     CellLine,
     get_all_entities_and_indices_for_model,
 )
+from depmap.context.models_new import SubtypeContext, SubtypeNode
 from depmap.utilities import color_palette
 
 
@@ -122,7 +122,9 @@ class CategoryConfig(ABC):
 
 class ContextConfig(CategoryConfig):
     def get_non_na_category(self, value, feature):
-        return Category(value=value, label=Context.get_display_name(value), color_num=1)
+        return Category(
+            value=value, label=SubtypeNode.get_display_name(feature), color_num=1
+        )
 
 
 OTHER_CONSERVING_INDEX = 1

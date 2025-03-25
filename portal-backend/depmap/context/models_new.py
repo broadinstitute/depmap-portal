@@ -1,5 +1,6 @@
 from operator import and_
 from typing import Dict, List, Optional, Type
+from depmap.cell_line.models import CellLine
 from depmap.database import (
     Column,
     ForeignKey,
@@ -47,6 +48,21 @@ class SubtypeNode(Model):
             return q.one()
         else:
             return q.one_or_none()
+
+    @staticmethod
+    def get_display_name(subtype_code: str, must=True) -> Optional[str]:
+        q = db.session.query(SubtypeNode).filter(
+            SubtypeNode.subtype_code == subtype_code
+        )
+        if must:
+            node = q.one()
+            return node.node_name
+        else:
+            node = q.one_or_none()
+            if node is None:
+                return node
+            else:
+                return node.node_name
 
     @staticmethod
     def get_all_organized_descending_by_level():
@@ -362,26 +378,6 @@ class SubtypeContext(Model):
             for cell_line in context.depmap_model
         ]
         return list(set(cell_lines))
-
-    @classmethod
-    def get_cell_line_table_query(cls, subtype_code):
-        query = (
-            SubtypeContext.query.filter_by(subtype_code=subtype_code)
-            .join(DepmapModel, SubtypeContext.depmap_model)
-            .join(SubtypeNode, SubtypeNode.subtype_code == SubtypeContext.subtype_code)
-            .with_entities(
-                DepmapModel.model_id, SubtypeNode.level_1.label("primary_disease"),
-            )
-            .add_columns(
-                sqlalchemy.column("primary_or_metastasis", is_literal=True).label(
-                    "tumor_type"
-                ),
-                sqlalchemy.column("stripped_cell_line_name", is_literal=True).label(
-                    "cell_line_display_name"
-                ),
-            )
-        )
-        return query
 
 
 class SubtypeContextEntity(Entity):

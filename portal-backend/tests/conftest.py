@@ -9,6 +9,7 @@ from unittest.mock import MagicMock
 from dataclasses import asdict
 
 from breadbox_facade import BBClient
+import depmap
 
 from depmap.access_control import PUBLIC_ACCESS_GROUP
 from depmap.access_control.sql_rewrite import (
@@ -356,10 +357,13 @@ def test_matrix(empty_db_mock_downloads):
         gene_loader.load_hgnc_genes(
             os.path.join(loader_data_dir, "gene/hgnc-database-1a29.1.csv")
         )
+        cell_line_loader.load_cell_lines_metadata(
+            os.path.join(loader_data_dir, "cell_line/cell_line_metadata.csv")
+        )
         load_sample_cell_lines()
 
-        cell_line_loader.load_contexts(
-            os.path.join(loader_data_dir, "cell_line/contexts.csv")
+        depmap_model_loader.load_subtype_contexts(
+            os.path.join(loader_data_dir, "cell_line/subtype_contexts.csv")
         )
 
         test_matrix_abs_file_path = os.path.join(
@@ -391,9 +395,15 @@ def load_interactive_db_data():
                 loader_data_dir, "interactive/small-hgnc-2a89.2_without_MED1.csv"
             )
         )
+        cell_line_loader.load_cell_lines_metadata(
+            os.path.join(loader_data_dir, "cell_line/cell_line_metadata.csv")
+        )
         load_sample_cell_lines()
-        cell_line_loader.load_contexts(
-            os.path.join(loader_data_dir, "cell_line/contexts.csv")
+        depmap_model_loader.load_subtype_contexts(
+            os.path.join(loader_data_dir, "cell_line/subtype_contexts.csv")
+        )
+        context_explorer_loader.load_subtype_tree(
+            os.path.join(loader_data_dir, "cell_line/subtype_tree.csv")
         )
         dataset_loader.load_mutations(
             os.path.join(loader_data_dir, "dataset/mutations.csv"), "test-taiga-id.1"
@@ -469,10 +479,6 @@ def load_populated_db_data():
         depmap_model_loader.load_depmap_model_metadata(
             os.path.join(loader_data_dir, "cell_line/models_metadata.csv")
         )
-        cell_line_loader.load_contexts(
-            os.path.join(loader_data_dir, "cell_line/contexts.csv")
-        )
-
         depmap_model_loader.load_subtype_contexts(
             os.path.join(loader_data_dir, "cell_line/subtype_contexts.csv")
         )

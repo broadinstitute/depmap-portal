@@ -211,7 +211,9 @@ def get_box_plot_data_for_context(
     )
 
 
-def get_branch_subtype_codes_organized_by_code(sig_contexts: Dict[str, List[str]]):
+def get_branch_subtype_codes_organized_by_code(
+    sig_contexts: Dict[str, List[str]], all_sig_context_codes: List[str]
+):
     branch_contexts = {}
 
     for level_0 in sig_contexts.keys():
@@ -313,7 +315,8 @@ def get_context_plot_box_data(
         ]
 
         branch_contexts = get_branch_subtype_codes_organized_by_code(
-            sig_contexts=sig_contexts_by_level_0
+            sig_contexts=sig_contexts_by_level_0,
+            all_sig_context_codes=all_sig_context_codes,
         )
 
         selected_sig_box_plot_card_data = get_card_data(

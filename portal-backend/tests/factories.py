@@ -28,7 +28,6 @@ from depmap.cell_line.models import (
     STRProfile,
 )
 from depmap.context.models_new import SubtypeContext, SubtypeContextEntity, SubtypeNode
-from depmap.context.models import Context, ContextEntity, ContextEnrichment
 from depmap.database import db as _db
 from depmap.dataset.models import (
     Dataset,
@@ -74,26 +73,6 @@ import pandas
 
 from depmap.access_control import PUBLIC_ACCESS_GROUP
 import sqlite3
-
-
-class ContextFactory(SQLAlchemyModelFactory):
-    class Meta:
-        model = Context
-
-        # Use the not-so-global scoped_session
-        # Warning: DO NOT USE common.Session()!
-        sqlalchemy_session = _db.session
-
-    name = factory.Sequence(lambda number: "context_{}".format(number))
-
-
-def ContextEntityFactory(context=None):
-    if context is None:
-        context = ContextFactory()
-
-    context_entity = ContextEntity(label=context.name, context=context)
-    _db.session.add(context_entity)
-    return context_entity
 
 
 class CellLineAliasFactory(SQLAlchemyModelFactory):
@@ -902,12 +881,12 @@ class SubtypeContextFactory(SQLAlchemyModelFactory):
     subtype_code = factory.Sequence(lambda number: "subtype_code_{}".format(number))
 
 
-def SubtypeContextEntityFactory(context=None):
-    if context is None:
-        context = SubtypeContextFactory()
+def SubtypeContextEntityFactory(subtype_context=None):
+    if subtype_context is None:
+        subtype_context = SubtypeContextFactory()
 
     context_entity = SubtypeContextEntity(
-        label=context.subtype_code, subtype_context=context
+        label=subtype_context.subtype_code, subtype_context=subtype_context
     )
     _db.session.add(context_entity)
     return context_entity
@@ -946,27 +925,6 @@ class ContextAnalysisFactory(SQLAlchemyModelFactory):
     frac_dep_in = factory.Sequence(lambda number: number)
     frac_dep_out = factory.Sequence(lambda number: number)
     selectivity_val = factory.Sequence(lambda number: number)
-
-
-class ContextEnrichmentFactory(SQLAlchemyModelFactory):
-    """
-    This needs to be defined after ContextFactory, GeneFactory, and DependencyDatasetFactory
-    """
-
-    class Meta:
-        model = ContextEnrichment
-
-        # Use the not-so-global scoped_session
-        # Warning: DO NOT USE common.Session()!
-        sqlalchemy_session = _db.session
-
-    context = factory.SubFactory(ContextFactory)
-    entity = factory.SubFactory(GeneFactory)
-    dataset = factory.SubFactory(DependencyDatasetFactory)
-
-    p_value = 1e-5
-    t_statistic = 3.0
-    effect_size_means_difference = 0.5
 
 
 class CustomDatasetConfigFactory(SQLAlchemyModelFactory):
