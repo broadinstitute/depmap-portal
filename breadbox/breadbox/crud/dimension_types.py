@@ -287,7 +287,7 @@ def get_dimension_type_metadata_col(
     # Create a subquery to find the column ID
     column_id = (
         db.query(TabularColumn.id)
-        .where(
+        .filter(
             and_(
                 TabularColumn.dataset_id == dimension_type.dataset_id,
                 TabularColumn.given_id == col_name,
@@ -305,4 +305,4 @@ def get_dimension_type_metadata_col(
         .all()
     )
     log.info(f"SQLAlchemy query (labels by ID) took {perf_counter() - start} seconds")
-    return {}
+    return {given_id: value for given_id, value in values_by_id_tuples}
