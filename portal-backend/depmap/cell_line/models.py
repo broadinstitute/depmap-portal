@@ -1,26 +1,12 @@
 # -*- coding: utf-8 -*-
 """Cell line models."""
-import enum
-from operator import or_
 import re
-from typing import Dict, Optional
+from typing import Optional
 
 import pandas as pd
 import sqlalchemy
-from sqlalchemy import and_, or_
 
 from depmap.database import Column, ForeignKey, Integer, Model, String, db, relationship
-
-Table = db.Table
-
-cell_line_context_association = Table(
-    "cell_line_context_association",
-    Column("depmap_id", String, ForeignKey("cell_line.depmap_id"), nullable=False),
-    Column(
-        "context_name", String, ForeignKey("context.name"), nullable=False, index=True
-    ),
-    db.UniqueConstraint("depmap_id", "context_name", name="uc_depmap_id_context_name"),
-)
 
 
 # CellLine.all_table_query() within get_cell_line_selector_lines_table for getting
