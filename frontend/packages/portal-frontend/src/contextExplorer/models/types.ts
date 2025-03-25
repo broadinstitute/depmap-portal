@@ -75,11 +75,13 @@ export interface CellLineOverview {
   rnai: string;
   wgs: string;
   wes: string;
-  prism: string;
+  prismOncRef: string;
+  prismRepurposing: string;
 }
 
 export enum DataType {
-  PRISM,
+  PRISMRepurposing,
+  PRISMOncRef,
   RNASeq,
   WGS,
   WES,
@@ -121,7 +123,8 @@ export function getDataTypeColorCategoryFromDataTypeValue(
     case DataType.WGS:
     case DataType.RNASeq:
       return DataTypeCategory.OMICS;
-    case DataType.PRISM:
+    case DataType.PRISMOncRef:
+    case DataType.PRISMRepurposing:
       return DataTypeCategory.CompoundViability;
     default:
       return DataTypeCategory.Subtype;
