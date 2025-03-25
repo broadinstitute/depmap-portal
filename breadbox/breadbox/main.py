@@ -3,7 +3,6 @@ from .celery_task.utils import create_celery
 from .config import get_settings, Settings
 from breadbox.api.dependencies import get_user
 from fastapi import Request, status
-from fastapi.exceptions import RequestValidationError
 from fastapi.exception_handlers import (
     request_validation_exception_handler,
     http_exception_handler,

@@ -14,6 +14,7 @@ from .ui import SinglePageApplication
 from .compute.celery import app as celery_app
 from .api.proxy import router as proxy_router
 from importlib.metadata import version
+from fastapi.middleware.gzip import GZipMiddleware
 
 
 def create_app(settings: Settings):
@@ -27,6 +28,8 @@ def create_app(settings: Settings):
         swagger_ui_oauth2_redirect_url=f"{api_prefix}/docs/oauth2-redirect",
         version=version("breadbox"),
     )
+
+    app.add_middleware(GZipMiddleware, minimum_size=1000, compresslevel=5)
 
     app.add_middleware(
         CORSMiddleware,
