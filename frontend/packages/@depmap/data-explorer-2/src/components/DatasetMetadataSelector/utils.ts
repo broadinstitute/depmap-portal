@@ -85,6 +85,18 @@ export const makeSliceComparator = (slices: MetadataSlices) => (
     return 1;
   }
 
+  if (nameA === "OncotreeLineage") {
+    return -1;
+  }
+
+  if (nameA === "OncotreePrimaryDisease" && nameB !== "OncotreeLineage") {
+    return -1;
+  }
+
+  if (nameA === "OncotreeSubtype" && nameB !== "OncotreePrimaryDisease") {
+    return -1;
+  }
+
   return nameA.toLowerCase() < nameB.toLowerCase() ? -1 : 1;
 };
 

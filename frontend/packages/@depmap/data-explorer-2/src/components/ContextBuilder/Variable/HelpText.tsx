@@ -1,19 +1,21 @@
 import React from "react";
+import { capitalize, getDimensionTypeLabel } from "../../../utils/misc";
 
 interface Props {
   dataSourceOption: string | null;
+  slice_type: string;
 }
 
-function HelpText({ dataSourceOption }: Props) {
+function HelpText({ dataSourceOption, slice_type }: Props) {
   if (dataSourceOption === "legacy_metadata_slice") {
     return (
       <span>
-        These are older annotations from our legacy database.
-        <br />
-        <br />
-        This list of properties remains available to ease the transition as we
-        reorganize this information. The goal is to make the naming consistent
-        with what you’ll find in the Downloads section.
+        These are the names of properties of as they appeared in past versions
+        of Context Manager. However, these names are inconsistent with the
+        property names you’ll see if you download annotations. We are gradually
+        updating the portal to consistently use the names as they appear in
+        downloads. These legacy names should be considered deprecated and this
+        option will be removed in a future update of the portal.
       </span>
     );
   }
@@ -21,18 +23,23 @@ function HelpText({ dataSourceOption }: Props) {
   if (dataSourceOption === "breadbox_metadata_column") {
     return (
       <span>
-        This is an updated and expanded set of annotations from our revised
-        database.
-        <br />
-        <br />
-        Where possible, you should prefer to use these, as they will have better
-        support going forward.
+        This is the set of annotations associated instances of{" "}
+        {capitalize(getDimensionTypeLabel(slice_type))}. See the corresponding
+        table of annotations in the download section for descriptions of each
+        property.
       </span>
     );
   }
 
   if (dataSourceOption === "matrix_dataset") {
-    return <span>Use this option to compare ranges of numeric values.</span>;
+    return (
+      <span>
+        This is the set of numerical features which are available for instances
+        of {capitalize(getDimensionTypeLabel(slice_type))}. You can use these if
+        you want to define a context based on some threshold of some measurement
+        (i.e. expression, probability of dependency, etc).
+      </span>
+    );
   }
 
   return null;
