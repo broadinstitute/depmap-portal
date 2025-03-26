@@ -17,6 +17,7 @@ import Select, {
 } from "react-select";
 import { Button } from "react-bootstrap";
 import { getHighlightLineColor } from "@depmap/utils";
+import CorrelationsTable from "../components/CorrelationsTable";
 
 export default {
   title: "Components/CorrelationAnalysis",
@@ -150,14 +151,20 @@ export function Story() {
   }, [selectedFeatureTypes]);
 
   return (
-    <div>
+    <div
+      style={{
+        display: "grid",
+        gridTemplateColumns: "1fr 7fr",
+        gridAutoRows: "1fr 1fr",
+        gridTemplateAreas: "'a b b b b b b b''a c c c c c c c'",
+        // gap: "2rem",
+        // marginBottom: "50px",
+      }}
+    >
       {/* {JSON.stringify(selectedFeatureTypes)} */}
       <div
         style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(3, 1fr)",
-          gap: "2rem",
-          marginBottom: "50px",
+          gridArea: "a",
         }}
       >
         <AsyncSelect
@@ -204,89 +211,74 @@ export function Story() {
         />
       </div>
 
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(3, 1fr)",
-          gap: "2rem",
-          marginBottom: "50px",
-        }}
-      >
-        {filteredVolcanoPlotFeatureTypes.map((selectedFeatureType) => {
-          return (
-            <>
-              {/* <div>
-                <header
-                  style={{
-                    textAlign: "center",
-                    fontSize: "18px",
-                    backgroundColor: "lightgray",
-                  }}
-                >{`${selectedFeatureType}`}</header>
-                <VolcanoPlot
-                  Plotly={Plotly}
-                  xLabel="Correlation Coefficient"
-                  yLabel="q value"
-                  traces={Object.values(
-                    volcanoDataForFeatureType[selectedFeatureType]
-                  )}
-                  showAxesOnSameScale={false}
-                  cellLinesToHighlight={new Set([])}
-                  onPointClick={(point) => {
-                    console.log(point);
-                  }}
-                  downloadData={[]}
-                />
-              </div> */}
-              <div>
-                <header
-                  style={{
-                    textAlign: "center",
-                    fontSize: "18px",
-                    backgroundColor: "lightgray",
-                  }}
-                >
-                  {selectedFeatureType}
-                </header>
-                <VolcanoPlotOld
-                  Plotly={Plotly}
-                  // ref={plotlyRef}
-                  xLabel="Correlation Coefficient"
-                  yLabel="q value"
-                  data={Object.values(
-                    volcanoDataForFeatureType[selectedFeatureType]
-                  )}
-                />
-              </div>
-            </>
-          );
-        })}
-      </div>
-      <div
-        style={{ display: "flex", justifyContent: "flex-end", padding: "10px" }}
-      >
-        <Button active>CSV</Button>
+      <div style={{ gridArea: "b" }}>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(3, 1fr)",
+            gap: "2rem",
+            marginBottom: "50px",
+          }}
+        >
+          {filteredVolcanoPlotFeatureTypes.map((selectedFeatureType) => {
+            return (
+              <>
+                {/* <div>
+                  <header
+                    style={{
+                      textAlign: "center",
+                      fontSize: "18px",
+                      backgroundColor: "lightgray",
+                    }}
+                  >{`${selectedFeatureType}`}</header>
+                  <VolcanoPlot
+                    Plotly={Plotly}
+                    xLabel="Correlation Coefficient"
+                    yLabel="q value"
+                    traces={Object.values(
+                      volcanoDataForFeatureType[selectedFeatureType]
+                    )}
+                    showAxesOnSameScale={false}
+                    cellLinesToHighlight={new Set([])}
+                    onPointClick={(point) => {
+                      console.log(point);
+                    }}
+                    downloadData={[]}
+                  />
+                </div> */}
+                <div>
+                  <header
+                    style={{
+                      textAlign: "center",
+                      fontSize: "18px",
+                      backgroundColor: "lightgray",
+                    }}
+                  >
+                    {selectedFeatureType}
+                  </header>
+                  <VolcanoPlotOld
+                    Plotly={Plotly}
+                    // ref={plotlyRef}
+                    xLabel="Correlation Coefficient"
+                    yLabel="q value"
+                    data={Object.values(
+                      volcanoDataForFeatureType[selectedFeatureType]
+                    )}
+                  />
+                </div>
+              </>
+            );
+          })}
+        </div>
       </div>
 
-      <div style={{ height: "300px" }}>
-        <WideTable
-          columns={[
-            { accessor: "Feature Type" },
-            { accessor: "imatinib Dose" },
-            { accessor: "Feature" },
-            { accessor: "Correlation Coefficient" },
-            { accessor: "-log10 qval" },
-            { accessor: "Rank" },
-          ]}
-          data={filteredTableCorrelationAnalysisData}
-          rowHeight={40}
-        />
+      <div style={{ gridArea: "c" }}>
+        <CorrelationsTable data={filteredTableCorrelationAnalysisData} />
+        <p>
+          Showing {filteredTableCorrelationAnalysisData.length} of{" "}
+          {correlationAnalysisData.length} entries
+        </p>
       </div>
-
-      <p>
-        Showing {filteredTableCorrelationAnalysisData.length} of{" "}
-        {correlationAnalysisData.length} entries
-      </p>
     </div>
   );
 }
