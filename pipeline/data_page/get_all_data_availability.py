@@ -376,11 +376,16 @@ def get_long_reads_summary(gcloud_storage_client, depmap_long_reads_gcloud_loc):
     prefix = depmap_long_reads_gcloud_loc["prefix"]
     file_names = depmap_long_reads_gcloud_loc["file_names"]
 
+    print(f"bucket_name: {bucket_name}")
+    print(f"prefix: {prefix}")
+    print(f"file_names: {file_names}")
+
+    bucket = gcloud_storage_client.bucket(bucket_name)
     unique_model_ids = set()
 
     for file_name in file_names:
         blob_name = f"{prefix}/{file_name}"
-        bucket = gcloud_storage_client.bucket(bucket_name)
+        print(f"blob_name: {blob_name}")
         blob = bucket.blob(blob_name)
         content = blob.download_as_string()
         df = pd.read_csv(pd.io.common.BytesIO(content), usecols=[0])
