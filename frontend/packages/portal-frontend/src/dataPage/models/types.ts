@@ -63,6 +63,8 @@ export enum DataPageDataType {
   Sequencing_WES_Sanger = "Sequencing_WES_Sanger",
   Sequencing_WGS_Broad = "Sequencing_WGS_Broad",
   Sequencing_RNA_Broad = "Sequencing_RNA_Broad",
+  Sequencing_ATACSeq_Broad = "Sequencing_ATACSeq_Broad",
+  Sequencing_Long_Reads = "Sequencing_Long_Reads",
   Drug_CTD_Broad = "Drug_CTD_Broad",
   Drug_Repurposing_Broad = "Drug_Repurposing_Broad",
   Drug_GDSC_Sanger = "Drug_GDSC_Sanger",
@@ -74,7 +76,6 @@ export enum DataPageDataType {
   Methylation_Sanger = "Methylation_Sanger",
   Methylation_CCLE = "Methylation_CCLE",
   Uncategorized_miRNA_CCLE = "Uncategorized_miRNA_CCLE",
-  Uncategorized_ATACSeq_Broad = "Uncategorized_ATACSeq_Broad",
 }
 
 export enum DataPageDataTypeCategory {
@@ -118,6 +119,8 @@ export function getDataPageDataTypeColorCategory(
     case DataPageDataType.Sequencing_WES_Broad:
     case DataPageDataType.Sequencing_WES_Sanger:
     case DataPageDataType.Sequencing_WGS_Broad:
+    case DataPageDataType.Sequencing_ATACSeq_Broad:
+    case DataPageDataType.Sequencing_Long_Reads:
       return DataPageDataTypeCategory.Sequencing;
     case DataPageDataType.Proteomics_MS_CCLE:
     case DataPageDataType.Proteomics_MS_Sanger:
@@ -133,7 +136,6 @@ export function getDataPageDataTypeColorCategory(
     case DataPageDataType.Drug_Repurposing_Broad:
       return DataPageDataTypeCategory.DrugScreens;
     case DataPageDataType.Uncategorized_miRNA_CCLE:
-    case DataPageDataType.Uncategorized_ATACSeq_Broad:
       return DataPageDataTypeCategory.Uncategorized;
     default:
       throw new Error(`Cannot map datatype ${datatype} to color category`);
@@ -172,6 +174,10 @@ export function getDataPageDataTypeString(datatype: DataPageDataType) {
       return "WES (Sanger)";
     case DataPageDataType.Sequencing_WGS_Broad:
       return "WGS (Broad)";
+    case DataPageDataType.Sequencing_ATACSeq_Broad:
+      return "ATAC-seq (Broad)";
+    case DataPageDataType.Sequencing_Long_Reads:
+      return "Long Reads";
     case DataPageDataType.CRISPR_Achilles_Broad:
       return "CRISPR KO screens (Broad)";
     case DataPageDataType.CRISPR_Score_Sanger:
@@ -184,8 +190,6 @@ export function getDataPageDataTypeString(datatype: DataPageDataType) {
       return "CCLE";
     case DataPageDataType.Uncategorized_miRNA_CCLE:
       return "miRNA (CCLE)";
-    case DataPageDataType.Uncategorized_ATACSeq_Broad:
-      return "ATAC-seq (Broad)";
     default:
       throw new Error(`Cannot map datatype ${datatype} to color category`);
   }
@@ -213,6 +217,8 @@ export function getDataPageDataTypeColorCategoryString(
     case DataPageDataType.Sequencing_WES_Broad:
     case DataPageDataType.Sequencing_WES_Sanger:
     case DataPageDataType.Sequencing_WGS_Broad:
+    case DataPageDataType.Sequencing_ATACSeq_Broad:
+    case DataPageDataType.Sequencing_Long_Reads:
       return DataPageDataTypeCategoryStrings.Sequencing;
     case DataPageDataType.CRISPR_Achilles_Broad:
     case DataPageDataType.CRISPR_Score_Sanger:
@@ -222,7 +228,6 @@ export function getDataPageDataTypeColorCategoryString(
     case DataPageDataType.Methylation_CCLE:
       return DataPageDataTypeCategoryStrings.Methylation;
     case DataPageDataType.Uncategorized_miRNA_CCLE:
-    case DataPageDataType.Uncategorized_ATACSeq_Broad:
       return DataPageDataTypeCategoryStrings.Uncategorized;
     default:
       throw new Error(`Cannot map datatype ${datatype} to color category`);

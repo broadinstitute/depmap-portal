@@ -6,7 +6,7 @@ authors = ["Jessica Cheng <jcheng@broadinstitute.org>"]
 packages = [{include = "breadbox"}]
 
 [tool.poetry.dependencies]
-python = "^3.9"
+python = ">3.9,<3.10"
 fastapi = "0.111.0"
 pandas = "^1.5.1"
 h5py = "^3.5.0"
