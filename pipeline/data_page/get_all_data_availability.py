@@ -376,6 +376,7 @@ def get_long_reads_summary(gcloud_storage_client, depmap_long_reads_gcloud_loc):
     prefix = depmap_long_reads_gcloud_loc["prefix"]
     file_names = depmap_long_reads_gcloud_loc["file_names"]
 
+    bucket = gcloud_storage_client.bucket(bucket_name)
     unique_model_ids = set()
 
     for file_name in file_names:
@@ -388,7 +389,7 @@ def get_long_reads_summary(gcloud_storage_client, depmap_long_reads_gcloud_loc):
 
     print(f"Length of unique_model_ids: {len(unique_model_ids)}")
 
-    # Note: unique_achids is a set, so we need to convert it to a list because of a breaking change between pandas 1.4.3 and 1.5.3 regarding using sets as DataFrame indices.
+    # Note: Converting unique_model_ids to a list due to a breaking change between pandas 1.4.3 and 1.5.3 regarding using sets as DataFrame indices.
     # Since pandas 1.5.3, using a set as an index raises a ValueError.
     long_reads_summary = pd.DataFrame(
         index=list(unique_model_ids), columns=["Sequencing_Long_Reads"], data=True
