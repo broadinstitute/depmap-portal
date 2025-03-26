@@ -1,7 +1,7 @@
 rule create_biomarker_matrix_contexts: 
     inputs: 
         subtype_context_taiga_id={'type': 'subtype_context'},
-        make_biomarker_matrix_contexts=fileref('scripts/make_biomarker_matrix_contexts.py'),
+        script=fileref('scripts/make_biomarker_matrix_contexts.py'),
     outputs: {
       'type': 'context-matrix',
       'hdf5_filename': {"$filename": "contexts.hdf5"},
@@ -14,6 +14,7 @@ rule create_biomarker_matrix_contexts:
     }
     run """
         python \
+          {{ inputs.script.filename }} \
           {{ inputs.subtype_context_taiga_id.dataset_id }} \
           temp-out.hdf5 \
           out.csv \
