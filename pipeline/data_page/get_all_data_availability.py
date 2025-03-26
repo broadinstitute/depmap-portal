@@ -374,7 +374,7 @@ def get_long_reads_summary(gcloud_storage_client, depmap_long_reads_gcloud_loc):
 
     bucket_name = depmap_long_reads_gcloud_loc["bucket_name"]
     prefix = depmap_long_reads_gcloud_loc["prefix"]
-    file_names = depmap_long_reads_gcloud_loc["file_names"]
+    file_names = depmap_long_reads_gcloud_loc["file_names"].replace(" ", "").split(",")
 
     bucket = gcloud_storage_client.bucket(bucket_name)
     unique_model_ids = set()
