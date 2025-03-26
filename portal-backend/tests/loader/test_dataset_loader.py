@@ -35,9 +35,9 @@ def test_load_row_col_all_nan(empty_db_mock_downloads):
 
     with transaction(empty_db_mock_downloads):
         load_hgnc_genes(os.path.join(loader_data_dir, "gene/hgnc-database-1a29.1.csv"))
-        # load_cell_lines_metadata(
-        #     os.path.join(loader_data_dir, "cell_line/cell_line_metadata.csv")
-        # )
+        load_cell_lines_metadata(
+            os.path.join(loader_data_dir, "cell_line/cell_line_metadata.csv")
+        )
         load_sample_cell_lines()
         from depmap.enums import DataTypeEnum
 
@@ -58,7 +58,7 @@ def test_load_row_col_all_nan(empty_db_mock_downloads):
     all_nan_gene = Gene.get_by_label(
         "F8A1"
     )  # present in the matrix, but not added to row index because row is nan
-    all_nan_cell_line = DepmapModel.get_by_name(
+    all_nan_cell_line = CellLine.get_by_name(
         "COLO679_SKIN"
     )  # present in the matrix, but not added to col index because col is nan
 
