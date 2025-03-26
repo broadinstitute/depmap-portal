@@ -52,7 +52,15 @@ rule get_all_data_availability:
                 ('gdsc_drug_taiga_id', 'gdsc_drug_taiga_id'), 
                 ('rppa_taiga_id', 'raw-rppa-matrix'), 
                 ('ms_ccle_taiga_id', 'proteomics-raw'), 
-                ('sanger_methylation_taiga_id', 'sanger_methylation_taiga_id'), ('methylation_ccle_taiga_id', 'biomarker-correctly-transposed'), ('ccle_mirna_taiga_id', 'ccle_mirna_taiga_id'), ('ataq_seq_taiga_id', 'ataq_seq_taiga_id'), ('olink_taiga_id', 'olink_taiga_id'), ('sanger_proteomics_taiga_id', 'sanger-proteomics'), ('depmap_paralogs_taiga_id', 'depmap_paralogs_taiga_id')]:
+                ('sanger_methylation_taiga_id', 'sanger_methylation_taiga_id'), 
+                ('methylation_ccle_taiga_id', 'biomarker-correctly-transposed'), 
+                ('ccle_mirna_taiga_id', 'ccle_mirna_taiga_id'), 
+                ('ataq_seq_taiga_id', 'ataq_seq_taiga_id'), 
+                ('olink_taiga_id', 'olink_taiga_id'), 
+                ('sanger_proteomics_taiga_id', 'sanger-proteomics'), 
+                ('depmap_paralogs_taiga_id', 'depmap_paralogs_taiga_id'),
+                ('sequencing_atacseq_broad_taiga_id', 'sequencing_atacseq_broad_taiga_id')
+            ]:
             artifact = by_type.get(type_name)
             transformed[dest_name] = [ artifact ] if artifact is not None else []
 

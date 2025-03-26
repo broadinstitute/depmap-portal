@@ -333,7 +333,7 @@ def get_atac_seq_broad_summary(tc, atac_seq_broad_taiga_id):
 
     atac_seq_broad_summary = (
         atac_seq_broad[["ModelID"]]
-        .assign(Uncategorized_ATACSeq_Broad=True)
+        .assign(Sequencing_ATACSeq_Broad=True)
         .drop_duplicates()
         .set_index("ModelID")
     )

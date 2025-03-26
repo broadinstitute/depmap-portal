@@ -27,6 +27,7 @@ DATA_ORDER = [
     "Sequencing_WES_Sanger",
     "Sequencing_WGS_Broad",
     "Sequencing_RNA_Broad",
+    "Sequencing_ATACSeq_Broad",
     "Drug_CTD_Broad",
     "Drug_Repurposing_Broad",
     "Drug_GDSC_Sanger",
@@ -38,7 +39,6 @@ DATA_ORDER = [
     "Methylation_Sanger",
     "Methylation_CCLE",
     "Uncategorized_miRNA_CCLE",
-    "Uncategorized_ATACSeq_Broad",
 ]
 
 
@@ -97,6 +97,7 @@ def _get_data_type_url_mapping(data_types: List[str]):
         "Sequencing_WES_Sanger": None,
         "Sequencing_WGS_Broad": None,
         "Sequencing_RNA_Broad": None,
+        "Sequencing_ATACSeq_Broad": None,
         "Drug_CTD_Broad": _get_dataset_url(DependencyEnum.CTRP_AUC.name),
         "Drug_Repurposing_Broad": _get_dataset_url(
             DependencyEnum.Rep_all_single_pt.name
@@ -118,7 +119,6 @@ def _get_data_type_url_mapping(data_types: List[str]):
             BiomarkerEnum.rrbs.name, isDependencyDataset=False
         ),
         "Uncategorized_miRNA_CCLE": None,
-        "Uncategorized_ATACSeq_Broad": None,
     }
 
     current_env_mapping = {
