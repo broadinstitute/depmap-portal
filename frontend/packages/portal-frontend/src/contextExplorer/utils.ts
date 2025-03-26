@@ -42,13 +42,17 @@ export const DATATYPE_TOOLTIP_TEXT = new Map<string, string>([
     "Cell lines that have been screened with at least one of the Avana, Humagne, or KY libraries.",
   ],
   [
-    DataTypeStrings.PRISMOncRef.toString(),
+    DataTypeStrings.PRISM.toString(),
     "Cell lines that have been screened in at least one of PRISM OncRef's screens.",
   ],
-  [
-    DataTypeStrings.PRISMRepurposing.toString(),
-    "Cell lines that have been screened in at least one of PRISM Repurposing's screens.",
-  ],
+  // [
+  //   DataTypeStrings.PRISMOncRef.toString(),
+  //   "Cell lines that have been screened in at least one of PRISM OncRef's screens.",
+  // ],
+  // [
+  //   DataTypeStrings.PRISMRepurposing.toString(),
+  //   "Cell lines that have been screened in at least one of PRISM Repurposing's screens.",
+  // ],
   [
     DataTypeStrings.RNASeq.toString(),
     "Cell lines that have been profiled in RNA-seq.",
@@ -632,10 +636,12 @@ export function getNewContextUrl(newCode: string) {
   const currentUrl = new URL(currentLocation);
 
   const currentContext = currentUrl.searchParams.get("context");
-  const newUrl = currentLocation.replace(
-    `&context=${currentContext}`,
-    `&context=${newCode}`
-  );
+  const newUrl = currentContext
+    ? currentLocation.replace(
+        `&context=${encodeURIComponent(currentContext)}`,
+        `&context=${encodeURIComponent(newCode)}`
+      )
+    : currentLocation.concat(`&context=${encodeURIComponent(newCode)}`);
 
   return newUrl;
 }
