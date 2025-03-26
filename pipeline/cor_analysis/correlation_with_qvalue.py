@@ -21,7 +21,9 @@ class Thresholds:
 
 def _reindex_matrix(mat, given_ids):
     new_mat = mat.loc[:, mat.columns[[x is not None for x in given_ids]]].copy()
-    new_mat.columns = given_ids
+    new_given_ids = [x for x in given_ids if x is not None]
+    assert len(new_mat.columns) == len(new_given_ids)
+    new_mat.columns = new_given_ids
     return new_mat
 
 
