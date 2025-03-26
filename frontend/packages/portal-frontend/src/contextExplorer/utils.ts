@@ -42,17 +42,13 @@ export const DATATYPE_TOOLTIP_TEXT = new Map<string, string>([
     "Cell lines that have been screened with at least one of the Avana, Humagne, or KY libraries.",
   ],
   [
-    DataTypeStrings.PRISM.toString(),
+    DataTypeStrings.PRISMOncRef.toString(),
     "Cell lines that have been screened in at least one of PRISM OncRef's screens.",
   ],
-  // [
-  //   DataTypeStrings.PRISMOncRef.toString(),
-  //   "Cell lines that have been screened in at least one of PRISM OncRef's screens.",
-  // ],
-  // [
-  //   DataTypeStrings.PRISMRepurposing.toString(),
-  //   "Cell lines that have been screened in at least one of PRISM Repurposing's screens.",
-  // ],
+  [
+    DataTypeStrings.PRISMRepurposing.toString(),
+    "Cell lines that have been screened in at least one of PRISM Repurposing's screens.",
+  ],
   [
     DataTypeStrings.RNASeq.toString(),
     "Cell lines that have been profiled in RNA-seq.",
