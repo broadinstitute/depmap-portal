@@ -44,6 +44,7 @@ def test_get_data_availability(populated_db):
             "Sequencing_WGS_Broad",
             "Sequencing_RNA_Broad",
             "Sequencing_ATACSeq_Broad",
+            "Sequencing_Long_Reads",
             "Drug_CTD_Broad",
             "Drug_Repurposing_Broad",
             "Drug_GDSC_Sanger",

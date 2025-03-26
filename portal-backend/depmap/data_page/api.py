@@ -28,6 +28,7 @@ DATA_ORDER = [
     "Sequencing_WGS_Broad",
     "Sequencing_RNA_Broad",
     "Sequencing_ATACSeq_Broad",
+    "Sequencing_Long_Reads",
     "Drug_CTD_Broad",
     "Drug_Repurposing_Broad",
     "Drug_GDSC_Sanger",
@@ -98,6 +99,7 @@ def _get_data_type_url_mapping(data_types: List[str]):
         "Sequencing_WGS_Broad": None,
         "Sequencing_RNA_Broad": None,
         "Sequencing_ATACSeq_Broad": None,
+        "Sequencing_Long_Reads": None,
         "Drug_CTD_Broad": _get_dataset_url(DependencyEnum.CTRP_AUC.name),
         "Drug_Repurposing_Broad": _get_dataset_url(
             DependencyEnum.Rep_all_single_pt.name
