@@ -31,7 +31,7 @@ function buildGlobalSearchDropdown(urlRoot, id) {
       { value: "cell_line_alias", label: "Cell Line Alias" },
       { value: "compound_target", label: "Compound Target" },
       { value: "download_file", label: "Download File" },
-      { value: "context_explorer", label: "Context" },
+      { value: "subtype_context", label: "Subtype Context" },
     ],
 
     maxItems: 1, // unfortunately this forces it into a grazy bezeled dropdown
