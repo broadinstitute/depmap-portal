@@ -31,7 +31,7 @@ def test_get_data_availability(populated_db):
             "all_depmap_ids",
         ]
 
-        assert len(data_availablity["values"]) == 22
+        assert len(data_availablity["values"]) == 23
         assert data_availablity["data_types"] == [
             "CRISPR_Achilles_Broad",
             "CRISPR_Score_Sanger",

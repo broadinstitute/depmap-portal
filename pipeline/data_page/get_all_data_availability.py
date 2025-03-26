@@ -374,11 +374,10 @@ def get_long_reads_summary(gcloud_storage_client, depmap_long_reads_gcloud_loc):
 
     bucket_name = depmap_long_reads_gcloud_loc["bucket_name"]
     prefix = depmap_long_reads_gcloud_loc["prefix"]
-    file_names = depmap_long_reads_gcloud_loc["file_names"]
+    file_names = depmap_long_reads_gcloud_loc["file_names"].replace(" ", "").split(",")
 
-    print(f"bucket_name: {bucket_name}")
-    print(f"prefix: {prefix}")
-    print(f"file_names: {file_names}")
+    # We have at least one file to process
+    assert len(file_names) > 0, "No file names provided in gcloud location"
 
     bucket = gcloud_storage_client.bucket(bucket_name)
     unique_model_ids = set()
@@ -389,15 +388,22 @@ def get_long_reads_summary(gcloud_storage_client, depmap_long_reads_gcloud_loc):
         blob = bucket.blob(blob_name)
         content = blob.download_as_string()
         df = pd.read_csv(pd.io.common.BytesIO(content), usecols=[0])
+        # Currently, the column name is "ACHID". Could be changed in the future to "ModelID" or something else?
+        assert "ACHID" in df.columns, f"Column 'ACHID' not found in file {file_name}"
         unique_model_ids.update(df["ACHID"].unique())
 
+    assert len(unique_model_ids) > 0, "No model IDs found in the provided files"
     print(f"Length of unique_model_ids: {len(unique_model_ids)}")
 
-    # Note: unique_achids is a set, so we need to convert it to a list because of a breaking change between pandas 1.4.3 and 1.5.3 regarding using sets as DataFrame indices.
+    # Note: Converting unique_model_ids to a list due to a breaking change between pandas 1.4.3 and 1.5.3 regarding using sets as DataFrame indices.
     # Since pandas 1.5.3, using a set as an index raises a ValueError.
     long_reads_summary = pd.DataFrame(
         index=list(unique_model_ids), columns=["Sequencing_Long_Reads"], data=True
     )
+
+    assert len(long_reads_summary) == len(
+        unique_model_ids
+    ), "Number of rows in DataFrame doesn't match number of unique model IDs"
 
     return long_reads_summary
 
