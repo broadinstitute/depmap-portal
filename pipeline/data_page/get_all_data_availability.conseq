@@ -4,10 +4,9 @@
 # won't manifest. Then, use the type field on each artifact to map it to the name the script is expecting
 rule get_all_data_availability:
     inputs:
-        artifacts=all {"type" ~ "depmap_data_taiga_id|depmap_oncref_taiga_id|rna_merged_version_taiga_id|rnai_drive_taiga_id|repurposing_matrix_taiga_id|ctd2-drug-taiga-id|gdsc_drug_taiga_id|raw-rppa-matrix|proteomics-raw|sanger_methylation_taiga_id|biomarker-correctly-transposed|ccle_mirna_taiga_id|ataq_seq_taiga_id|olink_taiga_id|sanger-proteomics|depmap_paralogs_taiga_id"},
+        artifacts=all {"type" ~ "depmap_data_taiga_id|depmap_oncref_taiga_id|rna_merged_version_taiga_id|rnai_drive_taiga_id|repurposing_matrix_taiga_id|ctd2-drug-taiga-id|gdsc_drug_taiga_id|raw-rppa-matrix|proteomics-raw|sanger_methylation_taiga_id|biomarker-correctly-transposed|ccle_mirna_taiga_id|ataq_seq_taiga_id|olink_taiga_id|sanger-proteomics|depmap_paralogs_taiga_id|depmap_long_reads_gcloud_loc"},
         rnai_broad_only={"type": "raw-dep-matrix", "label": "RNAi_Ach"},
         crispr_screen_sequence_map={"type": "crispr-screen-sequence-map"},
-        depmap_long_reads_gcloud_loc={"type": "depmap_long_reads_gcloud_loc"}, # Adding it separately since it's not a taiga id but a gcloud location
         script=fileref("get_all_data_availability.py"),
     outputs:
         {"type": "all-data-avail", "filename": { "$filename": "all-data-avail.csv"} }
@@ -21,7 +20,6 @@ rule get_all_data_availability:
             # handle the ones that couldn't uniquely be identified by type specially
             "rnai_broad_only": [{{ inputs.rnai_broad_only }}],
             "crispr_screen_sequence_map": [ {{ inputs.crispr_screen_sequence_map }} ],
-            "depmap_long_reads_gcloud_loc": [ {{ inputs.depmap_long_reads_gcloud_loc }} ],
         }
 
         by_type = { artifact['type'] : artifact for artifact in artifacts }
@@ -45,7 +43,8 @@ rule get_all_data_availability:
                 ('olink_taiga_id', 'olink_taiga_id'), 
                 ('sanger_proteomics_taiga_id', 'sanger-proteomics'), 
                 ('depmap_paralogs_taiga_id', 'depmap_paralogs_taiga_id'),
-                ('sequencing_atacseq_broad_taiga_id', 'sequencing_atacseq_broad_taiga_id')
+                ('sequencing_atacseq_broad_taiga_id', 'sequencing_atacseq_broad_taiga_id'),
+                ('depmap_long_reads_gcloud_loc', 'depmap_long_reads_gcloud_loc')
             ]:
             artifact = by_type.get(type_name)
             transformed[dest_name] = [ artifact ] if artifact is not None else []
