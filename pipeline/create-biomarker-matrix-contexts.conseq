@@ -8,7 +8,7 @@ rule create_biomarker_matrix_contexts:
       'csv_filename': {"$filename": "out.csv"},
     },
     { 'type': 'biomarker-matrix',
-      'source_dataset_id': '{{inputs.in.sample_info_id}}',
+      'source_dataset_id': '{{inputs.sample_info_dataset_id}}',
       'category': 'context',
       'filename': {'$filename': 'contexts.hdf5'},
     }
