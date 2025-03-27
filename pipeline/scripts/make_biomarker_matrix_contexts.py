@@ -1,5 +1,5 @@
 import argparse
-from pipeline.scripts.hdf5_utils import write_hdf5
+from hdf5_utils import write_hdf5
 
 
 def main(subtype_context_taiga_id, out_hdf5_filename, out_filename):
