@@ -8,8 +8,10 @@ def main(subtype_context_taiga_id, out_hdf5_filename, out_filename):
     tc = create_taiga_client_v3()
     one_hot_encoded_context_matrix = tc.get(subtype_context_taiga_id)
 
+    bool_matrix = one_hot_encoded_context_matrix.astype(bool)
+
     write_hdf5(one_hot_encoded_context_matrix.transpose(), out_hdf5_filename)
-    one_hot_encoded_context_matrix.to_csv(out_filename)
+    bool_matrix.to_csv(out_filename)
 
 
 if __name__ == "__main__":
