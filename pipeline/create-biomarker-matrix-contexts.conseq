@@ -13,10 +13,4 @@ rule create_biomarker_matrix_contexts:
       'category': 'context',
       'filename': {'$filename': 'contexts.hdf5'},
     }
-    run """
-        python \
-          {{ inputs.script.filename }} \
-          {{ inputs.subtype_context_taiga_id.dataset_id }} \
-          temp-out.hdf5 \
-          out.csv \
-        """
+    run "python {{ inputs.script.filename }} {{ inputs.subtype_context_taiga_id.dataset_id }} temp-out.hdf5 out.csv"
