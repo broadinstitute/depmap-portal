@@ -531,10 +531,6 @@ def load_populated_db_data():
                 "matrix_file_name_root": "dataset/chronos_combined",
                 "taiga_id": "small-chronos-combined-e82b.2/chronos_combined_score",
             },
-            DependencyDataset.DependencyEnum.GeCKO: {
-                "matrix_file_name_root": "dataset/gecko",
-                "taiga_id": "small-gecko-aff0.1",
-            },
             DependencyDataset.DependencyEnum.RNAi_Ach: {
                 "matrix_file_name_root": "dataset/rnai_ach",
                 "taiga_id": "small-rnai-d0ad.1",

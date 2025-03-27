@@ -26,10 +26,6 @@ additional_dev_metadata = {
         "matrix_file_name_root": "dataset/avana",
         "taiga_id": "placeholder-taiga-id.1",
     },
-    DependencyEnum.GeCKO: {
-        "matrix_file_name_root": "dataset/gecko",
-        "taiga_id": "small-gecko-aff0.1",  # has virtual to small-gecko-virtual-dataset-4fe6.1. gecko has versions and downloads virtual, db canonical
-    },
     DependencyEnum.RNAi_Ach: {
         "matrix_file_name_root": "dataset/rnai_ach",
         "taiga_id": "small-rnai-d0ad.1",

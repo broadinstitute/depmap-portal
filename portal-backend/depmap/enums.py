@@ -29,9 +29,6 @@ class DependencyEnum(DatasetEnum):
 
     OrganoidGeneEffect = "OrganoidGeneEffect"
 
-    # GeCKO is a stray crispr dataset, of a different crispr library (not Avana) run on a few cell lines
-    GeCKO = "GeCKO"
-
     # RNAi
     RNAi_merged = "RNAi_merged"
     RNAi_Ach = "RNAi_Ach"

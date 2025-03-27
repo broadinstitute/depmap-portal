@@ -18,13 +18,6 @@ add-if-missing {
 }
 
 add-if-missing {
-  "type": "raw-dep-matrix",
-  "dataset_id": "gecko-public-tentative-18q1-4213.1/gene_effect",
-  "label": "GeCKO",
-  "rows": "cell-lines"
-}
-
-add-if-missing {
   'type': 'raw-rppa-matrix',
   'matrix_dataset_id' : 'depmap-rppa-1b43.3/CCLE_RPPA_20181003',
   'mapping_dataset_id' : 'depmap-rppa-1b43.3/CCLE_RPPA_Ab_info_20181226'

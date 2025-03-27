@@ -1075,7 +1075,6 @@ def load_sample_data(
             DependencyEnum.Chronos_Achilles,
             DependencyEnum.Chronos_Score,
             DependencyEnum.Sanger_CRISPR,
-            DependencyEnum.GeCKO,
             DependencyEnum.RNAi_Ach,
             DependencyEnum.RNAi_Nov_DEM,
             DependencyEnum.RNAi_merged,
@@ -1337,7 +1336,6 @@ def load_sample_data(
         # Associations
         association_deps = [
             ("Chronos_Combined", DependencyEnum.Chronos_Combined.name),
-            ("GeCKO", DependencyEnum.GeCKO.name),
             ("RNAi_Ach", DependencyEnum.RNAi_Ach.name),
             ("RNAi_Nov_DEM", DependencyEnum.RNAi_Nov_DEM.name),
             ("RNAi_merged", DependencyEnum.RNAi_merged.name),
