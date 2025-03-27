@@ -1,15 +1,16 @@
 rule create_biomarker_matrix_contexts: 
     inputs:
-        sample_info={"type": "sample_info_dataset_id"},
+        in={'type': 'cell_line_metadata'},
         subtype_context_taiga_id={'type': 'subtype_context_matrix'},
         script=fileref('scripts/make_biomarker_matrix_contexts.py'),
     outputs: {
       'type': 'context-matrix',
       'hdf5_filename': {"$filename": "contexts.hdf5"},
       'csv_filename': {"$filename": "out.csv"},
+      'dataset_id': '{{inputs.in.sample_info_id}}',
     },
     { 'type': 'biomarker-matrix',
-      'source_dataset_id': '{{inputs.sample_info.dataset_id}}',
+      'source_dataset_id': '{{inputs.in.sample_info_id}}',
       'category': 'context',
       'filename': {'$filename': 'contexts.hdf5'},
     }
