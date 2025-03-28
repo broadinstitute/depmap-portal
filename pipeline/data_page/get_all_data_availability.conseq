@@ -43,7 +43,6 @@ rule get_all_data_availability:
                 ('olink_taiga_id', 'olink_taiga_id'), 
                 ('sanger_proteomics_taiga_id', 'sanger-proteomics'), 
                 ('depmap_paralogs_taiga_id', 'depmap_paralogs_taiga_id'),
-                ('sequencing_atacseq_broad_taiga_id', 'sequencing_atacseq_broad_taiga_id'),
                 ('depmap_long_reads_gcloud_loc', 'depmap_long_reads_gcloud_loc')
             ]:
             artifact = by_type.get(type_name)
