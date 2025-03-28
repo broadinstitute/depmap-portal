@@ -554,6 +554,7 @@ def main(
     assert omics_summary.index.is_unique
 
     # Long Reads
+    long_reads_summary = None
     if len(depmap_long_reads_gcloud_loc) > 0:
         long_reads_summary = get_long_reads_summary(
             gcloud_storage_client=gcloud_storage_client,
