@@ -163,6 +163,10 @@ class FeatureFlags:
 
     @property
     def private_datasets(self):
+        return False
+    
+    @property
+    def dataset_manager(self):
         return self.is_prerelease_env()
 
     @property
