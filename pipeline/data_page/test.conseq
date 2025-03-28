@@ -85,4 +85,11 @@ add-if-missing {
   "dataset_id": "sanger-proteomics-74a3.3/protein_matrix_avg"
 }
 
+add-if-missing {
+    "type": "depmap_long_reads_gcloud_loc",
+    "bucket_name": "depmap-dmc-downloads",
+    "prefix": "25q1-long-read-data",
+    "file_names": "df_gene_counts_achXgene.csv, df_gene_tpm_achXgene.csv, df_isoform_counts_achXtranscript.csv, df_isoform_tpm_achXtranscript.csv"
+}
+
 include "data_page/get_all_data_availability.conseq"
