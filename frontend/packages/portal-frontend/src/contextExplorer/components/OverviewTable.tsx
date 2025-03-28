@@ -138,7 +138,7 @@ function OverviewTable(props: OverviewTableProps) {
       disableFilters: true,
     },
     {
-      accessor: "repurposing",
+      accessor: "prismRepurposing",
       Header: "PRISM Repurposing",
       maxWidth: 1000,
       minWidth: 75,
@@ -148,7 +148,7 @@ function OverviewTable(props: OverviewTableProps) {
 
   if (enabledFeatures.context_explorer_prerelease_datasets) {
     columns.push({
-      accessor: "oncref",
+      accessor: "prismOncRef",
       Header: "PRISM OncRef",
       maxWidth: 1000,
       minWidth: 75,
