@@ -1,3 +1,5 @@
+from dataclasses import dataclass
+
 from flask.globals import current_app
 import pandas as pd
 import depmap.celfie.utils as celfie_utils
@@ -33,7 +35,7 @@ from depmap.gene.models import Gene
 from depmap.compound.models import Compound, CompoundExperiment
 from depmap.dataset.models import DependencyDataset, BiomarkerDataset
 from depmap.metmap.models import MetMap500
-from depmap.extensions import cansar
+from depmap.extensions import cansar, breadbox
 import requests
 from typing import Optional, List, Tuple
 from mypy_extensions import TypedDict
@@ -57,6 +59,12 @@ Returns a json response which contains the following:
 # erlotinib:PLX-4032 (2:1 mol/mol) which have slashes and colons.
 
 
+@dataclass
+class RenderedTile:
+    html: str
+    js_callback: str
+
+
 @blueprint.route("/<subject_type>/<tile_name>/<path:identifier>")
 @cache_without_user_permissions()
 def render_tile(subject_type, tile_name, identifier):
@@ -65,7 +73,7 @@ def render_tile(subject_type, tile_name, identifier):
         gene = Gene.query.filter_by(label=identifier).one_or_none()
         if gene is None:
             abort(404)
-        html = render_gene_tile(tile_name, gene)
+        rendered_tile = render_gene_tile(tile_name, gene)
     elif subject_type == "compound":
         compound = Compound.query.filter_by(label=identifier).one_or_none()
         if compound is None:
@@ -79,7 +87,7 @@ def render_tile(subject_type, tile_name, identifier):
             for x in compound_experiment_and_datasets
             if not x[1].is_ic50 and not x[1].is_dose_replicate
         ]  # filter for non ic50 or dose replicate datasets
-        html = render_compound_tile(
+        rendered_tile = render_compound_tile(
             tile_name, compound, compound_experiment_and_datasets, args_dict
         )
     elif subject_type == "cell_line":
@@ -87,26 +95,22 @@ def render_tile(subject_type, tile_name, identifier):
         if cell_line is None:
             abort(404)
 
-        html = render_cell_line_tile(tile_name, cell_line)
+        rendered_tile = render_cell_line_tile(tile_name, cell_line)
     else:
         abort(400)
+        # add a raise here because the linter doesn't realize the abort will always raise
+        # and thinks it's possible that rendered_tile will be unassigned after leaving this block
+        raise Exception("the abort will prevent this from executing")
 
-    js_callback = '(function(containerId){$("#"+containerId+" .popover-selector").popover()})'  # initialize js callback function
-    # Decription tile makes additional ajax call to grab info
-    if tile_name == GeneTileEnum.description.value and subject_type == "gene":
-        entrez_id = Gene.query.filter_by(label=identifier).one_or_none().entrez_id
-        js_callback = (
-            '(function() {getAbout("' + str(entrez_id) + '")})'
-        )  # References function in about.js.
-
-    # MetMap tile uses d3.js to render a plot
-    if tile_name == CellLineTileEnum.metmap.value and subject_type == "cell_line":
-        js_callback = render_template(
-            "tiles/metmap-petal-plot.js", depmap_id=identifier
-        )
-
-    # if tile_name == CellLineTileEnum.pref_dep.value and subject_type == "cell_line":
-    # js_callback = render_template("tiles/pref-dep-plot.js", depmap_id=identifier)
+    if isinstance(rendered_tile, RenderedTile):
+        html = rendered_tile.html
+        js_callback = rendered_tile.js_callback
+    else:
+        # fall back to the original behavior: render methods return html and we use a hardcoded js snippet for all tiles
+        # that didn't provide one
+        assert isinstance(rendered_tile, str)
+        html = rendered_tile
+        js_callback = '(function(containerId){$("#"+containerId+" .popover-selector").popover()})'  # initialize js callback function
 
     # If html is just whitespace, coerce whitespace to empty string
     if all(s in (" ", "\n") for s in html):
@@ -122,8 +126,8 @@ def render_cell_line_tile(tile_name: str, cell_line: DepmapModel):
     if tile_name not in tiles:
         abort(400)
     tile_html_fn = tiles[tile_name]
-    html = tile_html_fn(cell_line)
-    return html
+    rendered_tile = tile_html_fn(cell_line)
+    return rendered_tile
 
 
 def get_cell_line_description_html(model: DepmapModel):
@@ -166,9 +170,15 @@ def get_cell_line_metmap_html(cell_line: DepmapModel):
     metmap_models = MetMap500.get_all_by_depmap_id(cell_line.model_id)
     metmap_data = [model.serialize for model in metmap_models]
 
-    return render_template(
+    html = render_template(
         "tiles/metmap.html", depmap_id=cell_line.model_id, metmap_data=metmap_data
     )
+    # MetMap tile uses d3.js to render a plot
+    js_callback = render_template(
+        "tiles/metmap-petal-plot.js", depmap_id=cell_line.model_id
+    )
+
+    return RenderedTile(html, js_callback)
 
 
 def render_gene_tile(tile_name, gene):
@@ -189,8 +199,8 @@ def render_gene_tile(tile_name, gene):
     if tile_name not in tiles:
         abort(400)
     tile_html = tiles[tile_name]
-    html = tile_html(gene)
-    return html
+    rendered_tile = tile_html(gene)
+    return rendered_tile
 
 
 def render_compound_tile(
@@ -208,8 +218,8 @@ def render_compound_tile(
     if tile_name not in tiles:
         abort(400)
     tile_html = tiles[tile_name]
-    html = tile_html(compound, cpd_exp_and_datasets, query_params_dict)
-    return html
+    rendered_tile = tile_html(compound, cpd_exp_and_datasets, query_params_dict)
+    return rendered_tile
 
 
 # TODO: Maybe put this logic above to avoid multiple calls of same datasets in multiple tiles
@@ -364,38 +374,17 @@ def get_targeting_compounds_html(gene):
     )
 
 
+import json
+
+
 def get_enrichment_html(
     entity, compound_experiment_and_datasets=None, query_params_dict={}
 ):
-    entity_type = entity.get_entity_type()
-    if entity_type == "gene":
-        crispr_dataset = get_dependency_dataset_for_entity(
-            DependencyDataset.get_dataset_by_data_type_priority(
-                DependencyDataset.DataTypeEnum.crispr
-            ).name,
-            entity.entity_id,
-        )
-
-        rnai_dataset = get_dependency_dataset_for_entity(
-            DependencyDataset.get_dataset_by_data_type_priority(
-                DependencyDataset.DataTypeEnum.rnai
-            ).name,
-            entity.entity_id,
-        )
-
-        enrichment_boxes = format_dep_dist_and_enrichment_boxes(
-            entity, crispr_dataset, rnai_dataset
-        )[1]
-    elif entity_type == "compound":
-        best_ce_and_d = determine_compound_experiment_and_dataset(
-            compound_experiment_and_datasets
-        )
-        enrichment_boxes = format_enrichment_boxes(best_ce_and_d)
-
-    return render_template(
-        "tiles/selectivity.html",
-        enrichment_boxes=enrichment_boxes,
-        is_gene_entity_type=entity_type == "gene",
+    return RenderedTile(
+        "<div>get_enrichment_html is stubbed out</div>",
+        '(function() {console.log("get_enrichment_html js render", "'
+        + json.dumps([entity.entity_id])
+        + '")})',
     )
 
 
@@ -500,7 +489,7 @@ def get_omics_html(gene):
 def get_description_html(entity, cpd_exp_and_datasets=None, query_params_dict={}):
     entity_type = entity.type
     if entity_type == "gene":
-        return render_template(
+        html = render_template(
             "tiles/description.html",
             about={
                 "entrez_id": entity.entrez_id,
@@ -511,6 +500,12 @@ def get_description_html(entity, cpd_exp_and_datasets=None, query_params_dict={}
                 "hngc_id": entity.hgnc_id,
             },
         )
+
+        js_callback = (
+            '(function() {getAbout("' + str(entity.entrez_id) + '")})'
+        )  # References function in about.js.
+        return RenderedTile(html, js_callback)
+
     elif entity_type == "compound":
         return render_template(
             "tiles/compound_description.html", about=format_about(entity),
@@ -566,6 +561,9 @@ def get_confidence_html(gene):
     return render_template("tiles/confidence.html", confidence=confidence)
 
 
+from oauthlib.oauth2.rfc6749.errors import UnauthorizedClientError
+
+
 def get_tractability_html(gene):
     uniprot_ids = gene.get_uniprot_ids()
 
@@ -575,6 +573,9 @@ def get_tractability_html(gene):
         print(
             "Got an SSLError because cansar site cert expired. Check if this continues in future!"
         )
+        proteins = None
+    except UnauthorizedClientError as e:
+        print("Got unauthorized client error trying to fetch from CanSAR. Ignoring")
         proteins = None
     return render_template("tiles/tractability.html", proteins=proteins)
 
