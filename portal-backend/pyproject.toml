@@ -7,7 +7,7 @@ license = "BSD-3-Clause"
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.9,<3.10"
+python = "^3.9"
 Flask = "^1.1.4"
 #wheel==0.37.1
 # below is needed because flask_restplus does not work with later versions
