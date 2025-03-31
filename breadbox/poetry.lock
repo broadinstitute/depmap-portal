@@ -3021,6 +3021,7 @@ version = "0.2.1"
 description = ""
 optional = false
 python-versions = ">=3.9,<4.0"
+groups = ["main"]
 files = [
     {file = "pypatch_and_run-0.2.1-py3-none-any.whl", hash = "sha256:6a9e27137712d0ad6868ea386a531eb15a11ed4f38aad612bad0d08dd7b12464"},
     {file = "pypatch_and_run-0.2.1.tar.gz", hash = "sha256:ebde292c6107af55fc515cb73e92d9d5e4fa25bd9997507aec57b5fd399248c2"},
@@ -4353,4 +4354,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "jaraco.test", "more
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.9"
-content-hash = "0a5b88716b38e558ce7082db9cf9fcd7547a3644fa28d40e25bc2cdf24742bf2"
+content-hash = "4ce0ee4b73241196cd2e340ecb173f4f899b22c41eaa0b425f7e80b3bb448635"
