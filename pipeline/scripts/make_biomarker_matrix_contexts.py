@@ -34,7 +34,7 @@ def main(
 
     # Remove the MolecularSubtype columns
     no_mol_subtypes_one_hot_encoded_context_matrix = one_hot_encoded_context_matrix[
-        [unique_lineage_tree_codes]
+        unique_lineage_tree_codes
     ]
     mol_subtype_nodes = tree_df[tree_df["TreeType"] == "MolecularSubtype"]
     assert len(mol_subtype_nodes) == len(one_hot_encoded_context_matrix.columns) - len(
