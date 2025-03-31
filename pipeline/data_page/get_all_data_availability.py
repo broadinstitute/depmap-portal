@@ -414,7 +414,7 @@ def get_taiga_id(possible_id, id_key="dataset_id"):
 
 def get_gcloud_loc(possible_id):
     if len(possible_id) == 0:
-        return []
+        return None
     bucket_name = possible_id[0]["bucket_name"]
     prefix = possible_id[0]["prefix"]
     file_names = possible_id[0]["file_names"]
@@ -555,7 +555,7 @@ def main(
 
     # Long Reads
     long_reads_summary = None
-    if len(depmap_long_reads_gcloud_loc) > 0:
+    if depmap_long_reads_gcloud_loc is not None:
         long_reads_summary = get_long_reads_summary(
             gcloud_storage_client=gcloud_storage_client,
             depmap_long_reads_gcloud_loc=depmap_long_reads_gcloud_loc,
