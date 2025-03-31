@@ -12,6 +12,7 @@ from fastapi import (
     UploadFile,
     Query,
 )
+from fastapi.responses import ORJSONResponse
 from breadbox.models.dataset import Dataset
 from breadbox.models.dataset import DimensionType as DimensionTypeModel
 from breadbox.schemas.types import IdMappingInsanity
@@ -636,10 +637,11 @@ def get_dimension_type_identifiers(
         db, dim_type, data_type, show_only_dimensions_in_datasets, limit=limit,
     )
 
-    return [
+    result = [
         DimensionIdentifiers(id=id, label=label)
         for id, label in dimension_ids_and_labels.items()
     ]
+    return ORJSONResponse(result)
 
 
 @router.patch(
