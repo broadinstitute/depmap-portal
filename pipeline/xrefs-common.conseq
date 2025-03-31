@@ -93,21 +93,6 @@ add-if-missing {
 }
 
 
-
-# Sanger CRISPR data, run through Chronos
-add-if-missing {
-  "type": "raw-dep-matrix",
-  "dataset_id": "project-score-chronos-ad31.14/gene_effect",
-  "label": "Chronos_Score",
-  "rows": "cell-lines"
-}
-add-if-missing {
-  "type": "raw-dep-prob-matrix",
-  "dataset_id": "project-score-chronos-ad31.14/gene_dependency",
-  "label": "Chronos_Score",
-}
-
-
 add-if-missing {
     "type": "other-taiga-dataset",
     "category": "translocations",

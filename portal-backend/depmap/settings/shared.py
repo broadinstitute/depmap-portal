@@ -262,13 +262,6 @@ DATASET_METADATA: Dict[
         data_type=DataTypeEnum.crispr,
         priority=2,
     ),
-    DependencyEnum.Chronos_Score: DepDatasetMeta(
-        display_name="CRISPR (Project Score, Chronos)",
-        units="Gene Effect (Chronos)",
-        nominal_range=NORMALIZED_RANGE,
-        data_type=DataTypeEnum.crispr,
-        priority=3,
-    ),
     DependencyEnum.CERES_Combined: DepDatasetMeta(
         display_name="CRISPR (DepMap+Score, CERES)",
         units="Gene Effect (CERES)",

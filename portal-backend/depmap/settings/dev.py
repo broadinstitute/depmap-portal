@@ -10,10 +10,6 @@ additional_dev_metadata = {
         "matrix_file_name_root": "dataset/chronos_achilles",
         "taiga_id": "placeholder-taiga-id.1",
     },
-    DependencyEnum.Chronos_Score: {
-        "matrix_file_name_root": "dataset/chronos_score",
-        "taiga_id": "placeholder-taiga-id.1",
-    },
     DependencyEnum.CERES_Combined: {
         "matrix_file_name_root": "dataset/ceres_combined",
         "taiga_id": "small-ceres-combined-3dc6.1/ceres_combined_score",
