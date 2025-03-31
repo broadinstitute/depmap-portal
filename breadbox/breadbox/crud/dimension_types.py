@@ -305,4 +305,4 @@ def get_dimension_type_metadata_col(
         .all()
     )
     log.info(f"SQLAlchemy query (labels by ID) took {perf_counter() - start} seconds")
-    return {given_id: value for given_id, value in values_by_id_tuples}
+    return {id: value for id, value in values_by_id_tuples}
