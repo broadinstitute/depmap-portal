@@ -4,7 +4,7 @@ import PlotSpinner from "src/plot/components/PlotSpinner";
 import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
 import Heatmap from "src/plot/components/Heatmap";
 import { Button } from "react-bootstrap";
-import { ContextSummary } from "../models/types";
+import { ContextNameInfo, ContextSummary } from "../models/types";
 import DatatypeSelector from "./DatatypeSelector";
 import { saveNewContext } from "src";
 import {
@@ -13,7 +13,7 @@ import {
 } from "../utils";
 
 interface ContextExplorerPlotProps {
-  selectedContextName: string;
+  selectedContextNameInfo: ContextNameInfo;
   data: ContextSummary;
   checkedDataValues: number[][];
   checkedDatatypes: Set<string>;
@@ -29,7 +29,7 @@ function ContextExplorerPlot(props: ContextExplorerPlotProps) {
   const {
     data,
     checkedDataValues,
-    selectedContextName,
+    selectedContextNameInfo,
     checkedDatatypes,
     updateDatatypeSelection,
     topContextName,
@@ -65,15 +65,10 @@ function ContextExplorerPlot(props: ContextExplorerPlotProps) {
   }, [cellLineCountsBackwards]);
 
   const onMakeContextButtonClick = async () => {
-    // Save the context currently selected as DatasetOverlap
-    const allDepmapIds = data.all_depmap_ids.map((a) => a[1]);
-
     const context = getDataExplorerContextFromSelections(
-      selectedContextName,
+      selectedContextNameInfo,
       checkedDatatypes,
-      overlappingDepmapIds,
-      topContextName,
-      allDepmapIds
+      overlappingDepmapIds
     );
 
     saveNewContext(context);
@@ -89,7 +84,7 @@ function ContextExplorerPlot(props: ContextExplorerPlotProps) {
   return (
     <div className={styles.plotContainer}>
       <div className={styles.overviewGraphHeader}>
-        {selectedContextName === "All" ? (
+        {selectedContextNameInfo.name === "All" ? (
           <>
             <h2>
               Data Availability{" "}
@@ -107,16 +102,17 @@ function ContextExplorerPlot(props: ContextExplorerPlotProps) {
         ) : (
           <>
             <h2>
-              {selectedContextName} Data Availability{" "}
+              {selectedContextNameInfo.name} Data Availability{" "}
               {data.data_types.length > 0 && plotElement && (
                 <span>(n={totalCellLines})</span>
               )}
             </h2>
             <h4>
-              There are currently {totalCellLines} {selectedContextName} cell
-              lines, each of which is represented in one or more of the below
-              data types. Select your dataset type(s) of interest to see how
-              many {selectedContextName} lines have data available.
+              There are currently {totalCellLines}{" "}
+              {selectedContextNameInfo.name} cell lines, each of which is
+              represented in one or more of the below data types. Select your
+              dataset type(s) of interest to see how many{" "}
+              {selectedContextNameInfo.name} lines have data available.
             </h4>
           </>
         )}

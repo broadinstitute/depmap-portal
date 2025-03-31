@@ -854,7 +854,7 @@ function ContextAnalysis({
                   className={styles.deButton}
                   href={getDataExplorerUrl(
                     topContextNameInfo.name,
-                    selectedContextNameInfo.name,
+                    selectedContextNameInfo.subtype_code,
                     outgroup.value,
                     datasetId
                   )}

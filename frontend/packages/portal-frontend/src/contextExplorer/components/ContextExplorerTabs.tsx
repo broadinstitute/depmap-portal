@@ -118,7 +118,7 @@ const ContextExplorerTabs = ({
               !isLoadingInitialData && (
                 <ContextExplorerPlot
                   topContextName={topContextNameInfo.name}
-                  selectedContextName={selectedContextNameInfo.name}
+                  selectedContextNameInfo={selectedContextNameInfo}
                   data={selectedContextData}
                   checkedDataValues={checkedDataValues}
                   checkedDatatypes={checkedDatatypes}

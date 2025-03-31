@@ -5,6 +5,7 @@ import {
   DataTypeStrings,
   OutGroupType,
   ContextExplorerDatasets,
+  ContextNameInfo,
 } from "./models/types";
 import update from "immutability-helper";
 import { DataExplorerContext } from "@depmap/types";
@@ -188,18 +189,13 @@ export function capitalizeFirstLetter(str: string): string {
 }
 
 export function getDataExplorerContextFromSelections(
-  selectedContextName: string,
+  selectedContextNameInfo: ContextNameInfo,
   checkedDatatypes: Set<string>,
-  selectedContextDepmapIds: string[],
-  topContextName: string,
-  allDepmapIds: string[]
+  selectedContextDepmapIds: string[]
 ): DataExplorerContext {
+  const selectedContextCode = selectedContextNameInfo.subtype_code;
   const selectedDataTypes = [...checkedDatatypes].join(" ");
-  const de2ContextName = `${selectedContextName} Cell Lines available in ${selectedDataTypes}`;
-  const labelSliceId =
-    topContextName === selectedContextName
-      ? "slice/lineage/1/label"
-      : "slice/primary_disease/all/label";
+  const de2ContextName = `${selectedContextNameInfo.name} Cell Lines available in ${selectedDataTypes}`;
 
   // We don't have "datatype" information for some cell lines, and datatype information is
   // required for a cell line to show up in Context Explorer (datatype information = information
@@ -207,7 +203,7 @@ export function getDataExplorerContextFromSelections(
   // We add a depmapId list to the context we build off of Context Explorer to ensure the cell lines
   // in Context Explorer match the cell lines shown in Data Explorer 2 using a Context Explorer Context.
   const exp =
-    selectedContextName === "All"
+    selectedContextCode === "All"
       ? {
           and: [
             {
@@ -218,14 +214,13 @@ export function getDataExplorerContextFromSelections(
       : {
           and: [
             {
-              in: [
-                { var: "entity_label" },
-                checkedDatatypes.size > 0
-                  ? selectedContextDepmapIds
-                  : allDepmapIds,
+              "==": [
+                {
+                  var: `slice/Context_Matrix/${selectedContextCode}/label`,
+                },
+                1,
               ],
             },
-            { "==": [{ var: labelSliceId }, selectedContextName] },
           ],
         };
 
@@ -239,7 +234,7 @@ export function getDataExplorerContextFromSelections(
 }
 
 export function getGeneDependencyContexts(
-  selectedContextName: string,
+  selectedContextCode: string,
   topContextName: string,
   outgroupType: OutGroupType
 ): {
@@ -247,47 +242,40 @@ export function getGeneDependencyContexts(
   outGroupContext: DataExplorerContext;
 } {
   const context_type = "depmap_model";
-  const lineageLabelSliceId = "slice/lineage/1/label";
-  const primaryDiseaseSliceId = "slice/primary_disease/all/label";
-
-  const ingroupSliceId =
-    selectedContextName === topContextName
-      ? lineageLabelSliceId
-      : primaryDiseaseSliceId;
+  const inGroupSliceId = `slice/Context_Matrix/${selectedContextCode}/label`;
 
   const exp = {
     and: [
       {
         "==": [
           {
-            var: ingroupSliceId,
+            var: inGroupSliceId,
           },
-          selectedContextName,
+          1,
         ],
       },
     ],
   };
 
   const inGroupContext = {
-    name: `${selectedContextName}`,
+    name: `${selectedContextCode}`,
     context_type,
     expr: exp,
   };
 
   function getOutgroupContext(
     outgroup: OutGroupType,
-    inGroupSliceId: string | number | symbol | undefined,
-    lSliceId: string | number | symbol | undefined,
     outGroupSubtypeCode: string,
     ingroupName: string
   ) {
+    const outGroupSliceId = `slice/Context_Matrix/${outGroupSubtypeCode}/label`;
     switch (outgroup) {
       case OutGroupType.All:
         return {
           name: `Not ${ingroupName}`,
           context_type: "depmap_model",
           expr: {
-            and: [{ "!=": [{ var: inGroupSliceId }, ingroupName] }],
+            and: [{ "==": [{ var: inGroupSliceId }, 0] }],
           },
         };
       default:
@@ -296,8 +284,8 @@ export function getGeneDependencyContexts(
           context_type: "depmap_model",
           expr: {
             and: [
-              { "!=": [{ var: inGroupSliceId }, ingroupName] },
-              { "==": [{ var: lSliceId }, outGroupSubtypeCode] },
+              { "==": [{ var: inGroupSliceId }, 0] },
+              { "==": [{ var: outGroupSliceId }, 1] },
             ],
           },
         };
@@ -306,10 +294,8 @@ export function getGeneDependencyContexts(
 
   const outGroupContext = getOutgroupContext(
     outgroupType,
-    ingroupSliceId,
-    lineageLabelSliceId,
     topContextName,
-    selectedContextName
+    selectedContextCode
   );
 
   return { inGroupContext, outGroupContext };
@@ -324,14 +310,14 @@ const de2PageHref = window.location.href
 
 export function getDataExplorerUrl(
   topContextName: string,
-  ingroupName: string,
+  ingroupCode: string,
   outgroupType: OutGroupType,
   datasetId: ContextExplorerDatasets
 ): string {
   const xDataset = datasetId;
   const yDataset = datasetId;
   const { inGroupContext, outGroupContext } = getGeneDependencyContexts(
-    ingroupName,
+    ingroupCode,
     topContextName,
     outgroupType
   );
