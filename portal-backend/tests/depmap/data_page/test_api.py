@@ -31,7 +31,7 @@ def test_get_data_availability(populated_db):
             "all_depmap_ids",
         ]
 
-        assert len(data_availablity["values"]) == 22
+        assert len(data_availablity["values"]) == 23
         assert data_availablity["data_types"] == [
             "CRISPR_Achilles_Broad",
             "CRISPR_Score_Sanger",
@@ -43,6 +43,8 @@ def test_get_data_availability(populated_db):
             "Sequencing_WES_Sanger",
             "Sequencing_WGS_Broad",
             "Sequencing_RNA_Broad",
+            "Sequencing_ATACSeq_Broad",
+            "Sequencing_Long_Reads",
             "Drug_CTD_Broad",
             "Drug_Repurposing_Broad",
             "Drug_GDSC_Sanger",
@@ -54,7 +56,6 @@ def test_get_data_availability(populated_db):
             "Methylation_Sanger",
             "Methylation_CCLE",
             "Uncategorized_miRNA_CCLE",
-            "Uncategorized_ATACSeq_Broad",
         ]
         assert len(data_availablity["all_depmap_ids"]) == 2280
 
