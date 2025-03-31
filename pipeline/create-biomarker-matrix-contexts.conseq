@@ -2,6 +2,7 @@ rule create_biomarker_matrix_contexts:
     inputs:
         in={'type': 'cell_line_metadata'},
         subtype_context_taiga_id={'type': 'subtype_context_matrix'},
+        subtype_tree_taiga_id={'type': 'subtype_tree'},
         script=fileref('scripts/make_biomarker_matrix_contexts.py'),
         cleanup_script=fileref('scripts/cleanup_hdf5.py')
     outputs: {
