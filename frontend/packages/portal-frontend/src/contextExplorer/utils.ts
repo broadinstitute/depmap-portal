@@ -439,8 +439,8 @@ function mergeDataAvailability(
     dataTypes.push(allContextDatasetDataAvail.data_types[index]);
   });
 
-  const orderedDataTypes = [...dataTypes].reverse();
-  const orderedVals = [...vals].reverse();
+  const orderedDataTypes = [...dataTypes];
+  const orderedVals = [...vals];
   const mergedDataAvail = {
     all_depmap_ids: subtypeDataAvail.all_depmap_ids,
     data_types: [...orderedDataTypes, ...subtypeDataAvail.data_types].reverse(),
