@@ -3,6 +3,7 @@ from taigapy import create_taiga_client_v3
 import pandas as pd
 import argparse
 import json
+from google.cloud import storage
 
 
 def get_ctd_summary(tc, ctd2_drug_taiga_id, Model):
@@ -333,7 +334,7 @@ def get_atac_seq_broad_summary(tc, atac_seq_broad_taiga_id):
 
     atac_seq_broad_summary = (
         atac_seq_broad[["ModelID"]]
-        .assign(Uncategorized_ATACSeq_Broad=True)
+        .assign(Sequencing_ATACSeq_Broad=True)
         .drop_duplicates()
         .set_index("ModelID")
     )
@@ -357,8 +358,67 @@ def get_paralogs_summary(tc, depmap_paralogs_taiga_id):
     return paralogs_summary
 
 
-def get_id(possible_id, id_key="dataset_id"):
+def get_long_reads_summary(gcloud_storage_client, depmap_long_reads_gcloud_loc):
+    """
+    Get a summary of the long reads data available for each cell line.
+
+    Args:
+        gcloud_storage_client (storage.Client): gcloud storage client
+        depmap_long_reads_gcloud_loc (dict): gcloud location of the long reads data
+
+    Returns:
+        pd.DataFrame: Indexed by ACHID or ModelID, with a column of True values that will be filterd against the Model table in future
+    """
+
+    print("getting long_reads_summary...")
+
+    bucket_name = depmap_long_reads_gcloud_loc["bucket_name"]
+    prefix = depmap_long_reads_gcloud_loc["prefix"]
+    file_names = depmap_long_reads_gcloud_loc["file_names"].replace(" ", "").split(",")
+
+    # We have at least one file to process
+    assert len(file_names) > 0, "No file names provided in gcloud location"
+
+    bucket = gcloud_storage_client.bucket(bucket_name)
+    unique_model_ids = set()
+
+    for file_name in file_names:
+        blob_name = f"{prefix}/{file_name}"
+        bucket = gcloud_storage_client.bucket(bucket_name)
+        blob = bucket.blob(blob_name)
+        content = blob.download_as_string()
+        df = pd.read_csv(pd.io.common.BytesIO(content), usecols=[0])
+        # Currently, the column name is "ACHID". Could be changed in the future to "ModelID" or something else?
+        assert "ACHID" in df.columns, f"Column 'ACHID' not found in file {file_name}"
+        unique_model_ids.update(df["ACHID"].unique())
+
+    assert len(unique_model_ids) > 0, "No model IDs found in the provided files"
+    print(f"Length of unique_model_ids: {len(unique_model_ids)}")
+
+    # Note: Converting unique_model_ids to a list due to a breaking change between pandas 1.4.3 and 1.5.3 regarding using sets as DataFrame indices.
+    # Since pandas 1.5.3, using a set as an index raises a ValueError.
+    long_reads_summary = pd.DataFrame(
+        index=list(unique_model_ids), columns=["Sequencing_Long_Reads"], data=True
+    )
+
+    assert len(long_reads_summary) == len(
+        unique_model_ids
+    ), "Number of rows in DataFrame doesn't match number of unique model IDs"
+
+    return long_reads_summary
+
+
+def get_taiga_id(possible_id, id_key="dataset_id"):
     return [] if len(possible_id) == 0 else [possible_id[0][id_key]]
+
+
+def get_gcloud_loc(possible_id):
+    if len(possible_id) == 0:
+        return None
+    bucket_name = possible_id[0]["bucket_name"]
+    prefix = possible_id[0]["prefix"]
+    file_names = possible_id[0]["file_names"]
+    return {"bucket_name": bucket_name, "prefix": prefix, "file_names": file_names}
 
 
 def main(
@@ -367,27 +427,34 @@ def main(
     with open(inputs, "rt") as input_json:
         taiga_ids = json.load(input_json)
 
-    depmap_data_taiga_id = get_id(taiga_ids["depmap_data_taiga_id"])
-    depmap_oncref_taiga_id = get_id(taiga_ids["oncref_taiga_id"])
-    rnai_drive_taiga_id = get_id(taiga_ids["rnai_drive_taiga_id"])
-    repurposing_matrix_taiga_id = get_id(taiga_ids["repurposing_matrix_taiga_id"])
-    ctd2_drug_taiga_id = get_id(taiga_ids["ctd2_drug_taiga_id"])
-    gdsc_drug_taiga_id = get_id(taiga_ids["gdsc_drug_taiga_id"])
-    rppa_taiga_id = get_id(taiga_ids["rppa_taiga_id"], "matrix_dataset_id")
-    ms_ccle_taiga_id = get_id(taiga_ids["ms_ccle_taiga_id"])
-    sanger_methylation_taiga_id = get_id(taiga_ids["sanger_methylation_taiga_id"])
-    methylation_ccle_taiga_id = get_id(taiga_ids["methylation_ccle_taiga_id"])
-    ccle_mirna_taiga_id = get_id(taiga_ids["ccle_mirna_taiga_id"])
-    atac_seq_taiga_id = get_id(taiga_ids["ataq_seq_taiga_id"])
-    olink_taiga_id = get_id(taiga_ids["olink_taiga_id"])
-    ms_sanger_taiga_id = get_id(taiga_ids["sanger_proteomics_taiga_id"])
-    depmap_paralogs_taiga_id = get_id(taiga_ids["depmap_paralogs_taiga_id"])
-    rnai_broad_only_taiga_id = get_id(taiga_ids["rnai_broad_only"])
-    crispr_screen_sequence_map_taiga_id = get_id(
+    # taiga ids
+    depmap_data_taiga_id = get_taiga_id(taiga_ids["depmap_data_taiga_id"])
+    depmap_oncref_taiga_id = get_taiga_id(taiga_ids["oncref_taiga_id"])
+    rnai_drive_taiga_id = get_taiga_id(taiga_ids["rnai_drive_taiga_id"])
+    repurposing_matrix_taiga_id = get_taiga_id(taiga_ids["repurposing_matrix_taiga_id"])
+    ctd2_drug_taiga_id = get_taiga_id(taiga_ids["ctd2_drug_taiga_id"])
+    gdsc_drug_taiga_id = get_taiga_id(taiga_ids["gdsc_drug_taiga_id"])
+    rppa_taiga_id = get_taiga_id(taiga_ids["rppa_taiga_id"], "matrix_dataset_id")
+    ms_ccle_taiga_id = get_taiga_id(taiga_ids["ms_ccle_taiga_id"])
+    sanger_methylation_taiga_id = get_taiga_id(taiga_ids["sanger_methylation_taiga_id"])
+    methylation_ccle_taiga_id = get_taiga_id(taiga_ids["methylation_ccle_taiga_id"])
+    ccle_mirna_taiga_id = get_taiga_id(taiga_ids["ccle_mirna_taiga_id"])
+    atac_seq_taiga_id = get_taiga_id(taiga_ids["ataq_seq_taiga_id"])
+    olink_taiga_id = get_taiga_id(taiga_ids["olink_taiga_id"])
+    ms_sanger_taiga_id = get_taiga_id(taiga_ids["sanger_proteomics_taiga_id"])
+    depmap_paralogs_taiga_id = get_taiga_id(taiga_ids["depmap_paralogs_taiga_id"])
+    rnai_broad_only_taiga_id = get_taiga_id(taiga_ids["rnai_broad_only"])
+    crispr_screen_sequence_map_taiga_id = get_taiga_id(
         taiga_ids["crispr_screen_sequence_map"]
     )
 
+    # gcloud locations
+    depmap_long_reads_gcloud_loc = get_gcloud_loc(
+        taiga_ids["depmap_long_reads_gcloud_loc"]
+    )
+
     tc = create_taiga_client_v3()
+    gcloud_storage_client = storage.Client()
 
     Model = tc.get(f"{depmap_data_taiga_id[0]}/Model")
     assert Model is not None
@@ -486,6 +553,15 @@ def main(
     )
     assert omics_summary.index.is_unique
 
+    # Long Reads
+    long_reads_summary = None
+    if depmap_long_reads_gcloud_loc is not None:
+        long_reads_summary = get_long_reads_summary(
+            gcloud_storage_client=gcloud_storage_client,
+            depmap_long_reads_gcloud_loc=depmap_long_reads_gcloud_loc,
+        )
+        assert long_reads_summary.index.is_unique
+
     #####################
     ### CRISPR Screens###
     #####################
@@ -554,6 +630,7 @@ def main(
             atac_seq_broad_summary,
             ms_sanger_summary,
             paralogs_summary,
+            long_reads_summary,
         ],
         axis=1,
     )
