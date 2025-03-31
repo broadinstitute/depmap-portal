@@ -1074,7 +1074,6 @@ def load_sample_data(
             DependencyEnum.Chronos_Combined,
             DependencyEnum.Chronos_Achilles,
             DependencyEnum.Chronos_Score,
-            DependencyEnum.Sanger_CRISPR,
             DependencyEnum.RNAi_Ach,
             DependencyEnum.RNAi_Nov_DEM,
             DependencyEnum.RNAi_merged,
@@ -1349,7 +1348,6 @@ def load_sample_data(
             ),
             ("Chronos_Achilles", DependencyEnum.Chronos_Achilles.name),
             ("Chronos_Score", DependencyEnum.Chronos_Score.name),
-            ("Sanger_CRISPR", DependencyEnum.Sanger_CRISPR.name),
             ("GDSC1_AUC", DependencyEnum.GDSC1_AUC.name),
             ("GDSC2_AUC", DependencyEnum.GDSC2_AUC.name),
             ("ctd2_drug_auc", DependencyEnum.CTRP_AUC.name),
@@ -1375,7 +1373,6 @@ def load_sample_data(
                 DependencyDataset.DependencyEnum.GDSC1_AUC.name,
                 DependencyDataset.DependencyEnum.GDSC2_AUC.name,
                 DependencyDataset.DependencyEnum.CTRP_AUC.name,
-                DependencyDataset.DependencyEnum.Sanger_CRISPR.name,
                 DependencyDataset.DependencyEnum.Prism_oncology_AUC.name,
             ]:
                 association_loader.load_dep_dep_correlation(
@@ -1390,7 +1387,6 @@ def load_sample_data(
                     DependencyDataset.DependencyEnum.GDSC1_AUC.name,
                     DependencyDataset.DependencyEnum.GDSC2_AUC.name,
                     DependencyDataset.DependencyEnum.CTRP_AUC.name,
-                    DependencyDataset.DependencyEnum.Sanger_CRISPR.name,
                     DependencyDataset.DependencyEnum.Prism_oncology_AUC.name,
                 ]:
                     association_loader.load_dep_biom_correlation(

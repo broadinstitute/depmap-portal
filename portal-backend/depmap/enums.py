@@ -25,7 +25,6 @@ class DependencyEnum(DatasetEnum):
 
     CERES_Combined = "CERES_Combined"  # Avana and Sanger_CRISPR combined
     Avana = "Avana"
-    Sanger_CRISPR = "Sanger_CRISPR"
 
     OrganoidGeneEffect = "OrganoidGeneEffect"
 

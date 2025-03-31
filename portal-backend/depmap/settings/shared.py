@@ -283,13 +283,6 @@ DATASET_METADATA: Dict[
         data_type=DataTypeEnum.crispr,
         priority=5,
     ),
-    DependencyEnum.Sanger_CRISPR: DepDatasetMeta(
-        display_name="CRISPR (Project Score, CERES)",
-        units="Gene Effect (CERES)",
-        nominal_range=NORMALIZED_RANGE,
-        data_type=DataTypeEnum.crispr,
-        priority=6,
-    ),
     DependencyEnum.GDSC1_AUC: DepDatasetMeta(
         display_name="Drug sensitivity AUC (Sanger GDSC1)",
         units="AUC",

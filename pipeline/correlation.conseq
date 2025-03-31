@@ -50,7 +50,7 @@ rule dep_dep_correlation:
 rule dep_bio_correlation:
     resources: {'slots': "0.05"} # let up to 20 of these run in parallel
     inputs:
-        dep={'type': 'dep-matrix', 'label' ~ 'Chronos_Combined|Chronos_Achilles|Chronos_Score|CERES_Combined|Avana|Sanger_CRISPR|RNAi_Ach|RNAi_Nov_DEM|RNAi_merged|GDSC1_AUC|GDSC1_IC50|GDSC2_AUC|GDSC2_IC50|CTRP_AUC|Repurposing_secondary_AUC|Rep_all_single_pt'},
+        dep={'type': 'dep-matrix', 'label' ~ 'Chronos_Combined|Chronos_Achilles|Chronos_Score|CERES_Combined|Avana|RNAi_Ach|RNAi_Nov_DEM|RNAi_merged|GDSC1_AUC|GDSC1_IC50|GDSC2_AUC|GDSC2_IC50|CTRP_AUC|Repurposing_secondary_AUC|Rep_all_single_pt'},
         biomarker={'type': 'biomarker-matrix', 'category' ~ 'expression|copy-number-relative|copy-number-absolute|mutation-pearson|mutations-damaging|mutations-hotspot|mutations-driver'}, # Add biomarkers to association_bioms in db_load_commands.py to show for sample cors
         script=fileref('scripts/correlation.py'),
         hdf5_utils=fileref('scripts/hdf5_utils.py'),

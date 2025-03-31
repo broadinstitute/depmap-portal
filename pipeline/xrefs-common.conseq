@@ -107,13 +107,6 @@ add-if-missing {
   "label": "Chronos_Score",
 }
 
-# Sanger CRISPR data, run through CERES
-add-if-missing {
-  "type": "raw-dep-matrix",
-  "dataset_id": "sanger-crispr-project-score--e20b.4/gene_effect",
-  "label": "Sanger_CRISPR",
-  "rows": "cell-lines"
-}
 
 add-if-missing {
     "type": "other-taiga-dataset",
