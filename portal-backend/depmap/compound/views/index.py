@@ -74,7 +74,19 @@ def view_compound(name):
     sensitivity_tab_compound_summary = get_sensitivity_tab_info(compound.entity_id, compound_datasets)
     has_celfie = current_app.config["ENABLED_FEATURES"].celfie and has_datasets
     if has_celfie:
-        celfie = format_celfie(name, sensitivity_tab_compound_summary["summary_options"])
+        celfie_dataset_options = []
+        for compound_experiment, dataset in compound_experiment_and_datasets:
+            celfie_dataset_options.append(
+                format_summary_option(
+                    dataset,
+                    compound_experiment,
+                    "{} {}".format(compound_experiment.label, dataset.display_name),
+                )
+            )
+        celfie = format_celfie(
+            entity_label=name, 
+            dependency_datasets=celfie_dataset_options
+        )
 
     return render_template(
         "compounds/index.html",
