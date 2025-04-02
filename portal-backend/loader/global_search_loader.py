@@ -124,7 +124,11 @@ def load_file_search_index():
             )
 
 
-from depmap.context.models_new import SubtypeContext
+from depmap.context.models_new import (
+    SubtypeContext,
+    SubtypeContextGlobalSearch,
+    SubtypeNode,
+)
 
 
 def __load_context_search_index():
@@ -132,8 +136,10 @@ def __load_context_search_index():
         # Use SubtypeContext because SubtypeNode might have codes that don't have depmap models, and
         # therefore should not be searchable.
         for context in SubtypeContext.query.all():
+            node = SubtypeNode.get_by_code(context.subtype_code)
+            scs = SubtypeContextGlobalSearch(context.subtype_code, node.node_name)
             db.session.add(
                 ContextExplorerSearchIndex(
-                    label=context.subtype_code, subtype_context=context
+                    label=context.subtype_code, subtype_context_search=scs,
                 )
             )

@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { Tabs, Tab } from "react-bootstrap";
-import Select, { Props as ReactSelectProps } from "react-select";
+import Select from "react-select";
 import InfoIcon from "src/common/components/InfoIcon";
 import {
   ContextNameInfo,

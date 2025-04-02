@@ -6,7 +6,11 @@ from depmap.database import Column, ForeignKey, Integer, Model, String, db, rela
 from depmap.gene.models import Gene
 from depmap.entity.models import EntityAlias
 from depmap.cell_line.models import CellLine
-from depmap.context.models_new import SubtypeContext
+from depmap.context.models_new import (
+    SubtypeContext,
+    SubtypeNode,
+    SubtypeContextGlobalSearch,
+)
 from depmap.download.models import DownloadFileGlobalSearch
 
 
@@ -27,7 +31,7 @@ class GlobalSearchIndex(Model):
             "cell_line_alias",
             "download_file",
             "compound_target",
-            "subtype_context",
+            "subtype_context_search",
             name="SearchIndexType",
         ),
         nullable=False,
@@ -41,7 +45,9 @@ class GlobalSearchIndex(Model):
     gene_id = Column(Integer, ForeignKey("gene.entity_id"))
     depmap_id = Column(String, ForeignKey("cell_line.depmap_id"))
     file_id = Column(Integer, ForeignKey("download_file.file_id"))
-    subtype_code = Column(Integer, ForeignKey("subtype_context.subtype_code"))
+    subtype_context_search_id = Column(
+        Integer, ForeignKey("subtype_context_search.subtype_context_search_id")
+    )
 
     compound = relationship(
         "Compound", foreign_keys="GlobalSearchIndex.compound_id", uselist=False
@@ -58,8 +64,10 @@ class GlobalSearchIndex(Model):
         uselist=False,
     )
 
-    subtype_context = relationship(
-        "SubtypeContext", foreign_keys="GlobalSearchIndex.subtype_code", uselist=False,
+    subtype_context_search = relationship(
+        "SubtypeContextGlobalSearch",
+        foreign_keys="GlobalSearchIndex.subtype_context_search_id",
+        uselist=False,
     )
 
     __mapper_args__ = {
@@ -203,13 +211,9 @@ class CellLineAliasSearchIndex(_CellLine, GlobalSearchIndex):
         )
 
 
-class ContextExplorerSearchIndex(GlobalSearchIndex):
-    __mapper_args__ = {"polymorphic_identity": "subtype_context"}
-
+class _Context:
     def get_label(self):
-        context = SubtypeContext.get_by_code(self.subtype_context.subtype_code)
-        assert context is not None
-        return f"{context.subtype_code}"
+        return f"{self.subtype_context_search.subtype_node_name} ({self.subtype_context_search.subtype_context_code})"
 
     def get_description(self):
         return "Find cell lines which are members of {} context".format(
@@ -219,5 +223,9 @@ class ContextExplorerSearchIndex(GlobalSearchIndex):
     def get_url(self):
         return url_for(
             "context_explorer.view_context_explorer",
-            context=self.subtype_context.subtype_code,
+            context=self.subtype_context_search.subtype_context_code,
         )
+
+
+class ContextExplorerSearchIndex(_Context, GlobalSearchIndex):
+    __mapper_args__ = {"polymorphic_identity": "subtype_context_search"}

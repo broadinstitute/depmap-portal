@@ -124,9 +124,9 @@ def test_context_search_index_context_explorer_enabled(populated_db):
 
     expected = {
         "label": "ES",
-        "description": "Find cell lines which are members of ES context",
-        "type": "subtype_context",
-        "value": "subtype_context:ES:Find cell lines which are members of ES context",
+        "description": "Find cell lines which are members of Ewing Sarcoma (ES) context",
+        "type": "subtype_context_search",
+        "value": "subtype_context_search:ES:Find cell lines which are members of Ewing Sarcoma (ES) context",
         "url": "/context_explorer/?context=ES",
     }
     assert (

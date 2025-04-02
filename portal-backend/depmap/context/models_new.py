@@ -401,3 +401,15 @@ class SubtypeContextEntity(Entity):
             return q.one()
         else:
             return q.one_or_none()
+
+
+# for global search support.
+class SubtypeContextGlobalSearch(Model):
+    __tablename__ = "subtype_context_search"
+    subtype_context_search_id = Column(Integer, primary_key=True, autoincrement=True)
+    subtype_context_code = Column(String)
+    subtype_node_name = Column(String)
+
+    def __init__(self, subtype_context_code, subtype_node_name):
+        self.subtype_context_code = subtype_context_code
+        self.subtype_node_name = subtype_node_name
