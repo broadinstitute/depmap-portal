@@ -138,11 +138,6 @@ export enum ContextAnalysisPlotType {
   TTest,
 }
 
-export enum OutGroupType {
-  All = "All Others",
-  default = "Code",
-}
-
 export interface ContextAnalysisPlotData {
   indexLabels: string[];
   selectivityVal: number[];

@@ -194,7 +194,7 @@ def format_enrichment_boxes(compound_experiment_and_datasets):
             dataset,
             colors[dataset.name],
             "default",
-            negative_only=True,
+            # negative_only=True,
         )
         enrichment_box["title"] = "{} {}".format(
             compound_experiment.label, dataset.display_name

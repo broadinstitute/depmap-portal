@@ -3,7 +3,6 @@ import {
   ContextSummary,
   DataType,
   DataTypeStrings,
-  OutGroupType,
   ContextExplorerDatasets,
   ContextNameInfo,
 } from "./models/types";
@@ -33,7 +32,7 @@ export const ALL_SEARCH_OPTION = {
 };
 
 export const OUTGROUP_TYPE_ALL_OPTION = {
-  value: OutGroupType.All,
+  value: "All Others",
   label: "All other cell lines",
 };
 
@@ -235,8 +234,7 @@ export function getDataExplorerContextFromSelections(
 
 export function getGeneDependencyContexts(
   selectedContextCode: string,
-  topContextName: string,
-  outgroupType: OutGroupType
+  outgroup: { value: string; label: string }
 ): {
   inGroupContext: DataExplorerContext;
   outGroupContext: DataExplorerContext;
@@ -264,13 +262,13 @@ export function getGeneDependencyContexts(
   };
 
   function getOutgroupContext(
-    outgroup: OutGroupType,
-    outGroupSubtypeCode: string,
+    outgroupCode: string,
+    outGroupLabel: string,
     ingroupName: string
   ) {
-    const outGroupSliceId = `slice/Context_Matrix/${outGroupSubtypeCode}/label`;
-    switch (outgroup) {
-      case OutGroupType.All:
+    const outGroupSliceId = `slice/Context_Matrix/${outgroupCode}/label`;
+    switch (outgroupCode) {
+      case "All Others":
         return {
           name: `Not ${ingroupName}`,
           context_type: "depmap_model",
@@ -280,7 +278,7 @@ export function getGeneDependencyContexts(
         };
       default:
         return {
-          name: `Other ${outGroupSubtypeCode}`,
+          name: `${outGroupLabel}`,
           context_type: "depmap_model",
           expr: {
             and: [
@@ -293,8 +291,8 @@ export function getGeneDependencyContexts(
   }
 
   const outGroupContext = getOutgroupContext(
-    outgroupType,
-    topContextName,
+    outgroup.value,
+    outgroup.label,
     selectedContextCode
   );
 
@@ -309,17 +307,15 @@ const de2PageHref = window.location.href
   .replace("context_explorer", "data_explorer_2");
 
 export function getDataExplorerUrl(
-  topContextName: string,
   ingroupCode: string,
-  outgroupType: OutGroupType,
+  outgroup: { value: string; label: string },
   datasetId: ContextExplorerDatasets
 ): string {
   const xDataset = datasetId;
   const yDataset = datasetId;
   const { inGroupContext, outGroupContext } = getGeneDependencyContexts(
     ingroupCode,
-    topContextName,
-    outgroupType
+    outgroup
   );
 
   const queryString = qs.stringify({

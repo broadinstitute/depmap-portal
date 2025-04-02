@@ -14,7 +14,6 @@ import {
   ContextNameInfo,
   ContextNode,
   ContextPlotBoxData,
-  OutGroupType,
   TreeType,
 } from "../../models/types";
 import {
@@ -75,7 +74,7 @@ function ContextAnalysis({
 }: ContextAnalysisProps) {
   const dapi = getDapi();
   const [outgroup, setOutgroup] = useState<{
-    value: OutGroupType;
+    value: string;
     label: string;
   }>(OUTGROUP_TYPE_ALL_OPTION);
   const [outgroupOptions, setOutgroupOptions] = useState<
@@ -89,7 +88,7 @@ function ContextAnalysis({
   );
 
   const handleOutGroupChanged = useCallback(
-    (selection: { value: OutGroupType; label: string }) => {
+    (selection: { value: string; label: string }) => {
       setOutgroup(selection);
     },
     [setOutgroup]
@@ -137,7 +136,10 @@ function ContextAnalysis({
       if (newOutgroup.length === 0) {
         setOutgroup(OUTGROUP_TYPE_ALL_OPTION);
       } else {
-        setOutgroup({ value: outgroup.value, label: newOutgroup[0].label });
+        setOutgroup({
+          value: newOutgroup[0].value,
+          label: newOutgroup[0].label,
+        });
       }
     }
     setDidValidateOutgroup(true);
@@ -853,9 +855,8 @@ function ContextAnalysis({
                 <Button
                   className={styles.deButton}
                   href={getDataExplorerUrl(
-                    topContextNameInfo.name,
                     selectedContextNameInfo.subtype_code,
-                    outgroup.value,
+                    outgroup,
                     datasetId
                   )}
                   target="_blank"
