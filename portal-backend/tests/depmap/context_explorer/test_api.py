@@ -63,18 +63,44 @@ def test_get_context_search_options(populated_db):
 
         assert search_options == {
             "lineage": [
-                {"name": "Bone", "subtype_code": "BONE", "node_level": 0},
-                {"name": "Lung", "subtype_code": "LUNG", "node_level": 0},
+                {
+                    "name": "Bone",
+                    "subtype_code": "BONE",
+                    "node_level": 0,
+                    "numModels": 5,
+                },
+                {
+                    "name": "Lung",
+                    "subtype_code": "LUNG",
+                    "node_level": 0,
+                    "numModels": 2,
+                },
                 {
                     "name": "Peripheral Nervous System",
                     "subtype_code": "PNS",
                     "node_level": 0,
+                    "numModels": 1,
                 },
-                {"name": "Skin", "subtype_code": "SKIN", "node_level": 0},
+                {
+                    "name": "Skin",
+                    "subtype_code": "SKIN",
+                    "node_level": 0,
+                    "numModels": 11,
+                },
             ],
             "molecularSubtype": [
-                {"name": "ALK Hotspot", "subtype_code": "ALKHotspot", "node_level": 0},
-                {"name": "EGFR", "subtype_code": "EGFR", "node_level": 0},
+                {
+                    "name": "ALK Hotspot",
+                    "subtype_code": "ALKHotspot",
+                    "node_level": 0,
+                    "numModels": 4,
+                },
+                {
+                    "name": "EGFR",
+                    "subtype_code": "EGFR",
+                    "node_level": 0,
+                    "numModels": 4,
+                },
             ],
         }
 
