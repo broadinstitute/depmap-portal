@@ -127,8 +127,8 @@ class ComputeUnivariateAssociations(Resource):
             # If the query slice is from a legacy dataset, load it now and pass the values to breadbox
             # The query_cell_lines parameter needs to be the same order/length as the query_values when passed to breadbox.
             if slice_query and not slice_query_is_from_breadbox:
-                # In this one specific case, we avoid the data_access method because 
-                # breadbox-legacy-dataset-aliases don't work for lookups by entity_id 
+                # In this specific case, it's important to avoid the data_access interface because 
+                # breadbox legacy-dataset aliases don't work for lookups by entity_id 
                 # (which is still the slice format used by celfie/genomic associations)
                 legacy_data_slice: pd.Series = interactive_utils.get_row_of_values_from_slice_id(
                     query_id
@@ -182,8 +182,8 @@ class ComputeUnivariateAssociations(Resource):
             if slice_query_is_from_breadbox:
                 query_series = data_access.get_slice_data(slice_query)
             else: 
-                # In this one specific case, we avoid the data_access method because 
-                # breadbox-legacy-dataset-aliases don't work for lookups by entity_id 
+                # In this specific case, it's important to avoid the data_access interface because 
+                # breadbox legacy-dataset aliases don't work for lookups by entity_id 
                 # (which is still the slice format used by celfie/genomic associations)
                 query_series = interactive_utils.get_row_of_values_from_slice_id(
                     query_id
