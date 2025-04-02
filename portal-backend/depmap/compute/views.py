@@ -117,15 +117,22 @@ class ComputeUnivariateAssociations(Resource):
         # Parse the slice ID if one was provided
         if query_id:
             slice_query = slice_id_to_slice_query(query_id)
+            slice_query_is_from_breadbox = slice_query.dataset_id.startswith("breadbox/")
         else:
             slice_query = None
+            slice_query_is_from_breadbox = False
 
         # Forward requests to breadbox a breadbox dataset is requested
         if dataset_id.startswith("breadbox/"):
             # If the query slice is from a legacy dataset, load it now and pass the values to breadbox
             # The query_cell_lines parameter needs to be the same order/length as the query_values when passed to breadbox.
-            if slice_query and not slice_query.dataset_id.startswith("breadbox/"):
-                legacy_data_slice = data_access.get_slice_data(slice_query)
+            if slice_query and not slice_query_is_from_breadbox:
+                # In this specific case, it's important to avoid the data_access interface because 
+                # breadbox legacy-dataset aliases don't work for lookups by entity_id 
+                # (which is still the slice format used by celfie/genomic associations)
+                legacy_data_slice: pd.Series = interactive_utils.get_row_of_values_from_slice_id(
+                    query_id
+                )
                 if query_cell_lines is not None:
                     # When the cell lines have been filtered by the user,
                     # the legacy feature series also needs to be filtered before being passed to breadbox.
@@ -172,9 +179,16 @@ class ComputeUnivariateAssociations(Resource):
             # 2. which is dependent/independent, the matrix or the vector
             # 3. optionally, a list of cell line depmap ids
             assert slice_query is not None
-            query_series = data_access.get_slice_data(slice_query)
-            # remove missing entries because the intersection is assuming we have values for everything. perhaps this should be put into get_slice_data?
-            query_series = query_series[~query_series.isna()]
+            if slice_query_is_from_breadbox:
+                query_series = data_access.get_slice_data(slice_query)
+            else: 
+                # In this specific case, it's important to avoid the data_access interface because 
+                # breadbox legacy-dataset aliases don't work for lookups by entity_id 
+                # (which is still the slice format used by celfie/genomic associations)
+                query_series = interactive_utils.get_row_of_values_from_slice_id(
+                    query_id
+                )
+            query_series = query_series[~query_series.isna()] # In theory, this line is now redundant
 
             # cl_query_vector is the intersection of cell lines in both data tracts plus the cell line subset
             (
