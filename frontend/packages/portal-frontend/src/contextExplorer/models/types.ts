@@ -25,6 +25,8 @@ export interface ContextNameInfo {
   name: string;
   subtype_code: string;
   node_level: number;
+  // Only optional for generic "All Others" context
+  numModels?: number;
 }
 
 export interface SearchOptionsByTreeType {

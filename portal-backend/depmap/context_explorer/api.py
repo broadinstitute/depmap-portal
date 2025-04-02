@@ -16,17 +16,6 @@ from depmap.context_explorer.models import (
 )
 from depmap.context.models_new import SubtypeNode, TreeType
 
-# from depmap.database import db
-
-# from loader.context_explorer_loader import (
-#     load_context_explorer_context_analysis_dev,
-#     load_subtype_tree,
-# )
-
-# from loader.depmap_model_loader import load_subtype_contexts
-
-# from .development_scripts import dev
-
 namespace = Namespace("context_explorer", description="View context data in the portal")
 
 
@@ -136,11 +125,15 @@ def _get_all_level_0_subtype_info(tree_type: TreeType) -> List[dict]:
     context_name_info = []
 
     for subtype_node in subtype_nodes:
+        model_ids = SubtypeNode.get_model_ids_by_subtype_code_and_node_level(
+            subtype_node.subtype_code, 0
+        )
         context_name_info.append(
             {
                 "name": subtype_node.node_name,
                 "subtype_code": subtype_node.subtype_code,
                 "node_level": 0,
+                "numModels": len(model_ids),
             }
         )
 

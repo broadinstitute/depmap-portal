@@ -11,8 +11,18 @@ import {
 import styles from "../styles/ContextExplorer.scss";
 
 export interface LeftSearchPanelProps {
-  lineageSearchOptions: { value: string; label: string }[];
-  molecularSubtypeSearchOptions: { value: string; label: string }[];
+  lineageSearchOptions: {
+    value: string;
+    label: string;
+    level: 0;
+    numModels?: number;
+  }[];
+  molecularSubtypeSearchOptions: {
+    value: string;
+    label: string;
+    level: 0;
+    numModels?: number;
+  }[];
   contextTreeRoot: ContextNode | null;
   onRefineYourContext: (
     node: ContextNode | null,
@@ -28,7 +38,12 @@ export interface LeftSearchPanelProps {
 }
 
 export interface ContextTreeProps {
-  searchOptions: { value: string; label: string }[];
+  searchOptions: {
+    value: string;
+    label: string;
+    numModels?: number;
+    level: number;
+  }[];
   contextTree: ContextNode | null;
   onRefineYourContext: (
     node: ContextNode | null,
@@ -42,8 +57,8 @@ export interface ContextTreeProps {
   selectedTreeType: TreeType;
 }
 
-const customStyles: ReactSelectProps["styles"] = {
-  control: (base) => ({
+const customStyles: any = {
+  control: (base: any) => ({
     ...base,
     borderRadius: "0px",
     borderLeft: "none",
@@ -51,7 +66,7 @@ const customStyles: ReactSelectProps["styles"] = {
     borderBottom: "0.5px solid #697CAA",
     borderTop: "0.5px solid #697CAA",
   }),
-  menu: (base) => ({
+  menu: (base: any) => ({
     ...base,
   }),
 };
@@ -79,12 +94,24 @@ const formatOptionLabel = (
     value: string;
     label: string;
     level: number;
-    numModels: number;
+    numModels?: number;
   },
   menuIsOpen: boolean
 ) => {
   let marginLeft = (option.level - 1) * 35;
   const numModelsStr = ` (${option.numModels})`;
+
+  if (option.level === 0) {
+    if (option.label === "All") {
+      return option.label;
+    }
+
+    return (
+      <span>
+        <strong>{option.value}</strong> {numModelsStr}{" "}
+      </span>
+    );
+  }
   if (!menuIsOpen) {
     marginLeft = 0;
 
@@ -183,12 +210,21 @@ const ContextTree = (props: ContextTreeProps) => {
 
       <Select
         key="lineage-or-mol-subtype-select"
-        value={{
-          value: topContextNameInfo.subtype_code,
-          label: topContextNameInfo.name,
-        }}
+        value={
+          topContextNameInfo
+            ? {
+                value: topContextNameInfo.subtype_code,
+                label: topContextNameInfo.name,
+                level: topContextNameInfo.node_level,
+                numModels: topContextNameInfo.numModels,
+              }
+            : null
+        }
         styles={customStyles}
         options={searchOptions}
+        formatOptionLabel={(option, { context }) =>
+          formatOptionLabel(option, context === "menu")
+        }
         isClearable
         onChange={useCallback(
           (option: any) => {

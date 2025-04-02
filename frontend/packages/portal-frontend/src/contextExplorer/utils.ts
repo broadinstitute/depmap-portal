@@ -549,7 +549,12 @@ export function getSelectedContextNode(
   contextTree: ContextNode | undefined
 ) {
   let selectedNode: ContextNode | null = null;
-  let topContextNameInfo = ALL_SEARCH_OPTION;
+  let topContextNameInfo: {
+    name: string;
+    subtype_code: string;
+    node_level: number;
+    numModels?: number;
+  } = ALL_SEARCH_OPTION;
 
   if (contextTree && contextPath && contextPath.length > 0) {
     if (contextPath[0]) {
@@ -559,6 +564,7 @@ export function getSelectedContextNode(
         topContextNameInfo = {
           subtype_code: selectedTree.subtype_code,
           name: selectedTree.name,
+          numModels: selectedTree.model_ids.length,
           node_level: 0,
         };
         selectedNode = selectedTree;

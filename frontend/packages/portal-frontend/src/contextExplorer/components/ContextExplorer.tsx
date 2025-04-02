@@ -26,12 +26,14 @@ import LeftSearchPanel from "./LeftSearchPanel";
 
 export const ContextExplorer = () => {
   const [lineageSearchOptions, setLineageSearchOptions] = useState<
-    { value: string; label: string }[]
+    { value: string; label: string; level: 0; numModels?: number }[]
   >([]);
   const [
     molecularSubtypeSearchOptions,
     setMolecularSubtypeSearchOptions,
-  ] = useState<{ value: string; label: string }[]>([]);
+  ] = useState<
+    { value: string; label: string; level: 0; numModels?: number }[]
+  >([]);
   const [contextInfo, setContextInfo] = useState<ContextInfo | null>(null);
 
   const [
@@ -111,13 +113,23 @@ export const ContextExplorer = () => {
       options.lineage.unshift(ALL_SEARCH_OPTION);
       setLineageSearchOptions(
         options.lineage.map((option) => {
-          return { value: option.subtype_code, label: option.name };
+          return {
+            value: option.subtype_code,
+            label: option.name,
+            level: 0,
+            numModels: option.numModels,
+          };
         })
       );
       options.molecularSubtype.unshift(ALL_SEARCH_OPTION);
       setMolecularSubtypeSearchOptions(
         options.molecularSubtype.map((option) => {
-          return { value: option.subtype_code, label: option.name };
+          return {
+            value: option.subtype_code,
+            label: option.name,
+            level: 0,
+            numModels: option.numModels,
+          };
         })
       );
 
