@@ -64,12 +64,6 @@ class GlobalSearchIndex(Model):
         uselist=False,
     )
 
-    subtype_context_search = relationship(
-        "SubtypeContextGlobalSearch",
-        foreign_keys="GlobalSearchIndex.subtype_context_search_id",
-        uselist=False,
-    )
-
     __mapper_args__ = {
         "polymorphic_identity": "global_search_index",
         "polymorphic_on": type,
@@ -211,7 +205,15 @@ class CellLineAliasSearchIndex(_CellLine, GlobalSearchIndex):
         )
 
 
-class _Context:
+class ContextExplorerSearchIndex(GlobalSearchIndex):
+    subtype_context_search = relationship(
+        "SubtypeContextGlobalSearch",
+        foreign_keys="GlobalSearchIndex.subtype_context_search_id",
+        uselist=False,
+    )
+
+    __mapper_args__ = {"polymorphic_identity": "subtype_context_search"}
+
     def get_label(self):
         return f"{self.subtype_context_search.subtype_node_name} ({self.subtype_context_search.subtype_context_code})"
 
@@ -225,7 +227,3 @@ class _Context:
             "context_explorer.view_context_explorer",
             context=self.subtype_context_search.subtype_context_code,
         )
-
-
-class ContextExplorerSearchIndex(_Context, GlobalSearchIndex):
-    __mapper_args__ = {"polymorphic_identity": "subtype_context_search"}

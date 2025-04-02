@@ -33,7 +33,6 @@ autoapp.py: error: "ProxyMiddleware" is unknown import symbol (reportAttributeAc
 biomarker_loader.py: error: "dataset_versions" is not defined (reportUndefinedVariable)
 biomarker_loader.py: error: "record" is possibly unbound (reportPossiblyUnboundVariable)
 biomarker_loader.py: error: Argument of type "Literal['LOADER_DATA_DIR']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
-biomarker_loader.py: error: Argument of type "Literal[DependencyEnum.CTRP_AUC, 'expression', 'copy_number_absolute', 'copy_number_relative', 'mutation_pearson', 'mutations_damaging', 'mutations_hotspot', 'mutations_driver', 'mutations_prioritized', 'context', 'rppa', 'rrbs', 'proteomics', 'sanger_proteomics', 'fusions', 'ssgsea', 'metabolomics', 'crispr_confounders', 'rnai_confounders', 'oncref_confounders', 'rep_all_single_pt_confounders', 'rep1m_confounders', 'CRISPRGeneDependency', 'OmicsAbsoluteCNGene', 'OmicsSignatures', 'OmicsLoH', 'Chronos_Combined', 'Chronos_Achilles', 'Chronos_Score', 'CERES_Combined', 'Avana', 'Sanger_CRISPR', 'OrganoidGeneEffect', 'GeCKO', 'RNAi_merged', 'RNAi_Ach', 'RNAi_Nov_DEM', 'GDSC1_AUC', 'GDSC2_AUC', 'GDSC1_IC50', 'GDSC2_IC50', 'CTRP_AUC', 'Repurposing_secondary_AUC', 'CTRP_dose_replicate', 'GDSC1_dose_replicate', 'GDSC2_dose_replicate', 'Repurposing_secondary_dose', 'Repurposing_secondary_dose_replicate', 'Rep1M', 'Rep_all_single_pt', 'Prism_oncology_AUC', 'Prism_oncology_IC50', 'Prism_oncology_dose_replicate']" cannot be assigned to parameter "dependency_dataset_name" of type "str" in function "get_dataset_by_name"
 biomarker_loader.py: error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
 breadbox_shim.py: error: Argument of type "list[str | None]" cannot be assigned to parameter "feature_ids" of type "list[str]" in function "get_feature_data"
 bucket_utils.py: error: "csv_path" is not a known member of "None" (reportOptionalMemberAccess)
@@ -197,8 +196,6 @@ gene_loader.py: error: Argument of type "Literal['WEBAPP_DATA_DIR']" cannot be a
 gene_loader.py: error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
 get_and_process_data.py: error: "__get_config" is unknown import symbol (reportAttributeAccessIssue)
 get_and_process_data.py: error: "col_index" is not a known member of "None" (reportOptionalMemberAccess)
-get_and_process_data.py: error: "get_depmap_ids" is not a known member of "None" (reportOptionalMemberAccess)
-get_and_process_data.py: error: "name" is not a known member of "None" (reportOptionalMemberAccess)
 global_search_loader.py: error: Argument of type "Literal['ENABLED_FEATURES']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
 global_search_loader.py: error: Cannot access member "is_not" for type "Column[Text]"
 global_search_loader.py: error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
@@ -280,7 +277,6 @@ models.py: error: "entity_type" is not a known member of "None" (reportOptionalM
 models.py: error: "group" is not a known member of "None" (reportOptionalMemberAccess)
 models.py: error: "index" is not a known member of "None" (reportOptionalMemberAccess)
 models.py: error: "matrix" is not a known member of "None" (reportOptionalMemberAccess)
-models.py: error: "tolist" is not a known member of "None" (reportOptionalMemberAccess)
 models.py: error: Argument of type "List[str] | None" cannot be assigned to parameter "__obj" of type "Sized" in function "len"
 models.py: error: Argument of type "Literal['ENABLED_FEATURES']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
 models.py: error: Argument of type "Literal['GET_NONSTANDARD_DATASETS']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
@@ -401,12 +397,10 @@ test_bucket_utils.py: error: Argument of type "None" cannot be assigned to param
 test_cell_line_loader.py: error: "catalog_number" is not a known member of "None" (reportOptionalMemberAccess)
 test_cell_line_loader.py: error: "cell_line_alias" is not a known member of "None" (reportOptionalMemberAccess)
 test_cell_line_loader.py: error: "cell_line_name" is not a known member of "None" (reportOptionalMemberAccess)
-test_cell_line_loader.py: error: "context" is not a known member of "None" (reportOptionalMemberAccess)
 test_cell_line_loader.py: error: "gender" is not a known member of "None" (reportOptionalMemberAccess)
 test_cell_line_loader.py: error: "growth_pattern" is not a known member of "None" (reportOptionalMemberAccess)
 test_cell_line_loader.py: error: "lineage" is not a known member of "None" (reportOptionalMemberAccess)
 test_cell_line_loader.py: error: "source" is not a known member of "None" (reportOptionalMemberAccess)
-test_cell_line_loader.py: error: Cannot access member "all" for type "LazyAttribute"
 test_cell_line_loader.py: error: Cannot access member "catalog_number" for type "CellLineFactory"
 test_cell_line_loader.py: error: Cannot access member "growth_pattern" for type "CellLineFactory"
 test_cell_line_loader.py: error: Cannot access member "name" for type "SubFactory"
@@ -475,16 +469,13 @@ test_models.py: error: Cannot access member "Numeric" for type "SQLAlchemy"
 test_models.py: error: Cannot access member "String" for type "SQLAlchemy"
 test_models.py: error: Cannot access member "all" for type "LazyAttribute"
 test_models.py: error: Cannot access member "biomarker_dataset_id" for type "BiomarkerDatasetFactory"
-test_models.py: error: Cannot access member "compound" for type "SubFactory"
 test_models.py: error: Cannot access member "dataset_id" for type "BiomarkerDatasetFactory"
 test_models.py: error: Cannot access member "dataset_id" for type "DependencyDatasetFactory"
 test_models.py: error: Cannot access member "dataset_id" for type "PrivateDatasetMetadataFactory"
 test_models.py: error: Cannot access member "dependency_dataset_id" for type "DependencyDatasetFactory"
-test_models.py: error: Cannot access member "display_name" for type "SubFactory"
 test_models.py: error: Cannot access member "entity_id" for type "CompoundFactory"
 test_models.py: error: Cannot access member "entity_id" for type "GeneFactory"
 test_models.py: error: Cannot access member "get_cell_line_values_and_depmap_ids" for type "LazyAttribute"
-test_models.py: error: Cannot access member "label" for type "SubFactory"
 test_models.py: error: Cannot access member "label_without_compound_name" for type "CompoundDoseReplicateFactory"
 test_models.py: error: Cannot access member "level_1_lineage" for type "CellLineFactory"
 test_models.py: error: Cannot access member "mutation_id" for type "MutationFactory"
@@ -549,7 +540,6 @@ utils.py: error: Second argument to "isinstance" must be a class or tuple of cla
 views.py: error: "IGNORECASE" is not a known member of module "natsort" (reportAttributeAccessIssue)
 views.py: error: "Unbound" is not iterable (reportGeneralTypeIssues)
 views.py: error: "__getitem__" method not defined on type "Datatype" (reportIndexIssue)
-views.py: error: "cell_line" is not a known member of "None" (reportOptionalMemberAccess)
 views.py: error: "csv_path" is possibly unbound (reportPossiblyUnboundVariable)
 views.py: error: "dataset_id" is not a known member of "None" (reportOptionalMemberAccess)
 views.py: error: "dataset_name" is possibly unbound (reportPossiblyUnboundVariable)

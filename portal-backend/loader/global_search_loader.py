@@ -137,9 +137,10 @@ def __load_context_search_index():
         # therefore should not be searchable.
         for context in SubtypeContext.query.all():
             node = SubtypeNode.get_by_code(context.subtype_code)
+            assert node is not None
             scs = SubtypeContextGlobalSearch(context.subtype_code, node.node_name)
-            db.session.add(
-                ContextExplorerSearchIndex(
-                    label=context.subtype_code, subtype_context_search=scs,
-                )
+            ctx = ContextExplorerSearchIndex(
+                label=context.subtype_code, subtype_context_search=scs
             )
+
+            db.session.add(ctx)
