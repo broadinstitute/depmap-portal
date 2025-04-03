@@ -265,6 +265,7 @@ class TabularCell(Base, GroupMixin):
 
     __tablename__ = "tabular_cell"
     __table_args__ = (
+        Index("idx_tabular_column_id", "tabular_column_id"),
         Index(
             "idx_tabular_column_id_dimension_given_id",
             "tabular_column_id",
