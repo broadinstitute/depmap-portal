@@ -9,6 +9,9 @@ from fastapi import (
     File,
     Form,
     HTTPException,
+    Response,
+    Request,
+    status,
     UploadFile,
     Query,
 )
@@ -16,7 +19,7 @@ from fastapi.responses import ORJSONResponse
 from breadbox.models.dataset import Dataset
 from breadbox.models.dataset import DimensionType as DimensionTypeModel
 from breadbox.schemas.types import IdMappingInsanity
-from typing import Annotated
+from typing import Annotated, Callable
 
 from breadbox.db.session import SessionWithUser
 from .dependencies import get_db_with_user, get_user
@@ -644,6 +647,12 @@ def get_dimension_type_identifiers(
     ]
     log.info(f"Full modifiable portion of backend execution took {perf_counter() - start} seconds")
     return ORJSONResponse(result)
+
+# def _with_etag(etag: str, request: Request, get_response: Callable[[Request], dict]) -> Response:
+#     common = {"media_type": "application/json", "headers": {"ETag": etag}}
+#     if request.headers.get("If-None-Match") == etag:
+#         return Response(status_code=status.HTTP_304_NOT_MODIFIED, **common)
+#     return Response(status_code=status.HTTP_200_OK, content=get_response(request), **common)
 
 
 @router.patch(

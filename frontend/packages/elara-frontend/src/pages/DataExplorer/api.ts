@@ -20,7 +20,10 @@ const fetchJsonCache: Record<string, Promise<unknown> | null> = {};
 export const fetchJson = async <T>(url: string): Promise<T> => {
   if (!fetchJsonCache[url]) {
     fetchJsonCache[url] = new Promise((resolve, reject) => {
-      fetch(urlPrefix + url, { credentials: "include" })
+      fetch(urlPrefix + url, {
+        credentials: "include",
+        headers: {"Accept-Encoding": "gzip"}
+      })
         .then((response) => {
           return response.json().then((body) => {
             if (response.status >= 200 && response.status < 300) {

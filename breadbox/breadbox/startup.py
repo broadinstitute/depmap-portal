@@ -6,6 +6,7 @@ from fastapi.routing import APIRouter
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 from starlette.datastructures import MutableHeaders
 
 from .api import api_router
@@ -38,6 +39,8 @@ def create_app(settings: Settings):
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
+    app.add_middleware(GZipMiddleware, minimum_size=1000, compresslevel=5)
 
     if api_prefix != "":
         root_router = APIRouter(prefix=api_prefix)
