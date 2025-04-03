@@ -1,3 +1,4 @@
+import markdown
 from depmap.public.announcements.models import Announcement
 import yaml
 from flask import current_app
@@ -27,3 +28,14 @@ def get_announcements_list():
         announcements = []
 
     return announcements
+
+
+def get_updates_markdown_to_html():
+    markdown_path = current_app.config["UPDATES_AND_ANNOUNCEMENTS_FILE_PATH"]
+
+    if os.path.exists(markdown_path):
+        with open(markdown_path, "r") as md_file:
+            text = md_file.read()
+    else:
+        text = ""
+    return markdown.markdown(text, extensions=["markdown.extensions.tables"])
