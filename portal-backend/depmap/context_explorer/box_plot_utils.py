@@ -134,16 +134,17 @@ def get_box_plot_card_data(
 
 def get_box_plot_data_for_other_category(
     category: Literal["heme", "solid"],
-    significant_subtype_codes: List[str],
+    all_level_0_codes: List[str],
     entity_full_row_of_values,
+    tree_type: str,
 ) -> BoxData:
     heme_model_id_series = (
         SubtypeContext.get_model_ids_for_other_heme_contexts(
-            subtype_codes_to_filter_out=significant_subtype_codes
+            subtype_codes_to_filter_out=all_level_0_codes, tree_type=tree_type
         )
         if category == "heme"
         else SubtypeContext.get_model_ids_for_other_solid_contexts(
-            subtype_codes_to_filter_out=significant_subtype_codes
+            subtype_codes_to_filter_out=all_level_0_codes, tree_type=tree_type
         )
     )
 
@@ -294,6 +295,7 @@ def get_context_plot_box_data(
     node_entity_data: NodeEntityData,
     entity_full_row_of_values: pd.Series,
     drug_dotted_line: Any,
+    tree_type: str,
 ) -> Optional[ContextPlotBoxData]:
     heme_box_plot_data = {}
     solid_box_plot_data = {}
@@ -342,14 +344,16 @@ def get_context_plot_box_data(
 
         heme_box_plot_data = get_box_plot_data_for_other_category(
             category="heme",
-            significant_subtype_codes=all_sig_context_codes,
+            all_level_0_codes=list(all_level_0_codes),
             entity_full_row_of_values=entity_full_row_of_values,
+            tree_type=tree_type,
         )
 
         solid_box_plot_data = get_box_plot_data_for_other_category(
             category="solid",
-            significant_subtype_codes=all_sig_context_codes,
+            all_level_0_codes=list(all_level_0_codes),
             entity_full_row_of_values=entity_full_row_of_values,
+            tree_type=tree_type,
         )
 
         significant_selection = (
@@ -422,6 +426,7 @@ def get_organized_contexts(
         node_entity_data=node_entity_data,
         entity_full_row_of_values=entity_full_row_of_values,
         drug_dotted_line=drug_dotted_line,
+        tree_type=tree_type,
     )
 
     if context_box_plot_data == None:

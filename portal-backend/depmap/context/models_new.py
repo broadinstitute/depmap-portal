@@ -293,14 +293,18 @@ class SubtypeContext(Model):
 
     @staticmethod
     def get_model_ids_for_other_solid_contexts(
-        subtype_codes_to_filter_out: List[str],
+        subtype_codes_to_filter_out: List[str], tree_type: str
     ) -> Dict[str, str]:
         contexts = (
             db.session.query(SubtypeContext)
             .filter(SubtypeContext.subtype_code.notin_(subtype_codes_to_filter_out))
             .join(SubtypeNode, SubtypeNode.subtype_code == SubtypeContext.subtype_code)
             .filter(
-                and_(SubtypeNode.level_0 != "MYELOID", SubtypeNode.level_0 != "LYMPH")
+                and_(
+                    SubtypeNode.level_0 != "MYELOID",
+                    SubtypeNode.level_0 != "LYMPH",
+                    SubtypeNode.tree_type == tree_type,
+                )
             )
             .all()
         )
@@ -321,7 +325,7 @@ class SubtypeContext(Model):
 
     @staticmethod
     def get_model_ids_for_other_heme_contexts(
-        subtype_codes_to_filter_out: List[str],
+        subtype_codes_to_filter_out: List[str], tree_type: str
     ) -> Dict[str, str]:
         # Nodes with "MYELOID" or "LYMPHOID" at level 0 are considered "Heme contexts".
         # We want to find the insignficant heme contexts, leaving out branches that
@@ -337,7 +341,7 @@ class SubtypeContext(Model):
                     or_(
                         SubtypeNode.level_0 == "MYELOID", SubtypeNode.level_0 == "LYMPH"
                     ),
-                    SubtypeNode.level_0.notin_(subtype_codes_to_filter_out),
+                    SubtypeNode.tree_type == tree_type,
                 )
             )
             .all()
