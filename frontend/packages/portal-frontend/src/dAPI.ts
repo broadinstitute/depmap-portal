@@ -637,7 +637,8 @@ export class DepmapApi {
     subtypeCode: string,
     outGroupType: string,
     compoundLabel: string,
-    selectedLevel: number
+    selectedLevel: number,
+    treeType: string
   ): Promise<DoseCurveData> {
     const params = {
       dataset_name: datasetName,
@@ -645,6 +646,7 @@ export class DepmapApi {
       entity_full_label: compoundLabel,
       level: selectedLevel,
       out_group_type: outGroupType,
+      tree_type: treeType,
     };
 
     return this._fetchIncludeContextExplCache<DoseCurveData>(

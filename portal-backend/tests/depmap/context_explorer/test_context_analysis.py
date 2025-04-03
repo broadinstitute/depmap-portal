@@ -638,6 +638,7 @@ def test_get_dose_curves(empty_db_mock_downloads):
         subtype_code="ES",
         level=1,
         out_group_type="All Others",
+        tree_type="Lineage",
     )
 
     assert list(dose_curve_info.keys()) == [
@@ -917,6 +918,7 @@ def test_get_dose_curves(empty_db_mock_downloads):
         subtype_code="ES",
         level=1,
         out_group_type="BONE",
+        tree_type="Lineage",
     )
     assert dose_curve_info["dose_curve_info"] == {
         "in_group_curve_params": [

@@ -480,6 +480,7 @@ class ContextDoseCurves(Resource):
         subtype_code = request.args.get("subtype_code")
         level = request.args.get("level")
         out_group_type = request.args.get("out_group_type")
+        tree_type = request.args.get("tree_type")
 
         dose_curve_info = dose_curve_utils.get_context_dose_curves(
             dataset_name=dataset_name,
@@ -487,6 +488,7 @@ class ContextDoseCurves(Resource):
             subtype_code=subtype_code,
             level=level,
             out_group_type=out_group_type,
+            tree_type=tree_type,
         )
 
         compound_experiment = dose_curve_info["compound_experiment"]

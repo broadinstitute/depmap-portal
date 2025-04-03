@@ -12,7 +12,9 @@ from depmap.compound.models import (
 )
 
 
-def _get_out_group_model_ids(out_group_type, dataset_name, in_group_model_ids, label):
+def _get_out_group_model_ids(
+    out_group_type, dataset_name, in_group_model_ids, label, tree_type
+):
     (entity_full_row_of_values) = utils.get_full_row_of_values_and_depmap_ids(
         dataset_name=dataset_name, label=label
     )
@@ -31,7 +33,7 @@ def _get_out_group_model_ids(out_group_type, dataset_name, in_group_model_ids, l
         if out_group_type == "Other Heme":
             # find the Heme model ids
             other_heme_model_ids = SubtypeContext.get_model_ids_for_other_heme_contexts(
-                in_group_model_ids
+                in_group_model_ids, tree_type
             )
             return list(other_heme_model_ids.keys())
         else:
@@ -55,6 +57,7 @@ def _get_in_group_out_group_model_ids(
     subtype_code: str,
     level: int,
     out_group_type: str,
+    tree_type: str,
 ):
     in_group_model_ids = SubtypeNode.get_model_ids_by_subtype_code_and_node_level(
         subtype_code, level
@@ -65,6 +68,7 @@ def _get_in_group_out_group_model_ids(
         dataset_name=dataset_name,
         in_group_model_ids=in_group_model_ids,
         label=entity_full_label,
+        tree_type=tree_type,
     )
 
     return {
@@ -149,6 +153,7 @@ def get_context_dose_curves(
     subtype_code: str,
     level: int,
     out_group_type: str,
+    tree_type: str,
 ):
     assert dataset_name == DependencyDataset.DependencyEnum.Prism_oncology_AUC.name
     dataset = DependencyDataset.get_dataset_by_name(dataset_name)
@@ -166,6 +171,7 @@ def get_context_dose_curves(
         subtype_code=subtype_code,
         level=level,
         out_group_type=out_group_type,
+        tree_type=tree_type,
     )
 
     dose_curve_info = _get_dose_response_curves_per_model(

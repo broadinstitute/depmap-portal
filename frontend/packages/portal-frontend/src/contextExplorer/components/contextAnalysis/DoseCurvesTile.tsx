@@ -11,12 +11,14 @@ interface DoseCurvesTileProps {
   selectedLevel: number;
   selectedOutGroupType: string;
   datasetName: string;
+  selectedTreeType: string;
   getContextExplorerDoseResponsePoints: (
     datasetName: string,
     subtypeCode: string,
     outGroupType: string,
     compoundLabel: string,
-    selectedLevel: number
+    selectedLevel: number,
+    treeType: string
   ) => Promise<DoseCurveData>;
 }
 
@@ -28,6 +30,7 @@ function DoseCurvesTile(props: DoseCurvesTileProps) {
     selectedLevel,
     selectedOutGroupType,
     datasetName,
+    selectedTreeType,
     getContextExplorerDoseResponsePoints,
   } = props;
 
@@ -46,7 +49,8 @@ function DoseCurvesTile(props: DoseCurvesTileProps) {
         subtypeCode,
         selectedOutGroupType,
         selectedDrugLabel,
-        selectedLevel
+        selectedLevel,
+        selectedTreeType
       );
 
       doseCurvesLatestPromise.current = doseCurvesPromise;

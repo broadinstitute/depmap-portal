@@ -1008,6 +1008,7 @@ function ContextAnalysis({
                 selectedDrugLabel={[...selectedPlotLabels][0]}
                 datasetName={datasetId}
                 selectedOutGroupType={outgroup.value}
+                selectedTreeType={treeType}
                 getContextExplorerDoseResponsePoints={dapi.getContextExplorerDoseResponsePoints.bind(
                   dapi
                 )}
