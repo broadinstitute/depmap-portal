@@ -75,6 +75,7 @@ function DoseCurvesTile(props: DoseCurvesTileProps) {
     selectedDrugLabel,
     selectedLevel,
     selectedOutGroupType,
+    selectedTreeType,
     getContextExplorerDoseResponsePoints,
   ]);
 
