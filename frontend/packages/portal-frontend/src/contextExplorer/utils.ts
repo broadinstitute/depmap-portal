@@ -266,6 +266,11 @@ export function getGeneDependencyContexts(
     outGroupLabel: string,
     ingroupName: string
   ) {
+    const outGroupSliceId = `slice/Context_Matrix/${outgroupCode}/label`;
+    const hemeSliceIds = [
+      `slice/Context_Matrix/MYELOID/label`,
+      `slice/Context_Matrix/LYMPHOID/label`,
+    ];
     switch (outgroupCode) {
       case "All Others":
         return {
@@ -276,10 +281,6 @@ export function getGeneDependencyContexts(
           },
         };
       case "Other Heme":
-        const hemeSliceIds = [
-          `slice/Context_Matrix/MYELOID/label`,
-          `slice/Context_Matrix/LYMPHOID/label`,
-        ];
         return {
           name: `${outGroupLabel}`,
           context_type: "depmap_model",
@@ -292,7 +293,6 @@ export function getGeneDependencyContexts(
           },
         };
       default:
-        const outGroupSliceId = `slice/Context_Matrix/${outgroupCode}/label`;
         return {
           name: `${outGroupLabel}`,
           context_type: "depmap_model",
