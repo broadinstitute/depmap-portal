@@ -296,27 +296,67 @@ class ContextAnalysis(Model):
         assert dependency_dataset is not None
         return dependency_dataset.name
 
-    @classmethod
+    @staticmethod
     def get_enriched_context_cell_line_p_value_effect_size(
-        cls, entity_id, dataset_id, negative_only=False
+        entity_id, dataset_id, entity_type, negative_only=True
     ):
-        base_query = cls.query.filter_by(
-            entity_id=entity_id,
-            dependency_dataset_id=dataset_id,
-            out_group="All Others",
+        def _get_compound_min_effect_size_by_dependency_dataset_name(
+            dependency_dataset_id,
+        ):
+            dependency_dataset = DependencyDataset.get_dataset_by_id(
+                dataset_id=dependency_dataset_id
+            )
+            assert dependency_dataset is not None
+
+            if (
+                dependency_dataset.name
+                == DependencyDataset.DependencyEnum.Prism_oncology_AUC.name
+            ):
+                return 0.1
+            else:
+                return 0.5
+
+        base_query = (
+            ContextAnalysis.query.filter(
+                and_(
+                    ContextAnalysis.entity_id == entity_id,
+                    ContextAnalysis.dependency_dataset_id == dataset_id,
+                    ContextAnalysis.out_group == "All Others",
+                    ContextAnalysis.t_qval <= 0.05,
+                    ContextAnalysis.frac_dep_in >= 0.1,
+                    func.abs(ContextAnalysis.effect_size) >= 0.25,
+                )
+            )
+            if entity_type == "gene"
+            else ContextAnalysis.query.filter(
+                and_(
+                    ContextAnalysis.entity_id == entity_id,
+                    ContextAnalysis.dependency_dataset_id == dataset_id,
+                    ContextAnalysis.out_group == "All Others",
+                    ContextAnalysis.t_qval <= 0.05,
+                    func.abs(ContextAnalysis.effect_size)
+                    >= _get_compound_min_effect_size_by_dependency_dataset_name(
+                        dataset_id
+                    ),
+                )
+            )
         )
         if negative_only:
-            base_query = base_query.filter(cls.t_pval < 0)
+            base_query = base_query.filter(ContextAnalysis.effect_size < 0)
 
         context_cell_line_p_value_tuples = (
-            base_query.join(SubtypeNode, SubtypeNode.subtype_code == cls.subtype_code)
+            base_query.join(
+                SubtypeNode, SubtypeNode.subtype_code == ContextAnalysis.subtype_code
+            )
             .filter(SubtypeNode.tree_type == "Lineage")
             .join(SubtypeContext)
             .join(DepmapModel, SubtypeContext.depmap_model)
             .with_entities(
-                cls.subtype_code, DepmapModel.model_id, cls.t_pval, cls.effect_size,
+                ContextAnalysis.subtype_code,
+                DepmapModel.model_id,
+                ContextAnalysis.t_qval,
+                ContextAnalysis.effect_size,
             )
-            .limit(250)
             .all()
         )
 
@@ -328,13 +368,13 @@ class ContextAnalysis(Model):
 
         df = pd.DataFrame(
             context_cell_line_p_value_tuples,
-            columns=["context", "cell_line", "p_value", "effect_size"],
+            columns=["context", "cell_line", "q_value", "effect_size"],
         )
 
         df = df.groupby("context").aggregate(
             {
                 "cell_line": lambda x: set(x),
-                "p_value": lambda x: assert_one_or_none_and_get(x),
+                "q_value": lambda x: assert_one_or_none_and_get(x),
                 "effect_size": lambda x: assert_one_or_none_and_get(x),
             }
         )

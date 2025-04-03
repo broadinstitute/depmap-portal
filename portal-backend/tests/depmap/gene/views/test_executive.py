@@ -314,9 +314,6 @@ def test_format_crispr_possible_missing_reason_chronos(empty_db_mock_downloads,)
 
 
 def test_format_enrichment_boxes(empty_db_mock_downloads):
-    """
-    Test that negative t_statistic enrichments are filtered out
-    """
     cell_line_A = DepmapModelFactory(
         model_id="cell_line_A", depmap_model_type="context_A"
     )
@@ -347,14 +344,18 @@ def test_format_enrichment_boxes(empty_db_mock_downloads):
         subtype_context=context_A,
         entity=entity,
         dataset=dataset,
-        t_pval=1,
+        t_qval=0.05,
+        frac_dep_in=0.1,
+        effect_size=-0.25,
         out_group="All Others",
     )
     b = ContextAnalysisFactory(
         subtype_context=context_B,
         entity=entity,
         dataset=dataset,
-        t_pval=-1,
+        t_qval=0.05,
+        frac_dep_in=0.1,
+        effect_size=-0.25,
         out_group="All Others",
     )
 

@@ -22,7 +22,7 @@
     "label": "Min. Abs(effect size)",
     "minOrMax": "min",
     "step": 0.01,
-    "value": 0.1,
+    "value": 0.25,
     "minBound": 0
   },
   {

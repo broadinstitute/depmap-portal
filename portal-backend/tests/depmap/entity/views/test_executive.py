@@ -1,4 +1,6 @@
+from depmap.cell_line.models_new import DepmapModel
 from depmap.context.models_new import SubtypeNode
+from depmap.context_explorer.models import ContextAnalysis
 import pytest
 from numpy import NaN
 import pandas as pd
@@ -19,14 +21,17 @@ from tests.depmap.utilities.test_svg_utils import assert_is_svg
 from tests.utilities import interactive_test_utils
 from tests.factories import (
     BiomarkerDatasetFactory,
-    GeneFactory,
     CellLineFactory,
+    ContextAnalysisFactory,
+    DepmapModelFactory,
+    GeneFactory,
     MatrixFactory,
     DependencyDatasetFactory,
     PredictiveFeatureFactory,
     PredictiveModelFactory,
     PredictiveFeatureResultFactory,
     PredictiveBackgroundFactory,
+    SubtypeContextFactory,
     SubtypeNodeFactory,
 )
 from depmap.dataset.models import DependencyDataset
@@ -71,7 +76,18 @@ def test_format_enrichment_box_for_dataset(empty_db_mock_downloads):
         entity, dataset, "test_color", "test_override"
     )
 
-    assert enrichment_box.keys() == {"svg", "labels", "units", "color", "title_color"}
+    assert enrichment_box.keys() == {
+        "context_explorer_dataset_tab",
+        "most_selective_code",
+        "svg",
+        "labels",
+        "units",
+        "color",
+        "title_color",
+    }
+    assert enrichment_box["context_explorer_dataset_tab"] == "overview"
+    assert enrichment_box["most_selective_code"] == ""
+
     assert_is_svg(enrichment_box["svg"])
     assert "labels" in enrichment_box
     assert enrichment_box["units"] == dataset.matrix.units
@@ -80,13 +96,28 @@ def test_format_enrichment_box_for_dataset(empty_db_mock_downloads):
 
 
 def test_format_enrichments_for_svg(empty_db_mock_downloads):
-    subtype_nodeA = SubtypeNodeFactory(subtype_code="context_A", node_name="Context A")
-    subtype_nodeB = SubtypeNodeFactory(subtype_code="context_B", node_name="Context B")
-    subtype_nodeC = SubtypeNodeFactory(subtype_code="context_C", node_name="Context C")
+    subtype_nodeA = SubtypeNodeFactory(
+        subtype_code="context_A",
+        node_name="Context A",
+        node_level=0,
+        level_0="context_A",
+    )
+    subtype_nodeB = SubtypeNodeFactory(
+        subtype_code="context_B",
+        node_name="Context B",
+        node_level=0,
+        level_0="context_B",
+    )
+    subtype_nodeC = SubtypeNodeFactory(
+        subtype_code="context_C",
+        node_name="Context C",
+        node_level=0,
+        level_0="context_C",
+    )
 
     enriched_contexts = pd.DataFrame(
         {
-            "p_value": [1e-5, 1e-5, 1e-5],
+            "q_value": [1e-5, 1e-5, 1e-5],
             "effect_size": [0.5, 0.5, 0.5],
             "cell_line": [
                 ["cell_line_A1", "cell_line_AB2"],
@@ -95,7 +126,7 @@ def test_format_enrichments_for_svg(empty_db_mock_downloads):
             ],
         },
         index=["context_A", "context_B", "context_C"],
-        columns=["cell_line", "p_value", "effect_size"],
+        columns=["cell_line", "q_value", "effect_size"],
     )
 
     all_values_series = pd.Series(
@@ -116,9 +147,9 @@ def test_format_enrichments_for_svg(empty_db_mock_downloads):
     )
 
     expected_enriched_text_labels = [
-        "Context A (1.00e-05) n=2",
-        "Context B (1.00e-05) n=2",
-        "Context C (1.00e-05) n=1",
+        "Context A (context_A) (1.00e-05) n=2",
+        "Context B (context_B) (1.00e-05) n=2",
+        "Context C (context_C) (1.00e-05) n=1",
     ]
     expected_enriched_values = [[11, 122], [122, 23], [44]]
     expected_svg_all_box_positions = [4, 3, 2, 1]

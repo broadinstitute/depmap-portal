@@ -1,3 +1,4 @@
+from bdb import effective
 from depmap.compound.views.executive import (
     determine_compound_experiment_and_dataset,
     format_availability_tile,
@@ -86,14 +87,16 @@ def test_format_enrichment_boxes(empty_db_mock_downloads):
         subtype_context=context_A,
         entity=entity,
         dataset=dataset,
-        t_pval=1,
+        t_qval=0.03,
+        effect_size=0.26,
         out_group="All Others",
     )
     ContextAnalysisFactory(
         subtype_context=context_B,
         entity=entity,
         dataset=dataset,
-        t_pval=-1,
+        t_qval=0.03,
+        effect_size=0.26,
         out_group="All Others",
     )
 

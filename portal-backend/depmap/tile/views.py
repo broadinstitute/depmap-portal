@@ -369,6 +369,7 @@ def get_enrichment_html(
     entity, compound_experiment_and_datasets=None, query_params_dict={}
 ):
     entity_type = entity.get_entity_type()
+    enrichment_boxes = None
     if entity_type == "gene":
         crispr_dataset = get_dependency_dataset_for_entity(
             DependencyDataset.get_dataset_by_data_type_priority(
@@ -388,6 +389,12 @@ def get_enrichment_html(
         "tiles/selectivity.html",
         enrichment_boxes=enrichment_boxes,
         is_gene_entity_type=entity_type == "gene",
+        context_explorer_dataset_tab="overview"
+        if enrichment_boxes is None or len(enrichment_boxes) == 0
+        else enrichment_boxes[0]["context_explorer_dataset_tab"],
+        most_selective_code=""
+        if enrichment_boxes is None or len(enrichment_boxes) == 0
+        else enrichment_boxes[0]["most_selective_code"],
     )
 
 

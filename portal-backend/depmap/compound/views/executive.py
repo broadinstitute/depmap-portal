@@ -190,11 +190,7 @@ def format_enrichment_boxes(compound_experiment_and_datasets):
     for compound_experiment, dataset in compound_experiment_and_datasets:
         # compound dataset titles should not be colored
         enrichment_box = format_enrichment_box_for_dataset(
-            compound_experiment,
-            dataset,
-            colors[dataset.name],
-            "default",
-            # negative_only=True,
+            compound_experiment, dataset, colors[dataset.name], "default"
         )
         enrichment_box["title"] = "{} {}".format(
             compound_experiment.label, dataset.display_name
