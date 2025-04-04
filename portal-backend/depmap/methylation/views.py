@@ -26,7 +26,7 @@ def query_contexts(gene_symbol):
         assert context is not None
         cell_lines.update(context.depmap_model)
     results = [
-        methylation_db.connection.get(gene_symbol, cell_line)
+        methylation_db.connection.get(gene_symbol, cell_line.cell_line)
         for cell_line in cell_lines
     ]
 
