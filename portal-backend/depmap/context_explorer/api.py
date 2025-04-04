@@ -14,7 +14,7 @@ from depmap.context_explorer.models import (
     ContextAnalysis,
     ContextNode,
 )
-from depmap.context.models_new import SubtypeNode, TreeType
+from depmap.context.models_new import SubtypeContext, SubtypeNode, TreeType
 
 namespace = Namespace("context_explorer", description="View context data in the portal")
 
@@ -452,6 +452,7 @@ class AnalysisData(Resource):
         in_group = request.args.get("in_group")
         out_group_type = request.args.get("out_group_type")
         entity_type = request.args.get("entity_type")
+        tree_type = request.args.get("tree_type")
 
         # Can be either
         # DependencyEnum.Chronos_Combined.name
@@ -466,7 +467,22 @@ class AnalysisData(Resource):
             dataset_name=dataset_name,
         )
 
-        return data_table
+        out_group_heme_model_ids = []
+        if out_group_type == "Other Heme":
+            node = SubtypeNode.get_by_code(in_group)
+            in_group_model_ids = SubtypeNode.get_model_ids_by_subtype_code_and_node_level(
+                in_group, node.node_level
+            )
+            # find the Heme model ids
+            other_heme_model_ids = SubtypeContext.get_model_ids_for_other_heme_contexts(
+                in_group_model_ids, tree_type
+            )
+            out_group_heme_model_ids = list(other_heme_model_ids.keys())
+
+        return {
+            "data_table": data_table,
+            "out_group_heme_model_ids": out_group_heme_model_ids,
+        }
 
 
 @namespace.route("/context_dose_curves")

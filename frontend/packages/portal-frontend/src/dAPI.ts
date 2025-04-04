@@ -67,7 +67,6 @@ import {
   ContextInfo,
   ContextSummary,
   DataType,
-  ContextAnalysisTableType,
   getDataTypeColorCategoryFromDataTypeValue,
   Summary,
   ContextPlotBoxData,
@@ -76,6 +75,7 @@ import {
   ContextPathInfo,
   AvailabilitySummary,
   DataAvailabilitySummary,
+  ContextAnalysisData,
 } from "src/contextExplorer/models/types";
 import {
   DataAvailability,
@@ -658,16 +658,18 @@ export class DepmapApi {
     in_group_code: string,
     out_group_type: string,
     entity_type: string,
+    treeType: string,
     dataset_name: ContextExplorerDatasets
-  ): Promise<ContextAnalysisTableType> {
+  ): Promise<ContextAnalysisData> {
     const params = {
       in_group: in_group_code,
       out_group_type,
       entity_type,
+      tree_type: treeType,
       dataset_name,
     };
 
-    return this._fetch<ContextAnalysisTableType>(
+    return this._fetch<ContextAnalysisData>(
       `/api/context_explorer/analysis_data?${encodeParams(params)}`
     );
   }

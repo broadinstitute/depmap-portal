@@ -7,6 +7,7 @@ import React, {
 } from "react";
 import styles from "src/contextExplorer/styles/ContextExplorer.scss";
 import {
+  ContextAnalysisData,
   ContextAnalysisPlotData,
   ContextAnalysisPlotType,
   ContextAnalysisTableType,
@@ -146,9 +147,12 @@ function ContextAnalysis({
   }, [outgroup, outgroupOptions]);
 
   const [data, setData] = useState<ContextAnalysisTableType | null>(null);
+  const [outGroupOtherHemeModelIds, setOutGroupOtherHemeModelIds] = useState<
+    string[]
+  >([]);
   const [error, setError] = useState(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const latestPromise = useRef<Promise<ContextAnalysisTableType> | null>(null);
+  const latestPromise = useRef<Promise<ContextAnalysisData> | null>(null);
 
   useEffect(() => {
     setData(null);
@@ -158,6 +162,7 @@ function ContextAnalysis({
         selectedContextNameInfo.subtype_code,
         outgroup.value,
         entityType,
+        treeType,
         datasetId
       );
 
@@ -165,7 +170,8 @@ function ContextAnalysis({
       promise
         .then((fetchedData) => {
           if (promise === latestPromise.current) {
-            setData(fetchedData);
+            setData(fetchedData.data_table);
+            setOutGroupOtherHemeModelIds(fetchedData.out_group_heme_model_ids);
           }
         })
         .catch((e) => {
@@ -190,6 +196,7 @@ function ContextAnalysis({
     outgroup,
     datasetId,
     entityType,
+    treeType,
     dapi,
     didValidateOutgroup,
   ]);
@@ -857,7 +864,8 @@ function ContextAnalysis({
                   href={getDataExplorerUrl(
                     selectedContextNameInfo.subtype_code,
                     outgroup,
-                    datasetId
+                    datasetId,
+                    outGroupOtherHemeModelIds
                   )}
                   target="_blank"
                   disabled={
