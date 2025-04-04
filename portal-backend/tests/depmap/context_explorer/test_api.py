@@ -514,7 +514,7 @@ def test_unknown_context_analysis_data(populated_db):
             content_type="application/json",
         )
 
-        assert r.json == {"data_table": None, "out_group_heme_subtype_codes": []}
+        assert r.json == None
 
 
 def test_get_context_path(populated_db):

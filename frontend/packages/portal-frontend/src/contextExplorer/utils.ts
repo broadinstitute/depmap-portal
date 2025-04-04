@@ -237,8 +237,7 @@ export function getDataExplorerContextFromSelections(
 
 export function getGeneDependencyContexts(
   selectedContextCode: string,
-  outgroup: { value: string; label: string },
-  outGroupOtherHemeSubtypeCodes: string[]
+  outgroup: { value: string; label: string }
 ): {
   inGroupContext: DataExplorerContext;
   outGroupContext: DataExplorerContext;
@@ -271,13 +270,10 @@ export function getGeneDependencyContexts(
     ingroupName: string
   ) {
     const outGroupSliceId = `slice/Context_Matrix/${outgroupCode}/label`;
-    const outGroupHemeSliceIds = outGroupOtherHemeSubtypeCodes.map(
-      (code: string) => `slice/Context_Matrix/${code}/label`
-    );
-    const outGroupHemeExp = outGroupHemeSliceIds.map((sliceId: string) => {
-      return { "==": [{ var: sliceId }, 1] };
-    });
-    outGroupHemeExp.push({ "==": [{ var: inGroupSliceId }, 0] });
+    const outGroupHemeExp = [
+      { "==": [{ var: `slice/Context_Matrix/MYELOID/label` }, 1] },
+      { "==": [{ var: `slice/Context_Matrix/LYMPH/label` }, 1] },
+    ];
 
     switch (outgroupCode) {
       case "All Others":
@@ -293,7 +289,8 @@ export function getGeneDependencyContexts(
           name: `${outGroupLabel}`,
           context_type: "depmap_model",
           expr: {
-            and: outGroupHemeExp,
+            and: [{ "==": [{ var: inGroupSliceId }, 0] }],
+            or: [outGroupHemeExp[0], outGroupHemeExp[1]],
           },
         };
       default:
@@ -329,15 +326,13 @@ const de2PageHref = window.location.href
 export function getDataExplorerUrl(
   ingroupCode: string,
   outgroup: { value: string; label: string },
-  datasetId: ContextExplorerDatasets,
-  outGroupOtherHemeSubtypeCodes: string[]
+  datasetId: ContextExplorerDatasets
 ): string {
   const xDataset = datasetId;
   const yDataset = datasetId;
   const { inGroupContext, outGroupContext } = getGeneDependencyContexts(
     ingroupCode,
-    outgroup,
-    outGroupOtherHemeSubtypeCodes
+    outgroup
   );
 
   const queryString = qs.stringify({

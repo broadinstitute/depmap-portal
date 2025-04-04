@@ -452,7 +452,6 @@ class AnalysisData(Resource):
         in_group = request.args.get("in_group")
         out_group_type = request.args.get("out_group_type")
         entity_type = request.args.get("entity_type")
-        tree_type = request.args.get("tree_type")
 
         # Can be either
         # DependencyEnum.Chronos_Combined.name
@@ -467,22 +466,7 @@ class AnalysisData(Resource):
             dataset_name=dataset_name,
         )
 
-        other_heme_subtype_codes = []
-        if out_group_type == "Other Heme":
-            node = SubtypeNode.get_by_code(in_group)
-            assert node is not None
-            in_group_model_ids = SubtypeNode.get_model_ids_by_subtype_code_and_node_level(
-                in_group, node.node_level
-            )
-            # find the Heme subtype_codes
-            other_heme_subtype_codes = SubtypeContext.get_subtype_codes_for_other_heme_contexts(
-                in_group_model_ids, tree_type
-            )
-
-        return {
-            "data_table": data_table,
-            "out_group_heme_subtype_codes": other_heme_subtype_codes,
-        }
+        return data_table
 
 
 @namespace.route("/context_dose_curves")

@@ -7,7 +7,6 @@ import React, {
 } from "react";
 import styles from "src/contextExplorer/styles/ContextExplorer.scss";
 import {
-  ContextAnalysisData,
   ContextAnalysisPlotData,
   ContextAnalysisPlotType,
   ContextAnalysisTableType,
@@ -147,13 +146,9 @@ function ContextAnalysis({
   }, [outgroup, outgroupOptions]);
 
   const [data, setData] = useState<ContextAnalysisTableType | null>(null);
-  const [
-    outGroupOtherHemeSubtypeCodes,
-    setOutGroupOtherHemeSubtypeCodes,
-  ] = useState<string[]>([]);
   const [error, setError] = useState(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const latestPromise = useRef<Promise<ContextAnalysisData> | null>(null);
+  const latestPromise = useRef<Promise<ContextAnalysisTableType> | null>(null);
 
   useEffect(() => {
     setData(null);
@@ -163,7 +158,6 @@ function ContextAnalysis({
         selectedContextNameInfo.subtype_code,
         outgroup.value,
         entityType,
-        treeType,
         datasetId
       );
 
@@ -171,10 +165,7 @@ function ContextAnalysis({
       promise
         .then((fetchedData) => {
           if (promise === latestPromise.current) {
-            setData(fetchedData.data_table);
-            setOutGroupOtherHemeSubtypeCodes(
-              fetchedData.out_group_heme_subtype_codes
-            );
+            setData(fetchedData);
           }
         })
         .catch((e) => {
@@ -867,8 +858,7 @@ function ContextAnalysis({
                   href={getDataExplorerUrl(
                     selectedContextNameInfo.subtype_code,
                     outgroup,
-                    datasetId,
-                    outGroupOtherHemeSubtypeCodes
+                    datasetId
                   )}
                   target="_blank"
                   disabled={

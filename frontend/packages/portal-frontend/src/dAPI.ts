@@ -75,7 +75,7 @@ import {
   ContextPathInfo,
   AvailabilitySummary,
   DataAvailabilitySummary,
-  ContextAnalysisData,
+  ContextAnalysisTableType,
 } from "src/contextExplorer/models/types";
 import {
   DataAvailability,
@@ -658,18 +658,16 @@ export class DepmapApi {
     in_group_code: string,
     out_group_type: string,
     entity_type: string,
-    treeType: string,
     dataset_name: ContextExplorerDatasets
-  ): Promise<ContextAnalysisData> {
+  ): Promise<ContextAnalysisTableType> {
     const params = {
       in_group: in_group_code,
       out_group_type,
       entity_type,
-      tree_type: treeType,
       dataset_name,
     };
 
-    return this._fetch<ContextAnalysisData>(
+    return this._fetch<ContextAnalysisTableType>(
       `/api/context_explorer/analysis_data?${encodeParams(params)}`
     );
   }
