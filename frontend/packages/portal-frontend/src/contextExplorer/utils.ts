@@ -463,23 +463,19 @@ function mergeDataAvailability(
 }
 
 function getSelectedContextData(
-  selectedContextNode: ContextNode | null,
+  selectedContextNode: ContextNode,
   allContextDatasetDataAvail: ContextSummary,
   selectedContextDataAvailability: ContextSummary
 ) {
-  const mergedDataAvailability = selectedContextNode
-    ? mergeDataAvailability(
-        allContextDatasetDataAvail,
-        selectedContextDataAvailability
-      )
-    : mergeDataAvailability(
-        allContextDatasetDataAvail,
-        allContextDatasetDataAvail
-      );
+  const mergedDataAvailability = mergeDataAvailability(
+    allContextDatasetDataAvail,
+    selectedContextDataAvailability
+  );
 
-  const filteredData = selectedContextNode
-    ? getFilteredData(selectedContextNode, mergedDataAvailability)
-    : mergedDataAvailability;
+  const filteredData = getFilteredData(
+    selectedContextNode,
+    mergedDataAvailability
+  );
   const availableDepmapIds = mergedDataAvailability.all_depmap_ids;
 
   const newDataVals = [];
@@ -499,13 +495,11 @@ function getSelectedContextData(
 
   return {
     selectedContextData: newContextData,
-    selectedContextNameInfo: selectedContextNode
-      ? {
-          subtype_code: selectedContextNode.subtype_code,
-          name: selectedContextNode.name,
-          node_level: selectedContextNode.node_level,
-        }
-      : ALL_SEARCH_OPTION,
+    selectedContextNameInfo: {
+      subtype_code: selectedContextNode.subtype_code,
+      name: selectedContextNode.name,
+      node_level: selectedContextNode.node_level,
+    },
   };
 }
 
@@ -530,14 +524,21 @@ export function getSelectionInfo(
     }
   });
 
-  const {
-    selectedContextData,
-    selectedContextNameInfo,
-  } = getSelectedContextData(
-    selectedContextNode,
-    allContextDatasetDataAvail,
-    selectedContextDataAvailability
-  );
+  const { selectedContextData, selectedContextNameInfo } = selectedContextNode
+    ? getSelectedContextData(
+        selectedContextNode,
+        allContextDatasetDataAvail,
+        selectedContextDataAvailability
+      )
+    : {
+        selectedContextData: {
+          values: [...allContextDatasetDataAvail.values],
+          data_types: [...allContextDatasetDataAvail.data_types].reverse(),
+          all_depmap_ids: allContextDatasetDataAvail.all_depmap_ids,
+        },
+        selectedContextNameInfo: ALL_SEARCH_OPTION,
+      };
+
   let checkedDataValues = selectedContextNode
     ? selectedContextData.values
     : allContextDatasetDataAvail.values;
