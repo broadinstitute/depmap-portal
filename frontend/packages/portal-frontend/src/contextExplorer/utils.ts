@@ -194,7 +194,10 @@ export function getDataExplorerContextFromSelections(
 ): DataExplorerContext {
   const selectedContextCode = selectedContextNameInfo.subtype_code;
   const selectedDataTypes = [...checkedDatatypes].join(" ");
-  const de2ContextName = `${selectedContextNameInfo.name} Cell Lines available in ${selectedDataTypes}`;
+  const de2ContextName =
+    checkedDatatypes.size > 0
+      ? `${selectedContextNameInfo.name} Cell Lines available in ${selectedDataTypes}`
+      : selectedContextNameInfo.name;
 
   // We don't have "datatype" information for some cell lines, and datatype information is
   // required for a cell line to show up in Context Explorer (datatype information = information
@@ -202,7 +205,7 @@ export function getDataExplorerContextFromSelections(
   // We add a depmapId list to the context we build off of Context Explorer to ensure the cell lines
   // in Context Explorer match the cell lines shown in Data Explorer 2 using a Context Explorer Context.
   const exp =
-    selectedContextCode === "All"
+    selectedContextCode === "All" || checkedDatatypes.size > 0
       ? {
           and: [
             {
