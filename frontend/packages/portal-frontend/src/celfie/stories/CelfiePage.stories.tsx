@@ -125,18 +125,6 @@ export function CelfieStory() {
           label: "CRISPR CERES (Achilles Avana) Internal 18Q3",
         },
         {
-          dataset: "GeCKO",
-          entity: 11,
-          id: "GeCKO_11",
-          label: "CRISPR CERES (Achilles GeCKO)",
-        },
-        {
-          dataset: "Sanger_CRISPR",
-          entity: 11,
-          id: "Sanger_CRISPR_11",
-          label: "CRISPR CERES (Score)",
-        },
-        {
           dataset: "RNAi_merged",
           entity: 11,
           id: "RNAi_merged_11",

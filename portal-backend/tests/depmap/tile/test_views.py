@@ -18,10 +18,7 @@ from tests.factories import (
 )
 from tests.utilities.override_fixture import override
 from depmap.dataset.models import DependencyDataset
-from depmap.tile.views import (
-    render_tile,
-    _get_highest_priority_crispr_dataset_with_data_for_gene,
-)
+from depmap.tile.views import render_tile
 import pytest
 import requests.exceptions
 

@@ -35,8 +35,6 @@ def mock_ask_taiga_for_canonical_taiga_id(request, app, monkeypatch):
         # don't need to list all the virtuals, just that ones that are used in the load sample data process
         virtuals = {
             "small-avana-virtual-dataset-86d8.1/avana_score": "small-avana-f2b9.2/avana_score",
-            "small-gecko-virtual-dataset-4fe6.1": "small-gecko-aff0.1/gecko_score",
-            "small-gecko-aff0.1": "small-gecko-aff0.1/gecko_score",
         }
         if taiga_id in virtuals:
             return virtuals[taiga_id]

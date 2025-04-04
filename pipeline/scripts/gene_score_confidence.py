@@ -101,7 +101,6 @@ achilles_lrt_file_path = parser.parse_args().achilles_lrt_file_path
 # expression_taiga_id = "internal-20q2-7f46.18/CCLE_expression"
 # common_essentials_taiga_id = "internal-20q2-7f46.18/common_essentials"
 # nonessentials_taiga_id = "internal-20q2-7f46.18/nonessentials"
-# gene_effect_score_taiga_id = "sanger-crispr-project-score--e20b.4/gene_effect"
 # gene_effect_rnai_taiga_id = "demeter2-combined-dc9c.19/gene_means_proc"
 # fixme last two parameters
 

@@ -209,11 +209,11 @@ compound_gdsc_ids = [
 # the sample data for rnai_nov_dem is a copy of that for rnai_ach
 genes_expanded = [
     "SWI5 (375757)",  # avana
-    "TRIL (9865)",  # gecko, in rnai but not avana
+    "TRIL (9865)",  #  in rnai but not avana
     "TENC1 (23371)",  # rnai_ach, rnai_nov_dem. not in any dataset but has dropped from chronos
-    "UNC93B1 (81622)",  # gecko, rnai_ach, rnai_nov_dem. in rnai but not avana, but has gene executive info for chronos indicating dropped by chronos
+    "UNC93B1 (81622)",  #  rnai_ach, rnai_nov_dem. in rnai but not avana, but has gene executive info for chronos indicating dropped by chronos
     "PSG7 (5676)",  # avana, rnai_ach, rnai_nov_dem
-    "KDM7A (80853)",  # avana, gecko, not in combined chronos
+    "KDM7A (80853)",  # avana,  not in combined chronos
     "F8A1 (8263)",  # rnai, fusion
     "MIR3613 (100500908)",  # cn, also not in any dependency dataset
     "ANOS1 (3730)",  # exp
@@ -227,14 +227,14 @@ genes_expanded = [
 ]
 
 cell_lines_expanded = [
-    "HS294T_SKIN",  # avana, gecko, rnai_ach, rnai_nov_dem
-    "A673_BONE",  # gecko, rnai_ach, rnai_nov_dem
-    "EWS502_BONE",  # gecko, rnai_ach, rnai_nov_dem
-    "HT29_LARGE_INTESTINE",  # gecko, rnai_ach, rnai_nov_dem
+    "HS294T_SKIN",  # avana,  rnai_ach, rnai_nov_dem
+    "A673_BONE",  #  rnai_ach, rnai_nov_dem
+    "EWS502_BONE",  #  rnai_ach, rnai_nov_dem
+    "HT29_LARGE_INTESTINE",  #  rnai_ach, rnai_nov_dem
     "A2058_SKIN",  # avana, rnai_ach, rnai_nov_dem
     "C32_SKIN",  # avana, rnai_ach, rnai_nov_dem
     "143B_BONE",  # avana, rnai_ach, rnai_nov_dem
-    "CADOES1_BONE",  # gecko, rnai_ach, rnai_nov_dem
+    "CADOES1_BONE",  #  rnai_ach, rnai_nov_dem
     "CJM_SKIN",  # avana, rnai_ach, rnai_nov_dem
     "COLO679_SKIN",  # avana, rnai_ach, rnai_nov_dem
     "EKVX_LUNG",  # avana, rnai_ach, rnai_nov_dem
@@ -243,7 +243,6 @@ cell_lines_expanded = [
     "SKMEL30_SKIN",  # avana
     "WM88_SKIN",  # rnai_ach, rnai_nov_dem
     "PETA_SKIN",  # rnai_ach, rnai_nov_dem. missing rrid
-    "TC32_BONE",  # gecko
     "WM115_SKIN",  # avana, rnai_ach, rnai_nov_dem
     "SH4_SKIN",  # rnai_ach, rnai_nov_dem
 ]
@@ -297,17 +296,6 @@ avana_score = [
     "PSG7",
     "SOX10",
     "SWI5",
-]
-gecko_score = [
-    "ANOS1",
-    "HNF1B",
-    "KDM7A",
-    "MAP4K4",
-    "MED1",
-    "NRAS",
-    "SOX10",
-    "TRIL",
-    "UNC93B1",
 ]
 rnai_ach = [
     "AMY1A",

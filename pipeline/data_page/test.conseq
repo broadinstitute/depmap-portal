@@ -58,12 +58,6 @@ add-if-missing {
   "dataset_id": "total-proteome--5c50.1/protein_quant_current_normalized"
 }
 
-add-if-missing {
-  "type": "raw-dep-matrix",
-  "dataset_id": "project-score-chronos-ad31.14/gene_effect",
-  "label": "Chronos_Score",
-  "rows": "cell-lines"
-}
 
 add-if-missing {
     'type' : 'sanger_methylation_taiga_id',

@@ -519,7 +519,13 @@ def get_description_html(entity, cpd_exp_and_datasets=None, query_params_dict={}
 
 def get_essentiality_html(gene):
     # we also only do this for the essentiality tile, because the other tiles involve precomputed results which we have not calculated for the other enums
-    crispr_dataset = _get_highest_priority_crispr_dataset_with_data_for_gene(gene)
+
+    crispr_dataset = get_dependency_dataset_for_entity(
+        DependencyDataset.get_dataset_by_data_type_priority(
+            DependencyDataset.DataTypeEnum.crispr
+        ).name,
+        gene.entity_id,
+    )
 
     rnai_dataset = get_dependency_dataset_for_entity(
         DependencyDataset.get_dataset_by_data_type_priority(
@@ -533,25 +539,6 @@ def get_essentiality_html(gene):
     )
 
     return render_template("tiles/essentiality.html", dep_dist=dep_dist,)
-
-
-def _get_highest_priority_crispr_dataset_with_data_for_gene(gene: Gene):
-    """
-    NOTE: Get the highest priority crispr dataset that contains the given gene is limited bc it is used in essentiality tile where GeneExecutiveInfo only has info for 
-    ['Chronos_Combined', 'Chronos_Score', 'RNAi_merged']
-    """
-    top_crispr_enums = [
-        DependencyDataset.DependencyEnum.Chronos_Combined,
-        DependencyDataset.DependencyEnum.Chronos_Score,
-    ]
-    crispr_dataset = None
-
-    # find the first crispr dataset in the priority list for which there is data for this gene
-    for crispr_enum in top_crispr_enums:
-        crispr_dataset = get_dependency_dataset_for_entity(crispr_enum, gene.entity_id)
-        if crispr_dataset:
-            break
-    return crispr_dataset
 
 
 def get_codependencies_html(gene):

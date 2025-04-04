@@ -81,13 +81,6 @@ expected_downloads = [
                 ),
             ),
             DownloadFile(
-                name="gecko.csv",
-                type=FileType.genetic_dependency,
-                size="MB",
-                url="https://link.to/figshare/gecko",
-                taiga_id="small-gecko-virtual-dataset-4fe6.1",
-            ),
-            DownloadFile(
                 name="rnai.csv",
                 type=FileType.genetic_dependency,
                 size="MB",
@@ -170,7 +163,7 @@ def test_parse_download_file(
     file_path="tests/depmap/download/test_download_release.yaml",
 ):
     observed_downloads_release = parse_downloads_file(file_path)
-    assert len(observed_downloads_release.all_files) == 7
+    assert len(observed_downloads_release.all_files) == 6
 
     assert repr(observed_downloads_release.all_files[0]._url) == repr(
         DmcBucketUrl("test/gene_effect.csv")

@@ -104,23 +104,6 @@ files:
       - value: 1
         label: lineages
     md5_hash: null
-  - name: gecko.csv
-    type: genetic_dependency
-    size: MB
-    pipeline_name: ""
-    url: https://link.to/figshare/gecko
-    is_main_file: false
-    description: null
-    taiga_id: "small-gecko-virtual-dataset-4fe6.1"
-    sources:
-      - broad
-    satisfies_db_taiga_id: null
-    headliner_name_override: null
-    date_override: null
-    terms_override: null
-    retraction_override: null
-    summary_stats: null
-    md5_hash: null
   - name: rnai.csv
     type: genetic_dependency
     size: MB
