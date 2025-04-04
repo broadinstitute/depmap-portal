@@ -5,10 +5,12 @@ import {
 } from "../../contexts/DeprecatedDataExplorerApiContext";
 import PlotConfigSelect from "../PlotConfigSelect";
 import SliceLabelSelector from "../SliceLabelSelector";
+import BinaryColorsHelpTip from "./BinaryColorsHelpTip";
 import {
   containsPartialSlice,
   getDatasetIdFromSlice,
   getMetadataSliceTypeLabelFromSlice,
+  getValueTypeFromSlice,
   getOptions,
   sliceLabel,
   slicePrefix,
@@ -59,6 +61,11 @@ function DatasetMetadataSelector({
     options[value1] = isLoading ? "Loading…" : "(unknown property)";
   }
 
+  const sliceTypeLabel = getMetadataSliceTypeLabelFromSlice(
+    metadataSlices,
+    value
+  );
+
   return (
     <div>
       <PlotConfigSelect
@@ -73,17 +80,20 @@ function DatasetMetadataSelector({
         isLoading={isLoading}
       />
       {hasDynamicLabel && (
-        <SliceLabelSelector
-          value={value2}
-          onChange={onChange}
-          isClearable={false}
-          menuPortalTarget={null}
-          dataset_id={getDatasetIdFromSlice(metadataSlices, value as string)}
-          sliceTypeLabel={getMetadataSliceTypeLabelFromSlice(
-            metadataSlices,
-            value as string
-          )}
-        />
+        <div style={{ display: "flex" }}>
+          <SliceLabelSelector
+            value={value2}
+            onChange={onChange}
+            isClearable={false}
+            menuPortalTarget={null}
+            dataset_id={getDatasetIdFromSlice(metadataSlices, value as string)}
+            sliceTypeLabel={sliceTypeLabel}
+          />
+          <BinaryColorsHelpTip
+            valueType={getValueTypeFromSlice(metadataSlices, value)}
+            sliceTypeLabel={sliceTypeLabel}
+          />
+        </div>
       )}
     </div>
   );
