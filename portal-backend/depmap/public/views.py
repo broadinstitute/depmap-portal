@@ -33,7 +33,10 @@ from flask import (
 import requests
 from depmap.public.parse_resources import parse_resources_file
 
-from depmap.public.announcements.utils import get_announcements_list
+from depmap.public.announcements.utils import (
+    get_announcements_list,
+    get_updates_markdown_to_html,
+)
 
 from .documentation import rewrite_documentation_urls
 
@@ -65,9 +68,11 @@ def home():
         quarter_name = m.groups()[0]
     else:
         quarter_name = None
+
     return render_theme_template(
         "home.html",
         announcements=get_announcements_list(),
+        updates=get_updates_markdown_to_html(),  # only for dmc
         quarter=quarter_name,  # , DEPMAP_URL=url_prefix
     )
 
