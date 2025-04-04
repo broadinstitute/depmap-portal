@@ -147,9 +147,10 @@ function ContextAnalysis({
   }, [outgroup, outgroupOptions]);
 
   const [data, setData] = useState<ContextAnalysisTableType | null>(null);
-  const [outGroupOtherHemeModelIds, setOutGroupOtherHemeModelIds] = useState<
-    string[]
-  >([]);
+  const [
+    outGroupOtherHemeSubtypeCodes,
+    setOutGroupOtherHemeSubtypeCodes,
+  ] = useState<string[]>([]);
   const [error, setError] = useState(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const latestPromise = useRef<Promise<ContextAnalysisData> | null>(null);
@@ -171,7 +172,9 @@ function ContextAnalysis({
         .then((fetchedData) => {
           if (promise === latestPromise.current) {
             setData(fetchedData.data_table);
-            setOutGroupOtherHemeModelIds(fetchedData.out_group_heme_model_ids);
+            setOutGroupOtherHemeSubtypeCodes(
+              fetchedData.out_group_heme_subtype_codes
+            );
           }
         })
         .catch((e) => {
@@ -865,7 +868,7 @@ function ContextAnalysis({
                     selectedContextNameInfo.subtype_code,
                     outgroup,
                     datasetId,
-                    outGroupOtherHemeModelIds
+                    outGroupOtherHemeSubtypeCodes
                   )}
                   target="_blank"
                   disabled={

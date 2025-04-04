@@ -467,22 +467,21 @@ class AnalysisData(Resource):
             dataset_name=dataset_name,
         )
 
-        out_group_heme_model_ids = []
+        other_heme_subtype_codes = []
         if out_group_type == "Other Heme":
             node = SubtypeNode.get_by_code(in_group)
             assert node is not None
             in_group_model_ids = SubtypeNode.get_model_ids_by_subtype_code_and_node_level(
                 in_group, node.node_level
             )
-            # find the Heme model ids
-            other_heme_model_ids = SubtypeContext.get_model_ids_for_other_heme_contexts(
+            # find the Heme subtype_codes
+            other_heme_subtype_codes = SubtypeContext.get_subtype_codes_for_other_heme_contexts(
                 in_group_model_ids, tree_type
             )
-            out_group_heme_model_ids = list(other_heme_model_ids.keys())
 
         return {
             "data_table": data_table,
-            "out_group_heme_model_ids": out_group_heme_model_ids,
+            "out_group_heme_subtype_codes": other_heme_subtype_codes,
         }
 
 

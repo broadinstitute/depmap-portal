@@ -238,7 +238,7 @@ export function getDataExplorerContextFromSelections(
 export function getGeneDependencyContexts(
   selectedContextCode: string,
   outgroup: { value: string; label: string },
-  outGroupOtherHemeModelIds: string[]
+  outGroupOtherHemeSubtypeCodes: string[]
 ): {
   inGroupContext: DataExplorerContext;
   outGroupContext: DataExplorerContext;
@@ -271,6 +271,13 @@ export function getGeneDependencyContexts(
     ingroupName: string
   ) {
     const outGroupSliceId = `slice/Context_Matrix/${outgroupCode}/label`;
+    const outGroupHemeSliceIds = outGroupOtherHemeSubtypeCodes.map(
+      (code: string) => `slice/Context_Matrix/${code}/label`
+    );
+    const outGroupHemeExp = outGroupHemeSliceIds.map((sliceId: string) => {
+      return { "==": [{ var: sliceId }, 1] };
+    });
+    outGroupHemeExp.push({ "==": [{ var: inGroupSliceId }, 0] });
 
     switch (outgroupCode) {
       case "All Others":
@@ -286,11 +293,7 @@ export function getGeneDependencyContexts(
           name: `${outGroupLabel}`,
           context_type: "depmap_model",
           expr: {
-            and: [
-              {
-                in: [{ var: "entity_label" }, outGroupOtherHemeModelIds],
-              },
-            ],
+            and: outGroupHemeExp,
           },
         };
       default:
@@ -327,14 +330,14 @@ export function getDataExplorerUrl(
   ingroupCode: string,
   outgroup: { value: string; label: string },
   datasetId: ContextExplorerDatasets,
-  outGroupOtherHemeModelIds: string[]
+  outGroupOtherHemeSubtypeCodes: string[]
 ): string {
   const xDataset = datasetId;
   const yDataset = datasetId;
   const { inGroupContext, outGroupContext } = getGeneDependencyContexts(
     ingroupCode,
     outgroup,
-    outGroupOtherHemeModelIds
+    outGroupOtherHemeSubtypeCodes
   );
 
   const queryString = qs.stringify({

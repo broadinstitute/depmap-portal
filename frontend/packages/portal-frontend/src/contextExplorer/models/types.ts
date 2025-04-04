@@ -197,10 +197,10 @@ export type ContextAnalysisTableType = {
 export interface ContextAnalysisData {
   data_table: ContextAnalysisTableType;
   // Other Heme is a weird special case where we need
-  // to keep track of the out group model ids since "Other Heme"
+  // to keep track of the out group subtype_codes since "Other Heme"
   // cannot be identified by 1 particular subtype code. If out_group_type
-  // is not "Other Heme", out_group_heme_model_ids should be empty
-  out_group_heme_model_ids: string[];
+  // is not "Other Heme", out_group_heme_subtype_codes should be empty
+  out_group_heme_subtype_codes: string[];
 }
 
 export interface BoxData {

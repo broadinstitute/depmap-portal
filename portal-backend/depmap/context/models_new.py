@@ -324,6 +324,32 @@ class SubtypeContext(Model):
         return display_name_series.to_dict()
 
     @staticmethod
+    def get_subtype_codes_for_other_heme_contexts(
+        subtype_codes_to_filter_out: List[str], tree_type: str
+    ) -> Dict[str, str]:
+        contexts = (
+            db.session.query(SubtypeContext)
+            .filter(SubtypeContext.subtype_code.notin_(subtype_codes_to_filter_out))
+            .join(SubtypeNode, SubtypeNode.subtype_code == SubtypeContext.subtype_code)
+            .filter(
+                and_(
+                    or_(
+                        SubtypeNode.level_0 == "MYELOID", SubtypeNode.level_0 == "LYMPH"
+                    ),
+                    SubtypeNode.tree_type == tree_type,
+                )
+            )
+            .all()
+        )
+
+        if len(contexts) == 0:
+            return []
+
+        subtype_codes = [context.subtype_code for context in contexts]
+
+        return subtype_codes
+
+    @staticmethod
     def get_model_ids_for_other_heme_contexts(
         subtype_codes_to_filter_out: List[str], tree_type: str
     ) -> Dict[str, str]:
