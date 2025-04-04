@@ -26,6 +26,9 @@ import List from "./List";
 import NumberExpr from "./NumberExpr";
 import styles from "../../styles/ContextBuilder.scss";
 
+const LEFT_INDEX = 0;
+const RIGHT_INDEX = 1;
+
 interface Props {
   expr: Record<OperatorType, Expr>;
   path: (string | number)[];
@@ -89,8 +92,8 @@ function Comparison({
 
   const op = getOperator(expr);
   const [left, right] = expr[op] as [Expr, string | string[] | number | null];
-  const leftPath = [...path, op, 0];
-  const rightPath = [...path, op, 1];
+  const leftPath = [...path, op, LEFT_INDEX];
+  const rightPath = [...path, op, RIGHT_INDEX];
   let slice_id = !isVar(left) || isPartialSliceId(left.var) ? null : left.var;
 
   if (datasets && slice_id) {
@@ -228,7 +231,7 @@ function Comparison({
     if (value_type === "binary" && slice_id && right === null) {
       dispatch({
         type: "update-value",
-        payload: { path: [...path, op, 1], value: 1 },
+        payload: { path: [...path, op, RIGHT_INDEX], value: 1 },
       });
     }
   }, [dispatch, slice_id, op, right, path, value_type]);
@@ -238,7 +241,7 @@ function Comparison({
 
   if (summary?.value_type === "binary") {
     rhsExpr = slice_id;
-    rhsPath = [...path, op, 0, "var"];
+    rhsPath = [...path, op, LEFT_INDEX, "var"];
   }
 
   const variableValue =
