@@ -470,6 +470,7 @@ class AnalysisData(Resource):
         out_group_heme_model_ids = []
         if out_group_type == "Other Heme":
             node = SubtypeNode.get_by_code(in_group)
+            assert node is not None
             in_group_model_ids = SubtypeNode.get_model_ids_by_subtype_code_and_node_level(
                 in_group, node.node_level
             )
