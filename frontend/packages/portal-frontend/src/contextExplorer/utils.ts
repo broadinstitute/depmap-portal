@@ -531,7 +531,11 @@ export function getSelectionInfo(
         selectedContextDataAvailability
       )
     : {
-        selectedContextData: allContextDatasetDataAvail,
+        selectedContextData: {
+          values: [...allContextDatasetDataAvail.values].reverse(),
+          data_types: [...allContextDatasetDataAvail.data_types].reverse(),
+          all_depmap_ids: allContextDatasetDataAvail.all_depmap_ids,
+        },
         selectedContextNameInfo: ALL_SEARCH_OPTION,
       };
 

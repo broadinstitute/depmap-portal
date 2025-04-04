@@ -310,7 +310,7 @@ class ContextAnalysis(Model):
 
             if (
                 dependency_dataset.name
-                == DependencyDataset.DependencyEnum.Prism_oncology_AUC.name
+                == DependencyDataset.DependencyEnum.Prism_oncology_AUC
             ):
                 return 0.1
             else:
@@ -341,6 +341,7 @@ class ContextAnalysis(Model):
                 )
             )
         )
+
         if negative_only:
             base_query = base_query.filter(ContextAnalysis.effect_size < 0)
 
