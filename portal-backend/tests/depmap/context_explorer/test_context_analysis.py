@@ -1229,25 +1229,20 @@ def test_get_box_plot_data(empty_db_mock_downloads, dataset_name):
     }
     assert data["insignificant_heme_data"] == {
         "label": "Other Heme",
-        "data": [15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25],
+        "data": [15, 16, 17, 18, 19, 25],
         "cell_line_display_names": [
             "AML_0",
             "AML_1",
             "AML_2",
             "AML_3",
             "AML_4",
-            "child_myeloid_0",
-            "child_myeloid_1",
-            "child_myeloid_2",
-            "child_myeloid_3",
-            "child_myeloid_4",
             "LYMPH_1",
         ],
         "path": None,
     }
     assert data["insignificant_solid_data"] == {
         "label": "Other Solid",
-        "data": [0, 1, 2, 3, 4, 10, 11, 12, 13, 14],
+        "data": [0, 1, 2, 3, 4, 10, 11, 12, 13, 14, 26, 27, 28, 29, 30],
         "cell_line_display_names": [
             "0es",
             "1es",
@@ -1259,6 +1254,11 @@ def test_get_box_plot_data(empty_db_mock_downloads, dataset_name):
             "2os",
             "3os",
             "4os",
+            "0insig",
+            "1insig",
+            "2insig",
+            "3insig",
+            "4insig",
         ],
         "path": None,
     }

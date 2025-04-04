@@ -134,17 +134,17 @@ def get_box_plot_card_data(
 
 def get_box_plot_data_for_other_category(
     category: Literal["heme", "solid"],
-    all_level_0_codes: List[str],
+    all_sig_context_codes: List[str],
     entity_full_row_of_values,
     tree_type: str,
 ) -> BoxData:
     heme_model_id_series = (
         SubtypeContext.get_model_ids_for_other_heme_contexts(
-            subtype_codes_to_filter_out=all_level_0_codes, tree_type=tree_type
+            subtype_codes_to_filter_out=all_sig_context_codes, tree_type=tree_type
         )
         if category == "heme"
         else SubtypeContext.get_model_ids_for_other_solid_contexts(
-            subtype_codes_to_filter_out=all_level_0_codes, tree_type=tree_type
+            subtype_codes_to_filter_out=all_sig_context_codes, tree_type=tree_type
         )
     )
 
@@ -344,14 +344,14 @@ def get_context_plot_box_data(
 
         heme_box_plot_data = get_box_plot_data_for_other_category(
             category="heme",
-            all_level_0_codes=list(all_level_0_codes),
+            all_sig_context_codes=all_sig_context_codes,
             entity_full_row_of_values=entity_full_row_of_values,
             tree_type=tree_type,
         )
 
         solid_box_plot_data = get_box_plot_data_for_other_category(
             category="solid",
-            all_level_0_codes=list(all_level_0_codes),
+            all_sig_context_codes=all_sig_context_codes,
             entity_full_row_of_values=entity_full_row_of_values,
             tree_type=tree_type,
         )
