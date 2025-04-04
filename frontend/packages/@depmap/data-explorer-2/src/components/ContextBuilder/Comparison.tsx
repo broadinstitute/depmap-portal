@@ -221,7 +221,7 @@ function Comparison({
   // value of 1. The logic behind this is pretty convoluted but I'll try to
   // explain. One-hot encoded slices are typically used to visualize an
   // ingroup/outgroup relationship. Forcing the user to say "SOME_FEATURE == 1"
-  // is awakward. Instead we show the list of features, have the user select
+  // is awkward. Instead we show the list of features, have the user select
   // one, and then automatically set the value to 1 behind the scenes. The
   // features can thus be thought of a set of pseudo-categories.
   useEffect(() => {
