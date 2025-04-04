@@ -1,9 +1,9 @@
 import re
+import logging
 import numpy as np
 import natsort as ns
 import urllib.parse
 import scipy.cluster.hierarchy as sch
-import traceback
 from flask import (
     Blueprint,
     current_app,
@@ -54,6 +54,8 @@ from depmap.download.views import get_file_record, get_release_record
 
 from depmap_compute.context import LegacyContextEvaluator
 from depmap_compute.slice import decode_slice_id
+
+log = logging.getLogger(__name__)
 
 blueprint = Blueprint(
     "data_explorer_2",
@@ -397,17 +399,19 @@ def unique_values_or_range():
     try:
         series = get_series_from_de2_slice_id(slice_id)
     except ValueError as error:
-        response = jsonify(
-            {
-                "error": {
-                    "type": "ValueError",
-                    "message": str(error),
-                    "code": 500,
-                    "trace": traceback.format_exc().splitlines(),
-                }
-            }
+        log.exception(
+            "Error trying to get series from slice_id '%s': %s", slice_id, str(error)
         )
 
+        error_json = {
+            "error": {
+                "type": "ValueError",
+                "message": "There was a problem finding the data associated with this condition",
+                "code": 500,
+            }
+        }
+
+        response = jsonify(error_json)
         response.status_code = 500
         return response
 
