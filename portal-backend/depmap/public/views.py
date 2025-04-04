@@ -72,7 +72,7 @@ def home():
     return render_theme_template(
         "home.html",
         announcements=get_announcements_list(),
-        updates=get_updates_markdown_to_html(),
+        updates=get_updates_markdown_to_html(),  # only for dmc
         quarter=quarter_name,  # , DEPMAP_URL=url_prefix
     )
 
