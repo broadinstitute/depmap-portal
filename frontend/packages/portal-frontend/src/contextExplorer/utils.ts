@@ -532,7 +532,7 @@ export function getSelectionInfo(
       )
     : {
         selectedContextData: {
-          values: [...allContextDatasetDataAvail.values].reverse(),
+          values: [...allContextDatasetDataAvail.values],
           data_types: [...allContextDatasetDataAvail.data_types].reverse(),
           all_depmap_ids: allContextDatasetDataAvail.all_depmap_ids,
         },
