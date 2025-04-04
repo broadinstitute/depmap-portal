@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+import uuid
 
 from flask.globals import current_app
 import pandas as pd
@@ -375,17 +376,20 @@ def get_targeting_compounds_html(gene):
     )
 
 
-import json
-
-
 def get_enrichment_html(
-    entity, compound_experiment_and_datasets=None, query_params_dict={}
+    entity: Entity, compound_experiment_and_datasets=None, query_params_dict={}
 ):
+    div_id = str(uuid.uuid4())
+    gene_symbol = entity.symbol
+
     return RenderedTile(
-        "<div>get_enrichment_html is stubbed out</div>",
-        '(function() {console.log("get_enrichment_html js render", "'
-        + json.dumps([entity.entity_id])
-        + '")})',
+        f'<div id="{div_id}">get_enrichment_html is stubbed out</div>',
+        f"""(
+        function() {{
+            console.log("about to call initEnrichmentTile");
+            DepMap.initEnrichmentTile("{div_id}", "{gene_symbol}");
+            console.log("after initEnrichmentTile");
+        }})""",
     )
 
 

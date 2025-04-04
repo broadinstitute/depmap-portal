@@ -23,6 +23,7 @@ import { ConnectivityValue } from "./constellation/models/constellation";
 import { EntityType } from "./entity/models/entities";
 import TermsAndConditionsModal from "./common/components/TermsAndConditionsModal";
 import { initializeDevContexts } from "@depmap/data-explorer-2";
+import { EnrichmentStubTile } from "./contextExplorer/components/EnrichmentStubTile";
 
 export { log, tailLog, getLogCount } from "src/common/utilities/log";
 
@@ -342,6 +343,15 @@ export function initSublineagePlot(
   window.addEventListener(rerenderPlotEventName, renderPlot);
 
   renderPlot();
+}
+
+export function initEnrichmentTile(elementId: string, geneSymbol: string) {
+  renderWithErrorBoundary(
+    <React.Suspense fallback={<div>Loading...</div>}>
+      <EnrichmentStubTile geneSymbol={geneSymbol} />
+    </React.Suspense>,
+    document.getElementById(elementId) as HTMLElement
+  );
 }
 
 export function initCelfiePage(
