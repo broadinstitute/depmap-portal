@@ -269,7 +269,7 @@ export function getGeneDependencyContexts(
     const outGroupSliceId = `slice/Context_Matrix/${outgroupCode}/label`;
     const hemeSliceIds = [
       `slice/Context_Matrix/MYELOID/label`,
-      `slice/Context_Matrix/LYMPHOID/label`,
+      `slice/Context_Matrix/LYMPH/label`,
     ];
     switch (outgroupCode) {
       case "All Others":
