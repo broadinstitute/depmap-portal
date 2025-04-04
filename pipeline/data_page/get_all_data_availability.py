@@ -384,7 +384,7 @@ def get_long_reads_summary(gcloud_storage_client, depmap_long_reads_gcloud_loc):
 
     for file_name in file_names:
         blob_name = f"{prefix}/{file_name}"
-        bucket = gcloud_storage_client.bucket(bucket_name)
+        print(f"blob_name: {blob_name}")
         blob = bucket.blob(blob_name)
         content = blob.download_as_string()
         df = pd.read_csv(pd.io.common.BytesIO(content), usecols=[0])
