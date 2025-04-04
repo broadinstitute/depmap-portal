@@ -267,10 +267,21 @@ export function getGeneDependencyContexts(
     ingroupName: string
   ) {
     const outGroupSliceId = `slice/Context_Matrix/${outgroupCode}/label`;
-    const hemeSliceIds = [
-      `slice/Context_Matrix/MYELOID/label`,
-      `slice/Context_Matrix/LYMPH/label`,
-    ];
+    const otherHemeContextExp = [];
+
+    if (outgroupCode === "Other Heme") {
+      otherHemeContextExp.push({ "==": [{ var: inGroupSliceId }, 0] });
+      if (selectedContextCode === "LYMPH") {
+        otherHemeContextExp.push({
+          "==": [{ var: `slice/Context_Matrix/MYELOID/label` }, 1],
+        });
+      } else if (selectedContextCode === "MYELOID") {
+        otherHemeContextExp.push({
+          "==": [{ var: `slice/Context_Matrix/LYMPH/label` }, 1],
+        });
+      }
+    }
+
     switch (outgroupCode) {
       case "All Others":
         return {
@@ -285,11 +296,7 @@ export function getGeneDependencyContexts(
           name: `${outGroupLabel}`,
           context_type: "depmap_model",
           expr: {
-            and: [
-              { "==": [{ var: inGroupSliceId }, 0] },
-              { "==": [{ var: hemeSliceIds[0] }, 1] },
-              { "==": [{ var: hemeSliceIds[1] }, 1] },
-            ],
+            and: otherHemeContextExp,
           },
         };
       default:
@@ -532,7 +539,7 @@ export function getSelectionInfo(
       )
     : {
         selectedContextData: {
-          values: [...allContextDatasetDataAvail.values],
+          values: [...allContextDatasetDataAvail.values].reverse(),
           data_types: [...allContextDatasetDataAvail.data_types].reverse(),
           all_depmap_ids: allContextDatasetDataAvail.all_depmap_ids,
         },
