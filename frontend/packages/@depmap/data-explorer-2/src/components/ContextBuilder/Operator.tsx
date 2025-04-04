@@ -5,7 +5,12 @@ import { ContextBuilderReducerAction } from "./contextBuilderReducer";
 import styles from "../../styles/ContextBuilder.scss";
 
 type OperatorType = keyof typeof opLabels;
-type ValueType = "continuous" | "categorical" | "list_strings" | null;
+type ValueType =
+  | "continuous"
+  | "categorical"
+  | "list_strings"
+  | "binary"
+  | null;
 
 const toOperatorLabel = (value_type: ValueType, op: OperatorType) => {
   if (value_type === "continuous" && op === "==") {
@@ -73,6 +78,10 @@ function Operator({ expr, op, path, dispatch, value_type, isLoading }: Props) {
 
   if (value_type === "list_strings") {
     options = ["has_any", "!has_any"];
+  }
+
+  if (value_type === "binary") {
+    options = ["==", "!="];
   }
 
   const label = toOperatorLabel(value_type, op);

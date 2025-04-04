@@ -43,7 +43,13 @@ function NumberInput({ expr, path, domain, isLoading }: Props) {
       <label htmlFor={`number-input-${path}`}>Value</label>
       <FormControl
         className={cx({
-          [styles.invalidNumber]: shouldShowValidation && value === null,
+          [styles.invalidNumber]:
+            // FIXME: This will show that the number is out of range but the
+            // user can still save the context that way. We should add some
+            // more validation logic on the save handler.
+            (value !== null && value < floor(min)) ||
+            (value !== null && value > ceil(max)) ||
+            (value === null && shouldShowValidation),
         })}
         disabled={isLoading || !domain}
         componentClass="input"

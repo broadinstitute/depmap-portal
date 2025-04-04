@@ -217,9 +217,15 @@ function DataExplorerDensity1DPlot({
     return out;
   }, [colorMap, data, continuousBins, plotConfig.color_by]);
 
-  const legendTitle = data?.dimensions?.color
-    ? `${data.dimensions.color.axis_label}<br>${data.dimensions.color.dataset_label}`
-    : null;
+  let legendTitle = "";
+
+  if (data?.dimensions?.color) {
+    legendTitle = `${data.dimensions.color.axis_label}<br>${data.dimensions.color.dataset_label}`;
+  }
+
+  if (data?.metadata?.color_property) {
+    legendTitle = data.metadata.color_property.label;
+  }
 
   const pointVisibility = useMemo(
     () =>

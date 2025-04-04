@@ -1,6 +1,6 @@
 import { get_operator, get_values } from "json-logic-js";
 import { DataExplorerContext } from "@depmap/types";
-import { urlLibEncode } from "../../utils/misc";
+import { isSampleType, urlLibEncode } from "../../utils/misc";
 
 export const opLabels = {
   "==": "is",
@@ -59,8 +59,7 @@ export const makeSliceId = (
   dataset_id: string,
   feature: string
 ) => {
-  const featureType =
-    slice_type === "depmap_model" ? "transpose_label" : "label";
+  const featureType = isSampleType(slice_type) ? "transpose_label" : "label";
 
   return [
     "slice",
@@ -124,8 +123,8 @@ export const normalizeExpr = (expr: Expr) => {
 };
 
 export const getValueType = (
-  categoricalSlices:
-    | Record<string, { valueType: "categorical" | "list_strings" }>
+  metadataSlices:
+    | Record<string, { valueType: "categorical" | "list_strings" | "binary" }>
     | undefined,
   slice_id: string | null
 ) => {
@@ -137,15 +136,15 @@ export const getValueType = (
     return "categorical";
   }
 
-  if (categoricalSlices) {
-    if (slice_id in categoricalSlices) {
-      return categoricalSlices[slice_id].valueType;
+  if (metadataSlices) {
+    if (slice_id in metadataSlices) {
+      return metadataSlices[slice_id].valueType;
     }
 
     const sliceIdPrefix = slice_id.replace(/(slice\/[^/]+\/).*/, "$1");
 
-    if (sliceIdPrefix in categoricalSlices) {
-      return categoricalSlices[sliceIdPrefix].valueType;
+    if (sliceIdPrefix in metadataSlices) {
+      return metadataSlices[sliceIdPrefix].valueType;
     }
   }
 

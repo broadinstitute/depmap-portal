@@ -6,13 +6,13 @@ import pandas as pd
 from typing import Any, Optional
 from collections import defaultdict
 from logging import getLogger
-from flask import abort, json, make_response
+from flask import json, make_response
 
 from depmap_compute.context import (
     ContextEvaluator,
     LegacyContextEvaluator,
 )
-from depmap_compute.slice import decode_slice_id, SliceQuery
+from depmap_compute.slice import decode_slice_id
 from depmap import data_access
 from depmap.data_access.models import MatrixDataset
 from depmap.settings.download_settings import get_download_list
@@ -351,6 +351,8 @@ def get_all_supported_continuous_datasets() -> list[MatrixDataset]:
         if dataset.feature_type in blocked_dimension_types:
             continue
         if dataset.sample_type in blocked_dimension_types:
+            continue
+        if dataset.data_type == "metadata":
             continue
 
         if dataset.data_type is None:

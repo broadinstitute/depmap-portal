@@ -233,9 +233,15 @@ function DataExplorerWaterfallPlot({
 
   // The plot only needs legend info if the user is downloading an image of it.
   const legendForDownload = useMemo(() => {
-    const title = data?.dimensions?.color
-      ? `${data.dimensions.color.axis_label}<br>${data.dimensions.color.dataset_label}`
-      : "";
+    let title = "";
+
+    if (data?.dimensions?.color) {
+      title = `${data.dimensions.color.axis_label}<br>${data.dimensions.color.dataset_label}`;
+    }
+
+    if (data?.metadata?.color_property) {
+      title = data.metadata.color_property.label;
+    }
 
     const items: { name: string; hexColor: string }[] = [];
 

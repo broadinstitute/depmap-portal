@@ -91,13 +91,17 @@ function SlicePrefixSelect({
         }
       );
 
-      return Object.entries(groups).map(([dataType, sliceIds]) => {
-        const optionsByDataType = sliceIds.map((sliceId) => {
-          return { value: sliceId, label: variables[sliceId] };
-        });
+      return Object.keys(groups)
+        .sort()
+        .map((dataType) => {
+          const sliceIds = groups[dataType];
 
-        return { label: dataType, options: optionsByDataType };
-      });
+          const optionsByDataType = sliceIds.map((sliceId) => {
+            return { value: sliceId, label: variables[sliceId] };
+          });
+
+          return { label: dataType, options: optionsByDataType };
+        });
     }
 
     return Object.entries(variables).map(([value, label]) => ({

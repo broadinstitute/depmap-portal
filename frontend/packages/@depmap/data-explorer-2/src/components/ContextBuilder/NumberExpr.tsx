@@ -21,7 +21,9 @@ function NumberExpr({
   dispatch,
   shouldShowValidation,
 }: Props) {
-  const [value, setValue] = useState<number | null>(expr || floor(options.min));
+  const [value, setValue] = useState<number | null>(
+    expr === null ? floor(options.min) : expr
+  );
 
   const { min, max } = options;
   const step = ceil(max - min) / 100;

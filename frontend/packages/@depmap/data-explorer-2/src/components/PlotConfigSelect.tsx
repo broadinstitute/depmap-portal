@@ -48,7 +48,7 @@ const reactSelectOptionsToMap = (options: Option[]) => {
   for (let i = 0; i < options.length; i += 1) {
     const opt = options[i];
 
-    if (opt.value) {
+    if (opt.value != null && opt.value !== "") {
       out[opt.value] = opt.label;
     }
 
@@ -82,7 +82,9 @@ function PlotConfigSelect({
     : options;
 
   const toOption = (val: string | null) => {
-    return val ? { value: val, label: flattenedOptions[val] } : null;
+    return val != null && val !== ""
+      ? { value: val, label: flattenedOptions[val] }
+      : null;
   };
 
   const formattedOptions = Array.isArray(options)
