@@ -3,12 +3,14 @@ import numpy as np
 import natsort as ns
 import urllib.parse
 import scipy.cluster.hierarchy as sch
+import traceback
 from flask import (
     Blueprint,
     current_app,
     render_template,
     abort,
     request,
+    jsonify,
 )
 
 from depmap import data_access
@@ -42,7 +44,10 @@ from depmap.data_explorer_2.utils import (
     to_display_name,
     to_serializable_numpy_number,
 )
-from depmap.data_explorer_2.datatypes import hardcoded_metadata_slices
+from depmap.data_explorer_2.datatypes import (
+    get_hardcoded_metadata_slices,
+    is_hardcoded_binarylike_slice,
+)
 
 from depmap.download.models import ReleaseTerms
 from depmap.download.views import get_file_record, get_release_record
@@ -388,9 +393,31 @@ def dimension_labels_of_dataset():
 def unique_values_or_range():
     slice_id = request.args.get("slice_id")
     dataset_id, _, _ = decode_slice_id(slice_id)
-    series = get_series_from_de2_slice_id(slice_id)
+
+    try:
+        series = get_series_from_de2_slice_id(slice_id)
+    except ValueError as error:
+        response = jsonify(
+            {
+                "error": {
+                    "type": "ValueError",
+                    "message": str(error),
+                    "code": 500,
+                    "trace": traceback.format_exc().splitlines(),
+                }
+            }
+        )
+
+        response.status_code = 500
+        return response
 
     if data_access.is_continuous(dataset_id):
+        if is_hardcoded_binarylike_slice(slice_id):
+            return {
+                "value_type": "binary",
+                "unique_values": get_vector_labels(dataset_id, False),
+            }
+
         return make_gzipped_json_response(
             {
                 "value_type": "continuous",
@@ -591,7 +618,7 @@ def metadata_slices():
     """
     dimension_type = request.args.get("dimension_type")
 
-    return hardcoded_metadata_slices.get(dimension_type, {})
+    return get_hardcoded_metadata_slices().get(dimension_type, {})
 
 
 @blueprint.route("/dataset_details")
