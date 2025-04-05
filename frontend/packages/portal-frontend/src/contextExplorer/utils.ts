@@ -456,8 +456,8 @@ function mergeDataAvailability(
   const orderedVals = [...vals];
   const mergedDataAvail = {
     all_depmap_ids: subtypeDataAvail.all_depmap_ids,
-    data_types: [...orderedDataTypes, ...subtypeDataAvail.data_types].reverse(),
-    values: [...orderedVals, ...subtypeDataAvail.values].reverse(),
+    data_types: [...subtypeDataAvail.data_types, ...orderedDataTypes],
+    values: [...subtypeDataAvail.values, ...orderedVals],
   };
 
   return mergedDataAvail;
@@ -532,11 +532,7 @@ export function getSelectionInfo(
         selectedContextDataAvailability
       )
     : {
-        selectedContextData: {
-          values: [...allContextDatasetDataAvail.values].reverse(),
-          data_types: [...allContextDatasetDataAvail.data_types].reverse(),
-          all_depmap_ids: allContextDatasetDataAvail.all_depmap_ids,
-        },
+        selectedContextData: allContextDatasetDataAvail,
         selectedContextNameInfo: ALL_SEARCH_OPTION,
       };
 
