@@ -126,7 +126,7 @@ def test_context_search_index_context_explorer_enabled(populated_db):
         "label": "Ewing Sarcoma",
         "description": "Find cell lines which are members of Ewing Sarcoma (ES) context",
         "type": "subtype_context_search",
-        "value": "subtype_context_search:ES:Find cell lines which are members of Ewing Sarcoma (ES) context",
+        "value": "subtype_context_search:Ewing Sarcoma:Find cell lines which are members of Ewing Sarcoma (ES) context",
         "url": "/context_explorer/?context=ES",
     }
     assert (
