@@ -140,7 +140,7 @@ def __load_context_search_index():
             assert node is not None
             scs = SubtypeContextGlobalSearch(context.subtype_code, node.node_name)
             ctx = ContextExplorerSearchIndex(
-                label=context.subtype_code, subtype_context_search=scs
+                label=node.node_name, subtype_context_search=scs
             )
 
             db.session.add(ctx)

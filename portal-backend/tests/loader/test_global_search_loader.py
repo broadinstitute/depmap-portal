@@ -194,5 +194,5 @@ def test_load_context_search_index_context_explorer_enabled(app, populated_db):
 
     obj = GlobalSearchIndex.query.all()
     assert isinstance(obj[0], ContextExplorerSearchIndex)
-    assert obj[0].label == "ES"
+    assert obj[0].label == "Ewing Sarcoma"
     assert obj[0].type == "subtype_context_search"

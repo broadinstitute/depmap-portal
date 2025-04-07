@@ -108,7 +108,7 @@ const formatOptionLabel = (
 
     return (
       <span>
-        <strong>{option.value}</strong> {numModelsStr}{" "}
+        <strong>{option.label}</strong> {numModelsStr}{" "}
       </span>
     );
   }
