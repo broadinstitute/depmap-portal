@@ -575,4 +575,6 @@ class ContextNodeName(
             assert node is None
             return None
 
+        assert node is None
+
         return node.node_name
