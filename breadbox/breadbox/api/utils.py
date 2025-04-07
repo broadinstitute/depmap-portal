@@ -23,8 +23,7 @@ def get_response_with_etag(content: Any, etag: str) -> Response:
     return ORJSONResponse(status_code=status.HTTP_200_OK, content=content, **headers)
 
 
-def hash_values(values: list[str]):
-    values.sort()
+def hash_id_list(values: set[str]):
     hash = hashlib.md5()
     for id in values:
         hash.update(id.encode())
