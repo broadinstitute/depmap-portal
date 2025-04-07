@@ -14,7 +14,7 @@ from fastapi import (
     Request,
     status,
 )
-from fastapi.responses import ORJSONResponse, Response
+
 from breadbox.models.dataset import Dataset
 from breadbox.models.dataset import DimensionType as DimensionTypeModel
 from breadbox.schemas.types import IdMappingInsanity
@@ -634,32 +634,23 @@ def get_dimension_type_identifiers(
     db: SessionWithUser = Depends(get_db_with_user),
     etag: str = Depends(get_datasets_etag),
 ):
-    def get_response_data_callback(
-        name: str, 
-        data_type: Optional[str], 
-        show_only_dimensions_in_datasets: bool,
-        limit: Optional[int],
-        db: SessionWithUser,
-    ) -> callable:
-        """Return a function that loads the identifiers for this endpoint"""
-        def get_response_content() -> list[DimensionIdentifiers]:
-            dim_type = type_crud.get_dimension_type(db, name)
-            if dim_type is None:
-                raise HTTPException(404, f"Dimension type {name} not found")
-
-            dimension_ids_and_labels = metadata_service.get_dimension_type_identifiers(
-                db, dim_type, data_type, show_only_dimensions_in_datasets, limit=limit,
-            )
-            return [
-                DimensionIdentifiers(id=id, label=label)
-                for id, label in dimension_ids_and_labels.items()
-            ]
-        return get_response_content
+    def get_response_content() -> list[DimensionIdentifiers]:
+        dim_type = type_crud.get_dimension_type(db, name)
+        if dim_type is None:
+            raise HTTPException(404, f"Dimension type {name} not found")
+        """Load the response from this endpoint (to be called if not already cached)"""
+        dimension_ids_and_labels = metadata_service.get_dimension_type_identifiers(
+            db, dim_type, data_type, show_only_dimensions_in_datasets, limit=limit,
+        )
+        return [
+            DimensionIdentifiers(id=id, label=label)
+            for id, label in dimension_ids_and_labels.items()
+        ]
     
     return response_with_etag(
         etag, 
         request, 
-        get_response_data_callback(name, data_type, show_only_dimensions_in_datasets, limit, db)
+        get_response_content
     )
 
 
