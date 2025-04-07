@@ -416,12 +416,12 @@ function mergeDataAvailability(
     dataTypes.push(allContextDatasetDataAvail.data_types[index]);
   });
 
-  const orderedDataTypes = [...dataTypes];
-  const orderedVals = [...vals];
+  const orderedDataTypes = [...dataTypes].reverse();
+  const orderedVals = [...vals].reverse();
   const mergedDataAvail = {
     all_depmap_ids: subtypeDataAvail.all_depmap_ids,
-    data_types: [...subtypeDataAvail.data_types, ...orderedDataTypes],
-    values: [...subtypeDataAvail.values, ...orderedVals],
+    data_types: [...orderedDataTypes, ...subtypeDataAvail.data_types].reverse(),
+    values: [...orderedVals, ...subtypeDataAvail.values].reverse(),
   };
 
   return mergedDataAvail;
