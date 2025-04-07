@@ -11,15 +11,17 @@ from fastapi import (
     HTTPException,
     UploadFile,
     Query,
+    Request,
+    status,
 )
-from fastapi.responses import ORJSONResponse
+from fastapi.responses import ORJSONResponse, Response
 from breadbox.models.dataset import Dataset
 from breadbox.models.dataset import DimensionType as DimensionTypeModel
 from breadbox.schemas.types import IdMappingInsanity
 from typing import Annotated
 
 from breadbox.db.session import SessionWithUser
-from .dependencies import get_db_with_user, get_user
+from .dependencies import get_db_with_user, get_user, get_datasets_etag
 from ..config import Settings, get_settings
 from ..crud import dimension_types as type_crud
 from ..crud.dataset import get_datasets
@@ -623,12 +625,19 @@ def list_dimension_types_endpoint(db: SessionWithUser = Depends(get_db_with_user
     response_model=List[DimensionIdentifiers],
 )
 def get_dimension_type_identifiers(
+    request: Request,
     name: str,
     data_type: Annotated[Union[str, None], Query()] = None,
     show_only_dimensions_in_datasets: Annotated[bool, Query()] = False,
     limit: Annotated[Union[int, None], Query()] = None,
     db: SessionWithUser = Depends(get_db_with_user),
+    etag: str = Depends(get_datasets_etag),
 ):
+    # if the etag is the same as the one in the request, data does not need to be loaded
+    headers = {"media_type": "application/json", "headers": {"ETag": etag}}
+    if request.headers.get("If-None-Match") == etag:
+        return Response(status_code=status.HTTP_304_NOT_MODIFIED, **headers)
+    
     dim_type = type_crud.get_dimension_type(db, name)
     if dim_type is None:
         raise HTTPException(404, f"Dimension type {name} not found")
@@ -641,7 +650,7 @@ def get_dimension_type_identifiers(
         DimensionIdentifiers(id=id, label=label)
         for id, label in dimension_ids_and_labels.items()
     ]
-    return ORJSONResponse(result)
+    return ORJSONResponse(content=result, **headers)
 
 
 @router.patch(
