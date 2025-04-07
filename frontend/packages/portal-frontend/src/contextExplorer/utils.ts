@@ -416,8 +416,8 @@ function mergeDataAvailability(
     dataTypes.push(allContextDatasetDataAvail.data_types[index]);
   });
 
-  const orderedDataTypes = [...dataTypes].reverse();
-  const orderedVals = [...vals].reverse();
+  const orderedDataTypes = [...dataTypes];
+  const orderedVals = [...vals];
   const mergedDataAvail = {
     all_depmap_ids: subtypeDataAvail.all_depmap_ids,
     data_types: [...orderedDataTypes, ...subtypeDataAvail.data_types].reverse(),
@@ -494,13 +494,17 @@ export function getSelectionInfo(
         selectedContextDataAvailability
       )
     : {
-        selectedContextData: allContextDatasetDataAvail,
+        selectedContextData: {
+          all_depmap_ids: [...allContextDatasetDataAvail.all_depmap_ids],
+          values: [...allContextDatasetDataAvail.values].reverse(),
+          data_types: [...allContextDatasetDataAvail.data_types].reverse(),
+        },
         selectedContextNameInfo: ALL_SEARCH_OPTION,
       };
 
   let checkedDataValues = selectedContextNode
     ? selectedContextData.values
-    : allContextDatasetDataAvail.values;
+    : [...allContextDatasetDataAvail.values].reverse();
 
   if (selectedContextData && validCheckedDataTypes.size > 0) {
     const newSelectedValuesOverlap = getUpdatedGraphInfoForSelection(
