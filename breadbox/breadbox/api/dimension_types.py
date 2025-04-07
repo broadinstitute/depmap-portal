@@ -653,7 +653,7 @@ def get_dimension_type_identifiers(
             data_type=data_type,
         )
         filtered_dataset_ids = [dataset.id for dataset in filtered_datasets]
-    etag = hash_id_list([name] + sorted(filtered_dataset_ids))
+    etag = hash_id_list([name] + (sorted(filtered_dataset_ids) if filtered_dataset_ids else []))
 
     # If the client already has a cached version of the data, exit early
     if if_none_match and if_none_match[0] == etag:
