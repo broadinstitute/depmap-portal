@@ -18,6 +18,7 @@ import Select, {
 import { Button } from "react-bootstrap";
 import { getHighlightLineColor } from "@depmap/utils";
 import CorrelationsTable from "../components/CorrelationsTable";
+import CorrelationsPlots from "../components/CorrelationsPlots";
 
 export default {
   title: "Components/CorrelationAnalysis",
@@ -157,7 +158,7 @@ export function Story() {
         gridTemplateColumns: "1fr 7fr",
         gridAutoRows: "1fr 1fr",
         gridTemplateAreas: "'a b b b b b b b''a c c c c c c c'",
-        // gap: "2rem",
+        gap: "2rem",
         // marginBottom: "50px",
       }}
     >
@@ -167,6 +168,22 @@ export function Story() {
           gridArea: "a",
         }}
       >
+        <header>Dataset</header>
+        <AsyncSelect
+          placeholder="Choose Dataset"
+          defaultOptions
+          loadOptions={featureTypesPromise}
+          isMulti
+          onChange={(value, action) => {
+            console.log(value, action);
+            setSelectedFeatureTypes(
+              value !== null
+                ? value.map((selectedFeatureType) => selectedFeatureType.value)
+                : []
+            );
+          }}
+        />
+        <header>Dose</header>
         <AsyncSelect
           placeholder="imatinib Doses(uM)"
           defaultOptions
@@ -181,8 +198,9 @@ export function Story() {
             );
           }}
         />
+        <header>Feature Types</header>
         <AsyncSelect
-          placeholder="Select Feature Types..."
+          placeholder="Select Feature Types"
           defaultOptions
           loadOptions={featureTypesPromise}
           isMulti
@@ -195,6 +213,7 @@ export function Story() {
             );
           }}
         />
+        <header>Features</header>
         <AsyncSelect
           placeholder="Select Features"
           defaultOptions
@@ -212,64 +231,10 @@ export function Story() {
       </div>
 
       <div style={{ gridArea: "b" }}>
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(3, 1fr)",
-            gap: "2rem",
-            marginBottom: "50px",
-          }}
-        >
-          {filteredVolcanoPlotFeatureTypes.map((selectedFeatureType) => {
-            return (
-              <>
-                {/* <div>
-                  <header
-                    style={{
-                      textAlign: "center",
-                      fontSize: "18px",
-                      backgroundColor: "lightgray",
-                    }}
-                  >{`${selectedFeatureType}`}</header>
-                  <VolcanoPlot
-                    Plotly={Plotly}
-                    xLabel="Correlation Coefficient"
-                    yLabel="q value"
-                    traces={Object.values(
-                      volcanoDataForFeatureType[selectedFeatureType]
-                    )}
-                    showAxesOnSameScale={false}
-                    cellLinesToHighlight={new Set([])}
-                    onPointClick={(point) => {
-                      console.log(point);
-                    }}
-                    downloadData={[]}
-                  />
-                </div> */}
-                <div>
-                  <header
-                    style={{
-                      textAlign: "center",
-                      fontSize: "18px",
-                      backgroundColor: "lightgray",
-                    }}
-                  >
-                    {selectedFeatureType}
-                  </header>
-                  <VolcanoPlotOld
-                    Plotly={Plotly}
-                    // ref={plotlyRef}
-                    xLabel="Correlation Coefficient"
-                    yLabel="q value"
-                    data={Object.values(
-                      volcanoDataForFeatureType[selectedFeatureType]
-                    )}
-                  />
-                </div>
-              </>
-            );
-          })}
-        </div>
+        <CorrelationsPlots
+          featureTypesToShow={filteredVolcanoPlotFeatureTypes}
+          volcanoDataForFeatureType={volcanoDataForFeatureType}
+        />
       </div>
 
       <div style={{ gridArea: "c" }}>

@@ -19,9 +19,9 @@ export default function CorrelationsTable(props: CorrelationsTableProps) {
       <div style={{ height: "auto" }}>
         <WideTable
           columns={[
+            { accessor: "Feature" },
             { accessor: "Feature Type" },
             { accessor: "imatinib Dose" },
-            { accessor: "Feature" },
             { accessor: "Correlation Coefficient" },
             { accessor: "-log10 qval" },
             { accessor: "Rank" },
