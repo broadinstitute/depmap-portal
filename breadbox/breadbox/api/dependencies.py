@@ -58,17 +58,3 @@ def get_dataset(
     if dataset is None:
         raise HTTPException(404, detail="Dataset not found")
     return dataset
-
-
-async def get_datasets_etag(
-    db: SessionWithUser = Depends(get_db_with_user),
-    user: str = Depends(get_user),
-):
-    """Generate an etag based on the full set of datasets a user has access to."""
-    datasets = dataset_crud.get_datasets(db, user)
-    dataset_ids = [dataset.id for dataset in datasets]
-    dataset_ids.sort()
-    hash = hashlib.md5()
-    for id in dataset_ids:
-        hash.update(id.encode())
-    return hash.hexdigest()

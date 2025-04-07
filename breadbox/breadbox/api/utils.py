@@ -1,3 +1,5 @@
+import hashlib
+
 from fastapi import Request, status
 from fastapi.responses import ORJSONResponse, Response
 from typing import Callable, Any
@@ -18,3 +20,11 @@ def response_with_etag(
     if request.headers.get("If-None-Match") == etag:
         return Response(status_code=status.HTTP_304_NOT_MODIFIED, **common)
     return ORJSONResponse(status_code=status.HTTP_200_OK, content=get_response_content_callback(), **common)
+
+
+def generate_etag(values: list[str]):
+    values.sort()
+    hash = hashlib.md5()
+    for id in values:
+        hash.update(id.encode())
+    return hash.hexdigest()

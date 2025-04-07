@@ -21,7 +21,7 @@ from breadbox.schemas.types import IdMappingInsanity
 from typing import Annotated
 
 from breadbox.db.session import SessionWithUser
-from .dependencies import get_db_with_user, get_user, get_datasets_etag
+from .dependencies import get_db_with_user, get_user
 from ..config import Settings, get_settings
 from ..crud import dimension_types as type_crud
 from ..crud.dataset import get_datasets
@@ -43,7 +43,7 @@ from breadbox.schemas.types import (
     AddDimensionType,
     DimensionIdentifiers,
 )
-from breadbox.api.utils import response_with_etag
+from breadbox.api.utils import response_with_etag, generate_etag
 from breadbox.service import metadata as metadata_service
 from breadbox.db.util import transaction
 
@@ -632,15 +632,39 @@ def get_dimension_type_identifiers(
     show_only_dimensions_in_datasets: Annotated[bool, Query()] = False,
     limit: Annotated[Union[int, None], Query()] = None,
     db: SessionWithUser = Depends(get_db_with_user),
-    etag: str = Depends(get_datasets_etag),
 ):
+    """
+    For the given dimension type and filters, get all given IDs and labels.
+    If the `data_type` is given and/or `show_only_dimensions_in_datasets` is True, the dimension identifiers that are returned will only be those that are used within a dataset.
+    If `show_only_dimensions_in_datasets` is True, dimension identifiers within datasets, excluding the dimension type metadata, are returned
+    If neither `data_type` is given nor `show_only_dimensions_in_datasets` is True, all dimension identifiers from the given dimension type are returned.
+    """
+    dim_type = type_crud.get_dimension_type(db, name)
+    if dim_type is None:
+        raise HTTPException(404, f"Dimension type {name} not found")
+    
+    if data_type is None and not show_only_dimensions_in_datasets:
+        filtered_dataset_ids = None
+    else:
+        # Get subset of datasets matching the filters provided that the user has access to
+        filtered_datasets = get_datasets(
+            db,
+            db.user,
+            feature_type=dim_type.name if dim_type.axis == "feature" else None,
+            sample_type=dim_type.name if dim_type.axis == "sample" else None,
+            data_type=data_type,
+        )
+        filtered_dataset_ids = [dataset.id for dataset in filtered_datasets]
+    etag = generate_etag([name] + filtered_dataset_ids)
+
     def get_response_content() -> list[DimensionIdentifiers]:
-        dim_type = type_crud.get_dimension_type(db, name)
-        if dim_type is None:
-            raise HTTPException(404, f"Dimension type {name} not found")
         """Load the response from this endpoint (to be called if not already cached)"""
+        if filtered_dataset_ids:
+            # Remove the metadata dataset from our list of datasets 
+            filtered_dataset_ids = [dataset.id for dataset in filtered_datasets if dataset.id != dim_type.dataset_id]
+
         dimension_ids_and_labels = metadata_service.get_dimension_type_identifiers(
-            db, dim_type, data_type, show_only_dimensions_in_datasets, limit=limit,
+            db, dim_type, filtered_dataset_ids, limit=limit,
         )
         return [
             DimensionIdentifiers(id=id, label=label)
