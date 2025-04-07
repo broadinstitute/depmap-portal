@@ -4,22 +4,23 @@ from fastapi import Request, status
 from fastapi.responses import ORJSONResponse, Response
 from typing import Callable, Any
 
-def response_with_etag(
-    etag: str, 
-    request: Request,
-    get_response_content_callback: Callable[[], Any]
-) -> Response:
+
+def get_not_modified_response(etag: str) -> Response:
     """
-    Helper function to handle ETag-based caching. This etag should be a hashed 
-    value that represents the current state of the resource.
-    
-    Returns either a 304 Not Modified response if client's browser already has the 
-    up-to-date response, or a 200 OK response with the content from the callback.
+    Returns either a 304 Not Modified response which indicates the client's 
+    browser already has the up-to-date response cached.
     """
-    common = {"media_type": "application/json", "headers": {"ETag": etag}}
-    if request.headers.get("If-None-Match") == etag:
-        return Response(status_code=status.HTTP_304_NOT_MODIFIED, **common)
-    return ORJSONResponse(status_code=status.HTTP_200_OK, content=get_response_content_callback(), **common)
+    headers = {"media_type": "application/json", "headers": {"ETag": etag}}
+    return Response(status_code=status.HTTP_304_NOT_MODIFIED, **headers)
+
+
+def get_response_with_etag(content: Any, etag: str) -> Response:
+    """
+    This response format indicates that the browser should cache the response
+    and use the ETag value to check for changes in the future.
+    """
+    headers = {"media_type": "application/json", "headers": {"ETag": etag}}
+    return ORJSONResponse(status_code=status.HTTP_200_OK, content=content, **headers)
 
 
 def hash_values(values: list[str]):
