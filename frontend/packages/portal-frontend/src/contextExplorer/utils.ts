@@ -1,7 +1,6 @@
 import {
   ContextNode,
   ContextSummary,
-  DataType,
   DataTypeStrings,
   ContextExplorerDatasets,
   ContextNameInfo,
