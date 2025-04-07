@@ -642,7 +642,7 @@ def get_dimension_type_identifiers(
     if dim_type is None:
         raise HTTPException(404, f"Dimension type {name} not found")
     
-    filtered_dataset_ids = None
+    filtered_dataset_ids: Optional[list[str]] = None
     if data_type is None or show_only_dimensions_in_datasets:
         # Get subset of datasets matching the filters provided that the user has access to
         filtered_datasets = get_datasets(
@@ -663,7 +663,7 @@ def get_dimension_type_identifiers(
             dataset_ids_without_metadata = None
         else:
             # Remove the metadata dataset from our list of datasets 
-            dataset_ids_without_metadata = [dataset.id for dataset in filtered_datasets if dataset.id != dim_type.dataset_id]
+            dataset_ids_without_metadata = [dataset_id for dataset_id in filtered_dataset_ids if dataset_id != dim_type.dataset_id]
             
         dimension_ids_and_labels = metadata_service.get_dimension_type_identifiers(
             db, dim_type, dataset_ids_without_metadata, limit=limit,
