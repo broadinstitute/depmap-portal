@@ -1,7 +1,7 @@
 from typing import List, Optional, Literal, Union, Annotated
 from logging import getLogger
 from uuid import UUID, uuid4
-from collections import defaultdict
+from functools import partial
 from fastapi import (
     APIRouter,
     Body,
@@ -655,9 +655,10 @@ def get_dimension_type_identifiers(
             data_type=data_type,
         )
         filtered_dataset_ids = [dataset.id for dataset in filtered_datasets]
-    etag = generate_etag([name] + filtered_dataset_ids)
+    etag = generate_etag([name] + (filtered_dataset_ids if filtered_dataset_ids else []))
 
-    def get_response_content() -> list[DimensionIdentifiers]:
+
+    def get_response_content(db: SessionWithUser, dim_type: DimensionTypeModel, filtered_dataset_ids: Optional[list[str]]) -> list[DimensionIdentifiers]:
         """Load the response from this endpoint (to be called if not already cached)"""
         if filtered_dataset_ids:
             # Remove the metadata dataset from our list of datasets 
@@ -669,12 +670,13 @@ def get_dimension_type_identifiers(
         return [
             DimensionIdentifiers(id=id, label=label)
             for id, label in dimension_ids_and_labels.items()
-        ]
+    ]
+    callback = partial(get_response_content, db=db, dim_type=dim_type, filtered_dataset_ids=filtered_dataset_ids)
     
     return response_with_etag(
         etag, 
         request, 
-        get_response_content
+        callback,
     )
 
 
