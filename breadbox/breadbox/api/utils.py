@@ -22,7 +22,7 @@ def response_with_etag(
     return ORJSONResponse(status_code=status.HTTP_200_OK, content=get_response_content_callback(), **common)
 
 
-def generate_etag(values: list[str]):
+def hash_values(values: list[str]):
     values.sort()
     hash = hashlib.md5()
     for id in values:

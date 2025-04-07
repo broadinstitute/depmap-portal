@@ -12,7 +12,6 @@ from fastapi import (
     UploadFile,
     Query,
     Request,
-    status,
 )
 
 from breadbox.models.dataset import Dataset
@@ -43,7 +42,7 @@ from breadbox.schemas.types import (
     AddDimensionType,
     DimensionIdentifiers,
 )
-from breadbox.api.utils import response_with_etag, generate_etag
+from breadbox.api.utils import response_with_etag, hash_values
 from breadbox.service import metadata as metadata_service
 from breadbox.db.util import transaction
 
@@ -655,7 +654,7 @@ def get_dimension_type_identifiers(
             data_type=data_type,
         )
         filtered_dataset_ids = [dataset.id for dataset in filtered_datasets]
-    etag = generate_etag([name] + (filtered_dataset_ids if filtered_dataset_ids else []))
+    etag = hash_values([name] + (filtered_dataset_ids if filtered_dataset_ids else []))
 
 
     def get_response_content(db: SessionWithUser, dim_type: DimensionTypeModel, filtered_dataset_ids: Optional[list[str]]) -> list[DimensionIdentifiers]:
