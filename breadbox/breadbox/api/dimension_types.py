@@ -642,9 +642,8 @@ def get_dimension_type_identifiers(
     if dim_type is None:
         raise HTTPException(404, f"Dimension type {name} not found")
     
-    if data_type is None and not show_only_dimensions_in_datasets:
-        filtered_dataset_ids = None
-    else:
+    filtered_dataset_ids = None
+    if data_type is None or show_only_dimensions_in_datasets:
         # Get subset of datasets matching the filters provided that the user has access to
         filtered_datasets = get_datasets(
             db,
@@ -660,7 +659,7 @@ def get_dimension_type_identifiers(
     if if_none_match and if_none_match[0] == etag:
         return get_not_modified_response(etag)
     else:
-        if filtered_dataset_ids:
+        if filtered_dataset_ids is not None:
             # Remove the metadata dataset from our list of datasets 
             filtered_dataset_ids = [dataset.id for dataset in filtered_datasets if dataset.id != dim_type.dataset_id]
 
