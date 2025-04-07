@@ -1,13 +1,12 @@
 from typing import List, Optional, Literal, Union, Annotated
 from logging import getLogger
-from uuid import UUID, uuid4
-from functools import partial
 from fastapi import (
     APIRouter,
     Body,
     Depends,
     File,
     Form,
+    Header,
     HTTPException,
     UploadFile,
     Query,
@@ -42,7 +41,7 @@ from breadbox.schemas.types import (
     AddDimensionType,
     DimensionIdentifiers,
 )
-from breadbox.api.utils import response_with_etag, hash_values
+from breadbox.api.utils import get_not_modified_response, get_response_with_etag, hash_values
 from breadbox.service import metadata as metadata_service
 from breadbox.db.util import transaction
 
@@ -631,6 +630,7 @@ def get_dimension_type_identifiers(
     show_only_dimensions_in_datasets: Annotated[bool, Query()] = False,
     limit: Annotated[Union[int, None], Query()] = None,
     db: SessionWithUser = Depends(get_db_with_user),
+    if_none_match: Optional[List[str]] = Header(None), # etag from the client's cache
 ):
     """
     For the given dimension type and filters, get all given IDs and labels.
@@ -656,9 +656,10 @@ def get_dimension_type_identifiers(
         filtered_dataset_ids = [dataset.id for dataset in filtered_datasets]
     etag = hash_values([name] + (filtered_dataset_ids if filtered_dataset_ids else []))
 
-
-    def get_response_content(db: SessionWithUser, dim_type: DimensionTypeModel, filtered_dataset_ids: Optional[list[str]]) -> list[DimensionIdentifiers]:
-        """Load the response from this endpoint (to be called if not already cached)"""
+    # If the client already has a cached version of the data, exit early
+    if if_none_match and if_none_match[0] == etag:
+        return get_not_modified_response(etag)
+    else:
         if filtered_dataset_ids:
             # Remove the metadata dataset from our list of datasets 
             filtered_dataset_ids = [dataset.id for dataset in filtered_datasets if dataset.id != dim_type.dataset_id]
@@ -666,17 +667,12 @@ def get_dimension_type_identifiers(
         dimension_ids_and_labels = metadata_service.get_dimension_type_identifiers(
             db, dim_type, filtered_dataset_ids, limit=limit,
         )
-        return [
+        result = [
             DimensionIdentifiers(id=id, label=label)
             for id, label in dimension_ids_and_labels.items()
-    ]
-    callback = partial(get_response_content, db=db, dim_type=dim_type, filtered_dataset_ids=filtered_dataset_ids)
+        ]
+        return get_response_with_etag(content=result, etag=etag)
     
-    return response_with_etag(
-        etag, 
-        request, 
-        callback,
-    )
 
 
 @router.patch(
