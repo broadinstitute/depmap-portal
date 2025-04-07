@@ -26,6 +26,7 @@ import {
 } from "@depmap/utils";
 
 export type DatasetOption = {
+  // called a "summary_option" on the backend
   dataset: string;
   entity: number;
   id: string;

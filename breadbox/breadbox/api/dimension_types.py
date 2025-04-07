@@ -1,7 +1,7 @@
 from typing import List, Optional, Literal, Union, Annotated
 from logging import getLogger
 from uuid import UUID, uuid4
-from collections import defaultdict
+from functools import partial
 from fastapi import (
     APIRouter,
     Body,
@@ -14,8 +14,8 @@ from fastapi import (
     status,
     UploadFile,
     Query,
+    Request,
 )
-from fastapi.responses import ORJSONResponse
 from breadbox.models.dataset import Dataset
 from breadbox.models.dataset import DimensionType as DimensionTypeModel
 from breadbox.schemas.types import IdMappingInsanity
@@ -44,6 +44,7 @@ from breadbox.schemas.types import (
     AddDimensionType,
     DimensionIdentifiers,
 )
+from breadbox.api.utils import response_with_etag, hash_values
 from breadbox.service import metadata as metadata_service
 from breadbox.db.util import transaction
 
@@ -635,26 +636,51 @@ def get_dimension_type_identifiers(
     db: SessionWithUser = Depends(get_db_with_user),
     etag: str = Depends(get_datasets_etag),
 ):
-    # if the etag is the same as the one in the request, data does not need to be loaded
-    headers = {"media_type": "application/json", "headers": {"ETag": etag}}
-    if request.headers.get("If-None-Match") == etag:
-        return Response(status_code=status.HTTP_304_NOT_MODIFIED, **headers)
-    
-    start = perf_counter()
+    """
+    For the given dimension type and filters, get all given IDs and labels.
+    If the `data_type` is given and/or `show_only_dimensions_in_datasets` is True, the dimension identifiers that are returned will only be those that are used within a dataset.
+    If `show_only_dimensions_in_datasets` is True, dimension identifiers within datasets, excluding the dimension type metadata, are returned
+    If neither `data_type` is given nor `show_only_dimensions_in_datasets` is True, all dimension identifiers from the given dimension type are returned.
+    """
     dim_type = type_crud.get_dimension_type(db, name)
     if dim_type is None:
         raise HTTPException(404, f"Dimension type {name} not found")
+    
+    if data_type is None and not show_only_dimensions_in_datasets:
+        filtered_dataset_ids = None
+    else:
+        # Get subset of datasets matching the filters provided that the user has access to
+        filtered_datasets = get_datasets(
+            db,
+            db.user,
+            feature_type=dim_type.name if dim_type.axis == "feature" else None,
+            sample_type=dim_type.name if dim_type.axis == "sample" else None,
+            data_type=data_type,
+        )
+        filtered_dataset_ids = [dataset.id for dataset in filtered_datasets]
+    etag = hash_values([name] + (filtered_dataset_ids if filtered_dataset_ids else []))
 
-    dimension_ids_and_labels = metadata_service.get_dimension_type_identifiers(
-        db, dim_type, data_type, show_only_dimensions_in_datasets, limit=limit,
-    )
 
-    result = [
-        DimensionIdentifiers(id=id, label=label)
-        for id, label in dimension_ids_and_labels.items()
+    def get_response_content(db: SessionWithUser, dim_type: DimensionTypeModel, filtered_dataset_ids: Optional[list[str]]) -> list[DimensionIdentifiers]:
+        """Load the response from this endpoint (to be called if not already cached)"""
+        if filtered_dataset_ids:
+            # Remove the metadata dataset from our list of datasets 
+            filtered_dataset_ids = [dataset.id for dataset in filtered_datasets if dataset.id != dim_type.dataset_id]
+
+        dimension_ids_and_labels = metadata_service.get_dimension_type_identifiers(
+            db, dim_type, filtered_dataset_ids, limit=limit,
+        )
+        return [
+            DimensionIdentifiers(id=id, label=label)
+            for id, label in dimension_ids_and_labels.items()
     ]
-    log.info(f"Full modifiable portion of backend execution took {perf_counter() - start} seconds")
-    return ORJSONResponse(content=result, **headers)
+    callback = partial(get_response_content, db=db, dim_type=dim_type, filtered_dataset_ids=filtered_dataset_ids)
+    
+    return response_with_etag(
+        etag, 
+        request, 
+        callback,
+    )
 
 
 @router.patch(
