@@ -622,6 +622,15 @@ export class DepmapApi {
     );
   }
 
+  getNodeName(subtypeCode: string): Promise<string> {
+    const params = {
+      subtype_code: subtypeCode,
+    };
+    return this._fetch<string>(
+      `/api/context_explorer/context_node_name?${encodeParams(params)}`
+    );
+  }
+
   getContextExplorerContextInfo(subtypeCode: string): Promise<ContextInfo> {
     const params = {
       level_0_subtype_code: subtypeCode,

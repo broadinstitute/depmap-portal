@@ -32,7 +32,7 @@ export const ALL_SEARCH_OPTION = {
 
 export const OUTGROUP_TYPE_ALL_OPTION = {
   value: "All Others",
-  label: "All other cell lines",
+  label: "All other",
 };
 
 export const DATATYPE_TOOLTIP_TEXT = new Map<string, string>([

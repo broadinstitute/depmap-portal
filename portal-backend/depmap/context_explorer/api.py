@@ -555,3 +555,24 @@ class ContextBoxPlotData(Resource):
             return None
 
         return dataclasses.asdict(context_box_plot_data)
+
+
+@namespace.route("/context_node_name")
+class ContextNodeName(
+    Resource
+):  # the flask url_for endpoint is automagically the snake case of the namespace prefix plus class name
+    def get(self):
+        # Note: docstrings to restplus methods end up in the swagger documentation.
+        # DO NOT put a docstring here that you would not want exposed to users of the API. Use # for comments instead
+        """
+        List of available context trees as a dictionary with keys as each available non-terminal node, and values
+        as each available branch off of the key-node
+        """
+        subtype_code = request.args.get("subtype_code")
+        node = SubtypeNode.get_by_code(subtype_code, must=False)
+
+        if subtype_code == "Other Heme":
+            assert node is None
+            return None
+
+        return node.node_name

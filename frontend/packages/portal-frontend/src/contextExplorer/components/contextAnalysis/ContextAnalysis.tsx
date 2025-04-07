@@ -100,11 +100,12 @@ function ContextAnalysis({
     // All other cell lines
     outGroupOpts.push(OUTGROUP_TYPE_ALL_OPTION);
 
-    selectedContextNode?.path.forEach((subtype_code) => {
+    selectedContextNode?.path.forEach(async (subtype_code) => {
       if (subtype_code !== selectedContextNode.subtype_code) {
+        const nodeName = await dapi.getNodeName(subtype_code);
         outGroupOpts.push({
           value: subtype_code,
-          label: `Other ${subtype_code}`,
+          label: `Other ${nodeName}`,
         });
       }
     });
@@ -119,7 +120,12 @@ function ContextAnalysis({
       });
     }
     setOutgroupOptions(outGroupOpts);
-  }, [topContextNameInfo, selectedContextNode, selectedContextNameInfo.name]);
+  }, [
+    topContextNameInfo,
+    selectedContextNode,
+    selectedContextNameInfo.name,
+    dapi,
+  ]);
 
   useEffect(() => {
     const outgroupLabels = outgroupOptions.map((outgr) => outgr.label);
