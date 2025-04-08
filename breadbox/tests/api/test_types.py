@@ -409,6 +409,17 @@ def test_get_dimension_type_dimension_identifiers(
         {"id": "sample-2", "label": "Sample 2"},
     ]
 
+    # Test that the limit parameter works
+    dim_type_ids_res = client.get(
+        f"types/dimensions/{dim_type_fields['name']}/identifiers?limit=1",
+        headers=admin_headers,
+    )
+    assert_status_ok(dim_type_ids_res)
+    assert dim_type_ids_res.json() == [
+        {"id": "sample-1", "label": "Sample 1"},
+    ]
+
+
     # test dim type doesn't exist
     nonexistent_dim_type_res = client.get(
         f"types/dimensions/nonexistentDimensionType/identifiers", headers=admin_headers,
@@ -464,6 +475,73 @@ def test_get_dimension_type_dimension_identifiers(
         headers=admin_headers,
     )
     assert res.json() == []
+
+
+def test_invalid_dimension_type_metadata(client: TestClient, minimal_db, settings):
+    db = minimal_db
+    admin_headers = {"X-Forwarded-Email": settings.admin_users[0]}
+
+    dim_type_fields = {
+        "name": "sample_id_name",
+        "display_name": "Sample Name",
+        "axis": "sample",
+        "id_column": "sample_id",
+    }
+
+    # Create dimension type
+    dim_type_res = client.post(
+        "/types/dimensions", json=dim_type_fields, headers=admin_headers,
+    )
+    assert_status_ok(dim_type_res)
+    expected_dim_type_res = {
+        "name": "sample_id_name",
+        "display_name": "Sample Name",
+        "axis": "sample",
+        "id_column": "sample_id",
+        "properties_to_index": [],
+        "metadata_dataset_id": None,
+    }
+    assert dim_type_res.json() == expected_dim_type_res
+
+    # Confirm dimension type has no dimension identifiers
+    dim_type_ids_res = client.get(
+        f"types/dimensions/{dim_type_fields['name']}/identifiers",
+        headers=admin_headers,
+    )
+    assert_status_ok(dim_type_ids_res)
+    assert dim_type_ids_res.json() == []
+
+    # add a metadata table
+    # Create data type for metadata with non-public group
+    factories.data_type(db, "metadata")
+    group = factories.group(db, settings, "New Group")
+    dim_type_metadata = factories.tabular_dataset(
+        db,
+        settings,
+        group_id=group.id,
+        columns_metadata={
+            "label": ColumnMetadata(units=None, col_type=AnnotationType.text),
+            "sample_id": ColumnMetadata(units=None, col_type=AnnotationType.text),
+        },
+        index_type_name=dim_type_fields["name"],
+        data_type_="metadata",
+        data_df=pd.DataFrame(
+            {"sample_id": ["sample-1", "sample-2"], "label": ["Sample 1", "Sample 2"]}
+        ),
+    )
+
+    dim_type_metadata_res = client.patch(
+        f"/types/dimensions/{dim_type_fields['name']}",
+        json=(
+            {
+                "metadata_dataset_id": dim_type_metadata.id,
+                "properties_to_index": ["label"],
+            }
+        ),
+        headers=admin_headers,
+    )
+    assert_status_not_ok(dim_type_metadata_res)
+    dim_type_metadata_res.status_code = 404
 
 
 #### /types/sample and types/feature endpoints are deprecated!! ###

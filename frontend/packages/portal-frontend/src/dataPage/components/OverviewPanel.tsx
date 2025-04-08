@@ -68,9 +68,9 @@ function OverviewPanel(props: OverviewPanelProps) {
           <div className={styles.overColumnHeader}>Overview</div>
           <div className={styles.overviewParagraphBold}>
             The DepMap project, building off of the original Cancer Cell Line
-            Encyclopedia (CCLE) project, generates data and tools that can be
-            used and shared by researchers. New DepMap data is released twice a
-            year, in May and November.
+            Encyclopedia (CCLE) project and Project Achilles, generates data and
+            tools that can be used and shared by researchers. New DepMap data is
+            released twice a year, in May and November.
           </div>
           <div className={styles.overviewParagraphBold}>
             DepMap has an ever-evolving data structure that allows for

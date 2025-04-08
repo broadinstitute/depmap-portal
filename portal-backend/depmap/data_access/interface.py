@@ -1,4 +1,4 @@
-from typing import Any, Literal, Optional
+from typing import Any, Literal, Optional, Union
 import pandas as pd
 
 from depmap_compute.slice import SliceQuery
@@ -380,6 +380,10 @@ def get_tabular_dataset_column(dataset_id: str, column_name: str) -> pd.Series:
         raise NotImplementedError(
             "Tabular datasets are not supported outside of breadbox."
         )
+
+
+def get_metadata_dataset_id(dimension_type_name: str) -> Union[str, None]:
+    return breadbox_dao.get_metadata_dataset_id(dimension_type_name)
 
 
 ######################################################################

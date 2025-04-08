@@ -107,6 +107,10 @@ class MutationTableSpec:
         "am_class",
         "am_pathogenicity",
         "hotspot",
+        ## New columns 25Q2
+        "intron",
+        "exon",
+        "rescue_reason",
     ]
 
     common_renames = {
@@ -201,6 +205,9 @@ class MutationTableSpec:
         "am_class": "AM class",
         "am_pathogenicity": "AM Pathogenicity",
         "hotspot": "Hotspot",
+        "intron": "Intron",
+        "exon": "Exon",
+        "rescue_reason": "Rescue Reason",
     }
 
     common_default_columns = [

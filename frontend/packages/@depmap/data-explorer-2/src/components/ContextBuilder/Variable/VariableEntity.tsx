@@ -1,10 +1,10 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { useDeprecatedDataExplorerApi } from "../../contexts/DeprecatedDataExplorerApiContext";
-import { getDimensionTypeLabel, isPartialSliceId } from "../../utils/misc";
-import PlotConfigSelect from "../PlotConfigSelect";
-import { sliceLabelFromSliceId, makeSliceId } from "./contextBuilderUtils";
-import { ContextBuilderReducerAction } from "./contextBuilderReducer";
-import styles from "../../styles/ContextBuilder.scss";
+import { useDeprecatedDataExplorerApi } from "../../../contexts/DeprecatedDataExplorerApiContext";
+import { getDimensionTypeLabel, isPartialSliceId } from "../../../utils/misc";
+import PlotConfigSelect from "../../PlotConfigSelect";
+import { sliceLabelFromSliceId, makeSliceId } from "../contextBuilderUtils";
+import { ContextBuilderReducerAction } from "../contextBuilderReducer";
+import styles from "../../../styles/ContextBuilder.scss";
 
 const collator = new Intl.Collator(undefined, {
   numeric: true,

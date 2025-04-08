@@ -320,6 +320,10 @@ def _read_mutations(dr, pbar, gene_cache, cell_line_cache):
                 am_class=r["AMClass"],  # string
                 am_pathogenicity=_to_none(r["AMPathogenicity"]),  # float
                 hotspot=_to_sql_bool(r["Hotspot"]),  # bool
+                # New columns 25Q2
+                intron=r["Intron"],  # string
+                exon=r["Exon"],  # string
+                rescue_reason=r["RescueReason"],  # string
             )
 
             yield record

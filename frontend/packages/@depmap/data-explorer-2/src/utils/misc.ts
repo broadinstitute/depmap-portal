@@ -12,7 +12,7 @@ export function getDimensionTypeLabel(dimension_type: string) {
   }
 
   if (dimension_type === "compound_experiment") {
-    return "compound";
+    return "compound sample";
   }
 
   if (dimension_type === "msigdb_gene_set") {

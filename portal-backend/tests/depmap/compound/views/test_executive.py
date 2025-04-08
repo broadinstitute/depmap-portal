@@ -153,7 +153,7 @@ def test_format_top_corr_table(tmpdir, empty_db_mock_downloads):
 
 
 def test_format_availability_tile(empty_db_mock_downloads):
-    compound = CompoundFactory()
+    compound = CompoundFactory()  # pyright: ignore
     compound_experiment_1 = CompoundExperimentFactory(
         label="exp_label_1", compound=compound
     )
@@ -200,7 +200,7 @@ def test_format_availability_tile(empty_db_mock_downloads):
             "dataset_url": "/download/all/?release=test+name+version&file=test+file+name+2",
         },
     ]
-    availability = format_availability_tile(compound.entity_id)
+    availability = format_availability_tile(compound)
 
     assert expected == availability
 

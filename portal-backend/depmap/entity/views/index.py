@@ -12,6 +12,7 @@ def format_summary(
     default_color=None,
     show_auc_message=False,
 ):
+    """Only used for gene summary, not compound summary"""
     summary = { 
         "figure": "", # This "figure" param isn't used anymore and should be removed
         "summary_options": summary_options,

@@ -198,7 +198,9 @@ jobs:
         with:
           token: "${{ secrets.GITHUB_TOKEN }}"
           fetch-depth: 0
-
+        # pulls latest changes from head
+      - run: |
+          git pull origin HEAD:master
       - name: "Authenticate to Google Cloud"
         uses: google-github-actions/auth@v2
         with:

@@ -603,11 +603,10 @@ def get_correlations_html(
 def get_availability_html(
     compound, compound_experiment_and_datasets, query_params_dict={}
 ):
-    compound_id = compound.entity_id
     return render_template(
         "tiles/availability.html",
         name=compound.label,
-        availability=format_availability_tile(compound_id),
+        availability=format_availability_tile(compound),
     )
 
 

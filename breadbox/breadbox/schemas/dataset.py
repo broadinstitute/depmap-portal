@@ -2,6 +2,7 @@ from __future__ import annotations
 from uuid import UUID
 from typing import Optional, List, Dict, Any, Annotated, Union, Literal
 from pydantic import AfterValidator, BaseModel, Field, model_validator, field_validator
+from typing_extensions import TypedDict
 
 from breadbox.schemas.common import DBBase
 from fastapi import Body
@@ -9,7 +10,6 @@ from breadbox.schemas.custom_http_exception import UserError
 from .group import Group
 import enum
 
-from depmap_compute.slice import SliceQuery
 
 
 # NOTE: Using multivalue Literals seems to be creating errors in pydantic models and fastapi request params.
@@ -24,12 +24,12 @@ class FeatureSampleIdentifier(enum.Enum):
 class ValueType(enum.Enum):
     continuous = "continuous"
     categorical = "categorical"
+    list_strings = "list_strings"
 
 
 class AnnotationType(enum.Enum):
     continuous = "continuous"
     categorical = "categorical"
-    binary = "binary"
     text = "text"
     list_strings = "list_strings"
 
@@ -215,7 +215,7 @@ class ColumnMetadata(BaseModel):
     col_type: Annotated[
         AnnotationType,
         Field(
-            description="Annotation type for the column. Annotation types may include: `continuous`, `categorical`, `binary`, `text`, or `list_strings`."
+            description="Annotation type for the column. Annotation types may include: `continuous`, `categorical`, `text`, or `list_strings`."
         ),
     ]
 
@@ -549,7 +549,7 @@ UpdateDatasetParams = Annotated[
 ]
 
 
-class NameAndID(BaseModel):
+class NameAndID(TypedDict):
     name: str
     id: str
 

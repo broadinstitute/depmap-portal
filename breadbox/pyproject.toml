@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "breadbox"
-version = "3.25.1"
+version = "3.28.0"
 description = "A peristent service that stores and fetches datasets"
 authors = ["Jessica Cheng <jcheng@broadinstitute.org>"]
 packages = [{include = "breadbox"}]
@@ -59,7 +59,7 @@ name = "cz_customize"   # Must use name 'cz_customize' in order to enable custom
 tag_format = "breadbox-$version"
 version_scheme = "pep440"
 version_provider = "poetry"
-version = "3.25.1"
+version = "3.28.0"
 version_files = [
     'pyproject.toml:version',
     '../breadbox-client/pyproject.toml:version',
@@ -71,10 +71,10 @@ version_files = [
 message_template = "{{change_type}}({{scope}}){% if is_breaking %}!{% endif %}: {{message}}\n{% if description %}{{description}}{% endif %}\n{% if is_breaking and footer %}BREAKING CHANGE: {{footer}}{% endif %}"
 example = "feat(breadbox): Add this feature that does something"
 
-bump_pattern = '^(feat\((breadbox)\)(!)?|fix\((breadbox)\)(!)?|build\((breadbox)\)(!)?|chore\((breadbox)\)(!)?)'
+bump_pattern = '^(feat\((breadbox)\)(!)?|fix\((breadbox)\)(!)?|build\((breadbox)\)(!)?|chore\((breadbox)\)(!)?|perf\((breadbox)\)|test\((breadbox)\)|refactor\((breadbox)\)|docs\((breadbox)\)|ci\((breadbox)\))'
 # Changelog currently unused but will keep this here if we decide to in the future..
-changelog_pattern = '^(feat|fix|build|chore)\((breadbox)\)(!)?:'
-schema_pattern = '(feat|fix|test|refactor|style|docs|perf|build|chore|ci)\((breadbox)\)(!)?:(\s.*)'
+changelog_pattern = '^(feat|fix|build|chore|perf)\((breadbox)\)(!)?:'
+schema_pattern = '(feat|fix|build|chore|perf|test|refactor|docs|ci)\((breadbox)\)(!)?:(\s.*)'
 
 # bump_map keys are regex matched with regex match for commit with bump_pattern  (See: python3.9/site-packages/commitizen/bump.py: find_increment())
 [tool.commitizen.customize.bump_map]
@@ -83,9 +83,14 @@ schema_pattern = '(feat|fix|test|refactor|style|docs|perf|build|chore|ci)\((brea
 "build\\((breadbox)\\)!" = "MAJOR"
 "chore\\((breadbox)\\)!" = "MAJOR"
 "feat\\((breadbox)\\)" = "MINOR"
+"perf\\((breadbox)\\)" = "MINOR"
 "fix\\((breadbox)\\)" = "PATCH"
 "build\\((breadbox)\\)" = "PATCH"
 "chore\\((breadbox)\\)" = "PATCH"
+"test\\((breadbox)\\)" = "PATCH"
+"refactor\\((breadbox)\\)" = "PATCH"
+"docs\\((breadbox)\\)" = "PATCH"
+"ci\\((breadbox)\\)" = "PATCH"
 
 # Using the customization for commitizen requires rest of customization sections defined... https://github.com/commitizen-tools/commitizen/issues/781
 # Below questions are an attempt to mimic original prompts
@@ -97,7 +102,6 @@ choices = [
     {value = "feat", name = "feat: A new feature. Correlates with MINOR in SemVer"},
     {value = "test", name = "test: Adding missing or correcting existing tests"},
     {value = "refactor", name = "refactor: A code change that neither fixes a bug nor adds a feature"},
-    {value = "style", name = "style: Changes that do not affect the meaning of the code (white-space, formatting, missing semi-colons, etc)"},
     {value = "docs", name = "docs: Documentation only changes"},
     {value = "perf", name = "perf: A code change that improves performance"},
     {value = "build", name = "build: Changes that affect the build system or external dependencies (example scopes: pip, docker, npm)"},

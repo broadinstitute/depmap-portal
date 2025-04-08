@@ -41,7 +41,6 @@ from breadbox.schemas.types import (
     DimensionIdentifiers,
 )
 from breadbox.service import metadata as metadata_service
-from .settings import assert_is_admin_user
 from breadbox.db.util import transaction
 
 
@@ -57,6 +56,13 @@ log = getLogger(__name__)
 from breadbox.schemas.custom_http_exception import FileValidationError
 from typing import Dict
 from pydantic import Json
+
+
+def assert_is_admin_user(user: str, settings: Settings):
+    if user not in settings.admin_users:
+        raise HTTPException(
+            403, "You do not have permission to modify dimension types."
+        )
 
 
 @router.post(
@@ -619,6 +625,7 @@ def get_dimension_type_identifiers(
     name: str,
     data_type: Annotated[Union[str, None], Query()] = None,
     show_only_dimensions_in_datasets: Annotated[bool, Query()] = False,
+    limit: Annotated[Union[int, None], Query()] = None,
     db: SessionWithUser = Depends(get_db_with_user),
 ):
     dim_type = type_crud.get_dimension_type(db, name)
@@ -626,7 +633,7 @@ def get_dimension_type_identifiers(
         raise HTTPException(404, f"Dimension type {name} not found")
 
     dimension_ids_and_labels = metadata_service.get_dimension_type_identifiers(
-        db, dim_type, data_type, show_only_dimensions_in_datasets
+        db, dim_type, data_type, show_only_dimensions_in_datasets, limit=limit,
     )
 
     return [
