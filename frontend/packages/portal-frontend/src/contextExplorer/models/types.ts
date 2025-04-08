@@ -217,6 +217,12 @@ export interface ContextPlotBoxData {
   entity_label: string;
 }
 
+export interface EnrichedLineagesTileData {
+  box_plot_data: ContextPlotBoxData;
+  top_context_name_info: ContextNameInfo;
+  selected_context_name_info: ContextNameInfo;
+}
+
 export interface OtherBoxCardData {
   [key: string]: {
     levelZeroPlotInfo: BoxPlotInfo;

@@ -9,14 +9,8 @@ from depmap.context_explorer.models import ContextPlotBoxData, BoxData, NodeEnti
 
 
 def _get_node_entity_data(
-    dataset_name: str, entity_type: str, entity_full_label: str
+    dataset_name: str, entity_id: int, entity_label: str
 ) -> NodeEntityData:
-    entity_id_and_label = utils.get_entity_id_from_entity_full_label(
-        entity_type=entity_type, entity_full_label=entity_full_label
-    )
-    entity_id = entity_id_and_label["entity_id"]
-    entity_label = entity_id_and_label["label"]
-
     (entity_full_row_of_values) = utils.get_full_row_of_values_and_depmap_ids(
         dataset_name=dataset_name, label=entity_label
     )
@@ -229,14 +223,14 @@ def get_branch_subtype_codes_organized_by_code(
     return branch_contexts
 
 
-def _get_sig_context_dataframe(
+def get_sig_context_dataframe(
     tree_type: str,
     entity_type: str,
     entity_id: int,
     dataset_name: str,
-    max_fdr: float,
-    min_abs_effect_size: float,
-    min_frac_dep_in: float,
+    max_fdr: float = 0.5,
+    min_abs_effect_size: float = 0.1,
+    min_frac_dep_in: float = 0.1,
 ) -> pd.DataFrame:
     # If this doesn't find the node, something is wrong with how we
     # loaded the SubtypeNode database table data.
@@ -382,34 +376,21 @@ def get_context_plot_box_data(
 
 def get_organized_contexts(
     selected_subtype_code: str,
-    tree_type: str,
+    sig_contexts: pd.DataFrame,
     entity_type: str,
-    entity_full_label: str,
+    entity_id: int,
+    entity_label: str,
     dataset_name: str,
-    max_fdr: float,
-    min_abs_effect_size: float,
-    min_frac_dep_in: float,
+    tree_type: str,
 ) -> Optional[ContextPlotBoxData]:
     node = SubtypeNode.get_by_code(selected_subtype_code)
     assert node is not None
     level_0 = node.level_0
     node_entity_data = _get_node_entity_data(
-        dataset_name=dataset_name,
-        entity_type=entity_type,
-        entity_full_label=entity_full_label,
+        dataset_name=dataset_name, entity_id=entity_id, entity_label=entity_label
     )
 
     entity_full_row_of_values = node_entity_data.entity_full_row_of_values
-
-    sig_contexts = _get_sig_context_dataframe(
-        tree_type=tree_type,
-        entity_type=entity_type,
-        entity_id=node_entity_data.entity_id,
-        dataset_name=dataset_name,
-        max_fdr=max_fdr,
-        min_abs_effect_size=min_abs_effect_size,
-        min_frac_dep_in=min_frac_dep_in,
-    )
 
     (entity_full_row_of_values) = utils.get_full_row_of_values_and_depmap_ids(
         dataset_name=dataset_name, label=node_entity_data.entity_label

@@ -1,20 +1,31 @@
 import dataclasses
+import re
 from typing import Any, Dict, List, Literal, Tuple, Union
 import os
 from depmap.cell_line.models_new import DepmapModel
 from depmap.compound.models import Compound, CompoundExperiment
-from depmap.context_explorer.utils import get_path_to_node
+from depmap.compound.views.executive import determine_compound_experiment_and_dataset
+from depmap.context_explorer.utils import (
+    get_entity_id_from_entity_full_label,
+    get_path_to_node,
+)
 from depmap.context_explorer import box_plot_utils, dose_curve_utils
+from depmap.dataset.models import DependencyDataset
+from depmap.entity.models import Entity
+from depmap.gene.models import Gene
 from depmap.tda.views import convert_series_to_json_safe_list
+from depmap.tile.views import get_dependency_dataset_for_entity
 from flask_restplus import Namespace, Resource
 from flask import current_app, request
 import pandas as pd
 from depmap.settings.shared import DATASET_METADATA
 from depmap.context_explorer.models import (
     ContextAnalysis,
+    ContextNameInfo,
     ContextNode,
+    EnrichedLineagesTileData,
 )
-from depmap.context.models_new import SubtypeContext, SubtypeNode, TreeType
+from depmap.context.models_new import SubtypeNode, TreeType
 
 namespace = Namespace("context_explorer", description="View context data in the portal")
 
@@ -101,8 +112,8 @@ def _get_context_summary(tree_type: str):
         )
 
     summary = {
-        "values": sorted_summary_df.values.tolist(),
-        "data_types": sorted_summary_df.index.values.tolist(),
+        "values": sorted_summary_df.values.tolist()[::-1],
+        "data_types": sorted_summary_df.index.values.tolist()[::-1],
     }
 
     summary["all_depmap_ids"] = [
@@ -540,15 +551,30 @@ class ContextBoxPlotData(Resource):
         min_abs_effect_size = request.args.get("min_abs_effect_size", type=float)
         min_frac_dep_in = request.args.get("min_frac_dep_in", type=float)
 
-        context_box_plot_data = box_plot_utils.get_organized_contexts(
-            selected_subtype_code=selected_subtype_code,
+        entity_id_and_label = get_entity_id_from_entity_full_label(
+            entity_type=entity_type, entity_full_label=entity_full_label,
+        )
+        entity_id = entity_id_and_label["entity_id"]
+        entity_label = entity_id_and_label["label"]
+
+        sig_contexts = box_plot_utils.get_sig_context_dataframe(
             tree_type=tree_type,
             entity_type=entity_type,
-            entity_full_label=entity_full_label,
+            entity_id=entity_id,
             dataset_name=dataset_name,
             max_fdr=max_fdr,
             min_abs_effect_size=min_abs_effect_size,
             min_frac_dep_in=min_frac_dep_in,
+        )
+
+        context_box_plot_data = box_plot_utils.get_organized_contexts(
+            selected_subtype_code=selected_subtype_code,
+            sig_contexts=sig_contexts,
+            entity_type=entity_type,
+            entity_id=entity_id,
+            entity_label=entity_label,
+            dataset_name=dataset_name,
+            tree_type=tree_type,
         )
 
         if context_box_plot_data is None:
@@ -564,10 +590,6 @@ class ContextNodeName(
     def get(self):
         # Note: docstrings to restplus methods end up in the swagger documentation.
         # DO NOT put a docstring here that you would not want exposed to users of the API. Use # for comments instead
-        """
-        List of available context trees as a dictionary with keys as each available non-terminal node, and values
-        as each available branch off of the key-node
-        """
         subtype_code = request.args.get("subtype_code")
         node = SubtypeNode.get_by_code(subtype_code, must=False)
 
@@ -578,3 +600,92 @@ class ContextNodeName(
         assert node is not None
 
         return node.node_name
+
+
+def temp_get_compound_experiment_dataset(compound_experiment_and_datasets):
+    # DEPRECATED: this method will not work with breadbox datasets. Calls to it should be replaced.
+    dataset_regexp_ranking = [
+        "Prism_oncology.*",
+        "Rep_all_single_pt.*",
+        ".*",
+    ]
+    ce_and_d = []
+    for regexp in dataset_regexp_ranking:
+        for ce, d in compound_experiment_and_datasets:
+            pattern = re.compile(regexp)
+            if pattern.match(d.name.value):
+                ce_and_d = [[ce, d]]
+                return ce_and_d
+
+
+@namespace.route("/enriched_lineages_tile")
+class EnrichedLineagesTile(
+    Resource
+):  # the flask url_for endpoint is automagically the snake case of the namespace prefix plus class name
+    def get(self):
+        # Note: docstrings to restplus methods end up in the swagger documentation.
+        # DO NOT put a docstring here that you would not want exposed to users of the API. Use # for comments instead
+        tree_type = request.args.get("tree_type")
+        entity_label = request.args.get("entity_label")
+        entity_type = request.args.get("entity_type")
+
+        entity = (
+            Gene.get_by_label(entity_label)
+            if entity_type == "gene"
+            else CompoundExperiment.get_by_label(entity_label)
+        )
+
+        dataset = get_dependency_dataset_for_entity(
+            DependencyDataset.DependencyEnum.Chronos_Combined.name, entity.entity_id
+        )
+        dataset_name = dataset.name.name
+
+        if entity_type == "compound":
+            # Figure out membership in different datasets
+            compound_experiment_and_datasets = DependencyDataset.get_compound_experiment_priority_sorted_datasets_with_compound(
+                entity.entity_id
+            )
+            compound_experiment_and_datasets = [
+                x
+                for x in compound_experiment_and_datasets
+                if not x[1].is_ic50 and not x[1].is_dose_replicate
+            ]  # filter for non ic50 or dose replicate datasets"
+            best_ce_and_d = temp_get_compound_experiment_dataset(
+                compound_experiment_and_datasets
+            )
+
+            dataset_name = best_ce_and_d[0][1]
+
+        sig_contexts = box_plot_utils.get_sig_context_dataframe(
+            tree_type=tree_type,
+            entity_type=entity_type,
+            entity_id=entity.entity_id,
+            dataset_name=dataset_name,
+        )
+
+        selected_subtype_code = sig_contexts["level_0"].tolist()[0]
+        top_context = SubtypeNode.get_by_code(selected_subtype_code)
+        top_context_name_info = ContextNameInfo(
+            name=top_context.node_name, subtype_code=selected_subtype_code, node_level=0
+        )
+
+        context_box_plot_data = box_plot_utils.get_organized_contexts(
+            selected_subtype_code=selected_subtype_code,
+            entity_type=entity.type,
+            entity_label=entity.label,
+            dataset_name=dataset_name,
+            sig_contexts=sig_contexts,
+            entity_id=entity.entity_id,
+            tree_type=tree_type,
+        )
+
+        if context_box_plot_data is None:
+            return None
+
+        tile_data = EnrichedLineagesTileData(
+            box_plot_data=context_box_plot_data,
+            top_context_name_info=top_context_name_info,
+            selected_context_name_info=top_context_name_info,
+        )
+
+        return dataclasses.asdict(tile_data)
