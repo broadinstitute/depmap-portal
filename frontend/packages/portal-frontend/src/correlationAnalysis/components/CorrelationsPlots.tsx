@@ -34,6 +34,7 @@ export default function CorrelationsPlots(props: CorrelationsPlotsProps) {
               Plotly={Plotly}
               xLabel="Correlation Coefficient"
               yLabel="q value"
+              bounds={"autosize"}
               data={Object.values(volcanoDataForFeatureType[featureType])}
             />
           </div>

@@ -69,7 +69,7 @@ const getColor = (
 export const formatLayout = (
   xLabel: string,
   yLabel: string,
-  bounds: { width: number; height: number } | null = null,
+  bounds: { width: number; height: number } | null | "autosize" = null,
   annotations: Array<Partial<Plotly.Annotations>> | null = null
 ) => {
   // let bounds = resizer.getSize("main-plot");
@@ -77,7 +77,7 @@ export const formatLayout = (
     bounds = { width: 600, height: 600 };
   }
   const layout: any = {
-    // autosize: true, // autosizes width but not height
+    autosize: bounds, // autosizes width but not height
     width: bounds.width,
     height: bounds.height,
     hovermode: "closest",
