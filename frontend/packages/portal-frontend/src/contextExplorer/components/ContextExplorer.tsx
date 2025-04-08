@@ -159,7 +159,9 @@ export const ContextExplorer = () => {
         );
         setContextInfo(newContextInfo);
 
-        const dataAvail = await dapi.getSubtypeDataAvailability(path[0]);
+        const dataAvail = await dapi.getSubtypeDataAvailability(
+          path[path.length - 1]
+        );
 
         setContextDataAvailability(dataAvail);
       } else {

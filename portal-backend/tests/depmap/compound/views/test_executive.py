@@ -1,4 +1,5 @@
 from bdb import effective
+from depmap.compound.models import Compound
 from depmap.compound.views.executive import (
     determine_compound_experiment_and_dataset,
     format_availability_tile,
@@ -153,7 +154,7 @@ def test_format_top_corr_table(tmpdir, empty_db_mock_downloads):
 
 
 def test_format_availability_tile(empty_db_mock_downloads):
-    compound = CompoundFactory()  # pyright: ignore
+    compound: Compound = CompoundFactory()  # pyright: ignore
     compound_experiment_1 = CompoundExperimentFactory(
         label="exp_label_1", compound=compound
     )

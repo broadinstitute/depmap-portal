@@ -4,6 +4,7 @@ import {
   DataTypeStrings,
   ContextExplorerDatasets,
   ContextNameInfo,
+  DataType,
 } from "./models/types";
 import update from "immutability-helper";
 import { DataExplorerContext } from "@depmap/types";
@@ -398,6 +399,41 @@ export const getUpdatedGraphInfoForSelection = (
   };
 };
 
+function getFilteredData(
+  selectedContextNode: ContextNode,
+  data: ContextSummary
+) {
+  if (!selectedContextNode) {
+    return data;
+  }
+  const nodeChildrenCodes = selectedContextNode.children.map(
+    (node) => node.subtype_code
+  );
+  const datasetDataTypes = Object.keys(DataType).filter((item) => {
+    return Number.isNaN(Number(item));
+  });
+
+  const includedDataTypes: string[] = [];
+  const includedValueRows: number[][] = [];
+  data.values.forEach((row: number[], index) => {
+    const dataType = data.data_types[index];
+
+    if (
+      datasetDataTypes.includes(dataType) ||
+      nodeChildrenCodes.includes(dataType)
+    ) {
+      includedDataTypes.push(dataType);
+      includedValueRows.push(row);
+    }
+  });
+
+  return {
+    all_depmap_ids: data.all_depmap_ids,
+    values: includedValueRows,
+    data_types: includedDataTypes,
+  };
+}
+
 function mergeDataAvailability(
   allContextDatasetDataAvail: ContextSummary,
   subtypeDataAvail: ContextSummary
@@ -437,7 +473,10 @@ function getSelectedContextData(
     selectedContextDataAvailability
   );
 
-  const filteredData = mergedDataAvailability;
+  const filteredData = getFilteredData(
+    selectedContextNode,
+    mergedDataAvailability
+  );
 
   const availableDepmapIds = mergedDataAvailability.all_depmap_ids;
 
