@@ -86,6 +86,7 @@ export function Story() {
   const [selectedFeatureTypes, setSelectedFeatureTypes] = React.useState<
     string[]
   >([]);
+  const [selectedDoses, setSelectedDoses] = React.useState<string[]>([]);
 
   console.log(correlationAnalysisData);
   const columnData = {};
@@ -99,6 +100,17 @@ export function Story() {
   console.log(columnNames);
   console.log(columnData);
 
+  const getDoseOptions = () => {
+    const doses = new Set(columnData["imatinib Dose"]);
+    console.log(doses);
+    // TODO: need to sort doses
+    const doseOptions = [];
+    doses.forEach((dose) => {
+      doseOptions.push({ label: dose, value: dose });
+    });
+    return doseOptions;
+  };
+
   const columnNamesToPlotVariables = {
     "Correlation Coefficient": "x",
     "-log10 qval": "y",
@@ -108,13 +120,15 @@ export function Story() {
 
   const filteredTableCorrelationAnalysisData = React.useMemo(() => {
     // if no selected feature types, show all correlation analysis data
-    if (selectedFeatureTypes.length == 0) {
+    if (selectedFeatureTypes.length == 0 && selectedDoses.length == 0) {
       return correlationAnalysisData;
     }
-    return correlationAnalysisData.filter((data) =>
-      selectedFeatureTypes.includes(data["Feature Type"])
+    return correlationAnalysisData.filter(
+      (data) =>
+        selectedFeatureTypes.includes(data["Feature Type"]) ||
+        selectedDoses.includes(data["imatinib Dose"])
     );
-  }, [selectedFeatureTypes]);
+  }, [selectedFeatureTypes, selectedDoses]);
 
   const volcanoDataForFeatureType = correlationAnalysisData.reduce(
     (acc, curRecord) => {
@@ -172,19 +186,6 @@ export function Story() {
   );
   console.log(volcanoDataForFeatureType);
 
-  const filteredVolcanoPlotFeatureTypes = React.useMemo(() => {
-    if (selectedFeatureTypes.length == 0) {
-      // if no selected feature types, return all feature types that have volcano plot data
-      return featureTypeOptions
-        .filter(
-          (featureTypeOption) =>
-            featureTypeOption.value in volcanoDataForFeatureType
-        )
-        .map((featureTypeOption) => featureTypeOption.value);
-    }
-    return selectedFeatureTypes;
-  }, [selectedFeatureTypes]);
-
   return (
     <div
       style={{
@@ -219,17 +220,15 @@ export function Story() {
           }}
         />
         <header>Dose</header>
-        <AsyncSelect
+        <Select
           placeholder="imatinib Doses(uM)"
           defaultOptions
-          loadOptions={featureTypesPromise}
+          options={getDoseOptions()}
           isMulti
           onChange={(value, action) => {
             console.log(value, action);
-            setSelectedFeatureTypes(
-              value !== null
-                ? value.map((selectedFeatureType) => selectedFeatureType.value)
-                : []
+            setSelectedDoses(
+              value ? value.map((selectedDose) => selectedDose.value) : []
             );
           }}
         />
@@ -267,7 +266,12 @@ export function Story() {
 
       <div style={{ gridArea: "b" }}>
         <CorrelationsPlots
-          featureTypesToShow={filteredVolcanoPlotFeatureTypes}
+          featureTypesToShow={
+            selectedFeatureTypes.length
+              ? selectedFeatureTypes
+              : Object.keys(volcanoDataForFeatureType)
+          }
+          dosesToFilter={selectedDoses}
           volcanoDataForFeatureType={volcanoDataForFeatureType}
         />
       </div>

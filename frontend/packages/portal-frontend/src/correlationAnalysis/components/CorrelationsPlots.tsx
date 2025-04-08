@@ -4,11 +4,30 @@ import { VolcanoPlot } from "../../plot/components/VolcanoPlot";
 
 interface CorrelationsPlotsProps {
   featureTypesToShow: string[];
+  dosesToFilter: string[];
   volcanoDataForFeatureType: { [key: string]: any };
 }
 
 export default function CorrelationsPlots(props: CorrelationsPlotsProps) {
-  const { featureTypesToShow, volcanoDataForFeatureType } = props;
+  const {
+    featureTypesToShow,
+    dosesToFilter,
+    volcanoDataForFeatureType,
+  } = props;
+
+  const filteredDosesForFeatureTypeVolcanoData = React.useCallback(
+    (featureTypeVolcanoData) => {
+      if (dosesToFilter.length) {
+        const subset = {};
+        dosesToFilter.forEach((dose) => {
+          subset[dose] = featureTypeVolcanoData[dose];
+        });
+        return subset;
+      }
+      return featureTypeVolcanoData;
+    },
+    [dosesToFilter]
+  );
   return (
     <div
       style={{
@@ -35,7 +54,11 @@ export default function CorrelationsPlots(props: CorrelationsPlotsProps) {
               xLabel="Correlation Coefficient"
               yLabel="q value"
               bounds={"autosize"}
-              data={Object.values(volcanoDataForFeatureType[featureType])}
+              data={Object.values(
+                filteredDosesForFeatureTypeVolcanoData(
+                  volcanoDataForFeatureType[featureType]
+                )
+              )}
             />
           </div>
         );
