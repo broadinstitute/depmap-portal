@@ -419,7 +419,6 @@ def test_get_dimension_type_dimension_identifiers(
         {"id": "sample-1", "label": "Sample 1"},
     ]
 
-
     # test dim type doesn't exist
     nonexistent_dim_type_res = client.get(
         f"types/dimensions/nonexistentDimensionType/identifiers", headers=admin_headers,
@@ -459,7 +458,7 @@ def test_get_dimension_type_dimension_identifiers(
     assert len(only_dims_in_dataset) == 1
     assert only_dims_in_dataset[0]["id"] == "sample-1"
 
-    # verify all identifiers for a specific data type are returned. Additionally, only identifiers that are defined in metadata are returned
+    # verify all identifiers for a specific data type are returned. Additionally, only identifiers that are defined in metadata are returned since dimension type identifiers in its metadata would not share the same data type
     all_dims_for_data_type_res = client.get(
         f"types/dimensions/{dim_type_fields['name']}/identifiers?data_type=dataType1",
         headers=admin_headers,
@@ -475,6 +474,37 @@ def test_get_dimension_type_dimension_identifiers(
         headers=admin_headers,
     )
     assert res.json() == []
+
+    # Test case if data type is metadata and show only dimensions in datasets is True when there is a dataset of data type metadata with requested dimension type but is not used as a dimension types's metadata. The result should still filter out identifiers that are not found in the dimension type's metadata
+    matrix_values = factories.matrix_csv_data_file_with_values(
+        feature_ids=["feature-1", "feature-2", "feature-3"],
+        sample_ids=["sample-1", "sample-3"],
+        values=np.array([[1, 2, 3], [4, 5, 6]]),
+    )
+    matrix_dataset_metadata = factories.matrix_dataset(
+        db,
+        settings,
+        sample_type=dim_type_fields["name"],
+        data_file=matrix_values,
+        data_type="metadata",
+    )
+    res = client.get(
+        f"types/dimensions/{dim_type_fields['name']}/identifiers?data_type=metadata&show_only_dimensions_in_datasets=True",
+        headers=admin_headers,
+    )
+    assert res.json() == [
+        {"id": "sample-1", "label": "Sample 1"},
+    ]
+
+    # Test case if data type is metadata and show only dimensions in datasets is False when there is a dataset of data type metadata with requested dimension type but is not used as a dimension types's metadata. This should return dimension identifiers from both datasets but should still filter out identifiers that are not found in the dimension type's metadata
+    res = client.get(
+        f"types/dimensions/{dim_type_fields['name']}/identifiers?data_type=metadata",
+        headers=admin_headers,
+    )
+    assert res.json() == [
+        {"id": "sample-1", "label": "Sample 1"},
+        {"id": "sample-2", "label": "Sample 2"},
+    ]
 
 
 def test_invalid_dimension_type_metadata(client: TestClient, minimal_db, settings):
