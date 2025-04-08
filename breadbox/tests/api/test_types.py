@@ -471,7 +471,7 @@ def test_get_dimension_type_dimension_identifiers(
 
     # Test case if data type is metadata and show only dimensions in datasets is True. We expect that it returns an empty list since only the metadata dataset uses any identifiers
     res = client.get(
-        f"types/dimensions/{dim_type_fields['name']}/identifiers?data_type=metadata?show_only_dimensions_in_datasets=True",
+        f"types/dimensions/{dim_type_fields['name']}/identifiers?data_type=metadata&show_only_dimensions_in_datasets=True",
         headers=admin_headers,
     )
     assert res.json() == []
