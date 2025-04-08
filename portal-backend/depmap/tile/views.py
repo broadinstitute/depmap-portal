@@ -3,6 +3,11 @@ import uuid
 
 from flask.globals import current_app
 import pandas as pd
+
+from dataclasses import dataclass
+import uuid
+
+
 import depmap.celfie.utils as celfie_utils
 from flask import Blueprint, render_template, abort, jsonify, url_for, request
 from depmap.enums import GeneTileEnum, CompoundTileEnum, CellLineTileEnum
