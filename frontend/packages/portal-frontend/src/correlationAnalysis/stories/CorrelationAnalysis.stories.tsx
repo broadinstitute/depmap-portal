@@ -61,9 +61,28 @@ const featureTypesPromise = (inputValue: string) => {
   });
 };
 
+const correlationAnalysisDataPromise = () => {
+  return new Promise<
+    {
+      Compound: string;
+      "imatinib Dose": string;
+      "Feature Type": string;
+      Feature: string;
+      "Correlation Coefficient": number;
+      "-log10 qval": number;
+      Rank: number;
+    }[]
+  >((resolve) => {
+    setTimeout(() => {
+      resolve(correlationAnalysisData);
+    }, 1000);
+  });
+};
+
 export function Story() {
   const plotlyRef = React.useRef(null);
 
+  const compound = "imatinib";
   const [selectedFeatureTypes, setSelectedFeatureTypes] = React.useState<
     string[]
   >([]);
@@ -83,8 +102,8 @@ export function Story() {
   const columnNamesToPlotVariables = {
     "Correlation Coefficient": "x",
     "-log10 qval": "y",
-    Feature: "label",
-    // Feature: "text",
+    // Feature: "label",
+    Feature: "text",
   };
 
   const filteredTableCorrelationAnalysisData = React.useMemo(() => {
@@ -123,6 +142,21 @@ export function Story() {
             // VolcanoPlotProp `y` data by default log transforms values. To do the complement: Math.exp(-x)
             acc[key][doseCategory][columnNamesToPlotVariables[colName]].push(
               val
+            );
+          } else if (colName == "Feature") {
+            const label = curRecord[colName];
+            const text =
+              `<b>${label}</b><br>` +
+              `<b>${compound} dose (uM)</b>: ${curRecord["imatinib Dose"]}<br>` +
+              `<b>Correlation:</b> ${curRecord[
+                "Correlation Coefficient"
+              ].toFixed(3)}<br>` +
+              `<b>-log10(p-value):</b> ${curRecord["-log10 qval"].toFixed(
+                3
+              )}<br>` +
+              `<b>Feature Type:</b> ${curRecord["Feature Type"]}`;
+            acc[key][doseCategory][columnNamesToPlotVariables[colName]].push(
+              text
             );
           } else {
             acc[key][doseCategory][columnNamesToPlotVariables[colName]].push(
@@ -168,6 +202,7 @@ export function Story() {
           gridArea: "a",
         }}
       >
+        <h1>FILTERS</h1>
         <header>Dataset</header>
         <AsyncSelect
           placeholder="Choose Dataset"
