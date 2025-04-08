@@ -501,7 +501,7 @@ def test_get_dimension_type_dimension_identifiers(
         f"types/dimensions/{dim_type_fields['name']}/identifiers?data_type=metadata",
         headers=admin_headers,
     )
-    assert res.json() == [
+    assert sorted(res.json(), key=lambda item: item["id"]) == [
         {"id": "sample-1", "label": "Sample 1"},
         {"id": "sample-2", "label": "Sample 2"},
     ]
