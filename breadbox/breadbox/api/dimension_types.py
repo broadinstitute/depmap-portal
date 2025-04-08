@@ -646,7 +646,7 @@ def get_dimension_type_identifiers(
         raise HTTPException(404, f"Dimension type {name} not found")
     
     filtered_dataset_ids: Optional[list[str]] = None
-    if data_type is None or show_only_dimensions_in_datasets:
+    if data_type is not None or show_only_dimensions_in_datasets:
         # Get subset of datasets matching the filters provided that the user has access to
         filtered_datasets = get_datasets(
             db,
