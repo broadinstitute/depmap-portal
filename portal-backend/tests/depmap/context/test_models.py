@@ -62,7 +62,9 @@ def test_get_entities_enriched_in_context_query(empty_db_mock_downloads):
     compound_context_enrichment = ContextEnrichmentFactory(
         context=gene_context_enrichment.context,
         entity=CompoundExperimentFactory(),
-        dataset=DependencyDatasetFactory(name=DependencyDataset.DependencyEnum.GeCKO)
+        dataset=DependencyDatasetFactory(
+            name=DependencyDataset.DependencyEnum.Chronos_Achilles
+        )
         # need to make this different, since the DependencyDatasetFactory defaults to avana
     )
     empty_db_mock_downloads.session.flush()

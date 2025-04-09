@@ -120,18 +120,6 @@ add-if-missing {
 }
 
 
-add-if-missing {
-  "type": "dep-matrix",
-  "label": "Chronos_Score",
-  "orig_dataset_id": "project-score-chronos-ad31.14/gene_effect",
-  "filename": {
-    "$file_url": "gs://preprocessing-pipeline-outputs/conseq/depmap/CAS/b8189b8786811850400090b0ec1f7d373772e3b924d94eb9114d5e9b6a5a33d3"
-  },
-  "confounders_label": "missing",
-  "commitsha": {
-    "$value": "107fd2a671ba944dd6cd7151debbdc69af779640"
-  }
-}
 
 add-if-missing {
   "type": "biomarker-matrix",
@@ -152,11 +140,6 @@ add-if-missing {
   "label": "RNAi_merged"
 }
 
-add-if-missing {
-  "type": "raw-dep-prob-matrix",
-  "dataset_id": "project-score-chronos-ad31.14/gene_dependency",
-  "label": "Chronos_Score"
-}
 
 add-if-missing {
   "type": "confounders-matrix-raw",
