@@ -775,3 +775,9 @@
     }
   }
 }
+
+.EnrichmentTile {
+  .panel-default > .panel-heading {
+    background-color: transparent !important;
+  }
+}

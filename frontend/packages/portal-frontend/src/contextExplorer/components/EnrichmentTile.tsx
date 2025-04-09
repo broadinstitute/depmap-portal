@@ -1,17 +1,26 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { getDapi } from "src/common/utilities/context";
 import PlotSpinner from "src/plot/components/PlotSpinner";
 import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
-import { EnrichedLineagesTileData } from "../models/types";
+import {
+  ContextExplorerDatasets,
+  EnrichedLineagesTileData,
+} from "../models/types";
 import CollapsibleBoxPlots from "./contextAnalysis/CollapsibleBoxPlots";
 
 interface EnrichmentTileProps {
-  geneSymbol: string;
+  entityLabel: string;
+  entityType: string;
 }
 
 export const EnrichmentTile: React.FC<EnrichmentTileProps> = ({
-  geneSymbol,
+  entityLabel,
+  entityType,
 }) => {
+  const contextExplorerHref = window.location.href
+    .split(entityLabel)[0]
+    .replace(entityType, "context_explorer");
+
   const [tileData, setTileData] = useState<EnrichedLineagesTileData | null>(
     null
   );
@@ -21,6 +30,7 @@ export const EnrichmentTile: React.FC<EnrichmentTileProps> = ({
     null
   );
   const dapi = getDapi();
+
   useEffect(() => {
     setTileData(null);
     // setEntityDetailMainPlotElement(null);
@@ -28,8 +38,8 @@ export const EnrichmentTile: React.FC<EnrichmentTileProps> = ({
     // setBoxplotError(false);
     const boxplotPromise = dapi.getEnrichmentTileData(
       "Lineage",
-      "gene",
-      geneSymbol
+      entityType,
+      entityLabel
     );
 
     boxplotLatestPromise.current = boxplotPromise;
@@ -47,24 +57,61 @@ export const EnrichmentTile: React.FC<EnrichmentTileProps> = ({
         }
       })
       .finally(() => setIsLoadingBoxplot(false));
-  }, [setIsLoadingBoxplot, dapi, geneSymbol]);
+  }, [setIsLoadingBoxplot, dapi, entityType, entityLabel]);
+
+  const getTabFromDatasetName = useCallback((datasetName: string) => {
+    if (datasetName === ContextExplorerDatasets.Chronos_Combined.toString()) {
+      return "geneDependency";
+    }
+
+    if (datasetName === ContextExplorerDatasets.Rep_all_single_pt.toString()) {
+      return "repurposing";
+    }
+
+    return "oncref";
+  }, []);
+
+  if (
+    !isLoadingBoxplot &&
+    (!tileData?.box_plot_data.significant_selection ||
+      tileData?.box_plot_data.significant_selection.length === 0)
+  ) {
+    return null;
+  }
 
   return (
-    <div>
-      {!tileData && isLoadingBoxplot && <PlotSpinner />}
-      {tileData && (
-        <CollapsibleBoxPlots
-          handleSetMainPlotElement={(element: ExtendedPlotType | null) => {
-            if (element) {
-              /* do nothing */
-            }
-          }}
-          topContextNameInfo={tileData.top_context_name_info}
-          selectedCode={tileData.selected_context_name_info.subtype_code}
-          boxPlotData={tileData.box_plot_data}
-          entityType={"gene"}
-        />
-      )}
-    </div>
+    <article className="card_wrapper stacked-boxplot-tile">
+      <div className="card_border container_fluid">
+        <h2 className="no_margin cardtitle_text">Enriched Lineages</h2>
+        <div className="card_padding stacked-boxplot-graphs-padding">
+          <div id="enrichment-tile">
+            {!tileData && isLoadingBoxplot && <PlotSpinner />}
+            {tileData && (
+              <CollapsibleBoxPlots
+                handleSetMainPlotElement={(
+                  element: ExtendedPlotType | null
+                ) => {
+                  if (element) {
+                    /* do nothing */
+                  }
+                }}
+                topContextNameInfo={tileData.top_context_name_info}
+                selectedCode={tileData.selected_context_name_info.subtype_code}
+                boxPlotData={tileData.box_plot_data}
+                entityType={entityType}
+                urlPrefix={contextExplorerHref}
+                tab={getTabFromDatasetName(tileData.dataset_name)}
+              />
+            )}
+          </div>
+          {tileData && (
+            <p className="stacked-boxplot-download-container">
+              View more contexts in the{" "}
+              <a href={tileData?.context_explorer_url}>Context Explorer</a>
+            </p>
+          )}
+        </div>
+      </div>
+    </article>
   );
 };

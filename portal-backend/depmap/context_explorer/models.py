@@ -74,6 +74,8 @@ class EnrichedLineagesTileData:
     box_plot_data: ContextPlotBoxData
     top_context_name_info: ContextNameInfo
     selected_context_name_info: ContextNameInfo
+    dataset_name: str
+    context_explorer_url: str
 
 
 def _get_child_lineages_next_lineage_level_from_root_info(

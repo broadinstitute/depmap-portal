@@ -37,6 +37,8 @@ interface Props {
   selectedCode: string;
   boxPlotData: ContextPlotBoxData | null;
   entityType: string;
+  urlPrefix?: string;
+  tab?: string;
 }
 
 function CollapsibleBoxPlots({
@@ -45,6 +47,8 @@ function CollapsibleBoxPlots({
   selectedCode,
   boxPlotData,
   entityType,
+  urlPrefix = undefined,
+  tab = undefined,
 }: Props) {
   const [
     selectedLevelZeroBoxData,
@@ -267,71 +271,27 @@ function CollapsibleBoxPlots({
                 dottedLinePosition={
                   entityType === "gene" ? -1 : drugDottedLine || -1.74
                 }
+                urlPrefix={urlPrefix}
+                tab={tab}
               />
             </Panel.Title>
           ) : (
             <Panel.Title toggle>
               {" "}
-              <div style={{ display: "flex", flexDirection: "row" }}>
+              <div>
                 {selectedContextBoxData &&
                   selectedContextBoxData.length > 0 &&
-                  selectedLevelZeroBoxData !== null && (
+                  selectedLevelZeroBoxData !== null &&
+                  activeKey === "SELECTED" && (
                     <span
                       style={{
-                        paddingRight: "8px",
+                        paddingRight: "4px",
                         paddingTop: activeKey === "SELECTED" ? "0px" : "12px",
                         fontSize: "12px",
                         color: "#4479B2",
                       }}
-                      className={
-                        activeKey === "SELECTED"
-                          ? "glyphicon glyphicon-chevron-up"
-                          : "glyphicon glyphicon-chevron-down"
-                      }
+                      className={"glyphicon glyphicon-chevron-up"}
                     />
-                  )}
-                {selectedContextBoxData &&
-                  selectedContextBoxData.length > 0 &&
-                  selectedLevelZeroBoxData === null && (
-                    <div>
-                      <span
-                        style={{
-                          paddingRight: "8px",
-                          paddingTop: activeKey === "SELECTED" ? "0px" : "12px",
-                          fontSize: "12px",
-                          fontWeight:
-                            selectedCode === topContextNameInfo.subtype_code
-                              ? "600"
-                              : "normal",
-                          color:
-                            selectedCode === topContextNameInfo.subtype_code
-                              ? "#333333"
-                              : "#4479B2",
-                        }}
-                        className={
-                          activeKey === "SELECTED"
-                            ? "glyphicon glyphicon-chevron-up"
-                            : "glyphicon glyphicon-chevron-down"
-                        }
-                      />
-                      <span
-                        style={{
-                          paddingTop: activeKey === "SELECTED" ? "0px" : "12px",
-                          fontSize: "12px",
-                          fontWeight:
-                            selectedCode === topContextNameInfo.subtype_code
-                              ? "600"
-                              : "normal",
-                          color:
-                            selectedCode === topContextNameInfo.subtype_code
-                              ? "#333333"
-                              : "#4479B2",
-                        }}
-                      >
-                        {" "}
-                        {topContextNameInfo.subtype_code}
-                      </span>
-                    </div>
                   )}
 
                 {selectedLevelZeroBoxData && activeKey !== "SELECTED" ? (
@@ -353,6 +313,8 @@ function CollapsibleBoxPlots({
                     dottedLinePosition={
                       entityType === "gene" ? -1 : drugDottedLine || -1.74
                     }
+                    urlPrefix={urlPrefix}
+                    tab={tab}
                   />
                 ) : (
                   (!selectedContextBoxData && activeKey === "SELECTED") ||
@@ -401,6 +363,8 @@ function CollapsibleBoxPlots({
                 dottedLinePosition={
                   entityType === "gene" ? -1 : drugDottedLine || -1.74
                 }
+                urlPrefix={urlPrefix}
+                tab={tab}
               />
             </div>
           </Panel.Body>
@@ -415,20 +379,18 @@ function CollapsibleBoxPlots({
             >
               <Panel.Heading>
                 <Panel.Title toggle>
-                  <div style={{ display: "flex", flexDirection: "row" }}>
-                    <span
-                      style={{
-                        paddingRight: "8px",
-                        paddingTop: activeKey === level0Code ? "0px" : "12px",
-                        fontSize: "12px",
-                        color: "#4479B2",
-                      }}
-                      className={
-                        activeKey === level0Code
-                          ? "glyphicon glyphicon-chevron-up"
-                          : "glyphicon glyphicon-chevron-down"
-                      }
-                    />
+                  <div>
+                    {activeKey === level0Code && (
+                      <span
+                        style={{
+                          paddingRight: "8px",
+                          paddingTop: activeKey === level0Code ? "0px" : "12px",
+                          fontSize: "12px",
+                          color: "#4479B2",
+                        }}
+                        className={"glyphicon glyphicon-chevron-down"}
+                      />
+                    )}
                     {activeKey !== level0Code ? (
                       <BoxPlot
                         plotName={`${level0Code}-header`}
@@ -446,6 +408,8 @@ function CollapsibleBoxPlots({
                         dottedLinePosition={
                           entityType === "gene" ? -1 : drugDottedLine || -1.74
                         }
+                        urlPrefix={urlPrefix}
+                        tab={tab}
                       />
                     ) : (
                       activeKey === level0Code && (
@@ -490,6 +454,8 @@ function CollapsibleBoxPlots({
                       dottedLinePosition={
                         entityType === "gene" ? -1 : drugDottedLine || -1.74
                       }
+                      urlPrefix={urlPrefix}
+                      tab={tab}
                     />
                   )}
               </Panel.Body>

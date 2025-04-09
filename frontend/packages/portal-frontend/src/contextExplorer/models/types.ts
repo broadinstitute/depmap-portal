@@ -221,6 +221,8 @@ export interface EnrichedLineagesTileData {
   box_plot_data: ContextPlotBoxData;
   top_context_name_info: ContextNameInfo;
   selected_context_name_info: ContextNameInfo;
+  dataset_name: string;
+  context_explorer_url: string;
 }
 
 export interface OtherBoxCardData {

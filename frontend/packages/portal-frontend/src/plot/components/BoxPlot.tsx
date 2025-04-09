@@ -25,6 +25,8 @@ export interface BoxPlotProps {
   xAxisTitle?: string;
   bottomMargin?: number;
   topMargin?: number;
+  urlPrefix?: string; // Required if linking y-axis from somewhere other than context explorer (e.g. gene page)
+  tab?: string; // Required if linking y-axis from somewhere other than context explorer (e.g. gene page)
 }
 
 type BoxPlotWithPlotly = BoxPlotProps & { Plotly: PlotlyType };
@@ -41,6 +43,8 @@ function BoxPlot({
   setXAxisRange = undefined,
   bottomMargin = 0,
   topMargin = 0,
+  urlPrefix = undefined,
+  tab = undefined,
   Plotly,
 }: BoxPlotWithPlotly) {
   const ref = useRef<ExtendedPlotType>(null);
@@ -100,11 +104,11 @@ function BoxPlot({
     });
 
     const layout: Partial<Plotly.Layout> = {
-      margin: { t: topMargin, r: 10, b: bottomMargin, l: 10 },
+      margin: { t: topMargin, r: 5, b: bottomMargin, l: 5 },
       autosize: true,
       dragmode: "pan",
       height: plotHeight,
-      width: 200,
+      // width: 200,
       showlegend: false,
       yaxis: {
         zeroline: false,
@@ -159,6 +163,8 @@ function BoxPlot({
     xAxisTitle,
     dottedLinePosition,
     selectedCode,
+    urlPrefix,
+    tab,
     onLoad,
   ]);
 
@@ -177,7 +183,7 @@ function BoxPlot({
       (plotName === "main" || plotName === "main-header")
     ) {
       const update: Partial<Plotly.Layout> = {
-        margin: { t: topMargin, r: 15, b: bottomMargin, l: 0 },
+        margin: { t: topMargin, r: 5, b: bottomMargin, l: 0 },
         xaxis: {
           range: xAxisRange ?? ref.current.layout.xaxis.range,
           title: xAxisTitle ?? "",
@@ -212,6 +218,8 @@ function BoxPlot({
 export default function LazyBoxPlot({
   boxData,
   selectedCode = undefined,
+  urlPrefix = undefined,
+  tab = undefined,
   ...otherProps
 }: BoxPlotProps) {
   return (
@@ -221,7 +229,7 @@ export default function LazyBoxPlot({
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "120px auto",
+              gridTemplateColumns: "100px auto",
               color: "#4479B2",
             }}
           >
@@ -243,6 +251,21 @@ export default function LazyBoxPlot({
                     fontSize: "12px",
                   }}
                 >
+                  {boxData.length === 1 && (
+                    <span
+                      style={{
+                        paddingRight: "4px",
+                        paddingTop: box.name === selectedCode ? "0px" : "12px",
+                        fontSize: "12px",
+                        color: "#4479B2",
+                      }}
+                      className={
+                        box.name === selectedCode
+                          ? "glyphicon glyphicon-chevron-down"
+                          : "glyphicon glyphicon-chevron-up"
+                      }
+                    />
+                  )}
                   {boxData.length > 0 && !box?.name.includes("Other") ? (
                     box?.name.split("/").map((code, j) => (
                       <React.Fragment key={code}>
@@ -251,7 +274,9 @@ export default function LazyBoxPlot({
                             {code}
                           </span>
                         ) : (
-                          <a href={getNewContextUrl(code)}>{code}</a>
+                          <a href={getNewContextUrl(code, urlPrefix, tab)}>
+                            {code}
+                          </a>
                         )}
                         {j < box?.name.split("/").length - 1 && "/"}
                       </React.Fragment>
@@ -264,9 +289,7 @@ export default function LazyBoxPlot({
                           style={{
                             color: "#333333",
                             fontWeight: "600",
-                            fontSize: box?.name.includes("Other")
-                              ? "14px"
-                              : "12px",
+                            fontSize: "12px",
                           }}
                         >
                           {box.name}

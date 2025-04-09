@@ -4,19 +4,17 @@ from typing import Any, Dict, List, Literal, Tuple, Union
 import os
 from depmap.cell_line.models_new import DepmapModel
 from depmap.compound.models import Compound, CompoundExperiment
-from depmap.compound.views.executive import determine_compound_experiment_and_dataset
 from depmap.context_explorer.utils import (
     get_entity_id_from_entity_full_label,
     get_path_to_node,
 )
 from depmap.context_explorer import box_plot_utils, dose_curve_utils
 from depmap.dataset.models import DependencyDataset
-from depmap.entity.models import Entity
 from depmap.gene.models import Gene
 from depmap.tda.views import convert_series_to_json_safe_list
 from depmap.tile.views import get_dependency_dataset_for_entity
 from flask_restplus import Namespace, Resource
-from flask import current_app, request
+from flask import current_app, request, url_for
 import pandas as pd
 from depmap.settings.shared import DATASET_METADATA
 from depmap.context_explorer.models import (
@@ -632,13 +630,17 @@ class EnrichedLineagesTile(
         entity = (
             Gene.get_by_label(entity_label)
             if entity_type == "gene"
-            else CompoundExperiment.get_by_label(entity_label)
+            else Compound.get_by_label(entity_label)
         )
 
-        dataset = get_dependency_dataset_for_entity(
-            DependencyDataset.DependencyEnum.Chronos_Combined.name, entity.entity_id
+        dataset = (
+            get_dependency_dataset_for_entity(
+                DependencyDataset.DependencyEnum.Chronos_Combined.name, entity.entity_id
+            )
+            if entity_type == "gene"
+            else None
         )
-        dataset_name = dataset.name.name
+        dataset_name = None if dataset is None else dataset.name.name
 
         if entity_type == "compound":
             # Figure out membership in different datasets
@@ -654,13 +656,16 @@ class EnrichedLineagesTile(
                 compound_experiment_and_datasets
             )
 
-            dataset_name = best_ce_and_d[0][1]
+            dataset_name = best_ce_and_d[0][1].name.name
+            compound_experiment = best_ce_and_d[0][0]
+            entity = compound_experiment
 
         sig_contexts = box_plot_utils.get_sig_context_dataframe(
             tree_type=tree_type,
             entity_type=entity_type,
             entity_id=entity.entity_id,
             dataset_name=dataset_name,
+            use_enrichment_tile_filters=True,
         )
 
         selected_subtype_code = sig_contexts["level_0"].tolist()[0]
@@ -686,6 +691,8 @@ class EnrichedLineagesTile(
             box_plot_data=context_box_plot_data,
             top_context_name_info=top_context_name_info,
             selected_context_name_info=top_context_name_info,
+            dataset_name=dataset_name,
+            context_explorer_url=url_for("context_explorer.view_context_explorer"),
         )
 
         return dataclasses.asdict(tile_data)

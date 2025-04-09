@@ -385,14 +385,14 @@ def get_enrichment_html(
     entity: Entity, compound_experiment_and_datasets=None, query_params_dict={}
 ):
     div_id = str(uuid.uuid4())
-    gene_symbol = entity.symbol
+    entity_label = entity.label
 
     return RenderedTile(
         f'<div id="{div_id}">get_enrichment_html is stubbed out</div>',
         f"""(
         function() {{
             console.log("about to call initEnrichmentTile");
-            DepMap.initEnrichmentTile("{div_id}", "{gene_symbol}");
+            DepMap.initEnrichmentTile("{div_id}", "{entity_label}", "{entity.type}");
             console.log("after initEnrichmentTile");
         }})""",
     )

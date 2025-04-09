@@ -231,7 +231,13 @@ def get_sig_context_dataframe(
     max_fdr: float = 0.5,
     min_abs_effect_size: float = 0.1,
     min_frac_dep_in: float = 0.1,
+    use_enrichment_tile_filters=False,
 ) -> pd.DataFrame:
+
+    if entity_type == "compound" and use_enrichment_tile_filters:
+        max_fdr = 0.05
+        min_abs_effect_size: float = 0.1
+        min_frac_dep_in: float = 0.1
     # If this doesn't find the node, something is wrong with how we
     # loaded the SubtypeNode database table data.
     sig_contexts = ContextAnalysis.get_context_dependencies(

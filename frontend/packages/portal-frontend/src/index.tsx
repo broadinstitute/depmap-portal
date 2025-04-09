@@ -180,10 +180,14 @@ export function saveNewContext(
   );
 }
 
-export function initEnrichmentTile(elementId: string, geneSymbol: string) {
+export function initEnrichmentTile(
+  elementId: string,
+  entityLabel: string,
+  entityType: string
+) {
   renderWithErrorBoundary(
     <React.Suspense fallback={<div>Loading...</div>}>
-      <EnrichmentTile geneSymbol={geneSymbol} />
+      <EnrichmentTile entityLabel={entityLabel} entityType={entityType} />
     </React.Suspense>,
     document.getElementById(elementId) as HTMLElement
   );
