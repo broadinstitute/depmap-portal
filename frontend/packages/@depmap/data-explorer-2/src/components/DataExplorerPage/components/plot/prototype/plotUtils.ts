@@ -201,25 +201,39 @@ export function formatDataForScatterPlot(
     [data.dimensions.x, data.dimensions.y!]
   );
 
+  let xLabel = [data.dimensions.x.axis_label, data.dimensions.x.dataset_label]
+    .filter(Boolean)
+    .join("<br>");
+
+  let yLabel: string | null = null;
+
+  if (data.dimensions.y) {
+    yLabel = [data.dimensions.y.axis_label, data.dimensions.y.dataset_label]
+      .filter(Boolean)
+      .join("<br>");
+  }
+
+  if (data.filters.visible) {
+    if (xLabel) {
+      xLabel += `<br>filtered by ${data.filters.visible.name}`;
+    } else {
+      yLabel += `<br>filtered by ${data.filters.visible.name}`;
+    }
+  }
+
   return {
+    xLabel,
+    yLabel,
+
     x: nullifyUnplottableValues(
       data.dimensions.x.values,
       data.filters?.visible?.values
     ),
-    xLabel: [
-      data.dimensions.x.axis_label,
-      data.dimensions.x.dataset_label,
-    ].join("<br>"),
 
     y: nullifyUnplottableValues(
       data.dimensions?.y?.values,
       data.filters?.visible?.values
     ),
-    yLabel: data.dimensions.y
-      ? [data.dimensions.y.axis_label, data.dimensions.y.dataset_label].join(
-          "<br>"
-        )
-      : null,
 
     color1: c1Values || null,
     color2: c2Values || null,
@@ -264,9 +278,11 @@ export function formatDataForScatterPlot(
           : [`<b>${formattedLabel}</b>`, ...colorInfo];
 
       Object.keys(data.metadata || {}).forEach((key) => {
-        const { label: hoverLabel, values } = data.metadata[key]!;
+        const { label: hoverLabel, values, value_type } = data.metadata[key]!;
 
-        let val = values[i] != null ? values[i].toString() : "<b>N/A</b>";
+        const nullValueLabel =
+          value_type === "categorical" ? "<b>N/A</b>" : "Other";
+        let val = values[i] != null ? values[i].toString() : nullValueLabel;
         val = val.length > 40 ? `${val.substr(0, 40)}…` : val;
 
         formattedLines.push(`${hoverLabel}: ${val}`);
