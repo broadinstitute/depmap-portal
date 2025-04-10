@@ -41,7 +41,7 @@ from breadbox.schemas.types import (
     AddDimensionType,
     DimensionIdentifiers,
 )
-from breadbox.api.utils import get_not_modified_response, get_response_with_etag, hash_id_list
+from breadbox.api.utils import get_response_with_etag, hash_id_list
 from breadbox.service import metadata as metadata_service
 from breadbox.db.util import transaction
 
@@ -624,7 +624,6 @@ def list_dimension_types_endpoint(db: SessionWithUser = Depends(get_db_with_user
     response_model=List[DimensionIdentifiers],
 )
 def get_dimension_type_identifiers(
-    request: Request,
     name: str,
     data_type: Annotated[Union[str, None], Query()] = None,
     show_only_dimensions_in_datasets: Annotated[bool, Query()] = False,
@@ -655,10 +654,7 @@ def get_dimension_type_identifiers(
         filtered_dataset_ids = [dataset.id for dataset in filtered_datasets]
     etag = hash_id_list([name] + (sorted(filtered_dataset_ids) if filtered_dataset_ids else []))
 
-    # If the client already has a cached version of the data, exit early
-    if if_none_match and if_none_match[0] == etag:
-        return get_not_modified_response(etag)
-    else:
+    def _get_response_content() -> list[DimensionIdentifiers]:
         if filtered_dataset_ids is None:
             dataset_ids_without_metadata = None
         else:
@@ -668,12 +664,13 @@ def get_dimension_type_identifiers(
         dimension_ids_and_labels = metadata_service.get_dimension_type_identifiers(
             db, dim_type, dataset_ids_without_metadata, limit=limit,
         )
-        result = [
+        return [
             DimensionIdentifiers(id=id, label=label)
             for id, label in dimension_ids_and_labels.items()
         ]
-        return get_response_with_etag(content=result, etag=etag)
-    
+        
+    return get_response_with_etag(etag, if_none_match, _get_response_content)
+
 
 
 @router.patch(
