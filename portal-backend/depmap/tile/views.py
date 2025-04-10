@@ -381,19 +381,24 @@ def get_enrichment_html(
 
         enrichment_boxes = get_enrichment_boxes(entity, crispr_dataset)
     elif entity_type == "compound":
+        # This uses Context Explorer analyses, which do not have repurposing secondary data, but still need
+        # to show box plots for those drugs.
         # DEPRECATED: this method will not work with breadbox datasets. Calls to it should be replaced.
         dataset_regexp_ranking = [
             "Prism_oncology.*",
             "Rep_all_single_pt.*",
             ".*",
         ]
+        enrichment_boxes = None
         ce_and_d = []
-        for regexp in dataset_regexp_ranking:
-            for ce, d in compound_experiment_and_datasets:
-                pattern = re.compile(regexp)
-                if pattern.match(d.name.value):
-                    ce_and_d = [[ce, d]]
-                    break
+        if compound_experiment_and_datasets is not None:
+            for regexp in dataset_regexp_ranking:
+                assert compound_experiment_and_datasets is not None
+                for ce, d in compound_experiment_and_datasets:
+                    pattern = re.compile(regexp)
+                    if pattern.match(d.name.value):
+                        ce_and_d = [[ce, d]]
+                        break
 
         enrichment_boxes = format_enrichment_boxes(ce_and_d)
 
