@@ -18,15 +18,14 @@ def load_subtype_tree(tc, subtype_tree_taiga_id, context_matrix_taiga_id):
     return subtype_tree, context_matrix
 
 
-def load_crispr_data(tc, gene_effect_taiga_id, gene_dependency_taiga_id, tda_table_path):
+def load_crispr_data(
+    tc, gene_effect_taiga_id, gene_dependency_taiga_id, tda_table_path
+):
     CRISPRGeneDependency = tc.get(gene_dependency_taiga_id)
     CRISPRGeneEffect = tc.get(gene_effect_taiga_id)
-    
-    tda_table = pd.read_csv('tda_table.csv')
-    tda_table['gene'] = tda_table.apply(
-        lambda x: f'{x.symbol} ({x.entrez_id})',
-        axis=1
-    )
+
+    tda_table = pd.read_csv(tda_table_path)
+    tda_table["gene"] = tda_table.apply(lambda x: f"{x.symbol} ({x.entrez_id})", axis=1)
 
     # filter CRISPR data --> Restrict analysis to genes that are dep in min. 3
     #                       cell lines and max. 95% of cell lines
@@ -34,15 +33,12 @@ def load_crispr_data(tc, gene_effect_taiga_id, gene_dependency_taiga_id, tda_tab
     #                       Then rescuing strongly selective genes
     n_dep_lines = (CRISPRGeneDependency > 0.5).sum()
     perc_dep_lines = (CRISPRGeneDependency > 0.5).mean()
-    selective_genes = tda_table.query('CRISPR_StronglySelective == True').gene
+    selective_genes = tda_table.query("CRISPR_StronglySelective == True").gene
 
     incl_genes = list(
-        set(n_dep_lines[(n_dep_lines >= 3) & (perc_dep_lines <= 0.95)].index)\
-        .union(
-            set(selective_genes)
-        ).intersection(
-            set(CRISPRGeneEffect.columns)
-        )
+        set(n_dep_lines[(n_dep_lines >= 3) & (perc_dep_lines <= 0.95)].index)
+        .union(set(selective_genes))
+        .intersection(set(CRISPRGeneEffect.columns))
     )
 
     gene_effect = CRISPRGeneEffect.loc[:, incl_genes].sort_index(axis=1)
@@ -151,7 +147,7 @@ def load_all_data(
     oncref_auc_taiga_id,
     repurposing_table_path,
     oncref_table_path,
-    tda_table_path
+    tda_table_path,
 ):
 
     all_data_dict = dict()
@@ -175,7 +171,7 @@ def load_all_data(
         tc=tc,
         gene_effect_taiga_id=gene_effect_taiga_id,
         gene_dependency_taiga_id=gene_dependency_taiga_id,
-        tda_table_path=tda_table_path
+        tda_table_path=tda_table_path,
     )
     datasets_to_test["CRISPR"] = gene_effect
     data_for_extra_cols["gene_dependency"] = gene_dependency
@@ -498,7 +494,7 @@ def compute_context_explorer_results(inputs, out_filename):
         oncref_auc_taiga_id,
         repurposing_table_path,
         oncref_table_path,
-        tda_table_path
+        tda_table_path,
     )
 
     context_explorer_results = compute_in_out_groups(**data_dict)
