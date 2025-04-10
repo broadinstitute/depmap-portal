@@ -9,7 +9,8 @@ rule generate_tda_table:
         crispr_rnai_probs=all{"type": "raw-dep-prob-matrix"},
         crispr_predictive_accuracy={"type": "pred-models-csv", "dataset": "Chronos_Combined"},
         rnai_predictive_accuracy={"type": "pred-models-csv", "dataset": "RNAi_merged"},
-        count_dep_lines=fileref("scripts/count_dep_lines.py")
+        gene_dep_summary={"type": "gene-dep-summary"},
+        count_dep_lines=fileref("scripts/count_dep_lines.py"),
     outputs:
         {
             "type": "tda-table",
@@ -182,17 +183,49 @@ rule generate_tda_table:
 
         combined_df = pd.merge(combined_df, combined_preds_df, on='Row.name', how='outer')
 
-        ########################################################################################
-        #                                   Finalizing TDA table                               #
-        ########################################################################################
+        # ########################################################################################
+        # #               Get Entrez ID and Hugo Symbol out of Row.Name Column                   #
+        # ########################################################################################
 
-        # Drop all the rows with & in the Row.name
-        combined_df = combined_df[~combined_df['Row.name'].str.contains('&')]
-        print(f"Combined: {len(combined_df)}")
-        # Extract the entrez_id and hugo symbol from the Row.name and convert them into two separate columns
-        combined_df[['symbol', 'entrez_id']] = combined_df['Row.name'].str.extract(r'^(.*)\s\((\d+)\)$')
+        # Extract the symbol and entrez_id from the Row.name
+        # Handle cases where either part may contain "&" characters
+        combined_df[['symbol', 'entrez_id']] = combined_df['Row.name'].str.extract(r'^(.*?)\s*\((.*?)\)$')
         # Drop the Row.name column
         combined_df = combined_df.drop(columns=['Row.name'], axis=1)
+
+        ########################################################################################
+        #                                   Gene Dependency Summary                            #
+        ########################################################################################
+        # Merging the gene dependecy summary after separating the entrez_id and symbol
+        # Because the gene dependency summary has the entrez_id column as gene_id e.g. 1, 2, 3, etc.
+        # as opposed to the Row.name column which has the symbol and entrez_id e.g. A1BG (1), A1BG (2), A1BG (3), etc.
+        gene_dep_summary_df = pd.read_csv("{{ inputs.gene_dep_summary.filename }}")
+        
+        # Create separate dataframes for CRISPR and RNAi data
+        crispr_summary = gene_dep_summary_df[gene_dep_summary_df['label'] == 'Chronos_Combined']
+        rnai_summary = gene_dep_summary_df[gene_dep_summary_df['label'] == 'RNAi_merged']
+        
+        # Create new dataframes with just gene_id and is_strongly_selective columns
+        crispr_selective = crispr_summary[['gene_id', 'is_strongly_selective']].rename(
+            columns={'is_strongly_selective': 'CRISPR_StronglySelective'})
+        rnai_selective = rnai_summary[['gene_id', 'is_strongly_selective']].rename(
+            columns={'is_strongly_selective': 'RNAi_StronglySelective'})
+        
+        strongly_selective_df = pd.merge(crispr_selective, rnai_selective, on='gene_id', how='outer')
+        strongly_selective_df = strongly_selective_df.rename(columns={'gene_id': 'entrez_id'})
+        
+        combined_df = pd.merge(combined_df, strongly_selective_df, on='entrez_id', how='outer')
+
+        ########################################################################################
+        #                                   Finalize the TDA table                             #
+        ########################################################################################
+
+        # Drop all the rows with "&" in the entrez_id
+        # First convert entrez_id to string and handle NaN values
+        combined_df['entrez_id'] = combined_df['entrez_id'].astype(str)
+        combined_df = combined_df[~combined_df['entrez_id'].str.contains('&', na=False)]
+        print(f"Combined: {len(combined_df)}")
+
         # Reorder the columns
         combined_df = combined_df.reindex(columns=[
             'entrez_id', 'symbol', 'CRISPR_depCL_frac',
@@ -204,6 +237,7 @@ rule generate_tda_table:
             'RNAi_Kurtosis', 'RNAi_KS_score', 'RNAi_Bimodality', 'CRISPR_PanDependency', 'RNAi_PanDependency','CRISPR_LRT', 'RNAi_LRT',
             'CRISPR_Predictive_Accuracy',
             'RNAi_Predictive_Accuracy', 
+            'CRISPR_StronglySelective', 'RNAi_StronglySelective'
         ])
         combined_df.to_csv("tda_table.csv", index=False)
     """
