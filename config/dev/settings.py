@@ -120,6 +120,9 @@ class DevConfig(Config):
         Config.PROJECT_ROOT,
         f"../../depmap-deploy/portal-config/env/{ENV_TYPE}/announcements.yaml",
     )
+    UPDATES_AND_ANNOUNCEMENTS_FILE_PATH = os.path.join(
+        Config.PROJECT_ROOT, f"../config/{ENV_TYPE}/theme/updates_and_announcements.md"
+    )
     THEME_PATH = os.path.join(Config.PROJECT_ROOT, f"../config/{ENV_TYPE}/theme")
     DOCUMENTATION_PATH = os.path.join(
         Config.PROJECT_ROOT,
