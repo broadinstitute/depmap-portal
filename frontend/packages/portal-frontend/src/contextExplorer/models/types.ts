@@ -215,6 +215,7 @@ export interface ContextPlotBoxData {
   insignificant_solid_data: BoxData;
   drug_dotted_line: number;
   entity_label: string;
+  entity_overview_page_label: string;
 }
 
 export interface OtherBoxCardData {

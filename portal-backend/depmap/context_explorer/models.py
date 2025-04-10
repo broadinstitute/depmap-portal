@@ -53,6 +53,7 @@ class ContextPlotBoxData:
     insignificant_solid_data: BoxData
     drug_dotted_line: Any
     entity_label: str
+    entity_overview_page_label: str
 
 
 @dataclass
@@ -60,6 +61,7 @@ class NodeEntityData:
     entity_id: int
     entity_label: str
     entity_full_row_of_values: pd.Series
+    entity_overview_page_label: str
 
 
 @dataclass

@@ -988,7 +988,7 @@ function ContextAnalysis({
             </h2>
             {boxPlotData && (
               <a
-                href={`${entityUrlRoot}${boxPlotData.entity_label}`}
+                href={`${entityUrlRoot}${boxPlotData.entity_overview_page_label}`}
                 target="_blank"
                 rel="noreferrer"
                 style={{

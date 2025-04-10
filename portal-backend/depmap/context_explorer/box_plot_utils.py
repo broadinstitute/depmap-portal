@@ -16,6 +16,7 @@ def _get_node_entity_data(
     )
     entity_id = entity_id_and_label["entity_id"]
     entity_label = entity_id_and_label["label"]
+    entity_overview_page_label = entity_id_and_label["entity_overview_page_label"]
 
     (entity_full_row_of_values) = utils.get_full_row_of_values_and_depmap_ids(
         dataset_name=dataset_name, label=entity_label
@@ -26,6 +27,7 @@ def _get_node_entity_data(
         entity_id=entity_id,
         entity_label=entity_label,
         entity_full_row_of_values=entity_full_row_of_values,
+        entity_overview_page_label=entity_overview_page_label,
     )
 
 
@@ -375,6 +377,7 @@ def get_context_plot_box_data(
             insignificant_solid_data=solid_box_plot_data,
             drug_dotted_line=drug_dotted_line,
             entity_label=node_entity_data.entity_label,
+            entity_overview_page_label=node_entity_data.entity_overview_page_label,
         )
 
     return None
@@ -447,5 +450,7 @@ def get_organized_contexts(
         insignificant_solid_data=context_box_plot_data.insignificant_solid_data,
         drug_dotted_line=context_box_plot_data.drug_dotted_line,
         entity_label=context_box_plot_data.entity_label,
+        entity_overview_page_label=context_box_plot_data.entity_overview_page_label,
     )
+
     return ordered_box_plot_data
