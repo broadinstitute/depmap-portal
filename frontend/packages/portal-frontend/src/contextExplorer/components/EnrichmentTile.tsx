@@ -76,7 +76,12 @@ export const EnrichmentTile: React.FC<EnrichmentTileProps> = ({
     (!tileData?.box_plot_data.significant_selection ||
       tileData?.box_plot_data.significant_selection.length === 0)
   ) {
-    return null;
+    if (
+      tileData?.box_plot_data.insignificant_heme_data?.data.length === 0 ||
+      tileData?.box_plot_data.insignificant_solid_data?.data.length === 0
+    ) {
+      return null;
+    }
   }
 
   return (
@@ -96,7 +101,7 @@ export const EnrichmentTile: React.FC<EnrichmentTileProps> = ({
                   }
                 }}
                 topContextNameInfo={tileData.top_context_name_info}
-                selectedCode={tileData.selected_context_name_info.subtype_code}
+                selectedCode={tileData.selected_context_name_info?.subtype_code}
                 boxPlotData={tileData.box_plot_data}
                 entityType={entityType}
                 urlPrefix={contextExplorerHref}

@@ -6,6 +6,7 @@ from depmap.cell_line.models_new import DepmapModel
 from depmap.compound.models import Compound, CompoundExperiment
 from depmap.context_explorer.utils import (
     get_entity_id_from_entity_full_label,
+    get_full_row_of_values_and_depmap_ids,
     get_path_to_node,
 )
 from depmap.context_explorer import box_plot_utils, dose_curve_utils
@@ -21,6 +22,7 @@ from depmap.context_explorer.models import (
     ContextAnalysis,
     ContextNameInfo,
     ContextNode,
+    ContextPlotBoxData,
     EnrichedLineagesTileData,
 )
 from depmap.context.models_new import SubtypeNode, TreeType
@@ -667,6 +669,48 @@ class EnrichedLineagesTile(
             dataset_name=dataset_name,
             use_enrichment_tile_filters=True,
         )
+
+        if sig_contexts.empty:
+            (entity_full_row_of_values) = get_full_row_of_values_and_depmap_ids(
+                dataset_name=dataset_name, label=entity_label
+            )
+            entity_full_row_of_values.dropna(inplace=True)
+            drug_dotted_line = (
+                entity_full_row_of_values.mean() if entity_type == "compound" else None
+            )
+            heme_box_plot_data = box_plot_utils.get_box_plot_data_for_other_category(
+                category="heme",
+                all_sig_context_codes=[],
+                entity_full_row_of_values=entity_full_row_of_values,
+                tree_type=tree_type,
+            )
+
+            solid_box_plot_data = box_plot_utils.get_box_plot_data_for_other_category(
+                category="solid",
+                all_sig_context_codes=[],
+                entity_full_row_of_values=entity_full_row_of_values,
+                tree_type=tree_type,
+            )
+
+            ordered_box_plot_data = ContextPlotBoxData(
+                significant_selection=[],
+                insignificant_selection=None,
+                other_cards=[],
+                insignificant_heme_data=heme_box_plot_data,
+                insignificant_solid_data=solid_box_plot_data,
+                drug_dotted_line=drug_dotted_line,
+                entity_label=entity_label,
+            )
+
+            tile_data = EnrichedLineagesTileData(
+                box_plot_data=ordered_box_plot_data,
+                top_context_name_info=None,
+                selected_context_name_info=None,
+                dataset_name=dataset_name,
+                context_explorer_url=url_for("context_explorer.view_context_explorer"),
+            )
+
+            return dataclasses.asdict(tile_data)
 
         selected_subtype_code = sig_contexts["level_0"].tolist()[0]
         top_context = SubtypeNode.get_by_code(selected_subtype_code)

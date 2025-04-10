@@ -208,8 +208,8 @@ export interface BoxCardData {
 }
 
 export interface ContextPlotBoxData {
-  significant_selection: BoxData[];
-  insignificant_selection: BoxData;
+  significant_selection: BoxData[] | null;
+  insignificant_selection: BoxData | null;
   other_cards: BoxCardData[];
   insignificant_heme_data: BoxData;
   insignificant_solid_data: BoxData;
@@ -219,8 +219,8 @@ export interface ContextPlotBoxData {
 
 export interface EnrichedLineagesTileData {
   box_plot_data: ContextPlotBoxData;
-  top_context_name_info: ContextNameInfo;
-  selected_context_name_info: ContextNameInfo;
+  top_context_name_info: ContextNameInfo | null;
+  selected_context_name_info: ContextNameInfo | null;
   dataset_name: string;
   context_explorer_url: string;
 }

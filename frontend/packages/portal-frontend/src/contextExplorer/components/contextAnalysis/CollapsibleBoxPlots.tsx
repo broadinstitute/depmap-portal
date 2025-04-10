@@ -33,8 +33,8 @@ const InsignificantColor = { r: 255, g: 255, b: 255 };
 
 interface Props {
   handleSetMainPlotElement: (element: any) => void;
-  topContextNameInfo: ContextNameInfo;
-  selectedCode: string;
+  topContextNameInfo: ContextNameInfo | null;
+  selectedCode: string | undefined;
   boxPlotData: ContextPlotBoxData | null;
   entityType: string;
   urlPrefix?: string;
@@ -122,11 +122,11 @@ function CollapsibleBoxPlots({
       const plotInfo: BoxPlotInfo[] = [];
       let boxCardCount = 0;
 
-      boxPlotData.significant_selection.forEach((plotData) => {
+      boxPlotData.significant_selection?.forEach((plotData) => {
         if (plotData.data.length > 0) {
           if (
             plotData.path.length === 1 &&
-            plotData.path[0] === topContextNameInfo.subtype_code
+            plotData.path[0] === topContextNameInfo?.subtype_code
           ) {
             setSelectedLevelZeroBoxData({
               name: plotData.label,
@@ -154,7 +154,11 @@ function CollapsibleBoxPlots({
 
       const insigPlotData = boxPlotData.insignificant_selection;
       let otherPlot;
-      if (insigPlotData.data && insigPlotData.data.length > 0) {
+      if (
+        insigPlotData &&
+        insigPlotData.data &&
+        insigPlotData.data.length > 0
+      ) {
         otherPlot = {
           name: insigPlotData.label,
           hoverLabels: insigPlotData.cell_line_display_names,
@@ -323,16 +327,16 @@ function CollapsibleBoxPlots({
                       style={{
                         fontSize: "12px",
                         fontWeight:
-                          selectedCode === topContextNameInfo.subtype_code
+                          selectedCode === topContextNameInfo!.subtype_code
                             ? "600"
                             : "normal",
                         color:
-                          selectedCode === topContextNameInfo.subtype_code
+                          selectedCode === topContextNameInfo!.subtype_code
                             ? "#333333"
                             : "#4479B2",
                       }}
                     >
-                      {topContextNameInfo.subtype_code}
+                      {topContextNameInfo!.subtype_code}
                     </span>
                   ))
                 )}

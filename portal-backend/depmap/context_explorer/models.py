@@ -72,8 +72,8 @@ class ContextNameInfo:
 @dataclass
 class EnrichedLineagesTileData:
     box_plot_data: ContextPlotBoxData
-    top_context_name_info: ContextNameInfo
-    selected_context_name_info: ContextNameInfo
+    top_context_name_info: Union[ContextNameInfo, None]
+    selected_context_name_info: Union[ContextNameInfo, None]
     dataset_name: str
     context_explorer_url: str
 
