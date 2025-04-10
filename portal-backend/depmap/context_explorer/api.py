@@ -6,7 +6,6 @@ from depmap.cell_line.models_new import DepmapModel
 from depmap.compound.models import Compound, CompoundExperiment
 from depmap.context_explorer.utils import (
     get_entity_id_from_entity_full_label,
-    get_full_row_of_values_and_depmap_ids,
     get_path_to_node,
 )
 from depmap.context_explorer import box_plot_utils, dose_curve_utils
@@ -602,22 +601,6 @@ class ContextNodeName(
         return node.node_name
 
 
-def temp_get_compound_experiment_dataset(compound_experiment_and_datasets):
-    # DEPRECATED: this method will not work with breadbox datasets. Calls to it should be replaced.
-    dataset_regexp_ranking = [
-        "Prism_oncology.*",
-        "Rep_all_single_pt.*",
-        ".*",
-    ]
-    ce_and_d = []
-    for regexp in dataset_regexp_ranking:
-        for ce, d in compound_experiment_and_datasets:
-            pattern = re.compile(regexp)
-            if pattern.match(d.name.value):
-                ce_and_d = [[ce, d]]
-                return ce_and_d
-
-
 @namespace.route("/enriched_lineages_tile")
 class EnrichedLineagesTile(
     Resource
@@ -629,89 +612,50 @@ class EnrichedLineagesTile(
         entity_label = request.args.get("entity_label")
         entity_type = request.args.get("entity_type")
 
-        entity = (
-            Gene.get_by_label(entity_label)
-            if entity_type == "gene"
-            else Compound.get_by_label(entity_label)
-        )
-
-        dataset = (
-            get_dependency_dataset_for_entity(
-                DependencyDataset.DependencyEnum.Chronos_Combined.name, entity.entity_id
+        entity_id_and_dataset_name = (
+            box_plot_utils.get_gene_enriched_lineages_entity_id_and_dataset_name(
+                entity_label=entity_label
             )
             if entity_type == "gene"
-            else None
+            else box_plot_utils.get_compound_enriched_lineages_entity_id_and_dataset_name(
+                entity_label=entity_label
+            )
         )
-        dataset_name = None if dataset is None else dataset.name.name
+        entity_id = entity_id_and_dataset_name["entity_id"]
+        dataset_name = entity_id_and_dataset_name["dataset_name"]
 
         if entity_type == "compound":
-            # Figure out membership in different datasets
-            compound_experiment_and_datasets = DependencyDataset.get_compound_experiment_priority_sorted_datasets_with_compound(
-                entity.entity_id
-            )
-            compound_experiment_and_datasets = [
-                x
-                for x in compound_experiment_and_datasets
-                if not x[1].is_ic50 and not x[1].is_dose_replicate
-            ]  # filter for non ic50 or dose replicate datasets"
-            best_ce_and_d = temp_get_compound_experiment_dataset(
-                compound_experiment_and_datasets
-            )
-
-            dataset_name = best_ce_and_d[0][1].name.name
-            compound_experiment = best_ce_and_d[0][0]
-            entity = compound_experiment
+            entity_label = entity_id_and_dataset_name["compound_experiment_label"]
 
         sig_contexts = box_plot_utils.get_sig_context_dataframe(
             tree_type=tree_type,
             entity_type=entity_type,
-            entity_id=entity.entity_id,
+            entity_id=entity_id,
             dataset_name=dataset_name,
             use_enrichment_tile_filters=True,
         )
 
+        # If no contexts are signficant, we only want to show Other Solid and Other Heme box plots. This
+        # requires its own utility function since box_plot_utils.get_organized_contexts requires and is highly
+        # dependent on the "selected_subtype_code".
+        #
+        # When there are signficant contexts, "selected_subtype_code" is set to the most significant level_0 code. The
+        # concept of this being a "selected_subtype_code" is a little weird because the user isn't actually selecting anything
+        # for the enrichment tile; however, "selected_subtype_code" is a necessary requirment for reusing Context Explorer's
+        # CollapsibleBoxPlot. "selected_subtype_code" is how the component decides which collapsible accordion to display on top
+        # and open by default.
         if sig_contexts.empty:
-            (entity_full_row_of_values) = get_full_row_of_values_and_depmap_ids(
-                dataset_name=dataset_name, label=entity_label
-            )
-            entity_full_row_of_values.dropna(inplace=True)
-            drug_dotted_line = (
-                entity_full_row_of_values.mean() if entity_type == "compound" else None
-            )
-            heme_box_plot_data = box_plot_utils.get_box_plot_data_for_other_category(
-                category="heme",
-                all_sig_context_codes=[],
-                entity_full_row_of_values=entity_full_row_of_values,
-                tree_type=tree_type,
-            )
-
-            solid_box_plot_data = box_plot_utils.get_box_plot_data_for_other_category(
-                category="solid",
-                all_sig_context_codes=[],
-                entity_full_row_of_values=entity_full_row_of_values,
-                tree_type=tree_type,
-            )
-
-            ordered_box_plot_data = ContextPlotBoxData(
-                significant_selection=[],
-                insignificant_selection=None,
-                other_cards=[],
-                insignificant_heme_data=heme_box_plot_data,
-                insignificant_solid_data=solid_box_plot_data,
-                drug_dotted_line=drug_dotted_line,
+            return box_plot_utils.get_data_to_show_if_no_contexts_significant(
+                entity_type=entity_type,
                 entity_label=entity_label,
-            )
-
-            tile_data = EnrichedLineagesTileData(
-                box_plot_data=ordered_box_plot_data,
-                top_context_name_info=None,
-                selected_context_name_info=None,
+                tree_type=tree_type,
                 dataset_name=dataset_name,
-                context_explorer_url=url_for("context_explorer.view_context_explorer"),
             )
 
-            return dataclasses.asdict(tile_data)
-
+        # "sig_contexts" includes a column for "level_0" and a column for "subtype_code". This is necessary
+        # so that the collapsible box plots on the EnrichedLineagesTile can be organized from most signficant
+        # level_0 subtype_code to least signficant level_0 subtype_code, while also providing the information
+        # necessary to sort the child subtype_codes underneath each level_0 by signficance.
         selected_subtype_code = sig_contexts["level_0"].tolist()[0]
         top_context = SubtypeNode.get_by_code(selected_subtype_code)
         top_context_name_info = ContextNameInfo(
@@ -720,11 +664,11 @@ class EnrichedLineagesTile(
 
         context_box_plot_data = box_plot_utils.get_organized_contexts(
             selected_subtype_code=selected_subtype_code,
-            entity_type=entity.type,
-            entity_label=entity.label,
+            entity_type=entity_type,
+            entity_label=entity_label,
             dataset_name=dataset_name,
             sig_contexts=sig_contexts,
-            entity_id=entity.entity_id,
+            entity_id=entity_id,
             tree_type=tree_type,
         )
 
@@ -734,9 +678,11 @@ class EnrichedLineagesTile(
         tile_data = EnrichedLineagesTileData(
             box_plot_data=context_box_plot_data,
             top_context_name_info=top_context_name_info,
-            selected_context_name_info=top_context_name_info,
-            dataset_name=dataset_name,
-            context_explorer_url=url_for("context_explorer.view_context_explorer"),
+            selected_context_name_info=top_context_name_info,  # top_context_name_info is repeated here on purpose. As described above, "selected context" is inherited from the Context Explorer page version of the box plots
+            dataset_name=dataset_name,  # for the frontend to determine the tab of context_explorer to link to: "oncref", "repurposing", or "geneDependency"
+            context_explorer_url=url_for(
+                "context_explorer.view_context_explorer"
+            ),  # for linking the boxplot y-axis labels
         )
 
         return dataclasses.asdict(tile_data)
