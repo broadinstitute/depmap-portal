@@ -475,7 +475,10 @@ def test_get_dimension_type_dimension_identifiers(
     )
     assert res.json() == []
 
-    # Test case if data type is metadata and show only dimensions in datasets is True when there is a dataset of data type metadata with requested dimension type but is not used as a dimension types's metadata. The result should still filter out identifiers that are not found in the dimension type's metadata
+    # Test case if data type is metadata and show only dimensions in datasets is True when 
+    # there is a dataset of data type metadata with requested dimension type but is not used 
+    # as a dimension types's metadata. 
+    # The result should still filter out identifiers that are not found in the dimension type's metadata.
     matrix_values = factories.matrix_csv_data_file_with_values(
         feature_ids=["feature-1", "feature-2", "feature-3"],
         sample_ids=["sample-1", "sample-3"],
@@ -496,7 +499,11 @@ def test_get_dimension_type_dimension_identifiers(
         {"id": "sample-1", "label": "Sample 1"},
     ]
 
-    # Test case if data type is metadata and show only dimensions in datasets is False when there is a dataset of data type metadata with requested dimension type but is not used as a dimension types's metadata. This should return dimension identifiers from both datasets but should still filter out identifiers that are not found in the dimension type's metadata
+    # Test case if data type is metadata and show only dimensions in datasets is False when 
+    # there is a dataset of data type metadata with requested dimension type but is not used 
+    # as a dimension types's metadata. 
+    # This should return dimension identifiers from both datasets but should still filter out 
+    # identifiers that are not found in the dimension type's metadata.
     res = client.get(
         f"types/dimensions/{dim_type_fields['name']}/identifiers?data_type=metadata",
         headers=admin_headers,

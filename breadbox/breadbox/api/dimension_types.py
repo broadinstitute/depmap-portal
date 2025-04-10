@@ -652,17 +652,21 @@ def get_dimension_type_identifiers(
             data_type=data_type,
         )
         filtered_dataset_ids = [dataset.id for dataset in filtered_datasets]
-    etag = hash_id_list([name] + (sorted(filtered_dataset_ids) if filtered_dataset_ids else []))
+
+        if show_only_dimensions_in_datasets:
+            # Remove the metadata dataset if it's in our list of datasets 
+            filtered_dataset_ids = [dataset_id for dataset_id in filtered_dataset_ids if dataset_id != dim_type.dataset_id]
+    
+    # Create an ETag based on the dimension type and the filtered dataset IDs
+    etag = hash_id_list(
+        [dim_type.name] +
+        [dim_type.dataset_id] if dim_type.dataset_id else [] + 
+        (sorted(filtered_dataset_ids) if filtered_dataset_ids else [])
+    )
 
     def _get_response_content() -> list[DimensionIdentifiers]:
-        if filtered_dataset_ids is None:
-            dataset_ids_without_metadata = None
-        else:
-            # Remove the metadata dataset from our list of datasets 
-            dataset_ids_without_metadata = [dataset_id for dataset_id in filtered_dataset_ids if dataset_id != dim_type.dataset_id]
-            
         dimension_ids_and_labels = metadata_service.get_dimension_type_identifiers(
-            db, dim_type, dataset_ids_without_metadata, limit=limit,
+            db, dim_type, filtered_dataset_ids, limit=limit,
         )
         return [
             DimensionIdentifiers(id=id, label=label)
