@@ -12,7 +12,7 @@ rule get_context_analysis:
 #        oncref_auc_taiga_id=all {"type":"prism_oncref_auc_matrix"},
         compound_summary_repurposing={"type": "compound-summary", "dataset": "Rep_all_single_pt"},
         compound_summary_oncref={"type": "compound-summary", "dataset": "Prism_oncology_AUC"},
-        tda_table=all {"type":"tda-table"},
+        tda_table={"type":"tda-table"},
     outputs:
         {"type": "context_analysis", "filename": { "$filename": "context_analysis.csv"} }
     run "python3" with """
