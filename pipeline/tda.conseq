@@ -20,10 +20,12 @@ rule common_essentials:
     executor: dsub {"docker_image": "us.gcr.io/broad-achilles/depmap-pipeline-tda:v10", "min_ram": "10"}
     inputs:
         data={'type': 'dep-matrix-csv'},
+        crispr_inferred_common_essentials={'type': 'crispr-inferred-common-essentials'},
         script=fileref('scripts/tda/CE_percentile_rank_analysis.py')
     outputs:
         {'type': 'common-essentials', 'label': '{{ inputs.data.label }}', 'filename': {'$filename': 'ce.csv'} }
-    run "python3 {{ inputs.script.filename }} {{ inputs.data.filename }} ce.csv"
+    run "python3 {{ inputs.script.filename }} {{ inputs.data.label }} {{ inputs.crispr_inferred_common_essentials.dataset_id }} {{ inputs.data.filename }} ce.csv"
+
 
 rule dep_moments:
     executor: dsub {"docker_image": "us.gcr.io/broad-achilles/depmap-pipeline-tda:v10", "min_ram": "10"}
