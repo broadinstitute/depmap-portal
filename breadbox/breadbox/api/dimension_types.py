@@ -660,7 +660,7 @@ def get_dimension_type_identifiers(
     # Create an ETag based on the dimension type and the filtered dataset IDs
     etag = hash_id_list(
         [dim_type.name] +
-        [dim_type.dataset_id] if dim_type.dataset_id else [] + 
+        ([dim_type.dataset_id] if dim_type.dataset_id else []) + 
         (sorted(filtered_dataset_ids) if filtered_dataset_ids else [])
     )
 
@@ -670,7 +670,7 @@ def get_dimension_type_identifiers(
         )
         return [
             DimensionIdentifiers(id=id, label=label)
-            for id, label in dimension_ids_and_labels.items()
+            for id, label in sorted(dimension_ids_and_labels.items())
         ]
         
     return get_response_with_etag(etag, if_none_match, _get_response_content)
