@@ -1,3 +1,4 @@
+import re
 from flask.globals import current_app
 import pandas as pd
 import depmap.celfie.utils as celfie_utils
@@ -380,10 +381,21 @@ def get_enrichment_html(
 
         enrichment_boxes = get_enrichment_boxes(entity, crispr_dataset)
     elif entity_type == "compound":
-        best_ce_and_d = determine_compound_experiment_and_dataset(
-            compound_experiment_and_datasets
-        )
-        enrichment_boxes = format_enrichment_boxes(best_ce_and_d)
+        # DEPRECATED: this method will not work with breadbox datasets. Calls to it should be replaced.
+        dataset_regexp_ranking = [
+            "Prism_oncology.*",
+            "Rep_all_single_pt.*",
+            ".*",
+        ]
+        ce_and_d = []
+        for regexp in dataset_regexp_ranking:
+            for ce, d in compound_experiment_and_datasets:
+                pattern = re.compile(regexp)
+                if pattern.match(d.name.value):
+                    ce_and_d = [[ce, d]]
+                    break
+
+        enrichment_boxes = format_enrichment_boxes(ce_and_d)
 
     return render_template(
         "tiles/selectivity.html",
