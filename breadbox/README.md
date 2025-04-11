@@ -4,9 +4,9 @@ Breadbox is a persistent service for storing and retrieving data for the [DepMap
 
 ## Setup
 
-1.  Install python 3.9
+1.  Install pyenv
 
-    brew install python@3.9
+    brew install pyenv
 
 2.  Install poetry ([See poetry docs for installation](https://python-poetry.org/docs/))
 

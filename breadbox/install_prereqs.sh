@@ -11,7 +11,8 @@ echo "Setting up breadbox-client-generator..."
 
 echo "Setting up breadbox dependencies..."
 
-poetry env use python3.9
+pyenv install "$(cat .python-version)"
+poetry env use "$(pyenv which python)"
 poetry install
 
 if [ ! -e .env ]; then
