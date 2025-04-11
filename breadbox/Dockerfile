@@ -30,6 +30,7 @@ WORKDIR /install/breadbox
 RUN poetry config virtualenvs.create false
 # Install dependencies:
 RUN poetry install
+RUN poetry run python --version
 
 COPY *.py /install/breadbox
 COPY bb /install/breadbox
