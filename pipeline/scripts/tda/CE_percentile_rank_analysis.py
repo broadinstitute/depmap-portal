@@ -46,12 +46,13 @@ def calculate_common_essential_genes(in_file: str, out_file: str) -> pd.DataFram
 
 
 def get_common_essential_genes_for_chronos_combined(
-    crispr_inferred_ce_df: pd.DataFrame, out_file: str
+    crispr_inferred_ce_file: str, out_file: str
 ) -> pd.DataFrame:
     """
     Get the common essential genes for Chronos_Combined and format it so that 
     it can be merged with the other data
     """
+    crispr_inferred_ce_df = pd.read_csv(crispr_inferred_ce_file)
     crispr_inferred_ce_df.rename(columns={"Essentials": "Row.name"}, inplace=True)
     crispr_inferred_ce_df["Common_Essential"] = True
 
@@ -62,28 +63,17 @@ def get_common_essential_genes_for_chronos_combined(
 
 if __name__ == "__main__":
     import sys
-    from taigapy import create_taiga_client_v3
-
-    if len(sys.argv) != 5:
-        print(
-            "Need at least 4 arguments: data_label, crispr_inferred_common_essentials_taiga_id, non_crispr_input_data_file, out_file"
-        )
-        sys.exit(1)
 
     data_label = sys.argv[1]
-    crispr_inferred_common_essentials_taiga_id = sys.argv[2]
+    crispr_inferred_common_essentials_file = sys.argv[2]
     non_crispr_input_data_file = sys.argv[3]
     out_file = sys.argv[4]
 
     # Crispr is retreived from taiga
     # Non-crispr is calculated from the data file
     if data_label == "Chronos_Combined":
-        tc = create_taiga_client_v3()
-        crispr_inferred_common_essentials_df = tc.get(
-            crispr_inferred_common_essentials_taiga_id
-        )
         get_common_essential_genes_for_chronos_combined(
-            crispr_inferred_common_essentials_df, out_file
+            crispr_inferred_common_essentials_file, out_file
         )
     else:
         calculate_common_essential_genes(non_crispr_input_data_file, out_file)
