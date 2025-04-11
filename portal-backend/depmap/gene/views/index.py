@@ -119,6 +119,7 @@ def _get_gene_page_template_parameters(gene_symbol):
     characterizations = characterization.format_characterizations(
         entity_id, gene_symbol, biomarker_datasets
     )
+
     has_predictability = (
         crispr_dataset is not None
         and PredictiveModel.get_top_models_features(

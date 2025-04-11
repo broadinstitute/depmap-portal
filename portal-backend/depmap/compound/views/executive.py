@@ -43,7 +43,7 @@ class DataAvailabilityDataset:
     label: str
     dose_range: str
     assay: str
-    # There are multiple given IDs we may use to load the relevant dataset 
+    # There are multiple given IDs we may use to load the relevant dataset
     # If a re-indexed dataset exists in breadbox, that should be displayed.
     # Otherwise, just display the legacy version
     given_ids: list[str]
@@ -52,27 +52,27 @@ class DataAvailabilityDataset:
 # The set of information to show on the tile on the compound page
 data_availability_datasets = [
     DataAvailabilityDataset(
-        label="CTRP", 
-        dose_range="1nM - 10μM", 
-        assay="CellTitreGlo", 
+        label="CTRP",
+        dose_range="1nM - 10μM",
+        assay="CellTitreGlo",
         given_ids=["CTRP_AUC_collapsed", DependencyEnum.CTRP_AUC.name],
     ),
     DataAvailabilityDataset(
-        label="GDSC1", 
-        dose_range="1nM - 10μM", 
-        assay="Resazurin or Syto60", 
+        label="GDSC1",
+        dose_range="1nM - 10μM",
+        assay="Resazurin or Syto60",
         given_ids=["GDSC1_AUC_collapsed", DependencyEnum.GDSC1_AUC.name],
     ),
     DataAvailabilityDataset(
-        label="GDSC2", 
-        dose_range="1nM - 10μM", 
-        assay="CellTitreGlo", 
+        label="GDSC2",
+        dose_range="1nM - 10μM",
+        assay="CellTitreGlo",
         given_ids=["GDSC2_AUC_collapsed", DependencyEnum.GDSC2_AUC.name],
     ),
     DataAvailabilityDataset(
-        label="Repurposing single point", 
-        dose_range="2.5μM", 
-        assay="PRISM", 
+        label="Repurposing single point",
+        dose_range="2.5μM",
+        assay="PRISM",
         given_ids=["REPURPOSING_AUC_collapsed", DependencyEnum.Rep_all_single_pt.name],
     ),
     DataAvailabilityDataset(
@@ -83,9 +83,12 @@ data_availability_datasets = [
     ),
     DataAvailabilityDataset(
         label="OncRef",
-        dose_range="1nM - 10μM", 
-        assay="PRISM", 
-        given_ids=["Prism_oncology_AUC_collapsed", DependencyEnum.Prism_oncology_AUC.name],
+        dose_range="1nM - 10μM",
+        assay="PRISM",
+        given_ids=[
+            "Prism_oncology_AUC_collapsed",
+            DependencyEnum.Prism_oncology_AUC.name,
+        ],
     ),
 ]
 
@@ -209,11 +212,7 @@ def format_enrichment_boxes(compound_experiment_and_datasets):
     for compound_experiment, dataset in compound_experiment_and_datasets:
         # compound dataset titles should not be colored
         enrichment_box = format_enrichment_box_for_dataset(
-            compound_experiment,
-            dataset,
-            colors[dataset.name],
-            "default",
-            negative_only=True,
+            compound_experiment, dataset, colors[dataset.name], "default"
         )
         enrichment_box["title"] = "{} {}".format(
             compound_experiment.label, dataset.display_name
@@ -290,7 +289,9 @@ def format_availability_tile(compound: Compound):
     compound_id = compound.compound_id
     # First, load ALL portal datasets containing the compound (for performance reasons).
     # This is faster than iterating through the datasets and checking their full contents one-by-one.
-    all_compound_datasets = data_access.get_all_datasets_containing_compound(compound_id)
+    all_compound_datasets = data_access.get_all_datasets_containing_compound(
+        compound_id
+    )
     datasets_with_compound_by_id = {}
     for dataset in all_compound_datasets:
         if dataset.given_id:

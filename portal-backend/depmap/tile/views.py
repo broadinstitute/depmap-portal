@@ -1,3 +1,4 @@
+import re
 from flask.globals import current_app
 import pandas as pd
 import depmap.celfie.utils as celfie_utils
@@ -16,8 +17,9 @@ from depmap.enums import DependencyEnum
 from depmap.gene.views.executive import (
     format_mutation_profile,
     format_codependencies,
-    format_dep_dist_and_enrichment_boxes,
     generate_correlations_table_from_datasets,
+    get_dependency_distribution,
+    get_enrichment_boxes,
 )
 from depmap.compound.views.executive import (
     determine_compound_experiment_and_dataset,
@@ -368,6 +370,7 @@ def get_enrichment_html(
     entity, compound_experiment_and_datasets=None, query_params_dict={}
 ):
     entity_type = entity.get_entity_type()
+    enrichment_boxes = None
     if entity_type == "gene":
         crispr_dataset = get_dependency_dataset_for_entity(
             DependencyDataset.get_dataset_by_data_type_priority(
@@ -376,26 +379,39 @@ def get_enrichment_html(
             entity.entity_id,
         )
 
-        rnai_dataset = get_dependency_dataset_for_entity(
-            DependencyDataset.get_dataset_by_data_type_priority(
-                DependencyDataset.DataTypeEnum.rnai
-            ).name,
-            entity.entity_id,
-        )
-
-        enrichment_boxes = format_dep_dist_and_enrichment_boxes(
-            entity, crispr_dataset, rnai_dataset
-        )[1]
+        enrichment_boxes = get_enrichment_boxes(entity, crispr_dataset)
     elif entity_type == "compound":
-        best_ce_and_d = determine_compound_experiment_and_dataset(
-            compound_experiment_and_datasets
-        )
-        enrichment_boxes = format_enrichment_boxes(best_ce_and_d)
+        # This uses Context Explorer analyses, which do not have repurposing secondary data, but still need
+        # to show box plots for those drugs.
+        # DEPRECATED: this method will not work with breadbox datasets. Calls to it should be replaced.
+        dataset_regexp_ranking = [
+            "Prism_oncology.*",
+            "Rep_all_single_pt.*",
+            ".*",
+        ]
+        enrichment_boxes = None
+        ce_and_d = []
+        if compound_experiment_and_datasets is not None:
+            for regexp in dataset_regexp_ranking:
+                assert compound_experiment_and_datasets is not None
+                for ce, d in compound_experiment_and_datasets:
+                    pattern = re.compile(regexp)
+                    if pattern.match(d.name.value):
+                        ce_and_d = [[ce, d]]
+                        break
+
+        enrichment_boxes = format_enrichment_boxes(ce_and_d)
 
     return render_template(
         "tiles/selectivity.html",
         enrichment_boxes=enrichment_boxes,
         is_gene_entity_type=entity_type == "gene",
+        context_explorer_dataset_tab="overview"
+        if enrichment_boxes is None or len(enrichment_boxes) == 0
+        else enrichment_boxes[0]["context_explorer_dataset_tab"],
+        most_selective_code=""
+        if enrichment_boxes is None or len(enrichment_boxes) == 0
+        else enrichment_boxes[0]["most_selective_code"],
     )
 
 
@@ -534,9 +550,7 @@ def get_essentiality_html(gene):
         gene.entity_id,
     )
 
-    dep_dist, _ = format_dep_dist_and_enrichment_boxes(
-        gene, crispr_dataset, rnai_dataset
-    )
+    dep_dist = get_dependency_distribution(gene, crispr_dataset, rnai_dataset)
 
     return render_template("tiles/essentiality.html", dep_dist=dep_dist,)
 

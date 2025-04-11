@@ -10,7 +10,7 @@ standard_nonaliased_dataset_id = "rppa"
 standard_nonaliased_dataset_feature = "AMPK_alpha"
 
 context_dataset_id = "context"
-context_dataset_feature = "bone"
+context_dataset_feature = "BONE"
 
 nonstandard_aliased_dataset_id = (
     "small-mapped-avana-551a.1"  # has stable IDs, mapped to Gene

@@ -16,7 +16,7 @@ from depmap.utilities.exception import InvalidDatasetEnumError
 from loader.cell_line_loader import load_cell_lines_metadata
 from loader.gene_loader import load_hgnc_genes
 from loader.transcription_start_site_loader import load_transcription_start_sites
-from loader import dataset_loader
+from loader import dataset_loader, depmap_model_loader
 from tests.factories import (
     DependencyDatasetFactory,
     BiomarkerDatasetFactory,
@@ -368,6 +368,9 @@ def test_dependency_dataset_has_entity(empty_db_mock_downloads):
         load_cell_lines_metadata(
             os.path.join(loader_data_dir, "cell_line/cell_line_metadata.csv"),
         )
+        depmap_model_loader.load_depmap_model_metadata(
+            os.path.join(loader_data_dir, "cell_line/models_metadata.csv")
+        )
         dependency_datasets = {
             DependencyDataset.DependencyEnum.Avana: {
                 "matrix_file_name_root": "dataset/avana",
@@ -449,6 +452,9 @@ def test_biomarker_dataset_has_entity(empty_db_mock_downloads):
     with transaction():
         loader_data_dir = empty_db_mock_downloads.app.config["LOADER_DATA_DIR"]
         load_hgnc_genes(os.path.join(loader_data_dir, "gene/hgnc-database-1a29.1.csv"))
+        load_cell_lines_metadata(
+            os.path.join(loader_data_dir, "cell_line/cell_line_metadata.csv")
+        )
         load_sample_cell_lines()
         load_transcription_start_sites(
             os.path.join(loader_data_dir, "transcription_start_site/rrbs_tss_info.csv")
@@ -617,6 +623,10 @@ def test_mutation_translocation_fusion_has_gene(empty_db_mock_downloads):
     with transaction():
         loader_data_dir = empty_db_mock_downloads.app.config["LOADER_DATA_DIR"]
         load_hgnc_genes(os.path.join(loader_data_dir, "gene/hgnc-database-1a29.1.csv"))
+
+        load_cell_lines_metadata(
+            os.path.join(loader_data_dir, "cell_line/cell_line_metadata.csv")
+        )
         load_sample_cell_lines()
 
         dataset_loader.load_translocations(

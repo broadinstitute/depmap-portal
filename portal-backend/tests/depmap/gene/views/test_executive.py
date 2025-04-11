@@ -1,9 +1,10 @@
 import pytest
 import pandas as pd
 from depmap.gene.views.executive import (
-    format_dep_dist_and_enrichment_boxes,
     format_dep_dist_info,
     format_crispr_possible_missing_reason,
+    get_dependency_distribution,
+    get_enrichment_boxes,
     plot_mutation_profile,
     format_enrichment_boxes,
     format_codependencies,
@@ -12,14 +13,16 @@ from depmap.dataset.models import DependencyDataset
 from depmap.utilities import color_palette
 from depmap.enums import DependencyEnum, BiomarkerEnum
 from tests.factories import (
+    ContextAnalysisFactory,
+    DepmapModelFactory,
     GeneFactory,
     GeneExecutiveInfoFactory,
     MatrixFactory,
     DependencyDatasetFactory,
     BiomarkerDatasetFactory,
     CellLineFactory,
-    ContextFactory,
-    ContextEnrichmentFactory,
+    SubtypeContextFactory,
+    SubtypeNodeFactory,
 )
 from tests.depmap.utilities.test_svg_utils import assert_is_svg
 from depmap.settings.settings import TestConfig
@@ -51,7 +54,7 @@ from tests.utilities.override_fixture import override
         (False, False, True),
     ],
 )
-def test_format_dep_dist_and_enrichment_boxes_default_crispr_enum_chronos(
+def test_get_dep_dist_and_enrichment_boxes_default_crispr_enum_chronos(
     empty_db_mock_downloads, has_chronos, has_rnai, is_dropped_by_chronos
 ):
     gene = GeneFactory()
@@ -70,7 +73,6 @@ def test_format_dep_dist_and_enrichment_boxes_default_crispr_enum_chronos(
         GeneExecutiveInfoFactory(
             gene=gene, dataset=DependencyEnum.Chronos_Combined,
         )
-
     if has_rnai:
         rnai_dataset = DependencyDatasetFactory(
             matrix=MatrixFactory(
@@ -79,6 +81,7 @@ def test_format_dep_dist_and_enrichment_boxes_default_crispr_enum_chronos(
             name=DependencyEnum.RNAi_merged,
             priority=1,
         )
+
         GeneExecutiveInfoFactory(
             gene=gene, dataset=DependencyEnum.RNAi_merged,
         )
@@ -97,11 +100,17 @@ def test_format_dep_dist_and_enrichment_boxes_default_crispr_enum_chronos(
 
     empty_db_mock_downloads.session.flush()
 
-    dep_dist, enrichment_boxes = format_dep_dist_and_enrichment_boxes(
+    dep_dist = get_dependency_distribution(
         gene, crispr_dataset=crispr_dataset, rnai_dataset=rnai_dataset
     )
-    if has_chronos or has_rnai:
+
+    enrichment_boxes = get_enrichment_boxes(gene, crispr_dataset=crispr_dataset)
+
+    if has_chronos:
         assert enrichment_boxes is not None
+        assert "svg" in dep_dist
+    elif has_rnai:
+        assert enrichment_boxes is None
         assert "svg" in dep_dist
     else:
         assert enrichment_boxes is None
@@ -119,6 +128,7 @@ def test_format_dep_dist_and_enrichment_boxes_default_crispr_enum_chronos(
 
     if has_rnai:
         assert "rnai" in dep_dist["info"]
+
     else:
         assert not dep_dist or "info" not in dep_dist or "rnai" not in dep_dist["info"]
 
@@ -136,7 +146,7 @@ def test_format_dep_dist_and_enrichment_boxes_default_crispr_enum_chronos(
 @pytest.mark.parametrize(
     "has_avana, has_rnai", [(True, True), (False, True), (True, False), (False, False)],
 )
-def test_format_dep_dist_and_enrichment_boxes_default_crispr_enum_not_chronos(
+def test_get_dep_dist_and_enrichment_boxes_default_crispr_enum_not_chronos(
     empty_db_mock_downloads, has_avana, has_rnai
 ):
     """
@@ -185,11 +195,14 @@ def test_format_dep_dist_and_enrichment_boxes_default_crispr_enum_not_chronos(
 
     empty_db_mock_downloads.session.flush()
 
-    dep_dist, enrichment_boxes = format_dep_dist_and_enrichment_boxes(
+    dep_dist = get_dependency_distribution(
         gene, crispr_dataset=crispr_dataset, rnai_dataset=rnai_dataset
     )
+
+    enrichment_boxes = get_enrichment_boxes(gene, crispr_dataset=crispr_dataset)
     if has_avana or has_rnai:
-        assert enrichment_boxes is not None
+        if has_rnai and not has_avana:
+            assert enrichment_boxes is None
         assert "svg" in dep_dist
     else:
         assert enrichment_boxes is None
@@ -301,31 +314,54 @@ def test_format_crispr_possible_missing_reason_chronos(empty_db_mock_downloads,)
 
 
 def test_format_enrichment_boxes(empty_db_mock_downloads):
-    """
-    Test that negative t_statistic enrichments are filtered out
-    """
-    cell_line_A = CellLineFactory(cell_line_name="cell_line_A")
-    cell_line_B = CellLineFactory(cell_line_name="cell_line_B")
+    cell_line_A = DepmapModelFactory(
+        model_id="cell_line_A", depmap_model_type="context_A"
+    )
+    cell_line_B = DepmapModelFactory(
+        model_id="cell_line_B", depmap_model_type="context_B"
+    )
 
-    context_A = ContextFactory(name="context_A", cell_line=[cell_line_A])
-    context_B = ContextFactory(name="context_B", cell_line=[cell_line_B])
+    context_A = SubtypeContextFactory(
+        subtype_code="context_A", depmap_model=[cell_line_A]
+    )
+    context_B = SubtypeContextFactory(
+        subtype_code="context_B", depmap_model=[cell_line_B]
+    )
+    SubtypeNodeFactory(subtype_code="context_A", node_name="display_name_context_A")
+    SubtypeNodeFactory(subtype_code="context_B", node_name="display_name_context_B")
     entity = GeneFactory()
 
-    matrix = MatrixFactory(entities=[entity], cell_lines=[cell_line_A, cell_line_B])
+    matrix = MatrixFactory(
+        entities=[entity],
+        cell_lines=[cell_line_A, cell_line_B],
+        using_depmap_model_table=True,
+    )
     dataset = DependencyDatasetFactory(
-        name=DependencyDataset.DependencyEnum.Avana, matrix=matrix
+        name=DependencyDataset.DependencyEnum.Chronos_Combined, matrix=matrix
     )
 
-    ContextEnrichmentFactory(
-        context=context_A, entity=entity, dataset=dataset, t_statistic=1
+    ContextAnalysisFactory(
+        subtype_context=context_A,
+        entity=entity,
+        dataset=dataset,
+        t_qval=0.05,
+        frac_dep_in=0.1,
+        effect_size=-0.25,
+        out_group="All Others",
     )
-    ContextEnrichmentFactory(
-        context=context_B, entity=entity, dataset=dataset, t_statistic=-1
+    b = ContextAnalysisFactory(
+        subtype_context=context_B,
+        entity=entity,
+        dataset=dataset,
+        t_qval=0.05,
+        frac_dep_in=0.1,
+        effect_size=-0.25,
+        out_group="All Others",
     )
 
     empty_db_mock_downloads.session.flush()
 
-    enrichment_boxes = format_enrichment_boxes(entity, dataset, None)
+    enrichment_boxes = format_enrichment_boxes(entity, dataset)
 
     assert len(enrichment_boxes) == 1  # only one dataset
     assert (

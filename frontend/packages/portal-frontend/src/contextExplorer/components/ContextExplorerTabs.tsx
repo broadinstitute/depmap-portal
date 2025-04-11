@@ -9,19 +9,26 @@ import {
 import styles from "../styles/ContextExplorer.scss";
 import {
   CellLineOverview,
+  ContextExplorerDatasets,
   ContextNameInfo,
+  ContextNode,
   ContextSummary,
   TabTypes,
+  TreeType,
 } from "../models/types";
 import ContextExplorerPlot from "src/contextExplorer/components/ContexExplorerPlot";
 import OverviewTable from "src/contextExplorer/components/OverviewTable";
 import { capitalizeFirstLetter } from "../utils";
 import ContextAnalysis from "src/contextExplorer/components/contextAnalysis/ContextAnalysis";
 import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
+import { enabledFeatures } from "@depmap/globals";
 
 interface Props {
+  isLoadingInitialData: boolean;
   selectedContextNameInfo: ContextNameInfo;
+  selectedContextNode: ContextNode | null;
   selectedContextData: ContextSummary;
+  treeType: TreeType;
   checkedDataValues: number[][];
   checkedDatatypes: Set<string>;
   updateDatatypeSelection: (clicked: string) => void;
@@ -36,7 +43,10 @@ interface Props {
 }
 
 const ContextExplorerTabs = ({
+  isLoadingInitialData,
   selectedContextNameInfo,
+  selectedContextNode,
+  treeType,
   selectedContextData,
   checkedDataValues,
   checkedDatatypes,
@@ -50,27 +60,28 @@ const ContextExplorerTabs = ({
   handleSetPlotElement,
   plotElement,
 }: Props) => {
-  // Filters table data accoding to the selected context's depmap_ids
+  // Filters table data according to the selected context's depmap_ids
   const filteredData = overviewTableData.filter((row) => {
     return selectedContextData.all_depmap_ids.some(
-      (a) => a[1] === row.depmap_id
+      (a) => a[1] === row.model_id
     );
   });
 
   const formattedFilteredData: CellLineOverview[] = filteredData.map((row) => {
     return {
-      depmapId: row.depmap_id,
+      depmapId: row.model_id,
       cellLineDisplayName: row.cell_line_display_name,
-      lineage: row.lineage,
-      primaryDisease: row.primary_disease,
-      subtype: row.subtype,
-      molecularSubtype: row.molecular_subtype,
+      lineage: row.level_0,
+      primaryDisease: row.level_1,
+      subtype: row.level_2,
+      molecularSubtype: row.level_3,
       crispr: capitalizeFirstLetter(String(row.crispr)),
       rnai: capitalizeFirstLetter(String(row.rnai)),
       wgs: capitalizeFirstLetter(String(row.wgs)),
       wes: capitalizeFirstLetter(String(row.wes)),
       rna_seq: capitalizeFirstLetter(String(row.rna_seq)),
-      prism: capitalizeFirstLetter(String(row.prism)),
+      prismOncRef: capitalizeFirstLetter(String(row.oncref)),
+      prismRepurposing: capitalizeFirstLetter(String(row.repurposing)),
     };
   });
 
@@ -87,60 +98,95 @@ const ContextExplorerTabs = ({
           Overview
         </Tab>
         <Tab id="geneDependency" className={styles.Tab}>
-          Gene Dependency
+          CRISPR Gene Dependency
         </Tab>
-        <Tab id="drugSensitivity" className={styles.Tab}>
-          Drug Sensitivity
+        {enabledFeatures.context_explorer_prerelease_datasets && (
+          <Tab id="oncref" className={styles.Tab}>
+            OncRef Sensitivity
+          </Tab>
+        )}
+        <Tab id="repurposing" className={styles.Tab}>
+          Repurposing Sensitivity
         </Tab>
       </TabList>
 
       <TabPanels className={styles.TabPanels}>
         <TabPanel className={styles.TabPanel}>
           <div className={styles.plot}>
-            {checkedDataValues && selectedContextData && (
-              <ContextExplorerPlot
-                topContextName={topContextNameInfo.display_name}
-                selectedContextName={selectedContextNameInfo.display_name}
-                data={selectedContextData}
-                checkedDataValues={checkedDataValues}
-                checkedDatatypes={checkedDatatypes}
-                updateDatatypeSelection={updateDatatypeSelection}
-                customInfoImg={customInfoImg}
-                overlappingDepmapIds={overlappingDepmapIds}
-                handleSetPlotElement={handleSetPlotElement}
-                plotElement={plotElement}
-              />
-            )}
+            {checkedDataValues &&
+              selectedContextData &&
+              !isLoadingInitialData && (
+                <ContextExplorerPlot
+                  topContextName={topContextNameInfo.name}
+                  selectedContextNameInfo={selectedContextNameInfo}
+                  data={selectedContextData}
+                  checkedDataValues={checkedDataValues}
+                  checkedDatatypes={checkedDatatypes}
+                  updateDatatypeSelection={updateDatatypeSelection}
+                  customInfoImg={customInfoImg}
+                  overlappingDepmapIds={overlappingDepmapIds}
+                  handleSetPlotElement={handleSetPlotElement}
+                  plotElement={plotElement}
+                />
+              )}
           </div>
           <div className={styles.plot}>
-            <OverviewTable
-              cellLineData={
-                overlappingDepmapIds.length > 0
-                  ? formattedFilteredData.filter((dataItem: CellLineOverview) =>
-                      overlappingDepmapIds.includes(dataItem.depmapId)
-                    )
-                  : formattedFilteredData
-              }
-              getCellLineUrlRoot={getCellLineUrlRoot}
-            />
+            {checkedDataValues &&
+              selectedContextData &&
+              !isLoadingInitialData && (
+                <OverviewTable
+                  cellLineData={
+                    overlappingDepmapIds.length > 0
+                      ? formattedFilteredData.filter(
+                          (dataItem: CellLineOverview) =>
+                            overlappingDepmapIds.includes(dataItem.depmapId)
+                        )
+                      : formattedFilteredData
+                  }
+                  getCellLineUrlRoot={getCellLineUrlRoot}
+                />
+              )}
           </div>
         </TabPanel>
         <TabPanel className={styles.TabPanel}>
-          <ContextAnalysis
-            selectedContextNameInfo={selectedContextNameInfo}
-            topContextNameInfo={topContextNameInfo}
-            entityType={"gene"}
-            customInfoImg={customInfoImg}
-          />
+          {!isLoadingInitialData && (
+            <ContextAnalysis
+              selectedContextNode={selectedContextNode}
+              selectedContextNameInfo={selectedContextNameInfo}
+              topContextNameInfo={topContextNameInfo}
+              treeType={treeType}
+              entityType={"gene"}
+              datasetId={ContextExplorerDatasets.Chronos_Combined}
+            />
+          )}
         </TabPanel>
+        {enabledFeatures.context_explorer_prerelease_datasets && (
+          <TabPanel className={styles.TabPanel}>
+            {" "}
+            {!isLoadingInitialData && (
+              <ContextAnalysis
+                selectedContextNode={selectedContextNode}
+                selectedContextNameInfo={selectedContextNameInfo}
+                topContextNameInfo={topContextNameInfo}
+                treeType={treeType}
+                entityType={"compound"}
+                datasetId={ContextExplorerDatasets.Prism_oncology_AUC}
+              />
+            )}
+          </TabPanel>
+        )}
         <TabPanel className={styles.TabPanel}>
           {" "}
-          <ContextAnalysis
-            selectedContextNameInfo={selectedContextNameInfo}
-            topContextNameInfo={topContextNameInfo}
-            entityType={"compound"}
-            customInfoImg={customInfoImg}
-          />
+          {!isLoadingInitialData && (
+            <ContextAnalysis
+              selectedContextNode={selectedContextNode}
+              selectedContextNameInfo={selectedContextNameInfo}
+              topContextNameInfo={topContextNameInfo}
+              treeType={treeType}
+              entityType={"compound"}
+              datasetId={ContextExplorerDatasets.Rep_all_single_pt}
+            />
+          )}
         </TabPanel>
       </TabPanels>
     </TabsWithHistory>

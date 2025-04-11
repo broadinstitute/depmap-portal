@@ -1,29 +1,29 @@
 import os
+from depmap.cell_line.models_new import DepmapModel
+from depmap.context.models_new import SubtypeContext
 from flask import current_app
 from math import nan
+from loader.depmap_model_loader import insert_cell_lines, load_subtype_contexts
 
 import pandas as pd
 import pytest
 
 from loader.cell_line_loader import (
-    load_contexts,
-    get_cell_lines_in_context,
     insert_or_update_cell_lines,
     is_non_empty_string,
 )
 from depmap.cell_line.models import CellLine
-from depmap.context.models import Context
 from depmap.database import transaction
 from tests.factories import (
     CellLineFactory,
-    ContextFactory,
+    DepmapModelFactory,
+    SubtypeContextFactory,
 )
 from tests.utilities.df_test_utils import load_sample_cell_lines
 
 
 def test_alt_names_or_aliases(empty_db_mock_downloads):
     cell_line_1 = CellLineFactory(depmap_id="depmap_id_1")
-    ContextFactory(name="test_context", cell_line=[cell_line_1])
     empty_db_mock_downloads.session.flush()
 
     # line_1 updated to have lineage test, no aliases, and new arxspan_id
@@ -71,12 +71,14 @@ def test_insert_or_update_cell_lines(empty_db_mock_downloads):
     Existing cell line is correctly updated and context is still intact
     Other cell line still exists (total 3 lines)
     """
-    cell_line_1 = CellLineFactory(depmap_id="line_1")
-    cell_line_2 = CellLineFactory(depmap_id="line_2")
-    ContextFactory(name="test_context", cell_line=[cell_line_1, cell_line_2])
+    cell_line_1 = DepmapModelFactory(model_id="line_1")
+    cell_line_2 = DepmapModelFactory(model_id="line_2")
+    SubtypeContextFactory(
+        subtype_code="test_context", depmap_model=[cell_line_1, cell_line_2]
+    )
     empty_db_mock_downloads.session.flush()
 
-    assert len(cell_line_1.lineage.all()) == 1
+    assert len(cell_line_1.cell_line.lineage.all()) == 1
     assert cell_line_1.cell_line_name != "name_1"
 
     # line_1 updated to have lineage test, no aliases, and new arxspan_id
@@ -90,12 +92,16 @@ def test_insert_or_update_cell_lines(empty_db_mock_downloads):
         "lineage_4": [nan, nan, nan],
         "arxspan_id": ["line_1", "new_line", nan],
         "alt_names": ["", "", nan],
-        "wtsi_master_cell_id": [cell_line_1.wtsi_master_cell_id, None, nan],
-        "cosmic_id": [cell_line_1.cosmic_id, None, nan],
+        "wtsi_master_cell_id": [cell_line_1.cell_line.wtsi_master_cell_id, None, nan],
+        "cosmic_id": [cell_line_1.cell_line.cosmic_id, None, nan],
         "cell_line_passport_id": ["SIDM1", "SIDM2", nan],
-        "primary_disease_name": [cell_line_1.primary_disease.name, "test", nan],
-        "subtype_name": [cell_line_1.disease_subtype.name, "test", nan],
-        "tumor_type_name": [cell_line_1.tumor_type.name, "test", nan],
+        "primary_disease_name": [
+            cell_line_1.cell_line.primary_disease.name,
+            "test",
+            nan,
+        ],
+        "subtype_name": [cell_line_1.cell_line.disease_subtype.name, "test", nan],
+        "tumor_type_name": [cell_line_1.cell_line.tumor_type.name, "test", nan],
         "cclf_gender": ["new gender", "test", nan],
         "original_source": ["new source", "test", nan],
         "rrid": ["test rrid", "test rrid", nan],
@@ -121,11 +127,9 @@ def test_insert_or_update_cell_lines(empty_db_mock_downloads):
     assert cell_line_1.lineage.all()[0].name == "test"
     # assert cell_line_1.cell_line_name == 'name_1'
 
-    context = Context.query.get("test_context")
-    assert len(context.cell_line) == 2
-
-    assert len(cell_line_1.context) == 1
-    assert cell_line_1.context[0] == context
+    context = SubtypeContext.get_by_code("test_context")
+    assert context is not None
+    assert len(context.depmap_model) == 2
 
     assert cell_line_1.gender == "new gender"
     assert cell_line_1.source == "new source"
@@ -144,25 +148,30 @@ def test_is_non_empty_string(empty_db_mock_downloads, lineage, expected):
     assert is_non_empty_string(lineage) == expected
 
 
-def test_get_cell_lines_in_context(empty_db_mock_downloads):
+def test_get_models_in_context(empty_db_mock_downloads):
     with transaction():
         load_sample_cell_lines()
+        context_file_path = os.path.join(
+            empty_db_mock_downloads.app.config["LOADER_DATA_DIR"],
+            "cell_line/subtype_contexts.csv",
+        )
+        load_subtype_contexts(context_file_path)
 
-    context_file_path = os.path.join(
-        empty_db_mock_downloads.app.config["LOADER_DATA_DIR"], "cell_line/contexts.csv"
-    )
     bone_cell_lines = {
-        CellLine.query.filter_by(cell_line_name=name).one()
-        for name in [
-            "A673_BONE",
-            "EWS502_BONE",
-            "143B_BONE",
-            "CADOES1_BONE",
-            "TC32_BONE",
+        DepmapModel.query.filter_by(model_id=model_id).one()
+        for model_id in [
+            "ACH-001001",
+            "ACH-000210",
+            "ACH-001205",
+            "ACH-000052",
+            "ACH-000279",
         ]
     }
 
-    assert set(get_cell_lines_in_context(context_file_path)["bone"]) == bone_cell_lines
+    context = SubtypeContext.get_by_code("BONE")
+    assert context is not None
+    model_ids = [model.model_id for model in context.depmap_model]
+    assert sorted(model_ids) == sorted([model.model_id for model in bone_cell_lines])
 
 
 def test_load_context(empty_db_mock_downloads):
@@ -175,25 +184,32 @@ def test_load_context(empty_db_mock_downloads):
         loader_data_dir = empty_db_mock_downloads.app.config["LOADER_DATA_DIR"]
         load_sample_cell_lines()
         # this test relies on have duplicates in this context csv
-        load_contexts(os.path.join(loader_data_dir, "cell_line/contexts.csv"))
+        load_subtype_contexts(
+            os.path.join(loader_data_dir, "cell_line/subtype_contexts.csv")
+        )
 
-    bone_context = Context.query.filter_by(name="bone").one()
+    bone_context = SubtypeContext.query.filter_by(subtype_code="BONE").one()
     bone_cell_lines = [
-        "A673_BONE",
-        "EWS502_BONE",
-        "143B_BONE",
-        "CADOES1_BONE",
-        "TC32_BONE",
+        "ACH-001001",
+        "ACH-000052",
+        "ACH-000210",
+        "ACH-000279",
+        "ACH-001205",
     ]  # no duplicates
 
-    assert sorted(
-        [cell_line.cell_line_name for cell_line in bone_context.cell_line]
-    ) == sorted(bone_cell_lines)
+    assert sorted([model.model_id for model in bone_context.depmap_model]) == sorted(
+        bone_cell_lines
+    )
 
-    cell_line_in_osteo_and_bone = CellLine.query.filter_by(
-        cell_line_name="143B_BONE"
+    cell_line_in_ALKHotspot_ES_and_bone = DepmapModel.query.filter_by(
+        model_id="ACH-001205"
     ).one()
-    osteo_and_bone_contexts = {
-        Context.query.filter_by(name=name).one() for name in ["bone", "osteosarcoma"]
+
+    ALKHotspot_ES_and_bone_contexts = {
+        SubtypeContext.query.filter_by(subtype_code=code).one()
+        for code in ["BONE", "ES", "ALKHotspot"]
     }
-    assert set(cell_line_in_osteo_and_bone.context) == osteo_and_bone_contexts
+    assert (
+        set(cell_line_in_ALKHotspot_ES_and_bone.subtype_context)
+        == ALKHotspot_ES_and_bone_contexts
+    )

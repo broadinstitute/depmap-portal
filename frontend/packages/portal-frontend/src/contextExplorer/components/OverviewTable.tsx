@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import styles from "../styles/ContextExplorer.scss";
 import { CellLineOverview } from "../models/types";
 import WideTable from "@depmap/wide-table";
+import { enabledFeatures } from "@depmap/globals";
 
 interface OverviewTableProps {
   cellLineData: CellLineOverview[];
@@ -47,6 +48,114 @@ function OverviewTable(props: OverviewTableProps) {
     );
   });
 
+  const columns = [
+    {
+      accessor: "cellLineDisplayName",
+      Header: "Cell Line",
+      maxWidth: 800,
+      minWidth: 90,
+      customFilter: renderFilterPlaceholder,
+      Cell: (row: any) => (
+        <>
+          {cellLineUrlRoot ? (
+            <a
+              href={`${cellLineUrlRoot}${displayNameDepmapIdMap.get(
+                row.value
+              )}`}
+              target="_blank"
+              rel="noreferrer"
+              style={{ textDecoration: "underline" }}
+            >
+              {row.value}
+            </a>
+          ) : (
+            <p>{row.value}</p>
+          )}
+        </>
+      ),
+    },
+    {
+      accessor: "lineage",
+      Header: "Lineage",
+      maxWidth: 1000,
+      minWidth: 90,
+      customFilter: renderFilterPlaceholder,
+    },
+    {
+      accessor: "primaryDisease",
+      Header: "Primary Disease",
+      maxWidth: 1000,
+      minWidth: 90,
+      customFilter: renderFilterPlaceholder,
+    },
+    {
+      accessor: "subtype",
+      Header: "Subtype",
+      maxWidth: 1000,
+      minWidth: 90,
+      customFilter: renderFilterPlaceholder,
+    },
+    {
+      accessor: "molecularSubtype",
+      Header: "Molecular Subtype",
+      maxWidth: 1000,
+      minWidth: 90,
+      customFilter: renderFilterPlaceholder,
+    },
+    {
+      accessor: "crispr",
+      Header: "CRISPR",
+      maxWidth: 1000,
+      minWidth: 75,
+      disableFilters: true,
+    },
+    {
+      accessor: "rnai",
+      Header: "RNAi",
+      maxWidth: 1000,
+      minWidth: 75,
+      disableFilters: true,
+    },
+    {
+      accessor: "wes",
+      Header: "WES",
+      maxWidth: 1000,
+      minWidth: 75,
+      disableFilters: true,
+    },
+    {
+      accessor: "wgs",
+      Header: "WGS",
+      maxWidth: 1000,
+      minWidth: 75,
+      disableFilters: true,
+    },
+    {
+      accessor: "rna_seq",
+      Header: "RNASeq",
+      maxWidth: 1000,
+      minWidth: 75,
+      disableFilters: true,
+    },
+    {
+      accessor: "prismRepurposing",
+      Header: "PRISM Repurposing",
+      maxWidth: 1000,
+      minWidth: 75,
+      disableFilters: true,
+    },
+  ];
+
+  if (enabledFeatures.context_explorer_prerelease_datasets) {
+    columns.push({
+      accessor: "prismOncRef",
+      Header: "PRISM OncRef",
+      maxWidth: 1000,
+      minWidth: 75,
+      disableFilters: true,
+    });
+  }
+
   return (
     <div className={styles.plotContainer}>
       <div className={styles.overviewTable}>
@@ -55,103 +164,7 @@ function OverviewTable(props: OverviewTableProps) {
           data={cellLineData}
           allowDownloadFromTableDataWithMenu
           allowDownloadFromTableDataWithMenuFileName="context-explorer-overview.csv"
-          columns={[
-            {
-              accessor: "cellLineDisplayName",
-              Header: "Cell Line",
-              maxWidth: 800,
-              minWidth: 90,
-              customFilter: renderFilterPlaceholder,
-              Cell: (row: any) => (
-                <>
-                  {cellLineUrlRoot ? (
-                    <a
-                      href={`${cellLineUrlRoot}${displayNameDepmapIdMap.get(
-                        row.value
-                      )}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      style={{ textDecoration: "underline" }}
-                    >
-                      {row.value}
-                    </a>
-                  ) : (
-                    <p>{row.value}</p>
-                  )}
-                </>
-              ),
-            },
-            {
-              accessor: "lineage",
-              Header: "Lineage",
-              maxWidth: 1000,
-              minWidth: 90,
-              customFilter: renderFilterPlaceholder,
-            },
-            {
-              accessor: "primaryDisease",
-              Header: "Primary Disease",
-              maxWidth: 1000,
-              minWidth: 90,
-              customFilter: renderFilterPlaceholder,
-            },
-            {
-              accessor: "subtype",
-              Header: "Subtype",
-              maxWidth: 1000,
-              minWidth: 90,
-              customFilter: renderFilterPlaceholder,
-            },
-            {
-              accessor: "molecularSubtype",
-              Header: "Molecular Subtype",
-              maxWidth: 1000,
-              minWidth: 90,
-              customFilter: renderFilterPlaceholder,
-            },
-            {
-              accessor: "crispr",
-              Header: "CRISPR",
-              maxWidth: 1000,
-              minWidth: 75,
-              disableFilters: true,
-            },
-            {
-              accessor: "rnai",
-              Header: "RNAi",
-              maxWidth: 1000,
-              minWidth: 75,
-              disableFilters: true,
-            },
-            {
-              accessor: "wes",
-              Header: "WES",
-              maxWidth: 1000,
-              minWidth: 75,
-              disableFilters: true,
-            },
-            {
-              accessor: "wgs",
-              Header: "WGS",
-              maxWidth: 1000,
-              minWidth: 75,
-              disableFilters: true,
-            },
-            {
-              accessor: "rna_seq",
-              Header: "RNASeq",
-              maxWidth: 1000,
-              minWidth: 75,
-              disableFilters: true,
-            },
-            {
-              accessor: "prism",
-              Header: "PRISM",
-              maxWidth: 1000,
-              minWidth: 75,
-              disableFilters: true,
-            },
-          ]}
+          columns={columns}
           getTrProps={getTrProps}
         />
       </div>

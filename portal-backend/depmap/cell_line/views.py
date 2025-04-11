@@ -137,15 +137,7 @@ def get_cell_line_description_tile_data(model_id: str) -> dict:
         lineage = []
     else:
         lineages = sorted(model.oncotree_lineage, key=lambda x: x.level)
-        lineage = [
-            {
-                "display_name": lineage.display_name,
-                "url": url_for("context.view_context", context_name=lineage.name)
-                if lineage.level < 5
-                else None,  # NOTE: We cannot provide context link for lineage levels 5-6 since context matrix is only built from lineage levels 1-4. Temporary until we are able to include these lineage levels to our context matrix
-            }
-            for lineage in lineages
-        ]
+        lineage = [lineage.display_name for lineage in lineages]
 
     oncotree_lineage = lineage[0] if len(lineage) >= 1 else None
     oncotree_primary_disease = lineage[1] if len(lineage) >= 2 else None
@@ -159,10 +151,7 @@ def get_cell_line_description_tile_data(model_id: str) -> dict:
         "image": image,
         "oncotree_lineage": oncotree_lineage,
         "oncotree_primary_disease": oncotree_primary_disease,
-        "oncotree_subtype_and_code": {
-            "display_name": f"{model.oncotree_subtype} ({model.oncotree_code})",
-            "url": lineage[2]["url"],
-        }
+        "oncotree_subtype_and_code": f"{model.oncotree_subtype} ({model.oncotree_code})"
         if oncotree_subtype
         else None,
         "aliases": [
@@ -224,8 +213,8 @@ def get_lowest_z_scores_response(
     }
 
     if model_id in dataset_df.columns:
-        # filter nulls     
-        dataset_df = dataset_df[np.isfinite(dataset_df[model_id])] 
+        # filter nulls
+        dataset_df = dataset_df[np.isfinite(dataset_df[model_id])]
         # sort the matrix using cell line z-scores
         cell_line_z_scores = convert_to_z_score_matrix(dataset_df)[model_id]
         sorted_index = cell_line_z_scores.sort_values().index
@@ -286,9 +275,7 @@ def download_gene_effects(dataset_type: str, model_id: str):
     return response
 
 
-def get_all_cell_line_gene_effects(
-    dataset_name: str, model_id: str
-) -> pd.DataFrame:
+def get_all_cell_line_gene_effects(dataset_name: str, model_id: str) -> pd.DataFrame:
     """Get all gene effect data related to the cell line. Include five columns:
         gene, gene_effect, z_score, mean, stddev"""
     gene_effect_df = data_access.get_subsetted_df_by_labels(dataset_name)
@@ -328,7 +315,9 @@ def get_all_cell_line_compound_sensitivity(
 ) -> pd.DataFrame:
     """Get all compound sensitivity data related to the cell line. Include five columns:
         compound, compound_sensitivity, z_score, mean, stddev"""
-    sensitivity_df = data_access.get_subsetted_df_by_labels_compound_friendly(dataset_name)
+    sensitivity_df = data_access.get_subsetted_df_by_labels_compound_friendly(
+        dataset_name
+    )
     sensitivity_df = sensitivity_df[np.isfinite(sensitivity_df[model_id])]
 
     result_df = get_stats_for_dataframe(sensitivity_df, model_id)
