@@ -11,9 +11,14 @@ RUN pip3 install poetry==1.8.2
 RUN poetry config virtualenvs.create false 
 
 RUN mkdir /install/breadbox
-# Copy in the config files:
-COPY pyproject.toml poetry.lock /install/breadbox
 
+# Copy files:
+COPY pyproject.toml poetry.lock /install/breadbox
+COPY *.py /install/breadbox
+COPY bb /install/breadbox
+COPY alembic /install/breadbox/alembic
+COPY alembic.ini /install/breadbox
+COPY breadbox /install/breadbox/breadbox
 
 # TOOD: why does this need the breadbox client at all? is it for some github action?
 
@@ -34,9 +39,3 @@ RUN poetry run python --version
 RUN ls
 # TODO: debug why this is failing now
 RUN poetry install 
-
-COPY *.py /install/breadbox
-COPY bb /install/breadbox
-COPY alembic /install/breadbox/alembic
-COPY alembic.ini /install/breadbox
-COPY breadbox /install/breadbox/breadbox
