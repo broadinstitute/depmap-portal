@@ -19,6 +19,7 @@ from breadbox_client.api.datasets import add_dataset_uploads as add_dataset_uplo
 from breadbox_client.api.datasets import get_dataset as get_dataset_client
 from breadbox_client.api.datasets import get_dataset_data as get_dataset_data_client
 from breadbox_client.api.datasets import get_tabular_dataset_data as get_tabular_dataset_data_client
+from breadbox_client.api.datasets import get_matrix_dataset_data as get_matrix_dataset_data_client
 from breadbox_client.api.datasets import get_dataset_features as get_dataset_features_client
 from breadbox_client.api.datasets import get_dataset_samples as get_dataset_samples_client
 from breadbox_client.api.datasets import get_datasets as get_datasets_client
@@ -70,6 +71,7 @@ from breadbox_client.models import (
     MatrixDatasetParamsDatasetMetadataType0,
     MatrixDatasetParamsFormat,
     MatrixDatasetResponse,
+    MatrixDimensionsInfo,
     SampleTypeOut,
     SliceQuery,
     SliceQueryIdentifierType,
@@ -164,6 +166,7 @@ class BBClient:
         samples: Optional[list[str]],
         sample_identifier: Optional[Literal["id", "label"]],
     ) -> pd.DataFrame:
+        """DEPRECATED: Use get_tabular_dataset_data or get_matrix_dataset_data instead."""
         request_params = BodyGetDatasetData.from_dict(
             dict(
                 features=features,
@@ -191,7 +194,6 @@ class BBClient:
         indices: Optional[list[str]],
         strict: bool = False,
     ):
-        
         request_params = TabularDimensionsInfo(
             columns=columns,
             identifier=FeatureSampleIdentifier(identifier) if identifier else UNSET,
@@ -208,6 +210,34 @@ class BBClient:
             return pd.DataFrame.from_dict(response)
         except Exception as e:
             raise Exception(e, "Unable to parse breadbox response into dataframe.")
+
+    def get_matrix_dataset_data(
+        self, 
+        dataset_id: str,
+        features: Optional[list[str]],
+        feature_identifier: Optional[Literal["id", "label"]],
+        samples: Optional[list[str]],
+        sample_identifier: Optional[Literal["id", "label"]],
+        strict = False,
+    ):
+        request_params = MatrixDimensionsInfo(
+            feature_identifier=FeatureSampleIdentifier(feature_identifier) if feature_identifier else UNSET,
+            features=features,
+            sample_identifier=FeatureSampleIdentifier(sample_identifier) if sample_identifier else UNSET,
+            samples=samples,
+        )
+        breadbox_response = get_matrix_dataset_data_client.sync_detailed(
+            dataset_id=dataset_id,
+            client=self.client,
+            body=request_params,
+            strict=strict,
+        )
+        response = self._parse_client_response(breadbox_response)
+        try:
+            return pd.DataFrame.from_dict(response)
+        except Exception as e:
+            raise Exception(e, "Unable to parse breadbox response into dataframe.")
+
 
     def get_dataset_features(self, dataset_id: str) -> list[dict[str, str]]:
         """Get information about each feature belonging to a given dataset."""
