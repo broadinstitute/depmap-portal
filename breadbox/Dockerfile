@@ -4,6 +4,7 @@ FROM us.gcr.io/broad-achilles/depmap-breadbox-base:v2
 RUN apt update && apt upgrade -y
 
 # TODO: update this poetry setup to be more like the portal backend and other repos, seems unnecessarily complex
+# TODO: pin python version using pyenv
 
 # Install poetry:
 RUN pip3 install poetry==1.8.2 
@@ -29,8 +30,10 @@ WORKDIR /install/breadbox
 # You’re already in a virtual environment by using a docker image
 RUN poetry config virtualenvs.create false
 # Install dependencies:
-RUN poetry install
 RUN poetry run python --version
+RUN ls
+# TODO: debug why this is failing now
+RUN poetry install 
 
 COPY *.py /install/breadbox
 COPY bb /install/breadbox
