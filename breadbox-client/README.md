@@ -4,7 +4,7 @@ A python client library for interacting with the Breadbox API.
 
 This includes both an auto-generated `breadbox_client` module and a human-curated `breadbox_facade` which defines a more user-friendly interface for the client. 
 
-## Quick Start for Client Users
+## Quick Start for client users
 
 Reading data from the public DepMap portal does not require authentication, and is a good place to get started. 
 
@@ -34,6 +34,8 @@ df = client.get_tabular_dataset_data(dataset_id={some_other_dataset_id})
 ```
 
 _Note: Not all breadbox endpoints are available through the easy-to-use "breadbox_facade" portion of the client. This is under active development and will continue to improve._
+
+You can view the full list of available `breadbox_facade` methods [here](./breadbox_facade/client.py).
 
 # Guide for Breadbox Developers:
 
@@ -115,7 +117,7 @@ installed by brew and when using `poetry self ...` it's not updating the
 environment in the right directory. `poetry self update` flat out aborts
 saying it cannot do that when installed via brew.)
 
-## Advanced Usage
+# Advanced Client Usage
 
 If the endpoints you're going to hit require authentication, use `AuthenticatedClient` instead:
 
