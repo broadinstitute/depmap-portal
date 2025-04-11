@@ -1,9 +1,41 @@
 # The Breadbox Client
 
-A client library for accessing Breadbox
+A python client library for interacting with the Breadbox API. 
 
-Includes both an auto-generated `breadbox_client` module and a human-curated `breadbox_facade` which defines a more user-friendly interface for the client. 
+This includes both an auto-generated `breadbox_client` module and a human-curated `breadbox_facade` which defines a more user-friendly interface for the client. 
 
+## Quick Start for Client Users
+
+Reading data from the public DepMap portal does not require authentication, and is a good place to get started. 
+
+### Install the breadbox-client package:
+
+```
+poetry source add --priority=supplemental public-python https://us-central1-python.pkg.dev/cds-artifacts/public-python/simple/
+poetry add --source public-python breadbox-client
+```
+
+### Read data from the public portal
+
+```python
+from breadbox_facade import BBClient
+
+# First, instantiate the client:
+client = BBClient(base_url="https://depmap.org/portal/breadbox/", user="someusername")
+
+# View the full list datasets we have available: 
+datasets = client.get_datasets()
+
+# Load the full contents of a matrix dataset into a pandas dataframe
+df = client.get_matrix_dataset_data(dataset_id={some_dataset_id})
+
+# Or, get the contents of a tabular dataset (our metadata is stored in tabular datasets)
+df = client.get_tabular_dataset_data(dataset_id={some_other_dataset_id})
+```
+
+_Note: Not all breadbox endpoints are available through the easy-to-use "breadbox_facade" portion of the client. This is under active development and will continue to improve._
+
+# Guide for Breadbox Developers:
 
 ## Auto-Generating the breadbox_client
 When changes are merged to master, the `breadbox-client/breadbox_client` directory will be auto-generated before the breadbox-client module is published.
@@ -83,37 +115,7 @@ installed by brew and when using `poetry self ...` it's not updating the
 environment in the right directory. `poetry self update` flat out aborts
 saying it cannot do that when installed via brew.)
 
-## Usage
-
-### To install this module outside this repo:
-
-```
-poetry source add --priority=supplemental public-python https://us-central1-python.pkg.dev/cds-artifacts/public-python/simple/
-poetry add --source public-python breadbox-client
-```
-
-First, create a client:
-
-```python
-from breadbox_facade import BBClient
-
-client = BBClient(base_url="https://depmap.org/portal/breadbox/", user="someusername")
-
-
-# If you're connnecting to the public portal or a local instance, you can now go ahead and use the client.
-# For example:
-datasets = client.get_datasets()
-dimension_types = client.get_dimension_types()
-
-# If you wanted to get the metadata for a particular gene, you could do something like:
-df = client.get_tabular_dataset_data(
-    dataset_id=dataset_id, # The ID of the gene metadata dataset
-    columns=None,
-    identifier="label",
-    indices=[gene_name], # This will filter the result to just the gene you're interested in
-    strict=True,
-)
-```
+## Advanced Usage
 
 If the endpoints you're going to hit require authentication, use `AuthenticatedClient` instead:
 
