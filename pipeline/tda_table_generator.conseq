@@ -50,7 +50,6 @@ rule generate_tda_table:
         ########################################################################################
 
         common_essentials_crispr_df = pd.read_csv("{{ inputs.crispr_ce.filename }}")
-        common_essentials_crispr_df = common_essentials_crispr_df.drop("CE_percentile", axis=1)
         common_essentials_crispr_df = common_essentials_crispr_df.rename(columns={'Common_Essential': 'CRISPR_PanDependency'})
 
         common_essentials_rnai_df = pd.read_csv("{{ inputs.rnai_ce.filename }}")
