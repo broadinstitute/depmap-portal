@@ -193,7 +193,7 @@ def get_subsetted_tabular_dataset_df(
     If either indices or columns are not specified, return all indices or columns
     By default, if indices and identifier not specified, then dimension ids are used as identifier
     """
-    if not user_has_access_to_group(dataset.group, user, write_access=True):
+    if not user_has_access_to_group(dataset.group, user, write_access=False):
         raise DatasetAccessError(f"User {user} does not have access to dataset")
 
     # If labels were given as the filter, get the corresponding set of given ids
