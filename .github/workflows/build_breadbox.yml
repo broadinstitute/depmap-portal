@@ -21,7 +21,6 @@ on:
       - "peddep*"
       - "dmc*"
       - "external*"
-      - "test*"
 
 permissions:
   contents: write
