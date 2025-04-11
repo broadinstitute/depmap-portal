@@ -1,17 +1,10 @@
 import React, { useEffect, useRef } from "react";
 import { BOX_THICKNESS, getNewContextUrl } from "src/contextExplorer/utils";
-import ExtendedPlotType from "../models/ExtendedPlotType";
-import PlotlyLoader, { PlotlyType } from "./PlotlyLoader";
-
-export interface BoxPlotInfo {
-  name: string;
-  hoverLabels: string[];
-  xVals: number[];
-  color: { r: number; b: number; g: number; a?: number };
-  lineColor: string;
-  pointLineColor?: string;
-  code?: string;
-}
+import ExtendedPlotType from "../../../plot/models/ExtendedPlotType";
+import PlotlyLoader, {
+  PlotlyType,
+} from "../../../plot/components/PlotlyLoader";
+import { BoxPlotInfo } from "src/contextExplorer/models/types";
 
 export interface BoxPlotProps {
   plotName: string;

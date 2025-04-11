@@ -1,5 +1,3 @@
-import { BoxPlotInfo } from "src/plot/components/BoxPlot";
-
 export enum ContextExplorerDatasets {
   Chronos_Combined = "Chronos_Combined",
   Rep_all_single_pt = "Rep_all_single_pt",
@@ -226,7 +224,17 @@ export interface EnrichedLineagesTileData {
   context_explorer_url: string;
 }
 
-export interface OtherBoxCardData {
+export interface BoxPlotInfo {
+  name: string;
+  hoverLabels: string[];
+  xVals: number[];
+  color: { r: number; b: number; g: number; a?: number };
+  lineColor: string;
+  pointLineColor?: string;
+  code?: string;
+}
+
+export interface OtherSignificantBoxCardData {
   [key: string]: {
     levelZeroPlotInfo: BoxPlotInfo;
     subContextInfo: BoxPlotInfo[];

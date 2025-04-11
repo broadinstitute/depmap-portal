@@ -6,7 +6,7 @@ import {
   ContextExplorerDatasets,
   EnrichedLineagesTileData,
 } from "../models/types";
-import CollapsibleBoxPlots from "./contextAnalysis/CollapsibleBoxPlots";
+import CollapsibleBoxPlots from "./boxPlots/CollapsibleBoxPlots";
 
 interface EnrichmentTileProps {
   entityLabel: string;

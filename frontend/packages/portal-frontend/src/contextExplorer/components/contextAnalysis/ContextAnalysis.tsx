@@ -52,7 +52,7 @@ import { getDapi } from "src/common/utilities/context";
 import { Button } from "react-bootstrap";
 import useContextExplorerFilters from "src/contextExplorer/hooks/useContextExplorerFilters";
 import DoseCurvesTile from "./DoseCurvesTile";
-import CollapsibleBoxPlots from "./CollapsibleBoxPlots";
+import CollapsibleBoxPlots from "../boxPlots/CollapsibleBoxPlots";
 import { calcMinMax } from "@depmap/data-explorer-2/src/components/DataExplorerPage/components/plot/prototype/plotUtils";
 
 interface ContextAnalysisProps {

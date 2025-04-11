@@ -413,7 +413,9 @@ def get_organized_contexts(
     assert node is not None
     level_0 = node.level_0
     node_entity_data = _get_node_entity_data(
-        dataset_name=dataset_name, entity_id=entity_id, entity_label=entity_label
+        dataset_name=dataset_name,
+        entity_type=entity_type,
+        entity_full_label=entity_label,
     )
 
     entity_full_row_of_values = node_entity_data.entity_full_row_of_values
