@@ -1,6 +1,6 @@
 rule format_gene_dep_csv:
     inputs:
-        data={'type': 'dep-matrix', 'label' ~ 'Chronos_Combined|Chronos_Achilles|Chronos_Score|RNAi_merged|CERES_Combined|Sanger_CRISPR|Avana'},
+        data={'type': 'dep-matrix', 'label' ~ 'Chronos_Combined|Chronos_Achilles|RNAi_merged|CERES_Combined|Avana'},
         hdf5_utils=fileref("scripts/hdf5_utils.py", copy_to="hdf5_utils.py")
     outputs:
         {'type': 'dep-matrix-csv', 

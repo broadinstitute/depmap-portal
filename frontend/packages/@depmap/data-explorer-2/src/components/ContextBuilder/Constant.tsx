@@ -21,8 +21,8 @@ function Constant({
     <PlotConfigSelect
       show
       enable={Boolean(options)}
-      hasError={shouldShowValidation && !expr}
-      value={expr || null}
+      hasError={shouldShowValidation && expr === null}
+      value={expr ?? null}
       onChange={(value) => {
         dispatch({
           type: "update-value",
