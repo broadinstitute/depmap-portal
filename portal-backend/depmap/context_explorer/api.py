@@ -19,9 +19,9 @@ import pandas as pd
 from depmap.settings.shared import DATASET_METADATA
 from depmap.context_explorer.models import (
     ContextAnalysis,
-    ContextNameInfo,
     ContextNode,
     ContextPlotBoxData,
+    ContextNameInfo,
     EnrichedLineagesTileData,
 )
 from depmap.context.models_new import SubtypeNode, TreeType
@@ -111,8 +111,8 @@ def _get_context_summary(tree_type: str):
         )
 
     summary = {
-        "values": sorted_summary_df.values.tolist()[::-1],
-        "data_types": sorted_summary_df.index.values.tolist()[::-1],
+        "values": sorted_summary_df.values.tolist(),
+        "data_types": sorted_summary_df.index.values.tolist(),
     }
 
     summary["all_depmap_ids"] = [
@@ -589,6 +589,10 @@ class ContextNodeName(
     def get(self):
         # Note: docstrings to restplus methods end up in the swagger documentation.
         # DO NOT put a docstring here that you would not want exposed to users of the API. Use # for comments instead
+        """
+        List of available context trees as a dictionary with keys as each available non-terminal node, and values
+        as each available branch off of the key-node
+        """
         subtype_code = request.args.get("subtype_code")
         node = SubtypeNode.get_by_code(subtype_code, must=False)
 

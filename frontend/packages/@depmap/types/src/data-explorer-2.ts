@@ -147,6 +147,7 @@ export interface DataExplorerPlotResponse {
         label: string;
         slice_id: string;
         values: (string | number)[];
+        value_type: "categorical" | "binary";
       }
     >
   >;

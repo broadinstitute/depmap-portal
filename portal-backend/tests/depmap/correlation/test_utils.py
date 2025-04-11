@@ -36,7 +36,7 @@ def test_get_all_correlations(tmpdir, empty_db_mock_downloads):
         name=DependencyDataset.DependencyEnum.Avana, matrix=matrix_1
     )
     dataset_2 = DependencyDatasetFactory(
-        name=DependencyDataset.DependencyEnum.GeCKO, matrix=matrix_2
+        name=DependencyDataset.DependencyEnum.Chronos_Achilles, matrix=matrix_2
     )
 
     cor1_filename = str(tmpdir.join("cor.sqlite3"))

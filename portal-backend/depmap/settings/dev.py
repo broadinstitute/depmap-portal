@@ -10,10 +10,6 @@ additional_dev_metadata = {
         "matrix_file_name_root": "dataset/chronos_achilles",
         "taiga_id": "placeholder-taiga-id.1",
     },
-    DependencyEnum.Chronos_Score: {
-        "matrix_file_name_root": "dataset/chronos_score",
-        "taiga_id": "placeholder-taiga-id.1",
-    },
     DependencyEnum.CERES_Combined: {
         "matrix_file_name_root": "dataset/ceres_combined",
         "taiga_id": "small-ceres-combined-3dc6.1/ceres_combined_score",
@@ -21,14 +17,6 @@ additional_dev_metadata = {
     DependencyEnum.Avana: {
         "matrix_file_name_root": "dataset/avana",
         "taiga_id": "small-avana-virtual-dataset-86d8.1/avana_score",  # is virtual to small-avana-f2b9.2/avana_score, includes dataset name for testing. in prod the avana loader input will be canonical, but this simulates other datasets that may not go through pipeline re-writing. avana has loader input virtual, versions and downloads canonical
-    },
-    DependencyEnum.Sanger_CRISPR: {
-        "matrix_file_name_root": "dataset/avana",
-        "taiga_id": "placeholder-taiga-id.1",
-    },
-    DependencyEnum.GeCKO: {
-        "matrix_file_name_root": "dataset/gecko",
-        "taiga_id": "small-gecko-aff0.1",  # has virtual to small-gecko-virtual-dataset-4fe6.1. gecko has versions and downloads virtual, db canonical
     },
     DependencyEnum.RNAi_Ach: {
         "matrix_file_name_root": "dataset/rnai_ach",

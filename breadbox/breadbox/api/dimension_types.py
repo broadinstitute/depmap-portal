@@ -1,17 +1,18 @@
 from typing import List, Optional, Literal, Union, Annotated
 from logging import getLogger
-from uuid import UUID, uuid4
-from collections import defaultdict
 from fastapi import (
     APIRouter,
     Body,
     Depends,
     File,
     Form,
+    Header,
     HTTPException,
     UploadFile,
     Query,
+    Request,
 )
+
 from breadbox.models.dataset import Dataset
 from breadbox.models.dataset import DimensionType as DimensionTypeModel
 from breadbox.schemas.types import IdMappingInsanity
@@ -40,6 +41,7 @@ from breadbox.schemas.types import (
     AddDimensionType,
     DimensionIdentifiers,
 )
+from breadbox.api.utils import get_response_with_etag, hash_id_list
 from breadbox.service import metadata as metadata_service
 from breadbox.db.util import transaction
 
@@ -627,19 +629,52 @@ def get_dimension_type_identifiers(
     show_only_dimensions_in_datasets: Annotated[bool, Query()] = False,
     limit: Annotated[Union[int, None], Query()] = None,
     db: SessionWithUser = Depends(get_db_with_user),
+    if_none_match: Optional[List[str]] = Header(None), # etag from the client's cache
 ):
+    """
+    For the given dimension type and filters, get all given IDs and labels.
+    If the `data_type` is given and/or `show_only_dimensions_in_datasets` is True, the dimension identifiers that are returned will only be those that are used within a dataset.
+    If `show_only_dimensions_in_datasets` is True, dimension identifiers within datasets, excluding the dimension type metadata, are returned
+    If neither `data_type` is given nor `show_only_dimensions_in_datasets` is True, all dimension identifiers from the given dimension type are returned.
+    """
     dim_type = type_crud.get_dimension_type(db, name)
     if dim_type is None:
         raise HTTPException(404, f"Dimension type {name} not found")
+    
+    filtered_dataset_ids: Optional[list[str]] = None
+    if data_type is not None or show_only_dimensions_in_datasets:
+        # Get subset of datasets matching the filters provided that the user has access to
+        filtered_datasets = get_datasets(
+            db,
+            db.user,
+            feature_type=dim_type.name if dim_type.axis == "feature" else None,
+            sample_type=dim_type.name if dim_type.axis == "sample" else None,
+            data_type=data_type,
+        )
+        filtered_dataset_ids = [dataset.id for dataset in filtered_datasets]
 
-    dimension_ids_and_labels = metadata_service.get_dimension_type_identifiers(
-        db, dim_type, data_type, show_only_dimensions_in_datasets, limit=limit,
+        if show_only_dimensions_in_datasets:
+            # Remove the metadata dataset if it's in our list of datasets 
+            filtered_dataset_ids = [dataset_id for dataset_id in filtered_dataset_ids if dataset_id != dim_type.dataset_id]
+    
+    # Create an ETag based on the dimension type and the filtered dataset IDs
+    etag = hash_id_list(
+        [dim_type.name] +
+        ([dim_type.dataset_id] if dim_type.dataset_id else []) + 
+        (sorted(filtered_dataset_ids) if filtered_dataset_ids else [])
     )
 
-    return [
-        DimensionIdentifiers(id=id, label=label)
-        for id, label in dimension_ids_and_labels.items()
-    ]
+    def _get_response_content() -> list[DimensionIdentifiers]:
+        dimension_ids_and_labels = metadata_service.get_dimension_type_identifiers(
+            db, dim_type, filtered_dataset_ids, limit=limit,
+        )
+        return [
+            DimensionIdentifiers(id=id, label=label)
+            for id, label in sorted(dimension_ids_and_labels.items())
+        ]
+        
+    return get_response_with_etag(etag, if_none_match, _get_response_content)
+
 
 
 @router.patch(

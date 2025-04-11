@@ -77,6 +77,7 @@ def get_entity_id_from_entity_full_label(
         gene = Gene.get_gene_by_entrez(entrez_id)
         assert gene is not None
         label = gene.label
+        entity_overview_page_label = gene.label
         entity = gene
         entity_id = entity.entity_id
     else:
@@ -84,6 +85,13 @@ def get_entity_id_from_entity_full_label(
             entity_full_label=entity_full_label
         )
         entity_id = compound_experiment.entity_id
-        label = Compound.get_by_entity_id(entity_id).label
+        label = CompoundExperiment.get_by_entity_id(entity_id).label
+        entity_overview_page_label = Compound.get_by_id(
+            compound_experiment.compound_id
+        ).label
 
-    return {"entity_id": entity_id, "label": label}
+    return {
+        "entity_id": entity_id,
+        "label": label,
+        "entity_overview_page_label": entity_overview_page_label,
+    }
