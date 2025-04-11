@@ -97,12 +97,12 @@ jobs:
           yarn --cwd frontend "build:elara"
       - name: build docker image
         run: bash breadbox/build-docker-image.sh ${{ env.DOCKER_REPO }}:${{ env.DOCKER_TAG }}
+      - name: Check python version
+        run: |
+          docker run -v $PWD/breadbox/pyright-ratchet-errors.txt:/install/breadbox/pyright-ratchet-errors.txt ${{ env.DOCKER_REPO }}:${{ env.DOCKER_TAG }} poetry run python --version
       - name: Run pyright-ratchet
         run: |
           docker run -v $PWD/breadbox/pyright-ratchet-errors.txt:/install/breadbox/pyright-ratchet-errors.txt ${{ env.DOCKER_REPO }}:${{ env.DOCKER_TAG }} poetry run pyright-ratchet
-      - name: Run pyright-ratchet
-        run: |
-          docker run -v $PWD/breadbox/pyright-ratchet-errors.txt:/install/breadbox/pyright-ratchet-errors.txt ${{ env.DOCKER_REPO }}:${{ env.DOCKER_TAG }} poetry run python --version
       - name: Push Docker image
         run: docker push ${{ env.DOCKER_REPO }}:${{ env.DOCKER_TAG }}
 

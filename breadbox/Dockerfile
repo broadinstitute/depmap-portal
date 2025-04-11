@@ -6,7 +6,8 @@ RUN apt update && apt upgrade -y
 # TODO: update this poetry setup to be more like the portal backend and other repos, seems unnecessarily complex
 
 # Install poetry:
-RUN pip install poetry==1.8.2 && poetry config virtualenvs.create false 
+RUN pip3 install poetry==1.8.2 
+RUN poetry config virtualenvs.create false 
 
 RUN mkdir /install/breadbox
 # Copy in the config files:
