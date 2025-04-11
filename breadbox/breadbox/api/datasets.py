@@ -396,6 +396,10 @@ def get_dataset_data(
     ] = None,
 ):
     """Get dataset dataframe subset given the features and samples. Filtering should be possible using either labels (cell line name, gene name, etc.) or ids (depmap_id, entrez_id, etc.). If features or samples are not specified, return all features or samples"""
+    if dataset.format != "matrix_dataset":
+        raise HTTPException(
+            400, "This endpoint only supports matrix_datasets. Use the `/tabular` endpoint instead."
+        )
     try:
         dim_info = MatrixDimensionsInfo(
             features=features,
