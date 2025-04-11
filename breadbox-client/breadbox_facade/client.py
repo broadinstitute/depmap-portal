@@ -189,9 +189,9 @@ class BBClient:
     def get_tabular_dataset_data(
         self, 
         dataset_id: str,
-        columns: Optional[list[str]],
-        identifier: Optional[Literal["id", "label"]],
-        indices: Optional[list[str]],
+        columns: Optional[list[str]] = None,
+        identifier: Optional[Literal["id", "label"]] = None,
+        indices: Optional[list[str]] = None,
         strict: bool = False,
     ):
         request_params = TabularDimensionsInfo(
@@ -214,10 +214,10 @@ class BBClient:
     def get_matrix_dataset_data(
         self, 
         dataset_id: str,
-        features: Optional[list[str]],
-        feature_identifier: Optional[Literal["id", "label"]],
-        samples: Optional[list[str]],
-        sample_identifier: Optional[Literal["id", "label"]],
+        features: Optional[list[str]] = None,
+        feature_identifier: Optional[Literal["id", "label"]] = None,
+        samples: Optional[list[str]] = None,
+        sample_identifier: Optional[Literal["id", "label"]] = None,
         strict = False,
     ):
         request_params = MatrixDimensionsInfo(
