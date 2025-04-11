@@ -44,6 +44,9 @@ rule common_essentials:
         script=fileref('scripts/tda/CE_percentile_rank_analysis.py')
     outputs:
         {'type': 'common-essentials', 'label': '{{ inputs.data.label }}', 'filename': {'$filename': 'ce.csv'} }
+    # The data.label is only used to check for Chronos_Combined since that is directly being retrieved from taiga
+    # instead of being calculated here. However, running it this way preserves the ability to still keeping the output
+    # file and the label in sync for the downstream rules.
     run "python3 {{ inputs.script.filename }} {{ inputs.data.label }} {{ inputs.crispr_inferred_common_essentials.filename }} {{ inputs.data.filename }} ce.csv"
 
 
