@@ -16,6 +16,10 @@ rule format_gene_dep_csv:
         df.to_csv("deps.csv",index_label="Row.name")
     """
 
+# This rule only exists to get the CRISPRInferredCommonEssentials dataset from taiga and save it to a file
+# so that it can be used by the common_essentials rule later. It is being done this way because the common_essentials
+# rule is being run inside a docker container, which doesn't have taigapy installed and it seems to be the 
+# least painful way to get around that other than not using dsub for common_essentials rule. 
 rule get_crispr_inferred_common_essentials:
     inputs:
         crispr_inferred_common_essentials={'type': 'crispr-inferred-common-essentials'}
