@@ -509,6 +509,14 @@ def get_hardcoded_metadata_slices():
         "isBreadboxMetadata": True,
     }
 
+    model_slices["slice/Context_Matrix/"] = {
+        "name": "Context Matrix",
+        "valueType": "binary",
+        "isPartialSliceId": True,
+        "sliceTypeLabel": "Subtype Code",
+        "isBreadboxMetadata": True,
+    }
+
     return _hardcoded_metadata_slices
 
 
