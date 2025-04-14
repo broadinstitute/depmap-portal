@@ -170,8 +170,8 @@ function ContextAnalysisTable(props: ContextAnalysisTableProps) {
           id: "fractionInContextLinesDependent",
           Header:
             entityType === "gene"
-              ? "% of in-context lines dependent"
-              : "% of in-context lines sensitive",
+              ? "Fraction of in-context lines dependent"
+              : "Fraction in-context lines sensitive",
           maxWidth: 90,
           minWidth: 90,
 
@@ -182,8 +182,8 @@ function ContextAnalysisTable(props: ContextAnalysisTableProps) {
           id: "fractionOutGroupLinesDependent",
           Header:
             entityType === "gene"
-              ? "% of out-group lines dependent"
-              : "% of out-group lines sensitive",
+              ? "Fraction of out-group lines dependent"
+              : "Fraction of out-group lines sensitive",
           maxWidth: 90,
           minWidth: 90,
           disableFilters: true,
