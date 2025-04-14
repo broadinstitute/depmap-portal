@@ -210,6 +210,11 @@ def resources():
     return render_template("public/resources.html", root_category=root_category,)
 
 
+@blueprint.route("/peddep")
+def peddep():
+    return render_template("public/peddep.html")
+
+
 # DMC Only
 @blueprint.route("/dmc_symposia/")
 def dmc_symposia():
