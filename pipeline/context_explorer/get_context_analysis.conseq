@@ -13,6 +13,7 @@ rule get_context_analysis:
         compound_summary_repurposing={"type": "compound-summary", "dataset": "Rep_all_single_pt"},
         compound_summary_oncref={"type": "compound-summary", "dataset": "Prism_oncology_AUC"},
         tda_table={"type":"tda-table"},
+        workflow=fileref("parallelized_get_context_analysis.json")
     outputs:
         {"type": "context_analysis", "filename": { "$filename": "context_analysis.csv"} }
     run "python3" with """
@@ -43,7 +44,24 @@ rule get_context_analysis:
             artifact = by_type.get(type_name)
             transformed[dest_name] = [ artifact ] if artifact is not None else []
 
+        raise Exception("todo: transformed needs to map filenames to the parameters below")
+
         with open("inputs.json", "wt") as fd:
             fd.write(json.dumps(transformed, indent=2))
+
     """
-    run """ python {{ inputs.script.filename }} inputs.json context_analysis.csv """
+    run """sparkles --config sparkles-config \
+      workflow run test-context-analysis \
+     --add-hash-to-job-id \
+     --retry \
+     --nodes 10 \
+     -p batches=10 \
+     -u inputs.json \
+     -u ~/.taiga/token:.taiga-token \
+     -u {{ inputs.script.filename }}:get_context_analysis.py \
+     -u {{ }}:rep-cpmd-sum \
+     -u {{ }}:oncref-cpmd-sum \
+     -u {{ }}:tda-table \
+     {{ inputs.workflow }}
+"""
+    run """gsutil cp `cat results_path.txt` context_analysis.csv """

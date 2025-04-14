@@ -1,0 +1,47 @@
+{
+  "files_to_localize": ["get_context_analysis.py", ".taiga-token"],
+  "steps": [
+    {
+      "command": [
+        "python3",
+        "./get_context_analysis.py",
+        "prepare-batches",
+        "inputs.json",
+        "{step.1.job_path}/1/temp",
+        "{batches}"
+      ],
+      "files_to_localize": [
+        "inputs.json",
+        "rep-cpmd-sum",
+        "oncref-cpmd-sum",
+        "tda-table"
+      ]
+    },
+    {
+      "parameters_csv": "{step.1.job_path}/1/temp/batches.csv",
+      "command": [
+        "python3",
+        "./get_context_analysis.py",
+        "run-batch",
+        "{step.1.job_path}/1/temp",
+        "{parameter.start_index}",
+        "{parameter.end_index}"
+      ]
+    },
+    {
+      "command": [
+        "python3",
+        "./get_context_analysis.py",
+        "gather-batches",
+        "{step.1.job_path}/1/temp",
+        "{step.1.job_path}/1/results.csv"
+      ]
+    }
+  ],
+  "write_on_completion": [
+    {
+      "expression": "{step.1.job_path}/1/results.csv",
+      "filename": "results_path.txt"
+    }
+  ]
+}
