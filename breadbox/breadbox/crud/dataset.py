@@ -462,7 +462,7 @@ def get_matrix_dataset_features(
     return dataset_features
 
 
-def get_matrix_dataset_samples( 
+def get_matrix_dataset_samples(
     db: SessionWithUser, dataset: MatrixDataset
 ) -> list[DatasetSample]:
     assert_user_has_access_to_dataset(dataset, db.user)
@@ -805,8 +805,8 @@ def get_unique_dimension_ids_from_datasets(
 
     # Get all matrix dimensions for that dimension type
     matrix_given_ids = {
-        given_id for (given_id,) in
-        db.query(distinct(matrix_dimension_class.given_id))
+        given_id
+        for (given_id,) in db.query(distinct(matrix_dimension_class.given_id))
         .filter(
             and_(
                 Dimension.dataset_id.in_(dataset_ids),
@@ -817,8 +817,8 @@ def get_unique_dimension_ids_from_datasets(
     }
     # Get all tabular identifiers for that dimension type
     tabular_given_ids = {
-        given_id for (given_id,) in
-        db.query(TabularColumn)
+        given_id
+        for (given_id,) in db.query(TabularColumn)
         .filter(
             and_(
                 TabularColumn.dataset_id.in_(dataset_ids),
@@ -836,11 +836,11 @@ def get_unique_dimension_ids_from_datasets(
 
 
 def get_metadata_used_in_matrix_dataset(
-    db: SessionWithUser, 
+    db: SessionWithUser,
     dimension_type: DimensionType,
-    matrix_dataset: MatrixDataset, 
+    matrix_dataset: MatrixDataset,
     dimension_subtype_cls: Union[Type[DatasetFeature], Type[DatasetSample]],
-    metadata_col_name: str
+    metadata_col_name: str,
 ) -> dict[str, str]:
     """
     For the given matrix dataset, load a column from the associated metadata.
@@ -851,8 +851,8 @@ def get_metadata_used_in_matrix_dataset(
     assert_user_has_access_to_dataset(matrix_dataset, db.user)
     matrix_dataset_id = matrix_dataset.id
 
-    # Using a subquery makes this MUCH faster than two separate queries would be 
-    # because it reduces the number of rows that need to be fetched and constructed 
+    # Using a subquery makes this MUCH faster than two separate queries would be
+    # because it reduces the number of rows that need to be fetched and constructed
     # into python objects (which is usually by far the slowest part of SQLAlchemy queries).
     given_id_subquery = (
         db.query(dimension_subtype_cls.given_id)

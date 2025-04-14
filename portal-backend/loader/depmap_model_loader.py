@@ -43,7 +43,7 @@ def insert_cell_lines(df):
 
         cell_line = CellLine.get_by_depmap_id(model_id)
 
-        cell_line_name = row["CellLineName"]
+        cell_line_name = _coerce_na(row["CellLineName"])
         oncotree_primary_disease = _coerce_na(row["OncotreePrimaryDisease"])
         oncotree_subtype = _coerce_na(row["OncotreeSubtype"])
         oncotree_code = _coerce_na(row["OncotreeCode"])
