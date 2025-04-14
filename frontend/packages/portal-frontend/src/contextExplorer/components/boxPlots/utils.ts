@@ -5,18 +5,16 @@ import {
   ContextPlotBoxData,
 } from "src/contextExplorer/models/types";
 
-export const EntityBoxColorList = [
-  { r: 53, g: 15, b: 138 },
-  { r: 170, g: 51, b: 106 },
-  { r: 0, g: 109, b: 91 },
-  { r: 233, g: 116, b: 81 },
-  { r: 139, g: 0, b: 0 },
-  { r: 254, g: 52, b: 126 },
-  { r: 0, g: 100, b: 0 },
-  { r: 138, g: 154, b: 91 },
-  { r: 152, g: 251, b: 152 },
-  { r: 138, g: 43, b: 226 },
-  { r: 0, g: 191, b: 255 },
+export const GeneEntityBoxColorList = [
+  { r: 53, g: 132, b: 181 },
+  { r: 58, g: 123, b: 195 },
+  { r: 82, g: 40, b: 142 },
+  { r: 123, g: 140, b: 178 },
+];
+
+export const CompoundEntityBoxColorList = [
+  { r: 102, g: 153, b: 51 },
+  { r: 102, g: 153, b: 51 },
 ];
 
 export const InsignificantColor = { r: 255, g: 255, b: 255 };
@@ -25,7 +23,12 @@ const formatBoxData = (
   boxData: BoxData[],
   insigBoxData: BoxData,
   levelZeroCode: string,
-  count: number
+  count: number,
+  EntityBoxColorList: {
+    r: number;
+    g: number;
+    b: number;
+  }[]
 ) => {
   const formattedBoxData: BoxPlotInfo[] = [];
 
@@ -68,7 +71,12 @@ const formatBoxData = (
 
 export function formatSignificantBoxPlotDataCards(
   boxPlotData: ContextPlotBoxData,
-  boxCardCount: number
+  boxCardCount: number,
+  EntityBoxColorList: {
+    r: number;
+    g: number;
+    b: number;
+  }[]
 ) {
   let startingBoxCardCount = boxCardCount;
   const formattedCards = boxPlotData.other_cards.map(
@@ -93,7 +101,8 @@ export function formatSignificantBoxPlotDataCards(
             cardData.significant,
             cardData.insignificant,
             cardData.level_0_code,
-            startingBoxCardCount
+            startingBoxCardCount,
+            EntityBoxColorList
           ),
         },
       };

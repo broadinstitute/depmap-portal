@@ -12,7 +12,8 @@ import { OtherSolidAndHemeBoxPlots } from "./OtherSolidAndHemeBoxPlotCard";
 import { SelectedContextBoxPlotPanel } from "./SelectedContextBoxPlotPanel";
 import { SignificantBoxPlotCardPanel } from "./SignificantBoxPlotCardPanel";
 import {
-  EntityBoxColorList,
+  GeneEntityBoxColorList,
+  CompoundEntityBoxColorList,
   formatSignificantBoxPlotDataCards,
   InsignificantColor,
 } from "./utils";
@@ -51,11 +52,12 @@ function CollapsibleBoxPlots({
   const [otherBoxData, setOtherBoxData] = useState<BoxPlotInfo[]>([]);
 
   const drugDottedLine = boxPlotData?.drug_dotted_line;
+  const EntityBoxColorList =
+    entityType === "gene" ? GeneEntityBoxColorList : CompoundEntityBoxColorList;
 
   useEffect(() => {
     if (boxPlotData) {
       const plotInfo: BoxPlotInfo[] = [];
-      let boxCardCount = 0;
 
       boxPlotData.significant_selection?.forEach((plotData) => {
         if (plotData.data.length > 0) {
@@ -67,7 +69,7 @@ function CollapsibleBoxPlots({
               name: plotData.label,
               hoverLabels: plotData.cell_line_display_names,
               xVals: plotData.data,
-              color: { ...EntityBoxColorList[boxCardCount], a: 0.4 },
+              color: { ...EntityBoxColorList[0], a: 0.4 },
               lineColor: "#000000",
             });
           } else {
@@ -76,7 +78,7 @@ function CollapsibleBoxPlots({
               hoverLabels: plotData.cell_line_display_names,
               xVals: plotData.data,
               color: {
-                ...EntityBoxColorList[boxCardCount],
+                ...EntityBoxColorList[0],
                 a: 0.4,
               },
               lineColor: "#000000",
@@ -85,7 +87,7 @@ function CollapsibleBoxPlots({
           }
         }
       });
-      boxCardCount += 1;
+      let boxCardCount = 1;
 
       const insigPlotData = boxPlotData.insignificant_selection;
       let otherPlot;
@@ -107,7 +109,8 @@ function CollapsibleBoxPlots({
       if (boxPlotData.other_cards) {
         const otherBoxCards = formatSignificantBoxPlotDataCards(
           boxPlotData,
-          boxCardCount
+          boxCardCount,
+          EntityBoxColorList
         );
 
         setOtherSigBoxData(otherBoxCards);
@@ -173,8 +176,8 @@ function CollapsibleBoxPlots({
 
     const allData = [...sigSelectedData, ...sigOtherData];
 
-    const max = Math.max(...allData);
-    const min = Math.min(...allData);
+    const max = Math.max(...allData) + 0.05;
+    const min = Math.min(...allData) - 0.05;
 
     return [min, max];
   }, [boxPlotData]);
