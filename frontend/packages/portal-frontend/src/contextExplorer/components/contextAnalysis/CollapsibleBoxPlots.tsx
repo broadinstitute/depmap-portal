@@ -404,10 +404,10 @@ function CollapsibleBoxPlots({
                 plotHeight={
                   selectedContextBoxData.length * BOX_THICKNESS +
                   BOX_PLOT_TOP_MARGIN +
-                  BOX_PLOT_BOTTOM_MARGIN
+                  40
                 }
-                xAxisTitle={""}
-                bottomMargin={BOX_PLOT_BOTTOM_MARGIN}
+                xAxisTitle={X_AXIS_TITLE}
+                bottomMargin={40}
                 topMargin={BOX_PLOT_TOP_MARGIN}
                 selectedCode={selectedCode}
                 dottedLinePosition={
@@ -494,10 +494,10 @@ function CollapsibleBoxPlots({
                         otherCard[level0Code].subContextInfo.length *
                           BOX_THICKNESS +
                         BOX_PLOT_TOP_MARGIN +
-                        BOX_PLOT_BOTTOM_MARGIN
+                        40
                       }
-                      xAxisTitle={""}
-                      bottomMargin={BOX_PLOT_BOTTOM_MARGIN}
+                      xAxisTitle={X_AXIS_TITLE}
+                      bottomMargin={40}
                       topMargin={BOX_PLOT_TOP_MARGIN}
                       dottedLinePosition={
                         entityType === "gene" ? -1 : drugDottedLine || -1.74
