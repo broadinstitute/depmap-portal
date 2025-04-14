@@ -200,6 +200,7 @@ const defaultValue = {
     slice_id: string;
     label: string;
     indexed_values: Record<string, string>;
+    value_type: "categorical" | "binary";
   }> => {
     window.console.log("fetchMetadataColumn:", { slice_id });
     throw new Error("Not implemented");
@@ -212,10 +213,13 @@ const defaultValue = {
       string,
       {
         name: string;
-        valueType: "categorical" | "list_strings";
+        valueType: "categorical" | "list_strings" | "binary";
         isHighCardinality?: boolean;
         isPartialSliceId?: boolean;
         sliceTypeLabel?: string;
+        isBreadboxMetadata?: boolean;
+        isIdColumn?: boolean;
+        isLabelColumn?: boolean;
       }
     >
   > => {
@@ -267,7 +271,7 @@ const defaultValue = {
     slice_id: string
   ): Promise<
     | {
-        value_type: "categorical";
+        value_type: "categorical" | "binary";
         unique_values: string[];
       }
     | {

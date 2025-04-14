@@ -61,7 +61,7 @@ def add_dataset_uploads(
     `columns_metadata`: List of objects containing info about each column in the table dataset format.
 
         - `units`: Units for the values in the column, used for display
-        - `col_type`: Annotation type for the column. Annotation types may include: `continuous`, `categorical`, `binary`, `text`, or `list_strings`
+        - `col_type`: Annotation type for the column. Annotation types may include: `continuous`, `categorical`, `text`, or `list_strings`
 
     """
     utils.check_celery()

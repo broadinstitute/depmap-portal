@@ -629,27 +629,27 @@ def _load_real_data(
                 )
                 dataset_loader.load_curve_parameters_csv(curve_params_file_path)
 
-    def get_context_file():
-        full_path = gcsc_depmap.read_json("metadata/context-enrichment.json")[
-            "contexts"
-        ]["csv_filename"]
+    def get_subtype_context_file():
+        metadata = gcsc_depmap.read_json("metadata/subtype_context_matrix_out.json")[
+            "in"
+        ]
+        full_path = metadata["filename"]
         return gcsc_conseq_depmap.download_to_cache(full_path)
 
-    with checkpoint("context-data") as needed:
+    with checkpoint("subtype-context-data") as needed:
         if needed:
-            cell_line_loader.load_contexts(
-                get_context_file(), must=False,
+            depmap_model_loader.load_subtype_contexts(
+                get_subtype_context_file(), must=False
             )
 
-    def get_context_enrichment_file():
-        full_path = gcsc_depmap.read_json("metadata/context-enrichment.json")[
-            "enrichment"
-        ]["filename"]
+    def get_subtype_tree_file():
+        metadata = gcsc_depmap.read_json("metadata/subtype_tree_out.json")["in"]
+        full_path = metadata["filename"]
         return gcsc_conseq_depmap.download_to_cache(full_path)
 
-    with checkpoint("context-enrichment") as needed:
+    with checkpoint("subtype-tree-data") as needed:
         if needed:
-            dataset_loader.load_context_enrichment(get_context_enrichment_file())
+            context_explorer_loader.load_subtype_tree(get_subtype_tree_file())
 
     def get_oncokb_annotated_maf_file_and_taiga_id():
         metadata = gcsc_depmap.read_json("metadata/oncokb-annotated.json")["in"]
@@ -1073,9 +1073,6 @@ def load_sample_data(
             # when adding a dataset, check if it should be added to association_deps and additional_dev_metadata as well
             DependencyEnum.Chronos_Combined,
             DependencyEnum.Chronos_Achilles,
-            DependencyEnum.Chronos_Score,
-            DependencyEnum.Sanger_CRISPR,
-            DependencyEnum.GeCKO,
             DependencyEnum.RNAi_Ach,
             DependencyEnum.RNAi_Nov_DEM,
             DependencyEnum.RNAi_merged,
@@ -1150,8 +1147,9 @@ def load_sample_data(
             os.path.join(loader_data_dir, "cell_line/models_metadata.csv")
         )
 
-        cell_line_loader.load_contexts(
-            os.path.join(loader_data_dir, "cell_line/contexts.csv")
+        # TODO: This should eventually completely rreplace the old cell_line_loader.load_contexts
+        depmap_model_loader.load_subtype_contexts(
+            os.path.join(loader_data_dir, "cell_line/subtype_contexts.csv")
         )
 
         str_profile_loader.load_str_profiles(
@@ -1319,16 +1317,6 @@ def load_sample_data(
         assert default_crispr_dataset
         default_crispr_enum = default_crispr_dataset.name
 
-        default_crispr_enum_to_filename = {
-            DependencyDataset.DependencyEnum.Chronos_Combined: "enrichment_chronos.csv",
-        }
-        dataset_loader.load_context_enrichment(
-            os.path.join(
-                loader_data_dir,
-                "gene/{}".format(default_crispr_enum_to_filename[default_crispr_enum]),
-            )
-        )
-
         gene_loader.load_gene_executive_info(
             os.path.join(loader_data_dir, "gene/dep_summary.csv"),
             os.path.join(loader_data_dir, "gene/dropped_by_chronos.csv"),
@@ -1337,7 +1325,6 @@ def load_sample_data(
         # Associations
         association_deps = [
             ("Chronos_Combined", DependencyEnum.Chronos_Combined.name),
-            ("GeCKO", DependencyEnum.GeCKO.name),
             ("RNAi_Ach", DependencyEnum.RNAi_Ach.name),
             ("RNAi_Nov_DEM", DependencyEnum.RNAi_Nov_DEM.name),
             ("RNAi_merged", DependencyEnum.RNAi_merged.name),
@@ -1350,8 +1337,6 @@ def load_sample_data(
                 DependencyEnum.Repurposing_secondary_AUC.name,
             ),
             ("Chronos_Achilles", DependencyEnum.Chronos_Achilles.name),
-            ("Chronos_Score", DependencyEnum.Chronos_Score.name),
-            ("Sanger_CRISPR", DependencyEnum.Sanger_CRISPR.name),
             ("GDSC1_AUC", DependencyEnum.GDSC1_AUC.name),
             ("GDSC2_AUC", DependencyEnum.GDSC2_AUC.name),
             ("ctd2_drug_auc", DependencyEnum.CTRP_AUC.name),
@@ -1372,12 +1357,10 @@ def load_sample_data(
         )
         for file_name_root, enum_name in association_deps:
             if enum_name not in [
-                DependencyDataset.DependencyEnum.Chronos_Score.name,
                 DependencyDataset.DependencyEnum.Chronos_Achilles.name,
                 DependencyDataset.DependencyEnum.GDSC1_AUC.name,
                 DependencyDataset.DependencyEnum.GDSC2_AUC.name,
                 DependencyDataset.DependencyEnum.CTRP_AUC.name,
-                DependencyDataset.DependencyEnum.Sanger_CRISPR.name,
                 DependencyDataset.DependencyEnum.Prism_oncology_AUC.name,
             ]:
                 association_loader.load_dep_dep_correlation(
@@ -1387,12 +1370,10 @@ def load_sample_data(
         for dep_file_name_root, dep_enum_name in association_deps:
             for (biom_file_name_root, biom_enum_name,) in association_bioms:
                 if dep_enum_name not in [
-                    DependencyDataset.DependencyEnum.Chronos_Score.name,
                     DependencyDataset.DependencyEnum.Chronos_Achilles.name,
                     DependencyDataset.DependencyEnum.GDSC1_AUC.name,
                     DependencyDataset.DependencyEnum.GDSC2_AUC.name,
                     DependencyDataset.DependencyEnum.CTRP_AUC.name,
-                    DependencyDataset.DependencyEnum.Sanger_CRISPR.name,
                     DependencyDataset.DependencyEnum.Prism_oncology_AUC.name,
                 ]:
                     association_loader.load_dep_biom_correlation(
@@ -1571,7 +1552,9 @@ def load_sample_data(
                 "Adding context explorer ingroup/outgroup analyses to ContextAnalysis"
             )
             context_explorer_loader.load_context_explorer_context_analysis(
-                os.path.join(loader_data_dir, "context_explorer/context_analysis.csv")
+                os.path.join(
+                    loader_data_dir, "context_explorer/context_analysis_v2.csv"
+                )
             )
 
         if current_app.config["ENABLED_FEATURES"].data_page:

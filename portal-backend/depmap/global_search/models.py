@@ -6,9 +6,12 @@ from depmap.database import Column, ForeignKey, Integer, Model, String, db, rela
 from depmap.gene.models import Gene
 from depmap.entity.models import EntityAlias
 from depmap.cell_line.models import CellLine
-from depmap.context.models import Context
+from depmap.context.models_new import (
+    SubtypeContext,
+    SubtypeNode,
+    SubtypeContextGlobalSearch,
+)
 from depmap.download.models import DownloadFileGlobalSearch
-from depmap.context_explorer.models import ContextExplorerGlobalSearch
 
 
 class GlobalSearchIndex(Model):
@@ -26,10 +29,9 @@ class GlobalSearchIndex(Model):
             "compound_target_or_mechanism",
             "cell_line",
             "cell_line_alias",
-            "context",
             "download_file",
             "compound_target",
-            "context_explorer",
+            "subtype_context_search",
             name="SearchIndexType",
         ),
         nullable=False,
@@ -43,9 +45,9 @@ class GlobalSearchIndex(Model):
     gene_id = Column(Integer, ForeignKey("gene.entity_id"))
     depmap_id = Column(String, ForeignKey("cell_line.depmap_id"))
     file_id = Column(Integer, ForeignKey("download_file.file_id"))
-    context_id = Column(Integer, ForeignKey("context_explorer.context_id"))
-
-    context_name = Column(String, ForeignKey("context.name"))
+    subtype_context_search_id = Column(
+        Integer, ForeignKey("subtype_context_search.subtype_context_search_id")
+    )
 
     compound = relationship(
         "Compound", foreign_keys="GlobalSearchIndex.compound_id", uselist=False
@@ -55,19 +57,10 @@ class GlobalSearchIndex(Model):
     cell_line = relationship(
         "CellLine", foreign_keys="GlobalSearchIndex.depmap_id", uselist=False
     )
-    context = relationship(
-        "Context", foreign_keys="GlobalSearchIndex.context_name", uselist=False
-    )
 
     download_file = relationship(
         "DownloadFileGlobalSearch",
         foreign_keys="GlobalSearchIndex.file_id",
-        uselist=False,
-    )
-
-    context_explorer = relationship(
-        "ContextExplorerGlobalSearch",
-        foreign_keys="GlobalSearchIndex.context_id",
         uselist=False,
     )
 
@@ -212,24 +205,17 @@ class CellLineAliasSearchIndex(_CellLine, GlobalSearchIndex):
         )
 
 
-class ContextSearchIndex(GlobalSearchIndex):
-    __mapper_args__ = {"polymorphic_identity": "context"}
+class ContextExplorerSearchIndex(GlobalSearchIndex):
+    subtype_context_search = relationship(
+        "SubtypeContextGlobalSearch",
+        foreign_keys="GlobalSearchIndex.subtype_context_search_id",
+        uselist=False,
+    )
+
+    __mapper_args__ = {"polymorphic_identity": "subtype_context_search"}
 
     def get_label(self):
-        return Context.get_display_name(self.context.name)
-
-    def get_description(self):
-        return "Find cell lines which are members of {} context".format(
-            self.get_label()
-        )
-
-    def get_url(self):
-        return url_for("context.view_context", context_name=self.context.name)
-
-
-class _ContextExp:
-    def get_label(self):
-        return Context.get_display_name(self.context_explorer.lineage_name)
+        return f"{self.subtype_context_search.subtype_node_name} ({self.subtype_context_search.subtype_context_code})"
 
     def get_description(self):
         return "Find cell lines which are members of {} context".format(
@@ -239,10 +225,5 @@ class _ContextExp:
     def get_url(self):
         return url_for(
             "context_explorer.view_context_explorer",
-            lineage=self.context_explorer.lineage_name,
-            primary_disease=self.context_explorer.primary_disease_name,
+            context=self.subtype_context_search.subtype_context_code,
         )
-
-
-class ContextExplorerSearchIndex(_ContextExp, GlobalSearchIndex):
-    __mapper_args__ = {"polymorphic_identity": "context_explorer"}

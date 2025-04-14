@@ -20,7 +20,6 @@ from depmap.gene.models import Gene
 from depmap.utilities import hdf5_utils
 
 # Pycharm doesn't infer their usage, but the models are needed for strings in relationship definitions
-from depmap.context.models import Context
 from depmap.cell_line.models import CellLine, Lineage
 from depmap.entity.models import Entity
 

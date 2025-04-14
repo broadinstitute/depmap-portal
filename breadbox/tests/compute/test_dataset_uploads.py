@@ -165,7 +165,7 @@ def test_tabular_uploads(
             "attr1": ColumnMetadata(
                 units="some units", col_type=AnnotationType.continuous
             ),
-            "attr2": ColumnMetadata(col_type=AnnotationType.binary),
+            "attr2": ColumnMetadata(col_type=AnnotationType.categorical),
             "attr3": ColumnMetadata(col_type=AnnotationType.list_strings),
             "fk": ColumnMetadata(
                 col_type=AnnotationType.text, references="test-sample"
@@ -186,7 +186,7 @@ def test_tabular_uploads(
         minimal_db.query(TabularColumn).filter(TabularColumn.given_id == "attr2").one()
     )
     for cell in tabular_attr2.tabular_cells:
-        assert cell.value in ["True", "False"]
+        assert cell.value in ["0", "1"]
 
 
 def test_tabular_dataset_bad_typings_params(
@@ -253,7 +253,7 @@ def test_tabular_bad_list_str_col(minimal_db, client, settings, private_group):
                     **{"units": "some units", "col_type": AnnotationType.continuous}
                 ),
                 "attr2": ColumnMetadata(
-                    **{"units": None, "col_type": AnnotationType.binary}
+                    **{"units": None, "col_type": AnnotationType.categorical}
                 ),
                 "attr3": ColumnMetadata(
                     **{"units": None, "col_type": AnnotationType.list_strings}
@@ -291,7 +291,7 @@ def test_tabular_dup_ids_failure(client, private_group, minimal_db, settings):
                     **{"units": "some units", "col_type": AnnotationType.continuous}
                 ),
                 "attr2": ColumnMetadata(
-                    **{"units": None, "col_type": AnnotationType.binary}
+                    **{"units": None, "col_type": AnnotationType.categorical}
                 ),
                 "attr3": ColumnMetadata(
                     **{"units": None, "col_type": AnnotationType.list_strings}

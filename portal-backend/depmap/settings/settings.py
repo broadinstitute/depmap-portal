@@ -105,6 +105,10 @@ class FeatureFlags:
 
     @property
     def context_explorer(self):
+        return True
+
+    @property
+    def context_explorer_prerelease_datasets(self):
         return self.is_prerelease_env()
 
     @property
@@ -163,7 +167,7 @@ class FeatureFlags:
 
     @property
     def private_datasets(self):
-        return self.is_prerelease_env()
+        return self.is_only_dmc_and_i_have_a_good_reason()
 
     @property
     def target_discovery_app(self):
@@ -269,6 +273,9 @@ class Config(object):
     METMAP_500_TAIGA_ID = "metmap-data-f459.4/metmap500_flattened_table"
     ANNOUNCEMENTS_PATH = os.path.join(ADDITIONAL_MOUNTS_DIR, "announcements.md")
     ANNOUNCEMENTS_FILE_PATH = os.path.join(ADDITIONAL_MOUNTS_DIR, "announcements.yaml")
+    UPDATES_AND_ANNOUNCEMENTS_FILE_PATH = os.path.join(
+        ADDITIONAL_MOUNTS_DIR, "updates_and_announcements.md"
+    )
     DOCUMENTATION_PATH = os.path.join(ADDITIONAL_MOUNTS_DIR, "documentation.yaml")
     DMC_SYMPOSIA_PATH = os.path.join(ADDITIONAL_MOUNTS_DIR, "dmc_symposia.yaml")
     DOWNLOADS_PATHS = [

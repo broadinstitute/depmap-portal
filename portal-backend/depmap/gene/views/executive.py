@@ -131,24 +131,21 @@ def get_order(has_predictability):
     return order
 
 
-def format_dep_dist_and_enrichment_boxes(gene, crispr_dataset, rnai_dataset):
+# Used for "Dependent Cell Lines" tile amd Enriched Lineages
+def get_dependency_distribution(gene, crispr_dataset, rnai_dataset):
     """
     Handles logic for whether a given gene should have some combination of, for crispr and rnai:
         dep dist
             svg?
             info?
-        enrichment boxes?
 
     Specifically, handles the exception for genes that are missing from the crispr dataset but might have some reason for being missing that we need to show
     """
     dep_dist = None
-    enrichment_boxes = None
-
     if crispr_dataset or rnai_dataset:  # we have data for either
         dep_dist_svg = format_dep_dist_svg(gene, crispr_dataset, rnai_dataset)
         dep_dist_info = format_dep_dist_info(gene, crispr_dataset, rnai_dataset)
         dep_dist = {"svg": dep_dist_svg, "info": dep_dist_info}
-        enrichment_boxes = format_enrichment_boxes(gene, crispr_dataset, rnai_dataset)
 
     if not crispr_dataset:
         # crispr has an exception where
@@ -161,7 +158,17 @@ def format_dep_dist_and_enrichment_boxes(gene, crispr_dataset, rnai_dataset):
                 dep_dist = {"info": {}}
             dep_dist["info"]["crispr"] = crispr_dep_dist
 
-    return dep_dist, enrichment_boxes
+    return dep_dist
+
+
+# Enriched Lineages - only has crispr data as of 25q2
+def get_enrichment_boxes(gene, crispr_dataset):
+    enrichment_boxes = None
+
+    if crispr_dataset:
+        enrichment_boxes = format_enrichment_boxes(gene, crispr_dataset)
+
+    return enrichment_boxes
 
 
 def format_dep_dist_svg(
@@ -193,10 +200,11 @@ def format_dep_dist_svg(
             facecolor=color_palette.crispr_color,
             alpha=0.4,
         )
-        ax1.lines[0].set_linestyle("None")  # remove lines on the kdeplot
         rnai_line_index = 1
+        ax1.lines[0].set_linestyle("None")  # remove lines on the kdeplot
         eventplot_values.append(crispr_values)
         eventplot_colors.append(color_palette.crispr_color)
+
     else:
         rnai_line_index = 0
 
@@ -210,6 +218,7 @@ def format_dep_dist_svg(
         rnai_line = ax1.lines[
             rnai_line_index
         ]  # fixme not a fan of this incremental position indexing, but better than indexing later and assuming crispr is first
+
         ax1.fill_between(
             rnai_line.get_xdata(),
             rnai_line.get_ydata(),
@@ -352,21 +361,17 @@ def format_crispr_possible_missing_reason(gene: Gene,) -> Optional[CrisprDepDist
         return None
 
 
-def format_enrichment_boxes(gene, crispr_dataset, rnai_dataset):
-    enrichment_boxes = []
+def format_enrichment_boxes(gene, crispr_dataset):
+    enrichment_boxes = None
 
     if crispr_dataset:
+        enrichment_boxes = []
         crispr_box = format_enrichment_box_for_dataset(
             gene, crispr_dataset, color_palette.crispr_color
         )
         crispr_box["title"] = crispr_dataset.display_name
         enrichment_boxes.append(crispr_box)
-    if rnai_dataset:
-        rnai_box = format_enrichment_box_for_dataset(
-            gene, rnai_dataset, color_palette.rnai_color
-        )
-        rnai_box["title"] = rnai_dataset.display_name
-        enrichment_boxes.append(rnai_box)
+
     return enrichment_boxes
 
 

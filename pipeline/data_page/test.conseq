@@ -58,12 +58,6 @@ add-if-missing {
   "dataset_id": "total-proteome--5c50.1/protein_quant_current_normalized"
 }
 
-add-if-missing {
-  "type": "raw-dep-matrix",
-  "dataset_id": "project-score-chronos-ad31.14/gene_effect",
-  "label": "Chronos_Score",
-  "rows": "cell-lines"
-}
 
 add-if-missing {
     'type' : 'sanger_methylation_taiga_id',
@@ -83,6 +77,13 @@ add-if-missing {
 add-if-missing {
   "type": "sanger-proteomics",
   "dataset_id": "sanger-proteomics-74a3.3/protein_matrix_avg"
+}
+
+add-if-missing {
+    "type": "depmap_long_reads_gcloud_loc",
+    "bucket_name": "depmap-dmc-downloads",
+    "prefix": "25q1-long-read-data",
+    "file_names": "df_gene_counts_achXgene.csv, df_gene_tpm_achXgene.csv, df_isoform_counts_achXtranscript.csv, df_isoform_tpm_achXtranscript.csv"
 }
 
 include "data_page/get_all_data_availability.conseq"

@@ -1,6 +1,6 @@
 rule format_gene_dep_csv:
     inputs:
-        data={'type': 'dep-matrix', 'label' ~ 'Chronos_Combined|Chronos_Achilles|Chronos_Score|RNAi_merged|CERES_Combined|Sanger_CRISPR|Avana'},
+        data={'type': 'dep-matrix', 'label' ~ 'Chronos_Combined|Chronos_Achilles|RNAi_merged|CERES_Combined|Avana'},
         hdf5_utils=fileref("scripts/hdf5_utils.py", copy_to="hdf5_utils.py")
     outputs:
         {'type': 'dep-matrix-csv', 
@@ -16,14 +16,32 @@ rule format_gene_dep_csv:
         df.to_csv("deps.csv",index_label="Row.name")
     """
 
+rule get_crispr_inferred_common_essentials:
+    inputs:
+        crispr_inferred_common_essentials={'type': 'crispr-inferred-common-essentials'}
+    outputs:{
+        'type': 'crispr-inferred-common-essentials-file', 
+        'filename': {'$filename': 'crispr_inferred_common_essentials.csv'},
+        'orig_dataset_id': '{{ inputs.crispr_inferred_common_essentials.dataset_id }}'}
+    
+    run "python3" with """
+        from taigapy import create_taiga_client_v3
+        tc = create_taiga_client_v3()
+        df = tc.get("{{ inputs.crispr_inferred_common_essentials.dataset_id }}")
+        df.to_csv("crispr_inferred_common_essentials.csv", index=False)
+    """
+
+
 rule common_essentials:
     executor: dsub {"docker_image": "us.gcr.io/broad-achilles/depmap-pipeline-tda:v10", "min_ram": "10"}
     inputs:
         data={'type': 'dep-matrix-csv'},
+        crispr_inferred_common_essentials={'type': 'crispr-inferred-common-essentials-file'},
         script=fileref('scripts/tda/CE_percentile_rank_analysis.py')
     outputs:
         {'type': 'common-essentials', 'label': '{{ inputs.data.label }}', 'filename': {'$filename': 'ce.csv'} }
-    run "python3 {{ inputs.script.filename }} {{ inputs.data.filename }} ce.csv"
+    run "python3 {{ inputs.script.filename }} {{ inputs.data.label }} {{ inputs.crispr_inferred_common_essentials.filename }} {{ inputs.data.filename }} ce.csv"
+
 
 rule dep_moments:
     executor: dsub {"docker_image": "us.gcr.io/broad-achilles/depmap-pipeline-tda:v10", "min_ram": "10"}

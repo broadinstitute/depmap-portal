@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from "react";
+import { BOX_THICKNESS, getNewContextUrl } from "src/contextExplorer/utils";
 import ExtendedPlotType from "../models/ExtendedPlotType";
 import PlotlyLoader, { PlotlyType } from "./PlotlyLoader";
 
@@ -6,20 +7,24 @@ export interface BoxPlotInfo {
   name: string;
   hoverLabels: string[];
   xVals: number[];
-  color: { r: number; b: number; g: number };
+  color: { r: number; b: number; g: number; a?: number };
   lineColor: string;
+  pointLineColor?: string;
+  code?: string;
 }
 
 export interface BoxPlotProps {
   plotName: string;
   boxData: BoxPlotInfo[];
   dottedLinePosition: number;
+  selectedCode?: string;
   onLoad?: (plot: ExtendedPlotType) => void;
   setXAxisRange?: (range: any[]) => void;
   plotHeight?: number;
   xAxisRange?: any[];
   xAxisTitle?: string;
   bottomMargin?: number;
+  topMargin?: number;
 }
 
 type BoxPlotWithPlotly = BoxPlotProps & { Plotly: PlotlyType };
@@ -28,12 +33,14 @@ function BoxPlot({
   boxData,
   plotName,
   dottedLinePosition,
+  selectedCode = undefined,
   onLoad = () => {},
   plotHeight = undefined,
   xAxisRange = undefined,
   xAxisTitle = undefined,
   setXAxisRange = undefined,
   bottomMargin = 0,
+  topMargin = 0,
   Plotly,
 }: BoxPlotWithPlotly) {
   const ref = useRef<ExtendedPlotType>(null);
@@ -70,9 +77,15 @@ function BoxPlot({
         jitter: 0.5,
         pointpos: 0,
         type: "box",
-        fillcolor: `RGBA(${box.color.r.toString()}, ${box.color.g.toString()}, ${box.color.b.toString()}, 0.4)`,
+        fillcolor: `RGBA(${box.color.r.toString()}, ${box.color.g.toString()}, ${box.color.b.toString()}, ${
+          box.color.a?.toString() || (0.3).toString()
+        })`,
         marker: {
           color: `RGBA(${box.color.r.toString()}, ${box.color.g.toString()}, ${box.color.b.toString()}, 1)`,
+          line: {
+            color: `RGBA(0, 0, 0, 0.3)`,
+            width: 1,
+          },
         },
         line: {
           color: "#000000",
@@ -87,14 +100,15 @@ function BoxPlot({
     });
 
     const layout: Partial<Plotly.Layout> = {
-      margin: { t: 25, r: 5, b: bottomMargin, l: 130 },
-      autosize: plotHeight === undefined,
-      dragmode: false,
+      margin: { t: topMargin, r: 10, b: bottomMargin, l: 10 },
+      autosize: true,
+      dragmode: "pan",
       height: plotHeight,
-      width: 370,
+      width: 200,
       showlegend: false,
       yaxis: {
         zeroline: false,
+        visible: false,
       },
       xaxis: {
         zeroline: true,
@@ -141,8 +155,10 @@ function BoxPlot({
     plotHeight,
     xAxisRange,
     bottomMargin,
+    topMargin,
     xAxisTitle,
     dottedLinePosition,
+    selectedCode,
     onLoad,
   ]);
 
@@ -156,9 +172,12 @@ function BoxPlot({
       };
 
       Plotly.relayout(ref.current, update);
-    } else if (ref.current?.layout && plotName === "main") {
+    } else if (
+      ref.current?.layout &&
+      (plotName === "main" || plotName === "main-header")
+    ) {
       const update: Partial<Plotly.Layout> = {
-        margin: { t: 25, r: 5, b: bottomMargin, l: 130 },
+        margin: { t: topMargin, r: 15, b: bottomMargin, l: 0 },
         xaxis: {
           range: xAxisRange ?? ref.current.layout.xaxis.range,
           title: xAxisTitle ?? "",
@@ -167,13 +186,21 @@ function BoxPlot({
 
       Plotly.relayout(ref.current, update);
     }
-  }, [xAxisRange, xAxisTitle, Plotly, bottomMargin, plotName]);
+  }, [
+    xAxisRange,
+    xAxisTitle,
+    Plotly,
+    bottomMargin,
+    topMargin,
+    plotName,
+    plotHeight,
+  ]);
 
   useEffect(() => {
     if (
       ref.current?.layout.xaxis.range &&
       setXAxisRange &&
-      plotName === "main"
+      (plotName === "main" || plotName === "main-header")
     ) {
       setXAxisRange(ref.current?.layout.xaxis.range);
     }
@@ -182,17 +209,83 @@ function BoxPlot({
   return <div ref={ref} />;
 }
 
-export default function LazyBoxPlot({ boxData, ...otherProps }: BoxPlotProps) {
+export default function LazyBoxPlot({
+  boxData,
+  selectedCode = undefined,
+  ...otherProps
+}: BoxPlotProps) {
   return (
     <PlotlyLoader version="module">
       {(Plotly) =>
         boxData ? (
-          <BoxPlot
-            boxData={boxData}
-            Plotly={Plotly}
-            // eslint-disable-next-line react/jsx-props-no-spreading
-            {...otherProps}
-          />
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "120px auto",
+              color: "#4479B2",
+            }}
+          >
+            <div
+              style={{
+                display: "grid",
+                gridTemplateRows: `repeat(${boxData.length}, ${BOX_THICKNESS}px)`,
+                alignItems: "center",
+              }}
+            >
+              {[...boxData.slice(1), boxData[0]].reverse().map((box, index) => (
+                <div
+                  key={box.name}
+                  style={{
+                    gridRow: index,
+                    maxWidth: "120px",
+                    overflow: "hidden",
+                    overflowWrap: "break-word",
+                    fontSize: "12px",
+                  }}
+                >
+                  {boxData.length > 0 && !box?.name.includes("Other") ? (
+                    box?.name.split("/").map((code, j) => (
+                      <React.Fragment key={code}>
+                        {code === selectedCode ? (
+                          <span style={{ color: "#333333", fontWeight: "600" }}>
+                            {code}
+                          </span>
+                        ) : (
+                          <a href={getNewContextUrl(code)}>{code}</a>
+                        )}
+                        {j < box?.name.split("/").length - 1 && "/"}
+                      </React.Fragment>
+                    ))
+                  ) : (
+                    <div>
+                      {box.name === selectedCode ||
+                      box?.name.includes("Other") ? (
+                        <span
+                          style={{
+                            color: "#333333",
+                            fontWeight: "600",
+                            fontSize: box?.name.includes("Other")
+                              ? "14px"
+                              : "12px",
+                          }}
+                        >
+                          {box.name}
+                        </span>
+                      ) : (
+                        <span>{box.name}</span>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+            <BoxPlot
+              boxData={boxData}
+              Plotly={Plotly}
+              // eslint-disable-next-line react/jsx-props-no-spreading
+              {...otherProps}
+            />
+          </div>
         ) : null
       }
     </PlotlyLoader>

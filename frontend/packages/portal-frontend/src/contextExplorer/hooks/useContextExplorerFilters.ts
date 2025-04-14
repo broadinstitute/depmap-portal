@@ -51,7 +51,7 @@ export default function useContextExplorerFilters(
   }, [data, filterDefinitions, stickyFilterMode, stickyFilters]);
 
   const debouncedSetFilters = useMemo(
-    () => debounce((filters_) => setFilters(filters_), 500),
+    () => debounce((filters_) => setFilters(filters_), 100),
     [setFilters]
   );
 

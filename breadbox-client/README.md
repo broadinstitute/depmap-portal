@@ -104,6 +104,15 @@ client = BBClient(base_url="https://depmap.org/portal/breadbox/", user="someuser
 # For example:
 datasets = client.get_datasets()
 dimension_types = client.get_dimension_types()
+
+# If you wanted to get the metadata for a particular gene, you could do something like:
+df = client.get_tabular_dataset_data(
+    dataset_id=dataset_id, # The ID of the gene metadata dataset
+    columns=None,
+    identifier="label",
+    indices=[gene_name], # This will filter the result to just the gene you're interested in
+    strict=True,
+)
 ```
 
 If the endpoints you're going to hit require authentication, use `AuthenticatedClient` instead:

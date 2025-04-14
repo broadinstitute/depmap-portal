@@ -1,0 +1,19 @@
+DepmapModelType,MolecularSubtypeCode,NodeName,NodeLevel,NodeSource,TreeType,Level0,Level1,Level2,Level3,Level4,Level5,OncotreeCode
+,ALKHotspot,ALK Hotspot,0,Omics Inferred Molecular Subtype,MolecularSubtype,ALK Hotspot,,,,,,
+ES,,Ewing Sarcoma,1,Oncotree,Lineage,Bone,Ewing Sarcoma,,,,,ES
+OS,,Osteosarcoma,1,Oncotree,Lineage,Bone,Osteosarcoma,,,,,OS
+BONE,,Bone,0,Oncotree,Lineage,Bone,,,,,,BONE
+LUAD,,Lung Adenocarcinoma,2,Oncotree,Lineage,Lung,Non-Small Cell Lung Cancer,Lung Adenocarcinoma,,,,LUAD
+LUSC,,Lung Squamous Cell Carcinoma,2,Oncotree,Lineage,Lung,Non-Small Cell Lung Cancer,Lung Squamous Cell Carcinoma,,,,LUSC
+NSCLC,,Non-Small Cell Lung Cancer,1,Oncotree,Lineage,Lung,Non-Small Cell Lung Cancer,,,,,NSCLC
+LUNG,,Lung,0,Oncotree,Lineage,Lung,,,,,,LUNG
+LYMPH,,Lymphoid,0,Oncotree,Lineage,Lymphoid,,,,,,LYMPH
+MLADS,,Myeloid Leukemia Associated with Down Syndrome,2,Oncotree,Lineage,Myeloid,Acute Myeloid Leukemia,Myeloid Leukemia Associated with Down Syndrome,,,,MLADS
+AML,,Acute Myeloid Leukemia,1,Oncotree,Lineage,Myeloid,Acute Myeloid Leukemia,,,,,AML
+MYELOID,,Myeloid,0,Oncotree,Lineage,Myeloid,,,,,,MYELOID
+MCC,,Merkel Cell Carcinoma,1,Oncotree,Lineage,Skin,Merkel Cell Carcinoma,,,,,MCC
+BLADDER,,Bladder/Urinary Tract,0,Oncotree,Lineage,Bladder/Urinary Tract,,,,,,BLADDER
+PNS,,Peripheral Nervous System,0,Oncotree,Lineage,Peripheral Nervous System,,,,,,PNS
+,EGFR,EGFR,0,Omics Inferred Molecular Subtype,MolecularSubtype,EGFR,,,,,,
+MEL,,Melanoma,1,Oncotree,Lineage,Skin,Melanoma,,,,,MEL
+SKIN,,Skin,0,Oncotree,Lineage,Skin,,,,,,SKIN

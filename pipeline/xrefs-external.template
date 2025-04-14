@@ -66,6 +66,12 @@ add-if-missing {
     "dataset_id": PREPROCESS_TAIGA_ID(virtual_dataset_id, "OmicsFusionFiltered")
 }
 
+# CRISPRInferredCommonEssentials
+add-if-missing {
+  "type": "crispr-inferred-common-essentials",
+  "dataset_id": PREPROCESS_TAIGA_ID(virtual_dataset_id, "CRISPRInferredCommonEssentials")
+}
+
 # biomarker-matrix
 add-if-missing {
   'type': 'raw-expr-matrix',

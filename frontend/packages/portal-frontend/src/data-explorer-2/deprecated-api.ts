@@ -380,6 +380,7 @@ export async function fetchMetadataColumn(
   slice_id: string;
   label: string;
   indexed_values: Record<string, string>;
+  value_type: "categorical" | "binary";
 }> {
   return postJson("/get_metadata", { metadata: { slice_id } });
 }
@@ -395,6 +396,7 @@ export async function fetchMetadataSlices(
       isHighCardinality?: boolean;
       isPartialSliceId?: boolean;
       sliceTypeLabel?: string;
+      isBreadboxMetadata?: boolean;
     }
   >
 > {
@@ -570,7 +572,7 @@ export function fetchUniqueValuesOrRange(
   slice_id: string
 ): Promise<
   | {
-      value_type: "categorical";
+      value_type: "categorical" | "binary";
       unique_values: string[];
     }
   | {

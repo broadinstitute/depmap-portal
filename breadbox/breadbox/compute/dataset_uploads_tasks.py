@@ -155,7 +155,9 @@ def dataset_upload(
             dataset_params.version,
             dataset_params.description,
         )
-        save_dataset_file(dataset_id, data_df, settings.filestore_location)
+        save_dataset_file(
+            dataset_id, data_df, dataset_params.value_type, settings.filestore_location
+        )
 
     else:
         index_type = _get_dimension_type(db, dataset_params.index_type)

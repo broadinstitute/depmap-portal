@@ -10,9 +10,11 @@ import {
   ContextAnalysisPlotData,
   ContextAnalysisPlotType,
   ContextAnalysisTableType,
+  ContextExplorerDatasets,
   ContextNameInfo,
+  ContextNode,
   ContextPlotBoxData,
-  OutGroupType,
+  TreeType,
 } from "../../models/types";
 import {
   LEGEND_ALL,
@@ -32,14 +34,15 @@ import {
   getDataExplorerUrl,
   OUTGROUP_TYPE_ALL_OPTION,
   BLOOD_LINEAGES,
-  GENE_DATASET_ID,
-  COMPOUND_DATASET_ID,
   getBoxPlotFilterVariables,
+  getSelectivityValLabel,
 } from "../../utils";
 import geneDepFilterDefinitions from "../../json/geneDepFilters.json";
-import drugFilterDefinitions from "../../json/drugFilters.json";
+import repurposingFilterDefinitions from "../../json/repurposingFilters.json";
+import oncrefFilterDefinitions from "../../json/oncrefFilters.json";
 import Select from "react-select";
-import filterLayout from "../../json/filterLayout.json";
+import filterLayoutGene from "../../json/filterLayoutGene.json";
+import filterLayoutDrug from "../../json/filterLayoutDrug.json";
 import { satisfiesFilters } from "src/common/models/discoveryAppFilters";
 import ContextAnalysisTable from "./ContextAnalysisTable";
 import FilterInputGroup from "src/common/components/FilterControls/FilterInputGroup";
@@ -48,24 +51,30 @@ import PlotSpinner from "src/plot/components/PlotSpinner";
 import { getDapi } from "src/common/utilities/context";
 import { Button } from "react-bootstrap";
 import useContextExplorerFilters from "src/contextExplorer/hooks/useContextExplorerFilters";
-import EntityDetailBoxPlot from "./EntityDetailBoxPlot";
+import DoseCurvesTile from "./DoseCurvesTile";
+import CollapsibleBoxPlots from "./CollapsibleBoxPlots";
+import { calcMinMax } from "@depmap/data-explorer-2/src/components/DataExplorerPage/components/plot/prototype/plotUtils";
 
 interface ContextAnalysisProps {
   selectedContextNameInfo: ContextNameInfo;
+  selectedContextNode: ContextNode | null;
   topContextNameInfo: ContextNameInfo;
+  treeType: TreeType;
   entityType: string;
-  customInfoImg: React.JSX.Element;
+  datasetId: ContextExplorerDatasets;
 }
 
 function ContextAnalysis({
   selectedContextNameInfo,
+  selectedContextNode,
   topContextNameInfo,
+  treeType,
   entityType,
-  customInfoImg,
+  datasetId,
 }: ContextAnalysisProps) {
   const dapi = getDapi();
   const [outgroup, setOutgroup] = useState<{
-    value: OutGroupType;
+    value: string;
     label: string;
   }>(OUTGROUP_TYPE_ALL_OPTION);
   const [outgroupOptions, setOutgroupOptions] = useState<
@@ -79,7 +88,7 @@ function ContextAnalysis({
   );
 
   const handleOutGroupChanged = useCallback(
-    (selection: { value: OutGroupType; label: string }) => {
+    (selection: { value: string; label: string }) => {
       setOutgroup(selection);
     },
     [setOutgroup]
@@ -91,33 +100,32 @@ function ContextAnalysis({
     // All other cell lines
     outGroupOpts.push(OUTGROUP_TYPE_ALL_OPTION);
 
-    // Other Bone
-    if (topContextNameInfo.name !== selectedContextNameInfo.name) {
-      // Bone vs Other Bone wouldn't make sense, so only include this if the selected
-      // context is a subset of Bone
-      outGroupOpts.push({
-        value: OutGroupType.Lineage,
-        label: `Other ${topContextNameInfo.display_name}`,
-      });
-    }
+    selectedContextNode?.path.forEach(async (subtype_code) => {
+      if (subtype_code !== selectedContextNode.subtype_code) {
+        const nodeName = await dapi.getNodeName(subtype_code);
+        outGroupOpts.push({
+          value: subtype_code,
+          label: `Other ${nodeName}`,
+        });
+      }
+    });
 
-    // Other Solid
     if (
-      BLOOD_LINEAGES.includes(topContextNameInfo.display_name) ||
-      BLOOD_LINEAGES.includes(topContextNameInfo.name)
+      BLOOD_LINEAGES.includes(topContextNameInfo.name) ||
+      BLOOD_LINEAGES.includes(topContextNameInfo.subtype_code)
     ) {
       outGroupOpts.push({
-        value: OutGroupType.Type,
+        value: "Other Heme",
         label: "Other Heme",
-      });
-    } else {
-      outGroupOpts.push({
-        value: OutGroupType.Type,
-        label: "Other Solid",
       });
     }
     setOutgroupOptions(outGroupOpts);
-  }, [topContextNameInfo, selectedContextNameInfo.name]);
+  }, [
+    topContextNameInfo,
+    selectedContextNode,
+    selectedContextNameInfo.name,
+    dapi,
+  ]);
 
   useEffect(() => {
     const outgroupLabels = outgroupOptions.map((outgr) => outgr.label);
@@ -134,7 +142,10 @@ function ContextAnalysis({
       if (newOutgroup.length === 0) {
         setOutgroup(OUTGROUP_TYPE_ALL_OPTION);
       } else {
-        setOutgroup({ value: outgroup.value, label: newOutgroup[0].label });
+        setOutgroup({
+          value: newOutgroup[0].value,
+          label: newOutgroup[0].label,
+        });
       }
     }
     setDidValidateOutgroup(true);
@@ -147,12 +158,13 @@ function ContextAnalysis({
 
   useEffect(() => {
     setData(null);
-    setIsLoading(true);
     if (didValidateOutgroup) {
+      setIsLoading(true);
       const promise = dapi.getContextExplorerAnalysisData(
-        selectedContextNameInfo.name,
+        selectedContextNameInfo.subtype_code,
         outgroup.value,
-        entityType
+        entityType,
+        datasetId
       );
 
       latestPromise.current = promise;
@@ -166,6 +178,7 @@ function ContextAnalysis({
           if (promise === latestPromise.current) {
             window.console.error(e);
             setError(true);
+            setIsLoading(false);
           }
         })
         .finally(() => {
@@ -179,8 +192,11 @@ function ContextAnalysis({
     setData,
     setIsLoading,
     selectedContextNameInfo.name,
+    selectedContextNameInfo.subtype_code,
     outgroup,
+    datasetId,
     entityType,
+    treeType,
     dapi,
     didValidateOutgroup,
   ]);
@@ -224,15 +240,29 @@ function ContextAnalysis({
   // are temporarily separated out into 2 different files while the stickyFiltersMode
   // and Context Explorer is new. This is to reduce the risk of breaking Context Explorer,
   // TDA, and Compound Dashboard all at once.
+
+  const getFilterDefinitions = useCallback(() => {
+    if (datasetId === ContextExplorerDatasets.Prism_oncology_AUC) {
+      return oncrefFilterDefinitions;
+    }
+
+    if (datasetId === ContextExplorerDatasets.Rep_all_single_pt) {
+      return repurposingFilterDefinitions;
+    }
+
+    return geneDepFilterDefinitions;
+  }, [datasetId]);
+
   const {
     transientFilterState,
     filters,
     updateFilter,
+    resetFilters,
     changedFilters,
     defaultFilters,
   } = useContextExplorerFilters(
     data,
-    entityType === "gene" ? geneDepFilterDefinitions : drugFilterDefinitions,
+    getFilterDefinitions(),
     stickyFiltersMode
   );
 
@@ -242,7 +272,7 @@ function ContextAnalysis({
     setSelectedPlotLabels(null);
     setSelectedTableLabels(null);
     setPointVisibilityFiltered(null);
-  }, [selectedContextNameInfo]);
+  }, [selectedContextNameInfo, topContextNameInfo]);
 
   useEffect(() => {
     if (data && filters) {
@@ -255,7 +285,7 @@ function ContextAnalysis({
   const formatDataForScatterPlot = useCallback(
     (tableData: ContextAnalysisTableType) => {
       const entityLabels: string[] = [];
-      const logOR: number[] = [];
+      const selectivityVal: number[] = [];
       const tTestXVals: number[] = [];
       const tTestYVals: number[] = [];
       const inVsOutXVals: number[] = [];
@@ -263,7 +293,7 @@ function ContextAnalysis({
 
       tableData.entity.forEach((entity, i) => {
         entityLabels.push(entity);
-        logOR.push(tableData.log_OR[i]);
+        selectivityVal.push(tableData.selectivity_val[i]);
         tTestXVals.push(tableData.effect_size[i]);
         tTestYVals.push(tableData.t_qval_log[i]);
         inVsOutXVals.push(tableData.mean_in[i]);
@@ -271,7 +301,7 @@ function ContextAnalysis({
       });
       return {
         indexLabels: entityLabels,
-        logOR,
+        selectivityVal,
         tTest: {
           x: {
             axisLabel: "Effect size (difference in means)",
@@ -429,26 +459,7 @@ function ContextAnalysis({
     [setSelectedPlotLabels]
   );
 
-  const continuousColorScale = useMemo(() => {
-    const values = plotData?.logOR;
-    if (!values) {
-      return undefined;
-    }
-    let min = Infinity;
-    let max = -Infinity;
-
-    for (let i = 0; i < values.length; i += 1) {
-      const value = values[i];
-
-      if (value !== null && value < min) {
-        min = value;
-      }
-
-      if (value !== null && value > max) {
-        max = value;
-      }
-    }
-
+  const getLogOrColorScale = (min: number, max: number) => {
     const zeroPosition = Math.abs((0 - min) / (max - min));
     const scale = [
       ["0.0", "#0000FF"], // Blue to label Depletions (points with the most negative log(OR)
@@ -457,67 +468,111 @@ function ContextAnalysis({
     ];
 
     return scale;
-  }, [plotData]);
+  };
 
-  const calcEnrichmentDepletionBins = useCallback((values: number[]) => {
-    if (values.length === 0) {
-      return null;
+  const continuousColorScale = useMemo(() => {
+    const values = plotData?.selectivityVal;
+    if (!values) {
+      return undefined;
     }
 
-    let min = Infinity;
-    let max = -Infinity;
+    if (entityType === "gene") {
+      const { min, max } = calcMinMax(values);
+      const scale = getLogOrColorScale(min, max);
 
-    for (let i = 0; i < values.length; i += 1) {
-      const value = values[i];
+      return scale;
+    }
 
-      if (value !== null && value < min) {
-        min = value;
+    const scale = [
+      ["0", "#01153e"],
+      ["0.25", "#1873d3"],
+      ["0.5", "#00827d"],
+      ["0.75", "#00c06e"],
+      ["0.85", "#ccff00"],
+      ["1", "#ccff00"],
+    ];
+
+    return scale;
+  }, [plotData, entityType]);
+
+  const getBins = useCallback(
+    (
+      legendMin: number,
+      legendMax: number,
+      legendRange: number,
+      binNumber: number
+    ) => {
+      let binStart = legendMin;
+      const legendBinSize = legendRange / binNumber;
+
+      const bins = [];
+      for (let i = 0; i < binNumber; i += 1) {
+        const binEnd =
+          i === binNumber - 1 ? legendMax : binStart + legendBinSize;
+        bins.push([binStart, binEnd]);
+        binStart = binEnd;
       }
 
-      if (value !== null && value > max) {
-        max = value;
+      return bins;
+    },
+    []
+  );
+
+  const calcColorByBins = useCallback(
+    (values: number[]) => {
+      if (values.length === 0) {
+        return null;
       }
-    }
 
-    const binNumber = 7;
-    const legendMin = -2;
-    const legendMax = 2;
-    const legendRange = legendMax + Math.abs(legendMin);
+      const { min, max } = calcMinMax(values);
+      console.log(min);
+      if (entityType !== "gene") {
+        const binNumber = 5;
+        const legendMin = 0;
+        const legendMax = max;
+        const legendRange = legendMax - legendMin;
+        const bins = getBins(legendMin, legendMax, legendRange, binNumber);
+        return {
+          [LEGEND_RANGE_1]: bins[0],
+          [LEGEND_RANGE_2]: bins[1],
+          [LEGEND_RANGE_3]: bins[2],
+          [LEGEND_RANGE_4]: bins[3],
+          [LEGEND_RANGE_5]: bins[4],
+        };
+      }
+      const binNumber = 7;
+      const legendMin = -2;
+      const legendMax = 2;
+      const legendRange = legendMax + Math.abs(legendMin);
 
-    let binStart = legendMin;
-    const legendBinSize = legendRange / binNumber;
+      const bins = getBins(legendMin, legendMax, legendRange, binNumber);
 
-    const bins = [];
-    for (let i = 0; i < binNumber; i += 1) {
-      const binEnd = i === binNumber - 1 ? legendMax : binStart + legendBinSize;
-      bins.push([binStart, binEnd]);
-      binStart = binEnd;
-    }
-
-    return {
-      [LEGEND_RANGE_1]: bins[0],
-      [LEGEND_RANGE_2]: bins[1],
-      [LEGEND_RANGE_3]: bins[2],
-      [LEGEND_RANGE_4]: bins[3],
-      [LEGEND_RANGE_5]: bins[4],
-      [LEGEND_RANGE_6]: bins[5],
-      [LEGEND_RANGE_7]: bins[6],
-    };
-  }, []);
+      return {
+        [LEGEND_RANGE_1]: bins[0],
+        [LEGEND_RANGE_2]: bins[1],
+        [LEGEND_RANGE_3]: bins[2],
+        [LEGEND_RANGE_4]: bins[3],
+        [LEGEND_RANGE_5]: bins[4],
+        [LEGEND_RANGE_6]: bins[5],
+        [LEGEND_RANGE_7]: bins[6],
+      };
+    },
+    [entityType, getBins]
+  );
 
   const continuousBins = useMemo(
-    () => (plotData ? calcEnrichmentDepletionBins(plotData.logOR) : null),
-    [plotData, calcEnrichmentDepletionBins]
+    () => (plotData ? calcColorByBins(plotData.selectivityVal) : null),
+    [plotData, calcColorByBins]
   );
 
   const colorMap = useMemo(() => {
-    if (!plotData?.logOR || !continuousColorScale) {
+    if (!plotData?.selectivityVal || !continuousColorScale) {
       return {
         [LEGEND_ALL]: DEFAULT_PALETTE.all,
       };
     }
 
-    if (plotData?.logOR.length === 0) {
+    if (plotData?.selectivityVal.length === 0) {
       return {
         [LEGEND_ALL]: DEFAULT_PALETTE.all,
       };
@@ -525,18 +580,27 @@ function ContextAnalysis({
 
     let colorM: Partial<Record<LegendKey, string>> = {};
 
-    colorM = {
-      [LEGEND_RANGE_1]: continuousColorScale[0][1],
-      [LEGEND_RANGE_2]: "#BCD0F5",
-      [LEGEND_RANGE_3]: "#BCD0F5",
-      [LEGEND_RANGE_4]: continuousColorScale[1][1],
-      [LEGEND_RANGE_5]: "#EDC5AF",
-      [LEGEND_RANGE_6]: "#EDC5AF",
-      [LEGEND_RANGE_7]: continuousColorScale[2][1],
-    };
+    colorM =
+      entityType === "gene"
+        ? {
+            [LEGEND_RANGE_1]: continuousColorScale[0][1],
+            [LEGEND_RANGE_2]: "#BCD0F5",
+            [LEGEND_RANGE_3]: "#BCD0F5",
+            [LEGEND_RANGE_4]: continuousColorScale[1][1],
+            [LEGEND_RANGE_5]: "#EDC5AF",
+            [LEGEND_RANGE_6]: "#EDC5AF",
+            [LEGEND_RANGE_7]: continuousColorScale[2][1],
+          }
+        : {
+            [LEGEND_RANGE_1]: continuousColorScale[0][1],
+            [LEGEND_RANGE_2]: continuousColorScale[1][1],
+            [LEGEND_RANGE_3]: continuousColorScale[2][1],
+            [LEGEND_RANGE_4]: continuousColorScale[3][1],
+            [LEGEND_RANGE_5]: continuousColorScale[4][1],
+          };
 
     return colorM;
-  }, [plotData?.logOR, continuousColorScale]);
+  }, [plotData?.selectivityVal, continuousColorScale, entityType]);
 
   const getEntityUrlRoot = useCallback(
     () =>
@@ -554,22 +618,22 @@ function ContextAnalysis({
     null
   );
   const [
-    entityDetailPlotElement,
-    setEntityDetailPlotElement,
+    entityDetailMainPlotElement,
+    setEntityDetailMainPlotElement,
   ] = useState<ExtendedPlotType | null>(null);
+  console.log(entityDetailMainPlotElement);
 
   const [isLoadingBoxplot, setIsLoadingBoxplot] = useState<boolean>(true);
-  const [
-    useScatterPlotFiltersOnBoxPlot,
-    setUseScatterPlotFiltersOnBoxPlot,
-  ] = useState<boolean>(false);
-  const [boxPlotFDRRange, setBoxPlotFDRRange] = useState<number[] | null>(null);
-  const [boxPlotEffectSizeRange, setBoxPlotEffectSizeRange] = useState<
-    number[] | null
-  >(null);
-  const [boxPlotFracDepInRange, setBoxPlotFracDepInRange] = useState<
-    number[] | null
-  >(null);
+
+  const [boxPlotMaxFDR, setBoxPlotMaxFDR] = useState<number | undefined>(
+    undefined
+  );
+  const [boxPlotMinEffectSize, setBoxPlotMinEffectSize] = useState<
+    number | undefined
+  >(undefined);
+  const [boxPlotMinFracDepIn, setBoxPlotMinFracDepIn] = useState<
+    number | undefined
+  >(undefined);
 
   useEffect(() => {
     if (
@@ -578,27 +642,17 @@ function ContextAnalysis({
       selectedPlotLabels.size > 0 &&
       [...selectedPlotLabels][0]
     ) {
-      const boxPlotFilters =
-        !useScatterPlotFiltersOnBoxPlot &&
-        defaultFilters &&
-        defaultFilters.current
-          ? defaultFilters.current
-          : filters;
+      const boxPlotFilters = defaultFilters.current || filters;
 
-      const { fdr, effectSize, fracDepIn } = getBoxPlotFilterVariables(
+      const { maxFdr, minEffectSize, minFracDepIn } = getBoxPlotFilterVariables(
         boxPlotFilters
       );
 
-      setBoxPlotFDRRange(fdr);
-      setBoxPlotEffectSizeRange(effectSize);
-      setBoxPlotFracDepInRange(fracDepIn);
+      setBoxPlotMaxFDR(maxFdr);
+      setBoxPlotMinEffectSize(minEffectSize);
+      setBoxPlotMinFracDepIn(minFracDepIn);
     }
-  }, [
-    useScatterPlotFiltersOnBoxPlot,
-    filters,
-    selectedPlotLabels,
-    defaultFilters,
-  ]);
+  }, [filters, selectedPlotLabels, defaultFilters]);
 
   const [boxplotError, setBoxplotError] = useState(false);
   const boxplotLatestPromise = useRef<Promise<ContextPlotBoxData> | null>(null);
@@ -608,23 +662,23 @@ function ContextAnalysis({
       selectedPlotLabels &&
       selectedPlotLabels.size > 0 &&
       [...selectedPlotLabels][0] &&
-      boxPlotFDRRange &&
-      boxPlotEffectSizeRange &&
-      boxPlotFracDepInRange
+      boxPlotMaxFDR &&
+      boxPlotMinEffectSize &&
+      boxPlotMinFracDepIn
     ) {
       setBoxPlotData(null);
-      setEntityDetailPlotElement(null);
+      // setEntityDetailMainPlotElement(null);
       setIsLoadingBoxplot(true);
+      setBoxplotError(false);
       const boxplotPromise = dapi.getContextExplorerBoxPlotData(
-        selectedContextNameInfo.name,
-        entityType === "gene" ? GENE_DATASET_ID : COMPOUND_DATASET_ID,
-        topContextNameInfo.name,
-        outgroup.value,
+        selectedContextNameInfo.subtype_code,
+        treeType,
+        datasetId,
         entityType,
         [...selectedPlotLabels][0],
-        boxPlotFDRRange,
-        boxPlotEffectSizeRange,
-        boxPlotFracDepInRange
+        boxPlotMaxFDR,
+        boxPlotMinEffectSize,
+        boxPlotMinFracDepIn
       );
 
       boxplotLatestPromise.current = boxplotPromise;
@@ -647,24 +701,16 @@ function ContextAnalysis({
     setIsLoadingBoxplot,
     selectedContextNameInfo,
     outgroup,
+    datasetId,
     selectedPlotLabels,
     entityType,
+    treeType,
     dapi,
     topContextNameInfo,
-    boxPlotFDRRange,
-    boxPlotEffectSizeRange,
-    boxPlotFracDepInRange,
+    boxPlotMaxFDR,
+    boxPlotMinEffectSize,
+    boxPlotMinFracDepIn,
   ]);
-
-  const handleUseScatterPlotFiltersClicked = () => {
-    setUseScatterPlotFiltersOnBoxPlot(!useScatterPlotFiltersOnBoxPlot);
-  };
-
-  const [showOtherContexts, setShowOtherContexts] = useState<boolean>(false);
-
-  const handleShowOtherContexts = useCallback(() => {
-    setShowOtherContexts(!showOtherContexts);
-  }, [showOtherContexts]);
 
   return (
     <div className={styles.geneDepPage}>
@@ -673,8 +719,7 @@ function ContextAnalysis({
           {selectedContextNameInfo.name !== "All" && data && (
             <>
               <h2>
-                Dependencies enriched/depleted in{" "}
-                {selectedContextNameInfo.display_name}
+                Dependencies enriched/depleted in {selectedContextNameInfo.name}
               </h2>
               <h4>
                 Displayed here are{" "}
@@ -682,7 +727,7 @@ function ContextAnalysis({
                   ? "gene dependencies"
                   : "drug sensitivities"}{" "}
                 that occur more strongly or more frequently in{" "}
-                {selectedContextNameInfo.display_name} cell lines compared to{" "}
+                {selectedContextNameInfo.name} cell lines compared to{" "}
                 {outgroup.label.toLowerCase()} cell lines.
               </h4>
             </>
@@ -693,10 +738,12 @@ function ContextAnalysis({
               <p>There was an error loading these plots.</p>
             </div>
           )}
-          {!error && selectedContextNameInfo.name === "All" ? (
-            <h1 style={{ textAlign: "center", color: "#808080" }}>
-              Select A More Specific Context
-            </h1>
+          {!error && !isLoading && selectedContextNameInfo.name === "All" ? (
+            <div style={{ height: "100vh" }}>
+              <h1 style={{ textAlign: "center", color: "#808080" }}>
+                Select A More Specific Context
+              </h1>
+            </div>
           ) : (
             !error &&
             !isLoading &&
@@ -727,6 +774,7 @@ function ContextAnalysis({
                     onChange={(value: any) => {
                       if (value) {
                         handleOutGroupChanged(value);
+                        handleSetSelectedPlotLabels(null);
                       }
                     }}
                     id="context-explorer-outgroup-selection"
@@ -736,6 +784,7 @@ function ContextAnalysis({
             )}
             {continuousBins && selectedContextNameInfo.name !== "All" && (
               <ScatterPlotLegend
+                legendTitle={getSelectivityValLabel(entityType)}
                 colorMap={colorMap}
                 continuousBins={continuousBins}
                 legendKeysWithNoData={null}
@@ -756,7 +805,7 @@ function ContextAnalysis({
                     plotType={ContextAnalysisPlotType.TTest}
                     pointVisibility={
                       plotData && pointVisibility.length === 0
-                        ? plotData.logOR.map(() => true)
+                        ? plotData.selectivityVal.map(() => true)
                         : pointVisibility
                     }
                     handleClickPoint={handleClickRowAndPoint}
@@ -786,7 +835,7 @@ function ContextAnalysis({
                     plotType={ContextAnalysisPlotType.inVsOut}
                     pointVisibility={
                       plotData && pointVisibility.length === 0
-                        ? plotData.logOR.map(() => true)
+                        ? plotData.selectivityVal.map(() => true)
                         : pointVisibility
                     }
                     handleClickPoint={handleClickRowAndPoint}
@@ -813,10 +862,9 @@ function ContextAnalysis({
                 <Button
                   className={styles.deButton}
                   href={getDataExplorerUrl(
-                    topContextNameInfo.name,
-                    selectedContextNameInfo.name,
-                    outgroup.value,
-                    entityType
+                    selectedContextNameInfo.subtype_code,
+                    outgroup,
+                    datasetId
                   )}
                   target="_blank"
                   disabled={
@@ -824,7 +872,7 @@ function ContextAnalysis({
                     (!isLoading && !data)
                   }
                 >
-                  Open This Plot in Data Explorer 2
+                  Open This Plot in Data Explorer
                 </Button>
               </div>
             </div>
@@ -836,28 +884,48 @@ function ContextAnalysis({
                   borderTop: "1px solid #7d7d7d",
                 }}
               />
-              <h3>Data Table and Filters</h3>
+              <h3>
+                Table and Scatter Plot Filters{" "}
+                <span>
+                  <button
+                    type="button"
+                    className={styles.resetButton}
+                    onClick={resetFilters}
+                  >
+                    reset all
+                  </button>
+                </span>
+              </h3>
+
               {entityType === "gene" ? (
-                <p style={{ fontSize: "14px", paddingRight: "35px" }}>
-                  Use the filters in order to adjust the data shown in the plots
-                  above and the table below. To see stronger results, restrict
-                  the range of FDR adjusted T-test p-values, the range of
-                  absolute value of the effect size, and the percentage of
-                  in-context lines that are dependent on the gene. Including
-                  genes with positive effect sizes will display genes that are
-                  weaker dependencies in the selected context as compared to the
-                  out-group.
+                <p
+                  style={{
+                    fontSize: "14px",
+                    paddingRight: "35px",
+                    maxWidth: "750px",
+                  }}
+                >
+                  To see stronger results, restrict the range of FDR adjusted
+                  T-test p-values, the range of absolute value of the effect
+                  size, and the percentage of in-context lines that are
+                  dependent on the gene. Including genes with positive effect
+                  sizes will display genes that are weaker dependencies in the
+                  selected context as compared to the out-group.
                 </p>
               ) : (
-                <p style={{ fontSize: "14px", paddingRight: "35px" }}>
-                  Use the filters in order to adjust the data shown in the plots
-                  above and the table below. To see stronger results, restrict
-                  the range of FDR adjusted T-test p-values, the range of
-                  absolute value of the effect size, and the percentage of
-                  in-context lines that are sensitive to the drug. Including
-                  drugs with positive effect sizes will display drugs that are
-                  weaker sensitivities in the selected context as compared to
-                  the out-group.
+                <p
+                  style={{
+                    fontSize: "14px",
+                    paddingRight: "35px",
+                    maxWidth: "750px",
+                  }}
+                >
+                  To see stronger results, restrict the range of FDR adjusted
+                  T-test p-values, the range of absolute value of the effect
+                  size, and the percentage of in-context lines that are
+                  sensitive to the drug. Including drugs with positive effect
+                  sizes will display drugs that are weaker sensitivities in the
+                  selected context as compared to the out-group.
                 </p>
               )}
               <div
@@ -871,12 +939,22 @@ function ContextAnalysis({
                   // eslint-disable-next-line react/no-array-index-key
                   key="gene-dep-plot-filters"
                   data={data}
-                  group={filterLayout[0].groups[0]}
+                  group={
+                    entityType === "gene"
+                      ? filterLayoutGene[0].groups[0]
+                      : filterLayoutDrug[0].groups[0]
+                  }
                   filters={transientFilterState}
                   onChangeFilter={updateFilter}
-                  hasChanges={filterLayout[0].groups[0].keys.some(
-                    (key: any) => changedFilters.indexOf(key) > -1
-                  )}
+                  hasChanges={
+                    entityType === "gene"
+                      ? filterLayoutGene[0].groups[0].keys.some(
+                          (key: any) => changedFilters.indexOf(key) > -1
+                        )
+                      : filterLayoutDrug[0].groups[0].keys.some(
+                          (key: any) => changedFilters.indexOf(key) > -1
+                        )
+                  }
                   altStyle={styles}
                   selectedColor={"#a8529d66"}
                   disableHistogram
@@ -894,85 +972,140 @@ function ContextAnalysis({
           )}
         </div>
       </section>
-      {selectedContextNameInfo.name !== "All" && !isLoading && data && (
-        <div className={styles.right}>
-          {selectedPlotLabels && selectedPlotLabels.size > 0 ? (
-            <div className={styles.boxPlotHeader}>
-              <h2 style={{ marginBottom: "0" }}>
-                {entityType === "gene" ? "Gene" : "Drug"} Detail
-                {selectedPlotLabels && <span> - {selectedPlotLabels}</span>}
-              </h2>
-              {boxPlotData && (
-                <a
-                  href={`${entityUrlRoot}${boxPlotData.entity_label}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  style={{
-                    textDecoration: "underline",
-                    marginTop: "0",
-                    marginBottom: "25px",
-                  }}
-                >
-                  Go to {entityType} page
-                </a>
-              )}
-              {boxplotError && (
-                <div className={styles.initialLoadError}>
-                  <h1>Sorry, an error occurred</h1>
-                  <p>There was an error loading this plot.</p>
-                </div>
-              )}
-              {!boxplotError &&
-                (!entityDetailPlotElement || isLoadingBoxplot) && (
-                  <PlotSpinner />
-                )}
-              {!boxplotError && boxPlotData && (
-                <EntityDetailBoxPlot
-                  handleSetPlotElement={(element: ExtendedPlotType | null) => {
-                    if (element) {
-                      setEntityDetailPlotElement(element);
-                    }
-                  }}
-                  selectedContextNameInfo={selectedContextNameInfo}
-                  topContextNameInfo={topContextNameInfo}
-                  boxPlotData={boxPlotData}
-                  entityType={entityType}
-                  mainPlot={entityDetailPlotElement}
-                  useScatterPlotFiltersOnBoxPlot={
-                    useScatterPlotFiltersOnBoxPlot
-                  }
-                  handleUseScatterPlotFiltersClicked={
-                    handleUseScatterPlotFiltersClicked
-                  }
-                  boxPlotFDRRange={boxPlotFDRRange}
-                  boxPlotEffectSizeRange={boxPlotEffectSizeRange}
-                  boxPlotFracDepInRange={boxPlotFracDepInRange}
-                  showOtherContexts={showOtherContexts}
-                  handleShowOtherContexts={handleShowOtherContexts}
-                  customInfoImg={customInfoImg}
-                />
-              )}
-            </div>
-          ) : (
-            <div className={styles.boxPlotHeader}>
-              <h2 style={{ marginBottom: "15px" }}>
-                {entityType === "gene" ? "Gene" : "Drug"} Detail
-              </h2>
-              <h4
+      <div className={styles.right}>
+        {selectedPlotLabels && selectedPlotLabels.size > 0 && (
+          <>
+            <h2
+              style={{
+                marginBottom: "0",
+                fontFamily: "Lato",
+                fontSize: "24px",
+                fontWeight: "bold",
+              }}
+            >
+              {entityType === "gene" ? "Gene" : "Drug"} Detail
+              {selectedPlotLabels && <span> - {selectedPlotLabels}</span>}
+            </h2>
+            {boxPlotData && (
+              <a
+                href={`${entityUrlRoot}${boxPlotData.entity_overview_page_label}`}
+                target="_blank"
+                rel="noreferrer"
                 style={{
-                  textAlign: "left",
-                  margin: "20 20 20 20",
+                  textDecoration: "underline",
+                  marginTop: "0",
+                  marginBottom: "25px",
                 }}
               >
-                Select a {entityType === "gene" ? "gene" : "drug"} to see the
-                distribution of{" "}
-                {entityType === "gene" ? "gene effects" : "log2(viability)"} in
-                the selected context and other groups.
-              </h4>
+                Go to {entityType} page
+              </a>
+            )}
+          </>
+        )}
+        {selectedPlotLabels &&
+          selectedPlotLabels.size > 0 &&
+          datasetId === ContextExplorerDatasets.Prism_oncology_AUC &&
+          !isLoading &&
+          data && (
+            <div className={styles.plotFrame}>
+              <DoseCurvesTile
+                subtypeCode={selectedContextNameInfo.subtype_code}
+                selectedLevel={selectedContextNameInfo.node_level}
+                selectedContextName={selectedContextNameInfo.name}
+                selectedDrugLabel={[...selectedPlotLabels][0]}
+                datasetName={datasetId}
+                selectedOutGroupType={outgroup.value}
+                selectedTreeType={treeType}
+                getContextExplorerDoseResponsePoints={dapi.getContextExplorerDoseResponsePoints.bind(
+                  dapi
+                )}
+              />
             </div>
           )}
-        </div>
-      )}
+        {selectedContextNameInfo.name !== "All" && !isLoading && data && (
+          <div>
+            <div className={styles.plotFrame}>
+              {selectedPlotLabels && selectedPlotLabels.size > 0 ? (
+                <div className={styles.boxPlotHeader}>
+                  {boxplotError && !isLoadingBoxplot && (
+                    <div className={styles.initialLoadError}>
+                      <h1>Sorry, an error occurred</h1>
+                      <p>There was an error loading this plot.</p>
+                    </div>
+                  )}
+                  {!boxplotError && isLoadingBoxplot && <PlotSpinner />}
+                  {!boxplotError &&
+                    boxPlotData &&
+                    selectedContextNode &&
+                    boxPlotMaxFDR &&
+                    boxPlotMinEffectSize &&
+                    boxPlotMinFracDepIn && (
+                      <CollapsibleBoxPlots
+                        handleSetMainPlotElement={(
+                          element: ExtendedPlotType | null
+                        ) => {
+                          if (element) {
+                            setEntityDetailMainPlotElement(element);
+                          }
+                        }}
+                        topContextNameInfo={topContextNameInfo}
+                        selectedCode={selectedContextNameInfo.subtype_code}
+                        boxPlotData={boxPlotData}
+                        entityType={entityType}
+                      />
+                    )}
+                </div>
+              ) : (
+                <div className={styles.boxPlotHeader}>
+                  <h2
+                    style={{
+                      marginBottom: "15px",
+                    }}
+                  >
+                    {entityType === "gene" ? "Gene" : "Drug"} Detail
+                  </h2>
+                  <h4
+                    style={{
+                      textAlign: "left",
+                      margin: "20 20 20 20",
+                    }}
+                  >
+                    Select a {entityType === "gene" ? "gene" : "drug"} to see
+                    the distribution of{" "}
+                    {entityType === "gene" ? "gene effects" : "log2(viability)"}{" "}
+                    in the selected context and other groups.
+                  </h4>
+                </div>
+              )}
+            </div>
+
+            {false && (
+              <>
+                <div className={styles.deButtonContainerCentered}>
+                  <Button
+                    className={styles.deButton}
+                    href={
+                      "/" /* getDataExplorerUrl(
+                      topContextNameInfo.name,
+                      selectedContextNameInfo.name,
+                      outgroup.value,
+                      datasetId
+                    ) */
+                    }
+                    target="_blank"
+                    disabled={
+                      selectedContextNameInfo.name === "All" ||
+                      (!isLoading && !data)
+                    }
+                  >
+                    Open as 1D Density in Data Explorer
+                  </Button>
+                </div>
+              </>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

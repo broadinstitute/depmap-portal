@@ -6,7 +6,7 @@ import pandas as pd
 from typing import Any, Optional
 from collections import defaultdict
 from logging import getLogger
-from flask import abort, json, make_response
+from flask import json, make_response
 
 from depmap_compute.context import (
     ContextEvaluator,
@@ -95,6 +95,23 @@ def get_series_from_de2_slice_id(slice_id: str) -> pd.Series:
         return get_compound_experiment_compound_instance_series()
     if slice_id.startswith("slice/mutations_prioritized/"):
         return get_mutations_prioritized_series(dataset_id, feature_label)
+    # HACK: These aren't real dataset IDs, just magic strings
+    if dataset_id in ("depmap_model_metadata", "screen_metadata"):
+        dimension_type_name = (
+            "depmap_model"
+            if dataset_id == "depmap_model_metadata"
+            else "Screen metadata"
+        )
+        metadata_dataset_id = data_access.get_metadata_dataset_id(dimension_type_name)
+
+        if metadata_dataset_id is None:
+            raise LookupError(
+                f"Could not find metadata_dataset_id for dimension type '{dimension_type_name}'!"
+            )
+
+        return data_access.breadbox_dao.get_tabular_dataset_column(  # pyright: ignore
+            metadata_dataset_id, feature_label
+        )
 
     is_transpose = feature_type == "transpose_label"
     if is_transpose and data_access.is_continuous(dataset_id):
@@ -334,6 +351,8 @@ def get_all_supported_continuous_datasets() -> list[MatrixDataset]:
         if dataset.feature_type in blocked_dimension_types:
             continue
         if dataset.sample_type in blocked_dimension_types:
+            continue
+        if dataset.data_type == "metadata":
             continue
 
         if dataset.data_type is None:

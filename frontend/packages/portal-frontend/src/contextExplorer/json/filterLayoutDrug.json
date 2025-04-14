@@ -1,0 +1,10 @@
+[
+  {
+    "label": "",
+    "groups": [
+      {
+        "keys": ["depletion", "t_qval", "abs_effect_size"]
+      }
+    ]
+  }
+]

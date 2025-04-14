@@ -7,21 +7,22 @@
     "match": "False"
   },
   {
-    "kind": "range",
+    "kind": "numberInput",
     "key": "t_qval",
-    "label": "FDR",
-    "value": { "max": 0.05 }
+    "label": "Max. FDR",
+    "minOrMax": "max",
+    "step": 0.01,
+    "value": 0.05,
+    "minBound": 0,
+    "maxBound": 1
   },
   {
-    "kind": "range",
+    "kind": "numberInput",
     "key": "abs_effect_size",
     "label": "Min absolute effect size",
-    "value": { "min": 0.5 }
-  },
-  {
-    "kind": "range",
-    "key": "frac_dep_in",
-    "label": " % of in-context lines sensitive",
-    "value": { "min": 0.1 }
+    "minOrMax": "min",
+    "step": 0.01,
+    "value": 0.5,
+    "minBound": 0
   }
 ]

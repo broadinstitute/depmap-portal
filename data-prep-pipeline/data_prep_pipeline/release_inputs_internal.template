@@ -1,4 +1,4 @@
-# SET_TAIGA_PREPROCESSOR release_taiga_id "internal-24q2-3719"
+# SET_TAIGA_PREPROCESSOR release_taiga_id "ctexp2-internal-24q4-copy-67f0"
 
 # Destination Taiga ID
 add-if-missing {
@@ -104,4 +104,20 @@ add-if-missing {
 add-if-missing {
   "type": "metabolomics",
   "dataset_id": "metabolomics-cd0c.4/CCLE_metabolomics_20190502"
+}
+
+add-if-missing {
+    "type": "oncotree",
+    "dataset_id": "subtypetree-919e.7/oncotree"
+}
+
+add-if-missing {
+    "type": "lineage_tree_genetic_subtype_whitelist",
+    "dataset_name": "subtypetree-919e",
+    "filename":"lineage_tree_genetic_subtype_whitelist"
+}
+
+add-if-missing {
+    "type": "omics_inferred_molecular_subtype",
+    "dataset_id": PREPROCESS_TAIGA_ID(release_taiga_id, "OmicsInferredMolecularSubtypes")
 }
