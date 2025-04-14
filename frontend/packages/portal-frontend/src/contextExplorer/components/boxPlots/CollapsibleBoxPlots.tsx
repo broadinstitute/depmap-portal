@@ -1,6 +1,8 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Panel, PanelGroup } from "react-bootstrap";
 import {
+  BoxCardData,
+  BoxData,
   BoxPlotInfo,
   ContextNameInfo,
   ContextPlotBoxData,
@@ -47,7 +49,6 @@ function CollapsibleBoxPlots({
   );
 
   const [otherBoxData, setOtherBoxData] = useState<BoxPlotInfo[]>([]);
-  const [xAxisRange, setXAxisRange] = useState<any>(null);
 
   const drugDottedLine = boxPlotData?.drug_dotted_line;
 
@@ -156,6 +157,28 @@ function CollapsibleBoxPlots({
     setActiveKey((prevIndex) => (prevIndex === index ? null : index));
   };
 
+  const xAxisRange = useMemo(() => {
+    const sigSelectedData =
+      boxPlotData?.significant_selection?.flatMap(
+        (boxData: BoxData) => boxData.data
+      ) || [];
+
+    const sigOtherDataCollections =
+      boxPlotData?.other_cards?.map((card: BoxCardData) =>
+        card.significant.map((boxData: BoxData) => boxData.data)
+      ) || [];
+    const sigOtherData = sigOtherDataCollections.flatMap((val: number[][]) =>
+      val.flatMap((arr: number[]) => arr)
+    );
+
+    const allData = [...sigSelectedData, ...sigOtherData];
+
+    const max = Math.max(...allData);
+    const min = Math.min(...allData);
+
+    return [min, max];
+  }, [boxPlotData]);
+
   return (
     <PanelGroup
       accordion
@@ -171,7 +194,6 @@ function CollapsibleBoxPlots({
           selectedCode={selectedCode}
           selectedContextBoxData={selectedContextBoxData}
           handleSetMainPlotElement={handleSetMainPlotElement}
-          setXAxisRange={setXAxisRange}
           xAxisRange={xAxisRange}
           entityType={entityType}
           urlPrefix={urlPrefix}
@@ -191,7 +213,6 @@ function CollapsibleBoxPlots({
                   selectedCode={selectedCode}
                   activeKey={activeKey}
                   level0Code={level0Code}
-                  setXAxisRange={setXAxisRange}
                   xAxisRange={xAxisRange}
                   card={otherCard}
                   entityType={entityType}
@@ -205,7 +226,6 @@ function CollapsibleBoxPlots({
         )}
         <OtherSolidAndHemeBoxPlots
           otherBoxData={otherBoxData}
-          setXAxisRange={setXAxisRange}
           xAxisRange={xAxisRange}
           entityType={entityType}
           drugDottedLine={drugDottedLine}

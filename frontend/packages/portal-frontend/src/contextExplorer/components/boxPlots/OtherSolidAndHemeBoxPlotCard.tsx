@@ -10,7 +10,6 @@ import BoxPlot from "./BoxPlot";
 
 interface OtherSolidAndHemeBoxPlotsProps {
   otherBoxData: BoxPlotInfo[];
-  setXAxisRange: (range: any[]) => void;
   xAxisRange: any[];
   entityType: string;
   drugDottedLine?: number;
@@ -18,7 +17,6 @@ interface OtherSolidAndHemeBoxPlotsProps {
 
 export function OtherSolidAndHemeBoxPlots({
   otherBoxData,
-  setXAxisRange,
   xAxisRange,
   entityType,
   drugDottedLine = undefined,
@@ -32,7 +30,6 @@ export function OtherSolidAndHemeBoxPlots({
             <BoxPlot
               plotName="other solid and heme"
               boxData={otherBoxData}
-              setXAxisRange={setXAxisRange}
               xAxisRange={xAxisRange}
               plotHeight={
                 otherBoxData.length * BOX_THICKNESS +

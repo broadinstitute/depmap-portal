@@ -12,7 +12,6 @@ export interface BoxPlotProps {
   dottedLinePosition: number;
   selectedCode?: string;
   onLoad?: (plot: ExtendedPlotType) => void;
-  setXAxisRange?: (range: any[]) => void;
   plotHeight?: number;
   xAxisRange?: any[];
   xAxisTitle?: string;
@@ -33,7 +32,6 @@ function BoxPlot({
   plotHeight = undefined,
   xAxisRange = undefined,
   xAxisTitle = undefined,
-  setXAxisRange = undefined,
   bottomMargin = 0,
   topMargin = 0,
   urlPrefix = undefined,
@@ -194,16 +192,6 @@ function BoxPlot({
     plotName,
     plotHeight,
   ]);
-
-  useEffect(() => {
-    if (
-      ref.current?.layout.xaxis.range &&
-      setXAxisRange &&
-      (plotName === "main" || plotName === "main-header")
-    ) {
-      setXAxisRange(ref.current?.layout.xaxis.range);
-    }
-  }, [ref.current?.layout.xaxis.range, plotName, setXAxisRange]);
 
   return <div ref={ref} />;
 }

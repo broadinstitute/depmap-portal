@@ -11,7 +11,6 @@ import BoxPlot from "src/contextExplorer/components/boxPlots/BoxPlot";
 interface SignificantBoxPlotsPanelProps {
   activeKey: string | null;
   level0Code: string;
-  setXAxisRange: (range: any[]) => void;
   xAxisRange: any[];
   entityType: string;
   drugDottedLine?: number;
@@ -24,7 +23,6 @@ interface SignificantBoxPlotsPanelProps {
 interface SignificantPlotPanelHeadingProps {
   activeKey: string | null;
   level0Code: string;
-  setXAxisRange: (element: any) => void;
   xAxisRange: any;
   card: OtherSigBoxCardData;
   entityType: string;
@@ -37,7 +35,6 @@ interface SignificantPlotPanelHeadingProps {
 const SignificantPlotPanelHeading = ({
   activeKey,
   level0Code,
-  setXAxisRange,
   xAxisRange,
   card,
   entityType,
@@ -65,7 +62,6 @@ const SignificantPlotPanelHeading = ({
             <BoxPlot
               plotName={`${level0Code}-header`}
               boxData={[card[level0Code].levelZeroPlotInfo]}
-              setXAxisRange={setXAxisRange}
               xAxisRange={xAxisRange}
               plotHeight={
                 BOX_THICKNESS + BOX_PLOT_TOP_MARGIN + BOX_PLOT_BOTTOM_MARGIN
@@ -101,7 +97,6 @@ const SignificantPlotPanelHeading = ({
 export function SignificantBoxPlotCardPanel({
   activeKey,
   level0Code,
-  setXAxisRange,
   xAxisRange,
   card,
   entityType,
@@ -115,7 +110,6 @@ export function SignificantBoxPlotCardPanel({
       <SignificantPlotPanelHeading
         activeKey={activeKey}
         level0Code={level0Code}
-        setXAxisRange={setXAxisRange}
         xAxisRange={xAxisRange}
         card={card}
         entityType={entityType}
@@ -131,7 +125,6 @@ export function SignificantBoxPlotCardPanel({
               plotName={`${level0Code} box plot`}
               boxData={[...card[level0Code].subContextInfo].reverse()}
               onLoad={() => {}}
-              setXAxisRange={setXAxisRange}
               xAxisRange={xAxisRange}
               plotHeight={
                 card[level0Code].subContextInfo.length * BOX_THICKNESS +

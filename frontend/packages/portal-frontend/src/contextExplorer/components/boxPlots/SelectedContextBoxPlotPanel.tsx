@@ -14,7 +14,6 @@ interface SelectedContextBoxPlotPanelProps {
   selectedLevelZeroBoxData: BoxPlotInfo | null;
   selectedContextBoxData: BoxPlotInfo[] | null;
   handleSetMainPlotElement: (element: any) => void;
-  setXAxisRange: (range: any[]) => void;
   xAxisRange: any[];
   entityType: string;
   activeKey: string | null;
@@ -26,7 +25,6 @@ interface SelectedContextBoxPlotPanelProps {
 interface PanelBodyProps {
   selectedContextBoxData: BoxPlotInfo[];
   handleSetMainPlotElement: (element: any) => void;
-  setXAxisRange: (range: any[]) => void;
   xAxisRange: any[];
   entityType: string;
   drugDottedLine?: number;
@@ -38,7 +36,6 @@ interface PanelBodyProps {
 const PanelBody = ({
   selectedContextBoxData,
   handleSetMainPlotElement,
-  setXAxisRange,
   xAxisRange,
   entityType,
   drugDottedLine = undefined,
@@ -54,7 +51,6 @@ const PanelBody = ({
           plotName="main"
           boxData={selectedContextBoxData}
           onLoad={handleSetMainPlotElement}
-          setXAxisRange={setXAxisRange}
           xAxisRange={xAxisRange}
           plotHeight={
             selectedContextBoxData.length * BOX_THICKNESS +
@@ -80,7 +76,6 @@ interface PanelTitleNoChildPlotsProps {
   selectedLevelZeroBoxData: BoxPlotInfo | null;
   selectedContextBoxData: BoxPlotInfo[] | null;
   handleSetMainPlotElement: (element: any) => void;
-  setXAxisRange: (range: any[]) => void;
   xAxisRange: any[];
   entityType: string;
   drugDottedLine?: number;
@@ -113,7 +108,6 @@ const PanelHeading = ({
   selectedLevelZeroBoxData,
   selectedContextBoxData,
   handleSetMainPlotElement,
-  setXAxisRange,
   xAxisRange,
   entityType,
   activeKey,
@@ -130,7 +124,6 @@ const PanelHeading = ({
           <BoxPlot
             plotName="main-header"
             boxData={[selectedLevelZeroBoxData]}
-            setXAxisRange={setXAxisRange}
             onLoad={handleSetMainPlotElement}
             xAxisRange={xAxisRange}
             selectedCode={selectedCode}
@@ -169,7 +162,6 @@ const PanelHeading = ({
               <BoxPlot
                 plotName="main-header"
                 boxData={[selectedLevelZeroBoxData]}
-                setXAxisRange={setXAxisRange}
                 onLoad={handleSetMainPlotElement}
                 xAxisRange={xAxisRange}
                 selectedCode={selectedCode}
@@ -207,7 +199,6 @@ export const SelectedContextBoxPlotPanel = ({
   selectedCode,
   selectedContextBoxData,
   handleSetMainPlotElement,
-  setXAxisRange,
   xAxisRange,
   entityType,
   activeKey,
@@ -223,7 +214,6 @@ export const SelectedContextBoxPlotPanel = ({
         selectedLevelZeroBoxData={selectedLevelZeroBoxData}
         selectedContextBoxData={selectedContextBoxData}
         handleSetMainPlotElement={handleSetMainPlotElement}
-        setXAxisRange={setXAxisRange}
         xAxisRange={xAxisRange}
         entityType={entityType}
         drugDottedLine={drugDottedLine}
@@ -235,7 +225,6 @@ export const SelectedContextBoxPlotPanel = ({
         <PanelBody
           selectedContextBoxData={selectedContextBoxData}
           handleSetMainPlotElement={handleSetMainPlotElement}
-          setXAxisRange={setXAxisRange}
           xAxisRange={xAxisRange}
           entityType={entityType}
           drugDottedLine={drugDottedLine}
