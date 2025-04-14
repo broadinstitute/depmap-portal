@@ -1,5 +1,4 @@
 import { AsyncTypeahead } from "react-bootstrap-typeahead";
-import "react-bootstrap-typeahead/css/Typeahead.css";
 
 import React from "react";
 

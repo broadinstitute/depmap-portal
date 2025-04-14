@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import ReactDOM from "react-dom";
+import { ApiContext } from "@depmap/api";
 import { BrowserRouter, Navigate, Routes, Route } from "react-router-dom";
 import ErrorBoundary from "src/common/components/ErrorBoundary";
 import NotFound from "src/pages/NotFound";
@@ -7,11 +8,14 @@ import { Spinner } from "@depmap/common-components";
 import { ElaraApi } from "src/api";
 import ElaraNavbar from "src/ElaraNavbar";
 import TypesPage from "src/pages/Types/TypesPage";
+import "src/create-depmap-global-object";
 
 import "bootstrap/dist/css/bootstrap.css";
 // Include this after bootstrap so we can override its styles.
 import "./index.scss";
-import { ApiContext } from "@depmap/api";
+
+import "react-bootstrap-typeahead/css/Typeahead.css";
+import "./typeahead_fix.scss";
 
 const DataExplorer = React.lazy(() => import("src/pages/DataExplorer"));
 const Datasets = React.lazy(() => import("@depmap/dataset-manager"));
@@ -53,12 +57,18 @@ const App = () => {
           <ElaraNavbar />
           <Routes>
             <Route path="*" element={<NotFound />} />
-            <Route path="/" element={<Navigate to="/elara" replace />} />
+            <Route path="/" element={<Navigate to="/elara/" replace />} />
             <Route path="/elara">
               <Route
                 path="/elara"
                 element={
-                  <React.Suspense fallback={<Spinner />}>
+                  <React.Suspense
+                    fallback={
+                      <div style={{ width: "99vw", overflow: "hidden" }}>
+                        <Spinner position="relative" />
+                      </div>
+                    }
+                  >
                     <DataExplorer />
                   </React.Suspense>
                 }

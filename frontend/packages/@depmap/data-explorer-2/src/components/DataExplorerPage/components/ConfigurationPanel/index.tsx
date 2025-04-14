@@ -1,4 +1,5 @@
 import React from "react";
+import { isElara } from "@depmap/globals";
 import {
   ContextPath,
   DataExplorerContext,
@@ -34,7 +35,8 @@ function ConfigurationPanel({
   onClickSwapAxisConfigs,
 }: Props) {
   const showAssocations = Boolean(
-    plot.index_type === "depmap_model" &&
+    !isElara &&
+      plot.index_type === "depmap_model" &&
       plot.dimensions?.x &&
       plot.dimensions.x.context &&
       plot.dimensions.x.dataset_id &&

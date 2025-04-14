@@ -4,6 +4,7 @@ import { useDataExplorerApi } from "../../../contexts/DataExplorerApiContext";
 import useCallbacks from "./useCallbacks";
 import useSync from "./useSync";
 import resolveNextState from "./resolveNextState";
+import { findDataType } from "./utils";
 // import { validateDimension } from "./utils";
 import { Changes, Mode, State, DEFAULT_STATE } from "./types";
 
@@ -31,9 +32,18 @@ export default function useDimensionStateManager({
   const initialState = useRef({
     ...DEFAULT_STATE,
     dataType: initialDataType || null,
-    dimension: value || {
-      axis_type: mode === "context-only" ? "aggregated_slice" : "raw_slice",
-      aggregation: mode === "context-only" ? undefined : "first",
+    dimension: {
+      ...value,
+
+      axis_type:
+        value?.axis_type ||
+        (mode === "context-only"
+          ? ("aggregated_slice" as const)
+          : ("raw_slice" as const)),
+
+      aggregation:
+        value?.aggregation ||
+        (mode === "context-only" ? undefined : ("first" as const)),
     },
   });
 
@@ -73,9 +83,27 @@ export default function useDimensionStateManager({
 
     if (indexTypeChanged) {
       prevIndexType.current = index_type;
-      update({ index_type });
+      update({
+        index_type,
+        axis_type:
+          mode === "context-only"
+            ? ("aggregated_slice" as const)
+            : ("raw_slice" as const),
+
+        aggregation: mode === "context-only" ? undefined : ("first" as const),
+      });
     }
-  }, [index_type, update]);
+  }, [index_type, mode, update]);
+
+  useEffect(() => {
+    const dataset_id = state.dimension.dataset_id;
+
+    if (state.dataType === null && dataset_id !== undefined) {
+      findDataType(api, dataset_id).then((dataType) => {
+        update({ dataType, dataset_id });
+      });
+    }
+  }, [api, state.dataType, state.dimension.dataset_id, update]);
 
   const noMatchingContexts = useMemo(() => {
     return (
