@@ -87,7 +87,7 @@ function CollapsibleBoxPlots({
           }
         }
       });
-      let boxCardCount = 1;
+      const boxCardCount = 1;
 
       const insigPlotData = boxPlotData.insignificant_selection;
       let otherPlot;
@@ -153,7 +153,7 @@ function CollapsibleBoxPlots({
         setSelectedContextBoxData([otherPlot]);
       }
     }
-  }, [boxPlotData, topContextNameInfo]);
+  }, [boxPlotData, topContextNameInfo, EntityBoxColorList]);
 
   const [activeKey, setActiveKey] = useState<string | null>("SELECTED");
   const handleAccordionClick = (index: string) => {

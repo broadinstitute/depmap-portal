@@ -60,7 +60,6 @@ const SignificantPlotPanelHeading = ({
           )}
           {activeKey !== level0Code ? (
             <BoxPlot
-              plotName={`${level0Code}-header`}
               boxData={[card[level0Code].levelZeroPlotInfo]}
               xAxisRange={xAxisRange}
               plotHeight={
@@ -122,7 +121,6 @@ export function SignificantBoxPlotCardPanel({
         {activeKey === level0Code &&
           card[level0Code].subContextInfo.length > 0 && (
             <BoxPlot
-              plotName={`${level0Code} box plot`}
               boxData={[...card[level0Code].subContextInfo].reverse()}
               onLoad={() => {}}
               xAxisRange={xAxisRange}

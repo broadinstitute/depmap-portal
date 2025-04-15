@@ -5,9 +5,9 @@ import PlotlyLoader, {
   PlotlyType,
 } from "../../../plot/components/PlotlyLoader";
 import { BoxPlotInfo } from "src/contextExplorer/models/types";
+import { PlotlyHTMLElement } from "plotly.js";
 
 export interface BoxPlotProps {
-  plotName: string;
   boxData: BoxPlotInfo[];
   dottedLinePosition: number;
   selectedCode?: string;
@@ -25,7 +25,6 @@ type BoxPlotWithPlotly = BoxPlotProps & { Plotly: PlotlyType };
 
 function BoxPlot({
   boxData,
-  plotName,
   dottedLinePosition,
   selectedCode = undefined,
   onLoad = () => {},
@@ -144,6 +143,29 @@ function BoxPlot({
     const config: Partial<Plotly.Config> = { responsive: true };
 
     Plotly.react(plot, data, layout, config);
+
+    // Keep track of added listeners so we can easily remove them.
+    const listeners: [string, (e: any) => void][] = [];
+
+    const on = (eventName: string, callback: (e: any) => void) => {
+      plot.on(
+        eventName as Parameters<PlotlyHTMLElement["on"]>[0],
+        callback as Parameters<PlotlyHTMLElement["on"]>[1]
+      );
+      listeners.push([eventName, callback]);
+    };
+
+    on("plotly_autosize", () => {
+      setTimeout(() => {
+        Plotly.redraw(plot);
+      });
+    });
+
+    return () => {
+      listeners.forEach(([eventName, callback]) =>
+        plot.removeListener(eventName, callback)
+      );
+    };
   }, [
     Plotly,
     boxData,
@@ -157,40 +179,6 @@ function BoxPlot({
     urlPrefix,
     tab,
     onLoad,
-  ]);
-
-  useEffect(() => {
-    if (ref.current?.layout && plotName === "other") {
-      const update: Partial<Plotly.Layout> = {
-        xaxis: {
-          range: xAxisRange ?? ref.current.layout.xaxis.range,
-          title: xAxisTitle ?? "",
-        },
-      };
-
-      Plotly.relayout(ref.current, update);
-    } else if (
-      ref.current?.layout &&
-      (plotName === "main" || plotName === "main-header")
-    ) {
-      const update: Partial<Plotly.Layout> = {
-        margin: { t: topMargin, r: 5, b: bottomMargin, l: 0 },
-        xaxis: {
-          range: xAxisRange ?? ref.current.layout.xaxis.range,
-          title: xAxisTitle ?? "",
-        },
-      };
-
-      Plotly.relayout(ref.current, update);
-    }
-  }, [
-    xAxisRange,
-    xAxisTitle,
-    Plotly,
-    bottomMargin,
-    topMargin,
-    plotName,
-    plotHeight,
   ]);
 
   return <div ref={ref} />;

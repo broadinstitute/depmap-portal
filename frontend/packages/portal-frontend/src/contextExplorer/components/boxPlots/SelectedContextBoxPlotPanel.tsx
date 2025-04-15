@@ -48,7 +48,6 @@ const PanelBody = ({
       {" "}
       <div>
         <BoxPlot
-          plotName="main"
           boxData={selectedContextBoxData}
           onLoad={handleSetMainPlotElement}
           xAxisRange={xAxisRange}
@@ -122,7 +121,6 @@ const PanelHeading = ({
         <Panel.Title>
           {" "}
           <BoxPlot
-            plotName="main-header"
             boxData={[selectedLevelZeroBoxData]}
             onLoad={handleSetMainPlotElement}
             xAxisRange={xAxisRange}
@@ -159,24 +157,25 @@ const PanelHeading = ({
               )}
 
             {selectedLevelZeroBoxData && activeKey !== "SELECTED" ? (
-              <BoxPlot
-                plotName="main-header"
-                boxData={[selectedLevelZeroBoxData]}
-                onLoad={handleSetMainPlotElement}
-                xAxisRange={xAxisRange}
-                selectedCode={selectedCode}
-                plotHeight={
-                  BOX_THICKNESS + BOX_PLOT_TOP_MARGIN + BOX_PLOT_BOTTOM_MARGIN
-                }
-                xAxisTitle={""}
-                bottomMargin={BOX_PLOT_BOTTOM_MARGIN}
-                topMargin={BOX_PLOT_TOP_MARGIN}
-                dottedLinePosition={
-                  entityType === "gene" ? -1 : drugDottedLine || -1.74
-                }
-                urlPrefix={urlPrefix}
-                tab={tab}
-              />
+              <>
+                <BoxPlot
+                  boxData={[selectedLevelZeroBoxData]}
+                  onLoad={handleSetMainPlotElement}
+                  xAxisRange={xAxisRange}
+                  selectedCode={selectedCode}
+                  plotHeight={
+                    BOX_THICKNESS + BOX_PLOT_TOP_MARGIN + BOX_PLOT_BOTTOM_MARGIN
+                  }
+                  xAxisTitle={""}
+                  bottomMargin={BOX_PLOT_BOTTOM_MARGIN}
+                  topMargin={BOX_PLOT_TOP_MARGIN}
+                  dottedLinePosition={
+                    entityType === "gene" ? -1 : drugDottedLine || -1.74
+                  }
+                  urlPrefix={urlPrefix}
+                  tab={tab}
+                />
+              </>
             ) : (
               (!selectedContextBoxData && activeKey === "SELECTED") ||
               (selectedLevelZeroBoxData && activeKey === "SELECTED" && (

@@ -28,7 +28,6 @@ export function OtherSolidAndHemeBoxPlots({
         <div>
           {otherBoxData.length > 0 ? (
             <BoxPlot
-              plotName="other solid and heme"
               boxData={otherBoxData}
               xAxisRange={xAxisRange}
               plotHeight={
