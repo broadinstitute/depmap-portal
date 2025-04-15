@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React from "react";
 import { Panel } from "react-bootstrap";
 import { BoxPlotInfo } from "src/contextExplorer/models/types";
 import {
