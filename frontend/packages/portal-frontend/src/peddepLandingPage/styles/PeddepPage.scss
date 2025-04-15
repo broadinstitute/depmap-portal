@@ -1,0 +1,89 @@
+.PeddepPage {
+  font-family: roboto;
+  @media screen and (min-width: 1366px) {
+    padding: 90px;
+  }
+  @media screen and (min-width: 768px) and (max-width: 1365px) {
+    padding: 50px;
+  }
+  @media screen and (max-width: 768px) {
+    padding: 20px;
+  }
+
+  h1 {
+    font-size: 42px;
+    font-weight: 700;
+    line-height: 100%;
+    margin: 20px 0;
+  }
+  h2 {
+    font-size: 32px;
+    font-weight: 700;
+    line-height: 100%;
+    margin: 20px 0;
+  }
+  h3 {
+    font-size: 28px;
+    font-weight: 400;
+    line-height: 32px;
+  }
+  h4 {
+    font-size: 22px;
+    font-weight: normal;
+  }
+  h5 {
+    font-size: 16px;
+    font-weight: normal;
+    font-style: normal;
+  }
+  p {
+    font-size: 14px;
+  }
+
+  &.highlightBackground {
+    background-repeat: no-repeat;
+    background-position: right bottom;
+
+    @media screen and (max-width: 1024px) {
+      background-size: contain;
+    }
+    @media screen and (min-width: 1920px) {
+      background-size: calc(100vh);
+    }
+  }
+}
+
+.highlight {
+  @media screen and (min-width: 1024px) {
+    .title {
+      padding-right: 50px;
+    }
+    display: grid;
+    grid-template-columns: 5fr 4fr;
+    .highlightText {
+      padding-right: 15px;
+    }
+  }
+}
+
+.dataContainer {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+}
+
+.dataInfo {
+  @media screen and (min-width: 1366px) {
+    padding: 90px;
+  }
+  @media screen and (min-width: 768px) and (max-width: 1365px) {
+    padding: 50px;
+  }
+  @media screen and (max-width: 768px) {
+    padding: 20px;
+  }
+}
+
+.aboutPeddep {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
