@@ -1,4 +1,5 @@
-FROM us.gcr.io/broad-achilles/depmap-breadbox-base:v2
+# TODO: where does this image come from?
+FROM us.gcr.io/broad-achilles/depmap-breadbox-base:v2 
 
 # install security updated
 RUN apt update && apt upgrade -y
@@ -13,12 +14,10 @@ RUN poetry config virtualenvs.create false
 RUN mkdir /install/breadbox
 
 # Copy files:
-COPY pyproject.toml poetry.lock /install/breadbox
-COPY *.py /install/breadbox
-COPY bb /install/breadbox
-COPY alembic /install/breadbox/alembic
-COPY alembic.ini /install/breadbox
-COPY breadbox /install/breadbox/breadbox
+COPY . /install/breadbox
+
+# TODO: pyright errors still differ, even with the same python version! 
+# TODO: I simplified it a bunch but now it's hitting maybe-nondeterministic failures. Why? I should look back at the old changes
 
 # TOOD: why does this need the breadbox client at all? is it for some github action?
 
