@@ -255,8 +255,8 @@ def get_sig_context_dataframe(
 
     if entity_type == "compound" and use_enrichment_tile_filters:
         max_fdr = 0.05
-        min_abs_effect_size: float = 0.1
-        min_frac_dep_in: float = 0.1
+        min_abs_effect_size = 0.1
+        min_frac_dep_in = 0.1
     # If this doesn't find the node, something is wrong with how we
     # loaded the SubtypeNode database table data.
     sig_contexts = ContextAnalysis.get_context_dependencies(
@@ -404,7 +404,6 @@ def get_organized_contexts(
     selected_subtype_code: str,
     sig_contexts: pd.DataFrame,
     entity_type: str,
-    entity_id: int,
     entity_label: str,
     dataset_name: str,
     tree_type: str,
@@ -503,6 +502,7 @@ def get_gene_enriched_lineages_entity_id_and_dataset_name(entity_label: str) -> 
     dataset = get_dependency_dataset_for_entity(
         DependencyDataset.DependencyEnum.Chronos_Combined.name, gene.entity_id
     )
+    assert dataset is not None
     dataset_name = dataset.name.name
 
     return {"entity_id": gene.entity_id, "dataset_name": dataset_name}
@@ -513,6 +513,8 @@ def get_compound_enriched_lineages_entity_id_and_dataset_name(
 ) -> dict:
     compound = Compound.get_by_label(entity_label)
     best_ce_and_d = get_compound_experiment_and_dataset_name_from_compound(compound)
+
+    assert best_ce_and_d is not None
 
     compound_experiment = best_ce_and_d[0][0]
     dataset_name = best_ce_and_d[0][1].name.name
@@ -527,6 +529,13 @@ def get_compound_enriched_lineages_entity_id_and_dataset_name(
 def get_data_to_show_if_no_contexts_significant(
     entity_type: str, entity_label: str, tree_type: str, dataset_name: str
 ):
+    entity_id_and_label = utils.get_entity_id_from_entity_full_label(
+        entity_type=entity_type, entity_full_label=entity_label
+    )
+    entity_label = entity_id_and_label["label"]
+    entity_overview_page_label = entity_id_and_label["entity_overview_page_label"]
+
+    entity_overview_page_label = entity_id_and_label["entity_overview_page_label"]
     (entity_full_row_of_values) = utils.get_full_row_of_values_and_depmap_ids(
         dataset_name=dataset_name, label=entity_label
     )
@@ -556,6 +565,7 @@ def get_data_to_show_if_no_contexts_significant(
         insignificant_solid_data=solid_box_plot_data,
         drug_dotted_line=drug_dotted_line,
         entity_label=entity_label,
+        entity_overview_page_label=entity_overview_page_label,
     )
 
     tile_data = EnrichedLineagesTileData(

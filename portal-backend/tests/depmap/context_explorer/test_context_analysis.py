@@ -1,10 +1,12 @@
 from dataclasses import dataclass
 import dataclasses
+from depmap.context_explorer import box_plot_utils
 from depmap.context_explorer.api import _get_analysis_data_table
 import pytest
 from typing import List, Literal, Optional
 from depmap.context_explorer.dose_curve_utils import get_context_dose_curves
 from depmap.context_explorer.utils import (
+    get_entity_id_from_entity_full_label,
     get_full_row_of_values_and_depmap_ids,
     _get_compound_experiment_id_from_entity_label,
 )
@@ -1084,20 +1086,34 @@ def _get_box_plot_data(
     selected_entity_label: str,
     tree_type: str,
     entity_type: str,
-    max_fdr,
-    min_abs_effect_size,
-    min_frac_dep_in,
+    max_fdr: float = 0.5,
+    min_abs_effect_size: float = 0.1,
+    min_frac_dep_in: float = 0.1,
 ) -> Optional[dict]:
 
-    context_box_plot_data = get_organized_contexts(
-        selected_subtype_code=selected_subtype_code,
+    entity_id_and_label = get_entity_id_from_entity_full_label(
+        entity_type=entity_type, entity_full_label=selected_entity_label,
+    )
+    entity_id = entity_id_and_label["entity_id"]
+    entity_label = entity_id_and_label["label"]
+
+    sig_contexts = box_plot_utils.get_sig_context_dataframe(
         tree_type=tree_type,
         entity_type=entity_type,
-        entity_full_label=selected_entity_label,
+        entity_id=entity_id,
         dataset_name=dataset_name,
         max_fdr=max_fdr,
         min_abs_effect_size=min_abs_effect_size,
         min_frac_dep_in=min_frac_dep_in,
+    )
+
+    context_box_plot_data = box_plot_utils.get_organized_contexts(
+        selected_subtype_code=selected_subtype_code,
+        sig_contexts=sig_contexts,
+        entity_type=entity_type,
+        entity_label=entity_label,
+        dataset_name=dataset_name,
+        tree_type=tree_type,
     )
 
     if context_box_plot_data is None:
@@ -1134,9 +1150,6 @@ def test_get_box_plot_data(empty_db_mock_downloads, dataset_name):
         selected_subtype_code=selected_subtype_code,
         tree_type=tree_type,
         entity_type=entity_type,
-        max_fdr=all_range.max_fdr,
-        min_abs_effect_size=all_range.min_abs_effect_size,
-        min_frac_dep_in=all_range.min_frac_dep_in,
     )
 
     assert data["significant_selection"] == [

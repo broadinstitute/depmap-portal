@@ -1,5 +1,4 @@
 import dataclasses
-import re
 from typing import Any, Dict, List, Literal, Tuple, Union
 import os
 from depmap.cell_line.models_new import DepmapModel
@@ -9,10 +8,7 @@ from depmap.context_explorer.utils import (
     get_path_to_node,
 )
 from depmap.context_explorer import box_plot_utils, dose_curve_utils
-from depmap.dataset.models import DependencyDataset
-from depmap.gene.models import Gene
 from depmap.tda.views import convert_series_to_json_safe_list
-from depmap.tile.views import get_dependency_dataset_for_entity
 from flask_restplus import Namespace, Resource
 from flask import current_app, request, url_for
 import pandas as pd
@@ -20,7 +16,6 @@ from depmap.settings.shared import DATASET_METADATA
 from depmap.context_explorer.models import (
     ContextAnalysis,
     ContextNode,
-    ContextPlotBoxData,
     ContextNameInfo,
     EnrichedLineagesTileData,
 )
@@ -570,7 +565,6 @@ class ContextBoxPlotData(Resource):
             selected_subtype_code=selected_subtype_code,
             sig_contexts=sig_contexts,
             entity_type=entity_type,
-            entity_id=entity_id,
             entity_label=entity_label,
             dataset_name=dataset_name,
             tree_type=tree_type,
@@ -662,6 +656,7 @@ class EnrichedLineagesTile(
         # necessary to sort the child subtype_codes underneath each level_0 by signficance.
         selected_subtype_code = sig_contexts["level_0"].tolist()[0]
         top_context = SubtypeNode.get_by_code(selected_subtype_code)
+        assert top_context is not None
         top_context_name_info = ContextNameInfo(
             name=top_context.node_name, subtype_code=selected_subtype_code, node_level=0
         )
@@ -672,7 +667,6 @@ class EnrichedLineagesTile(
             entity_label=entity_label,
             dataset_name=dataset_name,
             sig_contexts=sig_contexts,
-            entity_id=entity_id,
             tree_type=tree_type,
         )
 
