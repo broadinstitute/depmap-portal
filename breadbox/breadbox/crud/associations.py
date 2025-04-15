@@ -46,7 +46,6 @@ def add_association_table(
     filestore_location: str,
     filename: str,
 ):
-    breakpoint()
 
     def get_matrix_dataset(dataset_id):
         dataset = dataset_crud.get_dataset(db, db.user, dataset_id)
