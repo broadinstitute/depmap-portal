@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { Panel } from "react-bootstrap";
 import { BoxPlotInfo } from "src/contextExplorer/models/types";
 import {
@@ -10,15 +10,15 @@ import BoxPlot from "./BoxPlot";
 
 interface OtherSolidAndHemeBoxPlotsProps {
   otherBoxData: BoxPlotInfo[];
-  xAxisRange: any[];
   entityType: string;
+  xAxisRange: any[];
   drugDottedLine?: number;
 }
 
 export function OtherSolidAndHemeBoxPlots({
   otherBoxData,
-  xAxisRange,
   entityType,
+  xAxisRange,
   drugDottedLine = undefined,
 }: OtherSolidAndHemeBoxPlotsProps) {
   return (

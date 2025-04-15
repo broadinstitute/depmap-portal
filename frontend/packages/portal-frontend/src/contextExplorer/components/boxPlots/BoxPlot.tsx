@@ -97,8 +97,6 @@ function BoxPlot({
       margin: { t: topMargin, r: 5, b: bottomMargin, l: 5 },
       autosize: true,
       dragmode: "pan",
-      height: plotHeight,
-      // width: 200,
       showlegend: false,
       yaxis: {
         zeroline: false,
@@ -155,7 +153,7 @@ function BoxPlot({
       listeners.push([eventName, callback]);
     };
 
-    on("plotly_autosize", () => {
+    on("plotly_resize", () => {
       setTimeout(() => {
         Plotly.redraw(plot);
       });
@@ -186,6 +184,7 @@ function BoxPlot({
 
 export default function LazyBoxPlot({
   boxData,
+  plotHeight = undefined,
   selectedCode = undefined,
   urlPrefix = undefined,
   tab = undefined,
@@ -200,6 +199,7 @@ export default function LazyBoxPlot({
               display: "grid",
               gridTemplateColumns: "100px auto",
               color: "#4479B2",
+              height: plotHeight,
             }}
           >
             <div

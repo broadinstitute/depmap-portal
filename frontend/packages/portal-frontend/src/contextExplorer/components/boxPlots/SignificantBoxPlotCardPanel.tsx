@@ -118,27 +118,26 @@ export function SignificantBoxPlotCardPanel({
         selectedCode={selectedCode}
       />
       <Panel.Body collapsible>
-        {activeKey === level0Code &&
-          card[level0Code].subContextInfo.length > 0 && (
-            <BoxPlot
-              boxData={[...card[level0Code].subContextInfo].reverse()}
-              onLoad={() => {}}
-              xAxisRange={xAxisRange}
-              plotHeight={
-                card[level0Code].subContextInfo.length * BOX_THICKNESS +
-                BOX_PLOT_TOP_MARGIN +
-                BOX_PLOT_BOTTOM_MARGIN
-              }
-              xAxisTitle={""}
-              bottomMargin={BOX_PLOT_BOTTOM_MARGIN}
-              topMargin={BOX_PLOT_TOP_MARGIN}
-              dottedLinePosition={
-                entityType === "gene" ? -1 : drugDottedLine || -1.74
-              }
-              urlPrefix={urlPrefix}
-              tab={tab}
-            />
-          )}
+        {activeKey === level0Code && (
+          <BoxPlot
+            boxData={[...card[level0Code].subContextInfo].reverse()}
+            onLoad={() => {}}
+            xAxisRange={xAxisRange}
+            plotHeight={
+              card[level0Code].subContextInfo.length * BOX_THICKNESS +
+              BOX_PLOT_TOP_MARGIN +
+              BOX_PLOT_BOTTOM_MARGIN
+            }
+            xAxisTitle={""}
+            bottomMargin={BOX_PLOT_BOTTOM_MARGIN}
+            topMargin={BOX_PLOT_TOP_MARGIN}
+            dottedLinePosition={
+              entityType === "gene" ? -1 : drugDottedLine || -1.74
+            }
+            urlPrefix={urlPrefix}
+            tab={tab}
+          />
+        )}
       </Panel.Body>
     </>
   );

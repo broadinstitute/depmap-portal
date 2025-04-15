@@ -161,6 +161,20 @@ function CollapsibleBoxPlots({
   };
 
   const xAxisRange = useMemo(() => {
+    if (
+      boxPlotData?.significant_selection?.length === 0 &&
+      boxPlotData.other_cards.length === 0 &&
+      otherBoxData.length > 0
+    ) {
+      const otherData = otherBoxData.flatMap((box: BoxPlotInfo) => box.xVals);
+
+      const allDataSolidHeme = [...otherData];
+
+      const maxSolidHeme = Math.max(...allDataSolidHeme) + 0.05;
+      const minSolidHeme = Math.min(...allDataSolidHeme) - 0.05;
+
+      return [minSolidHeme, maxSolidHeme];
+    }
     const sigSelectedData =
       boxPlotData?.significant_selection?.flatMap(
         (boxData: BoxData) => boxData.data
@@ -180,7 +194,7 @@ function CollapsibleBoxPlots({
     const min = Math.min(...allData) - 0.05;
 
     return [min, max];
-  }, [boxPlotData]);
+  }, [boxPlotData, otherBoxData]);
 
   return (
     <PanelGroup
