@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { Panel, PanelGroup } from "react-bootstrap";
 import {
   BoxCardData,
   BoxData,
+  ContextExplorerDatasets,
   ContextNameInfo,
   ContextPlotBoxData,
   OtherBoxCardData,
@@ -37,6 +38,7 @@ interface Props {
   selectedCode: string;
   boxPlotData: ContextPlotBoxData | null;
   entityType: string;
+  datasetId: ContextExplorerDatasets;
 }
 
 function CollapsibleBoxPlots({
@@ -45,6 +47,7 @@ function CollapsibleBoxPlots({
   selectedCode,
   boxPlotData,
   entityType,
+  datasetId,
 }: Props) {
   const [
     selectedLevelZeroBoxData,
@@ -61,10 +64,19 @@ function CollapsibleBoxPlots({
   const [otherBoxData, setOtherBoxData] = useState<BoxPlotInfo[]>([]);
   const [xAxisRange, setXAxisRange] = useState<any>(null);
 
-  const X_AXIS_TITLE = "";
-  // entityType === "gene"
-  //   ? GENE_BOX_PLOT_X_AXIS_TITLE
-  //   : COMPOUND_BOX_PLOT_X_AXIS_TITLE;
+  const getXAxisTitle = useCallback(() => {
+    if (datasetId === ContextExplorerDatasets.Prism_oncology_AUC) {
+      return "AUC";
+    }
+
+    if (datasetId === ContextExplorerDatasets.Rep_all_single_pt) {
+      return "log2(Viability)";
+    }
+
+    return "Gene Effect";
+  }, [datasetId]);
+
+  const X_AXIS_TITLE = getXAxisTitle();
 
   const drugDottedLine = boxPlotData?.drug_dotted_line;
 
@@ -392,10 +404,10 @@ function CollapsibleBoxPlots({
                 plotHeight={
                   selectedContextBoxData.length * BOX_THICKNESS +
                   BOX_PLOT_TOP_MARGIN +
-                  BOX_PLOT_BOTTOM_MARGIN
+                  40
                 }
                 xAxisTitle={X_AXIS_TITLE}
-                bottomMargin={BOX_PLOT_BOTTOM_MARGIN}
+                bottomMargin={40}
                 topMargin={BOX_PLOT_TOP_MARGIN}
                 selectedCode={selectedCode}
                 dottedLinePosition={
@@ -482,10 +494,10 @@ function CollapsibleBoxPlots({
                         otherCard[level0Code].subContextInfo.length *
                           BOX_THICKNESS +
                         BOX_PLOT_TOP_MARGIN +
-                        BOX_PLOT_BOTTOM_MARGIN
+                        40
                       }
-                      xAxisTitle={""}
-                      bottomMargin={BOX_PLOT_BOTTOM_MARGIN}
+                      xAxisTitle={X_AXIS_TITLE}
+                      bottomMargin={40}
                       topMargin={BOX_PLOT_TOP_MARGIN}
                       dottedLinePosition={
                         entityType === "gene" ? -1 : drugDottedLine || -1.74
@@ -508,12 +520,10 @@ function CollapsibleBoxPlots({
                 setXAxisRange={setXAxisRange}
                 xAxisRange={xAxisRange}
                 plotHeight={
-                  otherBoxData.length * BOX_THICKNESS +
-                  BOX_PLOT_TOP_MARGIN +
-                  BOX_PLOT_BOTTOM_MARGIN
+                  otherBoxData.length * BOX_THICKNESS + BOX_PLOT_TOP_MARGIN + 40
                 }
                 xAxisTitle={X_AXIS_TITLE}
-                bottomMargin={BOX_PLOT_BOTTOM_MARGIN}
+                bottomMargin={40}
                 topMargin={BOX_PLOT_TOP_MARGIN}
                 dottedLinePosition={
                   entityType === "gene" ? -1 : drugDottedLine || -1.74

@@ -284,6 +284,21 @@ function ContextAnalysis({
 
   const formatDataForScatterPlot = useCallback(
     (tableData: ContextAnalysisTableType) => {
+      const getDrugXAxisLabel = () => {
+        if (datasetId === ContextExplorerDatasets.Prism_oncology_AUC) {
+          return "In-context mean log2(AUC)";
+        }
+
+        return "In-context mean log2(viability)";
+      };
+
+      const getDrugYAxisLabel = () => {
+        if (datasetId === ContextExplorerDatasets.Prism_oncology_AUC) {
+          return "Out-group mean log2(AUC)";
+        }
+        return "Out-group mean log2(viability)";
+      };
+
       const entityLabels: string[] = [];
       const selectivityVal: number[] = [];
       const tTestXVals: number[] = [];
@@ -317,20 +332,20 @@ function ContextAnalysis({
             axisLabel:
               entityType === "gene"
                 ? "In-group mean gene effect"
-                : "In-context mean log2(viability)",
+                : getDrugXAxisLabel(),
             values: inVsOutXVals,
           },
           y: {
             axisLabel:
               entityType === "gene"
                 ? "Out-group mean gene effect"
-                : "Out-group mean log2(viability)",
+                : getDrugYAxisLabel(),
             values: inVsOutYVals,
           },
         },
       };
     },
-    [entityType]
+    [entityType, datasetId]
   );
 
   const formattedScatterPlotData = useMemo(
@@ -967,6 +982,7 @@ function ContextAnalysis({
                 selectedTableLabels={selectedTableLabels}
                 entityUrlRoot={entityUrlRoot}
                 entityType={entityType}
+                datasetId={datasetId}
               />
             </div>
           )}
@@ -1052,6 +1068,7 @@ function ContextAnalysis({
                         selectedCode={selectedContextNameInfo.subtype_code}
                         boxPlotData={boxPlotData}
                         entityType={entityType}
+                        datasetId={datasetId}
                       />
                     )}
                 </div>
