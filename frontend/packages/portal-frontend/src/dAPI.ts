@@ -76,6 +76,7 @@ import {
   AvailabilitySummary,
   DataAvailabilitySummary,
   ContextAnalysisTableType,
+  EnrichedLineagesTileData,
 } from "src/contextExplorer/models/types";
 import {
   DataAvailability,
@@ -705,6 +706,22 @@ export class DepmapApi {
 
     return this._fetchIncludeContextExplCache<ContextPlotBoxData>(
       `/api/context_explorer/context_box_plot_data?${encodeParams(params)}`
+    );
+  }
+
+  getEnrichmentTileData(
+    tree_type: string,
+    entity_type: string,
+    entity_label: string
+  ): Promise<EnrichedLineagesTileData> {
+    const params: any = {
+      tree_type,
+      entity_type,
+      entity_label,
+    };
+
+    return this._fetch<EnrichedLineagesTileData>(
+      `/api/context_explorer/enriched_lineages_tile?${encodeParams(params)}`
     );
   }
 

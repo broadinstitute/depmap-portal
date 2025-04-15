@@ -637,7 +637,16 @@ export function getSelectedContextNode(
   return { selectedContextNode: selectedNode, topContextNameInfo };
 }
 
-export function getNewContextUrl(newCode: string) {
+export function getNewContextUrl(
+  newCode: string,
+  urlPrefix?: string,
+  tab?: string
+) {
+  if (urlPrefix) {
+    return urlPrefix.concat(
+      `?tab=${tab}&context=${encodeURIComponent(newCode)}`
+    );
+  }
   const currentLocation = window.location.href;
   const currentUrl = new URL(currentLocation);
 

@@ -1,20 +1,30 @@
 import dataclasses
+import re
 from typing import Any, Dict, List, Literal, Tuple, Union
 import os
 from depmap.cell_line.models_new import DepmapModel
 from depmap.compound.models import Compound, CompoundExperiment
-from depmap.context_explorer.utils import get_path_to_node
+from depmap.context_explorer.utils import (
+    get_entity_id_from_entity_full_label,
+    get_path_to_node,
+)
 from depmap.context_explorer import box_plot_utils, dose_curve_utils
+from depmap.dataset.models import DependencyDataset
+from depmap.gene.models import Gene
 from depmap.tda.views import convert_series_to_json_safe_list
+from depmap.tile.views import get_dependency_dataset_for_entity
 from flask_restplus import Namespace, Resource
-from flask import current_app, request
+from flask import current_app, request, url_for
 import pandas as pd
 from depmap.settings.shared import DATASET_METADATA
 from depmap.context_explorer.models import (
     ContextAnalysis,
     ContextNode,
+    ContextPlotBoxData,
+    ContextNameInfo,
+    EnrichedLineagesTileData,
 )
-from depmap.context.models_new import SubtypeContext, SubtypeNode, TreeType
+from depmap.context.models_new import SubtypeNode, TreeType
 
 namespace = Namespace("context_explorer", description="View context data in the portal")
 
@@ -540,15 +550,30 @@ class ContextBoxPlotData(Resource):
         min_abs_effect_size = request.args.get("min_abs_effect_size", type=float)
         min_frac_dep_in = request.args.get("min_frac_dep_in", type=float)
 
-        context_box_plot_data = box_plot_utils.get_organized_contexts(
-            selected_subtype_code=selected_subtype_code,
+        entity_id_and_label = get_entity_id_from_entity_full_label(
+            entity_type=entity_type, entity_full_label=entity_full_label,
+        )
+        entity_id = entity_id_and_label["entity_id"]
+        entity_label = entity_id_and_label["label"]
+
+        sig_contexts = box_plot_utils.get_sig_context_dataframe(
             tree_type=tree_type,
             entity_type=entity_type,
-            entity_full_label=entity_full_label,
+            entity_id=entity_id,
             dataset_name=dataset_name,
             max_fdr=max_fdr,
             min_abs_effect_size=min_abs_effect_size,
             min_frac_dep_in=min_frac_dep_in,
+        )
+
+        context_box_plot_data = box_plot_utils.get_organized_contexts(
+            selected_subtype_code=selected_subtype_code,
+            sig_contexts=sig_contexts,
+            entity_type=entity_type,
+            entity_id=entity_id,
+            entity_label=entity_label,
+            dataset_name=dataset_name,
+            tree_type=tree_type,
         )
 
         if context_box_plot_data is None:
@@ -578,3 +603,90 @@ class ContextNodeName(
         assert node is not None
 
         return node.node_name
+
+
+@namespace.route("/enriched_lineages_tile")
+class EnrichedLineagesTile(
+    Resource
+):  # the flask url_for endpoint is automagically the snake case of the namespace prefix plus class name
+    def get(self):
+        # Note: docstrings to restplus methods end up in the swagger documentation.
+        # DO NOT put a docstring here that you would not want exposed to users of the API. Use # for comments instead
+        tree_type = request.args.get("tree_type")
+        entity_label = request.args.get("entity_label")
+        entity_type = request.args.get("entity_type")
+
+        entity_id_and_dataset_name = (
+            box_plot_utils.get_gene_enriched_lineages_entity_id_and_dataset_name(
+                entity_label=entity_label
+            )
+            if entity_type == "gene"
+            else box_plot_utils.get_compound_enriched_lineages_entity_id_and_dataset_name(
+                entity_label=entity_label
+            )
+        )
+        entity_id = entity_id_and_dataset_name["entity_id"]
+        dataset_name = entity_id_and_dataset_name["dataset_name"]
+
+        if entity_type == "compound":
+            entity_label = entity_id_and_dataset_name["compound_experiment_label"]
+
+        sig_contexts = box_plot_utils.get_sig_context_dataframe(
+            tree_type=tree_type,
+            entity_type=entity_type,
+            entity_id=entity_id,
+            dataset_name=dataset_name,
+            use_enrichment_tile_filters=True,
+        )
+
+        # If no contexts are signficant, we only want to show Other Solid and Other Heme box plots. This
+        # requires its own utility function since box_plot_utils.get_organized_contexts requires and is highly
+        # dependent on the "selected_subtype_code".
+        #
+        # When there are signficant contexts, "selected_subtype_code" is set to the most significant level_0 code. The
+        # concept of this being a "selected_subtype_code" is a little weird because the user isn't actually selecting anything
+        # for the enrichment tile; however, "selected_subtype_code" is a necessary requirment for reusing Context Explorer's
+        # CollapsibleBoxPlot. "selected_subtype_code" is how the component decides which collapsible accordion to display on top
+        # and open by default.
+        if sig_contexts.empty:
+            return box_plot_utils.get_data_to_show_if_no_contexts_significant(
+                entity_type=entity_type,
+                entity_label=entity_label,
+                tree_type=tree_type,
+                dataset_name=dataset_name,
+            )
+
+        # "sig_contexts" includes a column for "level_0" and a column for "subtype_code". This is necessary
+        # so that the collapsible box plots on the EnrichedLineagesTile can be organized from most signficant
+        # level_0 subtype_code to least signficant level_0 subtype_code, while also providing the information
+        # necessary to sort the child subtype_codes underneath each level_0 by signficance.
+        selected_subtype_code = sig_contexts["level_0"].tolist()[0]
+        top_context = SubtypeNode.get_by_code(selected_subtype_code)
+        top_context_name_info = ContextNameInfo(
+            name=top_context.node_name, subtype_code=selected_subtype_code, node_level=0
+        )
+
+        context_box_plot_data = box_plot_utils.get_organized_contexts(
+            selected_subtype_code=selected_subtype_code,
+            entity_type=entity_type,
+            entity_label=entity_label,
+            dataset_name=dataset_name,
+            sig_contexts=sig_contexts,
+            entity_id=entity_id,
+            tree_type=tree_type,
+        )
+
+        if context_box_plot_data is None:
+            return None
+
+        tile_data = EnrichedLineagesTileData(
+            box_plot_data=context_box_plot_data,
+            top_context_name_info=top_context_name_info,
+            selected_context_name_info=top_context_name_info,  # top_context_name_info is repeated here on purpose. As described above, "selected context" is inherited from the Context Explorer page version of the box plots
+            dataset_name=dataset_name,  # for the frontend to determine the tab of context_explorer to link to: "oncref", "repurposing", or "geneDependency"
+            context_explorer_url=url_for(
+                "context_explorer.view_context_explorer"
+            ),  # for linking the boxplot y-axis labels
+        )
+
+        return dataclasses.asdict(tile_data)

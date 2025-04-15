@@ -71,6 +71,15 @@ class ContextNameInfo:
     node_level: int
 
 
+@dataclass
+class EnrichedLineagesTileData:
+    box_plot_data: ContextPlotBoxData
+    top_context_name_info: Union[ContextNameInfo, None]
+    selected_context_name_info: Union[ContextNameInfo, None]
+    dataset_name: str
+    context_explorer_url: str
+
+
 def _get_child_lineages_next_lineage_level_from_root_info(
     sorted: pd.DataFrame, current_level: int, current_code: str
 ) -> Tuple[Optional[List[str]], Optional[int]]:
