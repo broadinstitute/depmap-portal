@@ -1150,6 +1150,9 @@ def test_get_box_plot_data(empty_db_mock_downloads, dataset_name):
         selected_subtype_code=selected_subtype_code,
         tree_type=tree_type,
         entity_type=entity_type,
+        max_fdr=all_range.max_fdr,
+        min_abs_effect_size=all_range.min_abs_effect_size,
+        min_frac_dep_in=all_range.min_frac_dep_in,
     )
 
     assert data["significant_selection"] == [
