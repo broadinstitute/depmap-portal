@@ -9,7 +9,10 @@ from depmap import data_access
 from depmap.dataset.models import BiomarkerDataset
 from depmap.entity.models import Entity
 from depmap.extensions import cache_without_user_permissions
-from depmap.partials.data_table.factories import get_data_table
+from depmap.partials.data_table.factories import (
+    get_data_table,
+    get_anchor_screen_metadata_table,
+)
 from depmap.partials.entity_summary.models import (
     format_strip_plot,
     get_download_data,
@@ -72,6 +75,12 @@ def data_table_download_temp(type):
         params = data_table.filename["params"]
         filename = function(**params)
     return format_csv_response(temp_df, filename, {"index": False})
+
+
+@blueprint.route("/data_table/anchor_screen_metadata")
+def data_table_download_anchor_screen_metadata():
+    data_table = get_anchor_screen_metadata_table()
+    return format_csv_response(data_table._df, data_table.filename, {"index": False})
 
 
 @blueprint.route("/entity_summary")

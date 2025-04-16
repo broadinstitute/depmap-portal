@@ -115,6 +115,8 @@ export const isSampleType = (
     "screen",
     "Screen metadata",
     "model_condition",
+    "anchor_experiment",
+    "anchor_experiment_v2",
   ].includes(dimensionTypeName);
 };
 

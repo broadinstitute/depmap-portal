@@ -177,6 +177,10 @@ class FeatureFlags:
     def gene_tea(self):
         return self.is_prerelease_env()
 
+    @property
+    def anchor_screen_dashboard(self):
+        return self.is_dmc_like()
+
 
 def make_log_config(log_dir):
     return {
