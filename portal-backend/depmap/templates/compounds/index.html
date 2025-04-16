@@ -1,8 +1,9 @@
 {% extends "nav_footer.html" %} {% block page_title %} {{ name }} DepMap
 Compound Summary {% endblock %} {% block css %} {% assets filters="libsass",
 output="public/css/view_entity.css", "css/entities/view_entity.scss",
-"public/css/context_explorer.css", "css/context_explorer/context_explorer.scss",
-depends=['css/entities/executive.scss', 'css/shared/*.scss'] %}
+"css/entities/executive.scss", "css/shared/*.scss"
+"public/css/context_explorer.css", "css/context_explorer/context_explorer.scss"
+%}
 <link rel="stylesheet" href="{{ ASSET_URL }}" />
 {% endassets %} {% endblock %} {% block content_class %}container-fluid{%
 endblock content_class %} {% set show_sensitivity_tab = summary is not none %}
