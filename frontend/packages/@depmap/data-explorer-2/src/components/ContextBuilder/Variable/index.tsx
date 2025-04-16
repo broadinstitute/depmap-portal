@@ -190,7 +190,7 @@ function Variable({
   const isPartialCategoricalSliceId = Boolean(
     psid &&
       metadataSlices[psid]?.isPartialSliceId &&
-      metadataSlices[psid]?.valueType === "categorical"
+      ["categorical", "list_strings"].includes(metadataSlices[psid]?.valueType)
   );
 
   const isOneHotEncodedAnnotation = Boolean(

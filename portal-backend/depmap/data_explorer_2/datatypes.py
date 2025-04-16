@@ -75,6 +75,7 @@ _hardcoded_metadata_slices = {
             "isPartialSliceId": True,
             "isHighCardinality": True,
             "sliceTypeLabel": "gene",
+            "isBreadboxMetadata": True,
         },
         "slice/msi-0584.6%2Fmsi/": {
             "name": "Micro Satellite Instability",
