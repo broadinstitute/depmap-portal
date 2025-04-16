@@ -981,6 +981,10 @@ export class DepmapApi {
     return Promise.reject(Error("Wrong api used. Check ApiContext"));
   };
 
+  getDimensionType(name: string): Promise<DimensionType> {
+    return Promise.reject(Error("Wrong api used. Check ApiContext"));
+  }
+
   postDimensionType = (
     dimTypeArgs: DimensionTypeAddArgs
   ): Promise<DimensionType> => {
