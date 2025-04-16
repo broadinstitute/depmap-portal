@@ -23,50 +23,6 @@ blueprint = Blueprint(
 )
 
 
-@blueprint.route("/")
-def home():
-    if not current_app.config["ENABLED_FEATURES"].private_datasets:
-        abort(404)
-
-    datasets = data_access.get_private_datasets()
-    dataset_ids = list(datasets.keys())
-    log_legacy_private_dataset_access("get_dataset_label", dataset_ids)
-
-    datasets = [
-        {
-            "dataset_id": dataset_id,
-            "display_name": config.label,
-            "private_group_display_name": config.private_group_display_name,
-            "data_explorer_url": url_for(
-                "data_explorer_2.view_data_explorer_2",
-                # Data Explorer 2 links require an xFeature (it does not
-                # support linking to a partially defined plot)
-                xFeature=nonstandard_utils.get_random_row_name(dataset_id),
-                xDataset=dataset_id,
-            ),
-        }
-        for dataset_id, config in datasets.items()
-    ]
-    # upload_url = url_for("private_dataset.upload")
-    visible_owner_ids = get_visible_owner_id_configs(write_access=True)
-    print(f"visible_owner_ids={visible_owner_ids}")
-    return render_template(
-        "private_dataset/index.html",
-        datasets=datasets,
-        data_explorer_url=url_for("data_explorer_2.view_data_explorer_2"),
-        data_manager_instructions_url=url_for(
-            "public.resources",
-            subcategory="ortal-custom-uploads-downloads-and-api",
-            topic="portal-custom-uploads-downloads-and-api",
-        ),
-        groups=[
-            {"groupId": k, "displayName": v.display_name}
-            for k, v in visible_owner_ids.items()
-        ],
-        dataTypes=[dataType.value for dataType in DataTypeEnum],
-    )
-
-
 # TODO: this should use the common task status endpoint
 @blueprint.route("/upload_status/<task_id>", methods=["GET"])
 def get_upload_task_status(task_id: str):
