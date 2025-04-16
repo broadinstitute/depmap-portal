@@ -123,7 +123,33 @@ rule summarize_gene_deps:
 
         common_essentials = read_artifacts( {{ inputs.common_essentials }} )
         common_essentials.to_csv("common_essentials.csv", index=False)
+        # common_essentials.to_csv("common_essentials.csv", index=False)
 
+        ############################################################
+        # NAquib: Since I am only getting the common essentials True values from taiga, I have missing genes
+        # that should have False values.
+        # This is a temporary quick fix that should be refactored for cleaner code once 
+        # some questions about other datasets(probably deprecated) such as chronos_score, sanger_crispr
+        # are clarified
+
+        depcounts_df = pd.read_csv("depcounts.csv")
+
+        chronos_genes = depcounts_df[depcounts_df['label'] == 'Chronos_Combined']
+        existing_genes = set(common_essentials.loc[common_essentials['label'] == 'Chronos_Combined', 'Row.name'])
+        new_genes = chronos_genes[~chronos_genes['gene'].isin(existing_genes)]
+
+        new_rows = pd.DataFrame({
+            'Row.name': new_genes['gene'],
+            'CE_percentile': np.nan,
+            'Common_Essential': False,
+            'label': 'Chronos_Combined'
+        })
+
+        common_essentials_updated = pd.concat([common_essentials, new_rows], ignore_index=True)
+
+        common_essentials_updated.to_csv("common_essentials.csv", index=False)
+
+        ############################################################
         dep_moments = read_artifacts( {{ inputs.dep_moments }} )
         dep_moments.to_csv("moments.csv", index=False)
 
