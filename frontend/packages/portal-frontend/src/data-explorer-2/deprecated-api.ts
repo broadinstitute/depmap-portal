@@ -396,7 +396,9 @@ export async function fetchMetadataSlices(
       isHighCardinality?: boolean;
       isPartialSliceId?: boolean;
       sliceTypeLabel?: string;
-      isBreadboxMetadata?: boolean;
+      isLegacy?: boolean;
+      isIdColumn?: boolean;
+      isLabelColumn?: boolean;
     }
   >
 > {
