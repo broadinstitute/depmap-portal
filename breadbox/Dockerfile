@@ -1,10 +1,7 @@
-FROM us.gcr.io/broad-achilles/depmap-breadbox-base:v2 
+FROM us.gcr.io/broad-achilles/depmap-breadbox-base:v2
 
 # install security updated
 RUN apt update && apt upgrade -y
-
-
-# TODO: pin python version using pyenv
 
 # Install poetry:
 RUN pip3 install poetry==1.8.2 
