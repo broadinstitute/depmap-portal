@@ -8,12 +8,23 @@ interface PeddepPageProps {}
 export default function ResourcesPage(props: PeddepPageProps) {
   const imagePath = getDapi()._getFileUrl(
     // TODO: Use context?
-    "/static/img/public/RainbowMap_2x.png"
+    "/static/img/peddep_landing_page/pedepwave.png"
+  );
+
+  const umapImage = (
+    <img
+      style={{ float: "right" }}
+      src={getDapi()._getFileUrl("/static/img/peddep_landing_page/umap.png")}
+      alt="Diagram of UMAP"
+    />
   );
 
   return (
     <div>
-      <div className={styles.PeddepPage}>
+      <div
+        className={`${styles.PeddepPage} ${styles.highlightBackground}`}
+        style={{ backgroundImage: `url(${imagePath})` }}
+      >
         <div className={styles.highlight}>
           <div className={styles.highlightText}>
             <h1 className={styles.title}>
@@ -117,6 +128,7 @@ export default function ResourcesPage(props: PeddepPageProps) {
               Explorer.
             </h4>
           </div>
+          <div>{umapImage}</div>
         </div>
       </div>
     </div>
