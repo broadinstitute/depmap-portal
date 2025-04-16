@@ -20,7 +20,7 @@ function HelpText({ dataSourceOption, slice_type }: Props) {
     );
   }
 
-  if (dataSourceOption === "breadbox_metadata_column") {
+  if (dataSourceOption === "official_annotation") {
     return (
       <span>
         This is the set of annotations associated instances of{" "}
