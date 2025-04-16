@@ -9,8 +9,6 @@ RUN mkdir /install/breadbox
 COPY . /install/breadbox
 WORKDIR /install/breadbox
 
-RUN python --version 
-
 # Install dependencies:
 RUN pip install poetry==1.8.2 
 # Ensure that when packages are installed with Poetry a virtual environment is NOT created first. 
