@@ -10,6 +10,7 @@ import { PlotlyHTMLElement } from "plotly.js";
 export interface BoxPlotProps {
   boxData: BoxPlotInfo[];
   dottedLinePosition: number;
+  isActivePlot?: boolean;
   selectedCode?: string;
   onLoad?: (plot: ExtendedPlotType) => void;
   plotHeight?: number;
@@ -28,6 +29,7 @@ function BoxPlot({
   dottedLinePosition,
   selectedCode = undefined,
   onLoad = () => {},
+  isActivePlot = false,
   plotHeight = undefined,
   xAxisRange = undefined,
   xAxisTitle = undefined,
@@ -175,6 +177,7 @@ function BoxPlot({
     dottedLinePosition,
     selectedCode,
     urlPrefix,
+    isActivePlot.valueOf,
     tab,
     onLoad,
   ]);
@@ -184,6 +187,7 @@ function BoxPlot({
 
 export default function LazyBoxPlot({
   boxData,
+  isActivePlot = false,
   plotHeight = undefined,
   selectedCode = undefined,
   urlPrefix = undefined,
@@ -220,7 +224,7 @@ export default function LazyBoxPlot({
                     fontSize: "12px",
                   }}
                 >
-                  {boxData.length === 1 && (
+                  {boxData.length === 1 && !box?.name.includes("Other") && (
                     <span
                       style={{
                         paddingRight: "4px",
@@ -229,9 +233,9 @@ export default function LazyBoxPlot({
                         color: "#4479B2",
                       }}
                       className={
-                        box.name === selectedCode
-                          ? "glyphicon glyphicon-chevron-down"
-                          : "glyphicon glyphicon-chevron-up"
+                        isActivePlot
+                          ? "glyphicon glyphicon-chevron-up"
+                          : "glyphicon glyphicon-chevron-down"
                       }
                     />
                   )}

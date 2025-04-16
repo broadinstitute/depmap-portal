@@ -1068,6 +1068,7 @@ function ContextAnalysis({
                         selectedCode={selectedContextNameInfo.subtype_code}
                         boxPlotData={boxPlotData}
                         entityType={entityType}
+                        datasetId={datasetId}
                       />
                     )}
                 </div>

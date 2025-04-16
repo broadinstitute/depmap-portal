@@ -13,6 +13,7 @@ interface SignificantBoxPlotsPanelProps {
   level0Code: string;
   xAxisRange: any[];
   entityType: string;
+  xAxisTitle: string;
   drugDottedLine?: number;
   card: OtherSigBoxCardData;
   urlPrefix?: string;
@@ -55,11 +56,12 @@ const SignificantPlotPanelHeading = ({
                 fontSize: "12px",
                 color: "#4479B2",
               }}
-              className={"glyphicon glyphicon-chevron-down"}
+              className={"glyphicon glyphicon-chevron-up"}
             />
           )}
           {activeKey !== level0Code ? (
             <BoxPlot
+              isActivePlot={activeKey === level0Code}
               boxData={[card[level0Code].levelZeroPlotInfo]}
               xAxisRange={xAxisRange}
               plotHeight={
@@ -71,6 +73,7 @@ const SignificantPlotPanelHeading = ({
               dottedLinePosition={
                 entityType === "gene" ? -1 : drugDottedLine || -1.74
               }
+              selectedCode={selectedCode}
               urlPrefix={urlPrefix}
               tab={tab}
             />
@@ -99,6 +102,7 @@ export function SignificantBoxPlotCardPanel({
   xAxisRange,
   card,
   entityType,
+  xAxisTitle,
   drugDottedLine = undefined,
   urlPrefix = undefined,
   tab = undefined,
@@ -128,12 +132,13 @@ export function SignificantBoxPlotCardPanel({
               BOX_PLOT_TOP_MARGIN +
               BOX_PLOT_BOTTOM_MARGIN
             }
-            xAxisTitle={""}
+            xAxisTitle={xAxisTitle}
             bottomMargin={BOX_PLOT_BOTTOM_MARGIN}
             topMargin={BOX_PLOT_TOP_MARGIN}
             dottedLinePosition={
               entityType === "gene" ? -1 : drugDottedLine || -1.74
             }
+            selectedCode={selectedCode}
             urlPrefix={urlPrefix}
             tab={tab}
           />

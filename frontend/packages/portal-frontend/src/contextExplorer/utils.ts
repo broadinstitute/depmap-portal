@@ -14,7 +14,7 @@ import { deleteSpecificQueryParams } from "@depmap/utils";
 
 export const CONTEXT_EXPL_BAR_THICKNESS = 40;
 export const BOX_THICKNESS = 40;
-export const BOX_PLOT_BOTTOM_MARGIN = 20;
+export const BOX_PLOT_BOTTOM_MARGIN = 40;
 export const BOX_PLOT_TOP_MARGIN = 0;
 
 export function getSelectivityValLabel(entityType: string) {

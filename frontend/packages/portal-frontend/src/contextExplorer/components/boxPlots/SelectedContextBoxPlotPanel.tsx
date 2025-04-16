@@ -17,6 +17,7 @@ interface SelectedContextBoxPlotPanelProps {
   xAxisRange: any[];
   entityType: string;
   activeKey: string | null;
+  xAxisTitle: string;
   drugDottedLine?: number;
   urlPrefix?: string;
   tab?: string;
@@ -27,6 +28,7 @@ interface PanelBodyProps {
   handleSetMainPlotElement: (element: any) => void;
   xAxisRange: any[];
   entityType: string;
+  xAxisTitle: string;
   drugDottedLine?: number;
   selectedCode?: string;
   urlPrefix?: string;
@@ -38,6 +40,7 @@ const PanelBody = ({
   handleSetMainPlotElement,
   xAxisRange,
   entityType,
+  xAxisTitle,
   drugDottedLine = undefined,
   selectedCode = undefined,
   urlPrefix = undefined,
@@ -62,6 +65,7 @@ const PanelBody = ({
           dottedLinePosition={
             entityType === "gene" ? -1 : drugDottedLine || -1.74
           }
+          xAxisTitle={xAxisTitle}
           urlPrefix={urlPrefix}
           tab={tab}
         />
@@ -121,6 +125,7 @@ const PanelHeading = ({
         <Panel.Title>
           {" "}
           <BoxPlot
+            isActivePlot={activeKey === topContextNameInfo.subtype_code}
             boxData={[selectedLevelZeroBoxData]}
             onLoad={handleSetMainPlotElement}
             xAxisRange={xAxisRange}
@@ -201,6 +206,7 @@ export const SelectedContextBoxPlotPanel = ({
   xAxisRange,
   entityType,
   activeKey,
+  xAxisTitle,
   urlPrefix = undefined,
   tab = undefined,
   drugDottedLine = undefined,
@@ -228,6 +234,7 @@ export const SelectedContextBoxPlotPanel = ({
           entityType={entityType}
           drugDottedLine={drugDottedLine}
           selectedCode={selectedCode}
+          xAxisTitle={xAxisTitle}
         />
       )}
     </Panel>

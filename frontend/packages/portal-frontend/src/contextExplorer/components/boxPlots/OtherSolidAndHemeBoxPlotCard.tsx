@@ -12,6 +12,7 @@ interface OtherSolidAndHemeBoxPlotsProps {
   otherBoxData: BoxPlotInfo[];
   entityType: string;
   xAxisRange: any[];
+  xAxisTitle: string;
   drugDottedLine?: number;
 }
 
@@ -19,6 +20,7 @@ export function OtherSolidAndHemeBoxPlots({
   otherBoxData,
   entityType,
   xAxisRange,
+  xAxisTitle,
   drugDottedLine = undefined,
 }: OtherSolidAndHemeBoxPlotsProps) {
   return (
@@ -30,6 +32,7 @@ export function OtherSolidAndHemeBoxPlots({
             <BoxPlot
               boxData={otherBoxData}
               xAxisRange={xAxisRange}
+              xAxisTitle={xAxisTitle}
               plotHeight={
                 otherBoxData.length * BOX_THICKNESS +
                 BOX_PLOT_TOP_MARGIN +

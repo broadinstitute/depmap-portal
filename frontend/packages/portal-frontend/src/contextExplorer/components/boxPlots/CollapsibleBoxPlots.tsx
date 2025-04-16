@@ -4,6 +4,7 @@ import {
   BoxCardData,
   BoxData,
   BoxPlotInfo,
+  ContextExplorerDatasets,
   ContextNameInfo,
   ContextPlotBoxData,
   OtherSignificantBoxCardData as OtherSigBoxCardData,
@@ -24,6 +25,7 @@ interface Props {
   selectedCode: string | undefined;
   boxPlotData: ContextPlotBoxData | null;
   entityType: string;
+  datasetId: ContextExplorerDatasets;
   urlPrefix?: string;
   tab?: string;
 }
@@ -34,6 +36,7 @@ function CollapsibleBoxPlots({
   selectedCode,
   boxPlotData,
   entityType,
+  datasetId,
   urlPrefix = undefined,
   tab = undefined,
 }: Props) {
@@ -160,6 +163,18 @@ function CollapsibleBoxPlots({
     setActiveKey((prevIndex) => (prevIndex === index ? null : index));
   };
 
+  const xAxisTitle = useMemo(() => {
+    if (datasetId === ContextExplorerDatasets.Prism_oncology_AUC) {
+      return "AUC";
+    }
+
+    if (datasetId === ContextExplorerDatasets.Rep_all_single_pt) {
+      return "log2(Viability)";
+    }
+
+    return "Gene Effect";
+  }, [datasetId]);
+
   const xAxisRange = useMemo(() => {
     if (
       boxPlotData?.significant_selection?.length === 0 &&
@@ -216,6 +231,7 @@ function CollapsibleBoxPlots({
           urlPrefix={urlPrefix}
           tab={tab}
           drugDottedLine={drugDottedLine}
+          xAxisTitle={xAxisTitle}
         />
       )}
       <>
@@ -236,6 +252,7 @@ function CollapsibleBoxPlots({
                   drugDottedLine={drugDottedLine}
                   urlPrefix={urlPrefix}
                   tab={tab}
+                  xAxisTitle={xAxisTitle}
                 />
               </Panel>
             </>
@@ -246,6 +263,7 @@ function CollapsibleBoxPlots({
           xAxisRange={xAxisRange}
           entityType={entityType}
           drugDottedLine={drugDottedLine}
+          xAxisTitle={xAxisTitle}
         />
       </>
     </PanelGroup>
