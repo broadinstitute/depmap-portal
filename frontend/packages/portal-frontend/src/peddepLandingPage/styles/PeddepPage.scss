@@ -42,13 +42,14 @@
 
   &.highlightBackground {
     background-repeat: no-repeat;
-    background-position: right bottom;
+    background-position: right;
+    min-height: 500px;
 
     @media screen and (max-width: 1024px) {
-      background-size: contain;
+      background-size: contain contain;
     }
     @media screen and (min-width: 1920px) {
-      background-size: calc(100vh);
+      background-size: calc(100vw * 1 / 3);
     }
   }
 }
@@ -86,4 +87,5 @@
 .aboutPeddep {
   display: grid;
   grid-template-columns: 1fr 1fr;
+  gap: 2%;
 }
