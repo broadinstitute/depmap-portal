@@ -258,9 +258,10 @@ export const ContextExplorer = () => {
           <span>Context Explorer</span>
         </h1>
         <p>
-          The Context Explorer displays gene dependencies and drug sensitivities
-          that are selective to the context of interest, in addition to showing
-          available data for cell lines in that context.
+          is a tumor subtype focused entry point to the DepMap data. Data
+          availability, enriched gene dependencies, and compound sensitivities
+          can be explored within a lineage- or molecular- subtype based
+          hierarchy of cancer models.
         </p>
       </header>
       <main className={styles.main}>

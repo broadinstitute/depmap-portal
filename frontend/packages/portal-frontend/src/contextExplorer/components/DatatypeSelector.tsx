@@ -33,7 +33,7 @@ const DatatypeSelector = (props: Props) => {
               popoverContent={
                 <p>
                   {DATATYPE_TOOLTIP_TEXT.get(datatype) ||
-                    "A disease subtype. Use the 'Refine Context' option, located within the left sidebar, to investigate this subtype in more detail."}
+                    "A further subtype of the currently selected lineage / tumor subtype. Use the “Refine Context” option in the left sidebar to investigate this subtype in more detail."}
                 </p>
               }
               popoverId={`datatype-popover`}
