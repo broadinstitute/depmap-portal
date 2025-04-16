@@ -319,6 +319,10 @@ export class BreadboxApi {
     return this._fetch<DimensionType[]>("/types/dimensions");
   }
 
+  getDimensionType(name: string): Promise<DimensionType> {
+    return this._fetch<DimensionType>(`/types/dimensions/${name}`);
+  }
+
   postDimensionType(dimTypeArgs: DimensionTypeAddArgs): Promise<DimensionType> {
     console.log("In bbapi.ts: ", dimTypeArgs);
 
