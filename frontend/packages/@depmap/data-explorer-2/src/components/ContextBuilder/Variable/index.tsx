@@ -80,33 +80,30 @@ const getMetadataLookupTable = (
 const inferDataSource = (
   value: string | null,
   metadataSlices: DeprecatedDataExplorerApiResponse["fetchMetadataSlices"],
-  isPartialContinuousSliceId: boolean,
-  isPartialCategoricalSliceId: boolean,
-  isOneHotEncodedAnnotation: boolean
+  isPartialContinuousSliceId: boolean
 ) => {
-  if (value === SLICE_LABEL_VARIABLE || isPartialCategoricalSliceId) {
+  if (value === SLICE_LABEL_VARIABLE) {
     return "legacy_metadata_slice";
   }
 
-  const slice = value && metadataSlices[value];
+  const sliceId = findSliceId(value, metadataSlices);
+  const slice = sliceId && metadataSlices[sliceId];
 
-  if (slice && !slice.isBreadboxMetadata) {
+  if (slice && slice.isLegacy) {
     return "legacy_metadata_slice";
-  }
-
-  if (slice && slice.isBreadboxMetadata) {
-    return "breadbox_metadata_column";
   }
 
   if (isPartialContinuousSliceId) {
     return "matrix_dataset";
   }
 
-  if (isOneHotEncodedAnnotation) {
-    return "breadbox_metadata_column";
-  }
+  const hasSomeOfficalAnnotations = Object.values(metadataSlices).some(
+    (s) => !s.isLegacy
+  );
 
-  return null;
+  return hasSomeOfficalAnnotations
+    ? "official_annotation"
+    : "legacy_metadata_slice";
 };
 
 function Variable({
@@ -209,15 +206,9 @@ function Variable({
   const varSliceType = datasets?.find((d) => d.id === varDatasetId)?.slice_type;
 
   const dataSource = (placeholderDataSource ||
-    inferDataSource(
-      value,
-      metadataSlices,
-      isPartialContinuousSliceId,
-      isPartialCategoricalSliceId,
-      isOneHotEncodedAnnotation
-    )) as
+    inferDataSource(value, metadataSlices, isPartialContinuousSliceId)) as
     | "legacy_metadata_slice"
-    | "breadbox_metadata_column"
+    | "official_annotation"
     | "matrix_dataset"
     | null;
 
