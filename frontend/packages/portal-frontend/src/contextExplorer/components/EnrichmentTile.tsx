@@ -106,6 +106,11 @@ export const EnrichmentTile: React.FC<EnrichmentTileProps> = ({
                 entityType={entityType}
                 urlPrefix={contextExplorerHref}
                 tab={getTabFromDatasetName(tileData.dataset_name)}
+                datasetId={
+                  ContextExplorerDatasets[
+                    tileData.dataset_name as ContextExplorerDatasets
+                  ]
+                }
               />
             )}
           </div>
