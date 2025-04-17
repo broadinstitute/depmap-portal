@@ -48,8 +48,23 @@ export function toStaticUrl(relativeUrl: string) {
   }
 
   const element = document.getElementById("webpack-config");
-  const urlPrefix = JSON.parse(element!.textContent as string).rootUrl;
-  return `${urlPrefix}/static/${assetUrl}`.replace(/^\/\//, "");
+  let urlPrefix = "";
+
+  try {
+    const config = JSON.parse(element?.textContent || "{}");
+
+    if (config && typeof config.rootUrl === "string") {
+      urlPrefix = config.rootUrl.trim();
+    } else {
+      window.console.error(
+        "Invalid webpack-config: Missing or malformed rootUrl."
+      );
+    }
+  } catch (e) {
+    window.console.error("Failed to parse webpack-config:", e);
+  }
+
+  return `${encodeURI(urlPrefix)}/static/${assetUrl}`.replace(/^\/\//, "");
 }
 
 // Currently, the `errorHandler` doesn't really do anything special outside of
