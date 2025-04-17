@@ -1,5 +1,4 @@
 import os
-from depmap.enums import DataTypeEnum
 import pytest
 import pandas as pd
 from typing import Any
@@ -7,21 +6,14 @@ from dataclasses import dataclass, asdict
 
 from depmap import data_access
 from depmap.user_uploads.tasks import (
-    upload_private,
     upload_transient_csv,
     upload_transient_taiga,
     convert_to_hdf5,
     validate_df_indices,
 )
-from depmap.access_control.utils import (
-    get_current_user_for_access_control,
-    assume_user,
-    PUBLIC_ACCESS_GROUP,
-)
 from depmap.interactive.config.models import Config
 from depmap.interactive.nonstandard.models import (
     NonstandardMatrix,
-    PrivateDatasetMetadata,
     CustomDatasetConfig,
     CellLineNameType,
 )
@@ -30,7 +22,6 @@ from depmap.utilities.exception import UserError
 from tests.conftest import InteractiveConfigFakeMutationsDownload
 from tests.factories import CellLineFactory
 from tests.depmap.user_uploads.user_upload_fixtures import UserUploadFixture
-from tests.utilities.access_control import get_canary_group_id
 
 
 @dataclass
