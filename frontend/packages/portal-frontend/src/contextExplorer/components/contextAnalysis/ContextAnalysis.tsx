@@ -36,6 +36,7 @@ import {
   BLOOD_LINEAGES,
   getBoxPlotFilterVariables,
   getSelectivityValLabel,
+  getShowPositiveEffectSizesFilter,
 } from "../../utils";
 import geneDepFilterDefinitions from "../../json/geneDepFilters.json";
 import repurposingFilterDefinitions from "../../json/repurposingFilters.json";
@@ -661,14 +662,13 @@ function ContextAnalysis({
       selectedPlotLabels.size > 0 &&
       [...selectedPlotLabels][0]
     ) {
-      // const boxPlotFilters = defaultFilters.current || filters;
+      const boxPlotFilters = defaultFilters.current || filters;
 
-      const {
-        maxFdr,
-        minEffectSize,
-        minFracDepIn,
-        showPositiveEffectSizes,
-      } = getBoxPlotFilterVariables(filters);
+      const { maxFdr, minEffectSize, minFracDepIn } = getBoxPlotFilterVariables(
+        boxPlotFilters
+      );
+
+      const showPositiveEffectSizes = getShowPositiveEffectSizesFilter(filters);
 
       setDoShowPositiveEffectSizes(showPositiveEffectSizes);
       setBoxPlotMaxFDR(maxFdr);

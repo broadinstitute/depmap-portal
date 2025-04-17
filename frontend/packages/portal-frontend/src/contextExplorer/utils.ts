@@ -336,11 +336,22 @@ export function getDataExplorerUrl(
   return `${de2PageHref}?${queryString}`;
 }
 
+export function getShowPositiveEffectSizesFilter(filters: Filter[]) {
+  let showPositiveEffectSizes: boolean = false;
+
+  filters.forEach((filter) => {
+    if (filter.key === "depletion" && typeof filter.value === "boolean") {
+      showPositiveEffectSizes = filter.value;
+    }
+  });
+
+  return showPositiveEffectSizes;
+}
+
 export function getBoxPlotFilterVariables(filters: Filter[]) {
   let maxFdr: number = 0.1;
   let minEffectSize: number = 0.1;
   let minFracDepIn: number = 0.1;
-  let showPositiveEffectSizes: boolean = false;
 
   filters.forEach((filter) => {
     if (filter.kind === "numberInput") {
@@ -352,15 +363,10 @@ export function getBoxPlotFilterVariables(filters: Filter[]) {
       } else if (filter.key === "frac_dep_in") {
         minFracDepIn = value;
       }
-    } else if (
-      filter.key === "depletion" &&
-      typeof filter.value === "boolean"
-    ) {
-      showPositiveEffectSizes = filter.value;
     }
   });
 
-  return { maxFdr, minEffectSize, minFracDepIn, showPositiveEffectSizes };
+  return { maxFdr, minEffectSize, minFracDepIn };
 }
 
 export const getUpdatedGraphInfoForSelection = (
