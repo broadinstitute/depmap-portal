@@ -419,6 +419,7 @@ class ContextAnalysis(Model):
         max_fdr: float,
         min_abs_effect_size: float,
         min_frac_dep_in: float,
+        show_positive_effect_sizes: bool,
     ):
         assert dataset_name in DependencyEnum.values()
 
@@ -427,16 +428,27 @@ class ContextAnalysis(Model):
         dependency_dataset_id = dependency_dataset.dependency_dataset_id
 
         if entity_type == "gene":
-            analyses = (
-                ContextAnalysis.query.filter(
-                    and_(
-                        ContextAnalysis.dependency_dataset_id == dependency_dataset_id,
-                        ContextAnalysis.entity_id == entity_id,
-                        ContextAnalysis.t_qval <= max_fdr,
-                        func.abs(ContextAnalysis.effect_size) >= min_abs_effect_size,
-                        ContextAnalysis.frac_dep_in >= min_frac_dep_in,
-                    )
+            filters = (
+                and_(
+                    ContextAnalysis.dependency_dataset_id == dependency_dataset_id,
+                    ContextAnalysis.entity_id == entity_id,
+                    ContextAnalysis.t_qval <= max_fdr,
+                    func.abs(ContextAnalysis.effect_size) >= min_abs_effect_size,
+                    ContextAnalysis.frac_dep_in >= min_frac_dep_in,
                 )
+                if show_positive_effect_sizes
+                else and_(
+                    ContextAnalysis.dependency_dataset_id == dependency_dataset_id,
+                    ContextAnalysis.entity_id == entity_id,
+                    ContextAnalysis.t_qval <= max_fdr,
+                    ContextAnalysis.effect_size < 0,
+                    func.abs(ContextAnalysis.effect_size) >= min_abs_effect_size,
+                    ContextAnalysis.frac_dep_in >= min_frac_dep_in,
+                )
+            )
+
+            analyses = (
+                ContextAnalysis.query.filter(filters)
                 .join(
                     SubtypeNode,
                     SubtypeNode.subtype_code == ContextAnalysis.subtype_code,
@@ -451,15 +463,24 @@ class ContextAnalysis(Model):
 
             return pd.DataFrame(analyses)
         else:
-            analyses = (
-                ContextAnalysis.query.filter(
-                    and_(
-                        ContextAnalysis.dependency_dataset_id == dependency_dataset_id,
-                        ContextAnalysis.entity_id == entity_id,
-                        ContextAnalysis.t_qval <= max_fdr,
-                        func.abs(ContextAnalysis.effect_size) >= min_abs_effect_size,
-                    )
+            filters = (
+                and_(
+                    ContextAnalysis.dependency_dataset_id == dependency_dataset_id,
+                    ContextAnalysis.entity_id == entity_id,
+                    ContextAnalysis.t_qval <= max_fdr,
+                    func.abs(ContextAnalysis.effect_size) >= min_abs_effect_size,
                 )
+                if show_positive_effect_sizes
+                else and_(
+                    ContextAnalysis.dependency_dataset_id == dependency_dataset_id,
+                    ContextAnalysis.entity_id == entity_id,
+                    ContextAnalysis.t_qval <= max_fdr,
+                    ContextAnalysis.effect_size < 0,
+                    func.abs(ContextAnalysis.effect_size) >= min_abs_effect_size,
+                )
+            )
+            analyses = (
+                ContextAnalysis.query.filter(filters)
                 .join(
                     SubtypeNode,
                     SubtypeNode.subtype_code == ContextAnalysis.subtype_code,

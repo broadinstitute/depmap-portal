@@ -649,6 +649,10 @@ function ContextAnalysis({
   const [boxPlotMinFracDepIn, setBoxPlotMinFracDepIn] = useState<
     number | undefined
   >(undefined);
+  const [
+    doShowPositiveEffectSizes,
+    setDoShowPositiveEffectSizes,
+  ] = useState<boolean>(false);
 
   useEffect(() => {
     if (
@@ -657,12 +661,16 @@ function ContextAnalysis({
       selectedPlotLabels.size > 0 &&
       [...selectedPlotLabels][0]
     ) {
-      const boxPlotFilters = defaultFilters.current || filters;
+      // const boxPlotFilters = defaultFilters.current || filters;
 
-      const { maxFdr, minEffectSize, minFracDepIn } = getBoxPlotFilterVariables(
-        boxPlotFilters
-      );
+      const {
+        maxFdr,
+        minEffectSize,
+        minFracDepIn,
+        showPositiveEffectSizes,
+      } = getBoxPlotFilterVariables(filters);
 
+      setDoShowPositiveEffectSizes(showPositiveEffectSizes);
       setBoxPlotMaxFDR(maxFdr);
       setBoxPlotMinEffectSize(minEffectSize);
       setBoxPlotMinFracDepIn(minFracDepIn);
@@ -693,7 +701,8 @@ function ContextAnalysis({
         [...selectedPlotLabels][0],
         boxPlotMaxFDR,
         boxPlotMinEffectSize,
-        boxPlotMinFracDepIn
+        boxPlotMinFracDepIn,
+        doShowPositiveEffectSizes
       );
 
       boxplotLatestPromise.current = boxplotPromise;
@@ -725,6 +734,7 @@ function ContextAnalysis({
     boxPlotMaxFDR,
     boxPlotMinEffectSize,
     boxPlotMinFracDepIn,
+    doShowPositiveEffectSizes,
   ]);
 
   return (

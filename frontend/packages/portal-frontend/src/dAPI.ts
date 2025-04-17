@@ -690,7 +690,8 @@ export class DepmapApi {
     entity_full_label: string,
     max_fdr: number,
     min_abs_effect_size: number,
-    min_frac_dep_in: number
+    min_frac_dep_in: number,
+    doShowPositiveEffectSizes: boolean
   ): Promise<ContextPlotBoxData> {
     const params: any = {
       selected_subtype_code,
@@ -702,6 +703,7 @@ export class DepmapApi {
       max_fdr,
       min_abs_effect_size,
       min_frac_dep_in,
+      show_positive_effect_sizes: doShowPositiveEffectSizes,
     };
 
     return this._fetchIncludeContextExplCache<ContextPlotBoxData>(

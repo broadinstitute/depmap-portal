@@ -247,16 +247,24 @@ def get_sig_context_dataframe(
     entity_type: str,
     entity_id: int,
     dataset_name: str,
-    max_fdr: float = 0.5,
-    min_abs_effect_size: float = 0.1,
+    max_fdr: float = 0.1,
+    min_abs_effect_size: float = 0.25,
     min_frac_dep_in: float = 0.1,
     use_enrichment_tile_filters=False,
+    show_positive_effect_sizes=False,
 ) -> pd.DataFrame:
 
     if entity_type == "compound" and use_enrichment_tile_filters:
-        max_fdr = 0.05
-        min_abs_effect_size = 0.1
-        min_frac_dep_in = 0.1
+        if (
+            dataset_name
+            == DependencyDataset.DependencyEnum.Prism_oncology_AUC.name.name
+        ):
+            max_fdr = 0.1
+            min_abs_effect_size = 0.1
+        else:
+            max_fdr = 0.1
+            min_abs_effect_size = 0.5
+
     # If this doesn't find the node, something is wrong with how we
     # loaded the SubtypeNode database table data.
     sig_contexts = ContextAnalysis.get_context_dependencies(
@@ -267,6 +275,7 @@ def get_sig_context_dataframe(
         max_fdr=max_fdr,
         min_abs_effect_size=min_abs_effect_size,
         min_frac_dep_in=min_frac_dep_in,
+        show_positive_effect_sizes=show_positive_effect_sizes,
     )
 
     return sig_contexts

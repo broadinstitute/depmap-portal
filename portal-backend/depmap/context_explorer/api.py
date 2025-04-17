@@ -544,6 +544,9 @@ class ContextBoxPlotData(Resource):
         max_fdr = request.args.get("max_fdr", type=float)
         min_abs_effect_size = request.args.get("min_abs_effect_size", type=float)
         min_frac_dep_in = request.args.get("min_frac_dep_in", type=float)
+        show_positive_effect_sizes = request.args.get("show_positive_effect_sizes")
+
+        show_positive_effect_sizes = show_positive_effect_sizes == "true"
 
         entity_id_and_label = get_entity_id_from_entity_full_label(
             entity_type=entity_type, entity_full_label=entity_full_label,
@@ -559,6 +562,7 @@ class ContextBoxPlotData(Resource):
             max_fdr=max_fdr,
             min_abs_effect_size=min_abs_effect_size,
             min_frac_dep_in=min_frac_dep_in,
+            show_positive_effect_sizes=show_positive_effect_sizes,
         )
 
         context_box_plot_data = box_plot_utils.get_organized_contexts(
