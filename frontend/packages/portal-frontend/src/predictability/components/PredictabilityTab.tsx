@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { Row, Col, Button } from "react-bootstrap";
 import * as Papa from "papaparse";
 
+import { toStaticUrl } from "@depmap/globals";
 import { getDapi } from "src/common/utilities/context";
 import { Spinner } from "@depmap/common-components";
 import { EntityType } from "src/entity/models/entities";
@@ -112,7 +113,7 @@ const InformationalContent = ({
         target="_blank"
       >
         <img
-          src={dapi._getFileUrl("/static/img/predictability/pdf.svg")}
+          src={toStaticUrl("img/predictability/pdf.svg")}
           alt=""
           className="icon"
         />
@@ -127,7 +128,7 @@ const InformationalContent = ({
         onClick={downloadData}
       >
         <img
-          src={dapi._getFileUrl("/static/img/predictability/download.svg")}
+          src={toStaticUrl("img/predictability/download.svg")}
           alt=""
           style={{ height: 14, marginInlineEnd: 2 }}
         />
@@ -142,7 +143,7 @@ const InformationalContent = ({
         download
       >
         <img
-          src={dapi._getFileUrl("/static/img/predictability/download.svg")}
+          src={toStaticUrl("img/predictability/download.svg")}
           alt=""
           style={{ height: 14, marginInlineEnd: 2 }}
         />
