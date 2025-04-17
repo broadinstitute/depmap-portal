@@ -25,12 +25,3 @@ def config(request):
 def private_datasets_map_df(request):
     df = pd.DataFrame(columns=["fake"], data=[[1], [2]])
     return df
-
-
-@override(config=config)
-def test_get_private_datasets_file_bucket_overrides(
-    empty_db_mock_downloads, upload_private_dataset_setup
-):
-    "Test that dstaging uses dprod GCS folder"
-    f = _get_private_datasets_file("fake_file")
-    assert f.name == "dprod/fake_file"

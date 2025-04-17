@@ -311,11 +311,6 @@ models_new.py: error: Cannot access member "Table" for type "SQLAlchemy"
 nonstandard_loader.py: error: Argument of type "Literal['GET_NONSTANDARD_DATASETS']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
 nonstandard_loader.py: error: Argument of type "Literal['NONSTANDARD_DATA_DIR']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
 nonstandard_loader.py: error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
-nonstandard_private_loader.py: error: "group" is not a known member of "None" (reportOptionalMemberAccess)
-nonstandard_private_loader.py: error: Argument of type "Literal['DOWNLOADS_KEY']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
-nonstandard_private_loader.py: error: Argument of type "Literal['LOADER_DATA_DIR']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
-nonstandard_private_loader.py: error: Argument of type "Literal['NONSTANDARD_DATA_DIR']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
-nonstandard_private_loader.py: error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
 nonstandard_utils.py: error: "__get_config" is unknown import symbol (reportAttributeAccessIssue)
 nonstandard_utils.py: error: "__getitem__" method not defined on type "Datatype" (reportIndexIssue)
 nonstandard_utils.py: error: "get_subsetted_df" is not a known member of "None" (reportOptionalMemberAccess)
@@ -392,7 +387,6 @@ tda_loader.py: error: Argument of type "list[Unknown | None]" cannot be assigned
 tda_loader.py: error: Argument of type "str | Any" cannot be assigned to parameter "entrez_id" of type "int" in function "get_gene_by_entrez"
 tda_loader.py: error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
 tda_loader.py: error: No overloads for "join" match the provided arguments (reportCallIssue)
-test_bucket_utils.py: error: Argument of type "None" cannot be assigned to parameter "bucket" of type "Bucket" in function "_get_private_datasets_file"
 test_cell_line_loader.py: error: "catalog_number" is not a known member of "None" (reportOptionalMemberAccess)
 test_cell_line_loader.py: error: "cell_line_alias" is not a known member of "None" (reportOptionalMemberAccess)
 test_cell_line_loader.py: error: "cell_line_name" is not a known member of "None" (reportOptionalMemberAccess)
@@ -485,10 +479,6 @@ test_models.py: error: Cannot access member "predictive_model_id" for type "Pred
 test_models.py: error: Cannot access member "units" for type "LazyAttribute"
 test_models.py: error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
 test_models.py: error: Object of type "None" is not subscriptable (reportOptionalSubscript)
-test_nonstandard_private_loader.py: error: "col_index" is not a known member of "None" (reportOptionalMemberAccess)
-test_nonstandard_private_loader.py: error: "owner_id" is not a known member of "None" (reportOptionalMemberAccess)
-test_nonstandard_private_loader.py: error: "row_index" is not a known member of "None" (reportOptionalMemberAccess)
-test_nonstandard_private_loader.py: error: Argument of type "Literal[CellLineNameType.depmap_id]" cannot be assigned to parameter "cell_line_name_type" of type "str" in function "__init__"
 test_parse_downloads.py: error: "stats" is not a known member of "None" (reportOptionalMemberAccess)
 test_predictability_loader.py: error: "dataset_id" is not a known member of "None" (reportOptionalMemberAccess)
 test_predictability_loader.py: error: "entity_id" is not a known member of "None" (reportOptionalMemberAccess)

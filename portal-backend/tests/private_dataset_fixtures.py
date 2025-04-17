@@ -115,25 +115,3 @@ def populated_gcs(monkeypatch, mock_gcs, private_datasets_map_df):
     records = [UserUploadRecord(**x) for x in private_datasets_map_df.to_dict("record")]
 
     update_user_upload_records(records)
-
-
-@pytest.fixture(scope="function")
-def upload_private_dataset_setup(populated_gcs, monkeypatch):
-    # Get content from existing client
-    from loader import nonstandard_private_loader
-
-    client = storage.Client(project=FAKE_PROJECT)
-
-    def mock_download_csv_to_hdf5(csv_path: str, dest_path: str):
-        if csv_path.startswith("gs://"):
-            blob = storage.Blob.from_string(csv_path, client)
-            with tempfile.NamedTemporaryFile() as temp_csv:
-                temp_csv.write(blob.download_as_string())
-                temp_csv.flush()
-                csv_to_hdf5(temp_csv.name, dest_path)
-        else:
-            csv_to_hdf5(csv_path, dest_path)
-
-    monkeypatch.setattr(
-        nonstandard_private_loader, "_download_csv_to_hdf5", mock_download_csv_to_hdf5
-    )
