@@ -1,6 +1,6 @@
 import * as React from "react";
 import { OverlayTrigger, Popover } from "react-bootstrap";
-import { getDapi } from "../utilities/context";
+import { toStaticUrl } from "@depmap/globals";
 
 type TriggerType = "click" | "hover" | "focus";
 
@@ -21,7 +21,7 @@ const infoImg = (
       paddingLeft: "4px",
       cursor: "pointer",
     }}
-    src={getDapi()._getFileUrl("/static/img/gene_overview/info_purple.svg")}
+    src={toStaticUrl("img/gene_overview/info_purple.svg")}
     alt="description of term"
     className="icon"
   />
