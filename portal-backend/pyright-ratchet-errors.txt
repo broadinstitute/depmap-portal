@@ -33,7 +33,6 @@ autoapp.py: error: "ProxyMiddleware" is unknown import symbol (reportAttributeAc
 biomarker_loader.py: error: "dataset_versions" is not defined (reportUndefinedVariable)
 biomarker_loader.py: error: "record" is possibly unbound (reportPossiblyUnboundVariable)
 biomarker_loader.py: error: Argument of type "Literal['LOADER_DATA_DIR']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
-biomarker_loader.py: error: Argument of type "Literal[DependencyEnum.CTRP_AUC, 'expression', 'copy_number_absolute', 'copy_number_relative', 'mutation_pearson', 'mutations_damaging', 'mutations_hotspot', 'mutations_driver', 'mutations_prioritized', 'context', 'rppa', 'rrbs', 'proteomics', 'sanger_proteomics', 'fusions', 'ssgsea', 'metabolomics', 'crispr_confounders', 'rnai_confounders', 'oncref_confounders', 'rep_all_single_pt_confounders', 'rep1m_confounders', 'CRISPRGeneDependency', 'OmicsAbsoluteCNGene', 'OmicsSignatures', 'OmicsLoH', 'Chronos_Combined', 'Chronos_Achilles', 'CERES_Combined', 'Avana', 'OrganoidGeneEffect', 'RNAi_merged', 'RNAi_Ach', 'RNAi_Nov_DEM', 'GDSC1_AUC', 'GDSC2_AUC', 'GDSC1_IC50', 'GDSC2_IC50', 'CTRP_AUC', 'Repurposing_secondary_AUC', 'CTRP_dose_replicate', 'GDSC1_dose_replicate', 'GDSC2_dose_replicate', 'Repurposing_secondary_dose', 'Repurposing_secondary_dose_replicate', 'Rep1M', 'Rep_all_single_pt', 'Prism_oncology_AUC', 'Prism_oncology_IC50', 'Prism_oncology_dose_replicate']" cannot be assigned to parameter "dependency_dataset_name" of type "str" in function "get_dataset_by_name"
 biomarker_loader.py: error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
 breadbox_shim.py: error: Argument of type "list[str | None]" cannot be assigned to parameter "feature_ids" of type "list[str]" in function "get_feature_data"
 bucket_utils.py: error: "csv_path" is not a known member of "None" (reportOptionalMemberAccess)
@@ -532,8 +531,6 @@ utils.py: error: Argument of type "Literal['WEBAPP_DATA_DIR']" cannot be assigne
 utils.py: error: Argument of type "Unknown | None" cannot be assigned to parameter "string" of type "bytes | bytearray" in function "quote" (reportArgumentType)
 utils.py: error: Cannot access member "encode" for type "bytes"
 utils.py: error: Cannot access member "get" for type "list[str]"
-utils.py: error: Cannot access member "rename" for type "NDArray[Unknown]"
-utils.py: error: Cannot access member "rename" for type "ndarray[Any, Unknown]"
 utils.py: error: Expression of type "Dict[str, DatasetSortKey] | Any" cannot be assigned to return type "DefaultDict[str, DatasetSortKey]"
 utils.py: error: Expression of type "None" cannot be assigned to return type "DataFrame"
 utils.py: error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
@@ -570,7 +567,6 @@ views.py: error: Argument of type "Literal['EXTERNAL_TOOLS']" cannot be assigned
 views.py: error: Argument of type "Literal['FEEDBACK_FORM_URL']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
 views.py: error: Argument of type "Literal['URL_UPLOAD_WHITELIST']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
 views.py: error: Argument of type "Literal['WEBAPP_DATA_DIR']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
-views.py: error: Argument of type "Literal['dataset_id']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
 views.py: error: Argument of type "Literal['display_name']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
 views.py: error: Argument of type "Literal['exception']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
 views.py: error: Argument of type "Literal['kNeighbors']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
@@ -596,7 +592,6 @@ views.py: error: Argument of type "str" cannot be assigned to parameter "__value
 views.py: error: Cannot access member "any" for type "List[Gene]"
 views.py: error: Cannot access member "apply" for type "function"
 views.py: error: Cannot access member "delay" for type "function"
-views.py: error: Cannot access member "drop" for type "List[UserUploadRecord]"
 views.py: error: Cannot access member "genes" for type "set[Unknown]"
 views.py: error: Cannot access member "get" for type "list[str]"
 views.py: error: Cannot access member "getlist" for type "list[str]"
