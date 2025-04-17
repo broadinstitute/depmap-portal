@@ -60,7 +60,9 @@ def get_box_plot_card_data(
 
     child_codes = model_ids_by_code.keys()
 
-    for child in child_codes:
+    # Sort significant codes to the front
+    sorted_child_codes = [x for _, x in sorted(zip(all_sig_context_codes, child_codes))]
+    for child in sorted_child_codes:
         context_model_ids = model_ids_by_code[child]
         if child in all_sig_context_codes:
             # This rule should be enforced in get_context_analysis.py. If this assertion gets hit,
@@ -76,7 +78,8 @@ def get_box_plot_card_data(
             else:
                 other_lineage_plot_model_ids.extend(context_model_ids)
         else:
-            other_lineage_plot_model_ids.extend(context_model_ids)
+            others = [m for m in context_model_ids if m not in all_sig_models]
+            other_lineage_plot_model_ids.extend(others)
 
     if level_0_code not in all_sig_context_codes:
         if len(all_sig_models) >= 5:
@@ -95,6 +98,7 @@ def get_box_plot_card_data(
         level_0_model_ids.extend(other_lineage_plot_model_ids)
 
         all_other_model_ids = list(set(level_0_model_ids) - set(all_sig_models))
+
         insignificant_box_plot_data = (
             BoxData(label=f"Other {level_0_code}", data=[], cell_line_display_names=[])
             if len(all_other_model_ids) < 5
