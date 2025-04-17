@@ -260,6 +260,9 @@ def _load_gene_executive_info(merged_gene_executive_info):
             entrez_id = row["entrez_id"]
             gene = lookup_gene.get(entrez_id)
             if gene is not None:
+                # TEMP HACK
+                if row["dataset"] not in DependencyDataset.DependencyEnum.values:
+                    continue
                 dataset = DependencyDataset.DependencyEnum(row["dataset"])
                 num_dependent_cell_lines = (
                     row["dep_lines"] if not pd.isna(row["dep_lines"]) else None
