@@ -32,13 +32,36 @@ export const getDatasetIdFromSlice = (
 
 export const getMetadataSliceTypeLabelFromSlice = (
   slices: MetadataSlices,
-  value: string
+  value: string | null
 ) => {
+  if (!value) {
+    return "";
+  }
+
   let out = "";
 
   Object.entries(slices).forEach(([sliceId, descriptor]) => {
     if (sliceId === slicePrefix(slices, value)) {
       out = descriptor.sliceTypeLabel as string;
+    }
+  });
+
+  return out;
+};
+
+export const getValueTypeFromSlice = (
+  slices: MetadataSlices,
+  value: string | null
+) => {
+  if (!value) {
+    return null;
+  }
+
+  let out = null;
+
+  Object.entries(slices).forEach(([sliceId, descriptor]) => {
+    if (sliceId === slicePrefix(slices, value)) {
+      out = descriptor.valueType as string;
     }
   });
 

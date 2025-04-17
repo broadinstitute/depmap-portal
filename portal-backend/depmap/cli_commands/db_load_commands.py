@@ -1073,9 +1073,6 @@ def load_sample_data(
             # when adding a dataset, check if it should be added to association_deps and additional_dev_metadata as well
             DependencyEnum.Chronos_Combined,
             DependencyEnum.Chronos_Achilles,
-            DependencyEnum.Chronos_Score,
-            DependencyEnum.Sanger_CRISPR,
-            DependencyEnum.GeCKO,
             DependencyEnum.RNAi_Ach,
             DependencyEnum.RNAi_Nov_DEM,
             DependencyEnum.RNAi_merged,
@@ -1328,7 +1325,6 @@ def load_sample_data(
         # Associations
         association_deps = [
             ("Chronos_Combined", DependencyEnum.Chronos_Combined.name),
-            ("GeCKO", DependencyEnum.GeCKO.name),
             ("RNAi_Ach", DependencyEnum.RNAi_Ach.name),
             ("RNAi_Nov_DEM", DependencyEnum.RNAi_Nov_DEM.name),
             ("RNAi_merged", DependencyEnum.RNAi_merged.name),
@@ -1341,8 +1337,6 @@ def load_sample_data(
                 DependencyEnum.Repurposing_secondary_AUC.name,
             ),
             ("Chronos_Achilles", DependencyEnum.Chronos_Achilles.name),
-            ("Chronos_Score", DependencyEnum.Chronos_Score.name),
-            ("Sanger_CRISPR", DependencyEnum.Sanger_CRISPR.name),
             ("GDSC1_AUC", DependencyEnum.GDSC1_AUC.name),
             ("GDSC2_AUC", DependencyEnum.GDSC2_AUC.name),
             ("ctd2_drug_auc", DependencyEnum.CTRP_AUC.name),
@@ -1363,12 +1357,10 @@ def load_sample_data(
         )
         for file_name_root, enum_name in association_deps:
             if enum_name not in [
-                DependencyDataset.DependencyEnum.Chronos_Score.name,
                 DependencyDataset.DependencyEnum.Chronos_Achilles.name,
                 DependencyDataset.DependencyEnum.GDSC1_AUC.name,
                 DependencyDataset.DependencyEnum.GDSC2_AUC.name,
                 DependencyDataset.DependencyEnum.CTRP_AUC.name,
-                DependencyDataset.DependencyEnum.Sanger_CRISPR.name,
                 DependencyDataset.DependencyEnum.Prism_oncology_AUC.name,
             ]:
                 association_loader.load_dep_dep_correlation(
@@ -1378,12 +1370,10 @@ def load_sample_data(
         for dep_file_name_root, dep_enum_name in association_deps:
             for (biom_file_name_root, biom_enum_name,) in association_bioms:
                 if dep_enum_name not in [
-                    DependencyDataset.DependencyEnum.Chronos_Score.name,
                     DependencyDataset.DependencyEnum.Chronos_Achilles.name,
                     DependencyDataset.DependencyEnum.GDSC1_AUC.name,
                     DependencyDataset.DependencyEnum.GDSC2_AUC.name,
                     DependencyDataset.DependencyEnum.CTRP_AUC.name,
-                    DependencyDataset.DependencyEnum.Sanger_CRISPR.name,
                     DependencyDataset.DependencyEnum.Prism_oncology_AUC.name,
                 ]:
                     association_loader.load_dep_biom_correlation(

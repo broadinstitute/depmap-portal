@@ -1,46 +1,42 @@
 import React, { useEffect, useRef } from "react";
 import { BOX_THICKNESS, getNewContextUrl } from "src/contextExplorer/utils";
-import ExtendedPlotType from "../models/ExtendedPlotType";
-import PlotlyLoader, { PlotlyType } from "./PlotlyLoader";
-
-export interface BoxPlotInfo {
-  name: string;
-  hoverLabels: string[];
-  xVals: number[];
-  color: { r: number; b: number; g: number; a?: number };
-  lineColor: string;
-  pointLineColor?: string;
-  code?: string;
-}
+import ExtendedPlotType from "../../../plot/models/ExtendedPlotType";
+import PlotlyLoader, {
+  PlotlyType,
+} from "../../../plot/components/PlotlyLoader";
+import { BoxPlotInfo } from "src/contextExplorer/models/types";
+import { PlotlyHTMLElement } from "plotly.js";
 
 export interface BoxPlotProps {
-  plotName: string;
   boxData: BoxPlotInfo[];
   dottedLinePosition: number;
+  isActivePlot?: boolean;
   selectedCode?: string;
   onLoad?: (plot: ExtendedPlotType) => void;
-  setXAxisRange?: (range: any[]) => void;
   plotHeight?: number;
   xAxisRange?: any[];
   xAxisTitle?: string;
   bottomMargin?: number;
   topMargin?: number;
+  urlPrefix?: string; // Required if linking y-axis from somewhere other than context explorer (e.g. gene page)
+  tab?: string; // Required if linking y-axis from somewhere other than context explorer (e.g. gene page)
 }
 
 type BoxPlotWithPlotly = BoxPlotProps & { Plotly: PlotlyType };
 
 function BoxPlot({
   boxData,
-  plotName,
   dottedLinePosition,
   selectedCode = undefined,
   onLoad = () => {},
+  isActivePlot = false,
   plotHeight = undefined,
   xAxisRange = undefined,
   xAxisTitle = undefined,
-  setXAxisRange = undefined,
   bottomMargin = 0,
   topMargin = 0,
+  urlPrefix = undefined,
+  tab = undefined,
   Plotly,
 }: BoxPlotWithPlotly) {
   const ref = useRef<ExtendedPlotType>(null);
@@ -100,11 +96,9 @@ function BoxPlot({
     });
 
     const layout: Partial<Plotly.Layout> = {
-      margin: { t: topMargin, r: 10, b: bottomMargin, l: 10 },
+      margin: { t: topMargin, r: 5, b: bottomMargin, l: 5 },
       autosize: true,
       dragmode: "pan",
-      height: plotHeight,
-      width: 200,
       showlegend: false,
       yaxis: {
         zeroline: false,
@@ -149,6 +143,29 @@ function BoxPlot({
     const config: Partial<Plotly.Config> = { responsive: true };
 
     Plotly.react(plot, data, layout, config);
+
+    // Keep track of added listeners so we can easily remove them.
+    const listeners: [string, (e: any) => void][] = [];
+
+    const on = (eventName: string, callback: (e: any) => void) => {
+      plot.on(
+        eventName as Parameters<PlotlyHTMLElement["on"]>[0],
+        callback as Parameters<PlotlyHTMLElement["on"]>[1]
+      );
+      listeners.push([eventName, callback]);
+    };
+
+    on("plotly_resize", () => {
+      setTimeout(() => {
+        Plotly.redraw(plot);
+      });
+    });
+
+    return () => {
+      listeners.forEach(([eventName, callback]) =>
+        plot.removeListener(eventName, callback)
+      );
+    };
   }, [
     Plotly,
     boxData,
@@ -159,59 +176,22 @@ function BoxPlot({
     xAxisTitle,
     dottedLinePosition,
     selectedCode,
+    urlPrefix,
+    isActivePlot.valueOf,
+    tab,
     onLoad,
   ]);
-
-  useEffect(() => {
-    if (ref.current?.layout && plotName === "other") {
-      const update: Partial<Plotly.Layout> = {
-        xaxis: {
-          range: xAxisRange ?? ref.current.layout.xaxis.range,
-          title: xAxisTitle ?? "",
-        },
-      };
-
-      Plotly.relayout(ref.current, update);
-    } else if (
-      ref.current?.layout &&
-      (plotName === "main" || plotName === "main-header")
-    ) {
-      const update: Partial<Plotly.Layout> = {
-        margin: { t: topMargin, r: 15, b: bottomMargin, l: 0 },
-        xaxis: {
-          range: xAxisRange ?? ref.current.layout.xaxis.range,
-          title: xAxisTitle ?? "",
-        },
-      };
-
-      Plotly.relayout(ref.current, update);
-    }
-  }, [
-    xAxisRange,
-    xAxisTitle,
-    Plotly,
-    bottomMargin,
-    topMargin,
-    plotName,
-    plotHeight,
-  ]);
-
-  useEffect(() => {
-    if (
-      ref.current?.layout.xaxis.range &&
-      setXAxisRange &&
-      (plotName === "main" || plotName === "main-header")
-    ) {
-      setXAxisRange(ref.current?.layout.xaxis.range);
-    }
-  }, [ref.current?.layout.xaxis.range, plotName, setXAxisRange]);
 
   return <div ref={ref} />;
 }
 
 export default function LazyBoxPlot({
   boxData,
+  isActivePlot = false,
+  plotHeight = undefined,
   selectedCode = undefined,
+  urlPrefix = undefined,
+  tab = undefined,
   ...otherProps
 }: BoxPlotProps) {
   return (
@@ -221,8 +201,9 @@ export default function LazyBoxPlot({
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "120px auto",
+              gridTemplateColumns: "100px auto",
               color: "#4479B2",
+              height: plotHeight,
             }}
           >
             <div
@@ -243,6 +224,21 @@ export default function LazyBoxPlot({
                     fontSize: "12px",
                   }}
                 >
+                  {boxData.length === 1 && !box?.name.includes("Other") && (
+                    <span
+                      style={{
+                        paddingRight: "4px",
+                        paddingTop: box.name === selectedCode ? "0px" : "12px",
+                        fontSize: "12px",
+                        color: "#4479B2",
+                      }}
+                      className={
+                        isActivePlot
+                          ? "glyphicon glyphicon-chevron-up"
+                          : "glyphicon glyphicon-chevron-down"
+                      }
+                    />
+                  )}
                   {boxData.length > 0 && !box?.name.includes("Other") ? (
                     box?.name.split("/").map((code, j) => (
                       <React.Fragment key={code}>
@@ -251,7 +247,9 @@ export default function LazyBoxPlot({
                             {code}
                           </span>
                         ) : (
-                          <a href={getNewContextUrl(code)}>{code}</a>
+                          <a href={getNewContextUrl(code, urlPrefix, tab)}>
+                            {code}
+                          </a>
                         )}
                         {j < box?.name.split("/").length - 1 && "/"}
                       </React.Fragment>
@@ -264,9 +262,7 @@ export default function LazyBoxPlot({
                           style={{
                             color: "#333333",
                             fontWeight: "600",
-                            fontSize: box?.name.includes("Other")
-                              ? "14px"
-                              : "12px",
+                            fontSize: "12px",
                           }}
                         >
                           {box.name}

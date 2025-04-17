@@ -1,5 +1,3 @@
-import { BoxPlotInfo } from "src/plot/components/BoxPlot";
-
 export enum ContextExplorerDatasets {
   Chronos_Combined = "Chronos_Combined",
   Rep_all_single_pt = "Rep_all_single_pt",
@@ -208,16 +206,35 @@ export interface BoxCardData {
 }
 
 export interface ContextPlotBoxData {
-  significant_selection: BoxData[];
-  insignificant_selection: BoxData;
+  significant_selection: BoxData[] | null;
+  insignificant_selection: BoxData | null;
   other_cards: BoxCardData[];
   insignificant_heme_data: BoxData;
   insignificant_solid_data: BoxData;
   drug_dotted_line: number;
   entity_label: string;
+  entity_overview_page_label: string;
 }
 
-export interface OtherBoxCardData {
+export interface EnrichedLineagesTileData {
+  box_plot_data: ContextPlotBoxData;
+  top_context_name_info: ContextNameInfo | null;
+  selected_context_name_info: ContextNameInfo | null;
+  dataset_name: string;
+  context_explorer_url: string;
+}
+
+export interface BoxPlotInfo {
+  name: string;
+  hoverLabels: string[];
+  xVals: number[];
+  color: { r: number; b: number; g: number; a?: number };
+  lineColor: string;
+  pointLineColor?: string;
+  code?: string;
+}
+
+export interface OtherSignificantBoxCardData {
   [key: string]: {
     levelZeroPlotInfo: BoxPlotInfo;
     subContextInfo: BoxPlotInfo[];

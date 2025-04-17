@@ -191,18 +191,18 @@ export function ColorByTypeSelector({
     options.aggregated_slice = `${sliceTypeLabel} Context`;
     helpContent.push(
       <p key={1}>
-        Choose <b>{sliceTypeLabel} context</b> to color by membership in a
+        Choose <b>{sliceTypeLabel} Context</b> to color by membership in a
         user-defined context.
       </p>
     );
   }
 
   if (hasLegacyColorProperty || value === "property") {
-    options.property = `${sliceTypeLabel} Property`;
+    options.property = `${sliceTypeLabel} Annotation`;
     helpContent.push(
       <p key={2}>
-        Choose <b>{sliceTypeLabel} property</b> to color by major properties of
-        the {sliceTypeLabel}, such as selectivity for genes or lineage for
+        Choose <b>{sliceTypeLabel} Annotation</b> to color by major properties
+        of the {sliceTypeLabel}, such as selectivity for genes or lineage for
         models.
       </p>
     );
@@ -217,11 +217,11 @@ export function ColorByTypeSelector({
   }
 
   if (slice_type !== "other") {
-    options.custom = isElara ? "Matrix Data" : "Custom";
+    options.custom = "Matrix Data";
     helpContent.push(
       <p key={3}>
-        Choose <b>Custom</b> to treat color as a third axis, letting you choose
-        any data type that could have been an axis.
+        Choose <b>Matrix data</b> to treat color as a third axis, letting you
+        choose any data type that could have been an axis.
       </p>
     );
   }

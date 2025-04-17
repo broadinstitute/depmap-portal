@@ -41,11 +41,14 @@ def main(
         unique_lineage_tree_codes
     )
 
-    bool_matrix = no_mol_subtypes_one_hot_encoded_context_matrix.astype(bool)
+    # Filter out columns with all zeros
+    all_zeros_filtered_out = no_mol_subtypes_one_hot_encoded_context_matrix.loc[
+        :, (no_mol_subtypes_one_hot_encoded_context_matrix != 0).any(axis=0)
+    ]
 
-    write_hdf5(
-        no_mol_subtypes_one_hot_encoded_context_matrix.transpose(), out_hdf5_filename
-    )
+    bool_matrix = all_zeros_filtered_out.astype(bool)
+
+    write_hdf5(all_zeros_filtered_out.transpose(), out_hdf5_filename)
     bool_matrix.to_csv(out_filename)
 
 

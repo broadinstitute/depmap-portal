@@ -36,7 +36,7 @@ function DataColumnSelect({ onChange }: Props) {
           setValue(null);
         }}
         options={{
-          categorical: "Model Property",
+          categorical: "Model Annotation",
           continuous: "Matrix Data",
         }}
       />

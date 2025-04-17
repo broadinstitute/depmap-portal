@@ -1,7 +1,18 @@
+import dataclasses
+import re
 from typing import Any, Dict, List, Literal, Optional
 from depmap.cell_line.models_new import DepmapModel
-from depmap.context_explorer.models import BoxCardData, ContextAnalysis
+from depmap.compound.models import Compound
+from depmap.context_explorer.models import (
+    BoxCardData,
+    ContextAnalysis,
+    EnrichedLineagesTileData,
+)
+from depmap.dataset.models import DependencyDataset
+from depmap.gene.models import Gene
+from depmap.tile.views import get_dependency_dataset_for_entity
 import pandas as pd
+from flask import url_for
 
 from depmap.context_explorer import utils
 from depmap.context.models_new import SubtypeNode, SubtypeContext
@@ -16,6 +27,7 @@ def _get_node_entity_data(
     )
     entity_id = entity_id_and_label["entity_id"]
     entity_label = entity_id_and_label["label"]
+    entity_overview_page_label = entity_id_and_label["entity_overview_page_label"]
 
     (entity_full_row_of_values) = utils.get_full_row_of_values_and_depmap_ids(
         dataset_name=dataset_name, label=entity_label
@@ -26,6 +38,7 @@ def _get_node_entity_data(
         entity_id=entity_id,
         entity_label=entity_label,
         entity_full_row_of_values=entity_full_row_of_values,
+        entity_overview_page_label=entity_overview_page_label,
     )
 
 
@@ -229,15 +242,21 @@ def get_branch_subtype_codes_organized_by_code(
     return branch_contexts
 
 
-def _get_sig_context_dataframe(
+def get_sig_context_dataframe(
     tree_type: str,
     entity_type: str,
     entity_id: int,
     dataset_name: str,
-    max_fdr: float,
-    min_abs_effect_size: float,
-    min_frac_dep_in: float,
+    max_fdr: float = 0.5,
+    min_abs_effect_size: float = 0.1,
+    min_frac_dep_in: float = 0.1,
+    use_enrichment_tile_filters=False,
 ) -> pd.DataFrame:
+
+    if entity_type == "compound" and use_enrichment_tile_filters:
+        max_fdr = 0.05
+        min_abs_effect_size = 0.1
+        min_frac_dep_in = 0.1
     # If this doesn't find the node, something is wrong with how we
     # loaded the SubtypeNode database table data.
     sig_contexts = ContextAnalysis.get_context_dependencies(
@@ -375,6 +394,7 @@ def get_context_plot_box_data(
             insignificant_solid_data=solid_box_plot_data,
             drug_dotted_line=drug_dotted_line,
             entity_label=node_entity_data.entity_label,
+            entity_overview_page_label=node_entity_data.entity_overview_page_label,
         )
 
     return None
@@ -382,13 +402,11 @@ def get_context_plot_box_data(
 
 def get_organized_contexts(
     selected_subtype_code: str,
-    tree_type: str,
+    sig_contexts: pd.DataFrame,
     entity_type: str,
-    entity_full_label: str,
+    entity_label: str,
     dataset_name: str,
-    max_fdr: float,
-    min_abs_effect_size: float,
-    min_frac_dep_in: float,
+    tree_type: str,
 ) -> Optional[ContextPlotBoxData]:
     node = SubtypeNode.get_by_code(selected_subtype_code)
     assert node is not None
@@ -396,20 +414,10 @@ def get_organized_contexts(
     node_entity_data = _get_node_entity_data(
         dataset_name=dataset_name,
         entity_type=entity_type,
-        entity_full_label=entity_full_label,
+        entity_full_label=entity_label,
     )
 
     entity_full_row_of_values = node_entity_data.entity_full_row_of_values
-
-    sig_contexts = _get_sig_context_dataframe(
-        tree_type=tree_type,
-        entity_type=entity_type,
-        entity_id=node_entity_data.entity_id,
-        dataset_name=dataset_name,
-        max_fdr=max_fdr,
-        min_abs_effect_size=min_abs_effect_size,
-        min_frac_dep_in=min_frac_dep_in,
-    )
 
     (entity_full_row_of_values) = utils.get_full_row_of_values_and_depmap_ids(
         dataset_name=dataset_name, label=node_entity_data.entity_label
@@ -447,5 +455,125 @@ def get_organized_contexts(
         insignificant_solid_data=context_box_plot_data.insignificant_solid_data,
         drug_dotted_line=context_box_plot_data.drug_dotted_line,
         entity_label=context_box_plot_data.entity_label,
+        entity_overview_page_label=context_box_plot_data.entity_overview_page_label,
     )
+
     return ordered_box_plot_data
+
+
+################################################################################
+### Enrichment Tile Boxplots (shown on the Gene and Compound overview pages) ###
+################################################################################
+def temp_get_compound_experiment_dataset(compound_experiment_and_datasets):
+    # DEPRECATED: this method will not work with breadbox datasets. Calls to it should be replaced.
+    dataset_regexp_ranking = [
+        "Prism_oncology.*",
+        "Rep_all_single_pt.*",
+        ".*",
+    ]
+    ce_and_d = []
+    for regexp in dataset_regexp_ranking:
+        for ce, d in compound_experiment_and_datasets:
+            pattern = re.compile(regexp)
+            if pattern.match(d.name.value):
+                ce_and_d = [[ce, d]]
+                return ce_and_d
+
+
+def get_compound_experiment_and_dataset_name_from_compound(compound: Compound):
+    # Figure out membership in different datasets
+    compound_experiment_and_datasets = DependencyDataset.get_compound_experiment_priority_sorted_datasets_with_compound(
+        compound.entity_id
+    )
+    compound_experiment_and_datasets = [
+        x
+        for x in compound_experiment_and_datasets
+        if not x[1].is_ic50 and not x[1].is_dose_replicate
+    ]  # filter for non ic50 or dose replicate datasets"
+    best_ce_and_d = temp_get_compound_experiment_dataset(
+        compound_experiment_and_datasets
+    )
+
+    return best_ce_and_d
+
+
+def get_gene_enriched_lineages_entity_id_and_dataset_name(entity_label: str) -> dict:
+    gene = Gene.get_by_label(entity_label)
+    dataset = get_dependency_dataset_for_entity(
+        DependencyDataset.DependencyEnum.Chronos_Combined.name, gene.entity_id
+    )
+    assert dataset is not None
+    dataset_name = dataset.name.name
+
+    return {"entity_id": gene.entity_id, "dataset_name": dataset_name}
+
+
+def get_compound_enriched_lineages_entity_id_and_dataset_name(
+    entity_label: str,
+) -> dict:
+    compound = Compound.get_by_label(entity_label)
+    best_ce_and_d = get_compound_experiment_and_dataset_name_from_compound(compound)
+
+    assert best_ce_and_d is not None
+
+    compound_experiment = best_ce_and_d[0][0]
+    dataset_name = best_ce_and_d[0][1].name.name
+
+    return {
+        "entity_id": compound_experiment.entity_id,
+        "dataset_name": dataset_name,
+        "compound_experiment_label": compound_experiment.label,
+    }
+
+
+def get_data_to_show_if_no_contexts_significant(
+    entity_type: str, entity_label: str, tree_type: str, dataset_name: str
+):
+    entity_id_and_label = utils.get_entity_id_from_entity_full_label(
+        entity_type=entity_type, entity_full_label=entity_label
+    )
+    entity_label = entity_id_and_label["label"]
+    entity_overview_page_label = entity_id_and_label["entity_overview_page_label"]
+
+    entity_overview_page_label = entity_id_and_label["entity_overview_page_label"]
+    (entity_full_row_of_values) = utils.get_full_row_of_values_and_depmap_ids(
+        dataset_name=dataset_name, label=entity_label
+    )
+    entity_full_row_of_values.dropna(inplace=True)
+    drug_dotted_line = (
+        entity_full_row_of_values.mean() if entity_type == "compound" else None
+    )
+    heme_box_plot_data = get_box_plot_data_for_other_category(
+        category="heme",
+        all_sig_context_codes=[],
+        entity_full_row_of_values=entity_full_row_of_values,
+        tree_type=tree_type,
+    )
+
+    solid_box_plot_data = get_box_plot_data_for_other_category(
+        category="solid",
+        all_sig_context_codes=[],
+        entity_full_row_of_values=entity_full_row_of_values,
+        tree_type=tree_type,
+    )
+
+    ordered_box_plot_data = ContextPlotBoxData(
+        significant_selection=[],
+        insignificant_selection=None,
+        other_cards=[],
+        insignificant_heme_data=heme_box_plot_data,
+        insignificant_solid_data=solid_box_plot_data,
+        drug_dotted_line=drug_dotted_line,
+        entity_label=entity_label,
+        entity_overview_page_label=entity_overview_page_label,
+    )
+
+    tile_data = EnrichedLineagesTileData(
+        box_plot_data=ordered_box_plot_data,
+        top_context_name_info=None,
+        selected_context_name_info=None,
+        dataset_name=dataset_name,
+        context_explorer_url=url_for("context_explorer.view_context_explorer"),
+    )
+
+    return dataclasses.asdict(tile_data)

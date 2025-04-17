@@ -19,7 +19,7 @@ entity_aliases = {
     ],
 }
 
-hardcoded_metadata_slices = {
+_hardcoded_metadata_slices = {
     "depmap_model": {
         "slice/cell_line_display_name/all/label": {
             "name": "Cell Line Name",
@@ -492,3 +492,38 @@ hardcoded_metadata_slices = {
         },
     },
 }
+
+
+def get_hardcoded_metadata_slices():
+    # FIXME: Instead of hardcoding this, find datasets with data_type
+    # "metadata" and value_type "binary". Those two conditions represent
+    # an annotation that's stored as a one-hot encoded matrix.
+    molecular_subtypes_slice_id = "slice/OmicsInferredMolecularSubtypes/"
+    model_slices = _hardcoded_metadata_slices["depmap_model"]
+
+    model_slices[molecular_subtypes_slice_id] = {
+        "name": "Inferred Molecular Subtype",
+        "valueType": "binary",
+        "isPartialSliceId": True,
+        "sliceTypeLabel": "Molecular subtype",
+        "isBreadboxMetadata": True,
+    }
+
+    model_slices["slice/Context_Matrix/"] = {
+        "name": "Context Matrix",
+        "valueType": "binary",
+        "isPartialSliceId": True,
+        "sliceTypeLabel": "Subtype Code",
+        "isBreadboxMetadata": True,
+    }
+
+    return _hardcoded_metadata_slices
+
+
+def is_hardcoded_binarylike_slice(slice_id: str) -> bool:
+    for slices in get_hardcoded_metadata_slices().values():
+        for m_slice_id, info in slices.items():
+            if m_slice_id in slice_id:
+                if info.get("valueType") == "binary":
+                    return True
+    return False

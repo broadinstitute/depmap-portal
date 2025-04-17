@@ -24,6 +24,19 @@ def load_depmap_model_metadata(filename: str, taiga_id: Optional[str] = None):
         )
 
 
+def temp_cell_line_name_fixup(model_id, cell_line_name):
+
+    if model_id == "ACH-000010":
+
+        log.warning(
+            "Nulling out cell line name from ACH-000010 because labeled as having the same name as ACH-000015. In the next release, we'll fix the dataset and then we can remove this hack"
+        )
+
+        cell_line_name = None
+
+    return cell_line_name
+
+
 def _coerce_na(value):
     if pd.isna(value):
         return None
@@ -43,7 +56,7 @@ def insert_cell_lines(df):
 
         cell_line = CellLine.get_by_depmap_id(model_id)
 
-        cell_line_name = row["CellLineName"]
+        cell_line_name = temp_cell_line_name_fixup(model_id, row["CellLineName"])
         oncotree_primary_disease = _coerce_na(row["OncotreePrimaryDisease"])
         oncotree_subtype = _coerce_na(row["OncotreeSubtype"])
         oncotree_code = _coerce_na(row["OncotreeCode"])

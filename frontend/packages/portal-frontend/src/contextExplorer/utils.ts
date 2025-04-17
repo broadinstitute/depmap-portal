@@ -14,7 +14,7 @@ import { deleteSpecificQueryParams } from "@depmap/utils";
 
 export const CONTEXT_EXPL_BAR_THICKNESS = 40;
 export const BOX_THICKNESS = 40;
-export const BOX_PLOT_BOTTOM_MARGIN = 20;
+export const BOX_PLOT_BOTTOM_MARGIN = 40;
 export const BOX_PLOT_TOP_MARGIN = 0;
 
 export function getSelectivityValLabel(entityType: string) {
@@ -39,32 +39,23 @@ export const OUTGROUP_TYPE_ALL_OPTION = {
 export const DATATYPE_TOOLTIP_TEXT = new Map<string, string>([
   [
     DataTypeStrings.CRISPR.toString(),
-    "Cell lines that have been screened with at least one of the Avana, Humagne, or KY libraries.",
+    "Models that have been screened with at least one genome-wide CRISPR library.",
   ],
   [
     DataTypeStrings.PRISMOncRef.toString(),
-    "Cell lines that have been screened in at least one of PRISM OncRef's screens.",
+    "Models that have been included in at least one PRISM OncRef screen.",
   ],
   [
     DataTypeStrings.PRISMRepurposing.toString(),
-    "Cell lines that have been screened in at least one of PRISM Repurposing's screens.",
+    "Models that have been included in at least one PRISM Repurposing screen.",
   ],
-  [
-    DataTypeStrings.RNASeq.toString(),
-    "Cell lines that have been profiled in RNA-seq.",
-  ],
+  [DataTypeStrings.RNASeq.toString(), "Models with RNAseq profiling."],
   [
     DataTypeStrings.RNAi.toString(),
-    "Cell lines that have been screened in an RNAi library.",
+    "Models that have been screened with at least one RNAi library.",
   ],
-  [
-    DataTypeStrings.WES.toString(),
-    "Cell lines that have had whole exome sequencing.",
-  ],
-  [
-    DataTypeStrings.WGS.toString(),
-    "Cell lines that have had whole genome sequencing.",
-  ],
+  [DataTypeStrings.WES.toString(), "Models with whole exome sequencing."],
+  [DataTypeStrings.WGS.toString(), "Models with whole genome sequencing."],
 ]);
 
 export const BLOOD_LINEAGES = ["Myeloid", "Lymphoid"];
@@ -637,7 +628,16 @@ export function getSelectedContextNode(
   return { selectedContextNode: selectedNode, topContextNameInfo };
 }
 
-export function getNewContextUrl(newCode: string) {
+export function getNewContextUrl(
+  newCode: string,
+  urlPrefix?: string,
+  tab?: string
+) {
+  if (urlPrefix) {
+    return urlPrefix.concat(
+      `?tab=${tab}&context=${encodeURIComponent(newCode)}`
+    );
+  }
   const currentLocation = window.location.href;
   const currentUrl = new URL(currentLocation);
 

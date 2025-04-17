@@ -530,13 +530,13 @@ utils.py: error: Argument of type "Literal['TAIGA_CACHE_DIR']" cannot be assigne
 utils.py: error: Argument of type "Literal['WEBAPP_DATA_DIR']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
 utils.py: error: Argument of type "Unknown | None" cannot be assigned to parameter "string" of type "bytes | bytearray" in function "quote" (reportArgumentType)
 utils.py: error: Cannot access member "encode" for type "bytes"
+utils.py: error: Cannot access member "get" for type "list[str]"
 utils.py: error: Expression of type "Dict[str, DatasetSortKey] | Any" cannot be assigned to return type "DefaultDict[str, DatasetSortKey]"
 utils.py: error: Expression of type "None" cannot be assigned to return type "DataFrame"
 utils.py: error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
 utils.py: error: No overloads for "quote" match the provided arguments (reportCallIssue)
 utils.py: error: Second argument to "isinstance" must be a class or tuple of classes
 views.py: error: "IGNORECASE" is not a known member of module "natsort" (reportAttributeAccessIssue)
-views.py: error: "Unbound" is not iterable (reportGeneralTypeIssues)
 views.py: error: "__getitem__" method not defined on type "Datatype" (reportIndexIssue)
 views.py: error: "csv_path" is possibly unbound (reportPossiblyUnboundVariable)
 views.py: error: "dataset_id" is not a known member of "None" (reportOptionalMemberAccess)
@@ -544,7 +544,6 @@ views.py: error: "dataset_name" is possibly unbound (reportPossiblyUnboundVariab
 views.py: error: "get" is not a known member of "None" (reportOptionalMemberAccess)
 views.py: error: "group_by_category_config" is possibly unbound (reportPossiblyUnboundVariable)
 views.py: error: "group_by_feature" is possibly unbound (reportPossiblyUnboundVariable)
-views.py: error: "html" is possibly unbound (reportPossiblyUnboundVariable)
 views.py: error: "index" is not a known member of "None" (reportOptionalMemberAccess)
 views.py: error: "matrix" is not a known member of "None" (reportOptionalMemberAccess)
 views.py: error: "model_id" is not a known member of "None" (reportOptionalMemberAccess)

@@ -309,16 +309,16 @@ const ContextTree = (props: ContextTreeProps) => {
             }}
           />
           <p>
-            In order to compare the selected context and selected out-group, the
-            Context Explorer uses a two-sided T-test to compare magnitude of{" "}
-            {selectedTab === TabTypes.GeneDependency
-              ? "gene effects"
-              : "log2(viability)"}{" "}
+            Gene dependencies enriched within models of the selected
+            lineage/tumor subtype vs. a chosen out-group (all other CRISPR
+            screened models by default) are calculated using a two-sided T-test
+            on the Chronos CRISPR Gene Effect scores. P-values are corrected for
+            multiple hypothesis testing using the Benjamini-Hochberg procedure.
+            Only genes that are ‘strongly selective’
             <InfoIcon
               target={customInfoImg}
               popoverContent={
                 <p>
-                  For each{" "}
                   {selectedTab === TabTypes.GeneDependency ? "gene" : "drug"},
                   the mean{" "}
                   {selectedTab === TabTypes.GeneDependency
@@ -453,7 +453,7 @@ const ContextTree = (props: ContextTreeProps) => {
         <div className={styles.overviewText}>
           Context Explorer helps researchers see how many datasets are available
           for their chosen tissue context type and subtype, as well as showing
-          the overlap in data. To learn more, visit this resource.
+          the overlap in data.
         </div>
       )}
     </>

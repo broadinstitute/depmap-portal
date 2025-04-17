@@ -6,6 +6,7 @@ import HelpText from "./HelpText";
 import styles from "../../../styles/ContextBuilder.scss";
 
 interface Props {
+  isLoading: boolean;
   slice_type: string;
   value: string | null;
   onChange: (
@@ -16,7 +17,7 @@ interface Props {
   ) => void;
 }
 
-function DataSourceSelect({ slice_type, value, onChange }: Props) {
+function DataSourceSelect({ isLoading, slice_type, value, onChange }: Props) {
   let options = [
     {
       label: "Annotation",
@@ -55,9 +56,9 @@ function DataSourceSelect({ slice_type, value, onChange }: Props) {
     <PlotConfigSelect
       show
       enable
-      value={value}
+      value={isLoading ? "" : value}
       options={options}
-      isLoading={false}
+      isLoading={isLoading}
       onChange={onChange as (nextValue: string | null) => void}
       className={styles.varSelect}
       placeholder="Select data source…"

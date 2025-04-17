@@ -53,6 +53,7 @@ class ContextPlotBoxData:
     insignificant_solid_data: BoxData
     drug_dotted_line: Any
     entity_label: str
+    entity_overview_page_label: str
 
 
 @dataclass
@@ -60,6 +61,7 @@ class NodeEntityData:
     entity_id: int
     entity_label: str
     entity_full_row_of_values: pd.Series
+    entity_overview_page_label: str
 
 
 @dataclass
@@ -67,6 +69,15 @@ class ContextNameInfo:
     name: str
     subtype_code: str
     node_level: int
+
+
+@dataclass
+class EnrichedLineagesTileData:
+    box_plot_data: ContextPlotBoxData
+    top_context_name_info: Union[ContextNameInfo, None]
+    selected_context_name_info: Union[ContextNameInfo, None]
+    dataset_name: str
+    context_explorer_url: str
 
 
 def _get_child_lineages_next_lineage_level_from_root_info(
