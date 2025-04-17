@@ -167,7 +167,11 @@ class FeatureFlags:
 
     @property
     def private_datasets(self):
-        return self.is_only_dmc_and_i_have_a_good_reason()
+        return False
+    
+    @property
+    def dataset_manager(self):
+        return self.is_prerelease_env()
 
     @property
     def target_discovery_app(self):
