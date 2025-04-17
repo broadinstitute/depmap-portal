@@ -146,6 +146,7 @@ release-scripts/release-diff.cache.db
 backup
 
 !.github/
+!.python-version
 hack-docker
 preprocess-logs
 pipeline/state-1

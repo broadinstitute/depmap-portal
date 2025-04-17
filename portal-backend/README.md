@@ -6,6 +6,11 @@ downloads.
 
 Also set up your taiga token (<https://cds.team/taiga/token/>)
 
+Install pyenv & poetry
+
+    brew install pyenv
+    pip install poetry
+
 Create a virtual environment, install Python and Javascript
 dependencies:
 
