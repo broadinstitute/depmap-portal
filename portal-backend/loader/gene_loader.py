@@ -261,7 +261,7 @@ def _load_gene_executive_info(merged_gene_executive_info):
             gene = lookup_gene.get(entrez_id)
             if gene is not None:
                 # TEMP HACK
-                if row["dataset"] not in DependencyDataset.DependencyEnum.values:
+                if row["dataset"] not in DependencyDataset.DependencyEnum.values():
                     continue
                 dataset = DependencyDataset.DependencyEnum(row["dataset"])
                 num_dependent_cell_lines = (
