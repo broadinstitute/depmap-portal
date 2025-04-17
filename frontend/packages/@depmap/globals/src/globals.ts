@@ -37,6 +37,21 @@ export const enabledFeatures: Record<string, boolean> =
 // Just a convenience function for looking up this flag.
 export const isElara: boolean = Boolean(enabledFeatures.elara);
 
+// Takes a relative path and generates a URL to the static/ folder.
+// Use this for images (i.e. files in the img/ subfolder) and for other
+// static resources.
+export function toStaticUrl(relativeUrl: string) {
+  const assetUrl = relativeUrl.trim().replace(/^\//, "");
+
+  if (isElara) {
+    return `static/${assetUrl}`;
+  }
+
+  const element = document.getElementById("webpack-config");
+  const urlPrefix = JSON.parse(element!.textContent as string).rootUrl;
+  return `${urlPrefix}/static/${assetUrl}`.replace(/^\/\//, "");
+}
+
 // Currently, the `errorHandler` doesn't really do anything special outside of
 // logging to the console. In the Portal, it's defined here:
 // https://github.com/broadinstitute/depmap-portal/blob/a2e2cc9/portal-backend/depmap/templates/nav_footer/layout.html#L103
