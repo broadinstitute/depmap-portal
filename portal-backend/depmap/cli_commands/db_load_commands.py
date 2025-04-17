@@ -1354,17 +1354,6 @@ def load_sample_data(
 
         ensure_all_max_min_loaded()
 
-        if current_app.config["ENABLED_FEATURES"].private_datasets:
-            print("Adding private datasets")
-            private_datasets_map_df = get_user_upload_records()
-            for row in private_datasets_map_df:
-                if "canary" not in row.display_name.lower():
-                    print(
-                        f"Skipping {row.display_name} because it doesn't have the word canary in it (so probably not a test upload)"
-                    )
-                    continue
-                nonstandard_private_loader.load_private_dataset_from_df_row(row)
-
         # create a canary custom dataset for dev
         # just as a warning of custom dataset leakage
         if load_nonstandard:
