@@ -37,6 +37,12 @@ import {
   getBoxPlotFilterVariables,
   getSelectivityValLabel,
   getShowPositiveEffectSizesFilter,
+  GENE_DEP_TABLE_DESCRIPTION,
+  GENE_DETAIL_NO_GENE_SELECTED,
+  ONCREF_DETAIL_NO_COMPOUND_SELECTED,
+  REPURPOSING_DETAIL_NO_COMPOUND_SELECTED,
+  ONCREF_TABLE_DESCRIPTION,
+  REPURPOSING_TABLE_DESCRIPTION,
 } from "../../utils";
 import geneDepFilterDefinitions from "../../json/geneDepFilters.json";
 import repurposingFilterDefinitions from "../../json/repurposingFilters.json";
@@ -748,18 +754,44 @@ function ContextAnalysis({
         <div className={styles.overviewGraphHeader}>
           {selectedContextNameInfo.name !== "All" && data && (
             <>
-              <h2>
-                Dependencies enriched/depleted in {selectedContextNameInfo.name}
-              </h2>
-              <h4>
-                Displayed here are{" "}
-                {entityType === "gene"
-                  ? "gene dependencies"
-                  : "drug sensitivities"}{" "}
-                that occur more strongly or more frequently in{" "}
-                {selectedContextNameInfo.name} cell lines compared to{" "}
-                {outgroup.label.toLowerCase()} cell lines.
-              </h4>
+              {entityType === "gene" && (
+                <>
+                  <h2>
+                    Dependencies enriched in {selectedContextNameInfo.name}
+                  </h2>
+                  <h4>
+                    The plots below display gene dependencies that are enriched
+                    in {selectedContextNameInfo.name} models compared to{" "}
+                    {outgroup.label.toLowerCase()} models.
+                  </h4>
+                </>
+              )}
+              {datasetId === ContextExplorerDatasets.Prism_oncology_AUC && (
+                <>
+                  <h2>
+                    OncRef sensitivies enriched in{" "}
+                    {selectedContextNameInfo.name}
+                  </h2>
+                  <h4>
+                    The plots below display compound sensitivities that are
+                    enriched in {selectedContextNameInfo.name} models compared
+                    to {outgroup.label.toLowerCase()} models.
+                  </h4>
+                </>
+              )}
+              {datasetId === ContextExplorerDatasets.Rep_all_single_pt && (
+                <>
+                  <h2>
+                    PRISM Repurposing compound sensitivities enriched in{" "}
+                    {selectedContextNameInfo.name}
+                  </h2>
+                  <h4>
+                    The plots below display compound sensitivities that are
+                    enriched in {selectedContextNameInfo.name} models compared
+                    to {outgroup.label.toLowerCase()} models.
+                  </h4>
+                </>
+              )}
             </>
           )}{" "}
           {error && (
@@ -777,7 +809,34 @@ function ContextAnalysis({
           ) : (
             !error &&
             !isLoading &&
-            !data && <h2>Not enough data points. Choose a larger context.</h2>
+            !data && (
+              <>
+                {entityType === "gene" && (
+                  <h2>
+                    Not enough data points to compute enriched dependencies for
+                    {selectedContextNameInfo.name}. Enriched dependencies are
+                    only computed for lineages/subtypes with at least 5 CRISPR
+                    screened models.
+                  </h2>
+                )}
+                {datasetId === ContextExplorerDatasets.Prism_oncology_AUC && (
+                  <h2>
+                    Not enough data points to compute enriched PRISM OncRef
+                    compound sensitivities for {selectedContextNameInfo.name}.
+                    Enriched compound sensitivities are only computed for
+                    lineages/subtypes with at least 5 PRISM OncRef models.
+                  </h2>
+                )}
+                {datasetId === ContextExplorerDatasets.Rep_all_single_pt && (
+                  <h2>
+                    Not enough data points to compute enriched PRISM Repurposing
+                    compound sensitivities for {selectedContextNameInfo.name}.
+                    Enriched compound sensitivities are only computed for
+                    lineages/subtypes with at least 5 PRISM Repurposing models.
+                  </h2>
+                )}
+              </>
+            )
           )}
         </div>
         <div className={styles.ContextExplorerScatterPlots}>
@@ -927,7 +986,7 @@ function ContextAnalysis({
                 </span>
               </h3>
 
-              {entityType === "gene" ? (
+              {entityType === "gene" && (
                 <p
                   style={{
                     fontSize: "14px",
@@ -935,14 +994,10 @@ function ContextAnalysis({
                     maxWidth: "750px",
                   }}
                 >
-                  To see stronger results, restrict the range of FDR adjusted
-                  T-test p-values, the range of absolute value of the effect
-                  size, and the percentage of in-context lines that are
-                  dependent on the gene. Including genes with positive effect
-                  sizes will display genes that are weaker dependencies in the
-                  selected context as compared to the out-group.
+                  {GENE_DEP_TABLE_DESCRIPTION}
                 </p>
-              ) : (
+              )}
+              {datasetId === ContextExplorerDatasets.Prism_oncology_AUC && (
                 <p
                   style={{
                     fontSize: "14px",
@@ -950,12 +1005,18 @@ function ContextAnalysis({
                     maxWidth: "750px",
                   }}
                 >
-                  To see stronger results, restrict the range of FDR adjusted
-                  T-test p-values, the range of absolute value of the effect
-                  size, and the percentage of in-context lines that are
-                  sensitive to the drug. Including drugs with positive effect
-                  sizes will display drugs that are weaker sensitivities in the
-                  selected context as compared to the out-group.
+                  {ONCREF_TABLE_DESCRIPTION}
+                </p>
+              )}
+              {datasetId === ContextExplorerDatasets.Rep_all_single_pt && (
+                <p
+                  style={{
+                    fontSize: "14px",
+                    paddingRight: "35px",
+                    maxWidth: "750px",
+                  }}
+                >
+                  {REPURPOSING_TABLE_DESCRIPTION}
                 </p>
               )}
               <div
@@ -1094,7 +1155,7 @@ function ContextAnalysis({
                       marginBottom: "15px",
                     }}
                   >
-                    {entityType === "gene" ? "Gene" : "Drug"} Detail
+                    {entityType === "gene" ? "Gene" : "Compound"} Detail
                   </h2>
                   <h4
                     style={{
@@ -1102,10 +1163,11 @@ function ContextAnalysis({
                       margin: "20 20 20 20",
                     }}
                   >
-                    Select a {entityType === "gene" ? "gene" : "drug"} to see
-                    the distribution of{" "}
-                    {entityType === "gene" ? "gene effects" : "log2(viability)"}{" "}
-                    in the selected context and other groups.
+                    {entityType === "gene" && GENE_DETAIL_NO_GENE_SELECTED}
+                    {entityType === "compound" &&
+                    datasetId === ContextExplorerDatasets.Prism_oncology_AUC
+                      ? ONCREF_DETAIL_NO_COMPOUND_SELECTED
+                      : REPURPOSING_DETAIL_NO_COMPOUND_SELECTED}
                   </h4>
                 </div>
               )}

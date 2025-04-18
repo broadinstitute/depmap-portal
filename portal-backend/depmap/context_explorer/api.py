@@ -85,25 +85,32 @@ def _get_context_summary(tree_type: str):
 
     sorted_summary_df = None
     if current_app.config.get("ENABLED_FEATURES").context_explorer_prerelease_datasets:
+        data_type_order = [
+            "CRISPR",
+            "RNAi",
+            "WGS",
+            "WES",
+            "RNASeq",
+            "PRISMOncRef",
+            "PRISMRepurposing",
+        ]
         sorted_summary_df = subsetted_summary_df.sort_values(
-            by=[
-                "CRISPR",
-                "RNAi",
-                "WES",
-                "WGS",
-                "RNASeq",
-                "PRISMOncRef",
-                "PRISMRepurposing",
-            ],
-            axis=1,
-            ascending=False,
+            by=data_type_order, axis=1, ascending=False,
         )
+        sorted_summary_df = sorted_summary_df.reindex(index=data_type_order)
     else:
+        data_type_order = [
+            "CRISPR",
+            "RNAi",
+            "WGS",
+            "WES",
+            "RNASeq",
+            "PRISMRepurposing",
+        ]
         sorted_summary_df = subsetted_summary_df.sort_values(
-            by=["CRISPR", "RNAi", "WES", "WGS", "RNASeq", "PRISMRepurposing",],
-            axis=1,
-            ascending=False,
+            by=data_type_order, axis=1, ascending=False,
         )
+        sorted_summary_df = sorted_summary_df.reindex(index=data_type_order)
 
     summary = {
         "values": sorted_summary_df.values.tolist(),

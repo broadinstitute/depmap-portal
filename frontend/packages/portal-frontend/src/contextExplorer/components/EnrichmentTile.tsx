@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import InfoIcon from "src/common/components/InfoIcon";
 import { getDapi } from "src/common/utilities/context";
 import PlotSpinner from "src/plot/components/PlotSpinner";
 import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
@@ -86,10 +87,45 @@ export const EnrichmentTile: React.FC<EnrichmentTileProps> = ({
     return null;
   }
 
+  const customInfoImg = (
+    <img
+      style={{
+        height: "13px",
+        margin: "1px 3px 4px 3px",
+        cursor: "pointer",
+      }}
+      src={getDapi()._getFileUrl("/static/img/gene_overview/info_purple.svg")}
+      alt="description of term"
+      className="icon"
+    />
+  );
+
+  const getCompoundToolTip = () => {
+    if (tileData?.dataset_name === ContextExplorerDatasets.Prism_oncology_AUC) {
+      return "Lineages and/or subtypes that have, on average, a stronger sensitivity to this compound compared to all other models. Enriched lineages/subtypes are calculated as in Context Explorer and selected based on default Context Explorer filters (T-test FDR<0.1, avg. AUC difference < -0.1).";
+    }
+    return "Lineages and/or subtypes that have, on average, a stronger sensitivity to this compound compared to all other models. Enriched lineages/subtypes are calculated as in Context Explorer and selected based on default Context Explorer filters (T-test FDR<0.1, avg. log2(Viability) difference < -0.5).";
+  };
+
+  const tooltipText =
+    entityType === "gene"
+      ? "Lineages and/or subtypes that have, on average, a stronger dependency on this gene compared to all other models. Enriched lineages/subtypes are calculated as in Context Explorer and selected based on default Context Explorer filters (T-test FDR<0.1, avg. gene effect difference < -0.25 and min. 1 dependent in-group model)."
+      : getCompoundToolTip();
+
   return (
     <article className="card_wrapper stacked-boxplot-tile">
       <div className="card_border container_fluid">
-        <h2 className="no_margin cardtitle_text">Enriched Lineages</h2>
+        <h2 className="no_margin cardtitle_text">
+          Enriched Lineages{" "}
+          {tileData && (
+            <InfoIcon
+              target={customInfoImg}
+              popoverContent={<p>{tooltipText}</p>}
+              popoverId={`sidebar-genedep1-popover`}
+              trigger={["hover", "focus"]}
+            />
+          )}
+        </h2>
         <div className="card_padding">
           {entityType === "gene" ? (
             <h4 className="crispr">{tileData?.dataset_display_name}</h4>

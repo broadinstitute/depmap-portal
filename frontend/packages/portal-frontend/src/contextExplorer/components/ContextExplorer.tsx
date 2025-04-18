@@ -258,10 +258,10 @@ export const ContextExplorer = () => {
           <span>Context Explorer</span>
         </h1>
         <p>
-          is a tumor subtype focused entry point to the DepMap data. Data
-          availability, enriched gene dependencies, and compound sensitivities
-          can be explored within a lineage- or molecular- subtype based
-          hierarchy of cancer models.
+          Context Explorer is a tumor subtype focused entry point to the DepMap
+          data. Data availability, enriched gene dependencies, and compound
+          sensitivities can be explored within a lineage- or molecular- subtype
+          based hierarchy of cancer models.
         </p>
       </header>
       <main className={styles.main}>
