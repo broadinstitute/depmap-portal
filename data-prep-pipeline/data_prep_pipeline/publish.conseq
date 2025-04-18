@@ -83,4 +83,4 @@ rule publish_context_matrix:
         update_taiga_script=fileref('upload_to_taiga.py')
     outputs:{"type": "release_context_matrix_published"}
 
-    run "python3 {{inputs.update_taiga_script.filename}} {{inputs.release_taiga_id.dataset_id}} 'Created ContextMatrix for release'  'ContextMatrix' {{inputs.context_matrix.filename}} 'csv_matrix'"
+    run "python3 {{inputs.update_taiga_script.filename}} {{inputs.release_taiga_id.dataset_id}} 'Created ContextMatrix for release'  'SubtypeMatrix' {{inputs.context_matrix.filename}} 'csv_matrix'"
