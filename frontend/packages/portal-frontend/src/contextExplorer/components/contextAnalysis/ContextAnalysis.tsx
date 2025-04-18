@@ -275,13 +275,26 @@ function ContextAnalysis({
     setPointVisibilityFiltered(null);
   }, [selectedContextNameInfo, topContextNameInfo]);
 
+  const [
+    doShowPositiveEffectSizes,
+    setDoShowPositiveEffectSizes,
+  ] = useState<boolean>(false);
+
   useEffect(() => {
-    if (data && filters) {
-      setPointVisibility(
-        filters && data ? satisfiesFilters(filters, data) : []
-      );
+    const newPointVisibility =
+      filters && data ? satisfiesFilters(filters, data) : [];
+    setPointVisibility(newPointVisibility);
+
+    if (
+      filters &&
+      data &&
+      doShowPositiveEffectSizes === true &&
+      getShowPositiveEffectSizesFilter(filters) === false
+    ) {
+      setSelectedPlotLabels(null);
+      setSelectedTableLabels(null);
     }
-  }, [data, filters]);
+  }, [data, filters, doShowPositiveEffectSizes]);
 
   const formatDataForScatterPlot = useCallback(
     (tableData: ContextAnalysisTableType) => {
@@ -462,8 +475,10 @@ function ContextAnalysis({
     },
     [
       plotData,
-      setSelectedTableLabels,
       setSelectedPlotLabels,
+      // setSelectedPlotIndex,
+      setSelectedTableLabels,
+      // setSelectedTableIndex,
       setPointVisibilityFiltered,
     ]
   );
@@ -633,11 +648,6 @@ function ContextAnalysis({
   const [boxPlotData, setBoxPlotData] = useState<ContextPlotBoxData | null>(
     null
   );
-  const [
-    entityDetailMainPlotElement,
-    setEntityDetailMainPlotElement,
-  ] = useState<ExtendedPlotType | null>(null);
-  console.log(entityDetailMainPlotElement);
 
   const [isLoadingBoxplot, setIsLoadingBoxplot] = useState<boolean>(true);
 
@@ -650,10 +660,6 @@ function ContextAnalysis({
   const [boxPlotMinFracDepIn, setBoxPlotMinFracDepIn] = useState<
     number | undefined
   >(undefined);
-  const [
-    doShowPositiveEffectSizes,
-    setDoShowPositiveEffectSizes,
-  ] = useState<boolean>(false);
 
   useEffect(() => {
     if (
@@ -669,7 +675,6 @@ function ContextAnalysis({
       );
 
       const showPositiveEffectSizes = getShowPositiveEffectSizesFilter(filters);
-
       setDoShowPositiveEffectSizes(showPositiveEffectSizes);
       setBoxPlotMaxFDR(maxFdr);
       setBoxPlotMinEffectSize(minEffectSize);
@@ -1071,7 +1076,7 @@ function ContextAnalysis({
                           element: ExtendedPlotType | null
                         ) => {
                           if (element) {
-                            setEntityDetailMainPlotElement(element);
+                            /* do nothing */
                           }
                         }}
                         topContextNameInfo={topContextNameInfo}
@@ -1105,31 +1110,6 @@ function ContextAnalysis({
                 </div>
               )}
             </div>
-
-            {false && (
-              <>
-                <div className={styles.deButtonContainerCentered}>
-                  <Button
-                    className={styles.deButton}
-                    href={
-                      "/" /* getDataExplorerUrl(
-                      topContextNameInfo.name,
-                      selectedContextNameInfo.name,
-                      outgroup.value,
-                      datasetId
-                    ) */
-                    }
-                    target="_blank"
-                    disabled={
-                      selectedContextNameInfo.name === "All" ||
-                      (!isLoading && !data)
-                    }
-                  >
-                    Open as 1D Density in Data Explorer
-                  </Button>
-                </div>
-              </>
-            )}
           </div>
         )}
       </div>

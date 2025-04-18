@@ -152,7 +152,6 @@ function CollapsibleBoxPlots({
         }
         setSelectedContextBoxData(plotInfo);
       } else if (otherPlot) {
-        // Rarely will be hit. This is an edge case.
         setSelectedContextBoxData([otherPlot]);
       }
     }

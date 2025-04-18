@@ -276,6 +276,7 @@ def get_sig_context_dataframe(
         min_frac_dep_in=min_frac_dep_in,
         show_positive_effect_sizes=show_positive_effect_sizes,
     )
+    breakpoint()
 
     return sig_contexts
 
@@ -537,11 +538,13 @@ def get_compound_enriched_lineages_entity_id_and_dataset_name(
 
     compound_experiment = best_ce_and_d[0][0]
     dataset_name = best_ce_and_d[0][1].name.name
+    dataset_display_name = best_ce_and_d[0][1].display_name
 
     return {
         "entity_id": compound_experiment.entity_id,
         "dataset_name": dataset_name,
         "compound_experiment_label": compound_experiment.label,
+        "dataset_display_name": dataset_display_name,
     }
 
 

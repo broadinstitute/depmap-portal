@@ -431,6 +431,7 @@ class ContextAnalysis(Model):
         if entity_type == "gene":
             filters = (
                 and_(
+                    ContextAnalysis.out_group == "All Others",
                     ContextAnalysis.dependency_dataset_id == dependency_dataset_id,
                     ContextAnalysis.entity_id == entity_id,
                     ContextAnalysis.t_qval <= max_fdr,
@@ -439,6 +440,7 @@ class ContextAnalysis(Model):
                 )
                 if show_positive_effect_sizes
                 else and_(
+                    ContextAnalysis.out_group == "All Others",
                     ContextAnalysis.dependency_dataset_id == dependency_dataset_id,
                     ContextAnalysis.entity_id == entity_id,
                     ContextAnalysis.t_qval <= max_fdr,
@@ -470,6 +472,7 @@ class ContextAnalysis(Model):
         else:
             filters = (
                 and_(
+                    ContextAnalysis.out_group == "All Others",
                     ContextAnalysis.dependency_dataset_id == dependency_dataset_id,
                     ContextAnalysis.entity_id == entity_id,
                     ContextAnalysis.t_qval <= max_fdr,
@@ -477,11 +480,12 @@ class ContextAnalysis(Model):
                 )
                 if show_positive_effect_sizes
                 else and_(
+                    ContextAnalysis.out_group == "All Others",
                     ContextAnalysis.dependency_dataset_id == dependency_dataset_id,
                     ContextAnalysis.entity_id == entity_id,
                     ContextAnalysis.t_qval <= max_fdr,
-                    ContextAnalysis.effect_size < 0,
                     func.abs(ContextAnalysis.effect_size) >= min_abs_effect_size,
+                    ContextAnalysis.effect_size < 0,
                 )
             )
             analyses = (
@@ -495,9 +499,16 @@ class ContextAnalysis(Model):
                     SubtypeNode.subtype_code == SubtypeContext.subtype_code,
                 )
                 .filter(SubtypeNode.tree_type == tree_type)
-                .with_entities(SubtypeNode.level_0, SubtypeNode.subtype_code)
+                .with_entities(
+                    SubtypeNode.level_0,
+                    SubtypeNode.subtype_code,
+                    ContextAnalysis.effect_size,
+                    ContextAnalysis.t_qval,
+                )
                 .order_by(desc(ContextAnalysis.mean_in))
                 .all()
             )
+
+            breakpoint()
 
             return pd.DataFrame(analyses)
