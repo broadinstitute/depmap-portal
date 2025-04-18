@@ -221,6 +221,7 @@ export interface EnrichedLineagesTileData {
   top_context_name_info: ContextNameInfo | null;
   selected_context_name_info: ContextNameInfo | null;
   dataset_name: string;
+  dataset_display_name: string;
   context_explorer_url: string;
 }
 

@@ -629,6 +629,7 @@ class EnrichedLineagesTile(
 
         entity_id = entity_id_and_dataset_name["entity_id"]
         dataset_name = entity_id_and_dataset_name["dataset_name"]
+        dataset_display_name = entity_id_and_dataset_name["dataset_display_name"]
 
         if entity_type == "compound":
             entity_label = entity_id_and_dataset_name["compound_experiment_label"]
@@ -686,6 +687,7 @@ class EnrichedLineagesTile(
             top_context_name_info=top_context_name_info,
             selected_context_name_info=top_context_name_info,  # top_context_name_info is repeated here on purpose. As described above, "selected context" is inherited from the Context Explorer page version of the box plots
             dataset_name=dataset_name,  # for the frontend to determine the tab of context_explorer to link to: "oncref", "repurposing", or "geneDependency"
+            dataset_display_name=dataset_display_name,
             context_explorer_url=url_for(
                 "context_explorer.view_context_explorer"
             ),  # for linking the boxplot y-axis labels

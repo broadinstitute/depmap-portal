@@ -77,6 +77,7 @@ class EnrichedLineagesTileData:
     top_context_name_info: Union[ContextNameInfo, None]
     selected_context_name_info: Union[ContextNameInfo, None]
     dataset_name: str
+    dataset_display_name: str
     context_explorer_url: str
 
 

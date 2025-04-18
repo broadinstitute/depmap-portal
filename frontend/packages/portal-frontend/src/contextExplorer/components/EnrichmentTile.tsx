@@ -90,6 +90,13 @@ export const EnrichmentTile: React.FC<EnrichmentTileProps> = ({
     <article className="card_wrapper stacked-boxplot-tile">
       <div className="card_border container_fluid">
         <h2 className="no_margin cardtitle_text">Enriched Lineages</h2>
+        <div className="card_padding">
+          {entityType === "gene" ? (
+            <h4 className="crispr">{tileData?.dataset_display_name}</h4>
+          ) : (
+            <h4>{tileData?.dataset_display_name}</h4>
+          )}
+        </div>
         <div className="card_padding stacked-boxplot-graphs-padding">
           <div id="enrichment-tile">
             {!tileData && isLoadingBoxplot && <PlotSpinner />}

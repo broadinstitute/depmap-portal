@@ -518,8 +518,13 @@ def get_gene_enriched_lineages_entity_id_and_dataset_name(
     if dataset is None:
         return None
     dataset_name = dataset.name.name
+    dataset_display_name = dataset.display_name
 
-    return {"entity_id": gene.entity_id, "dataset_name": dataset_name}
+    return {
+        "entity_id": gene.entity_id,
+        "dataset_name": dataset_name,
+        "dataset_display_name": dataset_display_name,
+    }
 
 
 def get_compound_enriched_lineages_entity_id_and_dataset_name(
