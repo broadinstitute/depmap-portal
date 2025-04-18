@@ -311,7 +311,6 @@ models_new.py: error: Cannot access member "Table" for type "SQLAlchemy"
 nonstandard_loader.py: error: Argument of type "Literal['GET_NONSTANDARD_DATASETS']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
 nonstandard_loader.py: error: Argument of type "Literal['NONSTANDARD_DATA_DIR']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
 nonstandard_loader.py: error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
-nonstandard_utils.py: error: "__get_config" is unknown import symbol (reportAttributeAccessIssue)
 nonstandard_utils.py: error: "__getitem__" method not defined on type "Datatype" (reportIndexIssue)
 nonstandard_utils.py: error: "get_subsetted_df" is not a known member of "None" (reportOptionalMemberAccess)
 nonstandard_utils.py: error: Argument of type "Group | Dataset | Datatype | Unknown" cannot be assigned to parameter "__iterable" of type "Iterable[_T@list]" in function "__init__"
@@ -335,9 +334,6 @@ predictability_loader.py: error: Argument of type "Hashable" cannot be assigned 
 predictability_loader.py: error: Argument of type "Literal['WEBAPP_DATA_DIR']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
 predictability_loader.py: error: Expression of type "int | None" cannot be assigned to return type "Gene | CompoundExperiment | None" (reportReturnType)
 predictability_loader.py: error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
-private_dataset_fixtures.py: error: Argument of type "Literal['ENV']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
-private_dataset_fixtures.py: error: Cannot access member "_buckets" for type "Client"
-private_dataset_fixtures.py: error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
 private_util_functions.py: error: Argument of type "Literal['DEFAULT_USER_ID']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
 private_util_functions.py: error: Argument of type "str | None" cannot be assigned to parameter "user_id_override" of type "str" in function "_setup_current_authorizations"
 private_util_functions.py: error: Cannot access member "get_allowed_owner_ids" for type "list[str]"
@@ -371,13 +367,11 @@ task_utils.py: error: Argument of type "FileStorage" cannot be assigned to param
 task_utils.py: error: Argument of type "Literal['COMPUTE_RESULTS_ROOT']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
 task_utils.py: error: Argument of type "Literal['MAX_UPLOAD_SIZE']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
 task_utils.py: error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
-tasks.py: error: "FileStorage" is unknown import symbol (reportAttributeAccessIssue)
 tasks.py: error: "tolist" is not a known member of "None" (reportOptionalMemberAccess)
 tasks.py: error: Argument of type "ArrayLike" cannot be assigned to parameter "column_labels" of type "List[str] | None" in function "_handle_df_nas" (reportArgumentType)
 tasks.py: error: Argument of type "Literal['COMPUTE_RESULTS_ROOT']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
 tasks.py: error: Argument of type "Literal['NONSTANDARD_DATA_DIR']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
 tasks.py: error: Argument of type "list[Unknown]" cannot be assigned to parameter "gene_ids" of type "MutationTableSpec" in function "get_subsetted_mutations_df_by_ids"
-tasks.py: error: Argument of type "str | None" cannot be assigned to parameter "data_type" of type "str" in function "format_config"
 tasks.py: error: Could not access item in TypedDict
 tasks.py: error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
 tda_loader.py: error: "dataset_id" is not a known member of "None" (reportOptionalMemberAccess)

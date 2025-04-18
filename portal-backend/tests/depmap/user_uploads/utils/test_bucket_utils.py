@@ -1,11 +1,4 @@
-import pandas as pd
-
 from depmap.settings.settings import TestConfig
-from depmap.user_uploads.utils.bucket_utils import (
-    _get_private_datasets_file,
-    get_user_upload_records,
-)
-from tests.utilities.override_fixture import override
 
 FAKE_PROJECT = "depmap-tests-fake-project"
 
@@ -20,8 +13,3 @@ def config(request):
         HAS_USER_ACCOUNTS = True  # we need to set this to appease a check
 
     return TestDStagingConfig
-
-
-def private_datasets_map_df(request):
-    df = pd.DataFrame(columns=["fake"], data=[[1], [2]])
-    return df
