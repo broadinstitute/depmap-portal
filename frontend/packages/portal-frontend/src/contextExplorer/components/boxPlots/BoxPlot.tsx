@@ -10,6 +10,7 @@ import { PlotlyHTMLElement } from "plotly.js";
 export interface BoxPlotProps {
   boxData: BoxPlotInfo[];
   dottedLinePosition: number;
+  isLevel0?: boolean;
   isActivePlot?: boolean;
   selectedCode?: string;
   onLoad?: (plot: ExtendedPlotType) => void;
@@ -27,6 +28,7 @@ type BoxPlotWithPlotly = BoxPlotProps & { Plotly: PlotlyType };
 function BoxPlot({
   boxData,
   dottedLinePosition,
+  isLevel0 = false,
   selectedCode = undefined,
   onLoad = () => {},
   isActivePlot = false,
@@ -177,7 +179,8 @@ function BoxPlot({
     dottedLinePosition,
     selectedCode,
     urlPrefix,
-    isActivePlot.valueOf,
+    isLevel0,
+    isActivePlot,
     tab,
     onLoad,
   ]);
@@ -187,6 +190,7 @@ function BoxPlot({
 
 export default function LazyBoxPlot({
   boxData,
+  isLevel0 = false,
   isActivePlot = false,
   plotHeight = undefined,
   selectedCode = undefined,
@@ -224,7 +228,7 @@ export default function LazyBoxPlot({
                     fontSize: "12px",
                   }}
                 >
-                  {boxData.length === 1 && !box?.name.includes("Other") && (
+                  {isLevel0 && (
                     <span
                       style={{
                         paddingRight: "4px",

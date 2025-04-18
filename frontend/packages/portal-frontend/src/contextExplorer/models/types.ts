@@ -236,7 +236,7 @@ export interface BoxPlotInfo {
 
 export interface OtherSignificantBoxCardData {
   [key: string]: {
-    levelZeroPlotInfo: BoxPlotInfo;
+    levelZeroPlotInfo: BoxPlotInfo | undefined;
     subContextInfo: BoxPlotInfo[];
   };
 }

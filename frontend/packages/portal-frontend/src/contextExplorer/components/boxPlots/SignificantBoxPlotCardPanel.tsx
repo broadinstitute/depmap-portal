@@ -48,21 +48,23 @@ const SignificantPlotPanelHeading = ({
     <Panel.Heading>
       <Panel.Title toggle>
         <div>
-          {activeKey === level0Code && (
-            <span
-              style={{
-                paddingRight: "8px",
-                paddingTop: activeKey === level0Code ? "0px" : "12px",
-                fontSize: "12px",
-                color: "#4479B2",
-              }}
-              className={"glyphicon glyphicon-chevron-up"}
-            />
-          )}
-          {activeKey !== level0Code ? (
+          {activeKey === level0Code &&
+            card[level0Code].subContextInfo.length > 0 && (
+              <span
+                style={{
+                  paddingRight: "8px",
+                  paddingTop: activeKey === level0Code ? "0px" : "12px",
+                  fontSize: "12px",
+                  color: "#4479B2",
+                }}
+                className={"glyphicon glyphicon-chevron-up"}
+              />
+            )}
+          {activeKey !== level0Code &&
+          card[level0Code].levelZeroPlotInfo !== undefined ? (
             <BoxPlot
               isActivePlot={activeKey === level0Code}
-              boxData={[card[level0Code].levelZeroPlotInfo]}
+              boxData={[card[level0Code].levelZeroPlotInfo!]}
               xAxisRange={xAxisRange}
               plotHeight={
                 BOX_THICKNESS + BOX_PLOT_TOP_MARGIN + BOX_PLOT_BOTTOM_MARGIN
@@ -76,6 +78,7 @@ const SignificantPlotPanelHeading = ({
               selectedCode={selectedCode}
               urlPrefix={urlPrefix}
               tab={tab}
+              isLevel0
             />
           ) : (
             activeKey === level0Code && (
@@ -121,8 +124,8 @@ export function SignificantBoxPlotCardPanel({
         tab={tab}
         selectedCode={selectedCode}
       />
-      <Panel.Body collapsible>
-        {activeKey === level0Code && (
+      {card[level0Code].subContextInfo.length > 0 && activeKey === level0Code && (
+        <Panel.Body collapsible>
           <BoxPlot
             boxData={[...card[level0Code].subContextInfo].reverse()}
             onLoad={() => {}}
@@ -142,8 +145,8 @@ export function SignificantBoxPlotCardPanel({
             urlPrefix={urlPrefix}
             tab={tab}
           />
-        )}
-      </Panel.Body>
+        </Panel.Body>
+      )}
     </>
   );
 }

@@ -238,23 +238,26 @@ function CollapsibleBoxPlots({
         {otherSigBoxData?.map((otherCard: OtherSigBoxCardData) =>
           Object.keys(otherCard).map((level0Code) => (
             <>
-              <Panel
-                eventKey={level0Code}
-                key={`otherSigLevelZeroBoxData${level0Code}`}
-              >
-                <SignificantBoxPlotCardPanel
-                  selectedCode={selectedCode}
-                  activeKey={activeKey}
-                  level0Code={level0Code}
-                  xAxisRange={xAxisRange}
-                  card={otherCard}
-                  entityType={entityType}
-                  drugDottedLine={drugDottedLine}
-                  urlPrefix={urlPrefix}
-                  tab={tab}
-                  xAxisTitle={xAxisTitle}
-                />
-              </Panel>
+              {otherCard[level0Code].levelZeroPlotInfo !== undefined &&
+                otherCard[level0Code].subContextInfo.length > 0 && (
+                  <Panel
+                    eventKey={level0Code}
+                    key={`otherSigLevelZeroBoxData${level0Code}`}
+                  >
+                    <SignificantBoxPlotCardPanel
+                      selectedCode={selectedCode}
+                      activeKey={activeKey}
+                      level0Code={level0Code}
+                      xAxisRange={xAxisRange}
+                      card={otherCard}
+                      entityType={entityType}
+                      drugDottedLine={drugDottedLine}
+                      urlPrefix={urlPrefix}
+                      tab={tab}
+                      xAxisTitle={xAxisTitle}
+                    />
+                  </Panel>
+                )}
             </>
           ))
         )}

@@ -65,8 +65,6 @@ def get_box_plot_card_data(
     for child in sorted_child_codes:
         context_model_ids = model_ids_by_code[child]
         if child in all_sig_context_codes:
-            # This rule should be enforced in get_context_analysis.py. If this assertion gets hit,
-            # something is wrong with our pipeline script.
             if len(context_model_ids) >= 5:
                 box_plot = get_box_plot_data_for_context(
                     subtype_code=child,
@@ -259,10 +257,7 @@ def get_sig_context_dataframe(
 ) -> pd.DataFrame:
 
     if entity_type == "compound" and use_enrichment_tile_filters:
-        if (
-            dataset_name
-            == DependencyDataset.DependencyEnum.Prism_oncology_AUC.name.name
-        ):
+        if dataset_name == DependencyDataset.DependencyEnum.Prism_oncology_AUC.name:
             max_fdr = 0.1
             min_abs_effect_size = 0.1
         else:
@@ -510,12 +505,15 @@ def get_compound_experiment_and_dataset_name_from_compound(compound: Compound):
     return best_ce_and_d
 
 
-def get_gene_enriched_lineages_entity_id_and_dataset_name(entity_label: str) -> dict:
+def get_gene_enriched_lineages_entity_id_and_dataset_name(
+    entity_label: str,
+) -> Optional[dict]:
     gene = Gene.get_by_label(entity_label)
     dataset = get_dependency_dataset_for_entity(
         DependencyDataset.DependencyEnum.Chronos_Combined.name, gene.entity_id
     )
-    assert dataset is not None
+    if dataset is None:
+        return None
     dataset_name = dataset.name.name
 
     return {"entity_id": gene.entity_id, "dataset_name": dataset_name}

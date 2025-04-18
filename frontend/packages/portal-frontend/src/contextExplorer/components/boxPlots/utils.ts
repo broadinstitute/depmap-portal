@@ -90,13 +90,15 @@ export function formatSignificantBoxPlotDataCards(
       )!;
       return {
         [cardData.level_0_code]: {
-          levelZeroPlotInfo: {
-            name: level0Data.label,
-            hoverLabels: level0Data.cell_line_display_names,
-            xVals: level0Data.data,
-            color: { ...EntityBoxColorList[startingBoxCardCount], a: 0.4 },
-            lineColor: "#000000",
-          },
+          levelZeroPlotInfo: level0Data
+            ? {
+                name: level0Data.label,
+                hoverLabels: level0Data.cell_line_display_names,
+                xVals: level0Data.data,
+                color: { ...EntityBoxColorList[startingBoxCardCount], a: 0.4 },
+                lineColor: "#000000",
+              }
+            : undefined,
           subContextInfo: formatBoxData(
             cardData.significant,
             cardData.insignificant,

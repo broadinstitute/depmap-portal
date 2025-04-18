@@ -623,6 +623,10 @@ class EnrichedLineagesTile(
                 entity_label=entity_label
             )
         )
+
+        if entity_id_and_dataset_name is None:
+            return None
+
         entity_id = entity_id_and_dataset_name["entity_id"]
         dataset_name = entity_id_and_dataset_name["dataset_name"]
 

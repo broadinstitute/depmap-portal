@@ -139,6 +139,7 @@ const PanelHeading = ({
             dottedLinePosition={
               entityType === "gene" ? -1 : drugDottedLine || -1.74
             }
+            isLevel0
             urlPrefix={urlPrefix}
             tab={tab}
           />
@@ -179,6 +180,7 @@ const PanelHeading = ({
                   }
                   urlPrefix={urlPrefix}
                   tab={tab}
+                  isLevel0
                 />
               </>
             ) : (
@@ -235,6 +237,8 @@ export const SelectedContextBoxPlotPanel = ({
           drugDottedLine={drugDottedLine}
           selectedCode={selectedCode}
           xAxisTitle={xAxisTitle}
+          urlPrefix={urlPrefix}
+          tab={tab}
         />
       )}
     </Panel>

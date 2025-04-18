@@ -450,8 +450,12 @@ class ContextAnalysis(Model):
             analyses = (
                 ContextAnalysis.query.filter(filters)
                 .join(
+                    SubtypeContext,
+                    SubtypeContext.subtype_code == ContextAnalysis.subtype_code,
+                )
+                .join(
                     SubtypeNode,
-                    SubtypeNode.subtype_code == ContextAnalysis.subtype_code,
+                    SubtypeNode.subtype_code == SubtypeContext.subtype_code,
                 )
                 .filter(SubtypeNode.tree_type == tree_type)
                 # frontend will be organized into cards based on level 0, so we need to make sure we know
@@ -482,8 +486,12 @@ class ContextAnalysis(Model):
             analyses = (
                 ContextAnalysis.query.filter(filters)
                 .join(
+                    SubtypeContext,
+                    SubtypeContext.subtype_code == ContextAnalysis.subtype_code,
+                )
+                .join(
                     SubtypeNode,
-                    SubtypeNode.subtype_code == ContextAnalysis.subtype_code,
+                    SubtypeNode.subtype_code == SubtypeContext.subtype_code,
                 )
                 .filter(SubtypeNode.tree_type == tree_type)
                 .with_entities(SubtypeNode.level_0, SubtypeNode.subtype_code)
