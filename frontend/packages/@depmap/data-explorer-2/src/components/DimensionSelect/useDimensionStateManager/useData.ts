@@ -13,6 +13,7 @@ interface Props {
 export const NULL_MAPPING: DimensionLabelsToDatasetsMapping = {
   aliases: [],
   dataset_ids: [],
+  given_ids: [],
   dataset_labels: [],
   data_types: {},
   units: {},

@@ -1,0 +1,21 @@
+{% extends "full_page.html" %}
+
+{% block page_title %}
+  Anchor Screen Dashboard
+{% endblock %}
+
+{% block meta_description %}
+  Provides model, lineage and drug information about anchor screens and links
+  to plot them in Data Explorer.
+{% endblock %}
+
+{% block content %}
+    <div class='full-screen-div'>
+        {% include "nav_footer/nav.html" %}
+        <div id="anchor_screen_dashboard"></div>
+    </div>
+{% endblock %}
+
+{% block js %}
+    <script src="{{ webpack_url('anchorScreenDashboard.js') }}"></script>
+{% endblock %}

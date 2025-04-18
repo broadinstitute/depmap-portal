@@ -21,6 +21,7 @@ from depmap.partials.data_table.models import (
 )
 from depmap.utilities.registration import _make_factory, _get_factory_output
 from depmap.utilities.url_utils import js_url_for
+from depmap import extensions
 from sqlalchemy import types
 
 
@@ -574,3 +575,45 @@ def get_cell_line_selector_lines_table():
         return cols
 
     return DataTableData(get_column_types, get_data)
+
+
+def get_anchor_screen_metadata_table():
+    cols = [
+        "ModelID",
+        "StrippedCellLineName",
+        "OncotreeLineage",
+        "OncotreePrimaryDisease",
+        "OncotreeSubtype",
+        "Drug",
+        "ExperimentID",
+        "ControlArmScreenID",
+        "DrugArmScreenID",
+    ]
+
+    def get_data():
+        df = extensions.breadbox.client.get_tabular_dataset_data(
+            dataset_id="anchor-screen-metadata",
+            columns=cols,
+            identifier=None,
+            indices=None,
+            strict=True,
+        )
+        df = df.sort_values(by="ModelID")
+        return df
+
+    def get_column_types():
+        return {col: types.String for col in cols}
+
+    table_data = DataTableData(get_column_types, get_data)
+
+    display = TableDisplay(
+        cols=cols,
+        factory_params={},
+        renames={},
+        renders=[],
+        default_cols_to_show=cols,
+        replace_underscores=False,
+        make_title_case=False,
+    )
+
+    return DataTable(table_data, display, "anchor screens", "anchor screen metadata")

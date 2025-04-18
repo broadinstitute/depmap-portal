@@ -30,6 +30,7 @@ const defaultValue = {
     dimension_type: string
   ): Promise<{
     dataset_ids: string[];
+    given_ids: (string | null)[];
     dataset_labels: string[];
     units: Record<string, number[]>;
     data_types: Record<string, number[]>;

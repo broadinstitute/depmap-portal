@@ -1,0 +1,21 @@
+.staticContent {
+  padding: 20px;
+  padding-bottom: 0;
+
+  h1 {
+    margin-top: 6px;
+    margin-bottom: 20px;
+  }
+}
+
+.description {
+  max-width: 1000px;
+}
+
+.error {
+  display: flex;
+  justify-content: center;
+  align-self: center;
+  font-size: 24px;
+  margin-top: 50px;
+}

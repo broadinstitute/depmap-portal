@@ -123,7 +123,7 @@ export interface WideTableProps {
    */
   allowDownloadFromTableDataWithMenuFileName?: string;
 
-  sorted?: Array<SortingRule<any>>; // TODO: Is this actually used?
+  sorted?: Array<SortingRule<any>>;
   renderExtraDownloads?: () => JSX.Element;
 
   /**
@@ -171,6 +171,12 @@ export interface WideTableProps {
   // the maximum allowed annotated points, so we want to be able to turn the select all checkbox off, even
   // when we're NOT in single select mode.
   hideSelectAllCheckbox?: boolean;
+
+  /**
+   * Use this to force the table to have a fixed height (in pixels) instead of
+   * setting one automatically.
+   */
+  fixedHeight?: number;
 }
 
 interface WideTableState {
@@ -1021,6 +1027,8 @@ class WideTable extends React.Component<WideTableProps, WideTableState> {
           selectedLabels={this.props.selectedTableLabels}
           singleSelectionMode={this.props.singleSelectionMode}
           hideSelectAllCheckbox={this.props.hideSelectAllCheckbox}
+          initialSortBy={this.props.sorted}
+          fixedHeight={this.props.fixedHeight}
         />
       </div>
     );

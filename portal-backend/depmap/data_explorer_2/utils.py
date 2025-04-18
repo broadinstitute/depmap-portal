@@ -260,6 +260,12 @@ def get_dimension_labels_to_datasets_mapping(dimension_type: str):
         "expression"
       ],
 
+      given_ids: [
+        "copy_number_absolute",
+        "Chronos_Combined",
+        "expression"
+      ],
+
       # Order matches "datset_ids" above.
       "dataset_labels": [
         "Copy Number (Absolute)",
@@ -301,6 +307,7 @@ def get_dimension_labels_to_datasets_mapping(dimension_type: str):
     data_types = defaultdict(list)
     units = defaultdict(list)
     dataset_ids = []
+    given_ids = []
     dataset_labels = []
 
     for dataset in get_all_supported_continuous_datasets():
@@ -309,6 +316,7 @@ def get_dimension_labels_to_datasets_mapping(dimension_type: str):
 
         index = len(dataset_ids)
         dataset_ids.append(dataset.id)
+        given_ids.append(dataset.given_id)
         dataset_labels.append(dataset.label)
         data_types[dataset.data_type].append(index)
         units[dataset.units].append(index)
@@ -323,6 +331,7 @@ def get_dimension_labels_to_datasets_mapping(dimension_type: str):
         "dimension_labels": sorted_labels,
         "data_types": data_types,
         "dataset_ids": dataset_ids,
+        "given_ids": given_ids,
         "dataset_labels": dataset_labels,
     }
 

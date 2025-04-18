@@ -27,6 +27,7 @@ module.exports = {
     dataPage: "./src/apps/dataPage.tsx",
     resourcesPage: "./src/apps/resourcesPage.tsx",
     secretDataViewer: "./src/apps/secretDataViewer.tsx",
+    anchorScreenDashboard: "./src/apps/anchorScreenDashboard.tsx",
   },
 
   plugins: [

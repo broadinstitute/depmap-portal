@@ -1,4 +1,4 @@
-import { isCompleteExpression } from "../../utils/misc";
+import { isCompleteExpression, isSampleType } from "../../utils/misc";
 import {
   DataExplorerContext,
   DataExplorerDatasetDescriptor,
@@ -64,6 +64,66 @@ const makeFeatureParser = (dimensionKey: DimensionKey) => (
   return p;
 };
 
+const makeSampleParser = (dimensionKey: DimensionKey) => (
+  partialPlot: PartialDataExplorerPlotConfig,
+  feature: string,
+  allParams: qs.ParsedQs,
+  datasets: Datasets
+) => {
+  const p = { ...partialPlot };
+
+  const dataset_id = (dimensionKey === "x"
+    ? allParams.xDataset
+    : allParams.yDataset) as string;
+
+  if (!dataset_id) {
+    return partialPlot;
+  }
+
+  let dataset: Datasets[string][number] | undefined;
+
+  Object.keys(datasets).forEach((index_type) => {
+    if (isSampleType(index_type)) {
+      const matchingDs = datasets[index_type].find((d) => {
+        return d.id === dataset_id || d.given_id === dataset_id;
+      });
+
+      if (matchingDs) {
+        dataset = matchingDs;
+      }
+    }
+  });
+
+  const slice_type = dataset ? dataset.index_type : "custom";
+
+  p.dimensions = p.dimensions || {};
+  p.dimensions[dimensionKey] = p.dimensions[dimensionKey] || {};
+
+  p.dimensions[dimensionKey]!.dataset_id = dataset_id;
+  p.dimensions[dimensionKey]!.axis_type = "raw_slice";
+  p.dimensions[dimensionKey]!.slice_type = slice_type;
+  p.dimensions[dimensionKey]!.aggregation = "first";
+  p.dimensions[dimensionKey]!.context = {
+    name: feature,
+    context_type: slice_type,
+    expr: { "==": [{ var: "entity_label" }, feature] } as object,
+  };
+
+  return p;
+};
+
+const isSingleSlice = (context: DataExplorerContext) => {
+  const { expr } = context;
+
+  return (
+    expr !== null &&
+    typeof expr === "object" &&
+    "==" in expr &&
+    "var" in expr["=="][0] &&
+    expr["=="][0].var === "entity_label"
+  );
+};
+
 const makeContextParser = (dimensionKey: DimensionKey) => (
   partialPlot: PartialDataExplorerPlotConfig,
   encodedContext: string
@@ -88,12 +148,17 @@ const makeContextParser = (dimensionKey: DimensionKey) => (
   p.dimensions = p.dimensions || {};
   p.dimensions[dimensionKey] = p.dimensions[dimensionKey] || {};
 
-  p.dimensions[dimensionKey]!.axis_type = "aggregated_slice";
   p.dimensions[dimensionKey]!.slice_type = context.context_type;
   p.dimensions[dimensionKey]!.context = context;
 
-  // TODO: Allow this default to be overriden.
-  p.dimensions[dimensionKey]!.aggregation = "mean";
+  if (isSingleSlice(context)) {
+    p.dimensions[dimensionKey]!.axis_type = "raw_slice";
+    p.dimensions[dimensionKey]!.aggregation = "first";
+  } else {
+    p.dimensions[dimensionKey]!.axis_type = "aggregated_slice";
+    // TODO: Allow this default to be overriden.
+    p.dimensions[dimensionKey]!.aggregation = "mean";
+  }
 
   return p;
 };
@@ -167,6 +232,9 @@ const parsers = {
 
   xFeature: makeFeatureParser("x"),
   yFeature: makeFeatureParser("y"),
+
+  xSample: makeSampleParser("x"),
+  ySample: makeSampleParser("y"),
 
   xContext: makeContextParser("x"),
   yContext: makeContextParser("y"),

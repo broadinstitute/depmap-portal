@@ -81,7 +81,8 @@ export function getEnabledDatasetIds(
     return new Set(
       datasets
         .filter((d) => !dataType || dataType === d.data_type)
-        .map((d) => d.id)
+        .map((d) => [d.id, d.given_id].filter(Boolean))
+        .flat() as string[]
     );
   }
 
@@ -127,6 +128,11 @@ export function getEnabledDatasetIds(
       if (validDsIndices.has(k)) {
         const id = sliceLabelMap.dataset_ids[k];
         enabledDatasetIds.add(id);
+
+        const given_id = sliceLabelMap.given_ids[k];
+        if (given_id) {
+          enabledDatasetIds.add(given_id);
+        }
       }
     }
   }
