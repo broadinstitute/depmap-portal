@@ -592,6 +592,7 @@ def get_data_to_show_if_no_contexts_significant(
         top_context_name_info=None,
         selected_context_name_info=None,
         dataset_name=dataset_name,
+        dataset_display_name="",
         context_explorer_url=url_for("context_explorer.view_context_explorer"),
     )
 
