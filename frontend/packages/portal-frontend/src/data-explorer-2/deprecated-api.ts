@@ -262,6 +262,7 @@ export function fetchDimensionLabelsToDatasetsMapping(
   dimension_type: string
 ): Promise<{
   dataset_ids: string[];
+  given_ids: (string | null)[];
   dataset_labels: string[];
   units: Record<string, DatasetIndex[]>;
   data_types: Record<DataType, DatasetIndex[]>;
