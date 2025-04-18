@@ -35,16 +35,6 @@ biomarker_loader.py: error: "record" is possibly unbound (reportPossiblyUnboundV
 biomarker_loader.py: error: Argument of type "Literal['LOADER_DATA_DIR']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
 biomarker_loader.py: error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
 breadbox_shim.py: error: Argument of type "list[str | None]" cannot be assigned to parameter "feature_ids" of type "list[str]" in function "get_feature_data"
-bucket_utils.py: error: "csv_path" is not a known member of "None" (reportOptionalMemberAccess)
-bucket_utils.py: error: "delete" is not a known member of "None" (reportOptionalMemberAccess)
-bucket_utils.py: error: Argument of type "Literal['DOWNLOADS_KEY']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
-bucket_utils.py: error: Argument of type "Literal['ENV']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
-bucket_utils.py: error: Argument of type "Literal['record']" cannot be assigned to parameter "orient" of type "Literal['records']" in function "to_dict"
-bucket_utils.py: error: Argument of type "None" cannot be assigned to parameter "bucket" of type "Bucket" in function "_get_private_datasets_map_file"
-bucket_utils.py: error: Expression of type "None" cannot be assigned to parameter of type "Bucket"
-bucket_utils.py: error: Expression of type "None" cannot be assigned to parameter of type "Client"
-bucket_utils.py: error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
-bucket_utils.py: error: No overloads for "to_dict" match the provided arguments (reportCallIssue)
 categories.py: error: Argument of type "Unknown | None" cannot be assigned to parameter "__x" of type "ConvertibleToInt" in function "__new__" (reportArgumentType)
 categories.py: error: Method "_get_na_label" overrides class "CategoryConfig" in an incompatible manner
 categories.py: error: Method "_get_na_value" overrides class "CategoryConfig" in an incompatible manner
@@ -523,7 +513,6 @@ utils.py: error: Second argument to "isinstance" must be a class or tuple of cla
 views.py: error: "IGNORECASE" is not a known member of module "natsort" (reportAttributeAccessIssue)
 views.py: error: "Unbound" is not iterable (reportGeneralTypeIssues)
 views.py: error: "__getitem__" method not defined on type "Datatype" (reportIndexIssue)
-views.py: error: "csv_path" is possibly unbound (reportPossiblyUnboundVariable)
 views.py: error: "dataset_id" is not a known member of "None" (reportOptionalMemberAccess)
 views.py: error: "dataset_name" is possibly unbound (reportPossiblyUnboundVariable)
 views.py: error: "get" is not a known member of "None" (reportOptionalMemberAccess)
@@ -549,9 +538,7 @@ views.py: error: Argument of type "Literal['ENABLED_FEATURES']" cannot be assign
 views.py: error: Argument of type "Literal['ENV']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
 views.py: error: Argument of type "Literal['EXTERNAL_TOOLS']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
 views.py: error: Argument of type "Literal['FEEDBACK_FORM_URL']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
-views.py: error: Argument of type "Literal['URL_UPLOAD_WHITELIST']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
 views.py: error: Argument of type "Literal['WEBAPP_DATA_DIR']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
-views.py: error: Argument of type "Literal['display_name']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
 views.py: error: Argument of type "Literal['exception']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
 views.py: error: Argument of type "Literal['kNeighbors']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
 views.py: error: Argument of type "Literal['logerror']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
@@ -560,8 +547,6 @@ views.py: error: Argument of type "Literal['primarySite']" cannot be assigned to
 views.py: error: Argument of type "Literal['release']" cannot be assigned to parameter "__key" of type "_KT@dict" in function "__setitem__"
 views.py: error: Argument of type "Literal['sampleId']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
 views.py: error: Argument of type "Literal['subtype']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
-views.py: error: Argument of type "Literal['units']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
-views.py: error: Argument of type "Literal['url']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
 views.py: error: Argument of type "Literal['user_id']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
 views.py: error: Argument of type "Literal['value']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
 views.py: error: Argument of type "Literal[DependencyEnum.Avana]" cannot be assigned to parameter "dependency_dataset_name" of type "str" in function "get_dataset_by_name"

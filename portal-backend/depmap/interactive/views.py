@@ -761,6 +761,7 @@ def add_custom_taiga_dataset():
 @blueprint.route("/api/dataset/add-csv-one-row", methods=["POST"])
 @csrf_protect.exempt
 def add_custom_csv_one_row_dataset():
+    # TODO: delete this?
     """
     Add a custom csv in the format
         cell line, value
@@ -791,7 +792,7 @@ def add_custom_csv_one_row_dataset():
 @blueprint.route("/api/dataset/add-csv", methods=["POST"])
 @csrf_protect.exempt
 def add_custom_csv_dataset():
-
+    # TODO: delete this?
     display_name = request.form.get("displayName")
     units = request.form.get("units")
     transposed = request.form.get("transposed").lower() == "true"
@@ -806,42 +807,3 @@ def add_custom_csv_dataset():
     response = format_task_status(result)
 
     return jsonify(response)
-
-
-@blueprint.route("/from-csv-url")
-def download_csv_and_view_interactive():
-    """Download a CSV from a link (from a white-listed domain), load the CSV as a
-    custom dataset, and redirect to that dataset in Data Explorer."""
-    display_name = request.args["display_name"]
-    units = request.args["units"]
-    file_url = request.args["url"]
-    use_de2 = request.args.get("de2", "T") == "T"
-
-    url_upload_whitelist = flask.current_app.config["URL_UPLOAD_WHITELIST"]
-
-    if not any(file_url.startswith(prefix) for prefix in url_upload_whitelist):
-        log.warning(
-            "Requested download from %s but prefix was not in %s",
-            file_url,
-            url_upload_whitelist,
-        )
-        abort(400)
-
-    try:
-        csv_path = write_url_to_local_file(file_url)
-    except Exception as e:
-        log.exception("Got exception in get_data_file_dict_from_url")
-        abort(400)
-
-    result = upload_transient_csv.apply(
-        args=[display_name, units, True, csv_path, False, use_de2]
-    )
-
-    if result.state == TaskState.SUCCESS.value:
-        return redirect(result.result["forwardingUrl"])
-
-    log.error(
-        "called upload_transient_csv.apply() but wasn't successful. Result was: %s",
-        result,
-    )
-    abort(500)
