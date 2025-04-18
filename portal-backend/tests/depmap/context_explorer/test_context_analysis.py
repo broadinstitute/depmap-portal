@@ -1205,53 +1205,53 @@ def test_get_box_plot_data(empty_db_mock_downloads, dataset_name):
         "insignificant",
         "level_0_code",
     ]
-    assert data["other_cards"][0]["level_0_code"] == "MYELOID"
+    assert data["other_cards"][0]["level_0_code"] == "LUNG"
     assert {
-        "label": "CHILD_OF_MYELOID",
-        "path": ["CHILD_OF_MYELOID"],
-        "data": [20, 21, 22, 23, 24],
+        "label": "LUNG",
+        "data": [5, 6, 7, 8, 9],
         "cell_line_display_names": [
-            "child_myeloid_0",
-            "child_myeloid_1",
-            "child_myeloid_2",
-            "child_myeloid_3",
-            "child_myeloid_4",
+            "lung_line_0",
+            "lung_line_1",
+            "lung_line_2",
+            "lung_line_3",
+            "lung_line_4",
         ],
+        "path": ["LUNG"],
     } in data["other_cards"][0]["significant"]
 
     assert {
-        "label": "MYELOID",
-        "path": ["MYELOID"],
-        "data": [15, 16, 17, 18, 19, 20, 21, 22, 23, 24],
+        "label": "LUNG",
+        "data": [5, 6, 7, 8, 9],
         "cell_line_display_names": [
-            "AML_0",
-            "AML_1",
-            "AML_2",
-            "AML_3",
-            "AML_4",
-            "child_myeloid_0",
-            "child_myeloid_1",
-            "child_myeloid_2",
-            "child_myeloid_3",
-            "child_myeloid_4",
+            "lung_line_0",
+            "lung_line_1",
+            "lung_line_2",
+            "lung_line_3",
+            "lung_line_4",
         ],
+        "path": ["LUNG"],
     } in data["other_cards"][0]["significant"]
 
     assert data["other_cards"][0]["insignificant"] == {
-        "label": "Other MYELOID",
-        "path": ["MYELOID"],
-        "data": [15, 16, 17, 18, 19],
-        "cell_line_display_names": ["AML_0", "AML_1", "AML_2", "AML_3", "AML_4"],
+        "label": "Other LUNG",
+        "data": [],
+        "cell_line_display_names": [],
+        "path": None,
     }
     assert data["insignificant_heme_data"] == {
         "label": "Other Heme",
-        "data": [15, 16, 17, 18, 19, 25],
+        "data": [15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25],
         "cell_line_display_names": [
             "AML_0",
             "AML_1",
             "AML_2",
             "AML_3",
             "AML_4",
+            "child_myeloid_0",
+            "child_myeloid_1",
+            "child_myeloid_2",
+            "child_myeloid_3",
+            "child_myeloid_4",
             "LYMPH_1",
         ],
         "path": None,
@@ -1332,42 +1332,37 @@ def test_get_box_plot_data(empty_db_mock_downloads, dataset_name):
     }
 
     assert {
-        "label": "CHILD_OF_MYELOID",
-        "path": ["CHILD_OF_MYELOID"],
-        "data": [20, 21, 22, 23, 24],
+        "label": "LUNG",
+        "data": [5, 6, 7, 8, 9],
         "cell_line_display_names": [
-            "child_myeloid_0",
-            "child_myeloid_1",
-            "child_myeloid_2",
-            "child_myeloid_3",
-            "child_myeloid_4",
+            "lung_line_0",
+            "lung_line_1",
+            "lung_line_2",
+            "lung_line_3",
+            "lung_line_4",
         ],
+        "path": ["LUNG"],
     } in data["other_cards"][0]["significant"]
     assert {
-        "label": "MYELOID",
-        "path": ["MYELOID"],
-        "data": [15, 16, 17, 18, 19, 20, 21, 22, 23, 24],
+        "label": "LUNG",
+        "data": [5, 6, 7, 8, 9],
         "cell_line_display_names": [
-            "AML_0",
-            "AML_1",
-            "AML_2",
-            "AML_3",
-            "AML_4",
-            "child_myeloid_0",
-            "child_myeloid_1",
-            "child_myeloid_2",
-            "child_myeloid_3",
-            "child_myeloid_4",
+            "lung_line_0",
+            "lung_line_1",
+            "lung_line_2",
+            "lung_line_3",
+            "lung_line_4",
         ],
+        "path": ["LUNG"],
     } in data["other_cards"][0]["significant"]
 
     assert data["other_cards"][0]["insignificant"] == {
-        "label": "Other MYELOID",
-        "path": ["MYELOID"],
-        "data": [15, 16, 17, 18, 19],
-        "cell_line_display_names": ["AML_0", "AML_1", "AML_2", "AML_3", "AML_4"],
+        "label": "Other LUNG",
+        "data": [],
+        "cell_line_display_names": [],
+        "path": None,
     }
-    assert data["other_cards"][0]["level_0_code"] == "MYELOID"
+    assert data["other_cards"][0]["level_0_code"] == "LUNG"
 
     selected_subtype_code = "ES"
     data = _get_box_plot_data(
@@ -1381,72 +1376,13 @@ def test_get_box_plot_data(empty_db_mock_downloads, dataset_name):
         min_frac_dep_in=nothing_range.min_frac_dep_in,
     )
 
-    assert data["significant_selection"] == []
+    assert data["significant_selection"] == None
 
     # If you can select a context it should always have something that
     # is insignificant... If nothing is significant just everything gets
     # added to data["insignificant_selection"]
-    assert data["insignificant_selection"] == {
-        "label": "Other BONE",
-        "path": ["BONE"],
-        "data": [0, 1, 2, 3, 4, 10, 11, 12, 13, 14, 26, 27, 28, 29, 30],
-        "cell_line_display_names": [
-            "0es",
-            "1es",
-            "2es",
-            "3es",
-            "4es",
-            "0os",
-            "1os",
-            "2os",
-            "3os",
-            "4os",
-            "0insig",
-            "1insig",
-            "2insig",
-            "3insig",
-            "4insig",
-        ],
-    }
-    assert {
-        "significant": [
-            {
-                "label": "MYELOID",
-                "path": ["MYELOID"],
-                "data": [15, 16, 17, 18, 19, 20, 21, 22, 23, 24],
-                "cell_line_display_names": [
-                    "AML_0",
-                    "AML_1",
-                    "AML_2",
-                    "AML_3",
-                    "AML_4",
-                    "child_myeloid_0",
-                    "child_myeloid_1",
-                    "child_myeloid_2",
-                    "child_myeloid_3",
-                    "child_myeloid_4",
-                ],
-            }
-        ],
-        "insignificant": {
-            "label": "Other MYELOID",
-            "path": ["MYELOID"],
-            "data": [15, 16, 17, 18, 19, 20, 21, 22, 23, 24],
-            "cell_line_display_names": [
-                "AML_0",
-                "AML_1",
-                "AML_2",
-                "AML_3",
-                "AML_4",
-                "child_myeloid_0",
-                "child_myeloid_1",
-                "child_myeloid_2",
-                "child_myeloid_3",
-                "child_myeloid_4",
-            ],
-        },
-        "level_0_code": "MYELOID",
-    } in data["other_cards"]
+    assert data["insignificant_selection"] == None
+    assert data["other_cards"] == []
 
     assert data["insignificant_heme_data"] == {
         "label": "Other Heme",

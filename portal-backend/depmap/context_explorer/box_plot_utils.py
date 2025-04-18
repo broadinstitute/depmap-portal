@@ -327,6 +327,7 @@ def get_context_plot_box_data(
     heme_box_plot_data = {}
     solid_box_plot_data = {}
     other_box_plot_data = []
+    all_sig_context_codes = []
     selected_sig_box_plot_card_data = {}
     if len(sig_contexts) > 0:
         all_sig_context_codes = sig_contexts["subtype_code"].to_list()
@@ -369,43 +370,41 @@ def get_context_plot_box_data(
                 if other_sig_data is not None:
                     other_box_plot_data.append(other_sig_data)
 
-        heme_box_plot_data = get_box_plot_data_for_other_category(
-            category="heme",
-            all_sig_context_codes=all_sig_context_codes,
-            entity_full_row_of_values=entity_full_row_of_values,
-            tree_type=tree_type,
-        )
+    heme_box_plot_data = get_box_plot_data_for_other_category(
+        category="heme",
+        all_sig_context_codes=all_sig_context_codes,
+        entity_full_row_of_values=entity_full_row_of_values,
+        tree_type=tree_type,
+    )
 
-        solid_box_plot_data = get_box_plot_data_for_other_category(
-            category="solid",
-            all_sig_context_codes=all_sig_context_codes,
-            entity_full_row_of_values=entity_full_row_of_values,
-            tree_type=tree_type,
-        )
+    solid_box_plot_data = get_box_plot_data_for_other_category(
+        category="solid",
+        all_sig_context_codes=all_sig_context_codes,
+        entity_full_row_of_values=entity_full_row_of_values,
+        tree_type=tree_type,
+    )
 
-        significant_selection = (
-            None
-            if not selected_sig_box_plot_card_data
-            else selected_sig_box_plot_card_data.significant
-        )
-        insignificant_selection = (
-            None
-            if not selected_sig_box_plot_card_data
-            else selected_sig_box_plot_card_data.insignificant
-        )
+    significant_selection = (
+        None
+        if not selected_sig_box_plot_card_data
+        else selected_sig_box_plot_card_data.significant
+    )
+    insignificant_selection = (
+        None
+        if not selected_sig_box_plot_card_data
+        else selected_sig_box_plot_card_data.insignificant
+    )
 
-        return ContextPlotBoxData(
-            significant_selection=significant_selection,
-            insignificant_selection=insignificant_selection,
-            other_cards=other_box_plot_data,
-            insignificant_heme_data=heme_box_plot_data,
-            insignificant_solid_data=solid_box_plot_data,
-            drug_dotted_line=drug_dotted_line,
-            entity_label=node_entity_data.entity_label,
-            entity_overview_page_label=node_entity_data.entity_overview_page_label,
-        )
-
-    return None
+    return ContextPlotBoxData(
+        significant_selection=significant_selection,
+        insignificant_selection=insignificant_selection,
+        other_cards=other_box_plot_data,
+        insignificant_heme_data=heme_box_plot_data,
+        insignificant_solid_data=solid_box_plot_data,
+        drug_dotted_line=drug_dotted_line,
+        entity_label=node_entity_data.entity_label,
+        entity_overview_page_label=node_entity_data.entity_overview_page_label,
+    )
 
 
 def get_organized_contexts(
@@ -448,12 +447,16 @@ def get_organized_contexts(
     if context_box_plot_data == None:
         return None
 
-    level_0_sort_order = sig_contexts["level_0"].drop_duplicates(keep="first").tolist()
     context_box_plot_data_other_cards = context_box_plot_data.other_cards
-    sorted_other_cards = sorted(
-        context_box_plot_data_other_cards,
-        key=lambda x: level_0_sort_order.index(x.level_0_code),
-    )
+    sorted_other_cards = context_box_plot_data_other_cards
+    if not sig_contexts.empty:
+        level_0_sort_order = (
+            sig_contexts["level_0"].drop_duplicates(keep="first").tolist()
+        )
+        sorted_other_cards = sorted(
+            context_box_plot_data_other_cards,
+            key=lambda x: level_0_sort_order.index(x.level_0_code),
+        )
 
     ordered_box_plot_data = ContextPlotBoxData(
         significant_selection=context_box_plot_data.significant_selection,
