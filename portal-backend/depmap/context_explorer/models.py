@@ -499,16 +499,9 @@ class ContextAnalysis(Model):
                     SubtypeNode.subtype_code == SubtypeContext.subtype_code,
                 )
                 .filter(SubtypeNode.tree_type == tree_type)
-                .with_entities(
-                    SubtypeNode.level_0,
-                    SubtypeNode.subtype_code,
-                    ContextAnalysis.effect_size,
-                    ContextAnalysis.t_qval,
-                )
+                .with_entities(SubtypeNode.level_0, SubtypeNode.subtype_code)
                 .order_by(desc(ContextAnalysis.mean_in))
                 .all()
             )
-
-            breakpoint()
 
             return pd.DataFrame(analyses)

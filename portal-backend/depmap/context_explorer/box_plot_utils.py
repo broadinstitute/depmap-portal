@@ -276,7 +276,6 @@ def get_sig_context_dataframe(
         min_frac_dep_in=min_frac_dep_in,
         show_positive_effect_sizes=show_positive_effect_sizes,
     )
-    breakpoint()
 
     return sig_contexts
 
