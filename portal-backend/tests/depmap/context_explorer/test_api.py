@@ -116,13 +116,13 @@ def test_get_context_summary(populated_db):
         # The data type list determines the number and order of rows on
         # the Context Explorer Data Availability graph.
         assert context_summary["summary"]["data_types"] == [
-            "PRISMRepurposing",
-            "RNASeq",
+            "CRISPR",
+            "RNAi",
             "WGS",
             "WES",
-            "RNAi",
-            "CRISPR",
+            "RNASeq",
             "PRISMOncRef",
+            "PRISMRepurposing",
         ]
 
         # There should be a value row for each data type.
@@ -285,15 +285,14 @@ def test_get_context_summary(populated_db):
         context_summary = r.json
 
         assert context_summary["summary"]["data_types"] == [
-            "PRISMRepurposing",
-            "RNASeq",
+            "CRISPR",
+            "RNAi",
             "WGS",
             "WES",
-            "RNAi",
-            "CRISPR",
+            "RNASeq",
             "PRISMOncRef",
+            "PRISMRepurposing",
         ]
-
         model_id_indices = {}
         for index, model_id in context_summary["summary"]["all_depmap_ids"]:
             model_id_indices[model_id] = index
@@ -303,7 +302,7 @@ def test_get_context_summary(populated_db):
             row[model_id_indices["ACH-000552"]]
             for row in context_summary["summary"]["values"]
         ]
-        expected_552 = [True, True, True, True, True, True, False]
+        expected_552 = [True, True, True, True, True, False, True]
         assert actual_552 == expected_552
 
         # 001001
@@ -320,7 +319,7 @@ def test_get_context_summary(populated_db):
             row[model_id_indices["ACH-000706"]]
             for row in context_summary["summary"]["values"]
         ]
-        expected_000706 = [True, True, False, True, True, True, False]
+        expected_000706 = [True, True, False, True, True, False, True]
         assert actual_000706 == expected_000706
 
         # 000279
@@ -328,7 +327,7 @@ def test_get_context_summary(populated_db):
             row[model_id_indices["ACH-000279"]]
             for row in context_summary["summary"]["values"]
         ]
-        expected_000279 = [True, True, False, True, True, True, False]
+        expected_000279 = [True, True, False, True, True, False, True]
         assert actual_000279 == expected_000279
 
         # 001170
@@ -336,7 +335,7 @@ def test_get_context_summary(populated_db):
             row[model_id_indices["ACH-001170"]]
             for row in context_summary["summary"]["values"]
         ]
-        expected_001170 = [False, False, False, False, True, False, False]
+        expected_001170 = [False, True, False, False, False, False, False]
         assert actual_001170 == expected_001170
 
         assert {
