@@ -81,24 +81,6 @@ export default function useDimensionStateManager({
     prevIndexType.current = index_type;
   }, [datasets, isLoading, index_type, update]);
 
-  useEffect(() => {
-    if (isLoading || !value || !value.dataset_id) {
-      return;
-    }
-
-    // HACK: If the dimension is using a given_id, replace it with the standard
-    // id. It would actually be a better experience to keep the given_id but
-    // doing that consistently throughout the UI would very difficult.
-    const preferredId = datasets.find((d) => {
-      const id = value.dataset_id;
-      return id === d.given_id && id !== d.id;
-    })?.id;
-
-    if (preferredId) {
-      update({ dataset_id: preferredId });
-    }
-  }, [datasets, isLoading, value, update]);
-
   const noMatchingContexts = useMemo(() => {
     return (
       !isLoading &&
