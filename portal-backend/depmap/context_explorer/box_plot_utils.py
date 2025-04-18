@@ -328,7 +328,7 @@ def get_context_plot_box_data(
     solid_box_plot_data = {}
     other_box_plot_data = []
     all_sig_context_codes = []
-    selected_sig_box_plot_card_data = {}
+    selected_sig_box_plot_card_data = None
     if len(sig_contexts) > 0:
         all_sig_context_codes = sig_contexts["subtype_code"].to_list()
         ordered_sig_subtype_codes = (
