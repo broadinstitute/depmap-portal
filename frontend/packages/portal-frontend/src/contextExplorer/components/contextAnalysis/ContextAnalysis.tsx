@@ -1165,9 +1165,12 @@ function ContextAnalysis({
                   >
                     {entityType === "gene" && GENE_DETAIL_NO_GENE_SELECTED}
                     {entityType === "compound" &&
-                    datasetId === ContextExplorerDatasets.Prism_oncology_AUC
-                      ? ONCREF_DETAIL_NO_COMPOUND_SELECTED
-                      : REPURPOSING_DETAIL_NO_COMPOUND_SELECTED}
+                      datasetId ===
+                        ContextExplorerDatasets.Prism_oncology_AUC &&
+                      ONCREF_DETAIL_NO_COMPOUND_SELECTED}
+                    {entityType === "compound" &&
+                      datasetId === ContextExplorerDatasets.Rep_all_single_pt &&
+                      REPURPOSING_DETAIL_NO_COMPOUND_SELECTED}
                   </h4>
                 </div>
               )}

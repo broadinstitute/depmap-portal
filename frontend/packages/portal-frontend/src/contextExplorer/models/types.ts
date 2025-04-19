@@ -69,8 +69,12 @@ export interface CellLineOverview {
   cellLineDisplayName: string;
   lineage: string;
   primaryDisease: string;
-  subtype: string;
-  molecularSubtype: string;
+  level0: string;
+  level1: string;
+  level2: string;
+  level3: string;
+  level4: string;
+  level5: string;
   crispr: string;
   rnai: string;
   wgs: string;

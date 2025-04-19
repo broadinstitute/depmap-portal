@@ -53,7 +53,6 @@ function OverviewTable(props: OverviewTableProps) {
       accessor: "cellLineDisplayName",
       Header: "Cell Line",
       maxWidth: 800,
-      minWidth: 90,
       customFilter: renderFilterPlaceholder,
       Cell: (row: any) => (
         <>
@@ -77,71 +76,85 @@ function OverviewTable(props: OverviewTableProps) {
     {
       accessor: "lineage",
       Header: "Lineage",
-      maxWidth: 1000,
-      minWidth: 90,
+      maxWidth: 90,
       customFilter: renderFilterPlaceholder,
     },
     {
       accessor: "primaryDisease",
       Header: "Primary Disease",
-      maxWidth: 1000,
-      minWidth: 90,
+      maxWidth: 90,
       customFilter: renderFilterPlaceholder,
     },
     {
-      accessor: "subtype",
-      Header: "Subtype",
-      maxWidth: 1000,
-      minWidth: 90,
+      accessor: "level0",
+      Header: "Level0",
+      maxWidth: 90,
       customFilter: renderFilterPlaceholder,
     },
     {
-      accessor: "molecularSubtype",
-      Header: "Molecular Subtype",
-      maxWidth: 1000,
-      minWidth: 90,
+      accessor: "level1",
+      Header: "Level1",
+      maxWidth: 90,
+      customFilter: renderFilterPlaceholder,
+    },
+    {
+      accessor: "level2",
+      Header: "Level2",
+      maxWidth: 90,
+      customFilter: renderFilterPlaceholder,
+    },
+    {
+      accessor: "level3",
+      Header: "Level3",
+      maxWidth: 90,
+      customFilter: renderFilterPlaceholder,
+    },
+    {
+      accessor: "level4",
+      Header: "Level4",
+      maxWidth: 90,
+      customFilter: renderFilterPlaceholder,
+    },
+    {
+      accessor: "level5",
+      Header: "Level5",
+      maxWidth: 90,
       customFilter: renderFilterPlaceholder,
     },
     {
       accessor: "crispr",
       Header: "CRISPR",
-      maxWidth: 1000,
-      minWidth: 75,
+      maxWidth: 75,
       disableFilters: true,
     },
     {
       accessor: "rnai",
       Header: "RNAi",
-      maxWidth: 1000,
-      minWidth: 75,
+      maxWidth: 75,
       disableFilters: true,
     },
     {
       accessor: "wes",
       Header: "WES",
-      maxWidth: 1000,
-      minWidth: 75,
+      maxWidth: 75,
       disableFilters: true,
     },
     {
       accessor: "wgs",
       Header: "WGS",
-      maxWidth: 1000,
-      minWidth: 75,
+      maxWidth: 75,
       disableFilters: true,
     },
     {
       accessor: "rna_seq",
       Header: "RNASeq",
-      maxWidth: 1000,
-      minWidth: 75,
+      maxWidth: 75,
       disableFilters: true,
     },
     {
       accessor: "prismRepurposing",
       Header: "PRISM Repurposing",
-      maxWidth: 1000,
-      minWidth: 75,
+      maxWidth: 75,
       disableFilters: true,
     },
   ];
@@ -150,8 +163,7 @@ function OverviewTable(props: OverviewTableProps) {
     columns.push({
       accessor: "prismOncRef",
       Header: "PRISM OncRef",
-      maxWidth: 1000,
-      minWidth: 75,
+      maxWidth: 75,
       disableFilters: true,
     });
   }
@@ -159,14 +171,16 @@ function OverviewTable(props: OverviewTableProps) {
   return (
     <div className={styles.plotContainer}>
       <div className={styles.overviewTable}>
-        <WideTable
-          rowHeight={28}
-          data={cellLineData}
-          allowDownloadFromTableDataWithMenu
-          allowDownloadFromTableDataWithMenuFileName="context-explorer-overview.csv"
-          columns={columns}
-          getTrProps={getTrProps}
-        />
+        <div style={{ maxWidth: "99%", minWidth: "100px" }}>
+          <WideTable
+            rowHeight={28}
+            data={cellLineData}
+            allowDownloadFromTableDataWithMenu
+            allowDownloadFromTableDataWithMenuFileName="context-explorer-overview.csv"
+            columns={columns}
+            getTrProps={getTrProps}
+          />
+        </div>
       </div>
     </div>
   );

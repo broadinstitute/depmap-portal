@@ -168,7 +168,8 @@ function ContextExplorerPlot(props: ContextExplorerPlotProps) {
                 gridTemplateRows: `repeat(${
                   cellLineCountsForwards.length + 1
                 }, ${CONTEXT_EXPL_BAR_THICKNESS}px)`,
-                marginLeft: "5px",
+                marginLeft: "8px",
+                width: "140px",
               }}
             >
               <div

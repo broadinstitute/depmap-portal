@@ -73,8 +73,12 @@ const ContextExplorerTabs = ({
       cellLineDisplayName: row.cell_line_display_name,
       lineage: row.level_0,
       primaryDisease: row.level_1,
-      subtype: row.level_2,
-      molecularSubtype: row.level_3,
+      level0: row.level_0,
+      level1: row.level_1,
+      level2: row.level_2,
+      level3: row.level_3,
+      level4: row.level_4,
+      level5: row.level_5,
       crispr: capitalizeFirstLetter(String(row.crispr)),
       rnai: capitalizeFirstLetter(String(row.rnai)),
       wgs: capitalizeFirstLetter(String(row.wgs)),
@@ -130,23 +134,21 @@ const ContextExplorerTabs = ({
                 />
               )}
           </div>
-          <div className={styles.plot}>
-            {checkedDataValues &&
-              selectedContextData &&
-              !isLoadingInitialData && (
-                <OverviewTable
-                  cellLineData={
-                    overlappingDepmapIds.length > 0
-                      ? formattedFilteredData.filter(
-                          (dataItem: CellLineOverview) =>
-                            overlappingDepmapIds.includes(dataItem.depmapId)
-                        )
-                      : formattedFilteredData
-                  }
-                  getCellLineUrlRoot={getCellLineUrlRoot}
-                />
-              )}
-          </div>
+          {checkedDataValues &&
+            selectedContextData &&
+            !isLoadingInitialData && (
+              <OverviewTable
+                cellLineData={
+                  overlappingDepmapIds.length > 0
+                    ? formattedFilteredData.filter(
+                        (dataItem: CellLineOverview) =>
+                          overlappingDepmapIds.includes(dataItem.depmapId)
+                      )
+                    : formattedFilteredData
+                }
+                getCellLineUrlRoot={getCellLineUrlRoot}
+              />
+            )}
         </TabPanel>
         <TabPanel className={styles.TabPanel}>
           {!isLoadingInitialData && (
