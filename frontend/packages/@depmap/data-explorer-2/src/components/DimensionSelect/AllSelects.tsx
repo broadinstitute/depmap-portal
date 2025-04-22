@@ -127,6 +127,7 @@ function AllSelects({
           (Boolean(dataType || dataset_id) && !isSingleCompound)
         }
         isLoading={isLoading}
+        index_type={index_type}
         value={dataset_id || null}
         options={dataVersionOptions}
         onChange={onChangeDataVersion}
