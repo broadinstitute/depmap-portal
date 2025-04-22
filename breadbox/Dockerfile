@@ -2,8 +2,6 @@
 # Since we no longer depend on R, we could move away from using this custom base image. The remaining non-R dependencies may be fairly quick to install.
 FROM us.gcr.io/broad-achilles/depmap-breadbox-base:v2
 
-RUN python --version
-
 # install security updated
 RUN apt update && apt upgrade -y
 
