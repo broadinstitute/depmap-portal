@@ -26,6 +26,7 @@ import {
   InvalidPrioritiesByDataType,
   SearchDimenionsRequest,
   SearchDimenionsResponse,
+  TabularDatasetDataArgs,
   UploadFileResponse,
 } from "@depmap/types";
 import { Trace } from "src/trace";
@@ -313,6 +314,14 @@ export class BreadboxApi {
         );
       }
     );
+  }
+
+  getTabularDatasetData(
+    datasetId: string,
+    args: TabularDatasetDataArgs
+  ): Promise<{ [key: string]: { [key: string]: any } }> {
+    const url = `/datasets/tabular/${datasetId}`;
+    return this._fetchWithJsonBody(url, "POST", args);
   }
 
   getDimensionTypes(): Promise<DimensionType[]> {
