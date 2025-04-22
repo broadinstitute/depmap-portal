@@ -31,6 +31,7 @@ import {
   DimensionType,
   DimensionTypeAddArgs,
   DimensionTypeUpdateArgs,
+  TabularDatasetDataArgs,
 } from "@depmap/types";
 import {
   DatasetDownloadMetadata,
@@ -77,6 +78,10 @@ export interface SharedApi {
     datasetId: string,
     datasetToUpdate: DatasetUpdateArgs
   ) => Promise<BreadboxDataset>;
+  getTabularDatasetData: (
+    datasetId: string,
+    args: TabularDatasetDataArgs
+  ) => Promise<{ [key: string]: { [key: string]: any } }>;
   getGroups: (writeAccess?: boolean) => Promise<Group[]>;
   postGroup: (groupArgs: GroupArgs) => Promise<Group>;
   deleteGroup: (id: string) => Promise<any>;
