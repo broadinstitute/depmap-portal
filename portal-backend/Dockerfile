@@ -18,8 +18,6 @@ ENV FLASK_APP autoapp.py
 ENV LC_ALL C.UTF-8
 ENV LANG C.UTF-8
 
-RUN python --version
-
 # Install requirements
 RUN pip install poetry==1.5.1 && poetry config virtualenvs.create false 
 RUN mkdir -p /install
