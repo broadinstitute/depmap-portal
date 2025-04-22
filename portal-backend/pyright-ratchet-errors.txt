@@ -408,12 +408,10 @@ test_get_associations.py: error: "parse" is not a known member of module "urllib
 test_get_associations.py: error: Cannot access member "entity_id" for type "GeneFactory"
 test_get_associations_csv.py: error: "parse" is not a known member of module "urllib" (reportAttributeAccessIssue)
 test_get_dataset_url.py: error: Argument of type "Sequence" cannot be assigned to parameter "dataset_id" of type "str" in function "get_dataset_url"
-test_get_dataset_url.py: error: Cannot access member "dataset_id" for type "PrivateDatasetMetadataFactory"
 test_get_features.py: error: "__get_config" is unknown import symbol (reportAttributeAccessIssue)
 test_get_features.py: error: Argument of type "list[tuple[Literal['groupBy'], str] | tuple[Literal['filter'], str] | tuple[Literal['computeLinearFit'], Literal[True]]]" cannot be assigned to parameter "__m" of type "Iterable[tuple[_S, str]]" in function "update"
 test_get_features.py: error: No overloads for "update" match the provided arguments (reportCallIssue)
 test_get_sort_key.py: error: Argument of type "LazyAttribute" cannot be assigned to parameter "third_key_display_name" of type "str" in function "__init__"
-test_get_sort_key.py: error: Cannot access member "dataset_id" for type "PrivateDatasetMetadataFactory"
 test_global_search_loader.py: error: "__load_context_search_index" is not a known member of module "loader.global_search_loader" (reportAttributeAccessIssue)
 test_global_search_loader.py: error: "__load_gene_search_index" is not a known member of module "loader.global_search_loader" (reportAttributeAccessIssue)
 test_global_search_loader.py: error: Cannot access member "entity_id" for type "CompoundFactory"
@@ -443,7 +441,6 @@ test_models.py: error: Cannot access member "all" for type "LazyAttribute"
 test_models.py: error: Cannot access member "biomarker_dataset_id" for type "BiomarkerDatasetFactory"
 test_models.py: error: Cannot access member "dataset_id" for type "BiomarkerDatasetFactory"
 test_models.py: error: Cannot access member "dataset_id" for type "DependencyDatasetFactory"
-test_models.py: error: Cannot access member "dataset_id" for type "PrivateDatasetMetadataFactory"
 test_models.py: error: Cannot access member "dependency_dataset_id" for type "DependencyDatasetFactory"
 test_models.py: error: Cannot access member "entity_id" for type "CompoundFactory"
 test_models.py: error: Cannot access member "entity_id" for type "GeneFactory"

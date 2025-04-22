@@ -39,8 +39,6 @@ from depmap.interactive.standard import standard_utils
 from depmap.interactive.nonstandard import nonstandard_utils
 from depmap.partials.matrix.models import CellLineSeries
 from depmap.interactive.common_utils import RowSummary
-from depmap.utilities.data_access_log import log_legacy_private_dataset_access
-
 
 def get_matrix(dataset_id):
     """
