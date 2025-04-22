@@ -32,7 +32,7 @@ from depmap.interactive import common_utils
 from depmap import data_access
 from depmap.interactive.config.categories import CategoryConfig
 from depmap.interactive.models import FeatureGroup, LinRegInfo, PlotFeatures
-from depmap.user_uploads.tasks import upload_transient_csv, upload_transient_taiga
+from depmap.user_uploads.tasks import upload_transient_csv
 from depmap.user_uploads.utils.task_utils import (
     write_upload_to_local_file,
     write_url_to_local_file,
@@ -728,34 +728,6 @@ def get_associations_csv():
     return format_csv_response(
         df, "{} in {} associations".format(x_feature, x_dataset), {"index": False}
     )
-
-
-## Custom datasets. Supporting functions in nonstandard/custom_dataset.py ##
-@blueprint.route("/api/dataset/add-taiga", methods=["POST"])
-@csrf_protect.exempt
-def add_custom_taiga_dataset():
-    """
-    Endpoint to add custom taiga dataset
-    Returns ok with an identifier, or not ok with what is wrong
-    Assuming people don't whack this endpoint with invalid inputs (ie bypass front end checks), the only thing that could go wrong is that the taiga id does not exist
-    """
-    if not current_app.config["ENABLED_FEATURES"].use_taiga_urls:
-        abort(
-            404
-        )  # 404 seems more appropriate than 403 since the entire server will not fulfil this request, regardless of permissions
-
-    metadata = request.get_json()
-    result = upload_transient_taiga.apply(
-        args=[
-            metadata["displayName"],
-            metadata["units"],
-            metadata["transposed"],
-            metadata["taigaId"],
-        ]
-    )
-    response = format_task_status(result)
-
-    return jsonify(response)
 
 
 @blueprint.route("/api/dataset/add-csv-one-row", methods=["POST"])

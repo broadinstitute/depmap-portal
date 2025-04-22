@@ -467,13 +467,6 @@ export class DepmapApi {
     return this._fetch<Dataset[]>("/interactive/api/getDatasets");
   }
 
-  postCustomTaiga = (config: UserUploadArgs): Promise<UploadTask> => {
-    return this._postJson<UploadTask>(
-      "/interactive/api/dataset/add-taiga",
-      config
-    );
-  };
-
   postCustomCsv = (config: UserUploadArgs): Promise<UploadTask> => {
     return this._postMultipart<UploadTask>(
       "/interactive/api/dataset/add-csv",

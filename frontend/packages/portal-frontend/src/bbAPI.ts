@@ -415,13 +415,6 @@ export class BreadboxApi {
     );
   }
 
-  postCustomTaiga = (config: UserUploadArgs): Promise<UploadTask> => {
-    if (!config) {
-      console.log("Not implemented");
-    }
-    return Promise.reject(Error("postCustomTaiga() not implemented"));
-  };
-
   postCustomCsv = (config: AddDatasetOneRowArgs): Promise<UploadTask> => {
     const { uploadFile } = config;
     const { name } = uploadFile;
