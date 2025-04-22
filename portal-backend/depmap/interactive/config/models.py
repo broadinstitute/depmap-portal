@@ -276,16 +276,10 @@ class InteractiveConfig:
         else:
             """
             This function is called many times and in loops
-            Checking private and custom datasets require database hits
+            Checking custom datasets require database hits
             Thus, for performance reasons we leave them for this last else block. We want to avoid making those database hits if we can
-
-            Note that private datasets CANNOT BE CACHED.
             """
-            # private datasets MUST be re-retrieved on every request and CANNOT BE CACHED. Note that this is a db hit
-            private_datasets = self.get_allowed_private_datasets()
-            if dataset_id in private_datasets:
-                return private_datasets[dataset_id]
-            elif CustomDatasetConfig.exists(dataset_id):
+            if CustomDatasetConfig.exists(dataset_id):
                 # custom datasets can be directly accessed if you know their dataset id
                 # but otherwise, are not discoverable (their dataset ids should not be listed)
                 return Config(**CustomDatasetConfig.get(dataset_id))
@@ -308,18 +302,12 @@ class InteractiveConfig:
 
         DO NOT modify to include custom datasets
             Custom datasets should not be listed
-            They are not tired to a particular user, and instead their dataset ids are bearer tokens
+            They are not tied to a particular user, and instead their dataset ids are bearer tokens
             They should only be accessed if the dataset id is specifically provided
             We should not list all the custom dataset ids. This violates access control
-
-        Private datasets are user specific, and given the appropriate user they should be discoverable
-            This allows us to list all the datasets for a particular user.
-            Unlike custom, users do not need to know the specific dataset id of the dataset to access it
-            We just need their identity in the request context, and our access control module makes the sqlalchemy-returned return automatically filter by user identity
         """
         # private datasets must be re-retrieved on every request and CANNOT BE CACHED
-        private_datasets = self.get_allowed_private_datasets()
-        datasets = {**self._immutable_datasets, **private_datasets}
+        datasets = self._immutable_datasets
         assert all([config.is_discoverable for config in datasets.values()])
         return datasets.keys()
 
@@ -505,52 +493,6 @@ class InteractiveConfig:
 
             nonstandard_datasets[key] = Config(**nonstandard_dict)
         return nonstandard_datasets
-
-    def is_legacy_private_dataset(self, dataset_id: str) -> bool:
-        all_private_dataset_ids = [
-            dataset.dataset_id for dataset in PrivateDatasetMetadata.get_all()
-        ]
-        return dataset_id in all_private_dataset_ids
-
-    def get_allowed_private_datasets(self) -> Dict[str, Config]:
-        """
-        WARNING: This CANNOT BE CACHED and must be re-retrieved on every request.
-        For every nonstandard dataset, check if it is in the environment settings of private datasets.
-        If so, create and add config
-        Return all configs
-        """
-        allowed_private_datasets = {}
-        # this query automatically only retrieves datasets that are accessible by a
-        # given user we thus CANNOT CACHE THIS RESULT. NonstandardMatrix.get_all() and
-        # PrivateDatasetMetadata.get_all()will return different results depending on
-        # the user identity as indicated in the request
-        all_private_datasets = {
-            dataset.dataset_id: dataset for dataset in PrivateDatasetMetadata.get_all()
-        }
-        visible_owner_ids = get_visible_owner_id_configs()
-        for dataset in NonstandardMatrix.get_all():
-            dataset_id = (
-                dataset.nonstandard_dataset_id
-            )  # the dataset id, not the matrix id
-            if dataset_id in all_private_datasets:  # if is private
-                settings = all_private_datasets[dataset_id]
-                private_group_display_name = visible_owner_ids[
-                    settings.owner_id
-                ].display_name
-                allowed_private_datasets[dataset_id] = Config(
-                    label=settings.display_name,
-                    feature_name=settings.feature_name,
-                    data_type=settings.data_type,
-                    units=settings.units,
-                    is_discoverable=True,  # private datasets are discoverable. this is because they are listable on a per user basis, a given user should be able to list all their private datasets. access control is handled lower, in the access_control module
-                    is_standard=False,
-                    is_private=True,
-                    is_continuous=True,
-                    prepopulate=False,  # just being explicit
-                    transpose=settings.is_transpose,
-                    private_group_display_name=private_group_display_name,
-                )
-        return allowed_private_datasets
 
     def __get_custom_cell_lines_dataset_config(self):
         """

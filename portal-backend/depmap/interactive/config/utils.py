@@ -75,8 +75,6 @@ def get_dataset_label(dataset_id) -> str:
     """
     Returns label of dataset
     """
-    if __get_config().is_legacy_private_dataset(dataset_id):
-        log_legacy_private_dataset_access("get_dataset_label", dataset_ids=[dataset_id])
     return __get_config().get(dataset_id).label
 
 
