@@ -1,7 +1,6 @@
 from flask import Blueprint
 from flask_restplus import Resource
 
-from depmap.access_control.api import namespace as access_control_namespace
 from depmap.api.models import ApiWithUrlScheme
 from depmap.celery_task.api import namespace as celery_namespace
 from depmap.download.api import namespace as download_namespace
@@ -33,7 +32,6 @@ api.add_namespace(context_explorer_namespace)
 api.add_namespace(health_check_namespace)
 api.add_namespace(celery_namespace)
 api.add_namespace(download_namespace)
-api.add_namespace(access_control_namespace)
 api.add_namespace(dataset_manager_namespace)
 
 

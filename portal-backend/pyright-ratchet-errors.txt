@@ -2,7 +2,6 @@ access_control_config.py: error: "GroupAuthConfig" is not defined (reportUndefin
 api.py: error: "dataset_id" is possibly unbound (reportPossiblyUnboundVariable)
 api.py: error: Argument of type "Literal['COMPUTE_RESULTS_ROOT']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
 api.py: error: Argument of type "Literal['DOWNLOADS_KEY']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
-api.py: error: Argument of type "Literal['ENABLED_FEATURES']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
 api.py: error: Argument of type "Literal['SHOW_TAIGA_IN_BULK_DOWNLOADS']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
 api.py: error: Argument of type "Literal['WEBAPP_DATA_DIR']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
 api.py: error: Cannot access member "delay" for type "function"
