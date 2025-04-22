@@ -33,7 +33,6 @@ from depmap.settings.shared import (
 )
 from depmap.taiga_id.models import TaigaAlias
 from depmap.taiga_id.utils import get_taiga_client
-from depmap.user_uploads.tasks import _upload_transient_csv
 from depmap.utilities.filename_utils import get_base_name_without_extension
 from depmap.utilities.hdf5_utils import csv_to_hdf5, df_to_hdf5
 from loader import (

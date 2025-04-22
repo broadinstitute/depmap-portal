@@ -119,9 +119,7 @@ db_load_commands.py: error: Argument of type "Literal['METMAP_500_TAIGA_ID']" ca
 db_load_commands.py: error: Argument of type "Literal['NONSTANDARD_DATA_DIR']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
 db_load_commands.py: error: Argument of type "Literal['RESOURCES_DATA_PATH']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
 db_load_commands.py: error: Argument of type "Literal['S3_DIR']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
-db_load_commands.py: error: Argument of type "Literal['SAMPLE_DATA_DIR']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
 db_load_commands.py: error: Argument of type "Literal['WEBAPP_DATA_DIR']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
-db_load_commands.py: error: Argument of type "None" cannot be assigned to parameter "task" of type "Task" in function "_upload_transient_csv"
 db_load_commands.py: error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
 df_test_utils.py: error: Argument of type "Literal['LOADER_DATA_DIR']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
 df_test_utils.py: error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
@@ -361,7 +359,6 @@ tasks.py: error: Argument of type "ArrayLike" cannot be assigned to parameter "c
 tasks.py: error: Argument of type "Literal['COMPUTE_RESULTS_ROOT']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
 tasks.py: error: Argument of type "Literal['NONSTANDARD_DATA_DIR']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
 tasks.py: error: Argument of type "list[Unknown]" cannot be assigned to parameter "gene_ids" of type "MutationTableSpec" in function "get_subsetted_mutations_df_by_ids"
-tasks.py: error: Could not access item in TypedDict
 tasks.py: error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
 tda_loader.py: error: "dataset_id" is not a known member of "None" (reportOptionalMemberAccess)
 tda_loader.py: error: "groups" is not a known member of "None" (reportOptionalMemberAccess)
@@ -472,7 +469,6 @@ test_run_custom_analysis_missing_row_matrix_index.py: error: Argument of type "l
 test_tasks.py: error: "__getitem__" method not defined on type "Datatype" (reportIndexIssue)
 test_tasks.py: error: Argument missing for parameter "self" (reportCallIssue)
 test_tasks.py: error: Argument missing for parameter "single_column" (reportCallIssue)
-test_tasks.py: error: Argument missing for parameter "taiga_id" (reportCallIssue)
 test_tasks.py: error: Argument of type "Group | Dataset | Datatype | Unknown" cannot be assigned to parameter "__iterable" of type "Iterable[_T@list]" in function "__init__"
 test_tasks.py: error: Argument of type "Group | Dataset | Datatype" cannot be assigned to parameter "__iterable" of type "Iterable[_T@list]" in function "__init__"
 test_tasks.py: error: Cannot access member "entity_id" for type "GeneFactory"

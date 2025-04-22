@@ -25,7 +25,6 @@ import celery
 from flask import current_app, url_for
 from depmap.compute.celery import app
 from depmap.cell_line.models import CellLine
-from depmap.taiga_id.utils import get_taiga_client, get_taiga_id_parts
 from depmap.interactive.nonstandard.models import (
     NonstandardMatrix,
     CellLineNameType,
@@ -40,7 +39,6 @@ from depmap.user_uploads.utils import (
 from depmap.access_control import (
     PUBLIC_ACCESS_GROUP,
 )
-from loader.taiga_id_loader import _ensure_canonical_id_stored
 
 
 def update_state(

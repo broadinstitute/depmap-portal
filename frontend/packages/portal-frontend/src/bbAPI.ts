@@ -32,7 +32,6 @@ import { Trace } from "src/trace";
 import {
   UploadTask,
   UploadTaskUserError,
-  UserUploadArgs,
 } from "@depmap/user-upload";
 import { encodeParams } from "@depmap/utils";
 
