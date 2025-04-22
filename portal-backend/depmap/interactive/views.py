@@ -761,7 +761,6 @@ def add_custom_taiga_dataset():
 @blueprint.route("/api/dataset/add-csv-one-row", methods=["POST"])
 @csrf_protect.exempt
 def add_custom_csv_one_row_dataset():
-    # TODO: delete this?
     """
     Add a custom csv in the format
         cell line, value
@@ -792,7 +791,6 @@ def add_custom_csv_one_row_dataset():
 @blueprint.route("/api/dataset/add-csv", methods=["POST"])
 @csrf_protect.exempt
 def add_custom_csv_dataset():
-    # TODO: delete this?
     display_name = request.form.get("displayName")
     units = request.form.get("units")
     transposed = request.form.get("transposed").lower() == "true"

@@ -19,8 +19,6 @@ from flask.json import JSONEncoder
 from werkzeug.routing import RequestRedirect
 
 from depmap.access_control import initialize_request_user, load_auth_config_for_app
-from depmap.access_control.api import Private as AccessControlRESTResource
-from depmap.access_control.api import namespace as access_control_namespace
 from depmap.access_control.views import blueprint as access_control_blueprint
 from depmap.access_control.utils.get_authorizations import is_current_user_an_admin
 from depmap.api.views import blueprint as api_blueprint
@@ -375,10 +373,6 @@ def register_blueprints(app: Flask):
 
     saved_handlers = app.handle_exception, app.handle_user_exception
     app.register_blueprint(api_blueprint)
-
-    with app.app_context():
-        if not app.config["ENABLED_FEATURES"].access_control_and_private_resources:
-            access_control_namespace.hide(AccessControlRESTResource)
 
     if app.config["DEBUG"]:
         # RESTplus installs an error handler which will return a simple json error message on any exceptions.
