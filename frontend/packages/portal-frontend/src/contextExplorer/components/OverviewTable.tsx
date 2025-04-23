@@ -161,7 +161,7 @@ function OverviewTable(props: OverviewTableProps) {
     },
   ];
 
-  let defaultColumns = [
+  const defaultColumns = [
     "cellLineDisplayName",
     "lineage",
     "primaryDisease",
