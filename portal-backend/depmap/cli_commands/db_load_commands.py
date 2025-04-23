@@ -34,10 +34,6 @@ from depmap.settings.shared import (
 from depmap.taiga_id.models import TaigaAlias
 from depmap.taiga_id.utils import get_taiga_client
 from depmap.user_uploads.tasks import _upload_transient_csv
-from depmap.user_uploads.utils import (
-    delete_private_datasets,
-    get_user_upload_records,
-)
 from depmap.utilities.filename_utils import get_base_name_without_extension
 from depmap.utilities.hdf5_utils import csv_to_hdf5, df_to_hdf5
 from loader import (
@@ -54,7 +50,6 @@ from loader import (
     global_search_loader,
     match_related_loader,
     nonstandard_loader,
-    nonstandard_private_loader,
     str_profile_loader,
     taiga_id_loader,
     tda_loader,
@@ -935,9 +930,6 @@ def _load_real_data(
     # load taiga aliases for everything else. this needs to happen after Datasets, TabularDatasets, and NonstandardDatasets are loaded
     db.session.commit()  # flush first, anything previously added
 
-    if current_app.config["ENABLED_FEATURES"].private_datasets:
-        synchronize_private_datasets(checkpoint)
-
     with checkpoint("relabel-new-datasets") as needed:
         if needed:
             _relabel_new_datasets_hack()
@@ -982,34 +974,6 @@ def set_display_name(taiga_client, dataset_name, taiga_id, display_name):
         ), f"When trying to update display_label of {dataset_name} to {display_name}, taiga_ids did not match expected value (datset taiga id was {ds.taiga_id} but expected {taiga_id})"
         ds.display_name = display_name
 
-
-def synchronize_private_datasets(checkpoint):
-    private_datasets_map_df = get_user_upload_records()
-    # Delete datasets that have been deleted by a user since the db build
-    # This is needed if we are doing a deploy without a clean build
-    all_private_dataset_metadata = PrivateDatasetMetadata.get_all()
-    dataset_ids_to_keep = [x.dataset_id for x in private_datasets_map_df]
-    dataset_ids_to_delete = [
-        pdm.dataset_id
-        for pdm in all_private_dataset_metadata
-        if pdm.dataset_id not in dataset_ids_to_keep
-    ]
-    if len(dataset_ids_to_delete) > 0:
-        log.info(f"Deleting private datasets {dataset_ids_to_delete}")
-        delete_private_datasets(dataset_ids_to_delete)
-    for row in private_datasets_map_df:
-        with checkpoint(f"private-{row.dataset_id}") as needed:
-            if needed:
-                log.info("Adding private dataset: %s", row.display_name)
-                private_dataset_metadata = PrivateDatasetMetadata.get_by_dataset_id(
-                    row.dataset_id, must=False
-                )
-                if private_dataset_metadata is None:
-                    nonstandard_private_loader.load_private_dataset_from_df_row(row)
-
-    with transaction():
-        with assume_user("anonymous"):
-            global_search_loader.load_global_search_index()
 
 
 def _load_nonstandard_noncustom_datasets(nonstandard_datasets):
@@ -1385,17 +1349,6 @@ def load_sample_data(
                     )
 
         ensure_all_max_min_loaded()
-
-        if current_app.config["ENABLED_FEATURES"].private_datasets:
-            print("Adding private datasets")
-            private_datasets_map_df = get_user_upload_records()
-            for row in private_datasets_map_df:
-                if "canary" not in row.display_name.lower():
-                    print(
-                        f"Skipping {row.display_name} because it doesn't have the word canary in it (so probably not a test upload)"
-                    )
-                    continue
-                nonstandard_private_loader.load_private_dataset_from_df_row(row)
 
         # create a canary custom dataset for dev
         # just as a warning of custom dataset leakage

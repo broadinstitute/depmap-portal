@@ -5,8 +5,7 @@ They take in any input that the main depmap thread sends (usually from an endpoi
 They return the dataset id of the uploaded dataset, as well as any warnings about the dataset
     E.g. a warning containing the cell lines that were not recognized
 
-The three entry point functions here are
-    upload_private
+The two entry point functions here are
     upload_transient_csv
     upload_transient_taiga
 
@@ -19,40 +18,27 @@ Some decisions about user upload datasets:
 
 import uuid
 import os
-import io
-import datetime
 from depmap.enums import DataTypeEnum
 import pandas as pd
 from math import isnan
 from typing import Any, List, Dict, Optional
-from werkzeug import FileStorage
-from werkzeug.utils import secure_filename
 import celery
 from flask import current_app, url_for
 from depmap.compute.celery import app
 from depmap.cell_line.models import CellLine
 from depmap.taiga_id.utils import get_taiga_client, get_taiga_id_parts
-from depmap.interactive.nonstandard import nonstandard_utils
 from depmap.interactive.nonstandard.models import (
     NonstandardMatrix,
     CellLineNameType,
     CustomDatasetConfig,
-    PrivateDatasetMetadata,
 )
 from depmap.utilities import hdf5_utils
 from depmap.utilities.hashing_utils import hash_df
 from depmap.utilities.exception import UserError
 from depmap.user_uploads.utils import (
     get_task,
-    get_user_upload_records,
-    update_user_upload_records,
-    write_user_upload_file,
-    UserUploadRecord,
 )
 from depmap.access_control import (
-    assume_user,
-    get_visible_owner_id_configs,
-    is_current_user_an_admin,
     PUBLIC_ACCESS_GROUP,
 )
 from loader.taiga_id_loader import _ensure_canonical_id_stored
@@ -72,69 +58,6 @@ def update_state(
         meta["message"] = message
 
     task.update_state(state=state, meta=meta)
-
-
-@app.task(bind=True)
-def upload_private(
-    self: celery.Task,
-    label: str,
-    units: str,
-    csv_path: str,
-    data_file_name: str,
-    content_type: str,
-    is_transpose: bool,
-    user_id: str,
-    group_id: int,
-    data_type_for_upload: Optional[str] = DataTypeEnum.user_upload.name,
-):
-    update_state(self, state="PROGRESS")
-    with assume_user(user_id):
-        # check that user belongs to group
-        update_state(self, message="Validating dataset settings")
-        validate_private_metadata(group_id)
-        validate_common_metadata(label, units)
-
-        update_state(self, message="Validating dataset format")
-        df = validate_csv_format(csv_path)
-
-        dataset_uuid = str(uuid.uuid4())
-        cell_line_name_type = get_cell_line_name_type(df, is_transpose)
-        config = format_config(
-            label, units, is_transpose, data_type=data_type_for_upload
-        )
-        # update state to validating cell lines...
-
-        # saying validating cell lines, because it seems a little strange to say "adding to the portal" here, then saving to cloud storage later
-        update_state(self, message="Validating cell lines")
-        # this loading of nonstandard matrix HAS to come after private metadata has been validated aka group access has been validated
-        # we also decided that we do not want to mutate the dataframe
-        warnings = validate_cell_lines_and_register_as_nonstandard_matrix(
-            df, dataset_uuid, cell_line_name_type, config, group_id
-        )
-
-        update_state(self, message="Saving file to cloud storage")
-        # fixme this FileStorage construction is a hack, to just put things in a format that the existing private code wnats
-        with open(csv_path, "rb") as data_file_fd:
-            add_private_config_and_upload_to_bucket(
-                data_file_fd,
-                data_file_name,
-                content_type,
-                dataset_uuid,
-                cell_line_name_type,
-                config,
-                group_id,
-            )
-        return {
-            "datasetId": dataset_uuid,
-            "warnings": warnings,
-            "forwardingUrl": url_for(
-                "data_explorer_2.view_data_explorer_2",
-                # Data Explorer 2 links require an xFeature (it does not
-                # support linking to a partially defined plot)
-                xFeature=nonstandard_utils.get_random_row_name(dataset_uuid),
-                xDataset=dataset_uuid,
-            ),
-        }  # fixme, this is not the actual contract. return warnings and what??
 
 
 # Split out from task because we also use it in the loader
@@ -237,15 +160,6 @@ def upload_transient_taiga(
             defaultCustomAnalysisToX=True,
         ),
     }
-
-
-def validate_private_metadata(group_id):
-    """
-    Note: This needs to be called in the context of `with assume_user(user_id):`
-    """
-    visible_owner_ids = get_visible_owner_id_configs(write_access=True)
-    if group_id not in visible_owner_ids.keys():
-        raise UserError("Invalid input: You do not have access to this group")
 
 
 def validate_transient_taiga_metadata(taiga_id: str):
@@ -525,62 +439,6 @@ def convert_to_hdf5(df):
         hdf5_utils.df_to_hdf5(df, local_file_path)
 
     return local_file_name
-
-
-import typing
-
-
-def add_private_config_and_upload_to_bucket(
-    data_file: typing.IO,
-    data_file_name: str,
-    content_type: str,
-    dataset_uuuid: str,
-    cell_line_name_type,
-    config,
-    group_id,
-):
-    """
-    Note: This needs to be called in the context of `with assume_user(user_id):`
-    """
-    data_file.seek(0)
-
-    assert data_file_name is not None
-
-    # update_state(message="Saving file to cloud storage", warnings=warnings)
-    visible_owner_ids = get_visible_owner_id_configs()
-
-    file_name = "{}_{}_{}.csv".format(
-        visible_owner_ids[group_id].display_name,
-        secure_filename(os.path.splitext(data_file_name)[0]),
-        datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S"),
-    )
-
-    uploaded_path = write_user_upload_file(file_name, data_file, content_type)
-
-    # add private dataset metadata row
-    private_dataset = PrivateDatasetMetadata.add(
-        uuid=dataset_uuuid,
-        display_name=config["label"],
-        units=config["units"],
-        feature_name=config["feature_name"],
-        is_transpose=config["transpose"],
-        cell_line_name_type=cell_line_name_type,
-        csv_path=uploaded_path,
-        owner_id=group_id,
-        data_type=config["data_type"].name,
-        priority=None,
-    )
-
-    private_dataset_metadata_dict = private_dataset.to_dict()
-
-    # add to private dataset map
-    df = get_user_upload_records()
-
-    df.append(UserUploadRecord(**private_dataset_metadata_dict))
-    update_user_upload_records(df)
-
-    # fixme do something better than passing data_file, modify load private dataset metadata to a function in the loader that just calls db add, without the csv download from bucket
-    # and thus move this direct db access into a loader file
 
 
 def add_transient_config(dataset_uuid, config):

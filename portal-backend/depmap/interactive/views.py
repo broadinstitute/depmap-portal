@@ -791,7 +791,6 @@ def add_custom_csv_one_row_dataset():
 @blueprint.route("/api/dataset/add-csv", methods=["POST"])
 @csrf_protect.exempt
 def add_custom_csv_dataset():
-
     display_name = request.form.get("displayName")
     units = request.form.get("units")
     transposed = request.form.get("transposed").lower() == "true"
@@ -808,6 +807,8 @@ def add_custom_csv_dataset():
     return jsonify(response)
 
 
+# Do not delete: this is used in the PRISM portal to link to Data Explorer.
+# As a result, you won't find any references to this inside the depmap-portal repo, only in the PRISM portal.
 @blueprint.route("/from-csv-url")
 def download_csv_and_view_interactive():
     """Download a CSV from a link (from a white-listed domain), load the CSV as a

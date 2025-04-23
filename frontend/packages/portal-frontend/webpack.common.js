@@ -17,7 +17,6 @@ module.exports = {
     datasetManager: "./src/apps/datasetManager.tsx",
     groupsManager: "./src/apps/groupsManager.tsx",
     download: "./src/apps/download.tsx",
-    privateDatasets: "./src/apps/privateDatasets.tsx",
     tdaSummary: "./src/apps/tdaSummary.tsx",
     genePage: "./src/apps/genePage.tsx",
     compoundDashboard: "./src/apps/compoundDashboard.tsx",

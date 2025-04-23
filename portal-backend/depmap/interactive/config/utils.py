@@ -283,10 +283,6 @@ def has_opaque_features(dataset_id):
     return __get_config().get(dataset_id).has_opaque_features
 
 
-def get_private_datasets():
-    return __get_config().get_allowed_private_datasets()
-
-
 def get_all_original_taiga_ids():
     """
     Warning: This is getting the /original/ taiga ids. The web app should use the .taiga_id property, which gets canonical

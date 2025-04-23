@@ -2,14 +2,13 @@
 """Defines fixtures available to all tests."""
 
 import os
-import re
+import pytest
 import shutil
+import pandas as pd
+from flask import current_app
 from collections import defaultdict
 from unittest.mock import MagicMock
 from dataclasses import asdict
-
-from breadbox_facade import BBClient
-import depmap
 
 from depmap.access_control import PUBLIC_ACCESS_GROUP
 from depmap.access_control.sql_rewrite import (
@@ -30,7 +29,6 @@ from depmap.enums import DependencyEnum
 from depmap.interactive.config.models import InteractiveConfig
 from depmap.settings.settings import TestConfig
 from depmap.settings.shared import DATASET_METADATA
-from depmap.utilities import hdf5_utils
 from loader import (
     cell_line_loader,
     celligner_loader,
@@ -52,7 +50,6 @@ from tests.depmap.interactive.fixtures import (
 )
 from tests.depmap.user_uploads.user_upload_fixtures import UserUploadFixture
 from tests.factories import CustomCellLineGroupFactory, TabularDatasetFactory
-from tests.private_dataset_fixtures import *  # this makes these fixtures available to use. fixme better organization
 from tests.utilities.df_test_utils import load_sample_cell_lines
 from tests.utilities.override_fixture import overridable_fixture
 

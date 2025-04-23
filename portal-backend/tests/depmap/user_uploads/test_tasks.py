@@ -1,5 +1,4 @@
 import os
-from depmap.enums import DataTypeEnum
 import pytest
 import pandas as pd
 from typing import Any
@@ -7,21 +6,14 @@ from dataclasses import dataclass, asdict
 
 from depmap import data_access
 from depmap.user_uploads.tasks import (
-    upload_private,
     upload_transient_csv,
     upload_transient_taiga,
     convert_to_hdf5,
     validate_df_indices,
 )
-from depmap.access_control.utils import (
-    get_current_user_for_access_control,
-    assume_user,
-    PUBLIC_ACCESS_GROUP,
-)
 from depmap.interactive.config.models import Config
 from depmap.interactive.nonstandard.models import (
     NonstandardMatrix,
-    PrivateDatasetMetadata,
     CustomDatasetConfig,
     CellLineNameType,
 )
@@ -30,7 +22,6 @@ from depmap.utilities.exception import UserError
 from tests.conftest import InteractiveConfigFakeMutationsDownload
 from tests.factories import CellLineFactory
 from tests.depmap.user_uploads.user_upload_fixtures import UserUploadFixture
-from tests.utilities.access_control import get_canary_group_id
 
 
 @dataclass
@@ -52,132 +43,6 @@ class TransientTaigaArgs(TransientArgs):
 
     def to_dict(self) -> dict:
         return asdict(self)
-
-
-def test_upload_private(
-    empty_db_mock_downloads,
-    mock_celery_task_update_state,
-    upload_private_dataset_setup,
-):
-    """
-    Largely copied from the old private dataset upload test
-    Make sure to test that
-        df is correctly transposed
-        NonstandardMatrix object exists
-        Using the returned dataset id, can access interactive_utils methods like get_row_of_values
-        PrivateDatasetMetadata object exists
-        exists in mock bucket
-
-    upload_private_dataset_setup is a fixture with setup like mocking the google bucket
-    """
-    fixture = UserUploadFixture()
-    CellLineFactory(
-        depmap_id=fixture.cell_line
-    )  # the only cell line in the canary dataset
-    empty_db_mock_downloads.session.flush()
-
-    with assume_user("someone@canary.com"):
-        assert len(NonstandardMatrix.query.all()) == 0
-        assert len(PrivateDatasetMetadata.query.all()) == 0
-        assert len(CustomDatasetConfig.query.all()) == 0
-        upload_private(
-            label="Canary",
-            units="chirps",
-            csv_path=fixture.file_path,
-            data_file_name=fixture.file_name,
-            content_type=None,
-            is_transpose=True,
-            user_id=get_current_user_for_access_control(),
-            group_id=get_canary_group_id(),
-            data_type_for_upload=DataTypeEnum.crispr.name,
-        )
-
-        assert len(NonstandardMatrix.query.all()) == 1
-        assert len(PrivateDatasetMetadata.query.all()) == 1
-        assert len(CustomDatasetConfig.query.all()) == 0  # does not add to custom
-
-        private_dataset_metadata = PrivateDatasetMetadata.query.all()[0]
-        dataset_id = private_dataset_metadata.dataset_id
-        assert NonstandardMatrix.query.all()[0].nonstandard_dataset_id == dataset_id
-
-        print(len(PrivateDatasetMetadata.query.all()))
-        print(len(PrivateDatasetMetadata.query.all()))
-
-        assert data_access.get_row_of_values(dataset_id, fixture.row_name).equals(
-            fixture.expected_row_of_values.astype(dtype="float32")
-        )
-
-        assert dataset_id in data_access.get_private_datasets()
-
-        # fixme assert correctly uploaded to mock bucket, and correctly added to master map
-
-    # Access control is the most important failure mode to test
-    # User not in group should not be able to access dataset
-    assert dataset_id not in data_access.get_private_datasets()
-
-    with pytest.raises(UserError):
-        # User not in group should not be able to upload a dataset with that group
-        upload_private(
-            label="Canary",
-            units="chirps",
-            csv_path=fixture.file_path,
-            data_file_name=fixture.file_name,
-            content_type=None,
-            is_transpose=True,
-            user_id=get_current_user_for_access_control(),
-            group_id=get_canary_group_id(),
-        )
-
-
-def test_upload_to_public_group(
-    empty_db_mock_downloads,
-    mock_celery_task_update_state,
-    upload_private_dataset_setup,
-):
-    """
-    Largely copied from test_upload_private
-    Make sure to test that uploads to public group as a normal user are rejected but admins are accepted
-    """
-    fixture = UserUploadFixture()
-    CellLineFactory(
-        depmap_id=fixture.cell_line
-    )  # the only cell line in the canary dataset
-    empty_db_mock_downloads.session.flush()
-
-    assert len(NonstandardMatrix.query.all()) == 0
-    assert len(PrivateDatasetMetadata.query.all()) == 0
-    assert len(CustomDatasetConfig.query.all()) == 0
-
-    with pytest.raises(UserError):
-        upload_private(
-            label="Canary",
-            units="chirps",
-            csv_path=fixture.file_path,
-            data_file_name=fixture.file_name,
-            content_type=None,
-            is_transpose=True,
-            user_id="someone@canary.com",
-            group_id=PUBLIC_ACCESS_GROUP,
-        )
-
-    assert len(NonstandardMatrix.query.all()) == 0
-    assert len(PrivateDatasetMetadata.query.all()) == 0
-    assert len(CustomDatasetConfig.query.all()) == 0
-
-    upload_private(
-        label="Canary",
-        units="chirps",
-        csv_path=fixture.file_path,
-        data_file_name=fixture.file_name,
-        content_type=None,
-        is_transpose=True,
-        user_id="dev@sample.com",  # in settings.py access_contorl_config.py this is set up as an admin account for the TestConfig
-        group_id=PUBLIC_ACCESS_GROUP,
-    )
-
-    assert len(NonstandardMatrix.query.all()) == 1
-    assert len(PrivateDatasetMetadata.query.all()) == 1
-    assert len(CustomDatasetConfig.query.all()) == 0  # does not add to custom
 
 
 def test_upload_transient_csv(empty_db_mock_downloads, mock_celery_task_update_state):

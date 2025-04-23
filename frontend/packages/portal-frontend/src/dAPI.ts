@@ -488,24 +488,6 @@ export class DepmapApi {
     );
   }
 
-  uploadPrivateDataset(data: UserUploadArgs): Promise<UploadTask> {
-    const queryParams = {
-      displayName: data.displayName,
-      units: data.units,
-      ownerId: data.selectedGroup,
-      transposed: data.transposed,
-      dataType: data.selectedDataType,
-    };
-    return this._postMultipart<UploadTask>(
-      `/api/upload/private?${encodeParams(queryParams)}`,
-      { uploadFile: data.uploadFile }
-    );
-  }
-
-  getPrivateDatasetUploadStatus(taskId: string): Promise<UploadTask> {
-    return this._fetch(`/private_dataset/upload_status/${taskId}`);
-  }
-
   entityLookup(
     datasetId: string,
     prefix: string
@@ -971,10 +953,6 @@ export class DepmapApi {
     return this._fetch<CompoundSummaryTableRaw>(
       `/compound_dashboard/summary_table/${datasetId}`
     );
-  }
-
-  deletePrivateDatasets(dataset_ids: Array<string>) {
-    return this._deleteJson("/private_dataset/delete", { dataset_ids });
   }
 
   getEntitySummary(
