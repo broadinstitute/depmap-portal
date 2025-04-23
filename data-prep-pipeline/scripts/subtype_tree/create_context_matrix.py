@@ -225,7 +225,7 @@ def create_context_matrix(
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Create ContextMatrix")
+    parser = argparse.ArgumentParser(description="Create SubtypeMatrix")
     parser.add_argument("model", help="Taiga ID of model table")
     parser.add_argument(
         "molecular_subtypes", help="Taiga ID of Omics Inferred Molecular Subtypes"
