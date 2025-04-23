@@ -172,6 +172,7 @@ export function Story() {
             acc[key][doseCategory][columnNamesToPlotVariables[colName]].push(
               text
             );
+            acc[key][doseCategory]["label"].push(label);
           } else {
             acc[key][doseCategory][columnNamesToPlotVariables[colName]].push(
               value
@@ -272,7 +273,7 @@ export function Story() {
               : Object.keys(volcanoDataForFeatureType)
           }
           dosesToFilter={selectedDoses}
-          volcanoDataForFeatureType={volcanoDataForFeatureType}
+          volcanoDataForFeatureTypes={volcanoDataForFeatureType}
         />
       </div>
 

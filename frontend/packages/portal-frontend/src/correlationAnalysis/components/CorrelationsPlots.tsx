@@ -1,24 +1,24 @@
 import React from "react";
-import * as Plotly from "plotly.js";
-import { VolcanoPlot } from "../../plot/components/VolcanoPlot";
+import { VolcanoData } from "../../plot/models/volcanoPlotModels";
+import CorrelationsPlot from "./CorrelationPlot";
 
 interface CorrelationsPlotsProps {
   featureTypesToShow: string[];
   dosesToFilter: string[];
-  volcanoDataForFeatureType: { [key: string]: any };
+  volcanoDataForFeatureTypes: { [key: string]: { [key: string]: VolcanoData } };
 }
 
 export default function CorrelationsPlots(props: CorrelationsPlotsProps) {
   const {
     featureTypesToShow,
     dosesToFilter,
-    volcanoDataForFeatureType,
+    volcanoDataForFeatureTypes: volcanoDataForFeatureType,
   } = props;
 
   const filteredDosesForFeatureTypeVolcanoData = React.useCallback(
-    (featureTypeVolcanoData) => {
+    (featureTypeVolcanoData: { [key: string]: VolcanoData }) => {
       if (dosesToFilter.length) {
-        const subset = {};
+        const subset: { [key: string]: VolcanoData } = {};
         dosesToFilter.forEach((dose) => {
           subset[dose] = featureTypeVolcanoData[dose];
         });
@@ -28,6 +28,7 @@ export default function CorrelationsPlots(props: CorrelationsPlotsProps) {
     },
     [dosesToFilter]
   );
+
   return (
     <div
       style={{
@@ -37,23 +38,11 @@ export default function CorrelationsPlots(props: CorrelationsPlotsProps) {
         marginBottom: "50px",
       }}
     >
-      {featureTypesToShow.map((featureType) => {
+      {featureTypesToShow.map((featureType, i) => {
         return (
           <div key={featureType + "-plot"}>
-            <header
-              style={{
-                textAlign: "center",
-                fontSize: "18px",
-                backgroundColor: "lightgray",
-              }}
-            >
-              {featureType}
-            </header>
-            <VolcanoPlot
-              Plotly={Plotly}
-              xLabel="Correlation Coefficient"
-              yLabel="q value"
-              bounds={"autosize"}
+            <CorrelationsPlot
+              featureType={featureType}
               data={Object.values(
                 filteredDosesForFeatureTypeVolcanoData(
                   volcanoDataForFeatureType[featureType]
