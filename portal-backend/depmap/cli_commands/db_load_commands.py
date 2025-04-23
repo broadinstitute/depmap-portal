@@ -1077,10 +1077,6 @@ def load_sample_data(
         log.info("Adding compounds")
         compound_loader.load_compounds("sample_data/compound/compounds.csv")
 
-        context_explorer_loader.load_subtype_tree(
-            os.path.join(loader_data_dir, "cell_line/subtype_tree.csv")
-        )
-
         if (
             DependencyDataset.DependencyEnum.Repurposing_secondary_dose
             in dep_datasets_config
