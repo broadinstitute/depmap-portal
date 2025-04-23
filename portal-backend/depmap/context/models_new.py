@@ -241,6 +241,7 @@ class SubtypeContext(Model):
             return None
 
         node_models = {}
+        all_model_ids = []
 
         for node in nodes:
             level_0 = SubtypeContext.get_by_code(node.level_0, must=False)
@@ -248,6 +249,7 @@ class SubtypeContext(Model):
             model_ids = [model.model_id for model in level_0.depmap_model]
             if len(model_ids) > 0:
                 node_models[level_0.subtype_code] = model_ids
+                all_model_ids.extend(model_ids)
 
             if node.level_1:
                 level_1 = SubtypeContext.get_by_code(node.level_1, must=False)
@@ -256,6 +258,7 @@ class SubtypeContext(Model):
                     model_ids = [model.model_id for model in level_1.depmap_model]
                     if len(model_ids) > 0:
                         node_models[level_1.subtype_code] = model_ids
+                        all_model_ids.extend(model_ids)
 
             if node.level_2:
                 level_2 = SubtypeContext.get_by_code(node.level_2, must=False)
@@ -264,6 +267,7 @@ class SubtypeContext(Model):
                     model_ids = [model.model_id for model in level_2.depmap_model]
                     if len(model_ids) > 0:
                         node_models[level_2.subtype_code] = model_ids
+                        all_model_ids.extend(model_ids)
 
             if node.level_3:
                 level_3 = SubtypeContext.get_by_code(node.level_3, must=False)
@@ -272,6 +276,7 @@ class SubtypeContext(Model):
                     model_ids = [model.model_id for model in level_3.depmap_model]
                     if len(model_ids) > 0:
                         node_models[level_3.subtype_code] = model_ids
+                        all_model_ids.extend(model_ids)
 
             if node.level_4:
                 level_4 = SubtypeContext.get_by_code(node.level_4, must=False)
@@ -280,6 +285,7 @@ class SubtypeContext(Model):
                     model_ids = [model.model_id for model in level_4.depmap_model]
                     if len(model_ids) > 0:
                         node_models[level_4.subtype_code] = model_ids
+                        all_model_ids.extend(model_ids)
 
             if node.level_5:
                 level_5 = SubtypeContext.get_by_code(node.level_5, must=False)
@@ -288,12 +294,15 @@ class SubtypeContext(Model):
                     model_ids = [model.model_id for model in level_5.depmap_model]
                     if len(model_ids) > 0:
                         node_models[level_5.subtype_code] = model_ids
+                        all_model_ids.extend(model_ids)
 
-        return node_models
+        return node_models, all_model_ids
 
     @staticmethod
     def get_model_ids_for_other_solid_contexts(
-        subtype_codes_to_filter_out: List[str], tree_type: str
+        subtype_codes_to_filter_out: List[str],
+        tree_type: str,
+        all_sig_models: List[str],
     ) -> Dict[str, str]:
         contexts = (
             db.session.query(SubtypeContext)
@@ -316,7 +325,9 @@ class SubtypeContext(Model):
             cell_line.model_id
             for context in contexts
             for cell_line in context.depmap_model
+            if cell_line.model_id not in all_sig_models
         ]
+
         display_name_series = DepmapModel.get_cell_line_display_names(
             model_ids=list(set(model_ids))
         )
@@ -325,7 +336,9 @@ class SubtypeContext(Model):
 
     @staticmethod
     def get_model_ids_for_other_heme_contexts(
-        subtype_codes_to_filter_out: List[str], tree_type: str
+        subtype_codes_to_filter_out: List[str],
+        tree_type: str,
+        all_sig_models: List[str],
     ) -> Dict[str, str]:
         # Nodes with "MYELOID" or "LYMPHOID" at level 0 are considered "Heme contexts".
         # We want to find the insignficant heme contexts, leaving out branches that
@@ -354,6 +367,7 @@ class SubtypeContext(Model):
             cell_line.model_id
             for context in contexts
             for cell_line in context.depmap_model
+            if cell_line.model_id not in all_sig_models
         ]
         display_name_series = DepmapModel.get_cell_line_display_names(
             model_ids=list(set(model_ids))

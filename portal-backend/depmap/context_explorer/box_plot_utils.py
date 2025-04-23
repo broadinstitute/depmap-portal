@@ -158,14 +158,19 @@ def get_box_plot_data_for_other_category(
     all_sig_context_codes: List[str],
     entity_full_row_of_values,
     tree_type: str,
+    all_sig_models: List[str],
 ) -> BoxData:
     heme_model_id_series = (
         SubtypeContext.get_model_ids_for_other_heme_contexts(
-            subtype_codes_to_filter_out=all_sig_context_codes, tree_type=tree_type
+            subtype_codes_to_filter_out=all_sig_context_codes,
+            tree_type=tree_type,
+            all_sig_models=all_sig_models,
         )
         if category == "heme"
         else SubtypeContext.get_model_ids_for_other_solid_contexts(
-            subtype_codes_to_filter_out=all_sig_context_codes, tree_type=tree_type
+            subtype_codes_to_filter_out=all_sig_context_codes,
+            tree_type=tree_type,
+            all_sig_models=all_sig_models,
         )
     )
 
@@ -237,17 +242,18 @@ def get_branch_subtype_codes_organized_by_code(
     sig_contexts: Dict[str, List[str]], all_sig_context_codes: List[str]
 ):
     branch_contexts = {}
-
+    all_sig_models = []
     for level_0 in sig_contexts.keys():
         child_nodes = SubtypeNode.get_children_using_current_level_code(level_0, 0)
         child_codes = [node.subtype_code for node in child_nodes]
-        branch = SubtypeContext.get_model_ids_for_node_branch(
+        branch, all_model_ids = SubtypeContext.get_model_ids_for_node_branch(
             subtype_codes=child_codes, level_0_subtype_code=level_0
         )
+        all_sig_models.extend(all_model_ids)
 
         branch_contexts[level_0] = branch
 
-    return branch_contexts
+    return branch_contexts, all_sig_models
 
 
 def get_sig_context_dataframe(
@@ -350,7 +356,7 @@ def get_context_plot_box_data(
             "subtype_code"
         ]
 
-        branch_contexts = get_branch_subtype_codes_organized_by_code(
+        branch_contexts, all_sig_models = get_branch_subtype_codes_organized_by_code(
             sig_contexts=sig_contexts_by_level_0,
             all_sig_context_codes=all_sig_context_codes,
         )
@@ -381,6 +387,7 @@ def get_context_plot_box_data(
         all_sig_context_codes=all_sig_context_codes,
         entity_full_row_of_values=entity_full_row_of_values,
         tree_type=tree_type,
+        all_sig_models=all_sig_models,
     )
 
     solid_box_plot_data = get_box_plot_data_for_other_category(
@@ -388,6 +395,7 @@ def get_context_plot_box_data(
         all_sig_context_codes=all_sig_context_codes,
         entity_full_row_of_values=entity_full_row_of_values,
         tree_type=tree_type,
+        all_sig_models=all_sig_models,
     )
 
     significant_selection = (
