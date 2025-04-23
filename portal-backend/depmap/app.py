@@ -93,17 +93,6 @@ from flask_hunter_profile.flask_blueprint import (
 
 log = logging.getLogger(__name__)
 
-ACCESS_CONTROLLED_TABLES = [
-    Dataset.__tablename__,
-    Matrix.__tablename__,
-    RowMatrixIndex.__tablename__,
-    ColMatrixIndex.__tablename__,
-    NonstandardMatrix.__tablename__,
-    ColNonstandardMatrix.__tablename__,
-    RowNonstandardMatrix.__tablename__,
-    PrivateDatasetMetadata.__tablename__,
-]
-
 pd.set_option("mode.use_inf_as_na", False)
 
 
@@ -233,13 +222,6 @@ def create_app(config_object):
     register_access_control(app)
 
     return app
-
-
-def get_table_mapping_for_access_controls():
-    table_mapping = {}
-    for table_name in ACCESS_CONTROLLED_TABLES:
-        table_mapping[table_name] = "{}_write_only".format(table_name)
-    return table_mapping
 
 
 def register_extensions(app: Flask):
