@@ -126,7 +126,7 @@ function CollapsibleBoxPlots({
       if (hemePlotData.data.length > 0) {
         otherData.push({
           name:
-            hemePlotData.data.length == 0 || solidPlotData.data.length == 0
+            hemePlotData.data.length === 0 || solidPlotData.data.length === 0
               ? "Other"
               : hemePlotData.label,
           hoverLabels: hemePlotData.cell_line_display_names,
@@ -139,7 +139,7 @@ function CollapsibleBoxPlots({
 
       if (solidPlotData.data.length > 0) {
         otherData.push({
-          name: hemePlotData.data.length == 0 ? "Other" : solidPlotData.label,
+          name: hemePlotData.data.length === 0 ? "Other" : solidPlotData.label,
           hoverLabels: solidPlotData.cell_line_display_names,
           xVals: solidPlotData.data,
           color: InsignificantColor,
