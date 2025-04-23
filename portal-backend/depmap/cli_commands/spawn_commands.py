@@ -4,8 +4,6 @@ import subprocess
 from flask.cli import with_appcontext
 from flask import current_app
 
-from depmap.app import enable_access_controls
-
 
 @click.command("webpack")
 def webpack():
@@ -28,14 +26,6 @@ def run_worker(name, celery_args):
         celery_args = ["--max-tasks-per-child", "1"]
     print(f"Starting worker named {name} with args {celery_args}")
     _run_worker(celery_args)
-
-
-def _run_worker(extra_args=[]):
-    enable_access_controls()
-    main(
-        ["", "-A", "depmap.compute.worker.app", "worker", "-l", "info"]
-        + list(extra_args)
-    )
 
 
 @click.command("run_dev_worker")

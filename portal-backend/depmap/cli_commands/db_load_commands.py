@@ -18,12 +18,11 @@ from flask.cli import with_appcontext
 
 from depmap.access_control import PUBLIC_ACCESS_GROUP, all_records_visible
 from depmap.access_control.utils.initialize_current_auth import assume_user
-from depmap.app import enable_access_controls, setup_logging
+from depmap.app import setup_logging
 from depmap.database import checkpoint, transaction
 from depmap.dataset.models import Dataset, DependencyDataset
 from depmap.enums import BiomarkerEnum, DependencyEnum
 from depmap.extensions import db
-from depmap.interactive.nonstandard.models import PrivateDatasetMetadata
 from depmap.settings.dev import additional_dev_metadata
 from depmap.settings.shared import (
     DATASET_METADATA,
@@ -147,10 +146,7 @@ def _setup_logging():
 
 
 def db_create_all():
-    from depmap.app import create_filtered_views
-
     db.create_all()
-    create_filtered_views()
 
 
 @click.command("recreate_dev_db")
@@ -427,7 +423,6 @@ def _load_real_data(
     checkpoint: Callable,
     process_downloads: bool,
 ):
-    enable_access_controls()
 
     taiga_client = get_taiga_client()
 
@@ -1020,7 +1015,6 @@ def load_sample_data(
         this (minus the taiga parts, which is currently only nonstandard and celligner)
     :return:
     """
-    enable_access_controls()
 
     if dep_datasets_config is None:
         dep_datasets_config = [
@@ -1082,6 +1076,10 @@ def load_sample_data(
 
         log.info("Adding compounds")
         compound_loader.load_compounds("sample_data/compound/compounds.csv")
+
+        context_explorer_loader.load_subtype_tree(
+            os.path.join(loader_data_dir, "cell_line/subtype_tree.csv")
+        )
 
         if (
             DependencyDataset.DependencyEnum.Repurposing_secondary_dose

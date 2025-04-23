@@ -17,6 +17,7 @@ def get_download_list() -> List[DownloadRelease]:
     # now these releases may include things that the current user is not allowed to see, so filter the list
     owner_ids = set(get_visible_owner_id_configs().keys())
 
+    # TODO: not sure what an access controlled release would be? I assume I don't need to worry about this?
     releases: List[DownloadRelease] = [
         release for release in download_releases if release.owner_id in owner_ids
     ]

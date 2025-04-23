@@ -11,15 +11,7 @@ from unittest.mock import MagicMock
 from dataclasses import asdict
 
 from depmap.access_control import PUBLIC_ACCESS_GROUP
-from depmap.access_control.sql_rewrite import (
-    create_filtered_views,
-    replace_filtered_views,
-)
-from depmap.app import (
-    create_app,
-    enable_access_controls,
-    get_table_mapping_for_access_controls,
-)
+from depmap.app import create_app
 
 from depmap.data_explorer_2.utils import clear_cache
 from depmap.database import db as _db
@@ -189,12 +181,6 @@ class DefaultDictMock(defaultdict):
         return True
 
 
-def drop_views(app):
-    with app.app_context():
-        c = _db.session.connection()
-        replace_filtered_views(c, get_table_mapping_for_access_controls())
-
-
 @pytest.fixture(scope="function")
 def _empty_db_base(app, mock_ask_taiga_for_canonical_taiga_id):
     """
@@ -210,10 +196,6 @@ def _empty_db_base(app, mock_ask_taiga_for_canonical_taiga_id):
     _db.app = app
     with app.app_context():
         _db.create_all()
-        c = _db.session.connection()
-        create_filtered_views(c, get_table_mapping_for_access_controls())
-        enable_access_controls()
-        c.close()
 
     yield _db
 
@@ -222,7 +204,6 @@ def _empty_db_base(app, mock_ask_taiga_for_canonical_taiga_id):
     _db.session.close()
 
     # This is necessary for tests to run
-    drop_views(app)
     _db.drop_all()
 
 
