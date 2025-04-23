@@ -120,10 +120,15 @@ function CollapsibleBoxPlots({
       }
 
       const hemePlotData = boxPlotData.insignificant_heme_data;
+      const solidPlotData = boxPlotData.insignificant_solid_data;
+
       const otherData = [];
       if (hemePlotData.data.length > 0) {
         otherData.push({
-          name: hemePlotData.label,
+          name:
+            hemePlotData.data.length == 0 || solidPlotData.data.length == 0
+              ? "Other"
+              : hemePlotData.label,
           hoverLabels: hemePlotData.cell_line_display_names,
           xVals: hemePlotData.data,
           color: InsignificantColor,
@@ -132,10 +137,9 @@ function CollapsibleBoxPlots({
         });
       }
 
-      const solidPlotData = boxPlotData.insignificant_solid_data;
       if (solidPlotData.data.length > 0) {
         otherData.push({
-          name: solidPlotData.label,
+          name: hemePlotData.data.length == 0 ? "Other" : solidPlotData.label,
           hoverLabels: solidPlotData.cell_line_display_names,
           xVals: solidPlotData.data,
           color: InsignificantColor,
