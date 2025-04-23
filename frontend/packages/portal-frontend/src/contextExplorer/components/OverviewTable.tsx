@@ -161,6 +161,22 @@ function OverviewTable(props: OverviewTableProps) {
     },
   ];
 
+  let defaultColumns = [
+    "cellLineDisplayName",
+    "lineage",
+    "primaryDisease",
+    "level0",
+    "level1",
+    "level2",
+    "level3",
+    "crispr",
+    "rnai",
+    "wgs",
+    "wes",
+    "rna_seq",
+    "prismRepurposing",
+  ];
+
   if (enabledFeatures.context_explorer_prerelease_datasets) {
     columns.push({
       accessor: "prismOncRef",
@@ -168,6 +184,8 @@ function OverviewTable(props: OverviewTableProps) {
       maxWidth: 90,
       disableFilters: true,
     });
+
+    defaultColumns.push("prismOncRef");
   }
 
   return (
@@ -181,22 +199,7 @@ function OverviewTable(props: OverviewTableProps) {
             allowDownloadFromTableDataWithMenuFileName="context-explorer-overview.csv"
             columns={columns}
             getTrProps={getTrProps}
-            defaultColumnsToShow={[
-              "cellLineDisplayName",
-              "lineage",
-              "primaryDisease",
-              "level0",
-              "level1",
-              "level2",
-              "level3",
-              "crispr",
-              "rnai",
-              "wgs",
-              "wes",
-              "rna_seq",
-              "prismOncRef",
-              "prismRepurposing",
-            ]}
+            defaultColumnsToShow={defaultColumns}
           />
         </div>
       </div>
