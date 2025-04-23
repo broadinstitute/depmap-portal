@@ -27,6 +27,12 @@ def run_worker(name, celery_args):
     print(f"Starting worker named {name} with args {celery_args}")
     _run_worker(celery_args)
 
+def _run_worker(extra_args=[]):
+    main(
+        ["", "-A", "depmap.compute.worker.app", "worker", "-l", "info"]
+        + list(extra_args)
+    )
+
 
 @click.command("run_dev_worker")
 @with_appcontext
