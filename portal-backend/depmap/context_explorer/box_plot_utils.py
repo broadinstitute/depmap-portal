@@ -1,4 +1,6 @@
 import dataclasses
+from functools import partial
+from operator import contains
 import re
 from typing import Any, Dict, List, Literal, Optional
 from depmap.cell_line.models_new import DepmapModel
@@ -59,9 +61,13 @@ def get_box_plot_card_data(
     other_lineage_plot_model_ids = []
 
     child_codes = model_ids_by_code.keys()
+    sig_child_codes = [code for code in child_codes if code in all_sig_context_codes]
 
     # Sort significant codes to the front
-    sorted_child_codes = [x for _, x in sorted(zip(all_sig_context_codes, child_codes))]
+    s = set(sig_child_codes)
+    sorted_child_codes = list(filter(partial(contains, s), child_codes))
+    sorted_child_codes.extend(v for v in child_codes if v not in s)
+
     for child in sorted_child_codes:
         context_model_ids = model_ids_by_code[child]
         if child in all_sig_context_codes:
