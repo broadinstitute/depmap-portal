@@ -6,13 +6,13 @@ if [[ "$CONDA_DEFAULT_ENV" != "" ]] && [[ "$CONDA_DEFAULT_ENV" != "base" ]]; the
     exit 1
 fi
 
+echo "Setting up breadbox dependencies..."
+pyenv install "$(cat .python-version)"
+poetry env use "$(pyenv which python)"
+poetry install
+
 echo "Setting up breadbox-client-generator..."
 (cd ../breadbox-client-generator && poetry install )
-
-echo "Setting up breadbox dependencies..."
-
-poetry env use python3.9
-poetry install
 
 if [ ! -e .env ]; then
   cp .env.dev .env
