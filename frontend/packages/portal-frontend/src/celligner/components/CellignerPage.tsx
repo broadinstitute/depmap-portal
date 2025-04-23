@@ -1,7 +1,7 @@
 import * as React from "react";
 import { Grid, Row, Col, Tabs, Tab, SelectCallback } from "react-bootstrap";
 
-import { enabledFeatures } from "@depmap/globals";
+import { enabledFeatures, toStaticUrl } from "@depmap/globals";
 import { DepmapApi } from "src/dAPI";
 import { getDapi } from "src/common/utilities/context";
 import WideTable, { WideTableColumns } from "@depmap/wide-table";
@@ -88,11 +88,8 @@ type State = {
   sidePanelSelectedPts: Set<number>;
   lassoOrBoxSelectedPts: Set<number>;
 };
-const ExplanationText = (props: {
-  dapi: DepmapApi;
-  methodologyUrl: string;
-}) => {
-  const { dapi, methodologyUrl } = props;
+const ExplanationText = (props: { methodologyUrl: string }) => {
+  const { methodologyUrl } = props;
   return (
     <>
       {methodologyUrl && (
@@ -104,7 +101,7 @@ const ExplanationText = (props: {
             className="icon-button-link"
           >
             <img
-              src={dapi._getFileUrl("/static/img/predictability/pdf.svg")}
+              src={toStaticUrl("img/predictability/pdf.svg")}
               alt=""
               className="icon"
             />
@@ -638,7 +635,7 @@ export default class CellignerPage extends React.Component<Props, State> {
         <Row>
           <Col sm={2}>
             {this.renderControlPanel()}
-            <ExplanationText dapi={this.dapi} methodologyUrl={methodologyUrl} />
+            <ExplanationText methodologyUrl={methodologyUrl} />
           </Col>
           <Col sm={10}>
             {this.renderGraph()}

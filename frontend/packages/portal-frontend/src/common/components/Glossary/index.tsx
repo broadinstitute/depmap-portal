@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import cx from "classnames";
 import { Typeahead } from "react-bootstrap-typeahead";
 import { CSSTransition } from "react-transition-group";
-import { toStaticUrl } from "src/common/utilities/context";
+import { toStaticUrl } from "@depmap/globals";
 import styles from "src/common/styles/Glossary.scss";
 import replaceReferencesWithLinks, {
   replaceSuperscriptTags,
