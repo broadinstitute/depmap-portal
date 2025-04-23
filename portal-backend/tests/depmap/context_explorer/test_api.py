@@ -36,6 +36,8 @@ def test_get_context_info(populated_db):
             "crispr",
             "oncref",
             "cell_line_display_name",
+            "lineage",
+            "primary_disease",
         ]
 
         for row in overview_table_data:
