@@ -1258,24 +1258,8 @@ def test_get_box_plot_data(empty_db_mock_downloads, dataset_name):
     }
     assert data["insignificant_solid_data"] == {
         "label": "Other Solid",
-        "data": [0, 1, 2, 3, 4, 10, 11, 12, 13, 14, 26, 27, 28, 29, 30],
-        "cell_line_display_names": [
-            "0es",
-            "1es",
-            "2es",
-            "3es",
-            "4es",
-            "0os",
-            "1os",
-            "2os",
-            "3os",
-            "4os",
-            "0insig",
-            "1insig",
-            "2insig",
-            "3insig",
-            "4insig",
-        ],
+        "data": [],
+        "cell_line_display_names": [],
         "path": None,
     }
 

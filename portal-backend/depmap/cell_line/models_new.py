@@ -258,6 +258,7 @@ class DepmapModel(Model):
     def get_cell_line_display_names_lineage_and_primary_disease(
         model_ids: Sequence[str],
     ) -> pd.DataFrame:
+        assert len(model_ids) > 0
         cell_line_names = (
             DepmapModel.query.filter(DepmapModel.model_id.in_(model_ids))
             .join(Lineage, DepmapModel.oncotree_lineage)

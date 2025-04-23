@@ -328,6 +328,8 @@ class SubtypeContext(Model):
             if cell_line.model_id not in all_sig_models
         ]
 
+        if len(model_ids) == 0:
+            return {}
         display_name_series = DepmapModel.get_cell_line_display_names(
             model_ids=list(set(model_ids))
         )
@@ -369,6 +371,9 @@ class SubtypeContext(Model):
             for cell_line in context.depmap_model
             if cell_line.model_id not in all_sig_models
         ]
+
+        if len(model_ids) == 0:
+            return {}
         display_name_series = DepmapModel.get_cell_line_display_names(
             model_ids=list(set(model_ids))
         )
