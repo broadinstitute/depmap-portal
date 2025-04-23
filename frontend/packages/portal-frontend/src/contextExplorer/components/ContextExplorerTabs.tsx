@@ -71,8 +71,8 @@ const ContextExplorerTabs = ({
     return {
       depmapId: row.model_id,
       cellLineDisplayName: row.cell_line_display_name,
-      lineage: row.level_0,
-      primaryDisease: row.level_1,
+      lineage: row.lineage,
+      primaryDisease: row.primary_disease,
       level0: row.level_0,
       level1: row.level_1,
       level2: row.level_2,

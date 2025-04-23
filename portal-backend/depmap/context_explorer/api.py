@@ -271,15 +271,23 @@ class SubtypeDataAvailability(
 
 
 def _get_overview_table(overview_page_table, summary_df_by_model_id):
-    cell_line_display_names = DepmapModel.get_cell_line_display_names(
+    cell_line_display_names = DepmapModel.get_cell_line_display_names_lineage_and_primary_disease(
         list(summary_df_by_model_id.index.values)
     )
 
     overview_page_table_joined = overview_page_table.join(summary_df_by_model_id)
 
     overview_page_table_joined["cell_line_display_name"] = cell_line_display_names[
+        "cell_line_display_name"
+    ][summary_df_by_model_id.index]
+
+    overview_page_table_joined["lineage"] = cell_line_display_names["lineage"][
         summary_df_by_model_id.index
     ]
+
+    overview_page_table_joined["primary_disease"] = cell_line_display_names[
+        "primary_disease"
+    ][summary_df_by_model_id.index]
 
     overview_page_table_joined = overview_page_table_joined.rename(
         columns={

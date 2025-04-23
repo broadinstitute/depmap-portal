@@ -76,13 +76,15 @@ function OverviewTable(props: OverviewTableProps) {
     {
       accessor: "lineage",
       Header: "Lineage",
-      maxWidth: 90,
+      maxWidth: 120,
+      minWidth: 120,
       customFilter: renderFilterPlaceholder,
     },
     {
       accessor: "primaryDisease",
       Header: "Primary Disease",
-      maxWidth: 90,
+      maxWidth: 150,
+      minWidth: 150,
       customFilter: renderFilterPlaceholder,
     },
     {
@@ -124,37 +126,37 @@ function OverviewTable(props: OverviewTableProps) {
     {
       accessor: "crispr",
       Header: "CRISPR",
-      maxWidth: 75,
+      maxWidth: 90,
       disableFilters: true,
     },
     {
       accessor: "rnai",
       Header: "RNAi",
-      maxWidth: 75,
+      maxWidth: 90,
       disableFilters: true,
     },
     {
       accessor: "wes",
       Header: "WES",
-      maxWidth: 75,
+      maxWidth: 90,
       disableFilters: true,
     },
     {
       accessor: "wgs",
       Header: "WGS",
-      maxWidth: 75,
+      maxWidth: 90,
       disableFilters: true,
     },
     {
       accessor: "rna_seq",
       Header: "RNASeq",
-      maxWidth: 75,
+      maxWidth: 90,
       disableFilters: true,
     },
     {
       accessor: "prismRepurposing",
       Header: "PRISM Repurposing",
-      maxWidth: 75,
+      maxWidth: 90,
       disableFilters: true,
     },
   ];
@@ -163,7 +165,7 @@ function OverviewTable(props: OverviewTableProps) {
     columns.push({
       accessor: "prismOncRef",
       Header: "PRISM OncRef",
-      maxWidth: 75,
+      maxWidth: 90,
       disableFilters: true,
     });
   }
@@ -179,6 +181,22 @@ function OverviewTable(props: OverviewTableProps) {
             allowDownloadFromTableDataWithMenuFileName="context-explorer-overview.csv"
             columns={columns}
             getTrProps={getTrProps}
+            defaultColumnsToShow={[
+              "cellLineDisplayName",
+              "lineage",
+              "primaryDisease",
+              "level0",
+              "level1",
+              "level2",
+              "level3",
+              "crispr",
+              "rnai",
+              "wgs",
+              "wes",
+              "rna_seq",
+              "prismOncRef",
+              "prismRepurposing",
+            ]}
           />
         </div>
       </div>
