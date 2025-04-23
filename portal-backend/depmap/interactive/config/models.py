@@ -1,16 +1,12 @@
 from depmap.enums import DataTypeEnum
 from flask import current_app
-from typing import Dict, NamedTuple
+from typing import NamedTuple
 import enum
-
-from depmap.access_control import get_visible_owner_id_configs
 
 from depmap.dataset.models import DependencyDataset, BiomarkerDataset, TabularDataset
 from depmap.interactive.config import categories
 from depmap.interactive.nonstandard.models import (
-    NonstandardMatrix,
     CustomDatasetConfig,
-    PrivateDatasetMetadata,
 )
 from depmap.taiga_id.models import TaigaAlias
 from depmap.utilities.exception import InteractiveDatasetNotFound
