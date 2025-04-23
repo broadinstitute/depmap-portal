@@ -1,5 +1,5 @@
 from operator import and_
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 from depmap.database import (
     Column,
     ForeignKey,
@@ -219,7 +219,7 @@ class SubtypeContext(Model):
     @staticmethod
     def get_model_ids_for_node_branch(
         subtype_codes: List[str], level_0_subtype_code: str
-    ) -> Optional[Dict[str, List[str]]]:
+    ) -> Tuple[Optional[Dict[str, List[str]]], Optional[List[str]]]:
 
         only_get_nodes_on_this_branch_filters = and_(
             SubtypeNode.level_0 == level_0_subtype_code,
@@ -238,7 +238,7 @@ class SubtypeContext(Model):
         nodes = db.session.query(SubtypeNode).filter(filters).all()
 
         if len(nodes) == 0:
-            return None
+            return None, []
 
         node_models = {}
         all_model_ids = []

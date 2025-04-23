@@ -33,7 +33,7 @@ def _get_out_group_model_ids(
         if out_group_type == "Other Heme":
             # find the Heme model ids
             other_heme_model_ids = SubtypeContext.get_model_ids_for_other_heme_contexts(
-                in_group_model_ids, tree_type
+                [], tree_type, in_group_model_ids
             )
             return list(other_heme_model_ids.keys())
         else:

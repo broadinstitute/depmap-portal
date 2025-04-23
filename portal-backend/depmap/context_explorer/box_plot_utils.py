@@ -249,7 +249,8 @@ def get_branch_subtype_codes_organized_by_code(
         branch, all_model_ids = SubtypeContext.get_model_ids_for_node_branch(
             subtype_codes=child_codes, level_0_subtype_code=level_0
         )
-        all_sig_models.extend(all_model_ids)
+        if all_model_ids:
+            all_sig_models.extend(all_model_ids)
 
         branch_contexts[level_0] = branch
 
@@ -312,7 +313,7 @@ def get_card_data(
             # the level_0 so that they can be sorted into an Other <level_0> plot.
             child_nodes = SubtypeNode.get_children_using_current_level_code(level_0, 0)
             child_codes = [node.subtype_code for node in child_nodes]
-            selected_context_level_0 = SubtypeContext.get_model_ids_for_node_branch(
+            selected_context_level_0, _ = SubtypeContext.get_model_ids_for_node_branch(
                 subtype_codes=child_codes, level_0_subtype_code=level_0
             )
 
@@ -340,6 +341,7 @@ def get_context_plot_box_data(
     solid_box_plot_data = {}
     other_box_plot_data = []
     all_sig_context_codes = []
+    all_sig_models = []
     selected_sig_box_plot_card_data = None
     if len(sig_contexts) > 0:
         all_sig_context_codes = sig_contexts["subtype_code"].to_list()
@@ -356,10 +358,14 @@ def get_context_plot_box_data(
             "subtype_code"
         ]
 
-        branch_contexts, all_sig_models = get_branch_subtype_codes_organized_by_code(
+        (
+            branch_contexts,
+            all_significant_models,
+        ) = get_branch_subtype_codes_organized_by_code(
             sig_contexts=sig_contexts_by_level_0,
             all_sig_context_codes=all_sig_context_codes,
         )
+        all_sig_models = all_significant_models
 
         selected_sig_box_plot_card_data = get_card_data(
             level_0=level_0,
@@ -583,6 +589,7 @@ def get_data_to_show_if_no_contexts_significant(
         all_sig_context_codes=[],
         entity_full_row_of_values=entity_full_row_of_values,
         tree_type=tree_type,
+        all_sig_models=[],
     )
 
     solid_box_plot_data = get_box_plot_data_for_other_category(
@@ -590,6 +597,7 @@ def get_data_to_show_if_no_contexts_significant(
         all_sig_context_codes=[],
         entity_full_row_of_values=entity_full_row_of_values,
         tree_type=tree_type,
+        all_sig_models=[],
     )
 
     ordered_box_plot_data = ContextPlotBoxData(
