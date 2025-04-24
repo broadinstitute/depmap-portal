@@ -9,6 +9,14 @@ import {
   TreeType,
 } from "../models/types";
 import styles from "../styles/ContextExplorer.scss";
+import {
+  GENE_DEP_BETWEEN_1_AND_2,
+  GENE_DEP_END,
+  GENE_DEP_TEXT_BEFORE_1_HELP_ICON,
+  ONCREF_SIDEBAR_TEXT,
+  OVERVIEW_SIDEBAR_TEXT,
+  REPURPOSING_SIDE_BAR_TEXT,
+} from "../utils";
 
 export interface LeftSearchPanelProps {
   lineageSearchOptions: {
@@ -298,9 +306,7 @@ const ContextTree = (props: ContextTreeProps) => {
           />
         </div>
       )}
-      {(selectedTab === TabTypes.GeneDependency ||
-        selectedTab === TabTypes.DrugSensitivityRepurposing ||
-        selectedTab === TabTypes.DrugSensitivityOncRef) && (
+      {selectedTab === TabTypes.GeneDependency && (
         <>
           <hr
             style={{
@@ -309,152 +315,76 @@ const ContextTree = (props: ContextTreeProps) => {
             }}
           />
           <p>
-            In order to compare the selected context and selected out-group, the
-            Context Explorer uses a two-sided T-test to compare magnitude of{" "}
-            {selectedTab === TabTypes.GeneDependency
-              ? "gene effects"
-              : "log2(viability)"}{" "}
+            {GENE_DEP_TEXT_BEFORE_1_HELP_ICON}
             <InfoIcon
               target={customInfoImg}
               popoverContent={
                 <p>
-                  For each{" "}
-                  {selectedTab === TabTypes.GeneDependency ? "gene" : "drug"},
-                  the mean{" "}
-                  {selectedTab === TabTypes.GeneDependency
-                    ? "Chronos gene effect score"
-                    : "log2(viability)"}{" "}
-                  of the in-context cell lines is compared to the mean{" "}
-                  {selectedTab === TabTypes.GeneDependency
-                    ? "Chronos gene effect score"
-                    : "log2(viability)"}{" "}
-                  of the out-group cell lines using Welch’s T-test. This tests
-                  the null hypothesis that the two samples have identical mean{" "}
-                  {selectedTab === TabTypes.GeneDependency
-                    ? "gene effect scores"
-                    : "log2(viability)"}
-                  , without assuming equal population variance.{" "}
+                  A gene whose dependency has the product of skewness and
+                  kurtosis in the top quartile and has at least one dependent
+                  cell line.
                 </p>
               }
               popoverId={`sidebar-genedep1-popover`}
               trigger={["hover", "focus"]}
-            />{" "}
-            and a Fisher’s exact test (FET) to compare frequency of{" "}
-            {selectedTab === TabTypes.GeneDependency
-              ? "gene dependency"
-              : "drug sensitivity"}{" "}
+            />
+            {GENE_DEP_BETWEEN_1_AND_2}
             <InfoIcon
               target={customInfoImg}
               popoverContent={
-                <div>
+                <>
+                  <h4 style={{ paddingTop: "5px" }}>Dependent Cell Lines</h4>
                   <p>
-                    For each{" "}
-                    {selectedTab === TabTypes.GeneDependency ? "gene" : "drug"},
-                    a 2x2 contingency table is created with the numbers of cell
-                    lines that are{" "}
-                    {selectedTab === TabTypes.GeneDependency
-                      ? "dependent and non-dependent"
-                      : "sensitive and non-sensitive"}{" "}
-                    for both the selected context and selected out-group.
-                    Fisher’s exact tests the null hypothesis that the true odds
-                    ratio of the populations is one. That is, the likelihood
-                    that a cell line is{" "}
-                    {selectedTab === TabTypes.GeneDependency
-                      ? "dependent on the gene"
-                      : "sensitive to the drug"}{" "}
-                    is the same for both populations.
+                    A cell line is considered dependent if it has a probability
+                    of dependency greater than 0.5.
                   </p>
-                  {selectedTab === TabTypes.GeneDependency ? (
-                    <>
-                      <h4 style={{ paddingTop: "5px" }}>
-                        Dependent Cell Lines
-                      </h4>
-                      <p>
-                        A cell line is considered dependent if it has a
-                        probability of dependency greater than 0.5.
-                      </p>
-                      <h4 style={{ paddingTop: "5px" }}>
-                        Probability of Dependency
-                      </h4>
-                      <p>
-                        Probabilities of dependency are calculated for each gene
-                        score in a cell line as the probability that score
-                        arises from the distribution of essential gene scores
-                        rather than nonessential gene scores. See{" "}
-                        <a href="https://doi.org/10.1101/720243">here</a> for
-                        details.
-                      </p>
-                    </>
-                  ) : (
-                    <>
-                      <h4 style={{ paddingTop: "5px" }}>
-                        Sensitive Cell Lines
-                      </h4>
-                      <p>
-                        A cell line is considered sensitive to a drug if its
-                        fold-change viability relative to the negative control
-                        (DMSO) condition is less than 0.3. In other words, less
-                        than 30% of cells from the cell line are viable after
-                        treatment with the drug.
-                      </p>
-                    </>
-                  )}
-                </div>
+                  <h4 style={{ paddingTop: "5px" }}>
+                    Probability of Dependency
+                  </h4>
+                  <p>
+                    Probabilities of dependency are calculated for each gene
+                    score in a cell line as the probability that score arises
+                    from the distribution of essential gene scores rather than
+                    nonessential gene scores. See{" "}
+                    <a href="https://doi.org/10.1101/720243">here</a> for
+                    details.
+                  </p>
+                </>
               }
               popoverId={`sidebar-genedep2-popover`}
               trigger={["hover", "focus"]}
             />
-            . The Explorer uses the FDR corrected p-values (q-value){" "}
-            <InfoIcon
-              target={customInfoImg}
-              popoverContent={
-                <p>
-                  The p-values from both the T-test and FET are corrected using
-                  the False Discovery Rate (FDR, or Benjamini-Hochberg method),
-                  which adjust for multiple hypotheses testing.
-                </p>
-              }
-              popoverId={`sidebar-genedep3-popover`}
-              trigger={["hover", "focus"]}
-            />{" "}
-            of the T-test and the odds ratio of the FET{" "}
-            <InfoIcon
-              target={customInfoImg}
-              popoverContent={
-                <p>
-                  The FET odds ratio indicates how likely it is for any given
-                  cell line in the selected context to be{" "}
-                  {selectedTab === TabTypes.GeneDependency
-                    ? "dependent on the selected gene"
-                    : "sensitive to the selected drug"}
-                  . An odds ratio larger than 1 indicates that{" "}
-                  {selectedTab === TabTypes.GeneDependency
-                    ? "dependency on the gene"
-                    : "sensitivity to the drug"}{" "}
-                  is more likely in the selected context. Conversely, an odds
-                  ratio less than 1 indicates that{" "}
-                  {selectedTab === TabTypes.GeneDependency
-                    ? "dependency on the gene"
-                    : "sensitivity to the drug"}{" "}
-                  is less likely in the selected context.
-                </p>
-              }
-              popoverId={`sidebar-genedep4-popover`}
-              trigger={["hover", "focus"]}
-            />{" "}
-            to display the results.{" "}
-            {selectedTab === TabTypes.GeneDependency
-              ? "This analysis only includes genes that are dependencies in three or more of all cell lines, and non-dependencies in 100 or more of all cell lines."
-              : "This analysis excludes compounds that are sensitivities in 75% or more of all cell lines, or sensitivities that only occur in one or less of all cell lines."}
+            {GENE_DEP_END} Points are colored according to the logged odd’s
+            ratio (OR) of in-group to out-group dependency; e.g. a value of 1
+            indicates the gene is 10x more likely to be a dependency in the
+            in-group vs. the out-group.
           </p>
         </>
       )}
+      {selectedTab === TabTypes.DrugSensitivityRepurposing && (
+        <>
+          <hr
+            style={{
+              marginTop: "27px",
+              borderTop: "1px solid #000000",
+            }}
+          />
+          <p>{REPURPOSING_SIDE_BAR_TEXT}</p>
+        </>
+      )}
+      {selectedTab === TabTypes.DrugSensitivityOncRef && (
+        <>
+          <hr
+            style={{
+              marginTop: "27px",
+              borderTop: "1px solid #000000",
+            }}
+          />
+          <p>{ONCREF_SIDEBAR_TEXT}</p>
+        </>
+      )}
       {selectedTab === TabTypes.Overview && (
-        <div className={styles.overviewText}>
-          Context Explorer helps researchers see how many datasets are available
-          for their chosen tissue context type and subtype, as well as showing
-          the overlap in data.
-        </div>
+        <div className={styles.overviewText}>{OVERVIEW_SIDEBAR_TEXT}</div>
       )}
     </>
   );

@@ -12,7 +12,7 @@ interface Props {
   onChange: (
     nextValue:
       | "legacy_metadata_slice"
-      | "breadbox_metadata_column"
+      | "official_annotation"
       | "matrix_dataset"
   ) => void;
 }
@@ -21,7 +21,7 @@ function DataSourceSelect({ isLoading, slice_type, value, onChange }: Props) {
   let options = [
     {
       label: "Annotation",
-      value: "breadbox_metadata_column",
+      value: "official_annotation",
     },
     {
       label: "Legacy Annotation",

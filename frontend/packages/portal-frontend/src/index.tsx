@@ -6,6 +6,7 @@ import {
   CustomList,
   renderCellLineSelectorModal,
 } from "@depmap/cell-line-selector";
+import { toStaticUrl } from "@depmap/globals";
 
 import { getQueryParams } from "@depmap/utils";
 import { getDapi } from "src/common/utilities/context";
@@ -23,6 +24,7 @@ import { ConnectivityValue } from "./constellation/models/constellation";
 import { EntityType } from "./entity/models/entities";
 import TermsAndConditionsModal from "./common/components/TermsAndConditionsModal";
 import { initializeDevContexts } from "@depmap/data-explorer-2";
+import { EnrichmentTile } from "./contextExplorer/components/EnrichmentTile";
 
 export { log, tailLog, getLogCount } from "src/common/utilities/log";
 
@@ -176,6 +178,19 @@ export function saveNewContext(
       />
     </React.Suspense>,
     container
+  );
+}
+
+export function initEnrichmentTile(
+  elementId: string,
+  entityLabel: string,
+  entityType: string
+) {
+  renderWithErrorBoundary(
+    <React.Suspense fallback={<div>Loading...</div>}>
+      <EnrichmentTile entityLabel={entityLabel} entityType={entityType} />
+    </React.Suspense>,
+    document.getElementById(elementId) as HTMLElement
   );
 }
 
@@ -397,10 +412,8 @@ export function initCelfiePage(
         dependencyProfileOptions={dependencyProfileOptions}
         onCelfieInitialized={() => dapi.endTrace()}
         howToImg={howToImg}
-        methodIcon={dapi._getFileUrl("/static/img/predictability/pdf.svg")}
-        methodPdf={dapi._getFileUrl(
-          "/static/pdf/Genomic_Associations_Methodology.pdf"
-        )}
+        methodIcon={toStaticUrl("img/predictability/pdf.svg")}
+        methodPdf={toStaticUrl("pdf/Genomic_Associations_Methodology.pdf")}
       />
     </React.Suspense>,
     document.getElementById(elementId) as HTMLElement

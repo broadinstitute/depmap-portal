@@ -5,6 +5,7 @@ import {
 import update from "immutability-helper";
 import qs from "qs";
 import React, { useCallback, useEffect, useState } from "react";
+import { toStaticUrl } from "@depmap/globals";
 import { getDapi } from "src/common/utilities/context";
 import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
 import {
@@ -245,7 +246,7 @@ export const ContextExplorer = () => {
         margin: "1px 3px 4px 3px",
         cursor: "pointer",
       }}
-      src={getDapi()._getFileUrl("/static/img/gene_overview/info_purple.svg")}
+      src={toStaticUrl("img/gene_overview/info_purple.svg")}
       alt="description of term"
       className="icon"
     />
@@ -258,9 +259,10 @@ export const ContextExplorer = () => {
           <span>Context Explorer</span>
         </h1>
         <p>
-          The Context Explorer displays gene dependencies and drug sensitivities
-          that are selective to the context of interest, in addition to showing
-          available data for cell lines in that context.
+          Context Explorer is a tumor subtype focused entry point to the DepMap
+          data. Data availability, enriched gene dependencies, and compound
+          sensitivities can be explored within a lineage- or molecular- subtype
+          based hierarchy of cancer models.
         </p>
       </header>
       <main className={styles.main}>

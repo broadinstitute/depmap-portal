@@ -1,4 +1,3 @@
-from bdb import effective
 from depmap.compound.models import Compound
 from depmap.compound.views.executive import (
     determine_compound_experiment_and_dataset,
