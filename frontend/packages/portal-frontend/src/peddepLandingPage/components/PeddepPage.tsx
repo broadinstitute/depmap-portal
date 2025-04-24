@@ -92,7 +92,11 @@ export default function PeddepPage(props: PeddepPageProps) {
               pediatric cancers, identify new vulnerabilities of these diseases
               and accelerate therapies globally.
             </h3>
-            <Button className={styles.peddepBtn}>
+            <Button
+              className={styles.peddepBtn}
+              href="https://peddep.org/"
+              target="_blank"
+            >
               Learn more at PedDep.org
             </Button>
           </div>
@@ -198,8 +202,22 @@ export default function PeddepPage(props: PeddepPageProps) {
                 research.
               </h4>
               <h4>
-                Read our landmark paper in Nature Genetics or visit our PedDep
-                Explorer.
+                <a
+                  href="https://depmap.org/peddep/"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Read our landmark paper
+                </a>{" "}
+                in Nature Genetics or visit our{" "}
+                <a
+                  href="https://depmap.org/peddep/vis-app/index.html"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  PedDep Explorer
+                </a>
+                .
               </h4>
             </div>
             <div>{umapImage}</div>

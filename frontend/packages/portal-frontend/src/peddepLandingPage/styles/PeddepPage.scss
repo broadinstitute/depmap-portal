@@ -59,6 +59,16 @@
     font-size: 14px;
   }
 
+  a {
+    color: #8658ab;
+    font-weight: 700;
+    text-decoration: none;
+    border-bottom: 1px solid #8658ab;
+  }
+  a:hover {
+    border-bottom: none;
+  }
+
   &.highlightBackground {
     margin-top: 20px;
     background-repeat: no-repeat;
@@ -91,7 +101,9 @@
   }
 }
 
-.peddepBtn {
+.peddepBtn,
+.peddepBtn:focus,
+.peddepBtn:visited {
   color: white;
   background-color: #8658ab;
   border-color: #8658ab;
