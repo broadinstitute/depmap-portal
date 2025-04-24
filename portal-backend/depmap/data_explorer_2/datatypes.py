@@ -460,7 +460,7 @@ def get_hardcoded_metadata_slices():
     }
 
     model_slices["slice/Context_Matrix/"] = {
-        "name": "Context Matrix",
+        "name": "Subtype Matrix",
         "valueType": "binary",
         "isPartialSliceId": True,
         "sliceTypeLabel": "Subtype Code",

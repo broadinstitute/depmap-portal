@@ -6,63 +6,6 @@
   }
 }
 
-.refine_context_tree {
-  .top_button.btn.btn-link {
-    margin-left: 1px;
-    border: none;
-    text-align: left;
-    white-space: pre-line;
-    word-break: break-word;
-    color: #4479b2;
-    outline: none;
-    // text-decoration: none;
-    font-weight: 600;
-    width: 100%;
-    padding-right: 8px;
-  }
-  .depmap-accordion {
-    margin: 0px !important;
-    padding: 8px;
-    .accordion-header {
-      margin-left: 0px;
-      background-color: #fff;
-      padding: 0px;
-
-      .btn {
-        padding: 0px !important;
-      }
-
-      .accordion_title_button.btn.btn-link {
-        margin: 0px !important;
-        color: #4479b2;
-        // text-decoration: none;
-        outline: none;
-        padding-bottom: 5px;
-        font-weight: 600;
-        width: 92%;
-      }
-
-      .accordion-title {
-        color: #4479b2;
-        float: right;
-        width: 93% !important;
-      }
-    }
-
-    .accordion_contents {
-      //margin-left: 12px;
-      border: 0;
-      text-align: left;
-      white-space: pre-line;
-      word-break: break-word;
-      color: #4479b2;
-      outline: 0;
-      width: 100%;
-      // text-decoration: none;
-    }
-  }
-}
-
 #context-explorer-tree-tabs {
   width: 100%;
   height: 100%;
@@ -72,12 +15,16 @@
   background-color: #ffffff;
 }
 
-.panel-default > .panel-heading {
-  background-color: transparent !important;
+#context-explorer-box-plots {
+  .panel-default > .panel-heading {
+    background-color: transparent !important;
+  }
 }
 
-.panel-group > .panel {
-  margin-bottom: 15px !important;
+#enrichment-tile {
+  .panel-group > .panel {
+    margin-bottom: 5px !important;
+  }
 }
 
 .btn.btn-link {

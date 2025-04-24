@@ -93,10 +93,9 @@ function ContextExplorerPlot(props: ContextExplorerPlotProps) {
               )}
             </h2>
             <h4>
-              Available datasets will appear according to the context that you
-              have chosen. Explore all of the cell lines we have available by
-              selecting the datasets or choosing a lineage and disease context
-              from the left.
+              Select a lineage or molecular subtype to view the number of models
+              with associated data, and the breakdown into further subtypes (if
+              any).
             </h4>
           </>
         ) : (
@@ -108,11 +107,10 @@ function ContextExplorerPlot(props: ContextExplorerPlotProps) {
               )}
             </h2>
             <h4>
-              There are currently {totalCellLines}{" "}
-              {selectedContextNameInfo.name} cell lines, each of which is
-              represented in one or more of the below data types. Select your
-              dataset type(s) of interest to see how many{" "}
-              {selectedContextNameInfo.name} lines have data available.
+              There are {totalCellLines} {selectedContextNameInfo.name} models
+              in the latest DepMap release included in at least one of the below
+              datasets. Select datasets/subtypes to see the total joint coverage
+              across specific data modalities.
             </h4>
           </>
         )}
@@ -170,7 +168,8 @@ function ContextExplorerPlot(props: ContextExplorerPlotProps) {
                 gridTemplateRows: `repeat(${
                   cellLineCountsForwards.length + 1
                 }, ${CONTEXT_EXPL_BAR_THICKNESS}px)`,
-                marginLeft: "5px",
+                marginLeft: "8px",
+                width: "140px",
               }}
             >
               <div
