@@ -75,9 +75,9 @@ export default function PeddepPage(props: PeddepPageProps) {
   );
 
   return (
-    <div>
+    <div className={styles.PeddepPage}>
       <div
-        className={`${styles.PeddepPage} ${styles.highlightBackground}`}
+        className={`${styles.PeddepPageContainer} ${styles.highlightBackground}`}
         style={{ backgroundImage: `url(${imagePath})` }}
       >
         <div className={styles.highlight}>
@@ -92,108 +92,118 @@ export default function PeddepPage(props: PeddepPageProps) {
               pediatric cancers, identify new vulnerabilities of these diseases
               and accelerate therapies globally.
             </h3>
-            <Button>Learn more at PedDep.org</Button>
+            <Button className={styles.peddepBtn}>
+              Learn more at PedDep.org
+            </Button>
           </div>
         </div>
       </div>
       <hr />
-      <div className={styles.PeddepPage}>
-        <h2>Our Goals and Focus</h2>
-        <h4>
-          The PedDep Accelerator is leading a multi-pronged effort against this
-          problem focusing both on expanding and extending known successful
-          approaches as well as investing in exploratory science with
-          transformative potential.
-        </h4>
-        <div className={styles.dataContainer}>
-          <div className={styles.dataInfo}>
-            <div>
-              <h4>Dependency Screening</h4>
-              <h5>
-                Developing and deploying CRISPR-based genome editing techniques
-                to identify hidden vulnerabilities (dependencies) in a spectrum
-                of high-risk childhood brain, solid and hematological
-                malignancies.
-              </h5>
+      <div className={styles.PeddepPageContainer}>
+        <div style={{ display: "grid" }}>
+          <h2>Our Goals and Focus</h2>
+          <h4>
+            The PedDep Accelerator is leading a multi-pronged effort against
+            this problem focusing both on expanding and extending known
+            successful approaches as well as investing in exploratory science
+            with transformative potential.
+          </h4>
+
+          <div className={styles.dataContainer}>
+            <div className={styles.dataInfo}>
+              <div>
+                <h4>Dependency Screening</h4>
+                <h5>
+                  Developing and deploying CRISPR-based genome editing
+                  techniques to identify hidden vulnerabilities (dependencies)
+                  in a spectrum of high-risk childhood brain, solid and
+                  hematological malignancies.
+                </h5>
+              </div>
+              <div>
+                <h4>Omics profiling</h4>
+                <h5>
+                  Leveraging emerging technologies to characterize the genetic
+                  and epigenetic landscape of pediatric cancers.
+                </h5>
+              </div>
+              <div>
+                <h4>Compound screening</h4>
+                <h5>
+                  Developing and deploying CRISPR-based genome editing
+                  techniques to identify hidden vulnerabilities (dependencies)
+                  in a spectrum of high-risk childhood brain, solid and
+                  hematological malignancies.
+                </h5>
+              </div>
+              <div>
+                <h4>New Model Derivation</h4>
+                <h5>
+                  Developing model systems where none currently exist for
+                  high-risk childhood cancers that have poor outcomes.
+                </h5>
+              </div>
+              <div>
+                <h4>Data science</h4>
+                <h5>
+                  Developing computational approaches to mine and integrate data
+                  and developing innovative software tools for data sharing.
+                </h5>
+              </div>
             </div>
             <div>
-              <h4>Omics profiling</h4>
-              <h5>
-                Leveraging emerging technologies to characterize the genetic and
-                epigenetic landscape of pediatric cancers.
-              </h5>
+              {data
+                ? Object.entries(data).map(([subgroup, values]) => {
+                    return (
+                      <SubGroupPlot
+                        key={subgroup}
+                        subgroup={subgroup}
+                        subtypes={values}
+                      />
+                    );
+                  })
+                : "Loading..."}
             </div>
-            <div>
-              <h4>Compound screening</h4>
-              <h5>
-                Developing and deploying CRISPR-based genome editing techniques
-                to identify hidden vulnerabilities (dependencies) in a spectrum
-                of high-risk childhood brain, solid and hematological
-                malignancies.
-              </h5>
-            </div>
-            <div>
-              <h4>New Model Derivation</h4>
-              <h5>
-                Developing model systems where none currently exist for
-                high-risk childhood cancers that have poor outcomes.
-              </h5>
-            </div>
-            <div>
-              <h4>Data science</h4>
-              <h5>
-                Developing computational approaches to mine and integrate data
-                and developing innovative software tools for data sharing.
-              </h5>
-            </div>
-          </div>
-          <div>
-            {data
-              ? Object.entries(data).map(([subgroup, values]) => {
-                  return (
-                    <SubGroupPlot
-                      key={subgroup}
-                      subgroup={subgroup}
-                      subtypes={values}
-                    />
-                  );
-                })
-              : "Loading..."}
           </div>
         </div>
       </div>
       <hr />
-      <div className={styles.PeddepPage}>
-        <h2>A Pediatric Context</h2>
-        <h4>
-          Navigate the portal with a pediatric context. We&apos;ve built this
-          context to include models that represent pediatric tumor types.
-        </h4>
+      <div className={styles.PeddepPageContainer}>
+        <div style={{ display: "grid" }}>
+          <h2>A Pediatric Context</h2>
+          <h4>
+            Navigate the portal with a pediatric context. We&apos;ve built this
+            context to include models that represent pediatric tumor types.
+          </h4>
+        </div>
       </div>
       <hr />
-      <div className={styles.PeddepPage}>
+      <div className={styles.PeddepPageContainer}>
         <div className={styles.aboutPeddep}>
-          <div>
-            <h2>The First Generation Pediatric Dependency Map</h2>
-            <h4>
-              The PedDep initiative started in 2014 with the goal of applying
-              the Broad&apos;s DepMap large-scale genetic dependencies and drug
-              sensitivity approaches to accelerate the discovery of therapeutic
-              targets and strategies for pediatric patients.
-            </h4>
-            <h4>
-              While clinical trials per se are not a component of the PedDep
-              project, generating data which would allow the start of clinical
-              trials is within the purview. PedDep was developed to generate the
-              core data, break down silos, and use the combination of expertises
-              to synergize ability to conduct groundbreaking research.
-            </h4>
-            <h4>
-              Read our landmark paper in Nature Genetics or visit our PedDep
-              Explorer.
-            </h4>
+          <h2>The First Generation Pediatric Dependency Map</h2>
+          <div className={styles.aboutPeddepColumns}>
+            <div>
+              <h4>
+                The PedDep initiative started in 2014 with the goal of applying
+                the Broad&apos;s DepMap large-scale genetic dependencies and
+                drug sensitivity approaches to accelerate the discovery of
+                therapeutic targets and strategies for pediatric patients.
+              </h4>
+              <h4>
+                While clinical trials per se are not a component of the PedDep
+                project, generating data which would allow the start of clinical
+                trials is within the purview. PedDep was developed to generate
+                the core data, break down silos, and use the combination of
+                expertises to synergize ability to conduct groundbreaking
+                research.
+              </h4>
+              <h4>
+                Read our landmark paper in Nature Genetics or visit our PedDep
+                Explorer.
+              </h4>
+            </div>
+            <div>{umapImage}</div>
           </div>
-          <div>{umapImage}</div>
         </div>
       </div>
     </div>
