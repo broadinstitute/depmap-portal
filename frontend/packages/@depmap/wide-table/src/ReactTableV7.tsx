@@ -18,6 +18,7 @@ import {
   useSortBy,
   UseTableOptions,
   Row,
+  SortingRule,
 } from "react-table";
 import VirtualList from "react-tiny-virtual-list";
 import styles from "./ReactTableV7.scss";
@@ -32,6 +33,8 @@ interface Props {
   getTrProps?: (row: Row) => React.HtmlHTMLAttributes<HTMLDivElement>;
   singleSelectionMode?: boolean;
   hideSelectAllCheckbox?: boolean;
+  initialSortBy?: SortingRule<any>[];
+  fixedHeight?: number;
 }
 
 let wasSelectionPropsWarningShown = false;
@@ -58,6 +61,8 @@ const ReactTableV7 = React.forwardRef(
       getTrProps = undefined,
       singleSelectionMode = false,
       hideSelectAllCheckbox = false,
+      initialSortBy = [],
+      fixedHeight = undefined,
     }: Props,
     ref
   ) => {
@@ -124,6 +129,10 @@ const ReactTableV7 = React.forwardRef(
         columns,
         data,
         defaultColumn,
+        initialState: {
+          // https://github.com/TanStack/table/blob/v7/docs/src/pages/docs/api/useSortBy.md#table-options
+          sortBy: initialSortBy,
+        },
       },
       useFlexLayout,
       useResizeColumns,
@@ -374,7 +383,9 @@ const ReactTableV7 = React.forwardRef(
           <VirtualList
             className={styles.virtualList}
             style={{ display: rows.length > 0 ? "block" : "none" }}
-            height={listHeight.current}
+            height={
+              fixedHeight !== undefined ? fixedHeight - 103 : listHeight.current
+            }
             itemSize={rowHeight}
             itemCount={rows.length}
             renderItem={({ index, style }) => {

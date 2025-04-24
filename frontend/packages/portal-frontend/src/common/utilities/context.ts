@@ -31,11 +31,6 @@ export function getBreadboxApi(): BreadboxApi {
   return bbapi;
 }
 
-export function toStaticUrl(relativeUrl: string) {
-  const assetUrl = relativeUrl.trim().replace(/^\//, "");
-  return `${fetchUrlPrefix()}/static/${assetUrl}`.replace(/^\/\//, "");
-}
-
 export const apiFunctions = {
   breadbox: {
     getApi: getBreadboxApi,

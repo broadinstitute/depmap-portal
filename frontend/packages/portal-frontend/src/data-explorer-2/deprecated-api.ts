@@ -262,6 +262,7 @@ export function fetchDimensionLabelsToDatasetsMapping(
   dimension_type: string
 ): Promise<{
   dataset_ids: string[];
+  given_ids: (string | null)[];
   dataset_labels: string[];
   units: Record<string, DatasetIndex[]>;
   data_types: Record<DataType, DatasetIndex[]>;
@@ -396,7 +397,9 @@ export async function fetchMetadataSlices(
       isHighCardinality?: boolean;
       isPartialSliceId?: boolean;
       sliceTypeLabel?: string;
-      isBreadboxMetadata?: boolean;
+      isLegacy?: boolean;
+      isIdColumn?: boolean;
+      isLabelColumn?: boolean;
     }
   >
 > {

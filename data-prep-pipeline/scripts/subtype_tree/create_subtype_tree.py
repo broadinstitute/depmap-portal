@@ -322,6 +322,10 @@ def add_depmap_nodes(models, oncotable):
             ## DECISION: Add cancerous nodes at level 1, right underneath lineage
             parent_code = lin_node.DepmapModelType
 
+            ## Hard-coded PedDep request for 25Q2: Add BALL and TALL under Lymphoid Neoplasm 
+            if new_type.DepmapModelType in ['BALL', 'TALL']:
+                parent_code = 'LNM'
+
         elif new_type.OncotreePrimaryDisease == "Non-Cancerous":
             if lin_node.NodeSource == "Oncotree":
                 ## DECISION: Add underneath the Non-Cancerous Level 1 node

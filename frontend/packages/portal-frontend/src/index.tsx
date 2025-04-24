@@ -6,6 +6,7 @@ import {
   CustomList,
   renderCellLineSelectorModal,
 } from "@depmap/cell-line-selector";
+import { toStaticUrl } from "@depmap/globals";
 
 import { getQueryParams } from "@depmap/utils";
 import { getDapi } from "src/common/utilities/context";
@@ -411,10 +412,8 @@ export function initCelfiePage(
         dependencyProfileOptions={dependencyProfileOptions}
         onCelfieInitialized={() => dapi.endTrace()}
         howToImg={howToImg}
-        methodIcon={dapi._getFileUrl("/static/img/predictability/pdf.svg")}
-        methodPdf={dapi._getFileUrl(
-          "/static/pdf/Genomic_Associations_Methodology.pdf"
-        )}
+        methodIcon={toStaticUrl("img/predictability/pdf.svg")}
+        methodPdf={toStaticUrl("pdf/Genomic_Associations_Methodology.pdf")}
       />
     </React.Suspense>,
     document.getElementById(elementId) as HTMLElement

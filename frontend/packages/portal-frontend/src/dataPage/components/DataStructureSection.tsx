@@ -1,6 +1,6 @@
 import { Accordion } from "@depmap/common-components";
 import React from "react";
-import { getDapi } from "src/common/utilities/context";
+import { toStaticUrl } from "@depmap/globals";
 
 import styles from "src/dataPage/styles/DataPage.scss";
 import { currentReleaseTabHref, de2PageHref } from "./utils";
@@ -17,9 +17,7 @@ const DataStructureSection = ({
   const dataStructureImage = (
     <img
       style={{ maxWidth: "675px", width: "100%" }}
-      src={getDapi()._getFileUrl(
-        "/static/img/data_page/data_structure_final.png"
-      )}
+      src={toStaticUrl("img/data_page/data_structure_final.png")}
       alt="Diagram of DepMap data structure"
     />
   );
