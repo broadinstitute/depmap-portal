@@ -510,7 +510,6 @@ utils.py: error: No overloads for "__getitem__" match the provided arguments (re
 utils.py: error: No overloads for "quote" match the provided arguments (reportCallIssue)
 utils.py: error: Second argument to "isinstance" must be a class or tuple of classes
 views.py: error: "IGNORECASE" is not a known member of module "natsort" (reportAttributeAccessIssue)
-views.py: error: "Unbound" is not iterable (reportGeneralTypeIssues)
 views.py: error: "__getitem__" method not defined on type "Datatype" (reportIndexIssue)
 views.py: error: "csv_path" is possibly unbound (reportPossiblyUnboundVariable)
 views.py: error: "dataset_id" is not a known member of "None" (reportOptionalMemberAccess)
@@ -518,7 +517,6 @@ views.py: error: "dataset_name" is possibly unbound (reportPossiblyUnboundVariab
 views.py: error: "get" is not a known member of "None" (reportOptionalMemberAccess)
 views.py: error: "group_by_category_config" is possibly unbound (reportPossiblyUnboundVariable)
 views.py: error: "group_by_feature" is possibly unbound (reportPossiblyUnboundVariable)
-views.py: error: "html" is possibly unbound (reportPossiblyUnboundVariable)
 views.py: error: "index" is not a known member of "None" (reportOptionalMemberAccess)
 views.py: error: "matrix" is not a known member of "None" (reportOptionalMemberAccess)
 views.py: error: "model_id" is not a known member of "None" (reportOptionalMemberAccess)

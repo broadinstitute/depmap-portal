@@ -111,7 +111,7 @@ def main(
 
     assert set(overall_summary.index) == set(
         context_matrix.index
-    ), "Models in the data availability matrix must exactly match models in the ContextMatrix"
+    ), "Models in the data availability matrix must exactly match models in the SubtypeMatrix"
 
     overall_summary.to_csv(out_filename, index=True)
 
