@@ -1,7 +1,7 @@
 import * as React from "react";
 import { useEffect, useContext, useState } from "react";
 import { Button } from "react-bootstrap";
-import { getDapi } from "src/common/utilities/context";
+import { toStaticUrl } from "@depmap/globals";
 import styles from "src/peddepLandingPage/styles/PeddepPage.scss";
 import { ApiContext } from "@depmap/api";
 import SubGroupPlot from "./SubgroupPlot";
@@ -61,15 +61,12 @@ export default function PeddepPage(props: PeddepPageProps) {
     })();
   }, [bapi]);
 
-  const imagePath = getDapi()._getFileUrl(
-    // TODO: Use context?
-    "/static/img/peddep_landing_page/pedepwave.png"
-  );
+  const imagePath = toStaticUrl("img/peddep_landing_page/pedepwave.png");
 
   const umapImage = (
     <img
       style={{ float: "right" }}
-      src={getDapi()._getFileUrl("/static/img/peddep_landing_page/umap.png")}
+      src={toStaticUrl("img/peddep_landing_page/umap.png")}
       alt="Diagram of UMAP"
     />
   );
