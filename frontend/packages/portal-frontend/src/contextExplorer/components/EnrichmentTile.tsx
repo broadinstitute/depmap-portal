@@ -83,8 +83,6 @@ export const EnrichmentTile: React.FC<EnrichmentTileProps> = ({
     ) {
       return null;
     }
-
-    return null;
   }
 
   const customInfoImg = (

@@ -78,14 +78,12 @@ def get_box_plot_card_data(
                     model_ids=context_model_ids,
                 )
                 significant_box_plot_data.append(box_plot)
-                all_sig_models.extend(context_model_ids)
-            else:
-                other_lineage_plot_model_ids.extend(context_model_ids)
-        else:
-            others = [m for m in context_model_ids if m not in all_sig_models]
-            other_lineage_plot_model_ids.extend(others)
+                if child != level_0_code:
+                    all_sig_models.extend(context_model_ids)
 
-    if level_0_code not in all_sig_context_codes:
+    if len(sig_child_codes) > 1 or (
+        len(sig_child_codes) == 1 and level_0_code != sig_child_codes[0]
+    ):
         if len(all_sig_models) >= 5:
             plot_data = get_box_plot_data_for_context(
                 subtype_code=level_0_code,
