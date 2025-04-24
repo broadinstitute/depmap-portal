@@ -148,7 +148,17 @@ export default function PeddepPage(props: PeddepPageProps) {
             </div>
           </div>
           <div>
-            <p>INPut graph here</p>
+            {data
+              ? Object.entries(data).map(([subgroup, values]) => {
+                  return (
+                    <SubGroupPlot
+                      key={subgroup}
+                      subgroup={subgroup}
+                      subtypes={values}
+                    />
+                  );
+                })
+              : "Loading..."}
           </div>
         </div>
       </div>
