@@ -159,6 +159,7 @@ const ContextExplorerTabs = ({
               treeType={treeType}
               entityType={"gene"}
               datasetId={ContextExplorerDatasets.Chronos_Combined}
+              customInfoImg={customInfoImg}
             />
           )}
         </TabPanel>
@@ -173,6 +174,7 @@ const ContextExplorerTabs = ({
                 treeType={treeType}
                 entityType={"compound"}
                 datasetId={ContextExplorerDatasets.Prism_oncology_AUC}
+                customInfoImg={customInfoImg}
               />
             )}
           </TabPanel>
@@ -187,6 +189,7 @@ const ContextExplorerTabs = ({
               treeType={treeType}
               entityType={"compound"}
               datasetId={ContextExplorerDatasets.Rep_all_single_pt}
+              customInfoImg={customInfoImg}
             />
           )}
         </TabPanel>
