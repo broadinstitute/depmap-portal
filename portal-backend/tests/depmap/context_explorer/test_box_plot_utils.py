@@ -16,6 +16,7 @@ from tests.factories import (
     SubtypeContextFactory,
     SubtypeNodeFactory,
 )
+import pandas as pd
 from tests.utilities import interactive_test_utils
 
 
@@ -636,30 +637,48 @@ def test_get_context_plot_data(
     }
 
 
-def test_get_box_plot_data_for_other_category_heme():
-    # Make sure no significant models are repeated in this category
-    # Make sure these are all heme models
-    # Make sure these are all the same tree_type (Lineage vs Molecular Subtype)
-    pass
-
-
-def test_get_box_plot_data_for_other_category_solid():
-    # Make sure no significant models are repeated in this category
-    # Make sure these are all solid models
-    # Make sure these are all the same tree_type (Lineage vs Molecular Subtype)
-    pass
-
-
 ######################################
 ### Enriched Lineage Tile Specific ###
 ######################################
-def test_get_compound_enriched_lineages_entity_id_and_dataset_name():
-    pass
+@pytest.mark.parametrize(
+    "dataset_name, entity_type, tree_type",
+    [
+        ("Chronos_Combined", "gene", "Lineage"),
+        ("Chronos_Combined", "gene", "MolecularSubtype"),
+        ("Rep_all_single_pt", "compound", "Lineage"),
+        ("Rep_all_single_pt", "compound", "MolecularSubtype"),
+        ("Prism_oncology_AUC", "compound", "Lineage"),
+        ("Prism_oncology_AUC", "compound", "MolecularSubtype"),
+    ],
+)
+def test_get_data_to_show_if_no_contexts_significant(
+    empty_db_mock_downloads, dataset_name, entity_type, tree_type
+):
+    entity = set_up_node_and_context_objects(
+        empty_db_mock_downloads=empty_db_mock_downloads,
+        dataset_name=dataset_name,
+        entity_type=entity_type,
+        make_level_0_significant=False,
+        tree_type=tree_type,
+    )
 
+    empty_db_mock_downloads.session.flush()
+    interactive_test_utils.reload_interactive_config()
 
-def test_get_gene_enriched_lineages_entity_id_and_dataset_name():
-    pass
+    # Forcing sig_contexts to be empty so we don't need to write a new
+    # set_up_node_and_context_objects just to create no contexts significant
+    sig_contexts = pd.DataFrame()
+    if sig_contexts.empty:
+        data = box_plot_utils.get_data_to_show_if_no_contexts_significant(
+            entity_type=entity_type,
+            entity_label=entity.label,
+            tree_type=tree_type,
+            dataset_name=dataset_name,
+        )
 
-
-def test_get_data_to_show_if_no_contexts_significant():
-    pass
+    assert len(data["box_plot_data"]["significant_selection"]) == 0
+    assert data["box_plot_data"]["insignificant_selection"] == None
+    assert len(data["box_plot_data"]["other_cards"]) == 0
+    # We didn't set anything up as MYELOID or LYMPH, so there shouldn't be any Heme data
+    assert len(data["box_plot_data"]["insignificant_heme_data"]["data"]) == 0
+    assert len(data["box_plot_data"]["insignificant_solid_data"]["data"]) > 0
