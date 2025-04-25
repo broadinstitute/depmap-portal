@@ -2,7 +2,9 @@ import dataclasses
 from depmap.cell_line.models_new import DepmapModel
 from depmap.context.models_new import SubtypeContext, SubtypeNode
 from depmap.context_explorer import box_plot_utils, enrichment_tile_filters
+from depmap.context_explorer.utils import get_compound_experiment
 from depmap.dataset.models import DependencyDataset
+from depmap.gene.models import Gene
 import numpy as np
 import pytest
 from tests.factories import (
@@ -306,7 +308,11 @@ def test_get_sig_context_dataframe_level_0_significant(
         make_level_0_significant=True,
         tree_type=tree_type,
     )
-    entity_id = entity.entity_id
+    entity_id = (
+        Gene.get_by_label(entity.label).entity_id
+        if entity_type == "gene"
+        else get_compound_experiment(entity.label).entity_id
+    )
     empty_db_mock_downloads.session.flush()
 
     max_fdr, min_abs_effect_size, frac_dep_in = get_context_explorer_box_plot_filters(
@@ -348,7 +354,11 @@ def test_get_sig_context_dataframe_level_0_not_significant(
         make_level_0_significant=False,
         tree_type=tree_type,
     )
-    entity_id = entity.entity_id
+    entity_id = (
+        Gene.get_by_label(entity.label).entity_id
+        if entity_type == "gene"
+        else get_compound_experiment(entity.label).entity_id
+    )
     empty_db_mock_downloads.session.flush()
 
     max_fdr, min_abs_effect_size, frac_dep_in = get_context_explorer_box_plot_filters(
@@ -429,7 +439,11 @@ def test_get_sig_context_data_frame_show_positive_effect_sizes(
         make_level_0_significant=True,
         tree_type=tree_type,
     )
-    entity_id = entity.entity_id
+    entity_id = (
+        Gene.get_by_label(entity.label).entity_id
+        if entity_type == "gene"
+        else get_compound_experiment(entity.label).entity_id
+    )
     empty_db_mock_downloads.session.flush()
 
     max_fdr, min_abs_effect_size, frac_dep_in = get_context_explorer_box_plot_filters(
@@ -493,7 +507,7 @@ def test_get_sig_context_dataframe_no_significant_analyses_found(
     sig_contexts = box_plot_utils.get_sig_context_dataframe(
         tree_type=tree_type,
         entity_type=entity_type,
-        entity_id="random",
+        entity_id=9999,
         dataset_name=dataset_name,
         max_fdr=max_fdr,
         min_abs_effect_size=1,
@@ -524,7 +538,11 @@ def test_get_context_plot_data(
         make_level_0_significant=True,
         tree_type=tree_type,
     )
-    entity_id = entity.entity_id
+    entity_id = (
+        Gene.get_by_label(entity.label).entity_id
+        if entity_type == "gene"
+        else get_compound_experiment(entity.label).entity_id
+    )
     empty_db_mock_downloads.session.flush()
     interactive_test_utils.reload_interactive_config()
 
@@ -552,6 +570,7 @@ def test_get_context_plot_data(
         level_0="A",
         tree_type=tree_type,
     )
+    assert context_plot_box_data is not None
     context_plot_box_data_dict = dataclasses.asdict(context_plot_box_data)
 
     # A2A doesn't have enough models to return a plot, so we should only see A and A1 here
@@ -665,16 +684,15 @@ def test_get_data_to_show_if_no_contexts_significant(
     empty_db_mock_downloads.session.flush()
     interactive_test_utils.reload_interactive_config()
 
-    # Forcing sig_contexts to be empty so we don't need to write a new
+    # Pretending sig_contexts is empty so we don't need to write a new
     # set_up_node_and_context_objects just to create no contexts significant
-    sig_contexts = pd.DataFrame()
-    if sig_contexts.empty:
-        data = box_plot_utils.get_data_to_show_if_no_contexts_significant(
-            entity_type=entity_type,
-            entity_label=entity.label,
-            tree_type=tree_type,
-            dataset_name=dataset_name,
-        )
+
+    data = box_plot_utils.get_data_to_show_if_no_contexts_significant(
+        entity_type=entity_type,
+        entity_label=entity.label,
+        tree_type=tree_type,
+        dataset_name=dataset_name,
+    )
 
     assert len(data["box_plot_data"]["significant_selection"]) == 0
     assert data["box_plot_data"]["insignificant_selection"] == None
