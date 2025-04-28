@@ -529,10 +529,21 @@ def compute_context_explorer_results(inputs, out_filename):
     )
     print("writing results to file")
     context_explorer_results.to_csv(out_filename, index=False)
-
     return
 
 
+def add_compute_command(subparser):
+    parser = subparser.add_parser("compute", help="Compute context analysis")
+    parser.add_argument("inputs")
+    parser.add_argument("out_filename")
+    parser.set_defaults(
+        func=lambda args: compute_context_explorer_results(
+            args.inputs, args.out_filename
+        )
+    )
+
+
+########################
 # code to allow breaking computation into batches and running each batch independently
 def prepare_batches(inputs, intermediates_dir, batch_count):
     all_data = _prepare(inputs)
@@ -624,15 +635,7 @@ def add_gather_batches_command(subparser):
     )
 
 
-def add_compute_command(subparser):
-    parser = subparser.add_parser("compute", help="Compute context analysis")
-    parser.add_argument("inputs")
-    parser.add_argument("out_filename")
-    parser.set_defaults(
-        func=lambda args: compute_context_explorer_results(
-            args.inputs, args.out_filename
-        )
-    )
+######################
 
 
 if __name__ == "__main__":

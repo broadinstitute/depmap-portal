@@ -51,7 +51,7 @@ rule get_context_analysis:
 
     """
     run """sparkles --config sparkles-config \
-      workflow run test-context-analysis \
+      workflow run \
      --add-hash-to-job-id \
      --retry \
      --nodes 10 \
@@ -62,6 +62,7 @@ rule get_context_analysis:
      -u {{ }}:rep-cpmd-sum \
      -u {{ }}:oncref-cpmd-sum \
      -u {{ }}:tda-table \
+      context-analysis \
      {{ inputs.workflow }}
 """
     run """gsutil cp `cat results_path.txt` context_analysis.csv """
