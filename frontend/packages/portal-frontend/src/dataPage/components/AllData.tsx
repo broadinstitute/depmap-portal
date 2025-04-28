@@ -5,27 +5,24 @@ import {
   Release,
   ReleaseType,
 } from "@depmap/data-slicer";
-import {
-  FileSearch,
-  FileSearchOption,
-} from "../../download/components/FileSearch";
+import { FileSearch, FileSearchOption } from "./FileSearch";
 import {
   deleteSpecificQueryParams,
   setQueryStringsWithoutPageReload,
 } from "@depmap/utils";
-import { TypeGroupOption } from "../../download/components/CheckboxPanel";
 import { Button, DropdownButton, MenuItem } from "react-bootstrap";
 import {
   areVersionsValidReleases,
   getReleaseByReleaseName,
 } from "src/common/utilities/helper_functions";
-import { formatReleaseGroupByType } from "../../download/utils";
+import { formatReleaseGroupByType } from "../utils";
 import useReleaseNameAndVersionSelectionHandlers, {
   useReleaseModalAndSingleFileModeHandlers,
 } from "../hooks/useAllDataHandlers";
 import styles from "src/dataPage/styles/DataPage.scss";
 import DataFilePanel from "./DataFilePanel";
 import { ReleaseCardModal } from "../../download/components/ReleaseCardModal";
+import { TypeGroupOption } from "../models/types";
 
 interface AllDataProps {
   downloadTable: DownloadTableData;

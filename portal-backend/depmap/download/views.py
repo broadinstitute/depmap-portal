@@ -79,30 +79,6 @@ def view_all():
     return _redirect_to_new_data_page()
 
 
-@blueprint.route("/data_page_citation/")
-def render_download_page(mode):
-    return render_template(
-        "downloads/all_downloads.html",
-        terms_definitions=ReleaseTerms.get_terms_to_text(),
-        bulk_files_csv_url=url_for("api.download_bulk_files_csv")
-        if current_app.config["ENABLED_FEATURES"].bulk_files_csv_url
-        else None,
-        mode=mode,
-    )
-
-
-def render_custom_download_page(mode):
-    mode = "customDownloads"
-    return render_template(
-        "downloads/custom_downloads.html",
-        all_terms=ReleaseTerms.get_all_terms(),
-        bulk_files_csv_url=url_for("api.download_bulk_files_csv")
-        if current_app.config["ENABLED_FEATURES"].bulk_files_csv_url
-        else None,
-        mode=mode,
-    )
-
-
 @blueprint.route("/api/downloads")
 def get_all_downloads():
     """

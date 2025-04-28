@@ -524,10 +524,6 @@ export class DepmapApi {
     return this._fetch<CeleryTask>(`/api/task/${id}`);
   }
 
-  getDownloads(): Promise<Downloads> {
-    return this._fetch<Downloads>("/download/api/downloads");
-  }
-
   getAllDataTabDownloadData(): Promise<Downloads> {
     return this._fetch<Downloads>("/data_page/api/data");
   }

@@ -1,5 +1,5 @@
 import { Release, ReleaseType } from "@depmap/data-slicer";
-import { TypeGroupOption } from "./components/CheckboxPanel";
+import { TypeGroupOption } from "./models/types";
 
 export const formatReleaseGroupByType = (
   releaseData: Release[],
