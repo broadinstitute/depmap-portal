@@ -49,6 +49,9 @@ def crawl_start():
     """
     global_search_types = inspect(GlobalSearchIndex).columns["type"].type.enums
     global_search_urls = {
+        "subtype_context_search": url_for(
+            "context_explorer.view_context_explorer", context="SKIN"
+        ),
         "gene": url_for("gene.view_gene", gene_symbol="SOX10"),
         "gene_alias": url_for("gene.view_gene", gene_symbol="SOX10"),
         "compound": url_for("compound.view_compound", name="AFATINIB"),
