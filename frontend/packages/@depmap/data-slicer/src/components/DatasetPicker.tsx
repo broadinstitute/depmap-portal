@@ -41,7 +41,11 @@ const DatasetPicker = (props: Props) => {
         >
           <span style={{ width: "100%" }}>{dataset.label}</span>
           {dataset.url && (
-            <a href={dataset.url} target="_blank" rel="noreferrer">
+            <a
+              href={dataset.url.concat("&tab=allData")}
+              target="_blank"
+              rel="noreferrer"
+            >
               <span
                 className="glyphicon glyphicon-new-window"
                 style={{ paddingLeft: "3px" }}

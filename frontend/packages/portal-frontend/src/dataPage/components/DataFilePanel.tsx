@@ -11,7 +11,7 @@ interface DataFilePanelProps {
   data: DownloadTableData;
   termsDefinitions: { [key: string]: string };
   release: Release;
-  panelToOpenOnPageLoad: DownloadFile | null;
+  panelToOpenOnPageLoad?: DownloadFile | null;
   keySuffix?: number;
 }
 
@@ -250,7 +250,7 @@ const DataFilePanel = ({
                 />
               }
               key={autoOpenedPanel.releaseName + autoOpenedPanel.fileName}
-              openPanelOnLoad={true}
+              openPanelOnLoad
               keyPrefix={autoOpenedPanel.releaseName + autoOpenedPanel.fileName}
               keySuffix={keySuffix}
             />
