@@ -17,7 +17,7 @@ import {
 } from "src/common/utilities/helper_functions";
 import { formatReleaseGroupByType } from "../utils";
 import useReleaseNameAndVersionSelectionHandlers, {
-  useReleaseModalAndSingleFileModeHandlers,
+  useReleaseModalAndAutoOpenSingleFilePanelModeHandlers,
 } from "../hooks/useAllDataHandlers";
 import styles from "src/dataPage/styles/DataPage.scss";
 import DataFilePanel from "./DataFilePanel";
@@ -177,7 +177,7 @@ export const AllData = ({
     handleReleaseFileNameUrls,
     handleToggleReleaseModal,
     handleFileSearch,
-  } = useReleaseModalAndSingleFileModeHandlers(
+  } = useReleaseModalAndAutoOpenSingleFilePanelModeHandlers(
     downloadTable,
     releaseData,
     releaseModalShown,
@@ -464,12 +464,10 @@ export const AllData = ({
               <div className={styles.dataFilePanelContainer}>
                 <DataFilePanel
                   data={
-                    singleFileToShow
-                      ? [singleFileToShow]
-                      : releaseDataGroupedByReleaseName[
-                          versionSelector?.selection[0] ??
-                            dropdownSelector.selection[0].name
-                        ]
+                    releaseDataGroupedByReleaseName[
+                      versionSelector?.selection[0] ??
+                        dropdownSelector.selection[0].name
+                    ]
                   }
                   release={
                     getReleaseByReleaseName(
@@ -479,7 +477,7 @@ export const AllData = ({
                     )!
                   }
                   termsDefinitions={termsDefinitions}
-                  openPanelOnLoad={singleFileToShow !== null}
+                  panelToOpenOnPageLoad={singleFileToShow}
                   keySuffix={keySuffix}
                 />
               </div>

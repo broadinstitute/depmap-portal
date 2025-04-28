@@ -33,15 +33,11 @@ export default function useReleaseNameAndVersionSelectionHandlers(
       selection: TypeGroupOption[];
     }>
   >,
-  setSingleFileShownFromFullSearch: React.Dispatch<
+  setFileToAutoOpenFullSearch: React.Dispatch<React.SetStateAction<boolean>>,
+  setFileToAutoOpenFromFileSetSearch: React.Dispatch<
     React.SetStateAction<boolean>
   >,
-  setSingleFileShownFromFileSetSearch: React.Dispatch<
-    React.SetStateAction<boolean>
-  >,
-  setSingleFileToShow: React.Dispatch<
-    React.SetStateAction<DownloadFile | null>
-  >,
+  setFileToAutoOpen: React.Dispatch<React.SetStateAction<DownloadFile | null>>,
   dropdownSelector: {
     fileType: {
       selected: Set<string>;
@@ -57,8 +53,8 @@ export default function useReleaseNameAndVersionSelectionHandlers(
   versionSelector: {
     selection: string[];
   },
-  singleFileShownFromFullSearch: boolean,
-  singleFileShownFromFileSetSearch: boolean
+  singleFileAutoOpenedFromFullSearch: boolean,
+  singleFileAutoOpenedFromFileSetSearch: boolean
 ) {
   const allFilesSearchOptions = downloadTable.map((row: any) => {
     return {
@@ -69,33 +65,33 @@ export default function useReleaseNameAndVersionSelectionHandlers(
   });
 
   const handleExitSingleFileFocusModeFullSearch = useCallback(() => {
-    if (singleFileShownFromFullSearch) {
-      setSingleFileShownFromFullSearch(false);
+    if (singleFileAutoOpenedFromFullSearch) {
+      setFileToAutoOpenFullSearch(false);
 
-      setSingleFileToShow(null);
+      setFileToAutoOpen(null);
 
       // Remove release and file name params from url (were added on open of the modal)
       deleteQueryParams();
     }
   }, [
-    setSingleFileShownFromFullSearch,
-    setSingleFileToShow,
-    singleFileShownFromFullSearch,
+    setFileToAutoOpenFullSearch,
+    setFileToAutoOpen,
+    singleFileAutoOpenedFromFullSearch,
   ]);
 
   const handleExitSingleFileFocusModeFileSetSearch = useCallback(() => {
-    if (singleFileShownFromFileSetSearch) {
-      setSingleFileShownFromFileSetSearch(false);
+    if (singleFileAutoOpenedFromFileSetSearch) {
+      setFileToAutoOpenFromFileSetSearch(false);
 
-      setSingleFileToShow(null);
+      setFileToAutoOpen(null);
 
       // Remove release and file name params from url (were added on open of the modal)
       deleteQueryParams();
     }
   }, [
-    setSingleFileShownFromFileSetSearch,
-    setSingleFileToShow,
-    singleFileShownFromFileSetSearch,
+    setFileToAutoOpenFromFileSetSearch,
+    setFileToAutoOpen,
+    singleFileAutoOpenedFromFileSetSearch,
   ]);
 
   const handleDropdownSelectionChange = useCallback(
@@ -266,7 +262,7 @@ export default function useReleaseNameAndVersionSelectionHandlers(
   };
 }
 
-export function useReleaseModalAndSingleFileModeHandlers(
+export function useReleaseModalAndAutoOpenSingleFilePanelModeHandlers(
   downloadTable: DownloadTableData,
   releaseData: Release[],
   releaseModalShown: boolean,
@@ -275,13 +271,13 @@ export function useReleaseModalAndSingleFileModeHandlers(
     releaseVersionGroupName?: string | undefined,
     versions?: string[] | undefined
   ) => void,
-  setSingleFileShownFromFullSearch: React.Dispatch<
+  setFileToAutoOpenFromFullSearch: React.Dispatch<
     React.SetStateAction<boolean>
   >,
-  setSingleFileShownFromFileSetSearch: React.Dispatch<
+  setFileToAutoOpenFromFileSetSearch: React.Dispatch<
     React.SetStateAction<boolean>
   >,
-  setSingleFileToShow: React.Dispatch<
+  setFileToAutoOpenOnSearch: React.Dispatch<
     React.SetStateAction<DownloadFile | null>
   >,
   setReleaseModalShown: React.Dispatch<React.SetStateAction<boolean>>,
@@ -295,6 +291,8 @@ export function useReleaseModalAndSingleFileModeHandlers(
     }
   }, [releaseModalShown, setReleaseModalShown]);
 
+  // If this is fromFullSearch or url params might need to select the appropriate fileset before
+  // anything else.
   const loadToSpecificFilePanel = useCallback(
     (releaseName: string, fileName: string, fromFullSearch: boolean) => {
       // Check if the releaseName is part of a releaseVersionGroup (e.g. "DepMap Public 23Q4" is part of "DepMap Public")
@@ -337,17 +335,17 @@ export function useReleaseModalAndSingleFileModeHandlers(
       }
 
       if (fromFullSearch) {
-        setSingleFileShownFromFullSearch(true);
+        setFileToAutoOpenFromFullSearch(true);
       } else {
-        setSingleFileShownFromFileSetSearch(true);
+        setFileToAutoOpenFromFileSetSearch(true);
       }
 
-      setSingleFileToShow(downloadTableRow);
+      setFileToAutoOpenOnSearch(downloadTableRow);
     },
     [
-      setSingleFileShownFromFullSearch,
-      setSingleFileShownFromFileSetSearch,
-      setSingleFileToShow,
+      setFileToAutoOpenFromFullSearch,
+      setFileToAutoOpenFromFileSetSearch,
+      setFileToAutoOpenOnSearch,
       handleDropdownSelectionChange,
       downloadTable,
       releaseData,

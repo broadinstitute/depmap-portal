@@ -11,7 +11,7 @@ interface DataFilePanelProps {
   data: DownloadTableData;
   termsDefinitions: { [key: string]: string };
   release: Release;
-  openPanelOnLoad?: boolean;
+  panelToOpenOnPageLoad: DownloadFile | null;
   keySuffix?: number;
 }
 
@@ -202,13 +202,18 @@ const DataFilePanel = ({
   data,
   termsDefinitions,
   release,
-  openPanelOnLoad = false,
+  panelToOpenOnPageLoad = null,
   keySuffix = 1,
 }: DataFilePanelProps) => {
-  const primaryFiles = data.filter((dataFile) => dataFile.isMainFile === true);
+  const autoOpenedPanel = panelToOpenOnPageLoad
+    ? data.find((file) => panelToOpenOnPageLoad === file)
+    : undefined;
+  const primaryFiles = data.filter(
+    (dataFile) => dataFile.isMainFile === true && dataFile !== autoOpenedPanel
+  );
 
   const supplementalFiles = data.filter(
-    (dataFile) => dataFile.isMainFile === false
+    (dataFile) => dataFile.isMainFile === false && dataFile !== autoOpenedPanel
   );
 
   const primaryFilesHaveSize =
@@ -219,6 +224,39 @@ const DataFilePanel = ({
 
   return (
     <div className={styles.DataFilePanel}>
+      {autoOpenedPanel && (
+        <div className={styles.dataPanelSection}>
+          <h3>Selected File</h3>
+          <div className={styles.filePanelHeader}>
+            <div className={styles.headerColOne}>NAME</div>
+            <div className={styles.headerColTwo}>DESCRIPTION</div>
+            {primaryFilesHaveSize && (
+              <div className={styles.headerColThree}>SIZE</div>
+            )}
+            <div className={styles.headerColFour}>ACTIONS</div>
+          </div>
+          <div className="collapsible-panel-list">
+            <CollapsiblePanel
+              headerContent={
+                <CollapsiblePanelHeader
+                  file={autoOpenedPanel}
+                  termsDefinitions={termsDefinitions}
+                />
+              }
+              bodyContent={
+                <CollapsiblePanelBody
+                  file={autoOpenedPanel}
+                  release={release}
+                />
+              }
+              key={autoOpenedPanel.releaseName + autoOpenedPanel.fileName}
+              openPanelOnLoad={true}
+              keyPrefix={autoOpenedPanel.releaseName + autoOpenedPanel.fileName}
+              keySuffix={keySuffix}
+            />
+          </div>
+        </div>
+      )}
       {primaryFiles.length > 0 && (
         <div className={styles.dataPanelSection}>
           <h3>Primary Files</h3>
@@ -243,7 +281,7 @@ const DataFilePanel = ({
                   <CollapsiblePanelBody file={file} release={release} />
                 }
                 key={file.releaseName + file.fileName}
-                openPanelOnLoad={openPanelOnLoad}
+                openPanelOnLoad={false}
                 keyPrefix={file.releaseName + file.fileName}
                 keySuffix={keySuffix}
               />
@@ -275,7 +313,7 @@ const DataFilePanel = ({
                   <CollapsiblePanelBody file={file} release={release} />
                 }
                 key={file.releaseName + file.fileName}
-                openPanelOnLoad={openPanelOnLoad}
+                openPanelOnLoad={false}
                 keyPrefix={file.releaseName + file.fileName}
                 keySuffix={keySuffix}
               />
