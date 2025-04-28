@@ -43,6 +43,7 @@ import {
   REPURPOSING_DETAIL_NO_COMPOUND_SELECTED,
   ONCREF_TABLE_DESCRIPTION,
   REPURPOSING_TABLE_DESCRIPTION,
+  getDetailPanelTooltip,
 } from "../../utils";
 import geneDepFilterDefinitions from "../../json/geneDepFilters.json";
 import repurposingFilterDefinitions from "../../json/repurposingFilters.json";
@@ -61,6 +62,7 @@ import useContextExplorerFilters from "src/contextExplorer/hooks/useContextExplo
 import DoseCurvesTile from "./DoseCurvesTile";
 import CollapsibleBoxPlots from "../boxPlots/CollapsibleBoxPlots";
 import { calcMinMax } from "@depmap/data-explorer-2/src/components/DataExplorerPage/components/plot/prototype/plotUtils";
+import InfoIcon from "src/common/components/InfoIcon";
 
 interface ContextAnalysisProps {
   selectedContextNameInfo: ContextNameInfo;
@@ -69,6 +71,7 @@ interface ContextAnalysisProps {
   treeType: TreeType;
   entityType: string;
   datasetId: ContextExplorerDatasets;
+  customInfoImg: React.JSX.Element;
 }
 
 function ContextAnalysis({
@@ -78,6 +81,7 @@ function ContextAnalysis({
   treeType,
   entityType,
   datasetId,
+  customInfoImg,
 }: ContextAnalysisProps) {
   const dapi = getDapi();
   const [outgroup, setOutgroup] = useState<{
@@ -1076,7 +1080,19 @@ function ContextAnalysis({
               }}
             >
               {entityType === "gene" ? "Gene" : "Drug"} Detail
-              {selectedPlotLabels && <span> - {selectedPlotLabels}</span>}
+              {selectedPlotLabels && (
+                <span>
+                  {" "}
+                  - {selectedPlotLabels}{" "}
+                  <InfoIcon
+                    target={customInfoImg}
+                    popoverContent={getDetailPanelTooltip(datasetId)}
+                    popoverId={`${datasetId}-detail-popover`}
+                    trigger={["hover", "focus"]}
+                    placement={"top"}
+                  />
+                </span>
+              )}
             </h2>
             {boxPlotData && (
               <a

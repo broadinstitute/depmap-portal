@@ -862,7 +862,7 @@ class SubtypeNodeFactory(SQLAlchemyModelFactory):
     )
     molecular_subtype_code = None
 
-    tree_type = "Lineage" if molecular_subtype_code is None else "MolecularSubtype"
+    tree_type = "Lineage"
 
     node_name = factory.Sequence(lambda number: "node_name_{}".format(number))
     node_level = factory.Sequence(lambda number: number)
