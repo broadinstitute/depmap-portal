@@ -21,7 +21,7 @@ import useReleaseNameAndVersionSelectionHandlers, {
 } from "../hooks/useAllDataHandlers";
 import styles from "src/dataPage/styles/DataPage.scss";
 import DataFilePanel from "./DataFilePanel";
-import { ReleaseCardModal } from "../../download/components/ReleaseCardModal";
+import { ReleaseCardModal } from "./ReleaseCardModal";
 import { TypeGroupOption } from "../models/types";
 
 interface AllDataProps {

@@ -3,7 +3,7 @@ import { deleteQueryParams } from "@depmap/utils";
 import qs from "qs";
 import { useCallback } from "react";
 import { getReleaseGroupFromSelection } from "src/common/utilities/helper_functions";
-import { FileSearchOption } from "../../download/components/FileSearch";
+import { FileSearchOption } from "../components/FileSearch";
 import { findReleaseVersionGroupName, findReleaseVersions } from "../utils";
 import { TypeGroupOption } from "../models/types";
 
