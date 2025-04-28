@@ -7,7 +7,6 @@ from dataclasses import dataclass, asdict
 from depmap import data_access
 from depmap.user_uploads.tasks import (
     upload_transient_csv,
-    upload_transient_taiga,
     convert_to_hdf5,
     validate_df_indices,
 )
@@ -73,40 +72,6 @@ def test_upload_transient_csv(empty_db_mock_downloads, mock_celery_task_update_s
         lambda: upload_transient_csv(label, units, is_transpose, file_path, False),
         expected_config,
     )
-
-
-def test_upload_transient_taiga(
-    empty_db_mock_downloads, mock_taiga_client, mock_celery_task_update_state
-):
-    """
-    :param mock_taiga_client: this fixture loads the test_avana.hdf5 file
-    """
-    is_transpose = True
-    label = "test label"
-    units = "test units"
-    taiga_id = "test_taiga_id"
-    expected_config = {
-        "transpose": True,
-        "taiga_id": taiga_id,
-        "feature_name": "feature",
-        "units": units,
-        "data_type": "user_upload",
-        "label": label,
-        "is_standard": False,
-        "is_custom": True,
-        "is_continuous": True,
-        "is_discoverable": False,
-    }
-    verify_first_add(
-        empty_db_mock_downloads,
-        lambda: upload_transient_taiga(label, units, is_transpose, taiga_id),
-        expected_config,
-    )
-    verify_duplicate_add(
-        lambda: upload_transient_taiga(label, units, is_transpose, taiga_id),
-        expected_config,
-    )
-
 
 # fixme add tests for the warnings, and other failure modes
 

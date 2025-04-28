@@ -37,7 +37,7 @@ def test_cas_operations(app, monkeypatch):
 
     _mock_bucket.blob = Mock(side_effect=_mock_blob)
     monkeypatch.setattr(
-        depmap.cas.util, "get_private_datasets_bucket", Mock(return_value=_mock_bucket)
+        depmap.cas.util, "get_cas_bucket", Mock(return_value=_mock_bucket)
     )
 
     # the actual tests

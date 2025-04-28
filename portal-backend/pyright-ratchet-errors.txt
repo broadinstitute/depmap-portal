@@ -119,9 +119,7 @@ db_load_commands.py: error: Argument of type "Literal['METMAP_500_TAIGA_ID']" ca
 db_load_commands.py: error: Argument of type "Literal['NONSTANDARD_DATA_DIR']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
 db_load_commands.py: error: Argument of type "Literal['RESOURCES_DATA_PATH']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
 db_load_commands.py: error: Argument of type "Literal['S3_DIR']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
-db_load_commands.py: error: Argument of type "Literal['SAMPLE_DATA_DIR']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
 db_load_commands.py: error: Argument of type "Literal['WEBAPP_DATA_DIR']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
-db_load_commands.py: error: Argument of type "None" cannot be assigned to parameter "task" of type "Task" in function "_upload_transient_csv"
 db_load_commands.py: error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
 df_test_utils.py: error: Argument of type "Literal['LOADER_DATA_DIR']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
 df_test_utils.py: error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
@@ -361,7 +359,6 @@ tasks.py: error: Argument of type "ArrayLike" cannot be assigned to parameter "c
 tasks.py: error: Argument of type "Literal['COMPUTE_RESULTS_ROOT']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
 tasks.py: error: Argument of type "Literal['NONSTANDARD_DATA_DIR']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
 tasks.py: error: Argument of type "list[Unknown]" cannot be assigned to parameter "gene_ids" of type "MutationTableSpec" in function "get_subsetted_mutations_df_by_ids"
-tasks.py: error: Could not access item in TypedDict
 tasks.py: error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
 tda_loader.py: error: "dataset_id" is not a known member of "None" (reportOptionalMemberAccess)
 tda_loader.py: error: "groups" is not a known member of "None" (reportOptionalMemberAccess)
@@ -411,12 +408,10 @@ test_get_associations.py: error: "parse" is not a known member of module "urllib
 test_get_associations.py: error: Cannot access member "entity_id" for type "GeneFactory"
 test_get_associations_csv.py: error: "parse" is not a known member of module "urllib" (reportAttributeAccessIssue)
 test_get_dataset_url.py: error: Argument of type "Sequence" cannot be assigned to parameter "dataset_id" of type "str" in function "get_dataset_url"
-test_get_dataset_url.py: error: Cannot access member "dataset_id" for type "PrivateDatasetMetadataFactory"
 test_get_features.py: error: "__get_config" is unknown import symbol (reportAttributeAccessIssue)
 test_get_features.py: error: Argument of type "list[tuple[Literal['groupBy'], str] | tuple[Literal['filter'], str] | tuple[Literal['computeLinearFit'], Literal[True]]]" cannot be assigned to parameter "__m" of type "Iterable[tuple[_S, str]]" in function "update"
 test_get_features.py: error: No overloads for "update" match the provided arguments (reportCallIssue)
 test_get_sort_key.py: error: Argument of type "LazyAttribute" cannot be assigned to parameter "third_key_display_name" of type "str" in function "__init__"
-test_get_sort_key.py: error: Cannot access member "dataset_id" for type "PrivateDatasetMetadataFactory"
 test_global_search_loader.py: error: "__load_context_search_index" is not a known member of module "loader.global_search_loader" (reportAttributeAccessIssue)
 test_global_search_loader.py: error: "__load_gene_search_index" is not a known member of module "loader.global_search_loader" (reportAttributeAccessIssue)
 test_global_search_loader.py: error: Cannot access member "entity_id" for type "CompoundFactory"
@@ -446,7 +441,6 @@ test_models.py: error: Cannot access member "all" for type "LazyAttribute"
 test_models.py: error: Cannot access member "biomarker_dataset_id" for type "BiomarkerDatasetFactory"
 test_models.py: error: Cannot access member "dataset_id" for type "BiomarkerDatasetFactory"
 test_models.py: error: Cannot access member "dataset_id" for type "DependencyDatasetFactory"
-test_models.py: error: Cannot access member "dataset_id" for type "PrivateDatasetMetadataFactory"
 test_models.py: error: Cannot access member "dependency_dataset_id" for type "DependencyDatasetFactory"
 test_models.py: error: Cannot access member "entity_id" for type "CompoundFactory"
 test_models.py: error: Cannot access member "entity_id" for type "GeneFactory"
@@ -472,7 +466,6 @@ test_run_custom_analysis_missing_row_matrix_index.py: error: Argument of type "l
 test_tasks.py: error: "__getitem__" method not defined on type "Datatype" (reportIndexIssue)
 test_tasks.py: error: Argument missing for parameter "self" (reportCallIssue)
 test_tasks.py: error: Argument missing for parameter "single_column" (reportCallIssue)
-test_tasks.py: error: Argument missing for parameter "taiga_id" (reportCallIssue)
 test_tasks.py: error: Argument of type "Group | Dataset | Datatype | Unknown" cannot be assigned to parameter "__iterable" of type "Iterable[_T@list]" in function "__init__"
 test_tasks.py: error: Argument of type "Group | Dataset | Datatype" cannot be assigned to parameter "__iterable" of type "Iterable[_T@list]" in function "__init__"
 test_tasks.py: error: Cannot access member "entity_id" for type "GeneFactory"

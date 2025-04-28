@@ -54,7 +54,6 @@ export interface SharedApi {
   getTaskStatus: (id: string) => Promise<CeleryTask>;
   getCellLineSelectorLines: () => Promise<CellLineSelectorLines>;
   getAssociations: (x: string) => Promise<AssociationAndCheckbox>;
-  postCustomTaiga: (config: UserUploadArgs) => Promise<UploadTask>;
   postCustomCsv: (config: UserUploadArgs) => Promise<UploadTask>;
   getCellignerColorMap: () => Promise<CellignerColorsForCellLineSelector>;
   searchDimensions: (

@@ -7,7 +7,6 @@ from depmap.entity.models import Entity
 from depmap.enums import DataTypeEnum
 from depmap.dataset.models import Dataset
 from depmap.download.utils import get_download_url
-from depmap.interactive.config import categories
 from depmap.interactive.config.models import (
     DatasetSortFirstKey,
     DatasetSortKey,
@@ -19,7 +18,6 @@ from depmap.predictability.utilities import (
 from depmap.taiga_id import utils as taiga_utils
 from depmap.utilities import entity_utils
 from depmap.utilities.exception import InteractiveDatasetNotFound
-from depmap.utilities.data_access_log import log_legacy_private_dataset_access
 
 
 def __get_config() -> InteractiveConfig:
@@ -75,8 +73,6 @@ def get_dataset_label(dataset_id) -> str:
     """
     Returns label of dataset
     """
-    if __get_config().is_legacy_private_dataset(dataset_id):
-        log_legacy_private_dataset_access("get_dataset_label", dataset_ids=[dataset_id])
     return __get_config().get(dataset_id).label
 
 

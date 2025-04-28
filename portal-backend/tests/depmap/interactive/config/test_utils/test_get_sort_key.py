@@ -81,9 +81,6 @@ def test_get_sort_key(empty_db_mock_downloads):
         )
     )
 
-    private_dataset = PrivateDatasetMetadataFactory(display_name="private label")
-    NonstandardMatrixFactory(private_dataset.dataset_id)
-
     standard_prioritized_dataset_0 = DependencyDatasetFactory(
         name=DependencyEnum.Chronos_Combined,
         display_name="Standard dataset display name 0",
@@ -124,9 +121,6 @@ def test_get_sort_key(empty_db_mock_downloads):
     custom_sort_key = interactive_utils.get_sort_key(custom_dataset.uuid)
     assert custom_sort_key == DatasetSortKey(0, 0, "custom label")
 
-    private_sort_key = interactive_utils.get_sort_key(private_dataset.dataset_id)
-    assert private_sort_key == DatasetSortKey(0, 0, "private label")
-
     standard_prioritized_sort_key = interactive_utils.get_sort_key(
         standard_prioritized_dataset_2.name.name
     )
@@ -155,7 +149,6 @@ def test_get_sort_key(empty_db_mock_downloads):
 
     expected_order = [
         custom_sort_key,
-        private_sort_key,
         standard_prioritized_sort_key,
         nonstandard_related_to_standard_sort_key,
         standard_other_sort_key,

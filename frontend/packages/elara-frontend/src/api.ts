@@ -555,11 +555,6 @@ export class ElaraApi {
     );
   }
 
-  // TODO: copy implementation from bbAPI.ts?
-  postCustomTaiga = (/* config: UserUploadArgs */): Promise<UploadTask> => {
-    return Promise.reject(new Error("postCustomTaiga() not implemented"));
-  };
-
   postCustomCsv = (config: AddDatasetOneRowArgs): Promise<UploadTask> => {
     const name = config.uploadFile.name;
     const finalConfig: AddCustDatasetArgs = {

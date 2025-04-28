@@ -5,9 +5,8 @@ They take in any input that the main depmap thread sends (usually from an endpoi
 They return the dataset id of the uploaded dataset, as well as any warnings about the dataset
     E.g. a warning containing the cell lines that were not recognized
 
-The two entry point functions here are
+The only remaining entry point function here is
     upload_transient_csv
-    upload_transient_taiga
 
 They are structured to be as similar as possible, to share as many of the same functions and have the same steps.
 
@@ -26,7 +25,6 @@ import celery
 from flask import current_app, url_for
 from depmap.compute.celery import app
 from depmap.cell_line.models import CellLine
-from depmap.taiga_id.utils import get_taiga_client, get_taiga_id_parts
 from depmap.interactive.nonstandard.models import (
     NonstandardMatrix,
     CellLineNameType,
@@ -41,7 +39,6 @@ from depmap.user_uploads.utils import (
 from depmap.access_control import (
     PUBLIC_ACCESS_GROUP,
 )
-from loader.taiga_id_loader import _ensure_canonical_id_stored
 
 
 def update_state(
@@ -128,90 +125,12 @@ def upload_transient_csv(
     )
 
 
-@app.task(bind=True)
-def upload_transient_taiga(
-    self: celery.Task, label: str, units: str, is_transpose: bool, taiga_id: str,
-):
-    update_state(self, state="PROGRESS")
-    # check that taiga id is valid
-    validate_transient_taiga_metadata(taiga_id)
-    validate_common_metadata(label, units)
-    # update state to checking file...
-    csv = download_transient_taiga(taiga_id)
-    df = validate_csv_format(csv)
-
-    dataset_uuid = str(uuid.uuid4())
-    cell_line_name_type = get_cell_line_name_type(df, is_transpose)
-    config = format_config_taiga(label, units, is_transpose, taiga_id)
-
-    # update state to validating cell lines...
-    warnings = validate_cell_lines_and_register_as_nonstandard_matrix(
-        df, dataset_uuid, cell_line_name_type, config, PUBLIC_ACCESS_GROUP
-    )
-    add_transient_config(dataset_uuid, config)
-    node_id = "custom_dataset/{}".format(dataset_uuid)
-    return {
-        "datasetId": dataset_uuid,
-        "warnings": warnings,
-        "forwardingUrl": url_for(
-            "interactive.view_interactive",
-            x=node_id,
-            y=node_id,
-            defaultCustomAnalysisToX=True,
-        ),
-    }
-
-
-def validate_transient_taiga_metadata(taiga_id: str):
-    tc = get_taiga_client()
-
-    dataset, version, _ = get_taiga_id_parts(taiga_id)
-    dataset_and_version_metadata = tc.get_dataset_metadata(dataset, version)
-    if dataset_and_version_metadata is None:
-        raise UserError(f"Invalid input: No file found for Taiga ID {taiga_id}")
-
-    dataset_metadata = dataset_and_version_metadata["dataset"]
-    dataset_version_metadata = dataset_and_version_metadata["datasetVersion"]
-
-    dv_status = dataset_version_metadata["state"]
-    if dv_status != "approved":
-        dv_name = f"{dataset_metadata['permanames'][-1]}.{dataset_version_metadata['version']}"
-        raise UserError(f"The dataset version {dv_name} is {dv_status}")
-
-    datafiles = dataset_version_metadata["datafiles"]
-
-    if len(datafiles) == 1:
-        datafile_metadata = datafiles[0]
-    else:
-        matching_datafiles = [
-            f for f in datafiles if taiga_id.endswith(f"/{f['name']}")
-        ]
-        assert len(matching_datafiles) == 1
-        datafile_metadata = matching_datafiles[0]
-
-    if datafile_metadata.get("type") != "HDF5":
-        raise UserError(f"Taiga datafile {taiga_id} is not a Matrix file")
-
-
 def validate_common_metadata(label, units):
     if label is None:
         raise UserError("Invalid input: Display name cannot be empty")
 
     if units is None:
         raise UserError("Invalid input: Units cannot be empty")
-
-
-def download_transient_taiga(taiga_id):
-    # register the canonical taiga id in the TaigaAlias table
-    # we can just promiscuously do so, it's fine to still have the row there if the custom dataset fails later
-    _ensure_canonical_id_stored(taiga_id)
-    source_file_path = get_taiga_client().download_to_cache(
-        datafile_id=taiga_id,
-        requested_format="csv_matrix"
-        # we test validity with hdf5, but download as csv, so that we can go through the code for the usual validation.
-        # then we will manually convert to hdf5 ourselves
-    )
-    return source_file_path
 
 
 def validate_csv_format(csv_path: str, single_column: bool = False):
@@ -271,12 +190,6 @@ def format_config(label, units, is_transpose, data_type=DataTypeEnum.user_upload
         "transpose": is_transpose,
         "is_standard": False,
     }
-    return config
-
-
-def format_config_taiga(label, units, is_transpose, taiga_id):
-    config = format_config(label, units, is_transpose)
-    config["taiga_id"] = taiga_id
     return config
 
 
