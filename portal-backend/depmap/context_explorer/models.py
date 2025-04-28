@@ -421,6 +421,7 @@ class ContextAnalysis(Model):
         min_abs_effect_size: float,
         min_frac_dep_in: float,
         show_positive_effect_sizes: bool,
+        out_group: str = "All Others",
     ):
         assert dataset_name in DependencyEnum.values()
 
@@ -431,7 +432,7 @@ class ContextAnalysis(Model):
         if entity_type == "gene":
             filters = (
                 and_(
-                    ContextAnalysis.out_group == "All Others",
+                    ContextAnalysis.out_group == out_group,
                     ContextAnalysis.dependency_dataset_id == dependency_dataset_id,
                     ContextAnalysis.entity_id == entity_id,
                     ContextAnalysis.t_qval <= max_fdr,
@@ -440,7 +441,7 @@ class ContextAnalysis(Model):
                 )
                 if show_positive_effect_sizes
                 else and_(
-                    ContextAnalysis.out_group == "All Others",
+                    ContextAnalysis.out_group == out_group,
                     ContextAnalysis.dependency_dataset_id == dependency_dataset_id,
                     ContextAnalysis.entity_id == entity_id,
                     ContextAnalysis.t_qval <= max_fdr,
@@ -472,7 +473,7 @@ class ContextAnalysis(Model):
         else:
             filters = (
                 and_(
-                    ContextAnalysis.out_group == "All Others",
+                    ContextAnalysis.out_group == out_group,
                     ContextAnalysis.dependency_dataset_id == dependency_dataset_id,
                     ContextAnalysis.entity_id == entity_id,
                     ContextAnalysis.t_qval <= max_fdr,
@@ -480,7 +481,7 @@ class ContextAnalysis(Model):
                 )
                 if show_positive_effect_sizes
                 else and_(
-                    ContextAnalysis.out_group == "All Others",
+                    ContextAnalysis.out_group == out_group,
                     ContextAnalysis.dependency_dataset_id == dependency_dataset_id,
                     ContextAnalysis.entity_id == entity_id,
                     ContextAnalysis.t_qval <= max_fdr,
