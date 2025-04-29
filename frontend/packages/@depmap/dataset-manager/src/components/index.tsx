@@ -169,6 +169,26 @@ export default function Datasets() {
     })();
   }, [dapi, getDimensionTypes, isAdvancedMode]);
 
+  useEffect(() => {
+    // Only show dataset delete error message for 3 seconds
+    if (datasetDeleteError) {
+      setTimeout(() => {
+        setDatasetDeleteError(null);
+        setShowDatasetDeleteError(false);
+      }, 3000);
+    }
+  }, [datasetDeleteError]);
+
+  useEffect(() => {
+    // Only show dim type delete error message for 3 seconds
+    if (dimTypeDeleteError) {
+      setTimeout(() => {
+        setDatasetDeleteError(null);
+        setShowDatasetDeleteError(false);
+      }, 3000);
+    }
+  }, [dimTypeDeleteError]);
+
   const datasetForm = useCallback(() => {
     if (datasets) {
       let datasetFormComponent;
