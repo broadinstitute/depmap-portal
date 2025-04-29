@@ -174,7 +174,6 @@ export default function Datasets() {
     if (datasetDeleteError) {
       setTimeout(() => {
         setDatasetDeleteError(null);
-        setShowDatasetDeleteError(false);
       }, 3000);
     }
   }, [datasetDeleteError]);
@@ -184,7 +183,6 @@ export default function Datasets() {
     if (dimTypeDeleteError) {
       setTimeout(() => {
         setDatasetDeleteError(null);
-        setShowDatasetDeleteError(false);
       }, 3000);
     }
   }, [dimTypeDeleteError]);
