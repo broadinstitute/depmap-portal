@@ -3,13 +3,11 @@ import { deleteQueryParams } from "@depmap/utils";
 import qs from "qs";
 import { useCallback } from "react";
 import { getReleaseGroupFromSelection } from "src/common/utilities/helper_functions";
-import { FileSearchOption } from "../components/FileSearch";
 import { findReleaseVersionGroupName, findReleaseVersions } from "../utils";
 import { TypeGroupOption } from "../models/types";
 
 export default function useReleaseNameAndVersionSelectionHandlers(
   releaseData: Release[],
-  downloadTable: DownloadTableData,
   setReleaseModalShown: React.Dispatch<React.SetStateAction<boolean>>,
   setVersionSelector: React.Dispatch<
     React.SetStateAction<{
@@ -33,11 +31,10 @@ export default function useReleaseNameAndVersionSelectionHandlers(
       selection: TypeGroupOption[];
     }>
   >,
-  setFileToAutoOpenFullSearch: React.Dispatch<React.SetStateAction<boolean>>,
-  setFileToAutoOpenFromFileSetSearch: React.Dispatch<
-    React.SetStateAction<boolean>
+  setUrlOrGlobalSearchSelectedFile: React.Dispatch<
+    React.SetStateAction<DownloadFile | null>
   >,
-  setFileToAutoOpen: React.Dispatch<React.SetStateAction<DownloadFile | null>>,
+  urlOrGlobalSearchSelectedFile: DownloadFile | null,
   dropdownSelector: {
     fileType: {
       selected: Set<string>;
@@ -52,47 +49,16 @@ export default function useReleaseNameAndVersionSelectionHandlers(
   },
   versionSelector: {
     selection: string[];
-  },
-  singleFileAutoOpenedFromFullSearch: boolean,
-  singleFileAutoOpenedFromFileSetSearch: boolean
+  }
 ) {
-  const allFilesSearchOptions = downloadTable.map((row: any) => {
-    return {
-      releasename: row.releaseName,
-      filename: row.fileName,
-      description: row.fileDescription,
-    };
-  });
-
-  const handleExitSingleFileFocusModeFullSearch = useCallback(() => {
-    if (singleFileAutoOpenedFromFullSearch) {
-      setFileToAutoOpenFullSearch(false);
-
-      setFileToAutoOpen(null);
+  const handleRemoveUrlOrGlobalSelectedFile = useCallback(() => {
+    if (urlOrGlobalSearchSelectedFile !== null) {
+      setUrlOrGlobalSearchSelectedFile(null);
 
       // Remove release and file name params from url (were added on open of the modal)
       deleteQueryParams();
     }
-  }, [
-    setFileToAutoOpenFullSearch,
-    setFileToAutoOpen,
-    singleFileAutoOpenedFromFullSearch,
-  ]);
-
-  const handleExitSingleFileFocusModeFileSetSearch = useCallback(() => {
-    if (singleFileAutoOpenedFromFileSetSearch) {
-      setFileToAutoOpenFromFileSetSearch(false);
-
-      setFileToAutoOpen(null);
-
-      // Remove release and file name params from url (were added on open of the modal)
-      deleteQueryParams();
-    }
-  }, [
-    setFileToAutoOpenFromFileSetSearch,
-    setFileToAutoOpen,
-    singleFileAutoOpenedFromFileSetSearch,
-  ]);
+  }, [setUrlOrGlobalSearchSelectedFile, urlOrGlobalSearchSelectedFile]);
 
   const handleDropdownSelectionChange = useCallback(
     (
@@ -151,8 +117,7 @@ export default function useReleaseNameAndVersionSelectionHandlers(
       }
 
       setReleaseModalShown(false);
-      handleExitSingleFileFocusModeFullSearch();
-      handleExitSingleFileFocusModeFileSetSearch();
+      handleRemoveUrlOrGlobalSelectedFile();
     },
     [
       dropdownSelector,
@@ -161,8 +126,7 @@ export default function useReleaseNameAndVersionSelectionHandlers(
       setReleaseModalShown,
       setVersionSelector,
       versionSelector,
-      handleExitSingleFileFocusModeFullSearch,
-      handleExitSingleFileFocusModeFileSetSearch,
+      handleRemoveUrlOrGlobalSelectedFile,
     ]
   );
 
@@ -200,6 +164,7 @@ export default function useReleaseNameAndVersionSelectionHandlers(
         );
       }
     },
+
     [handleDropdownSelectionChange, releaseData]
   );
 
@@ -232,16 +197,14 @@ export default function useReleaseNameAndVersionSelectionHandlers(
       });
 
       setReleaseModalShown(false);
-      handleExitSingleFileFocusModeFullSearch();
-      handleExitSingleFileFocusModeFileSetSearch();
+      handleRemoveUrlOrGlobalSelectedFile();
     },
     [
       releaseData,
       setReleaseModalShown,
+      handleRemoveUrlOrGlobalSelectedFile,
       setVersionSelector,
       versionSelector,
-      handleExitSingleFileFocusModeFileSetSearch,
-      handleExitSingleFileFocusModeFullSearch,
     ]
   );
 
@@ -253,16 +216,14 @@ export default function useReleaseNameAndVersionSelectionHandlers(
   );
 
   return {
-    allFilesSearchOptions,
     handleDropdownSelectionChange,
     handleSelectDropdown,
     handleSelectVersion,
-    handleExitSingleFileFocusModeFullSearch,
-    handleExitSingleFileFocusModeFileSetSearch,
+    handleRemoveUrlOrGlobalSelectedFile,
   };
 }
 
-export function useReleaseModalAndAutoOpenSingleFilePanelModeHandlers(
+export function useReleaseModalAndSelectFileHandlers(
   downloadTable: DownloadTableData,
   releaseData: Release[],
   releaseModalShown: boolean,
@@ -271,13 +232,7 @@ export function useReleaseModalAndAutoOpenSingleFilePanelModeHandlers(
     releaseVersionGroupName?: string | undefined,
     versions?: string[] | undefined
   ) => void,
-  setFileToAutoOpenFromFullSearch: React.Dispatch<
-    React.SetStateAction<boolean>
-  >,
-  setFileToAutoOpenFromFileSetSearch: React.Dispatch<
-    React.SetStateAction<boolean>
-  >,
-  setFileToAutoOpenOnSearch: React.Dispatch<
+  setUrlOrGlobalSearchSelectedFile: React.Dispatch<
     React.SetStateAction<DownloadFile | null>
   >,
   setReleaseModalShown: React.Dispatch<React.SetStateAction<boolean>>,
@@ -294,7 +249,9 @@ export function useReleaseModalAndAutoOpenSingleFilePanelModeHandlers(
   // If this is fromFullSearch or url params might need to select the appropriate fileset before
   // anything else.
   const loadToSpecificFilePanel = useCallback(
-    (releaseName: string, fileName: string, fromFullSearch: boolean) => {
+    (releaseName: string, fileName: string) => {
+      forceUpdate();
+
       // Check if the releaseName is part of a releaseVersionGroup (e.g. "DepMap Public 23Q4" is part of "DepMap Public")
       const releaseVersionGroupName = findReleaseVersionGroupName(
         releaseData,
@@ -334,21 +291,14 @@ export function useReleaseModalAndAutoOpenSingleFilePanelModeHandlers(
         return;
       }
 
-      if (fromFullSearch) {
-        setFileToAutoOpenFromFullSearch(true);
-      } else {
-        setFileToAutoOpenFromFileSetSearch(true);
-      }
-
-      setFileToAutoOpenOnSearch(downloadTableRow);
+      setUrlOrGlobalSearchSelectedFile(downloadTableRow);
     },
     [
-      setFileToAutoOpenFromFullSearch,
-      setFileToAutoOpenFromFileSetSearch,
-      setFileToAutoOpenOnSearch,
+      setUrlOrGlobalSearchSelectedFile,
       handleDropdownSelectionChange,
       downloadTable,
       releaseData,
+      forceUpdate,
     ]
   );
 
@@ -391,7 +341,7 @@ export function useReleaseModalAndAutoOpenSingleFilePanelModeHandlers(
         if (params.filename || params.file) {
           const fileNameParam = params.filename ? params.filename : params.file;
           const fileName: string = fileNameParam!.toString();
-          loadToSpecificFilePanel(releaseName, fileName, true);
+          loadToSpecificFilePanel(releaseName, fileName);
         } else {
           loadToReleaseModalFromUrl(releaseName);
         }
@@ -399,22 +349,8 @@ export function useReleaseModalAndAutoOpenSingleFilePanelModeHandlers(
     }
   }, [releaseData, loadToReleaseModalFromUrl, loadToSpecificFilePanel]);
 
-  const handleFileSearch = useCallback(
-    (selected: FileSearchOption, fromFullSearch: boolean) => {
-      if (releaseData && releaseData.length > 0) {
-        const fileName = selected.filename;
-        const releaseName = selected.releasename;
-        forceUpdate();
-        loadToSpecificFilePanel(releaseName, fileName, fromFullSearch);
-      }
-    },
-    [releaseData, forceUpdate, loadToSpecificFilePanel]
-  );
-
   return {
-    forceUpdate,
     handleReleaseFileNameUrls,
     handleToggleReleaseModal,
-    handleFileSearch,
   };
 }

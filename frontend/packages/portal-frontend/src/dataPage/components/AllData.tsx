@@ -5,19 +5,18 @@ import {
   Release,
   ReleaseType,
 } from "@depmap/data-slicer";
-import { FileSearch, FileSearchOption } from "./FileSearch";
 import {
   deleteSpecificQueryParams,
   setQueryStringsWithoutPageReload,
 } from "@depmap/utils";
-import { Button, DropdownButton, MenuItem } from "react-bootstrap";
+import { DropdownButton, MenuItem } from "react-bootstrap";
 import {
   areVersionsValidReleases,
   getReleaseByReleaseName,
 } from "src/common/utilities/helper_functions";
 import { formatReleaseGroupByType } from "../utils";
 import useReleaseNameAndVersionSelectionHandlers, {
-  useReleaseModalAndAutoOpenSingleFilePanelModeHandlers,
+  useReleaseModalAndSelectFileHandlers,
 } from "../hooks/useAllDataHandlers";
 import styles from "src/dataPage/styles/DataPage.scss";
 import DataFilePanel from "./DataFilePanel";
@@ -43,17 +42,11 @@ export const AllData = ({
   dataUsageUrl,
 }: AllDataProps) => {
   const [releaseModalShown, setReleaseModalShown] = useState<boolean>(false);
+
   const [
-    singleFileShownFromFullSearch,
-    setSingleFileShownFromFullSearch,
-  ] = useState<boolean>(false);
-  const [
-    singleFileShownFromFileSetSearch,
-    setSingleFileShownFromFileSetSearch,
-  ] = useState<boolean>(false);
-  const [singleFileToShow, setSingleFileToShow] = useState<DownloadFile | null>(
-    null
-  );
+    urlOrGlobalSearchSelectedFile,
+    setUrlOrGlobalSearchSelectedFile,
+  ] = useState<DownloadFile | null>(null);
   const [dropdownOpen, setDropdownOpen] = useState<boolean>(false);
   const [versionDropdownOpen, setVersionDropdownOpen] = useState<boolean>(
     false
@@ -152,39 +145,29 @@ export const AllData = ({
   const forceUpdate = () => setKeySuffix((n) => n + 1);
 
   const {
-    allFilesSearchOptions,
     handleDropdownSelectionChange,
     handleSelectDropdown,
     handleSelectVersion,
-    handleExitSingleFileFocusModeFullSearch,
-    handleExitSingleFileFocusModeFileSetSearch,
   } = useReleaseNameAndVersionSelectionHandlers(
     releaseData,
-    downloadTable,
     setReleaseModalShown,
     setVersionSelector,
     setDropdownSelector,
-    setSingleFileShownFromFullSearch,
-    setSingleFileShownFromFileSetSearch,
-    setSingleFileToShow,
+    setUrlOrGlobalSearchSelectedFile,
+    urlOrGlobalSearchSelectedFile,
     dropdownSelector,
-    versionSelector,
-    singleFileShownFromFullSearch,
-    singleFileShownFromFileSetSearch
+    versionSelector
   );
 
   const {
     handleReleaseFileNameUrls,
     handleToggleReleaseModal,
-    handleFileSearch,
-  } = useReleaseModalAndAutoOpenSingleFilePanelModeHandlers(
+  } = useReleaseModalAndSelectFileHandlers(
     downloadTable,
     releaseData,
     releaseModalShown,
     handleDropdownSelectionChange,
-    setSingleFileShownFromFullSearch,
-    setSingleFileShownFromFileSetSearch,
-    setSingleFileToShow,
+    setUrlOrGlobalSearchSelectedFile,
     setReleaseModalShown,
     forceUpdate
   );
@@ -197,10 +180,10 @@ export const AllData = ({
 
   useEffect(() => {
     const releaseFileNameParams: [string, string][] | null =
-      singleFileToShow?.releaseName !== undefined
+      urlOrGlobalSearchSelectedFile?.releaseName !== undefined
         ? [
-            ["releasename", singleFileToShow?.releaseName],
-            ["filename", singleFileToShow.fileName],
+            ["releasename", urlOrGlobalSearchSelectedFile?.releaseName],
+            ["filename", urlOrGlobalSearchSelectedFile.fileName],
           ]
         : null;
 
@@ -209,7 +192,7 @@ export const AllData = ({
     } else {
       deleteSpecificQueryParams(["releasename", "release", "filename", "file"]);
     }
-  }, [singleFileToShow]);
+  }, [urlOrGlobalSearchSelectedFile]);
 
   const groups: { [key: string]: any } = {};
   const releaseDataGroupedByReleaseName = downloadTable.reduce(
@@ -229,35 +212,6 @@ export const AllData = ({
             By default the latest DepMap data release of CRISPR and genomics
             data is shown.
           </p>
-          <div className={styles.fileSearchContainer}>
-            <div className={styles.fileSearch}>
-              <FileSearch
-                key="full-file-search"
-                searchOptions={allFilesSearchOptions}
-                onSearch={(selected: FileSearchOption) =>
-                  handleFileSearch(selected, true)
-                }
-                searchPlaceholder="Search for a download file..."
-                handleClearSearch={handleExitSingleFileFocusModeFullSearch}
-                selected={
-                  singleFileShownFromFullSearch && singleFileToShow !== null
-                    ? [singleFileToShow.fileName]
-                    : []
-                }
-              />
-            </div>
-            {singleFileShownFromFullSearch && (
-              <div className={styles.clearFilterButtonContainer}>
-                {" "}
-                <Button
-                  className={styles.clearFilterButton}
-                  onClick={handleExitSingleFileFocusModeFullSearch}
-                >
-                  Clear Filter
-                </Button>
-              </div>
-            )}
-          </div>
         </div>
         <p className={styles.selectFileSetLabel}>Select a file set to view:</p>
         <div className={styles.fileVersionSelectorContainer}>
@@ -414,53 +368,6 @@ export const AllData = ({
                     )?.description ?? "",
                 }}
               />
-              {releaseDataGroupedByReleaseName &&
-                releaseDataGroupedByReleaseName[
-                  versionSelector?.selection[0] ??
-                    dropdownSelector.selection[0].name
-                ] && (
-                  <div className={styles.fileSearchContainer}>
-                    <div className={styles.fileSearch}>
-                      <FileSearch
-                        key="selection-file-search"
-                        searchOptions={releaseDataGroupedByReleaseName[
-                          versionSelector?.selection[0] ??
-                            dropdownSelector.selection[0].name
-                        ].map((row: any) => {
-                          return {
-                            releasename: row.releaseName,
-                            filename: row.fileName,
-                            description: row.fileDescription,
-                          };
-                        })}
-                        onSearch={(selected: FileSearchOption) =>
-                          handleFileSearch(selected, false)
-                        }
-                        searchPlaceholder="Search by file name..."
-                        handleClearSearch={
-                          handleExitSingleFileFocusModeFileSetSearch
-                        }
-                        selected={
-                          singleFileShownFromFileSetSearch &&
-                          singleFileToShow !== null
-                            ? [singleFileToShow.fileName]
-                            : []
-                        }
-                      />
-                    </div>
-                    {singleFileShownFromFileSetSearch && (
-                      <div className={styles.clearFilterButtonContainer}>
-                        {" "}
-                        <Button
-                          className={styles.clearFilterButton}
-                          onClick={handleExitSingleFileFocusModeFileSetSearch}
-                        >
-                          Clear Filter
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                )}
               <div className={styles.dataFilePanelContainer}>
                 <DataFilePanel
                   data={
@@ -477,7 +384,7 @@ export const AllData = ({
                     )!
                   }
                   termsDefinitions={termsDefinitions}
-                  panelToOpenOnPageLoad={singleFileToShow}
+                  urlOrGlobalSearchSelectedFile={urlOrGlobalSearchSelectedFile}
                   keySuffix={keySuffix}
                 />
               </div>
