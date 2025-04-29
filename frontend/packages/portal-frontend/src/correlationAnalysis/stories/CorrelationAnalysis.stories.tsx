@@ -122,16 +122,50 @@ export function Story() {
   };
 
   const filteredTableCorrelationAnalysisData = React.useMemo(() => {
-    // if no selected feature types, show all correlation analysis data
-    if (selectedFeatureTypes.length == 0 && selectedDoses.length == 0) {
+    // if no filter applied, show all correlation analysis data
+    if (
+      selectedFeatureTypes.length == 0 &&
+      selectedDoses.length == 0 &&
+      Object.keys(allSelectedLabels).length == 0
+    ) {
       return correlationAnalysisData;
     }
-    return correlationAnalysisData.filter(
-      (data) =>
+
+    // keep list of all selected plot or table features
+    const selectedDataWithLabelFront: any[] = [];
+
+    // keep only selected feature types and selected doses and unselected features in plot or table
+    const filtered = correlationAnalysisData.filter((data) => {
+      // We want to keep data where feature type or dose is selected
+      const keepCondition =
         selectedFeatureTypes.includes(data["Feature Type"]) ||
-        selectedDoses.includes(data["imatinib Dose"])
-    );
-  }, [selectedFeatureTypes, selectedDoses]);
+        selectedDoses.includes(data["imatinib Dose"]);
+      // We want to remove features that are selected so that we can move those data to front of list later
+      const removeCondition =
+        data["Feature Type"] in allSelectedLabels &&
+        allSelectedLabels[data["Feature Type"]].includes(data["Feature"]);
+      if (
+        data["Feature Type"] in allSelectedLabels &&
+        allSelectedLabels[data["Feature Type"]].includes(data["Feature"])
+      ) {
+        selectedDataWithLabelFront.push(data);
+      }
+
+      return keepCondition || !removeCondition;
+    });
+
+    // Sort by feature label first, then by dose
+    selectedDataWithLabelFront.sort((a, b) => {
+      if (a["Feature"] === b["Feature"]) {
+        return a["imatinib Dose"] - b["imatinib Dose"]; // sort by dose within the same feature
+      } else {
+        return a["Feature"].localeCompare(b["Feature"]); // otherwise sort by type
+      }
+    });
+
+    // move selected features from plot or table up to front of data list
+    return selectedDataWithLabelFront.concat(filtered);
+  }, [selectedFeatureTypes, selectedDoses, allSelectedLabels]);
 
   const volcanoDataForFeatureType = correlationAnalysisData.reduce(
     (acc, curRecord) => {
