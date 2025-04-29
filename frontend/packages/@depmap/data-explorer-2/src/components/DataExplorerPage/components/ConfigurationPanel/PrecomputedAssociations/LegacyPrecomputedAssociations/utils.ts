@@ -6,9 +6,9 @@ import {
 import {
   DeprecatedDataExplorerApiResponse,
   useDeprecatedDataExplorerApi,
-} from "../../../../../contexts/DeprecatedDataExplorerApiContext";
+} from "../../../../../../contexts/DeprecatedDataExplorerApiContext";
 
-export type Associations = DeprecatedDataExplorerApiResponse["fetchAssociations"];
+export type Associations = DeprecatedDataExplorerApiResponse["fetchLegacyAssociations"];
 export const sliceToDataset = (slice_id: string) => {
   return slice_id.replace("slice/", "").replace(/\/\d+\/entity_id/, "");
 };
@@ -47,7 +47,7 @@ export function useAssociationsData(plot: PartialDataExplorerPlotConfig) {
   useEffect(() => {
     setIsLoading(true);
 
-    api.fetchAssociations(xDatasetId, xEntityLabel).then((data) => {
+    api.fetchLegacyAssociations(xDatasetId, xEntityLabel).then((data) => {
       setAssociations(data);
       setIsLoading(false);
     });

@@ -124,7 +124,7 @@ const defaultValue = {
     throw new Error("Not implemented");
   },
 
-  fetchAssociations: (
+  fetchLegacyAssociations: (
     dataset_id: string,
     slice_label: string
   ): Promise<{
@@ -138,7 +138,7 @@ const defaultValue = {
       other_slice_id: string;
     }[];
   }> => {
-    window.console.log("fetchAssociations:", { dataset_id, slice_label });
+    window.console.log("fetchLegacyAssociations:", { dataset_id, slice_label });
     throw new Error("Not implemented");
   },
 

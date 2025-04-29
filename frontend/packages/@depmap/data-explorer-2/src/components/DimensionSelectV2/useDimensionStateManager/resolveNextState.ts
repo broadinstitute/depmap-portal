@@ -25,6 +25,11 @@ async function resolveNextState(
   let dataset_id = pd.dataset_id;
   let axis_type = pd.axis_type;
   let aggregation = pd.aggregation;
+  let isUnknownDataset = prev.isUnknownDataset;
+
+  if ("isUnknownDataset" in changes) {
+    isUnknownDataset = changes.isUnknownDataset as boolean;
+  }
 
   if ("aggregation" in changes && changes.aggregation) {
     aggregation = changes.aggregation as DataExplorerAggregation;
@@ -41,6 +46,7 @@ async function resolveNextState(
   if ("dataType" in changes && dataType !== changes.dataType) {
     dataType = changes.dataType || null;
     dataset_id = undefined;
+    isUnknownDataset = false;
 
     if (
       dataType === null &&
@@ -101,6 +107,7 @@ async function resolveNextState(
 
   if ("dataset_id" in changes && dataset_id !== changes.dataset_id) {
     dataset_id = changes.dataset_id || undefined;
+    isUnknownDataset = false;
 
     if (dataset_id) {
       const {
@@ -193,6 +200,7 @@ async function resolveNextState(
     dataType,
     units,
     dirty,
+    isUnknownDataset,
     dimension: dirty
       ? {
           ...prev.dimension,
