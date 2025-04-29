@@ -91,11 +91,9 @@ export default function Datasets() {
   const [isEditDimensionTypeMode, setIsEditDimensionTypeMode] = useState(false);
   const [showDimensionTypeModal, setShowDimensionTypeModal] = useState(false);
 
-  const [showDatasetDeleteError, setShowDatasetDeleteError] = useState(false);
   const [datasetDeleteError, setDatasetDeleteError] = useState<string | null>(
     null
   );
-  const [showDimTypeDeleteError, setShowDimTypeDeleteError] = useState(false);
   const [dimTypeDeleteError, setDimTypeDeleteError] = useState<string | null>(
     null
   );
@@ -430,7 +428,6 @@ export default function Datasets() {
         setSelectedDatasetIds(new Set());
       })
       .catch((e) => {
-        setShowDatasetDeleteError(true);
         console.error(e);
         if (instanceOfErrorDetail(e)) {
           setDatasetDeleteError(e.detail);
@@ -447,7 +444,6 @@ export default function Datasets() {
         await dapi
           .deleteDimensionType(dimensionType.name)
           .then(() => {
-            setShowDimTypeDeleteError(false);
             setDimTypeDeleteError(null);
             setDimensionTypes(
               dimensionTypes.filter(
@@ -457,7 +453,6 @@ export default function Datasets() {
             setSelectedDimensionType(null);
           })
           .catch((e) => {
-            setShowDimTypeDeleteError(true);
             console.error(e);
             if (instanceOfErrorDetail(e)) {
               setDimTypeDeleteError(e.detail);
@@ -510,12 +505,12 @@ export default function Datasets() {
           </div>
 
           <h2>Datasets</h2>
-          {showDatasetDeleteError && (selectedDatasetIds.size !== 0) !== null && (
-            <Alert bsStyle="danger">
-              <strong>Dataset Delete Failed!</strong>{" "}
-              {datasetDeleteError !== null ? datasetDeleteError : null}
-            </Alert>
-          )}
+          {datasetDeleteError !== null &&
+            (selectedDatasetIds.size !== 0) !== null && (
+              <Alert bsStyle="danger">
+                <strong>Dataset Delete Failed!</strong> {datasetDeleteError}
+              </Alert>
+            )}
           <div className={styles.primaryButtons}>
             <Button
               bsStyle="primary"
@@ -560,7 +555,6 @@ export default function Datasets() {
                   );
                   setDatasetToEdit(selectedDataset || null);
                 }
-                setShowDatasetDeleteError(false);
                 setDatasetDeleteError(null);
               }}
               data={formatDatasetTableData(datasets)}
@@ -625,12 +619,12 @@ export default function Datasets() {
           <div>
             <h2>Dimension Types</h2>
 
-            {showDimTypeDeleteError && selectedDimensionType !== null && (
+            {dimTypeDeleteError !== null && selectedDimensionType !== null && (
               <Alert bsStyle="danger">
                 <strong>
                   Delete &quot;{selectedDimensionType.name}&quot; Failed!
                 </strong>{" "}
-                {dimTypeDeleteError !== null ? dimTypeDeleteError : null}
+                {dimTypeDeleteError}
               </Alert>
             )}
 
@@ -669,7 +663,6 @@ export default function Datasets() {
                   } else {
                     setSelectedDimensionType(null);
                   }
-                  setShowDimTypeDeleteError(false);
                   setDimTypeDeleteError(null);
                 }}
                 rowHeight={40}
