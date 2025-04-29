@@ -410,16 +410,16 @@ export default function Datasets() {
   };
 
   const deleteDatasetButtonAction = async () => {
-    const datasetIdsSet = new Set(selectedDatasetIds);
+    setDatasetDeleteError(null);
 
     await Promise.all(
-      Array.from(datasetIdsSet).map((dataset_id) => {
+      Array.from(selectedDatasetIds).map((dataset_id) => {
         return dapi.deleteDatasets(dataset_id);
       })
     )
       .then(() => {
         const datasetsRemaining = datasets.filter(
-          (dataset) => !datasetIdsSet.has(dataset.id)
+          (dataset) => !selectedDatasetIds.has(dataset.id)
         );
         setDatasets(datasetsRemaining);
         const dimTypeDatasetsNum = dimensionTypeDatasetCount(datasetsRemaining);
@@ -427,6 +427,7 @@ export default function Datasets() {
           return { ...dt, datasetsCount: dimTypeDatasetsNum[dt.name] };
         });
         setDimensionTypes(updatedDimensionTypeCounts);
+        setSelectedDatasetIds(new Set());
       })
       .catch((e) => {
         setShowDatasetDeleteError(true);
