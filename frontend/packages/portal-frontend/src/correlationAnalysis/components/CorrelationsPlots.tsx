@@ -6,6 +6,11 @@ interface CorrelationsPlotsProps {
   featureTypesToShow: string[];
   dosesToFilter: string[];
   volcanoDataForFeatureTypes: { [key: string]: { [key: string]: VolcanoData } };
+  featureTypeSelectedLabels: { [key: string]: string[] };
+  forwardSelectedLabels: (
+    featureType: string,
+    newSelectedLabels: string[]
+  ) => void;
 }
 
 export default function CorrelationsPlots(props: CorrelationsPlotsProps) {
@@ -13,6 +18,8 @@ export default function CorrelationsPlots(props: CorrelationsPlotsProps) {
     featureTypesToShow,
     dosesToFilter,
     volcanoDataForFeatureTypes: volcanoDataForFeatureType,
+    featureTypeSelectedLabels,
+    forwardSelectedLabels,
   } = props;
 
   const filteredDosesForFeatureTypeVolcanoData = React.useCallback(
@@ -48,6 +55,12 @@ export default function CorrelationsPlots(props: CorrelationsPlotsProps) {
                   volcanoDataForFeatureType[featureType]
                 )
               )}
+              selectedFeatures={
+                featureType in featureTypeSelectedLabels
+                  ? featureTypeSelectedLabels[featureType]
+                  : []
+              }
+              forwardPlotSelectedFeatures={forwardSelectedLabels}
             />
           </div>
         );

@@ -6,13 +6,22 @@ import { VolcanoData } from "src/plot/models/volcanoPlotModels";
 interface CorrelationsPlotProps {
   featureType: string;
   data: VolcanoData[];
+  selectedFeatures: string[];
+  forwardPlotSelectedFeatures: (
+    featureType: string,
+    newSelectedLabels: string[]
+  ) => void;
 }
 
 export default function CorrelationsPlot(props: CorrelationsPlotProps) {
-  const { featureType, data } = props;
+  const {
+    featureType,
+    data,
+    selectedFeatures,
+    forwardPlotSelectedFeatures,
+  } = props;
 
   const volcanoPlotsRef = React.useRef<any | null>(null);
-  const [selectedLabels, setSelectedLabels] = useState<string[]>([]);
 
   useEffect(() => {
     if (!volcanoPlotsRef.current) return;
@@ -21,8 +30,8 @@ export default function CorrelationsPlot(props: CorrelationsPlotProps) {
     const traceIndexes: number[] = [];
     data.forEach((doseTrace, traceIndex) => {
       const traceOpacity = doseTrace.label?.map((label) => {
-        if (selectedLabels.length) {
-          return selectedLabels.includes(label) ? 1 : 0.1;
+        if (selectedFeatures.length) {
+          return selectedFeatures.includes(label) ? 1 : 0.1;
         }
 
         return 1;
@@ -33,7 +42,7 @@ export default function CorrelationsPlot(props: CorrelationsPlotProps) {
     const update = { "marker.opacity": traceHighlights };
 
     Plotly.restyle(volcanoPlotsRef.current, update, traceIndexes);
-  }, [data, selectedLabels]);
+  }, [data, selectedFeatures]);
 
   return (
     <div>
@@ -57,13 +66,17 @@ export default function CorrelationsPlot(props: CorrelationsPlotProps) {
         data={data}
         onPointClick={(e) => {
           const selectedLabel = e.customdata as string;
-          if (selectedLabels.includes(selectedLabel)) {
+          if (selectedFeatures.includes(selectedLabel)) {
             // deselect point if point is already selected
-            setSelectedLabels(
-              selectedLabels.filter((label) => label != selectedLabel)
+            forwardPlotSelectedFeatures(
+              featureType,
+              selectedFeatures.filter((label) => label !== selectedLabel)
             );
           } else {
-            setSelectedLabels([...selectedLabels, selectedLabel]);
+            forwardPlotSelectedFeatures(featureType, [
+              ...selectedFeatures,
+              selectedLabel,
+            ]);
           }
           // replace the entire marker object with the one provided
           // const update = {

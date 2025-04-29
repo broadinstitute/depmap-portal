@@ -87,6 +87,9 @@ export function Story() {
     string[]
   >([]);
   const [selectedDoses, setSelectedDoses] = React.useState<string[]>([]);
+  const [allSelectedLabels, setAllSelectedLabels] = React.useState<{
+    [key: string]: string[];
+  }>({});
 
   console.log(correlationAnalysisData);
   const columnData = {};
@@ -274,6 +277,16 @@ export function Story() {
           }
           dosesToFilter={selectedDoses}
           volcanoDataForFeatureTypes={volcanoDataForFeatureType}
+          featureTypeSelectedLabels={allSelectedLabels}
+          forwardSelectedLabels={(
+            featureType: string,
+            newSelectedLabels: string[]
+          ) => {
+            setAllSelectedLabels({
+              ...allSelectedLabels,
+              [featureType]: newSelectedLabels,
+            });
+          }}
         />
       </div>
 
