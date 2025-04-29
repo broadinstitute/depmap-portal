@@ -182,7 +182,7 @@ export default function Datasets() {
     // Only show dim type delete error message for 3 seconds
     if (dimTypeDeleteError) {
       setTimeout(() => {
-        setDatasetDeleteError(null);
+        setDimTypeDeleteError(null);
       }, 3000);
     }
   }, [dimTypeDeleteError]);
