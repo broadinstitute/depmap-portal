@@ -337,6 +337,7 @@ from datetime import date
 from depmap.download.models import (
     DownloadRelease,
     DownloadFile,
+    FileSubtype,
     ReleaseType,
     FileSource,
     ReleaseTerms,
@@ -368,7 +369,7 @@ test_downloads = [
             DownloadFile(
                 name="test file name",
                 type=FileType.genetic_dependency,
-                sub_type={"code": "crispr_screen", "label": "CRISPR Screen"},
+                sub_type=FileSubtype(code="crispr_screen", label="CRISPR Screen"),
                 size="test size",
                 url="test url",  # urls are tested in the crawler, so this is fine
                 taiga_id="test-taiga-id.1",
@@ -387,7 +388,7 @@ test_downloads = [
                 name="headliner2 file name",
                 date_override=date(2000, 1, 1),
                 type=FileType.omics,
-                sub_type={"code": "mutations", "label": "Mutations"},
+                sub_type=FileSubtype(code="mutations", label="Mutations"),
                 size="headliner2 size",
                 url=ExternalBucketUrl("fake/test/headliner2_file_name"),
                 taiga_id="test-taiga-id.1",
@@ -397,7 +398,7 @@ test_downloads = [
             DownloadFile(
                 name="test file name 2",
                 type=FileType.genetic_dependency,
-                sub_type={"code": "crispr_screen", "label": "CRISPR Screen"},
+                sub_type=FileSubtype(code="crispr_screen", label="CRISPR Screen"),
                 size="test size",
                 url=RetractedUrl(),
                 taiga_id="test-taiga-id.1",

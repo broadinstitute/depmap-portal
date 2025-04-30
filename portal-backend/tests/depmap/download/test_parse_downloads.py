@@ -4,6 +4,7 @@ from depmap.download.models import (
     DmcBucketUrl,
     DownloadRelease,
     DownloadFile,
+    FileSubtype,
     ReleaseType,
     FileSource,
     FileType,
@@ -27,7 +28,7 @@ expected_downloads = [
             DownloadFile(
                 name="gene_effect.csv",
                 type=FileType.genetic_dependency,
-                sub_type={"code": "crispr_screen", "label": "CRISPR Screen"},
+                sub_type=FileSubtype(code="crispr_screen", label="CRISPR Screen"),
                 size="MB",
                 url=DmcBucketUrl("test/gene_effect.csv"),
                 taiga_id="small-chronos-combined-e82b.2/chronos_combined_score",
