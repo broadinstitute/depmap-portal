@@ -11,7 +11,6 @@ from depmap.download.models import (
     DownloadRelease,
     ExternalBucketUrl,
     FileSource,
-    FileSubType,
     FileType,
     ReleaseTerms,
     ReleaseType,
@@ -98,8 +97,7 @@ def make_file(file: Dict[str, Any]) -> DownloadFile:
     # Required for DownloadFile
     name = file.get("name", "")
     type = FileType(file.get("type", ""))
-    sub_type_val = file.get("sub_type", None)
-    sub_type = FileSubType(sub_type_val) if sub_type_val != None else sub_type_val
+    sub_type = file.get("sub_type", None)
 
     size = file.get("size", "")
 

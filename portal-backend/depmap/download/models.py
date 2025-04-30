@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from enum import Enum
 from datetime import date
 from typing_extensions import TypedDict
@@ -62,41 +63,6 @@ class FileType(Enum):
     @staticmethod
     def get_all_display_names():
         return [type.display_name for type in FileType]
-
-
-class FileSubType(Enum):
-    """
-    All these are just stable identifiers
-    These are only used in the downloads model (eventually processed in the view)
-    """
-
-    model_conditions_mapping = "model_conditions_mapping"
-    crispr_screen = "crispr_screen"
-    drug_screen = "drug_screen"
-    copy_number = "copy_number"
-    mutations = "mutations"
-    expression = "expression"
-    fusions = "fusions"
-    global_genomic_features = "global_genomic_features"
-    read_me = "read_me"
-
-    @property
-    def display_name(self):
-        return {
-            FileSubType.model_conditions_mapping: "Model, Conditions, and Mapping",
-            FileSubType.crispr_screen: "CRISPR Screen",
-            FileSubType.drug_screen: "Drug Screen",
-            FileSubType.copy_number: "Copy Number",
-            FileSubType.mutations: "Mutations",
-            FileSubType.expression: "Expression",
-            FileSubType.fusions: "Fusions",
-            FileSubType.read_me: "READ ME",
-            FileSubType.global_genomic_features: "Global Genomic Features",
-        }[self]
-
-    @staticmethod
-    def get_all_display_names():
-        return [type.display_name for type in FileSubType]
 
 
 class FileSource(Enum):
@@ -482,6 +448,12 @@ class DownloadFileGlobalSearch(Model):
         self.release_name = release_name
 
 
+@dataclass
+class FileSubtype:
+    code: str
+    label: str
+
+
 class DownloadFile:
     def __init__(
         self,
@@ -489,7 +461,7 @@ class DownloadFile:
         type: FileType,
         size: str,
         url: Union[BucketUrl, TaigaOnly, RetractedUrl, str],
-        sub_type: Optional[FileSubType] = None,  # Required on the most current release
+        sub_type: Optional[FileSubtype] = None,  # Required on the most current release
         taiga_id: Optional[str] = None,
         canonical_taiga_id: Optional[str] = None,
         sources: Optional[List[FileSource]] = None,
@@ -510,7 +482,7 @@ class DownloadFile:
         self.display_label = display_label
         assert isinstance(type, FileType)
         self.type: FileType = type
-        self.sub_type: Optional[FileSubType] = sub_type
+        self.sub_type: Optional[FileSubtype] = sub_type
 
         self.size: str = size
         self._url: Union[BucketUrl, TaigaOnly, RetractedUrl, str] = url

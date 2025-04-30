@@ -16,7 +16,6 @@ from flask import (
 )
 from depmap.download.models import ReleaseTerms
 from depmap.download.models import (
-    FileSubType,
     ReleaseType,
     FileSource,
     ReleaseTerms,
@@ -66,7 +65,6 @@ def get_all_data():
             "table": get_download_records(downloads),
             "releaseData": get_release_data(downloads),
             "currentRelease": get_current_release_download_record(downloads),
-            "fileSubTypes": FileSubType.get_all_display_names(),
             "fileType": FileType.get_all_display_names(),
             "releaseType": ReleaseType.get_all_display_names(),
             "source": FileSource.get_all_display_names(),

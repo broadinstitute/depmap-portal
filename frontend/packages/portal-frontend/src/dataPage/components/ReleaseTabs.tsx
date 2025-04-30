@@ -1,5 +1,5 @@
-import { DownloadTableData, FileSubType, Release } from "@depmap/data-slicer";
-import React from "react";
+import { DownloadTableData, Release } from "@depmap/data-slicer";
+import React, { useMemo } from "react";
 import { Tab, Tabs } from "react-bootstrap";
 import styles from "src/dataPage/styles/DataPage.scss";
 import DataFilePanel from "./DataFilePanel";
@@ -18,25 +18,42 @@ const ReleaseTabs = ({
   const groups: { [key: string]: any } = {};
   const releaseDataGroupedBySubtype = currentReleaseData.reduce(
     (group, option) => {
-      groups[option.fileSubType] = group[option.fileSubType] || [];
-      groups[option.fileSubType].push(option);
+      groups[option.fileSubType.code] = group[option.fileSubType.code] || [];
+      groups[option.fileSubType.code].push(option);
       return groups;
     },
     Object.create(null)
   );
 
-  const modelAndConditionsData =
-    releaseDataGroupedBySubtype[FileSubType.model_conditions_mapping];
-  const crisprScreenData =
-    releaseDataGroupedBySubtype[FileSubType.crispr_screen];
-  const drugScreenData = releaseDataGroupedBySubtype[FileSubType.drug_screen];
-  const copyNumberData = releaseDataGroupedBySubtype[FileSubType.copy_number];
-  const mutationsData = releaseDataGroupedBySubtype[FileSubType.mutations];
-  const expressionData = releaseDataGroupedBySubtype[FileSubType.expression];
-  const fusionsData = releaseDataGroupedBySubtype[FileSubType.fusions];
-  const globalGenomicFeatureData =
-    releaseDataGroupedBySubtype[FileSubType.global_genomic_features];
-  const readMeData = releaseDataGroupedBySubtype[FileSubType.read_me];
+  // We want these file sub types to always be first
+  const order = [
+    "model_conditions_mapping",
+    "crispr_screen",
+    "drug_screen",
+    "copy_number",
+    "mutations",
+    "expression",
+    "fusions",
+  ];
+
+  // We always want the readme data last
+  const readMeData = useMemo(() => {
+    return currentReleaseData.find(
+      (file) => file.fileSubType.code === "read_me"
+    );
+  }, [currentReleaseData]);
+
+  // Any amount of additional file sub type sections as defined in the yaml sub_type
+  // can exist between the original ordered data and read_me
+  const additionalDataGroups = currentReleaseData
+    .filter(
+      (file) =>
+        !order.includes(file.fileSubType.code) &&
+        file.fileSubType.code !== "read_me"
+    )
+    .map((file) => file.fileSubType.code);
+
+  const uniqueAdditionalDataGroups = Array.from(new Set(additionalDataGroups));
 
   return (
     <Tabs
@@ -44,119 +61,44 @@ const ReleaseTabs = ({
       defaultActiveKey={1}
       id="data_landing_page_release_tabs"
     >
-      {modelAndConditionsData && (
+      {order.map((dataTypeKey: string, index: number) => (
         <Tab
           className={styles.releaseTab}
-          eventKey={1}
-          title={FileSubType.model_conditions_mapping}
-          id={"mapping-files"}
+          eventKey={index}
+          title={releaseDataGroupedBySubtype[dataTypeKey][0].fileSubType.label}
+          id={dataTypeKey}
+          key={dataTypeKey}
         >
           <DataFilePanel
-            data={modelAndConditionsData}
+            data={releaseDataGroupedBySubtype[dataTypeKey]}
             termsDefinitions={termsDefinitions}
             release={release}
           />
         </Tab>
-      )}
-      {crisprScreenData && (
+      ))}
+      {uniqueAdditionalDataGroups.map((dataTypeKey: string, index: number) => (
         <Tab
           className={styles.releaseTab}
-          eventKey={2}
-          title={FileSubType.crispr_screen}
+          eventKey={order.length + index}
+          title={releaseDataGroupedBySubtype[dataTypeKey][0].fileSubType.label}
+          id={dataTypeKey}
+          key={dataTypeKey}
         >
           <DataFilePanel
-            data={crisprScreenData}
+            data={releaseDataGroupedBySubtype[dataTypeKey]}
             termsDefinitions={termsDefinitions}
             release={release}
           />
         </Tab>
-      )}
-      {drugScreenData && (
-        <Tab
-          className={styles.releaseTab}
-          eventKey={3}
-          title={FileSubType.drug_screen}
-        >
-          <DataFilePanel
-            data={drugScreenData}
-            termsDefinitions={termsDefinitions}
-            release={release}
-          />
-        </Tab>
-      )}
-      {copyNumberData && (
-        <Tab
-          className={styles.releaseTab}
-          eventKey={4}
-          title={FileSubType.copy_number}
-        >
-          <DataFilePanel
-            data={copyNumberData}
-            termsDefinitions={termsDefinitions}
-            release={release}
-          />
-        </Tab>
-      )}
-      {mutationsData && (
-        <Tab
-          className={styles.releaseTab}
-          eventKey={5}
-          title={FileSubType.mutations}
-        >
-          <DataFilePanel
-            data={mutationsData}
-            termsDefinitions={termsDefinitions}
-            release={release}
-          />
-        </Tab>
-      )}
-      {expressionData && (
-        <Tab
-          className={styles.releaseTab}
-          eventKey={6}
-          title={FileSubType.expression}
-        >
-          <DataFilePanel
-            data={expressionData}
-            termsDefinitions={termsDefinitions}
-            release={release}
-          />
-        </Tab>
-      )}
-      {fusionsData && (
-        <Tab
-          className={styles.releaseTab}
-          eventKey={7}
-          title={FileSubType.fusions}
-        >
-          <DataFilePanel
-            data={fusionsData}
-            termsDefinitions={termsDefinitions}
-            release={release}
-          />
-        </Tab>
-      )}
-      {globalGenomicFeatureData && (
-        <Tab
-          className={styles.releaseTab}
-          eventKey={8}
-          title={FileSubType.global_genomic_features}
-        >
-          <DataFilePanel
-            data={globalGenomicFeatureData}
-            termsDefinitions={termsDefinitions}
-            release={release}
-          />
-        </Tab>
-      )}
+      ))}
       {readMeData && (
         <Tab
           className={styles.releaseTab}
-          eventKey={9}
-          title={FileSubType.read_me}
+          eventKey={order.length + uniqueAdditionalDataGroups.length + 1}
+          title={readMeData.fileSubType.label}
         >
           <DataFilePanel
-            data={readMeData}
+            data={[readMeData]}
             termsDefinitions={termsDefinitions}
             release={release}
           />

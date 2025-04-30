@@ -22,20 +22,6 @@ export enum FileType {
   other = "Other",
 }
 
-// For categorization on the new DataPage.tsx's "Current Release" tab. FileSubType is determined
-// from the sub_type download yaml field.
-export enum FileSubType {
-  model_conditions_mapping = "Model, Conditions, and Mapping",
-  crispr_screen = "CRISPR Screen",
-  drug_screen = "Drug Screen",
-  copy_number = "Copy Number",
-  mutations = "Mutations",
-  expression = "Expression",
-  fusions = "Fusions",
-  global_genomic_features = "Global Genomic Features",
-  read_me = "READ ME",
-}
-
 export enum FileSource {
   broad = "Broad Institute",
   csoft = "Broad Institute, Chemical Biology & Therapeutics Science Program",
@@ -53,8 +39,6 @@ export interface Downloads {
 
   fileType: Array<FileType>;
 
-  fileSubTypes: FileSubType[];
-
   releaseType: Array<ReleaseType>;
 
   source: Array<FileSource>;
@@ -62,10 +46,15 @@ export interface Downloads {
   dataUsageUrl: string;
 }
 
+export interface FileSubtype {
+  code: string;
+  label: string;
+}
+
 export interface DownloadFile {
   fileName: string;
   fileType: FileType;
-  fileSubType: FileSubType;
+  fileSubType: FileSubtype;
   fileDescription: string;
   downloadUrl: string;
   taigaUrl: string;

@@ -12,6 +12,9 @@ files:
     type: genetic_dependency
     size: MB
     pipeline_name: ""
+    sub_type:
+      code: crispr_screen
+      label: "CRISPR Screen"
     url:
       bucket: depmap-dmc-downloads
       file_name: test/gene_effect.csv

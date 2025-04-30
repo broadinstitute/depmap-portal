@@ -188,7 +188,7 @@ def get_file_record(release: DownloadRelease, f: DownloadFile):
     }
 
     if f.sub_type is not None:
-        file_record["fileSubType"] = f.sub_type.display_name
+        file_record["fileSubType"] = f.sub_type
 
     if f.summary_stats is not None:
         file_record["summaryStats"] = f.summary_stats.stats
