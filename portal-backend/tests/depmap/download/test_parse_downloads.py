@@ -147,7 +147,8 @@ def assert_files_are_equal(
 ):
     sample_file = sample_downloads_releases[release_index].all_files[file_index]
     assert expected_file.name == sample_file.name
-    if sample_file.name == "TEST DATA":
+    if sample_file.name == "gene_effect.csv":
+        assert sample_file.sub_type is not None
         assert sample_file.sub_type.code == "crispr_screen"
         assert sample_file.sub_type.label == "CRISPR Screen"
     assert expected_file.type == sample_file.type

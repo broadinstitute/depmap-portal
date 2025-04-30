@@ -69,11 +69,18 @@ def get_summary_stats(stats: List[Dict[str, Any]]) -> SummaryStats:
     return SummaryStats(stats_dict_list)
 
 
-def get_file_sub_type(sub_type: Union[dict, None]) -> FileSubtype:
+def get_file_sub_type(sub_type: Union[dict, None]) -> Optional[FileSubtype]:
     if sub_type == None:
         return None
 
-    return FileSubtype(code=sub_type.get("code"), label=sub_type.get("label"))
+    code = sub_type.get("code", None)
+    if code is None:
+        return None
+
+    label = sub_type.get("label", None)
+    if label is None:
+        label = code
+    return FileSubtype(code=code, label=label)
 
 
 def get_bucket(url: dict):
