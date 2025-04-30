@@ -28,6 +28,7 @@ module.exports = {
     resourcesPage: "./src/apps/resourcesPage.tsx",
     secretDataViewer: "./src/apps/secretDataViewer.tsx",
     anchorScreenDashboard: "./src/apps/anchorScreenDashboard.tsx",
+    doseViabilityPrototype: "./src/apps/doseViabilityPrototype.tsx",
   },
 
   plugins: [
