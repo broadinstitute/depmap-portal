@@ -91,9 +91,11 @@ export default function Datasets() {
   const [isEditDimensionTypeMode, setIsEditDimensionTypeMode] = useState(false);
   const [showDimensionTypeModal, setShowDimensionTypeModal] = useState(false);
 
+  const [isDeletingDataset, setIsDeletingDataset] = useState(false);
   const [datasetDeleteError, setDatasetDeleteError] = useState<string | null>(
     null
   );
+  const [isDeletingDimType, setIsDeletingDimType] = useState(false);
   const [dimTypeDeleteError, setDimTypeDeleteError] = useState<string | null>(
     null
   );
@@ -426,6 +428,7 @@ export default function Datasets() {
   };
 
   const deleteDatasetButtonAction = async () => {
+    setIsDeletingDataset(true);
     setDatasetDeleteError(null);
 
     await Promise.all(
@@ -451,10 +454,13 @@ export default function Datasets() {
           setDatasetDeleteError(e.detail);
         }
       });
+
+    setIsDeletingDataset(false);
   };
 
   const deleteDimensionType = async () => {
     if (selectedDimensionType != null) {
+      setIsDeletingDimType(true);
       const dimensionType = dimensionTypes.find(
         (dt) => dt.name === selectedDimensionType.name
       );
@@ -477,6 +483,7 @@ export default function Datasets() {
             }
           });
       }
+      setIsDeletingDimType(false);
     }
   };
 
@@ -554,7 +561,8 @@ export default function Datasets() {
               disabled={
                 selectedDatasetIds.size === 0 ||
                 datasets.length === 0 ||
-                userGroups.writeGroups.length === 0
+                userGroups.writeGroups.length === 0 ||
+                isDeletingDataset
               }
             >
               Delete Selected Dataset
@@ -663,7 +671,7 @@ export default function Datasets() {
               <Button
                 bsStyle="danger"
                 onClick={() => deleteDimensionType()}
-                disabled={!selectedDimensionType}
+                disabled={!selectedDimensionType || isDeletingDimType}
               >
                 Delete Selected Dimension Type
               </Button>
