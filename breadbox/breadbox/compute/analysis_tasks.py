@@ -133,11 +133,11 @@ def _get_filtered_dataset_and_query_feature(
         value_query_vector = [0 if x == "out" else 1 for x in query_values]
 
         # Validate that BOTH the in-group and out-group have cell lines present in the dataset
-        in_group_cell_lines = {depmap_model_ids[i] for i in range(len(query_values)) if query_values[i] == "in"}
-        out_group_cell_lines = {depmap_model_ids[i] for i in range(len(query_values)) if query_values[i] == "out"}
-        if len(in_group_cell_lines.intersection(set(dataset_sample_ids))) == 0:
+        in_group_sample_ids = {depmap_model_ids[i] for i in range(len(query_values)) if query_values[i] == "in"}
+        out_group_sample_ids = {depmap_model_ids[i] for i in range(len(query_values)) if query_values[i] == "out"}
+        if len(in_group_sample_ids.intersection(set(dataset_sample_ids))) == 0:
             raise UserError("No cell lines in common between in-group and dataset selected")
-        if len(out_group_cell_lines.intersection(set(dataset_sample_ids))) == 0:
+        if len(out_group_sample_ids.intersection(set(dataset_sample_ids))) == 0:
             raise UserError("No cell lines in common between out-group and dataset selected")
 
     elif (
