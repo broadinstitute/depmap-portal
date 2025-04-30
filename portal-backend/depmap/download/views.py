@@ -1,3 +1,4 @@
+import dataclasses
 import os
 from flask import (
     Blueprint,
@@ -188,7 +189,7 @@ def get_file_record(release: DownloadRelease, f: DownloadFile):
     }
 
     if f.sub_type is not None:
-        file_record["fileSubType"] = f.sub_type
+        file_record["fileSubType"] = dataclasses.asdict(f.sub_type)
 
     if f.summary_stats is not None:
         file_record["summaryStats"] = f.summary_stats.stats
