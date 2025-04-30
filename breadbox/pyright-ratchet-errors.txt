@@ -1,6 +1,4 @@
 __init__.py: error: Expression of type "tuple[str, stat_result | None]" is incompatible with return type "Tuple[str, stat_result]"
-analysis_tasks.py: error: Argument of type "DataFrame | None" cannot be assigned to parameter "query_series" of type "DataFrame" in function "_get_filtered_dataset_and_query_feature"
-analysis_tasks.py: error: Object of type "None" cannot be used as iterable value (reportOptionalIterable)
 common.py: error: Cannot access attribute "__fields__" for class "type[ResponseMixin]*"
 conftest.py: error: Argument of type "Literal['read']" cannot be assigned to parameter "access_type" of type "AccessType" in function "__init__"
 data_validation.py: error: Argument of type "BinaryIO" cannot be assigned to parameter "filepath_or_buffer" of type "FilePath | ReadCsvBuffer[bytes] | ReadCsvBuffer[str]" in function "read_csv"

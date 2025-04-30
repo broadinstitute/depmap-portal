@@ -111,28 +111,40 @@ def _filter_out_models_not_in_search_dataset(
 def _get_filtered_dataset_and_query_feature(
     analysis_type: str,
     dataset: Dataset,  # dataset we're searching
-    query_series: pd.DataFrame,
+    query_series: Optional[pd.DataFrame],
     filestore_location: str,
     depmap_model_ids: List[str],
-    query_values: Optional[List[Any]] = [],
-    feature_indices: List[int] = [],  # indices for the dataset we're searching
+    query_values: Optional[List[str]],
+    feature_indices: List[int],  # indices for the dataset we're searching
 ) -> Tuple[List[str], Union[List[int], List[float]], pd.DataFrame]:
 
     # Get the dataframe of features for the dataset we're searching in
     feature_df = get_slice(
         dataset, feature_indices, None, filestore_location, keep_nans=True
     )
+    dataset_sample_ids = feature_df.index
 
     if analysis_type == models.AnalysisType.two_class:
+        assert query_values is not None
         model_query_vector = depmap_model_ids
         assert all(
             x in {"in", "out"} for x in query_values
         ), f"Expecting values in {query_values} to be either 'in' or 'out'"
         value_query_vector = [0 if x == "out" else 1 for x in query_values]
+
+        # Validate that BOTH the in-group and out-group have cell lines present in the dataset
+        in_group_cell_lines = {depmap_model_ids[i] for i in range(len(query_values)) if query_values[i] == "in"}
+        out_group_cell_lines = {depmap_model_ids[i] for i in range(len(query_values)) if query_values[i] == "out"}
+        if len(in_group_cell_lines.intersection(set(dataset_sample_ids))) == 0:
+            raise UserError("No cell lines in common between in-group and dataset selected")
+        if len(out_group_cell_lines.intersection(set(dataset_sample_ids))) == 0:
+            raise UserError("No cell lines in common between out-group and dataset selected")
+
     elif (
         analysis_type == models.AnalysisType.pearson
         or analysis_type == models.AnalysisType.association
     ):
+        assert query_series is not None
         assert query_series.shape[1] == 1
         model_query_vector, value_query_vector = _subset_feature_df(
             query_series.iloc[:, 0], depmap_model_ids
