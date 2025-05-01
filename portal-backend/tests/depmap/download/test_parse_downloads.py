@@ -1,4 +1,5 @@
 import datetime
+from turtle import position
 from depmap.download.models import (
     BucketUrl,
     DmcBucketUrl,
@@ -28,7 +29,9 @@ expected_downloads = [
             DownloadFile(
                 name="gene_effect.csv",
                 type=FileType.genetic_dependency,
-                sub_type=FileSubtype(code="crispr_screen", label="CRISPR Screen"),
+                sub_type=FileSubtype(
+                    code="crispr_screen", label="CRISPR Screen", position=1
+                ),
                 size="MB",
                 url=DmcBucketUrl("test/gene_effect.csv"),
                 taiga_id="small-chronos-combined-e82b.2/chronos_combined_score",

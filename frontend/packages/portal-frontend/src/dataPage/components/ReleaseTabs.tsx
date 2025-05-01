@@ -24,36 +24,12 @@ const ReleaseTabs = ({
     },
     Object.create(null)
   );
-
-  // We want these file sub types to always be first
-  const order = [
-    "model_conditions_mapping",
-    "crispr_screen",
-    "drug_screen",
-    "copy_number",
-    "mutations",
-    "expression",
-    "fusions",
-  ];
-
-  // We always want the readme data last
-  const readMeData = useMemo(() => {
-    return currentReleaseData.find(
-      (file) => file.fileSubType.code === "read_me"
-    );
-  }, [currentReleaseData]);
-
-  // Any amount of additional file sub type sections as defined in the yaml sub_type
-  // can exist between the original ordered data and read_me
-  const additionalDataGroups = currentReleaseData
-    .filter(
-      (file) =>
-        !order.includes(file.fileSubType.code) &&
-        file.fileSubType.code !== "read_me"
-    )
-    .map((file) => file.fileSubType.code);
-
-  const uniqueAdditionalDataGroups = Array.from(new Set(additionalDataGroups));
+  const unorderedCodes = Object.keys(releaseDataGroupedBySubtype);
+  const orderedCodes = unorderedCodes.sort(
+    (a, b) =>
+      releaseDataGroupedBySubtype[a][0].fileSubType.position -
+      releaseDataGroupedBySubtype[b][0].fileSubType.position
+  );
 
   return (
     <Tabs
@@ -61,49 +37,21 @@ const ReleaseTabs = ({
       defaultActiveKey={1}
       id="data_landing_page_release_tabs"
     >
-      {order.map((dataTypeKey: string, index: number) => (
+      {orderedCodes.map((code: string, index: number) => (
         <Tab
           className={styles.releaseTab}
           eventKey={index}
-          title={releaseDataGroupedBySubtype[dataTypeKey][0].fileSubType.label}
-          id={dataTypeKey}
-          key={dataTypeKey}
+          title={releaseDataGroupedBySubtype[code][0].fileSubType.label}
+          id={code}
+          key={code}
         >
           <DataFilePanel
-            data={releaseDataGroupedBySubtype[dataTypeKey]}
+            data={releaseDataGroupedBySubtype[code]}
             termsDefinitions={termsDefinitions}
             release={release}
           />
         </Tab>
       ))}
-      {uniqueAdditionalDataGroups.map((dataTypeKey: string, index: number) => (
-        <Tab
-          className={styles.releaseTab}
-          eventKey={order.length + index}
-          title={releaseDataGroupedBySubtype[dataTypeKey][0].fileSubType.label}
-          id={dataTypeKey}
-          key={dataTypeKey}
-        >
-          <DataFilePanel
-            data={releaseDataGroupedBySubtype[dataTypeKey]}
-            termsDefinitions={termsDefinitions}
-            release={release}
-          />
-        </Tab>
-      ))}
-      {readMeData && (
-        <Tab
-          className={styles.releaseTab}
-          eventKey={order.length + uniqueAdditionalDataGroups.length + 1}
-          title={readMeData.fileSubType.label}
-        >
-          <DataFilePanel
-            data={[readMeData]}
-            termsDefinitions={termsDefinitions}
-            release={release}
-          />
-        </Tab>
-      )}
     </Tabs>
   );
 };

@@ -69,20 +69,6 @@ def get_summary_stats(stats: List[Dict[str, Any]]) -> SummaryStats:
     return SummaryStats(stats_dict_list)
 
 
-def get_file_sub_type(sub_type: Union[dict, None]) -> Optional[FileSubtype]:
-    if sub_type == None:
-        return None
-
-    code = sub_type.get("code", None)
-    if code is None:
-        return None
-
-    label = sub_type.get("label", None)
-    if label is None:
-        label = code
-    return FileSubtype(code=code, label=label)
-
-
 def get_bucket(url: dict):
     if url.get("bucket", "") == DmcBucketUrl.BUCKET:
         return DmcBucketUrl(url.get("file_name", ""), dl_name=url.get("dl_name", ""))
@@ -108,12 +94,13 @@ def get_proper_url_format(url):
         return url
 
 
-def make_file(file: Dict[str, Any]) -> DownloadFile:
+def make_file(file: Dict[str, Any], subtype_mapping_w_positions: dict) -> DownloadFile:
     # Required for DownloadFile
     name = file.get("name", "")
     type = FileType(file.get("type", ""))
 
-    sub_type = get_file_sub_type(file.get("sub_type", None))
+    sub_type_code = file.get("sub_type")
+    sub_type = subtype_mapping_w_positions.get(sub_type_code)
 
     size = file.get("size", "")
 
@@ -214,7 +201,18 @@ def make_downloads_release_from_parsed_yaml(release: Dict[str, Any]) -> Download
 
     virtual_dataset_id = release.get("virtual_dataset_id")
 
-    files: List[DownloadFile] = [make_file(file) for file in files_preparse]
+    subtype_mapping = release.get("subtypes")
+    subtype_mapping_w_positions = {}
+
+    if subtype_mapping is not None:
+        for index, subtype in enumerate(subtype_mapping):
+            subtype_mapping_w_positions[subtype["code"]] = FileSubtype(
+                code=subtype["code"], label=subtype["label"], position=index
+            )
+
+    files: List[DownloadFile] = [
+        make_file(file, subtype_mapping_w_positions) for file in files_preparse
+    ]
 
     final_release = DownloadRelease(
         name,

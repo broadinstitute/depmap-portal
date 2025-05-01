@@ -49,6 +49,7 @@ export interface Downloads {
 export interface FileSubtype {
   code: string;
   label: string;
+  position: number;
 }
 
 export interface DownloadFile {

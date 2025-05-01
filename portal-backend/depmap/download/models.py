@@ -452,6 +452,7 @@ class DownloadFileGlobalSearch(Model):
 class FileSubtype:
     code: str
     label: str
+    position: int
 
 
 class DownloadFile:
