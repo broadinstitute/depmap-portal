@@ -132,7 +132,7 @@ def generate_and_upload_svg(smile: str) -> None:
 @click.option(
     "--taiga_id",
     type=str,
-    default="compound-metadata-de37.17/compound_metadata_expanded",
+    default="compound-metadata-de37.39/PortalCompounds",
     help="Taiga ID for the compound metadata",
 )
 def main(taiga_id):
