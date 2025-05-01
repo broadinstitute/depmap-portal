@@ -95,14 +95,18 @@ def get_proper_url_format(url):
 
 
 def make_file(
-    file: Dict[str, Any], subtype_mapping_w_positions: Dict[str, str]
+    file: Dict[str, Any], subtype_mapping_w_positions: Dict[str, FileSubtype]
 ) -> DownloadFile:
     # Required for DownloadFile
     name = file.get("name", "")
     type = FileType(file.get("type", ""))
 
     sub_type_code = file.get("sub_type")
-    sub_type = subtype_mapping_w_positions.get(sub_type_code)
+    sub_type = (
+        None
+        if sub_type_code is None
+        else subtype_mapping_w_positions.get(sub_type_code)
+    )
 
     size = file.get("size", "")
 
