@@ -18,8 +18,11 @@ const ReleaseTabs = ({
   const groups: { [key: string]: any } = {};
   const releaseDataGroupedBySubtype = currentReleaseData.reduce(
     (group, option) => {
-      groups[option.fileSubType.code] = group[option.fileSubType.code] || [];
-      groups[option.fileSubType.code].push(option);
+      if (option.fileSubType) {
+        groups[option.fileSubType.code] = group[option.fileSubType.code] || [];
+        groups[option.fileSubType.code].push(option);
+      }
+
       return groups;
     },
     Object.create(null)
@@ -42,7 +45,6 @@ const ReleaseTabs = ({
           className={styles.releaseTab}
           eventKey={index}
           title={releaseDataGroupedBySubtype[code][0].fileSubType.label}
-          id={code}
           key={code}
         >
           <DataFilePanel
