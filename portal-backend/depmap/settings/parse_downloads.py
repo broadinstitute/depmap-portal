@@ -94,7 +94,9 @@ def get_proper_url_format(url):
         return url
 
 
-def make_file(file: Dict[str, Any], subtype_mapping_w_positions: dict) -> DownloadFile:
+def make_file(
+    file: Dict[str, Any], subtype_mapping_w_positions: Dict[str, str]
+) -> DownloadFile:
     # Required for DownloadFile
     name = file.get("name", "")
     type = FileType(file.get("type", ""))

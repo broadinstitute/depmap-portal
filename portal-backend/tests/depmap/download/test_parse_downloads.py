@@ -29,7 +29,7 @@ expected_downloads = [
                 name="gene_effect.csv",
                 type=FileType.genetic_dependency,
                 sub_type=FileSubtype(
-                    code="crispr_screen", label="CRISPR Screen", position=1
+                    code="crispr_screen", label="CRISPR Screen", position=0
                 ),
                 size="MB",
                 url=DmcBucketUrl("test/gene_effect.csv"),
