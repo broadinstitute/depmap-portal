@@ -161,13 +161,27 @@ class ComputeUnivariateAssociations(Resource):
                 query_values=query_values,
             )
 
+        dataset_depmap_ids = set(data_access.get_dataset_sample_ids(dataset_id))
+
         # Two-class comparison case
         if analysis_type == AnalysisType.two_class:
-            cl_query_vector = query_cell_lines
+            cl_query_vector = query_cell_lines # includes both in group and out group
             assert all(
                 x in {"in", "out"} for x in query_values
             ), "Expecting values in {} to be either 'in' or 'out'".format(query_values)
             value_query_vector = [0 if x == "out" else 1 for x in query_values]
+
+            # Validate that BOTH the in-group and out-group have cell lines present in the dataset
+            in_group_cell_lines = {query_cell_lines[i] for i in range(len(query_values)) if query_values[i] == "in"}
+            out_group_cell_lines = {query_cell_lines[i] for i in range(len(query_values)) if query_values[i] == "out"}
+            if len(in_group_cell_lines.intersection(dataset_depmap_ids)) == 0:
+                return format_taskless_error_message(
+                    "No cell lines in common between in-group and dataset selected"
+                )
+            if len(out_group_cell_lines.intersection(dataset_depmap_ids)) == 0:
+                return format_taskless_error_message(
+                    "No cell lines in common between out-group and dataset selected"
+                )
 
         # Pearson and association case
         elif (
@@ -201,7 +215,6 @@ class ComputeUnivariateAssociations(Resource):
         # further intersect cell lines with the dataset being used. Get the list of cell lines actually used in computation
         depmap_ids_filtered = []
         values_filtered = []
-        dataset_depmap_ids = set(data_access.get_dataset_sample_ids(dataset_id))
         for depmap_id, value in zip(cl_query_vector, value_query_vector):
             if depmap_id in dataset_depmap_ids:
                 depmap_ids_filtered.append(depmap_id)
