@@ -7,12 +7,10 @@ export interface ModelTabProps {
 }
 
 const ModelTab = ({ modelInfo }: ModelTabProps) => {
-  const showOverview =
-    modelInfo.lineage_tree ||
-    modelInfo.molecular_subtype_tree ||
-    modelInfo.primary_metastasis ||
-    modelInfo.sample_collection_site ||
-    modelInfo.image;
+  const showAnnotations =
+    modelInfo.oncotree_lineage ||
+    modelInfo.oncotree_primary_disease ||
+    modelInfo.oncotree_subtype_and_code;
 
   const showDerivation =
     modelInfo.growth_pattern ||
@@ -28,7 +26,7 @@ const ModelTab = ({ modelInfo }: ModelTabProps) => {
     return (
       <div className={styles.descriptionTileColumns}>
         <div className={styles.descriptionTileColumn}>
-          {showOverview && (
+          {showAnnotations && (
             <h4 className={styles.propertyGroupHeader}>Annotations</h4>
           )}
           {modelInfo.oncotree_subtype_and_code && (
