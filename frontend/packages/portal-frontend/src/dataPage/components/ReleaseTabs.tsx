@@ -1,5 +1,5 @@
 import { DownloadTableData, Release } from "@depmap/data-slicer";
-import React, { useMemo } from "react";
+import React from "react";
 import { Tab, Tabs } from "react-bootstrap";
 import styles from "src/dataPage/styles/DataPage.scss";
 import DataFilePanel from "./DataFilePanel";
