@@ -1,5 +1,4 @@
 import datetime
-from turtle import position
 from depmap.download.models import (
     BucketUrl,
     DmcBucketUrl,
