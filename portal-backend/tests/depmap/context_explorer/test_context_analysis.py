@@ -1,10 +1,12 @@
 from dataclasses import dataclass
 import dataclasses
+from depmap.context_explorer import box_plot_utils
 from depmap.context_explorer.api import _get_analysis_data_table
 import pytest
 from typing import List, Literal, Optional
 from depmap.context_explorer.dose_curve_utils import get_context_dose_curves
 from depmap.context_explorer.utils import (
+    get_entity_id_from_entity_full_label,
     get_full_row_of_values_and_depmap_ids,
     _get_compound_experiment_id_from_entity_label,
 )
@@ -1084,20 +1086,34 @@ def _get_box_plot_data(
     selected_entity_label: str,
     tree_type: str,
     entity_type: str,
-    max_fdr,
-    min_abs_effect_size,
-    min_frac_dep_in,
+    max_fdr: float = 0.5,
+    min_abs_effect_size: float = 0.1,
+    min_frac_dep_in: float = 0.1,
 ) -> Optional[dict]:
 
-    context_box_plot_data = get_organized_contexts(
-        selected_subtype_code=selected_subtype_code,
+    entity_id_and_label = get_entity_id_from_entity_full_label(
+        entity_type=entity_type, entity_full_label=selected_entity_label,
+    )
+    entity_id = entity_id_and_label["entity_id"]
+    entity_label = entity_id_and_label["label"]
+
+    sig_contexts = box_plot_utils.get_sig_context_dataframe(
         tree_type=tree_type,
         entity_type=entity_type,
-        entity_full_label=selected_entity_label,
+        entity_id=entity_id,
         dataset_name=dataset_name,
         max_fdr=max_fdr,
         min_abs_effect_size=min_abs_effect_size,
         min_frac_dep_in=min_frac_dep_in,
+    )
+
+    context_box_plot_data = box_plot_utils.get_organized_contexts(
+        selected_subtype_code=selected_subtype_code,
+        sig_contexts=sig_contexts,
+        entity_type=entity_type,
+        entity_label=entity_label,
+        dataset_name=dataset_name,
+        tree_type=tree_type,
     )
 
     if context_box_plot_data is None:
@@ -1189,77 +1205,61 @@ def test_get_box_plot_data(empty_db_mock_downloads, dataset_name):
         "insignificant",
         "level_0_code",
     ]
-    assert data["other_cards"][0]["level_0_code"] == "MYELOID"
+    assert data["other_cards"][0]["level_0_code"] == "LUNG"
     assert {
-        "label": "CHILD_OF_MYELOID",
-        "path": ["CHILD_OF_MYELOID"],
-        "data": [20, 21, 22, 23, 24],
+        "label": "LUNG",
+        "data": [5, 6, 7, 8, 9],
         "cell_line_display_names": [
-            "child_myeloid_0",
-            "child_myeloid_1",
-            "child_myeloid_2",
-            "child_myeloid_3",
-            "child_myeloid_4",
+            "lung_line_0",
+            "lung_line_1",
+            "lung_line_2",
+            "lung_line_3",
+            "lung_line_4",
         ],
+        "path": ["LUNG"],
     } in data["other_cards"][0]["significant"]
 
     assert {
-        "label": "MYELOID",
-        "path": ["MYELOID"],
-        "data": [15, 16, 17, 18, 19, 20, 21, 22, 23, 24],
+        "label": "LUNG",
+        "data": [5, 6, 7, 8, 9],
         "cell_line_display_names": [
-            "AML_0",
-            "AML_1",
-            "AML_2",
-            "AML_3",
-            "AML_4",
-            "child_myeloid_0",
-            "child_myeloid_1",
-            "child_myeloid_2",
-            "child_myeloid_3",
-            "child_myeloid_4",
+            "lung_line_0",
+            "lung_line_1",
+            "lung_line_2",
+            "lung_line_3",
+            "lung_line_4",
         ],
+        "path": ["LUNG"],
     } in data["other_cards"][0]["significant"]
 
     assert data["other_cards"][0]["insignificant"] == {
-        "label": "Other MYELOID",
-        "path": ["MYELOID"],
-        "data": [15, 16, 17, 18, 19],
-        "cell_line_display_names": ["AML_0", "AML_1", "AML_2", "AML_3", "AML_4"],
+        "label": "Other LUNG",
+        "data": [],
+        "cell_line_display_names": [],
+        "path": None,
     }
     assert data["insignificant_heme_data"] == {
         "label": "Other Heme",
-        "data": [15, 16, 17, 18, 19, 25],
+        "data": [15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25],
         "cell_line_display_names": [
             "AML_0",
             "AML_1",
             "AML_2",
             "AML_3",
             "AML_4",
+            "child_myeloid_0",
+            "child_myeloid_1",
+            "child_myeloid_2",
+            "child_myeloid_3",
+            "child_myeloid_4",
             "LYMPH_1",
         ],
         "path": None,
     }
     assert data["insignificant_solid_data"] == {
         "label": "Other Solid",
-        "data": [0, 1, 2, 3, 4, 10, 11, 12, 13, 14, 26, 27, 28, 29, 30],
-        "cell_line_display_names": [
-            "0es",
-            "1es",
-            "2es",
-            "3es",
-            "4es",
-            "0os",
-            "1os",
-            "2os",
-            "3os",
-            "4os",
-            "0insig",
-            "1insig",
-            "2insig",
-            "3insig",
-            "4insig",
-        ],
+        "data": [],
+        "cell_line_display_names": [],
         "path": None,
     }
 
@@ -1316,42 +1316,37 @@ def test_get_box_plot_data(empty_db_mock_downloads, dataset_name):
     }
 
     assert {
-        "label": "CHILD_OF_MYELOID",
-        "path": ["CHILD_OF_MYELOID"],
-        "data": [20, 21, 22, 23, 24],
+        "label": "LUNG",
+        "data": [5, 6, 7, 8, 9],
         "cell_line_display_names": [
-            "child_myeloid_0",
-            "child_myeloid_1",
-            "child_myeloid_2",
-            "child_myeloid_3",
-            "child_myeloid_4",
+            "lung_line_0",
+            "lung_line_1",
+            "lung_line_2",
+            "lung_line_3",
+            "lung_line_4",
         ],
+        "path": ["LUNG"],
     } in data["other_cards"][0]["significant"]
     assert {
-        "label": "MYELOID",
-        "path": ["MYELOID"],
-        "data": [15, 16, 17, 18, 19, 20, 21, 22, 23, 24],
+        "label": "LUNG",
+        "data": [5, 6, 7, 8, 9],
         "cell_line_display_names": [
-            "AML_0",
-            "AML_1",
-            "AML_2",
-            "AML_3",
-            "AML_4",
-            "child_myeloid_0",
-            "child_myeloid_1",
-            "child_myeloid_2",
-            "child_myeloid_3",
-            "child_myeloid_4",
+            "lung_line_0",
+            "lung_line_1",
+            "lung_line_2",
+            "lung_line_3",
+            "lung_line_4",
         ],
+        "path": ["LUNG"],
     } in data["other_cards"][0]["significant"]
 
     assert data["other_cards"][0]["insignificant"] == {
-        "label": "Other MYELOID",
-        "path": ["MYELOID"],
-        "data": [15, 16, 17, 18, 19],
-        "cell_line_display_names": ["AML_0", "AML_1", "AML_2", "AML_3", "AML_4"],
+        "label": "Other LUNG",
+        "data": [],
+        "cell_line_display_names": [],
+        "path": None,
     }
-    assert data["other_cards"][0]["level_0_code"] == "MYELOID"
+    assert data["other_cards"][0]["level_0_code"] == "LUNG"
 
     selected_subtype_code = "ES"
     data = _get_box_plot_data(
@@ -1365,72 +1360,13 @@ def test_get_box_plot_data(empty_db_mock_downloads, dataset_name):
         min_frac_dep_in=nothing_range.min_frac_dep_in,
     )
 
-    assert data["significant_selection"] == []
+    assert data["significant_selection"] == None
 
     # If you can select a context it should always have something that
     # is insignificant... If nothing is significant just everything gets
     # added to data["insignificant_selection"]
-    assert data["insignificant_selection"] == {
-        "label": "Other BONE",
-        "path": ["BONE"],
-        "data": [0, 1, 2, 3, 4, 10, 11, 12, 13, 14, 26, 27, 28, 29, 30],
-        "cell_line_display_names": [
-            "0es",
-            "1es",
-            "2es",
-            "3es",
-            "4es",
-            "0os",
-            "1os",
-            "2os",
-            "3os",
-            "4os",
-            "0insig",
-            "1insig",
-            "2insig",
-            "3insig",
-            "4insig",
-        ],
-    }
-    assert {
-        "significant": [
-            {
-                "label": "MYELOID",
-                "path": ["MYELOID"],
-                "data": [15, 16, 17, 18, 19, 20, 21, 22, 23, 24],
-                "cell_line_display_names": [
-                    "AML_0",
-                    "AML_1",
-                    "AML_2",
-                    "AML_3",
-                    "AML_4",
-                    "child_myeloid_0",
-                    "child_myeloid_1",
-                    "child_myeloid_2",
-                    "child_myeloid_3",
-                    "child_myeloid_4",
-                ],
-            }
-        ],
-        "insignificant": {
-            "label": "Other MYELOID",
-            "path": ["MYELOID"],
-            "data": [15, 16, 17, 18, 19, 20, 21, 22, 23, 24],
-            "cell_line_display_names": [
-                "AML_0",
-                "AML_1",
-                "AML_2",
-                "AML_3",
-                "AML_4",
-                "child_myeloid_0",
-                "child_myeloid_1",
-                "child_myeloid_2",
-                "child_myeloid_3",
-                "child_myeloid_4",
-            ],
-        },
-        "level_0_code": "MYELOID",
-    } in data["other_cards"]
+    assert data["insignificant_selection"] == None
+    assert data["other_cards"] == []
 
     assert data["insignificant_heme_data"] == {
         "label": "Other Heme",

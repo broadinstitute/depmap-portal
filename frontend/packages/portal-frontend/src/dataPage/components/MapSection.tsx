@@ -1,6 +1,6 @@
 import { Accordion } from "@depmap/common-components";
 import React from "react";
-import { getDapi } from "src/common/utilities/context";
+import { toStaticUrl } from "@depmap/globals";
 
 import styles from "src/dataPage/styles/DataPage.scss";
 
@@ -8,7 +8,7 @@ const MapSection = () => {
   const mapImage = (
     <img
       style={{ maxWidth: "700px", width: "100%" }}
-      src={getDapi()._getFileUrl("/static/img/data_page/Mapping2.png")}
+      src={toStaticUrl("img/data_page/Mapping2.png")}
       alt="Diagram of how to map data"
     />
   );

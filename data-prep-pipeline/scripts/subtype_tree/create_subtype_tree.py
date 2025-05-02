@@ -4,9 +4,6 @@ import itertools
 import pandas as pd
 from taigapy import create_taiga_client_v3
 
-# TODO FOR 25Q2: REMOVE THE USE OF THIS TEMPORARY MODEL FILE
-temp_model_id = "alison-test-649a.18/Model_temp_between_24q4_25q2"
-
 ### HELPER FUNCTIONS ###
 def load_data(
     model_taiga_id,
@@ -34,19 +31,7 @@ def load_data(
     """
     tc = create_taiga_client_v3()
 
-    # HACK
-    # This is intended to use a temporary model file while waiting for a change in
-    # the model table that is coming in 25q2.
-    release_quarter = re.search("2[0-9]q[2|4]", model_taiga_id).group()
-    if release_quarter == "24q4":
-        model_taiga_id = temp_model_id
-
-    assert (
-        release_quarter == "24q4"
-    ), "If this assert gets hit, take out the above hack. We do not want to change the model_taiga_id's value anymore. This will also need to be removed in create_context_matrix.py on lines 18-25."
-
     ## Load the models table
-    # TODO FOR 25Q2: change taiga id to be model_taiga_id"
     models = (
         tc.get(model_taiga_id)
         .loc[
@@ -319,9 +304,9 @@ def add_depmap_nodes(models, oncotable):
             ## DECISION: Add cancerous nodes at level 1, right underneath lineage
             parent_code = lin_node.DepmapModelType
 
-            ## Hard-coded PedDep request for 25Q2: Add BALL and TALL under Lymphoid Neoplasm 
-            if new_type.DepmapModelType in ['BALL', 'TALL']:
-                parent_code = 'LNM'
+            ## Hard-coded PedDep request for 25Q2: Add BALL and TALL under Lymphoid Neoplasm
+            if new_type.DepmapModelType in ["BALL", "TALL"]:
+                parent_code = "LNM"
 
         elif new_type.OncotreePrimaryDisease == "Non-Cancerous":
             if lin_node.NodeSource == "Oncotree":

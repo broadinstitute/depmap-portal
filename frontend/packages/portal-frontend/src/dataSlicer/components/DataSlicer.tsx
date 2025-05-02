@@ -3,7 +3,7 @@ import * as React from "react";
 import { Button, Checkbox, Radio, Modal } from "react-bootstrap";
 import update from "immutability-helper";
 
-import { enabledFeatures } from "@depmap/globals";
+import { enabledFeatures, toStaticUrl } from "@depmap/globals";
 import { CellLineListsDropdown, CustomList } from "@depmap/cell-line-selector";
 import {
   DatasetOptionsWithLabels,
@@ -808,7 +808,7 @@ export default class DataSlicer extends React.Component<
           margin: "2px 7px 7px",
           cursor: "pointer",
         }}
-        src={dapi._getFileUrl("/static/img/gene_overview/info_purple.svg")}
+        src={toStaticUrl("img/gene_overview/info_purple.svg")}
         alt="description of term"
         className="icon"
       />

@@ -36,6 +36,14 @@ import {
   BLOOD_LINEAGES,
   getBoxPlotFilterVariables,
   getSelectivityValLabel,
+  getShowPositiveEffectSizesFilter,
+  GENE_DEP_TABLE_DESCRIPTION,
+  GENE_DETAIL_NO_GENE_SELECTED,
+  ONCREF_DETAIL_NO_COMPOUND_SELECTED,
+  REPURPOSING_DETAIL_NO_COMPOUND_SELECTED,
+  ONCREF_TABLE_DESCRIPTION,
+  REPURPOSING_TABLE_DESCRIPTION,
+  getDetailPanelTooltip,
 } from "../../utils";
 import geneDepFilterDefinitions from "../../json/geneDepFilters.json";
 import repurposingFilterDefinitions from "../../json/repurposingFilters.json";
@@ -52,8 +60,9 @@ import { getDapi } from "src/common/utilities/context";
 import { Button } from "react-bootstrap";
 import useContextExplorerFilters from "src/contextExplorer/hooks/useContextExplorerFilters";
 import DoseCurvesTile from "./DoseCurvesTile";
-import CollapsibleBoxPlots from "./CollapsibleBoxPlots";
+import CollapsibleBoxPlots from "../boxPlots/CollapsibleBoxPlots";
 import { calcMinMax } from "@depmap/data-explorer-2/src/components/DataExplorerPage/components/plot/prototype/plotUtils";
+import InfoIcon from "src/common/components/InfoIcon";
 
 interface ContextAnalysisProps {
   selectedContextNameInfo: ContextNameInfo;
@@ -62,6 +71,7 @@ interface ContextAnalysisProps {
   treeType: TreeType;
   entityType: string;
   datasetId: ContextExplorerDatasets;
+  customInfoImg: React.JSX.Element;
 }
 
 function ContextAnalysis({
@@ -71,6 +81,7 @@ function ContextAnalysis({
   treeType,
   entityType,
   datasetId,
+  customInfoImg,
 }: ContextAnalysisProps) {
   const dapi = getDapi();
   const [outgroup, setOutgroup] = useState<{
@@ -274,13 +285,26 @@ function ContextAnalysis({
     setPointVisibilityFiltered(null);
   }, [selectedContextNameInfo, topContextNameInfo]);
 
+  const [
+    doShowPositiveEffectSizes,
+    setDoShowPositiveEffectSizes,
+  ] = useState<boolean>(false);
+
   useEffect(() => {
-    if (data && filters) {
-      setPointVisibility(
-        filters && data ? satisfiesFilters(filters, data) : []
-      );
+    const newPointVisibility =
+      filters && data ? satisfiesFilters(filters, data) : [];
+    setPointVisibility(newPointVisibility);
+
+    if (
+      filters &&
+      data &&
+      doShowPositiveEffectSizes === true &&
+      getShowPositiveEffectSizesFilter(filters) === false
+    ) {
+      setSelectedPlotLabels(null);
+      setSelectedTableLabels(null);
     }
-  }, [data, filters]);
+  }, [data, filters, doShowPositiveEffectSizes]);
 
   const formatDataForScatterPlot = useCallback(
     (tableData: ContextAnalysisTableType) => {
@@ -461,8 +485,10 @@ function ContextAnalysis({
     },
     [
       plotData,
-      setSelectedTableLabels,
       setSelectedPlotLabels,
+      // setSelectedPlotIndex,
+      setSelectedTableLabels,
+      // setSelectedTableIndex,
       setPointVisibilityFiltered,
     ]
   );
@@ -632,11 +658,6 @@ function ContextAnalysis({
   const [boxPlotData, setBoxPlotData] = useState<ContextPlotBoxData | null>(
     null
   );
-  const [
-    entityDetailMainPlotElement,
-    setEntityDetailMainPlotElement,
-  ] = useState<ExtendedPlotType | null>(null);
-  console.log(entityDetailMainPlotElement);
 
   const [isLoadingBoxplot, setIsLoadingBoxplot] = useState<boolean>(true);
 
@@ -663,6 +684,8 @@ function ContextAnalysis({
         boxPlotFilters
       );
 
+      const showPositiveEffectSizes = getShowPositiveEffectSizesFilter(filters);
+      setDoShowPositiveEffectSizes(showPositiveEffectSizes);
       setBoxPlotMaxFDR(maxFdr);
       setBoxPlotMinEffectSize(minEffectSize);
       setBoxPlotMinFracDepIn(minFracDepIn);
@@ -693,7 +716,8 @@ function ContextAnalysis({
         [...selectedPlotLabels][0],
         boxPlotMaxFDR,
         boxPlotMinEffectSize,
-        boxPlotMinFracDepIn
+        boxPlotMinFracDepIn,
+        doShowPositiveEffectSizes
       );
 
       boxplotLatestPromise.current = boxplotPromise;
@@ -725,6 +749,7 @@ function ContextAnalysis({
     boxPlotMaxFDR,
     boxPlotMinEffectSize,
     boxPlotMinFracDepIn,
+    doShowPositiveEffectSizes,
   ]);
 
   return (
@@ -733,18 +758,44 @@ function ContextAnalysis({
         <div className={styles.overviewGraphHeader}>
           {selectedContextNameInfo.name !== "All" && data && (
             <>
-              <h2>
-                Dependencies enriched/depleted in {selectedContextNameInfo.name}
-              </h2>
-              <h4>
-                Displayed here are{" "}
-                {entityType === "gene"
-                  ? "gene dependencies"
-                  : "drug sensitivities"}{" "}
-                that occur more strongly or more frequently in{" "}
-                {selectedContextNameInfo.name} cell lines compared to{" "}
-                {outgroup.label.toLowerCase()} cell lines.
-              </h4>
+              {entityType === "gene" && (
+                <>
+                  <h2>
+                    Dependencies enriched in {selectedContextNameInfo.name}
+                  </h2>
+                  <h4>
+                    The plots below display gene dependencies that are enriched
+                    in {selectedContextNameInfo.name} models compared to{" "}
+                    {outgroup.label.toLowerCase()} models.
+                  </h4>
+                </>
+              )}
+              {datasetId === ContextExplorerDatasets.Prism_oncology_AUC && (
+                <>
+                  <h2>
+                    OncRef sensitivies enriched in{" "}
+                    {selectedContextNameInfo.name}
+                  </h2>
+                  <h4>
+                    The plots below display compound sensitivities that are
+                    enriched in {selectedContextNameInfo.name} models compared
+                    to {outgroup.label.toLowerCase()} models.
+                  </h4>
+                </>
+              )}
+              {datasetId === ContextExplorerDatasets.Rep_all_single_pt && (
+                <>
+                  <h2>
+                    PRISM Repurposing compound sensitivities enriched in{" "}
+                    {selectedContextNameInfo.name}
+                  </h2>
+                  <h4>
+                    The plots below display compound sensitivities that are
+                    enriched in {selectedContextNameInfo.name} models compared
+                    to {outgroup.label.toLowerCase()} models.
+                  </h4>
+                </>
+              )}
             </>
           )}{" "}
           {error && (
@@ -762,7 +813,34 @@ function ContextAnalysis({
           ) : (
             !error &&
             !isLoading &&
-            !data && <h2>Not enough data points. Choose a larger context.</h2>
+            !data && (
+              <>
+                {entityType === "gene" && (
+                  <h2>
+                    Not enough data points to compute enriched dependencies for
+                    {selectedContextNameInfo.name}. Enriched dependencies are
+                    only computed for lineages/subtypes with at least 5 CRISPR
+                    screened models.
+                  </h2>
+                )}
+                {datasetId === ContextExplorerDatasets.Prism_oncology_AUC && (
+                  <h2>
+                    Not enough data points to compute enriched PRISM OncRef
+                    compound sensitivities for {selectedContextNameInfo.name}.
+                    Enriched compound sensitivities are only computed for
+                    lineages/subtypes with at least 5 PRISM OncRef models.
+                  </h2>
+                )}
+                {datasetId === ContextExplorerDatasets.Rep_all_single_pt && (
+                  <h2>
+                    Not enough data points to compute enriched PRISM Repurposing
+                    compound sensitivities for {selectedContextNameInfo.name}.
+                    Enriched compound sensitivities are only computed for
+                    lineages/subtypes with at least 5 PRISM Repurposing models.
+                  </h2>
+                )}
+              </>
+            )
           )}
         </div>
         <div className={styles.ContextExplorerScatterPlots}>
@@ -912,7 +990,7 @@ function ContextAnalysis({
                 </span>
               </h3>
 
-              {entityType === "gene" ? (
+              {entityType === "gene" && (
                 <p
                   style={{
                     fontSize: "14px",
@@ -920,14 +998,10 @@ function ContextAnalysis({
                     maxWidth: "750px",
                   }}
                 >
-                  To see stronger results, restrict the range of FDR adjusted
-                  T-test p-values, the range of absolute value of the effect
-                  size, and the percentage of in-context lines that are
-                  dependent on the gene. Including genes with positive effect
-                  sizes will display genes that are weaker dependencies in the
-                  selected context as compared to the out-group.
+                  {GENE_DEP_TABLE_DESCRIPTION}
                 </p>
-              ) : (
+              )}
+              {datasetId === ContextExplorerDatasets.Prism_oncology_AUC && (
                 <p
                   style={{
                     fontSize: "14px",
@@ -935,12 +1009,18 @@ function ContextAnalysis({
                     maxWidth: "750px",
                   }}
                 >
-                  To see stronger results, restrict the range of FDR adjusted
-                  T-test p-values, the range of absolute value of the effect
-                  size, and the percentage of in-context lines that are
-                  sensitive to the drug. Including drugs with positive effect
-                  sizes will display drugs that are weaker sensitivities in the
-                  selected context as compared to the out-group.
+                  {ONCREF_TABLE_DESCRIPTION}
+                </p>
+              )}
+              {datasetId === ContextExplorerDatasets.Rep_all_single_pt && (
+                <p
+                  style={{
+                    fontSize: "14px",
+                    paddingRight: "35px",
+                    maxWidth: "750px",
+                  }}
+                >
+                  {REPURPOSING_TABLE_DESCRIPTION}
                 </p>
               )}
               <div
@@ -1000,7 +1080,19 @@ function ContextAnalysis({
               }}
             >
               {entityType === "gene" ? "Gene" : "Drug"} Detail
-              {selectedPlotLabels && <span> - {selectedPlotLabels}</span>}
+              {selectedPlotLabels && (
+                <span>
+                  {" "}
+                  - {selectedPlotLabels}{" "}
+                  <InfoIcon
+                    target={customInfoImg}
+                    popoverContent={getDetailPanelTooltip(datasetId)}
+                    popoverId={`${datasetId}-detail-popover`}
+                    trigger={["hover", "focus"]}
+                    placement={"top"}
+                  />
+                </span>
+              )}
             </h2>
             {boxPlotData && (
               <a
@@ -1061,7 +1153,7 @@ function ContextAnalysis({
                           element: ExtendedPlotType | null
                         ) => {
                           if (element) {
-                            setEntityDetailMainPlotElement(element);
+                            /* do nothing */
                           }
                         }}
                         topContextNameInfo={topContextNameInfo}
@@ -1079,7 +1171,7 @@ function ContextAnalysis({
                       marginBottom: "15px",
                     }}
                   >
-                    {entityType === "gene" ? "Gene" : "Drug"} Detail
+                    {entityType === "gene" ? "Gene" : "Compound"} Detail
                   </h2>
                   <h4
                     style={{
@@ -1087,39 +1179,18 @@ function ContextAnalysis({
                       margin: "20 20 20 20",
                     }}
                   >
-                    Select a {entityType === "gene" ? "gene" : "drug"} to see
-                    the distribution of{" "}
-                    {entityType === "gene" ? "gene effects" : "log2(viability)"}{" "}
-                    in the selected context and other groups.
+                    {entityType === "gene" && GENE_DETAIL_NO_GENE_SELECTED}
+                    {entityType === "compound" &&
+                      datasetId ===
+                        ContextExplorerDatasets.Prism_oncology_AUC &&
+                      ONCREF_DETAIL_NO_COMPOUND_SELECTED}
+                    {entityType === "compound" &&
+                      datasetId === ContextExplorerDatasets.Rep_all_single_pt &&
+                      REPURPOSING_DETAIL_NO_COMPOUND_SELECTED}
                   </h4>
                 </div>
               )}
             </div>
-
-            {false && (
-              <>
-                <div className={styles.deButtonContainerCentered}>
-                  <Button
-                    className={styles.deButton}
-                    href={
-                      "/" /* getDataExplorerUrl(
-                      topContextNameInfo.name,
-                      selectedContextNameInfo.name,
-                      outgroup.value,
-                      datasetId
-                    ) */
-                    }
-                    target="_blank"
-                    disabled={
-                      selectedContextNameInfo.name === "All" ||
-                      (!isLoading && !data)
-                    }
-                  >
-                    Open as 1D Density in Data Explorer
-                  </Button>
-                </div>
-              </>
-            )}
           </div>
         )}
       </div>

@@ -22,6 +22,6 @@ rule create_context_matrix:
     outputs:
         {
             "type": "context_matrix",
-            "filename": {"$filename": "ContextMatrix.csv"},
+            "filename": {"$filename": "SubtypeMatrix.csv"},
         }
-    run "python3 {{inputs.script.filename}} {{inputs.model.dataset_id}} {{inputs.molecular_subtypes.dataset_id}} {{inputs.subtype_tree.filename}} ContextMatrix.csv"
+    run "python3 {{inputs.script.filename}} {{inputs.model.dataset_id}} {{inputs.molecular_subtypes.dataset_id}} {{inputs.subtype_tree.filename}} SubtypeMatrix.csv"
