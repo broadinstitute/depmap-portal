@@ -113,8 +113,7 @@ add-if-missing {
 
 add-if-missing {
     "type": "lineage_tree_genetic_subtype_whitelist",
-    "dataset_name": "subtypetree-919e",
-    "filename":"lineage_tree_genetic_subtype_whitelist"
+    "dataset_id": "subtypetree-919e.9/lineage_tree_genetic_subtype_whitelist",
 }
 
 add-if-missing {
