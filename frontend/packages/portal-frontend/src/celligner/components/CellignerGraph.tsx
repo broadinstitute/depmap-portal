@@ -269,10 +269,11 @@ export default class CellignerGraph extends React.Component<Props, State> {
       (_, i) => tumorLegendPointVisibilty[i] && colorLegendPointVisibilty[i]
     );
 
-    const selectedPtsForContext = new Set([
-      ...lassoOrBoxSelectedPoints,
+    const intersectionOfSelectionMethods = [
       ...sidePanelSelectedPoints,
-    ]);
+    ].filter((value) => [...lassoOrBoxSelectedPoints].includes(value));
+
+    const selectedPtsForContext = new Set([...intersectionOfSelectionMethods]);
 
     const selectedModelIds = alignments.sampleId.filter(
       (_, index) =>
