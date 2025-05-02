@@ -13,7 +13,7 @@ import { RegistryFieldsType, RJSFSchema, UiSchema } from "@rjsf/utils";
 import validator from "@rjsf/validator-ajv8";
 import { CustomDatasetMetadata } from "./DatasetMetadataForm";
 import Form from "@rjsf/core";
-import { useSubmitButtonIsDisabled } from "../../utils/disableSubmitButton";
+import { submitButtonIsDisabled } from "../../utils/disableSubmitButton";
 
 interface DatasetEditFormProps {
   getDataTypesAndPriorities: () => Promise<InvalidPrioritiesByDataType>;
@@ -101,11 +101,6 @@ export default function DatasetForm(props: DatasetEditFormProps) {
     })();
   }, [groups, getDataTypesAndPriorities, datasetToEdit]);
 
-  const submitButtonIsDisabled = useSubmitButtonIsDisabled(
-    schema?.required,
-    formDataVals
-  );
-
   const uiSchema = React.useMemo(() => {
     const formUiSchema: UiSchema = {
       "ui:title": "", // removes the title <legend> html element
@@ -120,12 +115,12 @@ export default function DatasetForm(props: DatasetEditFormProps) {
       },
       "ui:submitButtonOptions": {
         props: {
-          disabled: submitButtonIsDisabled,
+          disabled: submitButtonIsDisabled(schema?.required, formDataVals),
         },
       },
     };
     return formUiSchema;
-  }, [submitButtonIsDisabled]);
+  }, [formDataVals, schema?.required]);
 
   return schema && formDataVals ? (
     <>

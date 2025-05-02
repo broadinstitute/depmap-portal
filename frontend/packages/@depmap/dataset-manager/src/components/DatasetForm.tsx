@@ -315,6 +315,7 @@ export default function DatasetForm(props: DatasetFormProps) {
               });
             }}
             onSubmitForm={onSubmitForm}
+            datasetIsLoading={isTaskRunning}
             isAdvancedMode={isAdvancedMode}
           />
           {submissionMessage}
@@ -342,6 +343,7 @@ export default function DatasetForm(props: DatasetFormProps) {
               });
             }}
             onSubmitForm={onSubmitForm}
+            datasetIsLoading={isTaskRunning}
           />
           {submissionMessage}
         </>
