@@ -52,9 +52,9 @@ def main():
             right_symbol = right.split(" ")[0]
         return f"{left_symbol}_{right_symbol}"
 
+    breakpoint()
     fusions["fusion_name"] = [
-        make_fusion_name(rec["LeftGene"], rec["RightGene"])
-        for rec in fusions.to_records()
+        make_fusion_name(rec["Gene1"], rec["Gene2"]) for rec in fusions.to_records()
     ]
 
     fusions["one"] = 1
