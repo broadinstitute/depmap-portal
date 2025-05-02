@@ -6,6 +6,7 @@ import {
   calculateLabelPositions,
   getGroupByColorPalette,
   getSampleTypeTransform,
+  getValidSelectedPoints,
 } from "src/celligner/utilities/plot";
 import {
   Alignments,
@@ -108,10 +109,11 @@ export default class CellignerGraph extends React.Component<Props, State> {
       groupbyColorPalette.get(colorByCategory) as any,
       pointSize.CL,
       pointSize.tumor,
-      new Set([...lassoOrBoxSelectedPoints, ...sidePanelSelectedPoints]),
       handleUnselectTableRows,
       handleSelectingContextPts,
-      handleResetContextPtSelection
+      handleResetContextPtSelection,
+      lassoOrBoxSelectedPoints,
+      sidePanelSelectedPoints
     );
 
     this.plotElement!.on("plotly_relayout", this.onPlotRelayout);
@@ -124,6 +126,7 @@ export default class CellignerGraph extends React.Component<Props, State> {
       annotatedPoints,
       colorByCategory,
       lassoOrBoxSelectedPoints,
+      sidePanelSelectedPoints,
     } = this.props;
     const {
       tumorLegendPointVisibilty,
@@ -140,8 +143,9 @@ export default class CellignerGraph extends React.Component<Props, State> {
       prevState.pointSize !== pointSize ||
       prevState.tumorLegendPointVisibilty !== tumorLegendPointVisibilty ||
       prevState.colorLegendPointVisibilty !== colorLegendPointVisibilty ||
-      prevProps.lassoOrBoxSelectedPoints !== lassoOrBoxSelectedPoints ||
-      prevProps.annotatedPoints !== annotatedPoints
+      prevProps.sidePanelSelectedPoints !== sidePanelSelectedPoints ||
+      prevProps.annotatedPoints !== annotatedPoints ||
+      prevProps.lassoOrBoxSelectedPoints !== lassoOrBoxSelectedPoints
     ) {
       const groups = (alignments[colorByCategory] as any).map(
         (c: any) => c ?? "N/A"
@@ -170,9 +174,6 @@ export default class CellignerGraph extends React.Component<Props, State> {
         ],
       ];
     }
-    if (!isEqual(prevProps.selectedPoints, selectedPoints)) {
-      (restyles as any).selectedpoints = [selectedPoints];
-    }
 
     // Important for when the user clicks the new PlotControls "Deselect" option
     if (
@@ -180,9 +181,35 @@ export default class CellignerGraph extends React.Component<Props, State> {
       prevProps.lassoOrBoxSelectedPoints.size > 0 &&
       lassoOrBoxSelectedPoints.size === 0
     ) {
-      (restyles as any).selectedPointIndexes = lassoOrBoxSelectedPoints;
-      (restyles as any).selectedpoints = [selectedPoints];
+      const points =
+        lassoOrBoxSelectedPoints.size > 0 || sidePanelSelectedPoints.size > 0
+          ? [
+              ...getValidSelectedPoints(
+                lassoOrBoxSelectedPoints,
+                sidePanelSelectedPoints,
+                selectedPoints
+              ),
+            ]
+          : selectedPoints;
+
+      (restyles as any).selectedpoints = [points];
     }
+
+    if (!isEqual(prevProps.selectedPoints, selectedPoints)) {
+      const points =
+        lassoOrBoxSelectedPoints.size > 0 || sidePanelSelectedPoints.size > 0
+          ? [
+              ...getValidSelectedPoints(
+                lassoOrBoxSelectedPoints,
+                sidePanelSelectedPoints,
+                selectedPoints
+              ),
+            ]
+          : selectedPoints;
+
+      (restyles as any).selectedpoints = [points];
+    }
+
     if (!isEqual(prevProps.annotatedPoints, annotatedPoints)) {
       (relayout as any).annotations = annotatedPoints
         ? this.labelPositions?.concat(annotatedPoints)
@@ -262,6 +289,7 @@ export default class CellignerGraph extends React.Component<Props, State> {
       alignments,
       lassoOrBoxSelectedPoints,
       sidePanelSelectedPoints,
+      selectedPoints,
     } = this.props;
     const { tumorLegendPointVisibilty, colorLegendPointVisibilty } = this.state;
 
@@ -269,11 +297,11 @@ export default class CellignerGraph extends React.Component<Props, State> {
       (_, i) => tumorLegendPointVisibilty[i] && colorLegendPointVisibilty[i]
     );
 
-    const intersectionOfSelectionMethods = [
-      ...sidePanelSelectedPoints,
-    ].filter((value) => [...lassoOrBoxSelectedPoints].includes(value));
-
-    const selectedPtsForContext = new Set([...intersectionOfSelectionMethods]);
+    const selectedPtsForContext = getValidSelectedPoints(
+      lassoOrBoxSelectedPoints,
+      sidePanelSelectedPoints,
+      selectedPoints
+    );
 
     const selectedModelIds = alignments.sampleId.filter(
       (_, index) =>

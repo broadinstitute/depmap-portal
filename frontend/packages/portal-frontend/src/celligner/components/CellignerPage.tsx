@@ -15,6 +15,7 @@ import "src/celligner/styles/celligner.scss";
 import { CustomList } from "@depmap/cell-line-selector";
 import {
   createFormattedAnnotatedPoints,
+  getValidSelectedPoints,
   sampleTypeToLabel,
 } from "src/celligner/utilities/plot";
 
@@ -218,12 +219,20 @@ export default class CellignerPage extends React.Component<Props, State> {
 
   handleSelectedPrimarySitesChange(selectedPrimarySite: string | null) {
     const { alignmentsArr, subtypes } = this.props;
+    const { lassoOrBoxSelectedPts } = this.state;
 
     const selectedPoints: Array<number> = [];
+    const filteredSelectedPoints: Array<number> = [];
     alignmentsArr.lineage.forEach((lineage, i) => {
       if (lineage === selectedPrimarySite) {
+        if (lassoOrBoxSelectedPts.size === 0 || lassoOrBoxSelectedPts.has(i)) {
+          filteredSelectedPoints.push(i);
+        }
         selectedPoints.push(i);
       } else if (!selectedPrimarySite) {
+        if (lassoOrBoxSelectedPts.size === 0 || lassoOrBoxSelectedPts.has(i)) {
+          filteredSelectedPoints.push(i);
+        }
         selectedPoints.push(i);
       }
     });
@@ -233,10 +242,9 @@ export default class CellignerPage extends React.Component<Props, State> {
         selectedPrimarySite,
         selectedPoints,
         sidePanelSelectedPts:
-          selectedPoints.length < alignmentsArr.lineage.length
-            ? new Set(selectedPoints)
+          filteredSelectedPoints.length < alignmentsArr.lineage.length
+            ? new Set(filteredSelectedPoints)
             : new Set([]),
-        lassoOrBoxSelectedPts: new Set([]),
         cellLineDistances: null,
         colorByCategory: selectedPrimarySite ? "subtype" : "lineage",
       },
@@ -296,7 +304,6 @@ export default class CellignerPage extends React.Component<Props, State> {
           sidePanelSelectedPts: new Set<number>(
             e.color_indexes.concat([cellLineIndex])
           ),
-          lassoOrBoxSelectedPts: new Set([]),
         });
       })
       .catch((e) => console.log("error", e));
@@ -374,12 +381,21 @@ export default class CellignerPage extends React.Component<Props, State> {
 
       for (let index = 0; index < pointIndexes.length; index++) {
         const pointIndex = pointIndexes[index];
-        if (!lassoOrBoxSelectedPts?.has(pointIndex)) {
+
+        if (
+          (!lassoOrBoxSelectedPts?.has(pointIndex) &&
+            sidePanelSelectedPts?.size > 0 &&
+            sidePanelSelectedPts?.has(pointIndex)) ||
+          (!lassoOrBoxSelectedPts?.has(pointIndex) &&
+            sidePanelSelectedPts?.size === 0)
+        ) {
           out.add(pointIndex);
         }
       }
 
-      return this.setState({ lassoOrBoxSelectedPts: out });
+      return this.setState({
+        lassoOrBoxSelectedPts: out,
+      });
     };
 
     const handleDeselectLassoOrBoxPts = () => {
@@ -445,6 +461,7 @@ export default class CellignerPage extends React.Component<Props, State> {
       annotatedPoints,
       lassoOrBoxSelectedPts,
       sidePanelSelectedPts,
+      selectedPoints,
     } = this.state;
 
     const handleChangeCellLineTableSelections = (selections: string[]) => {
@@ -509,8 +526,11 @@ export default class CellignerPage extends React.Component<Props, State> {
                       .filter(
                         (model) =>
                           [
-                            ...lassoOrBoxSelectedPts,
-                            ...sidePanelSelectedPts,
+                            ...getValidSelectedPoints(
+                              lassoOrBoxSelectedPts,
+                              sidePanelSelectedPts,
+                              selectedPoints
+                            ),
                           ].includes(model.pointIndex) ||
                           (lassoOrBoxSelectedPts.size === 0 &&
                             sidePanelSelectedPts.size === 0)
@@ -518,8 +538,11 @@ export default class CellignerPage extends React.Component<Props, State> {
                   : models.filter(
                       (model) =>
                         [
-                          ...lassoOrBoxSelectedPts,
-                          ...sidePanelSelectedPts,
+                          ...getValidSelectedPoints(
+                            lassoOrBoxSelectedPts,
+                            sidePanelSelectedPts,
+                            selectedPoints
+                          ),
                         ].includes(model.pointIndex) ||
                         (lassoOrBoxSelectedPts.size === 0 &&
                           sidePanelSelectedPts.size === 0)

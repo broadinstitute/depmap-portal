@@ -32,6 +32,35 @@ const SKIP_LINEAGE_LABELS = new Set([
   "endocrine",
 ]);
 
+export function getValidSelectedPoints(
+  lassoOrBoxSelectedPoints: Set<number>,
+  sidePanelSelectedPoints: Set<number>,
+  selectedPoints: number[] // The indices of the colored points
+) {
+  let selectedPtsForContext = new Set([...lassoOrBoxSelectedPoints]);
+
+  if (sidePanelSelectedPoints.size > 0 && lassoOrBoxSelectedPoints.size > 0) {
+    const intersectionOfSelectionMethods = [
+      ...sidePanelSelectedPoints,
+    ].filter((value) => [...lassoOrBoxSelectedPoints].includes(value));
+
+    selectedPtsForContext = new Set([...intersectionOfSelectionMethods]);
+  }
+
+  if (sidePanelSelectedPoints.size > 0 && lassoOrBoxSelectedPoints.size === 0) {
+    selectedPtsForContext = new Set([...sidePanelSelectedPoints]);
+  }
+
+  const visibleSelectedPts =
+    selectedPoints.length > 0
+      ? [...selectedPtsForContext].filter((pt: number) =>
+          selectedPoints.includes(pt)
+        )
+      : selectedPtsForContext;
+
+  return new Set([...visibleSelectedPts]);
+}
+
 export function createFormattedAnnotatedPoints(
   annotatedPoints: Set<number>,
   alignments: Alignments
@@ -290,10 +319,11 @@ export function buildPlot(
   colors: Array<Plotly.TransformStyle>,
   cellLinePointSize: number,
   tumorPointSize: number,
-  selectedPointIndexes: Set<number>,
   unselectTableRows: () => void = () => {},
   onSelected: (pointIndexes: number[]) => void = () => {},
-  onClickResetSelection: () => void = () => {}
+  onClickResetSelection: () => void = () => {},
+  lassoOrBoxSelectedPoints: Set<number>,
+  sidePanelSelectedPoints: Set<number>
 ) {
   const plotlyData: Array<Partial<Plotly.ScatterData>> = [
     {
@@ -390,7 +420,7 @@ export function buildPlot(
   /* eslint-disable no-param-reassign */
   plotElement.setDragmode = (dragmode) => {
     setTimeout(() => {
-      Plotly.update(plotElement, { selectedpoints: [] }, { dragmode });
+      Plotly.update(plotElement, {}, { dragmode });
       // This redraw fixes a very strange bug where setting the drag mode to
       // select (or lasso) with a filter also applied causes all of the points
       // to disappear.
@@ -422,13 +452,8 @@ export function buildPlot(
 
   on("plotly_selected", (e: PlotMouseEvent) => {
     const pointIndexes = e.points.map((point) => point.pointIndex);
-    onSelected(pointIndexes);
-  });
 
-  on("plotly_selecting", () => {
-    if (selectedPointIndexes.size > 0) {
-      onClickResetSelection();
-    }
+    onSelected(pointIndexes);
   });
 
   on("plotly_deselect", () => {
