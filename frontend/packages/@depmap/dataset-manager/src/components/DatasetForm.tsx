@@ -364,6 +364,7 @@ export default function DatasetForm(props: DatasetFormProps) {
     formContent,
     fileIds,
     md5Hash,
+    isTaskRunning,
     isAdvancedMode,
     submissionMessage,
   ]);
