@@ -48,17 +48,6 @@ def load_compounds(filename):
 
             compound_name = row["CompoundName"]
             units = row["DoseUnit"]
-            # REMOVE THIS: After PortalCompounds is regenerated. This should be harmless regardless, but good
-            # to clean up.
-            if units is None and row["CompoundID"] in {
-                "DPC-007503",
-                "DPC-007504",
-                "DPC-007505",
-                "DPC-007506",
-                "DPC-007507",
-                "DPC-007508",
-            }:
-                units = "uM"
             assert units, "Missing units!"
             if compound_name in created_compounds:
                 compound = created_compounds[compound_name]
