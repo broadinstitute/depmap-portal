@@ -721,14 +721,15 @@ def _load_real_data(
                 translocations_file, translocations_taiga_id
             )
 
-    with checkpoint("fusions") as needed:
-        if needed:
-            log.info("loading fusions")
-            fusions_taiga_id = gcsc_depmap.read_json(
-                "metadata/fusions-dataset-id.json"
-            )["in"]["dataset_id"]
-            fusions_file = taiga_client.download_to_cache(fusions_taiga_id, "csv_table")
-            dataset_loader.load_fusions(fusions_file, fusions_taiga_id)
+    # In 25Q4 Fusion file changed format. Commenting out until updates have been changed
+    # with checkpoint("fusions") as needed:
+    #     if needed:
+    #         log.info("loading fusions")
+    #         fusions_taiga_id = gcsc_depmap.read_json(
+    #             "metadata/fusions-dataset-id.json"
+    #         )["in"]["dataset_id"]
+    #         fusions_file = taiga_client.download_to_cache(fusions_taiga_id, "csv_table")
+    #         dataset_loader.load_fusions(fusions_file, fusions_taiga_id)
 
     with checkpoint("transcription-start-sites") as needed:
         if needed:
