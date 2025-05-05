@@ -139,3 +139,8 @@ def get_data_coverage():
 @blueprint.route("/table-tester")
 def table_tester():
     return render_template("dev/table_tester.html")
+
+
+@blueprint.route("/dose_viability_prototype")
+def dose_viability_prototype():
+    return render_template("dev/dose_viability_prototype.html")
