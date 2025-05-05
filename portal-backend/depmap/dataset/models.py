@@ -861,23 +861,22 @@ class Fusion(Model):
     fusion_name = Column(String, nullable=False)
     left_gene_id = Column(Integer, ForeignKey("gene.entity_id"), nullable=False)
     left_gene = relationship("Gene", foreign_keys="Fusion.left_gene_id", uselist=False)
-    left_breakpoint = Column(String, nullable=False)
     right_gene_id = Column(Integer, ForeignKey("gene.entity_id"), nullable=False)
     right_gene = relationship(
         "Gene", foreign_keys="Fusion.right_gene_id", uselist=False
     )
-    right_breakpoint = Column(String, nullable=False)
-    junction_read_count = Column(Integer, nullable=False)
-    spanning_frag_count = Column(Integer, nullable=False)
 
-    splice_type = Column(String, nullable=False)
-    large_anchor_support = Column(String, nullable=False)
-    left_break_dinuc = Column(String, nullable=False)
-    left_break_entropy = Column(Float, nullable=False)
-    right_break_dinc = Column(String, nullable=False)
-    right_break_entropy = Column(Float, nullable=False)
+    # New columns based on the updated schema
+    profile_id = Column(String, nullable=False)
+    total_reads_supporting_fusion = Column(Integer, nullable=False)
+    total_fusion_coverage = Column(Integer, nullable=False)
     ffpm = Column(Float, nullable=False)
-    annots = Column(String, nullable=False)
+    split_reads_1 = Column(Integer, nullable=False)
+    split_reads_2 = Column(Integer, nullable=False)
+    discordant_mates = Column(Integer, nullable=False)
+    strand1 = Column(String, nullable=False)
+    strand2 = Column(String, nullable=False)
+    reading_frame = Column(String, nullable=False)
 
     @classmethod
     def has_gene(cls, gene_id):

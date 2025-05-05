@@ -480,12 +480,12 @@ def get_fusion_data_by_cell_line(model_id):
 
     # Generating hyperlinks for genes and replacing gene names with the hyperlinks
     for item in result_json_data:
-        item["Left Gene"] = get_gene_link(gene_name=item["Left Gene"])
-        item["Right Gene"] = get_gene_link(gene_name=item["Right Gene"])
+        item["Gene 1"] = get_gene_link(gene_name=item["Gene 1"])
+        item["Gene 2"] = get_gene_link(gene_name=item["Gene 2"])
 
-        item["Annots"] = item["Annots"].strip("[]")
-        item["Annots"] = item["Annots"].replace('"', "")
-        item["Annots"] = item["Annots"].replace(",", "; ")
+        # Format Profile ID if needed
+        if "Profile ID" in item and item["Profile ID"]:
+            item["Profile ID"] = item["Profile ID"].strip()
 
     endpoint_dict = {
         "columns": fusion_data_object.renamed_cols,

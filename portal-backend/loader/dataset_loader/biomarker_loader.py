@@ -589,8 +589,8 @@ def _read_fusion(dr, pbar, gene_cache, cell_line_cache):
         cell_line_id = r["ModelID"]
         cell_line = cell_line_cache.get(cell_line_id)
 
-        left_gene = gene_cache.get(r["LeftGene"])
-        right_gene = gene_cache.get(r["RightGene"])
+        left_gene = gene_cache.get(r["Gene1"])
+        right_gene = gene_cache.get(r["Gene2"])
         if cell_line is None:
             missing_cell_line += 1
             log_data_issue(
@@ -603,49 +603,33 @@ def _read_fusion(dr, pbar, gene_cache, cell_line_cache):
         if left_gene is None:
             missing_gene += 1
             log_data_issue(
-                "Fusion", "Missing gene", id_type="gene", identifier=r["LeftGene"]
+                "Fusion", "Missing gene", id_type="gene", identifier=r["Gene1"]
             )
 
         elif right_gene is None:
             missing_gene += 1
             log_data_issue(
-                "Fusion", "Missing gene", id_type="gene", identifier=r["RightGene"]
+                "Fusion", "Missing gene", id_type="gene", identifier=r["Gene2"]
             )
 
         if cell_line is None or left_gene is None or right_gene is None:
             skipped += 1
         else:
-
-            # The header is FusionName for real data and #FusionName for sample data and old data
-            fusion_name = ""
-            if "FusionName" in r:
-                fusion_name = "FusionName"
-            else:
-                fusion_name = "#FusionName"
-
             record = dict(
                 depmap_id=cell_line.depmap_id,
-                fusion_name=str(r[fusion_name]),
+                fusion_name=str(r["CanonicalFusionName"]),
                 left_gene_id=left_gene.entity_id,
-                left_breakpoint=str(r["LeftBreakpoint"]),
-                # left_allelic_fraction=float(r['Left Allelic Fraction']),
                 right_gene_id=right_gene.entity_id,
-                right_breakpoint=str(r["RightBreakpoint"]),
-                # right_allelic_fraction=float(r['Right Allelic Fraction']),
-                junction_read_count=int(r["JunctionReadCount"]),
-                spanning_frag_count=int(r["SpanningFragCount"]),
-                splice_type=str(r["SpliceType"]),
-                large_anchor_support=str(r["LargeAnchorSupport"]),
-                left_break_dinuc=str(r["LeftBreakDinuc"]),
-                left_break_entropy=float(r["LeftBreakEntropy"]),
-                right_break_dinc=str(r["RightBreakDinuc"]),
-                right_break_entropy=float(r["RightBreakEntropy"]),
+                profile_id=str(r["ProfileID"]),
+                total_reads_supporting_fusion=int(r["TotalReadsSupportingFusion"]),
+                total_fusion_coverage=int(r["TotalFusionCoverage"]),
                 ffpm=float(r["FFPM"]),
-                annots=str(r["annots"])
-                # junction_read_ffpm=float(r['Junction Read FFPM']),
-                # spanning_frag_ffpm=float(r['Spanning Frag. FFPM']),
-                # tcga_count=int(r['TCGA count']),
-                # gtex_count=int(r['GTEX count'])
+                split_reads_1=int(r["SplitReads1"]),
+                split_reads_2=int(r["SplitReads2"]),
+                discordant_mates=int(r["DiscordantMates"]),
+                strand1=str(r["Strand1"]),
+                strand2=str(r["Strand2"]),
+                reading_frame=str(r["ReadingFrame"]),
             )
             yield record
             inserted += 1

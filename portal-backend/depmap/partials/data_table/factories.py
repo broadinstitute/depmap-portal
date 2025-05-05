@@ -283,33 +283,41 @@ class FusionTableSpec:
     common_columns = [
         "fusion_name",
         "left_gene_label",
-        "left_breakpoint",
         "right_gene_label",
-        "right_breakpoint",
-        "junction_read_count",
-        "spanning_frag_count",
-        "splice_type",
-        "large_anchor_support",
-        "left_break_dinuc",
-        "left_break_entropy",
-        "right_break_dinc",
-        "right_break_entropy",
+        "profile_id",
+        "total_reads_supporting_fusion",
+        "total_fusion_coverage",
         "ffpm",
-        "annots",
+        "split_reads_1",
+        "split_reads_2",
+        "discordant_mates",
+        "strand1",
+        "strand2",
+        "reading_frame",
     ]
     common_renames = {
-        "left_gene_label": "Left Gene",
-        "right_gene_label": "Right Gene",
-        "spanning_frag_count": "Spanning Frag Count",
+        "left_gene_label": "Gene 1",
+        "right_gene_label": "Gene 2",
+        "fusion_name": "Fusion Name",
+        "profile_id": "Profile ID",
+        "total_reads_supporting_fusion": "Total Reads Supporting Fusion",
+        "total_fusion_coverage": "Total Fusion Coverage",
+        "ffpm": "FFPM",
+        "split_reads_1": "Split Reads 1",
+        "split_reads_2": "Split Reads 2",
+        "discordant_mates": "Discordant Mates",
+        "strand1": "Strand 1",
+        "strand2": "Strand 2",
+        "reading_frame": "Reading Frame",
     }
     default_columns = [
         "Cell Line",
         "Fusion Name",
-        "Left Gene",
-        "Right Gene",
-        "Splice Type",
-        "Annots",
+        "Gene 1",
+        "Gene 2",
+        "FFPM",
     ]
+    default_sort = ("ffpm", "desc")
 
     @staticmethod
     def get_common_renders():
@@ -319,11 +327,6 @@ class FusionTableSpec:
             ),
             TableDisplayLink(
                 js_url_for("gene.view_gene", gene_symbol="{data}"), "right_gene_label"
-            ),
-            # Making this a render, so that the data stays as a string list for downloads. I don't want to assume the validiy of ';' as a delimiter (that it's not present in all data)
-            # Could put each annot on a line, but that makes the table large
-            TableDisplayRender(
-                lambda col_indices: 'JSON.parse(data).join("; ")', ["annots"]
             ),
         ]
 
@@ -484,6 +487,7 @@ def get_fusion_by_gene_table(gene_id):
         renames=renames,
         renders=renders,
         default_cols_to_show=default_cols_to_show,
+        sort_col=FusionTableSpec.default_sort,
     )
     query = Fusion.find_by_gene_query(gene_id)
 
@@ -511,6 +515,7 @@ def get_fusion_by_cell_line_table(model_id):
         renames=renames,
         renders=renders,
         default_cols_to_show=default_cols_to_show,
+        sort_col=FusionTableSpec.default_sort,
     )
     query = Fusion.find_by_cell_line_query(model_id)
     filename = "{} fusions".format(
