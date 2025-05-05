@@ -365,9 +365,52 @@ export function Story() {
         <CorrelationsTable
           data={filteredTableCorrelationAnalysisData}
           selectedRows={selectedRows}
-          onChangeSelections={(selections: any[]) =>
-            setSelectedRows(new Set(selections))
-          }
+          onChangeSelections={(selections: any[]) => {
+            const prevSelections = Array.from(selectedRows);
+            // if selections size decreases then a row was deselected. Deselect all selected features for that feature type
+            if (selections.length < prevSelections.length) {
+              // should only be one unselected at a time
+              // TODO: use set difference once es2024 supported
+              const unselectedId = prevSelections.filter(
+                (x) => !selections.includes(x)
+              )[0];
+              const featureTypeFeatureToRemove = filteredTableCorrelationAnalysisData.find(
+                (data) => data.id == unselectedId
+              );
+              if (featureTypeFeatureToRemove) {
+                const feature = featureTypeFeatureToRemove["Feature"];
+                const featureType = featureTypeFeatureToRemove["Feature Type"];
+                setAllSelectedLabels({
+                  ...allSelectedLabels,
+                  [featureType]: allSelectedLabels[featureType].filter(
+                    (label) => label !== feature
+                  ),
+                });
+              }
+            }
+            // if selections size increases then a row was selected and all doses for the selected feature type's feature should be selected
+            else {
+              // should only be one new selected at a time
+              const newSelectedId = selections.filter(
+                (x) => !prevSelections.includes(x)
+              )[0];
+              const featureTypeFeatureToAdd = filteredTableCorrelationAnalysisData.find(
+                (data) => data.id == newSelectedId
+              );
+              if (featureTypeFeatureToAdd) {
+                const featureType = featureTypeFeatureToAdd["Feature Type"];
+                const feature = featureTypeFeatureToAdd["Feature"];
+                const newSelectedLabels =
+                  featureType in allSelectedLabels
+                    ? [...allSelectedLabels[featureType]].push(feature)
+                    : [feature];
+                setAllSelectedLabels({
+                  ...allSelectedLabels,
+                  [featureType]: newSelectedLabels,
+                });
+              }
+            }
+          }}
         />
         <p>
           Showing {filteredTableCorrelationAnalysisData.length} of{" "}
