@@ -562,8 +562,8 @@ def get_fusion_data_by_gene(gene_id):
     for item in result_json_data:
         cell_line_name = item["Cell Line"]
         cell_line_depmap_id = item["Depmap Id"]
-        left_gene_name = item["Left Gene"]
-        right_gene_name = item["Right Gene"]
+        gene1_name = item["Gene 1"]
+        gene2_name = item["Gene 2"]
         item["Cell Line"] = {
             "type": "link",
             "name": f"{cell_line_name}",
@@ -571,19 +571,16 @@ def get_fusion_data_by_gene(gene_id):
                 "cell_line.view_cell_line", cell_line_name=cell_line_depmap_id
             ),
         }
-        item["Left Gene"] = {
+        item["Gene 1"] = {
             "type": "link",
-            "name": f"{left_gene_name}",
-            "url": url_for("gene.view_gene", gene_symbol=left_gene_name),
+            "name": f"{gene1_name}",
+            "url": url_for("gene.view_gene", gene_symbol=gene1_name),
         }
-        item["Right Gene"] = {
+        item["Gene 2"] = {
             "type": "link",
-            "name": f"{right_gene_name}",
-            "url": url_for("gene.view_gene", gene_symbol=right_gene_name),
+            "name": f"{gene2_name}",
+            "url": url_for("gene.view_gene", gene_symbol=gene2_name),
         }
-        item["Annots"] = item["Annots"].strip("[]")
-        item["Annots"] = item["Annots"].replace('"', "")
-        item["Annots"] = item["Annots"].replace(",", "; ")
 
     endpoint_dict = {
         "columns": columns,

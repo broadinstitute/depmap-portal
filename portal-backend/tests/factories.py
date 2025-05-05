@@ -815,24 +815,21 @@ class FusionFactory(SQLAlchemyModelFactory):
         # Warning: DO NOT USE common.Session()!
         sqlalchemy_session = _db.session
 
-    left_gene = factory.SubFactory(GeneFactory)
-    right_gene = factory.SubFactory(GeneFactory)
+    gene_1 = factory.SubFactory(GeneFactory)
+    gene_2 = factory.SubFactory(GeneFactory)
     cell_line = factory.SubFactory(CellLineFactory)
 
     fusion_name = "test_fusion_name"
-    left_breakpoint = "test_left_breakpoint"
-    right_breakpoint = "test_right_breakpoint"
-    junction_read_count = 0
-    spanning_frag_count = 0
-
-    splice_type = "test_splice_type"
-    large_anchor_support = "test_large_anchor_support"
-    left_break_dinuc = "test_left_break_dinuc"
-    left_break_entropy = 0
-    right_break_dinc = "test_right_break_dinc"
-    right_break_entropy = 0
-    ffpm = 0
-    annots = "test_annots"
+    profile_id = "test_profile_id"
+    total_reads_supporting_fusion = 100
+    total_fusion_coverage = 200
+    ffpm = 0.5
+    split_reads_1 = 50
+    split_reads_2 = 60
+    discordant_mates = 10
+    strand1 = "+"
+    strand2 = "-"
+    reading_frame = "in-frame"
 
 
 class TranslocationFactory(SQLAlchemyModelFactory):
