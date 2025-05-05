@@ -483,10 +483,6 @@ def get_fusion_data_by_cell_line(model_id):
         item["Gene 1"] = get_gene_link(gene_name=item["Gene 1"])
         item["Gene 2"] = get_gene_link(gene_name=item["Gene 2"])
 
-        # Format Profile ID if needed
-        if "Profile ID" in item and item["Profile ID"]:
-            item["Profile ID"] = item["Profile ID"].strip()
-
     endpoint_dict = {
         "columns": fusion_data_object.renamed_cols,
         "data": result_json_data,

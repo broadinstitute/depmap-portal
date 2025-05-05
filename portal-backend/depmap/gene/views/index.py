@@ -583,10 +583,6 @@ def get_fusion_data_by_gene(gene_id):
             "url": url_for("gene.view_gene", gene_symbol=gene2_name),
         }
 
-        # Format Profile ID if needed
-        if "Profile ID" in item and item["Profile ID"]:
-            item["Profile ID"] = item["Profile ID"].strip()
-
     endpoint_dict = {
         "columns": columns,
         "data": result_json_data,
