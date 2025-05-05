@@ -74,7 +74,12 @@ const correlationAnalysisDataPromise = () => {
     }[]
   >((resolve) => {
     setTimeout(() => {
-      resolve(correlationAnalysisData);
+      // add index as unique id to use for selection
+      resolve(
+        correlationAnalysisData.map((data, i) => {
+          return { id: i, ...data };
+        })
+      );
     }, 1000);
   });
 };
@@ -90,29 +95,45 @@ export function Story() {
   const [allSelectedLabels, setAllSelectedLabels] = React.useState<{
     [key: string]: string[];
   }>({});
+  const [correlationAnalysisData, setCorrelationAnalysisData] = React.useState<
+    any[]
+  >([]);
+
+  React.useEffect(() => {
+    (async () => {
+      try {
+        const data = await correlationAnalysisDataPromise();
+        setCorrelationAnalysisData(data);
+      } catch (e) {
+        console.log(e);
+      }
+    })();
+  }, []);
 
   console.log(correlationAnalysisData);
-  const columnData = {};
-  const columnNames = Object.keys(correlationAnalysisData[0]);
-  columnNames.forEach(
-    (colName) =>
-      (columnData[colName] = correlationAnalysisData.map(
-        (record) => record[colName]
-      ))
-  );
-  console.log(columnNames);
-  console.log(columnData);
 
-  const getDoseOptions = () => {
-    const doses = new Set(columnData["imatinib Dose"]);
-    console.log(doses);
-    // TODO: need to sort doses
+  const getDoseOptions = React.useCallback(() => {
     const doseOptions = [];
-    doses.forEach((dose) => {
-      doseOptions.push({ label: dose, value: dose });
-    });
+    if (correlationAnalysisData.length) {
+      const columnData = {};
+      const columnNames = Object.keys(correlationAnalysisData[0]);
+      columnNames.forEach(
+        (colName) =>
+          (columnData[colName] = correlationAnalysisData.map(
+            (record) => record[colName]
+          ))
+      );
+      console.log(columnNames);
+      console.log(columnData);
+      const doses = new Set(columnData["imatinib Dose"]);
+      console.log(doses);
+      // TODO: need to sort doses
+      doses.forEach((dose) => {
+        doseOptions.push({ label: dose, value: dose });
+      });
+    }
     return doseOptions;
-  };
+  }, [correlationAnalysisData]);
 
   const columnNamesToPlotVariables = {
     "Correlation Coefficient": "x",
@@ -165,64 +186,72 @@ export function Story() {
 
     // move selected features from plot or table up to front of data list
     return selectedDataWithLabelFront.concat(filtered);
-  }, [selectedFeatureTypes, selectedDoses, allSelectedLabels]);
+  }, [
+    selectedFeatureTypes,
+    selectedDoses,
+    allSelectedLabels,
+    correlationAnalysisData,
+  ]);
 
-  const volcanoDataForFeatureType = correlationAnalysisData.reduce(
-    (acc, curRecord) => {
-      const key = curRecord["Feature Type"];
-      if (!acc[key]) {
-        acc[key] = {};
-      }
-      const doseCategory = curRecord["imatinib Dose"];
-      if (!(doseCategory in acc[key])) {
-        acc[key][doseCategory] = {
-          x: [],
-          y: [],
-          label: [],
-          text: [],
-          isSignificant: [],
-          name: doseCategory,
-          color: undefined, // "blue", // causes marker.color undefined
-        };
-      }
-      columnNames.forEach((colName) => {
-        if (colName in columnNamesToPlotVariables) {
-          const value = curRecord[colName];
-          if (colName == "-log10 qval") {
-            const val = Math.pow(10, -value);
-            // VolcanoPlotProp `y` data by default log transforms values. To do the complement: Math.exp(-x)
-            acc[key][doseCategory][columnNamesToPlotVariables[colName]].push(
-              val
-            );
-          } else if (colName == "Feature") {
-            const label = curRecord[colName];
-            const text =
-              `<b>${label}</b><br>` +
-              `<b>${compound} dose (uM)</b>: ${curRecord["imatinib Dose"]}<br>` +
-              `<b>Correlation:</b> ${curRecord[
-                "Correlation Coefficient"
-              ].toFixed(3)}<br>` +
-              `<b>-log10(p-value):</b> ${curRecord["-log10 qval"].toFixed(
-                3
-              )}<br>` +
-              `<b>Feature Type:</b> ${curRecord["Feature Type"]}`;
-            acc[key][doseCategory][columnNamesToPlotVariables[colName]].push(
-              text
-            );
-            acc[key][doseCategory]["label"].push(label);
-          } else {
-            acc[key][doseCategory][columnNamesToPlotVariables[colName]].push(
-              value
-            );
-          }
+  const volcanoDataForFeatureType = React.useMemo(() => {
+    if (correlationAnalysisData.length) {
+      return correlationAnalysisData.reduce((acc, curRecord) => {
+        const key = curRecord["Feature Type"];
+        if (!acc[key]) {
+          acc[key] = {};
         }
-      });
-      acc[key][doseCategory]["isSignificant"].push(false);
-      return acc;
-    },
-    {}
-  );
-  console.log(volcanoDataForFeatureType);
+        const doseCategory = curRecord["imatinib Dose"];
+        if (!(doseCategory in acc[key])) {
+          acc[key][doseCategory] = {
+            x: [],
+            y: [],
+            label: [],
+            text: [],
+            isSignificant: [],
+            name: doseCategory,
+            color: undefined, // "blue", // causes marker.color undefined
+          };
+        }
+        const columnNames = Object.keys(correlationAnalysisData[0]);
+        columnNames.forEach((colName) => {
+          if (colName in columnNamesToPlotVariables) {
+            const value = curRecord[colName];
+            if (colName == "-log10 qval") {
+              const val = Math.pow(10, -value);
+              // VolcanoPlotProp `y` data by default log transforms values. To do the complement: Math.exp(-x)
+              acc[key][doseCategory][columnNamesToPlotVariables[colName]].push(
+                val
+              );
+            } else if (colName == "Feature") {
+              const label = curRecord[colName];
+              const text =
+                `<b>${label}</b><br>` +
+                `<b>${compound} dose (uM)</b>: ${curRecord["imatinib Dose"]}<br>` +
+                `<b>Correlation:</b> ${curRecord[
+                  "Correlation Coefficient"
+                ].toFixed(3)}<br>` +
+                `<b>-log10(p-value):</b> ${curRecord["-log10 qval"].toFixed(
+                  3
+                )}<br>` +
+                `<b>Feature Type:</b> ${curRecord["Feature Type"]}`;
+              acc[key][doseCategory][columnNamesToPlotVariables[colName]].push(
+                text
+              );
+              acc[key][doseCategory]["label"].push(label);
+            } else {
+              acc[key][doseCategory][columnNamesToPlotVariables[colName]].push(
+                value
+              );
+            }
+          }
+        });
+        acc[key][doseCategory]["isSignificant"].push(false);
+        return acc;
+      }, {});
+    }
+    return {};
+  }, [correlationAnalysisData]);
+  console.log("volcanodata: \n", volcanoDataForFeatureType);
 
   return (
     <div
