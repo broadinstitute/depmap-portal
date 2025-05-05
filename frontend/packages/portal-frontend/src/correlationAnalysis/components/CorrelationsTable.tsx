@@ -34,6 +34,7 @@ export default function CorrelationsTable(props: CorrelationsTableProps) {
           idProp="id" // TBD: confirm
           onChangeSelections={onChangeSelections}
           selectedTableLabels={selectedRows}
+          hideSelectAllCheckbox
         />
       </div>
     </div>

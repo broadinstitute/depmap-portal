@@ -161,22 +161,34 @@ export function Story() {
 
       // keep only selected feature types and selected doses and unselected features in plot or table
       const filtered = correlationAnalysisData.filter((data) => {
-        // We want to keep data where feature type or dose is selected
-        const keepCondition =
-          selectedFeatureTypes.includes(data["Feature Type"]) ||
-          selectedDoses.includes(data["imatinib Dose"]);
-        // We want to remove features that are selected so that we can move those data to front of list later
+        let keepCondition;
+        // We want to keep data where feature type and dose is selected
+        if (selectedFeatureTypes.length && selectedDoses.length) {
+          keepCondition =
+            selectedFeatureTypes.includes(data["Feature Type"]) &&
+            selectedDoses.includes(data["imatinib Dose"]);
+        }
+        // keep data where feature type is selected
+        else if (selectedFeatureTypes.length) {
+          keepCondition = selectedFeatureTypes.includes(data["Feature Type"]);
+        }
+        // keep data where dose is selected
+        else if (selectedDoses.length) {
+          keepCondition = selectedDoses.includes(data["imatinib Dose"]);
+        } else {
+          keepCondition = data !== null;
+        }
+
+        // We also want to remove features that are selected so that we can move those data to front of list later
         const removeCondition =
           data["Feature Type"] in allSelectedLabels &&
           allSelectedLabels[data["Feature Type"]].includes(data["Feature"]);
-        if (
-          data["Feature Type"] in allSelectedLabels &&
-          allSelectedLabels[data["Feature Type"]].includes(data["Feature"])
-        ) {
+        // data that should be moved to front must additionally be filtered
+        if (removeCondition && keepCondition) {
           selectedDataWithLabelFront.push(data);
         }
 
-        return keepCondition || !removeCondition;
+        return keepCondition && !removeCondition;
       });
 
       // Sort by feature label first, then by dose
