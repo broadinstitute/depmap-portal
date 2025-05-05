@@ -589,8 +589,8 @@ def _read_fusion(dr, pbar, gene_cache, cell_line_cache):
         cell_line_id = r["ModelID"]
         cell_line = cell_line_cache.get(cell_line_id)
 
-        left_gene = gene_cache.get(r["Gene1"])
-        right_gene = gene_cache.get(r["Gene2"])
+        gene_1 = gene_cache.get(r["Gene1"])
+        gene_2 = gene_cache.get(r["Gene2"])
         if cell_line is None:
             missing_cell_line += 1
             log_data_issue(
@@ -600,26 +600,26 @@ def _read_fusion(dr, pbar, gene_cache, cell_line_cache):
                 identifier=r["ModelID"],
             )
 
-        if left_gene is None:
+        if gene_1 is None:
             missing_gene += 1
             log_data_issue(
                 "Fusion", "Missing gene", id_type="gene", identifier=r["Gene1"]
             )
 
-        elif right_gene is None:
+        elif gene_2 is None:
             missing_gene += 1
             log_data_issue(
                 "Fusion", "Missing gene", id_type="gene", identifier=r["Gene2"]
             )
 
-        if cell_line is None or left_gene is None or right_gene is None:
+        if cell_line is None or gene_1 is None or gene_2 is None:
             skipped += 1
         else:
             record = dict(
                 depmap_id=cell_line.depmap_id,
                 fusion_name=str(r["CanonicalFusionName"]),
-                left_gene_id=left_gene.entity_id,
-                right_gene_id=right_gene.entity_id,
+                gene_1_id=gene_1.entity_id,
+                gene_2_id=gene_2.entity_id,
                 profile_id=str(r["ProfileID"]),
                 total_reads_supporting_fusion=int(r["TotalReadsSupportingFusion"]),
                 total_fusion_coverage=int(r["TotalFusionCoverage"]),

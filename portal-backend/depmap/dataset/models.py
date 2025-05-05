@@ -859,12 +859,10 @@ class Fusion(Model):
     depmap_id = Column(String, ForeignKey("cell_line.depmap_id"), nullable=False)
     cell_line = relationship("CellLine", foreign_keys="Fusion.depmap_id", uselist=False)
     fusion_name = Column(String, nullable=False)
-    left_gene_id = Column(Integer, ForeignKey("gene.entity_id"), nullable=False)
-    left_gene = relationship("Gene", foreign_keys="Fusion.left_gene_id", uselist=False)
-    right_gene_id = Column(Integer, ForeignKey("gene.entity_id"), nullable=False)
-    right_gene = relationship(
-        "Gene", foreign_keys="Fusion.right_gene_id", uselist=False
-    )
+    gene_1_id = Column(Integer, ForeignKey("gene.entity_id"), nullable=False)
+    gene_1 = relationship("Gene", foreign_keys="Fusion.gene_1_id", uselist=False)
+    gene_2_id = Column(Integer, ForeignKey("gene.entity_id"), nullable=False)
+    gene_2 = relationship("Gene", foreign_keys="Fusion.gene_2_id", uselist=False)
 
     # New columns based on the updated schema
     profile_id = Column(String, nullable=False)
@@ -905,9 +903,9 @@ class Fusion(Model):
                 *Fusion.__table__.columns,
             )
             .join(Fusion.cell_line)
-            .filter(sa.or_(cls.left_gene_id == gene_id, cls.right_gene_id == gene_id))
-            .join(left_alias, cls.left_gene_id == left_alias.entity_id)
-            .join(right_alias, cls.right_gene_id == right_alias.entity_id)
+            .filter(sa.or_(cls.gene_1_id == gene_id, cls.gene_2_id == gene_id))
+            .join(left_alias, cls.gene_1_id == left_alias.entity_id)
+            .join(right_alias, cls.gene_2_id == right_alias.entity_id)
             .outerjoin(
                 PrimaryDisease,
                 PrimaryDisease.primary_disease_id == CellLine.primary_disease_id,
@@ -920,11 +918,9 @@ class Fusion(Model):
             .outerjoin(lin_subtype, CellLine.depmap_id == lin_subtype.c.depmap_id)
             .add_columns(
                 sa.column('"right".entity_label', is_literal=True).label(
-                    "right_gene_label"
+                    "gene_2_label"
                 ),
-                sa.column('"left".entity_label', is_literal=True).label(
-                    "left_gene_label"
-                ),
+                sa.column('"left".entity_label', is_literal=True).label("gene_1_label"),
             )
         )
 
@@ -932,19 +928,19 @@ class Fusion(Model):
 
     @classmethod
     def find_by_cell_line_query(cls, depmap_id):
-        left_alias = sa.orm.aliased(Gene, name="left")
-        right_alias = sa.orm.aliased(Gene, name="right")
+        gene_1_alias = sa.orm.aliased(Gene, name="gene_1")
+        gene_2_alias = sa.orm.aliased(Gene, name="gene_2")
 
         return (
             cls.query.filter_by(depmap_id=depmap_id)
-            .join(left_alias, cls.left_gene_id == left_alias.entity_id)
-            .join(right_alias, cls.right_gene_id == right_alias.entity_id)
+            .join(gene_1_alias, cls.gene_1_id == gene_1_alias.entity_id)
+            .join(gene_2_alias, cls.gene_2_id == gene_2_alias.entity_id)
             .add_columns(
-                sa.column('"right".entity_label', is_literal=True).label(
-                    "right_gene_label"
+                sa.column('"gene_2".entity_label', is_literal=True).label(
+                    "gene_2_label"
                 ),
-                sa.column('"left".entity_label', is_literal=True).label(
-                    "left_gene_label"
+                sa.column('"gene_1".entity_label', is_literal=True).label(
+                    "gene_1_label"
                 ),
             )
         )

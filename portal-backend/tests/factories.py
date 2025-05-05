@@ -782,8 +782,8 @@ class FusionFactory(SQLAlchemyModelFactory):
         # Warning: DO NOT USE common.Session()!
         sqlalchemy_session = _db.session
 
-    left_gene = factory.SubFactory(GeneFactory)
-    right_gene = factory.SubFactory(GeneFactory)
+    gene_1 = factory.SubFactory(GeneFactory)
+    gene_2 = factory.SubFactory(GeneFactory)
     cell_line = factory.SubFactory(CellLineFactory)
 
     fusion_name = "test_fusion_name"

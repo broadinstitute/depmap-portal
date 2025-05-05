@@ -282,8 +282,8 @@ class TranslocationTableSpec:
 class FusionTableSpec:
     common_columns = [
         "fusion_name",
-        "left_gene_label",
-        "right_gene_label",
+        "gene_1_label",
+        "gene_2_label",
         "profile_id",
         "total_reads_supporting_fusion",
         "total_fusion_coverage",
@@ -296,8 +296,8 @@ class FusionTableSpec:
         "reading_frame",
     ]
     common_renames = {
-        "left_gene_label": "Gene 1",
-        "right_gene_label": "Gene 2",
+        "gene_1_label": "Gene 1",
+        "gene_2_label": "Gene 2",
         "fusion_name": "Fusion Name",
         "profile_id": "Profile ID",
         "total_reads_supporting_fusion": "Total Reads Supporting Fusion",
@@ -323,10 +323,10 @@ class FusionTableSpec:
     def get_common_renders():
         return [
             TableDisplayLink(
-                js_url_for("gene.view_gene", gene_symbol="{data}"), "left_gene_label"
+                js_url_for("gene.view_gene", gene_symbol="{data}"), "gene_1_label"
             ),
             TableDisplayLink(
-                js_url_for("gene.view_gene", gene_symbol="{data}"), "right_gene_label"
+                js_url_for("gene.view_gene", gene_symbol="{data}"), "gene_2_label"
             ),
         ]
 
