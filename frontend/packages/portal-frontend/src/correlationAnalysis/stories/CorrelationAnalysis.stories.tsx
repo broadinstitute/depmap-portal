@@ -95,9 +95,14 @@ export function Story() {
   const [allSelectedLabels, setAllSelectedLabels] = React.useState<{
     [key: string]: string[];
   }>({});
+  const [selectedRows, setSelectedRows] = React.useState(new Set());
   const [correlationAnalysisData, setCorrelationAnalysisData] = React.useState<
     any[]
   >([]);
+  const [
+    filteredTableCorrelationAnalysisData,
+    setFilteredTableCorrelationAnalysisData,
+  ] = React.useState<any[]>([]);
 
   React.useEffect(() => {
     (async () => {
@@ -142,50 +147,56 @@ export function Story() {
     Feature: "text",
   };
 
-  const filteredTableCorrelationAnalysisData = React.useMemo(() => {
+  React.useEffect(() => {
     // if no filter applied, show all correlation analysis data
     if (
       selectedFeatureTypes.length == 0 &&
       selectedDoses.length == 0 &&
       Object.keys(allSelectedLabels).length == 0
     ) {
-      return correlationAnalysisData;
+      setFilteredTableCorrelationAnalysisData(correlationAnalysisData);
+    } else {
+      // keep list of all selected plot or table features
+      const selectedDataWithLabelFront: any[] = [];
+
+      // keep only selected feature types and selected doses and unselected features in plot or table
+      const filtered = correlationAnalysisData.filter((data) => {
+        // We want to keep data where feature type or dose is selected
+        const keepCondition =
+          selectedFeatureTypes.includes(data["Feature Type"]) ||
+          selectedDoses.includes(data["imatinib Dose"]);
+        // We want to remove features that are selected so that we can move those data to front of list later
+        const removeCondition =
+          data["Feature Type"] in allSelectedLabels &&
+          allSelectedLabels[data["Feature Type"]].includes(data["Feature"]);
+        if (
+          data["Feature Type"] in allSelectedLabels &&
+          allSelectedLabels[data["Feature Type"]].includes(data["Feature"])
+        ) {
+          selectedDataWithLabelFront.push(data);
+        }
+
+        return keepCondition || !removeCondition;
+      });
+
+      // Sort by feature label first, then by dose
+      selectedDataWithLabelFront.sort((a, b) => {
+        if (a["Feature"] === b["Feature"]) {
+          return a["imatinib Dose"] - b["imatinib Dose"]; // sort by dose within the same feature
+        } else {
+          return a["Feature"].localeCompare(b["Feature"]); // otherwise sort by type
+        }
+      });
+      const selectedIds = selectedDataWithLabelFront.map((data) => {
+        return data.id;
+      });
+      setSelectedRows(new Set(selectedIds));
+
+      // move selected features from plot or table up to front of data list
+      setFilteredTableCorrelationAnalysisData(
+        selectedDataWithLabelFront.concat(filtered)
+      );
     }
-
-    // keep list of all selected plot or table features
-    const selectedDataWithLabelFront: any[] = [];
-
-    // keep only selected feature types and selected doses and unselected features in plot or table
-    const filtered = correlationAnalysisData.filter((data) => {
-      // We want to keep data where feature type or dose is selected
-      const keepCondition =
-        selectedFeatureTypes.includes(data["Feature Type"]) ||
-        selectedDoses.includes(data["imatinib Dose"]);
-      // We want to remove features that are selected so that we can move those data to front of list later
-      const removeCondition =
-        data["Feature Type"] in allSelectedLabels &&
-        allSelectedLabels[data["Feature Type"]].includes(data["Feature"]);
-      if (
-        data["Feature Type"] in allSelectedLabels &&
-        allSelectedLabels[data["Feature Type"]].includes(data["Feature"])
-      ) {
-        selectedDataWithLabelFront.push(data);
-      }
-
-      return keepCondition || !removeCondition;
-    });
-
-    // Sort by feature label first, then by dose
-    selectedDataWithLabelFront.sort((a, b) => {
-      if (a["Feature"] === b["Feature"]) {
-        return a["imatinib Dose"] - b["imatinib Dose"]; // sort by dose within the same feature
-      } else {
-        return a["Feature"].localeCompare(b["Feature"]); // otherwise sort by type
-      }
-    });
-
-    // move selected features from plot or table up to front of data list
-    return selectedDataWithLabelFront.concat(filtered);
   }, [
     selectedFeatureTypes,
     selectedDoses,
@@ -314,21 +325,6 @@ export function Story() {
             );
           }}
         />
-        <header>Features</header>
-        <AsyncSelect
-          placeholder="Select Features"
-          defaultOptions
-          loadOptions={featureTypesPromise}
-          isMulti
-          onChange={(value, action) => {
-            console.log(value, action);
-            setSelectedFeatureTypes(
-              value !== null
-                ? value.map((selectedFeatureType) => selectedFeatureType.value)
-                : []
-            );
-          }}
-        />
       </div>
 
       <div style={{ gridArea: "b" }}>
@@ -354,7 +350,13 @@ export function Story() {
       </div>
 
       <div style={{ gridArea: "c" }}>
-        <CorrelationsTable data={filteredTableCorrelationAnalysisData} />
+        <CorrelationsTable
+          data={filteredTableCorrelationAnalysisData}
+          selectedRows={selectedRows}
+          onChangeSelections={(selections: any[]) =>
+            setSelectedRows(new Set(selections))
+          }
+        />
         <p>
           Showing {filteredTableCorrelationAnalysisData.length} of{" "}
           {correlationAnalysisData.length} entries

@@ -4,10 +4,12 @@ import { Button } from "react-bootstrap";
 
 interface CorrelationsTableProps {
   data: any[];
+  selectedRows: Set<string>;
+  onChangeSelections: (selections: any[]) => void;
 }
 
 export default function CorrelationsTable(props: CorrelationsTableProps) {
-  const { data } = props;
+  const { data, selectedRows, onChangeSelections } = props;
   return (
     <div>
       <div
@@ -29,6 +31,9 @@ export default function CorrelationsTable(props: CorrelationsTableProps) {
           data={data}
           rowHeight={40}
           allowDownloadFromTableData
+          idProp="id" // TBD: confirm
+          onChangeSelections={onChangeSelections}
+          selectedTableLabels={selectedRows}
         />
       </div>
     </div>
