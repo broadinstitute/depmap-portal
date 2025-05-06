@@ -1,5 +1,8 @@
+from dataclasses import dataclass
+import dataclasses
 import json
 from typing import Any, Dict, List
+from depmap.context.models_new import SubtypeContext, TreeType
 from depmap.enums import DataTypeEnum, TabularEnum
 from depmap.oncokb_version.models import OncokbDatasetVersionDate
 from flask import (
@@ -123,6 +126,35 @@ def get_related_models(patient_id: str, model_id: str) -> List[Dict[str, str]]:
     return related_models_info
 
 
+@dataclass
+class SubtypeTreeInfo:
+    node_name: str
+    subtype_code: str
+    level: str
+    context_explorer_url: str
+
+
+def get_subtype_tree_info(tree_type: str, model_id: str) -> List[SubtypeTreeInfo]:
+    level_info = SubtypeContext.get_model_context_tree_levels(tree_type, model_id)
+
+    def create_subtype_level_dict(row):
+        return dataclasses.asdict(
+            SubtypeTreeInfo(
+                node_name=row["node_name"],
+                subtype_code=row["subtype_code"],
+                level=row["node_level"],
+                context_explorer_url=url_for(
+                    "context_explorer.view_context_explorer",
+                    context=row["subtype_code"],
+                ),
+            )
+        )
+
+    tree_info = list(level_info.apply(create_subtype_level_dict, axis=1))
+
+    return tree_info
+
+
 @blueprint.route("/description_tile/<model_id>")
 def get_cell_line_description_tile_data(model_id: str) -> dict:
     model = DepmapModel.get_by_model_id(model_id)
@@ -130,6 +162,13 @@ def get_cell_line_description_tile_data(model_id: str) -> dict:
     if model is None:
         abort(404)
     assert model is not None
+
+    lineage_tree = get_subtype_tree_info(
+        tree_type=TreeType.Lineage.value, model_id=model_id
+    )
+    molecular_subtype_tree = get_subtype_tree_info(
+        tree_type=TreeType.MolecularSubtype.value, model_id=model_id
+    )
 
     image = get_image_url(model.image_filename)
 
@@ -149,6 +188,8 @@ def get_cell_line_description_tile_data(model_id: str) -> dict:
 
     model_info = {
         "image": image,
+        "lineage_tree": lineage_tree,
+        "molecular_subtype_tree": molecular_subtype_tree,
         "oncotree_lineage": oncotree_lineage,
         "oncotree_primary_disease": oncotree_primary_disease,
         "oncotree_subtype_and_code": f"{model.oncotree_subtype} ({model.oncotree_code})"
