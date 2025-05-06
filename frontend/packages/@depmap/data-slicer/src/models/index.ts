@@ -27,7 +27,7 @@ export type CustomDownloadData = {
 export interface DatasetOptionsWithLabels {
   label: string;
   id: string;
-  url: string | null;
+  url?: string | null;
 }
 
 export interface DatasetDownloadMetadata {
