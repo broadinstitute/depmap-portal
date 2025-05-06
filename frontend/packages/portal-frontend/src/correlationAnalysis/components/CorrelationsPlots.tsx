@@ -1,6 +1,7 @@
 import React from "react";
 import { VolcanoData } from "../../plot/models/volcanoPlotModels";
 import CorrelationsPlot from "./CorrelationPlot";
+import DoseLegend from "./DoseLegend";
 
 interface CorrelationsPlotsProps {
   featureTypesToShow: string[];
@@ -38,33 +39,40 @@ export default function CorrelationsPlots(props: CorrelationsPlotsProps) {
 
   return (
     <div
-      style={{
-        display: "grid",
-        gridTemplateColumns: "repeat(3, 1fr)",
-        gap: "2rem",
-        marginBottom: "50px",
-      }}
+      style={{ display: "grid", gridTemplateColumns: "7fr 1fr", gap: "2rem" }}
     >
-      {featureTypesToShow.map((featureType, i) => {
-        return (
-          <div key={featureType + "-plot"}>
-            <CorrelationsPlot
-              featureType={featureType}
-              data={Object.values(
-                filteredDosesForFeatureTypeVolcanoData(
-                  volcanoDataForFeatureType[featureType]
-                )
-              )}
-              selectedFeatures={
-                featureType in featureTypeSelectedLabels
-                  ? featureTypeSelectedLabels[featureType]
-                  : []
-              }
-              forwardPlotSelectedFeatures={forwardSelectedLabels}
-            />
-          </div>
-        );
-      })}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(3, 1fr)",
+          gap: "2rem",
+          marginBottom: "50px",
+        }}
+      >
+        {featureTypesToShow.map((featureType, i) => {
+          return (
+            <div key={featureType + "-plot"}>
+              <CorrelationsPlot
+                featureType={featureType}
+                data={Object.values(
+                  filteredDosesForFeatureTypeVolcanoData(
+                    volcanoDataForFeatureType[featureType]
+                  )
+                )}
+                selectedFeatures={
+                  featureType in featureTypeSelectedLabels
+                    ? featureTypeSelectedLabels[featureType]
+                    : []
+                }
+                forwardPlotSelectedFeatures={forwardSelectedLabels}
+              />
+            </div>
+          );
+        })}
+      </div>
+      <div>
+        <DoseLegend />
+      </div>
     </div>
   );
 }

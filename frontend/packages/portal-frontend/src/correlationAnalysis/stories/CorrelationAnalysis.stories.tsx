@@ -21,7 +21,7 @@ import CorrelationsTable from "../components/CorrelationsTable";
 import CorrelationsPlots from "../components/CorrelationsPlots";
 
 export default {
-  title: "Components/CorrelationAnalysis",
+  title: "Components/CorrelationAnalysis/CorrelationAnalysisPage",
   component: WideTable,
 };
 
