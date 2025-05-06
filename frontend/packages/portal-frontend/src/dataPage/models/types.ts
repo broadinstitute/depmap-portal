@@ -233,3 +233,15 @@ export function getDataPageDataTypeColorCategoryString(
       throw new Error(`Cannot map datatype ${datatype} to color category`);
   }
 }
+
+export interface TypeGroupOption {
+  name: string;
+  versions?: string[];
+}
+
+export interface TypeGroup {
+  name: string;
+  // TypeGroup name comes from ReleaseType. Each ReleaseType can have options that map to either a releasee
+  // name OR a releaseVersionGroup (e.g. DepMap Consortium or DepMap Public).
+  options: Array<TypeGroupOption>;
+}
