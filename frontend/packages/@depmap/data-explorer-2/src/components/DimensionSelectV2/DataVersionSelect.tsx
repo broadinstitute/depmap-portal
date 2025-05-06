@@ -7,6 +7,7 @@ import styles from "../../styles/DimensionSelect.scss";
 interface Props {
   show: boolean;
   isLoading: boolean;
+  isUnknownDataset: boolean;
   options: {
     label: string;
     value: string;
@@ -23,6 +24,7 @@ interface Props {
 function DataVersionSelect({
   show,
   isLoading,
+  isUnknownDataset,
   value,
   options,
   onChange,
@@ -30,15 +32,26 @@ function DataVersionSelect({
   showNoDefaultHint,
   onClickShowModal = undefined,
 }: Props) {
+  const unknownDatasetOptions = [
+    {
+      value,
+      label: "⚠️ unknown version",
+      isDisabled: true,
+      isDefault: false,
+      disabledReason: `Unknown data version with id ${value}.`,
+    },
+  ];
+
   return (
     <PlotConfigSelect
       data-version-select
       isClearable
+      hasError={isUnknownDataset}
       show={show}
       enable={options.length > 1 && !isLoading}
       isLoading={isLoading}
       value={isLoading ? null : value}
-      options={options}
+      options={isUnknownDataset ? unknownDatasetOptions : options}
       onChange={onChange}
       label={
         <span>

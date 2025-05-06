@@ -8,6 +8,7 @@ interface Props {
   options: { label: string; value: string; isDisabled: boolean }[];
   value: string | null;
   onChange: (nextDataType: string | null) => void;
+  isUnknownDataset: boolean;
   hasError?: boolean;
 }
 
@@ -16,9 +17,18 @@ function DataTypeSelect({
   options,
   value,
   onChange,
+  isUnknownDataset,
   hasError = false,
 }: Props) {
-  const placeholder = isLoading ? "Loading…" : "Select data type…";
+  let placeholder = "Select data type…";
+
+  if (isLoading) {
+    placeholder = "Loading…";
+  }
+
+  if (isUnknownDataset) {
+    placeholder = "(unknown data type)";
+  }
 
   return (
     <PlotConfigSelect

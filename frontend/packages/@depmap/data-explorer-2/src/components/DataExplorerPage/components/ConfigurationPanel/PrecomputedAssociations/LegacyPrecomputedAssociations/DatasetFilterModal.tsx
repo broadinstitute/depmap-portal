@@ -1,14 +1,11 @@
 import React, { useState } from "react";
 import { Button, Modal } from "react-bootstrap";
-import usePrecomputedAssocationData from "../../../hooks/usePrecomputedAssocationData";
-import styles from "../../../styles/PrecomputedAssociations.scss";
+import styles from "../../../../styles/LegacyPrecomputedAssociations.scss";
 
 interface Props {
   show: boolean;
   onHide: () => void;
-  associatedDatasets: ReturnType<
-    typeof usePrecomputedAssocationData
-  >["associatedDatasets"];
+  associatedDatasets: string[];
   initialValue: Set<string>;
   onChange: (nextValue: Set<string>) => void;
 }
@@ -27,7 +24,7 @@ function DatasetFilterModal({
   };
 
   const handleCLickUnselectAll = () => {
-    setHiddenDataset(new Set(associatedDatasets.map((d) => d.dataset_id)));
+    setHiddenDataset(new Set(associatedDatasets));
   };
 
   return (
@@ -45,27 +42,27 @@ function DatasetFilterModal({
             Unselect all
           </button>
         </div>
-        {associatedDatasets.map(({ name, dataset_id }) => (
-          <div key={name}>
+        {associatedDatasets.map((datasetName) => (
+          <div key={datasetName}>
             <label>
               <input
                 type="checkbox"
-                checked={!hiddenDatasets.has(dataset_id)}
+                checked={!hiddenDatasets.has(datasetName)}
                 onChange={() => {
                   setHiddenDataset((prev) => {
                     const next = new Set(prev);
 
-                    if (prev.has(dataset_id)) {
-                      next.delete(dataset_id);
+                    if (prev.has(datasetName)) {
+                      next.delete(datasetName);
                     } else {
-                      next.add(dataset_id);
+                      next.add(datasetName);
                     }
 
                     return next;
                   });
                 }}
               />
-              <span>{name}</span>
+              <span>{datasetName}</span>
             </label>
           </div>
         ))}

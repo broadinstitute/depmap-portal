@@ -140,7 +140,7 @@ export async function fetchAnalysisResult(
   });
 }
 
-export async function fetchAssociations(
+export async function fetchLegacyAssociations(
   dataset_id: string,
   slice_label: string
 ): Promise<{
