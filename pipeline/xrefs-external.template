@@ -106,7 +106,7 @@ add-if-missing {
 
 add-if-missing {
     'type': 'dataset-display-name',
-    'display_name': 'Copy Number {{ config.RELEASE_LABEL }} (Log2 transformed)',
+    'display_name': 'Copy Number WGS {{ config.RELEASE_LABEL }} (Log2 transformed)',
     'label': 'copy_number_relative',
     'dataset_id': PREPROCESS_TAIGA_ID(virtual_dataset_id, "PortalOmicsCNGeneLog2")
 }
