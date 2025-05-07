@@ -386,7 +386,7 @@ export function Story() {
                 const feature = featureTypeFeatureToAdd["Feature"];
                 const newSelectedLabels =
                   featureType in allSelectedLabels
-                    ? [...allSelectedLabels[featureType]].push(feature)
+                    ? [...allSelectedLabels[featureType]].concat(feature)
                     : [feature];
                 setAllSelectedLabels({
                   ...allSelectedLabels,

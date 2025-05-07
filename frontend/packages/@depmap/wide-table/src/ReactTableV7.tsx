@@ -163,7 +163,7 @@ const ReactTableV7 = React.forwardRef(
     useEffect(() => {
       if (selectedLabels && selectedLabels.size > 0) {
         setSelections((prevSelections) => {
-          const newSelections = new Set(prevSelections);
+          let newSelections = new Set(prevSelections);
           if (
             singleSelectionMode &&
             !newSelections.has([...selectedLabels][0])
@@ -171,9 +171,7 @@ const ReactTableV7 = React.forwardRef(
             newSelections.clear();
             newSelections.add([...selectedLabels][0]);
           } else {
-            selectedLabels.forEach((selectedLabel) =>
-              newSelections.add(selectedLabel)
-            );
+            newSelections = new Set(selectedLabels);
           }
           return newSelections;
         });
