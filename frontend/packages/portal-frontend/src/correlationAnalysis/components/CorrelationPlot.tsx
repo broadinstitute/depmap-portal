@@ -50,7 +50,7 @@ export default function CorrelationsPlot(props: CorrelationsPlotProps) {
         style={{
           textAlign: "center",
           fontSize: "18px",
-          backgroundColor: "#d9d9d9",
+          backgroundColor: "#eee",
         }}
       >
         {featureType}

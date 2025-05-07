@@ -6,6 +6,7 @@ import DoseLegend from "./DoseLegend";
 interface CorrelationsPlotsProps {
   featureTypesToShow: string[];
   dosesToFilter: string[];
+  doseColors: { hex: string; dose: string }[];
   volcanoDataForFeatureTypes: { [key: string]: { [key: string]: VolcanoData } };
   featureTypeSelectedLabels: { [key: string]: string[] };
   forwardSelectedLabels: (
@@ -18,6 +19,7 @@ export default function CorrelationsPlots(props: CorrelationsPlotsProps) {
   const {
     featureTypesToShow,
     dosesToFilter,
+    doseColors,
     volcanoDataForFeatureTypes: volcanoDataForFeatureType,
     featureTypeSelectedLabels,
     forwardSelectedLabels,
@@ -49,7 +51,7 @@ export default function CorrelationsPlots(props: CorrelationsPlotsProps) {
           marginBottom: "50px",
         }}
       >
-        {featureTypesToShow.map((featureType, i) => {
+        {featureTypesToShow.map((featureType) => {
           return (
             <div key={featureType + "-plot"}>
               <CorrelationsPlot
@@ -71,7 +73,7 @@ export default function CorrelationsPlots(props: CorrelationsPlotsProps) {
         })}
       </div>
       <div>
-        <DoseLegend />
+        <DoseLegend doseColors={doseColors} />
       </div>
     </div>
   );

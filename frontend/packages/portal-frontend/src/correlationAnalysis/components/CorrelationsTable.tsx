@@ -12,12 +12,6 @@ export default function CorrelationsTable(props: CorrelationsTableProps) {
   const { data, selectedRows, onChangeSelections } = props;
   return (
     <div>
-      <div
-        style={{ display: "flex", justifyContent: "flex-end", padding: "10px" }}
-      >
-        <Button active>CSV</Button>
-      </div>
-
       <div style={{ height: "auto" }}>
         <WideTable
           columns={[

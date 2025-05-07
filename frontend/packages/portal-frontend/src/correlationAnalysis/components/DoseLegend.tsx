@@ -12,7 +12,12 @@ const colors = [
   { hex: "#CC4778" },
 ];
 
-export default function DoseLegend() {
+interface DoseLegendProps {
+  doseColors: { hex: string; dose: string }[];
+}
+
+export default function DoseLegend(props: DoseLegendProps) {
+  const { doseColors } = props;
   return (
     <div
       style={{
@@ -23,16 +28,16 @@ export default function DoseLegend() {
       }}
     >
       <header>Dose</header>
-      {colors.map((color, idx) => (
+      {doseColors.map((doseColor, idx) => (
         <div key={idx} style={{ display: "flex" }}>
           <div
             style={{
-              backgroundColor: color.hex,
+              backgroundColor: doseColor.hex,
               width: "20px",
               height: "20px",
             }}
           />
-          <p style={{ paddingLeft: "5px" }}>{color.hex.replace("#", "")}</p>
+          <p style={{ paddingLeft: "5px" }}>{doseColor.dose}</p>
         </div>
       ))}
     </div>

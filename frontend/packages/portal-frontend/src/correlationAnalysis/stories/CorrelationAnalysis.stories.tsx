@@ -115,9 +115,20 @@ export function Story() {
 
   console.log(correlationAnalysisData);
 
-  const getDoseOptions = React.useCallback(() => {
-    let doses = new Set();
+  const doseColors = React.useMemo(() => {
+    let doses = [];
     if (correlationAnalysisData.length) {
+      const colors = [
+        { hex: "#A0DA38" },
+        { hex: "#4AC16D" },
+        { hex: "#1EA187" },
+        { hex: "#277F8E" },
+        { hex: "#365C8D" },
+        { hex: "#46327E" },
+        { hex: "#440154" },
+        { hex: "#F89540" },
+        { hex: "#CC4778" },
+      ];
       const columnData = {};
       const columnNames = Object.keys(correlationAnalysisData[0]);
       columnNames.forEach(
@@ -128,8 +139,16 @@ export function Story() {
       );
       console.log(columnNames);
       console.log(columnData);
-      doses = new Set(columnData["imatinib Dose"]);
-      return doses;
+      doses = Array.from(new Set(columnData["imatinib Dose"])).sort((a, b) => {
+        return a - b;
+      });
+      return doses.map((dose, i) => {
+        if (i >= colors.length) {
+          return { hex: undefined, dose: dose };
+        } else {
+          return { ...colors[i], dose };
+        }
+      });
     }
     return doses;
   }, [correlationAnalysisData]);
@@ -226,7 +245,9 @@ export function Story() {
             text: [],
             isSignificant: [],
             name: doseCategory,
-            color: undefined, // "blue", // causes marker.color undefined
+            color: doseColors.find(
+              (doseColor) => doseColor.dose === doseCategory
+            ).hex,
           };
         }
         const columnNames = Object.keys(correlationAnalysisData[0]);
@@ -294,7 +315,7 @@ export function Story() {
           onChangeFeatureTypes={(featureTypes: string[]) =>
             setSelectedFeatureTypes(featureTypes !== null ? featureTypes : [])
           }
-          doses={getDoseOptions()}
+          doses={doseColors.map((doseColor) => doseColor.dose)}
           onChangeDoses={(newDoses) =>
             setSelectedDoses(newDoses ? newDoses : [])
           }
@@ -309,6 +330,7 @@ export function Story() {
               : Object.keys(volcanoDataForFeatureType)
           }
           dosesToFilter={selectedDoses}
+          doseColors={doseColors}
           volcanoDataForFeatureTypes={volcanoDataForFeatureType}
           featureTypeSelectedLabels={allSelectedLabels}
           forwardSelectedLabels={(

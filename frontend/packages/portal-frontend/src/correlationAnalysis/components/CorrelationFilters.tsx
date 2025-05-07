@@ -14,7 +14,7 @@ interface CorrelationFiltersProps {
   onChangeDataset: (dataset: string | null) => void; // undetermined for now
   getFeatureTypes: () => Promise<any[]>;
   onChangeFeatureTypes: (featureTypes: string[]) => void;
-  doses: Set<string>;
+  doses: string[];
   onChangeDoses: (doses: string[]) => void;
 }
 
@@ -32,10 +32,9 @@ export default function CorrelationFilters(props: CorrelationFiltersProps) {
     []
   );
   const getDoseOptions = useCallback(() => {
-    const doseOptions: FilterOption[] = [];
-    doses.forEach((dose) => doseOptions.push({ label: dose, value: dose }));
-    // TODO: Sort?
-    return doseOptions;
+    return doses.map((dose) => {
+      return { label: dose, value: dose };
+    });
   }, [doses]);
 
   useEffect(() => {
