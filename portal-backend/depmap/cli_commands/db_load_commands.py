@@ -9,6 +9,7 @@ from dataclasses import dataclass
 import time
 import httpx
 
+from depmap.cell_line.models import CellLine
 from depmap.dataset.models import TabularDataset
 
 import click
@@ -236,6 +237,13 @@ def sync_metadata_to_breadbox_with_retry(max_attempts):
                 f"Got exception trying to sync_metadata_to_breadbox(), but will retry: {ex}"
             )
             time.sleep(2)
+
+
+def assert_depmap_models_match_cell_lines():
+    # make sure that DepMapModel and CellLine have a 1:1 relationship. There is a non-nullable, unique
+    # constraint with a FK to cell_line(depmap_id). The only way there could not be a 1:1 is if there
+    # were fewer DepMapModels than lines, so just check the count
+    assert DepmapModel.query.count() == CellLine.query.count()
 
 
 @click.command("recreate_full_db")
@@ -514,6 +522,7 @@ def _load_real_data(
             )
             taiga_id = model_metadata_dict["metadata"]["sample_info_id"]
             depmap_model_loader.load_depmap_model_metadata(filename, taiga_id)
+            assert_depmap_models_match_cell_lines()
 
     with checkpoint("str_profile") as needed:
         if needed:
@@ -1146,6 +1155,7 @@ def load_sample_data(
         depmap_model_loader.load_depmap_model_metadata(
             os.path.join(loader_data_dir, "cell_line/models_metadata.csv")
         )
+        assert_depmap_models_match_cell_lines()
 
         # TODO: This should eventually completely rreplace the old cell_line_loader.load_contexts
         depmap_model_loader.load_subtype_contexts(
