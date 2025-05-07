@@ -19,6 +19,9 @@ import { Button } from "react-bootstrap";
 import { getHighlightLineColor } from "@depmap/utils";
 import CorrelationsTable from "../components/CorrelationsTable";
 import CorrelationsPlots from "../components/CorrelationsPlots";
+import CorrelationFilters, {
+  FilterOption,
+} from "../components/CorrelationFilters";
 
 export default {
   title: "Components/CorrelationAnalysis/CorrelationAnalysisPage",
@@ -48,15 +51,10 @@ const featureTypeOptions: TagOption[] = [
   { label: "shRNA knockdown", value: "shRNA knockdown", isDisabled: true },
 ];
 
-const filterOptions = (inputValue: string) =>
-  featureTypeOptions.filter((val) =>
-    val.label.toLowerCase().includes(inputValue.toLowerCase())
-  );
-
-const featureTypesPromise = (inputValue: string) => {
-  return new Promise<TagOption[]>((resolve) => {
+const featureTypesPromise = () => {
+  return new Promise<any[]>((resolve) => {
     setTimeout(() => {
-      resolve(filterOptions(inputValue));
+      resolve(featureTypeOptions);
     }, 1000);
   });
 };
@@ -118,7 +116,7 @@ export function Story() {
   console.log(correlationAnalysisData);
 
   const getDoseOptions = React.useCallback(() => {
-    const doseOptions = [];
+    let doses = new Set();
     if (correlationAnalysisData.length) {
       const columnData = {};
       const columnNames = Object.keys(correlationAnalysisData[0]);
@@ -130,14 +128,10 @@ export function Story() {
       );
       console.log(columnNames);
       console.log(columnData);
-      const doses = new Set(columnData["imatinib Dose"]);
-      console.log(doses);
-      // TODO: need to sort doses
-      doses.forEach((dose) => {
-        doseOptions.push({ label: dose, value: dose });
-      });
+      doses = new Set(columnData["imatinib Dose"]);
+      return doses;
     }
-    return doseOptions;
+    return doses;
   }, [correlationAnalysisData]);
 
   const columnNamesToPlotVariables = {
@@ -293,49 +287,17 @@ export function Story() {
           gridArea: "a",
         }}
       >
-        <h1>FILTERS</h1>
-        <header>Dataset</header>
-        <AsyncSelect
-          placeholder="Choose Dataset"
-          defaultOptions
-          loadOptions={featureTypesPromise}
-          isMulti
-          onChange={(value, action) => {
-            console.log(value, action);
-            setSelectedFeatureTypes(
-              value !== null
-                ? value.map((selectedFeatureType) => selectedFeatureType.value)
-                : []
-            );
-          }}
-        />
-        <header>Dose</header>
-        <Select
-          placeholder="imatinib Doses(uM)"
-          defaultOptions
-          options={getDoseOptions()}
-          isMulti
-          onChange={(value, action) => {
-            console.log(value, action);
-            setSelectedDoses(
-              value ? value.map((selectedDose) => selectedDose.value) : []
-            );
-          }}
-        />
-        <header>Feature Types</header>
-        <AsyncSelect
-          placeholder="Select Feature Types"
-          defaultOptions
-          loadOptions={featureTypesPromise}
-          isMulti
-          onChange={(value, action) => {
-            console.log(value, action);
-            setSelectedFeatureTypes(
-              value !== null
-                ? value.map((selectedFeatureType) => selectedFeatureType.value)
-                : []
-            );
-          }}
+        <CorrelationFilters
+          getDatasets={featureTypesPromise}
+          onChangeDataset={(dataset: string) => console.log(dataset)}
+          getFeatureTypes={featureTypesPromise}
+          onChangeFeatureTypes={(featureTypes: string[]) =>
+            setSelectedFeatureTypes(featureTypes !== null ? featureTypes : [])
+          }
+          doses={getDoseOptions()}
+          onChangeDoses={(newDoses) =>
+            setSelectedDoses(newDoses ? newDoses : [])
+          }
         />
       </div>
 

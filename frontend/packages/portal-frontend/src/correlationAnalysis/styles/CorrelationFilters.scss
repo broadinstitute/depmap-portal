@@ -1,0 +1,19 @@
+.correlationFilters {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  header {
+    padding-bottom: 5px;
+  }
+}
+
+.filters {
+  border-top: 1px solid darkgrey;
+  flex: 1;
+  background-color: #eee;
+  padding: 10px;
+
+  .filterStyle {
+    padding-bottom: 10px;
+  }
+}
