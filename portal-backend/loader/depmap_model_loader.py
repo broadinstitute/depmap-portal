@@ -57,8 +57,8 @@ def insert_cell_lines(df):
         if ccle_name in seen_ccle_names:
             ccle_name = None
             log_data_issue(
-                "DepmapModel",
-                "Duplicate ccle_name",
+                "DepMapModel",
+                "Duplicate ccle_name. Nulling out ccle_name",
                 identifier=ccle_name,
                 id_type="ccle_name",
             )
