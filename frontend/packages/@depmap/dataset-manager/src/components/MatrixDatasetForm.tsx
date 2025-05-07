@@ -20,7 +20,7 @@ import {
 } from "@depmap/types";
 import { Option, TagInput } from "@depmap/common-components";
 import { ActionMeta, ValueType } from "react-select";
-import { useSubmitButtonIsDisabled } from "../../utils/disableSubmitButton";
+import { submitButtonIsDisabled } from "../../utils/disableSubmitButton";
 
 function transformErrors(errors: RJSFValidationError[]) {
   // eslint-disable-next-line array-callback-return, consistent-return
@@ -171,6 +171,7 @@ interface MatrixDatasetFormProps {
   initFormData: any;
   isAdvancedMode: boolean;
   onSubmitForm: (formData: { [key: string]: any }) => void;
+  datasetIsLoading: boolean;
   forwardFormData?: (formData: { [key: string]: any }) => void;
 }
 
@@ -185,6 +186,7 @@ export function MatrixDatasetForm({
   initFormData,
   isAdvancedMode,
   onSubmitForm,
+  datasetIsLoading,
   forwardFormData = undefined,
 }: MatrixDatasetFormProps) {
   const [formData, setFormData] = React.useState(initFormData);
@@ -243,11 +245,6 @@ export function MatrixDatasetForm({
     }
   }, [fileIds, md5Hash, formData]);
 
-  const submitButtonIsDisabled = useSubmitButtonIsDisabled(
-    schema?.required,
-    formData
-  );
-
   const uiSchema = React.useMemo(() => {
     const formUiSchema: UiSchema = {
       "ui:title": "", // removes the title <legend> html element
@@ -291,7 +288,11 @@ export function MatrixDatasetForm({
       },
       "ui:submitButtonOptions": {
         props: {
-          disabled: submitButtonIsDisabled,
+          disabled: submitButtonIsDisabled(
+            schema?.required,
+            formData,
+            datasetIsLoading
+          ),
         },
       },
     };
@@ -307,7 +308,7 @@ export function MatrixDatasetForm({
       });
     }
     return formUiSchema;
-  }, [isAdvancedMode, submitButtonIsDisabled]);
+  }, [datasetIsLoading, formData, isAdvancedMode, schema?.required]);
 
   const handleOnChange = (e: any) => {
     // Need to set allowed_values with continuous value_type back to null if value_type switches from categorical

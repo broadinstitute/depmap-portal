@@ -10,7 +10,7 @@ import {
   instanceOfErrorDetail,
   TabularDataset,
 } from "@depmap/types";
-import { useSubmitButtonIsDisabled } from "../../utils/disableSubmitButton";
+import { submitButtonIsDisabled } from "../../utils/disableSubmitButton";
 
 interface DimensionTypeFormProps {
   onSubmit: (formData: any) => Promise<void>;
@@ -77,11 +77,6 @@ export default function DimensionTypeForm(props: DimensionTypeFormProps) {
     }
   }, [dimensionTypeToEdit, isEditMode, datasets]);
 
-  const submitButtonIsDisabled = useSubmitButtonIsDisabled(
-    schema?.required,
-    dimensionTypeFormData
-  );
-
   const uiSchema = React.useMemo(() => {
     const formUiSchema: UiSchema = {
       "ui:title": "", // removes the title <legend> html element,
@@ -104,12 +99,15 @@ export default function DimensionTypeForm(props: DimensionTypeFormProps) {
       },
       "ui:submitButtonOptions": {
         props: {
-          disabled: submitButtonIsDisabled,
+          disabled: submitButtonIsDisabled(
+            schema?.required,
+            dimensionTypeFormData
+          ),
         },
       },
     };
     return formUiSchema;
-  }, [submitButtonIsDisabled]);
+  }, [dimensionTypeFormData, schema?.required]);
 
   const onSubmission = async ({ formData }: any) => {
     setSubmissionMsg("Loading...");

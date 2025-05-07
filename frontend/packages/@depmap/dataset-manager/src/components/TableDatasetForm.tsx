@@ -18,7 +18,7 @@ import {
   Group,
   InvalidPrioritiesByDataType,
 } from "@depmap/types";
-import { useSubmitButtonIsDisabled } from "../../utils/disableSubmitButton";
+import { submitButtonIsDisabled } from "../../utils/disableSubmitButton";
 
 const CustomColumnsMetadata = function (props: FieldProps) {
   const { schema, onChange, required } = props;
@@ -108,6 +108,7 @@ interface TableDatasetFormProps {
   md5Hash?: string | null;
   initFormData: any;
   onSubmitForm: (formData: { [key: string]: any }) => void;
+  datasetIsLoading: boolean;
   forwardFormData?: (formData: { [key: string]: any }) => void;
 }
 
@@ -120,6 +121,7 @@ export function TableDatasetForm({
   md5Hash = null,
   initFormData,
   onSubmitForm,
+  datasetIsLoading,
   forwardFormData = undefined,
 }: TableDatasetFormProps) {
   const [formData, setFormData] = React.useState(initFormData);
@@ -168,11 +170,6 @@ export function TableDatasetForm({
     }
   }, [fileIds, md5Hash, formData]);
 
-  const submitButtonIsDisabled = useSubmitButtonIsDisabled(
-    schema?.required,
-    formData
-  );
-
   const uiSchema = React.useMemo(() => {
     const formUiSchema: UiSchema = {
       "ui:title": "", // removes the title <legend> html element
@@ -212,12 +209,16 @@ export function TableDatasetForm({
       },
       "ui:submitButtonOptions": {
         props: {
-          disabled: submitButtonIsDisabled,
+          disabled: submitButtonIsDisabled(
+            schema?.required,
+            formData,
+            datasetIsLoading
+          ),
         },
       },
     };
     return formUiSchema;
-  }, [submitButtonIsDisabled]);
+  }, [datasetIsLoading, formData, schema?.required]);
 
   function customValidate(formDataToValidate: any, errors: any) {
     let jsonParsed;
