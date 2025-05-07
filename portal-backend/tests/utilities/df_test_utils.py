@@ -52,10 +52,12 @@ def load_sample_cell_lines():
     models = pd.read_csv(csv_path)
 
     for rec in models.to_records():
-        cell_line = CellLine(
-            cell_line_display_name=rec["CellLineName"], depmap_id=rec["ModelID"],
-        )
+        if CellLine.get_by_depmap_id(rec["ModelID"], must=False) is None:
+            cell_line = CellLine(
+                cell_line_display_name=rec["CellLineName"], depmap_id=rec["ModelID"],
+            )
 
-        db.session.add(cell_line)
+            db.session.add(cell_line)
+    db.session.flush()
 
     load_depmap_model_metadata(csv_path,)
