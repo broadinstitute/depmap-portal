@@ -166,7 +166,7 @@ const ReactTableV7 = React.forwardRef(
           let newSelections: Set<any>;
           if (singleSelectionMode) {
             // We should always be getting the first selected label here since we expect selectedLabels size to be 1 in single selection mode
-            const label = [selectedLabels][0];
+            const label = [...selectedLabels][0];
             if (!prevSelections.has(label)) {
               newSelections = new Set([label]);
             } else {
