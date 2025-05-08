@@ -583,11 +583,19 @@ def get_fusion_data_by_gene(gene_id):
             "url": url_for("gene.view_gene", gene_symbol=gene2_name),
         }
 
+    # Get the sort configuration from the fusion_data_object
+    display_data = fusion_data_object.data_for_ajax_partial_temp()["display"]
+    sort_col_index = display_data.get("sort_col")
+    sort_col = columns[sort_col_index] if sort_col_index is not None else None
+    sort_order = display_data.get("sort_order")
+
     endpoint_dict = {
         "columns": columns,
         "data": result_json_data,
         "default_columns_to_show": fusion_data_object.default_cols_to_show,
         "download_url": fusion_data_object.data_for_ajax_partial_temp()["download_url"],
+        "sort_col": sort_col,
+        "sort_order": sort_order,
     }
 
     return endpoint_dict
