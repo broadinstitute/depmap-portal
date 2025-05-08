@@ -163,18 +163,25 @@ const ReactTableV7 = React.forwardRef(
     useEffect(() => {
       if (selectedLabels && selectedLabels.size > 0) {
         setSelections((prevSelections) => {
-          const newSelections = new Set(prevSelections);
-          if (!newSelections.has([...selectedLabels][0])) {
-            newSelections.clear();
-            newSelections.add([...selectedLabels][0]);
+          let newSelections: Set<any>;
+          if (singleSelectionMode) {
+            // We should always be getting the first selected label here since we expect selectedLabels size to be 1 in single selection mode
+            const label = [...selectedLabels][0];
+            if (!prevSelections.has(label)) {
+              newSelections = new Set([label]);
+            } else {
+              // in the case of single selection mode we should expect prevSelections size to be 1. Effectively no change to selections here
+              newSelections = new Set(prevSelections);
+            }
+          } else {
+            newSelections = new Set(selectedLabels);
           }
-
           return newSelections;
         });
       } else {
         setSelections(() => new Set());
       }
-    }, [selectedLabels, idProp]);
+    }, [selectedLabels, idProp, singleSelectionMode]);
 
     const headersRef = useRef<HTMLDivElement | null>(null);
     const bodyRef = useRef<HTMLDivElement | null>(null);
