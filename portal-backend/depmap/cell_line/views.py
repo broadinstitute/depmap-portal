@@ -494,11 +494,22 @@ def get_fusion_data_by_cell_line(model_id):
         item["Gene 1"] = get_gene_link(gene_name=item["Gene 1"])
         item["Gene 2"] = get_gene_link(gene_name=item["Gene 2"])
 
+    # Get the sort configuration from the fusion_data_object
+    display_data = fusion_data_object.data_for_ajax_partial_temp()["display"]
+    sort_col_index = display_data.get("sort_col")
+    sort_order = display_data.get("sort_order")
+
+    # Map the sort column index to the renamed column name
+    columns = fusion_data_object.renamed_cols
+    sort_col = columns[sort_col_index] if sort_col_index is not None else None
+
     endpoint_dict = {
-        "columns": fusion_data_object.renamed_cols,
+        "columns": columns,
         "data": result_json_data,
         "default_columns_to_show": fusion_data_object.default_cols_to_show,
         "download_url": fusion_data_object.data_for_ajax_partial_temp()["download_url"],
+        "sort_col": sort_col,
+        "sort_order": sort_order,
     }
 
     return endpoint_dict
