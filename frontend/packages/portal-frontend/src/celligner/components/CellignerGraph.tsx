@@ -90,8 +90,6 @@ export default class CellignerGraph extends React.Component<Props, State> {
       annotatedPoints,
       selectedPoints,
       colorByCategory,
-      lassoOrBoxSelectedPoints,
-      sidePanelSelectedPoints,
       handleResetContextPtSelection,
       handleSelectingContextPts,
       handleUnselectTableRows,
@@ -111,9 +109,7 @@ export default class CellignerGraph extends React.Component<Props, State> {
       pointSize.tumor,
       handleUnselectTableRows,
       handleSelectingContextPts,
-      handleResetContextPtSelection,
-      lassoOrBoxSelectedPoints,
-      sidePanelSelectedPoints
+      handleResetContextPtSelection
     );
 
     this.plotElement!.on("plotly_relayout", this.onPlotRelayout);

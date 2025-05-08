@@ -223,6 +223,7 @@ export default class CellignerPage extends React.Component<Props, State> {
 
     const selectedPoints: Array<number> = [];
     const filteredSelectedPoints: Array<number> = [];
+
     alignmentsArr.lineage.forEach((lineage, i) => {
       if (lineage === selectedPrimarySite) {
         if (lassoOrBoxSelectedPts.size === 0 || lassoOrBoxSelectedPts.has(i)) {
@@ -237,14 +238,16 @@ export default class CellignerPage extends React.Component<Props, State> {
       }
     });
 
+    const newSidePanelPoints =
+      filteredSelectedPoints.length < alignmentsArr.lineage.length
+        ? new Set(filteredSelectedPoints)
+        : new Set([]);
+
     this.setState(
       {
         selectedPrimarySite,
         selectedPoints,
-        sidePanelSelectedPts:
-          filteredSelectedPoints.length < alignmentsArr.lineage.length
-            ? new Set(filteredSelectedPoints)
-            : new Set([]),
+        sidePanelSelectedPts: newSidePanelPoints,
         cellLineDistances: null,
         colorByCategory: selectedPrimarySite ? "subtype" : "lineage",
       },
@@ -294,6 +297,7 @@ export default class CellignerPage extends React.Component<Props, State> {
     const cellLineIndex = alignmentsArr.sampleId.findIndex(
       (sampleId) => sampleId === selectedSampleId
     );
+    console.log("handleCellLineSelected");
     this.dapi
       .getCellignerDistancesToCellLine(selectedSampleId, kNeighbors)
       .then((e) => {
@@ -369,6 +373,11 @@ export default class CellignerPage extends React.Component<Props, State> {
     const handleResetContextPtSelection = () => {
       this.setState({
         lassoOrBoxSelectedPts: new Set<number>([]),
+        sidePanelSelectedPts: getValidSelectedPoints(
+          new Set<number>([]),
+          sidePanelSelectedPts,
+          selectedPoints
+        ),
       });
     };
 
@@ -395,12 +404,22 @@ export default class CellignerPage extends React.Component<Props, State> {
 
       return this.setState({
         lassoOrBoxSelectedPts: out,
+        sidePanelSelectedPts: getValidSelectedPoints(
+          out,
+          sidePanelSelectedPts,
+          selectedPoints
+        ),
       });
     };
 
     const handleDeselectLassoOrBoxPts = () => {
       this.setState({
         lassoOrBoxSelectedPts: new Set([]),
+        sidePanelSelectedPts: getValidSelectedPoints(
+          new Set([]),
+          sidePanelSelectedPts,
+          selectedPoints
+        ),
       });
     };
 
@@ -608,13 +627,6 @@ export default class CellignerPage extends React.Component<Props, State> {
               columns={tumorsForCellLinesColumns}
               sorted={[{ id: "distance", desc: true }]}
               onChangeSelections={handleChangeCellLineTableSelections}
-              selectedTableLabels={
-                new Set(
-                  [...annotatedPoints].map(
-                    (i: number) => alignmentsArr.displayName[i]
-                  )
-                )
-              }
               allowDownloadFromTableData
               hideSelectAllCheckbox
             />
