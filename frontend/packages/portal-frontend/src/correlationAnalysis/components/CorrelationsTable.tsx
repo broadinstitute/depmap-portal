@@ -6,10 +6,11 @@ interface CorrelationsTableProps {
   data: any[];
   selectedRows: Set<string>;
   onChangeSelections: (selections: any[]) => void;
+  compound: string;
 }
 
 export default function CorrelationsTable(props: CorrelationsTableProps) {
-  const { data, selectedRows, onChangeSelections } = props;
+  const { data, selectedRows, onChangeSelections, compound } = props;
   return (
     <div>
       <div style={{ height: "auto" }}>
@@ -17,9 +18,9 @@ export default function CorrelationsTable(props: CorrelationsTableProps) {
           columns={[
             { accessor: "Feature" },
             { accessor: "Feature Type" },
-            { accessor: "imatinib Dose" },
+            { accessor: "Dose", Header: `${compound} Dose` },
             { accessor: "Correlation Coefficient" },
-            { accessor: "-log10 qval" },
+            { accessor: "-log10 qval", Header: "-log10(q value)" },
             { accessor: "Rank" },
           ]}
           data={data}

@@ -7,21 +7,6 @@ import CorrelationsTable from "./CorrelationsTable";
 import CorrelationsPlots from "./CorrelationsPlots";
 import CorrelationFilters from "./CorrelationFilters";
 
-const featureTypeOptions: TagOption[] = [
-  { label: "CRISPR knock-out", value: "CRISPR knock-out", isDisabled: false },
-  { label: "Copy number", value: "Copy number", isDisabled: true },
-  { label: "Gene expression", value: "Gene expression", isDisabled: false },
-  { label: "Metabolomics", value: "Metabolomics", isDisabled: true },
-  { label: "Micro RNA", value: "Micro RNA", isDisabled: true },
-  { label: "Proteomics", value: "Proteomics", isDisabled: true },
-  {
-    label: "Repurposing compounds",
-    value: "Repurposing compounds",
-    isDisabled: false,
-  },
-  { label: "shRNA knockdown", value: "shRNA knockdown", isDisabled: true },
-];
-
 interface CorrelationAnalysisProps {
   compound: string;
   getCorrelationData: () => Promise<
@@ -301,6 +286,7 @@ export default function CorrelationAnalysis(props: CorrelationAnalysisProps) {
       <div style={{ gridArea: "c" }}>
         <CorrelationsTable
           data={filteredTableCorrelationAnalysisData}
+          compound={compound}
           selectedRows={selectedRows}
           onChangeSelections={(selections: any[]) => {
             const prevSelections = Array.from(selectedRows);

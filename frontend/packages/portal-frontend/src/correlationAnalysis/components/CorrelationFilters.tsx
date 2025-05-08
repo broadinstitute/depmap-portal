@@ -65,7 +65,7 @@ export default function CorrelationFilters(props: CorrelationFiltersProps) {
         <header>Dataset</header>
         <Select
           className={styles.filterStyle}
-          placeholder="Choose Dataset"
+          placeholder="Select..."
           options={datasetOptions}
           onChange={(value, action) => {
             console.log(value, action);
@@ -75,7 +75,7 @@ export default function CorrelationFilters(props: CorrelationFiltersProps) {
         <header>Dose</header>
         <Select
           className={styles.filterStyle}
-          placeholder="imatinib Doses(uM)"
+          placeholder="Select..."
           defaultOptions
           options={getDoseOptions()}
           isMulti
@@ -86,10 +86,10 @@ export default function CorrelationFilters(props: CorrelationFiltersProps) {
             );
           }}
         />
-        <header>Feature Types</header>
+        <header>Correlated Dataset</header>
         <Select
           className={styles.filterStyle}
-          placeholder="Select Feature Types"
+          placeholder="Select..."
           defaultOptions
           options={featureTypeOptions}
           isMulti
