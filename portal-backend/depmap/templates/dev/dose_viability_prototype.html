@@ -1,0 +1,23 @@
+{% extends "full_page.html" %}
+
+{% block page_title %}
+  Prototype for Compound Dose Viability Heatmap
+{% endblock %}
+
+{% block content %}
+    <div class='full-screen-div'>
+        {% include "nav_footer/nav.html" %}
+        <div id="dose_viability_prototype"></div>
+    </div>
+{% endblock %}
+
+{% block js %}
+    <script id="dose_viability_prototype-data" type="application/json">
+      {
+          {# Any data that needs to be present
+          when your app starts up can go here. #}
+          "secretOfTheUniverse": 42
+      }
+    </script>
+    <script src="{{ webpack_url('doseViabilityPrototype.js') }}"></script>
+{% endblock %}

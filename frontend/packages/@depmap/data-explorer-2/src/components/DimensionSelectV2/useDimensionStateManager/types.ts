@@ -22,6 +22,7 @@ export interface State {
   dataVersionOptions: (Option & { isDefault: boolean })[];
   dataType: string | null;
   units: string | null;
+  isUnknownDataset: boolean;
   dimension: PartialDimension;
 }
 
@@ -34,6 +35,7 @@ export const DEFAULT_STATE: State = {
   dataVersionOptions: [],
   dataType: null,
   units: null,
+  isUnknownDataset: false,
   dimension: {},
 };
 
@@ -46,6 +48,7 @@ export type Changes = Partial<{
   dataset_id: string | null;
   axis_type: "raw_slice" | "aggregated_slice" | null;
   context: DataExplorerContextV2 | null;
+  isUnknownDataset: boolean;
 }>;
 
 export type Update = (changes: Changes) => void;

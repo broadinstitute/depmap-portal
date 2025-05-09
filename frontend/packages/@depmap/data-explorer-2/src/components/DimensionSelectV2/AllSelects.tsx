@@ -56,6 +56,7 @@ function AllSelects({
     unitsOptions,
     dimension: { aggregation, axis_type, context, dataset_id, slice_type },
     isLoading,
+    isUnknownDataset,
     noMatchingContexts,
     onChangeAggregation,
     onChangeAxisType,
@@ -78,6 +79,7 @@ function AllSelects({
         onChange={onChangeDataType}
         isLoading={isLoading}
         hasError={noMatchingContexts}
+        isUnknownDataset={isUnknownDataset}
       />
       <SliceTypeSelect
         index_type={index_type}
@@ -136,6 +138,7 @@ function AllSelects({
       <DataVersionSelect
         show={removeWrapperDiv || Boolean(dataType || dataset_id)}
         isLoading={isLoading}
+        isUnknownDataset={isUnknownDataset}
         value={dataset_id || null}
         options={dataVersionOptions}
         onChange={onChangeDataVersion}

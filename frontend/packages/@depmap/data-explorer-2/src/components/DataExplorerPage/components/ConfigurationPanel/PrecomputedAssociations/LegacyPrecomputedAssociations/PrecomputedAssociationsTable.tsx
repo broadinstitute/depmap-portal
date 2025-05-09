@@ -3,7 +3,7 @@ import cx from "classnames";
 import { WordBreaker } from "@depmap/common-components";
 import { Associations, sliceToDataset } from "./utils";
 import DatasetFilterModal from "./DatasetFilterModal";
-import styles from "../../../styles/PrecomputedAssociations.scss";
+import styles from "../../../../styles/LegacyPrecomputedAssociations.scss";
 
 interface Props {
   associations: Associations;

@@ -123,6 +123,7 @@ export default class DataSlicer extends React.Component<
         const option: DatasetOptionsWithLabels = {
           id: dataset.id,
           label: dataset.display_name,
+          url: dataset.download_entry_url,
         };
         if (dataType != "") {
           if (!datasetOptions.has(dataType)) {

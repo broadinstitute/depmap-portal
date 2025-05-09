@@ -5,7 +5,6 @@ import useCallbacks from "./useCallbacks";
 import useSync from "./useSync";
 import resolveNextState from "./resolveNextState";
 import { findDataType } from "./utils";
-// import { validateDimension } from "./utils";
 import { Changes, Mode, State, DEFAULT_STATE } from "./types";
 
 interface Props {
@@ -96,14 +95,28 @@ export default function useDimensionStateManager({
   }, [index_type, mode, update]);
 
   useEffect(() => {
+    if (state.isUnknownDataset) {
+      return;
+    }
+
     const dataset_id = state.dimension.dataset_id;
 
     if (state.dataType === null && dataset_id !== undefined) {
       findDataType(api, dataset_id).then((dataType) => {
-        update({ dataType, dataset_id });
+        if (dataType) {
+          update({ dataType, dataset_id });
+        } else {
+          update({ isUnknownDataset: true });
+        }
       });
     }
-  }, [api, state.dataType, state.dimension.dataset_id, update]);
+  }, [
+    api,
+    state.dataType,
+    state.dimension.dataset_id,
+    state.isUnknownDataset,
+    update,
+  ]);
 
   const noMatchingContexts = useMemo(() => {
     return (
