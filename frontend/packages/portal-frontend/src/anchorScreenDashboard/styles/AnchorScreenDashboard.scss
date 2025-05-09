@@ -1,15 +1,24 @@
 .staticContent {
-  padding: 20px;
+  padding: 20px 30px;
   padding-bottom: 0;
 
   h1 {
-    margin-top: 6px;
-    margin-bottom: 20px;
+    margin-top: 0;
+    margin-bottom: 24px;
   }
 }
 
 .description {
-  max-width: 1000px;
+  max-width: 900px;
+
+
+  ul {
+    margin-bottom: 10px;
+  }
+
+  p:last-child {
+    margin-bottom: 5px;
+  }
 }
 
 .error {

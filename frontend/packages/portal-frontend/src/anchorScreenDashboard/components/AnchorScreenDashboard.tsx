@@ -17,19 +17,35 @@ function AnchorScreenDashboard() {
         <h1>Anchor Screen Dashboard</h1>
         <div className={styles.description}>
           <p>
-            Below is a table of the anchor screens which have data analyzed and
-            loaded into the portal. The “volcano” links will show a volcano plot
-            of the differential analysis produced by “Chronos compare.” The
-            “scatter” links will show a scatter plot of the drug arm vs the
-            control arm.
+            This dashboard will help you navigate the CRISPR drug anchor screens
+            which have data analyzed and loaded into the portal.
           </p>
+          <ul>
+            <li>
+              The “volcano” links will show a volcano plot of the differential
+              dependency analysis produced by Chronos-compare. The x-axis shows
+              difference in gene effect, negative values indicate greater
+              dependency in the drug vs. control arm.
+            </li>
+            <li>
+              The “scatter” links will show a scatter plot of the drug vs the
+              control arm gene effects.
+            </li>
+            <li>
+              The table includes cumulative population doublings (CPD) for each
+              screen arm; we have observed that there is little to no
+              significant differential dependency when the gap in CPDs between
+              the control and drug arm is less than 20% (% CPD change {">"}{" "}
+              -20), presumably due to low drug effect.
+            </li>
+          </ul>
           <p>
-            <b>Note</b>: the screens shown in the scatter plot are from
-            processing all screens together with Chronos, whereas the Chronos
-            compare volcano plots processed only the anchor screens. As a
-            result, the differential effect size in the volcano plot should be
-            similar but not exactly the same as the difference shown in the
-            scatter plot.
+            <b>Note</b>: the gene effects shown in the scatter plot are from
+            co-processing all screens with Chronos (ScreenGeneEffect), whereas
+            the Chronos-compare volcano plots are from processing each anchor
+            screen individually. As a result, the differential effect size in
+            the volcano plot should be similar but not exactly the same as the
+            difference shown in the scatter plot.
           </p>
         </div>
       </div>
