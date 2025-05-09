@@ -7,9 +7,14 @@ const columns = [
   { accessor: "OncotreePrimaryDisease" },
   { accessor: "OncotreeSubtype" },
   { accessor: "Drug" },
+  { accessor: "DrugConcentration" },
+  { accessor: "DrugArmAvgCPD" },
+  { accessor: "ControlArmAvgCPD" },
+  { accessor: "PercentCPDChange" },
   { accessor: "ExperimentID" },
   { accessor: "ControlArmScreenID" },
   { accessor: "DrugArmScreenID" },
+
   {
     accessor: "volcano plot link",
     disableFilters: true,
@@ -32,8 +37,11 @@ const defaultColumnsToShow = [
   "ModelID",
   "StrippedCellLineName",
   "OncotreeLineage",
-  "OncotreePrimaryDisease",
   "Drug",
+  "DrugConcentration",
+  "DrugArmAvgCPD",
+  "ControlArmAvgCPD",
+  "PercentCPDChange",
   "volcano plot link",
   "scatter plot link",
 ];
