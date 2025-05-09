@@ -1,7 +1,5 @@
-import collections
 import logging
 import pandas as pd
-import re
 from depmap.database import db
 from depmap.cell_line.models import (
     CellLine,
@@ -11,7 +9,6 @@ from depmap.cell_line.models import (
     DiseaseSubtype,
     TumorType,
 )
-from depmap.context.models import Context, ContextEntity
 
 
 log = logging.getLogger(__name__)
@@ -99,7 +96,8 @@ def insert_or_update_cell_lines(df):
             (2, row["lineage_2"]),
             (3, row["lineage_3"]),
             (4, row["lineage_4"]),
-            (5, row.get("legacy_sub_subtype")),
+            #            legacy_sub_subtype has been removed, so don't add it
+            #            (5, row.get("legacy_sub_subtype")),
             (6, row.get("legacy_molecular_subtype")),
         ]
         lineages = [
@@ -255,79 +253,3 @@ def create_or_retrieve_disease_subtype(name, associated_primary_disease=None):
         )
 
     return subtype_obj
-
-
-def load_contexts(context_file_path, must=True):
-    """
-    First get a dict of for every context, all the cell lines in it
-    """
-    cell_lines_per_context = get_cell_lines_in_context(context_file_path, must=must)
-    for name, cell_lines in cell_lines_per_context.items():
-        db.session.add(
-            ContextEntity(
-                label=name,  # this is duplicated, but not sure how to do otherwise
-                context=Context(name=name, cell_line=cell_lines),
-            )
-        )
-
-
-def get_cell_lines_in_context(context_file_path, must=True):
-    """
-    :param context_file_path: path to context boolean matrix csv
-    :return: list of Context objects of which the cell line is a member of 
-    """
-    print("loading context_file_path", context_file_path)
-    cell_lines_per_context = collections.defaultdict(lambda: [])
-    skipped_missing_cell_line = 0
-
-    df = pd.read_csv(
-        context_file_path, index_col=0
-    )  # pandas is ok with duplicate index names
-    # print("contexts", df, context_file_path)
-
-    indices_to_drop = df.index.duplicated(
-        keep="first"
-    )  # this has to be a positional true/false array, not the names of the indices. using df.drop(names of index) will all cell lines with that name
-    dropped_cell_lines = df[indices_to_drop].index.tolist()
-    print(
-        "Dropping the following cell lines; they have duplicates in the context matrix: \n{}".format(
-            dropped_cell_lines
-        )
-    )
-    for cell_line_name in dropped_cell_lines:
-        log_data_issue(
-            "Context",
-            "Duplicate cell line name",
-            identifier=cell_line_name,
-            id_type="CCLE_name",
-        )
-    df = df[~indices_to_drop]
-
-    cell_lines = df.index.values
-
-    for context_name in df.columns:
-        context_cell_lines = []
-
-        for cl_name in cell_lines[df[context_name] == 1]:
-            cl = CellLine.get_by_depmap_id(cl_name, must=must)
-            if cl is None:
-                skipped_missing_cell_line += 1
-                log_data_issue(
-                    "Context",
-                    "Missing cell line from context {}".format(context_name),
-                    identifier=cl_name,
-                    id_type="cell_line_name",
-                )
-            else:
-                context_cell_lines.append(cl)
-
-        cell_lines_per_context[context_name] = context_cell_lines
-
-    if skipped_missing_cell_line > 0:
-        log.warning(
-            "Skipped %s cell lines which were referenced by contexts, but could not find name",
-            skipped_missing_cell_line,
-        )
-
-    assert len(cell_lines_per_context) > 0
-    return cell_lines_per_context

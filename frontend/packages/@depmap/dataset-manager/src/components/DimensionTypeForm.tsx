@@ -5,45 +5,39 @@ import Form from "@rjsf/core";
 import { addDimensionTypeSchema } from "../models/addDimensionTypeSchema";
 import { RJSFSchema, UiSchema } from "@rjsf/utils";
 import { updateDimensionTypeSchema } from "../models/updateDimensionTypeSchema";
-import { Dataset } from "@depmap/types";
+import {
+  DimensionTypeWithCounts,
+  instanceOfErrorDetail,
+  TabularDataset,
+} from "@depmap/types";
+import { useSubmitButtonIsDisabled } from "../../utils/disableSubmitButton";
 
 interface DimensionTypeFormProps {
   onSubmit: (formData: any) => Promise<void>;
-  dimensionTypeToEdit: any | null;
+  dimensionTypeToEdit: DimensionTypeWithCounts | null;
   isEditMode: boolean;
-  datasets: Dataset[];
+  datasets: TabularDataset[];
 }
-
-const uiSchema: UiSchema = {
-  "ui:title": "", // removes the title <legend> html element,
-  id_column: {
-    "ui:help":
-      "Identifier name for the dimension type. Ex: For sample type gene, the identifier is entrez_id. entrez_id must then be a column in the metadata file.",
-  },
-  axis: {
-    "ui:help":
-      "Dimensions are either feature or sample. When used in a matrix dataset, features are oriented as columns and samples are oriented as rows.",
-  },
-  metadata_dataset_id: {
-    "ui:title": "Dataset Metadata",
-    "ui:help":
-      "This dataset contains metadata about your dimension type. At mininum one of the columns must match the ID Column of the dimension type and contain a column called 'label'.",
-  },
-  properties_to_index: {
-    "ui:help":
-      "Columns in the dataset file that you would like to index by or search by.",
-  },
-};
 
 export default function DimensionTypeForm(props: DimensionTypeFormProps) {
   const { onSubmit, isEditMode, dimensionTypeToEdit, datasets } = props;
-  const [editFormData, setEditFormData] = useState<any>(undefined);
-  const [editSchema, setEditSchema] = useState<RJSFSchema | null>(null);
+  const [dimensionTypeFormData, setDimensionTypeFormData] = useState<any>(
+    undefined
+  );
+  const [schema, setSchema] = useState<RJSFSchema | null>(null);
   const [submissionMsg, setSubmissionMsg] = useState<string | null>(null);
   const [hasError, setHasError] = useState<boolean>(false);
 
   React.useEffect(() => {
     if (isEditMode && dimensionTypeToEdit) {
+      const publicDatasetsWithDimensionType: TabularDataset[] = datasets.filter(
+        (d) => {
+          return (
+            d.index_type_name === dimensionTypeToEdit.name &&
+            d.group.id === "00000000-0000-0000-0000-000000000000"
+          );
+        }
+      );
       const dimensionTypeEditSchemaWithOptions = {
         ...updateDimensionTypeSchema,
         properties: {
@@ -54,31 +48,68 @@ export default function DimensionTypeForm(props: DimensionTypeFormProps) {
             default: null, // must include default null with enum options otherwise UI renders 2 null options
             enum: [
               null,
-              ...datasets.map((d) => {
+              ...publicDatasetsWithDimensionType.map((d) => {
                 return d.id;
               }),
             ],
             enumNames: [
               "None",
-              ...datasets.map((d) => {
+              ...publicDatasetsWithDimensionType.map((d) => {
                 return d.name;
               }),
             ],
           },
         },
       };
-      setEditSchema(dimensionTypeEditSchemaWithOptions);
+      setSchema(dimensionTypeEditSchemaWithOptions);
 
       // initialize form with selected dataset existing fields
       const initForm: { [key: string]: any } = {};
       Object.keys(updateDimensionTypeSchema.properties).forEach((key) => {
         if (key in dimensionTypeToEdit) {
-          initForm[key] = dimensionTypeToEdit[key];
+          initForm[key] = (dimensionTypeToEdit as any)[key];
         }
       });
-      setEditFormData(initForm);
+      setDimensionTypeFormData(initForm);
+    } else {
+      setSchema(addDimensionTypeSchema);
+      setDimensionTypeFormData({});
     }
   }, [dimensionTypeToEdit, isEditMode, datasets]);
+
+  const submitButtonIsDisabled = useSubmitButtonIsDisabled(
+    schema?.required,
+    dimensionTypeFormData
+  );
+
+  const uiSchema = React.useMemo(() => {
+    const formUiSchema: UiSchema = {
+      "ui:title": "", // removes the title <legend> html element,
+      id_column: {
+        "ui:help":
+          "Identifier name for the dimension type. Ex: For sample type gene, the identifier is entrez_id. entrez_id must then be a column in the metadata file.",
+      },
+      axis: {
+        "ui:help":
+          "Dimensions are either feature or sample. When used in a matrix dataset, features are oriented as columns and samples are oriented as rows.",
+      },
+      metadata_dataset_id: {
+        "ui:title": "Dataset Metadata",
+        "ui:help":
+          "This dataset contains metadata about your dimension type. At mininum one of the columns must match the ID Column of the dimension type and contain a column called 'label'.",
+      },
+      properties_to_index: {
+        "ui:help":
+          "Columns in the dataset file that you would like to index by or search by.",
+      },
+      "ui:submitButtonOptions": {
+        props: {
+          disabled: submitButtonIsDisabled,
+        },
+      },
+    };
+    return formUiSchema;
+  }, [submitButtonIsDisabled]);
 
   const onSubmission = async ({ formData }: any) => {
     setSubmissionMsg("Loading...");
@@ -90,7 +121,7 @@ export default function DimensionTypeForm(props: DimensionTypeFormProps) {
     } catch (e: any) {
       console.log(e);
       setHasError(true);
-      if ("detail" in e) {
+      if (instanceOfErrorDetail(e)) {
         setSubmissionMsg(e.detail as string);
       } else {
         setSubmissionMsg("An unknown error occurred!");
@@ -98,47 +129,36 @@ export default function DimensionTypeForm(props: DimensionTypeFormProps) {
     }
   };
 
-  return isEditMode && editSchema ? (
-    <>
-      <Form
-        formData={editFormData}
-        onChange={(e) => {
-          setEditFormData(e.formData);
-          // Refresh message if form changes
-          setSubmissionMsg(null);
-        }}
-        schema={editSchema}
-        uiSchema={uiSchema}
-        validator={validator}
-        onSubmit={onSubmission}
-      />
-      <p
-        style={{
-          color: hasError ? "red" : "gray",
-          paddingTop: "5px",
-          fontStyle: "italic",
-        }}
-      >
-        {submissionMsg}
-      </p>
-    </>
-  ) : (
-    <>
-      <Form
-        schema={addDimensionTypeSchema}
-        uiSchema={uiSchema}
-        validator={validator}
-        onSubmit={onSubmission}
-      />
-      <p
-        style={{
-          color: hasError ? "red" : "gray",
-          paddingTop: "5px",
-          fontStyle: "italic",
-        }}
-      >
-        {submissionMsg}
-      </p>
-    </>
-  );
+  const handleOnChange = (e: any) => {
+    setDimensionTypeFormData(e.formData);
+    // Refresh message if form changes
+    setSubmissionMsg(null);
+  };
+  if (schema) {
+    return (
+      <>
+        <Form
+          formData={dimensionTypeFormData}
+          onChange={handleOnChange}
+          schema={schema}
+          uiSchema={uiSchema}
+          validator={validator}
+          onSubmit={onSubmission}
+        />
+        <p
+          style={{
+            color: hasError ? "red" : "gray",
+            paddingTop: "5px",
+            fontStyle: "italic",
+          }}
+        >
+          {submissionMsg}
+        </p>
+      </>
+    );
+  }
+  // eslint-disable-next-line no-else-return
+  else {
+    return null;
+  }
 }

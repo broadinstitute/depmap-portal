@@ -68,9 +68,9 @@ function OverviewPanel(props: OverviewPanelProps) {
           <div className={styles.overColumnHeader}>Overview</div>
           <div className={styles.overviewParagraphBold}>
             The DepMap project, building off of the original Cancer Cell Line
-            Encyclopedia (CCLE) project, generates data and tools that can be
-            used and shared by researchers. New DepMap data is released twice a
-            year, in May and November.
+            Encyclopedia (CCLE) project and Project Achilles, generates data and
+            tools that can be used and shared by researchers. New DepMap data is
+            released twice a year, in May and November.
           </div>
           <div className={styles.overviewParagraphBold}>
             DepMap has an ever-evolving data structure that allows for
@@ -144,7 +144,16 @@ function OverviewPanel(props: OverviewPanelProps) {
           />
           {plotElement && (
             <div className={styles.plotFooter}>
-              *These datasets are growing as part of the DepMap Release dataset.
+              <div className={styles.plotFooterSection1}>
+                *These datasets are growing as part of the DepMap Release
+                dataset.
+              </div>
+              <div className={styles.plotFooterSection2}>
+                <sup>†</sup> The Drug Repurposing screens varied in the number
+                of lines screened. Originally compounds screened were tested in
+                578 lines, but collection of lines grew over time with the last
+                batch of compounds being tested in 916 lines.
+              </div>
             </div>
           )}
         </div>

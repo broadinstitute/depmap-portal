@@ -1,6 +1,7 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import cx from "classnames";
 import { Tooltip, WordBreaker } from "@depmap/common-components";
+import { useDeprecatedDataExplorerApi } from "../../contexts/DeprecatedDataExplorerApiContext";
 import PlotConfigSelect from "../PlotConfigSelect";
 import styles from "../../styles/DimensionSelect.scss";
 
@@ -13,6 +14,7 @@ interface Props {
     isDisabled: boolean;
     isDefault: boolean;
   }[];
+  index_type: string | null;
   value: string | null;
   onChange: (dataset_id: string | null) => void;
   showDefaultHint: boolean;
@@ -20,9 +22,36 @@ interface Props {
   onClickShowModal?: () => void;
 }
 
+// The select component gets confused if a given_id is used in place of a
+// dataset's proper id. This function will convert the former to the latter.
+const useNormalizedValue = (
+  value: string | null,
+  index_type: string | null
+) => {
+  const [normalizedValue, setNormalizedValue] = useState<string | null>(value);
+  const api = useDeprecatedDataExplorerApi();
+
+  useEffect(() => {
+    setNormalizedValue(value);
+
+    if (value && index_type) {
+      api.fetchDatasetsByIndexType().then((allDatasets) => {
+        allDatasets[index_type].forEach((dataset) => {
+          if (dataset.given_id === value) {
+            setNormalizedValue(dataset.id);
+          }
+        });
+      });
+    }
+  }, [api, value, index_type]);
+
+  return normalizedValue;
+};
+
 function DataVersionSelect({
   show,
   isLoading,
+  index_type,
   value,
   options,
   onChange,
@@ -30,13 +59,16 @@ function DataVersionSelect({
   showNoDefaultHint,
   onClickShowModal = undefined,
 }: Props) {
+  const normalizedValue = useNormalizedValue(value, index_type);
+
   return (
     <PlotConfigSelect
+      data-version-select
       isClearable
       show={show}
       enable={options.length > 1 && !isLoading}
       isLoading={isLoading}
-      value={isLoading ? null : value}
+      value={isLoading ? null : normalizedValue}
       options={options}
       onChange={onChange}
       label={

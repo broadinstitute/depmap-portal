@@ -1,15 +1,12 @@
+from dataclasses import dataclass
 from enum import Enum
 from datetime import date
-import sqlalchemy
-import pandas as pd
 from typing_extensions import TypedDict
 from depmap.database import Column, Integer, Model, String
 
 from flask import current_app, url_for
-from depmap.dataset.models import Dataset
 from typing import Optional, Callable, List, Dict, Set, Union
-from depmap.utilities.exception import DownloadHeadlinersException
-from depmap.taiga_id.models import TaigaAlias
+from depmap.taiga_id.models import TaigaAlias, NoSuchTaigaAlias
 from depmap.access_control import get_owner_id_from_group_display_name
 
 
@@ -66,39 +63,6 @@ class FileType(Enum):
     @staticmethod
     def get_all_display_names():
         return [type.display_name for type in FileType]
-
-
-class FileSubType(Enum):
-    """
-    All these are just stable identifiers
-    These are only used in the downloads model (eventually processed in the view)
-    """
-
-    model_conditions_mapping = "model_conditions_mapping"
-    crispr_screen = "crispr_screen"
-    drug_screen = "drug_screen"
-    copy_number = "copy_number"
-    mutations = "mutations"
-    expression = "expression"
-    fusions = "fusions"
-    read_me = "read_me"
-
-    @property
-    def display_name(self):
-        return {
-            FileSubType.model_conditions_mapping: "Model, Conditions, and Mapping",
-            FileSubType.crispr_screen: "CRISPR Screen",
-            FileSubType.drug_screen: "Drug Screen",
-            FileSubType.copy_number: "Copy Number",
-            FileSubType.mutations: "Mutations",
-            FileSubType.expression: "Expression",
-            FileSubType.fusions: "Fusions",
-            FileSubType.read_me: "READ ME",
-        }[self]
-
-    @staticmethod
-    def get_all_display_names():
-        return [type.display_name for type in FileSubType]
 
 
 class FileSource(Enum):
@@ -178,8 +142,8 @@ class ExternalBucketUrl(BucketUrl):
 class DmcBucketUrl(BucketUrl):
     BUCKET = "depmap-dmc-downloads"
 
-    def __init__(self, file_name):
-        super().__init__(DmcBucketUrl.BUCKET, file_name)
+    def __init__(self, file_name, dl_name=None):
+        super().__init__(DmcBucketUrl.BUCKET, file_name=file_name, dl_name=dl_name)
 
     def __repr__(self):
         return "DmcBucketUrl({})".format(repr(self.file_name))
@@ -484,6 +448,13 @@ class DownloadFileGlobalSearch(Model):
         self.release_name = release_name
 
 
+@dataclass
+class FileSubtype:
+    code: str
+    label: str
+    position: int
+
+
 class DownloadFile:
     def __init__(
         self,
@@ -491,7 +462,7 @@ class DownloadFile:
         type: FileType,
         size: str,
         url: Union[BucketUrl, TaigaOnly, RetractedUrl, str],
-        sub_type: Optional[FileSubType] = None,  # Required on the most current release
+        sub_type: Optional[FileSubtype] = None,  # Required on the most current release
         taiga_id: Optional[str] = None,
         canonical_taiga_id: Optional[str] = None,
         sources: Optional[List[FileSource]] = None,
@@ -512,7 +483,7 @@ class DownloadFile:
         self.display_label = display_label
         assert isinstance(type, FileType)
         self.type: FileType = type
-        self.sub_type: Optional[FileSubType] = sub_type
+        self.sub_type: Optional[FileSubtype] = sub_type
 
         self.size: str = size
         self._url: Union[BucketUrl, TaigaOnly, RetractedUrl, str] = url
@@ -626,9 +597,22 @@ class DownloadFile:
         if self.canonical_taiga_id:
             canonical_taiga_id = self.canonical_taiga_id
         else:
-            canonical_taiga_id = TaigaAlias.get_canonical_taiga_id(
-                self.original_taiga_id
-            )
+            try:
+                canonical_taiga_id = TaigaAlias.get_canonical_taiga_id(
+                    self.original_taiga_id
+                )
+            except NoSuchTaigaAlias as ex:
+                if current_app.config["ENV"] == "dev":  # pyright: ignore
+                    # this is a bit of a hack but it is handy for locally
+                    # testing themes without having the taiga aliases all
+                    # loaded into the DB correctly. It's only the really
+                    # old releases which are missing canonical taiga IDs
+                    # so just assume those IDs are canonical already because
+                    # they don't matter.
+                    print(f"Warning: {ex}, assuming ID is canonical ID")
+                    canonical_taiga_id = self.original_taiga_id
+                else:
+                    raise
 
         return canonical_taiga_id
 
@@ -648,20 +632,9 @@ class DownloadFile:
 
     @property
     def url(self):
-        if (
-            current_app.config["ENABLED_FEATURES"].use_taiga_urls_downloads_page
-            and isinstance(self._url, TaigaOnly)
-        ) or (
-            current_app.config["ENABLED_FEATURES"].use_taiga_urls
-            and isinstance(self._url, DmcBucketUrl)
-        ):
-            # files with DmcBucketUrl are hosted on the dmc bucket just so that the consortium can download it
-            # for these files, in skyros there should not be a download icon because
-            #   this will cause inconsistencies in which files have a download icon,
-            #   and may imply that the data is public
-            # the way this if statement is split allows dev to just change
-            # ENV_TYPE
-
+        if current_app.config[
+            "ENABLED_FEATURES"
+        ].use_taiga_urls_downloads_page and isinstance(self._url, TaigaOnly):
             # queries to the db use .taiga_id. outward links use .original_taiga_id
             assert self.original_taiga_id is not None
             return None  # front end will use taiga_id field

@@ -32,13 +32,13 @@ SERVER_NAME = "127.0.0.1:5000"
 PROJECT_ROOT = DevConfig.PROJECT_ROOT
 LOADER_DATA_DIR = DevConfig.LOADER_DATA_DIR
 WEBAPP_DATA_DIR = DevConfig.WEBAPP_DATA_DIR
-DOWNLOADS_PATH = os.path.join(
-    Config.PROJECT_ROOT, f"../config/{base_settings.ENV_TYPE}/downloads"
-)
+DOWNLOADS_PATHS = [
+    os.path.join(Config.PROJECT_ROOT, f"../config/{base_settings.ENV_TYPE}/downloads",),
+    "../config/shared/public_downloads",
+]
 THEME_PATH = os.path.join(
     Config.PROJECT_ROOT, f"../config/{base_settings.ENV_TYPE}/theme/"
 )
-SHARED_DOWNLOADS_PATH = "../config/shared/shared_downloads"
 DB_NAME = Config.DB_NAME
 DB_PATH = os.path.join(WEBAPP_DATA_DIR, DB_NAME)
 NONSTANDARD_DATA_DIR = DevConfig.NONSTANDARD_DATA_DIR

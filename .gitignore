@@ -127,10 +127,10 @@ pipeline/state
 # celery/redis
 dump.rdb
 
-# ignore files downloaded in release-scripts
-release-scripts/**/*.csv
-release-scripts/**/*.md
-release-scripts/**/depmap-gumbo-pull-sa.json
+# ignore files downloaded in the data-prep-pipeline
+data-prep-pipeline/**/*.csv
+data-prep-pipeline/**/*.md
+data-prep-pipeline/**/depmap-gumbo-pull-sa.json
 # used for generating download entries
 metadata.csv
 pipeline/xrefs-internal-DO-NOT-EDIT-ME
@@ -174,9 +174,12 @@ app_datasets/
 breadbox/install
 breadbox/breadbox/static
 breadbox/breadbox/result
-# generated file
+
+# generated files
 portal-backend/depmap/utilities/color_palette.py
 breadbox/app_datasets
+breadbox_client/
+latest-breadbox-api.json
 secrets
 
 # data access logs
@@ -184,3 +187,6 @@ portal-backend/access.log
 
 # predictability output_data from local run
 output_data/
+data-prep-pipeline/state
+
+portal-backend/gcscache

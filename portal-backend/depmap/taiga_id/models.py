@@ -5,6 +5,10 @@ from sqlalchemy.orm.exc import NoResultFound
 from depmap.database import Column, Model, String
 
 
+class NoSuchTaigaAlias(NoResultFound):
+    pass
+
+
 class TaigaAlias(Model):
     __tablename__ = "taiga_alias"
     taiga_id = Column(String, primary_key=True, nullable=False)
@@ -17,7 +21,7 @@ class TaigaAlias(Model):
             try:
                 result = q.one()
             except NoResultFound:
-                raise NoResultFound(
+                raise NoSuchTaigaAlias(
                     "Could not find TaigaAlias where taiga_id = {}".format(taiga_id)
                 )
         else:

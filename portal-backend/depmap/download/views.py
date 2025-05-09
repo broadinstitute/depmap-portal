@@ -1,3 +1,4 @@
+import dataclasses
 import os
 from flask import (
     Blueprint,
@@ -77,34 +78,6 @@ def download_base_url():
 @blueprint.route("/all/")
 def view_all():
     return _redirect_to_new_data_page()
-
-
-@blueprint.route("/data_page_citation/")
-def view_data_page_citation():
-    return render_template("downloads/data_page_citation.html")
-
-
-def render_download_page(mode):
-    return render_template(
-        "downloads/all_downloads.html",
-        terms_definitions=ReleaseTerms.get_terms_to_text(),
-        bulk_files_csv_url=url_for("api.download_bulk_files_csv")
-        if current_app.config["ENABLED_FEATURES"].bulk_files_csv_url
-        else None,
-        mode=mode,
-    )
-
-
-def render_custom_download_page(mode):
-    mode = "customDownloads"
-    return render_template(
-        "downloads/custom_downloads.html",
-        all_terms=ReleaseTerms.get_all_terms(),
-        bulk_files_csv_url=url_for("api.download_bulk_files_csv")
-        if current_app.config["ENABLED_FEATURES"].bulk_files_csv_url
-        else None,
-        mode=mode,
-    )
 
 
 @blueprint.route("/api/downloads")
@@ -192,7 +165,7 @@ def get_file_record(release: DownloadRelease, f: DownloadFile):
     }
 
     if f.sub_type is not None:
-        file_record["fileSubType"] = f.sub_type.display_name
+        file_record["fileSubType"] = dataclasses.asdict(f.sub_type)
 
     if f.summary_stats is not None:
         file_record["summaryStats"] = f.summary_stats.stats

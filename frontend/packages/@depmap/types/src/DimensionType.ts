@@ -7,6 +7,18 @@ export interface DimensionType {
   properties_to_index?: string[] | null;
 }
 
+export interface DimensionTypeWithCounts extends DimensionType {
+  datasetsCount: number;
+}
+
+export interface FeatureDimensionType extends DimensionType {
+  axis: "feature";
+}
+
+export interface SampleDimensionType extends DimensionType {
+  axis: "sample";
+}
+
 export interface DimensionTypeAddArgs {
   name: string;
   display_name: string;

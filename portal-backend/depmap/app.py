@@ -33,7 +33,9 @@ from depmap.celligner.views import blueprint as celligner_blueprint
 from depmap.compound.views.index import blueprint as compound_blueprint
 from depmap.compute.views import blueprint as compute_blueprint
 from depmap.constellation.views import blueprint as constellation_blueprint
-from depmap.context.views import blueprint as context_blueprint
+from depmap.anchor_screen_dashboard.views import (
+    blueprint as anchor_screen_dashboard_blueprint,
+)
 
 from depmap.dataset.models import (
     ColMatrixIndex,
@@ -84,7 +86,6 @@ from depmap.tile.views import blueprint as tile_blueprint
 from depmap.compound_dashboard.views import blueprint as compound_dashboard_blueprint
 from depmap.utilities import color_palette
 from depmap.utilities.mobile_utils import is_mobile
-from depmap.vector_catalog.views import blueprint as vector_catalog_blueprint
 from depmap.external_tools.views import blueprint as external_tools_blueprint
 from depmap.data_explorer_2.views import blueprint as data_explorer_2_blueprint
 from depmap.groups_manager.views import blueprint as groups_manager_blueprint
@@ -357,7 +358,6 @@ def register_blueprints(app: Flask):
     app.register_blueprint(cell_line_blueprint)
     app.register_blueprint(celligner_blueprint)
     app.register_blueprint(dev_blueprint)
-    app.register_blueprint(context_blueprint)
     app.register_blueprint(interactive_blueprint)
     app.register_blueprint(global_search_blueprint)
     app.register_blueprint(partials_blueprint)
@@ -370,7 +370,6 @@ def register_blueprints(app: Flask):
     app.register_blueprint(cas_blueprint)
     app.register_blueprint(access_control_blueprint)
     app.register_blueprint(tda_blueprint)
-    app.register_blueprint(vector_catalog_blueprint)
     app.register_blueprint(private_dataset_blueprint)
     app.register_blueprint(constellation_blueprint)
     app.register_blueprint(tile_blueprint)
@@ -382,6 +381,7 @@ def register_blueprints(app: Flask):
     app.register_blueprint(context_explorer_blueprint)
     app.register_blueprint(data_page_blueprint)
     app.register_blueprint(flask_hunter_profile_blueprint)
+    app.register_blueprint(anchor_screen_dashboard_blueprint)
 
     saved_handlers = app.handle_exception, app.handle_user_exception
     app.register_blueprint(api_blueprint)
@@ -409,12 +409,14 @@ def register_errorhandlers(app: Flask):
         user_agent = request.headers.get("User-Agent", "")
 
         # we're really only interested in exceptions from real people going in stack driver
-        if "bot" in user_agent.lower():
-            log.warning(
-                "Not logging exception to stackdriver because user_agent contained 'bot'"
-            )
-        else:
-            exception_reporter.report()
+        if 500 <= error_code < 600:
+            if "bot" in user_agent.lower():
+                log.warning(
+                    "Not logging exception to stackdriver because user_agent contained 'bot'"
+                )
+            else:
+                exception_reporter.report()
+
         # If a HTTPException, pull the `code` attribute; default to 500
         return render_template("{0}.html".format(error_code)), error_code
 

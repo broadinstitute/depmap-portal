@@ -1,5 +1,4 @@
 import React from "react";
-import cx from "classnames";
 import ContextSelector from "../ContextSelector";
 import DataTypeSelect from "./DataTypeSelect";
 import UnitsSelect from "./UnitsSelect";
@@ -9,7 +8,7 @@ import SliceLabelSelect from "./SliceLabelSelect";
 import DataVersionSelect from "./DataVersionSelect";
 import AggregationSelect from "./AggregationSelect";
 import useDimensionStateManager from "./useDimensionStateManager";
-import styles from "../../styles/DimensionSelect.scss";
+import AllSelectsContainer from "./AllSelectsContainer";
 
 interface Props {
   className?: string | undefined;
@@ -21,6 +20,8 @@ interface Props {
   onClickCreateContext: () => void;
   onClickSaveAsContext: () => void;
   onClickShowModal?: () => void;
+  onHeightChange?: (el: HTMLDivElement, prevHeight: number) => void;
+  removeWrapperDiv?: boolean;
 }
 
 function AllSelects({
@@ -33,6 +34,8 @@ function AllSelects({
   onClickSaveAsContext,
   onClickShowModal = undefined,
   className = undefined,
+  onHeightChange = undefined,
+  removeWrapperDiv = false,
 }: Props) {
   const {
     dataType,
@@ -56,7 +59,11 @@ function AllSelects({
   } = state;
 
   return (
-    <div className={cx(styles.DimensionSelect, className)}>
+    <AllSelectsContainer
+      className={className}
+      onHeightChange={onHeightChange}
+      removeWrapperDiv={removeWrapperDiv}
+    >
       <DataTypeSelect
         value={dataType}
         options={dataTypeOptions}
@@ -88,6 +95,7 @@ function AllSelects({
         dataset_id={dataset_id || null}
         units={units || null}
         onChangeCompound={onChangeCompound}
+        removeWrapperDiv={removeWrapperDiv}
       />
       <ContextSelector
         enable
@@ -105,15 +113,21 @@ function AllSelects({
         onChange={onChangeAggregation}
       />
       <UnitsSelect
-        show={Boolean(dataType && !isSingleCompound && isModalVersion)}
+        show={Boolean(
+          dataType && isModalVersion && (!isSingleCompound || removeWrapperDiv)
+        )}
         value={units}
         options={unitsOptions}
         onChange={onChangeUnits}
         isLoading={isLoading}
       />
       <DataVersionSelect
-        show={Boolean(dataType || dataset_id) && !isSingleCompound}
+        show={
+          removeWrapperDiv ||
+          (Boolean(dataType || dataset_id) && !isSingleCompound)
+        }
         isLoading={isLoading}
+        index_type={index_type}
         value={dataset_id || null}
         options={dataVersionOptions}
         onChange={onChangeDataVersion}
@@ -124,7 +138,7 @@ function AllSelects({
         showNoDefaultHint={dataVersionOptions.every((o) => !o.isDefault)}
         onClickShowModal={onClickShowModal}
       />
-    </div>
+    </AllSelectsContainer>
   );
 }
 

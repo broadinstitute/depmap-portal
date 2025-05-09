@@ -1,9 +1,10 @@
 import hashlib
 import io
+
 import typing
 from dataclasses import dataclass
 from time import sleep, time
-from typing import Any, Dict, List, Literal, Optional, Union
+from typing import Any, Dict, List, Literal, Optional, Union, IO
 from uuid import UUID
 
 import pandas as pd
@@ -18,6 +19,7 @@ from breadbox_client.api.datasets import add_dataset_uploads as add_dataset_uplo
 from breadbox_client.api.datasets import get_dataset as get_dataset_client
 from breadbox_client.api.datasets import get_dataset_data as get_dataset_data_client
 from breadbox_client.api.datasets import get_tabular_dataset_data as get_tabular_dataset_data_client
+from breadbox_client.api.datasets import get_matrix_dataset_data as get_matrix_dataset_data_client
 from breadbox_client.api.datasets import get_dataset_features as get_dataset_features_client
 from breadbox_client.api.datasets import get_dataset_samples as get_dataset_samples_client
 from breadbox_client.api.datasets import get_datasets as get_datasets_client
@@ -30,29 +32,28 @@ from breadbox_client.api.groups import add_group_entry as add_group_entry_client
 from breadbox_client.api.groups import remove_group_access as remove_group_access_client
 from breadbox_client.api.groups import get_groups as get_groups_client
 from breadbox_client.api.types import add_dimension_type as add_dimension_type_client
-from breadbox_client.api.types import add_feature_type as add_feature_type_client
-from breadbox_client.api.types import add_sample_type as add_sample_type_client
 from breadbox_client.api.types import get_dimension_type as get_dimension_type_client
 from breadbox_client.api.types import get_dimension_types as get_dimension_types_client
 from breadbox_client.api.types import get_feature_types as get_feature_types_client
 from breadbox_client.api.types import get_sample_types as get_sample_types_client
-from breadbox_client.api.types import remove_feature_type as remove_feature_type_client
-from breadbox_client.api.types import remove_sample_type as remove_sample_type_client
+from breadbox_client.api.types import remove_dimension_type as remove_dimension_type_client
 from breadbox_client.api.types import update_dimension_type as update_dimension_type_client
-from breadbox_client.api.types import update_feature_type_metadata as update_feature_type_metadata_client
-from breadbox_client.api.types import update_sample_type_metadata as update_sample_type_metadata_client
+from breadbox_client.api.temp import get_associations as get_associations_client
+from breadbox_client.api.temp import add_associations as add_associations_client
+from breadbox_client.api.temp import get_associations_for_slice as get_associations_for_slice_client
+#
+
 from breadbox_client.models import (
     AccessType,
     AddDatasetResponse,
     AddDimensionType,
+    Associations,
+    AssociationTable,
+    AssociationsIn,
+    AssociationsInAxis,
     AddDimensionTypeAxis,
-    AnnotationTypeMap,
     BodyAddDataType,
-    BodyAddFeatureType,
-    BodyAddSampleType,
     BodyGetDatasetData,
-    BodyUpdateFeatureTypeMetadata,
-    BodyUpdateSampleTypeMetadata,
     BodyUploadFile,
     ColumnMetadata,
     ComputeParams,
@@ -66,12 +67,14 @@ from breadbox_client.models import (
     GroupEntry,
     GroupEntryIn,
     GroupOut,
-    IdMapping,
     MatrixDatasetParams,
     MatrixDatasetParamsDatasetMetadataType0,
     MatrixDatasetParamsFormat,
     MatrixDatasetResponse,
+    MatrixDimensionsInfo,
     SampleTypeOut,
+    SliceQuery,
+    SliceQueryIdentifierType,
     TableDatasetParams,
     TableDatasetParamsColumnsMetadata,
     TableDatasetParamsDatasetMetadataType0,
@@ -82,10 +85,13 @@ from breadbox_client.models import (
     UploadFileResponse,
     ValueType,
     MatrixDatasetUpdateParamsFormat,
-    TabularDatasetUpdateParamsFormat
+    TabularDatasetUpdateParamsFormat,
+    MatrixDatasetParamsDataFileFormat,
 )
+
 from breadbox_client.types import UNSET, Unset, File, Response
 from breadbox_facade.exceptions import BreadboxException
+import tempfile
 
 
 class TimeoutError(Exception):
@@ -131,9 +137,21 @@ class BBClient:
 
     def get_datasets(
         self,
+        feature_id: Optional[str] = None,
+        feature_type: Optional[str] = None,
+        sample_id: Optional[str] = None,
+        sample_type: Optional[str] = None,
+        value_type: Optional[str] = None,
     ) -> list[Union[MatrixDatasetResponse, TabularDatasetResponse]]:
         """Get metadata for all datasets available to current user."""
-        breadbox_response = get_datasets_client.sync_detailed(client=self.client)
+        breadbox_response = get_datasets_client.sync_detailed(
+            client=self.client,
+            feature_id=feature_id if feature_id else UNSET,
+            feature_type=feature_type if feature_type else UNSET,
+            sample_id=sample_id if sample_id else UNSET,
+            sample_type=sample_type if sample_type else UNSET,
+            value_type=ValueType(value_type) if value_type else UNSET,
+            )
         return self._parse_client_response(breadbox_response)
 
     def remove_dataset(self, dataset_id: str):
@@ -148,6 +166,7 @@ class BBClient:
         samples: Optional[list[str]],
         sample_identifier: Optional[Literal["id", "label"]],
     ) -> pd.DataFrame:
+        """DEPRECATED: Use get_tabular_dataset_data or get_matrix_dataset_data instead."""
         request_params = BodyGetDatasetData.from_dict(
             dict(
                 features=features,
@@ -170,12 +189,11 @@ class BBClient:
     def get_tabular_dataset_data(
         self, 
         dataset_id: str,
-        columns: Optional[list[str]],
-        identifier: Optional[Literal["id", "label"]],
-        indices: Optional[list[str]],
+        columns: Optional[list[str]] = None,
+        identifier: Optional[Literal["id", "label"]] = None,
+        indices: Optional[list[str]] = None,
         strict: bool = False,
     ):
-        
         request_params = TabularDimensionsInfo(
             columns=columns,
             identifier=FeatureSampleIdentifier(identifier) if identifier else UNSET,
@@ -192,6 +210,34 @@ class BBClient:
             return pd.DataFrame.from_dict(response)
         except Exception as e:
             raise Exception(e, "Unable to parse breadbox response into dataframe.")
+
+    def get_matrix_dataset_data(
+        self, 
+        dataset_id: str,
+        features: Optional[list[str]] = None,
+        feature_identifier: Optional[Literal["id", "label"]] = None,
+        samples: Optional[list[str]] = None,
+        sample_identifier: Optional[Literal["id", "label"]] = None,
+        strict = False,
+    ):
+        request_params = MatrixDimensionsInfo(
+            feature_identifier=FeatureSampleIdentifier(feature_identifier) if feature_identifier else UNSET,
+            features=features,
+            sample_identifier=FeatureSampleIdentifier(sample_identifier) if sample_identifier else UNSET,
+            samples=samples,
+        )
+        breadbox_response = get_matrix_dataset_data_client.sync_detailed(
+            dataset_id=dataset_id,
+            client=self.client,
+            body=request_params,
+            strict=strict,
+        )
+        response = self._parse_client_response(breadbox_response)
+        try:
+            return pd.DataFrame.from_dict(response)
+        except Exception as e:
+            raise Exception(e, "Unable to parse breadbox response into dataframe.")
+
 
     def get_dataset_features(self, dataset_id: str) -> list[dict[str, str]]:
         """Get information about each feature belonging to a given dataset."""
@@ -211,7 +257,7 @@ class BBClient:
         )
         return self._parse_client_response(breadbox_response)
 
-    def upload_file(self, file_handle: io.BytesIO, mime_type="text/csv", chunk_size=5 * 1024 * 1024) -> UploadedFile:
+    def upload_file(self, file_handle: IO[bytes], chunk_size=5 * 1024 * 1024) -> UploadedFile:
         "Uploads a file in pieces and returns a list of file IDs and MD5 hash for subsequent calls"
 
         md5_hash = hashlib.md5()
@@ -229,8 +275,7 @@ class BBClient:
                 body=BodyUploadFile(
                     file=File(
                         payload=io.BytesIO(chunk),
-                        file_name="unnamed",
-                        mime_type=mime_type,
+                        file_name="unnamed"
                     )
                 ),
             )
@@ -299,15 +344,31 @@ class BBClient:
         is_transient: bool = False,
         group_id: str = PUBLIC_GROUP_ID,
         value_type: str = ValueType.CONTINUOUS.value,
+        allowed_values: Optional[List[str]] = None,
         priority: Optional[int] = None,
         taiga_id: Optional[str] = None,
         given_id: Optional[str] = None,
         dataset_metadata: Optional[dict] = None,
+        upload_parquet=False,
         timeout=None,
+        log_status=lambda msg: None
     ) -> AddDatasetResponse:
+        log_status(f"add_matrix_dataset start")
         metadata = MatrixDatasetParamsDatasetMetadataType0.from_dict(dataset_metadata) if dataset_metadata else None
 
-        uploaded_file = self.upload_file(file_handle=io.BytesIO(data_df.to_csv(index=False).encode("utf8")))
+        if upload_parquet:
+            with tempfile.NamedTemporaryFile() as tmp:
+                log_status(f"writing parquet")
+                data_df.to_parquet(tmp.name, index=False)
+                log_status(f"uploading parquet")
+                uploaded_file = self.upload_file(tmp)
+            data_file_format=MatrixDatasetParamsDataFileFormat.PARQUET
+        else:
+            log_status("Writing CSV")
+            buffer = io.BytesIO(data_df.to_csv(index=False).encode("utf8"))
+            log_status(f"Uploading CSV")
+            uploaded_file = self.upload_file(file_handle=buffer)
+            data_file_format=MatrixDatasetParamsDataFileFormat.CSV
 
         params = MatrixDatasetParams(
             name=name,
@@ -319,19 +380,24 @@ class BBClient:
             sample_type=sample_type,
             units=units,
             value_type=ValueType(value_type),
+            allowed_values=allowed_values if allowed_values else UNSET,
             dataset_metadata=metadata,
             feature_type=feature_type if feature_type else UNSET,
             is_transient=is_transient,
             priority=priority if priority else UNSET,
             taiga_id=taiga_id if taiga_id else UNSET,
             given_id=given_id if given_id else UNSET,
+            data_file_format=data_file_format
         )
+        log_status(f"calling add_dataset_uploads_client.sync_detailed")
         breadbox_response = add_dataset_uploads_client.sync_detailed(
             client=self.client,
             body=params,
         )
         breadbox_response_ = typing.cast(AddDatasetResponse, self._parse_client_response(breadbox_response))
+        log_status(f"awaiting task result")
         result = self.await_task_result(breadbox_response_.id, timeout=timeout)
+        log_status(f"task completed")
         return result
 
     def update_dataset(
@@ -340,6 +406,7 @@ class BBClient:
         name: Union[str, Unset] = UNSET,
         dataset_metadata: Optional[dict] = None,
         group_id: Union[str, Unset] = UNSET,
+        given_id: Union[str, Unset] = UNSET,
     ) -> Union[MatrixDatasetResponse, TabularDatasetResponse]:
         """Update the values specified for the given dataset"""
         from breadbox_client.models import MatrixDatasetUpdateParams, TabularDatasetUpdateParams
@@ -356,6 +423,7 @@ class BBClient:
             name=name,
             dataset_metadata=metadata,
             group_id=group_id,
+            given_id=given_id
         )
         breadbox_response = update_dataset_client.sync_detailed(
             dataset_id=dataset_id,
@@ -374,11 +442,16 @@ class BBClient:
         breadbox_response = get_sample_types_client.sync_detailed(client=self.client)
         return self._parse_client_response(breadbox_response)
 
-    def add_dimension_type(self, name: str, display_name: str, id_column: str, axis: Union[AddDimensionTypeAxis, str]):
+    def add_dimension_type(self, name: str, id_column: str, axis: Union[AddDimensionTypeAxis, str], display_name: Optional[str] = None):
         if isinstance(axis, str):
             axis = AddDimensionTypeAxis(axis)
 
-        params = AddDimensionType(axis=axis, id_column=id_column, name=name, display_name=display_name)
+        params = AddDimensionType(
+            axis=axis, 
+            id_column=id_column, 
+            name=name, 
+            display_name=display_name if display_name is not None else UNSET
+        )
 
         breadbox_response = add_dimension_type_client.sync_detailed(client=self.client, body=params)
         return self._parse_client_response(breadbox_response)
@@ -397,6 +470,11 @@ class BBClient:
     def get_dimension_type(self, name: str):
         breadbox_response = get_dimension_type_client.sync_detailed(name=name, client=self.client)
         return self._parse_client_response(breadbox_response)
+    
+    def delete_dimension_type(self, name: str):
+        breadbox_response = remove_dimension_type_client.sync_detailed(name=name, client=self.client)
+        return self._parse_client_response(breadbox_response)
+    
 
     # DATA TYPES
 
@@ -437,6 +515,24 @@ class BBClient:
         breadbox_response = remove_group_access_client.sync_detailed(client=self.client, group_entry_id=group_entry_id)
         return self._parse_client_response(breadbox_response)
 
+    # ASSOCIATIONS
+    def get_associations(self) -> List[AssociationTable]:
+        breadbox_response = get_associations_client.sync_detailed(client=self.client)
+        return self._parse_client_response(breadbox_response)
+
+    def add_associations(self, dataset_1_id:str, dataset_2_id: str, axis :str, associations_table_filename : str) -> AssociationTable:
+        with open(associations_table_filename, "rb") as fd:
+            uploaded_file = self.upload_file(fd)
+
+        associations_in = AssociationsIn(axis = AssociationsInAxis(axis), dataset_1_id=dataset_1_id, dataset_2_id=dataset_2_id, file_ids=uploaded_file.file_ids, md5=uploaded_file.md5)
+        breadbox_response = add_associations_client.sync_detailed(client=self.client, body=associations_in)
+
+        return self._parse_client_response(breadbox_response)
+
+    def get_associations_for_slice(self, dataset_id: str, identifier: str, identifier_type: str) -> Associations:
+        breadbox_response = get_associations_for_slice_client.sync_detailed(client=self.client, body=SliceQuery(dataset_id=dataset_id, identifier=identifier,
+                                                                                    identifier_type=SliceQueryIdentifierType(identifier_type)))
+        return self._parse_client_response(breadbox_response)
 
     # API
 

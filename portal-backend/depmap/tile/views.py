@@ -1,5 +1,13 @@
+from dataclasses import dataclass
+import uuid
+
 from flask.globals import current_app
 import pandas as pd
+
+from dataclasses import dataclass
+import uuid
+
+
 import depmap.celfie.utils as celfie_utils
 from flask import Blueprint, render_template, abort, jsonify, url_for, request
 from depmap.enums import GeneTileEnum, CompoundTileEnum, CellLineTileEnum
@@ -16,8 +24,9 @@ from depmap.enums import DependencyEnum
 from depmap.gene.views.executive import (
     format_mutation_profile,
     format_codependencies,
-    format_dep_dist_and_enrichment_boxes,
     generate_correlations_table_from_datasets,
+    get_dependency_distribution,
+    get_enrichment_boxes,
 )
 from depmap.compound.views.executive import (
     determine_compound_experiment_and_dataset,
@@ -33,7 +42,7 @@ from depmap.gene.models import Gene
 from depmap.compound.models import Compound, CompoundExperiment
 from depmap.dataset.models import DependencyDataset, BiomarkerDataset
 from depmap.metmap.models import MetMap500
-from depmap.extensions import cansar
+from depmap.extensions import cansar, breadbox
 import requests
 from typing import Optional, List, Tuple
 from mypy_extensions import TypedDict
@@ -57,6 +66,12 @@ Returns a json response which contains the following:
 # erlotinib:PLX-4032 (2:1 mol/mol) which have slashes and colons.
 
 
+@dataclass
+class RenderedTile:
+    html: str
+    js_callback: str
+
+
 @blueprint.route("/<subject_type>/<tile_name>/<path:identifier>")
 @cache_without_user_permissions()
 def render_tile(subject_type, tile_name, identifier):
@@ -65,7 +80,7 @@ def render_tile(subject_type, tile_name, identifier):
         gene = Gene.query.filter_by(label=identifier).one_or_none()
         if gene is None:
             abort(404)
-        html = render_gene_tile(tile_name, gene)
+        rendered_tile = render_gene_tile(tile_name, gene)
     elif subject_type == "compound":
         compound = Compound.query.filter_by(label=identifier).one_or_none()
         if compound is None:
@@ -79,7 +94,7 @@ def render_tile(subject_type, tile_name, identifier):
             for x in compound_experiment_and_datasets
             if not x[1].is_ic50 and not x[1].is_dose_replicate
         ]  # filter for non ic50 or dose replicate datasets
-        html = render_compound_tile(
+        rendered_tile = render_compound_tile(
             tile_name, compound, compound_experiment_and_datasets, args_dict
         )
     elif subject_type == "cell_line":
@@ -87,26 +102,22 @@ def render_tile(subject_type, tile_name, identifier):
         if cell_line is None:
             abort(404)
 
-        html = render_cell_line_tile(tile_name, cell_line)
+        rendered_tile = render_cell_line_tile(tile_name, cell_line)
     else:
         abort(400)
+        # add a raise here because the linter doesn't realize the abort will always raise
+        # and thinks it's possible that rendered_tile will be unassigned after leaving this block
+        raise Exception("the abort will prevent this from executing")
 
-    js_callback = '(function(containerId){$("#"+containerId+" .popover-selector").popover()})'  # initialize js callback function
-    # Decription tile makes additional ajax call to grab info
-    if tile_name == GeneTileEnum.description.value and subject_type == "gene":
-        entrez_id = Gene.query.filter_by(label=identifier).one_or_none().entrez_id
-        js_callback = (
-            '(function() {getAbout("' + str(entrez_id) + '")})'
-        )  # References function in about.js.
-
-    # MetMap tile uses d3.js to render a plot
-    if tile_name == CellLineTileEnum.metmap.value and subject_type == "cell_line":
-        js_callback = render_template(
-            "tiles/metmap-petal-plot.js", depmap_id=identifier
-        )
-
-    # if tile_name == CellLineTileEnum.pref_dep.value and subject_type == "cell_line":
-    # js_callback = render_template("tiles/pref-dep-plot.js", depmap_id=identifier)
+    if isinstance(rendered_tile, RenderedTile):
+        html = rendered_tile.html
+        js_callback = rendered_tile.js_callback
+    else:
+        # fall back to the original behavior: render methods return html and we use a hardcoded js snippet for all tiles
+        # that didn't provide one
+        assert isinstance(rendered_tile, str)
+        html = rendered_tile
+        js_callback = '(function(containerId){$("#"+containerId+" .popover-selector").popover()})'  # initialize js callback function
 
     # If html is just whitespace, coerce whitespace to empty string
     if all(s in (" ", "\n") for s in html):
@@ -122,53 +133,23 @@ def render_cell_line_tile(tile_name: str, cell_line: DepmapModel):
     if tile_name not in tiles:
         abort(400)
     tile_html_fn = tiles[tile_name]
-    html = tile_html_fn(cell_line)
-    return html
-
-
-def get_cell_line_description_html(model: DepmapModel):
-    oncotree_primary_disease = (
-        model.oncotree_primary_disease if model.oncotree_primary_disease else None
-    )
-    oncotree_subtype = model.oncotree_subtype if model.oncotree_subtype else None
-    primary_or_metastasis = model.primary_or_metastasis
-    source_type = model.source_type
-    sex = model.sex
-    image = get_image_url(model.image_filename)
-
-    if model.lineage_is_unknown():
-        lineage = []
-    else:
-        lineages = sorted(model.cell_line.lineage.all(), key=lambda x: x.level)
-        lineage = [
-            {
-                "display_name": lineage.display_name,
-                "url": url_for("context.view_context", context_name=lineage.name)
-                if lineage.level < 5
-                else None,  # NOTE: We cannot provide context link for lineage levels 5-6 since context matrix is only built from lineage levels 1-4. Temporary until we are able to include these lineage levels to our context matrix
-            }
-            for lineage in lineages
-        ]
-
-    return render_template(
-        "tiles/cell_line_description.html",
-        oncotree_primary_disease=oncotree_primary_disease,
-        oncotree_subtype=oncotree_subtype,
-        lineage=lineage,
-        primary_or_metastasis=primary_or_metastasis,
-        source_type=source_type,
-        sex=sex,
-        image=image,
-    )
+    rendered_tile = tile_html_fn(cell_line)
+    return rendered_tile
 
 
 def get_cell_line_metmap_html(cell_line: DepmapModel):
     metmap_models = MetMap500.get_all_by_depmap_id(cell_line.model_id)
     metmap_data = [model.serialize for model in metmap_models]
 
-    return render_template(
+    html = render_template(
         "tiles/metmap.html", depmap_id=cell_line.model_id, metmap_data=metmap_data
     )
+    # MetMap tile uses d3.js to render a plot
+    js_callback = render_template(
+        "tiles/metmap-petal-plot.js", depmap_id=cell_line.model_id
+    )
+
+    return RenderedTile(html, js_callback)
 
 
 def render_gene_tile(tile_name, gene):
@@ -189,8 +170,8 @@ def render_gene_tile(tile_name, gene):
     if tile_name not in tiles:
         abort(400)
     tile_html = tiles[tile_name]
-    html = tile_html(gene)
-    return html
+    rendered_tile = tile_html(gene)
+    return rendered_tile
 
 
 def render_compound_tile(
@@ -208,8 +189,8 @@ def render_compound_tile(
     if tile_name not in tiles:
         abort(400)
     tile_html = tiles[tile_name]
-    html = tile_html(compound, cpd_exp_and_datasets, query_params_dict)
-    return html
+    rendered_tile = tile_html(compound, cpd_exp_and_datasets, query_params_dict)
+    return rendered_tile
 
 
 # TODO: Maybe put this logic above to avoid multiple calls of same datasets in multiple tiles
@@ -365,37 +346,19 @@ def get_targeting_compounds_html(gene):
 
 
 def get_enrichment_html(
-    entity, compound_experiment_and_datasets=None, query_params_dict={}
+    entity: Entity, compound_experiment_and_datasets=None, query_params_dict={}
 ):
-    entity_type = entity.get_entity_type()
-    if entity_type == "gene":
-        crispr_dataset = get_dependency_dataset_for_entity(
-            DependencyDataset.get_dataset_by_data_type_priority(
-                DependencyDataset.DataTypeEnum.crispr
-            ).name,
-            entity.entity_id,
-        )
+    div_id = str(uuid.uuid4())
+    entity_label = entity.label
 
-        rnai_dataset = get_dependency_dataset_for_entity(
-            DependencyDataset.get_dataset_by_data_type_priority(
-                DependencyDataset.DataTypeEnum.rnai
-            ).name,
-            entity.entity_id,
-        )
-
-        enrichment_boxes = format_dep_dist_and_enrichment_boxes(
-            entity, crispr_dataset, rnai_dataset
-        )[1]
-    elif entity_type == "compound":
-        best_ce_and_d = determine_compound_experiment_and_dataset(
-            compound_experiment_and_datasets
-        )
-        enrichment_boxes = format_enrichment_boxes(best_ce_and_d)
-
-    return render_template(
-        "tiles/selectivity.html",
-        enrichment_boxes=enrichment_boxes,
-        is_gene_entity_type=entity_type == "gene",
+    return RenderedTile(
+        f'<div id="{div_id}">get_enrichment_html is stubbed out</div>',
+        f"""(
+        function() {{
+            console.log("about to call initEnrichmentTile");
+            DepMap.initEnrichmentTile("{div_id}", "{entity_label}", "{entity.type}");
+            console.log("after initEnrichmentTile");
+        }})""",
     )
 
 
@@ -500,7 +463,7 @@ def get_omics_html(gene):
 def get_description_html(entity, cpd_exp_and_datasets=None, query_params_dict={}):
     entity_type = entity.type
     if entity_type == "gene":
-        return render_template(
+        html = render_template(
             "tiles/description.html",
             about={
                 "entrez_id": entity.entrez_id,
@@ -511,6 +474,12 @@ def get_description_html(entity, cpd_exp_and_datasets=None, query_params_dict={}
                 "hngc_id": entity.hgnc_id,
             },
         )
+
+        js_callback = (
+            '(function() {getAbout("' + str(entity.entrez_id) + '")})'
+        )  # References function in about.js.
+        return RenderedTile(html, js_callback)
+
     elif entity_type == "compound":
         return render_template(
             "tiles/compound_description.html", about=format_about(entity),
@@ -519,7 +488,13 @@ def get_description_html(entity, cpd_exp_and_datasets=None, query_params_dict={}
 
 def get_essentiality_html(gene):
     # we also only do this for the essentiality tile, because the other tiles involve precomputed results which we have not calculated for the other enums
-    crispr_dataset = _get_highest_priority_crispr_dataset_with_data_for_gene(gene)
+
+    crispr_dataset = get_dependency_dataset_for_entity(
+        DependencyDataset.get_dataset_by_data_type_priority(
+            DependencyDataset.DataTypeEnum.crispr
+        ).name,
+        gene.entity_id,
+    )
 
     rnai_dataset = get_dependency_dataset_for_entity(
         DependencyDataset.get_dataset_by_data_type_priority(
@@ -528,30 +503,9 @@ def get_essentiality_html(gene):
         gene.entity_id,
     )
 
-    dep_dist, _ = format_dep_dist_and_enrichment_boxes(
-        gene, crispr_dataset, rnai_dataset
-    )
+    dep_dist = get_dependency_distribution(gene, crispr_dataset, rnai_dataset)
 
     return render_template("tiles/essentiality.html", dep_dist=dep_dist,)
-
-
-def _get_highest_priority_crispr_dataset_with_data_for_gene(gene: Gene):
-    """
-    NOTE: Get the highest priority crispr dataset that contains the given gene is limited bc it is used in essentiality tile where GeneExecutiveInfo only has info for 
-    ['Chronos_Combined', 'Chronos_Score', 'RNAi_merged']
-    """
-    top_crispr_enums = [
-        DependencyDataset.DependencyEnum.Chronos_Combined,
-        DependencyDataset.DependencyEnum.Chronos_Score,
-    ]
-    crispr_dataset = None
-
-    # find the first crispr dataset in the priority list for which there is data for this gene
-    for crispr_enum in top_crispr_enums:
-        crispr_dataset = get_dependency_dataset_for_entity(crispr_enum, gene.entity_id)
-        if crispr_dataset:
-            break
-    return crispr_dataset
 
 
 def get_codependencies_html(gene):
@@ -566,6 +520,9 @@ def get_confidence_html(gene):
     return render_template("tiles/confidence.html", confidence=confidence)
 
 
+from oauthlib.oauth2.rfc6749.errors import UnauthorizedClientError
+
+
 def get_tractability_html(gene):
     uniprot_ids = gene.get_uniprot_ids()
 
@@ -576,12 +533,16 @@ def get_tractability_html(gene):
             "Got an SSLError because cansar site cert expired. Check if this continues in future!"
         )
         proteins = None
+    except UnauthorizedClientError as e:
+        print("Got unauthorized client error trying to fetch from CanSAR. Ignoring")
+        proteins = None
     return render_template("tiles/tractability.html", proteins=proteins)
 
 
 def get_sensitivity_html(
     compound, compound_experiment_and_datasets, query_params_dict={}
 ):
+    # DEPRECATED: will be redesigned/replaced
     best_ce_and_d = determine_compound_experiment_and_dataset(
         compound_experiment_and_datasets
     )
@@ -595,6 +556,7 @@ def get_sensitivity_html(
 def get_correlations_html(
     compound, compound_experiment_and_datasets, query_params_dict={}
 ):
+    # DEPRECATED: will be redesigned/replaced
     return render_template(
         "tiles/correlations.html",
         correlations=format_top_corr_table(compound_experiment_and_datasets),
@@ -604,11 +566,10 @@ def get_correlations_html(
 def get_availability_html(
     compound, compound_experiment_and_datasets, query_params_dict={}
 ):
-    compound_id = compound.entity_id
     return render_template(
         "tiles/availability.html",
         name=compound.label,
-        availability=format_availability_tile(compound_id),
+        availability=format_availability_tile(compound),
     )
 
 
@@ -679,6 +640,7 @@ def get_correlations_for_celfie_react_tile(
 def get_celfie_html(
     entity, compound_experiment_and_datasets=None, query_params_dict={}
 ):
+    # DEPRECATED: will be redesigned/replaced
     # show tile only if env is skyros/dev
     show_celfie = current_app.config["ENABLED_FEATURES"].celfie
 

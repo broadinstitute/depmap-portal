@@ -4,7 +4,7 @@
     <div>
       <h2 class="no_margin cardtitle_text">Enriched Lineages <span>
           <img class="info-icon popover-selector" src="{{ url_for('static', filename='img/gene_overview/info_purple.svg') }}"
-              data-toggle="tooltip" data-placement="right" tabindex="0" data-trigger="focus" data-html="true" data-content="Enriched lineages have p-values < 0.0005 (shown in parentheses). n= indicates the number of cell lines plotted in that lineage. The ranking is done based on effect size in an ascending order."
+              data-toggle="tooltip" data-placement="right" tabindex="0" data-trigger="focus" data-html="true" data-content="Enriched lineages have p-values < 0.05 (shown in parentheses). n= indicates the number of cell lines plotted in that lineage. The ranking is done based on effect size in an ascending order."
           >
       </span></h2>
   </div>
@@ -39,7 +39,7 @@
         <div>
             {% if not is_mobile %}
             <p class="view-details-text">
-              <span>View details in the <a href="javascript:clickTab('#dependency')">{% if is_gene_entity_type %}Perturbation Effects{% else %}Sensitivity{% endif %} tab</a></span></p>
+              <span>View details in the <a target="_blank" rel="noreferrer noopener" href="{{ url_for('context_explorer.view_context_explorer', tab=context_explorer_dataset_tab, context=most_selective_code) }}">Context Explorer</a></span></p>
             {% endif %}
         </div>
       </div>

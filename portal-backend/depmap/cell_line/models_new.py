@@ -10,31 +10,49 @@ from collections import Counter
 
 import pandas as pd
 import sqlalchemy
-from sqlalchemy import and_, or_
+from sqlalchemy import and_, or_, UniqueConstraint
 
 from depmap.database import Column, ForeignKey, Integer, Model, String, db, relationship
 
 Table = db.Table
 
+depmap_model_context_association = Table(
+    "depmap_model_context_association",
+    Column("model_id", String, ForeignKey("depmap_model.model_id"), nullable=False),
+    Column(
+        "subtype_code",
+        String,
+        ForeignKey("subtype_context.subtype_code"),
+        nullable=False,
+        index=True,
+    ),
+    UniqueConstraint("model_id", "subtype_code", name="uc_depmap_id_context_name"),
+)
 
-# TODO: Not used yet. Need to update Cell Line Selector to depend on new DepmapModel table instead of CellLine
+
+model_with_depmap_id_1 = re.compile("\\S+ \\(([^)]+)\\)")
+model_with_depmap_id_2 = re.compile("(ACH-\\d+)(?:-\\d+)?$")
+
+
 def add_depmap_model_table_columns(query):
     """
     Separated so that Dataset.get_cell_line_table_query can use this as well
     Joins database tables required for cell line table columns
     """
-    table_query = query.join(Lineage, DepmapModel.oncotree_lineage).add_columns(
-        sqlalchemy.column(
-            '"depmap_model".oncotree_primary_disease', is_literal=True
-        ).label("primary_disease"),
-        sqlalchemy.column('"lineage".name', is_literal=True).label("lineage"),
-        sqlalchemy.column('"lineage".level', is_literal=True).label("lineage_level"),
+    table_query = (
+        query.join(Lineage, DepmapModel.oncotree_lineage)
+        .with_entities(
+            DepmapModel.oncotree_primary_disease.label("primary_disease"),
+            DepmapModel.cell_line_name,
+        )
+        .add_columns(
+            sqlalchemy.column('"lineage".name', is_literal=True).label("lineage"),
+            sqlalchemy.column('"lineage".level', is_literal=True).label(
+                "lineage_level"
+            ),
+        )
     )
     return table_query
-
-
-model_with_depmap_id_1 = re.compile("\\S+ \\(([^)]+)\\)")
-model_with_depmap_id_2 = re.compile("(ACH-\\d+)(?:-\\d+)?$")
 
 
 # Used by Context Explorer
@@ -57,6 +75,9 @@ class DepmapModel(Model):
     model_id = Column(String, primary_key=True)
 
     cell_line_name = Column(String, index=True, unique=True, nullable=True)
+    ccle_name = Column(String, index=True, unique=True, nullable=True)
+    patient_id = Column(String, index=True, nullable=False)
+
     # TODO: Update CellLineAlias and dependencies to only use DepmapModel table instead of CellLine
     cell_line_alias = relationship(
         "CellLineAlias",
@@ -66,16 +87,6 @@ class DepmapModel(Model):
     )
 
     stripped_cell_line_name = Column(String, nullable=False)  # stripped cell line name
-    patient_id = Column(String)
-    depmap_model_type = Column(String)
-    wtsi_master_cell_id = Column(Integer, index=True)  # wtsi is wellcome trust sanger
-
-    # same as cell_line_passport_id in CellLine table
-    sanger_model_id = Column(
-        String, index=True
-    )  # Sanger cell line passport is Sanger ID in https://cellmodelpassports.sanger.ac.uk/
-
-    cosmic_id = Column(Integer, index=True)
 
     oncotree_lineage = relationship(
         "Lineage",
@@ -87,35 +98,25 @@ class DepmapModel(Model):
 
     oncotree_primary_disease = Column(String)
     oncotree_subtype = Column(String)
-
     oncotree_code = Column(String)
-    legacy_molecular_subtype = Column(String)
-    patient_molecular_subtype = Column(String)
-    rrid = Column(String)
-    age = Column(Integer)
-    age_category = Column(String)
-    sex = Column(String)
-    patient_race = Column(String)
-    tissue_origin = Column(String)
-
-    primary_or_metastasis = Column(String)
-
-    sample_collection_site = Column(String)
-    source_type = Column(String)
-    source_detail = Column(String)
-    treatment_status = Column(String)
-    treatment_details = Column(String)
-    growth_pattern = Column(String)
-    onboarded_media = Column(String)
-    formulation_id = Column(String)
-    engineered_model = Column(String)
-    ccle_name = Column(String)
-    catalog_number = Column(String, nullable=True)
-    plate_coating = Column(String)
-    model_derivation_material = Column(String)
     public_comments = Column(String)
-    legacy_sub_subtype = Column(String)
     image_filename = Column(String)
+    age_category = Column(String)
+
+    # TODO: Added back because needed for Context Explorer V2,
+    # while was being developed in parallel when the json_encoded_metadata change
+    # was made. Still need to figure out what other changes might
+    # need to happen to work with the json_encoded_metadata change.
+    depmap_model_type = Column(String)
+
+    # in json_encoded_metadata, we're storing a json encoded dictionary of column_name -> column_value
+    # directly taken from full row taken from the Model.csv table. Those fields which the portal's python code depends
+    # on should be explicitly modeled as columns, however, there are many columns which the python
+    # code doesn't care about. However, the front end _does_ need them to display in the UI.
+    # by storing this unstructured dictionary, we're minimizing the number of boilerplate changes
+    # required when a column is added/changed. (We're also making it explicit which columns the portal
+    # backend depends on.)
+    json_encoded_metadata = Column(String)
 
     def __eq__(self, other):
         if isinstance(other, DepmapModel):
@@ -140,6 +141,11 @@ class DepmapModel(Model):
         If level 1 lineage is unknown, there is no level 2 or 3 lineage
         """
         return self.level_1_lineage.name == "unknown"
+
+    @staticmethod
+    def all():
+        all_models = db.session.query(DepmapModel).all()
+        return all_models
 
     @staticmethod
     def exists(cell_line_name):
@@ -196,7 +202,7 @@ class DepmapModel(Model):
     @staticmethod
     def get_valid_cell_line_names_in(cell_line_names):
         """
-        Returns (valid) cell line names contained in the provided list/set cell_line_names 
+        Returns (valid) cell line names contained in the provided list/set cell_line_names
         """
         q = (
             db.session.query(DepmapModel)
@@ -224,6 +230,14 @@ class DepmapModel(Model):
             return q.one_or_none()
 
     @staticmethod
+    def get_by_ccle_name(ccle_name, must=False) -> "DepmapModel":
+        q = db.session.query(DepmapModel).filter(DepmapModel.ccle_name == ccle_name)
+        if must:
+            return q.one()
+        else:
+            return q.one_or_none()
+
+    @staticmethod
     def get_cell_line_display_names(model_ids: Sequence[str]) -> pd.Series:
         cell_line_names = (
             DepmapModel.query.filter(DepmapModel.model_id.in_(model_ids))
@@ -236,101 +250,63 @@ class DepmapModel(Model):
         s = pd.DataFrame(cell_line_names).set_index("model_id")[
             "cell_line_display_name"
         ]
+
         assert len(s) == len(model_ids)
         return s
 
     @staticmethod
-    def get_context_tree_query():
-        """
-        Joins database tables required for Context Explorer
-        """
-        query = db.session.query(DepmapModel.model_id)
-        table_query = (
-            query.outerjoin(Lineage, DepmapModel.oncotree_lineage)
-            .add_columns(
-                sqlalchemy.column('"lineage".name', is_literal=True).label("lineage"),
-                sqlalchemy.column('"lineage".level', is_literal=True).label(
-                    "lineage_level"
-                ),
+    def get_cell_line_display_names_lineage_and_primary_disease(
+        model_ids: Sequence[str],
+    ) -> pd.DataFrame:
+        assert len(model_ids) > 0
+        cell_line_names = (
+            DepmapModel.query.filter(DepmapModel.model_id.in_(model_ids))
+            .join(Lineage, DepmapModel.oncotree_lineage)
+            .filter(Lineage.level == 1)
+            .with_entities(
+                DepmapModel.model_id,
+                DepmapModel.stripped_cell_line_name.label("cell_line_display_name"),
+                Lineage.name.label("lineage"),
+                DepmapModel.oncotree_primary_disease.label("primary_disease"),
             )
-            .order_by(Lineage.level)
+            .all()
         )
-        return table_query
+
+        s = pd.DataFrame(cell_line_names).set_index("model_id")
+
+        assert len(s) == len(model_ids)
+        return s
 
     @staticmethod
-    def get_model_ids_by_lineage(lineage_name) -> Dict[str, str]:
-        display_name_by_depmap_id = {}
-        cell_lines = (
+    def has_depmap_model_type(depmap_model_type: str, model_id: str):
+        return db.session.query(
+            DepmapModel.query.filter(
+                and_(
+                    DepmapModel.depmap_model_type == depmap_model_type,
+                    DepmapModel.model_id == model_id,
+                )
+            ).exists()
+        ).scalar()
+
+    @staticmethod
+    def get_model_ids_by_lineage_and_level(
+        lineage_name: str, level: int = 1
+    ) -> Dict[str, str]:
+        query = (
             db.session.query(DepmapModel)
             .join(Lineage, DepmapModel.oncotree_lineage)
-            .filter(and_(Lineage.name == lineage_name, Lineage.level == 1))
+            .filter(and_(Lineage.name == lineage_name, Lineage.level == level))
             .with_entities(DepmapModel.model_id, DepmapModel.stripped_cell_line_name)
-            .all()
         )
 
-        for depmap_id, display_name in cell_lines:
-            display_name_by_depmap_id[depmap_id] = display_name
-
-        return display_name_by_depmap_id
-
-    @staticmethod
-    def get_model_ids_by_primary_disease(primary_disease_name) -> Dict[str, str]:
-        display_name_by_model_id = {}
-        cell_lines = (
-            db.session.query(DepmapModel)
-            .filter(DepmapModel.oncotree_primary_disease == primary_disease_name)
-            .with_entities(DepmapModel.model_id, DepmapModel.stripped_cell_line_name)
-            .all()
+        cell_lines = pd.read_sql(query.statement, query.session.connection())
+        cell_lines_dict = dict(
+            zip(
+                cell_lines["model_id"].values,
+                cell_lines["stripped_cell_line_name"].values,
+            )
         )
-
-        for depmap_id, display_name in cell_lines:
-            display_name_by_model_id[depmap_id] = display_name
-
-        return display_name_by_model_id
-
-    @staticmethod
-    def get_model_ids_by_lineage_type_filtering_out_specific_lineage(
-        lineage_type: LineageType, lineage_name_to_filter_out: str
-    ) -> Dict[str, str]:
-        display_name_by_depmap_id = {}
-        if lineage_type == LineageType.Heme:
-            cell_lines = (
-                db.session.query(DepmapModel)
-                .join(Lineage, DepmapModel.oncotree_lineage)
-                .filter(
-                    and_(
-                        or_(Lineage.name == "Myeloid", Lineage.name == "Lymphoid"),
-                        Lineage.level == 1,
-                        Lineage.name != lineage_name_to_filter_out,
-                    )
-                )
-                .with_entities(
-                    DepmapModel.model_id, DepmapModel.stripped_cell_line_name,
-                )
-                .all()
-            )
-        else:
-            cell_lines = (
-                db.session.query(DepmapModel)
-                .join(Lineage, DepmapModel.oncotree_lineage)
-                .filter(
-                    and_(
-                        Lineage.name != "Myeloid",
-                        Lineage.name != "Lymphoid",
-                        Lineage.level == 1,
-                        Lineage.name != lineage_name_to_filter_out,
-                    )
-                )
-                .with_entities(
-                    DepmapModel.model_id, DepmapModel.stripped_cell_line_name
-                )
-                .all()
-            )
-
-        for depmap_id, display_name in cell_lines:
-            display_name_by_depmap_id[depmap_id] = display_name
-
-        return display_name_by_depmap_id
+        return cell_lines_dict
 
     @staticmethod
     def __get_models_age_category_tuples():

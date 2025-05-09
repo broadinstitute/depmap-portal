@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "depmap-compute"
-version = "0.1.9"
+version = "0.1.14"
 description = "Code related to computations shared between the Depmap Portal and BreadBox"
 authors = []
 
@@ -15,6 +15,7 @@ opencensus="0.8.0"
 opencensus-ext-flask="0.7.6"
 opencensus-ext-stackdriver="0.8.0"
 opencensus-ext-zipkin="0.2.2"
+json-logic = "^0.7.0-alpha"
 
 
 [build-system]

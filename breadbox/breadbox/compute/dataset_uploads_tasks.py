@@ -19,10 +19,11 @@ from breadbox.schemas.custom_http_exception import ResourceNotFoundError
 from breadbox.models.dataset import DimensionType
 from fastapi import HTTPException
 from breadbox.io.filestore_crud import save_dataset_file
-from ..crud import dataset as dataset_crud
-from ..crud import types as type_crud
+from ..service import dataset as dataset_service
+from ..crud import dimension_types as type_crud
 from ..crud import group as group_crud
 from ..crud import data_type as data_type_crud
+from ..crud import dataset as dataset_crud
 from .dataset_tasks import db_context
 from ..api.uploads import construct_file_from_ids
 from ..io.data_validation import (
@@ -142,7 +143,7 @@ def dataset_upload(
             dataset_md5=dataset_params.dataset_md5,
         )
 
-        added_dataset = dataset_crud.add_matrix_dataset(
+        added_dataset = dataset_service.add_matrix_dataset(
             db,
             user,
             dataset_in,
@@ -150,13 +151,18 @@ def dataset_upload(
             sample_labels_and_warnings.given_id_to_index,
             feature_type,
             sample_type,
+            dataset_params.short_name,
+            dataset_params.version,
+            dataset_params.description,
         )
-        save_dataset_file(dataset_id, data_df, settings.filestore_location)
+        save_dataset_file(
+            dataset_id, data_df, dataset_params.value_type, settings.filestore_location
+        )
 
     else:
         index_type = _get_dimension_type(db, dataset_params.index_type)
         data_df = read_and_validate_tabular_df(
-            file_path, dataset_params.columns_metadata, index_type.id_column
+            db, index_type, file_path, dataset_params.columns_metadata
         )
         dimension_labels_and_warnings = _get_dimension_labels_and_warnings(
             db, data_df[index_type.id_column], index_type
@@ -184,8 +190,16 @@ def dataset_upload(
             dataset_metadata=dataset_params.dataset_metadata,
             dataset_md5=dataset_params.dataset_md5,
         )
-        added_dataset = dataset_crud.add_tabular_dataset(
-            db, user, dataset_in, data_df, dataset_params.columns_metadata, index_type,
+        added_dataset = dataset_service.add_tabular_dataset(
+            db,
+            user,
+            dataset_in,
+            data_df,
+            dataset_params.columns_metadata,
+            index_type,
+            dataset_params.short_name,
+            dataset_params.version,
+            dataset_params.description,
         )
 
     # NOTE: The return value of dataset_crud.add_dataset can be None if the user

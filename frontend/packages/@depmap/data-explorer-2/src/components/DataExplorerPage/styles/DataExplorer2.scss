@@ -1,0 +1,605 @@
+@import "mixins";
+
+:global #modal-container {
+  z-index: 1051;
+  position: absolute;
+  top: 0;
+}
+
+.initialLoadingSpinner {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: calc(100vh - 52px);
+}
+
+.initialLoadError {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+  margin-top: 4px;
+}
+
+.DataExplorer2 {
+  display: flex;
+  margin-top: 2px;
+  flex-direction: column;
+
+  .plot {
+    min-height: 648px;
+  }
+
+  @media (min-width: 900px) {
+    height: calc(100vh - 52px);
+    flex-direction: row;
+
+    .plot {
+      min-height: calc(100vh - 132px);
+    }
+
+    .plotEmptyState {
+      max-height: calc(100vh - 136px);
+    }
+  }
+
+  @media (max-width: 1300px) {
+    .StartScreenExample {
+      width: 45%;
+    }
+  }
+
+  @media (max-width: 1000px) {
+    .StartScreenExample {
+      width: 100%;
+    }
+  }
+
+  // custom scrollbars
+  // https://stackoverflow.com/a/7855592/23712894
+  *::-webkit-scrollbar {
+    -webkit-appearance: none;
+  }
+
+  *::-webkit-scrollbar:vertical {
+    width: 11px;
+  }
+
+  *::-webkit-scrollbar:horizontal {
+    height: 11px;
+  }
+
+  *:hover {
+    &:not(:has(div[data-inner-scroll]:hover)) {
+      &::-webkit-scrollbar-thumb {
+        border-radius: 8px;
+        border: 2px solid white;
+        background-color: rgba(0, 0, 0, 0.5);
+      }
+
+      &::-webkit-scrollbar-track {
+        background-color: #fff;
+        border-radius: 8px;
+      }
+    }
+  }
+}
+
+.Section {
+  border: 1px solid #7d7d7d;
+
+  .sectionContent {
+    padding: 16px;
+    overflow: hidden;
+  }
+}
+
+.SectionStack {
+  @include scroll-shadow;
+  width: 255px;
+
+  max-height: calc(100vh - 90px);
+  overflow: auto;
+
+  &:not(:has(div[data-open])) {
+    width: 138px;
+  }
+
+  .Section {
+    width: 100%;
+  }
+}
+
+.sectionTitle {
+  display: flex;
+  justify-content: space-between;
+  padding: 12px;
+  margin: 0;
+  color: #656565;
+  background-color: #ededed;
+  font-weight: normal;
+  cursor: pointer;
+
+  button {
+    line-height: 10px;
+    background-color: transparent;
+    border: none;
+  }
+}
+
+.VisualizationPanel {
+  width: 100%;
+  padding: 20px;
+  padding-left: 0;
+}
+
+.DataExplorerScatterPlot,
+.DataExplorerDensity1DPlot {
+  display: flex;
+  flex-direction: row;
+}
+
+.left {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+}
+
+.right {
+  display: flex;
+  flex-direction: column;
+}
+
+.plotControls {
+  border: 2px solid #b8b8b8;
+  border-bottom: none;
+}
+
+.plot {
+  border: 2px solid #b8b8b8;
+  overflow: hidden;
+
+  :global .modebar {
+    display: none;
+  }
+}
+
+.SpinnerOverlay {
+  position: absolute;
+  z-index: 1;
+
+  & > div {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+  }
+}
+
+.overlayBackground {
+  opacity: 0.5;
+  background-color: #fff;
+}
+
+.plotInstructions {
+  font-style: italic;
+  margin-top: -4px;
+  margin-bottom: 10px;
+  font-size: 13px;
+  line-height: 15px;
+  width: 221px;
+}
+
+.plotSelectionsList {
+  @include scroll-shadow;
+}
+
+.virtualListItem {
+  display: list-item;
+  list-style-type: circle;
+  list-style-position: inside;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.plotSelectionsButtons {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 16px;
+}
+
+.setSelectionButton {
+  @extend .pseudoLink;
+
+  &.setSelectionButton {
+    font-style: normal;
+    margin-top: 5px;
+    margin-left: 2px;
+  }
+}
+
+.plotSelectionsContent {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+
+  button {
+    font-size: 13px;
+
+    :global .glyphicon {
+      position: relative;
+      top: 2px;
+      left: 4px;
+    }
+  }
+}
+
+.LegendLabels {
+  overflow-x: hidden;
+  overflow-y: auto;
+  @include scroll-shadow;
+
+  button {
+    background-color: transparent;
+    border: none;
+    max-width: 205px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    line-height: 20px;
+  }
+
+  .legendHideAllShowAllButtons {
+    padding-bottom: 2px;
+    button {
+      all: unset;
+      cursor: pointer;
+      color: #337ab7;
+      cursor: pointer;
+
+      &:active {
+        text-decoration: underline;
+      }
+
+      &:hover {
+        color: #23527c;
+      }
+
+      &:focus-visible {
+        outline: 5px auto -webkit-focus-ring-color;
+        outline-offset: 3px;
+      }
+    }
+  }
+}
+
+.legendSwatch {
+  position: relative;
+  top: 2px;
+  display: inline-block;
+  border-radius: 100%;
+  min-width: 14px;
+  min-height: 14px;
+  border: 1px solid #000;
+  margin-right: 4px;
+}
+
+.legendTooltip {
+  overflow: hidden;
+}
+
+.colorDimensionLabels {
+  max-width: 221px;
+  word-wrap: break-word;
+  font-weight: bold;
+}
+
+.plotEmptyState {
+  padding: 20px 30px;
+  overflow: auto;
+
+  h2 {
+    margin: 0 0 5px;
+    font-size: 28px;
+  }
+
+  p,
+  ul {
+    max-width: 800px;
+    margin: 0 0 20px;
+  }
+
+  h3 {
+    margin-top: 10px;
+    font-weight: normal;
+  }
+
+  a {
+    text-decoration: underline;
+  }
+}
+
+.GeneTea {
+  margin: 0 -16px 0 -16px;
+
+  & > div:not(.geneTeaSpinner) {
+    margin-left: 16px;
+    margin-right: 16px;
+  }
+
+  .geneTeaSpinner {
+    margin: 50px auto;
+  }
+
+  .geneTeaModalSpinner {
+    margin-top: -1px;
+    border: 1px solid #4a87ab;
+    border-top: 1px solid #fff;
+  }
+
+  .geneTeaTerm {
+    text-align: left;
+    background-color: unset;
+    border: none;
+    color: #337ab7;
+    text-decoration: underline;
+    padding: 0;
+
+    &:hover {
+      color: #23527c;
+    }
+
+    &:active {
+      text-decoration: none;
+    }
+  }
+
+  .geneTeaMatches {
+    color: #337ab7;
+    cursor: pointer;
+    text-align: center;
+
+    &:hover {
+      color: #23527c;
+    }
+
+    &:active {
+      text-decoration: underline;
+    }
+  }
+
+  .showMoreTerms {
+    font-size: 13px;
+    font-style: italic;
+    line-height: 14px;
+
+    button {
+      margin-top: 14px;
+      background-color: unset;
+      border: none;
+      color: #337ab7;
+      text-decoration: underline;
+      padding: 0 1px 0;
+    }
+  }
+
+  .viewInTeaParty {
+    margin-top: 16px;
+    width: 100%;
+  }
+}
+
+.GeneTeaTable {
+  border-collapse: separate;
+  empty-cells: show;
+  font-size: 12px;
+  min-width: 100%;
+
+  thead th {
+    border: none;
+    color: #fff;
+    background-color: #5392b6;
+    text-align: center;
+    font-weight: normal;
+    font-size: 13px;
+    padding: 4px;
+  }
+
+  tbody td {
+    border: none;
+  }
+
+  &.hasScrollBar {
+    td,
+    th {
+      &:first-child {
+        max-width: 122px;
+      }
+    }
+  }
+
+  td,
+  th {
+    padding: 4px 8px;
+
+    &:first-child {
+      max-width: 137px;
+      overflow: hidden;
+    }
+
+    &:not(:last-child) {
+      border-right: 1px solid #4a87ab;
+    }
+  }
+
+  tr:last-child td {
+    border-bottom: 1px solid #4a87ab;
+  }
+
+  tr:nth-child(even) td {
+    background-color: rgba(29, 105, 150, 0.1);
+  }
+}
+
+.GeneTeaModal {
+  @media screen and (min-height: 510px) {
+    min-height: 329px;
+  }
+
+  mark {
+    background-color: #ffe3d1;
+  }
+
+  table {
+    display: block;
+    border: 1px solid #4a87ab;
+    max-height: calc(100vh - 239px);
+    overflow: auto;
+    margin-bottom: 0;
+
+    @include scroll-shadow;
+
+    thead th {
+      border: none;
+      color: #fff;
+      background-color: #5392b6;
+      font-weight: normal;
+      font-size: 13px;
+      padding: 4px 10px;
+      position: sticky;
+      top: 0;
+    }
+
+    tbody td {
+      border: none;
+    }
+
+    td,
+    th {
+      &:first-child {
+        min-width: 68px;
+        border-right: 1px solid #4a87ab;
+      }
+
+      &:nth-child(2) {
+        width: 100%;
+      }
+    }
+
+    tr:nth-child(even) td {
+      background-color: rgba(29, 105, 150, 0.1);
+    }
+  }
+}
+
+.pseudoLink {
+  all: unset;
+  cursor: pointer;
+  color: #337ab7;
+  text-decoration: underline;
+  cursor: pointer;
+
+  &:hover,
+  &:focus {
+    color: #23527c;
+  }
+
+  &:focus-visible {
+    outline: 5px auto -webkit-focus-ring-color;
+    outline-offset: 3px;
+  }
+}
+
+.startScreenActions {
+  display: flex;
+  gap: 8px;
+  margin-top: -8px;
+  margin-bottom: 28px;
+
+  :global .btn {
+    text-decoration: none;
+  }
+}
+
+.StartScreenExamples {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 25px 10px;
+}
+
+.StartScreenExample {
+  width: 30%;
+
+  span:hover {
+    figure {
+      border: 1px solid #4479b2;
+      outline: 2px solid #4479b2;
+    }
+
+    dt button {
+      color: #23527c;
+    }
+  }
+
+  figure {
+    display: flex;
+    justify-content: center;
+    border: 1px solid #132041;
+    border-radius: 4px;
+    margin-top: 10px;
+    max-width: 100%;
+    aspect-ratio: 16/9;
+    background-color: #fff;
+
+    button {
+      all: unset;
+      cursor: pointer;
+    }
+
+    img {
+      width: 99%;
+      border-radius: 4px;
+    }
+  }
+
+  dt {
+    max-width: 200px;
+    margin-top: 10px;
+    margin-bottom: 10px;
+
+    button {
+      @extend .pseudoLink;
+      font-size: 16px;
+      font-weight: bold;
+    }
+  }
+
+  dd p {
+    &:last-child {
+      margin: 0;
+    }
+  }
+}
+
+.SettingsButton.SettingsButton {
+  cursor: pointer;
+  background-color: #fff;
+  border: 1px solid #ccc;
+  padding: 0 8px;
+  border-radius: 4px;
+
+  &:focus {
+    background-color: inherit;
+    outline: 1px solid #005ecc;
+  }
+
+  :global .glyphicon {
+    position: relative;
+    top: 2px;
+    font-size: 15px;
+  }
+}

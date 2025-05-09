@@ -6,9 +6,10 @@ import {
   CustomList,
   renderCellLineSelectorModal,
 } from "@depmap/cell-line-selector";
+import { toStaticUrl } from "@depmap/globals";
 
 import { getQueryParams } from "@depmap/utils";
-import { getDapi, getVectorCatalogApi } from "src/common/utilities/context";
+import { getDapi } from "src/common/utilities/context";
 
 import { DatasetOption } from "src/entity/components/EntitySummary";
 
@@ -23,10 +24,11 @@ import { ConnectivityValue } from "./constellation/models/constellation";
 import { EntityType } from "./entity/models/entities";
 import TermsAndConditionsModal from "./common/components/TermsAndConditionsModal";
 import { initializeDevContexts } from "@depmap/data-explorer-2";
+import { EnrichmentTile } from "./contextExplorer/components/EnrichmentTile";
 
 export { log, tailLog, getLogCount } from "src/common/utilities/log";
 
-if (["dev.cds.team", "127.0.0.1"].includes(window.location.hostname)) {
+if (["dev.cds.team", "127.0.0.1:5000"].includes(window.location.host)) {
   initializeDevContexts();
 }
 
@@ -78,11 +80,11 @@ const WideTable = React.lazy(
     )
 );
 
-const ContextManager = React.lazy(
+const PortalContextManager = React.lazy(
   () =>
     import(
-      /* webpackChunkName: "ContextManager" */
-      "src/data-explorer-2/components/ContextManager"
+      /* webpackChunkName: "PortalContextManager" */
+      "src/data-explorer-2/components/PortalContextManager"
     )
 );
 
@@ -105,7 +107,7 @@ const renderWithErrorBoundary = (
 export function launchCellLineSelectorModal() {
   const container = document.getElementById("cell_line_selector_modal"); // defined in layout.html
 
-  renderCellLineSelectorModal(getDapi, getVectorCatalogApi, container);
+  renderCellLineSelectorModal(getDapi, container);
 }
 
 export function showTermsAndConditionsModal() {
@@ -126,7 +128,7 @@ export function launchContextManagerModal(options?: {
 
   ReactDOM.render(
     <React.Suspense fallback={null}>
-      <ContextManager
+      <PortalContextManager
         onHide={hide}
         initialContextType={options?.initialContextType}
         showHelpText={options?.showHelpText || false}
@@ -176,6 +178,19 @@ export function saveNewContext(
       />
     </React.Suspense>,
     container
+  );
+}
+
+export function initEnrichmentTile(
+  elementId: string,
+  entityLabel: string,
+  entityType: string
+) {
+  renderWithErrorBoundary(
+    <React.Suspense fallback={<div>Loading...</div>}>
+      <EnrichmentTile entityLabel={entityLabel} entityType={entityType} />
+    </React.Suspense>,
+    document.getElementById(elementId) as HTMLElement
   );
 }
 
@@ -397,10 +412,8 @@ export function initCelfiePage(
         dependencyProfileOptions={dependencyProfileOptions}
         onCelfieInitialized={() => dapi.endTrace()}
         howToImg={howToImg}
-        methodIcon={dapi._getFileUrl("/static/img/predictability/pdf.svg")}
-        methodPdf={dapi._getFileUrl(
-          "/static/pdf/Genomic_Associations_Methodology.pdf"
-        )}
+        methodIcon={toStaticUrl("img/predictability/pdf.svg")}
+        methodPdf={toStaticUrl("pdf/Genomic_Associations_Methodology.pdf")}
       />
     </React.Suspense>,
     document.getElementById(elementId) as HTMLElement

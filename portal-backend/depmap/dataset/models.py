@@ -8,7 +8,7 @@ import pandas as pd
 import sqlalchemy as sa
 from sqlalchemy import UniqueConstraint, distinct, func, nullslast, case  # type: ignore
 from sqlalchemy.orm import backref
-
+from sqlalchemy.exc import NoResultFound  # pyright: ignore
 from depmap import enums
 from depmap.antibody.models import Antibody
 from depmap.cell_line.models import (
@@ -105,7 +105,7 @@ class Dataset(Model):
     __mapper_args__ = {"polymorphic_identity": "dataset", "polymorphic_on": type}
 
     @property
-    def nominal_range(self):
+    def nominal_range(self):  # No longer used
         return DATASET_METADATA[self.name].nominal_range
 
     @property
@@ -408,8 +408,10 @@ class DependencyDataset(Dataset):
 
     @staticmethod
     def get_compound_experiment_priority_sorted_datasets_with_compound(
-        compound_id,
+        compound_id: int,  # Expects compound.entity_id, not compound.compound_id
     ) -> List[Tuple["CompoundExperiment", "DependencyDataset"]]:
+        # DEPRECATED: this will not work with breadbox datasets.
+        # Calls to this should be replaced with get_all_datasets_containing_compound
         """
         :compound_id: entity id of compound object
         :return: List of (compound experiment object, dependency dataset object) tuples sorted by dataset priority first and secondly by compound experiment entity id
@@ -436,94 +438,6 @@ class DependencyDataset(Dataset):
 
         return object_tuples
 
-    @staticmethod
-    def get_compound_experiments_in_dataset_with_compound(dataset_name, compound_id):
-        """
-        If The dataset is a dose or dose replicate dataset, this will check if the compound dose or dose replicates, but still return compound experiments
-
-        :param dataset_name: enum or enum.name
-        :return: List of CompoundExperiments
-        Mostly copied from get_compound_experiment_datasets_with_compound, with tweaks
-        Unlike the above get_compound_experiment_datasets_with_compound, this is for a specific dataset
-        """
-        is_dose = DependencyDataset.is_dose_enum(
-            DependencyDataset.DependencyEnum[dataset_name]
-        )
-        is_dose_replicate = DependencyDataset.get_dataset_by_name(
-            DependencyDataset.DependencyEnum[dataset_name]
-        ).is_dose_replicate
-
-        if is_dose:
-            entity_class = CompoundDose
-            base_query = db.session.query(CompoundExperiment).join(
-                CompoundDose,
-                CompoundExperiment.entity_id == CompoundDose.compound_experiment_id,
-            )
-        elif is_dose_replicate:
-            entity_class = CompoundDoseReplicate
-            base_query = db.session.query(CompoundExperiment).join(
-                CompoundDoseReplicate,
-                CompoundExperiment.entity_id
-                == CompoundDoseReplicate.compound_experiment_id,
-            )
-        else:
-            entity_class = CompoundExperiment
-            base_query = db.session.query(CompoundExperiment)
-
-        return (
-            base_query.join(
-                Compound, Compound.entity_id == CompoundExperiment.compound_id
-            )
-            .join(RowMatrixIndex, RowMatrixIndex.entity_id == entity_class.entity_id)
-            .join(Matrix, Matrix.matrix_id == RowMatrixIndex.matrix_id)
-            .join(DependencyDataset, DependencyDataset.matrix_id == Matrix.matrix_id)
-            .filter(
-                DependencyDataset.name == dataset_name,
-                Compound.entity_id == compound_id,
-            )
-            .order_by(entity_class.entity_id)
-            .all()
-        )
-
-    @staticmethod
-    def get_dose_replicate_datasets_info_by_compound_id(compound_id):
-        """
-        Returns df of dose replicate datasets by compound id and shows cell line count and dosage info
-        """
-        query = (
-            DependencyDataset.query.join(
-                Matrix, DependencyDataset.matrix_id == Matrix.matrix_id
-            )
-            .join(RowMatrixIndex)
-            .join(ColMatrixIndex)
-            .join(
-                CompoundDoseReplicate,
-                RowMatrixIndex.entity_id == CompoundDoseReplicate.entity_id,
-            )
-            .join(
-                CompoundExperiment,
-                CompoundExperiment.entity_id
-                == CompoundDoseReplicate.compound_experiment_id,
-            )
-            .join(Compound, Compound.entity_id == CompoundExperiment.compound_id,)
-            .filter(Compound.entity_id == compound_id)
-            .with_entities(
-                DependencyDataset.dataset_id,
-                DependencyDataset.name,
-                DependencyDataset.display_name,
-                DependencyDataset.taiga_id,
-                func.count(distinct(ColMatrixIndex.depmap_id)).label("cell_line_count"),
-                CompoundDoseReplicate.compound_experiment_id,
-                CompoundExperiment.compound_id,
-                func.max(CompoundDoseReplicate.dose).label("max_dose"),
-                func.min(CompoundDoseReplicate.dose).label("min_dose"),
-            )
-            .group_by(DependencyDataset.dataset_id)
-        )
-
-        df = pd.read_sql(query.statement, query.session.connection())
-        return df
-
 
 class BiomarkerDataset(Dataset):
     """
@@ -549,7 +463,10 @@ class BiomarkerDataset(Dataset):
             BiomarkerDataset.name == enum_name
         )
         if must:
-            return q.one()
+            try:
+                return q.one()
+            except NoResultFound:
+                raise NoResultFound(f"get_dataset_by_name did not find {enum_name}")
         else:
             return q.one_or_none()
 
@@ -760,6 +677,11 @@ class Mutation(Model):
     am_class = Column(String)
     am_pathogenicity = Column(Float)
     hotspot = Column(Boolean)
+
+    ## New columns 25Q2
+    intron = Column(String)
+    exon = Column(String)
+    rescue_reason = Column(String)
 
     @classmethod
     def has_gene(cls, gene, by_label=False):

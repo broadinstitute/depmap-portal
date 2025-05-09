@@ -1,3 +1,4 @@
+from loader.depmap_model_loader import load_depmap_model_metadata
 import pandas as pd
 
 
@@ -36,10 +37,9 @@ def test_dfs_equal_ignoring_column_order():
 
 def load_sample_cell_lines():
     from flask import current_app
-    from loader.cell_line_loader import load_cell_lines_metadata
     import os
 
     loader_data_dir = current_app.config["LOADER_DATA_DIR"]
-    load_cell_lines_metadata(
-        os.path.join(loader_data_dir, "cell_line/cell_line_metadata.csv"),
+    load_depmap_model_metadata(
+        os.path.join(loader_data_dir, "cell_line/models_metadata.csv"),
     )

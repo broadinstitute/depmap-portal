@@ -1,7 +1,13 @@
 import pandas as pd
-from typing import Optional
+from typing import Literal, Optional, Union, cast
 
-from breadbox_client.models import MatrixDatasetResponse, MatrixDatasetResponseFormat
+from breadbox_client.models import (
+    DimensionType,
+    MatrixDatasetResponse,
+    MatrixDatasetResponseFormat,
+    TabularDatasetResponse,
+)
+from breadbox_client.types import Unset
 from depmap.data_access.response_parsing import (
     is_breadbox_id_format,
     parse_breadbox_slice_id,
@@ -12,6 +18,25 @@ from depmap.data_access.models import MatrixDataset
 from depmap import extensions
 from depmap.partials.matrix.models import CellLineSeries
 from depmap.interactive.config.models import DatasetSortKey, DatasetSortFirstKey
+import flask
+
+
+def _get_breadbox_datasets_with_caching() -> list[
+    Union[MatrixDatasetResponse, TabularDatasetResponse]
+]:
+    """
+    Cache the results of breadbox's get_datasets function (scoped to the flask request) because
+    some operations (ie: predictability) result in a _lot_ of calls in order
+    to answer the question is an ID in breadbox or not in the course of handling the request.
+    """
+    if hasattr(flask.g, "__cached_get_datasets"):
+        return cast(
+            list[Union[MatrixDatasetResponse, TabularDatasetResponse]],
+            flask.g.__cached_get_datasets,
+        )
+    else:
+        flask.g.__cached_get_datasets = extensions.breadbox.client.get_datasets()
+        return flask.g.__cached_get_datasets
 
 
 def get_all_matrix_datasets() -> list[MatrixDataset]:
@@ -19,7 +44,31 @@ def get_all_matrix_datasets() -> list[MatrixDataset]:
     Return all breadbox matrix datasets.
     """
     matrix_datasets = []
-    for dataset in extensions.breadbox.client.get_datasets():
+    for dataset in _get_breadbox_datasets_with_caching():
+        if dataset.format_ == MatrixDatasetResponseFormat.MATRIX_DATASET:
+            assert isinstance(dataset, MatrixDatasetResponse)
+            parsed_dataset = parse_matrix_dataset_response(dataset)
+            matrix_datasets.append(parsed_dataset)
+    return matrix_datasets
+
+
+def get_filtered_matrix_datasets(
+    feature_id: Optional[str] = None,
+    feature_type: Optional[str] = None,
+    sample_id: Optional[str] = None,
+    sample_type: Optional[str] = None,
+    value_type: Optional[str] = None,
+) -> list[MatrixDataset]:
+    """Load a filtered set of datasets (no caching used). Filtering is done on the breadbox side."""
+    datasets = extensions.breadbox.client.get_datasets(
+        feature_id=feature_id,
+        feature_type=feature_type,
+        sample_id=sample_id,
+        sample_type=sample_type,
+        value_type=value_type,
+    )
+    matrix_datasets = []
+    for dataset in datasets:
         if dataset.format_ == MatrixDatasetResponseFormat.MATRIX_DATASET:
             assert isinstance(dataset, MatrixDatasetResponse)
             parsed_dataset = parse_matrix_dataset_response(dataset)
@@ -29,7 +78,7 @@ def get_all_matrix_datasets() -> list[MatrixDataset]:
 
 def get_breadbox_given_ids() -> set[str]:
     given_ids = set()
-    for dataset in extensions.breadbox.client.get_datasets():
+    for dataset in _get_breadbox_datasets_with_caching():
         if dataset.given_id is not None:
             given_ids.add(dataset.given_id)
     return given_ids
@@ -104,16 +153,6 @@ def get_dataset_sample_ids(dataset_id: str) -> list[str]:
     return [sample["id"] for sample in samples]
 
 
-def get_sort_key(dataset_id: str) -> DatasetSortKey:
-    """
-    Sort breadbox datasets in with private datasets.
-    This method is only used in DE1. DE2 uses the 'priority' field instead.
-    """
-    return DatasetSortKey(
-        DatasetSortFirstKey.custom_or_private.value, 0, get_dataset_label(dataset_id),
-    )
-
-
 def get_dataset_taiga_id(dataset_id: str) -> Optional[str]:
     return get_matrix_dataset(dataset_id).taiga_id
 
@@ -122,7 +161,9 @@ def get_dataset_units(dataset_id: str) -> Optional[str]:
     return get_matrix_dataset(dataset_id).units
 
 
-def get_row_of_values(dataset_id: str, feature: str) -> CellLineSeries:
+def get_row_of_values(
+    dataset_id: str, feature: str, feature_identifier: Literal["id", "label"]
+) -> CellLineSeries:
     """
     For the given dataset id and a feature label, 
     Get a row of numeric or string values, indexed by depmap_id
@@ -131,7 +172,7 @@ def get_row_of_values(dataset_id: str, feature: str) -> CellLineSeries:
     single_col_df = extensions.breadbox.client.get_dataset_data(
         dataset_id=bb_dataset_id,
         features=[feature],
-        feature_identifier="label",
+        feature_identifier=feature_identifier,
         samples=None,
         sample_identifier=None,
     )
@@ -177,3 +218,23 @@ def get_tabular_dataset_column(dataset_id: str, column_name: str) -> pd.Series:
         strict=True,
     )
     return df.squeeze()
+
+
+def get_metadata_dataset_id(dimension_type_name: str) -> Union[str, None]:
+    if not hasattr(flask.g, "__cached_dimension_types"):
+        flask.g.__cached_dimension_types = (
+            extensions.breadbox.client.get_dimension_types()
+        )
+
+    dimension_types = cast(list[DimensionType], flask.g.__cached_dimension_types,)
+
+    dataset_id = next(
+        (
+            dt.metadata_dataset_id
+            for dt in dimension_types
+            if dt.name == dimension_type_name
+        ),
+        None,
+    )
+
+    return None if dataset_id is Unset else cast(Union[str, None], dataset_id)

@@ -85,8 +85,7 @@ export const matrixFormSchema: Required<Pick<RJSFSchema, "properties">> &
     group_id: {
       title: "Group Id",
       type: "string",
-      description:
-        "ID of the group the dataset belongs to. Required for non-transient datasets.",
+      description: "The group the dataset belongs to",
       format: "uuid",
     },
     priority: {
@@ -95,7 +94,7 @@ export const matrixFormSchema: Required<Pick<RJSFSchema, "properties">> &
       // exclusiveMinimum: 0, In openapi.json but RJSF not recognizing exclusiveMinimum and exclusiveMaximum keywords?
       type: ["integer", "null"], // "null" must be string or else it throws an error
       description:
-        "Numeric value assigned to the dataset with `1` being highest priority within the `data_type`, used for displaying order of datasets to show for a specific `data_type` in UI.",
+        "Numeric value representing priority of the dataset within its data type, with `1` being highest priority",
     },
     is_transient: {
       // TODO: This should be required param in bb
@@ -109,7 +108,7 @@ export const matrixFormSchema: Required<Pick<RJSFSchema, "properties">> &
       title: "Dataset Metadata",
       type: ["object", "null"],
       description:
-        "Contains a dictionary of additional dataset values that are not already provided above.",
+        "Additional dataset information that is not already provided in above form",
     },
     format: {
       title: "Format",

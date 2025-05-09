@@ -9,18 +9,18 @@
   "references": [
     { "path": "../@depmap/annotation-type-selector" },
     { "path": "../@depmap/api" },
-    { "path": "../depmap/cell-line-selector" },
-    { "path": "../depmap/common-components" },
-    { "path": "../depmap/compute" },
-    { "path": "../depmap/custom-analyses" },
-    { "path": "../depmap/data-slicer" },
-    { "path": "../depmap/downloads" },
-    { "path": "../depmap/groups-manager" },
-    { "path": "../depmap/interactive" },
-    { "path": "../depmap/long-table" },
-    { "path": "../depmap/types" },
-    { "path": "../depmap/user-upload" },
-    { "path": "../depmap/utils" },
-    { "path": "../depmap/wide-table" }
+    { "path": "../@depmap/cell-line-selector" },
+    { "path": "../@depmap/common-components" },
+    { "path": "../@depmap/compute" },
+    { "path": "../@depmap/custom-analyses" },
+    { "path": "../@depmap/data-slicer" },
+    { "path": "../@depmap/downloads" },
+    { "path": "../@depmap/groups-manager" },
+    { "path": "../@depmap/long-table" },
+    { "path": "../@depmap/statistics" },
+    { "path": "../@depmap/types" },
+    { "path": "../@depmap/user-upload" },
+    { "path": "../@depmap/utils" },
+    { "path": "../@depmap/wide-table" }
   ]
 }

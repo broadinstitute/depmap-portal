@@ -2,7 +2,7 @@ from itertools import groupby
 import math
 import os
 import tempfile
-from typing import List
+from typing import Any, List, Optional
 import zipfile
 import requests
 import urllib.parse
@@ -14,13 +14,14 @@ from flask import (
     abort,
     current_app,
     jsonify,
-    redirect,
     render_template,
     request,
     url_for,
     send_file,
 )
 
+from depmap import data_access
+from depmap.data_access.models import MatrixDataset
 from depmap.cell_line.models_new import DepmapModel
 from depmap.compound.models import (
     Compound,
@@ -33,7 +34,7 @@ from depmap.compound.views.executive import (
     get_predictive_models_for_compound,
 )
 from depmap.dataset.models import Dataset, DependencyDataset
-from depmap.entity.views.index import format_celfie, format_summary
+from depmap.entity.views.index import format_celfie
 from depmap.enums import DependencyEnum
 from depmap.partials.matrix.models import ColMatrixIndex
 from depmap.predictability.models import PredictiveFeatureResult, PredictiveModel
@@ -54,47 +55,45 @@ blueprint = Blueprint(
 @blueprint.route("/<path:name>")
 def view_compound(name):
     compound = Compound.get_by_label(name, must=False)
-
-    if compound is None:
-        compound_experiment = CompoundExperiment.get_by_label(name, must=False)
-        if compound_experiment is None:
-            abort(404)
-        else:
-            compound_name = compound_experiment.compound.label
-            return redirect(url_for("compound.view_compound", name=compound_name))
-
-    # Figure out entity_id
-    compound_id = compound.entity_id
-
-    # Figure out membership in different datasets
-    compound_experiment_and_datasets = DependencyDataset.get_compound_experiment_priority_sorted_datasets_with_compound(
-        compound_id
-    )
-
-    units = compound.units
-
-    aliases = Compound.get_aliases_by_entity_id(compound_id)
+    aliases = Compound.get_aliases_by_entity_id(compound.entity_id)
     compound_aliases = ", ".join(
         [alias for alias in aliases if alias.lower() != name.lower()]
     )
 
+    compound_experiment_and_datasets = DependencyDataset.get_compound_experiment_priority_sorted_datasets_with_compound(
+        compound.entity_id
+    )
     has_predictability: bool = len(
         get_predictive_models_for_compound(compound_experiment_and_datasets)
     ) != 0
 
-    has_datasets = len(compound_experiment_and_datasets) != 0
-    summary = format_compound_summary(compound_experiment_and_datasets)
 
+    # Figure out membership in different datasets
+    compound_datasets = data_access.get_all_datasets_containing_compound(compound.compound_id)
+    has_datasets = len(compound_datasets) != 0
+    sensitivity_tab_compound_summary = get_sensitivity_tab_info(compound.entity_id, compound_datasets)
     has_celfie = current_app.config["ENABLED_FEATURES"].celfie and has_datasets
     if has_celfie:
-        celfie = format_celfie(name, summary["summary_options"])
+        celfie_dataset_options = []
+        for compound_experiment, dataset in compound_experiment_and_datasets:
+            celfie_dataset_options.append(
+                format_summary_option(
+                    dataset,
+                    compound_experiment,
+                    "{} {}".format(compound_experiment.label, dataset.display_name),
+                )
+            )
+        celfie = format_celfie(
+            entity_label=name, 
+            dependency_datasets=celfie_dataset_options
+        )
 
     return render_template(
         "compounds/index.html",
         name=name,
         title=name,
         compound_aliases=compound_aliases,
-        summary=summary,
+        summary=sensitivity_tab_compound_summary,
         about=format_about(compound),
         has_predictability=has_predictability,
         predictability_custom_downloads_link=get_predictability_input_files_downloads_link(),
@@ -106,34 +105,33 @@ def view_compound(name):
         dose_curve_options=format_dose_curve_options(compound_experiment_and_datasets),
         has_celfie=has_celfie,
         celfie=celfie if has_celfie else None,
-        compound_units=units,
+        compound_units=compound.units,
     )
 
 
-def format_compound_summary(compound_experiment_and_datasets):
-    if len(compound_experiment_and_datasets) == 0:
+def get_sensitivity_tab_info(compound_entity_id: int, compound_datasets: list[MatrixDataset]) -> Optional[dict[str, Any]]:
+    """Get a dictionary of values containing layout information for the sensitivity tab."""
+    if len(compound_datasets) == 0:
         return None
+    
+    # Define the options that will appear in the datasets dropdown
+    dataset_options = []
+    for dataset in compound_datasets:
+        dataset_summary = {
+            "label": dataset.label,
+            "id": dataset.id,
+            "dataset": dataset.id,
+            "entity": compound_entity_id,
+        }
+        dataset_options.append(dataset_summary)
 
-    first_entity = None
-    first_dep_enum_name = None
-    summary_options = []
-
-    for compound_experiment, dataset in compound_experiment_and_datasets:
-        if first_entity is None and first_dep_enum_name is None:
-            first_dep_enum_name = dataset.name.name
-            first_entity = compound_experiment
-
-        summary_options.append(
-            format_summary_option(
-                dataset,
-                compound_experiment,
-                "{} {}".format(compound_experiment.label, dataset.display_name),
-            )
-        )
-
-    return format_summary(
-        summary_options, first_entity, first_dep_enum_name, show_auc_message=True,
-    )
+    return {
+        "figure": {"name": compound_entity_id},
+        "summary_options": dataset_options,
+        "show_auc_message": True,
+        "size_biom_enum_name": None,
+        "color": None,
+    }
 
 
 def format_summary_option(dataset, entity, label):
@@ -591,33 +589,8 @@ def get_predictability_files():
 
 @blueprint.route("/<path:compound_name>/genomic_associations")
 def view_genomic_associations(compound_name: str):
-    compound = Compound.query.filter_by(label=compound_name).one_or_none()
-    if compound is None:
-        compound_experiment = CompoundExperiment.get_by_label(compound_name, must=False)
-        if compound_experiment is None:
-            abort(404)
-        else:
-            compound_name = compound_experiment.compound.label
-            return redirect(
-                url_for("compound.view_genomic_associations", name=compound_name)
-            )
-
-    # Figure out entity_id
-    compound_id = compound.entity_id
-
-    # Figure out membership in different datasets
-    compound_experiment_and_datasets = DependencyDataset.get_compound_experiment_priority_sorted_datasets_with_compound(
-        compound_id
-    )
-
-    has_datasets = len(compound_experiment_and_datasets) != 0
-    summary = format_compound_summary(compound_experiment_and_datasets)
-    has_celfie = current_app.config["ENABLED_FEATURES"].celfie and has_datasets
-    celfie = format_celfie(compound_name, summary["summary_options"])
-
-    return render_template(
-        "entities/celfie_page.html", celfie=celfie if has_celfie else None
-    )
+    # This is broken and being replaced
+    return render_template("entities/celfie_page.html", celfie=None)
 
 
 # %%

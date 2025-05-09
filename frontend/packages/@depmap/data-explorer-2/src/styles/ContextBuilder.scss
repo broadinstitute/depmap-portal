@@ -201,3 +201,39 @@
 .cellLineContextName {
   margin-bottom: 15px;
 }
+
+.dataSourceOption {
+  :global .glyphicon {
+    float: right;
+    padding: 10px;
+    margin-top: -10px;
+    margin-right: -10px;
+
+    &:hover {
+      color: inherit !important;
+    }
+  }
+}
+
+.unblockable {
+  display: block !important;
+}
+
+.ComparisonError {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #e50001;
+  border-radius: 4px;
+  padding: 10px;
+  margin-right: 30px;
+  background-color: #ffe7eb;
+
+  & > div {
+    display: flex;
+    width: 100%;
+  }
+
+  & > div:first-child {
+    color: #e50001;
+  }
+}

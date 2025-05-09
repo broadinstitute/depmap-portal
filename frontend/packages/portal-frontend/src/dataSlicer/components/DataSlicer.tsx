@@ -3,7 +3,7 @@ import * as React from "react";
 import { Button, Checkbox, Radio, Modal } from "react-bootstrap";
 import update from "immutability-helper";
 
-import { enabledFeatures } from "@depmap/globals";
+import { enabledFeatures, toStaticUrl } from "@depmap/globals";
 import { CellLineListsDropdown, CustomList } from "@depmap/cell-line-selector";
 import {
   DatasetOptionsWithLabels,
@@ -123,6 +123,7 @@ export default class DataSlicer extends React.Component<
         const option: DatasetOptionsWithLabels = {
           id: dataset.id,
           label: dataset.display_name,
+          url: dataset.download_entry_url,
         };
         if (dataType != "") {
           if (!datasetOptions.has(dataType)) {
@@ -580,43 +581,26 @@ export default class DataSlicer extends React.Component<
             }
           >
             <label htmlFor="cellLinesCustom" style={{ cursor: "pointer" }}>
-              {enabledFeatures.data_explorer_2
-                ? "Use model context"
-                : "Use custom cell line list"}
+              Use model context
             </label>
           </Radio>
           <InfoIcon
             target={customInfoImg}
             popoverContent={
-              enabledFeatures.data_explorer_2 ? (
-                <p>
-                  Use the{" "}
-                  <a
-                    style={{ cursor: "pointer" }}
-                    onClick={() => {
-                      launchContextManagerModal();
-                      document.body.click();
-                    }}
-                  >
-                    Context Manager
-                  </a>{" "}
-                  to create custom rulesets that can be applied across tools and
-                  plots throughout the portal.
-                </p>
-              ) : (
-                <p>
-                  Use the{" "}
-                  <a
-                    style={{ cursor: "pointer" }}
-                    onClick={onCellLineLinkClick}
-                  >
-                    Cell Line Selector
-                  </a>{" "}
-                  to sort and filter cell lines to create and save custom
-                  collections that can be applied across tools and plots
-                  throughout the portal.
-                </p>
-              )
+              <p>
+                Use the{" "}
+                <a
+                  style={{ cursor: "pointer" }}
+                  onClick={() => {
+                    launchContextManagerModal();
+                    document.body.click();
+                  }}
+                >
+                  Context Manager
+                </a>{" "}
+                to create custom rulesets that can be applied across tools and
+                plots throughout the portal.
+              </p>
             }
             popoverId={`custom-cell-lines-popover`}
             trigger="click"
@@ -624,13 +608,13 @@ export default class DataSlicer extends React.Component<
         </div>
         {!this.state.useAllCellLines && (
           <CellLineListsDropdown
-            launchCellLineSelectorModal={launchCellLineSelectorModal}
-            id="cellLineDropdown"
             defaultNone
-            onListSelect={(e: CustomList) => {
-              this.setState({
-                selectedCellLineList: e,
-              });
+            onListSelect={(nextList: CustomList) => {
+              if (nextList.name === "" && nextList.lines.size === 0) {
+                this.setState({ selectedCellLineList: null });
+              } else {
+                this.setState({ selectedCellLineList: nextList });
+              }
             }}
           />
         )}
@@ -825,7 +809,7 @@ export default class DataSlicer extends React.Component<
           margin: "2px 7px 7px",
           cursor: "pointer",
         }}
-        src={dapi._getFileUrl("/static/img/gene_overview/info_purple.svg")}
+        src={toStaticUrl("img/gene_overview/info_purple.svg")}
         alt="description of term"
         className="icon"
       />

@@ -4,11 +4,12 @@ from flask import abort
 from typing import Literal, Optional
 from collections import defaultdict
 
-from depmap_compute.context import LegacyContextEvaluator, decode_slice_id
+from depmap_compute.context import LegacyContextEvaluator
+from depmap_compute.slice import decode_slice_id
 from depmap import data_access
 from depmap.data_access.models import MatrixDataset
 from depmap.utilities.data_access_log import log_dataset_access
-from depmap.data_explorer_2.datatypes import hardcoded_metadata_slices
+from depmap.data_explorer_2.datatypes import get_hardcoded_metadata_slices
 from depmap.data_explorer_2.utils import (
     get_aliases_matching_labels,
     get_dimension_labels_across_datasets,
@@ -117,23 +118,50 @@ def compute_filter(input_filter):
 def compute_metadata(metadata):
     slice_id = metadata["slice_id"]
     indexed_values = slice_to_dict(slice_id)
-    label = slice_id
+    value_type = "categorical"
+    label = None
 
     # HACK: Look up a label for the `slice_id` in `hardcoded_metadata_slices`.
     # When we stop relying on Slice IDs and start using SliceQuery objects,
     # perhaps we could include `label` as an optional field.
-    for slices in hardcoded_metadata_slices.values():
+    for slices in get_hardcoded_metadata_slices().values():
         for m_slice_id, info in slices.items():
             if m_slice_id == slice_id:
                 label = info["name"]
-            elif info.get("isPartialSliceId", False) and m_slice_id in slice_id:
-                _, identifier, _ = decode_slice_id(slice_id)
-                label = f"{info['name']} ({info['sliceTypeLabel']} = {identifier})"
+            elif m_slice_id in slice_id:
+                if info["valueType"] == "binary":
+                    label = info["name"]
+                    value_type = "binary"
+                elif info.get("isPartialSliceId"):
+                    _, identifier, _ = decode_slice_id(slice_id)
+                    label = f"{info['name']} ({info['sliceTypeLabel']} = {identifier})"
+
+    if value_type == "binary":
+        _, identifier, _ = decode_slice_id(slice_id)
+        # This (perhaps odd-looking) mapping will result in the frontend
+        # displaying the slice's identifier as a label for the in-group and
+        # "Other" for everything else.
+        replacement_map = {
+            1.0: identifier,
+            2.0: identifier,  # WORKAROUND: Some "binary" datasets have a value of 2
+            0.0: None,
+            None: None,
+        }
+
+        indexed_values = {
+            k: replacement_map.get(v, v) for k, v in indexed_values.items()
+        }
+
+    if label is None:
+        dataset_id, identifier, _ = decode_slice_id(slice_id)
+        dataset = data_access.get_matrix_dataset(dataset_id)
+        label = f"{identifier} {dataset.label}"
 
     return {
         "label": label,
         "slice_id": slice_id,
         "indexed_values": indexed_values,
+        "value_type": value_type,
     }
 
 
@@ -195,7 +223,7 @@ def compute_waterfall(index_type, dimensions, filters, metadata):
     # Handle the special case where we want to recompute the index to be
     # grouped by categorical colors (Josh has dubbed this type of thing a
     # "Sidney plot")
-    if metadata and metadata["color_property"]:
+    if metadata and "color_property" in metadata:
         grouped = defaultdict(list)
         input_metadata = metadata["color_property"]
         categorical_colors = compute_metadata(input_metadata)
@@ -257,12 +285,13 @@ def compute_waterfall(index_type, dimensions, filters, metadata):
         computed_metadata = {}
 
         if metadata_key == "color_property":
-            computed_metadata = categorical_colors
+            computed_metadata = categorical_colors or {}
         else:
             computed_metadata = compute_metadata(input_metadata)
 
         indexed_values = computed_metadata["indexed_values"]  # type: ignore
         output_metadata[metadata_key] = {
+            "label": computed_metadata["label"],
             "slice_id": input_metadata["slice_id"],
             "values": [indexed_values.get(label, None) for label in index_labels],
         }

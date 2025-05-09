@@ -4,12 +4,15 @@ import {
   DatasetParams,
   DatasetTableData,
   DatasetUpdateArgs,
-  // instanceOfErrorDetail,
   DimensionTypeAddArgs,
   DimensionTypeUpdateArgs,
+  DimensionTypeWithCounts,
+  Group,
+  instanceOfErrorDetail,
+  TabularDataset,
 } from "@depmap/types";
 
-import { FormModal, Spinner } from "@depmap/common-components";
+import { FormModal, Spinner, ToggleSwitch } from "@depmap/common-components";
 import WideTable from "@depmap/wide-table";
 import Button from "react-bootstrap/lib/Button";
 
@@ -17,7 +20,6 @@ import styles from "../styles/styles.scss";
 import { ApiContext } from "@depmap/api";
 
 import DatasetForm from "./DatasetForm";
-import DatasetMetadataForm from "./DatasetMetadataForm";
 import { Alert } from "react-bootstrap";
 import DatasetEditForm from "./DatasetEditForm";
 import DimensionTypeForm from "./DimensionTypeForm";
@@ -26,28 +28,25 @@ export default function Datasets() {
   const { getApi } = useContext(ApiContext);
   const [dapi] = useState(() => getApi());
   const [datasets, setDatasets] = useState<Dataset[] | null>(null);
+  const [userGroups, setUserGroups] = useState<{
+    availableGroups: Group[];
+    writeGroups: Group[];
+  }>({ availableGroups: [], writeGroups: [] });
 
   const [initError, setInitError] = useState(false);
-  // const [datasetSubmissionError, setDatasetSubmissionError] = useState<
-  //   string | null
-  // >(null);
+
+  const [isAdvancedMode, setIsAdvancedMode] = useState(false);
   const [selectedDatasetIds, setSelectedDatasetIds] = useState<Set<string>>(
     new Set()
   );
   const [showDatasetModal, setShowDatasetModal] = useState(false);
   const [isEditDatasetMode, setIsEditDatasetMode] = useState(false);
-  const [
-    showUpdateDatasetMetadataModal,
-    setShowUpdateDatasetMetadataModal,
-  ] = useState(false);
+
   const [datasetToEdit, setDatasetToEdit] = useState<Dataset | null>(null);
-  const [datasetMetadataToEdit, setDatasetMetadataToEdit] = useState<{
+  const [datasetMetadataToShow, setDatasetMetadataToShow] = useState<{
     [key: string]: string;
   } | null>(null);
-
-  // TODO: Remove
-  const getFeatureTypes = useCallback(() => dapi.getFeatureTypes(), [dapi]);
-  const getSampleTypes = useCallback(() => dapi.getSampleTypes(), [dapi]);
+  const [showMetadataForm, setShowMetadataForm] = useState<boolean>(false);
 
   const getDimensionTypes = useCallback(() => dapi.getDimensionTypes(), [dapi]);
   const postDimensionType = useCallback(
@@ -59,7 +58,7 @@ export default function Datasets() {
       dapi.updateDimensionType(dimTypeName, dimTypeArgs),
     [dapi]
   );
-  const getGroups = useCallback(() => dapi.getGroups(), [dapi]);
+
   const getDataTypesAndPriorities = useCallback(
     () => dapi.getDataTypesAndPriorities(),
     [dapi]
@@ -78,13 +77,28 @@ export default function Datasets() {
     [dapi]
   );
 
-  const [dimensionTypes, setDimensionTypes] = useState<any[] | null>(null);
+  const getTaskStatus = useCallback(
+    (task_id: string) => dapi.getTaskStatus(task_id),
+    [dapi]
+  );
+
+  const [dimensionTypes, setDimensionTypes] = useState<
+    DimensionTypeWithCounts[] | null
+  >(null);
   const [selectedDimensionType, setSelectedDimensionType] = useState<
     any | null
   >(null);
   const [isEditDimensionTypeMode, setIsEditDimensionTypeMode] = useState(false);
   const [showDimensionTypeModal, setShowDimensionTypeModal] = useState(false);
-  const [showDeleteError, setShowDeleteError] = useState(false);
+
+  const [isDeletingDataset, setIsDeletingDataset] = useState(false);
+  const [datasetDeleteError, setDatasetDeleteError] = useState<string | null>(
+    null
+  );
+  const [isDeletingDimType, setIsDeletingDimType] = useState(false);
+  const [dimTypeDeleteError, setDimTypeDeleteError] = useState<string | null>(
+    null
+  );
 
   const dimensionTypeDatasetCount = (datasetsList: Dataset[]) =>
     datasetsList.reduce(
@@ -116,7 +130,22 @@ export default function Datasets() {
   useEffect(() => {
     (async () => {
       try {
-        const currentDatasets = await dapi.getBreadboxDatasets();
+        let currentDatasets = await dapi.getBreadboxDatasets();
+
+        // write access set to true if not advanced mode
+        const availableGroups = await dapi.getGroups(!isAdvancedMode);
+        if (!isAdvancedMode) {
+          const group_ids = availableGroups.map((group) => {
+            return group.id;
+          });
+          currentDatasets = currentDatasets.filter((dataset) =>
+            group_ids.includes(dataset.group_id)
+          );
+          setUserGroups({ availableGroups, writeGroups: availableGroups });
+        } else {
+          const writeGroups = await dapi.getGroups(true);
+          setUserGroups({ availableGroups, writeGroups });
+        }
 
         setDatasets(currentDatasets);
         const dimensionTypeDatasetNum = dimensionTypeDatasetCount(
@@ -140,7 +169,25 @@ export default function Datasets() {
         setInitError(true);
       }
     })();
-  }, [dapi, getDimensionTypes]);
+  }, [dapi, getDimensionTypes, isAdvancedMode]);
+
+  useEffect(() => {
+    // Only show dataset delete error message for 3 seconds
+    if (datasetDeleteError) {
+      setTimeout(() => {
+        setDatasetDeleteError(null);
+      }, 3000);
+    }
+  }, [datasetDeleteError]);
+
+  useEffect(() => {
+    // Only show dim type delete error message for 3 seconds
+    if (dimTypeDeleteError) {
+      setTimeout(() => {
+        setDimTypeDeleteError(null);
+      }, 3000);
+    }
+  }, [dimTypeDeleteError]);
 
   const datasetForm = useCallback(() => {
     if (datasets) {
@@ -151,9 +198,26 @@ export default function Datasets() {
         formTitle = "Edit Dataset";
         datasetFormComponent = (
           <DatasetEditForm
-            getGroups={getGroups}
+            groups={userGroups.availableGroups}
             getDataTypesAndPriorities={getDataTypesAndPriorities}
-            updateDataset={updateDataset}
+            onSubmit={async (
+              datasetId: string,
+              datasetToUpdate: DatasetUpdateArgs
+            ) => {
+              const updatedDataset = await updateDataset(
+                datasetId,
+                datasetToUpdate
+              );
+              setDatasets(
+                datasets.map((d) => {
+                  if (d.id === datasetId) {
+                    return { ...d, ...updatedDataset };
+                  }
+                  return d;
+                })
+              );
+              setDatasetToEdit(updatedDataset);
+            }}
             datasetToEdit={datasetToEdit}
           />
         );
@@ -163,12 +227,29 @@ export default function Datasets() {
         formTitle = "Add Dataset";
         datasetFormComponent = (
           <DatasetForm
-            getFeatureTypes={getFeatureTypes}
-            getSampleTypes={getSampleTypes}
-            getGroups={getGroups}
+            getDimensionTypes={getDimensionTypes}
+            groups={userGroups.availableGroups}
             getDataTypesAndPriorities={getDataTypesAndPriorities}
             uploadFile={postFileUpload}
             uploadDataset={postDatasetUpload}
+            isAdvancedMode={isAdvancedMode}
+            getTaskStatus={getTaskStatus}
+            onSuccess={(dataset: Dataset) => {
+              const addedDatasets = [...datasets, dataset];
+              setDatasets(addedDatasets);
+              const dimTypeDatasetsNum = dimensionTypeDatasetCount(
+                addedDatasets
+              );
+              setDimensionTypes((oldDimensionTypes) => {
+                if (oldDimensionTypes == null) {
+                  // condition to make eslint happy. TBD: consider changing typing
+                  return null;
+                }
+                return oldDimensionTypes.map((dt) => {
+                  return { ...dt, datasetsCount: dimTypeDatasetsNum[dt.name] };
+                });
+              });
+            }}
           />
         );
       }
@@ -179,8 +260,6 @@ export default function Datasets() {
           onHide={() => {
             setShowDatasetModal(false);
             setIsEditDatasetMode(false);
-            setDatasetToEdit(null);
-            setDatasetMetadataToEdit(null);
           }}
           formComponent={datasetFormComponent}
         />
@@ -188,17 +267,18 @@ export default function Datasets() {
     }
     return null;
   }, [
-    datasetToEdit,
     datasets,
-    getDataTypesAndPriorities,
-    getFeatureTypes,
-    getGroups,
-    getSampleTypes,
     isEditDatasetMode,
-    postDatasetUpload,
-    postFileUpload,
+    datasetToEdit,
     showDatasetModal,
+    userGroups.availableGroups,
+    getDataTypesAndPriorities,
     updateDataset,
+    getDimensionTypes,
+    postFileUpload,
+    postDatasetUpload,
+    isAdvancedMode,
+    getTaskStatus,
   ]);
 
   if (!datasets || !dimensionTypes) {
@@ -263,14 +343,11 @@ export default function Datasets() {
               bsStyle="primary"
               bsSize="small"
               onClick={() => {
-                setShowUpdateDatasetMetadataModal(true);
-                setDatasetToEdit(dataset);
-                setDatasetMetadataToEdit(
-                  dataset.dataset_metadata ? dataset.dataset_metadata : null
-                ); // handled in DatasetMetadataForm.tsx:261
+                setDatasetMetadataToShow(dataset.dataset_metadata);
+                setShowMetadataForm(true);
               }}
             >
-              View / Edit
+              View
             </Button>
           </div>
         ),
@@ -308,62 +385,32 @@ export default function Datasets() {
       onSubmit={onSubmitDimensionType}
       isEditMode={isEditDimensionTypeMode}
       dimensionTypeToEdit={selectedDimensionType}
-      datasets={datasets.filter(
-        (dataset) => dataset.format === "tabular_dataset"
-      )}
+      datasets={
+        datasets.filter(
+          (dataset) => dataset.format === "tabular_dataset"
+        ) as TabularDataset[]
+      }
     />
   );
 
-  const onSubmitUpdateDatasetMetadata = async (
-    datasetId: string,
-    metadata: { [key: string]: string }
-  ) => {
-    try {
-      const selectedDataset = datasets.filter(
-        (dataset) => dataset.id === datasetId
-      )[0];
-
-      const updatedDatasetInfo: DatasetUpdateArgs = {
-        group_id: selectedDataset.group.id,
-        dataset_metadata: metadata,
-      };
-
-      const dataset = await dapi.updateDataset(datasetId, updatedDatasetInfo);
-      setShowUpdateDatasetMetadataModal(false);
-      setDatasets(
-        datasets.map((originalDataset) => {
-          if (originalDataset.id === datasetId) {
-            return dataset;
-          }
-          return originalDataset;
-        })
-      );
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  const updateDatasetMetadataForm = (
-    datasetId: string,
-    datasetMetadata: { [key: string]: string }
+  const datasetMetadataToShowForm = (
+    datasetMetadata: { [key: string]: string } | null
   ) => {
     return (
       <FormModal
-        title="Update Dataset Metadata"
-        showModal={showUpdateDatasetMetadataModal}
+        title="Dataset Metadata"
+        showModal={showMetadataForm}
         onHide={() => {
-          setShowUpdateDatasetMetadataModal(false);
-          setDatasetToEdit(null);
-          setDatasetMetadataToEdit(null);
+          setShowMetadataForm(false);
         }}
         formComponent={
           <div>
-            <DatasetMetadataForm
-              isEdit
-              datasetId={datasetId}
-              initDatasetMetadata={datasetMetadata}
-              onSubmit={onSubmitUpdateDatasetMetadata}
-            />
+            <p>
+              Current dataset metadata:{" "}
+              {datasetMetadata
+                ? JSON.stringify(datasetMetadata, null, 2)
+                : "None"}
+            </p>
           </div>
         }
       />
@@ -381,143 +428,204 @@ export default function Datasets() {
   };
 
   const deleteDatasetButtonAction = async () => {
-    let isDeleted = false;
-    const datasetIdsSet = new Set(selectedDatasetIds);
-    try {
-      await Promise.all(
-        Array.from(datasetIdsSet).map((dataset_id) => {
-          return dapi.deleteDatasets(dataset_id);
-        })
-      );
-      isDeleted = true;
-      setShowDeleteError(false);
-    } catch (e) {
-      setShowDeleteError(true);
-      console.error(e);
-    }
-    if (isDeleted) {
-      const datasetsRemaining = datasets.filter(
-        (dataset) => !datasetIdsSet.has(dataset.id)
-      );
-      setDatasets(datasetsRemaining);
-      const dimTypeDatasetsNum = dimensionTypeDatasetCount(datasetsRemaining);
-      const updatedDimensionTypeCounts = dimensionTypes.map((dt) => {
-        return { ...dt, datasetsCount: dimTypeDatasetsNum[dt.name] };
+    setIsDeletingDataset(true);
+    setDatasetDeleteError(null);
+
+    await Promise.all(
+      Array.from(selectedDatasetIds).map((dataset_id) => {
+        return dapi.deleteDatasets(dataset_id);
+      })
+    )
+      .then(() => {
+        const datasetsRemaining = datasets.filter(
+          (dataset) => !selectedDatasetIds.has(dataset.id)
+        );
+        setDatasets(datasetsRemaining);
+        const dimTypeDatasetsNum = dimensionTypeDatasetCount(datasetsRemaining);
+        const updatedDimensionTypeCounts = dimensionTypes.map((dt) => {
+          return { ...dt, datasetsCount: dimTypeDatasetsNum[dt.name] };
+        });
+        setDimensionTypes(updatedDimensionTypeCounts);
+        setSelectedDatasetIds(new Set());
+      })
+      .catch((e) => {
+        console.error(e);
+        if (instanceOfErrorDetail(e)) {
+          setDatasetDeleteError(e.detail);
+        }
       });
-      setDimensionTypes(updatedDimensionTypeCounts);
-    }
+
+    setIsDeletingDataset(false);
   };
 
   const deleteDimensionType = async () => {
-    let isDeleted = false;
-
-    try {
-      if (selectedDimensionType != null) {
-        const dimensionType = dimensionTypes.find(
-          (dt) => dt.name === selectedDimensionType.name
-        );
-        if (dimensionType.axis === "feature") {
-          await dapi.deleteFeatureType(dimensionType.name);
-        } else {
-          await dapi.deleteSampleType(dimensionType.name);
-        }
-
-        isDeleted = true;
-        setShowDeleteError(false);
-      }
-    } catch (e) {
-      setShowDeleteError(true);
-      console.error(e);
-    }
-    if (isDeleted) {
-      setDimensionTypes(
-        dimensionTypes.filter((dt) => dt.name !== selectedDimensionType.name)
+    if (selectedDimensionType != null) {
+      setIsDeletingDimType(true);
+      const dimensionType = dimensionTypes.find(
+        (dt) => dt.name === selectedDimensionType.name
       );
-      setSelectedDimensionType(null);
+      if (dimensionType) {
+        await dapi
+          .deleteDimensionType(dimensionType.name)
+          .then(() => {
+            setDimTypeDeleteError(null);
+            setDimensionTypes(
+              dimensionTypes.filter(
+                (dt) => dt.name !== selectedDimensionType.name
+              )
+            );
+            setSelectedDimensionType(null);
+          })
+          .catch((e) => {
+            console.error(e);
+            if (instanceOfErrorDetail(e)) {
+              setDimTypeDeleteError(e.detail);
+            }
+          });
+      }
+      setIsDeletingDimType(false);
     }
   };
 
   return (
     <>
       <div className="container-fluid">
-        <h1>Datasets</h1>
-        <div className={styles.primaryButtons}>
-          <Button bsStyle="primary" onClick={() => setShowDatasetModal(true)}>
-            Upload New Dataset
-          </Button>
-          <Button
-            bsStyle="default"
-            onClick={() => handleEditDatasetButtonClick()}
-            disabled={selectedDatasetIds.size !== 1 || datasets.length === 1}
-          >
-            Edit Selected Dataset
-          </Button>
-          <Button
-            bsStyle="danger"
-            onClick={() => deleteDatasetButtonAction()}
-            disabled={selectedDatasetIds.size === 0 || datasets.length === 0}
-          >
-            Delete Selected Dataset
-          </Button>
-        </div>
-        <div className={styles.tableView}>
-          <WideTable
-            rowHeight={40}
-            idProp="id"
-            onChangeSelections={(selections) => {
-              setSelectedDatasetIds(new Set(selections));
-              // If only one dataset is selected, assign that as the dataset to edit
-              if (selections.length === 1) {
-                const selectedDataset = datasets.find(
-                  (dataset) => dataset.id === selections[0]
-                );
-                setDatasetToEdit(selectedDataset || null);
-              }
+        <div>
+          <h1>Data Manager</h1>
+          <ToggleSwitch
+            value={isAdvancedMode}
+            onChange={(newValue: boolean) => {
+              setIsAdvancedMode(newValue);
             }}
-            data={formatDatasetTableData(datasets)}
-            columns={[
-              {
-                accessor: "name",
-                Header: "Name",
-                minWidth: 200,
-                maxWidth: 800,
-              },
-              {
-                accessor: "featureType",
-                Header: "Feature Type",
-                minWidth: 100,
-                maxWidth: 300,
-              },
-              {
-                accessor: "sampleType",
-                Header: "Sample Type",
-                minWidth: 100,
-                maxWidth: 300,
-              },
-              { accessor: "groupName", Header: "Group Name", maxWidth: 300 },
-              {
-                accessor: "dataType",
-                Header: "Data Type",
-                minWidth: 100,
-                maxWidth: 200,
-              },
-              {
-                accessor: "datasetMetadata",
-                Header: "Dataset Metadata",
-                width: 20,
-                disableFilters: true,
-                disableSortBy: true,
-              },
+            options={[
+              { label: "UI Mode: Simple", value: false },
+              { label: "Advanced", value: true },
             ]}
           />
+
+          <div style={{ margin: "10px", width: "800px" }}>
+            <p>
+              Data Manager allows users to upload custom data into the portal
+              for use along side any DepMap produced datasets.
+            </p>
+            <p>
+              At the very top of this page, you will see a control for choosing
+              between the &quot;Advanced&quot; or the &quot;Simple&quot; modes
+              of the UI. Most users should use the &quot;Simple&quot; mode as
+              this streamline the process of uploading data. Using this mode,
+              data that is uploaded will appear in Data Explorer under the data
+              type &quot;User Uploads&quot;.
+            </p>
+            <p>
+              To upload a dataset, click the &quot;Upload new dataset&quot;
+              button and fill out the corresponding form. Upon clicking
+              &quot;Submit&quot; the process will start and may take a few
+              seconds to complete. Once the upload is complete, either
+              &quot;Success&quot; or a validation error will be reported at the
+              bottom of the form. Once &quot;Success&quot; has been reported,
+              you can close the form to return to the list of
+              &quot;Datasets&quot; which should now include your newly added
+              dataset.
+            </p>
+          </div>
+
+          <h2>Datasets</h2>
+          {datasetDeleteError !== null &&
+            (selectedDatasetIds.size !== 0) !== null && (
+              <Alert bsStyle="danger">
+                <strong>Dataset Delete Failed!</strong> {datasetDeleteError}
+              </Alert>
+            )}
+          <div className={styles.primaryButtons}>
+            <Button
+              bsStyle="primary"
+              onClick={() => setShowDatasetModal(true)}
+              disabled={userGroups.writeGroups.length === 0}
+            >
+              Upload New Dataset
+            </Button>
+            <Button
+              bsStyle="default"
+              onClick={() => handleEditDatasetButtonClick()}
+              disabled={
+                selectedDatasetIds.size !== 1 ||
+                datasets.length === 1 ||
+                userGroups.writeGroups.length === 0
+              }
+            >
+              Edit Selected Dataset
+            </Button>
+            <Button
+              bsStyle="danger"
+              onClick={() => deleteDatasetButtonAction()}
+              disabled={
+                selectedDatasetIds.size === 0 ||
+                datasets.length === 0 ||
+                userGroups.writeGroups.length === 0 ||
+                isDeletingDataset
+              }
+            >
+              Delete Selected Dataset
+            </Button>
+          </div>
+          <div className={styles.tableView}>
+            <WideTable
+              rowHeight={40}
+              idProp="id"
+              onChangeSelections={(selections) => {
+                setSelectedDatasetIds(new Set(selections));
+                // If only one dataset is selected, assign that as the dataset to edit
+                if (selections.length === 1) {
+                  const selectedDataset = datasets.find(
+                    (dataset) => dataset.id === selections[0]
+                  );
+                  setDatasetToEdit(selectedDataset || null);
+                }
+                setDatasetDeleteError(null);
+              }}
+              data={formatDatasetTableData(datasets)}
+              columns={[
+                {
+                  accessor: "name",
+                  Header: "Name",
+                  minWidth: 200,
+                  maxWidth: 800,
+                },
+                {
+                  accessor: "featureType",
+                  Header: "Feature Type",
+                  minWidth: 100,
+                  maxWidth: 300,
+                },
+                {
+                  accessor: "sampleType",
+                  Header: "Sample Type",
+                  minWidth: 100,
+                  maxWidth: 300,
+                },
+                { accessor: "groupName", Header: "Group Name", maxWidth: 300 },
+                {
+                  accessor: "dataType",
+                  Header: "Data Type",
+                  minWidth: 100,
+                  maxWidth: 200,
+                },
+                {
+                  accessor: "datasetMetadata",
+                  Header: "Dataset Metadata",
+                  width: 20,
+                  disableFilters: true,
+                  disableSortBy: true,
+                },
+              ]}
+            />
+          </div>
         </div>
 
         {datasetForm()}
-        {datasetToEdit !== null && datasetMetadataToEdit !== null
-          ? updateDatasetMetadataForm(datasetToEdit.id, datasetMetadataToEdit)
-          : null}
+        {datasetMetadataToShowForm(datasetMetadataToShow)}
 
-        {dimensionTypes ? (
+        {dimensionTypes && isAdvancedMode ? (
           <FormModal
             title={
               isEditDimensionTypeMode
@@ -533,66 +641,69 @@ export default function Datasets() {
           />
         ) : null}
 
-        <h1>Dimension Types</h1>
+        {isAdvancedMode ? (
+          <div>
+            <h2>Dimension Types</h2>
 
-        {showDeleteError && (
-          <Alert bsStyle="danger">
-            <strong>
-              Delete &quot;{selectedDimensionType.name}&quot; Failed!
-            </strong>{" "}
-            Make sure &quot;{selectedDimensionType.name}&quot; has no datasets
-            with its dimension type.
-          </Alert>
-        )}
+            {dimTypeDeleteError !== null && selectedDimensionType !== null && (
+              <Alert bsStyle="danger">
+                <strong>
+                  Delete &quot;{selectedDimensionType.name}&quot; Failed!
+                </strong>{" "}
+                {dimTypeDeleteError}
+              </Alert>
+            )}
 
-        <div className={styles.primaryButtons}>
-          <Button
-            bsStyle="primary"
-            onClick={() => setShowDimensionTypeModal(true)}
-          >
-            Create New Dimension Type
-          </Button>
-          <Button
-            bsStyle="default"
-            onClick={() => handleEditDimensionTypeButtonClick()}
-            disabled={!selectedDimensionType}
-          >
-            Edit Selected Dimension Type
-          </Button>
-          <Button
-            bsStyle="danger"
-            onClick={() => deleteDimensionType()}
-            disabled={!selectedDimensionType}
-          >
-            Delete Selected Dimension Type
-          </Button>
-        </div>
+            <div className={styles.primaryButtons}>
+              <Button
+                bsStyle="primary"
+                onClick={() => setShowDimensionTypeModal(true)}
+              >
+                Create New Dimension Type
+              </Button>
+              <Button
+                bsStyle="default"
+                onClick={() => handleEditDimensionTypeButtonClick()}
+                disabled={!selectedDimensionType}
+              >
+                Edit Selected Dimension Type
+              </Button>
+              <Button
+                bsStyle="danger"
+                onClick={() => deleteDimensionType()}
+                disabled={!selectedDimensionType || isDeletingDimType}
+              >
+                Delete Selected Dimension Type
+              </Button>
+            </div>
 
-        <div className={styles.tableView}>
-          <WideTable
-            idProp="name"
-            onChangeSelections={(selections) => {
-              if (selections.length > 0) {
-                const selectedDimType = dimensionTypes.find(
-                  (dt) => dt.name === selections[0]
-                );
-                setSelectedDimensionType(selectedDimType || null);
-              } else {
-                setSelectedDimensionType(null);
-              }
-              setShowDeleteError(false);
-            }}
-            rowHeight={40}
-            columns={[
-              { accessor: "name", Header: "Name" },
-              { accessor: "display_name", Header: "Display Name" },
-              { accessor: "axis", Header: "Type" },
-              { accessor: "datasetsCount", Header: "Datasets" },
-            ]}
-            data={dimensionTypes}
-            singleSelectionMode
-          />
-        </div>
+            <div className={styles.tableView}>
+              <WideTable
+                idProp="name"
+                onChangeSelections={(selections) => {
+                  if (selections.length > 0) {
+                    const selectedDimType = dimensionTypes.find(
+                      (dt) => dt.name === selections[0]
+                    );
+                    setSelectedDimensionType(selectedDimType || null);
+                  } else {
+                    setSelectedDimensionType(null);
+                  }
+                  setDimTypeDeleteError(null);
+                }}
+                rowHeight={40}
+                columns={[
+                  { accessor: "name", Header: "Name" },
+                  { accessor: "display_name", Header: "Display Name" },
+                  { accessor: "axis", Header: "Type" },
+                  { accessor: "datasetsCount", Header: "Datasets" },
+                ]}
+                data={dimensionTypes}
+                singleSelectionMode
+              />
+            </div>
+          </div>
+        ) : null}
       </div>
     </>
   );

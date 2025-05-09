@@ -9,6 +9,7 @@ matplotlib.use(
 import pandas as pd
 
 from depmap import data_access
+from depmap.data_access.models import MatrixDataset
 from depmap.entity.views.executive import (
     format_enrichment_box_for_dataset,
     format_generic_distribution_plot,
@@ -28,7 +29,7 @@ colors = {
 from depmap.correlation.utils import get_all_correlations
 
 from depmap.dataset.models import BiomarkerDataset, DependencyDataset
-from depmap.compound.models import CompoundExperiment
+from depmap.compound.models import Compound, CompoundExperiment
 from depmap.predictability.models import PredictiveModel
 
 from depmap.download.utils import get_download_url
@@ -42,31 +43,52 @@ class DataAvailabilityDataset:
     label: str
     dose_range: str
     assay: str
-    dataset: DependencyEnum
+    # There are multiple given IDs we may use to load the relevant dataset
+    # If a re-indexed dataset exists in breadbox, that should be displayed.
+    # Otherwise, just display the legacy version
+    given_ids: list[str]
 
 
 # The set of information to show on the tile on the compound page
 data_availability_datasets = [
     DataAvailabilityDataset(
-        "CTRP", "1nM - 10μM", "CellTitreGlo", DependencyEnum.CTRP_AUC
+        label="CTRP",
+        dose_range="1nM - 10μM",
+        assay="CellTitreGlo",
+        given_ids=["CTRP_AUC_collapsed", DependencyEnum.CTRP_AUC.name],
     ),
     DataAvailabilityDataset(
-        "GDSC1", "1nM - 10μM", "Resazurin or Syto60", DependencyEnum.GDSC1_AUC
+        label="GDSC1",
+        dose_range="1nM - 10μM",
+        assay="Resazurin or Syto60",
+        given_ids=["GDSC1_AUC_collapsed", DependencyEnum.GDSC1_AUC.name],
     ),
     DataAvailabilityDataset(
-        "GDSC2", "1nM - 10μM", "CellTitreGlo", DependencyEnum.GDSC2_AUC
+        label="GDSC2",
+        dose_range="1nM - 10μM",
+        assay="CellTitreGlo",
+        given_ids=["GDSC2_AUC_collapsed", DependencyEnum.GDSC2_AUC.name],
     ),
     DataAvailabilityDataset(
-        "Repurposing single point", "2.5μM", "PRISM", DependencyEnum.Rep_all_single_pt
+        label="Repurposing single point",
+        dose_range="2.5μM",
+        assay="PRISM",
+        given_ids=["REPURPOSING_AUC_collapsed", DependencyEnum.Rep_all_single_pt.name],
     ),
     DataAvailabilityDataset(
-        "Repurposing multi-dose",
-        "1nM - 10μM",
-        "PRISM",
-        DependencyEnum.Repurposing_secondary_AUC,
+        label="Repurposing multi-dose",
+        dose_range="1nM - 10μM",
+        assay="PRISM",
+        given_ids=[DependencyEnum.Repurposing_secondary_AUC.name],
     ),
     DataAvailabilityDataset(
-        "OncRef", "1nM - 10μM", "PRISM", DependencyEnum.Prism_oncology_AUC
+        label="OncRef",
+        dose_range="1nM - 10μM",
+        assay="PRISM",
+        given_ids=[
+            "Prism_oncology_AUC_collapsed",
+            DependencyEnum.Prism_oncology_AUC.name,
+        ],
     ),
 ]
 
@@ -74,6 +96,7 @@ data_availability_datasets = [
 def format_dep_dist_caption(
     compound_experiment_and_datasets: List[Tuple[CompoundExperiment, DependencyDataset]]
 ):
+    # DEPRECATED: will be redesigned/replaced
     if compound_experiment_and_datasets is None:
         return None
     if any((dataset.units == "AUC" for _, dataset in compound_experiment_and_datasets)):
@@ -138,6 +161,7 @@ def get_order(has_predictability: bool):
 
 
 def determine_compound_experiment_and_dataset(compound_experiment_and_datasets):
+    # DEPRECATED: this method will not work with breadbox datasets. Calls to it should be replaced.
     dataset_regexp_ranking = [
         "Prism_oncology.*",
         "Repurposing_secondary.*",
@@ -154,6 +178,7 @@ def determine_compound_experiment_and_dataset(compound_experiment_and_datasets):
 
 
 def format_dep_dists(compound_experiment_and_datasets):
+    # DEPRECATED: will be redesigned/replaced
     if compound_experiment_and_datasets is None:
         return None
     dep_dists = []
@@ -187,11 +212,7 @@ def format_enrichment_boxes(compound_experiment_and_datasets):
     for compound_experiment, dataset in compound_experiment_and_datasets:
         # compound dataset titles should not be colored
         enrichment_box = format_enrichment_box_for_dataset(
-            compound_experiment,
-            dataset,
-            colors[dataset.name],
-            "default",
-            negative_only=True,
+            compound_experiment, dataset, colors[dataset.name], "default"
         )
         enrichment_box["title"] = "{} {}".format(
             compound_experiment.label, dataset.display_name
@@ -201,13 +222,12 @@ def format_enrichment_boxes(compound_experiment_and_datasets):
 
 
 def format_top_corr_table(compound_experiment_and_datasets):
+    # DEPRECATED: will be replaced/redesigned
     top_correlations = get_top_correlated_expression(compound_experiment_and_datasets)
     table = []
     for _, tc in top_correlations.items():
         interactive_url = url_for(
-            "data_explorer_2.view_data_explorer_2"
-            if current_app.config["ENABLED_FEATURES"].data_explorer_2
-            else "interactive.view_interactive",
+            "data_explorer_2.view_data_explorer_2",
             xDataset=tc["compound_dataset"].values[0],
             xFeature=tc["compound_label"].values[0],
             yDataset="expression",
@@ -258,33 +278,52 @@ def get_top_correlated_expression(compound_experiment_and_datasets):
     return top_correlations
 
 
-def format_availability_tile(compound_id):
-    # find all the compound experiment IDs because the data is stored in the AUC matrices
-    # indexed by compound_experiment, not compound_id
-    compound_experiments_ids = [
-        ce.entity_id for ce in CompoundExperiment.get_all_by_compound_id(compound_id)
-    ]
+def format_availability_tile(compound: Compound):
+    """
+    Load high-level information about which datasets the given compound
+    appears in. This does NOT load the full list of datasets, but instead
+    returns a curated subset that users are most interested in. 
+    For example, we want to show whether there is "Repurposing" data, but don't need
+    to list all of the oncref datasets (AUC, IC50, etc.).
+    """
+    compound_id = compound.compound_id
+    # First, load ALL portal datasets containing the compound (for performance reasons).
+    # This is faster than iterating through the datasets and checking their full contents one-by-one.
+    all_compound_datasets = data_access.get_all_datasets_containing_compound(
+        compound_id
+    )
+    datasets_with_compound_by_id = {}
+    for dataset in all_compound_datasets:
+        if dataset.given_id:
+            datasets_with_compound_by_id[dataset.given_id] = dataset
+        else:
+            datasets_with_compound_by_id[dataset.id] = dataset
 
+    # Only return datasets which both 1) contain the compound and 2) exist in our hard-coded list
     results = []
-    for data_availability_dataset in data_availability_datasets:
-        cell_line_count = get_cell_line_count(
-            data_availability_dataset.dataset, compound_experiments_ids
-        )
-        if cell_line_count == 0:
-            continue
-        dataset = DependencyDataset.get_dataset_by_name(
-            data_availability_dataset.dataset.value
-        )
-        dataset_url = get_download_url(dataset.taiga_id)
-        results.append(
-            {
-                "dataset_name": data_availability_dataset.label,
-                "dose_range": data_availability_dataset.dose_range,
-                "assay": data_availability_dataset.assay,
-                "cell_lines": cell_line_count,
-                "dataset_url": dataset_url,
-            }
-        )
+    for dataset_config in data_availability_datasets:
+        # Use the highest priority dataset that exists
+        dataset: Optional[MatrixDataset] = None
+        for given_id in dataset_config.given_ids:
+            if dataset is None and given_id in datasets_with_compound_by_id:
+                dataset = datasets_with_compound_by_id[given_id]
+
+        if dataset is not None:
+            # Load data for this compound to determine how many cell lines have data for it
+            df = data_access.get_subsetted_df_by_labels_compound_friendly(dataset.id)
+            feature_data = df.loc[compound.label]
+            cell_line_count = feature_data.dropna().size
+
+            dataset_url = get_download_url(dataset.taiga_id)
+            results.append(
+                {
+                    "dataset_name": dataset_config.label,
+                    "dose_range": dataset_config.dose_range,
+                    "assay": dataset_config.assay,
+                    "cell_lines": cell_line_count,
+                    "dataset_url": dataset_url,
+                }
+            )
 
     # Currently no filtering needs to happen here because only one DependencyDataset
     # per dataset has both dose_range and assay in its corresponding metadata
@@ -292,37 +331,11 @@ def format_availability_tile(compound_id):
     return results
 
 
-def get_cell_line_count(dataset: DependencyEnum, entity_ids: List[int]):
-    # given a set of entity_ids, return the number of cell lines which have
-    # values for any of those entity_ids
-
-    if not data_access.has_config(dataset.value):
-        return 0
-
-    # map entity_ids to row_indices
-    row_summaries = data_access.get_all_row_indices_labels_entity_ids(dataset.value)
-    row_index_by_entity_id = {x.entity_id: x.index for x in row_summaries}
-    row_indices = []
-    for entity_id in entity_ids:
-        if entity_id in row_index_by_entity_id:
-            row_indices.append(row_index_by_entity_id[entity_id])
-
-    # get the corresponding data
-    df: pd.DataFrame = data_access.get_subsetted_df(
-        dataset_id=dataset.value, row_indices=row_indices, col_indices=None
-    )
-
-    # compute the number of columns which have at least one non-na
-    return sum((~df.applymap(pd.isna)).apply(any, axis=0))
-
-
 def format_corr_table(compound_label, top_correlations):
     table = []
     for _, tc in top_correlations.items():
         interactive_url = url_for(
-            "data_explorer_2.view_data_explorer_2"
-            if current_app.config["ENABLED_FEATURES"].data_explorer_2
-            else "interactive.view_interactive",
+            "data_explorer_2.view_data_explorer_2",
             xDataset=tc["compound_dataset"].values[0],
             yDataset="expression",
             xFeature=compound_label,

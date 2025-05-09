@@ -26,7 +26,7 @@ type CompoundDataset = {
   dose_replicate_level_yunits: string;
 };
 
-type Props = {
+export type DoseResponseProps = {
   datasetOptions: Array<CompoundDataset>;
   doseUnits: string;
 };
@@ -58,14 +58,14 @@ function addIdToDoseResponseCurvePromise(
   };
 }
 
-class DoseResponseTab extends React.Component<Props, State> {
+class DoseResponseTab extends React.Component<DoseResponseProps, State> {
   dapi: DepmapApi;
 
   cellLineUrlRoot: string;
 
   dropdownEventKeyToLabel: Map<CompoundDataset, React.ReactNode>;
 
-  constructor(props: Props) {
+  constructor(props: DoseResponseProps) {
     super(props);
 
     this.dapi = getDapi();

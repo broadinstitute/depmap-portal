@@ -1,23 +1,32 @@
 import os
 import shutil
+import json
 from typing import Any, List, Optional, Union
 
 import pandas as pd
 
-from ..models.dataset import Dataset, ValueType
+from ..models.dataset import Dataset, MatrixDataset, ValueType
 from .hdf5_utils import write_hdf5_file, read_hdf5_file
 
 DATA_FILE: str = "data.hdf5"
 
 
 def save_dataset_file(
-    dataset_id: str, data_df: pd.DataFrame, filestore_location: str,
+    dataset_id: str,
+    data_df: pd.DataFrame,
+    value_type: ValueType,
+    filestore_location: str,
 ):
     base_path = os.path.join(filestore_location, dataset_id)
     os.makedirs(base_path)
 
+    if value_type == ValueType.list_strings:
+        dtype = "str"
+    else:
+        dtype = "float"
+
     write_hdf5_file(
-        get_file_location(dataset_id, filestore_location, DATA_FILE), data_df
+        get_file_location(dataset_id, filestore_location, DATA_FILE), data_df, dtype
     )
 
 
@@ -49,8 +58,12 @@ def get_slice(
 
 
 def get_feature_slice(
-    dataset: Dataset, feature_indexes: List[int], filestore_location: str
+    dataset: MatrixDataset, feature_indexes: List[int], filestore_location: str
 ) -> pd.DataFrame:
+    """
+    Load a dataframe of feature data belonging to the given indexes.
+    The resulting dataframe will be indexed by given IDs with features as columns.
+    """
     if len(feature_indexes) == 0:
         raise ValueError(f"No features match query")
 
@@ -63,8 +76,12 @@ def get_feature_slice(
 
 
 def get_sample_slice(
-    dataset: Dataset, sample_indexes: List[int], filestore_location: str
+    dataset: MatrixDataset, sample_indexes: List[int], filestore_location: str
 ) -> pd.DataFrame:
+    """
+    Load a dataframe of sample data belonging to the given indexes.
+    The resulting dataframe will be indexed by given IDs with samples as rows.
+    """
     if len(sample_indexes) == 0:
         raise ValueError(f"No samples match query")
 
@@ -86,6 +103,10 @@ def get_df_by_value_type(
         # Convert numerical values back to origincal categorical value
         df = df.astype(int)
         df = df.applymap(lambda x: dataset_allowed_values[x])
+    elif value_type == ValueType.list_strings:
+        # NOTE: String data in HDF5 datasets is read as bytes by default
+        # len of byte encoded empty string should be 0
+        df = df.applymap(lambda x: json.loads(x) if len(x) != 0 else None)
     return df
 
 

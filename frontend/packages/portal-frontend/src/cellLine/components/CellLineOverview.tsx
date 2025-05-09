@@ -6,7 +6,7 @@ import {
   OncogenicAlteration,
   CellLineDataMatrix,
   DatasetDataTypes,
-  CellLineDescriptionData,
+  ModelInfo,
 } from "src/cellLine/models/types";
 import styles from "src/common/styles/async_tile.module.scss";
 
@@ -42,7 +42,7 @@ const CellLineOverview = ({ modelId, hasMetMapData }: Props) => {
   const [
     descriptionTileData,
     setDescriptionTileData,
-  ] = useState<CellLineDescriptionData | null>(null);
+  ] = useState<ModelInfo | null>(null);
 
   const [
     prefDepCrisprData,

@@ -15,7 +15,7 @@ from breadbox.db.session import SessionWithUser, SessionLocalWithUser
 from breadbox.config import Settings
 from breadbox.startup import create_app
 from breadbox.crud.access_control import PUBLIC_GROUP_ID, TRANSIENT_GROUP_ID
-from breadbox.crud.types import add_dimension_type
+from breadbox.service.dataset import add_dimension_type
 from breadbox.crud.data_type import add_data_type
 from breadbox.crud.group import (
     add_group,
@@ -225,6 +225,12 @@ def mock_celery(minimal_db, settings, monkeypatch, celery_app):
 
     def get_test_settings():
         return settings
+
+    def mock_check_celery():
+        return True
+
+    # Monkeypatch check_celery and pretend celery is running for test
+    monkeypatch.setattr(utils, "check_celery", mock_check_celery)
 
     # The endpoint uses celery, and needs monkeypatching to replace db_context and get_settings,
     # which are not passed in as params due to the limits of redis serialization.

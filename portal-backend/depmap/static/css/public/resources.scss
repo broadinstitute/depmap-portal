@@ -1,12 +1,32 @@
-.depmap-accordion {
-  margin: 0px !important;
-  .accordion-header {
-    padding: 8px 20px 8px 40px !important;
-    background-color: #f5f8fd !important;
-    border-bottom: 1px solid #585858 !important;
-    .accordion-title {
-      font-weight: 500;
-      font-size: 18px;
-    }
+.panel-default > .panel-heading {
+  @media screen and (min-width: 800px) {
+    padding: 8px 20px 8px 40px;
+    font-size: 18px;
   }
+
+  font-weight: 500;
+  background-color: #f5f8fd;
+  border-bottom: 1px solid #585858;
+
+  cursor: pointer;
+}
+
+.panel-group .panel {
+  border-radius: 0px;
+  margin: 0px !important;
+  border: 0px;
+}
+
+// .panel-group .panel-heading+.panel-collapse>.list-group, .panel-group .panel-heading+.panel-collapse>.panel-body {
+//   border-top: 0px;
+// }
+// list-group when expanded has white border-top as default so get rid of border-top
+.panel-group .panel-heading + .panel-collapse > .list-group {
+  border-top: 0px;
+}
+
+.panel-group .panel {
+  border-radius: 0px;
+  margin: 0px !important;
+  border: 0px;
 }

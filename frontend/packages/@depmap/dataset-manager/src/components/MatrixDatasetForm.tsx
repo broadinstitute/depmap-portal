@@ -13,13 +13,14 @@ import { CustomDatasetMetadata } from "./DatasetMetadataForm";
 import { FormGroup, ControlLabel } from "react-bootstrap";
 import {
   DataType,
-  FeatureType,
+  FeatureDimensionType,
   Group,
   InvalidPrioritiesByDataType,
-  SampleType,
+  SampleDimensionType,
 } from "@depmap/types";
 import { Option, TagInput } from "@depmap/common-components";
 import { ActionMeta, ValueType } from "react-select";
+import { useSubmitButtonIsDisabled } from "../../utils/disableSubmitButton";
 
 function transformErrors(errors: RJSFValidationError[]) {
   // eslint-disable-next-line array-callback-return, consistent-return
@@ -159,57 +160,16 @@ const fields: RegistryFieldsType = {
   TagInputAllowedValues: CustomAllowedValues,
 };
 
-const uiSchema: UiSchema = {
-  "ui:title": "", // removes the title <legend> html element
-  "ui:order": [
-    "name",
-    "file_ids",
-    "dataset_md5",
-    "units",
-    "feature_type",
-    "sample_type",
-    "group_id",
-    "value_type",
-    "allowed_values",
-    "data_type",
-    "priority",
-    "dataset_metadata",
-    "is_transient",
-    "format",
-  ],
-  dataset_metadata: {
-    "ui:field": "TagInputMetadata",
-  },
-  allowed_values: {
-    "ui:field": "TagInputAllowedValues",
-    // "ui:emptyValue": null // This doesn't make default val 'null'. BUG: (see: https://github.com/rjsf-team/react-jsonschema-form/issues/1581                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             )
-  },
-  format: {
-    "ui:widget": "hidden",
-  },
-  file_ids: {
-    "ui:widget": "hidden",
-  },
-  dataset_md5: {
-    "ui:widget": "hidden",
-  },
-  is_transient: {
-    "ui:widget": "hidden",
-  },
-  group_id: {
-    "ui:title": "Group", // override original title from schema
-  },
-};
-
 interface MatrixDatasetFormProps {
-  featureTypes: FeatureType[];
-  sampleTypes: SampleType[];
+  featureTypes: FeatureDimensionType[];
+  sampleTypes: SampleDimensionType[];
   dataTypes: DataType[];
   invalidDataTypePriorities: InvalidPrioritiesByDataType;
   groups: Group[];
   fileIds?: string[] | null;
   md5Hash?: string | null;
   initFormData: any;
+  isAdvancedMode: boolean;
   onSubmitForm: (formData: { [key: string]: any }) => void;
   forwardFormData?: (formData: { [key: string]: any }) => void;
 }
@@ -223,6 +183,7 @@ export function MatrixDatasetForm({
   fileIds = null,
   md5Hash = null,
   initFormData,
+  isAdvancedMode,
   onSubmitForm,
   forwardFormData = undefined,
 }: MatrixDatasetFormProps) {
@@ -281,6 +242,72 @@ export function MatrixDatasetForm({
       setFormData(newFormData);
     }
   }, [fileIds, md5Hash, formData]);
+
+  const submitButtonIsDisabled = useSubmitButtonIsDisabled(
+    schema?.required,
+    formData
+  );
+
+  const uiSchema = React.useMemo(() => {
+    const formUiSchema: UiSchema = {
+      "ui:title": "", // removes the title <legend> html element
+      "ui:order": [
+        "name",
+        "file_ids",
+        "dataset_md5",
+        "units",
+        "feature_type",
+        "sample_type",
+        "group_id",
+        "value_type",
+        "allowed_values",
+        "data_type",
+        "priority",
+        "dataset_metadata",
+        "is_transient",
+        "format",
+      ],
+      dataset_metadata: {
+        "ui:field": "TagInputMetadata",
+      },
+      allowed_values: {
+        "ui:field": "TagInputAllowedValues",
+        // "ui:emptyValue": null // This doesn't make default val 'null'. BUG: (see: https://github.com/rjsf-team/react-jsonschema-form/issues/1581                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             )
+      },
+      format: {
+        "ui:widget": "hidden",
+      },
+      file_ids: {
+        "ui:widget": "hidden",
+      },
+      dataset_md5: {
+        "ui:widget": "hidden",
+      },
+      is_transient: {
+        "ui:widget": "hidden",
+      },
+      group_id: {
+        "ui:title": "Group", // override original title from schema
+      },
+      "ui:submitButtonOptions": {
+        props: {
+          disabled: submitButtonIsDisabled,
+        },
+      },
+    };
+    if (!isAdvancedMode) {
+      [
+        "feature_type",
+        "value_type",
+        "priority",
+        "dataset_metadata",
+        "data_type",
+      ].forEach((key) => {
+        formUiSchema[key] = { "ui:widget": "hidden" };
+      });
+    }
+    return formUiSchema;
+  }, [isAdvancedMode, submitButtonIsDisabled]);
 
   const handleOnChange = (e: any) => {
     // Need to set allowed_values with continuous value_type back to null if value_type switches from categorical

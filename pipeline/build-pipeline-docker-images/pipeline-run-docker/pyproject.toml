@@ -1,0 +1,33 @@
+[tool.poetry]
+name = "pipeline-run-docker"
+version = "0.1.0"
+description = ""
+authors = ["Your Name <you@example.com>"]
+readme = "README.md"
+package-mode = false
+
+
+[tool.poetry.dependencies]
+python = ">3.9,<3.10"
+pandas = "1.5.3"
+click = "^8.1.7"
+numpy = "^1.25.1"
+taigapy = {version = "3.12.0", source = "public-python"}
+pyyaml = "^6.0.2"
+statsmodels = "^0.14.4"
+pandera = "^0.22.1"
+sklearn = "0.0"
+packed-cor-tables = {version = "^0.1.1", source = "public-python"}
+tqdm = "^4.67.1"
+scipy = "1.12.0"
+gcsfs = "^2025.3.2"
+
+
+[[tool.poetry.source]]
+name = "public-python"
+url = "https://us-central1-python.pkg.dev/cds-artifacts/public-python/simple/"
+priority = "explicit"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

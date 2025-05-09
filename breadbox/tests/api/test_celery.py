@@ -12,6 +12,7 @@ from breadbox.db.session import SessionWithUser
 from breadbox.models.dataset import ValueType
 from breadbox.compute import analysis_tasks
 from breadbox.compute.analysis_tasks import _subset_feature_df
+from breadbox.celery_task import utils
 from tests import factories
 from breadbox.compute.analysis_tasks import (
     run_custom_analysis,
@@ -87,6 +88,12 @@ def test_compute_univariate_associations(
 
     def get_test_settings():
         return settings
+
+    def mock_check_celery():
+        return True
+
+    # Monkeypatch check_celery and pretend celery is running for test
+    monkeypatch.setattr(utils, "check_celery", mock_check_celery)
 
     monkeypatch.setattr(
         analysis_tasks, "get_settings", get_test_settings,
@@ -225,6 +232,12 @@ def test_compute_univariate_associations_intersection_with_minimum_points(
 
     def get_test_settings():
         return settings
+
+    def mock_check_celery():
+        return True
+
+    # Monkeypatch check_celery and pretend celery is running for test
+    monkeypatch.setattr(utils, "check_celery", mock_check_celery)
 
     monkeypatch.setattr(
         analysis_tasks, "get_settings", get_test_settings,

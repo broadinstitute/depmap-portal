@@ -119,6 +119,7 @@ def _get_gene_page_template_parameters(gene_symbol):
     characterizations = characterization.format_characterizations(
         entity_id, gene_symbol, biomarker_datasets
     )
+
     has_predictability = (
         crispr_dataset is not None
         and PredictiveModel.get_top_models_features(
@@ -204,20 +205,6 @@ def get_compounds_targeting_gene(gene_symbol):
             for c in compounds
         ]
     )
-
-
-@blueprint.route("/has_rephub/<gene_symbol>")
-def get_has_rephub(gene_symbol):
-    has_rephub = (
-        CompoundExperiment.query.join(
-            Compound, CompoundExperiment.compound_id == Compound.entity_id
-        )
-        .filter(CompoundExperiment.xref_type == "BRD")
-        .filter(Compound.target_gene.any(Gene.label == gene_symbol))
-        .first()
-        is not None
-    )
-    return jsonify({"hasRepHub": has_rephub})
 
 
 def format_gene_summary(gene, dependency_datasets):

@@ -1,12 +1,25 @@
 import React from "react";
 import { ApiContext } from "@depmap/api";
-import { ContextBuilderModal } from "@depmap/data-explorer-2";
-import { DataExplorerContext } from "@depmap/types";
 import {
-  getDapi as getApi,
-  getVectorCatalogApi,
-} from "src/common/utilities/context";
-import { saveContextToLocalStorage } from "src/data-explorer-2/utils";
+  ContextBuilderModal,
+  DeprecatedDataExplorerApiProvider,
+  saveContextToLocalStorageAndPersist,
+} from "@depmap/data-explorer-2";
+import { DataExplorerContext } from "@depmap/types";
+import { getDapi as getApi } from "src/common/utilities/context";
+import {
+  evaluateLegacyContext,
+  fetchContextSummary,
+  fetchDatasetDetails,
+  fetchDatasetsByIndexType,
+  fetchDatasetsMatchingContextIncludingEntities,
+  fetchDimensionLabels,
+  fetchDimensionLabelsOfDataset,
+  fetchDimensionLabelsToDatasetsMapping,
+  fetchMetadataColumn,
+  fetchMetadataSlices,
+  fetchUniqueValuesOrRange,
+} from "src/data-explorer-2/deprecated-api";
 
 interface Props {
   /* The context to use as a starting point. This can be as simple as
@@ -36,7 +49,10 @@ function StandaloneContextEditor({
   }
 
   const onClickSave = async (editedContext: DataExplorerContext) => {
-    const nextHash = await saveContextToLocalStorage(editedContext, hash);
+    const nextHash = await saveContextToLocalStorageAndPersist(
+      editedContext,
+      hash
+    );
     onSave(editedContext, nextHash);
     onHide();
 
@@ -55,14 +71,32 @@ function StandaloneContextEditor({
   };
 
   return (
-    <ApiContext.Provider value={{ getApi, getVectorCatalogApi }}>
-      <ContextBuilderModal
-        show
-        context={context}
-        isExistingContext={Boolean(hash)}
-        onClickSave={onClickSave}
-        onHide={onHide}
-      />
+    <ApiContext.Provider value={{ getApi }}>
+      <DeprecatedDataExplorerApiProvider
+        evaluateLegacyContext={evaluateLegacyContext}
+        fetchContextSummary={fetchContextSummary}
+        fetchDatasetDetails={fetchDatasetDetails}
+        fetchDatasetsByIndexType={fetchDatasetsByIndexType}
+        fetchDimensionLabels={fetchDimensionLabels}
+        fetchDimensionLabelsOfDataset={fetchDimensionLabelsOfDataset}
+        fetchDimensionLabelsToDatasetsMapping={
+          fetchDimensionLabelsToDatasetsMapping
+        }
+        fetchDatasetsMatchingContextIncludingEntities={
+          fetchDatasetsMatchingContextIncludingEntities
+        }
+        fetchMetadataColumn={fetchMetadataColumn}
+        fetchMetadataSlices={fetchMetadataSlices}
+        fetchUniqueValuesOrRange={fetchUniqueValuesOrRange}
+      >
+        <ContextBuilderModal
+          show
+          context={context}
+          isExistingContext={Boolean(hash)}
+          onClickSave={onClickSave}
+          onHide={onHide}
+        />
+      </DeprecatedDataExplorerApiProvider>
     </ApiContext.Provider>
   );
 }

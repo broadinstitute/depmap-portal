@@ -18,6 +18,9 @@ from .interface import (
     get_slice_data,
     is_categorical,
     is_continuous,
+    # compound-specific methods
+    get_all_datasets_containing_compound,
+    get_subsetted_df_by_labels_compound_friendly,
     # methods that will be supported with modified contracts
     get_private_datasets,
     get_row_of_values,
@@ -28,9 +31,6 @@ from .interface import (
     get_all_row_indices_labels_entity_ids,
     get_context_dataset,
     get_custom_cell_lines_dataset,
-    get_matrix_id,
-    get_sort_key,
+    get_metadata_dataset_id,
     has_config,
-    is_filter,
-    is_standard,
 )

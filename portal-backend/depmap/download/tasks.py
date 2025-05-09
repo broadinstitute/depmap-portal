@@ -16,7 +16,6 @@ from depmap.access_control import assume_user
 from depmap.cell_line.models import CellLine, Lineage
 from depmap.compute.celery import app
 from depmap.compute.analysis_tasks import make_result_task_directory
-from depmap.utilities.entity_utils import get_matching_entity_ids_for_label
 from depmap.utilities.exception import UserError
 from depmap.utilities.iter import chunk_iter
 
@@ -90,7 +89,9 @@ def _handle_df_nas(
 def _get_mutation_table_entity_ids(entity_labels: List[str]):
     entity_ids = []
     for label in entity_labels:
-        entity_ids.extend(get_matching_entity_ids_for_label(Gene, label))
+        gene = Gene.get_by_label(label, must=False)
+        if gene:
+            entity_ids.append(gene.entity_id)
 
     return entity_ids
 

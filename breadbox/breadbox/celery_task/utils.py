@@ -11,7 +11,7 @@ from ..compute.celery import app
 from fastapi import HTTPException
 from typing import Any, Optional
 from ..compute.celery import app
-from breadbox.schemas.custom_http_exception import UserError
+from breadbox.schemas.custom_http_exception import UserError, CeleryConnectionError
 from typing import Protocol, cast, Callable
 from celery.result import AsyncResult, EagerResult
 
@@ -180,7 +180,7 @@ def format_task_status(task):
         "id": task.id,
         "state": task.state,
         "message": message,
-        "percentComplete": percent_complete,
+        "percentComplete": int(percent_complete) if percent_complete else None,
         "nextPollDelay": 1000,  # units are miliseconds, this says once per second
         "result": result,
     }
@@ -204,3 +204,25 @@ def update_state(
         meta["message"] = message
 
     task.update_state(state=state, meta=meta)
+
+
+def check_celery():
+    """
+    Checks to see if celery redis broker is connected.
+    Check worker stats to see if any workers are running
+    """
+    inspect = app.control.inspect()
+    try:
+        # Tries to connect to celery broker
+        conn = app.broker_connection().ensure_connection(max_retries=3)
+    except Exception as exc:
+        raise CeleryConnectionError(
+            "Failed to connect to celery redis broker!"
+        ) from exc
+    # Pings workers to see if any of them respond. Returns None if no response
+    stats = inspect.stats()
+    # NOTE: app.control.broadcast("ping", reply=True, limit=1) or inspect.ping() pings all workers but will not return if all workers are busy
+    if stats is None:
+        raise CeleryConnectionError(
+            "Celery workers are not responding. Check if workers are running!"
+        )

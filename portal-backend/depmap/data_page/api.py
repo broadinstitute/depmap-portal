@@ -27,6 +27,8 @@ DATA_ORDER = [
     "Sequencing_WES_Sanger",
     "Sequencing_WGS_Broad",
     "Sequencing_RNA_Broad",
+    "Sequencing_ATACSeq_Broad",
+    "Sequencing_Long_Reads",
     "Drug_CTD_Broad",
     "Drug_Repurposing_Broad",
     "Drug_GDSC_Sanger",
@@ -38,7 +40,6 @@ DATA_ORDER = [
     "Methylation_Sanger",
     "Methylation_CCLE",
     "Uncategorized_miRNA_CCLE",
-    "Uncategorized_ATACSeq_Broad",
 ]
 
 
@@ -86,7 +87,9 @@ def _get_data_type_url_mapping(data_types: List[str]):
 
     full_mapping = {
         "CRISPR_Achilles_Broad": _get_dataset_url(DependencyEnum.Chronos_Combined.name),
-        "CRISPR_Score_Sanger": _get_dataset_url(DependencyEnum.Chronos_Score.name),
+        # CRISPR_Score_Sanger url is set to None by request. _get_dataset_url WILL return
+        # a url for crispr sanger, but we do not want this url to show up in the data availability graph.
+        "CRISPR_Score_Sanger": None,
         "CRISPR_ParalogsScreens": None,
         "RNAi_Marcotte": None,
         "RNAi_Achilles_Broad": _get_dataset_url(DependencyEnum.RNAi_merged.name),
@@ -95,6 +98,8 @@ def _get_data_type_url_mapping(data_types: List[str]):
         "Sequencing_WES_Sanger": None,
         "Sequencing_WGS_Broad": None,
         "Sequencing_RNA_Broad": None,
+        "Sequencing_ATACSeq_Broad": None,
+        "Sequencing_Long_Reads": None,
         "Drug_CTD_Broad": _get_dataset_url(DependencyEnum.CTRP_AUC.name),
         "Drug_Repurposing_Broad": _get_dataset_url(
             DependencyEnum.Rep_all_single_pt.name
@@ -116,7 +121,6 @@ def _get_data_type_url_mapping(data_types: List[str]):
             BiomarkerEnum.rrbs.name, isDependencyDataset=False
         ),
         "Uncategorized_miRNA_CCLE": None,
-        "Uncategorized_ATACSeq_Broad": None,
     }
 
     current_env_mapping = {

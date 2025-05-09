@@ -25,7 +25,7 @@ export function handleError(
 ) {
   if (error instanceof MismatchedSliceTypeError) {
     const slice_type = datasets.find(
-      (d) => d.dataset_id === prevState.dimension.dataset_id
+      (d) => d.id === prevState.dimension.dataset_id
     )?.slice_type;
 
     window.console.error(error);
@@ -101,5 +101,7 @@ export function handleError(
     };
   }
 
-  throw new Error("unhandlded DimensionSelect error");
+  window.console.error("Error applying changes", { prevState, changes });
+  window.console.error(error);
+  throw new Error("^^^ unhandled DimensionSelect error ^^^");
 }

@@ -30,7 +30,7 @@ def _rewrite_stream(vars, in_name, in_lines, out_fd):
             value = m.group(2)
             vars[variable_name] = value
 
-        m = re.match("(.*)PREPROCESS_TAIGA_ID\(([^ ,]+)\)(.*)", line, re.DOTALL)
+        m = re.match("(.*)PREPROCESS_TAIGA_ID\\(([^ ,]+)\\)(.*)", line, re.DOTALL)
         if m is not None:
             line_prefix = m.group(1)
             orig_taiga_dataset_var_name = m.group(2)
@@ -44,7 +44,7 @@ def _rewrite_stream(vars, in_name, in_lines, out_fd):
             )
 
         m = re.match(
-            '(.*)PREPROCESS_TAIGA_ID\(([^ ,]+), "([^"]+)"\)(.*)', line, re.DOTALL
+            '(.*)PREPROCESS_TAIGA_ID\\(([^ ,]+), "([^"]+)"\\)(.*)', line, re.DOTALL
         )
         if m is not None:
             orig_taiga_dataset_var_name = m.group(2)

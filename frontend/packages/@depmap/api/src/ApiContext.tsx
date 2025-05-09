@@ -1,10 +1,4 @@
 import React from "react";
-import {
-  AddDatasetOneRowArgs,
-  AssociationAndCheckbox,
-  PlotFeatures,
-  VectorCatalogApi,
-} from "@depmap/interactive";
 import { UserUploadArgs, UploadTask } from "@depmap/user-upload";
 import {
   CellLineSelectorLines,
@@ -17,6 +11,8 @@ import {
   UnivariateAssociationsParams,
 } from "@depmap/compute";
 import {
+  AddDatasetOneRowArgs,
+  AssociationAndCheckbox,
   Dataset as BreadboxDataset,
   DatasetParams,
   DatasetUpdateArgs,
@@ -61,12 +57,6 @@ export interface SharedApi {
   postCustomTaiga: (config: UserUploadArgs) => Promise<UploadTask>;
   postCustomCsv: (config: UserUploadArgs) => Promise<UploadTask>;
   getCellignerColorMap: () => Promise<CellignerColorsForCellLineSelector>;
-  getFeaturePlot: (
-    features: string[],
-    groupBy: string,
-    filter: string,
-    computeLinearFit: boolean
-  ) => Promise<PlotFeatures>;
   searchDimensions: (
     req: SearchDimenionsRequest
   ) => Promise<SearchDimenionsResponse>;
@@ -87,7 +77,7 @@ export interface SharedApi {
     datasetId: string,
     datasetToUpdate: DatasetUpdateArgs
   ) => Promise<BreadboxDataset>;
-  getGroups: () => Promise<Group[]>;
+  getGroups: (writeAccess?: boolean) => Promise<Group[]>;
   postGroup: (groupArgs: GroupArgs) => Promise<Group>;
   deleteGroup: (id: string) => Promise<any>;
   postGroupEntry: (
@@ -124,12 +114,10 @@ export interface SharedApi {
     config: UnivariateAssociationsParams
   ) => Promise<ComputeResponse>;
   postCustomCsvOneRow: (config: AddDatasetOneRowArgs) => Promise<UploadTask>;
-  getVector: (id: string) => Promise<any>;
 }
 
 export interface ApiContextInterface {
   getApi: () => SharedApi;
-  getVectorCatalogApi: () => VectorCatalogApi;
 }
 
 const apiFunctions = {
@@ -137,16 +125,10 @@ const apiFunctions = {
     getApi: () => {
       throw new Error("getBreadboxApi is not implemented");
     },
-    getVectorCatalogApi: () => {
-      throw new Error("getVectorCatalogApi is not implemented");
-    },
   },
   depmap: {
     getApi: () => {
       throw new Error("getDapi is not implemented");
-    },
-    getVectorCatalogApi: () => {
-      throw new Error("getVectorCatalogApi is not implemented");
     },
   },
 };

@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Button } from "react-bootstrap";
-import { DepMap } from "@depmap/globals";
+import { DepMap, isElara } from "@depmap/globals";
 
 import styles from "../styles/CustomAnalysisResult.scss";
 
@@ -13,6 +13,11 @@ export default function SaveContextButton({
   entityType,
   selectedLabels,
 }: Props) {
+  if (isElara) {
+    window.console.warn("SaveContextButton not implemented in Elara!");
+    return null;
+  }
+
   return (
     <Button
       className={styles.SaveContextButton}
