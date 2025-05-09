@@ -39,6 +39,14 @@ export default function CorrelationsPlots(props: CorrelationsPlotsProps) {
     [dosesToFilter]
   );
 
+  const otherFeatureTypesHasSelected = (featureType: string): boolean => {
+    const hasOtherFeatureTypeSelectedFeatures = Object.entries(
+      featureTypeSelectedLabels
+    ).some(([k, v]) => k !== featureType && v.length > 0);
+
+    return hasOtherFeatureTypeSelectedFeatures;
+  };
+
   return (
     <div
       style={{ display: "grid", gridTemplateColumns: "7fr 1fr", gap: "2rem" }}
@@ -67,6 +75,9 @@ export default function CorrelationsPlots(props: CorrelationsPlotsProps) {
                     : []
                 }
                 forwardPlotSelectedFeatures={forwardSelectedLabels}
+                hasOtherSelectedFeatureTypeFeatures={otherFeatureTypesHasSelected(
+                  featureType
+                )}
               />
             </div>
           );

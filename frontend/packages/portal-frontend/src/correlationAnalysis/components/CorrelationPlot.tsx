@@ -7,6 +7,7 @@ interface CorrelationsPlotProps {
   featureType: string;
   data: VolcanoData[];
   selectedFeatures: string[];
+  hasOtherSelectedFeatureTypeFeatures: boolean;
   forwardPlotSelectedFeatures: (
     featureType: string,
     newSelectedLabels: string[]
@@ -18,6 +19,7 @@ export default function CorrelationsPlot(props: CorrelationsPlotProps) {
     featureType,
     data,
     selectedFeatures,
+    hasOtherSelectedFeatureTypeFeatures,
     forwardPlotSelectedFeatures,
   } = props;
 
@@ -33,6 +35,12 @@ export default function CorrelationsPlot(props: CorrelationsPlotProps) {
         if (selectedFeatures.length) {
           return selectedFeatures.includes(label) ? 1 : 0.1;
         }
+        if (
+          selectedFeatures.length === 0 &&
+          hasOtherSelectedFeatureTypeFeatures
+        ) {
+          return 0.1;
+        }
 
         return 1;
       });
@@ -42,7 +50,7 @@ export default function CorrelationsPlot(props: CorrelationsPlotProps) {
     const update = { "marker.opacity": traceHighlights };
 
     Plotly.restyle(volcanoPlotsRef.current, update, traceIndexes);
-  }, [data, selectedFeatures]);
+  }, [data, hasOtherSelectedFeatureTypeFeatures, selectedFeatures]);
 
   return (
     <div>
