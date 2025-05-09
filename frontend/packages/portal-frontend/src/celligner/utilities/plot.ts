@@ -320,8 +320,7 @@ export function buildPlot(
   cellLinePointSize: number,
   tumorPointSize: number,
   unselectTableRows: () => void = () => {},
-  onSelected: (pointIndexes: number[]) => void = () => {},
-  onClickResetSelection: () => void = () => {}
+  onSelected: (pointIndexes: number[]) => void = () => {}
 ) {
   const plotlyData: Array<Partial<Plotly.ScatterData>> = [
     {
@@ -449,10 +448,6 @@ export function buildPlot(
     const pointIndexes = e.points.map((point) => point.pointIndex);
 
     onSelected(pointIndexes);
-  });
-
-  on("plotly_deselect", () => {
-    onClickResetSelection();
   });
 
   // WORKAROUND: Double-click is supposed to reset the zoom but it only works

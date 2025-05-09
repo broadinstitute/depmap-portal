@@ -36,7 +36,6 @@ interface Props {
   lassoOrBoxSelectedPoints: Set<number>;
   sidePanelSelectedPoints: Set<number>;
   handleUnselectTableRows: () => void;
-  handleResetContextPtSelection: () => void;
   handleSelectingContextPts: (pointIndexes: number[]) => void;
   handleDeselectContextPts: () => void;
 }
@@ -90,7 +89,6 @@ export default class CellignerGraph extends React.Component<Props, State> {
       annotatedPoints,
       selectedPoints,
       colorByCategory,
-      handleResetContextPtSelection,
       handleSelectingContextPts,
       handleUnselectTableRows,
     } = this.props;
@@ -108,8 +106,7 @@ export default class CellignerGraph extends React.Component<Props, State> {
       pointSize.CL,
       pointSize.tumor,
       handleUnselectTableRows,
-      handleSelectingContextPts,
-      handleResetContextPtSelection
+      handleSelectingContextPts
     );
 
     this.plotElement!.on("plotly_relayout", this.onPlotRelayout);

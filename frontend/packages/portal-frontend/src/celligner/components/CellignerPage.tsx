@@ -86,6 +86,7 @@ type State = {
   // to load points on the Make Context button click. These are separated into 2 state
   // variables, because there are 2 ways to select points, and only the lassOrSelectedPts
   // are deselectable via the "Deselect" PlotControls.tsx button.
+  allPossibleSidePanelSelectedPts: Set<number>;
   sidePanelSelectedPts: Set<number>;
   lassoOrBoxSelectedPts: Set<number>;
 };
@@ -168,6 +169,7 @@ export default class CellignerPage extends React.Component<Props, State> {
       cellLineList: null,
       sidePanelSelectedPts: new Set<number>([]),
       lassoOrBoxSelectedPts: new Set<number>([]),
+      allPossibleSidePanelSelectedPts: new Set<number>([]),
     };
 
     this.dapi = getDapi();
@@ -201,6 +203,8 @@ export default class CellignerPage extends React.Component<Props, State> {
         mostCommonLineage: null,
         sidePanelSelectedPts: new Set([]),
         lassoOrBoxSelectedPts: new Set([]),
+
+        allPossibleSidePanelSelectedPts: new Set<number>([]),
         annotatedPoints: new Set<number>([]),
       });
     } else {
@@ -209,6 +213,8 @@ export default class CellignerPage extends React.Component<Props, State> {
         selectedPoints: alignmentsArr.cluster.map((_, i) => i),
         sidePanelSelectedPts: new Set([]),
         lassoOrBoxSelectedPts: new Set([]),
+
+        allPossibleSidePanelSelectedPts: new Set<number>([]),
         annotatedPoints: new Set<number>([]),
         selectedPrimarySite: null,
         cellLineDistances: null,
@@ -231,9 +237,6 @@ export default class CellignerPage extends React.Component<Props, State> {
         }
         selectedPoints.push(i);
       } else if (!selectedPrimarySite) {
-        if (lassoOrBoxSelectedPts.size === 0 || lassoOrBoxSelectedPts.has(i)) {
-          filteredSelectedPoints.push(i);
-        }
         selectedPoints.push(i);
       }
     });
@@ -242,12 +245,17 @@ export default class CellignerPage extends React.Component<Props, State> {
       filteredSelectedPoints.length < alignmentsArr.lineage.length
         ? new Set(filteredSelectedPoints)
         : new Set([]);
+    const allPossibleSidePanelSelectedPts =
+      selectedPoints.length < alignmentsArr.lineage.length
+        ? new Set(selectedPoints)
+        : new Set([]);
 
     this.setState(
       {
         selectedPrimarySite,
         selectedPoints,
         sidePanelSelectedPts: newSidePanelPoints,
+        allPossibleSidePanelSelectedPts,
         cellLineDistances: null,
         colorByCategory: selectedPrimarySite ? "subtype" : "lineage",
       },
@@ -297,7 +305,7 @@ export default class CellignerPage extends React.Component<Props, State> {
     const cellLineIndex = alignmentsArr.sampleId.findIndex(
       (sampleId) => sampleId === selectedSampleId
     );
-    console.log("handleCellLineSelected");
+
     this.dapi
       .getCellignerDistancesToCellLine(selectedSampleId, kNeighbors)
       .then((e) => {
@@ -358,6 +366,7 @@ export default class CellignerPage extends React.Component<Props, State> {
       cellLineList,
       sidePanelSelectedPts,
       lassoOrBoxSelectedPts,
+      allPossibleSidePanelSelectedPts,
     } = this.state;
 
     const formattedAnnotatedPoints = createFormattedAnnotatedPoints(
@@ -369,17 +378,6 @@ export default class CellignerPage extends React.Component<Props, State> {
       alignmentsArr,
       cellLineList
     );
-
-    const handleResetContextPtSelection = () => {
-      this.setState({
-        lassoOrBoxSelectedPts: new Set<number>([]),
-        sidePanelSelectedPts: getValidSelectedPoints(
-          new Set<number>([]),
-          sidePanelSelectedPts,
-          selectedPoints
-        ),
-      });
-    };
 
     const handleSelectingContextPts = (pointIndexes: number[]) => {
       const out: Set<number> = new Set();
@@ -404,22 +402,13 @@ export default class CellignerPage extends React.Component<Props, State> {
 
       return this.setState({
         lassoOrBoxSelectedPts: out,
-        sidePanelSelectedPts: getValidSelectedPoints(
-          out,
-          sidePanelSelectedPts,
-          selectedPoints
-        ),
       });
     };
 
     const handleDeselectLassoOrBoxPts = () => {
       this.setState({
         lassoOrBoxSelectedPts: new Set([]),
-        sidePanelSelectedPts: getValidSelectedPoints(
-          new Set([]),
-          sidePanelSelectedPts,
-          selectedPoints
-        ),
+        sidePanelSelectedPts: allPossibleSidePanelSelectedPts,
       });
     };
 
@@ -438,7 +427,6 @@ export default class CellignerPage extends React.Component<Props, State> {
         sidePanelSelectedPoints={sidePanelSelectedPts}
         subsetLegendBySelectedLineages={!!tumorDistances}
         handleUnselectTableRows={handleUnselectTableRows}
-        handleResetContextPtSelection={handleResetContextPtSelection}
         handleSelectingContextPts={handleSelectingContextPts}
         handleDeselectContextPts={handleDeselectLassoOrBoxPts}
       />
@@ -608,8 +596,11 @@ export default class CellignerPage extends React.Component<Props, State> {
                       .filter(
                         (tumor) =>
                           [
-                            ...lassoOrBoxSelectedPts,
-                            ...sidePanelSelectedPts,
+                            ...getValidSelectedPoints(
+                              lassoOrBoxSelectedPts,
+                              sidePanelSelectedPts,
+                              selectedPoints
+                            ),
                           ].includes(tumor.pointIndex) ||
                           (lassoOrBoxSelectedPts.size === 0 &&
                             sidePanelSelectedPts.size === 0)
@@ -617,8 +608,11 @@ export default class CellignerPage extends React.Component<Props, State> {
                   : tumors.filter(
                       (tumor) =>
                         [
-                          ...lassoOrBoxSelectedPts,
-                          ...sidePanelSelectedPts,
+                          ...getValidSelectedPoints(
+                            lassoOrBoxSelectedPts,
+                            sidePanelSelectedPts,
+                            selectedPoints
+                          ),
                         ].includes(tumor.pointIndex) ||
                         (lassoOrBoxSelectedPts.size === 0 &&
                           sidePanelSelectedPts.size === 0)
