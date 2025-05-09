@@ -61,7 +61,7 @@ export default function CorrelationsPlot(props: CorrelationsPlotProps) {
         }}
         Plotly={Plotly}
         xLabel="Correlation Coefficient"
-        yLabel="(q value)"
+        yLabel="q value"
         bounds={"autosize"}
         data={data}
         onPointClick={(e) => {

@@ -47,12 +47,22 @@ export default function CorrelationAnalysis(props: CorrelationAnalysisProps) {
     (async () => {
       try {
         const data = await getCorrelationData();
-        setCorrelationAnalysisData(data);
+        const roundedData = data.map((d) => {
+          const dataMod = {};
+          // eslint-disable-next-line no-restricted-syntax
+          for (const key in d) {
+            const value = d[key];
+            dataMod[key] =
+              typeof value === "number" ? parseFloat(value.toFixed(2)) : value;
+          }
+          return dataMod;
+        });
+        setCorrelationAnalysisData(roundedData);
       } catch (e) {
         console.log(e);
       }
     })();
-  }, []);
+  }, [getCorrelationData]);
 
   console.log(correlationAnalysisData);
 
@@ -60,15 +70,15 @@ export default function CorrelationAnalysis(props: CorrelationAnalysisProps) {
     let doses: any[] = [];
     if (correlationAnalysisData.length) {
       const colors = [
-        { hex: "#A0DA38" },
-        { hex: "#4AC16D" },
-        { hex: "#1EA187" },
-        { hex: "#277F8E" },
-        { hex: "#365C8D" },
-        { hex: "#46327E" },
-        { hex: "#440154" },
-        { hex: "#F89540" },
         { hex: "#CC4778" },
+        { hex: "#F89540" },
+        { hex: "#440154" },
+        { hex: "#46327E" },
+        { hex: "#365C8D" },
+        { hex: "#277F8E" },
+        { hex: "#1EA187" },
+        { hex: "#4AC16D" },
+        { hex: "#A0DA38" },
       ];
       const columnData: { [key: string]: any } = {};
       const columnNames = Object.keys(correlationAnalysisData[0]);
@@ -207,9 +217,9 @@ export default function CorrelationAnalysis(props: CorrelationAnalysisProps) {
                 `<b>${compound} dose (uM)</b>: ${curRecord["Dose"]}<br>` +
                 `<b>Correlation:</b> ${curRecord[
                   "Correlation Coefficient"
-                ].toFixed(3)}<br>` +
+                ].toFixed(2)}<br>` +
                 `<b>-log10(q value):</b> ${curRecord["-log10 qval"].toFixed(
-                  3
+                  2
                 )}<br>` +
                 `<b>Feature Type:</b> ${curRecord["Feature Type"]}`;
               acc[key][doseCategory][columnNamesToPlotVariables[colName]].push(
