@@ -223,7 +223,9 @@ def process_depmap_ipts(expr_df, context_df, prof_map, model_condition):
 
     """
 
-    hgnc_complete_set = tc.get(name="hgnc-gene-table-e250", version=3, file="hgnc_complete_set")
+    hgnc_complete_set = tc.get(
+        name="hgnc-gene-table-e250", version=3, file="hgnc_complete_set"
+    )
     # hgnc_complete_set = hgnc_complete_set[hgnc_complete_set.locus_group == 'protein-coding gene']
     bg_genes = (
         pd.Series(expr_df.keys())
@@ -232,7 +234,11 @@ def process_depmap_ipts(expr_df, context_df, prof_map, model_condition):
     )
     bg_genes = bg_genes.set_axis(expr_df.keys()).to_frame()
     expr_df = expr_df.rename(columns=bg_genes.to_dict()["ensembl_gene_id"])
-    protein_coding = pd.Index(hgnc_complete_set[hgnc_complete_set.locus_group == 'protein-coding gene'].ensembl_gene_id)
+    protein_coding = pd.Index(
+        hgnc_complete_set[
+            hgnc_complete_set.locus_group == "protein-coding gene"
+        ].ensembl_gene_id
+    )
     expr_df = expr_df[expr_df.columns.intersection(protein_coding)]
 
     context_df = context_df
@@ -248,10 +254,20 @@ def process_depmap_ipts(expr_df, context_df, prof_map, model_condition):
     context_nocode.loc[:, ["lineage", "subtype"]] = codes_for_codeless
     context_df = pd.concat([context_nocode, context_w_oncocode])
     context_df["type"] = "DepMap Model"
-    context_df = prof_map.merge(context_df, how="left", left_on="ModelID", right_on='ModelID',suffixes = (None,'_y'))
-    context_df = context_df.merge(model_condition, how="left",
-                                  left_on=["ModelCondition",'ModelID'], right_on=["ModelConditionID",'ModelID'],
-                                  suffixes = (None,'_y')).set_index('ProfileID')
+    context_df = prof_map.merge(
+        context_df,
+        how="left",
+        left_on="ModelID",
+        right_on="ModelID",
+        suffixes=(None, "_y"),
+    )
+    context_df = context_df.merge(
+        model_condition,
+        how="left",
+        left_on=["ModelCondition", "ModelID"],
+        right_on=["ModelConditionID", "ModelID"],
+        suffixes=(None, "_y"),
+    ).set_index("ProfileID")
     # warnings.warn(context_df.head().to_string())
     adata = ad.AnnData(expr_df)
     adata.obs_names = expr_df.index
@@ -261,7 +277,14 @@ def process_depmap_ipts(expr_df, context_df, prof_map, model_condition):
     adata.uns["mnn_params"] = None
     adata.obs = context_df.loc[
         expr_df.index,
-        ["GrowthPattern", "PrimaryOrMetastasis", "lineage", "subtype", "type", "FormulationID"],
+        [
+            "GrowthPattern",
+            "PrimaryOrMetastasis",
+            "lineage",
+            "subtype",
+            "type",
+            "FormulationID",
+        ],
     ]
     return adata
 
@@ -471,10 +494,11 @@ def run_celligner(bg, contrast, extra_data=None):
     out = pd.merge(out_umap, df_annots, left_index=True, right_index=True)
 
     pca = PCA(my_celligner.pca_ncomp)
-    pcs = pd.DataFrame(data=pca.fit_transform(my_celligner.combined_output),
-                       index=my_celligner.combined_output.index,
-                       columns = ['pc_'+str(i) for i in range(my_celligner.pca_ncomp)]
-                       )
+    pcs = pd.DataFrame(
+        data=pca.fit_transform(my_celligner.combined_output),
+        index=my_celligner.combined_output.index,
+        columns=["pc_" + str(i) for i in range(my_celligner.pca_ncomp)],
+    )
 
     return out, my_celligner.tumor_CL_dist, pcs, my_celligner.combined_output
 
@@ -489,15 +513,17 @@ def process_data(inputs, extra=True):
     """
     warnings.warn("loading depmap")
     print("loading DepMap data...")
-    depmap_data = tc.get(inputs["depmap_expr"]["source_dataset_id"])
+    depmap_data = tc.get(inputs["depmap_expr"]["dataset_id"])
     warnings.warn("loading anns")
-    depmap_ann = tc.get(inputs["depmap_ann"]["source_dataset_id"])
+    depmap_ann = tc.get(inputs["depmap_ann"]["dataset_id"])
     warnings.warn("loading prof map")
-    depmap_prof_map = tc.get(inputs["depmap_prof_map"]["source_dataset_id"])
+    depmap_prof_map = tc.get(inputs["depmap_prof_map"]["dataset_id"])
     warnings.warn("loading model conds")
-    depmap_model_cond = tc.get(inputs["depmap_model_cond"]["source_dataset_id"])
+    depmap_model_cond = tc.get(inputs["depmap_model_cond"]["dataset_id"])
 
-    depmap_out = process_depmap_ipts(depmap_data, depmap_ann, depmap_prof_map, depmap_model_cond)
+    depmap_out = process_depmap_ipts(
+        depmap_data, depmap_ann, depmap_prof_map, depmap_model_cond
+    )
 
     # process tcga data into single input for celligner
     warnings.warn("loading tcga")
@@ -542,17 +568,23 @@ if __name__ == "__main__":
         "--input", type=str, help="name of input file", default="inputs.json"
     )
     args = parser.parse_args()
-    print('Reading inputs')
+    print("Reading inputs")
     warnings.warn("reading inputs")
     with open(args.input, "r") as fp:
         inputs = json.load(fp)
     # process depmap data into single input for celligner
-    depmap_processed, tcga_processed, extra_data_processed = process_data(inputs, extra=True)
+    depmap_processed, tcga_processed, extra_data_processed = process_data(
+        inputs, extra=True
+    )
     warnings.warn("beginning alignment")
     print("Beginning alignment...")
-    out, distances, pcs, combined_expression = run_celligner(depmap_processed, tcga_processed, extra_data_processed)
-    corrected_expression = combined_expression.loc[combined_expression.index.difference(depmap_processed.obs)]
+    out, distances, pcs, combined_expression = run_celligner(
+        depmap_processed, tcga_processed, extra_data_processed
+    )
+    corrected_expression = combined_expression.loc[
+        combined_expression.index.difference(depmap_processed.obs)
+    ]
     out.to_csv("celligner_output.csv")
     distances.to_csv("tumor_CL_dist.csv")
-    pcs.to_csv('celligner_pcs.csv')
-    corrected_expression.set_index('Unnamed: 0').to_csv('corrected_expression.csv')
+    pcs.to_csv("celligner_pcs.csv")
+    corrected_expression.set_index("Unnamed: 0").to_csv("corrected_expression.csv")
