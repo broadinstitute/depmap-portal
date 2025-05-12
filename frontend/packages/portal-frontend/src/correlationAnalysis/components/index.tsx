@@ -270,6 +270,14 @@ export default function CorrelationAnalysis(props: CorrelationAnalysisProps) {
       </div>
 
       <div style={{ gridArea: "b" }}>
+        <h2>Correlation Analysis</h2>
+        <p>
+          Univariate associations between sensitivity profiles and the genomic
+          features or genetic dependencies are presented in the table and
+          plots.Click on a plot to enlarge it. Hover over plot points for
+          tooltip information.
+        </p>
+        <hr style={{ borderTop: "1px solid black", marginBottom: "40px" }} />
         <CorrelationsPlots
           featureTypesToShow={
             selectedFeatureTypes.length
@@ -293,6 +301,8 @@ export default function CorrelationAnalysis(props: CorrelationAnalysisProps) {
       </div>
 
       <div style={{ gridArea: "c" }}>
+        <h2>Associated Features</h2>
+        <p>Clicking on rows highlights features in the plots above</p>
         <CorrelationsTable
           data={filteredTableCorrelationAnalysisData}
           compound={compound}
