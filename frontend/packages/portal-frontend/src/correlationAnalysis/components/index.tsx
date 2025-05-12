@@ -214,14 +214,13 @@ export default function CorrelationAnalysis(props: CorrelationAnalysisProps) {
               const label = curRecord[colName];
               const text =
                 `<b>${label}</b><br>` +
-                `<b>${compound} dose (uM)</b>: ${curRecord["Dose"]}<br>` +
+                `<b>Dose (uM)</b>: ${curRecord["Dose"]}<br>` +
                 `<b>Correlation:</b> ${curRecord[
                   "Correlation Coefficient"
                 ].toFixed(2)}<br>` +
                 `<b>-log10(q value):</b> ${curRecord["-log10 qval"].toFixed(
                   2
-                )}<br>` +
-                `<b>Feature Type:</b> ${curRecord["Feature Type"]}`;
+                )}<br>`;
               acc[key][doseCategory][columnNamesToPlotVariables[colName]].push(
                 text
               );
@@ -238,7 +237,7 @@ export default function CorrelationAnalysis(props: CorrelationAnalysisProps) {
       }, {});
     }
     return {};
-  }, [compound, correlationAnalysisData, doseColors]);
+  }, [correlationAnalysisData, doseColors]);
   console.log("volcanodata: \n", volcanoDataForFeatureType);
 
   return (

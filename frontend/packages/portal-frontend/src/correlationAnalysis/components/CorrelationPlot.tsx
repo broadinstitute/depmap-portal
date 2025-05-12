@@ -33,13 +33,13 @@ export default function CorrelationsPlot(props: CorrelationsPlotProps) {
     data.forEach((doseTrace, traceIndex) => {
       const traceOpacity = doseTrace.label?.map((label) => {
         if (selectedFeatures.length) {
-          return selectedFeatures.includes(label) ? 1 : 0.1;
+          return selectedFeatures.includes(label) ? 1 : 0.05;
         }
         if (
           selectedFeatures.length === 0 &&
           hasOtherSelectedFeatureTypeFeatures
         ) {
-          return 0.1;
+          return 0.05;
         }
 
         return 1;
