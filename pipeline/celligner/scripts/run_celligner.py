@@ -515,7 +515,7 @@ def process_data(inputs, extra=True):
     print("loading DepMap data...")
     depmap_data = tc.get(inputs["depmap_expr"]["dataset_id"])
     warnings.warn("loading anns")
-    depmap_ann = tc.get(inputs["depmap_ann"]["dataset_id"])
+    depmap_ann = tc.get(inputs["depmap_ann"]["source_dataset_id"])
     warnings.warn("loading prof map")
     depmap_prof_map = tc.get(inputs["depmap_prof_map"]["dataset_id"])
     warnings.warn("loading model conds")
