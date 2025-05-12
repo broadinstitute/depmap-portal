@@ -587,4 +587,6 @@ if __name__ == "__main__":
     out.to_csv("celligner_output.csv")
     distances.to_csv("tumor_CL_dist.csv")
     pcs.to_csv("celligner_pcs.csv")
-    corrected_expression.set_index("Unnamed: 0").to_csv("corrected_expression.csv")
+    corrected_expression.reset_index()
+    print(corrected_expression.index)
+    corrected_expression.to_csv("corrected_expression.csv")
