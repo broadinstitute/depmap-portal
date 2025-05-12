@@ -9,7 +9,7 @@ import {
 import { toStaticUrl } from "@depmap/globals";
 
 import { getQueryParams } from "@depmap/utils";
-import { getDapi } from "src/common/utilities/context";
+import { getDapi, getBreadboxApi } from "src/common/utilities/context";
 
 import { DatasetOption } from "src/entity/components/EntitySummary";
 
@@ -25,6 +25,8 @@ import { EntityType } from "./entity/models/entities";
 import TermsAndConditionsModal from "./common/components/TermsAndConditionsModal";
 import { initializeDevContexts } from "@depmap/data-explorer-2";
 import { EnrichmentTile } from "./contextExplorer/components/EnrichmentTile";
+import CorrelationAnalysis from "./correlationAnalysis/components";
+import { ApiContext } from "@depmap/api";
 
 export { log, tailLog, getLogCount } from "src/common/utilities/log";
 
@@ -225,6 +227,39 @@ export function initDoseResponseTab(
     <React.Suspense fallback={<div>Loading...</div>}>
       <DoseResponseTab datasetOptions={datasetOptions} doseUnits={units} />
     </React.Suspense>,
+    document.getElementById(elementId) as HTMLElement
+  );
+}
+
+export function initCorrelationAnalysisTab(
+  elementId: string,
+  compoundName: string
+) {
+  const bapi = getBreadboxApi();
+  renderWithErrorBoundary(
+    // <ApiContext.Provider value={apiFunctions.breadbox}>
+    <React.Suspense fallback={<div>Loading...</div>}>
+      <CorrelationAnalysis
+        compound={compoundName}
+        getCorrelationData={function (): Promise<
+          {
+            Compound: string;
+            Dose: string;
+            "Feature Type": string;
+            Feature: string;
+            "Correlation Coefficient": number;
+            "-log10 qval": number;
+            Rank: number;
+          }[]
+        > {
+          throw new Error("Function not implemented.");
+        }}
+        getFeatureTypes={function (): Promise<any[]> {
+          throw new Error("Function not implemented.");
+        }}
+      />
+    </React.Suspense>,
+    // </ApiContext.Provider>
     document.getElementById(elementId) as HTMLElement
   );
 }
