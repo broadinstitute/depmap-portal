@@ -71,6 +71,7 @@ export const VolcanoPlot = React.forwardRef((props: VolcanoPlotProps, ref) => {
         onPointClick={props.onPointClick}
         idPrefixForUniqueness={props.idPrefixForUniqueness}
         dragmodeWidgetOptions={props.dragmodeWidgetOptions}
+        showWidgetOptions={false}
       />
     );
   }

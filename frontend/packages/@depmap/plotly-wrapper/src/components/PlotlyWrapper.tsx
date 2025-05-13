@@ -286,7 +286,7 @@ const PlotlyWrapper = React.forwardRef((props: PlotlyWrapperProps, ref) => {
 
   return (
     <div className="react-base-plot">
-      {plotlyRefInitialized && (
+      {plotlyRefInitialized && props.showWidgetOptions !== false && (
         <div className="react-base-plot-toolbar">
           <ButtonGroup>
             <DownloadIcon
