@@ -234,7 +234,7 @@ export default function Datasets() {
             uploadDataset={postDatasetUpload}
             isAdvancedMode={isAdvancedMode}
             getTaskStatus={getTaskStatus}
-            onSuccess={(dataset: Dataset) => {
+            onSuccess={(dataset: Dataset, showModal: boolean) => {
               const addedDatasets = [...datasets, dataset];
               setDatasets(addedDatasets);
               const dimTypeDatasetsNum = dimensionTypeDatasetCount(
@@ -249,6 +249,10 @@ export default function Datasets() {
                   return { ...dt, datasetsCount: dimTypeDatasetsNum[dt.name] };
                 });
               });
+              // automatically close modal if success and no warnings
+              setTimeout(() => {
+                setShowDatasetModal(showModal);
+              }, 1000);
             }}
           />
         );

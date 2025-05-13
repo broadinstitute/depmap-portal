@@ -30,7 +30,7 @@ interface DatasetFormProps {
   uploadFile: (fileArgs: { file: File | Blob }) => Promise<UploadFileResponse>;
   uploadDataset: (datasetParams: DatasetParams) => Promise<any>;
   getTaskStatus: (taskIds: string) => Promise<CeleryTask>;
-  onSuccess: (dataset: Dataset) => void;
+  onSuccess: (dataset: Dataset, showModal: boolean) => void;
   isAdvancedMode: boolean;
 }
 
@@ -199,7 +199,11 @@ export default function DatasetForm(props: DatasetFormProps) {
       if (response.state === "SUCCESS") {
         setIsTaskRunning(false);
         setCompletedTask(response);
-        onSuccess(response.result.dataset);
+        // set close modal to true if there are no unknown IDs/warnings after upload is complete
+        onSuccess(
+          response.result.dataset,
+          response.result.unknownIDs?.length > 0
+        );
       } else if (response.state === "FAILURE") {
         setIsTaskRunning(false);
         setCompletedTask(response);
@@ -245,7 +249,11 @@ export default function DatasetForm(props: DatasetFormProps) {
                       </p>
                       <div className={styles.unknownIDsText}>
                         <p>
-                          <i>{sublistIDs.toString() + "..."}</i>
+                          <i>{`${sublistIDs.toString()} ${
+                            unknownIDGroup.IDs.length > sublistIDs.length
+                              ? "..."
+                              : ""
+                          }`}</i>
                         </p>
                       </div>
                     </div>
@@ -315,6 +323,7 @@ export default function DatasetForm(props: DatasetFormProps) {
               });
             }}
             onSubmitForm={onSubmitForm}
+            datasetIsLoading={isTaskRunning}
             isAdvancedMode={isAdvancedMode}
           />
           {submissionMessage}
@@ -342,6 +351,7 @@ export default function DatasetForm(props: DatasetFormProps) {
               });
             }}
             onSubmitForm={onSubmitForm}
+            datasetIsLoading={isTaskRunning}
           />
           {submissionMessage}
         </>
@@ -362,6 +372,7 @@ export default function DatasetForm(props: DatasetFormProps) {
     formContent,
     fileIds,
     md5Hash,
+    isTaskRunning,
     isAdvancedMode,
     submissionMessage,
   ]);
