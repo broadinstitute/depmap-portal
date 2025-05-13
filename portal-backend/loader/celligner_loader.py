@@ -113,6 +113,7 @@ def load_celligner_data(celligner_filename, distances_filename):
             "PrimaryOrMetastasis": "primaryMet",
             "GrowthPattern": "growthPattern",
             "ProfileID": "profileId",
+            "ModelConditionID": "modelConditionId",
         }
     )
 
