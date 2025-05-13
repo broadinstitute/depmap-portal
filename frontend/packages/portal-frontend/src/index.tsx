@@ -18,7 +18,7 @@ import { WideTableProps } from "@depmap/wide-table";
 
 import { EntitySummaryResponse } from "src/dAPI";
 import { Option } from "src/common/models/utilities";
-import { DataExplorerContext } from "@depmap/types";
+import { DataExplorerContext, SliceQuery } from "@depmap/types";
 
 import { ConnectivityValue } from "./constellation/models/constellation";
 import { EntityType } from "./entity/models/entities";
@@ -236,27 +236,34 @@ export function initCorrelationAnalysisTab(
   compoundName: string
 ) {
   const bapi = getBreadboxApi();
+  console.log(compoundName);
   renderWithErrorBoundary(
     // <ApiContext.Provider value={apiFunctions.breadbox}>
     <React.Suspense fallback={<div>Loading...</div>}>
       <CorrelationAnalysis
         compound={compoundName}
-        getCorrelationData={function (): Promise<
-          {
-            Compound: string;
-            Dose: string;
-            "Feature Type": string;
-            Feature: string;
-            "Correlation Coefficient": number;
-            "-log10 qval": number;
-            Rank: number;
-          }[]
-        > {
-          throw new Error("Function not implemented.");
+        getDimensionType={(name: string) => {
+          return bapi.getDimensionType(name);
         }}
-        getFeatureTypes={function (): Promise<any[]> {
-          throw new Error("Function not implemented.");
+        getTabularDatasetData={(
+          datasetId: string,
+          args: {
+            identifier: "id" | "label";
+            columns?: string[] | null;
+          }
+        ) => {
+          return bapi.getTabularDatasetData(datasetId, args);
         }}
+        getDatasetFeatures={(datasetId: string) => {
+          return bapi.getDatasetFeatures(datasetId);
+        }}
+        getCorrelationData={(sliceQuery: SliceQuery) => {
+          return bapi.fetchAssociations(sliceQuery);
+        }}
+        // getFeatureTypes={function (): Promise<any[]> {
+        //   console.log("Function not implemented.");
+        //   return []
+        // }}
       />
     </React.Suspense>,
     // </ApiContext.Provider>
