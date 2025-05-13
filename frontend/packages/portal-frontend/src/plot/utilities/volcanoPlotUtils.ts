@@ -16,6 +16,10 @@ export function formatTrace(
       text: volcanoDataTrace.text,
       customdata: volcanoDataTrace.label, // original label, for point click to match against
       marker: {
+        line: {
+          color: "black",
+          width: 1,
+        },
         size: 7,
         color: volcanoDataTrace.color
           ? volcanoDataTrace.color
@@ -26,6 +30,10 @@ export function formatTrace(
       type: "scatter",
       showlegend: false,
     };
+
+    if (volcanoDataTrace.name) {
+      plotlyTrace.name = volcanoDataTrace.name;
+    }
 
     if (highlightedPoints) {
       const symbols = Array<string>(plotlyTrace.x?.length || 0).fill("circle");
