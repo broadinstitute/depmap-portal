@@ -83,9 +83,13 @@ export default function CorrelationsPlots(props: CorrelationsPlotsProps) {
           );
         })}
       </div>
-      <div>
-        <DoseLegend doseColors={doseColors} />
-      </div>
+      {doseColors.length ? (
+        <div>
+          <DoseLegend doseColors={doseColors} />
+        </div>
+      ) : (
+        <div />
+      )}
     </div>
   );
 }

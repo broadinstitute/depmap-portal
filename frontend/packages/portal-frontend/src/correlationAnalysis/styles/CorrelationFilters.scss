@@ -1,4 +1,5 @@
 .correlationFilters {
+  background-color: #eee;
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -8,9 +9,9 @@
 }
 
 .filters {
-  border-top: 1px solid darkgrey;
   flex: 1;
-  background-color: #eee;
+  margin-top: 10px;
+
   padding: 10px;
 
   .filterStyle {

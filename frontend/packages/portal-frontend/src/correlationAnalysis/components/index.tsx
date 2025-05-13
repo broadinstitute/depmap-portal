@@ -1,8 +1,6 @@
 /* eslint-disable @typescript-eslint/dot-notation */
 import * as React from "react";
 
-import { TagOption } from "@depmap/common-components";
-
 import CorrelationsTable from "./CorrelationsTable";
 import CorrelationsPlots from "./CorrelationsPlots";
 import CorrelationFilters from "./CorrelationFilters";
@@ -21,10 +19,16 @@ interface CorrelationAnalysisProps {
     }[]
   >;
   getFeatureTypes: () => Promise<any[]>;
+  getCompoundDatasets: () => Promise<any[]>;
 }
 
 export default function CorrelationAnalysis(props: CorrelationAnalysisProps) {
-  const { compound, getCorrelationData, getFeatureTypes } = props;
+  const {
+    compound,
+    getCorrelationData,
+    getFeatureTypes,
+    getCompoundDatasets,
+  } = props;
   const [selectedFeatureTypes, setSelectedFeatureTypes] = React.useState<
     string[]
   >([]);
@@ -69,16 +73,17 @@ export default function CorrelationAnalysis(props: CorrelationAnalysisProps) {
   const doseColors = React.useMemo(() => {
     let doses: any[] = [];
     if (correlationAnalysisData.length) {
-      const colors = [
-        { hex: "#CC4778" },
-        { hex: "#F89540" },
-        { hex: "#440154" },
-        { hex: "#46327E" },
-        { hex: "#365C8D" },
-        { hex: "#277F8E" },
-        { hex: "#1EA187" },
-        { hex: "#4AC16D" },
-        { hex: "#A0DA38" },
+      const colorScale = [
+        { hex: "#ADFF2F" }, // Yellow-Green
+        { hex: "#97E34F" },
+        { hex: "#81C76E" },
+        { hex: "#6BAB8D" },
+        { hex: "#559FAC" },
+        { hex: "#4083CC" },
+        { hex: "#3365B6" },
+        { hex: "#26479F" },
+        { hex: "#1A2A89" },
+        { hex: "#4B0082" }, // Dark Purple
       ];
       const columnData: { [key: string]: any } = {};
       const columnNames = Object.keys(correlationAnalysisData[0]);
@@ -92,14 +97,19 @@ export default function CorrelationAnalysis(props: CorrelationAnalysisProps) {
       console.log(columnData);
       doses = Array.from(new Set(columnData["Dose"])).sort((a, b) => {
         return a - b;
-      });
+      }); // log2auc should be first
       console.log("DOSES: ", doses);
-      return doses.map((dose, i) => {
-        if (i >= colors.length) {
-          return { hex: undefined, dose };
+      const doseRanges = doses.slice(1);
+      const doseAndColors: { hex: string | undefined; dose: string }[] = [
+        { hex: "#CC4778", dose: "log2.auc" },
+      ];
+      doseRanges.forEach((dose, i) => {
+        if (i >= colorScale.length) {
+          doseAndColors.push({ hex: undefined, dose });
         }
-        return { ...colors[i], dose };
+        doseAndColors.push({ ...colorScale[i], dose });
       });
+      return doseAndColors;
     }
     return doses;
   }, [correlationAnalysisData]);
@@ -258,7 +268,7 @@ export default function CorrelationAnalysis(props: CorrelationAnalysisProps) {
         }}
       >
         <CorrelationFilters
-          getDatasets={getFeatureTypes}
+          getDatasets={getCompoundDatasets}
           onChangeDataset={(dataset: string) => console.log(dataset)}
           getFeatureTypes={getFeatureTypes}
           onChangeFeatureTypes={(featureTypes: string[]) =>
@@ -266,6 +276,7 @@ export default function CorrelationAnalysis(props: CorrelationAnalysisProps) {
           }
           doses={doseColors.map((doseColor) => doseColor.dose)}
           onChangeDoses={(newDoses) => setSelectedDoses(newDoses || [])}
+          compoundName={compound}
         />
       </div>
 
@@ -311,7 +322,6 @@ export default function CorrelationAnalysis(props: CorrelationAnalysisProps) {
             const prevSelections = Array.from(selectedRows);
             // if selections size decreases then a row was deselected. Deselect all selected features for that feature type
             if (selections.length < prevSelections.length) {
-              console.log("REMOVING");
               // should only be one unselected at a time
               // TODO: use set difference once es2024 supported
               const unselectedId = prevSelections.filter(

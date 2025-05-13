@@ -16,6 +16,7 @@ interface CorrelationFiltersProps {
   onChangeFeatureTypes: (featureTypes: string[]) => void;
   doses: string[];
   onChangeDoses: (doses: string[]) => void;
+  compoundName: string;
 }
 
 export default function CorrelationFilters(props: CorrelationFiltersProps) {
@@ -26,6 +27,7 @@ export default function CorrelationFilters(props: CorrelationFiltersProps) {
     onChangeFeatureTypes,
     doses,
     onChangeDoses,
+    compoundName,
   } = props;
   const [datasetOptions, setDatasetOptions] = useState<FilterOption[]>([]);
   const [featureTypeOptions, setFeatureTypeOptions] = useState<FilterOption[]>(
@@ -60,18 +62,23 @@ export default function CorrelationFilters(props: CorrelationFiltersProps) {
 
   return (
     <div className={styles.correlationFilters}>
-      <header style={{ paddingBottom: "10px" }}>FILTERS</header>
       <div className={styles.filters}>
-        <header>Dataset</header>
+        <header>Dataset ({compoundName})</header>
         <Select
           className={styles.filterStyle}
           placeholder="Select..."
+          value={datasetOptions[0]}
           options={datasetOptions}
           onChange={(value, action) => {
             console.log(value, action);
             onChangeDataset(value ? value.value : null);
           }}
         />
+        <header
+          style={{ paddingBottom: "10px", borderTop: "1px solid darkgrey" }}
+        >
+          FILTERS
+        </header>
         <header>Dose</header>
         <Select
           className={styles.filterStyle}
