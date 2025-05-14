@@ -5,6 +5,7 @@ import CorrelationsTable from "./CorrelationsTable";
 import CorrelationsPlots from "./CorrelationsPlots";
 import CorrelationFilters from "./CorrelationFilters";
 import { DimensionType, SliceQuery } from "@depmap/types";
+import { transformAndGroupByDataset } from "../utilities/helper";
 
 interface CorrelationAnalysisProps {
   compound: string;
@@ -104,6 +105,11 @@ export default function CorrelationAnalysis(props: CorrelationAnalysisProps) {
           doses2.add(dose);
           compoundDoseDatasets.push([feature.id, "Prism_oncology_viability"]);
         });
+
+        const featureDatasetDoseCorrelates: Record<
+          string,
+          Record<string, any[]>
+        > = {};
         const allCorrelates = await Promise.all(
           compoundDoseDatasets.map(([feature, dataset]) =>
             getCorrelationData({
@@ -113,8 +119,44 @@ export default function CorrelationAnalysis(props: CorrelationAnalysisProps) {
             })
           )
         );
+        allCorrelates.forEach((compoundDoseCorrelates) => {
+          const datasetLookup = compoundDoseCorrelates.associated_datasets.reduce(
+            (acc, item) => {
+              featureDatasetDoseCorrelates[item.name] = {};
+              acc[item.dataset_id] = item.name;
+              return acc;
+            },
+            {} as Record<string, string>
+          );
+          const doseAssociationsByFeatureDataset = transformAndGroupByDataset(
+            compoundDoseCorrelates.associated_dimensions,
+            compoundDoseCorrelates.dimension_label,
+            datasetLookup
+          );
+          console.log("Dosedict: \n", doseAssociationsByFeatureDataset);
+          Object.entries(doseAssociationsByFeatureDataset).forEach(
+            ([featureDataset, associations]) => {
+              if (featureDataset in featureDatasetDoseCorrelates) {
+                if (
+                  compoundDoseCorrelates.dimension_label in
+                  featureDatasetDoseCorrelates[featureDataset]
+                ) {
+                  featureDatasetDoseCorrelates[featureDataset][
+                    compoundDoseCorrelates.dimension_label
+                  ].concat(associations);
+                } else {
+                  featureDatasetDoseCorrelates[featureDataset][
+                    compoundDoseCorrelates.dimension_label
+                  ] = associations;
+                }
+              } else {
+                featureDatasetDoseCorrelates[featureDataset] = {};
+              }
+            }
+          );
+        });
         console.log(allCorrelates);
-        const associated_datasets = allCorrelates.map();
+        console.log(featureDatasetDoseCorrelates);
 
         // const data = await getCorrelationData({
         //     identifier: "identifier",
