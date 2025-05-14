@@ -203,6 +203,11 @@ def test_get_context_summary(populated_db):
             "lineage": "bone",
             "primary_disease": "Ewing Sarcoma",
         } in context_summary["table"]
+        table_model_ids = [record["model_id"] for record in context_summary["table"]]
+        overview_graph_model_ids = [
+            model_id for _, model_id in context_summary["summary"]["all_depmap_ids"]
+        ]
+        assert table_model_ids == overview_graph_model_ids
 
         r = c.get(
             url_for(
@@ -398,6 +403,12 @@ def test_get_context_summary(populated_db):
             "lineage": "lung",
             "primary_disease": "Non-Small Cell Lung Cancer",
         } in context_summary["table"]
+
+        table_model_ids = [record["model_id"] for record in context_summary["table"]]
+        overview_graph_model_ids = [
+            model_id for _, model_id in context_summary["summary"]["all_depmap_ids"]
+        ]
+        assert table_model_ids == overview_graph_model_ids
 
 
 def test_unknown_context_analysis_data(populated_db):
