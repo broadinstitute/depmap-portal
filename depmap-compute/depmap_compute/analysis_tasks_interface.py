@@ -345,8 +345,6 @@ def _run_custom_analysis(
     """
     update_message("Loading...")
 
-    raise Exception("AHHHHH")
-
     # in views.py, the asserts check user input. this checks that vectors after querying database are the same
     assert len(depmap_model_ids) > 0
 
