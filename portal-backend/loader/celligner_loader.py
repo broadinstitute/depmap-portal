@@ -108,12 +108,15 @@ def load_celligner_sample_data():
 
 def load_celligner_data(celligner_filename, distances_filename):
     celligner_data = pd.read_csv(celligner_filename, index_col=[0])
+    celligner_data = celligner_data.reset_index()
+
     celligner_data = celligner_data.rename(
         columns={
             "PrimaryOrMetastasis": "primaryMet",
             "GrowthPattern": "growthPattern",
-            "ProfileID": "profileId",
+            "index": "profileId",
             "ModelConditionID": "modelConditionId",
+            "ModelID": "sampleId",
         }
     )
 
