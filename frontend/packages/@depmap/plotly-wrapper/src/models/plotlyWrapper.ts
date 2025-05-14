@@ -29,6 +29,8 @@ export interface PlotlyWrapperProps {
   additionalPlotlyCallbacks?: PlotlyCallbacks;
   downloadIconWidgetProps: DownloadIconWidgetProps;
   dragmodeWidgetOptions?: Array<PlotlyDragmode>;
+  showWidgetOptions?: boolean;
+
   /**
    *  Using SelectToLabelWidget requires
    *  1) setting this to true

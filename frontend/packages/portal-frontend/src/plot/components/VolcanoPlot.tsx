@@ -21,7 +21,7 @@ type VolcanoPlotProps = {
   xLabel: string;
   yLabel: string;
   data: Array<models.VolcanoData>;
-  bounds?: { width: number | undefined; height: number };
+  bounds?: { width: number | undefined; height: number } | "autosize";
   annotations?: Array<Partial<Plotly.Annotations>>;
   highlightedPoints?: Array<number>;
   // resizer: PlotResizer;
@@ -71,6 +71,7 @@ export const VolcanoPlot = React.forwardRef((props: VolcanoPlotProps, ref) => {
         onPointClick={props.onPointClick}
         idPrefixForUniqueness={props.idPrefixForUniqueness}
         dragmodeWidgetOptions={props.dragmodeWidgetOptions}
+        showWidgetOptions={false}
       />
     );
   }

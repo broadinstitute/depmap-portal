@@ -46,6 +46,7 @@ import {
   DimensionType,
   DimensionTypeAddArgs,
   DimensionTypeUpdateArgs,
+  SliceQuery,
 } from "@depmap/types";
 import { TDASummaryTable } from "src/tda/models/types";
 import { CompoundSummaryTableRaw } from "src/compoundDashboard/models/types";
@@ -1195,4 +1196,8 @@ export class DepmapApi {
   deleteGroupEntry = (groupEntryId: string) => {
     return Promise.reject(Error("Wrong api used. Check ApiContext"));
   };
+
+  fetchAssociations(sliceQuery: SliceQuery) {
+    return Promise.reject(Error("Wrong api used. Check ApiContext"));
+  }
 }
