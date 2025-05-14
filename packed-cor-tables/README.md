@@ -15,6 +15,16 @@ pytest
 ```
 
 To publish package:
+If you have never authenticated with artifact registry before, then run:
+
+```
+gcloud auth login
+poetry config http-basic.public-python oauth2accesstoken "$(gcloud auth print-access-token)"
+```
+
+This command tells Poetry to use your Google Cloud access token for authentication when interacting with the public-python repository.
+
+Then run:
 
 ```
 poetry publish --build --repository public-python
