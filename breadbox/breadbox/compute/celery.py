@@ -1,9 +1,44 @@
-from celery import Celery
+from celery import Celery, Task
 import os
+import traceback
 from logging import getLogger
 
+from google.cloud import error_reporting
+
+
+class GCPExceptionReporter: # TODO: move this to some shared location to avoid 3x duplication
+    def __init__(self, env: str): # TODO: figure out how I'd get the env
+        self.service_name = "celery-" + env
+        self.client = self._create_client() if not env == "dev" else None
+
+    @property
+    def disabled(self):
+        return self.client is None
+
+    def _create_client(self):
+        return error_reporting.Client(service=self.service_name)
+
+    def report(self):
+        print("GCS Error being reported from celery")
+        print("---- Error reported to GCS is:")
+        print(traceback.format_exc())
+        if self.client is None:
+            print("Error reporting disabled")
+            return
+
+        self.client.report_exception(http_context=None, user=None) # From within celery, we don't know anything about the context
 
 log = getLogger(__name__)
+exception_reporter = GCPExceptionReporter(env="dev")
+
+class LogErrorsTask(Task):
+    def on_failure(self, exc, task_id, args, kwargs, einfo):
+        """Override the default behavior on task failure to also report to our GCP error logs""" 
+        print("ON FAILURE (celery)") # WOOO! It gets here
+        exception_reporter.report()
+        super(LogErrorsTask, self).on_failure(exc, task_id, args, kwargs, einfo)
+
+
 
 rhost = os.getenv("REDIS_HOST", "localhost")
 app = Celery(

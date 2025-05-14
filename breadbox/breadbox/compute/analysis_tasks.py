@@ -32,7 +32,7 @@ from ..crud import dataset as dataset_crud
 from ..service import dataset as dataset_service
 from ..crud import group as group_crud
 from ..io import filestore_crud
-from .celery import app
+from .celery import app, LogErrorsTask
 from ..db.util import db_context
 from breadbox.io.upload_utils import create_upload_file
 
@@ -270,7 +270,7 @@ def _get_update_message_callback(task):
     return update_message
 
 
-@app.task(bind=True)
+@app.task(base=LogErrorsTask, bind=True)
 def run_custom_analysis(
     self,
     user: str,
@@ -296,6 +296,8 @@ def run_custom_analysis(
 
     update_message = _get_update_message_callback(self)
     update_message("Fetching data")
+
+    raise Exception("TEST")
 
     with db_context(user) as db:
 
