@@ -136,6 +136,24 @@ active_tab_set = False %}
     </script>
     {% set active_tab_set = True %}
   </div>
+  {% endif %} {% if show_dose_curve_tab %}
+  <div
+    role="tabpanel"
+    class="tab-pane {% if not active_tab_set %}active{% endif %}"
+    id="new-dose-curves"
+  >
+    <div id="new-dose-curves-tab-content"></div>
+    <script>
+      $(function () { // document ready for middle-of-html js
+          DepMap.initDoseCurvesTab(
+              "new-dose-curves-tab-content",
+          {{dose_curve_options | tojson}},
+          "{{ compound_units }}"
+      );
+      });
+    </script>
+    {% set active_tab_set = True %}
+  </div>
   {% endif %} {% if False %}
   <div
     role="tabpanel"

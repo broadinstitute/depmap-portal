@@ -40,6 +40,14 @@ const DoseResponseTab = React.lazy(
     )
 );
 
+const DoseCurvesTab = React.lazy(
+  () =>
+    import(
+      /* webpackChunkName: "DoseCurvesTab" */
+      "src/compound/newComponents/DoseCurvesTab"
+    )
+);
+
 const EntitySummary = React.lazy(
   () =>
     import(
@@ -217,6 +225,20 @@ export function initPredictiveTab(
 }
 
 export function initDoseResponseTab(
+  elementId: string,
+  datasetOptions: Array<any>,
+  units: string
+) {
+  renderWithErrorBoundary(
+    <React.Suspense fallback={<div>Loading...</div>}>
+      <DoseResponseTab datasetOptions={datasetOptions} doseUnits={units} />
+    </React.Suspense>,
+    document.getElementById(elementId) as HTMLElement
+  );
+}
+
+// New dose curves tab
+export function initDoseCurvesTab(
   elementId: string,
   datasetOptions: Array<any>,
   units: string

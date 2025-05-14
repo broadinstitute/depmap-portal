@@ -67,11 +67,14 @@ def view_compound(name):
         get_predictive_models_for_compound(compound_experiment_and_datasets)
     ) != 0
 
-
     # Figure out membership in different datasets
-    compound_datasets = data_access.get_all_datasets_containing_compound(compound.compound_id)
+    compound_datasets = data_access.get_all_datasets_containing_compound(
+        compound.compound_id
+    )
     has_datasets = len(compound_datasets) != 0
-    sensitivity_tab_compound_summary = get_sensitivity_tab_info(compound.entity_id, compound_datasets)
+    sensitivity_tab_compound_summary = get_sensitivity_tab_info(
+        compound.entity_id, compound_datasets
+    )
     has_celfie = current_app.config["ENABLED_FEATURES"].celfie and has_datasets
     if has_celfie:
         celfie_dataset_options = []
@@ -84,8 +87,7 @@ def view_compound(name):
                 )
             )
         celfie = format_celfie(
-            entity_label=name, 
-            dependency_datasets=celfie_dataset_options
+            entity_label=name, dependency_datasets=celfie_dataset_options
         )
 
     return render_template(
@@ -109,11 +111,13 @@ def view_compound(name):
     )
 
 
-def get_sensitivity_tab_info(compound_entity_id: int, compound_datasets: list[MatrixDataset]) -> Optional[dict[str, Any]]:
+def get_sensitivity_tab_info(
+    compound_entity_id: int, compound_datasets: list[MatrixDataset]
+) -> Optional[dict[str, Any]]:
     """Get a dictionary of values containing layout information for the sensitivity tab."""
     if len(compound_datasets) == 0:
         return None
-    
+
     # Define the options that will appear in the datasets dropdown
     dataset_options = []
     for dataset in compound_datasets:
@@ -172,6 +176,50 @@ def format_dose_curve_options(compound_experiment_and_datasets):
 
 
 def format_dose_curve_option(dataset, compound_experiment, label):
+    option = format_summary_option(dataset, compound_experiment, label)
+    option.update(
+        {
+            "dose_replicate_dataset": dataset.get_dose_replicate_enum().name,
+            "auc_dataset_display_name": dataset.display_name,
+            "compound_label": compound_experiment.label,
+            "compound_xref_full": compound_experiment.xref_full,
+            "dose_replicate_level_yunits": DATASET_METADATA[
+                dataset.get_dose_replicate_enum()
+            ].units,
+        }
+    )
+
+    return option
+
+
+# TODO: Delete and rename once the old tab is replaced with the new tab
+def format_dose_curve_options_new_tab(compound_experiment_and_datasets):
+    """
+    Used for jinja rendering of the dose curve tab
+    """
+    dose_curve_options = []
+    for compound_experiment, dataset in compound_experiment_and_datasets:
+        # if has dose curve information
+        if (
+            dataset.get_dose_replicate_enum()
+            and len(
+                CompoundDoseReplicate.get_all_with_compound_experiment_id(
+                    compound_experiment.entity_id
+                )
+            )
+            > 0
+        ):
+            dose_curve_option = format_dose_curve_option(
+                dataset,
+                compound_experiment,
+                "{} {}".format(compound_experiment.label, dataset.display_name),
+            )
+            dose_curve_options.append(dose_curve_option)
+    return dose_curve_options
+
+
+# TODO: Delete and rename once the old tab is replaced with the new tab
+def format_dose_curve_option_new_tab(dataset, compound_experiment, label):
     option = format_summary_option(dataset, compound_experiment, label)
     option.update(
         {
