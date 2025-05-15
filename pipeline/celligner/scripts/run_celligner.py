@@ -347,7 +347,7 @@ def process_nov_pdx_ipts(expr_df, context_df):
     adata.var_names = expr_df.columns
     adata.obs = context_df.loc[
         expr_df.index,
-        ["GrowthPattern", "PrimaryOrMetastasis", "lineage", "subtype", "type"],
+        ["GrowthPattern", "PrimaryOrMetastasis", "lineage", "subtype", "type",],
     ]
     adata.uns["type"] = "model"
     adata.uns["name"] = "nov_pdx"
@@ -376,7 +376,7 @@ def process_ped_pdx_ipts(expr_df, context_df):
     adata.var_names = expr_df.columns
     adata.obs = context_df.loc[
         expr_df.index,
-        ["GrowthPattern", "PrimaryOrMetastasis", "lineage", "subtype", "type"],
+        ["GrowthPattern", "PrimaryOrMetastasis", "lineage", "subtype", "type",],
     ]
     adata.uns["type"] = "model"
     adata.uns["name"] = "ped_pdx"
@@ -483,7 +483,15 @@ def run_celligner(bg, contrast, extra_data=None):
 
     df_annots = pd.concat(annots)
     df_annots = df_annots[
-        ["lineage", "subtype", "type", "PrimaryOrMetastasis", "GrowthPattern"]
+        [
+            "lineage",
+            "subtype",
+            "type",
+            "PrimaryOrMetastasis",
+            "GrowthPattern",
+            "ModelConditionID",
+            "ModelID",
+        ]
     ]
 
     out_umap = my_celligner.umap_reduced
