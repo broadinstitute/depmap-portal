@@ -60,6 +60,10 @@ export interface SharedApi {
   searchDimensions: (
     req: SearchDimenionsRequest
   ) => Promise<SearchDimenionsResponse>;
+  getCompoundDoseCurveData: (
+    datasetName: string,
+    compoundLabel: string
+  ) => Promise<any>;
 
   // The following will throw errors if used in depmap mode. They're only relevant to breadbox.
   getBreadboxDatasets: () => Promise<BreadboxDataset[]>;

@@ -45,7 +45,7 @@ def _get_dose_response_curves_per_model(
     }
 
 
-@namespace.route("/dose_curves")
+@namespace.route("/dose_curve_data")
 class DoseCurves(
     Resource
 ):  # the flask url_for endpoint is automagically the snake case of the namespace prefix plus class name

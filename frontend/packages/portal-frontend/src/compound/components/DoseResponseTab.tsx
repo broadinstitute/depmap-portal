@@ -14,7 +14,7 @@ import { DepmapApi, DoseResponseCurvePromise } from "src/dAPI";
 import { getDapi } from "src/common/utilities/context";
 import { DoseResponseCurve } from "./DoseResponseCurve";
 
-type CompoundDataset = {
+export type CompoundDataset = {
   dataset: string;
   entity: number;
   id: string;

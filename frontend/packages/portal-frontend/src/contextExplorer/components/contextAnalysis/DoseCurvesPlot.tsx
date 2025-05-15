@@ -13,8 +13,8 @@ interface Props {
   minDose: number;
   maxDose: number;
   inGroupCurveParams: CurveParams[];
-  outGroupCurveParams: CurveParams[];
-  // handleSetPlotElement: (element: any) => void;
+  outGroupCurveParams?: CurveParams[];
+  handleSetPlotElement?: (element: any) => void;
 }
 
 interface CurveTrace {
@@ -206,24 +206,26 @@ const buildTraces = (
     shadingColorInGroup
   );
 
-  const outGroupData = samplePoints(
-    outGroupCurveParams,
-    outGroupNumPts,
-    minExponent,
-    rangeOfExponents
-  );
+  if (outGroupCurveParams.length > 0) {
+    const outGroupData = samplePoints(
+      outGroupCurveParams,
+      outGroupNumPts,
+      minExponent,
+      rangeOfExponents
+    );
 
-  const medianPoints = outGroupData.medianData;
+    const medianPoints = outGroupData.medianData;
 
-  const medianAndQuantileTraces = buildMedianAndQuantileTraces(
-    medianPoints.xs,
-    medianPoints.medianYs,
-    medianPoints.quantile0Ys,
-    medianPoints.quantile1Ys,
-    lineColorOutGroup,
-    shadingColorOutGroup
-  );
-  traces.push(...medianAndQuantileTraces);
+    const medianAndQuantileTraces = buildMedianAndQuantileTraces(
+      medianPoints.xs,
+      medianPoints.medianYs,
+      medianPoints.quantile0Ys,
+      medianPoints.quantile1Ys,
+      lineColorOutGroup,
+      shadingColorOutGroup
+    );
+    traces.push(...medianAndQuantileTraces);
+  }
 
   traces.reverse();
 
@@ -234,12 +236,12 @@ function DoseCurvesPlot({
   minDose,
   maxDose,
   inGroupCurveParams,
-  outGroupCurveParams,
+  outGroupCurveParams = [],
 }: Props) {
   const [curveTraces, setcurveTraces] = useState<CurveTrace[] | null>(null);
 
   useEffect(() => {
-    if (inGroupCurveParams && outGroupCurveParams && minDose && maxDose) {
+    if (inGroupCurveParams && minDose && maxDose) {
       const plotTraces = buildTraces(
         minDose,
         maxDose,
