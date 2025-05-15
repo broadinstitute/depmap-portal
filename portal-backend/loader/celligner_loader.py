@@ -120,7 +120,7 @@ def load_celligner_data(celligner_filename, distances_filename):
         }
     )
 
-    celligner_data["sampleId"].fillna(df["profileId"], inplace=True)
+    celligner_data["sampleId"].fillna(celligner_data["profileId"], inplace=True)
 
     celligner_data["type"] = celligner_data["type"].replace(
         {
