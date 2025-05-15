@@ -284,7 +284,7 @@ def process_depmap_ipts(expr_df, context_df, prof_map, model_condition):
             "subtype",
             "type",
             "FormulationID",
-            "ModelCondition",
+            "ModelConditionID",
             "ModelID",
         ],
     ]
