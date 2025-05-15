@@ -135,7 +135,7 @@ def load_celligner_data(celligner_filename, distances_filename):
     schema = pa.DataFrameSchema(
         columns={
             "profileId": pa.Column(str),
-            "sampleId": pa.Column(str),
+            "sampleId": pa.Column(str, nullable=True),
             "modelConditionId": pa.Column(str, nullable=True),
             "umap1": pa.Column("float64"),
             "umap2": pa.Column("float64"),
