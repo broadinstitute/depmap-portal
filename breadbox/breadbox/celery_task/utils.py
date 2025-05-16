@@ -117,12 +117,12 @@ def format_task_status(task):
             # return error message for the front to display
             message = str(task.result.detail)
         elif isinstance(task.result, HTTPException):
-            message = { # uncomment to show these errors to users
+            message = {
                 "status_code": str(task.result.status_code),
                 "detail": str(task.result.status_code),
             }
         elif isinstance(task.result, FileValidationError):
-            message = str(task.result) # uncomment to show these errors to users
+            message = str(task.result)
         else:
             # This is an unexpected error thrown while the task was running. 
             # At this point, the error has already been logged in the celery error reporter 
