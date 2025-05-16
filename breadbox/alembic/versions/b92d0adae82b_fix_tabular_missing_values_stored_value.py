@@ -6,6 +6,7 @@ Create Date: 2024-07-16 08:53:16.271861
 
 """
 from alembic import op
+from sqlalchemy import text
 
 # revision identifiers, used by Alembic.
 revision = "b92d0adae82b"
@@ -26,7 +27,7 @@ def upgrade():
 
     conn = op.get_bind()
     # Completed sanity check already to ensure no 'nan' values are from an index identifier
-    conn.execute("UPDATE tabular_cell SET value = NULL WHERE value = 'nan'")
+    conn.execute(text("UPDATE tabular_cell SET value = NULL WHERE value = 'nan'"))
 
     # ### end Alembic commands ###
 
