@@ -8,9 +8,10 @@ output="public/css/view_entity.css", "css/entities/view_entity.scss",
 {% endassets %} {% endblock %} {% block content_class %}container-fluid{%
 endblock content_class %} {% set show_sensitivity_tab = summary is not none %}
 {% set show_predictability_tab = has_datasets and has_predictability %} {% set
-show_dose_curve_tab = dose_curve_options | length > 0 %} {% set show_celfie_tab
-= has_celfie %} {% set show_aliases = compound_aliases|length > 0 %} {% block
-content %}
+show_dose_curve_tab = dose_curve_options | length > 0 %} {% set
+show_dose_curve_tab_new = dose_curve_options_new | length > 0 %} {% set
+show_celfie_tab = has_celfie %} {% set show_aliases = compound_aliases|length >
+0 %} {% block content %}
 <br />
 <div class="header">
   <div>
@@ -54,7 +55,17 @@ active_tab_set = False %}
       >Dose curves</a
     >
   </li>
-  {% set active_tab_set = True %} {% endif %} {% if show_predictability_tab %}
+  {% set active_tab_set = True %} {% endif %} {% if show_dose_curve_tab_new %}
+  <li role="presentation" class="{% if not active_tab_set %}active{% endif %}">
+    <a
+      href="#dose-curves-new"
+      aria-controls="dose-curves-new"
+      role="tab"
+      data-toggle="tab"
+      >Dose curves NEW</a
+    >
+  </li>
+  {% set active_tab_set = True %} {% endif %}{% if show_predictability_tab %}
   <li role="presentation" class="{% if not active_tab_set %}active{% endif %}">
     <a
       href="#predictability"
@@ -140,14 +151,14 @@ active_tab_set = False %}
   <div
     role="tabpanel"
     class="tab-pane {% if not active_tab_set %}active{% endif %}"
-    id="new-dose-curves"
+    id="dose-curves-new"
   >
     <div id="new-dose-curves-tab-content"></div>
     <script>
       $(function () { // document ready for middle-of-html js
           DepMap.initDoseCurvesTab(
               "new-dose-curves-tab-content",
-          {{dose_curve_options | tojson}},
+          {{dose_curve_options_new | tojson}},
           "{{ compound_units }}"
       );
       });

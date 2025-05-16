@@ -1,16 +1,19 @@
 /* eslint-disable @typescript-eslint/naming-convention */
-import React, { useCallback, useMemo } from "react";
-import { useState } from "react";
+import React, { useState } from "react";
 import DoseCurvesPlot from "src/contextExplorer/components/contextAnalysis/DoseCurvesPlot";
 import PlotControls from "src/plot/components/PlotControls";
 import PlotSpinner from "src/plot/components/PlotSpinner";
 import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
-import { CompoundDoseCurveData } from "./DoseCurvesTab";
+import { CompoundDoseCurveData } from "./types";
 
 interface DoseCurvesPlotSectionProps {
   curvesData: CompoundDoseCurveData | null;
+  doseUnits: string;
 }
-function DoseCurvesPlotSection({ curvesData }: DoseCurvesPlotSectionProps) {
+function DoseCurvesPlotSection({
+  curvesData,
+  doseUnits,
+}: DoseCurvesPlotSectionProps) {
   const [plotElement, setPlotElement] = useState<ExtendedPlotType | null>(null);
 
   return (
@@ -40,6 +43,7 @@ function DoseCurvesPlotSection({ curvesData }: DoseCurvesPlotSectionProps) {
             handleSetPlotElement={(element: ExtendedPlotType | null) => {
               setPlotElement(element);
             }}
+            doseUnits={doseUnits}
           />
         )}
       </div>

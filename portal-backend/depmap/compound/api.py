@@ -8,7 +8,7 @@ from flask_restplus import Namespace, Resource
 from flask import request
 
 
-namespace = Namespace("compound_data", description="View compound data in the portal")
+namespace = Namespace("compound", description="View compound data in the portal")
 
 
 def _get_dose_response_curves_per_model(
@@ -46,7 +46,7 @@ def _get_dose_response_curves_per_model(
 
 
 @namespace.route("/dose_curve_data")
-class DoseCurves(
+class DoseCurveData(
     Resource
 ):  # the flask url_for endpoint is automagically the snake case of the namespace prefix plus class name
     def get(self):
@@ -60,6 +60,7 @@ class DoseCurves(
             dataset_id=dataset_name, feature=compound_label
         )
         model_ids = full_row_of_values.index.tolist()
+        breakpoint()
         dose_curve_info = _get_dose_response_curves_per_model(
             model_ids=model_ids,
             replicate_dataset_name=replicate_dataset_name,

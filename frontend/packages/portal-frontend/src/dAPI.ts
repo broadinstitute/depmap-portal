@@ -85,7 +85,6 @@ import {
   getDataPageDataTypeColorCategory,
   LineageAvailability,
 } from "./dataPage/models/types";
-import { CompoundDoseCurveData } from "./compound/newComponents/DoseCurvesTab";
 
 export interface RenderTile {
   html: string;
@@ -983,15 +982,17 @@ export class DepmapApi {
 
   getCompoundDoseCurveData(
     datasetName: string,
-    compoundLabel: string
+    compoundLabel: string,
+    replicateDatasetName: string
   ): Promise<any> {
     const params = {
       dataset_name: datasetName,
       compound_label: compoundLabel,
+      replicate_dataset_name: replicateDatasetName,
     };
 
     return this._fetch<any>(
-      `/api/compound_data/dose_curve_data?${encodeParams(params)}`
+      `/api/compound/dose_curve_data?${encodeParams(params)}`
     );
   }
 

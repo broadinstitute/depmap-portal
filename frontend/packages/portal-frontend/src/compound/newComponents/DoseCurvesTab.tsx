@@ -1,6 +1,5 @@
 import React, { useCallback, useState } from "react";
-import PlotSpinner from "src/plot/components/PlotSpinner";
-import { CurveParams } from "../components/DoseResponseCurve";
+import { useEffect } from "react";
 import { CompoundDataset } from "../components/DoseResponseTab";
 import DoseCurvesMainContent from "./DoseCurvesMainContent";
 import FiltersPanel from "./FiltersPanel";
@@ -10,38 +9,56 @@ interface DoseCurvesTabProps {
   doseUnits: string;
 }
 
-export interface CompoundDoseCurveData {
-  curve_params: CurveParams[];
-  min_dose: number;
-  max_dose: number;
-}
-
 function DoseCurvesTab({ datasetOptions, doseUnits }: DoseCurvesTabProps) {
   const [
     selectedDataset,
     setSelectedDataset,
   ] = useState<CompoundDataset | null>(null);
-  const [error, setError] = useState(false);
+  const [selectedDatasetOption, setSelectedDatasetOption] = useState<{
+    value: string;
+    label: string;
+  } | null>(null);
+  // const [error, setError] = useState(false);
+
+  useEffect(() => {
+    if (datasetOptions) {
+      setSelectedDataset(datasetOptions[0]);
+    }
+  }, [datasetOptions]);
 
   const handleSelectDataset = useCallback(
-    (selection: CompoundDataset | null) => {
+    (selection: { value: string; label: string } | null) => {
       if (selection) {
-        setSelectedDataset(selection);
+        setSelectedDatasetOption(selection);
+        const selectedCompoundDataset = datasetOptions.filter(
+          (option: CompoundDataset) => option.id === selection.value
+        )[0];
+        setSelectedDataset(selectedCompoundDataset);
       }
     },
-    []
+    [datasetOptions]
   );
 
-  // TODO: What to show/how to handle before anything is selected?
-  // Auto select first option? Is nothing selected even an option?
+  console.log({ selectedDatasetOption });
+  console.log(selectedDataset);
+
   return (
     <>
       <main>
         <FiltersPanel
           handleSelectDataset={handleSelectDataset}
           datasetOptions={datasetOptions}
+          selectedDatasetOption={
+            selectedDatasetOption || {
+              value: datasetOptions[0].id,
+              label: datasetOptions[0].auc_dataset_display_name,
+            }
+          }
         />
-        <DoseCurvesMainContent dataset={selectedDataset} />
+        <DoseCurvesMainContent
+          dataset={selectedDataset}
+          doseUnits={doseUnits}
+        />
       </main>
     </>
   );

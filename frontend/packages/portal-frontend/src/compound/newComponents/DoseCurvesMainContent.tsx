@@ -1,16 +1,19 @@
-import { ApiContext } from "@depmap/api";
-import React, { useContext, useEffect, useRef, useState } from "react";
-import PlotSpinner from "src/plot/components/PlotSpinner";
+import React, { useEffect, useRef, useState } from "react";
+import { getDapi } from "src/common/utilities/context";
 import { CompoundDataset } from "../components/DoseResponseTab";
 import DoseCurvesPlotSection from "./DoseCurvesPlotSection";
-import { CompoundDoseCurveData } from "./DoseCurvesTab";
+import { CompoundDoseCurveData } from "./types";
 
 interface DoseCurvesMainContentProps {
   dataset: CompoundDataset | null;
+  doseUnits: string;
 }
 
-function DoseCurvesMainContent({ dataset }: DoseCurvesMainContentProps) {
-  const { getApi } = useContext(ApiContext);
+function DoseCurvesMainContent({
+  dataset,
+  doseUnits,
+}: DoseCurvesMainContentProps) {
+  const dapi = getDapi();
 
   const [error, setError] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -26,9 +29,10 @@ function DoseCurvesMainContent({ dataset }: DoseCurvesMainContentProps) {
     (async () => {
       if (dataset) {
         setIsLoading(true);
-        const promise = getApi().getCompoundDoseCurveData(
-          dataset.auc_dataset_display_name,
-          dataset.compound_label
+        const promise = dapi.getCompoundDoseCurveData!(
+          dataset.id,
+          dataset.compound_label,
+          dataset.dose_replicate_dataset
         );
 
         latestPromise.current = promise;
@@ -52,11 +56,14 @@ function DoseCurvesMainContent({ dataset }: DoseCurvesMainContentProps) {
           });
       }
     })();
-  }, [setDoseCurveData, setIsLoading, dataset]);
+  }, [setDoseCurveData, setIsLoading, dataset, dapi]);
+
+  console.log(isLoading);
+  console.log(error);
 
   return (
     <div>
-      <DoseCurvesPlotSection curvesData={doseCurveData} />
+      <DoseCurvesPlotSection curvesData={doseCurveData} doseUnits={doseUnits} />
     </div>
   );
 }

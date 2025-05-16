@@ -245,7 +245,7 @@ export function initDoseCurvesTab(
 ) {
   renderWithErrorBoundary(
     <React.Suspense fallback={<div>Loading...</div>}>
-      <DoseResponseTab datasetOptions={datasetOptions} doseUnits={units} />
+      <DoseCurvesTab datasetOptions={datasetOptions} doseUnits={units} />
     </React.Suspense>,
     document.getElementById(elementId) as HTMLElement
   );

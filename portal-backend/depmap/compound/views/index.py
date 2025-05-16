@@ -105,6 +105,9 @@ def view_compound(name):
         has_datasets=has_datasets,
         order=get_order(has_predictability),
         dose_curve_options=format_dose_curve_options(compound_experiment_and_datasets),
+        dose_curve_options_new=format_dose_curve_options_new_tab(
+            compound_experiment_and_datasets
+        ),
         has_celfie=has_celfie,
         celfie=celfie if has_celfie else None,
         compound_units=compound.units,

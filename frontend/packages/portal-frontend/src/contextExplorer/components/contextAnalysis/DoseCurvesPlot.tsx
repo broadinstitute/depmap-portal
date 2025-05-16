@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { CurveParams } from "src/compound/components/DoseResponseCurve";
 import CurvesChart from "src/plot/components/CurvesChart";
-// import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
 
 // Make median curve traces
 const lineColorInGroup = "rgba(1, 50, 32, 1)";
@@ -15,6 +14,7 @@ interface Props {
   inGroupCurveParams: CurveParams[];
   outGroupCurveParams?: CurveParams[];
   handleSetPlotElement?: (element: any) => void;
+  doseUnits?: string;
 }
 
 interface CurveTrace {
@@ -237,6 +237,8 @@ function DoseCurvesPlot({
   maxDose,
   inGroupCurveParams,
   outGroupCurveParams = [],
+  doseUnits = "Concentration (uM)",
+  handleSetPlotElement = () => {},
 }: Props) {
   const [curveTraces, setcurveTraces] = useState<CurveTrace[] | null>(null);
 
@@ -269,14 +271,14 @@ function DoseCurvesPlot({
       <CurvesChart
         title={""}
         yAxisTitle={"Viability"}
-        xAxisTitle={"Concentration (uM)"}
+        xAxisTitle={doseUnits}
         dottedLine={0.3}
         minX={minDose}
         maxX={maxDose}
         curves={curveTraces}
         showLegend={false}
         height={300}
-        onLoad={() => {}}
+        onLoad={handleSetPlotElement}
       />
     </div>
   );
