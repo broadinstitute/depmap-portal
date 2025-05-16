@@ -3,10 +3,14 @@ import React, { useCallback, useMemo } from "react";
 import { useState } from "react";
 import DoseCurvesPlot from "src/contextExplorer/components/contextAnalysis/DoseCurvesPlot";
 import PlotControls from "src/plot/components/PlotControls";
+import PlotSpinner from "src/plot/components/PlotSpinner";
 import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
+import { CompoundDoseCurveData } from "./DoseCurvesTab";
 
-interface Props {}
-function DoseCurvesPlotSection({}: Props) {
+interface DoseCurvesPlotSectionProps {
+  curvesData: CompoundDoseCurveData | null;
+}
+function DoseCurvesPlotSection({ curvesData }: DoseCurvesPlotSectionProps) {
   const [plotElement, setPlotElement] = useState<ExtendedPlotType | null>(null);
 
   return (
@@ -27,14 +31,17 @@ function DoseCurvesPlotSection({}: Props) {
       </div>
 
       <div>
-        <DoseCurvesPlot
-          minDose={minDose}
-          maxDose={maxDose}
-          inGroupCurveParams={curveParams}
-          handleSetPlotElement={(element: ExtendedPlotType | null) => {
-            setTTestPlotElement(element);
-          }}
-        />
+        {!curvesData && <PlotSpinner />}
+        {curvesData && (
+          <DoseCurvesPlot
+            minDose={curvesData.min_dose}
+            maxDose={curvesData.max_dose}
+            inGroupCurveParams={curvesData.curve_params}
+            handleSetPlotElement={(element: ExtendedPlotType | null) => {
+              setPlotElement(element);
+            }}
+          />
+        )}
       </div>
     </div>
   );

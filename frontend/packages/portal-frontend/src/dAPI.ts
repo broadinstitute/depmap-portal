@@ -984,13 +984,13 @@ export class DepmapApi {
   getCompoundDoseCurveData(
     datasetName: string,
     compoundLabel: string
-  ): Promise<CompoundDoseCurveData> {
+  ): Promise<any> {
     const params = {
       dataset_name: datasetName,
       compound_label: compoundLabel,
     };
 
-    return this._fetch<CompoundDoseCurveData>(
+    return this._fetch<any>(
       `/api/compound_data/dose_curve_data?${encodeParams(params)}`
     );
   }
