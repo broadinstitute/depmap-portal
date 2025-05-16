@@ -211,7 +211,7 @@ def update_dataset_dimensions_with_dimension_type(
     updated_dimension_labels = []
 
     dims_grouped_by_dataset_df = pd.read_sql(
-        str(dataset_dimensions_with_dimension_type_query.statement),
+        dataset_dimensions_with_dimension_type_query.statement,
         dataset_dimensions_with_dimension_type_query.session.connection(),
     ).groupby("dataset_id")
     for dataset_key in dims_grouped_by_dataset_df.groups.keys():

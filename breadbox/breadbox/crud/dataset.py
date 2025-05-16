@@ -388,9 +388,8 @@ def get_dataset_dimension_search_index_entries(
         )
     )
 
-    # Convert SQLAlchemy statement to string for pandas 2.0+ compatibility
     search_index_entries = pd.read_sql(
-        str(search_index_query.statement), search_index_query.session.connection()
+        search_index_query.statement, search_index_query.session.connection()
     )
     #    search_index_entries.columns = ["type_name", "dimension_given_id", "label", "property", "value"]
 
@@ -780,8 +779,7 @@ def get_subset_of_tabular_data_as_df(
             TabularCell.value, TabularCell.dimension_given_id, TabularColumn.given_id,
         )
     )
-    # Convert SQLAlchemy statement to string for pandas 2.0+ compatibility
-    query_df = pd.read_sql(str(query.statement), query.session.connection())
+    query_df = pd.read_sql(query.statement, query.session.connection())
 
     # Pivot table so that the indices are the index of the df and the given columns are the columns of the df
     # NOTE: resulting df will have columns as multi index ("value", "given_id") so will need to index df by "value" to get final df

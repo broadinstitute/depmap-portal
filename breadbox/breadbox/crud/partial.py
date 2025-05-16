@@ -36,8 +36,8 @@ def get_cell_line_selector_lines(db: SessionWithUser):
             TabularCell.value, TabularCell.dimension_given_id, TabularColumn.given_id,
         )
     )
-    # Convert SQLAlchemy statement to string for pandas 2.0+ compatibility
-    query_df = pd.read_sql(str(query.statement), query.session.connection())
+
+    query_df = pd.read_sql(query.statement, query.session.connection())
 
     df = query_df.pivot(index="dimension_given_id", columns="given_id")["value"]
     df["depmap_id"] = df.index

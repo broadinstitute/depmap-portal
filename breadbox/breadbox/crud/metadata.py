@@ -101,8 +101,8 @@ def _get_feature_or_sample_metadata_df(
             TabularColumn.annotation_type,
         )
     )
-    # Convert SQLAlchemy statement to string for pandas 2.0+ compatibility
-    metadata_df = pd.read_sql(str(query.statement), query.session.connection())
+
+    metadata_df = pd.read_sql(query.statement, query.session.connection())
 
     return metadata_df
 
@@ -143,10 +143,8 @@ def get_metadata_search_options(db: SessionWithUser, user: str, text: str):
         .with_entities(Dimension.given_id)
     )
 
-    # Convert SQLAlchemy statement to string for pandas 2.0+ compatibility
     dimension_names = pd.read_sql(
-        str(dimension_search_query.statement),
-        dimension_search_query.session.connection(),
+        dimension_search_query.statement, dimension_search_query.session.connection(),
     )
     dimension_names_list = dimension_names["given_id"].tolist()
 
