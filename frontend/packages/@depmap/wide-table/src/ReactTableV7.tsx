@@ -129,6 +129,7 @@ const ReactTableV7 = React.forwardRef(
         columns,
         data,
         defaultColumn,
+        autoResetSortBy: false,
         initialState: {
           // https://github.com/TanStack/table/blob/v7/docs/src/pages/docs/api/useSortBy.md#table-options
           sortBy: initialSortBy,
