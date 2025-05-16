@@ -326,7 +326,14 @@ def _get_overview_table_data(
         summary_df_by_model_id=summary_df_by_model_id,
     )
 
-    return overview_data
+    # This keeps the initial sort order of the overview table
+    # equal to the order of the overview heatmap columns
+    sort_order = summary_df.columns.tolist()
+    sorted_overview_data = sorted(
+        overview_data, key=lambda x: sort_order.index(x["model_id"])
+    )
+
+    return sorted_overview_data
 
 
 def get_context_explorer_lineage_trees_and_table_data(
