@@ -6,9 +6,10 @@ from logging import getLogger
 from google.cloud import error_reporting
 
 
+
 class GCPExceptionReporter: # TODO: move this to some shared location to avoid 3x duplication
-    def __init__(self, env: str): # TODO: figure out how I'd get the env
-        self.service_name = "celery-" + env
+    def __init__(self, env: str):
+        self.service_name = "breadbox-worker-" + env
         self.client = self._create_client() if not env == "dev" else None
 
     @property
@@ -19,7 +20,6 @@ class GCPExceptionReporter: # TODO: move this to some shared location to avoid 3
         return error_reporting.Client(service=self.service_name)
 
     def report(self):
-        print("GCS Error being reported from celery")
         print("---- Error reported to GCS is:")
         print(traceback.format_exc())
         if self.client is None:
@@ -28,8 +28,12 @@ class GCPExceptionReporter: # TODO: move this to some shared location to avoid 3
 
         self.client.report_exception(http_context=None, user=None) # From within celery, we don't know anything about the context
 
+
+rhost = os.getenv("REDIS_HOST", "localhost")
+breadbox_env = os.getenv("BREADBOX_ENV", "dev")
+
 log = getLogger(__name__)
-exception_reporter = GCPExceptionReporter(env="dev")
+exception_reporter = GCPExceptionReporter(env=breadbox_env)
 
 class LogErrorsTask(Task):
     def on_failure(self, exc, task_id, args, kwargs, einfo):
@@ -39,10 +43,8 @@ class LogErrorsTask(Task):
         super(LogErrorsTask, self).on_failure(exc, task_id, args, kwargs, einfo)
 
 
-
-rhost = os.getenv("REDIS_HOST", "localhost")
 app = Celery(
-    "compute",
+    "breadbox-worker",
     broker_url="redis://" + rhost,
     backend="redis://" + rhost,
     include=[
