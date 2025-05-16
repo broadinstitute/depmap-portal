@@ -117,18 +117,17 @@ def format_task_status(task):
             # return error message for the front to display
             message = str(task.result.detail)
         elif isinstance(task.result, HTTPException):
-            # message = { # uncomment to show these errors to users
-            #     "status_code": str(task.result.status_code),
-            #     "detail": str(task.result.status_code),
-            # }
-            raise task.result
+            message = { # uncomment to show these errors to users
+                "status_code": str(task.result.status_code),
+                "detail": str(task.result.status_code),
+            }
         elif isinstance(task.result, FileValidationError):
-            # message = str(task.result) # uncomment to show these errors to users
-            raise task.result
+            message = str(task.result) # uncomment to show these errors to users
         else:
-            # this is an unexpected error, somewhere in our code threw that exception
-            # task.result contains the exception. throw it to throw a hard 500 and report to stackdriver
-            raise CeleryException("Unexpected error from celery worker.") from task.result
+            # This is an unexpected error thrown while the task was running. 
+            # At this point, the error has already been logged in the celery error reporter 
+            # and should be visible in the GCS Error Groups.
+            message = "Encountered an unexpected error. Please try again later."
     elif task.state == TaskState.PENDING.name:
         # pending means we have not entered the task yet
         pass
