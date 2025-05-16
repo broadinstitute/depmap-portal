@@ -14,6 +14,7 @@ from sqlalchemy.orm import (
     relationship,
     Session,
     with_loader_criteria,  # pyright: ignore
+    Mapped,
 )
 
 from ..db.base_class import Base, UUIDMixin
@@ -71,11 +72,11 @@ class GroupMixin:
     # NOTE: pyright is not good at handling declared_attr fields, so some type-ignoring is required.
     # See: https://github.com/dropbox/sqlalchemy-stubs/issues/97 (issue has been open for 5 years)
     @declared_attr
-    def group_id(cls) -> str:
+    def group_id(cls) -> Mapped[str]:
         return Column(String, ForeignKey("group.id"), nullable=False)  # pyright: ignore
 
     @declared_attr
-    def group(cls) -> Group:
+    def group(cls) -> Mapped[Group]:
         return relationship(Group, foreign_keys=[cls.group_id])  # pyright: ignore
 
 

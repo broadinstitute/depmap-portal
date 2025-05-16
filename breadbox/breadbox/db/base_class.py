@@ -2,6 +2,7 @@ import uuid
 
 from sqlalchemy import Column, String, MetaData
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import Mapped
 
 # It has been a pain point encountering unnamed constraints when migrating since you can't drop unnamed constraints. These conventions will be used when the sqlalchemy model has constraints that are unnamed
 convention = {
@@ -17,4 +18,6 @@ Base = declarative_base(metadata=metadata_obj)
 
 
 class UUIDMixin:
-    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    id: Mapped[str] = Column(
+        String(36), primary_key=True, default=lambda: str(uuid.uuid4())
+    )

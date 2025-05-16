@@ -8,21 +8,21 @@ packages = [{include = "breadbox"}]
 [tool.poetry.dependencies]
 python = "^3.9"
 fastapi = "0.111.0"
-pandas = "^1.5.1"
+pandas = ">=2.2.0"
 h5py = "^3.5.0"
 python-dotenv = "^0.21.0"
 alembic = "^1.8.1"
-pre-commit = "2.17.0"
+pre-commit = ">=3.7.0"
 scipy = ">=1.11.0"
 sqlalchemy-stubs = "^0.4"
 celery = "^5.4.0"
-redis = "3.5.3"
+redis = "^4.5.0"
 pytest = "^7.2.0"
 httpx = "^0.23.1"
 uvicorn = "^0.20.0"
 pydantic = {extras = ["email"], version = "^2.7.1"}
-taigapy = {git = "https://github.com/broadinstitute/taigapy.git", rev = "0b67741f18fe6e3c2f508ee84b06ca3bed853b82"}
-SQLAlchemy= "^1.4.40"
+taigapy = {version = "3.14.0", source = "public-python"}
+SQLAlchemy= "^2.0.40"
 factory-boy = "^3.3.0"
 google-cloud-error-reporting = "^1.10.0"
 itsdangerous = "^2.1.2"

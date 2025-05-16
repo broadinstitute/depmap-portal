@@ -211,7 +211,7 @@ def update_dataset_dimensions_with_dimension_type(
     updated_dimension_labels = []
 
     dims_grouped_by_dataset_df = pd.read_sql(
-        dataset_dimensions_with_dimension_type_query.statement,
+        str(dataset_dimensions_with_dimension_type_query.statement),
         dataset_dimensions_with_dimension_type_query.session.connection(),
     ).groupby("dataset_id")
     for dataset_key in dims_grouped_by_dataset_df.groups.keys():
@@ -254,11 +254,16 @@ def get_dimension_type_labels_by_id(
     """
     For a given dimension, get all IDs and labels that exist in the metadata.
     """
-    return get_dimension_type_metadata_col(db, dimension_type_name, col_name="label", limit=limit)
+    return get_dimension_type_metadata_col(
+        db, dimension_type_name, col_name="label", limit=limit
+    )
 
 
 def get_dimension_type_metadata_col(
-    db: SessionWithUser, dimension_type_name: str, col_name: str, limit: Optional[int] = None,
+    db: SessionWithUser,
+    dimension_type_name: str,
+    col_name: str,
+    limit: Optional[int] = None,
 ) -> dict[str, str]:
     assert isinstance(col_name, str)
 

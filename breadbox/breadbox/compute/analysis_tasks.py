@@ -54,9 +54,11 @@ def _format_breadbox_shim_slice_id(dataset_id: str, feature_id: str):
 
 def _subset_feature_df(query_series, index_subset=None) -> Tuple[List[str], list]:
     if index_subset is not None:
-        query_series = query_series.loc[
+        # Convert sets to lists since pandas 2.0+ doesn't support sets as indexers
+        intersection = list(
             set.intersection(set(query_series.index), set(index_subset))
-        ]
+        )
+        query_series = query_series.loc[intersection]
 
     return (
         query_series.index.tolist(),
