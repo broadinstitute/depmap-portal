@@ -482,27 +482,22 @@ def run_custom_analysis(
     :param ctx: A dict containing the result of Analysis(...), which consists of variables required to complete the cust analysis
     :return:
     """
-    try: 
-        return _run_custom_analysis(
-            task_id,
-            update_message,
-            analysis_type,
-            depmap_model_ids,
-            value_query_vector,
-            features,
-            feature_type,
-            dataset,
-            vector_is_dependent,
-            parameters,
-            result_dir,
-            create_cell_line_group,
-            use_feature_ids,
-        )
-    except Exception as e:
-        # Custom analysis occasionally encounters unexpected python errors which
-        # should be caught and formatted with their stack trace. 
-        # Previously, these errors had been losing their stack trace when re-raised in format_task_status.
-        raise Exception(traceback.format_exc())
+    raise Exception('TEST TEST TEST')
+    return _run_custom_analysis(
+        task_id,
+        update_message,
+        analysis_type,
+        depmap_model_ids,
+        value_query_vector,
+        features,
+        feature_type,
+        dataset,
+        vector_is_dependent,
+        parameters,
+        result_dir,
+        create_cell_line_group,
+        use_feature_ids,
+    )
 
 
 def run_pearson(vector, matrix_subsetted, progress_callback):
