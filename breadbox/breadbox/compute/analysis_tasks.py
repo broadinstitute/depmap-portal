@@ -296,9 +296,7 @@ def run_custom_analysis(
 
     update_message = _get_update_message_callback(self)
     update_message("Fetching data")
-
-    raise Exception("TEST")
-
+    
     with db_context(user) as db:
 
         # All features and feature_indices for the dataset we're searching in

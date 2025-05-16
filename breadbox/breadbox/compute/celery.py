@@ -1,45 +1,24 @@
 from celery import Celery, Task
 import os
-import traceback
 from logging import getLogger
 
-from google.cloud import error_reporting
-
-
-
-class GCPExceptionReporter: # TODO: move this to some shared location to avoid 3x duplication
-    def __init__(self, env: str):
-        self.service_name = "breadbox-worker-" + env
-        self.client = self._create_client() if not env == "dev" else None
-
-    @property
-    def disabled(self):
-        return self.client is None
-
-    def _create_client(self):
-        return error_reporting.Client(service=self.service_name)
-
-    def report(self):
-        print("---- Error reported to GCS is:")
-        print(traceback.format_exc())
-        if self.client is None:
-            print("Error reporting disabled")
-            return
-
-        self.client.report_exception(http_context=None, user=None) # From within celery, we don't know anything about the context
+from breadbox.logging import GCPExceptionReporter
 
 
 rhost = os.getenv("REDIS_HOST", "localhost")
 breadbox_env = os.getenv("BREADBOX_ENV", "dev")
 
 log = getLogger(__name__)
-exception_reporter = GCPExceptionReporter(env=breadbox_env)
+exception_reporter = GCPExceptionReporter(breadbox_env=breadbox_env)
 
 class LogErrorsTask(Task):
     def on_failure(self, exc, task_id, args, kwargs, einfo):
-        """Override the default behavior on task failure to also report to our GCP error logs""" 
-        print("ON FAILURE (celery)") # WOOO! It gets here
-        exception_reporter.report()
+        """Override the default behavior on task failure to also report to our GCP error logs.""" 
+
+        # It would be nice if we could report some of the information we do have here
+        # (like task_id, args, etc.) to error_reporter. However, error_reporter is really 
+        # only set up to log context in the format of a HTTP request. 
+        exception_reporter.report(request=None, status_code=None, user=None)
         super(LogErrorsTask, self).on_failure(exc, task_id, args, kwargs, einfo)
 
 

@@ -482,7 +482,6 @@ def run_custom_analysis(
     :param ctx: A dict containing the result of Analysis(...), which consists of variables required to complete the cust analysis
     :return:
     """
-    raise Exception('TEST TEST TEST')
     return _run_custom_analysis(
         task_id,
         update_message,
