@@ -18,7 +18,7 @@ from ..models.dataset import (
     DatasetFeature,
     ValueType,
 )
-from .celery import app
+from .celery import app, LogErrorsTask
 from ..db.util import db_context
 from breadbox.service import metadata as metadata_service
 
@@ -334,7 +334,7 @@ def get_feature_and_sample_indices_per_merged_dataset(
     return feature_indices_per_dataset, sample_indices, datasets
 
 
-@app.task(bind=True)
+@app.task(base=LogErrorsTask, bind=True)
 def export_merged_datasets(
     self: Any,
     dataset_ids: List[str],
@@ -418,7 +418,7 @@ def _get_all_sample_indices(
     return sample_indices
 
 
-@app.task(bind=True)
+@app.task(base=LogErrorsTask, bind=True)
 def export_dataset(
     self: Any,
     dataset_id: str,
