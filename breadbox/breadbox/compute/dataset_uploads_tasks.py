@@ -31,12 +31,12 @@ from ..io.data_validation import (
     _get_dimension_labels_and_warnings,
     read_and_validate_tabular_df,
 )
-from .celery import app
+from .celery import app, LogErrorsTask
 import celery
 from ..config import get_settings
 
 
-@app.task(bind=True)
+@app.task(base=LogErrorsTask, bind=True)
 def run_dataset_upload(
     self: celery.Task, dataset_params: Dict, user: str,
 ):

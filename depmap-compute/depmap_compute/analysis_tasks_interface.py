@@ -5,8 +5,7 @@ import json
 import numpy as np
 import pandas as pd
 import logging
-
-import pytest
+import traceback
 
 from depmap_compute.models import AnalysisType
 from dataclasses import dataclass
@@ -483,7 +482,6 @@ def run_custom_analysis(
     :param ctx: A dict containing the result of Analysis(...), which consists of variables required to complete the cust analysis
     :return:
     """
-
     return _run_custom_analysis(
         task_id,
         update_message,

@@ -34,7 +34,7 @@ from ..crud import dimension_types as type_crud
 from ..crud import group as group_crud
 from ..crud import data_type as data_type_crud
 from ..io.data_validation import validate_and_upload_dataset_files
-from .celery import app
+from .celery import app, LogErrorsTask
 from ..db.util import db_context
 from breadbox.compute.dataset_uploads_tasks import parse_and_validate_dataset_given_id
 
@@ -323,7 +323,7 @@ def upload_dataset(
 #   (2) include the task in breadbox/breadbox/compute/celery.py (and the celery_includes pytest fixture)
 #   (3) Change the caller to use .delay instead of .apply
 #   (4) Implement a Progress Tracker in frontend components that rely on add_dataset
-@app.task(bind=True)
+@app.task(base=LogErrorsTask, bind=True)
 def run_upload_dataset(
     task: celery.Task,
     name: str,
