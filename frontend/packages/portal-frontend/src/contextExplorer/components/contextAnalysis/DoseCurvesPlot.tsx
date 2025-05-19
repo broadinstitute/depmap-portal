@@ -12,6 +12,7 @@ interface Props {
   minDose: number;
   maxDose: number;
   inGroupCurveParams: CurveParams[];
+  datasetUnits?: string;
   outGroupCurveParams?: CurveParams[];
   handleSetPlotElement?: (element: any) => void;
   doseUnits?: string;

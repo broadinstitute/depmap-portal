@@ -23,7 +23,7 @@ export interface CurvesChartProps {
   margin?: Margin;
   customWidth?: number | undefined;
   xRange?: number[] | undefined;
-  selectedPoints?: Set<number>;
+  selectedCurves?: Set<number>;
   customHoverinfo?: PlotData["hoverinfo"];
   onClickPoint?: (pointIndex: number) => void;
   onMultiselect?: (pointIndices: number[]) => void;
@@ -49,9 +49,9 @@ function CurvesChart({
   showLegend,
   curveTraces,
   customHoverinfo = undefined,
-  selectedPoints = undefined,
+  selectedCurves = undefined,
   onLoad = () => {},
-  onClickPoint = () => {},
+  onClickPoint: onClickCurve = () => {},
   onMultiselect = () => {},
   onClickResetSelection = () => {},
   height = "auto",
@@ -223,19 +223,59 @@ function CurvesChart({
       Plotly.react(plot, plot.data, nextLayout, plot.config);
     };
 
+    const debounce = (func: any, wait: any) => {
+      let timeout: any;
+      return function executedFunction(...args: any[]) {
+        const later = () => {
+          timeout = null;
+          func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+      };
+    };
+
+    on(
+      "plotly_hover",
+      debounce((e: PlotMouseEvent) => {
+        const { curveNumber } = e.points[0];
+        Plotly.restyle(
+          plot,
+          {
+            line: { color: "red" },
+          },
+          [curveNumber]
+        );
+      }, 25)
+    );
+
+    on(
+      "plotly_unhover",
+      debounce((e: PlotMouseEvent) => {
+        const { curveNumber } = e.points[0];
+        Plotly.restyle(
+          plot,
+          {
+            line: { color: "rgba(108, 122, 137, 0.5)" },
+          },
+          [curveNumber]
+        );
+      }, 10)
+    );
+
     on("plotly_click", (e: PlotMouseEvent) => {
-      const { pointIndex } = e.points[0];
+      const { curveNumber } = e.points[0];
 
-      const index = pointIndex;
+      const index = curveNumber;
 
-      if (onClickPoint) {
-        onClickPoint(index);
+      if (onClickCurve) {
+        onClickCurve(index);
       }
 
       // WORKAROUND: If you mean to double-click to zoom out and
       // select a point by accident, restore the previous selections.
       const prevAxes = axes.current;
-      const prevSelection = selectedPoints;
+      const prevSelection = selectedCurves;
 
       setTimeout(() => {
         if (axes.current !== prevAxes && prevSelection) {
@@ -245,7 +285,7 @@ function CurvesChart({
     });
 
     on("plotly_selecting", () => {
-      if (selectedPoints && selectedPoints.size > 0) {
+      if (selectedCurves && selectedCurves.size > 0) {
         onClickResetSelection();
       }
     });
@@ -295,10 +335,10 @@ function CurvesChart({
     dottedLine,
     minX,
     maxX,
-    onClickPoint,
+    onClickCurve,
     onClickResetSelection,
     onMultiselect,
-    selectedPoints,
+    selectedCurves,
     customHoverinfo,
   ]);
 

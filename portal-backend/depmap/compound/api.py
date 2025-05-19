@@ -13,10 +13,15 @@ namespace = Namespace("compound", description="View compound data in the portal"
 
 def _get_dose_response_curves_per_model(
     model_ids: List[str],
+    dataset_name: str,
     replicate_dataset_name: str,
     compound_experiment: CompoundExperiment,
 ):
-    dataset = Dataset.get_dataset_by_name(replicate_dataset_name)
+
+    dataset = Dataset.get_dataset_by_name(dataset_name)
+    units = dataset.units
+
+    replicate_dataset = Dataset.get_dataset_by_name(replicate_dataset_name)
 
     dose_min_max_df = CompoundDoseReplicate.get_dose_min_max_of_replicates_with_compound_experiment_id(
         compound_experiment.entity_id
@@ -25,7 +30,7 @@ def _get_dose_response_curves_per_model(
     compound_dose_replicates = [
         dose_rep
         for dose_rep in dose_min_max_df
-        if DependencyDataset.has_entity(dataset.name, dose_rep.entity_id)
+        if DependencyDataset.has_entity(replicate_dataset.name, dose_rep.entity_id)
     ]
 
     model_display_names_by_model_id = DepmapModel.get_cell_line_display_names(
@@ -42,6 +47,7 @@ def _get_dose_response_curves_per_model(
         "curve_params": in_group_curve_params,
         "max_dose": compound_dose_replicates[0].max_dose,
         "min_dose": compound_dose_replicates[0].min_dose,
+        "dataset_units": units,
     }
 
 
@@ -66,6 +72,7 @@ class DoseCurveData(
 
         dose_curve_info = _get_dose_response_curves_per_model(
             model_ids=model_ids,
+            dataset_name=dataset_name,
             replicate_dataset_name=replicate_dataset_name,
             compound_experiment=compound_experiment,
         )

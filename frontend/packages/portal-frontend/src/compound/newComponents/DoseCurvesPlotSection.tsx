@@ -46,6 +46,7 @@ function DoseCurvesPlotSection({
               setPlotElement(element);
             }}
             doseUnits={doseUnits}
+            datasetUnits={curvesData.dataset_units}
           />
         )}
       </div>
