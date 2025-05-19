@@ -1,6 +1,7 @@
 from celery import Celery, Task
 import os
 from logging import getLogger
+from fastapi import HTTPException
 
 from breadbox.logging import GCPExceptionReporter
 
@@ -14,12 +15,14 @@ exception_reporter = GCPExceptionReporter(breadbox_env=breadbox_env)
 class LogErrorsTask(Task):
     def on_failure(self, exc, task_id, args, kwargs, einfo):
         """Override the default behavior on task failure to also report to our GCP error logs.""" 
-
-        # It would be nice if we could report some of the information we do have here
-        # (like task_id, args, etc.) to error_reporter. However, error_reporter is really 
-        # only set up to log context in the format of a HTTP request. 
-        exception_reporter.report(request=None, status_code=None, user=None)
-        super(LogErrorsTask, self).on_failure(exc, task_id, args, kwargs, einfo)
+        # User errors should not be reported, unhandled errors should be reported.
+        is_http_error = isinstance(exc, HTTPException)
+        if (not is_http_error) or (500 <= exc.status_code < 600):
+            # It would be nice if we could report some of the information we do have here
+            # (like task_id, args, etc.) to error_reporter. However, error_reporter is really 
+            # only set up to log context in the format of a HTTP request. 
+            exception_reporter.report(request=None, status_code=None, user=None)
+            super(LogErrorsTask, self).on_failure(exc, task_id, args, kwargs, einfo)
 
 
 app = Celery(
