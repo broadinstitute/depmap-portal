@@ -6,6 +6,7 @@ import {
   calculateLabelPositions,
   getGroupByColorPalette,
   getSampleTypeTransform,
+  getValidSelectedPoints,
 } from "src/celligner/utilities/plot";
 import {
   Alignments,
@@ -35,7 +36,6 @@ interface Props {
   lassoOrBoxSelectedPoints: Set<number>;
   sidePanelSelectedPoints: Set<number>;
   handleUnselectTableRows: () => void;
-  handleResetContextPtSelection: () => void;
   handleSelectingContextPts: (pointIndexes: number[]) => void;
   handleDeselectContextPts: () => void;
 }
@@ -89,9 +89,6 @@ export default class CellignerGraph extends React.Component<Props, State> {
       annotatedPoints,
       selectedPoints,
       colorByCategory,
-      lassoOrBoxSelectedPoints,
-      sidePanelSelectedPoints,
-      handleResetContextPtSelection,
       handleSelectingContextPts,
       handleUnselectTableRows,
     } = this.props;
@@ -108,10 +105,8 @@ export default class CellignerGraph extends React.Component<Props, State> {
       groupbyColorPalette.get(colorByCategory) as any,
       pointSize.CL,
       pointSize.tumor,
-      new Set([...lassoOrBoxSelectedPoints, ...sidePanelSelectedPoints]),
       handleUnselectTableRows,
-      handleSelectingContextPts,
-      handleResetContextPtSelection
+      handleSelectingContextPts
     );
 
     this.plotElement!.on("plotly_relayout", this.onPlotRelayout);
@@ -124,6 +119,7 @@ export default class CellignerGraph extends React.Component<Props, State> {
       annotatedPoints,
       colorByCategory,
       lassoOrBoxSelectedPoints,
+      sidePanelSelectedPoints,
     } = this.props;
     const {
       tumorLegendPointVisibilty,
@@ -140,8 +136,9 @@ export default class CellignerGraph extends React.Component<Props, State> {
       prevState.pointSize !== pointSize ||
       prevState.tumorLegendPointVisibilty !== tumorLegendPointVisibilty ||
       prevState.colorLegendPointVisibilty !== colorLegendPointVisibilty ||
-      prevProps.lassoOrBoxSelectedPoints !== lassoOrBoxSelectedPoints ||
-      prevProps.annotatedPoints !== annotatedPoints
+      prevProps.sidePanelSelectedPoints !== sidePanelSelectedPoints ||
+      prevProps.annotatedPoints !== annotatedPoints ||
+      prevProps.lassoOrBoxSelectedPoints !== lassoOrBoxSelectedPoints
     ) {
       const groups = (alignments[colorByCategory] as any).map(
         (c: any) => c ?? "N/A"
@@ -170,9 +167,6 @@ export default class CellignerGraph extends React.Component<Props, State> {
         ],
       ];
     }
-    if (!isEqual(prevProps.selectedPoints, selectedPoints)) {
-      (restyles as any).selectedpoints = [selectedPoints];
-    }
 
     // Important for when the user clicks the new PlotControls "Deselect" option
     if (
@@ -180,9 +174,35 @@ export default class CellignerGraph extends React.Component<Props, State> {
       prevProps.lassoOrBoxSelectedPoints.size > 0 &&
       lassoOrBoxSelectedPoints.size === 0
     ) {
-      (restyles as any).selectedPointIndexes = lassoOrBoxSelectedPoints;
-      (restyles as any).selectedpoints = [selectedPoints];
+      const points =
+        lassoOrBoxSelectedPoints.size > 0 || sidePanelSelectedPoints.size > 0
+          ? [
+              ...getValidSelectedPoints(
+                lassoOrBoxSelectedPoints,
+                sidePanelSelectedPoints,
+                selectedPoints
+              ),
+            ]
+          : selectedPoints;
+
+      (restyles as any).selectedpoints = [points];
     }
+
+    if (!isEqual(prevProps.selectedPoints, selectedPoints)) {
+      const points =
+        lassoOrBoxSelectedPoints.size > 0 || sidePanelSelectedPoints.size > 0
+          ? [
+              ...getValidSelectedPoints(
+                lassoOrBoxSelectedPoints,
+                sidePanelSelectedPoints,
+                selectedPoints
+              ),
+            ]
+          : selectedPoints;
+
+      (restyles as any).selectedpoints = [points];
+    }
+
     if (!isEqual(prevProps.annotatedPoints, annotatedPoints)) {
       (relayout as any).annotations = annotatedPoints
         ? this.labelPositions?.concat(annotatedPoints)
@@ -262,6 +282,7 @@ export default class CellignerGraph extends React.Component<Props, State> {
       alignments,
       lassoOrBoxSelectedPoints,
       sidePanelSelectedPoints,
+      selectedPoints,
     } = this.props;
     const { tumorLegendPointVisibilty, colorLegendPointVisibilty } = this.state;
 
@@ -269,10 +290,11 @@ export default class CellignerGraph extends React.Component<Props, State> {
       (_, i) => tumorLegendPointVisibilty[i] && colorLegendPointVisibilty[i]
     );
 
-    const selectedPtsForContext = new Set([
-      ...lassoOrBoxSelectedPoints,
-      ...sidePanelSelectedPoints,
-    ]);
+    const selectedPtsForContext = getValidSelectedPoints(
+      lassoOrBoxSelectedPoints,
+      sidePanelSelectedPoints,
+      selectedPoints
+    );
 
     const selectedModelIds = alignments.sampleId.filter(
       (_, index) =>
