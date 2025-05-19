@@ -102,6 +102,7 @@ def run_migrations_online():
         # shouldn't matter, but since I explictly disabled the constraints at the start
         # I'd like to turn it back on at the end.
         connection.execute(text("PRAGMA foreign_keys = ON"))
+        connection.commit()
 
 
 if context.is_offline_mode():
