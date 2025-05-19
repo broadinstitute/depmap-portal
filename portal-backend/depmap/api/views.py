@@ -11,6 +11,7 @@ from depmap.health_check.api import namespace as health_check_namespace
 from depmap.context_explorer.api import namespace as context_explorer_namespace
 from depmap.dataset_manager.api import namespace as dataset_manager_namespace
 from depmap.data_page.api import namespace as data_page_namespace
+from depmap.compound.api import namespace as compound_namespace
 
 """
 Endpoints that are user-facing should go in in api.py files. Their blueprints are imported here
@@ -37,6 +38,7 @@ api.add_namespace(download_namespace)
 api.add_namespace(private_dataset_namespace)
 api.add_namespace(access_control_namespace)
 api.add_namespace(dataset_manager_namespace)
+api.add_namespace(compound_namespace)
 
 
 @api.route("/error")

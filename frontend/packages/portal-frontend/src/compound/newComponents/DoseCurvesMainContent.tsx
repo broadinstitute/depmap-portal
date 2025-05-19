@@ -30,7 +30,7 @@ function DoseCurvesMainContent({
       if (dataset) {
         setIsLoading(true);
         const promise = dapi.getCompoundDoseCurveData!(
-          dataset.id,
+          dataset.dataset,
           dataset.compound_label,
           dataset.dose_replicate_dataset
         );

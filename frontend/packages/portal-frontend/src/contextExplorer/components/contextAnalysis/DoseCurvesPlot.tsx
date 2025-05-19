@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useMemo } from "react";
 import { CurveParams } from "src/compound/components/DoseResponseCurve";
 import CurvesChart from "src/plot/components/CurvesChart";
 
@@ -15,6 +15,7 @@ interface Props {
   outGroupCurveParams?: CurveParams[];
   handleSetPlotElement?: (element: any) => void;
   doseUnits?: string;
+  includeMedianQuantileRegions?: boolean;
 }
 
 interface CurveTrace {
@@ -39,7 +40,8 @@ const samplePoints = (
   curves: CurveParams[],
   numPts: number,
   minExponent: number,
-  rangeOfExponents: number
+  rangeOfExponents: number,
+  includeMedianQuantileRegions: boolean
 ) => {
   const data: { xs: number[]; ys: Float32Array; name: string }[] = [];
 
@@ -65,28 +67,30 @@ const samplePoints = (
   const medianYs: number[] = [];
   const quantile0Ys: number[] = [];
   const quantile1Ys: number[] = [];
-  for (let index = 0; index < data[0].xs.length; index++) {
-    const xIndex = index;
+  if (includeMedianQuantileRegions) {
+    for (let index = 0; index < data[0].xs.length; index++) {
+      const xIndex = index;
 
-    const yValsAtThisXIndex = new Float32Array(data.length);
-    for (let j = 0; j < data.length; j++) {
-      const dataCurve = data[j];
-      yValsAtThisXIndex[j] = dataCurve.ys[xIndex];
+      const yValsAtThisXIndex = new Float32Array(data.length);
+      for (let j = 0; j < data.length; j++) {
+        const dataCurve = data[j];
+        yValsAtThisXIndex[j] = dataCurve.ys[xIndex];
+      }
+      const sortedArr = yValsAtThisXIndex.sort();
+      const quantile0Index = sortedArr.length * 0.4;
+      const quantile1Index = sortedArr.length * 0.6;
+      const mid = Math.floor(sortedArr.length / 2);
+      const median =
+        sortedArr.length % 2
+          ? sortedArr[mid]
+          : (sortedArr[mid - 1] + sortedArr[mid]) / 2;
+      const quantile0 = sortedArr[Math.round(quantile0Index)];
+      const quantile1 = sortedArr[Math.round(quantile1Index)];
+
+      medianYs.push(median);
+      quantile0Ys.push(quantile0);
+      quantile1Ys.push(quantile1);
     }
-    const sortedArr = yValsAtThisXIndex.sort();
-    const quantile0Index = sortedArr.length * 0.4;
-    const quantile1Index = sortedArr.length * 0.6;
-    const mid = Math.floor(sortedArr.length / 2);
-    const median =
-      sortedArr.length % 2
-        ? sortedArr[mid]
-        : (sortedArr[mid - 1] + sortedArr[mid]) / 2;
-    const quantile0 = sortedArr[Math.round(quantile0Index)];
-    const quantile1 = sortedArr[Math.round(quantile1Index)];
-
-    medianYs.push(median);
-    quantile0Ys.push(quantile0);
-    quantile1Ys.push(quantile1);
   }
 
   return {
@@ -144,14 +148,16 @@ const getTraces = (
   minExponent: number,
   rangeOfExponents: number,
   lineColor: string,
-  shadingColor: string
+  shadingColor: string,
+  includeMedianQuantileRegions: boolean
 ) => {
   const traces: CurveTrace[] = [];
   const curves = samplePoints(
     curveParams,
     numPts,
     minExponent,
-    rangeOfExponents
+    rangeOfExponents,
+    includeMedianQuantileRegions
   );
   const points = curves.data;
   const medianPoints = curves.medianData;
@@ -171,15 +177,17 @@ const getTraces = (
     });
   }
 
-  const medianAndQuantileTraces = buildMedianAndQuantileTraces(
-    medianPoints.xs,
-    medianPoints.medianYs,
-    medianPoints.quantile0Ys,
-    medianPoints.quantile1Ys,
-    lineColor,
-    shadingColor
-  );
-  traces.push(...medianAndQuantileTraces);
+  if (includeMedianQuantileRegions) {
+    const medianAndQuantileTraces = buildMedianAndQuantileTraces(
+      medianPoints.xs,
+      medianPoints.medianYs,
+      medianPoints.quantile0Ys,
+      medianPoints.quantile1Ys,
+      lineColor,
+      shadingColor
+    );
+    traces.push(...medianAndQuantileTraces);
+  }
 
   return traces;
 };
@@ -188,7 +196,8 @@ const buildTraces = (
   minDose: number,
   maxDose: number,
   inGroupCurveParams: CurveParams[],
-  outGroupCurveParams: CurveParams[]
+  outGroupCurveParams: CurveParams[],
+  includeMedianQuantileRegions: boolean
 ): CurveTrace[] => {
   const minX = minDose;
   const maxX = maxDose;
@@ -203,7 +212,8 @@ const buildTraces = (
     minExponent,
     rangeOfExponents,
     lineColorInGroup,
-    shadingColorInGroup
+    shadingColorInGroup,
+    includeMedianQuantileRegions
   );
 
   if (outGroupCurveParams.length > 0) {
@@ -211,20 +221,22 @@ const buildTraces = (
       outGroupCurveParams,
       outGroupNumPts,
       minExponent,
-      rangeOfExponents
+      rangeOfExponents,
+      includeMedianQuantileRegions
     );
 
-    const medianPoints = outGroupData.medianData;
-
-    const medianAndQuantileTraces = buildMedianAndQuantileTraces(
-      medianPoints.xs,
-      medianPoints.medianYs,
-      medianPoints.quantile0Ys,
-      medianPoints.quantile1Ys,
-      lineColorOutGroup,
-      shadingColorOutGroup
-    );
-    traces.push(...medianAndQuantileTraces);
+    if (includeMedianQuantileRegions) {
+      const medianPoints = outGroupData.medianData;
+      const medianAndQuantileTraces = buildMedianAndQuantileTraces(
+        medianPoints.xs,
+        medianPoints.medianYs,
+        medianPoints.quantile0Ys,
+        medianPoints.quantile1Ys,
+        lineColorOutGroup,
+        shadingColorOutGroup
+      );
+      traces.push(...medianAndQuantileTraces);
+    }
   }
 
   traces.reverse();
@@ -239,20 +251,26 @@ function DoseCurvesPlot({
   outGroupCurveParams = [],
   doseUnits = "Concentration (uM)",
   handleSetPlotElement = () => {},
+  includeMedianQuantileRegions = true,
 }: Props) {
-  const [curveTraces, setcurveTraces] = useState<CurveTrace[] | null>(null);
-
-  useEffect(() => {
+  const plotTraces = useMemo(() => {
     if (inGroupCurveParams && minDose && maxDose) {
-      const plotTraces = buildTraces(
+      return buildTraces(
         minDose,
         maxDose,
         inGroupCurveParams,
-        outGroupCurveParams
+        outGroupCurveParams,
+        includeMedianQuantileRegions
       );
-      setcurveTraces(plotTraces);
     }
-  }, [inGroupCurveParams, outGroupCurveParams, minDose, maxDose]);
+    return null;
+  }, [
+    inGroupCurveParams,
+    outGroupCurveParams,
+    minDose,
+    maxDose,
+    includeMedianQuantileRegions,
+  ]);
 
   return (
     <div>
@@ -275,7 +293,7 @@ function DoseCurvesPlot({
         dottedLine={0.3}
         minX={minDose}
         maxX={maxDose}
-        curves={curveTraces}
+        curveTraces={plotTraces}
         showLegend={false}
         height={300}
         onLoad={handleSetPlotElement}

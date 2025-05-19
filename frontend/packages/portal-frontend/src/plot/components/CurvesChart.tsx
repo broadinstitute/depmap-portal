@@ -1,13 +1,19 @@
-import { Margin } from "plotly.js";
+import {
+  Layout,
+  Margin,
+  PlotData,
+  PlotlyHTMLElement,
+  PlotMouseEvent,
+} from "plotly.js";
 import React, { useEffect, useRef } from "react";
 import ExtendedPlotType from "../models/ExtendedPlotType";
 import PlotlyLoader, { PlotlyType } from "./PlotlyLoader";
 
 export interface CurvesChartProps {
+  curveTraces: any;
   title: string;
   yAxisTitle: string;
   xAxisTitle: string;
-  curves: any;
   dottedLine: number;
   minX: number;
   maxX: number;
@@ -17,6 +23,13 @@ export interface CurvesChartProps {
   margin?: Margin;
   customWidth?: number | undefined;
   xRange?: number[] | undefined;
+  selectedPoints?: Set<number>;
+  customHoverinfo?: PlotData["hoverinfo"];
+  onClickPoint?: (pointIndex: number) => void;
+  onMultiselect?: (pointIndices: number[]) => void;
+  onClickResetSelection?: () => void;
+  xAxisFontSize?: number;
+  yAxisFontSize?: number;
 }
 
 const calcPlotHeight = (plot: HTMLDivElement) => {
@@ -30,15 +43,22 @@ function CurvesChart({
   title,
   yAxisTitle,
   xAxisTitle,
-  curves,
   dottedLine,
   minX,
   maxX,
   showLegend,
+  curveTraces,
+  customHoverinfo = undefined,
+  selectedPoints = undefined,
   onLoad = () => {},
+  onClickPoint = () => {},
+  onMultiselect = () => {},
+  onClickResetSelection = () => {},
   height = "auto",
   customWidth = undefined,
   xRange = undefined,
+  xAxisFontSize = 14,
+  yAxisFontSize = 14,
   margin = {
     l: 80,
 
@@ -53,6 +73,40 @@ function CurvesChart({
   Plotly,
 }: CurvesChartWithPlotly) {
   const ref = useRef<ExtendedPlotType>(null);
+
+  const axes = useRef<Partial<Layout>>({
+    xaxis: undefined,
+    yaxis: undefined,
+  });
+
+  // When the columns or underlying data change, we force an autoscale by
+  // discarding the stored axes.
+  useEffect(() => {
+    axes.current = {
+      xaxis: undefined,
+      yaxis: undefined,
+    };
+  }, [curveTraces]);
+
+  // Update axes when font size changes.
+  useEffect(() => {
+    const xaxis = axes.current.xaxis;
+    const yaxis = axes.current.yaxis;
+
+    if (xaxis) {
+      xaxis.title = {
+        ...(xaxis.title as object),
+        font: { size: xAxisFontSize },
+      };
+    }
+
+    if (yaxis) {
+      yaxis.title = {
+        ...(yaxis.title as object),
+        font: { size: yAxisFontSize },
+      };
+    }
+  }, [xAxisFontSize, yAxisFontSize]);
 
   useEffect(() => {
     if (onLoad && ref.current) {
@@ -121,13 +175,118 @@ function CurvesChart({
 
     const config: Partial<Plotly.Config> = { responsive: true };
 
-    Plotly.newPlot(plot, curves, layout, config);
+    Plotly.newPlot(plot, curveTraces, layout, config);
+
+    // Keep track of added listeners so we can easily remove them.
+    const listeners: [string, (e: any) => void][] = [];
+
+    const on = (eventName: string, callback: (e: any) => void) => {
+      plot.on(
+        eventName as Parameters<PlotlyHTMLElement["on"]>[0],
+        callback as Parameters<PlotlyHTMLElement["on"]>[1]
+      );
+      listeners.push([eventName, callback]);
+    };
+
+    const getButton = (attr: string, val: string) =>
+      plot.querySelector(
+        `.modebar-btn[data-attr="${attr}"][data-val="${val}"]`
+      ) as HTMLAnchorElement;
+
+    const zoom = (val: "in" | "out" | "reset") => {
+      getButton("zoom", val).click();
+
+      // This redraw fixes a very strange bug where setting the drag mode to
+      // select (or lasso) with a filter also applied causes all of the points
+      // to disappear.
+      Plotly.redraw(plot);
+    };
+
+    // Add a few non-standard methods to the plot for convenience.
+    plot.setDragmode = (dragmode) => {
+      setTimeout(() => {
+        Plotly.update(plot, { selectedpoints: [] }, { dragmode });
+        // This redraw fixes a very strange bug where setting the drag mode to
+        // select (or lasso) with a filter also applied causes all of the points
+        // to disappear.
+        Plotly.redraw(plot);
+      }, 0);
+    };
+
+    plot.zoomIn = () => setTimeout(zoom, 0, "in");
+    plot.zoomOut = () => setTimeout(zoom, 0, "out");
+
+    plot.resetZoom = () => {
+      const nextLayout = { ...plot.layout };
+      (plot.layout.shapes as any) = undefined;
+      zoom("reset");
+      Plotly.react(plot, plot.data, nextLayout, plot.config);
+    };
+
+    on("plotly_click", (e: PlotMouseEvent) => {
+      const { pointIndex } = e.points[0];
+
+      const index = pointIndex;
+
+      if (onClickPoint) {
+        onClickPoint(index);
+      }
+
+      // WORKAROUND: If you mean to double-click to zoom out and
+      // select a point by accident, restore the previous selections.
+      const prevAxes = axes.current;
+      const prevSelection = selectedPoints;
+
+      setTimeout(() => {
+        if (axes.current !== prevAxes && prevSelection) {
+          onMultiselect([...prevSelection]);
+        }
+      }, 100);
+    });
+
+    on("plotly_selecting", () => {
+      if (selectedPoints && selectedPoints.size > 0) {
+        onClickResetSelection();
+      }
+    });
+
+    on("plotly_deselect", () => {
+      onClickResetSelection();
+    });
+
+    // WORKAROUND: Double-click is supposed to reset the zoom but it only works
+    // actually intermittently so we'll do it ourselves.
+    on("plotly_doubleclick", () => {
+      plot.resetZoom();
+    });
+
+    // WORKAROUND: For some reason, autosize only works
+    // with width so we'll calculate the height as well.
+    on("plotly_autosize", () => {
+      setTimeout(() => {
+        plot.layout.height = height === "auto" ? calcPlotHeight(plot) : height;
+        Plotly.redraw(plot);
+      });
+    });
+
+    // https://github.com/plotly/plotly.js/blob/55dda47/src/lib/prepare_regl.js
+    on("plotly_webglcontextlost", () => {
+      // Fixes a bug where points disappear after the browser has been left
+      // idle for some time.
+      Plotly.redraw(plot);
+    });
+
+    return () => {
+      listeners.forEach(([eventName, callback]) =>
+        plot.removeListener(eventName, callback)
+      );
+    };
   }, [
     Plotly,
     showLegend,
     height,
     margin,
-    curves,
+    curveTraces,
     customWidth,
     xRange,
     title,
@@ -136,6 +295,11 @@ function CurvesChart({
     dottedLine,
     minX,
     maxX,
+    onClickPoint,
+    onClickResetSelection,
+    onMultiselect,
+    selectedPoints,
+    customHoverinfo,
   ]);
 
   return <div ref={ref} />;
@@ -143,16 +307,16 @@ function CurvesChart({
 
 export default function LazyLineChart({
   title,
-  curves,
+  curveTraces,
   ...otherProps
 }: CurvesChartProps) {
   return (
     <PlotlyLoader version="module">
       {(Plotly) =>
-        curves ? (
+        curveTraces ? (
           <CurvesChart
             title={title}
-            curves={curves}
+            curveTraces={curveTraces}
             Plotly={Plotly}
             // eslint-disable-next-line react/jsx-props-no-spreading
             {...otherProps}

@@ -19,18 +19,20 @@ function DoseCurvesPlotSection({
   return (
     <div>
       <div>
-        <PlotControls
-          plot={plotElement}
-          searchOptions={[]}
-          searchPlaceholder=""
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-          onSearch={(selection: { label: string; value: number }) => {
-            /* do nothing */
-          }}
-          onDownload={() => {
-            /* do nothing */
-          }}
-        />
+        {plotElement && (
+          <PlotControls
+            plot={plotElement}
+            searchOptions={[]}
+            searchPlaceholder=""
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            onSearch={(selection: { label: string; value: number }) => {
+              /* do nothing */
+            }}
+            onDownload={() => {
+              /* do nothing */
+            }}
+          />
+        )}
       </div>
 
       <div>

@@ -2,7 +2,7 @@ from typing import List
 from depmap import data_access
 from depmap.cell_line.models_new import DepmapModel
 from depmap.compound.models import CompoundDoseReplicate, CompoundExperiment
-from depmap.context_explorer import dose_curve_utils
+from depmap.context_explorer import dose_curve_utils, utils
 from depmap.dataset.models import Dataset, DependencyDataset
 from flask_restplus import Namespace, Resource
 from flask import request
@@ -60,11 +60,14 @@ class DoseCurveData(
             dataset_id=dataset_name, feature=compound_label
         )
         model_ids = full_row_of_values.index.tolist()
-        breakpoint()
+        compound_experiment = utils.get_compound_experiment(
+            entity_full_label=compound_label
+        )
+
         dose_curve_info = _get_dose_response_curves_per_model(
             model_ids=model_ids,
             replicate_dataset_name=replicate_dataset_name,
-            compound_experiment=compound_label,
+            compound_experiment=compound_experiment,
         )
 
         return dose_curve_info

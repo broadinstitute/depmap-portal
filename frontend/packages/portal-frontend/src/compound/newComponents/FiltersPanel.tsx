@@ -20,7 +20,7 @@ function FiltersPanel({
   const datasetSelectOptions = datasetOptions.map(
     (compoundDataset: CompoundDataset) => {
       return {
-        value: compoundDataset.id,
+        value: compoundDataset.dataset,
         label: compoundDataset.auc_dataset_display_name,
       };
     }

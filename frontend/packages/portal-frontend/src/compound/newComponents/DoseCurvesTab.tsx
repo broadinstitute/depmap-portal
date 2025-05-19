@@ -1,5 +1,4 @@
-import React, { useCallback, useState } from "react";
-import { useEffect } from "react";
+import React, { useEffect, useCallback, useState } from "react";
 import { CompoundDataset } from "../components/DoseResponseTab";
 import DoseCurvesMainContent from "./DoseCurvesMainContent";
 import FiltersPanel from "./FiltersPanel";
@@ -31,7 +30,7 @@ function DoseCurvesTab({ datasetOptions, doseUnits }: DoseCurvesTabProps) {
       if (selection) {
         setSelectedDatasetOption(selection);
         const selectedCompoundDataset = datasetOptions.filter(
-          (option: CompoundDataset) => option.id === selection.value
+          (option: CompoundDataset) => option.dataset === selection.value
         )[0];
         setSelectedDataset(selectedCompoundDataset);
       }
@@ -50,7 +49,7 @@ function DoseCurvesTab({ datasetOptions, doseUnits }: DoseCurvesTabProps) {
           datasetOptions={datasetOptions}
           selectedDatasetOption={
             selectedDatasetOption || {
-              value: datasetOptions[0].id,
+              value: datasetOptions[0].dataset,
               label: datasetOptions[0].auc_dataset_display_name,
             }
           }
