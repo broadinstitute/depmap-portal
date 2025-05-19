@@ -110,7 +110,7 @@ def get_dataset_features(
     """
     dataset = dataset_crud.get_dataset(db=db, user=user, dataset_id=dataset_id)
     if dataset is None:
-        raise HTTPException(404, "Dataset not found")
+        raise HTTPException(404, f"Dataset '{dataset_id}' not found")
 
     feature_labels_by_id = metadata_service.get_matrix_dataset_feature_labels_by_id(
         db=db, user=user, dataset=dataset,
@@ -133,7 +133,7 @@ def get_dataset_samples(
     """
     dataset = dataset_crud.get_dataset(db=db, user=user, dataset_id=dataset_id)
     if dataset is None:
-        raise HTTPException(404, "Dataset not found")
+        raise HTTPException(404, f"Dataset '{dataset_id}' not found")
 
     sample_labels_by_id = metadata_service.get_matrix_dataset_sample_labels_by_id(
         db=db, user=user, dataset=dataset,
@@ -591,7 +591,7 @@ def delete_dataset(
     """
     dataset = dataset_crud.get_dataset(db, user, dataset_id)
     if dataset is None:
-        raise HTTPException(404, "Dataset not found")
+        raise HTTPException(404, f"Dataset '{dataset_id}' not found")
 
     if not dataset_crud.user_has_access_to_group(
         dataset.group, user, write_access=True
