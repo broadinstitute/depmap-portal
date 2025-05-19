@@ -89,7 +89,11 @@ def test_get_file_record(app, _empty_db_base):
         "sources": ["Broad Institute", "Marcotte et al."],
         "fileName": "test file name",
         "fileType": "Genetic Dependency",
-        "fileSubType": "CRISPR Screen",
+        "fileSubType": {
+            "code": "crispr_screen",
+            "label": "CRISPR Screen",
+            "position": 0,
+        },
         "size": "test size",
         "fileDescription": "<p>test file description</p>",
         "isMainFile": False,
@@ -114,7 +118,7 @@ def test_get_file_record(app, _empty_db_base):
         "sources": ["Broad Institute"],
         "fileName": "headliner2 file name",
         "fileType": "Cellular Models",
-        "fileSubType": "Mutations",
+        "fileSubType": {"code": "mutations", "label": "Mutations", "position": 1},
         "size": "headliner2 size",
         "fileDescription": None,
         "isMainFile": False,
@@ -246,7 +250,7 @@ def test_validate_features(app, empty_db_mock_downloads):
         matrix=MatrixFactory(entities=genes, cell_lines=cell_lines),
     )
     dataset_2 = DependencyDatasetFactory(
-        name=DependencyDataset.DependencyEnum.GeCKO,
+        name=DependencyDataset.DependencyEnum.Chronos_Achilles,
         matrix=MatrixFactory(
             entities=[genes[i] for i in [0, 2]], cell_lines=cell_lines
         ),

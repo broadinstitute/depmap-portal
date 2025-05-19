@@ -1,56 +1,56 @@
 from dataclasses import dataclass
+import dataclasses
 from depmap.cell_line.models_new import DepmapModel
-from depmap.context_explorer.api import (
-    _get_analysis_data_table,
-    _get_compound_experiment_id_from_entity_label,
-)
+from depmap.cell_line.views import get_subtype_tree_info
+from depmap.context.models_new import SubtypeContext, TreeType
+from depmap.context_explorer import box_plot_utils
+from depmap.context_explorer.api import _get_analysis_data_table
 import pytest
 from typing import List, Literal, Optional
+from depmap.context_explorer.dose_curve_utils import get_context_dose_curves
 from depmap.context_explorer.utils import (
-    get_box_plot_data_for_primary_disease,
-    get_box_plot_data_for_selected_lineage,
+    get_entity_id_from_entity_full_label,
     get_full_row_of_values_and_depmap_ids,
-    get_other_context_dependencies,
+    _get_compound_experiment_id_from_entity_label,
 )
+from depmap.context_explorer.box_plot_utils import get_organized_contexts
 from depmap.dataset.models import DependencyDataset
 import numpy as np
 from tests.factories import (
-    CellLineFactory,
     CompoundExperimentFactory,
     ContextAnalysisFactory,
-    ContextFactory,
+    SubtypeContextFactory,
     DependencyDatasetFactory,
     DepmapModelFactory,
     GeneFactory,
-    LineageFactory,
     MatrixFactory,
-    PrimaryDiseaseFactory,
+    DoseResponseCurveFactory,
+    CompoundDoseReplicateFactory,
+    SubtypeNodeFactory,
 )
 from tests.utilities import interactive_test_utils
-import re
+import pandas as pd
 
 
 # Filter ranges to be used as params for get_other_context_dependencies.
 @dataclass
-class FilterRanges:
-    fdr: List[float]
-    abs_effect_size: List[float]
-    frac_dep_in: List[float]
+class FilterValues:
+    max_fdr: float
+    min_abs_effect_size: float
+    min_frac_dep_in: float
 
 
 # Will only capture ContextAnalysis objects made with narrow_filters.
-only_narrow_range = FilterRanges(
-    fdr=[0.002, 0.2], abs_effect_size=[0.028, 0.1], frac_dep_in=[0, 0.1]
+only_narrow_range = FilterValues(
+    max_fdr=0.2, min_abs_effect_size=0.1, min_frac_dep_in=0
 )
 
 # Will capture narrow_filters and wide_filters.
-all_range = FilterRanges(
-    fdr=[0.002, 10], abs_effect_size=[0.02, 10], frac_dep_in=[0, 10]
-)
+all_range = FilterValues(max_fdr=10, min_abs_effect_size=0.02, min_frac_dep_in=0)
 
 # Will filter out all ContextAnalysis objects so that nothing is returned.
-nothing_range = FilterRanges(
-    fdr=[0.002, 0.0021], abs_effect_size=[0.02, 0.021], frac_dep_in=[0, 0.0001]
+nothing_range = FilterValues(
+    max_fdr=0.002, min_abs_effect_size=0.02, min_frac_dep_in=0.0001
 )
 
 # Filter values of ContextAnalysis objects.
@@ -70,11 +70,55 @@ narrow_filters = OtherContextFilterVals(
 
 # If you want a ContextAnalysis to be filtered out in other context dependency results,
 # use these wide_filters with the only_narrow_range.
-wide_filters = OtherContextFilterVals(t_qval=8.5, effect_size=8.5, frac_dep_in=8.5)
+wide_filters = OtherContextFilterVals(t_qval=8.5, effect_size=0, frac_dep_in=0)
+
+
+def _setup_dose_response_curves(models: List[DepmapModelFactory], compound_exps: list):
+    dose_rep_entities = []
+    for cpd_exp in compound_exps:
+        dose_1 = CompoundDoseReplicateFactory(
+            compound_experiment=cpd_exp, dose=0.1, replicate=10
+        )
+        dose_rep_entities.append(dose_1)
+        dose_2 = CompoundDoseReplicateFactory(
+            compound_experiment=cpd_exp,
+            dose=0.2,
+            replicate=20,
+            is_masked=True,  # TODO: what does is_masked mean and does Context Explorer need to care?????
+        )
+        dose_rep_entities.append(dose_2)
+        dose_3 = CompoundDoseReplicateFactory(
+            compound_experiment=cpd_exp, dose=0.3, replicate=30
+        )
+        dose_rep_entities.append(dose_3)
+
+    viability_df = pd.DataFrame(
+        {model.cell_line_name: [10, 20, 30, 10, 20, 30] for model in models},
+        index=["dose_1", "dose_2", "dose_3", "dose_4", "dose_5", "dose_6"],
+    )
+
+    dataset = DependencyDatasetFactory(
+        name=DependencyDataset.DependencyEnum.Prism_oncology_dose_replicate,
+        matrix=MatrixFactory(
+            entities=dose_rep_entities,
+            cell_lines=models,
+            data=viability_df,
+            using_depmap_model_table=True,
+        ),
+    )
+
+    for compound_exp in compound_exps:
+        curves = [
+            DoseResponseCurveFactory(
+                compound_exp=compound_exp, cell_line=model.cell_line
+            )
+            for model in models
+        ]
 
 
 def _setup_factories(
     empty_db_mock_downloads,
+    dataset_name: str,
     gene_a: Optional[GeneFactory] = None,
     gene_b: Optional[GeneFactory] = None,
     compound_a: Optional[CompoundExperimentFactory] = None,
@@ -85,23 +129,19 @@ def _setup_factories(
 
     use_genes = entity_type == "gene"
 
-    es_primary_disease = PrimaryDiseaseFactory(name="Ewing Sarcoma")
-    os_primary_disease = PrimaryDiseaseFactory(name="Osteosarcoma")
-    myeloid_primary_disease = PrimaryDiseaseFactory(name="Acute Myeloid Leukemia")
-
     bone_es_cell_lines = [
         DepmapModelFactory(
             model_id=f"ACH-{num}es",
             stripped_cell_line_name=f"{num}es",
-            # cell_line needs to be explicitly defined to properly generate the lineages
-            cell_line=CellLineFactory(
-                depmap_id=f"ACH-{num}es",
-                lineage=[
-                    LineageFactory(level=1, name="Bone"),
-                    LineageFactory(level=2, name="Ewing Sarcoma"),
-                ],
-            ),
-            oncotree_primary_disease=es_primary_disease.name,
+            depmap_model_type="ES",
+        )
+        for num in range(5)
+    ]
+    bone_insig_child_cell_lines = [
+        DepmapModelFactory(
+            model_id=f"ACH-{num}insig",
+            stripped_cell_line_name=f"{num}insig",
+            depmap_model_type="INSIG_BONE_CHILD",
         )
         for num in range(5)
     ]
@@ -109,68 +149,215 @@ def _setup_factories(
         DepmapModelFactory(
             model_id=f"ACH-{num}os",
             stripped_cell_line_name=f"{num}os",
-            cell_line=CellLineFactory(
-                depmap_id=f"ACH-{num}os",
-                lineage=[
-                    LineageFactory(level=1, name="Bone"),
-                    LineageFactory(level=2, name="Osteosarcoma"),
-                ],
-            ),
-            oncotree_primary_disease=os_primary_disease.name,
+            depmap_model_type="OS",
         )
         for num in range(5)
     ]
+
+    bone_subtype_nodes = SubtypeNodeFactory(
+        node_name="BONE_NODE",
+        subtype_code="BONE",
+        node_level=0,
+        level_0="BONE",
+        level_1=None,
+        level_2=None,
+        level_3=None,
+        level_4=None,
+        level_5=None,
+    )
+    bone_ES_nodes = SubtypeNodeFactory(
+        node_name="ES_NODE",
+        subtype_code="ES",
+        node_level=1,
+        level_0="BONE",
+        level_1="ES",
+        level_2=None,
+        level_3=None,
+        level_4=None,
+        level_5=None,
+    )
+    bone_OS_nodes = SubtypeNodeFactory(
+        node_name="OS_NODE",
+        subtype_code="OS",
+        node_level=1,
+        level_0="BONE",
+        level_1="OS",
+        level_2=None,
+        level_3=None,
+        level_4=None,
+        level_5=None,
+    )
+    bone_context = SubtypeContextFactory(
+        subtype_code="BONE",
+        depmap_model=bone_es_cell_lines
+        + bone_os_cell_lines
+        + bone_insig_child_cell_lines,
+    )
+    bone_ES_context = SubtypeContextFactory(
+        subtype_code="ES", depmap_model=bone_es_cell_lines
+    )
+    insig_bone_child_context = SubtypeContextFactory(
+        subtype_code="INSIG_BONE_CHILD", depmap_model=bone_insig_child_cell_lines
+    )
+    bone_OS_context = SubtypeContextFactory(
+        subtype_code="OS", depmap_model=bone_os_cell_lines
+    )
 
     lung_cell_lines = [
         DepmapModelFactory(
             model_id=f"ACH-{num}lung",
             stripped_cell_line_name=f"lung_line_{num}",
-            cell_line=CellLineFactory(
-                depmap_id=f"ACH-{num}lung",
-                lineage=[LineageFactory(level=1, name="Lung")],
-            ),
+            depmap_model_type="LUNG",
         )
         for num in range(5)
     ]
+
+    lung_subtype_nodes = SubtypeNodeFactory(
+        node_name="LUNG_NODE",
+        subtype_code="LUNG",
+        node_level=0,
+        level_0="LUNG",
+        level_1=None,
+        level_2=None,
+        level_3=None,
+        level_4=None,
+        level_5=None,
+    )
+    lung_context = SubtypeContextFactory(
+        subtype_code="LUNG", depmap_model=lung_cell_lines
+    )
 
     # So we have some Heme cell lines
-    myeloid_cell_lines = [
+    aml_cell_lines = [
         DepmapModelFactory(
-            model_id=f"ACH-{num}myeloid",
-            stripped_cell_line_name=f"myeloid_{num}",
-            cell_line=CellLineFactory(
-                depmap_id=f"ACH-{num}myeloid",
-                lineage=[
-                    LineageFactory(level=1, name="Myeloid"),
-                    LineageFactory(level=2, name="Acute Myeloid Leukemia"),
-                ],
-            ),
-            oncotree_primary_disease=myeloid_primary_disease.name,
+            model_id=f"ACH-{num}AML",
+            stripped_cell_line_name=f"AML_{num}",
+            depmap_model_type="AML",
         )
         for num in range(5)
     ]
 
-    lung_context = ContextFactory(name="Lung")
-    es_context = ContextFactory(name="Ewing Sarcoma")
-    os_context = ContextFactory(name="Osteosarcoma")
-    myeloid_context = ContextFactory(name="Myeloid")
-    aml_context = ContextFactory(name="Acute Myeloid Leukemia")
+    child_of_myeloid_cell_lines = [
+        DepmapModelFactory(
+            model_id=f"ACH-{num}_child_myeloid",
+            stripped_cell_line_name=f"child_myeloid_{num}",
+            depmap_model_type="CHILD_OF_MYELOID",
+        )
+        for num in range(5)
+    ]
+
+    myeloid_cell_lines = aml_cell_lines + child_of_myeloid_cell_lines
+
+    myeloid_node = SubtypeNodeFactory(
+        node_name="MYELOID_NODE",
+        subtype_code="MYELOID",
+        node_level=0,
+        level_0="MYELOID",
+        level_1=None,
+        level_2=None,
+        level_3=None,
+        level_4=None,
+        level_5=None,
+    )
+
+    aml_node = SubtypeNodeFactory(
+        node_name="AML_NODE",
+        subtype_code="AML",
+        node_level=1,
+        level_0="MYELOID",
+        level_1="AML",
+        level_2=None,
+        level_3=None,
+        level_4=None,
+        level_5=None,
+    )
+    CHILD_OF_MYELOID_node = SubtypeNodeFactory(
+        node_name="CHILD_OF_MYELOID_node",
+        subtype_code="CHILD_OF_MYELOID",
+        node_level=1,
+        level_0="MYELOID",
+        level_1="CHILD_OF_MYELOID",
+        level_2=None,
+        level_3=None,
+        level_4=None,
+        level_5=None,
+    )
+
+    myeloid_context = SubtypeContextFactory(
+        subtype_code="MYELOID", depmap_model=myeloid_cell_lines
+    )
+    aml_context = SubtypeContextFactory(subtype_code="AML", depmap_model=aml_cell_lines)
+    CHILD_OF_MYELOID_context = SubtypeContextFactory(
+        subtype_code="CHILD_OF_MYELOID", depmap_model=child_of_myeloid_cell_lines
+    )
+    # Added so we get 1 result for the Others - heme boxplot
+    lymph_cell_lines = [
+        DepmapModelFactory(
+            model_id=f"ACH-1LYMPH",
+            stripped_cell_line_name="LYMPH_1",
+            depmap_model_type="LYMPH",
+        )
+    ]
+    lymph_node = SubtypeNodeFactory(
+        node_name="LYMPH_NODE",
+        subtype_code="LYMPH",
+        node_level=0,
+        level_0="LYMPH",
+        level_1=None,
+        level_2=None,
+        level_3=None,
+        level_4=None,
+        level_5=None,
+    )
+    lymph_context = SubtypeContextFactory(
+        subtype_code="LYMPH", depmap_model=lymph_cell_lines
+    )
+
+    matrix_cell_lines = (
+        bone_es_cell_lines
+        + lung_cell_lines
+        + bone_os_cell_lines
+        + myeloid_cell_lines
+        + lymph_cell_lines
+        + bone_insig_child_cell_lines
+    )
+
+    matrix = MatrixFactory(
+        entities=[
+            gene_a if use_genes else compound_a,
+            gene_b if use_genes else compound_b,
+        ],
+        data=np.array([[num for num in range(31)], [num for num in range(31)]]),
+        cell_lines=matrix_cell_lines,
+        using_depmap_model_table=True,
+    )
+
+    dataset = DependencyDatasetFactory(
+        display_name="test display name",
+        name=DependencyDataset.DependencyEnum(dataset_name),
+        matrix=matrix,
+        priority=1,
+    )
 
     ContextAnalysisFactory(
-        context=es_context,
-        context_name="Ewing Sarcoma",
-        out_group="All",
+        dataset=dataset,
+        subtype_context=bone_ES_context,
+        subtype_code="ES",
+        out_group="All Others",
         entity=gene_a if use_genes else compound_a,
         t_pval=1.0,
         mean_in=6,
         mean_out=0.5,
         effect_size=-0.05,  # Make sure this results in an abs_effect_size of 0.05
+        t_qval=0.01,
+        frac_dep_in=0.2 if use_genes else None,
     )
 
     ContextAnalysisFactory(
-        context=es_context,
-        context_name="Ewing Sarcoma",
-        out_group="Type",
+        dataset=dataset,
+        subtype_context=myeloid_context,
+        subtype_code="MYELOID",
+        out_group="Other Heme",
         entity=gene_a if use_genes else compound_a,
         t_pval=1,
         mean_in=2,
@@ -179,98 +366,128 @@ def _setup_factories(
     )
 
     ContextAnalysisFactory(
-        context=lung_context,
-        context_name="Lung",
-        out_group="All",
+        dataset=dataset,
+        subtype_context=lung_context,
+        subtype_code="LUNG",
+        out_group="All Others",
         entity=gene_a if use_genes else compound_a,
         t_pval=1.0,
         mean_in=6,
         mean_out=0.5,
-        t_qval=narrow_filters.t_qval,
-        effect_size=narrow_filters.effect_size,
-        frac_dep_in=narrow_filters.frac_dep_in,
+        effect_size=-0.05,  # Make sure this results in an abs_effect_size of 0.05
+        t_qval=0.01,
+        frac_dep_in=0.2 if use_genes else None,
     )
 
-    # Uses a wide filter, so filtered out if only_narrow_range
     ContextAnalysisFactory(
-        context=os_context,
-        context_name="Osteosarcoma",
-        out_group="All",
+        dataset=dataset,
+        subtype_context=bone_OS_context,
+        subtype_code="OS",
+        out_group="All Others",
         entity=gene_a if use_genes else compound_a,
-        t_qval=wide_filters.t_qval,
-        effect_size=narrow_filters.effect_size,
-        frac_dep_in=narrow_filters.frac_dep_in,
+        t_pval=1.0,
+        mean_in=6,
+        mean_out=0.5,
+        effect_size=-0.05,  # Make sure this results in an abs_effect_size of 0.05
+        t_qval=0.02,
+        frac_dep_in=0 if use_genes else None,
     )
     ContextAnalysisFactory(
-        context=es_context,
-        context_name="Ewing Sarcoma",
-        out_group="Lineage",
+        dataset=dataset,
+        subtype_context=bone_ES_context,
+        subtype_code="ES",
+        out_group="BONE",  # outgroup encoded as BONE. Technically, "Other BONE"
         entity=gene_a if use_genes else compound_a,
         t_pval=3.0,
         mean_in=0.1,
         mean_out=8,
         t_qval=narrow_filters.t_qval,
         effect_size=narrow_filters.effect_size,
-        frac_dep_in=narrow_filters.frac_dep_in,
+        frac_dep_in=narrow_filters.frac_dep_in if use_genes else None,
+    )
+    # Added this because there was a bug with the Context Explorer box plots that prevented
+    # the Other <Lineage> plot from showing up if the level_0 itself was significant, but 1
+    #  or more of its children were not.
+    ContextAnalysisFactory(
+        dataset=dataset,
+        subtype_context=insig_bone_child_context,
+        subtype_code="INSIG_BONE_CHILD",
+        out_group="All Others",
+        entity=gene_a if use_genes else compound_a,
+        t_pval=3.0,
+        mean_in=0.1,
+        mean_out=8,
+        t_qval=0,
+        effect_size=1000,
+        frac_dep_in=1000 if use_genes else None,
+    )
+    # never want this to be signficant
+    ContextAnalysisFactory(
+        dataset=dataset,
+        subtype_context=myeloid_context,
+        subtype_code="MYELOID",
+        out_group="All Others",
+        entity=gene_a if use_genes else compound_a,
+        t_qval=0,
+        effect_size=1000,
+        frac_dep_in=1000 if use_genes else None,
     )
     ContextAnalysisFactory(
-        context=myeloid_context,
-        context_name="Myeloid",
-        out_group="All",
+        dataset=dataset,
+        subtype_context=aml_context,
+        subtype_code="AML",
+        out_group="All Others",
+        entity=gene_a if use_genes else compound_a,
+        t_qval=0.01,
+        effect_size=0,
+        frac_dep_in=0 if use_genes else None,
+    )
+
+    ContextAnalysisFactory(
+        dataset=dataset,
+        subtype_context=CHILD_OF_MYELOID_context,
+        subtype_code="CHILD_OF_MYELOID",
+        out_group="All Others",
         entity=gene_a if use_genes else compound_a,
         t_qval=wide_filters.t_qval,
         effect_size=narrow_filters.effect_size,
-        frac_dep_in=narrow_filters.frac_dep_in,
+        frac_dep_in=narrow_filters.frac_dep_in if use_genes else None,
     )
+
+    # Added so we get 1 result for the Others - heme boxplot
     ContextAnalysisFactory(
-        context=aml_context,
-        context_name="Acute Myeloid Leukemia",
-        out_group="All",
+        dataset=dataset,
+        subtype_context=lymph_context,
+        subtype_code="LYMPH",
+        out_group="All Others",
         entity=gene_a if use_genes else compound_a,
-        t_qval=narrow_filters.t_qval,
-        effect_size=narrow_filters.effect_size,
-        frac_dep_in=wide_filters.frac_dep_in,
+        t_qval=90,
+        effect_size=90,
+        frac_dep_in=90 if use_genes else None,
     )
 
-    matrix_cell_lines = (
-        bone_es_cell_lines
-        + lung_cell_lines
-        + bone_os_cell_lines
-        + myeloid_cell_lines  # all acute myeloid leukemia
-    )
-
-    matrix = MatrixFactory(
-        entities=[
-            gene_a if use_genes else compound_a,
-            gene_b if use_genes else compound_b,
-        ],
-        data=np.array([[num for num in range(20)], [num for num in range(20)]]),
-        cell_lines=matrix_cell_lines,
-        using_depmap_model_table=True,
-    )
-    dataset = DependencyDatasetFactory(
-        display_name="test display name",
-        name=DependencyDataset.DependencyEnum.Chronos_Combined
-        if use_genes
-        else DependencyDataset.DependencyEnum.Rep_all_single_pt,
-        matrix=matrix,
-        priority=1,
-    )
+    if dataset_name == DependencyDataset.DependencyEnum.Prism_oncology_AUC.name:
+        _setup_dose_response_curves(
+            models=matrix_cell_lines, compound_exps=[compound_a, compound_b]
+        )
 
     empty_db_mock_downloads.session.flush()
 
 
-def _setup_entities_and_dataset_id(empty_db_mock_downloads, entity_type):
-    gene_a = GeneFactory()
-    gene_b = GeneFactory()
+def _setup_entities_and_dataset_id(empty_db_mock_downloads, entity_type, dataset_name):
+    gene_a = GeneFactory(label="gene_0 (0)", entrez_id=0)
+    gene_b = GeneFactory(label="gene_1 (1)", entrez_id=1)
 
-    compound_a = CompoundExperimentFactory()
-    compound_b = CompoundExperimentFactory()
-
-    dataset_id = (
-        DependencyDataset.DependencyEnum.Chronos_Combined.name
-        if entity_type == "gene"
-        else DependencyDataset.DependencyEnum.Rep_all_single_pt.name
+    xref_type = "BRD"
+    xref = "PRC-003465060-210-01"
+    xref_full = xref_type + ":" + xref
+    compound_a = CompoundExperimentFactory(
+        xref_type=xref_type, xref=xref, label=xref_full
+    )
+    xref_b = "PRC-003538266-583-86"
+    xref_full_b = xref_type + ":" + xref_b
+    compound_b = CompoundExperimentFactory(
+        xref_type=xref_type, xref=xref_b, label=xref_full_b
     )
 
     _setup_factories(
@@ -280,48 +497,70 @@ def _setup_entities_and_dataset_id(empty_db_mock_downloads, entity_type):
         compound_a=compound_a,
         compound_b=compound_b,
         entity_type=entity_type,
+        dataset_name=dataset_name,
     )
 
-    return gene_a, gene_b, compound_a, compound_b, dataset_id
+    return gene_a, gene_b, compound_a, compound_b
 
 
 @pytest.mark.parametrize(
-    "entity_type", ["gene", "compound"],
+    "dataset_name", ["Chronos_Combined", "Rep_all_single_pt", "Prism_oncology_AUC"],
 )
-def test_get_anaysis_data(empty_db_mock_downloads, entity_type):
-    use_genes = entity_type == "gene"
+def test_get_anaysis_data(empty_db_mock_downloads, dataset_name):
+    use_genes = dataset_name == DependencyDataset.DependencyEnum.Chronos_Combined.name
 
-    (
-        gene_a,
-        gene_b,
-        compound_a,
-        compound_b,
-        dataset_id,
-    ) = _setup_entities_and_dataset_id(empty_db_mock_downloads, entity_type)
+    entity_type = "gene" if use_genes else "compound"
+
+    (gene_a, gene_b, compound_a, compound_b) = _setup_entities_and_dataset_id(
+        empty_db_mock_downloads, entity_type, dataset_name
+    )
 
     ew_vs_all = _get_analysis_data_table(
-        in_group="Ewing Sarcoma", out_group_type="All", entity_type=entity_type
+        in_group="ES",
+        out_group_type="All Others",
+        entity_type=entity_type,
+        dataset_name=dataset_name,
     )
 
     # Make sure the expected columns are present.
-    assert list(ew_vs_all.keys()) == [
-        "entity",
-        "t_pval",
-        "mean_in",
-        "mean_out",
-        "effect_size",
-        "abs_effect_size",
-        "t_qval",
-        "t_qval_log",
-        "OR",
-        "n_dep_in",
-        "n_dep_out",
-        "frac_dep_in",
-        "frac_dep_out",
-        "log_OR",
-        "depletion",
-        "label",
-    ]
+    if entity_type == "gene":
+        assert list(ew_vs_all.keys()) == [
+            "entity",
+            "t_pval",
+            "mean_in",
+            "mean_out",
+            "effect_size",
+            "abs_effect_size",
+            "t_qval",
+            "t_qval_log",
+            "n_dep_in",
+            "n_dep_out",
+            "frac_dep_in",
+            "frac_dep_out",
+            "selectivity_val",
+            "depletion",
+            "label",
+        ]
+    else:
+        assert list(ew_vs_all.keys()) == [
+            "entity",
+            "t_pval",
+            "mean_in",
+            "mean_out",
+            "effect_size",
+            "abs_effect_size",
+            "t_qval",
+            "t_qval_log",
+            # "OR",
+            # "n_dep_in",
+            # "n_dep_out",
+            # "frac_dep_in",
+            # "frac_dep_out",
+            "selectivity_val",
+            # "log_OR",
+            "depletion",
+            "label",
+        ]
 
     assert ew_vs_all["entity"] == [
         f"{gene_a.label} ({gene_a.entrez_id})" if use_genes else compound_a.label
@@ -334,7 +573,10 @@ def test_get_anaysis_data(empty_db_mock_downloads, entity_type):
     assert ew_vs_all["depletion"] == ["False"]
 
     ew_vs_lineage = _get_analysis_data_table(
-        in_group="Ewing Sarcoma", out_group_type="Lineage", entity_type=entity_type
+        in_group="ES",
+        out_group_type="BONE",
+        entity_type=entity_type,
+        dataset_name=dataset_name,
     )
 
     assert ew_vs_lineage["entity"] == [
@@ -347,53 +589,490 @@ def test_get_anaysis_data(empty_db_mock_downloads, entity_type):
     assert ew_vs_lineage["abs_effect_size"] == [0.06]
     assert ew_vs_lineage["depletion"] == ["True"]
 
-    ew_vs_type = _get_analysis_data_table(
-        in_group="Ewing Sarcoma", out_group_type="Type", entity_type=entity_type
+    myeloid_vs_other_heme = _get_analysis_data_table(
+        in_group="MYELOID",
+        out_group_type="Other Heme",
+        entity_type=entity_type,
+        dataset_name=dataset_name,
     )
 
-    assert ew_vs_type["entity"] == [
+    assert myeloid_vs_other_heme["entity"] == [
         f"{gene_a.label} ({gene_a.entrez_id})" if use_genes else compound_a.label
     ]
-    assert ew_vs_type["t_pval"] == [1]
-    assert ew_vs_type["mean_in"] == [2]
-    assert ew_vs_type["mean_out"] == [3]
-    assert ew_vs_type["effect_size"] == [4]
-    assert ew_vs_type["abs_effect_size"] == [4]
-    assert ew_vs_type["depletion"] == ["True"]
+    assert myeloid_vs_other_heme["t_pval"] == [1]
+    assert myeloid_vs_other_heme["mean_in"] == [2]
+    assert myeloid_vs_other_heme["mean_out"] == [3]
+    assert myeloid_vs_other_heme["effect_size"] == [4]
+    assert myeloid_vs_other_heme["abs_effect_size"] == [4]
+    assert myeloid_vs_other_heme["depletion"] == ["True"]
 
     empty_data = _get_analysis_data_table(
-        in_group="Skin", out_group_type="All", entity_type=entity_type
+        in_group="Skin",
+        out_group_type="All Others",
+        entity_type=entity_type,
+        dataset_name=dataset_name,
     )
 
     assert empty_data == None
 
     all_in_group = _get_analysis_data_table(
-        in_group="All", out_group_type="All", entity_type=entity_type
+        in_group="All",
+        out_group_type="All Others",
+        entity_type=entity_type,
+        dataset_name=dataset_name,
     )
 
     assert all_in_group == None
 
 
-@pytest.mark.parametrize(
-    "entity_type", ["gene", "compound"],
-)
-def test_get_drug_dotted_line(empty_db_mock_downloads, entity_type):
-    use_genes = entity_type == "gene"
+def test_get_dose_curves(empty_db_mock_downloads):
+    dataset_name = "Prism_oncology_AUC"
+    entity_type = "compound"
 
-    (
-        gene_a,
-        gene_b,
-        compound_a,
-        compound_b,
-        dataset_id,
-    ) = _setup_entities_and_dataset_id(empty_db_mock_downloads, entity_type)
+    (_, _, compound_a, compound_b,) = _setup_entities_and_dataset_id(
+        empty_db_mock_downloads, entity_type, dataset_name
+    )
 
     interactive_test_utils.reload_interactive_config()
 
-    selected_entity_id = gene_a.entity_id if use_genes else compound_a.entity_id
+    selected_entity_label = compound_a.label
+
+    dose_curve_info = get_context_dose_curves(
+        dataset_name=dataset_name,
+        entity_full_label=selected_entity_label,
+        subtype_code="ES",
+        level=1,
+        out_group_type="All Others",
+        tree_type="Lineage",
+    )
+
+    assert list(dose_curve_info.keys()) == [
+        "dataset",
+        "compound_experiment",
+        "replicate_dataset_name",
+        "dose_curve_info",
+    ]
+    assert dose_curve_info["dataset"].name.value == dataset_name
+    assert dose_curve_info["compound_experiment"].type == "compound_experiment"
+    assert dose_curve_info["compound_experiment"].xref == "PRC-003465060-210-01"
+    assert dose_curve_info["compound_experiment"].xref_type == "BRD"
+    assert dose_curve_info["compound_experiment"].label == "BRD:PRC-003465060-210-01"
+
+    # If this breaks, double check that nothing changed with the id or displayName. In the past
+    # this assertion broke because both "id" and "displanName" were being filled with the model_id.
+    assert dose_curve_info["dose_curve_info"] == {
+        "in_group_curve_params": [
+            {
+                "id": "ACH-0es",
+                "displayName": "0es",
+                "ec50": 0,
+                "slope": 0,
+                "lowerAsymptote": 0,
+                "upperAsymptote": 0,
+            },
+            {
+                "id": "ACH-1es",
+                "displayName": "1es",
+                "ec50": 0,
+                "slope": 0,
+                "lowerAsymptote": 0,
+                "upperAsymptote": 0,
+            },
+            {
+                "id": "ACH-2es",
+                "displayName": "2es",
+                "ec50": 0,
+                "slope": 0,
+                "lowerAsymptote": 0,
+                "upperAsymptote": 0,
+            },
+            {
+                "id": "ACH-3es",
+                "displayName": "3es",
+                "ec50": 0,
+                "slope": 0,
+                "lowerAsymptote": 0,
+                "upperAsymptote": 0,
+            },
+            {
+                "id": "ACH-4es",
+                "displayName": "4es",
+                "ec50": 0,
+                "slope": 0,
+                "lowerAsymptote": 0,
+                "upperAsymptote": 0,
+            },
+        ],
+        "out_group_curve_params": [
+            {
+                "id": "ACH-0lung",
+                "displayName": "lung_line_0",
+                "ec50": 0,
+                "slope": 0,
+                "lowerAsymptote": 0,
+                "upperAsymptote": 0,
+            },
+            {
+                "id": "ACH-1lung",
+                "displayName": "lung_line_1",
+                "ec50": 0,
+                "slope": 0,
+                "lowerAsymptote": 0,
+                "upperAsymptote": 0,
+            },
+            {
+                "id": "ACH-2lung",
+                "displayName": "lung_line_2",
+                "ec50": 0,
+                "slope": 0,
+                "lowerAsymptote": 0,
+                "upperAsymptote": 0,
+            },
+            {
+                "id": "ACH-3lung",
+                "displayName": "lung_line_3",
+                "ec50": 0,
+                "slope": 0,
+                "lowerAsymptote": 0,
+                "upperAsymptote": 0,
+            },
+            {
+                "id": "ACH-4lung",
+                "displayName": "lung_line_4",
+                "ec50": 0,
+                "slope": 0,
+                "lowerAsymptote": 0,
+                "upperAsymptote": 0,
+            },
+            {
+                "id": "ACH-0os",
+                "displayName": "0os",
+                "ec50": 0,
+                "slope": 0,
+                "lowerAsymptote": 0,
+                "upperAsymptote": 0,
+            },
+            {
+                "id": "ACH-1os",
+                "displayName": "1os",
+                "ec50": 0,
+                "slope": 0,
+                "lowerAsymptote": 0,
+                "upperAsymptote": 0,
+            },
+            {
+                "id": "ACH-2os",
+                "displayName": "2os",
+                "ec50": 0,
+                "slope": 0,
+                "lowerAsymptote": 0,
+                "upperAsymptote": 0,
+            },
+            {
+                "id": "ACH-3os",
+                "displayName": "3os",
+                "ec50": 0,
+                "slope": 0,
+                "lowerAsymptote": 0,
+                "upperAsymptote": 0,
+            },
+            {
+                "id": "ACH-4os",
+                "displayName": "4os",
+                "ec50": 0,
+                "slope": 0,
+                "lowerAsymptote": 0,
+                "upperAsymptote": 0,
+            },
+            {
+                "id": "ACH-0AML",
+                "displayName": "AML_0",
+                "ec50": 0,
+                "slope": 0,
+                "lowerAsymptote": 0,
+                "upperAsymptote": 0,
+            },
+            {
+                "id": "ACH-1AML",
+                "displayName": "AML_1",
+                "ec50": 0,
+                "slope": 0,
+                "lowerAsymptote": 0,
+                "upperAsymptote": 0,
+            },
+            {
+                "id": "ACH-2AML",
+                "displayName": "AML_2",
+                "ec50": 0,
+                "slope": 0,
+                "lowerAsymptote": 0,
+                "upperAsymptote": 0,
+            },
+            {
+                "id": "ACH-3AML",
+                "displayName": "AML_3",
+                "ec50": 0,
+                "slope": 0,
+                "lowerAsymptote": 0,
+                "upperAsymptote": 0,
+            },
+            {
+                "id": "ACH-4AML",
+                "displayName": "AML_4",
+                "ec50": 0,
+                "slope": 0,
+                "lowerAsymptote": 0,
+                "upperAsymptote": 0,
+            },
+            {
+                "id": "ACH-0_child_myeloid",
+                "displayName": "child_myeloid_0",
+                "ec50": 0,
+                "slope": 0,
+                "lowerAsymptote": 0,
+                "upperAsymptote": 0,
+            },
+            {
+                "id": "ACH-1_child_myeloid",
+                "displayName": "child_myeloid_1",
+                "ec50": 0,
+                "slope": 0,
+                "lowerAsymptote": 0,
+                "upperAsymptote": 0,
+            },
+            {
+                "id": "ACH-2_child_myeloid",
+                "displayName": "child_myeloid_2",
+                "ec50": 0,
+                "slope": 0,
+                "lowerAsymptote": 0,
+                "upperAsymptote": 0,
+            },
+            {
+                "id": "ACH-3_child_myeloid",
+                "displayName": "child_myeloid_3",
+                "ec50": 0,
+                "slope": 0,
+                "lowerAsymptote": 0,
+                "upperAsymptote": 0,
+            },
+            {
+                "id": "ACH-4_child_myeloid",
+                "displayName": "child_myeloid_4",
+                "ec50": 0,
+                "slope": 0,
+                "lowerAsymptote": 0,
+                "upperAsymptote": 0,
+            },
+            {
+                "id": "ACH-1LYMPH",
+                "displayName": "LYMPH_1",
+                "ec50": 0,
+                "slope": 0,
+                "lowerAsymptote": 0,
+                "upperAsymptote": 0,
+            },
+            {
+                "id": "ACH-0insig",
+                "displayName": "0insig",
+                "ec50": 0,
+                "slope": 0,
+                "lowerAsymptote": 0,
+                "upperAsymptote": 0,
+            },
+            {
+                "id": "ACH-1insig",
+                "displayName": "1insig",
+                "ec50": 0,
+                "slope": 0,
+                "lowerAsymptote": 0,
+                "upperAsymptote": 0,
+            },
+            {
+                "id": "ACH-2insig",
+                "displayName": "2insig",
+                "ec50": 0,
+                "slope": 0,
+                "lowerAsymptote": 0,
+                "upperAsymptote": 0,
+            },
+            {
+                "id": "ACH-3insig",
+                "displayName": "3insig",
+                "ec50": 0,
+                "slope": 0,
+                "lowerAsymptote": 0,
+                "upperAsymptote": 0,
+            },
+            {
+                "id": "ACH-4insig",
+                "displayName": "4insig",
+                "ec50": 0,
+                "slope": 0,
+                "lowerAsymptote": 0,
+                "upperAsymptote": 0,
+            },
+        ],
+        "max_dose": 0.3,
+        "min_dose": 0.1,
+    }
+    # Test other bone outgroup
+    dose_curve_info = get_context_dose_curves(
+        dataset_name=dataset_name,
+        entity_full_label=selected_entity_label,
+        subtype_code="ES",
+        level=1,
+        out_group_type="BONE",
+        tree_type="Lineage",
+    )
+    assert dose_curve_info["dose_curve_info"] == {
+        "in_group_curve_params": [
+            {
+                "id": "ACH-0es",
+                "displayName": "0es",
+                "ec50": 0,
+                "slope": 0,
+                "lowerAsymptote": 0,
+                "upperAsymptote": 0,
+            },
+            {
+                "id": "ACH-1es",
+                "displayName": "1es",
+                "ec50": 0,
+                "slope": 0,
+                "lowerAsymptote": 0,
+                "upperAsymptote": 0,
+            },
+            {
+                "id": "ACH-2es",
+                "displayName": "2es",
+                "ec50": 0,
+                "slope": 0,
+                "lowerAsymptote": 0,
+                "upperAsymptote": 0,
+            },
+            {
+                "id": "ACH-3es",
+                "displayName": "3es",
+                "ec50": 0,
+                "slope": 0,
+                "lowerAsymptote": 0,
+                "upperAsymptote": 0,
+            },
+            {
+                "id": "ACH-4es",
+                "displayName": "4es",
+                "ec50": 0,
+                "slope": 0,
+                "lowerAsymptote": 0,
+                "upperAsymptote": 0,
+            },
+        ],
+        "out_group_curve_params": [
+            {
+                "id": "ACH-0os",
+                "displayName": "0os",
+                "ec50": 0,
+                "slope": 0,
+                "lowerAsymptote": 0,
+                "upperAsymptote": 0,
+            },
+            {
+                "id": "ACH-1os",
+                "displayName": "1os",
+                "ec50": 0,
+                "slope": 0,
+                "lowerAsymptote": 0,
+                "upperAsymptote": 0,
+            },
+            {
+                "id": "ACH-2os",
+                "displayName": "2os",
+                "ec50": 0,
+                "slope": 0,
+                "lowerAsymptote": 0,
+                "upperAsymptote": 0,
+            },
+            {
+                "id": "ACH-3os",
+                "displayName": "3os",
+                "ec50": 0,
+                "slope": 0,
+                "lowerAsymptote": 0,
+                "upperAsymptote": 0,
+            },
+            {
+                "id": "ACH-4os",
+                "displayName": "4os",
+                "ec50": 0,
+                "slope": 0,
+                "lowerAsymptote": 0,
+                "upperAsymptote": 0,
+            },
+            {
+                "id": "ACH-0insig",
+                "displayName": "0insig",
+                "ec50": 0,
+                "slope": 0,
+                "lowerAsymptote": 0,
+                "upperAsymptote": 0,
+            },
+            {
+                "id": "ACH-1insig",
+                "displayName": "1insig",
+                "ec50": 0,
+                "slope": 0,
+                "lowerAsymptote": 0,
+                "upperAsymptote": 0,
+            },
+            {
+                "id": "ACH-2insig",
+                "displayName": "2insig",
+                "ec50": 0,
+                "slope": 0,
+                "lowerAsymptote": 0,
+                "upperAsymptote": 0,
+            },
+            {
+                "id": "ACH-3insig",
+                "displayName": "3insig",
+                "ec50": 0,
+                "slope": 0,
+                "lowerAsymptote": 0,
+                "upperAsymptote": 0,
+            },
+            {
+                "id": "ACH-4insig",
+                "displayName": "4insig",
+                "ec50": 0,
+                "slope": 0,
+                "lowerAsymptote": 0,
+                "upperAsymptote": 0,
+            },
+        ],
+        "max_dose": 0.3,
+        "min_dose": 0.1,
+    }
+
+
+@pytest.mark.parametrize(
+    "dataset_name", ["Chronos_Combined", "Rep_all_single_pt", "Prism_oncology_AUC"],
+)
+def test_get_drug_dotted_line(empty_db_mock_downloads, dataset_name):
+    use_genes = dataset_name == DependencyDataset.DependencyEnum.Chronos_Combined.name
+
+    entity_type = "gene" if use_genes else "compound"
+
+    (gene_a, gene_b, compound_a, compound_b,) = _setup_entities_and_dataset_id(
+        empty_db_mock_downloads, entity_type, dataset_name
+    )
+
+    interactive_test_utils.reload_interactive_config()
+
+    selected_entity_label = gene_a.label if use_genes else compound_a.label
 
     (entity_full_row_of_values) = get_full_row_of_values_and_depmap_ids(
-        dataset_id=dataset_id, entity_id=selected_entity_id
+        dataset_name=dataset_name, label=selected_entity_label
     )
     entity_full_row_of_values.dropna(inplace=True)
 
@@ -405,91 +1084,91 @@ def test_get_drug_dotted_line(empty_db_mock_downloads, entity_type):
 
 
 def _get_box_plot_data(
-    dataset_id: str, selected_entity_id: int, selected_context: str, top_context: str
-):
-    lineage_depmap_ids_names_dict = DepmapModel.get_model_ids_by_lineage(top_context)
+    selected_subtype_code: str,
+    dataset_name: str,
+    selected_entity_label: str,
+    tree_type: str,
+    entity_type: str,
+    max_fdr: float = 0.5,
+    min_abs_effect_size: float = 0.1,
+    min_frac_dep_in: float = 0.1,
+) -> Optional[dict]:
 
-    entity_full_row_of_values = get_full_row_of_values_and_depmap_ids(
-        dataset_id=dataset_id, entity_id=selected_entity_id
+    entity_id_and_label = get_entity_id_from_entity_full_label(
+        entity_type=entity_type, entity_full_label=selected_entity_label,
     )
-    entity_full_row_of_values.dropna(inplace=True)
-    assert entity_full_row_of_values.values.tolist() == [num for num in range(20)]
-    assert entity_full_row_of_values.index.tolist() == [
-        "ACH-0es",
-        "ACH-1es",
-        "ACH-2es",
-        "ACH-3es",
-        "ACH-4es",
-        "ACH-0lung",
-        "ACH-1lung",
-        "ACH-2lung",
-        "ACH-3lung",
-        "ACH-4lung",
-        "ACH-0os",
-        "ACH-1os",
-        "ACH-2os",
-        "ACH-3os",
-        "ACH-4os",
-        "ACH-0myeloid",
-        "ACH-1myeloid",
-        "ACH-2myeloid",
-        "ACH-3myeloid",
-        "ACH-4myeloid",
-    ]
+    entity_id = entity_id_and_label["entity_id"]
+    entity_label = entity_id_and_label["label"]
 
-    is_lineage = selected_context == top_context
-    if is_lineage:
-        box_plot_data = get_box_plot_data_for_selected_lineage(
-            top_context=top_context,
-            lineage_depmap_ids=list(lineage_depmap_ids_names_dict.keys()),
-            entity_full_row_of_values=entity_full_row_of_values,
-            lineage_depmap_ids_names_dict=lineage_depmap_ids_names_dict,
-        )
-    else:
-        box_plot_data = get_box_plot_data_for_primary_disease(
-            selected_context=selected_context,
-            top_context=top_context,
-            lineage_depmap_ids=list(lineage_depmap_ids_names_dict.keys()),
-            entity_full_row_of_values=entity_full_row_of_values,
-            lineage_depmap_ids_names_dict=lineage_depmap_ids_names_dict,
-        )
+    sig_contexts = box_plot_utils.get_sig_context_dataframe(
+        tree_type=tree_type,
+        entity_type=entity_type,
+        entity_id=entity_id,
+        dataset_name=dataset_name,
+        max_fdr=max_fdr,
+        min_abs_effect_size=min_abs_effect_size,
+        min_frac_dep_in=min_frac_dep_in,
+    )
 
-    return box_plot_data
+    context_box_plot_data = box_plot_utils.get_organized_contexts(
+        selected_subtype_code=selected_subtype_code,
+        sig_contexts=sig_contexts,
+        entity_type=entity_type,
+        entity_label=entity_label,
+        dataset_name=dataset_name,
+        tree_type=tree_type,
+    )
+
+    if context_box_plot_data is None:
+        return None
+
+    return dataclasses.asdict(context_box_plot_data)
 
 
 @pytest.mark.parametrize(
-    "entity_type", ["gene", "compound"],
+    "dataset_name", ["Chronos_Combined", "Rep_all_single_pt", "Prism_oncology_AUC"],
 )
-def test_get_box_plot_data(empty_db_mock_downloads, entity_type):
-    use_genes = entity_type == "gene"
+def test_get_box_plot_data(empty_db_mock_downloads, dataset_name):
+    use_genes = dataset_name == DependencyDataset.DependencyEnum.Chronos_Combined.name
 
-    (
-        gene_a,
-        gene_b,
-        compound_a,
-        compound_b,
-        dataset_id,
-    ) = _setup_entities_and_dataset_id(empty_db_mock_downloads, entity_type)
+    entity_type = "gene" if use_genes else "compound"
+
+    (gene_a, gene_b, compound_a, compound_b) = _setup_entities_and_dataset_id(
+        empty_db_mock_downloads, entity_type, dataset_name
+    )
 
     interactive_test_utils.reload_interactive_config()
 
-    selected_entity_id = gene_a.entity_id if use_genes else compound_a.entity_id
+    selected_entity_label = gene_a.label if use_genes else compound_a.label
 
-    # 1. Test selected context is a lineage.
-    selected_context = "Bone"
-    top_context = "Bone"
-    box_plot_data = _get_box_plot_data(
-        dataset_id=dataset_id,
-        selected_entity_id=selected_entity_id,
-        selected_context=selected_context,
-        top_context=top_context,
+    ### Test - the User is on the Lineage tab and selects "BONE". Then, the
+    ### user selects a specific gene/compound from either the scatter plots or
+    ### the data table.
+    selected_subtype_code = "BONE"
+    tree_type = "Lineage"
+
+    data = _get_box_plot_data(
+        dataset_name=dataset_name,
+        selected_entity_label=selected_entity_label,
+        selected_subtype_code=selected_subtype_code,
+        tree_type=tree_type,
+        entity_type=entity_type,
+        max_fdr=all_range.max_fdr,
+        min_abs_effect_size=all_range.min_abs_effect_size,
+        min_frac_dep_in=all_range.min_frac_dep_in,
     )
 
-    assert box_plot_data == [
+    assert data["significant_selection"] == [
         {
-            "type": "SelectedLineage",
+            "label": "ES",
+            "path": ["ES"],
+            "data": [0, 1, 2, 3, 4],
+            "cell_line_display_names": ["0es", "1es", "2es", "3es", "4es"],
+        },
+        {
+            "label": "BONE",
+            "path": ["BONE"],
             "data": [0, 1, 2, 3, 4, 10, 11, 12, 13, 14],
-            # SelectedLineage is Bone, so these are all Ewing Sarcoma and Osteosarcoma lines.
             "cell_line_display_names": [
                 "0es",
                 "1es",
@@ -504,116 +1183,34 @@ def test_get_box_plot_data(empty_db_mock_downloads, entity_type):
             ],
         },
         {
-            "type": "SameLineageType",
-            "data": [5, 6, 7, 8, 9],
-            # lung results show up here because Bone is of LineageType Solid,
-            # so SameLineageType is anything that is Solid.
-            "cell_line_display_names": [
-                "lung_line_0",
-                "lung_line_1",
-                "lung_line_2",
-                "lung_line_3",
-                "lung_line_4",
-            ],
-        },
-        {
-            "type": "OtherLineageType",
-            "data": [15, 16, 17, 18, 19],
-            # myeloid results show up here because Bone is of LineageType Solid,
-            # so OtherLineageType is anything that is Heme.
-            "cell_line_display_names": [
-                "myeloid_0",
-                "myeloid_1",
-                "myeloid_2",
-                "myeloid_3",
-                "myeloid_4",
-            ],
-        },
-    ]
-
-    # 2. Test selected context is a primary disease.
-    selected_context = "Ewing Sarcoma"
-    top_context = "Bone"
-    box_plot_data = _get_box_plot_data(
-        dataset_id=dataset_id,
-        selected_entity_id=selected_entity_id,
-        selected_context=selected_context,
-        top_context=top_context,
-    )
-
-    assert box_plot_data == [
-        # Ewing Sarcoma
-        {
-            "type": "SelectedPrimaryDisease",
-            "data": [0, 1, 2, 3, 4],
-            "cell_line_display_names": ["0es", "1es", "2es", "3es", "4es"],
-        },
-        # Other Bone
-        {
-            "type": "SameLineage",
+            "label": "OS",
+            "path": ["OS"],
             "data": [10, 11, 12, 13, 14],
             "cell_line_display_names": ["0os", "1os", "2os", "3os", "4os"],
         },
-        # Other Solid
-        {
-            "type": "SameLineageType",
-            "data": [5, 6, 7, 8, 9],
-            "cell_line_display_names": [
-                "lung_line_0",
-                "lung_line_1",
-                "lung_line_2",
-                "lung_line_3",
-                "lung_line_4",
-            ],
-        },
-        # Heme
-        {
-            "type": "OtherLineageType",
-            "data": [15, 16, 17, 18, 19],
-            "cell_line_display_names": [
-                "myeloid_0",
-                "myeloid_1",
-                "myeloid_2",
-                "myeloid_3",
-                "myeloid_4",
-            ],
-        },
     ]
 
+    # Bone, OS, and ES factories were all created to be signficant. Bone has another
+    # child INSIG_BONE_CHILD. This was created to be insignificant to make sure we get
+    # the data for the Other <Lineage> box plot.
+    assert data["insignificant_selection"] == {
+        "label": "Other BONE",
+        "path": ["BONE"],
+        "data": [26, 27, 28, 29, 30],
+        "cell_line_display_names": ["0insig", "1insig", "2insig", "3insig", "4insig"],
+    }
 
-@pytest.mark.parametrize(
-    "entity_type", ["gene", "compound"],
-)
-def test_get_other_context_dependencies(empty_db_mock_downloads, entity_type):
-    use_genes = entity_type == "gene"
-
-    (
-        gene_a,
-        gene_b,
-        compound_a,
-        compound_b,
-        dataset_id,
-    ) = _setup_entities_and_dataset_id(empty_db_mock_downloads, entity_type)
-
-    interactive_test_utils.reload_interactive_config()
-
-    selected_entity_id = gene_a.entity_id if use_genes else compound_a.entity_id
-
-    other_deps = get_other_context_dependencies(
-        dataset_id=dataset_id,
-        in_group="Ewing Sarcoma",
-        out_group_type="All",
-        entity_type=entity_type,
-        entity_id=selected_entity_id,
-        fdr=all_range.fdr,
-        abs_effect_size=all_range.abs_effect_size,
-        frac_dep_in=all_range.frac_dep_in,
-    )
-
-    # 1. Test with all_range filters to get all possible other_context_dependencies.
-    lung_result = {
-        "name": "Lung",
-        "type": "Other",
+    # Test the funky case where a level_0 subtype is NOT signficant, but some of its
+    # children are. We still want a card to show up in the UI, so we need to return
+    # this data.
+    assert list(data["other_cards"][0].keys()) == [
+        "significant",
+        "insignificant",
+        "level_0_code",
+    ]
+    assert data["other_cards"][0]["level_0_code"] == "LUNG"
+    assert {
+        "label": "LUNG",
         "data": [5, 6, 7, 8, 9],
         "cell_line_display_names": [
             "lung_line_0",
@@ -622,94 +1219,203 @@ def test_get_other_context_dependencies(empty_db_mock_downloads, entity_type):
             "lung_line_3",
             "lung_line_4",
         ],
-    }
-    osteosarcoma_result = {
-        "name": "Osteosarcoma",
-        "type": "Other",
-        "data": [10, 11, 12, 13, 14],
-        "cell_line_display_names": ["0os", "1os", "2os", "3os", "4os"],
-    }
-    aml_result = {
-        "name": "Acute Myeloid Leukemia",
-        "type": "Other",
-        "data": [15, 16, 17, 18, 19],
+        "path": ["LUNG"],
+    } in data["other_cards"][0]["significant"]
+
+    assert {
+        "label": "LUNG",
+        "data": [5, 6, 7, 8, 9],
         "cell_line_display_names": [
-            "myeloid_0",
-            "myeloid_1",
-            "myeloid_2",
-            "myeloid_3",
-            "myeloid_4",
+            "lung_line_0",
+            "lung_line_1",
+            "lung_line_2",
+            "lung_line_3",
+            "lung_line_4",
         ],
-    }
+        "path": ["LUNG"],
+    } in data["other_cards"][0]["significant"]
 
-    myeloid_result = {
-        "name": "Myeloid",
-        "type": "Other",
-        "data": [15, 16, 17, 18, 19],
+    assert data["other_cards"][0]["insignificant"] == {
+        "label": "Other LUNG",
+        "data": [],
+        "cell_line_display_names": [],
+        "path": None,
+    }
+    assert data["insignificant_heme_data"] == {
+        "label": "Other Heme",
+        "data": [15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25],
         "cell_line_display_names": [
-            "myeloid_0",
-            "myeloid_1",
-            "myeloid_2",
-            "myeloid_3",
-            "myeloid_4",
+            "AML_0",
+            "AML_1",
+            "AML_2",
+            "AML_3",
+            "AML_4",
+            "child_myeloid_0",
+            "child_myeloid_1",
+            "child_myeloid_2",
+            "child_myeloid_3",
+            "child_myeloid_4",
+            "LYMPH_1",
         ],
+        "path": None,
+    }
+    assert data["insignificant_solid_data"] == {
+        "label": "Other Solid",
+        "data": [],
+        "cell_line_display_names": [],
+        "path": None,
     }
 
-    assert (
-        osteosarcoma_result in other_deps
-        and lung_result in other_deps
-        and myeloid_result in other_deps
-        and aml_result in other_deps
-    )
-
-    # 2. Test with only_narrow_range filter range so that 1 of the above "other context dependencies" is filtered out
-    other_deps = get_other_context_dependencies(
-        dataset_id=dataset_id,
-        in_group="Ewing Sarcoma",
-        out_group_type="All",
+    # 2. Test selected context is a primary disease.
+    selected_subtype_code = "ES"
+    data = _get_box_plot_data(
+        dataset_name=dataset_name,
+        selected_entity_label=selected_entity_label,
+        selected_subtype_code=selected_subtype_code,
+        tree_type=tree_type,
         entity_type=entity_type,
-        entity_id=selected_entity_id,
-        fdr=only_narrow_range.fdr,
-        abs_effect_size=only_narrow_range.abs_effect_size,
-        frac_dep_in=only_narrow_range.frac_dep_in,
+        max_fdr=all_range.max_fdr,
+        min_abs_effect_size=all_range.min_abs_effect_size,
+        min_frac_dep_in=all_range.min_frac_dep_in,
     )
 
-    assert other_deps == [lung_result]
-
-    # 3. Filter out everything so that nothing is returned.
-    other_deps = get_other_context_dependencies(
-        dataset_id=dataset_id,
-        in_group="Ewing Sarcoma",
-        out_group_type="All",
-        entity_type=entity_type,
-        entity_id=selected_entity_id,
-        fdr=nothing_range.fdr,
-        abs_effect_size=nothing_range.abs_effect_size,
-        frac_dep_in=nothing_range.frac_dep_in,
-    )
-
-    assert other_deps == []
-
-    # 4. Test with an outgroup type other than "All"
-    other_deps = get_other_context_dependencies(
-        dataset_id=dataset_id,
-        in_group="Osteosarcoma",
-        out_group_type="Lineage",
-        entity_type=entity_type,
-        entity_id=selected_entity_id,
-        fdr=all_range.fdr,
-        abs_effect_size=all_range.abs_effect_size,
-        frac_dep_in=all_range.frac_dep_in,
-    )
-
-    assert other_deps == [
+    assert data["significant_selection"] == [
         {
-            "name": "Ewing Sarcoma",
-            "type": "Other",
+            "label": "ES",
+            "path": ["ES"],
             "data": [0, 1, 2, 3, 4],
             "cell_line_display_names": ["0es", "1es", "2es", "3es", "4es"],
-        }
+        },
+        {
+            "label": "BONE",
+            "path": ["BONE"],
+            "data": [0, 1, 2, 3, 4, 10, 11, 12, 13, 14],
+            "cell_line_display_names": [
+                "0es",
+                "1es",
+                "2es",
+                "3es",
+                "4es",
+                "0os",
+                "1os",
+                "2os",
+                "3os",
+                "4os",
+            ],
+        },
+        {
+            "label": "OS",
+            "path": ["OS"],
+            "data": [10, 11, 12, 13, 14],
+            "cell_line_display_names": ["0os", "1os", "2os", "3os", "4os"],
+        },
     ]
+
+    assert data["insignificant_selection"] == {
+        "label": "Other BONE",
+        "path": ["BONE"],
+        "data": [26, 27, 28, 29, 30],
+        "cell_line_display_names": ["0insig", "1insig", "2insig", "3insig", "4insig"],
+    }
+
+    assert {
+        "label": "LUNG",
+        "data": [5, 6, 7, 8, 9],
+        "cell_line_display_names": [
+            "lung_line_0",
+            "lung_line_1",
+            "lung_line_2",
+            "lung_line_3",
+            "lung_line_4",
+        ],
+        "path": ["LUNG"],
+    } in data["other_cards"][0]["significant"]
+    assert {
+        "label": "LUNG",
+        "data": [5, 6, 7, 8, 9],
+        "cell_line_display_names": [
+            "lung_line_0",
+            "lung_line_1",
+            "lung_line_2",
+            "lung_line_3",
+            "lung_line_4",
+        ],
+        "path": ["LUNG"],
+    } in data["other_cards"][0]["significant"]
+
+    assert data["other_cards"][0]["insignificant"] == {
+        "label": "Other LUNG",
+        "data": [],
+        "cell_line_display_names": [],
+        "path": None,
+    }
+    assert data["other_cards"][0]["level_0_code"] == "LUNG"
+
+    selected_subtype_code = "ES"
+    data = _get_box_plot_data(
+        dataset_name=dataset_name,
+        selected_entity_label=selected_entity_label,
+        selected_subtype_code=selected_subtype_code,
+        tree_type=tree_type,
+        entity_type=entity_type,
+        max_fdr=nothing_range.max_fdr,
+        min_abs_effect_size=nothing_range.min_abs_effect_size,
+        min_frac_dep_in=nothing_range.min_frac_dep_in,
+    )
+
+    assert data["significant_selection"] == None
+
+    # If you can select a context it should always have something that
+    # is insignificant... If nothing is significant just everything gets
+    # added to data["insignificant_selection"]
+    assert data["insignificant_selection"] == None
+    assert data["other_cards"] == []
+
+    assert data["insignificant_heme_data"] == {
+        "label": "Other Heme",
+        "data": [15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25],
+        "cell_line_display_names": [
+            "AML_0",
+            "AML_1",
+            "AML_2",
+            "AML_3",
+            "AML_4",
+            "child_myeloid_0",
+            "child_myeloid_1",
+            "child_myeloid_2",
+            "child_myeloid_3",
+            "child_myeloid_4",
+            "LYMPH_1",
+        ],
+        "path": None,
+    }
+    assert data["insignificant_solid_data"] == {
+        "label": "Other Solid",
+        "data": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 26, 27, 28, 29, 30,],
+        "cell_line_display_names": [
+            "0es",
+            "1es",
+            "2es",
+            "3es",
+            "4es",
+            "lung_line_0",
+            "lung_line_1",
+            "lung_line_2",
+            "lung_line_3",
+            "lung_line_4",
+            "0os",
+            "1os",
+            "2os",
+            "3os",
+            "4os",
+            "0insig",
+            "1insig",
+            "2insig",
+            "3insig",
+            "4insig",
+        ],
+        "path": None,
+    }
 
 
 def test_get_compound_experiment_id_from_entity_label():
@@ -724,3 +1430,60 @@ def test_get_compound_experiment_id_from_entity_label():
         entity_full_label
     )
     assert compound_experiment_id == "BRD:BRD-K00005244-001-01-9"
+
+
+def test_get_subtype_tree_info(empty_db_mock_downloads):
+    (gene_a, gene_b, compound_a, compound_b,) = _setup_entities_and_dataset_id(
+        empty_db_mock_downloads, "gene", "Chronos_Combined"
+    )
+
+    model_id = "ACH-1es"
+
+    lineage_tree = get_subtype_tree_info(
+        tree_type=TreeType.Lineage.value, model_id=model_id
+    )
+
+    assert lineage_tree == [
+        {
+            "node_name": "BONE_NODE",
+            "subtype_code": "BONE",
+            "level": 0,
+            "context_explorer_url": "/context_explorer/?context=BONE",
+        },
+        {
+            "node_name": "ES_NODE",
+            "subtype_code": "ES",
+            "level": 1,
+            "context_explorer_url": "/context_explorer/?context=ES",
+        },
+    ]
+
+    molecular_subtype_tree = get_subtype_tree_info(
+        tree_type=TreeType.MolecularSubtype.value, model_id=model_id
+    )
+
+    assert molecular_subtype_tree == []
+
+    # Check that adding a molecular subtype will get only the molecular subtype tree info
+    depmap_model = DepmapModel.get_by_model_id(model_id)
+    SubtypeContextFactory(subtype_code="MOL_SUBTYPE", depmap_model=[depmap_model])
+    SubtypeNodeFactory(
+        subtype_code="MOL_SUBTYPE",
+        node_name="MOL_SUBTYPE_NODE",
+        node_level=0,
+        level_0="MOL_SUBTYPE",
+        tree_type="MolecularSubtype",
+    )
+    empty_db_mock_downloads.session.flush()
+
+    molecular_subtype_tree = get_subtype_tree_info(
+        tree_type=TreeType.MolecularSubtype.value, model_id=model_id
+    )
+    assert molecular_subtype_tree == [
+        {
+            "node_name": "MOL_SUBTYPE_NODE",
+            "subtype_code": "MOL_SUBTYPE",
+            "level": 0,
+            "context_explorer_url": "/context_explorer/?context=MOL_SUBTYPE",
+        }
+    ]

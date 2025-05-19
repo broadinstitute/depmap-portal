@@ -11,7 +11,7 @@ from depmap.download.models import (
     DownloadRelease,
     ExternalBucketUrl,
     FileSource,
-    FileSubType,
+    FileSubtype,
     FileType,
     ReleaseTerms,
     ReleaseType,
@@ -94,12 +94,19 @@ def get_proper_url_format(url):
         return url
 
 
-def make_file(file: Dict[str, Any]) -> DownloadFile:
+def make_file(
+    file: Dict[str, Any], subtype_mapping_w_positions: Dict[str, FileSubtype]
+) -> DownloadFile:
     # Required for DownloadFile
     name = file.get("name", "")
     type = FileType(file.get("type", ""))
-    sub_type_val = file.get("sub_type", None)
-    sub_type = FileSubType(sub_type_val) if sub_type_val != None else sub_type_val
+
+    sub_type_code = file.get("sub_type")
+    sub_type = (
+        None
+        if sub_type_code is None
+        else subtype_mapping_w_positions.get(sub_type_code)
+    )
 
     size = file.get("size", "")
 
@@ -200,7 +207,18 @@ def make_downloads_release_from_parsed_yaml(release: Dict[str, Any]) -> Download
 
     virtual_dataset_id = release.get("virtual_dataset_id")
 
-    files: List[DownloadFile] = [make_file(file) for file in files_preparse]
+    subtype_mapping = release.get("subtypes")
+    subtype_mapping_w_positions = {}
+
+    if subtype_mapping is not None:
+        for index, subtype in enumerate(subtype_mapping):
+            subtype_mapping_w_positions[subtype["code"]] = FileSubtype(
+                code=subtype["code"], label=subtype["label"], position=index
+            )
+
+    files: List[DownloadFile] = [
+        make_file(file, subtype_mapping_w_positions) for file in files_preparse
+    ]
 
     final_release = DownloadRelease(
         name,

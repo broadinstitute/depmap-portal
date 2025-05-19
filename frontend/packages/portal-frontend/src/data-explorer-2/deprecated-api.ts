@@ -140,7 +140,7 @@ export async function fetchAnalysisResult(
   });
 }
 
-export async function fetchAssociations(
+export async function fetchLegacyAssociations(
   dataset_id: string,
   slice_label: string
 ): Promise<{
@@ -262,6 +262,7 @@ export function fetchDimensionLabelsToDatasetsMapping(
   dimension_type: string
 ): Promise<{
   dataset_ids: string[];
+  given_ids: (string | null)[];
   dataset_labels: string[];
   units: Record<string, DatasetIndex[]>;
   data_types: Record<DataType, DatasetIndex[]>;
@@ -380,6 +381,7 @@ export async function fetchMetadataColumn(
   slice_id: string;
   label: string;
   indexed_values: Record<string, string>;
+  value_type: "categorical" | "binary";
 }> {
   return postJson("/get_metadata", { metadata: { slice_id } });
 }
@@ -395,7 +397,9 @@ export async function fetchMetadataSlices(
       isHighCardinality?: boolean;
       isPartialSliceId?: boolean;
       sliceTypeLabel?: string;
-      isBreadboxMetadata?: boolean;
+      isLegacy?: boolean;
+      isIdColumn?: boolean;
+      isLabelColumn?: boolean;
     }
   >
 > {
@@ -571,7 +575,7 @@ export function fetchUniqueValuesOrRange(
   slice_id: string
 ): Promise<
   | {
-      value_type: "categorical";
+      value_type: "categorical" | "binary";
       unique_values: string[];
     }
   | {

@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
+import { DataExplorerDatasetDescriptor } from "@depmap/types";
 import {
   DeprecatedDataExplorerApiResponse,
   useDeprecatedDataExplorerApi,
@@ -8,6 +9,7 @@ type MetadataSlices = DeprecatedDataExplorerApiResponse["fetchMetadataSlices"];
 
 const ContextBuilderContext = createContext({
   metadataSlices: {} as MetadataSlices,
+  datasets: null as DataExplorerDatasetDescriptor[] | null,
   isLoading: false,
 });
 
@@ -25,6 +27,9 @@ export const ContextBuilderContextProvider = ({
   const api = useDeprecatedDataExplorerApi();
   const [isLoading, setIsLoading] = useState(true);
   const [metadataSlices, setMetadataSlices] = useState<MetadataSlices>({});
+  const [datasets, setDatasets] = useState<
+    DataExplorerDatasetDescriptor[] | null
+  >(null);
 
   useEffect(() => {
     (async () => {
@@ -33,6 +38,10 @@ export const ContextBuilderContextProvider = ({
 
         const slices = await api.fetchMetadataSlices(dimension_type);
         setMetadataSlices(slices);
+
+        const datasetsByIndexType = await api.fetchDatasetsByIndexType();
+        const fetchedDatasets = datasetsByIndexType?.[dimension_type] || [];
+        setDatasets(fetchedDatasets);
 
         setIsLoading(false);
       }
@@ -43,6 +52,7 @@ export const ContextBuilderContextProvider = ({
     <ContextBuilderContext.Provider
       value={{
         isLoading,
+        datasets,
         metadataSlices,
       }}
     >

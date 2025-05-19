@@ -15,6 +15,7 @@ from fastapi import (
     Query,
     Request,
 )
+
 from breadbox.models.dataset import Dataset
 from breadbox.models.dataset import DimensionType as DimensionTypeModel
 from breadbox.schemas.types import IdMappingInsanity
@@ -43,7 +44,7 @@ from breadbox.schemas.types import (
     AddDimensionType,
     DimensionIdentifiers,
 )
-from breadbox.api.utils import get_not_modified_response, get_response_with_etag, hash_id_list
+from breadbox.api.utils import get_response_with_etag, hash_id_list
 from breadbox.service import metadata as metadata_service
 from breadbox.db.util import transaction
 
@@ -656,27 +657,29 @@ def get_dimension_type_identifiers(
             data_type=data_type,
         )
         filtered_dataset_ids = [dataset.id for dataset in filtered_datasets]
-    etag = hash_id_list([name] + (sorted(filtered_dataset_ids) if filtered_dataset_ids else []))
 
-    # If the client already has a cached version of the data, exit early
-    if if_none_match and if_none_match[0] == etag:
-        return get_not_modified_response(etag)
-    else:
-        if filtered_dataset_ids is None:
-            dataset_ids_without_metadata = None
-        else:
-            # Remove the metadata dataset from our list of datasets 
-            dataset_ids_without_metadata = [dataset_id for dataset_id in filtered_dataset_ids if dataset_id != dim_type.dataset_id]
-            
-        dimension_ids_and_labels = metadata_service.get_dimension_type_identifiers(
-            db, dim_type, dataset_ids_without_metadata, limit=limit,
-        )
-        result = [
-            DimensionIdentifiers(id=id, label=label)
-            for id, label in dimension_ids_and_labels.items()
-        ]
-        return get_response_with_etag(content=result, etag=etag)
+        if show_only_dimensions_in_datasets:
+            # Remove the metadata dataset if it's in our list of datasets 
+            filtered_dataset_ids = [dataset_id for dataset_id in filtered_dataset_ids if dataset_id != dim_type.dataset_id]
     
+    # Create an ETag based on the dimension type and the filtered dataset IDs
+    etag = hash_id_list(
+        [dim_type.name] +
+        ([dim_type.dataset_id] if dim_type.dataset_id else []) + 
+        (sorted(filtered_dataset_ids) if filtered_dataset_ids else [])
+    )
+
+    def _get_response_content() -> list[DimensionIdentifiers]:
+        dimension_ids_and_labels = metadata_service.get_dimension_type_identifiers(
+            db, dim_type, filtered_dataset_ids, limit=limit,
+        )
+        return [
+            DimensionIdentifiers(id=id, label=label)
+            for id, label in sorted(dimension_ids_and_labels.items())
+        ]
+        
+    return get_response_with_etag(etag, if_none_match, _get_response_content)
+
 
 
 @router.patch(

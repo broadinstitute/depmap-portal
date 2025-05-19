@@ -1,16 +1,13 @@
-from depmap.context_explorer.models import ContextExplorerGlobalSearch
 from flask import current_app
 from depmap.download.models import DownloadFileGlobalSearch
 from depmap.extensions import db
 from depmap.global_search.models import (
     ContextExplorerSearchIndex,
-    ContextSearchIndex,
     FileSearchIndex,
 )
 from depmap.settings.download_settings import get_download_list
 from depmap.compound.models import Compound
 import re
-import pandas as pd
 
 
 def load_global_search_index():
@@ -127,50 +124,23 @@ def load_file_search_index():
             )
 
 
-from depmap.context.models import Context
+from depmap.context.models_new import (
+    SubtypeContext,
+    SubtypeContextGlobalSearch,
+    SubtypeNode,
+)
 
 
 def __load_context_search_index():
     if current_app.config["ENABLED_FEATURES"].context_explorer:
-        lineage_primary_disease_pairs = Context.get_lineage_primary_disease_pairs()
-
-        if len(lineage_primary_disease_pairs) > 0:
-            for (lineage_name, primary_disease_name,) in lineage_primary_disease_pairs:
-                null_checked_lineage_name = (
-                    "unknown" if pd.isnull(lineage_name) else lineage_name
-                )
-                lineage_display_name = Context.get_display_name(
-                    null_checked_lineage_name
-                )
-                if pd.isna(primary_disease_name):
-                    primary_disease_name = "unknown"
-                primary_disease_display_name = Context.get_display_name(
-                    primary_disease_name
-                )
-                context_explorer = ContextExplorerGlobalSearch(
-                    lineage_name=null_checked_lineage_name,
-                    primary_disease_name=primary_disease_name,
-                )
-                db.session.add(
-                    ContextExplorerSearchIndex(
-                        label=f"{primary_disease_display_name} in {lineage_display_name}",
-                        context_explorer=context_explorer,
-                    )
-                )
-
-                context_explorer = ContextExplorerGlobalSearch(
-                    lineage_name=null_checked_lineage_name, primary_disease_name=None,
-                )
-                db.session.add(
-                    ContextExplorerSearchIndex(
-                        label=f"{lineage_display_name}",
-                        context_explorer=context_explorer,
-                    )
-                )
-    else:
-        for context in Context.query.all():
-            db.session.add(
-                ContextSearchIndex(
-                    label=context.get_display_name(context.name), context=context
-                )
+        # Use SubtypeContext because SubtypeNode might have codes that don't have depmap models, and
+        # therefore should not be searchable.
+        for context in SubtypeContext.query.all():
+            node = SubtypeNode.get_by_code(context.subtype_code)
+            assert node is not None
+            scs = SubtypeContextGlobalSearch(context.subtype_code, node.node_name)
+            ctx = ContextExplorerSearchIndex(
+                label=node.node_name, subtype_context_search=scs
             )
+
+            db.session.add(ctx)

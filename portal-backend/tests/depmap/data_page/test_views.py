@@ -16,7 +16,6 @@ def test_get_all_data(empty_db_mock_downloads):
         "table",
         "releaseData",
         "currentRelease",
-        "fileSubTypes",
         "fileType",
         "releaseType",
         "source",

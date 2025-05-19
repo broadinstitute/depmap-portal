@@ -128,13 +128,19 @@ def get_dataset_units(dataset_id: str) -> Optional[str]:
     return interactive_utils.get_dataset_units(dataset_id)
 
 
-def get_row_of_values(dataset_id: str, feature: str) -> CellLineSeries:
+def get_row_of_values(
+    dataset_id: str, feature: str, feature_identifier: Literal["id", "label"] = "label"
+) -> CellLineSeries:
     """
     Gets a row of numeric or string values, indexed by depmap_id
     for a given dataset and feature label.
     """
     if is_breadbox_id(dataset_id):
-        return breadbox_dao.get_row_of_values(dataset_id=dataset_id, feature=feature)
+        return breadbox_dao.get_row_of_values(
+            dataset_id=dataset_id,
+            feature=feature,
+            feature_identifier=feature_identifier,
+        )
     return interactive_utils.get_row_of_values(dataset_id=dataset_id, feature=feature)
 
 
@@ -300,17 +306,18 @@ def get_slice_data(slice_query: SliceQuery) -> pd.Series:
 
     else:
         raise Exception("Unrecognized slice query identifier type")
-    
+
     # remove missing entries
     result_series = result_series.dropna()
     return result_series
-    
+
+
 ###############################################################
 # METHODS BELOW ARE SPECIAL WORKAROUNDS FOR COMPOUND DATASETS #
 ###############################################################
 # In the future, all drug screen datasets will be indexed by compound instead of compound experiment.
-# These methods exist to ensure that both the legacy backend and breadbox are returning 
-# same shaped data while we are in this transitionary period. 
+# These methods exist to ensure that both the legacy backend and breadbox are returning
+# same shaped data while we are in this transitionary period.
 
 
 def get_all_datasets_containing_compound(compound_id: str) -> list[MatrixDataset]:
@@ -322,10 +329,12 @@ def get_all_datasets_containing_compound(compound_id: str) -> list[MatrixDataset
     Note: There are a couple of cases where the legacy dataset contains the compound but the breadbox 
     version does not (ex. CTRP_AUC changed feature types). In this case, the dataset will be hidden.
     """
-    bb_compound_datasets = breadbox_dao.get_filtered_matrix_datasets(feature_type="compound_v2",
-        feature_id=compound_id
+    bb_compound_datasets = breadbox_dao.get_filtered_matrix_datasets(
+        feature_type="compound_v2", feature_id=compound_id
     )
-    bb_compound_datasets.sort(key=lambda dataset: dataset.priority if dataset.priority else 999)
+    bb_compound_datasets.sort(
+        key=lambda dataset: dataset.priority if dataset.priority else 999
+    )
 
     # If a dataset is defined in both breadbox and the legacy DB, use the breadbox version
     legacy_ce_dataset_ids = legacy_compound_utils.get_compound_experiment_priority_sorted_datasets(
@@ -333,7 +342,8 @@ def get_all_datasets_containing_compound(compound_id: str) -> list[MatrixDataset
     )
     all_bb_given_ids = breadbox_dao.get_breadbox_given_ids()
     visible_legacy_datasets = [
-        _get_legacy_matrix_dataset(dataset_id) for dataset_id in legacy_ce_dataset_ids 
+        _get_legacy_matrix_dataset(dataset_id)
+        for dataset_id in legacy_ce_dataset_ids
         if dataset_id not in all_bb_given_ids
     ]
     return bb_compound_datasets + visible_legacy_datasets

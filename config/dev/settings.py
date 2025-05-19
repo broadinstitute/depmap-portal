@@ -61,33 +61,6 @@ def get_dev_nonstandard_datasets():
             "is_categorical": True,
             "categories": categories.MsiConfig(),  # this is important to have in dev because this is currently the only nonstandard dataset with a value map configured. it's also the only categorical nonstandard
         },
-        "small-mapped-avana-551a.1": {  # virtual to small-mapped-avana-551a.1. used to test nonstandard dataset taiga aliasing
-            "label": "Small Avana entity mapped",
-            "units": "CERES Score",
-            "data_type": DataTypeEnum.deprecated,
-            "priority": None,
-            "feature_name": "gene",
-            "transpose": False,
-            "entity": Gene,  # for nonstandard_utils,
-            "is_continuous": True,
-        },
-        # "small-chronos-combined-e82b.2/chronos_combined_score_duplicate": {  # for deving vector catalog sorting; specifically this mimics the nonstandard PR for a given quarter
-        #     "label": "CRISPR Chronos (Combined) Internal 21Q2 Duplicate",
-        #     "units": "CERES Score",
-        #     "feature_name": "gene",
-        #     "transpose": False,
-        #     "entity": Gene,
-        #     "is_continuous": True,
-        # },
-        "small-avana-2987.2": {  # does not have stable IDs, specifically made for dplot testing
-            "label": "Small Avana no entity",
-            "units": "CERES Score",
-            "data_type": DataTypeEnum.deprecated,
-            "priority": None,
-            "feature_name": "gene",
-            "transpose": False,
-            "is_continuous": True,
-        },
     }
 
 
@@ -146,6 +119,9 @@ class DevConfig(Config):
     ANNOUNCEMENTS_FILE_PATH = os.path.join(
         Config.PROJECT_ROOT,
         f"../../depmap-deploy/portal-config/env/{ENV_TYPE}/announcements.yaml",
+    )
+    UPDATES_AND_ANNOUNCEMENTS_FILE_PATH = os.path.join(
+        Config.PROJECT_ROOT, f"../config/{ENV_TYPE}/theme/updates_and_announcements.md"
     )
     THEME_PATH = os.path.join(Config.PROJECT_ROOT, f"../config/{ENV_TYPE}/theme")
     DOCUMENTATION_PATH = os.path.join(

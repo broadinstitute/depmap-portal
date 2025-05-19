@@ -8,7 +8,7 @@ import styles from "../../../styles/ContextBuilder.scss";
 interface Props {
   dataSource:
     | "legacy_metadata_slice"
-    | "breadbox_metadata_column"
+    | "official_annotation"
     | "matrix_dataset"
     | null;
   onChangeDataSelect: (option: { label: string; value: string } | null) => void;
@@ -63,9 +63,9 @@ function SlicePrefixSelect({
 
     Object.entries(metadataSlices)
       .filter(([, value]) => {
-        return value.isBreadboxMetadata
-          ? dataSource === "breadbox_metadata_column"
-          : dataSource === "legacy_metadata_slice";
+        return value.isLegacy
+          ? dataSource === "legacy_metadata_slice"
+          : dataSource === "official_annotation";
       })
       .sort((a, b) => compare(a[0], b[0]))
       .forEach(([key, value]) => {
@@ -91,13 +91,17 @@ function SlicePrefixSelect({
         }
       );
 
-      return Object.entries(groups).map(([dataType, sliceIds]) => {
-        const optionsByDataType = sliceIds.map((sliceId) => {
-          return { value: sliceId, label: variables[sliceId] };
-        });
+      return Object.keys(groups)
+        .sort()
+        .map((dataType) => {
+          const sliceIds = groups[dataType];
 
-        return { label: dataType, options: optionsByDataType };
-      });
+          const optionsByDataType = sliceIds.map((sliceId) => {
+            return { value: sliceId, label: variables[sliceId] };
+          });
+
+          return { label: dataType, options: optionsByDataType };
+        });
     }
 
     return Object.entries(variables).map(([value, label]) => ({

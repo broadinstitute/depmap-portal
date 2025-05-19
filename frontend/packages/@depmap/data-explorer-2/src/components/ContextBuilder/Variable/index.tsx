@@ -1,10 +1,6 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { DataExplorerDatasetDescriptor } from "@depmap/types";
+import React, { useMemo } from "react";
 import { capitalize, getDimensionTypeLabel } from "../../../utils/misc";
-import {
-  DeprecatedDataExplorerApiResponse,
-  useDeprecatedDataExplorerApi,
-} from "../../../contexts/DeprecatedDataExplorerApiContext";
+import { DeprecatedDataExplorerApiResponse } from "../../../contexts/DeprecatedDataExplorerApiContext";
 import SliceLabelSelector from "../../SliceLabelSelector";
 import { ContextBuilderReducerAction } from "../contextBuilderReducer";
 import { getValueType, makePartialSliceId } from "../contextBuilderUtils";
@@ -84,28 +80,30 @@ const getMetadataLookupTable = (
 const inferDataSource = (
   value: string | null,
   metadataSlices: DeprecatedDataExplorerApiResponse["fetchMetadataSlices"],
-  isParitalContinuousSliceId: boolean,
-  isParitalCategoricalSliceId: boolean
+  isPartialContinuousSliceId: boolean
 ) => {
-  if (value === SLICE_LABEL_VARIABLE || isParitalCategoricalSliceId) {
+  if (value === SLICE_LABEL_VARIABLE) {
     return "legacy_metadata_slice";
   }
 
-  const slice = value && metadataSlices[value];
+  const sliceId = findSliceId(value, metadataSlices);
+  const slice = sliceId && metadataSlices[sliceId];
 
-  if (slice && !slice.isBreadboxMetadata) {
+  if (slice && slice.isLegacy) {
     return "legacy_metadata_slice";
   }
 
-  if (slice && slice.isBreadboxMetadata) {
-    return "breadbox_metadata_column";
-  }
-
-  if (isParitalContinuousSliceId) {
+  if (isPartialContinuousSliceId) {
     return "matrix_dataset";
   }
 
-  return null;
+  const hasSomeOfficalAnnotations = Object.values(metadataSlices).some(
+    (s) => !s.isLegacy
+  );
+
+  return hasSomeOfficalAnnotations
+    ? "official_annotation"
+    : "legacy_metadata_slice";
 };
 
 function Variable({
@@ -117,56 +115,48 @@ function Variable({
   slice_type,
   shouldShowValidation,
 }: Props) {
-  const api = useDeprecatedDataExplorerApi();
-
-  const [datasets, setDatasets] = useState<
-    DataExplorerDatasetDescriptor[] | null
-  >(null);
-
-  const { metadataSlices } = useContextBuilderContext();
-
-  useEffect(() => {
-    let mounted = true;
-
-    (async () => {
-      try {
-        const data = await api.fetchDatasetsByIndexType();
-        const fetchedDatasets = data?.[slice_type] || [];
-        if (mounted) {
-          setDatasets(fetchedDatasets);
-        }
-      } catch (e) {
-        window.console.error(e);
-      }
-    })();
-
-    return () => {
-      mounted = false;
-    };
-  }, [api, slice_type]);
+  const { datasets, metadataSlices } = useContextBuilderContext();
 
   const continuousDatasetSliceLookupTable = useMemo(
     () =>
-      (datasets || []).reduce(
-        (memo, dataset) => ({
-          ...memo,
-          [makePartialSliceId(dataset.id)]: dataset.name,
-        }),
-        {}
-      ),
-    [datasets]
+      (datasets || [])
+        .filter((d) => {
+          const psid = makePartialSliceId(d.given_id || d.id);
+          if (metadataSlices[psid]?.valueType === "binary") {
+            return false;
+          }
+
+          return true;
+        })
+        .reduce(
+          (memo, d) => ({
+            ...memo,
+            [makePartialSliceId(d.given_id || d.id)]: d.name,
+          }),
+          {}
+        ),
+    [datasets, metadataSlices]
   );
 
   const continuousDatasetDataTypes = useMemo(
     () =>
-      (datasets || []).reduce(
-        (memo, dataset) => ({
-          ...memo,
-          [makePartialSliceId(dataset.id)]: dataset.data_type,
-        }),
-        {}
-      ),
-    [datasets]
+      (datasets || [])
+        .filter((d) => {
+          const psid = makePartialSliceId(d.given_id || d.id);
+          if (metadataSlices[psid]?.valueType === "binary") {
+            return false;
+          }
+
+          return true;
+        })
+        .reduce(
+          (memo, d) => ({
+            ...memo,
+            [makePartialSliceId(d.given_id || d.id)]: d.data_type,
+          }),
+          {}
+        ),
+    [datasets, metadataSlices]
   );
 
   const variables: Record<string, string> = useMemo(() => {
@@ -189,16 +179,25 @@ function Variable({
 
   // A partial slice is used to select the dataset only.
   // A complete slice also contains a specific feature.
-  const isParitalContinuousSliceId = Boolean(
+  const isPartialContinuousSliceId = Boolean(
     findSliceId(value, continuousDatasetSliceLookupTable)
   );
 
   const psid = findSliceId(value, metadataSlices);
-  const isParitalCategoricalSliceId =
-    !!psid && !!metadataSlices[psid]?.isPartialSliceId;
+  const isPartialCategoricalSliceId = Boolean(
+    psid &&
+      metadataSlices[psid]?.isPartialSliceId &&
+      ["categorical", "list_strings"].includes(metadataSlices[psid]?.valueType)
+  );
+
+  const isOneHotEncodedAnnotation = Boolean(
+    psid && metadataSlices[psid]?.valueType === "binary"
+  );
 
   const valueOrPartialSlice =
-    isParitalContinuousSliceId || isParitalCategoricalSliceId
+    isPartialContinuousSliceId ||
+    isPartialCategoricalSliceId ||
+    isOneHotEncodedAnnotation
       ? findSliceId(value, variables)
       : value;
 
@@ -207,20 +206,16 @@ function Variable({
   const varSliceType = datasets?.find((d) => d.id === varDatasetId)?.slice_type;
 
   const dataSource = (placeholderDataSource ||
-    inferDataSource(
-      value,
-      metadataSlices,
-      isParitalContinuousSliceId,
-      isParitalCategoricalSliceId
-    )) as
+    inferDataSource(value, metadataSlices, isPartialContinuousSliceId)) as
     | "legacy_metadata_slice"
-    | "breadbox_metadata_column"
+    | "official_annotation"
     | "matrix_dataset"
     | null;
 
   return (
     <div>
       <DataSourceSelect
+        isLoading={!datasets}
         slice_type={slice_type}
         value={dataSource}
         onChange={(nextDataSource) => {
@@ -246,7 +241,7 @@ function Variable({
           continuousDatasetDataTypes={continuousDatasetDataTypes}
         />
       )}
-      {isParitalContinuousSliceId && (
+      {isPartialContinuousSliceId && (
         <VariableEntity
           value={value}
           path={path}
@@ -256,7 +251,7 @@ function Variable({
           shouldShowValidation={shouldShowValidation}
         />
       )}
-      {isParitalCategoricalSliceId && (
+      {isPartialCategoricalSliceId && (
         <div className={styles.sliceLabelSelector}>
           <SliceLabelSelector
             value={value ? decodeURIComponent(value.split("/")[2]) : null}

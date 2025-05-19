@@ -18,13 +18,6 @@ add-if-missing {
 }
 
 add-if-missing {
-  "type": "raw-dep-matrix",
-  "dataset_id": "gecko-public-tentative-18q1-4213.1/gene_effect",
-  "label": "GeCKO",
-  "rows": "cell-lines"
-}
-
-add-if-missing {
   'type': 'raw-rppa-matrix',
   'matrix_dataset_id' : 'depmap-rppa-1b43.3/CCLE_RPPA_20181003',
   'mapping_dataset_id' : 'depmap-rppa-1b43.3/CCLE_RPPA_Ab_info_20181226'
@@ -99,28 +92,6 @@ add-if-missing {
   "rows": "genes"
 }
 
-
-
-# Sanger CRISPR data, run through Chronos
-add-if-missing {
-  "type": "raw-dep-matrix",
-  "dataset_id": "project-score-chronos-ad31.14/gene_effect",
-  "label": "Chronos_Score",
-  "rows": "cell-lines"
-}
-add-if-missing {
-  "type": "raw-dep-prob-matrix",
-  "dataset_id": "project-score-chronos-ad31.14/gene_dependency",
-  "label": "Chronos_Score",
-}
-
-# Sanger CRISPR data, run through CERES
-add-if-missing {
-  "type": "raw-dep-matrix",
-  "dataset_id": "sanger-crispr-project-score--e20b.4/gene_effect",
-  "label": "Sanger_CRISPR",
-  "rows": "cell-lines"
-}
 
 add-if-missing {
     "type": "other-taiga-dataset",

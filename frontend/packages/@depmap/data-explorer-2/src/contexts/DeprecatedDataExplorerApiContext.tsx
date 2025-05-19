@@ -30,6 +30,7 @@ const defaultValue = {
     dimension_type: string
   ): Promise<{
     dataset_ids: string[];
+    given_ids: (string | null)[];
     dataset_labels: string[];
     units: Record<string, number[]>;
     data_types: Record<string, number[]>;
@@ -123,7 +124,7 @@ const defaultValue = {
     throw new Error("Not implemented");
   },
 
-  fetchAssociations: (
+  fetchLegacyAssociations: (
     dataset_id: string,
     slice_label: string
   ): Promise<{
@@ -137,7 +138,7 @@ const defaultValue = {
       other_slice_id: string;
     }[];
   }> => {
-    window.console.log("fetchAssociations:", { dataset_id, slice_label });
+    window.console.log("fetchLegacyAssociations:", { dataset_id, slice_label });
     throw new Error("Not implemented");
   },
 
@@ -200,6 +201,7 @@ const defaultValue = {
     slice_id: string;
     label: string;
     indexed_values: Record<string, string>;
+    value_type: "categorical" | "binary";
   }> => {
     window.console.log("fetchMetadataColumn:", { slice_id });
     throw new Error("Not implemented");
@@ -212,11 +214,11 @@ const defaultValue = {
       string,
       {
         name: string;
-        valueType: "categorical" | "list_strings";
+        valueType: "categorical" | "list_strings" | "binary";
         isHighCardinality?: boolean;
         isPartialSliceId?: boolean;
         sliceTypeLabel?: string;
-        isBreadboxMetadata?: boolean;
+        isLegacy?: boolean;
         isIdColumn?: boolean;
         isLabelColumn?: boolean;
       }
@@ -270,7 +272,7 @@ const defaultValue = {
     slice_id: string
   ): Promise<
     | {
-        value_type: "categorical";
+        value_type: "categorical" | "binary";
         unique_values: string[];
       }
     | {

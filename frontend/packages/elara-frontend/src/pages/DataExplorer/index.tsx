@@ -11,6 +11,7 @@ import { ElaraApi } from "src/api";
 import PlotlyLoader from "src/plot/components/PlotlyLoader";
 import {
   evaluateContext,
+  fetchAssociations,
   fetchDatasetIdentifiers,
   fetchDatasets,
   fetchDimensionIdentifiers,
@@ -43,6 +44,7 @@ export default function DataExplorer() {
       <ApiContext.Provider value={{ getApi }}>
         <DataExplorerApiProvider
           evaluateContext={evaluateContext}
+          fetchAssociations={fetchAssociations}
           fetchDatasetIdentifiers={fetchDatasetIdentifiers}
           fetchDatasets={fetchDatasets}
           fetchDimensionIdentifiers={fetchDimensionIdentifiers}

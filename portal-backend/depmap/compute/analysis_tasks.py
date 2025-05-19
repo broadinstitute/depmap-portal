@@ -1,6 +1,6 @@
 import os
 import time
-from typing import Any, Dict, List, Tuple, Optional
+from typing import Dict, List, Optional
 
 from depmap.access_control.utils.initialize_current_auth import assume_user
 from depmap_compute import analysis_tasks_interface
@@ -11,7 +11,6 @@ from depmap.compute.celery import app
 import logging
 
 from depmap import data_access
-from depmap.vector_catalog.trees import InteractiveTree
 from depmap.compute.models import CustomCellLineGroup
 from depmap.vector_catalog.models import (
     SliceRowType,
@@ -31,14 +30,14 @@ def make_result_task_directory(result_dir: str, task_id: str):
 def get_features(
     dataset_id: str, feature_labels: list[str]
 ) -> List[analysis_tasks_interface.Feature]:
-    slice_ids = InteractiveTree.get_ids_from_dataset_features(
-        dataset_id, feature_labels, feature_is_entity_id=False
-    )
-
-    features = [
-        analysis_tasks_interface.Feature(feature_label, slice_id)
-        for feature_label, slice_id in zip(feature_labels, slice_ids)
-    ]
+    features = []
+    for feature_label in feature_labels:
+        slice_id = SliceSerializer.encode_slice_id(
+            dataset=dataset_id,
+            feature=feature_label,
+            slice_row_type=SliceRowType.label
+        )
+        features.append(analysis_tasks_interface.Feature(feature_label, slice_id))
 
     return features
 

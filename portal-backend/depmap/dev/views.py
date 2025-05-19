@@ -49,6 +49,9 @@ def crawl_start():
     """
     global_search_types = inspect(GlobalSearchIndex).columns["type"].type.enums
     global_search_urls = {
+        "subtype_context_search": url_for(
+            "context_explorer.view_context_explorer", context="SKIN"
+        ),
         "gene": url_for("gene.view_gene", gene_symbol="SOX10"),
         "gene_alias": url_for("gene.view_gene", gene_symbol="SOX10"),
         "compound": url_for("compound.view_compound", name="AFATINIB"),
@@ -61,12 +64,9 @@ def crawl_start():
         "cell_line_alias": url_for(
             "cell_line.view_cell_line", cell_line_name="ACH-000425"
         ),
-        "context": url_for("context.view_context", context_name="Melanoma"),
         "download_file": url_for("download.view_all"),
-        "context_explorer": url_for(
-            "context_explorer.view_context_explorer",
-            lineage="bone",
-            primary_disease="osteosarcoma",
+        "subtype_context": url_for(
+            "context_explorer.view_context_explorer", context="BONE"
         ),
     }
 
@@ -142,3 +142,8 @@ def get_data_coverage():
 @blueprint.route("/table-tester")
 def table_tester():
     return render_template("dev/table_tester.html")
+
+
+@blueprint.route("/dose_viability_prototype")
+def dose_viability_prototype():
+    return render_template("dev/dose_viability_prototype.html")

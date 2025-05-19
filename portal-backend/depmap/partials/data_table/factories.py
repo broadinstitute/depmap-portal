@@ -19,9 +19,9 @@ from depmap.partials.data_table.models import (
     TableDisplayEntityLink,
     TableDisplayRender,
 )
-from depmap.context.models import Context, ContextEnrichment
 from depmap.utilities.registration import _make_factory, _get_factory_output
 from depmap.utilities.url_utils import js_url_for
+from depmap import extensions
 from sqlalchemy import types
 
 
@@ -519,83 +519,6 @@ def get_fusion_by_cell_line_table(model_id):
     return DataTable(query, display, "fusion", filename)
 
 
-@_data_table_factory("context_cell_lines")
-def _get_cell_lines_in_context_table(context):
-    """
-    Table for cell lines in context
-    """
-    renders = [
-        TableDisplayLink(
-            js_url_for("cell_line.view_cell_line", cell_line_name="{row['Depmap Id']}"),
-            "cell_line_display_name",
-        )
-    ]
-    display = TableDisplay(
-        ["depmap_id", "cell_line_display_name", "primary_disease", "tumor_type"],
-        {"type": "context_cell_lines", "context": context},
-        renames={"cell_line_display_name": "Cell Line"},
-        renders=renders,
-        additional_react_table_props={"noDataText": "No cell lines with these filters"},
-        invisible_cols=["depmap_id"],
-        sort_col=("cell_line_display_name", "asc"),
-    )
-    query = Context.get_cell_line_table_query(context)
-    filename = "cell lines in {}".format(context)
-    # some contexts have dashes in their name, these need to be replaced because the DataTable name is used to form javascript variables (and other identifiers) that do not allow dashes
-    return DataTable(
-        query,
-        display,
-        "cell_lines_in_context_{}".format(context.replace("-", "_")),
-        filename,
-    )
-
-
-@_data_table_factory("context_dependency_enrichment")
-def _get_dependencies_enriched_in_context_table(context):
-    """
-    Table for dependencies enriched in a context
-    type (gene/compound) needs to be a column for the sake or url generation. it should also be shown so that users can filter by only genes or only compounds
-    """
-    renders = [TableDisplayEntityLink("label")]
-    display = TableDisplay(
-        [
-            "type",
-            "url_label",
-            "label",
-            "display_name",
-            "t_statistic",
-            "p_value",
-            "effect_size_means_difference",
-        ],
-        {"type": "context_dependency_enrichment", "context": context},
-        renames={
-            "label": "Gene/Compound",
-            "display_name": "Dataset",
-            "t_statistic": "T-Statistic",
-            "p_value": "P-Value",
-            "effect_size_means_difference": "Effect Size Means Difference",
-        },
-        format={
-            "t_statistic": "{:.3G}",
-            "p_value": "{:.3G}",
-            "effect_size_means_difference": "{:.3G}",
-        },
-        renders=renders,
-        invisible_cols=["url_label"],
-        sort_col=("effect_size_means_difference", "asc"),
-    )
-    # type for this query returns as 'compound' not 'compound_experiment'
-    query = ContextEnrichment.get_entities_enriched_in_context_query(context)
-    filename = "dependencies enriched in {}".format(context)
-    # some contexts have dashes in their name, these need to be replaced because the DataTable name is used to form javascript variables (and other identifiers) that do not allow dashes
-    return DataTable(
-        query,
-        display,
-        "dependencies_enriched_in_context_{}".format(context.replace("-", "_")),
-        filename,
-    )
-
-
 @_data_table_factory("cell_line_selector_lines")
 def _get_cell_line_selector_lines():
     # Note: The display is defined in frontend/packages/@depmap/cell-line-selector/src/components/CellLineSelector.tsx
@@ -652,3 +575,45 @@ def get_cell_line_selector_lines_table():
         return cols
 
     return DataTableData(get_column_types, get_data)
+
+
+def get_anchor_screen_metadata_table():
+    cols = [
+        "ModelID",
+        "StrippedCellLineName",
+        "OncotreeLineage",
+        "OncotreePrimaryDisease",
+        "OncotreeSubtype",
+        "Drug",
+        "ExperimentID",
+        "ControlArmScreenID",
+        "DrugArmScreenID",
+    ]
+
+    def get_data():
+        df = extensions.breadbox.client.get_tabular_dataset_data(
+            dataset_id="anchor-screen-metadata",
+            columns=cols,
+            identifier=None,
+            indices=None,
+            strict=True,
+        )
+        df = df.sort_values(by="ModelID")
+        return df
+
+    def get_column_types():
+        return {col: types.String for col in cols}
+
+    table_data = DataTableData(get_column_types, get_data)
+
+    display = TableDisplay(
+        cols=cols,
+        factory_params={},
+        renames={},
+        renders=[],
+        default_cols_to_show=cols,
+        replace_underscores=False,
+        make_title_case=False,
+    )
+
+    return DataTable(table_data, display, "anchor screens", "anchor screen metadata")

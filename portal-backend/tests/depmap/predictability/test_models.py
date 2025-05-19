@@ -25,7 +25,9 @@ def test_get_top_models_features(empty_db_mock_downloads):
             specified number of top features for each model
     """
     dataset = DependencyDatasetFactory()
-    dataset_2 = DependencyDatasetFactory(name=DependencyDataset.DependencyEnum.GeCKO)
+    dataset_2 = DependencyDatasetFactory(
+        name=DependencyDataset.DependencyEnum.Chronos_Achilles
+    )
     biomarker_dataset_1 = BiomarkerDatasetFactory()
     gene = GeneFactory()
     gene_2 = GeneFactory()

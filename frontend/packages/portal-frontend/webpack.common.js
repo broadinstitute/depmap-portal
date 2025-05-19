@@ -16,7 +16,6 @@ module.exports = {
     customAnalysis: "./src/apps/customAnalysis.tsx",
     datasetManager: "./src/apps/datasetManager.tsx",
     groupsManager: "./src/apps/groupsManager.tsx",
-    download: "./src/apps/download.tsx",
     privateDatasets: "./src/apps/privateDatasets.tsx",
     tdaSummary: "./src/apps/tdaSummary.tsx",
     genePage: "./src/apps/genePage.tsx",
@@ -27,6 +26,8 @@ module.exports = {
     dataPage: "./src/apps/dataPage.tsx",
     resourcesPage: "./src/apps/resourcesPage.tsx",
     secretDataViewer: "./src/apps/secretDataViewer.tsx",
+    anchorScreenDashboard: "./src/apps/anchorScreenDashboard.tsx",
+    doseViabilityPrototype: "./src/apps/doseViabilityPrototype.tsx",
   },
 
   plugins: [

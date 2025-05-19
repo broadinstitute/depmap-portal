@@ -33,7 +33,9 @@ from depmap.celligner.views import blueprint as celligner_blueprint
 from depmap.compound.views.index import blueprint as compound_blueprint
 from depmap.compute.views import blueprint as compute_blueprint
 from depmap.constellation.views import blueprint as constellation_blueprint
-from depmap.context.views import blueprint as context_blueprint
+from depmap.anchor_screen_dashboard.views import (
+    blueprint as anchor_screen_dashboard_blueprint,
+)
 
 from depmap.dataset.models import (
     ColMatrixIndex,
@@ -356,7 +358,6 @@ def register_blueprints(app: Flask):
     app.register_blueprint(cell_line_blueprint)
     app.register_blueprint(celligner_blueprint)
     app.register_blueprint(dev_blueprint)
-    app.register_blueprint(context_blueprint)
     app.register_blueprint(interactive_blueprint)
     app.register_blueprint(global_search_blueprint)
     app.register_blueprint(partials_blueprint)
@@ -380,6 +381,7 @@ def register_blueprints(app: Flask):
     app.register_blueprint(context_explorer_blueprint)
     app.register_blueprint(data_page_blueprint)
     app.register_blueprint(flask_hunter_profile_blueprint)
+    app.register_blueprint(anchor_screen_dashboard_blueprint)
 
     saved_handlers = app.handle_exception, app.handle_user_exception
     app.register_blueprint(api_blueprint)

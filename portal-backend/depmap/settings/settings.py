@@ -105,6 +105,10 @@ class FeatureFlags:
 
     @property
     def context_explorer(self):
+        return True
+
+    @property
+    def context_explorer_prerelease_datasets(self):
         return self.is_prerelease_env()
 
     @property
@@ -166,12 +170,20 @@ class FeatureFlags:
         return False
 
     @property
+    def dataset_manager(self):
+        return self.is_prerelease_env()
+
+    @property
     def target_discovery_app(self):
         return True
 
     @property
     def gene_tea(self):
         return self.is_prerelease_env()
+
+    @property
+    def anchor_screen_dashboard(self):
+        return self.is_dmc_like()
 
 
 def make_log_config(log_dir):
@@ -269,6 +281,9 @@ class Config(object):
     METMAP_500_TAIGA_ID = "metmap-data-f459.4/metmap500_flattened_table"
     ANNOUNCEMENTS_PATH = os.path.join(ADDITIONAL_MOUNTS_DIR, "announcements.md")
     ANNOUNCEMENTS_FILE_PATH = os.path.join(ADDITIONAL_MOUNTS_DIR, "announcements.yaml")
+    UPDATES_AND_ANNOUNCEMENTS_FILE_PATH = os.path.join(
+        ADDITIONAL_MOUNTS_DIR, "updates_and_announcements.md"
+    )
     DOCUMENTATION_PATH = os.path.join(ADDITIONAL_MOUNTS_DIR, "documentation.yaml")
     DMC_SYMPOSIA_PATH = os.path.join(ADDITIONAL_MOUNTS_DIR, "dmc_symposia.yaml")
     DOWNLOADS_PATHS = [
@@ -322,7 +337,7 @@ from datetime import date
 from depmap.download.models import (
     DownloadRelease,
     DownloadFile,
-    FileSubType,
+    FileSubtype,
     ReleaseType,
     FileSource,
     ReleaseTerms,
@@ -354,7 +369,9 @@ test_downloads = [
             DownloadFile(
                 name="test file name",
                 type=FileType.genetic_dependency,
-                sub_type=FileSubType.crispr_screen,
+                sub_type=FileSubtype(
+                    code="crispr_screen", label="CRISPR Screen", position=0
+                ),
                 size="test size",
                 url="test url",  # urls are tested in the crawler, so this is fine
                 taiga_id="test-taiga-id.1",
@@ -373,7 +390,7 @@ test_downloads = [
                 name="headliner2 file name",
                 date_override=date(2000, 1, 1),
                 type=FileType.omics,
-                sub_type=FileSubType.mutations,
+                sub_type=FileSubtype(code="mutations", label="Mutations", position=1),
                 size="headliner2 size",
                 url=ExternalBucketUrl("fake/test/headliner2_file_name"),
                 taiga_id="test-taiga-id.1",
@@ -383,7 +400,9 @@ test_downloads = [
             DownloadFile(
                 name="test file name 2",
                 type=FileType.genetic_dependency,
-                sub_type=FileSubType.crispr_screen,
+                sub_type=FileSubtype(
+                    code="crispr_screen", label="CRISPR Screen", position=0
+                ),
                 size="test size",
                 url=RetractedUrl(),
                 taiga_id="test-taiga-id.1",

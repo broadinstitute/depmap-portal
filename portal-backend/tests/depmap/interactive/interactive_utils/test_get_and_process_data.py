@@ -97,20 +97,19 @@ def test_get_all_rows(interactive_db_mock_downloads):
     # correctness of the nonstandard utils path is handled in test_nonstandard_utils/test_get_all_row_names
     # and parallel for the standard utils path
     assert interactive_utils.get_all_rows(interactive_utils.get_context_dataset()) == [
-        {"label": "AML", "value": "AML"},
-        {"label": "B-cell HERpos Dev Lineage", "value": "b_cell_HERpos_dev_lineage"},
-        {"label": "Bone", "value": "bone"},
-        {"label": "Ewings Sarcoma", "value": "Ewings_sarcoma"},
-        {"label": "Leukemia", "value": "leukemia"},
-        {"label": "Lung", "value": "lung"},
-        {"label": "Lung Adenocarcinoma", "value": "lung_adenocarcinoma"},
-        {"label": "Lung NSC", "value": "lung_NSC"},
-        {"label": "Lung Squamous", "value": "lung_squamous"},
-        {"label": "Melanoma", "value": "melanoma"},
-        {"label": "Merkel", "value": "Merkel"},
-        {"label": "Osteosarcoma", "value": "osteosarcoma"},
-        {"label": "Skin", "value": "skin"},
-        {"label": "Urinary Tract", "value": "urinary_tract"},
+        {"label": "ALKHotspot", "value": "ALKHotspot"},
+        {"label": "BONE", "value": "BONE"},
+        {"label": "EGFR", "value": "EGFR"},
+        {"label": "ES", "value": "ES"},
+        {"label": "LUAD", "value": "LUAD"},
+        {"label": "LUNG", "value": "LUNG"},
+        {"label": "LUSC", "value": "LUSC"},
+        {"label": "MCC", "value": "MCC"},
+        {"label": "MEL", "value": "MEL"},
+        {"label": "NSCLC", "value": "NSCLC"},
+        {"label": "OS", "value": "OS"},
+        {"label": "PNS", "value": "PNS"},
+        {"label": "SKIN", "value": "SKIN"},
     ]
 
 
@@ -119,7 +118,7 @@ def test_get_all_rows(interactive_db_mock_downloads):
     [
         (BiomarkerDataset.BiomarkerEnum.mutations_prioritized.name, "MAP4K4", True),
         (BiomarkerDataset.BiomarkerEnum.mutations_prioritized.name, "TRIL", False),
-        ("context", "lung_NSC", True),
+        ("context", "LUNG", True),
         ("context", "MAP4K4", False),
         ("lineage", "all", True),
         ("lineage", "bone", False),
@@ -185,11 +184,14 @@ def test_get_row_of_values(interactive_db_mock_downloads):
 
     expected_context_series = pd.Series(
         context_dataset_feature,
-        ["ACH-000052", "ACH-000210", "ACH-000279", "ACH-001205", "ACH-001001"],
+        ["ACH-001001", "ACH-000052", "ACH-000210", "ACH-000279", "ACH-001205"],
     )
-    assert interactive_utils.get_row_of_values(
+
+    found_context_series = interactive_utils.get_row_of_values(
         context_dataset_id, context_dataset_feature
-    ).equals(expected_context_series)
+    )
+
+    assert found_context_series.equals(expected_context_series)
 
     expected_custom_cell_lines_series = pd.Series(1, custom_cell_line_group_depmap_ids)
     assert interactive_utils.get_row_of_values(

@@ -6,21 +6,22 @@ import HelpText from "./HelpText";
 import styles from "../../../styles/ContextBuilder.scss";
 
 interface Props {
+  isLoading: boolean;
   slice_type: string;
   value: string | null;
   onChange: (
     nextValue:
       | "legacy_metadata_slice"
-      | "breadbox_metadata_column"
+      | "official_annotation"
       | "matrix_dataset"
   ) => void;
 }
 
-function DataSourceSelect({ slice_type, value, onChange }: Props) {
+function DataSourceSelect({ isLoading, slice_type, value, onChange }: Props) {
   let options = [
     {
       label: "Annotation",
-      value: "breadbox_metadata_column",
+      value: "official_annotation",
     },
     {
       label: "Legacy Annotation",
@@ -55,9 +56,9 @@ function DataSourceSelect({ slice_type, value, onChange }: Props) {
     <PlotConfigSelect
       show
       enable
-      value={value}
+      value={isLoading ? "" : value}
       options={options}
-      isLoading={false}
+      isLoading={isLoading}
       onChange={onChange as (nextValue: string | null) => void}
       className={styles.varSelect}
       placeholder="Select data source…"

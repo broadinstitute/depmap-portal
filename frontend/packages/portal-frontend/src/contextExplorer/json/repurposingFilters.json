@@ -1,0 +1,28 @@
+[
+  {
+    "kind": "checkbox",
+    "subtype": "additive",
+    "key": "depletion",
+    "label": "Include Positive Effect Sizes",
+    "match": "False"
+  },
+  {
+    "kind": "numberInput",
+    "key": "t_qval",
+    "label": "Max. FDR",
+    "minOrMax": "max",
+    "step": 0.01,
+    "value": 0.1,
+    "minBound": 0,
+    "maxBound": 1
+  },
+  {
+    "kind": "numberInput",
+    "key": "abs_effect_size",
+    "label": "Min absolute effect size",
+    "minOrMax": "min",
+    "step": 0.01,
+    "value": 0.5,
+    "minBound": 0
+  }
+]

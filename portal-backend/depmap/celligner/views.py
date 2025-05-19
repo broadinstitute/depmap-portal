@@ -14,7 +14,7 @@ from depmap.celligner.models import (
     CellignerDistanceRowIndex,
     TUMOR_TYPES,
 )
-from depmap.context.models import Lineage
+from depmap.cell_line.models import Lineage
 from depmap.extensions import restplus_handle_exception
 from depmap.utilities import hdf5_utils
 from depmap.utilities.sign_bucket_url import get_signed_url

@@ -60,6 +60,8 @@ export interface DataExplorerPlotConfigDimension {
   aggregation: DataExplorerAggregation;
 }
 
+export type PartialDataExplorerPlotConfigDimension = PartialDeep<DataExplorerPlotConfigDimension>;
+
 export interface DataExplorerPlotConfigDimensionV2
   extends Omit<DataExplorerPlotConfigDimension, "context"> {
   context: DataExplorerContextV2;
@@ -147,6 +149,7 @@ export interface DataExplorerPlotResponse {
         label: string;
         slice_id: string;
         values: (string | number)[];
+        value_type: "categorical" | "binary";
       }
     >
   >;

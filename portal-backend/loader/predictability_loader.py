@@ -10,7 +10,7 @@ from sqlalchemy import func
 
 from depmap.antibody.models import Antibody
 from depmap.compound.models import CompoundExperiment
-from depmap.context.models import ContextEntity
+from depmap.context.models_new import SubtypeContextEntity
 from depmap.database import db
 from depmap.dataset.models import BiomarkerDataset, Dataset, DependencyDataset
 from depmap.entity.models import GenericEntity
@@ -124,7 +124,7 @@ def _load_predictive_features(
     tss_cache = {tss.label: tss.label for tss in TranscriptionStartSite.get_all()}
     antibody_cache = {antibody.label: antibody.label for antibody in Antibody.get_all()}
     context_cache = {
-        context.label: context.label for context in ContextEntity.get_all()
+        context.label: context.label for context in SubtypeContextEntity.get_all()
     }
 
     feature_metadata = pd.read_csv(
