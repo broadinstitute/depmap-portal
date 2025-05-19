@@ -50,3 +50,30 @@ export function getAllCorrelates(data: Record<string, Record<string, any[]>>) {
     .flatMap((inner) => Object.values(inner))
     .flat();
 }
+
+export function createDoseRangeColorScale(
+  doses: string[]
+): { hex: string | undefined; dose: string }[] {
+  const colorScale = [
+    { hex: "#ADFF2F" }, // Yellow-Green
+    { hex: "#97E34F" },
+    { hex: "#81C76E" },
+    { hex: "#6BAB8D" },
+    { hex: "#559FAC" },
+    { hex: "#4083CC" },
+    { hex: "#3365B6" },
+    { hex: "#26479F" },
+    { hex: "#1A2A89" },
+    { hex: "#4B0082" }, // Dark Purple
+  ];
+  const sortedDoses = doses.sort((a, b) => {
+    return a - b;
+  });
+  return sortedDoses.map((dose, i) => {
+    if (i >= colorScale.length) {
+      return { hex: undefined, dose };
+    }
+
+    return { ...colorScale[i], dose };
+  });
+}

@@ -6,6 +6,7 @@ import CorrelationsPlots from "./CorrelationsPlots";
 import CorrelationFilters from "./CorrelationFilters";
 import { DimensionType, SliceQuery } from "@depmap/types";
 import {
+  createDoseRangeColorScale,
   getAllCorrelates,
   transformAndGroupByDataset,
 } from "../utilities/helper";
@@ -69,36 +70,42 @@ export default function CorrelationAnalysis(props: CorrelationAnalysisProps) {
     filteredTableCorrelationAnalysisData,
     setFilteredTableCorrelationAnalysisData,
   ] = React.useState<any[]>([]);
+  const [doseColors, setDoseColors] = React.useState<
+    { hex: string | undefined; dose: string }[]
+  >([]);
 
   React.useEffect(() => {
     (async () => {
       try {
+        // get compound id by label
         const compoundDimType = await getDimensionType("compound_v2");
         const allCompoundMetadata = await getTabularDatasetData(
           compoundDimType.metadata_dataset_id,
           { identifier: "label", columns: ["CompoundID"] }
         );
         const compoundID = allCompoundMetadata["CompoundID"][compound];
-        console.log(compoundID);
-        console.log("ALL COMPOUNDS: \n", allCompoundMetadata);
-        // const compoundMetadata = allCompoundMetadata.
-        const compoundDoseDimType = await getDimensionType("compound_dose");
-        const allCompoundDoseMetadata = await getTabularDatasetData(
-          compoundDoseDimType.metadata_dataset_id,
-          { identifier: "id", columns: ["CompoundID", "Dose"] }
-        );
-        console.log(allCompoundDoseMetadata);
-        const compoundDoses = Object.keys(
-          allCompoundDoseMetadata["CompoundID"]
-        ).filter((key) => allCompoundDoseMetadata[key] === compoundID);
-        console.log(compoundDoses);
-        const doses = compoundDoses.map(
-          (key) => allCompoundDoseMetadata["Dose"][key]
-        );
-        console.log(doses);
+
+        // console.log(compoundID);
+        // console.log("ALL COMPOUNDS: \n", allCompoundMetadata);
+        // // const compoundMetadata = allCompoundMetadata.
+        // // get compound doses
+        // const compoundDoseDimType = await getDimensionType("compound_dose");
+        // const allCompoundDoseMetadata = await getTabularDatasetData(
+        //   compoundDoseDimType.metadata_dataset_id,
+        //   { identifier: "id", columns: ["CompoundID", "Dose"] }
+        // );
+        // console.log(allCompoundDoseMetadata);
+        // const compoundDoses = Object.keys(
+        //   allCompoundDoseMetadata["CompoundID"]
+        // ).filter((key) => allCompoundDoseMetadata[key] === compoundID);
+        // console.log(compoundDoses);
+        // const doses = compoundDoses.map(
+        //   (key) => allCompoundDoseMetadata["Dose"][key]
+        // );
+        // console.log(doses);
 
         const compoundDoseToDose = new Map();
-        compoundDoseToDose.set(compound, "AUC");
+
         const compoundDoseDatasets: [string, string][] = [
           [compoundID, "Prism_oncology_AUC_collapsed"],
         ];
@@ -111,6 +118,13 @@ export default function CorrelationAnalysis(props: CorrelationAnalysisProps) {
           compoundDoseToDose.set(feature.id, dose);
           compoundDoseDatasets.push([feature.id, "Prism_oncology_viability"]);
         });
+
+        const dosesAndColors: { hex: string | undefined; dose: string }[] = [
+          { hex: "#CC4778", dose: "AUC" },
+          ...createDoseRangeColorScale(Array.from(compoundDoseToDose.values())),
+        ];
+        setDoseColors(dosesAndColors);
+        compoundDoseToDose.set(compound, "AUC");
 
         const featureDatasetDoseCorrelates: Record<
           string,
@@ -189,87 +203,6 @@ export default function CorrelationAnalysis(props: CorrelationAnalysisProps) {
   ]);
 
   console.log(correlationAnalysisData);
-
-  //   const doseColors = React.useMemo(() => {
-  //     let doses: any[] = [];
-  //     if (correlationAnalysisData.length) {
-  //       const colorScale = [
-  //         { hex: "#ADFF2F" }, // Yellow-Green
-  //         { hex: "#97E34F" },
-  //         { hex: "#81C76E" },
-  //         { hex: "#6BAB8D" },
-  //         { hex: "#559FAC" },
-  //         { hex: "#4083CC" },
-  //         { hex: "#3365B6" },
-  //         { hex: "#26479F" },
-  //         { hex: "#1A2A89" },
-  //         { hex: "#4B0082" }, // Dark Purple
-  //       ];
-  //       const columnData: { [key: string]: any } = {};
-  //       const columnNames = Object.keys(correlationAnalysisData[0]);
-  //       columnNames.forEach(
-  //         (colName) =>
-  //           (columnData[colName] = correlationAnalysisData.map(
-  //             (record) => record[colName]
-  //           ))
-  //       );
-  //       console.log(columnNames);
-  //       console.log(columnData);
-  //       doses = Array.from(new Set(columnData["Dose"])).sort((a, b) => {
-  //         return a - b;
-  //       }); // log2auc should be first
-  //       console.log("DOSES: ", doses);
-  //       const doseRanges = doses.slice(1);
-  //       const doseAndColors: { hex: string | undefined; dose: string }[] = [
-  //         { hex: "#CC4778", dose: "log2.auc" },
-  //       ];
-  //       doseRanges.forEach((dose, i) => {
-  //         if (i >= colorScale.length) {
-  //           doseAndColors.push({ hex: undefined, dose });
-  //         }
-  //         doseAndColors.push({ ...colorScale[i], dose });
-  //       });
-  //       return doseAndColors;
-  //     }
-  //     return doses;
-  //   }, [correlationAnalysisData]);
-  //   const doseColors = React.useMemo(() => {
-  //     let doses: any[] = [];
-  //     if (correlationAnalysisData.length) {
-  //       const colors = [
-  //         { hex: "#CC4778" },
-  //         { hex: "#F89540" },
-  //         { hex: "#440154" },
-  //         { hex: "#46327E" },
-  //         { hex: "#365C8D" },
-  //         { hex: "#277F8E" },
-  //         { hex: "#1EA187" },
-  //         { hex: "#4AC16D" },
-  //         { hex: "#A0DA38" },
-  //       ];
-  //       const columnData: { [key: string]: any } = {};
-  //       const columnNames = Object.keys(correlationAnalysisData[0]);
-  //       columnNames.forEach(
-  //         (colName) =>
-  //           (columnData[colName] = correlationAnalysisData.map(
-  //             (record) => record[colName]
-  //           ))
-  //       );
-  //       console.log(columnNames);
-  //       console.log(columnData);
-  //       doses = Array.from(new Set(columnData["Dose"])).sort((a, b) => {
-  //         return a - b;
-  //       });
-  //       console.log("DOSES: ", doses);
-  //       return doses.map((dose, i) => {
-  //         if (i >= colors.length) {
-  //           return { hex: undefined, dose };
-  //         }
-  //         return { ...colors[i], dose };
-  //       });
-  //     }
-  //     return doses;
-  //   }, [correlationAnalysisData]);
 
   React.useEffect(() => {
     // if no filter applied, show all correlation analysis data
@@ -356,22 +289,22 @@ export default function CorrelationAnalysis(props: CorrelationAnalysisProps) {
             text: [],
             isSignificant: [],
             name: doseCategory,
-            //   color: doseColors.find(
-            //     (doseColor) => doseColor.dose === doseCategory
-            //   )?.hex,
+            color: doseColors.find(
+              (doseColor) => doseColor.dose === doseCategory
+            )?.hex,
           };
         }
         const columnNamesToPlotVariables = {
           correlation: "x",
-          "log10(q value)": "y",
+          log10qvalue: "y",
           feature: "text",
         };
         const columnNames = Object.keys(correlationAnalysisData[0]);
         columnNames.forEach((colName) => {
           if (colName in columnNamesToPlotVariables) {
             const value = curRecord[colName];
-            if (colName === "log10(q value)") {
-              const val = Math.pow(10, -value);
+            if (colName === "log10qvalue") {
+              const val = Math.pow(10, value);
               // VolcanoPlotProp `y` data by default log transforms values. To do the complement: Math.exp(-x)
               acc[key][doseCategory][columnNamesToPlotVariables[colName]].push(
                 val
@@ -403,7 +336,7 @@ export default function CorrelationAnalysis(props: CorrelationAnalysisProps) {
       }, {});
     }
     return {};
-  }, [correlationAnalysisData]);
+  }, [correlationAnalysisData, doseColors]);
   // }, [correlationAnalysisData, doseColors]);
   console.log("volcanodata: \n", volcanoDataForFeatureType);
 
@@ -446,7 +379,7 @@ export default function CorrelationAnalysis(props: CorrelationAnalysisProps) {
           tooltip information.
         </p>
         <hr style={{ borderTop: "1px solid black", marginBottom: "40px" }} />
-        {/* <CorrelationsPlots
+        <CorrelationsPlots
           featureTypesToShow={
             selectedFeatureTypes.length
               ? selectedFeatureTypes
@@ -465,7 +398,7 @@ export default function CorrelationAnalysis(props: CorrelationAnalysisProps) {
               [featureType]: newSelectedLabels,
             });
           }}
-        /> */}
+        />
       </div>
 
       <div style={{ gridArea: "c" }}>
