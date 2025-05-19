@@ -55,5 +55,5 @@ def get_dataset(
     dataset = dataset_crud.get_dataset(db, user, dataset_id)
 
     if dataset is None:
-        raise HTTPException(404, detail="Dataset not found")
+        raise HTTPException(404, detail=f"Dataset '{dataset_id}' not found")
     return dataset

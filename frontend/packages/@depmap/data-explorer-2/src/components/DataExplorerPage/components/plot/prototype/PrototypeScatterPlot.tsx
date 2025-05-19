@@ -822,21 +822,23 @@ function PrototypeScatterPlot({
         return;
       }
 
-      const legendTraces = legendForDownload.items.map(
-        ({ name, hexColor }: any) => {
-          return {
-            ...templateTrace,
-            showlegend: true,
-            x: [null],
-            y: [null],
-            name,
-            marker: {
-              ...templateTrace.marker,
-              color: hexColor,
-            },
-          };
-        }
-      );
+      // These dummy traces exist only to force Plotly to add a legend with the
+      // correct colors (there is no good way of rendering our custom legend as
+      // part of the exported image).
+      const legendTraces = legendForDownload.items.map(({ name, hexColor }) => {
+        return {
+          ...templateTrace,
+          showlegend: true,
+          // HACK: Use a plot type of "indicator" rather than "scatter". This
+          // prevents a rare bug where these dummy traces interfere with the
+          // real ones and some points don't get rendered.
+          type: "indicator",
+          name,
+          x: [null], // Data doesn't matter but can't be completely empty
+          y: [null],
+          marker: { ...templateTrace.marker, color: hexColor },
+        };
+      });
 
       const imagePlot = {
         ...plot,

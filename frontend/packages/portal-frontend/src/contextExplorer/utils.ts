@@ -445,6 +445,17 @@ function mergeDataAvailability(
     (item) => item[1]
   );
 
+  const orderedModelIds = allContextDatasetDataAvail.all_depmap_ids.filter(
+    (indexedModel) => selectedModelIds.includes(indexedModel[1])
+  );
+  const indexedOrderedModelIds: [
+    number,
+    string
+  ][] = orderedModelIds.map((modelId: [number, string], index: number) => [
+    index,
+    modelId[1],
+  ]);
+
   const vals: number[][] = [];
   const dataTypes: string[] = [];
   allContextDatasetDataAvail.values.forEach((row: number[], index: number) => {
@@ -458,7 +469,7 @@ function mergeDataAvailability(
   const orderedDataTypes = [...dataTypes];
   const orderedVals = [...vals];
   const mergedDataAvail = {
-    all_depmap_ids: subtypeDataAvail.all_depmap_ids,
+    all_depmap_ids: indexedOrderedModelIds,
     data_types: [...orderedDataTypes, ...subtypeDataAvail.data_types].reverse(),
     values: [...orderedVals, ...subtypeDataAvail.values].reverse(),
   };
