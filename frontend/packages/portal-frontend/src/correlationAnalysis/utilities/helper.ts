@@ -7,7 +7,8 @@ export function transformAndGroupByDataset(
     other_dimension_label: string;
   }[],
   compoundDoseLabel: string,
-  datasetLookup: Record<string, string>
+  datasetLookup: Record<string, string>,
+  compoundDoseToDose: Map<string, string>
 ) {
   const grouped: Map<string, any[]> = new Map();
 
@@ -31,6 +32,7 @@ export function transformAndGroupByDataset(
         ...item,
         id: `${compoundDoseLabel}-${item.other_dimension_label}`, // compound dose and correlated feature pair should be unique
         feature: item.other_dimension_label,
+        dose: compoundDoseToDose.get(compoundDoseLabel),
         featureDataset: datasetLookup[item.other_dataset_id],
         correlation: parseFloat(item.correlation.toFixed(2)),
         log10qvalue: parseFloat(item.log10qvalue.toFixed(2)),
@@ -41,4 +43,10 @@ export function transformAndGroupByDataset(
   }
 
   return result;
+}
+
+export function getAllCorrelates(data: Record<string, Record<string, any[]>>) {
+  return Object.values(data)
+    .flatMap((inner) => Object.values(inner))
+    .flat();
 }
