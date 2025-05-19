@@ -297,6 +297,8 @@ def run_custom_analysis(
     update_message = _get_update_message_callback(self)
     update_message("Fetching data")
     
+    raise Exception("TESTING! This error should be raised from the celery test-perf env")
+    
     with db_context(user) as db:
 
         # All features and feature_indices for the dataset we're searching in
