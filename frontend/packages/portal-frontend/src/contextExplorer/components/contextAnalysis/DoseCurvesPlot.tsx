@@ -21,8 +21,9 @@ interface Props {
 interface CurveTrace {
   x: number[];
   y: number[];
-  text?: string;
+  text?: string[];
   hoverinfo?: string;
+  hovertemplate?: string;
   customdata?: string[];
   label?: string[];
   replicate?: string[];
@@ -43,7 +44,16 @@ const samplePoints = (
   rangeOfExponents: number,
   includeMedianQuantileRegions: boolean
 ) => {
-  const data: { xs: number[]; ys: Float32Array; name: string }[] = [];
+  const data: {
+    xs: number[];
+    ys: Float32Array;
+    name: string;
+    id: string;
+    ec50: number;
+    slope: number;
+    lowerA: number;
+    upperA: number;
+  }[] = [];
 
   for (let i = 0; i < curves.length; i++) {
     const lowerA = curves[i].lowerAsymptote;
@@ -53,6 +63,7 @@ const samplePoints = (
     const xs: number[] = [];
     const ys = new Float32Array(numPts);
     const name = curves[i].displayName!;
+    const id = curves[i].id!;
 
     for (let j = 0; j < numPts; j++) {
       const x = 10 ** (minExponent + (j / (numPts - 1)) * rangeOfExponents);
@@ -61,7 +72,7 @@ const samplePoints = (
       ys[j] = lowerA + (upperA - lowerA) / (1 + (x / ec50) ** -slope);
     }
 
-    data.push({ xs, ys, name });
+    data.push({ xs, ys, name, id, ec50, slope, lowerA, upperA });
   }
 
   const medianYs: number[] = [];
@@ -169,8 +180,22 @@ const getTraces = (
       x: pt.xs,
       y: Array.from(pt.ys),
       name: "",
-      text: `${curves.data[index].name}`,
-      hoverinfo: "x+y+text",
+      text: pt.xs.map(
+        (_) => `<b>Cell Line Name:</b> ${
+          curves.data[index].name
+        }<br><b>DepMap ID:</b> ${curves.data[index].id}
+    <br><b>Lower Asymptote:</b> ${curves.data[index].lowerA.toFixed(
+      4
+    )}<br><b>Upper Asymptote:</b> ${curves.data[index].upperA.toFixed(
+          4
+        )}<br><b>ec50:</b> ${curves.data[index].ec50.toFixed(
+          4
+        )}<br><b>slope:</b> ${curves.data[index].slope.toFixed(4)}`
+      ),
+      hovertemplate:
+        "<b>Dose:</b> %{x:.4f}<br>" +
+        "<b>Viability</b>: %{y:.4f}<br>" +
+        "%{text}",
       type: "curve",
       mode: "lines",
       marker: { color: "rgba(108, 122, 137, 0.5)" },
