@@ -10,7 +10,7 @@ rhost = os.getenv("REDIS_HOST", "localhost")
 breadbox_env = os.getenv("BREADBOX_ENV", "dev")
 
 log = getLogger(__name__)
-exception_reporter = GCPExceptionReporter(breadbox_env=breadbox_env)
+exception_reporter = GCPExceptionReporter(breadbox_env=f"{breadbox_env}-celery")
 
 class LogErrorsTask(Task):
     def on_failure(self, exc, task_id, args, kwargs, einfo):
@@ -22,11 +22,11 @@ class LogErrorsTask(Task):
             # (like task_id, args, etc.) to error_reporter. However, error_reporter is really 
             # only set up to log context in the format of a HTTP request. 
             exception_reporter.report(request=None, status_code=None, user=None)
-            super(LogErrorsTask, self).on_failure(exc, task_id, args, kwargs, einfo)
+            super().on_failure(exc, task_id, args, kwargs, einfo)
 
 
 app = Celery(
-    "breadbox-worker",
+    "breadbox-celery",
     broker_url="redis://" + rhost,
     backend="redis://" + rhost,
     include=[
