@@ -45,6 +45,14 @@ interface CorrelationAnalysisProps {
   //   getFeatureTypes: () => Promise<any[]>;
 }
 
+const datasetMap: Record<string, { auc: string; viability: string }> = {
+  OncRef: {
+    auc: "Prism_oncology_AUC_collapsed",
+    viability: "Prism_oncology_viability",
+  },
+  // TBD: Add more after correlations are generated
+};
+
 export default function CorrelationAnalysis(props: CorrelationAnalysisProps) {
   const {
     compound,
@@ -53,6 +61,10 @@ export default function CorrelationAnalysis(props: CorrelationAnalysisProps) {
     getDatasetFeatures,
     getCorrelationData,
   } = props;
+  const [selectedDataset, setSelectedDataset] = React.useState<string>(
+    "OncRef"
+  );
+  const [featureTypes, setFeatureTypes] = React.useState<string[]>([]);
   const [selectedFeatureTypes, setSelectedFeatureTypes] = React.useState<
     string[]
   >([]);
@@ -85,38 +97,24 @@ export default function CorrelationAnalysis(props: CorrelationAnalysisProps) {
         );
         const compoundID = allCompoundMetadata["CompoundID"][compound];
 
-        // console.log(compoundID);
-        // console.log("ALL COMPOUNDS: \n", allCompoundMetadata);
-        // // const compoundMetadata = allCompoundMetadata.
-        // // get compound doses
-        // const compoundDoseDimType = await getDimensionType("compound_dose");
-        // const allCompoundDoseMetadata = await getTabularDatasetData(
-        //   compoundDoseDimType.metadata_dataset_id,
-        //   { identifier: "id", columns: ["CompoundID", "Dose"] }
-        // );
-        // console.log(allCompoundDoseMetadata);
-        // const compoundDoses = Object.keys(
-        //   allCompoundDoseMetadata["CompoundID"]
-        // ).filter((key) => allCompoundDoseMetadata[key] === compoundID);
-        // console.log(compoundDoses);
-        // const doses = compoundDoses.map(
-        //   (key) => allCompoundDoseMetadata["Dose"][key]
-        // );
-        // console.log(doses);
+        // get selected datasets
+        const datasets = datasetMap[selectedDataset];
+        const aucDataset = datasets.auc;
+        const doseViabilityDataset = datasets.viability;
 
         const compoundDoseToDose = new Map();
 
         const compoundDoseDatasets: [string, string][] = [
-          [compoundID, "Prism_oncology_AUC_collapsed"],
+          [compoundID, aucDataset],
         ];
         const compoundDoseFeatures = (
-          await getDatasetFeatures("Prism_oncology_viability")
+          await getDatasetFeatures(doseViabilityDataset)
         ).filter((feature) => feature.id.includes(compoundID));
         compoundDoseFeatures.forEach((feature) => {
           const dose = feature.id.replace(compoundID, "").trim();
           console.log(feature.id, dose);
           compoundDoseToDose.set(feature.id, dose);
-          compoundDoseDatasets.push([feature.id, "Prism_oncology_viability"]);
+          compoundDoseDatasets.push([feature.id, doseViabilityDataset]);
         });
 
         const dosesAndColors: { hex: string | undefined; dose: string }[] = [
@@ -186,7 +184,8 @@ export default function CorrelationAnalysis(props: CorrelationAnalysisProps) {
           );
         });
         console.log(allCorrelatesForFeatureDataset);
-        console.log();
+        console.log(Object.keys(featureDatasetDoseCorrelates));
+        setFeatureTypes(Object.keys(featureDatasetDoseCorrelates));
         const tabledata = getAllCorrelates(featureDatasetDoseCorrelates);
         console.log(tabledata);
         setCorrelationAnalysisData(tabledata);
@@ -196,6 +195,7 @@ export default function CorrelationAnalysis(props: CorrelationAnalysisProps) {
     })();
   }, [
     compound,
+    selectedDataset,
     getCorrelationData,
     getDatasetFeatures,
     getDimensionType,
@@ -351,23 +351,24 @@ export default function CorrelationAnalysis(props: CorrelationAnalysisProps) {
         // marginBottom: "50px",
       }}
     >
-      {JSON.stringify(selectedFeatureTypes)}
       <div
         style={{
           gridArea: "a",
         }}
       >
-        {/* <CorrelationFilters
-          getDatasets={getCompoundDatasets}
-          onChangeDataset={(dataset: string) => console.log(dataset)}
-          getFeatureTypes={getFeatureTypes}
-          onChangeFeatureTypes={(featureTypes: string[]) =>
-            setSelectedFeatureTypes(featureTypes !== null ? featureTypes : [])
+        <CorrelationFilters
+          datasets={Object.keys(datasetMap)}
+          onChangeDataset={(dataset: string) => setSelectedDataset(dataset)}
+          featureTypes={featureTypes}
+          onChangeFeatureTypes={(newFeatureTypes: string[]) =>
+            setSelectedFeatureTypes(
+              newFeatureTypes !== null ? newFeatureTypes : []
+            )
           }
           doses={doseColors.map((doseColor) => doseColor.dose)}
           onChangeDoses={(newDoses) => setSelectedDoses(newDoses || [])}
           compoundName={compound}
-        /> */}
+        />
       </div>
 
       <div style={{ gridArea: "b" }}>
