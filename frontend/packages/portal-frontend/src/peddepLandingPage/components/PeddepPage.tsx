@@ -12,52 +12,60 @@ export default function PeddepPage(props: PeddepPageProps) {
   const { getApi } = useContext(ApiContext);
   const [bapi] = useState(() => getApi());
   const [data, setData] = useState(null);
+  const [hasError, setHasError] = useState(false);
 
   useEffect(() => {
     (async () => {
-      const dimensionType = await bapi.getDimensionType(
-        "depmap_model_with_peddep"
-      );
-      console.log(dimensionType);
-      const modelSubsetColData = await bapi.getTabularDatasetData(
-        dimensionType.metadata_dataset_id,
-        { columns: ["OncotreeLineage", "OncotreeSubtype", "PediatricSubtype"] }
-      );
-      console.log(modelSubsetColData);
-      const modelSubsetIndexData: { [key: string]: any } = {};
+      try {
+        const dimensionType = await bapi.getDimensionType(
+          "depmap_model_with_peddep"
+        );
+        console.log(dimensionType);
+        const modelSubsetColData = await bapi.getTabularDatasetData(
+          dimensionType.metadata_dataset_id,
+          {
+            columns: ["OncotreeLineage", "OncotreeSubtype", "PediatricSubtype"],
+          }
+        );
+        console.log(modelSubsetColData);
+        const modelSubsetIndexData: { [key: string]: any } = {};
 
-      // eslint-disable-next-line no-restricted-syntax
-      for (const [colName, colData] of Object.entries(modelSubsetColData)) {
         // eslint-disable-next-line no-restricted-syntax
-        for (const [index, value] of Object.entries(colData)) {
-          if (!modelSubsetIndexData[index]) {
-            modelSubsetIndexData[index] = {};
-          }
-          modelSubsetIndexData[index][colName] = value;
-        }
-      }
-      console.log(modelSubsetIndexData);
-
-      const pedModelData = Object.entries(modelSubsetIndexData).reduce(
-        (acc, [model, modelData]) => {
-          if (modelData.PediatricSubtype === "True") {
-            const subtype = modelData.OncotreeSubtype;
-            if (modelData.OncotreeLineage === "CNS/Brain") {
-              acc["CNS/Brain"].push(subtype);
-            } else if (
-              ["Myeloid", "Lymphoid"].includes(modelData.OncotreeLineage)
-            ) {
-              acc["Heme"].push(subtype);
-            } else {
-              acc["Solid"].push(subtype);
+        for (const [colName, colData] of Object.entries(modelSubsetColData)) {
+          // eslint-disable-next-line no-restricted-syntax
+          for (const [index, value] of Object.entries(colData)) {
+            if (!modelSubsetIndexData[index]) {
+              modelSubsetIndexData[index] = {};
             }
+            modelSubsetIndexData[index][colName] = value;
           }
-          return acc;
-        },
-        { "CNS/Brain": [], Heme: [], Solid: [] }
-      );
-      console.log(pedModelData);
-      setData(pedModelData);
+        }
+        console.log(modelSubsetIndexData);
+
+        const pedModelData = Object.entries(modelSubsetIndexData).reduce(
+          (acc, [model, modelData]) => {
+            if (modelData.PediatricSubtype === "True") {
+              const subtype = modelData.OncotreeSubtype;
+              if (modelData.OncotreeLineage === "CNS/Brain") {
+                acc["CNS/Brain"].push(subtype);
+              } else if (
+                ["Myeloid", "Lymphoid"].includes(modelData.OncotreeLineage)
+              ) {
+                acc["Heme"].push(subtype);
+              } else {
+                acc["Solid"].push(subtype);
+              }
+            }
+            return acc;
+          },
+          { "CNS/Brain": [], Heme: [], Solid: [] }
+        );
+        console.log(pedModelData);
+        setData(pedModelData);
+      } catch (e) {
+        console.log(e);
+        setHasError(true);
+      }
     })();
   }, [bapi]);
 
@@ -110,49 +118,23 @@ export default function PeddepPage(props: PeddepPageProps) {
             with transformative potential.
           </h4>
 
-          <div className={styles.dataContainer}>
-            <div className={styles.dataInfo}>
-              <div>
-                <h4>Dependency Screening</h4>
-                <h5>
-                  Developing and deploying CRISPR-based genome editing
-                  techniques to identify hidden vulnerabilities (dependencies)
-                  in a spectrum of high-risk childhood brain, solid and
-                  hematological malignancies.
-                </h5>
-              </div>
-              <div>
-                <h4>Omics profiling</h4>
-                <h5>
-                  Leveraging emerging technologies to characterize the genetic
-                  and epigenetic landscape of pediatric cancers.
-                </h5>
-              </div>
-              <div>
-                <h4>Compound screening</h4>
-                <h5>
-                  Developing and deploying CRISPR-based genome editing
-                  techniques to identify hidden vulnerabilities (dependencies)
-                  in a spectrum of high-risk childhood brain, solid and
-                  hematological malignancies.
-                </h5>
-              </div>
-              <div>
-                <h4>New Model Derivation</h4>
-                <h5>
-                  Developing model systems where none currently exist for
-                  high-risk childhood cancers that have poor outcomes.
-                </h5>
-              </div>
-              <div>
-                <h4>Data science</h4>
-                <h5>
-                  Developing computational approaches to mine and integrate data
-                  and developing innovative software tools for data sharing.
-                </h5>
-              </div>
+          {hasError ? (
+            <div
+              style={{
+                display: "flex",
+                height: "200px",
+                justifyContent: "center",
+                alignItems: "center",
+              }}
+            >
+              <i>
+                Unexpected error. If you get this error consistently, please
+                contact us with a screenshot and the actions that lead to this
+                error.
+              </i>
             </div>
-            <div>
+          ) : (
+            <div className={styles.dataPlotContainer}>
               {data
                 ? Object.entries(data).map(([subgroup, values]) => {
                     return (
@@ -164,6 +146,47 @@ export default function PeddepPage(props: PeddepPageProps) {
                     );
                   })
                 : "Loading..."}
+            </div>
+          )}
+          <div className={styles.dataInfo}>
+            <div>
+              <h4>Dependency Screening</h4>
+              <h5>
+                Developing and deploying CRISPR-based genome editing techniques
+                to identify hidden vulnerabilities (dependencies) in a spectrum
+                of high-risk childhood brain, solid and hematological
+                malignancies.
+              </h5>
+            </div>
+            <div>
+              <h4>Omics profiling</h4>
+              <h5>
+                Leveraging emerging technologies to characterize the genetic and
+                epigenetic landscape of pediatric cancers.
+              </h5>
+            </div>
+            <div>
+              <h4>Compound screening</h4>
+              <h5>
+                Developing and deploying CRISPR-based genome editing techniques
+                to identify hidden vulnerabilities (dependencies) in a spectrum
+                of high-risk childhood brain, solid and hematological
+                malignancies.
+              </h5>
+            </div>
+            <div>
+              <h4>New Model Derivation</h4>
+              <h5>
+                Developing model systems where none currently exist for
+                high-risk childhood cancers that have poor outcomes.
+              </h5>
+            </div>
+            <div>
+              <h4>Data science</h4>
+              <h5>
+                Developing computational approaches to mine and integrate data
+                and developing innovative software tools for data sharing.
+              </h5>
             </div>
           </div>
         </div>
