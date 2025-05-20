@@ -24,7 +24,7 @@ celery_app = create_celery()
 celery = celery_app
 
 # create the Google Cloud exception reporter class
-exception_reporter = GCPExceptionReporter(settings.breadbox_env)
+exception_reporter = GCPExceptionReporter(service="breadbox", env_name=settings.breadbox_env)
 
 from starlette.exceptions import HTTPException as StarletteHTTPException
 

@@ -10,7 +10,7 @@ rhost = os.getenv("REDIS_HOST", "localhost")
 breadbox_env = os.getenv("BREADBOX_ENV", "dev")
 
 log = getLogger(__name__)
-exception_reporter = GCPExceptionReporter(breadbox_env=f"{breadbox_env}-celery")
+exception_reporter = GCPExceptionReporter(service="breadbox-celery", env_name=breadbox_env)
 
 class LogErrorsTask(Task):
     def on_failure(self, exc, task_id, args, kwargs, einfo):

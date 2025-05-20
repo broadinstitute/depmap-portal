@@ -39,9 +39,9 @@ def configure_logging():
 
 
 class GCPExceptionReporter:
-    def __init__(self, breadbox_env: str):
-        self.service_name = "breadbox-" + breadbox_env
-        self.client = self._create_client() if not breadbox_env == "dev" else None
+    def __init__(self, service: str, env_name: str):
+        self.service_name = f"{service}-{env_name}"
+        self.client = self._create_client() if not env_name == "dev" else None
 
     @property
     def disabled(self):
