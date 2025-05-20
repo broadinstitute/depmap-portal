@@ -36,7 +36,7 @@ sqlitedict="^2.1.0"
 google-cloud-storage = "^3.1.0"
 packed-cor-tables = {version = "^0.2.0", source = "public-python"}
 orjson = "^3.10.16"
-python-multipart = "^0.0.7" # fastapi 0.115.12 needs this
+python-multipart = "^0.0.20" # fastapi 0.115.12 needs this
 
 [tool.poetry.group.dev.dependencies]
 pyright-ratchet = {git = "https://github.com/pgm/pyright-ratchet.git", rev = "v0.3.1"}
