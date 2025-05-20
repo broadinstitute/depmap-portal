@@ -6,62 +6,67 @@ import styles from "src/peddepLandingPage/styles/PeddepPage.scss";
 import { ApiContext } from "@depmap/api";
 import SubGroupPlot from "./SubgroupPlot";
 
-interface PeddepPageProps {}
-
-export default function PeddepPage(props: PeddepPageProps) {
+export default function PeddepPage() {
   const { getApi } = useContext(ApiContext);
   const [bapi] = useState(() => getApi());
-  const [data, setData] = useState(null);
+
+  const [data, setData] = useState<{
+    "CNS/Brain": any[];
+    Heme: any[];
+    Solid: any[];
+  } | null>(null);
   const [hasError, setHasError] = useState(false);
 
   useEffect(() => {
     (async () => {
       try {
-        const dimensionType = await bapi.getDimensionType(
-          "depmap_model_with_peddep"
-        );
-        console.log(dimensionType);
-        const modelSubsetColData = await bapi.getTabularDatasetData(
-          dimensionType.metadata_dataset_id,
-          {
-            columns: ["OncotreeLineage", "OncotreeSubtype", "PediatricSubtype"],
-          }
-        );
-        console.log(modelSubsetColData);
-        const modelSubsetIndexData: { [key: string]: any } = {};
+        const dimensionType = await bapi.getDimensionType("depmap with peddep");
+        if (dimensionType.metadata_dataset_id) {
+          const modelSubsetColData = await bapi.getTabularDatasetData(
+            dimensionType.metadata_dataset_id,
+            {
+              columns: [
+                "OncotreeLineage",
+                "OncotreeSubtype",
+                "PediatricSubtype",
+              ],
+            }
+          );
+          const modelSubsetIndexData: { [key: string]: any } = {};
 
-        // eslint-disable-next-line no-restricted-syntax
-        for (const [colName, colData] of Object.entries(modelSubsetColData)) {
           // eslint-disable-next-line no-restricted-syntax
-          for (const [index, value] of Object.entries(colData)) {
-            if (!modelSubsetIndexData[index]) {
-              modelSubsetIndexData[index] = {};
-            }
-            modelSubsetIndexData[index][colName] = value;
-          }
-        }
-        console.log(modelSubsetIndexData);
-
-        const pedModelData = Object.entries(modelSubsetIndexData).reduce(
-          (acc, [model, modelData]) => {
-            if (modelData.PediatricSubtype === "True") {
-              const subtype = modelData.OncotreeSubtype;
-              if (modelData.OncotreeLineage === "CNS/Brain") {
-                acc["CNS/Brain"].push(subtype);
-              } else if (
-                ["Myeloid", "Lymphoid"].includes(modelData.OncotreeLineage)
-              ) {
-                acc["Heme"].push(subtype);
-              } else {
-                acc["Solid"].push(subtype);
+          for (const [colName, colData] of Object.entries(modelSubsetColData)) {
+            // eslint-disable-next-line no-restricted-syntax
+            for (const [index, value] of Object.entries(colData)) {
+              if (!modelSubsetIndexData[index]) {
+                modelSubsetIndexData[index] = {};
               }
+              modelSubsetIndexData[index][colName] = value;
             }
-            return acc;
-          },
-          { "CNS/Brain": [], Heme: [], Solid: [] }
-        );
-        console.log(pedModelData);
-        setData(pedModelData);
+          }
+
+          const pedModelData = Object.entries(modelSubsetIndexData).reduce(
+            (acc, [, modelData]) => {
+              if (modelData.PediatricSubtype === "True") {
+                const subtype = modelData.OncotreeSubtype;
+                if (modelData.OncotreeLineage === "CNS/Brain") {
+                  acc["CNS/Brain"].push(subtype);
+                } else if (
+                  ["Myeloid", "Lymphoid"].includes(modelData.OncotreeLineage)
+                ) {
+                  acc["Heme"].push(subtype);
+                } else {
+                  acc["Solid"].push(subtype);
+                }
+              }
+              return acc;
+            },
+            { "CNS/Brain": [] as any[], Heme: [] as any[], Solid: [] as any[] }
+          );
+          setData(pedModelData);
+        } else {
+          setHasError(true);
+        }
       } catch (e) {
         console.log(e);
         setHasError(true);
