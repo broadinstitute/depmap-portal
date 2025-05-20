@@ -117,22 +117,15 @@
   border-color: #8658ab;
 }
 
-.dataContainer {
+.dataPlotContainer {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10em;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 2em;
 }
 
 .dataInfo {
-  @media screen and (min-width: 1366px) {
-    padding: 45px 90px 90px 90px;
-  }
-  @media screen and (min-width: 768px) and (max-width: 1365px) {
-    padding: 25px 50px 50px 50px;
-  }
-  @media screen and (max-width: 768px) {
-    padding: 10px 20px 20px 20px;
-  }
+  display: flex;
+  gap: 2em;
 
   h4 {
     color: #8658ab;

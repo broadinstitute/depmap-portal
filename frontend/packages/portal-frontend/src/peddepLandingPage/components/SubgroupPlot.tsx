@@ -1,9 +1,6 @@
 import * as React from "react";
-import { useEffect, useContext, useState, useMemo, useRef } from "react";
-import { Button } from "react-bootstrap";
-import { getDapi } from "src/common/utilities/context";
+import { useEffect, useMemo, useRef } from "react";
 import styles from "src/peddepLandingPage/styles/PeddepPage.scss";
-import { ApiContext } from "@depmap/api";
 import Plotly from "plotly.js";
 
 interface SubGroupPlotProps {
@@ -24,7 +21,7 @@ export default function SubGroupPlot(props: SubGroupPlotProps) {
         acc[subtype] = 1;
       }
       return acc;
-    }, {});
+    }, {} as any);
 
     return [
       {
@@ -38,36 +35,22 @@ export default function SubGroupPlot(props: SubGroupPlotProps) {
       },
     ];
   }, [subgroup, subtypes]);
-  console.log(traceData);
+
   useEffect(() => {
-    const layout = {
-      // annotations: [
-      //   {
-      //     // font: {
-      //     //   size: 20
-      //     // },
-      //     text: 'label',
-      //     // x: annotatedPoint.Cor,
-      //     // y: yPos,
-      //     xref: "x",
-      //     yref: "y",
-      //     arrowhead: 0,
-      //     ax: -50,
-      //     ay: 20,
-      //     standoff: 4,
-      //   }
-      // ],
-      height: 200,
-      // width: 600,
-      showlegend: false,
-      margin: {
-        l: 10,
-        r: 10,
-        t: 10,
-        b: 10,
-      },
-    };
-    Plotly.newPlot(plotRef.current, traceData, layout);
+    if (plotRef.current) {
+      const layout = {
+        // height: 300,
+        // width: 600,
+        showlegend: false,
+        margin: {
+          l: 10,
+          r: 10,
+          t: 10,
+          b: 10,
+        },
+      };
+      Plotly.newPlot(plotRef.current, traceData as Plotly.Data[], layout);
+    }
   }, [traceData]);
 
   return (
