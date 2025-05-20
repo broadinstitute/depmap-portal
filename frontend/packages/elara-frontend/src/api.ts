@@ -28,6 +28,7 @@ import {
   SampleTypeUpdateArgs,
   SearchDimenionsRequest,
   SearchDimenionsResponse,
+  SliceQuery,
   UploadFileResponse,
 } from "@depmap/types";
 import { Trace } from "src/trace";
@@ -672,6 +673,25 @@ export class ElaraApi {
       "POST",
       config
     );
+  }
+
+  fetchAssociations(sliceQuery: SliceQuery) {
+    return this._fetchWithJsonBody<{
+      dataset_name: string;
+      dimension_label: string;
+      associated_datasets: {
+        name: string;
+        dimension_type: string;
+        dataset_id: string;
+      }[];
+      associated_dimensions: {
+        correlation: number;
+        log10qvalue: number;
+        other_dataset_id: string;
+        other_dimension_given_id: string;
+        other_dimension_label: string;
+      }[];
+    }>("/temp/associations/query-slice", "POST", sliceQuery);
   }
 
   getDimensionTypes(): Promise<DimensionType[]> {
