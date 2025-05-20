@@ -9,7 +9,6 @@ source_modules=
     depmap.data_explorer_2
     depmap.download
     depmap.predictability
-    depmap.private_dataset
     depmap.tile
     depmap.user_uploads
 forbidden_modules=

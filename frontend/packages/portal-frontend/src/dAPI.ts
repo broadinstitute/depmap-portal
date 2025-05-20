@@ -469,13 +469,6 @@ export class DepmapApi {
     return this._fetch<Dataset[]>("/interactive/api/getDatasets");
   }
 
-  postCustomTaiga = (config: UserUploadArgs): Promise<UploadTask> => {
-    return this._postJson<UploadTask>(
-      "/interactive/api/dataset/add-taiga",
-      config
-    );
-  };
-
   postCustomCsv = (config: UserUploadArgs): Promise<UploadTask> => {
     return this._postMultipart<UploadTask>(
       "/interactive/api/dataset/add-csv",
@@ -488,24 +481,6 @@ export class DepmapApi {
       "/interactive/api/dataset/add-csv-one-row",
       config
     );
-  }
-
-  uploadPrivateDataset(data: UserUploadArgs): Promise<UploadTask> {
-    const queryParams = {
-      displayName: data.displayName,
-      units: data.units,
-      ownerId: data.selectedGroup,
-      transposed: data.transposed,
-      dataType: data.selectedDataType,
-    };
-    return this._postMultipart<UploadTask>(
-      `/api/upload/private?${encodeParams(queryParams)}`,
-      { uploadFile: data.uploadFile }
-    );
-  }
-
-  getPrivateDatasetUploadStatus(taskId: string): Promise<UploadTask> {
-    return this._fetch(`/private_dataset/upload_status/${taskId}`);
   }
 
   entityLookup(
@@ -987,10 +962,6 @@ export class DepmapApi {
     return this._fetch<CompoundSummaryTableRaw>(
       `/compound_dashboard/summary_table/${datasetId}`
     );
-  }
-
-  deletePrivateDatasets(dataset_ids: Array<string>) {
-    return this._deleteJson("/private_dataset/delete", { dataset_ids });
   }
 
   getEntitySummary(

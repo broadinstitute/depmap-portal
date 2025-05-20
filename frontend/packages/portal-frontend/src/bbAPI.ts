@@ -33,7 +33,6 @@ import { Trace } from "src/trace";
 import {
   UploadTask,
   UploadTaskUserError,
-  UserUploadArgs,
 } from "@depmap/user-upload";
 import { encodeParams } from "@depmap/utils";
 
@@ -415,13 +414,6 @@ export class BreadboxApi {
       }
     );
   }
-
-  postCustomTaiga = (config: UserUploadArgs): Promise<UploadTask> => {
-    if (!config) {
-      console.log("Not implemented");
-    }
-    return Promise.reject(Error("postCustomTaiga() not implemented"));
-  };
 
   postCustomCsv = (config: AddDatasetOneRowArgs): Promise<UploadTask> => {
     const { uploadFile } = config;
