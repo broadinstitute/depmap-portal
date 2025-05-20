@@ -88,11 +88,16 @@ def SessionLocalWithUser(user: str) -> SessionWithUser:
     settings = get_settings()
 
     engine = create_engine(
-        settings.sqlalchemy_database_url, connect_args={"check_same_thread": False},
+        settings.sqlalchemy_database_url,
+        connect_args={"check_same_thread": False},
+        future=True,
     )
 
     l = sessionmaker(
-        autocommit=False, autoflush=False, bind=engine, class_=SessionWithUser
+        autoflush=False,
+        bind=engine,
+        class_=SessionWithUser,
+        future=True,  # In SQLAlchemy 2.0, autocommit is deprecated
     )
     session = l()
     session.set_user(user)
