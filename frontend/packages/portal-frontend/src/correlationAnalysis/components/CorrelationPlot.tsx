@@ -49,6 +49,8 @@ export default function CorrelationsPlot(props: CorrelationsPlotProps) {
     });
     const update = { "marker.opacity": traceHighlights };
 
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
     Plotly.restyle(volcanoPlotsRef.current, update, traceIndexes);
   }, [data, hasOtherSelectedFeatureTypeFeatures, selectedFeatures]);
 

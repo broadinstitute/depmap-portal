@@ -288,7 +288,8 @@ const PlotlyWrapper = React.forwardRef((props: PlotlyWrapperProps, ref) => {
     <div className="react-base-plot">
       {plotlyRefInitialized &&
         props.showWidgetOptions !== false &&
-        props.idPrefixForUniqueness !== undefined && (
+        props.idPrefixForUniqueness &&
+        props.downloadIconWidgetProps && (
           <div className="react-base-plot-toolbar">
             <ButtonGroup>
               <DownloadIcon

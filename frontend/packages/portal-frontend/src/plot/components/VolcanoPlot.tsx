@@ -29,11 +29,9 @@ type VolcanoPlotProps = {
   // };
   onPointClick?: (point: Plotly.PlotDatum) => void;
   dragmodeWidgetOptions?: Array<PlotlyDragmode>;
-} & Partial<
-  Omit<
-    React.ComponentProps<typeof PlotlyWrapper>,
-    "plotlyParams" | "onPointClick"
-  >
+} & Omit<
+  React.ComponentProps<typeof PlotlyWrapper>,
+  "plotlyParams" | "onPointClick"
 >;
 /**
  * Forward any additional PlotlyWrapper props, with the exception of:
