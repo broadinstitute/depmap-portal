@@ -53,9 +53,13 @@ export default function CorrelationAnalysis(props: CorrelationAnalysisProps) {
         const data = await getCorrelationData();
         const roundedData = data.map((d) => {
           const dataMod = {};
-          // eslint-disable-next-line no-restricted-syntax
+          // eslint-disable-next-line no-restricted-syntax, guard-for-in
           for (const key in d) {
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-ignore
             const value = d[key];
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-ignore
             dataMod[key] =
               typeof value === "number" ? parseFloat(value.toFixed(2)) : value;
           }
@@ -95,7 +99,7 @@ export default function CorrelationAnalysis(props: CorrelationAnalysisProps) {
       );
       console.log(columnNames);
       console.log(columnData);
-      doses = Array.from(new Set(columnData["Dose"])).sort((a, b) => {
+      doses = Array.from(new Set(columnData["Dose"])).sort((a: any, b: any) => {
         return a - b;
       }); // log2auc should be first
       console.log("DOSES: ", doses);
@@ -204,7 +208,7 @@ export default function CorrelationAnalysis(props: CorrelationAnalysisProps) {
             )?.hex,
           };
         }
-        const columnNamesToPlotVariables = {
+        const columnNamesToPlotVariables: any = {
           "Correlation Coefficient": "x",
           "-log10 qval": "y",
           // Feature: "label",
@@ -269,7 +273,7 @@ export default function CorrelationAnalysis(props: CorrelationAnalysisProps) {
       >
         <CorrelationFilters
           getDatasets={getCompoundDatasets}
-          onChangeDataset={(dataset: string) => console.log(dataset)}
+          onChangeDataset={(dataset: string | null) => console.log(dataset)}
           getFeatureTypes={getFeatureTypes}
           onChangeFeatureTypes={(featureTypes: string[]) =>
             setSelectedFeatureTypes(featureTypes !== null ? featureTypes : [])

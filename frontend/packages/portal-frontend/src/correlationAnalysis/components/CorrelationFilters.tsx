@@ -11,7 +11,7 @@ export interface FilterOption {
 
 interface CorrelationFiltersProps {
   getDatasets: () => Promise<any[]>;
-  onChangeDataset: (dataset: string) => void; // undetermined for now
+  onChangeDataset: (dataset: string | null) => void; // undetermined for now
   getFeatureTypes: () => Promise<any[]>;
   onChangeFeatureTypes: (featureTypes: string[]) => void;
   doses: string[];
