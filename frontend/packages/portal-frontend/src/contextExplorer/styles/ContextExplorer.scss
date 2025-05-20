@@ -76,6 +76,7 @@
 .header {
   padding-left: 20px;
   margin-bottom: 18px;
+  max-width: 150ch;
 
   h1 {
     color: #333333;
@@ -174,13 +175,15 @@
 .overviewPlotWrapper {
   display: flex;
   flex-direction: row;
+  margin-left: 20px;
   .datatypeSelector {
     margin-right: 10px;
     align-self: normal;
     font-family: roboto;
-    font-size: 16px;
+    font-size: 14px;
     font-weight: 500;
     margin-top: 5px;
+    width: 180px;
 
     & > h5 {
       font-style: normal;
@@ -220,10 +223,6 @@
   .plot {
     text-align: center;
     width: 75%;
-
-    @media (max-width: 1150px) {
-      width: 40%;
-    }
 
     .plotHeaders {
       align-content: flex-start;
@@ -345,6 +344,7 @@
   margin-left: 14px;
   margin-right: 14px;
   margin-bottom: 12px;
+  max-width: 95%;
   overflow: hidden;
 
   @media (max-width: 1050px) {
@@ -360,6 +360,9 @@
     margin-right: 20px;
     font-weight: 500;
     font-size: 12px;
+    // max-width: 70%;
+    // min-width: 30%;
+    // overflow: hidden;
   }
 }
 
@@ -639,7 +642,7 @@
 
 .overviewGraphHeader {
   margin-left: 20px;
-  margin-bottom: 20px;
+  margin-bottom: 10px;
 
   & > h4 {
     font-weight: normal;
@@ -773,5 +776,11 @@
     &:not(:last-child) {
       border-bottom: none;
     }
+  }
+}
+
+.EnrichmentTile {
+  .panel-default > .panel-heading {
+    background-color: transparent !important;
   }
 }

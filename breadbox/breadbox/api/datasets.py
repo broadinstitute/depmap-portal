@@ -110,7 +110,7 @@ def get_dataset_features(
     """
     dataset = dataset_crud.get_dataset(db=db, user=user, dataset_id=dataset_id)
     if dataset is None:
-        raise HTTPException(404, "Dataset not found")
+        raise HTTPException(404, f"Dataset '{dataset_id}' not found")
 
     feature_labels_by_id = metadata_service.get_matrix_dataset_feature_labels_by_id(
         db=db, user=user, dataset=dataset,
@@ -133,7 +133,7 @@ def get_dataset_samples(
     """
     dataset = dataset_crud.get_dataset(db=db, user=user, dataset_id=dataset_id)
     if dataset is None:
-        raise HTTPException(404, "Dataset not found")
+        raise HTTPException(404, f"Dataset '{dataset_id}' not found")
 
     sample_labels_by_id = metadata_service.get_matrix_dataset_sample_labels_by_id(
         db=db, user=user, dataset=dataset,
@@ -324,6 +324,8 @@ def get_matrix_dataset_data(
         ),
     ] = False,
 ):
+    if dataset.format != "matrix_dataset":
+        raise UserError("This endpoint only supports matrix_datasets. Use the `/tabular` endpoint instead.")
     try:
         df = dataset_service.get_subsetted_matrix_dataset_df(
             db,
@@ -355,6 +357,8 @@ def get_tabular_dataset_data(
         ),
     ] = False,
 ):
+    if dataset.format != "tabular_dataset":
+        raise UserError("This endpoint only supports tabular datasets. Use the `/matrix` endpoint instead.")
     try:
         df = dataset_service.get_subsetted_tabular_dataset_df(
             db, user, dataset, tabular_dimensions_info, strict
@@ -396,6 +400,8 @@ def get_dataset_data(
     ] = None,
 ):
     """Get dataset dataframe subset given the features and samples. Filtering should be possible using either labels (cell line name, gene name, etc.) or ids (depmap_id, entrez_id, etc.). If features or samples are not specified, return all features or samples"""
+    if dataset.format != "matrix_dataset":
+        raise UserError("This endpoint only supports matrix_datasets. Use the `/tabular` endpoint instead.")
     try:
         dim_info = MatrixDimensionsInfo(
             features=features,
@@ -585,7 +591,7 @@ def delete_dataset(
     """
     dataset = dataset_crud.get_dataset(db, user, dataset_id)
     if dataset is None:
-        raise HTTPException(404, "Dataset not found")
+        raise HTTPException(404, f"Dataset '{dataset_id}' not found")
 
     if not dataset_crud.user_has_access_to_group(
         dataset.group, user, write_access=True

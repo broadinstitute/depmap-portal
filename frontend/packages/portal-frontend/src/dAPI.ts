@@ -46,6 +46,7 @@ import {
   DimensionType,
   DimensionTypeAddArgs,
   DimensionTypeUpdateArgs,
+  SliceQuery,
 } from "@depmap/types";
 import { TDASummaryTable } from "src/tda/models/types";
 import { CompoundSummaryTableRaw } from "src/compoundDashboard/models/types";
@@ -76,6 +77,7 @@ import {
   AvailabilitySummary,
   DataAvailabilitySummary,
   ContextAnalysisTableType,
+  EnrichedLineagesTileData,
 } from "src/contextExplorer/models/types";
 import {
   DataAvailability,
@@ -467,13 +469,6 @@ export class DepmapApi {
     return this._fetch<Dataset[]>("/interactive/api/getDatasets");
   }
 
-  postCustomTaiga = (config: UserUploadArgs): Promise<UploadTask> => {
-    return this._postJson<UploadTask>(
-      "/interactive/api/dataset/add-taiga",
-      config
-    );
-  };
-
   postCustomCsv = (config: UserUploadArgs): Promise<UploadTask> => {
     return this._postMultipart<UploadTask>(
       "/interactive/api/dataset/add-csv",
@@ -486,24 +481,6 @@ export class DepmapApi {
       "/interactive/api/dataset/add-csv-one-row",
       config
     );
-  }
-
-  uploadPrivateDataset(data: UserUploadArgs): Promise<UploadTask> {
-    const queryParams = {
-      displayName: data.displayName,
-      units: data.units,
-      ownerId: data.selectedGroup,
-      transposed: data.transposed,
-      dataType: data.selectedDataType,
-    };
-    return this._postMultipart<UploadTask>(
-      `/api/upload/private?${encodeParams(queryParams)}`,
-      { uploadFile: data.uploadFile }
-    );
-  }
-
-  getPrivateDatasetUploadStatus(taskId: string): Promise<UploadTask> {
-    return this._fetch(`/private_dataset/upload_status/${taskId}`);
   }
 
   entityLookup(
@@ -521,10 +498,6 @@ export class DepmapApi {
 
   getTaskStatus(id: string): Promise<CeleryTask> {
     return this._fetch<CeleryTask>(`/api/task/${id}`);
-  }
-
-  getDownloads(): Promise<Downloads> {
-    return this._fetch<Downloads>("/download/api/downloads");
   }
 
   getAllDataTabDownloadData(): Promise<Downloads> {
@@ -689,7 +662,8 @@ export class DepmapApi {
     entity_full_label: string,
     max_fdr: number,
     min_abs_effect_size: number,
-    min_frac_dep_in: number
+    min_frac_dep_in: number,
+    doShowPositiveEffectSizes: boolean
   ): Promise<ContextPlotBoxData> {
     const params: any = {
       selected_subtype_code,
@@ -701,10 +675,27 @@ export class DepmapApi {
       max_fdr,
       min_abs_effect_size,
       min_frac_dep_in,
+      show_positive_effect_sizes: doShowPositiveEffectSizes,
     };
 
     return this._fetchIncludeContextExplCache<ContextPlotBoxData>(
       `/api/context_explorer/context_box_plot_data?${encodeParams(params)}`
+    );
+  }
+
+  getEnrichmentTileData(
+    tree_type: string,
+    entity_type: string,
+    entity_label: string
+  ): Promise<EnrichedLineagesTileData> {
+    const params: any = {
+      tree_type,
+      entity_type,
+      entity_label,
+    };
+
+    return this._fetch<EnrichedLineagesTileData>(
+      `/api/context_explorer/enriched_lineages_tile?${encodeParams(params)}`
     );
   }
 
@@ -973,10 +964,6 @@ export class DepmapApi {
     );
   }
 
-  deletePrivateDatasets(dataset_ids: Array<string>) {
-    return this._deleteJson("/private_dataset/delete", { dataset_ids });
-  }
-
   getEntitySummary(
     entity_id: number,
     dep_enum_name: string,
@@ -1188,4 +1175,8 @@ export class DepmapApi {
   deleteGroupEntry = (groupEntryId: string) => {
     return Promise.reject(Error("Wrong api used. Check ApiContext"));
   };
+
+  fetchAssociations(sliceQuery: SliceQuery) {
+    return Promise.reject(Error("Wrong api used. Check ApiContext"));
+  }
 }

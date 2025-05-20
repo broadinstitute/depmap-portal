@@ -28,6 +28,11 @@ def get_cas_db_path():
     return os.path.join(settings.filestore_location, "cas.sqlite3")
 
 
+def get_user_settings_db_path():
+    settings = get_settings()
+    return os.path.join(settings.filestore_location, "user_settings.sqlite3")
+
+
 def get_user(request: Request) -> str:
     # try to get from the oauth email address
     user = request.headers.get("X-Forwarded-Email")
@@ -55,5 +60,5 @@ def get_dataset(
     dataset = dataset_crud.get_dataset(db, user, dataset_id)
 
     if dataset is None:
-        raise HTTPException(404, detail="Dataset not found")
+        raise HTTPException(404, detail=f"Dataset '{dataset_id}' not found")
     return dataset

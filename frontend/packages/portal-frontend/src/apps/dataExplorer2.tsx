@@ -14,7 +14,7 @@ import ErrorBoundary from "src/common/components/ErrorBoundary";
 import {
   evaluateLegacyContext,
   fetchAnalysisResult,
-  fetchAssociations,
+  fetchLegacyAssociations,
   fetchContextSummary,
   fetchCorrelation,
   fetchDatasetDetails,
@@ -66,7 +66,7 @@ const App = () => {
               fetchDatasetsMatchingContextIncludingEntities
             }
             fetchAnalysisResult={fetchAnalysisResult}
-            fetchAssociations={fetchAssociations}
+            fetchLegacyAssociations={fetchLegacyAssociations}
             fetchContextSummary={fetchContextSummary}
             fetchMetadataColumn={fetchMetadataColumn}
             fetchCorrelation={fetchCorrelation}

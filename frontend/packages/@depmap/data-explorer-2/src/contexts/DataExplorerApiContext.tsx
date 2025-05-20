@@ -4,6 +4,7 @@ import {
   DataExplorerContextVariable,
   Dataset,
   DimensionType,
+  SliceQuery,
 } from "@depmap/types";
 
 const defaultValue = {
@@ -67,6 +68,28 @@ const defaultValue = {
       dimensionTypeName,
       dataset_id,
     });
+    throw new Error("Not implemented");
+  },
+
+  fetchAssociations: (
+    sliceQuery: SliceQuery
+  ): Promise<{
+    dataset_name: string;
+    dimension_label: string;
+    associated_datasets: {
+      name: string;
+      dimension_type: string;
+      dataset_id: string;
+    }[];
+    associated_dimensions: {
+      correlation: number;
+      log10qvalue: number;
+      other_dataset_id: string;
+      other_dimension_given_id: string;
+      other_dimension_label: string;
+    }[];
+  }> => {
+    window.console.log("fetchAssociations:", { sliceQuery });
     throw new Error("Not implemented");
   },
 };

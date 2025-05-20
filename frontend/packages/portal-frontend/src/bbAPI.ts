@@ -27,13 +27,13 @@ import {
   SearchDimenionsRequest,
   SearchDimenionsResponse,
   TabularDatasetDataArgs,
+  SliceQuery,
   UploadFileResponse,
 } from "@depmap/types";
 import { Trace } from "src/trace";
 import {
   UploadTask,
   UploadTaskUserError,
-  UserUploadArgs,
 } from "@depmap/user-upload";
 import { encodeParams } from "@depmap/utils";
 
@@ -428,13 +428,6 @@ export class BreadboxApi {
     );
   }
 
-  postCustomTaiga = (config: UserUploadArgs): Promise<UploadTask> => {
-    if (!config) {
-      console.log("Not implemented");
-    }
-    return Promise.reject(Error("postCustomTaiga() not implemented"));
-  };
-
   postCustomCsv = (config: AddDatasetOneRowArgs): Promise<UploadTask> => {
     const { uploadFile } = config;
     const { name } = uploadFile;
@@ -555,6 +548,25 @@ export class BreadboxApi {
       "POST",
       config
     );
+  }
+
+  fetchAssociations(sliceQuery: SliceQuery) {
+    return this._fetchWithJsonBody<{
+      dataset_name: string;
+      dimension_label: string;
+      associated_datasets: {
+        name: string;
+        dimension_type: string;
+        dataset_id: string;
+      }[];
+      associated_dimensions: {
+        correlation: number;
+        log10qvalue: number;
+        other_dataset_id: string;
+        other_dimension_given_id: string;
+        other_dimension_label: string;
+      }[];
+    }>("/temp/associations/query-slice", "POST", sliceQuery);
   }
 
   _fetchWithJsonBody = <T>(

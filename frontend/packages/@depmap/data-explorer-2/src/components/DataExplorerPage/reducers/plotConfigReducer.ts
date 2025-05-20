@@ -48,6 +48,10 @@ export type PlotConfigReducerAction =
         dataset_id: string;
         slice_label: string;
         slice_type: string;
+        // `given_id` is optional to work with the legacy Portal as the backend.
+        // With Breadbox-as-the-backend (currently only supported in Elrara),
+        // given_id is required.
+        given_id?: string;
       };
     };
 
@@ -398,7 +402,7 @@ function plotConfigReducer(
     }
 
     case "select_scatter_y_slice": {
-      const { dataset_id, slice_label, slice_type } = action.payload;
+      const { dataset_id, slice_label, slice_type, given_id } = action.payload;
 
       return {
         ...plot,
@@ -412,8 +416,10 @@ function plotConfigReducer(
             dataset_id,
             context: {
               name: slice_label,
-              context_type: slice_type,
-              expr: { "==": [{ var: "entity_label" }, slice_label] },
+              [given_id ? "dimension_type" : "context_type"]: slice_type,
+              expr: given_id
+                ? { "==": [{ var: "given_id" }, given_id] }
+                : { "==": [{ var: "entity_label" }, slice_label] },
             },
           },
         },

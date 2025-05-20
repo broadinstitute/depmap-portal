@@ -1,26 +1,19 @@
 # -*- coding: utf-8 -*-
 import hashlib
 from base64 import urlsafe_b64encode
-from sqlitedict import SqliteDict
 from typing import Optional
 from google.cloud import storage
+from . import kv_store
 
 
 def get_value(db_path: str, key: str) -> Optional[str]:
-    with SqliteDict(db_path) as db:
-        blob = db.get(key)
-        if blob is None:
-            return None
-        return blob.decode("utf8")
+    return kv_store.get_value(db_path, key)
 
 
 def set_value(db_path: str, value: str) -> str:
     value_bytes = value.encode("utf8")
     key = urlsafe_b64encode(hashlib.sha256(value_bytes).digest()).decode("utf8")
-    with SqliteDict(db_path) as db:
-        db[key] = value_bytes
-        db.commit()
-    return key
+    return kv_store.set_value(db_path, key, value_bytes)
 
 
 ##########

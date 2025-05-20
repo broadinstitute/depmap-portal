@@ -30,6 +30,7 @@ const defaultValue = {
     dimension_type: string
   ): Promise<{
     dataset_ids: string[];
+    given_ids: (string | null)[];
     dataset_labels: string[];
     units: Record<string, number[]>;
     data_types: Record<string, number[]>;
@@ -123,7 +124,7 @@ const defaultValue = {
     throw new Error("Not implemented");
   },
 
-  fetchAssociations: (
+  fetchLegacyAssociations: (
     dataset_id: string,
     slice_label: string
   ): Promise<{
@@ -137,7 +138,7 @@ const defaultValue = {
       other_slice_id: string;
     }[];
   }> => {
-    window.console.log("fetchAssociations:", { dataset_id, slice_label });
+    window.console.log("fetchLegacyAssociations:", { dataset_id, slice_label });
     throw new Error("Not implemented");
   },
 
@@ -217,7 +218,7 @@ const defaultValue = {
         isHighCardinality?: boolean;
         isPartialSliceId?: boolean;
         sliceTypeLabel?: string;
-        isBreadboxMetadata?: boolean;
+        isLegacy?: boolean;
         isIdColumn?: boolean;
         isLabelColumn?: boolean;
       }

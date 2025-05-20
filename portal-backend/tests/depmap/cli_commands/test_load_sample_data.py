@@ -1,6 +1,6 @@
 import requests
 from unittest.mock import Mock
-from loader import nonstandard_private_loader, taiga_id_loader
+from loader import taiga_id_loader
 from depmap.cli_commands.db_load_commands import load_sample_data
 from tests.utilities.override_fixture import override
 from depmap.read_config import read_config

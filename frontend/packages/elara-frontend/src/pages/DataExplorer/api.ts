@@ -5,6 +5,7 @@ import {
   DataExplorerContextVariable,
   Dataset,
   DimensionType,
+  SliceQuery,
 } from "@depmap/types";
 import { compareCaseInsensitive } from "@depmap/utils";
 
@@ -270,4 +271,23 @@ export async function fetchDatasetIdentifiers(
   const featuresOrSamples = dimType.axis === "feature" ? "features" : "samples";
 
   return fetchJson<Identifiers>(`/datasets/${featuresOrSamples}/${dataset_id}`);
+}
+
+export async function fetchAssociations(sliceQuery: SliceQuery) {
+  return postJson<{
+    dataset_name: string;
+    dimension_label: string;
+    associated_datasets: {
+      name: string;
+      dimension_type: string;
+      dataset_id: string;
+    }[];
+    associated_dimensions: {
+      correlation: number;
+      log10qvalue: number;
+      other_dataset_id: string;
+      other_dimension_given_id: string;
+      other_dimension_label: string;
+    }[];
+  }>("/temp/associations/query-slice", sliceQuery);
 }

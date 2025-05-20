@@ -72,17 +72,30 @@ async function convertSearchResultToOptions(
   dataType: string | null,
   dataset_id: string | null
 ) {
+  let error = false;
+
+  const asyncData = await (() => {
+    return Promise.all([
+      fetchDataTypeCompatibleIds(api, slice_type, dataType),
+      fetchDataVersionCompatibleIds(api, slice_type, dataset_id),
+      fetchDimensionTypeDisplayName(api, slice_type),
+      fetchDatasetName(api, dataset_id),
+    ]).catch((e) => {
+      window.console.log(e);
+      error = true;
+    });
+  })();
+
+  if (error) {
+    return [];
+  }
+
   const [
     dataTypeCompatibleIds,
     dataVersionCompatibleIds,
     dimesionTypeDisplayName,
     datasetName,
-  ] = await Promise.all([
-    fetchDataTypeCompatibleIds(api, slice_type, dataType),
-    fetchDataVersionCompatibleIds(api, slice_type, dataset_id),
-    fetchDimensionTypeDisplayName(api, slice_type),
-    fetchDatasetName(api, dataset_id),
-  ]);
+  ] = asyncData!;
 
   return result
     .map(({ id, label, matching_properties }) => {

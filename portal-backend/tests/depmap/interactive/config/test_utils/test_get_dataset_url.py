@@ -18,13 +18,11 @@ from tests.utilities import interactive_test_utils
 from tests.factories import (
     DependencyDatasetFactory,
     NonstandardMatrixFactory,
-    PrivateDatasetMetadataFactory,
     CustomDatasetConfigFactory,
     TaigaAliasFactory,
 )
 from tests.depmap.utilities.test_url_utils import assert_url_contains_parts
 from tests.depmap.interactive.fixtures import lineage_dataset_id
-from tests.utilities.access_control import request_as_user, get_canary_group_id
 from tests.utilities.override_fixture import override
 
 nonstandard_dataset_with_download_id = "test-nonstandard-with-download-id.1"
@@ -141,7 +139,6 @@ def test_get_dataset_url(app, empty_db_mock_downloads):
         context and lineage datasets (none)
         custom taiga (taiga)
         custom csv (none)
-        private dataset (none)
         uses canonical taiga id to match to download (standard with download)
         uses original (virtual) taiga id to link to taiga (standard without download)
 
@@ -177,9 +174,6 @@ def test_get_dataset_url(app, empty_db_mock_downloads):
         )
     )
     custom_dataset_config_csv = CustomDatasetConfigFactory()
-
-    private_dataset = PrivateDatasetMetadataFactory(owner_id=get_canary_group_id())
-    NonstandardMatrixFactory(private_dataset.dataset_id, owner_id=get_canary_group_id())
 
     empty_db_mock_downloads.session.flush()
 
@@ -220,6 +214,3 @@ def test_get_dataset_url(app, empty_db_mock_downloads):
 
     # custom csv (none)
     assert interactive_utils.get_dataset_url(custom_dataset_config_csv.uuid) is None
-
-    with request_as_user(app, "test@canary.com"):
-        assert interactive_utils.get_dataset_url(private_dataset.dataset_id) is None

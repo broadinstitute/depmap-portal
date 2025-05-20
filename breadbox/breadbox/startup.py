@@ -1,17 +1,15 @@
 import os
 import pathlib
-from google.cloud import error_reporting
 
 from fastapi.routing import APIRouter
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.datastructures import MutableHeaders
 
 from .api import api_router
 from .config import Settings
 from .ui import SinglePageApplication
-from .compute.celery import app as celery_app
 from .api.proxy import router as proxy_router
 from importlib.metadata import version
 
@@ -96,31 +94,3 @@ class OverrideMiddleWare:
         await self.app(scope, receive, send)
 
 
-class GCPExceptionReporter:
-    def __init__(self, breadbox_env: str):
-        self.service_name = "breadbox-" + breadbox_env
-        self.client = self._create_client() if not breadbox_env == "dev" else None
-
-    @property
-    def disabled(self):
-        return self.client is None
-
-    def _create_client(self):
-        return error_reporting.Client(service=self.service_name)
-
-    def _create_http_context(self, request: Request, status_code: int):
-        breadbox_http_context = error_reporting.HTTPContext(
-            method=request.scope["method"],
-            url=request.scope["root_path"] + request.scope["path"],
-            response_status_code=status_code,
-        )
-        return breadbox_http_context
-
-    def report(self, request: Request, status_code: int, user: str):
-        if self.client is None:
-            print("Error reporting disabled")
-            return
-
-        self.client.report_exception(
-            http_context=self._create_http_context(request, status_code), user=user
-        )

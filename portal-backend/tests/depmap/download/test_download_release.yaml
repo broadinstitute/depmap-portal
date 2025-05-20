@@ -7,11 +7,15 @@ description: This dataset contains long text description
 funding: null
 citation: This is a fake dev citation
 terms: depmap
+subtypes:
+  - code: crispr_screen
+    label: "CRISPR Screen"
 files:
   - name: gene_effect.csv
     type: genetic_dependency
     size: MB
     pipeline_name: ""
+    sub_type: crispr_screen
     url:
       bucket: depmap-dmc-downloads
       file_name: test/gene_effect.csv

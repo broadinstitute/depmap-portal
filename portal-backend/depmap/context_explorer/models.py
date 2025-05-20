@@ -71,6 +71,16 @@ class ContextNameInfo:
     node_level: int
 
 
+@dataclass
+class EnrichedLineagesTileData:
+    box_plot_data: ContextPlotBoxData
+    top_context_name_info: Union[ContextNameInfo, None]
+    selected_context_name_info: Union[ContextNameInfo, None]
+    dataset_name: str
+    dataset_display_name: str
+    context_explorer_url: str
+
+
 def _get_child_lineages_next_lineage_level_from_root_info(
     sorted: pd.DataFrame, current_level: int, current_code: str
 ) -> Tuple[Optional[List[str]], Optional[int]]:
@@ -410,6 +420,8 @@ class ContextAnalysis(Model):
         max_fdr: float,
         min_abs_effect_size: float,
         min_frac_dep_in: float,
+        show_positive_effect_sizes: bool,
+        out_group: str = "All Others",
     ):
         assert dataset_name in DependencyEnum.values()
 
@@ -418,19 +430,36 @@ class ContextAnalysis(Model):
         dependency_dataset_id = dependency_dataset.dependency_dataset_id
 
         if entity_type == "gene":
+            filters = (
+                and_(
+                    ContextAnalysis.out_group == out_group,
+                    ContextAnalysis.dependency_dataset_id == dependency_dataset_id,
+                    ContextAnalysis.entity_id == entity_id,
+                    ContextAnalysis.t_qval <= max_fdr,
+                    func.abs(ContextAnalysis.effect_size) >= min_abs_effect_size,
+                    ContextAnalysis.frac_dep_in >= min_frac_dep_in,
+                )
+                if show_positive_effect_sizes
+                else and_(
+                    ContextAnalysis.out_group == out_group,
+                    ContextAnalysis.dependency_dataset_id == dependency_dataset_id,
+                    ContextAnalysis.entity_id == entity_id,
+                    ContextAnalysis.t_qval <= max_fdr,
+                    ContextAnalysis.effect_size < 0,
+                    func.abs(ContextAnalysis.effect_size) >= min_abs_effect_size,
+                    ContextAnalysis.frac_dep_in >= min_frac_dep_in,
+                )
+            )
+
             analyses = (
-                ContextAnalysis.query.filter(
-                    and_(
-                        ContextAnalysis.dependency_dataset_id == dependency_dataset_id,
-                        ContextAnalysis.entity_id == entity_id,
-                        ContextAnalysis.t_qval <= max_fdr,
-                        func.abs(ContextAnalysis.effect_size) >= min_abs_effect_size,
-                        ContextAnalysis.frac_dep_in >= min_frac_dep_in,
-                    )
+                ContextAnalysis.query.filter(filters)
+                .join(
+                    SubtypeContext,
+                    SubtypeContext.subtype_code == ContextAnalysis.subtype_code,
                 )
                 .join(
                     SubtypeNode,
-                    SubtypeNode.subtype_code == ContextAnalysis.subtype_code,
+                    SubtypeNode.subtype_code == SubtypeContext.subtype_code,
                 )
                 .filter(SubtypeNode.tree_type == tree_type)
                 # frontend will be organized into cards based on level 0, so we need to make sure we know
@@ -442,18 +471,33 @@ class ContextAnalysis(Model):
 
             return pd.DataFrame(analyses)
         else:
+            filters = (
+                and_(
+                    ContextAnalysis.out_group == out_group,
+                    ContextAnalysis.dependency_dataset_id == dependency_dataset_id,
+                    ContextAnalysis.entity_id == entity_id,
+                    ContextAnalysis.t_qval <= max_fdr,
+                    func.abs(ContextAnalysis.effect_size) >= min_abs_effect_size,
+                )
+                if show_positive_effect_sizes
+                else and_(
+                    ContextAnalysis.out_group == out_group,
+                    ContextAnalysis.dependency_dataset_id == dependency_dataset_id,
+                    ContextAnalysis.entity_id == entity_id,
+                    ContextAnalysis.t_qval <= max_fdr,
+                    func.abs(ContextAnalysis.effect_size) >= min_abs_effect_size,
+                    ContextAnalysis.effect_size < 0,
+                )
+            )
             analyses = (
-                ContextAnalysis.query.filter(
-                    and_(
-                        ContextAnalysis.dependency_dataset_id == dependency_dataset_id,
-                        ContextAnalysis.entity_id == entity_id,
-                        ContextAnalysis.t_qval <= max_fdr,
-                        func.abs(ContextAnalysis.effect_size) >= min_abs_effect_size,
-                    )
+                ContextAnalysis.query.filter(filters)
+                .join(
+                    SubtypeContext,
+                    SubtypeContext.subtype_code == ContextAnalysis.subtype_code,
                 )
                 .join(
                     SubtypeNode,
-                    SubtypeNode.subtype_code == ContextAnalysis.subtype_code,
+                    SubtypeNode.subtype_code == SubtypeContext.subtype_code,
                 )
                 .filter(SubtypeNode.tree_type == tree_type)
                 .with_entities(SubtypeNode.level_0, SubtypeNode.subtype_code)
