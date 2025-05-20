@@ -18,12 +18,11 @@ from flask.cli import with_appcontext
 
 from depmap.access_control import PUBLIC_ACCESS_GROUP, all_records_visible
 from depmap.access_control.utils.initialize_current_auth import assume_user
-from depmap.app import enable_access_controls, setup_logging
+from depmap.app import setup_logging
 from depmap.database import checkpoint, transaction
 from depmap.dataset.models import Dataset, DependencyDataset
 from depmap.enums import BiomarkerEnum, DependencyEnum
 from depmap.extensions import db
-from depmap.interactive.nonstandard.models import PrivateDatasetMetadata
 from depmap.settings.dev import additional_dev_metadata
 from depmap.settings.shared import (
     DATASET_METADATA,
@@ -33,7 +32,6 @@ from depmap.settings.shared import (
 )
 from depmap.taiga_id.models import TaigaAlias
 from depmap.taiga_id.utils import get_taiga_client
-from depmap.user_uploads.tasks import _upload_transient_csv
 from depmap.utilities.filename_utils import get_base_name_without_extension
 from depmap.utilities.hdf5_utils import csv_to_hdf5, df_to_hdf5
 from loader import (
@@ -148,10 +146,7 @@ def _setup_logging():
 
 
 def db_create_all():
-    from depmap.app import create_filtered_views
-
     db.create_all()
-    create_filtered_views()
 
 
 @click.command("recreate_dev_db")
@@ -428,7 +423,6 @@ def _load_real_data(
     checkpoint: Callable,
     process_downloads: bool,
 ):
-    enable_access_controls()
 
     taiga_client = get_taiga_client()
 
@@ -918,15 +912,6 @@ def _load_real_data(
                         DependencyEnum(summary["dataset"]), summary_table
                     )
 
-    with checkpoint("canary-custom-dataset") as needed:
-        if needed:
-            # THIS IS ONLY FOR DEVELOPMENT WARNING PURPOSES
-            # THERE SHOULD BE NO LOADING OF CUSTOM DATASETS
-            # custom datasets are provided by users after app deploy
-            # this is just here to alert us of access control leakage
-            log.info("Loading canary custom dataset")
-            load_canary_custom_dataset()
-
     # load taiga aliases for everything else. this needs to happen after Datasets, TabularDatasets, and NonstandardDatasets are loaded
     db.session.commit()  # flush first, anything previously added
 
@@ -1030,7 +1015,6 @@ def load_sample_data(
         this (minus the taiga parts, which is currently only nonstandard and celligner)
     :return:
     """
-    enable_access_controls()
 
     if dep_datasets_config is None:
         dep_datasets_config = [
@@ -1350,12 +1334,6 @@ def load_sample_data(
 
         ensure_all_max_min_loaded()
 
-        # create a canary custom dataset for dev
-        # just as a warning of custom dataset leakage
-        if load_nonstandard:
-            print("Adding custom canary dataset")
-            load_canary_custom_dataset()
-
         if load_taiga_dependencies and load_nonstandard:
             # Nonstandard datasets used only in interactive
             for taiga_id in current_app.config["GET_NONSTANDARD_DATASETS"]():
@@ -1532,19 +1510,6 @@ def load_sample_data(
         dev_only_write_taiga_alias_table_to_cache(dev_taiga_alias_cache_path)
 
         global_search_loader.load_global_search_index()
-
-
-def load_canary_custom_dataset():
-    """
-    Production environments also have access to sample data
-    :return:
-    """
-
-    label = "Canary custom dataset"
-    units = "chirps"
-    is_transpose = True
-    fn = os.path.join(current_app.config["SAMPLE_DATA_DIR"], "dataset/canary.csv")
-    _upload_transient_csv(None, label, units, is_transpose, fn, False, False)
 
 
 def dev_only_read_cache_to_taiga_alias_table(cache_path):
