@@ -25,7 +25,7 @@ type VolcanoPlotProps = {
   annotations?: Array<Partial<Plotly.Annotations>>;
   highlightedPoints?: Array<number>;
   // resizer: PlotResizer;
-  onSelectedLabelChange: models.OnSelectedLabelChange;
+  onSelectedLabelChange?: models.OnSelectedLabelChange;
   // };
   onPointClick?: (point: Plotly.PlotDatum) => void;
   dragmodeWidgetOptions?: Array<PlotlyDragmode>;
@@ -52,14 +52,6 @@ export const VolcanoPlot = React.forwardRef((props: VolcanoPlotProps, ref) => {
     [plotlyRefState]
   );
 
-  const onPointClick = useMemo(() => {
-    return utils.withColorChange(
-      plotlyRefState as PlotHTMLElement,
-      props.data,
-      props.onSelectedLabelChange
-    );
-  }, [plotlyRefState, props.data, props.onSelectedLabelChange]);
-
   function buildPlotlyWrapper(plotlyParams: PlotlyParams) {
     return (
       <PlotlyWrapper
@@ -71,6 +63,7 @@ export const VolcanoPlot = React.forwardRef((props: VolcanoPlotProps, ref) => {
         onPointClick={props.onPointClick}
         idPrefixForUniqueness={props.idPrefixForUniqueness}
         dragmodeWidgetOptions={props.dragmodeWidgetOptions}
+        showWidgetOptions={false}
       />
     );
   }
