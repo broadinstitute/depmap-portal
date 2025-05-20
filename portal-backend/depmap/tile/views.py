@@ -137,42 +137,6 @@ def render_cell_line_tile(tile_name: str, cell_line: DepmapModel):
     return rendered_tile
 
 
-def get_cell_line_description_html(model: DepmapModel):
-    oncotree_primary_disease = (
-        model.oncotree_primary_disease if model.oncotree_primary_disease else None
-    )
-    oncotree_subtype = model.oncotree_subtype if model.oncotree_subtype else None
-    primary_or_metastasis = model.primary_or_metastasis
-    source_type = model.source_type
-    sex = model.sex
-    image = get_image_url(model.image_filename)
-
-    if model.lineage_is_unknown():
-        lineage = []
-    else:
-        lineages = sorted(model.cell_line.lineage.all(), key=lambda x: x.level)
-        lineage = [
-            {
-                "display_name": lineage.display_name,
-                "url": url_for("context.view_context", context_name=lineage.name)
-                if lineage.level < 5
-                else None,  # NOTE: We cannot provide context link for lineage levels 5-6 since context matrix is only built from lineage levels 1-4. Temporary until we are able to include these lineage levels to our context matrix
-            }
-            for lineage in lineages
-        ]
-
-    return render_template(
-        "tiles/cell_line_description.html",
-        oncotree_primary_disease=oncotree_primary_disease,
-        oncotree_subtype=oncotree_subtype,
-        lineage=lineage,
-        primary_or_metastasis=primary_or_metastasis,
-        source_type=source_type,
-        sex=sex,
-        image=image,
-    )
-
-
 def get_cell_line_metmap_html(cell_line: DepmapModel):
     metmap_models = MetMap500.get_all_by_depmap_id(cell_line.model_id)
     metmap_data = [model.serialize for model in metmap_models]

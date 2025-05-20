@@ -445,6 +445,17 @@ function mergeDataAvailability(
     (item) => item[1]
   );
 
+  const orderedModelIds = allContextDatasetDataAvail.all_depmap_ids.filter(
+    (indexedModel) => selectedModelIds.includes(indexedModel[1])
+  );
+  const indexedOrderedModelIds: [
+    number,
+    string
+  ][] = orderedModelIds.map((modelId: [number, string], index: number) => [
+    index,
+    modelId[1],
+  ]);
+
   const vals: number[][] = [];
   const dataTypes: string[] = [];
   allContextDatasetDataAvail.values.forEach((row: number[], index: number) => {
@@ -458,7 +469,7 @@ function mergeDataAvailability(
   const orderedDataTypes = [...dataTypes];
   const orderedVals = [...vals];
   const mergedDataAvail = {
-    all_depmap_ids: subtypeDataAvail.all_depmap_ids,
+    all_depmap_ids: indexedOrderedModelIds,
     data_types: [...orderedDataTypes, ...subtypeDataAvail.data_types].reverse(),
     values: [...orderedVals, ...subtypeDataAvail.values].reverse(),
   };
@@ -700,3 +711,24 @@ export const ONCREF_TABLE_DESCRIPTION =
   "The filters below can be used to adjust the data displayed in the plots and table. By default only enriched sensitivities are shown, but relatively depleted sensitivities can be viewed by checking “include positive effect sizes”.";
 export const REPURPOSING_TABLE_DESCRIPTION =
   "The filters below can be used to adjust the data displayed in the plots and table. By default only enriched sensitivities are shown, but relatively depleted sensitivities can be viewed by checking “include positive effect sizes”.";
+
+export const GENE_DETAIL_TOOLTIP =
+  "Lineages and/or subtypes that have, on average, a stronger dependency on this gene compared to all other models. Enriched lineages/subtypes are selected based on default Context Explorer filters (T-test FDR<0.1, avg. gene effect difference < -0.25 and min. 1 dependent in-group model).";
+
+export const ONC_DETAIL_TOOLTIP =
+  "Lineages and/or subtypes that have, on average, a stronger sensitivity to this compound compared to all other models. Enriched lineages/subtypes are selected based on default Context Explorer filters (T-test FDR<0.1, avg. AUC difference < -0.1).";
+
+export const REP_DETAIL_TOOLTIP =
+  "Lineages and/or subtypes that have, on average, a stronger sensitivity to this compound compared to all other models. Enriched lineages/subtypes are selected based on default Context Explorer filters (T-test FDR<0.1, avg. log2(Viability) difference < -0.5).";
+
+export function getDetailPanelTooltip(datasetId: ContextExplorerDatasets) {
+  if (datasetId === ContextExplorerDatasets.Prism_oncology_AUC) {
+    return ONC_DETAIL_TOOLTIP;
+  }
+
+  if (datasetId === ContextExplorerDatasets.Rep_all_single_pt) {
+    return REP_DETAIL_TOOLTIP;
+  }
+
+  return GENE_DETAIL_TOOLTIP;
+}

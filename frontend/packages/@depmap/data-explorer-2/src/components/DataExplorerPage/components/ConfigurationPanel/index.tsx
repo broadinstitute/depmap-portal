@@ -26,6 +26,12 @@ interface Props {
   onClickSwapAxisConfigs: () => void;
 }
 
+const xFeatureTypeHasAssociations = (slice_type?: string) => {
+  return isElara
+    ? true
+    : ["gene", "compound_experiment"].includes(slice_type as string);
+};
+
 function ConfigurationPanel({
   plot,
   dispatch,
@@ -35,15 +41,12 @@ function ConfigurationPanel({
   onClickSwapAxisConfigs,
 }: Props) {
   const showAssocations = Boolean(
-    !isElara &&
-      plot.index_type === "depmap_model" &&
+    plot.index_type === "depmap_model" &&
       plot.dimensions?.x &&
       plot.dimensions.x.context &&
       plot.dimensions.x.dataset_id &&
       plot.dimensions.x.axis_type === "raw_slice" &&
-      ["gene", "compound_experiment"].includes(
-        plot.dimensions.x.slice_type as string
-      )
+      xFeatureTypeHasAssociations(plot.dimensions.x.slice_type)
   );
 
   return (

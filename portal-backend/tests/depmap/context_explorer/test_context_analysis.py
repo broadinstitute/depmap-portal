@@ -1,5 +1,8 @@
 from dataclasses import dataclass
 import dataclasses
+from depmap.cell_line.models_new import DepmapModel
+from depmap.cell_line.views import get_subtype_tree_info
+from depmap.context.models_new import SubtypeContext, TreeType
 from depmap.context_explorer import box_plot_utils
 from depmap.context_explorer.api import _get_analysis_data_table
 import pytest
@@ -1427,3 +1430,60 @@ def test_get_compound_experiment_id_from_entity_label():
         entity_full_label
     )
     assert compound_experiment_id == "BRD:BRD-K00005244-001-01-9"
+
+
+def test_get_subtype_tree_info(empty_db_mock_downloads):
+    (gene_a, gene_b, compound_a, compound_b,) = _setup_entities_and_dataset_id(
+        empty_db_mock_downloads, "gene", "Chronos_Combined"
+    )
+
+    model_id = "ACH-1es"
+
+    lineage_tree = get_subtype_tree_info(
+        tree_type=TreeType.Lineage.value, model_id=model_id
+    )
+
+    assert lineage_tree == [
+        {
+            "node_name": "BONE_NODE",
+            "subtype_code": "BONE",
+            "level": 0,
+            "context_explorer_url": "/context_explorer/?context=BONE",
+        },
+        {
+            "node_name": "ES_NODE",
+            "subtype_code": "ES",
+            "level": 1,
+            "context_explorer_url": "/context_explorer/?context=ES",
+        },
+    ]
+
+    molecular_subtype_tree = get_subtype_tree_info(
+        tree_type=TreeType.MolecularSubtype.value, model_id=model_id
+    )
+
+    assert molecular_subtype_tree == []
+
+    # Check that adding a molecular subtype will get only the molecular subtype tree info
+    depmap_model = DepmapModel.get_by_model_id(model_id)
+    SubtypeContextFactory(subtype_code="MOL_SUBTYPE", depmap_model=[depmap_model])
+    SubtypeNodeFactory(
+        subtype_code="MOL_SUBTYPE",
+        node_name="MOL_SUBTYPE_NODE",
+        node_level=0,
+        level_0="MOL_SUBTYPE",
+        tree_type="MolecularSubtype",
+    )
+    empty_db_mock_downloads.session.flush()
+
+    molecular_subtype_tree = get_subtype_tree_info(
+        tree_type=TreeType.MolecularSubtype.value, model_id=model_id
+    )
+    assert molecular_subtype_tree == [
+        {
+            "node_name": "MOL_SUBTYPE_NODE",
+            "subtype_code": "MOL_SUBTYPE",
+            "level": 0,
+            "context_explorer_url": "/context_explorer/?context=MOL_SUBTYPE",
+        }
+    ]

@@ -60,6 +60,8 @@ export interface DataExplorerPlotConfigDimension {
   aggregation: DataExplorerAggregation;
 }
 
+export type PartialDataExplorerPlotConfigDimension = PartialDeep<DataExplorerPlotConfigDimension>;
+
 export interface DataExplorerPlotConfigDimensionV2
   extends Omit<DataExplorerPlotConfigDimension, "context"> {
   context: DataExplorerContextV2;
