@@ -69,7 +69,6 @@ from breadbox_client.models import (
     GroupOut,
     MatrixDatasetParams,
     MatrixDatasetParamsDatasetMetadataType0,
-    MatrixDatasetParamsFormat,
     MatrixDatasetResponse,
     MatrixDimensionsInfo,
     SampleTypeOut,
@@ -78,14 +77,11 @@ from breadbox_client.models import (
     TableDatasetParams,
     TableDatasetParamsColumnsMetadata,
     TableDatasetParamsDatasetMetadataType0,
-    TableDatasetParamsFormat,
     TabularDatasetResponse,
     TabularDimensionsInfo,
     UpdateDimensionType,
     UploadFileResponse,
     ValueType,
-    MatrixDatasetUpdateParamsFormat,
-    TabularDatasetUpdateParamsFormat,
     MatrixDatasetParamsDataFileFormat,
 )
 
@@ -315,7 +311,7 @@ class BBClient:
             data_type=data_type,
             dataset_md5=uploaded_file.md5,
             file_ids=uploaded_file.file_ids,
-            format_=TableDatasetParamsFormat.TABULAR,
+            format_="tabular",
             group_id=group_id,
             index_type=index_type,
             name=name,
@@ -375,7 +371,7 @@ class BBClient:
             data_type=data_type,
             dataset_md5=uploaded_file.md5,
             file_ids=uploaded_file.file_ids,
-            format_=MatrixDatasetParamsFormat.MATRIX,
+            format_="matrix",
             group_id=group_id,
             sample_type=sample_type,
             units=units,
@@ -413,10 +409,10 @@ class BBClient:
 
         dataset = self.get_dataset(dataset_id)
         if isinstance(dataset, MatrixDatasetResponse):
-            param_factory = lambda **kwargs: MatrixDatasetUpdateParams(format_=MatrixDatasetUpdateParamsFormat.MATRIX, **kwargs)
+            param_factory = lambda **kwargs: MatrixDatasetUpdateParams(format_="matrix", **kwargs)
         else:
             assert isinstance(dataset, TabularDatasetResponse)
-            param_factory = lambda **kwargs: TabularDatasetUpdateParams(format_=TabularDatasetUpdateParamsFormat.TABULAR, **kwargs)
+            param_factory = lambda **kwargs: TabularDatasetUpdateParams(format_="tabular", **kwargs)
 
         metadata = DatasetMetadata.from_dict(dataset_metadata) if dataset_metadata is not None else UNSET
         params = param_factory(

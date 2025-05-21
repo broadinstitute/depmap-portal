@@ -101,6 +101,7 @@ def _get_feature_or_sample_metadata_df(
             TabularColumn.annotation_type,
         )
     )
+
     metadata_df = pd.read_sql(query.statement, query.session.connection())
 
     return metadata_df
@@ -143,7 +144,7 @@ def get_metadata_search_options(db: SessionWithUser, user: str, text: str):
     )
 
     dimension_names = pd.read_sql(
-        dimension_search_query.statement, dimension_search_query.session.connection()
+        dimension_search_query.statement, dimension_search_query.session.connection(),
     )
     dimension_names_list = dimension_names["given_id"].tolist()
 

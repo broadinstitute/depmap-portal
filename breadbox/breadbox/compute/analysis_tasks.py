@@ -54,9 +54,11 @@ def _format_breadbox_shim_slice_id(dataset_id: str, feature_id: str):
 
 def _subset_feature_df(query_series, index_subset=None) -> Tuple[List[str], list]:
     if index_subset is not None:
-        query_series = query_series.loc[
+        # Convert sets to lists since pandas 2.0+ doesn't support sets as indexers
+        intersection = list(
             set.intersection(set(query_series.index), set(index_subset))
-        ]
+        )
+        query_series = query_series.loc[intersection]
 
     return (
         query_series.index.tolist(),
@@ -133,12 +135,24 @@ def _get_filtered_dataset_and_query_feature(
         value_query_vector = [0 if x == "out" else 1 for x in query_values]
 
         # Validate that BOTH the in-group and out-group have cell lines present in the dataset
-        in_group_sample_ids = {depmap_model_ids[i] for i in range(len(query_values)) if query_values[i] == "in"}
-        out_group_sample_ids = {depmap_model_ids[i] for i in range(len(query_values)) if query_values[i] == "out"}
+        in_group_sample_ids = {
+            depmap_model_ids[i]
+            for i in range(len(query_values))
+            if query_values[i] == "in"
+        }
+        out_group_sample_ids = {
+            depmap_model_ids[i]
+            for i in range(len(query_values))
+            if query_values[i] == "out"
+        }
         if len(in_group_sample_ids.intersection(set(dataset_sample_ids))) == 0:
-            raise UserError("No cell lines in common between in-group and dataset selected")
+            raise UserError(
+                "No cell lines in common between in-group and dataset selected"
+            )
         if len(out_group_sample_ids.intersection(set(dataset_sample_ids))) == 0:
-            raise UserError("No cell lines in common between out-group and dataset selected")
+            raise UserError(
+                "No cell lines in common between out-group and dataset selected"
+            )
 
     elif (
         analysis_type == models.AnalysisType.pearson
@@ -296,7 +310,7 @@ def run_custom_analysis(
 
     update_message = _get_update_message_callback(self)
     update_message("Fetching data")
-    
+
     with db_context(user) as db:
 
         # All features and feature_indices for the dataset we're searching in

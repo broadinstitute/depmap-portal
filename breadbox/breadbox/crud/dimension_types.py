@@ -254,11 +254,16 @@ def get_dimension_type_labels_by_id(
     """
     For a given dimension, get all IDs and labels that exist in the metadata.
     """
-    return get_dimension_type_metadata_col(db, dimension_type_name, col_name="label", limit=limit)
+    return get_dimension_type_metadata_col(
+        db, dimension_type_name, col_name="label", limit=limit
+    )
 
 
 def get_dimension_type_metadata_col(
-    db: SessionWithUser, dimension_type_name: str, col_name: str, limit: Optional[int] = None,
+    db: SessionWithUser,
+    dimension_type_name: str,
+    col_name: str,
+    limit: Optional[int] = None,
 ) -> dict[str, str]:
     assert isinstance(col_name, str)
 

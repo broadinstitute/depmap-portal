@@ -16,5 +16,5 @@ def get_cell_line_selector_lines(
     settings: Settings = Depends(get_settings),
 ):
     df = partial_crud.get_cell_line_selector_lines(db)
-    # df = df.replace({np.nan: None})
+    df = df.replace({"nan": None})  # SQLALchemy 2.0 returns np.nan as 'nan'
     return {"cols": df.columns.tolist(), "data": df.values.tolist()}
