@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/naming-convention */
-import React, { useState } from "react";
+import React from "react";
 import DoseCurvesPlot from "src/contextExplorer/components/contextAnalysis/DoseCurvesPlot";
 import PlotControls from "src/plot/components/PlotControls";
 import PlotSpinner from "src/plot/components/PlotSpinner";
@@ -9,13 +9,19 @@ import { CompoundDoseCurveData } from "./types";
 interface DoseCurvesPlotSectionProps {
   curvesData: CompoundDoseCurveData | null;
   doseUnits: string;
+  selectedCurves: Set<number>;
+  handleClickCurve: (curveNumber: number) => void;
+  plotElement: ExtendedPlotType | null;
+  handleSetPlotElement?: (element: any) => void;
 }
 function DoseCurvesPlotSection({
   curvesData,
   doseUnits,
+  selectedCurves,
+  handleClickCurve,
+  plotElement,
+  handleSetPlotElement,
 }: DoseCurvesPlotSectionProps) {
-  const [plotElement, setPlotElement] = useState<ExtendedPlotType | null>(null);
-
   return (
     <div>
       <div>
@@ -42,11 +48,12 @@ function DoseCurvesPlotSection({
             minDose={curvesData.min_dose}
             maxDose={curvesData.max_dose}
             inGroupCurveParams={curvesData.curve_params}
-            handleSetPlotElement={(element: ExtendedPlotType | null) => {
-              setPlotElement(element);
-            }}
+            handleSetPlotElement={handleSetPlotElement}
             doseUnits={doseUnits}
             datasetUnits={curvesData.dataset_units}
+            includeMedianQuantileRegions={false}
+            handleClickCurve={handleClickCurve}
+            selectedCurves={selectedCurves}
           />
         )}
       </div>

@@ -25,7 +25,7 @@ export interface CurvesChartProps {
   xRange?: number[] | undefined;
   selectedCurves?: Set<number>;
   customHoverinfo?: PlotData["hoverinfo"];
-  onClickPoint?: (pointIndex: number) => void;
+  onClickCurve?: (pointIndex: number) => void;
   onMultiselect?: (pointIndices: number[]) => void;
   onClickResetSelection?: () => void;
   xAxisFontSize?: number;
@@ -51,7 +51,7 @@ function CurvesChart({
   customHoverinfo = undefined,
   selectedCurves = undefined,
   onLoad = () => {},
-  onClickPoint: onClickCurve = () => {},
+  onClickCurve = undefined,
   onMultiselect = () => {},
   onClickResetSelection = () => {},
   height = "auto",
@@ -223,36 +223,22 @@ function CurvesChart({
       Plotly.react(plot, plot.data, nextLayout, plot.config);
     };
 
-    const debounce = (func: any, wait: any) => {
-      let timeout: any;
-      return function executedFunction(...args: any[]) {
-        const later = () => {
-          timeout = null;
-          func(...args);
-        };
-        clearTimeout(timeout);
-        timeout = setTimeout(later, wait);
-      };
-    };
+    on("plotly_hover", (e: PlotMouseEvent) => {
+      const { curveNumber } = e.points[0];
+      Plotly.restyle(
+        plot,
+        {
+          line: { color: "rgba(60, 8, 128, 1)", width: 3 },
+        },
+        [curveNumber]
+      );
+    });
 
-    on(
-      "plotly_hover",
-      debounce((e: PlotMouseEvent) => {
-        const { curveNumber } = e.points[0];
-        Plotly.restyle(
-          plot,
-          {
-            line: { color: "red" },
-          },
-          [curveNumber]
-        );
-      }, 25)
-    );
+    on("plotly_unhover", (e: PlotMouseEvent) => {
+      const { curveNumber } = e.points[0];
 
-    on(
-      "plotly_unhover",
-      debounce((e: PlotMouseEvent) => {
-        const { curveNumber } = e.points[0];
+      // If the user clicked the line, we want to persist the change in coloring
+      if (!selectedCurves?.has(curveNumber))
         Plotly.restyle(
           plot,
           {
@@ -260,8 +246,7 @@ function CurvesChart({
           },
           [curveNumber]
         );
-      }, 10)
-    );
+    });
 
     on("plotly_click", (e: PlotMouseEvent) => {
       const { curveNumber } = e.points[0];
@@ -269,6 +254,13 @@ function CurvesChart({
       const index = curveNumber;
 
       if (onClickCurve) {
+        Plotly.restyle(
+          plot,
+          {
+            line: { color: "rgba(60, 8, 128, 1)", width: 3 },
+          },
+          [curveNumber]
+        );
         onClickCurve(index);
       }
 

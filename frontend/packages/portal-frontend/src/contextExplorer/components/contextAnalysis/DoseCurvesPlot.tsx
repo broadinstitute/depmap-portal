@@ -15,6 +15,8 @@ interface Props {
   datasetUnits?: string;
   outGroupCurveParams?: CurveParams[];
   handleSetPlotElement?: (element: any) => void;
+  handleClickCurve?: (pointIndex: number) => void;
+  selectedCurves?: Set<number>;
   doseUnits?: string;
   includeMedianQuantileRegions?: boolean;
 }
@@ -199,7 +201,7 @@ const getTraces = (
         "%{text}",
       type: "curve",
       mode: "lines",
-      marker: { color: "rgba(108, 122, 137, 0.5)" },
+      line: { color: "rgba(108, 122, 137, 0.1)", width: 2 },
     });
   }
 
@@ -277,6 +279,8 @@ function DoseCurvesPlot({
   outGroupCurveParams = [],
   doseUnits = "Concentration (uM)",
   handleSetPlotElement = () => {},
+  handleClickCurve = undefined,
+  selectedCurves = undefined,
   includeMedianQuantileRegions = true,
 }: Props) {
   const plotTraces = useMemo(() => {
@@ -323,6 +327,8 @@ function DoseCurvesPlot({
         showLegend={false}
         height={300}
         onLoad={handleSetPlotElement}
+        onClickCurve={handleClickCurve}
+        selectedCurves={selectedCurves}
       />
     </div>
   );
