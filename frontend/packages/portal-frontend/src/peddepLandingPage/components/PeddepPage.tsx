@@ -1,79 +1,10 @@
 import * as React from "react";
-import { useEffect, useContext, useState } from "react";
 import { Button } from "react-bootstrap";
 import { toStaticUrl } from "@depmap/globals";
 import styles from "src/peddepLandingPage/styles/PeddepPage.scss";
-import { ApiContext } from "@depmap/api";
-import SubGroupPlot from "./SubgroupPlot";
+import SubGroupsPlot from "./SubgroupsPlot";
 
 export default function PeddepPage() {
-  const { getApi } = useContext(ApiContext);
-  const [bapi] = useState(() => getApi());
-
-  const [data, setData] = useState<{
-    "CNS/Brain": any[];
-    Heme: any[];
-    Solid: any[];
-  } | null>(null);
-  const [hasError, setHasError] = useState(false);
-
-  useEffect(() => {
-    (async () => {
-      try {
-        const dimensionType = await bapi.getDimensionType("depmap with peddep");
-        if (dimensionType.metadata_dataset_id) {
-          const modelSubsetColData = await bapi.getTabularDatasetData(
-            dimensionType.metadata_dataset_id,
-            {
-              columns: [
-                "OncotreeLineage",
-                "OncotreeSubtype",
-                "PediatricSubtype",
-              ],
-            }
-          );
-          const modelSubsetIndexData: { [key: string]: any } = {};
-
-          // eslint-disable-next-line no-restricted-syntax
-          for (const [colName, colData] of Object.entries(modelSubsetColData)) {
-            // eslint-disable-next-line no-restricted-syntax
-            for (const [index, value] of Object.entries(colData)) {
-              if (!modelSubsetIndexData[index]) {
-                modelSubsetIndexData[index] = {};
-              }
-              modelSubsetIndexData[index][colName] = value;
-            }
-          }
-
-          const pedModelData = Object.entries(modelSubsetIndexData).reduce(
-            (acc, [, modelData]) => {
-              if (modelData.PediatricSubtype === "True") {
-                const subtype = modelData.OncotreeSubtype;
-                if (modelData.OncotreeLineage === "CNS/Brain") {
-                  acc["CNS/Brain"].push(subtype);
-                } else if (
-                  ["Myeloid", "Lymphoid"].includes(modelData.OncotreeLineage)
-                ) {
-                  acc["Heme"].push(subtype);
-                } else {
-                  acc["Solid"].push(subtype);
-                }
-              }
-              return acc;
-            },
-            { "CNS/Brain": [] as any[], Heme: [] as any[], Solid: [] as any[] }
-          );
-          setData(pedModelData);
-        } else {
-          setHasError(true);
-        }
-      } catch (e) {
-        console.log(e);
-        setHasError(true);
-      }
-    })();
-  }, [bapi]);
-
   const imagePath = toStaticUrl("img/peddep_landing_page/pedepwave.png");
 
   const umapImage = (
@@ -122,37 +53,10 @@ export default function PeddepPage() {
             successful approaches as well as investing in exploratory science
             with transformative potential.
           </h4>
+          <div>
+            <SubGroupsPlot />
+          </div>
 
-          {hasError ? (
-            <div
-              style={{
-                display: "flex",
-                height: "200px",
-                justifyContent: "center",
-                alignItems: "center",
-              }}
-            >
-              <i>
-                Unexpected error. If you get this error consistently, please
-                contact us with a screenshot and the actions that lead to this
-                error.
-              </i>
-            </div>
-          ) : (
-            <div className={styles.dataPlotContainer}>
-              {data
-                ? Object.entries(data).map(([subgroup, values]) => {
-                    return (
-                      <SubGroupPlot
-                        key={subgroup}
-                        subgroup={subgroup}
-                        subtypes={values}
-                      />
-                    );
-                  })
-                : "Loading..."}
-            </div>
-          )}
           <div className={styles.dataInfo}>
             <div>
               <h4>Dependency Screening</h4>
