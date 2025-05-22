@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from "react";
-import Plotly, { Config, Data, Layout, PlotData } from "plotly.js";
+import Plotly, { Config, Layout, PlotData } from "plotly.js";
 import { BarSubplotData } from "../models/subplotData";
 
 interface GroupedBarSuplotsProp {
