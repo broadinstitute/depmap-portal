@@ -85,6 +85,7 @@ export default function SubGroupsPlot() {
     if (data) {
       const subgroupSubtypesCounts: {
         key: Subgroup;
+        subtypeLabels: string[];
         labels: string[];
         values: number[];
         maxCount: number;
@@ -100,10 +101,14 @@ export default function SubGroupsPlot() {
           (a, b) => b[1] - a[1]
         );
 
-        // Extract subtype labels and values
+        // Extract subtype labels and values. Additionally, truncate label, if necessary for subtype label in x axis
         const labels: string[] = [];
+        const subtypeLabels: string[] = [];
         const counts: number[] = [];
         sortedEntries.forEach(([label, count]) => {
+          subtypeLabels.push(
+            label.length > 25 ? label.substring(0, 25).concat("...") : label
+          );
           labels.push(label);
           counts.push(count);
         });
@@ -111,8 +116,15 @@ export default function SubGroupsPlot() {
         // Track the max value for top-level sorting
         const maxCount = counts[0];
 
-        return { key: subgroup, labels, values: counts, maxCount } as {
+        return {
+          key: subgroup,
+          subtypeLabels,
+          labels,
+          values: counts,
+          maxCount,
+        } as {
           key: Subgroup;
+          subtypeLabels: string[];
           labels: string[];
           values: number[];
           maxCount: number;
@@ -132,8 +144,9 @@ export default function SubGroupsPlot() {
       };
 
       const subgroupSubtypesData: BarSubplotData[] = subgroupSubtypesCounts.map(
-        ({ key, labels, values }) => {
+        ({ key, subtypeLabels, labels, values }) => {
           return {
+            xAxisLabels: subtypeLabels,
             labels,
             values,
             name: key,

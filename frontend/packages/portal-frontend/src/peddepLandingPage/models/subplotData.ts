@@ -1,6 +1,7 @@
 export type Subgroup = "CNS/Brain" | "Heme" | "Solid";
 
 export type BarSubplotData = {
+  xAxisLabels: string[];
   labels: string[];
   values: number[];
   name: Subgroup;
