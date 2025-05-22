@@ -1,5 +1,8 @@
 import React, { useMemo } from "react";
-import { CurveParams } from "src/compound/components/DoseResponseCurve";
+import {
+  CurveParams,
+  CurvePlotPoints,
+} from "src/compound/components/DoseResponseCurve";
 import CurvesChart from "src/plot/components/CurvesChart";
 
 // Make median curve traces
@@ -14,6 +17,7 @@ interface Props {
   inGroupCurveParams: CurveParams[];
   datasetUnits?: string;
   outGroupCurveParams?: CurveParams[];
+  replicatePoints?: CurvePlotPoints[];
   handleSetPlotElement?: (element: any) => void;
   handleClickCurve?: (pointIndex: number) => void;
   selectedCurves?: Set<number>;
@@ -184,6 +188,7 @@ const getTraces = (
       y: Array.from(pt.ys),
       name: "",
       text: pt.xs.map(
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         (_) => `<b>Cell Line Name:</b> ${
           curves.data[index].name
         }<br><b>DepMap ID:</b> ${curves.data[index].id}
@@ -225,6 +230,7 @@ const buildTraces = (
   maxDose: number,
   inGroupCurveParams: CurveParams[],
   outGroupCurveParams: CurveParams[],
+  replicatePoints: CurvePlotPoints[],
   includeMedianQuantileRegions: boolean
 ): CurveTrace[] => {
   const minX = minDose;
@@ -277,12 +283,15 @@ function DoseCurvesPlot({
   maxDose,
   inGroupCurveParams,
   outGroupCurveParams = [],
+  replicatePoints = [],
   doseUnits = "Concentration (uM)",
   handleSetPlotElement = () => {},
   handleClickCurve = undefined,
   selectedCurves = undefined,
   includeMedianQuantileRegions = true,
+  datasetUnits = undefined,
 }: Props) {
+  console.log(datasetUnits);
   const plotTraces = useMemo(() => {
     if (inGroupCurveParams && minDose && maxDose) {
       return buildTraces(
@@ -290,11 +299,13 @@ function DoseCurvesPlot({
         maxDose,
         inGroupCurveParams,
         outGroupCurveParams,
+        replicatePoints,
         includeMedianQuantileRegions
       );
     }
     return null;
   }, [
+    replicatePoints,
     inGroupCurveParams,
     outGroupCurveParams,
     minDose,

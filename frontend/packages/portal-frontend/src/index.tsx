@@ -44,7 +44,7 @@ const DoseCurvesTab = React.lazy(
   () =>
     import(
       /* webpackChunkName: "DoseCurvesTab" */
-      "src/compound/newComponents/DoseCurvesTab"
+      "src/compound/doseCurvesTab/DoseCurvesTab"
     )
 );
 

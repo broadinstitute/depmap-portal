@@ -12,7 +12,7 @@ interface DoseCurvesPlotSectionProps {
   selectedCurves: Set<number>;
   handleClickCurve: (curveNumber: number) => void;
   plotElement: ExtendedPlotType | null;
-  handleSetPlotElement?: (element: any) => void;
+  handleSetPlotElement: (element: any) => void;
 }
 function DoseCurvesPlotSection({
   curvesData,

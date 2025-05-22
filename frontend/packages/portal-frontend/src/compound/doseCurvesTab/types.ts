@@ -1,8 +1,9 @@
-import { CurveParams } from "../components/DoseResponseCurve";
+import { CurveParams, CurvePlotPoints } from "../components/DoseResponseCurve";
 
 export interface CompoundDoseCurveData {
   curve_params: CurveParams[];
   min_dose: number;
   max_dose: number;
   dataset_units: string;
+  points: CurvePlotPoints;
 }

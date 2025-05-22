@@ -238,7 +238,7 @@ function CurvesChart({
       const { curveNumber } = e.points[0];
 
       // If the user clicked the line, we want to persist the change in coloring
-      if (!selectedCurves?.has(curveNumber))
+      if (!selectedCurves?.has(curveNumber)) {
         Plotly.restyle(
           plot,
           {
@@ -246,6 +246,7 @@ function CurvesChart({
           },
           [curveNumber]
         );
+      }
     });
 
     on("plotly_click", (e: PlotMouseEvent) => {
