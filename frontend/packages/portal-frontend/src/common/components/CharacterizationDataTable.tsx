@@ -21,6 +21,8 @@ function TableData({ id, physicalUnit, characterization }: Props) {
   const [columnNames, setColumnNames] = useState([]);
   const [defaultColumnsToShow, setDefaultColumns] = useState([]);
   const [downloadURL, setDownloadURL] = useState("");
+  const [sortCol, setSortCol] = useState<string | null>(null);
+  const [sortOrder, setSortOrder] = useState<string | null>(null);
 
   const columns = columnNames
     .filter((name) => name !== "Oncogenic" && name !== "Mutation Effect")
@@ -66,6 +68,12 @@ function TableData({ id, physicalUnit, characterization }: Props) {
         setColumnNames(response.columns);
         setDefaultColumns(response.default_columns_to_show);
         setDownloadURL(response.download_url);
+        if (response.sort_col) {
+          setSortCol(response.sort_col);
+        }
+        if (response.sort_order) {
+          setSortOrder(response.sort_order);
+        }
       });
   }, [id, physicalUnit, characterization]);
   if (
@@ -75,12 +83,18 @@ function TableData({ id, physicalUnit, characterization }: Props) {
   ) {
     return null;
   }
+
+  const initialSorted = sortCol
+    ? [{ id: sortCol, desc: sortOrder === "desc" }]
+    : [];
+
   return (
     <WideTable
       data={formattedData}
       columns={columns}
       defaultColumnsToShow={defaultColumnsToShow}
       downloadURL={downloadURL}
+      sorted={initialSorted}
     />
   );
 }

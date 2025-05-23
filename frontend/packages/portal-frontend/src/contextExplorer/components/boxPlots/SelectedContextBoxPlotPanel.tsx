@@ -183,8 +183,6 @@ export const SelectedContextBoxPlotPanel = ({
   tab = undefined,
   drugDottedLine = undefined,
 }: SelectedContextBoxPlotPanelProps) => {
-  console.log("HERE");
-  console.log(selectedContextBoxData?.length === 0 && selectedLevelZeroBoxData);
   return (
     <Panel eventKey="SELECTED">
       {(selectedContextBoxData === null ||
