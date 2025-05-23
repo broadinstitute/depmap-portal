@@ -27,7 +27,7 @@ export interface PlotlyWrapperProps {
    * It is highly recommended to memoize this prop for performance improvements, because this prop goes into the dependency array of a useEffect that detaches and re-attaches all handlers. For hook components, this means using useMemo
    * */
   additionalPlotlyCallbacks?: PlotlyCallbacks;
-  downloadIconWidgetProps: DownloadIconWidgetProps;
+  downloadIconWidgetProps?: DownloadIconWidgetProps; // if showWidgetOptions is not false use this prop
   dragmodeWidgetOptions?: Array<PlotlyDragmode>;
   showWidgetOptions?: boolean;
 
@@ -43,7 +43,7 @@ export interface PlotlyWrapperProps {
    * If more than one widget is provided, the widgets must be rendered with a "key" prop for rendering sibling components
    */
   additionalToolbarWidgets?: Array<JSX.Element>;
-  idPrefixForUniqueness: string;
+  idPrefixForUniqueness?: string; // if showWidgetOptions is not false use this prop
 }
 
 export type PlotlyWrapperScatterData = Omit<

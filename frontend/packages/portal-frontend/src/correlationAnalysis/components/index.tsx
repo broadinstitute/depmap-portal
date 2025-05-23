@@ -202,7 +202,6 @@ export default function CorrelationAnalysis(props: CorrelationAnalysisProps) {
     getTabularDatasetData,
   ]);
 
-  console.log(correlationAnalysisData);
 
   React.useEffect(() => {
     // if no filter applied, show all correlation analysis data

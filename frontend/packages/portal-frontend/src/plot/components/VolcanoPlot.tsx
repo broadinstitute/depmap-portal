@@ -21,11 +21,11 @@ type VolcanoPlotProps = {
   xLabel: string;
   yLabel: string;
   data: Array<models.VolcanoData>;
-  bounds?: { width: number | undefined; height: number } | "autosize";
+  bounds?: { width: number | undefined; height: number };
   annotations?: Array<Partial<Plotly.Annotations>>;
   highlightedPoints?: Array<number>;
   // resizer: PlotResizer;
-  onSelectedLabelChange: models.OnSelectedLabelChange;
+  onSelectedLabelChange?: models.OnSelectedLabelChange;
   // };
   onPointClick?: (point: Plotly.PlotDatum) => void;
   dragmodeWidgetOptions?: Array<PlotlyDragmode>;
@@ -51,14 +51,6 @@ export const VolcanoPlot = React.forwardRef((props: VolcanoPlotProps, ref) => {
     () => utils.getHoverCallbacks(plotlyRefState as PlotHTMLElement),
     [plotlyRefState]
   );
-
-  const onPointClick = useMemo(() => {
-    return utils.withColorChange(
-      plotlyRefState as PlotHTMLElement,
-      props.data,
-      props.onSelectedLabelChange
-    );
-  }, [plotlyRefState, props.data, props.onSelectedLabelChange]);
 
   function buildPlotlyWrapper(plotlyParams: PlotlyParams) {
     return (

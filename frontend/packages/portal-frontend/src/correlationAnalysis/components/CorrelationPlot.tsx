@@ -49,6 +49,8 @@ export default function CorrelationsPlot(props: CorrelationsPlotProps) {
     });
     const update = { "marker.opacity": traceHighlights };
 
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
     Plotly.restyle(volcanoPlotsRef.current, update, traceIndexes);
   }, [data, hasOtherSelectedFeatureTypeFeatures, selectedFeatures]);
 
@@ -70,7 +72,6 @@ export default function CorrelationsPlot(props: CorrelationsPlotProps) {
         Plotly={Plotly}
         xLabel="Correlation Coefficient"
         yLabel="q value"
-        bounds={"autosize"}
         data={data}
         onPointClick={(e) => {
           const selectedLabel = e.customdata as string;

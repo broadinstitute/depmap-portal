@@ -77,7 +77,7 @@ const getColor = (
 export const formatLayout = (
   xLabel: string,
   yLabel: string,
-  bounds: { width: number; height: number } | null | "autosize" = null,
+  bounds: { width: number; height: number } | null = null,
   annotations: Array<Partial<Plotly.Annotations>> | null = null
 ) => {
   // let bounds = resizer.getSize("main-plot");
