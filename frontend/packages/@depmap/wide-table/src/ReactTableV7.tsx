@@ -116,6 +116,25 @@ const ReactTableV7 = React.forwardRef(
       [idProp, selections, onChangeSelections]
     );
 
+    const modifiedColumns = useMemo(() => {
+      return columns.map((column) => {
+        const { accessor, ...rest } = column;
+
+        return {
+          ...rest,
+          // WORKAROUND: WideTable wants `accessor` to always be a string but
+          // react-table treats an `accessor` string that has a dot in a
+          // special way. For our purposes that only causes bugs. Below  we
+          // redefine `accessor` as a basic function without that special
+          // behavior so that our keys can contain dots. See this issue for
+          // more details:
+          // https://github.com/TanStack/table/issues/1671
+          id: accessor as string,
+          accessor: (d: Record<string, any>) => d[accessor as string],
+        };
+      });
+    }, [columns]);
+
     const {
       getTableProps,
       getTableBodyProps,
@@ -126,7 +145,7 @@ const ReactTableV7 = React.forwardRef(
       ...rest
     } = useTable(
       {
-        columns,
+        columns: modifiedColumns,
         data,
         defaultColumn,
         autoResetSortBy: false,
