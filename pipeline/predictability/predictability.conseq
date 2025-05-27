@@ -372,7 +372,7 @@ rule prep_rppa_pred_biomarker_matrix:
 
 # Construct the feature matrix for each target matrix (and its corresponding model config)
 rule assemble_feature_matrix:
-    executor: dsub {"min_ram":"10", "docker_image": "us.gcr.io/broad-achilles/depmap-pipeline-tda:v10"}
+    executor: dsub {"min_ram":"15", "docker_image": "us.gcr.io/broad-achilles/depmap-pipeline-tda:v10"}
     inputs:
         expression={'type': 'pred-biomarker-matrix-csv', 'category': 'expression'},
         # ssgsea={'type': 'pred-biomarker-matrix-csv', 'category': 'ssgsea'},

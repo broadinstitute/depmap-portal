@@ -662,8 +662,8 @@ def test_mutation_translocation_fusion_has_gene(empty_db_mock_downloads):
         (Translocation, symbol_to_id["AMY1A"], True),  # gene 1
         (Translocation, symbol_to_id["TNS2"], True),  # gene 2
         (Translocation, symbol_to_id["test_gene"], False),
-        (Fusion, symbol_to_id["ANOS1"], True),  # left gene
-        (Fusion, symbol_to_id["F8A1"], True),  # right gene
+        (Fusion, symbol_to_id["MED1"], True),  # left gene
+        (Fusion, symbol_to_id["TNS2"], True),  # right gene
         (Fusion, symbol_to_id["test_gene"], False),
     ]
 

@@ -282,7 +282,7 @@ class Config(object):
     ANNOUNCEMENTS_PATH = os.path.join(ADDITIONAL_MOUNTS_DIR, "announcements.md")
     ANNOUNCEMENTS_FILE_PATH = os.path.join(ADDITIONAL_MOUNTS_DIR, "announcements.yaml")
     UPDATES_AND_ANNOUNCEMENTS_FILE_PATH = os.path.join(
-        ADDITIONAL_MOUNTS_DIR, "updates_and_announcements.md"
+        ADDITIONAL_MOUNTS_DIR, "theme/updates_and_announcements.md"
     )
     DOCUMENTATION_PATH = os.path.join(ADDITIONAL_MOUNTS_DIR, "documentation.yaml")
     DMC_SYMPOSIA_PATH = os.path.join(ADDITIONAL_MOUNTS_DIR, "dmc_symposia.yaml")

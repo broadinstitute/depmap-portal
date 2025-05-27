@@ -198,6 +198,8 @@ def get_ms_sanger_summary(tc, ms_sanger_taiga_id, Model):
 def get_omics_summary(tc, omics_taiga_id):
     print("getting omics_summary...")
     OmicsProfiles = tc.get(omics_taiga_id)
+    # if the case is wrong on Datatype, fix it (the new capitalization was introduced 25Q2)
+    OmicsProfiles.rename(columns={"DataType": "Datatype"}, inplace=True)
 
     if "Source" not in OmicsProfiles:
         omics_summary = OmicsProfiles[["ModelID", "Datatype"]].drop_duplicates()

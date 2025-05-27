@@ -521,18 +521,25 @@ def get_fusion_data_by_cell_line(model_id):
 
     # Generating hyperlinks for genes and replacing gene names with the hyperlinks
     for item in result_json_data:
-        item["Left Gene"] = get_gene_link(gene_name=item["Left Gene"])
-        item["Right Gene"] = get_gene_link(gene_name=item["Right Gene"])
+        item["Gene 1"] = get_gene_link(gene_name=item["Gene 1"])
+        item["Gene 2"] = get_gene_link(gene_name=item["Gene 2"])
 
-        item["Annots"] = item["Annots"].strip("[]")
-        item["Annots"] = item["Annots"].replace('"', "")
-        item["Annots"] = item["Annots"].replace(",", "; ")
+    # Get the sort configuration from the fusion_data_object
+    display_data = fusion_data_object.data_for_ajax_partial_temp()["display"]
+    sort_col_index = display_data.get("sort_col")
+    sort_order = display_data.get("sort_order")
+
+    # Map the sort column index to the renamed column name
+    columns = fusion_data_object.renamed_cols
+    sort_col = columns[sort_col_index] if sort_col_index is not None else None
 
     endpoint_dict = {
-        "columns": fusion_data_object.renamed_cols,
+        "columns": columns,
         "data": result_json_data,
         "default_columns_to_show": fusion_data_object.default_cols_to_show,
         "download_url": fusion_data_object.data_for_ajax_partial_temp()["download_url"],
+        "sort_col": sort_col,
+        "sort_order": sort_order,
     }
 
     return endpoint_dict

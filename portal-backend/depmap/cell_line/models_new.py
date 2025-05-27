@@ -69,7 +69,9 @@ class DepmapModel(Model):
 
     __tablename__ = "depmap_model"
 
-    depmap_id = Column(String, ForeignKey("cell_line.depmap_id"))
+    depmap_id = Column(
+        String, ForeignKey("cell_line.depmap_id"), unique=True, nullable=False
+    )
     cell_line = relationship("CellLine", backref=__tablename__)
 
     model_id = Column(String, primary_key=True)

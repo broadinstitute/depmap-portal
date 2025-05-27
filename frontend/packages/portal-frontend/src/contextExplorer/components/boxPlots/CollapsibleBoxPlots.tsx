@@ -179,24 +179,12 @@ function CollapsibleBoxPlots({
   }, [datasetId]);
 
   const xAxisRange = useMemo(() => {
-    if (
-      boxPlotData?.significant_selection?.length === 0 &&
-      boxPlotData.other_cards.length === 0 &&
-      otherBoxData.length > 0
-    ) {
-      const otherData = otherBoxData.flatMap((box: BoxPlotInfo) => box.xVals);
-
-      const allDataSolidHeme = [...otherData];
-
-      const maxSolidHeme = Math.max(...allDataSolidHeme) + 0.05;
-      const minSolidHeme = Math.min(...allDataSolidHeme) - 0.05;
-
-      return [minSolidHeme, maxSolidHeme];
-    }
     const sigSelectedData =
       boxPlotData?.significant_selection?.flatMap(
         (boxData: BoxData) => boxData.data
       ) || [];
+
+    const insigSelectedData = boxPlotData?.insignificant_selection?.data || [];
 
     const sigOtherDataCollections =
       boxPlotData?.other_cards?.map((card: BoxCardData) =>
@@ -206,7 +194,16 @@ function CollapsibleBoxPlots({
       val.flatMap((arr: number[]) => arr)
     );
 
-    const allData = [...sigSelectedData, ...sigOtherData];
+    const otherData = otherBoxData.flatMap((box: BoxPlotInfo) => box.xVals);
+
+    const allDataSolidHeme = [...otherData];
+
+    const allData = [
+      ...sigSelectedData,
+      ...insigSelectedData,
+      ...sigOtherData,
+      ...allDataSolidHeme,
+    ];
 
     const max = Math.max(...allData) + 0.05;
     const min = Math.min(...allData) - 0.05;
