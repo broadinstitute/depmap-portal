@@ -886,9 +886,6 @@ def _load_real_data(
     # load taiga aliases for everything else. this needs to happen after Datasets, TabularDatasets, and NonstandardDatasets are loaded
     db.session.commit()  # flush first, anything previously added
 
-    if current_app.config["ENABLED_FEATURES"].private_datasets:
-        synchronize_private_datasets(checkpoint)
-
     # process taiga_ids after private datasets have been loaded
     if process_downloads:
         with transaction():
