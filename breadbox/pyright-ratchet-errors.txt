@@ -1,26 +1,15 @@
 __init__.py: error: Type "tuple[str, stat_result | None]" is not assignable to return type "Tuple[str, stat_result]"
-analysis_tasks.py: error: Argument of type "DataFrame | None" cannot be assigned to parameter "query_series" of type "DataFrame" in function "_get_filtered_dataset_and_query_feature"
-analysis_tasks.py: error: Object of type "None" cannot be used as iterable value (reportOptionalIterable)
 common.py: error: Cannot access attribute "__fields__" for class "type[ResponseMixin]*"
 conftest.py: error: Argument of type "Literal['read']" cannot be assigned to parameter "access_type" of type "AccessType" in function "__init__"
-data_validation.py: error: Argument of type "BinaryIO" cannot be assigned to parameter "filepath_or_buffer" of type "FilePath | ReadCsvBuffer[bytes] | ReadCsvBuffer[str]" in function "read_csv"
-data_validation.py: error: Cannot access attribute "all" for class "bool_t"
 data_validation.py: error: Cannot access attribute "any" for class "ExtensionArray"
-data_validation.py: error: Invalid conditional operand of type "Series | bool_t | Unknown"
-data_validation.py: error: No overloads for "read_csv" match the provided arguments (reportCallIssue)
 dataset.py: error: "value" is not a known attribute of "None" (reportOptionalMemberAccess)
-dataset.py: error: Argument of type "list[dict[str, Series | Unknown | Any | ndarray[Any, Unknown] | NDArray[Unknown]]]" cannot be assigned to parameter "matching_properties" of type "List[Dict[str, str]]" in function "__init__" (reportArgumentType)
 dataset.py: error: Argument of type "type[DatasetFeature]" cannot be assigned to parameter "axis" of type "DatasetFeature | DatasetSample" in function "_get_indexes_by_given_id"
 dataset.py: error: Argument of type "type[DatasetSample]" cannot be assigned to parameter "axis" of type "DatasetFeature | DatasetSample" in function "_get_indexes_by_given_id"
-dataset.py: error: Type "Series | DataFrame* | DataFrame" is not assignable to return type "DataFrame"
 dataset_tasks.py: error: Type "None" is not assignable to declared type "List[Unknown]"
-dataset_uploads_tasks.py: error: Argument of type "Series | DataFrame* | DataFrame" cannot be assigned to parameter "given_ids" of type "Sequence[str]" in function "_get_dimension_labels_and_warnings"
 download_tasks.py: error: Argument of type "ArrayLike" cannot be assigned to parameter "column_labels" of type "List[str] | None" in function "_handle_df_nas"
 download_tasks.py: error: Cannot access attribute "merge" for class "NDArray[Unknown]"
 download_tasks.py: error: Cannot access attribute "merge" for class "ndarray[Any, Unknown]"
 download_tasks.py: error: Cannot access attribute "merge" for class "ndarray[Any, _dtype]"
-env.py: error: Argument of type "str | PathLike[str] | None" cannot be assigned to parameter "fname" of type "StrOrBytesPath | IO[str] | RawConfigParser" in function "fileConfig"
-env.py: error: Object of type "None" is not subscriptable (reportOptionalSubscript)
 factories.py: error: "Meta" overrides symbol of same name in class "Factory"
 factories.py: error: Argument of type "BytesIO | BinaryIO | None" cannot be assigned to parameter "file" of type "BytesIO" in function "create_upload_file"
 factories.py: error: Argument of type "IdMapping | None" cannot be assigned to parameter "id_mapping" of type "Json[IdMappingInsanity] | None" in function "add_feature_type"
@@ -34,12 +23,6 @@ hdf5_utils.py: error: "__getitem__" method not defined on type "Datatype" (repor
 health_check.py: error: Cannot access attribute "delay" for class "function"
 metadata.py: error: Cannot access attribute "value" for class "NDArray[Unknown]"
 metadata.py: error: Cannot access attribute "value" for class "ndarray[Any, Unknown]"
-partials.py: error: Cannot access attribute "columns" for class "NDArray[Unknown]"
-partials.py: error: Cannot access attribute "columns" for class "ndarray[Any, Unknown]"
-partials.py: error: Cannot access attribute "values" for class "NDArray[Unknown]"
-partials.py: error: Cannot access attribute "values" for class "ndarray[Any, Unknown]"
 proxy.py: error: Argument of type "bytes" cannot be assigned to parameter "data" of type "RequestData | None" in function "post"
 test_compute.py: error: Argument missing for parameter "self" (reportCallIssue)
-test_compute.py: error: Argument of type "Series | Unknown | Any | ndarray[Any, Unknown] | NDArray[Unknown] | DataFrame* | DataFrame" cannot be assigned to parameter "a" of type "_SupportsFloatOrIndex" in function "isclose"
 test_types.py: error: Cannot access attribute "id" for class "str"
-utils.py: error: Cannot access attribute "detail" for class "Exception"
