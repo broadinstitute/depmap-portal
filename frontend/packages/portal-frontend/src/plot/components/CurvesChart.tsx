@@ -19,6 +19,7 @@ export interface CurvesChartProps {
   maxX: number;
   showLegend: boolean;
   onLoad: (plot: ExtendedPlotType) => void;
+  newTraces?: any;
   height?: number | "auto";
   margin?: Margin;
   customWidth?: number | undefined;
@@ -48,6 +49,7 @@ function CurvesChart({
   maxX,
   showLegend,
   curveTraces,
+  newTraces = undefined,
   customHoverinfo = undefined,
   selectedCurves = undefined,
   onLoad = () => {},
@@ -115,11 +117,18 @@ function CurvesChart({
   }, [onLoad]);
 
   useEffect(() => {
+    if (ref.current && newTraces && newTraces.length > 0) {
+      const plotRef = ref.current as ExtendedPlotType;
+      Plotly.addTraces(plotRef, newTraces);
+    }
+  }, [newTraces]);
+
+  useEffect(() => {
     const plot = ref.current as ExtendedPlotType;
 
     const xAxisTemplate: Partial<Plotly.LayoutAxis> = {
       visible: true,
-      type: "log",
+      // type: "log",
       title: {
         text: xAxisTitle,
         font: {

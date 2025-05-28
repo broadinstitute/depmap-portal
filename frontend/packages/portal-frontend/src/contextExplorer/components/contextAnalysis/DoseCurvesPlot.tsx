@@ -1,7 +1,8 @@
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   CurveParams,
   CurvePlotPoints,
+  groupBy,
 } from "src/compound/components/DoseResponseCurve";
 import CurvesChart from "src/plot/components/CurvesChart";
 
@@ -15,12 +16,15 @@ interface Props {
   minDose: number;
   maxDose: number;
   inGroupCurveParams: CurveParams[];
+  doseRepPoints?: {
+    [model_id: string]: CurvePlotPoints[];
+  } | null;
   datasetUnits?: string;
   outGroupCurveParams?: CurveParams[];
-  replicatePoints?: CurvePlotPoints[];
   handleSetPlotElement?: (element: any) => void;
   handleClickCurve?: (pointIndex: number) => void;
   selectedCurves?: Set<number>;
+  selectedModelIds?: Set<string>;
   doseUnits?: string;
   includeMedianQuantileRegions?: boolean;
 }
@@ -225,12 +229,139 @@ const getTraces = (
   return traces;
 };
 
+const buildPointsTraces = (
+  groupedPointsByReplicate: Map<string, CurvePlotPoints[]>,
+  id?: string
+) => {
+  let minX: number;
+  let maxX: number;
+
+  const newTraces: CurveTrace[] = [];
+
+  // for each group of points, plot them on the plot with their own color
+  Array.from(groupedPointsByReplicate.keys()).forEach((replicate) => {
+    const subgroup = groupedPointsByReplicate.get(replicate.toString()) || [];
+
+    // within each group of points with the same replicate #, split them into masked and non-masked groups
+    const isMaskedValues = [
+      ...new Set(subgroup.map((item: CurvePlotPoints) => item.isMasked)),
+    ];
+
+    const groupedPointsByIsMasked = groupBy(subgroup, "isMasked");
+
+    isMaskedValues.forEach((isMaskedValue) => {
+      const subsubGroup = groupedPointsByIsMasked.get(isMaskedValue.toString());
+
+      if (!subsubGroup) {
+        return;
+      }
+
+      const xs = subsubGroup.map((item: CurvePlotPoints) => item.dose);
+      const ys = subsubGroup.map((item: CurvePlotPoints) => item.viability);
+
+      let name: string = id
+        ? `${id} Replicate ${replicate}`
+        : `Replicate ${replicate}`;
+      if (isMaskedValue) {
+        name += " (masked)";
+      }
+
+      newTraces.push({
+        x: xs,
+        y: ys,
+        customdata: ["no"],
+        label: [`${isMaskedValue}`],
+        replicate: [`${replicate}`],
+        name,
+      });
+    });
+
+    const allXs = subgroup.map((item: CurvePlotPoints) => item.dose);
+
+    const minSubgroupX = Math.min(...allXs);
+    const maxSubgroupX = Math.max(...allXs);
+
+    minX =
+      minX == null ? minSubgroupX : minX < minSubgroupX ? minX : minSubgroupX;
+    maxX =
+      maxX == null ? maxSubgroupX : maxX > maxSubgroupX ? maxX : maxSubgroupX;
+  });
+
+  return { range: [minX!, maxX!], traces: newTraces };
+};
+
+const buildPointsTracesWithIds = (setAsArray: CurvePlotPoints[]) => {
+  const groupedPointsById = groupBy(setAsArray, "id");
+  let minX: number;
+  let maxX: number;
+  const newTraces: CurveTrace[] = [];
+
+  groupedPointsById.forEach((v, k) => {
+    const groupedPointsByReplicate = groupBy(v, "replicate");
+
+    const pointTraceInfo = buildPointsTraces(groupedPointsByReplicate, k);
+
+    newTraces.push(...pointTraceInfo.traces);
+
+    const [newMinX, newMaxX] = pointTraceInfo.range;
+    minX = minX == null ? newMinX : Math.min(newMinX, minX);
+    maxX = maxX == null ? newMaxX : Math.max(newMaxX, maxX);
+  });
+
+  return { range: [minX!, maxX!], traces: newTraces };
+};
+
+const buildReplicatePointTraces = (
+  curves: CurveParams[],
+  replicatePoints: CurvePlotPoints[]
+) => {
+  const setAsArray = Array.from(replicatePoints || []);
+
+  const allKeys = new Set(
+    setAsArray.filter((points) => !!points.id).map((points) => points.id)
+  );
+  curves
+    ?.filter((curve) => !!curve.id)
+    .forEach((curve) => allKeys.add(curve.id));
+
+  const pointTraceInfo =
+    setAsArray.length > 0 && allKeys.size > 1
+      ? buildPointsTracesWithIds(setAsArray)
+      : buildPointsTraces(groupBy(setAsArray, "replicate"));
+
+  return pointTraceInfo;
+};
+
+const buildReplicateTraces = (
+  inGroupCurveParams: CurveParams[],
+  replicatePoints: CurvePlotPoints[]
+) => {
+  const pointTraceInfo = buildReplicatePointTraces(
+    inGroupCurveParams,
+    replicatePoints
+  );
+
+  const pointTraces = pointTraceInfo.traces;
+
+  pointTraces.sort((a, b) => {
+    // sort by replicate name, i.e. replicate number
+    if (a.name > b.name) {
+      return 1;
+    }
+    if (a.name < b.name) {
+      return -1;
+    }
+    return 0;
+  });
+
+  return pointTraces;
+};
+
 const buildTraces = (
   minDose: number,
   maxDose: number,
   inGroupCurveParams: CurveParams[],
   outGroupCurveParams: CurveParams[],
-  replicatePoints: CurvePlotPoints[],
   includeMedianQuantileRegions: boolean
 ): CurveTrace[] => {
   const minX = minDose;
@@ -240,7 +371,9 @@ const buildTraces = (
   const inGroupNumPts = 150;
   const outGroupNumPts = 8;
 
-  const traces = getTraces(
+  let traces: CurveTrace[] = [];
+
+  const curveTraces = getTraces(
     inGroupCurveParams,
     inGroupNumPts,
     minExponent,
@@ -249,6 +382,7 @@ const buildTraces = (
     shadingColorInGroup,
     includeMedianQuantileRegions
   );
+  traces.push(...curveTraces);
 
   if (outGroupCurveParams.length > 0) {
     const outGroupData = samplePoints(
@@ -283,7 +417,7 @@ function DoseCurvesPlot({
   maxDose,
   inGroupCurveParams,
   outGroupCurveParams = [],
-  replicatePoints = [],
+  doseRepPoints = null,
   doseUnits = "Concentration (uM)",
   handleSetPlotElement = () => {},
   handleClickCurve = undefined,
@@ -291,7 +425,6 @@ function DoseCurvesPlot({
   includeMedianQuantileRegions = true,
   datasetUnits = undefined,
 }: Props) {
-  console.log(datasetUnits);
   const plotTraces = useMemo(() => {
     if (inGroupCurveParams && minDose && maxDose) {
       return buildTraces(
@@ -299,19 +432,44 @@ function DoseCurvesPlot({
         maxDose,
         inGroupCurveParams,
         outGroupCurveParams,
-        replicatePoints,
         includeMedianQuantileRegions
       );
     }
     return null;
   }, [
-    replicatePoints,
     inGroupCurveParams,
     outGroupCurveParams,
     minDose,
     maxDose,
+    selectedCurves,
     includeMedianQuantileRegions,
   ]);
+
+  const selectedModelIdsRef = useRef(
+    doseRepPoints ? Object.keys(doseRepPoints) : null
+  );
+  const [selectedModelIds, setSelectedModelIds] = useState<string[]>([]);
+  const [newTraces, setNewTraces] = useState<any>();
+  useEffect(() => {
+    let traces: CurveTrace[] = [];
+
+    if (doseRepPoints) {
+      const selectedModels = Object.keys(doseRepPoints);
+      setSelectedModelIds((modelIds) => {
+        selectedModelIdsRef.current = modelIds; // update the prev value
+        return selectedModels;
+      });
+
+      if (selectedModelIds !== selectedModelIdsRef.current) {
+        const ptTraces = selectedModels.flatMap((modelId) =>
+          buildReplicateTraces(inGroupCurveParams, doseRepPoints[modelId])
+        );
+        traces.push(...ptTraces);
+      }
+    }
+
+    setNewTraces(traces);
+  }, [setNewTraces, doseRepPoints]);
 
   return (
     <div>
@@ -335,6 +493,7 @@ function DoseCurvesPlot({
         minX={minDose}
         maxX={maxDose}
         curveTraces={plotTraces}
+        newTraces={newTraces}
         showLegend={false}
         height={300}
         onLoad={handleSetPlotElement}

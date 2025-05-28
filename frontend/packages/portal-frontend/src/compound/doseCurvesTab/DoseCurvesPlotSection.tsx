@@ -4,10 +4,14 @@ import DoseCurvesPlot from "src/contextExplorer/components/contextAnalysis/DoseC
 import PlotControls from "src/plot/components/PlotControls";
 import PlotSpinner from "src/plot/components/PlotSpinner";
 import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
+import { CurvePlotPoints } from "../components/DoseResponseCurve";
 import { CompoundDoseCurveData } from "./types";
 
 interface DoseCurvesPlotSectionProps {
   curvesData: CompoundDoseCurveData | null;
+  doseRepPoints: {
+    [model_id: string]: CurvePlotPoints[];
+  } | null;
   doseUnits: string;
   selectedCurves: Set<number>;
   handleClickCurve: (curveNumber: number) => void;
@@ -16,6 +20,7 @@ interface DoseCurvesPlotSectionProps {
 }
 function DoseCurvesPlotSection({
   curvesData,
+  doseRepPoints,
   doseUnits,
   selectedCurves,
   handleClickCurve,
@@ -48,6 +53,7 @@ function DoseCurvesPlotSection({
             minDose={curvesData.min_dose}
             maxDose={curvesData.max_dose}
             inGroupCurveParams={curvesData.curve_params}
+            doseRepPoints={doseRepPoints}
             handleSetPlotElement={handleSetPlotElement}
             doseUnits={doseUnits}
             datasetUnits={curvesData.dataset_units}

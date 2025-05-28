@@ -39,21 +39,21 @@ def _get_dose_replicate_points(
     return points
 
 
-def _get_dose_replicate_points_per_model_id(
-    replicate_dataset_matrix: Matrix,
-    compound_dose_replicates: list,
-    model_ids: List[str],
-):
-    dose_replicates_per_model_id = [
-        _get_dose_replicate_points(
-            replicate_dataset_matrix=replicate_dataset_matrix,
-            compound_dose_replicates=compound_dose_replicates,
-            model_id=model_id,
-        )
-        for model_id in model_ids
-    ]
+# def _get_dose_replicate_points_per_model_id(
+#     replicate_dataset_matrix: Matrix,
+#     compound_dose_replicates: list,
+#     model_ids: List[str],
+# ):
+#     dose_replicates_per_model_id = {}
+#     for model_id in model_ids:
+#         reps = _get_dose_replicate_points(
+#             replicate_dataset_matrix=replicate_dataset_matrix,
+#             compound_dose_replicates=compound_dose_replicates,
+#             model_id=model_id,
+#         )
+#         dose_replicates_per_model_id[model_id] = reps
 
-    return dose_replicates_per_model_id
+#     return dose_replicates_per_model_id
 
 
 def _get_dose_response_curves_per_model(
@@ -81,22 +81,6 @@ def _get_dose_response_curves_per_model(
         if DependencyDataset.has_entity(replicate_dataset.name, dose_rep.entity_id)
     ]
 
-    # get all CompoundDoseReplicate objects associated with CompoundExperiment
-    compound_dose_replicates = CompoundDoseReplicate.get_all_with_compound_experiment_id(
-        compound_experiment.entity_id
-    )
-    compound_dose_replicates = [
-        dose_rep
-        for dose_rep in compound_dose_replicates
-        if DependencyDataset.has_entity(dataset.name, dose_rep.entity_id)
-    ]
-
-    points_by_model = _get_dose_replicate_points_per_model_id(
-        replicate_dataset_matrix=replicate_dataset.matrix,
-        compound_dose_replicates=compound_dose_replicates,
-        model_ids=model_ids,
-    )
-
     model_display_names_by_model_id = DepmapModel.get_cell_line_display_names(
         list(set(model_ids))
     )
@@ -112,7 +96,6 @@ def _get_dose_response_curves_per_model(
         "max_dose": compound_dose_replicates_min_max[0].max_dose,
         "min_dose": compound_dose_replicates_min_max[0].min_dose,
         "dataset_units": units,
-        "points": points_by_model,
     }
 
 
@@ -143,3 +126,38 @@ class DoseCurveData(
         )
 
         return dose_curve_info
+
+
+@namespace.route("/model_dose_replicates")
+class ModelDoseReplicates(
+    Resource
+):  # the flask url_for endpoint is automagically the snake case of the namespace prefix plus class name
+    def get(self):
+        # NOTE to self --> the preexisting functions for getting the dose curve options on the old tab provide
+        # the dataset_name and compound_label options.
+        replicate_dataset_name = request.args.get("replicate_dataset_name")
+        compound_label = request.args.get("compound_label")
+        model_id = request.args.get("model_id")
+
+        replicate_dataset = Dataset.get_dataset_by_name(replicate_dataset_name)
+        compound_experiment = utils.get_compound_experiment(
+            entity_full_label=compound_label
+        )
+
+        # get all CompoundDoseReplicate objects associated with CompoundExperiment
+        compound_dose_replicates = CompoundDoseReplicate.get_all_with_compound_experiment_id(
+            compound_experiment.entity_id
+        )
+        compound_dose_replicates = [
+            dose_rep
+            for dose_rep in compound_dose_replicates
+            if DependencyDataset.has_entity(replicate_dataset.name, dose_rep.entity_id)
+        ]
+
+        points = _get_dose_replicate_points(
+            replicate_dataset_matrix=replicate_dataset.matrix,
+            compound_dose_replicates=compound_dose_replicates,
+            model_id=model_id,
+        )
+
+        return points

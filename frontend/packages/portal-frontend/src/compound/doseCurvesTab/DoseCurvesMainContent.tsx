@@ -1,7 +1,8 @@
 import WideTable from "@depmap/wide-table";
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { getDapi } from "src/common/utilities/context";
 import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
+import { CurvePlotPoints } from "../components/DoseResponseCurve";
 import { CompoundDataset } from "../components/DoseResponseTab";
 import DoseCurvesPlotSection from "./DoseCurvesPlotSection";
 import useDoseCurvesData from "./hooks/useDoseCurvesData";
@@ -16,7 +17,6 @@ function DoseCurvesMainContent({
   doseUnits,
 }: DoseCurvesMainContentProps) {
   const dapi = getDapi();
-
   const [showReplicates, setShowReplicates] = useState<boolean>(true);
 
   const { error, isLoading, doseCurveData, doseTable } = useDoseCurvesData(
@@ -34,9 +34,12 @@ function DoseCurvesMainContent({
   );
 
   const [plotElement, setPlotElement] = useState<ExtendedPlotType | null>(null);
+  const [doseRepPoints, setDoseRepPoints] = useState<{
+    [model_id: string]: CurvePlotPoints[];
+  } | null>(null);
 
   const handleClickCurve = useCallback(
-    (curveNumber: number) => {
+    async (curveNumber: number) => {
       if (doseCurveData) {
         setSelectedCurves((xs) => {
           if (!xs?.has(curveNumber)) {
@@ -46,6 +49,12 @@ function DoseCurvesMainContent({
         });
 
         const selectedModelId = doseCurveData.curve_params[curveNumber].id!;
+        const pts = await dapi.getCompoundModelDoseReplicatePoints!(
+          dataset!.compound_label,
+          dataset!.dose_replicate_dataset,
+          selectedModelId
+        );
+        setDoseRepPoints(pts ? { [selectedModelId]: pts } : null);
         setSelectedModelIds((xs) => {
           if (!xs?.has(selectedModelId)) {
             xs.add(selectedModelId);
@@ -100,6 +109,7 @@ function DoseCurvesMainContent({
       <DoseCurvesPlotSection
         plotElement={plotElement}
         curvesData={doseCurveData}
+        doseRepPoints={doseRepPoints}
         doseUnits={doseUnits}
         selectedCurves={selectedCurves}
         handleClickCurve={handleClickCurve}

@@ -996,6 +996,22 @@ export class DepmapApi {
     );
   }
 
+  getCompoundModelDoseReplicatePoints(
+    compoundLabel: string,
+    replicateDatasetName: string,
+    modelId: string
+  ): Promise<CurvePlotPoints[]> {
+    const params = {
+      replicate_dataset_name: replicateDatasetName,
+      compound_label: compoundLabel,
+      model_id: modelId,
+    };
+
+    return this._fetch<any>(
+      `/api/compound/model_dose_replicates?${encodeParams(params)}`
+    );
+  }
+
   getCompoundDashboardSummaryTable(
     datasetId: string
   ): Promise<CompoundSummaryTableRaw> {
