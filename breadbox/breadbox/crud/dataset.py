@@ -7,6 +7,7 @@ import warnings
 import pandas as pd
 from sqlalchemy import and_, func, or_
 from sqlalchemy.sql import distinct
+from sqlalchemy.sql.elements import ColumnElement
 from sqlalchemy.orm import aliased, with_polymorphic
 
 from breadbox.db.session import SessionWithUser
@@ -60,7 +61,9 @@ def get_dataset_filter_clauses(db, user):
     groups = get_groups_with_visible_contents(db, user)  # TODO: update
     group_ids = [group.id for group in groups]
 
-    filter_clauses = [Dataset.group_id.in_(group_ids)]  # pyright: ignore
+    filter_clauses: List[ColumnElement[bool]] = [
+        Dataset.group_id.in_(group_ids)
+    ]  # pyright: ignore
     # Don't return transient datasets
     filter_clauses.append(Dataset.is_transient == False)
 
@@ -95,7 +98,9 @@ def get_datasets(
     # Include columns for MatrixDataset, TabularDataset
     dataset_poly = with_polymorphic(Dataset, [MatrixDataset, TabularDataset])
 
-    filter_clauses = [Dataset.group_id.in_(group_ids)]  # pyright: ignore
+    filter_clauses: List[ColumnElement[bool]] = [
+        Dataset.group_id.in_(group_ids)
+    ]  # pyright: ignore
 
     # Don't return transient datasets
     filter_clauses.append(Dataset.is_transient == False)
