@@ -17,14 +17,14 @@ def test_verify_unique_rows_and_cols():
     # duplicate row index failure
     with pytest.raises(FileValidationError) as ex:
         verify_unique_rows_and_cols(
-            pd.DataFrame(0, columns=["C1", "C2"], index=["A", "B", "A"])  # type: ignore[arg-type]
+            pd.DataFrame(0, columns=["C1", "C2"], index=pd.Index(["A", "B", "A"]))
         )
     assert "Encountered duplicate row indices (Sample IDs): A" == str(ex.value.detail)
 
     # duplicate col failure
     with pytest.raises(FileValidationError) as ex:
         verify_unique_rows_and_cols(
-            pd.DataFrame(0, columns=["C1", "C2", "C1"], index=["A", "B", "C"])  # type: ignore[arg-type]
+            pd.DataFrame(0, columns=["C1", "C2", "C1"], index=pd.Index(["A", "B", "C"]))
         )
     assert "Encountered duplicate column names (Feature IDs): C1" == str(
         ex.value.detail
@@ -32,7 +32,7 @@ def test_verify_unique_rows_and_cols():
 
     # no problems
     verify_unique_rows_and_cols(
-        pd.DataFrame(0, columns=["C1", "C2", "C3"], index=["A", "B", "C"])  # type: ignore[arg-type]
+        pd.DataFrame(0, columns=["C1", "C2", "C3"], index=pd.Index(["A", "B", "C"]))
     )
 
     # now check a long error to make sure it shortens it
@@ -40,7 +40,7 @@ def test_verify_unique_rows_and_cols():
     with pytest.raises(FileValidationError) as ex:
         columns = [f"C{i}" for i in range(20)]
         verify_unique_rows_and_cols(
-            pd.DataFrame(0, columns=columns + columns, index=["A", "B", "C"])  # type: ignore[arg-type]
+            pd.DataFrame(0, columns=columns + columns, index=pd.Index(["A", "B", "C"]))
         )
     assert (
         "Encountered duplicate column names (Feature IDs): C0, C1, C2, C3, C4, ..., C15, C16, C17, C18, C19"
@@ -66,7 +66,7 @@ def test_read_and_validate_matrix_df(tmpdir):
 
     # parse this matrix as categorical
     df = read_and_validate_matrix_df(
-        to_csv(pd.DataFrame("3", columns=["C1", "C2"], index=["A", "B"])),  # type: ignore[arg-type]
+        to_csv(pd.DataFrame("3", columns=["C1", "C2"], index=pd.Index(["A", "B"]))),
         ValueType.categorical,
         ["2", "3"],
         "csv",
@@ -79,7 +79,7 @@ def test_read_and_validate_matrix_df(tmpdir):
 
     # parse this matrix as floats
     df = read_and_validate_matrix_df(
-        to_csv(pd.DataFrame("0", columns=["C1", "C2"], index=["A", "B"])),  # type: ignore[arg-type]
+        to_csv(pd.DataFrame("0", columns=["C1", "C2"], index=pd.Index(["A", "B"]))),
         ValueType.continuous,
         None,
         "csv",
@@ -89,7 +89,7 @@ def test_read_and_validate_matrix_df(tmpdir):
 
     # make sure the index and columns are read as strings even if they're numeric values
     df = read_and_validate_matrix_df(
-        to_csv(pd.DataFrame("0", columns=["10", "11"], index=["0", "1"])),  # type: ignore[arg-type]
+        to_csv(pd.DataFrame("0", columns=["10", "11"], index=pd.Index(["0", "1"]))),
         ValueType.continuous,
         None,
         "csv",
@@ -105,7 +105,10 @@ def test_validate_tabular_df_schema(tmpdir):
     # fewer edge cases with tables. Just exercise columns with numbers to see if
     # anything weird happens
     df = _validate_tabular_df_schema(
-        to_csv(pd.DataFrame("0", columns=["13", "10", "11"], index=[1]), index=False),  # type: ignore[arg-type]
+        to_csv(
+            pd.DataFrame("0", columns=["13", "10", "11"], index=pd.Index([1])),
+            index=False,
+        ),
         {
             "10": ColumnMetadata(col_type=AnnotationType.text),
             "13": ColumnMetadata(col_type=AnnotationType.text),
@@ -123,7 +126,9 @@ def test_validate_tabular_df_schema(tmpdir):
     # didn't test parsing str lists, so do that here
     df = _validate_tabular_df_schema(
         to_csv(
-            pd.DataFrame([["0", json.dumps(["1", "2"])]], columns=["ID", "list"]),  # type: ignore[arg-type]
+            pd.DataFrame(
+                [["0", json.dumps(["1", "2"])]], columns=["ID", "list"]
+            ),  # pyright: ignore
             index=False,
         ),
         {
@@ -151,7 +156,16 @@ def test_validate_tabular_df_schema(tmpdir):
                     "col6": [1, 0, 1],
                     "col7": [True, False, True],
                 },
-                columns=["ID", "col1", "col2", "col3", "col4", "col5", "col6", "col7"],  # type: ignore[arg-type]
+                columns=[
+                    "ID",
+                    "col1",
+                    "col2",
+                    "col3",
+                    "col4",
+                    "col5",
+                    "col6",
+                    "col7",
+                ],  # pyright: ignore
             ),
             index=False,
         ),
@@ -204,7 +218,7 @@ def test_incorrect_typing_tabular_df_schema(tmpdir):
             to_csv(
                 pd.DataFrame(
                     {"ID": ["id1", "id2", "id3"], "col1": ["val1", "val2", "val3"]},
-                    columns=["ID", "col1"],  # type: ignore[arg-type]
+                    columns=["ID", "col1"],  # pyright: ignore
                 ),
                 index=False,
             ),
