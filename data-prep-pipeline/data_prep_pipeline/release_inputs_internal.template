@@ -1,4 +1,4 @@
-# SET_TAIGA_PREPROCESSOR release_taiga_id "ctexp2-internal-24q4-copy-67f0"
+# SET_TAIGA_PREPROCESSOR release_taiga_id "internal-25q2-9cfa"
 
 # Destination Taiga ID
 add-if-missing {
@@ -15,7 +15,7 @@ add-if-missing {
 # CN gene expression data
 add-if-missing {
   "type": "cngene",
-  "dataset_id": PREPROCESS_TAIGA_ID(release_taiga_id, "OmicsCNGene") 
+  "dataset_id": PREPROCESS_TAIGA_ID(release_taiga_id, "OmicsCNGeneWGS") 
 }
 
 # Model
@@ -37,12 +37,12 @@ add-if-missing {
 
 add-if-missing {
   "type": "portal_compounds",
-  "dataset_id": "compound-metadata-de37.32/PortalCompounds"
+  "dataset_id": "compound-metadata-de37.42/PortalCompounds"
 }
 
 add-if-missing {
   "type": "prism_oncology_reference_auc_matrix",
-  "dataset_id": PREPROCESS_TAIGA_ID(release_taiga_id, "PRISMOncologyReferenceAUCMatrix") 
+  "dataset_id": PREPROCESS_TAIGA_ID(release_taiga_id, "PRISMOncologyReferenceLog2AUCMatrix") 
 }
 
 # HGNC Gene Table

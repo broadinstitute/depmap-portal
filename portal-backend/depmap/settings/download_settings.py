@@ -17,6 +17,8 @@ def get_download_list() -> List[DownloadRelease]:
     # now these releases may include things that the current user is not allowed to see, so filter the list
     owner_ids = set(get_visible_owner_id_configs().keys())
 
+    # After moving private datasets to breadbox, I'm not that these access controls are meaningfully used anymore. 
+    # Leaving them for now just in case. 
     releases: List[DownloadRelease] = [
         release for release in download_releases if release.owner_id in owner_ids
     ]

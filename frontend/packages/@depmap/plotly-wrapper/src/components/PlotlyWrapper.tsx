@@ -286,46 +286,49 @@ const PlotlyWrapper = React.forwardRef((props: PlotlyWrapperProps, ref) => {
 
   return (
     <div className="react-base-plot">
-      {plotlyRefInitialized && (
-        <div className="react-base-plot-toolbar">
-          <ButtonGroup>
-            <DownloadIcon
-              Plotly={props.Plotly}
-              plotlyRef={plotlyRef}
-              idPrefixForUniqueness={props.idPrefixForUniqueness}
-              {...props.downloadIconWidgetProps}
-            />
-            <DragmodeWidget
-              selectedDragmode={selectedDragmode}
-              setDragmodeZoom={setDragmodeZoom}
-              setDragmodePan={setDragmodePan}
-              setDragmodeBoxSelect={setDragmodeBoxSelect}
-              setDragmodeLassoSelect={setDragmodeLassoSelect}
-              idPrefixForUniqueness={props.idPrefixForUniqueness}
-              dragmodeWidgetOptions={dragmodeWidgetOptions}
-            />
-            {props.selectToLabelWidgetProps && (
-              <SelectToLabel
-                visibleLabels={visibleLabels}
-                setVisibleLabels={setVisibleLabels}
-                plotlySelectedEvent={plotlySelectedEvent}
-                setPlotlySelectedEvent={setPlotlySelectedEvent}
+      {plotlyRefInitialized &&
+        props.showWidgetOptions !== false &&
+        props.idPrefixForUniqueness &&
+        props.downloadIconWidgetProps && (
+          <div className="react-base-plot-toolbar">
+            <ButtonGroup>
+              <DownloadIcon
+                Plotly={props.Plotly}
+                plotlyRef={plotlyRef}
                 idPrefixForUniqueness={props.idPrefixForUniqueness}
-                plotlyLayout={props.plotlyParams.layout}
-                plotlyConfig={props.plotlyParams.config}
+                {...props.downloadIconWidgetProps}
+              />
+              <DragmodeWidget
+                selectedDragmode={selectedDragmode}
+                setDragmodeZoom={setDragmodeZoom}
+                setDragmodePan={setDragmodePan}
                 setDragmodeBoxSelect={setDragmodeBoxSelect}
                 setDragmodeLassoSelect={setDragmodeLassoSelect}
-                {...props.selectToLabelWidgetProps}
+                idPrefixForUniqueness={props.idPrefixForUniqueness}
+                dragmodeWidgetOptions={dragmodeWidgetOptions}
               />
-            )}
-            {props.additionalToolbarWidgets
-              ? props.additionalToolbarWidgets.map((element, i) => (
-                  <React.Fragment key={i}>{element}</React.Fragment>
-                ))
-              : null}
-          </ButtonGroup>
-        </div>
-      )}
+              {props.selectToLabelWidgetProps && (
+                <SelectToLabel
+                  visibleLabels={visibleLabels}
+                  setVisibleLabels={setVisibleLabels}
+                  plotlySelectedEvent={plotlySelectedEvent}
+                  setPlotlySelectedEvent={setPlotlySelectedEvent}
+                  idPrefixForUniqueness={props.idPrefixForUniqueness}
+                  plotlyLayout={props.plotlyParams.layout}
+                  plotlyConfig={props.plotlyParams.config}
+                  setDragmodeBoxSelect={setDragmodeBoxSelect}
+                  setDragmodeLassoSelect={setDragmodeLassoSelect}
+                  {...props.selectToLabelWidgetProps}
+                />
+              )}
+              {props.additionalToolbarWidgets
+                ? props.additionalToolbarWidgets.map((element, i) => (
+                    <React.Fragment key={i}>{element}</React.Fragment>
+                  ))
+                : null}
+            </ButtonGroup>
+          </div>
+        )}
       <div ref={plotlyRef} />
       {process.env.NODE_ENV === "development" && (
         <DevAssertions

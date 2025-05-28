@@ -24,7 +24,6 @@ from depmap.interactive.config.utils import (
     legacy_get_entity_class_name,
     get_entity_type,  # used in: DE2, downloads, vector catalog
     get_matrix_id,  # 4 uses: cell line view, associations: pre-calculated pearson correlation query, etc.
-    get_private_datasets,  # 4 uses: private datasets upload UI & tests
     get_sort_key,  # used to sort datasets in vector catalog and DE1
     get_taiga_id,  # 1 use: downloads: get dataset url
     has_opaque_features,  # only used to set DE1 axis labels to "" for custom cell line groups
