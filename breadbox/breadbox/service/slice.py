@@ -116,24 +116,36 @@ def get_slice_data(
         feature = dataset_crud.get_dataset_feature_by_given_id(
             db, dataset_id, feature_given_id=slice_query.identifier
         )
+        assert (
+            feature.index is not None
+        ), f"Feature {feature.given_id} has no index - this should not happen for matrix dataset features"
         slice_data = get_feature_slice(dataset, [feature.index], filestore_location)
 
     elif slice_query.identifier_type == "feature_label":
         feature = metadata_service.get_dataset_feature_by_label(
             db, dataset_id, feature_label=slice_query.identifier,
         )
+        assert (
+            feature.index is not None
+        ), f"Feature {feature.given_id} has no index - this should not happen for matrix dataset features"
         slice_data = get_feature_slice(dataset, [feature.index], filestore_location)
 
     elif slice_query.identifier_type == "sample_id":
         sample = dataset_crud.get_dataset_sample_by_given_id(
             db, dataset_id, sample_given_id=slice_query.identifier
         )
+        assert (
+            sample.index is not None
+        ), f"Sample {sample.given_id} has no index - this should not happen for matrix dataset samples"
         slice_data = get_sample_slice(dataset, [sample.index], filestore_location)
 
     elif slice_query.identifier_type == "sample_label":
         sample = metadata_service.get_dataset_sample_by_label(
             db, dataset_id, sample_label=slice_query.identifier
         )
+        assert (
+            sample.index is not None
+        ), f"Sample {sample.given_id} has no index - this should not happen for matrix dataset samples"
         slice_data = get_sample_slice(dataset, [sample.index], filestore_location)
 
     else:
