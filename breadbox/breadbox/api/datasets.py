@@ -35,7 +35,6 @@ from ..models.dataset import (
     Dataset as DatasetModel,
     ValueType,
     MatrixDataset,
-    DatasetFeature,
 )
 
 from ..io.filestore_crud import get_feature_slice
@@ -178,10 +177,6 @@ def get_feature_data(
         feature = dataset_crud.get_dataset_feature_by_given_id(
             db=db, dataset_id=dataset_ids[i], feature_given_id=feature_ids[i]
         )
-        # This explicitly tells pyright that feature is an instance of DatasetFeature. So accessing
-        # feature.index returns an int rather than a Column[int]
-        assert isinstance(feature, DatasetFeature)
-
         dataset = feature.dataset
         if not isinstance(dataset, MatrixDataset):
             raise UserError(
@@ -330,9 +325,7 @@ def get_matrix_dataset_data(
     ] = False,
 ):
     if dataset.format != "matrix_dataset":
-        raise UserError(
-            "This endpoint only supports matrix_datasets. Use the `/tabular` endpoint instead."
-        )
+        raise UserError("This endpoint only supports matrix_datasets. Use the `/tabular` endpoint instead.")
     try:
         df = dataset_service.get_subsetted_matrix_dataset_df(
             db,
@@ -365,9 +358,7 @@ def get_tabular_dataset_data(
     ] = False,
 ):
     if dataset.format != "tabular_dataset":
-        raise UserError(
-            "This endpoint only supports tabular datasets. Use the `/matrix` endpoint instead."
-        )
+        raise UserError("This endpoint only supports tabular datasets. Use the `/matrix` endpoint instead.")
     try:
         df = dataset_service.get_subsetted_tabular_dataset_df(
             db, user, dataset, tabular_dimensions_info, strict
@@ -410,9 +401,7 @@ def get_dataset_data(
 ):
     """Get dataset dataframe subset given the features and samples. Filtering should be possible using either labels (cell line name, gene name, etc.) or ids (depmap_id, entrez_id, etc.). If features or samples are not specified, return all features or samples"""
     if dataset.format != "matrix_dataset":
-        raise UserError(
-            "This endpoint only supports matrix_datasets. Use the `/tabular` endpoint instead."
-        )
+        raise UserError("This endpoint only supports matrix_datasets. Use the `/tabular` endpoint instead.")
     try:
         dim_info = MatrixDimensionsInfo(
             features=features,
