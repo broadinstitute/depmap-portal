@@ -2,10 +2,37 @@ import "src/public-path";
 import React from "react";
 import ReactDOM from "react-dom";
 import { ApiContext } from "@depmap/api";
-import { DataExplorerSettingsProvider } from "@depmap/data-explorer-2";
+import {
+  DataExplorerPage,
+  DataExplorerSettingsProvider,
+  DeprecatedDataExplorerApiProvider,
+  PlotlyLoaderProvider,
+} from "@depmap/data-explorer-2";
+import PlotlyLoader from "src/plot/components/PlotlyLoader";
 import { apiFunctions } from "src/common/utilities/context";
 import ErrorBoundary from "src/common/components/ErrorBoundary";
-import DataExplorer2 from "src/data-explorer-2/components/DataExplorer2";
+import {
+  evaluateLegacyContext,
+  fetchAnalysisResult,
+  fetchLegacyAssociations,
+  fetchContextSummary,
+  fetchCorrelation,
+  fetchDatasetDetails,
+  fetchDatasetsByIndexType,
+  fetchDatasetsMatchingContextIncludingEntities,
+  fetchDimensionLabels,
+  fetchDimensionLabelsOfDataset,
+  fetchDimensionLabelsToDatasetsMapping,
+  fetchGeneTeaEnrichment,
+  fetchGeneTeaTermContext,
+  fetchLinearRegression,
+  fetchMetadataColumn,
+  fetchMetadataSlices,
+  fetchPlotDimensions,
+  fetchUniqueValuesOrRange,
+  fetchWaterfall,
+} from "src/data-explorer-2/deprecated-api";
+
 import "react-bootstrap-typeahead/css/Typeahead.css";
 import "src/common/styles/typeahead_fix.scss";
 
@@ -24,15 +51,43 @@ const { feedbackUrl, contactEmail, tutorialLink } = JSON.parse(
 const App = () => {
   return (
     <ErrorBoundary>
-      <ApiContext.Provider value={apiFunctions.depmap}>
-        <DataExplorerSettingsProvider>
-          <DataExplorer2
-            feedbackUrl={feedbackUrl}
-            contactEmail={contactEmail}
-            tutorialLink={tutorialLink}
-          />
-        </DataExplorerSettingsProvider>
-      </ApiContext.Provider>
+      <PlotlyLoaderProvider PlotlyLoader={PlotlyLoader}>
+        <ApiContext.Provider value={apiFunctions.depmap}>
+          <DeprecatedDataExplorerApiProvider
+            evaluateLegacyContext={evaluateLegacyContext}
+            fetchDatasetDetails={fetchDatasetDetails}
+            fetchDatasetsByIndexType={fetchDatasetsByIndexType}
+            fetchDimensionLabels={fetchDimensionLabels}
+            fetchDimensionLabelsOfDataset={fetchDimensionLabelsOfDataset}
+            fetchDimensionLabelsToDatasetsMapping={
+              fetchDimensionLabelsToDatasetsMapping
+            }
+            fetchDatasetsMatchingContextIncludingEntities={
+              fetchDatasetsMatchingContextIncludingEntities
+            }
+            fetchAnalysisResult={fetchAnalysisResult}
+            fetchLegacyAssociations={fetchLegacyAssociations}
+            fetchContextSummary={fetchContextSummary}
+            fetchMetadataColumn={fetchMetadataColumn}
+            fetchCorrelation={fetchCorrelation}
+            fetchGeneTeaEnrichment={fetchGeneTeaEnrichment}
+            fetchGeneTeaTermContext={fetchGeneTeaTermContext}
+            fetchLinearRegression={fetchLinearRegression}
+            fetchMetadataSlices={fetchMetadataSlices}
+            fetchPlotDimensions={fetchPlotDimensions}
+            fetchUniqueValuesOrRange={fetchUniqueValuesOrRange}
+            fetchWaterfall={fetchWaterfall}
+          >
+            <DataExplorerSettingsProvider>
+              <DataExplorerPage
+                feedbackUrl={feedbackUrl}
+                contactEmail={contactEmail}
+                tutorialLink={tutorialLink}
+              />
+            </DataExplorerSettingsProvider>
+          </DeprecatedDataExplorerApiProvider>
+        </ApiContext.Provider>
+      </PlotlyLoaderProvider>
     </ErrorBoundary>
   );
 };

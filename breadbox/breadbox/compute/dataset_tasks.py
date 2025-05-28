@@ -2,10 +2,11 @@ from dataclasses import dataclass
 import dataclasses
 from io import BytesIO
 import time
-from typing import Any, Callable, Dict, List, Optional, Set, TypedDict, Union, Literal
+from typing import Any, Callable, Dict, List, Optional, Set, Union, Literal
 from logging import getLogger
 from uuid import UUID, uuid4
 from breadbox.io.upload_utils import create_upload_file
+from typing_extensions import TypedDict
 
 import celery
 
@@ -28,12 +29,12 @@ from breadbox.schemas.dataset import (
     DatasetResponse,
 )
 from ..config import get_settings
-from ..crud import dataset as dataset_crud
-from ..crud import types as type_crud
+from ..service import dataset as dataset_service
+from ..crud import dimension_types as type_crud
 from ..crud import group as group_crud
 from ..crud import data_type as data_type_crud
 from ..io.data_validation import validate_and_upload_dataset_files
-from .celery import app
+from .celery import app, LogErrorsTask
 from ..db.util import db_context
 from breadbox.compute.dataset_uploads_tasks import parse_and_validate_dataset_given_id
 
@@ -263,7 +264,7 @@ def upload_dataset(
         dataset_md5=None,
     )
 
-    added_dataset = dataset_crud.add_matrix_dataset(
+    added_dataset = dataset_service.add_matrix_dataset(
         db,
         user,
         dataset,
@@ -271,6 +272,9 @@ def upload_dataset(
         sample_given_id_and_index_df,
         valid_fields.valid_feature_type,
         valid_fields.valid_sample_type,
+        short_name=None,
+        version=None,
+        description=None,
     )
 
     # NOTE: The return value of dataset_crud.add_dataset can be None if the user
@@ -319,7 +323,7 @@ def upload_dataset(
 #   (2) include the task in breadbox/breadbox/compute/celery.py (and the celery_includes pytest fixture)
 #   (3) Change the caller to use .delay instead of .apply
 #   (4) Implement a Progress Tracker in frontend components that rely on add_dataset
-@app.task(bind=True)
+@app.task(base=LogErrorsTask, bind=True)
 def run_upload_dataset(
     task: celery.Task,
     name: str,

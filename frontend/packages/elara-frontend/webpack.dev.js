@@ -1,3 +1,4 @@
+const path = require("path");
 const merge = require("webpack-merge").merge;
 const common = require("./webpack.common.js");
 const ReactRefreshWebpackPlugin = require("@pmmmwh/react-refresh-webpack-plugin");
@@ -19,6 +20,10 @@ const devConfig = (env, argv) => ({
     historyApiFallback: true,
     client: {
       overlay: false,
+    },
+    static: {
+      directory: path.resolve(__dirname, "./public/static"),
+      publicPath: "/elara/static",
     },
     proxy: {
       "/elara/**/*.(ico|js|map|woff|woff2)": {

@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import BarChart from "src/plot/components/BarChart";
+import PrototypeBarChart from "./PrototypeBarChart";
 import PlotSpinner from "src/plot/components/PlotSpinner";
 import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
 import styles from "src/predictabilityPrototype/styles/PredictabilityPrototype.scss";
@@ -120,7 +120,7 @@ const TopFeaturesOverallTile = ({
             <PlotSpinner height={"100%"} />
           )}
           {topFeaturesData && (
-            <BarChart
+            <PrototypeBarChart
               title={plotTitle}
               categoryValues={xValues}
               xAxisTitle={"Adjusted Feature Importance"}

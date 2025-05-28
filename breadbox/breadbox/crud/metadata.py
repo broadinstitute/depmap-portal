@@ -35,9 +35,6 @@ from typing import List, Union, cast
 def cast_tabular_cell_value_type(value, type) -> Union[None, str, float, List[str]]:
     if value == None:
         return None
-    if type == AnnotationType.binary:
-        # NOTE: pandas dtype boolean in _validate_dimension_type_metadata_file standardizes booleans to True and False
-        return True if value == "True" else False
     if type == AnnotationType.categorical:
         return str(value)
     if type == AnnotationType.continuous:
@@ -85,6 +82,7 @@ def _get_metadata_as_name_value_list(df: pd.DataFrame):
 def _get_feature_or_sample_metadata_df(
     db: SessionWithUser, label_or_id: str
 ) -> pd.DataFrame:
+    """DEPRECATED: Remove after Elara metadata support is updated."""
     query = (
         db.query(TabularCell)
         .join(TabularColumn)
@@ -158,5 +156,6 @@ def get_metadata_search_options(db: SessionWithUser, user: str, text: str):
 def get_metadata_list_for_dimension_label(
     db: SessionWithUser, label_or_id: str
 ) -> MetadataResponse:
+    """DEPRECATED: Remove after Elara metadata support is updated."""
     metadata_df = _get_feature_or_sample_metadata_df(db, label_or_id)
     return format_feature_or_sample_metadata(metadata_df, label_or_id)

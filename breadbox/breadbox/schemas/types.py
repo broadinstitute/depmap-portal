@@ -1,17 +1,19 @@
 from typing import Optional, Dict, Any, Literal
 from breadbox.models.dataset import AnnotationType
-from breadbox.schemas.custom_http_exception import AnnotationValidationError
+from breadbox.schemas.custom_http_exception import AnnotationValidationError, UserError
 from breadbox.schemas.dataset import TabularDatasetResponse
 from fastapi import File, Form, HTTPException, UploadFile, Body
+from typing_extensions import TypedDict
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 from pydantic_settings import SettingsConfigDict
 from typing import List, Optional, Dict, Annotated
 
-
-class IdAndName(BaseModel):
+# TypedDict has much better performance for nested structures than pydantic models.
+# See: https://docs.pydantic.dev/latest/concepts/performance/#use-typeddict-over-nested-models
+class DimensionIdentifiers(TypedDict):
     id: str
-    name: str
+    label: str
 
 
 class DimensionType(BaseModel):
@@ -32,16 +34,28 @@ class AddDimensionType(BaseModel):
 
 class UpdateDimensionType(BaseModel):
     # cannot update name, id_column, nor axis
-    metadata_dataset_id: str
-    properties_to_index: List[str]
+    display_name: Optional[str] = None
+    metadata_dataset_id: Optional[str] = None
+    properties_to_index: Optional[List[str]] = None
 
+    @model_validator(mode="after")
+    def check_metadata_and_properties_to_index(self):
+        """
+        Properties to index, which are column names, can only be provided if there is new metadata.
+        """
+        metadata_dataset_id, properties_to_index = (
+            self.metadata_dataset_id,
+            self.properties_to_index,
+        )
+        # NOTE: By default `properties_to_index` is set to empty list when new dimension type without metadata is added
+        if metadata_dataset_id is None and (
+            properties_to_index is not None and len(properties_to_index) > 0
+        ):
+            raise UserError(
+                f"Cannot provide properties to index if there is no dataset metadata!"
+            )
 
-# class DimensionTypeIn(DimensionType):
-#     metadata_file_ids: List[str]
-#
-#
-# class DimensionTypeOut(DimensionType):
-#     dataset: IdAndName
+        return self
 
 
 class FeatureTypeOut(BaseModel):

@@ -1,34 +1,35 @@
 /*Color variables*/
 @import "../shared/variables";
 
+// original homepage styling
 .explore_tools_background {
   color: white;
   &.public {
     background-image: linear-gradient(#6790f7, #16215b);
   }
-}
 
-.cards_section {
-  display: flex;
-  gap: 2%;
-  min-height: 500px;
+  .cards_section {
+    display: flex;
+    gap: 2%;
+    min-height: 500px;
 
-  @media screen and (min-width: 992px) {
-    flex-direction: row;
+    @media screen and (min-width: 992px) {
+      flex-direction: row;
+    }
+    @media screen and (max-width: 991px) {
+      flex-direction: column;
+    }
   }
-  @media screen and (max-width: 991px) {
-    flex-direction: column;
-  }
-}
-.thumbnail {
-  color: #303030;
-  padding: 0 20px 0px 20px;
-  border-radius: 6px;
-  flex: 1 1 0px;
-  position: relative;
+  .thumbnail {
+    color: #303030;
+    padding: 0 20px 0px 20px;
+    border-radius: 6px;
+    flex: 1 1 0px;
+    position: relative;
 
-  img {
-    width: 100%;
+    img {
+      width: 100%;
+    }
   }
 }
 
@@ -234,6 +235,49 @@
   @media screen and (min-width: 768px) and (max-width: 1365px) {
     padding: 50px;
   }
+  @media screen and (max-width: 768px) {
+    padding: 20px;
+  }
+
+  &.dmc {
+    h1 {
+      font-size: 42px;
+      font-weight: 700;
+      margin: 0px 0px 30px;
+    }
+    h2 {
+      font-size: 28px;
+      font-weight: 400;
+      line-height: 40px;
+    }
+
+    h3 {
+      font-size: 24px;
+      font-weight: 600;
+      line-height: 30px;
+    }
+
+    h4 {
+      font-size: 20px;
+      line-height: 26px;
+    }
+
+    h5 {
+      font-size: 18px;
+      line-height: 26px;
+    }
+
+    @media screen and (min-width: 1366px) {
+      padding: 50px;
+    }
+    @media screen and (min-width: 768px) and (max-width: 1365px) {
+      padding: 25px;
+    }
+    @media screen and (max-width: 768px) {
+      padding: 10px;
+    }
+  }
+
   &.nonpublic_feature {
     @media screen and (min-width: 1366px) {
       padding: 0px 100px 0px 100px;

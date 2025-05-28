@@ -1,6 +1,5 @@
 /* eslint-disable */
 import * as React from "react";
-import { SaveCellLinesModal } from "@depmap/interactive";
 import { CSVLink } from "react-csv";
 
 export interface ButtonGroupProps {
@@ -44,58 +43,6 @@ interface RadioProps {
   label: string;
   value: string;
   handleChange: (event: React.FormEvent<HTMLInputElement>) => void;
-}
-
-export class ButtonGroup extends React.Component<ButtonGroupProps, any> {
-  constructor(props: any) {
-    super(props);
-    this.state = {
-      showSaveCellLinesModal: false,
-    };
-  }
-
-  openSaveCellLinesModal = () => {
-    this.setState({ showSaveCellLinesModal: true });
-  };
-
-  closeSaveCellLinesModal = () => {
-    this.setState({ showSaveCellLinesModal: false });
-  };
-
-  saveCellLineSet = (name: string) => {
-    this.closeSaveCellLinesModal();
-    this.props.saveCellLineSet?.(name);
-  };
-
-  render() {
-    return (
-      <div>
-        <div className="btn-toolbar">
-          {this.props.showGenerateUrl && (
-            <UrlButton onClick={this.props.generateUrl} />
-          )}
-          {this.props.showCustomTaiga && (
-            <CustomTaigaButton onClick={this.props.onShowCustomTaiga} />
-          )}
-          <CustomCsvButton onClick={this.props.onShowCustomCsv} />
-          <PlotPointsCsvButton
-            csvData={this.props.csvDownloadData}
-            filename={this.props.csvDownloadFilename}
-          />
-          {this.props.renderOpenInDE2Button()}
-          {this.props.saveCellLineSet && (
-            <SaveCellLinesButton onClick={this.openSaveCellLinesModal} />
-          )}
-        </div>
-
-        <SaveCellLinesModal
-          showModal={this.state.showSaveCellLinesModal}
-          onHide={this.closeSaveCellLinesModal}
-          onSubmit={this.saveCellLineSet}
-        />
-      </div>
-    );
-  }
 }
 
 class SaveCellLinesButton extends React.Component<ClickButtonProps, any> {

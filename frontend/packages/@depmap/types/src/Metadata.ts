@@ -16,7 +16,7 @@ export enum AnnotationType {
   categorical = "categorical",
   binary = "binary",
   text = "text",
-  listStrings = "list_strings",
+  list_strings = "list_strings",
 }
 export interface AnnotationTypeMap {
   annotation_type_mapping: { [key: string]: AnnotationType };

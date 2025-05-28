@@ -1,6 +1,7 @@
 import React from "react";
 import { DepmapApi } from "src/dAPI";
 
+import { toStaticUrl } from "@depmap/globals";
 import InfoIcon from "src/common/components/InfoIcon";
 import StyledMeter from "src/common/components/StyledMeter";
 import { EntityType } from "src/entity/models/entities";
@@ -100,7 +101,7 @@ const getRelationshipDescription = (
     <>
       <div style={{ display: "flex", alignItems: "center" }}>
         <img
-          src={dapi._getFileUrl("/static/img/predictability/self.svg")}
+          src={toStaticUrl("img/predictability/self.svg")}
           alt=""
           style={{ height: 12, marginInlineEnd: 4 }}
         />
@@ -113,7 +114,7 @@ const getRelationshipDescription = (
 
       <div style={{ display: "flex", alignItems: "center" }}>
         <img
-          src={dapi._getFileUrl("/static/img/predictability/related.svg")}
+          src={toStaticUrl("img/predictability/related.svg")}
           alt=""
           style={{ height: 12, marginInlineEnd: 4 }}
         />
@@ -130,7 +131,7 @@ const getRelationshipDescription = (
     <>
       <div style={{ display: "flex", alignItems: "center" }}>
         <img
-          src={dapi._getFileUrl("/static/img/predictability/target.svg")}
+          src={toStaticUrl("img/predictability/target.svg")}
           alt=""
           style={{ height: 12, marginInlineEnd: 4 }}
         />
@@ -267,8 +268,8 @@ const PredictiveModelTable = ({
                     {relatedType && (
                       <span className="related-icon-container">
                         <img
-                          src={dapi._getFileUrl(
-                            `/static/img/predictability/${relatedType}.svg`
+                          src={toStaticUrl(
+                            `img/predictability/${relatedType}.svg`
                           )}
                           alt={relatedType}
                         />

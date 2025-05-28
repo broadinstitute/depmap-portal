@@ -1,3 +1,5 @@
+import { SliceQuery } from "./SliceQuery";
+
 type PartialDeep<T> = { [P in keyof T]?: PartialDeep<T[P]> };
 
 export type DataExplorerPlotType =
@@ -6,12 +8,26 @@ export type DataExplorerPlotType =
   | "correlation_heatmap"
   | "waterfall";
 
+export type DataExplorerContextVariable = SliceQuery & {
+  source?: "metadata_column" | "tabular_dataset" | "matrix_dataset";
+  slice_type?: string;
+  label?: string;
+};
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type DataExplorerContextExpression = Record<string, any> | boolean;
+
 export type DataExplorerContext = {
   name: string;
   context_type: string;
-  // TODO: Add a ContextExpression type. It should be based on JSON logic but
-  // not necessarily tied to that library.
-  expr: Record<string, any> | boolean;
+  expr: DataExplorerContextExpression;
+};
+
+export type DataExplorerContextV2 = {
+  name: string;
+  dimension_type: string;
+  expr: DataExplorerContextExpression;
+  vars: Record<string, DataExplorerContextVariable>;
 };
 
 export type DataExplorerAnonymousContext = Omit<DataExplorerContext, "name">;
@@ -33,7 +49,7 @@ export type FilterKey =
   | "distinguish2";
 
 export type DataExplorerFilters = Partial<
-  Record<FilterKey, DataExplorerContext>
+  Record<FilterKey, DataExplorerContext | DataExplorerContextV2>
 >;
 
 export interface DataExplorerPlotConfigDimension {
@@ -44,14 +60,17 @@ export interface DataExplorerPlotConfigDimension {
   aggregation: DataExplorerAggregation;
 }
 
-// HACK: This Metadata type is intended as a stopgap. It should be removed from
-// the data model when we migrate to BreadBox. Its purpose is to provide a way
-// to request series that can *only* be referenced by `slice_id`. Certain
-// pseudo-datasets (e.g. lineage) don't have a `dataset_id` or `slice_type`
-// and thus are incompatible with the above notion of a dimension. Such
-// datasets cannot be plotted directly but it's still useful to get data from
-// them for the purposes of coloring and filtering.
-export type DataExplorerMetadata = Record<string, { slice_id: string }>;
+export type PartialDataExplorerPlotConfigDimension = PartialDeep<DataExplorerPlotConfigDimension>;
+
+export interface DataExplorerPlotConfigDimensionV2
+  extends Omit<DataExplorerPlotConfigDimension, "context"> {
+  context: DataExplorerContextV2;
+}
+
+export type DataExplorerMetadata = Record<
+  string,
+  { slice_id: string } | SliceQuery
+>;
 
 export interface DataExplorerPlotResponseDimension {
   axis_label: string;
@@ -61,11 +80,14 @@ export interface DataExplorerPlotResponseDimension {
   values: number[];
 }
 
-export type colorByValue =
+export type ColorByValue =
   | "raw_slice"
   | "aggregated_slice"
   | "property"
-  | "custom";
+  | "custom"
+  // Only supported in Elara. These map to how data is stored in Breadbox.
+  | "metadata_column"
+  | "tabular_dataset";
 
 // A DataExplorerPlotConfig is an object with all the configurable parameters
 // used to generate a plot. Note that some properties only make sense with
@@ -75,7 +97,7 @@ export interface DataExplorerPlotConfig {
   plot_type: DataExplorerPlotType;
   index_type: string;
   dimensions: Partial<Record<DimensionKey, DataExplorerPlotConfigDimension>>;
-  color_by?: colorByValue;
+  color_by?: ColorByValue;
   filters?: DataExplorerFilters;
   metadata?: DataExplorerMetadata;
 
@@ -127,6 +149,7 @@ export interface DataExplorerPlotResponse {
         label: string;
         slice_id: string;
         values: (string | number)[];
+        value_type: "categorical" | "binary";
       }
     >
   >;
@@ -149,19 +172,20 @@ export type ContextPath =
 
 export interface DataExplorerDatasetDescriptor {
   data_type: string;
-  dataset_id: string;
+  id: string;
   index_type: string;
+  given_id: string | null;
+  name: string;
+  priority: number | null;
   slice_type: string;
-  label: string;
   units: string;
-  priority: number;
 }
 
-type ContextWithoutExpr = {
+type ContextWithoutExprOrVars = {
   name: string;
   context_type: string;
   // HACK: This property is never saved in local storage. It's just a temporary
   // tag that loadContextsFromLocalStorage() creates.
   isLegacyList?: boolean;
 };
-export type StoredContexts = Record<string, ContextWithoutExpr>;
+export type StoredContexts = Record<string, ContextWithoutExprOrVars>;

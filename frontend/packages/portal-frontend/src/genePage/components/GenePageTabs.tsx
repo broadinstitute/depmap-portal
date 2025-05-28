@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { CustomList } from "@depmap/cell-line-selector";
+import { toStaticUrl } from "@depmap/globals";
 import {
   TabsWithHistory,
   TabList,
@@ -292,11 +293,9 @@ const GenePageTabs = ({
                     dependencyProfileOptions={dependencyProfileOptions}
                     onCelfieInitialized={() => dapi.endTrace()}
                     howToImg={howToImg}
-                    methodIcon={dapi._getFileUrl(
-                      "/static/img/predictability/pdf.svg"
-                    )}
-                    methodPdf={dapi._getFileUrl(
-                      "/static/pdf/Genomic_Associations_Methodology.pdf"
+                    methodIcon={toStaticUrl("img/predictability/pdf.svg")}
+                    methodPdf={toStaticUrl(
+                      "pdf/Genomic_Associations_Methodology.pdf"
                     )}
                   />
                 </React.Suspense>

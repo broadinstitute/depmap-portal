@@ -8,11 +8,14 @@ from collections import defaultdict
 from logging import getLogger
 from flask import json, make_response
 
-from depmap_compute.context import decode_slice_id
+from depmap_compute.context import (
+    ContextEvaluator,
+    LegacyContextEvaluator,
+)
+from depmap_compute.slice import decode_slice_id
 from depmap import data_access
 from depmap.data_access.models import MatrixDataset
 from depmap.settings.download_settings import get_download_list
-from depmap.vector_catalog.models import Serializer
 from depmap.data_explorer_2.datatypes import (
     blocked_dimension_types,
     entity_aliases,
@@ -24,6 +27,8 @@ log = getLogger(__name__)
 @functools.cache
 def get_vector_labels(dataset_id: str, is_transpose: bool) -> list[str]:
     """
+    DEPRECATED: this does not use the definition of "labels" that we are using
+    going forward. For samples, this returns IDs as labels. 
     Load all labels for an axis of the given dataset.
     If is_transpose, then get depmap_ids/sample labels.
     Otherwise, get sample/feature labels.
@@ -35,6 +40,10 @@ def get_vector_labels(dataset_id: str, is_transpose: bool) -> list[str]:
 
 
 def get_dimension_labels_of_dataset(dimension_type: str, dataset: MatrixDataset):
+    """
+    DEPRECATED: this does not use the definition of "labels" that we are using
+    going forward. For samples, this returns IDs as labels. 
+    """
     if dimension_type not in (dataset.feature_type, dataset.sample_type):
         return set()
 
@@ -86,6 +95,23 @@ def get_series_from_de2_slice_id(slice_id: str) -> pd.Series:
         return get_compound_experiment_compound_instance_series()
     if slice_id.startswith("slice/mutations_prioritized/"):
         return get_mutations_prioritized_series(dataset_id, feature_label)
+    # HACK: These aren't real dataset IDs, just magic strings
+    if dataset_id in ("depmap_model_metadata", "screen_metadata"):
+        dimension_type_name = (
+            "depmap_model"
+            if dataset_id == "depmap_model_metadata"
+            else "Screen metadata"
+        )
+        metadata_dataset_id = data_access.get_metadata_dataset_id(dimension_type_name)
+
+        if metadata_dataset_id is None:
+            raise LookupError(
+                f"Could not find metadata_dataset_id for dimension type '{dimension_type_name}'!"
+            )
+
+        return data_access.breadbox_dao.get_tabular_dataset_column(  # pyright: ignore
+            metadata_dataset_id, feature_label
+        )
 
     is_transpose = feature_type == "transpose_label"
     if is_transpose and data_access.is_continuous(dataset_id):
@@ -203,11 +229,38 @@ def get_dimension_labels_across_datasets(dimension_type):
     return sorted(list(all_labels))
 
 
+def get_all_dimension_labels_by_id(dimension_type: str) -> dict[str, str]:
+    """Get all dimension labels and IDs across datasets."""
+    all_labels_by_id = {}
+    # For each dataset, if it has the dimension type, get its IDs and labels
+    for dataset in get_all_supported_continuous_datasets():
+        if dimension_type == dataset.sample_type:
+            dataset_labels_by_id = data_access.get_dataset_sample_labels_by_id(
+                dataset.id
+            )
+        elif dimension_type == dataset.feature_type:
+            dataset_labels_by_id = data_access.get_dataset_feature_labels_by_id(
+                dataset.id
+            )
+        else:
+            dataset_labels_by_id = {}
+
+        all_labels_by_id.update(dataset_labels_by_id)
+
+    return all_labels_by_id
+
+
 def get_dimension_labels_to_datasets_mapping(dimension_type: str):
     """
     Takes a `dimension_type` and returns a dictionary like:
     {
       "dataset_ids": [
+        "copy_number_absolute",
+        "Chronos_Combined",
+        "expression"
+      ],
+
+      given_ids: [
         "copy_number_absolute",
         "Chronos_Combined",
         "expression"
@@ -254,6 +307,7 @@ def get_dimension_labels_to_datasets_mapping(dimension_type: str):
     data_types = defaultdict(list)
     units = defaultdict(list)
     dataset_ids = []
+    given_ids = []
     dataset_labels = []
 
     for dataset in get_all_supported_continuous_datasets():
@@ -262,6 +316,7 @@ def get_dimension_labels_to_datasets_mapping(dimension_type: str):
 
         index = len(dataset_ids)
         dataset_ids.append(dataset.id)
+        given_ids.append(dataset.given_id)
         dataset_labels.append(dataset.label)
         data_types[dataset.data_type].append(index)
         units[dataset.units].append(index)
@@ -276,6 +331,7 @@ def get_dimension_labels_to_datasets_mapping(dimension_type: str):
         "dimension_labels": sorted_labels,
         "data_types": data_types,
         "dataset_ids": dataset_ids,
+        "given_ids": given_ids,
         "dataset_labels": dataset_labels,
     }
 
@@ -304,6 +360,8 @@ def get_all_supported_continuous_datasets() -> list[MatrixDataset]:
         if dataset.feature_type in blocked_dimension_types:
             continue
         if dataset.sample_type in blocked_dimension_types:
+            continue
+        if dataset.data_type == "metadata":
             continue
 
         if dataset.data_type is None:
@@ -401,3 +459,41 @@ def get_union_of_index_labels(index_type, dataset_ids):
 
 def clear_cache():
     get_vector_labels.cache_clear()
+
+
+def get_ids_and_labels_matching_context(context: dict) -> tuple[list[str], list[str]]:
+    """
+    For a given context, load all matching IDs and labels.
+    Both context versions are supported here. 
+    """
+    # Identify which type of context has been provided
+    # Legacy contexts use the "context_type" field name, while newer contexts use "dimension_type"
+    is_legacy_context = context.get("context_type") is not None
+    if is_legacy_context:
+        dimension_type = context.get("context_type")
+        context_evaluator = LegacyContextEvaluator(context, slice_to_dict)
+    else:
+        dimension_type = context.get("dimension_type")
+        context_evaluator = ContextEvaluator(context, data_access.get_slice_data)
+
+    if dimension_type is None:
+        raise ValueError("Context requests must specify a dimension type.")
+    # Load all dimension labels and ids
+    all_labels_by_id = get_all_dimension_labels_by_id(dimension_type)
+
+    # Evaluate each against the context
+    ids_matching_context = []
+    labels_matching_context = []
+    for given_id, label in all_labels_by_id.items():
+        if is_legacy_context and dimension_type != "depmap_model":
+            # Legacy contexts do feature lookups by label
+            is_match = context_evaluator.is_match(label)
+
+        else:
+            is_match = context_evaluator.is_match(given_id)
+
+        if is_match:
+            ids_matching_context.append(given_id)
+            labels_matching_context.append(label)
+
+    return ids_matching_context, labels_matching_context

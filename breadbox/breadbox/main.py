@@ -1,14 +1,12 @@
-from .startup import create_app, ensure_directories_exist, GCPExceptionReporter
+from .startup import create_app, ensure_directories_exist
 from .celery_task.utils import create_celery
-from .config import get_settings, Settings
+from .config import get_settings
 from breadbox.api.dependencies import get_user
 from fastapi import Request, status
-from fastapi.exceptions import RequestValidationError
 from fastapi.exception_handlers import (
-    request_validation_exception_handler,
     http_exception_handler,
 )
-from .logging_config import configure_logging
+from .logging import configure_logging, GCPExceptionReporter
 
 configure_logging()
 
@@ -26,27 +24,17 @@ celery_app = create_celery()
 celery = celery_app
 
 # create the Google Cloud exception reporter class
-exception_reporter = GCPExceptionReporter(settings.breadbox_env)
+exception_reporter = GCPExceptionReporter(service="breadbox", env_name=settings.breadbox_env)
 
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 
 @app.exception_handler(StarletteHTTPException)
 async def custom_http_exception_handler(request: Request, exc: StarletteHTTPException):
-    if exception_reporter.disabled is False:
+    if (exception_reporter.disabled is False) and (500 <= exc.status_code < 600):
         exception_reporter.report(request, exc.status_code, get_user(request))
 
     return await http_exception_handler(request, exc)
-
-
-@app.exception_handler(RequestValidationError)
-async def custom_request_validation_exception_handler(
-    request: Request, exc: RequestValidationError
-):
-    exception_reporter.report(
-        request, status.HTTP_422_UNPROCESSABLE_ENTITY, get_user(request)
-    )
-    return await request_validation_exception_handler(request, exc)
 
 
 @app.exception_handler(Exception)

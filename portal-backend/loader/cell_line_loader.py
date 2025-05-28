@@ -1,7 +1,5 @@
-import collections
 import logging
 import pandas as pd
-import re
 from depmap.database import db
 from depmap.cell_line.models import (
     CellLine,
@@ -11,7 +9,6 @@ from depmap.cell_line.models import (
     DiseaseSubtype,
     TumorType,
 )
-from depmap.context.models import Context, ContextEntity
 
 
 log = logging.getLogger(__name__)
@@ -36,6 +33,7 @@ def insert_or_update_cell_lines(df):
     # we seem to have a dup wtsi_master_cell_id
     if "WTSI_Master_Cell_ID" in df.columns:
         del df["WTSI_Master_Cell_ID"]
+
     df.columns = [x.lower() for x in df.columns]
     assert "wtsi_master_cell_id" in df.columns
     # more strange column renames. Something is wrong with how we generated the 20q4 sample info file
@@ -46,94 +44,51 @@ def insert_or_update_cell_lines(df):
     if "disease_subtype" in df.columns and "subtype_name" not in df.columns:
         df["subtype_name"] = df["disease_subtype"]
 
-    # Combine all merged cell lines (add as aliases for the cell lines they were merged to)
-    merged_cell_lines = df[
-        df["ccle_name"].str.match(r"\[MERGED_TO_[A-Za-z\d\-\_]*\].*", na=False)
-    ]
-    for index, row in merged_cell_lines.iterrows():
-        merged_depmap_id = re.search(
-            r"(?<=MERGED_TO_)[A-Za-z\d\-\_]*(?=\])", row["ccle_name"]
-        ).group(0)
-        ccle_name = row["ccle_name"].rsplit("]")[1]
-        # HACK: There's a typo in one of the lines. Adding this here to avoid rerunning the pipeline.
-        if merged_depmap_id == "ACH001163":
-            merged_depmap_id = "ACH-001163"
-        assert merged_depmap_id in df["arxspan_id"].values
-
-        canonical_cell_line = df[df["arxspan_id"] == merged_depmap_id].iloc[0]
-
-        alt_names = canonical_cell_line["alt_names"]
-        if type(alt_names) != str or len(alt_names) == 0:
-            alt_names = ccle_name
-
-        alt_names = set(alt_names.split(",") + [ccle_name])
-
-        if type(row["aliases"]) == str:
-            alt_names.add(",".join(row["aliases"].split(", ")))
-        if type(row["alt_names"]) == str:
-            alt_names.add(row["alt_names"])
-        if type(row["display_name"]) == str and "MERGED" not in row["display_name"]:
-            alt_names.add(row["display_name"])
-
-        alt_names = ",".join(sorted(alt_names))
-
-        df.loc[canonical_cell_line.name, "alt_names"] = alt_names
-
     for index, row in df.iterrows():
         depmap_id = row["arxspan_id"]
+        if is_empty_string(depmap_id):
+            # if we don't have a depmap ID there's really nothing to do but drop this
+            log.warning(f"Missing depmap_id for {row}!")
+            continue
 
-        cell_line_name = row["ccle_name"]
+        ccle_name = row["ccle_name"]
         cell_line_display_name = row["display_name"]
 
         catalog_number = row["catalog_number"]
-        growth_pattern = row["growth_pattern"]
 
-        if type(cell_line_name) == str and "[MERGED_TO_" in cell_line_name:
+        if type(ccle_name) == str and "[MERGED_TO_" in ccle_name:
             continue
 
         # hack: some cell line names are missing striped cell line name because these are internal and have no data.
-        # We just want it for a display label and so if we don't have it, instead use the ccle name. Check for NaN because
-        # that's how pandas represents missing values
-        if not isinstance(cell_line_display_name, str) and isnan(
-            cell_line_display_name
-        ):
-            cell_line_display_name = cell_line_name
+        # We just want it for a display label and so if we don't have it, instead use the ccle name.
+        if is_empty_string(cell_line_display_name):
+            cell_line_display_name = ccle_name
 
-        # switching to model.csv resulted in records which also are missing ccle_name. Drop these records
-        if not isinstance(cell_line_display_name, str) and (
-            isnan(cell_line_display_name) or cell_line_display_name is None
-        ):
+        if is_empty_string(cell_line_display_name):
             log.warning(f"Missing display name for {depmap_id}")
             cell_line_display_name = depmap_id
 
-        # print(f"depmap_id {depmap_id}, cell_line_display_name {repr(cell_line_display_name)}")
-
-        seen_aliases = set()
+        aliases = set()
         if is_non_empty_string(row["aliases"]):
-            cell_line_aliases = [
-                CellLineAlias(alias=alias) for alias in row["aliases"].split(", ")
-            ]
-            seen_aliases.update(row["aliases"].split(", "))
-        else:
-            cell_line_aliases = []
+            aliases.update(row["aliases"].split(","))
 
         if is_non_empty_string(row["alt_names"]):
-            alt_names = row["alt_names"].split(",")
-            for alt_name in alt_names:
-                if alt_name not in seen_aliases:
-                    cell_line_aliases.append(CellLineAlias(alias=alt_name))
-                    seen_aliases.add(alt_name)
+            aliases.update(row["alt_names"].split(","))
 
-        if (
-            is_non_empty_string(row["ccle_name"])
-            and row["ccle_name"] not in seen_aliases
-        ):
-            cell_line_aliases.append(CellLineAlias(alias=row["ccle_name"]))
+        for alt_name_column in ["ccle_name", "full_cell_line_name"]:
+            alt_name_value = row.get(alt_name_column)
+            if is_non_empty_string(alt_name_value):
+                aliases.add(alt_name_value)
+
+        # get rid of any extra space
+        aliases = set([x.strip() for x in aliases])
+
+        cell_line_aliases = [CellLineAlias(alias=alias) for alias in aliases]
 
         level_1_lineage = row["lineage_1"]
         # each cell line must have a level 1 lineage
         if not is_non_empty_string(level_1_lineage):
-            log.warning("%s had no level 1 lineage, setting to unknown", cell_line_name)
+            log.warning("%s had no level 1 lineage, setting to unknown", ccle_name)
             level_1_lineage = "unknown"
 
         lineage_names = [
@@ -141,7 +96,8 @@ def insert_or_update_cell_lines(df):
             (2, row["lineage_2"]),
             (3, row["lineage_3"]),
             (4, row["lineage_4"]),
-            (5, row.get("legacy_sub_subtype")),
+            #            legacy_sub_subtype has been removed, so don't add it
+            #            (5, row.get("legacy_sub_subtype")),
             (6, row.get("legacy_molecular_subtype")),
         ]
         lineages = [
@@ -181,62 +137,68 @@ def insert_or_update_cell_lines(df):
             )
         else:
             tumor_type_obj = None
-        if CellLine.exists(cell_line_name):
+
+        if CellLine.exists(ccle_name):
             log_data_issue(
                 "CellLine",
-                "Duplicate cell line name",
-                identifier=cell_line_name,
-                id_type="CCLE_shname",
+                "Duplicate ccle_name. Nulling out ccle_name",
+                identifier=ccle_name,
+                id_type="ccle_name",
             )
+            ccle_name = None
+
+        if CellLine.exists_by_depmap_id(depmap_id):
+            cell_line = CellLine.get_by_depmap_id(depmap_id, must=True)
+
+            # this is required
+            [db.session.delete(alias) for alias in cell_line.cell_line_alias]
+            [db.session.delete(lineage) for lineage in cell_line.lineage]
+
+            # any properties that should be updated need to be specified here
+            # there was an attempt to use db.session.merge, but we want to preserve certain cell line relationships such as context that not loaded in this loader and would be overwritten by merge. Additionally, backrefs require figuring out cascades
+            cell_line.cell_line_display_name = cell_line_display_name
+            cell_line.cell_line_alias = cell_line_aliases
+            cell_line.wtsi_master_cell_id = wtsi_master_cell_id
+            cell_line.cosmic_id = cosmic_id
+            cell_line.cell_line_passport_id = cell_line_passport_id
+            cell_line.lineage = lineages
+            cell_line.primary_disease = primary_disease_obj
+            cell_line.disease_subtype = subtype_obj
+            cell_line.tumor_type = tumor_type_obj
+
+            cell_line.gender = gender
+            cell_line.source = source
+            cell_line.rrid = rrid
+            cell_line.image_filename = image_filename
+            cell_line.comments = comments
+
         else:
-            if CellLine.exists_by_depmap_id(depmap_id):
-                cell_line = CellLine.get_by_depmap_id(depmap_id, must=True)
+            cell_line = CellLine(
+                cell_line_name=ccle_name,
+                cell_line_display_name=cell_line_display_name,
+                cell_line_alias=cell_line_aliases,
+                depmap_id=depmap_id,
+                wtsi_master_cell_id=wtsi_master_cell_id,
+                cosmic_id=cosmic_id,
+                catalog_number=catalog_number,
+                cell_line_passport_id=cell_line_passport_id,
+                lineage=lineages,
+                primary_disease=primary_disease_obj,
+                disease_subtype=subtype_obj,
+                tumor_type=tumor_type_obj,
+                gender=gender,
+                source=source,
+                rrid=rrid,
+                image_filename=image_filename,
+                comments=comments,
+                growth_pattern=growth_pattern,
+            )
 
-                # this is required
-                [db.session.delete(alias) for alias in cell_line.cell_line_alias]
-                [db.session.delete(lineage) for lineage in cell_line.lineage]
+            db.session.add(cell_line)
 
-                # any properties that should be updated need to be specified here
-                # there was an attempt to use db.session.merge, but we want to preserve certain cell line relationships such as context that not loaded in this loader and would be overwritten by merge. Additionally, backrefs require figuring out cascades
-                cell_line.cell_line_display_name = cell_line_display_name
-                cell_line.cell_line_alias = cell_line_aliases
-                cell_line.wtsi_master_cell_id = wtsi_master_cell_id
-                cell_line.cosmic_id = cosmic_id
-                cell_line.cell_line_passport_id = cell_line_passport_id
-                cell_line.lineage = lineages
-                cell_line.primary_disease = primary_disease_obj
-                cell_line.disease_subtype = subtype_obj
-                cell_line.tumor_type = tumor_type_obj
 
-                cell_line.gender = gender
-                cell_line.source = source
-                cell_line.rrid = rrid
-                cell_line.image_filename = image_filename
-                cell_line.comments = comments
-
-            else:
-                cell_line = CellLine(
-                    cell_line_name=cell_line_name,
-                    cell_line_display_name=cell_line_display_name,
-                    cell_line_alias=cell_line_aliases,
-                    depmap_id=depmap_id,
-                    wtsi_master_cell_id=wtsi_master_cell_id,
-                    cosmic_id=cosmic_id,
-                    catalog_number=catalog_number,
-                    cell_line_passport_id=cell_line_passport_id,
-                    lineage=lineages,
-                    primary_disease=primary_disease_obj,
-                    disease_subtype=subtype_obj,
-                    tumor_type=tumor_type_obj,
-                    gender=gender,
-                    source=source,
-                    rrid=rrid,
-                    image_filename=image_filename,
-                    comments=comments,
-                    growth_pattern=growth_pattern,
-                )
-
-                db.session.add(cell_line)
+def is_empty_string(s):
+    return not is_non_empty_string(s)
 
 
 def is_non_empty_string(row_lineage_value):
@@ -292,79 +254,3 @@ def create_or_retrieve_disease_subtype(name, associated_primary_disease=None):
         )
 
     return subtype_obj
-
-
-def load_contexts(context_file_path, must=True):
-    """
-    First get a dict of for every context, all the cell lines in it
-    """
-    cell_lines_per_context = get_cell_lines_in_context(context_file_path, must=must)
-    for name, cell_lines in cell_lines_per_context.items():
-        db.session.add(
-            ContextEntity(
-                label=name,  # this is duplicated, but not sure how to do otherwise
-                context=Context(name=name, cell_line=cell_lines),
-            )
-        )
-
-
-def get_cell_lines_in_context(context_file_path, must=True):
-    """
-    :param context_file_path: path to context boolean matrix csv
-    :return: list of Context objects of which the cell line is a member of 
-    """
-    print("loading context_file_path", context_file_path)
-    cell_lines_per_context = collections.defaultdict(lambda: [])
-    skipped_missing_cell_line = 0
-
-    df = pd.read_csv(
-        context_file_path, index_col=0
-    )  # pandas is ok with duplicate index names
-    # print("contexts", df, context_file_path)
-
-    indices_to_drop = df.index.duplicated(
-        keep="first"
-    )  # this has to be a positional true/false array, not the names of the indices. using df.drop(names of index) will all cell lines with that name
-    dropped_cell_lines = df[indices_to_drop].index.tolist()
-    print(
-        "Dropping the following cell lines; they have duplicates in the context matrix: \n{}".format(
-            dropped_cell_lines
-        )
-    )
-    for cell_line_name in dropped_cell_lines:
-        log_data_issue(
-            "Context",
-            "Duplicate cell line name",
-            identifier=cell_line_name,
-            id_type="CCLE_name",
-        )
-    df = df[~indices_to_drop]
-
-    cell_lines = df.index.values
-
-    for context_name in df.columns:
-        context_cell_lines = []
-
-        for cl_name in cell_lines[df[context_name] == 1]:
-            cl = CellLine.get_by_depmap_id(cl_name, must=must)
-            if cl is None:
-                skipped_missing_cell_line += 1
-                log_data_issue(
-                    "Context",
-                    "Missing cell line from context {}".format(context_name),
-                    identifier=cl_name,
-                    id_type="cell_line_name",
-                )
-            else:
-                context_cell_lines.append(cl)
-
-        cell_lines_per_context[context_name] = context_cell_lines
-
-    if skipped_missing_cell_line > 0:
-        log.warning(
-            "Skipped %s cell lines which were referenced by contexts, but could not find name",
-            skipped_missing_cell_line,
-        )
-
-    assert len(cell_lines_per_context) > 0
-    return cell_lines_per_context

@@ -124,6 +124,13 @@ def load_curve_parameters_csv(filename):
     lookup_compound_exp = LazyCache(_lookup_compound_exp)
 
     def row_to_model_dict(row):
+        # in 25Q2 the oncref dose response file contained records with no parameters
+        if row["ec50"] == "" or row["slope"] == "":
+            log_data_issue(
+                "DoseResponseCurve",
+                f"Dose curve for {row['cell_line_name']} and {row['compound_name']} had blank parameters",
+            )
+            return None
         # only add to db if both cell line and compound experiment exist
         cell_line = lookup_cell_line.get(row["cell_line_name"])
         if cell_line and lookup_compound_exp.get(row["compound_name"]):

@@ -27,6 +27,12 @@ class SinglePageApplication(StaticFiles):
         Returns:
             [tuple[str, os.stat_result]]: Always retuens a full path and stat result.
         """
+        # WORKAROUND: For some reason, this prefix gets added to paths when
+        # Breadbox is running in one of our deployed environments. It doesn't
+        # happen locally. Maybe it has to do with the Docker config?
+        if path.startswith("elara/"):
+            path = path.replace("elara/", "")
+
         full_path, stat_result = super().lookup_path(path)
 
         # if a file cannot be found

@@ -11,13 +11,12 @@ from depmap.dataset.models import (
     Fusion,
 )
 from depmap.gene.models import Gene
-from depmap.compound.models import CompoundExperiment
 from depmap.database import transaction
 from depmap.utilities.exception import InvalidDatasetEnumError
 from loader.cell_line_loader import load_cell_lines_metadata
 from loader.gene_loader import load_hgnc_genes
 from loader.transcription_start_site_loader import load_transcription_start_sites
-from loader import dataset_loader
+from loader import dataset_loader, depmap_model_loader
 from tests.factories import (
     DependencyDatasetFactory,
     BiomarkerDatasetFactory,
@@ -31,10 +30,8 @@ from tests.factories import (
     TranslocationFactory,
     CompoundFactory,
     CompoundExperimentFactory,
-    CompoundDoseReplicateFactory,
 )
 from tests.utilities.df_test_utils import load_sample_cell_lines
-from tests.utilities import interactive_test_utils
 from tests.utilities.override_fixture import override
 from depmap.settings.settings import TestConfig
 from depmap.access_control import PUBLIC_ACCESS_GROUP
@@ -118,7 +115,7 @@ def test_dataset_find_datasets_with_entity_ids(empty_db_mock_downloads):
     )
     dataset_2 = DependencyDatasetFactory(
         matrix=MatrixFactory(entities=[genes[1]]),
-        name=DependencyDataset.DependencyEnum.GeCKO,
+        name=DependencyDataset.DependencyEnum.Chronos_Achilles,
     )
     dataset_3 = BiomarkerDatasetFactory(
         matrix=MatrixFactory(entities=[genes[1]]),
@@ -246,7 +243,7 @@ def test_biomarker_dataset_has_entity_by_label(empty_db_mock_downloads):
     "enum, expected",
     [
         (DependencyDataset.DependencyEnum.Avana, True),
-        (DependencyDataset.DependencyEnum.GeCKO, True),
+        (DependencyDataset.DependencyEnum.Chronos_Achilles, True),
         (DependencyDataset.DependencyEnum.RNAi_Ach, False),
         (DependencyDataset.DependencyEnum.GDSC1_AUC, False),
     ],
@@ -287,7 +284,7 @@ def test_dataset_is_auc(empty_db_mock_downloads, enum, expected):
 
 def test_get_all(empty_db_mock_downloads):
     DependencyDatasetFactory(name=DependencyDataset.DependencyEnum.Avana)
-    DependencyDatasetFactory(name=DependencyDataset.DependencyEnum.GeCKO)
+    DependencyDatasetFactory(name=DependencyDataset.DependencyEnum.Chronos_Achilles)
     BiomarkerDatasetFactory(name=BiomarkerDataset.BiomarkerEnum.expression)
     empty_db_mock_downloads.session.flush()
 
@@ -360,82 +357,6 @@ def test_get_compound_experiment_datasets_with_compound(empty_db_mock_downloads)
     assert result == expected_pairs
 
 
-def test_get_compound_experiments_in_dataset_with_compound(empty_db_mock_downloads):
-    """
-    This funciton can retrieve CompoundExperiments or CompoundDoseReplicates depending on the dataset
-    Test both cases
-    """
-    # test for compound experiment
-    compound = CompoundFactory()
-    compound_exp_1 = CompoundExperimentFactory(compound=compound)  # in two datasets
-    compound_exp_2 = CompoundExperimentFactory(compound=compound)
-    compound_exp_other_dataset = CompoundExperimentFactory(compound=compound)
-
-    compound_exp_no_dataset = CompoundExperimentFactory(
-        compound=compound
-    )  # unused variable because name describes purpose
-    compound_exp_different_compound = CompoundExperimentFactory()
-
-    matrix_1 = MatrixFactory(
-        entities=[compound_exp_1, compound_exp_2, compound_exp_different_compound]
-    )
-    dataset_1 = DependencyDatasetFactory(
-        name=DependencyDataset.DependencyEnum.GDSC1_AUC, matrix=matrix_1
-    )
-    matrix_2 = MatrixFactory(entities=[compound_exp_other_dataset])
-    dataset_2 = DependencyDatasetFactory(
-        name=DependencyDataset.DependencyEnum.CTRP_AUC, matrix=matrix_2
-    )
-    empty_db_mock_downloads.session.flush()
-
-    result = DependencyDataset.get_compound_experiments_in_dataset_with_compound(
-        DependencyDataset.DependencyEnum.GDSC1_AUC.name, compound.entity_id
-    )
-
-    assert set(result) == {compound_exp_1, compound_exp_2}
-
-    # test for compound dose replicate
-    compound_dose_replicate_1 = CompoundDoseReplicateFactory(
-        compound_experiment=compound_exp_1
-    )  # in two datasets
-    compound_dose_replicate_2 = CompoundDoseReplicateFactory(
-        compound_experiment=compound_exp_2
-    )
-    compound_dose_replicate_other_dataset = CompoundDoseReplicateFactory(
-        compound_experiment=compound_exp_other_dataset
-    )
-
-    compound_dose_replicate_no_dataset = CompoundDoseReplicateFactory(
-        compound_experiment=compound_exp_no_dataset
-    )  # unused variable because name describes purpose
-    compound_dose_replicate_different_compound = CompoundDoseReplicateFactory()
-
-    matrix_1 = MatrixFactory(
-        entities=[
-            compound_dose_replicate_1,
-            compound_dose_replicate_2,
-            compound_dose_replicate_different_compound,
-        ]
-    )
-    dataset_1 = DependencyDatasetFactory(
-        name=DependencyDataset.DependencyEnum.CTRP_dose_replicate, matrix=matrix_1
-    )
-    matrix_2 = MatrixFactory(entities=[compound_dose_replicate_other_dataset])
-    dataset_2 = DependencyDatasetFactory(
-        name=DependencyDataset.DependencyEnum.Repurposing_secondary_dose_replicate,
-        matrix=matrix_2,
-    )
-    empty_db_mock_downloads.session.flush()
-
-    result = DependencyDataset.get_compound_experiments_in_dataset_with_compound(
-        DependencyDataset.DependencyEnum.CTRP_dose_replicate.name, compound.entity_id
-    )
-
-    # this should still return compound EXPERIMENTS, not dose replicates. But it correctly surmises that this dose replicate dataset contains this compound
-    assert all([isinstance(entity, CompoundExperiment) for entity in result])
-    assert set(result) == {compound_exp_1, compound_exp_2}
-
-
 def test_dependency_dataset_has_entity(empty_db_mock_downloads):
     """
     Test DependencyDataset.has_entity(enum, gene_id)
@@ -447,6 +368,9 @@ def test_dependency_dataset_has_entity(empty_db_mock_downloads):
         load_cell_lines_metadata(
             os.path.join(loader_data_dir, "cell_line/cell_line_metadata.csv"),
         )
+        depmap_model_loader.load_depmap_model_metadata(
+            os.path.join(loader_data_dir, "cell_line/models_metadata.csv")
+        )
         dependency_datasets = {
             DependencyDataset.DependencyEnum.Avana: {
                 "matrix_file_name_root": "dataset/avana",
@@ -457,10 +381,10 @@ def test_dependency_dataset_has_entity(empty_db_mock_downloads):
                 "global_priority": None,
                 "taiga_id": "placeholder-taiga-id.1",
             },
-            DependencyDataset.DependencyEnum.GeCKO: {
-                "matrix_file_name_root": "dataset/gecko",
-                "display_name": "CRISPR CERES (Achilles GeCKO)",
-                "units": "Gene Effect (CERES)",
+            DependencyDataset.DependencyEnum.Chronos_Achilles: {
+                "matrix_file_name_root": "dataset/chronos_achilles",
+                "display_name": "CRISPR (DepMap, Chronos)",
+                "units": "Gene Effect (Chronos)",
                 "data_type": "CRISPR",
                 "priority": 4,
                 "global_priority": None,
@@ -500,8 +424,16 @@ def test_dependency_dataset_has_entity(empty_db_mock_downloads):
     enum_gene_id_expected = [
         (DependencyDataset.DependencyEnum.Avana, symbol_to_id["AMY1A"], True),
         (DependencyDataset.DependencyEnum.Avana, symbol_to_id["dummy"], False),
-        (DependencyDataset.DependencyEnum.GeCKO, symbol_to_id["ANOS1"], True),
-        (DependencyDataset.DependencyEnum.GeCKO, symbol_to_id["dummy"], False),
+        (
+            DependencyDataset.DependencyEnum.Chronos_Achilles,
+            symbol_to_id["ANOS1"],
+            True,
+        ),
+        (
+            DependencyDataset.DependencyEnum.Chronos_Achilles,
+            symbol_to_id["dummy"],
+            False,
+        ),
         (DependencyDataset.DependencyEnum.RNAi_Ach, symbol_to_id["AMY1A"], True),
         (DependencyDataset.DependencyEnum.RNAi_Ach, symbol_to_id["dummy"], False),
     ]
@@ -520,6 +452,9 @@ def test_biomarker_dataset_has_entity(empty_db_mock_downloads):
     with transaction():
         loader_data_dir = empty_db_mock_downloads.app.config["LOADER_DATA_DIR"]
         load_hgnc_genes(os.path.join(loader_data_dir, "gene/hgnc-database-1a29.1.csv"))
+        load_cell_lines_metadata(
+            os.path.join(loader_data_dir, "cell_line/cell_line_metadata.csv")
+        )
         load_sample_cell_lines()
         load_transcription_start_sites(
             os.path.join(loader_data_dir, "transcription_start_site/rrbs_tss_info.csv")
@@ -541,14 +476,14 @@ def test_biomarker_dataset_has_entity(empty_db_mock_downloads):
                 "global_priority": None,
                 "taiga_id": "placeholder-taiga-id.1",
             },
-            BiomarkerDataset.BiomarkerEnum.rppa: {
-                "display_name": "RPPA",
-                "units": "RPPA signal (log2)",
-                "data_type": "Protein Expression",
-                "priority": 1,
-                "global_priority": None,
-                "taiga_id": "placeholder-taiga-id.1",
-            },
+            # BiomarkerDataset.BiomarkerEnum.rppa: {
+            #     "display_name": "RPPA",
+            #     "units": "RPPA signal (log2)",
+            #     "data_type": "Protein Expression",
+            #     "priority": 1,
+            #     "global_priority": None,
+            #     "taiga_id": "placeholder-taiga-id.1",
+            # },
             BiomarkerDataset.BiomarkerEnum.rrbs: {
                 "display_name": "RRBS",
                 "units": "Methylation Fraction",
@@ -622,41 +557,41 @@ def test_biomarker_dataset_has_entity(empty_db_mock_downloads):
             direct=True,
             expected=False,
         ),
-        TestCase(
-            dataset=BiomarkerDataset.BiomarkerEnum.rppa,
-            gene="ANOS1",
-            by_label=True,
-            direct=True,
-            expected=False,
-        ),
-        TestCase(
-            dataset=BiomarkerDataset.BiomarkerEnum.rppa,
-            gene=symbol_to_id["ANOS1"],
-            by_label=False,
-            direct=True,
-            expected=False,
-        ),
-        TestCase(
-            dataset=BiomarkerDataset.BiomarkerEnum.rppa,
-            gene="ANOS1",
-            by_label=True,
-            direct=False,
-            expected=True,
-        ),
-        TestCase(
-            dataset=BiomarkerDataset.BiomarkerEnum.rppa,
-            gene=symbol_to_id["ANOS1"],
-            by_label=False,
-            direct=False,
-            expected=True,
-        ),
-        TestCase(
-            dataset=BiomarkerDataset.BiomarkerEnum.rppa,
-            gene="does not exist",
-            by_label=True,
-            direct=True,
-            expected=False,
-        ),
+        # TestCase(
+        #     dataset=BiomarkerDataset.BiomarkerEnum.rppa,
+        #     gene="ANOS1",
+        #     by_label=True,
+        #     direct=True,
+        #     expected=False,
+        # ),
+        # TestCase(
+        #     dataset=BiomarkerDataset.BiomarkerEnum.rppa,
+        #     gene=symbol_to_id["ANOS1"],
+        #     by_label=False,
+        #     direct=True,
+        #     expected=False,
+        # ),
+        # TestCase(
+        #     dataset=BiomarkerDataset.BiomarkerEnum.rppa,
+        #     gene="ANOS1",
+        #     by_label=True,
+        #     direct=False,
+        #     expected=True,
+        # ),
+        # TestCase(
+        #     dataset=BiomarkerDataset.BiomarkerEnum.rppa,
+        #     gene=symbol_to_id["ANOS1"],
+        #     by_label=False,
+        #     direct=False,
+        #     expected=True,
+        # ),
+        # TestCase(
+        #     dataset=BiomarkerDataset.BiomarkerEnum.rppa,
+        #     gene="does not exist",
+        #     by_label=True,
+        #     direct=True,
+        #     expected=False,
+        # ),
     ]
 
     for test_case in test_cases:
@@ -688,6 +623,10 @@ def test_mutation_translocation_fusion_has_gene(empty_db_mock_downloads):
     with transaction():
         loader_data_dir = empty_db_mock_downloads.app.config["LOADER_DATA_DIR"]
         load_hgnc_genes(os.path.join(loader_data_dir, "gene/hgnc-database-1a29.1.csv"))
+
+        load_cell_lines_metadata(
+            os.path.join(loader_data_dir, "cell_line/cell_line_metadata.csv")
+        )
         load_sample_cell_lines()
 
         dataset_loader.load_translocations(
@@ -723,8 +662,8 @@ def test_mutation_translocation_fusion_has_gene(empty_db_mock_downloads):
         (Translocation, symbol_to_id["AMY1A"], True),  # gene 1
         (Translocation, symbol_to_id["TNS2"], True),  # gene 2
         (Translocation, symbol_to_id["test_gene"], False),
-        (Fusion, symbol_to_id["ANOS1"], True),  # left gene
-        (Fusion, symbol_to_id["F8A1"], True),  # right gene
+        (Fusion, symbol_to_id["MED1"], True),  # left gene
+        (Fusion, symbol_to_id["TNS2"], True),  # right gene
         (Fusion, symbol_to_id["test_gene"], False),
     ]
 
@@ -785,95 +724,6 @@ def test_mutation_get_non_silent_rows(empty_db_mock_downloads):
     mutation_ids = df["mutation_id"].values
     for mutation in [mut1, mut2]:
         assert mutation.mutation_id in mutation_ids
-
-
-def test_get_dose_replicate_datasets_info_by_compound_id(empty_db_mock_downloads):
-    """
-    Tests that the dataframe returns dose replicate datasets
-    """
-    # Unqueried compound example
-    compound_1 = CompoundFactory()
-
-    compound_2 = CompoundFactory()
-    compound_experiment_1 = CompoundExperimentFactory(
-        label="exp_label_1", compound=compound_2
-    )
-    compound_experiment_2 = CompoundExperimentFactory(
-        label="exp_label_2", compound=compound_2
-    )
-
-    # Unqueried compound experiment example
-    compound_experiment_3 = CompoundExperimentFactory(
-        label="exp_label_3", compound=compound_1
-    )
-
-    cpd_dose_rep_1 = CompoundDoseReplicateFactory(
-        compound_experiment=compound_experiment_1, dose=10
-    )
-    cpd_dose_rep_2 = CompoundDoseReplicateFactory(
-        compound_experiment=compound_experiment_1, dose=20
-    )
-    cpd_dose_rep_3 = CompoundDoseReplicateFactory(
-        compound_experiment=compound_experiment_2, dose=0.0005
-    )
-
-    # Unqueried compound dose replicate example
-    cpd_dose_rep_4 = CompoundDoseReplicateFactory(
-        compound_experiment=compound_experiment_3, dose=0.02
-    )
-
-    cell_lines = [CellLineFactory(), CellLineFactory(), CellLineFactory()]
-
-    matrix_1 = MatrixFactory(
-        entities=[cpd_dose_rep_1, cpd_dose_rep_2], cell_lines=cell_lines,
-    )
-    matrix_2 = MatrixFactory(
-        entities=[cpd_dose_rep_3],
-        cell_lines=[CellLineFactory(), CellLineFactory(), CellLineFactory()],
-    )
-
-    # Unqueried matrix example
-    matrix_3 = MatrixFactory(
-        entities=[cpd_dose_rep_4],
-        cell_lines=[CellLineFactory(), CellLineFactory(), CellLineFactory()],
-    )
-
-    dataset_1 = DependencyDatasetFactory(
-        name=DependencyDataset.DependencyEnum.GDSC1_dose_replicate, matrix=matrix_1
-    )
-    dataset_2 = DependencyDatasetFactory(
-        name=DependencyDataset.DependencyEnum.CTRP_dose_replicate, matrix=matrix_2
-    )
-
-    # Unqueried dataset example
-    dataset_3 = DependencyDatasetFactory(
-        name=DependencyDataset.DependencyEnum.GDSC2_dose_replicate, matrix=matrix_3
-    )
-
-    empty_db_mock_downloads.session.flush()
-
-    # we just created a new datasets so reload the datasets from the DB
-    interactive_test_utils.reload_interactive_config()
-
-    df = DependencyDataset.get_dose_replicate_datasets_info_by_compound_id(
-        compound_2.entity_id
-    )
-    expected_cols = [
-        "dataset_id",
-        "name",
-        "display_name",
-        "taiga_id",
-        "cell_line_count",
-        "compound_experiment_id",
-        "compound_id",
-        "max_dose",
-        "min_dose",
-    ]
-    assert set(df.columns) == set(expected_cols)
-    # There should be 2 datasets returned
-    assert len(df) == 2
-    # Compound id check
-    assert all(x == compound_2.entity_id for x in df["compound_id"])
 
 
 def test_get_datasets_in_order(empty_db_mock_downloads):

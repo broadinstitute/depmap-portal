@@ -3,9 +3,6 @@ from depmap.enums import DependencyEnum, BiomarkerEnum
 from depmap.download.models import DownloadSettings
 from depmap.settings.nonstandard_datasets._ccle2 import ccle2_paper_nonstandard_datasets
 from depmap.settings.nonstandard_datasets._msi import msi_datasets
-from depmap.settings.nonstandard_datasets._ccle_arm_level_cna import (
-    ccle_arm_level_cna_datasets,
-)
 from depmap.settings.nonstandard_datasets._metmap import metmap_datasets
 from depmap.settings.taiga_ids import HUGO_NCGC_TAIGA_ID
 from depmap.settings.settings import RemoteConfig, Config
@@ -27,7 +24,6 @@ def get_external_nonstandard_datasets():
         **ccle2_paper_nonstandard_datasets,
         **msi_datasets,
         **metmap_datasets,
-        **ccle_arm_level_cna_datasets,
     }
 
 
@@ -41,7 +37,6 @@ class ExternalConfig(RemoteConfig):
     DB_PATH = os.path.join(WEBAPP_DATA_DIR, Config.DB_NAME)
     SQLALCHEMY_DATABASE_URI = "sqlite:///{0}".format(DB_PATH)
     NONSTANDARD_DATA_DIR = os.path.join(WEBAPP_DATA_DIR, "nonstandard")
-    PRIVATE_FILE_BUCKETS = ["external-resources-files"]
     RESOURCES_DATA_PATH = os.path.join(WEBAPP_DATA_DIR, "resources", "results.db")
     GET_NONSTANDARD_DATASETS = get_external_nonstandard_datasets
     COMPUTE_RESULTS_ROOT = os.path.join(WEBAPP_DATA_DIR, "results")
@@ -49,12 +44,12 @@ class ExternalConfig(RemoteConfig):
         PROJECT_ROOT, "profiling"
     )  # hardcoded mount point in ansible
     DATA_LOAD_CONFIG = external_datasets
-    S3_DIR = "depmap-pipeline/external-24q2"
+    S3_DIR = "depmap-pipeline/external-25q2"
     FEEDBACK_FORM_URL = "https://forum.depmap.org/"
     THEME_PATH = os.path.join(Config.ADDITIONAL_MOUNTS_DIR, "theme")
     RELEASE_NOTES_URL = "https://forum.depmap.org/c/announcements/15"
     FORUM_URL = "https://forum.depmap.org/"
-    FORUM_RESOURCES_CATEGORY = "resources-prototype"
+    FORUM_RESOURCES_CATEGORY = "resources"
     FORUM_RESOURCES_DEFAULT_TOPIC_ID = 3396
     BREADBOX_PROXY_DEFAULT_USER = "anonymous"
 

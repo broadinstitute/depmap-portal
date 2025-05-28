@@ -1,7 +1,7 @@
 import React from "react";
 import styles from "src/dataPage/styles/DataPage.scss";
 import { DataPageDataType, getDataPageDataTypeString } from "../models/types";
-import { BAR_THICKNESS, currentReleaseDatasets } from "./utils";
+import { BAR_THICKNESS, growingDatasets } from "./utils";
 
 interface Props {
   datatypes: string[];
@@ -49,7 +49,7 @@ const DataPageDatatypeSelector = ({
     const dataTypeDisplayName = getDataPageDataTypeString(
       datatype as DataPageDataType
     );
-    const inCurrentRelease = currentReleaseDatasets.includes(datatype);
+    const isGrowingDataset = growingDatasets.includes(datatype);
 
     display.push(
       <div className={styles.selector} key={`wapper-${dataTypeDisplayName}`}>
@@ -61,13 +61,16 @@ const DataPageDatatypeSelector = ({
             target="_blank"
             rel="noreferrer"
           >
-            {`${getDataTypeLabel(dataTypeDisplayName, inCurrentRelease)}`}
+            {getDataTypeLabel(dataTypeDisplayName, isGrowingDataset)}
+            {dataTypeDisplayName === "Repurposing (Broad)" && <sup>†</sup>}
             <br />
             {getDrugCountLabel(dataTypeDisplayName)}
           </a>
         ) : (
           <p>
-            {getDataTypeLabel(dataTypeDisplayName, inCurrentRelease)} <br />
+            {getDataTypeLabel(dataTypeDisplayName, isGrowingDataset)}
+            {dataTypeDisplayName === "Repurposing (Broad)" && <sup>†</sup>}{" "}
+            <br />
             {getDrugCountLabel(dataTypeDisplayName)}
           </p>
         )}

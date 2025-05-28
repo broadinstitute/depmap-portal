@@ -6,6 +6,7 @@ from fastapi import Depends, HTTPException, Request
 from ..crud import dataset as dataset_crud
 from breadbox.db.session import SessionLocalWithUser, SessionWithUser
 from breadbox.config import get_settings
+import os
 
 
 def get_db_with_user(request: Request):
@@ -15,6 +16,21 @@ def get_db_with_user(request: Request):
         yield db
     finally:
         db.close()
+
+
+def get_legacy_cas_bucket():
+    settings = get_settings()
+    return settings.LEGACY_CAS_BUCKET
+
+
+def get_cas_db_path():
+    settings = get_settings()
+    return os.path.join(settings.filestore_location, "cas.sqlite3")
+
+
+def get_user_settings_db_path():
+    settings = get_settings()
+    return os.path.join(settings.filestore_location, "user_settings.sqlite3")
 
 
 def get_user(request: Request) -> str:
@@ -44,5 +60,5 @@ def get_dataset(
     dataset = dataset_crud.get_dataset(db, user, dataset_id)
 
     if dataset is None:
-        raise HTTPException(404, detail="Dataset not found")
+        raise HTTPException(404, detail=f"Dataset '{dataset_id}' not found")
     return dataset

@@ -25,12 +25,14 @@ from breadbox.models.dataset import (
 from breadbox.schemas.custom_http_exception import ResourceNotFoundError, UserError
 
 from breadbox.schemas.dataset import MatrixDatasetIn
+from breadbox.service import metadata as metadata_service
 
-from ..crud.types import get_dimension_type
+from ..crud.dimension_types import get_dimension_type
 from ..crud import dataset as dataset_crud
+from ..service import dataset as dataset_service
 from ..crud import group as group_crud
 from ..io import filestore_crud
-from .celery import app
+from .celery import app, LogErrorsTask
 from ..db.util import db_context
 from breadbox.io.upload_utils import create_upload_file
 
@@ -109,28 +111,40 @@ def _filter_out_models_not_in_search_dataset(
 def _get_filtered_dataset_and_query_feature(
     analysis_type: str,
     dataset: Dataset,  # dataset we're searching
-    query_series: pd.DataFrame,
+    query_series: Optional[pd.DataFrame],
     filestore_location: str,
     depmap_model_ids: List[str],
-    query_values: Optional[List[Any]] = [],
-    feature_indices: List[int] = [],  # indices for the dataset we're searching
+    query_values: Optional[List[str]],
+    feature_indices: List[int],  # indices for the dataset we're searching
 ) -> Tuple[List[str], Union[List[int], List[float]], pd.DataFrame]:
 
     # Get the dataframe of features for the dataset we're searching in
     feature_df = get_slice(
         dataset, feature_indices, None, filestore_location, keep_nans=True
     )
+    dataset_sample_ids = feature_df.index
 
     if analysis_type == models.AnalysisType.two_class:
+        assert query_values is not None
         model_query_vector = depmap_model_ids
         assert all(
             x in {"in", "out"} for x in query_values
         ), f"Expecting values in {query_values} to be either 'in' or 'out'"
         value_query_vector = [0 if x == "out" else 1 for x in query_values]
+
+        # Validate that BOTH the in-group and out-group have cell lines present in the dataset
+        in_group_sample_ids = {depmap_model_ids[i] for i in range(len(query_values)) if query_values[i] == "in"}
+        out_group_sample_ids = {depmap_model_ids[i] for i in range(len(query_values)) if query_values[i] == "out"}
+        if len(in_group_sample_ids.intersection(set(dataset_sample_ids))) == 0:
+            raise UserError("No cell lines in common between in-group and dataset selected")
+        if len(out_group_sample_ids.intersection(set(dataset_sample_ids))) == 0:
+            raise UserError("No cell lines in common between out-group and dataset selected")
+
     elif (
         analysis_type == models.AnalysisType.pearson
         or analysis_type == models.AnalysisType.association
     ):
+        assert query_series is not None
         assert query_series.shape[1] == 1
         model_query_vector, value_query_vector = _subset_feature_df(
             query_series.iloc[:, 0], depmap_model_ids
@@ -165,12 +179,12 @@ def get_features_info_and_dataset(
     dataset = dataset_crud.get_dataset(db, user, dataset_id)
     if dataset is None:
         raise ResourceNotFoundError(f"Dataset '{dataset_id}' not found.")
-    dataset_features = dataset_crud.get_dataset_features(db, dataset, user)
+    dataset_features = dataset_crud.get_matrix_dataset_features(db, dataset)
 
     result_features: List[Feature] = []
     dataset_feature_ids: List[str] = []
     datasets: List[Dataset] = []
-    feature_labels_by_id = dataset_crud.get_dataset_feature_labels_by_id(
+    feature_labels_by_id = metadata_service.get_matrix_dataset_feature_labels_by_id(
         db, user, dataset
     )
     feature_indices = []
@@ -256,7 +270,7 @@ def _get_update_message_callback(task):
     return update_message
 
 
-@app.task(bind=True)
+@app.task(base=LogErrorsTask, bind=True)
 def run_custom_analysis(
     self,
     user: str,
@@ -282,7 +296,7 @@ def run_custom_analysis(
 
     update_message = _get_update_message_callback(self)
     update_message("Fetching data")
-
+    
     with db_context(user) as db:
 
         # All features and feature_indices for the dataset we're searching in
@@ -347,7 +361,7 @@ def run_custom_analysis(
             feature_indices,
         )
         if len(filtered_cell_line_list) == 0:
-            return UserError(
+            raise UserError(
                 "No cell lines in common between query and dataset searched"
             )
 
@@ -481,7 +495,7 @@ def create_cell_line_group(
                 dataset_metadata=None,
                 dataset_md5=None,
             )
-            dataset_crud.add_matrix_dataset(
+            dataset_service.add_matrix_dataset(
                 db,
                 user,
                 dataset_in,
@@ -489,16 +503,19 @@ def create_cell_line_group(
                 sample_given_id_and_index_df,
                 generic_feature_type,
                 depmap_model_sample_type,
+                short_name=None,
+                version=None,
+                description=None,
             )
 
         # Return the feature ID associated with the new dataset feature
         if use_feature_ids:
-            feature: DatasetFeature = dataset_crud.get_dataset_feature_by_label(
-                db=db, user=user, dataset_id=dataset_id, feature_label=feature_label
+            feature: DatasetFeature = metadata_service.get_dataset_feature_by_label(
+                db=db, dataset_id=dataset_id, feature_label=feature_label
             )
             return _format_breadbox_shim_slice_id(feature.dataset_id, feature.given_id)
         else:
-            dataset_feature = dataset_crud.get_dataset_feature_by_label(
-                db, user, dataset_id, feature_label
+            dataset_feature = metadata_service.get_dataset_feature_by_label(
+                db, dataset_id, feature_label
             )
             return str(dataset_feature.id)

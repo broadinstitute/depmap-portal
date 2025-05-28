@@ -1,13 +1,5 @@
 /* eslint @typescript-eslint/no-explicit-any: 0 */
 import {
-  AssociationAndCheckbox,
-  Catalog,
-  AddDatasetOneRowArgs,
-  Feature,
-  PlotFeatures,
-} from "@depmap/interactive";
-import { VectorResponse } from "@depmap/long-table";
-import {
   CeleryTask,
   FailedCeleryTask,
   UnivariateAssociationsParams,
@@ -15,11 +7,16 @@ import {
 } from "@depmap/compute";
 import {
   AddCustDatasetArgs,
+  AddDatasetOneRowArgs,
+  AssociationAndCheckbox,
   Dataset,
   DatasetParams,
   DatasetUpdateArgs,
   DatasetValueType,
   DimensionMetadata,
+  DimensionType,
+  DimensionTypeAddArgs,
+  DimensionTypeUpdateArgs,
   FeatureType,
   FeatureTypeUpdateArgs,
   Group,
@@ -31,6 +28,7 @@ import {
   SampleTypeUpdateArgs,
   SearchDimenionsRequest,
   SearchDimenionsResponse,
+  SliceQuery,
   UploadFileResponse,
 } from "@depmap/types";
 import { Trace } from "src/trace";
@@ -49,12 +47,6 @@ import {
 } from "@depmap/data-slicer";
 import { SearchResponse } from "./pages/SearchBar";
 
-// The Breadbox API includes a bit more information than the Portal.
-type FeatureWithCatalog = Feature & { catalog: Catalog };
-interface BreadboxPlotFeatures extends PlotFeatures {
-  features: FeatureWithCatalog[];
-}
-
 interface ValidationResult {
   valid: Set<string>; // These are upper/lower case-corrected, and may thus differ from the casing of query input
   invalid: Set<string>;
@@ -62,16 +54,7 @@ interface ValidationResult {
 
 const log = window.console.debug.bind(console);
 
-function convertChildIdsToStrings(obj: {
-  children: [{ id: number | string }];
-}) {
-  return {
-    ...obj,
-    children: obj.children.map((child) => ({ ...child, id: String(child.id) })),
-  };
-}
-
-export class BreadboxApi {
+export class ElaraApi {
   urlPrefix: string;
 
   trace: Trace | null;
@@ -101,6 +84,44 @@ export class BreadboxApi {
     return fetch(fullUrl, {
       credentials: "include",
       headers,
+    }).then(
+      (response: Response): Promise<T> => {
+        log(`response arrived from ${fullUrl}`);
+        return response.json().then(
+          (body: T): Promise<T> => {
+            // nesting to access response.status
+            if (response.status >= 200 && response.status < 300) {
+              return Promise.resolve(body);
+            }
+            return Promise.reject(body);
+          }
+        );
+      }
+    );
+  };
+
+  _fetchWithJsonBody = <T>(
+    url: string,
+    method: string,
+    body_content: any
+  ): Promise<T> => {
+    const fullUrl = this.urlPrefix + url;
+    log(`${method} json to ${fullUrl}`);
+
+    const headers: { [key: string]: string } = {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    };
+    const traceParentField = this.getTraceParentField();
+    if (traceParentField) {
+      // eslint-disable-next-line @typescript-eslint/dot-notation
+      headers["traceparent"] = traceParentField;
+    }
+    return fetch(fullUrl, {
+      credentials: "include",
+      method,
+      headers,
+      body: JSON.stringify(body_content),
     }).then(
       (response: Response): Promise<T> => {
         log(`response arrived from ${fullUrl}`);
@@ -215,33 +236,12 @@ export class BreadboxApi {
     );
   };
 
-  getFeaturePlot(
-    features: string[],
-    groupBy: string,
-    filter: string,
-    computeLinearFit: boolean
-  ): Promise<BreadboxPlotFeatures> {
-    const params: any = {
-      groupBy,
-      filter,
-      computeLinearFit,
-    };
-    if (groupBy !== null && groupBy !== undefined) {
-      params.groupBy = groupBy;
-    }
-    return this._fetchWithJsonBody<BreadboxPlotFeatures>(
-      `/api/get-features?${encodeParams(params)}`,
-      "POST",
-      features
-    );
-  }
-
   getAssociations(): Promise<AssociationAndCheckbox> {
     return Promise.reject(new Error("getAssociations() not implemented"));
   }
 
   getCellLineUrlRoot(): Promise<string> {
-    return this._fetch<string>(`/metadata/cellLineUrlRoot`);
+    return this._fetch<string>(`/metadata/cellLineUrlRoot/`);
   }
 
   getFeedbackUrl(): Promise<string> {
@@ -251,17 +251,17 @@ export class BreadboxApi {
   // TODO: Need to move to bbAPI.ts?
   getCitationUrl(datasetId: string): Promise<string> {
     return this._fetch<string>(
-      `/download/citationUrl?${encodeParams({ dataset_id: datasetId })}`
+      `/download/citationUrl/?${encodeParams({ dataset_id: datasetId })}`
     );
   }
 
   exportData(query: ExportDataQuery): Promise<any> {
-    return this._fetchWithJsonBody<any>("/downloads/custom", "POST", query);
+    return this._fetchWithJsonBody<any>("/downloads/custom/", "POST", query);
   }
 
   exportDataForMerge(query: ExportMergedDataQuery): Promise<any> {
     return this._fetchWithJsonBody<any>(
-      "/downloads/custom_merged",
+      "/downloads/custom_merged/",
       "POST",
       query
     );
@@ -271,7 +271,7 @@ export class BreadboxApi {
     query: FeatureValidationQuery
   ): Promise<ValidationResult> {
     return this._fetchWithJsonBody<any>(
-      "/downloads/data_slicer/validate_data_slicer_features",
+      "/downloads/data_slicer/validate_data_slicer_features/",
       "POST",
       query
     );
@@ -286,11 +286,11 @@ export class BreadboxApi {
   }
 
   getDatasetsList(): Promise<DatasetDownloadMetadata[]> {
-    return this._fetch<DatasetDownloadMetadata[]>("/datasets");
+    return this._fetch<DatasetDownloadMetadata[]>("/datasets/");
   }
 
   getDatasets(): Promise<any> {
-    return this._fetch<Dataset[]>("/datasets").then((datasets) =>
+    return this._fetch<Dataset[]>("/datasets/").then((datasets) =>
       datasets.map(({ id, name }) => ({ label: name, value: id }))
     );
   }
@@ -303,7 +303,7 @@ export class BreadboxApi {
   }
 
   postFileUpload(fileArgs: { file: File | Blob }): Promise<UploadFileResponse> {
-    return this._postMultipart<UploadFileResponse>("/uploads/file", fileArgs);
+    return this._postMultipart<UploadFileResponse>("/uploads/file/", fileArgs);
   }
 
   postDatasetUpload(datasetParams: DatasetParams): Promise<any> {
@@ -322,15 +322,15 @@ export class BreadboxApi {
   }
 
   getBreadboxUser(): Promise<string> {
-    return this._fetch<string>("/user");
+    return this._fetch<string>("/user/");
   }
 
   getBreadboxDatasets(): Promise<Dataset[]> {
-    return this._fetch<Dataset[]>("/datasets");
+    return this._fetch<Dataset[]>("/datasets/");
   }
 
   deleteDatasets(id: string) {
-    return this._delete("/datasets", id);
+    return this._delete("/datasets/", id);
   }
 
   patchDataset(datasetToUpdate: DatasetUpdateArgs): Promise<Dataset> {
@@ -380,7 +380,7 @@ export class BreadboxApi {
     );
   }
 
-  updateDataset(datasetToUpdate: DatasetUpdateArgs) {
+  updateDataset(datasetId: string, datasetToUpdate: DatasetUpdateArgs) {
     return this.patchDataset(datasetToUpdate);
   }
 
@@ -430,6 +430,7 @@ export class BreadboxApi {
     );
   }
 
+  // NOTE: The endpoints for feature type and sample type are deprecated and should not be used. Currently still used in TypesPage.tsx
   getSampleTypes(): Promise<SampleType[]> {
     return this._fetch<SampleType[]>("/types/sample");
   }
@@ -460,24 +461,6 @@ export class BreadboxApi {
     return this._fetch<FeatureType[]>("/types/feature");
   }
 
-  searchDimensions({
-    prefix,
-    substring,
-    type_name,
-    limit,
-  }: SearchDimenionsRequest) {
-    const params = {
-      prefix,
-      substring,
-      type_name,
-      limit: Number.isFinite(limit) ? limit : 100,
-    };
-
-    return this._fetch<SearchDimenionsResponse>(
-      `/datasets/dimensions/?${encodeParams(params)}`
-    );
-  }
-
   postFeatureType(featureTypeArgs: any): Promise<FeatureType> {
     const args = { ...featureTypeArgs };
 
@@ -498,7 +481,25 @@ export class BreadboxApi {
   }
 
   deleteFeatureType(name: string) {
-    return this._delete("/types/feature", name);
+    return this._delete("/types/feature/", name);
+  }
+
+  searchDimensions({
+    prefix,
+    substring,
+    type_name,
+    limit,
+  }: SearchDimenionsRequest) {
+    const params = {
+      prefix,
+      substring,
+      type_name,
+      limit: Number.isFinite(limit) ? limit : 100,
+    };
+
+    return this._fetch<SearchDimenionsResponse>(
+      `/datasets/dimensions/?${encodeParams(params)}`
+    );
   }
 
   async getDataTypesAndPriorities(): Promise<InvalidPrioritiesByDataType> {
@@ -510,15 +511,15 @@ export class BreadboxApi {
   }
 
   getGroups(): Promise<Group[]> {
-    return this._fetch<Group[]>("/groups");
+    return this._fetch<Group[]>("/groups/");
   }
 
   postGroup(groupArgs: GroupArgs): Promise<Group> {
-    return this._fetchWithJsonBody<Group>("/groups", "POST", groupArgs);
+    return this._fetchWithJsonBody<Group>("/groups/", "POST", groupArgs);
   }
 
   deleteGroup(id: string) {
-    return this._delete("/groups", id);
+    return this._delete("/groups/", id);
   }
 
   postGroupEntry(
@@ -526,7 +527,7 @@ export class BreadboxApi {
     groupEntryArgs: GroupEntryArgs
   ): Promise<GroupEntry> {
     return this._fetchWithJsonBody<GroupEntry>(
-      `/groups/${groupId}/addAccess`,
+      `/groups/${groupId}/addAccess/`,
       "POST",
       groupEntryArgs
     );
@@ -554,11 +555,6 @@ export class BreadboxApi {
       }
     );
   }
-
-  // TODO: copy implementation from bbAPI.ts?
-  postCustomTaiga = (/* config: UserUploadArgs */): Promise<UploadTask> => {
-    return Promise.reject(new Error("postCustomTaiga() not implemented"));
-  };
 
   postCustomCsv = (config: AddDatasetOneRowArgs): Promise<UploadTask> => {
     const name = config.uploadFile.name;
@@ -664,105 +660,57 @@ export class BreadboxApi {
     return Promise.reject(new Error("getCellignerColorMap() not implemented"));
   }
 
-  getVectorCatalogChildren(
-    catalog: Catalog,
-    id: string,
-    prefix = ""
-  ): Promise<any> {
-    // chances are, you shouldn't be using this. use getVectorCatalogOptions in vectorCatalogApi, which wraps around this
-    const params = {
-      catalog,
-      id,
-      prefix,
-    };
-    return this._fetch<any>(
-      `/datasets/vector_catalog/data/catalog/children?${encodeParams(params)}`
-    ).then((res) => {
-      // FIXME: This is a workaround for the case where the response is empty.
-      // The existing Data Explorer logic tries to rename properties of a
-      // nonexistent object.
-      const dummyObject = {
-        category: null,
-        persistChildIfNotFound: false,
-        children: [],
-      };
-
-      return res.length ? convertChildIdsToStrings(res[0]) : dummyObject;
-    });
-  }
-
-  getVectorCatalogPath(catalog: Catalog, id: string): Promise<Array<any>> {
-    // chances are, you shouldn't be using this. use getVectorCatalogPath in vectorCatalogApi, which wraps around this
-    const params = { catalog, id };
-    return this._fetch<Array<any>>(
-      `/datasets/vector_catalog/data/catalog/path?${encodeParams(params)}`
-    );
-  }
-
-  getVector(featureCatalogNodeId: string): Promise<VectorResponse> {
-    // The Portal uses a dedicated endpoint to get a single feature. Here we're
-    // using /api/get-features instead and re-formatting the response.
-    return this._fetchWithJsonBody<BreadboxPlotFeatures>(
-      `/api/get-features`,
-      "POST",
-      [featureCatalogNodeId]
-    ).then((res) => {
-      const feature = res.features[0];
-      const isCategorical = feature.catalog === "categorical";
-      const valuesKey = isCategorical ? "categoricalValues" : "values";
-
-      return {
-        cellLines: res.depmap_ids,
-        [valuesKey]: feature.values,
-      };
-    });
-  }
-
   computeUnivariateAssociations(
     config: UnivariateAssociationsParams
   ): Promise<ComputeResponse> {
     return this._fetchWithJsonBody<ComputeResponse>(
-      "/compute/compute_univariate_associations",
+      "/compute/compute_univariate_associations/",
       "POST",
       config
     );
   }
 
-  _fetchWithJsonBody = <T>(
-    url: string,
-    method: string,
-    body_content: any
-  ): Promise<T> => {
-    const fullUrl = this.urlPrefix + url;
-    log(`${method} json to ${fullUrl}`);
+  fetchAssociations(sliceQuery: SliceQuery) {
+    return this._fetchWithJsonBody<{
+      dataset_name: string;
+      dimension_label: string;
+      associated_datasets: {
+        name: string;
+        dimension_type: string;
+        dataset_id: string;
+      }[];
+      associated_dimensions: {
+        correlation: number;
+        log10qvalue: number;
+        other_dataset_id: string;
+        other_dimension_given_id: string;
+        other_dimension_label: string;
+      }[];
+    }>("/temp/associations/query-slice", "POST", sliceQuery);
+  }
 
-    const headers: { [key: string]: string } = {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    };
-    const traceParentField = this.getTraceParentField();
-    if (traceParentField) {
-      // eslint-disable-next-line @typescript-eslint/dot-notation
-      headers["traceparent"] = traceParentField;
-    }
-    return fetch(fullUrl, {
-      credentials: "include",
-      method,
-      headers,
-      body: JSON.stringify(body_content),
-    }).then(
-      (response: Response): Promise<T> => {
-        log(`response arrived from ${fullUrl}`);
-        return response.json().then(
-          (body: T): Promise<T> => {
-            // nesting to access response.status
-            if (response.status >= 200 && response.status < 300) {
-              return Promise.resolve(body);
-            }
-            return Promise.reject(body);
-          }
-        );
-      }
+  getDimensionTypes(): Promise<DimensionType[]> {
+    return this._fetch<DimensionType[]>("/types/dimensions");
+  }
+
+  postDimensionType(dimTypeArgs: DimensionTypeAddArgs): Promise<DimensionType> {
+    return this._fetchWithJsonBody<DimensionType>(
+      "/types/dimensions",
+      "POST",
+      dimTypeArgs
     );
-  };
+  }
+
+  updateDimensionType(
+    dimTypeName: string,
+    dimTypeArgs: DimensionTypeUpdateArgs
+  ): Promise<DimensionType> {
+    const url = `/types/dimensions/${dimTypeName}`;
+
+    return this._fetchWithJsonBody(url, "PATCH", dimTypeArgs);
+  }
+
+  deleteDimensionType(name: string) {
+    return this._delete("/types/dimensions", name);
+  }
 }

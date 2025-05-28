@@ -1,17 +1,21 @@
 from __future__ import annotations
-import json
 from uuid import UUID
 from typing import Optional, List, Dict, Any, Annotated, Union, Literal
 from pydantic import AfterValidator, BaseModel, Field, model_validator, field_validator
+from typing_extensions import TypedDict
 
 from breadbox.schemas.common import DBBase
-from fastapi import HTTPException, Body
+from fastapi import Body
 from breadbox.schemas.custom_http_exception import UserError
 from .group import Group
 import enum
 
 
-# NOTE: Using multivalue Literals seems to be creating errors in pydantic models and fastapi request params. It is possible for our version of pydantic, the schema for Literals is messed up (see: https://github.com/tiangolo/fastapi/issues/562). Upgrading the pydantic version could potentially solve this issue
+
+# NOTE: Using multivalue Literals seems to be creating errors in pydantic models and fastapi request params.
+# It is possible that for our version of pydantic, the schema for Literals is messed up
+# (see: https://github.com/tiangolo/fastapi/issues/562).
+# Upgrading the pydantic version could potentially solve this issue
 class FeatureSampleIdentifier(enum.Enum):
     id = "id"
     label = "label"
@@ -20,14 +24,30 @@ class FeatureSampleIdentifier(enum.Enum):
 class ValueType(enum.Enum):
     continuous = "continuous"
     categorical = "categorical"
+    list_strings = "list_strings"
 
 
 class AnnotationType(enum.Enum):
     continuous = "continuous"
     categorical = "categorical"
-    binary = "binary"
     text = "text"
     list_strings = "list_strings"
+
+
+class SliceQueryIdentifierType(enum.Enum):
+    # Only used because Pyright doesn't work well with the literal types we use elsewhere.
+    feature_id = "feature_id"
+    feature_label = "feature_label"
+    sample_id = "sample_id"
+    sample_label = "sample_label"
+    column = "column"
+
+
+class AggregationMethod(enum.Enum):
+    mean = "mean"
+    median = "median"
+    per25 = "25%tile"
+    per75 = "75%tile"
 
 
 # NOTE: `param: Annotated[Optional[str], Field(None)]` gives pydantic error 'ValueError: `Field` default cannot be set in `Annotated` for 'param''.
@@ -37,6 +57,15 @@ class AnnotationType(enum.Enum):
 # NOTE: fastapi versions >= V0.100.0 supports Pydantic V2
 class SharedDatasetParams(BaseModel):
     name: Annotated[str, Field(description="Name of dataset", min_length=1)]
+    short_name: Annotated[
+        Optional[str], Field(description="an optional short label describing dataset")
+    ] = None
+    description: Annotated[
+        Optional[str], Field(description="an optional long description of the dataset")
+    ] = None
+    version: Annotated[
+        Optional[str], Field(description="an optional short version identifier")
+    ] = None
     file_ids: Annotated[
         List[str],
         Field(description="Ordered list of file ids from the chunked dataset uploads"),
@@ -93,20 +122,6 @@ class SharedDatasetParams(BaseModel):
             raise ValueError("Must be hex string")
 
 
-def check_allowed_values_not_empty(v):
-    if v == "":
-        raise UserError("Empty strings are not allowed.")
-    allowed_values_list_lower = [str(x).lower() for x in v]
-    if len(set(allowed_values_list_lower)) != len(v):
-        raise UserError(
-            msg="Make sure there are no repeats in allowed_values. Values are not considered case-sensitive",
-        )
-    return v
-
-
-AllowedValue = Annotated[str, AfterValidator(check_allowed_values_not_empty)]
-
-
 class MatrixDatasetParams(SharedDatasetParams):
     format: Literal["matrix"]
     units: Annotated[
@@ -125,7 +140,7 @@ class MatrixDatasetParams(SharedDatasetParams):
         ),
     ]
     allowed_values: Annotated[
-        Optional[List[AllowedValue]],
+        Optional[List[str]],
         Field(
             description="Only provide if 'value_type' is 'categorical'. Must contain all possible categorical values",
         ),
@@ -170,6 +185,26 @@ class MatrixDatasetParams(SharedDatasetParams):
             )
         return self
 
+    @field_validator("allowed_values", mode="after")
+    @classmethod
+    def check_valid_allowed_values(cls, v: Optional[List[str]]):
+        """
+        Checks there are no empty strings and no repeated allowed values. Values in allowed values list are not case-sensitive.
+        """
+        if v is None:
+            return v
+        # Decision to make allowed values not case-sensitive in case user error in accidental repeats
+        allowed_values_list_lower = [str(x).lower() for x in v]
+        allowed_values_set = set(allowed_values_list_lower)
+        if len(allowed_values_set) != len(v):
+            raise UserError(
+                msg="Make sure there are no repeats in allowed_values. Values are not considered case-sensitive",
+            )
+        for val in allowed_values_set:
+            if val == "":
+                raise UserError("Empty strings are not allowed!")
+        return v
+
 
 class ColumnMetadata(BaseModel):
     units: Annotated[
@@ -180,7 +215,7 @@ class ColumnMetadata(BaseModel):
     col_type: Annotated[
         AnnotationType,
         Field(
-            description="Annotation type for the column. Annotation types may include: `continuous`, `categorical`, `binary`, `text`, or `list_strings`."
+            description="Annotation type for the column. Annotation types may include: `continuous`, `categorical`, `text`, or `list_strings`."
         ),
     ]
 
@@ -236,6 +271,15 @@ def check_uuid(id: str) -> str:
 
 class SharedDatasetFields(BaseModel):
     name: str
+    short_name: Annotated[
+        Optional[str], Field(description="an optional short label describing dataset")
+    ] = None
+    description: Annotated[
+        Optional[str], Field(description="an optional long description of the dataset")
+    ] = None
+    version: Annotated[
+        Optional[str], Field(description="an optional short version identifier")
+    ] = None
     data_type: str
     group_id: str
     given_id: Annotated[Optional[str], Field(default=None)]
@@ -388,6 +432,10 @@ class MatrixDimensionsInfo(BaseModel):
             description="Denotes whether the list of samples are given as ids or sample labels"
         ),
     ] = None
+    aggregate: Annotated[
+        Optional[MatrixAggregation],
+        Field(description="Aggregates features or samples into a single series"),
+    ] = None
 
     @model_validator(mode="after")
     def check_valid_values(self):
@@ -409,6 +457,32 @@ class MatrixDimensionsInfo(BaseModel):
             return self
 
 
+class MatrixAggregation(BaseModel):
+    aggregate_by: Literal[
+        "features", "samples"
+    ]  # collapse features or samples into a single series
+    aggregation: AggregationMethod
+
+    @model_validator(mode="before")
+    def check_valid_fields(self):
+        # Type checker complains about using "in" operator for literals and self so transform self to dict
+        self_dict = dict(self)
+        if "aggregate_by" not in self_dict or "aggregation" not in self_dict:
+            raise UserError("Both 'aggregate_by' and 'aggregation' must be included!")
+        return self
+
+    @field_validator("aggregation", mode="before")
+    def valid_aggregation_methods(cls, v):
+        try:
+            AggregationMethod(v)
+        except ValueError as err:
+            raise UserError(
+                "Aggregations method must be one of ['mean', 'median', '25%tile', '75%tile']"
+            ) from err
+
+        return v
+
+
 class FeatureResponse(BaseModel):
     feature_id: str
     dataset_id: str
@@ -422,6 +496,15 @@ class DatasetUpdateSharedParams(BaseModel):
     """Contains the shared subset of matrix and tabular dataset fields that may be updated after dataset creation."""
 
     name: Annotated[Optional[str], Field(description="Name of dataset")] = None
+    short_name: Annotated[
+        Optional[str], Field(description="an optional short label describing dataset")
+    ] = None
+    description: Annotated[
+        Optional[str], Field(description="an optional long description of the dataset")
+    ] = None
+    version: Annotated[
+        Optional[str], Field(description="an optional short version identifier")
+    ] = None
     data_type: Annotated[
         Optional[str], Field(description="Data type grouping for your dataset")
     ] = None
@@ -439,6 +522,9 @@ class DatasetUpdateSharedParams(BaseModel):
         Field(
             description="A dictionary of additional dataset metadata that is not already provided"
         ),
+    ] = None
+    given_id: Annotated[
+        Optional[str], Field(description="The 'given ID' for this dataset")
     ] = None
 
 
@@ -463,7 +549,7 @@ UpdateDatasetParams = Annotated[
 ]
 
 
-class NameAndID(BaseModel):
+class NameAndID(TypedDict):
     name: str
     id: str
 
@@ -474,3 +560,9 @@ class DimensionSearchIndexResponse(BaseModel):
     label: str
     matching_properties: List[Dict[str, str]]
     referenced_by: Optional[List[NameAndID]]
+
+
+class DimensionDataResponse(BaseModel):
+    ids: list[str]
+    labels: list[str]
+    values: list[Any]

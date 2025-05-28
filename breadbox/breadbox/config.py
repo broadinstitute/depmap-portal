@@ -29,6 +29,8 @@ class Settings(BaseSettings):
         "CELERY_RESULT_BACKEND", "redis://127.0.0.1:6379/0"
     )
 
+    LEGACY_CAS_BUCKET: Optional[str] = os.environ.get("LEGACY_CAS_BUCKET")
+
     model_config = SettingsConfigDict(env_file=".env",)
 
     @field_validator("host_scheme_override")

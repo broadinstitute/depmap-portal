@@ -1,6 +1,7 @@
 import csv
 import os
 import tempfile
+from depmap.context.models_new import SubtypeContextEntity
 from flask import current_app
 from depmap.enums import BiomarkerEnum, DataTypeEnum, TabularEnum
 from depmap.cell_line.models import CellLine
@@ -16,12 +17,10 @@ from depmap.dataset.models import (
 )
 from depmap.entity.models import GenericEntity
 from depmap.gene.models import Gene
-from depmap.context.models import Context, ContextEntity, ContextEnrichment
 from depmap.compound.models import CompoundExperiment
 from depmap.transcription_start_site.models import TranscriptionStartSite
 from depmap.proteomics.models import Protein
 from loader.matrix_loader import create_matrix_object, create_transposed_hdf5
-from loader.antibody_loader import format_index_antibody_list
 from loader.proteomics_loader import load_proteins
 from loader.dataset_loader.utils import add_biomarker_dataset, add_tabular_dataset
 from depmap.utilities.iter import estimate_line_count
@@ -70,21 +69,8 @@ def load_biomarker_dataset(
     ):  # TODO: Shouldn't be needed since no transpose property
         file_path = create_transposed_hdf5(file_path)
 
-    if biomarker_enum == BiomarkerDataset.BiomarkerEnum.rppa:
-        with db.session.no_autoflush:
-            index_antibody_list = format_index_antibody_list(
-                file_path, allow_missing_entities=allow_missing_entities
-            )
-        matrix = create_matrix_object(
-            matrix_name,
-            file_path,
-            biomarker_metadata["units"],
-            owner_id,
-            index_entity_list=index_antibody_list,
-        )
-        entity_type = "antibody"
-    elif biomarker_enum == BiomarkerDataset.BiomarkerEnum.context:
-        entity_lookup = lambda x: ContextEntity.get_by_label(x, must=False)
+    if biomarker_enum == BiomarkerDataset.BiomarkerEnum.context:
+        entity_lookup = lambda x: SubtypeContextEntity.get_by_label(x, must=False)
         matrix = create_matrix_object(
             matrix_name,
             file_path,
@@ -103,6 +89,16 @@ def load_biomarker_dataset(
             non_gene_lookup=entity_lookup,
         )
         entity_type = "transcription_start_site"
+    elif biomarker_enum == BiomarkerDataset.BiomarkerEnum.rppa:
+        entity_lookup = lambda x: Protein.get_by_uniprot_id(x, must=False)
+        matrix = create_matrix_object(
+            matrix_name,
+            file_path,
+            biomarker_metadata["units"],
+            owner_id,
+            non_gene_lookup=entity_lookup,
+        )
+        entity_type = "protein"
     elif (biomarker_enum == BiomarkerDataset.BiomarkerEnum.proteomics) or (
         biomarker_enum == BiomarkerDataset.BiomarkerEnum.sanger_proteomics
     ):
@@ -324,6 +320,10 @@ def _read_mutations(dr, pbar, gene_cache, cell_line_cache):
                 am_class=r["AMClass"],  # string
                 am_pathogenicity=_to_none(r["AMPathogenicity"]),  # float
                 hotspot=_to_sql_bool(r["Hotspot"]),  # bool
+                # New columns 25Q2
+                intron=r["Intron"],  # string
+                exon=r["Exon"],  # string
+                rescue_reason=r["RescueReason"],  # string
             )
 
             yield record
@@ -589,8 +589,8 @@ def _read_fusion(dr, pbar, gene_cache, cell_line_cache):
         cell_line_id = r["ModelID"]
         cell_line = cell_line_cache.get(cell_line_id)
 
-        left_gene = gene_cache.get(r["LeftGene"])
-        right_gene = gene_cache.get(r["RightGene"])
+        gene_1 = gene_cache.get(r["Gene1"])
+        gene_2 = gene_cache.get(r["Gene2"])
         if cell_line is None:
             missing_cell_line += 1
             log_data_issue(
@@ -600,52 +600,36 @@ def _read_fusion(dr, pbar, gene_cache, cell_line_cache):
                 identifier=r["ModelID"],
             )
 
-        if left_gene is None:
+        if gene_1 is None:
             missing_gene += 1
             log_data_issue(
-                "Fusion", "Missing gene", id_type="gene", identifier=r["LeftGene"]
+                "Fusion", "Missing gene", id_type="gene", identifier=r["Gene1"]
             )
 
-        elif right_gene is None:
+        elif gene_2 is None:
             missing_gene += 1
             log_data_issue(
-                "Fusion", "Missing gene", id_type="gene", identifier=r["RightGene"]
+                "Fusion", "Missing gene", id_type="gene", identifier=r["Gene2"]
             )
 
-        if cell_line is None or left_gene is None or right_gene is None:
+        if cell_line is None or gene_1 is None or gene_2 is None:
             skipped += 1
         else:
-
-            # The header is FusionName for real data and #FusionName for sample data and old data
-            fusion_name = ""
-            if "FusionName" in r:
-                fusion_name = "FusionName"
-            else:
-                fusion_name = "#FusionName"
-
             record = dict(
                 depmap_id=cell_line.depmap_id,
-                fusion_name=str(r[fusion_name]),
-                left_gene_id=left_gene.entity_id,
-                left_breakpoint=str(r["LeftBreakpoint"]),
-                # left_allelic_fraction=float(r['Left Allelic Fraction']),
-                right_gene_id=right_gene.entity_id,
-                right_breakpoint=str(r["RightBreakpoint"]),
-                # right_allelic_fraction=float(r['Right Allelic Fraction']),
-                junction_read_count=int(r["JunctionReadCount"]),
-                spanning_frag_count=int(r["SpanningFragCount"]),
-                splice_type=str(r["SpliceType"]),
-                large_anchor_support=str(r["LargeAnchorSupport"]),
-                left_break_dinuc=str(r["LeftBreakDinuc"]),
-                left_break_entropy=float(r["LeftBreakEntropy"]),
-                right_break_dinc=str(r["RightBreakDinuc"]),
-                right_break_entropy=float(r["RightBreakEntropy"]),
+                fusion_name=str(r["CanonicalFusionName"]),
+                gene_1_id=gene_1.entity_id,
+                gene_2_id=gene_2.entity_id,
+                profile_id=str(r["ProfileID"]),
+                total_reads_supporting_fusion=int(r["TotalReadsSupportingFusion"]),
+                total_fusion_coverage=int(r["TotalFusionCoverage"]),
                 ffpm=float(r["FFPM"]),
-                annots=str(r["annots"])
-                # junction_read_ffpm=float(r['Junction Read FFPM']),
-                # spanning_frag_ffpm=float(r['Spanning Frag. FFPM']),
-                # tcga_count=int(r['TCGA count']),
-                # gtex_count=int(r['GTEX count'])
+                split_reads_1=int(r["SplitReads1"]),
+                split_reads_2=int(r["SplitReads2"]),
+                discordant_mates=int(r["DiscordantMates"]),
+                strand1=str(r["Strand1"]),
+                strand2=str(r["Strand2"]),
+                reading_frame=str(r["ReadingFrame"]),
             )
             yield record
             inserted += 1
@@ -668,94 +652,3 @@ def load_fusions(filename, taiga_id):
     add_tabular_dataset(
         name_enum=TabularDataset.TabularEnum.fusion.name, taiga_id=taiga_id
     )
-
-
-def _read_enrichment(dr, pbar, gene_cache, cell_line_cache):
-    gene_cache = LazyCache(lambda name: Gene.get_gene_from_rowname(name, must=False))
-    context_cache = LazyCache(lambda name: Context.get_by_name(name, must=False))
-    compound_cache = LazyCache(
-        lambda xref: CompoundExperiment.get_by_xref_full(xref, must=False)
-    )
-
-    skipped_gene = 0
-    skipped_compound = 0
-    skipped_context = 0
-    loaded = 0
-
-    from loader.association_loader import pipeline_label_to_dataset
-
-    for row in dr:
-        dependency_dataset_name = pipeline_label_to_dataset[row["dataset"]]
-
-        dependency_dataset = DependencyDataset.get_dataset_by_name(
-            dependency_dataset_name, must=True
-        )
-        assert dependency_dataset is not None
-
-        if dependency_dataset.data_type == DataTypeEnum.drug_screen:
-            compound = compound_cache.get(row["Gene"])
-            if compound is None:
-                skipped_compound += 1
-                log_data_issue(
-                    "ContextEnrichment",
-                    "Missing compound",
-                    identifier=row["Gene"],
-                    id_type="compound",
-                )
-                continue
-            entity_id = compound.entity_id
-        else:
-            gene = gene_cache.get(row["Gene"])
-            if gene is None:
-                skipped_gene += 1
-                log_data_issue(
-                    "ContextEnrichment",
-                    "Missing gene",
-                    identifier=row["Gene"],
-                    id_type="gene",
-                )
-                continue
-            entity_id = gene.entity_id
-
-        context = context_cache.get(row["context"])
-        if context is None:
-            skipped_context += 1
-            log_data_issue(
-                "ContextEnrichment",
-                "Missing context",
-                identifier=row["context"],
-                id_type="context_name",
-            )
-            continue
-
-        enrichment = dict(
-            context_name=context.name,
-            entity_id=entity_id,
-            p_value=float(row["p_value"]),
-            t_statistic=float(row["t_statistic"]),
-            effect_size_means_difference=float(row["effect_size_means_difference"]),
-            dependency_dataset_id=dependency_dataset.dependency_dataset_id,
-        )
-
-        yield enrichment
-        loaded += 1
-        pbar.update(1)
-
-    # sanity check
-
-    # Add this back later
-    #    assert (
-    #        skipped_gene + skipped_compound < 2500
-    #    ), "Error too many enrichment rows skipped: skipped {} genes and {} compounds".format(
-    #        skipped_gene, skipped_compound
-    #    )
-
-    print(
-        "Loaded {} context enrichment records ({} missing gene, {} missing compound, {} missing context)".format(
-            loaded, skipped_gene, skipped_compound, skipped_context
-        )
-    )
-
-
-def load_context_enrichment(db_file):
-    _batch_load(db_file, _read_enrichment, ContextEnrichment.__table__)

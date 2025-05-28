@@ -1,15 +1,16 @@
-from typing import Literal, Optional
+from typing import Any, Literal, Optional, Union
 import pandas as pd
 
+from depmap_compute.slice import SliceQuery
 from depmap.data_access import breadbox_dao
 from depmap.data_access.breadbox_dao import is_breadbox_id
 from depmap.data_access.models import MatrixDataset
-from depmap.entity.models import Entity
 from depmap.interactive import interactive_utils
 from depmap.interactive.common_utils import RowSummary
-from depmap.interactive.config.categories import CategoryConfig
-from depmap.interactive.config.models import Config, DatasetSortKey
-from depmap.partials.matrix.models import CellLineSeries, Matrix
+from depmap.interactive.config.models import Config
+from depmap.partials.matrix.models import CellLineSeries
+from depmap.compound import legacy_utils as legacy_compound_utils
+
 
 # This data access interface will eventually only contains functions
 # which can be supported through both breadbox and the legacy backend.
@@ -132,7 +133,7 @@ def get_row_of_values(
 ) -> CellLineSeries:
     """
     Gets a row of numeric or string values, indexed by depmap_id
-    for a given dataset and feature name.
+    for a given dataset and feature label.
     """
     if is_breadbox_id(dataset_id):
         return breadbox_dao.get_row_of_values(
@@ -188,6 +189,23 @@ def get_dataset_sample_labels_by_id(dataset_id) -> dict[str, str]:
     return interactive_utils.get_dataset_sample_labels_by_id(dataset_id)
 
 
+def get_dataset_dimension_ids_by_label(
+    dataset_id: str, axis: Literal["sample", "feature"]
+) -> dict[str, str]:
+    """
+    For the given dataset axis, load all given_ids indexed by label.
+    This is helpful for re-indexing data which has been loaded by label. 
+    """
+    if axis == "feature":
+        labels_by_id = get_dataset_feature_labels_by_id(dataset_id)
+    else:
+        labels_by_id = get_dataset_sample_labels_by_id(dataset_id)
+    # invert the dictionary
+    # Also make sure ids are converted to strings (some legacy IDs are not)
+    ids_by_label = {label: str(id) for id, label in labels_by_id.items()}
+    return ids_by_label
+
+
 def get_dataset_feature_labels(dataset_id: str) -> list[str]:
     """
     Get a list of all feature/entity labels for the given dataset.
@@ -197,6 +215,15 @@ def get_dataset_feature_labels(dataset_id: str) -> list[str]:
     return interactive_utils.get_dataset_feature_labels(dataset_id)
 
 
+def get_dataset_feature_ids(dataset_id: str) -> list[str]:
+    """
+    Get a list of all feature/entity given_ids for the given dataset.
+    """
+    if is_breadbox_id(dataset_id):
+        return breadbox_dao.get_dataset_feature_ids(dataset_id)
+    return interactive_utils.get_dataset_feature_ids(dataset_id)
+
+
 def get_dataset_sample_ids(dataset_id: str) -> list[str]:
     """
     Get a list of all sample ids (ex. depmap ids) for the given dataset.
@@ -204,16 +231,6 @@ def get_dataset_sample_ids(dataset_id: str) -> list[str]:
     if is_breadbox_id(dataset_id):
         return breadbox_dao.get_dataset_sample_ids(dataset_id)
     return interactive_utils.get_dataset_sample_ids(dataset_id)
-
-
-def get_sort_key(dataset_id: str) -> DatasetSortKey:
-    """
-    Get a DatasetSortKey to order datasets as they should appear in vector catalog.
-    This method is only used in DE1. DE2 uses the 'priority' field instead.
-    """
-    if is_breadbox_id(dataset_id):
-        return breadbox_dao.get_sort_key(dataset_id)
-    return interactive_utils.get_sort_key(dataset_id)
 
 
 def is_categorical(dataset_id: str) -> bool:
@@ -245,16 +262,137 @@ def valid_row(dataset_id: str, row_name: str) -> bool:
     return interactive_utils.valid_row(dataset_id, row_name)
 
 
+def get_slice_data(slice_query: SliceQuery) -> pd.Series:
+    """
+    Loads data for the given slice query. 
+    The result will be a pandas series indexed by sample/feature ID 
+    (regardless of the identifier_type used in the query).
+    """
+    dataset_id = slice_query.dataset_id
+
+    if slice_query.identifier_type == "feature_id":
+        feature_labels_by_id = get_dataset_feature_labels_by_id(dataset_id)
+        query_feature_label = feature_labels_by_id[slice_query.identifier]
+        values_by_sample_id = get_subsetted_df_by_labels(
+            slice_query.dataset_id, feature_row_labels=[query_feature_label]
+        ).squeeze()
+        result_series = values_by_sample_id
+
+    elif slice_query.identifier_type == "feature_label":
+        values_by_sample_id = get_subsetted_df_by_labels(
+            slice_query.dataset_id, feature_row_labels=[slice_query.identifier]
+        ).squeeze()
+        result_series = values_by_sample_id
+
+    elif slice_query.identifier_type == "sample_id":
+        values_by_feature_label: pd.Series = get_subsetted_df_by_labels(
+            slice_query.dataset_id, sample_col_ids=[slice_query.identifier]
+        ).squeeze()
+        feature_ids_by_label = get_dataset_dimension_ids_by_label(
+            dataset_id, axis="feature"
+        )
+        result_series = values_by_feature_label.rename(feature_ids_by_label)
+
+    elif slice_query.identifier_type == "sample_label":
+        ids_by_label = get_dataset_dimension_ids_by_label(dataset_id, axis="sample")
+        query_sample_id = ids_by_label[slice_query.identifier]
+
+        values_by_feature_label: pd.Series = get_subsetted_df_by_labels(
+            slice_query.dataset_id, sample_col_ids=[query_sample_id]
+        ).squeeze()
+        feature_ids_by_label = get_dataset_dimension_ids_by_label(
+            dataset_id, axis="feature"
+        )
+        result_series = values_by_feature_label.rename(feature_ids_by_label)
+
+    elif slice_query.identifier_type == "column":
+        result_series = get_tabular_dataset_column(dataset_id, slice_query.identifier)
+
+    else:
+        raise Exception("Unrecognized slice query identifier type")
+
+    # remove missing entries
+    result_series = result_series.dropna()
+    return result_series
+
+
+###############################################################
+# METHODS BELOW ARE SPECIAL WORKAROUNDS FOR COMPOUND DATASETS #
+###############################################################
+# In the future, all drug screen datasets will be indexed by compound instead of compound experiment.
+# These methods exist to ensure that both the legacy backend and breadbox are returning
+# same shaped data while we are in this transitionary period.
+
+
+def get_all_datasets_containing_compound(compound_id: str) -> list[MatrixDataset]:
+    """
+    Return IDs for all datasets which contain data for the given compound, sorted by priority.
+    This should include both:
+        - Datasets indexed by compound (from breadbox)
+        - Datasets indexed by compound experiment (from the legacy backend)
+    Note: There are a couple of cases where the legacy dataset contains the compound but the breadbox 
+    version does not (ex. CTRP_AUC changed feature types). In this case, the dataset will be hidden.
+    """
+    bb_compound_datasets = breadbox_dao.get_filtered_matrix_datasets(
+        feature_type="compound_v2", feature_id=compound_id
+    )
+    bb_compound_datasets.sort(
+        key=lambda dataset: dataset.priority if dataset.priority else 999
+    )
+
+    # If a dataset is defined in both breadbox and the legacy DB, use the breadbox version
+    legacy_ce_dataset_ids = legacy_compound_utils.get_compound_experiment_priority_sorted_datasets(
+        compound_id
+    )
+    all_bb_given_ids = breadbox_dao.get_breadbox_given_ids()
+    visible_legacy_datasets = [
+        _get_legacy_matrix_dataset(dataset_id)
+        for dataset_id in legacy_ce_dataset_ids
+        if dataset_id not in all_bb_given_ids
+    ]
+    return bb_compound_datasets + visible_legacy_datasets
+
+
+def get_subsetted_df_by_labels_compound_friendly(dataset_id: str) -> pd.DataFrame:
+    """
+    Load the data for a drug screen dataset. This is similar to get_subsetted_df_by_labels,
+    except that for legacy compound datasets, the result will be indexed by compound 
+    (to match breadbox).
+    All non-compound datasets should work normally with this method as well.
+    """
+    dataset = get_matrix_dataset(dataset_id)
+    # Legacy datasets indexed by compound experiment get re-indexed by compound label
+    if not is_breadbox_id(dataset_id) and dataset.feature_type == "compound_experiment":
+        return legacy_compound_utils.get_subsetted_df_by_compound_labels(dataset_id)
+    else:
+        return get_subsetted_df_by_labels(dataset_id)
+
+
+##################################################
+# METHODS BELOW ARE ONLY SUPPORTABLE BY BREADBOX #
+##################################################
+
+
+def get_tabular_dataset_column(dataset_id: str, column_name: str) -> pd.Series:
+    """
+    Get a column of values from the given tabular dataset. 
+    The result will be a series indexed by given id. 
+    """
+    if is_breadbox_id(dataset_id):
+        return breadbox_dao.get_tabular_dataset_column(dataset_id, column_name)
+    else:
+        raise NotImplementedError(
+            "Tabular datasets are not supported outside of breadbox."
+        )
+
+
+def get_metadata_dataset_id(dimension_type_name: str) -> Union[str, None]:
+    return breadbox_dao.get_metadata_dataset_id(dimension_type_name)
+
+
 ######################################################################
 # METHODS BELOW NEED UPDATED CONTRACTS TO BE SUPPORTABLE BY BREADBOX #
 ######################################################################
-
-# used heavily by data explorer 2 to distinguish private datasets when caching
-def get_private_datasets() -> dict[str, Config]:
-    """
-    Get configuration information for all private datasets.
-    """
-    return interactive_utils.get_private_datasets()
 
 
 def get_subsetted_df(
@@ -316,34 +454,11 @@ def get_custom_cell_lines_dataset() -> str:
     return interactive_utils.get_custom_cell_lines_dataset()
 
 
-def get_matrix_id(dataset_id: str) -> int:
-    """
-    Load the matrix id for the given dataset.
-    Matrices are specific to the legacy data access implementation
-    """
-    return interactive_utils.get_matrix_id(dataset_id)
-
-
 def has_config(dataset_id: str) -> bool:
     """
     Check whether the given dataset exists in interactive config
     """
     return interactive_utils.has_config(dataset_id)
-
-
-def is_filter(dataset_id: str) -> bool:
-    """
-    Check whether the given dataset is a context or custom cell lines dataset.
-    """
-    return interactive_utils.is_filter(dataset_id)
-
-
-def is_standard(dataset_id: str) -> bool:
-    """
-    Check whether the given dataset is standard or nonstandard. 
-    Only applicable for the legacy data access implementation.
-    """
-    return interactive_utils.is_standard(dataset_id)
 
 
 def _get_visible_legacy_dataset_ids():

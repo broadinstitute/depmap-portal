@@ -1,4 +1,5 @@
 import re
+import logging
 import numpy as np
 import natsort as ns
 import urllib.parse
@@ -9,9 +10,9 @@ from flask import (
     render_template,
     abort,
     request,
+    jsonify,
 )
 
-from depmap_compute.context import ContextEvaluator, decode_slice_id
 from depmap import data_access
 from depmap.extensions import csrf_protect
 from depmap.access_control import is_current_user_an_admin
@@ -27,10 +28,12 @@ from depmap.data_explorer_2.performance import generate_performance_report
 from depmap.data_explorer_2.datasets import get_datasets_matching_context_with_details
 from depmap.data_explorer_2.utils import (
     get_aliases_matching_labels,
+    get_all_dimension_labels_by_id,
     get_all_supported_continuous_datasets,
     get_dimension_labels_across_datasets,
     get_dimension_labels_to_datasets_mapping,
     get_file_and_release_from_dataset,
+    get_ids_and_labels_matching_context,
     get_reoriented_df,
     get_series_from_de2_slice_id,
     get_union_of_index_labels,
@@ -41,11 +44,18 @@ from depmap.data_explorer_2.utils import (
     to_display_name,
     to_serializable_numpy_number,
 )
-from depmap.data_explorer_2.linear_regression import compute_linear_regression
-from depmap.data_explorer_2.datatypes import hardcoded_metadata_slices
+from depmap.data_explorer_2.datatypes import (
+    get_hardcoded_metadata_slices,
+    is_hardcoded_binarylike_slice,
+)
 
 from depmap.download.models import ReleaseTerms
 from depmap.download.views import get_file_record, get_release_record
+
+from depmap_compute.context import LegacyContextEvaluator
+from depmap_compute.slice import decode_slice_id
+
+log = logging.getLogger(__name__)
 
 blueprint = Blueprint(
     "data_explorer_2",
@@ -57,9 +67,6 @@ blueprint = Blueprint(
 
 @blueprint.route("/")
 def view_data_explorer_2():
-    if not current_app.config["ENABLED_FEATURES"].data_explorer_2:
-        abort(404)
-
     return render_template(
         "data_explorer_2/index.html", tutorial_link=get_tutorial_link()
     )
@@ -91,23 +98,6 @@ def get_waterfall():
     return make_gzipped_json_response(
         compute_waterfall(index_type, dimensions, filters, metadata)
     )
-
-
-@blueprint.route("/linear_regression", methods=["POST"])
-@csrf_protect.exempt
-def linear_regression():
-    json = request.get_json()
-    index_type = json["index_type"]
-    dimensions = json["dimensions"]
-    filters = json.get("filters") or {}
-    metadata = json.get("metadata") or {}
-
-    computed = compute_all(index_type, dimensions, filters, metadata)
-    linreg_by_group = compute_linear_regression(
-        dimensions, computed["dimensions"], computed["filters"], computed["metadata"]
-    )
-
-    return make_gzipped_json_response(linreg_by_group)
 
 
 @blueprint.route("/get_shared_index", methods=["POST"])
@@ -174,6 +164,7 @@ def get_correlation():
 
     dataset_id = dimension["dataset_id"]
     context = dimension["context"]
+    slice_type = dimension["slice_type"]
 
     output_index_labels = []
     row_labels = []
@@ -184,7 +175,7 @@ def get_correlation():
         if not is_transpose
         else data_access.get_dataset_sample_type(dataset_id)
     )
-    row_context_evaluator = ContextEvaluator(context, slice_to_dict)
+    row_context_evaluator = LegacyContextEvaluator(context, slice_to_dict)
     dataset_label = data_access.get_dataset_label(dataset_id)
 
     for label in get_vector_labels(dataset_id, is_transpose):
@@ -199,6 +190,7 @@ def get_correlation():
             "axis_label": "cannot plot",
             "values": [],
             "context_size": len(row_labels),
+            "slice_type": slice_type,
         }
 
         return make_gzipped_json_response(
@@ -216,6 +208,7 @@ def get_correlation():
             "axis_label": "context produced no matches",
             "values": [],
             "context_size": 0,
+            "slice_type": slice_type,
         }
 
         return make_gzipped_json_response(
@@ -236,10 +229,10 @@ def get_correlation():
         col_context_evaluator = None
 
         if dimension_key == "x" and distinguish1:
-            col_context_evaluator = ContextEvaluator(distinguish1, slice_to_dict)
+            col_context_evaluator = LegacyContextEvaluator(distinguish1, slice_to_dict)
 
         if dimension_key == "x2" and distinguish2:
-            col_context_evaluator = ContextEvaluator(distinguish2, slice_to_dict)
+            col_context_evaluator = LegacyContextEvaluator(distinguish2, slice_to_dict)
 
         for label in get_vector_labels(dataset_id, not is_transpose):
             if not col_context_evaluator or col_context_evaluator.is_match(label):
@@ -307,6 +300,7 @@ def get_correlation():
             "dataset_label": dataset_label,
             "axis_label": axis_label,
             "values": values,
+            "slice_type": slice_type,
         }
 
     index_aliases = get_aliases_matching_labels(dimension_type, row_labels)
@@ -333,9 +327,9 @@ def datasets_by_index_type():
     for dataset in get_all_supported_continuous_datasets():
         common_props = {
             "data_type": dataset.data_type,
-            "dataset_id": dataset.id,
+            "id": dataset.id,
             "given_id": dataset.given_id,
-            "label": dataset.label,
+            "name": dataset.label,
             "units": dataset.units,
             "priority": dataset.priority,
         }
@@ -357,7 +351,7 @@ def datasets_by_index_type():
         )
 
     for index_type, dataset in output.items():
-        output[index_type] = sorted(dataset, key=lambda dataset: dataset["label"],)
+        output[index_type] = sorted(dataset, key=lambda dataset: dataset["name"])
 
     return make_gzipped_json_response(output)
 
@@ -401,9 +395,33 @@ def dimension_labels_of_dataset():
 def unique_values_or_range():
     slice_id = request.args.get("slice_id")
     dataset_id, _, _ = decode_slice_id(slice_id)
-    series = get_series_from_de2_slice_id(slice_id)
+
+    try:
+        series = get_series_from_de2_slice_id(slice_id)
+    except ValueError as error:
+        log.exception(
+            "Error trying to get series from slice_id '%s': %s", slice_id, str(error)
+        )
+
+        error_json = {
+            "error": {
+                "type": "ValueError",
+                "message": "There was a problem finding the data associated with this condition",
+                "code": 500,
+            }
+        }
+
+        response = jsonify(error_json)
+        response.status_code = 500
+        return response
 
     if data_access.is_continuous(dataset_id):
+        if is_hardcoded_binarylike_slice(slice_id):
+            return {
+                "value_type": "binary",
+                "unique_values": get_vector_labels(dataset_id, False),
+            }
+
         return make_gzipped_json_response(
             {
                 "value_type": "continuous",
@@ -448,12 +466,12 @@ def unique_values_or_range():
 @csrf_protect.exempt
 def get_labels_matching_context():
     """
-    Get the full list of labels (in any dataset) which match the given context.
+    DEPRECATED: Get the full list of labels (in any dataset) which match the given context.
     """
     inputs = request.get_json()
     context = inputs["context"]
     context_type = context["context_type"]
-    context_evaluator = ContextEvaluator(context, slice_to_dict)
+    context_evaluator = LegacyContextEvaluator(context, slice_to_dict)
     input_labels = get_dimension_labels_across_datasets(context_type)
 
     labels_matching_context = []
@@ -462,6 +480,48 @@ def get_labels_matching_context():
             labels_matching_context.append(label)
 
     return make_gzipped_json_response(labels_matching_context)
+
+
+@blueprint.route("/v2/context", methods=["POST"])
+@csrf_protect.exempt
+def evaluate_v2_context():
+    """
+    Get the full list of labels (in any dataset) which match the given context.
+    """
+    inputs = request.get_json()
+    context = inputs["context"]
+
+    matching_ids, matching_labels = get_ids_and_labels_matching_context(context)
+
+    return make_gzipped_json_response({"ids": matching_ids, "labels": matching_labels})
+
+
+@blueprint.route("/v2/context/summary", methods=["POST"])
+@csrf_protect.exempt
+def get_v2_context_summary():
+    """
+    Get the number of matching labels and candidate labels.
+    "Candidate" labels are all labels belonging to the context's dimension type.
+    """
+    inputs = request.get_json()
+    context = inputs["context"]
+
+    # Legacy contexts use the "context_type" field name, while newer contexts use "dimension_type"
+    dimension_type = context.get("dimension_type")
+    if dimension_type is None:
+        dimension_type = context.get("context_type")
+
+    if dimension_type is None:
+        abort(400, "Context requests must specify a dimension type.")
+
+    # Load all dimension labels and ids
+    all_labels_by_id = get_all_dimension_labels_by_id(dimension_type)
+    matching_ids, _ = get_ids_and_labels_matching_context(context)
+
+    return {
+        "num_candidates": len(all_labels_by_id.keys()),
+        "num_matches": len(matching_ids),
+    }
 
 
 # TODO: Remove this endpoint. It's only used for one specific feature type
@@ -475,7 +535,7 @@ def get_labels_matching_context():
 @csrf_protect.exempt
 def get_datasets_matching_context():
     """
-    Get the list of datasets which have data matching the given context. For
+    DEPRECATED: Get the list of datasets which have data matching the given context. For
     each dataset, include the full list of dimension labels matching the
     context. Returns a list of dictionaries like:
     [
@@ -498,13 +558,13 @@ def get_datasets_matching_context():
 @csrf_protect.exempt
 def get_context_summary():
     """
-    Get the number of matching labels and candidate labels.
+    DEPRECATED: Get the number of matching labels and candidate labels.
     "Candidate" labels are all labels belonging to the context's dimension type.
     """
     inputs = request.get_json()
     context = inputs["context"]
     context_type = context["context_type"]
-    context_evaluator = ContextEvaluator(context, slice_to_dict)
+    context_evaluator = LegacyContextEvaluator(context, slice_to_dict)
     input_labels = get_dimension_labels_across_datasets(context_type)
 
     labels_matching_context = []
@@ -546,10 +606,22 @@ def metadata_slices():
         but this has a specific use on the frontend. The UI interprets
         isHighCardinality=True to mean "you can use this as context variable
         but it would make no sense to try to color by it."
+    "isLegacy" (boolean):
+        Indicates that this should be listed as legacy (deprecated) annotation
+        that does not match the current column name in the corresponding
+        Breadbox metadata table.
+    "isIdColumn" (boolean):
+        Indicates whether a column is the one associated with a Breadbox
+        dimension type's id_column This is used by the frontend to sort this
+        near at the top of the options.
+    "isLabelColumn" (boolean):
+        Indicates whether a column is the one associated with the special
+        "label" column in Breadbox. This is used by the frontend to sort this
+        near the top of the options.
     """
     dimension_type = request.args.get("dimension_type")
 
-    return hardcoded_metadata_slices.get(dimension_type, {})
+    return get_hardcoded_metadata_slices().get(dimension_type, {})
 
 
 @blueprint.route("/dataset_details")

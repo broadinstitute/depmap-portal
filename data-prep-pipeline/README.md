@@ -5,31 +5,30 @@ The data prep pipeline gets data from **Taiga** and prepares the data to make th
 1. **Transformed Data**: These datasets are generated from current release or a combination of current release and other relevant data such as hgnc gene table, onocokb annotated data, etc.
 2. **Legacy Data**: These datasets are not part of the currrent release anymore. However, they are still used for some analysis. E.g. RNAi data.
 
-## How to add a dataset to the data prep pipeline
+## How to run the Data Prep Pipeline locally
 
-#### If source data is from release only
+First, make sure you have conseq installed from here: https://github.com/broadinstitute/conseq and conseq is executable.
 
-1. Check if the dataset name already exists in [datarelease_taiga_permanames](data_prep_pipeline/datarelease_taiga_permanames.py). If it does, then go to step 2. If not, then add the taiga permaname as a variable there. E.g. For internal-24q2-3719.87/OmicsSomaticMutations the permaname would be _"OmicsSomaticMutations"_.
-2. Write a script that imports the source data, does the transformation, and uploads the transformed dataframe to taiga. There's a _update_taiga_ function in [utils.py](data_prep_pipeline/utils.py) that can be used to do so.
-3. Import and add that script to the main function of [data prep.py](data_prep_pipeline/data_prep.py).
+Then, assuming you are in `depmap-portal/data-prep-pipeline` where this readme is located, install and activate a poetry environment. Then:
 
-An example can be found [here](data_prep_pipeline/predictability/transform_crispr_confounders.py).
+1. Run `poetry shell`.
+2. Once inside the poetry environment, run `data_prep_pipeline/common.conseq` which will run each rule mentioned there and produce the relevant output.
 
-#### If source data is from release+some other dataset in taiga
+Note that there are two primary configuration files, `release_inputs.conseq` which contains all the taiga ids of the initial inputs for different rules and `common.conseq` which contains all the available rules. There's a `data_prep_pipeline/publish.conseq` file where each upload to taiga is configured and executed. If you would like to modify or skip the upload for a particular rule, then do so in that file.
 
-In case of the other dataset in taiga, add that to the [config.py](data_prep_pipeline/config.py) as a variable and import that in your transformation script. Everything else is exactly as [If Source Data is from release only](#if-source-data-is-from-release-only).
+## Run the Data Prep Pipeline in Jenkins
 
-An example can be found [here](data_prep_pipeline/predictability/transform_fusion.py)
+Go to the Data Prep Pipeline 1.0 jenkins job here: https://datascidev.broadinstitute.org/job/Data%20Prep%20Pipeline%201.0/
 
-#### If source data is from legacy only
+Then click on build. Optionally choose one of the parameters if you would like a clean start or start with a specific export or want to automatically rebuild the db once done.
 
-We are not expecting many such datasets to be out there. But if you need to add one, then:
+## How to extend the pipeline to add additional files to the release
 
-1. Add the legacy taiga id as a variable in [legacy_data_prep.py](data_prep_pipeline/legacy_datasets/legacy_data_prep.py).
-2. Add the target_taiga_id.
-3. Write a function that processes the data in [this format](#note) and uploads to taiga.
-4. Add that function to the main function.
-5. Execute the `legacy_data_prep.py` once.
+Please follow these steps:
+
+1. Write your conseq script and add that to the `data-prep-pipeline/data_prep_pipeline` directory.
+2. If it consumes a python script, then please add that to the `data-prep-pipeline/scripts` directory.
+3. If you would like the output file to be uploaded to Taiga, then please add that to the `data-prep-pipeline/data_prep_pipeline/publish.conseq` file. There's a `upload_to_taiga.py` script that can be used to upload in a simplified manner.
 
 #### Note
 
@@ -43,11 +42,3 @@ ACH-000001,0,0.5,0.5
 ACH-000002,0.6,0.6,0.7
 ACH-000003,0.3,0.4,0.4
 ```
-
-## How to run the data prep pipeline
-
-The `data_prep.py` runs the data-prep-pipeline. It needs at least a taiga dataset id which is used as the source. It is optional to provide a new target dataset id where the output matrices would be uploaded. If no new dataset id is provided, then the script will write the output matrices to the dataset of the source taiga id.
-
-1. To write/upload files at the source dataset, run: `python data_prep.py source_dataset_taiga_id`. For example,
-   `python data_prep.py internal-23q4-ac2b.80` will get the required data from the source_dataset_taiga_id, transform them, and upload the transformed versions to the source_dataset_taiga_id.
-2. To write at a new dataset, run: `python data_prep.py source_dataset_taiga_id --new_dataset_id=new_dataset_id`. For example, `python data_prep.py internal-23q4-ac2b.80 --new_dataset_id=predictability-76d5` will get the required data from the source_dataset_taiga_id, transform them, and upload the transformed versions to the new_dataset_id.

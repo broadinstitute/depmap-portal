@@ -1,197 +1,202 @@
-{% extends "nav_footer.html" %}
+{% extends "nav_footer.html" %} {% block page_title %} {{ name }} DepMap
+Compound Summary {% endblock %} {% block css %} {% assets filters="libsass",
+output="public/css/view_entity.css", "css/entities/view_entity.scss",
+"css/entities/executive.scss", "css/shared/*.scss"
+"public/css/context_explorer.css", "css/context_explorer/context_explorer.scss"
+%}
+<link rel="stylesheet" href="{{ ASSET_URL }}" />
+{% endassets %} {% endblock %} {% block content_class %}container-fluid{%
+endblock content_class %} {% set show_sensitivity_tab = summary is not none %}
+{% set show_predictability_tab = has_datasets and has_predictability %} {% set
+show_dose_curve_tab = dose_curve_options | length > 0 %} {% set show_celfie_tab
+= has_celfie %} {% set show_aliases = compound_aliases|length > 0 %} {% block
+content %}
+<br />
+<div class="header">
+  <div>
+    <div class="header_info_container">
+      <h1 class="compound_name">{{ name }}</h1>
+      <span class="other_info">
+        {% if show_aliases %} Also known as:
+        <span class="info_content">{{compound_aliases}}</span>
+        {% endif %}
+      </span>
+    </div>
+  </div>
+</div>
+{% if is_mobile %} {% include 'compounds/executive.html' %} {% else %} {% set
+active_tab_set = False %}
+<ul class="nav nav-tabs" role="tablist">
+  {% if has_datasets or about %}
+  <li role="presentation" class="{% if not active_tab_set %}active{% endif %}">
+    <a href="#overview" aria-controls="overview" role="tab" data-toggle="tab"
+      >Overview</a
+    >
+  </li>
+  {% set active_tab_set = True %} {% endif %} {% if show_sensitivity_tab %}
+  <!-- Change from #sensitivity to dependency for now -->
+  <li role="presentation" class="{% if not active_tab_set %}active{% endif %}">
+    <a
+      href="#dependency"
+      aria-controls="sensitivity"
+      role="tab"
+      data-toggle="tab"
+      >Sensitivity</a
+    >
+  </li>
+  {% set active_tab_set = True %} {% endif %} {% if show_dose_curve_tab %}
+  <li role="presentation" class="{% if not active_tab_set %}active{% endif %}">
+    <a
+      href="#dose-curves"
+      aria-controls="dose-curves"
+      role="tab"
+      data-toggle="tab"
+      >Dose curves</a
+    >
+  </li>
+  {% set active_tab_set = True %} {% endif %} {% if show_predictability_tab %}
+  <li role="presentation" class="{% if not active_tab_set %}active{% endif %}">
+    <a
+      href="#predictability"
+      aria-controls="predictability"
+      role="tab"
+      data-toggle="tab"
+      >Predictability</a
+    >
+  </li>
+  {% set active_tab_set = True %} {% endif %} {% if show_celfie_tab %}
+  <li role="presentation" class="{% if not active_tab_set %}active{% endif %}">
+    <a
+      href="#genomic_assoc"
+      aria-controls="genomic_assoc"
+      role="tab"
+      data-toggle="tab"
+      >Genomic Associations</a
+    >
+  </li>
+  {% set active_tab_set = True %} {% endif %}
+</ul>
 
-
-{% block page_title %}
-    {{ name }} DepMap Compound Summary
-{% endblock %}
-
-{% block css %}
-    {% assets filters="libsass", output="public/css/view_entity.css", "css/entities/view_entity.scss", depends=['css/entities/executive.scss', 'css/shared/*.scss'] %}
-        <link rel="stylesheet" href="{{ ASSET_URL }}">
-    {% endassets %}
-{% endblock %}
-
-{% block content_class %}container-fluid{% endblock content_class %}
-
-
-{% set show_sensitivity_tab = summary is not none %}
-{% set show_predictability_tab = has_datasets and has_predictability %}
-{% set show_dose_curve_tab = dose_curve_options | length > 0 %}
-{% set show_celfie_tab = has_celfie %}
-{% set show_aliases = compound_aliases|length > 0  %}
-
-{% block content %}
-    <br>
-    <div class="header">
-        <div>
-          <div class="header_info_container">
-            <h1 class="compound_name">{{ name }}</h1>
-            <span class="other_info">
-                {% if show_aliases %}
-                Also known as:
-              <span class="info_content">{{compound_aliases}}</span>
-                {% endif %}
-            </span>
-          </div>
-        </div>
-      </div>
-    {% if is_mobile %}
-        {% include 'compounds/executive.html' %}
-    {% else %}
-        {% set active_tab_set = False %}
-        <ul class="nav nav-tabs" role="tablist">
-            {% if has_datasets or about %}
-                <li role="presentation" class="{% if not active_tab_set %}active{% endif %}"><a href="#overview"
-                                                                                                aria-controls="overview"
-                                                                                                role="tab"
-                                                                                                data-toggle="tab">Overview</a>
-                </li>
-                {% set active_tab_set = True %}
-            {% endif %}
-            {% if show_sensitivity_tab %}
-                <!-- Change from #sensitivity to dependency for now -->
-                <li role="presentation" class="{% if not active_tab_set %}active{% endif %}"><a href="#dependency"
-                                                                                                aria-controls="sensitivity"
-                                                                                                role="tab"
-                                                                                                data-toggle="tab">Sensitivity</a>
-                </li>
-                {% set active_tab_set = True %}
-            {% endif %}
-            {% if show_dose_curve_tab %}
-                <li role="presentation" class="{% if not active_tab_set %}active{% endif %}"><a href="#dose-curves"
-                                                                                                aria-controls="dose-curves"
-                                                                                                role="tab"
-                                                                                                data-toggle="tab">Dose curves</a>
-                </li>
-                {% set active_tab_set = True %}
-            {% endif %}
-            {% if show_predictability_tab %}
-                <li role="presentation" class="{% if not active_tab_set %}active{% endif %}"><a href="#predictability"
-                                                                                                aria-controls="predictability"
-                                                                                                role="tab"
-                                                                                                data-toggle="tab">Predictability</a>
-                </li>
-                {% set active_tab_set = True %}
-            {% endif %}
-            {% if show_celfie_tab %}
-                <li role="presentation" class="{% if not active_tab_set %}active{% endif %}"><a href="#genomic_assoc"
-                                                                                                aria-controls="genomic_assoc"
-                                                                                                role="tab"
-                                                                                                data-toggle="tab">Genomic Associations</a>
-                </li>
-                {% set active_tab_set = True %}
-            {% endif %}
-        </ul>
-
-        {% set active_tab_set = False %}
-        <!-- Tab panes -->
-        <div class="tab-content">
-            {% if has_datasets or about %}
-                <div role="tabpanel" class="tab-pane {% if not active_tab_set %}active{% endif %}" id="overview">
-                    {% include 'compounds/executive.html' %}
-                    {% set active_tab_set = True %}
-                </div>
-            {% endif %}
-
-            {% if show_sensitivity_tab %}
-                <div role="tabpanel" class="tab-pane sticky_datasets {% if not active_tab_set %}active{% endif %}"
-                     id="dependency">
-                    <div class="sticky_datasets" id="dataset"> {# id is just for sticky_datasets #}
-                        <div id="entity-summary-root"></div>
-                        <script>
-                        $(function () { // document ready for middle-of-html js
-                            DepMap.initEntitySummary(
-                                "entity-summary-root",
-                                {{summary|tojson}},
-                            );
-                        })
-                        </script>
-                    </div>
-                    {% set active_tab_set = True %}
-                </div>
-            {% endif %}
-
-            {% if show_dose_curve_tab %}
-                <div role="tabpanel" class="tab-pane {% if not active_tab_set %}active{% endif %}" id="dose-curves">
-                    <div id="dose-curves-tab-content"></div>
-                    <script>
-                        $(function () { // document ready for middle-of-html js
-                            DepMap.initDoseResponseTab(
-                                "dose-curves-tab-content",
-                            {{dose_curve_options | tojson}},
-                            "{{ compound_units }}"
-                        );
-                        });
-                    </script>
-                    {% set active_tab_set = True %}
-                </div>
-            {% endif %}
-
-            {% if show_predictability_tab %}
-                <div role="tabpanel" class="tab-pane {% if not active_tab_set %}active{% endif %}"
-                     id="predictability">
-                    <div id="predictive-tab-root">Loading...</div>
-                    {% set active_tab_set = True %}
-                </div>
-            {% endif %}
-            {% if show_celfie_tab %}
-                <div role="tabpanel" class="tab-pane {% if not active_tab_set %}active{% endif %}"
-                     id="genomic_assoc">
-                    {% import "entities/celfie.html" as celfie_pg with context %}
-                    {{ celfie_pg.celfie_page("compound_celfie_tab", celfie, true)}}
-                    {% set active_tab_set = True %}
-                </div>
-            {% endif %}
-        </div>
-    {% endif %}
-    {% if not has_datasets and not about and not show_sensitivity_tab %}
-        <p style="padding: 15px 0">No data was found on this compound.</p>
-    {% endif %}
-{% endblock %}
-
-
-{% block js %}
-    <script>
-        // This is the only place we still use jquery-stickytabs. It should be
-        // removed after this page is converted to React because it doesn't
-        // play nice with our React Tabs component (it wants to stomp out the
-        // ?tab= query parameter).
-        $(function () {
-            $(".nav-tabs").stickyTabs();
-            for (let context of $(".sticky_datasets")) {
-                $(context).stickyDatasets();
-            }
-        });
-    </script>
-    <script type="text/javascript">
+{% set active_tab_set = False %}
+<!-- Tab panes -->
+<div class="tab-content">
+  {% if has_datasets or about %}
+  <div
+    role="tabpanel"
+    class="tab-pane {% if not active_tab_set %}active{% endif %}"
+    id="overview"
+  >
+    {% include 'compounds/executive.html' %} {% set active_tab_set = True %}
+  </div>
+  {% endif %} {% if show_sensitivity_tab %}
+  <div
+    role="tabpanel"
+    class="
+      tab-pane
+      sticky_datasets
+      {%
+      if
+      not
+      active_tab_set
+      %}active{%
+      endif
+      %}
+    "
+    id="dependency"
+  >
+    <div class="sticky_datasets" id="dataset">
+      {# id is just for sticky_datasets #}
+      <div id="entity-summary-root"></div>
+      <script>
         $(function () { // document ready for middle-of-html js
-            {% include "entities/partials/async_cards.js" %}
-            {% for group in order %}
-              {% for tile_name, _ in group %}
-                loadAsyncTile("{{ config.APPLICATION_ROOT }}", "compound", "{{tile_name}}", "{{name}}", "{{tile_name}}_placeholder")
-              {% endfor %}
-            {% endfor %}
-        });
-        function clickTab(target) { // outside for function definition
-            $(`.nav-tabs a[href="${target}"]`).click();
-        }
+            DepMap.initEntitySummary(
+                "entity-summary-root",
+                {{summary|tojson}},
+            );
+        })
+      </script>
+    </div>
+    {% set active_tab_set = True %}
+  </div>
+  {% endif %} {% if show_dose_curve_tab %}
+  <div
+    role="tabpanel"
+    class="tab-pane {% if not active_tab_set %}active{% endif %}"
+    id="dose-curves"
+  >
+    <div id="dose-curves-tab-content"></div>
+    <script>
+      $(function () { // document ready for middle-of-html js
+          DepMap.initDoseResponseTab(
+              "dose-curves-tab-content",
+          {{dose_curve_options | tojson}},
+          "{{ compound_units }}"
+      );
+      });
     </script>
-    {% if show_predictability_tab %}
-        <script>
-            $(function () { // document ready for middle-of-html js
-                DepMap.initPredictiveTab(
-                    'predictive-tab-root',
-                    "{{ name }}",
-                    "{{ name }}",
-                    "compound",
-                    "{{ predictability_custom_downloads_link }}",
-                    "{{ predictability_methodology_link | safe}}"
-                );
-            });
-        </script>
-    {% endif %}
-{% endblock %}
-
-{% block toxic_js %}
-    {% include "mailchimp.html" %}
+    {% set active_tab_set = True %}
+  </div>
+  {% endif %} {% if show_predictability_tab %}
+  <div
+    role="tabpanel"
+    class="tab-pane {% if not active_tab_set %}active{% endif %}"
+    id="predictability"
+  >
+    <div id="predictive-tab-root">Loading...</div>
+    {% set active_tab_set = True %}
+  </div>
+  {% endif %} {% if show_celfie_tab %}
+  <div
+    role="tabpanel"
+    class="tab-pane {% if not active_tab_set %}active{% endif %}"
+    id="genomic_assoc"
+  >
+    {% import "entities/celfie.html" as celfie_pg with context %} {{
+    celfie_pg.celfie_page("compound_celfie_tab", celfie, true)}} {% set
+    active_tab_set = True %}
+  </div>
+  {% endif %}
+</div>
+{% endif %} {% if not has_datasets and not about and not show_sensitivity_tab %}
+<p style="padding: 15px 0">No data was found on this compound.</p>
+{% endif %} {% endblock %} {% block js %}
+<script>
+  // This is the only place we still use jquery-stickytabs. It should be
+  // removed after this page is converted to React because it doesn't
+  // play nice with our React Tabs component (it wants to stomp out the
+  // ?tab= query parameter).
+  $(function () {
+    $(".nav-tabs").stickyTabs();
+    for (let context of $(".sticky_datasets")) {
+      $(context).stickyDatasets();
+    }
+  });
+</script>
+<script type="text/javascript">
+  $(function () { // document ready for middle-of-html js
+      {% include "entities/partials/async_cards.js" %}
+      {% for group in order %}
+        {% for tile_name, _ in group %}
+          loadAsyncTile("{{ config.APPLICATION_ROOT }}", "compound", {{tile_name | tojson}}, {{name | tojson }}, "{{tile_name}}_placeholder")
+        {% endfor %}
+      {% endfor %}
+  });
+  function clickTab(target) { // outside for function definition
+      $(`.nav-tabs a[href="${target}"]`).click();
+  }
+</script>
+{% if show_predictability_tab %}
+<script>
+  $(function () { // document ready for middle-of-html js
+      DepMap.initPredictiveTab(
+          'predictive-tab-root',
+          {{ name | tojson }},
+          {{ name | tojson }},
+          "compound",
+          {{ predictability_custom_downloads_link | tojson }} ,
+          {{ predictability_methodology_link | tojson }}
+      );
+  });
+</script>
+{% endif %} {% endblock %} {% block toxic_js %} {% include "mailchimp.html" %}
 {% endblock %}

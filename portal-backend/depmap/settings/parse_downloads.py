@@ -11,7 +11,7 @@ from depmap.download.models import (
     DownloadRelease,
     ExternalBucketUrl,
     FileSource,
-    FileSubType,
+    FileSubtype,
     FileType,
     ReleaseTerms,
     ReleaseType,
@@ -71,10 +71,12 @@ def get_summary_stats(stats: List[Dict[str, Any]]) -> SummaryStats:
 
 def get_bucket(url: dict):
     if url.get("bucket", "") == DmcBucketUrl.BUCKET:
-        return DmcBucketUrl(url.get("file_name", ""))
+        return DmcBucketUrl(url.get("file_name", ""), dl_name=url.get("dl_name", ""))
     else:
         return BucketUrl(
-            url.get("bucket", ""), url.get("file_name", ""), url.get("dl_name", "")
+            url.get("bucket", ""),
+            url.get("file_name", ""),
+            dl_name=url.get("dl_name", ""),
         )
 
 
@@ -92,12 +94,19 @@ def get_proper_url_format(url):
         return url
 
 
-def make_file(file: Dict[str, Any]) -> DownloadFile:
+def make_file(
+    file: Dict[str, Any], subtype_mapping_w_positions: Dict[str, FileSubtype]
+) -> DownloadFile:
     # Required for DownloadFile
     name = file.get("name", "")
     type = FileType(file.get("type", ""))
-    sub_type_val = file.get("sub_type", None)
-    sub_type = FileSubType(sub_type_val) if sub_type_val != None else sub_type_val
+
+    sub_type_code = file.get("sub_type")
+    sub_type = (
+        None
+        if sub_type_code is None
+        else subtype_mapping_w_positions.get(sub_type_code)
+    )
 
     size = file.get("size", "")
 
@@ -198,7 +207,18 @@ def make_downloads_release_from_parsed_yaml(release: Dict[str, Any]) -> Download
 
     virtual_dataset_id = release.get("virtual_dataset_id")
 
-    files: List[DownloadFile] = [make_file(file) for file in files_preparse]
+    subtype_mapping = release.get("subtypes")
+    subtype_mapping_w_positions = {}
+
+    if subtype_mapping is not None:
+        for index, subtype in enumerate(subtype_mapping):
+            subtype_mapping_w_positions[subtype["code"]] = FileSubtype(
+                code=subtype["code"], label=subtype["label"], position=index
+            )
+
+    files: List[DownloadFile] = [
+        make_file(file, subtype_mapping_w_positions) for file in files_preparse
+    ]
 
     final_release = DownloadRelease(
         name,
@@ -253,15 +273,12 @@ def get_downloads_file_paths(index_yaml: str) -> List[str]:
     return downloads_file_paths
 
 
-def get_list_of_file_paths(index_file_path: str) -> List[str]:
-    file_paths = get_downloads_file_paths(index_file_path)
+def get_list_of_file_paths(download_dir_paths: List[str]) -> List[str]:
+    file_paths = []
 
-    # SHARED_DOWNLOADS_PATH contains the public download yaml. This was moved into a shared folder, because
-    # all environments need to load the public downloads files.
-    shared_downloads_path = current_app.config["SHARED_DOWNLOADS_PATH"]
-    if shared_downloads_path:
-        shared_index_file_path = f"{shared_downloads_path}/index.yaml"
-        file_paths.extend(get_downloads_file_paths(shared_index_file_path))
+    for download_dir_path in download_dir_paths:
+        index_file_path = os.path.join(download_dir_path, "index.yaml")
+        file_paths.extend(get_downloads_file_paths(index_file_path))
 
     return file_paths
 
@@ -286,9 +303,9 @@ def get_virtual_dataset_id_by_yaml_file_name(file_name,) -> Tuple[str, DownloadR
 
 
 def _parse_releases(
-    downloads_path: str,
+    downloads_paths: List[str],
 ) -> Tuple[List[DownloadRelease], Dict[str, DownloadRelease]]:
-    file_paths: List[str] = get_list_of_file_paths(downloads_path)
+    file_paths: List[str] = get_list_of_file_paths(downloads_paths)
 
     release_by_filename: Dict[str, DownloadRelease] = {}
     downloads_releases: List[DownloadRelease] = []
@@ -300,8 +317,8 @@ def _parse_releases(
     return downloads_releases, release_by_filename
 
 
-def _parse_downloads(downloads_path: str) -> DownloadInfoFromConfig:
-    downloads_releases, release_by_filename = _parse_releases(downloads_path)
+def _parse_downloads(downloads_paths: List[str]) -> DownloadInfoFromConfig:
+    downloads_releases, release_by_filename = _parse_releases(downloads_paths)
 
     display_names_by_taiga_ids = {}
 
@@ -318,23 +335,36 @@ def _parse_downloads(downloads_path: str) -> DownloadInfoFromConfig:
     )
 
 
-def _parse_downloads_with_caching(downloads_path: str) -> DownloadInfoFromConfig:
+def _parse_downloads_with_caching(downloads_paths: List[str]) -> DownloadInfoFromConfig:
     """
-    Checks to see if the file at the given path has changed. If it has, it will re-parse the file
+    Checks to see if the index files in any of the given paths have changed. If it has, it will re-parse the files
     """
-    assert os.path.exists(
-        downloads_path
-    ), f"Downloads index does not exist: {downloads_path}"
-    timestamp = os.path.getmtime(downloads_path)
+    timestamp = None
+    for downloads_path in downloads_paths:
+        index_path = os.path.join(downloads_path, "index.yaml")
 
-    cache_entry = _parse_cache.get(downloads_path)
+        assert os.path.exists(
+            index_path
+        ), f"Downloads index does not exist: {index_path}"
+        _timestamp = os.path.getmtime(index_path)
+
+        # find the newest timestamp of all the index files
+        if timestamp is None or _timestamp > timestamp:
+            timestamp = _timestamp
+
+    # if we have a cache entry and the timestamp of the newest file hasn't changed, return the value
+    # from last time
+    cache_key = str(downloads_paths)
+    cache_entry = _parse_cache.get(cache_key)
     if cache_entry is not None:
         prev_timestamp, prev_value = cache_entry
         if prev_timestamp == timestamp:
             return prev_value
+    assert timestamp is not None
 
-    value = _parse_downloads(downloads_path)
-    _parse_cache[downloads_path] = (timestamp, value)
+    # otherwise, parse all the files and cache the result
+    value = _parse_downloads(downloads_paths)
+    _parse_cache[cache_key] = (timestamp, value)
     return value
 
 
@@ -345,12 +375,12 @@ def _parse_downloads_with_caching(downloads_path: str) -> DownloadInfoFromConfig
 def get_taiga_ids_from_all_downloads():
     taiga_ids = set()
 
-    downloads_path = current_app.config["DOWNLOADS_PATH"]
-    if downloads_path is None:
+    downloads_paths = current_app.config["DOWNLOADS_PATHS"]  # pyright: ignore
+    assert isinstance(downloads_paths, list)
+    if len(downloads_paths) == 0:
         downloads_releases = []
     else:
-        downloads_path = os.path.join(downloads_path, "index.yaml")
-        downloads_releases, _ = _parse_releases(downloads_path)
+        downloads_releases, _ = _parse_releases(downloads_paths)
 
     # If we have this config parameter set, then we need to treat this list of releases
     # the same as downloads that we took from the release. See also
@@ -373,12 +403,13 @@ def get_taiga_ids_from_all_downloads():
 # Used in download_settings.py get_download_list and _get_download_list_for_env to load downloads into the portal.
 # If this is called directly, it WILL BYPASS ACCESS CONTROLS. For access controls use get_download_list
 def parse_downloads_unsafe() -> DownloadInfoFromConfig:
-    downloads_path = current_app.config["DOWNLOADS_PATH"]
-    if downloads_path is None:
+    downloads_paths = current_app.config["DOWNLOADS_PATHS"]  # pyright: ignore
+    assert isinstance(downloads_paths, list)
+    if len(downloads_paths) == 0:
         return DownloadInfoFromConfig(
             releases=[], display_names_by_taiga_ids={}, release_by_filename={}
         )
-    return _parse_downloads_with_caching(os.path.join(downloads_path, "index.yaml"))
+    return _parse_downloads_with_caching(downloads_paths)
 
 
 # These are taiga IDs that are used by tests. Let's just ignore them for purposes of display names

@@ -64,19 +64,6 @@ def set_sqlite_pragma(dbapi_connection, connection_record):
     cursor.close()
 
 
-@event.listens_for(Engine, "connect")
-def register_access_control_functions(dbapi_connection, connection_record):
-    """
-    Registers functions which is used by access controls
-    """
-    # doing an import here to avoid top level import which I suspect would be circular
-    from depmap.access_control import (
-        register_access_control_functions as _register_access_control_functions,
-    )
-
-    _register_access_control_functions(dbapi_connection)
-
-
 class Checkpoint(Model):
     __tablename__ = "checkpoint"
     id = Column(Integer, primary_key=True, autoincrement=True)

@@ -3,7 +3,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
 import PlotSpinner from "src/plot/components/PlotSpinner";
 import BoxPlot from "src/plot/components/BoxPlot";
-import BarChart from "src/plot/components/BarChart";
+import PrototypeBarChart from "./PrototypeBarChart";
 
 interface PredictabilityBoxPlotProps {
   modelName: string;
@@ -141,7 +141,7 @@ const PredictabilityBoxOrBarPlot = ({
         />
       )}
       {barPlotData && !isLoading && (
-        <BarChart
+        <PrototypeBarChart
           title={"test"}
           categoryLabels={["Percent 0", "Percent 1"]}
           categoryValues={[barPlotData.fraction_0, barPlotData.fraction_1]}

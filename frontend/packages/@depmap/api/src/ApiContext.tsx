@@ -1,10 +1,4 @@
 import React from "react";
-import {
-  AddDatasetOneRowArgs,
-  AssociationAndCheckbox,
-  PlotFeatures,
-  VectorCatalogApi,
-} from "@depmap/interactive";
 import { UserUploadArgs, UploadTask } from "@depmap/user-upload";
 import {
   CellLineSelectorLines,
@@ -17,6 +11,8 @@ import {
   UnivariateAssociationsParams,
 } from "@depmap/compute";
 import {
+  AddDatasetOneRowArgs,
+  AssociationAndCheckbox,
   Dataset as BreadboxDataset,
   DatasetParams,
   DatasetUpdateArgs,
@@ -32,6 +28,10 @@ import {
   SearchDimenionsRequest,
   SearchDimenionsResponse,
   UploadFileResponse,
+  DimensionType,
+  DimensionTypeAddArgs,
+  DimensionTypeUpdateArgs,
+  SliceQuery,
 } from "@depmap/types";
 import {
   DatasetDownloadMetadata,
@@ -55,15 +55,8 @@ export interface SharedApi {
   getTaskStatus: (id: string) => Promise<CeleryTask>;
   getCellLineSelectorLines: () => Promise<CellLineSelectorLines>;
   getAssociations: (x: string) => Promise<AssociationAndCheckbox>;
-  postCustomTaiga: (config: UserUploadArgs) => Promise<UploadTask>;
   postCustomCsv: (config: UserUploadArgs) => Promise<UploadTask>;
   getCellignerColorMap: () => Promise<CellignerColorsForCellLineSelector>;
-  getFeaturePlot: (
-    features: string[],
-    groupBy: string,
-    filter: string,
-    computeLinearFit: boolean
-  ) => Promise<PlotFeatures>;
   searchDimensions: (
     req: SearchDimenionsRequest
   ) => Promise<SearchDimenionsResponse>;
@@ -81,9 +74,10 @@ export interface SharedApi {
   ) => Promise<BreadboxDataset>;
   deleteDatasets: (id: string) => Promise<any>;
   updateDataset: (
+    datasetId: string,
     datasetToUpdate: DatasetUpdateArgs
   ) => Promise<BreadboxDataset>;
-  getGroups: () => Promise<Group[]>;
+  getGroups: (writeAccess?: boolean) => Promise<Group[]>;
   postGroup: (groupArgs: GroupArgs) => Promise<Group>;
   deleteGroup: (id: string) => Promise<any>;
   postGroupEntry: (
@@ -92,6 +86,7 @@ export interface SharedApi {
   ) => Promise<GroupEntry>;
   deleteGroupEntry: (groupEntryId: string) => Promise<any>;
   getDataTypesAndPriorities: () => Promise<InvalidPrioritiesByDataType>;
+  // NOTE: The endpoints for feature type and sample type are deprecated and should not be used.
   getFeatureTypes: () => Promise<FeatureType[]>;
   getSampleTypes: () => Promise<SampleType[]>;
   postSampleType: (sampleTypeArgs: any) => Promise<SampleType>;
@@ -104,17 +99,43 @@ export interface SharedApi {
   updateFeatureType: (
     featureTypeArgs: FeatureTypeUpdateArgs
   ) => Promise<FeatureType>;
+  // NOTE: The endpoints for dimension type should be used instead of ones for feature and sample type
+  getDimensionTypes: () => Promise<DimensionType[]>;
+  postDimensionType: (
+    dimTypeArgs: DimensionTypeAddArgs
+  ) => Promise<DimensionType>;
+  updateDimensionType: (
+    dimTypeName: string,
+    dimTypeArgs: DimensionTypeUpdateArgs
+  ) => Promise<DimensionType>;
+  deleteDimensionType: (name: string) => Promise<any>;
   getMetadata: (label: string) => Promise<any>;
   computeUnivariateAssociations: (
     config: UnivariateAssociationsParams
   ) => Promise<ComputeResponse>;
+  fetchAssociations: (
+    sliceQuery: SliceQuery
+  ) => Promise<{
+    dataset_name: string;
+    dimension_label: string;
+    associated_datasets: {
+      name: string;
+      dimension_type: string;
+      dataset_id: string;
+    }[];
+    associated_dimensions: {
+      correlation: number;
+      log10qvalue: number;
+      other_dataset_id: string;
+      other_dimension_given_id: string;
+      other_dimension_label: string;
+    }[];
+  }>;
   postCustomCsvOneRow: (config: AddDatasetOneRowArgs) => Promise<UploadTask>;
-  getVector: (id: string) => Promise<any>;
 }
 
 export interface ApiContextInterface {
   getApi: () => SharedApi;
-  getVectorCatalogApi: () => VectorCatalogApi;
 }
 
 const apiFunctions = {
@@ -122,16 +143,10 @@ const apiFunctions = {
     getApi: () => {
       throw new Error("getBreadboxApi is not implemented");
     },
-    getVectorCatalogApi: () => {
-      throw new Error("getVectorCatalogApi is not implemented");
-    },
   },
   depmap: {
     getApi: () => {
       throw new Error("getDapi is not implemented");
-    },
-    getVectorCatalogApi: () => {
-      throw new Error("getVectorCatalogApi is not implemented");
     },
   },
 };

@@ -84,8 +84,8 @@ class UserOverrideMiddleware:
                 # where people may want to monkey with headers for testing.
 
                 # modifies environ to affect what the wrapped application sees
-                update_environ_header("HTTP_X-Forwarded-User", user_override)
-                update_environ_header("HTTP_X-Forwarded-Email", user_override)
+                update_environ_header("HTTP_X_FORWARDED_USER", user_override)
+                update_environ_header("HTTP_X_FORWARDED_EMAIL", user_override)
 
             return self.proxy(environ, start_response)
 

@@ -2,6 +2,7 @@ from .interface import (
     # methods that will likely be supported going forward
     get_all_matrix_datasets,
     get_matrix_dataset,
+    get_dataset_feature_ids,
     get_dataset_feature_labels_by_id,
     get_dataset_feature_labels,
     get_dataset_sample_ids,
@@ -14,10 +15,13 @@ from .interface import (
     get_dataset_taiga_id,
     get_dataset_units,
     get_subsetted_df_by_labels,
+    get_slice_data,
     is_categorical,
     is_continuous,
+    # compound-specific methods
+    get_all_datasets_containing_compound,
+    get_subsetted_df_by_labels_compound_friendly,
     # methods that will be supported with modified contracts
-    get_private_datasets,
     get_row_of_values,
     get_subsetted_df,
     get_subsetted_df_by_ids,
@@ -26,9 +30,6 @@ from .interface import (
     get_all_row_indices_labels_entity_ids,
     get_context_dataset,
     get_custom_cell_lines_dataset,
-    get_matrix_id,
-    get_sort_key,
+    get_metadata_dataset_id,
     has_config,
-    is_filter,
-    is_standard,
 )

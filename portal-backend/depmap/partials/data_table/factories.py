@@ -19,9 +19,9 @@ from depmap.partials.data_table.models import (
     TableDisplayEntityLink,
     TableDisplayRender,
 )
-from depmap.context.models import Context, ContextEnrichment
 from depmap.utilities.registration import _make_factory, _get_factory_output
 from depmap.utilities.url_utils import js_url_for
+from depmap import extensions
 from sqlalchemy import types
 
 
@@ -108,6 +108,10 @@ class MutationTableSpec:
         "am_class",
         "am_pathogenicity",
         "hotspot",
+        ## New columns 25Q2
+        "intron",
+        "exon",
+        "rescue_reason",
     ]
 
     common_renames = {
@@ -202,6 +206,9 @@ class MutationTableSpec:
         "am_class": "AM class",
         "am_pathogenicity": "AM Pathogenicity",
         "hotspot": "Hotspot",
+        "intron": "Intron",
+        "exon": "Exon",
+        "rescue_reason": "Rescue Reason",
     }
 
     common_default_columns = [
@@ -275,48 +282,51 @@ class TranslocationTableSpec:
 class FusionTableSpec:
     common_columns = [
         "fusion_name",
-        "left_gene_label",
-        "left_breakpoint",
-        "right_gene_label",
-        "right_breakpoint",
-        "junction_read_count",
-        "spanning_frag_count",
-        "splice_type",
-        "large_anchor_support",
-        "left_break_dinuc",
-        "left_break_entropy",
-        "right_break_dinc",
-        "right_break_entropy",
+        "gene_1_label",
+        "gene_2_label",
+        "profile_id",
+        "total_reads_supporting_fusion",
+        "total_fusion_coverage",
         "ffpm",
-        "annots",
+        "split_reads_1",
+        "split_reads_2",
+        "discordant_mates",
+        "strand1",
+        "strand2",
+        "reading_frame",
     ]
     common_renames = {
-        "left_gene_label": "Left Gene",
-        "right_gene_label": "Right Gene",
-        "spanning_frag_count": "Spanning Frag Count",
+        "gene_1_label": "Gene 1",
+        "gene_2_label": "Gene 2",
+        "fusion_name": "Fusion Name",
+        "profile_id": "Profile ID",
+        "total_reads_supporting_fusion": "Total Reads Supporting Fusion",
+        "total_fusion_coverage": "Total Fusion Coverage",
+        "ffpm": "FFPM",
+        "split_reads_1": "Split Reads 1",
+        "split_reads_2": "Split Reads 2",
+        "discordant_mates": "Discordant Mates",
+        "strand1": "Strand 1",
+        "strand2": "Strand 2",
+        "reading_frame": "Reading Frame",
     }
     default_columns = [
         "Cell Line",
         "Fusion Name",
-        "Left Gene",
-        "Right Gene",
-        "Splice Type",
-        "Annots",
+        "Gene 1",
+        "Gene 2",
+        "FFPM",
     ]
+    default_sort = ("ffpm", "desc")
 
     @staticmethod
     def get_common_renders():
         return [
             TableDisplayLink(
-                js_url_for("gene.view_gene", gene_symbol="{data}"), "left_gene_label"
+                js_url_for("gene.view_gene", gene_symbol="{data}"), "gene_1_label"
             ),
             TableDisplayLink(
-                js_url_for("gene.view_gene", gene_symbol="{data}"), "right_gene_label"
-            ),
-            # Making this a render, so that the data stays as a string list for downloads. I don't want to assume the validiy of ';' as a delimiter (that it's not present in all data)
-            # Could put each annot on a line, but that makes the table large
-            TableDisplayRender(
-                lambda col_indices: 'JSON.parse(data).join("; ")', ["annots"]
+                js_url_for("gene.view_gene", gene_symbol="{data}"), "gene_2_label"
             ),
         ]
 
@@ -477,6 +487,7 @@ def get_fusion_by_gene_table(gene_id):
         renames=renames,
         renders=renders,
         default_cols_to_show=default_cols_to_show,
+        sort_col=FusionTableSpec.default_sort,
     )
     query = Fusion.find_by_gene_query(gene_id)
 
@@ -504,89 +515,13 @@ def get_fusion_by_cell_line_table(model_id):
         renames=renames,
         renders=renders,
         default_cols_to_show=default_cols_to_show,
+        sort_col=FusionTableSpec.default_sort,
     )
     query = Fusion.find_by_cell_line_query(model_id)
     filename = "{} fusions".format(
         DepmapModel.query.filter_by(model_id=model_id).one().stripped_cell_line_name
     )
     return DataTable(query, display, "fusion", filename)
-
-
-@_data_table_factory("context_cell_lines")
-def _get_cell_lines_in_context_table(context):
-    """
-    Table for cell lines in context
-    """
-    renders = [
-        TableDisplayLink(
-            js_url_for("cell_line.view_cell_line", cell_line_name="{row['Depmap Id']}"),
-            "cell_line_display_name",
-        )
-    ]
-    display = TableDisplay(
-        ["depmap_id", "cell_line_display_name", "primary_disease", "tumor_type"],
-        {"type": "context_cell_lines", "context": context},
-        renames={"cell_line_display_name": "Cell Line"},
-        renders=renders,
-        additional_react_table_props={"noDataText": "No cell lines with these filters"},
-        invisible_cols=["depmap_id"],
-        sort_col=("cell_line_display_name", "asc"),
-    )
-    query = Context.get_cell_line_table_query(context)
-    filename = "cell lines in {}".format(context)
-    # some contexts have dashes in their name, these need to be replaced because the DataTable name is used to form javascript variables (and other identifiers) that do not allow dashes
-    return DataTable(
-        query,
-        display,
-        "cell_lines_in_context_{}".format(context.replace("-", "_")),
-        filename,
-    )
-
-
-@_data_table_factory("context_dependency_enrichment")
-def _get_dependencies_enriched_in_context_table(context):
-    """
-    Table for dependencies enriched in a context
-    type (gene/compound) needs to be a column for the sake or url generation. it should also be shown so that users can filter by only genes or only compounds
-    """
-    renders = [TableDisplayEntityLink("label")]
-    display = TableDisplay(
-        [
-            "type",
-            "url_label",
-            "label",
-            "display_name",
-            "t_statistic",
-            "p_value",
-            "effect_size_means_difference",
-        ],
-        {"type": "context_dependency_enrichment", "context": context},
-        renames={
-            "label": "Gene/Compound",
-            "display_name": "Dataset",
-            "t_statistic": "T-Statistic",
-            "p_value": "P-Value",
-            "effect_size_means_difference": "Effect Size Means Difference",
-        },
-        format={
-            "t_statistic": "{:.3G}",
-            "p_value": "{:.3G}",
-            "effect_size_means_difference": "{:.3G}",
-        },
-        renders=renders,
-        invisible_cols=["url_label"],
-        sort_col=("effect_size_means_difference", "asc"),
-    )
-    # type for this query returns as 'compound' not 'compound_experiment'
-    query = ContextEnrichment.get_entities_enriched_in_context_query(context)
-    filename = "dependencies enriched in {}".format(context)
-    # some contexts have dashes in their name, these need to be replaced because the DataTable name is used to form javascript variables (and other identifiers) that do not allow dashes
-    return DataTable(
-        query,
-        display,
-        "dependencies_enriched_in_context_{}".format(context.replace("-", "_")),
-        filename,
-    )
 
 
 @_data_table_factory("cell_line_selector_lines")
@@ -645,3 +580,45 @@ def get_cell_line_selector_lines_table():
         return cols
 
     return DataTableData(get_column_types, get_data)
+
+
+def get_anchor_screen_metadata_table():
+    cols = [
+        "ModelID",
+        "StrippedCellLineName",
+        "OncotreeLineage",
+        "OncotreePrimaryDisease",
+        "OncotreeSubtype",
+        "Drug",
+        "ExperimentID",
+        "ControlArmScreenID",
+        "DrugArmScreenID",
+    ]
+
+    def get_data():
+        df = extensions.breadbox.client.get_tabular_dataset_data(
+            dataset_id="anchor-screen-metadata",
+            columns=cols,
+            identifier=None,
+            indices=None,
+            strict=True,
+        )
+        df = df.sort_values(by="ModelID")
+        return df
+
+    def get_column_types():
+        return {col: types.String for col in cols}
+
+    table_data = DataTableData(get_column_types, get_data)
+
+    display = TableDisplay(
+        cols=cols,
+        factory_params={},
+        renames={},
+        renders=[],
+        default_cols_to_show=cols,
+        replace_underscores=False,
+        make_title_case=False,
+    )
+
+    return DataTable(table_data, display, "anchor screens", "anchor screen metadata")

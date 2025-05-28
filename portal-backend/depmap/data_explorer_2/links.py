@@ -5,13 +5,10 @@ from depmap import data_access
 from depmap.utilities.sign_bucket_url import sign_url
 from depmap.vector_catalog.models import SliceSerializer
 from depmap.entity.models import Entity
-from depmap.context.models import Lineage
+from depmap.cell_line.models import Lineage
 
 
 def get_tutorial_link():
-    if not current_app.config["ENABLED_FEATURES"].data_explorer_2:
-        return None
-
     return "https://sites.google.com/broadinstitute.org/depmap-de2-tutorial/home"
 
 

@@ -1,6 +1,6 @@
 import { DownloadFile, DownloadTableData, Release } from "@depmap/data-slicer";
 import { encodeParams } from "@depmap/utils";
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import styles from "src/dataPage/styles/DataPage.scss";
 import { Tooltip } from "@depmap/common-components";
 import { CollapsiblePanel } from "../../common/components/CollapsiblePanel";
@@ -11,7 +11,7 @@ interface DataFilePanelProps {
   data: DownloadTableData;
   termsDefinitions: { [key: string]: string };
   release: Release;
-  openPanelOnLoad?: boolean;
+  urlOrGlobalSearchSelectedFile?: DownloadFile | null;
   keySuffix?: number;
 }
 
@@ -202,9 +202,22 @@ const DataFilePanel = ({
   data,
   termsDefinitions,
   release,
-  openPanelOnLoad = false,
+  urlOrGlobalSearchSelectedFile = null,
   keySuffix = 1,
 }: DataFilePanelProps) => {
+  const element = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (urlOrGlobalSearchSelectedFile !== null) {
+      const key =
+        urlOrGlobalSearchSelectedFile.releaseName +
+        urlOrGlobalSearchSelectedFile.fileName;
+      element.current
+        ?.querySelector(`[id="${key}"]`)
+        ?.scrollIntoView({ behavior: "auto" });
+    }
+  }, [urlOrGlobalSearchSelectedFile]);
+
   const primaryFiles = data.filter((dataFile) => dataFile.isMainFile === true);
 
   const supplementalFiles = data.filter(
@@ -218,7 +231,7 @@ const DataFilePanel = ({
     supplementalFiles.filter((dataFile) => dataFile.size).length > 0;
 
   return (
-    <div className={styles.DataFilePanel}>
+    <div className={styles.DataFilePanel} ref={element}>
       {primaryFiles.length > 0 && (
         <div className={styles.dataPanelSection}>
           <h3>Primary Files</h3>
@@ -232,21 +245,27 @@ const DataFilePanel = ({
           </div>
           <div className="collapsible-panel-list">
             {primaryFiles.map((file: DownloadFile) => (
-              <CollapsiblePanel
-                headerContent={
-                  <CollapsiblePanelHeader
-                    file={file}
-                    termsDefinitions={termsDefinitions}
-                  />
-                }
-                bodyContent={
-                  <CollapsiblePanelBody file={file} release={release} />
-                }
+              <div
+                id={file.releaseName + file.fileName}
                 key={file.releaseName + file.fileName}
-                openPanelOnLoad={openPanelOnLoad}
-                keyPrefix={file.releaseName + file.fileName}
-                keySuffix={keySuffix}
-              />
+                style={{ scrollMarginTop: "55px" }}
+              >
+                <CollapsiblePanel
+                  headerContent={
+                    <CollapsiblePanelHeader
+                      file={file}
+                      termsDefinitions={termsDefinitions}
+                    />
+                  }
+                  bodyContent={
+                    <CollapsiblePanelBody file={file} release={release} />
+                  }
+                  key={file.releaseName + file.fileName}
+                  openPanelOnLoad={file === urlOrGlobalSearchSelectedFile}
+                  keyPrefix={file.releaseName + file.fileName}
+                  keySuffix={keySuffix}
+                />
+              </div>
             ))}
           </div>
         </div>
@@ -264,21 +283,27 @@ const DataFilePanel = ({
           </div>
           <div>
             {supplementalFiles.map((file: DownloadFile) => (
-              <CollapsiblePanel
-                headerContent={
-                  <CollapsiblePanelHeader
-                    file={file}
-                    termsDefinitions={termsDefinitions}
-                  />
-                }
-                bodyContent={
-                  <CollapsiblePanelBody file={file} release={release} />
-                }
+              <div
+                id={file.releaseName + file.fileName}
                 key={file.releaseName + file.fileName}
-                openPanelOnLoad={openPanelOnLoad}
-                keyPrefix={file.releaseName + file.fileName}
-                keySuffix={keySuffix}
-              />
+                style={{ scrollMarginTop: "55px" }}
+              >
+                <CollapsiblePanel
+                  headerContent={
+                    <CollapsiblePanelHeader
+                      file={file}
+                      termsDefinitions={termsDefinitions}
+                    />
+                  }
+                  bodyContent={
+                    <CollapsiblePanelBody file={file} release={release} />
+                  }
+                  key={file.releaseName + file.fileName}
+                  openPanelOnLoad={file === urlOrGlobalSearchSelectedFile}
+                  keyPrefix={file.releaseName + file.fileName}
+                  keySuffix={keySuffix}
+                />
+              </div>
             ))}
           </div>
         </div>

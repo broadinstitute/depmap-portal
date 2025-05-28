@@ -1,4 +1,4 @@
-import { Accordion, OpenCloseSymbol } from "@depmap/interactive";
+import { Accordion, OpenCloseSymbol } from "@depmap/common-components";
 import React from "react";
 
 export interface CollapsiblePanelProps {
@@ -33,7 +33,7 @@ export const CollapsiblePanel = ({
         isOpen={openPanelOnLoad}
         title={headerContent}
         openCloseSymbol={OpenCloseSymbol.Caret}
-        openingTransition={"max-height 0.2s ease"}
+        openingTransition={"max-height 0.05s ease"}
         openCloseSymbolStyle={openCloseSymbolStyle}
       >
         {bodyContent}

@@ -11,7 +11,6 @@ export const matrixFormSchema: Required<Pick<RJSFSchema, "properties">> &
     "group_id",
     "format",
     "units",
-    "feature_type",
     "sample_type",
     "value_type",
   ],
@@ -86,22 +85,16 @@ export const matrixFormSchema: Required<Pick<RJSFSchema, "properties">> &
     group_id: {
       title: "Group Id",
       type: "string",
-      description:
-        "ID of the group the dataset belongs to. Required for non-transient datasets. The public group is `00000000-0000-0000-0000-000000000000`",
+      description: "The group the dataset belongs to",
       format: "uuid",
     },
     priority: {
       title: "Priority",
       minimum: 1, // not in openapi.json but added to solve exclusiveMinimum problem
       // exclusiveMinimum: 0, In openapi.json but RJSF not recognizing exclusiveMinimum and exclusiveMaximum keywords?
-      type: "integer",
+      type: ["integer", "null"], // "null" must be string or else it throws an error
       description:
-        "Numeric value assigned to the dataset with `1` being highest priority within the `data_type`, used for displaying order of datasets to show for a specific `data_type` in UI.",
-    },
-    taiga_id: {
-      title: "Taiga Id",
-      type: "string",
-      description: "Taiga ID the dataset is sourced from.",
+        "Numeric value representing priority of the dataset within its data type, with `1` being highest priority",
     },
     is_transient: {
       // TODO: This should be required param in bb
@@ -113,9 +106,9 @@ export const matrixFormSchema: Required<Pick<RJSFSchema, "properties">> &
     },
     dataset_metadata: {
       title: "Dataset Metadata",
-      type: "object",
+      type: ["object", "null"],
       description:
-        "Contains a dictionary of additional dataset values that are not already provided above.",
+        "Additional dataset information that is not already provided in above form",
     },
     format: {
       title: "Format",
@@ -130,7 +123,7 @@ export const matrixFormSchema: Required<Pick<RJSFSchema, "properties">> &
     },
     feature_type: {
       title: "Feature Type",
-      type: "string",
+      type: ["string", "null"],
       description: "Type of features your dataset contains",
     },
     sample_type: {

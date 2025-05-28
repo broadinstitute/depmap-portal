@@ -1,31 +1,22 @@
-import { Base64 } from "js-base64";
-import stableStringify from "json-stable-stringify";
-import { DataExplorerContext, StoredContexts } from "@depmap/types";
+import { isElara } from "@depmap/globals";
+import {
+  DataExplorerContext,
+  DataExplorerContextV2,
+  StoredContexts,
+} from "@depmap/types";
 import { LocalStorageListStore } from "@depmap/cell-line-selector";
+import { persistContext } from "./context-storage";
 
-export async function getContextHash(context: DataExplorerContext) {
-  const json = stableStringify(context);
-  const encoded = new TextEncoder().encode(json);
-  const buffer = await crypto.subtle.digest("SHA-256", encoded);
-  const bytes = new Uint8Array(buffer);
-
-  // Passing `true` as a second argument yields a URL-safe encoding...
-  let str = Base64.fromUint8Array(bytes, true);
-
-  // ...but js-base64's defintion of "URL-safe" also strips padding.
-  // We'll stick it back on.
-  const paddingLength = 3 - (bytes.length % 3);
-  str += "=".repeat(paddingLength);
-
-  return str;
-}
-
-export const isContextAll = (context: DataExplorerContext) => {
+export const isContextAll = (
+  context: DataExplorerContext | DataExplorerContextV2
+) => {
   // `true` is a special value used to match on anything.
   return Boolean(context) && context.expr === true;
 };
 
-export function isNegatedContext(context: DataExplorerContext | null) {
+export function isNegatedContext(
+  context: DataExplorerContext | DataExplorerContextV2 | null
+) {
   if (!context) {
     return false;
   }
@@ -37,6 +28,10 @@ export function isNegatedContext(context: DataExplorerContext | null) {
   return "!" in context.expr;
 }
 
+export const userContextStorageKey = () => {
+  return isElara ? "elara_contexts" : "user_contexts";
+};
+
 export function loadContextsFromLocalStorage(context_type: string) {
   const out: StoredContexts = {};
 
@@ -44,7 +39,7 @@ export function loadContextsFromLocalStorage(context_type: string) {
   // ContextSelector component has smarts that will convert them to proper
   // contexts upon selection. This means they will gradually disappear over
   // time.
-  if (context_type === "depmap_model") {
+  if (context_type === "depmap_model" && !isElara) {
     const store = new LocalStorageListStore();
     store.importFromOldCellLineHighlighterIfExists();
 
@@ -60,7 +55,7 @@ export function loadContextsFromLocalStorage(context_type: string) {
       });
   }
 
-  const json = window.localStorage.getItem("user_contexts");
+  const json = window.localStorage.getItem(userContextStorageKey());
   const contexts: StoredContexts = json ? JSON.parse(json) : {};
 
   Object.entries(contexts).forEach(([contextHash, context]) => {
@@ -73,10 +68,17 @@ export function loadContextsFromLocalStorage(context_type: string) {
   // environments (public, Skyros, DMC, PedDep). Each env has its own external
   // storage but shares local storage. That means they can "see" each other's
   // contexts but can't actually fetch them. This mechanism corrects for that.
-  if (["dev.cds.team", "127.0.0.1"].includes(window.location.hostname)) {
-    const { rootUrl } = JSON.parse(
-      document.getElementById("webpack-config")!.textContent as string
-    );
+  if (["dev.cds.team", "127.0.0.1:5000"].includes(window.location.host)) {
+    const webpackConfig = document.getElementById("webpack-config");
+
+    let rootUrl = webpackConfig
+      ? JSON.parse(webpackConfig.textContent as string).rootUrl
+      : window.location.pathname.replace(/([^^])\/.*/, "$1");
+
+    if (window.location.pathname.includes("/breadbox")) {
+      rootUrl += "/breadbox";
+    }
+
     const devContextsByRootUrl = JSON.parse(
       window.localStorage.getItem("dev_contexts_by_root_url") || "{}"
     );
@@ -92,21 +94,151 @@ export function loadContextsFromLocalStorage(context_type: string) {
   return out;
 }
 
-export function negateContext(context: DataExplorerContext) {
-  const negateExpr = (expr: any) => (expr["!"] ? expr["!"] : { "!": expr });
+export function isV2Context(
+  context: DataExplorerContext | DataExplorerContextV2
+): context is DataExplorerContextV2 {
+  return "dimension_type" in context;
+}
+
+const toStoredContext = (
+  context: DataExplorerContext | DataExplorerContextV2
+): StoredContexts[string] => {
+  return {
+    name: context.name,
+    context_type: isV2Context(context)
+      ? context.dimension_type
+      : context.context_type,
+  };
+};
+
+export async function saveContextToLocalStorageAndPersist(
+  context: DataExplorerContext | DataExplorerContextV2,
+  hashToReplace?: string | null
+) {
+  let nextHash;
+  const json = window.localStorage.getItem(userContextStorageKey());
+  const existingContexts: StoredContexts = json ? JSON.parse(json) : {};
+
+  const updates = await Promise.all(
+    Object.entries(existingContexts).map(async ([oldHash, oldValue]) => {
+      if (oldHash === hashToReplace) {
+        nextHash = await persistContext(context);
+
+        return {
+          hash: nextHash,
+          value: toStoredContext(context),
+        };
+      }
+
+      return { hash: oldHash, value: oldValue };
+    })
+  );
+
+  if (!hashToReplace) {
+    nextHash = await persistContext(context);
+
+    updates.push({
+      hash: nextHash,
+      value: toStoredContext(context),
+    });
+  }
+
+  const updatedContexts: StoredContexts = {};
+
+  updates.forEach(({ hash, value }) => {
+    updatedContexts[hash] = value;
+  });
+
+  window.localStorage.setItem(
+    userContextStorageKey(),
+    JSON.stringify(updatedContexts)
+  );
+
+  // WORKAROUND: These hosts are special in that they simulates multiple
+  // environments (public, Skyros, DMC, PedDep). Each env has its own external
+  // storage but shares local storage. That means they can "see" each other's
+  // contexts but can't actually fetch them. This mechanism corrects for that.
+  if (["dev.cds.team", "127.0.0.1:5000"].includes(window.location.host)) {
+    const webpackConfig = document.getElementById("webpack-config");
+
+    let rootUrl = webpackConfig
+      ? JSON.parse(webpackConfig.textContent as string).rootUrl
+      : window.location.pathname.replace(/([^^])\/.*/, "$1");
+
+    if (window.location.pathname.includes("/breadbox")) {
+      rootUrl += "/breadbox";
+    }
+
+    const devContextsByRootUrl = JSON.parse(
+      window.localStorage.getItem("dev_contexts_by_root_url") || "{}"
+    );
+
+    const devContexts = devContextsByRootUrl[rootUrl] || [];
+    devContextsByRootUrl[rootUrl] = [...new Set(devContexts.concat(nextHash))];
+
+    window.localStorage.setItem(
+      "dev_contexts_by_root_url",
+      JSON.stringify(devContextsByRootUrl)
+    );
+  }
+
+  return nextHash as string;
+}
+
+// This only deletes the entry from the map of hashes to names. The content of
+// the context still persists in the CAS.
+export function deleteContextFromLocalStorage(hashToDelete: string) {
+  const json = window.localStorage.getItem(userContextStorageKey());
+  const existingContexts: StoredContexts = json ? JSON.parse(json) : {};
+
+  const updatedContexts: StoredContexts = {};
+
+  Object.entries(existingContexts).forEach(([oldHash, oldContext]) => {
+    if (oldHash !== hashToDelete) {
+      updatedContexts[oldHash] = oldContext;
+    }
+  });
+
+  window.localStorage.setItem(
+    userContextStorageKey(),
+    JSON.stringify(updatedContexts)
+  );
+}
+
+// https://www.typescriptlang.org/docs/handbook/2/functions.html#function-overloads
+// prettier-ignore
+export function negateContext(context: DataExplorerContext): DataExplorerContext;
+// prettier-ignore
+export function negateContext(context: DataExplorerContextV2): DataExplorerContextV2;
+export function negateContext(
+  context: DataExplorerContext | DataExplorerContextV2
+) {
+  const name = context.name.startsWith("Not ")
+    ? context.name.slice(4)
+    : `Not ${context.name}`;
+
+  const prevExpr = context.expr as any;
+  const expr = prevExpr["!"] ? prevExpr["!"] : { "!": prevExpr };
+
+  if (isV2Context(context)) {
+    return {
+      name,
+      dimension_type: context.dimension_type,
+      expr,
+      vars: context.vars,
+    };
+  }
 
   return {
-    name: context.name.startsWith("Not ")
-      ? context.name.slice(4)
-      : `Not ${context.name}`,
+    name,
     context_type: context.context_type,
-    expr: negateExpr(context.expr),
+    expr,
   };
 }
 
 export function contextsMatch(
-  contextA: DataExplorerContext | null,
-  contextB: DataExplorerContext | null
+  contextA: DataExplorerContext | DataExplorerContextV2 | null,
+  contextB: DataExplorerContext | DataExplorerContextV2 | null
 ) {
   if (!contextA || !contextB) {
     return false;
@@ -139,21 +271,32 @@ export function sliceLabelFromContext(
   return null;
 }
 
+// This is called when loading the main DepMap bundle (which all Portal pages
+// depend on). It ensures that the `loadContextsFromLocalStorage()` function
+// defined above works correctly in our dev environments. Those environments
+// share a common domain so extra care is needed to make sure that they can't
+// see each other's contexts in local storage.
 export async function initializeDevContexts() {
-  if (!["dev.cds.team", "127.0.0.1"].includes(window.location.hostname)) {
+  // Only run  in local and dev environments.
+  if (!["dev.cds.team", "127.0.0.1:5000"].includes(window.location.host)) {
     return;
   }
 
+  // Bail out if we've already initialized this item.
   if (localStorage.getItem("dev_contexts_by_root_url")) {
     return;
   }
 
+  // Peek at the cache and see what contexts exist there.
   const cache = await window.caches.open("contexts-v1");
   const keys = await cache.keys();
 
-  const contexts = JSON.parse(localStorage.getItem("user_contexts") || "{}");
+  const contexts = JSON.parse(
+    localStorage.getItem(userContextStorageKey()) || "{}"
+  );
   const devContexts: Record<string, string[]> = {};
 
+  // Now organize them by their url prefix.
   keys.forEach((key) => {
     const rootUrl = key.url
       .replace(/\/cas\/.*/, "")
@@ -165,5 +308,6 @@ export async function initializeDevContexts() {
     }
   });
 
+  // Initialize the item. It will be updated whenever a new context is saved.
   localStorage.setItem("dev_contexts_by_root_url", JSON.stringify(devContexts));
 }

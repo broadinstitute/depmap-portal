@@ -1,6 +1,8 @@
 import "src/public-path";
 import React from "react";
 import ReactDOM from "react-dom";
+import { DeprecatedDataExplorerApiProvider } from "@depmap/data-explorer-2";
+import { evaluateLegacyContext } from "src/data-explorer-2/deprecated-api";
 import ErrorBoundary from "src/common/components/ErrorBoundary";
 import GenePage from "src/genePage/components/GenePage";
 
@@ -54,42 +56,46 @@ const {
 const App = () => {
   return (
     <ErrorBoundary>
-      <GenePage
-        fullName={fullName}
-        symbol={symbol}
-        ensemblId={ensemblId}
-        entrezId={entrezId}
-        hgncId={hgncId}
-        aka={aka}
-        showDependencyTab={showDependencyTab}
-        showConfidenceTab={showConfidenceTab}
-        showCharacterizationTab={showCharacterizationTab}
-        showPredictabilityTab={showPredictabilityTab}
-        showCelfieTab={showCelfieTab}
-        showCelfieTile={showCelfieTile}
-        hasDatasets={hasDatasets}
-        order={order}
-        isMobile={isMobile}
-        entityId={entityId}
-        customDownloadsLink={customDownloadsLink}
-        methodologyLink={methodologyLink}
-        similarityOptions={similarityOptions}
-        colorOptions={colorOptions}
-        connectivityOptions={connectivityOptions}
-        targetFeatureLabel={targetFeatureLabel}
-        datasets={datasets}
-        dependencyProfileOptions={dependencyProfileOptions}
-        howToImg={howToImg}
-        sizeBiomEnumName={sizeBiomEnumName}
-        color={color}
-        figure={figure}
-        showAUCMessage={showAUCMessage}
-        summaryOptions={summaryOptions}
-        showMutationsTile={showMutationsTile}
-        showOmicsExpressionTile={showOmicsExpressionTile}
-        showTargetingCompoundsTile={showTargetingCompoundsTile}
-        showPredictabilityPrototype={showPredictabilityPrototype}
-      />
+      <DeprecatedDataExplorerApiProvider
+        evaluateLegacyContext={evaluateLegacyContext}
+      >
+        <GenePage
+          fullName={fullName}
+          symbol={symbol}
+          ensemblId={ensemblId}
+          entrezId={entrezId}
+          hgncId={hgncId}
+          aka={aka}
+          showDependencyTab={showDependencyTab}
+          showConfidenceTab={showConfidenceTab}
+          showCharacterizationTab={showCharacterizationTab}
+          showPredictabilityTab={showPredictabilityTab}
+          showCelfieTab={showCelfieTab}
+          showCelfieTile={showCelfieTile}
+          hasDatasets={hasDatasets}
+          order={order}
+          isMobile={isMobile}
+          entityId={entityId}
+          customDownloadsLink={customDownloadsLink}
+          methodologyLink={methodologyLink}
+          similarityOptions={similarityOptions}
+          colorOptions={colorOptions}
+          connectivityOptions={connectivityOptions}
+          targetFeatureLabel={targetFeatureLabel}
+          datasets={datasets}
+          dependencyProfileOptions={dependencyProfileOptions}
+          howToImg={howToImg}
+          sizeBiomEnumName={sizeBiomEnumName}
+          color={color}
+          figure={figure}
+          showAUCMessage={showAUCMessage}
+          summaryOptions={summaryOptions}
+          showMutationsTile={showMutationsTile}
+          showOmicsExpressionTile={showOmicsExpressionTile}
+          showTargetingCompoundsTile={showTargetingCompoundsTile}
+          showPredictabilityPrototype={showPredictabilityPrototype}
+        />
+      </DeprecatedDataExplorerApiProvider>
     </ErrorBoundary>
   );
 };

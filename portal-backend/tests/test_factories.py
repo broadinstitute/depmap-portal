@@ -3,23 +3,23 @@ from tests.factories import (
     MatrixFactory,
     GeneFactory,
     CellLineFactory,
-    ContextFactory,
-    ContextEntityFactory,
+    SubtypeContextFactory,
+    SubtypeContextEntityFactory,
 )
 import numpy as np
 
 from depmap.database import db
 
 
-def test_context_entity_factory(empty_db_mock_downloads):
-    context = ContextFactory()
-    context_entity_1 = ContextEntityFactory(context=context)
-    context_entity_2 = ContextEntityFactory()
+def test_subtype_context_entity_factory(empty_db_mock_downloads):
+    context = SubtypeContextFactory()
+    context_entity_1 = SubtypeContextEntityFactory(subtype_context=context)
+    context_entity_2 = SubtypeContextEntityFactory()
 
     empty_db_mock_downloads.session.flush()
 
-    assert context_entity_1.label == context_entity_1.context.name
-    assert context_entity_2.label == context_entity_2.context.name
+    assert context_entity_1.label == context_entity_1.subtype_context.subtype_code
+    assert context_entity_2.label == context_entity_2.subtype_context.subtype_code
 
 
 @pytest.mark.parametrize(

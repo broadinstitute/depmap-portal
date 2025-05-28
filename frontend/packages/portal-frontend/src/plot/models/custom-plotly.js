@@ -13,6 +13,6 @@ import bar from "plotly.js/lib/bar";
 import violin from "plotly.js/lib/violin";
 import heatmap from "plotly.js/lib/heatmap";
 
-plotlyCore.register([scattergl, violin, heatmap, box,bar]);
+plotlyCore.register([scattergl, violin, heatmap, box, bar]);
 
 export default plotlyCore;

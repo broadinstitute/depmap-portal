@@ -10,33 +10,15 @@ import {
 } from "@rjsf/utils";
 import validator from "@rjsf/validator-ajv8";
 import { tableFormSchema } from "../models/tableDatasetFormSchema";
-import DatasetMetadataForm from "./DatasetMetadataForm";
+import { CustomDatasetMetadata } from "./DatasetMetadataForm";
 import { FormGroup, FormControl, ControlLabel } from "react-bootstrap";
 import {
   DataType,
-  FeatureType,
+  DimensionType,
   Group,
   InvalidPrioritiesByDataType,
-  SampleType,
 } from "@depmap/types";
-
-// TODO: copied from MatrixDatasetForm
-const CustomDatasetMetadata = function (props: FieldProps) {
-  const { onChange } = props;
-
-  return (
-    <div id="customDatasetMetadata">
-      <DatasetMetadataForm
-        isEdit={false} // TODO: Unhardcode
-        forwardDatasetMetadataDict={(metadataDict: {
-          [key: string]: string;
-        }) => {
-          onChange(metadataDict);
-        }}
-      />
-    </div>
-  );
-};
+import { submitButtonIsDisabled } from "../../utils/disableSubmitButton";
 
 const CustomColumnsMetadata = function (props: FieldProps) {
   const { schema, onChange, required } = props;
@@ -71,45 +53,6 @@ const CustomColumnsMetadata = function (props: FieldProps) {
 const fields: RegistryFieldsType = {
   TagInputMetadata: CustomDatasetMetadata,
   JSONInputColumns: CustomColumnsMetadata,
-};
-
-const uiSchema: UiSchema = {
-  "ui:title": "", // removes the title <legend> html element
-  "ui:order": [
-    "name",
-    "file_ids",
-    "dataset_md5",
-    "index_type",
-    "columns_metadata",
-    "group_id",
-    "data_type",
-    "priority",
-    "taiga_id",
-    "dataset_metadata",
-    "is_transient",
-    "format",
-  ],
-  dataset_metadata: {
-    "ui:field": "TagInputMetadata",
-  },
-  columns_metadata: {
-    "ui:field": "JSONInputColumns",
-  },
-  format: {
-    "ui:widget": "hidden",
-  },
-  file_ids: {
-    "ui:widget": "hidden",
-  },
-  dataset_md5: {
-    "ui:widget": "hidden",
-  },
-  is_transient: {
-    "ui:widget": "hidden",
-  },
-  group_id: {
-    "ui:title": "Group", // override original title from schema
-  },
 };
 
 function transformErrors(errors: RJSFValidationError[]) {
@@ -157,8 +100,7 @@ function isObject(x: any) {
 }
 
 interface TableDatasetFormProps {
-  featureTypes: FeatureType[];
-  sampleTypes: SampleType[];
+  dimensionTypes: DimensionType[];
   dataTypes: DataType[];
   invalidDataTypePriorities: InvalidPrioritiesByDataType;
   groups: Group[];
@@ -166,12 +108,12 @@ interface TableDatasetFormProps {
   md5Hash?: string | null;
   initFormData: any;
   onSubmitForm: (formData: { [key: string]: any }) => void;
+  datasetIsLoading: boolean;
   forwardFormData?: (formData: { [key: string]: any }) => void;
 }
 
 export function TableDatasetForm({
-  featureTypes,
-  sampleTypes,
+  dimensionTypes,
   dataTypes,
   invalidDataTypePriorities,
   groups,
@@ -179,13 +121,14 @@ export function TableDatasetForm({
   md5Hash = null,
   initFormData,
   onSubmitForm,
+  datasetIsLoading,
   forwardFormData = undefined,
 }: TableDatasetFormProps) {
   const [formData, setFormData] = React.useState(initFormData);
   const [schema, setSchema] = React.useState<RJSFSchema | null>(null);
 
   React.useEffect(() => {
-    const indexOptions = featureTypes.concat(sampleTypes).map((option) => {
+    const indexOptions = dimensionTypes.map((option) => {
       return { title: option.name, const: option.name };
     });
     const dataTypeOptions = dataTypes.map((option) => {
@@ -214,7 +157,7 @@ export function TableDatasetForm({
       },
     };
     setSchema(schemaWithOptions);
-  }, [featureTypes, sampleTypes, dataTypes, groups]);
+  }, [dataTypes, groups, dimensionTypes]);
 
   React.useEffect(() => {
     if (fileIds !== formData.file_ids || md5Hash !== formData.dataset_md5) {
@@ -226,6 +169,56 @@ export function TableDatasetForm({
       setFormData(newFormData);
     }
   }, [fileIds, md5Hash, formData]);
+
+  const uiSchema = React.useMemo(() => {
+    const formUiSchema: UiSchema = {
+      "ui:title": "", // removes the title <legend> html element
+      "ui:order": [
+        "name",
+        "file_ids",
+        "dataset_md5",
+        "index_type",
+        "columns_metadata",
+        "group_id",
+        "data_type",
+        "priority",
+        "dataset_metadata",
+        "is_transient",
+        "format",
+      ],
+      dataset_metadata: {
+        "ui:field": "TagInputMetadata",
+      },
+      columns_metadata: {
+        "ui:field": "JSONInputColumns",
+      },
+      format: {
+        "ui:widget": "hidden",
+      },
+      file_ids: {
+        "ui:widget": "hidden",
+      },
+      dataset_md5: {
+        "ui:widget": "hidden",
+      },
+      is_transient: {
+        "ui:widget": "hidden",
+      },
+      group_id: {
+        "ui:title": "Group", // override original title from schema
+      },
+      "ui:submitButtonOptions": {
+        props: {
+          disabled: submitButtonIsDisabled(
+            schema?.required,
+            formData,
+            datasetIsLoading
+          ),
+        },
+      },
+    };
+    return formUiSchema;
+  }, [datasetIsLoading, formData, schema?.required]);
 
   function customValidate(formDataToValidate: any, errors: any) {
     let jsonParsed;

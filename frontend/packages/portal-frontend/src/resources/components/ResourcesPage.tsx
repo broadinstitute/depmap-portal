@@ -1,12 +1,13 @@
 import * as React from "react";
 import { useMemo } from "react";
-import { ListGroup, ListGroupItem } from "react-bootstrap";
-import { Accordion } from "@depmap/interactive";
-import { Link, useLocation } from "react-router-dom";
+import { PanelGroup } from "react-bootstrap";
+import { useLocation } from "react-router-dom";
 import styles from "src/resources/styles/ResourcesPage.scss";
-// import { CollapsiblePanel } from "src/dataPage/components/CollapsiblePanel";
+import { Subcategory, Topic } from "../models/Category";
+import SubcategoryPanel from "./SubcategoryPanel";
 
 interface ResourcesPageProps {
+  title: string;
   subcategories: any;
   defaultTopic: any;
 }
@@ -20,19 +21,19 @@ function useQuery() {
 }
 
 export default function ResourcesPage(props: ResourcesPageProps) {
-  const { subcategories, defaultTopic } = props;
-  console.log(subcategories);
+  const { subcategories, defaultTopic, title } = props;
   const query = useQuery();
+  const querySubcategory = query.get("subcategory");
 
   // If window location url has query params at the start, find the post to show
-  const initPost = useMemo(() => {
+  const initOrSelectedPost = useMemo(() => {
     const subcategory = subcategories.find(
-      (sub: any) => sub.slug === query.get("subcategory")
+      (sub: Subcategory) => sub.slug === query.get("subcategory")
     );
     let post;
     if (subcategory) {
       const topic = subcategory.topics.find(
-        (t: any) => t.slug === query.get("topic")
+        (t: Topic) => t.slug === query.get("topic")
       );
       post = topic;
     } else {
@@ -44,7 +45,7 @@ export default function ResourcesPage(props: ResourcesPageProps) {
   return (
     <div className={styles.ResourcesPageContainer}>
       <div className={styles.resourcesPageHeader}>
-        <h1>Depmap Resources</h1>
+        <h1>{title}</h1>
         <h3>
           Browse resource categories for information and frequently asked
           questions
@@ -52,43 +53,42 @@ export default function ResourcesPage(props: ResourcesPageProps) {
       </div>
 
       <section className={styles.postsNavList}>
-        {subcategories.map((subcategory: any) => {
-          return (
-            <Accordion key={subcategory.id} title={subcategory.title}>
-              <ListGroup style={{ marginBottom: 0, borderRadius: 0 }}>
-                {subcategory.topics.map((topic: any) => {
-                  return (
-                    <Link
-                      key={topic.id}
-                      to={`?subcategory=${subcategory.slug}&topic=${topic.slug}`}
-                      state={{ postHtml: topic }}
-                      style={{ textDecoration: "none" }}
-                    >
-                      <ListGroupItem
-                        className={styles.navPostItem}
-                        style={{ borderRadius: "0px" }}
-                        active={initPost ? initPost.slug === topic.slug : false}
-                      >
-                        {topic.title}
-                      </ListGroupItem>
-                    </Link>
-                  );
-                })}
-              </ListGroup>
-            </Accordion>
-          );
-        })}
+        <PanelGroup>
+          {subcategories.map((subcategory: Subcategory) => {
+            let isDefaultExpandedSubcategory: boolean;
+            if (querySubcategory) {
+              isDefaultExpandedSubcategory =
+                subcategory.slug === querySubcategory;
+            } else {
+              isDefaultExpandedSubcategory = !!subcategory.topics.find(
+                (t: Topic) => t.slug === defaultTopic?.slug
+              );
+            }
+
+            return (
+              <SubcategoryPanel
+                key={subcategory.id}
+                subcategory={subcategory}
+                isDefaultExpandedSubcategory={isDefaultExpandedSubcategory}
+                selectedTopic={initOrSelectedPost}
+              />
+            );
+          })}
+        </PanelGroup>
       </section>
       <section className={styles.postContentContainer}>
-        {initPost ? (
+        {initOrSelectedPost ? (
           <div className={styles.postContent}>
             <div className={styles.postDate}>
-              <p>Posted: {initPost.creation_date}</p>
-              <p>Updated: {initPost.update_date}</p>
+              <p>Posted: {initOrSelectedPost.creation_date}</p>
+              <p>Updated: {initOrSelectedPost.update_date}</p>
             </div>
+            <h2>{initOrSelectedPost.title}</h2>
             <div
               // eslint-disable-next-line react/no-danger
-              dangerouslySetInnerHTML={{ __html: initPost.post_content }}
+              dangerouslySetInnerHTML={{
+                __html: initOrSelectedPost.post_content,
+              }}
             />
           </div>
         ) : null}

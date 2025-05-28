@@ -102,16 +102,9 @@ def test_render_view_gene_404(populated_db):
     [
         (
             9,
-            [
-                "Chronos_Combined",
-                "Avana",
-                "GeCKO",
-                "RNAi_merged",
-                "RNAi_Ach",
-                "RNAi_Nov_DEM",
-            ],
+            ["Chronos_Combined", "Avana", "RNAi_merged", "RNAi_Ach", "RNAi_Nov_DEM",],
         ),  # NRAS. Coincidentally this also tests order
-        (14, ["GeCKO", "RNAi_merged"]),  # TRIL
+        (14, ["RNAi_merged"]),  # TRIL
     ],
 )
 def test_gene_dependency_datasets_where_present(
@@ -135,7 +128,6 @@ def test_gene_dependency_datasets_where_present(
                 "mutation_pearson",
                 "mutations_damaging",
                 "mutations_driver",
-                "rppa",
                 "rrbs",
                 "proteomics",
                 "sanger_proteomics",
@@ -202,7 +194,7 @@ def test_get_predictive_table(app, empty_db_mock_downloads):
         priority=1,
     )
     other = DependencyDatasetFactory(
-        name=DependencyDataset.DependencyEnum.GeCKO,
+        name=DependencyDataset.DependencyEnum.Chronos_Achilles,
         matrix=MatrixFactory(entities=[gene]),
     )
 

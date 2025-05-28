@@ -19,8 +19,6 @@ from flask.json import JSONEncoder
 from werkzeug.routing import RequestRedirect
 
 from depmap.access_control import initialize_request_user, load_auth_config_for_app
-from depmap.access_control.api import Private as AccessControlRESTResource
-from depmap.access_control.api import namespace as access_control_namespace
 from depmap.access_control.views import blueprint as access_control_blueprint
 from depmap.access_control.utils.get_authorizations import is_current_user_an_admin
 from depmap.api.views import blueprint as api_blueprint
@@ -33,7 +31,9 @@ from depmap.celligner.views import blueprint as celligner_blueprint
 from depmap.compound.views.index import blueprint as compound_blueprint
 from depmap.compute.views import blueprint as compute_blueprint
 from depmap.constellation.views import blueprint as constellation_blueprint
-from depmap.context.views import blueprint as context_blueprint
+from depmap.anchor_screen_dashboard.views import (
+    blueprint as anchor_screen_dashboard_blueprint,
+)
 
 from depmap.dataset.models import (
     ColMatrixIndex,
@@ -72,19 +72,14 @@ from depmap.interactive.nonstandard.models import (
 from depmap.interactive.views import blueprint as interactive_blueprint
 from depmap.methylation.views import blueprint as methylation_blueprint
 from depmap.partials.views import blueprint as partials_blueprint
-from depmap.private_dataset.api import Private as PrivateDatasetRESTResource
-from depmap.private_dataset.api import namespace as private_dataset_namespace
-from depmap.private_dataset.views import blueprint as private_dataset_blueprint
 from depmap.public.minisites import register_minisites
 from depmap.public.views import blueprint as public_blueprint
-from depmap.private.views import blueprint as private_blueprint
 from depmap.theme.views import blueprint as theme_blueprint
 from depmap.tda.views import blueprint as tda_blueprint
 from depmap.tile.views import blueprint as tile_blueprint
 from depmap.compound_dashboard.views import blueprint as compound_dashboard_blueprint
 from depmap.utilities import color_palette
 from depmap.utilities.mobile_utils import is_mobile
-from depmap.vector_catalog.views import blueprint as vector_catalog_blueprint
 from depmap.external_tools.views import blueprint as external_tools_blueprint
 from depmap.data_explorer_2.views import blueprint as data_explorer_2_blueprint
 from depmap.groups_manager.views import blueprint as groups_manager_blueprint
@@ -97,17 +92,6 @@ from flask_hunter_profile.flask_blueprint import (
 )
 
 log = logging.getLogger(__name__)
-
-ACCESS_CONTROLLED_TABLES = [
-    Dataset.__tablename__,
-    Matrix.__tablename__,
-    RowMatrixIndex.__tablename__,
-    ColMatrixIndex.__tablename__,
-    NonstandardMatrix.__tablename__,
-    ColNonstandardMatrix.__tablename__,
-    RowNonstandardMatrix.__tablename__,
-    PrivateDatasetMetadata.__tablename__,
-]
 
 pd.set_option("mode.use_inf_as_na", False)
 
@@ -236,33 +220,8 @@ def create_app(config_object):
     register_json_encoder(app)
 
     register_access_control(app)
-    # setup database before first request
-    app.before_first_request(enable_access_controls)
 
     return app
-
-
-def get_table_mapping_for_access_controls():
-    table_mapping = {}
-    for table_name in ACCESS_CONTROLLED_TABLES:
-        table_mapping[table_name] = "{}_write_only".format(table_name)
-    return table_mapping
-
-
-def enable_access_controls():
-    from depmap.access_control.sql_rewrite import (
-        enable_access_controls as _enable_access_controls,
-    )
-
-    _enable_access_controls(db.engine, get_table_mapping_for_access_controls())
-
-
-def create_filtered_views():
-    from depmap.access_control.sql_rewrite import (
-        create_filtered_views as _create_filtered_views,
-    )
-
-    _create_filtered_views(db.engine, get_table_mapping_for_access_controls())
 
 
 def register_extensions(app: Flask):
@@ -351,13 +310,11 @@ def register_access_control(app: Flask):
 def register_blueprints(app: Flask):
     """Register Flask blueprints."""
     app.register_blueprint(public_blueprint)
-    app.register_blueprint(private_blueprint)
     app.register_blueprint(theme_blueprint)
     app.register_blueprint(gene_blueprint)
     app.register_blueprint(cell_line_blueprint)
     app.register_blueprint(celligner_blueprint)
     app.register_blueprint(dev_blueprint)
-    app.register_blueprint(context_blueprint)
     app.register_blueprint(interactive_blueprint)
     app.register_blueprint(global_search_blueprint)
     app.register_blueprint(partials_blueprint)
@@ -370,8 +327,6 @@ def register_blueprints(app: Flask):
     app.register_blueprint(cas_blueprint)
     app.register_blueprint(access_control_blueprint)
     app.register_blueprint(tda_blueprint)
-    app.register_blueprint(vector_catalog_blueprint)
-    app.register_blueprint(private_dataset_blueprint)
     app.register_blueprint(constellation_blueprint)
     app.register_blueprint(tile_blueprint)
     app.register_blueprint(compound_dashboard_blueprint)
@@ -382,14 +337,10 @@ def register_blueprints(app: Flask):
     app.register_blueprint(context_explorer_blueprint)
     app.register_blueprint(data_page_blueprint)
     app.register_blueprint(flask_hunter_profile_blueprint)
+    app.register_blueprint(anchor_screen_dashboard_blueprint)
 
     saved_handlers = app.handle_exception, app.handle_user_exception
     app.register_blueprint(api_blueprint)
-
-    with app.app_context():
-        if not app.config["ENABLED_FEATURES"].access_control_and_private_resources:
-            access_control_namespace.hide(AccessControlRESTResource)
-            private_dataset_namespace.hide(PrivateDatasetRESTResource)
 
     if app.config["DEBUG"]:
         # RESTplus installs an error handler which will return a simple json error message on any exceptions.
@@ -409,12 +360,14 @@ def register_errorhandlers(app: Flask):
         user_agent = request.headers.get("User-Agent", "")
 
         # we're really only interested in exceptions from real people going in stack driver
-        if "bot" in user_agent.lower():
-            log.warning(
-                "Not logging exception to stackdriver because user_agent contained 'bot'"
-            )
-        else:
-            exception_reporter.report()
+        if 500 <= error_code < 600:
+            if "bot" in user_agent.lower():
+                log.warning(
+                    "Not logging exception to stackdriver because user_agent contained 'bot'"
+                )
+            else:
+                exception_reporter.report()
+
         # If a HTTPException, pull the `code` attribute; default to 500
         return render_template("{0}.html".format(error_code)), error_code
 

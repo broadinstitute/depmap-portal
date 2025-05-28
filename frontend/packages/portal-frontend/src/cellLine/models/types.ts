@@ -1,6 +1,15 @@
+import { ModelAnnotation } from "./ModelAnnotation";
+
 export interface DatasetDataTypes {
   dataType: string;
   datasets: { display_name: string; download_url: string }[];
+}
+
+export interface SubtypeTreeInfo {
+  node_name: string;
+  subtype_code: string;
+  level: number;
+  context_explorer_url: string;
 }
 
 export type OncogenicAlteration = {
@@ -28,52 +37,21 @@ export interface ModelInfo {
   // cell_line_name: string;
   primary_metastasis: string;
   sample_collection_site: string;
-  oncotree_lineage: {
-    display_name: string;
-    url: string;
-  };
-  oncotree_primary_disease: {
-    display_name: string;
-    url: string;
-  };
-  oncotree_subtype_and_code: {
-    display_name: string;
-    url: string;
-  };
-  legacy_molecular_subtype: string;
+  lineage_tree: SubtypeTreeInfo[];
+  molecular_subtype_tree: SubtypeTreeInfo[];
+  oncotree_lineage: string;
+  oncotree_primary_disease: string;
+  oncotree_subtype_and_code: string;
   engineered_model: string;
   growth_pattern: string;
   tissue_origin: string;
   source_type: string;
   catalog_number: string;
   model_derivation_material: string;
-}
-
-export interface IdInfo {
-  rrid: string;
-  sanger_model_id: string;
-  cosmic_id: number;
-  ccle_name: string;
-  aliases: string[];
-}
-
-export interface PatientInfo {
-  patient_id: string;
-  age: number;
-  age_category: string;
-  sex: string;
-  race: string;
-  patient_molecular_subtype: string;
-  treatment_status: string;
-  treatment_details: string;
   related_models: {
     model_id: string;
     url: string;
   }[];
-}
-
-export interface CellLineDescriptionData {
-  model_info: ModelInfo;
-  patient_info: PatientInfo;
-  id_info: IdInfo;
+  aliases: string[];
+  metadata: ModelAnnotation;
 }

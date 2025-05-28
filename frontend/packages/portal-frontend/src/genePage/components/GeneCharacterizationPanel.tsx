@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { CellLineListsDropdown, CustomList } from "@depmap/cell-line-selector";
-import { launchCellLineSelectorModal } from "src/index";
 import AsyncTile from "src/common/components/AsyncTile";
 import { getDapi } from "src/common/utilities/context";
 import { GeneCharacterizationData } from "src/dAPI";
@@ -82,7 +81,6 @@ const GeneCharacterizationPanel = ({
           <label htmlFor="button">Find cell lines:</label>
           <CellLineListsDropdown
             key={selectedCellLineList?.name}
-            launchCellLineSelectorModal={launchCellLineSelectorModal}
             onListSelect={(list) => {
               onListSelect(list);
 

@@ -11,7 +11,6 @@ from breadbox.schemas.custom_http_exception import UserError
 from breadbox.crud.dataset import get_sample_indexes_by_given_ids
 from breadbox.crud.dataset import get_all_sample_indexes
 from breadbox.crud.partial import get_cell_line_selector_lines
-from breadbox.crud.dataset import get_dataset_feature_labels_by_id
 from ..config import get_settings
 from ..models.dataset import (
     Dataset,
@@ -19,8 +18,9 @@ from ..models.dataset import (
     DatasetFeature,
     ValueType,
 )
-from .celery import app
+from .celery import app, LogErrorsTask
 from ..db.util import db_context
+from breadbox.service import metadata as metadata_service
 
 
 def _progress_callback(task, percentage, message="Fetching data"):
@@ -67,7 +67,9 @@ def _get_subsetted_df_by_indexes(
         # Only include dataset names in column names if we're merging datasets
         col_rename_map = {}
 
-        feature_labels = get_dataset_feature_labels_by_id(db, user, dataset)
+        feature_labels = metadata_service.get_matrix_dataset_feature_labels_by_id(
+            db, user, dataset
+        )
 
         for col in subsetted_df.columns:
             if include_dataset_name_in_row_name:
@@ -332,7 +334,7 @@ def get_feature_and_sample_indices_per_merged_dataset(
     return feature_indices_per_dataset, sample_indices, datasets
 
 
-@app.task(bind=True)
+@app.task(base=LogErrorsTask, bind=True)
 def export_merged_datasets(
     self: Any,
     dataset_ids: List[str],
@@ -416,7 +418,7 @@ def _get_all_sample_indices(
     return sample_indices
 
 
-@app.task(bind=True)
+@app.task(base=LogErrorsTask, bind=True)
 def export_dataset(
     self: Any,
     dataset_id: str,

@@ -33,7 +33,10 @@ from flask import (
 import requests
 from depmap.public.parse_resources import parse_resources_file
 
-from depmap.public.announcements.utils import get_announcements_list
+from depmap.public.announcements.utils import (
+    get_announcements_list,
+    get_updates_markdown_to_html,
+)
 
 from .documentation import rewrite_documentation_urls
 
@@ -65,9 +68,11 @@ def home():
         quarter_name = m.groups()[0]
     else:
         quarter_name = None
+
     return render_theme_template(
         "home.html",
         announcements=get_announcements_list(),
+        updates=get_updates_markdown_to_html(),  # only for dmc
         quarter=quarter_name,  # , DEPMAP_URL=url_prefix
     )
 
@@ -142,7 +147,8 @@ def documentation():
         sections = []
 
     sections = rewrite_documentation_urls(sections)
-    return render_template("public/documentation.html", sections=sections)
+    # redirect to new resources page
+    return redirect(url_for("public.resources"))
 
 
 @blueprint.route("/resources/reload")
@@ -169,8 +175,8 @@ def resources_reloads():
     return render_template("public/resources_reload.html")
 
 
-@blueprint.route("/resources_prototype/")
-def resources_prototype():
+@blueprint.route("/resources")
+def resources():
     forum_api_key_value = current_app.config.get("FORUM_API_KEY")
     forum_url = current_app.config.get("FORUM_URL")
     resources_data_path = current_app.config.get("RESOURCES_DATA_PATH")
@@ -201,9 +207,7 @@ def resources_prototype():
     if root_category is None:
         abort(404)
 
-    return render_template(
-        "public/resources_prototype.html", root_category=root_category,
-    )
+    return render_template("public/resources.html", root_category=root_category,)
 
 
 # DMC Only

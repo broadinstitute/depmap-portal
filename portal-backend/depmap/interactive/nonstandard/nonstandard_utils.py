@@ -13,7 +13,6 @@ from depmap.interactive.common_utils import (
     format_features_from_label_aliases,
 )
 from depmap.interactive.config.utils import (
-    __get_config,
     get_entity_class,
     is_prepopulate,
     is_transpose,

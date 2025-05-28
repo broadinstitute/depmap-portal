@@ -1,4 +1,4 @@
-import { DownloadTableData, FileSubType, Release } from "@depmap/data-slicer";
+import { DownloadTableData, Release } from "@depmap/data-slicer";
 import React, { useCallback, useMemo, useState } from "react";
 import styles from "src/dataPage/styles/DataPage.scss";
 import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
@@ -32,7 +32,7 @@ function CurrentReleasePanel(props: CurrentReleasePanelProps) {
 
   const readMeFile = useMemo(() => {
     return currentReleaseData.find(
-      (file) => file.fileSubType === FileSubType.read_me
+      (file) => file.fileSubType.code === "read_me"
     );
   }, [currentReleaseData]);
 
@@ -85,12 +85,16 @@ function CurrentReleasePanel(props: CurrentReleasePanelProps) {
               meaning the data may change as we continue to improve upon our
               pipelines and data generation. For more information on release
               files and what is in each file, always refer to the{" "}
-              <DownloadLink
-                terms={readMeFile!.terms}
-                downloadUrl={readMeFile!.downloadUrl ?? readMeFile!.taigaUrl}
-                termsDefinitions={termsDefinitions}
-                buttonText={"README file."}
-              />
+              {readMeFile ? (
+                <DownloadLink
+                  terms={readMeFile!.terms}
+                  downloadUrl={readMeFile!.downloadUrl ?? readMeFile!.taigaUrl}
+                  termsDefinitions={termsDefinitions}
+                  buttonText={"README file."}
+                />
+              ) : (
+                "README file."
+              )}
             </div>
           </div>
         )}
@@ -109,7 +113,7 @@ function CurrentReleasePanel(props: CurrentReleasePanelProps) {
           </div>
 
           <DataAvailabilityPlot
-            currentReleaseDataAvil={currentReleaseDataAvail}
+            dataAvail={currentReleaseDataAvail}
             handleSetPlotElement={(element: ExtendedPlotType | null) => {
               setPlotElement(element);
             }}

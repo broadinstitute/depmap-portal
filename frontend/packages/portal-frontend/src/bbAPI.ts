@@ -2,14 +2,6 @@
 /* eslint-disable class-methods-use-this */
 /* eslint-disable import/prefer-default-export */
 import {
-  AssociationAndCheckbox,
-  Catalog,
-  AddDatasetOneRowArgs,
-  Feature,
-  PlotFeatures,
-} from "@depmap/interactive";
-import { VectorResponse } from "@depmap/long-table";
-import {
   CeleryTask,
   FailedCeleryTask,
   UnivariateAssociationsParams,
@@ -17,29 +9,30 @@ import {
 } from "@depmap/compute";
 import {
   AddCustDatasetArgs,
+  AddDatasetOneRowArgs,
+  AssociationAndCheckbox,
   Dataset,
   DatasetParams,
   DatasetUpdateArgs,
   DatasetValueType,
   DimensionMetadata,
-  FeatureType,
-  FeatureTypeUpdateArgs,
+  DimensionType,
+  DimensionTypeAddArgs,
+  DimensionTypeUpdateArgs,
   Group,
   GroupArgs,
   GroupEntry,
   GroupEntryArgs,
   InvalidPrioritiesByDataType,
-  SampleType,
-  SampleTypeUpdateArgs,
   SearchDimenionsRequest,
   SearchDimenionsResponse,
+  SliceQuery,
   UploadFileResponse,
 } from "@depmap/types";
 import { Trace } from "src/trace";
 import {
   UploadTask,
   UploadTaskUserError,
-  UserUploadArgs,
 } from "@depmap/user-upload";
 import { encodeParams } from "@depmap/utils";
 
@@ -56,22 +49,7 @@ import {
   ValidationResult,
 } from "@depmap/data-slicer";
 
-// The Breadbox API includes a bit more information than the Portal.
-type FeatureWithCatalog = Feature & { catalog: Catalog };
-interface BreadboxPlotFeatures extends PlotFeatures {
-  features: FeatureWithCatalog[];
-}
-
 const log = console.debug.bind(console);
-
-function convertChildIdsToStrings(obj: {
-  children: [{ id: number | string }];
-}) {
-  return {
-    ...obj,
-    children: obj.children.map((child) => ({ ...child, id: String(child.id) })),
-  };
-}
 
 export class BreadboxApi {
   urlPrefix: string;
@@ -211,27 +189,6 @@ export class BreadboxApi {
     );
   };
 
-  getFeaturePlot(
-    features: string[],
-    groupBy: string,
-    filter: string,
-    computeLinearFit: boolean
-  ): Promise<BreadboxPlotFeatures> {
-    const params: any = {
-      groupBy,
-      filter,
-      computeLinearFit,
-    };
-    if (groupBy !== null && groupBy !== undefined) {
-      params.groupBy = groupBy;
-    }
-    return this._fetchWithJsonBody<BreadboxPlotFeatures>(
-      `/api/get-features?${encodeParams(params)}`,
-      "POST",
-      features
-    );
-  }
-
   getAssociations(): Promise<AssociationAndCheckbox> {
     return Promise.reject(Error("getAssociations() not implemented"));
   }
@@ -295,57 +252,14 @@ export class BreadboxApi {
     return this._delete("/datasets", id);
   }
 
-  patchDataset(datasetToUpdate: DatasetUpdateArgs): Promise<Dataset> {
-    const data = new FormData();
-    const jsonFormParams = ["dataset_metadata"];
+  updateDataset(
+    datasetId: string,
+    datasetUpdateArgs: DatasetUpdateArgs
+  ): Promise<Dataset> {
+    const url = `/datasets/${datasetId}`;
+    log(`fetching ${url}`);
 
-    const updateDict = Object.fromEntries(
-      Object.entries(datasetToUpdate).filter(
-        /* eslint-disable-next-line @typescript-eslint/no-unused-vars */
-        ([_, val]) => val !== null && val !== undefined
-      )
-    );
-
-    const datasetArgsCopy = { ...updateDict };
-    // eslint-disable-next-line no-restricted-syntax
-    for (const prop of Object.keys(datasetArgsCopy)) {
-      if (jsonFormParams.includes(prop) && prop in datasetArgsCopy) {
-        datasetArgsCopy[prop] = JSON.stringify(datasetArgsCopy[prop]);
-      }
-      if (Object.prototype.hasOwnProperty.call(datasetArgsCopy, prop)) {
-        data.append(prop, datasetArgsCopy[prop]);
-      }
-    }
-
-    const url = `/datasets/${datasetToUpdate.id}`;
-    const fullUrl = this.urlPrefix + url;
-    log(`fetching ${fullUrl}`);
-
-    return fetch(fullUrl, {
-      credentials: "include",
-      method: "PATCH",
-      body: data,
-    }).then(
-      (response: Response): Promise<Dataset> => {
-        return response.json().then(
-          (body: any): Promise<Dataset> => {
-            // nesting to access response.status
-            if (response.status >= 200 && response.status < 300) {
-              return Promise.resolve(body);
-            }
-            // eslint-disable-next-line prefer-promise-reject-errors
-            return Promise.reject({ body, status: response.status } as {
-              body: any;
-              status: number;
-            });
-          }
-        );
-      }
-    );
-  }
-
-  updateDataset(datasetToUpdate: DatasetUpdateArgs) {
-    return this.patchDataset(datasetToUpdate);
+    return this._fetchWithJsonBody(url, "PATCH", datasetUpdateArgs);
   }
 
   postFileUpload(fileArgs: { file: File | Blob }): Promise<UploadFileResponse> {
@@ -401,36 +315,31 @@ export class BreadboxApi {
     );
   }
 
-  getSampleTypes(): Promise<SampleType[]> {
-    return this._fetch<SampleType[]>("/types/sample");
+  getDimensionTypes(): Promise<DimensionType[]> {
+    return this._fetch<DimensionType[]>("/types/dimensions");
   }
 
-  postSampleType(sampleTypeArgs: any): Promise<SampleType> {
-    const args = { ...sampleTypeArgs };
+  postDimensionType(dimTypeArgs: DimensionTypeAddArgs): Promise<DimensionType> {
+    console.log("In bbapi.ts: ", dimTypeArgs);
 
-    if ("annotation_type_mapping" in args) {
-      args.annotation_type_mapping = JSON.stringify(
-        args.annotation_type_mapping
-      );
-    }
-    return this._postMultipart<SampleType>("/types/sample", args);
+    return this._fetchWithJsonBody<DimensionType>(
+      "/types/dimensions",
+      "POST",
+      dimTypeArgs
+    );
   }
 
-  updateSampleType(sampleTypeArgs: SampleTypeUpdateArgs): Promise<SampleType> {
-    const sampleTypeName = sampleTypeArgs.name;
-    const url = `/types/sample/${sampleTypeName}/metadata`;
+  updateDimensionType(
+    dimTypeName: string,
+    dimTypeArgs: DimensionTypeUpdateArgs
+  ): Promise<DimensionType> {
+    const url = `/types/dimensions/${dimTypeName}`;
 
-    const args = { ...sampleTypeArgs };
-
-    return this._patchMultipart<SampleType>(url, args);
+    return this._fetchWithJsonBody(url, "PATCH", dimTypeArgs);
   }
 
-  deleteSampleType(name: string) {
-    return this._delete("/types/sample", name);
-  }
-
-  getFeatureTypes(): Promise<FeatureType[]> {
-    return this._fetch<FeatureType[]>("/types/feature");
+  deleteDimensionType(name: string) {
+    return this._delete("/types/dimensions", name);
   }
 
   searchDimensions({
@@ -451,33 +360,6 @@ export class BreadboxApi {
     );
   }
 
-  postFeatureType(featureTypeArgs: any): Promise<FeatureType> {
-    console.log("In bbapi.ts: ", featureTypeArgs);
-    const args = { ...featureTypeArgs };
-
-    if ("annotation_type_mapping" in args) {
-      args.annotation_type_mapping = JSON.stringify(
-        args.annotation_type_mapping
-      );
-    }
-    return this._postMultipart<FeatureType>("/types/feature", args);
-  }
-
-  updateFeatureType(
-    featureTypeArgs: FeatureTypeUpdateArgs
-  ): Promise<FeatureType> {
-    const featureTypeName = featureTypeArgs.name;
-
-    const url = `/types/feature/${featureTypeName}/metadata`;
-    const args = { ...featureTypeArgs };
-
-    return this._patchMultipart<FeatureType>(url, args);
-  }
-
-  deleteFeatureType(name: string) {
-    return this._delete("/types/feature", name);
-  }
-
   async getDataTypesAndPriorities(): Promise<InvalidPrioritiesByDataType> {
     const dataTypesPriorities = await this._fetch<InvalidPrioritiesByDataType>(
       "/data_types/priorities"
@@ -486,8 +368,9 @@ export class BreadboxApi {
     return dataTypesPriorities;
   }
 
-  getGroups(): Promise<Group[]> {
-    return this._fetch<Group[]>("/groups/");
+  getGroups(writeAccess: boolean = false): Promise<Group[]> {
+    const queryParams = { write_access: writeAccess };
+    return this._fetch<Group[]>(`/groups/?${encodeParams(queryParams)}`);
   }
 
   postGroup(groupArgs: GroupArgs): Promise<Group> {
@@ -531,13 +414,6 @@ export class BreadboxApi {
       }
     );
   }
-
-  postCustomTaiga = (config: UserUploadArgs): Promise<UploadTask> => {
-    if (!config) {
-      console.log("Not implemented");
-    }
-    return Promise.reject(Error("postCustomTaiga() not implemented"));
-  };
 
   postCustomCsv = (config: AddDatasetOneRowArgs): Promise<UploadTask> => {
     const { uploadFile } = config;
@@ -651,60 +527,6 @@ export class BreadboxApi {
     return Promise.reject(Error("getCellignerColorMap() not implemented"));
   }
 
-  getVectorCatalogChildren(
-    catalog: Catalog,
-    id: string,
-    prefix = ""
-  ): Promise<any> {
-    // chances are, you shouldn't be using this. use getVectorCatalogOptions in vectorCatalogApi, which wraps around this
-    const params = {
-      catalog,
-      id,
-      prefix,
-    };
-    return this._fetch<any>(
-      `/datasets/vector_catalog/data/catalog/children?${encodeParams(params)}`
-    ).then((res) => {
-      // FIXME: This is a workaround for the case where the response is empty.
-      // The existing Data Explorer logic tries to rename properties of a
-      // nonexistent object.
-      const dummyObject: any = {
-        category: null,
-        persistChildIfNotFound: false,
-        children: [],
-      };
-
-      return res.length ? convertChildIdsToStrings(res[0]) : dummyObject;
-    });
-  }
-
-  getVectorCatalogPath(catalog: Catalog, id: string): Promise<Array<any>> {
-    // chances are, you shouldn't be using this. use getVectorCatalogPath in vectorCatalogApi, which wraps around this
-    const params = { catalog, id };
-    return this._fetch<Array<any>>(
-      `/datasets/vector_catalog/data/catalog/path?${encodeParams(params)}`
-    );
-  }
-
-  getVector(featureCatalogNodeId: string): Promise<VectorResponse> {
-    // The Portal uses a dedicated endpoint to get a single feature. Here we're
-    // using /api/get-features instead and re-formatting the response.
-    return this._fetchWithJsonBody<BreadboxPlotFeatures>(
-      `/api/get-features`,
-      "POST",
-      [featureCatalogNodeId]
-    ).then((res) => {
-      const feature = res.features[0];
-      const isCategorical = feature.catalog === "categorical";
-      const valuesKey = isCategorical ? "categoricalValues" : "values";
-
-      return {
-        cellLines: res.depmap_ids,
-        [valuesKey]: feature.values,
-      };
-    });
-  }
-
   computeUnivariateAssociations(
     config: UnivariateAssociationsParams
   ): Promise<ComputeResponse> {
@@ -713,6 +535,25 @@ export class BreadboxApi {
       "POST",
       config
     );
+  }
+
+  fetchAssociations(sliceQuery: SliceQuery) {
+    return this._fetchWithJsonBody<{
+      dataset_name: string;
+      dimension_label: string;
+      associated_datasets: {
+        name: string;
+        dimension_type: string;
+        dataset_id: string;
+      }[];
+      associated_dimensions: {
+        correlation: number;
+        log10qvalue: number;
+        other_dataset_id: string;
+        other_dimension_given_id: string;
+        other_dimension_label: string;
+      }[];
+    }>("/temp/associations/query-slice", "POST", sliceQuery);
   }
 
   _fetchWithJsonBody = <T>(
@@ -752,4 +593,49 @@ export class BreadboxApi {
       }
     );
   };
+
+  /* eslint-disable @typescript-eslint/no-unused-vars */
+  // NOTE: These endpoints for feature type and sample type should not be used because they are deprecated
+  getSampleTypes() {
+    return Promise.reject(Error("Deprecated function! Use getDimensionTypes."));
+  }
+
+  postSampleType(sampleTypeArgs: any) {
+    return Promise.reject(Error("Deprecated function! Use postDimensionType."));
+  }
+
+  updateSampleType(sampleTypeArgs: any) {
+    return Promise.reject(
+      Error("Deprecated function! Use updateDimensionType.")
+    );
+  }
+
+  deleteSampleType(name: string) {
+    return Promise.reject(
+      Error("Deprecated function! Use deleteDimensionType.")
+    );
+  }
+
+  getFeatureTypes() {
+    return Promise.reject(Error("Deprecated function! Use getDimensionTypes."));
+  }
+
+  postFeatureType(featureTypeArgs: any) {
+    return Promise.reject(Error("Deprecated function! Use postDimensionType."));
+  }
+
+  updateFeatureType(featureTypeArgs: any) {
+    return Promise.reject(
+      Error("Deprecated function! Use updateDimensionType.")
+    );
+  }
+
+  deleteFeatureType(name: string) {
+    return Promise.reject(
+      Error("Deprecated function! Use deleteDimensionType.")
+    );
+  }
+
+  // NOTE: THe above endpoints for feature type and sample type are deprecated and should not be used.
+  // Endpoints with URI prefix /types/dimensions should be used instead
 }

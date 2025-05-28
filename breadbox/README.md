@@ -4,17 +4,15 @@ Breadbox is a persistent service for storing and retrieving data for the [DepMap
 
 ## Setup
 
-1.  Install python 3.9
+1.  Install pyenv & poetry
 
-    brew install python@3.9
+    brew install pyenv
+    pip install poetry
 
-2.  Install poetry ([See poetry docs for installation](https://python-poetry.org/docs/))
-
-3.  Run
+2.  Run the setup tool
 
         ./install_prereqs.sh
 
-4.  Copy the contents of .env.dev into a .env file in the same location
 
 ## Running the app
 
@@ -93,14 +91,20 @@ The celery workers share an instance of redis which can be run with:
 
 ### Updating the Breadbox client
 
-Install the openapi-python-client tool following the directions at https://github.com/openapi-generators/openapi-python-client.
+When changes are merged to master, the `breadbox-client/breadbox_client` directory will be auto-generated before the breadbox-client module is published.
 
-To update the breadbox client, run:
+To generate the client for local development:
 
-    cd breadbox-client-generator/
-    poetry install && poetry shell
-    cd ../breadbox
-    ./bb update-client
+1. Make sure you have the `breadbox-client-generator` poetry project installed:
+   ```
+   cd ../breadbox-client-generator
+   poetry install
+   ```
+2. Generate the breadbox client:
+   ```
+   cd ../breadbox
+   poetry run ./bb update-client
+   ```
 
 ### Versioning and Publishing the Breadbox client
 

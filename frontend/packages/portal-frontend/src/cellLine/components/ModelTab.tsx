@@ -1,5 +1,5 @@
 import React from "react";
-import { ModelInfo } from "../models/types";
+import { ModelInfo, SubtypeTreeInfo } from "../models/types";
 import styles from "../styles/CellLinePage.scss";
 
 export interface ModelTabProps {
@@ -7,16 +7,10 @@ export interface ModelTabProps {
 }
 
 const ModelTab = ({ modelInfo }: ModelTabProps) => {
-  const urlPrefix = `${window.location.protocol}//${window.location.host}`;
-
-  const showOverview =
-    modelInfo.oncotree_subtype_and_code ||
-    modelInfo.oncotree_primary_disease ||
+  const showAnnotations =
     modelInfo.oncotree_lineage ||
-    modelInfo.legacy_molecular_subtype ||
-    modelInfo.primary_metastasis ||
-    modelInfo.sample_collection_site ||
-    modelInfo.image;
+    modelInfo.oncotree_primary_disease ||
+    modelInfo.oncotree_subtype_and_code;
 
   const showDerivation =
     modelInfo.growth_pattern ||
@@ -32,24 +26,15 @@ const ModelTab = ({ modelInfo }: ModelTabProps) => {
     return (
       <div className={styles.descriptionTileColumns}>
         <div className={styles.descriptionTileColumn}>
-          {showOverview && (
-            <h4 className={styles.propertyGroupHeader}>Overview</h4>
+          {showAnnotations && (
+            <h4 className={styles.propertyGroupHeader}>Annotations</h4>
           )}
           {modelInfo.oncotree_subtype_and_code && (
             <>
               <h6 className={styles.propertyHeader}>
                 Oncotree Subtype and Code
               </h6>
-              {modelInfo.oncotree_subtype_and_code.url ? (
-                <a
-                  className={styles.descriptionLinks}
-                  href={`${urlPrefix}${modelInfo.oncotree_subtype_and_code.url}`}
-                >
-                  {modelInfo.oncotree_subtype_and_code.display_name}
-                </a>
-              ) : (
-                <p>{modelInfo.oncotree_subtype_and_code.display_name}</p>
-              )}
+              <p>{modelInfo.oncotree_subtype_and_code}</p>
             </>
           )}
           {modelInfo.oncotree_primary_disease && (
@@ -57,49 +42,74 @@ const ModelTab = ({ modelInfo }: ModelTabProps) => {
               <h6 className={styles.propertyHeader}>
                 Oncotree Primary Disease
               </h6>
-              {modelInfo.oncotree_primary_disease.url ? (
-                <a
-                  className={styles.descriptionLinks}
-                  href={`${urlPrefix}${modelInfo.oncotree_primary_disease.url}`}
-                >
-                  {modelInfo.oncotree_primary_disease.display_name}
-                </a>
-              ) : (
-                <p>{modelInfo.oncotree_primary_disease.display_name}</p>
-              )}
+              <p>{modelInfo.oncotree_primary_disease}</p>
             </>
           )}
           {modelInfo.oncotree_lineage && (
             <>
               <h6 className={styles.propertyHeader}>Oncotree Lineage</h6>
-              {modelInfo.oncotree_lineage.url ? (
-                <a
-                  className={styles.descriptionLinks}
-                  href={`${urlPrefix}${modelInfo.oncotree_lineage.url}`}
-                >
-                  {modelInfo.oncotree_lineage.display_name}
-                </a>
-              ) : (
-                <p>{modelInfo.oncotree_lineage.display_name}</p>
-              )}
+              <p>{modelInfo.oncotree_lineage}</p>
             </>
           )}
-          {modelInfo.legacy_molecular_subtype && (
+          {modelInfo.lineage_tree && modelInfo.lineage_tree.length > 0 && (
             <>
-              <h6 className={styles.propertyHeader}>Molecular Subtype</h6>
-              <p>{modelInfo.legacy_molecular_subtype}</p>
+              <h4 className={styles.propertyGroupHeader}>Lineage Contexts</h4>
+              {modelInfo.lineage_tree
+                .sort((a, b) => a.level - b.level)
+                .map((info: SubtypeTreeInfo) => (
+                  <>
+                    <h6 className={styles.propertyHeader}>
+                      Level {info.level}
+                    </h6>
+                    <a
+                      className={styles.descriptionLinks}
+                      href={info.context_explorer_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      {info.node_name} ({info.subtype_code})
+                    </a>
+                  </>
+                ))}
             </>
           )}
-          {modelInfo.primary_metastasis && (
+        </div>
+        <div className={styles.descriptionTileColumn}>
+          {modelInfo.molecular_subtype_tree &&
+            modelInfo.molecular_subtype_tree.length > 0 && (
+              <>
+                <h4 className={styles.propertyGroupHeader}>
+                  Molecular Subtypes
+                </h4>
+                {modelInfo.molecular_subtype_tree
+                  .sort((a, b) => a.level - b.level)
+                  .map((info: SubtypeTreeInfo) => (
+                    <>
+                      <h6 className={styles.propertyHeader}>
+                        Level {info.level}
+                      </h6>
+                      <a
+                        className={styles.descriptionLinks}
+                        href={info.context_explorer_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        {info.node_name} ({info.subtype_code})
+                      </a>
+                    </>
+                  ))}
+              </>
+            )}
+          {modelInfo.metadata.PrimaryOrMetastasis && (
             <>
               <h6 className={styles.propertyHeader}>Primary/Metastasis</h6>
-              <p>{modelInfo.primary_metastasis}</p>
+              <p>{modelInfo.metadata.PrimaryOrMetastasis}</p>
             </>
           )}
-          {modelInfo.sample_collection_site && (
+          {modelInfo.metadata.SampleCollectionSite && (
             <>
               <h6 className={styles.propertyHeader}>Collection Site</h6>
-              <p>{modelInfo.sample_collection_site}</p>
+              <p>{modelInfo.metadata.SampleCollectionSite}</p>
             </>
           )}
           {modelInfo.image && (
@@ -109,8 +119,6 @@ const ModelTab = ({ modelInfo }: ModelTabProps) => {
               alt="cell line"
             />
           )}
-        </div>
-        <div className={styles.descriptionTileColumn}>
           {showDerivation && (
             <h4 className={styles.propertyGroupHeader}>Derivation</h4>
           )}
@@ -136,22 +144,22 @@ const ModelTab = ({ modelInfo }: ModelTabProps) => {
           {showSourceInformation && (
             <h4 className={styles.propertyGroupHeader}>Source Information</h4>
           )}
-          {modelInfo.source_type && (
+          {modelInfo.metadata.SourceType && (
             <>
               <h6 className={styles.propertyHeader}>Source</h6>
-              <p>{modelInfo.source_type}</p>
+              <p>{modelInfo.metadata.SourceType}</p>
             </>
           )}
-          {modelInfo.tissue_origin && (
+          {modelInfo.metadata.TissueOrigin && (
             <>
               <h6 className={styles.propertyHeader}>Tissue Origin</h6>
               <p>{modelInfo.tissue_origin}</p>
             </>
           )}
-          {modelInfo.catalog_number && (
+          {modelInfo.metadata.CatalogNumber && (
             <>
               <h6 className={styles.propertyHeader}>Catalog Number</h6>
-              <p>{modelInfo.catalog_number}</p>
+              <p>{modelInfo.metadata.CatalogNumber}</p>
             </>
           )}
         </div>

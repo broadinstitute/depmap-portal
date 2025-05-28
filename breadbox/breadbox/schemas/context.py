@@ -1,22 +1,26 @@
 from pydantic import Field, BaseModel
-from typing import Annotated, Union
+from typing import Annotated, Any, Optional, Union
 
 
-class ContextSummary(BaseModel):
+class ContextMatchResponse(BaseModel):
+    ids: list[str]
+    labels: list[str]
     num_candidates: int
-    num_matches: int
 
 
 ContextExpression = Annotated[
-    Union[bool, dict[str, list]], Field(union_mode="left_to_right")
+    Union[bool, dict[str, Any]], Field(union_mode="left_to_right")
 ]
 
 
 class Context(BaseModel):
     # Context expression examples:
-    # - { "!": [ { "var": "slice/lineage/1/label" }, "Breast" ] }
-    # - { "==": [ { "var": "entity_label"}, "ACH-000001" ] }
-    # - { "==": [ {"var": "slice/growth_pattern/all/label"}, "Adherent" ] }
+    # - { "!": [ { "var": "model1_lineage" }, "Breast" ] }
+    # - { "==": [ { "var": "entity_id"}, "ACH-000001" ] }
+    # - { ">": [ {"var": "model2_expression"}, 0.5 ] }
     # - True
     expr: ContextExpression
-    context_type: str  # Dimension type, Ex. "depmap_model"
+    name: Optional[str] = None
+    dimension_type: str
+    # This vars field is a dictionary of variable names to slice queries
+    vars: dict[str, dict[str, str]] = {}

@@ -1,45 +1,27 @@
 export { default as ContextSelector } from "./src/components/ContextSelector";
 export { default as SliceLabelSelector } from "./src/components/SliceLabelSelector";
-export { default as OptimizedSelectOption } from "./src/components/OptimizedSelectOption";
 export { default as PlotConfigSelect } from "./src/components/PlotConfigSelect";
 export { default as renderConditionally } from "./src/utils/render-conditionally";
-export { default as extendReactSelect } from "./src/utils/extend-react-select";
 export { default as DimensionSelect } from "./src/components/DimensionSelect";
+export { default as DimensionSelectV2 } from "./src/components/DimensionSelectV2";
 export { default as SliceLabelSelect } from "./src/components/DimensionSelect/SliceLabelSelect";
 export { default as ContextBuilderModal } from "./src/components/ContextBuilder/ContextBuilderModal";
-export { default as ContextNameForm } from "./src/components/ContextBuilder/ContextNameForm";
-export { default as useCellLineSelectorModal } from "./src/components/ContextBuilder/CellLineSelector/useCellLineSelectorModal";
-export { default as EditInCellLineSelectorButton } from "./src/components/ContextBuilder/Expression/EditInCellLineSelectorButton";
+export { default as ContextBuilderV2 } from "./src/components/ContextBuilderV2";
+export { default as ContextManager } from "./src/components/ContextManager";
+export { default as DatasetMetadataSelector } from "./src/components/DatasetMetadataSelector";
+export { default as DataExplorerPage } from "./src/components/DataExplorerPage/components/DataExplorer2";
 
 export {
-  fetchContextLabels,
-  fetchContextSummary,
-  fetchAnalysisResult,
-  fetchAssociations,
-  fetchContext,
-  fetchCorrelation,
-  fetchDatasetDetails,
-  fetchDatasetsByIndexType,
-  fetchDatasetsMatchingContextIncludingEntities,
-  fetchDimensionLabels,
-  fetchDimensionLabelsToDatasetsMapping,
-  fetchDimensionLabelsOfDataset,
-  fetchGeneTeaEnrichment,
-  fetchGeneTeaTermContext,
-  fetchLinearRegression,
-  fetchMetadataColumn,
-  fetchMetadataSlices,
-  fetchPlotDimensions,
-  fetchUniqueValuesOrRange,
-  fetchWaterfall,
-  persistContext,
-} from "./src/api";
+  DataExplorerApiProvider,
+  useDataExplorerApi,
+} from "./src/contexts/DataExplorerApiContext";
 
-export type {
-  GeneTeaEnrichedTerms,
-  GeneTeaTermContext,
-  MetadataSlices,
-} from "./src/api";
+export {
+  DeprecatedDataExplorerApiProvider,
+  useDeprecatedDataExplorerApi,
+} from "./src/contexts/DeprecatedDataExplorerApiContext";
+
+export type { DeprecatedDataExplorerApiResponse } from "./src/contexts/DeprecatedDataExplorerApiContext";
 
 export {
   DataExplorerSettingsProvider,
@@ -48,18 +30,25 @@ export {
 } from "./src/contexts/DataExplorerSettingsContext";
 
 export {
+  PlotlyLoaderProvider,
+  usePlotlyLoader,
+} from "./src/contexts/PlotlyLoaderContext";
+
+export {
   contextsMatch,
-  sliceLabelFromContext,
-  getContextHash,
   initializeDevContexts,
   isContextAll,
   isNegatedContext,
-  loadContextsFromLocalStorage,
+  isV2Context,
   negateContext,
+  saveContextToLocalStorageAndPersist,
 } from "./src/utils/context";
+
+export { fetchContext, persistContext } from "./src/utils/context-storage";
 
 export {
   capitalize,
+  convertDimensionToSliceId,
   getDimensionTypeLabel,
   isCompleteDimension,
   isCompleteExpression,
@@ -71,3 +60,27 @@ export {
 } from "./src/utils/misc";
 
 export { persistLegacyListAsContext } from "./src/components/ContextSelector/context-selector-utils";
+
+export {
+  logInitialPlot,
+  logReducerTransform,
+} from "./src/components/DataExplorerPage/debug";
+export { PointsSelector } from "./src/components/DataExplorerPage/components/ConfigurationPanel/selectors";
+export { default as plotConfigReducer } from "./src/components/DataExplorerPage/reducers/plotConfigReducer";
+export type { PlotConfigReducerAction } from "./src/components/DataExplorerPage/reducers/plotConfigReducer";
+export {
+  DEFAULT_PALETTE,
+  LEGEND_ALL,
+  LEGEND_BOTH,
+  LEGEND_RANGE_1,
+  LEGEND_RANGE_2,
+  LEGEND_RANGE_3,
+  LEGEND_RANGE_4,
+  LEGEND_RANGE_5,
+  LEGEND_RANGE_6,
+  LEGEND_RANGE_7,
+  LEGEND_RANGE_8,
+  LEGEND_RANGE_9,
+  LEGEND_RANGE_10,
+} from "./src/components/DataExplorerPage/components/plot/prototype/plotUtils";
+export type { LegendKey } from "./src/components/DataExplorerPage/components/plot/prototype/plotUtils";

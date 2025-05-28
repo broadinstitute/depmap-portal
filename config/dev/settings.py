@@ -7,6 +7,7 @@ from depmap.settings.settings import RemoteConfig, Config
 import os
 from depmap.read_config import read_config
 
+
 dev_datasets = DataLoadConfig(
     hgnc_dataset=HUGO_NCGC_TAIGA_ID,
     dose_replicate_level_datasets=[  # this split is only used by db loading, to loop over a different list and use a different loader
@@ -17,6 +18,30 @@ dev_datasets = DataLoadConfig(
         DependencyEnum.Prism_oncology_dose_replicate,
     ],
 )
+
+
+def get_downloads_paths(ENV_TYPE):
+    paths = [
+        os.path.join(
+            Config.PROJECT_ROOT,
+            f"../../depmap-deploy/portal-config/env/{ENV_TYPE}/downloads",
+        )
+    ]
+
+    if ENV_TYPE != "public":
+        paths.append(
+            os.path.join(
+                Config.PROJECT_ROOT,
+                "../../depmap-deploy/portal-config/env/shared/nonpublic_downloads",
+            )
+        )
+    paths.append(
+        os.path.join(
+            Config.PROJECT_ROOT,
+            "../../depmap-deploy/portal-config/env/shared/public_downloads",
+        )
+    )
+    return paths
 
 
 # dev downloads are _dev_only, plus specified in settings.py
@@ -35,33 +60,6 @@ def get_dev_nonstandard_datasets():
             "use_arxspan_id": True,
             "is_categorical": True,
             "categories": categories.MsiConfig(),  # this is important to have in dev because this is currently the only nonstandard dataset with a value map configured. it's also the only categorical nonstandard
-        },
-        "small-mapped-avana-551a.1": {  # virtual to small-mapped-avana-551a.1. used to test nonstandard dataset taiga aliasing
-            "label": "Small Avana entity mapped",
-            "units": "CERES Score",
-            "data_type": DataTypeEnum.deprecated,
-            "priority": None,
-            "feature_name": "gene",
-            "transpose": False,
-            "entity": Gene,  # for nonstandard_utils,
-            "is_continuous": True,
-        },
-        # "small-chronos-combined-e82b.2/chronos_combined_score_duplicate": {  # for deving vector catalog sorting; specifically this mimics the nonstandard PR for a given quarter
-        #     "label": "CRISPR Chronos (Combined) Internal 21Q2 Duplicate",
-        #     "units": "CERES Score",
-        #     "feature_name": "gene",
-        #     "transpose": False,
-        #     "entity": Gene,
-        #     "is_continuous": True,
-        # },
-        "small-avana-2987.2": {  # does not have stable IDs, specifically made for dplot testing
-            "label": "Small Avana no entity",
-            "units": "CERES Score",
-            "data_type": DataTypeEnum.deprecated,
-            "priority": None,
-            "feature_name": "gene",
-            "transpose": False,
-            "is_continuous": True,
         },
     }
 
@@ -110,7 +108,6 @@ class DevConfig(Config):
     DB_PATH = os.path.join(WEBAPP_DATA_DIR, DB_NAME)
     SQLALCHEMY_DATABASE_URI = "sqlite:///{0}".format(DB_PATH)
     NONSTANDARD_DATA_DIR = os.path.join(WEBAPP_DATA_DIR, "nonstandard")
-    PRIVATE_FILE_BUCKETS = ["dev-resources-files"]
     RESOURCES_DATA_PATH = os.path.join(WEBAPP_DATA_DIR, "resources", "results.db")
     COMPUTE_RESULTS_ROOT = os.path.join(WEBAPP_DATA_DIR, "results")
     PROFILE_DIR = os.path.join(Config.PROJECT_ROOT, "profiling")
@@ -122,6 +119,9 @@ class DevConfig(Config):
         Config.PROJECT_ROOT,
         f"../../depmap-deploy/portal-config/env/{ENV_TYPE}/announcements.yaml",
     )
+    UPDATES_AND_ANNOUNCEMENTS_FILE_PATH = os.path.join(
+        Config.PROJECT_ROOT, f"../config/{ENV_TYPE}/theme/updates_and_announcements.md"
+    )
     THEME_PATH = os.path.join(Config.PROJECT_ROOT, f"../config/{ENV_TYPE}/theme")
     DOCUMENTATION_PATH = os.path.join(
         Config.PROJECT_ROOT,
@@ -131,14 +131,7 @@ class DevConfig(Config):
         Config.PROJECT_ROOT,
         f"../../depmap-deploy/portal-config/env/{ENV_TYPE}/dmc_symposia.yaml",
     )
-    DOWNLOADS_PATH = os.path.join(
-        Config.PROJECT_ROOT,
-        f"../../depmap-deploy/portal-config/env/{ENV_TYPE}/downloads",
-    )
-    SHARED_DOWNLOADS_PATH = os.path.join(
-        Config.PROJECT_ROOT,
-        "../../depmap-deploy/portal-config/env/shared/shared_downloads",
-    )
+    DOWNLOADS_PATHS = get_downloads_paths(ENV_TYPE)
     DEV_DOWNLOADS_PATH = os.path.join(Config.PROJECT_ROOT, f"../config/dev/downloads")
     DOWNLOADS_KEY = os.path.join(
         Config.PROJECT_ROOT, "./secrets/dev-downloads-key.json",
@@ -169,7 +162,9 @@ class DevConfig(Config):
     )
     RELEASE_NOTES_URL = get_setting_from_config("RELEASE_NOTES_URL", ENV_TYPE)
     FORUM_URL = get_setting_from_config("FORUM_URL", ENV_TYPE)
-    FORUM_RESOURCES_CATEGORY = "resources-prototype"
+    FORUM_RESOURCES_CATEGORY = get_setting_from_config(
+        "FORUM_RESOURCES_CATEGORY", ENV_TYPE
+    )
     FORUM_RESOURCES_DEFAULT_TOPIC_ID = get_setting_from_config(
         "FORUM_RESOURCES_DEFAULT_TOPIC_ID", ENV_TYPE
     )

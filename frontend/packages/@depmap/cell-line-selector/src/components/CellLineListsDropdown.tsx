@@ -1,22 +1,26 @@
 import React, { useCallback, useEffect, useState } from "react";
 import {
   ContextSelector,
-  fetchContextLabels,
   fetchContext,
   isNegatedContext,
+  isV2Context,
   negateContext,
   persistLegacyListAsContext,
   PlotConfigSelect,
+  useDeprecatedDataExplorerApi,
 } from "@depmap/data-explorer-2";
-import { DepMap, enabledFeatures } from "@depmap/globals";
+import { DepMap } from "@depmap/globals";
 import { DataExplorerContext } from "@depmap/types";
 import {
   getSelectedCellLineListName,
   setSelectedCellLineListName,
 } from "@depmap/utils";
-import LegacyCellLineListsDropdown, {
-  LegacyCellLineListsDropdownProps,
-} from "./LegacyCellLineListsDropdown";
+import { CustomList } from "./ListStorage";
+
+type LegacyCellLineListsDropdownProps = {
+  defaultNone?: boolean;
+  onListSelect: (cellLineList: CustomList) => void;
+};
 
 const getSelectedContextHash = () => {
   return window.localStorage.getItem("model_context_to_highlight") || null;
@@ -40,6 +44,7 @@ const ContextEnabledDropdown = ({
   defaultNone: boolean;
   onListSelect: LegacyCellLineListsDropdownProps["onListSelect"];
 }) => {
+  const api = useDeprecatedDataExplorerApi();
   const [isLoading, setIsLoading] = useState(!defaultNone);
   const [value, setValue] = useState<DataExplorerContext | null>(null);
 
@@ -53,7 +58,7 @@ const ContextEnabledDropdown = ({
       }
 
       if (context && hash) {
-        const labels = await fetchContextLabels(context);
+        const labels = await api.evaluateLegacyContext(context);
 
         onListSelect({
           name: context.name,
@@ -64,7 +69,7 @@ const ContextEnabledDropdown = ({
         onListSelect({ name: "", lines: new Set() });
       }
     },
-    [defaultNone, onListSelect]
+    [api, defaultNone, onListSelect]
   );
 
   useEffect(() => {
@@ -77,7 +82,10 @@ const ContextEnabledDropdown = ({
       const selectedContextHash = getSelectedContextHash();
 
       if (selectedList && selectedList !== "None") {
-        const [hash, context] = await persistLegacyListAsContext(selectedList);
+        const [hash, context] = await persistLegacyListAsContext(
+          api,
+          selectedList
+        );
         setSelectedCellLineListName("None");
         handleChange(context, hash);
       }
@@ -86,6 +94,10 @@ const ContextEnabledDropdown = ({
         const hashWithoutPrefix = selectedContextHash.replace("not_", "");
         try {
           const context = await fetchContext(hashWithoutPrefix);
+
+          if (isV2Context(context)) {
+            throw new Error("V2 contexts not supported!");
+          }
 
           handleChange(
             selectedContextHash.startsWith("not_")
@@ -100,7 +112,7 @@ const ContextEnabledDropdown = ({
 
       setIsLoading(false);
     })();
-  }, [value, defaultNone, handleChange]);
+  }, [api, value, defaultNone, handleChange]);
 
   const handleClickCreateContext = () => {
     DepMap.saveNewContext({ context_type: "depmap_model" }, null, handleChange);
@@ -138,17 +150,16 @@ const ContextEnabledDropdown = ({
   );
 };
 
-function CellLineListsDropdown(props: LegacyCellLineListsDropdownProps) {
-  if (enabledFeatures.data_explorer_2) {
-    return (
-      <ContextEnabledDropdown
-        defaultNone={Boolean(props.defaultNone)}
-        onListSelect={props.onListSelect}
-      />
-    );
-  }
-
-  return <LegacyCellLineListsDropdown {...props} />;
+function CellLineListsDropdown({
+  defaultNone = false,
+  onListSelect,
+}: LegacyCellLineListsDropdownProps) {
+  return (
+    <ContextEnabledDropdown
+      defaultNone={defaultNone}
+      onListSelect={onListSelect}
+    />
+  );
 }
 
 export default CellLineListsDropdown;

@@ -32,7 +32,7 @@ export const getHighlightLineColor = () => {
   return colorPalette.highlight_star_outline_color;
 };
 export const getDefaultColor = (entityType = "gene") => {
-  if (entityType === "compound_experiment") {
+  if (entityType === "compound_experiment" || entityType === "compound") {
     return colorPalette.compound_color;
   }
   return colorPalette.gene_color;

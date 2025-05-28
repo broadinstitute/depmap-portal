@@ -11,7 +11,7 @@ from ..compute.celery import app
 from fastapi import HTTPException
 from typing import Any, Optional
 from ..compute.celery import app
-from breadbox.schemas.custom_http_exception import UserError
+from breadbox.schemas.custom_http_exception import UserError, CeleryConnectionError
 from typing import Protocol, cast, Callable
 from celery.result import AsyncResult, EagerResult
 
@@ -111,28 +111,23 @@ def format_task_status(task):
             # sometimes we get an error while the celery state is still progress
             task._state = TaskState.FAILURE.name
             if isinstance(task._result, UserError):
-                message = str(task.result.detail)
+                message = str(task._result.detail)
         if isinstance(task.result, UserError):
             # this is a specific, expected error that we check for
             # return error message for the front to display
             message = str(task.result.detail)
         elif isinstance(task.result, HTTPException):
-            raise task.result
-            # message = {
-            #     "status_code": str(task.result.status_code),
-            #     "detail": str(task.result.status_code),
-            # }
+            message = {
+                "status_code": str(task.result.status_code),
+                "detail": str(task.result.status_code),
+            }
         elif isinstance(task.result, FileValidationError):
-            raise task.result
-            # message = str(task.result)
+            message = str(task.result)
         else:
-            # this is an unexpected error, somewhere in our code threw that exception
-            # task.result contains the exception. throw it to throw a hard 500 and report to stackdriver
-            print("-----")
-            print(type(task.result))
-            print(task.result)
-            print("-----")
-            raise CeleryException("Error from celery worker.") from task.result
+            # This is an unexpected error thrown while the task was running. 
+            # At this point, the error has already been logged in the celery error reporter 
+            # and should be visible in the GCS Error Groups.
+            message = "Encountered an unexpected error. Please try again later."
     elif task.state == TaskState.PENDING.name:
         # pending means we have not entered the task yet
         pass
@@ -180,7 +175,7 @@ def format_task_status(task):
         "id": task.id,
         "state": task.state,
         "message": message,
-        "percentComplete": percent_complete,
+        "percentComplete": int(percent_complete) if percent_complete else None,
         "nextPollDelay": 1000,  # units are miliseconds, this says once per second
         "result": result,
     }
@@ -204,3 +199,25 @@ def update_state(
         meta["message"] = message
 
     task.update_state(state=state, meta=meta)
+
+
+def check_celery():
+    """
+    Checks to see if celery redis broker is connected.
+    Check worker stats to see if any workers are running
+    """
+    inspect = app.control.inspect()
+    try:
+        # Tries to connect to celery broker
+        conn = app.broker_connection().ensure_connection(max_retries=3)
+    except Exception as exc:
+        raise CeleryConnectionError(
+            "Failed to connect to celery redis broker!"
+        ) from exc
+    # Pings workers to see if any of them respond. Returns None if no response
+    stats = inspect.stats()
+    # NOTE: app.control.broadcast("ping", reply=True, limit=1) or inspect.ping() pings all workers but will not return if all workers are busy
+    if stats is None:
+        raise CeleryConnectionError(
+            "Celery workers are not responding. Check if workers are running!"
+        )
