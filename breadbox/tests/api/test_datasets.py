@@ -2501,7 +2501,7 @@ class TestPost:
         data_path = str(tmpdir.join("dataset.csv"))
         pd.DataFrame(
             {"A": [1, 2, 3], "B": [3, 4, pd.NA], "C": [4, 3, 2]},
-            index=pd.Index(["Id1", "Id2", "Id3"]),
+            index=["Id1", "Id2", "Id3"],  # type: ignore[arg-type]
         ).to_csv(data_path)
         """
                 A   B   C
@@ -2592,7 +2592,7 @@ class TestPost:
         data_path = str(tmpdir.join("dataset.csv"))
         pd.DataFrame(
             {"A": ["Yes", "No", "Yes"], "B": ["No", pd.NA, "Yes"]},
-            index=pd.Index(["Id1", "Id2", "Id3"]),
+            index=["Id1", "Id2", "Id3"],  # type: ignore[arg-type]
         ).to_csv(data_path)
 
         file_ids, expected_md5 = upload_and_get_file_ids(client, filename=data_path)
