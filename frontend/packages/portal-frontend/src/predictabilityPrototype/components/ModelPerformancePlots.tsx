@@ -1,12 +1,13 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import ScatterPlot from "src/contextExplorer/components/contextAnalysis/ScatterPlot";
-import PrototypeCorrelationHeatmap from "src/data-explorer-2/components/plot/prototype/PrototypeCorrelationHeatmap";
 import PlotSpinner from "src/plot/components/PlotSpinner";
 import styles from "src/predictabilityPrototype/styles/PredictabilityPrototype.scss";
 import { DENSITY_COLOR_SCALE, PredictiveModelData } from "../models/types";
 import { Button } from "react-bootstrap";
 import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
 import { getDataExplorerUrl } from "../utils";
+import PrototypeCorrelationHeatmap from "@depmap/data-explorer-2/src/components/DataExplorerPage/components/plot/prototype/PrototypeCorrelationHeatmap";
+import { default as DataExplorerExtendedPlotType } from "@depmap/data-explorer-2/src/components/DataExplorerPage/ExtendedPlotType";
 
 export interface ModelPerformancePlotsProps {
   modelName: string;
@@ -38,7 +39,7 @@ const ModelPerformancePlots = ({
   const [
     cellContextCorrPlotElement,
     setCellContextCorrPlotElement,
-  ] = useState<ExtendedPlotType | null>(null);
+  ] = useState<DataExplorerExtendedPlotType | null>(null);
 
   const [
     modelPredPlotElement,
@@ -173,10 +174,10 @@ const ModelPerformancePlots = ({
               margin={{ t: 60, l: 62, r: 120 }}
               density={predictiveModelData?.model_predictions.density}
               data={formattedModelPredData}
-              logOR={[]}
               height={337}
               xKey="x"
               yKey="y"
+              colorVariable={[]}
               continuousColorKey="contColorData"
               customContinuousColorScale={DENSITY_COLOR_SCALE}
               hoverTextKey="hoverText"
@@ -229,11 +230,7 @@ const ModelPerformancePlots = ({
               yKey="y"
               zKey="z"
               height={350}
-              onLoad={(element: ExtendedPlotType | null) => {
-                if (element) {
-                  setCellContextCorrPlotElement(element);
-                }
-              }}
+              onLoad={setCellContextCorrPlotElement}
               palette={undefined}
               margin={{ t: 30, l: 120, r: 30, b: 106 }}
               doTruncateTickLabels={false}

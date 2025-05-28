@@ -1,7 +1,8 @@
+import GeneTea from "@depmap/data-explorer-2/src/components/DataExplorerPage/components/plot/integrations/GeneTea";
 import { DataExplorerContext } from "@depmap/types";
 import React from "react";
 import { Tab, Tabs } from "react-bootstrap";
-import GeneTea from "src/data-explorer-2/components/plot/integrations/GeneTea";
+
 import PlotSpinner from "src/plot/components/PlotSpinner";
 import { GeneTeaSearchTerm, TopFeaturesBarData } from "../models/types";
 import TopFeaturesOverallTile from "./TopFeaturesOverallTile";

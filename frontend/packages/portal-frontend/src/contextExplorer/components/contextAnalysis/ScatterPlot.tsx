@@ -18,7 +18,6 @@ const MAX_POINTS_TO_ANNOTATE = 1;
 
 interface Props {
   data: Data;
-  colorVariable: number[];
   xKey: string;
   yKey: string;
   xLabel: string;
@@ -26,6 +25,7 @@ interface Props {
   // Height can be defined in pixels or set to "auto."  In auto mode, it will
   // attempt to fill the height of the viewport.
   height: number | "auto";
+  colorVariable: number[];
   density?: number[]; // For coloring by density
   margin?: any;
   plotTitle?: string;
@@ -57,13 +57,13 @@ const calcPlotHeight = (plot: HTMLDivElement) => {
 
 function ContextScatterPlot({
   data,
-  colorVariable,
   xKey,
   yKey,
   xLabel,
   yLabel,
   height,
   continuousColorKey,
+  colorVariable,
   margin = { t: 25, l: 62, r: 15 },
   customSelectedMarkerSymbol = undefined,
   plotTitle = undefined,
@@ -149,9 +149,9 @@ function ContextScatterPlot({
 
     const contColorData = colorVariable;
 
-    const color = contColorData.map((c: any) =>
-      c === null ? DEFAULT_PALETTE.other : c
-    );
+    const color =
+      contColorData.map((c: any) => (c === null ? DEFAULT_PALETTE.other : c)) ||
+      undefined;
 
     const colorscale = customContinuousColorScale;
 
