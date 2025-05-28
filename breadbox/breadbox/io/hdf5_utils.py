@@ -86,8 +86,8 @@ def read_hdf5_file(
             feature_ids = f["features"]
             sample_ids = f["samples"]
 
-        feature_ids: List[str] = [x.decode("utf8") for x in feature_ids]
-        sample_ids: List[str] = [x.decode("utf8") for x in sample_ids]
+        feature_ids = [x.decode("utf8") for x in feature_ids]
+        sample_ids = [x.decode("utf8") for x in sample_ids]
 
         df = pd.DataFrame(data=data, columns=feature_ids, index=sample_ids)
 
