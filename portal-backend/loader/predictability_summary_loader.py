@@ -267,6 +267,7 @@ def _load_predictability_screen(
         assert isinstance(current_app.config, dict)
         source_dir = current_app.config.get("WEBAPP_DATA_DIR")
 
+        assert source_dir is not None
         path = os.path.join(
             source_dir,
             "predictability_prototype",

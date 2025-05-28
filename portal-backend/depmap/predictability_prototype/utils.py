@@ -1,7 +1,7 @@
 import functools
 from http.client import HTTPException
 import math
-from typing import Any, Dict
+from typing import Any, Dict, List
 from depmap.data_access import interface as data_access
 from depmap.predictability_prototype import hacks
 from depmap.predictability_prototype.models import (
@@ -154,7 +154,8 @@ def aggregate_top_features(df: pd.DataFrame):
     grouped_df = df.groupby(["feature_name", "dim_type", "feature_label"])
     aggregated = grouped_df.apply(aggregate_feature_importance)
 
-    return aggregated.sort_values(ascending=False)
+    # NOTE added by=[0] to fix pyright but this might be wrong
+    return aggregated.sort_values(by=[0], ascending=False)
 
 
 def top_features_overall(gene_symbol, entity_id, screen_type):
@@ -186,10 +187,10 @@ def top_features_overall(gene_symbol, entity_id, screen_type):
     unique_gene_symbols = [
         {
             "name": row["feature_label"],
-            "feature_type_label": row["feature"].split("_")[-1],
-            "importance_rank": index + 1,
+            "feature_type_label": str(row["feature"]).split("_")[-1],
+            "importance_rank": i + 1,
         }
-        for index, row in df_100.iterrows()
+        for i, (_, row) in enumerate(df_100.iterrows())
         if row["dim_type"] == "gene"
     ]
 
@@ -358,6 +359,7 @@ def get_top_feature_headers(entity_id: int, model: str, screen_type: str):
         pearson = feature_info["pearson"]
 
         feature_obj = PrototypePredictiveFeature.get_by_feature_name(feature_name)
+        assert feature_obj is not None
         related_type = feature_obj.get_relation_to_entity(entity_id=entity_id)
 
         top_features_metadata[feature_name] = {
@@ -487,13 +489,18 @@ def get_feature_gene_effect_plot_data(
         feature_dataset_id
     )
 
+    # broken out to appease pyright
+    feature_actuals_value_labels = []
+    for model_id in slice.index.tolist():
+        assert isinstance(model_id, str)
+        display_name = model_ids_to_display_name_map.get(model_id)
+        feature_actuals_value_labels.append(display_name)
+
     return {
         "actuals_slice": gene_slice,
         "feature_dataset_id": feature_dataset_id,
         "feature_actuals_values": slice.values.tolist(),
-        "feature_actuals_value_labels": [
-            model_ids_to_display_name_map[model_id] for model_id in slice.index.tolist()
-        ],
+        "feature_actuals_value_labels": feature_actuals_value_labels,
         "density": list(density),
         "x_axis_label": f"{feature_label}<br>{feature_dataset_units}",
         "y_axis_label": f"{gene_symbol} Gene Effect",
@@ -681,7 +688,12 @@ def get_other_dep_waterfall_plot(
     def progress_callback(percentage):
         return
 
-    gene_df, feature_series = gene_df.align(feature_series, axis=1)
+    # NOTE: added join="other", feature_series.to_frame(), and axis=0 to fix pyright, but I don't remember what this was doing,
+    # and I don't have local data to easily double check. If this is involved in an error, might
+    # need a different join.
+    gene_df, feature_series = gene_df.align(
+        feature_series.to_frame(), join="outer", axis=0
+    )
 
     (scores, _, _, _) = analysis_tasks_interface.prep_and_run_py_pearson(
         feature_series.values, gene_df.values, progress_callback
