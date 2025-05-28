@@ -20,7 +20,7 @@ from breadbox.io.upload_utils import create_upload_file
 from breadbox.schemas.group import GroupIn
 import csv
 import numpy as np
-from factory import Factory
+from factory.base import Factory
 from breadbox import config
 from breadbox.config import Settings as realSettings
 from breadbox.schemas.types import AnnotationTypeMap, IdMapping, AnnotationType
