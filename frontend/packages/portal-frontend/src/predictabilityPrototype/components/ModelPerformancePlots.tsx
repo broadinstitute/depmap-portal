@@ -7,6 +7,7 @@ import { Button } from "react-bootstrap";
 import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
 import { getDataExplorerUrl } from "../utils";
 import PrototypeCorrelationHeatmap from "@depmap/data-explorer-2/src/components/DataExplorerPage/components/plot/prototype/PrototypeCorrelationHeatmap";
+// eslint-disable-next-line import/no-named-default
 import { default as DataExplorerExtendedPlotType } from "@depmap/data-explorer-2/src/components/DataExplorerPage/ExtendedPlotType";
 
 export interface ModelPerformancePlotsProps {
