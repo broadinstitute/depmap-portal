@@ -26,7 +26,6 @@ import TermsAndConditionsModal from "./common/components/TermsAndConditionsModal
 import { initializeDevContexts } from "@depmap/data-explorer-2";
 import { EnrichmentTile } from "./contextExplorer/components/EnrichmentTile";
 import CorrelationAnalysis from "./correlationAnalysis/components";
-import { ApiContext } from "@depmap/api";
 
 export { log, tailLog, getLogCount } from "src/common/utilities/log";
 
@@ -236,9 +235,7 @@ export function initCorrelationAnalysisTab(
   compoundName: string
 ) {
   const bapi = getBreadboxApi();
-  console.log(compoundName);
   renderWithErrorBoundary(
-    // <ApiContext.Provider value={apiFunctions.breadbox}>
     <React.Suspense fallback={<div>Loading...</div>}>
       <CorrelationAnalysis
         compound={compoundName}
@@ -260,13 +257,8 @@ export function initCorrelationAnalysisTab(
         getCorrelationData={(sliceQuery: SliceQuery) => {
           return bapi.fetchAssociations(sliceQuery);
         }}
-        // getFeatureTypes={function (): Promise<any[]> {
-        //   console.log("Function not implemented.");
-        //   return []
-        // }}
       />
     </React.Suspense>,
-    // </ApiContext.Provider>
     document.getElementById(elementId) as HTMLElement
   );
 }

@@ -1,6 +1,5 @@
 import WideTable from "@depmap/wide-table";
 import React from "react";
-import { Button } from "react-bootstrap";
 
 interface CorrelationsTableProps {
   data: any[];

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import * as Plotly from "plotly.js";
 import { VolcanoPlot } from "../../plot/components/VolcanoPlot";
 import { VolcanoData } from "src/plot/models/volcanoPlotModels";

@@ -1,5 +1,5 @@
-import React, { useEffect, useState, useCallback } from "react";
-import Select, { ActionMeta, OptionsType } from "react-select";
+import React, { useCallback } from "react";
+import Select from "react-select";
 import styles from "../styles/CorrelationFilters.scss";
 
 export interface FilterOption {

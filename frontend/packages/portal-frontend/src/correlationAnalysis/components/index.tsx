@@ -91,104 +91,98 @@ export default function CorrelationAnalysis(props: CorrelationAnalysisProps) {
       try {
         // get compound id by label
         const compoundDimType = await getDimensionType("compound_v2");
-        const allCompoundMetadata = await getTabularDatasetData(
-          compoundDimType.metadata_dataset_id,
-          { identifier: "label", columns: ["CompoundID"] }
-        );
-        const compoundID = allCompoundMetadata["CompoundID"][compound];
-
-        // get selected datasets
-        const datasets = datasetMap[selectedDataset];
-        const aucDataset = datasets.auc;
-        const doseViabilityDataset = datasets.viability;
-
-        const compoundDoseToDose = new Map();
-
-        const compoundDoseDatasets: [string, string][] = [
-          [compoundID, aucDataset],
-        ];
-        const compoundDoseFeatures = (
-          await getDatasetFeatures(doseViabilityDataset)
-        ).filter((feature) => feature.id.includes(compoundID));
-        compoundDoseFeatures.forEach((feature) => {
-          const dose = feature.id.replace(compoundID, "").trim();
-          console.log(feature.id, dose);
-          compoundDoseToDose.set(feature.id, dose);
-          compoundDoseDatasets.push([feature.id, doseViabilityDataset]);
-        });
-
-        const dosesAndColors: { hex: string | undefined; dose: string }[] = [
-          { hex: "#CC4778", dose: "AUC" },
-          ...createDoseRangeColorScale(Array.from(compoundDoseToDose.values())),
-        ];
-        setDoseColors(dosesAndColors);
-        compoundDoseToDose.set(compound, "AUC");
-
-        const featureDatasetDoseCorrelates: Record<
-          string,
-          Record<string, any[]>
-        > = {};
-        const allCorrelatesForFeatureDataset = await Promise.all(
-          compoundDoseDatasets.map(([feature, dataset]) =>
-            getCorrelationData({
-              dataset_id: dataset,
-              identifier: feature,
-              identifier_type: "feature_id",
-            })
-          )
-        );
-        allCorrelatesForFeatureDataset.forEach((compoundDoseCorrelates) => {
-          const datasetLookup = compoundDoseCorrelates.associated_datasets.reduce(
-            (acc, item) => {
-              acc[item.dataset_id] = item.name;
-              return acc;
-            },
-            {} as Record<string, string>
+        if (compoundDimType.metadata_dataset_id) {
+          const allCompoundMetadata = await getTabularDatasetData(
+            compoundDimType.metadata_dataset_id,
+            { identifier: "label", columns: ["CompoundID"] }
           );
-          const doseAssociationsByFeatureDataset = transformAndGroupByDataset(
-            compoundDoseCorrelates.associated_dimensions,
-            compoundDoseCorrelates.dimension_label,
-            datasetLookup,
-            compoundDoseToDose
+          const compoundID = allCompoundMetadata["CompoundID"][compound];
+
+          // get selected datasets
+          const datasets = datasetMap[selectedDataset];
+          const aucDataset = datasets.auc;
+          const doseViabilityDataset = datasets.viability;
+
+          const compoundDoseToDose = new Map();
+
+          const compoundDoseDatasets: [string, string][] = [
+            [compoundID, aucDataset],
+          ];
+          const compoundDoseFeatures = (
+            await getDatasetFeatures(doseViabilityDataset)
+          ).filter((feature) => feature.id.includes(compoundID));
+          compoundDoseFeatures.forEach((feature) => {
+            const dose = feature.id.replace(compoundID, "").trim();
+            compoundDoseToDose.set(feature.id, dose);
+            compoundDoseDatasets.push([feature.id, doseViabilityDataset]);
+          });
+
+          const dosesAndColors: { hex: string | undefined; dose: string }[] = [
+            { hex: "#CC4778", dose: "AUC" },
+            ...createDoseRangeColorScale(
+              Array.from(compoundDoseToDose.values())
+            ),
+          ];
+          setDoseColors(dosesAndColors);
+          compoundDoseToDose.set(compound, "AUC");
+
+          const featureDatasetDoseCorrelates: Record<
+            string,
+            Record<string, any[]>
+          > = {};
+          const allCorrelatesForFeatureDataset = await Promise.all(
+            compoundDoseDatasets.map(([feature, dataset]) =>
+              getCorrelationData({
+                dataset_id: dataset,
+                identifier: feature,
+                identifier_type: "feature_id",
+              })
+            )
           );
-          console.log("Dosedict: \n", doseAssociationsByFeatureDataset);
-          Object.entries(doseAssociationsByFeatureDataset).forEach(
-            ([featureDataset, associations]) => {
-              console.log(
-                compoundDoseCorrelates.dimension_label,
-                featureDataset,
-                associations,
-                featureDatasetDoseCorrelates
-              );
-              if (featureDataset in featureDatasetDoseCorrelates) {
-                if (
-                  compoundDoseCorrelates.dimension_label in
-                  featureDatasetDoseCorrelates[featureDataset]
-                ) {
-                  featureDatasetDoseCorrelates[featureDataset][
-                    compoundDoseCorrelates.dimension_label
-                  ] = featureDatasetDoseCorrelates[featureDataset][
-                    compoundDoseCorrelates.dimension_label
-                  ].concat(associations);
+          allCorrelatesForFeatureDataset.forEach((compoundDoseCorrelates) => {
+            const datasetLookup = compoundDoseCorrelates.associated_datasets.reduce(
+              (acc, item) => {
+                acc[item.dataset_id] = item.name;
+                return acc;
+              },
+              {} as Record<string, string>
+            );
+            const doseAssociationsByFeatureDataset = transformAndGroupByDataset(
+              compoundDoseCorrelates.associated_dimensions,
+              compoundDoseCorrelates.dimension_label,
+              datasetLookup,
+              compoundDoseToDose
+            );
+            Object.entries(doseAssociationsByFeatureDataset).forEach(
+              ([featureDataset, associations]) => {
+                if (featureDataset in featureDatasetDoseCorrelates) {
+                  if (
+                    compoundDoseCorrelates.dimension_label in
+                    featureDatasetDoseCorrelates[featureDataset]
+                  ) {
+                    featureDatasetDoseCorrelates[featureDataset][
+                      compoundDoseCorrelates.dimension_label
+                    ] = featureDatasetDoseCorrelates[featureDataset][
+                      compoundDoseCorrelates.dimension_label
+                    ].concat(associations);
+                  } else {
+                    featureDatasetDoseCorrelates[featureDataset][
+                      compoundDoseCorrelates.dimension_label
+                    ] = associations;
+                  }
                 } else {
-                  featureDatasetDoseCorrelates[featureDataset][
-                    compoundDoseCorrelates.dimension_label
-                  ] = associations;
+                  featureDatasetDoseCorrelates[featureDataset] = {
+                    [compoundDoseCorrelates.dimension_label]: associations,
+                  };
                 }
-              } else {
-                featureDatasetDoseCorrelates[featureDataset] = {
-                  [compoundDoseCorrelates.dimension_label]: associations,
-                };
               }
-            }
-          );
-        });
-        console.log(allCorrelatesForFeatureDataset);
-        console.log(Object.keys(featureDatasetDoseCorrelates));
-        setFeatureTypes(Object.keys(featureDatasetDoseCorrelates));
-        const tabledata = getAllCorrelates(featureDatasetDoseCorrelates);
-        console.log(tabledata);
-        setCorrelationAnalysisData(tabledata);
+            );
+          });
+
+          setFeatureTypes(Object.keys(featureDatasetDoseCorrelates));
+          const tabledata = getAllCorrelates(featureDatasetDoseCorrelates);
+          setCorrelationAnalysisData(tabledata);
+        }
       } catch (e) {
         console.log(e);
       }
@@ -201,7 +195,6 @@ export default function CorrelationAnalysis(props: CorrelationAnalysisProps) {
     getDimensionType,
     getTabularDatasetData,
   ]);
-
 
   React.useEffect(() => {
     // if no filter applied, show all correlation analysis data
@@ -298,16 +291,14 @@ export default function CorrelationAnalysis(props: CorrelationAnalysisProps) {
           log10qvalue: "y",
           feature: "text",
         };
-        const columnNames = Object.keys(correlationAnalysisData[0]);
-        columnNames.forEach((colName) => {
-          if (colName in columnNamesToPlotVariables) {
+
+        Object.entries(columnNamesToPlotVariables).forEach(
+          ([colName, volcanoDataProp]) => {
             const value = curRecord[colName];
             if (colName === "log10qvalue") {
-              const val = Math.pow(10, value);
+              const val = 10 ** value;
               // VolcanoPlotProp `y` data by default log transforms values. To do the complement: Math.exp(-x)
-              acc[key][doseCategory][columnNamesToPlotVariables[colName]].push(
-                val
-              );
+              acc[key][doseCategory][volcanoDataProp].push(val);
             } else if (colName === "feature") {
               const label = curRecord[colName];
               const text =
@@ -319,25 +310,20 @@ export default function CorrelationAnalysis(props: CorrelationAnalysisProps) {
                 `<b>-log10(q value):</b> ${curRecord["log10qvalue"].toFixed(
                   2
                 )}<br>`;
-              acc[key][doseCategory][columnNamesToPlotVariables[colName]].push(
-                text
-              );
+              acc[key][doseCategory][volcanoDataProp].push(text);
               acc[key][doseCategory]["label"].push(label);
             } else {
-              acc[key][doseCategory][columnNamesToPlotVariables[colName]].push(
-                value
-              );
+              acc[key][doseCategory][volcanoDataProp].push(value);
             }
           }
-        });
+        );
+
         acc[key][doseCategory]["isSignificant"].push(false);
         return acc;
       }, {});
     }
     return {};
   }, [correlationAnalysisData, doseColors]);
-  // }, [correlationAnalysisData, doseColors]);
-  console.log("volcanodata: \n", volcanoDataForFeatureType);
 
   return (
     <div
@@ -413,7 +399,6 @@ export default function CorrelationAnalysis(props: CorrelationAnalysisProps) {
             // if selections size decreases then a row was deselected. Deselect all selected features for that feature type
             if (selections.length < prevSelections.length) {
               // should only be one unselected at a time
-              // TODO: use set difference once es2024 supported
               const unselectedId = prevSelections.filter(
                 (x) => !selections.includes(x)
               )[0];

@@ -66,7 +66,7 @@ export function createDoseRangeColorScale(
     { hex: "#1A2A89" },
     { hex: "#4B0082" }, // Dark Purple
   ];
-  const sortedDoses = doses.sort((a, b) => {
+  const sortedDoses = doses.sort((a: any, b: any) => {
     return a - b;
   });
   return sortedDoses.map((dose, i) => {
