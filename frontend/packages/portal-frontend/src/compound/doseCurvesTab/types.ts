@@ -6,3 +6,23 @@ export interface CompoundDoseCurveData {
   max_dose: number;
   dataset_units: string;
 }
+
+export interface CurveTrace {
+  x: number[];
+  y: number[];
+  text?: string[];
+  hoverinfo?: string;
+  hovertemplate?: string;
+  customdata?: string[];
+  label?: string[];
+  replicate?: string[];
+  name: string;
+  marker?: any;
+  type?: "curve" | "scatter" | null;
+  fill?: "tonextx" | "tozerox" | "none" | null;
+  fillcolor?: string;
+  opacity?: string;
+  line?: any;
+  mode?: string;
+  id?: string;
+}

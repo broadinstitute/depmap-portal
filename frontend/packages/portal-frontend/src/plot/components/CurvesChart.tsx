@@ -24,14 +24,22 @@ export interface CurvesChartProps {
   margin?: Margin;
   customWidth?: number | undefined;
   xRange?: number[] | undefined;
-  selectedCurves?: Set<number>;
+  selectedCurves?: Set<string>;
   customHoverinfo?: PlotData["hoverinfo"];
-  onClickCurve?: (pointIndex: number) => void;
+  onClickCurve?: (id: string) => void;
   onMultiselect?: (pointIndices: number[]) => void;
   onClickResetSelection?: () => void;
   xAxisFontSize?: number;
   yAxisFontSize?: number;
 }
+
+const findIndexByProperty = (
+  array: any[],
+  property: keyof any,
+  value: any
+): number => {
+  return array.findIndex((item) => item[property] === value);
+};
 
 const calcPlotHeight = (plot: HTMLDivElement) => {
   const fullHeight = window.innerHeight - plot.offsetTop - 26;
@@ -117,13 +125,6 @@ function CurvesChart({
   }, [onLoad]);
 
   useEffect(() => {
-    if (ref.current && newTraces && newTraces.length > 0) {
-      const plotRef = ref.current as ExtendedPlotType;
-      Plotly.addTraces(plotRef, newTraces);
-    }
-  }, [newTraces]);
-
-  useEffect(() => {
     const plot = ref.current as ExtendedPlotType;
 
     const xAxisTemplate: Partial<Plotly.LayoutAxis> = {
@@ -186,6 +187,22 @@ function CurvesChart({
 
     Plotly.newPlot(plot, curveTraces, layout, config);
 
+    if (selectedCurves && selectedCurves.size > 0) {
+      const prevSelections =
+        [...selectedCurves].map((modelId: string) => {
+          return findIndexByProperty(curveTraces, "id", modelId);
+        }) || [];
+      console.log({ prevSelections });
+      console.log([...selectedCurves]);
+      Plotly.restyle(
+        plot,
+        {
+          line: { color: "rgba(60, 8, 128, 1)", width: 3 },
+        },
+        prevSelections
+      );
+    }
+
     // Keep track of added listeners so we can easily remove them.
     const listeners: [string, (e: any) => void][] = [];
 
@@ -232,6 +249,21 @@ function CurvesChart({
       Plotly.react(plot, plot.data, nextLayout, plot.config);
     };
 
+    on("plotly_relayout", () => {
+      const prevSelections =
+        [...(selectedCurves || [])].map((modelId: string) => {
+          return findIndexByProperty(curveTraces, "id", modelId);
+        }) || [];
+
+      Plotly.restyle(
+        plot,
+        {
+          line: { color: "rgba(60, 8, 128, 1)", width: 3 },
+        },
+        prevSelections
+      );
+    });
+
     on("plotly_hover", (e: PlotMouseEvent) => {
       const { curveNumber } = e.points[0];
       Plotly.restyle(
@@ -245,9 +277,10 @@ function CurvesChart({
 
     on("plotly_unhover", (e: PlotMouseEvent) => {
       const { curveNumber } = e.points[0];
+      const curveId = curveTraces[curveNumber].id;
 
       // If the user clicked the line, we want to persist the change in coloring
-      if (!selectedCurves?.has(curveNumber)) {
+      if (!selectedCurves?.has(curveId)) {
         Plotly.restyle(
           plot,
           {
@@ -260,8 +293,7 @@ function CurvesChart({
 
     on("plotly_click", (e: PlotMouseEvent) => {
       const { curveNumber } = e.points[0];
-
-      const index = curveNumber;
+      const curveId = curveTraces[curveNumber].id;
 
       if (onClickCurve) {
         Plotly.restyle(
@@ -271,14 +303,19 @@ function CurvesChart({
           },
           [curveNumber]
         );
-        onClickCurve(index);
+
+        onClickCurve(curveId);
       }
 
       // WORKAROUND: If you mean to double-click to zoom out and
       // select a point by accident, restore the previous selections.
       const prevAxes = axes.current;
-      const prevSelection = selectedCurves;
+      const prevSelection =
+        [...(selectedCurves || [])].map((modelId: string) => {
+          return findIndexByProperty(curveTraces, "id", modelId);
+        }) || [];
 
+      // TODO: are we going to allow multiselect??
       setTimeout(() => {
         if (axes.current !== prevAxes && prevSelection) {
           onMultiselect([...prevSelection]);

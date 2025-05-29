@@ -4,6 +4,7 @@ import {
   CurvePlotPoints,
   groupBy,
 } from "src/compound/components/DoseResponseCurve";
+import { CurveTrace } from "src/compound/doseCurvesTab/types";
 import CurvesChart from "src/plot/components/CurvesChart";
 
 // Make median curve traces
@@ -22,30 +23,11 @@ interface Props {
   datasetUnits?: string;
   outGroupCurveParams?: CurveParams[];
   handleSetPlotElement?: (element: any) => void;
-  handleClickCurve?: (pointIndex: number) => void;
-  selectedCurves?: Set<number>;
+  handleClickCurve?: (id: string) => void;
+  selectedCurves?: Set<string>;
   selectedModelIds?: Set<string>;
   doseUnits?: string;
   includeMedianQuantileRegions?: boolean;
-}
-
-interface CurveTrace {
-  x: number[];
-  y: number[];
-  text?: string[];
-  hoverinfo?: string;
-  hovertemplate?: string;
-  customdata?: string[];
-  label?: string[];
-  replicate?: string[];
-  name: string;
-  marker?: any;
-  type?: "curve" | "scatter" | null;
-  fill?: "tonextx" | "tozerox" | "none" | null;
-  fillcolor?: string;
-  opacity?: string;
-  line?: any;
-  mode?: string;
 }
 
 const samplePoints = (
@@ -191,6 +173,7 @@ const getTraces = (
       x: pt.xs,
       y: Array.from(pt.ys),
       name: "",
+      id: pt.id,
       text: pt.xs.map(
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         (_) => `<b>Cell Line Name:</b> ${
@@ -441,35 +424,34 @@ function DoseCurvesPlot({
     outGroupCurveParams,
     minDose,
     maxDose,
-    selectedCurves,
     includeMedianQuantileRegions,
   ]);
 
-  const selectedModelIdsRef = useRef(
-    doseRepPoints ? Object.keys(doseRepPoints) : null
-  );
-  const [selectedModelIds, setSelectedModelIds] = useState<string[]>([]);
-  const [newTraces, setNewTraces] = useState<any>();
-  useEffect(() => {
-    let traces: CurveTrace[] = [];
+  // const selectedModelIdsRef = useRef(
+  //   doseRepPoints ? Object.keys(doseRepPoints) : null
+  // );
+  // const [selectedModelIds, setSelectedModelIds] = useState<string[]>([]);
+  // const [newTraces, setNewTraces] = useState<any>();
+  // useEffect(() => {
+  //   let traces: CurveTrace[] = [];
 
-    if (doseRepPoints) {
-      const selectedModels = Object.keys(doseRepPoints);
-      setSelectedModelIds((modelIds) => {
-        selectedModelIdsRef.current = modelIds; // update the prev value
-        return selectedModels;
-      });
+  //   if (doseRepPoints) {
+  //     const selectedModels = Object.keys(doseRepPoints);
+  //     setSelectedModelIds((modelIds) => {
+  //       selectedModelIdsRef.current = modelIds; // update the prev value
+  //       return selectedModels;
+  //     });
 
-      if (selectedModelIds !== selectedModelIdsRef.current) {
-        const ptTraces = selectedModels.flatMap((modelId) =>
-          buildReplicateTraces(inGroupCurveParams, doseRepPoints[modelId])
-        );
-        traces.push(...ptTraces);
-      }
-    }
+  //     if (selectedModelIds !== selectedModelIdsRef.current) {
+  //       const ptTraces = selectedModels.flatMap((modelId) =>
+  //         buildReplicateTraces(inGroupCurveParams, doseRepPoints[modelId])
+  //       );
+  //       traces.push(...ptTraces);
+  //     }
+  //   }
 
-    setNewTraces(traces);
-  }, [setNewTraces, doseRepPoints]);
+  //   setNewTraces(traces);
+  // }, [setNewTraces, doseRepPoints]);
 
   return (
     <div>
@@ -493,7 +475,6 @@ function DoseCurvesPlot({
         minX={minDose}
         maxX={maxDose}
         curveTraces={plotTraces}
-        newTraces={newTraces}
         showLegend={false}
         height={300}
         onLoad={handleSetPlotElement}

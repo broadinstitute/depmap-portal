@@ -42,8 +42,15 @@ function DoseCurvesTab({ datasetOptions, doseUnits }: DoseCurvesTabProps) {
   console.log(selectedDataset);
 
   return (
-    <>
-      <main>
+    <div
+      style={{
+        display: "grid",
+        gridTemplateColumns: "1fr 4fr",
+        gridTemplateAreas: "'filters main main main main'",
+        gap: "2rem",
+      }}
+    >
+      <div style={{ gridArea: "filters" }}>
         <FiltersPanel
           handleSelectDataset={handleSelectDataset}
           datasetOptions={datasetOptions}
@@ -54,12 +61,14 @@ function DoseCurvesTab({ datasetOptions, doseUnits }: DoseCurvesTabProps) {
             }
           }
         />
+      </div>
+      <div style={{ gridArea: "main" }}>
         <DoseCurvesMainContent
           dataset={selectedDataset}
           doseUnits={doseUnits}
         />
-      </main>
-    </>
+      </div>
+    </div>
   );
 }
 

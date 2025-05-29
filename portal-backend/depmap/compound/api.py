@@ -154,6 +154,7 @@ class ModelDoseReplicates(
             if DependencyDataset.has_entity(replicate_dataset.name, dose_rep.entity_id)
         ]
 
+        # TODO: Switch to getting this data from Breadbox.
         points = _get_dose_replicate_points(
             replicate_dataset_matrix=replicate_dataset.matrix,
             compound_dose_replicates=compound_dose_replicates,

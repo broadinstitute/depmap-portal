@@ -5,7 +5,7 @@ import PlotControls from "src/plot/components/PlotControls";
 import PlotSpinner from "src/plot/components/PlotSpinner";
 import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
 import { CurvePlotPoints } from "../components/DoseResponseCurve";
-import { CompoundDoseCurveData } from "./types";
+import { CompoundDoseCurveData, CurveTrace } from "./types";
 
 interface DoseCurvesPlotSectionProps {
   curvesData: CompoundDoseCurveData | null;
@@ -13,8 +13,8 @@ interface DoseCurvesPlotSectionProps {
     [model_id: string]: CurvePlotPoints[];
   } | null;
   doseUnits: string;
-  selectedCurves: Set<number>;
-  handleClickCurve: (curveNumber: number) => void;
+  selectedCurves: Set<string>;
+  handleClickCurve: (modelId: string) => void;
   plotElement: ExtendedPlotType | null;
   handleSetPlotElement: (element: any) => void;
 }

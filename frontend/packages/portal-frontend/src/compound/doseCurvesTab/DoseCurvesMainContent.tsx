@@ -6,6 +6,7 @@ import { CurvePlotPoints } from "../components/DoseResponseCurve";
 import { CompoundDataset } from "../components/DoseResponseTab";
 import DoseCurvesPlotSection from "./DoseCurvesPlotSection";
 import useDoseCurvesData from "./hooks/useDoseCurvesData";
+import { CurveTrace } from "./types";
 
 interface DoseCurvesMainContentProps {
   dataset: CompoundDataset | null;
@@ -23,13 +24,10 @@ function DoseCurvesMainContent({
     dataset
   );
 
-  console.log(isLoading);
-  console.log(error);
-
-  const [selectedCurves, setSelectedCurves] = useState<Set<number>>(
+  const [selectedCurves, setSelectedCurves] = useState<Set<string>>(
     new Set([])
   );
-  const [selectedModelIds, setSelectedModelIds] = useState<Set<string>>(
+  const [selectedTableRows, setSelectedTableRows] = useState<Set<string>>(
     new Set([])
   );
 
@@ -38,70 +36,60 @@ function DoseCurvesMainContent({
     [model_id: string]: CurvePlotPoints[];
   } | null>(null);
 
+  // Can only add selections by clicking the plot.
   const handleClickCurve = useCallback(
-    async (curveNumber: number) => {
+    (modelId: string) => {
       if (doseCurveData) {
         setSelectedCurves((xs) => {
-          if (!xs?.has(curveNumber)) {
-            xs.add(curveNumber);
+          let ys = new Set(xs);
+          if (!xs?.has(modelId)) {
+            ys.add(modelId);
           }
-          return xs;
-        });
-
-        const selectedModelId = doseCurveData.curve_params[curveNumber].id!;
-        const pts = await dapi.getCompoundModelDoseReplicatePoints!(
-          dataset!.compound_label,
-          dataset!.dose_replicate_dataset,
-          selectedModelId
-        );
-        setDoseRepPoints(pts ? { [selectedModelId]: pts } : null);
-        setSelectedModelIds((xs) => {
-          if (!xs?.has(selectedModelId)) {
-            xs.add(selectedModelId);
-          }
-          return xs;
+          selectedTableRows.forEach((rowId: string) => {
+            if (!ys.has(rowId)) {
+              ys.add(rowId);
+            }
+          });
+          setSelectedTableRows(ys);
+          return ys;
         });
       }
     },
-    [doseCurveData, setSelectedCurves, setSelectedModelIds]
+    [doseCurveData, setSelectedCurves, setSelectedTableRows, selectedTableRows]
   );
 
-  const findIndexByProperty = (
-    array: any[],
-    property: keyof any,
-    value: any
-  ): number => {
-    return array.findIndex((item) => item[property] === value);
-  };
-
-  const handleChangeTableSelection = useCallback(
+  // Can add/delete selections using the table.
+  const handleChangeSelection = useCallback(
     (selections: string[]) => {
       if (doseCurveData) {
-        const curveNumbers = selections.map((modelId: string) => {
-          return findIndexByProperty(doseCurveData.curve_params, "id", modelId);
-        });
+        setSelectedTableRows((xs) => {
+          let unselectedId: string;
+          let ys = new Set(xs);
 
-        setSelectedModelIds((xs) => {
-          selections.forEach((selection: string) => {
-            if (!xs?.has(selection)) {
-              xs.add(selection);
+          if (selections.length < xs.size) {
+            unselectedId = [...xs].filter((x) => !selections.includes(x))[0];
+
+            ys.delete(unselectedId);
+          } else {
+            const newSelectedId = selections.filter(
+              (x) => ![...xs].includes(x)
+            )[0];
+
+            ys.add(newSelectedId);
+          }
+
+          // Add rows selected from the clicking the plot curves.
+          selectedCurves.forEach((curveId: string) => {
+            if (unselectedId && curveId !== unselectedId && !ys.has(curveId)) {
+              ys.add(curveId);
             }
           });
-          return xs;
-        });
-
-        setSelectedCurves((xs) => {
-          curveNumbers.forEach((curveNumber: number) => {
-            if (!xs?.has(curveNumber)) {
-              xs.add(curveNumber);
-            }
-          });
-
-          return xs;
+          setSelectedCurves(ys);
+          return ys;
         });
       }
     },
-    [doseCurveData, setSelectedCurves, setSelectedModelIds]
+    [doseCurveData, setSelectedTableRows, setSelectedCurves, selectedCurves]
   );
 
   return (
@@ -130,8 +118,8 @@ function DoseCurvesMainContent({
               minWidth: 150,
             };
           })}
-          selectedTableLabels={selectedModelIds}
-          onChangeSelections={handleChangeTableSelection}
+          selectedTableLabels={selectedCurves}
+          onChangeSelections={handleChangeSelection}
           hideSelectAllCheckbox
           allowDownloadFromTableDataWithMenu
           allowDownloadFromTableDataWithMenuFileName="dose-curve-data.csv"
