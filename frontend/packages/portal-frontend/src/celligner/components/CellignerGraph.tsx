@@ -303,7 +303,9 @@ export default class CellignerGraph extends React.Component<Props, State> {
         pointVisibility[index] === true
     );
 
-    const exp = { in: [{ var: "entity_label" }, selectedModelIds] };
+    const exp = {
+      in: [{ var: "entity_label" }, [...new Set(selectedModelIds)]],
+    };
 
     const context = {
       name: "",
