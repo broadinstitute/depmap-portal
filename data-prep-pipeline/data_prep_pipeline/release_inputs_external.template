@@ -111,7 +111,3 @@ add-if-missing {
     "dataset_id": "subtypetree-919e.9/lineage_tree_genetic_subtype_whitelist",
 }
 
-add-if-missing {
-    "type": "omics_inferred_molecular_subtype",
-    "dataset_id": PREPROCESS_TAIGA_ID(release_taiga_id, "OmicsInferredMolecularSubtypes")
-}
