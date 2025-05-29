@@ -118,7 +118,7 @@ function DoseCurvesMainContent({
               minWidth: 150,
             };
           })}
-          selectedTableLabels={selectedCurves}
+          selectedTableLabels={selectedTableRows}
           onChangeSelections={handleChangeSelection}
           hideSelectAllCheckbox
           allowDownloadFromTableDataWithMenu
