@@ -54,9 +54,9 @@ export default function PeddepPage() {
                 } else if (
                   ["Myeloid", "Lymphoid"].includes(modelData.OncotreeLineage)
                 ) {
-                  acc["Heme"].push(subtype);
+                  acc.Heme.push(subtype);
                 } else {
-                  acc["Solid"].push(subtype);
+                  acc.Solid.push(subtype);
                 }
               }
               return acc;
