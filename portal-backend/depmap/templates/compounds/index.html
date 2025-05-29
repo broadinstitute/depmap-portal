@@ -74,6 +74,15 @@ active_tab_set = False %}
       >Genomic Associations</a
     >
   </li>
+  <li role="presentation" class="{% if not active_tab_set %}active{% endif %}">
+    <a
+      href="#corr_analysis"
+      aria-controls="corr_analysis"
+      role="tab"
+      data-toggle="tab"
+      >Correlation Analysis</a
+    >
+  </li>
   {% set active_tab_set = True %} {% endif %}
 </ul>
 
@@ -156,6 +165,22 @@ active_tab_set = False %}
     active_tab_set = True %}
   </div>
   {% endif %}
+  <div
+    role="tabpanel"
+    class="tab-pane {% if not active_tab_set %}active{% endif %}"
+    id="corr_analysis"
+  >
+    <div id="correlations-analysis-tab-content"></div>
+    <script>
+      $(function () { // document ready for middle-of-html js
+          DepMap.initCorrelationAnalysisTab(
+              "correlations-analysis-tab-content",
+          {{name | tojson}},
+      );
+      });
+    </script>
+    {% set active_tab_set = True %}
+  </div>
 </div>
 {% endif %} {% if not has_datasets and not about and not show_sensitivity_tab %}
 <p style="padding: 15px 0">No data was found on this compound.</p>

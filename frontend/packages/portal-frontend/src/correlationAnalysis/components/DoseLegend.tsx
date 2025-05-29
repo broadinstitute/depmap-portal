@@ -1,19 +1,7 @@
 import * as React from "react";
 
-const colors = [
-  { hex: "#A0DA38" },
-  { hex: "#4AC16D" },
-  { hex: "#1EA187" },
-  { hex: "#277F8E" },
-  { hex: "#365C8D" },
-  { hex: "#46327E" },
-  { hex: "#440154" },
-  { hex: "#F89540" },
-  { hex: "#CC4778" },
-];
-
 interface DoseLegendProps {
-  doseColors: { hex: string; dose: string }[];
+  doseColors: { hex: string | undefined; dose: string }[];
 }
 
 export default function DoseLegend(props: DoseLegendProps) {

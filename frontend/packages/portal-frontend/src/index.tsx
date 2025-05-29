@@ -9,7 +9,7 @@ import {
 import { toStaticUrl } from "@depmap/globals";
 
 import { getQueryParams } from "@depmap/utils";
-import { getDapi } from "src/common/utilities/context";
+import { getDapi, getBreadboxApi } from "src/common/utilities/context";
 
 import { DatasetOption } from "src/entity/components/EntitySummary";
 
@@ -18,13 +18,14 @@ import { WideTableProps } from "@depmap/wide-table";
 
 import { EntitySummaryResponse } from "src/dAPI";
 import { Option } from "src/common/models/utilities";
-import { DataExplorerContext } from "@depmap/types";
+import { DataExplorerContext, SliceQuery } from "@depmap/types";
 
 import { ConnectivityValue } from "./constellation/models/constellation";
 import { EntityType } from "./entity/models/entities";
 import TermsAndConditionsModal from "./common/components/TermsAndConditionsModal";
 import { initializeDevContexts } from "@depmap/data-explorer-2";
 import { EnrichmentTile } from "./contextExplorer/components/EnrichmentTile";
+import CorrelationAnalysis from "./correlationAnalysis/components";
 
 export { log, tailLog, getLogCount } from "src/common/utilities/log";
 
@@ -224,6 +225,39 @@ export function initDoseResponseTab(
   renderWithErrorBoundary(
     <React.Suspense fallback={<div>Loading...</div>}>
       <DoseResponseTab datasetOptions={datasetOptions} doseUnits={units} />
+    </React.Suspense>,
+    document.getElementById(elementId) as HTMLElement
+  );
+}
+
+export function initCorrelationAnalysisTab(
+  elementId: string,
+  compoundName: string
+) {
+  const bapi = getBreadboxApi();
+  renderWithErrorBoundary(
+    <React.Suspense fallback={<div>Loading...</div>}>
+      <CorrelationAnalysis
+        compound={compoundName}
+        getDimensionType={(name: string) => {
+          return bapi.getDimensionType(name);
+        }}
+        getTabularDatasetData={(
+          datasetId: string,
+          args: {
+            identifier: "id" | "label";
+            columns?: string[] | null;
+          }
+        ) => {
+          return bapi.getTabularDatasetData(datasetId, args);
+        }}
+        getDatasetFeatures={(datasetId: string) => {
+          return bapi.getDatasetFeatures(datasetId);
+        }}
+        getCorrelationData={(sliceQuery: SliceQuery) => {
+          return bapi.fetchAssociations(sliceQuery);
+        }}
+      />
     </React.Suspense>,
     document.getElementById(elementId) as HTMLElement
   );

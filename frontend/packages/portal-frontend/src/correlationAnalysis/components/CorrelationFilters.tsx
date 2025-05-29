@@ -1,5 +1,5 @@
-import React, { useEffect, useState, useCallback } from "react";
-import Select, { ActionMeta, OptionsType } from "react-select";
+import React, { useCallback } from "react";
+import Select from "react-select";
 import styles from "../styles/CorrelationFilters.scss";
 
 export interface FilterOption {
@@ -10,9 +10,9 @@ export interface FilterOption {
 }
 
 interface CorrelationFiltersProps {
-  getDatasets: () => Promise<any[]>;
-  onChangeDataset: (dataset: string | null) => void; // undetermined for now
-  getFeatureTypes: () => Promise<any[]>;
+  datasets: any[];
+  onChangeDataset: (dataset: string) => void; // undetermined for now
+  featureTypes: any[];
   onChangeFeatureTypes: (featureTypes: string[]) => void;
   doses: string[];
   onChangeDoses: (doses: string[]) => void;
@@ -21,44 +21,28 @@ interface CorrelationFiltersProps {
 
 export default function CorrelationFilters(props: CorrelationFiltersProps) {
   const {
-    getDatasets,
+    datasets,
     onChangeDataset,
-    getFeatureTypes,
+    featureTypes,
     onChangeFeatureTypes,
     doses,
     onChangeDoses,
     compoundName,
   } = props;
-  const [datasetOptions, setDatasetOptions] = useState<FilterOption[]>([]);
-  const [featureTypeOptions, setFeatureTypeOptions] = useState<FilterOption[]>(
-    []
-  );
+
+  const datasetOptions = datasets.map((dataset) => {
+    return { label: dataset, value: dataset };
+  });
+  const featureTypeOptions = featureTypes.map((featureType) => {
+    return { label: featureType, value: featureType };
+  });
+  console.log("FEATURE TYPES", featureTypeOptions);
+
   const getDoseOptions = useCallback(() => {
     return doses.map((dose) => {
       return { label: dose, value: dose };
     });
   }, [doses]);
-
-  useEffect(() => {
-    (async () => {
-      try {
-        const datasets = await getDatasets();
-        setDatasetOptions(
-          datasets.map((dataset) => {
-            return { label: dataset.label, value: dataset.label };
-          })
-        );
-        const featureTypes = await getFeatureTypes();
-        setFeatureTypeOptions(
-          featureTypes.map((featureType) => {
-            return { label: featureType.label, value: featureType.label };
-          })
-        );
-      } catch (e) {
-        console.log(e);
-      }
-    })();
-  }, [getDatasets, getFeatureTypes]);
 
   return (
     <div className={styles.correlationFilters}>
