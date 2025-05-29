@@ -185,6 +185,11 @@ class FeatureFlags:
     def anchor_screen_dashboard(self):
         return self.is_dmc_like()
 
+    @property
+    def show_peddep_landing_page(self):
+        # remove False when ready to deploy
+        return self.is_public() and False
+
 
 def make_log_config(log_dir):
     return {
