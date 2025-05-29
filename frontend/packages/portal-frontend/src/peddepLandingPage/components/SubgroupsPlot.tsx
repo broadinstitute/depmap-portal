@@ -18,7 +18,7 @@ export default function SubGroupsPlot() {
     (async () => {
       try {
         // Get depmap models data
-        const dimensionType = await bapi.getDimensionType("depmap with peddep");
+        const dimensionType = await bapi.getDimensionType("depmap_model");
         if (dimensionType.metadata_dataset_id) {
           const modelSubsetColData = await bapi.getTabularDatasetData(
             dimensionType.metadata_dataset_id,
@@ -26,7 +26,7 @@ export default function SubGroupsPlot() {
               columns: [
                 "OncotreeLineage",
                 "OncotreeSubtype",
-                "PediatricSubtype",
+                "PediatricModelType",
               ],
             }
           );
@@ -50,7 +50,7 @@ export default function SubGroupsPlot() {
             modelSubsetIndexData
           ).reduce(
             (acc, [, modelData]) => {
-              if (modelData.PediatricSubtype === "True") {
+              if (modelData.PediatricModelType === "TRUE") {
                 const subtype: string = modelData.OncotreeSubtype;
                 if (modelData.OncotreeLineage === "CNS/Brain") {
                   acc["CNS/Brain"].push(subtype);
