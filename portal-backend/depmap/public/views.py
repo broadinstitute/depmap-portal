@@ -207,6 +207,8 @@ def resources():
 
 @blueprint.route("/peddep")
 def peddep():
+    if not current_app.config["ENABLED_FEATURES"].show_peddep_landing_page:
+        abort(404)
     return render_template("public/peddep.html")
 
 
