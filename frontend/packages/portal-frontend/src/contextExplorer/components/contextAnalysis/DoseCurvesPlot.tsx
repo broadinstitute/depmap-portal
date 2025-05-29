@@ -252,6 +252,8 @@ const buildPointsTraces = (
       newTraces.push({
         x: xs,
         y: ys,
+        mode: "markers",
+        type: "scatter",
         customdata: ["no"],
         label: [`${isMaskedValue}`],
         replicate: [`${replicate}`],
@@ -345,7 +347,10 @@ const buildTraces = (
   maxDose: number,
   inGroupCurveParams: CurveParams[],
   outGroupCurveParams: CurveParams[],
-  includeMedianQuantileRegions: boolean
+  includeMedianQuantileRegions: boolean,
+  doseRepPoints?: {
+    [model_id: string]: CurvePlotPoints[];
+  } | null
 ): CurveTrace[] => {
   const minX = minDose;
   const maxX = maxDose;
@@ -355,6 +360,20 @@ const buildTraces = (
   const outGroupNumPts = 8;
 
   let traces: CurveTrace[] = [];
+  if (doseRepPoints) {
+    const modelIds = Object.keys(doseRepPoints);
+
+    modelIds.forEach((modelId) => {
+      const modelCurveParams = inGroupCurveParams.filter(
+        (curveParam: CurveParams) => modelIds.includes(curveParam.id!)
+      );
+      const ptTraces = buildReplicateTraces(
+        modelCurveParams,
+        doseRepPoints[modelId]
+      );
+      traces.push(...ptTraces);
+    });
+  }
 
   const curveTraces = getTraces(
     inGroupCurveParams,
@@ -415,7 +434,8 @@ function DoseCurvesPlot({
         maxDose,
         inGroupCurveParams,
         outGroupCurveParams,
-        includeMedianQuantileRegions
+        includeMedianQuantileRegions,
+        doseRepPoints
       );
     }
     return null;

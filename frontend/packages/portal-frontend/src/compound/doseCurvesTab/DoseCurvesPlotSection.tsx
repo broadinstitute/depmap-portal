@@ -1,10 +1,12 @@
 /* eslint-disable @typescript-eslint/naming-convention */
-import React from "react";
+import React, { useMemo } from "react";
 import DoseCurvesPlot from "src/contextExplorer/components/contextAnalysis/DoseCurvesPlot";
-import PlotControls from "src/plot/components/PlotControls";
+import PlotControls, {
+  PlotToolOptions,
+} from "src/plot/components/PlotControls";
 import PlotSpinner from "src/plot/components/PlotSpinner";
 import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
-import { CurvePlotPoints } from "../components/DoseResponseCurve";
+import { CurveParams, CurvePlotPoints } from "../components/DoseResponseCurve";
 import { CompoundDoseCurveData, CurveTrace } from "./types";
 
 interface DoseCurvesPlotSectionProps {
@@ -27,17 +29,45 @@ function DoseCurvesPlotSection({
   plotElement,
   handleSetPlotElement,
 }: DoseCurvesPlotSectionProps) {
+  const searchOptions = useMemo(
+    () =>
+      curvesData
+        ? curvesData.curve_params.map((curve: CurveParams, index: number) => ({
+            label: curve.displayName!,
+            stringId: curve.id!,
+            value: index,
+          }))
+        : null,
+    [curvesData]
+  );
+
   return (
     <div>
       <div>
         {plotElement && (
           <PlotControls
             plot={plotElement}
-            searchOptions={[]}
-            searchPlaceholder=""
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            onSearch={(selection: { label: string; value: number }) => {
-              /* do nothing */
+            enabledTools={[
+              PlotToolOptions.Zoom,
+              PlotToolOptions.Pan,
+              PlotToolOptions.Search,
+              PlotToolOptions.Download,
+            ]}
+            searchOptions={searchOptions}
+            searchPlaceholder="Search for a cell line"
+            onSearch={(selection: {
+              label: string;
+              value: number;
+              stringId?: string;
+            }) => {
+              if (selection.stringId) {
+                handleClickCurve(selection.stringId);
+              }
+            }}
+            downloadImageOptions={{
+              filename: "dose-curves",
+              width: 800,
+              height: 600,
             }}
             onDownload={() => {
               /* do nothing */

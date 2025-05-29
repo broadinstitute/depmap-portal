@@ -39,21 +39,21 @@ def _get_dose_replicate_points(
     return points
 
 
-# def _get_dose_replicate_points_per_model_id(
-#     replicate_dataset_matrix: Matrix,
-#     compound_dose_replicates: list,
-#     model_ids: List[str],
-# ):
-#     dose_replicates_per_model_id = {}
-#     for model_id in model_ids:
-#         reps = _get_dose_replicate_points(
-#             replicate_dataset_matrix=replicate_dataset_matrix,
-#             compound_dose_replicates=compound_dose_replicates,
-#             model_id=model_id,
-#         )
-#         dose_replicates_per_model_id[model_id] = reps
+def _get_dose_replicate_points_per_model_id(
+    replicate_dataset_matrix: Matrix,
+    compound_dose_replicates: list,
+    model_ids: List[str],
+):
+    dose_replicates_per_model_id = {}
+    for model_id in model_ids:
+        reps = _get_dose_replicate_points(
+            replicate_dataset_matrix=replicate_dataset_matrix,
+            compound_dose_replicates=compound_dose_replicates,
+            model_id=model_id,
+        )
+        dose_replicates_per_model_id[model_id] = reps
 
-#     return dose_replicates_per_model_id
+    return dose_replicates_per_model_id
 
 
 def _get_dose_response_curves_per_model(
@@ -137,7 +137,7 @@ class ModelDoseReplicates(
         # the dataset_name and compound_label options.
         replicate_dataset_name = request.args.get("replicate_dataset_name")
         compound_label = request.args.get("compound_label")
-        model_id = request.args.get("model_id")
+        model_ids = request.args.getlist("model_ids")
 
         replicate_dataset = Dataset.get_dataset_by_name(replicate_dataset_name)
         compound_experiment = utils.get_compound_experiment(
@@ -155,10 +155,10 @@ class ModelDoseReplicates(
         ]
 
         # TODO: Switch to getting this data from Breadbox.
-        points = _get_dose_replicate_points(
+        points_per_model = _get_dose_replicate_points_per_model_id(
+            model_ids=model_ids,
             replicate_dataset_matrix=replicate_dataset.matrix,
             compound_dose_replicates=compound_dose_replicates,
-            model_id=model_id,
         )
 
-        return points
+        return points_per_model

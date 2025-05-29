@@ -111,6 +111,46 @@ function DoseCurvesMainContent({
     [doseCurveData, setSelectedTableRows, setSelectedCurves, selectedCurves]
   );
 
+  const latestPromise = useRef<Promise<{
+    [model_id: string]: CurvePlotPoints[];
+  }> | null>(null);
+
+  useEffect(() => {
+    (async () => {
+      if (dataset && showReplicates) {
+        // setIsLoading(true);
+
+        const promise = dapi.getCompoundModelDoseReplicatePoints!(
+          dataset.compound_label,
+          dataset.dose_replicate_dataset,
+          Array.from(selectedCurves)
+        );
+
+        latestPromise.current = promise;
+        promise
+          .then((fetchedData) => {
+            if (promise === latestPromise.current) {
+              setDoseRepPoints(fetchedData);
+            }
+          })
+          .catch((e) => {
+            if (promise === latestPromise.current) {
+              window.console.error(e);
+              // setError(true);
+              // setIsLoading(false);
+            }
+          })
+          .finally(() => {
+            if (promise === latestPromise.current) {
+              // setIsLoading(false);
+            }
+          });
+      }
+    })();
+  }, [selectedCurves, setDoseRepPoints, dapi]);
+
+  console.log(doseRepPoints);
+
   return (
     <div>
       <DoseCurvesPlotSection

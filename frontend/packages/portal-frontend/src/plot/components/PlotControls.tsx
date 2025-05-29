@@ -11,7 +11,7 @@ import {
 import type ExtendedPlotType from "src/plot/models/ExtendedPlotType";
 import styles from "src/plot/styles/PlotControls.scss";
 
-type Option = { label: string; value: number };
+type Option = { label: string; value: number; stringId?: string };
 type Dragmode = "zoom" | "pan" | "select" | "lasso";
 type DownloadImageOptions = Omit<
   Parameters<ExtendedPlotType["downloadImage"]>[0],

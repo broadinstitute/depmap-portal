@@ -248,21 +248,6 @@ function CurvesChart({
       Plotly.react(plot, plot.data, nextLayout, plot.config);
     };
 
-    on("plotly_relayout", () => {
-      const prevSelections =
-        [...(selectedCurves || [])].map((modelId: string) => {
-          return findIndexByProperty(curveTraces, "id", modelId);
-        }) || [];
-
-      Plotly.restyle(
-        plot,
-        {
-          line: { color: "rgba(60, 8, 128, 1)", width: 3 },
-        },
-        prevSelections
-      );
-    });
-
     on("plotly_hover", (e: PlotMouseEvent) => {
       const { curveNumber } = e.points[0];
       Plotly.restyle(

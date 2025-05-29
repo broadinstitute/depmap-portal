@@ -38,9 +38,6 @@ function DoseCurvesTab({ datasetOptions, doseUnits }: DoseCurvesTabProps) {
     [datasetOptions]
   );
 
-  console.log({ selectedDatasetOption });
-  console.log(selectedDataset);
-
   return (
     <div
       style={{

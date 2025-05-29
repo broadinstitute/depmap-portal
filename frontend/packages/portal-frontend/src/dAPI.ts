@@ -999,12 +999,12 @@ export class DepmapApi {
   getCompoundModelDoseReplicatePoints(
     compoundLabel: string,
     replicateDatasetName: string,
-    modelId: string
-  ): Promise<CurvePlotPoints[]> {
+    modelIds: string[]
+  ): Promise<{ [model_id: string]: CurvePlotPoints[] }> {
     const params = {
       replicate_dataset_name: replicateDatasetName,
       compound_label: compoundLabel,
-      model_id: modelId,
+      model_ids: modelIds,
     };
 
     return this._fetch<any>(
