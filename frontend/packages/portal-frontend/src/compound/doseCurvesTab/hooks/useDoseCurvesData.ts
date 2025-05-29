@@ -1,14 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import { getDapi } from "src/common/utilities/context";
 import { CompoundDataset } from "src/compound/components/DoseResponseTab";
-import { CompoundDoseCurveData } from "../types";
-
-type DoseTableRow = {
-  modelId: string;
-  cell_line_display_name: string;
-} & {
-  [dose: string]: number;
-};
+import { CompoundDoseCurveData, DoseTableRow } from "../types";
 
 function useDoseCurvesData(dataset: CompoundDataset | null) {
   const dapi = getDapi();

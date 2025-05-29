@@ -192,8 +192,7 @@ function CurvesChart({
         [...selectedCurves].map((modelId: string) => {
           return findIndexByProperty(curveTraces, "id", modelId);
         }) || [];
-      console.log({ prevSelections });
-      console.log([...selectedCurves]);
+
       Plotly.restyle(
         plot,
         {

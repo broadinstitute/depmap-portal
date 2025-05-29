@@ -6,12 +6,31 @@ import { CurvePlotPoints } from "../components/DoseResponseCurve";
 import { CompoundDataset } from "../components/DoseResponseTab";
 import DoseCurvesPlotSection from "./DoseCurvesPlotSection";
 import useDoseCurvesData from "./hooks/useDoseCurvesData";
-import { CurveTrace } from "./types";
+import { CurveTrace, DoseTableRow } from "./types";
 
 interface DoseCurvesMainContentProps {
   dataset: CompoundDataset | null;
   doseUnits: string;
 }
+
+const sortBySelectedModel = (
+  doseTable: DoseTableRow[],
+  selectedModelIds: Set<string>
+) => {
+  return doseTable.sort((a, b) => {
+    const aHasPriority = selectedModelIds.has(a.modelId);
+    const bHasPriority = selectedModelIds.has(b.modelId);
+
+    if (aHasPriority && !bHasPriority) {
+      return -1; // a comes first
+    }
+    if (!aHasPriority && bHasPriority) {
+      return 1; // b comes first
+    }
+    // If both or neither have a selectedModelId, it doesn't matter which comes first
+    return -1;
+  });
+};
 
 function DoseCurvesMainContent({
   dataset,
@@ -109,7 +128,11 @@ function DoseCurvesMainContent({
         <WideTable
           idProp="modelId"
           rowHeight={28}
-          data={doseTable}
+          data={
+            selectedTableRows.size === 0
+              ? doseTable
+              : sortBySelectedModel(doseTable, selectedTableRows)
+          }
           columns={Object.keys(doseTable![0]).map((colName: string) => {
             return {
               accessor: colName,

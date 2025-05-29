@@ -26,3 +26,10 @@ export interface CurveTrace {
   mode?: string;
   id?: string;
 }
+
+export type DoseTableRow = {
+  modelId: string;
+  cell_line_display_name: string;
+} & {
+  [dose: string]: number;
+};
