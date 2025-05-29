@@ -13,25 +13,33 @@
   border-collapse: separate;
   border: none;
   margin: 0;
+  padding: 0;
 
-  &.isLoading {
-    tbody {
-      color: #ccc;
-      pointer-events: none;
-    }
-  }
+  tbody tr td,
+  thead tr th {
+    vertical-align: middle;
 
-  tr td,
-  tr th {
     &:nth-child(1) {
       overflow: hidden;
       max-width: 150px;
     }
 
-    &:nth-child(3) {
-      width: 92px;
+    &:nth-child(2) {
+      padding: 8px 0;
+    }
+
+    &:nth-child(3),
+    &:nth-child(4) {
+      padding: 0;
+      width: 60px;
+    }
+  }
+
+  tbody tr td {
+    &:nth-child(3),
+    &:nth-child(4) {
       text-align: right;
-      vertical-align: middle;
+      padding-right: 9px;
     }
   }
 
@@ -39,17 +47,26 @@
     background-color: #fff;
     position: sticky;
     top: 0;
-    vertical-align: middle;
 
-    &:nth-child(3) {
+    sub {
+      font-size: 8px;
+    }
+
+    &:nth-child(4) {
       padding: 0;
+
+      button span:only-child {
+        display: inline-block;
+        padding-left: 10px;
+      }
     }
 
     button {
       all: unset;
       cursor: pointer;
 
-      padding: 4px;
+      min-width: 60px;
+      padding: 2px;
       border-radius: 4px;
       border: 1px solid transparent;
 
@@ -150,4 +167,15 @@
   border-top: 1px solid #ddd;
   padding-top: 15px;
   text-align: center;
+}
+
+.buttons {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+
+  button {
+    margin: 0;
+  }
 }

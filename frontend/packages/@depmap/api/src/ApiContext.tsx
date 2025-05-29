@@ -32,6 +32,7 @@ import {
   DimensionTypeAddArgs,
   DimensionTypeUpdateArgs,
   TabularDatasetDataArgs,
+  SliceQuery,
 } from "@depmap/types";
 import {
   DatasetDownloadMetadata,
@@ -55,7 +56,6 @@ export interface SharedApi {
   getTaskStatus: (id: string) => Promise<CeleryTask>;
   getCellLineSelectorLines: () => Promise<CellLineSelectorLines>;
   getAssociations: (x: string) => Promise<AssociationAndCheckbox>;
-  postCustomTaiga: (config: UserUploadArgs) => Promise<UploadTask>;
   postCustomCsv: (config: UserUploadArgs) => Promise<UploadTask>;
   getCellignerColorMap: () => Promise<CellignerColorsForCellLineSelector>;
   searchDimensions: (
@@ -119,6 +119,24 @@ export interface SharedApi {
   computeUnivariateAssociations: (
     config: UnivariateAssociationsParams
   ) => Promise<ComputeResponse>;
+  fetchAssociations: (
+    sliceQuery: SliceQuery
+  ) => Promise<{
+    dataset_name: string;
+    dimension_label: string;
+    associated_datasets: {
+      name: string;
+      dimension_type: string;
+      dataset_id: string;
+    }[];
+    associated_dimensions: {
+      correlation: number;
+      log10qvalue: number;
+      other_dataset_id: string;
+      other_dimension_given_id: string;
+      other_dimension_label: string;
+    }[];
+  }>;
   postCustomCsvOneRow: (config: AddDatasetOneRowArgs) => Promise<UploadTask>;
 }
 

@@ -255,6 +255,29 @@ class DepmapModel(Model):
         return s
 
     @staticmethod
+    def get_cell_line_display_names_lineage_and_primary_disease(
+        model_ids: Sequence[str],
+    ) -> pd.DataFrame:
+        assert len(model_ids) > 0
+        cell_line_names = (
+            DepmapModel.query.filter(DepmapModel.model_id.in_(model_ids))
+            .join(Lineage, DepmapModel.oncotree_lineage)
+            .filter(Lineage.level == 1)
+            .with_entities(
+                DepmapModel.model_id,
+                DepmapModel.stripped_cell_line_name.label("cell_line_display_name"),
+                Lineage.name.label("lineage"),
+                DepmapModel.oncotree_primary_disease.label("primary_disease"),
+            )
+            .all()
+        )
+
+        s = pd.DataFrame(cell_line_names).set_index("model_id")
+
+        assert len(s) == len(model_ids)
+        return s
+
+    @staticmethod
     def has_depmap_model_type(depmap_model_type: str, model_id: str):
         return db.session.query(
             DepmapModel.query.filter(

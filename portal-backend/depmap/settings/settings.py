@@ -167,7 +167,11 @@ class FeatureFlags:
 
     @property
     def private_datasets(self):
-        return self.is_only_dmc_and_i_have_a_good_reason()
+        return False
+
+    @property
+    def dataset_manager(self):
+        return self.is_prerelease_env()
 
     @property
     def target_discovery_app(self):
@@ -176,6 +180,10 @@ class FeatureFlags:
     @property
     def gene_tea(self):
         return self.is_prerelease_env()
+
+    @property
+    def anchor_screen_dashboard(self):
+        return self.is_dmc_like()
 
 
 def make_log_config(log_dir):
@@ -301,7 +309,6 @@ class Config(object):
     # with the expectation that in some environments we'll want to lower this
     MAX_UPLOAD_SIZE = 10 ** 10
     FORUM_API_KEY = os.getenv("FORUM_API_KEY")
-    PRIVATE_FILE_BUCKETS = os.getenv("PRIVATE_FILE_BUCKETS")
 
 
 class RemoteConfig(Config):
@@ -329,7 +336,7 @@ from datetime import date
 from depmap.download.models import (
     DownloadRelease,
     DownloadFile,
-    FileSubType,
+    FileSubtype,
     ReleaseType,
     FileSource,
     ReleaseTerms,
@@ -361,7 +368,9 @@ test_downloads = [
             DownloadFile(
                 name="test file name",
                 type=FileType.genetic_dependency,
-                sub_type=FileSubType.crispr_screen,
+                sub_type=FileSubtype(
+                    code="crispr_screen", label="CRISPR Screen", position=0
+                ),
                 size="test size",
                 url="test url",  # urls are tested in the crawler, so this is fine
                 taiga_id="test-taiga-id.1",
@@ -380,7 +389,7 @@ test_downloads = [
                 name="headliner2 file name",
                 date_override=date(2000, 1, 1),
                 type=FileType.omics,
-                sub_type=FileSubType.mutations,
+                sub_type=FileSubtype(code="mutations", label="Mutations", position=1),
                 size="headliner2 size",
                 url=ExternalBucketUrl("fake/test/headliner2_file_name"),
                 taiga_id="test-taiga-id.1",
@@ -390,7 +399,9 @@ test_downloads = [
             DownloadFile(
                 name="test file name 2",
                 type=FileType.genetic_dependency,
-                sub_type=FileSubType.crispr_screen,
+                sub_type=FileSubtype(
+                    code="crispr_screen", label="CRISPR Screen", position=0
+                ),
                 size="test size",
                 url=RetractedUrl(),
                 taiga_id="test-taiga-id.1",

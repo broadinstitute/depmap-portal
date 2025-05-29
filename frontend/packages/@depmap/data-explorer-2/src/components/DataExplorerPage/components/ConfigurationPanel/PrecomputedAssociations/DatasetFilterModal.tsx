@@ -1,11 +1,14 @@
 import React, { useState } from "react";
 import { Button, Modal } from "react-bootstrap";
+import usePrecomputedAssocationData from "../../../hooks/usePrecomputedAssocationData";
 import styles from "../../../styles/PrecomputedAssociations.scss";
 
 interface Props {
   show: boolean;
   onHide: () => void;
-  associatedDatasets: string[];
+  associatedDatasets: ReturnType<
+    typeof usePrecomputedAssocationData
+  >["associatedDatasets"];
   initialValue: Set<string>;
   onChange: (nextValue: Set<string>) => void;
 }
@@ -24,7 +27,7 @@ function DatasetFilterModal({
   };
 
   const handleCLickUnselectAll = () => {
-    setHiddenDataset(new Set(associatedDatasets));
+    setHiddenDataset(new Set(associatedDatasets.map((d) => d.dataset_id)));
   };
 
   return (
@@ -42,27 +45,27 @@ function DatasetFilterModal({
             Unselect all
           </button>
         </div>
-        {associatedDatasets.map((datasetName) => (
-          <div key={datasetName}>
+        {associatedDatasets.map(({ name, dataset_id }) => (
+          <div key={name}>
             <label>
               <input
                 type="checkbox"
-                checked={!hiddenDatasets.has(datasetName)}
+                checked={!hiddenDatasets.has(dataset_id)}
                 onChange={() => {
                   setHiddenDataset((prev) => {
                     const next = new Set(prev);
 
-                    if (prev.has(datasetName)) {
-                      next.delete(datasetName);
+                    if (prev.has(dataset_id)) {
+                      next.delete(dataset_id);
                     } else {
-                      next.add(datasetName);
+                      next.add(dataset_id);
                     }
 
                     return next;
                   });
                 }}
               />
-              <span>{datasetName}</span>
+              <span>{name}</span>
             </label>
           </div>
         ))}

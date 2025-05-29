@@ -14,7 +14,7 @@ import { deleteSpecificQueryParams } from "@depmap/utils";
 
 export const CONTEXT_EXPL_BAR_THICKNESS = 40;
 export const BOX_THICKNESS = 40;
-export const BOX_PLOT_BOTTOM_MARGIN = 20;
+export const BOX_PLOT_BOTTOM_MARGIN = 40;
 export const BOX_PLOT_TOP_MARGIN = 0;
 
 export function getSelectivityValLabel(entityType: string) {
@@ -39,32 +39,23 @@ export const OUTGROUP_TYPE_ALL_OPTION = {
 export const DATATYPE_TOOLTIP_TEXT = new Map<string, string>([
   [
     DataTypeStrings.CRISPR.toString(),
-    "Cell lines that have been screened with at least one of the Avana, Humagne, or KY libraries.",
+    "Models that have been screened with at least one genome-wide CRISPR library.",
   ],
   [
     DataTypeStrings.PRISMOncRef.toString(),
-    "Cell lines that have been screened in at least one of PRISM OncRef's screens.",
+    "Models that have been included in at least one PRISM OncRef screen.",
   ],
   [
     DataTypeStrings.PRISMRepurposing.toString(),
-    "Cell lines that have been screened in at least one of PRISM Repurposing's screens.",
+    "Models that have been included in at least one PRISM Repurposing screen.",
   ],
-  [
-    DataTypeStrings.RNASeq.toString(),
-    "Cell lines that have been profiled in RNA-seq.",
-  ],
+  [DataTypeStrings.RNASeq.toString(), "Models with RNAseq profiling."],
   [
     DataTypeStrings.RNAi.toString(),
-    "Cell lines that have been screened in an RNAi library.",
+    "Models that have been screened with at least one RNAi library.",
   ],
-  [
-    DataTypeStrings.WES.toString(),
-    "Cell lines that have had whole exome sequencing.",
-  ],
-  [
-    DataTypeStrings.WGS.toString(),
-    "Cell lines that have had whole genome sequencing.",
-  ],
+  [DataTypeStrings.WGS.toString(), "Models with whole genome sequencing."],
+  [DataTypeStrings.WES.toString(), "Models with whole exome sequencing."],
 ]);
 
 export const BLOOD_LINEAGES = ["Myeloid", "Lymphoid"];
@@ -345,6 +336,18 @@ export function getDataExplorerUrl(
   return `${de2PageHref}?${queryString}`;
 }
 
+export function getShowPositiveEffectSizesFilter(filters: Filter[]) {
+  let showPositiveEffectSizes: boolean = false;
+
+  filters.forEach((filter) => {
+    if (filter.key === "depletion" && typeof filter.value === "boolean") {
+      showPositiveEffectSizes = filter.value;
+    }
+  });
+
+  return showPositiveEffectSizes;
+}
+
 export function getBoxPlotFilterVariables(filters: Filter[]) {
   let maxFdr: number = 0.1;
   let minEffectSize: number = 0.1;
@@ -442,6 +445,17 @@ function mergeDataAvailability(
     (item) => item[1]
   );
 
+  const orderedModelIds = allContextDatasetDataAvail.all_depmap_ids.filter(
+    (indexedModel) => selectedModelIds.includes(indexedModel[1])
+  );
+  const indexedOrderedModelIds: [
+    number,
+    string
+  ][] = orderedModelIds.map((modelId: [number, string], index: number) => [
+    index,
+    modelId[1],
+  ]);
+
   const vals: number[][] = [];
   const dataTypes: string[] = [];
   allContextDatasetDataAvail.values.forEach((row: number[], index: number) => {
@@ -455,7 +469,7 @@ function mergeDataAvailability(
   const orderedDataTypes = [...dataTypes];
   const orderedVals = [...vals];
   const mergedDataAvail = {
-    all_depmap_ids: subtypeDataAvail.all_depmap_ids,
+    all_depmap_ids: indexedOrderedModelIds,
     data_types: [...orderedDataTypes, ...subtypeDataAvail.data_types].reverse(),
     values: [...orderedVals, ...subtypeDataAvail.values].reverse(),
   };
@@ -637,7 +651,16 @@ export function getSelectedContextNode(
   return { selectedContextNode: selectedNode, topContextNameInfo };
 }
 
-export function getNewContextUrl(newCode: string) {
+export function getNewContextUrl(
+  newCode: string,
+  urlPrefix?: string,
+  tab?: string
+) {
+  if (urlPrefix) {
+    return urlPrefix.concat(
+      `?tab=${tab}&context=${encodeURIComponent(newCode)}`
+    );
+  }
   const currentLocation = window.location.href;
   const currentUrl = new URL(currentLocation);
 
@@ -650,4 +673,62 @@ export function getNewContextUrl(newCode: string) {
     : currentLocation.concat(`&context=${encodeURIComponent(newCode)}`);
 
   return newUrl;
+}
+
+export const GENE_DEP_TEXT_BEFORE_1_HELP_ICON =
+  "Gene dependencies enriched within models of the selected lineage/tumor subtype vs. a chosen out-group (all other CRISPR screened models by default) are calculated using a two-sided T-test on the Chronos CRISPR Gene Effect scores. P-values are corrected for multiple hypothesis testing using the Benjamini-Hochberg procedure. Only genes that are ‘strongly selective’ ";
+
+export const GENE_DEP_BETWEEN_1_AND_2 = " or dependent ";
+
+export const GENE_DEP_END =
+  " in min. 3 and max. 95% of CRISPR screened models are considered for this analysis.";
+
+export const GENE_LOG_OR_LEGEND_TOOL_TIP =
+  "Points are colored according to the logged odd’s ratio (OR) of in-group to out-group dependency; e.g. a value of 1 indicates the gene is 10x more likely to be a dependency in the in-group vs. the out-group.";
+
+export const REPURPOSING_SIDE_BAR_TEXT =
+  "Compound sensitivities enriched within models of the selected lineage/tumor subtype vs. a chosen out-group (all other PRISM Repurposing screened models by default) are calculated using a two-sided T-test on the log viability from the Repurposing dataset. P-values are corrected for multiple hypothesis testing using the Benjamini-Hochberg procedure. Only compounds that are sensitivities in at least one and max. 75% of models are considered for this analysis.";
+
+export const ONCREF_SIDEBAR_TEXT =
+  "Compound sensitivities enriched within models of the selected lineage/tumor subtype vs. a chosen out-group (all other PRISM OncRef screened models by default) are calculated using a two-sided T-test on the log AUC of the dose response curves from the OncRef dataset. P-values are corrected for multiple hypothesis testing using the Benjamini-Hochberg procedure. ";
+
+export const OVERVIEW_SIDEBAR_TEXT =
+  "Context Explorer helps researchers see how many datasets are available for their chosen tissue context type and subtype, as well as showing the overlap in data.";
+
+export const GENE_DEP_TABLE_DESCRIPTION =
+  "The filters below can be used to adjust the data displayed in the plots and table. By default only enriched dependencies are shown, but relatively depleted dependencies can be viewed by checking “include positive effect sizes”.";
+
+export const GENE_DETAIL_NO_GENE_SELECTED =
+  "Select a gene to see the distribution of its CRISPR gene effects in the selected lineage/subtype vs. related groups, as well as other lineages/subtypes (if any) where the gene is an enriched dependency.";
+
+export const ONCREF_DETAIL_NO_COMPOUND_SELECTED =
+  "Select a compound to see (a) the median in- and out-group dose response curves; and (b) the distribution of dose response AUCs in the selected lineage/subtype vs. related groups, as well as other lineages/subtypes (if any) where the compound is an enriched sensitivity.";
+
+export const REPURPOSING_DETAIL_NO_COMPOUND_SELECTED =
+  "Select a compound to see the distribution of log viability in the selected lineage/subtype vs. related groups, as well as other lineages/subtypes (if any) where the compound is an enriched sensitivity.";
+
+export const ONCREF_TABLE_DESCRIPTION =
+  "The filters below can be used to adjust the data displayed in the plots and table. By default only enriched sensitivities are shown, but relatively depleted sensitivities can be viewed by checking “include positive effect sizes”.";
+export const REPURPOSING_TABLE_DESCRIPTION =
+  "The filters below can be used to adjust the data displayed in the plots and table. By default only enriched sensitivities are shown, but relatively depleted sensitivities can be viewed by checking “include positive effect sizes”.";
+
+export const GENE_DETAIL_TOOLTIP =
+  "Lineages and/or subtypes that have, on average, a stronger dependency on this gene compared to all other models. Enriched lineages/subtypes are selected based on default Context Explorer filters (T-test FDR<0.1, avg. gene effect difference < -0.25 and min. 1 dependent in-group model).";
+
+export const ONC_DETAIL_TOOLTIP =
+  "Lineages and/or subtypes that have, on average, a stronger sensitivity to this compound compared to all other models. Enriched lineages/subtypes are selected based on default Context Explorer filters (T-test FDR<0.1, avg. AUC difference < -0.1).";
+
+export const REP_DETAIL_TOOLTIP =
+  "Lineages and/or subtypes that have, on average, a stronger sensitivity to this compound compared to all other models. Enriched lineages/subtypes are selected based on default Context Explorer filters (T-test FDR<0.1, avg. log2(Viability) difference < -0.5).";
+
+export function getDetailPanelTooltip(datasetId: ContextExplorerDatasets) {
+  if (datasetId === ContextExplorerDatasets.Prism_oncology_AUC) {
+    return ONC_DETAIL_TOOLTIP;
+  }
+
+  if (datasetId === ContextExplorerDatasets.Rep_all_single_pt) {
+    return REP_DETAIL_TOOLTIP;
+  }
+
+  return GENE_DETAIL_TOOLTIP;
 }

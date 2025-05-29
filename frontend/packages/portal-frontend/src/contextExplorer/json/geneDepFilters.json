@@ -9,10 +9,10 @@
   {
     "kind": "numberInput",
     "key": "t_qval",
-    "label": " Max. T-test q-value",
+    "label": "Max. FDR",
     "minOrMax": "max",
     "step": 0.01,
-    "value": 0.05,
+    "value": 0.1,
     "minBound": 0,
     "maxBound": 1
   },
@@ -28,7 +28,7 @@
   {
     "kind": "numberInput",
     "key": "frac_dep_in",
-    "label": "Min. % of in-context lines dependent",
+    "label": "Min. frac of in-context lines dependent",
     "minOrMax": "min",
     "step": 0.01,
     "value": 0.1,

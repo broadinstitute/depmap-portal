@@ -10,7 +10,7 @@ rule create_subtype_tree:
             "type": "subtype_tree",
             "filename": {"$filename": "SubtypeTree.csv"},
         }
-    run "python3 {{inputs.script.filename}} {{inputs.model.dataset_id}} {{inputs.oncotree.dataset_id}} {{inputs.molecular_subtypes.dataset_id}} {{inputs.genetic_subtype_whitelist.dataset_name}} {{inputs.genetic_subtype_whitelist.filename}} SubtypeTree.csv"
+    run "python3 {{inputs.script.filename}} {{inputs.model.dataset_id}} {{inputs.oncotree.dataset_id}} {{inputs.molecular_subtypes.dataset_id}} {{inputs.genetic_subtype_whitelist.dataset_id}} SubtypeTree.csv"
 
 
 rule create_context_matrix:
@@ -22,6 +22,6 @@ rule create_context_matrix:
     outputs:
         {
             "type": "context_matrix",
-            "filename": {"$filename": "ContextMatrix.csv"},
+            "filename": {"$filename": "SubtypeMatrix.csv"},
         }
-    run "python3 {{inputs.script.filename}} {{inputs.model.dataset_id}} {{inputs.molecular_subtypes.dataset_id}} {{inputs.subtype_tree.filename}} ContextMatrix.csv"
+    run "python3 {{inputs.script.filename}} {{inputs.model.dataset_id}} {{inputs.molecular_subtypes.dataset_id}} {{inputs.subtype_tree.filename}} SubtypeMatrix.csv"

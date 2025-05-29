@@ -1,5 +1,10 @@
 import { useEffect, useState } from "react";
-import { DataExplorerPlotConfigDimension, DimensionType } from "@depmap/types";
+import {
+  DataExplorerPlotConfigDimension,
+  DimensionType,
+  PartialDataExplorerPlotConfigDimension,
+  SliceQuery,
+} from "@depmap/types";
 import { useDataExplorerApi } from "../contexts/DataExplorerApiContext";
 
 export function getDimensionTypeLabel(dimension_type: string) {
@@ -62,7 +67,7 @@ export const isCompleteExpression = (expr: any) => {
 };
 
 export function isCompleteDimension(
-  dimension: Partial<DataExplorerPlotConfigDimension> | null | undefined
+  dimension: PartialDataExplorerPlotConfigDimension | null | undefined
 ): dimension is DataExplorerPlotConfigDimension {
   if (!dimension) {
     return false;
@@ -115,6 +120,8 @@ export const isSampleType = (
     "screen",
     "Screen metadata",
     "model_condition",
+    "anchor_experiment",
+    "anchor_experiment_v2",
   ].includes(dimensionTypeName);
 };
 
@@ -144,6 +151,32 @@ export function convertDimensionToSliceId(
     urlLibEncode(feature),
     "label",
   ].join("/");
+}
+
+export function convertDimensionToSliceQuery(
+  dimension: Partial<DataExplorerPlotConfigDimension>
+): SliceQuery | null {
+  if (!isCompleteDimension(dimension)) {
+    return null;
+  }
+
+  if (dimension.axis_type !== "raw_slice") {
+    throw new Error("Cannot convert a context to a slice ID!");
+  }
+
+  if (isSampleType(dimension.slice_type)) {
+    throw new Error(
+      "Cannot convert a sample to a slice ID! Only features are supported."
+    );
+  }
+
+  const identifier = (dimension.context.expr as any)["=="][1];
+
+  return {
+    identifier,
+    identifier_type: "feature_id",
+    dataset_id: dimension.dataset_id,
+  };
 }
 
 export const useDimensionType = (dimensionTypeName: string | null) => {
