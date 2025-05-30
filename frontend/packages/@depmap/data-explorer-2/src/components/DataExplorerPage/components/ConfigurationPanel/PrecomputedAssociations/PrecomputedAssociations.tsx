@@ -1,10 +1,12 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useRef, useState } from "react";
 import { Button, Checkbox } from "react-bootstrap";
 import { Spinner } from "@depmap/common-components";
-import renderConditionally from "../../../../../utils/render-conditionally";
 import { PartialDataExplorerPlotConfig } from "@depmap/types";
-import PrecomputedAssociationsTable from "./PrecomputedAssociationsTable";
-import { useAssociationsData } from "./utils";
+import { downloadCsv } from "@depmap/utils";
+import { isCompleteDimension } from "../../../../../utils/misc";
+import usePrecomputedAssocationData from "../../../hooks/usePrecomputedAssocationData";
+import useScrollOnLoad from "./useScrollOnLoad";
+import AssociationsTable from "./AssociationsTable";
 import styles from "../../../styles/PrecomputedAssociations.scss";
 
 interface Props {
@@ -18,81 +20,116 @@ interface Props {
 }
 
 function PrecomputedAssociations({ plot, onSelectY, sectionRef }: Props) {
+  const staticContentRef = useRef<HTMLDivElement>(null);
+  const [hiddenDatasets, setHiddenDatasets] = useState<Set<string>>(new Set());
   const [sortByAbsoluteValue, setSortByAbsoluteValue] = useState(true);
-  const scrollOnLoad = useRef(true);
+  const [sortDirection, setSortDirection] = useState<"desc" | "asc">("desc");
+  const [sortColumn, setSortColumn] = useState<"correlation" | "log10qvalue">(
+    "correlation"
+  );
 
-  const {
-    xDatasetId,
-    xEntityLabel,
-    yDatasetId,
-    yEntityLabel,
-    associations,
-    isLoading,
-  } = useAssociationsData(plot);
+  const data = usePrecomputedAssocationData({
+    dimension: isCompleteDimension(plot.dimensions?.x)
+      ? plot.dimensions!.x
+      : null,
+    hiddenDatasets,
+    sortByAbsoluteValue,
+    sortDirection,
+    sortColumn,
+  });
 
-  useEffect(() => {
-    if (associations && scrollOnLoad.current) {
-      scrollOnLoad.current = false;
+  useScrollOnLoad({ data, sectionRef });
 
-      if (sectionRef.current) {
-        setTimeout(() => {
-          sectionRef.current!.parentElement!.scrollTo({
-            top: sectionRef.current!.offsetTop - 50,
-            behavior: "smooth",
-          });
-        }, 0);
-      }
-    }
-  }, [associations, sectionRef]);
+  if (data.error) {
+    return <div>⚠️ There was an error loading the assocations table.</div>;
+  }
 
-  if (!associations) {
+  if (data.isLoading) {
     return <Spinner className={styles.spinner} left="0px" position="static" />;
+  }
+
+  if (data.associatedDimensions.length === 0) {
+    return (
+      <div>
+        No associations could be found for <b>{data.dimensionLabel}</b> in
+        <b> {data.datasetName}</b>.
+      </div>
+    );
+  }
+
+  const yDatasetId = plot.dimensions!.y?.dataset_id || null;
+  let yDimensionId: string | null = null;
+
+  if (plot.dimensions?.y?.axis_type === "raw_slice") {
+    const expr = plot.dimensions.y.context?.expr;
+
+    if (expr !== null && typeof expr === "object" && "==" in expr) {
+      yDimensionId = (expr["=="]![1] as unknown) as string;
+    }
   }
 
   return (
     <div>
-      <div>
-        Top 100 correlates per dataset for <b>{xEntityLabel}</b> in
-        <b> {associations.datasetLabel}</b>
-        <i>
-          {" "}
-          ({associations.associatedDatasets.length}{" "}
-          {associations.associatedDatasets.length === 1
-            ? "dataset"
-            : "datasets"}
-          )
-        </i>
+      <div ref={staticContentRef}>
+        <p>
+          Top 250 features (or top 25 negative and positive correlations with
+          q-values {"<"} 0.1) for <b>{data.dimensionLabel}</b> in
+          <b> {data.datasetName}</b>.
+        </p>
+        <p>
+          For each dataset, the q-values are computed from p-values using the{" "}
+          <a
+            href="https://www.jstor.org/stable/2346101"
+            rel="noreferrer"
+            target="_blank"
+          >
+            Benjamini-Hochberg algorithm
+          </a>
+          .
+        </p>
+        <div className={styles.buttons}>
+          <Checkbox
+            className={styles.checkbox}
+            checked={sortByAbsoluteValue}
+            onChange={() => setSortByAbsoluteValue((prev) => !prev)}
+          >
+            <span>Sort by absolute value</span>
+          </Checkbox>
+          <Button
+            className={styles.exportButton}
+            bsSize="small"
+            bsStyle="primary"
+            disabled={data.isLoading || data.associatedDimensions.length === 0}
+            onClick={() => {
+              const filename =
+                `${data.dimensionLabel} in ${data.datasetName} ` +
+                "associations.csv";
+              downloadCsv(data.csvFriendlyFormat, "Gene/Compound", filename);
+            }}
+          >
+            Download table{" "}
+            <span
+              className="glyphicon glyphicon-download-alt"
+              aria-hidden="true"
+            />
+          </Button>
+        </div>
       </div>
-      <Button
-        className={styles.exportButton}
-        bsSize="small"
-        bsStyle="primary"
-        disabled={isLoading || associations.data.length === 0}
-        onClick={() => {
-          const sliceId = `slice/${xDatasetId}/${xEntityLabel}/label`;
-          window.location.href = `../interactive/api/associations-csv?x=${sliceId}`;
-        }}
-      >
-        Download table{" "}
-        <span className="glyphicon glyphicon-download-alt" aria-hidden="true" />
-      </Button>
-      <Checkbox
-        className={styles.checkbox}
-        checked={sortByAbsoluteValue}
-        onChange={() => setSortByAbsoluteValue((prev) => !prev)}
-      >
-        <span>Sort by absolute value</span>
-      </Checkbox>
-      <PrecomputedAssociationsTable
-        associations={associations}
-        isLoading={isLoading}
+      <AssociationsTable
+        data={data}
         yDatasetId={yDatasetId}
-        yEntityLabel={yEntityLabel}
-        sortByAbsoluteValue={sortByAbsoluteValue}
+        yDimensionId={yDimensionId}
         onClickRow={onSelectY}
+        staticContentRef={staticContentRef}
+        hiddenDatasets={hiddenDatasets}
+        onChangeHiddenDatasets={setHiddenDatasets}
+        sortDirection={sortDirection}
+        onChangeSortDirection={setSortDirection}
+        sortColumn={sortColumn}
+        onChangeSortColumn={setSortColumn}
       />
     </div>
   );
 }
 
-export default renderConditionally(PrecomputedAssociations);
+export default PrecomputedAssociations;

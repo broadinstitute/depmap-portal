@@ -18,9 +18,10 @@ export {
 
 export {
   DeprecatedDataExplorerApiProvider,
-  DeprecatedDataExplorerApiResponse,
   useDeprecatedDataExplorerApi,
 } from "./src/contexts/DeprecatedDataExplorerApiContext";
+
+export type { DeprecatedDataExplorerApiResponse } from "./src/contexts/DeprecatedDataExplorerApiContext";
 
 export {
   DataExplorerSettingsProvider,
@@ -65,10 +66,8 @@ export {
   logReducerTransform,
 } from "./src/components/DataExplorerPage/debug";
 export { PointsSelector } from "./src/components/DataExplorerPage/components/ConfigurationPanel/selectors";
-export {
-  default as plotConfigReducer,
-  PlotConfigReducerAction,
-} from "./src/components/DataExplorerPage/reducers/plotConfigReducer";
+export { default as plotConfigReducer } from "./src/components/DataExplorerPage/reducers/plotConfigReducer";
+export type { PlotConfigReducerAction } from "./src/components/DataExplorerPage/reducers/plotConfigReducer";
 export {
   DEFAULT_PALETTE,
   LEGEND_ALL,
@@ -83,5 +82,5 @@ export {
   LEGEND_RANGE_8,
   LEGEND_RANGE_9,
   LEGEND_RANGE_10,
-  LegendKey,
 } from "./src/components/DataExplorerPage/components/plot/prototype/plotUtils";
+export type { LegendKey } from "./src/components/DataExplorerPage/components/plot/prototype/plotUtils";

@@ -1,0 +1,153 @@
+@import "mixins";
+
+.tableWrapper {
+  margin: 0 -16px -16px -16px;
+  border-top: 1px solid #ddd;
+  overflow-y: auto;
+  @include scroll-shadow;
+}
+
+.associationsTable {
+  height: 100%;
+  font-size: 12px;
+  border-collapse: separate;
+  border: none;
+  margin: 0;
+
+  &.isLoading {
+    tbody {
+      color: #ccc;
+      pointer-events: none;
+    }
+  }
+
+  tr td,
+  tr th {
+    &:nth-child(1) {
+      overflow: hidden;
+      max-width: 150px;
+    }
+
+    &:nth-child(3) {
+      width: 92px;
+      text-align: right;
+      vertical-align: middle;
+    }
+  }
+
+  thead tr th {
+    background-color: #fff;
+    position: sticky;
+    top: 0;
+    vertical-align: middle;
+
+    &:nth-child(3) {
+      padding: 0;
+    }
+
+    button {
+      all: unset;
+      cursor: pointer;
+
+      padding: 4px;
+      border-radius: 4px;
+      border: 1px solid transparent;
+
+      &:hover {
+        border: 1px solid #adadad;
+        background-color: #e6e6e6;
+      }
+
+      &:focus-visible {
+        outline: 1px auto -webkit-focus-ring-color;
+        outline-offset: 1px;
+      }
+
+      i {
+        margin-left: 4px;
+
+        &:focus-visible {
+          outline: 1px auto -webkit-focus-ring-color;
+          outline-offset: 1px;
+        }
+      }
+    }
+  }
+
+  tbody tr {
+    cursor: pointer;
+
+    &:first-child td {
+      border-top: none;
+    }
+  }
+
+  tbody tr:not(.selectedRow) {
+    &:hover td {
+      color: #337ab7;
+    }
+
+    &:nth-child(odd) {
+      background-color: rgba(170, 170, 170, 0.1);
+    }
+  }
+}
+
+.selectedRow td {
+  background-color: #c6daec;
+}
+
+.associatedDatasets {
+  & > div:first-child {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+
+  button {
+    all: unset;
+    cursor: pointer;
+    color: #337ab7;
+    cursor: pointer;
+
+    &:active {
+      text-decoration: underline;
+    }
+
+    &:hover {
+      color: #23527c;
+    }
+
+    &:focus-visible {
+      outline: 5px auto -webkit-focus-ring-color;
+      outline-offset: 3px;
+    }
+  }
+
+  label {
+    font-weight: normal;
+    cursor: pointer;
+  }
+
+  input {
+    margin-right: 8px;
+  }
+}
+
+.exportButton {
+  margin: 8px 0 0 0;
+}
+
+.checkbox {
+  margin-top: 9px;
+}
+
+.spinner {
+  margin: 30px auto;
+}
+
+.noData {
+  border-top: 1px solid #ddd;
+  padding-top: 15px;
+  text-align: center;
+}

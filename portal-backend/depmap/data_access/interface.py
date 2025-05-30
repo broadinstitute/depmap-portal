@@ -390,13 +390,6 @@ def get_metadata_dataset_id(dimension_type_name: str) -> Union[str, None]:
 # METHODS BELOW NEED UPDATED CONTRACTS TO BE SUPPORTABLE BY BREADBOX #
 ######################################################################
 
-# used heavily by data explorer 2 to distinguish private datasets when caching
-def get_private_datasets() -> dict[str, Config]:
-    """
-    Get configuration information for all private datasets.
-    """
-    return interactive_utils.get_private_datasets()
-
 
 def get_subsetted_df(
     dataset_id: str, row_indices: Optional[list[int]], col_indices: Optional[list[int]]

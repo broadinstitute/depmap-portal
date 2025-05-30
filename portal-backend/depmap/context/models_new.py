@@ -11,6 +11,7 @@ from depmap.database import (
 )
 
 import enum
+import pandas as pd
 from typing import Type
 from sqlalchemy import and_, or_
 from depmap.entity.models import Entity
@@ -399,6 +400,31 @@ class SubtypeContext(Model):
             for cell_line in context.depmap_model
         ]
         return list(set(cell_lines))
+
+    @staticmethod
+    def get_model_context_tree_levels(tree_type, model_id: str):
+        model_context_nodes = (
+            db.session.query(SubtypeContext)
+            .join(SubtypeNode, SubtypeNode.subtype_code == SubtypeContext.subtype_code)
+            .filter(SubtypeNode.tree_type == tree_type)
+            .join(DepmapModel, SubtypeContext.depmap_model)
+            .filter(DepmapModel.model_id == model_id)
+            .with_entities(
+                SubtypeNode.subtype_code,
+                SubtypeNode.level_0,
+                SubtypeNode.level_1,
+                SubtypeNode.level_2,
+                SubtypeNode.level_3,
+                SubtypeNode.level_4,
+                SubtypeNode.level_5,
+                SubtypeNode.node_level,
+                SubtypeNode.node_name,
+            )
+        )
+
+        df = pd.DataFrame(model_context_nodes)
+
+        return df
 
 
 class SubtypeContextEntity(Entity):

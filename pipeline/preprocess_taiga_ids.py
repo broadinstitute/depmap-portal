@@ -56,6 +56,7 @@ def _rewrite_stream(vars, in_name, in_lines, out_fd):
                 tc.get_canonical_id(taiga_id)
             except:
                 print(f"failed to get data from canonical taiga id for {taiga_id}")
+                raise
             line = line_prefix + '"' + tc.get_canonical_id(taiga_id) + '"' + line_suffix
 
         fd.write(line)

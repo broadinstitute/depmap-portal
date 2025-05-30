@@ -35,6 +35,9 @@ def insert_cell_lines(df):
     """
     Is a separate method so this is testable
     """
+    # in 25Q2 duplicate ccle names appeared. Ignore dups if they arrise until we can remove this
+    # from the source data
+    seen_ccle_names = set()
 
     for index, row in df.iterrows():
         model_id = row["ModelID"]
@@ -51,6 +54,16 @@ def insert_cell_lines(df):
         public_comments = _coerce_na(row["PublicComments"])
         age_category = _coerce_na(row["AgeCategory"])
         ccle_name = _coerce_na(row["CCLEName"])
+        if ccle_name in seen_ccle_names:
+            ccle_name = None
+            log_data_issue(
+                "DepMapModel",
+                "Duplicate ccle_name. Nulling out ccle_name",
+                identifier=ccle_name,
+                id_type="ccle_name",
+            )
+        else:
+            seen_ccle_names.add(ccle_name)
         patient_id = _coerce_na(row["PatientID"])
 
         json_encoded_metadata = json.dumps({k: _coerce_na(v) for k, v in row.items()})
