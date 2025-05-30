@@ -1,5 +1,5 @@
 from copy import copy
-from typing import Optional
+from typing import Optional, Any
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.engine import Engine
@@ -63,7 +63,7 @@ class SessionWithUser(Session):
         # caching should be turned off but just in case, clear the cache
         self.read_group_ids = None
 
-    def query(self, *entities, **kwargs) -> Query:
+    def query(self, *entities: Any, **kwargs: Any) -> Query:
         return (
             super()
             .query(*entities, **kwargs)
