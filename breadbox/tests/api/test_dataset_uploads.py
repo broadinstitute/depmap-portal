@@ -1200,7 +1200,7 @@ def test_end_to_end_with_mismatched_metadata(
     # now create a matrix indexed by those types, but has some IDs mismatch the dim type
     matrix_df = pd.DataFrame(
         {"FID-3": [1, 2, 3], "FID-1": [4, 5, 6], "FID-X": [7, 8, 9]},
-        index=pd.Index(["SID-3", "SID-X", "SID-1"]),
+        index=["SID-3", "SID-X", "SID-1"],
     )
     file = io.BytesIO(matrix_df.to_csv().encode("utf8"))
 
