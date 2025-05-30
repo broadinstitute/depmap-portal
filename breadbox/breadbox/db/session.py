@@ -1,9 +1,7 @@
-from copy import copy
-from typing import Optional, Any
+from typing import Optional
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.engine import Engine
-from sqlalchemy.sql._typing import _ColumnsClauseArgument
 from sqlalchemy.orm.query import Query
 from sqlalchemy import event
 import sqlite3
@@ -64,12 +62,13 @@ class SessionWithUser(Session):
         # caching should be turned off but just in case, clear the cache
         self.read_group_ids = None
 
-    def query(
-        self, *entities: _ColumnsClauseArgument[Any], **kwargs: Any
-    ) -> Query[Any]:
+    def query(self, entity, **kwargs) -> Query:  # type: ignore[override]
+        # NOTE: query() has been deprecated in favor of select() in SQLAlchemy 2.0
+        # However, since the Query API usually represents the vast majority of database access code within an application, the majority of the Query API is not being removed from SQLAlchemy.
+        # The Query object behind the scenes now translates itself into a 2.0 style select() object when the Query object is executed, so it now is just a very thin adapter API.
         return (
             super()
-            .query(*entities, **kwargs)
+            .query(entity, **kwargs)
             .execution_options(filter_group_ids=self.get_read_group_ids())
         )
 
