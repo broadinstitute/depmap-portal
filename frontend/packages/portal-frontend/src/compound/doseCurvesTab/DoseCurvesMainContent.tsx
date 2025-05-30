@@ -8,12 +8,16 @@ import React, {
 } from "react";
 import { getBreadboxApi, getDapi } from "src/common/utilities/context";
 import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
-import { CurveParams, CurvePlotPoints } from "../components/DoseResponseCurve";
+import {
+  CurveParams,
+  CurvePlotPoints,
+  DoseCurveData,
+} from "../components/DoseResponseCurve";
 import { CompoundDataset } from "../components/DoseResponseTab";
 import DoseCurvesPlotSection from "./DoseCurvesPlotSection";
 import useDoseCurvesData from "./hooks/useDoseCurvesData";
 import CompoundPlotSelections from "./CompoundPlotSelections";
-import { DoseTableRow } from "./types";
+import { CompoundDoseCurveData, DoseTableRow } from "./types";
 import { DataExplorerContext } from "@depmap/types";
 import { defaultContextName } from "@depmap/data-explorer-2/src/components/DataExplorerPage/utils";
 import { saveNewContext } from "src";
@@ -193,6 +197,20 @@ function DoseCurvesMainContent({
     saveNewContext(context as DataExplorerContext);
   };
 
+  const visibleCurveData = useMemo(() => {
+    if (!showUnselectedLines && doseCurveData) {
+      const visibleCurveParams = doseCurveData?.curve_params.filter(
+        (c: CurveParams) => selectedCurves.has(c.id!)
+      );
+
+      return {
+        ...doseCurveData,
+        curve_params: visibleCurveParams,
+      } as CompoundDoseCurveData;
+    }
+    return doseCurveData;
+  }, [doseCurveData, showUnselectedLines]);
+
   return (
     <div style={{ marginLeft: "10px", marginRight: "10px" }}>
       <div style={{ marginTop: "20px", marginBottom: "20px" }}>
@@ -214,7 +232,7 @@ function DoseCurvesMainContent({
         <div style={{ gridArea: "plot" }}>
           <DoseCurvesPlotSection
             plotElement={plotElement}
-            curvesData={doseCurveData}
+            curvesData={visibleCurveData}
             doseRepPoints={showReplicates ? doseRepPoints : null}
             doseUnits={doseUnits}
             selectedCurves={selectedCurves}
