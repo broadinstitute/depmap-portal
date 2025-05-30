@@ -574,18 +574,18 @@ def _get_indexes_by_given_id(
 
     results = (
         db.query(axis)
-        .filter(
-            and_(
-                axis.dataset_id == dataset.id,
-                axis.given_id.in_(given_ids),  # pyright: ignore
-            )
-        )
+        .filter(and_(axis.dataset_id == dataset.id, axis.given_id.in_(given_ids),))
         .with_entities(axis.given_id, axis.index)
         .order_by(axis.index)
         .all()
     )
 
-    given_id_to_index = dict(results)
+    # Convert SQLAlchemy Row objects to a dict, filtering out None indices
+    given_id_to_index = {}
+    for row in results:
+        given_id, index = row
+        if index is not None:  # Only include non-None indices
+            given_id_to_index[given_id] = index
 
     return (
         list(given_id_to_index.values()),
