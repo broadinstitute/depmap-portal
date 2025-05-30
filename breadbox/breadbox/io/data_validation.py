@@ -178,8 +178,7 @@ def _validate_data_value_type(
         ] + [
             None
         ]  # Data values can include missing values
-        boolean_column_results = lower_df.isin(lower_allowed_values).all()
-        if not boolean_column_results.all():
+        if not lower_df.isin(lower_allowed_values).all().all():
             raise FileValidationError(
                 f"Value must be in list of allowed values: {allowed_values}"
             )

@@ -5,7 +5,7 @@ from uuid import UUID, uuid4
 import warnings
 
 import pandas as pd
-from sqlalchemy import and_, func, or_
+from sqlalchemy import and_, func, or_, select
 from sqlalchemy.sql import distinct
 from sqlalchemy.sql.elements import ColumnElement
 from sqlalchemy.orm import aliased, with_polymorphic
@@ -864,10 +864,8 @@ def get_metadata_used_in_matrix_dataset(
     # Using a subquery makes this MUCH faster than two separate queries would be
     # because it reduces the number of rows that need to be fetched and constructed
     # into python objects (which is usually by far the slowest part of SQLAlchemy queries).
-    given_id_subquery = (
-        db.query(dimension_subtype_cls.given_id)
-        .filter(dimension_subtype_cls.dataset_id == matrix_dataset_id)
-        .subquery()
+    given_id_subquery = select(dimension_subtype_cls.given_id).where(
+        dimension_subtype_cls.dataset_id == matrix_dataset_id
     )
     metadata_vals_by_id = (
         db.query(TabularColumn)
