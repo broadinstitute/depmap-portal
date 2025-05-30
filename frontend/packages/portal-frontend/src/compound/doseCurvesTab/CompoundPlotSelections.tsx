@@ -23,12 +23,8 @@ function CompoundPlotSelections({
   onClickSetSelectionFromContext = undefined,
 }: CompoundPlotSelectionsProps) {
   const listRef = useRef<HTMLDivElement | null>(null);
-  const { sectionHeights } = useContext(SectionStackContext);
 
-  const maxHeightOfList =
-    selectedLabels && selectedLabels.size > 0
-      ? sectionHeights[1] - SECTION_HEIGHT_WITHOUT_LIST
-      : Infinity;
+  const maxHeightOfList = Infinity;
 
   return (
     <div style={{ border: "1px solid #b8b8b8" }}>
@@ -50,7 +46,7 @@ function CompoundPlotSelections({
         <div className={styles.plotInstructions}>
           <div>
             Select points to populate list
-            <HelpTip id="select-points-help" />
+            {/* <HelpTip id="select-points-help" /> */}
           </div>
           {onClickClearSelection && selectedLabels && selectedLabels.size > 0 && (
             <div>

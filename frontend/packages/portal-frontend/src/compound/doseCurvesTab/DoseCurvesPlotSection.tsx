@@ -44,7 +44,6 @@ function DoseCurvesPlotSection({
   return (
     <div
       style={{
-        marginTop: "30px",
         marginLeft: "20",
         marginRight: "20px",
         display: "flex",

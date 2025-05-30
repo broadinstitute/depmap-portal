@@ -166,7 +166,7 @@ function DoseCurvesMainContent({
 
   const displayNameModelIdMap = new Map<string, string>();
   doseCurveData?.curve_params.forEach((curveParams: CurveParams) => {
-    displayNameModelIdMap.set(curveParams.displayName!, curveParams.id!);
+    displayNameModelIdMap.set(curveParams.id!, curveParams.displayName!);
   });
 
   const selectedLabels = useMemo(() => {
@@ -195,7 +195,7 @@ function DoseCurvesMainContent({
 
   return (
     <div style={{ marginLeft: "10px", marginRight: "10px" }}>
-      <div style={{ marginTop: "40px" }}>
+      <div style={{ marginTop: "20px", marginBottom: "20px" }}>
         <h3>Dose Curve</h3>
         <p style={{ maxWidth: "780px" }}>
           Each cell line is represented as a line, with doses on the x axis and
