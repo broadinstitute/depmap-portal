@@ -525,6 +525,11 @@ def process_data(inputs, extra=True):
     warnings.warn("loading depmap")
     print("loading DepMap data...")
     depmap_data = tc.get(inputs["depmap_expr"]["dataset_id"])
+    # starting in 25Q2, some additional columns got added which will need to be dropped before proceeding.
+    # the following should reformat the matrix to be the format we used to get from taiga prior to 25Q2
+    depmap_data.index = depmap_data["ProfileID"]
+    depmap_data.drop(columns=["ProfileID", "is_default_entry", "ModelID"], inplace=True)
+
     warnings.warn("loading anns")
     depmap_ann = tc.get(inputs["depmap_ann"]["source_dataset_id"])
     warnings.warn("loading prof map")
