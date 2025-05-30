@@ -3,6 +3,7 @@ from typing import Optional, Any
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.engine import Engine
+from sqlalchemy.sql._typing import _ColumnsClauseArgument
 from sqlalchemy.orm.query import Query
 from sqlalchemy import event
 import sqlite3
@@ -63,7 +64,9 @@ class SessionWithUser(Session):
         # caching should be turned off but just in case, clear the cache
         self.read_group_ids = None
 
-    def query(self, *entities: Any, **kwargs: Any) -> Query:
+    def query(
+        self, *entities: _ColumnsClauseArgument[Any], **kwargs: Any
+    ) -> Query[Any]:
         return (
             super()
             .query(*entities, **kwargs)
