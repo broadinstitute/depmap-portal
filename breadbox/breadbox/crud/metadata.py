@@ -2,7 +2,7 @@ from typing import Any, Dict, List
 import json
 
 import pandas as pd
-from sqlalchemy import and_, or_
+from sqlalchemy import and_, or_, false, ColumnElement
 
 from breadbox.db.session import SessionWithUser
 from breadbox.crud.group import get_groups_with_visible_contents
@@ -16,15 +16,17 @@ from breadbox.models.dataset import (
 from breadbox.schemas.metadata import MetadataResponse, FormattedMetadata
 
 
-def _get_dataset_filter_clauses(db: SessionWithUser, user: str):
+def _get_dataset_filter_clauses(
+    db: SessionWithUser, user: str
+) -> List[ColumnElement[bool]]:
 
     # Get groups for which the user has read-access
     groups = get_groups_with_visible_contents(db, user)
     group_ids = [group.id for group in groups]
 
-    filter_clauses = [Dataset.group_id.in_(group_ids)]  # pyright: ignore
+    filter_clauses: List[ColumnElement[bool]] = [Dataset.group_id.in_(group_ids)]
     # Don't return transient datasets
-    filter_clauses.append(Dataset.is_transient == False)
+    filter_clauses.append(Dataset.is_transient == false())
 
     return filter_clauses
 
@@ -120,7 +122,7 @@ def format_feature_or_sample_metadata(metadata_df: pd.DataFrame, label_or_id: st
 def get_metadata_search_options(db: SessionWithUser, user: str, text: str):
     # Make sure the user's group has read access
     dataset_filter_clauses = _get_dataset_filter_clauses(db, user)
-    dimension_query_filters = dataset_filter_clauses
+    dimension_query_filters: List[ColumnElement[bool]] = dataset_filter_clauses
 
     dimension_query_filters.append(Dimension.given_id.startswith(text))
     dimension_query_filters.append(
