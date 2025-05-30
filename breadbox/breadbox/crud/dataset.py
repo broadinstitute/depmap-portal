@@ -421,7 +421,7 @@ def get_dataset_dimension_search_index_entries(
                 id=dimension_given_id,
                 referenced_by=referenced_by,
                 matching_properties=[
-                    {"property": row["property"], "value": row["value"],}
+                    {"property": str(row["property"]), "value": str(row["value"]),}
                     for _, row in group.iterrows()
                     if row["value"] is not None
                 ],
