@@ -128,6 +128,7 @@ function DoseCurvesMainContent({
           dataset.dose_replicate_dataset,
           Array.from(selectedCurves)
         );
+        console.log("fetching replicates");
 
         latestPromise.current = promise;
         promise
@@ -150,7 +151,7 @@ function DoseCurvesMainContent({
           });
       }
     })();
-  }, [selectedCurves, setDoseRepPoints, dapi]);
+  }, [selectedCurves, setDoseRepPoints, showReplicates, dapi]);
 
   return (
     <div style={{ marginLeft: "10px", marginRight: "10px" }}>
@@ -165,7 +166,7 @@ function DoseCurvesMainContent({
       <DoseCurvesPlotSection
         plotElement={plotElement}
         curvesData={doseCurveData}
-        doseRepPoints={doseRepPoints}
+        doseRepPoints={showReplicates ? doseRepPoints : null}
         doseUnits={doseUnits}
         selectedCurves={selectedCurves}
         handleClickCurve={handleClickCurve}
