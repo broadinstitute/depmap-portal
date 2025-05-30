@@ -2,6 +2,8 @@ import React, { useEffect, useCallback, useState } from "react";
 import { CompoundDataset } from "../components/DoseResponseTab";
 import DoseCurvesMainContent from "./DoseCurvesMainContent";
 import FiltersPanel from "./FiltersPanel";
+import "react-bootstrap-typeahead/css/Typeahead.css";
+import "src/common/styles/typeahead_fix.scss";
 
 interface DoseCurvesTabProps {
   datasetOptions: CompoundDataset[];

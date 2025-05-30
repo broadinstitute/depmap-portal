@@ -1,6 +1,6 @@
 import WideTable from "@depmap/wide-table";
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { getDapi } from "src/common/utilities/context";
+import { getBreadboxApi, getDapi } from "src/common/utilities/context";
 import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
 import { CurvePlotPoints } from "../components/DoseResponseCurve";
 import { CompoundDataset } from "../components/DoseResponseTab";
@@ -41,6 +41,7 @@ function DoseCurvesMainContent({
   showUnselectedLines,
 }: DoseCurvesMainContentProps) {
   const dapi = getDapi();
+  const bbapi = getBreadboxApi();
 
   const { error, isLoading, doseCurveData, doseTable } = useDoseCurvesData(
     dataset
