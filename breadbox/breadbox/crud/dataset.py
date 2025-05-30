@@ -794,7 +794,12 @@ def get_subset_of_tabular_data_as_df(
     if pivot_df.empty:
         return pivot_df
 
-    return pivot_df["value"]
+    result = pivot_df["value"]
+    assert isinstance(
+        result, pd.DataFrame
+    ), "Expected pd.DataFrame type from pivot operation"
+
+    return result
 
 
 def get_unique_dimension_ids_from_datasets(
