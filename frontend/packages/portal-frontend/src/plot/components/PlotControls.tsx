@@ -41,6 +41,7 @@ interface Props {
   enabledTools?: PlotToolOptions[];
   onMakeContext?: () => void;
   onDeselectPoints?: () => void;
+  altContainerStyle?: any;
 }
 
 const toIcon = (dragmode: Dragmode) =>
@@ -98,6 +99,7 @@ function PlotControls({
   enabledTools = undefined,
   onMakeContext = () => {},
   onDeselectPoints = () => {},
+  altContainerStyle = undefined,
 }: Props) {
   const [dragmode, setDragmode] = useState<Dragmode>("zoom");
 
@@ -135,7 +137,7 @@ function PlotControls({
 
   return (
     <div className={styles.PlotControls}>
-      <div className={styles.container}>
+      <div style={altContainerStyle} className={styles.container}>
         <div className={styles.buttonGroup}>
           {zoomEnabled && (
             <DragmodeButton

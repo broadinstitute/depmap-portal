@@ -28,6 +28,7 @@ interface Props {
   selectedModelIds?: Set<string>;
   doseUnits?: string;
   includeMedianQuantileRegions?: boolean;
+  useDefaultTitle?: boolean;
 }
 
 const samplePoints = (
@@ -426,6 +427,7 @@ function DoseCurvesPlot({
   selectedCurves = undefined,
   includeMedianQuantileRegions = true,
   datasetUnits = undefined,
+  useDefaultTitle = true,
 }: Props) {
   const plotTraces = useMemo(() => {
     if (inGroupCurveParams && minDose && maxDose) {
@@ -447,46 +449,22 @@ function DoseCurvesPlot({
     includeMedianQuantileRegions,
   ]);
 
-  // const selectedModelIdsRef = useRef(
-  //   doseRepPoints ? Object.keys(doseRepPoints) : null
-  // );
-  // const [selectedModelIds, setSelectedModelIds] = useState<string[]>([]);
-  // const [newTraces, setNewTraces] = useState<any>();
-  // useEffect(() => {
-  //   let traces: CurveTrace[] = [];
-
-  //   if (doseRepPoints) {
-  //     const selectedModels = Object.keys(doseRepPoints);
-  //     setSelectedModelIds((modelIds) => {
-  //       selectedModelIdsRef.current = modelIds; // update the prev value
-  //       return selectedModels;
-  //     });
-
-  //     if (selectedModelIds !== selectedModelIdsRef.current) {
-  //       const ptTraces = selectedModels.flatMap((modelId) =>
-  //         buildReplicateTraces(inGroupCurveParams, doseRepPoints[modelId])
-  //       );
-  //       traces.push(...ptTraces);
-  //     }
-  //   }
-
-  //   setNewTraces(traces);
-  // }, [setNewTraces, doseRepPoints]);
-
   return (
     <div>
-      <div
-        style={{
-          color: "#333333",
-          fontFamily: "Lato",
-          fontWeight: "bold",
-          fontSize: "18px",
-          paddingLeft: "30px",
-          paddingTop: "15px",
-        }}
-      >
-        Dose Response Curves
-      </div>
+      {useDefaultTitle && (
+        <div
+          style={{
+            color: "#333333",
+            fontFamily: "Lato",
+            fontWeight: "bold",
+            fontSize: "18px",
+            paddingLeft: "30px",
+            paddingTop: "15px",
+          }}
+        >
+          Dose Response Curves
+        </div>
+      )}
       <CurvesChart
         title={""}
         yAxisTitle={"Viability"}

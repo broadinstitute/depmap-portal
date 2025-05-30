@@ -42,8 +42,19 @@ function DoseCurvesPlotSection({
   );
 
   return (
-    <div>
-      <div>
+    <div
+      style={{
+        marginTop: "30px",
+        marginLeft: "20",
+        marginRight: "20px",
+        display: "flex",
+        flexDirection: "column",
+        flexGrow: 1,
+        overflow: "visible",
+        border: "1px solid #b8b8b8",
+      }}
+    >
+      <div style={{ marginBottom: "20px" }}>
         {plotElement && (
           <PlotControls
             plot={plotElement}
@@ -72,11 +83,13 @@ function DoseCurvesPlotSection({
             onDownload={() => {
               /* do nothing */
             }}
+            altContainerStyle={{
+              backgroundColor: "#7B8CB2",
+            }}
           />
         )}
       </div>
-
-      <div>
+      <div style={{ marginTop: "20px" }}>
         {!curvesData && <PlotSpinner />}
         {curvesData && (
           <DoseCurvesPlot
@@ -90,6 +103,7 @@ function DoseCurvesPlotSection({
             includeMedianQuantileRegions={false}
             handleClickCurve={handleClickCurve}
             selectedCurves={selectedCurves}
+            useDefaultTitle={false}
           />
         )}
       </div>

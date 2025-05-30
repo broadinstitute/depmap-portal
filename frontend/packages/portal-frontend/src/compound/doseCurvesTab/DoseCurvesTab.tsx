@@ -18,6 +18,8 @@ function DoseCurvesTab({ datasetOptions, doseUnits }: DoseCurvesTabProps) {
     label: string;
   } | null>(null);
   // const [error, setError] = useState(false);
+  const [showReplicates, setShowReplicates] = useState<boolean>(true);
+  const [showUnselectedLines, setShowUnselectedLines] = useState<boolean>(true);
 
   useEffect(() => {
     if (datasetOptions) {
@@ -42,12 +44,20 @@ function DoseCurvesTab({ datasetOptions, doseUnits }: DoseCurvesTabProps) {
     <div
       style={{
         display: "grid",
-        gridTemplateColumns: "1fr 4fr",
-        gridTemplateAreas: "'filters main main main main'",
+        gridTemplateColumns: "1fr 7fr",
+        gridTemplateAreas: "'filters main main main main main main main'",
         gap: "2rem",
       }}
     >
-      <div style={{ gridArea: "filters" }}>
+      <div
+        style={{
+          gridArea: "filters",
+          backgroundColor: "rgba(123, 140, 178, 0.1)",
+          paddingLeft: "12px",
+          paddingRight: "12px",
+          paddingTop: "15px",
+        }}
+      >
         <FiltersPanel
           handleSelectDataset={handleSelectDataset}
           datasetOptions={datasetOptions}
@@ -57,12 +67,22 @@ function DoseCurvesTab({ datasetOptions, doseUnits }: DoseCurvesTabProps) {
               label: datasetOptions[0].auc_dataset_display_name,
             }
           }
+          showReplicates={showReplicates}
+          showUnselectedLines={showUnselectedLines}
+          handleToggleShowReplicates={(nextValue: boolean) =>
+            setShowReplicates(nextValue)
+          }
+          handleToggleShowUnselectedLines={(nextValue: boolean) =>
+            setShowUnselectedLines(nextValue)
+          }
         />
       </div>
       <div style={{ gridArea: "main" }}>
         <DoseCurvesMainContent
           dataset={selectedDataset}
           doseUnits={doseUnits}
+          showReplicates={showReplicates}
+          showUnselectedLines={showUnselectedLines}
         />
       </div>
     </div>

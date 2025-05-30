@@ -11,6 +11,8 @@ import { CurveTrace, DoseTableRow } from "./types";
 interface DoseCurvesMainContentProps {
   dataset: CompoundDataset | null;
   doseUnits: string;
+  showReplicates: boolean;
+  showUnselectedLines: boolean;
 }
 
 const sortBySelectedModel = (
@@ -35,9 +37,10 @@ const sortBySelectedModel = (
 function DoseCurvesMainContent({
   dataset,
   doseUnits,
+  showReplicates,
+  showUnselectedLines,
 }: DoseCurvesMainContentProps) {
   const dapi = getDapi();
-  const [showReplicates, setShowReplicates] = useState<boolean>(true);
 
   const { error, isLoading, doseCurveData, doseTable } = useDoseCurvesData(
     dataset
@@ -149,10 +152,16 @@ function DoseCurvesMainContent({
     })();
   }, [selectedCurves, setDoseRepPoints, dapi]);
 
-  console.log(doseRepPoints);
-
   return (
-    <div>
+    <div style={{ marginLeft: "10px", marginRight: "10px" }}>
+      <div style={{ marginTop: "40px" }}>
+        <h3>Dose Curve</h3>
+        <p style={{ maxWidth: "780px" }}>
+          Each cell line is represented as a line, with doses on the x axis and
+          viability on the y axis. Hover over plot points for tooltip
+          information. Click on items to select from the plot or table.
+        </p>
+      </div>
       <DoseCurvesPlotSection
         plotElement={plotElement}
         curvesData={doseCurveData}
@@ -164,6 +173,20 @@ function DoseCurvesMainContent({
           setPlotElement(element);
         }}
       />
+      <hr
+        style={{
+          borderTop: "1px solid #b8b8b8",
+          marginTop: "30px",
+        }}
+      />
+      <div style={{ marginTop: "20px", marginBottom: "20px" }}>
+        <h3>Cell Lines</h3>
+        <p style={{ maxWidth: "780px" }}>
+          Lines selected in the plot will appear checked in this table. Click on
+          the cell line name for more information or uncheck the box to deselect
+          from the plot.
+        </p>
+      </div>
       {doseTable && (
         <WideTable
           idProp="modelId"
