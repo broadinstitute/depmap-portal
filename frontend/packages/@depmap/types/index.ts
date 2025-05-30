@@ -29,6 +29,7 @@ export type {
   DatasetUpdateArgs,
   TabularDataset,
   MatrixDataset,
+  TabularDatasetDataArgs,
 } from "./src/Dataset";
 
 export type {

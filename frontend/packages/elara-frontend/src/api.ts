@@ -29,6 +29,7 @@ import {
   SearchDimenionsRequest,
   SearchDimenionsResponse,
   SliceQuery,
+  TabularDatasetDataArgs,
   UploadFileResponse,
 } from "@depmap/types";
 import { Trace } from "src/trace";
@@ -689,8 +690,20 @@ export class ElaraApi {
     }>("/temp/associations/query-slice", "POST", sliceQuery);
   }
 
+  getTabularDatasetData(
+    datasetId: string,
+    args: TabularDatasetDataArgs
+  ): Promise<{ [key: string]: { [key: string]: any } }> {
+    const url = `/datasets/tabular/${datasetId}`;
+    return this._fetchWithJsonBody(url, "POST", args);
+  }
+
   getDimensionTypes(): Promise<DimensionType[]> {
     return this._fetch<DimensionType[]>("/types/dimensions");
+  }
+
+  getDimensionType(name: string): Promise<DimensionType> {
+    return this._fetch<DimensionType>(`/types/dimensions/${name}`);
   }
 
   postDimensionType(dimTypeArgs: DimensionTypeAddArgs): Promise<DimensionType> {
