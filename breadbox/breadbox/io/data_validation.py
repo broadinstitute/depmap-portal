@@ -180,7 +180,7 @@ def _validate_data_value_type(
         ]  # Data values can include missing values
         if not bool(
             lower_df.isin(lower_allowed_values).all(axis=None)
-        ):  # Flatted and check all values
+        ):  # Flattened and checked all values
             raise FileValidationError(
                 f"Value must be in list of allowed values: {allowed_values}"
             )
