@@ -564,7 +564,7 @@ def _get_indexes_by_given_id(
     db: SessionWithUser,
     user: str,
     dataset: Dataset,
-    axis: Union[DatasetFeature, DatasetSample],
+    axis: Type[Union[DatasetFeature, DatasetSample]],
     given_ids: List[str],
 ) -> Tuple[List[int], List[str]]:
     assert_user_has_access_to_dataset(dataset, user)
