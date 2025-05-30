@@ -1,12 +1,22 @@
 import WideTable from "@depmap/wide-table";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { getBreadboxApi, getDapi } from "src/common/utilities/context";
 import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
-import { CurvePlotPoints } from "../components/DoseResponseCurve";
+import { CurveParams, CurvePlotPoints } from "../components/DoseResponseCurve";
 import { CompoundDataset } from "../components/DoseResponseTab";
 import DoseCurvesPlotSection from "./DoseCurvesPlotSection";
 import useDoseCurvesData from "./hooks/useDoseCurvesData";
-import { CurveTrace, DoseTableRow } from "./types";
+import CompoundPlotSelections from "./CompoundPlotSelections";
+import { DoseTableRow } from "./types";
+import { DataExplorerContext } from "@depmap/types";
+import { defaultContextName } from "@depmap/data-explorer-2/src/components/DataExplorerPage/utils";
+import { saveNewContext } from "src";
 
 interface DoseCurvesMainContentProps {
   dataset: CompoundDataset | null;
@@ -154,6 +164,35 @@ function DoseCurvesMainContent({
     })();
   }, [selectedCurves, setDoseRepPoints, showReplicates, dapi]);
 
+  const displayNameModelIdMap = new Map<string, string>();
+  doseCurveData?.curve_params.forEach((curveParams: CurveParams) => {
+    displayNameModelIdMap.set(curveParams.displayName!, curveParams.id!);
+  });
+
+  const selectedLabels = useMemo(() => {
+    const displayNames: string[] = [];
+    [...selectedCurves].forEach((modelId: string) => {
+      const displayName = displayNameModelIdMap.get(modelId);
+      if (displayName) {
+        displayNames.push(displayName);
+      }
+    });
+
+    return displayNames;
+  }, [selectedCurves]);
+
+  const handleClickSaveSelectionAsContext = () => {
+    const labels = [...selectedCurves];
+
+    const context = {
+      name: defaultContextName(selectedCurves.size),
+      context_type: "depmap_model",
+      expr: { in: [{ var: "entity_label" }, labels] },
+    };
+
+    saveNewContext(context as DataExplorerContext);
+  };
+
   return (
     <div style={{ marginLeft: "10px", marginRight: "10px" }}>
       <div style={{ marginTop: "40px" }}>
@@ -164,17 +203,40 @@ function DoseCurvesMainContent({
           information. Click on items to select from the plot or table.
         </p>
       </div>
-      <DoseCurvesPlotSection
-        plotElement={plotElement}
-        curvesData={doseCurveData}
-        doseRepPoints={showReplicates ? doseRepPoints : null}
-        doseUnits={doseUnits}
-        selectedCurves={selectedCurves}
-        handleClickCurve={handleClickCurve}
-        handleSetPlotElement={(element: ExtendedPlotType | null) => {
-          setPlotElement(element);
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "2fr 1fr",
+          gridTemplateAreas: "'plot plot selections'",
+          gap: "1rem",
         }}
-      />
+      >
+        <div style={{ gridArea: "plot" }}>
+          <DoseCurvesPlotSection
+            plotElement={plotElement}
+            curvesData={doseCurveData}
+            doseRepPoints={showReplicates ? doseRepPoints : null}
+            doseUnits={doseUnits}
+            selectedCurves={selectedCurves}
+            handleClickCurve={handleClickCurve}
+            handleSetPlotElement={(element: ExtendedPlotType | null) => {
+              setPlotElement(element);
+            }}
+          />
+        </div>
+        <div style={{ gridArea: "selections" }}>
+          <CompoundPlotSelections
+            selectedIds={selectedCurves}
+            selectedLabels={new Set(selectedLabels)}
+            onClickSaveSelectionAsContext={handleClickSaveSelectionAsContext}
+            onClickClearSelection={() => {
+              setSelectedCurves(new Set([]));
+              setSelectedTableRows(new Set([]));
+            }}
+            onClickSetSelectionFromContext={() => {}}
+          />
+        </div>
+      </div>
       <hr
         style={{
           borderTop: "1px solid #b8b8b8",
