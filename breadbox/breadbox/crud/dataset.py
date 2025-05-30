@@ -584,7 +584,7 @@ def _get_indexes_by_given_id(
     given_id_to_index = {}
     for row in results:
         given_id, index = row
-        if index is not None:  # Only include non-None indices
+        if index is not None:
             given_id_to_index[given_id] = index
 
     return (
