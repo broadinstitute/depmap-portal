@@ -63,10 +63,10 @@ class SessionWithUser(Session):
         # caching should be turned off but just in case, clear the cache
         self.read_group_ids = None
 
-    def query(self, entity, **kwargs) -> Query:
+    def query(self, *entities, **kwargs) -> Query:
         return (
             super()
-            .query(entity, **kwargs)
+            .query(*entities, **kwargs)
             .execution_options(filter_group_ids=self.get_read_group_ids())
         )
 
