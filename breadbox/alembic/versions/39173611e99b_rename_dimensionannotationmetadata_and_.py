@@ -7,6 +7,7 @@ Create Date: 2024-03-07 15:31:27.635330
 """
 from alembic import op
 import sqlalchemy as sa
+from sqlalchemy import text
 
 
 # revision identifiers, used by Alembic.
@@ -22,7 +23,9 @@ def upgrade():
         batch_op.drop_constraint("ck_index_with_dim_subtype", type_="check")
         batch_op.drop_constraint("ck_annotation_type_with_dim_subtype", type_="check")
     conn.execute(
-        "update dimension set subtype='tabular_column' where subtype = 'dimension_annotation_metadata'"
+        text(
+            "update dimension set subtype='tabular_column' where subtype = 'dimension_annotation_metadata'"
+        )
     )
     with op.batch_alter_table("dimension", schema=None) as batch_op:
         batch_op.create_check_constraint(
@@ -64,7 +67,9 @@ def upgrade():
         batch_op.drop_index("idx_dimension_annotation_id_dimension_given_id")
 
     conn.execute(
-        "INSERT INTO tabular_cell ( tabular_column_id, dimension_given_id, value ) select dimension_annotation_id, dimension_given_id, value from annotation_value"
+        text(
+            "INSERT INTO tabular_cell ( tabular_column_id, dimension_given_id, value ) select dimension_annotation_id, dimension_given_id, value from annotation_value"
+        )
     )
 
     op.drop_table("annotation_value")
@@ -100,7 +105,9 @@ def downgrade():
         )
 
     conn.execute(
-        "INSERT INTO annotation_value ( dimension_annotation_id, dimension_given_id, value ) select tabular_column_id, dimension_given_id, value from annotation_value"
+        text(
+            "INSERT INTO annotation_value ( dimension_annotation_id, dimension_given_id, value ) select tabular_column_id, dimension_given_id, value from annotation_value"
+        )
     )
     with op.batch_alter_table("tabular_cell", schema=None) as batch_op:
         batch_op.drop_index("idx_tabular_column_id_dimension_given_id")
@@ -111,7 +118,9 @@ def downgrade():
         batch_op.drop_constraint("ck_index_with_dim_subtype", type_="check")
         batch_op.drop_constraint("ck_annotation_type_with_dim_subtype", type_="check")
     conn.execute(
-        "update dimension set subtype='dimension_annotation_metadata' where subtype = 'tabular_column'"
+        text(
+            "update dimension set subtype='dimension_annotation_metadata' where subtype = 'tabular_column'"
+        )
     )
     with op.batch_alter_table("dimension", schema=None) as batch_op:
         batch_op.create_check_constraint(
