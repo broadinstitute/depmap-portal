@@ -5,7 +5,7 @@ from uuid import UUID, uuid4
 import warnings
 
 import pandas as pd
-from sqlalchemy import and_, func, or_, select
+from sqlalchemy import and_, func, or_, select, true
 from sqlalchemy.sql import distinct
 from sqlalchemy.sql.elements import ColumnElement
 from sqlalchemy.orm import aliased, with_polymorphic
@@ -165,7 +165,7 @@ def get_datasets(
     if data_type is not None:
         filter_clauses.append(Dataset.data_type == data_type)
 
-    datasets = db.query(dataset_poly).filter(and_(True, *filter_clauses)).all()
+    datasets = db.query(dataset_poly).filter(and_(true(), *filter_clauses)).all()
     return datasets
 
 
@@ -779,7 +779,7 @@ def get_subset_of_tabular_data_as_df(
     query = (
         db.query(TabularColumn)
         .join(TabularCell)
-        .filter(and_(True, *filter_statements))
+        .filter(and_(true(), *filter_statements))
         .with_entities(
             TabularCell.value, TabularCell.dimension_given_id, TabularColumn.given_id,
         )
