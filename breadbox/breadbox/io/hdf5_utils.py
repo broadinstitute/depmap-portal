@@ -89,7 +89,9 @@ def read_hdf5_file(
         feature_ids = [x.decode("utf8") for x in feature_ids]
         sample_ids = [x.decode("utf8") for x in sample_ids]
 
-        df = pd.DataFrame(data=data, columns=feature_ids, index=sample_ids)
+        df = pd.DataFrame(
+            data=data, columns=pd.Index(feature_ids), index=pd.Index(sample_ids)
+        )
 
         # Must convert NaNs to None bc NaNs not json serializable
         if not keep_nans:
