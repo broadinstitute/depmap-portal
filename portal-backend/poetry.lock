@@ -713,14 +713,14 @@ files = [
 
 [[package]]
 name = "depmap-compute"
-version = "0.1.11"
+version = "0.1.14"
 description = "Code related to computations shared between the Depmap Portal and BreadBox"
 optional = false
 python-versions = ">=3.9,<4.0"
 groups = ["main"]
 files = [
-    {file = "depmap_compute-0.1.11-py3-none-any.whl", hash = "sha256:9efe369ed029b0cfba6b2838d0122bd764b3166f49d4b4323cef07960857041a"},
-    {file = "depmap_compute-0.1.11.tar.gz", hash = "sha256:8d0ff872da4ee981ba6b562ce0978a3aefdfa9465acedc358d024fc174171e50"},
+    {file = "depmap_compute-0.1.14-py3-none-any.whl", hash = "sha256:242a6bada2e0cfb10db68e3b718b38cfc6fd04257fe759b7214a65a8bfeddf16"},
+    {file = "depmap_compute-0.1.14.tar.gz", hash = "sha256:d23fa616ecad71a3bc8d0020509c970f0176743a5c7541cad462a7c92174d7fa"},
 ]
 
 [package.dependencies]
@@ -3845,6 +3845,23 @@ files = [
 diagrams = ["jinja2", "railroad-diagrams"]
 
 [[package]]
+name = "pypatch-and-run"
+version = "0.1.4"
+description = ""
+optional = false
+python-versions = ">=3.9,<4.0"
+groups = ["main"]
+files = [
+    {file = "pypatch_and_run-0.1.4-py3-none-any.whl", hash = "sha256:0656d1d35da83994e8a3180e4fde377fd4e1d6bd1dc0d5625e0e1cd37c2fde43"},
+    {file = "pypatch_and_run-0.1.4.tar.gz", hash = "sha256:cb5538fdf82d0c0571636cddb8a926d9eda6e9638574d170653f3e4a28ff99b5"},
+]
+
+[package.source]
+type = "legacy"
+url = "https://us-central1-python.pkg.dev/cds-artifacts/public-python/simple"
+reference = "public-python"
+
+[[package]]
 name = "pyright"
 version = "1.1.348"
 description = "Command line wrapper for pyright"
@@ -5348,4 +5365,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.9"
-content-hash = "5ff0c902eaffb493606f6b02670b1bf84bcf43ef5a40ca42b11085346fdd9a2f"
+content-hash = "4afd1ec232300be6b318c706dbe790fe22cc126d838c1bb95cfd66ab0159deaa"

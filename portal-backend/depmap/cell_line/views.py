@@ -1,5 +1,8 @@
+from dataclasses import dataclass
+import dataclasses
 import json
 from typing import Any, Dict, List
+from depmap.context.models_new import SubtypeContext, TreeType
 from depmap.enums import DataTypeEnum, TabularEnum
 from depmap.oncokb_version.models import OncokbDatasetVersionDate
 from flask import (
@@ -123,6 +126,35 @@ def get_related_models(patient_id: str, model_id: str) -> List[Dict[str, str]]:
     return related_models_info
 
 
+@dataclass
+class SubtypeTreeInfo:
+    node_name: str
+    subtype_code: str
+    level: str
+    context_explorer_url: str
+
+
+def get_subtype_tree_info(tree_type: str, model_id: str) -> List[SubtypeTreeInfo]:
+    level_info = SubtypeContext.get_model_context_tree_levels(tree_type, model_id)
+
+    def create_subtype_level_dict(row):
+        return dataclasses.asdict(
+            SubtypeTreeInfo(
+                node_name=row["node_name"],
+                subtype_code=row["subtype_code"],
+                level=row["node_level"],
+                context_explorer_url=url_for(
+                    "context_explorer.view_context_explorer",
+                    context=row["subtype_code"],
+                ),
+            )
+        )
+
+    tree_info = list(level_info.apply(create_subtype_level_dict, axis=1))
+
+    return tree_info
+
+
 @blueprint.route("/description_tile/<model_id>")
 def get_cell_line_description_tile_data(model_id: str) -> dict:
     model = DepmapModel.get_by_model_id(model_id)
@@ -131,21 +163,20 @@ def get_cell_line_description_tile_data(model_id: str) -> dict:
         abort(404)
     assert model is not None
 
+    lineage_tree = get_subtype_tree_info(
+        tree_type=TreeType.Lineage.value, model_id=model_id
+    )
+    molecular_subtype_tree = get_subtype_tree_info(
+        tree_type=TreeType.MolecularSubtype.value, model_id=model_id
+    )
+
     image = get_image_url(model.image_filename)
 
     if model.level_1_lineage.name == "unknown":
         lineage = []
     else:
         lineages = sorted(model.oncotree_lineage, key=lambda x: x.level)
-        lineage = [
-            {
-                "display_name": lineage.display_name,
-                "url": url_for("context.view_context", context_name=lineage.name)
-                if lineage.level < 5
-                else None,  # NOTE: We cannot provide context link for lineage levels 5-6 since context matrix is only built from lineage levels 1-4. Temporary until we are able to include these lineage levels to our context matrix
-            }
-            for lineage in lineages
-        ]
+        lineage = [lineage.display_name for lineage in lineages]
 
     oncotree_lineage = lineage[0] if len(lineage) >= 1 else None
     oncotree_primary_disease = lineage[1] if len(lineage) >= 2 else None
@@ -157,12 +188,11 @@ def get_cell_line_description_tile_data(model_id: str) -> dict:
 
     model_info = {
         "image": image,
+        "lineage_tree": lineage_tree,
+        "molecular_subtype_tree": molecular_subtype_tree,
         "oncotree_lineage": oncotree_lineage,
         "oncotree_primary_disease": oncotree_primary_disease,
-        "oncotree_subtype_and_code": {
-            "display_name": f"{model.oncotree_subtype} ({model.oncotree_code})",
-            "url": lineage[2]["url"],
-        }
+        "oncotree_subtype_and_code": f"{model.oncotree_subtype} ({model.oncotree_code})"
         if oncotree_subtype
         else None,
         "aliases": [
@@ -224,8 +254,8 @@ def get_lowest_z_scores_response(
     }
 
     if model_id in dataset_df.columns:
-        # filter nulls     
-        dataset_df = dataset_df[np.isfinite(dataset_df[model_id])] 
+        # filter nulls
+        dataset_df = dataset_df[np.isfinite(dataset_df[model_id])]
         # sort the matrix using cell line z-scores
         cell_line_z_scores = convert_to_z_score_matrix(dataset_df)[model_id]
         sorted_index = cell_line_z_scores.sort_values().index
@@ -286,9 +316,7 @@ def download_gene_effects(dataset_type: str, model_id: str):
     return response
 
 
-def get_all_cell_line_gene_effects(
-    dataset_name: str, model_id: str
-) -> pd.DataFrame:
+def get_all_cell_line_gene_effects(dataset_name: str, model_id: str) -> pd.DataFrame:
     """Get all gene effect data related to the cell line. Include five columns:
         gene, gene_effect, z_score, mean, stddev"""
     gene_effect_df = data_access.get_subsetted_df_by_labels(dataset_name)
@@ -328,7 +356,9 @@ def get_all_cell_line_compound_sensitivity(
 ) -> pd.DataFrame:
     """Get all compound sensitivity data related to the cell line. Include five columns:
         compound, compound_sensitivity, z_score, mean, stddev"""
-    sensitivity_df = data_access.get_subsetted_df_by_labels_compound_friendly(dataset_name)
+    sensitivity_df = data_access.get_subsetted_df_by_labels_compound_friendly(
+        dataset_name
+    )
     sensitivity_df = sensitivity_df[np.isfinite(sensitivity_df[model_id])]
 
     result_df = get_stats_for_dataframe(sensitivity_df, model_id)
@@ -491,18 +521,25 @@ def get_fusion_data_by_cell_line(model_id):
 
     # Generating hyperlinks for genes and replacing gene names with the hyperlinks
     for item in result_json_data:
-        item["Left Gene"] = get_gene_link(gene_name=item["Left Gene"])
-        item["Right Gene"] = get_gene_link(gene_name=item["Right Gene"])
+        item["Gene 1"] = get_gene_link(gene_name=item["Gene 1"])
+        item["Gene 2"] = get_gene_link(gene_name=item["Gene 2"])
 
-        item["Annots"] = item["Annots"].strip("[]")
-        item["Annots"] = item["Annots"].replace('"', "")
-        item["Annots"] = item["Annots"].replace(",", "; ")
+    # Get the sort configuration from the fusion_data_object
+    display_data = fusion_data_object.data_for_ajax_partial_temp()["display"]
+    sort_col_index = display_data.get("sort_col")
+    sort_order = display_data.get("sort_order")
+
+    # Map the sort column index to the renamed column name
+    columns = fusion_data_object.renamed_cols
+    sort_col = columns[sort_col_index] if sort_col_index is not None else None
 
     endpoint_dict = {
-        "columns": fusion_data_object.renamed_cols,
+        "columns": columns,
         "data": result_json_data,
         "default_columns_to_show": fusion_data_object.default_cols_to_show,
         "download_url": fusion_data_object.data_for_ajax_partial_temp()["download_url"],
+        "sort_col": sort_col,
+        "sort_order": sort_order,
     }
 
     return endpoint_dict

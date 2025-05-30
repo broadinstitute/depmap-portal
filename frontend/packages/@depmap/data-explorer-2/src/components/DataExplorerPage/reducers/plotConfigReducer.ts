@@ -7,6 +7,7 @@ import {
   DimensionKey,
   FilterKey,
   PartialDataExplorerPlotConfig,
+  SliceQuery,
 } from "@depmap/types";
 
 export type PlotConfigReducerAction =
@@ -29,7 +30,14 @@ export type PlotConfigReducerAction =
     }
   | { type: "select_color_by"; payload: DataExplorerPlotConfig["color_by"] }
   | { type: "select_sort_by"; payload: DataExplorerPlotConfig["sort_by"] }
-  | { type: "select_color_property"; payload: { slice_id: string | null } }
+  | {
+      type: "select_color_property";
+      payload: SliceQuery | null;
+    }
+  | {
+      type: "select_legacy_color_property";
+      payload: { slice_id: string | null };
+    }
   | { type: "select_hide_points"; payload: boolean }
   | { type: "select_hide_identity_line"; payload: boolean }
   | { type: "select_use_clustering"; payload: boolean }
@@ -40,6 +48,10 @@ export type PlotConfigReducerAction =
         dataset_id: string;
         slice_label: string;
         slice_type: string;
+        // `given_id` is optional to work with the legacy Portal as the backend.
+        // With Breadbox-as-the-backend (currently only supported in Elrara),
+        // given_id is required.
+        given_id?: string;
       };
     };
 
@@ -164,6 +176,13 @@ function plotConfigReducer(
           ...(nextPlotType === "scatter" ? { y: {} } : {}),
         },
       };
+
+      if (
+        plot.plot_type === "correlation_heatmap" &&
+        nextPlotType !== "correlation_heatmap"
+      ) {
+        nextPlot = omit(nextPlot, ["filters"]);
+      }
 
       if (nextPlotType === "correlation_heatmap") {
         nextPlot = omit(nextPlot, [
@@ -290,6 +309,26 @@ function plotConfigReducer(
     }
 
     case "select_color_property": {
+      const sliceQuery = action.payload;
+
+      if (sliceQuery === null) {
+        return normalize({
+          ...plot,
+          metadata: omit(plot.metadata, "color_property"),
+        });
+      }
+
+      return {
+        ...plot,
+        metadata: {
+          ...plot.metadata,
+          color_property: sliceQuery,
+        },
+      };
+    }
+
+    // legacy version used a slice ID instead of SliceQuery
+    case "select_legacy_color_property": {
       const { slice_id } = action.payload;
 
       if (slice_id === null) {
@@ -363,7 +402,7 @@ function plotConfigReducer(
     }
 
     case "select_scatter_y_slice": {
-      const { dataset_id, slice_label, slice_type } = action.payload;
+      const { dataset_id, slice_label, slice_type, given_id } = action.payload;
 
       return {
         ...plot,
@@ -377,8 +416,10 @@ function plotConfigReducer(
             dataset_id,
             context: {
               name: slice_label,
-              context_type: slice_type,
-              expr: { "==": [{ var: "entity_label" }, slice_label] },
+              [given_id ? "dimension_type" : "context_type"]: slice_type,
+              expr: given_id
+                ? { "==": [{ var: "given_id" }, given_id] }
+                : { "==": [{ var: "entity_label" }, slice_label] },
             },
           },
         },

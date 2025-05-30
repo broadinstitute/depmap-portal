@@ -193,8 +193,7 @@ def get_subsetted_tabular_dataset_df(
     If either indices or columns are not specified, return all indices or columns
     By default, if indices and identifier not specified, then dimension ids are used as identifier
     """
-    if not user_has_access_to_group(dataset.group, user, write_access=True):
-        raise DatasetAccessError(f"User {user} does not have access to dataset")
+    dataset_crud.assert_user_has_access_to_dataset(dataset, user)
 
     # If labels were given as the filter, get the corresponding set of given ids
     dataset_labels_by_id = metadata_service.get_tabular_dataset_labels_by_id(
@@ -582,6 +581,9 @@ def update_dimension_type(
             raise ResourceNotFoundError(
                 f"Metadata table {given_updated_fields['metadata_dataset_id']} was not indexed by {dimension_type.name}",
             )
+
+        if metadata_dataset.group_id != PUBLIC_GROUP_ID:
+            raise DatasetAccessError("Metadata dataset must be from 'Public' group!")
 
         if dimension_type.dataset != metadata_dataset:
             assert metadata_dataset.index_type_name == dimension_type.name

@@ -1,4 +1,7 @@
 import React from "react";
+import { DimensionType } from "@depmap/types";
+import { capitalize } from "../../utils/misc";
+import ContextSelector from "../ContextSelector";
 import DataTypeSelect from "./DataTypeSelect";
 import UnitsSelect from "./UnitsSelect";
 import SliceTypeSelect from "./SliceTypeSelect";
@@ -23,6 +26,11 @@ interface Props {
   removeWrapperDiv?: boolean;
 }
 
+const truncate = (s: string) => {
+  const MAX = 15;
+  return s && s.length > MAX ? `${s.substr(0, MAX)}…` : s;
+};
+
 function AllSelects({
   index_type,
   mode,
@@ -39,10 +47,6 @@ function AllSelects({
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   onClickSaveAsContext,
 }: Props) {
-  if (mode !== "entity-only") {
-    throw new Error("Contexts are not yet support in DimensionSelectV2.");
-  }
-
   const {
     dataType,
     units,
@@ -52,6 +56,7 @@ function AllSelects({
     unitsOptions,
     dimension: { aggregation, axis_type, context, dataset_id, slice_type },
     isLoading,
+    isUnknownDataset,
     noMatchingContexts,
     onChangeAggregation,
     onChangeAxisType,
@@ -74,6 +79,7 @@ function AllSelects({
         onChange={onChangeDataType}
         isLoading={isLoading}
         hasError={noMatchingContexts}
+        isUnknownDataset={isUnknownDataset}
       />
       <SliceTypeSelect
         index_type={index_type}
@@ -99,7 +105,24 @@ function AllSelects({
         value={context || null}
         onChange={onChangeContext}
       />
-      {/* TODO: Add support for select a context */}
+      <ContextSelector
+        enable
+        // HACK: only ContextSelectorV2 supports this special function syntax
+        // for `label`.
+        label={
+          ((dimensionType: DimensionType) =>
+            `${truncate(
+              capitalize(dimensionType.display_name)
+            )} Context`) as any
+        }
+        show={axis_type === "aggregated_slice" && slice_type !== undefined}
+        value={(context as any) || null}
+        onChange={onChangeContext as any}
+        context_type={slice_type as string}
+        includeAllInOptions={includeAllInContextOptions}
+        onClickCreateContext={onClickCreateContext}
+        onClickSaveAsContext={onClickSaveAsContext}
+      />
       <AggregationSelect
         show={axis_type === "aggregated_slice" && aggregation !== "correlation"}
         value={aggregation as string}
@@ -115,6 +138,7 @@ function AllSelects({
       <DataVersionSelect
         show={removeWrapperDiv || Boolean(dataType || dataset_id)}
         isLoading={isLoading}
+        isUnknownDataset={isUnknownDataset}
         value={dataset_id || null}
         options={dataVersionOptions}
         onChange={onChangeDataVersion}

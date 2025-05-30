@@ -49,7 +49,7 @@ export type FilterKey =
   | "distinguish2";
 
 export type DataExplorerFilters = Partial<
-  Record<FilterKey, DataExplorerContext>
+  Record<FilterKey, DataExplorerContext | DataExplorerContextV2>
 >;
 
 export interface DataExplorerPlotConfigDimension {
@@ -60,13 +60,17 @@ export interface DataExplorerPlotConfigDimension {
   aggregation: DataExplorerAggregation;
 }
 
+export type PartialDataExplorerPlotConfigDimension = PartialDeep<DataExplorerPlotConfigDimension>;
+
 export interface DataExplorerPlotConfigDimensionV2
   extends Omit<DataExplorerPlotConfigDimension, "context"> {
   context: DataExplorerContextV2;
 }
 
-// TODO: Rework this to work SliceQuery objects instead of Slice IDs.
-export type DataExplorerMetadata = Record<string, { slice_id: string }>;
+export type DataExplorerMetadata = Record<
+  string,
+  { slice_id: string } | SliceQuery
+>;
 
 export interface DataExplorerPlotResponseDimension {
   axis_label: string;
@@ -76,11 +80,14 @@ export interface DataExplorerPlotResponseDimension {
   values: number[];
 }
 
-export type colorByValue =
+export type ColorByValue =
   | "raw_slice"
   | "aggregated_slice"
   | "property"
-  | "custom";
+  | "custom"
+  // Only supported in Elara. These map to how data is stored in Breadbox.
+  | "metadata_column"
+  | "tabular_dataset";
 
 // A DataExplorerPlotConfig is an object with all the configurable parameters
 // used to generate a plot. Note that some properties only make sense with
@@ -90,7 +97,7 @@ export interface DataExplorerPlotConfig {
   plot_type: DataExplorerPlotType;
   index_type: string;
   dimensions: Partial<Record<DimensionKey, DataExplorerPlotConfigDimension>>;
-  color_by?: colorByValue;
+  color_by?: ColorByValue;
   filters?: DataExplorerFilters;
   metadata?: DataExplorerMetadata;
 
@@ -142,6 +149,7 @@ export interface DataExplorerPlotResponse {
         label: string;
         slice_id: string;
         values: (string | number)[];
+        value_type: "categorical" | "binary";
       }
     >
   >;

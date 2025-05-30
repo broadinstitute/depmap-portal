@@ -117,15 +117,22 @@ class ComputeUnivariateAssociations(Resource):
         # Parse the slice ID if one was provided
         if query_id:
             slice_query = slice_id_to_slice_query(query_id)
+            slice_query_is_from_breadbox = slice_query.dataset_id.startswith("breadbox/")
         else:
             slice_query = None
+            slice_query_is_from_breadbox = False
 
         # Forward requests to breadbox a breadbox dataset is requested
         if dataset_id.startswith("breadbox/"):
             # If the query slice is from a legacy dataset, load it now and pass the values to breadbox
             # The query_cell_lines parameter needs to be the same order/length as the query_values when passed to breadbox.
-            if slice_query and not slice_query.dataset_id.startswith("breadbox/"):
-                legacy_data_slice = data_access.get_slice_data(slice_query)
+            if slice_query and not slice_query_is_from_breadbox:
+                # In this specific case, it's important to avoid the data_access interface because 
+                # breadbox legacy-dataset aliases don't work for lookups by entity_id 
+                # (which is still the slice format used by celfie/genomic associations)
+                legacy_data_slice: pd.Series = interactive_utils.get_row_of_values_from_slice_id(
+                    query_id
+                )
                 if query_cell_lines is not None:
                     # When the cell lines have been filtered by the user,
                     # the legacy feature series also needs to be filtered before being passed to breadbox.
@@ -154,13 +161,27 @@ class ComputeUnivariateAssociations(Resource):
                 query_values=query_values,
             )
 
+        dataset_depmap_ids = set(data_access.get_dataset_sample_ids(dataset_id))
+
         # Two-class comparison case
         if analysis_type == AnalysisType.two_class:
-            cl_query_vector = query_cell_lines
+            cl_query_vector = query_cell_lines # includes both in group and out group
             assert all(
                 x in {"in", "out"} for x in query_values
             ), "Expecting values in {} to be either 'in' or 'out'".format(query_values)
             value_query_vector = [0 if x == "out" else 1 for x in query_values]
+
+            # Validate that BOTH the in-group and out-group have cell lines present in the dataset
+            in_group_cell_lines = {query_cell_lines[i] for i in range(len(query_values)) if query_values[i] == "in"}
+            out_group_cell_lines = {query_cell_lines[i] for i in range(len(query_values)) if query_values[i] == "out"}
+            if len(in_group_cell_lines.intersection(dataset_depmap_ids)) == 0:
+                return format_taskless_error_message(
+                    "No cell lines in common between in-group and dataset selected"
+                )
+            if len(out_group_cell_lines.intersection(dataset_depmap_ids)) == 0:
+                return format_taskless_error_message(
+                    "No cell lines in common between out-group and dataset selected"
+                )
 
         # Pearson and association case
         elif (
@@ -172,9 +193,16 @@ class ComputeUnivariateAssociations(Resource):
             # 2. which is dependent/independent, the matrix or the vector
             # 3. optionally, a list of cell line depmap ids
             assert slice_query is not None
-            query_series = data_access.get_slice_data(slice_query)
-            # remove missing entries because the intersection is assuming we have values for everything. perhaps this should be put into get_slice_data?
-            query_series = query_series[~query_series.isna()]
+            if slice_query_is_from_breadbox:
+                query_series = data_access.get_slice_data(slice_query)
+            else: 
+                # In this specific case, it's important to avoid the data_access interface because 
+                # breadbox legacy-dataset aliases don't work for lookups by entity_id 
+                # (which is still the slice format used by celfie/genomic associations)
+                query_series = interactive_utils.get_row_of_values_from_slice_id(
+                    query_id
+                )
+            query_series = query_series[~query_series.isna()] # In theory, this line is now redundant
 
             # cl_query_vector is the intersection of cell lines in both data tracts plus the cell line subset
             (
@@ -187,7 +215,6 @@ class ComputeUnivariateAssociations(Resource):
         # further intersect cell lines with the dataset being used. Get the list of cell lines actually used in computation
         depmap_ids_filtered = []
         values_filtered = []
-        dataset_depmap_ids = set(data_access.get_dataset_sample_ids(dataset_id))
         for depmap_id, value in zip(cl_query_vector, value_query_vector):
             if depmap_id in dataset_depmap_ids:
                 depmap_ids_filtered.append(depmap_id)

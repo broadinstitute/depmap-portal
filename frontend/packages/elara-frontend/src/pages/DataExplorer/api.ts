@@ -5,6 +5,7 @@ import {
   DataExplorerContextVariable,
   Dataset,
   DimensionType,
+  SliceQuery,
 } from "@depmap/types";
 import { compareCaseInsensitive } from "@depmap/utils";
 
@@ -17,7 +18,7 @@ if (window.location.pathname.includes("/breadbox/elara")) {
 
 const fetchJsonCache: Record<string, Promise<unknown> | null> = {};
 
-const fetchJson = async <T>(url: string): Promise<T> => {
+export const fetchJson = async <T>(url: string): Promise<T> => {
   if (!fetchJsonCache[url]) {
     fetchJsonCache[url] = new Promise((resolve, reject) => {
       fetch(urlPrefix + url, { credentials: "include" })
@@ -42,7 +43,7 @@ const fetchJson = async <T>(url: string): Promise<T> => {
   return fetchJsonCache[url] as Promise<T>;
 };
 
-const postJson = async <T>(url: string, obj: unknown): Promise<T> => {
+export const postJson = async <T>(url: string, obj: unknown): Promise<T> => {
   const json = JSON.stringify(obj);
   const cacheKey = `${url}-${json}`;
 
@@ -100,11 +101,23 @@ export async function evaluateContext(
     vars: varsAsSliceQueries,
   };
 
-  return postJson<{
-    ids: string[];
-    labels: string[];
-    num_candidates: number;
-  }>("/temp/context", contextToEval);
+  const response = await postJson<
+    | {
+        ids: string[];
+        labels: string[];
+        num_candidates: number;
+      }
+    // WORKAROUND: Errors result in a code 200 like regular responses.
+    // We'll look for detail property to detect them.
+    | { detail: string }
+  >("/temp/context", contextToEval);
+
+  if ("detail" in response) {
+    window.console.warn("Could not evaluate context", context);
+    throw new Error(response.detail);
+  }
+
+  return response;
 }
 
 export function fetchDatasets(
@@ -159,9 +172,18 @@ export async function fetchVariableDomain(
     value_type = column.col_type;
   }
 
-  const data = await postJson<{
-    values: (string | string[] | number | null)[];
-  }>("/datasets/dimension/data/", sliceQuery);
+  let data = {
+    values: [] as (string | string[] | number | null)[],
+  };
+
+  try {
+    data = await postJson<{
+      values: (string | string[] | number | null)[];
+    }>("/datasets/dimension/data/", sliceQuery);
+  } catch {
+    window.console.error({ sliceQuery });
+    throw new Error("Error fetching data from slice query");
+  }
 
   if (!("values" in data)) {
     window.console.error({
@@ -216,11 +238,21 @@ export async function fetchDimensionIdentifiers(
     throw new Error(`Unrecognized dimension type "${dimensionTypeName}"!`);
   }
 
-  const url = [
-    `/types/dimensions/${dimensionTypeName}/identifiers`,
-    "?show_only_dimensions_in_datasets=true",
-    dataType ? `&data_type=${dataType}` : "",
-  ].join("");
+  const queryParams: string[] = [];
+
+  if (dataType) {
+    queryParams.push(`data_type=${dataType}`);
+  }
+
+  // FIXME: This query param makes things incredibly slow. I'm commenting it
+  // out for now because it might not be adding much value. Only about 8% of
+  // genes are not represented in a dataset somewhere.
+  // queryParams.push("show_only_dimensions_in_datasets=true");
+
+  const url =
+    `/types/dimensions/${dimensionTypeName}/identifiers` +
+    (queryParams.length ? `?` : "") +
+    queryParams.join("&");
 
   return fetchJson<Identifiers>(url);
 }
@@ -239,4 +271,23 @@ export async function fetchDatasetIdentifiers(
   const featuresOrSamples = dimType.axis === "feature" ? "features" : "samples";
 
   return fetchJson<Identifiers>(`/datasets/${featuresOrSamples}/${dataset_id}`);
+}
+
+export async function fetchAssociations(sliceQuery: SliceQuery) {
+  return postJson<{
+    dataset_name: string;
+    dimension_label: string;
+    associated_datasets: {
+      name: string;
+      dimension_type: string;
+      dataset_id: string;
+    }[];
+    associated_dimensions: {
+      correlation: number;
+      log10qvalue: number;
+      other_dataset_id: string;
+      other_dimension_given_id: string;
+      other_dimension_label: string;
+    }[];
+  }>("/temp/associations/query-slice", sliceQuery);
 }

@@ -10,7 +10,7 @@ import {
   instanceOfErrorDetail,
   TabularDataset,
 } from "@depmap/types";
-import { useSubmitButtonIsDisabled } from "../../utils/disableSubmitButton";
+import { submitButtonIsDisabled } from "../../utils/disableSubmitButton";
 
 interface DimensionTypeFormProps {
   onSubmit: (formData: any) => Promise<void>;
@@ -30,9 +30,12 @@ export default function DimensionTypeForm(props: DimensionTypeFormProps) {
 
   React.useEffect(() => {
     if (isEditMode && dimensionTypeToEdit) {
-      const datasetsWithDimensionType: TabularDataset[] = datasets.filter(
+      const publicDatasetsWithDimensionType: TabularDataset[] = datasets.filter(
         (d) => {
-          return d.index_type_name === dimensionTypeToEdit.name;
+          return (
+            d.index_type_name === dimensionTypeToEdit.name &&
+            d.group.id === "00000000-0000-0000-0000-000000000000"
+          );
         }
       );
       const dimensionTypeEditSchemaWithOptions = {
@@ -45,13 +48,13 @@ export default function DimensionTypeForm(props: DimensionTypeFormProps) {
             default: null, // must include default null with enum options otherwise UI renders 2 null options
             enum: [
               null,
-              ...datasetsWithDimensionType.map((d) => {
+              ...publicDatasetsWithDimensionType.map((d) => {
                 return d.id;
               }),
             ],
             enumNames: [
               "None",
-              ...datasetsWithDimensionType.map((d) => {
+              ...publicDatasetsWithDimensionType.map((d) => {
                 return d.name;
               }),
             ],
@@ -73,11 +76,6 @@ export default function DimensionTypeForm(props: DimensionTypeFormProps) {
       setDimensionTypeFormData({});
     }
   }, [dimensionTypeToEdit, isEditMode, datasets]);
-
-  const submitButtonIsDisabled = useSubmitButtonIsDisabled(
-    schema?.required,
-    dimensionTypeFormData
-  );
 
   const uiSchema = React.useMemo(() => {
     const formUiSchema: UiSchema = {
@@ -101,12 +99,15 @@ export default function DimensionTypeForm(props: DimensionTypeFormProps) {
       },
       "ui:submitButtonOptions": {
         props: {
-          disabled: submitButtonIsDisabled,
+          disabled: submitButtonIsDisabled(
+            schema?.required,
+            dimensionTypeFormData
+          ),
         },
       },
     };
     return formUiSchema;
-  }, [submitButtonIsDisabled]);
+  }, [dimensionTypeFormData, schema?.required]);
 
   const onSubmission = async ({ formData }: any) => {
     setSubmissionMsg("Loading...");

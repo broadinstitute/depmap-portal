@@ -6,6 +6,7 @@ import warnings
 
 import pandas as pd
 from sqlalchemy import and_, func, or_
+from sqlalchemy.sql import distinct
 from sqlalchemy.orm import aliased, with_polymorphic
 
 from breadbox.db.session import SessionWithUser
@@ -476,6 +477,28 @@ def get_matrix_dataset_samples(
     return dataset_samples
 
 
+def get_matrix_dataset_given_ids(
+    db: SessionWithUser, dataset: Dataset, axis: str
+) -> List[str]:
+    assert_user_has_access_to_dataset(dataset, db.user)
+
+    if axis == "feature":
+        dimension_class = DatasetFeature
+    elif axis == "sample":
+        dimension_class = DatasetSample
+    else:
+        raise ValueError(f"Invalid axis: {axis}")
+
+    given_ids = (
+        db.query(dimension_class.given_id)
+        .filter(dimension_class.dataset_id == dataset.id)
+        .order_by(dimension_class.given_id)
+        .all()
+    )
+
+    return [given_id for (given_id,) in given_ids]
+
+
 def get_tabular_dataset_index_given_ids(
     db: SessionWithUser, dataset: TabularDataset
 ) -> list[str]:
@@ -780,11 +803,10 @@ def get_unique_dimension_ids_from_datasets(
     else:
         matrix_dimension_class = DatasetSample
 
-    unique_dims = set()
-
     # Get all matrix dimensions for that dimension type
-    matrix_dimensions = (
-        db.query(matrix_dimension_class)
+    matrix_given_ids = {
+        given_id
+        for (given_id,) in db.query(distinct(matrix_dimension_class.given_id))
         .filter(
             and_(
                 Dimension.dataset_id.in_(dataset_ids),
@@ -792,11 +814,11 @@ def get_unique_dimension_ids_from_datasets(
             )
         )
         .all()
-    )
+    }
     # Get all tabular identifiers for that dimension type
-    tabular_dimension_ids = (
-        db.query(TabularCell)
-        .join(TabularColumn)
+    tabular_given_ids = {
+        given_id
+        for (given_id,) in db.query(TabularColumn)
         .filter(
             and_(
                 TabularColumn.dataset_id.in_(dataset_ids),
@@ -804,13 +826,50 @@ def get_unique_dimension_ids_from_datasets(
                 TabularColumn.dataset_dimension_type == dimension_type.name,
             )
         )
+        .join(TabularCell)
+        .distinct(TabularCell.dimension_given_id)
+        .with_entities(TabularCell.dimension_given_id)
+        .all()
+    }
+    # Combine the unique given ids from the tabular and matrix datasets
+    return matrix_given_ids.union(tabular_given_ids)
+
+
+def get_metadata_used_in_matrix_dataset(
+    db: SessionWithUser,
+    dimension_type: DimensionType,
+    matrix_dataset: MatrixDataset,
+    dimension_subtype_cls: Union[Type[DatasetFeature], Type[DatasetSample]],
+    metadata_col_name: str,
+) -> dict[str, str]:
+    """
+    For the given matrix dataset, load a column from the associated metadata.
+    The result will only include given ids which exist in both the dataset and the metadata.
+    For example, if a dataset's sample type is "depmap_model", and the requested metadata field name is "label",
+    then this will return a dictionary with depmap ids as keys and cell line names as values.
+    """
+    assert_user_has_access_to_dataset(matrix_dataset, db.user)
+    matrix_dataset_id = matrix_dataset.id
+
+    # Using a subquery makes this MUCH faster than two separate queries would be
+    # because it reduces the number of rows that need to be fetched and constructed
+    # into python objects (which is usually by far the slowest part of SQLAlchemy queries).
+    given_id_subquery = (
+        db.query(dimension_subtype_cls.given_id)
+        .filter(dimension_subtype_cls.dataset_id == matrix_dataset_id)
+        .subquery()
+    )
+    metadata_vals_by_id = (
+        db.query(TabularColumn)
+        .filter(
+            and_(
+                TabularColumn.dataset_id == dimension_type.dataset_id,
+                TabularColumn.given_id == metadata_col_name,
+            )
+        )
+        .join(TabularCell)
+        .filter(TabularCell.dimension_given_id.in_(given_id_subquery))
+        .with_entities(TabularCell.dimension_given_id, TabularCell.value)
         .all()
     )
-    # Combine dimension type's dimension given ids from datasets
-    for m_dim in matrix_dimensions:
-        unique_dims.add(m_dim.given_id)
-
-    for t_dim in tabular_dimension_ids:
-        unique_dims.add(t_dim.dimension_given_id)
-
-    return unique_dims
+    return {id: val for id, val in metadata_vals_by_id}

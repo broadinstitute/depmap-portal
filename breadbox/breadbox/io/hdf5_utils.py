@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List, Optional, Literal
 
 import h5py
 import numpy as np
@@ -21,10 +21,38 @@ def create_index_dataset(f: h5py.File, key: str, idx: pd.Index):
     )
 
 
-def write_hdf5_file(path: str, df: pd.DataFrame):
+def write_hdf5_file(path: str, df: pd.DataFrame, dtype: Literal["float", "str"]):
     f = h5py.File(path, mode="w")
     try:
-        f.create_dataset("data", shape=df.shape, dtype=np.float64, data=df.values)
+        # Get the row,col positions where df values are not null
+        rows_idx, cols_idx = np.where(df.notnull())
+        total_nulls = df.size - len(rows_idx)
+        # Determine whether matrix is considered sparse (~2/3 elements are null). Use chunked storage for sparse matrices for more optimal storage
+        if total_nulls / df.size > 0.6:
+            dataset = f.create_dataset(
+                "data",
+                shape=df.shape,
+                dtype=h5py.string_dtype() if dtype == "str" else np.float64,
+                chunks=(
+                    1,
+                    1,
+                ),  # Arbitrarily set size since it at least appears to yield smaller storage size than autochunking
+            )
+            # only insert nonnull values into hdf5 at given positions
+            for row_idx, col_idx in zip(rows_idx, cols_idx):
+                dataset[row_idx, col_idx] = df.iloc[row_idx, col_idx]
+        else:
+            if dtype == "str":
+                # NOTE: hdf5 will fail to stringify None or <NA>. Use empty string to represent NAs instead
+                df = df.fillna("")
+
+            # NOTE: For a large and dense string matrix, the size of the hdf5 will be very large. Right now, list of string matrices are a very rare use case and it is unlikely we'll encounter one that is not sparse. However, if that changes, we should consider other hdf5 size optimization methods such as compression
+            f.create_dataset(
+                "data",
+                shape=df.shape,
+                dtype=h5py.string_dtype() if dtype == "str" else np.float64,
+                data=df.values,
+            )
 
         create_index_dataset(f, "features", df.columns)
         create_index_dataset(f, "samples", df.index)

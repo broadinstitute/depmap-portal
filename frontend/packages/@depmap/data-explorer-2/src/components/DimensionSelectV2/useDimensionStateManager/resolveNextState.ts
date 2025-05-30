@@ -3,7 +3,6 @@ import { useDataExplorerApi } from "../../../contexts/DataExplorerApiContext";
 import { contextsMatch } from "../../../utils/context";
 import { Changes, State } from "./types";
 import {
-  findDataType,
   findHighestPriorityDataset,
   inferDataType,
   inferDatasetId,
@@ -26,20 +25,28 @@ async function resolveNextState(
   let dataset_id = pd.dataset_id;
   let axis_type = pd.axis_type;
   let aggregation = pd.aggregation;
+  let isUnknownDataset = prev.isUnknownDataset;
+
+  if ("isUnknownDataset" in changes) {
+    isUnknownDataset = changes.isUnknownDataset as boolean;
+  }
 
   if ("aggregation" in changes && changes.aggregation) {
     aggregation = changes.aggregation as DataExplorerAggregation;
   }
 
-  if ("index_type" in changes && !dataset_id) {
+  if ("index_type" in changes) {
     dataType = null;
+    units = null;
     slice_type = undefined;
     context = undefined;
+    dataset_id = undefined;
   }
 
   if ("dataType" in changes && dataType !== changes.dataType) {
     dataType = changes.dataType || null;
     dataset_id = undefined;
+    isUnknownDataset = false;
 
     if (
       dataType === null &&
@@ -100,6 +107,7 @@ async function resolveNextState(
 
   if ("dataset_id" in changes && dataset_id !== changes.dataset_id) {
     dataset_id = changes.dataset_id || undefined;
+    isUnknownDataset = false;
 
     if (dataset_id) {
       const {
@@ -155,12 +163,6 @@ async function resolveNextState(
     }
   }
 
-  // Initalize `dataType` if we already know the `dataset_id`. This needs to
-  // happen last to avoid triggering extra auto-selections.
-  if (!dataType && dataset_id) {
-    dataType = await findDataType(api, dataset_id);
-  }
-
   let dirty =
     slice_type !== pd.slice_type ||
     dataset_id !== pd.dataset_id ||
@@ -198,6 +200,7 @@ async function resolveNextState(
     dataType,
     units,
     dirty,
+    isUnknownDataset,
     dimension: dirty
       ? {
           ...prev.dimension,

@@ -1,4 +1,6 @@
 import re
+from depmap.context.models_new import SubtypeNode
+from depmap.context_explorer.models import ContextAnalysis
 from depmap.enums import DataTypeEnum
 import matplotlib
 import matplotlib.pyplot as plt
@@ -15,7 +17,6 @@ matplotlib.use(
     "svg", force=True
 )  # this line must come before this import, otherwise matplotlib complains about python not being installed as a framework
 
-from depmap.context.models import Context, ContextEnrichment
 from depmap.dataset.models import DependencyDataset
 from depmap.entity.models import Entity
 from depmap.predictability.models import (
@@ -46,6 +47,12 @@ def remove_svg_height_width(svg_string):
 
 
 def format_generic_distribution_plot(values, color, y_axis_at_zero=False):
+    # if all of `values` is a single value, the following fails at ax1.lines[0] so instead return html explaining we
+    # have zero variance
+    first_value = values[0]
+    if all([x == first_value for x in values]):
+        return f"<p>Cannot create density plot. All values are {first_value}</p>"
+
     fig = plt.figure(figsize=(4.5, 1.4))  # this has to be done first
 
     # set up event plot
@@ -112,11 +119,12 @@ def format_generic_distribution_plot(values, color, y_axis_at_zero=False):
 
 
 def format_enrichment_box_for_dataset(
-    entity, dataset, color, title_color_override=None, negative_only=False
+    entity, dataset, color, title_color_override=None, negative_only=True
 ):
-    enriched_contexts = ContextEnrichment.get_enriched_context_cell_line_p_value_effect_size(
-        entity.entity_id, dataset.dataset_id, negative_only
+    enriched_contexts = ContextAnalysis.get_enriched_context_cell_line_p_value_effect_size(
+        entity.entity_id, dataset.dependency_dataset_id, entity.type, negative_only
     )
+
     all_values_series = dataset.matrix.get_cell_line_values_and_depmap_ids(
         entity.entity_id
     )
@@ -127,6 +135,7 @@ def format_enrichment_box_for_dataset(
         svg_all_box_positions,
         svg_all_box_numeric_labels,
     ) = format_enrichments_for_svg(enriched_contexts, all_values_series)
+
     svg = format_box_svg(
         all_cell_line_values,
         enriched_values,
@@ -134,7 +143,22 @@ def format_enrichment_box_for_dataset(
         svg_all_box_numeric_labels,
         color,
     )
+    assert isinstance(enriched_contexts, pd.DataFrame)
+    enriched_contexts.sort_values("effect_size", inplace=True)
+
+    temp_mapping = {
+        "Prism_oncology_AUC": "oncref",
+        "Rep_all_single_pt": "repurposing",
+        "Chronos_Combined": "geneDependency",
+    }
+
     return {
+        "context_explorer_dataset_tab": "overview"
+        if dataset.name.name not in temp_mapping.keys()
+        else temp_mapping[dataset.name.name],
+        "most_selective_code": ""
+        if len(enriched_contexts.index) == 0
+        else enriched_contexts.index.tolist()[0],
         "svg": svg,
         "labels": enriched_text_labels,
         "units": dataset.matrix.units,
@@ -147,18 +171,34 @@ def format_enrichments_for_svg(enriched_contexts, all_values_series):
     enriched_values = []
     enriched_text_labels = []
 
-    enriched_contexts = enriched_contexts.sort_values(["effect_size_means_difference"])
+    enriched_contexts = enriched_contexts.sort_values(["effect_size"])
     for enriched_context in enriched_contexts.itertuples():
-        context_display_name = Context.get_display_name(enriched_context.Index)
+        node_obj = SubtypeNode.get_by_code(enriched_context.Index)
 
         # use index.isin instead of series.loc[enriched_context.cell_line]. the latter expects all cell lines to be present, and will generate NaN rows that need to be re-dropped
         in_series = all_values_series.loc[
             all_values_series.index.isin(enriched_context.cell_line)
         ]
         in_values = [x for x in in_series.values.tolist() if not isnan(x)]
+
+        assert node_obj is not None
+
+        cols = [
+            node_obj.level_0,
+            node_obj.level_1,
+            node_obj.level_2,
+            node_obj.level_3,
+            node_obj.level_4,
+            node_obj.level_5,
+        ]
+        path = [col for col in cols if col != None]
+
         enriched_text_labels.append(
-            "{} ({:.2e}) n={}".format(
-                context_display_name, enriched_context.p_value, len(in_values),
+            "{} ({}) ({:.2e}) n={}".format(
+                node_obj.node_name,
+                "/".join(path),
+                enriched_context.q_value,
+                len(in_values),
             )
         )
         enriched_values.append(in_values)

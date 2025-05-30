@@ -12,7 +12,7 @@ def get_storage_client() -> storage.Client:
     return client
 
 
-def get_private_datasets_bucket(client: storage.Client = None) -> storage.Bucket:
+def get_cas_bucket(client: storage.Client = None) -> storage.Bucket:
     if client is None:
         client = get_storage_client()
     bucket_name = current_app.config["CAS_BUCKET"]
@@ -21,7 +21,7 @@ def get_private_datasets_bucket(client: storage.Client = None) -> storage.Bucket
 
 
 def get_value(key: str) -> str:
-    bucket = get_private_datasets_bucket()
+    bucket = get_cas_bucket()
     blob = bucket.blob(key)
     if not blob.exists():
         return None
@@ -30,7 +30,7 @@ def get_value(key: str) -> str:
 
 def set_value(value: str) -> str:
     value_bytes = value.encode("utf8")
-    bucket = get_private_datasets_bucket()
+    bucket = get_cas_bucket()
     key = urlsafe_b64encode(hashlib.sha256(value_bytes).digest()).decode("utf8")
     blob = bucket.blob(key)
     if not blob.exists():

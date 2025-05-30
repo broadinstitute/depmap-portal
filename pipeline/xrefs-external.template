@@ -1,6 +1,6 @@
 include "xrefs-common.conseq"
 
-# SET_TAIGA_PREPROCESSOR virtual_dataset_id "public-24q4-31a4.61"
+# SET_TAIGA_PREPROCESSOR virtual_dataset_id "public-25q2-c5ef.53"
 
 let RELEASE_LABEL="Public 24Q4"
 
@@ -66,11 +66,38 @@ add-if-missing {
     "dataset_id": PREPROCESS_TAIGA_ID(virtual_dataset_id, "OmicsFusionFiltered")
 }
 
+# CRISPRInferredCommonEssentials
+add-if-missing {
+  "type": "crispr-inferred-common-essentials",
+  "dataset_id": PREPROCESS_TAIGA_ID(virtual_dataset_id, "CRISPRInferredCommonEssentials")
+}
+
 # biomarker-matrix
 add-if-missing {
   'type': 'raw-expr-matrix',
   'dataset_id' : PREPROCESS_TAIGA_ID(virtual_dataset_id, "OmicsExpressionProteinCodingGenesTPMLogp1"),
   'category' : 'expression',
+}
+
+# biomarker-matrix
+add-if-missing {
+  'type': 'raw-expr-matrix-profile',
+  'dataset_id' : PREPROCESS_TAIGA_ID(virtual_dataset_id, "OmicsExpressionAllGenesTPMLogp1Profile"),
+  'category' : 'expression',
+}
+
+# profile-map
+add-if-missing {
+  'type': 'profile-map',
+  'dataset_id' : PREPROCESS_TAIGA_ID(virtual_dataset_id, "OmicsProfiles"),
+  'category' : 'mapping',
+}
+
+# model-condition
+add-if-missing {
+  'type': 'model-condition',
+  'dataset_id' : PREPROCESS_TAIGA_ID(virtual_dataset_id, "ModelCondition"),
+  'category' : 'mapping',
 }
 
 # Log2-transformed CNGene data
@@ -100,7 +127,7 @@ add-if-missing {
 
 add-if-missing {
     'type': 'dataset-display-name',
-    'display_name': 'Copy Number {{ config.RELEASE_LABEL }} (Log2 transformed)',
+    'display_name': 'Copy Number WGS {{ config.RELEASE_LABEL }} (Log2 transformed)',
     'label': 'copy_number_relative',
     'dataset_id': PREPROCESS_TAIGA_ID(virtual_dataset_id, "PortalOmicsCNGeneLog2")
 }

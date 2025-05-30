@@ -6,13 +6,14 @@ import {
   Dataset,
   DatasetUpdateArgs,
   Group,
+  instanceOfErrorDetail,
   InvalidPrioritiesByDataType,
 } from "@depmap/types";
 import { RegistryFieldsType, RJSFSchema, UiSchema } from "@rjsf/utils";
 import validator from "@rjsf/validator-ajv8";
 import { CustomDatasetMetadata } from "./DatasetMetadataForm";
 import Form from "@rjsf/core";
-import { useSubmitButtonIsDisabled } from "../../utils/disableSubmitButton";
+import { submitButtonIsDisabled } from "../../utils/disableSubmitButton";
 
 interface DatasetEditFormProps {
   getDataTypesAndPriorities: () => Promise<InvalidPrioritiesByDataType>;
@@ -33,6 +34,8 @@ export default function DatasetForm(props: DatasetEditFormProps) {
 
   const [schema, setSchema] = useState<RJSFSchema | null>(null);
   const [formDataVals, setFormDataVals] = useState<any>(null);
+  const [submissionMsg, setSubmissionMsg] = useState<string | null>(null);
+  const [hasError, setHasError] = useState<boolean>(false);
   console.log(formDataVals);
 
   console.log(datasetToEdit);
@@ -98,11 +101,6 @@ export default function DatasetForm(props: DatasetEditFormProps) {
     })();
   }, [groups, getDataTypesAndPriorities, datasetToEdit]);
 
-  const submitButtonIsDisabled = useSubmitButtonIsDisabled(
-    schema?.required,
-    formDataVals
-  );
-
   const uiSchema = React.useMemo(() => {
     const formUiSchema: UiSchema = {
       "ui:title": "", // removes the title <legend> html element
@@ -117,24 +115,46 @@ export default function DatasetForm(props: DatasetEditFormProps) {
       },
       "ui:submitButtonOptions": {
         props: {
-          disabled: submitButtonIsDisabled,
+          disabled: submitButtonIsDisabled(schema?.required, formDataVals),
         },
       },
     };
     return formUiSchema;
-  }, [submitButtonIsDisabled]);
+  }, [formDataVals, schema?.required]);
 
   return schema && formDataVals ? (
-    <Form
-      formData={formDataVals}
-      schema={schema}
-      uiSchema={uiSchema}
-      validator={validator}
-      fields={fields}
-      onSubmit={async ({ formData }) => {
-        console.log(formData);
-        await onSubmit(datasetToEdit.id, formData);
-      }}
-    />
+    <>
+      <Form
+        formData={formDataVals}
+        schema={schema}
+        uiSchema={uiSchema}
+        validator={validator}
+        fields={fields}
+        onSubmit={async ({ formData }) => {
+          console.log(formData);
+          setSubmissionMsg("Loading...");
+          setHasError(false);
+          try {
+            await onSubmit(datasetToEdit.id, formData);
+            setSubmissionMsg("SUCCESS!");
+          } catch (e) {
+            console.error(e);
+            if (instanceOfErrorDetail(e)) {
+              setSubmissionMsg(e.detail);
+              setHasError(true);
+            }
+          }
+        }}
+      />
+      <p
+        style={{
+          color: hasError ? "red" : "gray",
+          paddingTop: "5px",
+          fontStyle: "italic",
+        }}
+      >
+        {submissionMsg}
+      </p>
+    </>
   ) : null;
 }

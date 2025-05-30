@@ -28,15 +28,15 @@ export const reformatLinRegTable = (groupPropsTable: LinRegInfo[]) => {
 
     const row: (number | string)[] = [
       tableRow.number_of_points,
-      tableRow.pearson,
-      tableRow.spearman,
-      tableRow.slope,
-      tableRow.intercept,
-      tableRow.p_value,
-    ];
+      tableRow.pearson.toFixed(3),
+      tableRow.spearman.toFixed(3),
+      tableRow.slope.toExponential(2),
+      tableRow.intercept.toExponential(2),
+      tableRow.p_value.toExponential(2),
+    ].map((s) => (s === "NaN" ? "" : s));
 
     if (groupPropsTable[0].group_label != null) {
-      row.splice(0, 0, tableRow.group_label);
+      row.splice(0, 0, tableRow.group_label as string);
     }
 
     staticTable.push(row);

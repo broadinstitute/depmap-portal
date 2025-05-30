@@ -1,21 +1,9 @@
 import React from "react";
-import { DepMap, enabledFeatures } from "@depmap/globals";
+import { DepMap, toStaticUrl } from "@depmap/globals";
 import { DataExplorerPlotConfig } from "@depmap/types";
 import StartScreenExample from "./StartScreenExample";
 import examples from "./examples.json";
 import styles from "../../styles/DataExplorer2.scss";
-
-function toStaticUrl(relativeUrl: string) {
-  const assetUrl = relativeUrl.trim().replace(/^\//, "");
-
-  if (enabledFeatures.elara) {
-    return `static/${assetUrl}`;
-  }
-
-  const element = document.getElementById("webpack-config");
-  const urlPrefix = JSON.parse(element!.textContent as string).rootUrl;
-  return `${urlPrefix}/static/${assetUrl}`.replace(/^\/\//, "");
-}
 
 const handleClickAdherentGrowthPattern = () => {
   DepMap.saveNewContext({

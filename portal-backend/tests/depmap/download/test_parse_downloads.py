@@ -4,6 +4,7 @@ from depmap.download.models import (
     DmcBucketUrl,
     DownloadRelease,
     DownloadFile,
+    FileSubtype,
     ReleaseType,
     FileSource,
     FileType,
@@ -27,6 +28,9 @@ expected_downloads = [
             DownloadFile(
                 name="gene_effect.csv",
                 type=FileType.genetic_dependency,
+                sub_type=FileSubtype(
+                    code="crispr_screen", label="CRISPR Screen", position=0
+                ),
                 size="MB",
                 url=DmcBucketUrl("test/gene_effect.csv"),
                 taiga_id="small-chronos-combined-e82b.2/chronos_combined_score",
@@ -79,13 +83,6 @@ expected_downloads = [
                         {"value": 1, "label": "lineages"},
                     ]
                 ),
-            ),
-            DownloadFile(
-                name="gecko.csv",
-                type=FileType.genetic_dependency,
-                size="MB",
-                url="https://link.to/figshare/gecko",
-                taiga_id="small-gecko-virtual-dataset-4fe6.1",
             ),
             DownloadFile(
                 name="rnai.csv",
@@ -152,9 +149,14 @@ def assert_files_are_equal(
 ):
     sample_file = sample_downloads_releases[release_index].all_files[file_index]
     assert expected_file.name == sample_file.name
+    if sample_file.name == "gene_effect.csv":
+        assert sample_file.sub_type is not None
+        assert sample_file.sub_type.code == "crispr_screen"
+        assert sample_file.sub_type.label == "CRISPR Screen"
     assert expected_file.type == sample_file.type
     assert expected_file.size == sample_file.size
     assert expected_file.sources == sample_file.sources
+    assert expected_file.sub_type == sample_file.sub_type
     assert expected_file.description == sample_file.description
     assert expected_file.is_main_file == sample_file.is_main_file
     assert expected_file.date_override == sample_file.date_override
@@ -170,7 +172,7 @@ def test_parse_download_file(
     file_path="tests/depmap/download/test_download_release.yaml",
 ):
     observed_downloads_release = parse_downloads_file(file_path)
-    assert len(observed_downloads_release.all_files) == 7
+    assert len(observed_downloads_release.all_files) == 6
 
     assert repr(observed_downloads_release.all_files[0]._url) == repr(
         DmcBucketUrl("test/gene_effect.csv")

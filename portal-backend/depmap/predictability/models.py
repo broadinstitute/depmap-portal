@@ -25,8 +25,7 @@ from depmap.dataset.models import (
 from depmap.entity.models import Entity
 from depmap.gene.models import Gene
 from depmap.match_related.models import RelatedEntityIndex
-from depmap.vector_catalog.trees import InteractiveTree
-from depmap.context.models import Lineage
+from depmap.cell_line.models import Lineage
 
 
 class TDPredictiveModel(Model):
@@ -215,13 +214,6 @@ class PredictiveFeature(Model):
             return None
 
         if self.dataset_id == "context":
-            lineage_level = "1"
-
-            for level in ["2", "3"]:
-                for lineage, _ in Lineage.get_lineage_ids_by_level(level):
-                    if lineage == self.feature_name:
-                        lineage_level = level
-
             return url_for(
                 "data_explorer_2.view_data_explorer_2",
                 xDataset=dep_dataset.name.name,
@@ -232,8 +224,10 @@ class PredictiveFeature(Model):
                         "context_type": "depmap_model",
                         "expr": {
                             "==": [
-                                {"var": f"slice/lineage/{lineage_level}/label"},
-                                self.feature_name,
+                                {
+                                    "var": f"slice/Context_Matrix/{self.feature_name}/label"
+                                },
+                                1,
                             ]
                         },
                     }

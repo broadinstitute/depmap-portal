@@ -9,6 +9,7 @@ from dataclasses import dataclass
 import time
 import httpx
 
+from depmap.cell_line.models import CellLine
 from depmap.dataset.models import TabularDataset
 
 import click
@@ -18,12 +19,11 @@ from flask.cli import with_appcontext
 
 from depmap.access_control import PUBLIC_ACCESS_GROUP, all_records_visible
 from depmap.access_control.utils.initialize_current_auth import assume_user
-from depmap.app import enable_access_controls, setup_logging
+from depmap.app import setup_logging
 from depmap.database import checkpoint, transaction
 from depmap.dataset.models import Dataset, DependencyDataset
 from depmap.enums import BiomarkerEnum, DependencyEnum
 from depmap.extensions import db
-from depmap.interactive.nonstandard.models import PrivateDatasetMetadata
 from depmap.settings.dev import additional_dev_metadata
 from depmap.settings.shared import (
     DATASET_METADATA,
@@ -33,11 +33,6 @@ from depmap.settings.shared import (
 )
 from depmap.taiga_id.models import TaigaAlias
 from depmap.taiga_id.utils import get_taiga_client
-from depmap.user_uploads.tasks import _upload_transient_csv
-from depmap.user_uploads.utils import (
-    delete_private_datasets,
-    get_user_upload_records,
-)
 from depmap.utilities.filename_utils import get_base_name_without_extension
 from depmap.utilities.hdf5_utils import csv_to_hdf5, df_to_hdf5
 from loader import (
@@ -54,7 +49,6 @@ from loader import (
     global_search_loader,
     match_related_loader,
     nonstandard_loader,
-    nonstandard_private_loader,
     str_profile_loader,
     taiga_id_loader,
     tda_loader,
@@ -153,10 +147,7 @@ def _setup_logging():
 
 
 def db_create_all():
-    from depmap.app import create_filtered_views
-
     db.create_all()
-    create_filtered_views()
 
 
 @click.command("recreate_dev_db")
@@ -236,6 +227,13 @@ def sync_metadata_to_breadbox_with_retry(max_attempts):
                 f"Got exception trying to sync_metadata_to_breadbox(), but will retry: {ex}"
             )
             time.sleep(2)
+
+
+def assert_depmap_models_match_cell_lines():
+    # make sure that DepMapModel and CellLine have a 1:1 relationship. There is a non-nullable, unique
+    # constraint with a FK to cell_line(depmap_id). The only way there could not be a 1:1 is if there
+    # were fewer DepMapModels than lines, so just check the count
+    assert DepmapModel.query.count() == CellLine.query.count()
 
 
 @click.command("recreate_full_db")
@@ -433,7 +431,6 @@ def _load_real_data(
     checkpoint: Callable,
     process_downloads: bool,
 ):
-    enable_access_controls()
 
     taiga_client = get_taiga_client()
 
@@ -514,6 +511,7 @@ def _load_real_data(
             )
             taiga_id = model_metadata_dict["metadata"]["sample_info_id"]
             depmap_model_loader.load_depmap_model_metadata(filename, taiga_id)
+            assert_depmap_models_match_cell_lines()
 
     with checkpoint("str_profile") as needed:
         if needed:
@@ -629,27 +627,27 @@ def _load_real_data(
                 )
                 dataset_loader.load_curve_parameters_csv(curve_params_file_path)
 
-    def get_context_file():
-        full_path = gcsc_depmap.read_json("metadata/context-enrichment.json")[
-            "contexts"
-        ]["csv_filename"]
+    def get_subtype_context_file():
+        metadata = gcsc_depmap.read_json("metadata/subtype_context_matrix_out.json")[
+            "in"
+        ]
+        full_path = metadata["filename"]
         return gcsc_conseq_depmap.download_to_cache(full_path)
 
-    with checkpoint("context-data") as needed:
+    with checkpoint("subtype-context-data") as needed:
         if needed:
-            cell_line_loader.load_contexts(
-                get_context_file(), must=False,
+            depmap_model_loader.load_subtype_contexts(
+                get_subtype_context_file(), must=False
             )
 
-    def get_context_enrichment_file():
-        full_path = gcsc_depmap.read_json("metadata/context-enrichment.json")[
-            "enrichment"
-        ]["filename"]
+    def get_subtype_tree_file():
+        metadata = gcsc_depmap.read_json("metadata/subtype_tree_out.json")["in"]
+        full_path = metadata["filename"]
         return gcsc_conseq_depmap.download_to_cache(full_path)
 
-    with checkpoint("context-enrichment") as needed:
+    with checkpoint("subtype-tree-data") as needed:
         if needed:
-            dataset_loader.load_context_enrichment(get_context_enrichment_file())
+            context_explorer_loader.load_subtype_tree(get_subtype_tree_file())
 
     def get_oncokb_annotated_maf_file_and_taiga_id():
         metadata = gcsc_depmap.read_json("metadata/oncokb-annotated.json")["in"]
@@ -923,20 +921,8 @@ def _load_real_data(
                         DependencyEnum(summary["dataset"]), summary_table
                     )
 
-    with checkpoint("canary-custom-dataset") as needed:
-        if needed:
-            # THIS IS ONLY FOR DEVELOPMENT WARNING PURPOSES
-            # THERE SHOULD BE NO LOADING OF CUSTOM DATASETS
-            # custom datasets are provided by users after app deploy
-            # this is just here to alert us of access control leakage
-            log.info("Loading canary custom dataset")
-            load_canary_custom_dataset()
-
     # load taiga aliases for everything else. this needs to happen after Datasets, TabularDatasets, and NonstandardDatasets are loaded
     db.session.commit()  # flush first, anything previously added
-
-    if current_app.config["ENABLED_FEATURES"].private_datasets:
-        synchronize_private_datasets(checkpoint)
 
     with checkpoint("relabel-new-datasets") as needed:
         if needed:
@@ -981,35 +967,6 @@ def set_display_name(taiga_client, dataset_name, taiga_id, display_name):
             ds.taiga_id == taiga_id
         ), f"When trying to update display_label of {dataset_name} to {display_name}, taiga_ids did not match expected value (datset taiga id was {ds.taiga_id} but expected {taiga_id})"
         ds.display_name = display_name
-
-
-def synchronize_private_datasets(checkpoint):
-    private_datasets_map_df = get_user_upload_records()
-    # Delete datasets that have been deleted by a user since the db build
-    # This is needed if we are doing a deploy without a clean build
-    all_private_dataset_metadata = PrivateDatasetMetadata.get_all()
-    dataset_ids_to_keep = [x.dataset_id for x in private_datasets_map_df]
-    dataset_ids_to_delete = [
-        pdm.dataset_id
-        for pdm in all_private_dataset_metadata
-        if pdm.dataset_id not in dataset_ids_to_keep
-    ]
-    if len(dataset_ids_to_delete) > 0:
-        log.info(f"Deleting private datasets {dataset_ids_to_delete}")
-        delete_private_datasets(dataset_ids_to_delete)
-    for row in private_datasets_map_df:
-        with checkpoint(f"private-{row.dataset_id}") as needed:
-            if needed:
-                log.info("Adding private dataset: %s", row.display_name)
-                private_dataset_metadata = PrivateDatasetMetadata.get_by_dataset_id(
-                    row.dataset_id, must=False
-                )
-                if private_dataset_metadata is None:
-                    nonstandard_private_loader.load_private_dataset_from_df_row(row)
-
-    with transaction():
-        with assume_user("anonymous"):
-            global_search_loader.load_global_search_index()
 
 
 def _load_nonstandard_noncustom_datasets(nonstandard_datasets):
@@ -1066,16 +1023,12 @@ def load_sample_data(
         this (minus the taiga parts, which is currently only nonstandard and celligner)
     :return:
     """
-    enable_access_controls()
 
     if dep_datasets_config is None:
         dep_datasets_config = [
             # when adding a dataset, check if it should be added to association_deps and additional_dev_metadata as well
             DependencyEnum.Chronos_Combined,
             DependencyEnum.Chronos_Achilles,
-            DependencyEnum.Chronos_Score,
-            DependencyEnum.Sanger_CRISPR,
-            DependencyEnum.GeCKO,
             DependencyEnum.RNAi_Ach,
             DependencyEnum.RNAi_Nov_DEM,
             DependencyEnum.RNAi_merged,
@@ -1149,9 +1102,11 @@ def load_sample_data(
         depmap_model_loader.load_depmap_model_metadata(
             os.path.join(loader_data_dir, "cell_line/models_metadata.csv")
         )
+        assert_depmap_models_match_cell_lines()
 
-        cell_line_loader.load_contexts(
-            os.path.join(loader_data_dir, "cell_line/contexts.csv")
+        # TODO: This should eventually completely rreplace the old cell_line_loader.load_contexts
+        depmap_model_loader.load_subtype_contexts(
+            os.path.join(loader_data_dir, "cell_line/subtype_contexts.csv")
         )
 
         str_profile_loader.load_str_profiles(
@@ -1319,16 +1274,6 @@ def load_sample_data(
         assert default_crispr_dataset
         default_crispr_enum = default_crispr_dataset.name
 
-        default_crispr_enum_to_filename = {
-            DependencyDataset.DependencyEnum.Chronos_Combined: "enrichment_chronos.csv",
-        }
-        dataset_loader.load_context_enrichment(
-            os.path.join(
-                loader_data_dir,
-                "gene/{}".format(default_crispr_enum_to_filename[default_crispr_enum]),
-            )
-        )
-
         gene_loader.load_gene_executive_info(
             os.path.join(loader_data_dir, "gene/dep_summary.csv"),
             os.path.join(loader_data_dir, "gene/dropped_by_chronos.csv"),
@@ -1337,7 +1282,6 @@ def load_sample_data(
         # Associations
         association_deps = [
             ("Chronos_Combined", DependencyEnum.Chronos_Combined.name),
-            ("GeCKO", DependencyEnum.GeCKO.name),
             ("RNAi_Ach", DependencyEnum.RNAi_Ach.name),
             ("RNAi_Nov_DEM", DependencyEnum.RNAi_Nov_DEM.name),
             ("RNAi_merged", DependencyEnum.RNAi_merged.name),
@@ -1350,8 +1294,6 @@ def load_sample_data(
                 DependencyEnum.Repurposing_secondary_AUC.name,
             ),
             ("Chronos_Achilles", DependencyEnum.Chronos_Achilles.name),
-            ("Chronos_Score", DependencyEnum.Chronos_Score.name),
-            ("Sanger_CRISPR", DependencyEnum.Sanger_CRISPR.name),
             ("GDSC1_AUC", DependencyEnum.GDSC1_AUC.name),
             ("GDSC2_AUC", DependencyEnum.GDSC2_AUC.name),
             ("ctd2_drug_auc", DependencyEnum.CTRP_AUC.name),
@@ -1372,12 +1314,10 @@ def load_sample_data(
         )
         for file_name_root, enum_name in association_deps:
             if enum_name not in [
-                DependencyDataset.DependencyEnum.Chronos_Score.name,
                 DependencyDataset.DependencyEnum.Chronos_Achilles.name,
                 DependencyDataset.DependencyEnum.GDSC1_AUC.name,
                 DependencyDataset.DependencyEnum.GDSC2_AUC.name,
                 DependencyDataset.DependencyEnum.CTRP_AUC.name,
-                DependencyDataset.DependencyEnum.Sanger_CRISPR.name,
                 DependencyDataset.DependencyEnum.Prism_oncology_AUC.name,
             ]:
                 association_loader.load_dep_dep_correlation(
@@ -1387,12 +1327,10 @@ def load_sample_data(
         for dep_file_name_root, dep_enum_name in association_deps:
             for (biom_file_name_root, biom_enum_name,) in association_bioms:
                 if dep_enum_name not in [
-                    DependencyDataset.DependencyEnum.Chronos_Score.name,
                     DependencyDataset.DependencyEnum.Chronos_Achilles.name,
                     DependencyDataset.DependencyEnum.GDSC1_AUC.name,
                     DependencyDataset.DependencyEnum.GDSC2_AUC.name,
                     DependencyDataset.DependencyEnum.CTRP_AUC.name,
-                    DependencyDataset.DependencyEnum.Sanger_CRISPR.name,
                     DependencyDataset.DependencyEnum.Prism_oncology_AUC.name,
                 ]:
                     association_loader.load_dep_biom_correlation(
@@ -1404,23 +1342,6 @@ def load_sample_data(
                     )
 
         ensure_all_max_min_loaded()
-
-        if current_app.config["ENABLED_FEATURES"].private_datasets:
-            print("Adding private datasets")
-            private_datasets_map_df = get_user_upload_records()
-            for row in private_datasets_map_df:
-                if "canary" not in row.display_name.lower():
-                    print(
-                        f"Skipping {row.display_name} because it doesn't have the word canary in it (so probably not a test upload)"
-                    )
-                    continue
-                nonstandard_private_loader.load_private_dataset_from_df_row(row)
-
-        # create a canary custom dataset for dev
-        # just as a warning of custom dataset leakage
-        if load_nonstandard:
-            print("Adding custom canary dataset")
-            load_canary_custom_dataset()
 
         if load_taiga_dependencies and load_nonstandard:
             # Nonstandard datasets used only in interactive
@@ -1571,7 +1492,9 @@ def load_sample_data(
                 "Adding context explorer ingroup/outgroup analyses to ContextAnalysis"
             )
             context_explorer_loader.load_context_explorer_context_analysis(
-                os.path.join(loader_data_dir, "context_explorer/context_analysis.csv")
+                os.path.join(
+                    loader_data_dir, "context_explorer/context_analysis_v2.csv"
+                )
             )
 
         if current_app.config["ENABLED_FEATURES"].data_page:
@@ -1596,19 +1519,6 @@ def load_sample_data(
         dev_only_write_taiga_alias_table_to_cache(dev_taiga_alias_cache_path)
 
         global_search_loader.load_global_search_index()
-
-
-def load_canary_custom_dataset():
-    """
-    Production environments also have access to sample data
-    :return:
-    """
-
-    label = "Canary custom dataset"
-    units = "chirps"
-    is_transpose = True
-    fn = os.path.join(current_app.config["SAMPLE_DATA_DIR"], "dataset/canary.csv")
-    _upload_transient_csv(None, label, units, is_transpose, fn, False, False)
 
 
 def dev_only_read_cache_to_taiga_alias_table(cache_path):

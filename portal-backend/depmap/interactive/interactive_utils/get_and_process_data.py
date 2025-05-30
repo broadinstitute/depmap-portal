@@ -3,11 +3,11 @@ from typing import List, Optional, Iterable, Dict
 
 from dataclasses import dataclass
 from depmap.cell_line.models_new import DepmapModel
+from depmap.context.models_new import SubtypeContext, SubtypeNode
 from depmap.gene.models import GeneExecutiveInfo
 import pandas as pd
 
 from depmap.database import db
-from depmap.context.models import Context
 from depmap.cell_line.models import CellLine
 from depmap.dataset.models import (
     BiomarkerDataset,
@@ -39,8 +39,6 @@ from depmap.interactive.standard import standard_utils
 from depmap.interactive.nonstandard import nonstandard_utils
 from depmap.partials.matrix.models import CellLineSeries
 from depmap.interactive.common_utils import RowSummary
-from depmap.utilities.data_access_log import log_legacy_private_dataset_access
-
 
 def get_matrix(dataset_id):
     """
@@ -99,11 +97,8 @@ def get_matching_row_entity_ids(dataset_id, prefix, max=10) -> Iterable[int]:
 
 def get_all_rows(dataset_id) -> List[Dict]:
     if dataset_id == get_context_dataset():
-        row_names = [context.name for context in Context.query.all()]
-        rows = [
-            {"label": Context.get_display_name(name), "value": name}
-            for name in sort_insensitive(row_names)
-        ]
+        row_names = [context.subtype_code for context in SubtypeContext.query.all()]
+        rows = [{"label": name, "value": name} for name in sort_insensitive(row_names)]
     elif dataset_id == get_custom_cell_lines_dataset():
         # keeping this as an if else to highlight that this is this dataset's implementation of this func
         assert (
@@ -208,11 +203,6 @@ def get_subsetted_df_by_labels(
     """
     Get a filtered dataframe with rows indexed by entity labels and columns indexed by depmap ids. 
     """
-    if __get_config().is_legacy_private_dataset(dataset_id):
-        log_legacy_private_dataset_access(
-            "get_subsetted_df_by_labels", dataset_ids=[dataset_id]
-        )
-
     row_index_to_entity_label = {}
     col_index_to_depmap_id = {}
     feature_row_labels_set = set(feature_row_labels) if feature_row_labels else set()
@@ -265,11 +255,6 @@ def get_subsetted_df_by_ids(
     :param cell_line_ids: depmap ids of cell lines to return.  If None, return all cell lines
     :return: dataframe where rows are entities (indexed by label) and columns are cell lines (indexed by ID)
     """
-    if __get_config().is_legacy_private_dataset(dataset_id):
-        log_legacy_private_dataset_access(
-            "get_subsetted_df_by_ids", dataset_ids=[dataset_id]
-        )
-
     row_index_to_entity_label = {}
     col_index_to_depmap_id = {}
     entity_ids_set = set(entity_ids) if entity_ids else set()
@@ -317,10 +302,6 @@ def get_subsetted_df(dataset_id, row_indices, col_indices):
     if is_standard(dataset_id):
         df = standard_utils.get_subsetted_df(dataset_id, row_indices, col_indices)
     else:
-        if __get_config().is_legacy_private_dataset(dataset_id):
-            log_legacy_private_dataset_access(
-                "get_subsetted_df", dataset_ids=[dataset_id]
-            )
         df = nonstandard_utils.get_subsetted_df(dataset_id, row_indices, col_indices)
 
     return df
@@ -329,7 +310,7 @@ def get_subsetted_df(dataset_id, row_indices, col_indices):
 def valid_row(dataset_id, row_name):
     if dataset_id == get_context_dataset():
         return db.session.query(
-            Context.query.filter_by(name=row_name).exists()
+            SubtypeContext.query.filter_by(subtype_code=row_name).exists()
         ).scalar()
 
     elif dataset_id in [
@@ -366,10 +347,14 @@ def get_row_of_values(dataset_id, feature):
 
     Whenever a new path is added to here, it should be added to the corresponding test
     """
-
     if dataset_id == get_context_dataset():
-        context = Context.get_by_name(feature)
-        series = pd.Series(context.name, context.get_depmap_ids())
+        context = SubtypeContext.get_by_code(feature)
+        assert context is not None
+        # TODO: Not sure if we should be using the SubtypeNode hierarchy to get the model ids of the
+        # child contexts, too
+        series = pd.Series(
+            context.subtype_code, [model.model_id for model in context.depmap_model]
+        )
     elif dataset_id == get_custom_cell_lines_dataset():
         series = pd.Series(1, CustomCellLineGroup.get_depmap_ids(feature))
 

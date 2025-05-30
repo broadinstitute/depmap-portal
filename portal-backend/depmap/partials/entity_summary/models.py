@@ -123,13 +123,14 @@ def legacy_dataset_contains_entity(legacy_dataset_enum, entity_id: int):
     )
 
 def get_download_data(
-        dataset_id: str, 
+        dataset_id: str,
         entity: Entity, 
         size_dataset_enum, 
         color_dataset_id,
     ):
     """
-    Returns the dataframe for the dependency data
+    Returns the dataframe for the dependency data.
+    This should be compatible with breadbox datasets. 
     """
     feature_data = get_feature_data(dataset_id, entity.label)
     metadata = get_entity_summary_metadata(dataset_id, feature_data, entity.label)
@@ -166,12 +167,12 @@ def get_download_data(
         )
         df.rename(columns={"mutation_num": color_dataset_id.title()}, inplace=True)
 
-    dep_name = Dataset.get_dataset_by_name(dataset_id).display_name
+    display_name = data_access.get_dataset_label(dataset_id)
     df.rename(
         columns={
             "cell_line_display_name": "Cell Line Name",
             "primary_disease": "Primary Disease",
-            "value": dep_name,
+            "value": display_name,
         },
         inplace=True,
     )

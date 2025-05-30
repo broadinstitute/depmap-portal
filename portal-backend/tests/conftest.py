@@ -2,24 +2,16 @@
 """Defines fixtures available to all tests."""
 
 import os
-import re
+import pytest
 import shutil
+import pandas as pd
+from flask import current_app
 from collections import defaultdict
 from unittest.mock import MagicMock
 from dataclasses import asdict
 
-from breadbox_facade import BBClient
-
 from depmap.access_control import PUBLIC_ACCESS_GROUP
-from depmap.access_control.sql_rewrite import (
-    create_filtered_views,
-    replace_filtered_views,
-)
-from depmap.app import (
-    create_app,
-    enable_access_controls,
-    get_table_mapping_for_access_controls,
-)
+from depmap.app import create_app
 
 from depmap.data_explorer_2.utils import clear_cache
 from depmap.database import db as _db
@@ -29,7 +21,6 @@ from depmap.enums import DependencyEnum
 from depmap.interactive.config.models import InteractiveConfig
 from depmap.settings.settings import TestConfig
 from depmap.settings.shared import DATASET_METADATA
-from depmap.utilities import hdf5_utils
 from loader import (
     cell_line_loader,
     celligner_loader,
@@ -51,7 +42,6 @@ from tests.depmap.interactive.fixtures import (
 )
 from tests.depmap.user_uploads.user_upload_fixtures import UserUploadFixture
 from tests.factories import CustomCellLineGroupFactory, TabularDatasetFactory
-from tests.private_dataset_fixtures import *  # this makes these fixtures available to use. fixme better organization
 from tests.utilities.df_test_utils import load_sample_cell_lines
 from tests.utilities.override_fixture import overridable_fixture
 
@@ -178,14 +168,6 @@ def mock_ask_taiga_for_canonical_taiga_id(request, app, monkeypatch):
 
 
 class InteractiveConfigFakeMutationsDownload(InteractiveConfig):
-    def __format_all_private_dataset_settings(self):
-        return {
-            "private-b4d7094196889fa4614409570bb12ab5c09c9cc00388deb7c13ec57fd2996461": None
-        }
-
-    def is_legacy_private_dataset(self, dataset_id: str) -> bool:
-        return False
-
     @classmethod
     def _get_mutations_taiga_id(cls):
         return "this-is-test-nonsense-that-should-never-be-checked-against.1/except-for-taiga-alias-loading"
@@ -197,12 +179,6 @@ class DefaultDictMock(defaultdict):
         So that `x in dict` will always return true
         """
         return True
-
-
-def drop_views(app):
-    with app.app_context():
-        c = _db.session.connection()
-        replace_filtered_views(c, get_table_mapping_for_access_controls())
 
 
 @pytest.fixture(scope="function")
@@ -220,10 +196,6 @@ def _empty_db_base(app, mock_ask_taiga_for_canonical_taiga_id):
     _db.app = app
     with app.app_context():
         _db.create_all()
-        c = _db.session.connection()
-        create_filtered_views(c, get_table_mapping_for_access_controls())
-        enable_access_controls()
-        c.close()
 
     yield _db
 
@@ -232,7 +204,6 @@ def _empty_db_base(app, mock_ask_taiga_for_canonical_taiga_id):
     _db.session.close()
 
     # This is necessary for tests to run
-    drop_views(app)
     _db.drop_all()
 
 
@@ -356,10 +327,13 @@ def test_matrix(empty_db_mock_downloads):
         gene_loader.load_hgnc_genes(
             os.path.join(loader_data_dir, "gene/hgnc-database-1a29.1.csv")
         )
+        cell_line_loader.load_cell_lines_metadata(
+            os.path.join(loader_data_dir, "cell_line/cell_line_metadata.csv")
+        )
         load_sample_cell_lines()
 
-        cell_line_loader.load_contexts(
-            os.path.join(loader_data_dir, "cell_line/contexts.csv")
+        depmap_model_loader.load_subtype_contexts(
+            os.path.join(loader_data_dir, "cell_line/subtype_contexts.csv")
         )
 
         test_matrix_abs_file_path = os.path.join(
@@ -391,9 +365,15 @@ def load_interactive_db_data():
                 loader_data_dir, "interactive/small-hgnc-2a89.2_without_MED1.csv"
             )
         )
+        cell_line_loader.load_cell_lines_metadata(
+            os.path.join(loader_data_dir, "cell_line/cell_line_metadata.csv")
+        )
         load_sample_cell_lines()
-        cell_line_loader.load_contexts(
-            os.path.join(loader_data_dir, "cell_line/contexts.csv")
+        depmap_model_loader.load_subtype_contexts(
+            os.path.join(loader_data_dir, "cell_line/subtype_contexts.csv")
+        )
+        context_explorer_loader.load_subtype_tree(
+            os.path.join(loader_data_dir, "cell_line/subtype_tree.csv")
         )
         dataset_loader.load_mutations(
             os.path.join(loader_data_dir, "dataset/mutations.csv"), "test-taiga-id.1"
@@ -469,9 +449,11 @@ def load_populated_db_data():
         depmap_model_loader.load_depmap_model_metadata(
             os.path.join(loader_data_dir, "cell_line/models_metadata.csv")
         )
-
-        cell_line_loader.load_contexts(
-            os.path.join(loader_data_dir, "cell_line/contexts.csv")
+        depmap_model_loader.load_subtype_contexts(
+            os.path.join(loader_data_dir, "cell_line/subtype_contexts.csv")
+        )
+        context_explorer_loader.load_subtype_tree(
+            os.path.join(loader_data_dir, "cell_line/subtype_tree.csv")
         )
 
         dataset_loader.load_translocations(
@@ -531,10 +513,6 @@ def load_populated_db_data():
                 "matrix_file_name_root": "dataset/chronos_combined",
                 "taiga_id": "small-chronos-combined-e82b.2/chronos_combined_score",
             },
-            DependencyDataset.DependencyEnum.GeCKO: {
-                "matrix_file_name_root": "dataset/gecko",
-                "taiga_id": "small-gecko-aff0.1",
-            },
             DependencyDataset.DependencyEnum.RNAi_Ach: {
                 "matrix_file_name_root": "dataset/rnai_ach",
                 "taiga_id": "small-rnai-d0ad.1",
@@ -573,7 +551,7 @@ def load_populated_db_data():
             current_app.config["WEBAPP_DATA_DIR"], context_explorer_data_avail
         )
         context_explorer_loader.load_context_explorer_context_analysis(
-            os.path.join(loader_data_dir, "context_explorer", "context_analysis.csv")
+            os.path.join(loader_data_dir, "context_explorer", "context_analysis_v2.csv")
         )
 
         data_page_all_data_avail = pd.read_csv(

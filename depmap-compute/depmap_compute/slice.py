@@ -38,3 +38,28 @@ def decode_slice_id(slice_id) -> tuple[str, str, str]:
     slice_type = unquote(parts[3])  # "label", "entity_id", or "transpose_label"
 
     return dataset_id, dimension_identifier, slice_type
+
+
+def slice_id_to_slice_query(slice_id: str) -> SliceQuery:
+    """Take a legacy slice ID string and convert it to the newer slice query format."""
+    dataset_id, dimension_identifier, slice_type = decode_slice_id(slice_id)
+
+    # Slice query identifier types use different (more descriptive) terminology
+    if slice_type == "label":
+        slice_query_identifier_type = "feature_label"
+    elif slice_type == "transpose_label":
+        # "transpose_label" is a deprecated slice type used in data explorer 2 to reference sample IDs. 
+        # Historically, sample IDs were always displayed to users, so it made some sense to call them the "labels".
+        # However, breadbox allows samples to have separate labels (ex. cell line names), which aren't just the IDs.
+        # It now makes more sense to call this identifier type "sample_id".
+        slice_query_identifier_type = "sample_id"
+    elif slice_type == "entity_id":
+        # "entity_id" is only used in older parts of the codebase (not DE2 or ContextManager)
+        assert not dataset_id.startswith("breadbox/"), "Breadbox datasets do not support lookups by entity_id"
+        slice_query_identifier_type = "feature_id"
+
+    return SliceQuery(
+        dataset_id=dataset_id,
+        identifier=dimension_identifier,
+        identifier_type=slice_query_identifier_type,
+    )

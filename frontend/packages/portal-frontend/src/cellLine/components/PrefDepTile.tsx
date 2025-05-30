@@ -1,6 +1,6 @@
 import React from "react";
 import { Tooltip, OverlayTrigger } from "react-bootstrap";
-
+import { toStaticUrl } from "@depmap/globals";
 import RectanglePlot from "src/cellLine/components/RectanglePlot";
 import { DepmapApi } from "src/dAPI";
 import { CellLineDataMatrix } from "../models/types";
@@ -35,7 +35,7 @@ const PrefDepTile = ({
             <span className="stacked-boxplot-tooltip">
               <OverlayTrigger placement="bottom" overlay={prefDepTooltip}>
                 <img
-                  src={dapi._getFileUrl("/static/img/predictability/info.svg")}
+                  src={toStaticUrl("img/predictability/info.svg")}
                   alt="info icon"
                 />
               </OverlayTrigger>

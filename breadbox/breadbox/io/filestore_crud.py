@@ -1,5 +1,6 @@
 import os
 import shutil
+import json
 from typing import Any, List, Optional, Union
 
 import pandas as pd
@@ -11,13 +12,21 @@ DATA_FILE: str = "data.hdf5"
 
 
 def save_dataset_file(
-    dataset_id: str, data_df: pd.DataFrame, filestore_location: str,
+    dataset_id: str,
+    data_df: pd.DataFrame,
+    value_type: ValueType,
+    filestore_location: str,
 ):
     base_path = os.path.join(filestore_location, dataset_id)
     os.makedirs(base_path)
 
+    if value_type == ValueType.list_strings:
+        dtype = "str"
+    else:
+        dtype = "float"
+
     write_hdf5_file(
-        get_file_location(dataset_id, filestore_location, DATA_FILE), data_df
+        get_file_location(dataset_id, filestore_location, DATA_FILE), data_df, dtype
     )
 
 
@@ -94,6 +103,10 @@ def get_df_by_value_type(
         # Convert numerical values back to origincal categorical value
         df = df.astype(int)
         df = df.applymap(lambda x: dataset_allowed_values[x])
+    elif value_type == ValueType.list_strings:
+        # NOTE: String data in HDF5 datasets is read as bytes by default
+        # len of byte encoded empty string should be 0
+        df = df.applymap(lambda x: json.loads(x) if len(x) != 0 else None)
     return df
 
 

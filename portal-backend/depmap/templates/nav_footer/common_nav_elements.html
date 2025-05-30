@@ -45,11 +45,13 @@
             {% if config.ENABLED_FEATURES.compound_dashboard_app %}
               <li><a href="{{ url_for('compound_dashboard.view_compound_dashboard') }}">Compound Dashboard <i class="alpha-tag"><b>Alpha</b></i></a></li>
             {% endif %}
+            {% if config.ENABLED_FEATURES.anchor_screen_dashboard %}
+              <li><a href="{{ url_for('anchor_screen_dashboard.view_anchor_screen_dashboard') }}">Anchor Screen Dashboard <i class="alpha-tag"><b>Alpha</b></i></a></li>
+            {% endif %}
             <li role="separator" class="divider"></li>
               <li><a class="cursor-pointer" onclick="DepMap.launchContextManagerModal()">Context Manager</a></li>
-            {% if config.ENABLED_FEATURES.private_datasets %}
+            {% if config.ENABLED_FEATURES.dataset_manager %}
                 <li><a href="{{ url_for("datasets.view_dataset_manager") }}">Data Manager</a></li>
-                <li><a href="{{ url_for('private_dataset.home') }}">Private Datasets <i class="alpha-tag"><b>Deprecated</b></i></a></li>
             {% endif %}
             {% if config.EXTERNAL_TOOLS %}
               <li role="separator" class="divider"></li>

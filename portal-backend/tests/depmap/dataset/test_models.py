@@ -16,7 +16,7 @@ from depmap.utilities.exception import InvalidDatasetEnumError
 from loader.cell_line_loader import load_cell_lines_metadata
 from loader.gene_loader import load_hgnc_genes
 from loader.transcription_start_site_loader import load_transcription_start_sites
-from loader import dataset_loader
+from loader import dataset_loader, depmap_model_loader
 from tests.factories import (
     DependencyDatasetFactory,
     BiomarkerDatasetFactory,
@@ -115,7 +115,7 @@ def test_dataset_find_datasets_with_entity_ids(empty_db_mock_downloads):
     )
     dataset_2 = DependencyDatasetFactory(
         matrix=MatrixFactory(entities=[genes[1]]),
-        name=DependencyDataset.DependencyEnum.GeCKO,
+        name=DependencyDataset.DependencyEnum.Chronos_Achilles,
     )
     dataset_3 = BiomarkerDatasetFactory(
         matrix=MatrixFactory(entities=[genes[1]]),
@@ -243,7 +243,7 @@ def test_biomarker_dataset_has_entity_by_label(empty_db_mock_downloads):
     "enum, expected",
     [
         (DependencyDataset.DependencyEnum.Avana, True),
-        (DependencyDataset.DependencyEnum.GeCKO, True),
+        (DependencyDataset.DependencyEnum.Chronos_Achilles, True),
         (DependencyDataset.DependencyEnum.RNAi_Ach, False),
         (DependencyDataset.DependencyEnum.GDSC1_AUC, False),
     ],
@@ -284,7 +284,7 @@ def test_dataset_is_auc(empty_db_mock_downloads, enum, expected):
 
 def test_get_all(empty_db_mock_downloads):
     DependencyDatasetFactory(name=DependencyDataset.DependencyEnum.Avana)
-    DependencyDatasetFactory(name=DependencyDataset.DependencyEnum.GeCKO)
+    DependencyDatasetFactory(name=DependencyDataset.DependencyEnum.Chronos_Achilles)
     BiomarkerDatasetFactory(name=BiomarkerDataset.BiomarkerEnum.expression)
     empty_db_mock_downloads.session.flush()
 
@@ -368,6 +368,9 @@ def test_dependency_dataset_has_entity(empty_db_mock_downloads):
         load_cell_lines_metadata(
             os.path.join(loader_data_dir, "cell_line/cell_line_metadata.csv"),
         )
+        depmap_model_loader.load_depmap_model_metadata(
+            os.path.join(loader_data_dir, "cell_line/models_metadata.csv")
+        )
         dependency_datasets = {
             DependencyDataset.DependencyEnum.Avana: {
                 "matrix_file_name_root": "dataset/avana",
@@ -378,10 +381,10 @@ def test_dependency_dataset_has_entity(empty_db_mock_downloads):
                 "global_priority": None,
                 "taiga_id": "placeholder-taiga-id.1",
             },
-            DependencyDataset.DependencyEnum.GeCKO: {
-                "matrix_file_name_root": "dataset/gecko",
-                "display_name": "CRISPR CERES (Achilles GeCKO)",
-                "units": "Gene Effect (CERES)",
+            DependencyDataset.DependencyEnum.Chronos_Achilles: {
+                "matrix_file_name_root": "dataset/chronos_achilles",
+                "display_name": "CRISPR (DepMap, Chronos)",
+                "units": "Gene Effect (Chronos)",
                 "data_type": "CRISPR",
                 "priority": 4,
                 "global_priority": None,
@@ -421,8 +424,16 @@ def test_dependency_dataset_has_entity(empty_db_mock_downloads):
     enum_gene_id_expected = [
         (DependencyDataset.DependencyEnum.Avana, symbol_to_id["AMY1A"], True),
         (DependencyDataset.DependencyEnum.Avana, symbol_to_id["dummy"], False),
-        (DependencyDataset.DependencyEnum.GeCKO, symbol_to_id["ANOS1"], True),
-        (DependencyDataset.DependencyEnum.GeCKO, symbol_to_id["dummy"], False),
+        (
+            DependencyDataset.DependencyEnum.Chronos_Achilles,
+            symbol_to_id["ANOS1"],
+            True,
+        ),
+        (
+            DependencyDataset.DependencyEnum.Chronos_Achilles,
+            symbol_to_id["dummy"],
+            False,
+        ),
         (DependencyDataset.DependencyEnum.RNAi_Ach, symbol_to_id["AMY1A"], True),
         (DependencyDataset.DependencyEnum.RNAi_Ach, symbol_to_id["dummy"], False),
     ]
@@ -441,6 +452,9 @@ def test_biomarker_dataset_has_entity(empty_db_mock_downloads):
     with transaction():
         loader_data_dir = empty_db_mock_downloads.app.config["LOADER_DATA_DIR"]
         load_hgnc_genes(os.path.join(loader_data_dir, "gene/hgnc-database-1a29.1.csv"))
+        load_cell_lines_metadata(
+            os.path.join(loader_data_dir, "cell_line/cell_line_metadata.csv")
+        )
         load_sample_cell_lines()
         load_transcription_start_sites(
             os.path.join(loader_data_dir, "transcription_start_site/rrbs_tss_info.csv")
@@ -609,6 +623,10 @@ def test_mutation_translocation_fusion_has_gene(empty_db_mock_downloads):
     with transaction():
         loader_data_dir = empty_db_mock_downloads.app.config["LOADER_DATA_DIR"]
         load_hgnc_genes(os.path.join(loader_data_dir, "gene/hgnc-database-1a29.1.csv"))
+
+        load_cell_lines_metadata(
+            os.path.join(loader_data_dir, "cell_line/cell_line_metadata.csv")
+        )
         load_sample_cell_lines()
 
         dataset_loader.load_translocations(
@@ -644,8 +662,8 @@ def test_mutation_translocation_fusion_has_gene(empty_db_mock_downloads):
         (Translocation, symbol_to_id["AMY1A"], True),  # gene 1
         (Translocation, symbol_to_id["TNS2"], True),  # gene 2
         (Translocation, symbol_to_id["test_gene"], False),
-        (Fusion, symbol_to_id["ANOS1"], True),  # left gene
-        (Fusion, symbol_to_id["F8A1"], True),  # right gene
+        (Fusion, symbol_to_id["MED1"], True),  # left gene
+        (Fusion, symbol_to_id["TNS2"], True),  # right gene
         (Fusion, symbol_to_id["test_gene"], False),
     ]
 

@@ -4,37 +4,44 @@ import numpy as np
 import statsmodels.api as sm
 import warnings
 import argparse
+import json
 
 from taigapy import create_taiga_client_v3
 
 MIN_GROUP_SIZE = 5
 
 ### ----- LOAD DATA FROM TAIGA ----- ###
-def load_models(tc, depmap_data_taiga_id):
-    models = tc.get(f"{depmap_data_taiga_id}/Model")[
-        ["ModelID", "StrippedCellLineName", "OncotreePrimaryDisease", "OncotreeLineage"]
-    ].rename(
-        columns={
-            "ModelID": "model_id",
-            "OncotreePrimaryDisease": "primary_disease",
-            "OncotreeLineage": "lineage",
-        }
-    )
+def load_subtype_tree(tc, subtype_tree_taiga_id, context_matrix_taiga_id):
+    subtype_tree = tc.get(subtype_tree_taiga_id)
+    context_matrix = tc.get(context_matrix_taiga_id)
 
-    return models
+    return subtype_tree, context_matrix
 
 
-def load_crispr_data(tc, depmap_data_taiga_id):
-    CRISPRGeneDependency = tc.get(f"{depmap_data_taiga_id}/CRISPRGeneDependency")
-    CRISPRGeneEffect = tc.get(f"{depmap_data_taiga_id}/CRISPRGeneEffect")
+def load_crispr_data(
+    tc, gene_effect_taiga_id, gene_dependency_taiga_id, tda_table_path
+):
+    CRISPRGeneDependency = tc.get(gene_dependency_taiga_id)
+    CRISPRGeneEffect = tc.get(gene_effect_taiga_id)
+
+    tda_table = pd.read_csv(tda_table_path)
+    tda_table["gene"] = tda_table.apply(lambda x: f"{x.symbol} ({x.entrez_id})", axis=1)
 
     # filter CRISPR data --> Restrict analysis to genes that are dep in min. 3
-    #                       cell lines and NOT dependent in min. 100 lines
-    #                       (Using second filter in place of Common Ess. filter)
+    #                       cell lines and max. 95% of cell lines
+    #                       Using second filter in place of Common Ess. filter
+    #                       Then rescuing strongly selective genes
     n_dep_lines = (CRISPRGeneDependency > 0.5).sum()
-    n_non_dep_lines = (CRISPRGeneDependency <= 0.5).sum()
-    incl_genes = n_dep_lines[(n_dep_lines >= 3) & (n_non_dep_lines >= 100)]
-    gene_effect = CRISPRGeneEffect.loc[:, incl_genes.index]
+    perc_dep_lines = (CRISPRGeneDependency > 0.5).mean()
+    selective_genes = tda_table.query("CRISPR_StronglySelective == True").gene
+
+    incl_genes = list(
+        set(n_dep_lines[(n_dep_lines >= 3) & (perc_dep_lines <= 0.95)].index)
+        .union(set(selective_genes))
+        .intersection(set(CRISPRGeneEffect.columns))
+    )
+
+    gene_effect = CRISPRGeneEffect.loc[:, incl_genes].sort_index(axis=1)
     gene_dependency = CRISPRGeneDependency.loc[:, gene_effect.columns] > 0.5
     gene_dependency = gene_dependency.mask(CRISPRGeneDependency.isnull())
 
@@ -69,7 +76,6 @@ def load_prism_data(tc, repurposing_matrix_taiga_id, repurposing_list_taiga_id):
         Extended_Primary_Compound_List.IDs.isin(incl_drugs)
     ].reindex()
     drug_sensitivity = Extended_Primary_Data_Matrix.loc[:, incl_drugs].reindex()
-    drug_discrete = Data_Matrix_Discrete.loc[:, incl_drugs].reindex()
 
     # identify duplicate drug IDs (same drug and screen, but diff. batch),
     # and only keep the ID with the greatest number of finite values
@@ -90,13 +96,122 @@ def load_prism_data(tc, repurposing_matrix_taiga_id, repurposing_list_taiga_id):
         drop_ids = drop_ids.append(drug_drop_ids)
 
     drug_sensitivity.drop(drop_ids, axis=1, inplace=True)
-    drug_discrete.drop(drop_ids, axis=1, inplace=True)
 
-    return drug_sensitivity, drug_discrete
+    return drug_sensitivity
+
+
+def load_oncref_data(tc, oncref_auc_taiga_id):
+    auc_matrix = tc.get(oncref_auc_taiga_id)
+
+    log_auc_matrix = np.log2(auc_matrix.fillna(1)).mask(auc_matrix.isna())
+
+    return auc_matrix, log_auc_matrix
+
+
+def format_selectivity_vals(repurposing_table_path, oncref_table_path):
+    selectivity_dfs = []
+
+    # reformat repurposing compounds
+    repurposing_table = pd.read_csv(repurposing_table_path)
+    repurposing_table["entity_id"] = repurposing_table.apply(
+        lambda x: f"BRD:{x.BroadID}", axis=1
+    )
+    repurposing_selectivity = repurposing_table.rename(
+        columns={"BimodalityCoefficient": "selectivity_val"}
+    )[["entity_id", "selectivity_val"]]
+
+    selectivity_dfs.append(repurposing_selectivity)
+
+    # reformat oncref compounds
+    if oncref_table_path is not None:
+        oncref_table = pd.read_csv(oncref_table_path)
+        oncref_selectivity = oncref_table.rename(
+            columns={"BroadID": "entity_id", "BimodalityCoefficient": "selectivity_val"}
+        )[["entity_id", "selectivity_val"]]
+
+        selectivity_dfs.append(oncref_selectivity)
+
+    # put them all together
+    selectivity_vals = pd.concat(selectivity_dfs)
+
+    return selectivity_vals
+
+
+def load_all_data(
+    subtype_tree_taiga_id,
+    context_matrix_taiga_id,
+    gene_effect_taiga_id,
+    gene_dependency_taiga_id,
+    repurposing_matrix_taiga_id,
+    repurposing_list_taiga_id,
+    oncref_auc_taiga_id,
+    repurposing_table_path,
+    oncref_table_path,
+    tda_table_path,
+):
+
+    all_data_dict = dict()
+
+    # dictionary for the dataframes that we will actually perform t-tests on
+    datasets_to_test = dict()
+
+    # dictionary for dataframes used to add extra information to the results
+    data_for_extra_cols = dict()
+
+    tc = create_taiga_client_v3()
+    subtype_tree, context_matrix = load_subtype_tree(
+        tc=tc,
+        subtype_tree_taiga_id=subtype_tree_taiga_id,
+        context_matrix_taiga_id=context_matrix_taiga_id,
+    )
+    all_data_dict["subtype_tree"] = subtype_tree
+    all_data_dict["context_matrix"] = context_matrix
+
+    gene_effect, gene_dependency = load_crispr_data(
+        tc=tc,
+        gene_effect_taiga_id=gene_effect_taiga_id,
+        gene_dependency_taiga_id=gene_dependency_taiga_id,
+        tda_table_path=tda_table_path,
+    )
+    datasets_to_test["CRISPR"] = gene_effect
+    data_for_extra_cols["gene_dependency"] = gene_dependency
+
+    rep_sensitivity = load_prism_data(
+        tc=tc,
+        repurposing_matrix_taiga_id=repurposing_matrix_taiga_id,
+        repurposing_list_taiga_id=repurposing_list_taiga_id,
+    )
+    datasets_to_test["PRISMRepurposing"] = rep_sensitivity
+
+    # OncRef will be None on the public portal
+    if oncref_auc_taiga_id is not None:
+        oncref_aucs, oncref_log_aucs = load_oncref_data(
+            tc=tc, oncref_auc_taiga_id=oncref_auc_taiga_id
+        )
+        datasets_to_test["PRISMOncRef"] = oncref_log_aucs
+
+        # for OncRef we compute the t-test on the logged AUCs,
+        # but want to set the mean_in and mean_out columns based on
+        # un-logged AUCs. Therefore the un-logged AUC matrix is a
+        # dataset used for "extra columns". In order to handle the
+        # possibility of OncRef being None, these dataframes are in a
+        # dictionary rather than expected named inputs to the
+        # compute_context_results function.
+        data_for_extra_cols["oncref_aucs"] = oncref_aucs
+
+    selectivity_vals = format_selectivity_vals(
+        repurposing_table_path, oncref_table_path
+    )
+    data_for_extra_cols["selectivity_vals"] = selectivity_vals
+
+    all_data_dict["datasets_to_test"] = datasets_to_test
+    all_data_dict["data_for_extra_cols"] = data_for_extra_cols
+
+    return all_data_dict
 
 
 ### ----- CONTEXT ENRICHMENT FUNCTIONS ----- ###
-def compute_selective_deps_for(in_group, out_group, data, discrete_data):
+def compute_selective_deps_for(in_group, out_group, data):
     in_group = list(set(in_group).intersection(set(data.index.values)))
     out_group = list(set(out_group).intersection(set(data.index.values)))
 
@@ -107,18 +222,21 @@ def compute_selective_deps_for(in_group, out_group, data, discrete_data):
         data.loc[out_group].count().where(lambda x: x >= MIN_GROUP_SIZE).dropna()
     )
 
-    ttest_genes = sorted(
+    ttest_entities = sorted(
         list(set.intersection(set(in_group_non_na.index), set(out_group_non_na.index)))
     )
 
-    data_subset = data.loc[in_group + out_group, ttest_genes]
-    discrete_data_subset = discrete_data.loc[in_group + out_group, ttest_genes]
+    # filter to in/out group and entities with enough non-nan values
+    data_subset = data.loc[in_group + out_group, ttest_entities]
+
+    # drop entities with zero variance (ttest results will be nan)
+    data_subset = data_subset.loc[:, data_subset.var() > 0]
 
     ## Welch's t-test results
-    results = pd.DataFrame(index=ttest_genes)
+    results = pd.DataFrame(index=data_subset.columns)
     results["t_pval"] = stats.ttest_ind(
-        data_subset.loc[out_group, ttest_genes],
-        data_subset.loc[in_group, ttest_genes],
+        data_subset.loc[out_group, :],
+        data_subset.loc[in_group, :],
         equal_var=True,
         nan_policy="omit",
     )[1]
@@ -132,305 +250,265 @@ def compute_selective_deps_for(in_group, out_group, data, discrete_data):
     results["mean_out"] = data_subset.loc[out_group].mean()
     results["effect_size"] = results.mean_in - results.mean_out
 
-    results["n_dep_in"] = (discrete_data_subset.loc[in_group]).sum()
-    results["n_dep_out"] = (discrete_data_subset.loc[out_group]).sum()
+    return results
 
-    results["n_non_dep_in"] = (discrete_data_subset.loc[in_group].eq(False)).sum()
-    results["n_non_dep_out"] = (discrete_data_subset.loc[out_group].eq(False)).sum()
 
-    results["frac_dep_in"] = (discrete_data_subset.loc[in_group]).mean()
-    results["frac_dep_out"] = (discrete_data_subset.loc[out_group]).mean()
+def add_crispr_columns(ds_res, gene_dependency, in_group, out_group):
+    # add initial columns
+    ds_res["n_dep_in"] = gene_dependency.loc[in_group].sum()
+    ds_res["n_dep_out"] = gene_dependency.loc[out_group].sum()
 
-    ## Odds Ratio
-    or_num = np.array(results.n_non_dep_out * results.n_dep_in)
-    or_denom = np.array(results.n_dep_out * results.n_non_dep_in)
+    ds_res["n_non_dep_in"] = (gene_dependency.loc[in_group].eq(False)).sum()
+    ds_res["n_non_dep_out"] = (gene_dependency.loc[out_group].eq(False)).sum()
+
+    ds_res["frac_dep_in"] = ds_res.n_dep_in / len(in_group)
+    ds_res["frac_dep_out"] = ds_res.n_dep_out / len(out_group)
+
+    # calculate and add Odds Ratio to the selectivity_val column
+    or_num = np.array(ds_res.n_non_dep_out * ds_res.n_dep_in)
+    or_denom = np.array(ds_res.n_dep_out * ds_res.n_non_dep_in)
 
     ors = np.divide(or_num, or_denom, where=or_denom != 0)
 
     # when the denominator is zero --> 100
     ors[or_denom == 0] = 100.0
 
-    # when there are no dependent lines in EITHER group --> NaN
-    ors[(results.n_dep_in == 0) & (results.n_dep_out == 0)] = np.nan
+    # when there are no dependent lines in EITHER group --> Odds Ratio should be 1
+    ors[(ds_res.n_dep_in == 0) & (ds_res.n_dep_out == 0)] = 1
 
-    results["OR"] = ors
-    results["log_OR"] = [
-        np.log10(i) if (i != 0) and ~(np.isnan(i)) else i for i in results.OR
+    ds_res["OR"] = ors
+    ds_res["selectivity_val"] = [
+        np.log10(i) if (i != 0) and ~(np.isnan(i)) else i for i in ds_res.OR
     ]
 
-    return results
+    return ds_res
 
 
 ### ----- CONTEXT TYPE RESULTS ----- ###
 def compute_context_results(
-    context,
-    models,
-    gene_effect,
-    gene_dependency,
-    drug_effect,
-    drug_discrete,
-    context_type="primary_disease",
+    ctx,
+    in_group,
+    out_group,
+    out_label,
+    datasets_to_test,
+    data_for_extra_cols,
+    verbose=False,
 ):
 
-    crispr_models = models[models.model_id.isin(gene_effect.index)]
-    drug_models = models[models.model_id.isin(drug_effect.index)]
-    assert (
-        not drug_models.empty
-    ), "Missing compound data. Make sure drug_effect is indexed by model id."
-
-    blood_lineages = ["Myeloid", "Lymphoid"]
-    solid_lineages = [
-        i for i in list(models.lineage.unique()) if not i in blood_lineages
-    ]
-
-    primary_disease, lineage, lineage_types, queries = None, None, None, None
-    crispr_in_group, drug_in_group = None, None
-    if context_type == "primary_disease":
-        # primary_disease
-        primary_disease = context
-
-        # lineage
-        lineage = models.query("primary_disease==@primary_disease").lineage.unique()
-        if len(lineage) > 1:
-            lin_list = []
-            for lin in lineage:
-                if lin == None:
-                    continue
-                else:
-                    lin_list.append(lin)
-
-            if len(lineage) == 1:
-                lineage = lin_list[0]
-            else:
-                lineage = lin_list
-            warnings.warn(
-                "More than one lineage found for %s models (using %s from %s)"
-                % (primary_disease, lineage[0], ", ".join(lineage))
-            )
-        else:
-            lineage = lineage[0]
-
-        # lineage type (solid/heme)
-        lineage_types = blood_lineages if lineage in blood_lineages else solid_lineages
-
-        # out group queries
-        queries = {
-            # same lineage, but not the primary disease
-            "Lineage": "primary_disease!=@primary_disease & lineage==@lineage",
-            # same type (solid/heme), but not the primary disease
-            "Type": "primary_disease!=@primary_disease & lineage.isin(@lineage_types)",
-            # anything, but not the primary disease
-            "All": "primary_disease!=@primary_disease",
-        }
-
-        # in groups
-        crispr_in_group = crispr_models.query(
-            "primary_disease == @primary_disease"
-        ).model_id.values
-        drug_in_group = drug_models.query(
-            "primary_disease == @primary_disease"
-        ).model_id.values
-
-    elif context_type == "lineage":
-        # lineage
-        lineage = context
-
-        # lineage type (solid/heme)
-        lineage_types = blood_lineages if lineage in blood_lineages else solid_lineages
-
-        # out group queries
-        queries = {
-            # same type (solid/heme), but not the lineage
-            "Type": "lineage!=@lineage & lineage.isin(@lineage_types)",
-            # anything, but not the lineage
-            "All": "lineage!=@lineage",
-        }
-
-        # in groups
-        crispr_in_group = crispr_models.query("lineage == @lineage").model_id.values
-        drug_in_group = drug_models.query("lineage == @lineage").model_id.values
-
-    context_results = []
     col_order = [
-        "context_name",
+        "subtype_code",
         "out_group",
         "entity_id",
+        "dataset",
         "t_pval",
+        "t_qval",
+        "t_qval_log",
         "mean_in",
         "mean_out",
         "effect_size",
-        "t_qval",
-        "t_qval_log",
-        "OR",
+        "selectivity_val",
         "n_dep_in",
         "n_dep_out",
         "frac_dep_in",
         "frac_dep_out",
-        "log_OR",
     ]
-    for query_label in queries.keys():
-        # GENE DEPS
-        crispr_out_group = crispr_models.query(queries[query_label]).model_id.values
-        if (
-            len(crispr_out_group) < MIN_GROUP_SIZE
-            or len(crispr_in_group) < MIN_GROUP_SIZE
-        ):
-            warnings.warn(
-                "CRISPR group size(s) too small for %s (n=%i) vs. %s (n=%i) (%i required for both). Skipping Context."
-                % (
-                    context,
-                    len(crispr_in_group),
-                    query_label,
-                    len(crispr_out_group),
-                    MIN_GROUP_SIZE,
+
+    ctx_res_dfs = []
+    for ds_name, ds in datasets_to_test.items():
+        ds_in_group = list(set(in_group).intersection(set(ds.index.values)))
+        ds_out_group = list(set(out_group).intersection(set(ds.index.values)))
+
+        if len(ds_in_group) < MIN_GROUP_SIZE or len(ds_out_group) < MIN_GROUP_SIZE:
+            if verbose:
+                print(
+                    f"Skipping {ds_name} for {ctx} (n={len(ds_in_group)}) vs. {out_label} (n={len(ds_out_group)})"
                 )
+            ctx_res_dfs.append(pd.DataFrame(columns=col_order))
+            continue
+
+        ds_res = compute_selective_deps_for(ds_in_group, ds_out_group, ds).assign(
+            subtype_code=ctx, out_group=out_label, dataset=ds_name
+        )
+
+        if ds_name == "CRISPR":
+            ds_res = add_crispr_columns(
+                ds_res,
+                data_for_extra_cols["gene_dependency"],
+                ds_in_group,
+                ds_out_group,
+            ).reset_index(names="entity_id")
+
+        elif ds_name == "PRISMOncRef":
+            # replace mean_in, mean_out, and effect size with non-logged versions
+            ds_res["mean_in"] = (
+                data_for_extra_cols["oncref_aucs"].loc[ds_in_group].mean()
             )
-            pass
-
-        else:
-            crispr_results = (
-                compute_selective_deps_for(
-                    crispr_in_group, crispr_out_group, gene_effect, gene_dependency
-                )
-                .reset_index(names="entity_id")
-                .assign(context_name=context, out_group=query_label)[col_order]
+            ds_res["mean_out"] = (
+                data_for_extra_cols["oncref_aucs"].loc[ds_out_group].mean()
             )
-            context_results.append(crispr_results)
+            ds_res["effect_size"] = ds_res.mean_in - ds_res.mean_out
 
-        # DRUG SENSITIVITIES
-        drug_out_group = drug_models.query(queries[query_label]).model_id.values
-        if len(drug_out_group) < MIN_GROUP_SIZE or len(drug_in_group) < MIN_GROUP_SIZE:
-            warnings.warn(
-                "PRISM group size(s) too small for %s (n=%i) vs. %s (n=%i) (%i required for both). Skipping Context."
-                % (
-                    context,
-                    len(drug_in_group),
-                    query_label,
-                    len(drug_out_group),
-                    MIN_GROUP_SIZE,
-                )
+        if ds_name in ["PRISMRepurposing", "PRISMOncRef"]:
+            # merge with selectivity vals
+            ds_res = ds_res.reset_index(names="entity_id").merge(
+                data_for_extra_cols["selectivity_vals"]
             )
-            pass
 
-        else:
-            drug_results = (
-                compute_selective_deps_for(
-                    drug_in_group, drug_out_group, drug_effect, drug_discrete
-                )
-                .reset_index(names="entity_id")
-                .assign(context_name=context, out_group=query_label)[col_order]
-            )
-            context_results.append(drug_results)
+        ctx_res_dfs.append(ds_res)
 
-        print(f"Results computed for {context} vs {query_label}!")
-
-    result = (
-        context_results if len(context_results) == 0 else pd.concat(context_results)
-    )
-    return result
+    return pd.concat(ctx_res_dfs).loc[:, col_order].copy()
 
 
-### ----- IDENTIFY OTHER CONTEXT DEPENDENCIES ---- ###
-def identify_other_context_dependencies(
-    context,
-    out_group,
-    entity_id,
-    results_filename,
-    min_fdr=0,
-    max_fdr=0.05,
-    min_abs_eff=0.1,
-    max_abs_eff=1,
-    min_frac_dep=0.1,
-    max_frac_dep=1,
+def compute_in_out_groups(
+    subtype_tree, context_matrix, datasets_to_test, data_for_extra_cols
 ):
-    results = pd.read_csv(results_filename)
+    name_to_code_onco = dict(
+        zip(
+            subtype_tree.dropna(subset=["DepmapModelType"]).NodeName,
+            subtype_tree.dropna(subset=["DepmapModelType"]).DepmapModelType,
+        )
+    )
+    name_to_code_gs = dict(
+        zip(
+            subtype_tree.dropna(subset=["MolecularSubtypeCode"]).NodeName,
+            subtype_tree.dropna(subset=["MolecularSubtypeCode"]).MolecularSubtypeCode,
+        )
+    )
+    names_to_codes = {**name_to_code_onco, **name_to_code_gs}
 
-    df = results.assign(abs_effect_size=lambda x: np.abs(x.effect_size))
+    all_results = []
+    for idx, ctx_row in subtype_tree.iterrows():
+        ctx_code = names_to_codes[ctx_row.NodeName]
+        ctx_in = context_matrix[context_matrix[ctx_code] == True].index
 
-    df = df[
-        (df.context_name != context)
-        & (df.out_group == out_group)
-        & (df.entity_id == entity_id)
-        & (df.t_qval >= min_fdr)
-        & (df.t_qval <= max_fdr)
-        & (df.abs_effect_size >= min_abs_eff)
-        & (df.abs_effect_size <= max_abs_eff)
-        & (df.frac_dep_in >= min_frac_dep)
-        & (df.frac_dep_in <= max_frac_dep)
-    ]
+        if len(ctx_in) < MIN_GROUP_SIZE:
+            continue
 
-    return df.context_name.values
+        # Compute vs. All Others
+        ctx_out = context_matrix[context_matrix[ctx_code] != True].index
+        all_results.append(
+            compute_context_results(
+                ctx_code,
+                ctx_in,
+                ctx_out,
+                "All Others",
+                datasets_to_test,
+                data_for_extra_cols,
+            )
+        )
+
+        # Compute vs. Other Heme, if applicable
+        if ctx_row.Level0 in ["Myeloid", "Lymphoid"]:
+            ctx_out = context_matrix[
+                (context_matrix[ctx_code] != True)
+                & (
+                    (context_matrix["MYELOID"] == True)
+                    | (context_matrix["LYMPH"] == True)
+                )
+            ].index
+            all_results.append(
+                compute_context_results(
+                    ctx_code,
+                    ctx_in,
+                    ctx_out,
+                    "Other Heme",
+                    datasets_to_test,
+                    data_for_extra_cols,
+                )
+            )
+
+        # Loop through all parents
+        lvls_to_compare = ctx_row[
+            ctx_row.index.str.contains("^Level") & (ctx_row != ctx_row.NodeName)
+        ].dropna()
+        for out_name in lvls_to_compare:
+            out_code = names_to_codes[out_name]
+
+            ctx_out = context_matrix[
+                (context_matrix[ctx_code] != True) & (context_matrix[out_code] == True)
+            ].index
+
+            all_results.append(
+                compute_context_results(
+                    ctx_code,
+                    ctx_in,
+                    ctx_out,
+                    out_code,
+                    datasets_to_test,
+                    data_for_extra_cols,
+                )
+            )
+
+    return pd.concat(all_results)
+
+
+def get_id_or_file_name(possible_id, id_key="dataset_id"):
+    return None if len(possible_id) == 0 else possible_id[0][id_key]
 
 
 ### ----- MAIN ----- ###
-def compute_context_explorer_results(
-    OUT_FILE,
-    depmap_data_taiga_id,
-    repurposing_matrix_taiga_id,
-    repurposing_list_taiga_id,
-):
-    ### ---- LOAD DATA ---- ###
-    tc = create_taiga_client_v3()
+def compute_context_explorer_results(inputs, out_filename):
+    with open(inputs, "rt") as input_json:
+        taiga_ids_or_file_name = json.load(input_json)
 
-    models = load_models(tc, depmap_data_taiga_id)
-    gene_effect, gene_dependency = load_crispr_data(tc, depmap_data_taiga_id)
-    drug_sensitivity, drug_discrete = load_prism_data(
-        tc, repurposing_matrix_taiga_id, repurposing_list_taiga_id
+    subtype_tree_taiga_id = get_id_or_file_name(
+        taiga_ids_or_file_name["subtype_tree_taiga_id"]
+    )
+    context_matrix_taiga_id = get_id_or_file_name(
+        taiga_ids_or_file_name["context_matrix_taiga_id"]
+    )
+    gene_effect_taiga_id = get_id_or_file_name(
+        taiga_ids_or_file_name["gene_effect_taiga_id"]
+    )
+    gene_dependency_taiga_id = get_id_or_file_name(
+        taiga_ids_or_file_name["gene_dependency_taiga_id"]
+    )
+    repurposing_matrix_taiga_id = get_id_or_file_name(
+        taiga_ids_or_file_name["repurposing_matrix_taiga_id"]
+    )
+    repurposing_list_taiga_id = get_id_or_file_name(
+        taiga_ids_or_file_name["repurposing_list_taiga_id"]
+    )
+    oncref_auc_taiga_id = get_id_or_file_name(
+        taiga_ids_or_file_name["oncref_auc_taiga_id"]
     )
 
-    all_results = []
-    for lineage in models.lineage.unique():
-        print(lineage)
-        if lineage is None:
-            continue
+    repurposing_table_path = get_id_or_file_name(
+        taiga_ids_or_file_name["repurposing_table_path"], id_key="filename"
+    )
+    oncref_table_path = get_id_or_file_name(
+        taiga_ids_or_file_name["oncref_table_path"], id_key="filename"
+    )
+    tda_table_path = get_id_or_file_name(
+        taiga_ids_or_file_name["tda_table"], id_key="filename"
+    )
 
-        context_results = compute_context_results(
-            lineage,
-            models,
-            gene_effect,
-            gene_dependency,
-            drug_sensitivity,
-            drug_discrete,
-            context_type="lineage",
-        )
-        if len(context_results) != 0:
-            all_results.append(context_results)
+    ### ---- LOAD DATA ---- ###
+    data_dict = load_all_data(
+        subtype_tree_taiga_id,
+        context_matrix_taiga_id,
+        gene_effect_taiga_id,
+        gene_dependency_taiga_id,
+        repurposing_matrix_taiga_id,
+        repurposing_list_taiga_id,
+        oncref_auc_taiga_id,
+        repurposing_table_path,
+        oncref_table_path,
+        tda_table_path,
+    )
 
-    for primary_disease in models.primary_disease.unique():
-        print(primary_disease)
-        if primary_disease is None:
-            continue
-        context_results = compute_context_results(
-            primary_disease,
-            models,
-            gene_effect,
-            gene_dependency,
-            drug_sensitivity,
-            drug_discrete,
-            context_type="primary_disease",
-        )
-        if len(context_results) != 0:
-            all_results.append(context_results)
-
-    assert len(all_results) > 0
-    results = pd.concat(all_results)
-    dummy_value = ""
-    results = results.fillna(dummy_value)
-    results.to_csv(OUT_FILE, index=False)
+    context_explorer_results = compute_in_out_groups(**data_dict)
+    context_explorer_results.to_csv(out_filename, index=False)
 
     return
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("depmap_data_taiga_id")
-    parser.add_argument("repurposing_matrix_taiga_id")
-    parser.add_argument("repurposing_list_taiga_id")
+    parser.add_argument("inputs")
     parser.add_argument("out_filename")
     args = parser.parse_args()
+
     compute_context_explorer_results(
-        args.out_filename,
-        args.depmap_data_taiga_id,
-        args.repurposing_matrix_taiga_id,
-        args.repurposing_list_taiga_id,
+        args.inputs, args.out_filename,
     )

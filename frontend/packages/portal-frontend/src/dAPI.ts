@@ -28,6 +28,7 @@ import { UploadTask, UserUploadArgs } from "@depmap/user-upload";
 import {
   CurvePlotPoints,
   CurveParams,
+  DoseCurveData,
 } from "src/compound/components/DoseResponseCurve";
 import {
   AddDatasetOneRowArgs,
@@ -45,6 +46,7 @@ import {
   DimensionType,
   DimensionTypeAddArgs,
   DimensionTypeUpdateArgs,
+  SliceQuery,
 } from "@depmap/types";
 import { TDASummaryTable } from "src/tda/models/types";
 import { CompoundSummaryTableRaw } from "src/compoundDashboard/models/types";
@@ -66,10 +68,16 @@ import {
   ContextInfo,
   ContextSummary,
   DataType,
-  ContextAnalysisTableType,
   getDataTypeColorCategoryFromDataTypeValue,
   Summary,
   ContextPlotBoxData,
+  ContextExplorerDatasets,
+  SearchOptionsByTreeType,
+  ContextPathInfo,
+  AvailabilitySummary,
+  DataAvailabilitySummary,
+  ContextAnalysisTableType,
+  EnrichedLineagesTileData,
 } from "src/contextExplorer/models/types";
 import {
   DataAvailability,
@@ -141,6 +149,8 @@ const PAGE_URL_ROOTS: Map<PageUrl, string> = new Map([
   ["constellation.view_constellation", "/constellation/"],
 ]);
 
+const contextExplRequestCache: Record<string, Promise<unknown> | null> = {};
+
 export type GeneCharacterizationData = {
   dataset: string;
   display_name: string;
@@ -199,6 +209,42 @@ export class DepmapApi {
         );
       }
     );
+  };
+
+  _fetchIncludeContextExplCache = async <T>(url: string): Promise<T> => {
+    if (!contextExplRequestCache[url]) {
+      const headers: { [key: string]: string } = {};
+      const traceParentField = this.getTraceParentField();
+      if (traceParentField) {
+        headers.traceparent = traceParentField;
+      }
+      const fullUrl = this.urlPrefix + url;
+      log(`fetching ${fullUrl}`);
+      contextExplRequestCache[url] = new Promise((resolve, reject) => {
+        fetch(fullUrl, {
+          credentials: "include",
+          headers,
+        })
+          .then((response) => {
+            return response.json().then((body) => {
+              if (response.status >= 200 && response.status < 300) {
+                const result = body;
+                contextExplRequestCache[url] = Promise.resolve(result);
+                resolve(result);
+              } else {
+                contextExplRequestCache[url] = null;
+                reject(body);
+              }
+            });
+          })
+          .catch((e) => {
+            contextExplRequestCache[url] = null;
+            reject(e);
+          });
+      });
+    }
+
+    return contextExplRequestCache[url] as Promise<T>;
   };
 
   _fetchText = (url: string): Promise<string> => {
@@ -415,16 +461,13 @@ export class DepmapApi {
     return this._fetch<string>("/compound/compoundUrlRoot");
   }
 
+  getContextExplorerUrlRoot(): Promise<string> {
+    return this._fetch<string>("/context_explorer");
+  }
+
   getDatasets(): Promise<Array<Dataset>> {
     return this._fetch<Dataset[]>("/interactive/api/getDatasets");
   }
-
-  postCustomTaiga = (config: UserUploadArgs): Promise<UploadTask> => {
-    return this._postJson<UploadTask>(
-      "/interactive/api/dataset/add-taiga",
-      config
-    );
-  };
 
   postCustomCsv = (config: UserUploadArgs): Promise<UploadTask> => {
     return this._postMultipart<UploadTask>(
@@ -438,24 +481,6 @@ export class DepmapApi {
       "/interactive/api/dataset/add-csv-one-row",
       config
     );
-  }
-
-  uploadPrivateDataset(data: UserUploadArgs): Promise<UploadTask> {
-    const queryParams = {
-      displayName: data.displayName,
-      units: data.units,
-      ownerId: data.selectedGroup,
-      transposed: data.transposed,
-      dataType: data.selectedDataType,
-    };
-    return this._postMultipart<UploadTask>(
-      `/api/upload/private?${encodeParams(queryParams)}`,
-      { uploadFile: data.uploadFile }
-    );
-  }
-
-  getPrivateDatasetUploadStatus(taskId: string): Promise<UploadTask> {
-    return this._fetch(`/private_dataset/upload_status/${taskId}`);
   }
 
   entityLookup(
@@ -473,10 +498,6 @@ export class DepmapApi {
 
   getTaskStatus(id: string): Promise<CeleryTask> {
     return this._fetch<CeleryTask>(`/api/task/${id}`);
-  }
-
-  getDownloads(): Promise<Downloads> {
-    return this._fetch<Downloads>("/download/api/downloads");
   }
 
   getAllDataTabDownloadData(): Promise<Downloads> {
@@ -529,19 +550,103 @@ export class DepmapApi {
     });
   }
 
-  getContextExplorerContextInfo(): Promise<ContextInfo> {
-    return this._fetch<ContextInfo>(`/api/context_explorer/context_info`);
+  getContextPath(selectedCode: string): Promise<ContextPathInfo> {
+    const params = {
+      selected_code: selectedCode,
+    };
+
+    return this._fetch<ContextPathInfo>(
+      `/api/context_explorer/context_path?${encodeParams(params)}`
+    );
+  }
+
+  async getSubtypeDataAvailability(
+    selectedCode: string
+  ): Promise<ContextSummary> {
+    const params = {
+      selected_code: selectedCode,
+    };
+
+    const subtypeDataAvail = await this._fetch<Summary>(
+      `/api/context_explorer/subtype_data_availability?${encodeParams(params)}`
+    );
+
+    const dataAvailVals = subtypeDataAvail.values.map(
+      (datatypeVals: boolean[], index: number) =>
+        datatypeVals.map((val: boolean) => {
+          const dType =
+            DataType[
+              subtypeDataAvail.data_types[index] as keyof typeof DataType
+            ];
+          return getDataTypeColorCategoryFromDataTypeValue(dType, val);
+        })
+    );
+
+    return {
+      all_depmap_ids: subtypeDataAvail.all_depmap_ids,
+      data_types: subtypeDataAvail.data_types,
+      values: dataAvailVals,
+    };
+  }
+
+  getContextSearchOptions(): Promise<SearchOptionsByTreeType> {
+    return this._fetch<SearchOptionsByTreeType>(
+      `/api/context_explorer/context_search_options`
+    );
+  }
+
+  getNodeName(subtypeCode: string): Promise<string> {
+    const params = {
+      subtype_code: subtypeCode,
+    };
+    return this._fetch<string>(
+      `/api/context_explorer/context_node_name?${encodeParams(params)}`
+    );
+  }
+
+  getContextExplorerContextInfo(subtypeCode: string): Promise<ContextInfo> {
+    const params = {
+      level_0_subtype_code: subtypeCode,
+    };
+
+    return this._fetch<ContextInfo>(
+      `/api/context_explorer/context_info?${encodeParams(params)}`
+    );
+  }
+
+  getContextExplorerDoseResponsePoints(
+    datasetName: string,
+    subtypeCode: string,
+    outGroupType: string,
+    compoundLabel: string,
+    selectedLevel: number,
+    treeType: string
+  ): Promise<DoseCurveData> {
+    const params = {
+      dataset_name: datasetName,
+      subtype_code: subtypeCode,
+      entity_full_label: compoundLabel,
+      level: selectedLevel,
+      out_group_type: outGroupType,
+      tree_type: treeType,
+    };
+
+    return this._fetchIncludeContextExplCache<DoseCurveData>(
+      `/api/context_explorer/context_dose_curves?${encodeParams(params)}`
+    );
   }
 
   getContextExplorerAnalysisData(
-    in_group: string,
+    in_group_code: string,
     out_group_type: string,
-    entity_type: string
+    entity_type: string,
+    dataset_name: ContextExplorerDatasets
   ): Promise<ContextAnalysisTableType> {
     const params = {
-      in_group,
+      in_group: in_group_code,
       out_group_type,
       entity_type,
+      dataset_name,
     };
 
     return this._fetch<ContextAnalysisTableType>(
@@ -550,37 +655,60 @@ export class DepmapApi {
   }
 
   getContextExplorerBoxPlotData(
-    selected_context: string,
-    dataset_id: string,
-    top_context: string,
-    out_group_type: string,
+    selected_subtype_code: string,
+    tree_type: string,
+    dataset_name: ContextExplorerDatasets,
     entity_type: string,
     entity_full_label: string,
-    fdr: number[],
-    abs_effect_size: number[],
-    frac_dep_in: number[]
+    max_fdr: number,
+    min_abs_effect_size: number,
+    min_frac_dep_in: number,
+    doShowPositiveEffectSizes: boolean
   ): Promise<ContextPlotBoxData> {
     const params: any = {
-      selected_context,
-      dataset_id,
-      top_context,
-      out_group_type,
+      selected_subtype_code,
+      tree_type,
+      dataset_name,
+      out_group: "All Others",
       entity_type,
       entity_full_label,
-      fdr,
-      abs_effect_size,
-      frac_dep_in,
+      max_fdr,
+      min_abs_effect_size,
+      min_frac_dep_in,
+      show_positive_effect_sizes: doShowPositiveEffectSizes,
     };
 
-    return this._fetch<ContextPlotBoxData>(
+    return this._fetchIncludeContextExplCache<ContextPlotBoxData>(
       `/api/context_explorer/context_box_plot_data?${encodeParams(params)}`
     );
   }
 
-  async getContextDataAvailability(): Promise<ContextSummary> {
-    const boolSummary = await this._fetch<Summary>(
-      "/api/context_explorer/context_summary"
+  getEnrichmentTileData(
+    tree_type: string,
+    entity_type: string,
+    entity_label: string
+  ): Promise<EnrichedLineagesTileData> {
+    const params: any = {
+      tree_type,
+      entity_type,
+      entity_label,
+    };
+
+    return this._fetch<EnrichedLineagesTileData>(
+      `/api/context_explorer/enriched_lineages_tile?${encodeParams(params)}`
     );
+  }
+
+  async getContextDataAvailability(
+    tree_type: string
+  ): Promise<DataAvailabilitySummary> {
+    const params: any = { tree_type };
+    const summaryAndTable = await this._fetch<AvailabilitySummary>(
+      `/api/context_explorer/context_summary?${encodeParams(params)}`
+    );
+
+    const boolSummary = summaryAndTable.summary;
+    const table = summaryAndTable.table;
 
     const dataAvailVals = boolSummary.values.map(
       (datatypeVals: boolean[], index: number) =>
@@ -591,13 +719,18 @@ export class DepmapApi {
         })
     );
 
-    return {
+    const contextSummary = {
       all_depmap_ids: boolSummary.all_depmap_ids,
       data_types: boolSummary.data_types,
       // The original True/False values returned from the backend are
       // mapped to color category integers. The integer maps to Heatmap.tsx's
       // color scale.
       values: dataAvailVals,
+    };
+
+    return {
+      summary: contextSummary,
+      table,
     };
   }
 
@@ -701,14 +834,14 @@ export class DepmapApi {
     );
   }
 
-  getCellignerDistancesToCellLine(sampleId: string, kNeighbors: number) {
+  getCellignerDistancesToCellLine(profileId: string, kNeighbors: number) {
     return this._fetch<{
       distance_to_tumors: Array<number>;
       most_common_lineage: string;
       color_indexes: Array<number>;
     }>(
       `/celligner/distance_cell_line_to_tumors?${encodeParams({
-        sampleId,
+        profileId,
         kNeighbors,
       })}`
     );
@@ -829,10 +962,6 @@ export class DepmapApi {
     return this._fetch<CompoundSummaryTableRaw>(
       `/compound_dashboard/summary_table/${datasetId}`
     );
-  }
-
-  deletePrivateDatasets(dataset_ids: Array<string>) {
-    return this._deleteJson("/private_dataset/delete", { dataset_ids });
   }
 
   getEntitySummary(
@@ -1038,4 +1167,8 @@ export class DepmapApi {
   deleteGroupEntry = (groupEntryId: string) => {
     return Promise.reject(Error("Wrong api used. Check ApiContext"));
   };
+
+  fetchAssociations(sliceQuery: SliceQuery) {
+    return Promise.reject(Error("Wrong api used. Check ApiContext"));
+  }
 }

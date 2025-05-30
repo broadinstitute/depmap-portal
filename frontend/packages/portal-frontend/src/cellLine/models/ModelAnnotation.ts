@@ -48,6 +48,7 @@ export interface ModelAnnotation {
   PatientSubtypeFeatures: string;
   PatientTreatmentResponse: string;
   PatientTreatmentStatus: string;
+  PediatricModelType: string;
   ModelTreatment: string;
   SerumFreeMedia: string;
   PatientTumorGrade: string;
@@ -58,6 +59,7 @@ export interface ModelAnnotation {
   ModelType: string;
   ModelSubtypeFeatures: string;
   StagingSystem: string;
+  ModelIDAlias: string;
   HCMIID: string;
   ImageFilename: string;
 }

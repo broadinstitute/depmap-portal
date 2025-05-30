@@ -5,6 +5,13 @@ export interface DatasetDataTypes {
   datasets: { display_name: string; download_url: string }[];
 }
 
+export interface SubtypeTreeInfo {
+  node_name: string;
+  subtype_code: string;
+  level: number;
+  context_explorer_url: string;
+}
+
 export type OncogenicAlteration = {
   gene: { name: string; url: string };
   alteration: string;
@@ -30,19 +37,11 @@ export interface ModelInfo {
   // cell_line_name: string;
   primary_metastasis: string;
   sample_collection_site: string;
-  oncotree_lineage: {
-    display_name: string;
-    url: string;
-  };
-  oncotree_primary_disease: {
-    display_name: string;
-    url: string;
-  };
-  oncotree_subtype_and_code: {
-    display_name: string;
-    url: string;
-  };
-  legacy_molecular_subtype: string;
+  lineage_tree: SubtypeTreeInfo[];
+  molecular_subtype_tree: SubtypeTreeInfo[];
+  oncotree_lineage: string;
+  oncotree_primary_disease: string;
+  oncotree_subtype_and_code: string;
   engineered_model: string;
   growth_pattern: string;
   tissue_origin: string;

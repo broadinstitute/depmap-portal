@@ -1,5 +1,6 @@
 from typing import List
 import sqlalchemy
+from sqlalchemy import and_, func
 from depmap.database import (
     Column,
     Float,
@@ -11,7 +12,9 @@ from depmap.database import (
     relationship,
 )
 from depmap.entity.models import Entity, EntityAlias
+from depmap.cell_line.models import CellLine
 from depmap.gene.models import Gene
+import pandas as pd
 import re
 
 gene_compound_target_association = db.Table(
@@ -153,7 +156,7 @@ class CompoundExperiment(Entity):
         Used by various loaders
         """
         if re.match(r"PRC-\d{9}-\d{3}-\d{2}", xref_full):
-            # This is to use as catch all for the Sample IDs(e.g. PRC-000964908-468-05 from PrismOncRefResponseCurves)
+            # This is to use as catch all for the Sample IDs(e.g. PRC-000964908-468-05 from PRISMOncRefResponseCurves)
             xref_type, xref = (
                 "BRD",
                 xref_full,
@@ -347,6 +350,18 @@ class CompoundDoseReplicate(Entity):
         q = CompoundDoseReplicate.query.filter_by(compound_experiment_id=cpd_exp_id)
         return q.all()
 
+    @staticmethod
+    def get_dose_min_max_of_replicates_with_compound_experiment_id(cpd_exp_id):
+        q = CompoundDoseReplicate.query.filter_by(
+            compound_experiment_id=cpd_exp_id
+        ).with_entities(
+            CompoundDoseReplicate.entity_id,
+            func.max(CompoundDoseReplicate.dose).label("max_dose"),
+            func.min(CompoundDoseReplicate.dose).label("min_dose"),
+        )
+
+        return q.all()
+
     @classmethod
     def get_all_for_compound_label(
         cls, compound_label: str, must=True
@@ -372,10 +387,12 @@ class DoseResponseCurve(Model):
 
     dose_response_curve = Column(Integer, primary_key=True, autoincrement=True)
 
-    depmap_id = Column(String, ForeignKey("cell_line.depmap_id"), nullable=False)
+    depmap_id = Column(
+        String, ForeignKey("cell_line.depmap_id"), nullable=False, index=True
+    )
     cell_line = relationship("CellLine", backref=__tablename__)
 
-    compound_exp_id = Column(Integer, ForeignKey("entity.entity_id"))
+    compound_exp_id = Column(Integer, ForeignKey("entity.entity_id"), index=True)
     compound_exp = relationship(
         "CompoundExperiment", foreign_keys="DoseResponseCurve.compound_exp_id"
     )
@@ -384,3 +401,26 @@ class DoseResponseCurve(Model):
     slope = Column(Float)
     upper_asymptote = Column(Float)
     lower_asymptote = Column(Float)
+
+    @staticmethod
+    def get_curve_params(compound_experiment: CompoundExperiment, model_ids: List[str]):
+        if len(model_ids) == 1:
+            return DoseResponseCurve.query.filter(
+                DoseResponseCurve.compound_exp == compound_experiment,
+                DoseResponseCurve.depmap_id == model_ids[0],
+            ).all()
+
+        return (
+            DoseResponseCurve.query.filter(
+                and_(
+                    DoseResponseCurve.compound_exp == compound_experiment,
+                    DoseResponseCurve.depmap_id.in_(model_ids),
+                )
+            )
+            .join(
+                CompoundDoseReplicate,
+                CompoundDoseReplicate.compound_experiment_id
+                == DoseResponseCurve.compound_exp_id,
+            )
+            .all()
+        )

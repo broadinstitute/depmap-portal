@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useDataExplorerSettings } from "../../../../contexts/DataExplorerSettingsContext";
 import { useDeprecatedDataExplorerApi } from "../../../../contexts/DeprecatedDataExplorerApiContext";
-import { enabledFeatures } from "@depmap/globals";
+import { enabledFeatures, isElara } from "@depmap/globals";
 import SpinnerOverlay from "./SpinnerOverlay";
 import type ExtendedPlotType from "../../ExtendedPlotType";
 import {
@@ -233,9 +233,15 @@ function DataExplorerWaterfallPlot({
 
   // The plot only needs legend info if the user is downloading an image of it.
   const legendForDownload = useMemo(() => {
-    const title = data?.dimensions?.color
-      ? `${data.dimensions.color.axis_label}<br>${data.dimensions.color.dataset_label}`
-      : "";
+    let title = "";
+
+    if (data?.dimensions?.color) {
+      title = `${data.dimensions.color.axis_label}<br>${data.dimensions.color.dataset_label}`;
+    }
+
+    if (data?.metadata?.color_property) {
+      title = data.metadata.color_property.label;
+    }
 
     const items: { name: string; hexColor: string }[] = [];
 
@@ -353,16 +359,24 @@ function DataExplorerWaterfallPlot({
               onClickClearSelection={() => {
                 setSelectedLabels(null);
               }}
-              onClickSetSelectionFromContext={async () => {
-                const labels = await promptForSelectionFromContext(api, data!);
+              onClickSetSelectionFromContext={
+                // TODO: Add support for this in Elara.
+                isElara
+                  ? undefined
+                  : async () => {
+                      const labels = await promptForSelectionFromContext(
+                        api,
+                        data!
+                      );
 
-                if (labels === null) {
-                  return;
-                }
+                      if (labels === null) {
+                        return;
+                      }
 
-                setSelectedLabels(labels);
-                plotElement?.annotateSelected();
-              }}
+                      setSelectedLabels(labels);
+                      plotElement?.annotateSelected();
+                    }
+              }
             />
           </StackableSection>
           {enabledFeatures.gene_tea && plotConfig.index_type === "gene" ? (

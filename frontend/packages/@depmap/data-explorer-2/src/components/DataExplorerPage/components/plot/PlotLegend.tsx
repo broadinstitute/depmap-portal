@@ -77,6 +77,27 @@ function LegendLabels({
   );
 }
 
+function SliceDescription({ data }: { data: DataExplorerPlotResponse | null }) {
+  if (data?.dimensions?.color) {
+    return (
+      <div className={styles.colorDimensionLabels}>
+        <div>{data.dimensions.color.axis_label}</div>
+        <div>{data.dimensions.color.dataset_label}</div>
+      </div>
+    );
+  }
+
+  if (data?.metadata?.color_property) {
+    return (
+      <div className={styles.colorDimensionLabels}>
+        <div>{data.metadata.color_property.label}</div>
+      </div>
+    );
+  }
+
+  return null;
+}
+
 interface Props {
   data: DataExplorerPlotResponse | null;
   // TODO: Convert `colorMap` to a proper Map so that `sortedLegendKeys` is not
@@ -114,12 +135,7 @@ function PlotLegend({
         Click to toggle on/off
         <HelpTip id="legend-doubleclick-help" />
       </div>
-      {data?.dimensions?.color && (
-        <div className={styles.colorDimensionLabels}>
-          <div>{data.dimensions.color.axis_label}</div>
-          <div>{data.dimensions.color.dataset_label}</div>
-        </div>
-      )}
+      <SliceDescription data={data} />
       <LegendLabels
         data={data}
         colorMap={colorMap}

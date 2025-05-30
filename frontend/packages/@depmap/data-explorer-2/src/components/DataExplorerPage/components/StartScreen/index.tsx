@@ -1,6 +1,7 @@
 import React, { useContext, useState } from "react";
 import { Button } from "react-bootstrap";
 import { ApiContext } from "@depmap/api";
+import { isElara } from "@depmap/globals";
 import { UploadFormat, UserUploadModal } from "@depmap/user-upload";
 import StartScreenExamples from "./StartScreenExamples";
 import styles from "../../styles/DataExplorer2.scss";
@@ -29,7 +30,9 @@ function StartScreen({ tutorialLink }: Props) {
       <p>Use these buttons to perform a Custom Analysis or plot from a CSV.</p>
       <div className={styles.startScreenActions}>
         <Button
-          href="../interactive/custom_analysis"
+          href={
+            isElara ? "./custom_analysis" : "../interactive/custom_analysis"
+          }
           bsStyle="primary"
           rel="noreferrer"
           target="_blank"
@@ -40,8 +43,12 @@ function StartScreen({ tutorialLink }: Props) {
           Plot from CSV
         </Button>
       </div>
-      <h3>Using Data Explorer 2.0</h3>
-      <StartScreenExamples />
+      {!isElara && (
+        <>
+          <h3>Using Data Explorer 2.0</h3>
+          <StartScreenExamples />
+        </>
+      )}
       <UserUploadModal
         key={`${showCsvUploadModal}`}
         show={showCsvUploadModal}

@@ -1,11 +1,13 @@
 import pandas as pd
-from typing import Optional, Union, cast
+from typing import Literal, Optional, Union, cast
 
 from breadbox_client.models import (
+    DimensionType,
     MatrixDatasetResponse,
     MatrixDatasetResponseFormat,
     TabularDatasetResponse,
 )
+from breadbox_client.types import Unset
 from depmap.data_access.response_parsing import (
     is_breadbox_id_format,
     parse_breadbox_slice_id,
@@ -51,11 +53,11 @@ def get_all_matrix_datasets() -> list[MatrixDataset]:
 
 
 def get_filtered_matrix_datasets(
-        feature_id: Optional[str] = None,
-        feature_type: Optional[str] = None,
-        sample_id: Optional[str] = None,
-        sample_type: Optional[str] = None,
-        value_type: Optional[str] = None,
+    feature_id: Optional[str] = None,
+    feature_type: Optional[str] = None,
+    sample_id: Optional[str] = None,
+    sample_type: Optional[str] = None,
+    value_type: Optional[str] = None,
 ) -> list[MatrixDataset]:
     """Load a filtered set of datasets (no caching used). Filtering is done on the breadbox side."""
     datasets = extensions.breadbox.client.get_datasets(
@@ -72,8 +74,6 @@ def get_filtered_matrix_datasets(
             parsed_dataset = parse_matrix_dataset_response(dataset)
             matrix_datasets.append(parsed_dataset)
     return matrix_datasets
-
-
 
 
 def get_breadbox_given_ids() -> set[str]:
@@ -161,7 +161,9 @@ def get_dataset_units(dataset_id: str) -> Optional[str]:
     return get_matrix_dataset(dataset_id).units
 
 
-def get_row_of_values(dataset_id: str, feature: str) -> CellLineSeries:
+def get_row_of_values(
+    dataset_id: str, feature: str, feature_identifier: Literal["id", "label"]
+) -> CellLineSeries:
     """
     For the given dataset id and a feature label, 
     Get a row of numeric or string values, indexed by depmap_id
@@ -170,7 +172,7 @@ def get_row_of_values(dataset_id: str, feature: str) -> CellLineSeries:
     single_col_df = extensions.breadbox.client.get_dataset_data(
         dataset_id=bb_dataset_id,
         features=[feature],
-        feature_identifier="label",
+        feature_identifier=feature_identifier,
         samples=None,
         sample_identifier=None,
     )
@@ -216,3 +218,23 @@ def get_tabular_dataset_column(dataset_id: str, column_name: str) -> pd.Series:
         strict=True,
     )
     return df.squeeze()
+
+
+def get_metadata_dataset_id(dimension_type_name: str) -> Union[str, None]:
+    if not hasattr(flask.g, "__cached_dimension_types"):
+        flask.g.__cached_dimension_types = (
+            extensions.breadbox.client.get_dimension_types()
+        )
+
+    dimension_types = cast(list[DimensionType], flask.g.__cached_dimension_types,)
+
+    dataset_id = next(
+        (
+            dt.metadata_dataset_id
+            for dt in dimension_types
+            if dt.name == dimension_type_name
+        ),
+        None,
+    )
+
+    return None if dataset_id is Unset else cast(Union[str, None], dataset_id)

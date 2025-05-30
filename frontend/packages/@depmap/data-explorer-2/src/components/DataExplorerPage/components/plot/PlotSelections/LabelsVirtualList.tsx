@@ -2,19 +2,8 @@ import React from "react";
 import VirtualList from "react-tiny-virtual-list";
 import styles from "../../../styles/DataExplorer2.scss";
 
-const toHyperlink = (
-  index_type: string,
-  plot_type: string,
-  label: string,
-  displayLabel: string
-) => {
-  // FIXME: The correlation heatmap is weird. The index_type does not actually
-  // reflect what you're selecting. We would need slice_type for that.
-  if (plot_type === "correlation_heatmap") {
-    return displayLabel;
-  }
-
-  if (index_type === "compound_experiment") {
+const toHyperlink = (dimensionType: string, id: string, label: string) => {
+  if (dimensionType === "compound_experiment") {
     const compound = label.replace(/\s*\(BRD:.*\)/, "");
 
     return (
@@ -28,30 +17,32 @@ const toHyperlink = (
 
   const urlFor: Record<string, string | undefined> = {
     gene: `../gene/${label}`,
-    depmap_model: `../cell_line/${label}`,
+    depmap_model: `../cell_line/${id}`,
   };
 
-  if (!urlFor[index_type]) {
+  if (!urlFor[dimensionType]) {
     return label;
   }
 
   return (
-    <a href={urlFor[index_type]} target="_blank" rel="noreferrer">
-      {displayLabel}
+    <a href={urlFor[dimensionType]} target="_blank" rel="noreferrer">
+      {label}
     </a>
   );
 };
 
 function LabelsVirtualList({
-  displayLabels,
+  ids,
   labels,
   index_type,
+  slice_type,
   plot_type,
   maxHeight,
 }: {
-  displayLabels: string[];
+  ids: string[];
   labels: string[];
   index_type: string;
+  slice_type: string;
   plot_type: string;
   maxHeight: number;
 }) {
@@ -73,10 +64,9 @@ function LabelsVirtualList({
             style={style}
           >
             {toHyperlink(
-              index_type,
-              plot_type,
-              labels[index],
-              displayLabels[index]
+              plot_type === "correlation_heatmap" ? slice_type : index_type,
+              ids[index],
+              labels[index]
             )}
           </div>
         );

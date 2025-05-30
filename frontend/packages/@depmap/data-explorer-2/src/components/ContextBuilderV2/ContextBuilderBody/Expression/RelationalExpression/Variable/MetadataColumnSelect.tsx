@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import PlotConfigSelect from "../../../../../PlotConfigSelect";
 import { useContextBuilderState } from "../../../../state/ContextBuilderState";
 import useTabularDatasets from "../../../../hooks/useTabularDatasets";
@@ -11,17 +11,39 @@ interface Props {
 function MetadataColumnSelect({ varName }: Props) {
   const { vars, setVar } = useContextBuilderState();
   const variable = vars[varName] || null;
-  const { isLoadingTabularDatasets, metadataDataset } = useTabularDatasets();
+  const {
+    isLoadingTabularDatasets,
+    metadataDataset,
+    metadataIdColumn,
+  } = useTabularDatasets();
 
-  const options = metadataDataset
-    ? Object.entries(metadataDataset.columns_metadata).map(
-        ([column, metadata]) => ({
-          label: column,
-          value: column,
-          col_type: metadata.col_type,
-        })
-      )
-    : [];
+  const options = useMemo(() => {
+    if (!metadataDataset) {
+      return [];
+    }
+
+    return Object.entries(metadataDataset.columns_metadata)
+      .sort(([colA], [colB]) => {
+        if (colA === metadataIdColumn) {
+          return -1;
+        }
+
+        if (colB === metadataIdColumn) {
+          return 1;
+        }
+
+        if (colA === "label") {
+          return -1;
+        }
+
+        return 0;
+      })
+      .map(([column, metadata]) => ({
+        label: column,
+        value: column,
+        col_type: metadata.col_type,
+      }));
+  }, [metadataDataset, metadataIdColumn]);
 
   return (
     <>

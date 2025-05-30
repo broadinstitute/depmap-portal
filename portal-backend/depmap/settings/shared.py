@@ -262,13 +262,6 @@ DATASET_METADATA: Dict[
         data_type=DataTypeEnum.crispr,
         priority=2,
     ),
-    DependencyEnum.Chronos_Score: DepDatasetMeta(
-        display_name="CRISPR (Project Score, Chronos)",
-        units="Gene Effect (Chronos)",
-        nominal_range=NORMALIZED_RANGE,
-        data_type=DataTypeEnum.crispr,
-        priority=3,
-    ),
     DependencyEnum.CERES_Combined: DepDatasetMeta(
         display_name="CRISPR (DepMap+Score, CERES)",
         units="Gene Effect (CERES)",
@@ -282,20 +275,6 @@ DATASET_METADATA: Dict[
         nominal_range=NORMALIZED_RANGE,
         data_type=DataTypeEnum.crispr,
         priority=5,
-    ),
-    DependencyEnum.Sanger_CRISPR: DepDatasetMeta(
-        display_name="CRISPR (Project Score, CERES)",
-        units="Gene Effect (CERES)",
-        nominal_range=NORMALIZED_RANGE,
-        data_type=DataTypeEnum.crispr,
-        priority=6,
-    ),
-    DependencyEnum.GeCKO: DepDatasetMeta(
-        display_name="CRISPR GeCKO (DepMap, CERES)",
-        units="Gene Effect (CERES)",
-        nominal_range=NORMALIZED_RANGE,
-        data_type=DataTypeEnum.crispr,
-        priority=8,
     ),
     DependencyEnum.GDSC1_AUC: DepDatasetMeta(
         display_name="Drug sensitivity AUC (Sanger GDSC1)",

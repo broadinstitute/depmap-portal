@@ -1,4 +1,5 @@
-export { FileSubType, ReleaseType, ViewMode } from "./src/models/downloads";
+export { ReleaseType, ViewMode } from "./src/models/downloads";
+export type { FileSubtype } from "./src/models/downloads";
 export { ValidationTextbox } from "./src/components/ValidationTextbox";
 export { default as DatasetPicker } from "./src/components/DatasetPicker";
 export { default as DownloadTracker } from "./src/components/DownloadTracker";
