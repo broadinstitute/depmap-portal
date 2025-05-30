@@ -3,6 +3,8 @@ common.py: error: Cannot access attribute "__fields__" for class "type[ResponseM
 conftest.py: error: Argument of type "Literal['read']" cannot be assigned to parameter "access_type" of type "AccessType" in function "__init__"
 data_validation.py: error: Cannot access attribute "any" for class "ExtensionArray"
 dataset.py: error: "value" is not a known attribute of "None" (reportOptionalMemberAccess)
+dataset.py: error: Argument of type "type[DatasetFeature]" cannot be assigned to parameter "axis" of type "DatasetFeature | DatasetSample" in function "_get_indexes_by_given_id"
+dataset.py: error: Argument of type "type[DatasetSample]" cannot be assigned to parameter "axis" of type "DatasetFeature | DatasetSample" in function "_get_indexes_by_given_id"
 dataset_tasks.py: error: Type "None" is not assignable to declared type "List[Unknown]"
 download_tasks.py: error: Argument of type "ArrayLike" cannot be assigned to parameter "column_labels" of type "List[str] | None" in function "_handle_df_nas"
 download_tasks.py: error: Cannot access attribute "merge" for class "NDArray[Unknown]"
