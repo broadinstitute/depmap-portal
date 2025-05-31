@@ -523,8 +523,10 @@ def process_data(inputs, extra=True):
     @return: (tuple of Anndata objects containing expression and metadata) Depmap, TCGA, and extra datasets
     """
     warnings.warn("loading depmap")
-    print("loading DepMap data...")
-    depmap_data = tc.get(inputs["depmap_expr"]["dataset_id"])
+    depmap_expr_id = inputs["depmap_expr"]["dataset_id"]
+    print(f"loading DepMap data ({depmap_expr_id})...")
+    depmap_data = tc.get(depmap_expr_id)
+    print(depmap_data)
     # starting in 25Q2, some additional columns got added which will need to be dropped before proceeding.
     # the following should reformat the matrix to be the format we used to get from taiga prior to 25Q2
     depmap_data.index = depmap_data["ProfileID"]
