@@ -47,6 +47,12 @@ def remove_svg_height_width(svg_string):
 
 
 def format_generic_distribution_plot(values, color, y_axis_at_zero=False):
+    # if all of `values` is a single value, the following fails at ax1.lines[0] so instead return html explaining we
+    # have zero variance
+    first_value = values[0]
+    if all([x == first_value for x in values]):
+        return f"<p>Cannot create density plot. All values are {first_value}</p>"
+
     fig = plt.figure(figsize=(4.5, 1.4))  # this has to be done first
 
     # set up event plot
