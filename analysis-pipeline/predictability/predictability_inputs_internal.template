@@ -132,7 +132,7 @@ add-if-missing {
     "type": "feature",
     "label": "armlevel_cna",
     "category": "armlevel",
-    "source_dataset_id": PREPROCESS_TAIGA_ID(virtual_permaname, "OmicsArmLevelCNA")
+    "source_dataset_id": PREPROCESS_TAIGA_ID(last_abs_cn_dataset_id, "OmicsArmLevelCNA")
 }
 
 add-if-missing {
@@ -146,7 +146,7 @@ add-if-missing {
     "type": "feature",
     "label": "genetic_signature",
     "category": "geneticsignature",
-    "source_dataset_id": PREPROCESS_TAIGA_ID(virtual_permaname, "OmicsSignatures")
+    "source_dataset_id": PREPROCESS_TAIGA_ID(last_abs_cn_dataset_id, "OmicsSignatures")
 }
 
 add-if-missing {
@@ -167,14 +167,14 @@ add-if-missing {
     "type": "feature",
     "label": "gene_cn",
     "category": "gene",
-    "source_dataset_id": PREPROCESS_TAIGA_ID(virtual_permaname, "OmicsCNGene")
+    "source_dataset_id": PREPROCESS_TAIGA_ID(virtual_permaname, "PortalOmicsCNGeneLog2")
 }
 
 add-if-missing {
     "type": "feature",
     "label": "loh",
     "category": "gene",
-    "source_dataset_id": PREPROCESS_TAIGA_ID(virtual_permaname, "OmicsLoH")
+    "source_dataset_id": PREPROCESS_TAIGA_ID(last_abs_cn_dataset_id, "OmicsLoH")
 }
 
 add-if-missing {
