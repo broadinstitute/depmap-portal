@@ -1,5 +1,6 @@
 import * as React from "react";
 import VolcanoPlot from "../components/VolcanoPlot";
+import { formatVolcanoTrace } from "../utilities/volcanoPlotUtils";
 
 export default {
   title: "Components/CorrelationAnalysis/VolcanoPlot",
@@ -20,7 +21,7 @@ export function VolcanoPlotStory() {
     <div>
       <h1>Volcano Plot Demo</h1>
       <VolcanoPlot
-        data={sampleData}
+        volcanoTrace={formatVolcanoTrace(sampleData, [], false)}
         onPointClick={(point, keyMod) => {
           console.log("Clicked point:", point);
           if (keyMod) {

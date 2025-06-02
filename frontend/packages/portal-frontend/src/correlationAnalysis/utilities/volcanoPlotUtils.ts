@@ -1,7 +1,11 @@
 import { VolcanoPlotData } from "../models/VolcanoPlot";
-import Plotly, { PlotData, Layout, Config, PlotMouseEvent } from "plotly.js";
+import { PlotData, Layout } from "plotly.js";
 
-export const formatVolcanoTrace = (volcanoData: Array<VolcanoPlotData>) => {
+export const formatVolcanoTrace = (
+  volcanoData: Array<VolcanoPlotData>,
+  selectedFeatures: string[],
+  hasOtherSelectedFeatureTypeFeatures: boolean
+) => {
   const traces = volcanoData.map((volcanoDataTrace) => {
     const plotlyTrace: Partial<PlotData> = {
       name: volcanoDataTrace.name,
@@ -15,6 +19,19 @@ export const formatVolcanoTrace = (volcanoData: Array<VolcanoPlotData>) => {
         },
         size: 7,
         color: volcanoDataTrace.color,
+        opacity: volcanoDataTrace.label.map((label) => {
+          if (selectedFeatures.length) {
+            return selectedFeatures.includes(label) ? 1 : 0.05;
+          }
+          if (
+            selectedFeatures.length === 0 &&
+            hasOtherSelectedFeatureTypeFeatures
+          ) {
+            return 0.05;
+          }
+
+          return 1;
+        }),
       },
       hoverinfo: "text",
       mode: "markers",

@@ -296,8 +296,7 @@ export default function CorrelationAnalysis(props: CorrelationAnalysisProps) {
           ([colName, volcanoDataProp]) => {
             const value = curRecord[colName];
             if (colName === "log10qvalue") {
-              const val = 10 ** value;
-              // VolcanoPlotProp `y` data by default log transforms values. To do the complement: Math.exp(-x)
+              const val = -(value as number);
               acc[key][doseCategory][volcanoDataProp].push(val);
             } else if (colName === "feature") {
               const label = curRecord[colName];
