@@ -15,6 +15,7 @@ from breadbox.db.session import SessionWithUser
 from breadbox.config import get_settings
 from breadbox.io.data_validation import validate_and_upload_dataset_files
 from breadbox.io.filestore_crud import get_slice
+from breadbox.utils.asserts import index_error_msg
 
 from breadbox.models.dataset import (
     Dataset,
@@ -80,9 +81,7 @@ def get_feature_data_slice_values(
     feature = dataset_crud.get_dataset_feature_by_uuid(
         db, user, dataset=dataset, feature_uuid=dataset_feature_id
     )
-    assert (
-        feature.index is not None
-    ), f"Feature {feature.given_id} has no index - this should not happen for matrix dataset features"
+    assert feature.index is not None, index_error_msg(feature)
     data_slice = get_slice(dataset, [feature.index], None, filestore_location,)
     data_slice.dropna(inplace=True)
     return data_slice
@@ -233,9 +232,7 @@ def get_features_info_and_dataset(
             result_feature = Feature(label=label, slice_id=slice_id)
             result_features.append(result_feature)
             dataset_feature_ids.append(dataset_feat.id)
-            assert (
-                dataset_feat.index is not None
-            ), f"Dataset feature {dataset_feat.given_id} has no index - this should not happen for matrix dataset features"
+            assert dataset_feat.index is not None, index_error_msg(dataset_feat)
             feature_indices.append(dataset_feat.index)
             datasets.append(dataset)
 
@@ -354,9 +351,7 @@ def run_custom_analysis(
                 feature = dataset_crud.get_dataset_feature_by_given_id(
                     db, query_dataset_id, query_feature_id
                 )
-                assert (
-                    feature.index is not None
-                ), f"Feature {feature.given_id} has no index - this should not happen for matrix dataset features"
+                assert feature.index is not None, index_error_msg(feature)
                 query_series = filestore_crud.get_feature_slice(
                     dataset=feature.dataset,
                     feature_indexes=[feature.index],

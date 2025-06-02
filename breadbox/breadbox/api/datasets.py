@@ -2,6 +2,7 @@ from typing import List, Optional, Set, Union
 from logging import getLogger
 from uuid import UUID
 from ..db.util import transaction
+from breadbox.utils.asserts import index_error_msg
 
 from fastapi import (
     APIRouter,
@@ -182,10 +183,8 @@ def get_feature_data(
             raise UserError(
                 f"Expected a matrix dataset. Unable to load feature data for tabular dataset: '{feature.dataset_id}' "
             )
+        assert feature.index is not None, index_error_msg(feature)
         # Read data from the HDF5 file
-        assert (
-            feature.index is not None
-        ), f"Feature {feature.given_id} has no index - this should not happen for matrix dataset features"
         df = get_feature_slice(dataset, [feature.index], settings.filestore_location)
         # Get the feature label
         if dataset.feature_type_name:
