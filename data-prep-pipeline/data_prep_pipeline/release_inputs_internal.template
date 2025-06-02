@@ -1,9 +1,9 @@
-# SET_TAIGA_PREPROCESSOR release_taiga_id "internal-25q2-9cfa"
+# TAIGA_PREPROCESSOR_INCLUDE "../../../depmap-deploy/current-dataset-ids/internal.conseq"
 
 # Destination Taiga ID
 add-if-missing {
- "type": "release_taiga_id",
- "dataset_id": PREPROCESS_TAIGA_ID(release_taiga_id)
+ "type": "release_taiga_id", 
+ "dataset_id": PREPROCESS_FORMAT_STR("{virtual_permaname}")
 }
 
 # Destination Taiga ID Test
@@ -15,13 +15,13 @@ add-if-missing {
 # CN gene expression data
 add-if-missing {
   "type": "cngene",
-  "dataset_id": PREPROCESS_TAIGA_ID(release_taiga_id, "OmicsCNGeneWGS") 
+  "dataset_id": PREPROCESS_TAIGA_ID(virtual_permaname, "OmicsCNGeneWGS") 
 }
 
 # Model
 add-if-missing {
   "type": "model",
-  "dataset_id": PREPROCESS_TAIGA_ID(release_taiga_id, "Model") 
+  "dataset_id": PREPROCESS_TAIGA_ID(virtual_permaname, "Model") 
 }
 
 # Portal Compounds
@@ -42,7 +42,7 @@ add-if-missing {
 
 add-if-missing {
   "type": "prism_oncology_reference_auc_matrix",
-  "dataset_id": PREPROCESS_TAIGA_ID(release_taiga_id, "PRISMOncologyReferenceLog2AUCMatrix") 
+  "dataset_id": PREPROCESS_TAIGA_ID(virtual_permaname, "PRISMOncologyReferenceLog2AUCMatrix") 
 }
 
 # HGNC Gene Table
@@ -54,7 +54,7 @@ add-if-missing {
 # Driver Events
 add-if-missing {
   "type": "mutations",
-  "dataset_id": PREPROCESS_TAIGA_ID(release_taiga_id, "OmicsSomaticMutations") 
+  "dataset_id": PREPROCESS_TAIGA_ID(virtual_permaname, "OmicsSomaticMutations") 
 }
 
 add-if-missing {
@@ -65,18 +65,18 @@ add-if-missing {
 # Fusion
 add-if-missing {
   "type": "fusion",
-  "dataset_id": PREPROCESS_TAIGA_ID(release_taiga_id, "OmicsFusionFiltered") 
+  "dataset_id": PREPROCESS_TAIGA_ID(virtual_permaname, "OmicsFusionFiltered") 
 }
 
 # CRISPR Confounders
 add-if-missing {
   "type": "achilles_screen_qc_report",
-  "dataset_id": PREPROCESS_TAIGA_ID(release_taiga_id, "AchillesScreenQCReport") 
+  "dataset_id": PREPROCESS_TAIGA_ID(virtual_permaname, "AchillesScreenQCReport") 
 }
 
 add-if-missing {
   "type": "crispr_screen_map",
-  "dataset_id": PREPROCESS_TAIGA_ID(release_taiga_id, "CRISPRScreenMap") 
+  "dataset_id": PREPROCESS_TAIGA_ID(virtual_permaname, "CRISPRScreenMap") 
 }
 
 # Legacy Data
@@ -118,5 +118,5 @@ add-if-missing {
 
 add-if-missing {
     "type": "omics_inferred_molecular_subtype",
-    "dataset_id": PREPROCESS_TAIGA_ID(release_taiga_id, "OmicsInferredMolecularSubtypes")
+    "dataset_id": PREPROCESS_TAIGA_ID(virtual_permaname, "OmicsInferredMolecularSubtypes")
 }

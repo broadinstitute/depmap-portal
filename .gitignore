@@ -191,3 +191,11 @@ output_data/
 data-prep-pipeline/state
 
 portal-backend/gcscache
+analysis-pipeline/predictability/predictability_inputs_internal-DO-NOT-EDIT-ME
+analysis-pipeline/state/
+pipeline/xrefs-internal.template
+pipeline/xrefs-non-public.template
+pipeline/run_dmc.conseq
+pipeline/run_internal.conseq
+pipeline/_run_internal.conseq
+config/shared/

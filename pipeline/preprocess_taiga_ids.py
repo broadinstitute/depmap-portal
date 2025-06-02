@@ -2,6 +2,7 @@ import sys
 import re
 from taigapy import create_taiga_client_v3
 import requests
+import json
 import os
 
 # this script exists to rewrite any Taiga IDs into their canonical form. (This allows conseq to recognize when data files are the same by just comparing taiga IDs)
@@ -35,7 +36,7 @@ def _rewrite_stream(vars, in_name, in_lines, out_fd):
             line_prefix = m.group(1)
             template = m.group(2)
             line_suffix = m.group(3)
-            line = line_prefix + repr(template.format(**vars)) + line_suffix
+            line = line_prefix + repr(json.loads(template.format(**vars))) + line_suffix
 
         m = re.match("(.*)PREPROCESS_TAIGA_ID\\(([^ ,]+)\\)(.*)", line, re.DOTALL)
         if m is not None:

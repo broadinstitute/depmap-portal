@@ -1,8 +1,11 @@
 eval """
 import subprocess
-subprocess.check_call(["python", "data_prep_pipeline/preprocess_taiga_ids.py", 
-                        "data_prep_pipeline/release_inputs_internal.template", 
-                        "data_prep_pipeline/release_inputs_internal-DO-NOT-EDIT-ME"])
+preprocessor = f"{config['SCRIPT_DIR']}/../../pipeline/preprocess_taiga_ids.py"
+cmd = ["python", preprocessor, 
+                        f"{config['SCRIPT_DIR']}/release_inputs_internal.template", 
+                        f"{config['SCRIPT_DIR']}/release_inputs_internal-DO-NOT-EDIT-ME"]
+print(f"Preprocessing templates by running {' '.join(cmd)}...")
+subprocess.check_call(cmd)
 """
 
 include "data_prep_pipeline/release_inputs_internal-DO-NOT-EDIT-ME"
