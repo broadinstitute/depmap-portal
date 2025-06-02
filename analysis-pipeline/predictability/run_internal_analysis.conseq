@@ -1,8 +1,11 @@
 eval """
 import subprocess
-subprocess.check_call(["python", "predictability/preprocess_taiga_ids.py", 
-                        "predictability/predictability_inputs_internal.template", 
-                        "predictability/predictability_inputs_internal-DO-NOT-EDIT-ME"])
+preprocessor = f"{config['SCRIPT_DIR']}/../../pipeline/preprocess_taiga_ids.py"
+cmd = ["python", preprocessor, 
+                        f"{config['SCRIPT_DIR']}/predictability_inputs_internal.template", 
+                        f"{config['SCRIPT_DIR']}/predictability_inputs_internal-DO-NOT-EDIT-ME"]
+print(f"Preprocessing templates by running {' '.join(cmd)}...")
+subprocess.check_call(cmd)
 """
 
 include "predictability/predictability_inputs_internal-DO-NOT-EDIT-ME"
