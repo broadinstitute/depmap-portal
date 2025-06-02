@@ -9,7 +9,7 @@ add-if-missing {
 # Destination Taiga ID Test
 add-if-missing {
   "type": "predictability_taiga_id",
-  "dataset_id": "predictability-76d5"
+  "dataset_id": PREPROCESS_FORMAT_STR("{virtual_permaname}")
 }
 
 # CN gene expression data
