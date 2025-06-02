@@ -61,9 +61,7 @@ def get_dataset_filter_clauses(db, user):
     groups = get_groups_with_visible_contents(db, user)  # TODO: update
     group_ids = [group.id for group in groups]
 
-    filter_clauses: List[ColumnElement[bool]] = [
-        Dataset.group_id.in_(group_ids)
-    ]  # pyright: ignore
+    filter_clauses: List[ColumnElement[bool]] = [Dataset.group_id.in_(group_ids)]
     # Don't return transient datasets
     filter_clauses.append(Dataset.is_transient == False)
 
@@ -98,9 +96,7 @@ def get_datasets(
     # Include columns for MatrixDataset, TabularDataset
     dataset_poly = with_polymorphic(Dataset, [MatrixDataset, TabularDataset])
 
-    filter_clauses: List[ColumnElement[bool]] = [
-        Dataset.group_id.in_(group_ids)
-    ]  # pyright: ignore
+    filter_clauses: List[ColumnElement[bool]] = [Dataset.group_id.in_(group_ids)]
 
     # Don't return transient datasets
     filter_clauses.append(Dataset.is_transient == False)
