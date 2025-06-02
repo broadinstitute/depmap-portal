@@ -67,6 +67,9 @@ def run_migrations_online():
 
     """
     configuration = config.get_section(config.config_ini_section) or {}
+    # In alembic the get_section() method can return None if the section doesn't exist, but engine_from_config() in sqlalchemy 2.0 requires a non-None dictionary (e.g. Dict[str, Any] )
+    # Hence, we are using the or {}
+
     configuration["sqlalchemy.url"] = get_url()
     connectable = engine_from_config(
         configuration, prefix="sqlalchemy.", poolclass=pool.NullPool,
