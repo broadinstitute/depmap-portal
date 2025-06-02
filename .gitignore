@@ -199,3 +199,5 @@ pipeline/run_dmc.conseq
 pipeline/run_internal.conseq
 pipeline/_run_internal.conseq
 config/shared/
+
+conseq-debug.log
