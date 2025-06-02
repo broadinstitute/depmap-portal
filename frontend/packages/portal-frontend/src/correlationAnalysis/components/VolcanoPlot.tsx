@@ -10,7 +10,7 @@ import { formatLayout } from "../utilities/volcanoPlotUtils";
 import { VolcanoPlotPoint } from "../models/VolcanoPlot";
 
 type VolcanoPlotProps = {
-  volcanoTrace: Partial<Plotly.PlotData>[];
+  volcanoTrace: Partial<PlotData>[];
   onPointClick: (point: VolcanoPlotPoint, keyModifier: boolean) => void;
 };
 
@@ -19,7 +19,8 @@ function VolcanoPlot({ volcanoTrace, onPointClick }: VolcanoPlotProps) {
 
   useEffect(() => {
     const plot = plotRef.current;
-    if (!plot) return;
+
+    if (!plot) return undefined;
 
     const layout: Partial<Layout> = formatLayout();
 

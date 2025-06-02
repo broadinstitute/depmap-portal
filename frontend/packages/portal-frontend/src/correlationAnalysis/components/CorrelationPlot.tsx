@@ -1,7 +1,6 @@
-import React from "react";
+import React, { useCallback } from "react";
 import VolcanoPlot from "./VolcanoPlot";
 import { VolcanoPlotData, VolcanoPlotPoint } from "../models/VolcanoPlot";
-import { useCallback } from "react";
 import { formatVolcanoTrace } from "../utilities/volcanoPlotUtils";
 
 interface CorrelationsPlotProps {
@@ -46,7 +45,7 @@ export default function CorrelationsPlot(props: CorrelationsPlotProps) {
         forwardPlotSelectedFeatures(featureType, [selectedLabel]);
       }
     },
-    [selectedFeatures, forwardPlotSelectedFeatures]
+    [selectedFeatures, featureType, forwardPlotSelectedFeatures]
   );
 
   return (
