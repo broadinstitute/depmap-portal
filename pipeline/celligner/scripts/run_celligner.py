@@ -18,7 +18,7 @@ import os
 from sklearn.decomposition import PCA
 import warnings
 
-tc = TaigaClient()
+tc = taigapy.create_taiga_client_v3()
 
 expr_dict = {""}
 ann_dict = {""}
