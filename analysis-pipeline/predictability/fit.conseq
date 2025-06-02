@@ -39,7 +39,7 @@ rule process_model_config:
         json.dump(config_dict, f, indent=2)   
 
     """
-    run "python {{ inputs.script.filename }} --model_config {{ inputs.model_config.filename }} --input_config 'daintree_input_config.json'"
+    run "python3 {{ inputs.script.filename }} --model_config {{ inputs.model_config.filename }} --input_config 'daintree_input_config.json'"
 
 
 rule run_fit_models:
@@ -51,73 +51,17 @@ rule run_fit_models:
         release_taiga_id={
           "type": "release_taiga_id"
           },
-        sparkles_config=fileref("sparkles-config", copy_to="sparkles-config")
+        sparkles_config=fileref("sparkles-config", copy_to="sparkles-config"),
+        create_workflow_script=fileref("scripts/create_daintree_workflow.py")
     outputs:
         {
           "type": "daintree_output_config",
           "name": "{{ inputs.daintree_input_config.label }}",
           "filename": {"$filename": "daintree_output_config.json"}
         }
-    run "python" with """
-      import subprocess
-      import os
-      import glob
-      import json
-      import shutil
-
-      # Get the input config file and copy it to current directory
-      input_config_filepath = "{{ inputs.daintree_input_config.filename }}"
-      local_input_config = "{{ inputs.daintree_input_config.label }}.json"
-      shutil.copy(input_config_filepath, local_input_config)
-
-      relative_path = os.path.relpath(os.getcwd(), '/work')
-      host_work_dir = os.environ.get('HOST_WORKSPACE_PATH', '/data1/jenkins/workspace/Analysis_Pipeline/analysis-pipeline')
-      host_current_dir = os.path.join(host_work_dir, relative_path)
-
-      print(f"relative_path: {relative_path}")
-      print(f"host_work_dir: {host_work_dir}")
-      print(f"host_current_dir: {host_current_dir}")
-
-      docker_command = [
-        "docker", "run",
-        "--rm",
-        "-v", f"{host_current_dir}:/daintree",
-        "-v", f"/home/ubuntu/.taiga/token:/root/.taiga/token",
-        "-v", f"/home/ubuntu/.sparkles-cache/service-keys/broad-achilles.json:/root/.sparkles-cache/service-keys/broad-achilles.json",
-        "--entrypoint", "/bin/bash",
-        "us.gcr.io/broad-achilles/daintree:v1",
-        "-c", f"mkdir -p /daintree/daintree_scripts/ && cp -r /daintree_scripts/* /daintree/daintree_scripts/ && /install/depmap-py/bin/python3.9 -u /daintree/daintree_scripts/run_fit_models.py collect-and-fit \
-        --input-config /daintree/{local_input_config} \
-        --sparkles-config /daintree/sparkles-config \
-        --out /daintree/output_data \
-        --test \"True\" \
-        --skipfit \"False\" \
-        --upload-to-taiga \"{{ inputs.release_taiga_id.dataset_id }}\""
-      ]
-
-      subprocess.run(
-          docker_command,
-          check=True
-      )
-      
-      # Find the output config file using glob
-      output_config_files = glob.glob(os.path.join(os.getcwd(), "output_data", "output_config_files", "*.json"))
-      if not output_config_files:
-          raise FileNotFoundError("No output config files found")
-      
-      # Use the first, there should only be one matching file
-      output_config_file = output_config_files[0]
-      
-      try:
-          with open(output_config_file, 'r') as f:
-              output_config = json.load(f)
-          with open("daintree_output_config.json", 'w') as f:
-              json.dump(output_config, f, indent=2)
-      except json.JSONDecodeError as e:
-          logger.error(f"Invalid JSON in output config: {e}")
-          raise
-    """
-
+    run "cp {{ inputs.daintree_input_config.filename }} {{ inputs.daintree_input_config.label }}.json"
+    run "python3 {{ inputs.create_workflow_script.filename }} --config {{ inputs.daintree_input_config.label }}.json --out workflow.json --nfolds 5 --models-per-task 5 --test-first-n-tasks 10"
+    run "sparkles workflow run workflow.json"
 
 rule combine_output_configs:
     inputs:
