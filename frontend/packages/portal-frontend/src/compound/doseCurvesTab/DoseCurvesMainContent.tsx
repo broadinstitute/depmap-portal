@@ -6,13 +6,9 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { getBreadboxApi, getDapi } from "src/common/utilities/context";
+import { getDapi } from "src/common/utilities/context";
 import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
-import {
-  CurveParams,
-  CurvePlotPoints,
-  DoseCurveData,
-} from "../components/DoseResponseCurve";
+import { CurveParams, CurvePlotPoints } from "../components/DoseResponseCurve";
 import { CompoundDataset } from "../components/DoseResponseTab";
 import DoseCurvesPlotSection from "./DoseCurvesPlotSection";
 import useDoseCurvesData from "./hooks/useDoseCurvesData";
@@ -21,12 +17,15 @@ import { CompoundDoseCurveData, DoseTableRow } from "./types";
 import { DataExplorerContext } from "@depmap/types";
 import { defaultContextName } from "@depmap/data-explorer-2/src/components/DataExplorerPage/utils";
 import { saveNewContext } from "src";
+import doseCurvesPromptForSelectionFromContext from "./doseCurvesPromptForSelectionFromContext";
+import { useDeprecatedDataExplorerApi } from "@depmap/data-explorer-2";
 
 interface DoseCurvesMainContentProps {
   dataset: CompoundDataset | null;
   doseUnits: string;
   showReplicates: boolean;
   showUnselectedLines: boolean;
+  compoundName: string;
 }
 
 const sortBySelectedModel = (
@@ -53,12 +52,14 @@ function DoseCurvesMainContent({
   doseUnits,
   showReplicates,
   showUnselectedLines,
+  compoundName,
 }: DoseCurvesMainContentProps) {
   const dapi = getDapi();
-  const bbapi = getBreadboxApi();
+  const api = useDeprecatedDataExplorerApi();
 
   const { error, isLoading, doseCurveData, doseTable } = useDoseCurvesData(
-    dataset
+    dataset,
+    compoundName
   );
 
   const [selectedCurves, setSelectedCurves] = useState<Set<string>>(
@@ -198,7 +199,7 @@ function DoseCurvesMainContent({
   };
 
   const visibleCurveData = useMemo(() => {
-    if (!showUnselectedLines && doseCurveData) {
+    if (!showUnselectedLines && doseCurveData && selectedCurves.size > 0) {
       const visibleCurveParams = doseCurveData?.curve_params.filter(
         (c: CurveParams) => selectedCurves.has(c.id!)
       );
@@ -209,7 +210,7 @@ function DoseCurvesMainContent({
       } as CompoundDoseCurveData;
     }
     return doseCurveData;
-  }, [doseCurveData, showUnselectedLines]);
+  }, [doseCurveData, selectedCurves, showUnselectedLines]);
 
   return (
     <div style={{ marginLeft: "10px", marginRight: "10px" }}>
@@ -251,7 +252,24 @@ function DoseCurvesMainContent({
               setSelectedCurves(new Set([]));
               setSelectedTableRows(new Set([]));
             }}
-            onClickSetSelectionFromContext={() => {}}
+            onClickSetSelectionFromContext={async () => {
+              const allLabels = new Set(
+                doseCurveData?.curve_params.map(
+                  (curveParam: CurveParams) => curveParam.id!
+                )
+              );
+              const labels = await doseCurvesPromptForSelectionFromContext(
+                api,
+                allLabels
+              );
+
+              if (labels === null) {
+                return;
+              }
+
+              setSelectedCurves(labels);
+              setSelectedTableRows(labels);
+            }}
           />
         </div>
       </div>

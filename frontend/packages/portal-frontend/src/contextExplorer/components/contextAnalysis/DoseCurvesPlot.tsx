@@ -447,6 +447,7 @@ function DoseCurvesPlot({
     minDose,
     maxDose,
     includeMedianQuantileRegions,
+    doseRepPoints,
   ]);
 
   return (

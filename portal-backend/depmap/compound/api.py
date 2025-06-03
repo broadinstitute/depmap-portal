@@ -24,6 +24,9 @@ def _get_dose_replicate_points(
     # points only contains viability -- we need to add on dose, isMasked, and replicate ourselves
     assert len(compound_dose_replicates) == len(viabilities)
     points = []
+
+    # NOTE: New - merge this with the viability information on the frontend using
+    # Breadbox data.
     for i in range(len(viabilities)):
         if (viabilities[i] is not None) & (not math.isnan(viabilities[i])):
             points.append(

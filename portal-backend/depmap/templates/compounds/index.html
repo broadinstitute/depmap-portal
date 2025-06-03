@@ -158,6 +158,7 @@ active_tab_set = False %}
       $(function () { // document ready for middle-of-html js
           DepMap.initDoseCurvesTab(
               "new-dose-curves-tab-content",
+              {{name | tojson}},
           {{dose_curve_options_new | tojson}},
           "{{ compound_units }}"
       );

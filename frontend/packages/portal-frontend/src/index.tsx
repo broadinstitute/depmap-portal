@@ -240,12 +240,17 @@ export function initDoseResponseTab(
 // New dose curves tab
 export function initDoseCurvesTab(
   elementId: string,
+  name: string,
   datasetOptions: Array<any>,
   units: string
 ) {
   renderWithErrorBoundary(
     <React.Suspense fallback={<div>Loading...</div>}>
-      <DoseCurvesTab datasetOptions={datasetOptions} doseUnits={units} />
+      <DoseCurvesTab
+        datasetOptions={datasetOptions}
+        doseUnits={units}
+        compoundName={name}
+      />
     </React.Suspense>,
     document.getElementById(elementId) as HTMLElement
   );

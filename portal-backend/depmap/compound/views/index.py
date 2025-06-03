@@ -55,6 +55,7 @@ blueprint = Blueprint(
 @blueprint.route("/<path:name>")
 def view_compound(name):
     compound = Compound.get_by_label(name, must=False)
+
     aliases = Compound.get_aliases_by_entity_id(compound.entity_id)
     compound_aliases = ", ".join(
         [alias for alias in aliases if alias.lower() != name.lower()]

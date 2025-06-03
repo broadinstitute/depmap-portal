@@ -8,9 +8,14 @@ import "src/common/styles/typeahead_fix.scss";
 interface DoseCurvesTabProps {
   datasetOptions: CompoundDataset[];
   doseUnits: string;
+  compoundName: string;
 }
 
-function DoseCurvesTab({ datasetOptions, doseUnits }: DoseCurvesTabProps) {
+function DoseCurvesTab({
+  datasetOptions,
+  doseUnits,
+  compoundName,
+}: DoseCurvesTabProps) {
   const [
     selectedDataset,
     setSelectedDataset,
@@ -85,6 +90,7 @@ function DoseCurvesTab({ datasetOptions, doseUnits }: DoseCurvesTabProps) {
           doseUnits={doseUnits}
           showReplicates={showReplicates}
           showUnselectedLines={showUnselectedLines}
+          compoundName={compoundName}
         />
       </div>
     </div>

@@ -233,6 +233,35 @@ export class BreadboxApi {
     );
   }
 
+  // NOTE: Replace this with final version of Jessica's from the Corr Analysis Tab
+  // PR
+  getDatasetFeatures(
+    datasetId: string
+  ): Promise<{ id: string; label: string }[]> {
+    return this._fetch<{ id: string; label: string }[]>(
+      `/datasets/features/${datasetId}`
+    );
+  }
+
+  getFeaturesData(
+    datasetId: string,
+    featureIds: string[]
+  ): Promise<{ id: string; label: string }[]> {
+    const numFeatureIds = featureIds.length;
+
+    // Every feature contains the same
+    const dataset_ids = Array(numFeatureIds).fill(datasetId);
+    const params: any = {
+      dataset_ids,
+      feature_ids: featureIds,
+    };
+    return this._fetch<any>(`/datasets/features/data/?${encodeParams(params)}`);
+  }
+
+  getDataset(datasetId: string): Promise<any> {
+    return this._fetch<any>(`/datasets/${datasetId}`);
+  }
+
   getMetadata(label: string): Promise<any> {
     const params: any = {
       label,
@@ -336,6 +365,25 @@ export class BreadboxApi {
     const url = `/types/dimensions/${dimTypeName}`;
 
     return this._fetchWithJsonBody(url, "PATCH", dimTypeArgs);
+  }
+
+  // NOTE: Replace this with final version of Jessica's from the Corr Analysis Tab
+  // PR
+  getTabularDatasetData(
+    datasetId: string,
+    args: {
+      identifier: "id" | "label";
+      columns?: string[] | null;
+    }
+  ): Promise<{ [key: string]: { [key: string]: any } }> {
+    const url = `/datasets/tabular/${datasetId}`;
+    return this._fetchWithJsonBody(url, "POST", args);
+  }
+
+  // NOTE: Replace this with final version of Jessica's from the Corr Analysis Tab
+  // PR
+  getDimensionType(name: string): Promise<DimensionType> {
+    return this._fetch<DimensionType>(`/types/dimensions/${name}`);
   }
 
   deleteDimensionType(name: string) {

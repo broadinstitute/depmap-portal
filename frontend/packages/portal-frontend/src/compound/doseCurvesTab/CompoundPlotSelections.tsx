@@ -1,9 +1,7 @@
-import React, { useContext, useRef } from "react";
+import React, { useRef } from "react";
 import { Button } from "react-bootstrap";
 import styles from "@depmap/data-explorer-2/src/components/DataExplorerPage/styles/DataExplorer2.scss";
 import LabelsVirtualList from "@depmap/data-explorer-2/src/components/DataExplorerPage/components/plot/PlotSelections/LabelsVirtualList";
-import { SectionStackContext } from "@depmap/data-explorer-2/src/components/DataExplorerPage/components/SectionStack";
-import HelpTip from "@depmap/data-explorer-2/src/components/DataExplorerPage/components/HelpTip";
 
 interface CompoundPlotSelectionsProps {
   selectedIds: Set<string> | null;
@@ -12,8 +10,6 @@ interface CompoundPlotSelectionsProps {
   onClickClearSelection?: () => void;
   onClickSetSelectionFromContext?: () => void;
 }
-
-const SECTION_HEIGHT_WITHOUT_LIST = 194;
 
 function CompoundPlotSelections({
   selectedIds,
@@ -60,18 +56,20 @@ function CompoundPlotSelections({
               </button>
             </div>
           )}
-          {onClickSetSelectionFromContext && !selectedLabels && (
-            <div>
-              or{" "}
-              <button
-                type="button"
-                className={styles.setSelectionButton}
-                onClick={onClickSetSelectionFromContext}
-              >
-                set selection from a context
-              </button>
-            </div>
-          )}
+          {onClickSetSelectionFromContext &&
+            selectedLabels &&
+            selectedLabels.size === 0 && (
+              <div>
+                or{" "}
+                <button
+                  type="button"
+                  className={styles.setSelectionButton}
+                  onClick={onClickSetSelectionFromContext}
+                >
+                  set selection from a context
+                </button>
+              </div>
+            )}
         </div>
         <div className={styles.plotSelectionsContent}>
           <div ref={listRef}>

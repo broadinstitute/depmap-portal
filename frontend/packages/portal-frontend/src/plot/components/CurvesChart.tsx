@@ -19,7 +19,6 @@ export interface CurvesChartProps {
   maxX: number;
   showLegend: boolean;
   onLoad: (plot: ExtendedPlotType) => void;
-  newTraces?: any;
   height?: number | "auto";
   margin?: Margin;
   customWidth?: number | undefined;
@@ -57,7 +56,6 @@ function CurvesChart({
   maxX,
   showLegend,
   curveTraces,
-  newTraces = undefined,
   customHoverinfo = undefined,
   selectedCurves = undefined,
   onLoad = () => {},
