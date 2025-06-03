@@ -27,7 +27,7 @@ RUN mkdir -p /root/.taiga
 
 # Sparkles v5 requires python==3.10^
 RUN virtualenv --python=python3.10 /install/sparkles && \
-    /install/sparkles/bin/pip install https://github.com/user-attachments/files/20524666/sparklespray-5.3.0.tar.gz
+    /install/sparkles/bin/pip install https://github.com/user-attachments/files/20561197/sparklespray-5.3.1.tar.gz
 
 RUN virtualenv /install/gsutil && /install/gsutil/bin/pip install gsutil
 
