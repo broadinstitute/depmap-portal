@@ -26,6 +26,7 @@ import TermsAndConditionsModal from "./common/components/TermsAndConditionsModal
 import { initializeDevContexts } from "@depmap/data-explorer-2";
 import { EnrichmentTile } from "./contextExplorer/components/EnrichmentTile";
 import CorrelationAnalysis from "./correlationAnalysis/components";
+import { CorrelatedDependenciesTile } from "./compound/components/tiles/CorrelatedDependenciesTile";
 
 export { log, tailLog, getLogCount } from "src/common/utilities/log";
 
@@ -190,6 +191,22 @@ export function initEnrichmentTile(
   renderWithErrorBoundary(
     <React.Suspense fallback={<div>Loading...</div>}>
       <EnrichmentTile entityLabel={entityLabel} entityType={entityType} />
+    </React.Suspense>,
+    document.getElementById(elementId) as HTMLElement
+  );
+}
+
+export function initCorrelatedDependenciesTile(
+  elementId: string,
+  entityLabel: string,
+  entityType: string
+) {
+  renderWithErrorBoundary(
+    <React.Suspense fallback={<div>Loading...</div>}>
+      <CorrelatedDependenciesTile
+        entityLabel={entityLabel}
+        entityType={entityType}
+      />
     </React.Suspense>,
     document.getElementById(elementId) as HTMLElement
   );

@@ -145,6 +145,7 @@ class CompoundTileEnum(enum.Enum):
     correlations = "correlations"
     availability = "availability"
     celfie = "celfie"
+    correlated_dependencies = "correlated_dependencies"
 
 
 class DataTypeEnum(enum.Enum):
