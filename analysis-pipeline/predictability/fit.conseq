@@ -6,6 +6,7 @@
 # todo: fix docker image such that default python is python3, and make sparkles in path
 let sparkes_path = "/install/sparkles/bin/sparkles"
 let daintree_docker_image = "us-central1-docker.pkg.dev/cds-docker-containers/docker/daintree:test"
+let dest_permaname = "internal-25q2-pred-test-f0ee"
 
 rule process_model_config:
     inputs:
@@ -57,7 +58,6 @@ rule run_fit_models:
           },
         sparkles_config=fileref("sparkles-config"),
         create_workflow_script=fileref("scripts/create_daintree_workflow.py")
-#    run "cp {{ inputs.daintree_input_config.filename }} {{ inputs.daintree_input_config.screen_name }}_{{ inputs.daintree_input_config.model_name }}.json"
     run "python3 {{ inputs.create_workflow_script.filename }} --config {{ inputs.daintree_input_config.filename }} --out workflow.json --nfolds 5 --models-per-task 5 --test-first-n-tasks 10"
     run "cp {{ inputs.sparkles_config.filename }} .sparkles"
     run "{{config.sparkles_path}} workflow run --retry --add-hash-to-job-id -i {{ config.daintree_docker_image }} daintree-fit workflow.json"
@@ -75,21 +75,44 @@ rule run_fit_models:
                     "type": "daintree_output",
                     "model_name": {{ inputs.daintree_input_config.model_name | quoted }},
                     "screen_name": {{ inputs.daintree_input_config.screen_name | quoted }},
+                    "sparkles_job_name": {"$value": result["sparkles_job_name"]},
+                    "daintree_input_config_filename": {{ inputs.daintree_input_config.filename | quoted }},
+                    "features_metadata_filename" : {"$file_url": result["features_metadata_path"]},
                     "ensemble_filename" : {"$file_url": result["ensemble_path"]},
                     "predictions_filename": {"$file_url": result["predictions_path"]}}
             ]}))
     """
 
-# this rule won't actually run because I've changed the output type
-rule combine_output_configs:
+rule upload_fit_results_to_taiga2:
     inputs:
-        daintree_output_config = all{
-          "type": "daintree_output_config"
+        daintree_output={"type": "daintree_output"},
+        script=fileref("scripts/upload_fit_results_to_taiga.py")
+    outputs:
+        {
+            "type": "daintree_upload_output", 
+            "filename": {"$filename": "{{ inputs.daintree_output.model_name }}-{{ inputs.daintree_output.screen_name }}.json" },
+            "model_name": "{{ inputs.daintree_output.model_name }}",
+            "screen_name": "{{ inputs.daintree_output.screen_name }}"
+        }
+    run "bash" with """
+        python3 {{inputs.script.filename}} \
+            --runner_config_file {{ inputs.daintree_output.daintree_input_config_filename }} \
+            --features_metadata_csv {{ inputs.daintree_output.features_metadata_filename }} \
+            --ensemble_csv {{ inputs.daintree_output.ensemble_filename }} \
+            --predictions_matrix_csv {{ inputs.daintree_output.predictions_filename }} \
+            --dest_permaname {{ config.dest_permaname }} \
+            --output_config_file {{ inputs.daintree_output.model_name }}-{{ inputs.daintree_output.screen_name }}.json \
+    """
+
+rule combine_daintree_upload_outputs:
+    inputs:
+        outputs = all{
+          "type": "daintree_upload_output"
           }
     outputs:
         {
-          "type": "combined_daintree_output_config",
-          "filename": {"$filename": "combined_daintree_output_config.json"}
+          "type": "combined_daintree_upload_outputs",
+          "filename": {"$filename": "combined_daintree_upload_outputs.json"}
         }
     run "python" with """
         import json
@@ -102,7 +125,9 @@ rule combine_output_configs:
                 with open(file_path, 'r') as f:
                     data = json.load(f)
                     
-                model_name = list(data.keys())[0]
+                model_names = list(data.keys())
+                assert len(model_names) == 1
+                model_name = model_names[0]
                 screen_name = data[model_name]["input"]["screen_name"]
                 
                 # Initialize the screen in combined if it doesn't exist
@@ -114,30 +139,13 @@ rule combine_output_configs:
             
             return combined        
 
-        artifacts = {{ inputs.daintree_output_config }}
+        artifacts = {{ inputs.outputs | quoted }}
         list_of_files = [artifact['filename'] for artifact in artifacts]
 
         combined_output_config = merge_json_files(list_of_files)
 
-        try:
-            with open("combined_daintree_output_config.json", 'w') as f:
-                json.dump(combined_output_config, f, indent=2)
-        except json.JSONDecodeError as e:
-            logger.error(f"Invalid JSON in combined output config: {e}")
-            raise
-
-        # Publish the combined output config file to gcp bucket
-        import subprocess
-        import datetime
-
-        os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "/etc/google_default_creds.json"
-        bucket_name = "preprocessing-pipeline-outputs"
-        timestamp = datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
-
-        subprocess.run([
-            "gsutil", "-o", f"Credentials:gs_service_key_file=/etc/google_default_creds.json",
-            "cp", "combined_daintree_output_config.json", 
-            f"gs://{bucket_name}/analysis-pipeline/combined_daintree_output_config-{timestamp}.json"
-        ])
-        
+        with open("combined_daintree_upload_outputs.json", 'w') as f:
+            json.dump(combined_output_config, f, indent=2)
     """
+
+# TODO: Add publish rule
