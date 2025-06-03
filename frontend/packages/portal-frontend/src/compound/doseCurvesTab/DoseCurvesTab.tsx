@@ -96,6 +96,9 @@ function DoseCurvesTab({
             showReplicates={showReplicates}
             showUnselectedLines={showUnselectedLines}
             compoundName={compoundName}
+            handleShowUnselectedLinesOnSelectionsCleared={() =>
+              setShowUnselectedLines(true)
+            }
           />
         </div>
       </div>

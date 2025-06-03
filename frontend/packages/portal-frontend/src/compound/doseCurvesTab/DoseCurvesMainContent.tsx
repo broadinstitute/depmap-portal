@@ -26,6 +26,7 @@ interface DoseCurvesMainContentProps {
   showReplicates: boolean;
   showUnselectedLines: boolean;
   compoundName: string;
+  handleShowUnselectedLinesOnSelectionsCleared: () => void;
 }
 
 const sortBySelectedModel = (
@@ -53,6 +54,7 @@ function DoseCurvesMainContent({
   showReplicates,
   showUnselectedLines,
   compoundName,
+  handleShowUnselectedLinesOnSelectionsCleared,
 }: DoseCurvesMainContentProps) {
   const dapi = getDapi();
   const api = useDeprecatedDataExplorerApi();
@@ -251,6 +253,7 @@ function DoseCurvesMainContent({
             onClickClearSelection={() => {
               setSelectedCurves(new Set([]));
               setSelectedTableRows(new Set([]));
+              handleShowUnselectedLinesOnSelectionsCleared();
             }}
             onClickSetSelectionFromContext={async () => {
               const allLabels = new Set(
