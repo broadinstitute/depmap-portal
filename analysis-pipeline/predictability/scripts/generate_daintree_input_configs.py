@@ -57,6 +57,9 @@ def generate_daintree_configs(
                 target_key = "rnai"
             elif screen == "oncref":
                 target_key = "oncref"
+            else:
+                raise Exception(f"unknown: {screen}")
+
             target_input = input_config[target_key]
 
             output_json["data"][target] = {
@@ -106,15 +109,16 @@ def generate_daintree_configs(
                 artifacts.append(
                     {
                         "type": "daintree_input_config",
-                        "model_and_screen": model_and_screen,
-                        "label": f"DaintreeInputConfig{model_and_screen}",
+                        "model_name": model_name,
+                        "screen_name": screen,
                         "filename": {"$filename": output_filename},
                     }
                 )
 
     # Write results
     with open("results.json", "w") as f:
-        json.dump({"outputs": artifacts}, f, indent=2)
+        # TODO: fix -- only temp change for testing. Limit to one job
+        json.dump({"outputs": artifacts[:1]}, f, indent=2)
 
     return artifacts
 

@@ -3,6 +3,10 @@
 # 2. Run the model fitting
 # 3. Combine the output config files
 
+# todo: fix docker image such that default python is python3, and make sparkles in path
+let sparkes_path = "/install/sparkles/bin/sparkles"
+let daintree_docker_image = "us-central1-docker.pkg.dev/cds-docker-containers/docker/daintree:test"
+
 rule process_model_config:
     inputs:
         # Model config yaml file
@@ -51,18 +55,32 @@ rule run_fit_models:
         release_taiga_id={
           "type": "release_taiga_id"
           },
-        sparkles_config=fileref("sparkles-config", copy_to="sparkles-config"),
+        sparkles_config=fileref("sparkles-config"),
         create_workflow_script=fileref("scripts/create_daintree_workflow.py")
-    outputs:
-        {
-          "type": "daintree_output_config",
-          "name": "{{ inputs.daintree_input_config.label }}",
-          "filename": {"$filename": "daintree_output_config.json"}
-        }
-    run "cp {{ inputs.daintree_input_config.filename }} {{ inputs.daintree_input_config.label }}.json"
-    run "python3 {{ inputs.create_workflow_script.filename }} --config {{ inputs.daintree_input_config.label }}.json --out workflow.json --nfolds 5 --models-per-task 5 --test-first-n-tasks 10"
-    run "sparkles workflow run workflow.json"
+#    run "cp {{ inputs.daintree_input_config.filename }} {{ inputs.daintree_input_config.screen_name }}_{{ inputs.daintree_input_config.model_name }}.json"
+    run "python3 {{ inputs.create_workflow_script.filename }} --config {{ inputs.daintree_input_config.filename }} --out workflow.json --nfolds 5 --models-per-task 5 --test-first-n-tasks 10"
+    run "cp {{ inputs.sparkles_config.filename }} .sparkles"
+    run "{{config.sparkles_path}} workflow run --retry --add-hash-to-job-id -i {{ config.daintree_docker_image }} daintree-fit workflow.json"
+    # reformat daintree-output into artifacts conseq will understand
+    run "python3" with """
+    import json
 
+    with open("daintree-output.json", "rt") as fd:
+        result = json.load(fd)
+
+    with open("outputs.json", "wt") as fd:
+        fd.write(json.dumps(
+            {"outputs": [
+                {
+                    "type": "daintree_output",
+                    "model_name": {{ inputs.daintree_input_config.model_name | quoted }},
+                    "screen_name": {{ inputs.daintree_input_config.screen_name | quoted }},
+                    "ensemble_filename" : {"$file_url": result["ensemble_path"]},
+                    "predictions_filename": {"$file_url": result["predictions_path"]}}
+            ]}))
+    """
+
+# this rule won't actually run because I've changed the output type
 rule combine_output_configs:
     inputs:
         daintree_output_config = all{

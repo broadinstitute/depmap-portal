@@ -25,7 +25,7 @@ def create_sparkles_workflow(config: str, out: Optional[str], test: bool, nfolds
         "steps": [
             {
                 "command": prepare_command,
-                "files_to_localize": [{"src": config, "dst":"model_config.json"}],
+                "paths_to_localize": [{"src": config, "dst":"model_config.json"}],
             },
             {
                 "command": ["daintree-core", "fit-model", "--x", "out/X.ftr", "--y", "out/target_matrix.ftr", "--model-config", "{parameter.model_config}", "--n-folds", str(nfolds), "--target-range", "{parameter.start_index}", "{parameter.end_index}", "--model", "{parameter.model_name}"],
@@ -34,7 +34,7 @@ def create_sparkles_workflow(config: str, out: Optional[str], test: bool, nfolds
                     {"src": "{step.1.job_path}/1/out", "dst":"out"}
                 ]
             },
-            {"command": ["daintree-runner", "gather", "--dir", "{step.2.job_path}"]},
+            {"command": ["daintree-runner", "gather", "--dir", "{step.2.job_path}", "{step.1.job_path}/1/out/partitions.csv"]},
         ],
         "write_on_completion": [
             {
@@ -42,7 +42,7 @@ def create_sparkles_workflow(config: str, out: Optional[str], test: bool, nfolds
                                 "{step.3.job_path}/1/ensemble.csv",
                                "predictions_path": 
                                 "{step.3.job_path}/1/predictions.csv"},
-                "filename": "outputs.json"
+                "filename": "daintree-output.json"
             },
         ],
     }
