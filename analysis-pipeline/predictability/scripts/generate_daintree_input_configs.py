@@ -117,8 +117,7 @@ def generate_daintree_configs(
 
     # Write results
     with open("results.json", "w") as f:
-        # TODO: fix -- only temp change for testing. Limit to one job
-        json.dump({"outputs": artifacts[:1]}, f, indent=2)
+        json.dump({"outputs": artifacts}, f, indent=2)
 
     return artifacts
 
