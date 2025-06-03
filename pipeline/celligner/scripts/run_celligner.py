@@ -550,7 +550,7 @@ def process_data(inputs, extra=True):
     @return: (tuple of Anndata objects containing expression and metadata) Depmap, TCGA, and extra datasets
     """
     warnings.warn("loading depmap")
-    depmap_expr_id = inputs["depmap_expr"]["source_dataset_id"]
+    depmap_expr_id = inputs["depmap_expr"]["dataset_id"]
 
     print(f"loading DepMap data ({depmap_expr_id})...")
     depmap_data = tc.get(depmap_expr_id)
@@ -565,9 +565,9 @@ def process_data(inputs, extra=True):
     warnings.warn("loading anns")
     depmap_ann = tc.get(inputs["depmap_ann"]["source_dataset_id"])
     warnings.warn("loading prof map")
-    depmap_prof_map = tc.get(inputs["depmap_prof_map"]["source_dataset_id"])
+    depmap_prof_map = tc.get(inputs["depmap_prof_map"]["dataset_id"])
     warnings.warn("loading model conds")
-    depmap_model_cond = tc.get(inputs["depmap_model_cond"]["source_dataset_id"])
+    depmap_model_cond = tc.get(inputs["depmap_model_cond"]["dataset_id"])
 
     depmap_out = process_depmap_ipts(
         depmap_data, depmap_ann, depmap_prof_map, depmap_model_cond
