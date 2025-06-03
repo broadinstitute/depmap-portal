@@ -2,6 +2,8 @@ import React, { useEffect, useCallback, useState } from "react";
 import { CompoundDataset } from "../components/DoseResponseTab";
 import DoseCurvesMainContent from "./DoseCurvesMainContent";
 import FiltersPanel from "./FiltersPanel";
+import { DeprecatedDataExplorerApiProvider } from "@depmap/data-explorer-2";
+import { evaluateLegacyContext } from "src/data-explorer-2/deprecated-api";
 import "react-bootstrap-typeahead/css/Typeahead.css";
 import "src/common/styles/typeahead_fix.scss";
 
@@ -48,52 +50,56 @@ function DoseCurvesTab({
   );
 
   return (
-    <div
-      style={{
-        display: "grid",
-        gridTemplateColumns: "1fr 7fr",
-        gridTemplateAreas: "'filters main main main main main main main'",
-        gap: "2rem",
-      }}
+    <DeprecatedDataExplorerApiProvider
+      evaluateLegacyContext={evaluateLegacyContext}
     >
       <div
         style={{
-          gridArea: "filters",
-          backgroundColor: "rgba(123, 140, 178, 0.1)",
-          paddingLeft: "12px",
-          paddingRight: "12px",
-          paddingTop: "15px",
+          display: "grid",
+          gridTemplateColumns: "1fr 7fr",
+          gridTemplateAreas: "'filters main main main main main main main'",
+          gap: "2rem",
         }}
       >
-        <FiltersPanel
-          handleSelectDataset={handleSelectDataset}
-          datasetOptions={datasetOptions}
-          selectedDatasetOption={
-            selectedDatasetOption || {
-              value: datasetOptions[0].dataset,
-              label: datasetOptions[0].auc_dataset_display_name,
+        <div
+          style={{
+            gridArea: "filters",
+            backgroundColor: "rgba(123, 140, 178, 0.1)",
+            paddingLeft: "12px",
+            paddingRight: "12px",
+            paddingTop: "15px",
+          }}
+        >
+          <FiltersPanel
+            handleSelectDataset={handleSelectDataset}
+            datasetOptions={datasetOptions}
+            selectedDatasetOption={
+              selectedDatasetOption || {
+                value: datasetOptions[0].dataset,
+                label: datasetOptions[0].auc_dataset_display_name,
+              }
             }
-          }
-          showReplicates={showReplicates}
-          showUnselectedLines={showUnselectedLines}
-          handleToggleShowReplicates={(nextValue: boolean) =>
-            setShowReplicates(nextValue)
-          }
-          handleToggleShowUnselectedLines={(nextValue: boolean) =>
-            setShowUnselectedLines(nextValue)
-          }
-        />
+            showReplicates={showReplicates}
+            showUnselectedLines={showUnselectedLines}
+            handleToggleShowReplicates={(nextValue: boolean) =>
+              setShowReplicates(nextValue)
+            }
+            handleToggleShowUnselectedLines={(nextValue: boolean) =>
+              setShowUnselectedLines(nextValue)
+            }
+          />
+        </div>
+        <div style={{ gridArea: "main" }}>
+          <DoseCurvesMainContent
+            dataset={selectedDataset}
+            doseUnits={doseUnits}
+            showReplicates={showReplicates}
+            showUnselectedLines={showUnselectedLines}
+            compoundName={compoundName}
+          />
+        </div>
       </div>
-      <div style={{ gridArea: "main" }}>
-        <DoseCurvesMainContent
-          dataset={selectedDataset}
-          doseUnits={doseUnits}
-          showReplicates={showReplicates}
-          showUnselectedLines={showUnselectedLines}
-          compoundName={compoundName}
-        />
-      </div>
-    </div>
+    </DeprecatedDataExplorerApiProvider>
   );
 }
 
