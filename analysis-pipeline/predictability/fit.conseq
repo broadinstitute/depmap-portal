@@ -68,7 +68,7 @@ rule run_fit_models:
     with open("daintree-output.json", "rt") as fd:
         result = json.load(fd)
 
-    with open("outputs.json", "wt") as fd:
+    with open("results.json", "wt") as fd:
         fd.write(json.dumps(
             {"outputs": [
                 {
