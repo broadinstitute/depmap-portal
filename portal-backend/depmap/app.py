@@ -66,7 +66,6 @@ from depmap.global_search.views import blueprint as global_search_blueprint
 from depmap.interactive.nonstandard.models import (
     ColNonstandardMatrix,
     NonstandardMatrix,
-    PrivateDatasetMetadata,
     RowNonstandardMatrix,
 )
 from depmap.interactive.views import blueprint as interactive_blueprint

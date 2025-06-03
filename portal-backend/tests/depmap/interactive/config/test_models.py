@@ -18,7 +18,6 @@ from tests.factories import (
     MatrixFactory,
     DependencyDatasetFactory,
     TaigaAliasFactory,
-    PrivateDatasetMetadataFactory,
     NonstandardMatrixFactory,
 )
 from tests.utilities import interactive_test_utils
