@@ -115,6 +115,19 @@ class Compound(Entity):
             return q.one_or_none()
 
     @staticmethod
+    def get_by_compound_id(compound_id: str, must=True) -> "Compound":
+        """
+        Return the Compound instance for a given compound_id (string, e.g. 'DPC-000001').
+        Returns None if not found.
+        """
+        q = Compound.query.filter(Compound.compound_id == compound_id).one_or_none()
+
+        if must:
+            return q.one()
+        else:
+            return q.one_or_none()
+
+    @staticmethod
     def find_by_name_prefix(prefix, limit):
         compounds = (
             Compound.query.filter(Compound.label.startswith(prefix))
@@ -135,6 +148,43 @@ class Compound(Entity):
         compound_aliases = [a[0] for a in aliases]
 
         return compound_aliases
+
+    @staticmethod
+    def get_dose_response_curves(compound_id: str, drc_dataset_label: str):
+        # Step 1: Get the compound
+        compound = Compound.query.filter(
+            Compound.compound_id == compound_id
+        ).one_or_none()
+        assert compound is not None, f"No compound found with compound_id={compound_id}"
+
+        # Step 2: Get all experiments for this compound
+        experiments = CompoundExperiment.query.filter(
+            CompoundExperiment.compound_id == compound.entity_id
+        ).all()
+        assert experiments, f"No CompoundExperiment found for compound_id={compound_id}"
+
+        experiment_ids = [exp.entity_id for exp in experiments]
+
+        # Step 3: Get all DoseResponseCurves for these experiments and label
+        dose_response_curves = (
+            DoseResponseCurve.query.filter(
+                DoseResponseCurve.compound_exp_id.in_(experiment_ids),
+                DoseResponseCurve.drc_dataset_label == drc_dataset_label,
+            )
+            .with_entities(
+                DoseResponseCurve.dose_response_curve,
+                DoseResponseCurve.depmap_id,
+                DoseResponseCurve.ec50,
+                DoseResponseCurve.slope,
+                DoseResponseCurve.upper_asymptote,
+                DoseResponseCurve.lower_asymptote,
+                DoseResponseCurve.compound_exp_id,
+                DoseResponseCurve.drc_dataset_label,
+            )
+            .all()
+        )
+
+        return dose_response_curves
 
 
 # for those cases where a dataset has data for the same compound multiple times
@@ -417,6 +467,27 @@ class CompoundDoseReplicate(Entity):
             )
         ]
 
+    @staticmethod
+    def get_dose_min_max_of_replicates_with_compound_id(compound_id: int):
+        """
+        Given a compound_id (entity_id of Compound), return a list of (entity_id, max_dose, min_dose) tuples
+        for all CompoundExperiments associated with this compound, using CompoundDoseReplicate.
+        """
+        experiments = CompoundExperiment.get_all_by_compound_id(compound_id)
+        results = []
+        for exp in experiments:
+            q = CompoundDoseReplicate.query.filter_by(
+                compound_experiment_id=exp.entity_id
+            ).with_entities(
+                CompoundDoseReplicate.entity_id,
+                func.max(CompoundDoseReplicate.dose).label("max_dose"),
+                func.min(CompoundDoseReplicate.dose).label("min_dose"),
+            )
+            # There may be multiple replicates, but we want min/max for each experiment
+            for row in q.all():
+                results.append(row)
+        return results
+
 
 class DoseResponseCurve(Model):
     """
@@ -464,3 +535,30 @@ class DoseResponseCurve(Model):
             )
             .all()
         )
+
+
+from sqlalchemy.orm import joinedload
+
+# Build a mapping from xref_type to drc_dataset_label
+xref_type_to_drc_label = {
+    "GDSC1": "GDSC1",
+    "GDSC2": "GDSC2",
+    "CTRP": "ctd2_per_curve",
+    "BRD": "Prism_oncology_per_curve",
+    # Add more if needed
+}
+
+
+def backfill_drc_dataset_label():
+    curves = DoseResponseCurve.query.options(
+        joinedload(DoseResponseCurve.compound_exp)
+    ).all()
+    updated = 0
+    for curve in curves:
+        if not curve.drc_dataset_label or curve.drc_dataset_label.strip() == "":
+            compound_exp = curve.compound_exp
+            if compound_exp and compound_exp.xref_type in xref_type_to_drc_label:
+                curve.drc_dataset_label = xref_type_to_drc_label[compound_exp.xref_type]
+                updated += 1
+    db.session.commit()
+    print(f"Backfilled {updated} DoseResponseCurve rows.")

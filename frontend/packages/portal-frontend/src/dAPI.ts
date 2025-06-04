@@ -959,12 +959,12 @@ export class DepmapApi {
   getCompoundDoseCurveData(
     datasetName: string,
     compoundLabel: string,
-    replicateDatasetName: string
+    drcDatasetLabel: string = "Prism_oncology_per_curve"
   ): Promise<any> {
     const params = {
       dataset_name: datasetName,
       compound_label: compoundLabel,
-      replicate_dataset_name: replicateDatasetName,
+      drc_dataset_label: drcDatasetLabel,
     };
 
     return this._fetch<any>(
