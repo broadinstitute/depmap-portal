@@ -185,6 +185,11 @@ class FeatureFlags:
     def anchor_screen_dashboard(self):
         return self.is_dmc_like()
 
+    @property
+    def show_peddep_landing_page(self):
+        # remove False when ready to deploy
+        return self.is_public() and False
+
 
 def make_log_config(log_dir):
     return {
@@ -282,7 +287,7 @@ class Config(object):
     ANNOUNCEMENTS_PATH = os.path.join(ADDITIONAL_MOUNTS_DIR, "announcements.md")
     ANNOUNCEMENTS_FILE_PATH = os.path.join(ADDITIONAL_MOUNTS_DIR, "announcements.yaml")
     UPDATES_AND_ANNOUNCEMENTS_FILE_PATH = os.path.join(
-        ADDITIONAL_MOUNTS_DIR, "updates_and_announcements.md"
+        ADDITIONAL_MOUNTS_DIR, "theme/updates_and_announcements.md"
     )
     DOCUMENTATION_PATH = os.path.join(ADDITIONAL_MOUNTS_DIR, "documentation.yaml")
     DMC_SYMPOSIA_PATH = os.path.join(ADDITIONAL_MOUNTS_DIR, "dmc_symposia.yaml")
@@ -309,7 +314,6 @@ class Config(object):
     # with the expectation that in some environments we'll want to lower this
     MAX_UPLOAD_SIZE = 10 ** 10
     FORUM_API_KEY = os.getenv("FORUM_API_KEY")
-    PRIVATE_FILE_BUCKETS = os.getenv("PRIVATE_FILE_BUCKETS")
 
 
 class RemoteConfig(Config):

@@ -310,7 +310,7 @@ function ContextAnalysis({
     (tableData: ContextAnalysisTableType) => {
       const getDrugXAxisLabel = () => {
         if (datasetId === ContextExplorerDatasets.Prism_oncology_AUC) {
-          return "In-context mean log2(AUC)";
+          return "In-context mean AUC";
         }
 
         return "In-context mean log2(viability)";
@@ -318,7 +318,7 @@ function ContextAnalysis({
 
       const getDrugYAxisLabel = () => {
         if (datasetId === ContextExplorerDatasets.Prism_oncology_AUC) {
-          return "Out-group mean log2(AUC)";
+          return "Out-group mean AUC";
         }
         return "Out-group mean log2(viability)";
       };

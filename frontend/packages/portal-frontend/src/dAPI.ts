@@ -46,6 +46,7 @@ import {
   DimensionType,
   DimensionTypeAddArgs,
   DimensionTypeUpdateArgs,
+  SliceQuery,
 } from "@depmap/types";
 import { TDASummaryTable } from "src/tda/models/types";
 import { CompoundSummaryTableRaw } from "src/compoundDashboard/models/types";
@@ -468,13 +469,6 @@ export class DepmapApi {
     return this._fetch<Dataset[]>("/interactive/api/getDatasets");
   }
 
-  postCustomTaiga = (config: UserUploadArgs): Promise<UploadTask> => {
-    return this._postJson<UploadTask>(
-      "/interactive/api/dataset/add-taiga",
-      config
-    );
-  };
-
   postCustomCsv = (config: UserUploadArgs): Promise<UploadTask> => {
     return this._postMultipart<UploadTask>(
       "/interactive/api/dataset/add-csv",
@@ -487,24 +481,6 @@ export class DepmapApi {
       "/interactive/api/dataset/add-csv-one-row",
       config
     );
-  }
-
-  uploadPrivateDataset(data: UserUploadArgs): Promise<UploadTask> {
-    const queryParams = {
-      displayName: data.displayName,
-      units: data.units,
-      ownerId: data.selectedGroup,
-      transposed: data.transposed,
-      dataType: data.selectedDataType,
-    };
-    return this._postMultipart<UploadTask>(
-      `/api/upload/private?${encodeParams(queryParams)}`,
-      { uploadFile: data.uploadFile }
-    );
-  }
-
-  getPrivateDatasetUploadStatus(taskId: string): Promise<UploadTask> {
-    return this._fetch(`/private_dataset/upload_status/${taskId}`);
   }
 
   entityLookup(
@@ -858,14 +834,14 @@ export class DepmapApi {
     );
   }
 
-  getCellignerDistancesToCellLine(sampleId: string, kNeighbors: number) {
+  getCellignerDistancesToCellLine(profileId: string, kNeighbors: number) {
     return this._fetch<{
       distance_to_tumors: Array<number>;
       most_common_lineage: string;
       color_indexes: Array<number>;
     }>(
       `/celligner/distance_cell_line_to_tumors?${encodeParams({
-        sampleId,
+        profileId,
         kNeighbors,
       })}`
     );
@@ -1020,10 +996,6 @@ export class DepmapApi {
     );
   }
 
-  deletePrivateDatasets(dataset_ids: Array<string>) {
-    return this._deleteJson("/private_dataset/delete", { dataset_ids });
-  }
-
   getEntitySummary(
     entity_id: number,
     dep_enum_name: string,
@@ -1127,6 +1099,10 @@ export class DepmapApi {
     return Promise.reject(Error("Wrong api used. Check ApiContext"));
   }
 
+  getTabularDatasetData(datasetId: string, args: any): Promise<any> {
+    return Promise.reject(Error("Wrong api used. Check ApiContext"));
+  }
+
   getGroups = (writeAccess: boolean = false): Promise<Group[]> => {
     return Promise.reject(Error("Wrong api used. Check ApiContext"));
   };
@@ -1169,6 +1145,10 @@ export class DepmapApi {
   getDimensionTypes = (): Promise<DimensionType[]> => {
     return Promise.reject(Error("Wrong api used. Check ApiContext"));
   };
+
+  getDimensionType(name: string): Promise<DimensionType> {
+    return Promise.reject(Error("Wrong api used. Check ApiContext"));
+  }
 
   postDimensionType = (
     dimTypeArgs: DimensionTypeAddArgs
@@ -1227,4 +1207,8 @@ export class DepmapApi {
   deleteGroupEntry = (groupEntryId: string) => {
     return Promise.reject(Error("Wrong api used. Check ApiContext"));
   };
+
+  fetchAssociations(sliceQuery: SliceQuery) {
+    return Promise.reject(Error("Wrong api used. Check ApiContext"));
+  }
 }

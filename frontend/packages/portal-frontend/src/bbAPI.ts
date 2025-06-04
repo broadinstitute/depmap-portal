@@ -26,14 +26,12 @@ import {
   InvalidPrioritiesByDataType,
   SearchDimenionsRequest,
   SearchDimenionsResponse,
+  TabularDatasetDataArgs,
+  SliceQuery,
   UploadFileResponse,
 } from "@depmap/types";
 import { Trace } from "src/trace";
-import {
-  UploadTask,
-  UploadTaskUserError,
-  UserUploadArgs,
-} from "@depmap/user-upload";
+import { UploadTask, UploadTaskUserError } from "@depmap/user-upload";
 import { encodeParams } from "@depmap/utils";
 
 import {
@@ -344,8 +342,20 @@ export class BreadboxApi {
     );
   }
 
+  getTabularDatasetData(
+    datasetId: string,
+    args: TabularDatasetDataArgs
+  ): Promise<{ [key: string]: { [key: string]: any } }> {
+    const url = `/datasets/tabular/${datasetId}`;
+    return this._fetchWithJsonBody(url, "POST", args);
+  }
+
   getDimensionTypes(): Promise<DimensionType[]> {
     return this._fetch<DimensionType[]>("/types/dimensions");
+  }
+
+  getDimensionType(name: string): Promise<DimensionType> {
+    return this._fetch<DimensionType>(`/types/dimensions/${name}`);
   }
 
   postDimensionType(dimTypeArgs: DimensionTypeAddArgs): Promise<DimensionType> {
@@ -462,13 +472,6 @@ export class BreadboxApi {
       }
     );
   }
-
-  postCustomTaiga = (config: UserUploadArgs): Promise<UploadTask> => {
-    if (!config) {
-      console.log("Not implemented");
-    }
-    return Promise.reject(Error("postCustomTaiga() not implemented"));
-  };
 
   postCustomCsv = (config: AddDatasetOneRowArgs): Promise<UploadTask> => {
     const { uploadFile } = config;
@@ -590,6 +593,25 @@ export class BreadboxApi {
       "POST",
       config
     );
+  }
+
+  fetchAssociations(sliceQuery: SliceQuery) {
+    return this._fetchWithJsonBody<{
+      dataset_name: string;
+      dimension_label: string;
+      associated_datasets: {
+        name: string;
+        dimension_type: string;
+        dataset_id: string;
+      }[];
+      associated_dimensions: {
+        correlation: number;
+        log10qvalue: number;
+        other_dataset_id: string;
+        other_dimension_given_id: string;
+        other_dimension_label: string;
+      }[];
+    }>("/temp/associations/query-slice", "POST", sliceQuery);
   }
 
   _fetchWithJsonBody = <T>(

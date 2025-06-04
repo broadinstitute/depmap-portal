@@ -1,5 +1,3 @@
-import os
-from depmap.access_control.models import AuthorizationConfig
 from depmap.access_control.utils.private_util_functions import (
     _create_authorization_config,
     _read_groups_from_external_file,

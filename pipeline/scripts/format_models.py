@@ -44,6 +44,7 @@ schema = pa.DataFrameSchema(
         "PatientSubtypeFeatures": pa.Column(str),
         "PatientTreatmentResponse": pa.Column(str),
         "PatientTreatmentStatus": pa.Column(str),
+        "PediatricModelType": pa.Column(str),
         "ModelTreatment": pa.Column(str),
         "SerumFreeMedia": pa.Column(str),
         "PatientTumorGrade": pa.Column(str),
@@ -54,6 +55,7 @@ schema = pa.DataFrameSchema(
         "ModelType": pa.Column(str),
         "ModelSubtypeFeatures": pa.Column(str),
         "StagingSystem": pa.Column(str),
+        "ModelIDAlias": pa.Column(str),
         "HCMIID": pa.Column(str),
         "ImageFilename": pa.Column(str),
     },
@@ -101,9 +103,18 @@ def main():
 
     assert not any(models["ModelID"].duplicated())
 
-    sample_info = schema.validate(models)
+    try:
+        sample_info = schema.validate(models, lazy=True)
+    except pa.errors.SchemaErrors as err:
+        print(
+            "Schema has changed. Update the schema in format_models.py and re-run install_prereqs.sh to regenerate typescript type in ModelAnnotation.ts and then commit all those changes"
+        )
+        print(err.failure_cases)
+        sys.exit(1)
     sample_info.to_csv(outfile, index=False)
 
+
+import sys
 
 if __name__ == "__main__":
     main()

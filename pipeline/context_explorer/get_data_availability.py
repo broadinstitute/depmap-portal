@@ -82,6 +82,8 @@ def main(
     OmicsProfiles = tc.get(omics_profiles_taiga_id)
     assert OmicsProfiles is not None
 
+    # if the case is wrong on Datatype, fix it (the new capitalization was introduced 25Q2)
+    OmicsProfiles.rename(columns={"DataType": "Datatype"}, inplace=True)
     omics_summary = OmicsProfiles[["ModelID", "Datatype"]].drop_duplicates()
     omics_summary = pd.pivot(
         omics_summary.assign(value=True),

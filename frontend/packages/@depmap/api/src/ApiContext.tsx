@@ -31,6 +31,8 @@ import {
   DimensionType,
   DimensionTypeAddArgs,
   DimensionTypeUpdateArgs,
+  TabularDatasetDataArgs,
+  SliceQuery,
 } from "@depmap/types";
 import {
   DatasetDownloadMetadata,
@@ -54,7 +56,6 @@ export interface SharedApi {
   getTaskStatus: (id: string) => Promise<CeleryTask>;
   getCellLineSelectorLines: () => Promise<CellLineSelectorLines>;
   getAssociations: (x: string) => Promise<AssociationAndCheckbox>;
-  postCustomTaiga: (config: UserUploadArgs) => Promise<UploadTask>;
   postCustomCsv: (config: UserUploadArgs) => Promise<UploadTask>;
   getCellignerColorMap: () => Promise<CellignerColorsForCellLineSelector>;
   searchDimensions: (
@@ -77,6 +78,10 @@ export interface SharedApi {
     datasetId: string,
     datasetToUpdate: DatasetUpdateArgs
   ) => Promise<BreadboxDataset>;
+  getTabularDatasetData: (
+    datasetId: string,
+    args: TabularDatasetDataArgs
+  ) => Promise<{ [key: string]: { [key: string]: any } }>;
   getGroups: (writeAccess?: boolean) => Promise<Group[]>;
   postGroup: (groupArgs: GroupArgs) => Promise<Group>;
   deleteGroup: (id: string) => Promise<any>;
@@ -101,6 +106,7 @@ export interface SharedApi {
   ) => Promise<FeatureType>;
   // NOTE: The endpoints for dimension type should be used instead of ones for feature and sample type
   getDimensionTypes: () => Promise<DimensionType[]>;
+  getDimensionType: (name: string) => Promise<DimensionType>;
   postDimensionType: (
     dimTypeArgs: DimensionTypeAddArgs
   ) => Promise<DimensionType>;
@@ -113,6 +119,24 @@ export interface SharedApi {
   computeUnivariateAssociations: (
     config: UnivariateAssociationsParams
   ) => Promise<ComputeResponse>;
+  fetchAssociations: (
+    sliceQuery: SliceQuery
+  ) => Promise<{
+    dataset_name: string;
+    dimension_label: string;
+    associated_datasets: {
+      name: string;
+      dimension_type: string;
+      dataset_id: string;
+    }[];
+    associated_dimensions: {
+      correlation: number;
+      log10qvalue: number;
+      other_dataset_id: string;
+      other_dimension_given_id: string;
+      other_dimension_label: string;
+    }[];
+  }>;
   postCustomCsvOneRow: (config: AddDatasetOneRowArgs) => Promise<UploadTask>;
 }
 

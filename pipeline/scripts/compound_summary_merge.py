@@ -165,7 +165,11 @@ def get_sensitive_cell_lines_count(
     """
     Return the number of sensitive cell lines for each compound in the dataset based on a threshold dependent on the dataset units
     """
-    threshold_from_units = {"log2 fold change": np.log2(0.3), "AUC": 0.8}
+    threshold_from_units = {
+        "log2 fold change": np.log2(0.3),
+        "AUC": 0.8,
+        "log2(AUC)": np.log2(0.8),
+    }
     return dataset_viabilities_df[
         dataset_viabilities_df < threshold_from_units[units]
     ].count(axis="columns")

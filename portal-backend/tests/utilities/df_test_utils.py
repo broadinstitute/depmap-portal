@@ -38,8 +38,26 @@ def test_dfs_equal_ignoring_column_order():
 def load_sample_cell_lines():
     from flask import current_app
     import os
+    from depmap.database import db
+    from depmap.cell_line.models import CellLine
 
     loader_data_dir = current_app.config["LOADER_DATA_DIR"]
-    load_depmap_model_metadata(
-        os.path.join(loader_data_dir, "cell_line/models_metadata.csv"),
-    )
+
+    # DepMapModels have a fk to CellLine and are enforced to be 1:1. This means
+    # that we need to populate some CellLine records in order for load_depmap_model_metadata to
+    # be called. We'll do this manually without filling out all values to keep things simple
+    # this is just for setting up data for testes
+    csv_path = os.path.join(loader_data_dir, "cell_line/models_metadata.csv")
+
+    models = pd.read_csv(csv_path)
+
+    for rec in models.to_records():
+        if CellLine.get_by_depmap_id(rec["ModelID"], must=False) is None:
+            cell_line = CellLine(
+                cell_line_display_name=rec["CellLineName"], depmap_id=rec["ModelID"],
+            )
+
+            db.session.add(cell_line)
+    db.session.flush()
+
+    load_depmap_model_metadata(csv_path,)

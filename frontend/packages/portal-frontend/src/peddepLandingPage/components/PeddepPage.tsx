@@ -1,0 +1,254 @@
+import * as React from "react";
+import { useEffect, useContext, useState } from "react";
+import { Button } from "react-bootstrap";
+import { toStaticUrl } from "@depmap/globals";
+import styles from "src/peddepLandingPage/styles/PeddepPage.scss";
+import { ApiContext } from "@depmap/api";
+import SubGroupPlot from "./SubgroupPlot";
+
+export default function PeddepPage() {
+  const { getApi } = useContext(ApiContext);
+  const [bapi] = useState(() => getApi());
+
+  const [data, setData] = useState<{
+    "CNS/Brain": any[];
+    Heme: any[];
+    Solid: any[];
+  } | null>(null);
+  const [hasError, setHasError] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const dimensionType = await bapi.getDimensionType("depmap with peddep");
+        if (dimensionType.metadata_dataset_id) {
+          const modelSubsetColData = await bapi.getTabularDatasetData(
+            dimensionType.metadata_dataset_id,
+            {
+              columns: [
+                "OncotreeLineage",
+                "OncotreeSubtype",
+                "PediatricSubtype",
+              ],
+            }
+          );
+          const modelSubsetIndexData: { [key: string]: any } = {};
+
+          // eslint-disable-next-line no-restricted-syntax
+          for (const [colName, colData] of Object.entries(modelSubsetColData)) {
+            // eslint-disable-next-line no-restricted-syntax
+            for (const [index, value] of Object.entries(colData)) {
+              if (!modelSubsetIndexData[index]) {
+                modelSubsetIndexData[index] = {};
+              }
+              modelSubsetIndexData[index][colName] = value;
+            }
+          }
+
+          const pedModelData = Object.entries(modelSubsetIndexData).reduce(
+            (acc, [, modelData]) => {
+              if (modelData.PediatricSubtype === "True") {
+                const subtype = modelData.OncotreeSubtype;
+                if (modelData.OncotreeLineage === "CNS/Brain") {
+                  acc["CNS/Brain"].push(subtype);
+                } else if (
+                  ["Myeloid", "Lymphoid"].includes(modelData.OncotreeLineage)
+                ) {
+                  acc.Heme.push(subtype);
+                } else {
+                  acc.Solid.push(subtype);
+                }
+              }
+              return acc;
+            },
+            { "CNS/Brain": [] as any[], Heme: [] as any[], Solid: [] as any[] }
+          );
+          setData(pedModelData);
+        } else {
+          setHasError(true);
+        }
+      } catch (e) {
+        console.log(e);
+        setHasError(true);
+      }
+    })();
+  }, [bapi]);
+
+  const imagePath = toStaticUrl("img/peddep_landing_page/pedepwave.png");
+
+  const umapImage = (
+    <img
+      style={{ float: "right" }}
+      src={toStaticUrl("img/peddep_landing_page/umap.png")}
+      alt="Diagram of UMAP"
+    />
+  );
+
+  return (
+    <div className={styles.PeddepPage}>
+      <div
+        className={`${styles.PeddepPageContainer} ${styles.highlightBackground}`}
+        style={{ backgroundImage: `url(${imagePath})` }}
+      >
+        <div className={styles.highlight}>
+          <div className={styles.highlightText}>
+            <h1 className={styles.title}>
+              The Pediatric Cancer Dependencies Accelerator
+            </h1>
+            <h3>
+              St. Jude Children&apos;s Research Hospital, The Broad Institute,
+              and Dana-Farber Cancer Institute have launched a large-scale
+              collaboration to advance understanding of the biological basis of
+              pediatric cancers, identify new vulnerabilities of these diseases
+              and accelerate therapies globally.
+            </h3>
+            <Button
+              className={styles.peddepBtn}
+              href="https://peddep.org/"
+              target="_blank"
+            >
+              Learn more at PedDep.org
+            </Button>
+          </div>
+        </div>
+      </div>
+      <hr />
+      <div className={styles.PeddepPageContainer}>
+        <div style={{ display: "grid" }}>
+          <h2>Our Goals and Focus</h2>
+          <h4>
+            The PedDep Accelerator is leading a multi-pronged effort against
+            this problem focusing both on expanding and extending known
+            successful approaches as well as investing in exploratory science
+            with transformative potential.
+          </h4>
+
+          {hasError ? (
+            <div
+              style={{
+                display: "flex",
+                height: "200px",
+                justifyContent: "center",
+                alignItems: "center",
+              }}
+            >
+              <i>
+                Unexpected error. If you get this error consistently, please
+                contact us with a screenshot and the actions that lead to this
+                error.
+              </i>
+            </div>
+          ) : (
+            <div className={styles.dataPlotContainer}>
+              {data
+                ? Object.entries(data).map(([subgroup, values]) => {
+                    return (
+                      <SubGroupPlot
+                        key={subgroup}
+                        subgroup={subgroup}
+                        subtypes={values}
+                      />
+                    );
+                  })
+                : "Loading..."}
+            </div>
+          )}
+          <div className={styles.dataInfo}>
+            <div>
+              <h4>Dependency Screening</h4>
+              <h5>
+                Developing and deploying CRISPR-based genome editing techniques
+                to identify hidden vulnerabilities (dependencies) in a spectrum
+                of high-risk childhood brain, solid and hematological
+                malignancies.
+              </h5>
+            </div>
+            <div>
+              <h4>Omics profiling</h4>
+              <h5>
+                Leveraging emerging technologies to characterize the genetic and
+                epigenetic landscape of pediatric cancers.
+              </h5>
+            </div>
+            <div>
+              <h4>Compound screening</h4>
+              <h5>
+                Developing and deploying CRISPR-based genome editing techniques
+                to identify hidden vulnerabilities (dependencies) in a spectrum
+                of high-risk childhood brain, solid and hematological
+                malignancies.
+              </h5>
+            </div>
+            <div>
+              <h4>New Model Derivation</h4>
+              <h5>
+                Developing model systems where none currently exist for
+                high-risk childhood cancers that have poor outcomes.
+              </h5>
+            </div>
+            <div>
+              <h4>Data science</h4>
+              <h5>
+                Developing computational approaches to mine and integrate data
+                and developing innovative software tools for data sharing.
+              </h5>
+            </div>
+          </div>
+        </div>
+      </div>
+      <hr />
+      <div className={styles.PeddepPageContainer}>
+        <div style={{ display: "grid" }}>
+          <h2>A Pediatric Context</h2>
+          <h4>
+            Navigate the portal with a pediatric context. We&apos;ve built this
+            context to include models that represent pediatric tumor types.
+          </h4>
+        </div>
+      </div>
+      <hr />
+      <div className={styles.PeddepPageContainer}>
+        <div className={styles.aboutPeddep}>
+          <h2>The First Generation Pediatric Dependency Map</h2>
+          <div className={styles.aboutPeddepColumns}>
+            <div>
+              <h4>
+                The PedDep initiative started in 2014 with the goal of applying
+                the Broad&apos;s DepMap large-scale genetic dependencies and
+                drug sensitivity approaches to accelerate the discovery of
+                therapeutic targets and strategies for pediatric patients.
+              </h4>
+              <h4>
+                While clinical trials per se are not a component of the PedDep
+                project, generating data which would allow the start of clinical
+                trials is within the purview. PedDep was developed to generate
+                the core data, break down silos, and use the combination of
+                expertises to synergize ability to conduct groundbreaking
+                research.
+              </h4>
+              <h4>
+                <a
+                  href="https://depmap.org/peddep/"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Read our landmark paper
+                </a>{" "}
+                in Nature Genetics or visit our{" "}
+                <a
+                  href="https://depmap.org/peddep/vis-app/index.html"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  PedDep Explorer
+                </a>
+                .
+              </h4>
+            </div>
+            <div>{umapImage}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
