@@ -16,6 +16,46 @@ from depmap.cell_line.models import CellLine
 from depmap.gene.models import Gene
 import pandas as pd
 import re
+from dataclasses import dataclass
+
+
+@dataclass
+class DRCCompoundDataset:
+    drc_dataset_label: str
+    viability_dataset_given_id: str
+    display_name: str
+
+
+# An association of the dataset_labels which appear in the DoseResponseCurve table, and
+# the given_id of the corresponding viabilitiy dataset in breadbox, as well as how this
+# dataset should be referred to in drop down menus.
+drc_compound_datasets = [
+    DRCCompoundDataset(
+        drc_dataset_label="Prism_oncology_per_curve",
+        viability_dataset_given_id="Prism_oncology_viability",
+        display_name="PRISM OncRef",
+    ),
+    DRCCompoundDataset(
+        drc_dataset_label="GDSC2",
+        viability_dataset_given_id="GDSC2_Viability",
+        display_name="GDSC2",
+    ),
+    DRCCompoundDataset(
+        drc_dataset_label="GDSC1",
+        viability_dataset_given_id="GDSC1_Viability",
+        display_name="GDSC1",
+    ),
+    DRCCompoundDataset(
+        drc_dataset_label="ctd2_per_curve",
+        viability_dataset_given_id="CTRP_Viability",
+        display_name="CTD^2",
+    ),
+    DRCCompoundDataset(
+        drc_dataset_label="repurposing_per_curve",
+        viability_dataset_given_id="REPURPOSING_Viability",
+        display_name="PRISM Drug Repurposing",
+    ),
+]
 
 gene_compound_target_association = db.Table(
     "gene_compound_target_association",
@@ -391,7 +431,7 @@ class DoseResponseCurve(Model):
         String, ForeignKey("cell_line.depmap_id"), nullable=False, index=True
     )
     cell_line = relationship("CellLine", backref=__tablename__)
-
+    drc_dataset_label = Column(String, nullable=False)
     compound_exp_id = Column(Integer, ForeignKey("entity.entity_id"), index=True)
     compound_exp = relationship(
         "CompoundExperiment", foreign_keys="DoseResponseCurve.compound_exp_id"
