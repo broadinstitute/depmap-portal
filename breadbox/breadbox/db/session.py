@@ -1,4 +1,3 @@
-from copy import copy
 from typing import Optional
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
@@ -63,7 +62,10 @@ class SessionWithUser(Session):
         # caching should be turned off but just in case, clear the cache
         self.read_group_ids = None
 
-    def query(self, entity, **kwargs) -> Query:
+    def query(self, entity, **kwargs) -> Query:  # type: ignore[override]
+        # NOTE: query() has been deprecated in favor of select() in SQLAlchemy 2.0
+        # However, since the Query API usually represents the vast majority of database access code within an application, the majority of the Query API is not being removed from SQLAlchemy.
+        # The Query object behind the scenes now translates itself into a 2.0 style select() object when the Query object is executed, so it now is just a very thin adapter API.
         return (
             super()
             .query(entity, **kwargs)
@@ -88,11 +90,16 @@ def SessionLocalWithUser(user: str) -> SessionWithUser:
     settings = get_settings()
 
     engine = create_engine(
-        settings.sqlalchemy_database_url, connect_args={"check_same_thread": False},
+        settings.sqlalchemy_database_url,
+        connect_args={"check_same_thread": False},
+        future=True,
     )
 
     l = sessionmaker(
-        autocommit=False, autoflush=False, bind=engine, class_=SessionWithUser
+        autoflush=False,
+        bind=engine,
+        class_=SessionWithUser,
+        future=True,  # In SQLAlchemy 2.0, autocommit is deprecated
     )
     session = l()
     session.set_user(user)

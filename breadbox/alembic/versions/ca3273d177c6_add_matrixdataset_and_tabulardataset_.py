@@ -6,6 +6,7 @@ Create Date: 2024-03-12 17:08:20.604126
 
 """
 from alembic import op
+from sqlalchemy import text
 import sqlalchemy as sa
 from sqlalchemy.dialects import sqlite
 
@@ -18,7 +19,7 @@ depends_on = None
 
 def upgrade():
     # Turn off FK enforcement for this migration only (the "PRAGMA foreign_keys" value resets on every DB connection)
-    op.execute("PRAGMA foreign_keys = OFF")
+    op.execute(text("PRAGMA foreign_keys = OFF"))
 
     op.create_table(
         "matrix_dataset",

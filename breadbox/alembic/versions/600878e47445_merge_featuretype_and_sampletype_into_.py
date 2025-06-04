@@ -8,6 +8,7 @@ Create Date: 2024-01-10 11:23:03.858371
 from alembic import op
 import sqlalchemy as sa
 import json
+from sqlalchemy import text
 
 
 # revision identifiers, used by Alembic.
@@ -34,7 +35,7 @@ def upgrade():
         ),
         sa.PrimaryKeyConstraint("name"),
     )
-    all_feature_types = conn.execute("select * from feature_type").fetchall()
+    all_feature_types = conn.execute(text("select * from feature_type")).fetchall()
     feature_type_insert_dimension_type = [
         {
             "name": feature_type_tuple[0],
@@ -45,7 +46,7 @@ def upgrade():
         for feature_type_tuple in all_feature_types
     ]
     op.bulk_insert(dimension_type, feature_type_insert_dimension_type)
-    all_sample_types = conn.execute("select * from sample_type").fetchall()
+    all_sample_types = conn.execute(text("select * from sample_type")).fetchall()
     sample_type_insert_dimension_type = [
         {
             "name": sample_type_tuple[0],
@@ -80,7 +81,7 @@ def upgrade():
             unique=False,
         )
     all_feature_annotation_values = conn.execute(
-        "select * from feature_annotation_value"
+        text("select * from feature_annotation_value")
     ).fetchall()
     feature_annotation_value_insert_annotation_value = [
         {
@@ -92,7 +93,7 @@ def upgrade():
     ]
     op.bulk_insert(annotation_value, feature_annotation_value_insert_annotation_value)
     all_sample_annotation_values = conn.execute(
-        "select * from sample_annotation_value"
+        text("select * from sample_annotation_value")
     ).fetchall()
     sample_annotation_value_insert_annotation_value = [
         {
@@ -178,7 +179,9 @@ def upgrade():
     )
     # list out columns names so order stays consistent
     all_current_datasets = conn.execute(
-        "select id, name, units, feature_type, sample_type, is_transient, group_id, value_type, allowed_values, dataset_metadata, data_type, priority, taiga_id from dataset"
+        text(
+            "select id, name, units, feature_type, sample_type, is_transient, group_id, value_type, allowed_values, dataset_metadata, data_type, priority, taiga_id from dataset"
+        )
     ).fetchall()
     dataset_inserts = [
         {
@@ -245,7 +248,9 @@ def upgrade():
         unique=False,
     )
     all_current_dimensions = conn.execute(
-        "select id, dataset_id, name, dataset_dimension_type, subtype, annotation_type, 'index', feature_label from dimension"
+        text(
+            "select id, dataset_id, name, dataset_dimension_type, subtype, annotation_type, 'index', feature_label from dimension"
+        )
     ).fetchall()
     dimension_inserts = [
         {
@@ -287,10 +292,14 @@ def downgrade():
         "idx_dataset_id_name", "dimension", ["dataset_id", "name"], unique=False
     )
     conn.execute(
-        "update dimension set subtype='feature_annotation_metadata' from (select name from dimension_type where axis='feature') as DT where DT.name = dimension.dataset_dimension_type and dimension.subtype='dimension_annotation_metadata'"
+        text(
+            "update dimension set subtype='feature_annotation_metadata' from (select name from dimension_type where axis='feature') as DT where DT.name = dimension.dataset_dimension_type and dimension.subtype='dimension_annotation_metadata'"
+        )
     )
     conn.execute(
-        "update dimension set subtype='sample_annotation_metadata' from (select name from dimension_type where axis='sample') as DT where DT.name = dimension.dataset_dimension_type and dimension.subtype='dimension_annotation_metadata'"
+        text(
+            "update dimension set subtype='sample_annotation_metadata' from (select name from dimension_type where axis='sample') as DT where DT.name = dimension.dataset_dimension_type and dimension.subtype='dimension_annotation_metadata'"
+        )
     )
     # SQLite doesn't support JOINS with UPDATE
     # conn.execute("update D set D.subtype = 'feature_annotation_metadata' from dimension as D inner join dimension_type as DT on D.dataset_dimension_type = DT.name where DT.axis='feature' and D.subtype='dimension_annotation_metadata'")
@@ -348,7 +357,9 @@ def downgrade():
         sa.PrimaryKeyConstraint("feature_type"),
     )
     all_feature_types = conn.execute(
-        "select name, id_column, dataset_id from dimension_type where axis='feature'"
+        text(
+            "select name, id_column, dataset_id from dimension_type where axis='feature'"
+        )
     ).fetchall()
     feature_type_inserts = [
         {
@@ -360,7 +371,9 @@ def downgrade():
     ]
     op.bulk_insert(feature_type, feature_type_inserts)
     all_sample_types = conn.execute(
-        "select name, id_column, dataset_id from dimension_type where axis='sample'"
+        text(
+            "select name, id_column, dataset_id from dimension_type where axis='sample'"
+        )
     ).fetchall()
     sample_type_inserts = [
         {
@@ -419,7 +432,9 @@ def downgrade():
         )
 
     all_feature_annotation_values = conn.execute(
-        "select annotation_value.id, dimension_annotation_id, dimension_given_id, value from annotation_value inner join dimension on annotation_value.dimension_annotation_id=dimension.id where dimension.subtype='feature_annotation_metadata'"
+        text(
+            "select annotation_value.id, dimension_annotation_id, dimension_given_id, value from annotation_value inner join dimension on annotation_value.dimension_annotation_id=dimension.id where dimension.subtype='feature_annotation_metadata'"
+        )
     ).fetchall()
     feature_annotation_value_inserts = [
         {
@@ -431,7 +446,9 @@ def downgrade():
     ]
     op.bulk_insert(feature_annotation_value, feature_annotation_value_inserts)
     all_sample_annotation_values = conn.execute(
-        "select annotation_value.id, dimension_annotation_id, dimension_given_id, value from annotation_value inner join dimension on annotation_value.dimension_annotation_id=dimension.id where dimension.subtype='sample_annotation_metadata'"
+        text(
+            "select annotation_value.id, dimension_annotation_id, dimension_given_id, value from annotation_value inner join dimension on annotation_value.dimension_annotation_id=dimension.id where dimension.subtype='sample_annotation_metadata'"
+        )
     ).fetchall()
     sample_annotation_value_inserts = [
         {
