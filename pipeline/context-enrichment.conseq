@@ -26,7 +26,7 @@ rule context_enrichment:
         hdf5_utils=fileref('scripts/hdf5_utils.py', copy_to='hdf5_utils.py')
     outputs: {"type": "context-enrichment", 
               "filename": {"$filename": "t-test-enrichment.csv"}}
-    run """python compute_enrichment.py \
+    run """python3 compute_enrichment.py \
       --dep_datasets "[{% for dep in inputs.deps %}
 {\"filename\":\"{{dep.filename|quoted}}\",\"label\":\"{{dep.label|quoted}}\"}
 {% if not loop.last %},{% endif %}
