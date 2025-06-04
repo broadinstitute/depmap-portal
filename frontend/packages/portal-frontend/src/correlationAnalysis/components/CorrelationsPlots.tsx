@@ -6,7 +6,7 @@ import DoseLegend from "./DoseLegend";
 interface CorrelationsPlotsProps {
   featureTypesToShow: string[];
   dosesToFilter: string[];
-  doseColors: { hex: string; dose: string }[];
+  doseColors: { hex: string | undefined; dose: string }[];
   volcanoDataForFeatureTypes: { [key: string]: { [key: string]: VolcanoData } };
   featureTypeSelectedLabels: { [key: string]: string[] };
   forwardSelectedLabels: (

@@ -77,6 +77,16 @@ export interface SharedApi {
     datasetId: string,
     datasetToUpdate: DatasetUpdateArgs
   ) => Promise<BreadboxDataset>;
+  getDatasetFeatures: (
+    datasetId: string
+  ) => Promise<{ id: string; label: string }[]>;
+  getTabularDatasetData: (
+    datasetId: string,
+    args: {
+      identifier: "id" | "label";
+      columns?: string[] | null;
+    }
+  ) => Promise<{ [key: string]: { [key: string]: any } }>;
   getGroups: (writeAccess?: boolean) => Promise<Group[]>;
   postGroup: (groupArgs: GroupArgs) => Promise<Group>;
   deleteGroup: (id: string) => Promise<any>;
@@ -101,6 +111,7 @@ export interface SharedApi {
   ) => Promise<FeatureType>;
   // NOTE: The endpoints for dimension type should be used instead of ones for feature and sample type
   getDimensionTypes: () => Promise<DimensionType[]>;
+  getDimensionType: (name: string) => Promise<DimensionType>;
   postDimensionType: (
     dimTypeArgs: DimensionTypeAddArgs
   ) => Promise<DimensionType>;

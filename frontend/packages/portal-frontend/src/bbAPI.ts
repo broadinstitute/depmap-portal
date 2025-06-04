@@ -233,6 +233,14 @@ export class BreadboxApi {
     );
   }
 
+  getDatasetFeatures(
+    datasetId: string
+  ): Promise<{ id: string; label: string }[]> {
+    return this._fetch<{ id: string; label: string }[]>(
+      `/datasets/features/${datasetId}`
+    );
+  }
+
   getMetadata(label: string): Promise<any> {
     const params: any = {
       label,
@@ -315,8 +323,23 @@ export class BreadboxApi {
     );
   }
 
+  getTabularDatasetData(
+    datasetId: string,
+    args: {
+      identifier: "id" | "label";
+      columns?: string[] | null;
+    }
+  ): Promise<{ [key: string]: { [key: string]: any } }> {
+    const url = `/datasets/tabular/${datasetId}`;
+    return this._fetchWithJsonBody(url, "POST", args);
+  }
+
   getDimensionTypes(): Promise<DimensionType[]> {
     return this._fetch<DimensionType[]>("/types/dimensions");
+  }
+
+  getDimensionType(name: string): Promise<DimensionType> {
+    return this._fetch<DimensionType>(`/types/dimensions/${name}`);
   }
 
   postDimensionType(dimTypeArgs: DimensionTypeAddArgs): Promise<DimensionType> {

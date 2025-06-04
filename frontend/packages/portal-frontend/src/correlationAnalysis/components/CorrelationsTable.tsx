@@ -1,6 +1,5 @@
 import WideTable from "@depmap/wide-table";
 import React from "react";
-import { Button } from "react-bootstrap";
 
 interface CorrelationsTableProps {
   data: any[];
@@ -15,12 +14,12 @@ export default function CorrelationsTable(props: CorrelationsTableProps) {
     <div>
       <WideTable
         columns={[
-          { accessor: "Feature" },
-          { accessor: "Feature Type" },
-          { accessor: "Dose", Header: `${compound} Dose` },
-          { accessor: "Correlation Coefficient" },
-          { accessor: "-log10 qval", Header: "-log10(q value)" },
-          { accessor: "Rank" },
+          { accessor: "feature", Header: "Feature" },
+          { accessor: "featureDataset", Header: "Correlated Dataset" },
+          { accessor: "dose", Header: `${compound} Dose` },
+          { accessor: "correlation", Header: "Correlation" },
+          { accessor: "log10qvalue", Header: "log10(q value)" },
+          { accessor: "rank", Header: "Rank" },
         ]}
         data={data}
         rowHeight={40}
