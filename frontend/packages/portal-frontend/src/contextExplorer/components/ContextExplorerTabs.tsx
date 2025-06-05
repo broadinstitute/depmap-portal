@@ -9,9 +9,6 @@ import {
 import styles from "../styles/ContextExplorer.scss";
 import {
   CellLineOverview,
-  ContextExplorerDatasets,
-  ContextNameInfo,
-  ContextNode,
   ContextSummary,
   TabTypes,
   TreeType,
@@ -22,6 +19,11 @@ import { capitalizeFirstLetter } from "../utils";
 import ContextAnalysis from "src/contextExplorer/components/contextAnalysis/ContextAnalysis";
 import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
 import { enabledFeatures } from "@depmap/globals";
+import {
+  ContextExplorerDatasets,
+  ContextNameInfo,
+  ContextNode,
+} from "@depmap/types";
 
 interface Props {
   isLoadingInitialData: boolean;

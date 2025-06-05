@@ -25,8 +25,6 @@ done
 source setup_env.sh
 
 # install python requirements
-pyenv install "$(cat .python-version)"
-poetry env use "$(pyenv which python)"
 poetry install
 
 # generate python version of shared constants between frontend and backend

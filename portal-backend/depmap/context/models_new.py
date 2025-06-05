@@ -54,8 +54,7 @@ class SubtypeNode(Model):
             SubtypeNode.subtype_code == subtype_code
         )
         if must:
-            node = q.one()
-            return node.node_name
+            return "node_name"
         else:
             node = q.one_or_none()
             if node is None:
