@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { Row, Col, Button } from "react-bootstrap";
 import * as Papa from "papaparse";
-
-import { toStaticUrl } from "@depmap/globals";
-import { getDapi } from "src/common/utilities/context";
+import { legacyPortalAPI } from "@depmap/api";
+import { toPortalLink, toStaticUrl } from "@depmap/globals";
 import { Spinner } from "@depmap/common-components";
 import { EntityType } from "src/entity/models/entities";
 import {
@@ -12,10 +11,9 @@ import {
   PredictiveModelResults,
   PredictabilityTable,
   ScreenType,
-} from "src/predictability/models/predictive";
+} from "@depmap/types";
 import PredictiveModelsForScreen from "src/predictability/components/PredictiveModelsForScreen";
 import "src/predictability/styles/predictability_tab.scss";
-import { DepmapApi } from "src/dAPI";
 
 interface Props {
   entityIdOrLabel: number | string;
@@ -26,7 +24,6 @@ interface Props {
 }
 
 interface InformationalContentProps {
-  dapi: DepmapApi;
   tables: Array<{
     screen: string;
     screenType: ScreenType;
@@ -39,7 +36,6 @@ interface InformationalContentProps {
 }
 
 const InformationalContent = ({
-  dapi,
   tables,
   entityLabel,
   entityType,
@@ -139,7 +135,7 @@ const InformationalContent = ({
         bsStyle="link"
         bsSize="xs"
         className="icon-button"
-        href={dapi.getPredictabilityDownloadUrl(entityType)}
+        href={toPortalLink(`/${entityType}/predictability_files`)}
         download
       >
         <img
@@ -166,9 +162,8 @@ const InformationalContent = ({
 const PredictabilityRowForEntity = (props: {
   tables: Array<PredictabilityTable>;
   entityType: EntityType;
-  dapi: DepmapApi;
 }) => {
-  const { dapi, entityType, tables } = props;
+  const { entityType, tables } = props;
   if (!tables) {
     return null;
   }
@@ -182,7 +177,6 @@ const PredictabilityRowForEntity = (props: {
             <Col key={screen} md={6}>
               <PredictiveModelsForScreen
                 key={screen}
-                dapi={dapi}
                 entityType={entityType}
                 screen={screen}
                 screenType={screenType}
@@ -242,7 +236,6 @@ const PredictabilityRowForEntity = (props: {
                 >
                   <PredictiveModelsForScreen
                     key={screen}
-                    dapi={dapi}
                     entityType={entityType}
                     screen={screen}
                     screenType={screenType}
@@ -269,11 +262,10 @@ const PredictabilityTab = (props: Props) => {
   } = props;
   const [tables, setTables] = useState<Array<PredictabilityTable> | null>(null);
   const [error, setError] = useState(false);
-  const [dapi] = useState(() => getDapi());
 
   useEffect(() => {
     if (entityType === EntityType.Gene) {
-      dapi
+      legacyPortalAPI
         .getPredictiveTableGene(entityIdOrLabel as number)
         .then((r) => {
           setTables(r);
@@ -283,7 +275,7 @@ const PredictabilityTab = (props: Props) => {
           window.console.error(e);
         });
     } else {
-      dapi
+      legacyPortalAPI
         .getPredictiveTableCompound(entityIdOrLabel as string)
         .then((r) => {
           setTables(
@@ -300,7 +292,7 @@ const PredictabilityTab = (props: Props) => {
           window.console.error(e);
         });
     }
-  }, [entityIdOrLabel, entityType, dapi]);
+  }, [entityIdOrLabel, entityType]);
 
   if (error) {
     return <h4>Sorry, an error occurred.</h4>;
@@ -313,18 +305,13 @@ const PredictabilityTab = (props: Props) => {
   return (
     <>
       <InformationalContent
-        dapi={dapi}
         tables={tables}
         entityLabel={entityLabel}
         entityType={entityType}
         customDownloadsLink={customDownloadsLink}
         methodologyUrl={methodologyUrl}
       />
-      <PredictabilityRowForEntity
-        tables={tables}
-        dapi={dapi}
-        entityType={entityType}
-      />
+      <PredictabilityRowForEntity tables={tables} entityType={entityType} />
     </>
   );
 };
