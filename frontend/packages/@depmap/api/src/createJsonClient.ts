@@ -21,6 +21,33 @@ async function request<T>(url: string, options: RequestInit): Promise<T> {
     throw new Error("Network request failed");
   }
 
+  // Handle 404 and other non-JSON responses gracefully
+  if (!response.ok) {
+    if (response.status === 404) {
+      throw new Error(`Endpoint not found: ${url}`);
+    }
+
+    // Check if response is JSON before trying to parse
+    const contentType = response.headers.get("content-type");
+    if (contentType && contentType.includes("application/json")) {
+      try {
+        const json = await response.json();
+        const message =
+          typeof json === "object" && json !== null
+            ? JSON.stringify(json)
+            : `Request failed with status ${response.status}`;
+        throw new Error(message);
+      } catch (parseErr) {
+        // If JSON parsing fails, fall back to status message
+        throw new Error(`Request failed with status ${response.status}`);
+      }
+    } else {
+      // Non-JSON error response (like HTML 404 page)
+      throw new Error(`Request failed with status ${response.status}`);
+    }
+  }
+
+  // Only try to parse JSON for successful responses
   let json: unknown;
   try {
     json = await response.json();
@@ -29,16 +56,7 @@ async function request<T>(url: string, options: RequestInit): Promise<T> {
     throw new Error("Failed to parse JSON response");
   }
 
-  if (response.ok) {
-    return json as T;
-  }
-
-  const message =
-    typeof json === "object" && json !== null
-      ? JSON.stringify(json)
-      : `Request failed with status ${response.status}`;
-
-  throw new Error(message);
+  return json as T;
 }
 
 const makeGetJson = (urlPrefix: string) => <T>(
