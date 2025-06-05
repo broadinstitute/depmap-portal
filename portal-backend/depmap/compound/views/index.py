@@ -28,6 +28,7 @@ from depmap.compound.models import (
     CompoundDoseReplicate,
     CompoundExperiment,
     DoseResponseCurve,
+    backfill_drc_dataset_label,
 )
 from depmap.compound.views.executive import (
     get_order,
@@ -54,6 +55,8 @@ blueprint = Blueprint(
 # (e.g. more sane gene names), we don't want to do this.
 @blueprint.route("/<path:name>")
 def view_compound(name):
+    backfill_drc_dataset_label()
+    breakpoint()
     compound = Compound.get_by_label(name, must=False)
 
     aliases = Compound.get_aliases_by_entity_id(compound.entity_id)

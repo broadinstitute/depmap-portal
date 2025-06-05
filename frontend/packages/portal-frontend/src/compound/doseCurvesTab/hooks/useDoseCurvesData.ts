@@ -60,7 +60,7 @@ function useDoseCurvesData(
         if (compoundDimType.metadata_dataset_id) {
           const allCompoundMetadata = await bbapi.getTabularDatasetData(
             compoundDimType.metadata_dataset_id,
-            { identifier: "label", columns: ["CompoundID"] }
+            { columns: ["CompoundID"] }
           );
           const compoundID = allCompoundMetadata["CompoundID"][compound];
 

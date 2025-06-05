@@ -555,8 +555,10 @@ def backfill_drc_dataset_label():
     ).all()
     updated = 0
     for curve in curves:
+
         if not curve.drc_dataset_label or curve.drc_dataset_label.strip() == "":
             compound_exp = curve.compound_exp
+
             if compound_exp and compound_exp.xref_type in xref_type_to_drc_label:
                 curve.drc_dataset_label = xref_type_to_drc_label[compound_exp.xref_type]
                 updated += 1

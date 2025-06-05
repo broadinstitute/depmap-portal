@@ -377,25 +377,6 @@ export class BreadboxApi {
     return this._fetchWithJsonBody(url, "PATCH", dimTypeArgs);
   }
 
-  // NOTE: Replace this with final version of Jessica's from the Corr Analysis Tab
-  // PR
-  getTabularDatasetData(
-    datasetId: string,
-    args: {
-      identifier: "id" | "label";
-      columns?: string[] | null;
-    }
-  ): Promise<{ [key: string]: { [key: string]: any } }> {
-    const url = `/datasets/tabular/${datasetId}`;
-    return this._fetchWithJsonBody(url, "POST", args);
-  }
-
-  // NOTE: Replace this with final version of Jessica's from the Corr Analysis Tab
-  // PR
-  getDimensionType(name: string): Promise<DimensionType> {
-    return this._fetch<DimensionType>(`/types/dimensions/${name}`);
-  }
-
   deleteDimensionType(name: string) {
     return this._delete("/types/dimensions", name);
   }
