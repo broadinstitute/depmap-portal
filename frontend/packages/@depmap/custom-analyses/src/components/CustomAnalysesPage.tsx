@@ -1,6 +1,7 @@
 import React from "react";
 import { Button, Radio } from "react-bootstrap";
-import { enabledFeatures } from "@depmap/globals";
+import { breadboxAPI, legacyPortalAPI } from "@depmap/api";
+import { enabledFeatures, isElara } from "@depmap/globals";
 import {
   AnalysisType,
   AssociationPearsonQuery,
@@ -11,7 +12,6 @@ import {
   TwoClassQuery,
 } from "@depmap/compute";
 import { ProgressTracker } from "@depmap/common-components";
-import { legacyPortalAPI } from "@depmap/api";
 import ResultsReadyModal from "./ResultsReadyModal";
 
 import styles from "../styles/CustomAnalysis.scss";
@@ -78,7 +78,21 @@ export default class CustomAnalysesPage extends React.Component<
       this.setState({ cellLineData });
     });
 
-    legacyPortalAPI.getCustomAnalysisDatasets().then((availableDatasets) => {
+    const getDatasets = isElara
+      ? () =>
+          breadboxAPI.getDatasets().then((datasets) => {
+            return datasets
+              .filter((d) => {
+                return (
+                  d.format === "matrix_dataset" &&
+                  d.sample_type_name === "depmap_model"
+                );
+              })
+              .map(({ id, name }) => ({ value: id, label: name }));
+          })
+      : legacyPortalAPI.getCustomAnalysisDatasets;
+
+    getDatasets().then((availableDatasets) => {
       this.setState({ datasets: availableDatasets });
     });
   };
@@ -251,7 +265,11 @@ export default class CustomAnalysesPage extends React.Component<
                       analysisCurrentlyRunning: false,
                     });
                   }}
-                  getTaskStatus={legacyPortalAPI.getTaskStatus}
+                  getTaskStatus={
+                    isElara
+                      ? breadboxAPI.getTaskStatus
+                      : legacyPortalAPI.getTaskStatus
+                  }
                 />
               )}
             </div>
