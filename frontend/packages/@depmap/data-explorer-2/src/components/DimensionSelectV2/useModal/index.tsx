@@ -1,5 +1,6 @@
-import React, { useCallback } from "react";
+import React, { useCallback, useContext } from "react";
 import ReactDOM from "react-dom";
+import { ApiContext } from "@depmap/api";
 import { DataExplorerPlotConfigDimensionV2 } from "@depmap/types";
 import {
   DataExplorerApiProvider,
@@ -23,8 +24,9 @@ export default function useModal({
   onChange,
   state,
 }: Props) {
-  // We need to create a duplicate provider because
+  // We need to create duplicate providers for each of these contexts because
   // we're rendering a new React root with its own scope.
+  const sharedApi = useContext(ApiContext);
   const dataExplorerApi = useDataExplorerApi();
 
   const onClickShowModal = useCallback(() => {
@@ -38,22 +40,25 @@ export default function useModal({
     };
 
     ReactDOM.render(
-      <DataExplorerApiProvider {...dataExplorerApi}>
-        <DimensionDetailsModal
-          mode={mode}
-          index_type={index_type}
-          initialState={state}
-          onCancel={unmount}
-          onChange={(dimension) => {
-            onChange(dimension);
-            unmount();
-          }}
-          includeAllInContextOptions={includeAllInContextOptions}
-        />
-      </DataExplorerApiProvider>,
+      <ApiContext.Provider value={sharedApi}>
+        <DataExplorerApiProvider {...dataExplorerApi}>
+          <DimensionDetailsModal
+            mode={mode}
+            index_type={index_type}
+            initialState={state}
+            onCancel={unmount}
+            onChange={(dimension) => {
+              onChange(dimension);
+              unmount();
+            }}
+            includeAllInContextOptions={includeAllInContextOptions}
+          />
+        </DataExplorerApiProvider>
+      </ApiContext.Provider>,
       container
     );
   }, [
+    sharedApi,
     dataExplorerApi,
     includeAllInContextOptions,
     index_type,

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useContext, useEffect, useState } from "react";
 import {
   Dataset,
   DatasetParams,
@@ -17,7 +17,7 @@ import WideTable from "@depmap/wide-table";
 import Button from "react-bootstrap/lib/Button";
 
 import styles from "../styles/styles.scss";
-import { breadboxAPI, legacyPortalAPI } from "@depmap/api";
+import { ApiContext } from "@depmap/api";
 
 import DatasetForm from "./DatasetForm";
 import { Alert } from "react-bootstrap";
@@ -25,6 +25,8 @@ import DatasetEditForm from "./DatasetEditForm";
 import DimensionTypeForm from "./DimensionTypeForm";
 
 export default function Datasets() {
+  const { getApi } = useContext(ApiContext);
+  const [dapi] = useState(() => getApi());
   const [datasets, setDatasets] = useState<Dataset[] | null>(null);
   const [userGroups, setUserGroups] = useState<{
     availableGroups: Group[];
@@ -46,38 +48,38 @@ export default function Datasets() {
   } | null>(null);
   const [showMetadataForm, setShowMetadataForm] = useState<boolean>(false);
 
-  const getDimensionTypes = useCallback(
-    () => breadboxAPI.getDimensionTypes(),
-    []
-  );
+  const getDimensionTypes = useCallback(() => dapi.getDimensionTypes(), [dapi]);
   const postDimensionType = useCallback(
-    (dimTypeArgs: DimensionTypeAddArgs) =>
-      breadboxAPI.postDimensionType(dimTypeArgs),
-    []
+    (dimTypeArgs: DimensionTypeAddArgs) => dapi.postDimensionType(dimTypeArgs),
+    [dapi]
   );
   const updateDimensionType = useCallback(
     (dimTypeName: string, dimTypeArgs: DimensionTypeUpdateArgs) =>
-      breadboxAPI.updateDimensionType(dimTypeName, dimTypeArgs),
-    []
+      dapi.updateDimensionType(dimTypeName, dimTypeArgs),
+    [dapi]
   );
 
   const getDataTypesAndPriorities = useCallback(
-    () => breadboxAPI.getDataTypesAndPriorities(),
-    []
+    () => dapi.getDataTypesAndPriorities(),
+    [dapi]
   );
   const postFileUpload = useCallback(
-    (fileArgs: { file: File | Blob }) => breadboxAPI.postFileUpload(fileArgs),
-    []
+    (fileArgs: { file: File | Blob }) => dapi.postFileUpload(fileArgs),
+    [dapi]
   );
   const postDatasetUpload = useCallback(
-    (datasetParams: DatasetParams) =>
-      breadboxAPI.postDatasetUpload(datasetParams),
-    []
+    (datasetParams: DatasetParams) => dapi.postDatasetUpload(datasetParams),
+    [dapi]
   );
   const updateDataset = useCallback(
     (datasetId: string, datasetUpdateArgs: DatasetUpdateArgs) =>
-      breadboxAPI.updateDataset(datasetId, datasetUpdateArgs),
-    []
+      dapi.updateDataset(datasetId, datasetUpdateArgs),
+    [dapi]
+  );
+
+  const getTaskStatus = useCallback(
+    (task_id: string) => dapi.getTaskStatus(task_id),
+    [dapi]
   );
 
   const [dimensionTypes, setDimensionTypes] = useState<
@@ -128,10 +130,10 @@ export default function Datasets() {
   useEffect(() => {
     (async () => {
       try {
-        let currentDatasets = await breadboxAPI.getDatasets();
+        let currentDatasets = await dapi.getBreadboxDatasets();
 
         // write access set to true if not advanced mode
-        const availableGroups = await breadboxAPI.getGroups(!isAdvancedMode);
+        const availableGroups = await dapi.getGroups(!isAdvancedMode);
         if (!isAdvancedMode) {
           const group_ids = availableGroups.map((group) => {
             return group.id;
@@ -141,7 +143,7 @@ export default function Datasets() {
           );
           setUserGroups({ availableGroups, writeGroups: availableGroups });
         } else {
-          const writeGroups = await breadboxAPI.getGroups(true);
+          const writeGroups = await dapi.getGroups(true);
           setUserGroups({ availableGroups, writeGroups });
         }
 
@@ -167,7 +169,7 @@ export default function Datasets() {
         setInitError(true);
       }
     })();
-  }, [getDimensionTypes, isAdvancedMode]);
+  }, [dapi, getDimensionTypes, isAdvancedMode]);
 
   useEffect(() => {
     // Only show dataset delete error message for 3 seconds
@@ -231,7 +233,7 @@ export default function Datasets() {
             uploadFile={postFileUpload}
             uploadDataset={postDatasetUpload}
             isAdvancedMode={isAdvancedMode}
-            getTaskStatus={legacyPortalAPI.getTaskStatus}
+            getTaskStatus={getTaskStatus}
             onSuccess={(dataset: Dataset, showModal: boolean) => {
               const addedDatasets = [...datasets, dataset];
               setDatasets(addedDatasets);
@@ -280,6 +282,7 @@ export default function Datasets() {
     postFileUpload,
     postDatasetUpload,
     isAdvancedMode,
+    getTaskStatus,
   ]);
 
   if (!datasets || !dimensionTypes) {
@@ -434,7 +437,7 @@ export default function Datasets() {
 
     await Promise.all(
       Array.from(selectedDatasetIds).map((dataset_id) => {
-        return breadboxAPI.deleteDataset(dataset_id);
+        return dapi.deleteDatasets(dataset_id);
       })
     )
       .then(() => {
@@ -466,7 +469,7 @@ export default function Datasets() {
         (dt) => dt.name === selectedDimensionType.name
       );
       if (dimensionType) {
-        await breadboxAPI
+        await dapi
           .deleteDimensionType(dimensionType.name)
           .then(() => {
             setDimTypeDeleteError(null);

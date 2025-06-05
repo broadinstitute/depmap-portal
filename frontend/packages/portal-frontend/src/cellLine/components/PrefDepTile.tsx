@@ -1,16 +1,23 @@
 import React from "react";
 import { Tooltip, OverlayTrigger } from "react-bootstrap";
-import { toStaticUrl, toPortalLink } from "@depmap/globals";
-import { CellLineDataMatrix } from "@depmap/types";
+import { toStaticUrl } from "@depmap/globals";
 import RectanglePlot from "src/cellLine/components/RectanglePlot";
+import { DepmapApi } from "src/dAPI";
+import { CellLineDataMatrix } from "../models/types";
 
 export interface PrefDepProps {
   depmapId: string;
   crisprData: CellLineDataMatrix;
   rnaiData: CellLineDataMatrix;
+  dapi: DepmapApi;
 }
 
-const PrefDepTile = ({ depmapId, crisprData, rnaiData }: PrefDepProps) => {
+const PrefDepTile = ({
+  depmapId,
+  crisprData,
+  rnaiData,
+  dapi,
+}: PrefDepProps) => {
   const prefDepTooltip = (
     <Tooltip>
       The below genes are ranked by z-score. The z-score is computed for each
@@ -68,7 +75,7 @@ const PrefDepTile = ({ depmapId, crisprData, rnaiData }: PrefDepProps) => {
               Download gene effect z-scores for all genes:
               {crisprData.data && (
                 <a
-                  href={toPortalLink(
+                  href={dapi._getFileUrl(
                     `/cell_line/gene_effects/download/crispr/${depmapId}`
                   )}
                 >
@@ -79,7 +86,7 @@ const PrefDepTile = ({ depmapId, crisprData, rnaiData }: PrefDepProps) => {
               {crisprData.data && rnaiData.data && <span>,</span>}
               {rnaiData.data && (
                 <a
-                  href={toPortalLink(
+                  href={dapi._getFileUrl(
                     `/cell_line/gene_effects/download/rnai/${depmapId}`
                   )}
                 >

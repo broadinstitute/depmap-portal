@@ -1,5 +1,11 @@
-import React, { useCallback, useEffect, useState } from "react";
-import { breadboxAPI } from "@depmap/api";
+import React, {
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+import { ApiContext, SharedApi } from "@depmap/api";
 import { Highlighter, Tooltip, WordBreaker } from "@depmap/common-components";
 import { useDeprecatedDataExplorerApi } from "../../../contexts/DeprecatedDataExplorerApiContext";
 import { getDimensionTypeLabel } from "../../../utils/misc";
@@ -27,6 +33,17 @@ export const getPlaceholder = (slice_type: string) => {
   return `Choose ${getDimensionTypeLabel(slice_type)}…`;
 };
 
+export function useSharedApi() {
+  const apiContext = useContext(ApiContext);
+  const ref = useRef<SharedApi | null>(null);
+
+  if (!ref.current) {
+    ref.current = apiContext.getApi();
+  }
+
+  return ref.current as SharedApi;
+}
+
 function tokenize(input: string | null) {
   const str = input || "";
   const tokens = str.split(/\s+/g).filter(Boolean);
@@ -36,13 +53,18 @@ function tokenize(input: string | null) {
 }
 
 export function useSearch() {
-  return useCallback((input: string, type_name: string) => {
-    return breadboxAPI.searchDimensions({
-      substring: tokenize(input),
-      type_name,
-      limit: 100,
-    });
-  }, []);
+  const api = useSharedApi();
+
+  return useCallback(
+    (input: string, type_name: string) => {
+      return api.searchDimensions({
+        substring: tokenize(input),
+        type_name,
+        limit: 100,
+      });
+    },
+    [api]
+  );
 }
 
 function doNotOverlap(a: number[], b: number[]) {

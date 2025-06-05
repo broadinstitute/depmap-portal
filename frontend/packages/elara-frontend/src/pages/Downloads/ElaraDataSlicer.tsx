@@ -9,9 +9,14 @@ import {
 } from "react-bootstrap";
 import update from "immutability-helper";
 
-import { CellLineListsDropdown, CustomList } from "@depmap/cell-line-selector";
+import {
+  CellLineListsDropdown,
+  CustomList,
+  renderCellLineSelectorModal,
+} from "@depmap/cell-line-selector";
 
 import {
+  DatasetDownloadMetadata,
   DatasetOptionsWithLabels,
   DatasetPicker,
   DownloadTracker,
@@ -21,10 +26,12 @@ import {
   ValidationResult,
   ValidationTextbox,
 } from "@depmap/data-slicer";
+import { ElaraApi } from "src/api";
 import styles from "src/pages/Downloads/styles.scss";
-import { breadboxAPI } from "@depmap/api";
+import { ApiContext } from "@depmap/api";
 
 interface ElaraDataSlicerProps {
+  getDatasetsList: () => Promise<DatasetDownloadMetadata[]>;
   exportData: (query: ExportDataQuery) => Promise<any>;
   exportDataForMerge: (query: ExportMergedDataQuery) => Promise<any>;
   getTaskStatus: (taskId: string) => Promise<any>;
@@ -57,6 +64,8 @@ export default class ElaraDataSlicer extends React.Component<
 > {
   private validationTextbox: any = null;
 
+  static contextType = ApiContext;
+
   constructor(props: ElaraDataSlicerProps) {
     super(props);
     this.validationTextbox = React.createRef();
@@ -87,12 +96,12 @@ export default class ElaraDataSlicer extends React.Component<
     const defaultSelectedStr = urlParams.get("default_selected") ?? "";
     const defaultSelectedSet = new Set(defaultSelectedStr.split(","));
 
-    breadboxAPI.getDatasets().then((response) => {
+    this.props.getDatasetsList().then((response: DatasetDownloadMetadata[]) => {
       response.forEach((dataset) => {
         // group the datasets by their dataType
         const option: DatasetOptionsWithLabels = {
           id: dataset.id,
-          label: dataset.name,
+          label: dataset.display_name,
         };
 
         const dataType = dataset.data_type;
@@ -109,7 +118,7 @@ export default class ElaraDataSlicer extends React.Component<
         }
 
         if (defaultSelectedSet.has(dataset.id)) {
-          selectedDatasets.set(dataset.id, dataset.name);
+          selectedDatasets.set(dataset.id, dataset.display_name);
         }
       });
 
@@ -375,8 +384,17 @@ export default class ElaraDataSlicer extends React.Component<
   };
 
   renderCellLineSelection = (): any => {
+    const dapi = new ElaraApi("/");
+
+    const getDapi = () => dapi;
+    const cellLineSelectorContainer = document.getElementById(
+      "cell_line_selector_modal"
+    );
+
+    const launchCellLineSelectorModal = () =>
+      renderCellLineSelectorModal(getDapi, cellLineSelectorContainer);
     const onCellLineLinkClick = () => {
-      window.alert("TODO: launch context manager");
+      launchCellLineSelectorModal();
       // Need this click so that the tooltip doesn't stay open in front of the cell line modal
       document.body.click();
     };

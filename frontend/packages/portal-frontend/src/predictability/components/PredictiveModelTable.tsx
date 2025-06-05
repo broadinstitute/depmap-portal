@@ -1,11 +1,15 @@
 import React from "react";
+import { DepmapApi } from "src/dAPI";
 
 import { toStaticUrl } from "@depmap/globals";
 import InfoIcon from "src/common/components/InfoIcon";
 import StyledMeter from "src/common/components/StyledMeter";
 import { EntityType } from "src/entity/models/entities";
 import CorrelationMeter from "src/predictability/components/CorrelationMeter";
-import { PredictiveFeatureResult, ScreenType } from "@depmap/types";
+import {
+  PredictiveFeatureResult,
+  ScreenType,
+} from "src/predictability/models/predictive";
 
 const FEATURE_IMPORTANCE_DESCRIPTION = (
   <span>
@@ -89,7 +93,10 @@ const FEATURE_TYPE_DESCRIPTION = (
   </table>
 );
 
-const getRelationshipDescription = (entityType: EntityType) => {
+const getRelationshipDescription = (
+  dapi: DepmapApi,
+  entityType: EntityType
+) => {
   return entityType === EntityType.Gene ? (
     <>
       <div style={{ display: "flex", alignItems: "center" }}>
@@ -145,6 +152,7 @@ const getRelationshipDescription = (entityType: EntityType) => {
 };
 
 interface Props {
+  dapi: DepmapApi;
   entityType: EntityType;
   screenType: ScreenType;
   modelName: string;
@@ -155,6 +163,7 @@ interface Props {
 }
 
 const PredictiveModelTable = ({
+  dapi,
   entityType,
   screenType,
   modelName,
@@ -174,7 +183,7 @@ const PredictiveModelTable = ({
         }}
       >
         <div className="predictive-model-summary-container">
-          <span className="predictive-model-name-info">
+          <span className={`predictive-model-name-info`}>
             <span className="predictive-model-name">{modelName}</span>
             {modelFeatureSets && (
               <InfoIcon
@@ -207,7 +216,10 @@ const PredictiveModelTable = ({
               <th aria-label="Relationship">
                 <span className="column-header">
                   <InfoIcon
-                    popoverContent={getRelationshipDescription(entityType)}
+                    popoverContent={getRelationshipDescription(
+                      dapi,
+                      entityType
+                    )}
                     popoverId={`relationship-popover-${screenType}-${modelName}`}
                     trigger="click"
                   />

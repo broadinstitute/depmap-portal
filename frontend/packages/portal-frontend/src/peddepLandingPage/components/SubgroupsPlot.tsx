@@ -1,6 +1,6 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useContext, useEffect, useMemo, useState } from "react";
 import GroupedBarSuplots from "./GroupedBarSuplots";
-import { breadboxAPI } from "@depmap/api";
+import { ApiContext } from "@depmap/api";
 import {
   BarSubplotData,
   Subgroup,
@@ -8,6 +8,9 @@ import {
 } from "../models/subplotData";
 
 export default function SubGroupsPlot() {
+  const { getApi } = useContext(ApiContext);
+  const [bapi] = useState(() => getApi());
+
   const [data, setData] = React.useState<SubgroupSubtypes | null>(null);
   const [hasError, setHasError] = useState(false);
 
@@ -15,11 +18,9 @@ export default function SubGroupsPlot() {
     (async () => {
       try {
         // Get depmap models data
-        const dimensionType = await breadboxAPI.getDimensionType(
-          "depmap_model"
-        );
+        const dimensionType = await bapi.getDimensionType("depmap_model");
         if (dimensionType.metadata_dataset_id) {
-          const modelSubsetColData = await breadboxAPI.getTabularDatasetData(
+          const modelSubsetColData = await bapi.getTabularDatasetData(
             dimensionType.metadata_dataset_id,
             {
               columns: [
@@ -78,7 +79,7 @@ export default function SubGroupsPlot() {
         setHasError(true);
       }
     })();
-  }, []);
+  }, [bapi]);
 
   const subplotsData = useMemo(() => {
     if (data) {

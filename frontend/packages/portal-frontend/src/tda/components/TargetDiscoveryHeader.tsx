@@ -1,5 +1,5 @@
 import React from "react";
-import { toPortalLink } from "@depmap/globals";
+import { getDapi } from "src/common/utilities/context";
 import DownloadDataSvg from "src/common/components/svgs/DownloadDataSvg";
 import styles from "src/tda/styles/TDASummaryPage.scss";
 
@@ -9,7 +9,7 @@ function TargetDiscoveryHeader() {
       <span>Target Discovery</span>
       {/* TODO: add link to tutorial document */}
       <form
-        action={toPortalLink("/tda/table_download")}
+        action={getDapi().getTDATableDownloadUrl()}
         className={styles.headerForm}
       >
         <button type="submit" className={styles.headerButton}>

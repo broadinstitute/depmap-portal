@@ -8,7 +8,7 @@ import {
   TabPanel,
 } from "src/common/components/tabs";
 import styles from "src/dataPage/styles/DataPage.scss";
-import { DataAvailability } from "@depmap/types";
+import { DataAvailability } from "../models/types";
 import { AllData } from "./AllData";
 import CurrentReleasePanel from "./CurrentReleasePanel";
 import CustomDownloads from "./CustomDownloads";

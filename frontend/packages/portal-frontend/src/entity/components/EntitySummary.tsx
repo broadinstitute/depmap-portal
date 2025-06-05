@@ -10,14 +10,13 @@ import {
   Popover,
   ControlLabel,
 } from "react-bootstrap";
-import { legacyPortalAPI, LegacyPortalApiResponse } from "@depmap/api";
 import { Checkbox } from "@depmap/common-components";
 import { DeprecatedDataExplorerApiProvider } from "@depmap/data-explorer-2";
-import { toPortalLink } from "@depmap/globals";
-import { encodeParams } from "@depmap/utils";
 import DropdownButton from "src/common/components/DropdownButton";
 import { CellLineListsDropdown, CustomList } from "@depmap/cell-line-selector";
 import { evaluateLegacyContext } from "src/data-explorer-2/deprecated-api";
+import { getDapi } from "src/common/utilities/context";
+import { DepmapApi, EntitySummaryResponse } from "src/dAPI";
 import { PlotHTMLElement } from "@depmap/plotly-wrapper";
 import SublineagePlot from "./SublineagePlot";
 import {
@@ -25,8 +24,6 @@ import {
   mutationNumToColor,
   setQueryStringWithoutPageReload,
 } from "@depmap/utils";
-
-type EntitySummaryResponse = LegacyPortalApiResponse["getEntitySummary"];
 
 export type DatasetOption = {
   // called a "summary_option" on the backend
@@ -74,12 +71,15 @@ const setsAreEqual = (
 };
 
 class EntitySummary extends React.Component<Props, State> {
+  dapi: DepmapApi;
+
   plotElement?: PlotHTMLElement;
 
   eventKeyTitleMap: Map<string, React.ReactNode>;
 
   constructor(props: Props) {
     super(props);
+    this.dapi = getDapi();
     this.eventKeyTitleMap = new Map(
       props.summary_options.map((summaryOption, i) => [
         summaryOption.dataset,
@@ -117,7 +117,7 @@ class EntitySummary extends React.Component<Props, State> {
   }
 
   fetchEntitySummary(selectedDataset: DatasetOption) {
-    legacyPortalAPI
+    this.dapi
       .getEntitySummary(
         selectedDataset.entity,
         selectedDataset.dataset,
@@ -310,16 +310,12 @@ class EntitySummary extends React.Component<Props, State> {
     if (selectedDataset === null) {
       return null;
     }
-
-    const params = {
-      entity_id: selectedDataset.entity,
-      dep_enum_name: selectedDataset.dataset,
-      size_biom_enum_name: this.props.size_biom_enum_name || "none",
-      color: this.props.color || "none",
-    };
-    const url = `/partials/entity_summary/download?${encodeParams(params)}`;
-    const downloadLink = toPortalLink(url);
-
+    const downloadLink = this.dapi.getEntitySummaryDownload(
+      selectedDataset.entity,
+      selectedDataset.dataset,
+      this.props.size_biom_enum_name,
+      this.props.color
+    );
     return (
       <div
         style={{

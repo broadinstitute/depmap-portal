@@ -1,18 +1,15 @@
 import * as React from "react";
-import { TopFeatureValue } from "@depmap/types";
 import CelfiePage, { defaultData } from "src/celfie/components/CelfiePage";
 import { expressionData } from "src/celfie/stories/expressionData";
 import { copyNumberData } from "src/celfie/stories/copyNumData";
+import { sleep } from "src/common/utilities/mockUtils";
 import copyNumTaskResponse from "src/celfie/stories/copyNumTaskResponse.json";
 import expressionTaskResponse from "src/celfie/stories/expressionTaskResponse.json";
 import { combinedData } from "src/celfie/stories/combinedData";
 import { UnivariateAssociationsParams, ComputeResponse } from "@depmap/compute";
+import TopFeatureValue from "src/celfie/models/celfie";
 import { combinedDataPVal } from "src/celfie/stories/combinedDataPVal";
 import { ConnectivityValue } from "src/constellation/models/constellation";
-
-function sleep(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
 
 export default {
   title: "Components/Celfie/CelfiePage",

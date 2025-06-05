@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useContext } from "react";
 
 import { Spinner } from "@depmap/common-components";
 import WideTable from "@depmap/wide-table";
@@ -6,7 +6,7 @@ import WideTable from "@depmap/wide-table";
 import { DimensionMetadata, DimensionMetadataTableData } from "@depmap/types";
 import styles from "src/pages/Metadata/styles.scss";
 import { useSearchParams } from "react-router-dom";
-import { breadboxAPI } from "@depmap/api";
+import { ApiContext } from "@depmap/api";
 
 const formatTableData = (
   dimensionMetadata: DimensionMetadata | null
@@ -24,6 +24,8 @@ const formatTableData = (
 };
 
 export default function Metadata() {
+  const context = useContext(ApiContext);
+  const bbapi = context.getApi();
   const [
     selectedDimension,
     setSelectedDimension,
@@ -39,7 +41,7 @@ export default function Metadata() {
 
         const searchLabel =
           selectedDimensionLabel != null ? selectedDimensionLabel : "";
-        const dimension = await breadboxAPI.getMetadata(searchLabel);
+        const dimension = await bbapi.getMetadata(searchLabel);
         setSelectedDimension(dimension);
         setSearchParams({ label: searchLabel });
       } catch (e) {
@@ -47,7 +49,7 @@ export default function Metadata() {
         setInitError(true);
       }
     })();
-  }, [searchParams, setSearchParams]);
+  }, [bbapi, searchParams, setSearchParams]);
 
   if (!selectedDimension) {
     return initError ? (

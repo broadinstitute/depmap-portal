@@ -1,9 +1,7 @@
 /* eslint-disable */
 import React from "react";
 import { MenuItem } from "react-bootstrap";
-import { legacyPortalAPI } from "@depmap/api";
-import type { LegacyPortalApiResponse } from "@depmap/api";
-import { toPortalLink } from "@depmap/globals";
+
 import {
   ColumnType,
   CustomCellRendererInputs,
@@ -12,9 +10,9 @@ import {
   LongTableData,
 } from "@depmap/long-table";
 import DropdownButton from "src/common/components/DropdownButton";
+import { DepmapApi, DoseResponseCurvePromise } from "src/dAPI";
+import { getDapi } from "src/common/utilities/context";
 import { DoseResponseCurve } from "./DoseResponseCurve";
-
-type DoseResponseCurvePromise = LegacyPortalApiResponse["getDoseResponsePoints"];
 
 type CompoundDataset = {
   dataset: string;
@@ -61,10 +59,17 @@ function addIdToDoseResponseCurvePromise(
 }
 
 class DoseResponseTab extends React.Component<DoseResponseProps, State> {
+  dapi: DepmapApi;
+
+  cellLineUrlRoot: string;
+
   dropdownEventKeyToLabel: Map<CompoundDataset, React.ReactNode>;
 
   constructor(props: DoseResponseProps) {
     super(props);
+
+    this.dapi = getDapi();
+    this.cellLineUrlRoot = this.dapi.getUrlRoot("cell_line.view_cell_line");
 
     this.dropdownEventKeyToLabel = new Map(
       props.datasetOptions.map((datasetOption) => [
@@ -80,7 +85,7 @@ class DoseResponseTab extends React.Component<DoseResponseProps, State> {
       curvePlotPoints: new Map(),
     };
 
-    legacyPortalAPI
+    this.dapi
       .getDoseResponseTable(
         this.state.dataset.dose_replicate_dataset,
         this.state.dataset.compound_xref_full
@@ -97,7 +102,7 @@ class DoseResponseTab extends React.Component<DoseResponseProps, State> {
   }
 
   onDatasetChange = (newDataset: CompoundDataset) => {
-    legacyPortalAPI
+    this.dapi
       .getDoseResponseTable(
         newDataset.dose_replicate_dataset,
         newDataset.compound_xref_full
@@ -121,7 +126,7 @@ class DoseResponseTab extends React.Component<DoseResponseProps, State> {
       .then((v) => {
         Promise.all([
           ...this.state.selectedRows.map((depmapId) =>
-            legacyPortalAPI.getDoseResponsePoints(
+            this.dapi.getDoseResponsePoints(
               newDataset.dose_replicate_dataset,
               depmapId,
               newDataset.compound_xref_full
@@ -157,7 +162,7 @@ class DoseResponseTab extends React.Component<DoseResponseProps, State> {
         );
         this.setState({ selectedRows: newSelectedRows });
       } else {
-        legacyPortalAPI
+        this.dapi
           .getDoseResponsePoints(
             this.state.dataset.dose_replicate_dataset,
             rowKey,
@@ -177,7 +182,7 @@ class DoseResponseTab extends React.Component<DoseResponseProps, State> {
           );
       }
     } else {
-      legacyPortalAPI
+      this.dapi
         .getDoseResponsePoints(
           this.state.dataset.dose_replicate_dataset,
           rowKey,
@@ -245,7 +250,7 @@ class DoseResponseTab extends React.Component<DoseResponseProps, State> {
       return cellData;
     }
     return (
-      <a href={toPortalLink(`/cell_line/${rowData.depmapId}`)} target="_blank">
+      <a href={`${this.cellLineUrlRoot}${rowData.depmapId}`} target="_blank">
         {rowData.cell_line_display_name}
       </a>
     );

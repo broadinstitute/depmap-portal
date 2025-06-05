@@ -4,14 +4,16 @@ import { enabledFeatures } from "@depmap/globals";
 import {
   AnalysisType,
   AssociationPearsonQuery,
+  CeleryTask,
   CommonQueryProps,
   ComputeResponse,
   ComputeResponseResult,
+  Dataset,
   QuerySelections,
   TwoClassQuery,
 } from "@depmap/compute";
 import { ProgressTracker } from "@depmap/common-components";
-import { legacyPortalAPI } from "@depmap/api";
+import { ApiContext } from "@depmap/api";
 import ResultsReadyModal from "./ResultsReadyModal";
 
 import styles from "../styles/CustomAnalysis.scss";
@@ -20,6 +22,7 @@ import styles from "../styles/CustomAnalysis.scss";
 // this component is concerned with the logic of having a modal, sending an analysis request, and handling it's progress/error messages
 
 interface CustomAnalysesPageProps {
+  launchCellLineSelectorModal: () => void;
   fetchSimplifiedCellLineData: () => Promise<
     Map<string, { displayName: string }>
   >;
@@ -40,7 +43,7 @@ interface CustomAnalysesPageState {
     onResultsComplete: (response: ComputeResponse) => void
   ) => void;
   analysisCurrentlyRunning: boolean;
-  datasets: { label: string; value: string }[];
+  datasets: Dataset[];
   cellLineData: Map<string, { displayName: string }>;
   customAnalysisResults: Partial<ResultsWrapper> | undefined;
 }
@@ -49,11 +52,21 @@ export default class CustomAnalysesPage extends React.Component<
   CustomAnalysesPageProps,
   Partial<CustomAnalysesPageState>
 > {
+  declare context: React.ContextType<typeof ApiContext>;
+
+  static contextType = ApiContext;
+
   private queryComponents: Partial<Record<AnalysisType, any>> = {};
+
+  api: {
+    getDatasets: () => Promise<Dataset[]>;
+    getTaskStatus: (id: string) => Promise<CeleryTask>;
+  };
 
   constructor(props: any, context: any) {
     super(props, context);
 
+    this.api = context.getApi();
     this.state = {
       analysisType: undefined,
       submissionResponse: undefined,
@@ -78,7 +91,7 @@ export default class CustomAnalysesPage extends React.Component<
       this.setState({ cellLineData });
     });
 
-    legacyPortalAPI.getCustomAnalysisDatasets().then((availableDatasets) => {
+    this.api.getDatasets().then((availableDatasets: Dataset[]) => {
       this.setState({ datasets: availableDatasets });
     });
   };
@@ -251,7 +264,9 @@ export default class CustomAnalysesPage extends React.Component<
                       analysisCurrentlyRunning: false,
                     });
                   }}
-                  getTaskStatus={legacyPortalAPI.getTaskStatus}
+                  getTaskStatus={(taskId: string) =>
+                    this.api.getTaskStatus(taskId)
+                  }
                 />
               )}
             </div>
@@ -262,6 +277,7 @@ export default class CustomAnalysesPage extends React.Component<
   };
 
   render() {
+    const { launchCellLineSelectorModal } = this.props;
     const {
       analysisType,
       cellLineData,
@@ -287,6 +303,7 @@ export default class CustomAnalysesPage extends React.Component<
             this.renderBodyFooter(undefined, false, undefined)
           ) : (
             <QueryComponentClass
+              launchCellLineSelectorModal={launchCellLineSelectorModal}
               analysisType={analysisType} // only used for association and pearson
               renderBodyFooter={this.renderBodyFooter}
               sendQueryGeneric={this.sendQueryGeneric}

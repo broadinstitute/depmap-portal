@@ -10,14 +10,8 @@
     "@depmap/cell-line-selector": "1.0.0",
     "@depmap/compute": "1.0.0",
     "@depmap/data-slicer": "1.0.0",
-    "@depmap/globals": "1.0.0",
     "@depmap/types": "1.0.0",
-    "@depmap/user-upload": "1.0.0",
-    "papaparse": "^4.6.0",
-    "qs": "^6.14.0"
-  },
-  "devDependencies": {
-    "@types/papaparse": "^4.5.2"
+    "@depmap/user-upload": "1.0.0"
   },
   "peerDependencies": {
     "react": "^16.9.35"

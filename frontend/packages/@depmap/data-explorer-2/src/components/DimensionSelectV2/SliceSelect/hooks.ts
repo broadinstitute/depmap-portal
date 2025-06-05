@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useState } from "react";
-import { breadboxAPI } from "@depmap/api";
+import { useCallback, useContext, useEffect, useState } from "react";
+import { ApiContext } from "@depmap/api";
 import { useDataExplorerApi } from "../../../contexts/DataExplorerApiContext";
 import { useDimensionType } from "../../../utils/misc";
 import convertSearchResultToOptions from "./convertSearchResultToOptions";
@@ -75,12 +75,13 @@ export const useSearch = (
   dataset_id: string | null
 ) => {
   const deApi = useDataExplorerApi();
+  const sharedApi = useContext(ApiContext);
 
   return useCallback(
     async (input: string) => {
       const tokens = tokenize(input);
 
-      const result = await breadboxAPI.searchDimensions({
+      const result = await sharedApi.getApi().searchDimensions({
         substring: tokens,
         type_name: slice_type,
         limit: 100,
@@ -95,7 +96,7 @@ export const useSearch = (
         dataset_id
       );
     },
-    [deApi, slice_type, dataType, dataset_id]
+    [deApi, sharedApi, slice_type, dataType, dataset_id]
   );
 };
 

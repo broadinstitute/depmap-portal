@@ -1,15 +1,16 @@
-import React, { useCallback, useEffect, useState } from "react";
-import qs from "qs";
-import update from "immutability-helper";
-import { legacyPortalAPI } from "@depmap/api";
-import { toStaticUrl } from "@depmap/globals";
-import { ContextInfo, ContextNode } from "@depmap/types";
 import {
   deleteSpecificQueryParams,
   setQueryStringWithoutPageReload,
 } from "@depmap/utils";
+import update from "immutability-helper";
+import qs from "qs";
+import React, { useCallback, useEffect, useState } from "react";
+import { toStaticUrl } from "@depmap/globals";
+import { getDapi } from "src/common/utilities/context";
 import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
 import {
+  ContextInfo,
+  ContextNode,
   ContextSummary,
   DataAvailabilitySummary,
   TabTypes,
@@ -81,6 +82,8 @@ export const ContextExplorer = () => {
 
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
+  const dapi = getDapi();
+
   const { selectedContextNode, topContextNameInfo } = getSelectedContextNode(
     contextPath,
     contextInfo?.tree
@@ -106,7 +109,7 @@ export const ContextExplorer = () => {
       // each tree, which will always be at list index 0
       setPlotElement(null);
       setIsLoading(true);
-      const options = await legacyPortalAPI.getContextSearchOptions();
+      const options = await dapi.getContextSearchOptions();
 
       options.lineage.unshift(ALL_SEARCH_OPTION);
       setLineageSearchOptions(
@@ -131,10 +134,10 @@ export const ContextExplorer = () => {
         })
       );
 
-      const lineageContextData = await legacyPortalAPI.getContextDataAvailability(
+      const lineageContextData = await dapi.getContextDataAvailability(
         TreeType.Lineage.toString()
       );
-      const molSubtypeContextData = await legacyPortalAPI.getContextDataAvailability(
+      const molSubtypeContextData = await dapi.getContextDataAvailability(
         TreeType.MolecularSubtype.toString()
       );
       setAllLineageContextData(lineageContextData);
@@ -143,9 +146,7 @@ export const ContextExplorer = () => {
       const params = qs.parse(window.location.search.substr(1));
       if (params.context) {
         const selectedSubtypeCode = params.context!.toString();
-        const context = await legacyPortalAPI.getContextPath(
-          selectedSubtypeCode
-        );
+        const context = await dapi.getContextPath(selectedSubtypeCode);
         const path = context.path;
         const selectedTree = context.tree_type;
         setContextPath(path);
@@ -154,12 +155,12 @@ export const ContextExplorer = () => {
             ? TreeType.Lineage
             : TreeType.MolecularSubtype
         );
-        const newContextInfo = await legacyPortalAPI.getContextExplorerContextInfo(
+        const newContextInfo = await dapi.getContextExplorerContextInfo(
           path[0]
         );
         setContextInfo(newContextInfo);
 
-        const dataAvail = await legacyPortalAPI.getSubtypeDataAvailability(
+        const dataAvail = await dapi.getSubtypeDataAvailability(
           path[path.length - 1]
         );
 
@@ -170,7 +171,7 @@ export const ContextExplorer = () => {
       }
       setIsLoading(false);
     })();
-  }, []);
+  }, [dapi]);
 
   const updateDatatypeSelection = useCallback(
     (clicked: string) => {
@@ -203,11 +204,11 @@ export const ContextExplorer = () => {
         (allMolecularSubtypeContextData || allLineageContextData) &&
         (contextNode || subtypeCode)
       ) {
-        const context = await legacyPortalAPI.getContextPath(
+        const context = await dapi.getContextPath(
           contextNode?.subtype_code || subtypeCode!
         );
         const path = context.path;
-        const subtypeDataAvail = await legacyPortalAPI.getSubtypeDataAvailability(
+        const subtypeDataAvail = await dapi.getSubtypeDataAvailability(
           contextNode?.subtype_code || subtypeCode!
         );
 
@@ -215,7 +216,7 @@ export const ContextExplorer = () => {
           !contextInfo ||
           (contextTreeRoot && path[0] !== contextTreeRoot.subtype_code)
         ) {
-          const newContextInfo = await legacyPortalAPI.getContextExplorerContextInfo(
+          const newContextInfo = await dapi.getContextExplorerContextInfo(
             path[0]
           );
           setContextInfo(newContextInfo);
@@ -233,8 +234,10 @@ export const ContextExplorer = () => {
       }
       setIsLoading(false);
     },
-    [allLineageContextData, allMolecularSubtypeContextData, contextInfo]
+    [allLineageContextData, allMolecularSubtypeContextData, contextInfo, dapi]
   );
+
+  const cellLineUrlRoot = useCallback(() => dapi.getCellLineUrlRoot(), [dapi]);
 
   const customInfoImg = (
     <img
@@ -305,7 +308,7 @@ export const ContextExplorer = () => {
                       : allMolecularSubtypeContextData.table
                     /* eslint-enable no-nested-ternary */
                   }
-                  getCellLineUrlRoot={legacyPortalAPI.getCellLineUrlRoot}
+                  getCellLineUrlRoot={cellLineUrlRoot}
                   handleSetSelectedTab={setSelectedTab}
                   customInfoImg={customInfoImg}
                   handleSetPlotElement={(element: ExtendedPlotType | null) => {

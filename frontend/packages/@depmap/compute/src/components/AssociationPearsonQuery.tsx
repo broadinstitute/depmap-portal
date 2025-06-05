@@ -3,9 +3,8 @@ import React from "react";
 import { Radio } from "react-bootstrap";
 import { assert } from "@depmap/utils";
 import { Link } from "../models/legacy";
-import { breadboxAPI, legacyPortalAPI } from "@depmap/api";
+import { ApiContext } from "@depmap/api";
 import { CellLineListsDropdown, CustomList } from "@depmap/cell-line-selector";
-import { isElara } from "@depmap/globals";
 import {
   AssociationOrPearsonAnalysisType,
   QuerySelections,
@@ -34,6 +33,9 @@ export default class AssociationPearsonQuery extends React.Component<
   AssociationPearsonQueryProps,
   Partial<AssociationPearsonQueryState>
 > {
+  declare context: React.ContextType<typeof ApiContext>;
+  static contextType = ApiContext;
+
   constructor(props: any) {
     super(props);
 
@@ -235,6 +237,8 @@ export default class AssociationPearsonQuery extends React.Component<
       vectorVariableType,
     } = this.state;
 
+    const { getApi } = this.context;
+
     let queryCellLines = null; // remains null if subset is not defined
     if (usingSubsetOfLines && selectedList) {
       // is a set, need to convert to an array
@@ -251,13 +255,9 @@ export default class AssociationPearsonQuery extends React.Component<
       // pearson does not use vectorVariableType, only association
       params.vectorVariableType = vectorVariableType;
     }
-
     const runCustomAnalysis = () => {
-      return isElara
-        ? breadboxAPI.computeUnivariateAssociations(params)
-        : legacyPortalAPI.computeUnivariateAssociations(params);
+      return getApi().computeUnivariateAssociations(params);
     };
-
     sendQueryGeneric(runCustomAnalysis, this.onSuccess);
   };
 

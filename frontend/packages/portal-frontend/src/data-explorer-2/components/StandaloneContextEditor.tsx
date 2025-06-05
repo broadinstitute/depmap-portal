@@ -1,10 +1,12 @@
 import React from "react";
+import { ApiContext } from "@depmap/api";
 import {
   ContextBuilderModal,
   DeprecatedDataExplorerApiProvider,
   saveContextToLocalStorageAndPersist,
 } from "@depmap/data-explorer-2";
 import { DataExplorerContext } from "@depmap/types";
+import { getDapi as getApi } from "src/common/utilities/context";
 import {
   evaluateLegacyContext,
   fetchContextSummary,
@@ -69,31 +71,33 @@ function StandaloneContextEditor({
   };
 
   return (
-    <DeprecatedDataExplorerApiProvider
-      evaluateLegacyContext={evaluateLegacyContext}
-      fetchContextSummary={fetchContextSummary}
-      fetchDatasetDetails={fetchDatasetDetails}
-      fetchDatasetsByIndexType={fetchDatasetsByIndexType}
-      fetchDimensionLabels={fetchDimensionLabels}
-      fetchDimensionLabelsOfDataset={fetchDimensionLabelsOfDataset}
-      fetchDimensionLabelsToDatasetsMapping={
-        fetchDimensionLabelsToDatasetsMapping
-      }
-      fetchDatasetsMatchingContextIncludingEntities={
-        fetchDatasetsMatchingContextIncludingEntities
-      }
-      fetchMetadataColumn={fetchMetadataColumn}
-      fetchMetadataSlices={fetchMetadataSlices}
-      fetchUniqueValuesOrRange={fetchUniqueValuesOrRange}
-    >
-      <ContextBuilderModal
-        show
-        context={context}
-        isExistingContext={Boolean(hash)}
-        onClickSave={onClickSave}
-        onHide={onHide}
-      />
-    </DeprecatedDataExplorerApiProvider>
+    <ApiContext.Provider value={{ getApi }}>
+      <DeprecatedDataExplorerApiProvider
+        evaluateLegacyContext={evaluateLegacyContext}
+        fetchContextSummary={fetchContextSummary}
+        fetchDatasetDetails={fetchDatasetDetails}
+        fetchDatasetsByIndexType={fetchDatasetsByIndexType}
+        fetchDimensionLabels={fetchDimensionLabels}
+        fetchDimensionLabelsOfDataset={fetchDimensionLabelsOfDataset}
+        fetchDimensionLabelsToDatasetsMapping={
+          fetchDimensionLabelsToDatasetsMapping
+        }
+        fetchDatasetsMatchingContextIncludingEntities={
+          fetchDatasetsMatchingContextIncludingEntities
+        }
+        fetchMetadataColumn={fetchMetadataColumn}
+        fetchMetadataSlices={fetchMetadataSlices}
+        fetchUniqueValuesOrRange={fetchUniqueValuesOrRange}
+      >
+        <ContextBuilderModal
+          show
+          context={context}
+          isExistingContext={Boolean(hash)}
+          onClickSave={onClickSave}
+          onHide={onHide}
+        />
+      </DeprecatedDataExplorerApiProvider>
+    </ApiContext.Provider>
   );
 }
 

@@ -1,7 +1,6 @@
 import React from "react";
 import { Panel } from "react-bootstrap";
-import { ContextNameInfo } from "@depmap/types";
-import { BoxPlotInfo } from "src/contextExplorer/models/types";
+import { BoxPlotInfo, ContextNameInfo } from "src/contextExplorer/models/types";
 import {
   BOX_PLOT_BOTTOM_MARGIN,
   BOX_PLOT_TOP_MARGIN,

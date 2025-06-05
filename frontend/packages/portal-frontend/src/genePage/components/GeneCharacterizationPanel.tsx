@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
-import { legacyPortalAPI, LegacyPortalApiResponse } from "@depmap/api";
 import { CellLineListsDropdown, CustomList } from "@depmap/cell-line-selector";
 import AsyncTile from "src/common/components/AsyncTile";
+import { getDapi } from "src/common/utilities/context";
+import { GeneCharacterizationData } from "src/dAPI";
 import {
   TabsWithHistory,
   TabList,
@@ -10,9 +11,8 @@ import {
   TabPanel,
 } from "src/common/components/tabs";
 import TableData from "src/common/components/CharacterizationDataTable";
-import styles from "../styles/GenePage.scss";
 
-type GeneCharacterizationData = LegacyPortalApiResponse["getGeneCharacterizationData"];
+import styles from "../styles/GenePage.scss";
 
 interface Props {
   symbol: string;
@@ -34,7 +34,7 @@ const GeneCharacterizationPanel = ({
 
   useEffect(() => {
     (async () => {
-      const data = await legacyPortalAPI.getGeneCharacterizationData(symbol);
+      const data = await getDapi().getGeneCharacterizationData(symbol);
       setCharacterizations(data);
     })();
   }, [symbol]);

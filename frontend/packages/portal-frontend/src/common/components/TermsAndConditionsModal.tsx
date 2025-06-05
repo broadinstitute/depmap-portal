@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Button, Modal } from "react-bootstrap";
-import { getUrlPrefix } from "@depmap/globals";
+import { fetchUrlPrefix } from "../utilities/context";
 import styles from "src/common/styles/terms_and_conditions_modal.scss";
 
 declare let AcceptedTerms: {
@@ -19,7 +19,7 @@ const TermsAndConditionsModal = () => {
   useEffect(() => {
     (async () => {
       try {
-        const urlPrefix = getUrlPrefix().replace(/^\/$/, "");
+        const urlPrefix = fetchUrlPrefix().replace(/^\/$/, "");
         const res = await fetch(urlPrefix + "/terms_text");
 
         if (res.status >= 200 && res.status <= 299) {
