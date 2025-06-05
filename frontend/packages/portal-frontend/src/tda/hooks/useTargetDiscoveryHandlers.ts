@@ -1,5 +1,5 @@
 import { useCallback, useRef } from "react";
-import { getDapi } from "src/common/utilities/context";
+import { legacyPortalAPI } from "@depmap/api";
 import { TDASummaryTable } from "src/tda/models/types";
 import useDiscoveryAppHandlers from "src/common/hooks/useDiscoveryAppHandlers";
 
@@ -12,7 +12,7 @@ export default function useTargetDiscoveryHandlers(
 
   const handleDownload = useCallback(async () => {
     if (!cachedCsv.current) {
-      cachedCsv.current = await getDapi().getTDATableAsOriginalCSV();
+      cachedCsv.current = await legacyPortalAPI.getTDATableAsOriginalCSV();
     }
 
     const visibleGenes = new Set();

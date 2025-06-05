@@ -7,7 +7,7 @@ import DataStructureSection from "./DataStructureSection";
 import LearnAboutDepMapSection from "./LearnAboutDepMapSection";
 import HowDoICiteSection from "./HowDoICiteSection";
 import { allDataTabHref, currentReleaseTabHref, de2PageHref } from "./utils";
-import { DataAvailability } from "../models/types";
+import { DataAvailability } from "@depmap/types";
 import MapSection from "./MapSection";
 
 interface OverviewPanelProps {

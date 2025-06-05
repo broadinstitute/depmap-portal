@@ -7,7 +7,7 @@ import { DownloadLink } from "@depmap/downloads";
 import ReleaseTabs from "./ReleaseTabs";
 import DataStructureSection from "./DataStructureSection";
 import { de2PageHref, overviewTabHref } from "./utils";
-import { DataAvailability } from "../models/types";
+import { DataAvailability } from "@depmap/types";
 import MapSection from "./MapSection";
 import HowDoICiteSection from "./HowDoICiteSection";
 

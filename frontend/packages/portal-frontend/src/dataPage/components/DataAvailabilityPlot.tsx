@@ -1,11 +1,10 @@
 import React, { useCallback, useMemo, useState } from "react";
+import { DataAvailability, DataPageDataType } from "@depmap/types";
 import Heatmap from "src/plot/components/Heatmap";
 import PlotSpinner from "src/plot/components/PlotSpinner";
 import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
 import {
   COLOR_SCALE,
-  DataAvailability,
-  DataPageDataType,
   DataPageDataTypeCategoryStrings,
   getDataPageDataTypeColorCategoryString,
   getDataPageDataTypeString,

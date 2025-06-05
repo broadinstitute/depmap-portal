@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { DoseCurveData } from "src/compound/components/DoseResponseCurve";
+import { DoseCurveData } from "@depmap/types";
 import styles from "src/contextExplorer/styles/ContextExplorer.scss";
 import PlotSpinner from "src/plot/components/PlotSpinner";
 import DoseCurvesPlot from "./DoseCurvesPlot";
