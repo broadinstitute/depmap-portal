@@ -80,44 +80,6 @@ from depmap.discourse.client import DiscourseClient
 from breadbox_facade import BBClient, BreadboxException, ColumnMetadata, AnnotationType
 
 
-def _get_relabel_updates():
-    def _mk_updates(display_name, new_type):
-        return [
-            f"""UPDATE nonstandard_private_dataset_metadata_write_only 
-                    set data_type = '{new_type}',
-                    priority = 1000 
-                    where display_name = '{display_name}'""",
-            f"""update nonstandard_matrix_write_only 
-                    set data_type = '{new_type}' 
-                    where nonstandard_dataset_id in (
-                        select uuid 
-                        from nonstandard_private_dataset_metadata_write_only 
-                        where display_name = '{display_name}')
-            """,
-        ]
-
-    statements = []
-    statements.extend(
-        _mk_updates("Olink Proteomics", DataTypeEnum.protein_expression.name)
-    )
-    statements.extend(
-        _mk_updates(
-            "ATAC Pseudobulk Gene Accessibility 23Q4",
-            DataTypeEnum.gene_accessibility.name,
-        )
-    )
-    statements.extend(_mk_updates("Paralogs 23Q4", DataTypeEnum.crispr.name))
-    return statements
-
-
-def _relabel_new_datasets_hack():
-    statements = _get_relabel_updates()
-
-    for statement in statements:
-        log.info("Executing: %s", statement)
-        db.session.execute(statement)
-
-
 def _recreate_td_predictive_model():
     # recreate the table because the fk is created wrong by sqlalchemy
     statements = [
@@ -924,10 +886,6 @@ def _load_real_data(
 
     # load taiga aliases for everything else. this needs to happen after Datasets, TabularDatasets, and NonstandardDatasets are loaded
     db.session.commit()  # flush first, anything previously added
-
-    with checkpoint("relabel-new-datasets") as needed:
-        if needed:
-            _relabel_new_datasets_hack()
 
     # process taiga_ids after private datasets have been loaded
     if process_downloads:

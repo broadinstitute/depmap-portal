@@ -210,6 +210,13 @@ def resources():
     return render_template("public/resources.html", root_category=root_category,)
 
 
+@blueprint.route("/peddep")
+def peddep():
+    if not current_app.config["ENABLED_FEATURES"].show_peddep_landing_page:
+        abort(404)
+    return render_template("public/peddep.html")
+
+
 # DMC Only
 @blueprint.route("/dmc_symposia/")
 def dmc_symposia():

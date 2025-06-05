@@ -27,7 +27,7 @@ RUN mkdir -p /root/.taiga
 
 # Sparkles v5 requires python==3.10^
 RUN virtualenv --python=python3.10 /install/sparkles && \
-    /install/sparkles/bin/pip install https://github.com/user-attachments/files/20524666/sparklespray-5.3.0.tar.gz
+    /install/sparkles/bin/pip install https://github.com/user-attachments/files/20561197/sparklespray-5.3.1.tar.gz
 
 RUN virtualenv /install/gsutil && /install/gsutil/bin/pip install gsutil
 
@@ -41,13 +41,7 @@ ENV LC_ALL en_US.UTF-8
 
 RUN virtualenv --python=python3.9 /install/conseq
 COPY conseq-settings /root/.conseq
-COPY conseq-2.0.2.tar.gz /tmp
-RUN cd /tmp && \
-    mkdir conseq-install && \
-    cd conseq-install && \
-    tar -xzf /tmp/conseq-2.0.2.tar.gz && \
-    cd conseq-2.0.2 && \
-    /install/conseq/bin/pip install . && \
+RUN /install/conseq/bin/pip install https://github.com/broadinstitute/conseq/releases/download/v2.0.3/conseq-2.0.3.tar.gz && \
     ln -s /install/conseq/bin/conseq /usr/bin/conseq
 
 RUN cp /install/conseq/lib/python3.9/site-packages/conseq/helper.py /helper.py
