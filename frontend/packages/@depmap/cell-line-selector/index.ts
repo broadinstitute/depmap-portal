@@ -13,10 +13,6 @@ export {
 
 export { loadCellLines } from "./src/models/cellLines";
 export { default as CellLineListsDropdown } from "./src/components/CellLineListsDropdown";
-export {
-  default as renderCellLineSelectorModal,
-  renderCellLineSelectorModalUsingBBApi,
-} from "./src/utilities/renderCellLineSelectorModal";
 
 export { CellLineSelectorUsage } from "./src/components/CellLineSelectorUsage";
 export { LongTableCellLineSelector } from "./src/components/LongTableCellLineSelector";

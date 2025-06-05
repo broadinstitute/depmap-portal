@@ -1,6 +1,6 @@
 import React from "react";
-import { OncogenicAlteration } from "src/cellLine/models/types";
 import { toStaticUrl } from "@depmap/globals";
+import { OncogenicAlteration } from "@depmap/types";
 
 interface OncogenicAlterationsTileProps {
   oncogenicAlterations: Array<OncogenicAlteration>;

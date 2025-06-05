@@ -1,5 +1,5 @@
-import { useContext, useEffect, useState } from "react";
-import { ApiContext } from "@depmap/api";
+import { useEffect, useState } from "react";
+import { breadboxAPI } from "@depmap/api";
 import { DimensionType } from "@depmap/types";
 import type {
   CompoundDoseViability,
@@ -8,6 +8,7 @@ import type {
 } from "src/doseViabilityPrototype/types";
 
 const fetchDimensionTypes = async () => {
+  // FIXME: use an API wrapper instead of `fetch`
   const response = await fetch("../breadbox/types/dimensions");
   return response.json() as Promise<DimensionType[]>;
 };
@@ -18,12 +19,12 @@ const fetchMetadata = async (feature_type_name: string) => {
   const dimType = dimensionTypes.find((t) => t.name === feature_type_name);
   const url = "../breadbox/datasets/tabular/" + dimType!.metadata_dataset_id;
 
+  // FIXME: use an API wrapper instead of `fetch`
   const response = await fetch(url, { method: "POST" });
   return response.json();
 };
 
 function useData(compoundName: string) {
-  const sharedApi = useContext(ApiContext);
   const [
     heatmapFormattedData,
     setHeatmapFormattedData,
@@ -39,7 +40,7 @@ function useData(compoundName: string) {
       setIsLoading(true);
 
       try {
-        const dimensions = await sharedApi.getApi().searchDimensions({
+        const dimensions = await breadboxAPI.searchDimensions({
           substring: compoundName,
           type_name: "oncref_collapsed_metadata",
           limit: 100,
@@ -47,6 +48,7 @@ function useData(compoundName: string) {
 
         const featureLabels = dimensions.map(({ label }) => label);
 
+        // FIXME: use an API wrapper instead of `fetch`
         const response = await fetch(
           "../breadbox/datasets/matrix/Prism_oncology_viability",
           {
@@ -103,7 +105,7 @@ function useData(compoundName: string) {
         window.console.error(e);
       }
     })();
-  }, [sharedApi, compoundName]);
+  }, [compoundName]);
 
   return { isLoading, heatmapFormattedData, tableFormattedData };
 }

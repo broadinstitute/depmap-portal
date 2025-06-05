@@ -1,8 +1,7 @@
 /* eslint-disable */
 import React from "react";
 import Plotly from "plotly.js";
-
-import { EntitySummaryResponse } from "src/dAPI";
+import { LegacyPortalApiResponse } from "@depmap/api";
 import { PlotHTMLElement } from "@depmap/plotly-wrapper";
 import { assert, getDefaultColor, getHighlightLineColor } from "@depmap/utils";
 
@@ -10,6 +9,8 @@ import {
   getEntitySummaryStripHighlightData,
   HoverInfo,
 } from "src/entity/utilities/colorAndHighlights";
+
+type EntitySummaryResponse = LegacyPortalApiResponse["getEntitySummary"];
 
 type Props = {
   datasetEntitySummary: EntitySummaryResponse;
