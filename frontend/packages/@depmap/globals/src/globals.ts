@@ -74,7 +74,12 @@ export const getUrlPrefix = () => {
 };
 
 export function toPortalLink(relativeUrl: string) {
-  const assetUrl = relativeUrl.trim().replace(/^\//, "");
+  const assetUrl = relativeUrl
+    .trim()
+    .replace(/^\//, "")
+    .split("/")
+    .map(encodeURIComponent)
+    .join("/");
   let fullUrl = `${encodeURI(getUrlPrefix())}/${assetUrl}`;
 
   if (!fullUrl.startsWith("/")) {
@@ -88,7 +93,12 @@ export function toPortalLink(relativeUrl: string) {
 // Use this for images (i.e. files in the img/ subfolder) and for other
 // static resources.
 export function toStaticUrl(relativeUrl: string) {
-  const assetUrl = relativeUrl.trim().replace(/^\//, "");
+  const assetUrl = relativeUrl
+    .trim()
+    .replace(/^\//, "")
+    .split("/")
+    .map(encodeURIComponent)
+    .join("/");
 
   if (isElara) {
     return `/static/${assetUrl}`;
