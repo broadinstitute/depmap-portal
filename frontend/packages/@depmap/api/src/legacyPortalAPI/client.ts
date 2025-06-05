@@ -10,7 +10,10 @@ const createAutoFailClient = () => {
       const lines = stack.split("\n");
       const match = lines[2].match(/at\s+(.+?)\s+\(/);
       if (match && match.length > 1) {
-        caller = match[1].replace("Object.", "legacyPortalAPI.") + "()";
+        caller =
+          match[1]
+            .replace(/Object\.\w+ \[as (\w+)\]/, "Object.$1")
+            .replace("Object.", "legacyPortalAPI.") + "()";
       }
     }
 
