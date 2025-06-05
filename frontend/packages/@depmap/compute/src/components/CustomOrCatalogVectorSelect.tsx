@@ -1,5 +1,6 @@
 import React from "react";
 import { Radio } from "react-bootstrap";
+import { breadboxAPI, legacyPortalAPI } from "@depmap/api";
 import {
   convertDimensionToSliceId,
   DimensionSelect,
@@ -7,13 +8,12 @@ import {
   isCompleteDimension,
 } from "@depmap/data-explorer-2";
 import { isElara } from "@depmap/globals";
-import { Link } from "../models/legacy";
 import {
   DataExplorerPlotConfigDimension,
   DataExplorerPlotConfigDimensionV2,
 } from "@depmap/types";
 import { UploadTask } from "@depmap/user-upload";
-import { ApiContext } from "@depmap/api";
+import { Link } from "../models/legacy";
 import { FileUpload } from "./FileUpload";
 import uniqueId from "lodash.uniqueid";
 
@@ -39,10 +39,6 @@ export class CustomOrCatalogVectorSelect extends React.Component<
   CustomOrCatalogVectorSelectProps,
   CustomOrCatalogVectorSelectState
 > {
-  declare context: React.ContextType<typeof ApiContext>;
-
-  static contextType = ApiContext;
-
   private radioName = `vectorSelectInputType-${uniqueId()}`;
 
   constructor(props: CustomOrCatalogVectorSelectProps) {
@@ -217,11 +213,11 @@ export class CustomOrCatalogVectorSelect extends React.Component<
       isLoading: true,
     });
 
-    const { getApi } = this.context;
+    const postCustomCsvOneRow = isElara
+      ? breadboxAPI.postCustomCsvOneRow
+      : legacyPortalAPI.postCustomCsvOneRow;
 
-    getApi()
-      .postCustomCsvOneRow({ uploadFile })
-      .then(this.handleUploadResponse);
+    postCustomCsvOneRow({ uploadFile }).then(this.handleUploadResponse);
   };
 
   render() {

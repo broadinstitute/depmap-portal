@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { CurveParams } from "src/compound/components/DoseResponseCurve";
+import { CurveParams } from "@depmap/types";
 import CurvesChart from "src/plot/components/CurvesChart";
 // import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
 

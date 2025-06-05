@@ -1,3 +1,5 @@
+import { DataPageDataType } from "@depmap/types";
+
 export const COLOR_SCALE = [
   // Data not available colors
   [0, "rgb(217, 217, 217)"],
@@ -18,18 +20,6 @@ export const COLOR_SCALE = [
   [1.0, "rgb(0, 0, 0)"],
 ];
 
-export interface LineageCountInfo {
-  [lineage: string]: [{ [primary_disease: string]: number }];
-}
-
-export interface DataAvailSummary {
-  all_depmap_ids: [number, string][];
-  data_type_url_mapping: { [data_type: string]: string };
-  drug_count_mapping: { [data_type: string]: number };
-  data_types: string[];
-  values: boolean[][];
-}
-
 export interface DataSummary {
   dataByCategory: {
     [key: string]: {
@@ -40,54 +30,6 @@ export interface DataSummary {
   };
 }
 
-export interface LineageAvailability {
-  lineage_counts: LineageCountInfo;
-}
-
-export interface DataAvailability {
-  all_depmap_ids: [number, string][];
-  data_type_url_mapping: { [data_type: string]: string };
-  drug_count_mapping: { [data_type: string]: number };
-  values: number[][];
-  data_types: string[];
-}
-
-export enum DataPageDataType {
-  CRISPR_Achilles_Broad = "CRISPR_Achilles_Broad",
-  CRISPR_Score_Sanger = "CRISPR_Score_Sanger",
-  CRISPR_ParalogsScreens = "CRISPR_ParalogsScreens",
-  RNAi_Marcotte = "RNAi_Marcotte",
-  RNAi_Achilles_Broad = "RNAi_Achilles_Broad",
-  RNAi_Drive_Novartis = "RNAi_Drive_Novartis",
-  Sequencing_WES_Broad = "Sequencing_WES_Broad",
-  Sequencing_WES_Sanger = "Sequencing_WES_Sanger",
-  Sequencing_WGS_Broad = "Sequencing_WGS_Broad",
-  Sequencing_RNA_Broad = "Sequencing_RNA_Broad",
-  Sequencing_ATACSeq_Broad = "Sequencing_ATACSeq_Broad",
-  Sequencing_Long_Reads = "Sequencing_Long_Reads",
-  Drug_CTD_Broad = "Drug_CTD_Broad",
-  Drug_Repurposing_Broad = "Drug_Repurposing_Broad",
-  Drug_GDSC_Sanger = "Drug_GDSC_Sanger",
-  Drug_OncRef_Broad = "Drug_OncRef_Broad",
-  Proteomics_Olink = "Proteomics_Olink",
-  Proteomics_RPPA_CCLE = "Proteomics_RPPA_CCLE",
-  Proteomics_MS_CCLE = "Proteomics_MS_CCLE",
-  Proteomics_MS_Sanger = "Proteomics_MS_Sanger",
-  Methylation_Sanger = "Methylation_Sanger",
-  Methylation_CCLE = "Methylation_CCLE",
-  Uncategorized_miRNA_CCLE = "Uncategorized_miRNA_CCLE",
-}
-
-export enum DataPageDataTypeCategory {
-  CRISPRScreens = 1,
-  RNAiScreens = 2,
-  Sequencing = 3,
-  Proteomics = 4,
-  Methylation = 5,
-  DrugScreens = 6,
-  Uncategorized = 7,
-}
-
 export enum DataPageDataTypeCategoryStrings {
   DrugScreens = "Drug Screens",
   RNAiScreens = "RNAi Screens",
@@ -96,50 +38,6 @@ export enum DataPageDataTypeCategoryStrings {
   CRISPRScreens = "CRISPR Screens",
   Methylation = "Methylation",
   Uncategorized = "Other Datasets",
-}
-
-export function getDataPageDataTypeColorCategory(
-  datatype: DataPageDataType,
-  cellLineAvailable: boolean
-) {
-  if (!cellLineAvailable) {
-    return 0;
-  }
-
-  switch (datatype) {
-    case DataPageDataType.CRISPR_Achilles_Broad:
-    case DataPageDataType.CRISPR_Score_Sanger:
-    case DataPageDataType.CRISPR_ParalogsScreens:
-      return DataPageDataTypeCategory.CRISPRScreens;
-    case DataPageDataType.RNAi_Achilles_Broad:
-    case DataPageDataType.RNAi_Drive_Novartis:
-    case DataPageDataType.RNAi_Marcotte:
-      return DataPageDataTypeCategory.RNAiScreens;
-    case DataPageDataType.Sequencing_RNA_Broad:
-    case DataPageDataType.Sequencing_WES_Broad:
-    case DataPageDataType.Sequencing_WES_Sanger:
-    case DataPageDataType.Sequencing_WGS_Broad:
-    case DataPageDataType.Sequencing_ATACSeq_Broad:
-    case DataPageDataType.Sequencing_Long_Reads:
-      return DataPageDataTypeCategory.Sequencing;
-    case DataPageDataType.Proteomics_MS_CCLE:
-    case DataPageDataType.Proteomics_MS_Sanger:
-    case DataPageDataType.Proteomics_Olink:
-    case DataPageDataType.Proteomics_RPPA_CCLE:
-      return DataPageDataTypeCategory.Proteomics;
-    case DataPageDataType.Methylation_CCLE:
-    case DataPageDataType.Methylation_Sanger:
-      return DataPageDataTypeCategory.Methylation;
-    case DataPageDataType.Drug_CTD_Broad:
-    case DataPageDataType.Drug_GDSC_Sanger:
-    case DataPageDataType.Drug_OncRef_Broad:
-    case DataPageDataType.Drug_Repurposing_Broad:
-      return DataPageDataTypeCategory.DrugScreens;
-    case DataPageDataType.Uncategorized_miRNA_CCLE:
-      return DataPageDataTypeCategory.Uncategorized;
-    default:
-      throw new Error(`Cannot map datatype ${datatype} to color category`);
-  }
 }
 
 export function getDataPageDataTypeString(datatype: DataPageDataType) {

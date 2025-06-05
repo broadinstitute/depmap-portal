@@ -3,7 +3,6 @@ import { render, screen, waitFor } from "@testing-library/react";
 import * as React from "react";
 import DimensionSelect from "../index";
 import { NULL_MAPPING } from "../useDimensionStateManager/useData";
-import * as api from "../../../api";
 import { DeprecatedDataExplorerApiProvider } from "../../../contexts/DeprecatedDataExplorerApiContext";
 
 test("hides the aggregation select for the special case of correlation", async () => {

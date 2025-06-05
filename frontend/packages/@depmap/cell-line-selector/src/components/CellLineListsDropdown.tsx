@@ -7,10 +7,11 @@ import {
   negateContext,
   persistLegacyListAsContext,
   PlotConfigSelect,
+  useDataExplorerApi,
   useDeprecatedDataExplorerApi,
 } from "@depmap/data-explorer-2";
-import { DepMap } from "@depmap/globals";
-import { DataExplorerContext } from "@depmap/types";
+import { DepMap, isElara } from "@depmap/globals";
+import { DataExplorerContext, DataExplorerContextV2 } from "@depmap/types";
 import {
   getSelectedCellLineListName,
   setSelectedCellLineListName,
@@ -44,7 +45,8 @@ const ContextEnabledDropdown = ({
   defaultNone: boolean;
   onListSelect: LegacyCellLineListsDropdownProps["onListSelect"];
 }) => {
-  const api = useDeprecatedDataExplorerApi();
+  const api = useDataExplorerApi();
+  const deprecatedApi = useDeprecatedDataExplorerApi();
   const [isLoading, setIsLoading] = useState(!defaultNone);
   const [value, setValue] = useState<DataExplorerContext | null>(null);
 
@@ -58,7 +60,16 @@ const ContextEnabledDropdown = ({
       }
 
       if (context && hash) {
-        const labels = await api.evaluateLegacyContext(context);
+        let labels: string[] = [];
+
+        if (isElara) {
+          const result = await api.evaluateContext(
+            (context as unknown) as DataExplorerContextV2
+          );
+          labels = result.labels;
+        } else {
+          labels = await deprecatedApi.evaluateLegacyContext(context);
+        }
 
         onListSelect({
           name: context.name,
@@ -69,7 +80,7 @@ const ContextEnabledDropdown = ({
         onListSelect({ name: "", lines: new Set() });
       }
     },
-    [api, defaultNone, onListSelect]
+    [api, deprecatedApi, defaultNone, onListSelect]
   );
 
   useEffect(() => {
@@ -83,7 +94,7 @@ const ContextEnabledDropdown = ({
 
       if (selectedList && selectedList !== "None") {
         const [hash, context] = await persistLegacyListAsContext(
-          api,
+          deprecatedApi,
           selectedList
         );
         setSelectedCellLineListName("None");
@@ -112,7 +123,7 @@ const ContextEnabledDropdown = ({
 
       setIsLoading(false);
     })();
-  }, [api, value, defaultNone, handleChange]);
+  }, [deprecatedApi, value, defaultNone, handleChange]);
 
   const handleClickCreateContext = () => {
     DepMap.saveNewContext({ context_type: "depmap_model" }, null, handleChange);

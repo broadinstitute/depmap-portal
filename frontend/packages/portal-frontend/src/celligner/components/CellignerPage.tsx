@@ -1,9 +1,7 @@
 import * as React from "react";
 import { Grid, Row, Col, Tabs, Tab, SelectCallback } from "react-bootstrap";
-
+import { legacyPortalAPI } from "@depmap/api";
 import { enabledFeatures, toStaticUrl } from "@depmap/globals";
-import { DepmapApi } from "src/dAPI";
-import { getDapi } from "src/common/utilities/context";
 import WideTable, { WideTableColumns } from "@depmap/wide-table";
 import { titleCase } from "@depmap/utils";
 import CellignerCellLinesForTumorsControlPanel from "./CellignerCellLinesForTumorsControlPanel";
@@ -149,8 +147,6 @@ function createAlignmentsWithCellLineSet(
 }
 
 export default class CellignerPage extends React.Component<Props, State> {
-  dapi: DepmapApi;
-
   // data munging
   lineages: Array<string>;
 
@@ -171,8 +167,6 @@ export default class CellignerPage extends React.Component<Props, State> {
       lassoOrBoxSelectedPts: new Set<number>([]),
       allPossibleSidePanelSelectedPts: new Set<number>([]),
     };
-
-    this.dapi = getDapi();
 
     // data munging
     this.lineages = Array.from(props.subtypes.keys()).sort();
@@ -273,7 +267,7 @@ export default class CellignerPage extends React.Component<Props, State> {
   handleSelectedSubtypeChange(selectedSubtype: string) {
     const { selectedPrimarySite } = this.state;
 
-    this.dapi
+    legacyPortalAPI
       .getCellignerDistancesToTumors(
         selectedPrimarySite as string,
         selectedSubtype
@@ -306,7 +300,7 @@ export default class CellignerPage extends React.Component<Props, State> {
       (profileId) => profileId === selectedProfileId
     );
 
-    this.dapi
+    legacyPortalAPI
       .getCellignerDistancesToCellLine(selectedProfileId, kNeighbors)
       .then((e) => {
         this.setState({

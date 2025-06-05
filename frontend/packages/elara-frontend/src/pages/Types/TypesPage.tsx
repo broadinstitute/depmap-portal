@@ -1,5 +1,5 @@
-import React, { useEffect, useState, useContext } from "react";
-import { ApiContext } from "@depmap/api";
+import React, { useEffect, useState } from "react";
+import { deprecatedBreadboxAPI } from "@depmap/api";
 import {
   FeatureType,
   FeatureTypeUpdateArgs,
@@ -27,8 +27,6 @@ const formatTypeData = (types: SampleType[] | FeatureType[]) => {
 
 export default function TypesPage(props: TypesPageProps) {
   const { type } = props;
-  const apiContext = useContext(ApiContext);
-  const bbapi = apiContext.getApi();
   const [types, setTypes] = useState<SampleType[] | FeatureType[] | null>(null);
   const [showTypeModal, setShowTypeModal] = useState<boolean>(false);
   const [typeSubmissionError, setTypeSubmissionError] = useState<string | null>(
@@ -54,10 +52,10 @@ export default function TypesPage(props: TypesPageProps) {
     (async () => {
       try {
         if (type === "sample") {
-          const typesList = await bbapi.getSampleTypes();
+          const typesList = await deprecatedBreadboxAPI.getSampleTypes();
           setTypes(typesList);
         } else {
-          const typesList = await bbapi.getFeatureTypes();
+          const typesList = await deprecatedBreadboxAPI.getFeatureTypes();
           setTypes(typesList);
         }
       } catch (e) {
@@ -65,7 +63,7 @@ export default function TypesPage(props: TypesPageProps) {
         setInitError(true);
       }
     })();
-  }, [type, bbapi]);
+  }, [type]);
 
   if (!types) {
     return initError ? (
@@ -86,10 +84,10 @@ export default function TypesPage(props: TypesPageProps) {
     try {
       const newType =
         type === "sample"
-          ? await bbapi.postSampleType(
+          ? await deprecatedBreadboxAPI.postSampleType(
               typeArgs // TODO: create model for args
             )
-          : await bbapi.postFeatureType(typeArgs);
+          : await deprecatedBreadboxAPI.postFeatureType(typeArgs);
       const newTypes = [...types, newType];
       setTypes(newTypes);
 
@@ -132,14 +130,14 @@ export default function TypesPage(props: TypesPageProps) {
     try {
       const newType =
         type === "sample"
-          ? await bbapi.updateSampleType(
+          ? await deprecatedBreadboxAPI.updateSampleType(
               new SampleTypeUpdateArgs(
                 updateArgs.name,
                 updateArgs.metadata_file,
                 updateArgs.annotation_type_mapping
               )
             )
-          : await bbapi.updateFeatureType(
+          : await deprecatedBreadboxAPI.updateFeatureType(
               new FeatureTypeUpdateArgs(
                 updateArgs.name,
                 updateArgs.metadata_file,
@@ -182,8 +180,8 @@ export default function TypesPage(props: TypesPageProps) {
       await Promise.all(
         Array.from(typeIdsSet).map((type_name) => {
           return type === "sample"
-            ? bbapi.deleteSampleType(type_name)
-            : bbapi.deleteFeatureType(type_name);
+            ? deprecatedBreadboxAPI.deleteSampleType(type_name)
+            : deprecatedBreadboxAPI.deleteFeatureType(type_name);
         })
       );
       isDeleted = true;

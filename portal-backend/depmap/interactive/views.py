@@ -83,8 +83,8 @@ def get_cell_line_url_root():
     return jsonify(url_for("cell_line.view_cell_line", cell_line_name=""))
 
 
-@blueprint.route("/api/getDatasets")
-def get_datasets():
+@blueprint.route("/api/getCustomAnalysisDatasets")
+def get_custom_analysis_datasets():
     """
     Returns matrix datasets (both breadbox and legacy datasets) sorted alphabetically.
     Only matrices with a sample type of "depmap_model" are included.
