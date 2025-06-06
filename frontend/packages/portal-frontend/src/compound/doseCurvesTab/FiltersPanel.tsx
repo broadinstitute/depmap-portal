@@ -1,7 +1,7 @@
 import { ToggleSwitch } from "@depmap/common-components";
 import React from "react";
 import Select from "react-select";
-import { DRCDatasetOptions } from "./types";
+import { DRCDatasetOptions, Rep1Color, Rep2Color, Rep3Color } from "./types";
 
 interface FiltersPanelProps {
   handleSelectDataset: (selection: { value: string; label: string }) => void;
@@ -33,7 +33,7 @@ function FiltersPanel({
 
   return (
     <div>
-      <h4>Dataset</h4>
+      <h4 style={{ fontSize: "16px" }}>Dataset</h4>
       <Select
         defaultValue={datasetSelectOptions[0]}
         value={selectedDatasetOption}
@@ -52,42 +52,110 @@ function FiltersPanel({
           borderTop: "1px solid rgba(0, 0, 0, 1",
         }}
       />
-      <h4>View Options</h4>
-      <div style={{ paddingTop: "5px", paddingBottom: "8px" }}>
-        <div style={{ paddingRight: "10px", paddingBottom: "4px" }}>
-          Unselected lines
-        </div>
-        <div>
-          <ToggleSwitch
-            value={showUnselectedLines}
-            onChange={handleToggleShowUnselectedLines}
-            options={[
-              { label: "ON", value: true },
-              { label: "OFF", value: false },
-            ]}
-          />
-        </div>
-      </div>
-      <div style={{ paddingTop: "10px" }}>
+      <h4 style={{ fontSize: "16px" }}>View Options</h4>
+      <div
+        style={{
+          paddingTop: "8px",
+          paddingBottom: "8px",
+          display: "flex",
+          alignItems: "center",
+        }}
+      >
         <div
           style={{
             paddingRight: "10px",
-            paddingBottom: "4px",
+            fontSize: "14px",
+            fontWeight: 700,
+            color: "#3D4864",
+            minWidth: "120px",
+            textAlign: "left",
+          }}
+        >
+          Unselected lines
+        </div>
+        <ToggleSwitch
+          value={showUnselectedLines}
+          onChange={handleToggleShowUnselectedLines}
+          options={[
+            { label: "ON", value: true },
+            { label: "OFF", value: false },
+          ]}
+        />
+      </div>
+      <div
+        style={{ paddingTop: "10px", display: "flex", alignItems: "center" }}
+      >
+        <div
+          style={{
+            paddingRight: "10px",
+            fontSize: "14px",
+            fontWeight: 700,
+            color: "#3D4864",
+            minWidth: "120px",
+            textAlign: "left",
           }}
         >
           Replicates
         </div>
-        <div>
-          <ToggleSwitch
-            value={showReplicates}
-            onChange={handleToggleShowReplicates}
-            options={[
-              { label: "ON", value: true },
-              { label: "OFF", value: false },
-            ]}
+        <ToggleSwitch
+          value={showReplicates}
+          onChange={handleToggleShowReplicates}
+          options={[
+            { label: "ON", value: true },
+            { label: "OFF", value: false },
+          ]}
+        />
+      </div>
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "flex-start",
+          gap: "14px",
+          marginTop: "20px",
+          minWidth: "120px",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+          <div
+            style={{
+              width: "18px",
+              height: "18px",
+              background: Rep1Color,
+              border: `1px solid ${Rep1Color}`,
+            }}
           />
+          <span style={{ fontSize: "13px", fontWeight: 600 }}>x1</span>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+          <div
+            style={{
+              width: "18px",
+              height: "18px",
+              background: Rep2Color,
+              border: `1px solid ${Rep2Color}`,
+            }}
+          />
+          <span style={{ fontSize: "13px", fontWeight: 600 }}>x2</span>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+          <div
+            style={{
+              width: "18px",
+              height: "18px",
+              background: Rep3Color,
+              border: `1px solid ${Rep3Color}`,
+            }}
+          />
+          <span style={{ fontSize: "13px", fontWeight: 600 }}>x3</span>
         </div>
       </div>
+      <hr
+        style={{
+          marginTop: "20px",
+          borderTop: "1px solid rgba(0, 0, 0, 1",
+        }}
+      />
     </div>
   );
 }
