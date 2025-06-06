@@ -957,13 +957,11 @@ export class DepmapApi {
   }
 
   getCompoundDoseCurveData(
-    datasetName: string,
-    compoundLabel: string,
-    drcDatasetLabel: string = "Prism_oncology_per_curve"
+    compoundId: string,
+    drcDatasetLabel: string
   ): Promise<any> {
     const params = {
-      dataset_name: datasetName,
-      compound_label: compoundLabel,
+      compound_id: compoundId,
       drc_dataset_label: drcDatasetLabel,
     };
 
@@ -972,18 +970,40 @@ export class DepmapApi {
     );
   }
 
-  getCompoundModelDoseReplicatePoints(
-    compoundLabel: string,
-    replicateDatasetName: string,
-    modelIds: string[]
-  ): Promise<{ [model_id: string]: CurvePlotPoints[] }> {
+  getDoseCurveTableMetadata(
+    aucDatasetId: string,
+    compoundId: string,
+    drcDatasetLabel: string,
+    ic50DatasetId?: string
+  ): Promise<any> {
     const params = {
-      replicate_dataset_name: replicateDatasetName,
-      compound_label: compoundLabel,
-      model_ids: modelIds,
+      auc_dataset_id: aucDatasetId,
+      compound_id: compoundId,
+      drc_dataset_label: drcDatasetLabel,
+      ic50_datasetI_id: ic50DatasetId,
     };
 
     return this._fetch<any>(
+      `/api/compound/dose_table_metadata?${encodeParams(params)}`
+    );
+  }
+
+  getCompoundModelDoseReplicatePoints(
+    compoundLabel: string,
+    replicateDatasetName: string,
+    aucDatasetId: string,
+    modelIds: string[],
+    drcDatasetLabel: string
+  ): Promise<{ [model_id: string]: CurvePlotPoints[] }> {
+    const params = {
+      replicate_dataset_name: replicateDatasetName,
+      auc_dataset_id: aucDatasetId,
+      compound_label: compoundLabel,
+      model_ids: modelIds,
+      drc_dataset_label: drcDatasetLabel,
+    };
+
+    return this._fetch<{ [model_id: string]: CurvePlotPoints[] }>(
       `/api/compound/model_dose_replicates?${encodeParams(params)}`
     );
   }

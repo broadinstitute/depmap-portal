@@ -28,7 +28,7 @@ from depmap.compound.models import (
     CompoundDoseReplicate,
     CompoundExperiment,
     DoseResponseCurve,
-    backfill_drc_dataset_label,
+    drc_compound_datasets,
 )
 from depmap.compound.views.executive import (
     get_order,
@@ -55,8 +55,7 @@ blueprint = Blueprint(
 # (e.g. more sane gene names), we don't want to do this.
 @blueprint.route("/<path:name>")
 def view_compound(name):
-    backfill_drc_dataset_label()
-    breakpoint()
+
     compound = Compound.get_by_label(name, must=False)
 
     aliases = Compound.get_aliases_by_entity_id(compound.entity_id)
@@ -97,6 +96,7 @@ def view_compound(name):
     return render_template(
         "compounds/index.html",
         name=name,
+        compound_id=compound.compound_id,
         title=name,
         compound_aliases=compound_aliases,
         summary=sensitivity_tab_compound_summary,
@@ -109,9 +109,7 @@ def view_compound(name):
         has_datasets=has_datasets,
         order=get_order(has_predictability),
         dose_curve_options=format_dose_curve_options(compound_experiment_and_datasets),
-        dose_curve_options_new=format_dose_curve_options_new_tab(
-            compound_experiment_and_datasets
-        ),
+        dose_curve_options_new=format_dose_curve_options_new_tab(),
         has_celfie=has_celfie,
         celfie=celfie if has_celfie else None,
         compound_units=compound.units,
@@ -199,48 +197,23 @@ def format_dose_curve_option(dataset, compound_experiment, label):
     return option
 
 
-# TODO: Delete and rename once the old tab is replaced with the new tab
-def format_dose_curve_options_new_tab(compound_experiment_and_datasets):
+def format_dose_curve_options_new_tab():
     """
     Used for jinja rendering of the dose curve tab
     """
-    dose_curve_options = []
-    for compound_experiment, dataset in compound_experiment_and_datasets:
-        # if has dose curve information
-        if (
-            dataset.get_dose_replicate_enum()
-            and len(
-                CompoundDoseReplicate.get_all_with_compound_experiment_id(
-                    compound_experiment.entity_id
-                )
-            )
-            > 0
-        ):
-            dose_curve_option = format_dose_curve_option(
-                dataset,
-                compound_experiment,
-                "{} {}".format(compound_experiment.label, dataset.display_name),
-            )
-            dose_curve_options.append(dose_curve_option)
-    return dose_curve_options
-
-
-# TODO: Delete and rename once the old tab is replaced with the new tab
-def format_dose_curve_option_new_tab(dataset, compound_experiment, label):
-    option = format_summary_option(dataset, compound_experiment, label)
-    option.update(
+    dose_curve_options = [
         {
-            "dose_replicate_dataset": dataset.get_dose_replicate_enum().name,
-            "auc_dataset_display_name": dataset.display_name,
-            "compound_label": compound_experiment.label,
-            "compound_xref_full": compound_experiment.xref_full,
-            "dose_replicate_level_yunits": DATASET_METADATA[
-                dataset.get_dose_replicate_enum()
-            ].units,
+            "display_name": dataset.display_name,
+            "viability_dataset_id": dataset.viability_dataset_given_id,
+            "replicate_dataset": dataset.replicate_dataset,
+            "auc_dataset_id": dataset.auc_dataset_given_id,
+            "ic50_dataset_id": dataset.ic50_dataset_given_id,
+            "drc_dataset_label": dataset.drc_dataset_label,
         }
-    )
+        for dataset in drc_compound_datasets
+    ]
 
-    return option
+    return dose_curve_options
 
 
 def is_url_valid(url):

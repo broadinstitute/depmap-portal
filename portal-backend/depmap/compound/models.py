@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 import sqlalchemy
 from sqlalchemy import and_, func
 from depmap.database import (
@@ -23,36 +23,51 @@ from dataclasses import dataclass
 class DRCCompoundDataset:
     drc_dataset_label: str
     viability_dataset_given_id: str
+    replicate_dataset: str
+    auc_dataset_given_id: str
+    ic50_dataset_given_id: Optional[str]
     display_name: str
 
 
-# An association of the dataset_labels which appear in the DoseResponseCurve table, and
-# the given_id of the corresponding viabilitiy dataset in breadbox, as well as how this
-# dataset should be referred to in drop down menus.
 drc_compound_datasets = [
     DRCCompoundDataset(
         drc_dataset_label="Prism_oncology_per_curve",
         viability_dataset_given_id="Prism_oncology_viability",
+        replicate_dataset="Prism_oncology_dose_replicate",
+        auc_dataset_given_id="Prism_oncology_AUC_collapsed",
+        ic50_dataset_given_id="Prism_oncology_ic50",
         display_name="PRISM OncRef",
     ),
     DRCCompoundDataset(
         drc_dataset_label="GDSC2",
         viability_dataset_given_id="GDSC2_Viability",
+        replicate_dataset="GDSC2_dose_replicate",
+        auc_dataset_given_id="GDSC2_AUC",
+        ic50_dataset_given_id="GDSC2_IC50",
         display_name="GDSC2",
     ),
     DRCCompoundDataset(
         drc_dataset_label="GDSC1",
         viability_dataset_given_id="GDSC1_Viability",
+        replicate_dataset="GDSC1_dose_replicate",
+        auc_dataset_given_id="GDSC1_AUC",
+        ic50_dataset_given_id="GDSC1_IC50",
         display_name="GDSC1",
     ),
     DRCCompoundDataset(
         drc_dataset_label="ctd2_per_curve",
         viability_dataset_given_id="CTRP_Viability",
+        replicate_dataset="CTRP_dose_replicate",
+        auc_dataset_given_id="CTRP_AUC",
+        ic50_dataset_given_id=None,
         display_name="CTD^2",
     ),
     DRCCompoundDataset(
         drc_dataset_label="repurposing_per_curve",
         viability_dataset_given_id="REPURPOSING_Viability",
+        replicate_dataset="Repurposing_secondary_dose_replicate",
+        auc_dataset_given_id="Repurposing_secondary_AUC",
+        ic50_dataset_given_id=None,
         display_name="PRISM Drug Repurposing",
     ),
 ]
@@ -120,7 +135,7 @@ class Compound(Entity):
         Return the Compound instance for a given compound_id (string, e.g. 'DPC-000001').
         Returns None if not found.
         """
-        q = Compound.query.filter(Compound.compound_id == compound_id).one_or_none()
+        q = Compound.query.filter(Compound.compound_id == compound_id)
 
         if must:
             return q.one()
@@ -297,6 +312,26 @@ class CompoundExperiment(Entity):
     @staticmethod
     def get_all_by_compound_id(compound_id) -> List["CompoundExperiment"]:
         return CompoundExperiment.query.filter_by(compound_id=compound_id).all()
+
+    @staticmethod
+    def get_corresponding_compound_experiment_using_drc_dataset_label(
+        compound_id: str, drc_dataset_label: str
+    ):
+        query = (
+            db.session.query(CompoundExperiment)
+            .join(Compound, Compound.entity_id == CompoundExperiment.compound_id)
+            .join(
+                DoseResponseCurve,
+                DoseResponseCurve.compound_exp_id == CompoundExperiment.entity_id,
+            )
+            .filter(
+                Compound.compound_id == compound_id,
+                DoseResponseCurve.drc_dataset_label == drc_dataset_label,
+            )
+            .distinct()
+        )
+        results = query.all()
+        return results
 
 
 class CompoundDose(Entity):
@@ -502,7 +537,7 @@ class DoseResponseCurve(Model):
         String, ForeignKey("cell_line.depmap_id"), nullable=False, index=True
     )
     cell_line = relationship("CellLine", backref=__tablename__)
-    drc_dataset_label = Column(String, nullable=False)
+    drc_dataset_label = Column(String, nullable=True)
     compound_exp_id = Column(Integer, ForeignKey("entity.entity_id"), index=True)
     compound_exp = relationship(
         "CompoundExperiment", foreign_keys="DoseResponseCurve.compound_exp_id"
@@ -535,32 +570,3 @@ class DoseResponseCurve(Model):
             )
             .all()
         )
-
-
-from sqlalchemy.orm import joinedload
-
-# Build a mapping from xref_type to drc_dataset_label
-xref_type_to_drc_label = {
-    "GDSC1": "GDSC1",
-    "GDSC2": "GDSC2",
-    "CTRP": "ctd2_per_curve",
-    "BRD": "Prism_oncology_per_curve",
-    # Add more if needed
-}
-
-
-def backfill_drc_dataset_label():
-    curves = DoseResponseCurve.query.options(
-        joinedload(DoseResponseCurve.compound_exp)
-    ).all()
-    updated = 0
-    for curve in curves:
-
-        if not curve.drc_dataset_label or curve.drc_dataset_label.strip() == "":
-            compound_exp = curve.compound_exp
-
-            if compound_exp and compound_exp.xref_type in xref_type_to_drc_label:
-                curve.drc_dataset_label = xref_type_to_drc_label[compound_exp.xref_type]
-                updated += 1
-    db.session.commit()
-    print(f"Backfilled {updated} DoseResponseCurve rows.")

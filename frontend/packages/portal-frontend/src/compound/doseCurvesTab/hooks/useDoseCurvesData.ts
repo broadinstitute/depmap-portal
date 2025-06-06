@@ -1,12 +1,14 @@
-import { Dataset } from "@depmap/types";
 import { useEffect, useState, useRef } from "react";
 import { getBreadboxApi, getDapi } from "src/common/utilities/context";
-import { CompoundDataset } from "src/compound/components/DoseResponseTab";
-import { CompoundDoseCurveData, DoseTableRow } from "../types";
+import {
+  CompoundDoseCurveData,
+  DoseTableRow,
+  DRCDatasetOptions,
+} from "../types";
 
 function useDoseCurvesData(
-  dataset: CompoundDataset | null,
-  compoundName: string
+  dataset: DRCDatasetOptions | null,
+  compoundId: string
 ) {
   const dapi = getDapi();
   const bbapi = getBreadboxApi();
@@ -20,7 +22,6 @@ function useDoseCurvesData(
   const [doseTable, setDoseTable] = useState<DoseTableRow[] | null>(null);
 
   const latestPromise = useRef<Promise<CompoundDoseCurveData> | null>(null);
-  const latestTablePromise = useRef<Promise<any> | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -28,8 +29,8 @@ function useDoseCurvesData(
         setIsLoading(true);
 
         const promise = dapi.getCompoundDoseCurveData!(
-          dataset.dataset,
-          dataset.compound_label
+          compoundId,
+          dataset.drc_dataset_label
         );
 
         latestPromise.current = promise;
@@ -52,78 +53,67 @@ function useDoseCurvesData(
             }
           });
 
-        // Get the breadbox data uses compoundName instead of the compound
-        // experiment label (see above: dataset.compound_label) used by the legact database to get the dose curve
-        // info. Will rename to dataset.compound_exp_label asap to disambiguate
-        const compound = compoundName;
-        const compoundDimType = await bbapi.getDimensionType("compound_v2");
-        if (compoundDimType.metadata_dataset_id) {
-          const allCompoundMetadata = await bbapi.getTabularDatasetData(
-            compoundDimType.metadata_dataset_id,
-            { columns: ["CompoundID"] }
-          );
-          const compoundID = allCompoundMetadata["CompoundID"][compound];
+        const compoundDoseToDose = new Map();
+        const featuresData = (
+          await bbapi.getDatasetFeatures(dataset.viability_dataset_id)
+        ).filter((feature) => feature.id.includes(compoundId));
+        featuresData.forEach((feature) => {
+          const dose = feature.id.replace(compoundId, "").trim();
+          compoundDoseToDose.set(feature.id, dose);
+        });
 
-          const aucDataset = dataset.dataset;
-          // Is there a better way of getting this given id that isn't
-          // hard coding???
-          const doseViabilityDataset = "Prism_oncology_viability";
+        const compoundDoseFeatures = await bbapi.getFeaturesData(
+          dataset.viability_dataset_id,
+          featuresData.map((doseFeat) => doseFeat.id)
+        );
+        console.log({ featuresData });
 
-          const compoundDoseToDose = new Map();
-
-          const compoundDoseDatasets: [string, string][] = [
-            [compoundID, aucDataset],
-          ];
-          const compoundDoseFeatures = (
-            await bbapi.getDatasetFeatures(doseViabilityDataset)
-          ).filter((feature) => feature.id.includes(compoundID));
-          compoundDoseFeatures.forEach((feature) => {
-            const dose = feature.id.replace(compoundID, "").trim();
-            compoundDoseToDose.set(feature.id, dose);
-            compoundDoseDatasets.push([feature.id, doseViabilityDataset]);
-          });
-
-          const featuresData = await bbapi.getFeaturesData(
-            doseViabilityDataset,
-            compoundDoseFeatures.map((doseFeat) => doseFeat.id)
-          );
-          console.log({ featuresData });
-        }
-
-        const tablePromise = dapi.getDoseResponseTable!(
-          dataset.dose_replicate_dataset,
-          dataset.compound_xref_full
+        const aucs = await dapi.getDoseCurveTableMetadata(
+          dataset.auc_dataset_id,
+          compoundId,
+          dataset.drc_dataset_label,
+          dataset.ic50_dataset_id || undefined
         );
 
-        latestTablePromise.current = tablePromise;
-        tablePromise
-          .then((fetchedData) => {
-            if (tablePromise === latestTablePromise.current) {
-              const modelIds = Object.keys(fetchedData).sort();
-              const formattedTableData: DoseTableRow[] = modelIds.map(
-                (modelId) => {
-                  return { ...fetchedData[modelId], modelId };
-                }
-              );
+        // Inverse log2 transform each value of feature.values before merging
+        const allIndices = new Set<string>();
+        compoundDoseFeatures.forEach((feature: any) => {
+          if (feature.values) {
+            Object.keys(feature.values).forEach((modelId) =>
+              allIndices.add(modelId)
+            );
+          }
+        });
+        Object.keys(aucs).forEach((modelId) => allIndices.add(modelId));
 
-              setDoseTable(formattedTableData);
+        const mergedRows: any[] = [];
+        allIndices.forEach((modelId) => {
+          const row: any = { modelId: modelId };
+          compoundDoseFeatures.forEach((feature: any) => {
+            const col = feature.feature_id || feature.id;
+            let value = feature.values ? feature.values[modelId] : undefined;
+
+            if (!Number.isNaN(value)) {
+              value = 2 ** value;
             }
-          })
-          .catch((e) => {
-            if (tablePromise === latestPromise.current) {
-              window.console.error(e);
-              // setError(true);
-              // setIsLoading(false);
-            }
-          })
-          .finally(() => {
-            if (tablePromise === latestTablePromise.current) {
-              // setIsLoading(false);
-            }
+            row[col] = value;
           });
+          row.AUC = aucs[modelId];
+          mergedRows.push(row);
+        });
+
+        setDoseTable(mergedRows);
       }
     })();
-  }, [setDoseCurveData, setIsLoading, dataset, dapi, setDoseTable]);
+  }, [
+    setDoseCurveData,
+    setIsLoading,
+    dataset,
+    dapi,
+    bbapi,
+    compoundId,
+    setDoseTable,
+  ]);
 
   return { error, isLoading, doseCurveData, doseTable };
 }

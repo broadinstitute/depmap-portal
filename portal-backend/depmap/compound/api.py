@@ -1,9 +1,15 @@
 from typing import List
 from depmap.cell_line.models_new import DepmapModel
-from depmap.compound.models import Compound, CompoundDoseReplicate
+from depmap.compound.models import (
+    Compound,
+    CompoundDoseReplicate,
+    CompoundExperiment,
+    DoseResponseCurve,
+)
 from depmap.context_explorer import utils
 from depmap.dataset.models import Dataset, DependencyDataset
 from depmap.partials.matrix.models import Matrix
+from depmap import data_access
 import math
 from flask_restplus import Namespace, Resource
 from flask import request
@@ -23,9 +29,6 @@ def _get_dose_replicate_points(
     # points only contains viability -- we need to add on dose, isMasked, and replicate ourselves
     assert len(compound_dose_replicates) == len(viabilities)
     points = []
-
-    # NOTE: New - merge this with the viability information on the frontend using
-    # Breadbox data.
     for i in range(len(viabilities)):
         if (viabilities[i] is not None) & (not math.isnan(viabilities[i])):
             points.append(
@@ -80,14 +83,12 @@ def get_curve_params_for_model_ids(compound_id: str, drc_dataset_label: str):
     return curve_params
 
 
-def _get_dose_response_curves_per_model(
-    dataset_name: str, compound_id: str, drc_dataset_label: str
-):
-    dataset = Dataset.get_dataset_by_name(dataset_name)
-    units = dataset.units
+def _get_dose_response_curves_per_model(compound_id: str, drc_dataset_label: str):
+    compound = Compound.get_by_compound_id(compound_id, must=True)
 
+    # This is so confusing but sometimes compound.entity_id is compound_id
     dose_min_max_df = CompoundDoseReplicate.get_dose_min_max_of_replicates_with_compound_id(
-        compound_id=compound_id
+        compound_id=compound.entity_id
     )
 
     compound_dose_replicates = [dose_rep for dose_rep in dose_min_max_df]
@@ -100,7 +101,7 @@ def _get_dose_response_curves_per_model(
         "curve_params": in_group_curve_params,
         "max_dose": compound_dose_replicates[0].max_dose,
         "min_dose": compound_dose_replicates[0].min_dose,
-        "dataset_units": units,
+        "dataset_units": "",  # Is this used for anything?
     }
 
 
@@ -109,17 +110,42 @@ class DoseCurveData(
     Resource
 ):  # the flask url_for endpoint is automagically the snake case of the namespace prefix plus class name
     def get(self):
-        dataset_name = request.args.get("dataset_name")
         compound_id = request.args.get("compound_id")
         drc_dataset_label = request.args.get("drc_dataset_label")
 
         dose_curve_info = _get_dose_response_curves_per_model(
-            dataset_name=dataset_name,
-            compound_id=compound_id,
-            drc_dataset_label=drc_dataset_label,
+            compound_id=compound_id, drc_dataset_label=drc_dataset_label,
         )
 
         return dose_curve_info
+
+
+@namespace.route("/dose_table_metadata")
+class DoseTableMetadata(
+    Resource
+):  # the flask url_for endpoint is automagically the snake case of the namespace prefix plus class name
+    def get(self):
+        """
+        Get the metadata for the dose table, including AUC, IC50, cell line name, and model id.
+        """
+        auc_dataset_id = request.args.get("auc_dataset_id")
+        ic50_dataset_id = request.args.get("ic50_dataset_id")
+        compound_id = request.args.get("compound_id")
+        drc_dataset_label = request.args.get("drc_dataset_label")
+
+        # TODO: Eventually add ic50 data??
+        # TODO: This will only work for Prism_oncology_auc_collapsed, b/c the other auc dataset use
+        # compound experiments instead of compound, and these results need to be merged with a table
+        # indexed by compound_id on the frontend.
+        compound = Compound.get_by_compound_id(compound_id, must=True)
+        aucs = data_access.get_subsetted_df_by_labels(
+            dataset_id=auc_dataset_id, feature_row_labels=[compound.label]
+        )
+
+        results = aucs.squeeze() if not aucs.empty else {}
+        results.dropna(inplace=True)
+
+        return results.to_dict() if not results.empty else {}
 
 
 @namespace.route("/model_dose_replicates")
@@ -127,30 +153,45 @@ class ModelDoseReplicates(
     Resource
 ):  # the flask url_for endpoint is automagically the snake case of the namespace prefix plus class name
     def get(self):
-        # NOTE to self --> the preexisting functions for getting the dose curve options on the old tab provide
-        # the dataset_name and compound_label options.
         replicate_dataset_name = request.args.get("replicate_dataset_name")
+        auc_dataset_id = request.args.get("auc_dataset_id")
         compound_label = request.args.get("compound_label")
         model_ids = request.args.getlist("model_ids")
+        drc_dataset_label = request.args.get("drc_dataset_label")
 
-        replicate_dataset = Dataset.get_dataset_by_name(replicate_dataset_name)
-        compound_experiment = utils.get_compound_experiment(
-            entity_full_label=compound_label
+        dataset = Dataset.get_dataset_by_name(replicate_dataset_name)
+        compound = Compound.get_by_label(compound_label, must=True)
+
+        # HACK: Datasets other than prism_oncology_auc can have a 1:many relationship
+        # with compound experiments, so here we just check all of them and use the first
+        # compound experiment that has matching dose_rep entities in the replicate dataset.
+        ces = CompoundExperiment.get_corresponding_compound_experiment_using_drc_dataset_label(
+            compound_id=compound.compound_id, drc_dataset_label=drc_dataset_label
         )
 
-        # get all CompoundDoseReplicate objects associated with CompoundExperiment
-        compound_dose_replicates = CompoundDoseReplicate.get_all_with_compound_experiment_id(
-            compound_experiment.entity_id
-        )
-        compound_dose_replicates = [
-            dose_rep
-            for dose_rep in compound_dose_replicates
-            if DependencyDataset.has_entity(replicate_dataset.name, dose_rep.entity_id)
-        ]
+        for compound_experiment in ces:
+            # get all CompoundDoseReplicate objects associated with CompoundExperiment
+            compound_dose_replicates = CompoundDoseReplicate.get_all_with_compound_experiment_id(
+                compound_experiment.entity_id
+            )
+
+            if len(compound_dose_replicates) == 0:
+                continue
+
+            compound_dose_replicates = [
+                dose_rep
+                for dose_rep in compound_dose_replicates
+                if DependencyDataset.has_entity(
+                    replicate_dataset_name, dose_rep.entity_id
+                )
+            ]
+
+            if len(compound_dose_replicates) > 0:
+                break
 
         points_per_model = _get_dose_replicate_points_per_model_id(
             model_ids=model_ids,
-            replicate_dataset_matrix=replicate_dataset.matrix,
+            replicate_dataset_matrix=dataset.matrix,
             compound_dose_replicates=compound_dose_replicates,
         )
 

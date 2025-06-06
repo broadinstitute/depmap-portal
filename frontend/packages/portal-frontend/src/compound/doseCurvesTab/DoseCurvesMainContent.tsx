@@ -9,11 +9,14 @@ import React, {
 import { getDapi } from "src/common/utilities/context";
 import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
 import { CurveParams, CurvePlotPoints } from "../components/DoseResponseCurve";
-import { CompoundDataset } from "../components/DoseResponseTab";
 import DoseCurvesPlotSection from "./DoseCurvesPlotSection";
 import useDoseCurvesData from "./hooks/useDoseCurvesData";
 import CompoundPlotSelections from "./CompoundPlotSelections";
-import { CompoundDoseCurveData, DoseTableRow } from "./types";
+import {
+  CompoundDoseCurveData,
+  DoseTableRow,
+  DRCDatasetOptions,
+} from "./types";
 import { DataExplorerContext } from "@depmap/types";
 import { defaultContextName } from "@depmap/data-explorer-2/src/components/DataExplorerPage/utils";
 import { saveNewContext } from "src";
@@ -21,11 +24,12 @@ import doseCurvesPromptForSelectionFromContext from "./doseCurvesPromptForSelect
 import { useDeprecatedDataExplorerApi } from "@depmap/data-explorer-2";
 
 interface DoseCurvesMainContentProps {
-  dataset: CompoundDataset | null;
+  dataset: DRCDatasetOptions | null;
   doseUnits: string;
   showReplicates: boolean;
   showUnselectedLines: boolean;
   compoundName: string;
+  compoundId: string;
   handleShowUnselectedLinesOnSelectionsCleared: () => void;
 }
 
@@ -54,6 +58,7 @@ function DoseCurvesMainContent({
   showReplicates,
   showUnselectedLines,
   compoundName,
+  compoundId,
   handleShowUnselectedLinesOnSelectionsCleared,
 }: DoseCurvesMainContentProps) {
   const dapi = getDapi();
@@ -61,7 +66,7 @@ function DoseCurvesMainContent({
 
   const { error, isLoading, doseCurveData, doseTable } = useDoseCurvesData(
     dataset,
-    compoundName
+    compoundId
   );
 
   const [selectedCurves, setSelectedCurves] = useState<Set<string>>(
@@ -138,15 +143,16 @@ function DoseCurvesMainContent({
 
   useEffect(() => {
     (async () => {
-      if (dataset && showReplicates) {
+      if (dataset && showReplicates && selectedCurves.size > 0) {
         // setIsLoading(true);
 
         const promise = dapi.getCompoundModelDoseReplicatePoints!(
-          dataset.compound_label,
-          dataset.dose_replicate_dataset,
-          Array.from(selectedCurves)
+          compoundName,
+          dataset.replicate_dataset,
+          dataset.auc_dataset_id,
+          Array.from(selectedCurves),
+          dataset.drc_dataset_label
         );
-        console.log("fetching replicates");
 
         latestPromise.current = promise;
         promise
@@ -169,14 +175,13 @@ function DoseCurvesMainContent({
           });
       }
     })();
-  }, [selectedCurves, setDoseRepPoints, showReplicates, dapi]);
-
-  const displayNameModelIdMap = new Map<string, string>();
-  doseCurveData?.curve_params.forEach((curveParams: CurveParams) => {
-    displayNameModelIdMap.set(curveParams.id!, curveParams.displayName!);
-  });
+  }, [selectedCurves, setDoseRepPoints, dapi]);
 
   const selectedLabels = useMemo(() => {
+    const displayNameModelIdMap = new Map<string, string>();
+    doseCurveData?.curve_params.forEach((curveParams: CurveParams) => {
+      displayNameModelIdMap.set(curveParams.id!, curveParams.displayName!);
+    });
     const displayNames: string[] = [];
     [...selectedCurves].forEach((modelId: string) => {
       const displayName = displayNameModelIdMap.get(modelId);
@@ -186,7 +191,7 @@ function DoseCurvesMainContent({
     });
 
     return displayNames;
-  }, [selectedCurves]);
+  }, [selectedCurves, doseCurveData]);
 
   const handleClickSaveSelectionAsContext = () => {
     const labels = [...selectedCurves];

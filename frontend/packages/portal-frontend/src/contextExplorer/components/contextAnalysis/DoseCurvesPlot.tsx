@@ -430,7 +430,11 @@ function DoseCurvesPlot({
   useDefaultTitle = true,
 }: Props) {
   const plotTraces = useMemo(() => {
-    if (inGroupCurveParams && minDose && maxDose) {
+    if (
+      inGroupCurveParams &&
+      !Number.isNaN(minDose) &&
+      !Number.isNaN(maxDose)
+    ) {
       return buildTraces(
         minDose,
         maxDose,

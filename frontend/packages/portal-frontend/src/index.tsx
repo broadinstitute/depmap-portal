@@ -241,6 +241,7 @@ export function initDoseResponseTab(
 export function initDoseCurvesTab(
   elementId: string,
   name: string,
+  compoundId: string,
   datasetOptions: Array<any>,
   units: string
 ) {
@@ -250,6 +251,7 @@ export function initDoseCurvesTab(
         datasetOptions={datasetOptions}
         doseUnits={units}
         compoundName={name}
+        compoundId={compoundId}
       />
     </React.Suspense>,
     document.getElementById(elementId) as HTMLElement

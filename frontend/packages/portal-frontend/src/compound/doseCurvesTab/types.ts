@@ -33,3 +33,12 @@ export type DoseTableRow = {
 } & {
   [dose: string]: number;
 };
+
+export interface DRCDatasetOptions {
+  display_name: string;
+  viability_dataset_id: string;
+  replicate_dataset: string;
+  auc_dataset_id: string;
+  ic50_dataset_id?: string;
+  drc_dataset_label: string;
+}

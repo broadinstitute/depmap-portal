@@ -92,8 +92,8 @@ function DoseCurvesPlotSection({
         {!curvesData && <PlotSpinner />}
         {curvesData && (
           <DoseCurvesPlot
-            minDose={curvesData.min_dose}
-            maxDose={curvesData.max_dose}
+            minDose={curvesData.min_dose ?? 0.1} // TODO: fix this in the backend
+            maxDose={curvesData.max_dose ?? 1} // TODO: fix this in the backend
             inGroupCurveParams={curvesData.curve_params}
             doseRepPoints={doseRepPoints}
             handleSetPlotElement={handleSetPlotElement}

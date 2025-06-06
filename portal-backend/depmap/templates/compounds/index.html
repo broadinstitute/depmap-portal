@@ -55,7 +55,7 @@ active_tab_set = False %}
       >Dose curves</a
     >
   </li>
-  {% set active_tab_set = True %} {% endif %} {% if show_dose_curve_tab_new %}
+  {% set active_tab_set = True %} {% endif %} {% if show_dose_curve_tab %}
   <li role="presentation" class="{% if not active_tab_set %}active{% endif %}">
     <a
       href="#dose-curves-new"
@@ -147,18 +147,19 @@ active_tab_set = False %}
     </script>
     {% set active_tab_set = True %}
   </div>
-  {% endif %} {% if show_dose_curve_tab_new %}
+  {% endif %} {% if show_dose_curve_tab %}
   <div
     role="tabpanel"
     class="tab-pane {% if not active_tab_set %}active{% endif %}"
     id="dose-curves-new"
   >
-    <div id="dose-curves-tab-content"></div>
+    <div id="new-dose-curves-tab-content"></div>
     <script>
       $(function () { // document ready for middle-of-html js
           DepMap.initDoseCurvesTab(
-              "dose-curves-tab-content",
+              "new-dose-curves-tab-content",
               {{name | tojson}},
+              {{compound_id | tojson}},
           {{dose_curve_options_new | tojson}},
           "{{ compound_units }}"
       );

@@ -1,11 +1,11 @@
 import { ToggleSwitch } from "@depmap/common-components";
 import React from "react";
 import Select from "react-select";
-import { CompoundDataset } from "../components/DoseResponseTab";
+import { DRCDatasetOptions } from "./types";
 
 interface FiltersPanelProps {
   handleSelectDataset: (selection: { value: string; label: string }) => void;
-  datasetOptions: CompoundDataset[];
+  datasetOptions: DRCDatasetOptions[];
   selectedDatasetOption: { value: string; label: string };
   showReplicates: boolean;
   showUnselectedLines: boolean;
@@ -23,10 +23,10 @@ function FiltersPanel({
   handleToggleShowUnselectedLines,
 }: FiltersPanelProps) {
   const datasetSelectOptions = datasetOptions.map(
-    (compoundDataset: CompoundDataset) => {
+    (compoundDataset: DRCDatasetOptions) => {
       return {
-        value: compoundDataset.dataset,
-        label: compoundDataset.auc_dataset_display_name,
+        value: compoundDataset.viability_dataset_id,
+        label: compoundDataset.display_name,
       };
     }
   );

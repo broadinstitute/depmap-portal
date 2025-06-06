@@ -1,27 +1,29 @@
 import React, { useEffect, useCallback, useState } from "react";
-import { CompoundDataset } from "../components/DoseResponseTab";
 import DoseCurvesMainContent from "./DoseCurvesMainContent";
 import FiltersPanel from "./FiltersPanel";
+import { DRCDatasetOptions } from "./types";
 import { DeprecatedDataExplorerApiProvider } from "@depmap/data-explorer-2";
 import { evaluateLegacyContext } from "src/data-explorer-2/deprecated-api";
 import "react-bootstrap-typeahead/css/Typeahead.css";
 import "src/common/styles/typeahead_fix.scss";
 
 interface DoseCurvesTabProps {
-  datasetOptions: CompoundDataset[];
+  datasetOptions: DRCDatasetOptions[];
   doseUnits: string;
   compoundName: string;
+  compoundId: string;
 }
 
 function DoseCurvesTab({
   datasetOptions,
   doseUnits,
   compoundName,
+  compoundId,
 }: DoseCurvesTabProps) {
   const [
     selectedDataset,
     setSelectedDataset,
-  ] = useState<CompoundDataset | null>(null);
+  ] = useState<DRCDatasetOptions | null>(null);
   const [selectedDatasetOption, setSelectedDatasetOption] = useState<{
     value: string;
     label: string;
@@ -41,7 +43,8 @@ function DoseCurvesTab({
       if (selection) {
         setSelectedDatasetOption(selection);
         const selectedCompoundDataset = datasetOptions.filter(
-          (option: CompoundDataset) => option.dataset === selection.value
+          (option: DRCDatasetOptions) =>
+            option.viability_dataset_id === selection.value
         )[0];
         setSelectedDataset(selectedCompoundDataset);
       }
@@ -75,8 +78,8 @@ function DoseCurvesTab({
             datasetOptions={datasetOptions}
             selectedDatasetOption={
               selectedDatasetOption || {
-                value: datasetOptions[0].dataset,
-                label: datasetOptions[0].auc_dataset_display_name,
+                value: datasetOptions[0].viability_dataset_id,
+                label: datasetOptions[0].display_name,
               }
             }
             showReplicates={showReplicates}
@@ -96,6 +99,7 @@ function DoseCurvesTab({
             showReplicates={showReplicates}
             showUnselectedLines={showUnselectedLines}
             compoundName={compoundName}
+            compoundId={compoundId}
             handleShowUnselectedLinesOnSelectionsCleared={() =>
               setShowUnselectedLines(true)
             }
