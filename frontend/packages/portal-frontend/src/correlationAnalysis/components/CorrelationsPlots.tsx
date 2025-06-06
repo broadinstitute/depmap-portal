@@ -1,13 +1,15 @@
 import React from "react";
-import { VolcanoData } from "../../plot/models/volcanoPlotModels";
 import CorrelationsPlot from "./CorrelationPlot";
 import DoseLegend from "./DoseLegend";
+import { VolcanoPlotData } from "../models/VolcanoPlot";
 
 interface CorrelationsPlotsProps {
   featureTypesToShow: string[];
   dosesToFilter: string[];
   doseColors: { hex: string | undefined; dose: string }[];
-  volcanoDataForFeatureTypes: { [key: string]: { [key: string]: VolcanoData } };
+  volcanoDataForFeatureTypes: {
+    [key: string]: { [key: string]: VolcanoPlotData };
+  };
   featureTypeSelectedLabels: { [key: string]: string[] };
   forwardSelectedLabels: (
     featureType: string,
@@ -20,15 +22,15 @@ export default function CorrelationsPlots(props: CorrelationsPlotsProps) {
     featureTypesToShow,
     dosesToFilter,
     doseColors,
-    volcanoDataForFeatureTypes: volcanoDataForFeatureType,
+    volcanoDataForFeatureTypes,
     featureTypeSelectedLabels,
     forwardSelectedLabels,
   } = props;
 
   const filteredDosesForFeatureTypeVolcanoData = React.useCallback(
-    (featureTypeVolcanoData: { [key: string]: VolcanoData }) => {
+    (featureTypeVolcanoData: { [key: string]: VolcanoPlotData }) => {
       if (dosesToFilter.length) {
-        const subset: { [key: string]: VolcanoData } = {};
+        const subset: { [key: string]: VolcanoPlotData } = {};
         dosesToFilter.forEach((dose) => {
           subset[dose] = featureTypeVolcanoData[dose];
         });
@@ -66,7 +68,7 @@ export default function CorrelationsPlots(props: CorrelationsPlotsProps) {
                 featureType={featureType}
                 data={Object.values(
                   filteredDosesForFeatureTypeVolcanoData(
-                    volcanoDataForFeatureType[featureType]
+                    volcanoDataForFeatureTypes[featureType]
                   )
                 )}
                 selectedFeatures={
