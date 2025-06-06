@@ -240,6 +240,7 @@ function DoseCurvesMainContent({
       >
         <div style={{ gridArea: "plot" }}>
           <DoseCurvesPlotSection
+            compoundName={compoundName}
             plotElement={plotElement}
             curvesData={visibleCurveData}
             doseRepPoints={showReplicates ? doseRepPoints : null}

@@ -42,6 +42,7 @@ interface Props {
   onMakeContext?: () => void;
   onDeselectPoints?: () => void;
   altContainerStyle?: any;
+  hideCSVDownload?: boolean;
 }
 
 const toIcon = (dragmode: Dragmode) =>
@@ -100,6 +101,7 @@ function PlotControls({
   onMakeContext = () => {},
   onDeselectPoints = () => {},
   altContainerStyle = undefined,
+  hideCSVDownload = false,
 }: Props) {
   const [dragmode, setDragmode] = useState<Dragmode>("zoom");
 
@@ -298,7 +300,9 @@ function PlotControls({
                     Image (.svg)
                   </MenuItem>
                 )}
-                <MenuItem onClick={onDownload}>Filtered data (.csv)</MenuItem>
+                {!hideCSVDownload && (
+                  <MenuItem onClick={onDownload}>Filtered data (.csv)</MenuItem>
+                )}
               </DropdownButton>
             </Tooltip>
           </div>

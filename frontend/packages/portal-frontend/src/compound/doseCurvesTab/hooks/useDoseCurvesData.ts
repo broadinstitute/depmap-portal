@@ -53,20 +53,14 @@ function useDoseCurvesData(
             }
           });
 
-        const compoundDoseToDose = new Map();
         const featuresData = (
           await bbapi.getDatasetFeatures(dataset.viability_dataset_id)
         ).filter((feature) => feature.id.includes(compoundId));
-        featuresData.forEach((feature) => {
-          const dose = feature.id.replace(compoundId, "").trim();
-          compoundDoseToDose.set(feature.id, dose);
-        });
 
         const compoundDoseFeatures = await bbapi.getFeaturesData(
           dataset.viability_dataset_id,
           featuresData.map((doseFeat) => doseFeat.id)
         );
-        console.log({ featuresData });
 
         const aucs = await dapi.getDoseCurveTableMetadata(
           dataset.auc_dataset_id,
@@ -90,7 +84,9 @@ function useDoseCurvesData(
         allIndices.forEach((modelId) => {
           const row: any = { modelId: modelId };
           compoundDoseFeatures.forEach((feature: any) => {
-            const col = feature.feature_id || feature.id;
+            // Remove the compoundId substring from feature_id for the column name
+            const col = feature.feature_id.replace(compoundId, "").trim();
+
             let value = feature.values ? feature.values[modelId] : undefined;
 
             if (!Number.isNaN(value)) {

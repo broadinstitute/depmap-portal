@@ -10,6 +10,7 @@ import { CurveParams, CurvePlotPoints } from "../components/DoseResponseCurve";
 import { CompoundDoseCurveData } from "./types";
 
 interface DoseCurvesPlotSectionProps {
+  compoundName: string;
   curvesData: CompoundDoseCurveData | null;
   doseRepPoints: {
     [model_id: string]: CurvePlotPoints[];
@@ -21,6 +22,7 @@ interface DoseCurvesPlotSectionProps {
   handleSetPlotElement: (element: any) => void;
 }
 function DoseCurvesPlotSection({
+  compoundName,
   curvesData,
   doseRepPoints,
   doseUnits,
@@ -75,7 +77,7 @@ function DoseCurvesPlotSection({
               }
             }}
             downloadImageOptions={{
-              filename: "dose-curves",
+              filename: `dose-curves-${compoundName}`,
               width: 800,
               height: 600,
             }}
@@ -85,6 +87,7 @@ function DoseCurvesPlotSection({
             altContainerStyle={{
               backgroundColor: "#7B8CB2",
             }}
+            hideCSVDownload
           />
         )}
       </div>
