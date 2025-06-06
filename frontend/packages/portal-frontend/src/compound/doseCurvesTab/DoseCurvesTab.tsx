@@ -59,8 +59,8 @@ function DoseCurvesTab({
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "1fr 7fr",
-          gridTemplateAreas: "'filters main main main main main main main'",
+          gridTemplateColumns: "1fr 6fr",
+          gridTemplateAreas: "'filters main main main main main main'",
           gap: "2rem",
         }}
       >
@@ -100,9 +100,9 @@ function DoseCurvesTab({
             showUnselectedLines={showUnselectedLines}
             compoundName={compoundName}
             compoundId={compoundId}
-            handleShowUnselectedLinesOnSelectionsCleared={() =>
-              setShowUnselectedLines(true)
-            }
+            handleShowUnselectedLinesOnSelectionsCleared={() => {
+              setShowUnselectedLines(true);
+            }}
           />
         </div>
       </div>

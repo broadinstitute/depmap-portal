@@ -989,16 +989,14 @@ export class DepmapApi {
   }
 
   getCompoundModelDoseReplicatePoints(
-    compoundLabel: string,
+    compoundId: string,
     replicateDatasetName: string,
-    aucDatasetId: string,
     modelIds: string[],
     drcDatasetLabel: string
   ): Promise<{ [model_id: string]: CurvePlotPoints[] }> {
     const params = {
       replicate_dataset_name: replicateDatasetName,
-      auc_dataset_id: aucDatasetId,
-      compound_label: compoundLabel,
+      compound_id: compoundId,
       model_ids: modelIds,
       drc_dataset_label: drcDatasetLabel,
     };

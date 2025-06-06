@@ -84,14 +84,11 @@ def get_curve_params_for_model_ids(compound_id: str, drc_dataset_label: str):
 
 
 def _get_dose_response_curves_per_model(compound_id: str, drc_dataset_label: str):
-    compound = Compound.get_by_compound_id(compound_id, must=True)
-
-    # This is so confusing but sometimes compound.entity_id is compound_id
-    dose_min_max_df = CompoundDoseReplicate.get_dose_min_max_of_replicates_with_compound_id(
-        compound_id=compound.entity_id
+    dose_min_max = CompoundDoseReplicate.get_dose_min_max_of_replicates_with_compound_id(
+        compound_id=compound_id, drc_dataset_label=drc_dataset_label
     )
 
-    compound_dose_replicates = [dose_rep for dose_rep in dose_min_max_df]
+    compound_dose_replicates = [dose_rep for dose_rep in dose_min_max]
 
     in_group_curve_params = get_curve_params_for_model_ids(
         compound_id=compound_id, drc_dataset_label=drc_dataset_label,
@@ -154,13 +151,12 @@ class ModelDoseReplicates(
 ):  # the flask url_for endpoint is automagically the snake case of the namespace prefix plus class name
     def get(self):
         replicate_dataset_name = request.args.get("replicate_dataset_name")
-        auc_dataset_id = request.args.get("auc_dataset_id")
-        compound_label = request.args.get("compound_label")
+        compound_id = request.args.get("compound_id")
         model_ids = request.args.getlist("model_ids")
         drc_dataset_label = request.args.get("drc_dataset_label")
 
         dataset = Dataset.get_dataset_by_name(replicate_dataset_name)
-        compound = Compound.get_by_label(compound_label, must=True)
+        compound = Compound.get_by_compound_id(compound_id, must=True)
 
         # HACK: Datasets other than prism_oncology_auc can have a 1:many relationship
         # with compound experiments, so here we just check all of them and use the first

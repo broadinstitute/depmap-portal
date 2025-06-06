@@ -147,9 +147,8 @@ function DoseCurvesMainContent({
         // setIsLoading(true);
 
         const promise = dapi.getCompoundModelDoseReplicatePoints!(
-          compoundName,
+          compoundId,
           dataset.replicate_dataset,
-          dataset.auc_dataset_id,
           Array.from(selectedCurves),
           dataset.drc_dataset_label
         );
@@ -173,6 +172,8 @@ function DoseCurvesMainContent({
               // setIsLoading(false);
             }
           });
+      } else {
+        setDoseRepPoints(null);
       }
     })();
   }, [selectedCurves, setDoseRepPoints, dapi]);
@@ -258,6 +259,7 @@ function DoseCurvesMainContent({
             onClickClearSelection={() => {
               setSelectedCurves(new Set([]));
               setSelectedTableRows(new Set([]));
+              setDoseRepPoints(null);
               handleShowUnselectedLinesOnSelectionsCleared();
             }}
             onClickSetSelectionFromContext={async () => {

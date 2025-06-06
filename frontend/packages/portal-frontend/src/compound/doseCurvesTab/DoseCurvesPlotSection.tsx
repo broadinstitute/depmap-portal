@@ -7,7 +7,7 @@ import PlotControls, {
 import PlotSpinner from "src/plot/components/PlotSpinner";
 import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
 import { CurveParams, CurvePlotPoints } from "../components/DoseResponseCurve";
-import { CompoundDoseCurveData, CurveTrace } from "./types";
+import { CompoundDoseCurveData } from "./types";
 
 interface DoseCurvesPlotSectionProps {
   curvesData: CompoundDoseCurveData | null;
@@ -92,7 +92,7 @@ function DoseCurvesPlotSection({
         {!curvesData && <PlotSpinner />}
         {curvesData && (
           <DoseCurvesPlot
-            minDose={curvesData.min_dose ?? 0.1} // TODO: fix this in the backend
+            minDose={curvesData.min_dose ?? 0.01} // TODO: fix this in the backend
             maxDose={curvesData.max_dose ?? 1} // TODO: fix this in the backend
             inGroupCurveParams={curvesData.curve_params}
             doseRepPoints={doseRepPoints}

@@ -4,7 +4,12 @@ import {
   CurvePlotPoints,
   groupBy,
 } from "src/compound/components/DoseResponseCurve";
-import { CurveTrace } from "src/compound/doseCurvesTab/types";
+import {
+  CurveTrace,
+  Rep1Color,
+  Rep2Color,
+  Rep3Color,
+} from "src/compound/doseCurvesTab/types";
 import CurvesChart from "src/plot/components/CurvesChart";
 
 // Make median curve traces
@@ -250,10 +255,24 @@ const buildPointsTraces = (
         name += " (masked)";
       }
 
+      const getReplicateColor = (replicate: string) => {
+        switch (replicate) {
+          case "1":
+            return Rep1Color;
+          case "2":
+            return Rep2Color;
+          case "3":
+            return Rep3Color;
+          default:
+            return "#333333";
+        }
+      };
+
       newTraces.push({
         x: xs,
         y: ys,
         mode: "markers",
+        marker: { color: getReplicateColor(replicate) },
         type: "scatter",
         customdata: ["no"],
         label: [`${isMaskedValue}`],
