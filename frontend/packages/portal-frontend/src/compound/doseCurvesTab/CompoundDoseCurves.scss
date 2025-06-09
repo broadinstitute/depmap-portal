@@ -1,0 +1,142 @@
+.mainContentContainer {
+  margin-left: 10px;
+  margin-right: 10px;
+
+  .mainContentHeader {
+    margin-top: 20px;
+    margin-bottom: 20px;
+
+    p {
+      max-width: 780px;
+    }
+  }
+
+  .mainContentGrid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    grid-template-areas: "plot plot selections";
+    gap: 1rem;
+  }
+
+  .mainContentHr {
+    border-top: 1px solid #b8b8b8;
+    margin-top: 30px;
+  }
+
+  .mainContentCellLines {
+    margin-top: 20px;
+    margin-bottom: 20px;
+
+    p {
+      max-width: 780px;
+    }
+  }
+}
+
+.PlotSection {
+  margin-left: 20px;
+  margin-right: 20px;
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  overflow: visible;
+  border: 1px solid #b8b8b8;
+
+  .sectionHeader {
+    margin-bottom: 20px;
+  }
+
+  .plotArea {
+    margin-top: 20px;
+  }
+}
+
+.doseCurvesTabGrid {
+  display: grid;
+  grid-template-columns: 1fr 6fr;
+  grid-template-areas: "filters main main main main main main";
+  gap: 2rem;
+
+  .doseCurvesTabFilters {
+    grid-area: filters;
+    background-color: rgba(123, 140, 178, 0.1);
+    padding-left: 12px;
+    padding-right: 12px;
+    padding-top: 15px;
+  }
+
+  .doseCurvesTabMain {
+    grid-area: main;
+  }
+}
+
+.FiltersPanel {
+  .sectionTitle {
+    font-size: 16px;
+  }
+
+  .filtersPanelHr {
+    margin-top: 20px;
+    border-top: 1px solid rgba(0, 0, 0, 1);
+  }
+
+  .toggleRow {
+    padding-top: 8px;
+    padding-bottom: 8px;
+    display: flex;
+    align-items: center;
+  }
+
+  .toggleLabel {
+    padding-right: 10px;
+    font-size: 14px;
+    font-weight: 700;
+    color: #3d4864;
+    min-width: 120px;
+    text-align: left;
+  }
+
+  .legendBox {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 14px;
+    margin-top: 20px;
+    min-width: 120px;
+  }
+
+  .legendRow {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .legendSwatch {
+    width: 18px;
+    height: 18px;
+  }
+
+  .legendLabel {
+    font-size: 13px;
+    font-weight: 600;
+  }
+}
+
+.CompoundPlotSelections {
+  border: 1px solid #b8b8b8;
+
+  .headerDiv {
+    color: #ffffff;
+    background-color: #7b8cb2;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    padding-left: 15px;
+    font-size: 16px;
+    font-weight: 700;
+    font-family: Lato;
+  }
+
+  .mainContent {
+    margin: 15px;
+  }
+}

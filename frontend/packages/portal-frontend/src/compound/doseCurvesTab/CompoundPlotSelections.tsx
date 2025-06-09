@@ -2,6 +2,7 @@ import React, { useRef } from "react";
 import { Button } from "react-bootstrap";
 import styles from "@depmap/data-explorer-2/src/components/DataExplorerPage/styles/DataExplorer2.scss";
 import LabelsVirtualList from "@depmap/data-explorer-2/src/components/DataExplorerPage/components/plot/PlotSelections/LabelsVirtualList";
+import compoundStyles from "./CompoundDoseCurves.scss";
 
 interface CompoundPlotSelectionsProps {
   selectedIds: Set<string> | null;
@@ -23,22 +24,9 @@ function CompoundPlotSelections({
   const maxHeightOfList = Infinity;
 
   return (
-    <div style={{ border: "1px solid #b8b8b8" }}>
-      <div
-        style={{
-          color: "#FFFFFF",
-          backgroundColor: "#7B8CB2",
-          paddingTop: "10px",
-          paddingBottom: "10px",
-          paddingLeft: "15px",
-          fontSize: "16px",
-          fontWeight: "700",
-          fontFamily: "Lato",
-        }}
-      >
-        Plot Selections
-      </div>
-      <div style={{ margin: "15px" }}>
+    <div className={compoundStyles.CompoundPlotSelections}>
+      <div className={compoundStyles.headerDiv}>Plot Selections</div>
+      <div className={compoundStyles.mainContent}>
         <div className={styles.plotInstructions}>
           <div>
             Select points to populate list

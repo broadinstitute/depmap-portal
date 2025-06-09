@@ -2,6 +2,7 @@ import { ToggleSwitch } from "@depmap/common-components";
 import React from "react";
 import Select from "react-select";
 import { DRCDatasetOptions, Rep1Color, Rep2Color, Rep3Color } from "./types";
+import styles from "./CompoundDoseCurves.scss";
 
 interface FiltersPanelProps {
   handleSelectDataset: (selection: { value: string; label: string }) => void;
@@ -32,8 +33,8 @@ function FiltersPanel({
   );
 
   return (
-    <div>
-      <h4 style={{ fontSize: "16px" }}>Dataset</h4>
+    <div className={styles.FiltersPanel}>
+      <h4 className={styles.sectionTitle}>Dataset</h4>
       <Select
         defaultValue={datasetSelectOptions[0]}
         value={selectedDatasetOption}
@@ -46,33 +47,10 @@ function FiltersPanel({
         }}
         id="compound-dose-curves-dataset-selection"
       />
-      <hr
-        style={{
-          marginTop: "20px",
-          borderTop: "1px solid rgba(0, 0, 0, 1",
-        }}
-      />
-      <h4 style={{ fontSize: "16px" }}>View Options</h4>
-      <div
-        style={{
-          paddingTop: "8px",
-          paddingBottom: "8px",
-          display: "flex",
-          alignItems: "center",
-        }}
-      >
-        <div
-          style={{
-            paddingRight: "10px",
-            fontSize: "14px",
-            fontWeight: 700,
-            color: "#3D4864",
-            minWidth: "120px",
-            textAlign: "left",
-          }}
-        >
-          Unselected lines
-        </div>
+      <hr className={styles.filtersPanelHr} />
+      <h4 className={styles.sectionTitle}>View Options</h4>
+      <div className={styles.toggleRow}>
+        <div className={styles.toggleLabel}>Unselected lines</div>
         <ToggleSwitch
           value={showUnselectedLines}
           onChange={handleToggleShowUnselectedLines}
@@ -82,21 +60,8 @@ function FiltersPanel({
           ]}
         />
       </div>
-      <div
-        style={{ paddingTop: "10px", display: "flex", alignItems: "center" }}
-      >
-        <div
-          style={{
-            paddingRight: "10px",
-            fontSize: "14px",
-            fontWeight: 700,
-            color: "#3D4864",
-            minWidth: "120px",
-            textAlign: "left",
-          }}
-        >
-          Replicates
-        </div>
+      <div className={styles.toggleRow} style={{ paddingTop: "10px" }}>
+        <div className={styles.toggleLabel}>Replicates</div>
         <ToggleSwitch
           value={showReplicates}
           onChange={handleToggleShowReplicates}
@@ -106,56 +71,30 @@ function FiltersPanel({
           ]}
         />
       </div>
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "flex-start",
-          gap: "14px",
-          marginTop: "20px",
-          minWidth: "120px",
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+      <div className={styles.legendBox}>
+        <div className={styles.legendRow}>
           <div
-            style={{
-              width: "18px",
-              height: "18px",
-              background: Rep1Color,
-              border: `1px solid ${Rep1Color}`,
-            }}
+            className={styles.legendSwatch}
+            style={{ background: Rep1Color, border: `1px solid ${Rep1Color}` }}
           />
-          <span style={{ fontSize: "13px", fontWeight: 600 }}>x1</span>
+          <span className={styles.legendLabel}>x1</span>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+        <div className={styles.legendRow}>
           <div
-            style={{
-              width: "18px",
-              height: "18px",
-              background: Rep2Color,
-              border: `1px solid ${Rep2Color}`,
-            }}
+            className={styles.legendSwatch}
+            style={{ background: Rep2Color, border: `1px solid ${Rep2Color}` }}
           />
-          <span style={{ fontSize: "13px", fontWeight: 600 }}>x2</span>
+          <span className={styles.legendLabel}>x2</span>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+        <div className={styles.legendRow}>
           <div
-            style={{
-              width: "18px",
-              height: "18px",
-              background: Rep3Color,
-              border: `1px solid ${Rep3Color}`,
-            }}
+            className={styles.legendSwatch}
+            style={{ background: Rep3Color, border: `1px solid ${Rep3Color}` }}
           />
-          <span style={{ fontSize: "13px", fontWeight: 600 }}>x3</span>
+          <span className={styles.legendLabel}>x3</span>
         </div>
       </div>
-      <hr
-        style={{
-          marginTop: "20px",
-          borderTop: "1px solid rgba(0, 0, 0, 1",
-        }}
-      />
+      <hr className={styles.filtersPanelHr} />
     </div>
   );
 }

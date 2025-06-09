@@ -6,6 +6,7 @@ import { DeprecatedDataExplorerApiProvider } from "@depmap/data-explorer-2";
 import { evaluateLegacyContext } from "src/data-explorer-2/deprecated-api";
 import "react-bootstrap-typeahead/css/Typeahead.css";
 import "src/common/styles/typeahead_fix.scss";
+import styles from "./CompoundDoseCurves.scss";
 
 interface DoseCurvesTabProps {
   datasetOptions: DRCDatasetOptions[];
@@ -56,23 +57,8 @@ function DoseCurvesTab({
     <DeprecatedDataExplorerApiProvider
       evaluateLegacyContext={evaluateLegacyContext}
     >
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "1fr 6fr",
-          gridTemplateAreas: "'filters main main main main main main'",
-          gap: "2rem",
-        }}
-      >
-        <div
-          style={{
-            gridArea: "filters",
-            backgroundColor: "rgba(123, 140, 178, 0.1)",
-            paddingLeft: "12px",
-            paddingRight: "12px",
-            paddingTop: "15px",
-          }}
-        >
+      <div className={styles.doseCurvesTabGrid}>
+        <div className={styles.doseCurvesTabFilters}>
           <FiltersPanel
             handleSelectDataset={handleSelectDataset}
             datasetOptions={datasetOptions}
@@ -92,7 +78,7 @@ function DoseCurvesTab({
             }
           />
         </div>
-        <div style={{ gridArea: "main" }}>
+        <div className={styles.doseCurvesTabMain}>
           <DoseCurvesMainContent
             dataset={selectedDataset}
             doseUnits={doseUnits}

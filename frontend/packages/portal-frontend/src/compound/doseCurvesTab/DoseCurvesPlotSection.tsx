@@ -8,6 +8,7 @@ import PlotSpinner from "src/plot/components/PlotSpinner";
 import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
 import { CurveParams, CurvePlotPoints } from "../components/DoseResponseCurve";
 import { CompoundDoseCurveData } from "./types";
+import styles from "./CompoundDoseCurves.scss";
 
 interface DoseCurvesPlotSectionProps {
   compoundName: string;
@@ -44,18 +45,8 @@ function DoseCurvesPlotSection({
   );
 
   return (
-    <div
-      style={{
-        marginLeft: "20",
-        marginRight: "20px",
-        display: "flex",
-        flexDirection: "column",
-        flexGrow: 1,
-        overflow: "visible",
-        border: "1px solid #b8b8b8",
-      }}
-    >
-      <div style={{ marginBottom: "20px" }}>
+    <div className={styles.PlotSection}>
+      <div className={styles.sectionHeader}>
         {plotElement && (
           <PlotControls
             plot={plotElement}
@@ -91,7 +82,7 @@ function DoseCurvesPlotSection({
           />
         )}
       </div>
-      <div style={{ marginTop: "20px" }}>
+      <div className={styles.plotArea}>
         {!curvesData && <PlotSpinner />}
         {curvesData && (
           <DoseCurvesPlot

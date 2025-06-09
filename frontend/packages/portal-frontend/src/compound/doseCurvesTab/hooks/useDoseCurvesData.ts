@@ -82,20 +82,22 @@ function useDoseCurvesData(
 
         const mergedRows: any[] = [];
         allIndices.forEach((modelId) => {
-          const row: any = { modelId: modelId };
+          const row: any = {};
+          row.modelId = modelId;
+          // Fill dose columns
           compoundDoseFeatures.forEach((feature: any) => {
             // Remove the compoundId substring from feature_id for the column name
             const col = feature.feature_id.replace(compoundId, "").trim();
-
             let value = feature.values ? feature.values[modelId] : undefined;
-
             if (!Number.isNaN(value)) {
               value = 2 ** value;
             }
             row[col] = value;
           });
           row.AUC = aucs[modelId];
-          mergedRows.push(row);
+          // Reorder keys: modelId, AUC, ...rest
+          const { modelId: id, AUC, ...rest } = row;
+          mergedRows.push({ modelId: id, AUC, ...rest });
         });
 
         setDoseTable(mergedRows);

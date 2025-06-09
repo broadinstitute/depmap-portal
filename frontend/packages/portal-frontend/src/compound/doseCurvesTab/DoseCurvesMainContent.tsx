@@ -12,16 +12,14 @@ import { CurveParams, CurvePlotPoints } from "../components/DoseResponseCurve";
 import DoseCurvesPlotSection from "./DoseCurvesPlotSection";
 import useDoseCurvesData from "./hooks/useDoseCurvesData";
 import CompoundPlotSelections from "./CompoundPlotSelections";
-import {
-  CompoundDoseCurveData,
-  DoseTableRow,
-  DRCDatasetOptions,
-} from "./types";
+import { CompoundDoseCurveData, DRCDatasetOptions } from "./types";
 import { DataExplorerContext } from "@depmap/types";
 import { defaultContextName } from "@depmap/data-explorer-2/src/components/DataExplorerPage/utils";
 import { saveNewContext } from "src";
 import doseCurvesPromptForSelectionFromContext from "./doseCurvesPromptForSelectionFromContext";
 import { useDeprecatedDataExplorerApi } from "@depmap/data-explorer-2";
+import { doseCurveTableColumns, sortBySelectedModel } from "./utils";
+import styles from "./CompoundDoseCurves.scss";
 
 interface DoseCurvesMainContentProps {
   dataset: DRCDatasetOptions | null;
@@ -32,25 +30,6 @@ interface DoseCurvesMainContentProps {
   compoundId: string;
   handleShowUnselectedLinesOnSelectionsCleared: () => void;
 }
-
-const sortBySelectedModel = (
-  doseTable: DoseTableRow[],
-  selectedModelIds: Set<string>
-) => {
-  return doseTable.sort((a, b) => {
-    const aHasPriority = selectedModelIds.has(a.modelId);
-    const bHasPriority = selectedModelIds.has(b.modelId);
-
-    if (aHasPriority && !bHasPriority) {
-      return -1; // a comes first
-    }
-    if (!aHasPriority && bHasPriority) {
-      return 1; // b comes first
-    }
-    // If both or neither have a selectedModelId, it doesn't matter which comes first
-    return -1;
-  });
-};
 
 function DoseCurvesMainContent({
   dataset,
@@ -220,24 +199,19 @@ function DoseCurvesMainContent({
     return doseCurveData;
   }, [doseCurveData, selectedCurves, showUnselectedLines]);
 
+  console.log({ doseTable });
+
   return (
-    <div style={{ marginLeft: "10px", marginRight: "10px" }}>
-      <div style={{ marginTop: "20px", marginBottom: "20px" }}>
+    <div className={styles.mainContentContainer}>
+      <div className={styles.mainContentHeader}>
         <h3>Dose Curve</h3>
-        <p style={{ maxWidth: "780px" }}>
+        <p>
           Each cell line is represented as a line, with doses on the x axis and
           viability on the y axis. Hover over plot points for tooltip
           information. Click on items to select from the plot or table.
         </p>
       </div>
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "2fr 1fr",
-          gridTemplateAreas: "'plot plot selections'",
-          gap: "1rem",
-        }}
-      >
+      <div className={styles.mainContentGrid}>
         <div style={{ gridArea: "plot" }}>
           <DoseCurvesPlotSection
             compoundName={compoundName}
@@ -284,15 +258,10 @@ function DoseCurvesMainContent({
           />
         </div>
       </div>
-      <hr
-        style={{
-          borderTop: "1px solid #b8b8b8",
-          marginTop: "30px",
-        }}
-      />
-      <div style={{ marginTop: "20px", marginBottom: "20px" }}>
+      <hr className={styles.mainContentHr} />
+      <div className={styles.mainContentCellLines}>
         <h3>Cell Lines</h3>
-        <p style={{ maxWidth: "780px" }}>
+        <p>
           Lines selected in the plot will appear checked in this table. Click on
           the cell line name for more information or uncheck the box to deselect
           from the plot.
@@ -307,20 +276,12 @@ function DoseCurvesMainContent({
               ? doseTable
               : sortBySelectedModel(doseTable, selectedTableRows)
           }
-          columns={Object.keys(doseTable![0]).map((colName: string) => {
-            return {
-              accessor: colName,
-              Header: colName,
-              maxWidth: 150,
-              minWidth: 150,
-            };
-          })}
+          columns={doseCurveTableColumns(doseTable)}
           selectedTableLabels={selectedTableRows}
           onChangeSelections={handleChangeSelection}
           hideSelectAllCheckbox
           allowDownloadFromTableDataWithMenu
           allowDownloadFromTableDataWithMenuFileName="dose-curve-data.csv"
-          // defaultColumnsToShow={defaultColumns}
         />
       )}
     </div>
