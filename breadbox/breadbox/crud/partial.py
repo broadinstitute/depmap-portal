@@ -36,6 +36,7 @@ def get_cell_line_selector_lines(db: SessionWithUser):
             TabularCell.value, TabularCell.dimension_given_id, TabularColumn.given_id,
         )
     )
+
     query_df = pd.read_sql(query.statement, query.session.connection())
 
     df = query_df.pivot(index="dimension_given_id", columns="given_id")["value"]

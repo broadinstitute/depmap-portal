@@ -1,4 +1,5 @@
 from typing import List, Optional
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
 
@@ -71,7 +72,7 @@ def get_group(
 def _get_access_controlled_group_response(group: Group, user: str) -> GroupOut:
     group_has_visible_contents = user_can_view_group_contents(group, user)
     return GroupOut(
-        id=group.id,
+        id=UUID(group.id),
         name=group.name,
         group_entries=group.group_entries,
         datasets=group.datasets if group_has_visible_contents else None,

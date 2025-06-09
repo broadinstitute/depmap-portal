@@ -7,7 +7,7 @@ Create Date: 2024-03-15 14:56:31.164478
 """
 from alembic import op
 import sqlalchemy as sa
-from sqlalchemy import Table, MetaData
+from sqlalchemy import Table, MetaData, text
 
 
 # revision identifiers, used by Alembic.
@@ -22,20 +22,28 @@ def upgrade():
 
     op.add_column("dataset", sa.Column("format", sa.String(), nullable=True))
 
-    all_matrix_ids = connection.execute("select id from matrix_dataset").fetchall()
+    all_matrix_ids = connection.execute(
+        text("select id from matrix_dataset")
+    ).fetchall()
 
     for tuple in all_matrix_ids:
         matrix_id = tuple[0]
         op.execute(
-            f"update dataset set format='matrix_dataset' where id = '{matrix_id}'"
+            text(
+                "update dataset set format='matrix_dataset' where id = :matrix_id"
+            ).bindparams(matrix_id=matrix_id)
         )
 
-    all_tabular_ids = connection.execute("select id from tabular_dataset").fetchall()
+    all_tabular_ids = connection.execute(
+        text("select id from tabular_dataset")
+    ).fetchall()
 
     for tuple in all_tabular_ids:
         tabular_id = tuple[0]
         op.execute(
-            f"update dataset set format='tabular_dataset' where id = '{tabular_id}'"
+            text(
+                "update dataset set format='tabular_dataset' where id = :tabular_id"
+            ).bindparams(tabular_id=tabular_id)
         )
 
     with op.batch_alter_table("dataset", schema=None) as batch_op:
