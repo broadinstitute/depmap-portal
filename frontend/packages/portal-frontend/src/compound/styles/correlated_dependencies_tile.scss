@@ -4,3 +4,11 @@
   align-items: center;
   border-left: 1px black solid;
 }
+
+.targetIconContainer {
+  display: flex;
+  align-items: center;
+  img {
+    height: 12px;
+  }
+}
