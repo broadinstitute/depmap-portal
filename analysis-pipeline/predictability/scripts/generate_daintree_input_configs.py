@@ -2,13 +2,14 @@ import argparse
 import json
 import yaml
 import os
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 
 screens = ["crispr", "rnai", "oncref"]
 
 
 def generate_daintree_configs(
-    model_config_path: str, input_config_path: str
+    model_config_path: str, input_config_path: str, 
+    test_only_first_n : Optional[int]
 ) -> List[Dict[str, Any]]:
     """
     Generate Daintree input configs for each model and screen
@@ -115,6 +116,10 @@ def generate_daintree_configs(
                     }
                 )
 
+    if test_only_first_n is not None:
+        print(f"Warning: --test-only-first-n was specified so only returning the first {test_only_first_n}")
+        artifacts = artifacts[:test_only_first_n]
+
     # Write results
     with open("results.json", "w") as f:
         json.dump({"outputs": artifacts}, f, indent=2)
@@ -126,5 +131,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--model_config", type=str, required=True)
     parser.add_argument("--input_config", type=str, required=True)
+    parser.add_argument("--test-only-first-n", type=int)
     args = parser.parse_args()
-    generate_daintree_configs(args.model_config, args.input_config)
+    generate_daintree_configs(args.model_config, args.input_config, args.test_only_first_n)

@@ -44,11 +44,12 @@ rule process_model_config:
         json.dump(config_dict, f, indent=2)   
 
     """
+    # --test-only-first-n 2
     run "python3 {{ inputs.script.filename }} --model_config {{ inputs.model_config.filename }} --input_config 'daintree_input_config.json'"
 
 
 rule run_fit_models:
-    resources: {'slots': "0.5"} # let up to 2 of these run in parallel
+    resources: {'slots': "0.1"} # let up to 10 of these run in parallel
     inputs:
         daintree_input_config={
           "type": "daintree_input_config"
