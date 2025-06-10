@@ -83,11 +83,15 @@ function DoseCurvesPlotSection({
         )}
       </div>
       <div className={styles.plotArea}>
-        {!curvesData && <PlotSpinner />}
+        {!curvesData && (
+          <div className={styles.plotSpinnerContainer}>
+            <PlotSpinner height="100%" />
+          </div>
+        )}
         {curvesData && (
           <DoseCurvesPlot
-            minDose={curvesData.min_dose ?? 0.01} // TODO: fix this in the backend
-            maxDose={curvesData.max_dose ?? 1} // TODO: fix this in the backend
+            minDose={curvesData.min_dose ?? 0.01}
+            maxDose={curvesData.max_dose ?? 1}
             inGroupCurveParams={curvesData.curve_params}
             doseRepPoints={doseRepPoints}
             handleSetPlotElement={handleSetPlotElement}

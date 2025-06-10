@@ -18,7 +18,7 @@ import { defaultContextName } from "@depmap/data-explorer-2/src/components/DataE
 import { saveNewContext } from "src";
 import doseCurvesPromptForSelectionFromContext from "./doseCurvesPromptForSelectionFromContext";
 import { useDeprecatedDataExplorerApi } from "@depmap/data-explorer-2";
-import { doseCurveTableColumns, sortBySelectedModel } from "./utils";
+import { getDoseCurveTableColumns, sortBySelectedModel } from "./utils";
 import styles from "./CompoundDoseCurves.scss";
 import PlotSpinner from "src/plot/components/PlotSpinner";
 
@@ -158,11 +158,26 @@ function DoseCurvesMainContent({
     })();
   }, [selectedCurves, setDoseRepPoints, dapi]);
 
-  const selectedLabels = useMemo(() => {
-    const displayNameModelIdMap = new Map<string, string>();
+  // Build a modelId → displayName map for use in both selectedLabels and WideTable
+  const displayNameModelIdMap = useMemo(() => {
+    const map = new Map<string, string>();
     doseCurveData?.curve_params.forEach((curveParams: CurveParams) => {
-      displayNameModelIdMap.set(curveParams.id!, curveParams.displayName!);
+      map.set(curveParams.id!, curveParams.displayName!);
     });
+    return map;
+  }, [doseCurveData]);
+
+  const doseCurveTableColumns = useMemo(
+    () => getDoseCurveTableColumns(doseTable ?? [], displayNameModelIdMap),
+    [doseTable, displayNameModelIdMap]
+  );
+
+  const columnOrdering = useMemo(
+    () => doseCurveTableColumns.map((col) => col.accessor),
+    [doseCurveTableColumns]
+  );
+
+  const selectedLabels = useMemo(() => {
     const displayNames: string[] = [];
     [...selectedCurves].forEach((modelId: string) => {
       const displayName = displayNameModelIdMap.get(modelId);
@@ -170,9 +185,8 @@ function DoseCurvesMainContent({
         displayNames.push(displayName);
       }
     });
-
     return displayNames;
-  }, [selectedCurves, doseCurveData]);
+  }, [selectedCurves, displayNameModelIdMap]);
 
   const handleClickSaveSelectionAsContext = () => {
     const labels = [...selectedCurves];
@@ -199,8 +213,6 @@ function DoseCurvesMainContent({
     }
     return doseCurveData;
   }, [doseCurveData, selectedCurves, showUnselectedLines]);
-
-  console.log({ doseTable });
 
   return (
     <div className={styles.mainContentContainer}>
@@ -286,7 +298,11 @@ function DoseCurvesMainContent({
                 ? doseTable
                 : sortBySelectedModel(doseTable, selectedTableRows)
             }
-            columns={doseCurveTableColumns(doseTable)}
+            columns={doseCurveTableColumns}
+            columnOrdering={columnOrdering}
+            defaultColumnsToShow={doseCurveTableColumns
+              .map((col) => col.accessor)
+              .filter((accessor) => accessor !== "modelId")}
             selectedTableLabels={selectedTableRows}
             onChangeSelections={handleChangeSelection}
             hideSelectAllCheckbox

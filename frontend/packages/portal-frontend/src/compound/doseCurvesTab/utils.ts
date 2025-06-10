@@ -1,10 +1,11 @@
 import { DoseTableRow } from "./types";
 
-export function doseCurveTableColumns(doseTable: DoseTableRow[]) {
+export function getDoseCurveTableColumns(
+  doseTable: DoseTableRow[],
+  displayNameModelIdMap?: Map<string, string>
+) {
   if (!doseTable || doseTable.length === 0) return [];
   const allCols = Object.keys(doseTable[0]);
-  // Different datasets might have different dose columns (I think), so we can't just
-  // hardcode these. But is this reliable enough?...
   // Identify dose columns: match format '<float> <units>'
   const doseColRegex = /^\d*\.?\d+\s+\S+$/;
   const doseCols = allCols.filter(
@@ -20,13 +21,33 @@ export function doseCurveTableColumns(doseTable: DoseTableRow[]) {
   const otherCols = allCols.filter(
     (col) => col !== "modelId" && col !== "AUC" && !doseColRegex.test(col)
   );
-  const orderedCols = ["modelId", "AUC", ...sortedDoseCols, ...otherCols];
-  return orderedCols.map((colName: string) => ({
-    accessor: colName,
-    Header: colName,
-    maxWidth: 150,
-    minWidth: 150,
-  }));
+  // Add Cell Line column after modelId
+  const orderedCols = [
+    "modelId",
+    "Cell Line",
+    "AUC",
+    ...sortedDoseCols,
+    ...otherCols,
+  ];
+  return orderedCols.map((colName: string) => {
+    if (colName === "Cell Line") {
+      return {
+        accessor: "Cell Line",
+        Header: "Cell Line",
+        maxWidth: 200,
+        minWidth: 150,
+        Cell: (row: any) =>
+          displayNameModelIdMap?.get(row.row.original.modelId) ||
+          row.row.original.modelId,
+      };
+    }
+    return {
+      accessor: colName,
+      Header: colName,
+      maxWidth: 150,
+      minWidth: 150,
+    };
+  });
 }
 
 export const sortBySelectedModel = (
