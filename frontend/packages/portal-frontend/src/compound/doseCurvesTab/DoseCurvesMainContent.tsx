@@ -287,6 +287,7 @@ function DoseCurvesMainContent({
       <div className={styles.mainContentGrid}>
         <div style={{ gridArea: "plot" }}>
           <DoseCurvesPlotSection
+            isLoading={isLoading}
             compoundName={compoundName}
             plotElement={plotElement}
             curvesData={visibleCurveData}

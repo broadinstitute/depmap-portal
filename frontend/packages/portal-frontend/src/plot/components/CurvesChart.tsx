@@ -127,7 +127,8 @@ function CurvesChart({
 
     const xAxisTemplate: Partial<Plotly.LayoutAxis> = {
       visible: true,
-      // type: "log",
+      type: "log",
+      dtick: 1,
       title: {
         text: xAxisTitle,
         font: {

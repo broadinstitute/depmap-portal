@@ -11,6 +11,7 @@ import { CompoundDoseCurveData } from "./types";
 import styles from "./CompoundDoseCurves.scss";
 
 interface DoseCurvesPlotSectionProps {
+  isLoading: boolean;
   compoundName: string;
   curvesData: CompoundDoseCurveData | null;
   doseRepPoints: {
@@ -23,6 +24,7 @@ interface DoseCurvesPlotSectionProps {
   handleSetPlotElement: (element: any) => void;
 }
 function DoseCurvesPlotSection({
+  isLoading,
   compoundName,
   curvesData,
   doseRepPoints,
@@ -83,12 +85,12 @@ function DoseCurvesPlotSection({
         )}
       </div>
       <div className={styles.plotArea}>
-        {!curvesData && (
+        {(!plotElement || isLoading) && (
           <div className={styles.plotSpinnerContainer}>
             <PlotSpinner height="100%" />
           </div>
         )}
-        {curvesData && (
+        {curvesData && !isLoading && (
           <DoseCurvesPlot
             minDose={curvesData.min_dose ?? 0.01}
             maxDose={curvesData.max_dose ?? 1}

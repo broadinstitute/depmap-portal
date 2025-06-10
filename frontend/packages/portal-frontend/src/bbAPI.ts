@@ -231,8 +231,6 @@ export class BreadboxApi {
     );
   }
 
-  // NOTE: Replace this with final version of Jessica's from the Corr Analysis Tab
-  // PR
   getDatasetFeatures(
     datasetId: string
   ): Promise<{ id: string; label: string }[]> {
@@ -241,10 +239,7 @@ export class BreadboxApi {
     );
   }
 
-  getFeaturesData(
-    datasetId: string,
-    featureIds: string[]
-  ): Promise<{ id: string; label: string }[]> {
+  getFeaturesData(datasetId: string, featureIds: string[]): Promise<any> {
     const numFeatureIds = featureIds.length;
 
     // Every feature contains the same
@@ -348,6 +343,14 @@ export class BreadboxApi {
   ): Promise<{ [key: string]: { [key: string]: any } }> {
     const url = `/datasets/tabular/${datasetId}`;
     return this._fetchWithJsonBody(url, "POST", args);
+  }
+
+  getMatrixDatasetData(
+    datasetId: string
+    // args: MatrixDatasetDataArgs
+  ): Promise<any> {
+    const url = `/datasets/matrix/${datasetId}`;
+    return this._fetchWithJsonBody(url, "POST", {});
   }
 
   getDimensionTypes(): Promise<DimensionType[]> {

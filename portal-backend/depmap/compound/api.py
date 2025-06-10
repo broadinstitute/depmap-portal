@@ -117,34 +117,6 @@ class DoseCurveData(
         return dose_curve_info
 
 
-@namespace.route("/dose_table_metadata")
-class DoseTableMetadata(
-    Resource
-):  # the flask url_for endpoint is automagically the snake case of the namespace prefix plus class name
-    def get(self):
-        """
-        Get the metadata for the dose table, including AUC, IC50, cell line name, and model id.
-        """
-        auc_dataset_id = request.args.get("auc_dataset_id")
-        ic50_dataset_id = request.args.get("ic50_dataset_id")
-        compound_id = request.args.get("compound_id")
-        drc_dataset_label = request.args.get("drc_dataset_label")
-
-        # TODO: Eventually add ic50 data??
-        # TODO: This will only work for Prism_oncology_auc_collapsed, b/c the other auc dataset use
-        # compound experiments instead of compound, and these results need to be merged with a table
-        # indexed by compound_id on the frontend.
-        compound = Compound.get_by_compound_id(compound_id, must=True)
-        aucs = data_access.get_subsetted_df_by_labels(
-            dataset_id=auc_dataset_id, feature_row_labels=[compound.label]
-        )
-
-        results = aucs.squeeze() if not aucs.empty else {}
-        results.dropna(inplace=True)
-
-        return results.to_dict() if not results.empty else {}
-
-
 @namespace.route("/model_dose_replicates")
 class ModelDoseReplicates(
     Resource

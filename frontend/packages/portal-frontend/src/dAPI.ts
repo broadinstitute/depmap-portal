@@ -970,24 +970,6 @@ export class DepmapApi {
     );
   }
 
-  getDoseCurveTableMetadata(
-    aucDatasetId: string,
-    compoundId: string,
-    drcDatasetLabel: string,
-    ic50DatasetId?: string
-  ): Promise<any> {
-    const params = {
-      auc_dataset_id: aucDatasetId,
-      compound_id: compoundId,
-      drc_dataset_label: drcDatasetLabel,
-      ic50_datasetI_id: ic50DatasetId,
-    };
-
-    return this._fetch<any>(
-      `/api/compound/dose_table_metadata?${encodeParams(params)}`
-    );
-  }
-
   getCompoundModelDoseReplicatePoints(
     compoundId: string,
     replicateDatasetName: string,

@@ -62,12 +62,13 @@ function useDoseCurvesData(
           featuresData.map((doseFeat) => doseFeat.id)
         );
 
-        const aucs = await dapi.getDoseCurveTableMetadata(
-          dataset.auc_dataset_id,
+        const aucsList = await bbapi.getFeaturesData(dataset.auc_dataset_id, [
           compoundId,
-          dataset.drc_dataset_label,
-          dataset.ic50_dataset_id || undefined
-        );
+        ]);
+
+        // aucsList is a list of length equal to the number of features we asked for.
+        // We are only looking at 1 compound at a time, so aucs will always be length 1.
+        const aucs = aucsList[0];
 
         // Inverse log2 transform each value of feature.values before merging
         // Build a map of modelId to row for fast merging
@@ -97,10 +98,21 @@ function useDoseCurvesData(
             if (!Number.isNaN(value)) {
               value = 2 ** value;
             }
-            row[col] = value !== undefined ? value.toFixed(3) : undefined;
+            row[col] =
+              value !== undefined && value !== null
+                ? value.toFixed(3)
+                : undefined;
           });
-          row.AUC = aucs[modelId];
-          mergedRows.push(row);
+          // Only add row if at least one doseCol is not null/undefined
+          const hasDose = doseColNames.some((col) => row[col] !== undefined);
+          if (
+            aucs.values[modelId] !== undefined &&
+            aucs.values[modelId] !== null &&
+            hasDose
+          ) {
+            row.AUC = aucs.values[modelId].toFixed(3);
+            mergedRows.push(row);
+          }
         });
         // Ensure modelId and AUC are first
         setDoseTable(mergedRows);
