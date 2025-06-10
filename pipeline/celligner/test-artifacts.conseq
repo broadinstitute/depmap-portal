@@ -22,20 +22,20 @@ add-if-missing {
 # biomarker-matrix
 add-if-missing {
   'type': 'raw-expr-matrix-profile',
-  'source_dataset_id' : "internal-24q2-3719.88/OmicsExpressionAllGenesTPMLogp1Profile",
+  'source_dataset_id' : "internal-25q2-9cfa.81/OmicsExpressionTPMLogp1HumanAllGenes",
   'category' : 'expression',
 }
 
 # profile-map
 add-if-missing {
   'type': 'profile-map',
-  'source_dataset_id' : "internal-24q2-3719.88/OmicsProfiles",
+  'source_dataset_id' : "2025-05-01-master-mapping-table-28c2.14/internal_release_date.2025-05-01.master_mapping_table",
   'category' : 'mapping',
 }
 
 # model-condition
 add-if-missing {
   'type': 'model-condition',
-  'source_dataset_id' : "internal-24q2-3719.88/ModelCondition",
+  'source_dataset_id' : "internal-25q2-9cfa.65/ModelCondition",
   'category' : 'mapping',
 }

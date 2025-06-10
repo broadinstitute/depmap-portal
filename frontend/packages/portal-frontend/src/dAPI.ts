@@ -1223,6 +1223,10 @@ export class DepmapApi {
     return Promise.reject(Error("Wrong api used. Check ApiContext"));
   }
 
+  getTabularDatasetData(datasetId: string, args: any): Promise<any> {
+    return Promise.reject(Error("Wrong api used. Check ApiContext"));
+  }
+
   getGroups = (writeAccess: boolean = false): Promise<Group[]> => {
     return Promise.reject(Error("Wrong api used. Check ApiContext"));
   };
@@ -1265,6 +1269,10 @@ export class DepmapApi {
   getDimensionTypes = (): Promise<DimensionType[]> => {
     return Promise.reject(Error("Wrong api used. Check ApiContext"));
   };
+
+  getDimensionType(name: string): Promise<DimensionType> {
+    return Promise.reject(Error("Wrong api used. Check ApiContext"));
+  }
 
   postDimensionType = (
     dimTypeArgs: DimensionTypeAddArgs

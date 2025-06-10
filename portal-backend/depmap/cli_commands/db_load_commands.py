@@ -80,44 +80,6 @@ from depmap.discourse.client import DiscourseClient
 from breadbox_facade import BBClient, BreadboxException, ColumnMetadata, AnnotationType
 
 
-def _get_relabel_updates():
-    def _mk_updates(display_name, new_type):
-        return [
-            f"""UPDATE nonstandard_private_dataset_metadata_write_only 
-                    set data_type = '{new_type}',
-                    priority = 1000 
-                    where display_name = '{display_name}'""",
-            f"""update nonstandard_matrix_write_only 
-                    set data_type = '{new_type}' 
-                    where nonstandard_dataset_id in (
-                        select uuid 
-                        from nonstandard_private_dataset_metadata_write_only 
-                        where display_name = '{display_name}')
-            """,
-        ]
-
-    statements = []
-    statements.extend(
-        _mk_updates("Olink Proteomics", DataTypeEnum.protein_expression.name)
-    )
-    statements.extend(
-        _mk_updates(
-            "ATAC Pseudobulk Gene Accessibility 23Q4",
-            DataTypeEnum.gene_accessibility.name,
-        )
-    )
-    statements.extend(_mk_updates("Paralogs 23Q4", DataTypeEnum.crispr.name))
-    return statements
-
-
-def _relabel_new_datasets_hack():
-    statements = _get_relabel_updates()
-
-    for statement in statements:
-        log.info("Executing: %s", statement)
-        db.session.execute(statement)
-
-
 def _recreate_td_predictive_model():
     # recreate the table because the fk is created wrong by sqlalchemy
     statements = [
@@ -899,6 +861,22 @@ def _load_real_data(
             df = taiga_client.get(current_app.config["MATCH_RELATED_TAIGA_ID"])
             match_related_loader.load_match_related(df)
 
+    if current_app.config["ENABLED_FEATURES"].predictability_prototype:
+        with checkpoint("predictive-insights-load") as needed:
+            log.info("Adding predictability prototype summary info")
+            daintree_outputs_json_artifacts = gcsc_depmap.read_json(
+                "metadata/combined_daintree_upload_outputs.json"
+            )
+            daintree_outputs_json_artifact = daintree_outputs_json_artifacts["outputs"]
+            daintree_outputs_url = daintree_outputs_json_artifact["filename"]
+            daintree_outputs_filename = gcsc_depmap.download_to_cache(
+                daintree_outputs_url
+            )
+
+            predictability_summary_loader.load_predictability_prototype(
+                model_config_file_path=daintree_outputs_filename,
+            )
+
     if current_app.config["ENABLED_FEATURES"].target_discovery_app:
         with checkpoint("tda") as needed:
             if needed:
@@ -924,10 +902,6 @@ def _load_real_data(
 
     # load taiga aliases for everything else. this needs to happen after Datasets, TabularDatasets, and NonstandardDatasets are loaded
     db.session.commit()  # flush first, anything previously added
-
-    with checkpoint("relabel-new-datasets") as needed:
-        if needed:
-            _relabel_new_datasets_hack()
 
     # process taiga_ids after private datasets have been loaded
     if process_downloads:
@@ -1500,6 +1474,7 @@ def load_sample_data(
 
         if current_app.config["ENABLED_FEATURES"].predictability_prototype:
             log.info("Adding predictability prototype summary info")
+            # CHANGE BEFORE MERGE TO MASTER
             predictability_summary_loader.load_predictability_prototype(
                 model_config_file_path="/Users/amourey/dev/depmap-portal/portal-backend/depmap/predictability_prototype/scripts/merged-output-model-config.json",
             )

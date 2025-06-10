@@ -1,11 +1,14 @@
 #%%
 import celligner
 
+
 #%%
 import numpy as np
 import pandas as pd
 import re
-from taigapy import TaigaClient
+
+from networkx.algorithms.operators.binary import intersection
+from taigapy import create_taiga_client_v3
 import anndata as ad
 from collections import namedtuple
 from anndata.experimental.multi_files import AnnCollection
@@ -17,7 +20,7 @@ import os
 from sklearn.decomposition import PCA
 import warnings
 
-tc = TaigaClient()
+tc = create_taiga_client_v3()
 
 expr_dict = {""}
 ann_dict = {""}
@@ -226,20 +229,40 @@ def process_depmap_ipts(expr_df, context_df, prof_map, model_condition):
     hgnc_complete_set = tc.get(
         name="hgnc-gene-table-e250", version=3, file="hgnc_complete_set"
     )
-    # hgnc_complete_set = hgnc_complete_set[hgnc_complete_set.locus_group == 'protein-coding gene']
-    bg_genes = (
-        pd.Series(expr_df.keys())
-        .apply(lambda s: re.search(r"(ENSG[0-9]+)", s).group(1))
-        .rename("ensembl_gene_id")
+    hgnc_complete_set["depmap"] = (
+        hgnc_complete_set.symbol
+        + " ("
+        + hgnc_complete_set.entrez_id.astype("Int64").astype(str)
+        + ")"
     )
-    bg_genes = bg_genes.set_axis(expr_df.keys()).to_frame()
-    expr_df = expr_df.rename(columns=bg_genes.to_dict()["ensembl_gene_id"])
+
+    # hgnc_complete_set = hgnc_complete_set[hgnc_complete_set.locus_group == 'protein-coding gene']
+    expr_ensembls = expr_df.columns.to_series()[
+        expr_df.columns.to_series().str[:4] == "ENSG"
+    ]
+    expr_nonsembls = expr_df.columns.to_series()[
+        expr_df.columns.to_series().str[:4] != "ENSG"
+    ]
+
+    expr_ensembls = expr_ensembls.str.extract(r"(ENSG[0-9]+)")
+    expr_nonsembls.loc[
+        expr_nonsembls.index.intersection(pd.Index(hgnc_complete_set.depmap))
+    ] = (
+        hgnc_complete_set.set_index("depmap")
+        .loc[expr_nonsembls.index.intersection(pd.Index(hgnc_complete_set.depmap))]
+        .ensembl_gene_id
+    )
+
+    bg_genes = pd.concat([expr_ensembls, expr_nonsembls])[0]
+
+    expr_df = expr_df.rename(columns=bg_genes)
     protein_coding = pd.Index(
         hgnc_complete_set[
             hgnc_complete_set.locus_group == "protein-coding gene"
         ].ensembl_gene_id
     )
     expr_df = expr_df[expr_df.columns.intersection(protein_coding)]
+    expr_df = expr_df[~expr_df.index.duplicated()]
 
     context_df = context_df
     context_w_oncocode = context_df.loc[~context_df.OncotreeCode.isna()]
@@ -264,18 +287,12 @@ def process_depmap_ipts(expr_df, context_df, prof_map, model_condition):
     context_df = context_df.merge(
         model_condition,
         how="left",
-        left_on=["ModelCondition", "ModelID"],
+        left_on=["ModelConditionID", "ModelID"],
         right_on=["ModelConditionID", "ModelID"],
         suffixes=(None, "_y"),
     ).set_index("ProfileID")
     # warnings.warn(context_df.head().to_string())
-    adata = ad.AnnData(expr_df)
-    adata.obs_names = expr_df.index
-    adata.var_names = expr_df.columns
-    adata.uns["type"] = "model"
-    adata.uns["name"] = "depmap"
-    adata.uns["mnn_params"] = None
-    adata.obs = context_df.loc[
+    context_df = context_df.loc[
         expr_df.index,
         [
             "GrowthPattern",
@@ -287,7 +304,18 @@ def process_depmap_ipts(expr_df, context_df, prof_map, model_condition):
             "ModelConditionID",
             "ModelID",
         ],
-    ]
+    ].drop_duplicates()
+
+    expr_df = expr_df.loc[expr_df.index.intersection(context_df.index)]
+    expr_df = expr_df.T.groupby(level=0).mean().T
+
+    adata = ad.AnnData(expr_df)
+    adata.obs_names = expr_df.index.intersection(context_df.index)
+    adata.var_names = expr_df.columns
+    adata.uns["type"] = "model"
+    adata.uns["name"] = "depmap"
+    adata.uns["mnn_params"] = None
+    adata.obs = context_df
     return adata
 
 
@@ -522,8 +550,18 @@ def process_data(inputs, extra=True):
     @return: (tuple of Anndata objects containing expression and metadata) Depmap, TCGA, and extra datasets
     """
     warnings.warn("loading depmap")
-    print("loading DepMap data...")
-    depmap_data = tc.get(inputs["depmap_expr"]["dataset_id"])
+    depmap_expr_id = inputs["depmap_expr"]["dataset_id"]
+
+    print(f"loading DepMap data ({depmap_expr_id})...")
+    depmap_data = tc.get(depmap_expr_id)
+    print(depmap_data)
+    # starting in 25Q2, some additional columns got added which will need to be dropped before proceeding.
+    # the following should reformat the matrix to be the format we used to get from taiga prior to 25Q2
+
+    depmap_data.index = depmap_data["ProfileID"]
+
+    depmap_data.drop(columns=["ProfileID", "is_default_entry", "ModelID"], inplace=True)
+
     warnings.warn("loading anns")
     depmap_ann = tc.get(inputs["depmap_ann"]["source_dataset_id"])
     warnings.warn("loading prof map")
