@@ -26,7 +26,7 @@ def get_git_commit_sha():
         return "unknown"
 
 
-def load_docker_image():
+def read_docker_image_name():
     """Load Docker image name from image-name file."""
     script_dir = Path(__file__).parent
     image_name_file = script_dir / "image-name"
@@ -152,6 +152,8 @@ def main():
     parser.add_argument("--manually-run-conseq", action="store_true", help="If set args will be passed directly to conseq")
     parser.add_argument("--taiga-dir", default=f"{os.environ['HOME']}/.taiga")
     parser.add_argument("--sparkles-cache", default=f"{os.environ['HOME']}/.sparkles-cache")
+    parser.add_argument("--image", help="If set, use this docker image when running the pipeline, otherwise, uses the value from './docker-image'")
+    parser.add_argument("--publish-dest")
     parser.add_argument("conseq_args", nargs="*", help="parameters to pass to conseq") 
 
     args = parser.parse_args()
@@ -163,21 +165,27 @@ def main():
     taiga_dir = args.taiga_dir
     manually_run_conseq = args.manually_run_conseq
     sparkles_cache = args.sparkles_cache
+    publish_dest=args.publish_dest
+    assert publish_dest
     gcp_creds_file = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS")
     assert gcp_creds_file, "environment variable GOOGLE_APPLICATION_CREDENTIALS must be set"
 
-    conseq_file = f"predictability/run_{env_name}_analysis.conseq"
+    conseq_file = f"run_{env_name}_analysis.conseq"
 
     try:
         # Load Docker image and get commit SHA
-        docker_image = load_docker_image()
+        if args.image:
+            docker_image = args.image
+        else:
+            docker_image = read_docker_image_name()
         commit_sha = get_git_commit_sha()
         
         # Pull Docker image
-        print("Pulling Docker image...")
-        subprocess.run([
-            "docker", "pull", docker_image
-        ], check=True)
+        if "/" in docker_image:
+            print("Pulling Docker image...")
+            subprocess.run([
+                "docker", "pull", docker_image
+            ], check=True)
         
         # Backup logs before running
         backup_conseq_logs()
@@ -201,6 +209,8 @@ def main():
             conseq_run_cmd = (
                 f"conseq run --addlabel commitsha={commit_sha} --no-reattach --maxfail 20 "
                 f"--remove-unknown-artifacts -D sparkles_path=/install/sparkles/bin/sparkles "
+                f"-D S3_STAGING_URL=gs://preprocessing-pipeline-outputs/conseq/depmap "
+                f"-D publish_dest={publish_dest} " 
                 f"-D is_dev=False {conseq_file} {' '.join(conseq_args)}"
             )
             

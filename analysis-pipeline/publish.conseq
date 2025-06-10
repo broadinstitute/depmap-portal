@@ -1,0 +1,5 @@
+
+rule publish_merged_drugs:
+    inputs: outputs={"type": "combined_daintree_upload_outputs"}
+    publish: "{{config.publish_dest}}/combined_daintree_upload_outputs.json"
+

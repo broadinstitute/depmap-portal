@@ -1,6 +1,7 @@
 import json
 import argparse
 from typing import Optional
+import os
 
 def create_sparkles_workflow(config: str, out: Optional[str], test: bool, nfolds: int, models_per_task: int, test_first_n_tasks:Optional[int]):
     prepare_command = [
@@ -38,9 +39,12 @@ def create_sparkles_workflow(config: str, out: Optional[str], test: bool, nfolds
         ],
         "write_on_completion": [
             {
-                "expression": {"ensemble_path":
+                "expression": {
+                    "sparkles_job_name": "{step.1.job_name}",
+                    "features_metadata_path": "{step.1.job_path}/1/out/feature_metadata.csv",
+                    "ensemble_path":
                                 "{step.3.job_path}/1/ensemble.csv",
-                               "predictions_path": 
+                    "predictions_path": 
                                 "{step.3.job_path}/1/predictions.csv"},
                 "filename": "daintree-output.json"
             },
@@ -55,7 +59,6 @@ def create_sparkles_workflow(config: str, out: Optional[str], test: bool, nfolds
     else:
         print(workflow_json)
 
-import os
 
 def _find_taiga_token():
     search_path = [".taiga-token", f"{os.environ['HOME']}/.taiga/token"]
