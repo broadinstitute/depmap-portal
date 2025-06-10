@@ -61,6 +61,14 @@ function DoseCurvesMainContent({
     [model_id: string]: CurvePlotPoints[];
   } | null>(null);
 
+  const [cellLineUrlRoot, setCellLineUrlRoot] = useState<string | null>(null);
+
+  useEffect(() => {
+    dapi.getCellLineUrlRoot().then((urlRoot: string) => {
+      setCellLineUrlRoot(urlRoot);
+    });
+  }, [dapi]);
+
   // Can only add selections by clicking the plot.
   const handleClickCurve = useCallback(
     (modelId: string) => {
@@ -167,16 +175,68 @@ function DoseCurvesMainContent({
     return map;
   }, [doseCurveData]);
 
-  const doseCurveTableColumns = useMemo(
-    () => getDoseCurveTableColumns(doseTable ?? [], displayNameModelIdMap),
+  // Add cell line display names to the dose table rows
+  const tableData = useMemo(
+    () =>
+      (doseTable ?? []).map((row: any) => ({
+        ...row,
+        cellLine: displayNameModelIdMap.get(row.modelId) || row.modelId,
+      })),
     [doseTable, displayNameModelIdMap]
   );
 
+  // Format cellLine column to link to cell line pages
+  const doseCurveTableColumns = useMemo(() => {
+    const columns = [
+      {
+        accessor: "cellLine",
+        Header: "Cell Line",
+        maxWidth: 200,
+        minWidth: 150,
+        Cell: (row: any) => {
+          const modelId = row.row.original.modelId;
+          const displayName = row.row.original.cellLine;
+          return (
+            <>
+              {cellLineUrlRoot ? (
+                <a
+                  href={`${cellLineUrlRoot}${modelId}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{ textDecoration: "underline" }}
+                >
+                  {displayName}
+                  <span
+                    className="glyphicon glyphicon-new-window"
+                    style={{
+                      paddingLeft: "3px",
+                      fontWeight: 300,
+                      fontSize: "10px",
+                    }}
+                  />
+                </a>
+              ) : (
+                <p>{displayName}</p>
+              )}
+            </>
+          );
+        },
+      },
+      ...getDoseCurveTableColumns(tableData).filter(
+        (col: any) => col.accessor !== "cellLine"
+      ),
+    ];
+    return columns;
+  }, [tableData, cellLineUrlRoot]);
+
+  // Make sure "Cell Line" and "AUC" always come first, followed by the dose
+  // columns in order of smallest to largest dose.
   const columnOrdering = useMemo(
     () => doseCurveTableColumns.map((col) => col.accessor),
     [doseCurveTableColumns]
   );
 
+  // Get the selected cell line name labels for display in the Plot Selections panel.
   const selectedLabels = useMemo(() => {
     const displayNames: string[] = [];
     [...selectedCurves].forEach((modelId: string) => {
@@ -295,8 +355,8 @@ function DoseCurvesMainContent({
             rowHeight={28}
             data={
               selectedTableRows.size === 0
-                ? doseTable
-                : sortBySelectedModel(doseTable, selectedTableRows)
+                ? tableData
+                : sortBySelectedModel(tableData, selectedTableRows)
             }
             columns={doseCurveTableColumns}
             columnOrdering={columnOrdering}
