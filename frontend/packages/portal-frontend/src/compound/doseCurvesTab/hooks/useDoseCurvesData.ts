@@ -70,36 +70,39 @@ function useDoseCurvesData(
         );
 
         // Inverse log2 transform each value of feature.values before merging
+        // Build a map of modelId to row for fast merging
         const allIndices = new Set<string>();
+        const doseColNames: string[] = [];
+        const featureValueMaps: Record<string, Record<string, number>> = {};
         compoundDoseFeatures.forEach((feature: any) => {
           if (feature.values) {
             Object.keys(feature.values).forEach((modelId) =>
               allIndices.add(modelId)
             );
           }
+          // Remove the compoundId substring from feature_id for the column name
+          const col = feature.feature_id.replace(compoundId, "").trim();
+          doseColNames.push(col);
+          featureValueMaps[col] = feature.values || {};
         });
         Object.keys(aucs).forEach((modelId) => allIndices.add(modelId));
 
+        // Precompute all dose values for each modelId and col
         const mergedRows: any[] = [];
         allIndices.forEach((modelId) => {
-          const row: any = {};
-          row.modelId = modelId;
-          // Fill dose columns
-          compoundDoseFeatures.forEach((feature: any) => {
-            // Remove the compoundId substring from feature_id for the column name
-            const col = feature.feature_id.replace(compoundId, "").trim();
-            let value = feature.values ? feature.values[modelId] : undefined;
+          const row: any = { modelId };
+          // Fill dose columns in the same order as doseColNames
+          doseColNames.forEach((col) => {
+            let value = featureValueMaps[col][modelId];
             if (!Number.isNaN(value)) {
               value = 2 ** value;
             }
-            row[col] = value;
+            row[col] = value !== undefined ? value.toFixed(3) : undefined;
           });
           row.AUC = aucs[modelId];
-          // Reorder keys: modelId, AUC, ...rest
-          const { modelId: id, AUC, ...rest } = row;
-          mergedRows.push({ modelId: id, AUC, ...rest });
+          mergedRows.push(row);
         });
-
+        // Ensure modelId and AUC are first
         setDoseTable(mergedRows);
       }
     })();

@@ -20,6 +20,7 @@ import doseCurvesPromptForSelectionFromContext from "./doseCurvesPromptForSelect
 import { useDeprecatedDataExplorerApi } from "@depmap/data-explorer-2";
 import { doseCurveTableColumns, sortBySelectedModel } from "./utils";
 import styles from "./CompoundDoseCurves.scss";
+import PlotSpinner from "src/plot/components/PlotSpinner";
 
 interface DoseCurvesMainContentProps {
   dataset: DRCDatasetOptions | null;
@@ -267,23 +268,33 @@ function DoseCurvesMainContent({
           from the plot.
         </p>
       </div>
-      {doseTable && (
-        <WideTable
-          idProp="modelId"
-          rowHeight={28}
-          data={
-            selectedTableRows.size === 0
-              ? doseTable
-              : sortBySelectedModel(doseTable, selectedTableRows)
-          }
-          columns={doseCurveTableColumns(doseTable)}
-          selectedTableLabels={selectedTableRows}
-          onChangeSelections={handleChangeSelection}
-          hideSelectAllCheckbox
-          allowDownloadFromTableDataWithMenu
-          allowDownloadFromTableDataWithMenuFileName="dose-curve-data.csv"
-        />
-      )}
+      <div>
+        {error ? (
+          <div className={styles.errorMessage}>
+            Error loading dose curve data.
+          </div>
+        ) : isLoading || !doseTable ? (
+          <div className={styles.tableSpinnerContainer}>
+            <PlotSpinner />
+          </div>
+        ) : (
+          <WideTable
+            idProp="modelId"
+            rowHeight={28}
+            data={
+              selectedTableRows.size === 0
+                ? doseTable
+                : sortBySelectedModel(doseTable, selectedTableRows)
+            }
+            columns={doseCurveTableColumns(doseTable)}
+            selectedTableLabels={selectedTableRows}
+            onChangeSelections={handleChangeSelection}
+            hideSelectAllCheckbox
+            allowDownloadFromTableDataWithMenu
+            allowDownloadFromTableDataWithMenuFileName="dose-curve-data.csv"
+          />
+        )}
+      </div>
     </div>
   );
 }

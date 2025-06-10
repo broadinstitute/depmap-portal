@@ -48,6 +48,8 @@ function DoseCurvesTab({
             option.viability_dataset_id === selection.value
         )[0];
         setSelectedDataset(selectedCompoundDataset);
+        setShowReplicates(true);
+        setShowUnselectedLines(true);
       }
     },
     [datasetOptions]
