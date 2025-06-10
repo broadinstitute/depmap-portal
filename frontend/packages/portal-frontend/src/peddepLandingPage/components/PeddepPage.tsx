@@ -3,6 +3,7 @@ import { Button } from "react-bootstrap";
 import { toStaticUrl } from "@depmap/globals";
 import styles from "src/peddepLandingPage/styles/PeddepPage.scss";
 import SubGroupsPlot from "./SubgroupsPlot";
+import PediatricContextExamples from "./PediatricContextExamples";
 
 export default function PeddepPage() {
   const imagePath = toStaticUrl("img/peddep_landing_page/pedepwave.png");
@@ -108,6 +109,7 @@ export default function PeddepPage() {
             Navigate the portal with a pediatric context. We&apos;ve built this
             context to include models that represent pediatric tumor types.
           </h4>
+          <PediatricContextExamples />
         </div>
       </div>
       <hr />

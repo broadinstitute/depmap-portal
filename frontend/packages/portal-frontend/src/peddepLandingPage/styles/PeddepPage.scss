@@ -160,3 +160,40 @@
     margin-bottom: 20px;
   }
 }
+
+.pediatricContextSection {
+  @media screen and (max-width: 767px) {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    // grid-template-rows: 2fr 1fr;
+    // grid-template-areas: "'a a''b b'";
+    gap: 2%;
+  }
+  @media screen and (min-width: 768px) {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    // grid-template-rows: 2fr 1fr;
+    // grid-template-areas: "'a a a a''b b b b'";
+    gap: 2%;
+  }
+}
+
+.cardContainer {
+  display: grid;
+  grid-template-rows: 1fr 1.5fr;
+  h5 {
+    font-size: 20px;
+    font-weight: 700;
+  }
+  h6 {
+    font-size: 14px;
+    line-height: 19px;
+  }
+
+  .cardImg {
+    height: 100%;
+  }
+  .cardText {
+    height: auto;
+  }
+}

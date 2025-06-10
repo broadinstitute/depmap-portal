@@ -30,6 +30,7 @@ export default function SubGroupsPlot() {
               ],
             }
           );
+          console.log(modelSubsetColData);
 
           // Transform data to use models as index instead of col names
           const modelSubsetIndexData: { [key: string]: any } = {};
@@ -50,7 +51,7 @@ export default function SubGroupsPlot() {
             modelSubsetIndexData
           ).reduce(
             (acc, [, modelData]) => {
-              if (modelData.PediatricModelType === "TRUE") {
+              if (modelData.PediatricModelType === "True") {
                 const subtype: string = modelData.OncotreeSubtype;
                 if (modelData.OncotreeLineage === "CNS/Brain") {
                   acc["CNS/Brain"].push(subtype);
