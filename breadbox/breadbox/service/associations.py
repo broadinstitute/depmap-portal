@@ -37,6 +37,8 @@ def get_associations(
     dim_label_cache = {}
 
     def _get_dimension_label(dimension_type, given_id):
+        if not dimension_type:
+            return None
         if dimension_type not in dim_label_cache:
             dim_label_cache[dimension_type] = get_dimension_type_labels_by_id(
                 db, dimension_type
