@@ -861,6 +861,22 @@ def _load_real_data(
             df = taiga_client.get(current_app.config["MATCH_RELATED_TAIGA_ID"])
             match_related_loader.load_match_related(df)
 
+    if current_app.config["ENABLED_FEATURES"].predictability_prototype:
+        with checkpoint("predictive-insights-load") as needed:
+            log.info("Adding predictability prototype summary info")
+            daintree_outputs_json_artifacts = gcsc_depmap.read_json(
+                "metadata/combined_daintree_upload_outputs.json"
+            )
+            daintree_outputs_json_artifact = daintree_outputs_json_artifacts["outputs"]
+            daintree_outputs_url = daintree_outputs_json_artifact["filename"]
+            daintree_outputs_filename = gcsc_depmap.download_to_cache(
+                daintree_outputs_url
+            )
+
+            predictability_summary_loader.load_predictability_prototype(
+                model_config_file_path=daintree_outputs_filename,
+            )
+
     if current_app.config["ENABLED_FEATURES"].target_discovery_app:
         with checkpoint("tda") as needed:
             if needed:
@@ -1458,6 +1474,7 @@ def load_sample_data(
 
         if current_app.config["ENABLED_FEATURES"].predictability_prototype:
             log.info("Adding predictability prototype summary info")
+            # CHANGE BEFORE MERGE TO MASTER
             predictability_summary_loader.load_predictability_prototype(
                 model_config_file_path="/Users/amourey/dev/depmap-portal/portal-backend/depmap/predictability_prototype/scripts/merged-output-model-config.json",
             )
