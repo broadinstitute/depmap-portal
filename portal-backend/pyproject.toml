@@ -13,7 +13,7 @@ Flask = "^1.1.4"
 # below is needed because flask_restplus does not work with later versions
 Werkzeug="0.16.1"
 #itsdangerous==1.1.0
-requests="^2.27.1"
+requests="^2.32.4"
 Flask-SQLAlchemy="^2.5.1"
 Flask-WTF="^1.0.0"
 WTForms="^3.0.1"
