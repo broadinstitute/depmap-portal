@@ -38,6 +38,7 @@ google-cloud-storage = "^3.1.0"
 packed-cor-tables = {version = "^0.2.0", source = "public-python"}
 orjson = "^3.10.16"
 
+
 [tool.poetry.group.dev.dependencies]
 pyright-ratchet = {git = "https://github.com/pgm/pyright-ratchet.git", rev = "v0.3.1"}
 pyright="^1.1.361"
