@@ -9,7 +9,7 @@ import {
   EnrichedLineagesTileData,
   SearchOptionsByTreeType,
 } from "@depmap/types";
-import { getJson } from "../client";
+import { getJson, getJsonCached } from "../client";
 
 enum DataType {
   PRISMRepurposing,
@@ -109,9 +109,7 @@ export function getContextExplorerAnalysisData(
   );
 }
 
-let boxPlotData: ContextPlotBoxData | null = null;
-
-export async function getContextExplorerBoxPlotData(
+export function getContextExplorerBoxPlotData(
   selected_subtype_code: string,
   tree_type: string,
   dataset_name: ContextExplorerDatasets,
@@ -121,9 +119,10 @@ export async function getContextExplorerBoxPlotData(
   min_abs_effect_size: number,
   min_frac_dep_in: number,
   doShowPositiveEffectSizes: boolean
-): Promise<ContextPlotBoxData> {
-  if (!boxPlotData) {
-    boxPlotData = await getJson("/api/context_explorer/context_box_plot_data", {
+) {
+  return getJsonCached<ContextPlotBoxData>(
+    "/api/context_explorer/context_box_plot_data",
+    {
       selected_subtype_code,
       tree_type,
       dataset_name,
@@ -134,10 +133,8 @@ export async function getContextExplorerBoxPlotData(
       min_abs_effect_size,
       min_frac_dep_in,
       show_positive_effect_sizes: doShowPositiveEffectSizes,
-    });
-  }
-
-  return boxPlotData as ContextPlotBoxData;
+    }
+  );
 }
 
 export function getContextExplorerContextInfo(subtypeCode: string) {
@@ -146,9 +143,7 @@ export function getContextExplorerContextInfo(subtypeCode: string) {
   });
 }
 
-let doseResponsePoints: DoseCurveData | null = null;
-
-export async function getContextExplorerDoseResponsePoints(
+export function getContextExplorerDoseResponsePoints(
   datasetName: string,
   subtypeCode: string,
   outGroupType: string,
@@ -156,21 +151,17 @@ export async function getContextExplorerDoseResponsePoints(
   selectedLevel: number,
   treeType: string
 ) {
-  if (!doseResponsePoints) {
-    doseResponsePoints = await getJson(
-      "/api/context_explorer/context_dose_curves",
-      {
-        dataset_name: datasetName,
-        subtype_code: subtypeCode,
-        entity_full_label: compoundLabel,
-        level: selectedLevel,
-        out_group_type: outGroupType,
-        tree_type: treeType,
-      }
-    );
-  }
-
-  return doseResponsePoints as DoseCurveData;
+  return getJsonCached<DoseCurveData>(
+    "/api/context_explorer/context_dose_curves",
+    {
+      dataset_name: datasetName,
+      subtype_code: subtypeCode,
+      entity_full_label: compoundLabel,
+      level: selectedLevel,
+      out_group_type: outGroupType,
+      tree_type: treeType,
+    }
+  );
 }
 
 export function getContextPath(selectedCode: string) {
