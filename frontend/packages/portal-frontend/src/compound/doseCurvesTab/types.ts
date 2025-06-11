@@ -1,10 +1,13 @@
-import { CurveParams } from "../components/DoseResponseCurve";
+import { CurveParams, CurvePlotPoints } from "../components/DoseResponseCurve";
 
 export const Rep1Color = "#CC4778";
 export const Rep2Color = "#F89540";
 export const Rep3Color = "#176CE0";
 
 export interface CompoundDoseCurveData {
+  dose_replicate_points: {
+    [model_id: string]: CurvePlotPoints[];
+  };
   curve_params: CurveParams[];
   min_dose: number;
   max_dose: number;
@@ -22,7 +25,7 @@ export interface CurveTrace {
   replicate?: string[];
   name: string;
   marker?: any;
-  type?: "curve" | "scatter" | null;
+  type?: "curve" | "scatter" | "scattergl" | null;
   fill?: "tonextx" | "tozerox" | "none" | null;
   fillcolor?: string;
   opacity?: string;

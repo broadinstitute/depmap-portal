@@ -273,7 +273,7 @@ const buildPointsTraces = (
         y: ys,
         mode: "markers",
         marker: { color: getReplicateColor(replicate) },
-        type: "scatter",
+        type: "scattergl",
         customdata: ["no"],
         label: [`${isMaskedValue}`],
         replicate: [`${replicate}`],
@@ -376,7 +376,7 @@ const buildTraces = (
   const maxX = maxDose;
   const rangeOfExponents = Math.log10(maxX) - Math.log10(minX);
   const minExponent = Math.log10(minX);
-  const inGroupNumPts = 150;
+  const inGroupNumPts = 50;
   const outGroupNumPts = 8;
 
   let traces: CurveTrace[] = [];

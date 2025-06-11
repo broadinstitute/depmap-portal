@@ -30,7 +30,8 @@ function useDoseCurvesData(
 
         const promise = dapi.getCompoundDoseCurveData!(
           compoundId,
-          dataset.drc_dataset_label
+          dataset.drc_dataset_label,
+          dataset.replicate_dataset
         );
 
         latestPromise.current = promise;

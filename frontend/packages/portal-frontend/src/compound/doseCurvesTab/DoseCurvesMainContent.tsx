@@ -1,14 +1,8 @@
 import WideTable from "@depmap/wide-table";
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { getDapi } from "src/common/utilities/context";
 import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
-import { CurveParams, CurvePlotPoints } from "../components/DoseResponseCurve";
+import { CurveParams } from "../components/DoseResponseCurve";
 import DoseCurvesPlotSection from "./DoseCurvesPlotSection";
 import useDoseCurvesData from "./hooks/useDoseCurvesData";
 import CompoundPlotSelections from "./CompoundPlotSelections";
@@ -57,10 +51,6 @@ function DoseCurvesMainContent({
   );
 
   const [plotElement, setPlotElement] = useState<ExtendedPlotType | null>(null);
-  const [doseRepPoints, setDoseRepPoints] = useState<{
-    [model_id: string]: CurvePlotPoints[];
-  } | null>(null);
-
   const [cellLineUrlRoot, setCellLineUrlRoot] = useState<string | null>(null);
 
   useEffect(() => {
@@ -124,47 +114,6 @@ function DoseCurvesMainContent({
     },
     [doseCurveData, setSelectedTableRows, setSelectedCurves, selectedCurves]
   );
-
-  const latestPromise = useRef<Promise<{
-    [model_id: string]: CurvePlotPoints[];
-  }> | null>(null);
-
-  useEffect(() => {
-    (async () => {
-      if (dataset && showReplicates && selectedCurves.size > 0) {
-        // setIsLoading(true);
-
-        const promise = dapi.getCompoundModelDoseReplicatePoints!(
-          compoundId,
-          dataset.replicate_dataset,
-          Array.from(selectedCurves),
-          dataset.drc_dataset_label
-        );
-
-        latestPromise.current = promise;
-        promise
-          .then((fetchedData) => {
-            if (promise === latestPromise.current) {
-              setDoseRepPoints(fetchedData);
-            }
-          })
-          .catch((e) => {
-            if (promise === latestPromise.current) {
-              window.console.error(e);
-              // setError(true);
-              // setIsLoading(false);
-            }
-          })
-          .finally(() => {
-            if (promise === latestPromise.current) {
-              // setIsLoading(false);
-            }
-          });
-      } else {
-        setDoseRepPoints(null);
-      }
-    })();
-  }, [selectedCurves, setDoseRepPoints, dapi]);
 
   // Build a modelId → displayName map for use in both selectedLabels and WideTable
   const displayNameModelIdMap = useMemo(() => {
@@ -248,7 +197,7 @@ function DoseCurvesMainContent({
     return displayNames;
   }, [selectedCurves, displayNameModelIdMap]);
 
-  const handleClickSaveSelectionAsContext = () => {
+  const handleClickSaveSelectionAsContext = useCallback(() => {
     const labels = [...selectedCurves];
 
     const context = {
@@ -258,7 +207,7 @@ function DoseCurvesMainContent({
     };
 
     saveNewContext(context as DataExplorerContext);
-  };
+  }, [selectedCurves]);
 
   const visibleCurveData = useMemo(() => {
     if (!showUnselectedLines && doseCurveData && selectedCurves.size > 0) {
@@ -273,6 +222,39 @@ function DoseCurvesMainContent({
     }
     return doseCurveData;
   }, [doseCurveData, selectedCurves, showUnselectedLines]);
+
+  const handleSetSelectionFromContext = useCallback(async () => {
+    const allLabels = new Set(
+      doseCurveData?.curve_params.map(
+        (curveParam: CurveParams) => curveParam.id!
+      )
+    );
+
+    const labels = await doseCurvesPromptForSelectionFromContext(
+      api,
+      allLabels
+    );
+
+    if (labels === null) {
+      return;
+    }
+
+    setSelectedCurves(labels);
+    setSelectedTableRows(labels);
+  }, [doseCurveData, api]);
+
+  const visibleDoseRepPoints = useMemo(() => {
+    if (!showReplicates || !doseCurveData || selectedCurves.size === 0)
+      return null;
+    return Object.fromEntries(
+      [...selectedCurves]
+        .filter((modelId) => doseCurveData.dose_replicate_points[modelId])
+        .map((modelId) => [
+          modelId,
+          doseCurveData.dose_replicate_points[modelId],
+        ])
+    );
+  }, [doseCurveData, selectedCurves, showReplicates]);
 
   return (
     <div className={styles.mainContentContainer}>
@@ -291,7 +273,7 @@ function DoseCurvesMainContent({
             compoundName={compoundName}
             plotElement={plotElement}
             curvesData={visibleCurveData}
-            doseRepPoints={showReplicates ? doseRepPoints : null}
+            doseRepPoints={visibleDoseRepPoints}
             doseUnits={doseUnits}
             selectedCurves={selectedCurves}
             handleClickCurve={handleClickCurve}
@@ -308,27 +290,13 @@ function DoseCurvesMainContent({
             onClickClearSelection={() => {
               setSelectedCurves(new Set([]));
               setSelectedTableRows(new Set([]));
-              setDoseRepPoints(null);
               handleShowUnselectedLinesOnSelectionsCleared();
             }}
-            onClickSetSelectionFromContext={async () => {
-              const allLabels = new Set(
-                doseCurveData?.curve_params.map(
-                  (curveParam: CurveParams) => curveParam.id!
-                )
-              );
-              const labels = await doseCurvesPromptForSelectionFromContext(
-                api,
-                allLabels
-              );
-
-              if (labels === null) {
-                return;
-              }
-
-              setSelectedCurves(labels);
-              setSelectedTableRows(labels);
-            }}
+            onClickSetSelectionFromContext={
+              doseCurveData?.curve_params
+                ? handleSetSelectionFromContext
+                : undefined
+            }
           />
         </div>
       </div>
