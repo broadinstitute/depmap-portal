@@ -14,6 +14,8 @@ interface DoseCurvesPlotSectionProps {
   isLoading: boolean;
   compoundName: string;
   curvesData: CompoundDoseCurveData | null;
+  doseMin: number | null;
+  doseMax: number | null;
   doseRepPoints: {
     [model_id: string]: CurvePlotPoints[];
   } | null;
@@ -27,6 +29,8 @@ function DoseCurvesPlotSection({
   isLoading,
   compoundName,
   curvesData,
+  doseMin,
+  doseMax,
   doseRepPoints,
   doseUnits,
   selectedCurves,
@@ -90,15 +94,14 @@ function DoseCurvesPlotSection({
             <PlotSpinner height="100%" />
           </div>
         )}
-        {curvesData && !isLoading && (
+        {curvesData && doseMin && doseMax && !isLoading && (
           <DoseCurvesPlot
-            minDose={curvesData.min_dose ?? 0.01}
-            maxDose={curvesData.max_dose ?? 1}
+            minDose={doseMin}
+            maxDose={doseMax}
             inGroupCurveParams={curvesData.curve_params}
             doseRepPoints={doseRepPoints}
             handleSetPlotElement={handleSetPlotElement}
             doseUnits={doseUnits}
-            datasetUnits={curvesData.dataset_units}
             includeMedianQuantileRegions={false}
             handleClickCurve={handleClickCurve}
             selectedCurves={selectedCurves}

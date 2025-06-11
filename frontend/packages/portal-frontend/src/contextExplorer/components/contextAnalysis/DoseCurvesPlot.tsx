@@ -25,7 +25,6 @@ interface Props {
   doseRepPoints?: {
     [model_id: string]: CurvePlotPoints[];
   } | null;
-  datasetUnits?: string;
   outGroupCurveParams?: CurveParams[];
   handleSetPlotElement?: (element: any) => void;
   handleClickCurve?: (id: string) => void;
@@ -445,7 +444,6 @@ function DoseCurvesPlot({
   handleClickCurve = undefined,
   selectedCurves = undefined,
   includeMedianQuantileRegions = true,
-  datasetUnits = undefined,
   useDefaultTitle = true,
 }: Props) {
   const plotTraces = useMemo(() => {

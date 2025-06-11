@@ -4,9 +4,7 @@ from depmap.compound.models import (
     CompoundDoseReplicate,
     CompoundExperiment,
 )
-from depmap.context_explorer import utils
 from depmap.dataset.models import Dataset, DependencyDataset
-from depmap.partials.matrix.models import Matrix
 import math
 from flask_restplus import Namespace, Resource
 from flask import request
@@ -44,10 +42,15 @@ def get_curve_params_for_model_ids(
     compound_dose_replicates: list,
     replicate_dataset_name: str,
 ):
+    # Use drc_dataset_label to get the dose response curves for the dataset selected in the UI. This is necessary
+    # because dose response curves have a relationship with CompoundExperiment, not Compound, and 1 compound can have
+    # multiple compound experiments mapping to different datasets and therefore different sets of dose response curves.
     curve_objs = Compound.get_dose_response_curves(
         compound_id=compound_id, drc_dataset_label=drc_dataset_label
     )
 
+    # Get the replicate dataset, including viabilities. Do NOT use data_access here. data_access would not find the
+    # legacy replicate datasets that have been filtered out of other places in the portal UI.
     replicate_dataset = Dataset.get_dataset_by_name(replicate_dataset_name)
     replicate_dataset_matrix = replicate_dataset.matrix
     viabilities_by_model_id = replicate_dataset_matrix.get_values_by_entities_all_depmap_ids(
@@ -74,14 +77,17 @@ def get_curve_params_for_model_ids(
 
             if curve is None or curve.depmap_id not in valid_depmap_ids:
                 continue
-            model = model_map.get(curve.depmap_id)
+
             reps = _get_dose_replicate_points(
                 viabilities=viabilities_by_model_id[curve.depmap_id],
                 compound_dose_replicates=compound_dose_replicates,
                 model_id=curve.depmap_id,
             )
+
             dose_replicates_per_model_id[curve.depmap_id] = reps
 
+            # Get the model object to determine the displayName for the curve's hover label.
+            model = model_map.get(curve.depmap_id)
             curve_param = {
                 "id": curve.depmap_id,
                 "displayName": model.stripped_cell_line_name,
@@ -130,29 +136,20 @@ def _get_dose_response_curves_per_model(
     return {
         "curve_params": curve_params,
         "dose_replicate_points": dose_replicate_points,
-        "max_dose": 0.0001,
-        "min_dose": 3.00,
-        "dataset_units": "",  # Is this used for anything?
     }
 
 
 @namespace.route("/dose_curve_data")
 class DoseCurveData(Resource):
     def get(self):
-        import time
-
-        start_total = time.time()
         compound_id = request.args.get("compound_id")
         drc_dataset_label = request.args.get("drc_dataset_label")
         replicate_dataset_name = request.args.get("replicate_dataset_name")
 
-        # Get curve params and min/max dose
         dose_curve_info = _get_dose_response_curves_per_model(
             compound_id=compound_id,
             drc_dataset_label=drc_dataset_label,
             replicate_dataset_name=replicate_dataset_name,
         )
-        t_total_end = time.time()
-        print(f"[TIMING] TOTAL: {t_total_end - start_total:.3f}s")
 
         return dose_curve_info

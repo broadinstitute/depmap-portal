@@ -9,9 +9,6 @@ export interface CompoundDoseCurveData {
     [model_id: string]: CurvePlotPoints[];
   };
   curve_params: CurveParams[];
-  min_dose: number;
-  max_dose: number;
-  dataset_units: string;
 }
 
 export interface CurveTrace {

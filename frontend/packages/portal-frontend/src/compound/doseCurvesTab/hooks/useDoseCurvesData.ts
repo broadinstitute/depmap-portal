@@ -20,6 +20,8 @@ function useDoseCurvesData(
     setDoseCurveData,
   ] = useState<CompoundDoseCurveData | null>(null);
   const [doseTable, setDoseTable] = useState<DoseTableRow[] | null>(null);
+  const [doseMin, setDoseMin] = useState<number | null>(null);
+  const [doseMax, setDoseMax] = useState<number | null>(null);
 
   const latestPromise = useRef<Promise<CompoundDoseCurveData> | null>(null);
 
@@ -75,6 +77,7 @@ function useDoseCurvesData(
         // Build a map of modelId to row for fast merging
         const allIndices = new Set<string>();
         const doseColNames: string[] = [];
+        const doseValues: number[] = [];
         const featureValueMaps: Record<string, Record<string, number>> = {};
         compoundDoseFeatures.forEach((feature: any) => {
           if (feature.values) {
@@ -86,6 +89,14 @@ function useDoseCurvesData(
           const col = feature.feature_id.replace(compoundId, "").trim();
           doseColNames.push(col);
           featureValueMaps[col] = feature.values || {};
+
+          // Keep track of all dose values so we can set the minimum and maximum of the plot's
+          // x-axis accordingly.
+          const floatMatch = col.match(/^([+-]?([0-9]*[.])?[0-9]+)/);
+          const doseValue = floatMatch ? parseFloat(floatMatch[1]) : null;
+          if (doseValue) {
+            doseValues.push(doseValue);
+          }
         });
         Object.keys(aucs).forEach((modelId) => allIndices.add(modelId));
 
@@ -116,6 +127,8 @@ function useDoseCurvesData(
           }
         });
 
+        setDoseMin(Math.min(...doseValues));
+        setDoseMax(Math.max(...doseValues));
         setDoseTable(mergedRows);
       }
     })();
@@ -129,7 +142,7 @@ function useDoseCurvesData(
     setDoseTable,
   ]);
 
-  return { error, isLoading, doseCurveData, doseTable };
+  return { error, isLoading, doseCurveData, doseTable, doseMin, doseMax };
 }
 
 export default useDoseCurvesData;

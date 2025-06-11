@@ -502,32 +502,6 @@ class CompoundDoseReplicate(Entity):
             )
         ]
 
-    @staticmethod
-    def get_dose_min_max_of_replicates_with_compound_id(
-        compound_id: int, drc_dataset_label: str
-    ):
-        """
-        Given a compound_id (entity_id of Compound), return a list of (entity_id, max_dose, min_dose) tuples
-        for all CompoundExperiments associated with this compound, using CompoundDoseReplicate.
-        """
-        ces = CompoundExperiment.get_corresponding_compound_experiment_using_drc_dataset_label(
-            compound_id=compound_id, drc_dataset_label=drc_dataset_label
-        )
-
-        results = []
-        for exp in ces:
-            q = CompoundDoseReplicate.query.filter_by(
-                compound_experiment_id=exp.entity_id
-            ).with_entities(
-                func.max(CompoundDoseReplicate.dose).label("max_dose"),
-                func.min(CompoundDoseReplicate.dose).label("min_dose"),
-            )
-            # There may be multiple replicates, but we want min/max for each experiment
-            for row in q.all():
-                if row[0] and row[1]:
-                    results.append(row)
-        return results
-
 
 class DoseResponseCurve(Model):
     """

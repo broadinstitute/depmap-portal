@@ -38,10 +38,14 @@ function DoseCurvesMainContent({
   const dapi = getDapi();
   const api = useDeprecatedDataExplorerApi();
 
-  const { error, isLoading, doseCurveData, doseTable } = useDoseCurvesData(
-    dataset,
-    compoundId
-  );
+  const {
+    error,
+    isLoading,
+    doseCurveData,
+    doseTable,
+    doseMin,
+    doseMax,
+  } = useDoseCurvesData(dataset, compoundId);
 
   const [selectedCurves, setSelectedCurves] = useState<Set<string>>(
     new Set([])
@@ -285,6 +289,8 @@ function DoseCurvesMainContent({
             compoundName={compoundName}
             plotElement={plotElement}
             curvesData={visibleCurveData}
+            doseMin={doseMin}
+            doseMax={doseMax}
             doseRepPoints={visibleDoseRepPoints}
             doseUnits={doseUnits}
             selectedCurves={selectedCurves}
@@ -331,19 +337,21 @@ function DoseCurvesMainContent({
             <PlotSpinner />
           </div>
         ) : (
-          <WideTable
-            idProp="modelId"
-            rowHeight={28}
-            data={memoizedTableData}
-            columns={doseCurveTableColumns}
-            columnOrdering={columnOrdering}
-            defaultColumnsToShow={defaultCols}
-            selectedTableLabels={selectedTableRows}
-            onChangeSelections={handleChangeSelection}
-            hideSelectAllCheckbox
-            allowDownloadFromTableDataWithMenu
-            allowDownloadFromTableDataWithMenuFileName="dose-curve-data.csv"
-          />
+          <div>
+            <WideTable
+              idProp="modelId"
+              rowHeight={28}
+              data={memoizedTableData}
+              columns={doseCurveTableColumns}
+              columnOrdering={columnOrdering}
+              defaultColumnsToShow={defaultCols}
+              selectedTableLabels={selectedTableRows}
+              onChangeSelections={handleChangeSelection}
+              hideSelectAllCheckbox
+              allowDownloadFromTableDataWithMenu
+              allowDownloadFromTableDataWithMenuFileName="dose-curve-data.csv"
+            />
+          </div>
         )}
       </div>
     </div>
