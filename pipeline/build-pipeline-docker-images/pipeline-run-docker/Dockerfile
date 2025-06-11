@@ -33,7 +33,7 @@ RUN virtualenv /install/dsub && \
 
 # install sparkles v5 (requires python==3.10 )
 RUN virtualenv --python=python3.10 /install/sparkles && \
-    /install/sparkles/bin/pip install https://github.com/broadinstitute/sparklespray/releases/download/v5.3.6/sparklespray-5.3.6.tar.gz && \
+    /install/sparkles/bin/pip install https://github.com/broadinstitute/sparklespray/releases/download/v5.4.0/sparklespray-5.4.0.tar.gz && \
     ln -s /install/sparkles/bin/sparkles /root/.local/bin
 
 # install gsutil 
