@@ -55,7 +55,7 @@ active_tab_set = False %}
       >Dose curves</a
     >
   </li>
-  {% set active_tab_set = True %} {% endif %} {% if show_dose_curve_tab %}
+  {% set active_tab_set = True %} {% endif %} {% if show_dose_curve_tab_new %}
   <li role="presentation" class="{% if not active_tab_set %}active{% endif %}">
     <a
       href="#dose-curves-new"
@@ -147,7 +147,7 @@ active_tab_set = False %}
     </script>
     {% set active_tab_set = True %}
   </div>
-  {% endif %} {% if show_dose_curve_tab %}
+  {% endif %} {% if show_dose_curve_tab_new %}
   <div
     role="tabpanel"
     class="tab-pane {% if not active_tab_set %}active{% endif %}"

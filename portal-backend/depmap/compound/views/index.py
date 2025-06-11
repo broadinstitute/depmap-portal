@@ -93,6 +93,10 @@ def view_compound(name):
             entity_label=name, dependency_datasets=celfie_dataset_options
         )
 
+    show_new_dose_curves_tab = current_app.config[
+        "ENABLED_FEATURES"
+    ].new_dose_curves_tab
+
     return render_template(
         "compounds/index.html",
         name=name,
@@ -109,7 +113,9 @@ def view_compound(name):
         has_datasets=has_datasets,
         order=get_order(has_predictability),
         dose_curve_options=format_dose_curve_options(compound_experiment_and_datasets),
-        dose_curve_options_new=format_dose_curve_options_new_tab(),
+        dose_curve_options_new=format_dose_curve_options_new_tab()
+        if show_new_dose_curves_tab
+        else [],
         has_celfie=has_celfie,
         celfie=celfie if has_celfie else None,
         compound_units=compound.units,
@@ -201,6 +207,7 @@ def format_dose_curve_options_new_tab():
     """
     Used for jinja rendering of the dose curve tab
     """
+
     dose_curve_options = [
         {
             "display_name": dataset.display_name,
