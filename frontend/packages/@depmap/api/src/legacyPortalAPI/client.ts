@@ -51,24 +51,18 @@ const cache: Record<string, Promise<unknown> | null> = {};
 
 // TODO: Deprecate this method and provide caching through
 // @tanstack/react-query
-const getJsonCached = async <T>(
+const getJsonCached = <T>(
   url: string,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   queryParameters?: Record<string, any>
-) => {
+): Promise<T> => {
   const json = JSON.stringify(queryParameters || {});
   const cacheKey = `${url}-${json}`;
 
   if (!cache[cacheKey]) {
-    cache[cacheKey] = new Promise((resolve, reject) => {
-      getJson<T>(url, queryParameters)
-        .then((result) => {
-          cache[cacheKey] = Promise.resolve(result);
-          resolve(result);
-        })
-        .catch((e) => {
-          cache[cacheKey] = null;
-          reject(e);
-        });
+    cache[cacheKey] = getJson<T>(url, queryParameters).catch((e) => {
+      delete cache[cacheKey];
+      throw e;
     });
   }
 
