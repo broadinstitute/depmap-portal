@@ -115,7 +115,7 @@ function useDoseCurvesData(
             mergedRows.push(row);
           }
         });
-        // Ensure modelId and AUC are first
+
         setDoseTable(mergedRows);
       }
     })();

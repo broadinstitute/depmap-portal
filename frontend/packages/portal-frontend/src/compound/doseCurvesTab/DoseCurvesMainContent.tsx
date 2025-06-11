@@ -256,6 +256,18 @@ function DoseCurvesMainContent({
     );
   }, [doseCurveData, selectedCurves, showReplicates]);
 
+  const memoizedTableData = useMemo(() => {
+    return selectedTableRows.size === 0
+      ? tableData
+      : sortBySelectedModel(tableData, selectedTableRows);
+  }, [selectedTableRows, tableData]);
+
+  const defaultCols = useMemo(() => {
+    return doseCurveTableColumns
+      .map((col) => col.accessor)
+      .filter((accessor) => accessor !== "modelId");
+  }, [doseCurveTableColumns]);
+
   return (
     <div className={styles.mainContentContainer}>
       <div className={styles.mainContentHeader}>
@@ -322,16 +334,10 @@ function DoseCurvesMainContent({
           <WideTable
             idProp="modelId"
             rowHeight={28}
-            data={
-              selectedTableRows.size === 0
-                ? tableData
-                : sortBySelectedModel(tableData, selectedTableRows)
-            }
+            data={memoizedTableData}
             columns={doseCurveTableColumns}
             columnOrdering={columnOrdering}
-            defaultColumnsToShow={doseCurveTableColumns
-              .map((col) => col.accessor)
-              .filter((accessor) => accessor !== "modelId")}
+            defaultColumnsToShow={defaultCols}
             selectedTableLabels={selectedTableRows}
             onChangeSelections={handleChangeSelection}
             hideSelectAllCheckbox
