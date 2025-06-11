@@ -54,32 +54,33 @@ def get_curve_params_for_model_ids(
         entities=compound_dose_replicates
     )
 
+    # HACK: This should not be necessary in production. But during development, my code
+    # is using a hack that could result in curve_objs that are actually from the Repurposing
+    # dataset, and not OncRef. We want to skip these curves.
+    cell_line_series = replicate_dataset_matrix.get_cell_line_values_and_depmap_ids(
+        compound_dose_replicates[0].entity_id
+    )
+    valid_depmap_ids = set(cell_line_series.index)
+    model_objs = DepmapModel.query.filter(
+        DepmapModel.model_id.in_(valid_depmap_ids)
+    ).all()
+    model_map = {m.model_id: m for m in model_objs}
+
     curve_params = []
     dose_replicates_per_model_id = {}
 
     for curve in curve_objs:
         if curve is not None:
 
-            # HACK: This should not be necessary in production. But during development, my code
-            # is using a hack that could result in curve_objs that are actually from the Repurposing
-            # dataset, and not OncRef. We want to skip these curves.
-            if (
-                not Dataset.has_cell_line(
-                    dataset_name=replicate_dataset_name, depmap_id=curve.depmap_id
-                )
-                or viabilities_by_model_id.get(curve.depmap_id) is None
-            ):
+            if curve is None or curve.depmap_id not in valid_depmap_ids:
                 continue
-
+            model = model_map.get(curve.depmap_id)
             reps = _get_dose_replicate_points(
                 viabilities=viabilities_by_model_id[curve.depmap_id],
                 compound_dose_replicates=compound_dose_replicates,
                 model_id=curve.depmap_id,
             )
             dose_replicates_per_model_id[curve.depmap_id] = reps
-
-            # Get the model to get the display name for the graph hover labels
-            model = DepmapModel.get_by_model_id(curve.depmap_id)
 
             curve_param = {
                 "id": curve.depmap_id,
@@ -138,6 +139,9 @@ def _get_dose_response_curves_per_model(
 @namespace.route("/dose_curve_data")
 class DoseCurveData(Resource):
     def get(self):
+        import time
+
+        start_total = time.time()
         compound_id = request.args.get("compound_id")
         drc_dataset_label = request.args.get("drc_dataset_label")
         replicate_dataset_name = request.args.get("replicate_dataset_name")
@@ -148,5 +152,7 @@ class DoseCurveData(Resource):
             drc_dataset_label=drc_dataset_label,
             replicate_dataset_name=replicate_dataset_name,
         )
+        t_total_end = time.time()
+        print(f"[TIMING] TOTAL: {t_total_end - start_total:.3f}s")
 
         return dose_curve_info
