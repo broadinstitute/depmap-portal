@@ -47,8 +47,37 @@ const {
   patchMultipart,
 } = isElara ? createAutoFailClient() : createJsonClient(getUrlPrefix());
 
+const cache: Record<string, Promise<unknown> | null> = {};
+
+// TODO: Deprecate this method and provide caching through
+// @tanstack/react-query
+const getJsonCached = async <T>(
+  url: string,
+  queryParameters?: Record<string, any>
+) => {
+  const json = JSON.stringify(queryParameters || {});
+  const cacheKey = `${url}-${json}`;
+
+  if (!cache[cacheKey]) {
+    cache[cacheKey] = new Promise((resolve, reject) => {
+      getJson<T>(url, queryParameters)
+        .then((result) => {
+          cache[cacheKey] = Promise.resolve(result);
+          resolve(result);
+        })
+        .catch((e) => {
+          cache[cacheKey] = null;
+          reject(e);
+        });
+    });
+  }
+
+  return cache[cacheKey] as Promise<T>;
+};
+
 export {
   getJson,
+  getJsonCached,
   postJson,
   patchJson,
   deleteJson,
