@@ -17,6 +17,14 @@
     grid-template-columns: 2fr 1fr;
     grid-template-areas: "plot plot selections";
     gap: 1rem;
+
+    @media (max-width: 950px) {
+      grid-template-areas:
+        "selections"
+        "plot";
+      grid-template-columns: 1fr;
+      grid-template-rows: auto auto;
+    }
   }
 
   .mainContentHr {
@@ -42,6 +50,10 @@
   flex-grow: 1;
   overflow: visible;
   border: 1px solid #b8b8b8;
+
+  @media (max-width: 950px) {
+    margin-right: 0px;
+  }
 
   .sectionHeader {
     margin-bottom: 20px;
