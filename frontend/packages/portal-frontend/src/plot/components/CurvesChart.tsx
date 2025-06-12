@@ -249,10 +249,10 @@ function CurvesChart({
 
     // Add a downloadImage method to the plot for PNG and SVG export using Plotly's toImage utility (as in PrototypeDensity1D)
     plot.downloadImage = (options) => {
-      const { filename, width, height, format } = options;
+      const { filename, width, format } = options;
       if (!plot || !plot.data || !plot.layout) return;
       // Use Plotly's toImage for consistent export
-      Plotly.toImage(plot, { format, width, height })
+      Plotly.toImage(plot, { format, width, height: options.height })
         .then((dataUrl) => {
           const a = document.createElement("a");
           a.href = dataUrl;
@@ -261,7 +261,7 @@ function CurvesChart({
           a.click();
           document.body.removeChild(a);
         })
-        .catch((err) => {
+        .catch(() => {
           // fallback: try SVG serialization for SVG only
           if (format === "svg") {
             const svgNode = plot.querySelector("svg");

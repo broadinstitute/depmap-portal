@@ -21,7 +21,7 @@ export function getDoseCurveTableColumns(doseTable: DoseTableRow[]) {
     accessor: colName,
     Header: colName,
     maxWidth: 150,
-    minWidth: 150,
+    minWidth: 100,
   }));
 }
 

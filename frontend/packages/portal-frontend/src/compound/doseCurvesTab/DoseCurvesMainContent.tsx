@@ -1,4 +1,3 @@
-import WideTable from "@depmap/wide-table";
 import React, { useEffect, useMemo, useState } from "react";
 import { getDapi } from "src/common/utilities/context";
 import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
@@ -7,11 +6,11 @@ import DoseCurvesPlotSection from "./DoseCurvesPlotSection";
 import useDoseCurvesData from "./hooks/useDoseCurvesData";
 import useDoseCurvesSelectionHandlers from "./hooks/useDoseCurvesSelectionHandlers";
 import CompoundPlotSelections from "./CompoundPlotSelections";
+import DoseCurvesTable from "./DoseCurvesTable";
 import { CompoundDoseCurveData, DRCDatasetOptions } from "./types";
 import { useDeprecatedDataExplorerApi } from "@depmap/data-explorer-2";
 import { getDoseCurveTableColumns } from "./utils";
 import styles from "./CompoundDoseCurves.scss";
-import PlotSpinner from "src/plot/components/PlotSpinner";
 
 interface DoseCurvesMainContentProps {
   dataset: DRCDatasetOptions | null;
@@ -166,8 +165,10 @@ function DoseCurvesMainContent({
   }, [doseCurveData, selectedCurves, showUnselectedLines]);
 
   const visibleDoseRepPoints = useMemo(() => {
-    if (!showReplicates || !doseCurveData || selectedCurves.size === 0)
+    if (!showReplicates || !doseCurveData || selectedCurves.size === 0) {
       return null;
+    }
+
     return Object.fromEntries(
       [...selectedCurves]
         .filter((modelId) => doseCurveData.dose_replicate_points[modelId])
@@ -236,32 +237,17 @@ function DoseCurvesMainContent({
         </p>
       </div>
       <div>
-        {error ? (
-          <div className={styles.errorMessage}>
-            Error loading dose curve data.
-          </div>
-        ) : isLoading || !doseTable ? (
-          <div className={styles.tableSpinnerContainer}>
-            <PlotSpinner />
-          </div>
-        ) : (
-          <div>
-            <WideTable
-              idProp="modelId"
-              rowHeight={28}
-              data={memoizedTableData}
-              fixedHeight={500}
-              columns={doseCurveTableColumns}
-              columnOrdering={columnOrdering}
-              defaultColumnsToShow={defaultCols}
-              selectedTableLabels={selectedTableRows}
-              onChangeSelections={handleChangeSelection}
-              hideSelectAllCheckbox
-              allowDownloadFromTableDataWithMenu
-              allowDownloadFromTableDataWithMenuFileName="dose-curve-data.csv"
-            />
-          </div>
-        )}
+        <DoseCurvesTable
+          error={error}
+          isLoading={isLoading}
+          doseTable={doseTable}
+          memoizedTableData={memoizedTableData}
+          doseCurveTableColumns={doseCurveTableColumns}
+          columnOrdering={columnOrdering}
+          defaultCols={defaultCols}
+          selectedTableRows={selectedTableRows}
+          handleChangeSelection={handleChangeSelection}
+        />
       </div>
     </div>
   );

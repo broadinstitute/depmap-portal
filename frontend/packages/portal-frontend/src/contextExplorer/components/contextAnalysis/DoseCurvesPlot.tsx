@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useMemo } from "react";
 import {
   CurveParams,
   CurvePlotPoints,
@@ -29,7 +29,6 @@ interface Props {
   handleSetPlotElement?: (element: any) => void;
   handleClickCurve?: (id: string) => void;
   selectedCurves?: Set<string>;
-  selectedModelIds?: Set<string>;
   doseUnits?: string;
   includeMedianQuantileRegions?: boolean;
   useDefaultTitle?: boolean;
@@ -254,7 +253,7 @@ const buildPointsTraces = (
         name += " (masked)";
       }
 
-      const getReplicateColor = (replicate: string) => {
+      const getReplicateColor = () => {
         switch (replicate) {
           case "1":
             return Rep1Color;
@@ -271,7 +270,7 @@ const buildPointsTraces = (
         x: xs,
         y: ys,
         mode: "markers",
-        marker: { color: getReplicateColor(replicate) },
+        marker: { color: getReplicateColor() },
         type: "scattergl",
         customdata: ["no"],
         label: [`${isMaskedValue}`],
@@ -285,10 +284,21 @@ const buildPointsTraces = (
     const minSubgroupX = Math.min(...allXs);
     const maxSubgroupX = Math.max(...allXs);
 
-    minX =
-      minX == null ? minSubgroupX : minX < minSubgroupX ? minX : minSubgroupX;
-    maxX =
-      maxX == null ? maxSubgroupX : maxX > maxSubgroupX ? maxX : maxSubgroupX;
+    if (minX == null) {
+      minX = minSubgroupX;
+    } else if (minX < minSubgroupX) {
+      // keep minX as is
+    } else {
+      minX = minSubgroupX;
+    }
+
+    if (maxX == null) {
+      maxX = maxSubgroupX;
+    } else if (maxX > maxSubgroupX) {
+      // keep maxX as is
+    } else {
+      maxX = maxSubgroupX;
+    }
   });
 
   return { range: [minX!, maxX!], traces: newTraces };
@@ -375,10 +385,10 @@ const buildTraces = (
   const maxX = maxDose;
   const rangeOfExponents = Math.log10(maxX) - Math.log10(minX);
   const minExponent = Math.log10(minX);
-  const inGroupNumPts = 50;
+  const inGroupNumPts = 150;
   const outGroupNumPts = 8;
 
-  let traces: CurveTrace[] = [];
+  const traces: CurveTrace[] = [];
   if (doseRepPoints) {
     const modelIds = Object.keys(doseRepPoints);
 

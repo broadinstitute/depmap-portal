@@ -25,7 +25,7 @@ function useDoseCurvesSelectionHandlers(
     (modelId: string) => {
       if (doseCurveData) {
         setSelectedCurves((xs) => {
-          let ys = new Set(xs);
+          const ys = new Set(xs);
           if (!xs?.has(modelId)) ys.add(modelId);
           selectedTableRows.forEach((rowId: string) => {
             if (!ys.has(rowId)) ys.add(rowId);
@@ -43,7 +43,7 @@ function useDoseCurvesSelectionHandlers(
       if (doseCurveData) {
         setSelectedTableRows((xs) => {
           let unselectedId: string;
-          let ys = new Set(xs);
+          const ys = new Set(xs);
 
           if (selections.length < xs.size) {
             unselectedId = [...xs].filter((x) => !selections.includes(x))[0];

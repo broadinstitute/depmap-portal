@@ -29,7 +29,6 @@ function DoseCurvesTab({
     value: string;
     label: string;
   } | null>(null);
-  // const [error, setError] = useState(false);
   const [showReplicates, setShowReplicates] = useState<boolean>(true);
   const [showUnselectedLines, setShowUnselectedLines] = useState<boolean>(true);
 
