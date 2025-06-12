@@ -6,6 +6,7 @@ CellContext:
     - lineage
     - confounder
   Relation: All
+  EstimatedSecondsPerModel: 80
 
 DriverEvents:
   Features:
@@ -17,6 +18,7 @@ DriverEvents:
     - confounder
     - driver_events
   Relation: All
+  EstimatedSecondsPerModel: 95
 
 GeneticDerangement:
   Features:
@@ -34,6 +36,7 @@ GeneticDerangement:
     - cytoband_cn
     - genetic_signature
   Relation: All
+  EstimatedSecondsPerModel: 1000
 
 DNA:
   Features:
@@ -58,6 +61,7 @@ DNA:
     - mutations_damaging
     - gene_cn
   Relation: All
+  EstimatedSecondsPerModel: 600
 
 RNASeq:
   Features:
@@ -84,3 +88,4 @@ RNASeq:
     - gene_cn
     - rnaseq
   Relation: All
+  EstimatedSecondsPerModel: 900
