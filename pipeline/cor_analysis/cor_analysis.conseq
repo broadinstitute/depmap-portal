@@ -3,7 +3,8 @@ rule create_cor_analysis_pairs:
     inputs:
         a_set=all {'type': 'cor-analysis-a'},
         b_set=all {'type': 'cor-analysis-b'},
-        script=fileref("create_cor_analysis_pairs.py")
+        script=fileref("create_cor_analysis_pairs.py"),
+        cor_script=fileref("correlation_with_qvalue.py")
     
     run "bash" with """
         cat > inputs.json <<EOF
