@@ -96,6 +96,7 @@
   grid-template-columns: 1fr 6fr;
   grid-template-areas: "filters main main main main main main";
   gap: 2rem;
+  min-height: 100vh;
 
   .doseCurvesTabFilters {
     grid-area: filters;

@@ -29,7 +29,7 @@ const DoseCurvesTable: React.FC<DoseCurvesTableProps> = ({
   let tableContent;
   if (error) {
     tableContent = (
-      <div className={styles.errorMessage}>Error loading dose curve data.</div>
+      <div className={styles.errorMessage}>Error loading table data.</div>
     );
   } else if (isLoading || !doseTable) {
     tableContent = (

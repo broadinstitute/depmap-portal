@@ -196,36 +196,52 @@ function DoseCurvesMainContent({
         </p>
       </div>
       <div className={styles.mainContentGrid}>
-        <div style={{ gridArea: "plot" }}>
-          <DoseCurvesPlotSection
-            isLoading={isLoading}
-            compoundName={compoundName}
-            plotElement={plotElement}
-            curvesData={visibleCurveData}
-            doseMin={doseMin}
-            doseMax={doseMax}
-            doseRepPoints={visibleDoseRepPoints}
-            doseUnits={doseUnits}
-            selectedCurves={selectedCurves}
-            handleClickCurve={handleClickCurve}
-            handleSetPlotElement={(element: ExtendedPlotType | null) => {
-              setPlotElement(element);
+        {error ? (
+          <div
+            className={styles.errorMessage}
+            style={{
+              gridArea: "plot / plot / selections / selections",
+              width: "100%",
             }}
-          />
-        </div>
-        <div style={{ gridArea: "selections" }}>
-          <CompoundPlotSelections
-            selectedIds={selectedCurves}
-            selectedLabels={new Set(selectedLabels)}
-            onClickSaveSelectionAsContext={handleClickSaveSelectionAsContext}
-            onClickClearSelection={handleClearSelection}
-            onClickSetSelectionFromContext={
-              doseCurveData?.curve_params
-                ? handleSetSelectionFromContext
-                : undefined
-            }
-          />
-        </div>
+          >
+            Error loading dose curve data.
+          </div>
+        ) : (
+          <>
+            <div style={{ gridArea: "plot" }}>
+              <DoseCurvesPlotSection
+                isLoading={isLoading}
+                compoundName={compoundName}
+                plotElement={plotElement}
+                curvesData={visibleCurveData}
+                doseMin={doseMin}
+                doseMax={doseMax}
+                doseRepPoints={visibleDoseRepPoints}
+                doseUnits={doseUnits}
+                selectedCurves={selectedCurves}
+                handleClickCurve={handleClickCurve}
+                handleSetPlotElement={(element: ExtendedPlotType | null) => {
+                  setPlotElement(element);
+                }}
+              />
+            </div>
+            <div style={{ gridArea: "selections" }}>
+              <CompoundPlotSelections
+                selectedIds={selectedCurves}
+                selectedLabels={new Set(selectedLabels)}
+                onClickSaveSelectionAsContext={
+                  handleClickSaveSelectionAsContext
+                }
+                onClickClearSelection={handleClearSelection}
+                onClickSetSelectionFromContext={
+                  doseCurveData?.curve_params
+                    ? handleSetSelectionFromContext
+                    : undefined
+                }
+              />
+            </div>
+          </>
+        )}
       </div>
       <hr className={styles.mainContentHr} />
       <div className={styles.mainContentCellLines}>
