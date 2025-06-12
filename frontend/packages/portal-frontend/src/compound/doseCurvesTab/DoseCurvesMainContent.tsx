@@ -1,18 +1,15 @@
 import WideTable from "@depmap/wide-table";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { getDapi } from "src/common/utilities/context";
 import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
 import { CurveParams } from "../components/DoseResponseCurve";
 import DoseCurvesPlotSection from "./DoseCurvesPlotSection";
 import useDoseCurvesData from "./hooks/useDoseCurvesData";
+import useDoseCurvesSelectionHandlers from "./hooks/useDoseCurvesSelectionHandlers";
 import CompoundPlotSelections from "./CompoundPlotSelections";
 import { CompoundDoseCurveData, DRCDatasetOptions } from "./types";
-import { DataExplorerContext } from "@depmap/types";
-import { defaultContextName } from "@depmap/data-explorer-2/src/components/DataExplorerPage/utils";
-import { saveNewContext } from "src";
-import doseCurvesPromptForSelectionFromContext from "./doseCurvesPromptForSelectionFromContext";
 import { useDeprecatedDataExplorerApi } from "@depmap/data-explorer-2";
-import { getDoseCurveTableColumns, sortBySelectedModel } from "./utils";
+import { getDoseCurveTableColumns } from "./utils";
 import styles from "./CompoundDoseCurves.scss";
 import PlotSpinner from "src/plot/components/PlotSpinner";
 
@@ -47,13 +44,6 @@ function DoseCurvesMainContent({
     doseMax,
   } = useDoseCurvesData(dataset, compoundId);
 
-  const [selectedCurves, setSelectedCurves] = useState<Set<string>>(
-    new Set([])
-  );
-  const [selectedTableRows, setSelectedTableRows] = useState<Set<string>>(
-    new Set([])
-  );
-
   const [plotElement, setPlotElement] = useState<ExtendedPlotType | null>(null);
   const [cellLineUrlRoot, setCellLineUrlRoot] = useState<string | null>(null);
 
@@ -62,62 +52,6 @@ function DoseCurvesMainContent({
       setCellLineUrlRoot(urlRoot);
     });
   }, [dapi]);
-
-  // Can only add selections by clicking the plot.
-  const handleClickCurve = useCallback(
-    (modelId: string) => {
-      if (doseCurveData) {
-        setSelectedCurves((xs) => {
-          let ys = new Set(xs);
-          if (!xs?.has(modelId)) {
-            ys.add(modelId);
-          }
-          selectedTableRows.forEach((rowId: string) => {
-            if (!ys.has(rowId)) {
-              ys.add(rowId);
-            }
-          });
-          setSelectedTableRows(ys);
-          return ys;
-        });
-      }
-    },
-    [doseCurveData, setSelectedCurves, setSelectedTableRows, selectedTableRows]
-  );
-
-  // Can add/delete selections using the table.
-  const handleChangeSelection = useCallback(
-    (selections: string[]) => {
-      if (doseCurveData) {
-        setSelectedTableRows((xs) => {
-          let unselectedId: string;
-          let ys = new Set(xs);
-
-          if (selections.length < xs.size) {
-            unselectedId = [...xs].filter((x) => !selections.includes(x))[0];
-
-            ys.delete(unselectedId);
-          } else {
-            const newSelectedId = selections.filter(
-              (x) => ![...xs].includes(x)
-            )[0];
-
-            ys.add(newSelectedId);
-          }
-
-          // Add rows selected from the clicking the plot curves.
-          selectedCurves.forEach((curveId: string) => {
-            if (unselectedId && curveId !== unselectedId && !ys.has(curveId)) {
-              ys.add(curveId);
-            }
-          });
-          setSelectedCurves(ys);
-          return ys;
-        });
-      }
-    },
-    [doseCurveData, setSelectedTableRows, setSelectedCurves, selectedCurves]
-  );
 
   // Build a modelId → displayName map for use in both selectedLabels and WideTable
   const displayNameModelIdMap = useMemo(() => {
@@ -136,6 +70,22 @@ function DoseCurvesMainContent({
         cellLine: displayNameModelIdMap.get(row.modelId) || row.modelId,
       })),
     [doseTable, displayNameModelIdMap]
+  );
+
+  const {
+    selectedCurves,
+    selectedTableRows,
+    handleClickCurve,
+    handleChangeSelection,
+    handleClickSaveSelectionAsContext,
+    handleSetSelectionFromContext,
+    handleClearSelection,
+    memoizedTableData,
+  } = useDoseCurvesSelectionHandlers(
+    doseCurveData,
+    tableData,
+    api,
+    handleShowUnselectedLinesOnSelectionsCleared
   );
 
   // Format cellLine column to link to cell line pages
@@ -201,18 +151,6 @@ function DoseCurvesMainContent({
     return displayNames;
   }, [selectedCurves, displayNameModelIdMap]);
 
-  const handleClickSaveSelectionAsContext = useCallback(() => {
-    const labels = [...selectedCurves];
-
-    const context = {
-      name: defaultContextName(selectedCurves.size),
-      context_type: "depmap_model",
-      expr: { in: [{ var: "entity_label" }, labels] },
-    };
-
-    saveNewContext(context as DataExplorerContext);
-  }, [selectedCurves]);
-
   const visibleCurveData = useMemo(() => {
     if (!showUnselectedLines && doseCurveData && selectedCurves.size > 0) {
       const visibleCurveParams = doseCurveData?.curve_params.filter(
@@ -227,26 +165,6 @@ function DoseCurvesMainContent({
     return doseCurveData;
   }, [doseCurveData, selectedCurves, showUnselectedLines]);
 
-  const handleSetSelectionFromContext = useCallback(async () => {
-    const allLabels = new Set(
-      doseCurveData?.curve_params.map(
-        (curveParam: CurveParams) => curveParam.id!
-      )
-    );
-
-    const labels = await doseCurvesPromptForSelectionFromContext(
-      api,
-      allLabels
-    );
-
-    if (labels === null) {
-      return;
-    }
-
-    setSelectedCurves(labels);
-    setSelectedTableRows(labels);
-  }, [doseCurveData, api]);
-
   const visibleDoseRepPoints = useMemo(() => {
     if (!showReplicates || !doseCurveData || selectedCurves.size === 0)
       return null;
@@ -259,12 +177,6 @@ function DoseCurvesMainContent({
         ])
     );
   }, [doseCurveData, selectedCurves, showReplicates]);
-
-  const memoizedTableData = useMemo(() => {
-    return selectedTableRows.size === 0
-      ? tableData
-      : sortBySelectedModel(tableData, selectedTableRows);
-  }, [selectedTableRows, tableData]);
 
   const defaultCols = useMemo(() => {
     return doseCurveTableColumns
@@ -305,11 +217,7 @@ function DoseCurvesMainContent({
             selectedIds={selectedCurves}
             selectedLabels={new Set(selectedLabels)}
             onClickSaveSelectionAsContext={handleClickSaveSelectionAsContext}
-            onClickClearSelection={() => {
-              setSelectedCurves(new Set([]));
-              setSelectedTableRows(new Set([]));
-              handleShowUnselectedLinesOnSelectionsCleared();
-            }}
+            onClickClearSelection={handleClearSelection}
             onClickSetSelectionFromContext={
               doseCurveData?.curve_params
                 ? handleSetSelectionFromContext
