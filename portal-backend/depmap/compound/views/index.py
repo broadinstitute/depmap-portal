@@ -93,10 +93,6 @@ def view_compound(name):
             entity_label=name, dependency_datasets=celfie_dataset_options
         )
 
-    show_new_dose_curves_tab = current_app.config[
-        "ENABLED_FEATURES"
-    ].new_dose_curves_tab
-
     return render_template(
         "compounds/index.html",
         name=name,
@@ -113,9 +109,7 @@ def view_compound(name):
         has_datasets=has_datasets,
         order=get_order(has_predictability),
         dose_curve_options=format_dose_curve_options(compound_experiment_and_datasets),
-        dose_curve_options_new=format_dose_curve_options_new_tab()
-        if show_new_dose_curves_tab
-        else [],
+        dose_curve_options_new=format_dose_curve_options_new_tab_if_available(),
         has_celfie=has_celfie,
         celfie=celfie if has_celfie else None,
         compound_units=compound.units,
@@ -203,24 +197,30 @@ def format_dose_curve_option(dataset, compound_experiment, label):
     return option
 
 
-def format_dose_curve_options_new_tab():
+def format_dose_curve_options_new_tab_if_available():
     """
     Used for jinja rendering of the dose curve tab
     """
+    show_new_dose_curves_tab = current_app.config[
+        "ENABLED_FEATURES"
+    ].new_dose_curves_tab
 
-    dose_curve_options = [
-        {
-            "display_name": dataset.display_name,
-            "viability_dataset_id": dataset.viability_dataset_given_id,
-            "replicate_dataset": dataset.replicate_dataset,
-            "auc_dataset_id": dataset.auc_dataset_given_id,
-            "ic50_dataset_id": dataset.ic50_dataset_given_id,
-            "drc_dataset_label": dataset.drc_dataset_label,
-        }
-        for dataset in drc_compound_datasets
-    ]
+    if show_new_dose_curves_tab:
+        dose_curve_options = [
+            {
+                "display_name": dataset.display_name,
+                "viability_dataset_id": dataset.viability_dataset_given_id,
+                "replicate_dataset": dataset.replicate_dataset,
+                "auc_dataset_id": dataset.auc_dataset_given_id,
+                "ic50_dataset_id": dataset.ic50_dataset_given_id,
+                "drc_dataset_label": dataset.drc_dataset_label,
+            }
+            for dataset in drc_compound_datasets
+        ]
 
-    return dose_curve_options
+        return dose_curve_options
+    else:
+        return []
 
 
 def is_url_valid(url):
