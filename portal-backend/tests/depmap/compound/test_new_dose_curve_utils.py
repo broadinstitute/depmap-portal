@@ -1,5 +1,4 @@
 from typing import List
-from depmap.compound.models import CompoundDoseReplicate, CompoundExperiment
 from depmap.dataset.models import DependencyDataset
 import pytest
 import pandas as pd
@@ -13,7 +12,6 @@ from tests.factories import (
     DoseResponseCurveFactory,
     MatrixFactory,
 )
-from tests.utilities import interactive_test_utils
 
 
 def _setup_dose_response_curves(models: List[DepmapModelFactory], compound_exps: list):
@@ -216,7 +214,7 @@ def test_get_dose_response_curves_per_model(empty_db_mock_downloads):
         ) == sorted(expected_list, key=lambda x: (x["dose"], x["replicate"]))
 
 
-def test_get_dose_replicate_points_skips_none_nan():
+def test_get_dose_replicate_points_skips_nan():
     class DummyRep:
         def __init__(self, dose, is_masked, replicate):
             self.dose = dose
@@ -235,3 +233,23 @@ def test_get_dose_replicate_points_skips_none_nan():
     assert len(points) == 1
     assert points[0]["dose"] == 3
     assert points[0]["viability"] == 5.0
+
+
+def test_get_dose_replicate_points_all_invalid():
+    class DummyRep:
+        def __init__(self, dose, is_masked, replicate):
+            self.dose = dose
+            self.is_masked = is_masked
+            self.replicate = replicate
+
+    class DummyVal(float):
+        def item(self):
+            return float(self)
+
+    # All viabilities are NaN
+    viabilities = [DummyVal(float("nan")), DummyVal(float("nan"))]
+    replicates = [DummyRep(1, False, 1), DummyRep(2, True, 2)]
+    points = new_dose_curves_utils.get_dose_replicate_points(
+        viabilities, replicates, "MODEL"
+    )
+    assert points == []
