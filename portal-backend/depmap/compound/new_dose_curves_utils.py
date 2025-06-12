@@ -32,15 +32,12 @@ def get_dose_replicate_points(
     return points
 
 
-def _get_curve_params_for_model_ids(
+def _get_valid_curve_objs_and_model_map(
     compound_id: str,
     drc_dataset_label: str,
-    compound_dose_replicates: list,
     replicate_dataset_name: str,
+    compound_dose_replicates: list,
 ):
-    """
-    Retrieve curve parameters and replicate points for all model IDs.
-    """
     # Use drc_dataset_label to get the dose response curves for the dataset selected in the UI. This is necessary
     # because dose response curves have a relationship with CompoundExperiment, not Compound, and 1 compound can have
     # multiple compound experiments mapping to different datasets and therefore different sets of dose response curves.
@@ -67,6 +64,30 @@ def _get_curve_params_for_model_ids(
         DepmapModel.model_id.in_(valid_depmap_ids)
     ).all()
     model_map = {m.model_id: m for m in model_objs}
+    return curve_objs, valid_depmap_ids, model_map, viabilities_by_model_id
+
+
+def _get_curve_params_for_model_ids(
+    compound_id: str,
+    drc_dataset_label: str,
+    compound_dose_replicates: list,
+    replicate_dataset_name: str,
+):
+    """
+    Retrieve curve parameters and replicate points for all model IDs.
+    """
+
+    (
+        curve_objs,
+        valid_depmap_ids,
+        model_map,
+        viabilities_by_model_id,
+    ) = _get_valid_curve_objs_and_model_map(
+        compound_id=compound_id,
+        drc_dataset_label=drc_dataset_label,
+        replicate_dataset_name=replicate_dataset_name,
+        compound_dose_replicates=compound_dose_replicates,
+    )
 
     curve_params = []
     dose_replicates_per_model_id = {}
@@ -103,15 +124,15 @@ def _get_curve_params_for_model_ids(
     }
 
 
-def get_dose_response_curves_per_model(
+def _get_compound_dose_replicates(
     compound_id: str, drc_dataset_label: str, replicate_dataset_name: str
 ):
-    """
-    Setup retrieval of dose response curves and replicate points for a compound and dataset.
-    """
     ces = CompoundExperiment.get_corresponding_compound_experiment_using_drc_dataset_label(
         compound_id=compound_id, drc_dataset_label=drc_dataset_label
     )
+
+    compound_dose_replicates = []
+
     for compound_experiment in ces:
         compound_dose_replicates = CompoundDoseReplicate.get_all_with_compound_experiment_id(
             compound_experiment.entity_id
@@ -126,6 +147,20 @@ def get_dose_response_curves_per_model(
         if len(compound_dose_replicates) > 0:
             break
 
+    return compound_dose_replicates
+
+
+def get_dose_response_curves_per_model(
+    compound_id: str, drc_dataset_label: str, replicate_dataset_name: str
+):
+    """
+    Setup retrieval of dose response curves and replicate points for a compound and dataset.
+    """
+    compound_dose_replicates = _get_compound_dose_replicates(
+        compound_id=compound_id,
+        drc_dataset_label=drc_dataset_label,
+        replicate_dataset_name=replicate_dataset_name,
+    )
     curve_params_and_points = _get_curve_params_for_model_ids(
         compound_id=compound_id,
         drc_dataset_label=drc_dataset_label,
