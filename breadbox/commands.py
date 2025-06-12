@@ -131,7 +131,7 @@ def _post_alembic_upgrade(db: SessionWithUser):
 
 def _upgrade_db():
     # This has the side effect of create a SQLite database if one doesn't already exist
-    subprocess.run(["alembic", "upgrade", "head"], check=True)
+    subprocess.run(["alembic", "upgrade", "heads"], check=True)
     _post_alembic_upgrade(_get_db_connection())
 
 
