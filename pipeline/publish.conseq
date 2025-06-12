@@ -1,3 +1,6 @@
+rule publish_depmap_release:
+    inputs: release={"type": "depmap_data_taiga_id"}
+    publish: "{{config.publish_dest}}/depmap-release.json"
 
 rule publish_dep_mats:
     inputs: dep=all {"type": "dep-matrix"}

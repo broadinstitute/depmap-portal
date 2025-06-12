@@ -119,13 +119,13 @@ def format_task_status(task):
         elif isinstance(task.result, HTTPException):
             message = {
                 "status_code": str(task.result.status_code),
-                "detail": str(task.result.status_code),
+                "detail": str(task.result.detail),
             }
         elif isinstance(task.result, FileValidationError):
             message = str(task.result)
         else:
-            # This is an unexpected error thrown while the task was running. 
-            # At this point, the error has already been logged in the celery error reporter 
+            # This is an unexpected error thrown while the task was running.
+            # At this point, the error has already been logged in the celery error reporter
             # and should be visible in the GCS Error Groups.
             message = "Encountered an unexpected error. Please try again later."
     elif task.state == TaskState.PENDING.name:
