@@ -342,6 +342,7 @@ function DoseCurvesMainContent({
               idProp="modelId"
               rowHeight={28}
               data={memoizedTableData}
+              fixedHeight={500}
               columns={doseCurveTableColumns}
               columnOrdering={columnOrdering}
               defaultColumnsToShow={defaultCols}
