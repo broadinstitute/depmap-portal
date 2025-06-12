@@ -250,6 +250,10 @@ _hardcoded_metadata_slices = {
             "name": "PediatricModelType",
             "valueType": "categorical",
         },
+        "slice/depmap_model_metadata/PediatricModelType/label": {
+            "name": "PediatricModelType",
+            "valueType": "categorical",
+        },
         "slice/depmap_model_metadata/PlateCoating/label": {
             "name": "PlateCoating",
             "valueType": "categorical",
