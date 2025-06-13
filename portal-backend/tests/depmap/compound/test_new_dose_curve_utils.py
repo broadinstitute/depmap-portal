@@ -73,7 +73,7 @@ def test_get_dose_response_curves_per_model(empty_db_mock_downloads):
     empty_db_mock_downloads.session.flush()
 
     result = new_dose_curves_utils.get_dose_response_curves_per_model(
-        compound_id=compound.compound_id,
+        compound_id=str(compound.compound_id),
         drc_dataset_label=drc_dataset_label,
         replicate_dataset_name=replicate_dataset_name,
     )

@@ -48,6 +48,8 @@ def _get_valid_curve_objs_and_model_map(
     # Get the replicate dataset, including viabilities. Do NOT use data_access here. data_access would not find the
     # legacy replicate datasets that have been filtered out of other places in the portal UI.
     replicate_dataset = Dataset.get_dataset_by_name(replicate_dataset_name)
+    assert replicate_dataset is not None
+
     replicate_dataset_matrix = replicate_dataset.matrix
     viabilities_by_model_id = replicate_dataset_matrix.get_values_by_entities_all_depmap_ids(
         entities=compound_dose_replicates
@@ -108,6 +110,8 @@ def _get_curve_params_for_model_ids(
 
             # Get the model object to determine the displayName for the curve's hover label.
             model = model_map.get(curve.depmap_id)
+            assert model is not None
+
             curve_param = {
                 "id": curve.depmap_id,
                 "displayName": model.stripped_cell_line_name,
