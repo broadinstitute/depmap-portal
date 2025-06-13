@@ -68,9 +68,9 @@ def test_get_dose_response_curves_per_model(empty_db_mock_downloads):
         xref_type=xref_type, xref=xref, label=xref_full, compound=compound
     )
     models = [
-        DepmapModelFactory(model_id="ACH-0"),
-        DepmapModelFactory(model_id="ACH-1"),
-        DepmapModelFactory(model_id="ACH-2"),
+        DepmapModelFactory(model_id="ACH-0", stripped_cell_line_name="0"),
+        DepmapModelFactory(model_id="ACH-1", stripped_cell_line_name="1"),
+        DepmapModelFactory(model_id="ACH-2", stripped_cell_line_name="2"),
     ]
 
     _setup_dose_response_curves(models=models, compound_exps=[cpd_exp])
@@ -114,26 +114,26 @@ def test_get_dose_response_curves_per_model(empty_db_mock_downloads):
         {
             "id": "ACH-0",
             "displayName": "0",
-            "ec50": 0.0,
-            "slope": 0.0,
-            "lowerAsymptote": 0.0,
-            "upperAsymptote": 0.0,
+            "ec50": 0,
+            "slope": 0,
+            "lowerAsymptote": 0,
+            "upperAsymptote": 0,
         },
         {
             "id": "ACH-1",
             "displayName": "1",
-            "ec50": 0.0,
-            "slope": 0.0,
-            "lowerAsymptote": 0.0,
-            "upperAsymptote": 0.0,
+            "ec50": 0,
+            "slope": 0,
+            "lowerAsymptote": 0,
+            "upperAsymptote": 0,
         },
         {
             "id": "ACH-2",
             "displayName": "2",
-            "ec50": 0.0,
-            "slope": 0.0,
-            "lowerAsymptote": 0.0,
-            "upperAsymptote": 0.0,
+            "ec50": 0,
+            "slope": 0,
+            "lowerAsymptote": 0,
+            "upperAsymptote": 0,
         },
     ]
     assert sorted(result["curve_params"], key=lambda x: x["id"]) == sorted(

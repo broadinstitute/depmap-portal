@@ -115,10 +115,10 @@ def _get_curve_params_for_model_ids(
             curve_param = {
                 "id": curve.depmap_id,
                 "displayName": model.stripped_cell_line_name,
-                "ec50": curve.ec50,
-                "slope": curve.slope,
-                "lowerAsymptote": curve.lower_asymptote,
-                "upperAsymptote": curve.upper_asymptote,
+                "ec50": float(curve.ec50),
+                "slope": float(curve.slope),
+                "lowerAsymptote": float(curve.lower_asymptote),
+                "upperAsymptote": float(curve.upper_asymptote),
             }
             curve_params.append(curve_param)
 
