@@ -22,7 +22,9 @@ from flask import request
 from depmap.dataset.models import DependencyDataset
 from loader.predictability_summary_loader import load_predictability_prototype
 from depmap.database import db
+import logging
 
+logger = logging.getLogger(__name__)
 namespace = Namespace("predictability_prototype", description="")
 
 
@@ -134,6 +136,7 @@ class Predictions(
                 }
 
         except Exception as e:
+            logger.exception("Exception occurred")
             return {"error_message": str(e)}
 
         return {"data": data_by_screen_type}
