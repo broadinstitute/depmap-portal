@@ -67,7 +67,11 @@ def test_get_dose_response_curves_per_model(empty_db_mock_downloads):
     cpd_exp = CompoundExperimentFactory(
         xref_type=xref_type, xref=xref, label=xref_full, compound=compound
     )
-    models = [DepmapModelFactory(), DepmapModelFactory(), DepmapModelFactory()]
+    models = [
+        DepmapModelFactory(model_id="ACH-0"),
+        DepmapModelFactory(model_id="ACH-1"),
+        DepmapModelFactory(model_id="ACH-2"),
+    ]
 
     _setup_dose_response_curves(models=models, compound_exps=[cpd_exp])
     empty_db_mock_downloads.session.flush()
