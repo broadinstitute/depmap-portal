@@ -181,23 +181,10 @@ class Compound(Entity):
         experiment_ids = [exp.entity_id for exp in experiments]
 
         # Step 3: Get all DoseResponseCurves for these experiments and label
-        dose_response_curves = (
-            DoseResponseCurve.query.filter(
-                DoseResponseCurve.compound_exp_id.in_(experiment_ids),
-                DoseResponseCurve.drc_dataset_label == drc_dataset_label,
-            )
-            .with_entities(
-                DoseResponseCurve.dose_response_curve,
-                DoseResponseCurve.depmap_id,
-                DoseResponseCurve.ec50,
-                DoseResponseCurve.slope,
-                DoseResponseCurve.upper_asymptote,
-                DoseResponseCurve.lower_asymptote,
-                DoseResponseCurve.compound_exp_id,
-                DoseResponseCurve.drc_dataset_label,
-            )
-            .all()
-        )
+        dose_response_curves = DoseResponseCurve.query.filter(
+            DoseResponseCurve.compound_exp_id.in_(experiment_ids),
+            DoseResponseCurve.drc_dataset_label == drc_dataset_label,
+        ).all()
 
         return dose_response_curves
 

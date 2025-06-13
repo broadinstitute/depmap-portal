@@ -82,10 +82,10 @@ def test_get_dose_response_curves_experiment_for_different_compound(
         compound_exp=compound_exp, drc_dataset_label="Prism_oncology_per_curve"
     )
     empty_db_mock_downloads.session.flush()
-    results = Compound.get_dose_response_curves(
-        compound_id="TEST-0006", drc_dataset_label="Prism_oncology_per_curve"
-    )
-    assert results == []
+    with pytest.raises(AssertionError):
+        results = Compound.get_dose_response_curves(
+            compound_id="TEST-0006", drc_dataset_label="Prism_oncology_per_curve"
+        )
 
 
 def test_get_dose_response_curves_multiple_experiments(empty_db_mock_downloads):
