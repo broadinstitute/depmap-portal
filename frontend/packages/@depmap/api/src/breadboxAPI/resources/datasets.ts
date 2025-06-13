@@ -43,6 +43,19 @@ export function getDatasetFeatures(datasetId: string) {
   );
 }
 
+export function getMatrixDatasetFeaturesData(
+  datasetId: string,
+  featureIds: string[]
+): Promise<{ [key: string]: Record<string, any> }> {
+  const url = `/datasets/matrix/${datasetId}`;
+
+  const args = {
+    features: featureIds,
+    feature_identifier: "id",
+  };
+  return postJson<{ [key: string]: Record<string, any> }>(url, args);
+}
+
 export function searchDimensions({
   prefix,
   substring,

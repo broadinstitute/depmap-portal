@@ -77,6 +77,7 @@ from depmap.gene.models import Gene
 from depmap.public.resources import refresh_all_category_topics, read_forum_api_key
 from depmap.discourse.client import DiscourseClient
 from breadbox_facade import BBClient, BreadboxException, ColumnMetadata, AnnotationType
+from depmap.compound.models import drc_compound_datasets
 
 
 def _recreate_td_predictive_model():
@@ -587,7 +588,13 @@ def _load_real_data(
                 curve_params_file_path = gcsc_depmap.download_to_cache(
                     curve["filename"]
                 )
-                dataset_loader.load_curve_parameters_csv(curve_params_file_path)
+                # make sure that the label for the DRC dataset is in drc_compound_datasets if we're loading data for it
+                assert curve["label"] in [
+                    x.drc_dataset_label for x in drc_compound_datasets
+                ]
+                dataset_loader.load_curve_parameters_csv(
+                    curve_params_file_path, curve["label"]
+                )
 
     def get_subtype_context_file():
         metadata = gcsc_depmap.read_json("metadata/subtype_context_matrix_out.json")[
@@ -1067,6 +1074,10 @@ def load_sample_data(
             os.path.join(loader_data_dir, "cell_line/subtype_contexts.csv")
         )
 
+        context_explorer_loader.load_subtype_tree(
+            os.path.join(loader_data_dir, "cell_line/subtype_tree.csv")
+        )
+
         str_profile_loader.load_str_profiles(
             os.path.join(loader_data_dir, "str_profile/sample_str_profile.csv")
         )
@@ -1127,19 +1138,21 @@ def load_sample_data(
 
         log.info("adding dose response curve parameter data")
         dataset_loader.load_curve_parameters_csv(
-            "sample_data/compound/ctd2_per_curve.csv"
+            "sample_data/compound/ctd2_per_curve.csv", "ctd2_per_curve"
         )
         dataset_loader.load_curve_parameters_csv(
-            "sample_data/compound/gdsc1_per_curve.csv"
+            "sample_data/compound/gdsc1_per_curve.csv", "GDSC1"
         )
         dataset_loader.load_curve_parameters_csv(
-            "sample_data/compound/gdsc2_per_curve.csv"
+            "sample_data/compound/gdsc2_per_curve.csv", "GDSC2"
         )
         dataset_loader.load_curve_parameters_csv(
-            "sample_data/compound/repurposing_secondary_per_curve.csv"
+            "sample_data/compound/repurposing_secondary_per_curve.csv",
+            "repurposing_per_curve",
         )
         dataset_loader.load_curve_parameters_csv(
-            "sample_data/compound/prism_oncology_per_curve.csv"
+            "sample_data/compound/prism_oncology_per_curve.csv",
+            "Prism_oncology_per_curve",
         )
     with transaction():
         log.info("Adding biomarker data")

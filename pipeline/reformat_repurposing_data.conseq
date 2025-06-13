@@ -44,6 +44,7 @@ rule reformat_curve_params_secondary_repurposing_data:
         taiga_token={"type": "config-file", "name": "taiga-token"}
     outputs: {
         "type": 'dose-response-curve-params',
+        "label": "repurposing_per_curve",
         "orig_dataset_id": "{{ inputs.data.dataset_id }}",
         "filename": {"$filename": "curves.csv"} },
         {"type": 'dep-matrix',

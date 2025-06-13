@@ -11,7 +11,7 @@ import {
 import type ExtendedPlotType from "src/plot/models/ExtendedPlotType";
 import styles from "src/plot/styles/PlotControls.scss";
 
-type Option = { label: string; value: number };
+type Option = { label: string; value: number; stringId?: string };
 type Dragmode = "zoom" | "pan" | "select" | "lasso";
 type DownloadImageOptions = Omit<
   Parameters<ExtendedPlotType["downloadImage"]>[0],
@@ -41,6 +41,8 @@ interface Props {
   enabledTools?: PlotToolOptions[];
   onMakeContext?: () => void;
   onDeselectPoints?: () => void;
+  altContainerStyle?: any;
+  hideCSVDownload?: boolean;
 }
 
 const toIcon = (dragmode: Dragmode) =>
@@ -98,6 +100,8 @@ function PlotControls({
   enabledTools = undefined,
   onMakeContext = () => {},
   onDeselectPoints = () => {},
+  altContainerStyle = undefined,
+  hideCSVDownload = false,
 }: Props) {
   const [dragmode, setDragmode] = useState<Dragmode>("zoom");
 
@@ -135,7 +139,7 @@ function PlotControls({
 
   return (
     <div className={styles.PlotControls}>
-      <div className={styles.container}>
+      <div style={altContainerStyle} className={styles.container}>
         <div className={styles.buttonGroup}>
           {zoomEnabled && (
             <DragmodeButton
@@ -296,7 +300,9 @@ function PlotControls({
                     Image (.svg)
                   </MenuItem>
                 )}
-                <MenuItem onClick={onDownload}>Filtered data (.csv)</MenuItem>
+                {!hideCSVDownload && (
+                  <MenuItem onClick={onDownload}>Filtered data (.csv)</MenuItem>
+                )}
               </DropdownButton>
             </Tooltip>
           </div>
