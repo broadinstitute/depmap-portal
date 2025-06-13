@@ -43,20 +43,17 @@ export function getDatasetFeatures(datasetId: string) {
   );
 }
 
-// TODO: Figure out return type.
-export function getFeaturesData(
+export function getMatrixDatasetFeaturesData(
   datasetId: string,
   featureIds: string[]
-): Promise<any> {
-  const numFeatureIds = featureIds.length;
+): Promise<{ [key: string]: Record<string, any> }> {
+  const url = `/datasets/matrix/${datasetId}`;
 
-  // Every feature contains the same
-  const dataset_ids = Array(numFeatureIds).fill(datasetId);
-  const params: any = {
-    dataset_ids,
-    feature_ids: featureIds,
+  const args = {
+    features: featureIds,
+    feature_identifier: "id",
   };
-  return getJson<any>(`/datasets/features/data/`, params);
+  return postJson<{ [key: string]: Record<string, any> }>(url, args);
 }
 
 export function searchDimensions({

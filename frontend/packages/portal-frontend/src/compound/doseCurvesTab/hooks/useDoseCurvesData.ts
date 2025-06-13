@@ -60,18 +60,19 @@ function useDoseCurvesData(
           await bbapi.getDatasetFeatures(dataset.viability_dataset_id)
         ).filter((feature) => feature.id.includes(compoundId));
 
-        const compoundDoseFeatures = await bbapi.getFeaturesData(
+        const compoundDoseFeatures = await bbapi.getMatrixDatasetFeaturesData(
           dataset.viability_dataset_id,
           featuresData.map((doseFeat) => doseFeat.id)
         );
 
-        const aucsList = await bbapi.getFeaturesData(dataset.auc_dataset_id, [
-          compoundId,
-        ]);
+        const aucsListResponse = await bbapi.getMatrixDatasetFeaturesData(
+          dataset.auc_dataset_id,
+          [compoundId]
+        );
 
         // aucsList is a list of length equal to the number of features we asked for.
         // We are only looking at 1 compound at a time, so aucs will always be length 1.
-        const aucs = aucsList[0];
+        const aucs = aucsListResponse[compoundId];
 
         // Inverse log2 transform each value of feature.values before merging
         // Build a map of modelId to row for fast merging
@@ -79,14 +80,15 @@ function useDoseCurvesData(
         const doseColNames: string[] = [];
         const doseValues: number[] = [];
         const featureValueMaps: Record<string, Record<string, number>> = {};
-        compoundDoseFeatures.forEach((feature: any) => {
+        Object.keys(compoundDoseFeatures).forEach((doseFeature: string) => {
+          const feature = compoundDoseFeatures[doseFeature];
           if (feature.values) {
             Object.keys(feature.values).forEach((modelId) =>
               allIndices.add(modelId)
             );
           }
           // Remove the compoundId substring from feature_id for the column name
-          const col = feature.feature_id.replace(compoundId, "").trim();
+          const col = doseFeature.replace(compoundId, "").trim();
           doseColNames.push(col);
           featureValueMaps[col] = feature.values || {};
 
@@ -118,11 +120,11 @@ function useDoseCurvesData(
           // Only add row if at least one doseCol is not null/undefined
           const hasDose = doseColNames.some((col) => row[col] !== undefined);
           if (
-            aucs.values[modelId] !== undefined &&
-            aucs.values[modelId] !== null &&
+            aucs[modelId] !== undefined &&
+            aucs[modelId] !== null &&
             hasDose
           ) {
-            row.AUC = aucs.values[modelId].toFixed(3);
+            row.AUC = aucs[modelId].toFixed(3);
             mergedRows.push(row);
           }
         });
