@@ -90,19 +90,23 @@ class Predictions(
 
         # Overview data
         try:
+            logger.warning(f"get predictions start")
             matrix_datasets = data_access.get_all_matrix_datasets()
             datasets_by_taiga_id = get_all_datasets(matrix_datasets)
 
             data_by_screen_type = {}
             for screen_type in SCREEN_TYPES:
+                logger.warning(f"fetching {screen_type}")
                 dataset = DependencyDataset.get_dataset_by_data_type_priority(
                     screen_type
                 )
 
+                logger.warning(f"fetching {screen_type} gene effect")
                 gene_effect_df = get_gene_effect_df(dataset)
 
                 entity_id = Gene.get_by_label(gene_symbol).entity_id
 
+                logger.warning(f"generate_aggregate_scores_across_all_models")
                 agg_scores = generate_aggregate_scores_across_all_models(
                     gene_symbol,
                     entity_id=entity_id,
@@ -111,12 +115,14 @@ class Predictions(
                     actuals=gene_effect_df,
                 )
 
+                logger.warning(f"top_features_overall")
                 top_features, gene_tea_symbols = top_features_overall(
                     gene_symbol, entity_id=entity_id, screen_type=screen_type
                 )
 
                 model_performance_info = {}
                 for model in MODEL_SEQUENCE:
+                    logger.warning(f"model {model}")
                     feature_header_info = get_top_feature_headers(
                         entity_id=entity_id, model=model, screen_type=screen_type
                     )
@@ -125,6 +131,7 @@ class Predictions(
                         "r": 0.71,
                         "feature_summaries": feature_header_info,
                     }
+                    logger.warning(f"feature_header_info={feature_header_info}")
 
                 data_by_screen_type[screen_type] = {
                     "overview": {
