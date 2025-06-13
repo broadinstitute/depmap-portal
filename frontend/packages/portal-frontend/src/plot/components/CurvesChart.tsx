@@ -323,21 +323,6 @@ function CurvesChart({
 
         onClickCurve(curveId);
       }
-
-      // WORKAROUND: If you mean to double-click to zoom out and
-      // select a point by accident, restore the previous selections.
-      const prevAxes = axes.current;
-      const prevSelection =
-        [...(selectedCurves || [])].map((modelId: string) => {
-          return findIndexByProperty(curveTraces, "id", modelId);
-        }) || [];
-
-      // TODO: are we going to allow multiselect??
-      setTimeout(() => {
-        if (axes.current !== prevAxes && prevSelection) {
-          onMultiselect([...prevSelection]);
-        }
-      }, 100);
     });
 
     on("plotly_selecting", () => {
