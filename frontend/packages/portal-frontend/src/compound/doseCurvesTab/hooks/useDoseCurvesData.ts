@@ -82,15 +82,14 @@ function useDoseCurvesData(
         const featureValueMaps: Record<string, Record<string, number>> = {};
         Object.keys(compoundDoseFeatures).forEach((doseFeature: string) => {
           const feature = compoundDoseFeatures[doseFeature];
-          if (feature.values) {
-            Object.keys(feature.values).forEach((modelId) =>
-              allIndices.add(modelId)
-            );
+          const featureVals: number[] = Object.values(feature);
+          if (featureVals) {
+            Object.keys(feature).forEach((modelId) => allIndices.add(modelId));
           }
           // Remove the compoundId substring from feature_id for the column name
           const col = doseFeature.replace(compoundId, "").trim();
           doseColNames.push(col);
-          featureValueMaps[col] = feature.values || {};
+          featureValueMaps[col] = feature || {};
 
           // Keep track of all dose values so we can set the minimum and maximum of the plot's
           // x-axis accordingly.
