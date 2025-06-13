@@ -1,17 +1,14 @@
 import React, { useContext, useEffect, useMemo, useState } from "react";
 import GroupedBarSuplots from "./GroupedBarSuplots";
 import { ApiContext } from "@depmap/api";
-import {
-  BarSubplotData,
-  Subgroup,
-  SubgroupSubtypes,
-} from "../models/subplotData";
+import { Subgroup } from "../models/subplotData";
 
 export default function SubGroupsPlot() {
   const { getApi } = useContext(ApiContext);
   const [bapi] = useState(() => getApi());
 
-  const [data, setData] = React.useState<SubgroupSubtypes | null>(null);
+  const [data, setData] = React.useState<any | null>(null);
+  const [counts, setCounts] = useState<Record<string, number> | null>(null);
   const [hasError, setHasError] = useState(false);
 
   useEffect(() => {
@@ -26,6 +23,7 @@ export default function SubGroupsPlot() {
               columns: [
                 "OncotreeLineage",
                 "OncotreeSubtype",
+                "ModelSubtypeFeatures",
                 "PediatricModelType",
               ],
             }
@@ -45,33 +43,70 @@ export default function SubGroupsPlot() {
               modelSubsetIndexData[index][colName] = value;
             }
           }
+          console.log(modelSubsetIndexData);
 
-          // Filter by pediatric models and group by subtype groups
-          const pedModelData: SubgroupSubtypes = Object.entries(
-            modelSubsetIndexData
-          ).reduce(
-            (acc, [, modelData]) => {
-              if (modelData.PediatricModelType === "True") {
-                const subtype: string = modelData.OncotreeSubtype;
-                if (modelData.OncotreeLineage === "CNS/Brain") {
-                  acc["CNS/Brain"].push(subtype);
-                } else if (
-                  ["Myeloid", "Lymphoid"].includes(modelData.OncotreeLineage)
-                ) {
-                  acc.Heme.push(subtype);
-                } else {
-                  acc.Solid.push(subtype);
-                }
+          // create count map for subtype feature counts
+
+          // Filter by pediatric models, add lineage subgroup, add subtype feature
+          const pedModelData = Object.values(modelSubsetIndexData)
+            .filter((modelInfo) => {
+              return modelInfo.PediatricModelType === "True";
+            })
+            .map((modelInfo) => {
+              let subgroup: Subgroup;
+              const subtype: string = modelInfo.OncotreeSubtype;
+              // if model subtype feature is null, set subtype as subtype feature
+              const subtypeFeature: string = modelInfo.ModelSubtypeFeatures
+                ? modelInfo.ModelSubtypeFeatures
+                : modelInfo.OncotreeSubtype;
+              if (modelInfo.OncotreeLineage === "CNS/Brain") {
+                subgroup = "CNS/Brain";
+              } else if (
+                ["Myeloid", "Lymphoid"].includes(modelInfo.OncotreeLineage)
+              ) {
+                subgroup = "Heme";
+              } else {
+                subgroup = "Solid";
               }
-              return acc;
-            },
-            {
-              "CNS/Brain": new Array<string>(),
-              Heme: new Array<string>(),
-              Solid: new Array<string>(),
+              return {
+                key: `${subgroup}-${subtype}-${subtypeFeature}`,
+                subgroup,
+                subtype,
+                subtypeFeature,
+              };
+            });
+          // Count map: { parent_type -> type -> subtype -> count }
+          const allCounts: Record<string, number> = {};
+
+          pedModelData.forEach(({ key }) => {
+            allCounts[key] = (allCounts[key] || 0) + 1;
+          });
+
+          const sortedPedModelData = pedModelData.map((d) => {
+            return { ...d, count: allCounts[d.key] };
+          });
+          // Step 1: Compute total counts per `subtype`
+          const subtypeTotalCount: Record<string, number> = {};
+          sortedPedModelData.forEach(({ subtype, count }) => {
+            subtypeTotalCount[subtype] =
+              (subtypeTotalCount[subtype] || count) + count;
+          });
+
+          sortedPedModelData.sort((a, b) => {
+            if (a.subgroup !== b.subgroup) {
+              return a.subgroup.localeCompare(b.subgroup);
             }
-          );
-          setData(pedModelData);
+            const totalA = subtypeTotalCount[a.subtype];
+            const totalB = subtypeTotalCount[b.subtype];
+            if (totalB === totalA) {
+              return a.subtype.localeCompare(b.subtype);
+            }
+            return totalB - totalA; // descending
+          });
+          console.log(sortedPedModelData);
+
+          setData(sortedPedModelData);
+          setCounts(allCounts);
         } else {
           setHasError(true);
         }
@@ -81,85 +116,6 @@ export default function SubGroupsPlot() {
       }
     })();
   }, [bapi]);
-
-  const subplotsData = useMemo(() => {
-    if (data) {
-      const subgroupSubtypesCounts: {
-        key: Subgroup;
-        subtypeLabels: string[];
-        labels: string[];
-        values: number[];
-        maxCount: number;
-      }[] = Object.entries(data).map(([subgroup, subtypes]) => {
-        // Count subtype labels
-        const subtypesCountMap = subtypes.reduce((acc, label) => {
-          acc[label] = (acc[label] || 0) + 1;
-          return acc;
-        }, {} as { [key: string]: number });
-
-        // Sort subtype labels by count descending
-        const sortedEntries = Object.entries(subtypesCountMap).sort(
-          (a, b) => b[1] - a[1]
-        );
-
-        // Extract subtype labels and values. Additionally, truncate label, if necessary for subtype label in x axis
-        const labels: string[] = [];
-        const subtypeLabels: string[] = [];
-        const counts: number[] = [];
-        sortedEntries.forEach(([label, count]) => {
-          subtypeLabels.push(
-            label.length > 25 ? label.substring(0, 25).concat("...") : label
-          );
-          labels.push(label);
-          counts.push(count);
-        });
-
-        // Track the max value for top-level sorting
-        const maxCount = counts[0];
-
-        return {
-          key: subgroup,
-          subtypeLabels,
-          labels,
-          values: counts,
-          maxCount,
-        } as {
-          key: Subgroup;
-          subtypeLabels: string[];
-          labels: string[];
-          values: number[];
-          maxCount: number;
-        };
-      });
-
-      // Sort by maxCount descending
-      subgroupSubtypesCounts.sort((a, b) => b.maxCount - a.maxCount);
-
-      // Define subgroup colors
-      const subgroupToColor: {
-        [key in Subgroup]: { color: string; line: string };
-      } = {
-        "CNS/Brain": { color: "#f5db84", line: "#f5c422" },
-        Heme: { color: "#d3b2db", line: "#ba37db" },
-        Solid: { color: "#a3bce6", line: "#1154bf" },
-      };
-
-      const subgroupSubtypesData: BarSubplotData[] = subgroupSubtypesCounts.map(
-        ({ key, subtypeLabels, labels, values }) => {
-          return {
-            xAxisLabels: subtypeLabels,
-            labels,
-            values,
-            name: key,
-            color: subgroupToColor[key].color,
-            lineColor: subgroupToColor[key].line,
-          };
-        }
-      );
-      return subgroupSubtypesData;
-    }
-    return [];
-  }, [data]);
 
   if (hasError) {
     return (
@@ -175,10 +131,10 @@ export default function SubGroupsPlot() {
       </div>
     );
   }
-  if (data) {
+  if (data && counts) {
     return (
       <div>
-        <GroupedBarSuplots subplotsData={subplotsData} />
+        <GroupedBarSuplots subplotsData={data} countData={counts} />
       </div>
     );
   }
