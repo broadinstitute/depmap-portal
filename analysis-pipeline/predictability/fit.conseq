@@ -3,7 +3,6 @@
 # 2. Run the model fitting
 # 3. Combine the output config files
 
-# todo: fix docker image such that default python is python3, and make sparkles in path
 let sparkes_path = "/install/sparkles/bin/sparkles"
 let daintree_docker_image = "us-central1-docker.pkg.dev/cds-docker-containers/docker/daintree:test"
 let dest_permaname = "internal-25q2-pred-test-f0ee"
@@ -44,7 +43,7 @@ rule process_model_config:
         json.dump(config_dict, f, indent=2)   
 
     """
-    # --test-only-first-n 2
+    # Add --test-only-first-n 2 to only generate a two configs (for testing)
     run "python3 {{ inputs.script.filename }} --model_config {{ inputs.model_config.filename }} --input_config 'daintree_input_config.json'"
 
 
@@ -59,9 +58,10 @@ rule run_fit_models:
           },
         sparkles_config=fileref("sparkles-config"),
         create_workflow_script=fileref("scripts/create_daintree_workflow.py")
-    run "python3 {{ inputs.create_workflow_script.filename }} --config {{ inputs.daintree_input_config.filename }} --out workflow.json --nfolds 5 --models-per-task 5 --test-first-n-tasks 10"
+    run "python3 {{ inputs.create_workflow_script.filename }} --config {{ inputs.daintree_input_config.filename }} --out workflow.json --nfolds 5 --models-per-task {{ inputs.daintree_input_config.models_per_task}} --test-first-n-tasks 10"
     run "cp {{ inputs.sparkles_config.filename }} .sparkles"
-    run "{{config.sparkles_path}} workflow run --retry --add-hash-to-job-id -i {{ config.daintree_docker_image }} daintree-fit workflow.json"
+    run "{{config.sparkles_path}} workflow run --nodes 100 --retry --add-hash-to-job-id -i {{ config.daintree_docker_image }} daintree-fit-v1 workflow.json"
+
     # reformat daintree-output into artifacts conseq will understand
     run "python3" with """
     import json

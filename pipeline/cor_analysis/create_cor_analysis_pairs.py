@@ -16,6 +16,11 @@ def main():
         print("warning: ignoring input: ", inputs)
         # todo change this so we take the taiga IDs from inputs
 
+    # include the contents of cor_script when computing the hash for the job id
+    # so that any changes in it result in new job IDs
+    with open(inputs["cor_script"]["filename"], "rb") as fd:
+        cor_script = fd.read()
+
     def make_pairs():
         for mat_a in inputs["a_set"]:
             for mat_b in inputs["b_set"]:
@@ -37,7 +42,9 @@ def main():
 
         # compute job name based on the inputs so that we can use it as a cache key
         hasher = hashlib.sha256(json.dumps(artifact, sort_keys=True).encode("utf-8"))
-        hasher.update("v5".encode("utf-8"))
+        hasher.update(cor_script)
+        hasher.update(b"v5")
+
         artifact["job_name"] = f"cor-pair-{hasher.hexdigest()[:10]}"
 
         return artifact

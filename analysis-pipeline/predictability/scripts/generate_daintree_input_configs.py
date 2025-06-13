@@ -2,6 +2,7 @@ import argparse
 import json
 import yaml
 import os
+import math
 from typing import List, Dict, Any, Optional
 
 screens = ["crispr", "rnai", "oncref"]
@@ -101,20 +102,28 @@ def generate_daintree_configs(
                     "exempt": False,
                 }
 
+            # these values were collected by running a small number of models for each configuration
+            # We'd like to target each task runs ~15 minutes to minimize loss of work due to preemption
+            # while also minimizing the amount of startup work it takes to start each task
+            estimated_seconds_per_model = model_config['EstimatedSecondsPerModel']
+            models_per_task = int(math.ceil((15 * 60 )/ estimated_seconds_per_model ))
+
             # Generate output filename
             model_and_screen = f"{model_name}{screen}"
             output_filename = f"DaintreeInputConfig{model_and_screen}.json"
 
             with open(output_filename, "w") as f:
                 json.dump(output_json, f, indent=2)
-                artifacts.append(
-                    {
-                        "type": "daintree_input_config",
-                        "model_name": model_name,
-                        "screen_name": screen,
-                        "filename": {"$filename": output_filename},
-                    }
-                )
+
+            artifacts.append(
+                {
+                    "type": "daintree_input_config",
+                    "model_name": model_name,
+                    "screen_name": screen,
+                    "filename": {"$filename": output_filename},
+                    "models_per_task": str(models_per_task)
+                }
+            )
 
     if test_only_first_n is not None:
         print(f"Warning: --test-only-first-n was specified so only returning the first {test_only_first_n}")
