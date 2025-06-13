@@ -160,8 +160,18 @@ class PrototypePredictiveFeature(Model):
         return None
 
 
+from typing import Union, Tuple
+
+
 class PrototypePredictiveModel(Model):
     __tablename__ = "prototype_predictive_model"
+
+    __table_args__: Union[Dict, Tuple] = (
+        db.UniqueConstraint(
+            "label", "screen_type", "entity_id", name="uc_comp_key_pred_model"
+        ),
+    )
+
     predictive_model_id = Column(Integer, primary_key=True, autoincrement=True)
 
     entity_id = Column(
