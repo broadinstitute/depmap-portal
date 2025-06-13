@@ -1,7 +1,7 @@
 import React, { useContext, useEffect, useMemo, useState } from "react";
 import GroupedBarSuplots from "./GroupedBarSuplots";
 import { ApiContext } from "@depmap/api";
-import { Subgroup } from "../models/subplotData";
+import { ModelDataWithSubgroup, Subgroup } from "../models/subplotData";
 
 export default function SubGroupsPlot() {
   const { getApi } = useContext(ApiContext);
@@ -28,7 +28,6 @@ export default function SubGroupsPlot() {
               ],
             }
           );
-          console.log(modelSubsetColData);
 
           // Transform data to use models as index instead of col names
           const modelSubsetIndexData: { [key: string]: any } = {};
@@ -43,22 +42,24 @@ export default function SubGroupsPlot() {
               modelSubsetIndexData[index][colName] = value;
             }
           }
-          console.log(modelSubsetIndexData);
-
-          // create count map for subtype feature counts
 
           // Filter by pediatric models, add lineage subgroup, add subtype feature
-          const pedModelData = Object.values(modelSubsetIndexData)
+          const pedModelData: Omit<
+            ModelDataWithSubgroup,
+            "count"
+          >[] = Object.values(modelSubsetIndexData)
             .filter((modelInfo) => {
               return modelInfo.PediatricModelType === "True";
             })
             .map((modelInfo) => {
-              let subgroup: Subgroup;
               const subtype: string = modelInfo.OncotreeSubtype;
               // if model subtype feature is null, set subtype as subtype feature
               const subtypeFeature: string = modelInfo.ModelSubtypeFeatures
                 ? modelInfo.ModelSubtypeFeatures
                 : modelInfo.OncotreeSubtype;
+
+              // define subgroup for models based on lineage
+              let subgroup: Subgroup;
               if (modelInfo.OncotreeLineage === "CNS/Brain") {
                 subgroup = "CNS/Brain";
               } else if (
@@ -68,44 +69,53 @@ export default function SubGroupsPlot() {
               } else {
                 subgroup = "Solid";
               }
+
               return {
-                key: `${subgroup}-${subtype}-${subtypeFeature}`,
+                // NOTE: (subtype, subtypeFeature) is unique within subgroups but (subgroup, subtypeFeature) can be repeated. We will make each (subgroup, subtype, subtypeFeature) unique in case
+                key: `${subgroup}-${subtype}-${subtypeFeature}`, // key used as unique identifier for count map
                 subgroup,
                 subtype,
                 subtypeFeature,
               };
             });
-          // Count map: { parent_type -> type -> subtype -> count }
-          const allCounts: Record<string, number> = {};
 
+          // Count map: { [parent_type,type,subtype] -> count }
+          const allCounts: Record<string, number> = {};
           pedModelData.forEach(({ key }) => {
             allCounts[key] = (allCounts[key] || 0) + 1;
           });
 
-          const sortedPedModelData = pedModelData.map((d) => {
+          // add count to each model data
+          const pedModelDataCounts = pedModelData.map((d) => {
             return { ...d, count: allCounts[d.key] };
           });
-          // Step 1: Compute total counts per `subtype`
+
+          // NOTE: The following sort/group is important to ensure the bars are displayed accurately.
+          // Data with same subgroups are next to each other and total subtype counts are displayed in descending order
+
+          // Sort the model data by its subgroup and total counts across subtypes
           const subtypeTotalCount: Record<string, number> = {};
-          sortedPedModelData.forEach(({ subtype, count }) => {
+          pedModelDataCounts.forEach(({ subtype, count }) => {
             subtypeTotalCount[subtype] =
-              (subtypeTotalCount[subtype] || count) + count;
+              (subtypeTotalCount[subtype] || 0) + count;
           });
 
-          sortedPedModelData.sort((a, b) => {
+          pedModelDataCounts.sort((a, b) => {
             if (a.subgroup !== b.subgroup) {
               return a.subgroup.localeCompare(b.subgroup);
             }
+
             const totalA = subtypeTotalCount[a.subtype];
             const totalB = subtypeTotalCount[b.subtype];
-            if (totalB === totalA) {
-              return a.subtype.localeCompare(b.subtype);
+            if (totalB !== totalA) {
+              return totalB - totalA; // descending
             }
-            return totalB - totalA; // descending
-          });
-          console.log(sortedPedModelData);
 
-          setData(sortedPedModelData);
+            return a.subtype.localeCompare(b.subtype);
+          });
+          console.log(pedModelDataCounts);
+
+          setData(pedModelDataCounts);
           setCounts(allCounts);
         } else {
           setHasError(true);

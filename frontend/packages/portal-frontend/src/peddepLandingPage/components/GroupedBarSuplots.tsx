@@ -1,9 +1,9 @@
 import React, { useEffect, useRef } from "react";
-import Plotly, { Config, Layout, PlotData } from "plotly.js";
-import { BarSubplotData, Subgroup } from "../models/subplotData";
+import Plotly, { Config, Layout } from "plotly.js";
+import { ModelDataWithSubgroup, Subgroup } from "../models/subplotData";
 
 interface GroupedBarSuplotsProp {
-  subplotsData: any;
+  subplotsData: ModelDataWithSubgroup[];
   countData: Record<string, number>;
 }
 
@@ -23,6 +23,8 @@ export default function GroupedBarSuplots(props: GroupedBarSuplotsProp) {
         Heme: { color: "#d3b2db", line: "#ba37db" },
         Solid: { color: "#a3bce6", line: "#1154bf" },
       };
+
+      // Remove duplicates
       const subtypes = Array.from(new Set(subplotsData.map((d) => d.subtype)));
       const subgroups = Array.from(
         new Set(subplotsData.map((d) => d.subgroup))
@@ -30,16 +32,17 @@ export default function GroupedBarSuplots(props: GroupedBarSuplotsProp) {
       const subfeatures = Array.from(
         new Set(subplotsData.map((d) => d.subtypeFeature))
       );
-      console.log(subtypes);
-      console.log(subgroups);
-      console.log(subfeatures);
 
       const traces: Partial<Plotly.PlotData>[] = [];
-
+      // HACK: Plotly's barmode: 'stack' stacks traces, not categories inside traces.
+      // So the only way to stack subfeatures within each subgroup for the same subtype is to create a trace per subfeature
+      // Create one trace per (subgroup, subfeature) pair.
       subgroups.forEach((subgroup) => {
         subfeatures.forEach((subfeature, i) => {
           traces.push({
-            x: subtypes,
+            x: subtypes.map((st) =>
+              st.length > 20 ? st.substring(0, 20).concat("...") : st
+            ),
             y: subtypes.map((subtype) => {
               return countData[`${subgroup}-${subtype}-${subfeature}`] ?? 0;
             }),
@@ -47,7 +50,7 @@ export default function GroupedBarSuplots(props: GroupedBarSuplotsProp) {
               const count =
                 countData[`${subgroup}-${subtype}-${subfeature}`] ?? 0;
               return count > 0
-                ? `Parent: ${subgroup}<br>Type: ${subtype}<br>Subtype: ${subfeature}<br>Count: ${count}`
+                ? `Subgroup: ${subgroup}<br>Subtype: ${subtype}<br>Feature: ${subfeature}<br>Count: ${count}`
                 : "";
             }),
             hoverinfo: "text",
@@ -58,9 +61,9 @@ export default function GroupedBarSuplots(props: GroupedBarSuplotsProp) {
             stackgroup: subgroup,
             type: "bar",
             marker: {
-              color: subgroupToColor[subgroup as Subgroup].color,
+              color: subgroupToColor[subgroup].color,
               line: {
-                color: subgroupToColor[subgroup as Subgroup].line,
+                color: subgroupToColor[subgroup].line,
                 width: 2,
               },
             },
@@ -74,7 +77,7 @@ export default function GroupedBarSuplots(props: GroupedBarSuplotsProp) {
       const layout: Partial<Layout> = {
         title: "",
         xaxis: {
-          tickangle: -50,
+          tickangle: -60,
           tickfont: {
             size: 10,
           },
