@@ -933,7 +933,7 @@ class WideTable extends React.Component<WideTableProps, WideTableState> {
         Use textboxes below the headers to filter values in a column.{" "}
       </Popover>
     );
-    console.log(this.props.selectedTableLabels);
+
     return (
       <div className="wide-table">
         <canvas
