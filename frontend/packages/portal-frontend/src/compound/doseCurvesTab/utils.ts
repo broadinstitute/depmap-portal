@@ -1,4 +1,8 @@
-import { DoseTableRow } from "./types";
+import { DoseTableRow } from "@depmap/types";
+
+export const Rep1Color = "#CC4778";
+export const Rep2Color = "#F89540";
+export const Rep3Color = "#176CE0";
 
 export function getDoseCurveTableColumns(doseTable: DoseTableRow[]) {
   if (!doseTable || doseTable.length === 0) return [];

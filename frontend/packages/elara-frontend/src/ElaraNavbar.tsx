@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useState } from "react";
 import {
   MenuItem,
   Nav,
@@ -12,8 +12,8 @@ import {
   LinkProps,
   useNavigate,
 } from "react-router-dom";
+import { breadboxAPI } from "@depmap/api";
 import BannerSvg from "src/BannerSvg";
-import { ElaraApi } from "src/api";
 import { SearchBar, SearchResponse } from "./pages/SearchBar";
 import launchContextManagerModal from "src/modals/launchContextManagerModal";
 
@@ -42,7 +42,6 @@ function MenuItemLink({ onSelect = undefined, ...rest }: MenuItemLinkProps) {
 
 function ElaraNavbar() {
   // TODO: Needs to be cleaned up
-  const dapi = useMemo(() => new ElaraApi("/"), []);
   const [isLoading, setIsLoading] = useState(false);
   const [options, setOptions] = useState<string[]>([]);
 
@@ -55,14 +54,14 @@ function ElaraNavbar() {
 
       setIsLoading(true);
 
-      await dapi
+      await breadboxAPI
         .getSearchOptions(query)
         .then((searchResponse: SearchResponse) => {
           setOptions(searchResponse.labels);
           setIsLoading(false);
         });
     },
-    [setIsLoading, setOptions, dapi]
+    [setIsLoading, setOptions]
   );
 
   const navigate = useNavigate();

@@ -6,8 +6,11 @@ import PlotControls, {
 } from "src/plot/components/PlotControls";
 import PlotSpinner from "src/plot/components/PlotSpinner";
 import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
-import { CurveParams, CurvePlotPoints } from "../components/DoseResponseCurve";
-import { CompoundDoseCurveData } from "./types";
+import {
+  CompoundDoseCurveData,
+  CurveParams,
+  CurvePlotPoints,
+} from "@depmap/types";
 import styles from "./CompoundDoseCurves.scss";
 
 interface DoseCurvesPlotSectionProps {

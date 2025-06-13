@@ -1,7 +1,6 @@
 import "src/public-path";
 import React from "react";
 import ReactDOM from "react-dom";
-import { ApiContext } from "@depmap/api";
 import {
   DataExplorerPage,
   DataExplorerSettingsProvider,
@@ -9,7 +8,6 @@ import {
   PlotlyLoaderProvider,
 } from "@depmap/data-explorer-2";
 import PlotlyLoader from "src/plot/components/PlotlyLoader";
-import { apiFunctions } from "src/common/utilities/context";
 import ErrorBoundary from "src/common/components/ErrorBoundary";
 import {
   evaluateLegacyContext,
@@ -52,41 +50,39 @@ const App = () => {
   return (
     <ErrorBoundary>
       <PlotlyLoaderProvider PlotlyLoader={PlotlyLoader}>
-        <ApiContext.Provider value={apiFunctions.depmap}>
-          <DeprecatedDataExplorerApiProvider
-            evaluateLegacyContext={evaluateLegacyContext}
-            fetchDatasetDetails={fetchDatasetDetails}
-            fetchDatasetsByIndexType={fetchDatasetsByIndexType}
-            fetchDimensionLabels={fetchDimensionLabels}
-            fetchDimensionLabelsOfDataset={fetchDimensionLabelsOfDataset}
-            fetchDimensionLabelsToDatasetsMapping={
-              fetchDimensionLabelsToDatasetsMapping
-            }
-            fetchDatasetsMatchingContextIncludingEntities={
-              fetchDatasetsMatchingContextIncludingEntities
-            }
-            fetchAnalysisResult={fetchAnalysisResult}
-            fetchLegacyAssociations={fetchLegacyAssociations}
-            fetchContextSummary={fetchContextSummary}
-            fetchMetadataColumn={fetchMetadataColumn}
-            fetchCorrelation={fetchCorrelation}
-            fetchGeneTeaEnrichment={fetchGeneTeaEnrichment}
-            fetchGeneTeaTermContext={fetchGeneTeaTermContext}
-            fetchLinearRegression={fetchLinearRegression}
-            fetchMetadataSlices={fetchMetadataSlices}
-            fetchPlotDimensions={fetchPlotDimensions}
-            fetchUniqueValuesOrRange={fetchUniqueValuesOrRange}
-            fetchWaterfall={fetchWaterfall}
-          >
-            <DataExplorerSettingsProvider>
-              <DataExplorerPage
-                feedbackUrl={feedbackUrl}
-                contactEmail={contactEmail}
-                tutorialLink={tutorialLink}
-              />
-            </DataExplorerSettingsProvider>
-          </DeprecatedDataExplorerApiProvider>
-        </ApiContext.Provider>
+        <DeprecatedDataExplorerApiProvider
+          evaluateLegacyContext={evaluateLegacyContext}
+          fetchDatasetDetails={fetchDatasetDetails}
+          fetchDatasetsByIndexType={fetchDatasetsByIndexType}
+          fetchDimensionLabels={fetchDimensionLabels}
+          fetchDimensionLabelsOfDataset={fetchDimensionLabelsOfDataset}
+          fetchDimensionLabelsToDatasetsMapping={
+            fetchDimensionLabelsToDatasetsMapping
+          }
+          fetchDatasetsMatchingContextIncludingEntities={
+            fetchDatasetsMatchingContextIncludingEntities
+          }
+          fetchAnalysisResult={fetchAnalysisResult}
+          fetchLegacyAssociations={fetchLegacyAssociations}
+          fetchContextSummary={fetchContextSummary}
+          fetchMetadataColumn={fetchMetadataColumn}
+          fetchCorrelation={fetchCorrelation}
+          fetchGeneTeaEnrichment={fetchGeneTeaEnrichment}
+          fetchGeneTeaTermContext={fetchGeneTeaTermContext}
+          fetchLinearRegression={fetchLinearRegression}
+          fetchMetadataSlices={fetchMetadataSlices}
+          fetchPlotDimensions={fetchPlotDimensions}
+          fetchUniqueValuesOrRange={fetchUniqueValuesOrRange}
+          fetchWaterfall={fetchWaterfall}
+        >
+          <DataExplorerSettingsProvider>
+            <DataExplorerPage
+              feedbackUrl={feedbackUrl}
+              contactEmail={contactEmail}
+              tutorialLink={tutorialLink}
+            />
+          </DataExplorerSettingsProvider>
+        </DeprecatedDataExplorerApiProvider>
       </PlotlyLoaderProvider>
     </ErrorBoundary>
   );

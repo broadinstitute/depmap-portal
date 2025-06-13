@@ -1,10 +1,13 @@
 import { useCallback, useMemo, useState } from "react";
 import { defaultContextName } from "@depmap/data-explorer-2/src/components/DataExplorerPage/utils";
-import { DataExplorerContext } from "@depmap/types";
+import {
+  CompoundDoseCurveData,
+  DataExplorerContext,
+  DoseTableRow,
+} from "@depmap/types";
 import { saveNewContext } from "src";
 import doseCurvesPromptForSelectionFromContext from "../doseCurvesPromptForSelectionFromContext";
 import { sortBySelectedModel } from "../utils";
-import { CompoundDoseCurveData, DoseTableRow } from "../types";
 import { useDeprecatedDataExplorerApi } from "@depmap/data-explorer-2";
 
 function useDoseCurvesSelectionHandlers(

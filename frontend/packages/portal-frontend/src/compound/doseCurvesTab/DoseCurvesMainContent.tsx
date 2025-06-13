@@ -1,16 +1,19 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { getDapi } from "src/common/utilities/context";
 import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
-import { CurveParams } from "../components/DoseResponseCurve";
 import DoseCurvesPlotSection from "./DoseCurvesPlotSection";
 import useDoseCurvesData from "./hooks/useDoseCurvesData";
 import useDoseCurvesSelectionHandlers from "./hooks/useDoseCurvesSelectionHandlers";
 import CompoundPlotSelections from "./CompoundPlotSelections";
 import DoseCurvesTable from "./DoseCurvesTable";
-import { CompoundDoseCurveData, DRCDatasetOptions } from "./types";
 import { useDeprecatedDataExplorerApi } from "@depmap/data-explorer-2";
 import { getDoseCurveTableColumns } from "./utils";
+import { legacyPortalAPI } from "@depmap/api";
 import styles from "./CompoundDoseCurves.scss";
+import {
+  CurveParams,
+  CompoundDoseCurveData,
+  DRCDatasetOptions,
+} from "@depmap/types";
 
 interface DoseCurvesMainContentProps {
   dataset: DRCDatasetOptions | null;
@@ -31,7 +34,6 @@ function DoseCurvesMainContent({
   compoundId,
   handleShowUnselectedLinesOnSelectionsCleared,
 }: DoseCurvesMainContentProps) {
-  const dapi = getDapi();
   const api = useDeprecatedDataExplorerApi();
 
   const {
@@ -47,10 +49,10 @@ function DoseCurvesMainContent({
   const [cellLineUrlRoot, setCellLineUrlRoot] = useState<string | null>(null);
 
   useEffect(() => {
-    dapi.getCellLineUrlRoot().then((urlRoot: string) => {
+    legacyPortalAPI.getCellLineUrlRoot().then((urlRoot: string) => {
       setCellLineUrlRoot(urlRoot);
     });
-  }, [dapi]);
+  }, []);
 
   // Build a modelId → displayName map for use in both selectedLabels and WideTable
   const displayNameModelIdMap = useMemo(() => {

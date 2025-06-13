@@ -1,8 +1,9 @@
 import { ToggleSwitch } from "@depmap/common-components";
 import React from "react";
 import Select from "react-select";
-import { DRCDatasetOptions, Rep1Color, Rep2Color, Rep3Color } from "./types";
+import { DRCDatasetOptions } from "@depmap/types";
 import styles from "./CompoundDoseCurves.scss";
+import { Rep1Color, Rep2Color, Rep3Color } from "./utils";
 
 interface FiltersPanelProps {
   handleSelectDataset: (selection: { value: string; label: string }) => void;

@@ -1,7 +1,7 @@
 import React, { useEffect, useCallback, useState } from "react";
 import DoseCurvesMainContent from "./DoseCurvesMainContent";
 import FiltersPanel from "./FiltersPanel";
-import { DRCDatasetOptions } from "./types";
+import { DRCDatasetOptions } from "@depmap/types";
 import { DeprecatedDataExplorerApiProvider } from "@depmap/data-explorer-2";
 import { evaluateLegacyContext } from "src/data-explorer-2/deprecated-api";
 import "react-bootstrap-typeahead/css/Typeahead.css";

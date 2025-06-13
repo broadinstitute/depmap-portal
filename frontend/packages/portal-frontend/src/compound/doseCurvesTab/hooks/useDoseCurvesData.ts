@@ -1,17 +1,17 @@
 import { useEffect, useState, useRef } from "react";
-import { getBreadboxApi, getDapi } from "src/common/utilities/context";
 import {
   CompoundDoseCurveData,
   DoseTableRow,
   DRCDatasetOptions,
-} from "../types";
+} from "@depmap/types";
+import { legacyPortalAPI, breadboxAPI } from "@depmap/api";
 
 function useDoseCurvesData(
   dataset: DRCDatasetOptions | null,
   compoundId: string
 ) {
-  const dapi = getDapi();
-  const bbapi = getBreadboxApi();
+  const dapi = legacyPortalAPI;
+  const bbapi = breadboxAPI;
 
   const [error, setError] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
