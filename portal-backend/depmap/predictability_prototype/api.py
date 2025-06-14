@@ -102,17 +102,12 @@ class Predictions(
                 )
 
                 logger.warning(f"fetching {screen_type} gene effect")
-                gene_effect_df = get_gene_effect_df(dataset)
 
                 entity_id = Gene.get_by_label(gene_symbol).entity_id
 
                 logger.warning(f"generate_aggregate_scores_across_all_models")
                 agg_scores = generate_aggregate_scores_across_all_models(
-                    gene_symbol,
-                    entity_id=entity_id,
-                    screen_type=screen_type,
-                    datasets_by_taiga_id=datasets_by_taiga_id,
-                    actuals=gene_effect_df,
+                    entity_id=entity_id, screen_type=screen_type,
                 )
 
                 logger.warning(f"top_features_overall")

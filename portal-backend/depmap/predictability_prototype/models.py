@@ -190,52 +190,23 @@ class PrototypePredictiveModel(Model):
         "PrototypePredictiveFeatureResult"
     )
 
-    # TODO: Figure out how to compute the model sequence
     # @staticmethod
-    # def get_model_sequence(entity_label: str, screen_type: str = "crispr"):
-    #     # For each unique model label
-    #     # For an individual entity
-    #     # What is the model name, and how many PredictiveFeatureResults are there
-    #     # Order these ascending to get the model sequence
-    #     query = (
-    #         db.session.query(PrototypePredictiveFeatureResult)
-    #         .join(
-    #             PrototypePredictiveModel,
-    #             PrototypePredictiveFeatureResult.predictive_model_id
-    #             == PrototypePredictiveModel.predictive_model_id,
+    # def get_predictions_taiga_id_by_model_name_and_screen_type(
+    #     model_name: str, screen_type: str, entity_id: int
+    # ):
+    #     predictive_model = (
+    #         db.session.query(PrototypePredictiveModel)
+    #         .filter(
+    #             and_(
+    #                 PrototypePredictiveModel.label == model_name,
+    #                 PrototypePredictiveModel.screen_type == screen_type,
+    #                 PrototypePredictiveModel.entity_id == entity_id,
+    #             )
     #         )
-    #         .filter(PrototypePredictiveModel.screen_type == screen_type)
-    #         .join(
-    #             PrototypePredictiveFeature,
-    #             PrototypePredictiveFeatureResult.feature_id
-    #             == PrototypePredictiveFeature.feature_id,
-    #         )
-    #         .join(Entity, PrototypePredictiveModel.entity_id == Entity.entity_id)
-    #         .filter(Entity.label == entity_label)
-    #         .with_entities(
-    #             PrototypePredictiveModel.label, PrototypePredictiveFeature.feature_name
-    #         )
+    #         .one()
     #     )
-
-    #     # all_models = [model for model, in all_models_query_result]
-    #     model_df = pd.read_sql(query.statement, query.session.connection())
-    @staticmethod
-    def get_predictions_taiga_id_by_model_name_and_screen_type(
-        model_name: str, screen_type: str, entity_id: int
-    ):
-        predictive_model = (
-            db.session.query(PrototypePredictiveModel)
-            .filter(
-                and_(
-                    PrototypePredictiveModel.label == model_name,
-                    PrototypePredictiveModel.screen_type == screen_type,
-                    PrototypePredictiveModel.entity_id == entity_id,
-                )
-            )
-            .one()
-        )
-
-        return predictive_model.predictions_dataset_taiga_id
+    #
+    #     return predictive_model.predictions_dataset_taiga_id
 
     @staticmethod
     def get_feature_types_added_per_model(
@@ -398,23 +369,22 @@ class PrototypePredictiveModel(Model):
 
         return entity_row
 
-    @staticmethod
-    def get_r_squared_for_model(model_name):
-        result = (
-            db.session.query(PrototypePredictiveFeatureResult)
-            .join(PrototypePredictiveModel)
-            .filter(PrototypePredictiveModel.label == model_name)
-            .with_entities(PrototypePredictiveModel.pearson)
+    @classmethod
+    def find_by_screen_type(
+        cls, screen_type, entity_id
+    ) -> List["PrototypePredictiveModel"]:
+        predictive_models = (
+            db.session.query(PrototypePredictiveModel)
+            .filter(
+                and_(
+                    PrototypePredictiveModel.screen_type == screen_type,
+                    PrototypePredictiveModel.entity_id == entity_id,
+                )
+            )
             .all()
         )
 
-        # TODO make sure this is the correct way to get r_squared!!!!!
-        pearson_vals = [r for r, in result]
-        avg_pearson_val = np.mean(pearson_vals)
-
-        r_squared = avg_pearson_val * avg_pearson_val
-
-        return r_squared
+        return predictive_models
 
 
 class PrototypePredictiveFeatureResult(Model):

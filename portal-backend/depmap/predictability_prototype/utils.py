@@ -64,58 +64,32 @@ def pairwise_complete_pearson_cor(x, y):
     return np.corrcoef(x[pairwise_complete], y[pairwise_complete])[0, 1]
 
 
-def accuracy_per_model(gene_symbol, entity_id, screen_type, datasets, actuals):
-    gene_actuals = get_column_by_gene(actuals, gene_symbol)
+def accuracy_per_model(entity_id, screen_type):
     accuracies = []
 
     feature_highest_importance_by_model = {}
+
+    predictive_models = PrototypePredictiveModel.find_by_screen_type(
+        screen_type=screen_type, entity_id=entity_id
+    )
+    predictive_models_by_model_label: Dict[str, PrototypePredictiveModel] = {
+        predictive_model.label: predictive_model
+        for predictive_model in predictive_models
+    }
 
     feature_labels_by_model = PrototypePredictiveModel.get_features_added_per_model(
         MODEL_SEQUENCE, entity_id
     )
 
     for model_name in MODEL_SEQUENCE:
-        predictions_taiga_id = PrototypePredictiveModel.get_predictions_taiga_id_by_model_name_and_screen_type(
-            model_name=model_name, screen_type=screen_type, entity_id=entity_id
-        )
-        prediction_dataset_id = datasets[predictions_taiga_id].id
+        predictive_model = predictive_models_by_model_label[model_name]
 
-        try:
-            gene_predictions = data_access.get_row_of_values(
-                prediction_dataset_id, gene_symbol,
-            )
-        except:
-            raise Exception(
-                f"{gene_symbol} is missing prediction data. Cannot load page."
-            )
+        accuracy = predictive_model.pearson
 
-        accuracy = pairwise_complete_pearson_cor(gene_predictions, gene_actuals)
-
-        unique_model_features = feature_labels_by_model[model_name]
-        gene_row = PrototypePredictiveModel.get_entity_row(
-            model_name=model_name, entity_id=entity_id, screen_type=screen_type
-        )
-        features_importances = list(
-            zip(
-                gene_row["feature_label"].values.tolist(),
-                gene_row["importance"].values.tolist(),
-            )
-        )
-
-        features_above_threshold = [
-            feat_imp[0]
-            for feat_imp in features_importances
-            if feat_imp[1] > IMPORTANCE_CUTOFF
-        ]
-
-        highest_importance_candidates = [
-            feat for feat in features_above_threshold if feat in unique_model_features
-        ]
-
-        feature_highest_importance_by_model[model_name] = (
-            None
-            if len(highest_importance_candidates) < 1
-            else highest_importance_candidates
+        feature_highest_importance_by_model[
+            model_name
+        ] = _get_feature_highest_importance(
+            feature_labels_by_model, model_name, entity_id, screen_type
         )
 
         accuracies.append(accuracy)
@@ -127,12 +101,42 @@ def accuracy_per_model(gene_symbol, entity_id, screen_type, datasets, actuals):
     )
 
 
-def generate_aggregate_scores_across_all_models(
-    gene_symbol, entity_id, screen_type, datasets_by_taiga_id, actuals
+def _get_feature_highest_importance(
+    feature_labels_by_model, model_name, entity_id, screen_type
 ):
-    accuracies = accuracy_per_model(
-        gene_symbol, entity_id, screen_type, datasets_by_taiga_id, actuals
+    # PRED-FIXME: I'm not entirely sure I understand this logic
+    unique_model_features = feature_labels_by_model[model_name]
+    gene_row = PrototypePredictiveModel.get_entity_row(
+        model_name=model_name, entity_id=entity_id, screen_type=screen_type
     )
+    features_importances = list(
+        zip(
+            gene_row["feature_label"].values.tolist(),
+            gene_row["importance"].values.tolist(),
+        )
+    )
+
+    features_above_threshold = [
+        feat_imp[0]
+        for feat_imp in features_importances
+        if feat_imp[1] > IMPORTANCE_CUTOFF
+    ]
+
+    highest_importance_candidates = [
+        feat for feat in features_above_threshold if feat in unique_model_features
+    ]
+
+    return (
+        None
+        if len(highest_importance_candidates) < 1
+        else highest_importance_candidates
+    )
+
+
+def generate_aggregate_scores_across_all_models(
+    entity_id, screen_type,
+):
+    accuracies = accuracy_per_model(entity_id, screen_type)
     return {
         "accuracies": accuracies,
         "x_axis_label": "name",
