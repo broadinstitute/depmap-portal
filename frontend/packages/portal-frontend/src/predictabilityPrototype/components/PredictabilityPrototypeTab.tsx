@@ -16,6 +16,8 @@ import {
 } from "../models/types";
 import { Panel, PanelGroup } from "react-bootstrap";
 import ModelPerformancePanel from "./ModelPerformancePanel";
+import { PlotlyLoaderProvider } from "@depmap/data-explorer-2";
+import PlotlyLoader from "../../plot/components/PlotlyLoader";
 
 const AggScoresTile = React.lazy(
   () => import("src/predictabilityPrototype/components/AggScoresTile")
@@ -110,182 +112,187 @@ const PredictabilityPrototypeTab = ({
         );
 
   return (
-    <div>
-      {isError && error && (
-        <h4 style={{ color: "red" }}>Error: {String(error)}</h4>
-      )}
-      {!isError && (
-        <div
-          style={{ borderBottom: "1px solid #000000", marginBottom: "15px" }}
-        >
-          <CardRowContainer>
-            <CardRow>
-              <CardRowItem>
-                <AggScoresTile
-                  plotTitle={`${entityLabel}`}
-                  crisprData={
-                    data ? data.crispr.overview?.aggregated_scores : null
-                  }
-                  rnaiData={data ? data.rnai.overview?.aggregated_scores : null}
-                />
-              </CardRowItem>
-              <CardRowItem>
-                {geneTeaSymbolsCRISPR && (
-                  <GeneTeaTile
-                    selectedLabels={geneTeaSymbolsCRISPR}
-                    screenTypeLabel={"CRISPR"}
-                    entityLabel={entityLabel}
-                    topFeaturesData={
-                      data ? data.crispr.overview?.top_features : null
+    <PlotlyLoaderProvider PlotlyLoader={PlotlyLoader}>
+      <div>
+        {isError && error && (
+          <h4 style={{ color: "red" }}>Error: {String(error)}</h4>
+        )}
+        {!isError && (
+          <div
+            style={{ borderBottom: "1px solid #000000", marginBottom: "15px" }}
+          >
+            <CardRowContainer>
+              <CardRow>
+                <CardRowItem>
+                  <AggScoresTile
+                    plotTitle={`${entityLabel}`}
+                    crisprData={
+                      data ? data.crispr.overview?.aggregated_scores : null
+                    }
+                    rnaiData={
+                      data ? data.rnai.overview?.aggregated_scores : null
                     }
                   />
-                )}
-              </CardRowItem>
-              <CardRowItem>
-                {geneTeaSymbolsRNAi && (
-                  <GeneTeaTile
-                    selectedLabels={geneTeaSymbolsRNAi}
-                    screenTypeLabel={"RNAi"}
-                    entityLabel={entityLabel}
-                    topFeaturesData={
-                      data ? data.rnai.overview?.top_features : null
-                    }
-                  />
-                )}
-              </CardRowItem>
-            </CardRow>
-          </CardRowContainer>
-        </div>
-      )}
-      {!isError && (
-        <div>
-          <div style={{ marginLeft: "12px" }}>
-            <h3 style={{ marginTop: "22px" }}>Model Performance</h3>
-            <p>Performance according to CRISPR and RNAi</p>
+                </CardRowItem>
+                <CardRowItem>
+                  {geneTeaSymbolsCRISPR && (
+                    <GeneTeaTile
+                      selectedLabels={geneTeaSymbolsCRISPR}
+                      screenTypeLabel={"CRISPR"}
+                      entityLabel={entityLabel}
+                      topFeaturesData={
+                        data ? data.crispr.overview?.top_features : null
+                      }
+                    />
+                  )}
+                </CardRowItem>
+                <CardRowItem>
+                  {geneTeaSymbolsRNAi && (
+                    <GeneTeaTile
+                      selectedLabels={geneTeaSymbolsRNAi}
+                      screenTypeLabel={"RNAi"}
+                      entityLabel={entityLabel}
+                      topFeaturesData={
+                        data ? data.rnai.overview?.top_features : null
+                      }
+                    />
+                  )}
+                </CardRowItem>
+              </CardRow>
+            </CardRowContainer>
           </div>
-        </div>
-      )}
-      {!isError && (
-        <div className={styles.DataFilePanel}>
-          <div className={styles.dataPanelSection}>
-            {data && data[ScreenType.CRISPR].model_performance_info && (
-              <h2 style={{ color: SCREEN_TYPE_COLORS.get(ScreenType.CRISPR) }}>
-                CRISPR
-              </h2>
-            )}
-            {data &&
-              data[ScreenType.CRISPR].model_performance_info &&
-              Object.keys(data[ScreenType.CRISPR].model_performance_info).map(
-                (modelName: string, modelIndex: number) => (
-                  <PanelGroup
-                    accordion
-                    id="accordion-model"
-                    onSelect={(index) =>
-                      handleModelAccordionClick(index, ScreenType.CRISPR)
-                    }
-                    activeKey={activeCRISPRModelIndex}
-                    key={`${modelName}-accordion-model-${modelIndex}`}
-                  >
-                    <Panel eventKey={modelIndex} key={modelName}>
-                      <Panel.Heading>
-                        <Panel.Title toggle>
-                          <div>
-                            <CollapsiblePanelHeader
-                              title={`Model: ${modelName}`}
-                              modelCorrelation={
-                                data[ScreenType.CRISPR].model_performance_info[
-                                  modelName
-                                ].r
-                              }
-                              screenType={ScreenType.CRISPR}
-                              isOpen={activeCRISPRModelIndex === modelIndex}
-                            />
-                          </div>
-                        </Panel.Title>
-                      </Panel.Heading>
-                      <Panel.Body collapsible>
-                        <ModelPerformancePanel
-                          isOpen={activeCRISPRModelIndex === modelIndex}
-                          modelName={modelName}
-                          entityLabel={entityLabel}
-                          entityType={entityType}
-                          screenType={ScreenType.CRISPR}
-                          dapi={dapi}
-                          modelPerformanceInfo={
-                            data[ScreenType.CRISPR].model_performance_info[
-                              modelName
-                            ]
-                          }
-                          getModelPerformanceData={dapi.getModelPerformanceData.bind(
-                            dapi
-                          )}
-                        />
-                      </Panel.Body>
-                    </Panel>
-                  </PanelGroup>
-                )
-              )}
-            {data && data[ScreenType.RNAI].model_performance_info && (
-              <h2 style={{ color: SCREEN_TYPE_COLORS.get(ScreenType.RNAI) }}>
-                RNAi
-              </h2>
-            )}
-            {data &&
-              data[ScreenType.RNAI].model_performance_info &&
-              Object.keys(data[ScreenType.RNAI].model_performance_info).map(
-                (modelName: string, modelIndex: number) => (
-                  <PanelGroup
-                    accordion
-                    id="accordion-model"
-                    onSelect={(index) =>
-                      handleModelAccordionClick(index, ScreenType.RNAI)
-                    }
-                    activeKey={activeRNAiModelIndex}
-                    key={`${modelName}-accordion-model-${modelIndex}`}
-                  >
-                    <Panel eventKey={modelIndex} key={modelName}>
-                      <Panel.Heading>
-                        <Panel.Title toggle>
-                          <div>
-                            <CollapsiblePanelHeader
-                              title={`Model: ${modelName}`}
-                              modelCorrelation={
-                                data[ScreenType.RNAI].model_performance_info[
-                                  modelName
-                                ].r
-                              }
-                              screenType={ScreenType.RNAI}
-                              isOpen={activeRNAiModelIndex === modelIndex}
-                            />
-                          </div>
-                        </Panel.Title>
-                      </Panel.Heading>
-                      <Panel.Body collapsible>
-                        <ModelPerformancePanel
-                          isOpen={activeRNAiModelIndex === modelIndex}
-                          modelName={modelName}
-                          entityLabel={entityLabel}
-                          screenType={ScreenType.RNAI}
-                          entityType={entityType}
-                          dapi={dapi}
-                          modelPerformanceInfo={
-                            data[ScreenType.RNAI].model_performance_info[
-                              modelName
-                            ]
-                          }
-                          getModelPerformanceData={dapi.getModelPerformanceData.bind(
-                            dapi
-                          )}
-                        />
-                      </Panel.Body>
-                    </Panel>
-                  </PanelGroup>
-                )
-              )}
+        )}
+        {!isError && (
+          <div>
+            <div style={{ marginLeft: "12px" }}>
+              <h3 style={{ marginTop: "22px" }}>Model Performance</h3>
+              <p>Performance according to CRISPR and RNAi</p>
+            </div>
           </div>
-        </div>
-      )}
-    </div>
+        )}
+        {!isError && (
+          <div className={styles.DataFilePanel}>
+            <div className={styles.dataPanelSection}>
+              {data && data[ScreenType.CRISPR].model_performance_info && (
+                <h2
+                  style={{ color: SCREEN_TYPE_COLORS.get(ScreenType.CRISPR) }}
+                >
+                  CRISPR
+                </h2>
+              )}
+              {data &&
+                data[ScreenType.CRISPR].model_performance_info &&
+                Object.keys(data[ScreenType.CRISPR].model_performance_info).map(
+                  (modelName: string, modelIndex: number) => (
+                    <PanelGroup
+                      accordion
+                      id="accordion-model"
+                      onSelect={(index) =>
+                        handleModelAccordionClick(index, ScreenType.CRISPR)
+                      }
+                      activeKey={activeCRISPRModelIndex}
+                      key={`${modelName}-accordion-model-${modelIndex}`}
+                    >
+                      <Panel eventKey={modelIndex} key={modelName}>
+                        <Panel.Heading>
+                          <Panel.Title toggle>
+                            <div>
+                              <CollapsiblePanelHeader
+                                title={`Model: ${modelName}`}
+                                modelCorrelation={
+                                  data[ScreenType.CRISPR]
+                                    .model_performance_info[modelName].r
+                                }
+                                screenType={ScreenType.CRISPR}
+                                isOpen={activeCRISPRModelIndex === modelIndex}
+                              />
+                            </div>
+                          </Panel.Title>
+                        </Panel.Heading>
+                        <Panel.Body collapsible>
+                          <ModelPerformancePanel
+                            isOpen={activeCRISPRModelIndex === modelIndex}
+                            modelName={modelName}
+                            entityLabel={entityLabel}
+                            entityType={entityType}
+                            screenType={ScreenType.CRISPR}
+                            dapi={dapi}
+                            modelPerformanceInfo={
+                              data[ScreenType.CRISPR].model_performance_info[
+                                modelName
+                              ]
+                            }
+                            getModelPerformanceData={dapi.getModelPerformanceData.bind(
+                              dapi
+                            )}
+                          />
+                        </Panel.Body>
+                      </Panel>
+                    </PanelGroup>
+                  )
+                )}
+              {data && data[ScreenType.RNAI].model_performance_info && (
+                <h2 style={{ color: SCREEN_TYPE_COLORS.get(ScreenType.RNAI) }}>
+                  RNAi
+                </h2>
+              )}
+              {data &&
+                data[ScreenType.RNAI].model_performance_info &&
+                Object.keys(data[ScreenType.RNAI].model_performance_info).map(
+                  (modelName: string, modelIndex: number) => (
+                    <PanelGroup
+                      accordion
+                      id="accordion-model"
+                      onSelect={(index) =>
+                        handleModelAccordionClick(index, ScreenType.RNAI)
+                      }
+                      activeKey={activeRNAiModelIndex}
+                      key={`${modelName}-accordion-model-${modelIndex}`}
+                    >
+                      <Panel eventKey={modelIndex} key={modelName}>
+                        <Panel.Heading>
+                          <Panel.Title toggle>
+                            <div>
+                              <CollapsiblePanelHeader
+                                title={`Model: ${modelName}`}
+                                modelCorrelation={
+                                  data[ScreenType.RNAI].model_performance_info[
+                                    modelName
+                                  ].r
+                                }
+                                screenType={ScreenType.RNAI}
+                                isOpen={activeRNAiModelIndex === modelIndex}
+                              />
+                            </div>
+                          </Panel.Title>
+                        </Panel.Heading>
+                        <Panel.Body collapsible>
+                          <ModelPerformancePanel
+                            isOpen={activeRNAiModelIndex === modelIndex}
+                            modelName={modelName}
+                            entityLabel={entityLabel}
+                            screenType={ScreenType.RNAI}
+                            entityType={entityType}
+                            dapi={dapi}
+                            modelPerformanceInfo={
+                              data[ScreenType.RNAI].model_performance_info[
+                                modelName
+                              ]
+                            }
+                            getModelPerformanceData={dapi.getModelPerformanceData.bind(
+                              dapi
+                            )}
+                          />
+                        </Panel.Body>
+                      </Panel>
+                    </PanelGroup>
+                  )
+                )}
+            </div>
+          </div>
+        )}
+      </div>
+    </PlotlyLoaderProvider>
   );
 };
 
