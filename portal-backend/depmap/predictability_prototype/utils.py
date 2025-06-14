@@ -154,7 +154,7 @@ def aggregate_top_features(df: pd.DataFrame):
     grouped_df = df.groupby(["feature_name", "dim_type", "feature_label"])
     aggregated = grouped_df.apply(aggregate_feature_importance)
     assert isinstance(aggregated, pd.Series)
-    return aggregated.sort_values(ascending=False)
+    return aggregated.sort_values(ascending=False)  # pyright: ignore
 
 
 def top_features_overall(gene_symbol, entity_id, screen_type):
