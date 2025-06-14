@@ -23,6 +23,8 @@ import sqlalchemy
 from sqlalchemy import and_
 import numpy as np
 
+from depmap.predictability.models import PredictiveModel
+
 
 @dataclass
 class TopFeaturesBarData:
@@ -190,23 +192,24 @@ class PrototypePredictiveModel(Model):
         "PrototypePredictiveFeatureResult"
     )
 
-    # @staticmethod
-    # def get_predictions_taiga_id_by_model_name_and_screen_type(
-    #     model_name: str, screen_type: str, entity_id: int
-    # ):
-    #     predictive_model = (
-    #         db.session.query(PrototypePredictiveModel)
-    #         .filter(
-    #             and_(
-    #                 PrototypePredictiveModel.label == model_name,
-    #                 PrototypePredictiveModel.screen_type == screen_type,
-    #                 PrototypePredictiveModel.entity_id == entity_id,
-    #             )
-    #         )
-    #         .one()
-    #     )
-    #
-    #     return predictive_model.predictions_dataset_taiga_id
+    @staticmethod
+    def get_by_model_name_and_screen_type_and_entity_id(
+        model_name: str, screen_type: str, entity_id: int
+    ) -> "PrototypePredictiveModel":
+
+        predictive_model = (
+            db.session.query(PrototypePredictiveModel)
+            .filter(
+                and_(
+                    PrototypePredictiveModel.label == model_name,
+                    PrototypePredictiveModel.screen_type == screen_type,
+                    PrototypePredictiveModel.entity_id == entity_id,
+                )
+            )
+            .one()
+        )
+
+        return predictive_model
 
     @staticmethod
     def get_feature_types_added_per_model(

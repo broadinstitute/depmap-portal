@@ -21,17 +21,19 @@ SCREEN_TYPES = ["crispr", "rnai"]
 IMPORTANCE_CUTOFF = 0.1
 
 
-def get_dataset_by_model_name(
+def get_dataset_by_model_name_and_screen_type_and_entity_id(
     model_name: str, screen_type: str, entity_id: int, matrix_datasets: list
 ):
-    predictions_taiga_id = PrototypePredictiveModel.get_predictions_taiga_id_by_model_name_and_screen_type(
+    predictive_model = PrototypePredictiveModel.get_by_model_name_and_screen_type_and_entity_id(
         model_name=model_name, screen_type=screen_type, entity_id=entity_id
     )
     for dataset in matrix_datasets:
-        if dataset.taiga_id == predictions_taiga_id:
+        if dataset.taiga_id == predictive_model.predictions_dataset_taiga_id:
             return dataset
 
-    raise Exception(f"Could not find dataset for {model_name}")
+    raise Exception(
+        f"Could not find dataset for model_name={model_name} screen_type={screen_type} entity_id={entity_id} taiga_id={predictive_model.predictions_dataset_taiga_id}"
+    )
 
 
 def get_all_datasets(matrix_datasets):
@@ -243,7 +245,7 @@ def generate_model_predictions(
     entity_id: int,
     matrix_datasets: list,
 ):
-    dataset = get_dataset_by_model_name(
+    dataset = get_dataset_by_model_name_and_screen_type_and_entity_id(
         model_name=model,
         screen_type=screen_type,
         entity_id=entity_id,
