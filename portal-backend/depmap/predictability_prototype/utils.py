@@ -153,9 +153,8 @@ def aggregate_top_features(df: pd.DataFrame):
 
     grouped_df = df.groupby(["feature_name", "dim_type", "feature_label"])
     aggregated = grouped_df.apply(aggregate_feature_importance)
-
-    # NOTE added by=[0] to fix pyright but this might be wrong
-    return aggregated.sort_values(by=[0], ascending=False)
+    assert isinstance(aggregated, pd.Series)
+    return aggregated.sort_values(ascending=False)
 
 
 def top_features_overall(gene_symbol, entity_id, screen_type):
@@ -197,7 +196,9 @@ def top_features_overall(gene_symbol, entity_id, screen_type):
     df = df_100.head(10)
 
     df["dim_type"] = [x for x in df["dim_type"]]
-    df["feature_set"] = [get_feature_set(x) for x in df["feature_type"]]
+    # FIXME: df['feature_type'] does not exist. Hardcoding to CellContext for now
+    # df["feature_set"] = [get_feature_set(x) for x in df["feature_type"]]
+    df["feature_set"] = ["CellContext" for x in df["dim_type"]]
     df["feature"] = [x.replace("_", " ") for x in df["feature"]]
     df["feature_label"] = df["feature_label"].values
 

@@ -2,6 +2,7 @@ import os
 import re
 import shutil
 from typing import Any, Dict, Match, Optional, Tuple, Union, cast
+from typing import Callable
 
 import pandas as pd
 from flask import current_app
@@ -196,18 +197,14 @@ def _load_predictive_features(model_configs: dict, ensemble_csv_path: str):
 
 
 def _load_predictability_screen(
-    screen_type: str, screen_model_configs: dict,
+    screen_type: str, screen_model_configs: dict, get_ensemble_csv: Callable[[str], str]
 ):
-    tc = get_taiga_client()
-
     for model_name in MODEL_SEQUENCE:
         ensemble_csv_taiga_id = screen_model_configs[model_name]["output"][
             "ensemble_taiga_id"
         ]
 
-        ensemble_csv_path = tc.download_to_cache(
-            ensemble_csv_taiga_id, requested_format="csv_table"
-        )
+        ensemble_csv_path = get_ensemble_csv(ensemble_csv_taiga_id)
 
         model_ids: Dict[Tuple[str, str], int] = {}
         next_id = [get_starting_predictive_model_id()]
@@ -245,7 +242,7 @@ def _load_predictability_screen(
                     continue
                 assert (
                     feature is not None
-                ), f"Counld not find PredictiveFeature where feature_name={feature_name}"
+                ), f"Could not find PredictiveFeature where feature_name={feature_name}"
 
                 rec = dict(
                     predictive_model_id=model_id,
@@ -277,7 +274,9 @@ def _load_predictability_screen(
         shutil.copy(ensemble_csv_path, path)
 
 
-def load_predictability_prototype(model_config_file_path: str):
+def load_predictability_prototype(
+    model_config_file_path: str, get_ensemble_csv: Callable[[str], str]
+):
     with open(model_config_file_path, "r") as file:
         model_configs = json.load(file)
 
@@ -285,7 +284,9 @@ def load_predictability_prototype(model_config_file_path: str):
 
     for screen_type in screen_types:
         _load_predictability_screen(
-            screen_type=screen_type, screen_model_configs=model_configs[screen_type],
+            screen_type=screen_type,
+            screen_model_configs=model_configs[screen_type],
+            get_ensemble_csv=get_ensemble_csv,
         )
 
 
