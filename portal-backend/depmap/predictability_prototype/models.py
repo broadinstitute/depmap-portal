@@ -65,8 +65,24 @@ class PredictiveModelData:
     corr: CorrData
 
 
+from typing import Union, Tuple
+
+
+@dataclass
+class PredictiveFeatureSummary:
+    feature_name: str
+    feature_label: str
+    given_id: str
+    importance: float
+    rank: int
+    pearson: float
+    dim_type: str
+    taiga_id: str
+
+
 class PrototypePredictiveFeature(Model):
     __tablename__ = "prototype_predictive_feature"
+    __table_args__: Union[Dict, Tuple] = (db.Index("idx_ppf_1", "feature_name"),)
 
     feature_id = Column(String, primary_key=True)
 
@@ -95,6 +111,16 @@ class PrototypePredictiveFeature(Model):
     ):
         result = (
             db.session.query(PrototypePredictiveFeature)
+            .join(
+                PrototypePredictiveFeatureResult,
+                PrototypePredictiveFeatureResult.feature_id
+                == PrototypePredictiveFeature.feature_id,
+            )
+            .join(
+                PrototypePredictiveModel,
+                PrototypePredictiveFeatureResult.predictive_model_id
+                == PrototypePredictiveModel.predictive_model_id,
+            )
             .filter(
                 and_(
                     PrototypePredictiveModel.label == model_name,
@@ -160,9 +186,6 @@ class PrototypePredictiveFeature(Model):
             ):
                 return "target"
         return None
-
-
-from typing import Union, Tuple
 
 
 class PrototypePredictiveModel(Model):
@@ -335,9 +358,10 @@ class PrototypePredictiveModel(Model):
         return entity_row
 
     @staticmethod
-    def get_entity_row(model_name: str, entity_id: int, screen_type: str):
-
-        gene_query = (
+    def get_predictive_model_feature_summaries(
+        model_name: str, entity_id: int, screen_type: str
+    ) -> List[PredictiveFeatureSummary]:
+        query = (
             db.session.query(PrototypePredictiveFeatureResult)
             .join(
                 PrototypePredictiveModel,
@@ -362,15 +386,13 @@ class PrototypePredictiveModel(Model):
                 PrototypePredictiveFeature.given_id,
                 PrototypePredictiveFeatureResult.importance,
                 PrototypePredictiveFeatureResult.rank,
+                PrototypePredictiveFeatureResult.pearson,
                 PrototypePredictiveFeature.dim_type,
-                PrototypePredictiveModel.pearson,
                 PrototypePredictiveFeature.taiga_id,
             )
         )
 
-        entity_row = pd.read_sql(gene_query.statement, gene_query.session.connection())
-
-        return entity_row
+        return [PredictiveFeatureSummary(*row) for row in query.all()]
 
     @classmethod
     def find_by_screen_type(
@@ -392,6 +414,10 @@ class PrototypePredictiveModel(Model):
 
 class PrototypePredictiveFeatureResult(Model):
     __tablename__ = "prototype_predictive_feature_result"
+    __table_args__: Union[Dict, Tuple] = (
+        db.Index("idx_ppfr_1", "predictive_model_id"),
+        db.Index("idx_ppfr_2", "feature_id"),
+    )
 
     predictive_feature_result_id = Column(Integer, primary_key=True, autoincrement=True)
 
@@ -414,10 +440,10 @@ class PrototypePredictiveFeatureResult(Model):
         uselist=False,
         cascade="delete",
     )
-    screen_type = Column(String, nullable=False)  # crispr or rnai
 
     rank = Column(Integer, nullable=False)
     importance = Column(Float, nullable=False)
+    pearson = Column(Float, nullable=False)
 
     @staticmethod
     def get_feature_result(

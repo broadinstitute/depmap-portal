@@ -108,15 +108,10 @@ def _get_feature_highest_importance(
 ):
     # PRED-FIXME: I'm not entirely sure I understand this logic
     unique_model_features = feature_labels_by_model[model_name]
-    gene_row = PrototypePredictiveModel.get_entity_row(
+    summaries = PrototypePredictiveModel.get_predictive_model_feature_summaries(
         model_name=model_name, entity_id=entity_id, screen_type=screen_type
     )
-    features_importances = list(
-        zip(
-            gene_row["feature_label"].values.tolist(),
-            gene_row["importance"].values.tolist(),
-        )
-    )
+    features_importances = [(x.feature_label, x.importance) for x in summaries]
 
     features_above_threshold = [
         feat_imp[0]
@@ -133,6 +128,12 @@ def _get_feature_highest_importance(
         if len(highest_importance_candidates) < 1
         else highest_importance_candidates
     )
+
+
+class AccuracyPerModel:
+    x_axis_label: str
+    y_axis_label: str
+    accuracies: List[float]
 
 
 def generate_aggregate_scores_across_all_models(
@@ -349,21 +350,19 @@ def get_feature_slice_and_dataset_id(
 
 
 def get_top_feature_headers(entity_id: int, model: str, screen_type: str):
-    feature_df = PrototypePredictiveModel.get_entity_row(
+    summaries = PrototypePredictiveModel.get_predictive_model_feature_summaries(
         model_name=model, entity_id=entity_id, screen_type=screen_type
     )
+    summaries = sorted(summaries, key=lambda x: x.rank)
 
     top_features_metadata = {}
-    for i in range(0, 10):
-        if len(feature_df.loc[feature_df["rank"] == i]) == 0:
-            continue
-        feature_info = feature_df.loc[feature_df["rank"] == i].to_dict("records")[0]
-        feature_name = feature_info["feature_name"]
-        dim_type = feature_info["dim_type"]
-        feature_label = feature_info["feature_label"]
+    for feature_info in summaries[:10]:
+        feature_name = feature_info.feature_name
+        dim_type = feature_info.dim_type
+        feature_label = feature_info.feature_label
 
-        feature_importance = feature_info["importance"]
-        pearson = feature_info["pearson"]
+        feature_importance = feature_info.importance
+        pearson = feature_info.pearson
 
         feature_obj = PrototypePredictiveFeature.get_by_feature_name(feature_name)
         assert feature_obj is not None
@@ -381,25 +380,22 @@ def get_top_feature_headers(entity_id: int, model: str, screen_type: str):
     return top_features_metadata
 
 
-# Index(['feature_label', 'given_id', 'importance', 'rank', 'pearson', 'entity'], dtype='object')
 def get_top_features(
     entity_id: int, model: str, screen_type: str, matrix_datasets: list
 ):
-    feature_df = PrototypePredictiveModel.get_entity_row(
+    summaries = PrototypePredictiveModel.get_predictive_model_feature_summaries(
         model_name=model, entity_id=entity_id, screen_type=screen_type
     )
+    summaries = sorted(summaries, key=lambda x: x.rank)
 
     top_features = {}
     top_features_metadata = {}
 
-    for i in range(0, 10):
-        if len(feature_df.loc[feature_df["rank"] == i]) == 0:
-            continue
-        feature_info = feature_df.loc[feature_df["rank"] == i].to_dict("records")[0]
-        feature_name = feature_info["feature_name"]
-        feature_given_id = feature_info["given_id"]
-        dim_type = feature_info["dim_type"]
-        feature_label = feature_info["feature_label"]
+    for feature_info in summaries[:10]:
+        feature_name = feature_info.feature_name
+        feature_given_id = feature_info.given_id
+        dim_type = feature_info.dim_type
+        feature_label = feature_info.feature_label
 
         (slice, feature_dataset_id) = get_feature_slice_and_dataset_id(
             screen_type=screen_type,
@@ -409,8 +405,8 @@ def get_top_features(
             matrix_datasets=matrix_datasets,
         )
 
-        feature_importance = feature_info["importance"]
-        pearson = feature_info["pearson"]
+        feature_importance = feature_info.importance
+        pearson = feature_info.pearson
 
         slice = slice.dropna()
         top_features[feature_name] = slice
@@ -453,18 +449,20 @@ def get_feature_gene_effect_plot_data(
     # Use entity_id instead of label for consistency between the portal release
     # datasets and Breadbox. If a gene has 2 symbols, using the entity_id ensures
     # both symbols will map to the proper entity in the PrototypePredictiveModel table.
-    row = PrototypePredictiveModel.get_entity_row(
+    summaries = PrototypePredictiveModel.get_predictive_model_feature_summaries(
         model_name=model, entity_id=entity_id, screen_type=screen_type
     )
+    # It's a little odd to filter out by rank after the query. Maybe make the query above take feature_index (rank) as a parameter?
+    summaries = [x for x in summaries if x.rank == feature_index]
+    assert len(summaries) == 1
+    feature = summaries[0]
 
     gene_dataset_id = _get_gene_dataset_id(screen_type)
     gene_series = data_access.get_row_of_values(gene_dataset_id, gene_symbol)
 
-    feature = row.iloc[[feature_index]]
-
-    feature_name = feature["feature_name"].values[0]
-    given_id = feature["given_id"].values[0]
-    feature_label = feature["feature_label"].values[0]
+    feature_name = feature.feature_name
+    given_id = feature.given_id
+    feature_label = feature.feature_label
 
     slice, feature_dataset_id = get_feature_slice_and_dataset_id(
         screen_type=screen_type,
@@ -477,6 +475,7 @@ def get_feature_gene_effect_plot_data(
     value_labels = slice.index.tolist()
     values = slice.values.tolist()
 
+    # PRED-FIXME: see below
     # TEMP HACK FOR PROTOTYPE
     values, value_labels = hacks.get_value_labels_temp_hack(
         gene_series, value_labels, values

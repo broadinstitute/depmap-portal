@@ -1,3 +1,4 @@
+import logging
 import os
 import re
 import shutil
@@ -231,14 +232,24 @@ def _load_predictability_screen(
                 return results
 
             model_id = model_ids[model_ids_key]
-            # top ten features, columns are labelled e.g. feature0, feature0_importance
-            for i in range(10):
-                feature_name = row[f"feature{i}"]
-                feature_importance = row[f"feature{i}_importance"]
+
+            # top N features, columns are labelled e.g. feature0, feature0_importance
+            feature_index = 0
+            while True:
+                feature_column = f"feature{feature_index}"
+                if feature_column not in row:
+                    break
+
+                feature_name = row[feature_column]
+                feature_importance = row[f"{feature_column}_importance"]
+                feature_correlation = row[f"{feature_column}_correlation"]
 
                 feature = PrototypePredictiveFeature.get_by_feature_name(feature_name)
 
                 if feature is None:
+                    logging.warning(
+                        f"Could not find PredictiveFeature where feature_name={feature_name}"
+                    )
                     continue
                 assert (
                     feature is not None
@@ -247,11 +258,12 @@ def _load_predictability_screen(
                 rec = dict(
                     predictive_model_id=model_id,
                     feature_id=feature.feature_id,
-                    screen_type=screen_type,
-                    rank=i,
+                    rank=feature_index,
                     importance=feature_importance,
+                    pearson=feature_correlation,
                 )
                 results.append(rec)
+                feature_index += 1
             return results
 
         bulk_load(

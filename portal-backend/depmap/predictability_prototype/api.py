@@ -40,54 +40,6 @@ class Predictions(
         """
         gene_symbol = request.args.get("gene_symbol")
 
-        # statements = [
-        #     "drop table if exists prototype_predictive_feature",
-        #     """CREATE TABLE IF NOT EXISTS prototype_predictive_feature (
-        #     feature_id STRING PRIMARY KEY,
-        #     feature_name STRING,
-        #     feature_label STRING,
-        #     dim_type STRING,
-        #     taiga_id STRING,
-        #     given_id STRING
-        # );""",
-        #     "drop table if exists prototype_predictive_model",
-        #     """CREATE TABLE IF NOT EXISTS prototype_predictive_model (
-        #     predictive_model_id INTEGER PRIMARY KEY AUTOINCREMENT,
-        #     entity_id INTEGER,
-        #     label STRING,
-        #     screen_type STRING,
-        #     predictions_dataset_taiga_id STRING,
-        #     pearson FLOAT,
-        #     CONSTRAINT prototype_predictive_model_FK FOREIGN KEY (entity_id) REFERENCES entity(entity_id)
-        # );""",
-        #     "drop table if exists prototype_predictive_feature_result",
-        #     """CREATE TABLE IF NOT EXISTS prototype_predictive_feature_result (
-        #     predictive_feature_result_id INTEGER PRIMARY KEY AUTOINCREMENT,
-        #     predictive_model_id INTEGER,
-        #     feature_id STRING,
-        #     screen_type STRING,
-        #     rank INTEGER,
-        #     importance FLOAT,
-        #     CONSTRAINT prototype_predictive_feature_result_FK FOREIGN KEY (predictive_model_id) REFERENCES prototype_predictive_model(predictive_model_id),
-        #     CONSTRAINT prototype_predictive_feature_result2_FK FOREIGN KEY (feature_id) REFERENCES prototype_predictive_feature(feature_id) ON DELETE CASCADE
-        # );""",
-        # ]
-        # db.session.execute("PRAGMA foreign_keys = 0;")
-        # for statement in statements:
-        #     db.session.execute(statement)
-
-        # # ensemble_crispr: predictability-76d5.110/ensemble_crispr
-        # # ensemble_rnai: predictability-76d5.110/ensemble_rnai
-        # # feature_metadata_crispr: predictability-76d5.110/feature_metadata_crispr
-        # # feature_metadata_rnai: predictability-76d5.110/feature_metadata_rnai
-
-        # load_predictability_prototype(
-        #     "/Users/amourey/dev/depmap-portal/portal-backend/depmap/predictability_prototype/scripts/merged-output-model-config.json"
-        # )
-
-        # db.session.commit()
-        # breakpoint()
-
         # Overview data
         try:
             logger.warning(f"get predictions start")
@@ -116,25 +68,29 @@ class Predictions(
                 )
 
                 model_performance_info = {}
-                for model in MODEL_SEQUENCE:
+                for i, model in enumerate(MODEL_SEQUENCE):
                     logger.warning(f"model {model}")
                     feature_header_info = get_top_feature_headers(
                         entity_id=entity_id, model=model, screen_type=screen_type
                     )
-                    # r = PrototypePredictiveModel.get_r_squared_for_model(model)
+                    # this data structure is a little convoluted. Can we simplify?
+                    # maybe we should fetch all the data and then restructure it?
+                    r = agg_scores["accuracies"]["accuracy"][i]
                     model_performance_info[model] = {
-                        "r": 0.71,
+                        "r": r,
                         "feature_summaries": feature_header_info,
                     }
                     logger.warning(f"feature_header_info={feature_header_info}")
 
                 data_by_screen_type[screen_type] = {
                     "overview": {
-                        "aggregated_scores": agg_scores,
-                        "top_features": top_features,
-                        "gene_tea_symbols": list(gene_tea_symbols),
+                        "aggregated_scores": agg_scores,  # used by "Aggregate Scores Across All Models" figure
+                        "top_features": top_features,  # used by "Top features overall" figure
+                        "gene_tea_symbols": list(
+                            gene_tea_symbols
+                        ),  # used by GeneTEA results tab
                     },
-                    "model_performance_info": model_performance_info,
+                    "model_performance_info": model_performance_info,  # used by model performance section
                 }
 
         except Exception as e:
