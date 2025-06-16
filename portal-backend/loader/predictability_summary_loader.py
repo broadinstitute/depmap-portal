@@ -23,6 +23,9 @@ import re
 from depmap.taiga_id.utils import get_taiga_client
 import os
 import json
+import logging
+
+log = logging.getLogger(__name__)
 
 # this script exists to rewrite any Taiga IDs into their canonical form. (This allows conseq to recognize when data files are the same by just comparing taiga IDs)
 #
@@ -204,11 +207,21 @@ def _load_predictability_screen(
         ensemble_csv_taiga_id = screen_model_configs[model_name]["output"][
             "ensemble_taiga_id"
         ]
+        log.warning(
+            f"_load_predictability_screen({screen_type}, {ensemble_csv_taiga_id})"
+        )
 
         ensemble_csv_path = get_ensemble_csv(ensemble_csv_taiga_id)
 
         model_ids: Dict[Tuple[str, str], int] = {}
         next_id = [get_starting_predictive_model_id()]
+
+        # temp hack: Remove once we've fixed loading of oncref data
+        if screen_type not in ["rnai", "cripsr"]:
+            log.warning(
+                f"Skipping load of {screen_type} {model_name} because call to _load_predictive_models below assume entity_type is always gene"
+            )
+            continue
 
         _load_predictive_models(
             ensemble_csv_path,
@@ -295,6 +308,7 @@ def load_predictability_prototype(
     screen_types = model_configs.keys()
 
     for screen_type in screen_types:
+        log.warning(f"Loading predictability screen for {screen_type}")
         _load_predictability_screen(
             screen_type=screen_type,
             screen_model_configs=model_configs[screen_type],
