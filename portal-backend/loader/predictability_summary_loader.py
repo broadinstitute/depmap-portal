@@ -145,40 +145,39 @@ def _load_predictive_models(
     bulk_load(ensemble_csv_path, row_to_model_dict, PrototypePredictiveModel.__table__)
 
 
-def _load_predictive_features(model_configs: dict, ensemble_csv_path: str):
+def _load_predictive_features(screen_configs: dict, feature_names: set):
     tc = get_taiga_client()
-    feature_metadata_taiga_id = model_configs["CellContext"]["output"][
-        "feature_metadata_taiga_id"
-    ]
 
-    feature_metadata = tc.get(feature_metadata_taiga_id)
+    taiga_ids = set()
+    for screen_type in screen_configs.keys():
+        model_config = screen_configs[screen_type]
+        for model in model_config.keys():
+            # breakpoint()
+            taiga_ids.add(model_config[model]["output"]["feature_metadata_taiga_id"])
+    print(f"Loading feature metadata from {taiga_ids}")
 
-    # Filter out features which are not in the top features of any model
-    df = pd.read_csv(ensemble_csv_path, usecols=[f"feature{i}" for i in range(10)])
-    used_features = pd.unique(df.values.ravel("K"))
-    feature_metadata = feature_metadata.loc[
-        feature_metadata["feature_name"].isin(used_features)
-    ]
-
-    # Filter out features which have already been loaded
-    already_loaded_feature_labels = [
-        f.feature_name for f in PrototypePredictiveFeature.get_all()
-    ]
-
-    dropIndex = feature_metadata[
-        feature_metadata["feature_name"].isin(already_loaded_feature_labels)
-    ].index
-
-    feature_metadata = feature_metadata.drop(dropIndex)
+    # merge all of these
+    feature_metadata = pd.concat(
+        [tc.get(x) for x in taiga_ids], ignore_index=True
+    ).drop_duplicates()
     feature_metadata = feature_metadata.drop_duplicates(subset=["feature_name"])
+    print(f"total features {len(feature_metadata)}")
+    feature_metadata = feature_metadata[
+        feature_metadata["feature_name"].isin(feature_names)
+    ]
+    print(f"after filtering features {len(feature_metadata)}")
 
-    def row_to_feature_obj(
-        feature_id: str, row
-    ) -> Optional[PrototypePredictiveFeature]:
+    seen_taiga_id = set()
+
+    def row_to_feature_obj(row) -> Optional[dict]:
         feature_name = row["feature_name"]
         feature_label = row["feature_label"]
 
         taiga_id = row["taiga_id"]
+        if taiga_id not in seen_taiga_id:
+            seen_taiga_id.add(taiga_id)
+            print(f"Loading features which reference {taiga_id}")
+
         tc = get_taiga_client()
         taiga_id = tc.get_canonical_id(taiga_id)
         assert taiga_id, f"Could not find canonical taiga ID for {taiga_id}"
@@ -188,10 +187,11 @@ def _load_predictive_features(model_configs: dict, ensemble_csv_path: str):
 
         existing_feature = PrototypePredictiveFeature.get(feature_name, must=False)
 
+        # don't load dups. If it exists, move on
         if existing_feature is not None:
             return None
 
-        rec = PrototypePredictiveFeature(
+        rec = dict(
             feature_name=feature_name,
             feature_label=feature_label,
             dim_type=dim_type,
@@ -202,11 +202,43 @@ def _load_predictive_features(model_configs: dict, ensemble_csv_path: str):
 
         return rec
 
-    objs = [row_to_feature_obj(i, row) for i, row in feature_metadata.iterrows()]
-    objs = [o for o in objs if o is not None]
+    feature_metadata.to_csv("merged_feature_metadata.csv", index=False)
 
-    db.session.bulk_save_objects(objs)
-    db.session.flush()
+    bulk_load(
+        "merged_feature_metadata.csv",
+        row_to_feature_obj,
+        PrototypePredictiveFeature.__table__,
+    )
+
+
+def _get_feature_col_count(columns):
+    i = 1
+    while True:
+        if f"feature{i}" not in columns:
+            break
+        i += 1
+    return i
+
+
+def _read_all_feature_names(
+    screen_model_configs, get_ensemble_csv: Callable[[str], str]
+):
+    feature_names = set()
+
+    for screen_type in screen_model_configs.keys():
+        model_config = screen_model_configs[screen_type]
+        for model_name in model_config.keys():
+            ensemble_csv_taiga_id = model_config[model_name]["output"][
+                "ensemble_taiga_id"
+            ]
+
+            ensemble_csv_path = get_ensemble_csv(ensemble_csv_taiga_id)
+            df = pd.read_csv(ensemble_csv_path, index_col=0)
+            n_features = _get_feature_col_count(set(df.columns))
+            for i in range(n_features):
+                feature_names.update(df[f"feature{i}"])
+
+    return feature_names
 
 
 def _load_predictability_screen(
@@ -241,10 +273,14 @@ def _load_predictability_screen(
             screen_model_configs,
         )
 
-        _load_predictive_features(screen_model_configs, ensemble_csv_path)
+        n_features = None
 
         # Load all feature results
         def row_to_feature_result_dict(row):
+            nonlocal n_features
+            if n_features is None:
+                n_features = _get_feature_col_count(set(row.keys()))
+
             results = []
             entity_label = row["target_variable"]
             model_name = row["model"]
@@ -256,8 +292,7 @@ def _load_predictability_screen(
             model_id = model_ids[model_ids_key]
 
             # top N features, columns are labelled e.g. feature0, feature0_importance
-            feature_index = 0
-            while True:
+            for feature_index in range(n_features):
                 feature_column = f"feature{feature_index}"
                 if feature_column not in row:
                     break
@@ -309,6 +344,10 @@ def load_predictability_prototype(
 ):
     with open(model_config_file_path, "r") as file:
         model_configs = json.load(file)
+
+    feature_names = _read_all_feature_names(model_configs, get_ensemble_csv)
+    print(f"found {len(feature_names)} feature names")
+    _load_predictive_features(model_configs, feature_names)
 
     screen_types = model_configs.keys()
 

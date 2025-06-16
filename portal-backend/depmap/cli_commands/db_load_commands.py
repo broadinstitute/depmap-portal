@@ -862,8 +862,12 @@ def _load_real_data(
             match_related_loader.load_match_related(df)
 
     if current_app.config["ENABLED_FEATURES"].predictability_prototype:
-        with checkpoint("predictive-insights-load") as needed:
+        with checkpoint("predictive-insights-load-reset") as needed:
             if needed:
+                db.session.execute("delete from prototype_predictive_feature_result")
+                db.session.execute("delete from prototype_predictive_feature")
+                db.session.execute("delete from prototype_predictive_model")
+
                 log.info("Adding predictability prototype summary info")
                 daintree_outputs_json_artifacts = gcsc_depmap.read_json(
                     "metadata/combined_daintree_upload_outputs.json"
