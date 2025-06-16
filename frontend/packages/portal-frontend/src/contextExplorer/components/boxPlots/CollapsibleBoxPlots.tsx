@@ -213,8 +213,17 @@ function CollapsibleBoxPlots({
     return [min, max];
   }, [boxPlotData, otherBoxData]);
 
+  const [key, setKey] = React.useState(0);
+
+  React.useEffect(() => {
+    const onChangeTab = () => setKey((k) => k + 1);
+    window.addEventListener("changeTab", onChangeTab);
+    return () => window.removeEventListener("changeTab", onChangeTab);
+  }, []);
+
   return (
     <PanelGroup
+      key={key}
       accordion
       id="context-explorer-box-plots"
       activeKey={activeKey}
