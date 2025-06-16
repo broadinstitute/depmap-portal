@@ -14,11 +14,13 @@ from sqlalchemy.orm import (
     relationship,
     Session,
     with_loader_criteria,  # pyright: ignore
+    Mapped,
+    mapped_column,
 )
 
 from ..db.base_class import Base, UUIDMixin
 
-from typing import Any, TypeVar, Type, TYPE_CHECKING
+from typing import Any, TypeVar, Type, TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
     from sqlalchemy.sql.type_api import TypeEngine
@@ -42,7 +44,7 @@ from ..schemas.group import AccessType
 
 class Group(Base, UUIDMixin):
     __tablename__ = "group"
-    name = Column(String, nullable=False, unique=True)
+    name: Mapped[str] = mapped_column(String, nullable=False, unique=True)
 
     group_entries = relationship("GroupEntry", back_populates="group", uselist=True)
     datasets = relationship("Dataset", back_populates="group", uselist=True)
@@ -53,11 +55,13 @@ class GroupEntry(Base, UUIDMixin):
     # explicit/composite unique constraint where email can't be duplicate if in same group
     __table_args__ = (UniqueConstraint("email", "group_id"),)
 
-    access_type = Column(Enum(AccessType), nullable=False)
-    email = Column(String)
-    exact_match = Column(Boolean, default=True)
+    access_type: Mapped[AccessType] = mapped_column(Enum(AccessType), nullable=False)
+    email: Mapped[Optional[str]] = mapped_column(String)
+    exact_match: Mapped[Optional[bool]] = mapped_column(Boolean, default=True)
 
-    group_id = Column(String, ForeignKey("group.id"), nullable=False)
+    group_id: Mapped[str] = mapped_column(
+        String, ForeignKey("group.id"), nullable=False
+    )
 
     group = relationship(Group, back_populates="group_entries")
 
@@ -71,11 +75,13 @@ class GroupMixin:
     # NOTE: pyright is not good at handling declared_attr fields, so some type-ignoring is required.
     # See: https://github.com/dropbox/sqlalchemy-stubs/issues/97 (issue has been open for 5 years)
     @declared_attr
-    def group_id(cls) -> str:
-        return Column(String, ForeignKey("group.id"), nullable=False)  # pyright: ignore
+    def group_id(cls) -> Mapped[str]:
+        return mapped_column(
+            String, ForeignKey("group.id"), nullable=False
+        )  # pyright: ignore
 
     @declared_attr
-    def group(cls) -> Group:
+    def group(cls) -> Mapped[Group]:
         return relationship(Group, foreign_keys=[cls.group_id])  # pyright: ignore
 
 
