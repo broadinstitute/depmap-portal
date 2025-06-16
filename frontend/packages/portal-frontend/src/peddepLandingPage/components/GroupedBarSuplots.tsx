@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Plotly, { Config, Layout } from "plotly.js";
 import { ModelDataWithSubgroup, Subgroup } from "../models/subplotData";
 
@@ -10,6 +10,9 @@ interface GroupedBarSuplotsProp {
 export default function GroupedBarSuplots(props: GroupedBarSuplotsProp) {
   const { subplotsData, countData } = props;
   console.log(subplotsData);
+  const [visibleSubgroups, setVisibleSubgroups] = useState(
+    new Set(subplotsData.map((d) => d.subgroup))
+  ); // optmize
 
   const plotRef = useRef(null);
 
@@ -25,7 +28,13 @@ export default function GroupedBarSuplots(props: GroupedBarSuplotsProp) {
       };
 
       // Remove duplicates
-      const subtypes = Array.from(new Set(subplotsData.map((d) => d.subtype)));
+      const subtypes = Array.from(
+        new Set(
+          subplotsData
+            .filter((d) => visibleSubgroups.has(d.subgroup))
+            .map((d) => d.subtype)
+        )
+      );
       const subgroups = Array.from(
         new Set(subplotsData.map((d) => d.subgroup))
       );
@@ -63,6 +72,7 @@ export default function GroupedBarSuplots(props: GroupedBarSuplotsProp) {
             legendgroup: subgroup,
             offsetgroup: subgroup,
             stackgroup: subgroup,
+            visible: visibleSubgroups.has(subgroup) ? true : "legendonly", // filter out the traces of clicked subgroup in graph but keep the subgroup visible in legend
             type: "bar",
             marker: {
               color: subgroupToColor[subgroup].color,
@@ -119,7 +129,33 @@ export default function GroupedBarSuplots(props: GroupedBarSuplotsProp) {
 
       Plotly.react(plotRef.current, traces, layout, config);
     }
-  }, [countData, subplotsData]);
+  }, [countData, subplotsData, visibleSubgroups]);
+
+  useEffect(() => {
+    const plot = plotRef.current;
+    if (!plot) return;
+    const handleLegendClick = (e: any) => {
+      const clickedSubgroup = e.node.textContent;
+      console.log(clickedSubgroup);
+
+      const newVisible = new Set(visibleSubgroups);
+
+      if (newVisible.has(clickedSubgroup)) {
+        newVisible.delete(clickedSubgroup);
+      } else {
+        newVisible.add(clickedSubgroup);
+      }
+
+      setVisibleSubgroups(newVisible);
+      return false; // Prevent default Plotly behavior
+    };
+
+    plot.on("plotly_legendclick", handleLegendClick);
+    // eslint-disable-next-line consistent-return
+    return () => {
+      plot.removeListener("plotly_legendclick", handleLegendClick);
+    };
+  }, [visibleSubgroups]);
 
   return (
     <div>
