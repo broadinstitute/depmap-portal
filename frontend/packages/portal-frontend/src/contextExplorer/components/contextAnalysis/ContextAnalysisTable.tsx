@@ -7,7 +7,10 @@ import {
 } from "@depmap/types";
 import WideTable from "@depmap/wide-table";
 import { ContextAnalysisTableRow } from "src/contextExplorer/models/types";
-import { getSelectivityValLabel } from "src/contextExplorer/utils";
+import {
+  getSelectivityValLabel,
+  ONCREF_UNITS,
+} from "src/contextExplorer/utils";
 
 interface ContextAnalysisTableProps {
   data: ContextAnalysisTableType | null;
@@ -93,7 +96,7 @@ function ContextAnalysisTable(props: ContextAnalysisTableProps) {
 
     const getDrugInGroupLabel = () => {
       if (datasetId === ContextExplorerDatasets.Prism_oncology_AUC) {
-        return "In-context mean AUC";
+        return `In-context mean ${ONCREF_UNITS}`;
       }
 
       return "In-context mean log2(viability)";
@@ -101,7 +104,7 @@ function ContextAnalysisTable(props: ContextAnalysisTableProps) {
 
     const getDrugOutGroupLabel = () => {
       if (datasetId === ContextExplorerDatasets.Prism_oncology_AUC) {
-        return "Out-group mean AUC";
+        return `Out-group mean ${ONCREF_UNITS}`;
       }
       return "Out-group mean log2(viability)";
     };

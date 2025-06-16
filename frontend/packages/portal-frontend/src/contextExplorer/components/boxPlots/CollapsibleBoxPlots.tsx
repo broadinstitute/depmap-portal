@@ -20,6 +20,7 @@ import {
   formatSignificantBoxPlotDataCards,
   InsignificantColor,
 } from "./utils";
+import { ONCREF_UNITS } from "src/contextExplorer/utils";
 
 interface Props {
   handleSetMainPlotElement: (element: any) => void;
@@ -170,7 +171,7 @@ function CollapsibleBoxPlots({
 
   const xAxisTitle = useMemo(() => {
     if (datasetId === ContextExplorerDatasets.Prism_oncology_AUC) {
-      return "AUC";
+      return `${ONCREF_UNITS}`;
     }
 
     if (datasetId === ContextExplorerDatasets.Rep_all_single_pt) {
