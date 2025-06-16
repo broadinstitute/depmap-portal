@@ -157,10 +157,10 @@ def _load_predictive_features(screen_configs: dict, feature_names: set):
     print(f"Loading feature metadata from {taiga_ids}")
 
     # merge all of these
-    feature_metadata = pd.concat(
-        [tc.get(x) for x in taiga_ids], ignore_index=True
-    ).drop_duplicates()
+    feature_metadata = pd.concat([tc.get(x) for x in taiga_ids], ignore_index=True)
+    assert feature_metadata is not None
     feature_metadata = feature_metadata.drop_duplicates(subset=["feature_name"])
+    assert feature_metadata is not None
     print(f"total features {len(feature_metadata)}")
     feature_metadata = feature_metadata[
         feature_metadata["feature_name"].isin(feature_names)
