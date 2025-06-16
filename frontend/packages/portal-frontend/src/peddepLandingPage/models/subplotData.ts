@@ -12,3 +12,11 @@ export type BarSubplotData = {
 export type SubgroupSubtypes = {
   [key in Subgroup]: string[];
 };
+
+export type ModelDataWithSubgroup = {
+  key: string;
+  subgroup: Subgroup;
+  subtype: string;
+  subtypeFeature: string;
+  count: number;
+};

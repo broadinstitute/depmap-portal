@@ -35,7 +35,8 @@ export default function GroupedBarSuplots(props: GroupedBarSuplotsProp) {
 
       const traces: Partial<Plotly.PlotData>[] = [];
       // HACK: Plotly's barmode: 'stack' stacks traces, not categories inside traces.
-      // So the only way to stack subfeatures within each subgroup for the same subtype is to create a trace per subfeature
+      // So the only way to stack subfeatures within each subgroup for the same subtype is to create a trace per subfeature.
+      // And since not all models have subfeatures, we previously set subtype == subfeature if subfeature was null
       // Create one trace per (subgroup, subfeature) pair.
       subgroups.forEach((subgroup) => {
         subfeatures.forEach((subfeature, i) => {
@@ -50,7 +51,10 @@ export default function GroupedBarSuplots(props: GroupedBarSuplotsProp) {
               const count =
                 countData[`${subgroup}-${subtype}-${subfeature}`] ?? 0;
               return count > 0
-                ? `Subgroup: ${subgroup}<br>Subtype: ${subtype}<br>Feature: ${subfeature}<br>Count: ${count}`
+                ? // undo hack where null subfeatures were set to subtype
+                  `Subgroup: ${subgroup}<br>Subtype: ${subtype}<br>Feature: ${
+                    subfeature === subtype ? "" : subfeature
+                  }<br>Count: ${count}`
                 : "";
             }),
             hoverinfo: "text",
@@ -76,6 +80,7 @@ export default function GroupedBarSuplots(props: GroupedBarSuplotsProp) {
 
       const layout: Partial<Layout> = {
         title: "",
+        height: 500,
         xaxis: {
           tickangle: -60,
           tickfont: {

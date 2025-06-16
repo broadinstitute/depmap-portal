@@ -95,9 +95,8 @@ export default function SubGroupsPlot() {
 
           // Sort the model data by its subgroup and total counts across subtypes
           const subtypeTotalCount: Record<string, number> = {};
-          pedModelDataCounts.forEach(({ subtype, count }) => {
-            subtypeTotalCount[subtype] =
-              (subtypeTotalCount[subtype] || 0) + count;
+          pedModelDataCounts.forEach(({ subtype }) => {
+            subtypeTotalCount[subtype] = (subtypeTotalCount[subtype] || 0) + 1;
           });
 
           pedModelDataCounts.sort((a, b) => {
