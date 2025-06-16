@@ -1,20 +1,23 @@
 import React, { useEffect, useRef, useState } from "react";
 import Plotly, { Config, Layout } from "plotly.js";
-import { ModelDataWithSubgroup, Subgroup } from "../models/subplotData";
+import {
+  ExtendedPlotType,
+  ModelDataWithSubgroup,
+  Subgroup,
+} from "../models/subplotData";
 
 interface GroupedBarSuplotsProp {
+  subgroups: Subgroup[];
   subplotsData: ModelDataWithSubgroup[];
   countData: Record<string, number>;
+  subtypeCountData: Record<string, number>;
 }
 
 export default function GroupedBarSuplots(props: GroupedBarSuplotsProp) {
-  const { subplotsData, countData } = props;
-  console.log(subplotsData);
-  const [visibleSubgroups, setVisibleSubgroups] = useState(
-    new Set(subplotsData.map((d) => d.subgroup))
-  ); // optmize
+  const { subgroups, subplotsData, countData, subtypeCountData } = props;
+  const [visibleSubgroups, setVisibleSubgroups] = useState(new Set(subgroups));
 
-  const plotRef = useRef(null);
+  const plotRef = useRef<ExtendedPlotType>(null);
 
   useEffect(() => {
     if (plotRef.current) {
@@ -31,13 +34,16 @@ export default function GroupedBarSuplots(props: GroupedBarSuplotsProp) {
       const subtypes = Array.from(
         new Set(
           subplotsData
-            .filter((d) => visibleSubgroups.has(d.subgroup))
+            .filter((d) => {
+              if (visibleSubgroups.size) {
+                return visibleSubgroups.has(d.subgroup);
+              }
+              return d;
+            }) // do not show subtypes of subgroups that have been filtered out unless no subgroups should be visible (hack: so legend group still shows)
             .map((d) => d.subtype)
         )
       );
-      const subgroups = Array.from(
-        new Set(subplotsData.map((d) => d.subgroup))
-      );
+
       const subfeatures = Array.from(
         new Set(subplotsData.map((d) => d.subtypeFeature))
       );
@@ -45,9 +51,21 @@ export default function GroupedBarSuplots(props: GroupedBarSuplotsProp) {
       const traces: Partial<Plotly.PlotData>[] = [];
       // HACK: Plotly's barmode: 'stack' stacks traces, not categories inside traces.
       // So the only way to stack subfeatures within each subgroup for the same subtype is to create a trace per subfeature.
-      // And since not all models have subfeatures, we previously set subtype == subfeature if subfeature was null
+      // And since not all models have subfeatures, we previously set subtype == subfeature if subfeature was null so (subgroup, subfeature) are unique pair
       // Create one trace per (subgroup, subfeature) pair.
+
       subgroups.forEach((subgroup) => {
+        // determines whether subgroup plot should show and if not, only show the subgroup legend group
+        let showSubgroup: boolean | "legendonly";
+        if (visibleSubgroups.size > 0) {
+          if (visibleSubgroups.has(subgroup)) {
+            showSubgroup = true;
+          } else {
+            showSubgroup = "legendonly";
+          }
+        } else {
+          showSubgroup = "legendonly";
+        }
         subfeatures.forEach((subfeature, i) => {
           traces.push({
             x: subtypes.map((st) =>
@@ -57,22 +75,22 @@ export default function GroupedBarSuplots(props: GroupedBarSuplotsProp) {
               return countData[`${subgroup}-${subtype}-${subfeature}`] ?? 0;
             }),
             text: subtypes.map((subtype) => {
+              const totalCount = subtypeCountData[subtype];
               const count =
                 countData[`${subgroup}-${subtype}-${subfeature}`] ?? 0;
               return count > 0
                 ? // undo hack where null subfeatures were set to subtype
                   `Subgroup: ${subgroup}<br>Subtype: ${subtype}<br>Feature: ${
                     subfeature === subtype ? "" : subfeature
-                  }<br>Count: ${count}`
+                  }<br>Count: ${count}/${totalCount}`
                 : "";
             }),
             hoverinfo: "text",
             name: i === 0 ? subgroup : "", // Only first subtype gets legend label
             showlegend: i === 0,
             legendgroup: subgroup,
-            offsetgroup: subgroup,
             stackgroup: subgroup,
-            visible: visibleSubgroups.has(subgroup) ? true : "legendonly", // filter out the traces of clicked subgroup in graph but keep the subgroup visible in legend
+            visible: showSubgroup, // filter out the traces of clicked subgroup in graph but keep the subgroup visible in legend
             type: "bar",
             marker: {
               color: subgroupToColor[subgroup].color,
@@ -84,9 +102,6 @@ export default function GroupedBarSuplots(props: GroupedBarSuplotsProp) {
           });
         });
       });
-      console.log("Traces: ", traces);
-
-      console.log(traces);
 
       const layout: Partial<Layout> = {
         title: "",
@@ -112,7 +127,7 @@ export default function GroupedBarSuplots(props: GroupedBarSuplotsProp) {
         showlegend: true,
         margin: {
           l: 50,
-          r: 100,
+          r: 50,
           b: 200,
           t: 50,
           pad: 4,
@@ -129,37 +144,35 @@ export default function GroupedBarSuplots(props: GroupedBarSuplotsProp) {
 
       Plotly.react(plotRef.current, traces, layout, config);
     }
-  }, [countData, subplotsData, visibleSubgroups]);
+  }, [countData, subgroups, subplotsData, subtypeCountData, visibleSubgroups]);
 
+  // custom legend click behavior since default behavior doesn't work with our plot hack
   useEffect(() => {
-    const plot = plotRef.current;
-    if (!plot) return;
-    const handleLegendClick = (e: any) => {
-      const clickedSubgroup = e.node.textContent;
-      console.log(clickedSubgroup);
+    const plot: ExtendedPlotType | null = plotRef.current;
+    if (plot) {
+      const handleLegendClick = (e: any) => {
+        const clickedSubgroup = e.node.textContent;
 
-      const newVisible = new Set(visibleSubgroups);
+        const newVisible = new Set(visibleSubgroups);
 
-      if (newVisible.has(clickedSubgroup)) {
-        newVisible.delete(clickedSubgroup);
-      } else {
-        newVisible.add(clickedSubgroup);
-      }
+        if (newVisible.has(clickedSubgroup)) {
+          newVisible.delete(clickedSubgroup);
+        } else {
+          newVisible.add(clickedSubgroup);
+        }
 
-      setVisibleSubgroups(newVisible);
-      return false; // Prevent default Plotly behavior
-    };
+        setVisibleSubgroups(newVisible);
+        return false; // Prevent default Plotly behavior
+      };
 
-    plot.on("plotly_legendclick", handleLegendClick);
-    // eslint-disable-next-line consistent-return
-    return () => {
-      plot.removeListener("plotly_legendclick", handleLegendClick);
-    };
+      plot.on("plotly_legendclick", handleLegendClick);
+      return () => {
+        // This is built into Plotly but not documented in its type definitions.
+        plot.removeListener("plotly_legendclick", handleLegendClick);
+      };
+    }
+    return () => {};
   }, [visibleSubgroups]);
 
-  return (
-    <div>
-      <div ref={plotRef} />
-    </div>
-  );
+  return <div ref={plotRef} />;
 }

@@ -54,50 +54,8 @@ export default function PeddepPage() {
             successful approaches as well as investing in exploratory science
             with transformative potential.
           </h4>
-          <div>
+          <div className={styles.plotContainer}>
             <SubGroupsPlot />
-          </div>
-
-          <div className={styles.dataInfo}>
-            <div>
-              <h4>Dependency Screening</h4>
-              <h5>
-                Developing and deploying CRISPR-based genome editing techniques
-                to identify hidden vulnerabilities (dependencies) in a spectrum
-                of high-risk childhood brain, solid and hematological
-                malignancies.
-              </h5>
-            </div>
-            <div>
-              <h4>Omics profiling</h4>
-              <h5>
-                Leveraging emerging technologies to characterize the genetic and
-                epigenetic landscape of pediatric cancers.
-              </h5>
-            </div>
-            <div>
-              <h4>Compound screening</h4>
-              <h5>
-                Developing and deploying CRISPR-based genome editing techniques
-                to identify hidden vulnerabilities (dependencies) in a spectrum
-                of high-risk childhood brain, solid and hematological
-                malignancies.
-              </h5>
-            </div>
-            <div>
-              <h4>New Model Derivation</h4>
-              <h5>
-                Developing model systems where none currently exist for
-                high-risk childhood cancers that have poor outcomes.
-              </h5>
-            </div>
-            <div>
-              <h4>Data science</h4>
-              <h5>
-                Developing computational approaches to mine and integrate data
-                and developing innovative software tools for data sharing.
-              </h5>
-            </div>
           </div>
         </div>
       </div>

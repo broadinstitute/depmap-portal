@@ -1,14 +1,24 @@
-import React, { useContext, useEffect, useMemo, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import GroupedBarSuplots from "./GroupedBarSuplots";
 import { ApiContext } from "@depmap/api";
 import { ModelDataWithSubgroup, Subgroup } from "../models/subplotData";
+import PlotSpinner from "src/plot/components/PlotSpinner";
 
 export default function SubGroupsPlot() {
   const { getApi } = useContext(ApiContext);
   const [bapi] = useState(() => getApi());
 
-  const [data, setData] = React.useState<any | null>(null);
+  const [data, setData] = useState<any | null>(null);
+  const [subgroups, setSubgroups] = useState<Subgroup[]>([
+    "CNS/Brain",
+    "Heme",
+    "Solid",
+  ]);
   const [counts, setCounts] = useState<Record<string, number> | null>(null);
+  const [subtypeCounts, setSubtypeCounts] = useState<Record<
+    string,
+    number
+  > | null>(null);
   const [hasError, setHasError] = useState(false);
 
   useEffect(() => {
@@ -44,10 +54,9 @@ export default function SubGroupsPlot() {
           }
 
           // Filter by pediatric models, add lineage subgroup, add subtype feature
-          const pedModelData: Omit<
-            ModelDataWithSubgroup,
-            "count"
-          >[] = Object.values(modelSubsetIndexData)
+          const pedModelData: ModelDataWithSubgroup[] = Object.values(
+            modelSubsetIndexData
+          )
             .filter((modelInfo) => {
               return modelInfo.PediatricModelType === "True";
             })
@@ -79,43 +88,50 @@ export default function SubGroupsPlot() {
               };
             });
 
-          // Count map: { [parent_type,type,subtype] -> count }
-          const allCounts: Record<string, number> = {};
-          pedModelData.forEach(({ key }) => {
-            allCounts[key] = (allCounts[key] || 0) + 1;
-          });
-
-          // add count to each model data
-          const pedModelDataCounts = pedModelData.map((d) => {
-            return { ...d, count: allCounts[d.key] };
-          });
-
           // NOTE: The following sort/group is important to ensure the bars are displayed accurately.
           // Data with same subgroups are next to each other and total subtype counts are displayed in descending order
 
-          // Sort the model data by its subgroup and total counts across subtypes
+          // Count map: { [parent_type,type,subtype] -> count }
+          const allCounts: Record<string, number> = {};
           const subtypeTotalCount: Record<string, number> = {};
-          pedModelDataCounts.forEach(({ subtype }) => {
-            subtypeTotalCount[subtype] = (subtypeTotalCount[subtype] || 0) + 1;
+          const subgroupTotalCount: Record<string, number> = {};
+          const subgroupToModel: Record<Subgroup, ModelDataWithSubgroup[]> = {
+            "CNS/Brain": [],
+            Heme: [],
+            Solid: [],
+          };
+          pedModelData.forEach((d) => {
+            allCounts[d.key] = (allCounts[d.key] || 0) + 1;
+            subtypeTotalCount[d.subtype] =
+              (subtypeTotalCount[d.subtype] || 0) + 1;
+            subgroupTotalCount[d.subgroup] =
+              (subgroupTotalCount[d.subgroup] || 0) + 1;
+            subgroupToModel[d.subgroup].push(d);
           });
 
-          pedModelDataCounts.sort((a, b) => {
-            if (a.subgroup !== b.subgroup) {
-              return a.subgroup.localeCompare(b.subgroup);
-            }
+          // Sort subgroups from highest to lowest based on how many models with subgroup
+          const sortedSubgroups = Object.entries(subgroupTotalCount)
+            .sort((a, b) => b[1] - a[1])
+            .map(([key]) => key) as Subgroup[];
+          setSubgroups(sortedSubgroups);
 
-            const totalA = subtypeTotalCount[a.subtype];
-            const totalB = subtypeTotalCount[b.subtype];
-            if (totalB !== totalA) {
-              return totalB - totalA; // descending
-            }
-
-            return a.subtype.localeCompare(b.subtype);
+          // Sort the model data by its subgroup and total counts across subtypes
+          let pedModelSorted: ModelDataWithSubgroup[] = [];
+          sortedSubgroups.forEach((subgroup) => {
+            subgroupToModel[subgroup].sort((a, b) => {
+              const totalA = subtypeTotalCount[a.subtype];
+              const totalB = subtypeTotalCount[b.subtype];
+              if (totalB !== totalA) {
+                return totalB - totalA; // descending
+              }
+              return allCounts[b.key] - allCounts[a.key];
+            });
+            pedModelSorted = pedModelSorted.concat(subgroupToModel[subgroup]);
           });
-          console.log(pedModelDataCounts);
 
-          setData(pedModelDataCounts);
+          setData(pedModelSorted);
           setCounts(allCounts);
+          setSubtypeCounts(subtypeTotalCount);
         } else {
           setHasError(true);
         }
@@ -140,12 +156,21 @@ export default function SubGroupsPlot() {
       </div>
     );
   }
-  if (data && counts) {
+  if (data && counts && subtypeCounts) {
     return (
       <div>
-        <GroupedBarSuplots subplotsData={data} countData={counts} />
+        <GroupedBarSuplots
+          subgroups={subgroups}
+          subplotsData={data}
+          countData={counts}
+          subtypeCountData={subtypeCounts}
+        />
       </div>
     );
   }
-  return <div>Loading...</div>;
+  return (
+    <div>
+      <PlotSpinner />
+    </div>
+  );
 }
