@@ -862,7 +862,7 @@ def _load_real_data(
             match_related_loader.load_match_related(df)
 
     if current_app.config["ENABLED_FEATURES"].predictability_prototype:
-        with checkpoint("predictive-insights-load-reset") as needed:
+        with checkpoint("predictive-insights-load-reset-2") as needed:
             if needed:
                 db.session.execute("delete from prototype_predictive_feature_result")
                 db.session.execute("delete from prototype_predictive_feature")

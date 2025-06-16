@@ -258,7 +258,7 @@ def _load_predictability_screen(
         next_id = [get_starting_predictive_model_id()]
 
         # temp hack: Remove once we've fixed loading of oncref data
-        if screen_type not in ["rnai", "cripsr"]:
+        if screen_type not in ["rnai", "crispr"]:
             log.warning(
                 f"Skipping load of {screen_type} {model_name} because call to _load_predictive_models below assume entity_type is always gene"
             )
