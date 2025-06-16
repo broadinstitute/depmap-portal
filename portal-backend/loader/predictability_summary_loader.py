@@ -55,6 +55,9 @@ def lookup_compound_dose(xref_full: str):
     return None
 
 
+# _seen_models = set()
+
+
 def _load_predictive_models(
     ensemble_csv_path: str,
     model_ids: Dict[Tuple[str, str], int],
@@ -63,6 +66,8 @@ def _load_predictive_models(
     screen_type: str,
     model_configs: dict,
 ):
+    #    global _seen_models
+
     def lookup_entity_id(gene_or_compound_experiment_label: str,) -> Optional[int]:
         if entity_type == "gene":
             m = re.match("\S+ \\((\\d+)\\)", gene_or_compound_experiment_label)
@@ -121,9 +126,13 @@ def _load_predictive_models(
         ]
         predictions_dataset_taiga_id = tc.get_canonical_id(predictions_dataset_taiga_id)
 
+        entity_id = lookup_entity_id(entity_label)
+        # key = (entity_label, model_name, entity_id)
+        # assert key not in _seen_models
+        # _seen_models.add(key)
         rec = dict(
             predictive_model_id=model_id,
-            entity_id=lookup_entity_id(entity_label),
+            entity_id=entity_id,
             label=model_name,
             predictions_dataset_taiga_id=predictions_dataset_taiga_id,
             pearson=float(row["pearson"]),
@@ -197,7 +206,7 @@ def _load_predictive_features(model_configs: dict, ensemble_csv_path: str):
     objs = [o for o in objs if o is not None]
 
     db.session.bulk_save_objects(objs)
-    db.session.commit()
+    db.session.flush()
 
 
 def _load_predictability_screen(
@@ -263,19 +272,15 @@ def _load_predictability_screen(
                     logging.warning(
                         f"Could not find PredictiveFeature where feature_name={feature_name}"
                     )
-                    continue
-                assert (
-                    feature is not None
-                ), f"Could not find PredictiveFeature where feature_name={feature_name}"
-
-                rec = dict(
-                    predictive_model_id=model_id,
-                    feature_id=feature.feature_id,
-                    rank=feature_index,
-                    importance=feature_importance,
-                    pearson=feature_correlation,
-                )
-                results.append(rec)
+                else:
+                    rec = dict(
+                        predictive_model_id=model_id,
+                        feature_id=feature.feature_id,
+                        rank=feature_index,
+                        importance=feature_importance,
+                        pearson=feature_correlation,
+                    )
+                    results.append(rec)
                 feature_index += 1
             return results
 
