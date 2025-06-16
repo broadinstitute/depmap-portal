@@ -181,7 +181,7 @@ export function getEnrichmentTileData(
   entity_type: string,
   entity_label: string
 ) {
-  return getJson<EnrichedLineagesTileData>(
+  return getJsonCached<EnrichedLineagesTileData>(
     "/api/context_explorer/enriched_lineages_tile",
     {
       tree_type,

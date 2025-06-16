@@ -9,6 +9,7 @@ import InfoIcon from "src/common/components/InfoIcon";
 import PlotSpinner from "src/plot/components/PlotSpinner";
 import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
 import CollapsibleBoxPlots from "./boxPlots/CollapsibleBoxPlots";
+import useTabVisibility from "../hooks/useTabVisibility";
 
 interface EnrichmentTileProps {
   entityLabel: string;
@@ -26,24 +27,29 @@ export const EnrichmentTile: React.FC<EnrichmentTileProps> = ({
   const [tileData, setTileData] = useState<EnrichedLineagesTileData | null>(
     null
   );
-  const [isLoadingBoxplot, setIsLoadingBoxplot] = useState<boolean>(true);
-  // const [boxplotError, setBoxplotError] = useState(false);
+  const [isLoadingBoxplot, setIsLoadingBoxplot] = useState<boolean>(false);
+  const [boxplotError, setBoxplotError] = useState(false);
   const boxplotLatestPromise = useRef<Promise<EnrichedLineagesTileData> | null>(
     null
   );
+
+  // Hack to get tab visibility and force a re-render when the overview
+  // tab comes into view. This fixes a bug that caused the enrichment box plots
+  // to explode out of their container if the plots were loaded while the overview
+  // plot was hidden. getEnrichmentTileData is cached, so this forces a redraw of the plots
+  // without adding unecessary time refetching data.
+  const isVisible = useTabVisibility("overview");
+
   useEffect(() => {
     setTileData(null);
-    // setEntityDetailMainPlotElement(null);
     setIsLoadingBoxplot(true);
-    // setBoxplotError(false);
+    setBoxplotError(false);
     const boxplotPromise = legacyPortalAPI.getEnrichmentTileData(
       "Lineage",
       entityType,
       entityLabel
     );
-
     boxplotLatestPromise.current = boxplotPromise;
-
     boxplotPromise
       .then((dataVals) => {
         if (boxplotPromise === boxplotLatestPromise.current) {
@@ -53,11 +59,11 @@ export const EnrichmentTile: React.FC<EnrichmentTileProps> = ({
       .catch((e) => {
         if (boxplotPromise === boxplotLatestPromise.current) {
           window.console.error(e);
-          // setBoxplotError(true);
+          setBoxplotError(true);
         }
       })
       .finally(() => setIsLoadingBoxplot(false));
-  }, [setIsLoadingBoxplot, entityType, entityLabel]);
+  }, [isVisible, entityType, entityLabel]);
 
   const getTabFromDatasetName = useCallback((datasetName: string) => {
     if (datasetName === ContextExplorerDatasets.Chronos_Combined.toString()) {
@@ -108,6 +114,29 @@ export const EnrichmentTile: React.FC<EnrichmentTileProps> = ({
     entityType === "gene"
       ? "Lineages and/or subtypes that have, on average, a stronger dependency on this gene compared to all other models. Enriched lineages/subtypes are calculated as in Context Explorer and selected based on default Context Explorer filters (T-test FDR<0.1, avg. gene effect difference < -0.25 and min. 1 dependent in-group model)."
       : getCompoundToolTip();
+
+  if (boxplotError) {
+    return (
+      <article className="card_wrapper stacked-boxplot-tile">
+        <div className="card_border container_fluid">
+          <div
+            className="card_padding stacked-boxplot-graphs-padding"
+            style={{ paddingTop: "50px", paddingBottom: "50px" }}
+          >
+            <div
+              style={{
+                fontWeight: 500,
+                fontSize: 16,
+                textAlign: "center",
+              }}
+            >
+              Sorry, there was an error fetching enrichment data.
+            </div>
+          </div>
+        </div>
+      </article>
+    );
+  }
 
   return (
     <article className="card_wrapper stacked-boxplot-tile">
