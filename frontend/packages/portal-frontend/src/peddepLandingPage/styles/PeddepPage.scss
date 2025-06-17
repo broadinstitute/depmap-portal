@@ -59,16 +59,6 @@
     font-size: 14px;
   }
 
-  a {
-    color: #8658ab;
-    font-weight: 700;
-    text-decoration: none;
-    border-bottom: 1px solid #8658ab;
-  }
-  a:hover {
-    border-bottom: none;
-  }
-
   &.highlightBackground {
     margin-top: 20px;
     background-repeat: no-repeat;
@@ -151,6 +141,16 @@
 .aboutPeddep {
   display: grid;
   padding-bottom: 50px;
+  a {
+    color: #8658ab;
+    font-weight: 700;
+    text-decoration: none;
+    border-bottom: 1px solid #8658ab;
+  }
+  a:hover {
+    border-bottom: none;
+  }
+
   .aboutPeddepColumns {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -172,6 +172,16 @@
     grid-template-columns: repeat(2, minmax(200px, 1fr));
   }
   gap: 2em;
+
+  a {
+    color: #8658ab;
+    font-weight: 700;
+    text-decoration: none;
+    border-bottom: 1px solid #8658ab;
+  }
+  a:hover {
+    border-bottom: none;
+  }
 
   h5 {
     font-size: 20px;
