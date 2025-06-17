@@ -150,6 +150,7 @@
 
 .aboutPeddep {
   display: grid;
+  padding-bottom: 50px;
   .aboutPeddepColumns {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -161,40 +162,41 @@
   }
 }
 
-.pediatricContextSection {
-  @media screen and (max-width: 767px) {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    // grid-template-rows: 2fr 1fr;
-    // grid-template-areas: "'a a''b b'";
-    gap: 2%;
-  }
-  @media screen and (min-width: 768px) {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    // grid-template-rows: 2fr 1fr;
-    // grid-template-areas: "'a a a a''b b b b'";
-    gap: 2%;
-  }
-}
-
 .cardContainer {
+  padding-top: 20px;
   display: grid;
-  grid-template-rows: 1fr 1.5fr;
+  @media screen and (min-width: 1024px) {
+    grid-template-columns: repeat(4, minmax(200px, 1fr));
+  }
+  @media screen and (max-width: 1023px) {
+    grid-template-columns: repeat(2, minmax(200px, 1fr));
+  }
+  gap: 1em;
+
   h5 {
     font-size: 20px;
     font-weight: 700;
+    line-height: 24px;
+    padding-bottom: 5px;
   }
   h6 {
-    font-size: 14px;
+    font-size: 16px;
     line-height: 19px;
   }
 
   .cardImg {
-    height: 100%;
-  }
-  .cardText {
-    height: auto;
+    display: flex;
+
+    flex-direction: column;
+    align-items: center;
+
+    img {
+      width: 100%;
+      aspect-ratio: 4 / 3; /* Ensures uniform height */
+      object-fit: cover; /* or 'contain' if you want the full image visible */
+      border-radius: 3px;
+      border: 1px solid black;
+    }
   }
 }
 
