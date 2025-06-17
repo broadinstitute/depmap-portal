@@ -171,7 +171,7 @@
   @media screen and (max-width: 1023px) {
     grid-template-columns: repeat(2, minmax(200px, 1fr));
   }
-  gap: 1em;
+  gap: 2em;
 
   h5 {
     font-size: 20px;
@@ -192,9 +192,9 @@
 
     img {
       width: 100%;
-      aspect-ratio: 4 / 3; /* Ensures uniform height */
-      object-fit: cover; /* or 'contain' if you want the full image visible */
-      border-radius: 3px;
+      aspect-ratio: 3 / 3; /* Ensures uniform height */
+      object-fit: contain;
+      border-radius: 5px;
       border: 1px solid black;
     }
   }

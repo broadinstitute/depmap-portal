@@ -142,21 +142,28 @@ export default function SubGroupsPlot() {
     })();
   }, [bapi]);
 
+  const errorDiv = (
+    <div
+      style={{
+        display: "flex",
+        height: "200px",
+        justifyContent: "center",
+        alignItems: "center",
+      }}
+    >
+      <i>Plot failed to load! Try again later.</i>
+    </div>
+  );
+
   if (hasError) {
-    return (
-      <div
-        style={{
-          display: "flex",
-          height: "200px",
-          justifyContent: "center",
-          alignItems: "center",
-        }}
-      >
-        <i>Plot failed to load! Try again later.</i>
-      </div>
-    );
+    return errorDiv;
   }
   if (data && counts && subtypeCounts) {
+    // something is wrong if length of model data is 0
+    if (data.length === 0) {
+      return errorDiv;
+    }
+
     return (
       <div>
         <GroupedBarSuplots
