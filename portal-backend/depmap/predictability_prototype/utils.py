@@ -449,12 +449,14 @@ def get_feature_gene_effect_plot_data(
     # Use entity_id instead of label for consistency between the portal release
     # datasets and Breadbox. If a gene has 2 symbols, using the entity_id ensures
     # both symbols will map to the proper entity in the PrototypePredictiveModel table.
-    summaries = PrototypePredictiveModel.get_predictive_model_feature_summaries(
+    summaries_ = PrototypePredictiveModel.get_predictive_model_feature_summaries(
         model_name=model, entity_id=entity_id, screen_type=screen_type
     )
     # It's a little odd to filter out by rank after the query. Maybe make the query above take feature_index (rank) as a parameter?
-    summaries = [x for x in summaries if x.rank == feature_index]
-    assert len(summaries) == 1
+    summaries = [x for x in summaries_ if x.rank == feature_index]
+    assert (
+        len(summaries) == 1
+    ), f"Expected 1 but found {len(summaries)} rows with rank {feature_index}: {summaries_}"
     feature = summaries[0]
 
     gene_dataset_id = _get_gene_dataset_id(screen_type)

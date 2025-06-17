@@ -1,5 +1,4 @@
 from depmap.gene.models import Gene
-from depmap.predictability_prototype.models import PrototypePredictiveModel
 from depmap.predictability_prototype.utils import (
     feature_correlation_map_calc,
     generate_aggregate_scores_across_all_models,
@@ -20,8 +19,6 @@ from depmap.data_access import interface as data_access
 from flask_restplus import Namespace, Resource
 from flask import request
 from depmap.dataset.models import DependencyDataset
-from loader.predictability_summary_loader import load_predictability_prototype
-from depmap.database import db
 import logging
 
 logger = logging.getLogger(__name__)
@@ -248,10 +245,10 @@ class GeneEffectData(
         plot = get_feature_gene_effect_plot_data(
             model=model,
             gene_symbol=entity_label,
-            feature_index=feature_index,
+            feature_index=int(feature_index),
             feature_name=feature_name_type,
             screen_type=screen_type,
-            entity_id=entity_id,
+            entity_id=int(entity_id),
             matrix_datasets=matrix_datasets,
         )
 
