@@ -9,7 +9,6 @@ import traceback
 
 from depmap_compute.models import AnalysisType
 from dataclasses import dataclass
-from opencensus.trace import execution_context
 from .lin_associations import lin_associations_wrapper
 
 log = logging.getLogger(__name__)
@@ -196,23 +195,6 @@ def write_custom_analysis_table(df, result_task_dir, effect_size_column):
     return data_json_file_path
 
 
-from opencensus.trace.span import Span
-from opencensus.trace.tracers import base
-
-
-def _print_span_debug_info(msg, span: Span):
-    lineage = []
-    if isinstance(span, Span):
-        while span is not None:
-            lineage.append(f"(name={span.name} id={span.span_id})")
-            if isinstance(span, base.NullContextManager):
-                span = None
-            else:
-                span = span.parent_span
-
-    print(msg, " -> ".join(lineage))
-
-
 def reformat_pearson_result(
     df: pd.DataFrame,
     dataset: np.ndarray,
@@ -270,49 +252,43 @@ def _local_run_pearson(
 ) -> pd.DataFrame:
     assert np.isnan(value_query_vector).sum() == 0
 
-    tracer = execution_context.get_opencensus_tracer()
-    with tracer.span(name="_local_run_pearson") as span:
-        _print_span_debug_info("in _local_run_pearson", span)
+    update_message("Running Pearson correlation...")
 
-        update_message("Running Pearson correlation...")
-
-        def progress_callback(fraction_complete):
-            # assuming 10% of time is before computing correlations
-            # and assume 10% of time is packaging results up
-            if fraction_complete > 1:
-                log.warning(
-                    "fraction_complete should be between 0 and 1 but was %f",
-                    fraction_complete,
-                )
-            update_message(
-                "Running Pearson correlation...",
-                percent_complete=((fraction_complete * 0.8 + 0.1) * 100),
+    def progress_callback(fraction_complete):
+        # assuming 10% of time is before computing correlations
+        # and assume 10% of time is packaging results up
+        if fraction_complete > 1:
+            log.warning(
+                "fraction_complete should be between 0 and 1 but was %f",
+                fraction_complete,
             )
+        update_message(
+            "Running Pearson correlation...",
+            percent_complete=((fraction_complete * 0.8 + 0.1) * 100),
+        )
 
-        with tracer.span(name="prep_and_run_py_pearson") as span:
-            (
-                pearson_cor,
-                p_vals,
-                q_vals,
-                _num_cell_lines_used_in_calc,
-            ) = prep_and_run_py_pearson(value_query_vector, dataset, progress_callback)
+    (
+        pearson_cor,
+        p_vals,
+        q_vals,
+        _num_cell_lines_used_in_calc,
+    ) = prep_and_run_py_pearson(value_query_vector, dataset, progress_callback)
 
-            # verify that the indices of the dep_mat_col_indices list can line up with that of the pearson list
-            # assert len(features) == len(pearson_cor)  # pearson_cor is a numpy array
+    # verify that the indices of the dep_mat_col_indices list can line up with that of the pearson list
+    # assert len(features) == len(pearson_cor)  # pearson_cor is a numpy array
 
-            df = pd.DataFrame(
-                {
-                    "Cor": pearson_cor,
-                    "PValue": p_vals,
-                    "QValue": q_vals,
-                    # "PValue_Rob": np.full(p_vals.shape, np.nan), 'QValue_Rob': np.full(q_vals.shape, np.nan)
-                }
-            )
+    df = pd.DataFrame(
+        {
+            "Cor": pearson_cor,
+            "PValue": p_vals,
+            "QValue": q_vals,
+            # "PValue_Rob": np.full(p_vals.shape, np.nan), 'QValue_Rob': np.full(q_vals.shape, np.nan)
+        }
+    )
 
-        with tracer.span(name="reformat_result") as span:
-            df, metadata = reformat_pearson_result(
-                df, dataset, _num_cell_lines_used_in_calc, features
-            )
+    df, metadata = reformat_pearson_result(
+        df, dataset, _num_cell_lines_used_in_calc, features
+    )
 
     return df
 
