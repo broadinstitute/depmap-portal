@@ -187,8 +187,7 @@ class FeatureFlags:
 
     @property
     def show_peddep_landing_page(self):
-        # remove False when ready to deploy
-        return self.is_public() and False
+        return self.is_public()
 
 
 def make_log_config(log_dir):
