@@ -5,6 +5,7 @@ import {
 import update from "immutability-helper";
 import qs from "qs";
 import React, { useCallback, useEffect, useState } from "react";
+import { toStaticUrl } from "@depmap/globals";
 import { getDapi } from "src/common/utilities/context";
 import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
 import {
@@ -151,7 +152,7 @@ export const ContextExplorer = () => {
         margin: "1px 3px 4px 3px",
         cursor: "pointer",
       }}
-      src={getDapi()._getFileUrl("/static/img/gene_overview/info_purple.svg")}
+      src={toStaticUrl("img/gene_overview/info_purple.svg")}
       alt="description of term"
       className="icon"
     />
