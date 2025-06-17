@@ -28,6 +28,7 @@ from depmap.compound.models import (
     CompoundDoseReplicate,
     CompoundExperiment,
     DoseResponseCurve,
+    drc_compound_datasets,
 )
 from depmap.compound.views.executive import (
     get_order,
@@ -54,7 +55,9 @@ blueprint = Blueprint(
 # (e.g. more sane gene names), we don't want to do this.
 @blueprint.route("/<path:name>")
 def view_compound(name):
+
     compound = Compound.get_by_label(name, must=False)
+
     aliases = Compound.get_aliases_by_entity_id(compound.entity_id)
     compound_aliases = ", ".join(
         [alias for alias in aliases if alias.lower() != name.lower()]
@@ -67,11 +70,14 @@ def view_compound(name):
         get_predictive_models_for_compound(compound_experiment_and_datasets)
     ) != 0
 
-
     # Figure out membership in different datasets
-    compound_datasets = data_access.get_all_datasets_containing_compound(compound.compound_id)
+    compound_datasets = data_access.get_all_datasets_containing_compound(
+        compound.compound_id
+    )
     has_datasets = len(compound_datasets) != 0
-    sensitivity_tab_compound_summary = get_sensitivity_tab_info(compound.entity_id, compound_datasets)
+    sensitivity_tab_compound_summary = get_sensitivity_tab_info(
+        compound.entity_id, compound_datasets
+    )
     has_celfie = current_app.config["ENABLED_FEATURES"].celfie and has_datasets
     if has_celfie:
         celfie_dataset_options = []
@@ -84,13 +90,13 @@ def view_compound(name):
                 )
             )
         celfie = format_celfie(
-            entity_label=name, 
-            dependency_datasets=celfie_dataset_options
+            entity_label=name, dependency_datasets=celfie_dataset_options
         )
 
     return render_template(
         "compounds/index.html",
         name=name,
+        compound_id=compound.compound_id,
         title=name,
         compound_aliases=compound_aliases,
         summary=sensitivity_tab_compound_summary,
@@ -103,17 +109,20 @@ def view_compound(name):
         has_datasets=has_datasets,
         order=get_order(has_predictability),
         dose_curve_options=format_dose_curve_options(compound_experiment_and_datasets),
+        dose_curve_options_new=format_dose_curve_options_new_tab_if_available(),
         has_celfie=has_celfie,
         celfie=celfie if has_celfie else None,
         compound_units=compound.units,
     )
 
 
-def get_sensitivity_tab_info(compound_entity_id: int, compound_datasets: list[MatrixDataset]) -> Optional[dict[str, Any]]:
+def get_sensitivity_tab_info(
+    compound_entity_id: int, compound_datasets: list[MatrixDataset]
+) -> Optional[dict[str, Any]]:
     """Get a dictionary of values containing layout information for the sensitivity tab."""
     if len(compound_datasets) == 0:
         return None
-    
+
     # Define the options that will appear in the datasets dropdown
     dataset_options = []
     for dataset in compound_datasets:
@@ -186,6 +195,32 @@ def format_dose_curve_option(dataset, compound_experiment, label):
     )
 
     return option
+
+
+def format_dose_curve_options_new_tab_if_available():
+    """
+    Used for jinja rendering of the dose curve tab
+    """
+    show_new_dose_curves_tab = current_app.config[
+        "ENABLED_FEATURES"
+    ].new_dose_curves_tab
+
+    if show_new_dose_curves_tab:
+        dose_curve_options = [
+            {
+                "display_name": dataset.display_name,
+                "viability_dataset_id": dataset.viability_dataset_given_id,
+                "replicate_dataset": dataset.replicate_dataset,
+                "auc_dataset_id": dataset.auc_dataset_given_id,
+                "ic50_dataset_id": dataset.ic50_dataset_given_id,
+                "drc_dataset_label": dataset.drc_dataset_label,
+            }
+            for dataset in drc_compound_datasets
+        ]
+
+        return dose_curve_options
+    else:
+        return []
 
 
 def is_url_valid(url):
