@@ -4,19 +4,15 @@ import useHeatmapSelectionHandlers from "./hooks/useHeatmapSelectionHandlers";
 import DoseViabilityTable from "../DoseViabilityTable";
 import { useDeprecatedDataExplorerApi } from "@depmap/data-explorer-2";
 import { legacyPortalAPI } from "@depmap/api";
-import styles from "./CompoundDoseCurves.scss";
-import { DRCDatasetOptions } from "@depmap/types";
+import styles from "../CompoundDoseViability.scss";
+// import { DRCDatasetOptions } from "@depmap/types";
 import useHeatmapData from "./hooks/useHeatmapData";
 import HeatmapPlotSection from "./HeatmapPlotSection";
-import CompoundPlotSelections from "../CompoundPlotSelections";
+import CompoundPlotSelections from "../doseCurvesTab/CompoundPlotSelections";
 
 interface HeatmapTabMainContentProps {
-  dataset: DRCDatasetOptions | null;
-  doseUnits: string;
-  showInsensitiveLines: boolean;
-  showUnselectedLines: boolean;
+  // compoundId: string; // unused
   compoundName: string;
-  compoundId: string;
   handleShowUnselectedLinesOnSelectionsCleared: () => void;
   doseColumnNames: string[];
   tableFormattedData: any;
@@ -24,16 +20,11 @@ interface HeatmapTabMainContentProps {
 }
 
 function DoseCurvesMainContent({
-  dataset,
-  doseUnits,
-  showInsensitiveLines,
-  showUnselectedLines,
-  compoundName,
-  compoundId,
   handleShowUnselectedLinesOnSelectionsCleared,
   doseColumnNames,
   tableFormattedData,
-  selectedDoses,
+  selectedDoses = new Set(),
+  compoundName,
 }: HeatmapTabMainContentProps) {
   const api = useDeprecatedDataExplorerApi();
 
@@ -73,7 +64,6 @@ function DoseCurvesMainContent({
     selectedModelIds,
     selectedTableRows,
     selectedLabels,
-    displayNameModelIdMap,
     handleSetSelectedPlotModels,
     handleChangeTableSelection,
     handleClickSaveSelectionAsContext,
@@ -156,11 +146,6 @@ function DoseCurvesMainContent({
     [doseViabilityTableColumns]
   );
 
-  // TODO: FINISH THIS
-  const visibleModelsData = useMemo(() => {
-    /* do something */
-  }, []);
-
   const defaultCols = useMemo(() => {
     return doseViabilityTableColumns
       .map((col) => col.accessor)
@@ -180,19 +165,19 @@ function DoseCurvesMainContent({
       <div className={styles.mainContentGrid}>
         <>
           <div style={{ gridArea: "plot" }}>
-            <HeatmapPlotSection
-              isLoading={false}
-              compoundName={compoundName}
-              plotElement={plotElement}
-              heatmapFormattedData={filteredHeatmapFormattedData}
-              doseMin={doseMin}
-              doseMax={doseMax}
-              selectedModelIds={selectedModelIds}
-              handleSetSelectedPlotModels={handleSetSelectedPlotModels}
-              handleSetPlotElement={(element: ExtendedPlotType | null) => {
-                setPlotElement(element);
-              }}
-            />
+            {filteredHeatmapFormattedData && (
+              <HeatmapPlotSection
+                isLoading={false}
+                compoundName={compoundName}
+                plotElement={plotElement}
+                heatmapFormattedData={filteredHeatmapFormattedData}
+                doseMin={doseMin}
+                doseMax={doseMax}
+                selectedModelIds={selectedModelIds}
+                handleSetSelectedPlotModels={handleSetSelectedPlotModels}
+                handleSetPlotElement={setPlotElement}
+              />
+            )}
           </div>
           <div style={{ gridArea: "selections" }}>
             <CompoundPlotSelections

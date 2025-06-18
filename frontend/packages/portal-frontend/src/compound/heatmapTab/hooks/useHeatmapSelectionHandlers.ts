@@ -95,7 +95,7 @@ function useHeatmapSelectionHandlers(
     if (labels === null) return;
     setPlotSelectedModelIds(labels);
     setSelectedTableRows(labels);
-  }, [deApi]);
+  }, [deApi, selectedLabels]);
 
   const handleClearSelection = useCallback(() => {
     setPlotSelectedModelIds(new Set([]));

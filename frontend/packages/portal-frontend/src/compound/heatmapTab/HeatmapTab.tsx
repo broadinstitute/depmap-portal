@@ -6,12 +6,12 @@ import { DeprecatedDataExplorerApiProvider } from "@depmap/data-explorer-2";
 import { evaluateLegacyContext } from "src/data-explorer-2/deprecated-api";
 import "react-bootstrap-typeahead/css/Typeahead.css";
 import "src/common/styles/typeahead_fix.scss";
-import styles from "./CompoundDoseCurves.scss";
+import styles from "../CompoundDoseViability.scss";
 import useDoseTableData from "./hooks/useDoseTableData";
 
 interface HeatmapTabProps {
   datasetOptions: DRCDatasetOptions[];
-  doseUnits: string;
+  doseUnits: string; // unused
   compoundName: string;
   compoundId: string;
 }
@@ -22,6 +22,7 @@ function HeatmapTab({
   compoundName,
   compoundId,
 }: HeatmapTabProps) {
+  console.log(doseUnits);
   const [
     selectedDataset,
     setSelectedDataset,
@@ -115,12 +116,12 @@ function HeatmapTab({
         </div>
         <div className={styles.doseCurvesTabMain}>
           <HeatmapTabMainContent
-            dataset={selectedDataset}
-            doseUnits={doseUnits}
-            showInsensitiveLines={showInsensitiveLines}
-            showUnselectedLines={showUnselectedLines}
+            // dataset={selectedDataset}
+            // doseUnits={doseUnits}
+            // showInsensitiveLines={showInsensitiveLines}
+            // showUnselectedLines={showUnselectedLines}
             compoundName={compoundName}
-            compoundId={compoundId}
+            // compoundId={compoundId}
             doseColumnNames={doseColumnNames}
             tableFormattedData={tableFormattedData}
             selectedDoses={selectedDoses}

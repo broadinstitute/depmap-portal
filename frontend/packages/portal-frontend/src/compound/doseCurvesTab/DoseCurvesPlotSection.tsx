@@ -11,7 +11,7 @@ import {
   CurveParams,
   CurvePlotPoints,
 } from "@depmap/types";
-import styles from "./CompoundDoseCurves.scss";
+import styles from "../CompoundDoseViability.scss";
 
 interface DoseCurvesPlotSectionProps {
   isLoading: boolean;

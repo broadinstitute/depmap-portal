@@ -1,7 +1,7 @@
 import React from "react";
 import WideTable from "@depmap/wide-table";
 import PlotSpinner from "src/plot/components/PlotSpinner";
-import styles from "./CompoundDoseCurves.scss";
+import styles from "./CompoundDoseViability.scss";
 
 interface DoseViabilityTableProps {
   error: boolean;

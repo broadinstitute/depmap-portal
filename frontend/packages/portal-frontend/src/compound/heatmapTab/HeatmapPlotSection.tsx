@@ -1,26 +1,24 @@
 /* eslint-disable @typescript-eslint/naming-convention */
-import React, { useMemo, useState } from "react";
+import React, { useMemo } from "react";
 import PlotControls, {
   PlotToolOptions,
 } from "src/plot/components/PlotControls";
 import PlotSpinner from "src/plot/components/PlotSpinner";
 import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
-import styles from "./CompoundDoseCurves.scss";
+import styles from "../CompoundDoseViability.scss";
 import PrototypeBrushableHeatmap from "src/doseViabilityPrototype/components/PrototypeBrushableHeatmap";
-import { HeatmapFormattedData } from "src/doseViabilityPrototype/types";
+import { HeatmapFormattedData } from "./types";
 
 interface HeatmapPlotSectionProps {
   isLoading: boolean;
   compoundName: string;
-  heatmapFormattedData: HeatmapFormattedData | null;
+  plotElement: ExtendedPlotType | null;
+  heatmapFormattedData: HeatmapFormattedData;
   doseMin: number | null;
   doseMax: number | null;
   selectedModelIds: Set<string>;
-  plotElement: ExtendedPlotType | null;
-  handleSetSelectedPlotModels: (
-    models: React.SetStateAction<Set<string>>
-  ) => void;
-  handleSetPlotElement: (element: any) => void;
+  handleSetSelectedPlotModels: (models: Set<string>) => void;
+  handleSetPlotElement: (element: ExtendedPlotType | null) => void;
 }
 function HeatmapPlotSection({
   isLoading,
@@ -30,8 +28,8 @@ function HeatmapPlotSection({
   doseMax,
   selectedModelIds,
   handleSetSelectedPlotModels,
-  plotElement,
   handleSetPlotElement,
+  plotElement,
 }: HeatmapPlotSectionProps) {
   const selectedColumns = useMemo(() => {
     const out = new Set<number>();
@@ -58,7 +56,7 @@ function HeatmapPlotSection({
             })
           )
         : null,
-    []
+    [heatmapFormattedData]
   );
 
   return (
@@ -109,6 +107,7 @@ function HeatmapPlotSection({
           <div className={styles.heatmapContainer}>
             <PrototypeBrushableHeatmap
               data={heatmapFormattedData}
+              onLoad={handleSetPlotElement}
               xAxisTitle="Cell Lines"
               yAxisTitle={`${compoundName} Dose (μM)`}
               legendTitle="Viability"
@@ -125,17 +124,16 @@ function HeatmapPlotSection({
                 end: number,
                 shiftKey: boolean
               ) => {
-                handleSetSelectedPlotModels((prev: Set<string>) => {
-                  const next: Set<string> = shiftKey
-                    ? new Set(prev)
-                    : new Set();
-
-                  for (let i = start; i <= end; i += 1) {
-                    next.add(heatmapFormattedData.modelIds[i]);
-                  }
-
-                  return next;
-                });
+                let next: Set<string>;
+                if (shiftKey) {
+                  next = new Set(selectedModelIds);
+                } else {
+                  next = new Set();
+                }
+                for (let i = start; i <= end; i += 1) {
+                  next.add(heatmapFormattedData.modelIds[i]);
+                }
+                handleSetSelectedPlotModels(next);
               }}
             />
           </div>

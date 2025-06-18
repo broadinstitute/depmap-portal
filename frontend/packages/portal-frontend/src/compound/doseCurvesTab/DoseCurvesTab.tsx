@@ -6,7 +6,7 @@ import { DeprecatedDataExplorerApiProvider } from "@depmap/data-explorer-2";
 import { evaluateLegacyContext } from "src/data-explorer-2/deprecated-api";
 import "react-bootstrap-typeahead/css/Typeahead.css";
 import "src/common/styles/typeahead_fix.scss";
-import styles from "./CompoundDoseCurves.scss";
+import styles from "../CompoundDoseViability.scss";
 
 interface DoseCurvesTabProps {
   datasetOptions: DRCDatasetOptions[];

@@ -2,7 +2,7 @@ import { ToggleSwitch } from "@depmap/common-components";
 import React from "react";
 import Select from "react-select";
 import { DRCDatasetOptions } from "@depmap/types";
-import styles from "./CompoundDoseCurves.scss";
+import styles from "../CompoundDoseViability.scss";
 
 interface FiltersPanelProps {
   // Dataset Selection Props

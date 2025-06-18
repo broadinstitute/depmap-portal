@@ -3,7 +3,7 @@ import type {
   Config,
   Data as PlotlyData,
   Layout,
-  PlotData,
+  // PlotData,
   PlotlyHTMLElement,
 } from "plotly.js";
 import PlotlyLoader from "src/plot/components/PlotlyLoader";
@@ -11,6 +11,7 @@ import usePlotResizer from "src/doseViabilityPrototype/hooks/usePlotResizer";
 import HeatmapBrush from "src/doseViabilityPrototype/components/PrototypeBrushableHeatmap/HeatmapBrush";
 import customizeDragLayer from "src/doseViabilityPrototype/components/PrototypeBrushableHeatmap/customizeDragLayer";
 import { generateTickLabels } from "src/doseViabilityPrototype/components/PrototypeBrushableHeatmap/utils";
+import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
 
 interface Props {
   data: {
@@ -24,6 +25,7 @@ interface Props {
   selectedColumns: Set<number>;
   onSelectColumnRange: (start: number, end: number, shiftKey: boolean) => void;
   onClearSelection: () => void;
+  onLoad?: (plot: ExtendedPlotType) => void;
   hovertemplate?: string | string[];
   // Optionally set a min/max for the color scale. If left undefined, these
   // will default to the min and max of values contained in `data.z`
@@ -33,13 +35,13 @@ interface Props {
 
 type PlotlyType = typeof import("plotly.js");
 
-type PlotElement = HTMLDivElement &
-  PlotlyHTMLElement & {
-    data: PlotData[];
-    layout: Layout;
-    config: Config;
-    removeListener: (eventName: string, callback: (e: object) => void) => void;
-  };
+// type PlotElement = HTMLDivElement &
+//   PlotlyHTMLElement & {
+//     data: PlotData[];
+//     layout: Layout;
+//     config: Config;
+//     removeListener: (eventName: string, callback: (e: object) => void) => void;
+//   };
 
 function PrototypeBrushableHeatmap({
   data,
@@ -52,9 +54,10 @@ function PrototypeBrushableHeatmap({
   hovertemplate = undefined,
   zmin = undefined,
   zmax = undefined,
+  onLoad = () => {},
   Plotly,
 }: Props & { Plotly: PlotlyType }) {
-  const ref = useRef<PlotElement>(null);
+  const ref = useRef<ExtendedPlotType>(null);
   usePlotResizer(Plotly, ref);
 
   const initialRange: [number, number] = useMemo(() => {
@@ -84,7 +87,13 @@ function PrototypeBrushableHeatmap({
   }, [data.x, selectedColumns, pixelDistanceBetweenColumns]);
 
   useEffect(() => {
-    const plot = ref.current as PlotElement;
+    if (onLoad && ref.current) {
+      onLoad(ref.current);
+    }
+  }, [onLoad]);
+
+  useEffect(() => {
+    const plot = ref.current as ExtendedPlotType; // as PlotElement;
     const deltaRange = selectedRange[1] - selectedRange[0];
 
     const plotlyData: PlotlyData[] = [

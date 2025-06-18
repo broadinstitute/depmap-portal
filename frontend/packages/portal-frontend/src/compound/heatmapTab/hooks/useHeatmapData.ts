@@ -10,7 +10,7 @@ function useHeatmapFormattedData(
     () =>
       doseColumnNames
         .map((d) => parseFloat(d.split(" ")[0]))
-        .filter((n) => !isNaN(n)),
+        .filter((n) => !Number.isNaN(n)),
     [doseColumnNames]
   );
 
@@ -19,12 +19,13 @@ function useHeatmapFormattedData(
       !tableFormattedData ||
       tableFormattedData.length === 0 ||
       y.length === 0
-    )
+    ) {
       return null;
+    }
     const modelIds = tableFormattedData.map((row) => row.modelId);
     const x = tableFormattedData.map((row) => row.cellLine);
     // Build z matrix: rows = doses, cols = models
-    const z = y.map((doseNum, rowIdx) => {
+    const z = y.map((doseNum) => {
       // Find the original string column name for this dose
       const doseStr = doseColumnNames.find(
         (d) => parseFloat(d.split(" ")[0]) === doseNum
