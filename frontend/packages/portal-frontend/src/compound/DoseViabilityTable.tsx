@@ -3,7 +3,7 @@ import WideTable from "@depmap/wide-table";
 import PlotSpinner from "src/plot/components/PlotSpinner";
 import styles from "./CompoundDoseCurves.scss";
 
-interface DoseCurvesTableProps {
+interface DoseViabilityTableProps {
   error: boolean;
   isLoading: boolean;
   doseTable: any[] | null;
@@ -15,7 +15,7 @@ interface DoseCurvesTableProps {
   handleChangeSelection: (selections: string[]) => void;
 }
 
-const DoseCurvesTable: React.FC<DoseCurvesTableProps> = ({
+const DoseViabilityTable: React.FC<DoseViabilityTableProps> = ({
   error,
   isLoading,
   doseTable,
@@ -52,7 +52,7 @@ const DoseCurvesTable: React.FC<DoseCurvesTableProps> = ({
           onChangeSelections={handleChangeSelection}
           hideSelectAllCheckbox
           allowDownloadFromTableDataWithMenu
-          allowDownloadFromTableDataWithMenuFileName="dose-curve-data.csv"
+          allowDownloadFromTableDataWithMenuFileName="dose-data.csv"
         />
       </div>
     );
@@ -60,4 +60,4 @@ const DoseCurvesTable: React.FC<DoseCurvesTableProps> = ({
   return <>{tableContent}</>;
 };
 
-export default DoseCurvesTable;
+export default DoseViabilityTable;

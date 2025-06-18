@@ -3,10 +3,10 @@ import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
 import DoseCurvesPlotSection from "./DoseCurvesPlotSection";
 import useDoseCurvesData from "./hooks/useDoseCurvesData";
 import useDoseCurvesSelectionHandlers from "./hooks/useDoseCurvesSelectionHandlers";
-import CompoundPlotSelections from "./CompoundPlotSelections";
-import DoseCurvesTable from "./DoseCurvesTable";
+import CompoundPlotSelections from "../CompoundPlotSelections";
+import DoseViabilityTable from "../DoseViabilityTable";
 import { useDeprecatedDataExplorerApi } from "@depmap/data-explorer-2";
-import { getDoseCurveTableColumns } from "./utils";
+import { getDoseViabilityTableColumns } from "../utils";
 import { legacyPortalAPI } from "@depmap/api";
 import styles from "./CompoundDoseCurves.scss";
 import {
@@ -74,7 +74,7 @@ function DoseCurvesMainContent({
   );
 
   const {
-    selectedCurves,
+    selectedModelIds,
     selectedTableRows,
     handleClickCurve,
     handleChangeSelection,
@@ -126,7 +126,7 @@ function DoseCurvesMainContent({
           );
         },
       },
-      ...getDoseCurveTableColumns(tableData).filter(
+      ...getDoseViabilityTableColumns(tableData).filter(
         (col: any) => col.accessor !== "cellLine"
       ),
     ];
@@ -143,19 +143,19 @@ function DoseCurvesMainContent({
   // Get the selected cell line name labels for display in the Plot Selections panel.
   const selectedLabels = useMemo(() => {
     const displayNames: string[] = [];
-    [...selectedCurves].forEach((modelId: string) => {
+    [...selectedModelIds].forEach((modelId: string) => {
       const displayName = displayNameModelIdMap.get(modelId);
       if (displayName) {
         displayNames.push(displayName);
       }
     });
     return displayNames;
-  }, [selectedCurves, displayNameModelIdMap]);
+  }, [selectedModelIds, displayNameModelIdMap]);
 
   const visibleCurveData = useMemo(() => {
-    if (!showUnselectedLines && doseCurveData && selectedCurves.size > 0) {
+    if (!showUnselectedLines && doseCurveData && selectedModelIds.size > 0) {
       const visibleCurveParams = doseCurveData?.curve_params.filter(
-        (c: CurveParams) => selectedCurves.has(c.id!)
+        (c: CurveParams) => selectedModelIds.has(c.id!)
       );
 
       return {
@@ -164,22 +164,22 @@ function DoseCurvesMainContent({
       } as CompoundDoseCurveData;
     }
     return doseCurveData;
-  }, [doseCurveData, selectedCurves, showUnselectedLines]);
+  }, [doseCurveData, selectedModelIds, showUnselectedLines]);
 
   const visibleDoseRepPoints = useMemo(() => {
-    if (!showReplicates || !doseCurveData || selectedCurves.size === 0) {
+    if (!showReplicates || !doseCurveData || selectedModelIds.size === 0) {
       return null;
     }
 
     return Object.fromEntries(
-      [...selectedCurves]
+      [...selectedModelIds]
         .filter((modelId) => doseCurveData.dose_replicate_points[modelId])
         .map((modelId) => [
           modelId,
           doseCurveData.dose_replicate_points[modelId],
         ])
     );
-  }, [doseCurveData, selectedCurves, showReplicates]);
+  }, [doseCurveData, selectedModelIds, showReplicates]);
 
   const defaultCols = useMemo(() => {
     return doseCurveTableColumns
@@ -220,7 +220,7 @@ function DoseCurvesMainContent({
                 doseMax={doseMax}
                 doseRepPoints={visibleDoseRepPoints}
                 doseUnits={doseUnits}
-                selectedCurves={selectedCurves}
+                selectedModelIds={selectedModelIds}
                 handleClickCurve={handleClickCurve}
                 handleSetPlotElement={(element: ExtendedPlotType | null) => {
                   setPlotElement(element);
@@ -229,7 +229,7 @@ function DoseCurvesMainContent({
             </div>
             <div style={{ gridArea: "selections" }}>
               <CompoundPlotSelections
-                selectedIds={selectedCurves}
+                selectedIds={selectedModelIds}
                 selectedLabels={new Set(selectedLabels)}
                 onClickSaveSelectionAsContext={
                   handleClickSaveSelectionAsContext
@@ -255,7 +255,7 @@ function DoseCurvesMainContent({
         </p>
       </div>
       <div>
-        <DoseCurvesTable
+        <DoseViabilityTable
           error={error}
           isLoading={isLoading}
           doseTable={doseTable}

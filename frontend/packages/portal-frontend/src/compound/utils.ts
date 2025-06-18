@@ -1,10 +1,11 @@
 import { DoseTableRow } from "@depmap/types";
+import { TableFormattedData } from "./heatmapTab/types";
 
 export const Rep1Color = "#CC4778";
 export const Rep2Color = "#F89540";
 export const Rep3Color = "#176CE0";
 
-export function getDoseCurveTableColumns(doseTable: DoseTableRow[]) {
+export function getDoseViabilityTableColumns(doseTable: DoseTableRow[]) {
   if (!doseTable || doseTable.length === 0) return [];
   const allCols = Object.keys(doseTable[0]);
   const doseColRegex = /^\d*\.?\d+\s+\S+$/;
@@ -30,7 +31,7 @@ export function getDoseCurveTableColumns(doseTable: DoseTableRow[]) {
 }
 
 export const sortBySelectedModel = (
-  doseTable: DoseTableRow[],
+  doseTable: TableFormattedData | DoseTableRow[],
   selectedModelIds: Set<string>
 ) => {
   return doseTable.sort((a, b) => {

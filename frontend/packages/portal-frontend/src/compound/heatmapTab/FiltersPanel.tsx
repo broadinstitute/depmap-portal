@@ -3,25 +3,36 @@ import React from "react";
 import Select from "react-select";
 import { DRCDatasetOptions } from "@depmap/types";
 import styles from "./CompoundDoseCurves.scss";
-import { Rep1Color, Rep2Color, Rep3Color } from "../utils";
 
 interface FiltersPanelProps {
+  // Dataset Selection Props
   handleSelectDataset: (selection: { value: string; label: string }) => void;
   datasetOptions: DRCDatasetOptions[];
   selectedDatasetOption: { value: string; label: string };
-  showReplicates: boolean;
+  // Filter by Dose Props
+  handleFilterByDose: (selection: { value: string; label: string }) => void;
+  doseOptions: Set<string>;
+  selectedDoseOption: { value: string; label: string }[];
+  // Toggle Switches
+  showInsensitiveLines: boolean;
   showUnselectedLines: boolean;
-  handleToggleShowReplicates: (nextValue: boolean) => void;
+  handleToggleShowInsensitiveLines: (nextValue: boolean) => void;
   handleToggleShowUnselectedLines: (nextValue: boolean) => void;
 }
 
 function FiltersPanel({
+  // Dataset
   handleSelectDataset,
   datasetOptions,
   selectedDatasetOption,
-  showReplicates,
+  // Dose
+  handleFilterByDose,
+  doseOptions,
+  selectedDoseOption,
+  // Toggle Switches
+  showInsensitiveLines,
   showUnselectedLines,
-  handleToggleShowReplicates,
+  handleToggleShowInsensitiveLines,
   handleToggleShowUnselectedLines,
 }: FiltersPanelProps) {
   const datasetSelectOptions = datasetOptions.map(
@@ -32,6 +43,9 @@ function FiltersPanel({
       };
     }
   );
+
+  // TODO: Implement logic for constructing doseSelectOptions
+  const doseSelectOptions: any[] = [];
 
   return (
     <div className={styles.FiltersPanel}>
@@ -47,7 +61,21 @@ function FiltersPanel({
             handleSelectDataset(value);
           }
         }}
-        id="compound-dose-curves-dataset-selection"
+        id="compound-heatmap-dataset-selection"
+      />
+      <hr className={styles.filtersPanelHr} />
+      <h5 className={styles.filterByDoseLabel}>Filter by Dose</h5>
+      <Select
+        value={selectedDoseOption}
+        isMulti
+        isDisabled={!doseOptions}
+        options={doseSelectOptions}
+        onChange={(values: any) => {
+          if (values) {
+            values.forEach((value: any) => handleFilterByDose(value));
+          }
+        }}
+        id="compound-heatmap-filter-by-dose"
       />
       <hr className={styles.filtersPanelHr} />
       <h4 className={styles.sectionTitle}>View Options</h4>
@@ -62,40 +90,18 @@ function FiltersPanel({
           ]}
         />
       </div>
-      <div className={styles.toggleRow} style={{ paddingTop: "10px" }}>
-        <div className={styles.toggleLabel}>Replicates</div>
+      <div className={styles.toggleRow}>
+        <div className={styles.toggleLabel}>Insensitive lines</div>
         <ToggleSwitch
-          value={showReplicates}
-          onChange={handleToggleShowReplicates}
+          value={showInsensitiveLines}
+          onChange={handleToggleShowInsensitiveLines}
           options={[
             { label: "ON", value: true },
             { label: "OFF", value: false },
           ]}
         />
       </div>
-      <div className={styles.legendBox}>
-        <div className={styles.legendRow}>
-          <div
-            className={styles.legendSwatch}
-            style={{ background: Rep1Color, border: `1px solid ${Rep1Color}` }}
-          />
-          <span className={styles.legendLabel}>x1</span>
-        </div>
-        <div className={styles.legendRow}>
-          <div
-            className={styles.legendSwatch}
-            style={{ background: Rep2Color, border: `1px solid ${Rep2Color}` }}
-          />
-          <span className={styles.legendLabel}>x2</span>
-        </div>
-        <div className={styles.legendRow}>
-          <div
-            className={styles.legendSwatch}
-            style={{ background: Rep3Color, border: `1px solid ${Rep3Color}` }}
-          />
-          <span className={styles.legendLabel}>x3</span>
-        </div>
-      </div>
+
       <hr className={styles.filtersPanelHr} />
     </div>
   );

@@ -1,49 +1,28 @@
 import { useCallback, useMemo, useState } from "react";
 import { defaultContextName } from "@depmap/data-explorer-2/src/components/DataExplorerPage/utils";
-import {
-  CompoundDoseCurveData,
-  DataExplorerContext,
-  DoseTableRow,
-} from "@depmap/types";
+import { DataExplorerContext } from "@depmap/types";
 import { saveNewContext } from "src";
 import doseCurvesPromptForSelectionFromContext from "../../doseCurvesPromptForSelectionFromContext";
 import { sortBySelectedModel } from "../../utils";
 import { useDeprecatedDataExplorerApi } from "@depmap/data-explorer-2";
+import { HeatmapFormattedData, TableFormattedData } from "../types";
 
-function useDoseCurvesSelectionHandlers(
-  doseCurveData: CompoundDoseCurveData | null,
-  tableData: DoseTableRow[],
+function useHeatmapSelectionHandlers(
+  plotData: HeatmapFormattedData | null,
+  tableData: TableFormattedData | null,
   deApi: ReturnType<typeof useDeprecatedDataExplorerApi>,
   handleShowUnselectedLinesOnSelectionsCleared: () => void
 ) {
-  const [selectedModelIds, setSelectedModelIds] = useState<Set<string>>(
+  const [selectedModelIds, setPlotSelectedModelIds] = useState<Set<string>>(
     new Set([])
   );
   const [selectedTableRows, setSelectedTableRows] = useState<Set<string>>(
     new Set([])
   );
 
-  // Handlers
-  const handleClickCurve = useCallback(
-    (modelId: string) => {
-      if (doseCurveData) {
-        setSelectedModelIds((xs) => {
-          const ys = new Set(xs);
-          if (!xs?.has(modelId)) ys.add(modelId);
-          selectedTableRows.forEach((rowId: string) => {
-            if (!ys.has(rowId)) ys.add(rowId);
-          });
-          setSelectedTableRows(ys);
-          return ys;
-        });
-      }
-    },
-    [doseCurveData, selectedTableRows]
-  );
-
-  const handleChangeSelection = useCallback(
+  const handleChangeTableSelection = useCallback(
     (selections: string[]) => {
-      if (doseCurveData) {
+      if (plotData) {
         setSelectedTableRows((xs) => {
           let unselectedId: string;
           const ys = new Set(xs);
@@ -63,13 +42,17 @@ function useDoseCurvesSelectionHandlers(
               ys.add(curveId);
             }
           });
-          setSelectedModelIds(ys);
+          setPlotSelectedModelIds(ys);
           return ys;
         });
       }
     },
-    [doseCurveData, selectedModelIds]
+    [plotData, selectedModelIds]
   );
+
+  const handleSetSelectedPlotModels = (
+    models: React.SetStateAction<Set<string>>
+  ) => setPlotSelectedModelIds(models);
 
   const handleClickSaveSelectionAsContext = useCallback(() => {
     const labels = [...selectedModelIds];
@@ -81,39 +64,62 @@ function useDoseCurvesSelectionHandlers(
     saveNewContext(context as DataExplorerContext);
   }, [selectedModelIds]);
 
+  const displayNameModelIdMap = useMemo(() => {
+    const map = new Map<string, string>();
+    if (tableData) {
+      tableData.forEach((row) => {
+        map.set(row.modelId, row.cellLine);
+      });
+    }
+    return map;
+  }, [tableData]);
+
+  // Get the selected cell line name labels for display in the Plot Selections panel.
+  const selectedLabels = useMemo(() => {
+    const displayNames: string[] = [];
+    [...selectedModelIds].forEach((modelId: string) => {
+      const displayName = displayNameModelIdMap.get(modelId);
+      if (displayName) {
+        displayNames.push(displayName);
+      }
+    });
+    return displayNames;
+  }, [selectedModelIds, displayNameModelIdMap]);
+
   const handleSetSelectionFromContext = useCallback(async () => {
-    const allLabels = new Set(
-      doseCurveData?.curve_params.map((curveParam) => curveParam.id!)
-    );
+    const allLabels = new Set(selectedLabels);
     const labels = await doseCurvesPromptForSelectionFromContext(
       deApi,
       allLabels
     );
     if (labels === null) return;
-    setSelectedModelIds(labels);
+    setPlotSelectedModelIds(labels);
     setSelectedTableRows(labels);
-  }, [doseCurveData, deApi]);
+  }, [deApi]);
 
   const handleClearSelection = useCallback(() => {
-    setSelectedModelIds(new Set([]));
+    setPlotSelectedModelIds(new Set([]));
     setSelectedTableRows(new Set([]));
     handleShowUnselectedLinesOnSelectionsCleared();
   }, [handleShowUnselectedLinesOnSelectionsCleared]);
 
-  // Memoized sorted table data
   const memoizedTableData = useMemo(() => {
-    return selectedTableRows.size === 0
-      ? tableData
-      : sortBySelectedModel(tableData, selectedTableRows);
+    if (tableData !== null) {
+      return selectedTableRows.size === 0
+        ? tableData
+        : sortBySelectedModel(tableData, selectedTableRows);
+    }
+
+    return null;
   }, [selectedTableRows, tableData]);
 
   return {
     selectedModelIds,
-    setselectedModelIds: setSelectedModelIds,
     selectedTableRows,
-    setSelectedTableRows,
-    handleClickCurve,
-    handleChangeSelection,
+    selectedLabels,
+    displayNameModelIdMap,
+    handleSetSelectedPlotModels,
+    handleChangeTableSelection,
     handleClickSaveSelectionAsContext,
     handleSetSelectionFromContext,
     handleClearSelection,
@@ -121,4 +127,4 @@ function useDoseCurvesSelectionHandlers(
   };
 }
 
-export default useDoseCurvesSelectionHandlers;
+export default useHeatmapSelectionHandlers;

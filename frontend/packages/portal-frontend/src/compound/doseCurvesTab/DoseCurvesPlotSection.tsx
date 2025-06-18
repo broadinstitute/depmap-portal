@@ -23,7 +23,7 @@ interface DoseCurvesPlotSectionProps {
     [model_id: string]: CurvePlotPoints[];
   } | null;
   doseUnits: string;
-  selectedCurves: Set<string>;
+  selectedModelIds: Set<string>;
   handleClickCurve: (modelId: string) => void;
   plotElement: ExtendedPlotType | null;
   handleSetPlotElement: (element: any) => void;
@@ -36,7 +36,7 @@ function DoseCurvesPlotSection({
   doseMax,
   doseRepPoints,
   doseUnits,
-  selectedCurves,
+  selectedModelIds,
   handleClickCurve,
   plotElement,
   handleSetPlotElement,
@@ -107,7 +107,7 @@ function DoseCurvesPlotSection({
             doseUnits={doseUnits}
             includeMedianQuantileRegions={false}
             handleClickCurve={handleClickCurve}
-            selectedCurves={selectedCurves}
+            selectedCurves={selectedModelIds}
             useDefaultTitle={false}
           />
         )}

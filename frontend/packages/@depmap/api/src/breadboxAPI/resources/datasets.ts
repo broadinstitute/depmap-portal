@@ -45,13 +45,14 @@ export function getDatasetFeatures(datasetId: string) {
 
 export function getMatrixDatasetFeaturesData(
   datasetId: string,
-  featureIds: string[]
+  featureIds: string[],
+  featureIdentifier: "id" | "label" = "id"
 ): Promise<{ [key: string]: Record<string, any> }> {
   const url = `/datasets/matrix/${datasetId}`;
 
   const args = {
     features: featureIds,
-    feature_identifier: "id",
+    feature_identifier: featureIdentifier,
   };
   return postJson<{ [key: string]: Record<string, any> }>(url, args);
 }
