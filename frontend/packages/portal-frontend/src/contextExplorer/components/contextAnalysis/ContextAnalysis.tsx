@@ -5,7 +5,7 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { legacyPortalAPI } from "@depmap/api";
+import { cached, legacyPortalAPI } from "@depmap/api";
 import { toPortalLink } from "@depmap/globals";
 import {
   ContextAnalysisTableType,
@@ -691,7 +691,9 @@ function ContextAnalysis({
       // setEntityDetailMainPlotElement(null);
       setIsLoadingBoxplot(true);
       setBoxplotError(false);
-      const boxplotPromise = legacyPortalAPI.getContextExplorerBoxPlotData(
+      const boxplotPromise = cached(
+        legacyPortalAPI
+      ).getContextExplorerBoxPlotData(
         selectedContextNameInfo.subtype_code,
         treeType,
         datasetId,
@@ -1108,7 +1110,7 @@ function ContextAnalysis({
                 selectedOutGroupType={outgroup.value}
                 selectedTreeType={treeType}
                 getContextExplorerDoseResponsePoints={
-                  legacyPortalAPI.getContextExplorerDoseResponsePoints
+                  cached(legacyPortalAPI).getContextExplorerDoseResponsePoints
                 }
               />
             </div>

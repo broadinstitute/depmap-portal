@@ -57,6 +57,8 @@ const createApiMock = (
 };
 
 jest.mock("@depmap/api", () => ({
+  cached: (api: unknown) => api,
+
   legacyPortalAPI: createApiMock(
     "Portal API",
     "legacyPortalAPI",
