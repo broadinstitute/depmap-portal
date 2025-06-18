@@ -29,5 +29,21 @@ export function updateDimensionType(
 
 export function deleteDimensionType(name: string) {
   // TODO: Figure out return type.
-  return deleteJson<any>("/types/dimensions", name);
+  return deleteJson<unknown>("/types/dimensions", name);
+}
+
+type Identifiers = { id: string; label: string }[];
+
+export function getDimensionTypeIdentifiers(
+  dimTypeName: string,
+  params?: {
+    data_type?: string;
+    // NOTE: This is known to affect performance.
+    show_only_dimensions_in_datasets?: boolean;
+  }
+) {
+  return getJson<Identifiers>(
+    `/types/dimensions/${dimTypeName}/identifiers`,
+    params
+  );
 }
