@@ -10,8 +10,9 @@ endblock content_class %} {% set show_sensitivity_tab = summary is not none %}
 {% set show_predictability_tab = has_datasets and has_predictability %} {% set
 show_dose_curve_tab = dose_curve_options | length > 0 %} {% set
 show_dose_curve_tab_new = dose_curve_options_new | length > 0 %} {% set
-show_celfie_tab = has_celfie %} {% set show_aliases = compound_aliases|length >
-0 %} {% block content %}
+show_heatmap_tab = dose_curve_options_new | length > 0 %} {% set show_celfie_tab
+= has_celfie %} {% set show_aliases = compound_aliases|length > 0 %} {% block
+content %}
 <br />
 <div class="header">
   <div>
@@ -65,7 +66,14 @@ active_tab_set = False %}
       >Dose curves NEW</a
     >
   </li>
-  {% set active_tab_set = True %} {% endif %}{% if show_predictability_tab %}
+  {% if show_heatmap_tab %}
+  <li role="presentation" class="{% if not active_tab_set %}active{% endif %}">
+    <a href="#heatmap" aria-controls="heatmap" role="tab" data-toggle="tab"
+      >Heatmap</a
+    >
+  </li>
+  {% set active_tab_set = True %} {% endif %} {% set active_tab_set = True %} {%
+  endif %}{% if show_predictability_tab %}
   <li role="presentation" class="{% if not active_tab_set %}active{% endif %}">
     <a
       href="#predictability"
@@ -158,6 +166,26 @@ active_tab_set = False %}
       $(function () { // document ready for middle-of-html js
           DepMap.initDoseCurvesTab(
               "new-dose-curves-tab-content",
+              {{name | tojson}},
+              {{compound_id | tojson}},
+          {{dose_curve_options_new | tojson}},
+          "{{ compound_units }}"
+      );
+      });
+    </script>
+    {% set active_tab_set = True %}
+  </div>
+  {% endif %} {% if show_heatmap_tab %}
+  <div
+    role="tabpanel"
+    class="tab-pane {% if not active_tab_set %}active{% endif %}"
+    id="heatmap"
+  >
+    <div id="heatmap-tab-content"></div>
+    <script>
+      $(function () { // document ready for middle-of-html js
+          DepMap.initHeatmapTab(
+              "heatmap-tab-content",
               {{name | tojson}},
               {{compound_id | tojson}},
           {{dose_curve_options_new | tojson}},
