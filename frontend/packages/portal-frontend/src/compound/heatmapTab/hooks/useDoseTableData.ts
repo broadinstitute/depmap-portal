@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { DRCDatasetOptions } from "@depmap/types";
 import { breadboxAPI } from "@depmap/api";
-import { TableFormattedData } from "../types";
+import { TableFormattedData } from "../../types";
 
 // Helper to fetch metadata
 async function fetchMetadata<T>(typeName: string, bbapi: typeof breadboxAPI) {
@@ -19,7 +19,7 @@ async function fetchMetadata<T>(typeName: string, bbapi: typeof breadboxAPI) {
 // Helper to build table data
 function buildTableData(
   viabilityAtDose: any,
-  oncrefMetadata: any,
+  dosefMetadata: any,
   modelMetadata: any,
   aucs: Record<string, number>
 ): TableFormattedData {
@@ -28,8 +28,8 @@ function buildTableData(
     const modelValues = modelValuesRaw as Record<string, number | null>;
     Object.entries(modelValues).forEach(([model, log2Viability]) => {
       if (log2Viability !== null) {
-        const dose = oncrefMetadata.Dose[label];
-        const unit = oncrefMetadata.DoseUnit[label];
+        const dose = dosefMetadata.Dose[label];
+        const unit = dosefMetadata.DoseUnit[label];
         if (!tableLookup[model]) {
           tableLookup[model] = {};
         }
@@ -78,7 +78,7 @@ export default function useDoseTableData(
         // Fetch all required data
         const dimensions = await bbapi.searchDimensions({
           substring: compoundName,
-          type_name: "oncref_collapsed_metadata",
+          type_name: "compound_dose",
           limit: 100,
         });
         const featureLabels = dimensions.map(({ label }) => label);
@@ -89,10 +89,10 @@ export default function useDoseTableData(
         );
 
         // TODO: move id of dataset specific metadata to legacy db drc_dataset mapping
-        const oncrefMetadata = await fetchMetadata<{
+        const doseMetadata = await fetchMetadata<{
           Dose: Record<string, number>;
           DoseUnit: Record<string, string>;
-        }>("oncref_collapsed_metadata", bbapi);
+        }>("compound_dose", bbapi);
         const modelMetadata = await fetchMetadata<{
           CellLineName: Record<string, string>;
         }>("depmap_model", bbapi);
@@ -106,7 +106,7 @@ export default function useDoseTableData(
         // Build table and columns
         const tableData = buildTableData(
           viabilityAtDose,
-          oncrefMetadata,
+          doseMetadata,
           modelMetadata,
           aucs
         );

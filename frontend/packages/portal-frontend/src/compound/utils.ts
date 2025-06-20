@@ -1,5 +1,5 @@
 import { DoseTableRow } from "@depmap/types";
-import { TableFormattedData } from "./heatmapTab/types";
+import { TableFormattedData } from "./types";
 
 export const Rep1Color = "#CC4778";
 export const Rep2Color = "#F89540";
@@ -31,7 +31,7 @@ export function getDoseViabilityTableColumns(doseTable: DoseTableRow[]) {
 }
 
 export const sortBySelectedModel = (
-  doseTable: TableFormattedData | DoseTableRow[],
+  doseTable: TableFormattedData,
   selectedModelIds: Set<string>
 ) => {
   return doseTable.sort((a, b) => {

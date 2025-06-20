@@ -5,7 +5,7 @@ import { saveNewContext } from "src";
 import doseCurvesPromptForSelectionFromContext from "../../doseCurvesPromptForSelectionFromContext";
 import { sortBySelectedModel } from "../../utils";
 import { useDeprecatedDataExplorerApi } from "@depmap/data-explorer-2";
-import { HeatmapFormattedData, TableFormattedData } from "../types";
+import { HeatmapFormattedData, TableFormattedData } from "../../types";
 
 function useHeatmapSelectionHandlers(
   plotData: HeatmapFormattedData | null,
@@ -103,7 +103,7 @@ function useHeatmapSelectionHandlers(
     handleShowUnselectedLinesOnSelectionsCleared();
   }, [handleShowUnselectedLinesOnSelectionsCleared]);
 
-  const memoizedTableData = useMemo(() => {
+  const sortedTableData = useMemo(() => {
     if (tableData !== null) {
       return selectedTableRows.size === 0
         ? tableData
@@ -123,7 +123,7 @@ function useHeatmapSelectionHandlers(
     handleClickSaveSelectionAsContext,
     handleSetSelectionFromContext,
     handleClearSelection,
-    memoizedTableData,
+    sortedTableData,
   };
 }
 

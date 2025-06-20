@@ -9,13 +9,14 @@ import styles from "../CompoundDoseViability.scss";
 import useHeatmapData from "./hooks/useHeatmapData";
 import HeatmapPlotSection from "./HeatmapPlotSection";
 import CompoundPlotSelections from "../doseCurvesTab/CompoundPlotSelections";
+import { TableFormattedData } from "../types";
 
 interface HeatmapTabMainContentProps {
   // compoundId: string; // unused
   compoundName: string;
   handleShowUnselectedLinesOnSelectionsCleared: () => void;
   doseColumnNames: string[];
-  tableFormattedData: any;
+  tableFormattedData: TableFormattedData | null;
   selectedDoses?: Set<string>;
 }
 
@@ -69,7 +70,7 @@ function DoseCurvesMainContent({
     handleClickSaveSelectionAsContext,
     handleSetSelectionFromContext,
     handleClearSelection,
-    memoizedTableData,
+    sortedTableData,
   } = useHeatmapSelectionHandlers(
     heatmapFormattedData,
     tableFormattedData,
@@ -127,14 +128,18 @@ function DoseCurvesMainContent({
         minWidth: 80,
       },
       // Add dynamic dose columns
-      ...Object.keys(tableFormattedData || {})
-        .filter((colName) => !staticColumns.includes(colName))
-        .map((colName) => ({
-          accessor: colName,
-          Header: colName,
-          maxWidth: 150,
-          minWidth: 100,
-        })),
+      ...(tableFormattedData && tableFormattedData.length > 0
+        ? Array.from(
+            new Set(tableFormattedData.flatMap((row) => Object.keys(row)))
+          )
+            .filter((colName) => !staticColumns.includes(colName))
+            .map((colName) => ({
+              accessor: colName,
+              Header: colName,
+              maxWidth: 150,
+              minWidth: 100,
+            }))
+        : []),
     ];
     return columns;
   }, [cellLineUrlRoot, tableFormattedData]);
@@ -205,8 +210,7 @@ function DoseCurvesMainContent({
         <DoseViabilityTable
           error={false}
           isLoading={false}
-          doseTable={tableFormattedData}
-          memoizedTableData={memoizedTableData ?? []}
+          sortedTableData={sortedTableData ?? []}
           doseCurveTableColumns={doseViabilityTableColumns}
           columnOrdering={columnOrdering}
           defaultCols={defaultCols}

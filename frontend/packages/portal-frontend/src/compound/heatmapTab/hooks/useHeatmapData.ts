@@ -1,8 +1,8 @@
 import { useMemo } from "react";
-import { HeatmapFormattedData, TableFormattedData } from "../types";
+import { HeatmapFormattedData, TableFormattedData } from "../../types";
 
 function useHeatmapFormattedData(
-  tableFormattedData: TableFormattedData,
+  tableFormattedData: TableFormattedData | null,
   doseColumnNames: string[]
 ) {
   // Extract numeric doses for y axis

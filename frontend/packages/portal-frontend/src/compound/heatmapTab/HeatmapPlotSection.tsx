@@ -7,7 +7,7 @@ import PlotSpinner from "src/plot/components/PlotSpinner";
 import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
 import styles from "../CompoundDoseViability.scss";
 import PrototypeBrushableHeatmap from "src/doseViabilityPrototype/components/PrototypeBrushableHeatmap";
-import { HeatmapFormattedData } from "./types";
+import { HeatmapFormattedData } from "../types";
 
 interface HeatmapPlotSectionProps {
   isLoading: boolean;

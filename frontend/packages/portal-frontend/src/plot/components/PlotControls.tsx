@@ -106,7 +106,9 @@ function PlotControls({
   const [dragmode, setDragmode] = useState<Dragmode>("zoom");
 
   useEffect(() => {
-    plot?.setDragmode(dragmode);
+    if (plot?.setDragmode) {
+      plot?.setDragmode(dragmode);
+    }
   }, [plot, dragmode]);
 
   const allDefaultEnabled = !enabledTools;
