@@ -15,6 +15,8 @@ export const BOX_THICKNESS = 40;
 export const BOX_PLOT_BOTTOM_MARGIN = 40;
 export const BOX_PLOT_TOP_MARGIN = 0;
 
+export const ONCREF_UNITS = "log2(AUC)";
+
 export function getSelectivityValLabel(entityType: string) {
   return entityType === "gene" ? "log(OR)" : "Bimodality Coefficient";
 }
