@@ -1066,6 +1066,9 @@ def load_sample_data(
         depmap_model_loader.load_subtype_contexts(
             os.path.join(loader_data_dir, "cell_line/subtype_contexts.csv")
         )
+        context_explorer_loader.load_subtype_tree(
+            os.path.join(loader_data_dir, "cell_line/subtype_tree.csv")
+        )
 
         str_profile_loader.load_str_profiles(
             os.path.join(loader_data_dir, "str_profile/sample_str_profile.csv")
