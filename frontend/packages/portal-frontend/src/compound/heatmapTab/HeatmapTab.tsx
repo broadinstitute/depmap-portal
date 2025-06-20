@@ -66,20 +66,14 @@ function HeatmapTab({
     isLoading,
   } = useDoseTableData(selectedDataset, compoundId, compoundName);
 
-  const [selectedDoses, setSelectedDoses] = useState<Set<string>>(new Set());
+  // Change selectedDoses to be an array of selection objects
+  const [selectedDoses, setSelectedDoses] = useState<
+    { value: number; label: string }[]
+  >([]);
 
   const handleFilterByDose = useCallback(
-    (selection: { value: string; label: string } | null) => {
-      if (!selection) return;
-      setSelectedDoses((prev) => {
-        const next = new Set(prev);
-        if (next.has(selection.value)) {
-          next.delete(selection.value);
-        } else {
-          next.add(selection.value);
-        }
-        return next;
-      });
+    (selections: Array<{ value: number; label: string }> | null) => {
+      setSelectedDoses(selections ?? []);
     },
     []
   );
@@ -101,10 +95,6 @@ function HeatmapTab({
             }
             handleFilterByDose={handleFilterByDose}
             doseOptions={new Set(doseColumnNames)}
-            selectedDoseOption={Array.from(selectedDoses).map((dose) => ({
-              value: dose,
-              label: dose,
-            }))}
             showInsensitiveLines={showInsensitiveLines}
             showUnselectedLines={showUnselectedLines}
             handleToggleShowInsensitiveLines={(nextValue: boolean) =>
@@ -127,7 +117,7 @@ function HeatmapTab({
             // compoundId={compoundId}
             doseColumnNames={doseColumnNames}
             tableFormattedData={tableFormattedData}
-            selectedDoses={selectedDoses}
+            selectedDoses={new Set(selectedDoses.map((d) => d.value))}
             handleShowUnselectedLinesOnSelectionsCleared={() => {
               setShowUnselectedLines(true);
             }}

@@ -19,10 +19,10 @@ interface HeatmapTabMainContentProps {
   tableFormattedData: TableFormattedData | null;
   error: boolean;
   isLoading: boolean;
-  selectedDoses?: Set<string>;
+  selectedDoses?: Set<number>;
 }
 
-function DoseCurvesMainContent({
+function HeatmapTabMainContent({
   handleShowUnselectedLinesOnSelectionsCleared,
   doseColumnNames,
   tableFormattedData,
@@ -39,20 +39,23 @@ function DoseCurvesMainContent({
   );
 
   // Filter heatmapFormattedData based on selectedDoses
-  const filteredHeatmapFormattedData = React.useMemo(() => {
+  const filteredHeatmapFormattedData = useMemo(() => {
     if (!selectedDoses || selectedDoses.size === 0 || !heatmapFormattedData) {
       return heatmapFormattedData;
     }
-    // Only keep rows (doses) in y/z that match selectedDoses
-    const filteredDoseIndices = heatmapFormattedData.y
-      .map((dose, idx) => (selectedDoses.has(String(dose)) ? idx : -1))
-      .filter((idx) => idx !== -1);
+
+    // For each dose in y, if not selected, set z row to nulls
+    const newZ = heatmapFormattedData.y.map((dose, idx) => {
+      if (selectedDoses.has(dose)) {
+        return heatmapFormattedData.z[idx];
+      }
+
+      return heatmapFormattedData.z[idx].map(() => null);
+    });
+
     return {
       ...heatmapFormattedData,
-      y: heatmapFormattedData.y.filter((dose, idx) =>
-        filteredDoseIndices.includes(idx)
-      ),
-      z: filteredDoseIndices.map((idx) => heatmapFormattedData.z[idx]),
+      z: newZ,
     };
   }, [heatmapFormattedData, selectedDoses]);
 
@@ -226,4 +229,4 @@ function DoseCurvesMainContent({
   );
 }
 
-export default DoseCurvesMainContent;
+export default HeatmapTabMainContent;

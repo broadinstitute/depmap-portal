@@ -10,9 +10,8 @@ interface FiltersPanelProps {
   datasetOptions: DRCDatasetOptions[];
   selectedDatasetOption: { value: string; label: string };
   // Filter by Dose Props
-  handleFilterByDose: (selection: { value: string; label: string }) => void;
+  handleFilterByDose: (selection: { value: number; label: string }[]) => void;
   doseOptions: Set<string>;
-  selectedDoseOption: { value: string; label: string }[];
   // Toggle Switches
   showInsensitiveLines: boolean;
   showUnselectedLines: boolean;
@@ -28,7 +27,6 @@ function FiltersPanel({
   // Dose
   handleFilterByDose,
   doseOptions,
-  selectedDoseOption,
   // Toggle Switches
   showInsensitiveLines,
   showUnselectedLines,
@@ -44,8 +42,10 @@ function FiltersPanel({
     }
   );
 
-  // TODO: Implement logic for constructing doseSelectOptions
-  const doseSelectOptions: any[] = [];
+  const doseSelectOptions = Array.from(doseOptions).map((dose) => ({
+    value: parseFloat(dose.split(" ")[0]),
+    label: dose,
+  }));
 
   return (
     <div className={styles.FiltersPanel}>
@@ -66,14 +66,11 @@ function FiltersPanel({
       <hr className={styles.filtersPanelHr} />
       <h5 className={styles.filterByDoseLabel}>Filter by Dose</h5>
       <Select
-        value={selectedDoseOption}
+        options={doseSelectOptions}
         isMulti
         isDisabled={!doseOptions}
-        options={doseSelectOptions}
         onChange={(values: any) => {
-          if (values) {
-            values.forEach((value: any) => handleFilterByDose(value));
-          }
+          handleFilterByDose(values as Array<{ value: number; label: string }>);
         }}
         id="compound-heatmap-filter-by-dose"
       />
