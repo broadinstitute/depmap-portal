@@ -176,3 +176,27 @@ def test_get_values_by_entities_and_depmap_id(empty_db_mock_downloads):
     )
 
     assert viabilities == expected_viabilities
+
+
+def test_get_values_by_entities_all_depmap_ids(empty_db_mock_downloads):
+    cell_line1 = CellLineFactory(depmap_id="ACH-000001", cell_line_name="CL1")
+    cell_line2 = CellLineFactory(depmap_id="ACH-000002", cell_line_name="CL2")
+    compound_experiment = CompoundExperimentFactory()
+    entity1 = CompoundDoseReplicateFactory(compound_experiment=compound_experiment)
+    entity2 = CompoundDoseReplicateFactory(compound_experiment=compound_experiment)
+    entities = [entity1, entity2]
+    data = [
+        [1.1, 1.2],  # entity1: CL1, CL2
+        [2.1, 2.2],  # entity2: CL1, CL2
+    ]
+    matrix = MatrixFactory(
+        entities=entities, cell_lines=[cell_line1, cell_line2], data=data,
+    )
+    empty_db_mock_downloads.session.flush()
+
+    result = matrix.get_values_by_entities_all_depmap_ids(entities)
+
+    assert result == {
+        "ACH-000001": [1.1, 2.1],
+        "ACH-000002": [1.2, 2.2],
+    }

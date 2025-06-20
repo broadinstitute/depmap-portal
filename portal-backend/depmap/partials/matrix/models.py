@@ -1,5 +1,5 @@
 import os
-from typing import Union
+from typing import Dict, List, Union
 
 import pandas as pd
 from flask import current_app
@@ -227,6 +227,28 @@ class Matrix(Model):
             return points_list
         else:
             return None
+
+    # passing in a list of entities and a list of depmap ids, return a dict of depmap_id -> list of values
+    def get_values_by_entities_all_depmap_ids(self, entities) -> Dict[str, List[float]]:
+        # Get all (col_index, depmap_id) pairs in the matrix
+        col_index_id_tuples = self._get_cell_line_indices_and_depmap_ids()
+        if not col_index_id_tuples:
+            return {}
+
+        entity_rows = {}
+        for entity in entities:
+            entity_rows[entity.entity_id] = self.get_values_by_entity(
+                entity.entity_id, by_label=False
+            )
+
+        result = {}
+        for col_idx, depmap_id in col_index_id_tuples:
+            values = []
+            for entity in entities:
+                row = entity_rows[entity.entity_id]
+                values.append(row[col_idx])
+            result[depmap_id] = values
+        return result
 
     def get_subsetted_df(self, row_indices, col_indices, is_transpose=False):
         df = hdf5_utils.get_df_of_values(

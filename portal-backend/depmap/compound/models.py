@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 import sqlalchemy
 from sqlalchemy import and_, func
 from depmap.database import (
@@ -16,6 +16,61 @@ from depmap.cell_line.models import CellLine
 from depmap.gene.models import Gene
 import pandas as pd
 import re
+from dataclasses import dataclass
+
+
+@dataclass
+class DRCCompoundDataset:
+    drc_dataset_label: str
+    viability_dataset_given_id: str
+    replicate_dataset: str
+    auc_dataset_given_id: str
+    ic50_dataset_given_id: Optional[str]
+    display_name: str
+
+
+drc_compound_datasets = [
+    DRCCompoundDataset(
+        drc_dataset_label="Prism_oncology_per_curve",
+        viability_dataset_given_id="Prism_oncology_viability",
+        replicate_dataset="Prism_oncology_dose_replicate",
+        auc_dataset_given_id="Prism_oncology_AUC_collapsed",
+        ic50_dataset_given_id="Prism_oncology_ic50",
+        display_name="PRISM OncRef",
+    ),
+    # DRCCompoundDataset(
+    #     drc_dataset_label="GDSC2",
+    #     viability_dataset_given_id="GDSC2_Viability",
+    #     replicate_dataset="GDSC2_dose_replicate",
+    #     auc_dataset_given_id="GDSC2_AUC",
+    #     ic50_dataset_given_id="GDSC2_IC50",
+    #     display_name="GDSC2",
+    # ),
+    # DRCCompoundDataset(
+    #     drc_dataset_label="GDSC1",
+    #     viability_dataset_given_id="GDSC1_Viability",
+    #     replicate_dataset="GDSC1_dose_replicate",
+    #     auc_dataset_given_id="GDSC1_AUC",
+    #     ic50_dataset_given_id="GDSC1_IC50",
+    #     display_name="GDSC1",
+    # ),
+    # DRCCompoundDataset(
+    #     drc_dataset_label="ctd2_per_curve",
+    #     viability_dataset_given_id="CTRP_Viability",
+    #     replicate_dataset="CTRP_dose_replicate",
+    #     auc_dataset_given_id="CTRP_AUC",
+    #     ic50_dataset_given_id=None,
+    #     display_name="CTD^2",
+    # ),
+    # DRCCompoundDataset(
+    #     drc_dataset_label="repurposing_per_curve",
+    #     viability_dataset_given_id="REPURPOSING_Viability",
+    #     replicate_dataset="Repurposing_secondary_dose_replicate",
+    #     auc_dataset_given_id="Repurposing_secondary_AUC",
+    #     ic50_dataset_given_id=None,
+    #     display_name="PRISM Drug Repurposing",
+    # ),
+]
 
 gene_compound_target_association = db.Table(
     "gene_compound_target_association",
@@ -75,6 +130,19 @@ class Compound(Entity):
             return q.one_or_none()
 
     @staticmethod
+    def get_by_compound_id(compound_id: str, must=True) -> "Compound":
+        """
+        Return the Compound instance for a given compound_id (string, e.g. 'DPC-000001').
+        Returns None if not found.
+        """
+        q = Compound.query.filter(Compound.compound_id == compound_id)
+
+        if must:
+            return q.one()
+        else:
+            return q.one_or_none()
+
+    @staticmethod
     def find_by_name_prefix(prefix, limit):
         compounds = (
             Compound.query.filter(Compound.label.startswith(prefix))
@@ -95,6 +163,30 @@ class Compound(Entity):
         compound_aliases = [a[0] for a in aliases]
 
         return compound_aliases
+
+    @staticmethod
+    def get_dose_response_curves(compound_id: str, drc_dataset_label: str):
+        # Step 1: Get the compound
+        compound = Compound.query.filter(
+            Compound.compound_id == compound_id
+        ).one_or_none()
+        assert compound is not None, f"No compound found with compound_id={compound_id}"
+
+        # Step 2: Get all experiments for this compound
+        experiments = CompoundExperiment.query.filter(
+            CompoundExperiment.compound_id == compound.entity_id
+        ).all()
+        assert experiments, f"No CompoundExperiment found for compound_id={compound_id}"
+
+        experiment_ids = [exp.entity_id for exp in experiments]
+
+        # Step 3: Get all DoseResponseCurves for these experiments and label
+        dose_response_curves = DoseResponseCurve.query.filter(
+            DoseResponseCurve.compound_exp_id.in_(experiment_ids),
+            DoseResponseCurve.drc_dataset_label == drc_dataset_label,
+        ).all()
+
+        return dose_response_curves
 
 
 # for those cases where a dataset has data for the same compound multiple times
@@ -207,6 +299,26 @@ class CompoundExperiment(Entity):
     @staticmethod
     def get_all_by_compound_id(compound_id) -> List["CompoundExperiment"]:
         return CompoundExperiment.query.filter_by(compound_id=compound_id).all()
+
+    @staticmethod
+    def get_corresponding_compound_experiment_using_drc_dataset_label(
+        compound_id: str, drc_dataset_label: str
+    ):
+        query = (
+            db.session.query(CompoundExperiment)
+            .join(Compound, Compound.entity_id == CompoundExperiment.compound_id)
+            .join(
+                DoseResponseCurve,
+                DoseResponseCurve.compound_exp_id == CompoundExperiment.entity_id,
+            )
+            .filter(
+                Compound.compound_id == compound_id,
+                DoseResponseCurve.drc_dataset_label == drc_dataset_label,
+            )
+            .distinct()
+        )
+        results = query.all()
+        return results
 
 
 class CompoundDose(Entity):
@@ -391,7 +503,7 @@ class DoseResponseCurve(Model):
         String, ForeignKey("cell_line.depmap_id"), nullable=False, index=True
     )
     cell_line = relationship("CellLine", backref=__tablename__)
-
+    drc_dataset_label = Column(String, nullable=True)
     compound_exp_id = Column(Integer, ForeignKey("entity.entity_id"), index=True)
     compound_exp = relationship(
         "CompoundExperiment", foreign_keys="DoseResponseCurve.compound_exp_id"
