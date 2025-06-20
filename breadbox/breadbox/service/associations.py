@@ -37,8 +37,9 @@ def get_associations(
     dim_label_cache = {}
 
     def _get_dimension_label(dimension_type, given_id):
+        # if the dimension type is None, we use the dataset's dimension given_id as the label
         if not dimension_type:
-            return None
+            return given_id
         if dimension_type not in dim_label_cache:
             dim_label_cache[dimension_type] = get_dimension_type_labels_by_id(
                 db, dimension_type
@@ -47,6 +48,7 @@ def get_associations(
         if given_id in labels_by_id:
             return labels_by_id[given_id]
         else:
+            # there is a dimension type, and all valid given_ids are defined in that dimension type. If given_id is not included in the dimension type, we want act like that dimension doesn't exist
             return None
 
     for precomputed_assoc_table in precomputed_assoc_tables:
