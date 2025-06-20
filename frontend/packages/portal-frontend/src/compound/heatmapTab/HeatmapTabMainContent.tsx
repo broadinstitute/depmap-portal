@@ -17,6 +17,8 @@ interface HeatmapTabMainContentProps {
   handleShowUnselectedLinesOnSelectionsCleared: () => void;
   doseColumnNames: string[];
   tableFormattedData: TableFormattedData | null;
+  error: boolean;
+  isLoading: boolean;
   selectedDoses?: Set<string>;
 }
 
@@ -24,6 +26,8 @@ function DoseCurvesMainContent({
   handleShowUnselectedLinesOnSelectionsCleared,
   doseColumnNames,
   tableFormattedData,
+  error,
+  isLoading,
   selectedDoses = new Set(),
   compoundName,
 }: HeatmapTabMainContentProps) {
@@ -128,9 +132,9 @@ function DoseCurvesMainContent({
         minWidth: 80,
       },
       // Add dynamic dose columns
-      ...(tableFormattedData && tableFormattedData.length > 0
+      ...(sortedTableData && sortedTableData.length > 0
         ? Array.from(
-            new Set(tableFormattedData.flatMap((row) => Object.keys(row)))
+            new Set(sortedTableData.flatMap((row) => Object.keys(row)))
           )
             .filter((colName) => !staticColumns.includes(colName))
             .map((colName) => ({
@@ -142,7 +146,7 @@ function DoseCurvesMainContent({
         : []),
     ];
     return columns;
-  }, [cellLineUrlRoot, tableFormattedData]);
+  }, [cellLineUrlRoot, sortedTableData]);
 
   // Make sure "Cell Line" and "AUC" always come first, followed by the dose
   // columns in order of smallest to largest dose.
@@ -208,8 +212,8 @@ function DoseCurvesMainContent({
       </div>
       <div>
         <DoseViabilityTable
-          error={false}
-          isLoading={false}
+          error={error}
+          isLoading={isLoading}
           sortedTableData={sortedTableData ?? []}
           doseCurveTableColumns={doseViabilityTableColumns}
           columnOrdering={columnOrdering}

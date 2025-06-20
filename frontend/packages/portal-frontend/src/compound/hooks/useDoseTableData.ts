@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { DRCDatasetOptions } from "@depmap/types";
 import { breadboxAPI } from "@depmap/api";
-import { TableFormattedData } from "../../types";
+import { TableFormattedData } from "../types";
 
 // Helper to fetch metadata
 async function fetchMetadata<T>(typeName: string, bbapi: typeof breadboxAPI) {
@@ -65,14 +65,20 @@ export default function useDoseTableData(
     setTableFormattedData,
   ] = useState<TableFormattedData | null>(null);
   const [doseColumnNames, setDoseColumnNames] = useState<string[]>([]);
+  const [error, setError] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     if (!dataset) {
       setTableFormattedData(null);
       setDoseColumnNames([]);
+      setError(false);
+      setIsLoading(false);
       return;
     }
     (async () => {
+      setIsLoading(true);
+      setError(false);
       try {
         const bbapi = breadboxAPI;
         // Fetch all required data
@@ -113,13 +119,16 @@ export default function useDoseTableData(
 
         setTableFormattedData(tableData);
         setDoseColumnNames(extractDoseColumns(tableData));
+        setIsLoading(false);
       } catch (e) {
         window.console.error(e);
         setTableFormattedData(null);
         setDoseColumnNames([]);
+        setError(true);
+        setIsLoading(false);
       }
     })();
   }, [dataset, compoundId, compoundName]);
 
-  return { tableFormattedData, doseColumnNames };
+  return { tableFormattedData, doseColumnNames, error, isLoading };
 }

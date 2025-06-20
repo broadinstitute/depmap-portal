@@ -7,6 +7,7 @@ import { evaluateLegacyContext } from "src/data-explorer-2/deprecated-api";
 import "react-bootstrap-typeahead/css/Typeahead.css";
 import "src/common/styles/typeahead_fix.scss";
 import styles from "../CompoundDoseViability.scss";
+import useDoseTableData from "../hooks/useDoseTableData";
 
 interface DoseCurvesTabProps {
   datasetOptions: DRCDatasetOptions[];
@@ -54,6 +55,12 @@ function DoseCurvesTab({
     [datasetOptions]
   );
 
+  const { doseColumnNames, tableFormattedData } = useDoseTableData(
+    selectedDataset,
+    compoundId,
+    compoundName
+  );
+
   return (
     <DeprecatedDataExplorerApiProvider
       evaluateLegacyContext={evaluateLegacyContext}
@@ -87,6 +94,8 @@ function DoseCurvesTab({
             showUnselectedLines={showUnselectedLines}
             compoundName={compoundName}
             compoundId={compoundId}
+            doseColumnNames={doseColumnNames}
+            tableFormattedData={tableFormattedData}
             handleShowUnselectedLinesOnSelectionsCleared={() => {
               setShowUnselectedLines(true);
             }}

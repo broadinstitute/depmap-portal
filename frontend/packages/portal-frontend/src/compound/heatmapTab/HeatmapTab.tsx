@@ -7,7 +7,7 @@ import { evaluateLegacyContext } from "src/data-explorer-2/deprecated-api";
 import "react-bootstrap-typeahead/css/Typeahead.css";
 import "src/common/styles/typeahead_fix.scss";
 import styles from "../CompoundDoseViability.scss";
-import useDoseTableData from "./hooks/useDoseTableData";
+import useDoseTableData from "../hooks/useDoseTableData";
 
 interface HeatmapTabProps {
   datasetOptions: DRCDatasetOptions[];
@@ -59,11 +59,12 @@ function HeatmapTab({
   );
 
   // Use the custom hook to get doseColumnNames and tableFormattedData
-  const { doseColumnNames, tableFormattedData } = useDoseTableData(
-    selectedDataset,
-    compoundId,
-    compoundName
-  );
+  const {
+    doseColumnNames,
+    tableFormattedData,
+    error,
+    isLoading,
+  } = useDoseTableData(selectedDataset, compoundId, compoundName);
 
   const [selectedDoses, setSelectedDoses] = useState<Set<string>>(new Set());
 
@@ -116,6 +117,8 @@ function HeatmapTab({
         </div>
         <div className={styles.doseCurvesTabMain}>
           <HeatmapTabMainContent
+            error={error}
+            isLoading={isLoading}
             // dataset={selectedDataset}
             // doseUnits={doseUnits}
             // showInsensitiveLines={showInsensitiveLines}

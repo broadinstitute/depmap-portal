@@ -1,34 +1,8 @@
-import { DoseTableRow } from "@depmap/types";
 import { TableFormattedData } from "./types";
 
 export const Rep1Color = "#CC4778";
 export const Rep2Color = "#F89540";
 export const Rep3Color = "#176CE0";
-
-export function getDoseViabilityTableColumns(doseTable: DoseTableRow[]) {
-  if (!doseTable || doseTable.length === 0) return [];
-  const allCols = Object.keys(doseTable[0]);
-  const doseColRegex = /^\d*\.?\d+\s+\S+$/;
-  const doseCols = allCols.filter(
-    (col) => col !== "modelId" && col !== "AUC" && doseColRegex.test(col)
-  );
-  const sortedDoseCols = doseCols.sort((a, b) => {
-    const aVal = parseFloat(a.split(" ")[0]);
-    const bVal = parseFloat(b.split(" ")[0]);
-    return aVal - bVal;
-  });
-  const otherCols = allCols.filter(
-    (col) => col !== "modelId" && col !== "AUC" && !doseColRegex.test(col)
-  );
-  // Build columns array, but leave Cell Line column to be injected by caller
-  const orderedCols = ["modelId", "AUC", ...sortedDoseCols, ...otherCols];
-  return orderedCols.map((colName: string) => ({
-    accessor: colName,
-    Header: colName,
-    maxWidth: 150,
-    minWidth: 100,
-  }));
-}
 
 export const sortBySelectedModel = (
   doseTable: TableFormattedData,

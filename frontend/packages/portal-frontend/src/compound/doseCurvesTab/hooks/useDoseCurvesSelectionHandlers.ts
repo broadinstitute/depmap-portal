@@ -1,18 +1,15 @@
 import { useCallback, useMemo, useState } from "react";
 import { defaultContextName } from "@depmap/data-explorer-2/src/components/DataExplorerPage/utils";
-import {
-  CompoundDoseCurveData,
-  DataExplorerContext,
-  DoseTableRow,
-} from "@depmap/types";
+import { CompoundDoseCurveData, DataExplorerContext } from "@depmap/types";
 import { saveNewContext } from "src";
 import doseCurvesPromptForSelectionFromContext from "../../doseCurvesPromptForSelectionFromContext";
 import { sortBySelectedModel } from "../../utils";
 import { useDeprecatedDataExplorerApi } from "@depmap/data-explorer-2";
+import { TableFormattedData } from "src/compound/types";
 
 function useDoseCurvesSelectionHandlers(
   doseCurveData: CompoundDoseCurveData | null,
-  tableData: DoseTableRow[],
+  tableData: TableFormattedData | null,
   deApi: ReturnType<typeof useDeprecatedDataExplorerApi>,
   handleShowUnselectedLinesOnSelectionsCleared: () => void
 ) {
@@ -81,6 +78,28 @@ function useDoseCurvesSelectionHandlers(
     saveNewContext(context as DataExplorerContext);
   }, [selectedModelIds]);
 
+  const displayNameModelIdMap = useMemo(() => {
+    const map = new Map<string, string>();
+    if (tableData) {
+      tableData.forEach((row) => {
+        map.set(row.modelId, row.cellLine);
+      });
+    }
+    return map;
+  }, [tableData]);
+
+  // Get the selected cell line name labels for display in the Plot Selections panel.
+  const selectedLabels = useMemo(() => {
+    const displayNames: string[] = [];
+    [...selectedModelIds].forEach((modelId: string) => {
+      const displayName = displayNameModelIdMap.get(modelId);
+      if (displayName) {
+        displayNames.push(displayName);
+      }
+    });
+    return displayNames;
+  }, [selectedModelIds, displayNameModelIdMap]);
+
   const handleSetSelectionFromContext = useCallback(async () => {
     const allLabels = new Set(
       doseCurveData?.curve_params.map((curveParam) => curveParam.id!)
@@ -100,24 +119,28 @@ function useDoseCurvesSelectionHandlers(
     handleShowUnselectedLinesOnSelectionsCleared();
   }, [handleShowUnselectedLinesOnSelectionsCleared]);
 
-  // Memoized sorted table data
-  const memoizedTableData = useMemo(() => {
-    return selectedTableRows.size === 0
-      ? tableData
-      : sortBySelectedModel(tableData, selectedTableRows);
+  const sortedTableData = useMemo(() => {
+    if (tableData !== null) {
+      return selectedTableRows.size === 0
+        ? tableData
+        : sortBySelectedModel(tableData, selectedTableRows);
+    }
+
+    return null;
   }, [selectedTableRows, tableData]);
 
   return {
     selectedModelIds,
     setselectedModelIds: setSelectedModelIds,
     selectedTableRows,
+    selectedLabels,
     setSelectedTableRows,
     handleClickCurve,
     handleChangeSelection,
     handleClickSaveSelectionAsContext,
     handleSetSelectionFromContext,
     handleClearSelection,
-    memoizedTableData,
+    sortedTableData,
   };
 }
 

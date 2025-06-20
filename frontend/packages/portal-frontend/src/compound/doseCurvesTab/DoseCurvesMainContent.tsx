@@ -6,7 +6,6 @@ import useDoseCurvesSelectionHandlers from "./hooks/useDoseCurvesSelectionHandle
 import CompoundPlotSelections from "./CompoundPlotSelections";
 import DoseViabilityTable from "../DoseViabilityTable";
 import { useDeprecatedDataExplorerApi } from "@depmap/data-explorer-2";
-import { getDoseViabilityTableColumns } from "../utils";
 import { legacyPortalAPI } from "@depmap/api";
 import styles from "../CompoundDoseViability.scss";
 import {
@@ -14,6 +13,7 @@ import {
   CompoundDoseCurveData,
   DRCDatasetOptions,
 } from "@depmap/types";
+import { TableFormattedData } from "../types";
 
 interface DoseCurvesMainContentProps {
   dataset: DRCDatasetOptions | null;
@@ -22,10 +22,14 @@ interface DoseCurvesMainContentProps {
   showUnselectedLines: boolean;
   compoundName: string;
   compoundId: string;
+  doseColumnNames: string[];
+  tableFormattedData: TableFormattedData | null;
   handleShowUnselectedLinesOnSelectionsCleared: () => void;
 }
 
 function DoseCurvesMainContent({
+  doseColumnNames,
+  tableFormattedData,
   dataset,
   doseUnits,
   showReplicates,
@@ -40,10 +44,9 @@ function DoseCurvesMainContent({
     error,
     isLoading,
     doseCurveData,
-    doseTable,
     doseMin,
     doseMax,
-  } = useDoseCurvesData(dataset, compoundId);
+  } = useDoseCurvesData(dataset, compoundId, doseColumnNames);
 
   const [plotElement, setPlotElement] = useState<ExtendedPlotType | null>(null);
   const [cellLineUrlRoot, setCellLineUrlRoot] = useState<string | null>(null);
@@ -54,43 +57,26 @@ function DoseCurvesMainContent({
     });
   }, []);
 
-  // Build a modelId → displayName map for use in both selectedLabels and WideTable
-  const displayNameModelIdMap = useMemo(() => {
-    const map = new Map<string, string>();
-    doseCurveData?.curve_params.forEach((curveParams: CurveParams) => {
-      map.set(curveParams.id!, curveParams.displayName!);
-    });
-    return map;
-  }, [doseCurveData]);
-
-  // Add cell line display names to the dose table rows
-  const tableData = useMemo(
-    () =>
-      (doseTable ?? []).map((row: any) => ({
-        ...row,
-        cellLine: displayNameModelIdMap.get(row.modelId) || row.modelId,
-      })),
-    [doseTable, displayNameModelIdMap]
-  );
-
   const {
     selectedModelIds,
     selectedTableRows,
+    selectedLabels,
     handleClickCurve,
     handleChangeSelection,
     handleClickSaveSelectionAsContext,
     handleSetSelectionFromContext,
     handleClearSelection,
-    memoizedTableData,
+    sortedTableData,
   } = useDoseCurvesSelectionHandlers(
     doseCurveData,
-    tableData,
+    tableFormattedData,
     api,
     handleShowUnselectedLinesOnSelectionsCleared
   );
 
   // Format cellLine column to link to cell line pages
-  const doseCurveTableColumns = useMemo(() => {
+  const doseViabilityTableColumns = useMemo(() => {
+    const staticColumns = ["cellLine", "modelId", "auc"];
     const columns = [
       {
         accessor: "cellLine",
@@ -126,31 +112,41 @@ function DoseCurvesMainContent({
           );
         },
       },
-      ...getDoseViabilityTableColumns(tableData).filter(
-        (col: any) => col.accessor !== "cellLine"
-      ),
+      {
+        accessor: "modelId",
+        Header: "Model ID",
+        maxWidth: 120,
+        minWidth: 80,
+      },
+      {
+        accessor: "auc",
+        Header: "AUC",
+        maxWidth: 120,
+        minWidth: 80,
+      },
+      // Add dynamic dose columns
+      ...(sortedTableData && sortedTableData.length > 0
+        ? Array.from(
+            new Set(sortedTableData.flatMap((row) => Object.keys(row)))
+          )
+            .filter((colName) => !staticColumns.includes(colName))
+            .map((colName) => ({
+              accessor: colName,
+              Header: colName,
+              maxWidth: 150,
+              minWidth: 100,
+            }))
+        : []),
     ];
     return columns;
-  }, [tableData, cellLineUrlRoot]);
+  }, [cellLineUrlRoot, sortedTableData]);
 
   // Make sure "Cell Line" and "AUC" always come first, followed by the dose
   // columns in order of smallest to largest dose.
   const columnOrdering = useMemo(
-    () => doseCurveTableColumns.map((col) => col.accessor),
-    [doseCurveTableColumns]
+    () => doseViabilityTableColumns.map((col) => col.accessor),
+    [doseViabilityTableColumns]
   );
-
-  // Get the selected cell line name labels for display in the Plot Selections panel.
-  const selectedLabels = useMemo(() => {
-    const displayNames: string[] = [];
-    [...selectedModelIds].forEach((modelId: string) => {
-      const displayName = displayNameModelIdMap.get(modelId);
-      if (displayName) {
-        displayNames.push(displayName);
-      }
-    });
-    return displayNames;
-  }, [selectedModelIds, displayNameModelIdMap]);
 
   const visibleCurveData = useMemo(() => {
     if (!showUnselectedLines && doseCurveData && selectedModelIds.size > 0) {
@@ -182,10 +178,10 @@ function DoseCurvesMainContent({
   }, [doseCurveData, selectedModelIds, showReplicates]);
 
   const defaultCols = useMemo(() => {
-    return doseCurveTableColumns
+    return doseViabilityTableColumns
       .map((col) => col.accessor)
       .filter((accessor) => accessor !== "modelId");
-  }, [doseCurveTableColumns]);
+  }, [doseViabilityTableColumns]);
 
   return (
     <div className={styles.mainContentContainer}>
@@ -258,9 +254,8 @@ function DoseCurvesMainContent({
         <DoseViabilityTable
           error={error}
           isLoading={isLoading}
-          doseTable={doseTable}
-          memoizedTableData={memoizedTableData}
-          doseCurveTableColumns={doseCurveTableColumns}
+          sortedTableData={sortedTableData ?? []}
+          doseCurveTableColumns={doseViabilityTableColumns}
           columnOrdering={columnOrdering}
           defaultCols={defaultCols}
           selectedTableRows={selectedTableRows}
