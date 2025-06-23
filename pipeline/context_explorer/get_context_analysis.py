@@ -380,7 +380,7 @@ def compute_in_out_groups(
     names_to_codes = {**name_to_code_onco, **name_to_code_gs}
 
     all_results = []
-    for idx, ctx_row in subtype_tree[subtype_tree.Level0 == 'Bone'].iterrows():
+    for idx, ctx_row in subtype_tree.iterrows():
         ctx_code = names_to_codes[ctx_row.NodeName]
         ctx_in = context_matrix[context_matrix[ctx_code] == True].index
 
