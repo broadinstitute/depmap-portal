@@ -375,7 +375,7 @@ def get_correlated_dependencies_html(
         f"""(
         function() {{
             console.log("about to call initCorrelatedDependenciesTile");
-            DepMap.initCorrelatedDependenciesTile("{div_id}", "{entity_label}", "{entity.type}");
+            DepMap.initCorrelatedDependenciesTile("{div_id}", "{entity_label}");
             console.log("after initCorrelatedDependenciesTile");
         }})""",
     )

@@ -12,3 +12,10 @@
     height: 12px;
   }
 }
+
+// center text in div
+.errorMessage {
+  display: grid;
+  place-items: center;
+  height: 50px;
+}

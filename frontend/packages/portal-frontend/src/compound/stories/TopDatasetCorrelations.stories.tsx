@@ -1,12 +1,12 @@
 import React from "react";
 
-import { TopDatasetCorrelations } from "../components/tiles/TopDatasetCorrelations";
+import { TopDatasetDependencies } from "../components/tiles/TopDatasetDependencies";
 
 export default {
   title: "Components/Compounds/TopDatasetCorrelations",
-  component: TopDatasetCorrelations,
+  component: TopDatasetDependencies,
 };
 
 export const TopDatasetCorrelationsStory = () => {
-  return <TopDatasetCorrelations datasetName="CRISPR" />;
+  return <TopDatasetDependencies datasetName="CRISPR" />;
 };

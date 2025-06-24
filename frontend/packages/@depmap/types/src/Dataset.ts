@@ -108,3 +108,25 @@ export interface DatasetTableData {
   sampleType: string | null;
   dataType: string | null;
 }
+
+export interface DatasetAssociations {
+  dataset_name: string;
+  dataset_given_id: string;
+  dimension_label: string;
+  associated_datasets: {
+    name: string;
+    dimension_type: string;
+    dataset_id: string;
+    dataset_given_id: string;
+  }[];
+  associated_dimensions: AssociatedFeatures[];
+}
+
+export interface AssociatedFeatures {
+  correlation: number;
+  log10qvalue: number;
+  other_dataset_id: string;
+  other_dataset_given_id: string;
+  other_dimension_given_id: string;
+  other_dimension_label: string;
+}

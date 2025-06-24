@@ -29,6 +29,7 @@ export type {
   DatasetUpdateArgs,
   TabularDataset,
   MatrixDataset,
+  DatasetAssociations,
 } from "./src/Dataset";
 
 export type {
@@ -50,7 +51,7 @@ export type {
 export type * from "./src/data-explorer-2";
 export type * from "./src/interactive";
 export type { UploadFileResponse } from "./src/UploadFileResponse";
-export type { SliceQuery } from "./src/SliceQuery";
+export type { SliceQuery, SliceQueryAssociations } from "./src/SliceQuery";
 
 // predicates (these are functions, not types, but they help to narrow types)
 export { instanceOfErrorDetail } from "./src/ErrorDetail";

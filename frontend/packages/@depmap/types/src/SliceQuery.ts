@@ -9,6 +9,10 @@ export type SliceQuery = {
     | "column";
 };
 
+export type SliceQueryAssociations = SliceQuery & {
+  association_datasets?: string[];
+};
+
 export const isValidSliceQuery = (
   sq?: Partial<SliceQuery> | null
 ): sq is SliceQuery => {

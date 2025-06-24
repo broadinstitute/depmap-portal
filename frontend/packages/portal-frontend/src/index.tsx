@@ -26,13 +26,20 @@ import TermsAndConditionsModal from "./common/components/TermsAndConditionsModal
 import { initializeDevContexts } from "@depmap/data-explorer-2";
 import { EnrichmentTile } from "./contextExplorer/components/EnrichmentTile";
 import CorrelationAnalysis from "./correlationAnalysis/components";
-import { CorrelatedDependenciesTile } from "./compound/components/tiles/CorrelatedDependenciesTile";
 
 export { log, tailLog, getLogCount } from "src/common/utilities/log";
 
 if (["dev.cds.team", "127.0.0.1:5000"].includes(window.location.host)) {
   initializeDevContexts();
 }
+
+const CorrelatedDependenciesTile = React.lazy(
+  () =>
+    import(
+      /* webpackChunkName: "CorrelatedDependenciesTile" */
+      "src/compound/components/tiles/CorrelatedDependenciesTile"
+    )
+);
 
 const DoseResponseTab = React.lazy(
   () =>
@@ -198,15 +205,11 @@ export function initEnrichmentTile(
 
 export function initCorrelatedDependenciesTile(
   elementId: string,
-  entityLabel: string,
-  entityType: string
+  entityLabel: string
 ) {
   renderWithErrorBoundary(
     <React.Suspense fallback={<div>Loading...</div>}>
-      <CorrelatedDependenciesTile
-        entityLabel={entityLabel}
-        entityType={entityType}
-      />
+      <CorrelatedDependenciesTile entityLabel={entityLabel} />
     </React.Suspense>,
     document.getElementById(elementId) as HTMLElement
   );
