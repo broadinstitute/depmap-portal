@@ -24,7 +24,7 @@ export const TopDatasetDependencies: React.FC<TopDatasetDependencyProps> = ({
   const urlPrefix = window.location.origin;
   return (
     <div>
-      <h3>{dataType}</h3>
+      <h3 style={{ fontSize: "16px" }}>{dataType}</h3>
       <table style={{ width: "100%" }}>
         <thead>
           <tr>
