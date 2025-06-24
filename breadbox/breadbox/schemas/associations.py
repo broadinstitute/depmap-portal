@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List, Optional, Union
 
 
 class DatasetSummary(BaseModel):
@@ -7,14 +7,14 @@ class DatasetSummary(BaseModel):
     name: str
     dimension_type: Optional[str] = None
     dataset_id: str
-    dataset_given_id: str
+    dataset_given_id: Union[str, None]
 
 
 class Association(BaseModel):
     correlation: float
     log10qvalue: float
     other_dataset_id: str
-    other_dataset_given_id: str
+    other_dataset_given_id: Union[str, None]
     other_dimension_given_id: str
     other_dimension_label: str
 
