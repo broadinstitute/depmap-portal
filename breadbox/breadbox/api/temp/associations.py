@@ -1,8 +1,7 @@
 import os.path
-from typing import Annotated
+from typing import Annotated, List, Optional
 import shutil
 
-from depmap_compute.slice import SliceQuery
 from fastapi import Body, Depends
 from itsdangerous import URLSafeSerializer
 
@@ -10,8 +9,12 @@ from breadbox.api.dependencies import get_db_with_user
 from breadbox.config import Settings, get_settings
 from breadbox.db.session import SessionWithUser
 from breadbox.api.uploads import construct_file_from_ids
-from breadbox.schemas.associations import Associations
-from breadbox.schemas.associations import AssociationTable, AssociationsIn
+from breadbox.schemas.associations import (
+    Associations,
+    AssociationTable,
+    AssociationsIn,
+    SliceQueryAssociations,
+)
 from typing import List
 from breadbox.service import associations as associations_service
 from breadbox.crud import associations as associations_crud
@@ -32,7 +35,7 @@ def query_associations_for_slice(
     db: Annotated[SessionWithUser, Depends(get_db_with_user)],
     settings: Annotated[Settings, Depends(get_settings)],
     slice_query: Annotated[
-        SliceQuery, Body(description="A Data Explorer 2 context expression")
+        SliceQueryAssociations, Body(description="A Data Explorer 2 context expression")
     ],
 ):
     return associations_service.get_associations(

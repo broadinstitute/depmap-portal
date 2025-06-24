@@ -7,18 +7,21 @@ class DatasetSummary(BaseModel):
     name: str
     dimension_type: Optional[str] = None
     dataset_id: str
+    dataset_given_id: str
 
 
 class Association(BaseModel):
     correlation: float
     log10qvalue: float
     other_dataset_id: str
+    other_dataset_given_id: str
     other_dimension_given_id: str
     other_dimension_label: str
 
 
 class Associations(BaseModel):
     dataset_name: str
+    dataset_given_id: str
     dimension_label: str
     associated_datasets: List[DatasetSummary]
     associated_dimensions: List[Association]
@@ -42,3 +45,12 @@ class AssociationTable(BaseModel):
     axis: Literal["sample", "feature"]
     dataset_1_id: str
     dataset_2_id: str
+
+
+class SliceQueryAssociations(BaseModel):
+    dataset_id: str
+    identifier: str
+    identifier_type: Literal[
+        "feature_id", "feature_label", "sample_id", "sample_label", "column"
+    ]
+    association_datasets: Optional[List[str]] = None
