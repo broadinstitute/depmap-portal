@@ -1,13 +1,12 @@
+import { breadboxAPI } from "@depmap/api";
 import { DatasetAssociations } from "@depmap/types/src/Dataset";
 import { useEffect, useState } from "react";
-
-import { getBreadboxApi } from "src/common/utilities/context";
 
 function useCorrelatedDependenciesData(
   datasetId: string,
   compoundLabel: string
 ) {
-  const bapi = getBreadboxApi();
+  const bapi = breadboxAPI;
 
   const [error, setError] = useState(false);
   const [isLoading, setIsLoading] = useState(true);

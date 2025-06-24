@@ -2,7 +2,11 @@ import "src/public-path";
 
 import React from "react";
 import ReactDOM from "react-dom";
-import { legacyPortalAPI, LegacyPortalApiResponse } from "@depmap/api";
+import {
+  legacyPortalAPI,
+  LegacyPortalApiResponse,
+  breadboxAPI,
+} from "@depmap/api";
 import { CustomList } from "@depmap/cell-line-selector";
 import { toStaticUrl } from "@depmap/globals";
 
@@ -253,7 +257,7 @@ export function initCorrelationAnalysisTab(
   elementId: string,
   compoundName: string
 ) {
-  const bapi = getBreadboxApi();
+  const bapi = breadboxAPI;
   renderWithErrorBoundary(
     <React.Suspense fallback={<div>Loading...</div>}>
       <CorrelationAnalysis
