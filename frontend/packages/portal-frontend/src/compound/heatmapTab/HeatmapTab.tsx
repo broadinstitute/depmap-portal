@@ -31,9 +31,10 @@ function HeatmapTab({
     value: string;
     label: string;
   } | null>(null);
-  const [showInsensitiveLines, setShowInsensitiveLines] = useState<boolean>(
-    true
-  );
+
+  // NOTE: temporarily disabling insensitive lines filter until "insensitive" is better defined
+  // const [showInsensitiveLines, setShowInsensitiveLines] =
+  //   useState<boolean>(true);
   const [showUnselectedLines, setShowUnselectedLines] = useState<boolean>(true);
 
   useEffect(() => {
@@ -51,7 +52,7 @@ function HeatmapTab({
             option.viability_dataset_id === selection.value
         )[0];
         setSelectedDataset(selectedCompoundDataset);
-        setShowInsensitiveLines(true);
+        // setShowInsensitiveLines(true);
         setShowUnselectedLines(true);
       }
     },
@@ -95,11 +96,11 @@ function HeatmapTab({
             }
             handleFilterByDose={handleFilterByDose}
             doseOptions={new Set(doseColumnNames)}
-            showInsensitiveLines={showInsensitiveLines}
+            // showInsensitiveLines={showInsensitiveLines}
             showUnselectedLines={showUnselectedLines}
-            handleToggleShowInsensitiveLines={(nextValue: boolean) =>
-              setShowInsensitiveLines(nextValue)
-            }
+            // handleToggleShowInsensitiveLines={(nextValue: boolean) =>
+            //   setShowInsensitiveLines(nextValue)
+            // }
             handleToggleShowUnselectedLines={(nextValue: boolean) =>
               setShowUnselectedLines(nextValue)
             }

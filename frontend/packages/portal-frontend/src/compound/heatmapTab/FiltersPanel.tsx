@@ -13,10 +13,12 @@ interface FiltersPanelProps {
   handleFilterByDose: (selection: { value: number; label: string }[]) => void;
   doseOptions: Set<string>;
   // Toggle Switches
-  showInsensitiveLines: boolean;
   showUnselectedLines: boolean;
-  handleToggleShowInsensitiveLines: (nextValue: boolean) => void;
   handleToggleShowUnselectedLines: (nextValue: boolean) => void;
+  // NOTE: Temporarily disabling Insensitive Lines toggles until stakeholders
+  // decide on a definition for "Insensitive"
+  // showInsensitiveLines: boolean;
+  // handleToggleShowInsensitiveLines: (nextValue: boolean) => void;
 }
 
 function FiltersPanel({
@@ -28,9 +30,9 @@ function FiltersPanel({
   handleFilterByDose,
   doseOptions,
   // Toggle Switches
-  showInsensitiveLines,
+  // showInsensitiveLines,
   showUnselectedLines,
-  handleToggleShowInsensitiveLines,
+  // handleToggleShowInsensitiveLines,
   handleToggleShowUnselectedLines,
 }: FiltersPanelProps) {
   const datasetSelectOptions = datasetOptions.map(
@@ -87,19 +89,6 @@ function FiltersPanel({
           ]}
         />
       </div>
-      <div className={styles.toggleRow}>
-        <div className={styles.toggleLabel}>Insensitive lines</div>
-        <ToggleSwitch
-          value={showInsensitiveLines}
-          onChange={handleToggleShowInsensitiveLines}
-          options={[
-            { label: "ON", value: true },
-            { label: "OFF", value: false },
-          ]}
-        />
-      </div>
-
-      <hr className={styles.filtersPanelHr} />
     </div>
   );
 }

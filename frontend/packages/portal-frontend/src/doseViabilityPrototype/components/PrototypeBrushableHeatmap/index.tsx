@@ -249,6 +249,40 @@ function PrototypeBrushableHeatmap({
       setHoveredColumns([e.points[0].pointIndex[1]]);
     });
 
+    // Add a downloadImage method to the plot for PNG and SVG export using Plotly's toImage utility (as in PrototypeDensity1D)
+    plot.downloadImage = (options) => {
+      const { filename, width, format } = options;
+      if (!plot || !plot.data || !plot.layout) return;
+      // Use Plotly's toImage for consistent export
+      Plotly.toImage(plot, { format, width, height: options.height })
+        .then((dataUrl) => {
+          const a = document.createElement("a");
+          a.href = dataUrl;
+          a.download = filename + "." + format;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+        })
+        .catch(() => {
+          // fallback: try SVG serialization for SVG only
+          if (format === "svg") {
+            const svgNode = plot.querySelector("svg");
+            if (!svgNode) return;
+            const serializer = new XMLSerializer();
+            const svgString = serializer.serializeToString(svgNode);
+            const blob = new Blob([svgString], { type: "image/svg+xml" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = filename + ".svg";
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+          }
+        });
+    };
+
     return () => {
       listeners.forEach(([eventName, callback]) =>
         plot.removeListener(eventName, callback)

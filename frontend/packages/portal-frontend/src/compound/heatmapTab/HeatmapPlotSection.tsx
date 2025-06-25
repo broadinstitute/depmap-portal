@@ -93,7 +93,6 @@ function HeatmapPlotSection({
         : null,
     [sortedHeatmapFormattedData, displayNameModelIdMap]
   );
-  console.log(searchOptions);
 
   return (
     <div className={styles.PlotSection}>
@@ -119,7 +118,7 @@ function HeatmapPlotSection({
               }
             }}
             downloadImageOptions={{
-              filename: `dose-curves-${compoundName}`,
+              filename: `dose-viability-heatmap-${compoundName}`,
               width: 800,
               height: 600,
             }}
