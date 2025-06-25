@@ -17,6 +17,7 @@ interface HeatmapTabMainContentProps {
   handleShowUnselectedLinesOnSelectionsCleared: () => void;
   doseColumnNames: string[];
   tableFormattedData: TableFormattedData | null;
+  showUnselectedLines: boolean;
   error: boolean;
   isLoading: boolean;
   selectedDoses?: Set<number>;
@@ -26,6 +27,7 @@ function HeatmapTabMainContent({
   handleShowUnselectedLinesOnSelectionsCleared,
   doseColumnNames,
   tableFormattedData,
+  showUnselectedLines,
   error,
   isLoading,
   selectedDoses = new Set(),
@@ -37,27 +39,6 @@ function HeatmapTabMainContent({
     tableFormattedData,
     doseColumnNames
   );
-
-  // Filter heatmapFormattedData based on selectedDoses
-  const filteredHeatmapFormattedData = useMemo(() => {
-    if (!selectedDoses || selectedDoses.size === 0 || !heatmapFormattedData) {
-      return heatmapFormattedData;
-    }
-
-    // For each dose in y, if not selected, set z row to nulls
-    const newZ = heatmapFormattedData.y.map((dose, idx) => {
-      if (selectedDoses.has(dose)) {
-        return heatmapFormattedData.z[idx];
-      }
-
-      return heatmapFormattedData.z[idx].map(() => null);
-    });
-
-    return {
-      ...heatmapFormattedData,
-      z: newZ,
-    };
-  }, [heatmapFormattedData, selectedDoses]);
 
   const [plotElement, setPlotElement] = useState<ExtendedPlotType | null>(null);
   const [cellLineUrlRoot, setCellLineUrlRoot] = useState<string | null>(null);
@@ -85,6 +66,28 @@ function HeatmapTabMainContent({
     api,
     handleShowUnselectedLinesOnSelectionsCleared
   );
+
+  // Compute visible modelId indices (columns)
+  const visibleModelIdIndices = useMemo(() => {
+    if (!heatmapFormattedData) return [];
+    if (!showUnselectedLines && selectedModelIds && selectedModelIds.size > 0) {
+      return heatmapFormattedData.modelIds
+        .map((id, idx) => (selectedModelIds.has(id) ? idx : -1))
+        .filter((idx) => idx !== -1);
+    }
+    return heatmapFormattedData.modelIds.map((_, idx) => idx);
+  }, [heatmapFormattedData, selectedModelIds, showUnselectedLines]);
+
+  // Compute visible dose (row) indices
+  const visibleZIndexes = useMemo(() => {
+    if (!heatmapFormattedData) return [];
+    if (selectedDoses && selectedDoses.size > 0) {
+      return heatmapFormattedData.y
+        .map((dose, idx) => (selectedDoses.has(dose) ? idx : -1))
+        .filter((idx) => idx !== -1);
+    }
+    return heatmapFormattedData.y.map((_, idx) => idx);
+  }, [heatmapFormattedData, selectedDoses]);
 
   const doseViabilityTableColumns = useMemo(() => {
     const staticColumns = ["cellLine", "modelId", "auc"];
@@ -178,18 +181,21 @@ function HeatmapTabMainContent({
       <div className={styles.mainContentGrid}>
         <>
           <div style={{ gridArea: "plot" }}>
-            {filteredHeatmapFormattedData && (
+            {heatmapFormattedData && (
               <HeatmapPlotSection
                 isLoading={false}
                 compoundName={compoundName}
                 plotElement={plotElement}
-                heatmapFormattedData={filteredHeatmapFormattedData}
+                heatmapFormattedData={heatmapFormattedData}
                 doseMin={doseMin}
                 doseMax={doseMax}
                 selectedModelIds={selectedModelIds}
                 handleSetSelectedPlotModels={handleSetSelectedPlotModels}
                 handleSetPlotElement={setPlotElement}
                 displayNameModelIdMap={displayNameModelIdMap}
+                visibleModelIdIndices={visibleModelIdIndices}
+                visibleZIndexes={visibleZIndexes}
+                showUnselectedLines={showUnselectedLines}
               />
             )}
           </div>

@@ -18,6 +18,7 @@ interface Props {
     x: (string | number)[];
     y: (string | number)[];
     z: (number | null)[][];
+    customdata?: any[][]; // Add customdata for per-cell hover masking
   };
   xAxisTitle: string;
   yAxisTitle: string;
@@ -114,7 +115,6 @@ function PrototypeBrushableHeatmap({
         // gradually increase the gap size as a function of the zoom level.
         xgap: 3 * (1 - deltaRange / data.x.length) ** 2,
         ygap: 1 * (1 - deltaRange / data.x.length) ** 2,
-
         colorbar: {
           x: -0.009,
           y: -0.3,

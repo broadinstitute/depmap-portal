@@ -113,7 +113,7 @@ function HeatmapTab({
             // dataset={selectedDataset}
             // doseUnits={doseUnits}
             // showInsensitiveLines={showInsensitiveLines}
-            // showUnselectedLines={showUnselectedLines}
+            showUnselectedLines={showUnselectedLines}
             compoundName={compoundName}
             // compoundId={compoundId}
             doseColumnNames={doseColumnNames}

@@ -11,6 +11,7 @@ import { HeatmapFormattedData } from "../types";
 
 interface HeatmapPlotSectionProps {
   isLoading: boolean;
+  showUnselectedLines: boolean;
   compoundName: string;
   plotElement: ExtendedPlotType | null;
   heatmapFormattedData: HeatmapFormattedData;
@@ -20,6 +21,8 @@ interface HeatmapPlotSectionProps {
   handleSetSelectedPlotModels: (models: Set<string>) => void;
   handleSetPlotElement: (element: ExtendedPlotType | null) => void;
   displayNameModelIdMap: Map<string, string>;
+  visibleModelIdIndices: number[];
+  visibleZIndexes: number[];
 }
 function HeatmapPlotSection({
   isLoading,
@@ -32,6 +35,9 @@ function HeatmapPlotSection({
   handleSetPlotElement,
   plotElement,
   displayNameModelIdMap,
+  visibleModelIdIndices,
+  visibleZIndexes,
+  showUnselectedLines,
 }: HeatmapPlotSectionProps) {
   // Sort heatmapFormattedData by viability (mean of z values for each model/column)
   const sortedHeatmapFormattedData = useMemo(() => {
@@ -66,33 +72,91 @@ function HeatmapPlotSection({
     };
   }, [heatmapFormattedData]);
 
+  // Compute visible indices based on sorted columns
+  const visibleSortedModelIdIndices = useMemo(() => {
+    if (!sortedHeatmapFormattedData) return [];
+    if (!showUnselectedLines && selectedModelIds && selectedModelIds.size > 0) {
+      return sortedHeatmapFormattedData.modelIds
+        .map((id, idx) => (selectedModelIds.has(id) ? idx : -1))
+        .filter((idx) => idx !== -1);
+    }
+    return sortedHeatmapFormattedData.modelIds.map((_, idx) => idx);
+  }, [sortedHeatmapFormattedData, selectedModelIds, showUnselectedLines]);
+
+  // Mask sortedHeatmapFormattedData based on visibleSortedModelIdIndices and visibleZIndexes (do not filter out, just mask with nulls)
+  const maskedHeatmapData = useMemo(() => {
+    if (!sortedHeatmapFormattedData) return sortedHeatmapFormattedData;
+
+    // Mask z: for each row, if rowIdx not in visibleZIndexes, mask entire row with nulls;
+    // for each col, if colIdx not in visibleSortedModelIdIndices, mask with null
+    const maskedZ = sortedHeatmapFormattedData.z.map((row, rowIdx) => {
+      if (!visibleZIndexes.includes(rowIdx)) {
+        return row.map(() => null);
+      }
+      return row.map((val, colIdx) =>
+        visibleSortedModelIdIndices.includes(colIdx) ? val : null
+      );
+    });
+    return {
+      ...sortedHeatmapFormattedData,
+      z: maskedZ,
+    };
+  }, [
+    sortedHeatmapFormattedData,
+    visibleSortedModelIdIndices,
+    visibleZIndexes,
+  ]);
+
   // Use sortedHeatmapFormattedData for selectedColumns
   const selectedColumns = useMemo(() => {
     const out = new Set<number>();
 
-    sortedHeatmapFormattedData?.modelIds.forEach((id, index) => {
-      if (selectedModelIds.has(id)) {
+    maskedHeatmapData?.modelIds.forEach((id, index) => {
+      if (id !== null && selectedModelIds.has(id)) {
         out.add(index);
       }
     });
 
     return out;
-  }, [selectedModelIds, sortedHeatmapFormattedData]);
+  }, [selectedModelIds, maskedHeatmapData]);
 
-  // Use sortedHeatmapFormattedData for searchOptions
+  // Use maskedHeatmapData for searchOptions, skipping null modelIds
   const searchOptions = useMemo(
     () =>
-      sortedHeatmapFormattedData
-        ? sortedHeatmapFormattedData.modelIds.map(
-            (modelId: string, index: number) => ({
-              label: displayNameModelIdMap.get(modelId) || modelId,
-              stringId: modelId,
-              value: index,
-            })
-          )
+      maskedHeatmapData
+        ? maskedHeatmapData.modelIds
+            .map((modelId, index) =>
+              modelId
+                ? {
+                    label: displayNameModelIdMap.get(modelId) || modelId,
+                    stringId: modelId,
+                    value: index,
+                  }
+                : null
+            )
+            .filter((opt) => opt !== null)
         : null,
-    [sortedHeatmapFormattedData, displayNameModelIdMap]
+    [maskedHeatmapData, displayNameModelIdMap]
   );
+
+  // Use to hide hover text when the Heatmap is using showUnselectedLines = False
+  const customdata = useMemo(() => {
+    if (!maskedHeatmapData) return undefined;
+    const { x, y, z } = maskedHeatmapData;
+    return z.map((row, rowIdx) =>
+      row.map((val, colIdx) => {
+        if (val === null || val === undefined || Number.isNaN(val)) {
+          return "";
+        }
+        // Format hover text for this cell
+        return [
+          `Cell line: ${x[colIdx]}`,
+          `Dose: ${y[rowIdx]} µM`,
+          `Viability: ${val.toFixed(3)}`,
+        ].join("<br>");
+      })
+    );
+  }, [maskedHeatmapData]);
 
   return (
     <div className={styles.PlotSection}>
@@ -138,27 +202,25 @@ function HeatmapPlotSection({
             <PlotSpinner height="100%" />
           </div>
         )}
-        {sortedHeatmapFormattedData && doseMin && doseMax && !isLoading && (
+        {maskedHeatmapData && doseMin && doseMax && !isLoading && (
           <div className={styles.heatmapContainer}>
             <PrototypeBrushableHeatmap
-              data={sortedHeatmapFormattedData}
+              data={{
+                ...maskedHeatmapData,
+                x: maskedHeatmapData.x,
+                y: maskedHeatmapData.y,
+                z: maskedHeatmapData.z,
+                customdata, // Pass customdata for per-cell hover masking
+              }}
               onLoad={handleSetPlotElement}
               xAxisTitle="Cell Lines"
               yAxisTitle={`${compoundName} Dose (μM)`}
               legendTitle="Viability"
-              hovertemplate={[
-                "Cell line: %{x}",
-                "Dose: %{y} µM",
-                "Viability: %{z}",
-                "<extra></extra>",
-              ].join("<br>")}
+              // Use per-cell hovertemplate: show %{customdata.hover} (blank for masked)
+              hovertemplate="%{customdata}<extra></extra>"
               selectedColumns={selectedColumns}
               onClearSelection={() => handleSetSelectedPlotModels(new Set())}
-              onSelectColumnRange={(
-                start: number,
-                end: number,
-                shiftKey: boolean
-              ) => {
+              onSelectColumnRange={(start, end, shiftKey) => {
                 let next: Set<string>;
                 if (shiftKey) {
                   next = new Set(selectedModelIds);
@@ -166,7 +228,9 @@ function HeatmapPlotSection({
                   next = new Set();
                 }
                 for (let i = start; i <= end; i += 1) {
-                  next.add(sortedHeatmapFormattedData.modelIds[i]);
+                  if (maskedHeatmapData.modelIds[i]) {
+                    next.add(maskedHeatmapData.modelIds[i]!);
+                  }
                 }
                 handleSetSelectedPlotModels(next);
               }}
