@@ -1,13 +1,9 @@
 import React, { useEffect, useState } from "react";
+import { legacyPortalAPI } from "@depmap/api";
+import { CellLineDataMatrix, OncogenicAlteration } from "@depmap/types";
 import AsyncTile from "src/common/components/AsyncTile";
 import { CardContainer, CardColumn } from "src/common/components/Card";
-import { getDapi } from "src/common/utilities/context";
-import {
-  OncogenicAlteration,
-  CellLineDataMatrix,
-  DatasetDataTypes,
-  ModelInfo,
-} from "src/cellLine/models/types";
+import { DatasetDataTypes, ModelInfo } from "src/cellLine/models/types";
 import styles from "src/common/styles/async_tile.module.scss";
 
 const DatasetsTile = React.lazy(
@@ -37,8 +33,6 @@ interface Props {
 }
 
 const CellLineOverview = ({ modelId, hasMetMapData }: Props) => {
-  const dapi = getDapi();
-
   const [
     descriptionTileData,
     setDescriptionTileData,
@@ -69,40 +63,40 @@ const CellLineOverview = ({ modelId, hasMetMapData }: Props) => {
   const [oncokbDatasetVersion, setOncokbDatasetVersion] = useState<string>("");
 
   useEffect(() => {
-    dapi.getCellLineDescriptionTileData(modelId).then((data) => {
-      setDescriptionTileData(data);
+    legacyPortalAPI.getCellLineDescriptionTileData(modelId).then((data) => {
+      setDescriptionTileData(data as ModelInfo);
     });
-  }, [dapi, modelId]);
+  }, [modelId]);
 
   useEffect(() => {
     // Don't try to update an unmounted component - could cause memory leaks
     let mounted = true;
 
-    dapi.getCellLinePrefDepData("crispr", modelId).then((data) => {
+    legacyPortalAPI.getCellLinePrefDepData("crispr", modelId).then((data) => {
       if (mounted) {
         setPrefDepCrisprData(data);
       }
     });
 
-    dapi.getCellLinePrefDepData("rnai", modelId).then((data) => {
+    legacyPortalAPI.getCellLinePrefDepData("rnai", modelId).then((data) => {
       if (mounted) {
         setPrefDepRnaiData(data);
       }
     });
 
-    dapi.getCellLineCompoundSensitivityData(modelId).then((data) => {
+    legacyPortalAPI.getCellLineCompoundSensitivityData(modelId).then((data) => {
       if (mounted) {
         setCompoundSensitivityData(data);
       }
     });
 
-    dapi.getCellLineDatasets(modelId).then((data) => {
+    legacyPortalAPI.getCellLineDatasets(modelId).then((data) => {
       if (mounted) {
         setCellLineDatasets(data);
       }
     });
 
-    dapi.getOncogenicAlterations(modelId).then((data) => {
+    legacyPortalAPI.getOncogenicAlterations(modelId).then((data) => {
       if (mounted) {
         setOncoAlterations(data.onco_alterations);
         setOncokbDatasetVersion(data.oncokb_dataset_version);
@@ -112,7 +106,7 @@ const CellLineOverview = ({ modelId, hasMetMapData }: Props) => {
     return () => {
       mounted = false;
     };
-  }, [modelId, dapi]);
+  }, [modelId]);
 
   return (
     <CardContainer>
@@ -142,7 +136,6 @@ const CellLineOverview = ({ modelId, hasMetMapData }: Props) => {
             <CompoundSensitivityTile
               depmapId={modelId}
               dataMatrix={compoundSensitivityData}
-              dapi={dapi}
             />
           </React.Suspense>
         )}
@@ -156,7 +149,6 @@ const CellLineOverview = ({ modelId, hasMetMapData }: Props) => {
               depmapId={modelId}
               crisprData={prefDepCrisprData}
               rnaiData={prefDepRnaiData}
-              dapi={dapi}
             />
           </React.Suspense>
         )}

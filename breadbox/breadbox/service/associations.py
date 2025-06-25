@@ -1,9 +1,14 @@
 import os
 import numpy as np
+from typing import List, Optional
 
-from breadbox.db.session import SessionWithUser
 from depmap_compute.slice import SliceQuery
-from breadbox.schemas.associations import Associations, Association, DatasetSummary
+from breadbox.db.session import SessionWithUser
+from breadbox.schemas.associations import (
+    Associations,
+    Association,
+    DatasetSummary,
+)
 from breadbox.crud import associations as associations_crud
 from breadbox.crud import dataset as dataset_crud
 from breadbox.schemas.custom_http_exception import (
@@ -20,7 +25,10 @@ log = logging.getLogger(__name__)
 
 
 def get_associations(
-    db: SessionWithUser, filestore_location: str, slice_query: SliceQuery
+    db: SessionWithUser,
+    filestore_location: str,
+    slice_query: SliceQuery,
+    association_datasets: Optional[List[str]] = None,
 ) -> Associations:
     dataset_id = slice_query.dataset_id
 
@@ -28,15 +36,20 @@ def get_associations(
     if dataset is None:
         raise ResourceNotFoundError(f"Could not find dataset {dataset_id}")
 
-    precomputed_assoc_tables = associations_crud.get_association_tables(db, dataset.id)
+    precomputed_assoc_tables = associations_crud.get_association_tables(
+        db, dataset.id, association_datasets
+    )
     datasets = []
     associated_dimensions = []
 
-    resolved_slice = slice_service.resolve_slice_to_components(db, slice_query)
+    resolved_slice = slice_service.resolve_slice_to_components(db, slice_query,)
 
     dim_label_cache = {}
 
     def _get_dimension_label(dimension_type, given_id):
+        # if the dimension type is None, we use the dataset's dimension given_id as the label
+        if not dimension_type:
+            return given_id
         if dimension_type not in dim_label_cache:
             dim_label_cache[dimension_type] = get_dimension_type_labels_by_id(
                 db, dimension_type
@@ -45,6 +58,7 @@ def get_associations(
         if given_id in labels_by_id:
             return labels_by_id[given_id]
         else:
+            # there is a dimension type, and all valid given_ids are defined in that dimension type. If given_id is not included in the dimension type, we want act like that dimension doesn't exist
             return None
 
     for precomputed_assoc_table in precomputed_assoc_tables:
@@ -63,6 +77,7 @@ def get_associations(
                 name=other_dataset.name,
                 dimension_type=other_dimension_type,
                 dataset_id=other_dataset.id,
+                dataset_given_id=other_dataset.given_id,
             )
         )
 
@@ -97,6 +112,7 @@ def get_associations(
                     correlation=row["cor"],
                     log10qvalue=log10qvalue,
                     other_dataset_id=other_dataset.id,
+                    other_dataset_given_id=other_dataset.given_id,
                     other_dimension_given_id=other_dimension_given_id,
                     other_dimension_label=associated_label,
                 )
@@ -104,6 +120,7 @@ def get_associations(
 
     return Associations(
         dataset_name=dataset.name,
+        dataset_given_id=dataset.given_id,
         dimension_label=resolved_slice.label,
         associated_datasets=datasets,
         associated_dimensions=associated_dimensions,

@@ -1,8 +1,8 @@
 import { DownloadTableData, Release, ReleaseType } from "@depmap/data-slicer";
 import React, { useEffect, useState } from "react";
-import { getDapi } from "src/common/utilities/context";
+import { legacyPortalAPI } from "@depmap/api";
 import styles from "src/dataPage/styles/DataPage.scss";
-import { DataAvailability } from "../models/types";
+import { DataAvailability } from "@depmap/types";
 import DataTabs from "./DataTabs";
 import { currentReleaseDatasets } from "./utils";
 
@@ -17,7 +17,6 @@ export const DataPage = ({
   releaseNotesUrl,
   forumUrl,
 }: DataPageProps) => {
-  const dapi = getDapi();
   const [allDownloads, setAllDownloads] = useState<DownloadTableData>([]);
   const [
     currentReleaseData,
@@ -50,7 +49,7 @@ export const DataPage = ({
 
   useEffect(() => {
     (async () => {
-      const downloads = await dapi.getAllDataTabDownloadData();
+      const downloads = await legacyPortalAPI.getAllDataTabDownloadData();
       setAllDownloads(downloads.table);
       setCurrentReleaseData(downloads.currentRelease);
       setReleaseData(downloads.releaseData);
@@ -61,7 +60,7 @@ export const DataPage = ({
       setFileTypes(downloads.fileType);
       setSources(downloads.source);
 
-      const dataAvail = await dapi.getDataPageDataAvailability();
+      const dataAvail = await legacyPortalAPI.getDataPageDataAvailability();
       setAllDataAvail(dataAvail);
 
       const currentDataValues: number[][] = [];
@@ -89,7 +88,7 @@ export const DataPage = ({
       });
       setFullyInitialized(true);
     })();
-  }, [dapi]);
+  }, []);
 
   return (
     <div
