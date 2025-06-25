@@ -10,6 +10,8 @@ import {
   getAllCorrelates,
   transformAndGroupByDataset,
 } from "../utilities/helper";
+import PlotSpinner from "src/plot/components/PlotSpinner";
+import styles from "../styles/CorrelationAnalysis.scss";
 
 interface CorrelationAnalysisProps {
   compound: string;
@@ -85,6 +87,7 @@ export default function CorrelationAnalysis(props: CorrelationAnalysisProps) {
   const [doseColors, setDoseColors] = React.useState<
     { hex: string | undefined; dose: string }[]
   >([]);
+  const [isLoading, setIsLoading] = React.useState<boolean>(true);
 
   React.useEffect(() => {
     (async () => {
@@ -182,6 +185,7 @@ export default function CorrelationAnalysis(props: CorrelationAnalysisProps) {
           setFeatureTypes(Object.keys(featureDatasetDoseCorrelates));
           const tabledata = getAllCorrelates(featureDatasetDoseCorrelates);
           setCorrelationAnalysisData(tabledata);
+          setIsLoading(false);
         }
       } catch (e) {
         console.log(e);
@@ -364,31 +368,53 @@ export default function CorrelationAnalysis(props: CorrelationAnalysisProps) {
           tooltip information.
         </p>
         <hr style={{ borderTop: "1px solid black", marginBottom: "40px" }} />
-        <CorrelationsPlots
-          featureTypesToShow={
-            selectedFeatureTypes.length
-              ? selectedFeatureTypes
-              : Object.keys(volcanoDataForFeatureType)
-          }
-          dosesToFilter={selectedDoses}
-          doseColors={doseColors}
-          volcanoDataForFeatureTypes={volcanoDataForFeatureType}
-          featureTypeSelectedLabels={allSelectedLabels}
-          forwardSelectedLabels={(
-            featureType: string,
-            newSelectedLabels: string[]
-          ) => {
-            setAllSelectedLabels({
-              ...allSelectedLabels,
-              [featureType]: newSelectedLabels,
-            });
-          }}
-        />
+
+        {isLoading ? (
+          <div style={{ display: "grid", placeItems: "center" }}>
+            <PlotSpinner />
+          </div>
+        ) : (
+          <CorrelationsPlots
+            featureTypesToShow={
+              selectedFeatureTypes.length
+                ? selectedFeatureTypes
+                : Object.keys(volcanoDataForFeatureType)
+            }
+            dosesToFilter={selectedDoses}
+            doseColors={doseColors}
+            volcanoDataForFeatureTypes={volcanoDataForFeatureType}
+            featureTypeSelectedLabels={allSelectedLabels}
+            forwardSelectedLabels={(
+              featureType: string,
+              newSelectedLabels: string[]
+            ) => {
+              setAllSelectedLabels({
+                ...allSelectedLabels,
+                [featureType]: newSelectedLabels,
+              });
+            }}
+          />
+        )}
       </div>
 
       <div style={{ gridArea: "c" }}>
         <h2>Associated Features</h2>
         <p>Clicking on rows highlights features in the plots above</p>
+        <div style={{ height: "20px" }}>
+          {selectedRows && (
+            <button
+              className={styles.linkButton}
+              type="button"
+              onClick={() => {
+                setSelectedRows(new Set());
+                setAllSelectedLabels({});
+              }}
+            >
+              Unselect all
+            </button>
+          )}
+        </div>
+
         <CorrelationsTable
           data={filteredTableCorrelationAnalysisData}
           compound={compound}
