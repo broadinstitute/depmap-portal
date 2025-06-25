@@ -1,0 +1,37 @@
+.plotContent {
+  display: grid;
+  grid-template-columns: 7fr 1fr;
+  gap: 2rem;
+}
+
+.plotContainer {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2rem;
+  margin-bottom: 50px;
+}
+
+.doseLegendContainer {
+  border: 1px solid #d9d9d9;
+  padding: 10px;
+  max-width: max-content;
+  max-height: max-content;
+
+  header {
+    font-weight: bold;
+    margin-bottom: 10px;
+    font-size: 16px;
+  }
+}
+
+.linkButton {
+  line-height: 16px;
+  padding: 0;
+  border: 0;
+  text-decoration: underline;
+  background: transparent;
+  color: #337ab7;
+  :hover {
+    text-decoration: none;
+  }
+}

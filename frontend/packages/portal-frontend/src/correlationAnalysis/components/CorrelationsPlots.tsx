@@ -2,6 +2,7 @@ import React from "react";
 import CorrelationsPlot from "./CorrelationPlot";
 import DoseLegend from "./DoseLegend";
 import { VolcanoPlotData } from "../models/VolcanoPlot";
+import styles from "../styles/CorrelationAnalysis.scss";
 
 interface CorrelationsPlotsProps {
   featureTypesToShow: string[];
@@ -50,17 +51,8 @@ export default function CorrelationsPlots(props: CorrelationsPlotsProps) {
   };
 
   return (
-    <div
-      style={{ display: "grid", gridTemplateColumns: "7fr 1fr", gap: "2rem" }}
-    >
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(3, 1fr)",
-          gap: "2rem",
-          marginBottom: "50px",
-        }}
-      >
+    <div className={styles.plotContent}>
+      <div className={styles.plotContainer}>
         {featureTypesToShow.map((featureType) => {
           return (
             <div key={featureType + "-plot"}>
