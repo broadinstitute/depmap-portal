@@ -19,6 +19,7 @@ interface HeatmapPlotSectionProps {
   selectedModelIds: Set<string>;
   handleSetSelectedPlotModels: (models: Set<string>) => void;
   handleSetPlotElement: (element: ExtendedPlotType | null) => void;
+  displayNameModelIdMap: Map<string, string>;
 }
 function HeatmapPlotSection({
   isLoading,
@@ -30,34 +31,69 @@ function HeatmapPlotSection({
   handleSetSelectedPlotModels,
   handleSetPlotElement,
   plotElement,
+  displayNameModelIdMap,
 }: HeatmapPlotSectionProps) {
+  // Sort heatmapFormattedData by viability (mean of z values for each model/column)
+  const sortedHeatmapFormattedData = useMemo(() => {
+    if (!heatmapFormattedData) {
+      return heatmapFormattedData;
+    }
+    const { modelIds, x, z } = heatmapFormattedData;
+    // Compute mean viability for each model (column)
+    const means = modelIds.map((_, colIdx) => {
+      // For each column, get all z values (one per dose)
+      const values = z
+        .map((row) => row[colIdx])
+        .filter((v) => v !== null && v !== undefined);
+      if (values.length === 0) return Infinity; // Put empty columns at the end
+      const sum = values.reduce(
+        (acc, v) => acc + (typeof v === "number" ? v : 0),
+        0
+      );
+      return sum / values.length;
+    });
+    // Get sorted indices by mean viability ascending
+    const sortedIndices = means
+      .map((mean, idx) => ({ mean, idx }))
+      .sort((a, b) => a.mean - b.mean)
+      .map((obj) => obj.idx);
+    // Reorder modelIds, x, and each row of z
+    return {
+      ...heatmapFormattedData,
+      modelIds: sortedIndices.map((i) => modelIds[i]),
+      x: sortedIndices.map((i) => x[i]),
+      z: z.map((row) => sortedIndices.map((i) => row[i])),
+    };
+  }, [heatmapFormattedData]);
+
+  // Use sortedHeatmapFormattedData for selectedColumns
   const selectedColumns = useMemo(() => {
     const out = new Set<number>();
 
-    heatmapFormattedData?.modelIds.forEach((id, index) => {
+    sortedHeatmapFormattedData?.modelIds.forEach((id, index) => {
       if (selectedModelIds.has(id)) {
         out.add(index);
       }
     });
 
     return out;
-  }, [selectedModelIds, heatmapFormattedData]);
+  }, [selectedModelIds, sortedHeatmapFormattedData]);
 
-  // TODO need the display name model id map here to use heatmapFormattedData.modelIds to
-  // make search options
+  // Use sortedHeatmapFormattedData for searchOptions
   const searchOptions = useMemo(
     () =>
-      heatmapFormattedData
-        ? heatmapFormattedData.modelIds.map(
+      sortedHeatmapFormattedData
+        ? sortedHeatmapFormattedData.modelIds.map(
             (modelId: string, index: number) => ({
-              label: "TODO add display name here!!!!!",
+              label: displayNameModelIdMap.get(modelId) || modelId,
               stringId: modelId,
               value: index,
             })
           )
         : null,
-    [heatmapFormattedData]
+    [sortedHeatmapFormattedData, displayNameModelIdMap]
   );
+  console.log(searchOptions);
 
   return (
     <div className={styles.PlotSection}>
@@ -103,10 +139,10 @@ function HeatmapPlotSection({
             <PlotSpinner height="100%" />
           </div>
         )}
-        {heatmapFormattedData && doseMin && doseMax && !isLoading && (
+        {sortedHeatmapFormattedData && doseMin && doseMax && !isLoading && (
           <div className={styles.heatmapContainer}>
             <PrototypeBrushableHeatmap
-              data={heatmapFormattedData}
+              data={sortedHeatmapFormattedData}
               onLoad={handleSetPlotElement}
               xAxisTitle="Cell Lines"
               yAxisTitle={`${compoundName} Dose (μM)`}
@@ -131,7 +167,7 @@ function HeatmapPlotSection({
                   next = new Set();
                 }
                 for (let i = start; i <= end; i += 1) {
-                  next.add(heatmapFormattedData.modelIds[i]);
+                  next.add(sortedHeatmapFormattedData.modelIds[i]);
                 }
                 handleSetSelectedPlotModels(next);
               }}

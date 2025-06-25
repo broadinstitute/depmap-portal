@@ -16,7 +16,6 @@ async function fetchMetadata<T>(typeName: string, bbapi: typeof breadboxAPI) {
   ) as Promise<T>;
 }
 
-// Helper to build table data
 function buildTableData(
   viabilityAtDose: any,
   dosefMetadata: any,
@@ -45,7 +44,6 @@ function buildTableData(
   }));
 }
 
-// Helper to extract and sort dose columns
 function extractDoseColumns(tableData: TableFormattedData): string[] {
   if (!tableData.length) {
     return [];

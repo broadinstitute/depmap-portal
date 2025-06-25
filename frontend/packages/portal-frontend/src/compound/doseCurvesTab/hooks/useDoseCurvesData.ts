@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import { CompoundDoseCurveData, DRCDatasetOptions } from "@depmap/types";
-import { legacyPortalAPI, breadboxAPI } from "@depmap/api";
+import { legacyPortalAPI } from "@depmap/api";
 
 function useDoseCurvesData(
   dataset: DRCDatasetOptions | null,
@@ -8,7 +8,6 @@ function useDoseCurvesData(
   doseColumnNames: string[]
 ) {
   const dapi = legacyPortalAPI;
-  const bbapi = breadboxAPI;
 
   const [error, setError] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -71,7 +70,6 @@ function useDoseCurvesData(
     setIsLoading,
     dataset,
     dapi,
-    bbapi,
     compoundId,
     doseColumnNames,
   ]);

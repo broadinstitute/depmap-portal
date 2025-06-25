@@ -25,7 +25,6 @@ const DoseViabilityTable: React.FC<DoseViabilityTableProps> = ({
   selectedTableRows,
   handleChangeSelection,
 }) => {
-  // Memoize rounded table data (must be at top level, not inside conditionals)
   const roundedTableData = useMemo(
     () =>
       sortedTableData

@@ -8,8 +8,8 @@ import styles from "../CompoundDoseViability.scss";
 // import { DRCDatasetOptions } from "@depmap/types";
 import useHeatmapData from "./hooks/useHeatmapData";
 import HeatmapPlotSection from "./HeatmapPlotSection";
-import CompoundPlotSelections from "../doseCurvesTab/CompoundPlotSelections";
 import { TableFormattedData } from "../types";
+import CompoundPlotSelections from "../CompoundPlotSelections";
 
 interface HeatmapTabMainContentProps {
   // compoundId: string; // unused
@@ -72,6 +72,7 @@ function HeatmapTabMainContent({
     selectedModelIds,
     selectedTableRows,
     selectedLabels,
+    displayNameModelIdMap,
     handleSetSelectedPlotModels,
     handleChangeTableSelection,
     handleClickSaveSelectionAsContext,
@@ -167,11 +168,11 @@ function HeatmapTabMainContent({
   return (
     <div className={styles.mainContentContainer}>
       <div className={styles.mainContentHeader}>
-        <h3>Dose Curve</h3>
+        <h3>Viability Heatmap</h3>
         <p>
-          Each cell line is represented as a line, with doses on the x axis and
-          viability on the y axis. Hover over plot points for tooltip
-          information. Click on items to select from the plot or table.
+          Each cell line is organized by column, divided by dose. Hover over
+          plot points for tooltip information. Click on items to select from the
+          plot or table.
         </p>
       </div>
       <div className={styles.mainContentGrid}>
@@ -188,6 +189,7 @@ function HeatmapTabMainContent({
                 selectedModelIds={selectedModelIds}
                 handleSetSelectedPlotModels={handleSetSelectedPlotModels}
                 handleSetPlotElement={setPlotElement}
+                displayNameModelIdMap={displayNameModelIdMap}
               />
             )}
           </div>

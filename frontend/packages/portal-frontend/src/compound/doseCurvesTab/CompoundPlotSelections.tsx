@@ -59,7 +59,7 @@ function CompoundPlotSelections({
               </div>
             )}
         </div>
-        <div className={styles.plotSelectionsContent}>
+        <div className={compoundStyles.plotSelectionsContent}>
           <div ref={listRef}>
             <LabelsVirtualList
               ids={selectedIds ? Array.from(selectedIds) : []}

@@ -196,3 +196,19 @@
   padding: 24px;
   text-align: center;
 }
+
+.plotSelectionsContent {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+
+  button {
+    font-size: 13px;
+
+    :global .glyphicon {
+      position: relative;
+      top: 2px;
+      left: 4px;
+    }
+  }
+}
