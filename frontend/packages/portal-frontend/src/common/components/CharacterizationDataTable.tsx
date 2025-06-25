@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { fetchUrlPrefix } from "src/common/utilities/context";
+import { getUrlPrefix } from "@depmap/globals";
 import WideTable from "@depmap/wide-table";
 
-let relativeUrlPrefix = fetchUrlPrefix();
+let relativeUrlPrefix = getUrlPrefix();
 
 if (relativeUrlPrefix === "/") {
   relativeUrlPrefix = "";

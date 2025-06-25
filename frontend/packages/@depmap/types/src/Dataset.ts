@@ -109,6 +109,20 @@ export interface DatasetTableData {
   dataType: string | null;
 }
 
+// all of the properties are optional, however if indices is provided then identifier must also be provided
+export type TabularDatasetDataArgs =
+  | { indices?: null; identifier?: null; columns?: string[] | null } // indices and identifer both missing or null
+  | {
+      indices: string[];
+      identifier: "id" | "label";
+      columns?: string[] | null;
+    }
+  | {
+      indices?: null;
+      identifier?: "id" | "label";
+      columns?: string[] | null;
+    }; // indice; // indices and identifer both present and non-null
+
 export interface DatasetAssociations {
   dataset_name: string;
   dataset_given_id: string;

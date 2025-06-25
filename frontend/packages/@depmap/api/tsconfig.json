@@ -4,6 +4,7 @@
     { "path": "../cell-line-selector" },
     { "path": "../compute" },
     { "path": "../data-slicer" },
+    { "path": "../globals" },
     { "path": "../types" },
     { "path": "../user-upload" }
   ]
