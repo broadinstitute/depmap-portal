@@ -9,9 +9,9 @@ interface CorrelatedDependenciesTileProps {
   entityLabel: string;
 }
 
-const CorrelatedDependenciesTile: React.FC<CorrelatedDependenciesTileProps> = ({
+const CorrelatedDependenciesTile = ({
   entityLabel,
-}) => {
+}: CorrelatedDependenciesTileProps) => {
   const {
     correlationData,
     dataTypeToDatasetMap,
