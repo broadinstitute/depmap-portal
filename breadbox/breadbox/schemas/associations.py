@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+from depmap_compute.slice import SliceQuery
 from typing import List, Optional, Union
 
 
@@ -45,12 +46,3 @@ class AssociationTable(BaseModel):
     axis: Literal["sample", "feature"]
     dataset_1_id: str
     dataset_2_id: str
-
-
-class SliceQueryAssociations(BaseModel):
-    dataset_id: str
-    identifier: str
-    identifier_type: Literal[
-        "feature_id", "feature_label", "sample_id", "sample_label", "column"
-    ]
-    association_datasets: Optional[List[str]] = None
