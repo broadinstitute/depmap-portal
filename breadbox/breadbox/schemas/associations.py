@@ -22,7 +22,7 @@ class Association(BaseModel):
 
 class Associations(BaseModel):
     dataset_name: str
-    dataset_given_id: str
+    dataset_given_id: Union[str, None]
     dimension_label: str
     associated_datasets: List[DatasetSummary]
     associated_dimensions: List[Association]
