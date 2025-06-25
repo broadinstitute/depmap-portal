@@ -1,5 +1,16 @@
 import qs from "qs";
 
+const cache: Record<string, Promise<unknown> | null> = {};
+let useCache = false;
+
+export const cacheOn = () => {
+  useCache = true;
+};
+
+export const cacheOff = () => {
+  useCache = false;
+};
+
 async function request<T>(url: string, options: RequestInit): Promise<T> {
   let response: Response;
 
@@ -61,16 +72,33 @@ async function request<T>(url: string, options: RequestInit): Promise<T> {
 
 const makeGetJson = (urlPrefix: string) => <T>(
   url: string,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  queryParameters?: Record<string, any>
+  queryParameters?: Record<string, unknown>
 ): Promise<T> => {
-  let fullUrl = `${urlPrefix}${url}`;
+  const getJson = () => {
+    let fullUrl = `${urlPrefix}${url}`;
 
-  if (queryParameters) {
-    fullUrl += "?" + qs.stringify(queryParameters);
+    if (queryParameters && Object.keys(queryParameters).length > 0) {
+      fullUrl += "?" + qs.stringify(queryParameters, { arrayFormat: "repeat" });
+    }
+
+    return request<T>(fullUrl, { method: "GET" });
+  };
+
+  if (!useCache) {
+    return getJson();
   }
 
-  return request<T>(fullUrl, { method: "GET" });
+  const json = JSON.stringify(queryParameters || {});
+  const cacheKey = `${url}-${json}`;
+
+  if (!cache[cacheKey]) {
+    cache[cacheKey] = getJson().catch((e) => {
+      delete cache[cacheKey];
+      throw e;
+    });
+  }
+
+  return cache[cacheKey] as Promise<T>;
 };
 
 const makePostJson = (urlPrefix: string) => async <T>(
