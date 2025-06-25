@@ -43,12 +43,14 @@ function useCorrelatedDependenciesData(
           );
 
           // Fetching the correlation data for the given dataset and compound and filtering by associated dataset IDs
-          const datasetAssociations = await bapi.fetchAssociations({
-            dataset_id: datasetId,
-            identifier: compoundID,
-            identifier_type: "feature_id",
-            association_datasets: Object.values(dataTypeToDatasetMap),
-          });
+          const datasetAssociations = await bapi.fetchAssociations(
+            {
+              dataset_id: datasetId,
+              identifier: compoundID,
+              identifier_type: "feature_id",
+            },
+            Object.values(dataTypeToDatasetMap)
+          );
 
           setCorrelationData(datasetAssociations);
         } else {

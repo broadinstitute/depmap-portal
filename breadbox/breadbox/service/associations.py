@@ -8,7 +8,6 @@ from breadbox.schemas.associations import (
     Associations,
     Association,
     DatasetSummary,
-    SliceQueryAssociations,
 )
 from breadbox.crud import associations as associations_crud
 from breadbox.crud import dataset as dataset_crud
@@ -26,7 +25,10 @@ log = logging.getLogger(__name__)
 
 
 def get_associations(
-    db: SessionWithUser, filestore_location: str, slice_query: SliceQueryAssociations
+    db: SessionWithUser,
+    filestore_location: str,
+    slice_query: SliceQuery,
+    association_datasets: Optional[List[str]] = None,
 ) -> Associations:
     dataset_id = slice_query.dataset_id
 
@@ -35,19 +37,12 @@ def get_associations(
         raise ResourceNotFoundError(f"Could not find dataset {dataset_id}")
 
     precomputed_assoc_tables = associations_crud.get_association_tables(
-        db, dataset.id, slice_query.association_datasets
+        db, dataset.id, association_datasets
     )
     datasets = []
     associated_dimensions = []
 
-    resolved_slice = slice_service.resolve_slice_to_components(
-        db,
-        SliceQuery(
-            dataset_id=slice_query.dataset_id,
-            identifier=slice_query.identifier,
-            identifier_type=slice_query.identifier_type,
-        ),
-    )
+    resolved_slice = slice_service.resolve_slice_to_components(db, slice_query,)
 
     dim_label_cache = {}
 

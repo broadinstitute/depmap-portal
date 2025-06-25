@@ -13,8 +13,8 @@ from breadbox.schemas.associations import (
     Associations,
     AssociationTable,
     AssociationsIn,
-    SliceQueryAssociations,
 )
+from depmap_compute.slice import SliceQuery
 from typing import List
 from breadbox.service import associations as associations_service
 from breadbox.crud import associations as associations_crud
@@ -35,11 +35,12 @@ def query_associations_for_slice(
     db: Annotated[SessionWithUser, Depends(get_db_with_user)],
     settings: Annotated[Settings, Depends(get_settings)],
     slice_query: Annotated[
-        SliceQueryAssociations, Body(description="A Data Explorer 2 context expression")
+        SliceQuery, Body(description="A Data Explorer 2 context expression")
     ],
+    association_datasets: Optional[List[str]] = None,
 ):
     return associations_service.get_associations(
-        db, settings.filestore_location, slice_query
+        db, settings.filestore_location, slice_query, association_datasets
     )
 
 

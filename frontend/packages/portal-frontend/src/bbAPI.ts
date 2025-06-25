@@ -29,6 +29,7 @@ import {
   SliceQueryAssociations,
   UploadFileResponse,
   DatasetAssociations,
+  SliceQuery,
 } from "@depmap/types";
 import { Trace } from "src/trace";
 import { UploadTask, UploadTaskUserError } from "@depmap/user-upload";
@@ -558,11 +559,11 @@ export class BreadboxApi {
     );
   }
 
-  fetchAssociations(sliceQuery: SliceQueryAssociations) {
+  fetchAssociations(sliceQuery: SliceQuery, association_datasets?: string[]) {
     return this._fetchWithJsonBody<DatasetAssociations>(
       "/temp/associations/query-slice",
       "POST",
-      sliceQuery
+      { slice_query: sliceQuery, association_datasets }
     );
   }
 
