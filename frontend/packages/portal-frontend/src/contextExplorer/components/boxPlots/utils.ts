@@ -1,9 +1,5 @@
-import {
-  BoxCardData,
-  BoxData,
-  BoxPlotInfo,
-  ContextPlotBoxData,
-} from "src/contextExplorer/models/types";
+import { BoxCardData, BoxData, ContextPlotBoxData } from "@depmap/types";
+import { BoxPlotInfo } from "src/contextExplorer/models/types";
 
 export const GeneEntityBoxColorList = [
   { r: 53, g: 132, b: 181 },

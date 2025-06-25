@@ -1,13 +1,9 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { Tabs, Tab } from "react-bootstrap";
 import Select from "react-select";
+import { ContextNameInfo, ContextNode } from "@depmap/types";
 import InfoIcon from "src/common/components/InfoIcon";
-import {
-  ContextNameInfo,
-  ContextNode,
-  TabTypes,
-  TreeType,
-} from "../models/types";
+import { TabTypes, TreeType } from "../models/types";
 import styles from "../styles/ContextExplorer.scss";
 import {
   GENE_DEP_BETWEEN_1_AND_2,
@@ -416,7 +412,6 @@ const LeftSearchPanel = (lineageSearchProps: LeftSearchPanelProps) => {
           }}
         >
           <Tab
-            id="lineage"
             eventKey={TreeType.Lineage.toString()}
             title={"Lineage"}
             className={styles.Tab}

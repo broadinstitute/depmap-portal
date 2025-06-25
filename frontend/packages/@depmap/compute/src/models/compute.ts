@@ -90,5 +90,4 @@ export interface CommonQueryProps {
     overrideFilterState: string,
     analysisType: AnalysisType
   ) => void;
-  launchCellLineSelectorModal: () => void;
 }

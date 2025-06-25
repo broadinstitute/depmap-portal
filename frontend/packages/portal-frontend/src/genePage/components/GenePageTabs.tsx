@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { legacyPortalAPI } from "@depmap/api";
 import { CustomList } from "@depmap/cell-line-selector";
 import { toStaticUrl } from "@depmap/globals";
 import {
@@ -11,7 +12,6 @@ import {
 import AsyncTile from "src/common/components/AsyncTile";
 import { EntityType } from "src/entity/models/entities";
 import { getQueryParams } from "@depmap/utils";
-import { getDapi } from "src/common/utilities/context";
 import { Option } from "src/common/models/utilities";
 import { ConnectivityValue } from "src/constellation/models/constellation";
 import { DatasetOption } from "src/entity/components/EntitySummary";
@@ -146,11 +146,6 @@ const GenePageTabs = ({
     initialSelectedDataset = firstSelectedDataset;
   }
 
-  const dapi = getDapi();
-  if (showCelfieTab) {
-    dapi.startTrace("celfieInit");
-  }
-
   return (
     <div>
       {isMobile ? (
@@ -258,7 +253,7 @@ const GenePageTabs = ({
                       connectivity,
                       topFeature
                     ) =>
-                      dapi.getConstellationGraphs(
+                      legacyPortalAPI.getConstellationGraphs(
                         taskIds,
                         null,
                         similarityMeasure,
@@ -267,31 +262,17 @@ const GenePageTabs = ({
                         topFeature
                       )
                     }
-                    getVolcanoData={(taskId: string) => {
-                      // const span = dapi.startSpan("getVolcanoData")
-                      return dapi.getTaskStatus(taskId).finally(() => {
-                        // span.end();
-                      });
-                    }}
+                    getVolcanoData={legacyPortalAPI.getTaskStatus}
                     similarityOptions={similarityOptions}
                     colorOptions={colorOptions}
                     connectivityOptions={connectivityOptions}
                     targetFeatureLabel={targetFeatureLabel}
                     datasets={datasets}
-                    getComputeUnivariateAssociations={(params: any) => {
-                      const span = dapi.startSpan(
-                        "computeUnivariateAssociations"
-                      );
-                      return dapi.withSpan(span, () =>
-                        dapi
-                          .computeUnivariateAssociations(params)
-                          .finally(() => {
-                            span.end();
-                          })
-                      );
-                    }}
+                    getComputeUnivariateAssociations={
+                      legacyPortalAPI.computeUnivariateAssociations
+                    }
                     dependencyProfileOptions={dependencyProfileOptions}
-                    onCelfieInitialized={() => dapi.endTrace()}
+                    onCelfieInitialized={() => {}}
                     howToImg={howToImg}
                     methodIcon={toStaticUrl("img/predictability/pdf.svg")}
                     methodPdf={toStaticUrl(
