@@ -73,7 +73,7 @@ from breadbox_client.models import (
     MatrixDatasetResponse,
     MatrixDimensionsInfo,
     SampleTypeOut,
-    SliceQuery,
+    BodyGetAssociationsForSlice,
     SliceQueryIdentifierType,
     TableDatasetParams,
     TableDatasetParamsColumnsMetadata,
@@ -530,7 +530,7 @@ class BBClient:
         return self._parse_client_response(breadbox_response)
 
     def get_associations_for_slice(self, dataset_id: str, identifier: str, identifier_type: str) -> Associations:
-        breadbox_response = get_associations_for_slice_client.sync_detailed(client=self.client, body=SliceQuery(dataset_id=dataset_id, identifier=identifier,
+        breadbox_response = get_associations_for_slice_client.sync_detailed(client=self.client, body=BodyGetAssociationsForSlice(dataset_id=dataset_id, identifier=identifier,
                                                                                     identifier_type=SliceQueryIdentifierType(identifier_type)))
         return self._parse_client_response(breadbox_response)
 
