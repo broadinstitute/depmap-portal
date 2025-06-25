@@ -78,7 +78,7 @@ const makeGetJson = (urlPrefix: string) => <T>(
     let fullUrl = `${urlPrefix}${url}`;
 
     if (queryParameters && Object.keys(queryParameters).length > 0) {
-      fullUrl += "?" + qs.stringify(queryParameters);
+      fullUrl += "?" + qs.stringify(queryParameters, { arrayFormat: "repeat" });
     }
 
     return request<T>(fullUrl, { method: "GET" });
