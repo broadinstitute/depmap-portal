@@ -90,7 +90,7 @@ export type * from "./src/cell-line";
 export type * from "./src/compounds";
 
 export type { UploadFileResponse } from "./src/UploadFileResponse";
-export type { SliceQuery, SliceQueryAssociations } from "./src/SliceQuery";
+export type { SliceQuery } from "./src/SliceQuery";
 
 // predicates (these are functions, not types, but they help to narrow types)
 export { instanceOfErrorDetail } from "./src/ErrorDetail";
