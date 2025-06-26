@@ -173,12 +173,7 @@ function HeatmapPlotSection({
         {plotElement && (
           <PlotControls
             plot={plotElement}
-            enabledTools={[
-              PlotToolOptions.Zoom,
-              PlotToolOptions.Pan,
-              PlotToolOptions.Search,
-              PlotToolOptions.Download,
-            ]}
+            enabledTools={[PlotToolOptions.Search, PlotToolOptions.Download]}
             searchOptions={searchOptions}
             searchPlaceholder="Search for a cell line"
             onSearch={(selection: {
