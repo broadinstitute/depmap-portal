@@ -16,41 +16,59 @@ async function fetchMetadata<T>(typeName: string, bbapi: typeof breadboxAPI) {
   ) as Promise<T>;
 }
 
+function parseDoseKeyToUM(doseKey: string): number {
+  // doseKey is like "0.1 uM", "100 nM", "1 mM"
+  const match = doseKey.match(/([\d.eE+-]+)\s*(nM|uM|mM)/);
+  if (!match) return NaN;
+  const value = parseFloat(match[1]);
+  const unit = match[2];
+  if (unit === "nM") return value / 1000;
+  if (unit === "uM") return value;
+  if (unit === "mM") return value * 1000;
+  return value;
+}
+
 function buildTableData(
   viabilityAtDose: any,
   dosefMetadata: any,
   modelMetadata: any,
   aucs: Record<string, number>
-): TableFormattedData {
+): { table: TableFormattedData; orderedDoseColumns: string[] } {
   const tableLookup: Record<string, Record<string, number>> = {};
+  const allDoseKeys = new Set<string>();
+  const doseKeyToVal = new Map<string, number>();
   Object.entries(viabilityAtDose).forEach(([label, modelValuesRaw]) => {
     const modelValues = modelValuesRaw as Record<string, number | null>;
     Object.entries(modelValues).forEach(([model, log2Viability]) => {
       if (log2Viability !== null) {
         const dose = dosefMetadata.Dose[label];
         const unit = dosefMetadata.DoseUnit[label];
+        const doseKey = `${dose} ${unit}`;
+        doseKeyToVal.set(doseKey, parseFloat(dose));
+        allDoseKeys.add(doseKey);
         if (!tableLookup[model]) {
           tableLookup[model] = {};
         }
-        tableLookup[model][`${dose} ${unit}`] = log2Viability;
+        tableLookup[model][doseKey] = log2Viability;
       }
     });
   });
-  return Object.entries(tableLookup).map(([modelId, doseMap]) => ({
-    cellLine: modelMetadata.CellLineName[modelId],
-    modelId,
-    auc: parseFloat(aucs[modelId]?.toFixed(3) ?? "NaN"),
-    ...doseMap,
-  }));
-}
-
-function extractDoseColumns(tableData: TableFormattedData): string[] {
-  if (!tableData.length) {
-    return [];
-  }
-  return Object.keys(tableData[0])
-    .filter((key) => key !== "cellLine" && key !== "modelId" && key !== "auc")
-    .sort((a, b) => parseFloat(a) - parseFloat(b));
+  // Sort dose columns by numeric value using doseValToKey
+  const orderedDoseColumns = Array.from(allDoseKeys).sort(
+    (a, b) => (doseKeyToVal.get(a) ?? 0) - (doseKeyToVal.get(b) ?? 0)
+  );
+  const table = Object.entries(tableLookup).map(([modelId, doseMap]) => {
+    const row: any = {
+      cellLine: modelMetadata.CellLineName[modelId],
+      modelId,
+      auc: parseFloat(aucs[modelId]?.toFixed(3) ?? "NaN"),
+    };
+    orderedDoseColumns.forEach((doseKey) => {
+      row[doseKey] = doseMap[doseKey];
+    });
+    return row;
+  });
+  return { table, orderedDoseColumns };
 }
 
 export default function useDoseTableData(
@@ -108,15 +126,15 @@ export default function useDoseTableData(
         const aucs = aucsListResponse[compoundId];
 
         // Build table and columns
-        const tableData = buildTableData(
+        const { table, orderedDoseColumns } = buildTableData(
           viabilityAtDose,
           doseMetadata,
           modelMetadata,
           aucs
         );
 
-        setTableFormattedData(tableData);
-        setDoseColumnNames(extractDoseColumns(tableData));
+        setTableFormattedData(table);
+        setDoseColumnNames(orderedDoseColumns);
         setIsLoading(false);
       } catch (e) {
         window.console.error(e);

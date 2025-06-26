@@ -105,6 +105,7 @@ function useHeatmapSelectionHandlers(
 
   const sortedTableData = useMemo(() => {
     if (tableData !== null) {
+      console.log({ tableData });
       return selectedTableRows.size === 0
         ? tableData
         : sortBySelectedModel(tableData, selectedTableRows);
