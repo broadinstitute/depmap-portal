@@ -96,7 +96,8 @@ function useHeatmapSelectionHandlers(
   }, [selectedModelIds, displayNameModelIdMap]);
 
   const handleSetSelectionFromContext = useCallback(async () => {
-    const allLabels = new Set(selectedLabels);
+    const allModelIds = Array.from(displayNameModelIdMap.keys());
+    const allLabels = new Set(allModelIds);
     const labels = await doseCurvesPromptForSelectionFromContext(
       deApi,
       allLabels
