@@ -3,7 +3,7 @@ import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
 import DoseCurvesPlotSection from "./DoseCurvesPlotSection";
 import useDoseCurvesData from "./hooks/useDoseCurvesData";
 import useDoseCurvesSelectionHandlers from "./hooks/useDoseCurvesSelectionHandlers";
-import CompoundPlotSelections from "./CompoundPlotSelections";
+// import CompoundPlotSelections from "./CompoundPlotSelections";
 import DoseViabilityTable from "../DoseViabilityTable";
 import { useDeprecatedDataExplorerApi } from "@depmap/data-explorer-2";
 import { legacyPortalAPI } from "@depmap/api";
@@ -14,6 +14,7 @@ import {
   DRCDatasetOptions,
 } from "@depmap/types";
 import { TableFormattedData } from "../types";
+import CompoundPlotSelections from "../CompoundPlotSelections";
 
 interface DoseCurvesMainContentProps {
   dataset: DRCDatasetOptions | null;

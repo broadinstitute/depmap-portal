@@ -21,7 +21,6 @@ interface HeatmapPlotSectionProps {
   handleSetSelectedPlotModels: (models: Set<string>) => void;
   handleSetPlotElement: (element: ExtendedPlotType | null) => void;
   displayNameModelIdMap: Map<string, string>;
-  visibleModelIdIndices: number[];
   visibleZIndexes: number[];
 }
 function HeatmapPlotSection({
@@ -35,7 +34,6 @@ function HeatmapPlotSection({
   handleSetPlotElement,
   plotElement,
   displayNameModelIdMap,
-  visibleModelIdIndices,
   visibleZIndexes,
   showUnselectedLines,
 }: HeatmapPlotSectionProps) {
@@ -51,7 +49,7 @@ function HeatmapPlotSection({
       const values = z
         .map((row) => row[colIdx])
         .filter((v) => v !== null && v !== undefined);
-      if (values.length === 0) return Infinity; // Put empty columns at the end
+      if (values.length === 0) return Infinity;
       const sum = values.reduce(
         (acc, v) => acc + (typeof v === "number" ? v : 0),
         0
@@ -158,8 +156,19 @@ function HeatmapPlotSection({
     );
   }, [maskedHeatmapData]);
 
+  // HACK: so that Plotly will resize the plot when the user switches to this tab.
+  // Without this hack, if the plot loads while this tab is inactive, Plotly does not
+  // properly calculate plot size, and this can cause the plot to drastically overflow its bounds.
+  const [key, setKey] = React.useState(0);
+
+  React.useEffect(() => {
+    const handler = () => setKey((k) => k + 1);
+    window.addEventListener("changeTab:heatmap", handler);
+    return () => window.removeEventListener("changeTab:heatmap", handler);
+  }, []);
+
   return (
-    <div className={styles.PlotSection}>
+    <div className={styles.PlotSection} key={key}>
       <div className={styles.sectionHeader}>
         {plotElement && (
           <PlotControls

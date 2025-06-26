@@ -53,8 +53,17 @@ function DoseCurvesPlotSection({
     [curvesData]
   );
 
+  const [doseCurveKey, setDoseCurveKey] = React.useState(0);
+
+  React.useEffect(() => {
+    const handler = () => setDoseCurveKey((k) => k + 1);
+    window.addEventListener("changeTab:dose-curves-new", handler);
+    return () =>
+      window.removeEventListener("changeTab:dose-curves-new", handler);
+  }, []);
+
   return (
-    <div className={styles.PlotSection}>
+    <div className={styles.PlotSection} key={doseCurveKey}>
       <div className={styles.sectionHeader}>
         {plotElement && (
           <PlotControls

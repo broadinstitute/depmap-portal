@@ -67,18 +67,7 @@ function HeatmapTabMainContent({
     handleShowUnselectedLinesOnSelectionsCleared
   );
 
-  // Compute visible modelId indices (columns)
-  const visibleModelIdIndices = useMemo(() => {
-    if (!heatmapFormattedData) return [];
-    if (!showUnselectedLines && selectedModelIds && selectedModelIds.size > 0) {
-      return heatmapFormattedData.modelIds
-        .map((id, idx) => (selectedModelIds.has(id) ? idx : -1))
-        .filter((idx) => idx !== -1);
-    }
-    return heatmapFormattedData.modelIds.map((_, idx) => idx);
-  }, [heatmapFormattedData, selectedModelIds, showUnselectedLines]);
-
-  // Compute visible dose (row) indices
+  // To hide/show the appropriate cells on Filter By Dose
   const visibleZIndexes = useMemo(() => {
     if (!heatmapFormattedData) return [];
     if (selectedDoses && selectedDoses.size > 0) {
@@ -193,7 +182,6 @@ function HeatmapTabMainContent({
                 handleSetSelectedPlotModels={handleSetSelectedPlotModels}
                 handleSetPlotElement={setPlotElement}
                 displayNameModelIdMap={displayNameModelIdMap}
-                visibleModelIdIndices={visibleModelIdIndices}
                 visibleZIndexes={visibleZIndexes}
                 showUnselectedLines={showUnselectedLines}
               />
