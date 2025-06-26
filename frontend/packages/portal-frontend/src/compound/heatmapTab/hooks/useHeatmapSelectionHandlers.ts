@@ -50,9 +50,18 @@ function useHeatmapSelectionHandlers(
     [plotData, selectedModelIds]
   );
 
-  const handleSetSelectedPlotModels = (
-    models: React.SetStateAction<Set<string>>
-  ) => setPlotSelectedModelIds(models);
+  const handleSetSelectedPlotModels = (models: Set<string>) => {
+    setPlotSelectedModelIds((prev) => {
+      const next = new Set(prev);
+      models.forEach((id) => next.add(id));
+      setSelectedTableRows((tablePrev) => {
+        const tableNext = new Set(tablePrev);
+        models.forEach((id) => tableNext.add(id));
+        return tableNext;
+      });
+      return next;
+    });
+  };
 
   const handleClickSaveSelectionAsContext = useCallback(() => {
     const labels = [...selectedModelIds];
@@ -103,15 +112,18 @@ function useHeatmapSelectionHandlers(
     handleShowUnselectedLinesOnSelectionsCleared();
   }, [handleShowUnselectedLinesOnSelectionsCleared]);
 
-  const sortedTableData = useMemo(() => {
-    if (tableData !== null) {
-      console.log({ tableData });
-      return selectedTableRows.size === 0
-        ? tableData
-        : sortBySelectedModel(tableData, selectedTableRows);
-    }
-
-    return null;
+  const sortedTableData: TableFormattedData = useMemo(() => {
+    if (!tableData) return [];
+    if (selectedTableRows.size === 0) return tableData;
+    // Selected rows at the top, in order of selection, then the rest in original order
+    const selectedIds = Array.from(selectedTableRows);
+    const selected = selectedIds
+      .map((id) => tableData.find((row) => row.modelId === id))
+      .filter((row): row is NonNullable<typeof row> => Boolean(row));
+    const unselected = tableData.filter(
+      (row) => !selectedTableRows.has(row.modelId)
+    );
+    return [...selected, ...unselected];
   }, [selectedTableRows, tableData]);
 
   return {

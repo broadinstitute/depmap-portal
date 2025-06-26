@@ -3,7 +3,6 @@ import { defaultContextName } from "@depmap/data-explorer-2/src/components/DataE
 import { CompoundDoseCurveData, DataExplorerContext } from "@depmap/types";
 import { saveNewContext } from "src";
 import doseCurvesPromptForSelectionFromContext from "../../doseCurvesPromptForSelectionFromContext";
-import { sortBySelectedModel } from "../../utils";
 import { useDeprecatedDataExplorerApi } from "@depmap/data-explorer-2";
 import { TableFormattedData } from "src/compound/types";
 
@@ -119,14 +118,18 @@ function useDoseCurvesSelectionHandlers(
     handleShowUnselectedLinesOnSelectionsCleared();
   }, [handleShowUnselectedLinesOnSelectionsCleared]);
 
-  const sortedTableData = useMemo(() => {
-    if (tableData !== null) {
-      return selectedTableRows.size === 0
-        ? tableData
-        : sortBySelectedModel(tableData, selectedTableRows);
-    }
-
-    return null;
+  const sortedTableData: TableFormattedData = useMemo(() => {
+    if (!tableData) return [];
+    if (selectedTableRows.size === 0) return tableData;
+    // Selected rows at the top, in order of selection, then the rest in original order
+    const selectedIds = Array.from(selectedTableRows);
+    const selected = selectedIds
+      .map((id) => tableData.find((row) => row.modelId === id))
+      .filter((row): row is NonNullable<typeof row> => Boolean(row));
+    const unselected = tableData.filter(
+      (row) => !selectedTableRows.has(row.modelId)
+    );
+    return [...selected, ...unselected];
   }, [selectedTableRows, tableData]);
 
   return {
