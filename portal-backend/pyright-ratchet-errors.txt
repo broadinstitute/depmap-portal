@@ -538,7 +538,6 @@ views.py: error: Argument of type "Literal['logerror']" cannot be assigned to pa
 views.py: error: Argument of type "Literal['opt_in']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
 views.py: error: Argument of type "Literal['primarySite']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
 views.py: error: Argument of type "Literal['release']" cannot be assigned to parameter "__key" of type "_KT@dict" in function "__setitem__"
-views.py: error: Argument of type "Literal['sampleId']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
 views.py: error: Argument of type "Literal['subtype']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
 views.py: error: Argument of type "Literal['units']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
 views.py: error: Argument of type "Literal['url']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
