@@ -101,9 +101,12 @@ def load_prism_data(tc, repurposing_matrix_taiga_id, repurposing_list_taiga_id):
 
 
 def load_oncref_data(tc, oncref_auc_taiga_id):
-    auc_matrix = tc.get(oncref_auc_taiga_id)
+    log_auc_matrix = tc.get(oncref_auc_taiga_id)
 
-    log_auc_matrix = np.log2(auc_matrix.fillna(1)).mask(auc_matrix.isna())
+    auc_matrix = 2 ** log_auc_matrix
+
+    # verify that the NaNs are the same between the two matrices
+    assert (log_auc_matrix.isna() != auc_matrix.isna()).sum().sum() == 0
 
     return auc_matrix, log_auc_matrix
 
