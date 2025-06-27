@@ -2,7 +2,7 @@
 name = "depmap-compute"
 version = "0.1.15"
 description = "Code related to computations shared between the Depmap Portal and BreadBox"
-authors = ["Nayeem Aquib <naquib@broadinstitute.org>"]
+authors = []
 
 [tool.poetry.dependencies]
 python = "^3.9"
