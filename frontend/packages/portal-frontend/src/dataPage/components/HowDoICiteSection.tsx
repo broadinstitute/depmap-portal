@@ -69,7 +69,7 @@ const HowDoICiteSection = ({
                 <b>We ask that you also cite the DepMap program:</b> <br />
                 Arafeh, R., Shibue, T., Dempster, J.M. <i>et al.</i>{" "}
                 The present and future of the Cancer Dependency Map.{" "}
-                <i>Nat Rev Cancer</i><b>25</b>, 59-73 (2025).
+                <i>Nat Rev Cancer</i> <b>25</b>, 59-73 (2025).
                 https://doi.org/10.1038/s41568-024-00763-x
               </div>
               <div>
