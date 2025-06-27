@@ -102,19 +102,8 @@ function PrototypeBrushableHeatmap({
         type: "heatmap",
         ...data,
         colorscale: "YlOrRd",
-        xaxis: "x",
-        yaxis: "y",
-        zmin,
-        zmax,
-        hovertemplate,
-        // We only want there to be gaps between cells once the user has
-        // zoomed in a little. When the plot is fulled zoomed out, it should
-        // look like a smooth gradient with no gaps.
-        // While we could set a threshold where gaps suddenly appear, that
-        // would be a litt jarring. Instead we'll use some fancy math to
-        // gradually increase the gap size as a function of the zoom level.
-        xgap: 3 * (1 - deltaRange / data.x.length) ** 2,
-        ygap: 1 * (1 - deltaRange / data.x.length) ** 2,
+        zmin: -2,
+        zmax: 0,
         colorbar: {
           x: -0.009,
           y: -0.3,
@@ -130,6 +119,17 @@ function PrototypeBrushableHeatmap({
             },
           } as object),
         },
+        hovertemplate,
+        xaxis: "x",
+        yaxis: "y",
+        // We only want there to be gaps between cells once the user has
+        // zoomed in a little. When the plot is fulled zoomed out, it should
+        // look like a smooth gradient with no gaps.
+        // While we could set a threshold where gaps suddenly appear, that
+        // would be a litt jarring. Instead we'll use some fancy math to
+        // gradually increase the gap size as a function of the zoom level.
+        xgap: 3 * (1 - deltaRange / data.x.length) ** 2,
+        ygap: 1 * (1 - deltaRange / data.x.length) ** 2,
       },
     ];
 

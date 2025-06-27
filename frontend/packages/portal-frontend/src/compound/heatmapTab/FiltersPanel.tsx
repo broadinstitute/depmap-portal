@@ -66,7 +66,9 @@ function FiltersPanel({
         id="compound-heatmap-dataset-selection"
       />
       <hr className={styles.filtersPanelHr} />
-      <h5 className={styles.filterByDoseLabel}>Filter by Dose</h5>
+      <h4 className={styles.sectionTitle} style={{ paddingBottom: "4px" }}>
+        Filter by Dose
+      </h4>
       <Select
         options={doseSelectOptions}
         isMulti
