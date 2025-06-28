@@ -80,8 +80,12 @@ function PrototypeBrushableHeatmap({
   }, [selectedRange]);
 
   const xAxisTickLabels = useMemo(() => {
+    // Truncate labels longer than 18 characters with ellipsis
     return generateTickLabels(
-      data.x.map(String),
+      data.x.map((val) => {
+        const str = String(val);
+        return str.length > 15 ? str.slice(0, 15) + "..." : str;
+      }),
       selectedColumns,
       pixelDistanceBetweenColumns
     );
@@ -94,7 +98,7 @@ function PrototypeBrushableHeatmap({
   }, [onLoad]);
 
   useEffect(() => {
-    const plot = ref.current as ExtendedPlotType; // as PlotElement;
+    const plot = ref.current as ExtendedPlotType;
     const deltaRange = selectedRange[1] - selectedRange[0];
 
     const plotlyData: PlotlyData[] = [
@@ -139,22 +143,24 @@ function PrototypeBrushableHeatmap({
       hovermode: "closest",
       hoverlabel: { namelength: -1 },
       dragmode: false,
-
       xaxis: {
+        title: xAxisTitle,
         side: "top",
         tickvals: xAxisTickLabels.map((label, i) => (label ? data.x[i] : "")),
         ticktext: xAxisTickLabels,
-        title: xAxisTitle,
+        tickmode: "array",
+        tickangle: -25,
+        tickfont: { size: 10 },
+        automargin: true,
         range: selectedRange,
       },
-
       yaxis: {
         type: "category",
         automargin: true,
         autorange: true,
         title: {
           text: yAxisTitle,
-          standoff: 15,
+          standoff: 10,
         },
       },
 

@@ -170,22 +170,20 @@ function HeatmapTabMainContent({
       <div className={styles.mainContentGrid}>
         <>
           <div style={{ gridArea: "plot" }}>
-            {heatmapFormattedData && (
-              <HeatmapPlotSection
-                isLoading={false}
-                compoundName={compoundName}
-                plotElement={plotElement}
-                heatmapFormattedData={heatmapFormattedData}
-                doseMin={doseMin}
-                doseMax={doseMax}
-                selectedModelIds={selectedModelIds}
-                handleSetSelectedPlotModels={handleSetSelectedPlotModels}
-                handleSetPlotElement={setPlotElement}
-                displayNameModelIdMap={displayNameModelIdMap}
-                visibleZIndexes={visibleZIndexes}
-                showUnselectedLines={showUnselectedLines}
-              />
-            )}
+            <HeatmapPlotSection
+              isLoading={false}
+              compoundName={compoundName}
+              plotElement={plotElement}
+              heatmapFormattedData={heatmapFormattedData}
+              doseMin={doseMin}
+              doseMax={doseMax}
+              selectedModelIds={selectedModelIds}
+              handleSetSelectedPlotModels={handleSetSelectedPlotModels}
+              handleSetPlotElement={setPlotElement}
+              displayNameModelIdMap={displayNameModelIdMap}
+              visibleZIndexes={visibleZIndexes}
+              showUnselectedLines={showUnselectedLines}
+            />
           </div>
           <div style={{ gridArea: "selections" }}>
             <CompoundPlotSelections

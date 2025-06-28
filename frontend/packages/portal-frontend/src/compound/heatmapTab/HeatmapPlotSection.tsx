@@ -14,7 +14,7 @@ interface HeatmapPlotSectionProps {
   showUnselectedLines: boolean;
   compoundName: string;
   plotElement: ExtendedPlotType | null;
-  heatmapFormattedData: HeatmapFormattedData;
+  heatmapFormattedData: HeatmapFormattedData | null;
   doseMin: number | null;
   doseMax: number | null;
   selectedModelIds: Set<string>;
