@@ -36,14 +36,6 @@ interface Props {
 
 type PlotlyType = typeof import("plotly.js");
 
-// type PlotElement = HTMLDivElement &
-//   PlotlyHTMLElement & {
-//     data: PlotData[];
-//     layout: Layout;
-//     config: Config;
-//     removeListener: (eventName: string, callback: (e: object) => void) => void;
-//   };
-
 function PrototypeBrushableHeatmap({
   data,
   xAxisTitle,
@@ -80,7 +72,7 @@ function PrototypeBrushableHeatmap({
   }, [selectedRange]);
 
   const xAxisTickLabels = useMemo(() => {
-    // Truncate labels longer than 18 characters with ellipsis
+    // Truncate labels longer than 15 characters with ellipsis
     return generateTickLabels(
       data.x.map((val) => {
         const str = String(val);

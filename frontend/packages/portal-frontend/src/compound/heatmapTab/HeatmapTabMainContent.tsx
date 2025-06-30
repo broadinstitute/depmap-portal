@@ -5,14 +5,12 @@ import DoseViabilityTable from "../DoseViabilityTable";
 import { useDeprecatedDataExplorerApi } from "@depmap/data-explorer-2";
 import { legacyPortalAPI } from "@depmap/api";
 import styles from "../CompoundDoseViability.scss";
-// import { DRCDatasetOptions } from "@depmap/types";
 import useHeatmapData from "./hooks/useHeatmapData";
 import HeatmapPlotSection from "./HeatmapPlotSection";
 import { TableFormattedData } from "../types";
 import CompoundPlotSelections from "../CompoundPlotSelections";
 
 interface HeatmapTabMainContentProps {
-  // compoundId: string; // unused
   compoundName: string;
   handleShowUnselectedLinesOnSelectionsCleared: () => void;
   doseColumnNames: string[];

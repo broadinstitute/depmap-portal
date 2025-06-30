@@ -12,7 +12,7 @@ import {
   useDeprecatedDataExplorerApi,
 } from "@depmap/data-explorer-2";
 
-export default async function doseCurvesPromptForSelectionFromContext(
+export default async function compoundPagePromptForSelectionFromContext(
   api: ReturnType<typeof useDeprecatedDataExplorerApi>,
   allPossibleLabels: Set<string>
 ) {

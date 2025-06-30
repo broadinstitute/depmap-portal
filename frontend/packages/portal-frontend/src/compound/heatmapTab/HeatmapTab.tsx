@@ -11,7 +11,7 @@ import useDoseTableData from "../hooks/useDoseTableData";
 
 interface HeatmapTabProps {
   datasetOptions: DRCDatasetOptions[];
-  doseUnits: string; // unused
+  doseUnits: string;
   compoundName: string;
   compoundId: string;
 }
@@ -115,7 +115,6 @@ function HeatmapTab({
             // showInsensitiveLines={showInsensitiveLines}
             showUnselectedLines={showUnselectedLines}
             compoundName={compoundName}
-            // compoundId={compoundId}
             doseColumnNames={doseColumnNames}
             tableFormattedData={tableFormattedData}
             selectedDoses={new Set(selectedDoses.map((d) => d.value))}

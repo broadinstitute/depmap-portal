@@ -28,10 +28,7 @@ function CompoundPlotSelections({
       <div className={compoundStyles.headerDiv}>Plot Selections</div>
       <div className={compoundStyles.mainContent}>
         <div className={styles.plotInstructions}>
-          <div>
-            Select points to populate list
-            {/* <HelpTip id="select-points-help" /> */}
-          </div>
+          <div>Select points to populate list</div>
           {onClickClearSelection && selectedLabels && selectedLabels.size > 0 && (
             <div>
               <button

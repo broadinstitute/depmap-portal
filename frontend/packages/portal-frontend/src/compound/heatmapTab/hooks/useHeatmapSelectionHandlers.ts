@@ -2,8 +2,7 @@ import { useCallback, useMemo, useState } from "react";
 import { defaultContextName } from "@depmap/data-explorer-2/src/components/DataExplorerPage/utils";
 import { DataExplorerContext } from "@depmap/types";
 import { saveNewContext } from "src";
-import doseCurvesPromptForSelectionFromContext from "../../doseCurvesPromptForSelectionFromContext";
-import { sortBySelectedModel } from "../../utils";
+import compoundPagePromptForSelectionFromContext from "../../compoundPagePromptForSelectionFromContext";
 import { useDeprecatedDataExplorerApi } from "@depmap/data-explorer-2";
 import { HeatmapFormattedData, TableFormattedData } from "../../types";
 
@@ -98,7 +97,7 @@ function useHeatmapSelectionHandlers(
   const handleSetSelectionFromContext = useCallback(async () => {
     const allModelIds = Array.from(displayNameModelIdMap.keys());
     const allLabels = new Set(allModelIds);
-    const labels = await doseCurvesPromptForSelectionFromContext(
+    const labels = await compoundPagePromptForSelectionFromContext(
       deApi,
       allLabels
     );
