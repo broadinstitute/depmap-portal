@@ -11,7 +11,14 @@ import {
   TabularDatasetDataArgs,
 } from "@depmap/types";
 import { UploadTask, UploadTaskUserError } from "@depmap/user-upload";
-import { getJson, postJson, deleteJson, postMultipart } from "../client";
+import {
+  getJson,
+  postJson,
+  deleteJson,
+  postMultipart,
+  getJsonCached,
+  postJsonCached,
+} from "../client";
 
 export function getDatasets() {
   return getJson<Dataset[]>("/datasets/");
@@ -34,11 +41,11 @@ export function getTabularDatasetData(
   args: TabularDatasetDataArgs
 ) {
   const url = `/datasets/tabular/${datasetId}`;
-  return postJson<{ [key: string]: Record<string, any> }>(url, args);
+  return postJsonCached<{ [key: string]: Record<string, any> }>(url, args);
 }
 
 export function getDatasetFeatures(datasetId: string) {
-  return getJson<{ id: string; label: string }[]>(
+  return getJsonCached<{ id: string; label: string }[]>(
     `/datasets/features/${datasetId}`
   );
 }
@@ -54,7 +61,7 @@ export function getMatrixDatasetFeaturesData(
     features: featureIds,
     feature_identifier: featureIdentifier,
   };
-  return postJson<{ [key: string]: Record<string, any> }>(url, args);
+  return postJsonCached<{ [key: string]: Record<string, any> }>(url, args);
 }
 
 export function searchDimensions({
@@ -63,7 +70,7 @@ export function searchDimensions({
   type_name,
   limit,
 }: SearchDimenionsRequest) {
-  return getJson<SearchDimenionsResponse>("/datasets/dimensions/", {
+  return getJsonCached<SearchDimenionsResponse>("/datasets/dimensions/", {
     prefix,
     substring,
     type_name,

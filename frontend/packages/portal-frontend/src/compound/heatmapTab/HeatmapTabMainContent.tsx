@@ -7,31 +7,24 @@ import { legacyPortalAPI } from "@depmap/api";
 import styles from "../CompoundDoseViability.scss";
 import useHeatmapData from "./hooks/useHeatmapData";
 import HeatmapPlotSection from "./HeatmapPlotSection";
-import { TableFormattedData } from "../types";
 import CompoundPlotSelections from "../CompoundPlotSelections";
+import { useDoseTableDataContext } from "../hooks/useDoseTableDataContext";
 
 interface HeatmapTabMainContentProps {
   compoundName: string;
   handleShowUnselectedLinesOnSelectionsCleared: () => void;
-  doseColumnNames: string[];
-  tableFormattedData: TableFormattedData | null;
   showUnselectedLines: boolean;
-  error: boolean;
-  isLoading: boolean;
   selectedDoses?: Set<number>;
 }
 
 function HeatmapTabMainContent({
   handleShowUnselectedLinesOnSelectionsCleared,
-  doseColumnNames,
-  tableFormattedData,
   showUnselectedLines,
-  error,
-  isLoading,
   selectedDoses = new Set(),
   compoundName,
 }: HeatmapTabMainContentProps) {
   const api = useDeprecatedDataExplorerApi();
+  const { tableFormattedData, doseColumnNames } = useDoseTableDataContext();
 
   const { heatmapFormattedData, doseMin, doseMax } = useHeatmapData(
     tableFormattedData,
@@ -207,8 +200,8 @@ function HeatmapTabMainContent({
       </div>
       <div>
         <DoseViabilityTable
-          error={error}
-          isLoading={isLoading}
+          error={false}
+          isLoading={false}
           sortedTableData={sortedTableData ?? []}
           doseCurveTableColumns={doseViabilityTableColumns}
           columnOrdering={columnOrdering}

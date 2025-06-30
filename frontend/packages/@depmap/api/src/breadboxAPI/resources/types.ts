@@ -3,14 +3,20 @@ import {
   DimensionTypeAddArgs,
   DimensionTypeUpdateArgs,
 } from "@depmap/types";
-import { getJson, postJson, patchJson, deleteJson } from "../client";
+import {
+  getJson,
+  postJson,
+  patchJson,
+  deleteJson,
+  getJsonCached,
+} from "../client";
 
 export function getDimensionTypes() {
   return getJson<DimensionType[]>("/types/dimensions");
 }
 
 export function getDimensionType(name: string) {
-  return getJson<DimensionType>(`/types/dimensions/${name}`);
+  return getJsonCached<DimensionType>(`/types/dimensions/${name}`);
 }
 
 export function postDimensionType(dimTypeArgs: DimensionTypeAddArgs) {

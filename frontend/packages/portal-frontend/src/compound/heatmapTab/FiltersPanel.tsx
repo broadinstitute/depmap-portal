@@ -2,16 +2,20 @@ import { ToggleSwitch } from "@depmap/common-components";
 import React from "react";
 import Select from "react-select";
 import { DRCDatasetOptions } from "@depmap/types";
+import { useDoseTableDataContext } from "../hooks/useDoseTableDataContext";
 import styles from "../CompoundDoseViability.scss";
 
 interface FiltersPanelProps {
   // Dataset Selection Props
-  handleSelectDataset: (selection: { value: string; label: string }) => void;
-  datasetOptions: DRCDatasetOptions[];
-  selectedDatasetOption: { value: string; label: string };
+  handleSelectDataset: (
+    selection: { value: string; label: string } | null
+  ) => void;
+  datasetOptions: any[];
+  selectedDatasetOption: { value: string; label: string } | null;
   // Filter by Dose Props
-  handleFilterByDose: (selection: { value: number; label: string }[]) => void;
-  doseOptions: Set<string>;
+  handleFilterByDose: (
+    selections: Array<{ value: number; label: string }> | null
+  ) => void;
   // Toggle Switches
   showUnselectedLines: boolean;
   handleToggleShowUnselectedLines: (nextValue: boolean) => void;
@@ -28,13 +32,14 @@ function FiltersPanel({
   selectedDatasetOption,
   // Dose
   handleFilterByDose,
-  doseOptions,
   // Toggle Switches
   // showInsensitiveLines,
   showUnselectedLines,
   // handleToggleShowInsensitiveLines,
   handleToggleShowUnselectedLines,
 }: FiltersPanelProps) {
+  const { doseColumnNames } = useDoseTableDataContext();
+
   const datasetSelectOptions = datasetOptions.map(
     (compoundDataset: DRCDatasetOptions) => {
       return {
@@ -44,7 +49,7 @@ function FiltersPanel({
     }
   );
 
-  const doseSelectOptions = Array.from(doseOptions).map((dose) => ({
+  const doseSelectOptions = Array.from(doseColumnNames).map((dose) => ({
     value: parseFloat(dose.split(" ")[0]),
     label: dose,
   }));
@@ -72,7 +77,7 @@ function FiltersPanel({
       <Select
         options={doseSelectOptions}
         isMulti
-        isDisabled={!doseOptions}
+        isDisabled={!doseColumnNames}
         onChange={(values: any) => {
           handleFilterByDose(values as Array<{ value: number; label: string }>);
         }}

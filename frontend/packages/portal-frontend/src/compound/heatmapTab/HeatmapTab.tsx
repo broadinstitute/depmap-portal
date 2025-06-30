@@ -7,7 +7,7 @@ import { evaluateLegacyContext } from "src/data-explorer-2/deprecated-api";
 import "react-bootstrap-typeahead/css/Typeahead.css";
 import "src/common/styles/typeahead_fix.scss";
 import styles from "../CompoundDoseViability.scss";
-import useDoseTableData from "../hooks/useDoseTableData";
+import { DoseTableDataProvider } from "../hooks/DoseTableDataContext";
 
 interface HeatmapTabProps {
   datasetOptions: DRCDatasetOptions[];
@@ -59,14 +59,6 @@ function HeatmapTab({
     [datasetOptions]
   );
 
-  // Use the custom hook to get doseColumnNames and tableFormattedData
-  const {
-    doseColumnNames,
-    tableFormattedData,
-    error,
-    isLoading,
-  } = useDoseTableData(selectedDataset, compoundId, compoundName);
-
   // Change selectedDoses to be an array of selection objects
   const [selectedDoses, setSelectedDoses] = useState<
     { value: number; label: string }[]
@@ -83,47 +75,37 @@ function HeatmapTab({
     <DeprecatedDataExplorerApiProvider
       evaluateLegacyContext={evaluateLegacyContext}
     >
-      <div className={styles.doseCurvesTabGrid}>
-        <div className={styles.doseCurvesTabFilters}>
-          <FiltersPanel
-            handleSelectDataset={handleSelectDataset}
-            datasetOptions={datasetOptions}
-            selectedDatasetOption={
-              selectedDatasetOption || {
-                value: datasetOptions[0].viability_dataset_id,
-                label: datasetOptions[0].display_name,
+      <DoseTableDataProvider dataset={selectedDataset} compoundId={compoundId}>
+        <div className={styles.doseCurvesTabGrid}>
+          <div className={styles.doseCurvesTabFilters}>
+            <FiltersPanel
+              handleSelectDataset={handleSelectDataset}
+              datasetOptions={datasetOptions}
+              selectedDatasetOption={
+                selectedDatasetOption || {
+                  value: datasetOptions[0].viability_dataset_id,
+                  label: datasetOptions[0].display_name,
+                }
               }
-            }
-            handleFilterByDose={handleFilterByDose}
-            doseOptions={new Set(doseColumnNames)}
-            // showInsensitiveLines={showInsensitiveLines}
-            showUnselectedLines={showUnselectedLines}
-            // handleToggleShowInsensitiveLines={(nextValue: boolean) =>
-            //   setShowInsensitiveLines(nextValue)
-            // }
-            handleToggleShowUnselectedLines={(nextValue: boolean) =>
-              setShowUnselectedLines(nextValue)
-            }
-          />
+              handleFilterByDose={handleFilterByDose}
+              showUnselectedLines={showUnselectedLines}
+              handleToggleShowUnselectedLines={(nextValue: boolean) =>
+                setShowUnselectedLines(nextValue)
+              }
+            />
+          </div>
+          <div className={styles.doseCurvesTabMain}>
+            <HeatmapTabMainContent
+              showUnselectedLines={showUnselectedLines}
+              compoundName={compoundName}
+              selectedDoses={new Set(selectedDoses.map((d) => d.value))}
+              handleShowUnselectedLinesOnSelectionsCleared={() => {
+                setShowUnselectedLines(true);
+              }}
+            />
+          </div>
         </div>
-        <div className={styles.doseCurvesTabMain}>
-          <HeatmapTabMainContent
-            error={error}
-            isLoading={isLoading}
-            // dataset={selectedDataset}
-            // doseUnits={doseUnits}
-            // showInsensitiveLines={showInsensitiveLines}
-            showUnselectedLines={showUnselectedLines}
-            compoundName={compoundName}
-            doseColumnNames={doseColumnNames}
-            tableFormattedData={tableFormattedData}
-            selectedDoses={new Set(selectedDoses.map((d) => d.value))}
-            handleShowUnselectedLinesOnSelectionsCleared={() => {
-              setShowUnselectedLines(true);
-            }}
-          />
-        </div>
-      </div>
+      </DoseTableDataProvider>
     </DeprecatedDataExplorerApiProvider>
   );
 }

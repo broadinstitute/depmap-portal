@@ -4,28 +4,47 @@ import { breadboxAPI } from "@depmap/api";
 import { TableFormattedData } from "../types";
 
 // Helper to fetch metadata
-async function fetchMetadata<T>(typeName: string, bbapi: typeof breadboxAPI) {
-  const dimensionTypes = await bbapi.getDimensionTypes();
-  const dimType = dimensionTypes.find((t) => t.name === typeName);
+async function fetchMetadata<T>(
+  typeName: string,
+  indices: string[] | null,
+  columns: string[] | null,
+  bbapi: typeof breadboxAPI
+) {
+  const dimType = await bbapi.getDimensionType(typeName);
   if (!dimType?.metadata_dataset_id) {
     throw new Error(`No metadata for ${typeName}`);
   }
+
+  let args;
+  if (indices && indices.length > 0) {
+    args = { indices, identifier: "label" as const, columns };
+  } else {
+    args = { indices: null, identifier: null, columns };
+  }
   return bbapi.getTabularDatasetData(
     dimType.metadata_dataset_id,
-    {}
+    args
   ) as Promise<T>;
 }
 
-function parseDoseKeyToUM(doseKey: string): number {
-  // doseKey is like "0.1 uM", "100 nM", "1 mM"
-  const match = doseKey.match(/([\d.eE+-]+)\s*(nM|uM|mM)/);
-  if (!match) return NaN;
-  const value = parseFloat(match[1]);
-  const unit = match[2];
-  if (unit === "nM") return value / 1000;
-  if (unit === "uM") return value;
-  if (unit === "mM") return value * 1000;
-  return value;
+const doseMetadataCache = new Map<string, any>();
+const modelMetadataCache = new Map<string, any>();
+
+async function fetchCachedMetadata<T>(
+  typeName: string,
+  indices: string[] | null,
+  columns: string[] | null,
+  bbapi: typeof breadboxAPI
+) {
+  const cacheKey = `${typeName}-${JSON.stringify(indices)}-${JSON.stringify(
+    columns
+  )}`;
+  const cache =
+    typeName === "compound_dose" ? doseMetadataCache : modelMetadataCache;
+  if (cache.has(cacheKey)) return cache.get(cacheKey);
+  const data = await fetchMetadata<T>(typeName, indices, columns, bbapi);
+  cache.set(cacheKey, data);
+  return data;
 }
 
 function buildTableData(
@@ -73,8 +92,7 @@ function buildTableData(
 
 export default function useDoseTableData(
   dataset: DRCDatasetOptions | null,
-  compoundId: string,
-  compoundName: string
+  compoundId: string
 ) {
   const [
     tableFormattedData,
@@ -97,32 +115,48 @@ export default function useDoseTableData(
       setError(false);
       try {
         const bbapi = breadboxAPI;
-        // Fetch all required data
-        const dimensions = await bbapi.searchDimensions({
-          substring: compoundName,
-          type_name: "compound_dose",
-          limit: 100,
-        });
-        const featureLabels = dimensions.map(({ label }) => label);
-        const viabilityAtDose = await bbapi.getMatrixDatasetFeaturesData(
-          dataset.viability_dataset_id,
-          featureLabels,
-          "label"
+        console.time("breadboxRequestTimer");
+        // Step 1: Fetch dataset features and compute viabilityFeatureLabels
+        console.time("getDatasetFeatures");
+        const datasetFeatures = await bbapi.getDatasetFeatures(
+          dataset.viability_dataset_id
+        );
+        console.timeEnd("getDatasetFeatures");
+        const featureLabels = datasetFeatures.map((df) => df.label);
+
+        const viabilityFeatureLabels = featureLabels.filter((label) =>
+          label.startsWith(compoundId)
         );
 
-        // TODO: move id of dataset specific metadata to legacy db drc_dataset mapping
-        const doseMetadata = await fetchMetadata<{
-          Dose: Record<string, number>;
-          DoseUnit: Record<string, string>;
-        }>("compound_dose", bbapi);
-        const modelMetadata = await fetchMetadata<{
-          CellLineName: Record<string, string>;
-        }>("depmap_model", bbapi);
+        const [
+          viabilityAtDose,
+          doseMetadata,
+          modelMetadata,
+          aucsListResponse,
+        ] = await Promise.all([
+          bbapi.getMatrixDatasetFeaturesData(
+            dataset.viability_dataset_id,
+            viabilityFeatureLabels,
+            "label"
+          ),
+          fetchCachedMetadata<{
+            Dose: Record<string, number>;
+            DoseUnit: Record<string, string>;
+          }>(
+            "compound_dose",
+            viabilityFeatureLabels,
+            ["Dose", "DoseUnit"],
+            bbapi
+          ),
+          fetchCachedMetadata<{
+            CellLineName: Record<string, string>;
+          }>("depmap_model", null, ["CellLineName"], bbapi),
+          bbapi.getMatrixDatasetFeaturesData(dataset.auc_dataset_id, [
+            compoundId,
+          ]),
+        ]);
+        console.timeEnd("breadboxRequestTimer");
 
-        const aucsListResponse = await bbapi.getMatrixDatasetFeaturesData(
-          dataset.auc_dataset_id,
-          [compoundId]
-        );
         const aucs = aucsListResponse[compoundId];
 
         // Build table and columns
@@ -144,7 +178,7 @@ export default function useDoseTableData(
         setIsLoading(false);
       }
     })();
-  }, [dataset, compoundId, compoundName]);
+  }, [dataset, compoundId]);
 
   return { tableFormattedData, doseColumnNames, error, isLoading };
 }

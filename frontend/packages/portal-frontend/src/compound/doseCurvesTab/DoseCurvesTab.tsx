@@ -7,7 +7,7 @@ import { evaluateLegacyContext } from "src/data-explorer-2/deprecated-api";
 import "react-bootstrap-typeahead/css/Typeahead.css";
 import "src/common/styles/typeahead_fix.scss";
 import styles from "../CompoundDoseViability.scss";
-import useDoseTableData from "../hooks/useDoseTableData";
+import { DoseTableDataProvider } from "../hooks/DoseTableDataContext";
 
 interface DoseCurvesTabProps {
   datasetOptions: DRCDatasetOptions[];
@@ -55,53 +55,47 @@ function DoseCurvesTab({
     [datasetOptions]
   );
 
-  const { doseColumnNames, tableFormattedData } = useDoseTableData(
-    selectedDataset,
-    compoundId,
-    compoundName
-  );
-
   return (
     <DeprecatedDataExplorerApiProvider
       evaluateLegacyContext={evaluateLegacyContext}
     >
-      <div className={styles.doseCurvesTabGrid}>
-        <div className={styles.doseCurvesTabFilters}>
-          <FiltersPanel
-            handleSelectDataset={handleSelectDataset}
-            datasetOptions={datasetOptions}
-            selectedDatasetOption={
-              selectedDatasetOption || {
-                value: datasetOptions[0].viability_dataset_id,
-                label: datasetOptions[0].display_name,
+      <DoseTableDataProvider dataset={selectedDataset} compoundId={compoundId}>
+        <div className={styles.doseCurvesTabGrid}>
+          <div className={styles.doseCurvesTabFilters}>
+            <FiltersPanel
+              handleSelectDataset={handleSelectDataset}
+              datasetOptions={datasetOptions}
+              selectedDatasetOption={
+                selectedDatasetOption || {
+                  value: datasetOptions[0].viability_dataset_id,
+                  label: datasetOptions[0].display_name,
+                }
               }
-            }
-            showReplicates={showReplicates}
-            showUnselectedLines={showUnselectedLines}
-            handleToggleShowReplicates={(nextValue: boolean) =>
-              setShowReplicates(nextValue)
-            }
-            handleToggleShowUnselectedLines={(nextValue: boolean) =>
-              setShowUnselectedLines(nextValue)
-            }
-          />
+              showReplicates={showReplicates}
+              showUnselectedLines={showUnselectedLines}
+              handleToggleShowReplicates={(nextValue: boolean) =>
+                setShowReplicates(nextValue)
+              }
+              handleToggleShowUnselectedLines={(nextValue: boolean) =>
+                setShowUnselectedLines(nextValue)
+              }
+            />
+          </div>
+          <div className={styles.doseCurvesTabMain}>
+            <DoseCurvesMainContent
+              dataset={selectedDataset}
+              doseUnits={doseUnits}
+              showReplicates={showReplicates}
+              showUnselectedLines={showUnselectedLines}
+              compoundName={compoundName}
+              compoundId={compoundId}
+              handleShowUnselectedLinesOnSelectionsCleared={() => {
+                setShowUnselectedLines(true);
+              }}
+            />
+          </div>
         </div>
-        <div className={styles.doseCurvesTabMain}>
-          <DoseCurvesMainContent
-            dataset={selectedDataset}
-            doseUnits={doseUnits}
-            showReplicates={showReplicates}
-            showUnselectedLines={showUnselectedLines}
-            compoundName={compoundName}
-            compoundId={compoundId}
-            doseColumnNames={doseColumnNames}
-            tableFormattedData={tableFormattedData}
-            handleShowUnselectedLinesOnSelectionsCleared={() => {
-              setShowUnselectedLines(true);
-            }}
-          />
-        </div>
-      </div>
+      </DoseTableDataProvider>
     </DeprecatedDataExplorerApiProvider>
   );
 }

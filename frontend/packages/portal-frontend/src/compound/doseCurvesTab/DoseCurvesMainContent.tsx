@@ -12,8 +12,8 @@ import {
   CompoundDoseCurveData,
   DRCDatasetOptions,
 } from "@depmap/types";
-import { TableFormattedData } from "../types";
 import CompoundPlotSelections from "../CompoundPlotSelections";
+import { useDoseTableDataContext } from "../hooks/useDoseTableDataContext";
 
 interface DoseCurvesMainContentProps {
   dataset: DRCDatasetOptions | null;
@@ -22,14 +22,10 @@ interface DoseCurvesMainContentProps {
   showUnselectedLines: boolean;
   compoundName: string;
   compoundId: string;
-  doseColumnNames: string[];
-  tableFormattedData: TableFormattedData | null;
   handleShowUnselectedLinesOnSelectionsCleared: () => void;
 }
 
 function DoseCurvesMainContent({
-  doseColumnNames,
-  tableFormattedData,
   dataset,
   doseUnits,
   showReplicates,
@@ -38,6 +34,7 @@ function DoseCurvesMainContent({
   compoundId,
   handleShowUnselectedLinesOnSelectionsCleared,
 }: DoseCurvesMainContentProps) {
+  const { doseColumnNames, tableFormattedData } = useDoseTableDataContext();
   const api = useDeprecatedDataExplorerApi();
 
   const {

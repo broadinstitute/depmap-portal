@@ -3,7 +3,7 @@ import {
   CurveParams,
   CurvePlotPoints,
 } from "@depmap/types";
-import { getJson } from "../client";
+import { getJson, getJsonCached } from "../client";
 
 export function getDoseResponsePoints(
   datasetName: string,
@@ -31,7 +31,7 @@ export function getCompoundDoseCurveData(
     replicate_dataset_name: replicateDatasetName,
   };
 
-  return getJson<CompoundDoseCurveData>(
+  return getJsonCached<CompoundDoseCurveData>(
     `/api/compound/dose_curve_data`,
     params
   );
