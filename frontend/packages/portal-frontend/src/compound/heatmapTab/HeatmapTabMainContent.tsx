@@ -24,7 +24,12 @@ function HeatmapTabMainContent({
   compoundName,
 }: HeatmapTabMainContentProps) {
   const api = useDeprecatedDataExplorerApi();
-  const { tableFormattedData, doseColumnNames } = useDoseTableDataContext();
+  const {
+    tableFormattedData,
+    doseColumnNames,
+    error,
+    isLoading,
+  } = useDoseTableDataContext();
 
   const { heatmapFormattedData, doseMin, doseMax } = useHeatmapData(
     tableFormattedData,
@@ -162,7 +167,7 @@ function HeatmapTabMainContent({
         <>
           <div style={{ gridArea: "plot" }}>
             <HeatmapPlotSection
-              isLoading={false}
+              isLoading={isLoading}
               compoundName={compoundName}
               plotElement={plotElement}
               heatmapFormattedData={heatmapFormattedData}
@@ -200,8 +205,8 @@ function HeatmapTabMainContent({
       </div>
       <div>
         <DoseViabilityTable
-          error={false}
-          isLoading={false}
+          error={error}
+          isLoading={isLoading}
           sortedTableData={sortedTableData ?? []}
           doseCurveTableColumns={doseViabilityTableColumns}
           columnOrdering={columnOrdering}

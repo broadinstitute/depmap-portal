@@ -115,13 +115,11 @@ export default function useDoseTableData(
       setError(false);
       try {
         const bbapi = breadboxAPI;
-        console.time("breadboxRequestTimer");
-        // Step 1: Fetch dataset features and compute viabilityFeatureLabels
-        console.time("getDatasetFeatures");
+
         const datasetFeatures = await bbapi.getDatasetFeatures(
           dataset.viability_dataset_id
         );
-        console.timeEnd("getDatasetFeatures");
+
         const featureLabels = datasetFeatures.map((df) => df.label);
 
         const viabilityFeatureLabels = featureLabels.filter((label) =>
@@ -155,7 +153,6 @@ export default function useDoseTableData(
             compoundId,
           ]),
         ]);
-        console.timeEnd("breadboxRequestTimer");
 
         const aucs = aucsListResponse[compoundId];
 
