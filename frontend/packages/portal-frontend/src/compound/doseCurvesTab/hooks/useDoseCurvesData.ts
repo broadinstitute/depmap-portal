@@ -74,7 +74,13 @@ function useDoseCurvesData(
     doseColumnNames,
   ]);
 
-  return { error, isLoading, doseCurveData, doseMin, doseMax };
+  return {
+    doseCurveDataError: error,
+    doseCurveDataIsLoading: isLoading,
+    doseCurveData,
+    doseMin,
+    doseMax,
+  };
 }
 
 export default useDoseCurvesData;

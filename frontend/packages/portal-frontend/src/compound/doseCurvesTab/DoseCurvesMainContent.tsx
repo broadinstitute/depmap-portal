@@ -34,12 +34,17 @@ function DoseCurvesMainContent({
   compoundId,
   handleShowUnselectedLinesOnSelectionsCleared,
 }: DoseCurvesMainContentProps) {
-  const { doseColumnNames, tableFormattedData } = useDoseTableDataContext();
+  const {
+    doseColumnNames,
+    tableFormattedData,
+    error,
+    isLoading,
+  } = useDoseTableDataContext();
   const api = useDeprecatedDataExplorerApi();
 
   const {
-    error,
-    isLoading,
+    doseCurveDataError,
+    doseCurveDataIsLoading,
     doseCurveData,
     doseMin,
     doseMax,
@@ -191,7 +196,7 @@ function DoseCurvesMainContent({
         </p>
       </div>
       <div className={styles.mainContentGrid}>
-        {error ? (
+        {doseCurveDataError ? (
           <div
             className={styles.errorMessage}
             style={{
@@ -205,7 +210,7 @@ function DoseCurvesMainContent({
           <>
             <div style={{ gridArea: "plot" }}>
               <DoseCurvesPlotSection
-                isLoading={isLoading}
+                isLoading={doseCurveDataIsLoading}
                 compoundName={compoundName}
                 plotElement={plotElement}
                 curvesData={visibleCurveData}
