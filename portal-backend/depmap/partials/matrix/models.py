@@ -1,6 +1,7 @@
 import os
 from typing import Dict, List, Union
 
+import numpy as np
 import pandas as pd
 from flask import current_app
 from sqlalchemy.orm.exc import NoResultFound
@@ -228,26 +229,47 @@ class Matrix(Model):
         else:
             return None
 
-    # passing in a list of entities and a list of depmap ids, return a dict of depmap_id -> list of values
     def get_values_by_entities_all_depmap_ids(self, entities) -> Dict[str, List[float]]:
-        # Get all (col_index, depmap_id) pairs in the matrix
+        if not entities:
+            return {}
+
+        # 1. Get entity_ids from the input entities
+        entity_ids = [entity.entity_id for entity in entities]
+
+        # 2. Query all row indices for these entities in one go
+        row_index_tuples = (
+            self.row_index.filter(
+                RowMatrixIndex.entity_id.in_(entity_ids),
+                RowMatrixIndex.matrix_id == self.matrix_id,
+            )
+            .with_entities(RowMatrixIndex.entity_id, RowMatrixIndex.index)
+            .all()
+        )
+        # Map entity_id -> row_index
+        entity_id_to_index = {eid: idx for eid, idx in row_index_tuples}
+        # Only keep entity_ids that are present in the mapping (avoid KeyError)
+        filtered_entity_ids = [eid for eid in entity_ids if eid in entity_id_to_index]
+        row_indices = [entity_id_to_index[eid] for eid in filtered_entity_ids]
+
+        # 3. Get all (col_index, depmap_id) pairs
         col_index_id_tuples = self._get_cell_line_indices_and_depmap_ids()
         if not col_index_id_tuples:
             return {}
 
-        entity_rows = {}
-        for entity in entities:
-            entity_rows[entity.entity_id] = self.get_values_by_entity(
-                entity.entity_id, by_label=False
-            )
+        col_indices = [col_idx for col_idx, _ in col_index_id_tuples]
+        depmap_ids = [depmap_id for _, depmap_id in col_index_id_tuples]
 
-        result = {}
-        for col_idx, depmap_id in col_index_id_tuples:
-            values = []
-            for entity in entities:
-                row = entity_rows[entity.entity_id]
-                values.append(row[col_idx])
-            result[depmap_id] = values
+        # 4. Get the DataFrame
+        df = self.get_subsetted_df(row_indices, col_indices)
+        df.index = filtered_entity_ids  # rows = entity_ids
+        df.columns = depmap_ids  # columns = depmap_ids
+
+        # 5. Build the result: depmap_id -> numpy array of values for each entity (in input order)
+        # Use filtered_entity_ids to ensure order matches the filtered input
+        result = {
+            depmap_id: df[depmap_id].reindex(filtered_entity_ids).to_numpy()
+            for depmap_id in depmap_ids
+        }
         return result
 
     def get_subsetted_df(self, row_indices, col_indices, is_transpose=False):
