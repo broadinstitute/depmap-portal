@@ -1,6 +1,7 @@
 from depmap.cell_line.models_new import DepmapModel
 from depmap.compound.models import Compound, CompoundDoseReplicate, CompoundExperiment
 from depmap.dataset.models import Dataset, DependencyDataset
+from depmap.partials.matrix.models import Matrix
 import pandas as pd
 
 
@@ -31,29 +32,20 @@ def get_dose_replicate_points(
     return points
 
 
-def _get_valid_curve_objs_and_model_map(
-    compound_id: str,
-    drc_dataset_label: str,
-    replicate_dataset_name: str,
-    compound_dose_replicates: list,
-):
-    # Use drc_dataset_label to get the dose response curves for the dataset selected in the UI. This is necessary
-    # because dose response curves have a relationship with CompoundExperiment, not Compound, and 1 compound can have
-    # multiple compound experiments mapping to different datasets and therefore different sets of dose response curves.
-    curve_objs = Compound.get_dose_response_curves(
-        compound_id=compound_id, drc_dataset_label=drc_dataset_label
-    )
-
+def _get_replicate_dataset_matrix(replicate_dataset_name: str) -> Matrix:
     # Get the replicate dataset, including viabilities. Do NOT use data_access here. data_access would not find the
     # legacy replicate datasets that have been filtered out of other places in the portal UI.
     replicate_dataset = Dataset.get_dataset_by_name(replicate_dataset_name)
     assert replicate_dataset is not None
 
     replicate_dataset_matrix = replicate_dataset.matrix
-    viabilities_by_model_id = replicate_dataset_matrix.get_values_by_entities_all_depmap_ids(
-        entities=compound_dose_replicates
-    )
 
+    return replicate_dataset_matrix
+
+
+def _HACK_get_valid_depmap_ids(
+    replicate_dataset_matrix: Matrix, compound_dose_replicates: list
+) -> set:
     # HACK: This should not be necessary in production. But during development, my code
     # is using a hack that could result in curve_objs that are actually from the Repurposing
     # dataset, and not OncRef. We want to skip these curves.
@@ -61,11 +53,17 @@ def _get_valid_curve_objs_and_model_map(
         compound_dose_replicates[0].entity_id
     )
     valid_depmap_ids = set(cell_line_series.index)
+
+    return valid_depmap_ids
+
+
+def _get_model_map(valid_depmap_ids: set) -> dict:
     model_objs = DepmapModel.query.filter(
         DepmapModel.model_id.in_(valid_depmap_ids)
     ).all()
     model_map = {m.model_id: m for m in model_objs}
-    return curve_objs, valid_depmap_ids, model_map, viabilities_by_model_id
+
+    return model_map
 
 
 def _get_curve_params_for_model_ids(
@@ -78,17 +76,30 @@ def _get_curve_params_for_model_ids(
     Retrieve curve parameters and replicate points for all model IDs.
     """
 
-    (
-        curve_objs,
-        valid_depmap_ids,
-        model_map,
-        viabilities_by_model_id,
-    ) = _get_valid_curve_objs_and_model_map(
-        compound_id=compound_id,
-        drc_dataset_label=drc_dataset_label,
-        replicate_dataset_name=replicate_dataset_name,
+    # Use drc_dataset_label to get the dose response curves for the dataset selected in the UI. This is necessary
+    # because dose response curves have a relationship with CompoundExperiment, not Compound, and 1 compound can have
+    # multiple compound experiments mapping to different datasets and therefore different sets of dose response curves.
+    curve_objs = Compound.get_dose_response_curves(
+        compound_id=compound_id, drc_dataset_label=drc_dataset_label
+    )
+
+    replicate_dataset_matrix = _get_replicate_dataset_matrix(
+        replicate_dataset_name=replicate_dataset_name
+    )
+
+    viabilities_by_model_id = replicate_dataset_matrix.get_values_by_entities_all_depmap_ids(
+        entities=compound_dose_replicates
+    )
+
+    valid_depmap_ids = _HACK_get_valid_depmap_ids(
+        replicate_dataset_matrix=replicate_dataset_matrix,
         compound_dose_replicates=compound_dose_replicates,
     )
+
+    # Get a mapping of model_id to model object so that we can use model_id to
+    # look up model displayName (without querying the DepmapModel table over and over)
+    # while iterating through the curve_objs below.
+    model_map = _get_model_map(valid_depmap_ids=valid_depmap_ids)
 
     curve_params = []
     dose_replicates_per_model_id = {}
