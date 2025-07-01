@@ -138,6 +138,11 @@ def _get_curve_params_for_model_ids(
     }
 
 
+# This is somewhat of a HACK because CompoundDoseReplicate has a relationship with CompoundExperiment instead of Compound.
+# There can be multiple CompoundExperiments per Compound. Each CompoundExperiment for a single Compound will have the same
+# CompoundDoseReplicates. As result, here we:
+# 1. Look at each Compound Experiment, are there valid CompoundDoseReplicates?
+# 2. As soon as we find valid replicates, ignore any subsequent CompoundExperiments.
 def _get_compound_dose_replicates(
     compound_id: str, drc_dataset_label: str, replicate_dataset_name: str
 ):
@@ -151,6 +156,11 @@ def _get_compound_dose_replicates(
         compound_dose_replicates = CompoundDoseReplicate.get_all_with_compound_experiment_id(
             compound_experiment.entity_id
         )
+
+        # HACK: this is only necessary due to a heuristic used when loading sample data that made it impossible to reliably
+        # distinguish between oncref and repurposing compound experiments. If we are looking at a CompoundExperiment from a
+        # different dataset than the one currently selected, compound_dose_replicates will be of length 0, so just "continue"
+        # on to the next dataset.
         if len(compound_dose_replicates) == 0:
             continue
         compound_dose_replicates = [
@@ -158,6 +168,8 @@ def _get_compound_dose_replicates(
             for dose_rep in compound_dose_replicates
             if DependencyDataset.has_entity(replicate_dataset_name, dose_rep.entity_id)
         ]
+        # Break out of the loop as soon as we have valid compound_dose_replicates and have confurmed the replicates are present in
+        # the current dataset via if DependencyDataset.has_entity(replicate_dataset_name, dose_rep.entity_id)
         if len(compound_dose_replicates) > 0:
             break
 
