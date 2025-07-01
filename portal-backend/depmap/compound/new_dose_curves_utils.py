@@ -1,8 +1,7 @@
-import math
-
 from depmap.cell_line.models_new import DepmapModel
 from depmap.compound.models import Compound, CompoundDoseReplicate, CompoundExperiment
 from depmap.dataset.models import Dataset, DependencyDataset
+import pandas as pd
 
 
 def get_dose_replicate_points(
@@ -18,7 +17,7 @@ def get_dose_replicate_points(
 
     points = []
     for i in range(len(viabilities)):
-        if (viabilities[i] is not None) & (not math.isnan(viabilities[i])):
+        if not pd.isna(viabilities[i]):
             points.append(
                 {
                     "id": model_id,
