@@ -6,7 +6,6 @@ import PlotControls, {
 import PlotSpinner from "src/plot/components/PlotSpinner";
 import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
 import styles from "../CompoundDoseViability.scss";
-import PrototypeBrushableHeatmap from "src/doseViabilityPrototype/components/PrototypeBrushableHeatmap";
 import { HeatmapFormattedData } from "../types";
 import {
   sortHeatmapByViability,
@@ -16,6 +15,7 @@ import {
   getSearchOptions,
   getCustomData,
 } from "./heatmapPlotUtils";
+import PrototypeBrushableHeatmap from "./doseViabilityHeatmap/components/PrototypeBrushableHeatmap";
 
 interface HeatmapPlotSectionProps {
   isLoading: boolean;
