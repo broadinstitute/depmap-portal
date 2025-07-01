@@ -127,6 +127,7 @@ def get_order(has_predictability: bool):
     anywhere_cards = {
         CompoundTileEnum.predictability.value: tile_large,
         CompoundTileEnum.celfie.value: tile_large,
+        CompoundTileEnum.correlated_dependencies.value: tile_large,  # TBD: Actually we want to group with CompoundTileEnum.correlations
     }
     bottom_left_card = (CompoundTileEnum.description.value, tile_large)
 

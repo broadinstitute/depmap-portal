@@ -1,5 +1,4 @@
 import React from "react";
-import { ApiContext } from "@depmap/api";
 import {
   ContextManager,
   DeprecatedDataExplorerApiProvider,
@@ -17,7 +16,6 @@ import {
   fetchMetadataSlices,
   fetchUniqueValuesOrRange,
 } from "src/data-explorer-2/deprecated-api";
-import { getDapi as getApi } from "src/common/utilities/context";
 
 interface Props {
   onHide: () => void;
@@ -31,33 +29,29 @@ function PortalContextManager({
   initialContextType = undefined,
 }: Props) {
   return (
-    // ApiContext is needed to support Cell Line Selector inside of
-    // ContextBuilder.
-    <ApiContext.Provider value={{ getApi }}>
-      <DeprecatedDataExplorerApiProvider
-        evaluateLegacyContext={evaluateLegacyContext}
-        fetchContextSummary={fetchContextSummary}
-        fetchDatasetDetails={fetchDatasetDetails}
-        fetchDatasetsByIndexType={fetchDatasetsByIndexType}
-        fetchDimensionLabels={fetchDimensionLabels}
-        fetchDimensionLabelsOfDataset={fetchDimensionLabelsOfDataset}
-        fetchDimensionLabelsToDatasetsMapping={
-          fetchDimensionLabelsToDatasetsMapping
-        }
-        fetchDatasetsMatchingContextIncludingEntities={
-          fetchDatasetsMatchingContextIncludingEntities
-        }
-        fetchMetadataColumn={fetchMetadataColumn}
-        fetchMetadataSlices={fetchMetadataSlices}
-        fetchUniqueValuesOrRange={fetchUniqueValuesOrRange}
-      >
-        <ContextManager
-          onHide={onHide}
-          initialContextType={initialContextType}
-          showHelpText={showHelpText}
-        />
-      </DeprecatedDataExplorerApiProvider>
-    </ApiContext.Provider>
+    <DeprecatedDataExplorerApiProvider
+      evaluateLegacyContext={evaluateLegacyContext}
+      fetchContextSummary={fetchContextSummary}
+      fetchDatasetDetails={fetchDatasetDetails}
+      fetchDatasetsByIndexType={fetchDatasetsByIndexType}
+      fetchDimensionLabels={fetchDimensionLabels}
+      fetchDimensionLabelsOfDataset={fetchDimensionLabelsOfDataset}
+      fetchDimensionLabelsToDatasetsMapping={
+        fetchDimensionLabelsToDatasetsMapping
+      }
+      fetchDatasetsMatchingContextIncludingEntities={
+        fetchDatasetsMatchingContextIncludingEntities
+      }
+      fetchMetadataColumn={fetchMetadataColumn}
+      fetchMetadataSlices={fetchMetadataSlices}
+      fetchUniqueValuesOrRange={fetchUniqueValuesOrRange}
+    >
+      <ContextManager
+        onHide={onHide}
+        initialContextType={initialContextType}
+        showHelpText={showHelpText}
+      />
+    </DeprecatedDataExplorerApiProvider>
   );
 }
 

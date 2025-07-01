@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from "react";
 import ReactDOM from "react-dom";
-import { ApiContext } from "@depmap/api";
+import { breadboxAPI } from "@depmap/api";
 import { BrowserRouter, Navigate, Routes, Route } from "react-router-dom";
 import ErrorBoundary from "src/common/components/ErrorBoundary";
 import NotFound from "src/pages/NotFound";
 import { Spinner } from "@depmap/common-components";
-import { ElaraApi } from "src/api";
 import ElaraNavbar from "src/ElaraNavbar";
 import TypesPage from "src/pages/Types/TypesPage";
 import "src/create-depmap-global-object";
@@ -36,113 +35,106 @@ const App = () => {
   if (window.location.pathname.includes("/breadbox/elara")) {
     basename = window.location.pathname.replace(/\/elara\/.*$/, "");
   }
-  const [bbapi] = useState(
-    () => new ElaraApi(basename === "" ? "/" : basename)
-  );
   const [user, setUser] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
-      const fetchedUser = await bbapi.getBreadboxUser();
+      const fetchedUser = await breadboxAPI.getBreadboxUser();
       setUser(fetchedUser);
     })();
-  }, [bbapi]);
-
-  const getApi = () => bbapi;
+  }, []);
 
   return (
-    <ApiContext.Provider value={{ getApi }}>
-      <ErrorBoundary>
-        <BrowserRouter basename={basename}>
-          <ElaraNavbar />
-          <Routes>
-            <Route path="*" element={<NotFound />} />
-            <Route path="/" element={<Navigate to="/elara/" replace />} />
-            <Route path="/elara">
-              <Route
-                path="/elara"
-                element={
-                  <React.Suspense
-                    fallback={
-                      <div style={{ width: "99vw", overflow: "hidden" }}>
-                        <Spinner position="relative" />
-                      </div>
-                    }
-                  >
-                    <DataExplorer />
-                  </React.Suspense>
-                }
-              />
-              <Route
-                path="/elara/custom_analysis"
-                element={
-                  <React.Suspense fallback={<Spinner />}>
-                    <ElaraCustomAnalysesPage />
-                  </React.Suspense>
-                }
-              />
-              <Route
-                path="/elara/datasets"
-                element={
-                  <React.Suspense fallback={<Spinner />}>
-                    <Datasets />
-                  </React.Suspense>
-                }
-              />
-              <Route
-                path="/elara/sample_types"
-                element={
-                  <React.Suspense fallback={<Spinner />}>
-                    <TypesPage type="sample" />
-                  </React.Suspense>
-                }
-              />
-              <Route
-                path="/elara/feature_types"
-                element={
-                  <React.Suspense fallback={<Spinner />}>
-                    <TypesPage type="feature" />
-                  </React.Suspense>
-                }
-              />
-              <Route
-                path="/elara/custom_downloads"
-                element={
-                  <React.Suspense fallback={<Spinner />}>
-                    <CustomDownloads />
-                  </React.Suspense>
-                }
-              />
-            </Route>
+    <ErrorBoundary>
+      <BrowserRouter basename={basename}>
+        <ElaraNavbar />
+        <Routes>
+          <Route path="*" element={<NotFound />} />
+          <Route path="/" element={<Navigate to="/elara/" replace />} />
+          <Route path="/elara">
             <Route
-              path="/elara/groups"
+              path="/elara"
               element={
-                <React.Suspense fallback={<Spinner />}>
-                  {user && (
-                    <GroupsPage
-                      user={user}
-                      getGroups={bbapi.getGroups.bind(bbapi)}
-                      addGroup={bbapi.postGroup.bind(bbapi)}
-                      deleteGroup={bbapi.deleteGroup.bind(bbapi)}
-                      addGroupEntry={bbapi.postGroupEntry.bind(bbapi)}
-                      deleteGroupEntry={bbapi.deleteGroupEntry.bind(bbapi)}
-                    />
-                  )}
+                <React.Suspense
+                  fallback={
+                    <div style={{ width: "99vw", overflow: "hidden" }}>
+                      <Spinner position="relative" />
+                    </div>
+                  }
+                >
+                  <DataExplorer />
                 </React.Suspense>
               }
             />
             <Route
-              path="/elara/metadata"
+              path="/elara/custom_analysis"
               element={
                 <React.Suspense fallback={<Spinner />}>
-                  <Metadata />
+                  <ElaraCustomAnalysesPage />
                 </React.Suspense>
               }
             />
-          </Routes>
-        </BrowserRouter>
-      </ErrorBoundary>
-    </ApiContext.Provider>
+            <Route
+              path="/elara/datasets"
+              element={
+                <React.Suspense fallback={<Spinner />}>
+                  <Datasets />
+                </React.Suspense>
+              }
+            />
+            <Route
+              path="/elara/sample_types"
+              element={
+                <React.Suspense fallback={<Spinner />}>
+                  <TypesPage type="sample" />
+                </React.Suspense>
+              }
+            />
+            <Route
+              path="/elara/feature_types"
+              element={
+                <React.Suspense fallback={<Spinner />}>
+                  <TypesPage type="feature" />
+                </React.Suspense>
+              }
+            />
+            <Route
+              path="/elara/custom_downloads"
+              element={
+                <React.Suspense fallback={<Spinner />}>
+                  <CustomDownloads />
+                </React.Suspense>
+              }
+            />
+          </Route>
+          <Route
+            path="/elara/groups"
+            element={
+              <React.Suspense fallback={<Spinner />}>
+                {user && (
+                  <GroupsPage
+                    user={user}
+                    getGroups={breadboxAPI.getGroups}
+                    addGroup={breadboxAPI.postGroup}
+                    deleteGroup={breadboxAPI.deleteGroup}
+                    addGroupEntry={breadboxAPI.postGroupEntry}
+                    deleteGroupEntry={breadboxAPI.deleteGroupEntry}
+                  />
+                )}
+              </React.Suspense>
+            }
+          />
+          <Route
+            path="/elara/metadata"
+            element={
+              <React.Suspense fallback={<Spinner />}>
+                <Metadata />
+              </React.Suspense>
+            }
+          />
+        </Routes>
+      </BrowserRouter>
+    </ErrorBoundary>
   );
 };
 

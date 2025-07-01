@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getDapi } from "src/common/utilities/context";
+import { legacyPortalAPI } from "@depmap/api";
 import {
   CompoundSummaryTable,
   CompoundSummaryTableRaw,
@@ -64,8 +64,9 @@ export default function useCompoundDashboardData(datasetId: DatasetId) {
 
     (async () => {
       try {
-        const dapi = getDapi();
-        const nextData = await dapi.getCompoundDashboardSummaryTable(datasetId);
+        const nextData = await legacyPortalAPI.getCompoundDashboardSummaryTable(
+          datasetId
+        );
         setData(processRawData(nextData));
       } catch (e) {
         window.console.error(e);

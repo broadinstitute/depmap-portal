@@ -3,10 +3,12 @@ import { Panel, PanelGroup } from "react-bootstrap";
 import {
   BoxCardData,
   BoxData,
-  BoxPlotInfo,
-  ContextExplorerDatasets,
   ContextNameInfo,
   ContextPlotBoxData,
+  ContextExplorerDatasets,
+} from "@depmap/types";
+import {
+  BoxPlotInfo,
   OtherSignificantBoxCardData as OtherSigBoxCardData,
 } from "src/contextExplorer/models/types";
 import { OtherSolidAndHemeBoxPlots } from "./OtherSolidAndHemeBoxPlotCard";

@@ -1,12 +1,12 @@
 import React, { useCallback, useEffect, useState } from "react";
 import styles from "src/contextExplorer/styles/ContextExplorer.scss";
-
-import WideTable from "@depmap/wide-table";
+import { toPortalLink } from "@depmap/globals";
 import {
-  ContextAnalysisTableRow,
   ContextAnalysisTableType,
   ContextExplorerDatasets,
-} from "src/contextExplorer/models/types";
+} from "@depmap/types";
+import WideTable from "@depmap/wide-table";
+import { ContextAnalysisTableRow } from "src/contextExplorer/models/types";
 import { getSelectivityValLabel } from "src/contextExplorer/utils";
 
 interface ContextAnalysisTableProps {
@@ -14,7 +14,6 @@ interface ContextAnalysisTableProps {
   pointVisibility: boolean[];
   handleSelectRowAndPoint: (entityLabel: string) => void;
   selectedTableLabels: Set<string> | null;
-  entityUrlRoot: string | null;
   entityType: string;
   datasetId: ContextExplorerDatasets;
 }
@@ -25,7 +24,6 @@ function ContextAnalysisTable(props: ContextAnalysisTableProps) {
     pointVisibility,
     handleSelectRowAndPoint,
     selectedTableLabels,
-    entityUrlRoot,
     entityType,
     datasetId,
   } = props;
@@ -117,21 +115,17 @@ function ContextAnalysisTable(props: ContextAnalysisTableProps) {
         minWidth: 120,
         customFilter: renderFilterPlaceholder,
         Cell: (row: any) => (
-          <>
-            {entityUrlRoot ? (
-              <a
-                href={`${entityUrlRoot}${entityLabelMap[row.value] as string}`}
-                target="_blank"
-                rel="noreferrer"
-                key={row.value}
-                style={{ textDecoration: "underline" }}
-              >
-                {row.value}
-              </a>
-            ) : (
-              <p>{row.value}</p>
+          <a
+            href={toPortalLink(
+              `/${entityType}/${entityLabelMap[row.value] as string}`
             )}
-          </>
+            target="_blank"
+            rel="noreferrer"
+            key={row.value}
+            style={{ textDecoration: "underline" }}
+          >
+            {row.value}
+          </a>
         ),
       },
       {
@@ -211,7 +205,7 @@ function ContextAnalysisTable(props: ContextAnalysisTableProps) {
       initialCols = [...initialCols, ...geneOnlyColumns];
     }
     setColumns(initialCols);
-  }, [data, pointVisibility, entityUrlRoot, entityType, datasetId]);
+  }, [data, pointVisibility, entityType, datasetId]);
 
   const handleChangeSelection = (selections: string[]) => {
     handleSelectRowAndPoint(selections[0]);

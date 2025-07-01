@@ -185,6 +185,7 @@ def render_compound_tile(
         CompoundTileEnum.correlations.value: get_correlations_html,
         CompoundTileEnum.availability.value: get_availability_html,
         CompoundTileEnum.celfie.value: get_celfie_html,
+        CompoundTileEnum.correlated_dependencies.value: get_correlated_dependencies_html,
     }
     if tile_name not in tiles:
         abort(400)
@@ -358,6 +359,24 @@ def get_enrichment_html(
             console.log("about to call initEnrichmentTile");
             DepMap.initEnrichmentTile("{div_id}", "{entity_label}", "{entity.type}");
             console.log("after initEnrichmentTile");
+        }})""",
+    )
+
+
+def get_correlated_dependencies_html(
+    entity: Entity, compound_experiment_and_datasets=None, query_params_dict={}
+):
+    # unique id to insert in DOM
+    div_id = str(uuid.uuid4())
+    entity_label = entity.label
+
+    return RenderedTile(
+        f'<div id="{div_id}">get_correlated_dependencies_html is stubbed out</div>',
+        f"""(
+        function() {{
+            console.log("about to call initCorrelatedDependenciesTile");
+            DepMap.initCorrelatedDependenciesTile("{div_id}", "{entity_label}");
+            console.log("after initCorrelatedDependenciesTile");
         }})""",
     )
 
