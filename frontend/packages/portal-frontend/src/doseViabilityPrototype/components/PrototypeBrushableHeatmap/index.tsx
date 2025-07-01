@@ -57,9 +57,58 @@ function PrototypeBrushableHeatmap({
     return [0, data.x.length - 1];
   }, [data]);
 
+  // Store the user's intended range
   const [selectedRange, setSelectedRange] = useState(initialRange);
   const [containerWidth, setContainerWidth] = useState(0);
   const [hoveredColumns, setHoveredColumns] = useState<number[]>([]);
+  // Track whether the user is actively dragging the brush
+  const [isUserDraggingBrush, setIsUserDraggingBrush] = useState(false);
+
+  // Track if the last range change was user-driven (brush drag)
+  const lastRangeChangeWasUser = useRef(false);
+
+  // Respond to selectedColumns changes by shifting or zooming out as needed
+  useEffect(() => {
+    if (isUserDraggingBrush) return; // Don't auto-shift/zoom while user is dragging
+    if (lastRangeChangeWasUser.current) {
+      lastRangeChangeWasUser.current = false;
+      return; // Don't auto-shift/zoom immediately after user drag ends
+    }
+    if (!selectedColumns || selectedColumns.size === 0) return;
+    const sorted = Array.from(selectedColumns).sort((a, b) => a - b);
+    const minSel = sorted[0];
+    const maxSel = sorted[sorted.length - 1];
+    const delta = selectedRange[1] - selectedRange[0];
+    // If all selected columns are already in view, do nothing
+    if (minSel >= selectedRange[0] && maxSel <= selectedRange[1]) return;
+    // If selection is wider than current delta, zoom out to fit
+    if (maxSel - minSel + 1 > delta) {
+      const newStart = Math.max(0, minSel);
+      const newEnd = Math.min(data.x.length - 1, maxSel);
+      if (newStart !== selectedRange[0] || newEnd !== selectedRange[1]) {
+        setSelectedRange([newStart, newEnd]);
+      }
+    } else {
+      // Shift the window to fit the selection, maintaining delta
+      let newStart = Math.max(0, Math.min(minSel, data.x.length - 1 - delta));
+      let newEnd = newStart + delta;
+      if (newEnd > data.x.length - 1) {
+        newEnd = data.x.length - 1;
+        newStart = Math.max(0, newEnd - delta);
+      }
+      if (newStart !== selectedRange[0] || newEnd !== selectedRange[1]) {
+        setSelectedRange([newStart, newEnd]);
+      }
+    }
+  }, [selectedColumns, data.x.length, selectedRange, isUserDraggingBrush]);
+
+  // When the brush changes the range, mark it as user-driven
+  const handleChangeRange = (range: [number, number]) => {
+    if (isUserDraggingBrush) {
+      lastRangeChangeWasUser.current = true;
+    }
+    setSelectedRange(range);
+  };
 
   const pixelDistanceBetweenColumns = useMemo(() => {
     if (ref.current) {
@@ -308,8 +357,11 @@ function PrototypeBrushableHeatmap({
       <HeatmapBrush
         containerWidth={containerWidth}
         dataLength={data.x.length}
-        initialRange={initialRange}
-        onChangeRange={setSelectedRange}
+        range={selectedRange}
+        onChangeRange={handleChangeRange}
+        selectedColumns={selectedColumns}
+        zoomDomain={[0, data.x.length - 1]}
+        onBrushDragActive={setIsUserDraggingBrush}
       />
     </div>
   );
