@@ -1,0 +1,27 @@
+{% extends "full_page.html" %}
+
+{% block page_title %}
+    {# The title that will appear in the browser's title/tab bar #}
+{% endblock %}
+
+{% block meta_description %}
+    {# include a short description that search engines can display #}
+{% endblock %}
+
+{% block content %}
+    <div class='full-screen-div'>
+        {% include "nav_footer/nav.html" %}
+        <div id="peddep-page"></div>
+    </div>
+{% endblock %}
+
+{% block js %}
+    <script id="peddep-page-data" type="application/json">
+      {
+          {# Any data that needs to be present
+          when your app starts up can go here. #}
+          "secretOfTheUniverse": 42
+      }
+    </script>
+    <script src="{{ webpack_url('peddepPage.js') }}"></script>
+{% endblock %}

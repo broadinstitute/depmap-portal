@@ -86,4 +86,3 @@ rule publish_context_matrix:
 #     outputs:{"type": "predictability_crispr_confounders_published"}
 
 #     run "python3 {{inputs.update_taiga_script.filename}} {{inputs.predictability_taiga_id.dataset_id}} 'Generated CRISPR confounders data for predictability'  'PredictabilityCRISPRConfoundersTransformed' {{inputs.crispr_confounders_data.filename}} 'csv_matrix'"
-

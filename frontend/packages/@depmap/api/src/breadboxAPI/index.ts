@@ -28,6 +28,22 @@ export const breadboxAPI = {
 
 type Api = typeof breadboxAPI;
 
+(Object.keys(breadboxAPI) as Array<keyof Api>).forEach((name) => {
+  const originalFn = breadboxAPI[name];
+
+  breadboxAPI[name] = async (...args: Parameters<typeof originalFn>) => {
+    const callSiteError = new Error(`breadboxAPI method "${name}" failed`);
+
+    try {
+      // @ts-expect-error 2556
+      return await originalFn(...args);
+    } catch (error) {
+      window.console.warn(callSiteError.stack);
+      throw error;
+    }
+  };
+});
+
 export type BreadboxApiResponse = {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [P in keyof Api]: Api[P] extends (...args: any) => any

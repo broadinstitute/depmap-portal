@@ -26,6 +26,22 @@ export const legacyPortalAPI = {
 
 type Api = typeof legacyPortalAPI;
 
+(Object.keys(legacyPortalAPI) as Array<keyof Api>).forEach((name) => {
+  const originalFn = legacyPortalAPI[name];
+
+  legacyPortalAPI[name] = async (...args: Parameters<typeof originalFn>) => {
+    const callSiteError = new Error(`legacyPortalAPI method "${name}" failed`);
+
+    try {
+      // @ts-expect-error 2556
+      return await originalFn(...args);
+    } catch (error) {
+      window.console.warn(callSiteError.stack);
+      throw error;
+    }
+  };
+});
+
 export type LegacyPortalApiResponse = {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [P in keyof Api]: Api[P] extends (...args: any) => any

@@ -412,7 +412,6 @@ const LeftSearchPanel = (lineageSearchProps: LeftSearchPanelProps) => {
           }}
         >
           <Tab
-            id="lineage"
             eventKey={TreeType.Lineage.toString()}
             title={"Lineage"}
             className={styles.Tab}

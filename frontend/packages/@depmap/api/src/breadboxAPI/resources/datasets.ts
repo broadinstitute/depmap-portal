@@ -13,13 +13,20 @@ import {
 import { UploadTask, UploadTaskUserError } from "@depmap/user-upload";
 import { getJson, postJson, deleteJson, postMultipart } from "../client";
 
-export function getDatasets() {
-  return getJson<Dataset[]>("/datasets/");
+export function getDatasets(
+  params?: Partial<{
+    feature_id: string;
+    feature_type: string;
+    sample_id: string;
+    sample_type: string;
+  }>
+) {
+  return getJson<Dataset[]>("/datasets/", params);
 }
 
 export function deleteDataset(id: string) {
   // TODO: Figure out return type.
-  return deleteJson<any>("/datasets/", id);
+  return deleteJson<unknown>("/datasets/", id);
 }
 
 export function updateDataset(
@@ -55,6 +62,18 @@ export function searchDimensions({
     type_name,
     limit: Number.isFinite(limit) ? limit : 100,
   });
+}
+
+export function getMatrixDatasetFeatures(dataset_id: string) {
+  return getJson<{ id: string; label: string }[]>(
+    `/datasets/features/${dataset_id}`
+  );
+}
+
+export function getMatrixDatasetSamples(dataset_id: string) {
+  return getJson<{ id: string; label: string }[]>(
+    `/datasets/features/${dataset_id}`
+  );
 }
 
 const assertCsvSingleColumnNoHeader = (
