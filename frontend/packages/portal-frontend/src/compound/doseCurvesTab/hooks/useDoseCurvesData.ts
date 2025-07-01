@@ -62,12 +62,18 @@ function useDoseCurvesData(
 
         const compoundDoseFeatures = await bbapi.getMatrixDatasetFeaturesData(
           dataset.viability_dataset_id,
-          featuresData.map((doseFeat) => doseFeat.id)
+          {
+            features: featuresData.map((doseFeat) => doseFeat.id),
+            feature_identifier: "id",
+          }
         );
 
         const aucsListResponse = await bbapi.getMatrixDatasetFeaturesData(
           dataset.auc_dataset_id,
-          [compoundId]
+          {
+            features: [compoundId],
+            feature_identifier: "id",
+          }
         );
 
         // aucsList is a list of length equal to the number of features we asked for.
