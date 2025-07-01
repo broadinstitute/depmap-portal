@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
 import { Button } from "react-bootstrap";
-import { breadboxAPI, legacyPortalAPI } from "@depmap/api";
+import { ApiContext } from "@depmap/api";
 import { isElara } from "@depmap/globals";
 import { UploadFormat, UserUploadModal } from "@depmap/user-upload";
 import StartScreenExamples from "./StartScreenExamples";
@@ -12,6 +12,8 @@ interface Props {
 
 function StartScreen({ tutorialLink }: Props) {
   const [showCsvUploadModal, setShowCsvUploadModal] = useState(false);
+  const context = useContext(ApiContext);
+  const api = context.getApi();
 
   return (
     <div id="dx2_start_screen" className={styles.plotEmptyState}>
@@ -55,23 +57,9 @@ function StartScreen({ tutorialLink }: Props) {
         isPrivate={false}
         isTransient
         taskKickoffFunction={(args) => {
-          if (isElara) {
-            // There is an Asana ticket to fix this.
-            // https://app.asana.com/1/9513920295503/project/1200435587978125/task/1210026345785485
-            // Note that Elara API used to have an implementation of postCustomCsv but it looks
-            // like it takes different arguments that the Legacy Portal version.
-            // https://github.com/broadinstitute/depmap-portal/blob/d9751a1/frontend/packages/elara-frontend/src/api.ts#L563-L575
-            throw new Error("Not implemented in Elara!");
-          }
-
-          return legacyPortalAPI.postCustomCsv({
-            ...args,
-            useDataExplorer2: true,
-          });
+          return api.postCustomCsv({ ...args, useDataExplorer2: true });
         }}
-        getTaskStatus={
-          isElara ? breadboxAPI.getTaskStatus : legacyPortalAPI.getTaskStatus
-        }
+        getTaskStatus={api.getTaskStatus}
       />
     </div>
   );

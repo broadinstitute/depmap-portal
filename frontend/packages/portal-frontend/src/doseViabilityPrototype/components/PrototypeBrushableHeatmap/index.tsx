@@ -9,26 +9,18 @@ import type {
 import PlotlyLoader from "src/plot/components/PlotlyLoader";
 import usePlotResizer from "src/doseViabilityPrototype/hooks/usePlotResizer";
 import HeatmapBrush from "src/doseViabilityPrototype/components/PrototypeBrushableHeatmap/HeatmapBrush";
-import customizeDragLayer from "src/doseViabilityPrototype/components/PrototypeBrushableHeatmap/customizeDragLayer";
-import { generateTickLabels } from "src/doseViabilityPrototype/components/PrototypeBrushableHeatmap/utils";
 
 interface Props {
   data: {
-    x: (string | number)[];
-    y: (string | number)[];
+    x: string[];
+    y: string[];
     z: (number | null)[][];
   };
   xAxisTitle: string;
   yAxisTitle: string;
   legendTitle: string;
-  selectedColumns: Set<number>;
-  onSelectColumnRange: (start: number, end: number, shiftKey: boolean) => void;
-  onClearSelection: () => void;
-  hovertemplate?: string | string[];
-  // Optionally set a min/max for the color scale. If left undefined, these
-  // will default to the min and max of values contained in `data.z`
-  zmin?: number;
-  zmax?: number;
+  selectedCells: Set<string>;
+  onClickColumn: (index: number, shiftKey: boolean) => void;
 }
 
 type PlotlyType = typeof import("plotly.js");
@@ -46,46 +38,22 @@ function PrototypeBrushableHeatmap({
   xAxisTitle,
   yAxisTitle,
   legendTitle,
-  selectedColumns,
-  onSelectColumnRange,
-  onClearSelection,
-  hovertemplate = undefined,
-  zmin = undefined,
-  zmax = undefined,
+  selectedCells,
+  onClickColumn,
   Plotly,
 }: Props & { Plotly: PlotlyType }) {
   const ref = useRef<PlotElement>(null);
   usePlotResizer(Plotly, ref);
 
   const initialRange: [number, number] = useMemo(() => {
-    return [0, data.x.length - 1];
+    return [-1, Math.min(100, data.x.length - 1)];
   }, [data]);
 
   const [selectedRange, setSelectedRange] = useState(initialRange);
   const [containerWidth, setContainerWidth] = useState(0);
-  const [hoveredColumns, setHoveredColumns] = useState<number[]>([]);
-
-  const pixelDistanceBetweenColumns = useMemo(() => {
-    if (ref.current) {
-      const dataToPiixels = (ref.current as any)._fullLayout.xaxis.l2p;
-      return dataToPiixels(1) - dataToPiixels(0);
-    }
-
-    return 0;
-    // eslint-disable-next-line
-  }, [selectedRange]);
-
-  const xAxisTickLabels = useMemo(() => {
-    return generateTickLabels(
-      data.x.map(String),
-      selectedColumns,
-      pixelDistanceBetweenColumns
-    );
-  }, [data.x, selectedColumns, pixelDistanceBetweenColumns]);
 
   useEffect(() => {
     const plot = ref.current as PlotElement;
-    const deltaRange = selectedRange[1] - selectedRange[0];
 
     const plotlyData: PlotlyData[] = [
       {
@@ -94,25 +62,17 @@ function PrototypeBrushableHeatmap({
         colorscale: "YlOrRd",
         xaxis: "x",
         yaxis: "y",
-        zmin,
-        zmax,
-        hovertemplate,
-        // We only want there to be gaps between cells once the user has
-        // zoomed in a little. When the plot is fulled zoomed out, it should
-        // look like a smooth gradient with no gaps.
-        // While we could set a threshold where gaps suddenly appear, that
-        // would be a litt jarring. Instead we'll use some fancy math to
-        // gradually increase the gap size as a function of the zoom level.
-        xgap: 3 * (1 - deltaRange / data.x.length) ** 2,
-        ygap: 1 * (1 - deltaRange / data.x.length) ** 2,
+        // Add some undocumented features (unfortunately these won't type check)
+        // https://github.com/plotly/plotly.js/blob/041c8dc/src/traces/heatmap/attributes.js
+        ...{ hoverongaps: false, xgap: 1, ygap: 1 },
 
         colorbar: {
-          x: -0.009,
+          x: -0.004,
           y: -0.3,
           len: 0.2,
           ypad: 0,
           xanchor: "left",
-          // These features are undocumented and won't type check properly.
+          // More undocumented features
           ...({
             orientation: "h",
             title: {
@@ -133,8 +93,9 @@ function PrototypeBrushableHeatmap({
 
       xaxis: {
         side: "top",
-        tickvals: xAxisTickLabels.map((label, i) => (label ? data.x[i] : "")),
-        ticktext: xAxisTickLabels,
+        tickvals: data.x.map((val, i) =>
+          selectedCells.has(`${i},0`) ? val : ""
+        ),
         title: xAxisTitle,
         range: selectedRange,
       },
@@ -149,54 +110,55 @@ function PrototypeBrushableHeatmap({
         },
       },
 
-      // We use `shapes` to draw the hovered and selected columns
-      shapes: [
-        // Outline
-        [...selectedColumns].map((colIndex) => ({
-          type: "path" as const,
-          line: { width: 2, color: "black" },
-          path: (() => {
-            const x0 = colIndex - 0.5;
-            const x1 = colIndex + 0.5;
-            const y0 = -0.5;
-            const y1 = data.y.length - 0.5;
-            const shouldDrawLeft = !selectedColumns.has(colIndex! - 1);
-            const shouldDrawRight = !selectedColumns.has(colIndex! + 1);
+      // We use `shapes` to draw the selected cells.
+      shapes: [...selectedCells]
+        .map((cellAsString) => {
+          const cell = cellAsString.split(",").map(Number);
+          const shouldDrawTop = !selectedCells.has(`${cell[0]},${cell[1] - 1}`);
+          const shouldDrawBottom = !selectedCells.has(
+            `${cell[0]},${cell[1] + 1}`
+          );
 
-            const segments: string[] = [];
+          return [
+            // Outline
+            {
+              type: "path" as const,
+              line: { width: 2, color: "black" },
+              path: (() => {
+                const p1 = [0.5 + cell[0], 0.5 + cell[1]].join(" ");
+                const p2 = [-0.5 + cell[0], 0.5 + cell[1]].join(" ");
+                const p3 = [-0.5 + cell[0], -0.5 + cell[1]].join(" ");
+                const p4 = [0.5 + cell[0], -0.5 + cell[1]].join(" ");
 
-            if (shouldDrawLeft) {
-              segments.push(`M ${x0} ${y0}`);
-              segments.push(`L ${x0} ${y1}`);
-            }
+                const segments: string[] = [];
 
-            segments.push(`M ${x0} ${y1}`);
-            segments.push(`L ${x1} ${y1}`);
-            segments.push(`M ${x1} ${y0}`);
-            segments.push(`L ${x0} ${y0}`);
+                if (shouldDrawBottom) {
+                  segments.push(`M ${p1} L ${p2}`);
+                }
 
-            if (shouldDrawRight) {
-              segments.push(`M ${x1} ${y1}`);
-              segments.push(`L ${x1} ${y0}`);
-            }
+                segments.push(`M ${p2} L ${p3}`);
+                segments.push(`M ${p4} L ${p1}`);
 
-            return segments.join(" ");
-          })(),
-        })),
+                if (shouldDrawTop) {
+                  segments.push(`M ${p3} L ${p4}`);
+                }
 
-        // Fill
-        [...new Set([...hoveredColumns, ...selectedColumns])].map(
-          (colIndex) => ({
-            type: "rect" as const,
-            x0: colIndex - 0.5,
-            x1: colIndex + 0.5,
-            y0: -0.5,
-            y1: data.y.length - 0.5,
-            line: { width: 0 },
-            fillcolor: "rgba(0, 0, 0, 0.15)",
-          })
-        ),
-      ].flat(),
+                return segments.join(" ");
+              })(),
+            },
+            // Fill
+            {
+              type: "rect" as const,
+              x0: cell[0] - 0.5,
+              x1: cell[0] + 0.5,
+              y0: cell[1] - 0.5,
+              y1: cell[1] + 0.5,
+              line: { width: 0 },
+              fillcolor: "rgba(0, 0, 0, 0.1)",
+            },
+          ];
+        })
+        .flat(),
     };
 
     const config: Partial<Config> = {
@@ -216,28 +178,20 @@ function PrototypeBrushableHeatmap({
       listeners.push([eventName, callback]);
     };
 
-    on("plotly_afterplot", () => {
-      setContainerWidth(plot.clientWidth);
-
-      customizeDragLayer({
-        plot,
-        onMouseOut: () => setHoveredColumns([]),
-        onChangeInProgressSelection: (start, end) => {
-          const range = [];
-          for (let i = start; i <= end; i += 1) {
-            range.push(i);
-          }
-          setHoveredColumns(range);
-        },
-        onSelectColumnRange: (start, end, shiftKey) => {
-          onSelectColumnRange(start, end, shiftKey);
-        },
-        onClearSelection,
-      });
+    on("plotly_click", (e: any) => {
+      onClickColumn?.(e.points[0].pointIndex[1], e.event.shiftKey);
     });
 
-    on("plotly_hover", (e: any) => {
-      setHoveredColumns([e.points[0].pointIndex[1]]);
+    on("plotly_afterplot", () => {
+      const dragLayers = plot.querySelectorAll(
+        ".draglayer .drag:not(.nsewdrag)"
+      ) as NodeListOf<HTMLDivElement>;
+
+      [...dragLayers].forEach((el) => {
+        el?.style.setProperty("display", "none");
+      });
+
+      setContainerWidth(plot.clientWidth);
     });
 
     return () => {
@@ -251,14 +205,8 @@ function PrototypeBrushableHeatmap({
     yAxisTitle,
     legendTitle,
     selectedRange,
-    selectedColumns,
-    hoveredColumns,
-    onSelectColumnRange,
-    onClearSelection,
-    hovertemplate,
-    zmin,
-    zmax,
-    xAxisTickLabels,
+    selectedCells,
+    onClickColumn,
     Plotly,
   ]);
 

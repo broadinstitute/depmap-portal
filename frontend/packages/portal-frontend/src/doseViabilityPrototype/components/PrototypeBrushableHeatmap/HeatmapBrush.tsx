@@ -18,14 +18,12 @@ function HeatmapBrush({
   onChangeRange,
 }: Props) {
   const height = 20;
-  const leftMargin = 82;
+  const leftMargin = 90;
   const handleSize = 8;
   const brushRef: React.ComponentProps<typeof Brush>["innerRef"] = useRef(null);
   const width = containerWidth ? containerWidth - leftMargin : 1000;
 
-  // Create a mapping of data indices to on screen pixels.
-  const xScale = scaleLinear().domain([0, dataLength]).range([0, width]);
-  // This is a dummy scale that just sets a fixed height.
+  const xScale = scaleLinear().domain([-2, dataLength]).range([0, width]);
   const yScale = scaleLinear().domain([0, height]).range([0, height]);
 
   return (
@@ -75,9 +73,6 @@ function HeatmapBrush({
 
                 onChangeRange([start, end]);
               } else if (brushRef.current) {
-                // WORKAROUND: If you click outside the brush, `range` is null
-                // and the brush just disappears! Instead of that weird
-                // behavior, we'll reset it to its initial range.
                 brushRef.current.updateBrush((prev) => {
                   return {
                     ...prev,

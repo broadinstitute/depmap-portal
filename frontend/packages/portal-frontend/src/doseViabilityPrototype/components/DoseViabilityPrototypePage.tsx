@@ -3,46 +3,26 @@ import { Spinner } from "@depmap/common-components";
 import WideTable from "@depmap/wide-table";
 import PrototypeBrushableHeatmap from "src/doseViabilityPrototype/components/PrototypeBrushableHeatmap";
 import useData from "src/doseViabilityPrototype/hooks/useData";
-import styles from "src/doseViabilityPrototype/styles/DoseViabilityPrototypePage.scss";
 
 function DoseViabilityPrototypePage() {
   const compoundName = "ETOPOSIDE";
-  const compoundNameFormatted = `${compoundName[0].toUpperCase()}${compoundName
-    .slice(1)
-    .toLowerCase()}`;
 
-  const {
-    heatmapFormattedData,
-    tableFormattedData,
-    doseColumnNames,
-    isLoading,
-  } = useData(compoundName);
+  const { heatmapFormattedData, tableFormattedData, isLoading } = useData(
+    compoundName
+  );
 
-  const [selectedModels, setSelectedModels] = useState(new Set<string>());
-  const selectedColumns = useMemo(() => {
-    const out = new Set<number>();
-
-    heatmapFormattedData?.modelIds.forEach((id, index) => {
-      if (selectedModels.has(id)) {
-        out.add(index);
-      }
-    });
-
-    return out;
-  }, [selectedModels, heatmapFormattedData]);
+  const [selectedCells, setSelectedCells] = useState<Set<string>>(new Set());
 
   const tableConfig = useMemo(() => {
     return {
       columns: [
-        { accessor: "Cell Line" },
-        ...doseColumnNames.map((name) => ({
-          id: name,
-          accessor: name,
-        })),
+        { accessor: "dose" },
+        { accessor: "model" },
+        { accessor: "viability" },
       ],
-      sorted: [{ id: "Cell Line", desc: false }],
+      sorted: [{ id: "dose", desc: false }],
     };
-  }, [doseColumnNames]);
+  }, []);
 
   if (isLoading || !tableFormattedData || !heatmapFormattedData) {
     return <Spinner />;
@@ -50,33 +30,34 @@ function DoseViabilityPrototypePage() {
 
   return (
     <div>
-      <div className={styles.heatmapContainer}>
+      <div style={{ padding: "30px 30px 0 26px", marginBottom: -40 }}>
         <PrototypeBrushableHeatmap
           data={heatmapFormattedData}
           xAxisTitle="Cell Lines"
-          yAxisTitle={`${compoundNameFormatted} Dose (μM)`}
+          yAxisTitle="Dose (μM)"
           legendTitle="Viability"
-          hovertemplate={[
-            "Cell line: %{x}",
-            "Dose: %{y} µM",
-            "Viability: %{z}",
-            "<extra></extra>",
-          ].join("<br>")}
-          selectedColumns={selectedColumns}
-          onClearSelection={() => setSelectedModels(new Set())}
-          onSelectColumnRange={(
-            start: number,
-            end: number,
-            shiftKey: boolean
-          ) => {
-            setSelectedModels((prev) => {
-              const next: Set<string> = shiftKey ? new Set(prev) : new Set();
+          selectedCells={selectedCells}
+          onClickColumn={(x: number, shiftKey: boolean) => {
+            const columnCells = heatmapFormattedData.y.map(
+              (_, y: number) => `${x},${y}`
+            );
 
-              for (let i = start; i <= end; i += 1) {
-                next.add(heatmapFormattedData.modelIds[i]);
+            setSelectedCells((prev) => {
+              if (shiftKey) {
+                const next = new Set(prev);
+
+                columnCells.forEach((cell) => {
+                  if (prev.has(columnCells[0])) {
+                    next.delete(cell);
+                  } else {
+                    next.add(cell);
+                  }
+                });
+
+                return next;
               }
 
-              return next;
+              return new Set(columnCells);
             });
           }}
         />

@@ -1,14 +1,11 @@
 #%%
 import celligner
 
-
 #%%
 import numpy as np
 import pandas as pd
 import re
-
-from networkx.algorithms.operators.binary import intersection
-from taigapy import create_taiga_client_v3
+from taigapy import TaigaClient
 import anndata as ad
 from collections import namedtuple
 from anndata.experimental.multi_files import AnnCollection
@@ -17,10 +14,8 @@ import argparse
 import json
 import pickle as pkl
 import os
-from sklearn.decomposition import PCA
-import warnings
 
-tc = create_taiga_client_v3()
+tc = TaigaClient()
 
 expr_dict = {""}
 ann_dict = {""}
@@ -208,15 +203,13 @@ def process_tcga_ipts(expr_df, context_df):
     return adata
 
 
-def process_depmap_ipts(expr_df, context_df, prof_map, model_condition):
+def process_depmap_ipts(expr_df, context_df):
     """
 
     Args:
         expr_df: Pandas Dataframe. DepMap expression data, pulled from taiga
         context_df: Pandas DataFrame. artifact input from conseq file with either type = biomarker-matrix and category = context
                 or type = context-matrix (not sure what the difference is)
-        prof_map: Pandas DataFrame. maping from profile ID to model ID/model condition ID
-        model_condition: Pandas DataFrame. table containing information on model conditions, including growth media
 
     Returns: anndata object. Observations are indexed by ModelID and variables are ensembl IDs. Includes model metadata.
             Model metadata included are: lineage, subtype, type (provenance), primary/metastasis,
@@ -226,45 +219,21 @@ def process_depmap_ipts(expr_df, context_df, prof_map, model_condition):
 
     """
 
-    hgnc_complete_set = tc.get(
-        name="hgnc-gene-table-e250", version=3, file="hgnc_complete_set"
+    hgnc_complete_set = tc.get(name="hgnc-87ab", version=7, file="hgnc_complete_set")
+    bg_genes = (
+        pd.Series(expr_df.keys())
+        .apply(lambda s: re.search(r"^([\w.-]+) \(", s).group(1))
+        .rename("symbol")
     )
-    hgnc_complete_set["depmap"] = (
-        hgnc_complete_set.symbol
-        + " ("
-        + hgnc_complete_set.entrez_id.astype("Int64").astype(str)
-        + ")"
-    )
+    bg_genes = bg_genes.set_axis(expr_df.keys()).to_frame().reset_index()
+    bg_genes = bg_genes.merge(
+        hgnc_complete_set[["symbol", "ensembl_gene_id"]],
+        left_on="symbol",
+        right_on="symbol",
+    )[["index", "ensembl_gene_id"]].set_index("index")
+    expr_df = expr_df.rename(columns=bg_genes.to_dict()["ensembl_gene_id"])
 
-    # hgnc_complete_set = hgnc_complete_set[hgnc_complete_set.locus_group == 'protein-coding gene']
-    expr_ensembls = expr_df.columns.to_series()[
-        expr_df.columns.to_series().str[:4] == "ENSG"
-    ]
-    expr_nonsembls = expr_df.columns.to_series()[
-        expr_df.columns.to_series().str[:4] != "ENSG"
-    ]
-
-    expr_ensembls = expr_ensembls.str.extract(r"(ENSG[0-9]+)")
-    expr_nonsembls.loc[
-        expr_nonsembls.index.intersection(pd.Index(hgnc_complete_set.depmap))
-    ] = (
-        hgnc_complete_set.set_index("depmap")
-        .loc[expr_nonsembls.index.intersection(pd.Index(hgnc_complete_set.depmap))]
-        .ensembl_gene_id
-    )
-
-    bg_genes = pd.concat([expr_ensembls, expr_nonsembls])[0]
-
-    expr_df = expr_df.rename(columns=bg_genes)
-    protein_coding = pd.Index(
-        hgnc_complete_set[
-            hgnc_complete_set.locus_group == "protein-coding gene"
-        ].ensembl_gene_id
-    )
-    expr_df = expr_df[expr_df.columns.intersection(protein_coding)]
-    expr_df = expr_df[~expr_df.index.duplicated()]
-
-    context_df = context_df
+    context_df = context_df.set_index("ModelID")
     context_w_oncocode = context_df.loc[~context_df.OncotreeCode.isna()]
     context_w_oncocode.loc[
         :, ["lineage", "subtype"]
@@ -277,45 +246,16 @@ def process_depmap_ipts(expr_df, context_df, prof_map, model_condition):
     context_nocode.loc[:, ["lineage", "subtype"]] = codes_for_codeless
     context_df = pd.concat([context_nocode, context_w_oncocode])
     context_df["type"] = "DepMap Model"
-    context_df = prof_map.merge(
-        context_df,
-        how="left",
-        left_on="ModelID",
-        right_on="ModelID",
-        suffixes=(None, "_y"),
-    )
-    context_df = context_df.merge(
-        model_condition,
-        how="left",
-        left_on=["ModelConditionID", "ModelID"],
-        right_on=["ModelConditionID", "ModelID"],
-        suffixes=(None, "_y"),
-    ).set_index("ProfileID")
-    # warnings.warn(context_df.head().to_string())
-    context_df = context_df.loc[
-        expr_df.index,
-        [
-            "GrowthPattern",
-            "PrimaryOrMetastasis",
-            "lineage",
-            "subtype",
-            "type",
-            "FormulationID",
-            "ModelConditionID",
-            "ModelID",
-        ],
-    ].drop_duplicates()
-
-    expr_df = expr_df.loc[expr_df.index.intersection(context_df.index)]
-    expr_df = expr_df.T.groupby(level=0).mean().T
-
     adata = ad.AnnData(expr_df)
-    adata.obs_names = expr_df.index.intersection(context_df.index)
+    adata.obs_names = expr_df.index
     adata.var_names = expr_df.columns
     adata.uns["type"] = "model"
     adata.uns["name"] = "depmap"
     adata.uns["mnn_params"] = None
-    adata.obs = context_df
+    adata.obs = context_df.loc[
+        expr_df.index,
+        ["GrowthPattern", "PrimaryOrMetastasis", "lineage", "subtype", "type"],
+    ]
     return adata
 
 
@@ -375,7 +315,7 @@ def process_nov_pdx_ipts(expr_df, context_df):
     adata.var_names = expr_df.columns
     adata.obs = context_df.loc[
         expr_df.index,
-        ["GrowthPattern", "PrimaryOrMetastasis", "lineage", "subtype", "type",],
+        ["GrowthPattern", "PrimaryOrMetastasis", "lineage", "subtype", "type"],
     ]
     adata.uns["type"] = "model"
     adata.uns["name"] = "nov_pdx"
@@ -404,7 +344,7 @@ def process_ped_pdx_ipts(expr_df, context_df):
     adata.var_names = expr_df.columns
     adata.obs = context_df.loc[
         expr_df.index,
-        ["GrowthPattern", "PrimaryOrMetastasis", "lineage", "subtype", "type",],
+        ["GrowthPattern", "PrimaryOrMetastasis", "lineage", "subtype", "type"],
     ]
     adata.uns["type"] = "model"
     adata.uns["name"] = "ped_pdx"
@@ -511,15 +451,7 @@ def run_celligner(bg, contrast, extra_data=None):
 
     df_annots = pd.concat(annots)
     df_annots = df_annots[
-        [
-            "lineage",
-            "subtype",
-            "type",
-            "PrimaryOrMetastasis",
-            "GrowthPattern",
-            "ModelConditionID",
-            "ModelID",
-        ]
+        ["lineage", "subtype", "type", "PrimaryOrMetastasis", "GrowthPattern"]
     ]
 
     out_umap = my_celligner.umap_reduced
@@ -531,14 +463,7 @@ def run_celligner(bg, contrast, extra_data=None):
     out_umap["cluster"] = cluster_ids
     out = pd.merge(out_umap, df_annots, left_index=True, right_index=True)
 
-    pca = PCA(my_celligner.pca_ncomp)
-    pcs = pd.DataFrame(
-        data=pca.fit_transform(my_celligner.combined_output),
-        index=my_celligner.combined_output.index,
-        columns=["pc_" + str(i) for i in range(my_celligner.pca_ncomp)],
-    )
-
-    return out, my_celligner.tumor_CL_dist, pcs, my_celligner.combined_output
+    return out, my_celligner.tumor_CL_dist
 
 
 #%%
@@ -549,38 +474,18 @@ def process_data(inputs, extra=True):
     @param extra: (bool) include extra datasets (MET500 & PDXs) or not
     @return: (tuple of Anndata objects containing expression and metadata) Depmap, TCGA, and extra datasets
     """
-    warnings.warn("loading depmap")
-    depmap_expr_id = inputs["depmap_expr"]["dataset_id"]
-
-    print(f"loading DepMap data ({depmap_expr_id})...")
-    depmap_data = tc.get(depmap_expr_id)
-    print(depmap_data)
-    # starting in 25Q2, some additional columns got added which will need to be dropped before proceeding.
-    # the following should reformat the matrix to be the format we used to get from taiga prior to 25Q2
-
-    depmap_data.index = depmap_data["ProfileID"]
-
-    depmap_data.drop(columns=["ProfileID", "is_default_entry", "ModelID"], inplace=True)
-
-    warnings.warn("loading anns")
+    print("loading DepMap data...")
+    depmap_data = tc.get(inputs["depmap_expr"]["source_dataset_id"])
     depmap_ann = tc.get(inputs["depmap_ann"]["source_dataset_id"])
-    warnings.warn("loading prof map")
-    depmap_prof_map = tc.get(inputs["depmap_prof_map"]["dataset_id"])
-    warnings.warn("loading model conds")
-    depmap_model_cond = tc.get(inputs["depmap_model_cond"]["dataset_id"])
 
-    depmap_out = process_depmap_ipts(
-        depmap_data, depmap_ann, depmap_prof_map, depmap_model_cond
-    )
+    depmap_out = process_depmap_ipts(depmap_data, depmap_ann)
 
     # process tcga data into single input for celligner
-    warnings.warn("loading tcga")
     print("loading TCGA data...")
     tcga_expr = tc.get(inputs["tcga_expr"]["source_dataset_id"])
     tcga_ann = tc.get(inputs["tcga_ann"]["source_dataset_id"])
 
     tcga_out = process_tcga_ipts(tcga_expr, tcga_ann)
-    warnings.warn("loading extra datasets")
     if extra:
         # process met500 data into single input for celligner
         print("loading MET500 data...")
@@ -616,25 +521,12 @@ if __name__ == "__main__":
         "--input", type=str, help="name of input file", default="inputs.json"
     )
     args = parser.parse_args()
-    print("Reading inputs")
-    warnings.warn("reading inputs")
+
     with open(args.input, "r") as fp:
         inputs = json.load(fp)
     # process depmap data into single input for celligner
-    depmap_processed, tcga_processed, extra_data_processed = process_data(
-        inputs, extra=True
-    )
-    warnings.warn("beginning alignment")
+    depmap_out, tcga_out, extra_data = process_data(inputs, extra=True)
     print("Beginning alignment...")
-    out, distances, pcs, combined_expression = run_celligner(
-        depmap_processed, tcga_processed, extra_data_processed
-    )
-    corrected_expression = combined_expression.loc[
-        combined_expression.index.difference(depmap_processed.obs)
-    ]
+    out, distances = run_celligner(depmap_out, tcga_out, extra_data)
     out.to_csv("celligner_output.csv")
     distances.to_csv("tumor_CL_dist.csv")
-    pcs.to_csv("celligner_pcs.csv")
-    corrected_expression.reset_index()
-    print(corrected_expression.index)
-    corrected_expression.to_csv("corrected_expression.csv")

@@ -1,13 +1,12 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { legacyPortalAPI } from "@depmap/api";
-import { toStaticUrl } from "@depmap/globals";
+import InfoIcon from "src/common/components/InfoIcon";
+import { getDapi } from "src/common/utilities/context";
+import PlotSpinner from "src/plot/components/PlotSpinner";
+import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
 import {
   ContextExplorerDatasets,
   EnrichedLineagesTileData,
-} from "@depmap/types";
-import InfoIcon from "src/common/components/InfoIcon";
-import PlotSpinner from "src/plot/components/PlotSpinner";
-import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
+} from "../models/types";
 import CollapsibleBoxPlots from "./boxPlots/CollapsibleBoxPlots";
 
 interface EnrichmentTileProps {
@@ -31,12 +30,14 @@ export const EnrichmentTile: React.FC<EnrichmentTileProps> = ({
   const boxplotLatestPromise = useRef<Promise<EnrichedLineagesTileData> | null>(
     null
   );
+  const dapi = getDapi();
+
   useEffect(() => {
     setTileData(null);
     // setEntityDetailMainPlotElement(null);
     setIsLoadingBoxplot(true);
     // setBoxplotError(false);
-    const boxplotPromise = legacyPortalAPI.getEnrichmentTileData(
+    const boxplotPromise = dapi.getEnrichmentTileData(
       "Lineage",
       entityType,
       entityLabel
@@ -57,7 +58,7 @@ export const EnrichmentTile: React.FC<EnrichmentTileProps> = ({
         }
       })
       .finally(() => setIsLoadingBoxplot(false));
-  }, [setIsLoadingBoxplot, entityType, entityLabel]);
+  }, [setIsLoadingBoxplot, dapi, entityType, entityLabel]);
 
   const getTabFromDatasetName = useCallback((datasetName: string) => {
     if (datasetName === ContextExplorerDatasets.Chronos_Combined.toString()) {
@@ -91,7 +92,7 @@ export const EnrichmentTile: React.FC<EnrichmentTileProps> = ({
         margin: "1px 3px 4px 3px",
         cursor: "pointer",
       }}
-      src={toStaticUrl("img/gene_overview/info_purple.svg")}
+      src={getDapi()._getFileUrl("/static/img/gene_overview/info_purple.svg")}
       alt="description of term"
       className="icon"
     />

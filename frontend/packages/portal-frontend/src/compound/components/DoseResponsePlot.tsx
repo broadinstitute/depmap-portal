@@ -197,7 +197,6 @@ export class DoseResponsePlot extends React.Component<PlotProps> {
       xaxis: {
         title: this.props.xLabel,
         type: "log",
-        dtick: 1,
       },
       yaxis: {
         title: this.props.yLabel,

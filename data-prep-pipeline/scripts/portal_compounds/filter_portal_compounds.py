@@ -59,9 +59,8 @@ if __name__ == "__main__":
         "portal_compounds_taiga_id", help="Taiga ID of portal compounds data"
     )
     parser.add_argument(
-        "--prism_oncology_reference_auc_matrix_taiga_id",
-        help="Taiga ID of the PRISMOncologyReferenceAUCMatrix (optional)",
-        default=None,
+        "prism_oncology_reference_auc_matrix_taiga_id",
+        help="Taiga ID of the PRISMOncologyReferenceAUCMatrix",
     )
     parser.add_argument("output", help="Path to write the output")
 
@@ -80,10 +79,7 @@ if __name__ == "__main__":
     assert not portal_compounds_df.empty, "portal_compounds_df is empty"
 
     print("Getting oncref AUC matrix data...")
-    if (
-        args.prism_oncology_reference_auc_matrix_taiga_id is None
-        or args.prism_oncology_reference_auc_matrix_taiga_id.startswith("public")
-    ):
+    if args.prism_oncology_reference_auc_matrix_taiga_id.startswith("public"):
         oncrefauc_matrix = pd.DataFrame()
     else:
         oncrefauc_matrix = tc.get(args.prism_oncology_reference_auc_matrix_taiga_id)

@@ -28,7 +28,6 @@ export default class CellignerTumorsForCellLineControlPanel extends React.Compon
     this.handleKNeighborsChange = this.handleKNeighborsChange.bind(this);
   }
 
-  // Value is profile Id
   handleCellLineChange(selection: ValueType<{ value: string }, false>) {
     const { onCellLineSelected } = this.props;
     const { kNeighbors } = this.state;
@@ -60,8 +59,8 @@ export default class CellignerTumorsForCellLineControlPanel extends React.Compon
     const options: Array<{ value: string; label: string }> = cellLines.map(
       (cellLine) => {
         return {
-          value: cellLine.profileId,
-          label: `${cellLine.displayName} (Profile ID: ${cellLine.profileId})`,
+          value: cellLine.sampleId || cellLine.displayName,
+          label: cellLine.displayName,
         };
       }
     );

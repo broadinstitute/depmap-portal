@@ -1,29 +1,15 @@
-type PRCid = string;
-type ModelID = string;
-type CompoundName = string;
-type Viability = number | null;
-type CellLineName = string;
-type DoseWithUnits = `${number} uM`;
-type DoseWithoutUnits = number;
+type DrugDoseLabel = `${string} (${string}) @${number} uM`;
+type Viability = number;
+export type CompoundDoseViability = Record<DrugDoseLabel, Viability>;
 
-export type DrugDoseLabel = `${CompoundName} (${PRCid}) @${DoseWithUnits}`;
+export type TableFormattedData = {
+  dose: number;
+  model: string;
+  viability: number;
+}[];
 
-export type CompoundDoseViability = Record<
-  DrugDoseLabel,
-  Record<ModelID, Viability>
->;
-
-type TableRow = {
-  depmapId: string;
-  "Cell Line": CellLineName;
-} & {
-  [K in DoseWithUnits]: Viability;
-};
-
-export type TableFormattedData = TableRow[];
 export type HeatmapFormattedData = {
-  modelIds: ModelID[];
-  x: CellLineName[];
-  y: DoseWithoutUnits[];
-  z: Viability[][];
+  x: string[];
+  y: string[];
+  z: (number | null)[][];
 };

@@ -1,3 +1,5 @@
+include "predictability_inputs.conseq"
+
 # Three Steps:
 # 1. Generate a daintree input config file for each model and screen
 # 2. Run the model fitting
@@ -43,13 +45,10 @@ rule process_model_config:
 
 
 rule run_fit_models:
-    resources: {'slots': "0.5"} # let up to 2 of these run in parallel
+    resources: {'slots': "0.05"} # let up to 20 of these run in parallel
     inputs:
         daintree_input_config={
           "type": "daintree_input_config"
-          },
-        release_taiga_id={
-          "type": "release_taiga_id"
           },
         sparkles_config=fileref("sparkles-config", copy_to="sparkles-config")
     outputs:
@@ -63,36 +62,23 @@ rule run_fit_models:
       import os
       import glob
       import json
-      import shutil
 
-      # Get the input config file and copy it to current directory
       input_config_filepath = "{{ inputs.daintree_input_config.filename }}"
-      local_input_config = "{{ inputs.daintree_input_config.label }}.json"
-      shutil.copy(input_config_filepath, local_input_config)
-
-      relative_path = os.path.relpath(os.getcwd(), '/work')
-      host_work_dir = os.environ.get('HOST_WORKSPACE_PATH', '/data1/jenkins/workspace/Analysis_Pipeline/analysis-pipeline')
-      host_current_dir = os.path.join(host_work_dir, relative_path)
-
-      print(f"relative_path: {relative_path}")
-      print(f"host_work_dir: {host_work_dir}")
-      print(f"host_current_dir: {host_current_dir}")
+      input_config_filename = "{{ inputs.daintree_input_config.label }}.json"
 
       docker_command = [
         "docker", "run",
         "--rm",
-        "-v", f"{host_current_dir}:/daintree",
-        "-v", f"/home/ubuntu/.taiga/token:/root/.taiga/token",
-        "-v", f"/home/ubuntu/.sparkles-cache/service-keys/broad-achilles.json:/root/.sparkles-cache/service-keys/broad-achilles.json",
-        "--entrypoint", "/bin/bash",
-        "us.gcr.io/broad-achilles/daintree:v1",
-        "-c", f"mkdir -p /daintree/daintree_scripts/ && cp -r /daintree_scripts/* /daintree/daintree_scripts/ && /install/depmap-py/bin/python3.9 -u /daintree/daintree_scripts/run_fit_models.py collect-and-fit \
-        --input-config /daintree/{local_input_config} \
-        --sparkles-config /daintree/sparkles-config \
-        --out /daintree/output_data \
-        --test \"True\" \
-        --skipfit \"False\" \
-        --upload-to-taiga \"{{ inputs.release_taiga_id.dataset_id }}\""
+        "-v", f"{input_config_filepath}:/daintree/{input_config_filename}",
+        "-v", f"{os.getcwd()}/output_data:/daintree/output_data",
+        "-v", f"{os.getcwd()}/sparkles-config:/daintree/sparkles-config",
+        "us.gcr.io/broad-achilles/daintree:v5",
+        "collect-and-fit",
+        "--input-config", input_config_filename,
+        "--sparkles-config", "/daintree/sparkles-config",
+        "--out", "/daintree/output_data",
+        "--test", "True",
+        "--upload-to-taiga", "predictability-76d5",
       ]
 
       subprocess.run(
@@ -163,19 +149,4 @@ rule combine_output_configs:
         except json.JSONDecodeError as e:
             logger.error(f"Invalid JSON in combined output config: {e}")
             raise
-
-        # Publish the combined output config file to gcp bucket
-        import subprocess
-        import datetime
-
-        os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "/etc/google_default_creds.json"
-        bucket_name = "preprocessing-pipeline-outputs"
-        timestamp = datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
-
-        subprocess.run([
-            "gsutil", "-o", f"Credentials:gs_service_key_file=/etc/google_default_creds.json",
-            "cp", "combined_daintree_output_config.json", 
-            f"gs://{bucket_name}/analysis-pipeline/combined_daintree_output_config-{timestamp}.json"
-        ])
-        
     """

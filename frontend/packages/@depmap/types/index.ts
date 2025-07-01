@@ -4,13 +4,6 @@ export { AnnotationType } from "./src/Metadata";
 export { DatasetValueType } from "./src/Dataset";
 export { FeatureTypeUpdateArgs } from "./src/FeatureType";
 export { SampleTypeUpdateArgs } from "./src/SampleType";
-export {
-  ContextExplorerDatasets,
-  DataTypeCategory,
-} from "./src/context-explorer";
-export { TopFeatureValue } from "./src/constellation";
-export { DataPageDataType, DataPageDataTypeCategory } from "./src/data_page";
-export { ModelType, ScreenType } from "./src/predictability";
 
 export type { default as FeatureType } from "./src/FeatureType";
 export type { default as SampleType } from "./src/SampleType";
@@ -36,7 +29,6 @@ export type {
   DatasetUpdateArgs,
   TabularDataset,
   MatrixDataset,
-  TabularDatasetDataArgs,
 } from "./src/Dataset";
 
 export type {
@@ -55,39 +47,8 @@ export type {
   GroupEntryArgs,
 } from "./src/Group";
 
-export type {
-  ContextAnalysisTableType,
-  ContextNode,
-  ContextInfo,
-  ContextPathInfo,
-  BoxData,
-  BoxCardData,
-  ContextPlotBoxData,
-  ContextNameInfo,
-  SearchOptionsByTreeType,
-  EnrichedLineagesTileData,
-} from "./src/context-explorer";
-
-export type {
-  DataAvailability,
-  LineageAvailability,
-  LineageCountInfo,
-  DataAvailSummary,
-} from "./src/data_page";
-
-export type {
-  GenePredictiveModelResults,
-  CompoundDosePredictiveModelResults,
-  PredictiveModelResults,
-  PredictiveFeatureResult,
-  PredictabilityTable,
-} from "./src/predictability";
-
 export type * from "./src/data-explorer-2";
 export type * from "./src/interactive";
-export type * from "./src/cell-line";
-export type * from "./src/compounds";
-
 export type { UploadFileResponse } from "./src/UploadFileResponse";
 export type { SliceQuery } from "./src/SliceQuery";
 

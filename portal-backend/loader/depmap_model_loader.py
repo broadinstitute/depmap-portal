@@ -45,6 +45,7 @@ def insert_cell_lines(df):
         stripped_cell_line_name = row["StrippedCellLineName"]
 
         cell_line = CellLine.get_by_depmap_id(model_id)
+
         cell_line_name = _coerce_na(row["CellLineName"])
         oncotree_primary_disease = _coerce_na(row["OncotreePrimaryDisease"])
         oncotree_subtype = _coerce_na(row["OncotreeSubtype"])

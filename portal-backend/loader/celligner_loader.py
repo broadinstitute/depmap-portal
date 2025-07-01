@@ -93,11 +93,11 @@ def _write_distances(distance_csv_file):
     ]
     db.session.bulk_save_objects(tumor_index_objects)
 
-    profile_index_objects = [
-        CellignerDistanceColIndex(profile_id=profile, index=i)
-        for i, profile in enumerate(df.columns)
+    model_index_objects = [
+        CellignerDistanceColIndex(sample_id=model, index=i)
+        for i, model in enumerate(df.columns)
     ]
-    db.session.bulk_save_objects(profile_index_objects)
+    db.session.bulk_save_objects(model_index_objects)
 
 
 def load_celligner_sample_data():
@@ -107,20 +107,15 @@ def load_celligner_sample_data():
 
 
 def load_celligner_data(celligner_filename, distances_filename):
-    celligner_data = pd.read_csv(celligner_filename, index_col=[0])
-    celligner_data = celligner_data.reset_index()
-
+    celligner_data = pd.read_csv(celligner_filename)
+    assert celligner_data.columns[0] == "Unnamed: 0"
     celligner_data = celligner_data.rename(
         columns={
+            "Unnamed: 0": "sampleId",
             "PrimaryOrMetastasis": "primaryMet",
             "GrowthPattern": "growthPattern",
-            "index": "profileId",
-            "ModelConditionID": "modelConditionId",
-            "ModelID": "sampleId",
         }
     )
-
-    celligner_data["sampleId"].fillna(celligner_data["profileId"], inplace=True)
 
     celligner_data["type"] = celligner_data["type"].replace(
         {
@@ -135,10 +130,8 @@ def load_celligner_data(celligner_filename, distances_filename):
     import pandera as pa
 
     schema = pa.DataFrameSchema(
-        columns={
-            "profileId": pa.Column(str),
+        {
             "sampleId": pa.Column(str),
-            "modelConditionId": pa.Column(str, nullable=True),
             "umap1": pa.Column("float64"),
             "umap2": pa.Column("float64"),
             "lineage": pa.Column(str, nullable=True),
@@ -158,7 +151,7 @@ def load_celligner_data(celligner_filename, distances_filename):
             ),
             "growthPattern": pa.Column(str, nullable=True),
             "cluster": pa.Column(int),
-        },
+        }
     )
     celligner_data = schema.validate(celligner_data)
 

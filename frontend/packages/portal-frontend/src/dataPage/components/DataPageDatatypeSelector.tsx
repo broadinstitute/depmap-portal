@@ -1,7 +1,6 @@
 import React from "react";
-import { DataPageDataType } from "@depmap/types";
 import styles from "src/dataPage/styles/DataPage.scss";
-import { getDataPageDataTypeString } from "../models/types";
+import { DataPageDataType, getDataPageDataTypeString } from "../models/types";
 import { BAR_THICKNESS, growingDatasets } from "./utils";
 
 interface Props {

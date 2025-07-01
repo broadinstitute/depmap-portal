@@ -1,13 +1,19 @@
-import React from "react";
+import React, { useContext } from "react";
 import { Button } from "react-bootstrap";
+import { ApiContext } from "@depmap/api";
 import { Tooltip } from "@depmap/common-components";
-import { toStaticUrl } from "@depmap/globals";
 
 interface Props {
   onClick: () => void;
 }
 
 function EditInCellLineSelectorButton({ onClick }: Props) {
+  const { getApi } = useContext(ApiContext);
+
+  const urlPrefix = getApi().urlPrefix;
+  const assetUrl = "img/public/icon-cohort.png";
+  const imgSrc = `${urlPrefix}/static/${assetUrl}`.replace(/^\/\//, "");
+
   return (
     <Tooltip
       id="edit-in-cell-line-selector-tooltip"
@@ -22,7 +28,7 @@ function EditInCellLineSelectorButton({ onClick }: Props) {
         <img
           style={{ width: 20, height: 20 }}
           alt="Edit in Cell Line Selector"
-          src={toStaticUrl("img/public/icon-cohort.png")}
+          src={imgSrc}
         />
       </Button>
     </Tooltip>

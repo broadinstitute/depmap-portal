@@ -1,7 +1,9 @@
 import * as React from "react";
 import { Grid, Row, Col, Tabs, Tab, SelectCallback } from "react-bootstrap";
-import { legacyPortalAPI } from "@depmap/api";
+
 import { enabledFeatures, toStaticUrl } from "@depmap/globals";
+import { DepmapApi } from "src/dAPI";
+import { getDapi } from "src/common/utilities/context";
 import WideTable, { WideTableColumns } from "@depmap/wide-table";
 import { titleCase } from "@depmap/utils";
 import CellignerCellLinesForTumorsControlPanel from "./CellignerCellLinesForTumorsControlPanel";
@@ -147,6 +149,8 @@ function createAlignmentsWithCellLineSet(
 }
 
 export default class CellignerPage extends React.Component<Props, State> {
+  dapi: DepmapApi;
+
   // data munging
   lineages: Array<string>;
 
@@ -167,6 +171,8 @@ export default class CellignerPage extends React.Component<Props, State> {
       lassoOrBoxSelectedPts: new Set<number>([]),
       allPossibleSidePanelSelectedPts: new Set<number>([]),
     };
+
+    this.dapi = getDapi();
 
     // data munging
     this.lineages = Array.from(props.subtypes.keys()).sort();
@@ -267,7 +273,7 @@ export default class CellignerPage extends React.Component<Props, State> {
   handleSelectedSubtypeChange(selectedSubtype: string) {
     const { selectedPrimarySite } = this.state;
 
-    legacyPortalAPI
+    this.dapi
       .getCellignerDistancesToTumors(
         selectedPrimarySite as string,
         selectedSubtype
@@ -293,15 +299,15 @@ export default class CellignerPage extends React.Component<Props, State> {
     this.setState({ cellLineList });
   }
 
-  handleCellLineSelected(selectedProfileId: string, kNeighbors: number) {
+  handleCellLineSelected(selectedSampleId: string, kNeighbors: number) {
     const { alignmentsArr } = this.props;
 
-    const cellLineIndex = alignmentsArr.profileId.findIndex(
-      (profileId) => profileId === selectedProfileId
+    const cellLineIndex = alignmentsArr.sampleId.findIndex(
+      (sampleId) => sampleId === selectedSampleId
     );
 
-    legacyPortalAPI
-      .getCellignerDistancesToCellLine(selectedProfileId, kNeighbors)
+    this.dapi
+      .getCellignerDistancesToCellLine(selectedSampleId, kNeighbors)
       .then((e) => {
         this.setState({
           tumorDistances: e.distance_to_tumors,
@@ -466,9 +472,9 @@ export default class CellignerPage extends React.Component<Props, State> {
     } = this.state;
 
     const handleChangeCellLineTableSelections = (selections: string[]) => {
-      const selectedIndexes = selections.map((selectedProfileId: string) =>
-        alignmentsArr.profileId.findIndex(
-          (profileId) => profileId === selectedProfileId
+      const selectedIndexes = selections.map((selectedDisplayName: string) =>
+        alignmentsArr.displayName.findIndex(
+          (displayName) => displayName === selectedDisplayName
         )
       );
 
@@ -499,16 +505,6 @@ export default class CellignerPage extends React.Component<Props, State> {
     if (activeTab === "cell-line-for-tumors") {
       const cellLinesForTumorsColumns: Array<WideTableColumns> = ([
         {
-          Header: "Profile ID",
-          accessor: "profileId",
-          columnDropdownLabel: "Profile ID",
-        },
-        {
-          Header: "Model Condition ID",
-          accessor: "modelConditionId",
-          columnDropdownLabel: "Model Condition ID",
-        },
-        {
           Header: `${titleCase(NAME_FOR_MODEL)} Name`,
           accessor: "displayName",
           columnDropdownLabel: `${titleCase(NAME_FOR_MODEL)} Name`,
@@ -523,7 +519,7 @@ export default class CellignerPage extends React.Component<Props, State> {
           <div style={{ height: 380 }}>
             <WideTable
               key={activeTab}
-              idProp={"profileId"}
+              idProp={"displayName"}
               onChangeSelections={handleChangeCellLineTableSelections}
               data={
                 cellLineDistances
@@ -565,7 +561,7 @@ export default class CellignerPage extends React.Component<Props, State> {
               selectedTableLabels={
                 new Set(
                   [...annotatedPoints].map(
-                    (i: number) => alignmentsArr.profileId[i]
+                    (i: number) => alignmentsArr.displayName[i]
                   )
                 )
               }
@@ -590,7 +586,7 @@ export default class CellignerPage extends React.Component<Props, State> {
           <div style={{ height: 380 }}>
             <WideTable
               key={activeTab}
-              idProp={"profileId"}
+              idProp={"displayName"}
               data={
                 tumorDistances
                   ? tumors
@@ -625,13 +621,6 @@ export default class CellignerPage extends React.Component<Props, State> {
               columns={tumorsForCellLinesColumns}
               sorted={[{ id: "distance", desc: true }]}
               onChangeSelections={handleChangeCellLineTableSelections}
-              selectedTableLabels={
-                new Set(
-                  [...annotatedPoints].map(
-                    (i: number) => alignmentsArr.profileId[i]
-                  )
-                )
-              }
               allowDownloadFromTableData
               hideSelectAllCheckbox
             />

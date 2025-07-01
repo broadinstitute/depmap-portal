@@ -1,14 +1,16 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { legacyPortalAPI, LegacyPortalApiResponse } from "@depmap/api";
-import { DataPageDataType, LineageCountInfo } from "@depmap/types";
-import { getDataPageDataTypeString } from "../models/types";
+import {
+  DataPageDataType,
+  getDataPageDataTypeString,
+  LineageAvailability,
+  LineageCountInfo,
+} from "../models/types";
 import { Button, Modal } from "react-bootstrap";
 import BarChart from "src/plot/components/BarChart";
 import { DISEASE_COLORS } from "./utils";
 import PlotSpinner from "src/plot/components/PlotSpinner";
 import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
-
-type LineageAvailability = LegacyPortalApiResponse["getLineageDataAvailability"];
+import { getDapi } from "src/common/utilities/context";
 
 interface LineageAvailabilityPlotProps {
   show: boolean;
@@ -21,6 +23,7 @@ const LineageAvailabilityPlot = ({
   selectedDataType,
   onCloseLineageModal,
 }: LineageAvailabilityPlotProps) => {
+  const dapi = getDapi();
   const [plotElement, setPlotElement] = useState<ExtendedPlotType | null>(null);
 
   // On open of a datatype's model count on the right side of the data availability
@@ -37,9 +40,7 @@ const LineageAvailabilityPlot = ({
   useEffect(() => {
     setLineageAvail(null);
     setIsLoading(true);
-    const promise = legacyPortalAPI.getLineageDataAvailability(
-      selectedDataType
-    );
+    const promise = dapi.getLineageDataAvailability(selectedDataType);
 
     latestPromise.current = promise;
     promise
@@ -64,7 +65,7 @@ const LineageAvailabilityPlot = ({
     return () => {
       setLineageAvail(null);
     };
-  }, [selectedDataType, show]);
+  }, [selectedDataType, show, dapi]);
 
   // For each primary disease
   // Make a trace with the primary disease as the value of trace.name

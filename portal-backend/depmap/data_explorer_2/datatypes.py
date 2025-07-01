@@ -246,14 +246,6 @@ _hardcoded_metadata_slices = {
             "name": "PatientTumorGrade",
             "valueType": "categorical",
         },
-        "slice/depmap_model_metadata/PediatricModelType/label": {
-            "name": "PediatricModelType",
-            "valueType": "categorical",
-        },
-        "slice/depmap_model_metadata/PediatricModelType/label": {
-            "name": "PediatricModelType",
-            "valueType": "categorical",
-        },
         "slice/depmap_model_metadata/PlateCoating/label": {
             "name": "PlateCoating",
             "valueType": "categorical",

@@ -2,17 +2,21 @@ import "src/public-path";
 
 import React from "react";
 import ReactDOM from "react-dom";
-import { legacyPortalAPI, LegacyPortalApiResponse } from "@depmap/api";
-import { CustomList } from "@depmap/cell-line-selector";
+import {
+  CustomList,
+  renderCellLineSelectorModal,
+} from "@depmap/cell-line-selector";
 import { toStaticUrl } from "@depmap/globals";
 
 import { getQueryParams } from "@depmap/utils";
+import { getDapi, getBreadboxApi } from "src/common/utilities/context";
 
 import { DatasetOption } from "src/entity/components/EntitySummary";
 
 import ErrorBoundary from "src/common/components/ErrorBoundary";
 import { WideTableProps } from "@depmap/wide-table";
 
+import { EntitySummaryResponse } from "src/dAPI";
 import { Option } from "src/common/models/utilities";
 import { DataExplorerContext, SliceQuery } from "@depmap/types";
 
@@ -24,8 +28,6 @@ import { EnrichmentTile } from "./contextExplorer/components/EnrichmentTile";
 import CorrelationAnalysis from "./correlationAnalysis/components";
 
 export { log, tailLog, getLogCount } from "src/common/utilities/log";
-
-type EntitySummaryResponse = LegacyPortalApiResponse["getEntitySummary"];
 
 if (["dev.cds.team", "127.0.0.1:5000"].includes(window.location.host)) {
   initializeDevContexts();
@@ -103,6 +105,12 @@ const renderWithErrorBoundary = (
   ReactDOM.render(<ErrorBoundary>{element}</ErrorBoundary>, container);
 };
 
+export function launchCellLineSelectorModal() {
+  const container = document.getElementById("cell_line_selector_modal"); // defined in layout.html
+
+  renderCellLineSelectorModal(getDapi, container);
+}
+
 export function showTermsAndConditionsModal() {
   const container = document.getElementById("modal-container");
   ReactDOM.render(<TermsAndConditionsModal />, container);
@@ -129,13 +137,6 @@ export function launchContextManagerModal(options?: {
     </React.Suspense>,
     container
   );
-}
-
-export function launchCellLineSelectorModal() {
-  launchContextManagerModal({
-    initialContextType: "depmap_model",
-    showHelpText: true,
-  });
 }
 
 export function editContext(context: DataExplorerContext, hash: string) {
@@ -402,6 +403,8 @@ export function initCelfiePage(
   dependencyProfileOptions: Array<DatasetOption>,
   howToImg: string
 ) {
+  const dapi = getDapi();
+  dapi.startTrace("celfieInit");
   renderWithErrorBoundary(
     <React.Suspense fallback={<div>Loading...</div>}>
       <CelfiePage
@@ -412,7 +415,7 @@ export function initCelfiePage(
           connectivity,
           topFeature
         ) =>
-          legacyPortalAPI.getConstellationGraphs(
+          dapi.getConstellationGraphs(
             taskIds,
             null,
             similarityMeasure,
@@ -421,17 +424,27 @@ export function initCelfiePage(
             topFeature
           )
         }
-        getVolcanoData={legacyPortalAPI.getTaskStatus}
+        getVolcanoData={(taskId: string) => {
+          // const span = dapi.startSpan("getVolcanoData")
+          return dapi.getTaskStatus(taskId).finally(() => {
+            // span.end();
+          });
+        }}
         similarityOptions={similarityOptions}
         colorOptions={colorOptions}
         connectivityOptions={connectivityOptions}
         targetFeatureLabel={targetFeatureLabel}
         datasets={datasets}
-        getComputeUnivariateAssociations={
-          legacyPortalAPI.computeUnivariateAssociations
-        }
+        getComputeUnivariateAssociations={(params) => {
+          const span = dapi.startSpan("computeUnivariateAssociations");
+          return dapi.withSpan(span, () =>
+            dapi.computeUnivariateAssociations(params).finally(() => {
+              span.end();
+            })
+          );
+        }}
         dependencyProfileOptions={dependencyProfileOptions}
-        onCelfieInitialized={() => {}}
+        onCelfieInitialized={() => dapi.endTrace()}
         howToImg={howToImg}
         methodIcon={toStaticUrl("img/predictability/pdf.svg")}
         methodPdf={toStaticUrl("pdf/Genomic_Associations_Methodology.pdf")}

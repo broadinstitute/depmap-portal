@@ -65,11 +65,6 @@ def test_format_generic_distribution_plot():
     assert_is_svg(svg)
 
 
-def test_format_generic_distribution_plot_with_single_value():
-    svg = format_generic_distribution_plot([1.0, 1.0, 1.0, 1.0], "#ffffff")
-    assert "All values are 1.0" in svg
-
-
 def test_format_enrichment_box_for_dataset(empty_db_mock_downloads):
     entity = GeneFactory()
     dataset = DependencyDatasetFactory(

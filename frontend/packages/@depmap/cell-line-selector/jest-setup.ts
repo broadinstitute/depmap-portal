@@ -4,7 +4,7 @@
 // https://jestjs.io/docs/en/jest-object.html#jestmockmodulename-factory-options
 // see example creating virtual mocks, to mock modules that don't exist. for us, these are libraries that we pull in via CDNs, e.g. plotly.
 declare const jest: any;
-declare const afterEach: any;
+declare const beforeEach: any;
 
 import * as Enzyme from "enzyme";
 import Adapter from "enzyme-adapter-react-16";
@@ -18,8 +18,4 @@ jest.mock(
 
 Enzyme.configure({
   adapter: new Adapter(),
-});
-
-afterEach(() => {
-  jest.resetAllMocks();
 });

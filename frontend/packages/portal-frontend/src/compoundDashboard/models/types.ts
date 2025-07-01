@@ -1,9 +1,19 @@
-import type { LegacyPortalApiResponse } from "@depmap/api";
-
 export type DatasetId = "Rep_all_single_pt" | "Prism_oncology_AUC" | "unknown";
 
 // raw data as returned by the server
-export type CompoundSummaryTableRaw = LegacyPortalApiResponse["getCompoundDashboardSummaryTable"];
+export type CompoundSummaryTableRaw = {
+  BroadID: string[];
+  Name: string[];
+  PearsonScore: number[];
+  BimodalityCoefficient: number[];
+  ModelType: string[];
+  TopBiomarker: string[];
+  NumberOfSensitiveLines: number[];
+  Dose: number[];
+  Target: string[];
+  Synonyms: string[];
+  TargetOrMechanism: string[];
+};
 
 export type CompoundSummaryTableRow = {
   BroadID: string;

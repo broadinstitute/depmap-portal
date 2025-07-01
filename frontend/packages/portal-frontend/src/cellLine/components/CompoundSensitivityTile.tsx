@@ -1,17 +1,20 @@
 import React from "react";
 import { Tooltip, OverlayTrigger } from "react-bootstrap";
-import { toPortalLink, toStaticUrl } from "@depmap/globals";
-import { CellLineDataMatrix } from "@depmap/types";
+import { toStaticUrl } from "@depmap/globals";
 import RectanglePlot from "src/cellLine/components/RectanglePlot";
+import { DepmapApi } from "src/dAPI";
+import { CellLineDataMatrix } from "../models/types";
 
 export interface CompoundSensitivityTileProps {
   depmapId: string;
   dataMatrix: CellLineDataMatrix;
+  dapi: DepmapApi;
 }
 
 const CompoundSensitivityTile = ({
   depmapId,
   dataMatrix,
+  dapi,
 }: CompoundSensitivityTileProps) => {
   const prefDepTooltip = (
     <Tooltip>
@@ -51,7 +54,7 @@ const CompoundSensitivityTile = ({
             <p className="stacked-boxplot-download-container">
               {dataMatrix.data && (
                 <a
-                  href={toPortalLink(
+                  href={dapi._getFileUrl(
                     `/cell_line/compound_sensitivity/download/${depmapId}`
                   )}
                 >

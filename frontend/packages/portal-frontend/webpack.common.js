@@ -25,7 +25,6 @@ module.exports = {
     dataPage: "./src/apps/dataPage.tsx",
     resourcesPage: "./src/apps/resourcesPage.tsx",
     secretDataViewer: "./src/apps/secretDataViewer.tsx",
-    peddepPage: "./src/apps/peddepPage.tsx",
     anchorScreenDashboard: "./src/apps/anchorScreenDashboard.tsx",
     doseViabilityPrototype: "./src/apps/doseViabilityPrototype.tsx",
   },

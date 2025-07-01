@@ -1,5 +1,4 @@
-/* eslint-disable max-classes-per-file, react/no-access-state-in-setstate,
-eqeqeq, @typescript-eslint/lines-between-class-members */
+/* eslint-disable */
 import * as React from "react";
 import Select from "react-select";
 import { Radio } from "react-bootstrap";
@@ -8,19 +7,21 @@ import update from "immutability-helper";
 import { SelectNSOption } from "../models/compute";
 import { UploadTask } from "@depmap/user-upload";
 import { FileUpload } from "@depmap/compute";
-import { legacyPortalAPI } from "@depmap/api";
+import { ApiContext } from "@depmap/api";
 
 import "../styles/DatasetSelect.scss";
+
+export interface Dataset {
+  label: string;
+  value: string;
+}
 
 type selectDatasetInputType = "dropdowns" | "upload";
 
 class DatasetSelectProps {
   label?: string;
 
-  datasets?: Array<{
-    label: string;
-    value: string;
-  }>;
+  datasets?: Array<Dataset>;
 
   onChange?: (newValue: string) => any;
 }
@@ -40,6 +41,9 @@ export class DatasetSelect extends React.Component<
   DatasetSelectProps,
   DatasetSelectState
 > {
+  declare context: React.ContextType<typeof ApiContext>;
+  static contextType = ApiContext;
+
   constructor(props: DatasetSelectProps) {
     super(props);
 
@@ -113,6 +117,8 @@ export class DatasetSelect extends React.Component<
       return;
     }
 
+    const { getApi } = this.context;
+
     this.setState(
       {
         uploadDataset: update(this.state.uploadDataset, {
@@ -120,7 +126,7 @@ export class DatasetSelect extends React.Component<
         }),
       },
       () =>
-        legacyPortalAPI
+        getApi()
           .postCustomCsv({
             uploadFile,
             displayName: uploadFile.name,

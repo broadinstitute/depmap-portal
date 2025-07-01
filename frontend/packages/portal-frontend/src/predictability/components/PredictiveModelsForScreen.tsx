@@ -1,8 +1,13 @@
 import React from "react";
+import { DepmapApi } from "src/dAPI";
 import { EntityType } from "src/entity/models/entities";
 
 import PredictiveModelTable from "src/predictability/components/PredictiveModelTable";
-import { PredictiveModelResults, ModelType, ScreenType } from "@depmap/types";
+import {
+  PredictiveModelResults,
+  ModelType,
+  ScreenType,
+} from "src/predictability/models/predictive";
 
 const MODEL_FEATURE_SETS = {
   [ModelType.CoreOmics]:
@@ -16,6 +21,7 @@ const MODEL_FEATURE_SETS = {
 };
 
 interface Props {
+  dapi: DepmapApi;
   entityType: EntityType;
   screen: string;
   screenType: ScreenType;
@@ -23,7 +29,7 @@ interface Props {
 }
 
 export default function PredictiveModelsForScreen(props: Props) {
-  const { entityType, screen, screenType, modelsAndResults } = props;
+  const { dapi, entityType, screen, screenType, modelsAndResults } = props;
   return (
     <div>
       <div className="screen-label">{screen}</div>
@@ -43,6 +49,7 @@ export default function PredictiveModelsForScreen(props: Props) {
         return (
           <PredictiveModelTable
             key={key}
+            dapi={dapi}
             entityType={entityType}
             screenType={screenType}
             modelName={tableTitle}

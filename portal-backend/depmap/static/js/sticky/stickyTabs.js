@@ -36,7 +36,6 @@
 
         if (history && history.replaceState) {
           history.replaceState(null, null, url.toString());
-          window.dispatchEvent(new Event("changeTab"));
         }
       }
     };
