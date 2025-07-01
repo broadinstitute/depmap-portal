@@ -150,30 +150,32 @@ def _get_compound_dose_replicates(
         compound_id=compound_id, drc_dataset_label=drc_dataset_label
     )
 
-    compound_dose_replicates = []
+    valid_compound_dose_replicates = []
 
     for compound_experiment in ces:
-        compound_dose_replicates = CompoundDoseReplicate.get_all_with_compound_experiment_id(
+        compound_dose_replicate_objs = CompoundDoseReplicate.get_all_with_compound_experiment_id(
             compound_experiment.entity_id
         )
 
         # HACK: this is only necessary due to a heuristic used when loading sample data that made it impossible to reliably
         # distinguish between oncref and repurposing compound experiments. If we are looking at a CompoundExperiment from a
-        # different dataset than the one currently selected, compound_dose_replicates will be of length 0, so just "continue"
+        # different dataset than the one currently selected, compound_dose_replicate_objs will be of length 0, so just "continue"
         # on to the next dataset.
-        if len(compound_dose_replicates) == 0:
+        if len(compound_dose_replicate_objs) == 0:
             continue
-        compound_dose_replicates = [
+
+        # Make sure the dose_rep is valid (e.g. make sure it exists in the currently selected replicate dataset)
+        valid_compound_dose_replicates = [
             dose_rep
-            for dose_rep in compound_dose_replicates
+            for dose_rep in compound_dose_replicate_objs
             if DependencyDataset.has_entity(replicate_dataset_name, dose_rep.entity_id)
         ]
         # Break out of the loop as soon as we have valid compound_dose_replicates and have confurmed the replicates are present in
         # the current dataset via if DependencyDataset.has_entity(replicate_dataset_name, dose_rep.entity_id)
-        if len(compound_dose_replicates) > 0:
+        if len(valid_compound_dose_replicates) > 0:
             break
 
-    return compound_dose_replicates
+    return valid_compound_dose_replicates
 
 
 def get_dose_response_curves_per_model(
