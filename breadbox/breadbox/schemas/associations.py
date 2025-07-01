@@ -1,11 +1,11 @@
 from pydantic import BaseModel
-from typing import List
+from typing import List, Optional
 
 
 class DatasetSummary(BaseModel):
     id: str
     name: str
-    dimension_type: str
+    dimension_type: Optional[str] = None
     dataset_id: str
 
 
