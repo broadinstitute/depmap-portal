@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { TDASummaryTable } from "src/tda/models/types";
-import { getDapi } from "src/common/utilities/context";
+import { legacyPortalAPI, LegacyPortalApiResponse } from "@depmap/api";
+
+type TDASummaryTable = LegacyPortalApiResponse["getTDASummaryTable"];
 
 export default function useTargetDiscoveryData() {
   const [data, setData] = useState<TDASummaryTable | null>(null);
@@ -9,8 +10,7 @@ export default function useTargetDiscoveryData() {
   useEffect(() => {
     (async () => {
       try {
-        const dapi = getDapi();
-        const nextData = await dapi.getTDASummaryTable();
+        const nextData = await legacyPortalAPI.getTDASummaryTable();
         setData(nextData);
       } catch (e) {
         window.console.error(e);

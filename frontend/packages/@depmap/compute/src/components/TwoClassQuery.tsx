@@ -1,20 +1,17 @@
 /* eslint-disable */
 import * as React from "react";
-import { errorHandler } from "@depmap/globals";
+import { errorHandler, isElara } from "@depmap/globals";
 import { CellLineListsDropdown, CustomList } from "@depmap/cell-line-selector";
 import { Radio } from "react-bootstrap";
-
+import { breadboxAPI, legacyPortalAPI } from "@depmap/api";
 import {
   CommonQueryProps,
   ComputeResponse,
-  Dataset,
   DatasetSelect,
   UnivariateAssociationsParams,
   VariableType,
 } from "@depmap/compute";
-
 import { assert } from "@depmap/utils";
-import { ApiContext } from "@depmap/api";
 
 interface TwoClassQueryProps extends CommonQueryProps {
   analysisType: "two_class";
@@ -32,9 +29,6 @@ export class TwoClassQuery extends React.Component<
   TwoClassQueryProps,
   Partial<TwoClassQueryState>
 > {
-  declare context: React.ContextType<typeof ApiContext>;
-  static contextType = ApiContext;
-
   constructor(props: any) {
     super(props);
 
@@ -200,11 +194,12 @@ export class TwoClassQuery extends React.Component<
       queryValues,
     };
 
-    const { getApi } = this.context;
-
     const runCustomAnalysis = () => {
-      return getApi().computeUnivariateAssociations(params);
+      return isElara
+        ? breadboxAPI.computeUnivariateAssociations(params)
+        : legacyPortalAPI.computeUnivariateAssociations(params);
     };
+
     this.props.sendQueryGeneric(runCustomAnalysis, this.onSuccess);
   };
 

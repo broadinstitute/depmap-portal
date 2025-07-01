@@ -1,13 +1,11 @@
+import { ContextSummary, DataTypeStrings, DataType } from "./models/types";
+import update from "immutability-helper";
 import {
-  ContextNode,
-  ContextSummary,
-  DataTypeStrings,
   ContextExplorerDatasets,
   ContextNameInfo,
-  DataType,
-} from "./models/types";
-import update from "immutability-helper";
-import { DataExplorerContext } from "@depmap/types";
+  ContextNode,
+  DataExplorerContext,
+} from "@depmap/types";
 import qs from "qs";
 import { Filter } from "src/common/models/discoveryAppFilters";
 import { deleteSpecificQueryParams } from "@depmap/utils";

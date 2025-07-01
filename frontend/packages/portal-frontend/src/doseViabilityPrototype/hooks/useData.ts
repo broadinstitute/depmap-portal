@@ -1,5 +1,5 @@
-import { useContext, useEffect, useState } from "react";
-import { ApiContext } from "@depmap/api";
+import { useEffect, useState } from "react";
+import { breadboxAPI } from "@depmap/api";
 import { DimensionType } from "@depmap/types";
 import type {
   CompoundDoseViability,
@@ -8,22 +8,25 @@ import type {
 } from "src/doseViabilityPrototype/types";
 
 const fetchDimensionTypes = async () => {
+  // FIXME: use an API wrapper instead of `fetch`
   const response = await fetch("../breadbox/types/dimensions");
   return response.json() as Promise<DimensionType[]>;
 };
 
-const fetchMetadata = async (feature_type_name: string) => {
+const fetchMetadata = async <T>(feature_type_name: string) => {
   const dimensionTypes = await fetchDimensionTypes();
 
   const dimType = dimensionTypes.find((t) => t.name === feature_type_name);
   const url = "../breadbox/datasets/tabular/" + dimType!.metadata_dataset_id;
 
+  // FIXME: use an API wrapper instead of `fetch`
   const response = await fetch(url, { method: "POST" });
-  return response.json();
+  const json = await response.json();
+
+  return json as T;
 };
 
 function useData(compoundName: string) {
-  const sharedApi = useContext(ApiContext);
   const [
     heatmapFormattedData,
     setHeatmapFormattedData,
@@ -32,6 +35,7 @@ function useData(compoundName: string) {
     tableFormattedData,
     setTableFormattedData,
   ] = useState<TableFormattedData | null>(null);
+  const [doseColumnNames, setDoseColumnNames] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
@@ -39,7 +43,7 @@ function useData(compoundName: string) {
       setIsLoading(true);
 
       try {
-        const dimensions = await sharedApi.getApi().searchDimensions({
+        const dimensions = await breadboxAPI.searchDimensions({
           substring: compoundName,
           type_name: "oncref_collapsed_metadata",
           limit: 100,
@@ -47,6 +51,7 @@ function useData(compoundName: string) {
 
         const featureLabels = dimensions.map(({ label }) => label);
 
+        // FIXME: use an API wrapper instead of `fetch`
         const response = await fetch(
           "../breadbox/datasets/matrix/Prism_oncology_viability",
           {
@@ -62,50 +67,118 @@ function useData(compoundName: string) {
           }
         );
 
-        const data: CompoundDoseViability = await response.json();
-        const metadata = await fetchMetadata("oncref_collapsed_metadata");
+        const viabilityAtDose: CompoundDoseViability = await response.json();
 
-        const tableData: TableFormattedData = [];
+        const oncrefMetadata = await fetchMetadata<{
+          Dose: Record<string, number>;
+          DoseUnit: Record<string, string>;
+        }>("oncref_collapsed_metadata");
 
-        Object.entries(data).forEach(([label, modelValues]) => {
+        const modelMetadata = await fetchMetadata<{
+          CellLineName: Record<string, string>;
+        }>("depmap_model");
+
+        const flatData: {
+          dose: number;
+          model: string;
+          viability: number;
+        }[] = [];
+        const tableLookup: Record<string, Record<string, number>> = {};
+
+        Object.entries(viabilityAtDose).forEach(([label, modelValues]) => {
           Object.entries(modelValues).forEach(([model, viability]) => {
             if (viability !== null) {
-              const dose = metadata.Dose[label];
-              tableData.push({ model, dose, viability });
+              const dose = oncrefMetadata.Dose[label];
+              const unit = oncrefMetadata.DoseUnit[label];
+              flatData.push({ model, dose, viability });
+
+              tableLookup[model] = tableLookup[model] || {};
+              tableLookup[model][`${dose} ${unit}`] = viability;
             }
           });
         });
 
-        const x = [...new Set(tableData.map((d) => d.model))].sort();
-        const y = [...new Set(tableData.map((d) => d.dose))]
-          .sort((a, b) => a - b)
-          .map(String);
-        const z = Array.from({ length: x.length }, () =>
-          Array(y.length).fill(null)
+        const meanViabilityByModel: Record<string, number> = {};
+        const tableData: TableFormattedData = [];
+
+        Object.entries(tableLookup).forEach(([depmapId, doseMap]) => {
+          tableData.push({
+            "Cell Line": modelMetadata.CellLineName[depmapId],
+            depmapId,
+            ...doseMap,
+          });
+
+          const values = Object.values(doseMap);
+          meanViabilityByModel[depmapId] =
+            values.reduce((sum, val) => sum + val, 0) / values.length;
+        });
+
+        const uniqueModels = [...new Set(flatData.map((d) => d.model))];
+        const uniqueDoses = [...new Set(flatData.map((d) => d.dose))].sort(
+          (a, b) => a - b
         );
 
-        const modelIndex = Object.fromEntries(x.map((m, i) => [m, i]));
-        const doseIndex = Object.fromEntries(y.map((d, i) => [d, i]));
+        const sortedModels = uniqueModels.sort(
+          (a, b) => meanViabilityByModel[a] - meanViabilityByModel[b]
+        );
 
-        for (let i = 0; i < tableData.length; i++) {
-          const dose = tableData[i].dose;
-          const model = tableData[i].model;
-          const viability = tableData[i].viability;
+        const zMatrix = Array.from({ length: uniqueDoses.length }, () =>
+          Array(sortedModels.length).fill(null)
+        ) as (number | null)[][];
+
+        const modelIndex = Object.fromEntries(
+          sortedModels.map((m, i) => [m, i])
+        );
+        const doseIndex = Object.fromEntries(uniqueDoses.map((d, i) => [d, i]));
+
+        flatData.forEach(({ dose, model, viability }) => {
           const row = doseIndex[dose];
           const col = modelIndex[model];
-          z[row][col] = viability;
-        }
+          zMatrix[row][col] = viability;
+        });
 
         setTableFormattedData(tableData);
-        setHeatmapFormattedData({ x, y, z });
+
+        setDoseColumnNames(
+          Object.keys(tableData[0])
+            .filter((key) => key !== "Cell Line" && key !== "depmapId")
+            .sort((a, b) => parseFloat(a) - parseFloat(b))
+        );
+
+        const seen = new Set<string>();
+
+        const cellLineNames = sortedModels.map((id) => {
+          let name = modelMetadata.CellLineName[id];
+
+          if (seen.has(name)) {
+            window.console.warn(`Warning: duplicate cell line name "${name}"!`);
+            name += ` (${id})`;
+          }
+
+          seen.add(name);
+          return name;
+        });
+
+        setHeatmapFormattedData({
+          modelIds: sortedModels,
+          x: cellLineNames,
+          y: uniqueDoses,
+          z: zMatrix,
+        });
+
         setIsLoading(false);
       } catch (e) {
         window.console.error(e);
       }
     })();
-  }, [sharedApi, compoundName]);
+  }, [compoundName]);
 
-  return { isLoading, heatmapFormattedData, tableFormattedData };
+  return {
+    isLoading,
+    heatmapFormattedData,
+    doseColumnNames,
+    tableFormattedData,
+  };
 }
 
 export default useData;

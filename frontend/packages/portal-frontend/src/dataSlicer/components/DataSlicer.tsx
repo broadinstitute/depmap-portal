@@ -20,10 +20,6 @@ import {
   ValidationResult,
   ValidationTextbox,
 } from "@depmap/data-slicer";
-import {
-  launchCellLineSelectorModal,
-  launchContextManagerModal,
-} from "src/index";
 import InfoIcon from "src/common/components/InfoIcon";
 import { ExportType } from "../models/types";
 
@@ -31,7 +27,7 @@ interface DataSlicerProps {
   // NOTE: getMorpheusUrl is required when used in portal frontend
   getMorpheusUrl?: (downloadUrl: string) => Promise<string>;
   getCitationUrl: (datasetId: string) => Promise<string>;
-  getDatasetsList: () => Promise<DatasetDownloadMetadata[]>;
+  getDatasetsDownloadMetadata: () => Promise<DatasetDownloadMetadata[]>;
   getMutationTableCitation: () => Promise<string>;
   exportMutationTable: (query: ExportMutationTableQuery) => Promise<any>;
   exportData: (query: ExportDataQuery) => Promise<any>;
@@ -41,7 +37,6 @@ interface DataSlicerProps {
     query: FeatureValidationQuery
   ) => Promise<ValidationResult>;
   fileInformation?: DownloadTableData;
-  dapi: any; // DepmapApi or BreadboxApi
 }
 
 interface DataSlicerState {
@@ -116,7 +111,7 @@ export default class DataSlicer extends React.Component<
     const defaultSelectedStr = urlParams.get("default_selected") ?? "";
     const defaultSelectedSet = new Set(defaultSelectedStr.split(","));
 
-    this.props.getDatasetsList().then((response) => {
+    this.props.getDatasetsDownloadMetadata().then((response) => {
       response.forEach((dataset) => {
         // group the datasets by their dataType
         const dataType = dataset.data_type;
@@ -543,12 +538,6 @@ export default class DataSlicer extends React.Component<
   };
 
   renderCellLineSelection = (customInfoImg: JSX.Element): any => {
-    const onCellLineLinkClick = () => {
-      launchCellLineSelectorModal();
-      // Need this click so that the tooltip doesn't stay open in front of the cell line modal
-      document.body.click();
-    };
-
     return (
       <div>
         <h4>{"CELL LINES "}</h4>
@@ -592,8 +581,7 @@ export default class DataSlicer extends React.Component<
                 <a
                   style={{ cursor: "pointer" }}
                   onClick={() => {
-                    launchContextManagerModal();
-                    document.body.click();
+                    window.alert("TODO: Launch context manager here");
                   }}
                 >
                   Context Manager
@@ -801,7 +789,6 @@ export default class DataSlicer extends React.Component<
   };
 
   render() {
-    const { dapi } = this.props;
     const customInfoImg = (
       <img
         style={{

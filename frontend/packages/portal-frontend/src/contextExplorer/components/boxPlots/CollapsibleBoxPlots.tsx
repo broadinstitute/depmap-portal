@@ -3,10 +3,12 @@ import { Panel, PanelGroup } from "react-bootstrap";
 import {
   BoxCardData,
   BoxData,
-  BoxPlotInfo,
-  ContextExplorerDatasets,
   ContextNameInfo,
   ContextPlotBoxData,
+  ContextExplorerDatasets,
+} from "@depmap/types";
+import {
+  BoxPlotInfo,
   OtherSignificantBoxCardData as OtherSigBoxCardData,
 } from "src/contextExplorer/models/types";
 import { OtherSolidAndHemeBoxPlots } from "./OtherSolidAndHemeBoxPlotCard";
@@ -211,8 +213,17 @@ function CollapsibleBoxPlots({
     return [min, max];
   }, [boxPlotData, otherBoxData]);
 
+  const [key, setKey] = React.useState(0);
+
+  React.useEffect(() => {
+    const onChangeTab = () => setKey((k) => k + 1);
+    window.addEventListener("changeTab", onChangeTab);
+    return () => window.removeEventListener("changeTab", onChangeTab);
+  }, []);
+
   return (
     <PanelGroup
+      key={key}
       accordion
       id="context-explorer-box-plots"
       activeKey={activeKey}
@@ -236,30 +247,32 @@ function CollapsibleBoxPlots({
       )}
       <>
         {otherSigBoxData?.map((otherCard: OtherSigBoxCardData) =>
-          Object.keys(otherCard).map((level0Code) => (
-            <>
-              {otherCard[level0Code].levelZeroPlotInfo !== undefined &&
-                otherCard[level0Code].subContextInfo.length > 0 && (
-                  <Panel
-                    eventKey={level0Code}
-                    key={`otherSigLevelZeroBoxData${level0Code}`}
-                  >
-                    <SignificantBoxPlotCardPanel
-                      selectedCode={selectedCode}
-                      activeKey={activeKey}
-                      level0Code={level0Code}
-                      xAxisRange={xAxisRange}
-                      card={otherCard}
-                      entityType={entityType}
-                      drugDottedLine={drugDottedLine}
-                      urlPrefix={urlPrefix}
-                      tab={tab}
-                      xAxisTitle={xAxisTitle}
-                    />
-                  </Panel>
-                )}
-            </>
-          ))
+          Object.keys(otherCard)
+            .filter((level0Code) => {
+              return (
+                otherCard[level0Code].levelZeroPlotInfo !== undefined &&
+                otherCard[level0Code].subContextInfo.length > 0
+              );
+            })
+            .map((level0Code) => (
+              <Panel
+                eventKey={level0Code}
+                key={`otherSigLevelZeroBoxData${level0Code}`}
+              >
+                <SignificantBoxPlotCardPanel
+                  selectedCode={selectedCode}
+                  activeKey={activeKey}
+                  level0Code={level0Code}
+                  xAxisRange={xAxisRange}
+                  card={otherCard}
+                  entityType={entityType}
+                  drugDottedLine={drugDottedLine}
+                  urlPrefix={urlPrefix}
+                  tab={tab}
+                  xAxisTitle={xAxisTitle}
+                />
+              </Panel>
+            ))
         )}
         <OtherSolidAndHemeBoxPlots
           otherBoxData={otherBoxData}

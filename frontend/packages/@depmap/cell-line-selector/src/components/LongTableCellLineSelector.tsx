@@ -15,7 +15,6 @@ import {
   Vector,
   inferColumnType,
 } from "@depmap/long-table";
-import { ApiContext } from "@depmap/api";
 import DataColumnSelect from "./DataColumnSelect";
 
 export interface LongTableCellLineSelectorProps {
@@ -41,9 +40,6 @@ export class LongTableCellLineSelector extends React.Component<
   LongTableCellLineSelectorProps,
   LongTableCellLineSelectorState
 > {
-  declare context: React.ContextType<typeof ApiContext>;
-  static contextType = ApiContext;
-
   private displayNameDepmapIdMap = new Map<string, string>();
 
   constructor(props: LongTableCellLineSelectorProps) {

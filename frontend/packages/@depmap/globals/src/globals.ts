@@ -1,6 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 function makeMockEnabledFeatures() {
-  (window as any).enabledFeaturesOverrides = {};
+  (window as any).enabledFeaturesOverrides = {
+    elara: false,
+  };
 
   return new Proxy((window as any).enabledFeaturesOverrides, {
     get(obj, prop) {
@@ -37,14 +39,18 @@ export const enabledFeatures: Record<string, boolean> =
 // Just a convenience function for looking up this flag.
 export const isElara: boolean = Boolean(enabledFeatures.elara);
 
-// Takes a relative path and generates a URL to the static/ folder.
-// Use this for images (i.e. files in the img/ subfolder) and for other
-// static resources.
-export function toStaticUrl(relativeUrl: string) {
-  const assetUrl = relativeUrl.trim().replace(/^\//, "");
+export const getUrlPrefix = () => {
+  if (process.env.JEST_WORKER_ID) {
+    return "";
+  }
 
   if (isElara) {
-    return `static/${assetUrl}`;
+    // Detect when Elara is being served behind the DepMap Portal proxy.
+    if (window.location.pathname.includes("/breadbox/elara")) {
+      return window.location.pathname.replace(/\/elara\/.*$/, "");
+    }
+
+    return "";
   }
 
   const element = document.getElementById("webpack-config");
@@ -64,7 +70,39 @@ export function toStaticUrl(relativeUrl: string) {
     window.console.error("Failed to parse webpack-config:", e);
   }
 
-  return `${encodeURI(urlPrefix)}/static/${assetUrl}`.replace(/^\/\//, "");
+  return urlPrefix;
+};
+
+export function toPortalLink(relativeUrl: string) {
+  if (isElara) {
+    throw new Error("Portal links are not supported in Elara!");
+  }
+
+  const trimmed = relativeUrl.trim().replace(/^\//, "");
+  const [path, queryAndFragment] = trimmed.split(/(?=[?#])/); // Split at first ? or #
+
+  const encodedPath = path.split("/").map(encodeURIComponent).join("/");
+  let fullUrl = `${encodeURI(getUrlPrefix())}/${encodedPath}`;
+
+  if (queryAndFragment) {
+    fullUrl += queryAndFragment; // preserve ?query=... and/or #fragment
+  }
+
+  return fullUrl;
+}
+
+// Takes a relative path and generates a URL to the static/ folder.
+// Use this for images (i.e. files in the img/ subfolder) and for other
+// static resources.
+export function toStaticUrl(relativeUrl: string) {
+  const trimmed = relativeUrl.trim().replace(/^\//, "");
+  const [path, queryAndFragment] = trimmed.split(/(?=[?#])/); // Split at first ? or #
+
+  const encodedPath = path.split("/").map(encodeURIComponent).join("/");
+  const assetUrl = `${encodedPath}${queryAndFragment || ""}`;
+  const staticFolder = isElara ? "elara/static" : "static";
+
+  return `${encodeURI(getUrlPrefix())}/${staticFolder}/${assetUrl}`;
 }
 
 // Currently, the `errorHandler` doesn't really do anything special outside of

@@ -5,15 +5,19 @@ import React, {
   useRef,
   useState,
 } from "react";
-import styles from "src/contextExplorer/styles/ContextExplorer.scss";
+import { cached, legacyPortalAPI } from "@depmap/api";
+import { toPortalLink } from "@depmap/globals";
 import {
-  ContextAnalysisPlotData,
-  ContextAnalysisPlotType,
   ContextAnalysisTableType,
   ContextExplorerDatasets,
   ContextNameInfo,
   ContextNode,
   ContextPlotBoxData,
+} from "@depmap/types";
+import styles from "src/contextExplorer/styles/ContextExplorer.scss";
+import {
+  ContextAnalysisPlotData,
+  ContextAnalysisPlotType,
   TreeType,
 } from "../../models/types";
 import {
@@ -56,7 +60,6 @@ import ContextAnalysisTable from "./ContextAnalysisTable";
 import FilterInputGroup from "src/common/components/FilterControls/FilterInputGroup";
 import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
 import PlotSpinner from "src/plot/components/PlotSpinner";
-import { getDapi } from "src/common/utilities/context";
 import { Button } from "react-bootstrap";
 import useContextExplorerFilters from "src/contextExplorer/hooks/useContextExplorerFilters";
 import DoseCurvesTile from "./DoseCurvesTile";
@@ -83,7 +86,6 @@ function ContextAnalysis({
   datasetId,
   customInfoImg,
 }: ContextAnalysisProps) {
-  const dapi = getDapi();
   const [outgroup, setOutgroup] = useState<{
     value: string;
     label: string;
@@ -113,7 +115,7 @@ function ContextAnalysis({
 
     selectedContextNode?.path.forEach(async (subtype_code) => {
       if (subtype_code !== selectedContextNode.subtype_code) {
-        const nodeName = await dapi.getNodeName(subtype_code);
+        const nodeName = await legacyPortalAPI.getNodeName(subtype_code);
         outGroupOpts.push({
           value: subtype_code,
           label: `Other ${nodeName}`,
@@ -131,12 +133,7 @@ function ContextAnalysis({
       });
     }
     setOutgroupOptions(outGroupOpts);
-  }, [
-    topContextNameInfo,
-    selectedContextNode,
-    selectedContextNameInfo.name,
-    dapi,
-  ]);
+  }, [topContextNameInfo, selectedContextNode, selectedContextNameInfo.name]);
 
   useEffect(() => {
     const outgroupLabels = outgroupOptions.map((outgr) => outgr.label);
@@ -171,7 +168,7 @@ function ContextAnalysis({
     setData(null);
     if (didValidateOutgroup) {
       setIsLoading(true);
-      const promise = dapi.getContextExplorerAnalysisData(
+      const promise = legacyPortalAPI.getContextExplorerAnalysisData(
         selectedContextNameInfo.subtype_code,
         outgroup.value,
         entityType,
@@ -208,7 +205,6 @@ function ContextAnalysis({
     datasetId,
     entityType,
     treeType,
-    dapi,
     didValidateOutgroup,
   ]);
 
@@ -240,7 +236,6 @@ function ContextAnalysis({
     inVsOutPlotElement,
     setInVsOutPlotElement,
   ] = useState<ExtendedPlotType | null>(null);
-  const [entityUrlRoot, setEntityUrlRoot] = useState<string | null>(null);
 
   // TODO: In the future, we should take stickyFiltersMode out since it's always turned off. The decision
   // to turn this off was made right before the 24q4 release, so it was decided that it's temporarily less risky to
@@ -643,18 +638,6 @@ function ContextAnalysis({
     return colorM;
   }, [plotData?.selectivityVal, continuousColorScale, entityType]);
 
-  const getEntityUrlRoot = useCallback(
-    () =>
-      entityType === "gene" ? dapi.getGeneUrlRoot() : dapi.getCompoundUrlRoot(),
-    [dapi, entityType]
-  );
-
-  useEffect(() => {
-    getEntityUrlRoot().then((urlRoot: string) => {
-      setEntityUrlRoot(urlRoot);
-    });
-  }, [getEntityUrlRoot]);
-
   const [boxPlotData, setBoxPlotData] = useState<ContextPlotBoxData | null>(
     null
   );
@@ -708,7 +691,9 @@ function ContextAnalysis({
       // setEntityDetailMainPlotElement(null);
       setIsLoadingBoxplot(true);
       setBoxplotError(false);
-      const boxplotPromise = dapi.getContextExplorerBoxPlotData(
+      const boxplotPromise = cached(
+        legacyPortalAPI
+      ).getContextExplorerBoxPlotData(
         selectedContextNameInfo.subtype_code,
         treeType,
         datasetId,
@@ -744,7 +729,6 @@ function ContextAnalysis({
     selectedPlotLabels,
     entityType,
     treeType,
-    dapi,
     topContextNameInfo,
     boxPlotMaxFDR,
     boxPlotMinEffectSize,
@@ -1060,7 +1044,6 @@ function ContextAnalysis({
                 pointVisibility={pointVisibilityFiltered ?? pointVisibility}
                 handleSelectRowAndPoint={handleSelectRowAndPoint}
                 selectedTableLabels={selectedTableLabels}
-                entityUrlRoot={entityUrlRoot}
                 entityType={entityType}
                 datasetId={datasetId}
               />
@@ -1096,7 +1079,9 @@ function ContextAnalysis({
             </h2>
             {boxPlotData && (
               <a
-                href={`${entityUrlRoot}${boxPlotData.entity_overview_page_label}`}
+                href={toPortalLink(
+                  `/${entityType}/${boxPlotData.entity_overview_page_label}`
+                )}
                 target="_blank"
                 rel="noreferrer"
                 style={{
@@ -1124,9 +1109,9 @@ function ContextAnalysis({
                 datasetName={datasetId}
                 selectedOutGroupType={outgroup.value}
                 selectedTreeType={treeType}
-                getContextExplorerDoseResponsePoints={dapi.getContextExplorerDoseResponsePoints.bind(
-                  dapi
-                )}
+                getContextExplorerDoseResponsePoints={
+                  cached(legacyPortalAPI).getContextExplorerDoseResponsePoints
+                }
               />
             </div>
           )}
