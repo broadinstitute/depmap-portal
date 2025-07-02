@@ -12,6 +12,7 @@ import {
 } from "@depmap/types";
 import { UploadTask, UploadTaskUserError } from "@depmap/user-upload";
 import { getJson, postJson, deleteJson, postMultipart } from "../client";
+import { MatrixDatasetDataArgs } from "@depmap/types/src/Dataset";
 
 export function getDatasets(
   params?: Partial<{
@@ -48,6 +49,15 @@ export function getDatasetFeatures(datasetId: string) {
   return getJson<{ id: string; label: string }[]>(
     `/datasets/features/${datasetId}`
   );
+}
+
+export function getMatrixDatasetFeaturesData(
+  datasetId: string,
+  args: MatrixDatasetDataArgs
+): Promise<{ [key: string]: Record<string, any> }> {
+  const url = `/datasets/matrix/${datasetId}`;
+
+  return postJson<{ [key: string]: Record<string, any> }>(url, args);
 }
 
 export function searchDimensions({

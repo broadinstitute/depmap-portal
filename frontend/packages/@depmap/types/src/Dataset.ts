@@ -117,3 +117,14 @@ export type TabularDatasetDataArgs =
       identifier: "id" | "label";
       columns?: string[] | null;
     }; // indices and identifer both present and non-null
+
+export type MatrixDatasetDataArgs = {
+  features: string[];
+  feature_identifier: "id";
+  samples?: string[];
+  sample_identifier?: "id";
+  aggregate?: {
+    aggregate_by: string;
+    aggregation: string;
+  };
+};

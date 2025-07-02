@@ -7,6 +7,7 @@ from depmap import data_access
 from depmap.dataset.models import DependencyDataset
 from depmap.compound.models import Compound
 from depmap.compound.views.index import (
+    format_dose_curve_options_new_tab_if_available,
     get_sensitivity_tab_info,
     format_summary_option,
     format_dose_curve_options,
@@ -45,7 +46,7 @@ def test_format_compound_summary(empty_db_mock_downloads):
         the label of summary options includes the compound experiment label
     E.g. if first_dep_enum_name was a dataset instead of an enum, format_summary would error
     """
-    compound: Compound = CompoundFactory() # pyright: ignore
+    compound: Compound = CompoundFactory()  # pyright: ignore
 
     # two compound experiments just so that get_compound_experiment_datasets_with_compound returns a list
     compound_exp_1 = CompoundExperimentFactory(compound=compound)
@@ -58,9 +59,10 @@ def test_format_compound_summary(empty_db_mock_downloads):
     empty_db_mock_downloads.session.flush()
     interactive_test_utils.reload_interactive_config()
 
-
     datasets = data_access.get_all_datasets_containing_compound(compound.compound_id)
-    summary = get_sensitivity_tab_info(compound_entity_id=compound.entity_id, compound_datasets=datasets)
+    summary = get_sensitivity_tab_info(
+        compound_entity_id=compound.entity_id, compound_datasets=datasets
+    )
 
     # Even though there are two compound experiments, the dataset should appear once in the result
     expected_option_labels = {dataset.display_name}
@@ -460,3 +462,25 @@ def test_get_predictive_table(app, empty_db_mock_downloads):
         r_no_predictability_table_json = r_no_predictability_table.get_json()
         assert r_no_predictability_table.status_code == 200
         assert len(r_no_predictability_table_json) == 0
+
+
+def test_format_dose_curve_options_new_tab_if_available_true(app):
+    with app.app_context():
+        result = format_dose_curve_options_new_tab_if_available()
+        assert isinstance(result, list)
+        assert len(result) == 1
+        assert result[0] == {
+            "display_name": "PRISM OncRef",
+            "viability_dataset_id": "Prism_oncology_viability",
+            "replicate_dataset": "Prism_oncology_dose_replicate",
+            "auc_dataset_id": "Prism_oncology_AUC_collapsed",
+            "ic50_dataset_id": "Prism_oncology_ic50",
+            "drc_dataset_label": "Prism_oncology_per_curve",
+        }
+
+
+def test_format_dose_curve_options_new_tab_if_available_false(app):
+    with app.app_context():
+        app.config["ENV_TYPE"] = "public"
+        result = format_dose_curve_options_new_tab_if_available()
+        assert result == []
