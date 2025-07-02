@@ -23,7 +23,7 @@ def get_dose_replicate_points(
                 {
                     "id": model_id,
                     "dose": compound_dose_replicates[i].dose,
-                    "viability": viabilities[i].item(),
+                    "viability": viabilities[i],
                     "isMasked": compound_dose_replicates[i].is_masked,
                     "replicate": compound_dose_replicates[i].replicate,
                 }
