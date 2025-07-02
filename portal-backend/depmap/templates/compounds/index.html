@@ -124,16 +124,7 @@ active_tab_set = False %}
     id="dependency"
   >
     <div class="sticky_datasets" id="dataset">
-      {# id is just for sticky_datasets #}
       <div id="entity-summary-root"></div>
-      <script>
-        $(function () { // document ready for middle-of-html js
-            DepMap.initEntitySummary(
-                "entity-summary-root",
-                {{summary|tojson}},
-            );
-        })
-      </script>
     </div>
     {% set active_tab_set = True %}
   </div>
@@ -144,15 +135,6 @@ active_tab_set = False %}
     id="dose-curves"
   >
     <div id="dose-curves-tab-content"></div>
-    <script>
-      $(function () { // document ready for middle-of-html js
-          DepMap.initDoseResponseTab(
-              "dose-curves-tab-content",
-          {{dose_curve_options | tojson}},
-          "{{ compound_units }}"
-      );
-      });
-    </script>
     {% set active_tab_set = True %}
   </div>
   {% endif %} {% if show_dose_curve_tab_new %}
@@ -213,12 +195,15 @@ active_tab_set = False %}
     $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
       var target = $(e.target).attr('href');
       if (loadedTabs[target]) return;
-      if (target === "#heatmap") {
-        DepMap.initHeatmapTab(
-          "heatmap-tab-content",
-          {{ name | tojson }},
-          {{ compound_id | tojson }},
-          {{ dose_curve_options_new | tojson }},
+      if (target === "#dependency") {
+        DepMap.initEntitySummary(
+          "entity-summary-root",
+          {{ summary | tojson }}
+        );
+      } else if (target === "#dose-curves") {
+        DepMap.initDoseResponseTab(
+          "dose-curves-tab-content",
+          {{ dose_curve_options | tojson }},
           "{{ compound_units }}"
         );
       } else if (target === "#dose-curves-new") {
@@ -228,6 +213,23 @@ active_tab_set = False %}
           {{ compound_id | tojson }},
           {{ dose_curve_options_new | tojson }},
           "{{ compound_units }}"
+        );
+      } else if (target === "#heatmap") {
+        DepMap.initHeatmapTab(
+          "heatmap-tab-content",
+          {{ name | tojson }},
+          {{ compound_id | tojson }},
+          {{ dose_curve_options_new | tojson }},
+          "{{ compound_units }}"
+        );
+      } else if (target === "#predictability") {
+        DepMap.initPredictiveTab(
+          'predictive-tab-root',
+          {{ name | tojson }},
+          {{ name | tojson }},
+          "compound",
+          {{ predictability_custom_downloads_link | tojson }},
+          {{ predictability_methodology_link | tojson }}
         );
       }
       loadedTabs[target] = true;
@@ -252,18 +254,5 @@ active_tab_set = False %}
       $(`.nav-tabs a[href="${target}"]`).click();
   }
 </script>
-{% if show_predictability_tab %}
-<script>
-  $(function () { // document ready for middle-of-html js
-      DepMap.initPredictiveTab(
-          'predictive-tab-root',
-          {{ name | tojson }},
-          {{ name | tojson }},
-          "compound",
-          {{ predictability_custom_downloads_link | tojson }} ,
-          {{ predictability_methodology_link | tojson }}
-      );
-  });
-</script>
-{% endif %} {% endblock %} {% block toxic_js %} {% include "mailchimp.html" %}
-{% endblock %}
+{% endblock %} {% block toxic_js %} {% include "mailchimp.html" %} {% endblock
+%}
