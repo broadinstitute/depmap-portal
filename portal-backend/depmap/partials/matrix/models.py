@@ -267,7 +267,7 @@ class Matrix(Model):
         # 5. Build the result: depmap_id -> numpy array of values for each entity (in input order)
         # Use filtered_entity_ids to ensure order matches the filtered input
         result = {
-            depmap_id: df[depmap_id].reindex(filtered_entity_ids).to_numpy()
+            depmap_id: df[depmap_id].reindex(filtered_entity_ids).tolist()
             for depmap_id in depmap_ids
         }
         return result
