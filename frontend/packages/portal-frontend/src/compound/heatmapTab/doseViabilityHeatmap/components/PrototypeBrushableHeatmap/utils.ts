@@ -1,7 +1,6 @@
 export function generateTickLabels(
   columnNames: string[],
-  selectedColumnIndices: Set<number>,
-  pixelDistanceBetweenColumns: number
+  selectedColumnIndices: Set<number>
 ): string[] {
   // Initialize output array with empty strings
   const tickvals: string[] = new Array(columnNames.length).fill("");
@@ -32,7 +31,7 @@ export function generateTickLabels(
 
   // For each subset, find middle index and place subset size there
   contiguousSubsets.forEach((subset) => {
-    if (subset.length === 1 || pixelDistanceBetweenColumns > 20) {
+    if (subset.length === 1) {
       subset.forEach((j) => {
         tickvals[j] = columnNames[j];
       });

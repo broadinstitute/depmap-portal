@@ -89,16 +89,6 @@ function HeatmapPlotSection({
     maskedHeatmapData,
   ]);
 
-  // HACK: so that Plotly will resize the plot when the user switches to this tab.
-  // Without this hack, if the plot loads while this tab is inactive, Plotly does not
-  // properly calculate plot size, and this can cause the plot to drastically overflow its bounds.
-  const [key, setKey] = React.useState(0);
-  React.useEffect(() => {
-    const handler = () => setKey((k) => k + 1);
-    window.addEventListener("changeTab:heatmap", handler);
-    return () => window.removeEventListener("changeTab:heatmap", handler);
-  }, []);
-
   const handleSearch = (selection: {
     label: string;
     value: number;
@@ -129,7 +119,7 @@ function HeatmapPlotSection({
   };
 
   return (
-    <div className={styles.PlotSection} key={key}>
+    <div className={styles.PlotSection}>
       <div className={styles.sectionHeader}>
         {plotElement && (
           <PlotControls

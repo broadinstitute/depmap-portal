@@ -180,22 +180,32 @@ active_tab_set = False %}
 <p style="padding: 15px 0">No data was found on this compound.</p>
 {% endif %} {% endblock %} {% block js %}
 <script>
+  window.DepMap = window.DepMap || {};
+  DepMap.initOverviewTab = function() {
+    // async_cards.js logic
+    {% include "entities/partials/async_cards.js" %}
+    // loadAsyncTile calls
+    {% for group in order %}
+      {% for tile_name, _ in group %}
+        loadAsyncTile("{{ config.APPLICATION_ROOT }}", "compound", {{tile_name | tojson}}, {{name | tojson }}, "{{tile_name}}_placeholder");
+      {% endfor %}
+    {% endfor %}
+  };
+</script>
+<script>
   $(function () {
-    // This is the only place we still use jquery-stickytabs. It should be
-    // removed after this page is converted to React because it doesn't
-    // play nice with our React Tabs component (it wants to stomp out the
-    // ?tab= query parameter).
     $(".nav-tabs").stickyTabs();
     for (let context of $(".sticky_datasets")) {
       $(context).stickyDatasets();
     }
-
     // Lazy load tab content
     var loadedTabs = {};
     $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
       var target = $(e.target).attr('href');
       if (loadedTabs[target]) return;
-      if (target === "#dependency") {
+      if (target === "#overview") {
+        DepMap.initOverviewTab();
+      } else if (target === "#dependency") {
         DepMap.initEntitySummary(
           "entity-summary-root",
           {{ summary | tojson }}
@@ -240,18 +250,8 @@ active_tab_set = False %}
       $active.trigger('shown.bs.tab');
     }
   });
-</script>
-<script type="text/javascript">
-  $(function () { // document ready for middle-of-html js
-      {% include "entities/partials/async_cards.js" %}
-      {% for group in order %}
-        {% for tile_name, _ in group %}
-          loadAsyncTile("{{ config.APPLICATION_ROOT }}", "compound", {{tile_name | tojson}}, {{name | tojson }}, "{{tile_name}}_placeholder")
-        {% endfor %}
-      {% endfor %}
-  });
-  function clickTab(target) { // outside for function definition
-      $(`.nav-tabs a[href="${target}"]`).click();
+  function clickTab(target) {
+    $(`.nav-tabs a[href="${target}"]`).click();
   }
 </script>
 {% endblock %} {% block toxic_js %} {% include "mailchimp.html" %} {% endblock
