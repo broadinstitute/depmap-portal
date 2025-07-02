@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { DRCDatasetOptions } from "@depmap/types";
-import { breadboxAPI } from "@depmap/api";
+import { breadboxAPI, cached } from "@depmap/api";
 import { TableFormattedData } from "../types";
 
 // Helper to fetch metadata
@@ -10,7 +10,7 @@ async function fetchMetadata<T>(
   columns: string[] | null,
   bbapi: typeof breadboxAPI
 ) {
-  const dimType = await bbapi.getDimensionType(typeName);
+  const dimType = await cached(bbapi).getDimensionType(typeName);
   if (!dimType?.metadata_dataset_id) {
     throw new Error(`No metadata for ${typeName}`);
   }
@@ -21,30 +21,10 @@ async function fetchMetadata<T>(
   } else {
     args = { indices: null, identifier: null, columns };
   }
-  return bbapi.getTabularDatasetData(
+  return cached(bbapi).getTabularDatasetData(
     dimType.metadata_dataset_id,
     args
   ) as Promise<T>;
-}
-
-const doseMetadataCache = new Map<string, any>();
-const modelMetadataCache = new Map<string, any>();
-
-async function fetchCachedMetadata<T>(
-  typeName: string,
-  indices: string[] | null,
-  columns: string[] | null,
-  bbapi: typeof breadboxAPI
-) {
-  const cacheKey = `${typeName}-${JSON.stringify(indices)}-${JSON.stringify(
-    columns
-  )}`;
-  const cache =
-    typeName === "compound_dose" ? doseMetadataCache : modelMetadataCache;
-  if (cache.has(cacheKey)) return cache.get(cacheKey);
-  const data = await fetchMetadata<T>(typeName, indices, columns, bbapi);
-  cache.set(cacheKey, data);
-  return data;
 }
 
 function buildTableData(
@@ -116,7 +96,7 @@ export default function useDoseTableData(
       try {
         const bbapi = breadboxAPI;
 
-        const datasetFeatures = await bbapi.getDatasetFeatures(
+        const datasetFeatures = await cached(bbapi).getDatasetFeatures(
           dataset.viability_dataset_id
         );
 
@@ -132,12 +112,14 @@ export default function useDoseTableData(
           modelMetadata,
           aucsListResponse,
         ] = await Promise.all([
-          bbapi.getMatrixDatasetFeaturesData(
+          cached(bbapi).getMatrixDatasetFeaturesData(
             dataset.viability_dataset_id,
-            viabilityFeatureLabels,
-            "label"
+            {
+              features: viabilityFeatureLabels,
+              feature_identifier: "label",
+            }
           ),
-          fetchCachedMetadata<{
+          fetchMetadata<{
             Dose: Record<string, number>;
             DoseUnit: Record<string, string>;
           }>(
@@ -146,12 +128,13 @@ export default function useDoseTableData(
             ["Dose", "DoseUnit"],
             bbapi
           ),
-          fetchCachedMetadata<{
+          fetchMetadata<{
             CellLineName: Record<string, string>;
           }>("depmap_model", null, ["CellLineName"], bbapi),
-          bbapi.getMatrixDatasetFeaturesData(dataset.auc_dataset_id, [
-            compoundId,
-          ]),
+          cached(bbapi).getMatrixDatasetFeaturesData(dataset.auc_dataset_id, {
+            features: [compoundId],
+            feature_identifier: "id",
+          }),
         ]);
 
         const aucs = aucsListResponse[compoundId];

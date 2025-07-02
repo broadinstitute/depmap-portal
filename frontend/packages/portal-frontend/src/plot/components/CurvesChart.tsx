@@ -247,7 +247,7 @@ function CurvesChart({
       Plotly.react(plot, plot.data, nextLayout, plot.config);
     };
 
-    // Add a downloadImage method to the plot for PNG and SVG export using Plotly's toImage utility (as in PrototypeDensity1D)
+    // Add a downloadImage method to the plot for PNG and SVG export using Plotly's toImage utility
     plot.downloadImage = (options) => {
       const { filename, width, format } = options;
       if (!plot || !plot.data || !plot.layout) return;

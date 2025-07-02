@@ -1,6 +1,6 @@
 import { AddDatasetOneRowArgs } from "@depmap/types";
 import { UploadTask, UserUploadArgs } from "@depmap/user-upload";
-import { getJson, getJsonCached, postMultipart } from "../client";
+import { getJson, postMultipart } from "../client";
 
 export function getCustomAnalysisDatasets() {
   return getJson<{ label: string; value: string }[]>(
@@ -9,7 +9,7 @@ export function getCustomAnalysisDatasets() {
 }
 
 export function getCellLineUrlRoot() {
-  return getJsonCached<string>("/interactive/api/cellLineUrlRoot");
+  return getJson<string>("/interactive/api/cellLineUrlRoot");
 }
 
 export function postCustomCsv(config: UserUploadArgs) {

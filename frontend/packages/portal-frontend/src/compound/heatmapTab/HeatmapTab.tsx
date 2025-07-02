@@ -59,7 +59,6 @@ function HeatmapTab({
     [datasetOptions]
   );
 
-  // Change selectedDoses to be an array of selection objects
   const [selectedDoses, setSelectedDoses] = useState<
     { value: number; label: string }[]
   >([]);

@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import { CompoundDoseCurveData, DRCDatasetOptions } from "@depmap/types";
-import { legacyPortalAPI } from "@depmap/api";
+import { cached, legacyPortalAPI } from "@depmap/api";
 
 function useDoseCurvesData(
   dataset: DRCDatasetOptions | null,
@@ -25,7 +25,7 @@ function useDoseCurvesData(
       if (dataset) {
         setIsLoading(true);
 
-        const promise = dapi.getCompoundDoseCurveData!(
+        const promise = cached(dapi).getCompoundDoseCurveData!(
           compoundId,
           dataset.drc_dataset_label,
           dataset.replicate_dataset
