@@ -162,17 +162,6 @@ active_tab_set = False %}
     id="dose-curves-new"
   >
     <div id="new-dose-curves-tab-content"></div>
-    <script>
-      $(function () { // document ready for middle-of-html js
-          DepMap.initDoseCurvesTab(
-              "new-dose-curves-tab-content",
-              {{name | tojson}},
-              {{compound_id | tojson}},
-          {{dose_curve_options_new | tojson}},
-          "{{ compound_units }}"
-      );
-      });
-    </script>
     {% set active_tab_set = True %}
   </div>
   {% endif %} {% if show_heatmap_tab %}
@@ -182,17 +171,6 @@ active_tab_set = False %}
     id="heatmap"
   >
     <div id="heatmap-tab-content"></div>
-    <script>
-      $(function () { // document ready for middle-of-html js
-          DepMap.initHeatmapTab(
-              "heatmap-tab-content",
-              {{name | tojson}},
-              {{compound_id | tojson}},
-          {{dose_curve_options_new | tojson}},
-          "{{ compound_units }}"
-      );
-      });
-    </script>
     {% set active_tab_set = True %}
   </div>
   {% endif %} {% if show_predictability_tab %}
@@ -220,14 +198,44 @@ active_tab_set = False %}
 <p style="padding: 15px 0">No data was found on this compound.</p>
 {% endif %} {% endblock %} {% block js %}
 <script>
-  // This is the only place we still use jquery-stickytabs. It should be
-  // removed after this page is converted to React because it doesn't
-  // play nice with our React Tabs component (it wants to stomp out the
-  // ?tab= query parameter).
   $(function () {
+    // This is the only place we still use jquery-stickytabs. It should be
+    // removed after this page is converted to React because it doesn't
+    // play nice with our React Tabs component (it wants to stomp out the
+    // ?tab= query parameter).
     $(".nav-tabs").stickyTabs();
     for (let context of $(".sticky_datasets")) {
       $(context).stickyDatasets();
+    }
+
+    // Lazy load tab content
+    var loadedTabs = {};
+    $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+      var target = $(e.target).attr('href');
+      if (loadedTabs[target]) return;
+      if (target === "#heatmap") {
+        DepMap.initHeatmapTab(
+          "heatmap-tab-content",
+          {{ name | tojson }},
+          {{ compound_id | tojson }},
+          {{ dose_curve_options_new | tojson }},
+          "{{ compound_units }}"
+        );
+      } else if (target === "#dose-curves-new") {
+        DepMap.initDoseCurvesTab(
+          "new-dose-curves-tab-content",
+          {{ name | tojson }},
+          {{ compound_id | tojson }},
+          {{ dose_curve_options_new | tojson }},
+          "{{ compound_units }}"
+        );
+      }
+      loadedTabs[target] = true;
+    });
+    // Optionally, trigger the active tab on page load
+    var $active = $('.nav-tabs li.active a');
+    if ($active.length) {
+      $active.trigger('shown.bs.tab');
     }
   });
 </script>
