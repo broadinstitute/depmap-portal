@@ -85,17 +85,11 @@ export function getSearchOptions(
   displayNameModelIdMap: Map<string, string>
 ) {
   return maskedHeatmapData
-    ? maskedHeatmapData.modelIds
-        .map((modelId, index) =>
-          modelId
-            ? {
-                label: displayNameModelIdMap.get(modelId) || modelId,
-                stringId: modelId,
-                value: index,
-              }
-            : null
-        )
-        .filter((opt) => opt !== null)
+    ? maskedHeatmapData.modelIds.map((modelId, index) => ({
+        label: displayNameModelIdMap.get(modelId) || modelId,
+        stringId: modelId,
+        value: index,
+      }))
     : null;
 }
 
