@@ -32,7 +32,7 @@ interface HeatmapPlotSectionProps {
   visibleZIndexes: number[];
 }
 
-const HeatmapPlotSection = React.memo(function HeatmapPlotSection({
+function HeatmapPlotSection({
   isLoading,
   compoundName,
   heatmapFormattedData,
@@ -179,6 +179,6 @@ const HeatmapPlotSection = React.memo(function HeatmapPlotSection({
       </div>
     </div>
   );
-});
+}
 
-export default HeatmapPlotSection;
+export default React.memo(HeatmapPlotSection);

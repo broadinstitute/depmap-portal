@@ -9,8 +9,9 @@ interface Props {
   dataLength: number;
   range: [number, number];
   onChangeRange: (range: [number, number]) => void;
-  zoomDomain: [number, number]; // NEW: total zoomable domain
-  onBrushDragActive?: (active: boolean) => void; // NEW
+  zoomDomain: [number, number];
+  selectedColumns?: Set<number>;
+  onBrushDragActive?: (active: boolean) => void;
 }
 
 function HeatmapBrush({
@@ -18,10 +19,10 @@ function HeatmapBrush({
   dataLength,
   range,
   onChangeRange,
-  selectedColumns,
   zoomDomain,
-  onBrushDragActive,
-}: Props & { selectedColumns?: Set<number> }) {
+  selectedColumns = new Set([]),
+  onBrushDragActive = () => {},
+}: Props) {
   const height = 20;
   const leftMargin = 82;
   const handleSize = 8;

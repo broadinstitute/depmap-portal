@@ -3,18 +3,21 @@ import { HeatmapFormattedData } from "../types";
 export function sortHeatmapByViability(
   heatmapFormattedData: HeatmapFormattedData | null
 ) {
-  if (!heatmapFormattedData) return heatmapFormattedData;
+  if (!heatmapFormattedData) {
+    return heatmapFormattedData;
+  }
   const { modelIds, x, z } = heatmapFormattedData;
   const means = modelIds.map((_, colIdx) => {
     const values = z
       .map((row) => row[colIdx])
       .filter((v) => v !== null && v !== undefined);
-    if (values.length === 0) return Infinity;
-    const sum = values.reduce(
-      (acc, v) => acc + (typeof v === "number" ? v : 0),
-      0
-    );
-    return sum / values.length;
+    if (values.length === 0) {
+      return Infinity;
+    }
+    // Ensure all values are numbers to avoid typescript error, fallback to 0 if not
+    const numericValues = values.map((v) => (typeof v === "number" ? v : 0));
+    const sum = numericValues.reduce((acc, v) => acc + v, 0);
+    return sum / numericValues.length;
   });
   const sortedIndices = means
     .map((mean, idx) => ({ mean, idx }))
@@ -33,7 +36,9 @@ export function getVisibleSortedModelIdIndices(
   selectedModelIds: Set<string>,
   showUnselectedLines: boolean
 ) {
-  if (!sortedHeatmapFormattedData) return [];
+  if (!sortedHeatmapFormattedData) {
+    return [];
+  }
   if (!showUnselectedLines && selectedModelIds && selectedModelIds.size > 0) {
     return sortedHeatmapFormattedData.modelIds
       .map((id, idx) => (selectedModelIds.has(id) ? idx : -1))
@@ -95,7 +100,9 @@ export function getSearchOptions(
 }
 
 export function getCustomData(maskedHeatmapData: HeatmapFormattedData | null) {
-  if (!maskedHeatmapData) return undefined;
+  if (!maskedHeatmapData) {
+    return undefined;
+  }
   const { x, y, z } = maskedHeatmapData;
   return z.map((row, rowIdx) =>
     row.map((val, colIdx) => {

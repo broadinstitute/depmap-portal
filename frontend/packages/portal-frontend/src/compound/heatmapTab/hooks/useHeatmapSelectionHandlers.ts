@@ -101,10 +101,12 @@ function useHeatmapSelectionHandlers(
       deApi,
       allLabels
     );
-    if (labels === null) return;
+    if (labels === null) {
+      return;
+    }
     setPlotSelectedModelIds(labels);
     setSelectedTableRows(labels);
-  }, [deApi, selectedLabels]);
+  }, [deApi, displayNameModelIdMap]);
 
   const handleClearSelection = useCallback(() => {
     setPlotSelectedModelIds(new Set([]));
@@ -113,8 +115,14 @@ function useHeatmapSelectionHandlers(
   }, [handleShowUnselectedLinesOnSelectionsCleared]);
 
   const sortedTableData: TableFormattedData = useMemo(() => {
-    if (!tableData) return [];
-    if (selectedTableRows.size === 0) return tableData;
+    if (!tableData) {
+      return [];
+    }
+
+    if (selectedTableRows.size === 0) {
+      return tableData;
+    }
+
     // Selected rows at the top, in order of selection, then the rest in original order
     const selectedIds = Array.from(selectedTableRows);
     const selected = selectedIds
