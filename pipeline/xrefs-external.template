@@ -79,12 +79,16 @@ add-if-missing {
   'category' : 'expression',
 }
 
+# Uncomment the below before merging test-llm back into master!
+# This appears to have been added for celligner, but it looks like the external release doesn't have this
+# file for some reason. Will need to check with Sowyma about getting it added before 25Q3 
+#
 # biomarker-matrix
-add-if-missing {
-  'type': 'raw-expr-matrix-profile',
-  'dataset_id' : PREPROCESS_TAIGA_ID(virtual_dataset_id, "OmicsExpressionAllGenesTPMLogp1Profile"),
-  'category' : 'expression',
-}
+# add-if-missing {
+#  'type': 'raw-expr-matrix-profile',
+#  'dataset_id' : PREPROCESS_TAIGA_ID(virtual_dataset_id, "OmicsExpressionAllGenesTPMLogp1Profile"),
+#  'category' : 'expression',
+# }
 
 # profile-map
 add-if-missing {
