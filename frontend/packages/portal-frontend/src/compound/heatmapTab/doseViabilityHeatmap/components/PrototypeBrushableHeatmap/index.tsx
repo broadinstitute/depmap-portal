@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import type {
   Config,
   Data as PlotlyData,
@@ -6,7 +6,6 @@ import type {
   PlotlyHTMLElement,
 } from "plotly.js";
 import PlotlyLoader from "src/plot/components/PlotlyLoader";
-import HeatmapBrush from "./HeatmapBrush";
 import customizeDragLayer from "./customizeDragLayer";
 
 import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
@@ -53,11 +52,6 @@ function PrototypeBrushableHeatmap({
   const ref = useRef<ExtendedPlotType>(null);
   usePlotResizer(Plotly, ref);
 
-  const initialRange: [number, number] = useMemo(() => {
-    return [0, data.x.length - 1];
-  }, [data]);
-
-  const [containerWidth, setContainerWidth] = useState(0);
   const [hoveredColumns, setHoveredColumns] = useState<number[]>([]);
 
   useEffect(() => {
@@ -68,8 +62,7 @@ function PrototypeBrushableHeatmap({
 
   useEffect(() => {
     const plot = ref.current as ExtendedPlotType;
-
-    // --- Preserve current xaxis range when calling Plotly.react ---
+    // Determine the visible range for tick label logic
     let range: [number, number] = [0, data.x.length - 1];
     if (
       plot &&
@@ -80,7 +73,6 @@ function PrototypeBrushableHeatmap({
     ) {
       range = plot.layout.xaxis.range as [number, number];
     }
-    const deltaRange = range[1] - range[0];
 
     const xAxisTickLabels = generateTickLabels(
       data.x.map((val) => {
@@ -99,7 +91,7 @@ function PrototypeBrushableHeatmap({
         zmax: 0,
         colorbar: {
           x: -0.009,
-          y: -0.35,
+          y: -0.4,
           len: 0.2,
           ypad: 0,
           xanchor: "left",
@@ -114,15 +106,15 @@ function PrototypeBrushableHeatmap({
         hovertemplate,
         xaxis: "x",
         yaxis: "y",
-        xgap: 3 * (1 - deltaRange / data.x.length) ** 2,
-        ygap: 1 * (1 - deltaRange / data.x.length) ** 2,
+        xgap: 0.15,
+        ygap: 0.15,
       },
     ];
 
     // --- Preserve zoom/range by injecting current range into layout ---
     const layout: Partial<Layout> = {
       height: 500,
-      margin: { t: 50, l: 40, r: 0, b: 0 },
+      margin: { t: 50, l: 40, r: 10, b: 10 },
       hovermode: "closest",
       hoverlabel: { namelength: -1 },
       dragmode: false,
@@ -132,14 +124,15 @@ function PrototypeBrushableHeatmap({
         tickvals: xAxisTickLabels.map((label, i) => (label ? data.x[i] : "")),
         ticktext: xAxisTickLabels,
         tickmode: "array",
-        tickangle: -25,
+        tickangle: -45,
         tickfont: { size: 10 },
         automargin: true,
         rangeslider: {
-          thickness: 0.05,
+          thickness: 0.05, // Make the rangeslider thicker (default is 0.05)
           visible: true,
+          borderwidth: 1, // Make the border more visible
         },
-        range: range, // <--- preserve current range
+        range,
       },
       yaxis: {
         type: "category",
@@ -149,7 +142,6 @@ function PrototypeBrushableHeatmap({
           text: yAxisTitle,
         },
       },
-      // Do NOT include shapes here; shapes will be updated separately
     };
 
     const config: Partial<Config> = {
@@ -158,7 +150,6 @@ function PrototypeBrushableHeatmap({
 
     Plotly.react(plot, plotlyData, layout, config);
 
-    // Only call customizeDragLayer once per plot instance
     customizeDragLayer({
       plot,
       onMouseOut: () => setHoveredColumns([]),
@@ -185,11 +176,6 @@ function PrototypeBrushableHeatmap({
       );
       listeners.push([eventName, callback]);
     };
-
-    on("plotly_afterplot", () => {
-      setContainerWidth(plot.clientWidth);
-      // customizeDragLayer is now only called once above, not here
-    });
 
     on("plotly_hover", (e: any) => {
       setHoveredColumns([e.points[0].pointIndex[1]]);
@@ -243,7 +229,7 @@ function PrototypeBrushableHeatmap({
     zmin,
     zmax,
     Plotly,
-    // selectedColumns and hoveredColumns intentionally omitted to prevent zoom snapback
+    selectedColumns, // add selectedColumns to dependencies
   ]);
 
   // New effect: update only shapes on hover/selection, but use Plotly.update to avoid overwriting layout/range
@@ -298,6 +284,50 @@ function PrototypeBrushableHeatmap({
       }
     );
   }, [hoveredColumns, selectedColumns, data.y.length]);
+
+  // --- Auto-zoom if a selected column is out of view ---
+  useEffect(() => {
+    const plot = ref.current as ExtendedPlotType;
+    // ...existing code...
+
+    // --- Auto-zoom if a selected column is out of view ---
+    if (selectedColumns.size > 0 && plot && plot.layout && plot.layout.xaxis) {
+      let range: [number, number] = [0, data.x.length - 1];
+      if (
+        plot.layout.xaxis.range &&
+        Array.isArray(plot.layout.xaxis.range) &&
+        plot.layout.xaxis.range.length === 2
+      ) {
+        range = plot.layout.xaxis.range as [number, number];
+      }
+      const minSelected = Math.min(...selectedColumns);
+      const maxSelected = Math.max(...selectedColumns);
+      // If any selected column is out of view, zoom out to fit all selected
+      if (minSelected < range[0] || maxSelected > range[1]) {
+        // Use Plotly.react to update the range and force a re-render
+        Plotly.relayout(plot, {
+          "xaxis.autorange": false,
+          "xaxis.range": [
+            Math.max(0, minSelected - 1),
+            Math.min(data.x.length - 1, maxSelected + 1),
+          ],
+        });
+      }
+    }
+    // ...existing code...
+  }, [
+    data,
+    xAxisTitle,
+    yAxisTitle,
+    legendTitle,
+    onSelectColumnRange,
+    onClearSelection,
+    hovertemplate,
+    zmin,
+    zmax,
+    Plotly,
+    selectedColumns, // add selectedColumns to dependencies
+  ]);
 
   return <div ref={ref} />;
 }
