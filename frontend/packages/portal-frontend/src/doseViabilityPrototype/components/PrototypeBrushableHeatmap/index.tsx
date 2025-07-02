@@ -3,7 +3,7 @@ import type {
   Config,
   Data as PlotlyData,
   Layout,
-  // PlotData,
+  PlotData,
   PlotlyHTMLElement,
 } from "plotly.js";
 import PlotlyLoader from "src/plot/components/PlotlyLoader";
@@ -11,14 +11,12 @@ import usePlotResizer from "src/doseViabilityPrototype/hooks/usePlotResizer";
 import HeatmapBrush from "src/doseViabilityPrototype/components/PrototypeBrushableHeatmap/HeatmapBrush";
 import customizeDragLayer from "src/doseViabilityPrototype/components/PrototypeBrushableHeatmap/customizeDragLayer";
 import { generateTickLabels } from "src/doseViabilityPrototype/components/PrototypeBrushableHeatmap/utils";
-import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
 
 interface Props {
   data: {
     x: (string | number)[];
     y: (string | number)[];
     z: (number | null)[][];
-    customdata?: any[][]; // Add customdata for per-cell hover masking
   };
   xAxisTitle: string;
   yAxisTitle: string;
@@ -26,7 +24,6 @@ interface Props {
   selectedColumns: Set<number>;
   onSelectColumnRange: (start: number, end: number, shiftKey: boolean) => void;
   onClearSelection: () => void;
-  onLoad?: (plot: ExtendedPlotType) => void;
   hovertemplate?: string | string[];
   // Optionally set a min/max for the color scale. If left undefined, these
   // will default to the min and max of values contained in `data.z`
@@ -35,6 +32,14 @@ interface Props {
 }
 
 type PlotlyType = typeof import("plotly.js");
+
+type PlotElement = HTMLDivElement &
+  PlotlyHTMLElement & {
+    data: PlotData[];
+    layout: Layout;
+    config: Config;
+    removeListener: (eventName: string, callback: (e: object) => void) => void;
+  };
 
 function PrototypeBrushableHeatmap({
   data,
@@ -47,68 +52,18 @@ function PrototypeBrushableHeatmap({
   hovertemplate = undefined,
   zmin = undefined,
   zmax = undefined,
-  onLoad = () => {},
   Plotly,
 }: Props & { Plotly: PlotlyType }) {
-  const ref = useRef<ExtendedPlotType>(null);
+  const ref = useRef<PlotElement>(null);
   usePlotResizer(Plotly, ref);
 
   const initialRange: [number, number] = useMemo(() => {
     return [0, data.x.length - 1];
   }, [data]);
 
-  // Store the user's intended range
   const [selectedRange, setSelectedRange] = useState(initialRange);
   const [containerWidth, setContainerWidth] = useState(0);
   const [hoveredColumns, setHoveredColumns] = useState<number[]>([]);
-  // Track whether the user is actively dragging the brush
-  const [isUserDraggingBrush, setIsUserDraggingBrush] = useState(false);
-
-  // Track if the last range change was user-driven (brush drag)
-  const lastRangeChangeWasUser = useRef(false);
-
-  // Respond to selectedColumns changes by shifting or zooming out as needed
-  useEffect(() => {
-    if (isUserDraggingBrush) return; // Don't auto-shift/zoom while user is dragging
-    if (lastRangeChangeWasUser.current) {
-      lastRangeChangeWasUser.current = false;
-      return; // Don't auto-shift/zoom immediately after user drag ends
-    }
-    if (!selectedColumns || selectedColumns.size === 0) return;
-    const sorted = Array.from(selectedColumns).sort((a, b) => a - b);
-    const minSel = sorted[0];
-    const maxSel = sorted[sorted.length - 1];
-    const delta = selectedRange[1] - selectedRange[0];
-    // If all selected columns are already in view, do nothing
-    if (minSel >= selectedRange[0] && maxSel <= selectedRange[1]) return;
-    // If selection is wider than current delta, zoom out to fit
-    if (maxSel - minSel + 1 > delta) {
-      const newStart = Math.max(0, minSel);
-      const newEnd = Math.min(data.x.length - 1, maxSel);
-      if (newStart !== selectedRange[0] || newEnd !== selectedRange[1]) {
-        setSelectedRange([newStart, newEnd]);
-      }
-    } else {
-      // Shift the window to fit the selection, maintaining delta
-      let newStart = Math.max(0, Math.min(minSel, data.x.length - 1 - delta));
-      let newEnd = newStart + delta;
-      if (newEnd > data.x.length - 1) {
-        newEnd = data.x.length - 1;
-        newStart = Math.max(0, newEnd - delta);
-      }
-      if (newStart !== selectedRange[0] || newEnd !== selectedRange[1]) {
-        setSelectedRange([newStart, newEnd]);
-      }
-    }
-  }, [selectedColumns, data.x.length, selectedRange, isUserDraggingBrush]);
-
-  // When the brush changes the range, mark it as user-driven
-  const handleChangeRange = (range: [number, number]) => {
-    if (isUserDraggingBrush) {
-      lastRangeChangeWasUser.current = true;
-    }
-    setSelectedRange(range);
-  };
 
   const pixelDistanceBetweenColumns = useMemo(() => {
     if (ref.current) {
@@ -121,25 +76,15 @@ function PrototypeBrushableHeatmap({
   }, [selectedRange]);
 
   const xAxisTickLabels = useMemo(() => {
-    // Truncate labels longer than 15 characters with ellipsis
     return generateTickLabels(
-      data.x.map((val) => {
-        const str = String(val);
-        return str.length > 15 ? str.slice(0, 15) + "..." : str;
-      }),
+      data.x.map(String),
       selectedColumns,
       pixelDistanceBetweenColumns
     );
   }, [data.x, selectedColumns, pixelDistanceBetweenColumns]);
 
   useEffect(() => {
-    if (onLoad && ref.current) {
-      onLoad(ref.current);
-    }
-  }, [onLoad]);
-
-  useEffect(() => {
-    const plot = ref.current as ExtendedPlotType;
+    const plot = ref.current as PlotElement;
     const deltaRange = selectedRange[1] - selectedRange[0];
 
     const plotlyData: PlotlyData[] = [
@@ -147,8 +92,20 @@ function PrototypeBrushableHeatmap({
         type: "heatmap",
         ...data,
         colorscale: "YlOrRd",
-        zmin: -2,
-        zmax: 0,
+        xaxis: "x",
+        yaxis: "y",
+        zmin,
+        zmax,
+        hovertemplate,
+        // We only want there to be gaps between cells once the user has
+        // zoomed in a little. When the plot is fulled zoomed out, it should
+        // look like a smooth gradient with no gaps.
+        // While we could set a threshold where gaps suddenly appear, that
+        // would be a litt jarring. Instead we'll use some fancy math to
+        // gradually increase the gap size as a function of the zoom level.
+        xgap: 3 * (1 - deltaRange / data.x.length) ** 2,
+        ygap: 1 * (1 - deltaRange / data.x.length) ** 2,
+
         colorbar: {
           x: -0.009,
           y: -0.3,
@@ -164,17 +121,6 @@ function PrototypeBrushableHeatmap({
             },
           } as object),
         },
-        hovertemplate,
-        xaxis: "x",
-        yaxis: "y",
-        // We only want there to be gaps between cells once the user has
-        // zoomed in a little. When the plot is fulled zoomed out, it should
-        // look like a smooth gradient with no gaps.
-        // While we could set a threshold where gaps suddenly appear, that
-        // would be a litt jarring. Instead we'll use some fancy math to
-        // gradually increase the gap size as a function of the zoom level.
-        xgap: 3 * (1 - deltaRange / data.x.length) ** 2,
-        ygap: 1 * (1 - deltaRange / data.x.length) ** 2,
       },
     ];
 
@@ -184,24 +130,22 @@ function PrototypeBrushableHeatmap({
       hovermode: "closest",
       hoverlabel: { namelength: -1 },
       dragmode: false,
+
       xaxis: {
-        title: xAxisTitle,
         side: "top",
         tickvals: xAxisTickLabels.map((label, i) => (label ? data.x[i] : "")),
         ticktext: xAxisTickLabels,
-        tickmode: "array",
-        tickangle: -25,
-        tickfont: { size: 10 },
-        automargin: true,
+        title: xAxisTitle,
         range: selectedRange,
       },
+
       yaxis: {
         type: "category",
         automargin: true,
         autorange: true,
         title: {
           text: yAxisTitle,
-          standoff: 10,
+          standoff: 15,
         },
       },
 
@@ -296,40 +240,6 @@ function PrototypeBrushableHeatmap({
       setHoveredColumns([e.points[0].pointIndex[1]]);
     });
 
-    // Add a downloadImage method to the plot for PNG and SVG export using Plotly's toImage utility (as in PrototypeDensity1D)
-    plot.downloadImage = (options) => {
-      const { filename, width, format } = options;
-      if (!plot || !plot.data || !plot.layout) return;
-      // Use Plotly's toImage for consistent export
-      Plotly.toImage(plot, { format, width, height: options.height })
-        .then((dataUrl) => {
-          const a = document.createElement("a");
-          a.href = dataUrl;
-          a.download = filename + "." + format;
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
-        })
-        .catch(() => {
-          // fallback: try SVG serialization for SVG only
-          if (format === "svg") {
-            const svgNode = plot.querySelector("svg");
-            if (!svgNode) return;
-            const serializer = new XMLSerializer();
-            const svgString = serializer.serializeToString(svgNode);
-            const blob = new Blob([svgString], { type: "image/svg+xml" });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.href = url;
-            a.download = filename + ".svg";
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-          }
-        });
-    };
-
     return () => {
       listeners.forEach(([eventName, callback]) =>
         plot.removeListener(eventName, callback)
@@ -357,11 +267,8 @@ function PrototypeBrushableHeatmap({
       <HeatmapBrush
         containerWidth={containerWidth}
         dataLength={data.x.length}
-        range={selectedRange}
-        onChangeRange={handleChangeRange}
-        selectedColumns={selectedColumns}
-        zoomDomain={[0, data.x.length - 1]}
-        onBrushDragActive={setIsUserDraggingBrush}
+        initialRange={initialRange}
+        onChangeRange={setSelectedRange}
       />
     </div>
   );

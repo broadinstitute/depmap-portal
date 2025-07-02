@@ -7,46 +7,26 @@ import BrushHandle from "./BrushHandle";
 interface Props {
   containerWidth: number | undefined;
   dataLength: number;
-  range: [number, number];
+  initialRange: [number, number];
   onChangeRange: (range: [number, number]) => void;
-  zoomDomain: [number, number]; // NEW: total zoomable domain
-  onBrushDragActive?: (active: boolean) => void; // NEW
 }
 
 function HeatmapBrush({
   containerWidth,
   dataLength,
-  range,
+  initialRange,
   onChangeRange,
-  selectedColumns,
-  zoomDomain,
-  onBrushDragActive,
-}: Props & { selectedColumns?: Set<number> }) {
+}: Props) {
   const height = 20;
   const leftMargin = 82;
   const handleSize = 8;
   const brushRef: React.ComponentProps<typeof Brush>["innerRef"] = useRef(null);
   const width = containerWidth ? containerWidth - leftMargin : 1000;
 
-  // Use zoomDomain for the xScale domain, not [range[0], range[1]]
-  const xScale = scaleLinear().domain(zoomDomain).range([0, width]);
+  // Create a mapping of data indices to on screen pixels.
+  const xScale = scaleLinear().domain([0, dataLength]).range([0, width]);
   // This is a dummy scale that just sets a fixed height.
   const yScale = scaleLinear().domain([0, height]).range([0, height]);
-
-  // Use range for brush position
-  const brushStart = range[0];
-  const brushEnd = range[1];
-
-  // Compute a stable key for the brush that only changes when selectedColumns changes
-  const brushKey = React.useMemo(() => {
-    if (selectedColumns && selectedColumns.size > 0) {
-      return Array.from(selectedColumns)
-        .map(Number)
-        .sort((a, b) => a - b)
-        .join("-");
-    }
-    return "default";
-  }, [selectedColumns]);
 
   return (
     <div style={{ position: "absolute" }}>
@@ -73,7 +53,6 @@ function HeatmapBrush({
           />
 
           <Brush
-            key={brushKey}
             innerRef={brushRef}
             xScale={xScale}
             yScale={yScale}
@@ -84,27 +63,35 @@ function HeatmapBrush({
             resizeTriggerAreas={["left", "right"]}
             brushDirection="horizontal"
             initialBrushPosition={{
-              start: { x: xScale(brushStart) },
-              end: { x: xScale(brushEnd) },
+              start: { x: xScale(initialRange[0]) },
+              end: { x: xScale(initialRange[1]) },
             }}
-            onChange={(brush) => {
-              if (brush) {
-                // Allow drag across full data domain, even if selected columns are dragged out of view.
-                let start = Math.floor(brush.x0);
-                let end = Math.ceil(brush.x1);
+            onChange={(range) => {
+              if (range) {
+                let start = Math.floor(range.x0);
+                let end = Math.ceil(range.x1);
                 start = Math.max(start, -1);
                 end = Math.min(end, dataLength);
+
                 onChangeRange([start, end]);
-              } else {
-                // If brush is cleared (e.g., click outside), just reset to current range
-                onChangeRange(range);
+              } else if (brushRef.current) {
+                // WORKAROUND: If you click outside the brush, `range` is null
+                // and the brush just disappears! Instead of that weird
+                // behavior, we'll reset it to its initial range.
+                brushRef.current.updateBrush((prev) => {
+                  return {
+                    ...prev,
+                    start: { ...prev.start, y: 0 },
+                    end: { ...prev.end, y: height },
+                    extent: {
+                      x0: xScale(initialRange[0]),
+                      x1: xScale(initialRange[1]),
+                      y0: 0,
+                      y1: height,
+                    },
+                  };
+                });
               }
-            }}
-            onBrushStart={() => {
-              if (onBrushDragActive) onBrushDragActive(true);
-            }}
-            onBrushEnd={() => {
-              if (onBrushDragActive) onBrushDragActive(false);
             }}
             useWindowMoveEvents
             selectedBoxStyle={{ fill: "#C7C7C7" }}
