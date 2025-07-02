@@ -50,6 +50,13 @@ export interface CurveTrace {
   id?: string;
 }
 
+export type DoseTableRow = {
+  modelId: string;
+  cell_line_display_name: string;
+} & {
+  [dose: string]: number;
+};
+
 export interface DRCDatasetOptions {
   display_name: string;
   viability_dataset_id: string;

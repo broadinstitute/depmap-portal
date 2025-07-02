@@ -15,7 +15,6 @@ function useDoseCurvesData(
     doseCurveData,
     setDoseCurveData,
   ] = useState<CompoundDoseCurveData | null>(null);
-
   const [doseMin, setDoseMin] = useState<number | null>(null);
   const [doseMax, setDoseMax] = useState<number | null>(null);
 

@@ -1,8 +1,8 @@
-import math
-
 from depmap.cell_line.models_new import DepmapModel
 from depmap.compound.models import Compound, CompoundDoseReplicate, CompoundExperiment
 from depmap.dataset.models import Dataset, DependencyDataset
+from depmap.partials.matrix.models import Matrix
+import pandas as pd
 
 
 def get_dose_replicate_points(
@@ -18,12 +18,12 @@ def get_dose_replicate_points(
 
     points = []
     for i in range(len(viabilities)):
-        if (viabilities[i] is not None) & (not math.isnan(viabilities[i])):
+        if not pd.isna(viabilities[i]):
             points.append(
                 {
                     "id": model_id,
                     "dose": compound_dose_replicates[i].dose,
-                    "viability": viabilities[i].item(),
+                    "viability": viabilities[i],
                     "isMasked": compound_dose_replicates[i].is_masked,
                     "replicate": compound_dose_replicates[i].replicate,
                 }
@@ -32,29 +32,20 @@ def get_dose_replicate_points(
     return points
 
 
-def _get_valid_curve_objs_and_model_map(
-    compound_id: str,
-    drc_dataset_label: str,
-    replicate_dataset_name: str,
-    compound_dose_replicates: list,
-):
-    # Use drc_dataset_label to get the dose response curves for the dataset selected in the UI. This is necessary
-    # because dose response curves have a relationship with CompoundExperiment, not Compound, and 1 compound can have
-    # multiple compound experiments mapping to different datasets and therefore different sets of dose response curves.
-    curve_objs = Compound.get_dose_response_curves(
-        compound_id=compound_id, drc_dataset_label=drc_dataset_label
-    )
-
+def _get_replicate_dataset_matrix(replicate_dataset_name: str) -> Matrix:
     # Get the replicate dataset, including viabilities. Do NOT use data_access here. data_access would not find the
     # legacy replicate datasets that have been filtered out of other places in the portal UI.
     replicate_dataset = Dataset.get_dataset_by_name(replicate_dataset_name)
     assert replicate_dataset is not None
 
     replicate_dataset_matrix = replicate_dataset.matrix
-    viabilities_by_model_id = replicate_dataset_matrix.get_values_by_entities_all_depmap_ids(
-        entities=compound_dose_replicates
-    )
 
+    return replicate_dataset_matrix
+
+
+def _HACK_get_valid_depmap_ids(
+    replicate_dataset_matrix: Matrix, compound_dose_replicates: list
+) -> set:
     # HACK: This should not be necessary in production. But during development, my code
     # is using a hack that could result in curve_objs that are actually from the Repurposing
     # dataset, and not OncRef. We want to skip these curves.
@@ -62,11 +53,17 @@ def _get_valid_curve_objs_and_model_map(
         compound_dose_replicates[0].entity_id
     )
     valid_depmap_ids = set(cell_line_series.index)
+
+    return valid_depmap_ids
+
+
+def _get_model_map(valid_depmap_ids: set) -> dict:
     model_objs = DepmapModel.query.filter(
         DepmapModel.model_id.in_(valid_depmap_ids)
     ).all()
     model_map = {m.model_id: m for m in model_objs}
-    return curve_objs, valid_depmap_ids, model_map, viabilities_by_model_id
+
+    return model_map
 
 
 def _get_curve_params_for_model_ids(
@@ -79,17 +76,30 @@ def _get_curve_params_for_model_ids(
     Retrieve curve parameters and replicate points for all model IDs.
     """
 
-    (
-        curve_objs,
-        valid_depmap_ids,
-        model_map,
-        viabilities_by_model_id,
-    ) = _get_valid_curve_objs_and_model_map(
-        compound_id=compound_id,
-        drc_dataset_label=drc_dataset_label,
-        replicate_dataset_name=replicate_dataset_name,
+    # Use drc_dataset_label to get the dose response curves for the dataset selected in the UI. This is necessary
+    # because dose response curves have a relationship with CompoundExperiment, not Compound, and 1 compound can have
+    # multiple compound experiments mapping to different datasets and therefore different sets of dose response curves.
+    curve_objs = Compound.get_dose_response_curves(
+        compound_id=compound_id, drc_dataset_label=drc_dataset_label
+    )
+
+    replicate_dataset_matrix = _get_replicate_dataset_matrix(
+        replicate_dataset_name=replicate_dataset_name
+    )
+
+    viabilities_by_model_id = replicate_dataset_matrix.get_values_by_entities_all_depmap_ids(
+        entities=compound_dose_replicates
+    )
+
+    valid_depmap_ids = _HACK_get_valid_depmap_ids(
+        replicate_dataset_matrix=replicate_dataset_matrix,
         compound_dose_replicates=compound_dose_replicates,
     )
+
+    # Get a mapping of model_id to model object so that we can use model_id to
+    # look up model displayName (without querying the DepmapModel table over and over)
+    # while iterating through the curve_objs below.
+    model_map = _get_model_map(valid_depmap_ids=valid_depmap_ids)
 
     curve_params = []
     dose_replicates_per_model_id = {}
@@ -128,6 +138,11 @@ def _get_curve_params_for_model_ids(
     }
 
 
+# This is somewhat of a HACK because CompoundDoseReplicate has a relationship with CompoundExperiment instead of Compound.
+# There can be multiple CompoundExperiments per Compound. Each CompoundExperiment for a single Compound will have the same
+# CompoundDoseReplicates. As result, here we:
+# 1. Look at each Compound Experiment, are there valid CompoundDoseReplicates?
+# 2. As soon as we find valid replicates, ignore any subsequent CompoundExperiments.
 def _get_compound_dose_replicates(
     compound_id: str, drc_dataset_label: str, replicate_dataset_name: str
 ):
@@ -135,23 +150,32 @@ def _get_compound_dose_replicates(
         compound_id=compound_id, drc_dataset_label=drc_dataset_label
     )
 
-    compound_dose_replicates = []
+    valid_compound_dose_replicates = []
 
     for compound_experiment in ces:
-        compound_dose_replicates = CompoundDoseReplicate.get_all_with_compound_experiment_id(
+        compound_dose_replicate_objs = CompoundDoseReplicate.get_all_with_compound_experiment_id(
             compound_experiment.entity_id
         )
-        if len(compound_dose_replicates) == 0:
+
+        # HACK: this is only necessary due to a heuristic used when loading sample data that made it impossible to reliably
+        # distinguish between oncref and repurposing compound experiments. If we are looking at a CompoundExperiment from a
+        # different dataset than the one currently selected, compound_dose_replicate_objs will be of length 0, so just "continue"
+        # on to the next dataset.
+        if len(compound_dose_replicate_objs) == 0:
             continue
-        compound_dose_replicates = [
+
+        # Make sure the dose_rep is valid (e.g. make sure it exists in the currently selected replicate dataset)
+        valid_compound_dose_replicates = [
             dose_rep
-            for dose_rep in compound_dose_replicates
+            for dose_rep in compound_dose_replicate_objs
             if DependencyDataset.has_entity(replicate_dataset_name, dose_rep.entity_id)
         ]
-        if len(compound_dose_replicates) > 0:
+        # Break out of the loop as soon as we have valid compound_dose_replicates and have confurmed the replicates are present in
+        # the current dataset via if DependencyDataset.has_entity(replicate_dataset_name, dose_rep.entity_id)
+        if len(valid_compound_dose_replicates) > 0:
             break
 
-    return compound_dose_replicates
+    return valid_compound_dose_replicates
 
 
 def get_dose_response_curves_per_model(

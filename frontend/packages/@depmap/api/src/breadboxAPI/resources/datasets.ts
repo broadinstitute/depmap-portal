@@ -19,6 +19,7 @@ import {
   getJsonCached,
   postJsonCached,
 } from "../client";
+import { MatrixDatasetDataArgs } from "@depmap/types/src/Dataset";
 
 export function getDatasets(
   params?: Partial<{
@@ -59,16 +60,11 @@ export function getDatasetFeatures(datasetId: string) {
 
 export function getMatrixDatasetFeaturesData(
   datasetId: string,
-  featureIds: string[],
-  featureIdentifier: "id" | "label" = "id"
+  args: MatrixDatasetDataArgs
 ): Promise<{ [key: string]: Record<string, any> }> {
   const url = `/datasets/matrix/${datasetId}`;
 
-  const args = {
-    features: featureIds,
-    feature_identifier: featureIdentifier,
-  };
-  return postJsonCached<{ [key: string]: Record<string, any> }>(url, args);
+  return postJson<{ [key: string]: Record<string, any> }>(url, args);
 }
 
 export function searchDimensions({

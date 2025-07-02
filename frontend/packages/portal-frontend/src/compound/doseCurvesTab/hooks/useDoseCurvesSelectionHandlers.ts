@@ -41,12 +41,14 @@ function useDoseCurvesSelectionHandlers(
     (selections: string[]) => {
       if (doseCurveData) {
         setSelectedTableRows((xs) => {
-          let unselectedId: string;
+          let unselectedId: string | undefined;
           const ys = new Set(xs);
 
           if (selections.length < xs.size) {
-            unselectedId = [...xs].filter((x) => !selections.includes(x))[0];
-            ys.delete(unselectedId);
+            unselectedId = [...xs].find((x) => !selections.includes(x));
+            if (unselectedId !== undefined) {
+              ys.delete(unselectedId);
+            }
           } else {
             const newSelectedId = selections.filter(
               (x) => ![...xs].includes(x)

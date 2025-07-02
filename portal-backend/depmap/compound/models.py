@@ -503,7 +503,7 @@ class DoseResponseCurve(Model):
         String, ForeignKey("cell_line.depmap_id"), nullable=False, index=True
     )
     cell_line = relationship("CellLine", backref=__tablename__)
-    drc_dataset_label = Column(String, nullable=True)
+    drc_dataset_label = Column(String, nullable=False)
     compound_exp_id = Column(Integer, ForeignKey("entity.entity_id"), index=True)
     compound_exp = relationship(
         "CompoundExperiment", foreign_keys="DoseResponseCurve.compound_exp_id"
