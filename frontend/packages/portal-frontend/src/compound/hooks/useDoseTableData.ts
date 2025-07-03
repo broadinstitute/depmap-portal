@@ -48,7 +48,8 @@ function buildTableData(
         if (!tableLookup[model]) {
           tableLookup[model] = {};
         }
-        tableLookup[model][doseKey] = log2Viability;
+        // Transfrom log2Viability back to viability for display in the Dose Curves and Heatmap table.
+        tableLookup[model][doseKey] = 2 ** log2Viability;
       }
     });
   });

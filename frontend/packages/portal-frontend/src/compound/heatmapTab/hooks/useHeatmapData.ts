@@ -33,7 +33,7 @@ function useHeatmapFormattedData(
       return modelIds.map((_, colIdx) => {
         const row = tableFormattedData[colIdx];
         const val = doseStr ? row[doseStr as keyof typeof row] : undefined;
-        return val !== undefined ? val : null;
+        return val !== undefined ? Math.log2(Number(val)) : null;
       });
     });
     return { modelIds, x, y, z } as HeatmapFormattedData;

@@ -14,6 +14,7 @@ export function sortHeatmapByViability(
     if (values.length === 0) {
       return Infinity;
     }
+
     // Ensure all values are numbers to avoid typescript error, fallback to 0 if not
     const numericValues = values.map((v) => (typeof v === "number" ? v : 0));
     const sum = numericValues.reduce((acc, v) => acc + v, 0);
@@ -106,7 +107,7 @@ export function getCustomData(maskedHeatmapData: HeatmapFormattedData | null) {
       return [
         `Cell line: ${x[colIdx]}`,
         `Dose: ${y[rowIdx]} µM`,
-        `Viability: ${val.toFixed(3)}`,
+        `log2(Viability): ${val.toFixed(3)}`,
       ].join("<br>");
     })
   );

@@ -246,6 +246,7 @@ function DoseCurvesMainContent({
       <hr className={styles.mainContentHr} />
       <div className={styles.mainContentCellLines}>
         <h3>Cell Lines</h3>
+        <h4>Dose column units: Viability</h4>
         <p>
           Lines selected in the plot will appear checked in this table. Click on
           the cell line name for more information or uncheck the box to deselect

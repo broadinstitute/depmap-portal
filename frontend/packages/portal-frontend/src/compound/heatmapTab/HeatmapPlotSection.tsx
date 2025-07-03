@@ -163,7 +163,7 @@ function HeatmapPlotSection({
               onLoad={handleSetPlotElement}
               xAxisTitle="Cell Lines"
               yAxisTitle={`${compoundName} Dose (μM)`}
-              legendTitle="Viability"
+              legendTitle="log2(Viability)"
               hovertemplate="%{customdata}<extra></extra>"
               selectedColumns={selectedColumns}
               onClearSelection={() => handleSetSelectedPlotModels(new Set())}
