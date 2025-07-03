@@ -5,7 +5,7 @@ import type {
   Layout,
   PlotlyHTMLElement,
 } from "plotly.js";
-import PlotlyLoader from "src/plot/components/PlotlyLoader";
+import PlotlyLoader, { PlotlyType } from "src/plot/components/PlotlyLoader";
 import customizeDragLayer from "./customizeDragLayer";
 
 import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
@@ -32,8 +32,6 @@ interface Props {
   zmin?: number;
   zmax?: number;
 }
-
-type PlotlyType = typeof import("plotly.js");
 
 function PrototypeBrushableHeatmap({
   data,
@@ -111,7 +109,6 @@ function PrototypeBrushableHeatmap({
       },
     ];
 
-    // --- Preserve zoom/range by injecting current range into layout ---
     const layout: Partial<Layout> = {
       height: 500,
       margin: { t: 50, l: 40, r: 10, b: 10 },
@@ -128,9 +125,9 @@ function PrototypeBrushableHeatmap({
         tickfont: { size: 10 },
         automargin: true,
         rangeslider: {
-          thickness: 0.05, // Make the rangeslider thicker (default is 0.05)
+          thickness: 0.05,
           visible: true,
-          borderwidth: 1, // Make the border more visible
+          borderwidth: 2,
         },
         range,
       },
@@ -142,6 +139,54 @@ function PrototypeBrushableHeatmap({
           text: yAxisTitle,
         },
       },
+      // We use `shapes` to draw the hovered and selected columns
+      shapes: [
+        // Outline
+        [...selectedColumns].map((colIndex) => ({
+          type: "path" as const,
+          line: { width: 2, color: "black" },
+          path: (() => {
+            const x0 = colIndex - 0.5;
+            const x1 = colIndex + 0.5;
+            const y0 = -0.5;
+            const y1 = data.y.length - 0.5;
+            const shouldDrawLeft = !selectedColumns.has(colIndex! - 1);
+            const shouldDrawRight = !selectedColumns.has(colIndex! + 1);
+
+            const segments: string[] = [];
+
+            if (shouldDrawLeft) {
+              segments.push(`M ${x0} ${y0}`);
+              segments.push(`L ${x0} ${y1}`);
+            }
+
+            segments.push(`M ${x0} ${y1}`);
+            segments.push(`L ${x1} ${y1}`);
+            segments.push(`M ${x1} ${y0}`);
+            segments.push(`L ${x0} ${y0}`);
+
+            if (shouldDrawRight) {
+              segments.push(`M ${x1} ${y1}`);
+              segments.push(`L ${x1} ${y0}`);
+            }
+
+            return segments.join(" ");
+          })(),
+        })),
+
+        // Fill
+        [...new Set([...hoveredColumns, ...selectedColumns])].map(
+          (colIndex) => ({
+            type: "rect" as const,
+            x0: colIndex - 0.5,
+            x1: colIndex + 0.5,
+            y0: -0.5,
+            y1: data.y.length - 0.5,
+            line: { width: 0 },
+            fillcolor: "rgba(0, 0, 0, 0.15)",
+          })
+        ),
+      ].flat(),
     };
 
     const config: Partial<Config> = {
@@ -149,22 +194,6 @@ function PrototypeBrushableHeatmap({
     };
 
     Plotly.react(plot, plotlyData, layout, config);
-
-    customizeDragLayer({
-      plot,
-      onMouseOut: () => setHoveredColumns([]),
-      onChangeInProgressSelection: (start, end) => {
-        const range = [];
-        for (let i = start; i <= end; i += 1) {
-          range.push(i);
-        }
-        setHoveredColumns(range);
-      },
-      onSelectColumnRange: (start, end, shiftKey) => {
-        onSelectColumnRange(start, end, shiftKey);
-      },
-      onClearSelection,
-    });
 
     // Keep track of added listeners so we can easily remove them.
     const listeners: [string, (e: object) => void][] = [];
@@ -176,6 +205,24 @@ function PrototypeBrushableHeatmap({
       );
       listeners.push([eventName, callback]);
     };
+
+    on("plotly_afterplot", () => {
+      customizeDragLayer({
+        plot,
+        onMouseOut: () => setHoveredColumns([]),
+        onChangeInProgressSelection: (start, end) => {
+          const selectRange = [];
+          for (let i = start; i <= end; i += 1) {
+            selectRange.push(i);
+          }
+          setHoveredColumns(selectRange);
+        },
+        onSelectColumnRange: (start, end, shiftKey) => {
+          onSelectColumnRange(start, end, shiftKey);
+        },
+        onClearSelection,
+      });
+    });
 
     on("plotly_hover", (e: any) => {
       setHoveredColumns([e.points[0].pointIndex[1]]);
@@ -229,81 +276,26 @@ function PrototypeBrushableHeatmap({
     zmin,
     zmax,
     Plotly,
-    selectedColumns, // add selectedColumns to dependencies
+    selectedColumns,
+    hoveredColumns,
   ]);
-
-  // New effect: update only shapes on hover/selection, but use Plotly.update to avoid overwriting layout/range
-  useEffect(() => {
-    const plot = ref.current as ExtendedPlotType;
-    if (!plot) return;
-    Plotly.update(
-      plot,
-      {},
-      {
-        shapes: [
-          // Outline
-          [...selectedColumns].map((colIndex) => ({
-            type: "path" as const,
-            line: { width: 2, color: "black" },
-            path: (() => {
-              const x0 = colIndex - 0.5;
-              const x1 = colIndex + 0.5;
-              const y0 = -0.5;
-              const y1 = data.y.length - 0.5;
-              const shouldDrawLeft = !selectedColumns.has(colIndex! - 1);
-              const shouldDrawRight = !selectedColumns.has(colIndex! + 1);
-              const segments: string[] = [];
-              if (shouldDrawLeft) {
-                segments.push(`M ${x0} ${y0}`);
-                segments.push(`L ${x0} ${y1}`);
-              }
-              segments.push(`M ${x0} ${y1}`);
-              segments.push(`L ${x1} ${y1}`);
-              segments.push(`M ${x1} ${y0}`);
-              segments.push(`L ${x0} ${y0}`);
-              if (shouldDrawRight) {
-                segments.push(`M ${x1} ${y1}`);
-                segments.push(`L ${x1} ${y0}`);
-              }
-              return segments.join(" ");
-            })(),
-          })),
-          // Fill
-          [...new Set([...hoveredColumns, ...selectedColumns])].map(
-            (colIndex) => ({
-              type: "rect" as const,
-              x0: colIndex - 0.5,
-              x1: colIndex + 0.5,
-              y0: -0.5,
-              y1: data.y.length - 0.5,
-              line: { width: 0 },
-              fillcolor: "rgba(0, 0, 0, 0.15)",
-            })
-          ),
-        ].flat(),
-      }
-    );
-  }, [hoveredColumns, selectedColumns, data.y.length]);
 
   // --- Auto-zoom if a selected column is out of view ---
   useEffect(() => {
     const plot = ref.current as ExtendedPlotType;
-    // ...existing code...
-
-    // --- Auto-zoom if a selected column is out of view ---
     if (selectedColumns.size > 0 && plot && plot.layout && plot.layout.xaxis) {
-      let range: [number, number] = [0, data.x.length - 1];
+      let xRange: [number, number] = [0, data.x.length - 1];
       if (
         plot.layout.xaxis.range &&
         Array.isArray(plot.layout.xaxis.range) &&
         plot.layout.xaxis.range.length === 2
       ) {
-        range = plot.layout.xaxis.range as [number, number];
+        xRange = plot.layout.xaxis.range as [number, number];
       }
       const minSelected = Math.min(...selectedColumns);
       const maxSelected = Math.max(...selectedColumns);
       // If any selected column is out of view, zoom out to fit all selected
-      if (minSelected < range[0] || maxSelected > range[1]) {
+      if (minSelected < xRange[0] || maxSelected > xRange[1]) {
         // Use Plotly.react to update the range and force a re-render
         Plotly.relayout(plot, {
           "xaxis.autorange": false,
@@ -314,7 +306,6 @@ function PrototypeBrushableHeatmap({
         });
       }
     }
-    // ...existing code...
   }, [
     data,
     xAxisTitle,
@@ -325,8 +316,8 @@ function PrototypeBrushableHeatmap({
     hovertemplate,
     zmin,
     zmax,
+    selectedColumns,
     Plotly,
-    selectedColumns, // add selectedColumns to dependencies
   ]);
 
   return <div ref={ref} />;
