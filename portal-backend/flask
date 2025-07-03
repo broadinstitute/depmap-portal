@@ -12,7 +12,7 @@ source setup_env.sh
 # If you want to run locally using a copy of a production
 # or staging database. Uncomment and set the below accordingly.
 
-#export DEPMAP_ENV=istaging
+#export DEPMAP_ENV=dstaging
 #export CONFIG_PATH=../config/dmc/settings.py
 #export DEPMAP_OVERRIDES=./overrides.py
 
