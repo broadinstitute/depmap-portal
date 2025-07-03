@@ -100,7 +100,7 @@ class FeatureFlags:
         return self.is_skyros()
 
     @property
-    def new_dose_curves_tab(self):
+    def new_compound_page_tabs(self):
         return self.is_skyros()
 
     @property

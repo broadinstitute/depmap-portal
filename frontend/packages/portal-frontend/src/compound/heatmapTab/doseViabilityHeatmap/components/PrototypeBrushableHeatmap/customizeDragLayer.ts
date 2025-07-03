@@ -162,8 +162,6 @@ function customizeDragLayer({
   if ((plot as any).alreadyConfigured) {
     return;
   }
-
-  hideStandardPlotlyZoomHandles(plot);
   addMouseListeners({
     plot,
     onMouseOut,
