@@ -130,19 +130,6 @@ class Compound(Entity):
             return q.one_or_none()
 
     @staticmethod
-    def get_by_compound_id(compound_id: str, must=True) -> "Compound":
-        """
-        Return the Compound instance for a given compound_id (string, e.g. 'DPC-000001').
-        Returns None if not found.
-        """
-        q = Compound.query.filter(Compound.compound_id == compound_id)
-
-        if must:
-            return q.one()
-        else:
-            return q.one_or_none()
-
-    @staticmethod
     def find_by_name_prefix(prefix, limit):
         compounds = (
             Compound.query.filter(Compound.label.startswith(prefix))
