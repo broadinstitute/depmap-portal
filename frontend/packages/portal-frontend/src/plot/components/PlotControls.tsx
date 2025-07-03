@@ -29,6 +29,7 @@ export enum PlotToolOptions {
   Download,
   MakeContext,
   UnselectAnnotatedPoints,
+  ZoomToSelection,
 }
 
 interface Props {
@@ -43,6 +44,7 @@ interface Props {
   onDeselectPoints?: () => void;
   altContainerStyle?: any;
   hideCSVDownload?: boolean;
+  zoomToSelectedSelections?: Set<number>;
 }
 
 const toIcon = (dragmode: Dragmode) =>
@@ -102,11 +104,14 @@ function PlotControls({
   onDeselectPoints = () => {},
   altContainerStyle = undefined,
   hideCSVDownload = false,
+  zoomToSelectedSelections = undefined,
 }: Props) {
   const [dragmode, setDragmode] = useState<Dragmode>("zoom");
 
   useEffect(() => {
-    plot?.setDragmode(dragmode);
+    if (plot?.setDragmode) {
+      plot?.setDragmode(dragmode);
+    }
   }, [plot, dragmode]);
 
   const allDefaultEnabled = !enabledTools;
@@ -135,6 +140,9 @@ function PlotControls({
   const deselectEnabled = enabledTools?.includes(PlotToolOptions.Deselect);
   const makeContextEnabled = enabledTools?.includes(
     PlotToolOptions.MakeContext
+  ); // A newer, more experimental tool, so only turn on if explicitly included in the enabledTools list.
+  const zoomToSelectionEnabled = enabledTools?.includes(
+    PlotToolOptions.ZoomToSelection
   ); // A newer, more experimental tool, so only turn on if explicitly included in the enabledTools list.
 
   return (
@@ -200,6 +208,27 @@ function PlotControls({
         )}
         {zoomEnabled && (
           <div className={styles.buttonGroup}>
+            <Button disabled={!plot} onClick={plot?.zoomIn}>
+              <span className="glyphicon glyphicon-plus" />
+            </Button>
+            <Button disabled={!plot} onClick={plot?.zoomOut}>
+              <span className="glyphicon glyphicon-minus" />
+            </Button>
+            <Button disabled={!plot} onClick={plot?.resetZoom}>
+              reset
+            </Button>
+          </div>
+        )}
+        {zoomToSelectionEnabled && zoomToSelectedSelections && (
+          <div className={styles.buttonGroup}>
+            {zoomToSelectedSelections.size > 0 && (
+              <Button
+                disabled={!plot}
+                onClick={() => plot?.zoomToSelection(zoomToSelectedSelections)}
+              >
+                Zoom to Selection
+              </Button>
+            )}
             <Button disabled={!plot} onClick={plot?.zoomIn}>
               <span className="glyphicon glyphicon-plus" />
             </Button>

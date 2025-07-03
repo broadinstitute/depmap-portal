@@ -120,7 +120,7 @@ export type TabularDatasetDataArgs =
 
 export type MatrixDatasetDataArgs = {
   features: string[];
-  feature_identifier: "id";
+  feature_identifier: "id" | "label";
   samples?: string[];
   sample_identifier?: "id";
   aggregate?: {

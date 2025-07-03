@@ -1,5 +1,5 @@
 import React, { useEffect, useCallback, useState } from "react";
-import DoseCurvesMainContent from "./DoseCurvesMainContent";
+import HeatmapTabMainContent from "./HeatmapTabMainContent";
 import FiltersPanel from "./FiltersPanel";
 import { DRCDatasetOptions } from "@depmap/types";
 import { DeprecatedDataExplorerApiProvider } from "@depmap/data-explorer-2";
@@ -9,19 +9,20 @@ import "src/common/styles/typeahead_fix.scss";
 import styles from "../CompoundDoseViability.scss";
 import { DoseTableDataProvider } from "../hooks/DoseTableDataContext";
 
-interface DoseCurvesTabProps {
+interface HeatmapTabProps {
   datasetOptions: DRCDatasetOptions[];
   doseUnits: string;
   compoundName: string;
   compoundId: string;
 }
 
-function DoseCurvesTab({
+function HeatmapTab({
   datasetOptions,
   doseUnits,
   compoundName,
   compoundId,
-}: DoseCurvesTabProps) {
+}: HeatmapTabProps) {
+  console.log(doseUnits);
   const [
     selectedDataset,
     setSelectedDataset,
@@ -30,7 +31,10 @@ function DoseCurvesTab({
     value: string;
     label: string;
   } | null>(null);
-  const [showReplicates, setShowReplicates] = useState<boolean>(true);
+
+  // NOTE: temporarily disabling insensitive lines filter until "insensitive" is better defined
+  // const [showInsensitiveLines, setShowInsensitiveLines] =
+  //   useState<boolean>(true);
   const [showUnselectedLines, setShowUnselectedLines] = useState<boolean>(true);
 
   useEffect(() => {
@@ -48,11 +52,22 @@ function DoseCurvesTab({
             option.viability_dataset_id === selection.value
         )[0];
         setSelectedDataset(selectedCompoundDataset);
-        setShowReplicates(true);
+        // setShowInsensitiveLines(true);
         setShowUnselectedLines(true);
       }
     },
     [datasetOptions]
+  );
+
+  const [selectedDoses, setSelectedDoses] = useState<
+    { value: number; label: string }[]
+  >([]);
+
+  const handleFilterByDose = useCallback(
+    (selections: Array<{ value: number; label: string }> | null) => {
+      setSelectedDoses(selections ?? []);
+    },
+    []
   );
 
   return (
@@ -71,24 +86,18 @@ function DoseCurvesTab({
                   label: datasetOptions[0].display_name,
                 }
               }
-              showReplicates={showReplicates}
+              handleFilterByDose={handleFilterByDose}
               showUnselectedLines={showUnselectedLines}
-              handleToggleShowReplicates={(nextValue: boolean) =>
-                setShowReplicates(nextValue)
-              }
               handleToggleShowUnselectedLines={(nextValue: boolean) =>
                 setShowUnselectedLines(nextValue)
               }
             />
           </div>
           <div className={styles.doseCurvesTabMain}>
-            <DoseCurvesMainContent
-              dataset={selectedDataset}
-              doseUnits={doseUnits}
-              showReplicates={showReplicates}
+            <HeatmapTabMainContent
               showUnselectedLines={showUnselectedLines}
               compoundName={compoundName}
-              compoundId={compoundId}
+              selectedDoses={new Set(selectedDoses.map((d) => d.value))}
               handleShowUnselectedLinesOnSelectionsCleared={() => {
                 setShowUnselectedLines(true);
               }}
@@ -100,4 +109,4 @@ function DoseCurvesTab({
   );
 }
 
-export default DoseCurvesTab;
+export default HeatmapTab;

@@ -11,7 +11,7 @@ import {
   CurveParams,
   CurvePlotPoints,
 } from "@depmap/types";
-import styles from "./CompoundDoseCurves.scss";
+import styles from "../CompoundDoseViability.scss";
 
 interface DoseCurvesPlotSectionProps {
   isLoading: boolean;
@@ -23,7 +23,7 @@ interface DoseCurvesPlotSectionProps {
     [model_id: string]: CurvePlotPoints[];
   } | null;
   doseUnits: string;
-  selectedCurves: Set<string>;
+  selectedModelIds: Set<string>;
   handleClickCurve: (modelId: string) => void;
   plotElement: ExtendedPlotType | null;
   handleSetPlotElement: (element: any) => void;
@@ -36,7 +36,7 @@ function DoseCurvesPlotSection({
   doseMax,
   doseRepPoints,
   doseUnits,
-  selectedCurves,
+  selectedModelIds,
   handleClickCurve,
   plotElement,
   handleSetPlotElement,
@@ -59,12 +59,7 @@ function DoseCurvesPlotSection({
         {plotElement && (
           <PlotControls
             plot={plotElement}
-            enabledTools={[
-              PlotToolOptions.Zoom,
-              PlotToolOptions.Pan,
-              PlotToolOptions.Search,
-              PlotToolOptions.Download,
-            ]}
+            enabledTools={[PlotToolOptions.Search, PlotToolOptions.Download]}
             searchOptions={searchOptions}
             searchPlaceholder="Search for a cell line"
             onSearch={(selection: {
@@ -107,7 +102,7 @@ function DoseCurvesPlotSection({
             doseUnits={doseUnits}
             includeMedianQuantileRegions={false}
             handleClickCurve={handleClickCurve}
-            selectedCurves={selectedCurves}
+            selectedCurves={selectedModelIds}
             useDefaultTitle={false}
           />
         )}

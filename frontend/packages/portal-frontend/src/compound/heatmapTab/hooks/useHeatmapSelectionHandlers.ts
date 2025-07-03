@@ -1,54 +1,34 @@
 import { useCallback, useMemo, useState } from "react";
 import { defaultContextName } from "@depmap/data-explorer-2/src/components/DataExplorerPage/utils";
-import { CompoundDoseCurveData, DataExplorerContext } from "@depmap/types";
+import { DataExplorerContext } from "@depmap/types";
 import { saveNewContext } from "src";
 import compoundPagePromptForSelectionFromContext from "../../compoundPagePromptForSelectionFromContext";
 import { useDeprecatedDataExplorerApi } from "@depmap/data-explorer-2";
-import { TableFormattedData } from "src/compound/types";
+import { HeatmapFormattedData, TableFormattedData } from "../../types";
 
-function useDoseCurvesSelectionHandlers(
-  doseCurveData: CompoundDoseCurveData | null,
+function useHeatmapSelectionHandlers(
+  plotData: HeatmapFormattedData | null,
   tableData: TableFormattedData | null,
   deApi: ReturnType<typeof useDeprecatedDataExplorerApi>,
   handleShowUnselectedLinesOnSelectionsCleared: () => void
 ) {
-  const [selectedModelIds, setSelectedModelIds] = useState<Set<string>>(
+  const [selectedModelIds, setPlotSelectedModelIds] = useState<Set<string>>(
     new Set([])
   );
   const [selectedTableRows, setSelectedTableRows] = useState<Set<string>>(
     new Set([])
   );
 
-  // Handlers
-  const handleClickCurve = useCallback(
-    (modelId: string) => {
-      if (doseCurveData) {
-        setSelectedModelIds((xs) => {
-          const ys = new Set(xs);
-          if (!xs?.has(modelId)) ys.add(modelId);
-          selectedTableRows.forEach((rowId: string) => {
-            if (!ys.has(rowId)) ys.add(rowId);
-          });
-          setSelectedTableRows(ys);
-          return ys;
-        });
-      }
-    },
-    [doseCurveData, selectedTableRows]
-  );
-
-  const handleChangeSelection = useCallback(
+  const handleChangeTableSelection = useCallback(
     (selections: string[]) => {
-      if (doseCurveData) {
+      if (plotData) {
         setSelectedTableRows((xs) => {
-          let unselectedId: string | undefined;
+          let unselectedId: string;
           const ys = new Set(xs);
 
           if (selections.length < xs.size) {
-            unselectedId = [...xs].find((x) => !selections.includes(x));
-            if (unselectedId !== undefined) {
-              ys.delete(unselectedId);
-            }
+            unselectedId = [...xs].filter((x) => !selections.includes(x))[0];
+            ys.delete(unselectedId);
           } else {
             const newSelectedId = selections.filter(
               (x) => ![...xs].includes(x)
@@ -61,13 +41,26 @@ function useDoseCurvesSelectionHandlers(
               ys.add(curveId);
             }
           });
-          setSelectedModelIds(ys);
+          setPlotSelectedModelIds(ys);
           return ys;
         });
       }
     },
-    [doseCurveData, selectedModelIds]
+    [plotData, selectedModelIds]
   );
+
+  const handleSetSelectedPlotModels = (models: Set<string>) => {
+    setPlotSelectedModelIds((prev) => {
+      const next = new Set(prev);
+      models.forEach((id) => next.add(id));
+      setSelectedTableRows((tablePrev) => {
+        const tableNext = new Set(tablePrev);
+        models.forEach((id) => tableNext.add(id));
+        return tableNext;
+      });
+      return next;
+    });
+  };
 
   const handleClickSaveSelectionAsContext = useCallback(() => {
     const labels = [...selectedModelIds];
@@ -102,27 +95,34 @@ function useDoseCurvesSelectionHandlers(
   }, [selectedModelIds, displayNameModelIdMap]);
 
   const handleSetSelectionFromContext = useCallback(async () => {
-    const allLabels = new Set(
-      doseCurveData?.curve_params.map((curveParam) => curveParam.id!)
-    );
+    const allModelIds = Array.from(displayNameModelIdMap.keys());
+    const allLabels = new Set(allModelIds);
     const labels = await compoundPagePromptForSelectionFromContext(
       deApi,
       allLabels
     );
-    if (labels === null) return;
-    setSelectedModelIds(labels);
+    if (labels === null) {
+      return;
+    }
+    setPlotSelectedModelIds(labels);
     setSelectedTableRows(labels);
-  }, [doseCurveData, deApi]);
+  }, [deApi, displayNameModelIdMap]);
 
   const handleClearSelection = useCallback(() => {
-    setSelectedModelIds(new Set([]));
+    setPlotSelectedModelIds(new Set([]));
     setSelectedTableRows(new Set([]));
     handleShowUnselectedLinesOnSelectionsCleared();
   }, [handleShowUnselectedLinesOnSelectionsCleared]);
 
   const sortedTableData: TableFormattedData = useMemo(() => {
-    if (!tableData) return [];
-    if (selectedTableRows.size === 0) return tableData;
+    if (!tableData) {
+      return [];
+    }
+
+    if (selectedTableRows.size === 0) {
+      return tableData;
+    }
+
     // Selected rows at the top, in order of selection, then the rest in original order
     const selectedIds = Array.from(selectedTableRows);
     const selected = selectedIds
@@ -136,12 +136,11 @@ function useDoseCurvesSelectionHandlers(
 
   return {
     selectedModelIds,
-    setselectedModelIds: setSelectedModelIds,
     selectedTableRows,
     selectedLabels,
-    setSelectedTableRows,
-    handleClickCurve,
-    handleChangeSelection,
+    displayNameModelIdMap,
+    handleSetSelectedPlotModels,
+    handleChangeTableSelection,
     handleClickSaveSelectionAsContext,
     handleSetSelectionFromContext,
     handleClearSelection,
@@ -149,4 +148,4 @@ function useDoseCurvesSelectionHandlers(
   };
 }
 
-export default useDoseCurvesSelectionHandlers;
+export default useHeatmapSelectionHandlers;

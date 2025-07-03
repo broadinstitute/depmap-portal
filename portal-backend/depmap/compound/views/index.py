@@ -93,6 +93,8 @@ def view_compound(name):
             entity_label=name, dependency_datasets=celfie_dataset_options
         )
 
+    show_heatmap_tab = current_app.config["ENABLED_FEATURES"].new_compound_page_tabs
+
     return render_template(
         "compounds/index.html",
         name=name,
@@ -113,6 +115,7 @@ def view_compound(name):
         has_celfie=has_celfie,
         celfie=celfie if has_celfie else None,
         compound_units=compound.units,
+        show_heatmap_tab=show_heatmap_tab,
     )
 
 
@@ -203,7 +206,7 @@ def format_dose_curve_options_new_tab_if_available():
     """
     show_new_dose_curves_tab = current_app.config[
         "ENABLED_FEATURES"
-    ].new_dose_curves_tab
+    ].new_compound_page_tabs
 
     if show_new_dose_curves_tab:
         dose_curve_options = [

@@ -36,7 +36,8 @@
 
         if (history && history.replaceState) {
           history.replaceState(null, null, url.toString());
-          window.dispatchEvent(new Event("changeTab"));
+          // Only dispatch the event for the tab being shown
+          window.dispatchEvent(new CustomEvent(`changeTab:${tab}`));
         }
       }
     };
