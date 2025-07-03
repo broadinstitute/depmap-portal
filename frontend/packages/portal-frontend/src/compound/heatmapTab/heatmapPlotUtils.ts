@@ -1,5 +1,9 @@
 import { HeatmapFormattedData } from "../types";
 
+// Switch between displaying the plot with Viability or log2(Viability) by toggling
+// this switch: DO_LOG2_PLOT_DATA. Unit requirements for the plot are currently
+// uncertain... And maybe we want to give users the power to switch between units
+// with a button at some point?
 export const DO_LOG2_PLOT_DATA = true;
 export const PLOT_UNITS_LABEL = DO_LOG2_PLOT_DATA
   ? "log2(Viability)"
