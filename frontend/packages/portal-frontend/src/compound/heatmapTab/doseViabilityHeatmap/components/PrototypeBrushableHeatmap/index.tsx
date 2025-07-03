@@ -6,6 +6,7 @@ import customizeDragLayer from "./customizeDragLayer";
 import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
 import { generateTickLabels } from "./utils";
 import usePlotResizer from "../../hooks/usePlotResizer";
+import { DO_LOG2_PLOT_DATA } from "src/compound/heatmapTab/heatmapPlotUtils";
 
 interface Props {
   data: {
@@ -80,8 +81,9 @@ function PrototypeBrushableHeatmap({
         type: "heatmap",
         ...data,
         colorscale: "YlOrRd",
-        zmin: -2,
-        zmax: 0,
+        zmin: DO_LOG2_PLOT_DATA ? -2 : 0,
+        zmax: DO_LOG2_PLOT_DATA ? 0 : 1,
+        reversescale: !DO_LOG2_PLOT_DATA,
         colorbar: {
           x: -0.009,
           y: -0.4,

@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { HeatmapFormattedData, TableFormattedData } from "../../types";
+import { DO_LOG2_PLOT_DATA } from "../heatmapPlotUtils";
 
 function useHeatmapFormattedData(
   tableFormattedData: TableFormattedData | null,
@@ -22,6 +23,10 @@ function useHeatmapFormattedData(
     ) {
       return null;
     }
+
+    const getUnitCorrectedVal = (val: number) =>
+      DO_LOG2_PLOT_DATA ? Math.log2(val) : val;
+
     const modelIds = tableFormattedData.map((row) => row.modelId);
     const x = tableFormattedData.map((row) => row.cellLine);
     // Build z matrix: rows = doses, cols = models
@@ -33,7 +38,7 @@ function useHeatmapFormattedData(
       return modelIds.map((_, colIdx) => {
         const row = tableFormattedData[colIdx];
         const val = doseStr ? row[doseStr as keyof typeof row] : undefined;
-        return val !== undefined ? Math.log2(Number(val)) : null;
+        return val !== undefined ? getUnitCorrectedVal(Number(val)) : null;
       });
     });
     return { modelIds, x, y, z } as HeatmapFormattedData;

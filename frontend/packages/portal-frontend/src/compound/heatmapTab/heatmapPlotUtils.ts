@@ -1,5 +1,10 @@
 import { HeatmapFormattedData } from "../types";
 
+export const DO_LOG2_PLOT_DATA = true;
+export const PLOT_UNITS_LABEL = DO_LOG2_PLOT_DATA
+  ? "log2(Viability)"
+  : "Viability";
+
 export function sortHeatmapByViability(
   heatmapFormattedData: HeatmapFormattedData | null
 ) {
@@ -107,7 +112,7 @@ export function getCustomData(maskedHeatmapData: HeatmapFormattedData | null) {
       return [
         `Cell line: ${x[colIdx]}`,
         `Dose: ${y[rowIdx]} µM`,
-        `log2(Viability): ${val.toFixed(3)}`,
+        `${PLOT_UNITS_LABEL}: ${val.toFixed(3)}`,
       ].join("<br>");
     })
   );

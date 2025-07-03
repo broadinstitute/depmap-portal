@@ -14,6 +14,7 @@ import {
   getSelectedColumns,
   getSearchOptions,
   getCustomData,
+  PLOT_UNITS_LABEL,
 } from "./heatmapPlotUtils";
 import PrototypeBrushableHeatmap from "./doseViabilityHeatmap/components/PrototypeBrushableHeatmap";
 
@@ -163,7 +164,7 @@ function HeatmapPlotSection({
               onLoad={handleSetPlotElement}
               xAxisTitle="Cell Lines"
               yAxisTitle={`${compoundName} Dose (μM)`}
-              legendTitle="log2(Viability)"
+              legendTitle={PLOT_UNITS_LABEL}
               hovertemplate="%{customdata}<extra></extra>"
               selectedColumns={selectedColumns}
               onClearSelection={() => handleSetSelectedPlotModels(new Set())}
