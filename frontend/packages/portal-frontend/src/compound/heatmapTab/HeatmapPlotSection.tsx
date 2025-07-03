@@ -124,7 +124,11 @@ function HeatmapPlotSection({
         {plotElement && (
           <PlotControls
             plot={plotElement}
-            enabledTools={[PlotToolOptions.Search, PlotToolOptions.Download]}
+            enabledTools={[
+              PlotToolOptions.Search,
+              PlotToolOptions.Download,
+              PlotToolOptions.ZoomToSelection,
+            ]}
             searchOptions={searchOptions}
             searchPlaceholder="Search for a cell line"
             onSearch={handleSearch}
@@ -134,6 +138,7 @@ function HeatmapPlotSection({
               height: 600,
             }}
             onDownload={() => {}}
+            zoomToSelectedSelections={selectedColumns}
             altContainerStyle={{ backgroundColor: "#7B8CB2" }}
             hideCSVDownload
           />

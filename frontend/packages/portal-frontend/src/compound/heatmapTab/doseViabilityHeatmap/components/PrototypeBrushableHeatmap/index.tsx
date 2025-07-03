@@ -1,10 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import type {
-  Config,
-  Data as PlotlyData,
-  Layout,
-  PlotlyHTMLElement,
-} from "plotly.js";
+import type { Data as PlotlyData, Layout, PlotlyHTMLElement } from "plotly.js";
 import PlotlyLoader, { PlotlyType } from "src/plot/components/PlotlyLoader";
 import customizeDragLayer from "./customizeDragLayer";
 
@@ -189,11 +184,7 @@ function PrototypeBrushableHeatmap({
       ].flat(),
     };
 
-    const config: Partial<Config> = {
-      displayModeBar: false,
-    };
-
-    Plotly.react(plot, plotlyData, layout, config);
+    Plotly.react(plot, plotlyData, layout);
 
     // Keep track of added listeners so we can easily remove them.
     const listeners: [string, (e: object) => void][] = [];
@@ -204,6 +195,30 @@ function PrototypeBrushableHeatmap({
         callback as Parameters<PlotlyHTMLElement["on"]>[1]
       );
       listeners.push([eventName, callback]);
+    };
+
+    const getButton = (attr: string, val: string) =>
+      plot.querySelector(
+        `.modebar-btn[data-attr="${attr}"][data-val="${val}"]`
+      ) as HTMLAnchorElement;
+
+    const zoom = (val: "in" | "out" | "reset") => {
+      getButton("zoom", val).click();
+
+      // This redraw fixes a very strange bug where setting the drag mode to
+      // select (or lasso) with a filter also applied causes all of the points
+      // to disappear.
+      Plotly.redraw(plot);
+    };
+
+    plot.zoomIn = () => setTimeout(zoom, 0, "in");
+    plot.zoomOut = () => setTimeout(zoom, 0, "out");
+
+    plot.resetZoom = () => {
+      const nextLayout = { ...plot.layout };
+      (plot.layout.shapes as any) = undefined;
+      zoom("reset");
+      Plotly.react(plot, plot.data, nextLayout, plot.config);
     };
 
     on("plotly_afterplot", () => {
@@ -227,6 +242,26 @@ function PrototypeBrushableHeatmap({
     on("plotly_hover", (e: any) => {
       setHoveredColumns([e.points[0].pointIndex[1]]);
     });
+
+    // Used for PlotControls.tsx to zoom to the highest resolution possible
+    // the keeps all selected columns in the visible window.
+    plot.zoomToSelection = (selections: Set<number>) => {
+      if (!plot) return;
+
+      if (selections.size > 0 && plot && plot.layout && plot.layout.xaxis) {
+        const minSelected = Math.min(...selections);
+        const maxSelected = Math.max(...selections);
+
+        // Use Plotly.react to update the range and force a re-render
+        Plotly.relayout(plot, {
+          "xaxis.autorange": false,
+          "xaxis.range": [
+            Math.max(0, minSelected - 1),
+            Math.min(data.x.length - 1, maxSelected + 1),
+          ],
+        });
+      }
+    };
 
     // Add a downloadImage method to the plot for PNG and SVG export using Plotly's toImage utility
     plot.downloadImage = (options) => {
@@ -278,46 +313,6 @@ function PrototypeBrushableHeatmap({
     Plotly,
     selectedColumns,
     hoveredColumns,
-  ]);
-
-  // --- Auto-zoom if a selected column is out of view ---
-  useEffect(() => {
-    const plot = ref.current as ExtendedPlotType;
-    if (selectedColumns.size > 0 && plot && plot.layout && plot.layout.xaxis) {
-      let xRange: [number, number] = [0, data.x.length - 1];
-      if (
-        plot.layout.xaxis.range &&
-        Array.isArray(plot.layout.xaxis.range) &&
-        plot.layout.xaxis.range.length === 2
-      ) {
-        xRange = plot.layout.xaxis.range as [number, number];
-      }
-      const minSelected = Math.min(...selectedColumns);
-      const maxSelected = Math.max(...selectedColumns);
-      // If any selected column is out of view, zoom out to fit all selected
-      if (minSelected < xRange[0] || maxSelected > xRange[1]) {
-        // Use Plotly.react to update the range and force a re-render
-        Plotly.relayout(plot, {
-          "xaxis.autorange": false,
-          "xaxis.range": [
-            Math.max(0, minSelected - 1),
-            Math.min(data.x.length - 1, maxSelected + 1),
-          ],
-        });
-      }
-    }
-  }, [
-    data,
-    xAxisTitle,
-    yAxisTitle,
-    legendTitle,
-    onSelectColumnRange,
-    onClearSelection,
-    hovertemplate,
-    zmin,
-    zmax,
-    selectedColumns,
-    Plotly,
   ]);
 
   return <div ref={ref} />;

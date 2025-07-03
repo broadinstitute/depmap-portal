@@ -8,20 +8,6 @@ interface Props {
   onClearSelection: () => void;
 }
 
-// Hide all of Plotly's default zoom/pan controls that show up on hover
-// (since we have our own custom zoom controls).
-const hideStandardPlotlyZoomHandles = (plot: PlotlyHTMLElement) => {
-  const dragLayer = plot.querySelector(".draglayer") as SVGGElement;
-
-  const rects = dragLayer.querySelectorAll(
-    ".drag:not(.nsewdrag)"
-  ) as NodeListOf<SVGRectElement>;
-
-  [...rects].forEach((el) => {
-    el.style.setProperty("display", "none");
-  });
-};
-
 const addMouseListeners = ({
   plot,
   onMouseOut,

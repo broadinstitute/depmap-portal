@@ -2,3 +2,23 @@
   padding: 30px 30px 0 26px;
   min-height: 530px;
 }
+
+.buttonLink {
+  all: unset;
+  cursor: pointer;
+  color: #337ab7;
+  cursor: pointer;
+
+  &:active {
+    text-decoration: underline;
+  }
+
+  &:hover {
+    color: #23527c;
+  }
+
+  &:focus-visible {
+    outline: 5px auto -webkit-focus-ring-color;
+    outline-offset: 3px;
+  }
+}
