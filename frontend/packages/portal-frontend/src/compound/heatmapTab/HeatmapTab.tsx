@@ -22,7 +22,6 @@ function HeatmapTab({
   compoundName,
   compoundId,
 }: HeatmapTabProps) {
-  console.log(doseUnits);
   const [
     selectedDataset,
     setSelectedDataset,
@@ -96,6 +95,7 @@ function HeatmapTab({
           <div className={styles.doseCurvesTabMain}>
             <HeatmapTabMainContent
               showUnselectedLines={showUnselectedLines}
+              doseUnits={doseUnits}
               compoundName={compoundName}
               selectedDoses={new Set(selectedDoses.map((d) => d.value))}
               handleShowUnselectedLinesOnSelectionsCleared={() => {

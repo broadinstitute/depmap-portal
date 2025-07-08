@@ -26,6 +26,7 @@ interface HeatmapPlotSectionProps {
   heatmapFormattedData: HeatmapFormattedData | null;
   doseMin: number | null;
   doseMax: number | null;
+  doseUnits: string;
   selectedModelIds: Set<string>;
   handleSetSelectedPlotModels: (models: Set<string>) => void;
   handleSetPlotElement: (element: ExtendedPlotType | null) => void;
@@ -45,6 +46,7 @@ function HeatmapPlotSection({
   plotElement,
   displayNameModelIdMap,
   visibleZIndexes,
+  doseUnits,
   showUnselectedLines,
 }: HeatmapPlotSectionProps) {
   // Sort data by ascending mean viability
@@ -163,7 +165,7 @@ function HeatmapPlotSection({
               }}
               onLoad={handleSetPlotElement}
               xAxisTitle="Cell Lines"
-              yAxisTitle={`${compoundName} Dose (μM)`}
+              yAxisTitle={`${compoundName} Dose (${doseUnits})`}
               legendTitle={PLOT_UNITS_LABEL}
               hovertemplate="%{customdata}<extra></extra>"
               selectedColumns={selectedColumns}

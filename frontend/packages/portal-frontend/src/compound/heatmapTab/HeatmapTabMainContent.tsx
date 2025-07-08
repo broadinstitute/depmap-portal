@@ -14,12 +14,14 @@ interface HeatmapTabMainContentProps {
   compoundName: string;
   handleShowUnselectedLinesOnSelectionsCleared: () => void;
   showUnselectedLines: boolean;
+  doseUnits: string;
   selectedDoses?: Set<number>;
 }
 
 function HeatmapTabMainContent({
   handleShowUnselectedLinesOnSelectionsCleared,
   showUnselectedLines,
+  doseUnits,
   selectedDoses = new Set(),
   compoundName,
 }: HeatmapTabMainContentProps) {
@@ -168,6 +170,7 @@ function HeatmapTabMainContent({
               heatmapFormattedData={heatmapFormattedData}
               doseMin={doseMin}
               doseMax={doseMax}
+              doseUnits={doseUnits}
               selectedModelIds={selectedModelIds}
               handleSetSelectedPlotModels={handleSetSelectedPlotModels}
               handleSetPlotElement={setPlotElement}
