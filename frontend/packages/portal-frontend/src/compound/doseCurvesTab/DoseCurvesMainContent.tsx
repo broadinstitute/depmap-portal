@@ -95,16 +95,11 @@ function DoseCurvesMainContent({
                   href={`${cellLineUrlRoot}${modelId}`}
                   target="_blank"
                   rel="noreferrer"
-                  style={{ textDecoration: "underline" }}
+                  className={styles.customWideTableCellLink}
                 >
                   {displayName}
                   <span
-                    className="glyphicon glyphicon-new-window"
-                    style={{
-                      paddingLeft: "3px",
-                      fontWeight: 300,
-                      fontSize: "10px",
-                    }}
+                    className={`glyphicon glyphicon-new-window ${styles.customColLinkOutIcon}`}
                   />
                 </a>
               ) : (
@@ -197,18 +192,12 @@ function DoseCurvesMainContent({
       </div>
       <div className={styles.mainContentGrid}>
         {doseCurveDataError ? (
-          <div
-            className={styles.errorMessage}
-            style={{
-              gridArea: "plot / plot / selections / selections",
-              width: "100%",
-            }}
-          >
+          <div className={styles.mainContentGridErrorMessage}>
             Error loading dose curve data.
           </div>
         ) : (
           <>
-            <div style={{ gridArea: "plot" }}>
+            <div style={styles.plot}>
               <DoseCurvesPlotSection
                 isLoading={doseCurveDataIsLoading}
                 compoundName={compoundName}
@@ -225,7 +214,7 @@ function DoseCurvesMainContent({
                 }}
               />
             </div>
-            <div style={{ gridArea: "selections" }}>
+            <div style={styles.selections}>
               <CompoundPlotSelections
                 selectedIds={selectedModelIds}
                 selectedLabels={new Set(selectedLabels)}

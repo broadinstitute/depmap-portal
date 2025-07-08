@@ -92,16 +92,11 @@ function HeatmapTabMainContent({
                   href={`${cellLineUrlRoot}${modelId}`}
                   target="_blank"
                   rel="noreferrer"
-                  style={{ textDecoration: "underline" }}
+                  className={styles.customWideTableCellLink}
                 >
                   {displayName}
                   <span
-                    className="glyphicon glyphicon-new-window"
-                    style={{
-                      paddingLeft: "3px",
-                      fontWeight: 300,
-                      fontSize: "10px",
-                    }}
+                    className={`glyphicon glyphicon-new-window ${styles.customColLinkOutIcon}`}
                   />
                 </a>
               ) : (
@@ -165,7 +160,7 @@ function HeatmapTabMainContent({
       </div>
       <div className={styles.mainContentGrid}>
         <>
-          <div style={{ gridArea: "plot" }}>
+          <div className={styles.plotArea}>
             <HeatmapPlotSection
               isLoading={isLoading}
               compoundName={compoundName}
@@ -181,7 +176,7 @@ function HeatmapTabMainContent({
               showUnselectedLines={showUnselectedLines}
             />
           </div>
-          <div style={{ gridArea: "selections" }}>
+          <div className={styles.selectionsArea}>
             <CompoundPlotSelections
               selectedIds={selectedModelIds}
               selectedLabels={new Set(selectedLabels)}
