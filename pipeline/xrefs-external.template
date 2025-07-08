@@ -16,6 +16,16 @@ add-if-missing {
 }
 
 add-if-missing {
+  "type": "subtype_tree",
+  "dataset_id": PREPROCESS_TAIGA_ID(virtual_dataset_id, "SubtypeTree"),
+}
+
+add-if-missing {
+  "type": "subtype_context_matrix",
+  "dataset_id": PREPROCESS_TAIGA_ID(virtual_dataset_id, "SubtypeMatrix"),
+}
+
+add-if-missing {
     "type": "crispr-confounder-parameters",
     "achilles_qc_report_taiga_id":  PREPROCESS_TAIGA_ID(virtual_dataset_id, "AchillesScreenQCReport"),
     "crispr_screen_map_taiga_id": PREPROCESS_TAIGA_ID(virtual_dataset_id, "CRISPRScreenMap")
