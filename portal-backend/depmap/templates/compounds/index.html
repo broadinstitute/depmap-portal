@@ -192,6 +192,10 @@ active_tab_set = False %}
   };
 </script>
 <script>
+   // This is the only place we still use jquery-stickytabs. It should be
+  // removed after this page is converted to React because it doesn't
+  // play nice with our React Tabs component (it wants to stomp out the
+  // ?tab= query parameter).
   $(function () {
     $(".nav-tabs").stickyTabs();
     for (let context of $(".sticky_datasets")) {
