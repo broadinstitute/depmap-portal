@@ -2,7 +2,7 @@ import React, { useRef } from "react";
 import { Button } from "react-bootstrap";
 import styles from "@depmap/data-explorer-2/src/components/DataExplorerPage/styles/DataExplorer2.scss";
 import LabelsVirtualList from "@depmap/data-explorer-2/src/components/DataExplorerPage/components/plot/PlotSelections/LabelsVirtualList";
-import compoundStyles from "./CompoundDoseCurves.scss";
+import compoundStyles from "../CompoundDoseViability.scss";
 
 interface CompoundPlotSelectionsProps {
   selectedIds: Set<string> | null;
