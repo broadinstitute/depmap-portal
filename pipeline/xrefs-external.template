@@ -82,7 +82,7 @@ add-if-missing {
 # biomarker-matrix
 add-if-missing {
   'type': 'raw-expr-matrix-profile',
-  'dataset_id' : PREPROCESS_TAIGA_ID(virtual_dataset_id, "OmicsExpressionAllGenesTPMLogp1Profile"),
+  'dataset_id' : PREPROCESS_TAIGA_ID(virtual_dataset_id, "OmicsExpressionTPMLogp1HumanAllGenes"),
   'category' : 'expression',
 }
 
