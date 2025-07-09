@@ -6,8 +6,10 @@ import {
   BOX_PLOT_BOTTOM_MARGIN,
   BOX_PLOT_TOP_MARGIN,
   BOX_THICKNESS,
+  getNewContextUrl,
 } from "src/contextExplorer/utils";
 import BoxPlot from "./BoxPlot";
+import { BoxPlotHeaderTitle } from "./BoxPlotHeaderTitle";
 
 interface SelectedContextBoxPlotPanelProps {
   topContextNameInfo: ContextNameInfo;
@@ -88,24 +90,6 @@ interface PanelTitleNoChildPlotsProps {
   activeKey: string | null;
 }
 
-interface Props {
-  subtypeCode: string;
-  selectedCode: string | undefined;
-}
-function SelectedLabel({ subtypeCode, selectedCode }: Props) {
-  return (
-    <span
-      style={{
-        fontSize: "12px",
-        fontWeight: selectedCode === subtypeCode ? "600" : "normal",
-        color: selectedCode === subtypeCode ? "#333333" : "#4479B2",
-      }}
-    >
-      {subtypeCode}
-    </span>
-  );
-}
-
 const PanelHeading = ({
   topContextNameInfo,
   selectedLevelZeroBoxData,
@@ -120,14 +104,15 @@ const PanelHeading = ({
 }: PanelTitleNoChildPlotsProps) => {
   return (
     <Panel.Heading>
-      <Panel.Title toggle>
+      <Panel.Toggle componentClass="a">
         <div>
           {selectedLevelZeroBoxData !== null && activeKey === "SELECTED" && (
             <span
               style={{
-                paddingRight: "4px",
+                paddingRight: "12px",
+                paddingBottom: "2px",
                 paddingTop: activeKey === "SELECTED" ? "0px" : "12px",
-                fontSize: "12px",
+                fontSize: "16px",
                 color: "#4479B2",
               }}
               className={"glyphicon glyphicon-chevron-up"}
@@ -158,14 +143,19 @@ const PanelHeading = ({
           ) : (
             selectedLevelZeroBoxData &&
             activeKey === "SELECTED" && (
-              <SelectedLabel
+              <BoxPlotHeaderTitle
                 subtypeCode={topContextNameInfo!.subtype_code}
                 selectedCode={selectedCode}
+                url={getNewContextUrl(
+                  topContextNameInfo!.subtype_code,
+                  urlPrefix,
+                  tab
+                )}
               />
             )
           )}
         </div>
-      </Panel.Title>
+      </Panel.Toggle>
     </Panel.Heading>
   );
 };
