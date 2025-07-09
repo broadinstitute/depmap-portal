@@ -456,6 +456,9 @@ def get_context_plot_box_data(
         else selected_sig_box_plot_card_data.insignificant
     )
 
+    dataset_units = data_access.get_dataset_units(dataset_id=dataset_name)
+    assert dataset_units is not None
+
     return ContextPlotBoxData(
         significant_selection=significant_selection,
         insignificant_selection=insignificant_selection,
@@ -465,7 +468,7 @@ def get_context_plot_box_data(
         drug_dotted_line=drug_dotted_line,
         entity_label=node_entity_data.entity_label,
         entity_overview_page_label=node_entity_data.entity_overview_page_label,
-        dataset_units=data_access.get_dataset_units(dataset_id=dataset_name),
+        dataset_units=dataset_units,
     )
 
 
@@ -504,6 +507,7 @@ def get_organized_contexts(
         )
 
     dataset_units = data_access.get_dataset_units(dataset_id=dataset_name)
+    assert dataset_units is not None
 
     ordered_box_plot_data = ContextPlotBoxData(
         significant_selection=context_box_plot_data.significant_selection,
@@ -628,6 +632,9 @@ def get_data_to_show_if_no_contexts_significant(
         all_sig_models=[],
     )
 
+    dataset_units = data_access.get_dataset_units(dataset_id=dataset_name)
+    assert dataset_units is not None
+
     ordered_box_plot_data = ContextPlotBoxData(
         significant_selection=[],
         insignificant_selection=None,
@@ -637,7 +644,7 @@ def get_data_to_show_if_no_contexts_significant(
         drug_dotted_line=drug_dotted_line,
         entity_label=entity_label,
         entity_overview_page_label=entity_overview_page_label,
-        dataset_units=data_access.get_dataset_units(dataset_id=dataset_name),
+        dataset_units=dataset_units,
     )
 
     tile_data = EnrichedLineagesTileData(
