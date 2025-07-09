@@ -48,7 +48,6 @@ import {
   ONCREF_TABLE_DESCRIPTION,
   REPURPOSING_TABLE_DESCRIPTION,
   getDetailPanelTooltip,
-  ONCREF_UNITS,
 } from "../../utils";
 import geneDepFilterDefinitions from "../../json/geneDepFilters.json";
 import repurposingFilterDefinitions from "../../json/repurposingFilters.json";
@@ -306,7 +305,9 @@ function ContextAnalysis({
     (tableData: ContextAnalysisTableType) => {
       const getDrugXAxisLabel = () => {
         if (datasetId === ContextExplorerDatasets.Prism_oncology_AUC) {
-          return `In-context mean ${ONCREF_UNITS}`;
+          // Keep this as AUC regardless of what the units of Prism_oncology_AUC are because
+          // get_context_analysis outputs these results and should always use AUC (rather than log2(AUC))
+          return `In-context mean AUC`;
         }
 
         return "In-context mean log2(viability)";
@@ -314,7 +315,7 @@ function ContextAnalysis({
 
       const getDrugYAxisLabel = () => {
         if (datasetId === ContextExplorerDatasets.Prism_oncology_AUC) {
-          return `Out-group mean ${ONCREF_UNITS}`;
+          return `Out-group mean AUC`;
         }
         return "Out-group mean log2(viability)";
       };
