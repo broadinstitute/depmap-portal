@@ -1,3 +1,5 @@
+// Dose Curves and Heatmap
+
 .mainContentContainer {
   margin-left: 10px;
   margin-right: 60px;
@@ -14,9 +16,22 @@
 
   .mainContentGrid {
     display: grid;
-    grid-template-columns: 2fr 1fr;
-    grid-template-areas: "plot plot selections";
+    grid-template-columns: 3fr 1fr;
+    grid-template-areas: "plot plot plot selections";
     gap: 1rem;
+
+    .plotArea {
+      grid-area: "plot";
+    }
+
+    .selectionsArea {
+      grid-area: "selections";
+    }
+
+    .mainContentGridErrorMessage {
+      grid-area: "plot / plot / selections / selections";
+      width: "100%";
+    }
 
     @media (max-width: 950px) {
       grid-template-areas:
@@ -193,4 +208,30 @@
 .tableSpinnerContainer {
   padding: 24px;
   text-align: center;
+}
+
+.plotSelectionsContent {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+
+  button {
+    font-size: 13px;
+
+    :global .glyphicon {
+      position: relative;
+      top: 2px;
+      left: 4px;
+    }
+  }
+}
+
+.customWideTableCellLink {
+  text-decoration: underline;
+}
+
+.customColLinkOutIcon {
+  padding-left: 3px;
+  font-weight: 300;
+  font-size: 10px;
 }

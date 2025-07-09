@@ -46,6 +46,14 @@ const DoseCurvesTab = React.lazy(
     )
 );
 
+const HeatmapTab = React.lazy(
+  () =>
+    import(
+      /* webpackChunkName: "HeatmapTab" */
+      "src/compound/heatmapTab/HeatmapTab"
+    )
+);
+
 const EntitySummary = React.lazy(
   () =>
     import(
@@ -247,6 +255,26 @@ export function initDoseCurvesTab(
   renderWithErrorBoundary(
     <React.Suspense fallback={<div>Loading...</div>}>
       <DoseCurvesTab
+        datasetOptions={datasetOptions}
+        doseUnits={units}
+        compoundName={name}
+        compoundId={compoundId}
+      />
+    </React.Suspense>,
+    document.getElementById(elementId) as HTMLElement
+  );
+}
+
+export function initHeatmapTab(
+  elementId: string,
+  name: string,
+  compoundId: string,
+  datasetOptions: Array<any>,
+  units: string
+) {
+  renderWithErrorBoundary(
+    <React.Suspense fallback={<div>Loading...</div>}>
+      <HeatmapTab
         datasetOptions={datasetOptions}
         doseUnits={units}
         compoundName={name}

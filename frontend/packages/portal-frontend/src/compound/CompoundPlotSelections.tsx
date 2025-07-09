@@ -2,7 +2,7 @@ import React, { useRef } from "react";
 import { Button } from "react-bootstrap";
 import styles from "@depmap/data-explorer-2/src/components/DataExplorerPage/styles/DataExplorer2.scss";
 import LabelsVirtualList from "@depmap/data-explorer-2/src/components/DataExplorerPage/components/plot/PlotSelections/LabelsVirtualList";
-import compoundStyles from "../CompoundDoseViability.scss";
+import compoundStyles from "./CompoundDoseViability.scss";
 
 interface CompoundPlotSelectionsProps {
   selectedIds: Set<string> | null;
@@ -21,17 +21,14 @@ function CompoundPlotSelections({
 }: CompoundPlotSelectionsProps) {
   const listRef = useRef<HTMLDivElement | null>(null);
 
-  const maxHeightOfList = Infinity;
+  const maxHeightOfList = 400;
 
   return (
     <div className={compoundStyles.CompoundPlotSelections}>
       <div className={compoundStyles.headerDiv}>Plot Selections</div>
       <div className={compoundStyles.mainContent}>
         <div className={styles.plotInstructions}>
-          <div>
-            Select points to populate list
-            {/* <HelpTip id="select-points-help" /> */}
-          </div>
+          <div>Select points to populate list</div>
           {onClickClearSelection && selectedLabels && selectedLabels.size > 0 && (
             <div>
               <button

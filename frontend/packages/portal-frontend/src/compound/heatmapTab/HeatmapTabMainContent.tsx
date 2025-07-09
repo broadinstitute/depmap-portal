@@ -1,54 +1,42 @@
 import React, { useEffect, useMemo, useState } from "react";
 import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
-import DoseCurvesPlotSection from "./DoseCurvesPlotSection";
-import useDoseCurvesData from "./hooks/useDoseCurvesData";
-import useDoseCurvesSelectionHandlers from "./hooks/useDoseCurvesSelectionHandlers";
+import useHeatmapSelectionHandlers from "./hooks/useHeatmapSelectionHandlers";
 import DoseViabilityTable from "../DoseViabilityTable";
 import { useDeprecatedDataExplorerApi } from "@depmap/data-explorer-2";
 import { legacyPortalAPI } from "@depmap/api";
 import styles from "../CompoundDoseViability.scss";
-import {
-  CurveParams,
-  CompoundDoseCurveData,
-  DRCDatasetOptions,
-} from "@depmap/types";
+import useHeatmapData from "./hooks/useHeatmapData";
+import HeatmapPlotSection from "./HeatmapPlotSection";
 import CompoundPlotSelections from "../CompoundPlotSelections";
 import { useDoseTableDataContext } from "../hooks/useDoseTableDataContext";
 
-interface DoseCurvesMainContentProps {
-  dataset: DRCDatasetOptions | null;
-  doseUnits: string;
-  showReplicates: boolean;
-  showUnselectedLines: boolean;
+interface HeatmapTabMainContentProps {
   compoundName: string;
-  compoundId: string;
   handleShowUnselectedLinesOnSelectionsCleared: () => void;
+  showUnselectedLines: boolean;
+  doseUnits: string;
+  selectedDoses?: Set<number>;
 }
 
-function DoseCurvesMainContent({
-  dataset,
-  doseUnits,
-  showReplicates,
-  showUnselectedLines,
-  compoundName,
-  compoundId,
+function HeatmapTabMainContent({
   handleShowUnselectedLinesOnSelectionsCleared,
-}: DoseCurvesMainContentProps) {
+  showUnselectedLines,
+  doseUnits,
+  selectedDoses = new Set(),
+  compoundName,
+}: HeatmapTabMainContentProps) {
+  const api = useDeprecatedDataExplorerApi();
   const {
-    doseColumnNames,
     tableFormattedData,
+    doseColumnNames,
     error,
     isLoading,
   } = useDoseTableDataContext();
-  const api = useDeprecatedDataExplorerApi();
 
-  const {
-    doseCurveDataError,
-    doseCurveDataIsLoading,
-    doseCurveData,
-    doseMin,
-    doseMax,
-  } = useDoseCurvesData(dataset, compoundId, doseColumnNames);
+  const { heatmapFormattedData, doseMin, doseMax } = useHeatmapData(
+    tableFormattedData,
+    doseColumnNames
+  );
 
   const [plotElement, setPlotElement] = useState<ExtendedPlotType | null>(null);
   const [cellLineUrlRoot, setCellLineUrlRoot] = useState<string | null>(null);
@@ -63,20 +51,31 @@ function DoseCurvesMainContent({
     selectedModelIds,
     selectedTableRows,
     selectedLabels,
-    handleClickCurve,
-    handleChangeSelection,
+    displayNameModelIdMap,
+    handleSetSelectedPlotModels,
+    handleChangeTableSelection,
     handleClickSaveSelectionAsContext,
     handleSetSelectionFromContext,
     handleClearSelection,
     sortedTableData,
-  } = useDoseCurvesSelectionHandlers(
-    doseCurveData,
+  } = useHeatmapSelectionHandlers(
+    heatmapFormattedData,
     tableFormattedData,
     api,
     handleShowUnselectedLinesOnSelectionsCleared
   );
 
-  // Format cellLine column to link to cell line pages
+  // To hide/show the appropriate cells on Filter By Dose
+  const visibleZIndexes = useMemo(() => {
+    if (!heatmapFormattedData) return [];
+    if (selectedDoses && selectedDoses.size > 0) {
+      return heatmapFormattedData.y
+        .map((dose, idx) => (selectedDoses.has(dose) ? idx : -1))
+        .filter((idx) => idx !== -1);
+    }
+    return heatmapFormattedData.y.map((_, idx) => idx);
+  }, [heatmapFormattedData, selectedDoses]);
+
   const doseViabilityTableColumns = useMemo(() => {
     const staticColumns = ["cellLine", "modelId", "auc"];
     const columns = [
@@ -145,35 +144,6 @@ function DoseCurvesMainContent({
     [doseViabilityTableColumns]
   );
 
-  const visibleCurveData = useMemo(() => {
-    if (!showUnselectedLines && doseCurveData && selectedModelIds.size > 0) {
-      const visibleCurveParams = doseCurveData?.curve_params.filter(
-        (c: CurveParams) => selectedModelIds.has(c.id!)
-      );
-
-      return {
-        ...doseCurveData,
-        curve_params: visibleCurveParams,
-      } as CompoundDoseCurveData;
-    }
-    return doseCurveData;
-  }, [doseCurveData, selectedModelIds, showUnselectedLines]);
-
-  const visibleDoseRepPoints = useMemo(() => {
-    if (!showReplicates || !doseCurveData || selectedModelIds.size === 0) {
-      return null;
-    }
-
-    return Object.fromEntries(
-      [...selectedModelIds]
-        .filter((modelId) => doseCurveData.dose_replicate_points[modelId])
-        .map((modelId) => [
-          modelId,
-          doseCurveData.dose_replicate_points[modelId],
-        ])
-    );
-  }, [doseCurveData, selectedModelIds, showReplicates]);
-
   const defaultCols = useMemo(() => {
     return doseViabilityTableColumns
       .map((col) => col.accessor)
@@ -183,54 +153,44 @@ function DoseCurvesMainContent({
   return (
     <div className={styles.mainContentContainer}>
       <div className={styles.mainContentHeader}>
-        <h3>Dose Curve</h3>
+        <h3>Viability Heatmap</h3>
         <p>
-          Each cell line is represented as a line, with doses on the x axis and
-          viability on the y axis. Hover over plot points for tooltip
-          information. Click on items to select from the plot or table.
+          Each cell line is organized by column, divided by dose. Hover over
+          plot points for tooltip information. Click on items to select from the
+          plot or table.
         </p>
       </div>
       <div className={styles.mainContentGrid}>
-        {doseCurveDataError ? (
-          <div className={styles.mainContentGridErrorMessage}>
-            Error loading dose curve data.
+        <>
+          <div className={styles.plotArea}>
+            <HeatmapPlotSection
+              isLoading={isLoading}
+              compoundName={compoundName}
+              plotElement={plotElement}
+              heatmapFormattedData={heatmapFormattedData}
+              doseMin={doseMin}
+              doseMax={doseMax}
+              doseUnits={doseUnits}
+              selectedModelIds={selectedModelIds}
+              handleSetSelectedPlotModels={handleSetSelectedPlotModels}
+              handleSetPlotElement={setPlotElement}
+              displayNameModelIdMap={displayNameModelIdMap}
+              visibleZIndexes={visibleZIndexes}
+              showUnselectedLines={showUnselectedLines}
+            />
           </div>
-        ) : (
-          <>
-            <div style={styles.plot}>
-              <DoseCurvesPlotSection
-                isLoading={doseCurveDataIsLoading}
-                compoundName={compoundName}
-                plotElement={plotElement}
-                curvesData={visibleCurveData}
-                doseMin={doseMin}
-                doseMax={doseMax}
-                doseRepPoints={visibleDoseRepPoints}
-                doseUnits={doseUnits}
-                selectedModelIds={selectedModelIds}
-                handleClickCurve={handleClickCurve}
-                handleSetPlotElement={(element: ExtendedPlotType | null) => {
-                  setPlotElement(element);
-                }}
-              />
-            </div>
-            <div style={styles.selections}>
-              <CompoundPlotSelections
-                selectedIds={selectedModelIds}
-                selectedLabels={new Set(selectedLabels)}
-                onClickSaveSelectionAsContext={
-                  handleClickSaveSelectionAsContext
-                }
-                onClickClearSelection={handleClearSelection}
-                onClickSetSelectionFromContext={
-                  doseCurveData?.curve_params
-                    ? handleSetSelectionFromContext
-                    : undefined
-                }
-              />
-            </div>
-          </>
-        )}
+          <div className={styles.selectionsArea}>
+            <CompoundPlotSelections
+              selectedIds={selectedModelIds}
+              selectedLabels={new Set(selectedLabels)}
+              onClickSaveSelectionAsContext={handleClickSaveSelectionAsContext}
+              onClickClearSelection={handleClearSelection}
+              onClickSetSelectionFromContext={
+                heatmapFormattedData ? handleSetSelectionFromContext : undefined
+              }
+            />
+          </div>
+        </>
       </div>
       <hr className={styles.mainContentHr} />
       <div className={styles.mainContentCellLines}>
@@ -251,11 +211,11 @@ function DoseCurvesMainContent({
           columnOrdering={columnOrdering}
           defaultCols={defaultCols}
           selectedTableRows={selectedTableRows}
-          handleChangeSelection={handleChangeSelection}
+          handleChangeSelection={handleChangeTableSelection}
         />
       </div>
     </div>
   );
 }
 
-export default DoseCurvesMainContent;
+export default HeatmapTabMainContent;

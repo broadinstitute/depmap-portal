@@ -2,28 +2,44 @@ import { ToggleSwitch } from "@depmap/common-components";
 import React from "react";
 import Select from "react-select";
 import { DRCDatasetOptions } from "@depmap/types";
+import { useDoseTableDataContext } from "../hooks/useDoseTableDataContext";
 import styles from "../CompoundDoseViability.scss";
-import { Rep1Color, Rep2Color, Rep3Color } from "../utils";
 
 interface FiltersPanelProps {
-  handleSelectDataset: (selection: { value: string; label: string }) => void;
-  datasetOptions: DRCDatasetOptions[];
-  selectedDatasetOption: { value: string; label: string };
-  showReplicates: boolean;
+  // Dataset Selection Props
+  handleSelectDataset: (
+    selection: { value: string; label: string } | null
+  ) => void;
+  datasetOptions: any[];
+  selectedDatasetOption: { value: string; label: string } | null;
+  // Filter by Dose Props
+  handleFilterByDose: (
+    selections: Array<{ value: number; label: string }> | null
+  ) => void;
+  // Toggle Switches
   showUnselectedLines: boolean;
-  handleToggleShowReplicates: (nextValue: boolean) => void;
   handleToggleShowUnselectedLines: (nextValue: boolean) => void;
+  // NOTE: Temporarily disabling Insensitive Lines toggles until stakeholders
+  // decide on a definition for "Insensitive"
+  // showInsensitiveLines: boolean;
+  // handleToggleShowInsensitiveLines: (nextValue: boolean) => void;
 }
 
 function FiltersPanel({
+  // Dataset
   handleSelectDataset,
   datasetOptions,
   selectedDatasetOption,
-  showReplicates,
+  // Dose
+  handleFilterByDose,
+  // Toggle Switches
+  // showInsensitiveLines,
   showUnselectedLines,
-  handleToggleShowReplicates,
+  // handleToggleShowInsensitiveLines,
   handleToggleShowUnselectedLines,
 }: FiltersPanelProps) {
+  const { doseColumnNames } = useDoseTableDataContext();
+
   const datasetSelectOptions = datasetOptions.map(
     (compoundDataset: DRCDatasetOptions) => {
       return {
@@ -32,6 +48,11 @@ function FiltersPanel({
       };
     }
   );
+
+  const doseSelectOptions = Array.from(doseColumnNames).map((dose) => ({
+    value: parseFloat(dose.split(" ")[0]),
+    label: dose,
+  }));
 
   return (
     <div className={styles.FiltersPanel}>
@@ -47,7 +68,20 @@ function FiltersPanel({
             handleSelectDataset(value);
           }
         }}
-        id="compound-dose-curves-dataset-selection"
+        id="compound-heatmap-dataset-selection"
+      />
+      <hr className={styles.filtersPanelHr} />
+      <h4 className={styles.sectionTitle} style={{ paddingBottom: "4px" }}>
+        Filter by Dose
+      </h4>
+      <Select
+        options={doseSelectOptions}
+        isMulti
+        isDisabled={!doseColumnNames}
+        onChange={(values: any) => {
+          handleFilterByDose(values as Array<{ value: number; label: string }>);
+        }}
+        id="compound-heatmap-filter-by-dose"
       />
       <hr className={styles.filtersPanelHr} />
       <h4 className={styles.sectionTitle}>View Options</h4>
@@ -62,41 +96,6 @@ function FiltersPanel({
           ]}
         />
       </div>
-      <div className={styles.toggleRow} style={{ paddingTop: "10px" }}>
-        <div className={styles.toggleLabel}>Replicates</div>
-        <ToggleSwitch
-          value={showReplicates}
-          onChange={handleToggleShowReplicates}
-          options={[
-            { label: "ON", value: true },
-            { label: "OFF", value: false },
-          ]}
-        />
-      </div>
-      <div className={styles.legendBox}>
-        <div className={styles.legendRow}>
-          <div
-            className={styles.legendSwatch}
-            style={{ background: Rep1Color, border: `1px solid ${Rep1Color}` }}
-          />
-          <span className={styles.legendLabel}>x1</span>
-        </div>
-        <div className={styles.legendRow}>
-          <div
-            className={styles.legendSwatch}
-            style={{ background: Rep2Color, border: `1px solid ${Rep2Color}` }}
-          />
-          <span className={styles.legendLabel}>x2</span>
-        </div>
-        <div className={styles.legendRow}>
-          <div
-            className={styles.legendSwatch}
-            style={{ background: Rep3Color, border: `1px solid ${Rep3Color}` }}
-          />
-          <span className={styles.legendLabel}>x3</span>
-        </div>
-      </div>
-      <hr className={styles.filtersPanelHr} />
     </div>
   );
 }

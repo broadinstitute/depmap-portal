@@ -1,17 +1,13 @@
 import { useEffect, useState, useRef } from "react";
-import {
-  CompoundDoseCurveData,
-  DoseTableRow,
-  DRCDatasetOptions,
-} from "@depmap/types";
-import { legacyPortalAPI, breadboxAPI } from "@depmap/api";
+import { CompoundDoseCurveData, DRCDatasetOptions } from "@depmap/types";
+import { cached, legacyPortalAPI } from "@depmap/api";
 
 function useDoseCurvesData(
   dataset: DRCDatasetOptions | null,
-  compoundId: string
+  compoundId: string,
+  doseColumnNames: string[]
 ) {
   const dapi = legacyPortalAPI;
-  const bbapi = breadboxAPI;
 
   const [error, setError] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -19,7 +15,6 @@ function useDoseCurvesData(
     doseCurveData,
     setDoseCurveData,
   ] = useState<CompoundDoseCurveData | null>(null);
-  const [doseTable, setDoseTable] = useState<DoseTableRow[] | null>(null);
   const [doseMin, setDoseMin] = useState<number | null>(null);
   const [doseMax, setDoseMax] = useState<number | null>(null);
 
@@ -30,7 +25,7 @@ function useDoseCurvesData(
       if (dataset) {
         setIsLoading(true);
 
-        const promise = dapi.getCompoundDoseCurveData!(
+        const promise = cached(dapi).getCompoundDoseCurveData!(
           compoundId,
           dataset.drc_dataset_label,
           dataset.replicate_dataset
@@ -56,87 +51,17 @@ function useDoseCurvesData(
             }
           });
 
-        const featuresData = (
-          await bbapi.getDatasetFeatures(dataset.viability_dataset_id)
-        ).filter((feature) => feature.id.includes(compoundId));
+        // Get doseMin and doseMax from doseColumnNames, which was previously determined in useDoseTableData.
+        // useDoseTableData is hared with the Heatmap component. We only need doseMin and doseMax for the dose curves
+        // plot.
+        const doseValues = Array.isArray(doseColumnNames)
+          ? doseColumnNames
+              .map((d) => parseFloat(d.split(" ")[0]))
+              .filter((n) => !Number.isNaN(n))
+          : [];
 
-        const compoundDoseFeatures = await bbapi.getMatrixDatasetFeaturesData(
-          dataset.viability_dataset_id,
-          {
-            features: featuresData.map((doseFeat) => doseFeat.id),
-            feature_identifier: "id",
-          }
-        );
-
-        const aucsListResponse = await bbapi.getMatrixDatasetFeaturesData(
-          dataset.auc_dataset_id,
-          {
-            features: [compoundId],
-            feature_identifier: "id",
-          }
-        );
-
-        // aucsList is a list of length equal to the number of features we asked for.
-        // We are only looking at 1 compound at a time, so aucs will always be length 1.
-        const aucs = aucsListResponse[compoundId];
-
-        // Inverse log2 transform each value of feature.values before merging
-        // Build a map of modelId to row for fast merging
-        const allIndices = new Set<string>();
-        const doseColNames: string[] = [];
-        const doseValues: number[] = [];
-        const featureValueMaps: Record<string, Record<string, number>> = {};
-        Object.keys(compoundDoseFeatures).forEach((doseFeature: string) => {
-          const feature = compoundDoseFeatures[doseFeature];
-          const featureVals: number[] = Object.values(feature);
-          if (featureVals) {
-            Object.keys(feature).forEach((modelId) => allIndices.add(modelId));
-          }
-          // Remove the compoundId substring from feature_id for the column name
-          const col = doseFeature.replace(compoundId, "").trim();
-          doseColNames.push(col);
-          featureValueMaps[col] = feature || {};
-
-          // Keep track of all dose values so we can set the minimum and maximum of the plot's
-          // x-axis accordingly.
-          const floatMatch = col.match(/^([+-]?([0-9]*[.])?[0-9]+)/);
-          const doseValue = floatMatch ? parseFloat(floatMatch[1]) : null;
-          if (doseValue) {
-            doseValues.push(doseValue);
-          }
-        });
-        Object.keys(aucs).forEach((modelId) => allIndices.add(modelId));
-
-        // Precompute all dose values for each modelId and col
-        const mergedRows: any[] = [];
-        allIndices.forEach((modelId) => {
-          const row: any = { modelId };
-          // Fill dose columns in the same order as doseColNames
-          doseColNames.forEach((col) => {
-            let value = featureValueMaps[col][modelId];
-            if (!Number.isNaN(value)) {
-              value = 2 ** value;
-            }
-            row[col] =
-              value !== undefined && value !== null
-                ? value.toFixed(3)
-                : undefined;
-          });
-          // Only add row if at least one doseCol is not null/undefined
-          const hasDose = doseColNames.some((col) => row[col] !== undefined);
-          if (
-            aucs[modelId] !== undefined &&
-            aucs[modelId] !== null &&
-            hasDose
-          ) {
-            row.AUC = aucs[modelId].toFixed(3);
-            mergedRows.push(row);
-          }
-        });
-
-        setDoseMin(Math.min(...doseValues));
-        setDoseMax(Math.max(...doseValues));
-        setDoseTable(mergedRows);
+        setDoseMin(doseValues.length > 0 ? Math.min(...doseValues) : null);
+        setDoseMax(doseValues.length > 0 ? Math.max(...doseValues) : null);
       }
     })();
   }, [
@@ -144,12 +69,17 @@ function useDoseCurvesData(
     setIsLoading,
     dataset,
     dapi,
-    bbapi,
     compoundId,
-    setDoseTable,
+    doseColumnNames,
   ]);
 
-  return { error, isLoading, doseCurveData, doseTable, doseMin, doseMax };
+  return {
+    doseCurveDataError: error,
+    doseCurveDataIsLoading: isLoading,
+    doseCurveData,
+    doseMin,
+    doseMax,
+  };
 }
 
 export default useDoseCurvesData;
