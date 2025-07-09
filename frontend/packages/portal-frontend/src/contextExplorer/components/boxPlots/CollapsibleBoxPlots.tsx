@@ -178,7 +178,7 @@ function CollapsibleBoxPlots({
     }
 
     return "Gene Effect";
-  }, [datasetId]);
+  }, [datasetId, boxPlotData]);
 
   const xAxisRange = useMemo(() => {
     const sigSelectedData =
