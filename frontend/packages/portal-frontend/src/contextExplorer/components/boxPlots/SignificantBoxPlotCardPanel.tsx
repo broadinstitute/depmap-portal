@@ -5,8 +5,10 @@ import {
   BOX_PLOT_BOTTOM_MARGIN,
   BOX_PLOT_TOP_MARGIN,
   BOX_THICKNESS,
+  getNewContextUrl,
 } from "src/contextExplorer/utils";
 import BoxPlot from "src/contextExplorer/components/boxPlots/BoxPlot";
+import { BoxPlotHeaderTitle } from "./BoxPlotHeaderTitle";
 
 interface SignificantBoxPlotsPanelProps {
   activeKey: string | null;
@@ -46,15 +48,15 @@ const SignificantPlotPanelHeading = ({
 }: SignificantPlotPanelHeadingProps) => {
   return (
     <Panel.Heading>
-      <Panel.Title toggle>
+      <Panel.Toggle componentClass="a">
         <div>
           {activeKey === level0Code &&
             card[level0Code].subContextInfo.length > 0 && (
               <span
                 style={{
-                  paddingRight: "8px",
+                  paddingRight: "12px",
                   paddingTop: activeKey === level0Code ? "0px" : "12px",
-                  fontSize: "12px",
+                  fontSize: "16px",
                   color: "#4479B2",
                 }}
                 className={"glyphicon glyphicon-chevron-up"}
@@ -82,19 +84,15 @@ const SignificantPlotPanelHeading = ({
             />
           ) : (
             activeKey === level0Code && (
-              <span
-                style={{
-                  fontSize: "12px",
-                  fontWeight: selectedCode === level0Code ? "600" : "normal",
-                  color: selectedCode === level0Code ? "#333333" : "#4479B2",
-                }}
-              >
-                {level0Code}
-              </span>
+              <BoxPlotHeaderTitle
+                subtypeCode={level0Code}
+                selectedCode={selectedCode}
+                url={getNewContextUrl(level0Code, urlPrefix, tab)}
+              />
             )
           )}
         </div>
-      </Panel.Title>
+      </Panel.Toggle>
     </Panel.Heading>
   );
 };

@@ -1,0 +1,13 @@
+.linkedBoxPlotTitle {
+  font-size: 12px;
+  font-weight: normal;
+  color: #4479b2;
+}
+
+// When the title of the box plot is equal to the context the user is
+// on, this styling is used.
+.unlinkedBoxPlotTitle {
+  font-size: 12px;
+  font-weight: 600;
+  color: #333333;
+}

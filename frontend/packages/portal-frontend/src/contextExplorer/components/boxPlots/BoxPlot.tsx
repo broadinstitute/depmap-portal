@@ -231,9 +231,9 @@ export default function LazyBoxPlot({
                   {isLevel0 && (
                     <span
                       style={{
-                        paddingRight: "4px",
+                        paddingRight: "10px",
                         paddingTop: box.name === selectedCode ? "0px" : "12px",
-                        fontSize: "12px",
+                        fontSize: "16px",
                         color: "#4479B2",
                       }}
                       className={
