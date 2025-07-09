@@ -2,12 +2,12 @@ import React from "react";
 import { toStaticUrl } from "@depmap/globals";
 import InfoIcon from "src/common/components/InfoIcon";
 
-interface DetailTileProps {
+interface StructureAndDetailTileProps {
   compoundName: string;
   compoundId: string;
 }
 
-export const DetailTile: React.FC<DetailTileProps> = ({
+export const StructureAndDetailTile: React.FC<StructureAndDetailTileProps> = ({
   compoundName,
   compoundId,
 }) => {

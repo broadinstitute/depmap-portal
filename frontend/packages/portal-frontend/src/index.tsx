@@ -21,6 +21,7 @@ import { EntityType } from "./entity/models/entities";
 import TermsAndConditionsModal from "./common/components/TermsAndConditionsModal";
 import { initializeDevContexts } from "@depmap/data-explorer-2";
 import { EnrichmentTile } from "./contextExplorer/components/EnrichmentTile";
+import { StructureAndDetailTile } from "./compound/tiles/DetailTile";
 
 export { log, tailLog, getLogCount } from "src/common/utilities/log";
 
@@ -204,6 +205,19 @@ export function initEnrichmentTile(
   renderWithErrorBoundary(
     <React.Suspense fallback={<div>Loading...</div>}>
       <EnrichmentTile entityLabel={entityLabel} entityType={entityType} />
+    </React.Suspense>,
+    document.getElementById(elementId) as HTMLElement
+  );
+}
+
+export function initStructureAndDetailTile(
+  elementId: string,
+  name: string,
+  compoundId: string
+) {
+  renderWithErrorBoundary(
+    <React.Suspense fallback={<div>Loading...</div>}>
+      <StructureAndDetailTile compoundName={name} compoundId={compoundId} />
     </React.Suspense>,
     document.getElementById(elementId) as HTMLElement
   );
