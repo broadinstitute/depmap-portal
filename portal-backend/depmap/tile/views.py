@@ -355,9 +355,7 @@ def get_enrichment_html(
         f'<div id="{div_id}">get_enrichment_html is stubbed out</div>',
         f"""(
         function() {{
-            console.log("about to call initEnrichmentTile");
             DepMap.initEnrichmentTile("{div_id}", "{entity_label}", "{entity.type}");
-            console.log("after initEnrichmentTile");
         }})""",
     )
 
