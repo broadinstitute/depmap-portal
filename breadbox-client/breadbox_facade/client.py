@@ -41,6 +41,7 @@ from breadbox_client.api.types import update_dimension_type as update_dimension_
 from breadbox_client.api.temp import get_associations as get_associations_client
 from breadbox_client.api.temp import add_associations as add_associations_client
 from breadbox_client.api.temp import get_associations_for_slice as get_associations_for_slice_client
+from breadbox_client.api.temp import evaluate_context as evaluate_context_client
 #
 
 from breadbox_client.models import (
@@ -58,6 +59,8 @@ from breadbox_client.models import (
     ColumnMetadata,
     ComputeParams,
     ComputeResponse,
+    Context,
+    ContextMatchResponse,
     DatasetMetadata,
     DataType,
     FeatureSampleIdentifier,
@@ -515,7 +518,8 @@ class BBClient:
         breadbox_response = remove_group_access_client.sync_detailed(client=self.client, group_entry_id=group_entry_id)
         return self._parse_client_response(breadbox_response)
 
-    # ASSOCIATIONS
+    # TEMP
+
     def get_associations(self) -> List[AssociationTable]:
         breadbox_response = get_associations_client.sync_detailed(client=self.client)
         return self._parse_client_response(breadbox_response)
@@ -532,6 +536,11 @@ class BBClient:
     def get_associations_for_slice(self, dataset_id: str, identifier: str, identifier_type: str) -> Associations:
         breadbox_response = get_associations_for_slice_client.sync_detailed(client=self.client, body=SliceQuery(dataset_id=dataset_id, identifier=identifier,
                                                                                     identifier_type=SliceQueryIdentifierType(identifier_type)))
+        return self._parse_client_response(breadbox_response)
+    
+    def evaluate_context(self, context_expression: dict) -> ContextMatchResponse:
+        request_body = Context.from_dict(context_expression)
+        breadbox_response = evaluate_context_client.sync_detailed(client=self.client, body=request_body)
         return self._parse_client_response(breadbox_response)
 
     # API

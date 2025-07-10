@@ -311,6 +311,7 @@ class DoseResponseCurveFactory(SQLAlchemyModelFactory):
     slope = 0
     upper_asymptote = 0
     lower_asymptote = 0
+    drc_dataset_label = "GDSC1"
 
 
 class GeneFactory(SQLAlchemyModelFactory):
