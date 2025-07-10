@@ -7,15 +7,11 @@ from celery import current_app as current_celery_app
 import celery
 from celery.result import AsyncResult
 from breadbox.schemas.custom_http_exception import FileValidationError
-from ..compute.celery import app
 from fastapi import HTTPException
 from typing import Any, Optional
-from ..compute.celery import app
 from breadbox.schemas.custom_http_exception import UserError, CeleryConnectionError
 from typing import Protocol, cast, Callable
 from celery.result import AsyncResult, EagerResult
-
-from ..celery_task.exception import CeleryException
 
 from ..config import get_settings
 from pydantic import BaseModel
@@ -185,7 +181,7 @@ def format_task_status(task):
     }
 
 
-def get_task(task_id: str) -> AsyncResult:
+def get_task(task_id: str, app: Celery) -> AsyncResult:
     return AsyncResult(task_id, app=app)
 
 
@@ -195,7 +191,9 @@ def update_state(
     if task is None:
         return
     if state is None and task.request is not None:
-        task_result = get_task(task.request.id)
+        task_result = get_task(
+            task.request.id, task.app
+        )  # application instance associated with this task class
         state = task_result.state
 
     meta: Dict[str, Any] = {}
@@ -205,7 +203,7 @@ def update_state(
     task.update_state(state=state, meta=meta)
 
 
-def check_celery():
+def check_celery(app: Celery):
     """
     Checks to see if celery redis broker is connected.
     Check worker stats to see if any workers are running
