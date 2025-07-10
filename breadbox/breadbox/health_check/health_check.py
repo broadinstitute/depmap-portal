@@ -1,5 +1,5 @@
 from fastapi import APIRouter, status
-from breadbox.health_check import site_check_task
+from breadbox.compute import site_check_task
 from breadbox.celery_task.utils import format_task_status
 from breadbox.schemas.custom_http_exception import HTTPError
 
