@@ -156,6 +156,12 @@ def add_group_entry(
                 raise HTTPException(404)
             raise HTTPException(403)
 
+        if not group_entry.exact_match and not group_entry.email.startswith("@"):
+            raise HTTPException(
+                422,
+                "If exact_match is False, which indicates the entry applies to all email addresses within a domain, the email field must start with a '@'",
+            )
+
         group_entry_db = group_crud.add_group_entry(db, user, group, group_entry)
     return group_entry_db
 
