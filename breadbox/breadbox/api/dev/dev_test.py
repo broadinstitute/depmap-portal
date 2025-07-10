@@ -5,14 +5,9 @@ from breadbox.schemas.custom_http_exception import HTTPError
 
 import logging
 
-router = APIRouter(prefix="/health_check", tags=["health_check"])
+router = APIRouter(prefix="/dev_test", tags=["dev_test"])
 
 log = logging.getLogger(__name__)
-
-
-@router.get("/basic", operation_id="basic_check")
-def basic_check():
-    return {"message": "ok"}
 
 
 @router.get("/log-test", operation_id="log_test")
@@ -22,14 +17,6 @@ def log_test():
     log.info("info message")
     log.debug("debug message")
     return {"message": "ok"}
-
-
-@router.get("/ok", operation_id="ok")
-def ok():
-    task = site_check_task.is_ok.delay()
-    task.wait(timeout=60, interval=0.5)
-
-    return format_task_status(task)
 
 
 @router.get("/simulate-error", operation_id="simulate_error")

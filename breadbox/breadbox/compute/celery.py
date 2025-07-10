@@ -41,7 +41,7 @@ app = Celery(
     include=[
         "breadbox.compute.analysis_tasks",
         "breadbox.compute.download_tasks",
-        "breadbox.health_check.health_check",
+        "breadbox.compute.site_check_task",
         "breadbox.compute.dataset_uploads_tasks",
     ],
 )
