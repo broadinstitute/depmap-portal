@@ -6,28 +6,8 @@ on:
 permissions:
   contents: write
 
-env:
-  DOCKER_REPO: us.gcr.io/broad-achilles/depmap-breadbox
-
 jobs:
-  pyright-breadbox-client:
-    runs-on: ubuntu-latest
-    steps:
-      - name: "Check out"
-        uses: actions/checkout@v3
-        with:
-          token: "${{ secrets.GITHUB_TOKEN }}"
-          fetch-depth: 0
-
-      - name: Prepare breadbox client
-        uses: ./.github/actions/prepare-breadbox-client # checks out and generates breadbox client code
-
-      - name: Check that the breadbox client passes pyright
-        working-directory: ./breadbox-client
-        run: "poetry install && poetry run pyright breadbox_facade"
-
   publish-breadbox-client:
-    needs: pyright-breadbox-client
     if: ${{ (github.ref_name == 'master') }}
     runs-on: ubuntu-latest
     steps:
@@ -46,6 +26,10 @@ jobs:
 
       - name: Prepare breadbox client
         uses: ./.github/actions/prepare-breadbox-client # checks out and generates breadbox client code
+
+      - name: Check that the breadbox client passes pyright
+        working-directory: ./breadbox-client
+        run: "poetry install && poetry run pyright breadbox_facade"
 
       - name: Publish breadbox client
         uses: ./.github/actions/publish-breadbox-client
