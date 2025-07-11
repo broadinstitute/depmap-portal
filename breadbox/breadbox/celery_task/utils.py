@@ -7,17 +7,14 @@ from celery import current_app as current_celery_app
 import celery
 from celery.result import AsyncResult
 from breadbox.schemas.custom_http_exception import FileValidationError
-from ..compute.celery import app
 from fastapi import HTTPException
 from typing import Any, Optional
-from ..compute.celery import app
 from breadbox.schemas.custom_http_exception import UserError, CeleryConnectionError
 from typing import Protocol, cast, Callable
 from celery.result import AsyncResult, EagerResult
 
-from ..celery_task.exception import CeleryException
-
 from ..config import get_settings
+from pydantic import BaseModel
 
 
 class TaskState(Enum):
@@ -124,8 +121,8 @@ def format_task_status(task):
         elif isinstance(task.result, FileValidationError):
             message = str(task.result)
         else:
-            # This is an unexpected error thrown while the task was running. 
-            # At this point, the error has already been logged in the celery error reporter 
+            # This is an unexpected error thrown while the task was running.
+            # At this point, the error has already been logged in the celery error reporter
             # and should be visible in the GCS Error Groups.
             message = "Encountered an unexpected error. Please try again later."
     elif task.state == TaskState.PENDING.name:
@@ -159,7 +156,10 @@ def format_task_status(task):
         # done, return the result payload
         result = task.result
 
-        if not isinstance(result, dict):
+        # NOTE: Celery's workers serialize task response into JSON and the only time this condition seems to be used is for task run_upload_dataset() which does not actually run the task with a celery worker
+        # TODO: Task run_upload_dataset() possibly only seems to be used in test_delete_group() so perhaps we can deprecate our old POST dataset endpoint which still uses this task
+        if not isinstance(result, dict) and isinstance(result, BaseModel):
+            # NOTE: model_dump is a method on a pydantic model instance
             result = result.model_dump()
 
         # if the "data_json_file_path" key is provided in the result payload, this endpoint reads the table and sends it to the front
@@ -181,7 +181,7 @@ def format_task_status(task):
     }
 
 
-def get_task(task_id: str) -> AsyncResult:
+def get_task(task_id: str, app: Celery) -> AsyncResult:
     return AsyncResult(task_id, app=app)
 
 
@@ -191,7 +191,9 @@ def update_state(
     if task is None:
         return
     if state is None and task.request is not None:
-        task_result = get_task(task.request.id)
+        task_result = get_task(
+            task.request.id, task.app
+        )  # application instance associated with this task class
         state = task_result.state
 
     meta: Dict[str, Any] = {}
@@ -201,7 +203,7 @@ def update_state(
     task.update_state(state=state, meta=meta)
 
 
-def check_celery():
+def check_celery(app: Celery):
     """
     Checks to see if celery redis broker is connected.
     Check worker stats to see if any workers are running
