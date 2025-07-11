@@ -61,6 +61,22 @@ jobs:
       - name: Check PR title
         run: poetry run cz check -m '${{ github.event.pull_request.title }}'
 
+  pyright-breadbox-client:
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Check out"
+        uses: actions/checkout@v3
+        with:
+          token: "${{ secrets.GITHUB_TOKEN }}"
+          fetch-depth: 0
+
+      - name: Prepare breadbox client
+        uses: ./.github/actions/prepare-breadbox-client # checks out and generates breadbox client code
+
+      - name: Check that the breadbox client passes pyright
+        working-directory: ./breadbox-client
+        run: "poetry install && poetry run pyright breadbox_facade"
+
   build-docker:
     runs-on: ubuntu-latest
     steps:
@@ -170,3 +186,27 @@ jobs:
         run: echo "bumped_version=$(poetry run cz version -p)" >> $GITHUB_OUTPUT
       - name: Get bumped version
         run: echo "${{ steps.current-version.outputs.bumped_version}}"
+
+  publish-breadbox-client:
+    needs: bump-versions
+    if: ${{ (needs.bump-versions.outputs.current_version != needs.bump-versions.outputs.bumped_version) && (github.ref_name == 'master') }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Check out"
+        uses: actions/checkout@v3
+        with:
+          token: "${{ secrets.GITHUB_TOKEN }}"
+          fetch-depth: 0
+        # pulls latest changes from head
+      - run: |
+          git pull origin HEAD:master
+      - name: "Authenticate to Google Cloud"
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: "${{ secrets.DEPMAP_ARTIFACTS_SVC_ACCT }}"
+
+      - name: Prepare breadbox client
+        uses: ./.github/actions/prepare-breadbox-client # checks out and generates breadbox client code
+
+      - name: Publish breadbox client
+        uses: ./.github/actions/publish-breadbox-client

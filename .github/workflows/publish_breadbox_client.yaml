@@ -3,12 +3,9 @@ name: Publish breadbox client
 
 on:
   workflow_dispatch:
-permissions:
-  contents: write
 
 jobs:
   publish-breadbox-client:
-    if: ${{ (github.ref_name == 'master') }}
     runs-on: ubuntu-latest
     steps:
       - name: "Check out"
@@ -16,9 +13,7 @@ jobs:
         with:
           token: "${{ secrets.GITHUB_TOKEN }}"
           fetch-depth: 0
-        # pulls latest changes from head
-      - run: |
-          git pull origin HEAD:master
+
       - name: "Authenticate to Google Cloud"
         uses: google-github-actions/auth@v2
         with:
@@ -26,53 +21,6 @@ jobs:
 
       - name: Prepare breadbox client
         uses: ./.github/actions/prepare-breadbox-client # checks out and generates breadbox client code
-
-      - name: Check that the breadbox client passes pyright
-        working-directory: ./breadbox-client
-        run: "poetry install && poetry run pyright breadbox_facade"
-
-      # now, since we are manually triggering this build, we really are sure we want a new version
-      # but if we haven't make a commit that contains a conventional commit message for breadbox
-      # (or more annoying: the bump job failed in the middle and we end up with a state where the
-      # version failed to increment and we need to make a manual fake commit to force a build)
-      # To avoid all that, automatically make a stubbed commit to force a version bump.
-
-      # before we can bump the version, we need cz installed, which means we need to drag in
-      # breadbox into this process
-      - name: Get cz setup from the breadbox project
-        run: poetry install
-        working-directory: ./breadbox
-
-      - name: Bump version and tag
-        run: |
-          git config user.name github-actions
-          git config user.email github-actions@github.com
-          git commit -m "build(breadbox): bumping version for manual publish of breadbox client" --allow-empty
-
-      - name: Store current version
-        id: current-version
-        run: echo "current_version=$(poetry run cz version -p)" >> $GITHUB_OUTPUT
-        working-directory: ./breadbox
-
-      - name: Bump version and tag
-        run: |
-          echo pulling
-          git pull origin HEAD:master
-          echo bumping
-          poetry run ./bb bump-version
-          echo push 1
-          git push origin HEAD:master
-          echo push 2
-          git push origin --tags
-        working-directory: ./breadbox
-
-      - name: Store bumped version
-        id: bumped-version
-        run: echo "bumped_version=$(poetry run cz version -p)" >> $GITHUB_OUTPUT
-        working-directory: ./breadbox
-
-      - name: Get bumped version
-        run: echo "${{ steps.current-version.outputs.bumped_version}}"
 
       - name: Publish breadbox client
         uses: ./.github/actions/publish-breadbox-client
