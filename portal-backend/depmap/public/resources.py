@@ -141,9 +141,15 @@ def get_root_category_subcategory_topics(
     for sub_id in category["subcategory_ids"]:
         subcategory = client.get_category(sub_id)
         assert subcategory is not None
+        # subcategories that are not accessible to everyone should not be shown
+        if subcategory["read_restricted"]:
+            continue
         # Create Subcategory object
         sub_category = Subcategory(sub_id, subcategory["slug"], subcategory["name"], [])
         subcategory_topics = client.get_category_topics(subcategory["slug"], sub_id)
+        # if there are no subcategory topics, don't add subcategory to list of subcategories to show
+        if not subcategory_topics:
+            continue
         for sub_topic in subcategory_topics:
             topic_main_post = client.get_topic_main_post(sub_topic["id"])
             # A lot of random tags and attributes come along for the ride in the "cooked" field, so sanitize this.
