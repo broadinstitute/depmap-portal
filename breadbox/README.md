@@ -13,7 +13,6 @@ Breadbox is a persistent service for storing and retrieving data for the [DepMap
 
         ./install_prereqs.sh
 
-
 ## Running the app
 
 Before running any of the following, you'll need to activate the poetry environment
@@ -108,16 +107,6 @@ To generate the client for local development:
 
 ### Versioning and Publishing the Breadbox client
 
-#### Auto-versioning and publishing
-
-Our Github actions workflow `build-breadbox.yml` auto-versions and auto-publishes breadbox and the breadbox client as well as updates anywhere that has a dependency on those packages (currently only `breadbox-facade`). You may need to update `breadbox-facade`'s `poetry.lock` file and install the updated dependencies after the version bumps by running:
-
-    poetry lock --no-update
-
-and
-
-    poetry install
-
 #### Commit Conventions
 
 We use a tool called [commitizen-tools/commitizen](https://github.com/commitizen-tools/commitizen) for versioning. The way commitizen works is by checking if there are any new commits that follow the formatting rules defined in our `pyproject.toml`'s `bump_pattern` and `bump_map` variables. By default, commitizen uses [conventional commits](https://www.conventionalcommits.org/), however, we have selected a subset of rules to fit most of our current use cases.
@@ -149,7 +138,20 @@ Pull request titles with master as target branch should also adhere to our defin
 
 #### Publishing
 
-**NOTE: Our CI/CD pipeline includes a Github actions workflow `build-breadbox.yml` that auto-versions and publishes breadbox and the breadbox client. The below instructions are only for if you want to publish locally though this is not recommended!**
+\*\*NOTE: Our CI/CD pipeline includes a Github actions job that can be
+manually triggered to publish the breadbox client. The "cz" tool is used to
+manage updating the version and the breadbox_client version is locked to
+match the version of breadbox.
+
+You can manually trigger this workflow by clicking "Run workflow" at https://github.com/broadinstitute/depmap-portal/actions/workflows/publish_breadbox_client.yaml
+
+If you get an error saying 'Requested entity already exists', this is a sign
+that the current version has already been published. As versions are
+incremented by commits with the "convential commit" conventions, you will
+need to make a commit on master in order to bump the version. (Something
+like 'build(breadbox): bumping client version' should suffice)
+
+**The below instructions are only for if you want to publish locally though this is not recommended!**
 
 Note: this will publish the resulting module to an internal package repo. Before you do this,
 you'll need to set yourself up to be able to publish to `python-public`:
