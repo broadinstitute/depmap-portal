@@ -31,5 +31,44 @@ jobs:
         working-directory: ./breadbox-client
         run: "poetry install && poetry run pyright breadbox_facade"
 
+      # now, since we are manually triggering this build, we really are sure we want a new version
+      # but if we haven't make a commit that contains a conventional commit message for breadbox
+      # (or more annoying: the bump job failed in the middle and we end up with a state where the
+      # version failed to increment and we need to make a manual fake commit to force a build)
+      # To avoid all that, automatically make a stubbed commit to force a version bump.
+
+      # before we can bump the version, we need cz installed, which means we need to drag in
+      # breadbox into this process
+      - name: Install dependencies
+        run: poetry install
+        working-directory: ./breadbox
+
+      - name: Bump version and tag
+        run: |
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git commit -m "build(breadbox): bumping version for manual publish of breadbox client" --allow-empty
+
+      - name: Store current version
+        id: current-version
+        run: echo "current_version=$(poetry run cz version -p)" >> $GITHUB_OUTPUT
+        working-directory: ./breadbox
+
+      - name: Bump version and tag
+        run: |
+          git pull origin HEAD:master
+          poetry run ./bb bump-version
+          git push origin HEAD:master
+          git push origin HEAD:master --tags
+        working-directory: ./breadbox
+
+      - name: Store bumped version
+        id: bumped-version
+        run: echo "bumped_version=$(poetry run cz version -p)" >> $GITHUB_OUTPUT
+        working-directory: ./breadbox
+
+      - name: Get bumped version
+        run: echo "${{ steps.current-version.outputs.bumped_version}}"
+
       - name: Publish breadbox client
         uses: ./.github/actions/publish-breadbox-client
