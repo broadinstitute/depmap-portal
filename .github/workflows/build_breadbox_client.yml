@@ -39,7 +39,7 @@ jobs:
 
       # before we can bump the version, we need cz installed, which means we need to drag in
       # breadbox into this process
-      - name: Install dependencies
+      - name: Get cz setup from the breadbox project
         run: poetry install
         working-directory: ./breadbox
 
