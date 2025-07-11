@@ -4,7 +4,8 @@ export async function fetchMetadata<T>(
   typeName: string,
   indices: string[] | null,
   columns: string[] | null,
-  bbapi: typeof breadboxAPI
+  bbapi: typeof breadboxAPI,
+  identifier: "label" | "id" = "label"
 ) {
   const dimType = await cached(bbapi).getDimensionType(typeName);
   if (!dimType?.metadata_dataset_id) {
@@ -13,7 +14,7 @@ export async function fetchMetadata<T>(
 
   let args;
   if (indices && indices.length > 0) {
-    args = { indices, identifier: "label" as const, columns };
+    args = { indices, identifier, columns };
   } else {
     args = { indices: null, identifier: null, columns };
   }

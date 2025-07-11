@@ -180,7 +180,6 @@ def render_compound_tile(
     tiles = {
         CompoundTileEnum.predictability.value: get_predictability_html,
         CompoundTileEnum.selectivity.value: get_enrichment_html,
-        # CompoundTileEnum.description.value: get_description_html,
         CompoundTileEnum.sensitivity.value: get_sensitivity_html,
         CompoundTileEnum.correlations.value: get_correlations_html,
         CompoundTileEnum.availability.value: get_availability_html,
