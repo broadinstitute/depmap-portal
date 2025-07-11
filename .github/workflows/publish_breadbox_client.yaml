@@ -56,10 +56,14 @@ jobs:
 
       - name: Bump version and tag
         run: |
+          echo pulling
           git pull origin HEAD:master
+          echo bumping
           poetry run ./bb bump-version
+          echo push 1
           git push origin HEAD:master
-          git push origin HEAD:master --tags
+          echo push 2
+          git push origin --tags
         working-directory: ./breadbox
 
       - name: Store bumped version
