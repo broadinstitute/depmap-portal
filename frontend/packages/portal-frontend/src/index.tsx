@@ -2,10 +2,9 @@ import "src/public-path";
 
 import React from "react";
 import ReactDOM from "react-dom";
-import {
-  CustomList,
-  renderCellLineSelectorModal,
-} from "@depmap/cell-line-selector";
+// TODO: uncomment this when merging into master
+// import { legacyPortalAPI, LegacyPortalApiResponse } from "@depmap/api";
+import { CustomList } from "@depmap/cell-line-selector";
 import { toStaticUrl } from "@depmap/globals";
 
 import { getQueryParams } from "@depmap/utils";
@@ -103,12 +102,6 @@ const renderWithErrorBoundary = (
   ReactDOM.render(<ErrorBoundary>{element}</ErrorBoundary>, container);
 };
 
-export function launchCellLineSelectorModal() {
-  const container = document.getElementById("cell_line_selector_modal"); // defined in layout.html
-
-  renderCellLineSelectorModal(getDapi, container);
-}
-
 export function showTermsAndConditionsModal() {
   const container = document.getElementById("modal-container");
   ReactDOM.render(<TermsAndConditionsModal />, container);
@@ -135,6 +128,13 @@ export function launchContextManagerModal(options?: {
     </React.Suspense>,
     container
   );
+}
+
+export function launchCellLineSelectorModal() {
+  launchContextManagerModal({
+    initialContextType: "depmap_model",
+    showHelpText: true,
+  });
 }
 
 export function editContext(context: DataExplorerContext, hash: string) {
