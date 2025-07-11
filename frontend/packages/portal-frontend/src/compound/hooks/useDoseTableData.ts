@@ -2,30 +2,7 @@ import { useEffect, useState } from "react";
 import { DRCDatasetOptions } from "@depmap/types";
 import { breadboxAPI, cached } from "@depmap/api";
 import { TableFormattedData } from "../types";
-
-// Helper to fetch metadata
-async function fetchMetadata<T>(
-  typeName: string,
-  indices: string[] | null,
-  columns: string[] | null,
-  bbapi: typeof breadboxAPI
-) {
-  const dimType = await cached(bbapi).getDimensionType(typeName);
-  if (!dimType?.metadata_dataset_id) {
-    throw new Error(`No metadata for ${typeName}`);
-  }
-
-  let args;
-  if (indices && indices.length > 0) {
-    args = { indices, identifier: "label" as const, columns };
-  } else {
-    args = { indices: null, identifier: null, columns };
-  }
-  return cached(bbapi).getTabularDatasetData(
-    dimType.metadata_dataset_id,
-    args
-  ) as Promise<T>;
-}
+import { fetchMetadata } from "../fetchDataHelpers";
 
 function buildTableData(
   viabilityAtDose: any,

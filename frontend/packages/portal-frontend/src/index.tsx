@@ -21,7 +21,7 @@ import { EntityType } from "./entity/models/entities";
 import TermsAndConditionsModal from "./common/components/TermsAndConditionsModal";
 import { initializeDevContexts } from "@depmap/data-explorer-2";
 import { EnrichmentTile } from "./contextExplorer/components/EnrichmentTile";
-import { StructureAndDetailTile } from "./compound/tiles/DetailTile";
+import { StructureAndDetailTile } from "./compound/tiles/StructureAndDetailTile";
 
 export { log, tailLog, getLogCount } from "src/common/utilities/log";
 
@@ -215,8 +215,11 @@ export function initStructureAndDetailTile(
   name: string,
   compoundId: string
 ) {
+  console.log(name);
+  console.log(compoundId);
   renderWithErrorBoundary(
     <React.Suspense fallback={<div>Loading...</div>}>
+      HELLO
       <StructureAndDetailTile compoundName={name} compoundId={compoundId} />
     </React.Suspense>,
     document.getElementById(elementId) as HTMLElement

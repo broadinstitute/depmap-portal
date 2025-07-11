@@ -38,7 +38,9 @@ export const StructureAndDetailTile: React.FC<StructureAndDetailTileProps> = ({
             />
           )}
         </h2>
-        <div className="card_padding">Card Area</div>
+        <div className="card_padding">
+          {compoundName} {compoundId}
+        </div>
         <div className="card_padding stacked-boxplot-graphs-padding">
           <div id="enrichment-tile"></div>
           <p className="stacked-boxplot-download-container">
