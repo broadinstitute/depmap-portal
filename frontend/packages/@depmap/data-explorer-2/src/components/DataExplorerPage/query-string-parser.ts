@@ -309,7 +309,7 @@ const inferColorBy = (partialPlot: PartialDataExplorerPlotConfig) => {
 
 const inferSortBy = (partialPlot: PartialDataExplorerPlotConfig) => {
   if (partialPlot.metadata) {
-    return "mean_values_asc";
+    return "mean_values_asc" as PartialDataExplorerPlotConfig["sort_by"];
   }
 
   return null;

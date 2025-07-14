@@ -10,6 +10,7 @@ export { default as ContextBuilderV2 } from "./src/components/ContextBuilderV2";
 export { default as ContextManager } from "./src/components/ContextManager";
 export { default as DatasetMetadataSelector } from "./src/components/DatasetMetadataSelector";
 export { default as DataExplorerPage } from "./src/components/DataExplorerPage/components/DataExplorer2";
+export { default as ContextTypeSelect } from "./src/components/ContextManager/ContextTypeSelect";
 
 export {
   DataExplorerApiProvider,
@@ -49,6 +50,7 @@ export { fetchContext, persistContext } from "./src/utils/context-storage";
 export {
   capitalize,
   convertDimensionToSliceId,
+  convertDimensionToSliceQuery,
   getDimensionTypeLabel,
   isCompleteDimension,
   isCompleteExpression,
@@ -60,6 +62,8 @@ export {
 } from "./src/utils/misc";
 
 export { persistLegacyListAsContext } from "./src/components/ContextSelector/context-selector-utils";
+
+export { default as DensityPlot } from "./src/components/DataExplorerPage/components/plot/prototype/PrototypeDensity1D";
 
 export {
   logInitialPlot,

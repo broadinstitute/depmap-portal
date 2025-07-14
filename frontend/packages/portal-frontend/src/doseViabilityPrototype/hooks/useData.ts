@@ -140,7 +140,7 @@ function useData(compoundName: string) {
         setTableFormattedData(tableData);
 
         setDoseColumnNames(
-          Object.keys(tableData[0])
+          Object.keys(tableData[0] || {})
             .filter((key) => key !== "Cell Line" && key !== "depmapId")
             .sort((a, b) => parseFloat(a) - parseFloat(b))
         );

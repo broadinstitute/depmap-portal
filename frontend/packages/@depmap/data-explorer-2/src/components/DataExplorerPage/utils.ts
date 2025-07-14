@@ -657,7 +657,7 @@ export async function readPlotFromQueryString(
   plot = replaceLegacyPropertyNames(plot);
   plot = await replaceHashesWithContexts(plot);
 
-  return (plot as DataExplorerPlotConfig) || DEFAULT_EMPTY_PLOT;
+  return (plot || DEFAULT_EMPTY_PLOT) as DataExplorerPlotConfig;
 }
 
 export function plotsAreEquivalentWhenSerialized(

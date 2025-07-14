@@ -32,7 +32,7 @@ interface Props {
 }
 
 const DimensionSelect = isElara
-  ? (DimensionSelectV2 as typeof DimensionSelectV1)
+  ? ((DimensionSelectV2 as unknown) as typeof DimensionSelectV1)
   : DimensionSelectV1;
 
 const getAxisLabel = (plot_type: string | undefined, axis: string) => {

@@ -13,7 +13,6 @@ Breadbox is a persistent service for storing and retrieving data for the [DepMap
 
         ./install_prereqs.sh
 
-
 ## Running the app
 
 Before running any of the following, you'll need to activate the poetry environment

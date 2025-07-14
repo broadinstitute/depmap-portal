@@ -663,12 +663,16 @@ export function getNewContextUrl(
   const currentUrl = new URL(currentLocation);
 
   const currentContext = currentUrl.searchParams.get("context");
+
   const newUrl = currentContext
-    ? currentLocation.replace(
-        `&context=${encodeURIComponent(currentContext)}`,
-        `&context=${encodeURIComponent(newCode)}`
+    ? // Do not include & in the string replacement. Cannot guarantee that the context query string
+      // will come after the tab query string.
+      currentLocation.replace(
+        `context=${encodeURIComponent(currentContext)}`,
+        `context=${encodeURIComponent(newCode)}`
       )
-    : currentLocation.concat(`&context=${encodeURIComponent(newCode)}`);
+    : // & is okay here because no context query string exists yet, but a tab will always exist.
+      currentLocation.concat(`&context=${encodeURIComponent(newCode)}`);
 
   return newUrl;
 }

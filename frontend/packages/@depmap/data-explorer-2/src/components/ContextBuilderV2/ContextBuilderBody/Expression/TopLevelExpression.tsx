@@ -1,8 +1,12 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Button } from "react-bootstrap";
 import { get_values } from "json-logic-js";
 import { Expr, getOperator, MAX_CONDITIONS } from "../../utils/expressionUtils";
-import { scrollLastConditionIntoView } from "../../utils/domUtils";
+import {
+  scrollLastConditionIntoView,
+  saveScrollPosition,
+  restoreScrollPosition,
+} from "../../utils/domUtils";
 import { useContextBuilderState } from "../../state/ContextBuilderState";
 import type { ExpressionComponentType } from "./index";
 import BooleanExpression from "./BooleanExpression";
@@ -15,10 +19,18 @@ interface Props {
 }
 
 function TopLevelExpression({ expr, Expression }: Props) {
-  const { dispatch } = useContextBuilderState();
+  const { dispatch, setShowTableView } = useContextBuilderState();
 
   const op = getOperator(expr);
   const numConditions = get_values(expr).length;
+
+  useEffect(
+    () => restoreScrollPosition(expr),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [
+      /* only do this on mount */
+    ]
+  );
 
   return (
     <div className={styles.TopLevelExpression}>
@@ -29,17 +41,29 @@ function TopLevelExpression({ expr, Expression }: Props) {
         Expression={Expression}
       />
       <div className={styles.topLevelButtonsAndStats}>
-        <Button
-          id="add-condition"
-          bsStyle="info"
-          disabled={numConditions >= MAX_CONDITIONS}
-          onClick={() => {
-            dispatch({ type: "add-condition", payload: { path: [op] } });
-            scrollLastConditionIntoView();
-          }}
-        >
-          Add condition +
-        </Button>
+        <div className={styles.tlButtons}>
+          <Button
+            id="add-condition"
+            bsStyle="info"
+            disabled={numConditions >= MAX_CONDITIONS}
+            onClick={() => {
+              dispatch({ type: "add-condition", payload: { path: [op] } });
+              scrollLastConditionIntoView();
+            }}
+          >
+            <i className="glyphicon glyphicon-plus" />
+            <span> Add rule</span>
+          </Button>
+          <Button
+            onClick={() => {
+              saveScrollPosition(expr);
+              setShowTableView(true);
+            }}
+          >
+            <i className="glyphicon glyphicon-th-list" />
+            <span> View as table</span>
+          </Button>
+        </div>
         <NumberOfMatches
           className={styles.topLevelMatches}
           showNumCandidates

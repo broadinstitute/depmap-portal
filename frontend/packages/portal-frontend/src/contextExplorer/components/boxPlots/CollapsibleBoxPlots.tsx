@@ -170,7 +170,7 @@ function CollapsibleBoxPlots({
 
   const xAxisTitle = useMemo(() => {
     if (datasetId === ContextExplorerDatasets.Prism_oncology_AUC) {
-      return "AUC";
+      return boxPlotData?.dataset_units || "";
     }
 
     if (datasetId === ContextExplorerDatasets.Rep_all_single_pt) {
@@ -178,7 +178,7 @@ function CollapsibleBoxPlots({
     }
 
     return "Gene Effect";
-  }, [datasetId]);
+  }, [datasetId, boxPlotData]);
 
   const xAxisRange = useMemo(() => {
     const sigSelectedData =
