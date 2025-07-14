@@ -38,6 +38,23 @@ export const StructureAndDetailTile: React.FC<StructureAndDetailTileProps> = ({
     />
   );
 
+  if (!isLoading && error) {
+    return (
+      <article
+        className={`${styles.StructureAndDetailTile} card_wrapper stacked-boxplot-tile`}
+      >
+        <div className="card_border container_fluid">
+          <h2 className="no_margin cardtitle_text">Structure and Details </h2>
+          <div className="card_padding">
+            <div className={styles.errorMessage}>
+              There was an error loading this tile.
+            </div>
+          </div>
+        </div>
+      </article>
+    );
+  }
+
   return (
     <article
       className={`${styles.StructureAndDetailTile} card_wrapper stacked-boxplot-tile`}
