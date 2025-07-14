@@ -3,9 +3,9 @@ import { toStaticUrl } from "@depmap/globals";
 import InfoIcon from "src/common/components/InfoIcon";
 import useStructureAndDetailData from "./hooks/useStructureAndDetailData";
 import styles from "./CompoundTiles.scss";
+import PlotSpinner from "src/plot/components/PlotSpinner";
 
 interface StructureAndDetailTileProps {
-  compoundName: string;
   compoundId: string;
 }
 
@@ -14,7 +14,6 @@ const getGenePageUrl = (gene: string) => {
 };
 
 export const StructureAndDetailTile: React.FC<StructureAndDetailTileProps> = ({
-  compoundName,
   compoundId,
 }) => {
   const {
@@ -55,6 +54,7 @@ export const StructureAndDetailTile: React.FC<StructureAndDetailTileProps> = ({
             />
           )}
         </h2>
+        {isLoading && !error && <PlotSpinner />}
         {metadata && (
           <div className="card_padding">
             {structureImageUrl && (
@@ -89,7 +89,13 @@ export const StructureAndDetailTile: React.FC<StructureAndDetailTileProps> = ({
             {metadata.SMILES[compoundId] && (
               <div className={styles.metadataLine}>
                 <div className={styles.metadataLineLabel}>SMILES:</div>
-                {metadata.SMILES[compoundId]}
+                <a
+                  href={`https://pubchem.ncbi.nlm.nih.gov/compound/${metadata.PubChemCID[compoundId]}`}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  {metadata.SMILES[compoundId]}
+                </a>
               </div>
             )}
             {metadata.TargetOrMechanism[compoundId] && (

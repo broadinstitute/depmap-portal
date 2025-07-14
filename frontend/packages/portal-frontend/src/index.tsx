@@ -212,15 +212,11 @@ export function initEnrichmentTile(
 
 export function initStructureAndDetailTile(
   elementId: string,
-  name: string,
   compoundId: string
 ) {
-  console.log(name);
-  console.log(compoundId);
   renderWithErrorBoundary(
     <React.Suspense fallback={<div>Loading...</div>}>
-      HELLO
-      <StructureAndDetailTile compoundName={name} compoundId={compoundId} />
+      <StructureAndDetailTile compoundId={compoundId} />
     </React.Suspense>,
     document.getElementById(elementId) as HTMLElement
   );

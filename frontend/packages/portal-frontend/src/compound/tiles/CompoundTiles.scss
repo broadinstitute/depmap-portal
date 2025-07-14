@@ -2,9 +2,16 @@
   .metadataLine {
     font-size: 14px;
     font-family: "Lato";
-    line-height: 20px;
+    line-height: 24px;
     display: flex;
     align-items: baseline;
+    overflow: hidden;
+    word-wrap: break-word;
+    max-width: 380px;
+    & a {
+      overflow: hidden;
+      max-width: 380px;
+    }
     .metadataLineLabel {
       font-weight: 700;
       text-align: left;

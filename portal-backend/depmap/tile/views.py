@@ -371,7 +371,7 @@ def get_structure_and_detail_html(
         f'<div id="{div_id}"></div>',
         f"""(
         function() {{
-            DepMap.initStructureAndDetailTile("{div_id}", "{compound_name}", "{compound_id}");
+            DepMap.initStructureAndDetailTile("{div_id}", "{compound_id}");
         }})""",
     )
 
