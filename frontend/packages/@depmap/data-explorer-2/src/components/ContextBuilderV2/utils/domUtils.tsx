@@ -21,3 +21,25 @@ export function scrollParentIntoView(element: HTMLElement | null) {
     });
   }, 0);
 }
+
+let prevScrollTop = 0;
+let prevSentinel = {};
+
+export function saveScrollPosition(sentinel: object) {
+  const el = document.querySelector('[data-expr-scroll-index="0"]')
+    ?.parentElement;
+
+  prevScrollTop = el?.scrollTop || 0;
+  prevSentinel = sentinel;
+}
+
+export function restoreScrollPosition(sentinel: object) {
+  const el = document.querySelector('[data-expr-scroll-index="0"]')
+    ?.parentElement;
+
+  if (el && sentinel === prevSentinel) {
+    setTimeout(() => {
+      el.scrollTop = prevScrollTop;
+    }, 0);
+  }
+}

@@ -17,6 +17,7 @@ function useModalContainer() {
     modal.style.zIndex = "1051";
     modal.style.position = "absolute";
     modal.style.top = "0";
+    modal.setAttribute("data-modal-stacking-mode", "exclusive");
   }, []);
 }
 

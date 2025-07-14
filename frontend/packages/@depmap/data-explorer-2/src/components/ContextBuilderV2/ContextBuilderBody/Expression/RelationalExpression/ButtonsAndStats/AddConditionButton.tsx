@@ -16,7 +16,7 @@ function AddConditionButton({ path, numConditions }: Props) {
   return (
     <Tooltip
       id="add-condition-tooltip"
-      content="Add sub-condition"
+      content="Add grouped rule"
       placement="top"
     >
       <Button
