@@ -27,14 +27,9 @@ export const StructureAndDetailTile: React.FC<StructureAndDetailTileProps> = ({
   const showInfoIcon = false;
   const customInfoImg = (
     <img
-      style={{
-        height: "13px",
-        margin: "1px 3px 4px 3px",
-        cursor: "pointer",
-      }}
       src={toStaticUrl("img/gene_overview/info_purple.svg")}
       alt="structure and detail info tip"
-      className="icon"
+      className={styles.infoImage}
     />
   );
 
