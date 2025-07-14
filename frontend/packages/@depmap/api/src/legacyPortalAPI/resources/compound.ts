@@ -36,3 +36,7 @@ export function getCompoundDoseCurveData(
     params
   );
 }
+
+export function getStructureImageUrl(compoundId: string) {
+  return getJson<string>(`/api/compound/structure_image/${compoundId}`);
+}

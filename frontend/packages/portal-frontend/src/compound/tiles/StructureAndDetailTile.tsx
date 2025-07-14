@@ -9,11 +9,23 @@ interface StructureAndDetailTileProps {
   compoundId: string;
 }
 
+const getGenePageUrl = (gene: string) => {
+  return window.location.href.split("compound")[0].concat(`gene/${gene}`);
+};
+
 export const StructureAndDetailTile: React.FC<StructureAndDetailTileProps> = ({
   compoundName,
   compoundId,
 }) => {
-  const { metadata, error, isLoading } = useStructureAndDetailData(compoundId);
+  const {
+    metadata,
+    structureImageUrl,
+    error,
+    isLoading,
+  } = useStructureAndDetailData(compoundId);
+
+  // TODO: Always show InfoIcon once we have content for the popoverContent
+  const showInfoIcon = false;
   const customInfoImg = (
     <img
       style={{
@@ -27,10 +39,6 @@ export const StructureAndDetailTile: React.FC<StructureAndDetailTileProps> = ({
     />
   );
 
-  const getGenePageLinkedLabels = () => {
-    // TODO left off here!!!!!
-  };
-
   return (
     <article
       className={`${styles.StructureAndDetailTile} card_wrapper stacked-boxplot-tile`}
@@ -38,7 +46,7 @@ export const StructureAndDetailTile: React.FC<StructureAndDetailTileProps> = ({
       <div className="card_border container_fluid">
         <h2 className="no_margin cardtitle_text">
           Structure and Details{" "}
-          {true && (
+          {showInfoIcon && (
             <InfoIcon
               target={customInfoImg}
               popoverContent={<p>{"This is a tooltip"}</p>}
@@ -49,9 +57,14 @@ export const StructureAndDetailTile: React.FC<StructureAndDetailTileProps> = ({
         </h2>
         {metadata && (
           <div className="card_padding">
+            {structureImageUrl && (
+              <div>
+                <img className="image_width_100" src={structureImageUrl} />
+              </div>
+            )}
             {metadata.PubChemCID[compoundId] && (
               <div className={styles.metadataLine}>
-                <h4 className={styles.metadataLineLabel}>PubChem ID: </h4>
+                <div className={styles.metadataLineLabel}>PubChem ID: </div>
                 <a
                   href={`https://pubchem.ncbi.nlm.nih.gov/compound/${metadata.PubChemCID[compoundId]}`}
                   target="_blank"
@@ -63,7 +76,7 @@ export const StructureAndDetailTile: React.FC<StructureAndDetailTileProps> = ({
             )}
             {metadata.ChEMBLID[compoundId] && (
               <div className={styles.metadataLine}>
-                <h4 className={styles.metadataLineLabel}>ChEMBL ID: </h4>
+                <div className={styles.metadataLineLabel}>ChEMBL ID: </div>
                 <a
                   href={`https://www.ebi.ac.uk/chembl/compound_report_card/${metadata.ChEMBLID[compoundId]}`}
                   target="_blank"
@@ -73,19 +86,45 @@ export const StructureAndDetailTile: React.FC<StructureAndDetailTileProps> = ({
                 </a>
               </div>
             )}
-            <div className={styles.metadataLine}>
-              <h4 className={styles.metadataLineLabel}>SMILES: </h4>{" "}
-              {metadata.SMILES[compoundId]}
-            </div>
-            <div className={styles.metadataLine}>
-              <h4 className={styles.metadataLineLabel}>Target/Mechanism: </h4>{" "}
-              {metadata.TargetOrMechanism[compoundId]}
-            </div>
+            {metadata.SMILES[compoundId] && (
+              <div className={styles.metadataLine}>
+                <div className={styles.metadataLineLabel}>SMILES:</div>
+                {metadata.SMILES[compoundId]}
+              </div>
+            )}
+            {metadata.TargetOrMechanism[compoundId] && (
+              <div className={styles.metadataLine}>
+                <div className={styles.metadataLineLabel}>
+                  Target/Mechanism:
+                </div>
+                {metadata.TargetOrMechanism[compoundId]}
+              </div>
+            )}
             {metadata.GeneSymbolOfTargets[compoundId] &&
               metadata.GeneSymbolOfTargets[compoundId].length > 0 && (
                 <div className={styles.metadataLine}>
                   <h4 className={styles.metadataLineLabel}>Target: </h4>
-                  {getGenePageLinkedLabels().join(",")}
+                  {metadata.GeneSymbolOfTargets[compoundId].map(
+                    (gene: string, i: number) =>
+                      i <
+                      metadata.GeneSymbolOfTargets[compoundId].length - 1 ? (
+                        <a
+                          href={getGenePageUrl(gene)}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          {gene},
+                        </a>
+                      ) : (
+                        <a
+                          href={getGenePageUrl(gene)}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          {gene}
+                        </a>
+                      )
+                  )}
                 </div>
               )}
           </div>

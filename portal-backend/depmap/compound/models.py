@@ -122,6 +122,19 @@ class Compound(Entity):
         return xref_parts[0] + "-" + xref_parts[1]
 
     @staticmethod
+    def get_by_compound_id(compound_id: str, must=True) -> "Compound":
+        """
+        Return the Compound instance for a given compound_id (string, e.g. 'DPC-000001').
+        Returns None if not found.
+        """
+        q = Compound.query.filter(Compound.compound_id == compound_id)
+
+        if must:
+            return q.one()
+        else:
+            return q.one_or_none()
+
+    @staticmethod
     def get_by_label(label, must=True) -> "Compound":
         q = Compound.query.filter(Compound.label == label)
         if must:

@@ -1,10 +1,16 @@
-.StructureAndDetail {
+.StructureAndDetailTile {
   .metadataLine {
     font-size: 14px;
     font-family: "Lato";
     line-height: 20px;
+    display: flex;
+    align-items: baseline;
     .metadataLineLabel {
-      font-weight: 700 !important;
+      font-weight: 700;
+      text-align: left;
+    }
+    .metadataLineLabel:after {
+      content: "\00a0"; /* Unicode for non-breaking space */
     }
   }
 }

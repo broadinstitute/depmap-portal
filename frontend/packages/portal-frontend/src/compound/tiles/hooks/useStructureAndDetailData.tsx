@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { breadboxAPI } from "@depmap/api";
+import { breadboxAPI, legacyPortalAPI } from "@depmap/api";
 import { fetchMetadata } from "src/compound/fetchDataHelpers";
 
 interface CompoundDetailsResponse {
@@ -12,6 +12,9 @@ interface CompoundDetailsResponse {
 
 export default function useStructureAndDetailData(compoundId: string) {
   const [metadata, setMetdata] = useState<CompoundDetailsResponse | null>(null);
+  const [structureImageUrl, setStructureImageUrl] = useState<string | null>(
+    null
+  );
   const [error, setError] = useState(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
@@ -27,6 +30,7 @@ export default function useStructureAndDetailData(compoundId: string) {
       setError(false);
       try {
         const bbapi = breadboxAPI;
+        const dapi = legacyPortalAPI; // only need the legacy api to get the structure image
 
         const columnsOfInterest = [
           "GeneSymbolOfTargets",
@@ -43,8 +47,13 @@ export default function useStructureAndDetailData(compoundId: string) {
           bbapi,
           "id"
         );
-        console.log(compoundDetailMetadata);
+
         setMetdata(compoundDetailMetadata);
+
+        // Get structure image
+        const strucImg = await dapi.getStructureImageUrl(compoundId);
+        setStructureImageUrl(strucImg);
+
         setIsLoading(false);
       } catch (e) {
         window.console.error(e);
@@ -55,5 +64,5 @@ export default function useStructureAndDetailData(compoundId: string) {
     })();
   }, [compoundId]);
 
-  return { metadata, error, isLoading };
+  return { metadata, structureImageUrl, error, isLoading };
 }
