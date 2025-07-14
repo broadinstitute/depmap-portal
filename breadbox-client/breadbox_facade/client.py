@@ -413,8 +413,8 @@ class BBClient:
         name: Union[str, Unset] = UNSET,
         dataset_metadata: Optional[dict] = None,
         group_id: Union[str, Unset] = UNSET,
-        given_id: Union[str, Unset] = UNSET,
-        description: Union[str, Unset] = UNSET,
+        given_id: Union[str, Unset, None] = UNSET,
+        description: Union[str, Unset, None] = UNSET,
     ) -> Union[MatrixDatasetResponse, TabularDatasetResponse]:
         """Update the values specified for the given dataset"""
         from breadbox_client.models import MatrixDatasetUpdateParams, TabularDatasetUpdateParams
