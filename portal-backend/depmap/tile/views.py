@@ -39,7 +39,7 @@ from depmap.compound.views.executive import (
 )
 from depmap.compound.views.index import format_about
 from depmap.gene.models import Gene
-from depmap.compound.models import Compound, CompoundExperiment
+from depmap.compound.models import Compound, CompoundExperiment, drc_compound_datasets
 from depmap.dataset.models import DependencyDataset, BiomarkerDataset
 from depmap.metmap.models import MetMap500
 from depmap.extensions import cansar, breadbox
@@ -186,6 +186,10 @@ def render_compound_tile(
         CompoundTileEnum.availability.value: get_availability_html,
         CompoundTileEnum.celfie.value: get_celfie_html,
     }
+
+    if current_app.config["ENABLED_FEATURES"].new_compound_page_tabs:
+        tiles[CompoundTileEnum.heatmap.value] = get_heatmap_html
+
     if tile_name not in tiles:
         abort(400)
     tile_html = tiles[tile_name]
@@ -358,6 +362,43 @@ def get_enrichment_html(
             console.log("about to call initEnrichmentTile");
             DepMap.initEnrichmentTile("{div_id}", "{entity_label}", "{entity.type}");
             console.log("after initEnrichmentTile");
+        }})""",
+    )
+
+
+def get_heatmap_html(
+    entity: Entity, compound_experiment_and_datasets=None, query_params_dict={}
+):
+    div_id = str(uuid.uuid4())
+    entity_label = entity.label
+    compound = Compound.get_by_label(entity_label)
+    compound_id = compound.compound_id
+
+    # TODO: How to figure out which dataset to prioritize? Right now only OncRef is supported,
+    # so don't worry about this yet.
+    dataset_options = [
+        {
+            "display_name": dataset.display_name,
+            "viability_dataset_id": dataset.viability_dataset_given_id,
+            "replicate_dataset": dataset.replicate_dataset,
+            "auc_dataset_id": dataset.auc_dataset_given_id,
+            "ic50_dataset_id": dataset.ic50_dataset_given_id,
+            "drc_dataset_label": dataset.drc_dataset_label,
+        }
+        for dataset in drc_compound_datasets
+    ]
+
+    prioritized_dataset = dataset_options[0]
+
+    dataset_display_name = prioritized_dataset["display_name"]
+    viability_dataset_id = prioritized_dataset["viability_dataset_id"]
+    auc_dataset_id = prioritized_dataset["auc_dataset_id"]
+
+    return RenderedTile(
+        f'<div id="{div_id}"></div>',
+        f"""(
+        function() {{
+            DepMap.initHeatmapTile("{div_id}", "{compound_id}", "{dataset_display_name}", "{viability_dataset_id}", "{auc_dataset_id}" );
         }})""",
     )
 
@@ -542,7 +583,7 @@ def get_tractability_html(gene):
 def get_sensitivity_html(
     compound, compound_experiment_and_datasets, query_params_dict={}
 ):
-    # DEPRECATED: will be redesigned/replaced
+    # DEPRECATED: will be redesigned/repzlaced
     best_ce_and_d = determine_compound_experiment_and_dataset(
         compound_experiment_and_datasets
     )

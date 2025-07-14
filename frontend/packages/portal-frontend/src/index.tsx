@@ -14,13 +14,14 @@ import ErrorBoundary from "src/common/components/ErrorBoundary";
 import { WideTableProps } from "@depmap/wide-table";
 
 import { Option } from "src/common/models/utilities";
-import { DataExplorerContext } from "@depmap/types";
+import { DataExplorerContext, DRCDatasetOptions } from "@depmap/types";
 
 import { ConnectivityValue } from "./constellation/models/constellation";
 import { EntityType } from "./entity/models/entities";
 import TermsAndConditionsModal from "./common/components/TermsAndConditionsModal";
 import { initializeDevContexts } from "@depmap/data-explorer-2";
 import { EnrichmentTile } from "./contextExplorer/components/EnrichmentTile";
+import { HeatmapTileContainer } from "./compound/tiles/HeatmapTile/HeatmapTileContainer";
 
 export { log, tailLog, getLogCount } from "src/common/utilities/log";
 
@@ -204,6 +205,19 @@ export function initEnrichmentTile(
   renderWithErrorBoundary(
     <React.Suspense fallback={<div>Loading...</div>}>
       <EnrichmentTile entityLabel={entityLabel} entityType={entityType} />
+    </React.Suspense>,
+    document.getElementById(elementId) as HTMLElement
+  );
+}
+
+export function initHeatmapTile(
+  elementId: string,
+  compoundId: string,
+  dataset: DRCDatasetOptions
+) {
+  renderWithErrorBoundary(
+    <React.Suspense fallback={<div>Loading...</div>}>
+      <HeatmapTileContainer compoundId={compoundId} dataset={dataset} />
     </React.Suspense>,
     document.getElementById(elementId) as HTMLElement
   );

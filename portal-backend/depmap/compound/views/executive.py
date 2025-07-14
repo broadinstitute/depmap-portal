@@ -125,6 +125,7 @@ def get_order(has_predictability: bool):
         CompoundTileEnum.availability.value: tile_small,
     }
     anywhere_cards = {
+        CompoundTileEnum.heatmap.value: tile_large,
         CompoundTileEnum.predictability.value: tile_large,
         CompoundTileEnum.celfie.value: tile_large,
     }

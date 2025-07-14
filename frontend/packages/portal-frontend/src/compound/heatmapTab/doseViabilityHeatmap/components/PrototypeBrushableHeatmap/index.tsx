@@ -18,9 +18,10 @@ interface Props {
   xAxisTitle: string;
   yAxisTitle: string;
   legendTitle: string;
-  selectedColumns: Set<number>;
-  onSelectColumnRange: (start: number, end: number, shiftKey: boolean) => void;
-  onClearSelection: () => void;
+  selectedColumns?: Set<number>;
+  interactiveVersion?: boolean;
+  onSelectColumnRange?: (start: number, end: number, shiftKey: boolean) => void;
+  onClearSelection?: () => void;
   onLoad?: (plot: ExtendedPlotType) => void;
   hovertemplate?: string | string[];
   // Optionally set a min/max for the color scale. If left undefined, these
@@ -34,9 +35,10 @@ function PrototypeBrushableHeatmap({
   xAxisTitle,
   yAxisTitle,
   legendTitle,
-  selectedColumns,
-  onSelectColumnRange,
-  onClearSelection,
+  onSelectColumnRange = () => {},
+  onClearSelection = () => {},
+  selectedColumns = new Set([]),
+  interactiveVersion = true,
   hovertemplate = undefined,
   zmin = undefined,
   zmax = undefined,
@@ -224,21 +226,23 @@ function PrototypeBrushableHeatmap({
     };
 
     on("plotly_afterplot", () => {
-      customizeDragLayer({
-        plot,
-        onMouseOut: () => setHoveredColumns([]),
-        onChangeInProgressSelection: (start, end) => {
-          const selectRange = [];
-          for (let i = start; i <= end; i += 1) {
-            selectRange.push(i);
-          }
-          setHoveredColumns(selectRange);
-        },
-        onSelectColumnRange: (start, end, shiftKey) => {
-          onSelectColumnRange(start, end, shiftKey);
-        },
-        onClearSelection,
-      });
+      if (interactiveVersion) {
+        customizeDragLayer({
+          plot,
+          onMouseOut: () => setHoveredColumns([]),
+          onChangeInProgressSelection: (start, end) => {
+            const selectRange = [];
+            for (let i = start; i <= end; i += 1) {
+              selectRange.push(i);
+            }
+            setHoveredColumns(selectRange);
+          },
+          onSelectColumnRange: (start, end, shiftKey) => {
+            onSelectColumnRange(start, end, shiftKey);
+          },
+          onClearSelection,
+        });
+      }
     });
 
     on("plotly_hover", (e: any) => {
