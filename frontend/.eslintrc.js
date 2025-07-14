@@ -51,6 +51,7 @@ module.exports = {
     "max-len": "off",
     "no-confusing-arrow": "off",
     "no-plusplus": "off",
+    "no-restricted-syntax": "off",
     "no-tabs": "off",
     "no-trailing-spaces": "off",
     "no-underscore-dangle": "off",

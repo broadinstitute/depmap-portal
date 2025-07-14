@@ -22,22 +22,21 @@ import {
 import usePlotResizer from "./usePlotResizer";
 import type ExtendedPlotType from "../../../ExtendedPlotType";
 
-type Data = Record<string, any[]>;
+type Data = Record<string, any>;
 
 const MAX_POINTS_TO_ANNOTATE = 50;
 
 interface Props {
   data: Data;
   xKey: string;
-  xLabel: string;
   hoverTextKey?: string;
   annotationTextKey?: string;
   height: number | "auto";
   colorMap: any;
-  colorData: any;
+  colorData?: any;
   continuousColorKey?: string;
   legendDisplayNames: any;
-  legendTitle: string | null;
+  legendTitle?: string | null;
   selectedPoints?: Set<number>;
   onClickPoint?: (pointIndex: number, ctrlKey: boolean) => void;
   onMultiselect?: (pointIndices: number[]) => void;
@@ -45,7 +44,7 @@ interface Props {
   pointVisibility?: boolean[];
   useSemiOpaqueViolins?: boolean;
   onLoad?: (plot: ExtendedPlotType) => void;
-  hiddenLegendValues: any;
+  hiddenLegendValues?: any;
   // optional styling
   pointSize?: number;
   pointOpacity?: number;
@@ -142,7 +141,6 @@ const hasSomeNonNullValue = (array: unknown[]) => {
 function PrototypeDensity1D({
   data,
   xKey,
-  xLabel,
   colorMap,
   colorData,
   continuousColorKey,
@@ -158,7 +156,7 @@ function PrototypeDensity1D({
   onMultiselect = () => {},
   onClickResetSelection = () => {},
   onLoad = () => {},
-  hiddenLegendValues,
+  hiddenLegendValues = new Set(),
   pointSize = 7,
   pointOpacity = 1.0,
   outlineWidth = 0.5,
@@ -196,7 +194,7 @@ function PrototypeDensity1D({
       xaxis: undefined,
       yaxis: undefined,
     };
-  }, [xLabel, colorData, minX, maxX]);
+  }, [data.xLabel, colorData, minX, maxX]);
 
   useEffect(() => {
     axes.current.yaxis = undefined;
@@ -216,7 +214,6 @@ function PrototypeDensity1D({
 
     if (yaxis) {
       yaxis.tickfont = { size: yAxisFontSize };
-      console.log(axes.current.yaxis);
     }
   }, [xAxisFontSize, yAxisFontSize]);
 
@@ -437,7 +434,7 @@ function PrototypeDensity1D({
 
       xaxis: axes.current.xaxis || {
         title: {
-          text: xLabel,
+          text: data.xLabel,
           font: { size: xAxisFontSize },
           standoff: 8,
         } as any,
@@ -462,7 +459,7 @@ function PrototypeDensity1D({
       dragmode,
 
       annotations:
-        selectedPoints?.size <= MAX_POINTS_TO_ANNOTATE
+        annotationText && selectedPoints?.size <= MAX_POINTS_TO_ANNOTATE
           ? [...selectedPoints]
               .filter(
                 // Filter out any annotations associated with missing data. This can
@@ -493,7 +490,11 @@ function PrototypeDensity1D({
               return selectedPoints
                 ? [
                     {
-                      text: `(${selectedPoints.size} selected points)`,
+                      text: [
+                        selectedPoints.size,
+                        "selected",
+                        selectedPoints.size === 1 ? "point" : "points",
+                      ].join(" "),
                       arrowcolor: "transparent",
                       bordercolor: "#c7c7c7",
                       bgcolor: "#fff",
@@ -506,6 +507,8 @@ function PrototypeDensity1D({
     const config: Partial<Config> = {
       responsive: true,
       edits: { annotationTail: true },
+      displaylogo: false,
+      modeBarButtonsToRemove: ["select2d", "lasso2d"],
     };
 
     Plotly.react(plot, plotlyData, layout, config);
@@ -735,7 +738,6 @@ function PrototypeDensity1D({
   }, [
     data,
     xKey,
-    xLabel,
     colorMap,
     colorData,
     continuousColorKey,
