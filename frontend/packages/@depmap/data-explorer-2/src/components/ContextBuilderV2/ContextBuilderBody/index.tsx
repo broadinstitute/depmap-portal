@@ -4,10 +4,11 @@ import { useContextBuilderState } from "../state/ContextBuilderState";
 import NameInput from "./NameInput";
 import Expression from "./Expression";
 import DebugInfo from "./DebugInfo";
+import ContextBuilderTableView from "./ContextBuilderTableView";
 import styles from "../../../styles/ContextBuilderV2.scss";
 
 function ContextBuilderBody() {
-  const { isInitializing, mainExpr } = useContextBuilderState();
+  const { isInitializing, mainExpr, showTableView } = useContextBuilderState();
 
   return (
     <Modal.Body>
@@ -16,8 +17,12 @@ function ContextBuilderBody() {
       ) : (
         <>
           <NameInput />
-          <div className={styles.mainExpr}>
-            <Expression expr={mainExpr} path={[]} />
+          <div className={styles.mainContent}>
+            {showTableView ? (
+              <ContextBuilderTableView />
+            ) : (
+              <Expression expr={mainExpr} path={[]} />
+            )}
           </div>
           <DebugInfo />
         </>

@@ -282,14 +282,16 @@ function ContextManager({
                   openContextEditor(null, { context_type: contextType });
                 }}
               >
-                Create new +
+                <i className="glyphicon glyphicon-plus" />
+                <span> Create new</span>
               </Button>
               {contextType === "depmap_model" && !useContextBuilderV2 && (
                 <Button
                   style={{ marginLeft: 10 }}
                   onClick={handleClickCreateWithCellLineSelector}
                 >
-                  Create new with Cell Line Selector +
+                  <i className="glyphicon glyphicon-plus" />
+                  <span> Create new with Cell Line Selector</span>
                 </Button>
               )}
             </div>
