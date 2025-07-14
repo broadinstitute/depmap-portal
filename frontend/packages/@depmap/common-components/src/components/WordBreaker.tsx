@@ -21,8 +21,8 @@ function WordBreaker({ text }: Props) {
   }
 
   const elements: React.ReactNode[] = [];
-  // Split on the chars +_/ or at camelCase word boundaries.
-  const regex = /[+_/]|[a-z](?=[A-Z])/g;
+  // Split on the chars +_/@ or at camelCase word boundaries.
+  const regex = /[+_/@]|[a-z](?=[A-Z])/g;
   const matches = text.match(regex);
 
   text.split(regex).forEach((str: string, i) => {

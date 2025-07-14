@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { DataExplorerPlotConfigDimensionV2 } from "@depmap/types";
-import { useDataExplorerApi } from "../../../contexts/DataExplorerApiContext";
 import useCallbacks from "./useCallbacks";
 import useSync from "./useSync";
 import resolveNextState from "./resolveNextState";
@@ -22,7 +21,6 @@ export default function useDimensionStateManager({
   onChange,
   initialDataType = "",
 }: Props) {
-  const api = useDataExplorerApi();
   const isInitialized = useRef(false);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -56,12 +54,7 @@ export default function useDimensionStateManager({
       setIsLoading(true);
 
       try {
-        const nextState = await resolveNextState(
-          api,
-          index_type,
-          state,
-          changes
-        );
+        const nextState = await resolveNextState(index_type, state, changes);
         setState(nextState);
       } catch (e) {
         window.console.error(e);
@@ -69,7 +62,7 @@ export default function useDimensionStateManager({
         setIsLoading(false);
       }
     },
-    [api, index_type, state]
+    [index_type, state]
   );
 
   if (!isInitialized.current) {
@@ -102,7 +95,7 @@ export default function useDimensionStateManager({
     const dataset_id = state.dimension.dataset_id;
 
     if (state.dataType === null && dataset_id !== undefined) {
-      findDataType(api, dataset_id).then((dataType) => {
+      findDataType(dataset_id).then((dataType) => {
         if (dataType) {
           update({ dataType, dataset_id });
         } else {
@@ -111,7 +104,6 @@ export default function useDimensionStateManager({
       });
     }
   }, [
-    api,
     state.dataType,
     state.dimension.dataset_id,
     state.isUnknownDataset,
