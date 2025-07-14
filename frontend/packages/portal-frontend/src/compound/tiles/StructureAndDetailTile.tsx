@@ -71,7 +71,11 @@ export const StructureAndDetailTile: React.FC<StructureAndDetailTileProps> = ({
           <div className="card_padding">
             {structureImageUrl && (
               <div>
-                <img className="image_width_100" src={structureImageUrl} />
+                <img
+                  className="image_width_100"
+                  src={structureImageUrl}
+                  alt="compound structure"
+                />
               </div>
             )}
             {metadata.PubChemCID[compoundId] && (
@@ -130,6 +134,7 @@ export const StructureAndDetailTile: React.FC<StructureAndDetailTileProps> = ({
                           href={getGenePageUrl(gene)}
                           target="_blank"
                           rel="noreferrer"
+                          key={i}
                         >
                           {gene},
                         </a>
@@ -138,6 +143,7 @@ export const StructureAndDetailTile: React.FC<StructureAndDetailTileProps> = ({
                           href={getGenePageUrl(gene)}
                           target="_blank"
                           rel="noreferrer"
+                          key={i}
                         >
                           {gene}
                         </a>
