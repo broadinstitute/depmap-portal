@@ -167,7 +167,7 @@ function StringList({ expr, path, domain, isLoading }: Props) {
           expr ? expr.map((value: string) => ({ value, label: value })) : null
         }
         onChange={(val) => {
-          const selections = val as { value: string }[] | null;
+          const selections = (val as unknown) as { value: string }[] | null;
 
           const nextValue =
             selections && selections.length > 0

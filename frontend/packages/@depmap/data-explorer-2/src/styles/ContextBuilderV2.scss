@@ -1,6 +1,11 @@
 .ContextBuilder {
-  :global .modal-lg {
+  :global .modal-lg.modal-dialog {
     width: 800px;
+
+    &:has(:local .ContextBuilderTableView) {
+      width: calc(100% - 150px);
+      transition: width 0.3s ease;
+    }
   }
 
   :global .modal-body {
@@ -14,6 +19,28 @@
   }
 }
 
+:global {
+  #modal-container[data-modal-stacking-mode="exclusive"] {
+    & ~ div[role="dialog"] {
+      // Detect when the modal has a sibling later in the DOM. That suggests it
+      // has launched another modal that should take precedence.
+      &:has(~ div[role="dialog"]) {
+        .modal-content {
+          display: none;
+        }
+      }
+
+      // Hide the backdrop of that later sibling so there is only one backdrop
+      // at a time.
+      & ~ div[role="dialog"] {
+        .modal-backdrop {
+          display: none;
+        }
+      }
+    }
+  }
+}
+
 .DebugInfo {
   padding: 0 10px 10px 10px;
   margin-top: 10px;
@@ -22,7 +49,7 @@
   overflow: auto;
 }
 
-.mainExpr {
+.mainContent {
   margin-top: 20px;
 }
 
@@ -35,10 +62,21 @@
   }
 }
 
+.zeroConditionsWarning {
+  color: #666;
+  font-style: italic;
+  padding: 14px 0;
+}
+
 .topLevelButtonsAndStats {
   display: flex;
   margin-top: 20px;
   justify-content: space-between;
+
+  .tlButtons {
+    display: flex;
+    gap: 8px;
+  }
 }
 
 .BooleanExpression {
@@ -53,9 +91,9 @@
 .boolSubexpr.isTopLevel {
   width: 100%;
   padding: 20px;
-  border: 1px solid #ccc;
+  border: 1px solid #aaa;
   border-radius: 10px;
-  background-color: #fafafa;
+  background-color: #e9f5fd;
 
   &:not(:first-child) {
     margin-top: 10px;
@@ -102,6 +140,7 @@
   display: flex;
   justify-content: flex-end;
   font-variant-numeric: tabular-nums;
+  margin-top: 10px;
 }
 
 .topLevelMatches {
@@ -185,5 +224,17 @@
     &:focus {
       border: 1px solid #a94442;
     }
+  }
+}
+
+.ContextBuilderTableView {
+  height: calc(100vh - 273px);
+  min-height: 300px;
+
+  .customTableControls {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    justify-content: space-between;
   }
 }

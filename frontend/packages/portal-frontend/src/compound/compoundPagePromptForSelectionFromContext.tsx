@@ -24,7 +24,7 @@ export default async function compoundPagePromptForSelectionFromContext(
       value,
       onChange,
       updateAcceptText,
-    }: PromptComponentProps) => {
+    }: PromptComponentProps<DataExplorerContext | null>) => {
       const [stats, setStats] = useState<{
         total: number;
         notFound: number;

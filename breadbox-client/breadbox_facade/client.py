@@ -303,6 +303,7 @@ class BBClient:
         taiga_id: Optional[str] = None,
         given_id: Optional[str] = None,
         timeout=None,
+        description=None,
     ):
         metadata = TableDatasetParamsDatasetMetadataType0.from_dict(dataset_metadata) if dataset_metadata else None
 
@@ -327,6 +328,7 @@ class BBClient:
             priority=priority if priority else UNSET,
             taiga_id=taiga_id if taiga_id else UNSET,
             given_id=given_id if given_id else UNSET,
+            description=description if description else UNSET,
         )
         breadbox_response = add_dataset_uploads_client.sync_detailed(
             client=self.client,
@@ -354,7 +356,8 @@ class BBClient:
         dataset_metadata: Optional[dict] = None,
         upload_parquet=False,
         timeout=None,
-        log_status=lambda msg: None
+        log_status=lambda msg: None,
+            description:Optional[str] = None,
     ) -> AddDatasetResponse:
         log_status(f"add_matrix_dataset start")
         metadata = MatrixDatasetParamsDatasetMetadataType0.from_dict(dataset_metadata) if dataset_metadata else None
@@ -390,7 +393,8 @@ class BBClient:
             priority=priority if priority else UNSET,
             taiga_id=taiga_id if taiga_id else UNSET,
             given_id=given_id if given_id else UNSET,
-            data_file_format=data_file_format
+            data_file_format=data_file_format,
+            description=description
         )
         log_status(f"calling add_dataset_uploads_client.sync_detailed")
         breadbox_response = add_dataset_uploads_client.sync_detailed(
@@ -409,7 +413,8 @@ class BBClient:
         name: Union[str, Unset] = UNSET,
         dataset_metadata: Optional[dict] = None,
         group_id: Union[str, Unset] = UNSET,
-        given_id: Union[str, Unset] = UNSET,
+        given_id: Union[str, Unset, None] = UNSET,
+        description: Union[str, Unset, None] = UNSET,
     ) -> Union[MatrixDatasetResponse, TabularDatasetResponse]:
         """Update the values specified for the given dataset"""
         from breadbox_client.models import MatrixDatasetUpdateParams, TabularDatasetUpdateParams
@@ -426,7 +431,8 @@ class BBClient:
             name=name,
             dataset_metadata=metadata,
             group_id=group_id,
-            given_id=given_id
+            given_id=given_id,
+            description=description,
         )
         breadbox_response = update_dataset_client.sync_detailed(
             dataset_id=dataset_id,

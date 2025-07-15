@@ -1,0 +1,202 @@
+// https://stackoverflow.com/a/34299947
+@mixin scroll-shadow {
+  background:
+    /* Top and bottom fade covers to blend with background */ linear-gradient(
+      white 30%,
+      rgba(255, 255, 255, 0)
+    ),
+    linear-gradient(rgba(255, 255, 255, 0), white 70%) 0 100%,
+    /* Flatter, moderately subtle shadows */
+      linear-gradient(to bottom, rgba(0, 0, 0, 0.05), rgba(0, 0, 0, 0)),
+    linear-gradient(to top, rgba(0, 0, 0, 0.05), rgba(0, 0, 0, 0)) 0 100%;
+
+  background-repeat: no-repeat;
+  background-color: white;
+  background-size: 100% 40px, 100% 40px, 100% 34px, 100% 34px;
+  background-attachment: local, local, scroll, scroll;
+}
+
+.tableContainer {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  border: 1px solid #ccc;
+  border-bottom: 2px solid #ccc;
+  overflow: hidden;
+  contain: layout;
+}
+
+.headerScrollContainer {
+  background-color: #f0f0f0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  flex-shrink: 0;
+  position: relative; /* Create stacking context for sticky elements */
+
+  /* Hide scrollbar for header to avoid double scrollbars */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+
+  &::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
+  }
+}
+
+.tableHeaderWrapper {
+  background-color: #f0f0f0;
+}
+
+.sortIcon {
+  display: flex;
+  flex-direction: column;
+  color: lightgrey;
+  font-size: 12px;
+  margin-right: 5px;
+
+  &:hover {
+    color: darkgray;
+  }
+}
+
+.sortArrowActive {
+  color: black;
+}
+
+.virtualScroll {
+  overflow-y: auto;
+  overflow-x: auto;
+  width: 100%;
+  flex: 1;
+  position: relative; /* Create stacking context for sticky elements */
+  @include scroll-shadow;
+
+  /* This ensures the scrollbar doesn't push content */
+  scrollbar-gutter: stable overlay;
+
+  /* Chrome, Edge */
+  &::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  /* Firefox */
+  & {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0, 0, 0, 0.3) transparent;
+  }
+}
+
+.table {
+  table-layout: fixed;
+  border-collapse: collapse;
+  width: 100%;
+  max-width: 100%;
+  min-width: fit-content;
+}
+
+.table th,
+.table td {
+  border: 1px solid #ccc;
+  padding: 7px 12px;
+  text-align: left;
+}
+
+.table td {
+  border-bottom: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.table th {
+  border-top: none;
+  border-bottom: 2px solid #ccc;
+  background-color: #f0f0f0;
+  font-weight: bold;
+}
+
+.thContent {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
+}
+
+.stickyCell {
+  position: sticky;
+  left: 0;
+  z-index: 20;
+  outline: 1px solid #ccc;
+
+  /* Ensure background is properly set for sticky positioning */
+  background-color: #f0f0f0; /* Default header background */
+
+  /* Override background colors based on context */
+  .selectedRow & {
+    background-color: #e3f2fd;
+  }
+
+  .selectedRow:hover & {
+    background-color: #bbdefb;
+  }
+
+  .unselectedRow & {
+    background-color: #fff;
+  }
+
+  .unselectedRow:hover & {
+    background-color: #f1f1f1;
+  }
+
+  /* Special handling for header sticky cells */
+  thead & {
+    background-color: #f0f0f0;
+  }
+}
+
+.selectedRow {
+  background-color: #e3f2fd;
+}
+
+.selectedRow:hover {
+  background-color: #bbdefb;
+}
+
+.unselectedRow {
+  /* Background handled by stickyCell styles */
+}
+
+.unselectedRow:hover {
+  background-color: #f1f1f1;
+}
+
+.resizer {
+  position: absolute;
+  right: -17px;
+  top: -8px;
+  height: calc(100% + 18px);
+  width: 9px;
+  cursor: col-resize;
+  user-select: none; /* avoid text selection during resize */
+  /* Optional: add a visible line or slight background for the handle */
+  background-color: rgba(0, 0, 0, 0);
+  transition: background-color 0.2s ease;
+  z-index: 1;
+}
+
+.resizer:hover,
+.resizer:active {
+  background-color: rgba(0, 0, 0, 0.2);
+}

@@ -14,7 +14,7 @@ function DeleteConditionButton({ path, varName }: Props) {
   return (
     <Tooltip
       id="delete-condition-tooltip"
-      content="Delete condition"
+      content="Delete rule"
       placement="top"
     >
       <Button

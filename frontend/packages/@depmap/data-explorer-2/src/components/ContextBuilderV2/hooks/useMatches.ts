@@ -5,8 +5,9 @@ import { isCompleteExpression } from "../../../utils/misc";
 import { Expr, isBoolean, getVariableNames } from "../utils/expressionUtils";
 import { useContextBuilderState } from "../state/ContextBuilderState";
 
-function useNumMatches(expr: Expr) {
+function useMatches(expr: Expr) {
   const api = useDataExplorerApi();
+  const [matchingIds, setMatchingIds] = useState<string[]>([]);
   const [numMatches, setNumMatches] = useState<number | null>(null);
   const [numCandidates, setNumCandidates] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -49,6 +50,7 @@ function useNumMatches(expr: Expr) {
             vars: exprVars,
           });
 
+          setMatchingIds(result.ids);
           setNumMatches(result.ids.length);
           setNumCandidates(result.num_candidates);
         } catch (e) {
@@ -64,7 +66,7 @@ function useNumMatches(expr: Expr) {
     }
   }, [api, expr, dimension_type, fullySpecifiedVars, vars]);
 
-  return { isLoading, hasError, numMatches, numCandidates };
+  return { isLoading, hasError, matchingIds, numMatches, numCandidates };
 }
 
-export default useNumMatches;
+export default useMatches;
