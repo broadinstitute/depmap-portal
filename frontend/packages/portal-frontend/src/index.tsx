@@ -213,8 +213,11 @@ export function initEnrichmentTile(
 export function initHeatmapTile(
   elementId: string,
   compoundId: string,
-  dataset: DRCDatasetOptions
+  dataset: any
 ) {
+  console.log(dataset);
+  console.log(dataset.viability_dataset_id);
+
   renderWithErrorBoundary(
     <React.Suspense fallback={<div>Loading...</div>}>
       <HeatmapTileContainer compoundId={compoundId} dataset={dataset} />

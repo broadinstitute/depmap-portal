@@ -1,13 +1,12 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { toStaticUrl } from "@depmap/globals";
 import InfoIcon from "src/common/components/InfoIcon";
-import styles from "./CompoundTiles.scss";
+import styles from "../CompoundTiles.scss";
 import PlotSpinner from "src/plot/components/PlotSpinner";
 import { useDoseTableDataContext } from "src/compound/hooks/DoseTableDataContext";
 import useHeatmapData from "src/compound/heatmapTab/hooks/useHeatmapData";
 import PrototypeBrushableHeatmap from "src/compound/heatmapTab/doseViabilityHeatmap/components/PrototypeBrushableHeatmap";
 import { legacyPortalAPI } from "@depmap/api";
-import { TableRow } from "src/compound/types";
 import { sortHeatmapByViability } from "src/compound/heatmapTab/heatmapPlotUtils";
 
 const FailedToLoadHeatmapTile: React.FC = () => {
@@ -47,7 +46,9 @@ export const HeatmapTile: React.FC = () => {
   );
 
   const [cellLineUrlRoot, setCellLineUrlRoot] = useState<string | null>(null);
-
+  console.log(cellLineUrlRoot);
+  console.log(doseMin);
+  console.log(doseMax);
   useEffect(() => {
     legacyPortalAPI.getCellLineUrlRoot().then((urlRoot: string) => {
       setCellLineUrlRoot(urlRoot);
@@ -73,7 +74,7 @@ export const HeatmapTile: React.FC = () => {
     >
       <div className="card_border container_fluid">
         <h2 className="no_margin cardtitle_text">
-          Heatmap
+          Compound Viability
           {showInfoIcon && (
             <InfoIcon
               target={customInfoImg}

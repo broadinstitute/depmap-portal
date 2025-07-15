@@ -390,15 +390,11 @@ def get_heatmap_html(
 
     prioritized_dataset = dataset_options[0]
 
-    dataset_display_name = prioritized_dataset["display_name"]
-    viability_dataset_id = prioritized_dataset["viability_dataset_id"]
-    auc_dataset_id = prioritized_dataset["auc_dataset_id"]
-
     return RenderedTile(
         f'<div id="{div_id}"></div>',
         f"""(
         function() {{
-            DepMap.initHeatmapTile("{div_id}", "{compound_id}", "{dataset_display_name}", "{viability_dataset_id}", "{auc_dataset_id}" );
+            DepMap.initHeatmapTile("{div_id}", "{compound_id}", "{prioritized_dataset}" );
         }})""",
     )
 

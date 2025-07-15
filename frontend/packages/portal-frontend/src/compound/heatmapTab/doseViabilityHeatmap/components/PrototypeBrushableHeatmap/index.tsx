@@ -319,6 +319,7 @@ function PrototypeBrushableHeatmap({
     Plotly,
     selectedColumns,
     hoveredColumns,
+    interactiveVersion,
   ]);
 
   return <div ref={ref} />;
