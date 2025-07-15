@@ -2,7 +2,7 @@ import React from "react";
 import { PlotConfigSelect } from "@depmap/data-explorer-2";
 
 interface Props {
-  value: "metadata_column" | "matrix_dataset" | null;
+  value: "metadata_column" | "matrix_dataset";
   onChange: (nextValue: "metadata_column" | "matrix_dataset") => void;
 }
 

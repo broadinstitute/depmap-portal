@@ -19,7 +19,7 @@ interface Props {
   downloadFilename?: string;
 }
 
-const getRowId = (row: Record<string, string | number | null>) => {
+const getRowId = (row: Record<string, string | number | undefined>) => {
   return row.id as string;
 };
 
