@@ -1,9 +1,10 @@
 import React, { useContext, ReactNode } from "react";
 import { DRCDatasetOptions } from "@depmap/types";
 import useDoseTableData from "./useDoseTableData";
+import { TableFormattedData } from "../types";
 
 export interface DoseTableDataContextType {
-  tableFormattedData: any;
+  tableFormattedData: TableFormattedData | null;
   doseColumnNames: string[];
   error: boolean;
   isLoading: boolean;

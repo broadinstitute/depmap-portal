@@ -39,6 +39,11 @@ export const HeatmapTile: React.FC = () => {
     doseColumnNames
   );
 
+  const sortedTableFormattedData = useMemo(
+    () => tableFormattedData?.sort((a, b) => a.auc - b.auc) || [],
+    [tableFormattedData]
+  );
+
   // Sort data by ascending mean viability
   const sortedHeatmapFormattedData = useMemo(
     () => sortHeatmapByViability(heatmapFormattedData),
@@ -46,9 +51,7 @@ export const HeatmapTile: React.FC = () => {
   );
 
   const [cellLineUrlRoot, setCellLineUrlRoot] = useState<string | null>(null);
-  console.log(cellLineUrlRoot);
-  console.log(doseMin);
-  console.log(doseMax);
+
   useEffect(() => {
     legacyPortalAPI.getCellLineUrlRoot().then((urlRoot: string) => {
       setCellLineUrlRoot(urlRoot);
@@ -99,6 +102,33 @@ export const HeatmapTile: React.FC = () => {
             interactiveVersion={false}
           />
         )}
+        <div className="card_padding">
+          <h4>Top 5 Sensitive Lines</h4>
+          <table style={{ borderSpacing: "20px" }}>
+            <thead>
+              <tr>
+                <th>Cell Line</th>
+                <th>AUC (Mean Viability)</th>
+              </tr>
+            </thead>
+            <tbody>
+              {[...sortedTableFormattedData].slice(0, 5).map((row, i) => (
+                <tr key={row.cellLine}>
+                  <td>
+                    <a
+                      href={`${cellLineUrlRoot}${row.modelId}`}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      {row.cellLine}
+                    </a>
+                  </td>
+                  <td>{row.auc}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </article>
   );
