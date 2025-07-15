@@ -1,0 +1,80 @@
+.AddColumnModal {
+  overflow-y: auto;
+
+  :global .modal-lg {
+    width: calc(100vw - 60px);
+    max-width: 1000px;
+  }
+}
+
+.spinnerContainer {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+
+  & > div {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+
+    &:nth-child(1) {
+      height: 500px;
+    }
+
+    &:nth-child(2) {
+      height: 100px;
+    }
+
+    & > div {
+      margin: 0;
+    }
+  }
+}
+
+.content {
+  display: flex;
+  min-height: 500px;
+}
+
+.menus {
+  & > div:first-child {
+    min-height: 342px;
+  }
+
+  & > div:nth-child(2) {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    margin-top: 20px;
+    min-height: 238px;
+  }
+}
+
+.FilterDescription {
+  display: flex;
+  flex-direction: column;
+  width: 162px;
+
+  p {
+    font-style: italic;
+  }
+}
+
+.preview {
+  width: 100%;
+}
+
+.previewPlaceholder {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-left: 30px;
+  padding: 20px;
+  color: grey;
+  font-size: 14px;
+  height: 500px;
+  border: 1px dashed #ccc;
+}

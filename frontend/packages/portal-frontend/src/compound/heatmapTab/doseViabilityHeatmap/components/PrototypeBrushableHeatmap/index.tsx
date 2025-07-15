@@ -83,7 +83,6 @@ function PrototypeBrushableHeatmap({
         colorscale: "YlOrRd",
         zmin: DO_LOG2_PLOT_DATA ? -2 : 0,
         zmax: DO_LOG2_PLOT_DATA ? 0 : 1,
-        reversescale: !DO_LOG2_PLOT_DATA,
         colorbar: {
           x: -0.009,
           y: -0.4,

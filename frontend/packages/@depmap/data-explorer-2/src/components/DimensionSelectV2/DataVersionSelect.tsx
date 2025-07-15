@@ -1,5 +1,6 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import cx from "classnames";
+import { breadboxAPI, cached } from "@depmap/api";
 import { Tooltip, WordBreaker } from "@depmap/common-components";
 import PlotConfigSelect from "../PlotConfigSelect";
 import styles from "../../styles/DimensionSelect.scss";
@@ -8,6 +9,7 @@ interface Props {
   show: boolean;
   isLoading: boolean;
   isUnknownDataset: boolean;
+  shouldGroupByDataType: boolean;
   options: {
     label: string;
     value: string;
@@ -21,10 +23,13 @@ interface Props {
   onClickShowModal?: () => void;
 }
 
+type GroupedOptions = { label: string; options: Props["options"] }[];
+
 function DataVersionSelect({
   show,
   isLoading,
   isUnknownDataset,
+  shouldGroupByDataType,
   value,
   options,
   onChange,
@@ -32,15 +37,50 @@ function DataVersionSelect({
   showNoDefaultHint,
   onClickShowModal = undefined,
 }: Props) {
-  const unknownDatasetOptions = [
-    {
-      value,
-      label: "⚠️ unknown version",
-      isDisabled: true,
-      isDefault: false,
-      disabledReason: `Unknown data version with id ${value}.`,
-    },
-  ];
+  const [groupedOptions, setGroupedOptions] = useState<GroupedOptions | null>(
+    null
+  );
+
+  let optionsToShow = groupedOptions || options;
+
+  if (isUnknownDataset) {
+    optionsToShow = [
+      {
+        value,
+        label: "⚠️ unknown version",
+        isDisabled: true,
+        isDefault: false,
+        disabledReason: `Unknown data version with id ${value}.`,
+      } as Props["options"][number],
+    ];
+  }
+
+  useEffect(() => {
+    if (!shouldGroupByDataType) {
+      setGroupedOptions(null);
+      return;
+    }
+
+    (async () => {
+      const datasets = await cached(breadboxAPI).getDatasets();
+
+      const groups: Record<string, typeof options> = {};
+
+      options.forEach((option) => {
+        const dataset = datasets.find((d) => d.id === option.value)!;
+        groups[dataset.data_type] ||= [];
+        groups[dataset.data_type].push(option);
+      });
+
+      const groupedOpts = Object.keys(groups)
+        .sort()
+        .map((dataType) => {
+          return { label: dataType, options: groups[dataType] };
+        });
+
+      setGroupedOptions(groupedOpts);
+    })();
+  }, [options, shouldGroupByDataType]);
 
   return (
     <PlotConfigSelect
@@ -51,7 +91,7 @@ function DataVersionSelect({
       enable={options.length > 1 && !isLoading}
       isLoading={isLoading}
       value={isLoading ? null : value}
-      options={isUnknownDataset ? unknownDatasetOptions : options}
+      options={optionsToShow}
       onChange={onChange}
       label={
         <span>

@@ -4,39 +4,54 @@ import ReactDOM from "react-dom";
 import { Button, Modal } from "react-bootstrap";
 import "../styles/modals.scss";
 
-export interface PromptComponentProps {
-  value: any;
-  onChange: (nextValue: any) => void;
+export interface PromptComponentProps<T> {
+  value: T;
+  onChange: React.Dispatch<React.SetStateAction<T>>;
   updateAcceptText: (nextText: string) => void;
 }
 
-interface PromptOptions {
+type ModalProps = React.ComponentProps<typeof Modal>;
+type ModalPropsWithOptionalOnHide = Omit<ModalProps, "onHide"> & {
+  onHide?: ModalProps["onHide"];
+};
+
+interface PromptOptions<T> {
   title: string | null;
-  PromptComponent: React.ComponentType<PromptComponentProps>;
+  PromptComponent: React.ComponentType<PromptComponentProps<T>>;
   defaultValue?: any;
   acceptButtonText?: string | null;
-  showModalBackdrop?: boolean | null;
+  modalProps?: ModalPropsWithOptionalOnHide;
+  secondaryAction?: {
+    buttonText: string;
+    bsStyle?: string | null | undefined;
+    // This should return a Promise of `true` if the action has been
+    // handled (and the modal should now close) and `false` otherwise.
+    onClick: (value: T) => Promise<boolean>;
+  };
 }
 
-function State({
+function State<T>({
   initialValue,
   children,
 }: {
-  initialValue: any;
+  initialValue: T;
   children: (
-    value: any,
-    onChange: (nextValue: any) => void,
+    value: T,
+    onChange: (nextValue: T) => void,
     acceptText: string | null,
     setAcceptText: (nextText: string) => void
   ) => React.ReactNode;
 }) {
-  const [value, onChange] = useState<any>(initialValue);
+  const [value, onChange] = useState<T>(initialValue);
   const [acceptText, setAcceptText] = useState<string | null>(null);
 
   return children(value, onChange, acceptText, setAcceptText);
 }
 
-const launchModal = (options: PromptOptions, resolve: (value: any) => void) => {
+function launchModal<T>(
+  options: PromptOptions<T>,
+  resolve: (value: T | undefined) => void
+) {
   const container = document.createElement("div");
   container.id = "prompt-modal-container";
   document.body.append(container);
@@ -50,14 +65,12 @@ const launchModal = (options: PromptOptions, resolve: (value: any) => void) => {
     <State initialValue={options.defaultValue}>
       {(value, onChange, acceptText, setAcceptText) => (
         <Modal
+          backdrop="static"
+          {...options.modalProps}
           show
-          backdrop={
-            typeof options.showModalBackdrop === "boolean"
-              ? options.showModalBackdrop
-              : true
-          }
           onHide={() => {
             resolve(undefined);
+            options.modalProps?.onHide?.();
             unmount();
           }}
         >
@@ -82,8 +95,23 @@ const launchModal = (options: PromptOptions, resolve: (value: any) => void) => {
             >
               Cancel
             </Button>
+            {options.secondaryAction && (
+              <Button
+                bsStyle={options.secondaryAction.bsStyle || "info"}
+                onClick={() => {
+                  options.secondaryAction!.onClick(value).then((handled) => {
+                    if (handled) {
+                      resolve(undefined);
+                      unmount();
+                    }
+                  });
+                }}
+              >
+                {options.secondaryAction.buttonText}
+              </Button>
+            )}
             <Button
-              disabled={value === undefined || value === null}
+              disabled={value === null || value === undefined}
               bsStyle="primary"
               onClick={() => {
                 resolve(value);
@@ -98,10 +126,10 @@ const launchModal = (options: PromptOptions, resolve: (value: any) => void) => {
     </State>,
     container
   );
-};
+}
 
-export default function promptForValue(options: PromptOptions) {
-  return new Promise<any>((resolve) => {
-    launchModal(options, resolve);
+export default function promptForValue<T>(options: PromptOptions<T>) {
+  return new Promise<T | undefined>((resolve) => {
+    launchModal<T>(options, resolve);
   });
 }

@@ -259,7 +259,6 @@ function DataExplorerDensity1DPlot({
             <PrototypeDensity1D
               data={formattedData}
               xKey="x"
-              xLabel={formattedData?.xLabel}
               colorMap={colorMap}
               colorData={colorData}
               continuousColorKey="contColorData"
