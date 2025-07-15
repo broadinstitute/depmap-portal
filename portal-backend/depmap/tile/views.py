@@ -374,27 +374,11 @@ def get_heatmap_html(
     compound = Compound.get_by_label(entity_label)
     compound_id = compound.compound_id
 
-    # TODO: How to figure out which dataset to prioritize? Right now only OncRef is supported,
-    # so don't worry about this yet.
-    dataset_options = [
-        {
-            "display_name": dataset.display_name,
-            "viability_dataset_id": dataset.viability_dataset_given_id,
-            "replicate_dataset": dataset.replicate_dataset,
-            "auc_dataset_id": dataset.auc_dataset_given_id,
-            "ic50_dataset_id": dataset.ic50_dataset_given_id,
-            "drc_dataset_label": dataset.drc_dataset_label,
-        }
-        for dataset in drc_compound_datasets
-    ]
-
-    prioritized_dataset = dataset_options[0]
-
     return RenderedTile(
         f'<div id="{div_id}"></div>',
         f"""(
         function() {{
-            DepMap.initHeatmapTile("{div_id}", "{compound_id}", "{prioritized_dataset}" );
+            DepMap.initHeatmapTile("{div_id}", "{compound_id}");
         }})""",
     )
 

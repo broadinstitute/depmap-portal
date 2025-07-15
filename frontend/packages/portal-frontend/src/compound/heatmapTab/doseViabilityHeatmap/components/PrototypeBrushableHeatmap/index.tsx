@@ -15,7 +15,7 @@ interface Props {
     z: (number | null)[][];
     customdata?: any[][]; // Add customdata for per-cell hover masking
   };
-  xAxisTitle: string;
+  xAxisTitle?: string;
   yAxisTitle: string;
   legendTitle: string;
   selectedColumns?: Set<number>;
@@ -32,7 +32,7 @@ interface Props {
 
 function PrototypeBrushableHeatmap({
   data,
-  xAxisTitle,
+  xAxisTitle = undefined,
   yAxisTitle,
   legendTitle,
   onSelectColumnRange = () => {},
@@ -78,6 +78,36 @@ function PrototypeBrushableHeatmap({
       selectedColumns
     );
 
+    const plotlyTileData: PlotlyData[] = [
+      {
+        type: "heatmap",
+        ...data,
+        colorscale: "YlOrRd",
+        zmin: DO_LOG2_PLOT_DATA ? -2 : 0,
+        zmax: DO_LOG2_PLOT_DATA ? 0 : 1,
+        colorbar: {
+          x: 0.1,
+          y: -0.4,
+          len: 0.8,
+          thickness: 8,
+          ypad: 0,
+          xanchor: "left",
+          ...({
+            orientation: "h",
+            title: {
+              text: legendTitle,
+              side: "bottom",
+            },
+          } as object),
+        },
+        hovertemplate,
+        xaxis: "x",
+        yaxis: "y",
+        xgap: 0.15,
+        ygap: 0.15,
+      },
+    ];
+
     const plotlyData: PlotlyData[] = [
       {
         type: "heatmap",
@@ -85,7 +115,6 @@ function PrototypeBrushableHeatmap({
         colorscale: "YlOrRd",
         zmin: DO_LOG2_PLOT_DATA ? -2 : 0,
         zmax: DO_LOG2_PLOT_DATA ? 0 : 1,
-        reversescale: !DO_LOG2_PLOT_DATA,
         colorbar: {
           x: -0.009,
           y: -0.4,
@@ -107,6 +136,24 @@ function PrototypeBrushableHeatmap({
         ygap: 0.15,
       },
     ];
+
+    const tileLayout: Partial<Layout> = {
+      height: 300,
+      margin: { t: 20, l: 20, r: 20, b: 100 },
+      dragmode: false,
+      xaxis: {
+        visible: false,
+      },
+      yaxis: {
+        type: "category",
+        automargin: true,
+        autorange: true,
+        title: {
+          text: yAxisTitle,
+        },
+        visible: false,
+      },
+    };
 
     const layout: Partial<Layout> = {
       height: 500,
@@ -188,7 +235,12 @@ function PrototypeBrushableHeatmap({
       ].flat(),
     };
 
-    Plotly.react(plot, plotlyData, layout);
+    Plotly.react(
+      plot,
+      interactiveVersion ? plotlyData : plotlyTileData,
+      interactiveVersion ? layout : tileLayout,
+      { staticPlot: interactiveVersion ? false : true }
+    );
 
     // Keep track of added listeners so we can easily remove them.
     const listeners: [string, (e: object) => void][] = [];

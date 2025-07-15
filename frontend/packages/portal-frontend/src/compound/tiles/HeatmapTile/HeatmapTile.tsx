@@ -94,9 +94,9 @@ export const HeatmapTile: React.FC = () => {
               z: sortedHeatmapFormattedData.z,
             }}
             onLoad={() => {}}
-            xAxisTitle="Cell Lines"
             yAxisTitle={`Dose`}
             legendTitle={"Viability"}
+            interactiveVersion={false}
           />
         )}
       </div>

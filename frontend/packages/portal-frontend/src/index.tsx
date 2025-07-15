@@ -14,7 +14,7 @@ import ErrorBoundary from "src/common/components/ErrorBoundary";
 import { WideTableProps } from "@depmap/wide-table";
 
 import { Option } from "src/common/models/utilities";
-import { DataExplorerContext, DRCDatasetOptions } from "@depmap/types";
+import { DataExplorerContext } from "@depmap/types";
 
 import { ConnectivityValue } from "./constellation/models/constellation";
 import { EntityType } from "./entity/models/entities";
@@ -210,17 +210,10 @@ export function initEnrichmentTile(
   );
 }
 
-export function initHeatmapTile(
-  elementId: string,
-  compoundId: string,
-  dataset: any
-) {
-  console.log(dataset);
-  console.log(dataset.viability_dataset_id);
-
+export function initHeatmapTile(elementId: string, compoundId: string) {
   renderWithErrorBoundary(
     <React.Suspense fallback={<div>Loading...</div>}>
-      <HeatmapTileContainer compoundId={compoundId} dataset={dataset} />
+      <HeatmapTileContainer compoundId={compoundId} />
     </React.Suspense>,
     document.getElementById(elementId) as HTMLElement
   );
