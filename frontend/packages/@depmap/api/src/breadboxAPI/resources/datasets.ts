@@ -123,7 +123,7 @@ export function getMatrixDatasetFeatures(dataset_id: string) {
 
 export function getMatrixDatasetSamples(dataset_id: string) {
   return getJson<{ id: string; label: string }[]>(
-    `/datasets/features/${dataset_id}`
+    `/datasets/samples/${dataset_id}`
   );
 }
 
