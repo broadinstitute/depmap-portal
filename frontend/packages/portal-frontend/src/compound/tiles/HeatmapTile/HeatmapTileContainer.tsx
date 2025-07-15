@@ -14,21 +14,22 @@ export const HeatmapTileContainer: React.FC<HeatmapTileContainerProps> = ({
   compoundName,
 }) => {
   const [dataset, setDataset] = useState<DRCDatasetOptions | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+
   useEffect(() => {
     (async () => {
+      setIsLoading(true);
       const prioritizedDataset = await legacyPortalAPI.getPrioritizedDataset(
         compoundId
       );
       setDataset(prioritizedDataset);
+      setIsLoading(false);
     })();
   }, [compoundId]);
+
   return (
-    <>
-      {dataset && (
-        <DoseTableDataProvider dataset={dataset} compoundId={compoundId}>
-          <HeatmapTile compoundName={compoundName} />
-        </DoseTableDataProvider>
-      )}
-    </>
+    <DoseTableDataProvider dataset={dataset} compoundId={compoundId}>
+      <HeatmapTile compoundName={compoundName} isLoadingDataset={isLoading} />
+    </DoseTableDataProvider>
   );
 };

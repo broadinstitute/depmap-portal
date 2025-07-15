@@ -120,12 +120,12 @@ def get_order(has_predictability: bool):
     tile_small = 300
     header_cards = {
         CompoundTileEnum.sensitivity.value: tile_medium,
-        CompoundTileEnum.selectivity.value: tile_small,
+        CompoundTileEnum.selectivity.value: tile_large,
         CompoundTileEnum.correlations.value: tile_small,
         CompoundTileEnum.availability.value: tile_small,
     }
     anywhere_cards = {
-        CompoundTileEnum.heatmap.value: tile_large,
+        CompoundTileEnum.heatmap.value: tile_medium,
         CompoundTileEnum.predictability.value: tile_large,
         CompoundTileEnum.celfie.value: tile_large,
     }

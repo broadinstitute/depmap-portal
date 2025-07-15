@@ -11,6 +11,24 @@
     font-size: 14px;
     font-weight: 700;
   }
+
+  .heatmapTileTable {
+    th {
+      border-left: 50px solid transparent;
+      border-top: 8px solid transparent;
+    }
+    th:first-child {
+      border-left: 0;
+    }
+
+    td {
+      border-left: 50px solid transparent;
+      border-top: 8px solid transparent;
+    }
+    td:first-child {
+      border-left: 0;
+    }
+  }
 }
 
 .errorMessage {

@@ -8,12 +8,14 @@ import useHeatmapData from "src/compound/heatmapTab/hooks/useHeatmapData";
 import PrototypeBrushableHeatmap from "src/compound/heatmapTab/doseViabilityHeatmap/components/PrototypeBrushableHeatmap";
 import { legacyPortalAPI } from "@depmap/api";
 import { sortHeatmapByViability } from "src/compound/heatmapTab/heatmapPlotUtils";
+import { TableFormattedData } from "src/compound/types";
 
 interface HeatmapTileProps {
   compoundName: string;
+  isLoadingDataset: boolean;
 }
 
-const FailedToLoadHeatmapTile: React.FC = () => {
+const ErrorLoading: React.FC = () => {
   return (
     <article
       className={`${styles.HeatmapTile} card_wrapper stacked-boxplot-tile`}
@@ -30,28 +32,15 @@ const FailedToLoadHeatmapTile: React.FC = () => {
   );
 };
 
-export const HeatmapTile: React.FC<HeatmapTileProps> = ({ compoundName }) => {
-  const {
-    tableFormattedData,
-    doseColumnNames,
-    error,
-    isLoading,
-  } = useDoseTableDataContext();
-
-  const { heatmapFormattedData, doseMin, doseMax } = useHeatmapData(
-    tableFormattedData,
-    doseColumnNames
-  );
-
+interface TopLinesMiniTableProps {
+  tableFormattedData: TableFormattedData;
+}
+const TopLinesMiniTable: React.FC<TopLinesMiniTableProps> = ({
+  tableFormattedData,
+}) => {
   const sortedTableFormattedData = useMemo(
     () => tableFormattedData?.sort((a, b) => a.auc - b.auc) || [],
     [tableFormattedData]
-  );
-
-  // Sort data by ascending mean viability
-  const sortedHeatmapFormattedData = useMemo(
-    () => sortHeatmapByViability(heatmapFormattedData),
-    [heatmapFormattedData]
   );
 
   const [cellLineUrlRoot, setCellLineUrlRoot] = useState<string | null>(null);
@@ -61,6 +50,64 @@ export const HeatmapTile: React.FC<HeatmapTileProps> = ({ compoundName }) => {
       setCellLineUrlRoot(urlRoot);
     });
   }, []);
+
+  return (
+    <>
+      <div className={styles.subHeader}>Top 5 Sensitive Lines</div>
+      <table className={styles.heatmapTileTable}>
+        <thead>
+          <tr>
+            <th className={styles.tableColumnHeader}>Cell Line</th>
+            <th className={styles.tableColumnHeader}>AUC (Mean Viability)</th>
+          </tr>
+        </thead>
+        <tbody>
+          {[...sortedTableFormattedData].slice(0, 5).map((row) => (
+            <tr key={row.cellLine}>
+              <td>
+                {cellLineUrlRoot ? (
+                  <a
+                    href={`${cellLineUrlRoot}${row.modelId}`}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    {row.cellLine}
+                  </a>
+                ) : (
+                  row.cellLine
+                )}
+              </td>
+              <td>{row.auc}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </>
+  );
+};
+
+export const HeatmapTile: React.FC<HeatmapTileProps> = ({
+  compoundName,
+  isLoadingDataset,
+}) => {
+  const {
+    tableFormattedData,
+    doseColumnNames,
+    error,
+    isLoading,
+  } = useDoseTableDataContext();
+
+  const { heatmapFormattedData } = useHeatmapData(
+    tableFormattedData,
+    doseColumnNames
+  );
+
+  // Sort data by ascending mean viability
+  const sortedHeatmapFormattedData = useMemo(
+    () => sortHeatmapByViability(heatmapFormattedData),
+    [heatmapFormattedData]
+  );
+
   // TODO: Always show InfoIcon once we have content for the popoverContent
   const showInfoIcon = false;
   const customInfoImg = (
@@ -72,7 +119,7 @@ export const HeatmapTile: React.FC<HeatmapTileProps> = ({ compoundName }) => {
   );
 
   if (!isLoading && error) {
-    return <FailedToLoadHeatmapTile />;
+    return <ErrorLoading />;
   }
 
   return (
@@ -95,7 +142,7 @@ export const HeatmapTile: React.FC<HeatmapTileProps> = ({ compoundName }) => {
           <div className={styles.subHeader}>
             {compoundName} sensitivity distributed per dose
           </div>
-          {isLoading && !error && <PlotSpinner />}
+          {(isLoading || isLoadingDataset) && !error && <PlotSpinner />}
           {!isLoading && !error && sortedHeatmapFormattedData && (
             <PrototypeBrushableHeatmap
               data={{
@@ -111,33 +158,9 @@ export const HeatmapTile: React.FC<HeatmapTileProps> = ({ compoundName }) => {
               interactiveVersion={false}
             />
           )}
-          <div className={styles.subHeader}>Top 5 Sensitive Lines</div>
-          <table>
-            <thead>
-              <tr>
-                <th className={styles.tableColumnHeader}>Cell Line</th>
-                <th className={styles.tableColumnHeader}>
-                  AUC (Mean Viability)
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {[...sortedTableFormattedData].slice(0, 5).map((row, i) => (
-                <tr key={row.cellLine}>
-                  <td>
-                    <a
-                      href={`${cellLineUrlRoot}${row.modelId}`}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      {row.cellLine}
-                    </a>
-                  </td>
-                  <td>{row.auc}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          {tableFormattedData && (
+            <TopLinesMiniTable tableFormattedData={tableFormattedData} />
+          )}
         </div>
       </div>
     </article>
