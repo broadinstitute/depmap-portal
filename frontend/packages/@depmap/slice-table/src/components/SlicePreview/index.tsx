@@ -48,19 +48,19 @@ function SlicePreview({ index_type_name, value, PlotlyLoader }: Props) {
 
   return (
     <PlotlyLoaderProvider PlotlyLoader={PlotlyLoader}>
-      {!value || previewData.length === 0 ? (
+      {!value && (
         <div className={styles.previewPlaceholder}>
           <i>a data preview will appear here</i>
         </div>
-      ) : null}
-      {value && value.identifier_type === "column" && (
+      )}
+      {column && column.meta.value_type !== "continuous" && (
         <CategoricalDataPreview
           value={value}
           data={previewData}
           uniqueId={uniqueId}
         />
       )}
-      {value && value.identifier_type !== "column" && (
+      {column && column.meta.value_type === "continuous" && (
         <ContinuousDataPreview
           slice={value}
           data={previewData}
