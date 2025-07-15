@@ -1,5 +1,16 @@
-.CompoundTile {
+.HeatmapTile {
   padding: 24px;
+
+  .subHeader {
+    font-size: 14px;
+    font-weight: 700;
+    padding-bottom: 10px;
+  }
+
+  .tableColumnHeader {
+    font-size: 14px;
+    font-weight: 700;
+  }
 }
 
 .errorMessage {

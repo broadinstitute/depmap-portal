@@ -6,10 +6,12 @@ import { legacyPortalAPI } from "@depmap/api";
 
 interface HeatmapTileContainerProps {
   compoundId: string;
+  compoundName: string;
 }
 
 export const HeatmapTileContainer: React.FC<HeatmapTileContainerProps> = ({
   compoundId,
+  compoundName,
 }) => {
   const [dataset, setDataset] = useState<DRCDatasetOptions | null>(null);
   useEffect(() => {
@@ -24,7 +26,7 @@ export const HeatmapTileContainer: React.FC<HeatmapTileContainerProps> = ({
     <>
       {dataset && (
         <DoseTableDataProvider dataset={dataset} compoundId={compoundId}>
-          <HeatmapTile />
+          <HeatmapTile compoundName={compoundName} />
         </DoseTableDataProvider>
       )}
     </>

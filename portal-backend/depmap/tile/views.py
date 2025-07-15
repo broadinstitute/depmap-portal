@@ -378,7 +378,7 @@ def get_heatmap_html(
         f'<div id="{div_id}"></div>',
         f"""(
         function() {{
-            DepMap.initHeatmapTile("{div_id}", "{compound_id}");
+            DepMap.initHeatmapTile("{div_id}", "{compound_id}", "{entity_label}");
         }})""",
     )
 

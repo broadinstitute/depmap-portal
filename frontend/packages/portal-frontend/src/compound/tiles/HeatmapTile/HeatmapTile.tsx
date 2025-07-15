@@ -9,6 +9,10 @@ import PrototypeBrushableHeatmap from "src/compound/heatmapTab/doseViabilityHeat
 import { legacyPortalAPI } from "@depmap/api";
 import { sortHeatmapByViability } from "src/compound/heatmapTab/heatmapPlotUtils";
 
+interface HeatmapTileProps {
+  compoundName: string;
+}
+
 const FailedToLoadHeatmapTile: React.FC = () => {
   return (
     <article
@@ -26,7 +30,7 @@ const FailedToLoadHeatmapTile: React.FC = () => {
   );
 };
 
-export const HeatmapTile: React.FC = () => {
+export const HeatmapTile: React.FC<HeatmapTileProps> = ({ compoundName }) => {
   const {
     tableFormattedData,
     doseColumnNames,
@@ -87,28 +91,34 @@ export const HeatmapTile: React.FC = () => {
             />
           )}
         </h2>
-        {isLoading && !error && <PlotSpinner />}
-        {!isLoading && !error && sortedHeatmapFormattedData && (
-          <PrototypeBrushableHeatmap
-            data={{
-              ...sortedHeatmapFormattedData,
-              x: sortedHeatmapFormattedData.x,
-              y: sortedHeatmapFormattedData.y,
-              z: sortedHeatmapFormattedData.z,
-            }}
-            onLoad={() => {}}
-            yAxisTitle={`Dose`}
-            legendTitle={"Viability"}
-            interactiveVersion={false}
-          />
-        )}
         <div className="card_padding">
-          <h4>Top 5 Sensitive Lines</h4>
-          <table style={{ borderSpacing: "20px" }}>
+          <div className={styles.subHeader}>
+            {compoundName} sensitivity distributed per dose
+          </div>
+          {isLoading && !error && <PlotSpinner />}
+          {!isLoading && !error && sortedHeatmapFormattedData && (
+            <PrototypeBrushableHeatmap
+              data={{
+                ...sortedHeatmapFormattedData,
+                x: sortedHeatmapFormattedData.x,
+                y: sortedHeatmapFormattedData.y,
+                z: sortedHeatmapFormattedData.z,
+              }}
+              onLoad={() => {}}
+              xAxisTitle={"Cell Lines"}
+              yAxisTitle={`Dose`}
+              legendTitle={"Viability"}
+              interactiveVersion={false}
+            />
+          )}
+          <div className={styles.subHeader}>Top 5 Sensitive Lines</div>
+          <table>
             <thead>
               <tr>
-                <th>Cell Line</th>
-                <th>AUC (Mean Viability)</th>
+                <th className={styles.tableColumnHeader}>Cell Line</th>
+                <th className={styles.tableColumnHeader}>
+                  AUC (Mean Viability)
+                </th>
               </tr>
             </thead>
             <tbody>

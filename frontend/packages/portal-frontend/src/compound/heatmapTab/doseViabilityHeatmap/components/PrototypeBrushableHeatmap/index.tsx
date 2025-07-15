@@ -87,7 +87,7 @@ function PrototypeBrushableHeatmap({
         zmax: DO_LOG2_PLOT_DATA ? 0 : 1,
         colorbar: {
           x: 0.1,
-          y: -0.4,
+          y: -0.35,
           len: 0.8,
           thickness: 8,
           ypad: 0,
@@ -138,8 +138,15 @@ function PrototypeBrushableHeatmap({
     ];
 
     const tileLayout: Partial<Layout> = {
-      height: 300,
-      margin: { t: 20, l: 20, r: 20, b: 100 },
+      height: 260,
+      title: {
+        text: "Cell Lines",
+        font: {
+          family: "Lato",
+          size: 14,
+        },
+      },
+      margin: { t: 20, l: 0, r: 0, b: 80 },
       dragmode: false,
       xaxis: {
         visible: false,

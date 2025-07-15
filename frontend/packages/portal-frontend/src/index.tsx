@@ -210,10 +210,17 @@ export function initEnrichmentTile(
   );
 }
 
-export function initHeatmapTile(elementId: string, compoundId: string) {
+export function initHeatmapTile(
+  elementId: string,
+  compoundId: string,
+  compoundName: string
+) {
   renderWithErrorBoundary(
     <React.Suspense fallback={<div>Loading...</div>}>
-      <HeatmapTileContainer compoundId={compoundId} />
+      <HeatmapTileContainer
+        compoundId={compoundId}
+        compoundName={compoundName}
+      />
     </React.Suspense>,
     document.getElementById(elementId) as HTMLElement
   );
