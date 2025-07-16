@@ -1,14 +1,11 @@
+import { breadboxAPI, cached } from "@depmap/api";
 import { compareCaseInsensitive, compareDisabledLast } from "@depmap/utils";
-import { useDataExplorerApi } from "../../../contexts/DataExplorerApiContext";
 import { isSampleType, pluralize } from "../../../utils/misc";
 import { State } from "./types";
 import { fetchDatasetsByIndexType } from "./utils";
 
-async function fetchIndexCompatibleDatasets(
-  api: ReturnType<typeof useDataExplorerApi>,
-  index_type: string | null
-) {
-  const datasets = await fetchDatasetsByIndexType(api);
+async function fetchIndexCompatibleDatasets(index_type: string | null) {
+  const datasets = await fetchDatasetsByIndexType();
 
   if (!index_type || !(index_type in datasets)) {
     return [];
@@ -21,24 +18,21 @@ async function fetchIndexCompatibleDatasets(
   return datasets[index_type];
 }
 
-async function fetchContextCompatibleDatasets(
-  api: ReturnType<typeof useDataExplorerApi>,
-  dimension: State["dimension"]
-) {
+async function fetchContextCompatibleDatasets(dimension: State["dimension"]) {
   if (!dimension.context) {
     return null;
   }
 
   const expr = dimension.context.expr;
 
-  const dimensionTypes = await api.fetchDimensionTypes();
+  const dimensionTypes = await cached(breadboxAPI).getDimensionTypes();
   const axis = dimensionTypes.find((dt) => dt.name === dimension.slice_type)
     ?.axis;
 
   if (dimension.axis_type === "aggregated_slice") {
     // HACK: It would be difficult to compute what datasets match the context
     // so just return them all.
-    return api.fetchDatasets({
+    return cached(breadboxAPI).getDatasets({
       [axis === "sample" ? "sample_type" : "feature_type"]: dimension.context
         .dimension_type,
     });
@@ -49,23 +43,20 @@ async function fetchContextCompatibleDatasets(
   }
 
   if (axis === "sample") {
-    return api.fetchDatasets({
+    return cached(breadboxAPI).getDatasets({
       sample_id: expr["=="][1],
       sample_type: dimension.context.dimension_type,
     });
   }
 
-  return api.fetchDatasets({
+  return cached(breadboxAPI).getDatasets({
     feature_id: expr["=="][1],
     feature_type: dimension.context.dimension_type,
   });
 }
 
-async function fetchContextCompatibleDatasetIds(
-  api: ReturnType<typeof useDataExplorerApi>,
-  dimension: State["dimension"]
-) {
-  const datasets = await fetchContextCompatibleDatasets(api, dimension);
+async function fetchContextCompatibleDatasetIds(dimension: State["dimension"]) {
+  const datasets = await fetchContextCompatibleDatasets(dimension);
 
   if (!datasets) {
     return null;
@@ -74,11 +65,8 @@ async function fetchContextCompatibleDatasetIds(
   return new Set(datasets.map(({ id }) => id));
 }
 
-async function fetchContextCompatibleDataTypes(
-  api: ReturnType<typeof useDataExplorerApi>,
-  dimension: State["dimension"]
-) {
-  const datasets = await fetchContextCompatibleDatasets(api, dimension);
+async function fetchContextCompatibleDataTypes(dimension: State["dimension"]) {
+  const datasets = await fetchContextCompatibleDatasets(dimension);
 
   if (!datasets) {
     return null;
@@ -94,7 +82,6 @@ async function fetchContextCompatibleDataTypes(
 }
 
 async function computeDataTypeOptions(
-  api: ReturnType<typeof useDataExplorerApi>,
   index_type: string | null,
   dimension: State["dimension"]
 ) {
@@ -103,9 +90,9 @@ async function computeDataTypeOptions(
     contextCompatibleDataTypes,
     dimensionTypes,
   ] = await Promise.all([
-    fetchIndexCompatibleDatasets(api, index_type),
-    fetchContextCompatibleDataTypes(api, dimension),
-    api.fetchDimensionTypes(),
+    fetchIndexCompatibleDatasets(index_type),
+    fetchContextCompatibleDataTypes(dimension),
+    cached(breadboxAPI).getDimensionTypes(),
   ]);
 
   const dataTypes = [...new Set(datasets.map((d) => d.data_type))].sort(
@@ -175,13 +162,12 @@ async function computeDataTypeOptions(
 }
 
 async function computeSliceTypeOptions(
-  api: ReturnType<typeof useDataExplorerApi>,
   index_type: string | null,
   selectedDataType: string | null
 ) {
   const [datasets, dimensionTypes] = await Promise.all([
-    fetchIndexCompatibleDatasets(api, index_type),
-    api.fetchDimensionTypes(),
+    fetchIndexCompatibleDatasets(index_type),
+    cached(breadboxAPI).getDimensionTypes(),
   ]);
 
   const sliceTypeOptions: State["sliceTypeOptions"] = [];
@@ -242,7 +228,6 @@ async function computeSliceTypeOptions(
 }
 
 async function computeDataVersionOptions(
-  api: ReturnType<typeof useDataExplorerApi>,
   index_type: string | null,
   selectedDataType: string | null,
   dimension: State["dimension"]
@@ -252,9 +237,9 @@ async function computeDataVersionOptions(
     contextCompatibleDatasetIds,
     dimensionTypes,
   ] = await Promise.all([
-    fetchIndexCompatibleDatasets(api, index_type),
-    fetchContextCompatibleDatasetIds(api, dimension),
-    api.fetchDimensionTypes(),
+    fetchIndexCompatibleDatasets(index_type),
+    fetchContextCompatibleDatasetIds(dimension),
+    cached(breadboxAPI).getDimensionTypes(),
   ]);
 
   // TODO:
@@ -316,7 +301,6 @@ async function computeDataVersionOptions(
 }
 
 export default async function computeOptions(
-  api: ReturnType<typeof useDataExplorerApi>,
   index_type: string | null,
   selectedDataType: string | null,
   dimension: State["dimension"]
@@ -326,9 +310,9 @@ export default async function computeOptions(
     sliceTypeOptions,
     dataVersionOptions,
   ] = await Promise.all([
-    computeDataTypeOptions(api, index_type, dimension),
-    computeSliceTypeOptions(api, index_type, selectedDataType),
-    computeDataVersionOptions(api, index_type, selectedDataType, dimension),
+    computeDataTypeOptions(index_type, dimension),
+    computeSliceTypeOptions(index_type, selectedDataType),
+    computeDataVersionOptions(index_type, selectedDataType, dimension),
   ]);
 
   return {

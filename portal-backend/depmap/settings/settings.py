@@ -100,6 +100,10 @@ class FeatureFlags:
         return self.is_skyros()
 
     @property
+    def new_compound_page_tabs(self):
+        return self.is_skyros()
+
+    @property
     def data_page(self):
         return True
 

@@ -14,6 +14,7 @@
     "@depmap/data-slicer": "1.0.0",
     "@depmap/downloads": "1.0.0",
     "@depmap/globals": "1.0.0",
+    "@depmap/slice-table": "1.0.0",
     "@depmap/types": "1.0.0",
     "@depmap/user-upload": "1.0.0",
     "@depmap/utils": "1.0.0",

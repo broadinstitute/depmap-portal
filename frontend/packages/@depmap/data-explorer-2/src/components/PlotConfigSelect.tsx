@@ -92,7 +92,9 @@ function PlotConfigSelect({
     : Object.keys(options).map(toOption);
 
   const reactSelectValue =
-    value !== null && typeof value === "object" ? value : toOption(value);
+    value !== null && typeof value === "object"
+      ? value
+      : toOption(value as string | null);
 
   return (
     <ExtendedSelect

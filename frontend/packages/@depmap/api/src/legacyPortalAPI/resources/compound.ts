@@ -1,4 +1,8 @@
-import { CurveParams, CurvePlotPoints } from "@depmap/types";
+import {
+  CompoundDoseCurveData,
+  CurveParams,
+  CurvePlotPoints,
+} from "@depmap/types";
 import { getJson } from "../client";
 
 export function getDoseResponsePoints(
@@ -14,4 +18,21 @@ export function getDoseResponsePoints(
 
 export function getDoseResponseTable(datasetName: string, xrefFull: string) {
   return getJson<any>(`/compound/dosetable/${datasetName}/${xrefFull}`);
+}
+
+export function getCompoundDoseCurveData(
+  compoundId: string,
+  drcDatasetLabel: string,
+  replicateDatasetName: string
+): Promise<CompoundDoseCurveData> {
+  const params = {
+    compound_id: compoundId,
+    drc_dataset_label: drcDatasetLabel,
+    replicate_dataset_name: replicateDatasetName,
+  };
+
+  return getJson<CompoundDoseCurveData>(
+    `/api/compound/dose_curve_data`,
+    params
+  );
 }

@@ -161,30 +161,31 @@ jobs:
         with:
           token: "${{ secrets.GITHUB_TOKEN }}"
           fetch-depth: 0
-      - name: Install and configure Poetry
-        uses: snok/install-poetry@v1
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
         with:
-          version: 1.7.1
-          virtualenvs-create: true
-          virtualenvs-in-project: true
-      - name: Install dependencies
-        run: poetry install
+          version: "0.7.20"
+
       - name: Store current version
         id: current-version
-        run: echo "current_version=$(poetry run cz version -p)" >> $GITHUB_OUTPUT
+        run: echo "current_version=$(uvx --from commitizen cz version -p)" >> $GITHUB_OUTPUT
+
       - name: Get current version
         run: echo "${{ steps.current-version.outputs.current_version}}"
+
       - name: Bump version and tag
         run: |
           git config user.name github-actions
           git config user.email github-actions@github.com
           git pull origin HEAD:master
-          poetry run ./bb bump-version
+          uvx --from commitizen cz --no-raise 21 bump --check-consistency
           git push origin HEAD:master
           git push origin HEAD:master --tags
+
       - name: Store bumped version
         id: bumped-version
-        run: echo "bumped_version=$(poetry run cz version -p)" >> $GITHUB_OUTPUT
+        run: echo "bumped_version=$(uvx --from commitizen cz version -p)" >> $GITHUB_OUTPUT
       - name: Get bumped version
         run: echo "${{ steps.current-version.outputs.bumped_version}}"
 

@@ -51,6 +51,22 @@ const DoseResponseTab = React.lazy(
     )
 );
 
+const DoseCurvesTab = React.lazy(
+  () =>
+    import(
+      /* webpackChunkName: "DoseCurvesTab" */
+      "src/compound/doseCurvesTab/DoseCurvesTab"
+    )
+);
+
+const HeatmapTab = React.lazy(
+  () =>
+    import(
+      /* webpackChunkName: "HeatmapTab" */
+      "src/compound/heatmapTab/HeatmapTab"
+    )
+);
+
 const EntitySummary = React.lazy(
   () =>
     import(
@@ -280,6 +296,47 @@ export function initCorrelationAnalysisTab(
         getCorrelationData={(sliceQuery: SliceQuery) => {
           return bapi.fetchAssociations(sliceQuery);
         }}
+      />
+    </React.Suspense>,
+    document.getElementById(elementId) as HTMLElement
+  );
+}
+
+// New dose curves tab
+export function initDoseCurvesTab(
+  elementId: string,
+  name: string,
+  compoundId: string,
+  datasetOptions: Array<any>,
+  units: string
+) {
+  renderWithErrorBoundary(
+    <React.Suspense fallback={<div>Loading...</div>}>
+      <DoseCurvesTab
+        datasetOptions={datasetOptions}
+        doseUnits={units}
+        compoundName={name}
+        compoundId={compoundId}
+      />
+    </React.Suspense>,
+    document.getElementById(elementId) as HTMLElement
+  );
+}
+
+export function initHeatmapTab(
+  elementId: string,
+  name: string,
+  compoundId: string,
+  datasetOptions: Array<any>,
+  units: string
+) {
+  renderWithErrorBoundary(
+    <React.Suspense fallback={<div>Loading...</div>}>
+      <HeatmapTab
+        datasetOptions={datasetOptions}
+        doseUnits={units}
+        compoundName={name}
+        compoundId={compoundId}
       />
     </React.Suspense>,
     document.getElementById(elementId) as HTMLElement

@@ -91,7 +91,7 @@ def _read_perturbation_index_mapping(perturbation_csv_file):
 
 
 # must load after all compound_experiments have been loaded
-def load_curve_parameters_csv(filename):
+def load_curve_parameters_csv(filename, label):
     # each row of the file includes cell line name, compound name, ec50, slope, upper asymptote, and lower asymptote
 
     # use cell line name to look up the corresponding cell line in the CellLine table
@@ -138,6 +138,7 @@ def load_curve_parameters_csv(filename):
                 row["cell_line_name"], row["compound_name"], row["ec50"]
             )
             entry_dict = dict(
+                drc_dataset_label=label,
                 depmap_id=cell_line.depmap_id,
                 compound_exp_id=lookup_compound_exp.get(row["compound_name"]).entity_id,
                 ec50=row["ec50"],

@@ -64,6 +64,7 @@ export interface ContextPlotBoxData {
   drug_dotted_line: number;
   entity_label: string;
   entity_overview_page_label: string;
+  dataset_units: string;
 }
 
 export interface ContextNameInfo {
