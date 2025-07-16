@@ -2,52 +2,171 @@ import React, { useEffect, useRef, useState } from "react";
 import type { Data as PlotlyData, Layout, PlotlyHTMLElement } from "plotly.js";
 import PlotlyLoader, { PlotlyType } from "src/plot/components/PlotlyLoader";
 import customizeDragLayer from "./customizeDragLayer";
-
 import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
 import { generateTickLabels } from "./utils";
 import usePlotResizer from "../../hooks/usePlotResizer";
 import { DO_LOG2_PLOT_DATA } from "src/compound/heatmapTab/heatmapPlotUtils";
 
-interface Props {
+/**
+ * Props for StaticBrushableHeatmap (overview tile)
+ */
+interface StaticHeatmapProps {
   data: {
     x: (string | number)[];
     y: (string | number)[];
     z: (number | null)[][];
-    customdata?: any[][]; // Add customdata for per-cell hover masking
+    customdata?: any[][];
   };
   xAxisTitle?: string;
   yAxisTitle: string;
   legendTitle: string;
+  hovertemplate?: string | string[];
+  onLoad?: (plot: ExtendedPlotType) => void;
+}
+
+/**
+ * Props for InteractiveBrushableHeatmap (heatmap tab)
+ */
+interface InteractiveHeatmapProps extends StaticHeatmapProps {
   selectedColumns?: Set<number>;
   interactiveVersion?: boolean;
   onSelectColumnRange?: (start: number, end: number, shiftKey: boolean) => void;
   onClearSelection?: () => void;
-  onLoad?: (plot: ExtendedPlotType) => void;
-  hovertemplate?: string | string[];
-  // Optionally set a min/max for the color scale. If left undefined, these
-  // will default to the min and max of values contained in `data.z`
-  zmin?: number;
-  zmax?: number;
 }
 
-function PrototypeBrushableHeatmap({
+// --- Plotly configs ---
+function getStaticPlotlyConfig(
+  data: StaticHeatmapProps["data"],
+  legendTitle: string,
+  hovertemplate: string | string[] | undefined
+) {
+  const plotlyTileData: PlotlyData = {
+    type: "heatmap",
+    ...data,
+    colorscale: "YlOrRd",
+    zmin: DO_LOG2_PLOT_DATA ? -2 : 0,
+    zmax: DO_LOG2_PLOT_DATA ? 0 : 1,
+    colorbar: {
+      x: 0.1,
+      y: -0.35,
+      len: 0.8,
+      thickness: 8,
+      ypad: 0,
+      xanchor: "left",
+      ...({
+        orientation: "h",
+        title: {
+          text: legendTitle,
+          side: "bottom",
+        },
+      } as object),
+    },
+    hovertemplate,
+    xaxis: "x",
+    yaxis: "y",
+    xgap: 0.15,
+    ygap: 0.15,
+  };
+
+  return plotlyTileData;
+}
+
+function getStaticLayout(xAxisTitle: string | undefined, yAxisTitle: string) {
+  return {
+    height: 260,
+    title: {
+      text: xAxisTitle ?? "Cell Lines",
+      font: {
+        family: "Lato",
+        size: 14,
+      },
+    },
+    margin: { t: 20, l: 5, r: 10, b: 80 },
+    dragmode: false as
+      | false
+      | "zoom"
+      | "pan"
+      | "select"
+      | "lasso"
+      | "orbit"
+      | "turntable"
+      | undefined,
+    xaxis: { visible: false },
+    yaxis: {
+      type: "category" as const,
+      automargin: true,
+      autorange: true,
+      title: { text: yAxisTitle },
+      visible: false,
+    },
+  };
+}
+
+// --- Custom hook for Plotly setup/teardown ---
+function usePlotlyHeatmap(
+  ref: React.RefObject<ExtendedPlotType>,
+  data: PlotlyData[],
+  layout: Partial<Layout>,
+  config: object,
+  onLoad: ((plot: ExtendedPlotType) => void) | undefined,
+  Plotly: PlotlyType
+) {
+  usePlotResizer(Plotly, ref);
+
+  useEffect(() => {
+    if (onLoad && ref.current) {
+      onLoad(ref.current);
+    }
+  }, [onLoad, ref]);
+
+  useEffect(() => {
+    const plot = ref.current as ExtendedPlotType;
+    if (plot) {
+      Plotly.react(plot, data, layout, config);
+    }
+  }, [data, layout, config, Plotly, ref]);
+}
+
+// --- StaticBrushableHeatmap ---
+function StaticBrushableHeatmap({
   data,
   xAxisTitle = undefined,
   yAxisTitle,
   legendTitle,
-  onSelectColumnRange = () => {},
-  onClearSelection = () => {},
+  hovertemplate = undefined,
+  onLoad = () => {},
+  Plotly,
+}: StaticHeatmapProps & { Plotly: PlotlyType }) {
+  const plotlyData = [getStaticPlotlyConfig(data, legendTitle, hovertemplate)];
+  const layout = getStaticLayout(xAxisTitle, yAxisTitle);
+  const ref = useRef<ExtendedPlotType>(null);
+  usePlotlyHeatmap(
+    ref,
+    plotlyData,
+    layout,
+    { staticPlot: true },
+    onLoad,
+    Plotly
+  );
+  return <div ref={ref} />;
+}
+
+// --- InteractiveBrushableHeatmap ---
+function InteractiveBrushableHeatmap({
+  data,
+  xAxisTitle = undefined,
+  yAxisTitle,
+  legendTitle,
   selectedColumns = new Set([]),
   interactiveVersion = true,
   hovertemplate = undefined,
-  zmin = undefined,
-  zmax = undefined,
+  onSelectColumnRange = () => {},
+  onClearSelection = () => {},
   onLoad = () => {},
   Plotly,
-}: Props & { Plotly: PlotlyType }) {
+}: InteractiveHeatmapProps & { Plotly: PlotlyType }) {
   const ref = useRef<ExtendedPlotType>(null);
   usePlotResizer(Plotly, ref);
-
   const [hoveredColumns, setHoveredColumns] = useState<number[]>([]);
 
   useEffect(() => {
@@ -58,7 +177,6 @@ function PrototypeBrushableHeatmap({
 
   useEffect(() => {
     const plot = ref.current as ExtendedPlotType;
-    // Determine the visible range for tick label logic
     let range: [number, number] = [0, data.x.length - 1];
     if (
       plot &&
@@ -69,7 +187,6 @@ function PrototypeBrushableHeatmap({
     ) {
       range = plot.layout.xaxis.range as [number, number];
     }
-
     const xAxisTickLabels = generateTickLabels(
       data.x.map((val) => {
         const str = String(val);
@@ -77,36 +194,6 @@ function PrototypeBrushableHeatmap({
       }),
       selectedColumns
     );
-
-    const plotlyTileData: PlotlyData[] = [
-      {
-        type: "heatmap",
-        ...data,
-        colorscale: "YlOrRd",
-        zmin: DO_LOG2_PLOT_DATA ? -2 : 0,
-        zmax: DO_LOG2_PLOT_DATA ? 0 : 1,
-        colorbar: {
-          x: 0.1,
-          y: -0.35,
-          len: 0.8,
-          thickness: 8,
-          ypad: 0,
-          xanchor: "left",
-          ...({
-            orientation: "h",
-            title: {
-              text: legendTitle,
-              side: "bottom",
-            },
-          } as object),
-        },
-        hovertemplate,
-        xaxis: "x",
-        yaxis: "y",
-        xgap: 0.15,
-        ygap: 0.15,
-      },
-    ];
 
     const plotlyData: PlotlyData[] = [
       {
@@ -136,31 +223,6 @@ function PrototypeBrushableHeatmap({
         ygap: 0.15,
       },
     ];
-
-    const tileLayout: Partial<Layout> = {
-      height: 260,
-      title: {
-        text: "Cell Lines",
-        font: {
-          family: "Lato",
-          size: 14,
-        },
-      },
-      margin: { t: 20, l: 5, r: 10, b: 80 },
-      dragmode: false,
-      xaxis: {
-        visible: false,
-      },
-      yaxis: {
-        type: "category",
-        automargin: true,
-        autorange: true,
-        title: {
-          text: yAxisTitle,
-        },
-        visible: false,
-      },
-    };
 
     const layout: Partial<Layout> = {
       height: 500,
@@ -203,30 +265,24 @@ function PrototypeBrushableHeatmap({
             const x1 = colIndex + 0.5;
             const y0 = -0.5;
             const y1 = data.y.length - 0.5;
-            const shouldDrawLeft = !selectedColumns.has(colIndex! - 1);
-            const shouldDrawRight = !selectedColumns.has(colIndex! + 1);
-
+            const shouldDrawLeft = !selectedColumns.has(colIndex - 1);
+            const shouldDrawRight = !selectedColumns.has(colIndex + 1);
             const segments: string[] = [];
-
             if (shouldDrawLeft) {
               segments.push(`M ${x0} ${y0}`);
               segments.push(`L ${x0} ${y1}`);
             }
-
             segments.push(`M ${x0} ${y1}`);
             segments.push(`L ${x1} ${y1}`);
             segments.push(`M ${x1} ${y0}`);
             segments.push(`L ${x0} ${y0}`);
-
             if (shouldDrawRight) {
               segments.push(`M ${x1} ${y1}`);
               segments.push(`L ${x1} ${y0}`);
             }
-
             return segments.join(" ");
           })(),
         })),
-
         // Fill
         [...new Set([...hoveredColumns, ...selectedColumns])].map(
           (colIndex) => ({
@@ -242,12 +298,7 @@ function PrototypeBrushableHeatmap({
       ].flat(),
     };
 
-    Plotly.react(
-      plot,
-      interactiveVersion ? plotlyData : plotlyTileData,
-      interactiveVersion ? layout : tileLayout,
-      { staticPlot: interactiveVersion ? false : true }
-    );
+    Plotly.react(plot, plotlyData, layout, { staticPlot: false });
 
     // Keep track of added listeners so we can easily remove them.
     const listeners: [string, (e: object) => void][] = [];
@@ -312,7 +363,6 @@ function PrototypeBrushableHeatmap({
     // the keeps all selected columns in the visible window.
     plot.zoomToSelection = (selections: Set<number>) => {
       if (!plot) return;
-
       if (selections.size > 0 && plot && plot.layout && plot.layout.xaxis) {
         const minSelected = Math.min(...selections);
         const maxSelected = Math.max(...selections);
@@ -373,8 +423,6 @@ function PrototypeBrushableHeatmap({
     onSelectColumnRange,
     onClearSelection,
     hovertemplate,
-    zmin,
-    zmax,
     Plotly,
     selectedColumns,
     hoveredColumns,
@@ -386,19 +434,28 @@ function PrototypeBrushableHeatmap({
 
 export default function LazyPrototypeBrushableHeatmap({
   data,
+  interactiveVersion = true,
   ...otherProps
-}: Props) {
+}: InteractiveHeatmapProps) {
   return (
     <PlotlyLoader version="module">
-      {(Plotly) =>
-        data ? (
-          <PrototypeBrushableHeatmap
-            data={data}
-            Plotly={Plotly}
-            {...otherProps}
-          />
-        ) : null
-      }
+      {(Plotly) => {
+        if (!data) return null;
+        if (interactiveVersion) {
+          return (
+            <InteractiveBrushableHeatmap
+              data={data}
+              Plotly={Plotly}
+              interactiveVersion
+              {...otherProps}
+            />
+          );
+        }
+        return (
+          <StaticBrushableHeatmap data={data} Plotly={Plotly} {...otherProps} />
+        );
+      }}
     </PlotlyLoader>
   );
 }
+// ...existing code...
