@@ -30,4 +30,3 @@ export default function LazyPrototypeBrushableHeatmap({
     </PlotlyLoader>
   );
 }
-// ...existing code...

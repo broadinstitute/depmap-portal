@@ -90,13 +90,10 @@ export default function useDoseTableData(
           modelMetadata,
           aucsListResponse,
         ] = await Promise.all([
-          cached(bbapi).getMatrixDatasetFeaturesData(
-            dataset.viability_dataset_id,
-            {
-              features: viabilityFeatureLabels,
-              feature_identifier: "label",
-            }
-          ),
+          cached(bbapi).getMatrixDatasetData(dataset.viability_dataset_id, {
+            features: viabilityFeatureLabels,
+            feature_identifier: "label",
+          }),
           fetchMetadata<{
             Dose: Record<string, number>;
             DoseUnit: Record<string, string>;
@@ -109,7 +106,7 @@ export default function useDoseTableData(
           fetchMetadata<{
             CellLineName: Record<string, string>;
           }>("depmap_model", null, ["CellLineName"], bbapi),
-          cached(bbapi).getMatrixDatasetFeaturesData(dataset.auc_dataset_id, {
+          cached(bbapi).getMatrixDatasetData(dataset.auc_dataset_id, {
             features: [compoundId],
             feature_identifier: "id",
           }),
