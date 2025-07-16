@@ -1,6 +1,33 @@
 .HeatmapTile {
   padding: 24px;
 
+  .triangleWithLabel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-right: 4px;
+  }
+
+  .triangleLabel {
+    margin-bottom: 2px;
+  }
+
+  .triangleSVG {
+    flex-shrink: 0;
+    width: 18px;
+    height: 160px;
+    display: block;
+    margin-right: 4px;
+  }
+  .heatmapWithTriangle {
+    display: flex;
+    height: 100%;
+  }
+  .heatmapContainer {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
   .subHeader {
     font-size: 14px;
     font-weight: 700;

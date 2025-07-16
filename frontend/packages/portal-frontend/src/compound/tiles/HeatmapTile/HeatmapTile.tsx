@@ -144,19 +144,40 @@ export const HeatmapTile: React.FC<HeatmapTileProps> = ({
           </div>
           {(isLoading || isLoadingDataset) && !error && <PlotSpinner />}
           {!isLoading && !error && sortedHeatmapFormattedData && (
-            <PrototypeBrushableHeatmap
-              data={{
-                ...sortedHeatmapFormattedData,
-                x: sortedHeatmapFormattedData.x,
-                y: sortedHeatmapFormattedData.y,
-                z: sortedHeatmapFormattedData.z,
-              }}
-              onLoad={() => {}}
-              xAxisTitle={"Cell Lines"}
-              yAxisTitle={`Dose`}
-              legendTitle={"Viability"}
-              interactiveVersion={false}
-            />
+            <div className={styles.heatmapWithTriangle}>
+              <div className={styles.triangleWithLabel}>
+                <span className={styles.triangleLabel}>Dose</span>
+                <svg
+                  className={styles.triangleSVG}
+                  viewBox="0 0 18 160"
+                  aria-hidden="true"
+                  preserveAspectRatio="xMidYMid meet"
+                  shapeRendering="geometricPrecision"
+                >
+                  <polygon
+                    points="0,0 18,0 9,160"
+                    fill="none"
+                    stroke="#000"
+                    strokeWidth="2"
+                  />
+                </svg>
+              </div>
+              <div className={styles.heatmapContainer}>
+                <PrototypeBrushableHeatmap
+                  data={{
+                    ...sortedHeatmapFormattedData,
+                    x: sortedHeatmapFormattedData.x,
+                    y: sortedHeatmapFormattedData.y,
+                    z: sortedHeatmapFormattedData.z,
+                  }}
+                  onLoad={() => {}}
+                  xAxisTitle={"Cell Lines"}
+                  yAxisTitle={`Dose`}
+                  legendTitle={"Viability"}
+                  interactiveVersion={false}
+                />
+              </div>
+            </div>
           )}
           {tableFormattedData && (
             <TopLinesMiniTable tableFormattedData={tableFormattedData} />
