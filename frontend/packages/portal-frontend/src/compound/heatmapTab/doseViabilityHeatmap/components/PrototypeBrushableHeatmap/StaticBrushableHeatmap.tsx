@@ -55,7 +55,7 @@ export function getStaticLayout(
         size: 14,
       },
     },
-    margin: { t: 20, l: 5, r: 10, b: 80 },
+    margin: { t: 20, l: 2, r: 10, b: 80 },
     dragmode: false as
       | false
       | "zoom"

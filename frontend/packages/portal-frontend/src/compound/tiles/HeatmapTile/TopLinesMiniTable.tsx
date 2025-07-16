@@ -25,7 +25,7 @@ const TopLinesMiniTable: React.FC<TopLinesMiniTableProps> = ({
 
   return (
     <>
-      <div className={styles.subHeader}>Top 5 Sensitive Lines</div>
+      <div className={styles.subHeader2}>Top 5 Sensitive Lines</div>
       <table className={styles.heatmapTileTable}>
         <thead>
           <tr>

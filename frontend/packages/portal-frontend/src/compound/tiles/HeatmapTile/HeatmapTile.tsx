@@ -38,6 +38,12 @@ export const HeatmapTile: React.FC<HeatmapTileProps> = ({
     [heatmapFormattedData]
   );
 
+  const heatmapTabHref = (() => {
+    const url = new URL(window.location.href);
+    url.searchParams.set("tab", "heatmap");
+    return url.pathname + url.search;
+  })();
+
   // TODO: Always show InfoIcon once we have content for the popoverContent
   const showInfoIcon = false;
   const customInfoImg = (
@@ -96,6 +102,15 @@ export const HeatmapTile: React.FC<HeatmapTileProps> = ({
           )}
           {tableFormattedData && (
             <TopLinesMiniTable tableFormattedData={tableFormattedData} />
+          )}
+          <hr className={styles.heatmapSeparator} />
+          {tableFormattedData && (
+            <p className="stacked-boxplot-download-container">
+              View details in{" "}
+              <a href={heatmapTabHref} className={styles.buttonLink}>
+                Heatmap
+              </a>
+            </p>
           )}
         </div>
       </div>

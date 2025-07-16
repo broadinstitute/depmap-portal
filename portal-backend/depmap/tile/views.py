@@ -563,7 +563,7 @@ def get_tractability_html(gene):
 def get_sensitivity_html(
     compound, compound_experiment_and_datasets, query_params_dict={}
 ):
-    # DEPRECATED: will be redesigned/repzlaced
+    # DEPRECATED: will be redesigned/replaced
     best_ce_and_d = determine_compound_experiment_and_dataset(
         compound_experiment_and_datasets
     )
