@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo } from "react";
 import { toStaticUrl } from "@depmap/globals";
 import InfoIcon from "src/common/components/InfoIcon";
 import styles from "../CompoundTiles.scss";
@@ -6,85 +6,15 @@ import PlotSpinner from "src/plot/components/PlotSpinner";
 import { useDoseTableDataContext } from "src/compound/hooks/DoseTableDataContext";
 import useHeatmapData from "src/compound/heatmapTab/hooks/useHeatmapData";
 import PrototypeBrushableHeatmap from "src/compound/heatmapTab/doseViabilityHeatmap/components/PrototypeBrushableHeatmap";
-import { legacyPortalAPI } from "@depmap/api";
 import { sortHeatmapByViability } from "src/compound/heatmapTab/heatmapPlotUtils";
-import { TableFormattedData } from "src/compound/types";
+import DoseTriangleLabel from "./DoseTriangleLabel";
+import ErrorLoading from "./ErrorLoading";
+import TopLinesMiniTable from "./TopLinesMiniTable";
 
 interface HeatmapTileProps {
   compoundName: string;
   isLoadingDataset: boolean;
 }
-
-const ErrorLoading: React.FC = () => {
-  return (
-    <article
-      className={`${styles.HeatmapTile} card_wrapper stacked-boxplot-tile`}
-    >
-      <div className="card_border container_fluid">
-        <h2 className="no_margin cardtitle_text">Heatmap</h2>
-        <div className="card_padding">
-          <div className={styles.errorMessage}>
-            There was an error loading this tile.
-          </div>
-        </div>
-      </div>
-    </article>
-  );
-};
-
-interface TopLinesMiniTableProps {
-  tableFormattedData: TableFormattedData;
-}
-const TopLinesMiniTable: React.FC<TopLinesMiniTableProps> = ({
-  tableFormattedData,
-}) => {
-  const sortedTableFormattedData = useMemo(
-    () => tableFormattedData?.sort((a, b) => a.auc - b.auc) || [],
-    [tableFormattedData]
-  );
-
-  const [cellLineUrlRoot, setCellLineUrlRoot] = useState<string | null>(null);
-
-  useEffect(() => {
-    legacyPortalAPI.getCellLineUrlRoot().then((urlRoot: string) => {
-      setCellLineUrlRoot(urlRoot);
-    });
-  }, []);
-
-  return (
-    <>
-      <div className={styles.subHeader}>Top 5 Sensitive Lines</div>
-      <table className={styles.heatmapTileTable}>
-        <thead>
-          <tr>
-            <th className={styles.tableColumnHeader}>Cell Line</th>
-            <th className={styles.tableColumnHeader}>AUC (Mean Viability)</th>
-          </tr>
-        </thead>
-        <tbody>
-          {[...sortedTableFormattedData].slice(0, 5).map((row) => (
-            <tr key={row.cellLine}>
-              <td>
-                {cellLineUrlRoot ? (
-                  <a
-                    href={`${cellLineUrlRoot}${row.modelId}`}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    {row.cellLine}
-                  </a>
-                ) : (
-                  row.cellLine
-                )}
-              </td>
-              <td>{row.auc}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </>
-  );
-};
 
 export const HeatmapTile: React.FC<HeatmapTileProps> = ({
   compoundName,
@@ -145,23 +75,8 @@ export const HeatmapTile: React.FC<HeatmapTileProps> = ({
           {(isLoading || isLoadingDataset) && !error && <PlotSpinner />}
           {!isLoading && !error && sortedHeatmapFormattedData && (
             <div className={styles.heatmapWithTriangle}>
-              <div className={styles.triangleWithLabel}>
-                <span className={styles.triangleLabel}>Dose</span>
-                <svg
-                  className={styles.triangleSVG}
-                  viewBox="0 0 18 160"
-                  aria-hidden="true"
-                  preserveAspectRatio="xMidYMid meet"
-                  shapeRendering="geometricPrecision"
-                >
-                  <polygon
-                    points="0,0 18,0 9,160"
-                    fill="none"
-                    stroke="#000"
-                    strokeWidth="2"
-                  />
-                </svg>
-              </div>
+              <DoseTriangleLabel />
+
               <div className={styles.heatmapContainer}>
                 <PrototypeBrushableHeatmap
                   data={{
