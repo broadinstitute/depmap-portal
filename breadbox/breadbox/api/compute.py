@@ -69,8 +69,6 @@ def compute_univariate_associations(
     user: str = Depends(get_user),
     settings: Settings = Depends(get_settings),
 ):
-    utils.check_celery()
-
     resultsDirPrefix = settings.compute_results_location
     dataset_id = computeParams.datasetId
     vector_variable_type = computeParams.vectorVariableType
@@ -120,6 +118,4 @@ def compute_univariate_associations(
 
 @router.get("/test_task", operation_id="test_task")
 def test_task(message):
-    utils.check_celery()
-
     utils.cast_celery_task(analysis_tasks.test_task).delay(message)
