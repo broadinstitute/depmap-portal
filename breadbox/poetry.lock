@@ -2896,6 +2896,22 @@ files = [
 windows-terminal = ["colorama (>=0.4.6)"]
 
 [[package]]
+name = "pypatch-and-run"
+version = "0.3.1"
+description = ""
+optional = false
+python-versions = ">=3.9,<4.0"
+files = [
+    {file = "pypatch_and_run-0.3.1-py3-none-any.whl", hash = "sha256:d03929214bad4f916bd063679e19ad26d6e69eb80fcfd6fcf674f4c2a7797fec"},
+    {file = "pypatch_and_run-0.3.1.tar.gz", hash = "sha256:c84a0f220a99839055716fd067e7803adb3999ae5e6fdeb155f61770cc5f55ab"},
+]
+
+[package.source]
+type = "legacy"
+url = "https://us-central1-python.pkg.dev/cds-artifacts/public-python/simple"
+reference = "public-python"
+
+[[package]]
 name = "pyright"
 version = "1.1.399"
 description = "Command line wrapper for pyright"
@@ -4186,4 +4202,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "jaraco.test", "more
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "9342939da7e974385e164b03fca76d34480a28ff55334cd417ff6674924d460a"
+content-hash = "790bbd40f05458c9ab9feaba2bab3478a9222cdeb5ab1dcb6c2a4d0e552579db"
