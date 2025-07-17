@@ -6,14 +6,14 @@ import React, {
   useState,
 } from "react";
 import cx from "classnames";
+import { LegacyPortalApiResponse } from "@depmap/api";
 import { Tooltip, WordBreaker } from "@depmap/common-components";
-import { DeprecatedDataExplorerApiResponse } from "../../../../../../contexts/DeprecatedDataExplorerApiContext";
 import { DataExplorerContext } from "@depmap/types";
 import { SectionStackContext } from "../../../SectionStack";
 import GeneTeaTerm from "./GeneTeaTerm";
 import styles from "../../../../styles/DataExplorer2.scss";
 
-type GeneTeaEnrichedTerms = DeprecatedDataExplorerApiResponse["fetchGeneTeaEnrichment"];
+type GeneTeaEnrichedTerms = LegacyPortalApiResponse["fetchGeneTeaEnrichment"];
 
 interface Props {
   data: GeneTeaEnrichedTerms;

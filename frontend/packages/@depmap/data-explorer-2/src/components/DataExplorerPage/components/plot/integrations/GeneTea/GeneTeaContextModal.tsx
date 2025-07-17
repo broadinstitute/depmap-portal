@@ -1,8 +1,8 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { Button, Modal } from "react-bootstrap";
+import { cached, legacyPortalAPI } from "@depmap/api";
 import { Spinner } from "@depmap/common-components";
 import { DepMap } from "@depmap/globals";
-import { useDeprecatedDataExplorerApi } from "../../../../../../contexts/DeprecatedDataExplorerApiContext";
 import renderConditionally from "../../../../../../utils/render-conditionally";
 import GeneTeaTerm from "./GeneTeaTerm";
 import styles from "../../../../styles/DataExplorer2.scss";
@@ -22,7 +22,6 @@ function GeneTeaContextModal({
   matchingGenes,
   onClose,
 }: Props) {
-  const api = useDeprecatedDataExplorerApi();
   const [show, setShow] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [data, setData] = useState<Record<string, string> | null>(null);
@@ -34,10 +33,9 @@ function GeneTeaContextModal({
       setError(false);
 
       try {
-        const fetchedData = await api.fetchGeneTeaTermContext(
-          term,
-          matchingGenes
-        );
+        const fetchedData = await cached(
+          legacyPortalAPI
+        ).fetchGeneTeaTermContext(term, matchingGenes);
         setData(fetchedData);
       } catch (e) {
         setError(true);
@@ -46,7 +44,7 @@ function GeneTeaContextModal({
         setIsLoading(false);
       }
     })();
-  }, [api, term, matchingGenes]);
+  }, [term, matchingGenes]);
 
   const handleClickCreateContext = useCallback(() => {
     setShow(false);
