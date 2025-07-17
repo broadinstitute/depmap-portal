@@ -192,15 +192,11 @@ def render_compound_tile(
     # TEMP: Right now, the heatmap tile and tab is only available for OncRef, and drc_compound_datasets only
     # has one element in it, so before showing these features we need to check if the compound is in the Breadbox
     # version of the OncRef dataset.
-    compound_is_in_dataset = compound_is_in_oncref_dataset(
-        compound, drc_compound_datasets, data_access
-    )
-
-    show_heatmap_tab = (
-        current_app.config["ENABLED_FEATURES"].new_compound_page_tabs
-        and compound_is_in_dataset
-    )
-    if show_heatmap_tab:
+    if current_app.config[
+        "ENABLED_FEATURES"
+    ].new_compound_page_tabs and compound_is_in_oncref_dataset(
+        compound, drc_compound_datasets
+    ):
         tiles[CompoundTileEnum.heatmap.value] = get_heatmap_html
 
     if tile_name not in tiles:

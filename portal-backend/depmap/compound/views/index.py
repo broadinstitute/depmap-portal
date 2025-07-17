@@ -98,7 +98,7 @@ def view_compound(name):
     # has one element in it, so before showing these features we need to check if the compound is in the Breadbox
     # version of the OncRef dataset.
     compound_is_in_dataset = compound_is_in_oncref_dataset(
-        compound, drc_compound_datasets, data_access
+        compound, drc_compound_datasets
     )
 
     show_heatmap_tab = (
