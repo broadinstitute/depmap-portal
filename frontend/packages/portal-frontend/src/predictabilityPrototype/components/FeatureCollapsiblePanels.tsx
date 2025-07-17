@@ -1,13 +1,14 @@
 import React from "react";
 import styles from "src/predictabilityPrototype/styles/PredictabilityPrototype.scss";
 import StyledMeter from "src/common/components/StyledMeter";
-import { getDapi } from "src/common/utilities/context";
+import { toStaticUrl } from "@depmap/globals";
 import PredictabilityWaterfallPlot from "./PredictabilityWaterfallPlot";
 import RelatedFeaturesCorrPlot from "./RelatedFeaturesCorrPlot";
 import PredictabilityBoxOrBarPlot from "./PredictabilityBoxOrBarPlot";
 import FeatureVsGeneEffectPlot from "./FeatureVsGeneEffectPlot";
 import { SCREEN_TYPE_COLORS } from "../models/types";
-import { RelatedType } from "src/predictability/models/predictive";
+import { RelatedType } from "@depmap/types/src/predictability";
+import { legacyPortalAPI } from "@depmap/api";
 
 interface FeatureSinglePanelHeaderProps {
   feature: string;
@@ -48,9 +49,7 @@ export const FeatureCollapsiblePanelHeader = ({
                 paddingBottom: "3px",
                 paddingLeft: "5px",
               }}
-              src={getDapi()._getFileUrl(
-                `/static/img/predictability/${relatedType}.svg`
-              )}
+              src={toStaticUrl(`/static/img/predictability/${relatedType}.svg`)}
               alt={relatedType}
             />
           </span>
@@ -172,8 +171,6 @@ const FeatureCollapsiblePanels = ({
   isOpen,
   screenType,
 }: FeatureCollapsiblePanelProps) => {
-  const dapi = getDapi();
-
   return (
     <div
       style={{
@@ -192,9 +189,9 @@ const FeatureCollapsiblePanels = ({
                 dimType={dimType}
                 panelIndex={panelIndex}
                 screenType={screenType}
-                getFeatureVsGeneEffectData={dapi.getPredictabilityFeatureGeneEffectData.bind(
-                  dapi
-                )}
+                getFeatureVsGeneEffectData={
+                  legacyPortalAPI.getPredictabilityFeatureGeneEffectData
+                }
               />
             )}
           </div>
@@ -208,9 +205,9 @@ const FeatureCollapsiblePanels = ({
                 dimType={dimType}
                 panelIndex={panelIndex}
                 screenType={screenType}
-                getPredictabilityBoxPlotData={dapi.getPredictabilityBoxOrBarPlotData.bind(
-                  dapi
-                )}
+                getPredictabilityBoxPlotData={
+                  legacyPortalAPI.getPredictabilityBoxOrBarPlotData
+                }
               />
             )}
           </div>
@@ -223,9 +220,9 @@ const FeatureCollapsiblePanels = ({
                 feature={feature}
                 panelIndex={panelIndex}
                 screenType={screenType}
-                getRelatedFeaturesCorrPlotData={dapi.getRelatedFeatureCorrData.bind(
-                  dapi
-                )}
+                getRelatedFeaturesCorrPlotData={
+                  legacyPortalAPI.getRelatedFeatureCorrData
+                }
               />
             )}
           </div>
@@ -238,7 +235,7 @@ const FeatureCollapsiblePanels = ({
                 feature={feature}
                 panelIndex={panelIndex}
                 screenType={screenType}
-                getWaterfallPlotData={dapi.getWaterfallData.bind(dapi)}
+                getWaterfallPlotData={legacyPortalAPI.getWaterfallData}
               />
             )}
           </div>

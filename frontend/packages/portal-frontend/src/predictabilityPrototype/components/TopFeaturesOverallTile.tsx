@@ -3,7 +3,8 @@ import PrototypeBarChart from "./PrototypeBarChart";
 import PlotSpinner from "src/plot/components/PlotSpinner";
 import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
 import styles from "src/predictabilityPrototype/styles/PredictabilityPrototype.scss";
-import { FEATURE_SET_COLORS, TopFeaturesBarData } from "../models/types";
+import { FEATURE_SET_COLORS } from "../models/types";
+import { TopFeaturesBarData } from "@depmap/types";
 
 export interface TopFeaturesOverallTileProps {
   plotTitle: string;

@@ -9,6 +9,7 @@ import * as entity_summary from "./resources/entity_summary";
 import * as interactive from "./resources/interactive";
 import * as tda from "./resources/tda";
 import * as misc from "./resources/misc";
+import * as predictability_prototype from "./resources/predictability_prototype";
 
 export const legacyPortalAPI = {
   ...cell_line,
@@ -22,6 +23,7 @@ export const legacyPortalAPI = {
   ...interactive,
   ...tda,
   ...misc,
+  ...predictability_prototype,
 };
 
 type Api = typeof legacyPortalAPI;

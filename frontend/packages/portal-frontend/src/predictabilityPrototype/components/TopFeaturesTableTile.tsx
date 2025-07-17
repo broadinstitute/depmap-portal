@@ -2,7 +2,7 @@ import React from "react";
 import { Table } from "react-bootstrap";
 import PlotSpinner from "src/plot/components/PlotSpinner";
 // import styles from "src/predictabilityPrototype/styles/PredictabilityPrototype.scss";
-import { GeneTeaSearchTerm } from "../models/types";
+import { GeneTeaSearchTerm } from "@depmap/types";
 
 export interface TopFeaturesTableProps {
   selectedLabels: GeneTeaSearchTerm[] | null;

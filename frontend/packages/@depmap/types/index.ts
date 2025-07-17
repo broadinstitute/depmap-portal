@@ -83,6 +83,18 @@ export type {
   PredictabilityTable,
 } from "./src/predictability";
 
+export type {
+  PredictabilityData,
+  RelatedFeaturePlot,
+  PredictiveModelData,
+  FeatureVsGeneEffectPlotData,
+  GeneTeaSearchTerm,
+  PredData,
+  AggScoresData,
+  TopFeaturesBarData,
+  ModelPerformanceInfo,
+} from "./src/PredictabilityPrototype";
+
 export type * from "./src/data-explorer-2";
 export type * from "./src/interactive";
 export type * from "./src/cell-line";

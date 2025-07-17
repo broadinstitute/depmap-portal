@@ -3,7 +3,8 @@ import LineChart from "src/plot/components/LineChart";
 import PlotSpinner from "src/plot/components/PlotSpinner";
 import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
 import styles from "src/predictabilityPrototype/styles/PredictabilityPrototype.scss";
-import { AggScoresData, SCREEN_TYPE_COLORS } from "../models/types";
+import { SCREEN_TYPE_COLORS } from "../models/types";
+import { AggScoresData } from "@depmap/types";
 
 export interface AggScoresTileProps {
   plotTitle: string;

@@ -1,10 +1,13 @@
 import GeneTea from "@depmap/data-explorer-2/src/components/DataExplorerPage/components/plot/integrations/GeneTea";
-import { DataExplorerContext } from "@depmap/types";
 import React from "react";
 import { Tab, Tabs } from "react-bootstrap";
 
 import PlotSpinner from "src/plot/components/PlotSpinner";
-import { GeneTeaSearchTerm, TopFeaturesBarData } from "../models/types";
+import {
+  GeneTeaSearchTerm,
+  TopFeaturesBarData,
+  DataExplorerContext,
+} from "@depmap/types";
 import TopFeaturesOverallTile from "./TopFeaturesOverallTile";
 import TopFeaturesTableTile from "./TopFeaturesTableTile";
 // import styles from "src/predictabilityPrototype/styles/PredictabilityPrototype.scss";

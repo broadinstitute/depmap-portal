@@ -1,13 +1,13 @@
 import React, { useState } from "react";
 import styles from "src/predictabilityPrototype/styles/PredictabilityPrototype.scss";
-import { ModelPerformanceInfo, PredictiveModelData } from "../models/types";
+import { ModelPerformanceInfo, PredictiveModelData } from "@depmap/types";
 import { Panel, PanelGroup } from "react-bootstrap";
 import FeatureCollapsiblePanel, {
   FeatureCollapsiblePanelHeader,
 } from "./FeatureCollapsiblePanels";
 import ModelPerformancePlots from "./ModelPerformancePlots";
-import { DepmapApi } from "src/dAPI";
 import InfoIcon from "src/common/components/InfoIcon";
+import { toStaticUrl } from "@depmap/globals";
 
 interface ModelPerformancePanelProps {
   modelName: string;
@@ -21,15 +21,14 @@ interface ModelPerformancePanelProps {
     screenType: string
   ) => Promise<PredictiveModelData>;
   isOpen: boolean;
-  dapi: DepmapApi;
 }
 
-const getRelationshipDescription = (dapi: DepmapApi, featureType: string) => {
+const getRelationshipDescription = (featureType: string) => {
   return featureType === "gene" ? (
     <>
       <div style={{ display: "flex", alignItems: "center" }}>
         <img
-          src={dapi._getFileUrl("/static/img/predictability/self.svg")}
+          src={toStaticUrl("/static/img/predictability/self.svg")}
           alt=""
           style={{ height: 12, marginInlineEnd: 4 }}
         />
@@ -42,7 +41,7 @@ const getRelationshipDescription = (dapi: DepmapApi, featureType: string) => {
 
       <div style={{ display: "flex", alignItems: "center" }}>
         <img
-          src={dapi._getFileUrl("/static/img/predictability/related.svg")}
+          src={toStaticUrl("/static/img/predictability/related.svg")}
           alt=""
           style={{ height: 12, marginInlineEnd: 4 }}
         />
@@ -59,7 +58,7 @@ const getRelationshipDescription = (dapi: DepmapApi, featureType: string) => {
     <>
       <div style={{ display: "flex", alignItems: "center" }}>
         <img
-          src={dapi._getFileUrl("/static/img/predictability/target.svg")}
+          src={toStaticUrl("/static/img/predictability/target.svg")}
           alt=""
           style={{ height: 12, marginInlineEnd: 4 }}
         />
@@ -87,7 +86,6 @@ const ModelPerformancePanel = ({
   screenType,
   getModelPerformanceData,
   isOpen,
-  dapi,
 }: ModelPerformancePanelProps) => {
   const [activeFeatureIndex, setActiveFeatureIndex] = useState<number | null>(
     null
@@ -117,7 +115,7 @@ const ModelPerformancePanel = ({
           FEATURE{" "}
           <span>
             <InfoIcon
-              popoverContent={getRelationshipDescription(dapi, entityType)}
+              popoverContent={getRelationshipDescription(entityType)}
               popoverId={`relationship-popover-${screenType}-${modelName}`}
               trigger="click"
             />

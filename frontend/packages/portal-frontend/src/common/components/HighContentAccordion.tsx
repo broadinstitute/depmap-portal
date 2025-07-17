@@ -1,7 +1,6 @@
 import { Panel, PanelGroup } from "react-bootstrap";
-import React, { useCallback, useState } from "react";
+import React, { useState } from "react";
 import PlotSpinner from "src/plot/components/PlotSpinner";
-import { FeatureInfo } from "src/predictabilityPrototype/models/types";
 
 interface HighContentAccordionProps {
   title: string;
