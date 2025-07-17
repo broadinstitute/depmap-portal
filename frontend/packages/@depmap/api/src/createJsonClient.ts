@@ -1,4 +1,5 @@
 import qs from "qs";
+import { isLocalDevEnvironment } from "@depmap/globals";
 
 const cache: Record<string, Promise<unknown> | null> = {};
 let useCache = false;
@@ -23,7 +24,7 @@ async function request<T>(url: string, options: RequestInit): Promise<T> {
 
   try {
     response = await fetch(url, {
-      credentials: "include",
+      credentials: isLocalDevEnvironment ? "omit" : "include",
       ...options,
       headers,
     });

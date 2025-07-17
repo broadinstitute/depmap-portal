@@ -1,5 +1,13 @@
-import { enabledFeatures } from "@depmap/globals";
+import qs from "qs";
+import { enabledFeatures, isLocalDevEnvironment } from "@depmap/globals";
 import { getJson } from "../client";
+
+// Do not use in production! For local development only.
+const toCorsProxyUrl = (geneTeaUrl: string, params: object) => {
+  const query = qs.stringify(params, { arrayFormat: "repeat" });
+  const url = `https://cds.team/${geneTeaUrl}/?${query}`;
+  return "https://corsproxy.io/?" + encodeURIComponent(url);
+};
 
 export async function fetchGeneTeaEnrichment(
   genes: string[],
@@ -16,7 +24,16 @@ export async function fetchGeneTeaEnrichment(
     throw new Error("GeneTea is not supported in this environment!");
   }
 
-  const body = await getJson<{
+  const geneTeaUrl = "genetea-api/enriched-terms";
+
+  const params = {
+    gene_list: genes,
+    remove_overlapping: "true",
+    n: limit || -1,
+    model: "v2",
+  };
+
+  interface RawResponse {
     // TODO: Give the user feedback when some genes are invalid.
     invalid_genes: string[];
     total_n_enriched_terms: number;
@@ -30,12 +47,11 @@ export async function fetchGeneTeaEnrichment(
       // Gene lists are just space-separated strings like "ADSL CAD UMPS"
       "Matching Genes in List": string[];
     };
-  }>(`/../../genetea-api/enriched-terms/`, {
-    gene_list: genes,
-    remove_overlapping: "true",
-    n: limit || -1,
-    model: "v2",
-  });
+  }
+
+  const body = isLocalDevEnvironment
+    ? await getJson<RawResponse>(toCorsProxyUrl(geneTeaUrl, params))
+    : await getJson<RawResponse>(`/../../${geneTeaUrl}/`, params);
 
   // `enriched_terms` can be null when there are no relevant terms. We'll
   // return a wrapper object to distinguish this from some kind of error.
@@ -72,20 +88,27 @@ export async function fetchGeneTeaTermContext(
     throw new Error("GeneTea is not supported in this environment!");
   }
 
-  const body = await getJson<
+  const geneTeaUrl = "genetea-api/context";
+
+  const params = {
+    term,
+    gene_list: genes,
+    model: "v2",
+    html: true,
+  };
+
+  type RawResponse =
     | {
         valid_genes: string[];
         invalid_genes: string[];
         remapped_genes: Record<string, string>;
         context: Record<string, string>;
       }
-    | { message: string } // error message
-  >(`/../../genetea-api/context/`, {
-    term,
-    gene_list: genes,
-    model: "v2",
-    html: true,
-  });
+    | { message: string }; // error message
+
+  const body = isLocalDevEnvironment
+    ? await getJson<RawResponse>(toCorsProxyUrl(geneTeaUrl, params))
+    : await getJson<RawResponse>(`/../../${geneTeaUrl}/`, params);
 
   if ("message" in body) {
     throw new Error(body.message);
